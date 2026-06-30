@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "description": "Local strategic synergy rules layered on top of raw Spire Codex data.",
+  "rules": [
+    {
+      "id": "defect-focus-orbs",
+      "applies_to": {
+        "character": "DEFECT"
+      },
+      "when": ["deck has Focus gain", "deck has reliable orb channeling"],
+      "prefer": ["more Frost/Lightning/Dark generation", "orb slots after Focus exists", "orb payoff cards"],
+      "avoid": ["too many orb slots before Focus", "slow powers without early defense"]
+    },
+    {
+      "id": "defect-status-fuel",
+      "applies_to": {
+        "character": "DEFECT"
+      },
+      "when": ["deck has Compact or other status payoff"],
+      "prefer": ["status-producing cards", "draw to convert status cards into tempo"],
+      "avoid": ["self-status cards without payoff"]
+    }
+  ]
+}

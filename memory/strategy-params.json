@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "updatedAt": "2026-06-30T23:00:34.221Z",
+  "weights": {
+    "damage": 1.0449999999999997,
+    "block": 1.28,
+    "lethal": 8,
+    "draw": 0.55,
+    "energy": 0.5,
+    "scaling": 0.73,
+    "statusControl": 1.4,
+    "deckThinness": 0.7,
+    "routeEliteRisk": 1,
+    "routeShopValue": 1,
+    "restSafety": 1.1
+  },
+  "thresholds": {
+    "localConfidence": 0.72,
+    "llmUncertaintyMargin": 4,
+    "lowHpRatio": 0.35,
+    "obviousScoreGap": 8,
+    "maxLlmCandidates": 5
+  },
+  "learning": {
+    "enabled": true,
+    "maxParamDeltaPerRun": 0.05,
+    "memoryConfidenceStep": 0.05
+  },
+  "history": [
+    {
+      "at": "2026-06-30T02:26:03.957Z",
+      "reason": "post-run reward feedback",
+      "changes": {
+        "weights.damage": 0.015
+      },
+      "rewardScore": -51
+    },
+    {
+      "at": "2026-06-30T14:30:20.203Z",
+      "reason": "post-run reward feedback",
+      "changes": {
+        "weights.block": 0.03,
+        "weights.damage": 0.015
+      },
+      "rewardScore": -42
+    },
+    {
+      "at": "2026-06-30T23:00:34.221Z",
+      "reason": "post-run reward feedback",
+      "changes": {
+        "weights.scaling": 0.03,
+        "weights.damage": 0.015
+      },
+      "rewardScore": -6
+    }
+  ]
+}

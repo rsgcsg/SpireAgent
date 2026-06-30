@@ -1,0 +1,30 @@
+{
+  "name": "sts2-ai-agent-portable",
+  "version": "0.1.0",
+  "description": "LLM-first Slay the Spire 2 AI agent with local scaffold, memory, collector, and MCP/REST integration.",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "agent:tick": "tsx src/agent/index.ts tick",
+    "agent:run": "tsx src/agent/index.ts run",
+    "agent:run:bridge": "STS2_LLM_COMMAND=\"node scripts/llm-bridge-decider.mjs\" STS2_LLM_TIMEOUT_MS=300000 STS2_LLM_BRIDGE_TIMEOUT_MS=300000 tsx src/agent/index.ts run",
+    "agent:review": "tsx src/agent/index.ts review",
+    "agent:smoke": "tsx src/agent/smoke.ts",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm run agent:smoke",
+    "collect:state": "tsx src/agent/collector.ts state",
+    "collect:watch": "tsx src/agent/collector.ts watch",
+    "data:replay": "tsx src/replay/cli.ts timeline",
+    "data:eval": "tsx src/eval/cli.ts",
+    "sync:sts2-data": "node scripts/sync-sts2-data.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.0",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3"
+  }
+}

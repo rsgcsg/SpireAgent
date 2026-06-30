@@ -1,0 +1,40 @@
+{
+  "syncedAt": "2026-06-29T13:52:07.161Z",
+  "source": "spire-codex",
+  "baseUrl": "https://spire-codex.com",
+  "language": "zhs",
+  "usedExport": true,
+  "downloadedEntities": [
+    "cards",
+    "relics",
+    "characters",
+    "keywords",
+    "potions"
+  ],
+  "failedEntities": [],
+  "retainedFromCache": [],
+  "files": {
+    "cards": {
+      "path": "data/spire-codex/cards-zhs.json",
+      "count": 577
+    },
+    "relics": {
+      "path": "data/spire-codex/relics-zhs.json",
+      "count": 296
+    },
+    "characters": {
+      "path": "data/spire-codex/characters-zhs.json",
+      "count": 5
+    },
+    "keywords": {
+      "path": "data/spire-codex/keywords-zhs.json",
+      "count": 7
+    },
+    "potions": {
+      "path": "data/spire-codex/potions-zhs.json",
+      "count": 63
+    }
+  },
+  "notes": [],
+  "exportUrl": "https://spire-codex.com/api/exports/zhs"
+}

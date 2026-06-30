@@ -1,0 +1,5 @@
+{
+  "version": 1,
+  "description": "Agent-maintained relic tags. Spire Codex stores relic facts; this file stores local strategic labels.",
+  "tags": {}
+}

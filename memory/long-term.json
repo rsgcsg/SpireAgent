@@ -1,0 +1,99 @@
+{
+  "version": 1,
+  "runs": [
+    {
+      "runId": "run-mqzzausx-ke8fdq",
+      "at": "2026-06-30T02:26:03.957Z",
+      "character": "The Defect",
+      "result": "loss",
+      "act": 1,
+      "floor": 11,
+      "rewardScore": -51,
+      "summary": "loss score=-51 character=The Defect act=1 floor=11 hp=0/75 deficits=draw,healing",
+      "failureReasons": [
+        "failed:death-act-1-floor-11",
+        "failed:healing",
+        "failed:combat-tempo"
+      ],
+      "successfulPatterns": []
+    },
+    {
+      "runId": "run-mr0ckah9-99khw3",
+      "at": "2026-06-30T14:30:20.203Z",
+      "character": "The Ironclad",
+      "result": "loss",
+      "act": 1,
+      "floor": 17,
+      "rewardScore": -42,
+      "summary": "loss score=-42 character=The Ironclad act=1 floor=17 hp=0/83 deficits=block,healing",
+      "failureReasons": [
+        "failed:death-act-1-floor-17",
+        "failed:block",
+        "failed:healing",
+        "failed:combat-tempo"
+      ],
+      "successfulPatterns": []
+    },
+    {
+      "runId": "run-mr0qudda-21si27",
+      "at": "2026-06-30T14:46:39.943Z",
+      "character": "The Defect",
+      "result": "loss",
+      "act": 1,
+      "floor": 13,
+      "rewardScore": -48,
+      "summary": "loss score=-48 character=The Defect act=1 floor=13 hp=0/75 deficits=draw,healing",
+      "failureReasons": [
+        "failed:death-act-1-floor-13",
+        "failed:healing"
+      ],
+      "successfulPatterns": []
+    },
+    {
+      "runId": "run-mr0rfdcb-yewhg8",
+      "at": "2026-06-30T23:00:34.220Z",
+      "character": "The Defect",
+      "result": "loss",
+      "act": 2,
+      "floor": 33,
+      "rewardScore": -6,
+      "summary": "loss score=-6 character=The Defect act=2 floor=33 hp=0/75 deficits=scaling,healing",
+      "failureReasons": [
+        "failed:death-act-2-floor-33",
+        "failed:scaling",
+        "failed:healing",
+        "failed:combat-tempo"
+      ],
+      "successfulPatterns": []
+    }
+  ],
+  "lessons": [
+    {
+      "id": "敌人不攻击或已挡住时-不要带着能量空过-优先打-0-费工具-易伤-成长和即时伤害-",
+      "text": "敌人不攻击或已挡住时，不要带着能量空过；优先打 0 费工具、易伤、成长和即时伤害。",
+      "tags": [
+        "combat",
+        "tempo"
+      ],
+      "confidence": 0.6500000000000001,
+      "evidenceRunIds": [
+        "run-mqzzausx-ke8fdq",
+        "run-mr0ckah9-99khw3",
+        "run-mr0rfdcb-yewhg8"
+      ],
+      "updatedAt": "2026-06-30T23:00:34.221Z"
+    },
+    {
+      "id": "死亡局如果长期缺防御-下局提高防御牌-弱化-冰球和休息路线优先级-",
+      "text": "死亡局如果长期缺防御，下局提高防御牌、弱化、冰球和休息路线优先级。",
+      "tags": [
+        "block"
+      ],
+      "confidence": 0.55,
+      "evidenceRunIds": [
+        "run-mr0ckah9-99khw3"
+      ],
+      "updatedAt": "2026-06-30T14:30:20.203Z"
+    }
+  ]
+}
