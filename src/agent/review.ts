@@ -1,5 +1,8 @@
+import { existsSync, readFileSync } from "node:fs";
+import path from "node:path";
 import type { DecisionLogEntry, JsonRecord, RunMemory } from "./types.js";
 import type { MemoryManager } from "./memory.js";
+import { agentRoot, isRecord } from "./utils.js";
 
 export function buildReviewReport(memory: MemoryManager): JsonRecord {
   const decisions = memory.run.keyDecisions;
@@ -8,6 +11,7 @@ export function buildReviewReport(memory: MemoryManager): JsonRecord {
   return {
     run: summarizeRunMemory(memory.run),
     decisionStats: stats,
+    cognitiveCoverage: summarizeCurrentRunCognitiveCoverage(memory.run.runId),
     recentDecisions: decisions.slice(-12).map((decision) => ({
       at: decision.at,
       screen: decision.screen,
@@ -30,6 +34,79 @@ export function buildReviewReport(memory: MemoryManager): JsonRecord {
     },
     recentLessons: memory.longTerm.lessons.slice(-10),
     recentRuns: memory.longTerm.runs.slice(-10)
+  };
+}
+
+function summarizeCurrentRunCognitiveCoverage(runId: string): JsonRecord {
+  const transitionsPath = path.join(agentRoot, "data", "runs", runId, "transitions.jsonl");
+  if (!existsSync(transitionsPath)) {
+    return { runId, transitions: 0, available: false };
+  }
+  const transitions = readFileSync(transitionsPath, "utf8")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      try {
+        return JSON.parse(line) as unknown;
+      } catch {
+        return undefined;
+      }
+    })
+    .filter((value): value is JsonRecord => isRecord(value));
+  const count = (predicate: (transition: JsonRecord) => boolean): number => transitions.filter(predicate).length;
+  const total = transitions.length;
+  const rate = (value: number): number => (total > 0 ? round(value / total) ?? 0 : 0);
+  const strategicImpression = count((transition) => isRecord(transition.strategicImpression));
+  const derivedSnapshot = count((transition) => isRecord(transition.derivedSnapshot));
+  const candidateFuturePredictionChecks = count((transition) =>
+    Array.isArray(transition.candidateFutures) &&
+    transition.candidateFutures.some((future) => isRecord(future) && Array.isArray(future.predictionChecks) && future.predictionChecks.length > 0)
+  );
+  const deliberationPacket = count((transition) => isRecord(transition.deliberationPacket));
+  const derivedKnowledgeSummary = count((transition) => isRecord(transition.deliberationPacket) && isRecord(transition.deliberationPacket.derivedKnowledgeSummary));
+  const promptParity = count((transition) => isRecord(transition.promptParity) || (isRecord(transition.deliberationPacket) && isRecord(transition.deliberationPacket.promptParity)));
+  const predictionError = count((transition) => isRecord(transition.predictionError));
+  const predictionErrorAttributionBuckets = count((transition) =>
+    isRecord(transition.predictionError) &&
+    Array.isArray(transition.predictionError.attributionBuckets) &&
+    transition.predictionError.attributionBuckets.length > 0
+  );
+  const replayFrame = count((transition) => isRecord(transition.replayFrame));
+  const consolidation = count((transition) => isRecord(transition.consolidation));
+  const consolidationStatusCounts = transitions.reduce<Record<string, number>>((counts, transition) => {
+    if (!isRecord(transition.consolidation)) return counts;
+    const status = typeof transition.consolidation.status === "string" ? transition.consolidation.status : "unknown";
+    counts[status] = (counts[status] ?? 0) + 1;
+    return counts;
+  }, {});
+  return {
+    runId,
+    available: true,
+    transitions: total,
+    strategicImpression,
+    derivedSnapshot,
+    candidateFuturePredictionChecks,
+    deliberationPacket,
+    derivedKnowledgeSummary,
+    promptParity,
+    predictionError,
+    predictionErrorAttributionBuckets,
+    replayFrame,
+    consolidation,
+    consolidationStatusCounts,
+    rates: {
+      strategicImpression: rate(strategicImpression),
+      derivedSnapshot: rate(derivedSnapshot),
+      candidateFuturePredictionChecks: rate(candidateFuturePredictionChecks),
+      deliberationPacket: rate(deliberationPacket),
+      derivedKnowledgeSummary: rate(derivedKnowledgeSummary),
+      promptParity: rate(promptParity),
+      predictionError: rate(predictionError),
+      predictionErrorAttributionBuckets: rate(predictionErrorAttributionBuckets),
+      replayFrame: rate(replayFrame),
+      consolidation: rate(consolidation)
+    }
   };
 }
 

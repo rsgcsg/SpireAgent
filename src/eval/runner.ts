@@ -30,6 +30,8 @@ export type EvalWarningCategory =
   | "program_risk"
   | "historical_fixed_evidence"
   | "strategy_quality"
+  | "cognitive_coverage"
+  | "prediction_error"
   | "needs_fixture_bug_candidate";
 
 export type EvalWarningSeverity = "info" | "warn" | "risk";
@@ -60,6 +62,7 @@ export interface EvalSummary {
   runDir: string;
   transitions: number;
   parsedTransitions: number;
+  parsedEvents: number;
   regeneratedCandidates: number;
   matchedSelectedActions: number;
   hardCheckpoints: number;
@@ -67,6 +70,73 @@ export interface EvalSummary {
   settlementTimeouts: number;
   repeatedNoProgress: number;
   warningCategories: Record<string, number>;
+  cognitiveCoverage: EvalCognitiveCoverage;
+  deliberationCoverage: EvalDeliberationCoverage;
+  promptParityCoverage: EvalPromptParityCoverage;
+  predictionErrorCoverage: EvalPredictionErrorCoverage;
+  consolidationCoverage: EvalConsolidationCoverage;
+}
+
+export interface EvalCognitiveCoverage {
+  transitions: number;
+  strategicImpression: number;
+  salienceSignals: number;
+  memoryActivation: number;
+  candidateFutures: number;
+  candidateFuturePredictionChecks: number;
+  derivedSnapshot: number;
+  deliberationPacket: number;
+  fullShadowScaffold: number;
+  rates: Record<string, number>;
+}
+
+export interface EvalDeliberationCoverage {
+  transitions: number;
+  packetPresent: number;
+  stateFacts: number;
+  enemyIntent: number;
+  handSummary: number;
+  legalActionsSummary: number;
+  topCandidates: number;
+  derivedKnowledgeSummary: number;
+  outputSchema: number;
+  rates: Record<string, number>;
+}
+
+export interface EvalPromptParityCoverage {
+  transitions: number;
+  promptParity: number;
+  livePromptUsed: number;
+  averageCoverage: number;
+  missingSections: Record<string, number>;
+}
+
+export interface EvalPredictionErrorCoverage {
+  transitions: number;
+  predictionError: number;
+  supported: number;
+  unknownOrOpen: number;
+  warningOrCritical: number;
+  withTypedChecks: number;
+  withAttribution: number;
+  withAttributionBuckets: number;
+  attributionBucketCounts: Record<string, number>;
+  attributionBucketStatusCounts: Record<string, number>;
+  unsupportedAttributionBuckets: number;
+  criticalAttributionBuckets: number;
+  rates: Record<string, number>;
+}
+
+export interface EvalConsolidationCoverage {
+  transitions: number;
+  consolidation: number;
+  proposed: number;
+  rejected: number;
+  expired: number;
+  reverted: number;
+  acceptedOrMutating: number;
+  statusCounts: Record<string, number>;
+  rates: Record<string, number>;
 }
 
 export interface EvalReport {
@@ -89,6 +159,7 @@ export function evaluateRun(runIdOrPath?: string): EvalReport {
   const warnings: EvalIssue[] = [];
   const metadata = readMetadata(runDir, errors);
   const transitions = readTransitionsForEval(path.join(runDir, "transitions.jsonl"), errors);
+  const parsedEvents = readEventsForEval(path.join(runDir, "events.jsonl"), errors);
   const seenTransitionIds = new Set<string>();
   let regeneratedCandidates = 0;
   let matchedSelectedActions = 0;
@@ -99,6 +170,11 @@ export function evaluateRun(runIdOrPath?: string): EvalReport {
   let previous: TransitionRecord | undefined;
   const warningSummary: Record<string, EvalWarningSummaryBucket> = {};
   const strategyMetrics = createStrategyMetrics();
+  const cognitiveCoverage = createCognitiveCoverage();
+  const deliberationCoverage = createDeliberationCoverage();
+  const promptParityCoverage = createPromptParityCoverage();
+  const predictionErrorCoverage = createPredictionErrorCoverage();
+  const consolidationCoverage = createConsolidationCoverage();
 
   if (!existsSync(path.join(runDir, "snapshots"))) {
     errors.push({ code: "missing_snapshots_dir", message: `Missing snapshots directory: ${path.join(runDir, "snapshots")}` });
@@ -124,6 +200,11 @@ export function evaluateRun(runIdOrPath?: string): EvalReport {
       });
     }
     seenTransitionIds.add(transition.transitionId);
+    collectCognitiveCoverage(cognitiveCoverage, transition);
+    collectDeliberationCoverage(deliberationCoverage, transition);
+    collectPromptParityCoverage(promptParityCoverage, transition);
+    collectPredictionErrorCoverage(predictionErrorCoverage, transition);
+    collectConsolidationCoverage(consolidationCoverage, transition);
 
     try {
       assertGroundTruthInvariants(transition);
@@ -153,6 +234,9 @@ export function evaluateRun(runIdOrPath?: string): EvalReport {
     if (previous && isRepeatedNoProgress(previous, transition)) {
       repeatedNoProgress += 1;
       addWarning(warnings, warningSummary, classifyRepeatedNoProgress(previous, transition));
+    }
+    for (const issue of classifyPredictionAttributionIssues(transition)) {
+      addWarning(warnings, warningSummary, issue);
     }
     previous = transition;
 
@@ -203,7 +287,18 @@ export function evaluateRun(runIdOrPath?: string): EvalReport {
     });
   }
   finishStrategyMetrics(strategyMetrics, transitionCount);
+  finishCognitiveCoverage(cognitiveCoverage, transitionCount);
+  finishDeliberationCoverage(deliberationCoverage, transitionCount);
+  finishPromptParityCoverage(promptParityCoverage, transitionCount);
+  finishPredictionErrorCoverage(predictionErrorCoverage, transitionCount);
+  finishConsolidationCoverage(consolidationCoverage, transitionCount);
   for (const issue of buildStrategyWarnings(strategyMetrics)) {
+    addWarning(warnings, warningSummary, issue);
+  }
+  for (const issue of buildCognitiveCoverageWarnings(cognitiveCoverage, transitionCount)) {
+    addWarning(warnings, warningSummary, issue);
+  }
+  for (const issue of buildP1CoverageWarnings(deliberationCoverage, promptParityCoverage, predictionErrorCoverage, transitionCount)) {
     addWarning(warnings, warningSummary, issue);
   }
 
@@ -218,19 +313,53 @@ export function evaluateRun(runIdOrPath?: string): EvalReport {
       runDir,
       transitions: transitionCount,
       parsedTransitions: transitionCount,
+      parsedEvents,
       regeneratedCandidates,
       matchedSelectedActions,
       hardCheckpoints,
       unknownCheckpoints,
       settlementTimeouts,
       repeatedNoProgress,
-      warningCategories
+      warningCategories,
+      cognitiveCoverage,
+      deliberationCoverage,
+      promptParityCoverage,
+      predictionErrorCoverage,
+      consolidationCoverage
     },
     errors,
     warnings,
     warningSummary,
     strategyMetrics
   };
+}
+
+function readEventsForEval(filePath: string, errors: EvalIssue[]): number {
+  if (!existsSync(filePath)) return 0;
+  let count = 0;
+  const lines = readFileSync(filePath, "utf8")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  for (let index = 0; index < lines.length; index += 1) {
+    try {
+      const parsed = JSON.parse(lines[index]);
+      if (!isRecord(parsed)) {
+        errors.push({
+          code: "invalid_event_jsonl",
+          message: `events.jsonl line ${index + 1} is not an object`
+        });
+        continue;
+      }
+      count += 1;
+    } catch (error) {
+      errors.push({
+        code: "event_json_parse_error",
+        message: `events.jsonl line ${index + 1} failed to parse: ${error instanceof Error ? error.message : String(error)}`
+      });
+    }
+  }
+  return count;
 }
 
 function readMetadata(runDir: string, errors: EvalIssue[]): RunRecord | undefined {
@@ -517,6 +646,31 @@ function classifyRepeatedNoProgress(previous: TransitionRecord, transition: Tran
   };
 }
 
+function classifyPredictionAttributionIssues(transition: TransitionRecord): EvalIssue[] {
+  const predictionError = isRecord(transition.predictionError) ? transition.predictionError : undefined;
+  const buckets = Array.isArray(predictionError?.attributionBuckets)
+    ? predictionError.attributionBuckets.filter(isRecord)
+    : [];
+  return buckets
+    .filter((bucket) => bucket.status === "unsupported" || bucket.severity === "critical")
+    .map((bucket): EvalIssue => {
+      const bucketName = typeof bucket.bucket === "string" ? bucket.bucket : "unknown";
+      const status = typeof bucket.status === "string" ? bucket.status : "unknown";
+      const severity = bucket.severity === "critical" ? "risk" : "warn";
+      return {
+        ...issueBase(transition),
+        code: "prediction_attribution_miss",
+        message: `Prediction attribution ${bucketName} is ${status}`,
+        category: "prediction_error",
+        severity,
+        actionable: false,
+        action: shortAction(transition.selectedAction),
+        screen: transition.screen,
+        floor: transition.floor
+      };
+    });
+}
+
 function isNormalHardCheckpoint(transition: TransitionRecord): boolean {
   const action = actionKind(transition.selectedAction);
   const reasons = checkpointReasons(transition);
@@ -626,6 +780,282 @@ function checkpointReasons(transition: TransitionRecord): string[] {
 
 function actionKind(action: unknown): string {
   return isRecord(action) && typeof action.kind === "string" ? action.kind : "unknown";
+}
+
+function createCognitiveCoverage(): EvalCognitiveCoverage {
+  return {
+    transitions: 0,
+    strategicImpression: 0,
+    salienceSignals: 0,
+    memoryActivation: 0,
+    candidateFutures: 0,
+    candidateFuturePredictionChecks: 0,
+    derivedSnapshot: 0,
+    deliberationPacket: 0,
+    fullShadowScaffold: 0,
+    rates: {}
+  };
+}
+
+function collectCognitiveCoverage(coverage: EvalCognitiveCoverage, transition: TransitionRecord): void {
+  coverage.transitions += 1;
+  const hasStrategicImpression = isRecord(transition.strategicImpression);
+  const hasSalienceSignals = Array.isArray(transition.salienceSignals) && transition.salienceSignals.length > 0;
+  const hasMemoryActivation = isRecord(transition.memoryActivation);
+  const hasCandidateFutures = Array.isArray(transition.candidateFutures) && transition.candidateFutures.length > 0;
+  const hasCandidateFuturePredictionChecks = Array.isArray(transition.candidateFutures) &&
+    transition.candidateFutures.some((future) => isRecord(future) && Array.isArray(future.predictionChecks) && future.predictionChecks.length > 0);
+  const hasDerivedSnapshot = isRecord(transition.derivedSnapshot);
+  const hasDeliberationPacket = isRecord(transition.deliberationPacket);
+  if (hasStrategicImpression) coverage.strategicImpression += 1;
+  if (hasSalienceSignals) coverage.salienceSignals += 1;
+  if (hasMemoryActivation) coverage.memoryActivation += 1;
+  if (hasCandidateFutures) coverage.candidateFutures += 1;
+  if (hasCandidateFuturePredictionChecks) coverage.candidateFuturePredictionChecks += 1;
+  if (hasDerivedSnapshot) coverage.derivedSnapshot += 1;
+  if (hasDeliberationPacket) coverage.deliberationPacket += 1;
+  if (hasStrategicImpression && hasSalienceSignals && hasMemoryActivation && hasCandidateFutures && hasDeliberationPacket) {
+    coverage.fullShadowScaffold += 1;
+  }
+}
+
+function finishCognitiveCoverage(coverage: EvalCognitiveCoverage, transitionCount: number): void {
+  coverage.transitions = transitionCount;
+  const rate = (value: number): number => (transitionCount > 0 ? Number((value / transitionCount).toFixed(3)) : 0);
+  coverage.rates = {
+    strategicImpression: rate(coverage.strategicImpression),
+    salienceSignals: rate(coverage.salienceSignals),
+    memoryActivation: rate(coverage.memoryActivation),
+    candidateFutures: rate(coverage.candidateFutures),
+    candidateFuturePredictionChecks: rate(coverage.candidateFuturePredictionChecks),
+    derivedSnapshot: rate(coverage.derivedSnapshot),
+    deliberationPacket: rate(coverage.deliberationPacket),
+    fullShadowScaffold: rate(coverage.fullShadowScaffold)
+  };
+}
+
+function buildCognitiveCoverageWarnings(coverage: EvalCognitiveCoverage, transitionCount: number): EvalIssue[] {
+  if (transitionCount === 0) return [];
+  const warnings: EvalIssue[] = [];
+  const pushCoverage = (code: string, count: number, label: string): void => {
+    if (count < transitionCount) {
+      warnings.push({
+        code,
+        message: `${label} present on ${count}/${transitionCount} transition(s)`,
+        category: "cognitive_coverage",
+        severity: "info",
+        actionable: false
+      });
+    }
+  };
+  pushCoverage("cognitive_missing_strategic_impression", coverage.strategicImpression, "StrategicImpression");
+  pushCoverage("cognitive_missing_salience_signals", coverage.salienceSignals, "SalienceSignal[]");
+  pushCoverage("cognitive_missing_memory_activation", coverage.memoryActivation, "MemoryActivation");
+  pushCoverage("cognitive_missing_candidate_futures", coverage.candidateFutures, "CandidateFuture[]");
+  pushCoverage("cognitive_missing_candidate_future_prediction_checks", coverage.candidateFuturePredictionChecks, "CandidateFuture.predictionChecks");
+  pushCoverage("cognitive_missing_deliberation_packet", coverage.deliberationPacket, "DeliberationPacket");
+  pushCoverage("cognitive_missing_full_shadow_scaffold", coverage.fullShadowScaffold, "Full shadow scaffold");
+  return warnings;
+}
+
+function createDeliberationCoverage(): EvalDeliberationCoverage {
+  return {
+    transitions: 0,
+    packetPresent: 0,
+    stateFacts: 0,
+    enemyIntent: 0,
+    handSummary: 0,
+    legalActionsSummary: 0,
+    topCandidates: 0,
+    derivedKnowledgeSummary: 0,
+    outputSchema: 0,
+    rates: {}
+  };
+}
+
+function collectDeliberationCoverage(coverage: EvalDeliberationCoverage, transition: TransitionRecord): void {
+  coverage.transitions += 1;
+  const packet = isRecord(transition.deliberationPacket) ? transition.deliberationPacket : undefined;
+  if (!packet) return;
+  coverage.packetPresent += 1;
+  if (isRecord(packet.stateFacts)) coverage.stateFacts += 1;
+  if (Array.isArray(packet.enemyIntent)) coverage.enemyIntent += 1;
+  if (Array.isArray(packet.handSummary)) coverage.handSummary += 1;
+  if (Array.isArray(packet.legalActionsSummary)) coverage.legalActionsSummary += 1;
+  if (Array.isArray(packet.topCandidates)) coverage.topCandidates += 1;
+  if (isRecord(packet.derivedKnowledgeSummary)) coverage.derivedKnowledgeSummary += 1;
+  if (isRecord(packet.outputSchema)) coverage.outputSchema += 1;
+}
+
+function finishDeliberationCoverage(coverage: EvalDeliberationCoverage, transitionCount: number): void {
+  coverage.transitions = transitionCount;
+  const rate = (value: number): number => (transitionCount > 0 ? Number((value / transitionCount).toFixed(3)) : 0);
+  coverage.rates = {
+    packetPresent: rate(coverage.packetPresent),
+    stateFacts: rate(coverage.stateFacts),
+    enemyIntent: rate(coverage.enemyIntent),
+    handSummary: rate(coverage.handSummary),
+    legalActionsSummary: rate(coverage.legalActionsSummary),
+    topCandidates: rate(coverage.topCandidates),
+    derivedKnowledgeSummary: rate(coverage.derivedKnowledgeSummary),
+    outputSchema: rate(coverage.outputSchema)
+  };
+}
+
+function createPromptParityCoverage(): EvalPromptParityCoverage {
+  return {
+    transitions: 0,
+    promptParity: 0,
+    livePromptUsed: 0,
+    averageCoverage: 0,
+    missingSections: {}
+  };
+}
+
+function collectPromptParityCoverage(coverage: EvalPromptParityCoverage, transition: TransitionRecord): void {
+  coverage.transitions += 1;
+  const parity = isRecord(transition.promptParity)
+    ? transition.promptParity
+    : isRecord(transition.deliberationPacket) && isRecord(transition.deliberationPacket.promptParity)
+      ? transition.deliberationPacket.promptParity
+      : undefined;
+  if (!parity) return;
+  coverage.promptParity += 1;
+  if (parity.livePromptUsed === true) coverage.livePromptUsed += 1;
+  const coverageValue = typeof parity.coverage === "number" ? parity.coverage : 0;
+  coverage.averageCoverage += coverageValue;
+  const missing = Array.isArray(parity.missingSections) ? parity.missingSections.map(String) : [];
+  for (const section of missing) {
+    coverage.missingSections[section] = (coverage.missingSections[section] ?? 0) + 1;
+  }
+}
+
+function finishPromptParityCoverage(coverage: EvalPromptParityCoverage, transitionCount: number): void {
+  coverage.transitions = transitionCount;
+  coverage.averageCoverage = coverage.promptParity > 0 ? Number((coverage.averageCoverage / coverage.promptParity).toFixed(3)) : 0;
+}
+
+function createPredictionErrorCoverage(): EvalPredictionErrorCoverage {
+  return {
+    transitions: 0,
+    predictionError: 0,
+    supported: 0,
+    unknownOrOpen: 0,
+    warningOrCritical: 0,
+    withTypedChecks: 0,
+    withAttribution: 0,
+    withAttributionBuckets: 0,
+    attributionBucketCounts: {},
+    attributionBucketStatusCounts: {},
+    unsupportedAttributionBuckets: 0,
+    criticalAttributionBuckets: 0,
+    rates: {}
+  };
+}
+
+function collectPredictionErrorCoverage(coverage: EvalPredictionErrorCoverage, transition: TransitionRecord): void {
+  coverage.transitions += 1;
+  const predictionError = isRecord(transition.predictionError) ? transition.predictionError : undefined;
+  if (!predictionError) return;
+  coverage.predictionError += 1;
+  if (predictionError.status === "accepted" || predictionError.errorType === "prediction_supported") coverage.supported += 1;
+  if (predictionError.status === "open" || String(predictionError.errorType ?? "").includes("unknown")) coverage.unknownOrOpen += 1;
+  if (predictionError.severity === "warning" || predictionError.severity === "critical") coverage.warningOrCritical += 1;
+  const evidence = Array.isArray(predictionError.evidence) ? predictionError.evidence.filter(isRecord) : [];
+  if (evidence.some((item) => Array.isArray(item.typedChecks) && item.typedChecks.length > 0)) coverage.withTypedChecks += 1;
+  if (evidence.some((item) => isRecord(item.attribution))) coverage.withAttribution += 1;
+  const attributionBuckets = Array.isArray(predictionError.attributionBuckets)
+    ? predictionError.attributionBuckets.filter(isRecord)
+    : [];
+  if (attributionBuckets.length > 0) coverage.withAttributionBuckets += 1;
+  for (const bucket of attributionBuckets) {
+    const bucketName = typeof bucket.bucket === "string" ? bucket.bucket : "unknown";
+    const status = typeof bucket.status === "string" ? bucket.status : "unknown";
+    coverage.attributionBucketCounts[bucketName] = (coverage.attributionBucketCounts[bucketName] ?? 0) + 1;
+    coverage.attributionBucketStatusCounts[status] = (coverage.attributionBucketStatusCounts[status] ?? 0) + 1;
+    if (status === "unsupported") coverage.unsupportedAttributionBuckets += 1;
+    if (bucket.severity === "critical") coverage.criticalAttributionBuckets += 1;
+  }
+}
+
+function finishPredictionErrorCoverage(coverage: EvalPredictionErrorCoverage, transitionCount: number): void {
+  coverage.transitions = transitionCount;
+  const rate = (value: number): number => (transitionCount > 0 ? Number((value / transitionCount).toFixed(3)) : 0);
+  coverage.rates = {
+    predictionError: rate(coverage.predictionError),
+    supported: rate(coverage.supported),
+    unknownOrOpen: rate(coverage.unknownOrOpen),
+    warningOrCritical: rate(coverage.warningOrCritical),
+    withTypedChecks: rate(coverage.withTypedChecks),
+    withAttribution: rate(coverage.withAttribution),
+    withAttributionBuckets: rate(coverage.withAttributionBuckets),
+    unsupportedAttributionBuckets: rate(coverage.unsupportedAttributionBuckets),
+    criticalAttributionBuckets: rate(coverage.criticalAttributionBuckets)
+  };
+}
+
+function createConsolidationCoverage(): EvalConsolidationCoverage {
+  return {
+    transitions: 0,
+    consolidation: 0,
+    proposed: 0,
+    rejected: 0,
+    expired: 0,
+    reverted: 0,
+    acceptedOrMutating: 0,
+    statusCounts: {},
+    rates: {}
+  };
+}
+
+function collectConsolidationCoverage(coverage: EvalConsolidationCoverage, transition: TransitionRecord): void {
+  coverage.transitions += 1;
+  const consolidation = isRecord(transition.consolidation) ? transition.consolidation : undefined;
+  if (!consolidation) return;
+  coverage.consolidation += 1;
+  const status = typeof consolidation.status === "string" ? consolidation.status : "unknown";
+  coverage.statusCounts[status] = (coverage.statusCounts[status] ?? 0) + 1;
+  if (status === "proposed") coverage.proposed += 1;
+  if (status === "rejected") coverage.rejected += 1;
+  if (status === "expired") coverage.expired += 1;
+  if (status === "reverted" || status === "rolled_back") coverage.reverted += 1;
+  if (status === "accepted" || status === "reverted" || status === "rolled_back") coverage.acceptedOrMutating += 1;
+}
+
+function finishConsolidationCoverage(coverage: EvalConsolidationCoverage, transitionCount: number): void {
+  coverage.transitions = transitionCount;
+  const rate = (value: number): number => (transitionCount > 0 ? Number((value / transitionCount).toFixed(3)) : 0);
+  coverage.rates = {
+    consolidation: rate(coverage.consolidation),
+    proposed: rate(coverage.proposed),
+    rejected: rate(coverage.rejected),
+    expired: rate(coverage.expired),
+    reverted: rate(coverage.reverted),
+    acceptedOrMutating: rate(coverage.acceptedOrMutating)
+  };
+}
+
+function buildP1CoverageWarnings(
+  deliberation: EvalDeliberationCoverage,
+  promptParity: EvalPromptParityCoverage,
+  predictionError: EvalPredictionErrorCoverage,
+  transitionCount: number
+): EvalIssue[] {
+  if (transitionCount === 0) return [];
+  const warnings: EvalIssue[] = [];
+  const push = (code: string, message: string): void => {
+    warnings.push({ code, message, category: "cognitive_coverage", severity: "info", actionable: false });
+  };
+  if (deliberation.packetPresent < transitionCount) {
+    push("deliberation_packet_partial_coverage", `DeliberationPacket present on ${deliberation.packetPresent}/${transitionCount} transition(s)`);
+  }
+  if (promptParity.promptParity < transitionCount) {
+    push("prompt_parity_partial_coverage", `PromptParity present on ${promptParity.promptParity}/${transitionCount} transition(s)`);
+  }
+  if (predictionError.predictionError < transitionCount) {
+    push("prediction_error_partial_coverage", `PredictionErrorRecord present on ${predictionError.predictionError}/${transitionCount} transition(s)`);
+  }
+  return warnings;
 }
 
 function createStrategyMetrics(): EvalStrategyMetrics {

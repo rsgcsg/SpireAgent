@@ -182,6 +182,196 @@ export interface DerivedSnapshot {
   ref?: string;
 }
 
+export type SalienceKind =
+  | "danger"
+  | "opportunity"
+  | "uncertainty"
+  | "memory_resonance"
+  | "irreversible_choice"
+  | "repeated_failure_pattern"
+  | "resource_pressure"
+  | "strategy_quality";
+
+export interface SalienceSignal {
+  kind: SalienceKind | string;
+  label: string;
+  severity?: "info" | "warning" | "critical";
+  confidence: number;
+  reason?: string;
+  evidence?: JsonRecord[];
+  tags?: string[];
+}
+
+export interface StrategicImpression {
+  schemaVersion: number;
+  summary: string;
+  decisionType?: string;
+  isKeyDecision?: boolean;
+  danger?: string[];
+  opportunity?: string[];
+  uncertainty?: string[];
+  resourcePressure?: string[];
+  deckPressure?: string[];
+  routePressure?: string[];
+  memoryResonance?: string[];
+  salienceSignals?: SalienceSignal[];
+}
+
+export type MemoryActivationKind = "episodic" | "semantic" | "procedural" | "salience" | "unknown";
+
+export interface MemoryActivationItem {
+  memoryId: string;
+  kind: MemoryActivationKind | string;
+  summary: string;
+  relevance: number;
+  confidence: number;
+  reason?: string;
+  evidenceRunIds?: string[];
+  conditions?: string[];
+  counterexamples?: string[];
+  tags?: string[];
+}
+
+export interface MemoryActivation {
+  schemaVersion: number;
+  activatedAt: string;
+  queryTags: string[];
+  items: MemoryActivationItem[];
+  omissions?: string[];
+}
+
+export interface CandidatePredictionCheck {
+  type: string;
+  prediction: string;
+  expected?: JsonRecord;
+  source?: "candidate_future" | "derived_from_text" | string;
+  severity?: "info" | "warning" | "critical";
+}
+
+export interface CandidateFuture {
+  id: string;
+  label: string;
+  plan: string;
+  sourceCandidateId?: string;
+  actions?: GameAction[];
+  deterministicCalculations?: JsonRecord;
+  predictedOutcome?: string[];
+  predictionChecks?: CandidatePredictionCheck[];
+  cost?: string[];
+  risk?: string[];
+  uncertainty?: string[];
+  assumptions?: string[];
+  invalidationTriggers?: string[];
+  executionRequirements?: string[];
+  memoryLinks?: string[];
+  confidence?: number;
+}
+
+export interface DeliberationPacket {
+  schemaVersion: number;
+  stateSummary: string;
+  screen?: string;
+  stateFacts?: JsonRecord;
+  enemyIntent?: JsonRecord[];
+  handSummary?: JsonRecord[];
+  deckSummary?: JsonRecord;
+  legalActionsSummary?: JsonRecord[];
+  topCandidates?: JsonRecord[];
+  runMemorySummary?: JsonRecord;
+  derivedKnowledgeSummary?: JsonRecord;
+  strategicImpression?: StrategicImpression;
+  salienceSignals?: SalienceSignal[];
+  memoryActivation?: MemoryActivation;
+  candidateFutures: CandidateFuture[];
+  deterministicCalculations?: JsonRecord;
+  tradeoffs?: string[];
+  uncertainty?: string[];
+  validationConstraints?: string[];
+  outputSchema?: JsonRecord;
+  promptParity?: PromptParityReport | JsonRecord;
+}
+
+export interface PromptParityReport {
+  schemaVersion: number;
+  mode: "shadow";
+  livePromptUsed: boolean;
+  livePromptBytes?: number;
+  coveredSections: string[];
+  missingSections: string[];
+  coverage: number;
+  notes?: string[];
+}
+
+export type PredictionErrorLayer =
+  | "normalization"
+  | "salience"
+  | "memory_activation"
+  | "candidate_future"
+  | "llm_decision"
+  | "validation"
+  | "execution"
+  | "checkpoint"
+  | "eval"
+  | "unknown";
+
+export interface PredictionAttributionBucket {
+  bucket: "damage" | "defense" | "hp" | "kill" | "phase" | "card_flow" | "resource" | "route" | "reward" | "unknown" | string;
+  status: "supported" | "unsupported" | "unknown";
+  predictionTypes: string[];
+  expected?: JsonRecord;
+  actual?: JsonRecord;
+  evidenceReasons: string[];
+  severity?: "info" | "warning" | "critical";
+}
+
+export interface PredictionErrorRecord {
+  schemaVersion: number;
+  transitionId?: string;
+  predicted: string;
+  actual?: string;
+  errorType: string;
+  attributedLayer: PredictionErrorLayer | string;
+  severity: "info" | "warning" | "critical";
+  evidence?: JsonRecord[];
+  attributionBuckets?: PredictionAttributionBucket[];
+  proposedFix?: string;
+  status?: "open" | "accepted" | "rejected" | "fixed";
+}
+
+export interface ReplayFrame {
+  schemaVersion: number;
+  frameId: string;
+  transitionId: string;
+  stateSummary?: string;
+  selectedAction?: unknown;
+  stateDiff?: StateDiff | JsonRecord;
+  strategicImpression?: StrategicImpression | JsonRecord;
+  salienceSignals?: SalienceSignal[];
+  memoryActivation?: MemoryActivation | JsonRecord;
+  candidateFutures?: CandidateFuture[];
+  deliberationPacket?: DeliberationPacket | JsonRecord;
+  promptParity?: PromptParityReport | JsonRecord;
+  predictionError?: PredictionErrorRecord | JsonRecord;
+}
+
+export interface ConsolidationRecord {
+  schemaVersion: number;
+  recordId: string;
+  sourceFrameId?: string;
+  targetLayer: PredictionErrorLayer | "memory" | "derived_knowledge" | "strategy_params" | string;
+  affectedModule?: PredictionErrorLayer | "memory" | "derived_knowledge" | "strategy_params" | string;
+  proposal: string;
+  proposedChange?: JsonRecord;
+  evidence: JsonRecord[];
+  confidence: number;
+  conditions: string[];
+  expiry?: JsonRecord;
+  revalidation?: JsonRecord;
+  rollback: string;
+  createdAt?: string;
+  status?: "proposed" | "accepted" | "rejected" | "expired" | "reverted" | "rolled_back";
+}
+
 export interface ExecutionResult {
   status: "ok" | "error" | "unknown";
   message?: string;
@@ -227,6 +417,16 @@ export interface TransitionRecord {
   decisionAudit?: DecisionAudit;
   derivedSnapshot?: DerivedSnapshot | JsonRecord;
   memorySnapshot?: MemorySnapshot | JsonRecord;
+  strategicImpression?: StrategicImpression | JsonRecord;
+  salienceSignals?: SalienceSignal[];
+  memoryActivation?: MemoryActivation | JsonRecord;
+  candidateFutures?: CandidateFuture[];
+  deliberationPacket?: DeliberationPacket | JsonRecord;
+  promptParity?: PromptParityReport | JsonRecord;
+  selectedPlan?: CandidateFuture | JsonRecord;
+  predictionError?: PredictionErrorRecord | JsonRecord;
+  replayFrame?: ReplayFrame | JsonRecord;
+  consolidation?: ConsolidationRecord | JsonRecord;
   executionResult?: ExecutionResult | JsonRecord;
   stateDiff?: StateDiff | JsonRecord;
   rawRefs: string[];

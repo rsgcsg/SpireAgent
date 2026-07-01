@@ -1,6 +1,22 @@
 # Architecture
 
-The system is an LLM-first Slay the Spire 2 agent with a layered local scaffold. The LLM is the strategic player; local TypeScript code provides state clarity, deterministic checks, candidate generation, validation, execution, memory, and observability.
+The system is an LLM-centered Slay the Spire 2 agent with a predictive cognitive scaffold. The LLM is the strategic player; local TypeScript code turns raw game data into compact strategic evidence, candidate futures, validation, execution, memory, and replayable learning signals.
+
+This document follows `PROJECT_NORTH_STAR.md`. If an older phrase such as "layered local scaffold" conflicts with the North Star, interpret it as the local machinery that supports this flow:
+
+```text
+raw game state
+  -> canonical state
+  -> Strategic Impression / Salience
+  -> Memory Activation
+  -> Candidate Futures
+  -> Deliberation Packet
+  -> LLM strategic decision
+  -> validated safe execution
+  -> transition recording
+  -> replay / evaluation / review
+  -> prediction-error-driven learning
+```
 
 ## Five Planes
 
@@ -43,6 +59,7 @@ Responsibilities:
 - validate legality, energy, targets, options, affordability
 - estimate damage, block, incoming damage, lethal, and deterministic risk
 - compute state diffs and checkpoints
+- expose deterministic evidence for salience and candidate futures
 
 Current code:
 
@@ -54,9 +71,11 @@ Current code:
 
 Responsibilities:
 
-- generate legal candidates and future candidate plans
+- build Strategic Impression and SalienceSignal records from canonical state
+- activate relevant memory with evidence, conditions, confidence, and omissions
+- generate legal candidates and CandidateFuture plans with predictions, costs, risks, assumptions, and invalidation triggers
 - score candidates and route decisions
-- build compact prompt context
+- build a compact DeliberationPacket for the LLM
 - call LLM at most once per tick
 - validate LLM JSON and candidate IDs
 - choose fallback safely when LLM is unavailable or invalid
@@ -66,6 +85,7 @@ Current code:
 - `src/agent/candidates.ts`
 - `src/agent/scoring.ts`
 - `src/agent/prompt.ts`
+- `src/agent/derivedKnowledge.ts`
 - `src/agent/llm.ts`
 - `src/agent/fallback.ts`
 - `src/agent/controller.ts`
@@ -78,7 +98,10 @@ Responsibilities:
 - maintain run memory, long-term memory, experience memory, and strategy params
 - retrieve relevant memory and derived knowledge
 - score runs with lightweight reward
+- record prediction errors and replay frames for later attribution
 - apply conservative, auditable updates
+
+P2 shadow refinement retrieves a small read-only derived snapshot from `derived/` and records it in the cognitive scaffold. This supports prompt-parity and prediction-error inspection without replacing the live prompt or changing candidate ordering.
 
 Current code:
 
@@ -118,18 +141,61 @@ Current code/docs:
 ```text
 GameIO.readState()
   -> normalizeGameState()
-  -> update run memory
-  -> generate candidates/plans
-  -> score + route
-  -> local decision or LLM JSON
+  -> build StrategicImpression + SalienceSignal[]
+  -> activate memory and derived knowledge
+  -> generate CandidateFuture[]
+  -> build DeliberationPacket
+  -> local routing or LLM JSON decision
   -> validate candidate
   -> execute via GameIO
   -> read post-state
   -> checkpoint/diff
   -> record decision/transition
-  -> review/reward after run
+  -> replay/eval/review
+  -> prediction-error-driven learning proposal
 ```
 
-## Current Phase 2 Boundary
+## Current Implementation Boundary
 
-Phase 2 adds executor-logged agent transition recording, a minimal replay timeline reader, and Phase 2.5 offline engineering eval without replacing the controller. It should not implement strategy-quality eval, event-log mod work, vector memory, or segmented combat planning.
+The current code has the data loop, replay reader, offline eval, grouped warning summary, and lightweight strategy metrics. It does not yet fully construct the North Star cognitive objects in the live loop.
+
+Additive anchors exist in `src/domain/types.ts` for:
+
+- `StrategicImpression`
+- `SalienceSignal`
+- `MemoryActivation`
+- `CandidateFuture`
+- `DeliberationPacket`
+- `PredictionErrorRecord`
+- `ReplayFrame`
+- `ConsolidationRecord`
+
+Near-term refactors should populate these objects around the existing controller instead of rewriting the controller. They should keep live execution semantics stable, preserve replay/eval compatibility, and add tests before changing strategic behavior.
+
+Phase 3.0 shadow-mode status:
+
+- `src/agent/cognitiveScaffold.ts` now builds the first five objects in recording-only mode.
+- New executor-logged transitions can carry `strategicImpression`, `salienceSignals`, `memoryActivation`, `candidateFutures`, `deliberationPacket`, and `selectedPlan`.
+- Replay/eval can report coverage.
+- The objects are not yet used to change prompt text, route decisions, candidate ordering, or execution.
+
+P1 shadow DeliberationPacket status:
+
+- `DeliberationPacket` now mirrors the current live prompt inputs as structured data.
+- `promptParity` measures shadow coverage without storing the full live prompt.
+- `PredictionErrorRecord` is generated from selected candidate future predictions and checkpoint/state-diff evidence.
+- These remain observability objects only; the live prompt is still built by `src/agent/prompt.ts`.
+
+P3/P4/P5 shadow status:
+
+- Prediction errors now include typed checks and checkpoint attribution so replay/eval can distinguish block, damage, kill, card-flow, phase, and resource evidence.
+- `CandidateFuture` now carries `predictionChecks`; `PredictionErrorRecord` consumes these structured checks before falling back to text-derived checks.
+- `AgentDecisionRecorder` writes `ReplayFrame` MVP records into transitions.
+- Unsupported prediction errors can create proposed `ConsolidationRecord` objects with conditions and rollback text, but they do not apply stable learning updates.
+- Eval parses `events.jsonl` for future event-log adapters while current STS2MCP REST capabilities continue to report no reliable event log.
+
+P6 attribution status:
+
+- Candidate futures now carry mechanics-informed expected records where the scaffold can infer them.
+- Checkpoint diffs can include `enemyDeltas`, allowing damage and kill predictions to be checked against actual post-action state.
+- Prediction attribution is still shadow-only and feeds replay/eval/review, not stable learning updates.

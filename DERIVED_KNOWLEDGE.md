@@ -70,3 +70,9 @@ Only a small relevant subset of derived knowledge should enter real-time prompts
 - relics
 - enemy names and intents
 - deck deficits
+
+## Current Shadow Retrieval
+
+`src/agent/derivedKnowledge.ts` now builds a read-only `derivedSnapshot` for new agent transitions. It matches local card tags, relic tags, character synergy rules, and draft policy bullets against the current canonical state and generated candidates.
+
+This is shadow-only: the snapshot is recorded into transitions and summarized inside `DeliberationPacket.derivedKnowledgeSummary`, but it does not replace or modify the live prompt, candidate scoring, fallback selection, validation, or execution.

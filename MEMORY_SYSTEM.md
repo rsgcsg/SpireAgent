@@ -1,6 +1,6 @@
 # Memory System
 
-The memory system is not just logs. It should affect decisions while remaining structured, searchable, compressible, and reversible.
+The memory system is not just logs. It should affect decisions through explicit, evidence-backed `MemoryActivation` while remaining structured, searchable, compressible, conditional, and reversible.
 
 ## Current Files
 
@@ -58,8 +58,24 @@ Long-term memory is updated after runs. It should record:
 - repeated failure causes
 - cards/relics/routes/events that performed well or poorly
 - lessons with confidence and evidence run IDs
+- conditions where the lesson applies
+- counterexamples or situations where the lesson should not be trusted
 
 Long-term memory is retrieved by tags. Do not dump the whole file into prompts.
+
+## Memory Activation
+
+Each strategic decision should eventually produce a `MemoryActivation` record:
+
+- query tags and screen context
+- activated memory IDs
+- relevance and confidence
+- evidence run IDs
+- conditions and counterexamples
+- reason the memory matters now
+- omissions when memory exists but is not applicable
+
+This record can be stored on `TransitionRecord.memoryActivation` and summarized inside the `DeliberationPacket`. Memory that cannot explain why it applies should not control strategy.
 
 ## Strategy Params
 
@@ -77,5 +93,5 @@ Current implementation stores history in `strategy-params.json`.
 
 - Add `memory/experiments.jsonl`.
 - Add memory snapshots per transition.
-- Add retrieval scores to decision logs.
+- Add `MemoryActivation` records per decision.
 - Add explicit rollback command for strategy params and derived changes.

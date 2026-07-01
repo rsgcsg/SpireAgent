@@ -23,8 +23,19 @@ import { MemoryManager } from "./memory.js";
 import { cardDamage, normalizeGameState } from "./state.js";
 import { generateCandidates } from "./candidates.js";
 import { scoreCandidates } from "./scoring.js";
-import { buildReplayTimeline, readReplayRun, readTransitionJsonl } from "../replay/reader.js";
+import { buildReplayCognitiveCoverage, buildReplayTimeline, readReplayRun, readTransitionJsonl } from "../replay/reader.js";
 import { evaluateRun } from "../eval/runner.js";
+import { buildCognitiveScaffold, buildConsolidationRecord, buildPredictionErrorRecord } from "./cognitiveScaffold.js";
+import {
+  DOMAIN_SCHEMA_VERSION,
+  type CandidateFuture,
+  type DeliberationPacket,
+  type MemoryActivation,
+  type PredictionErrorRecord,
+  type SalienceSignal,
+  type StrategicImpression,
+  type TransitionRecord
+} from "../domain/types.js";
 
 class FakeClient implements GameClient {
   executed: AgentAction[] = [];
@@ -107,6 +118,81 @@ assert.equal(capabilities.canReadHumanEvents, false);
 assert.equal(capabilities.canProvideFactData, false);
 assert.equal(capabilities.canProvideVersionedFacts, false);
 
+const salienceSignal: SalienceSignal = {
+  kind: "danger",
+  label: "incoming_damage",
+  severity: "warning",
+  confidence: 0.8,
+  reason: "enemy intends to attack this turn",
+  tags: ["combat", "block_deficit"]
+};
+const strategicImpression: StrategicImpression = {
+  schemaVersion: DOMAIN_SCHEMA_VERSION,
+  summary: "Attack is incoming and the decision should preserve HP without hiding lethal lines.",
+  decisionType: "combat",
+  isKeyDecision: true,
+  danger: ["incoming damage"],
+  opportunity: ["enemy is in strike range"],
+  uncertainty: ["draw quality next turn"],
+  salienceSignals: [salienceSignal]
+};
+const memoryActivation: MemoryActivation = {
+  schemaVersion: DOMAIN_SCHEMA_VERSION,
+  activatedAt: new Date(0).toISOString(),
+  queryTags: ["combat", "block_deficit"],
+  items: [
+    {
+      memoryId: "lesson-block-deficit",
+      kind: "procedural",
+      summary: "When low on HP, prefer lines that reduce incoming damage unless lethal is reliable.",
+      relevance: 0.7,
+      confidence: 0.6,
+      evidenceRunIds: ["run-test"],
+      conditions: ["low_hp", "enemy_attacking"]
+    }
+  ]
+};
+const candidateFuture: CandidateFuture = {
+  id: "future-strike",
+  label: "Strike the attacking enemy",
+  plan: "Play Strike and reassess after state settlement.",
+  sourceCandidateId: "play-strike",
+  predictedOutcome: ["enemy HP decreases"],
+  predictionChecks: [
+    {
+      type: "enemy_hp_or_block_delta",
+      prediction: "enemy HP decreases",
+      expected: { enemyHpOrBlockChanged: true },
+      source: "candidate_future",
+      severity: "info"
+    }
+  ],
+  cost: ["1 energy"],
+  risk: ["may leave block deficit"],
+  assumptions: ["card index is current"],
+  invalidationTriggers: ["hand index shifted before execution"],
+  confidence: 0.72
+};
+const deliberationPacket: DeliberationPacket = {
+  schemaVersion: DOMAIN_SCHEMA_VERSION,
+  stateSummary: "Combat with one attacking enemy and a small hand.",
+  strategicImpression,
+  salienceSignals: [salienceSignal],
+  memoryActivation,
+  candidateFutures: [candidateFuture],
+  validationConstraints: ["LLM must choose a provided candidate id"]
+};
+const predictionError: PredictionErrorRecord = {
+  schemaVersion: DOMAIN_SCHEMA_VERSION,
+  predicted: "Strike reduces immediate threat enough for the turn.",
+  actual: "Enemy survived and incoming damage remained high.",
+  errorType: "underestimated_incoming_risk",
+  attributedLayer: "candidate_future",
+  severity: "warning",
+  status: "open"
+};
+assert.equal(deliberationPacket.candidateFutures[0]?.sourceCandidateId, "play-strike");
+
 const collectedRecord = buildCollectedStateRecord({
   rawStatePath: "memory/collected/snapshots/test.raw.json",
   runId: "run-test",
@@ -134,6 +220,17 @@ const executorTransition = createExecutorLoggedTransitionSkeleton({
 });
 assert.equal(executorTransition.captureMode, "executor_logged");
 assert.equal(executorTransition.isGroundTruth, true);
+const cognitiveTransition: TransitionRecord = {
+  ...executorTransition,
+  strategicImpression,
+  salienceSignals: [salienceSignal],
+  memoryActivation,
+  candidateFutures: [candidateFuture],
+  deliberationPacket,
+  predictionError
+};
+assert.equal(cognitiveTransition.strategicImpression?.schemaVersion, DOMAIN_SCHEMA_VERSION);
+assert.equal(cognitiveTransition.candidateFutures?.[0]?.id, "future-strike");
 assert.throws(
   () => assertGroundTruthInvariants({ ...executorTransition, source: "human", captureMode: "executor_logged" }),
   /human ground truth/
@@ -431,6 +528,121 @@ assert.deepEqual(
 const smokeMemoryDir = mkdtempSync(path.join(tmpdir(), "sts2-agent-smoke-"));
 try {
   const memory = new MemoryManager(smokeMemoryDir);
+  const scaffoldState = normalizeGameState(combatState());
+  const scaffoldCandidates = scoreCandidates(scaffoldState, generateCandidates(scaffoldState), memory.run, memory.strategy);
+  const scaffold = buildCognitiveScaffold({
+    state: scaffoldState,
+    run: memory.run,
+    candidates: scaffoldCandidates.candidates,
+    relevantMemories: ["combat lesson: avoid death risk when incoming damage is high (conf=0.80)"],
+    tags: ["combat", "incoming_damage"],
+    route: scaffoldCandidates.route,
+    uncertaintyReasons: scaffoldCandidates.uncertaintyReasons
+  });
+  assert.equal(scaffold.strategicImpression.schemaVersion, DOMAIN_SCHEMA_VERSION);
+  assert.ok(scaffold.salienceSignals.length > 0);
+  assert.equal(scaffold.memoryActivation.items.length, 1);
+  assert.equal(scaffold.candidateFutures.length, scaffoldCandidates.candidates.length);
+  assert.ok(scaffold.candidateFutures.every((future) => Array.isArray(future.predictionChecks)));
+  assert.ok(scaffold.candidateFutures.some((future) => (future.predictionChecks?.length ?? 0) > 0));
+  assert.equal(scaffold.deliberationPacket.candidateFutures.length, scaffoldCandidates.candidates.length);
+  const blockPrediction = buildPredictionErrorRecord({
+    selectedPlan: {
+      predictedOutcome: ["player block should increase"],
+      predictionChecks: [
+        {
+          type: "block_delta",
+          prediction: "player block should increase",
+          expected: { blockChanged: true },
+          source: "candidate_future"
+        }
+      ]
+    },
+    checkpoint: {
+      kind: "soft",
+      reasons: ["player_block_changed"],
+      settled: true,
+      polls: 1,
+      preStateHash: "pre",
+      postStateHash: "post",
+      before: "before",
+      after: "after",
+      changes: { block: { changed: true, before: 0, after: 5 } }
+    }
+  });
+  assert.equal(blockPrediction.errorType, "prediction_supported");
+  assert.ok(Array.isArray(blockPrediction.evidence?.[0]?.typedChecks));
+  assert.equal(blockPrediction.evidence?.[0]?.typedChecks?.[0]?.type, "block_delta");
+  assert.equal(blockPrediction.evidence?.[0]?.typedChecks?.[0]?.status, "supported");
+  assert.equal(blockPrediction.evidence?.[0]?.typedChecks?.[0]?.source, "candidate_future");
+  assert.equal(blockPrediction.attributionBuckets?.[0]?.bucket, "defense");
+  assert.equal(blockPrediction.attributionBuckets?.[0]?.status, "supported");
+  assert.equal(buildConsolidationRecord({ predictionError: blockPrediction }), undefined);
+  const unsupportedPrediction = buildPredictionErrorRecord({
+    selectedPlan: {
+      id: "future-test",
+      predictedOutcome: ["player block should increase"],
+      predictionChecks: [
+        {
+          type: "block_delta",
+          prediction: "player block should increase",
+          expected: { blockChanged: true },
+          source: "candidate_future"
+        }
+      ]
+    },
+    checkpoint: {
+      kind: "soft",
+      reasons: ["player_energy_changed"],
+      settled: true,
+      polls: 1,
+      preStateHash: "pre",
+      postStateHash: "post",
+      before: "before",
+      after: "after",
+      changes: { energy: { changed: true, before: 3, after: 2 } }
+    }
+  });
+  assert.equal(unsupportedPrediction.attributionBuckets?.[0]?.bucket, "defense");
+  assert.equal(unsupportedPrediction.attributionBuckets?.[0]?.status, "unknown");
+  const consolidationProposal = buildConsolidationRecord({ predictionError: unsupportedPrediction, selectedPlan: { id: "future-test" } });
+  assert.equal(consolidationProposal?.status, "proposed");
+  assert.equal(consolidationProposal?.targetLayer, "candidate_future");
+  assert.equal(consolidationProposal?.affectedModule, "candidate_future");
+  assert.equal(consolidationProposal?.proposedChange?.stableMutation, false);
+  assert.ok(consolidationProposal?.expiry);
+  assert.ok(consolidationProposal?.revalidation);
+  assert.ok(consolidationProposal?.createdAt);
+  const contradictedPrediction = buildPredictionErrorRecord({
+    selectedPlan: {
+      id: "future-contradicted",
+      predictedOutcome: ["player block should increase"],
+      predictionChecks: [
+        {
+          type: "block_delta",
+          prediction: "player block should increase by 5",
+          expected: { blockChanged: true, expectedBlockGain: 5 },
+          source: "candidate_future"
+        }
+      ]
+    },
+    checkpoint: {
+      kind: "soft",
+      reasons: ["player_block_changed"],
+      settled: true,
+      polls: 1,
+      preStateHash: "pre",
+      postStateHash: "post",
+      before: "before",
+      after: "after",
+      changes: { block: { changed: true, before: 0, after: 3 } }
+    }
+  });
+  const contradictedChecks = contradictedPrediction.evidence?.[0]?.typedChecks;
+  assert.ok(Array.isArray(contradictedChecks));
+  assert.equal(contradictedChecks[0]?.status, "unsupported");
+  assert.equal(contradictedPrediction.attributionBuckets?.[0]?.status, "unsupported");
+
   const lowHpMapState = normalizeGameState({
     state_type: "map",
     map_nodes: [{ type: "RestSite" }, { type: "Unknown" }],
@@ -1661,18 +1873,56 @@ try {
   assert.ok(parsedTransition.compactState);
   assert.ok(parsedTransition.memorySnapshot);
   assert.ok(parsedTransition.derivedSnapshot);
+  assert.ok(parsedTransition.strategicImpression);
+  assert.ok(Array.isArray(parsedTransition.salienceSignals));
+  assert.ok(parsedTransition.salienceSignals.length > 0);
+  assert.ok(parsedTransition.memoryActivation);
+  assert.ok(Array.isArray(parsedTransition.candidateFutures));
+  assert.ok(parsedTransition.candidateFutures.length > 0);
+  assert.ok(parsedTransition.candidateFutures.some((future: { predictionChecks?: unknown[] }) => Array.isArray(future.predictionChecks) && future.predictionChecks.length > 0));
+  assert.ok(parsedTransition.deliberationPacket);
+  assert.ok(parsedTransition.deliberationPacket.promptParity);
+  assert.ok(parsedTransition.promptParity);
+  assert.ok(!parsedTransition.promptParity.missingSections.includes("derived_knowledge"));
+  assert.ok(parsedTransition.deliberationPacket.derivedKnowledgeSummary.present);
+  assert.ok(parsedTransition.selectedPlan);
+  assert.ok(parsedTransition.predictionError);
+  assert.equal(parsedTransition.predictionError.schemaVersion, DOMAIN_SCHEMA_VERSION);
+  assert.ok(parsedTransition.predictionError.evidence[0].attribution);
+  assert.ok(Array.isArray(parsedTransition.predictionError.evidence[0].typedChecks));
+  assert.ok(parsedTransition.predictionError.evidence[0].typedChecks.length > 0);
+  assert.ok(Array.isArray(parsedTransition.predictionError.attributionBuckets));
+  assert.ok(parsedTransition.predictionError.attributionBuckets.length > 0);
+  assert.ok(parsedTransition.replayFrame);
+  assert.equal(parsedTransition.replayFrame.transitionId, parsedTransition.transitionId);
+  if (parsedTransition.consolidation) {
+    assert.equal(parsedTransition.consolidation.status, "proposed");
+    assert.equal(parsedTransition.consolidation.sourceFrameId, parsedTransition.replayFrame.frameId);
+  }
   assert.equal(parsedTransition.executionResult.status, "ok");
   assert.ok(parsedTransition.stateDiff.checkpoint);
   assert.equal(readTransitionJsonl(transitionsPath).length, 1);
   const replayRun = readReplayRun(runDir);
   assert.equal(replayRun.transitions.length, 1);
+  const replayCoverage = buildReplayCognitiveCoverage(replayRun.transitions);
+  assert.equal(replayCoverage.fullShadowScaffold, 1);
+  assert.equal(replayCoverage.candidateFuturePredictionChecks, 1);
+  assert.equal(replayCoverage.replayFrame, 1);
   const timeline = buildReplayTimeline(replayRun.transitions);
   assert.equal(timeline.length, 1);
   assert.equal(timeline[0]?.captureMode, "executor_logged");
   const evalReport = evaluateRun(runDir);
   assert.equal(evalReport.status, "PASS");
   assert.equal(evalReport.summary.transitions, 1);
+  assert.equal(evalReport.summary.parsedEvents, 0);
   assert.equal(evalReport.summary.matchedSelectedActions, 1);
+  assert.equal(evalReport.summary.cognitiveCoverage.fullShadowScaffold, 1);
+  assert.equal(evalReport.summary.cognitiveCoverage.candidateFuturePredictionChecks, 1);
+  assert.equal(evalReport.summary.deliberationCoverage.packetPresent, 1);
+  assert.equal(evalReport.summary.promptParityCoverage.promptParity, 1);
+  assert.equal(evalReport.summary.predictionErrorCoverage.predictionError, 1);
+  assert.equal(evalReport.summary.predictionErrorCoverage.withTypedChecks, 1);
+  assert.equal(evalReport.summary.predictionErrorCoverage.withAttribution, 1);
   assert.deepEqual(evalReport.warningSummary, {});
   assert.equal(evalReport.strategyMetrics.fallbackRate, 0);
   assert.deepEqual(evalReport.errors, []);
@@ -1727,6 +1977,10 @@ try {
   assert.equal(historicalEvalReport.status, "WARN");
   assert.equal(historicalEvalReport.errors.length, 0);
   assert.equal(historicalEvalReport.summary.repeatedNoProgress, 1);
+  assert.equal(historicalEvalReport.summary.cognitiveCoverage.fullShadowScaffold, 0);
+  assert.equal(historicalEvalReport.summary.promptParityCoverage.promptParity, 0);
+  assert.equal(historicalEvalReport.summary.predictionErrorCoverage.predictionError, 0);
+  assert.ok(historicalEvalReport.warningSummary.cognitive_coverage);
   assert.equal(historicalEvalReport.warningSummary.historical_fixed_evidence?.codes.repeated_no_progress, 1);
   assert.equal(
     historicalEvalReport.warnings.find((warning) => warning.code === "repeated_no_progress")?.historical,

@@ -1,6 +1,20 @@
 import { existsSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { DOMAIN_SCHEMA_VERSION, type ExecutionResult, type JsonRecord, type RunRecord } from "../domain/types.js";
+import {
+  DOMAIN_SCHEMA_VERSION,
+  type CandidateFuture,
+  type ConsolidationRecord,
+  type DeliberationPacket,
+  type ExecutionResult,
+  type JsonRecord,
+  type MemoryActivation,
+  type PredictionErrorRecord,
+  type PromptParityReport,
+  type ReplayFrame,
+  type RunRecord,
+  type SalienceSignal,
+  type StrategicImpression
+} from "../domain/types.js";
 import { createExecutorLoggedTransitionSkeleton, type TransitionRecord } from "../data/transitionSchema.js";
 import { compactStateForDataset } from "./collector.js";
 import type {
@@ -43,6 +57,16 @@ export interface AgentDecisionRecordInput {
   fallbackPolicy?: FallbackPolicyAudit;
   memoryRun: RunMemory;
   derivedSnapshot?: JsonRecord;
+  strategicImpression?: StrategicImpression | JsonRecord;
+  salienceSignals?: SalienceSignal[];
+  memoryActivation?: MemoryActivation | JsonRecord;
+  candidateFutures?: CandidateFuture[];
+  deliberationPacket?: DeliberationPacket | JsonRecord;
+  promptParity?: PromptParityReport | JsonRecord;
+  selectedPlan?: CandidateFuture | JsonRecord;
+  predictionError?: PredictionErrorRecord | JsonRecord;
+  replayFrame?: ReplayFrame | JsonRecord;
+  consolidation?: ConsolidationRecord | JsonRecord;
 }
 
 export interface AgentDecisionRecordResult {
@@ -67,6 +91,21 @@ export class AgentDecisionRecorder {
     const compactPreState = compactStateForDataset(input.preState);
     const compactPostState = compactStateForDataset(input.postState);
     const legalActions = input.legalActions.map(compactCandidate);
+    const stateDiff = checkpointStateDiff(input.checkpoint);
+    const consolidation = enrichConsolidation(input.consolidation, transitionId);
+    const replayFrame = input.replayFrame ?? buildReplayFrame({
+      transitionId,
+      preState: input.preState,
+      selectedAction: input.selectedAction,
+      stateDiff,
+      strategicImpression: input.strategicImpression,
+      salienceSignals: input.salienceSignals,
+      memoryActivation: input.memoryActivation,
+      candidateFutures: input.candidateFutures,
+      deliberationPacket: input.deliberationPacket,
+      promptParity: input.promptParity,
+      predictionError: input.predictionError
+    });
     const transition = createExecutorLoggedTransitionSkeleton({
       runId: input.runId,
       transitionId,
@@ -107,13 +146,23 @@ export class AgentDecisionRecorder {
         }
       },
       memorySnapshot: memorySnapshot(input.memoryRun),
+      strategicImpression: input.strategicImpression,
+      salienceSignals: input.salienceSignals,
+      memoryActivation: input.memoryActivation,
+      candidateFutures: input.candidateFutures,
+      deliberationPacket: input.deliberationPacket,
+      promptParity: input.promptParity,
+      selectedPlan: input.selectedPlan,
+      predictionError: input.predictionError,
+      replayFrame,
+      consolidation,
       derivedSnapshot: input.derivedSnapshot ?? {
         schemaVersion: DOMAIN_SCHEMA_VERSION,
         relevantFacts: [],
         relevantRules: []
       },
       executionResult: toExecutionResult(input.executionResult),
-      stateDiff: checkpointStateDiff(input.checkpoint)
+      stateDiff
     });
     const transitionPath = path.join(runDir, "transitions.jsonl");
     appendJsonl(transitionPath, transition);
@@ -185,6 +234,47 @@ export class AgentDecisionRecorder {
       }
     });
   }
+}
+
+function enrichConsolidation(consolidation: ConsolidationRecord | JsonRecord | undefined, transitionId: string): ConsolidationRecord | JsonRecord | undefined {
+  if (!consolidation || !isRecord(consolidation)) return consolidation;
+  return {
+    ...consolidation,
+    recordId: typeof consolidation.recordId === "string" && !consolidation.recordId.endsWith("-pending")
+      ? consolidation.recordId
+      : `consolidation-${transitionId}`,
+    sourceFrameId: typeof consolidation.sourceFrameId === "string" ? consolidation.sourceFrameId : `frame-${transitionId}`
+  };
+}
+
+function buildReplayFrame(input: {
+  transitionId: string;
+  preState: NormalizedState;
+  selectedAction: AgentAction;
+  stateDiff: JsonRecord;
+  strategicImpression?: StrategicImpression | JsonRecord;
+  salienceSignals?: SalienceSignal[];
+  memoryActivation?: MemoryActivation | JsonRecord;
+  candidateFutures?: CandidateFuture[];
+  deliberationPacket?: DeliberationPacket | JsonRecord;
+  promptParity?: PromptParityReport | JsonRecord;
+  predictionError?: PredictionErrorRecord | JsonRecord;
+}): ReplayFrame {
+  return {
+    schemaVersion: DOMAIN_SCHEMA_VERSION,
+    frameId: `frame-${input.transitionId}`,
+    transitionId: input.transitionId,
+    stateSummary: `${input.preState.screen} floor=${input.preState.floor ?? "?"} hp=${input.preState.player.hp}/${input.preState.player.maxHp}`,
+    selectedAction: input.selectedAction,
+    stateDiff: input.stateDiff,
+    strategicImpression: input.strategicImpression,
+    salienceSignals: input.salienceSignals,
+    memoryActivation: input.memoryActivation,
+    candidateFutures: input.candidateFutures,
+    deliberationPacket: input.deliberationPacket,
+    promptParity: input.promptParity,
+    predictionError: input.predictionError
+  };
 }
 
 function compactCandidate(candidate: ScoredCandidate): JsonRecord {

@@ -65,6 +65,85 @@
         "failed:combat-tempo"
       ],
       "successfulPatterns": []
+    },
+    {
+      "runId": "run-mr192jap-y1qb0x",
+      "at": "2026-07-01T00:00:23.837Z",
+      "character": "The Defect",
+      "result": "loss",
+      "act": 2,
+      "floor": 21,
+      "rewardScore": -24,
+      "summary": "loss score=-24 character=The Defect act=2 floor=21 hp=0/75 deficits=block,scaling,healing",
+      "failureReasons": [
+        "failed:death-act-2-floor-21",
+        "failed:scaling",
+        "failed:healing",
+        "failed:combat-tempo"
+      ],
+      "successfulPatterns": []
+    },
+    {
+      "runId": "run-mr1b7h2b-kcqhmr",
+      "at": "2026-07-01T00:03:05.964Z",
+      "character": "The Defect",
+      "result": "loss",
+      "act": 1,
+      "floor": 11,
+      "rewardScore": -51,
+      "summary": "loss score=-51 character=The Defect act=1 floor=11 hp=0/75 deficits=healing",
+      "failureReasons": [
+        "failed:death-act-1-floor-11",
+        "failed:healing"
+      ],
+      "successfulPatterns": []
+    },
+    {
+      "runId": "run-mr1bay5v-vla493",
+      "at": "2026-07-01T00:10:26.422Z",
+      "character": "The Defect",
+      "result": "loss",
+      "act": 2,
+      "floor": 25,
+      "rewardScore": -18,
+      "summary": "loss score=-18 character=The Defect act=2 floor=25 hp=0/75 deficits=block,scaling,deck_thinness,healing",
+      "failureReasons": [
+        "failed:death-act-2-floor-25",
+        "failed:scaling",
+        "failed:healing"
+      ],
+      "successfulPatterns": []
+    },
+    {
+      "runId": "run-mr1bkl96-34bpvd",
+      "at": "2026-07-01T00:13:38.479Z",
+      "character": "The Defect",
+      "result": "loss",
+      "act": 1,
+      "floor": 9,
+      "rewardScore": -54,
+      "summary": "loss score=-54 character=The Defect act=1 floor=9 hp=0/75 deficits=draw,healing",
+      "failureReasons": [
+        "failed:death-act-1-floor-9",
+        "failed:healing",
+        "failed:combat-tempo"
+      ],
+      "successfulPatterns": []
+    },
+    {
+      "runId": "run-mr1bomgg-7tc81y",
+      "at": "2026-07-01T00:17:48.482Z",
+      "character": "The Ironclad",
+      "result": "loss",
+      "act": 1,
+      "floor": 17,
+      "rewardScore": -42,
+      "summary": "loss score=-42 character=The Ironclad act=1 floor=17 hp=0/80 deficits=draw,status_control,healing",
+      "failureReasons": [
+        "failed:death-act-1-floor-17",
+        "failed:healing"
+      ],
+      "successfulPatterns": []
     }
   ],
   "lessons": [
@@ -75,13 +154,15 @@
         "combat",
         "tempo"
       ],
-      "confidence": 0.6500000000000001,
+      "confidence": 0.7500000000000002,
       "evidenceRunIds": [
         "run-mqzzausx-ke8fdq",
         "run-mr0ckah9-99khw3",
-        "run-mr0rfdcb-yewhg8"
+        "run-mr0rfdcb-yewhg8",
+        "run-mr192jap-y1qb0x",
+        "run-mr1bkl96-34bpvd"
       ],
-      "updatedAt": "2026-06-30T23:00:34.221Z"
+      "updatedAt": "2026-07-01T00:13:38.480Z"
     },
     {
       "id": "死亡局如果长期缺防御-下局提高防御牌-弱化-冰球和休息路线优先级-",

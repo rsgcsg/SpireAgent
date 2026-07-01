@@ -109,6 +109,7 @@ function diffState(before: NormalizedState, after: NormalizedState, action: Agen
       removed: beforeLiving.filter((id) => !afterLiving.includes(id)),
       added: afterLiving.filter((id) => !beforeLiving.includes(id))
     },
+    enemyDeltas: enemyDeltas(before, after),
     rewardsCount: changed(before.rewards.length, after.rewards.length),
     optionsCount: changed(before.options.length, after.options.length),
     mapNodesCount: changed(before.mapNodes.length, after.mapNodes.length)
@@ -211,6 +212,43 @@ function enemyHpOrBlockChanged(before: NormalizedState, after: NormalizedState):
     const next = afterById.get(enemy.id);
     return Boolean(next && (next.hp !== enemy.hp || next.block !== enemy.block));
   });
+}
+
+function enemyDeltas(before: NormalizedState, after: NormalizedState): JsonRecord[] {
+  const afterById = new Map(after.enemies.map((enemy) => [enemy.id, enemy]));
+  const deltas: JsonRecord[] = [];
+  for (const enemy of before.enemies) {
+    const next = afterById.get(enemy.id);
+    if (!next) {
+      deltas.push({
+        id: enemy.id,
+        name: enemy.name,
+        removed: true,
+        hpBefore: enemy.hp,
+        hpAfter: 0,
+        hpDelta: -enemy.hp,
+        blockBefore: enemy.block,
+        blockAfter: 0,
+        blockDelta: -enemy.block
+      });
+      continue;
+    }
+    const hpDelta = next.hp - enemy.hp;
+    const blockDelta = next.block - enemy.block;
+    if (hpDelta === 0 && blockDelta === 0) continue;
+    deltas.push({
+      id: enemy.id,
+      name: enemy.name,
+      removed: next.hp <= 0,
+      hpBefore: enemy.hp,
+      hpAfter: next.hp,
+      hpDelta,
+      blockBefore: enemy.block,
+      blockAfter: next.block,
+      blockDelta
+    });
+  }
+  return deltas;
 }
 
 function livingEnemyIds(state: NormalizedState): string[] {

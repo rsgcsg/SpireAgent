@@ -1,13 +1,13 @@
 {
   "version": 1,
-  "updatedAt": "2026-06-30T23:00:34.221Z",
+  "updatedAt": "2026-07-01T00:13:38.480Z",
   "weights": {
-    "damage": 1.0449999999999997,
+    "damage": 1.0749999999999995,
     "block": 1.28,
     "lethal": 8,
     "draw": 0.55,
     "energy": 0.5,
-    "scaling": 0.73,
+    "scaling": 0.79,
     "statusControl": 1.4,
     "deckThinness": 0.7,
     "routeEliteRisk": 1,
@@ -52,6 +52,31 @@
         "weights.damage": 0.015
       },
       "rewardScore": -6
+    },
+    {
+      "at": "2026-07-01T00:00:23.837Z",
+      "reason": "post-run reward feedback",
+      "changes": {
+        "weights.scaling": 0.03,
+        "weights.damage": 0.015
+      },
+      "rewardScore": -24
+    },
+    {
+      "at": "2026-07-01T00:10:26.422Z",
+      "reason": "post-run reward feedback",
+      "changes": {
+        "weights.scaling": 0.03
+      },
+      "rewardScore": -18
+    },
+    {
+      "at": "2026-07-01T00:13:38.480Z",
+      "reason": "post-run reward feedback",
+      "changes": {
+        "weights.damage": 0.015
+      },
+      "rewardScore": -54
     }
   ]
 }

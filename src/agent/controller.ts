@@ -21,6 +21,8 @@ import { scoreCandidates } from "./scoring.js";
 import { buildDecisionPrompt } from "./prompt.js";
 import { selectFallbackCandidate } from "./fallback.js";
 import { isRecord, nowIso, stableId } from "./utils.js";
+import { buildCognitiveScaffold, buildConsolidationRecord, buildPredictionErrorRecord } from "./cognitiveScaffold.js";
+import { buildDerivedSnapshot } from "./derivedKnowledge.js";
 
 export interface ControllerOptions {
   dryRun?: boolean;
@@ -86,6 +88,20 @@ export class AgentController {
             settled: settlement.settled,
             polls: settlement.polls
           });
+          const tags = tagsForState(state);
+          const derivedSnapshot = buildDerivedSnapshot({ state, candidates: [chosen], tags });
+          const cognitive = buildCognitiveScaffold({
+            state,
+            run: runForGameOverRecord,
+            candidates: [chosen],
+            relevantMemories: this.memory.relevantMemories(tags, 5),
+            tags,
+            route: { kind: "forced_local", shouldAskLlm: false, llmPriority: "none", reasons: ["game_over_return_main_menu"] },
+            uncertaintyReasons: [],
+            derivedSnapshot
+          });
+          const selectedPlan = cognitive.candidateFutures[0];
+          const predictionError = buildPredictionErrorRecord({ selectedPlan, checkpoint });
           this.recorder?.recordAgentDecision({
             runId: runForGameOverRecord.runId,
             tick: runForGameOverRecord.counters.ticks,
@@ -100,7 +116,17 @@ export class AgentController {
             checkpoint,
             chosenBy: "local",
             route: { kind: "forced_local", reasons: ["game_over_return_main_menu"] },
-            memoryRun: runForGameOverRecord
+            memoryRun: runForGameOverRecord,
+            derivedSnapshot,
+            strategicImpression: cognitive.strategicImpression,
+            salienceSignals: cognitive.salienceSignals,
+            memoryActivation: cognitive.memoryActivation,
+            candidateFutures: cognitive.candidateFutures,
+            deliberationPacket: cognitive.deliberationPacket,
+            promptParity: cognitive.promptParity,
+            selectedPlan,
+            predictionError,
+            consolidation: buildConsolidationRecord({ selectedPlan, predictionError })
           });
           return {
             state,
@@ -140,6 +166,19 @@ export class AgentController {
     }
 
     const scoring = scoreCandidates(state, candidates, this.memory.run, this.memory.strategy);
+    const tags = tagsForState(state);
+    const relevantMemories = this.memory.relevantMemories(tags, 5);
+    const derivedSnapshot = buildDerivedSnapshot({ state, candidates: scoring.candidates, tags });
+    const cognitive = buildCognitiveScaffold({
+      state,
+      run: this.memory.run,
+      candidates: scoring.candidates,
+      relevantMemories,
+      tags,
+      route: scoring.route,
+      uncertaintyReasons: scoring.uncertaintyReasons,
+      derivedSnapshot
+    });
     let chosen = scoring.top;
     let chosenBy: TickResult["chosenBy"] = "local";
     let llmDecision: LlmDecision | null = null;
@@ -173,12 +212,15 @@ export class AgentController {
           state,
           run: this.memory.run,
           candidates: promptCandidates,
-          memories: this.memory.relevantMemories(tagsForState(state), 5),
+          memories: relevantMemories,
           uncertaintyReasons: scoring.uncertaintyReasons
         });
         llmAudit.called = true;
         llmAudit.promptBytes = Buffer.byteLength(prompt, "utf8");
         llmAudit.candidatesSent = promptCandidates.length;
+        cognitive.promptParity.livePromptUsed = true;
+        cognitive.promptParity.livePromptBytes = llmAudit.promptBytes;
+        cognitive.deliberationPacket.promptParity = cognitive.promptParity;
 
         try {
           llmDecision = await this.llm.decide(prompt);
@@ -297,6 +339,10 @@ export class AgentController {
         checkpoint
       );
       this.memory.recordDecision(entry);
+      const selectedCandidateForRecord = chosen;
+      const selectedPlan = cognitive.candidateFutures.find((future) => future.sourceCandidateId === selectedCandidateForRecord.id);
+      const predictionError = buildPredictionErrorRecord({ selectedPlan, checkpoint });
+      const consolidation = buildConsolidationRecord({ selectedPlan, predictionError });
       this.recorder?.recordAgentDecision({
         runId: this.memory.run.runId,
         tick: this.memory.run.counters.ticks,
@@ -315,7 +361,17 @@ export class AgentController {
         llmDecision,
         fallbackReason,
         fallbackPolicy,
-        memoryRun: this.memory.run
+        memoryRun: this.memory.run,
+        derivedSnapshot,
+        strategicImpression: cognitive.strategicImpression,
+        salienceSignals: cognitive.salienceSignals,
+        memoryActivation: cognitive.memoryActivation,
+        candidateFutures: cognitive.candidateFutures,
+        deliberationPacket: cognitive.deliberationPacket,
+        promptParity: cognitive.promptParity,
+        selectedPlan,
+        predictionError,
+        consolidation
       });
     }
 

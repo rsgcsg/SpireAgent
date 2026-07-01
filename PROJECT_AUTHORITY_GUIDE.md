@@ -7,9 +7,9 @@
 
 ## 0. 这份文档的目的
 
-当前项目已经完成 Phase 0：已经有完整项目书、架构文档、外部依赖评估、Game I/O capability 文档、data schema 文档、memory / derived / replay / reward / human capture 等子系统文档，并且当前 TypeScript agent 已能通过 smoke、review、dry-run、collector 等基本验证。
+当前项目已经完成 Phase 0、Phase 1、Phase 2 数据闭环、Phase 2.5 offline eval runner、Phase 2.6 eval WARN 分类/降噪。当前 TypeScript agent 已能通过 install、tsc、smoke、check、review、replay/eval、collector、dry-run 等基本验证，并能在本地 MCP 在线时进行真实短跑和长跑记录。
 
-当前项目正在进入 Phase 1：文档 source-of-truth 收敛、`domain-core`、`GameIO`、adapter capabilities、transition schema、ground truth invariants 和最小 LLM candidate validation。
+当前项目正在进入 Phase 3.0：根据新的 `PROJECT_NORTH_STAR.md`，把已有 transition/replay/eval 工程闭环升级为 LLM-centered predictive cognitive scaffold。第一阶段只做低风险、可测试、可回滚的对象锚定和渐进迁移，不大拆 controller，不改变 live 执行语义。
 
 后续任何改变系统目标、schema、capability、memory、derived、reward、LLM 输出格式、collector/replay/eval 行为的代码修改，都必须同步更新对应权威文档。文档不能只在聊天记录里更新。
 
@@ -18,7 +18,7 @@
 1. 文档太多，权威层级不清。
 2. 多份文档重复讲同一件事，后续 agent 不知道该听谁的。
 3. 一些文档是历史 debug / portable / runbook，不应继续作为长期架构 source of truth。
-4. 架构理念已经写清楚，但还没有充分转化成代码边界、schema、adapter capability、transition recorder 和 replay/eval 闭环。
+4. 新 North Star 的核心概念还没有充分转化成 live loop 中的对象和数据：`StrategicImpression`、`SalienceSignal`、`MemoryActivation`、`CandidateFuture`、`DeliberationPacket`、`PredictionErrorRecord`、`ReplayFrame`、`ConsolidationRecord`。
 5. 当前项目有可工作的旧结构，不能大爆炸式重构；必须边界先行、兼容旧命令、小步落地。
 
 因此，本文件的作用是：
@@ -28,26 +28,36 @@
 - 定义哪些文档应该保留、合并、redirect 或 archive。
 - 定义 mod、adapter、本地 agent、data/memory/learning 的边界。
 - 定义当前和未来外部依赖的处理规则。
-- 定义 Phase 1 到 Phase 5 的长期路线。
+- 定义 Phase 1 到 Phase 10 的长期路线。
 - 给出下一轮 Codex 的长期 prompt，让它能自主阅读、审计、检索、构建、整理项目文档索引和项目架构。
 
 ---
 
 ## 1. 最高目标
 
-项目的最终目标是构建一个能够高水平、较高速度、可复盘、可学习、可维护地真实本地游玩 Slay the Spire 2 的 agent 系统。
+项目的最终目标是构建一个能够高水平、较高速度、可复盘、可学习、可维护地真实本地游玩 Slay the Spire 2 的 LLM-centered agent 系统。
 
-这个系统不是纯规则 bot，也不是让本地程序完全替代 LLM。它应该是：
+这个系统不是追求任意算法意义上的最强 AI，也不是让本地程序完全替代 LLM。它应该通过预测型认知脚手架最大化 LLM 作为战略玩家的能力：
 
 ```text
-LLM-first + layered local scaffold + structured memory + derived knowledge + lightweight learning + replaceable external adapters
+raw game state
+  -> canonical state
+  -> Strategic Impression / Salience
+  -> Memory Activation
+  -> Candidate Futures
+  -> Deliberation Packet
+  -> LLM strategic decision
+  -> validated safe execution
+  -> transition recording
+  -> replay / evaluation / review
+  -> prediction-error-driven learning
 ```
 
 核心原则：
 
 1. **LLM 是主要战略玩家**：负责高分歧、高不确定、长期取舍、组合判断、路线规划、抓牌、商店、事件、复杂战斗 plan、局后复盘和受控自我改进。
-2. **本地脚手架负责清理战场**：读取完整状态、规范化、生成候选、过滤非法动作、计算确定性指标、压缩上下文、执行动作、checkpoint、记录 transition、构造 replay/eval 数据。
-3. **LLM 不看 raw dump**：实时 prompt 只包含 compact state、top candidates、本局记忆摘要、少量相关 long-term memory、少量相关 derived knowledge 和严格 JSON 输出格式。
+2. **本地脚手架负责塑造问题**：读取完整状态、规范化、识别 salience、激活记忆、生成 candidate futures、计算确定性指标、构造 deliberation packet、过滤非法动作、执行动作、checkpoint、记录 transition、构造 replay/eval 数据。
+3. **LLM 不看 raw dump**：实时 prompt 应是紧凑但战略完整的 `DeliberationPacket`，包含决定性状态、salience、memory activation、candidate futures、风险/假设/失效条件和严格 JSON 输出格式。
 4. **本地不应变成死规则机器人**：低争议、低自由度、确定性场景可以本地处理；真正有战略分歧的地方必须留给 LLM。
 5. **数据闭环比单次聪明更重要**：agent 的每一步决策、执行结果、checkpoint、状态变化、记忆快照、derived 证据和 LLM/fallback 路由都应可记录、可 replay、可 eval。
 6. **学习必须保守可回滚**：memory、derived、strategy params、reward、experiment 只能保守更新，必须有 evidence、reason、confidence、rollback。
@@ -959,6 +969,8 @@ Future event-log mod:
 
 ## 12. Phase 路线
 
+当前正式路线是 Phase 0 到 Phase 10。Phase 10 的目标不是“自动训练一个黑箱 bot”，而是形成 Guarded Learning Loop：每次学习都必须来自可回放 transition、明确 prediction error、证据充分的 consolidation proposal、受保护的稳定更新和可回滚记录。
+
 ### Phase 0：已完成
 
 目标：项目书、架构、外部依赖、人类采集限制、阶段路线。
@@ -1019,19 +1031,22 @@ Phase 1 禁止：
 - HumanPlayRecorder diff fallback skeleton。
 - offline eval fixture skeleton。
 
-### Phase 3：分层脚手架和短 prompt
+### Phase 3：预测型认知脚手架迁移
 
-目标：速度和质量提升。
+目标：把现有 loop 迁移到 North Star 的核心认知对象，但先保持 shadow-only。
 
 实现：
 
-- mechanics-engine 拆分。
-- candidates/scoring 按 screen 拆分。
-- combat segmented plan generator。
-- checkpoint continuation。
-- card reward / shop / route / event / rest scorer。
-- stronger LLM schema validation。
-- prompt budget tests。
+- `StrategicImpression`。
+- `SalienceSignal`。
+- `MemoryActivation`。
+- `CandidateFuture`。
+- `DeliberationPacket`。
+- `PredictionErrorRecord`。
+- `ReplayFrame`。
+- replay/eval/review cognitive coverage。
+
+状态：shadow-mode 已开始落地。live prompt、候选排序、fallback、validation、execution semantics 不应在 Phase 3 被悄悄改变。
 
 ### Phase 4：memory / derived / reward / experiment 闭环
 
@@ -1045,6 +1060,8 @@ Phase 1 禁止：
 - `memory/experiments.jsonl`。
 - experiment manager。
 
+状态：derived snapshot 和 proposal-only `ConsolidationRecord` 已开始落地。稳定 memory/derived/strategy 更新仍未启用。
+
 ### Phase 5：event-log mod / event-first human recorder
 
 实现：
@@ -1055,34 +1072,107 @@ Phase 1 禁止：
 - event-first HumanPlayRecorder。
 - diff inference 变成 fallback / validation。
 
+状态：当前 REST adapter 仍无可靠 event log；`events.jsonl` 是 forward-compatible sink，不是 ground-truth human capture。
+
+### Phase 6：typed prediction-error attribution
+
+目标：让 prediction error 不只是 checkpoint reason，而是可归因的工程证据。
+
+实现：
+
+- damage / block / HP / kill / phase-change attribution。
+- card-flow / resource / route / reward attribution。
+- supported / unsupported / unknown typed checks。
+- replay/eval/review attribution coverage。
+- fixture 覆盖 supported、unsupported、unknown。
+
+禁止：不要从 Phase 6 attribution 自动更新稳定记忆或策略参数。
+
+### Phase 7：consolidation proposal pipeline
+
+目标：把重复或关键 prediction error 转成可审计的学习提案。
+
+实现：
+
+- `ConsolidationRecord` 状态机：proposed / accepted / rejected / expired / reverted。
+- evidence、conditions、confidence、affected module、rollback、expiry。
+- CLI/review 可见 pending proposals。
+- proposal 默认不变更稳定层。
+
+### Phase 8：DeliberationPacket as LLM strategic workspace
+
+目标：让 LLM 在更好的 strategic workspace 里判断，而不是直接吃 raw state，也不是被本地规则替代。
+
+实现：
+
+- `DeliberationPacket` 作为紧凑但战略完整的 LLM workspace。
+- workspace 必须包含 Strategic Impression、Salience、MemoryActivation、CandidateFutures、assumptions、risks、invalidation triggers 和输出 schema。
+- legacy prompt vs packet workspace shadow compare。
+- workspace parity / information-preservation acceptance threshold。
+- 只对 gated high-dispute decision classes 逐步启用。
+- 继续保留 validated candidate selection 和 fallback。
+
+禁止：不要把 Phase 8 写成简单“换 prompt”；不要让本地 scaffold 替代 LLM 战略判断。
+
+### Phase 9：guarded stable updates
+
+目标：允许极窄范围的稳定更新，但必须有 guard。
+
+实现：
+
+- gated applicator。
+- evidence count / confidence threshold / condition scope。
+- eval-before/after。
+- rollback record。
+- 先从 memory confidence 或 derived draft rule 这类低风险更新开始。
+
+禁止：不要直接开放无约束 strategy-param 自动调参。
+
+### Phase 10：Guarded Learning Loop
+
+目标：完整闭环。
+
+实现：
+
+- candidate future prediction。
+- safe execution + checkpoint/state diff。
+- typed prediction error。
+- consolidation proposal。
+- guarded stable update。
+- replay/eval/review validation。
+- rollback and rejection records。
+- run-level learning report。
+
+验收：系统能说明“预测了什么、实际发生了什么、错在哪里、建议学什么、是否应用、如何回滚”，并且 LLM 仍是核心战略玩家。
+
 ---
 
 ## 13. 当前最重要的工作优先级
 
-### P0：必须马上做
+### P0：保护边界
 
-1. 文档 source-of-truth 整理。
-2. typed `AdapterCapabilities`。
-3. typed `GameIO`。
-4. `TransitionRecord` schema。
-5. snapshot-only compatibility。
-6. ground truth rules tests。
-7. invalid LLM candidate fallback tests。
+1. 保持 live prompt / candidate ordering / fallback / execution semantics 不被 shadow 工作悄悄改变。
+2. 保持 replay/eval zero-error baseline。
+3. 保持 ground-truth invariant：agent executor logged 可以 ground truth；snapshot/diff inferred human 不能 ground truth。
 
-### P1：紧随其后
+### P1：补齐 Phase 1-5 缺口
 
-1. AgentDecisionRecorder。
-2. `data/runs/<runId>/`。
-3. replay CLI。
-4. StateDiff 独立化。
-5. offline eval fixtures。
+1. 明确记录 Phase 1-5 未完成项。
+2. 保持旧 redirect 文档只做兼容指针。
+3. 更新 README / AGENTS / LLM_HANDOFF，避免旧路径或旧阶段误导。
 
-### P2：再做
+### P2：推进 Phase 6
 
-1. segmented combat plan。
-2. prompt schema / provider upgrade。
-3. memory retrieval。
-4. derived retrieval。
+1. typed prediction-error attribution。
+2. fixture for unsupported prediction。
+3. eval/review grouped visibility。
+
+### P3：推进 Phase 7-10
+
+1. proposal lifecycle。
+2. guarded stable update。
+3. shadow-to-live deliberation。
+4. Guarded Learning Loop。
 5. reward/experiment。
 
 ### P3：长期
@@ -1161,12 +1251,12 @@ npm run agent:run -- --max-ticks 5 --delay-ms 120
 
 # 16. 下一步长期 Codex Prompt
 
-下面这段 prompt 应直接交给下一轮 Codex / coding agent。目标不是让它继续写空泛文档，而是让它自主阅读、审计、检索、构建并完整理顺项目文档索引结构和项目架构，然后小步进入 Phase 1 代码落地。
+下面这段 prompt 是历史 Phase 1 交接参考，不再是当前执行指令。当前执行方向以 `PROJECT_NORTH_STAR.md`、`LLM_HANDOFF.md`、`PROJECT_PLAN.md` 和本文件前文的 Phase 3.0 说明为准。
 
 ```text
-你现在在 /Users/fire/STS2MCP/sts2-ai-agent-portable 中继续开发 Slay the Spire 2 AI agent。请不要另起项目，也不要继续只堆文档。当前 Phase 0 已经完成，仓库中已有 PROJECT_PLAN.md、ARCHITECTURE.md、EXTERNAL_DEPENDENCIES.md、GAME_IO_CAPABILITIES.md、DATA_SCHEMA.md、MEMORY_SYSTEM.md、DERIVED_KNOWLEDGE.md、AGENT_LOOP.md、COMBAT_PLAN_AND_CHECKPOINT.md、HUMAN_CAPTURE_LIMITS.md、REPLAY_AND_EVAL.md、REWARD_AND_EXPERIMENTS.md、CONTRIBUTING_OR_ENGINEERING_RULES.md 等文档。现在你的任务是以专业 agent 工程师、软件工程师、AI 工程师的标准，批判性检视所有已有文档和程序，建立文档 source-of-truth，清理重复文档，并开始 Phase 1 的 schema/interface/capability/transition 代码落地。
+你现在在 /Users/fire/Desktop/SPIREAGENT 中继续开发 Slay the Spire 2 AI agent。请不要另起项目，也不要继续只堆文档。当前 Phase 0/1/2/2.5/2.6 已经完成，仓库中已有 PROJECT_NORTH_STAR.md、PROJECT_NORTH_STAR_CHINESE.md、PROJECT_PLAN.md、ARCHITECTURE.md、EXTERNAL_DEPENDENCIES.md、GAME_IO_CAPABILITIES.md、DATA_SCHEMA.md、MEMORY_SYSTEM.md、DERIVED_KNOWLEDGE.md、AGENT_LOOP.md、COMBAT_PLAN_AND_CHECKPOINT.md、HUMAN_CAPTURE_LIMITS.md、REPLAY_AND_EVAL.md、REWARD_AND_EXPERIMENTS.md、CONTRIBUTING_OR_ENGINEERING_RULES.md 等文档。现在的任务是小步进入 Phase 3.0：把已有 transition/replay/eval 闭环升级为 LLM-centered predictive cognitive scaffold。
 
-最终目标不变：把当前项目演进成一个 LLM-first + 分层本地脚手架 + 结构化记忆 + derived 经验层 + 轻量学习 + 可替换外部依赖 adapter 的 Slay the Spire 2 agent。LLM 是主要战略玩家；本地脚手架负责状态读取、规范化、候选生成、确定性计算、上下文压缩、动作执行、checkpoint、数据记录、replay、eval、memory/derived/reward 支撑。最终系统要能高水平、高速度、可复盘、可学习、可维护地真实本地玩 STS2。
+最终目标不变：把当前项目演进成一个 LLM 作为核心战略玩家、由预测型认知脚手架增强能力的 Slay the Spire 2 agent。核心链路是 raw game state -> canonical state -> Strategic Impression / Salience -> Memory Activation -> Candidate Futures -> Deliberation Packet -> LLM strategic decision -> validated safe execution -> transition recording -> replay / evaluation / review -> prediction-error-driven learning。
 
 请先完整阅读并审计以下文档：
 

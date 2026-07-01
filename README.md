@@ -1,6 +1,6 @@
 # STS2 AI Agent Portable
 
-LLM-first Slay the Spire 2 agent with a layered local scaffold, structured memory, derived strategy knowledge, lightweight learning, and replaceable game/fact adapters.
+LLM-centered Slay the Spire 2 agent with a predictive cognitive scaffold, structured memory, derived strategy knowledge, replay/eval data loop, lightweight learning, and replaceable game/fact adapters.
 
 This repository contains the TypeScript agent package. It does not include the game, the STS2 MCP C# mod, the Python MCP server, build outputs, or `node_modules`.
 
@@ -35,6 +35,8 @@ npm run agent:run
 npm run agent:run:bridge
 npm run agent:review
 npm run agent:smoke
+npm run data:replay -- --latest
+npm run data:eval -- --latest
 npm run check
 npm run collect:state
 npm run collect:watch
@@ -45,6 +47,7 @@ npm run collect:watch
 Read these first:
 
 - [PROJECT_NORTH_STAR.md](PROJECT_NORTH_STAR.md): long-term constitution.
+- [PROJECT_NORTH_STAR_CHINESE.md](PROJECT_NORTH_STAR_CHINESE.md): Chinese long-term constitution.
 - [PROJECT_AUTHORITY_GUIDE.md](PROJECT_AUTHORITY_GUIDE.md): document authority, boundaries, phase route.
 - [PROJECT_PLAN.md](PROJECT_PLAN.md): current project book and phase plan.
 - [ARCHITECTURE.md](ARCHITECTURE.md): five-plane system architecture.
@@ -68,10 +71,21 @@ Operational docs live under `docs/` and are not architecture source of truth.
 
 ## Runtime Model
 
-- STS2 MCP/REST reads game state and executes actions.
-- Local TypeScript code normalizes state, generates candidates, scores locally, validates LLM choices, executes actions, records checkpoints, and maintains memory.
-- LLM remains the strategic player for high-dispute decisions, but only selects from validated candidates with short JSON.
+- STS2 MCP/REST reads game state and executes validated actions.
+- Local TypeScript code normalizes state, identifies salience, activates memory, generates candidate futures, validates LLM choices, executes actions, records checkpoints, and maintains replayable data.
+- LLM remains the strategic player for high-dispute decisions, but only selects from validated candidates with compact strategic context.
 - Raw facts live in `data/spire-codex/`; learned strategy lives in `derived/` and `memory/`.
+
+## Phase Route
+
+The formal route currently runs through Phase 10:
+
+- Phase 1-2 established schema, capabilities, transition recording, replay, and eval.
+- Phase 3-5 migrate the loop toward shadow cognitive objects, derived/memory visibility, and event-log compatibility.
+- Phase 6-9 add typed prediction-error attribution, consolidation proposals, guarded stable updates, and controlled shadow-to-live deliberation migration.
+- Phase 10 is the Guarded Learning Loop: prediction -> execution evidence -> prediction error -> consolidation -> guarded update -> replay/eval validation -> rollback-capable review.
+
+See [PROJECT_PLAN.md](PROJECT_PLAN.md) for current completion gaps and acceptance criteria.
 
 ## Live Testing Policy
 

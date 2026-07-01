@@ -3,7 +3,7 @@
 Current project directory:
 
 ```text
-/Users/fire/STS2MCP/sts2-ai-agent-portable
+/Users/fire/Desktop/SpireAgent
 ```
 
 Read first:
@@ -18,7 +18,25 @@ Read first:
 
 ## Current State
 
-The project has completed Phase 0, Phase 1, the Phase 2 minimum data-loop MVP, the Phase 2.5 offline engineering eval runner, and Phase 2.6 eval warning classification/noise reduction.
+The project has completed Phase 0, Phase 1, the Phase 2 minimum data-loop MVP, the Phase 2.5 offline engineering eval runner, and Phase 2.6 eval warning classification/noise reduction. The formal route now extends through Phase 10, where the target is a complete Guarded Learning Loop.
+
+The active North Star is now the LLM-centered predictive cognitive scaffold described in `PROJECT_NORTH_STAR.md` and `PROJECT_NORTH_STAR_CHINESE.md`. Phase 3.0 should migrate the existing working loop toward `StrategicImpression`, `SalienceSignal`, `MemoryActivation`, `CandidateFuture`, `DeliberationPacket`, `PredictionErrorRecord`, `ReplayFrame`, and `ConsolidationRecord` without large controller rewrites or untested strategy changes.
+
+Phase 3.0 shadow-mode P0 is now implemented:
+
+- `src/agent/cognitiveScaffold.ts` builds `StrategicImpression`, `SalienceSignal[]`, `MemoryActivation`, `CandidateFuture[]`, and a shadow `DeliberationPacket`.
+- `AgentController` constructs these after existing scoring and passes them to `AgentDecisionRecorder`.
+- `AgentDecisionRecorder` writes them to new executor-logged transitions.
+- Replay/eval report cognitive coverage.
+- This does not change prompt construction, candidate ordering, selected action, fallback behavior, or execution semantics.
+
+P1 shadow DeliberationPacket is now implemented:
+
+- `DeliberationPacket` contains structured state facts, enemy intent, hand/deck summaries, legal actions, top candidates, run memory summary, derived summary, strategic impression, salience, memory activation, candidate futures, output schema, and prompt parity.
+- `promptParity` records coverage metadata without storing the full live prompt.
+- `predictionError` records a minimal prediction-vs-checkpoint result.
+- `agent:review`, `data:replay`, and `data:eval` expose coverage.
+- This still does not replace the live prompt or change action selection.
 
 Implemented and working:
 
@@ -68,6 +86,7 @@ Known gaps:
 
 - Offline eval strategy checks are lightweight metrics/WARNs only. They are not policy tuning or training.
 - Historical runs may contain pre-fix transition evidence. If `npm run data:eval -- --run-id <oldRun>` fails on an old run, inspect the errors before treating it as a current-code regression.
+- Current live loop does not yet populate formal North Star cognitive objects on every transition.
 - No reliable human UI event log from current STS2MCP.
 - Human data is snapshot/diff-inferred only and is not ground truth.
 - No HumanPlayRecorder diff fallback implementation yet.
@@ -99,24 +118,66 @@ npm run data:replay
 
 Do not do long live runs before the offline baseline passes.
 
-## Latest Validation
+## Latest Desktop Validation
 
-On 2026-07-01, Phase 2.5 local validation passed:
+On 2026-07-01 in `/Users/fire/Desktop/SpireAgent`, local validation passed:
 
 - `npm install`
 - `npm exec tsc -- --noEmit`
 - `npm run agent:smoke`
-- `npm run check`
 - `npm run agent:review`
+- `npm run check`
 - `npm run data:replay -- --latest`
+- `npm run data:eval -- --latest`
 
 Live MCP validation also exercised:
 
 - `npm run collect:state`
 - `npm run agent:tick -- --dry-run`
-- multiple `npm run agent:run -- --max-ticks 50 --delay-ms 120` passes while fixing program-level bugs.
 
-The latest known local run is `run-mr0rfdcb-yewhg8`. `npm run data:eval -- --latest` returns `WARN` with zero errors: 374 parsed transitions and 374 selected actions matched regenerated candidates. The warnings are hard/unknown checkpoint, settlement-timeout audit items, and historical repeated no-progress evidence from before the latest card-select guard fix in the same run.
+The latest known local run in this Desktop clone is `run-mr1jyh2e-5hmiwn`. After Phase 6 planning and attribution validation, `npm run data:eval -- --latest` returns `WARN` with zero errors: 60 parsed transitions and 60 selected actions matched regenerated candidates. Cognitive scaffold coverage is partial because only newer transitions were recorded after the shadow scaffold landed. The latest eval reports `candidateFuturePredictionChecks=2/60`, `predictionError=5/60`, `replayFrame=3/60`, and `withAttributionBuckets=1/60`.
+
+P2 specifically added read-only derived knowledge retrieval into the shadow packet. Fresh transitions should now carry `derivedSnapshot`, `DeliberationPacket.derivedKnowledgeSummary`, and no `derived_knowledge` prompt-parity gap when retrieval succeeds. Prediction-error evidence now includes damage/defense/hp/card-flow/phase/resource attribution from checkpoint state-diff evidence.
+
+P3/P4/P5 shadow refinement is now partially implemented:
+
+- `PredictionErrorRecord.evidence[0].typedChecks` records typed prediction checks.
+- `CandidateFuture.predictionChecks` is now the preferred source for typed checks; `predictedOutcome` remains for compatibility/readability.
+- New transitions can carry a `ReplayFrame` MVP.
+- Unsupported prediction errors can create proposed `ConsolidationRecord` objects with conditions and rollback.
+- Eval reports typed-check, attribution, consolidation, and `events.jsonl` parse coverage.
+- Current STS2MCP REST capabilities still do not provide reliable event logs or human ground-truth events.
+
+Phase 6 planning and MVP attribution are now partially implemented:
+
+- `PROJECT_PLAN.md` and `PROJECT_AUTHORITY_GUIDE.md` define Phase 6 through Phase 10, with Phase 10 as the Guarded Learning Loop.
+- `PredictionErrorRecord.attributionBuckets` records typed shadow buckets for damage/defense/HP/kill/phase/card-flow/resource/unknown attribution.
+- P6 is now tied more tightly to CandidateFuture Doctrine: `CandidateFuture.predictionChecks.expected` carries mechanics-informed expected records, and new checkpoint diffs include `enemyDeltas` for damage/kill actual evidence.
+- Eval/review report attribution bucket coverage, bucket counts, and bucket status counts.
+- Latest live validation wrote one executor transition with attribution buckets.
+
+Phase 7 proposal lifecycle MVP is now partially implemented:
+
+- `ConsolidationRecord` can carry `affectedModule`, `proposedChange`, `expiry`, `revalidation`, `createdAt`, and lifecycle statuses.
+- Eval/review report consolidation status counts.
+- Proposals remain non-mutating; Phase 8 guarded stable updates are not implemented yet.
+
+The next formal work inside Phase 6:
+
+- Deepen `PredictionErrorRecord` attribution into typed damage/block/HP/kill/phase-change/card-flow/resource buckets.
+- Add fixtures for supported, unsupported, and unknown prediction checks.
+- Keep all Phase 6 output shadow-only; do not apply stable memory, derived knowledge, or strategy updates.
+
+Planned route after Phase 6:
+
+- Phase 7: deepen proposal lifecycle with a CLI/review surface for pending proposals.
+- Phase 8: move `DeliberationPacket` toward the LLM strategic workspace for gated high-dispute decisions. This is not a raw prompt swap; it is giving the LLM a better workspace while preserving validation/fallback.
+- Phase 9: add a guarded stable-update applicator for a narrow low-risk update class.
+- Phase 10: close the Guarded Learning Loop from prediction to guarded update and rollback-capable replay/eval validation.
+
+Before continuing a live run, re-read current game state. The latest observed validation action in this Desktop clone was `Strike` in Act 1 floor 5 combat against `SEAPUNK_0`; do not assume the state is still stable.
+
+## Historical Phase 2.5 Notes
 
 Phase 2.5 live hardening fixed:
 
@@ -128,21 +189,21 @@ Phase 2.5 live hardening fixed:
 - automatic potions such as `Fairy in a Bottle` are not manually used
 - rest post-choice flow gets a short settlement backoff before proceed
 
-Before continuing a live run, re-read current game state. The latest observed live state for `run-mr0rfdcb-yewhg8` was Act 2 floor 20 rewards after a post-fix 50 tick verification, but that should not be assumed.
+Those notes are preserved as historical context from the sibling portable project. Revalidate in this Desktop clone before relying on any run ID or floor.
 
-## Latest Phase 2.5 Live Stability Notes
+## Historical Phase 2.5 Live Stability Notes
 
-On 2026-07-01, the same latest run `run-mr0rfdcb-yewhg8` was extended substantially:
+On 2026-07-01, the sibling portable-project run `run-mr0rfdcb-yewhg8` was extended substantially:
 
 - A stale `play_card` settlement bug was fixed after REST rejected a stale hand index.
 - A multi-card `card_select` repeated-toggle bug was fixed after `Pael's Tooth` kept selecting `index=0`.
 - replay/eval short action labels now include card/action indices, so indexed selections are not collapsed into false repeated no-progress.
 
-Current `npm run data:eval -- --latest` returns `WARN` with zero errors. After the fixes, a fresh 200 tick run completed from Act 2 floor 20 rewards to Act 2 floor 31 combat. The run now has 574 parsed transitions and 574 selected actions matched regenerated candidates.
+In that project at that time, `npm run data:eval -- --latest` returned `WARN` with zero errors. After the fixes, a fresh 200 tick run completed from Act 2 floor 20 rewards to Act 2 floor 31 combat. The run had 574 parsed transitions and 574 selected actions matched regenerated candidates.
 
 Do not treat normal HP loss, imperfect fallback choices, or route/card-pick disagreement as stop conditions. Phase 2.5 has enough engineering signal to proceed to Phase 2.6 planning/implementation. Keep hard/unknown checkpoints, settlement audit warnings, and historical repeated no-progress evidence as follow-up inputs rather than current blockers.
 
-## Latest Phase 2.6 Eval Classification Notes
+## Historical Phase 2.6 Eval Classification Notes
 
 On 2026-07-01, eval WARN output was grouped into actionable categories:
 
@@ -155,7 +216,7 @@ On 2026-07-01, eval WARN output was grouped into actionable categories:
 
 The CLI keeps detailed info-level noise in `warningSummary` and prints focused warnings only when they are actionable, risk-level, or strategy-quality metrics. Normal menu/reward/map/rest/card-select transitions, expected combat hard checkpoints, and low-visibility settlement timeouts are no longer mixed into the top-level warning list.
 
-Latest validation run:
+Historical validation run:
 
 - `run-mr192jap-y1qb0x`
 - 142 parsed transitions, 142 selected actions matched regenerated candidates

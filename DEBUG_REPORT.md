@@ -2,6 +2,136 @@
 
 > Historical append-only debug log. This file records what was true during earlier engineering passes; older "current status" sections may be stale. Use `PROJECT_NORTH_STAR.md`, `PROJECT_AUTHORITY_GUIDE.md`, `PROJECT_PLAN.md`, `ARCHITECTURE.md`, `GAME_IO_CAPABILITIES.md`, and `DATA_SCHEMA.md` as source of truth.
 
+## 2026-07-01 Phase 6-10 Planning And P6 Attribution MVP
+
+本轮完成：
+
+- 将正式路线从 Phase 0-5 扩展为 Phase 0-10。
+- 明确 Phase 10 目标为 Guarded Learning Loop：prediction -> execution evidence -> typed prediction error -> consolidation proposal -> guarded stable update -> replay/eval validation -> rollback-capable review。
+- 在 `PROJECT_PLAN.md` 记录 Phase 1-5 未完成项，避免误判历史 MVP 为完整实现。
+- 清理 `AGENTS.md` 的必读入口，不再把旧 redirect 文档列为当前架构权威。
+- 新增 Phase 6 shadow MVP：`PredictionErrorRecord.attributionBuckets`。
+- eval/review 现在能统计 attribution bucket coverage。
+- smoke 覆盖 supported 与 unknown attribution bucket，以及 transition 挂载。
+
+后续追加：
+
+- P6 eval/review visibility 已扩展为 bucket counts 和 bucket status counts。
+- P6 eval 会把 unsupported 或 critical attribution bucket 归入 `prediction_error` WARN，而不是自动学习。
+- P6 CandidateFuture 预测已进一步从“字段存在”推进到 mechanics-informed expected-vs-actual：`predictionChecks.expected` 可携带 card removal、target/damage/block、HP loss、energy cost、route progress、reward flow 等期望。
+- checkpoint diff 新增 `enemyDeltas`，用于 damage/kill actual evidence。
+- P7 proposal lifecycle MVP 已开始：`ConsolidationRecord` 可携带 affected module、proposed change、expiry、revalidation、createdAt 和 proposed/accepted/rejected/expired/reverted/legacy rolled_back 状态。
+- eval/review 现在能显示 consolidation status counts。
+
+边界：
+
+- P6 仍然 shadow-only。
+- 没有改变 live prompt、candidate ordering、fallback、validation 或 execution semantics。
+- 没有启用 P8 stable update applicator、P9 live prompt migration 或 P10 guarded learning loop。
+
+## 2026-07-01 Desktop North Star Alignment Pass
+
+当前工作目录：
+
+```text
+/Users/fire/Desktop/SpireAgent
+```
+
+本轮完成：
+
+- 阅读新的 `PROJECT_NORTH_STAR.md` 和 `PROJECT_NORTH_STAR_CHINESE.md`，确认长期方向已升级为 LLM-centered predictive cognitive scaffold。
+- 审计主要文档、核心 `src/agent`、`src/domain`、`src/data`、`src/replay`、`src/eval` 代码路径。
+- 确认当前工程闭环可运行：transition/replay/eval 已可用，但 live loop 尚未正式产出 North Star 认知对象。
+- 新增/扩展 `src/domain/types.ts` 中的可选类型锚点：`StrategicImpression`、`SalienceSignal`、`MemoryActivation`、`CandidateFuture`、`DeliberationPacket`、`PredictionErrorRecord`、`ReplayFrame`、`ConsolidationRecord`。
+- 扩展 `TransitionRecord` 可选字段以承载这些对象，不改变旧 transition 或 ground-truth 语义。
+- 扩展 smoke，验证认知对象能挂到 executor-logged transition 上。
+- 更新 `AGENTS.md`、`README.md`、`ARCHITECTURE.md`、`PROJECT_AUTHORITY_GUIDE.md`、`PROJECT_PLAN.md`、`AGENT_LOOP.md`、`MEMORY_SYSTEM.md`、`DATA_SCHEMA.md`、`REPLAY_AND_EVAL.md`、`LLM_HANDOFF.md`。
+
+验证结果：
+
+- `npm install`：通过。
+- `npm exec tsc -- --noEmit`：通过。
+- `npm run agent:smoke`：通过。
+- `npm run check`：通过。
+- `npm run agent:review`：通过。
+- `npm run data:replay -- --latest`：通过，latest run 为 `run-mr1jyh2e-5hmiwn`，54 transitions。
+- `npm run data:eval -- --latest`：`WARN`，0 errors，54 parsed transitions，54 selected actions matched regenerated candidates。
+- MCP 在线验证：`curl http://localhost:15526/`、`npm run collect:state`、`npm run agent:tick -- --dry-run` 通过。
+
+当前主要缺口：
+
+- prompt 还不是正式 `DeliberationPacket`。
+- candidate generation 仍是 action-first，还未生成完整 `CandidateFuture`。
+- memory retrieval 还不是显式 `MemoryActivation`。
+- eval/review 还没有生成 `PredictionErrorRecord` 和 `ConsolidationRecord`。
+- controller 仍应渐进拆分，不能大改 live 行为。
+
+## 2026-07-01 Phase 3.0 Shadow Cognitive Scaffold Pass
+
+本轮完成：
+
+- 新增 `src/agent/cognitiveScaffold.ts`。
+- 实现 shadow-mode `buildStrategicImpression()`、`buildSalienceSignals()`、`buildMemoryActivation()`、`buildCandidateFutures()` 和 `buildCognitiveScaffold()`。
+- `AgentController` 在现有 scoring 后构造认知脚手架，只传给 recorder，不参与 prompt、排序、fallback 或执行。
+- `AgentDecisionRecorder` 和 transition schema 写入 `strategicImpression`、`salienceSignals`、`memoryActivation`、`candidateFutures`、`deliberationPacket`、`selectedPlan`。
+- replay CLI 输出 cognitive coverage。
+- eval summary 输出 `cognitiveCoverage`，旧 run 缺字段只产生 `cognitive_coverage` WARN，不产生 FAIL。
+- smoke 覆盖 builder、executor transition 写入、replay coverage、eval coverage、旧 transition 兼容。
+
+真实验证：
+
+- `npm run collect:state`：通过，当前为 Act 1 floor 5 combat。
+- `npm run agent:tick -- --dry-run`：通过，选择 `Strike -> SEAPUNK_0`。
+- `npm run agent:run -- --max-ticks 1 --delay-ms 120`：通过，真实执行 `Strike -> SEAPUNK_0`。
+- 新 transition `transition-000140-agent-mr1mga2q-olr8ch` 写入 shadow scaffold：
+  - `StrategicImpression`: present
+  - `SalienceSignal[]`: 4
+  - `MemoryActivation.items`: 3
+  - `CandidateFuture[]`: 4
+  - `DeliberationPacket`: present
+  - `selectedPlan.sourceCandidateId`: `play-0-SEAPUNK_0`
+- `npm run data:replay -- --latest`：55 transitions，full shadow scaffold coverage 1/55。
+- `npm run data:eval -- --latest`：`WARN`，0 errors，55 selected actions matched regenerated candidates，cognitive coverage 1/55。
+
+行为边界：
+
+- 本轮没有改变 live 决策语义。
+- 没有把 `StrategicImpression` 接入 prompt。
+- 没有改变 candidate generation、scoring、fallback、validation 或 execution。
+- 初版 `CandidateFuture` 仍是 action-first/shallow future，用于记录和后续回放归因。
+
+## 2026-07-01 P1 Shadow DeliberationPacket / Prediction Error Pass
+
+本轮完成：
+
+- P0 审计：上一轮 shadow cognitive scaffold 从 builder、controller、recorder、transition schema、replay/eval、smoke 到旧数据 WARN 兼容已闭环，无需补救性大改。
+- 扩展 `DeliberationPacket`，记录 state facts、enemy intent、hand/deck summary、legal actions、top candidates、run memory、derived summary、output schema、prompt parity。
+- 新增 `PromptParityReport`，只记录 coverage metadata，不记录完整 live prompt。
+- 新增最小 `PredictionErrorRecord` 生成：用 `CandidateFuture.predictedOutcome` 对照 checkpoint/state-diff reasons，能确认则 `prediction_supported`，不能确认则 open/unknown。
+- replay 输出增加 `promptParity` 和 `predictionError` coverage。
+- eval summary 增加 `deliberationCoverage`、`promptParityCoverage`、`predictionErrorCoverage`。
+- review 增加当前 run 的 cognitive coverage 摘要。
+- smoke 覆盖 P1 字段写入、coverage 读取、旧 transition 兼容。
+
+真实验证：
+
+- `npm run collect:state`：通过，观察到当前为 menu。
+- `npm run agent:tick -- --dry-run`：通过，候选为 menu `continue`。
+- `npm run agent:run -- --max-ticks 1 --delay-ms 120`：通过，真实执行 menu `continue`。
+- 新 transition `transition-000142-agent-mr1mv96o-2bmm6c` 写入：
+  - structured `DeliberationPacket`: present
+  - `PromptParityReport.coverage`: 0.909
+  - `PredictionErrorRecord.errorType`: `prediction_supported`
+  - `PredictionErrorRecord.status`: `accepted`
+- `npm run data:replay -- --latest`：56 transitions，prompt parity coverage 1/56，prediction error coverage 1/56。
+- `npm run data:eval -- --latest`：`WARN`，0 errors，56 selected actions matched regenerated candidates。
+
+行为边界：
+
+- 本轮没有替换 live prompt。
+- 没有改变 candidate generation、scoring、fallback、validation、execution 或真实 action selection。
+- P1 仍是 shadow-only observability。
+
 调试目录：
 
 ```text
@@ -681,3 +811,38 @@ Smoke 覆盖：
 - LLM 不可用时 fallback 仍会在无 incoming 或高压局面做不聪明选择。
 - shop/treasure/potion/card-select 等界面仍会产生 unknown checkpoint / settlement timeout WARN，但没有形成 invalid REST action 或重复无进展。
 - 同一 run 内仍保留修复前 Pael's Tooth 的 14 条 historical repeatedNoProgress warning；它们不是 fresh 200 的新回归。
+
+## 2026-07-01 P2 Shadow Prompt Parity Refinement
+
+Implemented the next shadow-only scaffold step in the Desktop project:
+
+- Added `src/agent/derivedKnowledge.ts` to retrieve a small read-only derived snapshot from `derived/card-tags.json`, `derived/relic-tags.json`, `derived/synergy-rules.json`, and `derived/draft-rules.md`.
+- Wired `derivedSnapshot` into the existing transition recorder path through `AgentController` and `buildCognitiveScaffold`.
+- Kept live behavior unchanged: no live prompt replacement, no candidate reordering, no scoring change, no fallback change, no validation/execution change.
+- Extended replay/eval/review coverage so `derivedSnapshot` and `derivedKnowledgeSummary` are visible as first-class shadow coverage.
+- Refined `PredictionErrorRecord.evidence[0].attribution` into damage, defense, hp, card flow, phase, and resource groups derived from checkpoint reasons and state-diff evidence.
+
+Latest observed P2 transition:
+
+- run `run-mr1jyh2e-5hmiwn`
+- transition `transition-000144-agent-mr1okkpq-j6zgbb`
+- selected action `Defend`
+- `derivedSnapshot`: 0 relevant facts, 8 relevant rules from local derived knowledge
+- `promptParity.coverage`: 1.0 with no missing sections on the fresh transition
+- prediction attribution captured block gain, energy spend, discard change, and expected hand removal
+
+Latest eval signal after P2:
+
+- `npm run data:eval -- --latest`: `WARN`, 0 errors, 57 parsed transitions, 57 selected actions matched.
+- Remaining WARN status is coverage/history visibility from older transitions in the same run, not a current program-level failure.
+
+## 2026-07-01 P3/P4/P5 Shadow Object Refinement
+
+Implemented the next ordered shadow-only slice:
+
+- P3: `PredictionErrorRecord` evidence now includes typed prediction checks, and new transitions receive a `ReplayFrame` MVP.
+- P3 continuation: `CandidateFuture.predictionChecks` now carries the structured checks directly, and `PredictionErrorRecord` prefers them over text-derived checks.
+- P4: unsupported/unknown prediction errors can create proposed `ConsolidationRecord` objects with conditions and rollback metadata. These do not mutate memory, derived knowledge, strategy params, or candidate templates.
+- P5: offline eval now parses `events.jsonl` and reports `parsedEvents`, while current STS2MCP REST capabilities still correctly say event logs and human events are unavailable.
+
+Live behavior remains unchanged: no live prompt replacement, no candidate reordering, no scoring change, no fallback change, no validation/execution change.

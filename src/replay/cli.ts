@@ -1,5 +1,5 @@
 import path from "node:path";
-import { buildReplayTimeline, formatReplayTimeline, readReplayRun } from "./reader.js";
+import { buildReplayCognitiveCoverage, buildReplayTimeline, formatReplayCognitiveCoverage, formatReplayTimeline, readReplayRun } from "./reader.js";
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
@@ -12,8 +12,10 @@ async function main(): Promise<void> {
 
   const run = readReplayRun(runIdOrPath);
   const timeline = buildReplayTimeline(run.transitions);
+  const cognitiveCoverage = buildReplayCognitiveCoverage(run.transitions);
   console.log(`Run: ${path.basename(run.runDir)}`);
   console.log(`Transitions: ${run.transitions.length}`);
+  console.log(`Cognitive coverage: ${formatReplayCognitiveCoverage(cognitiveCoverage)}`);
   console.log(formatReplayTimeline(timeline));
 }
 

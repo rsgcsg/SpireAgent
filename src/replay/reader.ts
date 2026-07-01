@@ -23,6 +23,23 @@ export interface ReplayTimelineItem {
   summary: string;
 }
 
+export interface ReplayCognitiveCoverage {
+  transitions: number;
+  strategicImpression: number;
+  salienceSignals: number;
+  memoryActivation: number;
+  candidateFutures: number;
+  candidateFuturePredictionChecks: number;
+  derivedSnapshot: number;
+  derivedKnowledgeSummary: number;
+  deliberationPacket: number;
+  promptParity: number;
+  predictionError: number;
+  replayFrame: number;
+  consolidation: number;
+  fullShadowScaffold: number;
+}
+
 export function readReplayRun(runIdOrPath?: string, runsRoot = path.join(agentRoot, "data", "runs")): ReplayRun {
   const runDir = resolveRunDir(runIdOrPath, runsRoot);
   const transitionsPath = path.join(runDir, "transitions.jsonl");
@@ -67,6 +84,76 @@ export function buildReplayTimeline(transitions: TransitionRecord[]): ReplayTime
       summary: summarizeTransition(transition, checkpointKind)
     };
   });
+}
+
+export function buildReplayCognitiveCoverage(transitions: TransitionRecord[]): ReplayCognitiveCoverage {
+  const coverage: ReplayCognitiveCoverage = {
+    transitions: transitions.length,
+    strategicImpression: 0,
+    salienceSignals: 0,
+    memoryActivation: 0,
+    candidateFutures: 0,
+    candidateFuturePredictionChecks: 0,
+    derivedSnapshot: 0,
+    derivedKnowledgeSummary: 0,
+    deliberationPacket: 0,
+    promptParity: 0,
+    predictionError: 0,
+    replayFrame: 0,
+    consolidation: 0,
+    fullShadowScaffold: 0
+  };
+  for (const transition of transitions) {
+    const hasStrategicImpression = isRecord(transition.strategicImpression);
+    const hasSalienceSignals = Array.isArray(transition.salienceSignals) && transition.salienceSignals.length > 0;
+    const hasMemoryActivation = isRecord(transition.memoryActivation);
+    const hasCandidateFutures = Array.isArray(transition.candidateFutures) && transition.candidateFutures.length > 0;
+    const hasCandidateFuturePredictionChecks = Array.isArray(transition.candidateFutures) &&
+      transition.candidateFutures.some((future) => isRecord(future) && Array.isArray(future.predictionChecks) && future.predictionChecks.length > 0);
+    const hasDerivedSnapshot = isRecord(transition.derivedSnapshot);
+    const hasDeliberationPacket = isRecord(transition.deliberationPacket);
+    const hasDerivedKnowledgeSummary = hasDeliberationPacket && isRecord(transition.deliberationPacket?.derivedKnowledgeSummary);
+    const hasPromptParity = isRecord(transition.promptParity) || (hasDeliberationPacket && isRecord(transition.deliberationPacket?.promptParity));
+    const hasPredictionError = isRecord(transition.predictionError);
+    const hasReplayFrame = isRecord(transition.replayFrame);
+    const hasConsolidation = isRecord(transition.consolidation);
+    if (hasStrategicImpression) coverage.strategicImpression += 1;
+    if (hasSalienceSignals) coverage.salienceSignals += 1;
+    if (hasMemoryActivation) coverage.memoryActivation += 1;
+    if (hasCandidateFutures) coverage.candidateFutures += 1;
+    if (hasCandidateFuturePredictionChecks) coverage.candidateFuturePredictionChecks += 1;
+    if (hasDerivedSnapshot) coverage.derivedSnapshot += 1;
+    if (hasDerivedKnowledgeSummary) coverage.derivedKnowledgeSummary += 1;
+    if (hasDeliberationPacket) coverage.deliberationPacket += 1;
+    if (hasPromptParity) coverage.promptParity += 1;
+    if (hasPredictionError) coverage.predictionError += 1;
+    if (hasReplayFrame) coverage.replayFrame += 1;
+    if (hasConsolidation) coverage.consolidation += 1;
+    if (hasStrategicImpression && hasSalienceSignals && hasMemoryActivation && hasCandidateFutures && hasDeliberationPacket) {
+      coverage.fullShadowScaffold += 1;
+    }
+  }
+  return coverage;
+}
+
+export function formatReplayCognitiveCoverage(coverage: ReplayCognitiveCoverage): string {
+  const total = Math.max(1, coverage.transitions);
+  const item = (label: string, value: number): string => `${label}=${value}/${coverage.transitions} (${((value / total) * 100).toFixed(1)}%)`;
+  return [
+    item("strategicImpression", coverage.strategicImpression),
+    item("salienceSignals", coverage.salienceSignals),
+    item("memoryActivation", coverage.memoryActivation),
+    item("candidateFutures", coverage.candidateFutures),
+    item("candidateFuturePredictionChecks", coverage.candidateFuturePredictionChecks),
+    item("derivedSnapshot", coverage.derivedSnapshot),
+    item("derivedKnowledgeSummary", coverage.derivedKnowledgeSummary),
+    item("deliberationPacket", coverage.deliberationPacket),
+    item("promptParity", coverage.promptParity),
+    item("predictionError", coverage.predictionError),
+    item("replayFrame", coverage.replayFrame),
+    item("consolidation", coverage.consolidation),
+    item("fullShadowScaffold", coverage.fullShadowScaffold)
+  ].join(", ");
 }
 
 export function formatReplayTimeline(items: ReplayTimelineItem[]): string {

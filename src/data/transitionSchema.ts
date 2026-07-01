@@ -1,8 +1,17 @@
 import {
   DOMAIN_SCHEMA_VERSION,
+  type CandidateFuture,
   type CaptureMode,
+  type ConsolidationRecord,
+  type DeliberationPacket,
   type ExecutionResult,
   type JsonRecord,
+  type MemoryActivation,
+  type PredictionErrorRecord,
+  type PromptParityReport,
+  type ReplayFrame,
+  type SalienceSignal,
+  type StrategicImpression,
   type TransitionRecord,
   type TransitionSource
 } from "../domain/types.js";
@@ -31,6 +40,16 @@ export interface TransitionBaseInput {
   legalActions?: unknown[];
   candidateActions?: unknown[];
   memorySnapshot?: JsonRecord;
+  strategicImpression?: StrategicImpression | JsonRecord;
+  salienceSignals?: SalienceSignal[];
+  memoryActivation?: MemoryActivation | JsonRecord;
+  candidateFutures?: CandidateFuture[];
+  deliberationPacket?: DeliberationPacket | JsonRecord;
+  promptParity?: PromptParityReport | JsonRecord;
+  selectedPlan?: CandidateFuture | JsonRecord;
+  predictionError?: PredictionErrorRecord | JsonRecord;
+  replayFrame?: ReplayFrame | JsonRecord;
+  consolidation?: ConsolidationRecord | JsonRecord;
   derivedSnapshot?: JsonRecord;
   localScores?: unknown;
   llmDecision?: unknown;
@@ -180,6 +199,16 @@ function baseTransition(
     llmDecision: input.llmDecision,
     derivedSnapshot: input.derivedSnapshot,
     memorySnapshot: input.memorySnapshot,
+    strategicImpression: input.strategicImpression,
+    salienceSignals: input.salienceSignals,
+    memoryActivation: input.memoryActivation,
+    candidateFutures: input.candidateFutures,
+    deliberationPacket: input.deliberationPacket,
+    promptParity: input.promptParity,
+    selectedPlan: input.selectedPlan,
+    predictionError: input.predictionError,
+    replayFrame: input.replayFrame,
+    consolidation: input.consolidation,
     executionResult: input.executionResult,
     stateDiff: input.stateDiff,
     rawRefs: input.rawRefs ?? [input.preStateRef, input.postStateRef].filter((value): value is string => Boolean(value))

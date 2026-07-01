@@ -4,15 +4,50 @@
 
 Before changing this project, read:
 
-- `docs/PROJECT_STEERING.md`
-- `docs/ITERATION_GUIDE.md`
-- `docs/DEPLOYMENT.md`
-- `docs/ai-agent-architecture.md`
+- `PROJECT_NORTH_STAR.md`
+- `PROJECT_NORTH_STAR_CHINESE.md` if Chinese context is helpful
+- `PROJECT_AUTHORITY_GUIDE.md`
+- `PROJECT_PLAN.md`
+- `ARCHITECTURE.md`
+- `DATA_SCHEMA.md`
+- `REPLAY_AND_EVAL.md`
+- `LLM_HANDOFF.md`
+- `CONTRIBUTING_OR_ENGINEERING_RULES.md`
 - `DEBUG_REPORT.md`
 
 This repository is intended to be pushed to GitHub and redeployed by other users. Keep docs, commands, and tests in sync with behavior.
 
-The architecture is LLM-first + layered local scaffold + structured memory + derived strategy + lightweight learning. Do not turn it into a rigid pure rules bot, and do not make LLM face raw state dumps.
+Historical `docs/PROJECT_STEERING.md`, `docs/PROJECT_BOUNDARIES.md`, `docs/agent-system-principles.md`, and `docs/ai-agent-architecture.md` are redirect pointers only. Do not treat them as active architecture authority.
+
+`PROJECT_NORTH_STAR.md` is the highest-priority long-term constitution. The project is not trying to build the strongest arbitrary algorithmic bot; it is trying to maximize an LLM strategic player's game ability through a predictive cognitive scaffold.
+
+The target architecture is:
+
+```text
+raw game state
+  -> canonical state
+  -> Strategic Impression / Salience
+  -> Memory Activation
+  -> Candidate Futures
+  -> Deliberation Packet
+  -> LLM strategic decision
+  -> validated safe execution
+  -> transition recording
+  -> replay / evaluation / review
+  -> prediction-error-driven learning
+```
+
+Keep these boundaries intact:
+
+- The LLM is the core strategic player; local scaffold must not quietly replace it.
+- Local code should shape the decision problem through salience, candidate futures, validation, and replayable evidence.
+- Prompt context should be compact but strategically complete, never a raw state dump.
+- Facts, observations, inference, memory, derived knowledge, LLM reflection, and prediction errors must stay separable.
+- Transition recording is the foundation for replay, eval, and learning.
+- Memory and strategy updates require evidence, conditions, confidence, and rollback.
+- External game projects are adapters, not architecture core. Mods are sensors/actuators, not the brain.
+
+The formal route now runs through Phase 10. Phase 10 is the Guarded Learning Loop: candidate future prediction -> execution evidence -> typed prediction error -> consolidation proposal -> guarded stable update -> replay/eval validation -> rollback-capable review. Do not skip directly to automatic learning; Phase 6-9 must make prediction attribution, consolidation proposals, stable-update guards, and prompt migration safe first.
 
 ## Live Testing Policy
 
