@@ -4,6 +4,7 @@ import {
   type CaptureMode,
   type ConsolidationRecord,
   type DeliberationPacket,
+  type DeliberationWorkspaceComparison,
   type ExecutionResult,
   type JsonRecord,
   type MemoryActivation,
@@ -11,6 +12,7 @@ import {
   type PromptParityReport,
   type ReplayFrame,
   type SalienceSignal,
+  type ShadowWorkspaceDecision,
   type StrategicImpression,
   type TransitionRecord,
   type TransitionSource
@@ -46,6 +48,8 @@ export interface TransitionBaseInput {
   candidateFutures?: CandidateFuture[];
   deliberationPacket?: DeliberationPacket | JsonRecord;
   promptParity?: PromptParityReport | JsonRecord;
+  workspaceComparison?: DeliberationWorkspaceComparison | JsonRecord;
+  shadowWorkspaceDecision?: ShadowWorkspaceDecision | JsonRecord;
   selectedPlan?: CandidateFuture | JsonRecord;
   predictionError?: PredictionErrorRecord | JsonRecord;
   replayFrame?: ReplayFrame | JsonRecord;
@@ -205,6 +209,8 @@ function baseTransition(
     candidateFutures: input.candidateFutures,
     deliberationPacket: input.deliberationPacket,
     promptParity: input.promptParity,
+    workspaceComparison: input.workspaceComparison,
+    shadowWorkspaceDecision: input.shadowWorkspaceDecision,
     selectedPlan: input.selectedPlan,
     predictionError: input.predictionError,
     replayFrame: input.replayFrame,

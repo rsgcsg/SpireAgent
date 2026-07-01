@@ -1,21 +1,37 @@
 import path from "node:path";
-import { buildReplayCognitiveCoverage, buildReplayTimeline, formatReplayCognitiveCoverage, formatReplayTimeline, readReplayRun } from "./reader.js";
+import {
+  buildReplayCognitiveCoverage,
+  buildReplayConsolidationProposalSurface,
+  buildReplayTimeline,
+  formatReplayCognitiveCoverage,
+  formatReplayConsolidationProposalSurface,
+  formatReplayTimeline,
+  readConsolidationProposals,
+  readReplayRun
+} from "./reader.js";
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const command = args[0] && !args[0].startsWith("--") ? args[0] : "timeline";
-  const runIdOrPath = parseRunArg(command === "timeline" ? args.slice(command === args[0] ? 1 : 0) : args);
+  const commandArgs = command === args[0] ? args.slice(1) : args;
+  const runIdOrPath = parseRunArg(commandArgs);
 
-  if (command !== "timeline") {
+  if (command !== "timeline" && command !== "proposals") {
     throw new Error(`Unknown replay command: ${command}`);
   }
 
   const run = readReplayRun(runIdOrPath);
-  const timeline = buildReplayTimeline(run.transitions);
   const cognitiveCoverage = buildReplayCognitiveCoverage(run.transitions);
+  const proposalSurface = buildReplayConsolidationProposalSurface(readConsolidationProposals(run.runDir, run.transitions));
   console.log(`Run: ${path.basename(run.runDir)}`);
   console.log(`Transitions: ${run.transitions.length}`);
   console.log(`Cognitive coverage: ${formatReplayCognitiveCoverage(cognitiveCoverage)}`);
+  console.log(`Consolidation proposal surface: ${formatReplayConsolidationProposalSurface(proposalSurface)}`);
+  if (command === "proposals") {
+    console.log(JSON.stringify(proposalSurface, null, 2));
+    return;
+  }
+  const timeline = buildReplayTimeline(run.transitions);
   console.log(formatReplayTimeline(timeline));
 }
 

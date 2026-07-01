@@ -15,7 +15,7 @@
     "check": "npm run typecheck && npm run agent:smoke",
     "collect:state": "tsx src/agent/collector.ts state",
     "collect:watch": "tsx src/agent/collector.ts watch",
-    "data:replay": "tsx src/replay/cli.ts timeline",
+    "data:replay": "tsx src/replay/cli.ts",
     "data:eval": "tsx src/eval/cli.ts",
     "sync:sts2-data": "node scripts/sync-sts2-data.mjs"
   },

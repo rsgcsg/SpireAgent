@@ -166,21 +166,47 @@ export function buildConsolidationRecord(input: {
   if (!predictionError || predictionError.status === "accepted" || predictionError.errorType === "prediction_supported") {
     return undefined;
   }
+  const buckets = Array.isArray(predictionError.attributionBuckets)
+    ? predictionError.attributionBuckets.filter(isRecord)
+    : [];
+  const actionableBuckets = buckets.filter((bucket) => bucket.status === "unsupported" || bucket.severity === "critical");
+  if (actionableBuckets.length === 0) {
+    return undefined;
+  }
   const layer = typeof predictionError.attributedLayer === "string" ? predictionError.attributedLayer : "unknown";
+  const bucketNames = Array.from(new Set(actionableBuckets.map((bucket) => String(bucket.bucket ?? "unknown"))));
+  const hasCritical = actionableBuckets.some((bucket) => bucket.severity === "critical");
+  const evidenceStrength = hasCritical ? "strong" : actionableBuckets.length >= 2 ? "moderate" : "weak";
   const proposal = layer === "candidate_future"
-    ? "Refine candidate future predictedOutcome predicates before using this signal for stable learning."
-    : `Review ${layer} attribution before applying any stable update.`;
+    ? `Refine CandidateFuture mechanics or prediction predicates for unsupported attribution bucket(s): ${bucketNames.join(", ")}.`
+    : `Review ${layer} attribution for unsupported bucket(s) ${bucketNames.join(", ")} before proposing any stable update.`;
   return {
     schemaVersion: DOMAIN_SCHEMA_VERSION,
     recordId: `consolidation-${input.transitionId ?? "pending"}`,
     sourceFrameId: input.transitionId ? `frame-${input.transitionId}` : undefined,
     targetLayer: layer,
     affectedModule: layer,
+    proposalKind: "learning_proposal",
+    evidenceStrength,
+    blockedStableTargets: ["memory", "derived_knowledge", "strategy_params", "candidate_ordering", "prompt"],
     proposal,
     proposedChange: {
       kind: "shadow_proposal",
-      action: layer === "candidate_future" ? "refine_prediction_predicates" : "review_attribution_before_update",
-      stableMutation: false
+      action: layer === "candidate_future" ? "refine_candidate_future_mechanics" : "review_attribution_before_update",
+      stableMutation: false,
+      allowedNextSteps: [
+        "create_or_update_fixture",
+        "improve_expected_vs_actual_check",
+        "collect_more_executor_logged_evidence",
+        "manual_review"
+      ],
+      forbiddenNextSteps: [
+        "auto_write_memory",
+        "auto_write_derived_knowledge",
+        "auto_change_strategy_params",
+        "auto_change_candidate_ordering",
+        "replace_live_prompt"
+      ]
     },
     evidence: [
       {
@@ -188,24 +214,33 @@ export function buildConsolidationRecord(input: {
         severity: predictionError.severity,
         selectedPlanId: input.selectedPlan?.id,
         status: predictionError.status ?? "open",
-        attributionBuckets: Array.isArray(predictionError.attributionBuckets)
-          ? predictionError.attributionBuckets.map((bucket) => isRecord(bucket) ? {
+        actionableBuckets: actionableBuckets.map((bucket) => ({
             bucket: bucket.bucket,
             status: bucket.status,
-            predictionTypes: bucket.predictionTypes
-          } : bucket)
-          : undefined
+            severity: bucket.severity,
+            predictionTypes: bucket.predictionTypes,
+            expected: bucket.expected,
+            actual: bucket.actual,
+            evidenceReasons: bucket.evidenceReasons
+        })),
+        nonActionableBucketCount: Math.max(0, buckets.length - actionableBuckets.length)
       }
     ],
-    confidence: predictionError.severity === "critical" ? 0.7 : 0.35,
-    conditions: ["shadow_only", "requires_replay_confirmation", "do_not_apply_as_stable_learning_yet"],
+    confidence: hasCritical ? 0.7 : evidenceStrength === "moderate" ? 0.55 : 0.4,
+    conditions: [
+      "shadow_only",
+      "evidence_backed_by_prediction_attribution",
+      "requires_replay_confirmation",
+      "requires_manual_review_before_stable_update",
+      "do_not_apply_as_stable_learning_yet"
+    ],
     expiry: {
       policy: "expires_if_not_revalidated",
       maxFreshRuns: 3
     },
     revalidation: {
-      requiredEvidence: ["fresh_transition", "eval_zero_errors", "same_attribution_bucket_or_manual_review"],
-      minimumOccurrences: predictionError.severity === "critical" ? 1 : 2
+      requiredEvidence: ["fresh_executor_logged_transition", "eval_zero_errors", "same_attribution_bucket_or_manual_review"],
+      minimumOccurrences: hasCritical ? 1 : 2
     },
     rollback: "Discard this proposal; it has not mutated memory, derived knowledge, candidate templates, or strategy params.",
     createdAt: new Date().toISOString(),
@@ -980,6 +1015,9 @@ function predictionCheckStatus(
     case "card_removed_from_hand": {
       const expectedAfterHandCount = numeric(expected.expectedAfterHandCount);
       const hand = isRecord(actual.hand) ? actual.hand : undefined;
+      if (actual.expectedCardRemovedFromHand === true) {
+        return "supported";
+      }
       if (expectedAfterHandCount === undefined || !hand || !Array.isArray(hand.after)) return fallback;
       return hand.after.length === expectedAfterHandCount ? "supported" : "unsupported";
     }
@@ -1155,9 +1193,12 @@ function actualForPredictionType(type: string, checkpoint?: ExecutionCheckpoint)
     case "card_flow_delta":
       return {
         handCountChanged: reasons.has("hand_count_changed"),
+        handChangedBeyondExpectedCardRemoval: reasons.has("hand_changed_beyond_expected_card_removal"),
+        handGrewOrGeneratedCard: reasons.has("hand_grew_or_generated_card"),
         drawPileCount: changes.drawPileCount,
         discardPileCount: changes.discardPileCount,
-        exhaustPileCount: changes.exhaustPileCount
+        exhaustPileCount: changes.exhaustPileCount,
+        hand: changes.hand
       };
     case "phase_or_turn_change":
       return {

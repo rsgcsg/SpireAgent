@@ -144,6 +144,40 @@
         "failed:healing"
       ],
       "successfulPatterns": []
+    },
+    {
+      "runId": "run-mr208pud-fgye9c",
+      "at": "2026-07-01T11:58:42.797Z",
+      "character": "The Defect",
+      "result": "loss",
+      "act": 2,
+      "floor": 22,
+      "rewardScore": -23,
+      "summary": "loss score=-23 character=The Defect act=2 floor=22 hp=0/75 deficits=block,draw,scaling,healing",
+      "failureReasons": [
+        "failed:death-act-2-floor-22",
+        "failed:block",
+        "failed:scaling",
+        "failed:healing",
+        "failed:combat-tempo"
+      ],
+      "successfulPatterns": []
+    },
+    {
+      "runId": "run-mr20v8fn-rfn9xk",
+      "at": "2026-07-01T12:00:24.692Z",
+      "character": "The Defect",
+      "result": "loss",
+      "act": 1,
+      "floor": 15,
+      "rewardScore": -45,
+      "summary": "loss score=-45 character=The Defect act=1 floor=15 hp=0/75 deficits=block,draw,healing",
+      "failureReasons": [
+        "failed:death-act-1-floor-15",
+        "failed:healing",
+        "failed:combat-tempo"
+      ],
+      "successfulPatterns": []
     }
   ],
   "lessons": [
@@ -154,15 +188,17 @@
         "combat",
         "tempo"
       ],
-      "confidence": 0.7500000000000002,
+      "confidence": 0.8500000000000003,
       "evidenceRunIds": [
         "run-mqzzausx-ke8fdq",
         "run-mr0ckah9-99khw3",
         "run-mr0rfdcb-yewhg8",
         "run-mr192jap-y1qb0x",
-        "run-mr1bkl96-34bpvd"
+        "run-mr1bkl96-34bpvd",
+        "run-mr208pud-fgye9c",
+        "run-mr20v8fn-rfn9xk"
       ],
-      "updatedAt": "2026-07-01T00:13:38.480Z"
+      "updatedAt": "2026-07-01T12:00:24.692Z"
     },
     {
       "id": "死亡局如果长期缺防御-下局提高防御牌-弱化-冰球和休息路线优先级-",
@@ -170,11 +206,12 @@
       "tags": [
         "block"
       ],
-      "confidence": 0.55,
+      "confidence": 0.6000000000000001,
       "evidenceRunIds": [
-        "run-mr0ckah9-99khw3"
+        "run-mr0ckah9-99khw3",
+        "run-mr208pud-fgye9c"
       ],
-      "updatedAt": "2026-06-30T14:30:20.203Z"
+      "updatedAt": "2026-07-01T11:58:42.797Z"
     }
   ]
 }

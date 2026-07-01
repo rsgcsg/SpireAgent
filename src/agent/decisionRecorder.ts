@@ -5,6 +5,7 @@ import {
   type CandidateFuture,
   type ConsolidationRecord,
   type DeliberationPacket,
+  type DeliberationWorkspaceComparison,
   type ExecutionResult,
   type JsonRecord,
   type MemoryActivation,
@@ -13,6 +14,7 @@ import {
   type ReplayFrame,
   type RunRecord,
   type SalienceSignal,
+  type ShadowWorkspaceDecision,
   type StrategicImpression
 } from "../domain/types.js";
 import { createExecutorLoggedTransitionSkeleton, type TransitionRecord } from "../data/transitionSchema.js";
@@ -63,6 +65,8 @@ export interface AgentDecisionRecordInput {
   candidateFutures?: CandidateFuture[];
   deliberationPacket?: DeliberationPacket | JsonRecord;
   promptParity?: PromptParityReport | JsonRecord;
+  workspaceComparison?: DeliberationWorkspaceComparison | JsonRecord;
+  shadowWorkspaceDecision?: ShadowWorkspaceDecision | JsonRecord;
   selectedPlan?: CandidateFuture | JsonRecord;
   predictionError?: PredictionErrorRecord | JsonRecord;
   replayFrame?: ReplayFrame | JsonRecord;
@@ -104,6 +108,8 @@ export class AgentDecisionRecorder {
       candidateFutures: input.candidateFutures,
       deliberationPacket: input.deliberationPacket,
       promptParity: input.promptParity,
+      workspaceComparison: input.workspaceComparison,
+      shadowWorkspaceDecision: input.shadowWorkspaceDecision,
       predictionError: input.predictionError
     });
     const transition = createExecutorLoggedTransitionSkeleton({
@@ -152,6 +158,8 @@ export class AgentDecisionRecorder {
       candidateFutures: input.candidateFutures,
       deliberationPacket: input.deliberationPacket,
       promptParity: input.promptParity,
+      workspaceComparison: input.workspaceComparison,
+      shadowWorkspaceDecision: input.shadowWorkspaceDecision,
       selectedPlan: input.selectedPlan,
       predictionError: input.predictionError,
       replayFrame,
@@ -166,6 +174,18 @@ export class AgentDecisionRecorder {
     });
     const transitionPath = path.join(runDir, "transitions.jsonl");
     appendJsonl(transitionPath, transition);
+    if (isRecord(consolidation)) {
+      appendJsonl(path.join(runDir, "proposals.jsonl"), {
+        ...consolidation,
+        runId: input.runId,
+        transitionId,
+        tick: input.tick,
+        timestamp,
+        screen: input.preState.screen,
+        floor: input.preState.floor,
+        selectedAction: input.selectedAction
+      });
+    }
     this.updateMetadata(runDir, input);
     return { runDir, transitionPath, transition };
   }
@@ -176,6 +196,7 @@ export class AgentDecisionRecorder {
     ensureDir(snapshotsDir);
     touch(path.join(runDir, "events.jsonl"));
     touch(path.join(runDir, "transitions.jsonl"));
+    touch(path.join(runDir, "proposals.jsonl"));
 
     const metadataPath = path.join(runDir, "metadata.json");
     if (!existsSync(metadataPath)) {
@@ -258,6 +279,8 @@ function buildReplayFrame(input: {
   candidateFutures?: CandidateFuture[];
   deliberationPacket?: DeliberationPacket | JsonRecord;
   promptParity?: PromptParityReport | JsonRecord;
+  workspaceComparison?: DeliberationWorkspaceComparison | JsonRecord;
+  shadowWorkspaceDecision?: ShadowWorkspaceDecision | JsonRecord;
   predictionError?: PredictionErrorRecord | JsonRecord;
 }): ReplayFrame {
   return {
@@ -273,6 +296,8 @@ function buildReplayFrame(input: {
     candidateFutures: input.candidateFutures,
     deliberationPacket: input.deliberationPacket,
     promptParity: input.promptParity,
+    workspaceComparison: input.workspaceComparison,
+    shadowWorkspaceDecision: input.shadowWorkspaceDecision,
     predictionError: input.predictionError
   };
 }

@@ -3,6 +3,7 @@ import path from "node:path";
 import type { DecisionLogEntry, JsonRecord, RunMemory } from "./types.js";
 import type { MemoryManager } from "./memory.js";
 import { agentRoot, isRecord } from "./utils.js";
+import { buildReplayConsolidationProposalSurface, readConsolidationProposals } from "../replay/reader.js";
 
 export function buildReviewReport(memory: MemoryManager): JsonRecord {
   const decisions = memory.run.keyDecisions;
@@ -66,6 +67,16 @@ function summarizeCurrentRunCognitiveCoverage(runId: string): JsonRecord {
   const deliberationPacket = count((transition) => isRecord(transition.deliberationPacket));
   const derivedKnowledgeSummary = count((transition) => isRecord(transition.deliberationPacket) && isRecord(transition.deliberationPacket.derivedKnowledgeSummary));
   const promptParity = count((transition) => isRecord(transition.promptParity) || (isRecord(transition.deliberationPacket) && isRecord(transition.deliberationPacket.promptParity)));
+  const workspaceComparison = count((transition) => isRecord(transition.workspaceComparison));
+  const workspaceReady = count((transition) => isRecord(transition.workspaceComparison) && transition.workspaceComparison.gatedReadiness === "ready");
+  const shadowWorkspaceDecision = count((transition) => isRecord(transition.shadowWorkspaceDecision));
+  const shadowWorkspaceCalled = count((transition) => isRecord(transition.shadowWorkspaceDecision) && transition.shadowWorkspaceDecision.called === true);
+  const workspaceAgreementCounts = transitions.reduce<Record<string, number>>((counts, transition) => {
+    if (!isRecord(transition.shadowWorkspaceDecision)) return counts;
+    const agreement = typeof transition.shadowWorkspaceDecision.agreement === "string" ? transition.shadowWorkspaceDecision.agreement : "unknown";
+    counts[agreement] = (counts[agreement] ?? 0) + 1;
+    return counts;
+  }, {});
   const predictionError = count((transition) => isRecord(transition.predictionError));
   const predictionErrorAttributionBuckets = count((transition) =>
     isRecord(transition.predictionError) &&
@@ -74,6 +85,7 @@ function summarizeCurrentRunCognitiveCoverage(runId: string): JsonRecord {
   );
   const replayFrame = count((transition) => isRecord(transition.replayFrame));
   const consolidation = count((transition) => isRecord(transition.consolidation));
+  const proposalSurface = buildReplayConsolidationProposalSurface(readConsolidationProposals(path.dirname(transitionsPath), transitions));
   const consolidationStatusCounts = transitions.reduce<Record<string, number>>((counts, transition) => {
     if (!isRecord(transition.consolidation)) return counts;
     const status = typeof transition.consolidation.status === "string" ? transition.consolidation.status : "unknown";
@@ -90,10 +102,16 @@ function summarizeCurrentRunCognitiveCoverage(runId: string): JsonRecord {
     deliberationPacket,
     derivedKnowledgeSummary,
     promptParity,
+    workspaceComparison,
+    workspaceReady,
+    shadowWorkspaceDecision,
+    shadowWorkspaceCalled,
+    workspaceAgreementCounts,
     predictionError,
     predictionErrorAttributionBuckets,
     replayFrame,
     consolidation,
+    consolidationProposalSurface: proposalSurface,
     consolidationStatusCounts,
     rates: {
       strategicImpression: rate(strategicImpression),
@@ -102,6 +120,10 @@ function summarizeCurrentRunCognitiveCoverage(runId: string): JsonRecord {
       deliberationPacket: rate(deliberationPacket),
       derivedKnowledgeSummary: rate(derivedKnowledgeSummary),
       promptParity: rate(promptParity),
+      workspaceComparison: rate(workspaceComparison),
+      workspaceReady: rate(workspaceReady),
+      shadowWorkspaceDecision: rate(shadowWorkspaceDecision),
+      shadowWorkspaceCalled: rate(shadowWorkspaceCalled),
       predictionError: rate(predictionError),
       predictionErrorAttributionBuckets: rate(predictionErrorAttributionBuckets),
       replayFrame: rate(replayFrame),

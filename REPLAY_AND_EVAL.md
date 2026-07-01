@@ -25,13 +25,14 @@ Implemented:
 - lightweight strategy quality metrics
 - cognitive scaffold coverage for shadow-mode `StrategicImpression`, `SalienceSignal[]`, `MemoryActivation`, `CandidateFuture[]`, and `DeliberationPacket`
 - DeliberationPacket section coverage, prompt parity coverage, and PredictionErrorRecord coverage
+- P8 DeliberationPacket workspace comparison coverage and optional shadow LLM decision stats
 
 Missing:
 
 - human recorder with diff fallback
 - labeled-example export
-- `ReplayFrame` objects that bind state, salience, memory activation, candidate futures, selected action, outcome, and prediction error
-- `PredictionErrorRecord` generation for controlled learning updates
+- guarded stable learning applicator
+- event-log adapter for reliable human/game event capture
 
 ## Replay Goal
 
@@ -78,7 +79,25 @@ As of P6, eval/review also report whether `PredictionErrorRecord.attributionBuck
 
 P6 is tied to the CandidateFuture Doctrine: checks should prefer mechanics-informed expected-vs-actual evidence from `CandidateFuture.predictionChecks.expected` and checkpoint `stateDiff`, including `enemyDeltas` when available. Broad checkpoint reasons remain compatibility evidence for old transitions or low-visibility outcomes, not the end state of prediction quality.
 
-As of the P7 proposal lifecycle MVP, eval/review also preserve consolidation status counts and proposal metadata. `proposed` records are non-mutating. `accepted`, `rejected`, `expired`, `reverted`, and legacy `rolled_back` are lifecycle evidence for future guarded updates, not proof that an update has already been applied.
+As of the P7 proposal surface MVP, fresh runs create `proposals.jsonl` and replay/eval/review report consolidation proposal health. The surface includes proposal count, pending review count, status counts, target layer counts, evidence strength counts, and `mutatingOrAccepted` risk. `proposed` records are non-mutating. `accepted`, `rejected`, `expired`, `reverted`, and legacy `rolled_back` are lifecycle evidence for future guarded updates, not proof that an update has already been applied.
+
+P7.5 adds a derived aggregation view over the same proposal surface. Aggregation groups proposals by target layer, proposed action, and actionable attribution bucket, then reports occurrence count, recurring group count, grouped evidence strength, blocked stable targets, allowed next review steps, forbidden stable mutations, and sample transitions. This helps reviewers see repeated prediction-error patterns without applying learning. Aggregated groups remain shadow-only and must not mutate memory, derived knowledge, strategy params, candidate ordering, prompt behavior, fallback, validation, or execution.
+
+As of P8, replay/eval/review also report the DeliberationPacket strategic workspace surface:
+
+- `workspaceComparison`: legacy prompt hash vs structured workspace hash, byte/token estimates, decision class, section coverage, missing sections, and gated readiness.
+- `shadowWorkspaceDecision`: optional structured-prompt LLM call result, agreement/disagreement with the live selected candidate, invalid output, missing candidate, reason quality, and errors.
+- `STS2_P8_WORKSPACE_SHADOW` defaults off, so fresh transitions normally show comparison coverage with readiness blocked by the flag.
+- `STS2_P8_WORKSPACE_CALL` separately gates any structured shadow LLM call. With defaults, P8 never calls an extra LLM and never changes action selection.
+
+P8 disagreement is a review signal, not an eval failure. Invalid structured output or missing candidate is a WARN-level engineering signal unless it corrupts transition data or live validation.
+
+P7 proposal rules:
+
+- Generate learning proposals only from unsupported or critical prediction attribution.
+- Treat unknown/low-visibility attribution as an evidence gap unless later executor-logged evidence supports it.
+- Keep all proposals shadow-only and block automatic writes to memory, derived knowledge, strategy params, candidate ordering, prompt behavior, fallback, validation, and execution.
+- `npm run data:replay -- proposals --latest` prints the proposal surface and grouped proposal evidence for the latest run.
 
 Useful checks:
 
@@ -112,6 +131,7 @@ Warning categories:
 - `strategy_quality`: low HP/high incoming/block deficit/deck thickness/potion/fallback/tempo metrics.
 - `needs_fixture_bug_candidate`: actionable suspicious transitions that are not yet explained and should become fixtures if they repeat.
 - `cognitive_coverage`: missing shadow-mode cognitive objects. This is expected for old runs and should rise as fresh transitions are recorded.
+- `p8 workspace`: reported inside `cognitive_coverage` and `workspaceCoverage`; missing coverage on old runs is migration visibility, while invalid structured output is a review/debug signal.
 
 Action identity note:
 

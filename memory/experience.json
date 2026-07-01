@@ -17,13 +17,15 @@
         "failed:scaling",
         "failed:death-act-2-floor-21",
         "failed:death-act-2-floor-25",
-        "failed:death-act-1-floor-9"
+        "failed:death-act-1-floor-9",
+        "failed:death-act-2-floor-22",
+        "failed:death-act-1-floor-15"
       ],
       "tags": [],
-      "confidence": 0.5800000000000002,
+      "confidence": 0.6200000000000002,
       "wins": 0,
-      "losses": 9,
-      "updatedAt": "2026-07-01T00:17:48.482Z"
+      "losses": 11,
+      "updatedAt": "2026-07-01T12:00:24.692Z"
     }
   }
 }

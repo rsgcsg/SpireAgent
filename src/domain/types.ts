@@ -302,6 +302,67 @@ export interface PromptParityReport {
   notes?: string[];
 }
 
+export interface DeliberationWorkspaceCoverage {
+  promptParityCoverage?: number;
+  coveredSections: string[];
+  missingSections: string[];
+  structuredSections: string[];
+  missingStructuredSections: string[];
+  candidateFutureCount: number;
+}
+
+export interface DeliberationWorkspaceComparison {
+  schemaVersion: number;
+  phase: "P8";
+  mode: "shadow";
+  featureFlag: string;
+  enabled: boolean;
+  structuredPromptAvailable: boolean;
+  legacyPromptAvailable: boolean;
+  decisionClass: string;
+  legacyPromptHash?: string;
+  structuredPromptHash?: string;
+  legacyPromptBytes?: number;
+  structuredPromptBytes?: number;
+  legacyTokenEstimate?: number;
+  structuredTokenEstimate?: number;
+  coverage: DeliberationWorkspaceCoverage;
+  gatedReadiness: "ready" | "not_ready";
+  readinessReasons: string[];
+  summary: string;
+}
+
+export type ShadowWorkspaceAgreement = "agree" | "disagree" | "missing_candidate" | "not_applicable";
+
+export type ShadowWorkspaceDecisionOutcome =
+  | "not_enabled"
+  | "not_ready"
+  | "unavailable"
+  | "valid"
+  | "invalid_output"
+  | "invalid_choice"
+  | "error";
+
+export interface ShadowWorkspaceDecision {
+  schemaVersion: number;
+  phase: "P8";
+  mode: "shadow";
+  enabled: boolean;
+  attempted: boolean;
+  called: boolean;
+  available: boolean;
+  outcome: ShadowWorkspaceDecisionOutcome;
+  agreement: ShadowWorkspaceAgreement;
+  legacySelectedCandidateId?: string;
+  structuredSelectedCandidateId?: string;
+  confidence?: number;
+  reason?: string;
+  reasonQuality?: "missing" | "thin" | "adequate";
+  validationError?: string;
+  error?: string;
+  promptHash?: string;
+}
+
 export type PredictionErrorLayer =
   | "normalization"
   | "salience"
@@ -351,6 +412,8 @@ export interface ReplayFrame {
   candidateFutures?: CandidateFuture[];
   deliberationPacket?: DeliberationPacket | JsonRecord;
   promptParity?: PromptParityReport | JsonRecord;
+  workspaceComparison?: DeliberationWorkspaceComparison | JsonRecord;
+  shadowWorkspaceDecision?: ShadowWorkspaceDecision | JsonRecord;
   predictionError?: PredictionErrorRecord | JsonRecord;
 }
 
@@ -360,6 +423,9 @@ export interface ConsolidationRecord {
   sourceFrameId?: string;
   targetLayer: PredictionErrorLayer | "memory" | "derived_knowledge" | "strategy_params" | string;
   affectedModule?: PredictionErrorLayer | "memory" | "derived_knowledge" | "strategy_params" | string;
+  proposalKind?: "learning_proposal" | "evidence_gap" | "manual_review";
+  evidenceStrength?: "weak" | "moderate" | "strong";
+  blockedStableTargets?: string[];
   proposal: string;
   proposedChange?: JsonRecord;
   evidence: JsonRecord[];
@@ -423,6 +489,8 @@ export interface TransitionRecord {
   candidateFutures?: CandidateFuture[];
   deliberationPacket?: DeliberationPacket | JsonRecord;
   promptParity?: PromptParityReport | JsonRecord;
+  workspaceComparison?: DeliberationWorkspaceComparison | JsonRecord;
+  shadowWorkspaceDecision?: ShadowWorkspaceDecision | JsonRecord;
   selectedPlan?: CandidateFuture | JsonRecord;
   predictionError?: PredictionErrorRecord | JsonRecord;
   replayFrame?: ReplayFrame | JsonRecord;

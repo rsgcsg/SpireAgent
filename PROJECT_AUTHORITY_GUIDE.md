@@ -31,6 +31,30 @@
 - 定义 Phase 1 到 Phase 10 的长期路线。
 - 给出下一轮 Codex 的长期 prompt，让它能自主阅读、审计、检索、构建、整理项目文档索引和项目架构。
 
+## 0.1 P1-P10 的强约束
+
+P1 到 P10 不是任务打卡表，而是 North Star 的成熟度路线：让 LLM 始终是 strategic player，本地系统作为 predictive cognitive scaffold，逐步增强它的 see / remember / imagine / deliberate / execute / replay / learn 能力。
+
+阶段推进的硬约束：
+
+- P1 到 P2.6：建立可信边界、记录、replay/eval，不追求智能提升。
+- P3 到 P6：把 `StrategicImpression`、`MemoryActivation`、`CandidateFuture`、`PredictionErrorRecord` 做成 shadow 可观测、可测试对象。
+- P7：把 prediction-error attribution 变成 evidence-backed learning proposals，但不自动学习。
+- P8：才开始让 `DeliberationPacket` 小范围进入 LLM strategic workspace，必须有 feature flag，并保留 legacy prompt。
+- P9：才考虑 guarded stable memory / derived / scoring updates，必须有证据、阈值、rollback。
+- P10：形成完整 guarded learning loop。
+
+任何推进都必须回答以下问题：
+
+1. 这是否让 LLM 更好地 see / remember / imagine / deliberate / learn？
+2. 是否保持 LLM 是核心战略玩家，而不是被规则系统替代？
+3. 是否保持 data truth：fact / observation / inference / memory / derived / reflection 分离？
+4. 是否可 replay、可 eval、可测试、可回滚？
+5. 是否没有过早污染 stable memory / derived / strategy？
+6. 是否真的提高未来决策质量，而不只是增加 coverage 字段？
+
+如果发现某个 P 的实现只是“字段存在”，但不能帮助预测、归因、复盘或未来决策，必须先重构目标，不得继续机械推进到下一阶段。
+
 ---
 
 ## 1. 最高目标
@@ -1095,9 +1119,11 @@ Phase 1 禁止：
 实现：
 
 - `ConsolidationRecord` 状态机：proposed / accepted / rejected / expired / reverted。
-- evidence、conditions、confidence、affected module、rollback、expiry。
-- CLI/review 可见 pending proposals。
-- proposal 默认不变更稳定层。
+- evidence、conditions、confidence、affected module、rollback、expiry、evidence strength、blocked stable targets。
+- `proposals.jsonl` 作为 proposal surface；旧 run 可从 transition-level consolidation 兼容派生。
+- replay/eval/review 可见 pending proposals、status counts、target layer counts、evidence strength 和 mutating/accepted risk。
+- 只有 unsupported 或 critical attribution bucket 可以生成 learning proposal；unknown/low-visibility attribution 只能作为 evidence gap。
+- proposal 默认不变更稳定层，且不得自动写 memory、derived knowledge、strategy params、candidate ordering、prompt、fallback、validation 或 execution。
 
 ### Phase 8：DeliberationPacket as LLM strategic workspace
 

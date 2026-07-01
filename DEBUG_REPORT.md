@@ -20,14 +20,19 @@
 - P6 eval 会把 unsupported 或 critical attribution bucket 归入 `prediction_error` WARN，而不是自动学习。
 - P6 CandidateFuture 预测已进一步从“字段存在”推进到 mechanics-informed expected-vs-actual：`predictionChecks.expected` 可携带 card removal、target/damage/block、HP loss、energy cost、route progress、reward flow 等期望。
 - checkpoint diff 新增 `enemyDeltas`，用于 damage/kill actual evidence。
-- P7 proposal lifecycle MVP 已开始：`ConsolidationRecord` 可携带 affected module、proposed change、expiry、revalidation、createdAt 和 proposed/accepted/rejected/expired/reverted/legacy rolled_back 状态。
-- eval/review 现在能显示 consolidation status counts。
+- P7 proposal surface MVP 已实现：`ConsolidationRecord` 可携带 affected module、proposed change、expiry、revalidation、createdAt、proposalKind、evidenceStrength、blockedStableTargets 和 proposed/accepted/rejected/expired/reverted/legacy rolled_back 状态。
+- fresh run 会创建 `proposals.jsonl`；replay/eval/review 现在能显示 proposal count、pending review、status counts、target layer、evidence strength 和 mutating/accepted risk。
+- P7.5 proposal aggregation 已实现：replay/eval/review 会按 target layer、proposed action 和 actionable attribution bucket 聚合 proposal evidence，显示 occurrence、recurring group、sample transition、grouped evidence strength、blocked stable targets、allowed next review steps 和 forbidden stable mutations。
+- `buildConsolidationRecord()` 现在只从 unsupported 或 critical attribution bucket 生成 learning proposal；unknown/low-visibility attribution 只保留为 evidence gap。
+- P7 proposal 明确 `stableMutation=false` 和 forbidden next steps，禁止自动写 memory、derived knowledge、strategy params、candidate ordering 或 prompt。
 
 边界：
 
 - P6 仍然 shadow-only。
+- P7 仍然 proposal-only。
+- P7.5 aggregation 仍然是 replay/eval/review surface，不是 stable learning applicator。
 - 没有改变 live prompt、candidate ordering、fallback、validation 或 execution semantics。
-- 没有启用 P8 stable update applicator、P9 live prompt migration 或 P10 guarded learning loop。
+- 没有启用 P8 DeliberationPacket strategic workspace、P9 stable update applicator 或 P10 guarded learning loop。
 
 ## 2026-07-01 Desktop North Star Alignment Pass
 
@@ -846,3 +851,54 @@ Implemented the next ordered shadow-only slice:
 - P5: offline eval now parses `events.jsonl` and reports `parsedEvents`, while current STS2MCP REST capabilities still correctly say event logs and human events are unavailable.
 
 Live behavior remains unchanged: no live prompt replacement, no candidate reordering, no scoring change, no fallback change, no validation/execution change.
+
+## 2026-07-01 P8 DeliberationPacket Strategic Workspace Shadow Surface
+
+Implemented P8 as a gated shadow workspace, not a live prompt swap:
+
+- Added `DeliberationWorkspaceComparison` and `ShadowWorkspaceDecision` domain records.
+- Added `src/agent/workspace.ts` to serialize `DeliberationPacket` into a compact structured LLM strategic workspace.
+- The workspace comparison records legacy prompt hash, structured prompt hash, byte/token estimates, decision class, packet coverage, structured section gaps, gated readiness, and readiness reasons.
+- Optional structured shadow LLM calls are supported only when both flags allow it.
+- Feature flags default off:
+  - `STS2_P8_WORKSPACE_SHADOW`
+  - `STS2_P8_WORKSPACE_CALL`
+- New executor-logged transitions can now include `workspaceComparison` and `shadowWorkspaceDecision`.
+- Replay/eval/review now expose P8 workspace coverage, readiness, shadow call counts, valid/invalid/error stats, and agreement/disagreement/missing-candidate counts.
+
+North Star boundary:
+
+- LLM remains the strategic player.
+- The local system shapes a better strategic workspace; it does not replace LLM judgment with local rules.
+- Legacy prompt remains the live path by default.
+- No candidate generation, ordering, scoring, fallback, validation, execution, stable memory, derived knowledge, or strategy params were changed.
+- Disagreement is review evidence, not a program failure.
+
+Validation run for this patch:
+
+- `npm exec tsc -- --noEmit`: passed.
+- `npm run agent:smoke`: passed.
+- `npm run check`: passed.
+- `npm run data:replay -- --latest`: passed.
+- `npm run data:eval -- --latest`: `WARN`, 0 errors.
+- `npm run agent:review`: passed.
+- `npm run collect:state`: passed, current MCP state was Act 2 floor 17 map, HP 23/75.
+- `npm run agent:tick -- --dry-run`: passed, selected the forced map node without executing.
+- `npm run agent:run -- --max-ticks 1 --delay-ms 120`: passed, executed one map node and advanced to Act 2 floor 18 event.
+
+Fresh P8 signal after the 1 tick validation:
+
+- Latest run: `run-mr20xf22-o5tlcp`.
+- Transitions: 142.
+- `workspaceComparison`: 1/142.
+- `shadowWorkspaceDecision`: 1/142.
+- `workspaceReady`: 0/142 because `STS2_P8_WORKSPACE_SHADOW` is off by default.
+- `shadowWorkspaceCalled`: 0/142 because `STS2_P8_WORKSPACE_CALL` is off by default.
+- Eval workspace summary: structured prompt available on the fresh transition, no invalid output, no invalid choice, no workspace errors, agreement `not_applicable`.
+- Eval status remained `WARN` with 0 errors; focused warning remained strategy-only (`strategy_block_deficit`).
+
+Remaining P8 work:
+
+- Validate coverage on a fresh real transition.
+- Define acceptance thresholds for readiness and information preservation before any gated live experiment.
+- If a future gated experiment is attempted, preserve legacy fallback and current validation/execution.

@@ -157,7 +157,7 @@ GameIO.readState()
 
 ## Current Implementation Boundary
 
-The current code has the data loop, replay reader, offline eval, grouped warning summary, and lightweight strategy metrics. It does not yet fully construct the North Star cognitive objects in the live loop.
+The current code has the data loop, replay reader, offline eval, grouped warning summary, lightweight strategy metrics, and shadow cognitive scaffold objects in the live loop.
 
 Additive anchors exist in `src/domain/types.ts` for:
 
@@ -169,6 +169,8 @@ Additive anchors exist in `src/domain/types.ts` for:
 - `PredictionErrorRecord`
 - `ReplayFrame`
 - `ConsolidationRecord`
+- `DeliberationWorkspaceComparison`
+- `ShadowWorkspaceDecision`
 
 Near-term refactors should populate these objects around the existing controller instead of rewriting the controller. They should keep live execution semantics stable, preserve replay/eval compatibility, and add tests before changing strategic behavior.
 
@@ -191,7 +193,10 @@ P3/P4/P5 shadow status:
 - Prediction errors now include typed checks and checkpoint attribution so replay/eval can distinguish block, damage, kill, card-flow, phase, and resource evidence.
 - `CandidateFuture` now carries `predictionChecks`; `PredictionErrorRecord` consumes these structured checks before falling back to text-derived checks.
 - `AgentDecisionRecorder` writes `ReplayFrame` MVP records into transitions.
-- Unsupported prediction errors can create proposed `ConsolidationRecord` objects with conditions and rollback text, but they do not apply stable learning updates.
+- Unsupported or critical prediction attribution can create proposed `ConsolidationRecord` objects with conditions, evidence strength, blocked stable targets, and rollback text.
+- Unknown/low-visibility attribution remains an evidence gap instead of becoming a learning proposal by itself.
+- Fresh runs write a P7 `proposals.jsonl` surface for replay/eval/review; proposals do not apply stable learning updates.
+- P7.5 derives grouped proposal evidence from the proposal surface. The grouping helps reviewers see recurring attribution patterns, but it remains replay/eval/review evidence and does not mutate memory, derived knowledge, strategy params, candidate ordering, prompt behavior, fallback, validation, or execution.
 - Eval parses `events.jsonl` for future event-log adapters while current STS2MCP REST capabilities continue to report no reliable event log.
 
 P6 attribution status:
@@ -199,3 +204,12 @@ P6 attribution status:
 - Candidate futures now carry mechanics-informed expected records where the scaffold can infer them.
 - Checkpoint diffs can include `enemyDeltas`, allowing damage and kill predictions to be checked against actual post-action state.
 - Prediction attribution is still shadow-only and feeds replay/eval/review, not stable learning updates.
+
+P8 workspace status:
+
+- `src/agent/workspace.ts` turns the existing `DeliberationPacket` into a compact structured strategic workspace for LLM deliberation.
+- The controller records a `workspaceComparison` for fresh executor-logged transitions: legacy prompt hash, structured prompt hash, byte/token estimates, decision class, coverage, missing sections, and readiness.
+- The controller can record `shadowWorkspaceDecision` when the P8 flags permit a structured shadow LLM call, but this decision is never executed.
+- `STS2_P8_WORKSPACE_SHADOW` and `STS2_P8_WORKSPACE_CALL` both default off. With defaults, P8 records comparison visibility without extra LLM calls.
+- P8 does not replace the live prompt yet. It does not alter candidate generation, ordering, scoring, fallback, validation, execution, stable memory, derived knowledge, or strategy params.
+- This keeps the North Star boundary intact: the local scaffold shapes a better strategic workspace for the LLM, while the LLM remains the strategic player and all actions still pass through current validation/execution.

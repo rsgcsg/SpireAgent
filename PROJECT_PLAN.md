@@ -4,6 +4,30 @@ This is the current project book for the Slay the Spire 2 AI agent. It records t
 
 The current formal route is Phase 0 through Phase 10. Phase 10 is the first target state for a complete Guarded Learning Loop: predictions are made before decisions, checked after execution, attributed in replay/eval, converted into evidence-gated consolidation proposals, and only then allowed to update stable memory/derived/strategy state with rollback.
 
+## Maturity Route Constraint
+
+P1 through P10 are not a task checklist. They are the North Star maturity route for keeping the LLM as the strategic player while the local system grows into a predictive cognitive scaffold that improves how the LLM can see, remember, imagine, deliberate, execute, replay, and learn.
+
+Hard phase intent:
+
+- P1 through P2.6: establish trusted boundaries, recording, replay, and eval. Do not optimize for intelligence gains yet.
+- P3 through P6: make `StrategicImpression`, `MemoryActivation`, `CandidateFuture`, and `PredictionErrorRecord` shadow-visible, testable, and replayable.
+- P7: turn prediction-error attribution into evidence-backed learning proposals without automatic learning.
+- P8: only here may `DeliberationPacket` begin entering the LLM strategic workspace under feature flags while preserving the legacy prompt.
+- P9: only here may guarded stable memory, derived, or scoring updates be considered, and only with evidence, thresholds, and rollback.
+- P10: complete the guarded learning loop.
+
+Non-negotiable evaluation questions for every phase change:
+
+1. Does it help the LLM see, remember, imagine, deliberate, or learn better?
+2. Does it preserve the LLM as the core strategic player instead of replacing it with local rules?
+3. Does it preserve data truth boundaries between fact, observation, inference, memory, derived knowledge, and reflection?
+4. Is it replayable, evaluable, testable, and rollback-capable?
+5. Does it avoid prematurely contaminating stable memory, derived knowledge, or strategy state?
+6. Does it improve future decision quality rather than merely increasing schema or coverage fields?
+
+If a phase implementation only proves that fields exist but does not improve prediction, attribution, replay, review, or future decisions, stop and reshape the goal before proceeding to the next phase.
+
 ## Current Diagnosis
 
 The current package is a working TypeScript agent, not a blank project.
@@ -218,23 +242,28 @@ Current Phase 6 status:
 
 Phase 7: Consolidation proposal pipeline.
 
-- Convert unsupported or repeated prediction errors into explicit `ConsolidationRecord` proposals.
+- Convert unsupported or critical prediction attribution into explicit `ConsolidationRecord` proposals.
+- Treat low-visibility `unknown` attribution as an evidence gap, not as a learning proposal by itself.
 - Require evidence, conditions, confidence, affected module, proposed change, rollback path, and expiry/revalidation policy.
 - Separate proposed, accepted, rejected, expired, and reverted consolidation states.
-- Add CLI/review visibility for pending proposals.
-- Do not auto-apply proposals yet unless they are explicitly marked shadow-safe and covered by tests.
+- Add replay/eval/review visibility for pending proposals and proposal surface health.
+- Do not auto-apply proposals.
 
 Target Phase 7 output:
 
 - The system can explain what it would learn and why.
 - Proposed learning remains auditable and non-mutating by default.
+- Every proposal says which stable targets are blocked until a later guarded applicator exists.
 
 Current Phase 7 status:
 
-- Proposal lifecycle MVP is partially implemented.
-- New `ConsolidationRecord` proposals can include affected module, proposed change, expiry, revalidation, created timestamp, and lifecycle status.
-- Eval/review can surface consolidation status counts.
-- No proposal is auto-applied; stable updates remain Phase 8 work.
+- Proposal surface MVP is implemented.
+- New `ConsolidationRecord` proposals are generated only from unsupported or critical attribution buckets, not from unsupported evidence-free guesses.
+- New runs create `proposals.jsonl`; old runs remain compatible via transition-level `consolidation` fallback.
+- Proposals include affected module, proposed change, expiry, revalidation, created timestamp, lifecycle status, evidence strength, blocked stable targets, and explicit forbidden next steps.
+- Replay/eval/review surface proposal counts, status counts, target layer counts, evidence strength, pending review, and mutating/accepted risk.
+- P7.5 aggregation is implemented as a derived review surface over proposal evidence. It groups proposals by target layer, proposed action, and actionable attribution bucket, then reports occurrences, recurring groups, sample transitions, grouped evidence strength, blocked stable targets, allowed review steps, and forbidden stable mutations.
+- No proposal is auto-applied; stable updates remain Phase 9 work.
 
 Phase 8: DeliberationPacket as LLM strategic workspace.
 
@@ -252,7 +281,15 @@ Target Phase 8 output:
 
 Current Phase 8 status:
 
-- Not implemented; live LLM input path remains unchanged.
+- P8 shadow workspace surface is implemented.
+- `src/agent/workspace.ts` builds a compact structured prompt from `DeliberationPacket`, compares it with the legacy live prompt, records hashes, byte/token estimates, coverage, missing sections, decision class, and gated readiness.
+- Feature flags:
+  - `STS2_P8_WORKSPACE_SHADOW`: enables P8 readiness for shadow workspace evaluation. Default is off.
+  - `STS2_P8_WORKSPACE_CALL`: allows an optional structured shadow LLM call when readiness is satisfied. Default is off.
+- New executor-logged transitions can carry `workspaceComparison` and `shadowWorkspaceDecision`.
+- Replay/eval/review expose P8 workspace coverage, readiness, shadow-call counts, agreement/disagreement, invalid output, missing candidate, and error stats.
+- Live LLM input path remains unchanged by default. P8 currently does not replace the legacy prompt, change candidate generation/order/scoring, change fallback, change validation, change execution, or write stable learning.
+- Next gated step is to define acceptance thresholds and a very narrow live-routing experiment, still preserving legacy fallback and validation.
 
 Phase 9: Guarded stable updates.
 

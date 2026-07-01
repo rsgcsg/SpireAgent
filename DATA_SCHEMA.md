@@ -73,6 +73,9 @@ interface TransitionRecord {
   memoryActivation?: unknown;
   candidateFutures?: unknown[];
   deliberationPacket?: unknown;
+  promptParity?: unknown;
+  workspaceComparison?: unknown;
+  shadowWorkspaceDecision?: unknown;
   selectedPlan?: unknown;
   predictionError?: unknown;
   replayFrame?: unknown;
@@ -90,6 +93,9 @@ North Star cognitive fields are optional for compatibility:
 - `memoryActivation`: memories retrieved for this decision, with relevance, confidence, evidence, conditions, and omissions.
 - `candidateFutures`: candidate plans with predicted outcomes, costs, risks, assumptions, invalidation triggers, and execution requirements.
 - `deliberationPacket`: compact strategic package shown to the LLM.
+- `promptParity`: coverage metadata comparing current legacy prompt inputs with the shadow packet.
+- `workspaceComparison`: P8 shadow comparison between the legacy prompt and the structured DeliberationPacket workspace.
+- `shadowWorkspaceDecision`: optional P8 shadow LLM decision audit; recorded only, never executed.
 - `selectedPlan`: the chosen candidate future or plan-level decision.
 - `predictionError`: post-hoc record of what was predicted, what happened, and which layer likely needs repair.
 - `replayFrame`: replay-oriented view used for attribution and review.
@@ -140,9 +146,41 @@ P6 typed attribution refinement:
 
 P7 consolidation proposal lifecycle MVP:
 
-- `ConsolidationRecord` proposals can carry `affectedModule`, `proposedChange`, `expiry`, `revalidation`, and `createdAt`.
+- `ConsolidationRecord` proposals can carry `affectedModule`, `proposedChange`, `expiry`, `revalidation`, `createdAt`, `proposalKind`, `evidenceStrength`, and `blockedStableTargets`.
+- Fresh runs create `data/runs/<runId>/proposals.jsonl` as the P7 proposal surface. It is append-only proposal evidence, not a stable learning store.
+- Replay/eval can fall back to transition-level `consolidation` objects for older runs that do not have `proposals.jsonl`.
+- Proposals are generated from unsupported or critical `PredictionErrorRecord.attributionBuckets`. Low-visibility `unknown` attribution remains an evidence gap unless later evidence supports it.
 - Lifecycle status supports `proposed`, `accepted`, `rejected`, `expired`, `reverted`, plus legacy `rolled_back` for old data compatibility.
 - Proposal lifecycle metadata is review/eval evidence only until a later guarded applicator exists.
+- P7 proposals explicitly block automatic writes to memory, derived knowledge, strategy params, candidate ordering, and prompt behavior.
+
+P7.5 consolidation proposal aggregation:
+
+- Replay/eval/review derive grouped proposal evidence from `proposals.jsonl` or transition-level consolidation fallback.
+- Aggregation groups proposals by target layer, proposed action, and actionable attribution bucket. It tracks occurrences, sample transitions, evidence strength, confidence, blocked stable targets, allowed next review steps, and forbidden stable mutations.
+- Repeated weak evidence can be surfaced as a moderate review signal inside the aggregated view, but this is still shadow-only evidence. It does not write memory, derived knowledge, strategy params, candidate ordering, prompt behavior, fallback, validation, or execution.
+- Aggregation exists to help reviewers decide which fixture, attribution, or CandidateFuture mechanics work to do next. It is not a stable learning applicator.
+
+P8 DeliberationPacket strategic workspace shadow surface:
+
+- `src/agent/workspace.ts` serializes the existing `DeliberationPacket` into a compact structured LLM workspace.
+- `workspaceComparison` records:
+  - `phase="P8"` and `mode="shadow"`
+  - feature flag state
+  - legacy and structured prompt hashes
+  - byte and token estimates
+  - decision class
+  - covered/missing packet sections
+  - structured workspace section coverage
+  - gated readiness and readiness reasons
+- `shadowWorkspaceDecision` records:
+  - whether shadow workspace evaluation was enabled, attempted, and called
+  - whether an LLM bridge was available
+  - outcome: not enabled, not ready, unavailable, valid, invalid output, invalid choice, or error
+  - agreement/disagreement/missing-candidate against the live selected candidate
+  - reason quality when a structured shadow LLM decision exists
+- `STS2_P8_WORKSPACE_SHADOW` defaults off; `STS2_P8_WORKSPACE_CALL` defaults off. Fresh transitions still record the comparison surface with both flags off.
+- P8 fields are observability data. They do not replace `src/agent/prompt.ts`, alter action selection, change candidate generation/order/scoring, change fallback, change validation/execution, or write stable memory/derived/strategy updates.
 
 ## Ground Truth Rules
 

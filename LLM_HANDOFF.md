@@ -22,6 +22,17 @@ The project has completed Phase 0, Phase 1, the Phase 2 minimum data-loop MVP, t
 
 The active North Star is now the LLM-centered predictive cognitive scaffold described in `PROJECT_NORTH_STAR.md` and `PROJECT_NORTH_STAR_CHINESE.md`. Phase 3.0 should migrate the existing working loop toward `StrategicImpression`, `SalienceSignal`, `MemoryActivation`, `CandidateFuture`, `DeliberationPacket`, `PredictionErrorRecord`, `ReplayFrame`, and `ConsolidationRecord` without large controller rewrites or untested strategy changes.
 
+P1 through P10 are a maturity route, not a checklist. The constraint is strict:
+
+- P1 through P2.6: trusted boundaries, recording, replay/eval first; no intelligence chasing.
+- P3 through P6: shadow-visible, testable cognitive scaffold objects.
+- P7: evidence-backed learning proposals only; no automatic learning.
+- P8: feature-flagged `DeliberationPacket` entry into the LLM strategic workspace while preserving the legacy prompt.
+- P9: guarded stable memory / derived / scoring updates only with evidence, thresholds, and rollback.
+- P10: complete guarded learning loop.
+
+Before advancing any phase, verify that the change improves LLM seeing, remembering, imagining, deliberating, replaying, or learning; preserves the LLM as strategic player; keeps fact / observation / inference / memory / derived / reflection separated; stays replayable/evaluable/testable/rollback-capable; avoids premature stable-state contamination; and improves decision quality rather than merely increasing coverage fields.
+
 Phase 3.0 shadow-mode P0 is now implemented:
 
 - `src/agent/cognitiveScaffold.ts` builds `StrategicImpression`, `SalienceSignal[]`, `MemoryActivation`, `CandidateFuture[]`, and a shadow `DeliberationPacket`.
@@ -38,6 +49,16 @@ P1 shadow DeliberationPacket is now implemented:
 - `agent:review`, `data:replay`, and `data:eval` expose coverage.
 - This still does not replace the live prompt or change action selection.
 
+P8 DeliberationPacket strategic workspace shadow surface is now implemented:
+
+- `src/agent/workspace.ts` serializes the current `DeliberationPacket` into a structured LLM workspace.
+- New transitions can carry `workspaceComparison` with legacy prompt hash, structured prompt hash, byte/token estimates, decision class, coverage, missing sections, and gated readiness.
+- New transitions can carry `shadowWorkspaceDecision`, which records optional structured shadow LLM outcomes, agreement/disagreement, missing candidate, invalid output, reason quality, or error.
+- `STS2_P8_WORKSPACE_SHADOW` defaults off and blocks readiness by default.
+- `STS2_P8_WORKSPACE_CALL` defaults off and blocks extra structured LLM calls by default.
+- With default flags, live behavior is unchanged: legacy prompt remains the live prompt, candidate generation/order/scoring/fallback/validation/execution are unchanged, and no stable memory/derived/strategy updates occur.
+- Replay/eval/review expose P8 workspace coverage and stats. Disagreement is a review signal, not a program failure.
+
 Implemented and working:
 
 - TypeScript agent CLI.
@@ -46,6 +67,7 @@ Implemented and working:
 - Candidate generation.
 - Local scoring and decision routing.
 - LLM command/bridge integration.
+- P8 structured workspace prompt surface, comparison, and shadow decision audit.
 - LLM unavailable/invalid fallback.
 - Checkpoint/state-diff audit after real actions.
 - Run memory, long-term memory, experience memory, strategy params.
@@ -148,7 +170,7 @@ P3/P4/P5 shadow refinement is now partially implemented:
 - Eval reports typed-check, attribution, consolidation, and `events.jsonl` parse coverage.
 - Current STS2MCP REST capabilities still do not provide reliable event logs or human ground-truth events.
 
-Phase 6 planning and MVP attribution are now partially implemented:
+Phase 6 CandidateFuture attribution is now implemented as the current MVP:
 
 - `PROJECT_PLAN.md` and `PROJECT_AUTHORITY_GUIDE.md` define Phase 6 through Phase 10, with Phase 10 as the Guarded Learning Loop.
 - `PredictionErrorRecord.attributionBuckets` records typed shadow buckets for damage/defense/HP/kill/phase/card-flow/resource/unknown attribution.
@@ -156,21 +178,22 @@ Phase 6 planning and MVP attribution are now partially implemented:
 - Eval/review report attribution bucket coverage, bucket counts, and bucket status counts.
 - Latest live validation wrote one executor transition with attribution buckets.
 
-Phase 7 proposal lifecycle MVP is now partially implemented:
+Phase 7 proposal surface MVP is now implemented:
 
-- `ConsolidationRecord` can carry `affectedModule`, `proposedChange`, `expiry`, `revalidation`, `createdAt`, and lifecycle statuses.
-- Eval/review report consolidation status counts.
-- Proposals remain non-mutating; Phase 8 guarded stable updates are not implemented yet.
+- `ConsolidationRecord` can carry `affectedModule`, `proposedChange`, `expiry`, `revalidation`, `createdAt`, lifecycle status, `proposalKind`, `evidenceStrength`, and `blockedStableTargets`.
+- Fresh runs create `proposals.jsonl`; old runs remain readable through transition-level `consolidation` fallback.
+- Replay/eval/review report proposal counts, pending review, status counts, target layer counts, evidence strength, and mutating/accepted risk.
+- P7.5 proposal aggregation is implemented. Replay/eval/review now group proposal evidence by target layer, proposed action, and actionable attribution bucket, surfacing occurrences, recurring groups, representative transitions, grouped evidence strength, and forbidden stable mutations.
+- Proposals are generated only from unsupported or critical attribution buckets. Unknown/low-visibility attribution remains an evidence gap.
+- Proposals remain non-mutating; Phase 9 guarded stable updates are not implemented yet.
 
-The next formal work inside Phase 6:
+Current maturity boundary:
 
-- Deepen `PredictionErrorRecord` attribution into typed damage/block/HP/kill/phase-change/card-flow/resource buckets.
-- Add fixtures for supported, unsupported, and unknown prediction checks.
-- Keep all Phase 6 output shadow-only; do not apply stable memory, derived knowledge, or strategy updates.
+- P1-P7 are scaffold, evidence, replay/eval, and proposal-surface work.
+- They do not change live prompt, scoring, candidate ordering, fallback, validation, execution, stable memory, derived knowledge, or strategy params.
 
-Planned route after Phase 6:
+Planned route:
 
-- Phase 7: deepen proposal lifecycle with a CLI/review surface for pending proposals.
 - Phase 8: move `DeliberationPacket` toward the LLM strategic workspace for gated high-dispute decisions. This is not a raw prompt swap; it is giving the LLM a better workspace while preserving validation/fallback.
 - Phase 9: add a guarded stable-update applicator for a narrow low-risk update class.
 - Phase 10: close the Guarded Learning Loop from prediction to guarded update and rollback-capable replay/eval validation.

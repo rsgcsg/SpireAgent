@@ -6,7 +6,12 @@ import { generateCandidates } from "../agent/candidates.js";
 import type { AgentAction, CandidateAction, NormalizedState } from "../agent/types.js";
 import { normalizeGameState } from "../agent/state.js";
 import { agentRoot, isRecord } from "../agent/utils.js";
-import { resolveRunDir } from "../replay/reader.js";
+import {
+  buildReplayConsolidationProposalSurface,
+  readConsolidationProposals,
+  resolveRunDir,
+  type ReplayConsolidationProposalSurface
+} from "../replay/reader.js";
 
 export type EvalStatus = "PASS" | "WARN" | "FAIL";
 
@@ -73,8 +78,10 @@ export interface EvalSummary {
   cognitiveCoverage: EvalCognitiveCoverage;
   deliberationCoverage: EvalDeliberationCoverage;
   promptParityCoverage: EvalPromptParityCoverage;
+  workspaceCoverage: EvalWorkspaceCoverage;
   predictionErrorCoverage: EvalPredictionErrorCoverage;
   consolidationCoverage: EvalConsolidationCoverage;
+  consolidationProposalSurface: ReplayConsolidationProposalSurface;
 }
 
 export interface EvalCognitiveCoverage {
@@ -109,6 +116,26 @@ export interface EvalPromptParityCoverage {
   livePromptUsed: number;
   averageCoverage: number;
   missingSections: Record<string, number>;
+}
+
+export interface EvalWorkspaceCoverage {
+  transitions: number;
+  comparison: number;
+  structuredPromptAvailable: number;
+  enabled: number;
+  ready: number;
+  shadowDecision: number;
+  shadowCalled: number;
+  validShadowDecision: number;
+  invalidOutput: number;
+  invalidChoice: number;
+  errors: number;
+  agreementCounts: Record<string, number>;
+  averageStructuredTokenEstimate: number;
+  averageLegacyTokenEstimate: number;
+  missingStructuredSections: Record<string, number>;
+  readinessReasons: Record<string, number>;
+  rates: Record<string, number>;
 }
 
 export interface EvalPredictionErrorCoverage {
@@ -173,6 +200,7 @@ export function evaluateRun(runIdOrPath?: string): EvalReport {
   const cognitiveCoverage = createCognitiveCoverage();
   const deliberationCoverage = createDeliberationCoverage();
   const promptParityCoverage = createPromptParityCoverage();
+  const workspaceCoverage = createWorkspaceCoverage();
   const predictionErrorCoverage = createPredictionErrorCoverage();
   const consolidationCoverage = createConsolidationCoverage();
 
@@ -203,6 +231,7 @@ export function evaluateRun(runIdOrPath?: string): EvalReport {
     collectCognitiveCoverage(cognitiveCoverage, transition);
     collectDeliberationCoverage(deliberationCoverage, transition);
     collectPromptParityCoverage(promptParityCoverage, transition);
+    collectWorkspaceCoverage(workspaceCoverage, transition);
     collectPredictionErrorCoverage(predictionErrorCoverage, transition);
     collectConsolidationCoverage(consolidationCoverage, transition);
 
@@ -290,8 +319,13 @@ export function evaluateRun(runIdOrPath?: string): EvalReport {
   finishCognitiveCoverage(cognitiveCoverage, transitionCount);
   finishDeliberationCoverage(deliberationCoverage, transitionCount);
   finishPromptParityCoverage(promptParityCoverage, transitionCount);
+  finishWorkspaceCoverage(workspaceCoverage, transitionCount);
   finishPredictionErrorCoverage(predictionErrorCoverage, transitionCount);
   finishConsolidationCoverage(consolidationCoverage, transitionCount);
+  const validTransitions = transitions
+    .map((line) => line.transition)
+    .filter((transition): transition is TransitionRecord => Boolean(transition));
+  const consolidationProposalSurface = buildReplayConsolidationProposalSurface(readConsolidationProposals(runDir, validTransitions));
   for (const issue of buildStrategyWarnings(strategyMetrics)) {
     addWarning(warnings, warningSummary, issue);
   }
@@ -299,6 +333,12 @@ export function evaluateRun(runIdOrPath?: string): EvalReport {
     addWarning(warnings, warningSummary, issue);
   }
   for (const issue of buildP1CoverageWarnings(deliberationCoverage, promptParityCoverage, predictionErrorCoverage, transitionCount)) {
+    addWarning(warnings, warningSummary, issue);
+  }
+  for (const issue of buildP8WorkspaceWarnings(workspaceCoverage, transitionCount)) {
+    addWarning(warnings, warningSummary, issue);
+  }
+  for (const issue of buildP7ProposalWarnings(consolidationProposalSurface, predictionErrorCoverage)) {
     addWarning(warnings, warningSummary, issue);
   }
 
@@ -324,8 +364,10 @@ export function evaluateRun(runIdOrPath?: string): EvalReport {
       cognitiveCoverage,
       deliberationCoverage,
       promptParityCoverage,
+      workspaceCoverage,
       predictionErrorCoverage,
-      consolidationCoverage
+      consolidationCoverage,
+      consolidationProposalSurface
     },
     errors,
     warnings,
@@ -701,7 +743,7 @@ function isNormalHardCheckpoint(transition: TransitionRecord): boolean {
   if (
     transition.screen === "combat" &&
     action === "play_card" &&
-    reasons.some((reason) => ["expected_card_removed_from_hand", "enemy_removed_or_dead", "screen_changed"].includes(reason))
+    hasAcceptedCombatPlayCardProgress(reasons)
   ) {
     return true;
   }
@@ -709,6 +751,26 @@ function isNormalHardCheckpoint(transition: TransitionRecord): boolean {
     return true;
   }
   return false;
+}
+
+function hasAcceptedCombatPlayCardProgress(reasons: string[]): boolean {
+  const accepted = new Set([
+    "expected_card_removed_from_hand",
+    "enemy_removed_or_dead",
+    "enemy_hp_or_block_changed",
+    "player_block_changed",
+    "player_energy_changed",
+    "orb_state_changed",
+    "hand_count_changed",
+    "hand_changed_beyond_expected_card_removal",
+    "hand_grew_or_generated_card",
+    "draw_pile_count_changed",
+    "discard_pile_count_changed",
+    "exhaust_pile_count_changed",
+    "screen_changed",
+    "state_hash_changed"
+  ]);
+  return reasons.some((reason) => accepted.has(reason));
 }
 
 function isAcceptableUnknownOrTimeout(transition: TransitionRecord): boolean {
@@ -935,6 +997,87 @@ function finishPromptParityCoverage(coverage: EvalPromptParityCoverage, transiti
   coverage.averageCoverage = coverage.promptParity > 0 ? Number((coverage.averageCoverage / coverage.promptParity).toFixed(3)) : 0;
 }
 
+function createWorkspaceCoverage(): EvalWorkspaceCoverage {
+  return {
+    transitions: 0,
+    comparison: 0,
+    structuredPromptAvailable: 0,
+    enabled: 0,
+    ready: 0,
+    shadowDecision: 0,
+    shadowCalled: 0,
+    validShadowDecision: 0,
+    invalidOutput: 0,
+    invalidChoice: 0,
+    errors: 0,
+    agreementCounts: {},
+    averageStructuredTokenEstimate: 0,
+    averageLegacyTokenEstimate: 0,
+    missingStructuredSections: {},
+    readinessReasons: {},
+    rates: {}
+  };
+}
+
+function collectWorkspaceCoverage(coverage: EvalWorkspaceCoverage, transition: TransitionRecord): void {
+  coverage.transitions += 1;
+  const comparison = isRecord(transition.workspaceComparison) ? transition.workspaceComparison : undefined;
+  if (comparison) {
+    coverage.comparison += 1;
+    if (comparison.structuredPromptAvailable === true) coverage.structuredPromptAvailable += 1;
+    if (comparison.enabled === true) coverage.enabled += 1;
+    if (comparison.gatedReadiness === "ready") coverage.ready += 1;
+    if (typeof comparison.structuredTokenEstimate === "number") coverage.averageStructuredTokenEstimate += comparison.structuredTokenEstimate;
+    if (typeof comparison.legacyTokenEstimate === "number") coverage.averageLegacyTokenEstimate += comparison.legacyTokenEstimate;
+    const workspaceCoverage = isRecord(comparison.coverage) ? comparison.coverage : {};
+    const missingStructured = Array.isArray(workspaceCoverage.missingStructuredSections)
+      ? workspaceCoverage.missingStructuredSections.map(String)
+      : [];
+    for (const section of missingStructured) {
+      coverage.missingStructuredSections[section] = (coverage.missingStructuredSections[section] ?? 0) + 1;
+    }
+    const readinessReasons = Array.isArray(comparison.readinessReasons) ? comparison.readinessReasons.map(String) : [];
+    for (const reason of readinessReasons) {
+      coverage.readinessReasons[reason] = (coverage.readinessReasons[reason] ?? 0) + 1;
+    }
+  }
+
+  const shadowDecision = isRecord(transition.shadowWorkspaceDecision) ? transition.shadowWorkspaceDecision : undefined;
+  if (!shadowDecision) return;
+  coverage.shadowDecision += 1;
+  if (shadowDecision.called === true) coverage.shadowCalled += 1;
+  const outcome = typeof shadowDecision.outcome === "string" ? shadowDecision.outcome : "unknown";
+  if (outcome === "valid") coverage.validShadowDecision += 1;
+  if (outcome === "invalid_output") coverage.invalidOutput += 1;
+  if (outcome === "invalid_choice") coverage.invalidChoice += 1;
+  if (outcome === "error") coverage.errors += 1;
+  const agreement = typeof shadowDecision.agreement === "string" ? shadowDecision.agreement : "unknown";
+  coverage.agreementCounts[agreement] = (coverage.agreementCounts[agreement] ?? 0) + 1;
+}
+
+function finishWorkspaceCoverage(coverage: EvalWorkspaceCoverage, transitionCount: number): void {
+  coverage.transitions = transitionCount;
+  coverage.averageStructuredTokenEstimate = coverage.comparison > 0
+    ? Number((coverage.averageStructuredTokenEstimate / coverage.comparison).toFixed(1))
+    : 0;
+  coverage.averageLegacyTokenEstimate = coverage.comparison > 0
+    ? Number((coverage.averageLegacyTokenEstimate / coverage.comparison).toFixed(1))
+    : 0;
+  const rate = (value: number): number => (transitionCount > 0 ? Number((value / transitionCount).toFixed(3)) : 0);
+  coverage.rates = {
+    comparison: rate(coverage.comparison),
+    structuredPromptAvailable: rate(coverage.structuredPromptAvailable),
+    enabled: rate(coverage.enabled),
+    ready: rate(coverage.ready),
+    shadowDecision: rate(coverage.shadowDecision),
+    shadowCalled: rate(coverage.shadowCalled),
+    validShadowDecision: rate(coverage.validShadowDecision),
+    invalidOutput: rate(coverage.invalidOutput),
+    invalidChoice: rate(coverage.invalidChoice),
+    errors: rate(coverage.errors)
+  };
+}
+
 function createPredictionErrorCoverage(): EvalPredictionErrorCoverage {
   return {
     transitions: 0,
@@ -1054,6 +1197,76 @@ function buildP1CoverageWarnings(
   }
   if (predictionError.predictionError < transitionCount) {
     push("prediction_error_partial_coverage", `PredictionErrorRecord present on ${predictionError.predictionError}/${transitionCount} transition(s)`);
+  }
+  return warnings;
+}
+
+function buildP7ProposalWarnings(
+  surface: ReplayConsolidationProposalSurface,
+  predictionError: EvalPredictionErrorCoverage
+): EvalIssue[] {
+  const warnings: EvalIssue[] = [];
+  if ((predictionError.unsupportedAttributionBuckets > 0 || predictionError.criticalAttributionBuckets > 0) && surface.proposals === 0) {
+    warnings.push({
+      code: "consolidation_missing_for_actionable_prediction_error",
+      message: "Unsupported or critical prediction attribution exists but no shadow consolidation proposal surface is available",
+      category: "prediction_error",
+      severity: "warn",
+      actionable: true
+    });
+  }
+  if (surface.mutatingOrAccepted > 0) {
+    warnings.push({
+      code: "consolidation_surface_mutating_or_accepted",
+      message: `P7 proposal surface contains ${surface.mutatingOrAccepted} accepted or mutating proposal(s); P7 must remain proposal-only`,
+      category: "program_risk",
+      severity: "risk",
+      actionable: true
+    });
+  }
+  return warnings;
+}
+
+function buildP8WorkspaceWarnings(coverage: EvalWorkspaceCoverage, transitionCount: number): EvalIssue[] {
+  if (transitionCount === 0) return [];
+  const warnings: EvalIssue[] = [];
+  if (coverage.comparison < transitionCount) {
+    warnings.push({
+      code: "p8_workspace_comparison_partial_coverage",
+      message: `P8 workspace comparison present on ${coverage.comparison}/${transitionCount} transition(s)`,
+      category: "cognitive_coverage",
+      severity: "info",
+      actionable: false
+    });
+  }
+  if (coverage.shadowDecision < transitionCount) {
+    warnings.push({
+      code: "p8_shadow_decision_partial_coverage",
+      message: `P8 shadow decision record present on ${coverage.shadowDecision}/${transitionCount} transition(s)`,
+      category: "cognitive_coverage",
+      severity: "info",
+      actionable: false
+    });
+  }
+  if (coverage.invalidOutput > 0 || coverage.invalidChoice > 0 || coverage.errors > 0) {
+    warnings.push({
+      code: "p8_shadow_workspace_invalid_or_error",
+      message: `P8 shadow workspace produced invalid/error outcomes: invalidOutput=${coverage.invalidOutput}, invalidChoice=${coverage.invalidChoice}, errors=${coverage.errors}`,
+      category: "program_risk",
+      severity: "warn",
+      actionable: true
+    });
+  }
+  const disagreements = coverage.agreementCounts.disagree ?? 0;
+  const missingCandidate = coverage.agreementCounts.missing_candidate ?? 0;
+  if (disagreements > 0 || missingCandidate > 0) {
+    warnings.push({
+      code: "p8_shadow_workspace_disagreement",
+      message: `P8 shadow workspace disagreed or chose missing candidates: disagree=${disagreements}, missingCandidate=${missingCandidate}`,
+      category: "cognitive_coverage",
+      severity: "info",
+      actionable: false
+    });
   }
   return warnings;
 }

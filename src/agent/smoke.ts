@@ -23,9 +23,21 @@ import { MemoryManager } from "./memory.js";
 import { cardDamage, normalizeGameState } from "./state.js";
 import { generateCandidates } from "./candidates.js";
 import { scoreCandidates } from "./scoring.js";
-import { buildReplayCognitiveCoverage, buildReplayTimeline, readReplayRun, readTransitionJsonl } from "../replay/reader.js";
+import {
+  buildReplayCognitiveCoverage,
+  buildReplayConsolidationProposalSurface,
+  buildReplayTimeline,
+  readConsolidationProposals,
+  readReplayRun,
+  readTransitionJsonl
+} from "../replay/reader.js";
 import { evaluateRun } from "../eval/runner.js";
 import { buildCognitiveScaffold, buildConsolidationRecord, buildPredictionErrorRecord } from "./cognitiveScaffold.js";
+import {
+  buildP8WorkspaceShadowFromPacket,
+  buildStructuredDeliberationWorkspacePrompt,
+  buildWorkspaceComparison
+} from "./workspace.js";
 import {
   DOMAIN_SCHEMA_VERSION,
   type CandidateFuture,
@@ -192,6 +204,41 @@ const predictionError: PredictionErrorRecord = {
   status: "open"
 };
 assert.equal(deliberationPacket.candidateFutures[0]?.sourceCandidateId, "play-strike");
+const workspaceCandidate: ScoredCandidate = {
+  id: "play-strike",
+  kind: "play_card",
+  label: "Strike Jaw Worm",
+  action: { kind: "play_card", cardIndex: 0, cardName: "Strike", target: "JAW_WORM_0" },
+  score: 10,
+  confidence: 0.8,
+  reasons: ["test candidate"],
+  risks: []
+};
+const structuredWorkspacePrompt = buildStructuredDeliberationWorkspacePrompt(deliberationPacket);
+assert.match(structuredWorkspacePrompt, /structured strategic workspace/);
+const workspaceComparison = buildWorkspaceComparison({
+  legacyPrompt: JSON.stringify({ candidates: [{ id: "play-strike" }] }),
+  deliberationPacket,
+  candidates: [workspaceCandidate],
+  decisionClass: "combat:test",
+  options: { shadowEnabled: false, callEnabled: false }
+});
+assert.equal(workspaceComparison.enabled, false);
+assert.equal(workspaceComparison.structuredPromptAvailable, true);
+assert.equal(workspaceComparison.gatedReadiness, "not_ready");
+assert.ok(workspaceComparison.readinessReasons.includes("STS2_P8_WORKSPACE_SHADOW=off"));
+assert.ok(workspaceComparison.structuredPromptHash);
+const p8Shadow = await buildP8WorkspaceShadowFromPacket({
+  legacyPrompt: JSON.stringify({ candidates: [{ id: "play-strike" }] }),
+  deliberationPacket,
+  candidates: [workspaceCandidate],
+  decisionClass: "combat:test",
+  llm: new NoopLlmDecider(),
+  legacySelectedCandidateId: "play-strike",
+  options: { shadowEnabled: false, callEnabled: false }
+});
+assert.equal(p8Shadow.shadowDecision.called, false);
+assert.equal(p8Shadow.shadowDecision.outcome, "not_enabled");
 
 const collectedRecord = buildCollectedStateRecord({
   rawStatePath: "memory/collected/snapshots/test.raw.json",
@@ -227,6 +274,8 @@ const cognitiveTransition: TransitionRecord = {
   memoryActivation,
   candidateFutures: [candidateFuture],
   deliberationPacket,
+  workspaceComparison,
+  shadowWorkspaceDecision: p8Shadow.shadowDecision,
   predictionError
 };
 assert.equal(cognitiveTransition.strategicImpression?.schemaVersion, DOMAIN_SCHEMA_VERSION);
@@ -578,7 +627,7 @@ try {
   assert.equal(blockPrediction.attributionBuckets?.[0]?.bucket, "defense");
   assert.equal(blockPrediction.attributionBuckets?.[0]?.status, "supported");
   assert.equal(buildConsolidationRecord({ predictionError: blockPrediction }), undefined);
-  const unsupportedPrediction = buildPredictionErrorRecord({
+  const unknownPrediction = buildPredictionErrorRecord({
     selectedPlan: {
       id: "future-test",
       predictedOutcome: ["player block should increase"],
@@ -603,16 +652,9 @@ try {
       changes: { energy: { changed: true, before: 3, after: 2 } }
     }
   });
-  assert.equal(unsupportedPrediction.attributionBuckets?.[0]?.bucket, "defense");
-  assert.equal(unsupportedPrediction.attributionBuckets?.[0]?.status, "unknown");
-  const consolidationProposal = buildConsolidationRecord({ predictionError: unsupportedPrediction, selectedPlan: { id: "future-test" } });
-  assert.equal(consolidationProposal?.status, "proposed");
-  assert.equal(consolidationProposal?.targetLayer, "candidate_future");
-  assert.equal(consolidationProposal?.affectedModule, "candidate_future");
-  assert.equal(consolidationProposal?.proposedChange?.stableMutation, false);
-  assert.ok(consolidationProposal?.expiry);
-  assert.ok(consolidationProposal?.revalidation);
-  assert.ok(consolidationProposal?.createdAt);
+  assert.equal(unknownPrediction.attributionBuckets?.[0]?.bucket, "defense");
+  assert.equal(unknownPrediction.attributionBuckets?.[0]?.status, "unknown");
+  assert.equal(buildConsolidationRecord({ predictionError: unknownPrediction, selectedPlan: { id: "future-test" } }), undefined);
   const contradictedPrediction = buildPredictionErrorRecord({
     selectedPlan: {
       id: "future-contradicted",
@@ -642,6 +684,106 @@ try {
   assert.ok(Array.isArray(contradictedChecks));
   assert.equal(contradictedChecks[0]?.status, "unsupported");
   assert.equal(contradictedPrediction.attributionBuckets?.[0]?.status, "unsupported");
+  const consolidationProposal = buildConsolidationRecord({ predictionError: contradictedPrediction, selectedPlan: { id: "future-contradicted" } });
+  assert.equal(consolidationProposal?.status, "proposed");
+  assert.ok(consolidationProposal);
+  assert.equal(consolidationProposal?.targetLayer, "candidate_future");
+  assert.equal(consolidationProposal?.affectedModule, "candidate_future");
+  assert.equal(consolidationProposal?.proposalKind, "learning_proposal");
+  assert.equal(consolidationProposal?.evidenceStrength, "weak");
+  assert.ok(consolidationProposal?.blockedStableTargets?.includes("memory"));
+  assert.equal(consolidationProposal?.proposedChange?.stableMutation, false);
+  assert.ok(consolidationProposal?.expiry);
+  assert.ok(consolidationProposal?.revalidation);
+  assert.ok(consolidationProposal?.createdAt);
+  const unsupportedProposalSurface = buildReplayConsolidationProposalSurface([consolidationProposal]);
+  assert.equal(unsupportedProposalSurface.proposals, 1);
+  assert.equal(unsupportedProposalSurface.pendingReview, 1);
+  assert.equal(unsupportedProposalSurface.mutatingOrAccepted, 0);
+  assert.equal(unsupportedProposalSurface.targetLayerCounts.candidate_future, 1);
+  assert.equal(unsupportedProposalSurface.groups.length, 1);
+  assert.equal(unsupportedProposalSurface.groups[0]?.occurrences, 1);
+  assert.equal(unsupportedProposalSurface.groups[0]?.stableMutation, false);
+  assert.ok(unsupportedProposalSurface.groups[0]?.blockedStableTargets.includes("memory"));
+  const aggregatedProposalSurface = buildReplayConsolidationProposalSurface([
+    consolidationProposal,
+    {
+      ...consolidationProposal,
+      recordId: "consolidation-aggregate-2",
+      transitionId: "transition-aggregate-2",
+      tick: 2,
+      selectedAction: { kind: "play_card", cardName: "Strike" }
+    },
+    {
+      ...consolidationProposal,
+      recordId: "consolidation-aggregate-3",
+      transitionId: "transition-aggregate-3",
+      tick: 3,
+      selectedAction: { kind: "play_card", cardName: "Strike" }
+    }
+  ]);
+  assert.equal(aggregatedProposalSurface.proposals, 3);
+  assert.equal(aggregatedProposalSurface.groups.length, 1);
+  assert.equal(aggregatedProposalSurface.recurringGroups, 1);
+  assert.equal(aggregatedProposalSurface.groups[0]?.occurrences, 3);
+  assert.equal(aggregatedProposalSurface.groups[0]?.evidenceStrength, "moderate");
+  assert.equal(aggregatedProposalSurface.groups[0]?.mutatingOrAccepted, 0);
+  assert.equal(aggregatedProposalSurface.groups[0]?.stableMutation, false);
+  assert.ok(aggregatedProposalSurface.groups[0]?.forbiddenNextSteps.includes("auto_write_memory"));
+  const cardFlowSupportedPrediction = buildPredictionErrorRecord({
+    selectedPlan: {
+      id: "future-card-flow-supported",
+      predictedOutcome: [
+        "card Strike leaves hand if accepted",
+        "hand or draw/discard state may change beyond played card"
+      ],
+      predictionChecks: [
+        {
+          type: "card_removed_from_hand",
+          prediction: "card Strike leaves hand if accepted",
+          expected: {
+            cardIndex: 0,
+            cardName: "Strike",
+            beforeHandCount: 3,
+            expectedAfterHandCount: 2
+          },
+          source: "candidate_future"
+        },
+        {
+          type: "card_flow_delta",
+          prediction: "hand or draw/discard state may change beyond played card",
+          expected: { handOrPileChanged: true },
+          source: "candidate_future"
+        }
+      ]
+    },
+    checkpoint: {
+      kind: "hard",
+      reasons: [
+        "expected_card_removed_from_hand",
+        "hand_grew_or_generated_card",
+        "draw_pile_count_changed",
+        "discard_pile_count_changed"
+      ],
+      settled: true,
+      polls: 1,
+      preStateHash: "pre-card-flow",
+      postStateHash: "post-card-flow",
+      before: "before",
+      after: "after",
+      changes: {
+        hand: {
+          before: ["Strike", "Zap", "Coolheaded"],
+          after: ["Zap", "Defend", "Orb Shard"]
+        },
+        drawPileCount: { before: 6, after: 5 },
+        discardPileCount: { before: 2, after: 3 }
+      }
+    }
+  });
+  assert.equal(cardFlowSupportedPrediction.status, "accepted");
+  assert.equal(cardFlowSupportedPrediction.attributionBuckets?.[0]?.bucket, "card_flow");
+  assert.equal(cardFlowSupportedPrediction.attributionBuckets?.[0]?.status, "supported");
 
   const lowHpMapState = normalizeGameState({
     state_type: "map",
@@ -1854,6 +1996,7 @@ try {
   const transitionsPath = path.join(runDir, "transitions.jsonl");
   assert.ok(existsSync(path.join(runDir, "metadata.json")));
   assert.ok(existsSync(path.join(runDir, "events.jsonl")));
+  assert.ok(existsSync(path.join(runDir, "proposals.jsonl")));
   assert.ok(existsSync(path.join(runDir, "replay.json")));
   assert.ok(existsSync(path.join(runDir, "snapshots")));
   assert.ok(existsSync(transitionsPath));
@@ -1883,6 +2026,13 @@ try {
   assert.ok(parsedTransition.deliberationPacket);
   assert.ok(parsedTransition.deliberationPacket.promptParity);
   assert.ok(parsedTransition.promptParity);
+  assert.ok(parsedTransition.workspaceComparison);
+  assert.equal(parsedTransition.workspaceComparison.phase, "P8");
+  assert.equal(parsedTransition.workspaceComparison.enabled, false);
+  assert.ok(parsedTransition.workspaceComparison.structuredPromptHash);
+  assert.ok(parsedTransition.shadowWorkspaceDecision);
+  assert.equal(parsedTransition.shadowWorkspaceDecision.outcome, "not_enabled");
+  assert.equal(parsedTransition.shadowWorkspaceDecision.called, false);
   assert.ok(!parsedTransition.promptParity.missingSections.includes("derived_knowledge"));
   assert.ok(parsedTransition.deliberationPacket.derivedKnowledgeSummary.present);
   assert.ok(parsedTransition.selectedPlan);
@@ -1907,7 +2057,13 @@ try {
   const replayCoverage = buildReplayCognitiveCoverage(replayRun.transitions);
   assert.equal(replayCoverage.fullShadowScaffold, 1);
   assert.equal(replayCoverage.candidateFuturePredictionChecks, 1);
+  assert.equal(replayCoverage.workspaceComparison, 1);
+  assert.equal(replayCoverage.shadowWorkspaceDecision, 1);
+  assert.equal(replayCoverage.shadowWorkspaceCalled, 0);
   assert.equal(replayCoverage.replayFrame, 1);
+  const proposalSurface = buildReplayConsolidationProposalSurface(readConsolidationProposals(runDir, replayRun.transitions));
+  assert.equal(proposalSurface.proposals, 0);
+  assert.equal(proposalSurface.mutatingOrAccepted, 0);
   const timeline = buildReplayTimeline(replayRun.transitions);
   assert.equal(timeline.length, 1);
   assert.equal(timeline[0]?.captureMode, "executor_logged");
@@ -1920,12 +2076,96 @@ try {
   assert.equal(evalReport.summary.cognitiveCoverage.candidateFuturePredictionChecks, 1);
   assert.equal(evalReport.summary.deliberationCoverage.packetPresent, 1);
   assert.equal(evalReport.summary.promptParityCoverage.promptParity, 1);
+  assert.equal(evalReport.summary.workspaceCoverage.comparison, 1);
+  assert.equal(evalReport.summary.workspaceCoverage.structuredPromptAvailable, 1);
+  assert.equal(evalReport.summary.workspaceCoverage.shadowDecision, 1);
+  assert.equal(evalReport.summary.workspaceCoverage.enabled, 0);
+  assert.equal(evalReport.summary.workspaceCoverage.shadowCalled, 0);
+  assert.equal(evalReport.summary.workspaceCoverage.agreementCounts.not_applicable, 1);
   assert.equal(evalReport.summary.predictionErrorCoverage.predictionError, 1);
   assert.equal(evalReport.summary.predictionErrorCoverage.withTypedChecks, 1);
   assert.equal(evalReport.summary.predictionErrorCoverage.withAttribution, 1);
+  assert.equal(evalReport.summary.consolidationProposalSurface.proposals, 0);
   assert.deepEqual(evalReport.warningSummary, {});
   assert.equal(evalReport.strategyMetrics.fallbackRate, 0);
   assert.deepEqual(evalReport.errors, []);
+
+  const mechanicsEvalDir = path.join(smokeMemoryDir, "mechanics-eval");
+  const mechanicsSnapshotsDir = path.join(mechanicsEvalDir, "snapshots");
+  mkdirSync(mechanicsSnapshotsDir, { recursive: true });
+  writeFileSync(path.join(mechanicsEvalDir, "metadata.json"), JSON.stringify({ runId: "run-mechanics-eval" }));
+  writeFileSync(path.join(mechanicsEvalDir, "events.jsonl"), "");
+  const mechanicsRawPath = path.join(mechanicsSnapshotsDir, "combat.raw.json");
+  writeFileSync(mechanicsRawPath, JSON.stringify(highPressureState.raw));
+  const mechanicsTransition = {
+    schemaVersion: DOMAIN_SCHEMA_VERSION,
+    runId: "run-mechanics-eval",
+    transitionId: "transition-mechanics-card-flow",
+    tick: 1,
+    source: "agent",
+    captureMode: "executor_logged",
+    isGroundTruth: true,
+    timestamp: new Date(0).toISOString(),
+    screen: "combat",
+    floor: 9,
+    hp: 42,
+    gold: 99,
+    preStateRef: mechanicsRawPath,
+    postStateRef: mechanicsRawPath,
+    rawStatePath: mechanicsRawPath,
+    rawRefs: [mechanicsRawPath],
+    compactPreState: { screen: "combat" },
+    compactPostState: { screen: "combat" },
+    compactState: { screen: "combat" },
+    legalActions: generateCandidates(highPressureState),
+    selectedAction: { kind: "play_card", cardIndex: 0, cardName: "Strike", target: "CORPSE_SLUG_0" },
+    executionResult: { status: "ok" },
+    stateDiff: {
+      checkpoint: {
+        kind: "hard",
+        settled: true,
+        reasons: [
+          "expected_card_removed_from_hand",
+          "player_energy_changed",
+          "orb_state_changed",
+          "hand_changed_beyond_expected_card_removal",
+          "draw_pile_count_changed",
+          "discard_pile_count_changed",
+          "state_hash_changed"
+        ],
+        preStateHash: "combat-before",
+        postStateHash: "combat-after"
+      }
+    },
+    decisionAudit: { chosenBy: "local", confidence: 0.5 },
+    derivedSnapshot: {},
+    memorySnapshot: {},
+    predictionError: {
+      schemaVersion: DOMAIN_SCHEMA_VERSION,
+      predicted: "card Strike leaves hand if accepted",
+      actual: "hard: expected_card_removed_from_hand, hand_changed_beyond_expected_card_removal",
+      errorType: "prediction_supported",
+      attributedLayer: "checkpoint",
+      severity: "info",
+      evidence: [],
+      attributionBuckets: [
+        {
+          bucket: "card_flow",
+          status: "supported",
+          predictionTypes: ["card_removed_from_hand", "card_flow_delta"],
+          expected: {},
+          actual: {},
+          evidenceReasons: ["expected_card_removed_from_hand", "hand_changed_beyond_expected_card_removal"],
+          severity: "info"
+        }
+      ],
+      status: "accepted"
+    }
+  };
+  writeFileSync(path.join(mechanicsEvalDir, "transitions.jsonl"), `${JSON.stringify(mechanicsTransition)}\n`);
+  const mechanicsEval = evaluateRun(mechanicsEvalDir);
+  assert.equal(mechanicsEval.errors.length, 0);
+  assert.equal(mechanicsEval.warnings.some((warning) => warning.category === "needs_fixture_bug_candidate"), false);
 
   const historicalEvalDir = path.join(smokeMemoryDir, "historical-eval");
   const historicalSnapshotsDir = path.join(historicalEvalDir, "snapshots");

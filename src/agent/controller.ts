@@ -23,6 +23,7 @@ import { selectFallbackCandidate } from "./fallback.js";
 import { isRecord, nowIso, stableId } from "./utils.js";
 import { buildCognitiveScaffold, buildConsolidationRecord, buildPredictionErrorRecord } from "./cognitiveScaffold.js";
 import { buildDerivedSnapshot } from "./derivedKnowledge.js";
+import { buildP8WorkspaceShadowFromPacket } from "./workspace.js";
 
 export interface ControllerOptions {
   dryRun?: boolean;
@@ -100,8 +101,24 @@ export class AgentController {
             uncertaintyReasons: [],
             derivedSnapshot
           });
+          const gameOverMemories = this.memory.relevantMemories(tags, 5);
           const selectedPlan = cognitive.candidateFutures[0];
           const predictionError = buildPredictionErrorRecord({ selectedPlan, checkpoint });
+          const legacyPrompt = buildDecisionPrompt({
+            state,
+            run: runForGameOverRecord,
+            candidates: [chosen],
+            memories: gameOverMemories,
+            uncertaintyReasons: []
+          });
+          const workspaceShadow = await buildP8WorkspaceShadowFromPacket({
+            legacyPrompt,
+            deliberationPacket: cognitive.deliberationPacket,
+            candidates: [chosen],
+            decisionClass: "game_over:forced_local",
+            llm: this.llm,
+            legacySelectedCandidateId: chosen.id
+          });
           this.recorder?.recordAgentDecision({
             runId: runForGameOverRecord.runId,
             tick: runForGameOverRecord.counters.ticks,
@@ -124,6 +141,8 @@ export class AgentController {
             candidateFutures: cognitive.candidateFutures,
             deliberationPacket: cognitive.deliberationPacket,
             promptParity: cognitive.promptParity,
+            workspaceComparison: workspaceShadow.comparison,
+            shadowWorkspaceDecision: workspaceShadow.shadowDecision,
             selectedPlan,
             predictionError,
             consolidation: buildConsolidationRecord({ selectedPlan, predictionError })
@@ -192,6 +211,14 @@ export class AgentController {
       available: this.llm.isAvailable?.() ?? true,
       outcome: llmWanted ? "unavailable" : "not_needed"
     };
+    const promptCandidates = scoring.candidates.slice(0, this.memory.strategy.thresholds.maxLlmCandidates);
+    const legacyPrompt = buildDecisionPrompt({
+      state,
+      run: this.memory.run,
+      candidates: promptCandidates,
+      memories: relevantMemories,
+      uncertaintyReasons: scoring.uncertaintyReasons
+    });
 
     const shouldAskLlm =
       llmWanted &&
@@ -207,23 +234,15 @@ export class AgentController {
         fallbackReason = "llm_unavailable";
         llmAudit.outcome = "unavailable";
       } else {
-        const promptCandidates = scoring.candidates.slice(0, this.memory.strategy.thresholds.maxLlmCandidates);
-        const prompt = buildDecisionPrompt({
-          state,
-          run: this.memory.run,
-          candidates: promptCandidates,
-          memories: relevantMemories,
-          uncertaintyReasons: scoring.uncertaintyReasons
-        });
         llmAudit.called = true;
-        llmAudit.promptBytes = Buffer.byteLength(prompt, "utf8");
+        llmAudit.promptBytes = Buffer.byteLength(legacyPrompt, "utf8");
         llmAudit.candidatesSent = promptCandidates.length;
         cognitive.promptParity.livePromptUsed = true;
         cognitive.promptParity.livePromptBytes = llmAudit.promptBytes;
         cognitive.deliberationPacket.promptParity = cognitive.promptParity;
 
         try {
-          llmDecision = await this.llm.decide(prompt);
+          llmDecision = await this.llm.decide(legacyPrompt);
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
           const outcome = classifyLlmError(message);
@@ -281,6 +300,14 @@ export class AgentController {
       chosen = fallbackSelection.candidate ?? chosen;
       fallbackPolicy = fallbackSelection.audit;
     }
+    const workspaceShadow = await buildP8WorkspaceShadowFromPacket({
+      legacyPrompt,
+      deliberationPacket: cognitive.deliberationPacket,
+      candidates: scoring.candidates,
+      decisionClass: `${state.screen}:${scoring.route.kind}`,
+      llm: this.llm,
+      legacySelectedCandidateId: chosen.id
+    });
 
     if (!options.dryRun) {
       const guardedChoice = this.avoidRepeatedCardSelectToggle(state, chosen, scoring.candidates);
@@ -369,6 +396,8 @@ export class AgentController {
         candidateFutures: cognitive.candidateFutures,
         deliberationPacket: cognitive.deliberationPacket,
         promptParity: cognitive.promptParity,
+        workspaceComparison: workspaceShadow.comparison,
+        shadowWorkspaceDecision: workspaceShadow.shadowDecision,
         selectedPlan,
         predictionError,
         consolidation
