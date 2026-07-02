@@ -51,6 +51,51 @@ export interface ReplayCognitiveCoverage {
   fullShadowScaffold: number;
 }
 
+export interface ReplayShadowSliceStats {
+  label: string;
+  revisionTag?: string;
+  transitions: number;
+  shadowRecords: number;
+  called: number;
+  valid: number;
+  invalidOutput: number;
+  invalidChoice: number;
+  error: number;
+  unavailable: number;
+  skipped: number;
+  missingCandidate: number;
+  agreementCounts: Record<string, number>;
+  reasonQualityCounts: Record<string, number>;
+  budgetStatusCounts: Record<string, number>;
+  invalidBucketCounts: Record<string, number>;
+  providerModeCounts: Record<string, number>;
+  ablationModeCounts: Record<string, number>;
+  retryCount: number;
+  retriedCalls: number;
+  retrySuccessCount: number;
+  averageWorkspacePromptBytes: number;
+  averageWorkspacePromptTokens: number;
+  workspacePromptSamples: number;
+  estimatedCostUsd: number;
+  actualOrEstimatedCostUsd: number;
+  averageLatencyMs: number;
+  latencySamples: number;
+  totalActualInputTokens: number;
+  totalActualOutputTokens: number;
+  totalActualTokens: number;
+  gate: {
+    status: "go" | "no_go";
+    reasons: string[];
+  };
+}
+
+export interface ReplayFreshShadowSlices {
+  last5: ReplayShadowSliceStats;
+  last20: ReplayShadowSliceStats;
+  last50: ReplayShadowSliceStats;
+  sinceLatestRevision: ReplayShadowSliceStats;
+}
+
 export interface ReplayConsolidationProposalSurface {
   proposals: number;
   fromProposalLog: number;
@@ -310,6 +355,143 @@ export function buildReplayCognitiveCoverage(transitions: TransitionRecord[]): R
   return coverage;
 }
 
+export function buildReplayFreshShadowSlices(transitions: TransitionRecord[]): ReplayFreshShadowSlices {
+  const latestRevisionTag = latestShadowRevisionTag(transitions);
+  return {
+    last5: buildReplayShadowSliceStats("last5", transitions.slice(-5)),
+    last20: buildReplayShadowSliceStats("last20", transitions.slice(-20)),
+    last50: buildReplayShadowSliceStats("last50", transitions.slice(-50)),
+    sinceLatestRevision: buildReplayShadowSliceStats(
+      latestRevisionTag ? `since:${latestRevisionTag}` : "since:unversioned",
+      latestRevisionTag
+        ? transitions.filter((transition) => shadowRevisionTag(transition) === latestRevisionTag)
+        : transitions,
+      latestRevisionTag
+    )
+  };
+}
+
+export function buildReplayShadowSliceStats(
+  label: string,
+  transitions: TransitionRecord[],
+  revisionTag?: string
+): ReplayShadowSliceStats {
+  const stats: ReplayShadowSliceStats = {
+    label,
+    revisionTag,
+    transitions: transitions.length,
+    shadowRecords: 0,
+    called: 0,
+    valid: 0,
+    invalidOutput: 0,
+    invalidChoice: 0,
+    error: 0,
+    unavailable: 0,
+    skipped: 0,
+    missingCandidate: 0,
+    agreementCounts: {},
+    reasonQualityCounts: {},
+    budgetStatusCounts: {},
+    invalidBucketCounts: {},
+    providerModeCounts: {},
+    ablationModeCounts: {},
+    retryCount: 0,
+    retriedCalls: 0,
+    retrySuccessCount: 0,
+    averageWorkspacePromptBytes: 0,
+    averageWorkspacePromptTokens: 0,
+    workspacePromptSamples: 0,
+    estimatedCostUsd: 0,
+    actualOrEstimatedCostUsd: 0,
+    averageLatencyMs: 0,
+    latencySamples: 0,
+    totalActualInputTokens: 0,
+    totalActualOutputTokens: 0,
+    totalActualTokens: 0,
+    gate: {
+      status: "no_go",
+      reasons: ["no_shadow_records"]
+    }
+  };
+  for (const transition of transitions) {
+    if (!isRecord(transition.shadowWorkspaceDecision)) continue;
+    stats.shadowRecords += 1;
+    const shadow = transition.shadowWorkspaceDecision;
+    if (shadow.called === true) stats.called += 1;
+    const outcome = typeof shadow.outcome === "string" ? shadow.outcome : "unknown";
+    if (outcome === "valid") stats.valid += 1;
+    if (outcome === "invalid_output") stats.invalidOutput += 1;
+    if (outcome === "invalid_choice") stats.invalidChoice += 1;
+    if (outcome === "error") stats.error += 1;
+    if (outcome === "unavailable") stats.unavailable += 1;
+    if (outcome === "skipped") stats.skipped += 1;
+    const agreement = typeof shadow.agreement === "string" ? shadow.agreement : "unknown";
+    stats.agreementCounts[agreement] = (stats.agreementCounts[agreement] ?? 0) + 1;
+    if (agreement === "missing_candidate") stats.missingCandidate += 1;
+    if (typeof shadow.reasonQuality === "string") {
+      stats.reasonQualityCounts[shadow.reasonQuality] = (stats.reasonQualityCounts[shadow.reasonQuality] ?? 0) + 1;
+    }
+    if (typeof shadow.providerMode === "string") {
+      stats.providerModeCounts[shadow.providerMode] = (stats.providerModeCounts[shadow.providerMode] ?? 0) + 1;
+    }
+    if (typeof shadow.ablationMode === "string") {
+      stats.ablationModeCounts[shadow.ablationMode] = (stats.ablationModeCounts[shadow.ablationMode] ?? 0) + 1;
+    }
+    if (typeof shadow.budgetStatus === "string") {
+      stats.budgetStatusCounts[shadow.budgetStatus] = (stats.budgetStatusCounts[shadow.budgetStatus] ?? 0) + 1;
+    }
+    if (typeof shadow.retryCount === "number") {
+      stats.retryCount += shadow.retryCount;
+      if (shadow.retryCount > 0) stats.retriedCalls += 1;
+    }
+    if (shadow.emptyContentRetrySucceeded === true) {
+      stats.retrySuccessCount += 1;
+    }
+    if (typeof shadow.workspacePromptBytes === "number") {
+      stats.averageWorkspacePromptBytes += shadow.workspacePromptBytes;
+      stats.workspacePromptSamples += 1;
+    } else if (isRecord(transition.workspaceComparison) && typeof transition.workspaceComparison.structuredPromptBytes === "number") {
+      stats.averageWorkspacePromptBytes += transition.workspaceComparison.structuredPromptBytes;
+      stats.workspacePromptSamples += 1;
+    }
+    if (typeof shadow.workspacePromptTokens === "number") {
+      stats.averageWorkspacePromptTokens += shadow.workspacePromptTokens;
+    } else if (isRecord(transition.workspaceComparison) && typeof transition.workspaceComparison.structuredTokenEstimate === "number") {
+      stats.averageWorkspacePromptTokens += transition.workspaceComparison.structuredTokenEstimate;
+    }
+    if (outcome === "invalid_output" || outcome === "invalid_choice" || outcome === "error") {
+      const invalidBucket = [
+        typeof shadow.providerParseState === "string" ? shadow.providerParseState : undefined,
+        typeof shadow.providerOutputKind === "string" ? shadow.providerOutputKind : undefined,
+        typeof shadow.validationError === "string" ? shadow.validationError : undefined,
+        typeof shadow.error === "string" ? shadow.error : undefined,
+        outcome
+      ].find((value) => typeof value === "string" && value.length > 0) ?? "unknown";
+      stats.invalidBucketCounts[invalidBucket] = (stats.invalidBucketCounts[invalidBucket] ?? 0) + 1;
+    }
+    if (typeof shadow.estimatedCostUsd === "number") {
+      stats.actualOrEstimatedCostUsd += shadow.estimatedCostUsd;
+      stats.estimatedCostUsd += shadow.estimatedCostUsd;
+    } else if (isRecord(transition.workspaceComparison) && isRecord(transition.workspaceComparison.budget) && typeof transition.workspaceComparison.budget.estimatedCostUsd === "number") {
+      stats.estimatedCostUsd += transition.workspaceComparison.budget.estimatedCostUsd;
+    }
+    if (typeof shadow.latencyMs === "number") {
+      stats.averageLatencyMs += shadow.latencyMs;
+      stats.latencySamples += 1;
+    }
+    if (typeof shadow.actualInputTokens === "number") stats.totalActualInputTokens += shadow.actualInputTokens;
+    if (typeof shadow.actualOutputTokens === "number") stats.totalActualOutputTokens += shadow.actualOutputTokens;
+    if (typeof shadow.actualTotalTokens === "number") stats.totalActualTokens += shadow.actualTotalTokens;
+  }
+  stats.estimatedCostUsd = Number(stats.estimatedCostUsd.toFixed(6));
+  stats.actualOrEstimatedCostUsd = Number(stats.actualOrEstimatedCostUsd.toFixed(6));
+  stats.averageLatencyMs = stats.latencySamples > 0 ? Number((stats.averageLatencyMs / stats.latencySamples).toFixed(1)) : 0;
+  stats.averageWorkspacePromptBytes = stats.workspacePromptSamples > 0 ? Number((stats.averageWorkspacePromptBytes / stats.workspacePromptSamples).toFixed(1)) : 0;
+  stats.averageWorkspacePromptTokens = stats.workspacePromptSamples > 0 ? Number((stats.averageWorkspacePromptTokens / stats.workspacePromptSamples).toFixed(1)) : 0;
+  stats.gate = buildReplayShadowSliceGate(stats);
+  return stats;
+}
+
 export function formatReplayCognitiveCoverage(coverage: ReplayCognitiveCoverage): string {
   const total = Math.max(1, coverage.transitions);
   const item = (label: string, value: number): string => `${label}=${value}/${coverage.transitions} (${((value / total) * 100).toFixed(1)}%)`;
@@ -338,6 +520,33 @@ export function formatReplayCognitiveCoverage(coverage: ReplayCognitiveCoverage)
     item("consolidation", coverage.consolidation),
     item("fullShadowScaffold", coverage.fullShadowScaffold)
   ].join(", ");
+}
+
+export function formatReplayFreshShadowSlices(slices: ReplayFreshShadowSlices): string {
+  return [
+    formatReplayShadowSliceStats(slices.last5),
+    formatReplayShadowSliceStats(slices.last20),
+    formatReplayShadowSliceStats(slices.last50),
+    formatReplayShadowSliceStats(slices.sinceLatestRevision)
+  ].join(" | ");
+}
+
+export function formatReplayShadowSliceStats(stats: ReplayShadowSliceStats): string {
+  return [
+    `${stats.label}`,
+    `called=${stats.called}`,
+    `valid=${stats.valid}`,
+    `invalid=${stats.invalidOutput + stats.invalidChoice}`,
+    `error=${stats.error}`,
+    `missingCandidate=${stats.missingCandidate}`,
+    `ablation=${JSON.stringify(stats.ablationModeCounts)}`,
+    `modes=${JSON.stringify(stats.providerModeCounts)}`,
+    `workspaceTokensAvg=${stats.averageWorkspacePromptTokens}`,
+    `retries=${stats.retryCount}/${stats.retrySuccessCount}`,
+    `invalidBuckets=${JSON.stringify(stats.invalidBucketCounts)}`,
+    `gate=${stats.gate.status}`,
+    `reasons=${JSON.stringify(stats.gate.reasons)}`
+  ].join(" ");
 }
 
 export function formatReplayConsolidationProposalSurface(surface: ReplayConsolidationProposalSurface): string {
@@ -405,6 +614,42 @@ function summarizeTransition(transition: TransitionRecord, checkpointKind?: stri
     `action=${shortAction(transition.selectedAction)}`,
     `checkpoint=${checkpointKind ?? "unknown"}`
   ].join(" ");
+}
+
+function buildReplayShadowSliceGate(stats: ReplayShadowSliceStats): ReplayShadowSliceStats["gate"] {
+  const reasons: string[] = [];
+  if (stats.called === 0) reasons.push("no_real_shadow_calls");
+  if (stats.valid === 0) reasons.push("no_valid_shadow_decisions");
+  if (stats.invalidOutput > 0) reasons.push("invalid_output_present");
+  if (stats.invalidChoice > 0) reasons.push("invalid_choice_present");
+  if (stats.error > 0) reasons.push("shadow_error_present");
+  if (stats.missingCandidate > 0) reasons.push("missing_candidate_present");
+  if ((stats.budgetStatusCounts.token_budget_exceeded ?? 0) > 0) reasons.push("token_budget_exceeded");
+  if ((stats.budgetStatusCounts.call_budget_exceeded ?? 0) > 0) reasons.push("call_budget_exceeded");
+  if ((stats.budgetStatusCounts.cost_budget_exceeded ?? 0) > 0) reasons.push("cost_budget_exceeded");
+  if ((stats.reasonQualityCounts.missing ?? 0) > 0) reasons.push("missing_reason_quality");
+  return {
+    status: reasons.length === 0 ? "go" : "no_go",
+    reasons
+  };
+}
+
+function latestShadowRevisionTag(transitions: TransitionRecord[]): string | undefined {
+  for (let index = transitions.length - 1; index >= 0; index -= 1) {
+    const revisionTag = shadowRevisionTag(transitions[index]);
+    if (revisionTag) return revisionTag;
+  }
+  return undefined;
+}
+
+function shadowRevisionTag(transition: TransitionRecord): string | undefined {
+  if (isRecord(transition.shadowWorkspaceDecision) && typeof transition.shadowWorkspaceDecision.revisionTag === "string") {
+    return transition.shadowWorkspaceDecision.revisionTag;
+  }
+  if (isRecord(transition.workspaceComparison) && typeof transition.workspaceComparison.revisionTag === "string") {
+    return transition.workspaceComparison.revisionTag;
+  }
+  return undefined;
 }
 
 function proposalStableMutation(proposal: JsonRecord): boolean {

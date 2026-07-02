@@ -87,6 +87,8 @@ As of P8, replay/eval/review also report the DeliberationPacket strategic worksp
 
 - `workspaceComparison`: legacy prompt hash vs structured workspace hash, byte/token estimates, decision class, section coverage, missing sections, required/preserved legacy-information sections, information-preservation score, provider readiness, and gated readiness.
 - `shadowWorkspaceDecision`: optional structured-prompt LLM call result, skipped/unavailable path, provider/model identity, estimated/actual tokens, max output tokens, latency, estimated cost, budget status, agreement/disagreement with the live selected candidate, invalid output, missing candidate, reason quality, risk tags, missing info, scaffold feedback, and errors.
+- Replay/eval/review fresh slices also bucket `empty_content`, track provider mode (`json_mode` vs `non_json_strict`), and report retry count / retry success for the single provider-level rescue retry.
+- P8.4 fresh slices also show workspace ablation mode (`full`, `compact`, `ultra_compact`) and average workspace prompt size so empty-content rate can be compared against token/cost/latency without changing live behavior.
 - `STS2_P8_WORKSPACE_SHADOW` defaults off, so fresh transitions normally show comparison coverage with readiness blocked by the flag.
 - `STS2_P8_WORKSPACE_CALL` separately gates any structured shadow LLM call. With defaults, P8 never calls an extra LLM and never changes action selection.
 - DeepSeek V4 Flash provider plumbing is prepared, but missing `STS2_DEEPSEEK_API_KEY` must be reported as `needs_api_key`, `skipped`, or `unavailable`; eval must not treat this as a fake model result.

@@ -335,6 +335,8 @@ export interface DeliberationWorkspaceComparison {
   schemaVersion: number;
   phase: "P8";
   mode: "shadow";
+  revisionTag?: string;
+  ablationMode?: string;
   featureFlag: string;
   enabled: boolean;
   structuredPromptAvailable: boolean;
@@ -372,6 +374,7 @@ export interface ShadowWorkspaceDecision {
   schemaVersion: number;
   phase: "P8";
   mode: "shadow";
+  revisionTag?: string;
   enabled: boolean;
   attempted: boolean;
   called: boolean;
@@ -388,6 +391,17 @@ export interface ShadowWorkspaceDecision {
   promptHash?: string;
   provider?: string;
   model?: string;
+  providerMode?: string;
+  ablationMode?: string;
+  workspacePromptBytes?: number;
+  workspacePromptTokens?: number;
+  providerOutputKind?: string;
+  providerOutputPreview?: string;
+  providerOutputBytes?: number;
+  providerParseState?: string;
+  retryCount?: number;
+  emptyContentRetryCount?: number;
+  emptyContentRetrySucceeded?: boolean;
   estimatedInputTokens?: number;
   actualInputTokens?: number;
   actualOutputTokens?: number;

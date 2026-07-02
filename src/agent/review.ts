@@ -3,7 +3,11 @@ import path from "node:path";
 import type { DecisionLogEntry, JsonRecord, RunMemory } from "./types.js";
 import type { MemoryManager } from "./memory.js";
 import { agentRoot, isRecord } from "./utils.js";
-import { buildReplayConsolidationProposalSurface, readConsolidationProposals } from "../replay/reader.js";
+import {
+  buildReplayConsolidationProposalSurface,
+  buildReplayFreshShadowSlices,
+  readConsolidationProposals
+} from "../replay/reader.js";
 
 export function buildReviewReport(memory: MemoryManager): JsonRecord {
   const decisions = memory.run.keyDecisions;
@@ -102,6 +106,30 @@ function summarizeCurrentRunCognitiveCoverage(runId: string): JsonRecord {
     counts[transition.shadowWorkspaceDecision.reasonQuality] = (counts[transition.shadowWorkspaceDecision.reasonQuality] ?? 0) + 1;
     return counts;
   }, {});
+  const workspaceProviderModeCounts = transitions.reduce<Record<string, number>>((counts, transition) => {
+    if (!isRecord(transition.shadowWorkspaceDecision) || typeof transition.shadowWorkspaceDecision.providerMode !== "string") return counts;
+    counts[transition.shadowWorkspaceDecision.providerMode] = (counts[transition.shadowWorkspaceDecision.providerMode] ?? 0) + 1;
+    return counts;
+  }, {});
+  const workspaceAblationModeCounts = transitions.reduce<Record<string, number>>((counts, transition) => {
+    const mode = isRecord(transition.shadowWorkspaceDecision) && typeof transition.shadowWorkspaceDecision.ablationMode === "string"
+      ? transition.shadowWorkspaceDecision.ablationMode
+      : isRecord(transition.workspaceComparison) && typeof transition.workspaceComparison.ablationMode === "string"
+        ? transition.workspaceComparison.ablationMode
+        : undefined;
+    if (mode) counts[mode] = (counts[mode] ?? 0) + 1;
+    return counts;
+  }, {});
+  const workspaceRetryCount = transitions.reduce((sum, transition) => (
+    isRecord(transition.shadowWorkspaceDecision) && typeof transition.shadowWorkspaceDecision.retryCount === "number"
+      ? sum + transition.shadowWorkspaceDecision.retryCount
+      : sum
+  ), 0);
+  const workspaceRetrySuccessCount = transitions.reduce((sum, transition) => (
+    isRecord(transition.shadowWorkspaceDecision) && transition.shadowWorkspaceDecision.emptyContentRetrySucceeded === true
+      ? sum + 1
+      : sum
+  ), 0);
   const workspaceCostEstimate = transitions.reduce((sum, transition) => {
     if (isRecord(transition.shadowWorkspaceDecision) && typeof transition.shadowWorkspaceDecision.estimatedCostUsd === "number") {
       return sum + transition.shadowWorkspaceDecision.estimatedCostUsd;
@@ -115,6 +143,17 @@ function summarizeCurrentRunCognitiveCoverage(runId: string): JsonRecord {
     .map((transition) => isRecord(transition.shadowWorkspaceDecision) && typeof transition.shadowWorkspaceDecision.latencyMs === "number"
       ? transition.shadowWorkspaceDecision.latencyMs
       : undefined)
+    .filter((value): value is number => value !== undefined);
+  const workspacePromptTokens = transitions
+    .map((transition) => {
+      if (isRecord(transition.shadowWorkspaceDecision) && typeof transition.shadowWorkspaceDecision.workspacePromptTokens === "number") {
+        return transition.shadowWorkspaceDecision.workspacePromptTokens;
+      }
+      if (isRecord(transition.workspaceComparison) && typeof transition.workspaceComparison.structuredTokenEstimate === "number") {
+        return transition.workspaceComparison.structuredTokenEstimate;
+      }
+      return undefined;
+    })
     .filter((value): value is number => value !== undefined);
   const workspacePreservationScores = transitions
     .map((transition) => {
@@ -134,6 +173,7 @@ function summarizeCurrentRunCognitiveCoverage(runId: string): JsonRecord {
   const replayFrame = count((transition) => isRecord(transition.replayFrame));
   const consolidation = count((transition) => isRecord(transition.consolidation));
   const proposalSurface = buildReplayConsolidationProposalSurface(readConsolidationProposals(path.dirname(transitionsPath), transitions));
+  const freshSlices = buildReplayFreshShadowSlices(transitions as any);
   const consolidationStatusCounts = transitions.reduce<Record<string, number>>((counts, transition) => {
     if (!isRecord(transition.consolidation)) return counts;
     const status = typeof transition.consolidation.status === "string" ? transition.consolidation.status : "unknown";
@@ -161,10 +201,18 @@ function summarizeCurrentRunCognitiveCoverage(runId: string): JsonRecord {
     workspaceProviderReadinessCounts,
     workspaceBudgetStatusCounts,
     workspaceReasonQualityCounts,
+    workspaceProviderModeCounts,
+    workspaceAblationModeCounts,
+    workspaceRetryCount,
+    workspaceRetrySuccessCount,
     workspaceEstimatedCostUsd: round(workspaceCostEstimate),
     averageWorkspaceLatencyMs:
       workspaceLatencies.length > 0
         ? round(workspaceLatencies.reduce((sum, value) => sum + value, 0) / workspaceLatencies.length)
+        : undefined,
+    averageWorkspacePromptTokens:
+      workspacePromptTokens.length > 0
+        ? round(workspacePromptTokens.reduce((sum, value) => sum + value, 0) / workspacePromptTokens.length)
         : undefined,
     p8RolloutGate: buildP8ReviewGate({
       shadowWorkspaceCalled,
@@ -173,6 +221,7 @@ function summarizeCurrentRunCognitiveCoverage(runId: string): JsonRecord {
       workspaceReasonQualityCounts,
       transitions
     }),
+    freshSlices,
     averageWorkspaceInformationPreservation:
       workspacePreservationScores.length > 0
         ? round(workspacePreservationScores.reduce((sum, score) => sum + score, 0) / workspacePreservationScores.length)

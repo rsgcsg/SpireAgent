@@ -2,9 +2,11 @@ import path from "node:path";
 import {
   buildReplayCognitiveCoverage,
   buildReplayConsolidationProposalSurface,
+  buildReplayFreshShadowSlices,
   buildReplayTimeline,
   formatReplayCognitiveCoverage,
   formatReplayConsolidationProposalSurface,
+  formatReplayFreshShadowSlices,
   formatReplayTimeline,
   readConsolidationProposals,
   readReplayRun
@@ -22,10 +24,12 @@ async function main(): Promise<void> {
 
   const run = readReplayRun(runIdOrPath);
   const cognitiveCoverage = buildReplayCognitiveCoverage(run.transitions);
+  const freshShadowSlices = buildReplayFreshShadowSlices(run.transitions);
   const proposalSurface = buildReplayConsolidationProposalSurface(readConsolidationProposals(run.runDir, run.transitions));
   console.log(`Run: ${path.basename(run.runDir)}`);
   console.log(`Transitions: ${run.transitions.length}`);
   console.log(`Cognitive coverage: ${formatReplayCognitiveCoverage(cognitiveCoverage)}`);
+  console.log(`Fresh shadow slices: ${formatReplayFreshShadowSlices(freshShadowSlices)}`);
   console.log(`Consolidation proposal surface: ${formatReplayConsolidationProposalSurface(proposalSurface)}`);
   if (command === "proposals") {
     console.log(JSON.stringify(proposalSurface, null, 2));

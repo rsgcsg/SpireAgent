@@ -37,6 +37,9 @@ npm run agent:tick -- --dry-run
 ```
 
 With the default `.env.local` settings, the project allows at most one guarded shadow call per process and does not execute the DeepSeek decision.
+The canonical limit variable is `STS2_P8_WORKSPACE_MAX_SHADOW_CALLS`; `STS2_P8_MAX_SHADOW_CALLS` is accepted as a backward-compatible alias.
+DeepSeek shadow output defaults to `STS2_DEEPSEEK_OUTPUT_MODE=json_mode` with `response_format: { "type": "json_object" }`, `STS2_DEEPSEEK_TEMPERATURE=0`, `STS2_DEEPSEEK_TOP_P=0.1`, and a single `STS2_DEEPSEEK_EMPTY_RETRY_LIMIT=1` rescue retry for `empty_content`. Set `STS2_DEEPSEEK_OUTPUT_MODE=non_json_strict` only for A/B shadow testing.
+P8.4 shadow prompt ablation uses `STS2_P8_WORKSPACE_ABLATION_MODE=full` by default. For small shadow-only experiments, use `compact` or `ultra_compact`; these modes do not change the live prompt or execute the DeepSeek decision.
 
 Do not enable live P8 integration by default. The first allowed live experiment is later P8.5-only and must be additive:
 

@@ -8,9 +8,11 @@ import { normalizeGameState } from "../agent/state.js";
 import { agentRoot, isRecord } from "../agent/utils.js";
 import {
   buildReplayConsolidationProposalSurface,
+  buildReplayFreshShadowSlices,
   readConsolidationProposals,
   resolveRunDir,
-  type ReplayConsolidationProposalSurface
+  type ReplayConsolidationProposalSurface,
+  type ReplayFreshShadowSlices
 } from "../replay/reader.js";
 
 export type EvalStatus = "PASS" | "WARN" | "FAIL";
@@ -144,9 +146,17 @@ export interface EvalWorkspaceCoverage {
   budgetStatusCounts: Record<string, number>;
   skippedReasonCounts: Record<string, number>;
   reasonQualityCounts: Record<string, number>;
+  providerModeCounts: Record<string, number>;
+  ablationModeCounts: Record<string, number>;
   missingCandidate: number;
   missingInfoCount: number;
   scaffoldFeedbackCount: number;
+  retryCount: number;
+  retriedCalls: number;
+  retrySuccessCount: number;
+  averageWorkspacePromptBytes: number;
+  averageWorkspacePromptTokens: number;
+  workspacePromptSamples: number;
   estimatedCostUsd: number;
   actualOrEstimatedCostUsd: number;
   averageLatencyMs: number;
@@ -159,6 +169,7 @@ export interface EvalWorkspaceCoverage {
     firstLiveMode: "additive_legacy_prompt_plus_compact_workspace_summary";
     structuredPromptOnlyDefaultAllowed: false;
   };
+  freshSlices?: ReplayFreshShadowSlices;
   skipped: number;
   unavailable: number;
   rates: Record<string, number>;
@@ -351,6 +362,7 @@ export function evaluateRun(runIdOrPath?: string): EvalReport {
   const validTransitions = transitions
     .map((line) => line.transition)
     .filter((transition): transition is TransitionRecord => Boolean(transition));
+  workspaceCoverage.freshSlices = buildReplayFreshShadowSlices(validTransitions);
   const consolidationProposalSurface = buildReplayConsolidationProposalSurface(readConsolidationProposals(runDir, validTransitions));
   for (const issue of buildStrategyWarnings(strategyMetrics)) {
     addWarning(warnings, warningSummary, issue);
@@ -1050,9 +1062,17 @@ function createWorkspaceCoverage(): EvalWorkspaceCoverage {
     budgetStatusCounts: {},
     skippedReasonCounts: {},
     reasonQualityCounts: {},
+    providerModeCounts: {},
+    ablationModeCounts: {},
     missingCandidate: 0,
     missingInfoCount: 0,
     scaffoldFeedbackCount: 0,
+    retryCount: 0,
+    retriedCalls: 0,
+    retrySuccessCount: 0,
+    averageWorkspacePromptBytes: 0,
+    averageWorkspacePromptTokens: 0,
+    workspacePromptSamples: 0,
     estimatedCostUsd: 0,
     actualOrEstimatedCostUsd: 0,
     averageLatencyMs: 0,
@@ -1149,8 +1169,32 @@ function collectWorkspaceCoverage(coverage: EvalWorkspaceCoverage, transition: T
   }
   const reasonQuality = typeof shadowDecision.reasonQuality === "string" ? shadowDecision.reasonQuality : undefined;
   if (reasonQuality) coverage.reasonQualityCounts[reasonQuality] = (coverage.reasonQualityCounts[reasonQuality] ?? 0) + 1;
+  const providerMode = typeof shadowDecision.providerMode === "string" ? shadowDecision.providerMode : undefined;
+  if (providerMode) coverage.providerModeCounts[providerMode] = (coverage.providerModeCounts[providerMode] ?? 0) + 1;
+  const ablationMode = typeof shadowDecision.ablationMode === "string"
+    ? shadowDecision.ablationMode
+    : typeof comparison?.ablationMode === "string" ? comparison.ablationMode : undefined;
+  if (ablationMode) coverage.ablationModeCounts[ablationMode] = (coverage.ablationModeCounts[ablationMode] ?? 0) + 1;
   if (Array.isArray(shadowDecision.missingInfo)) coverage.missingInfoCount += shadowDecision.missingInfo.length;
   if (Array.isArray(shadowDecision.scaffoldFeedback)) coverage.scaffoldFeedbackCount += shadowDecision.scaffoldFeedback.length;
+  if (typeof shadowDecision.retryCount === "number") {
+    coverage.retryCount += shadowDecision.retryCount;
+    if (shadowDecision.retryCount > 0) coverage.retriedCalls += 1;
+  }
+  if (shadowDecision.emptyContentRetrySucceeded === true) coverage.retrySuccessCount += 1;
+  const workspacePromptBytes = typeof shadowDecision.workspacePromptBytes === "number"
+    ? shadowDecision.workspacePromptBytes
+    : typeof comparison?.structuredPromptBytes === "number" ? comparison.structuredPromptBytes : undefined;
+  if (typeof workspacePromptBytes === "number") {
+    coverage.averageWorkspacePromptBytes += workspacePromptBytes;
+    coverage.workspacePromptSamples += 1;
+  }
+  const workspacePromptTokens = typeof shadowDecision.workspacePromptTokens === "number"
+    ? shadowDecision.workspacePromptTokens
+    : typeof comparison?.structuredTokenEstimate === "number" ? comparison.structuredTokenEstimate : undefined;
+  if (typeof workspacePromptTokens === "number") {
+    coverage.averageWorkspacePromptTokens += workspacePromptTokens;
+  }
   if (typeof shadowDecision.estimatedCostUsd === "number") coverage.actualOrEstimatedCostUsd += shadowDecision.estimatedCostUsd;
   if (typeof shadowDecision.latencyMs === "number") {
     coverage.averageLatencyMs += shadowDecision.latencyMs;
@@ -1174,6 +1218,12 @@ function finishWorkspaceCoverage(coverage: EvalWorkspaceCoverage, transitionCoun
     : 0;
   coverage.averageEstimatedInputTokens = coverage.tokenSamples > 0
     ? Number((coverage.averageEstimatedInputTokens / coverage.tokenSamples).toFixed(1))
+    : 0;
+  coverage.averageWorkspacePromptBytes = coverage.workspacePromptSamples > 0
+    ? Number((coverage.averageWorkspacePromptBytes / coverage.workspacePromptSamples).toFixed(1))
+    : 0;
+  coverage.averageWorkspacePromptTokens = coverage.workspacePromptSamples > 0
+    ? Number((coverage.averageWorkspacePromptTokens / coverage.workspacePromptSamples).toFixed(1))
     : 0;
   coverage.estimatedCostUsd = Number(coverage.estimatedCostUsd.toFixed(6));
   coverage.actualOrEstimatedCostUsd = Number(coverage.actualOrEstimatedCostUsd.toFixed(6));

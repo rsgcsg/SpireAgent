@@ -21,9 +21,11 @@ import { selectFallbackCandidate } from "./fallback.js";
 import {
   DeepSeekV4FlashDecider,
   NoopLlmDecider,
+  buildDeepSeekRequestBody,
   createLlmDecider,
   createP8WorkspaceDecider,
   parseWorkspaceJsonDecision,
+  resolveDeepSeekResponseMode,
   validateLlmDecisionForCandidates,
   type LlmDecider
 } from "./llm.js";
@@ -44,8 +46,11 @@ import { buildCognitiveScaffold, buildConsolidationRecord, buildPredictionErrorR
 import {
   buildP8WorkspaceShadowFromPacket,
   buildCompactWorkspaceSummary,
+  buildDeliberationWorkspacePrompt,
   buildStructuredDeliberationWorkspacePrompt,
-  buildWorkspaceComparison
+  buildWorkspaceComparison,
+  normalizeWorkspaceAblationMode,
+  workspaceOptionsFromEnv
 } from "./workspace.js";
 import {
   DOMAIN_SCHEMA_VERSION,
@@ -233,10 +238,22 @@ const workspaceCandidate: ScoredCandidate = {
   reasons: ["test candidate"],
   risks: []
 };
-const structuredWorkspacePrompt = buildStructuredDeliberationWorkspacePrompt(deliberationPacket);
-assert.match(structuredWorkspacePrompt, /structured strategic workspace/);
+const baselineStructuredWorkspacePrompt = buildStructuredDeliberationWorkspacePrompt(deliberationPacket);
+assert.match(baselineStructuredWorkspacePrompt, /structured strategic workspace/);
 const compactWorkspaceSummary = buildCompactWorkspaceSummary(deliberationPacket);
 assert.match(compactWorkspaceSummary, /p8_workspace_summary/);
+const structuredWorkspacePrompt = buildStructuredDeliberationWorkspacePrompt(deliberationPacket, [workspaceCandidate]);
+assert.match(structuredWorkspacePrompt, /allowed_candidate_ids/);
+assert.match(structuredWorkspacePrompt, /choose_exactly_one_candidate_id_from_allowed_list/);
+assert.match(structuredWorkspacePrompt, /FINAL_ALLOWED_CANDIDATE_IDS/);
+assert.match(structuredWorkspacePrompt, /Return JSON now/);
+const compactShadowPrompt = buildDeliberationWorkspacePrompt(deliberationPacket, [workspaceCandidate], "compact");
+const ultraCompactShadowPrompt = buildDeliberationWorkspacePrompt(deliberationPacket, [workspaceCandidate], "ultra_compact");
+assert.ok(compactShadowPrompt.length < structuredWorkspacePrompt.length);
+assert.ok(ultraCompactShadowPrompt.length < compactShadowPrompt.length);
+assert.equal(normalizeWorkspaceAblationMode("compact"), "compact");
+assert.equal(normalizeWorkspaceAblationMode("ultra"), "ultra_compact");
+assert.equal(normalizeWorkspaceAblationMode("unknown"), "full");
 const workspaceComparison = buildWorkspaceComparison({
   legacyPrompt: JSON.stringify({ candidates: [{ id: "play-strike" }] }),
   deliberationPacket,
@@ -244,6 +261,8 @@ const workspaceComparison = buildWorkspaceComparison({
   decisionClass: "combat:test",
   options: { shadowEnabled: false, callEnabled: false }
 });
+assert.ok(workspaceComparison.revisionTag);
+assert.equal(workspaceComparison.ablationMode, "full");
 assert.equal(workspaceComparison.enabled, false);
 assert.equal(workspaceComparison.structuredPromptAvailable, true);
 assert.equal(workspaceComparison.gatedReadiness, "not_ready");
@@ -271,6 +290,8 @@ const p8Shadow = await buildP8WorkspaceShadowFromPacket({
 });
 assert.equal(p8Shadow.shadowDecision.called, false);
 assert.equal(p8Shadow.shadowDecision.outcome, "not_enabled");
+assert.equal(p8Shadow.shadowDecision.ablationMode, "full");
+assert.ok(p8Shadow.shadowDecision.workspacePromptTokens);
 const p8ShadowReadyButSkipped = await buildP8WorkspaceShadowFromPacket({
   legacyPrompt: JSON.stringify({ candidates: [{ id: "play-strike" }] }),
   deliberationPacket,
@@ -310,8 +331,74 @@ const parsedWorkspaceDecision = parseWorkspaceJsonDecision(JSON.stringify({
 }));
 assert.equal(parsedWorkspaceDecision?.candidateId, "play-strike");
 assert.deepEqual(parsedWorkspaceDecision?.riskTags, ["tempo"]);
+const parsedNestedWorkspaceDecision = parseWorkspaceJsonDecision(JSON.stringify({
+  decision: {
+    selected_candidate_id: "play-strike",
+    reason_brief: "Take the exact listed action.",
+    risk_tags: ["pressure"],
+    missing_info: ["future draw"],
+    scaffold_feedback: ["salience was useful"]
+  }
+}));
+assert.equal(parsedNestedWorkspaceDecision?.candidateId, "play-strike");
+assert.equal(parsedNestedWorkspaceDecision?.reason, "Take the exact listed action.");
+assert.deepEqual(parsedNestedWorkspaceDecision?.riskTags, ["pressure"]);
+const parsedRepairedWorkspaceDecision = parseWorkspaceJsonDecision("{\"candidateId\":\"play-strike\",\"reasonBrief\":\"Close the turn safely\",");
+assert.equal(parsedRepairedWorkspaceDecision?.candidateId, "play-strike");
+assert.equal(parsedRepairedWorkspaceDecision?.reason, "Close the turn safely");
+const parsedArrayWrappedWorkspaceDecision = parseWorkspaceJsonDecision("[{\"selectedCandidateId\":\"play-strike\",\"reasonBrief\":\"Array-wrapped but still explicit\"}]");
+assert.equal(parsedArrayWrappedWorkspaceDecision?.candidateId, "play-strike");
+assert.equal(resolveDeepSeekResponseMode(undefined, undefined), "json_mode");
+assert.equal(resolveDeepSeekResponseMode("non_json_strict", undefined), "non_json_strict");
+assert.equal(resolveDeepSeekResponseMode(undefined, "0"), "non_json_strict");
+const jsonModeRequest = buildDeepSeekRequestBody({
+  model: "deepseek-v4-flash",
+  maxOutputTokens: 400,
+  temperature: 0,
+  topP: 0.1,
+  outputMode: "json_mode",
+  requestKind: "primary",
+  prompt: "{\"allowed_candidate_ids\":[\"play-strike\"]}"
+});
+assert.deepEqual(jsonModeRequest.response_format, { type: "json_object" });
+const nonJsonRequest = buildDeepSeekRequestBody({
+  model: "deepseek-v4-flash",
+  maxOutputTokens: 400,
+  temperature: 0,
+  topP: 0.1,
+  outputMode: "non_json_strict",
+  requestKind: "primary",
+  prompt: "{\"allowed_candidate_ids\":[\"play-strike\"]}"
+});
+assert.equal("response_format" in nonJsonRequest, false);
 const deepSeekWithoutKey = new DeepSeekV4FlashDecider({ apiKey: "" });
 assert.equal(deepSeekWithoutKey.isAvailable(), false);
+let fetchCalls = 0;
+const deepSeekEmptyRetry = new DeepSeekV4FlashDecider({
+  apiKey: "fixture-key",
+  emptyContentRetryLimit: 1,
+  retryLimit: 0,
+  fetchImpl: async () => {
+    fetchCalls += 1;
+    const content = fetchCalls === 1
+      ? ""
+      : "{\"selectedCandidateId\":\"play-strike\",\"reasonBrief\":\"Rescue prompt returned a candidate.\"}";
+    return new Response(JSON.stringify({
+      choices: [{ message: { content } }],
+      usage: { prompt_tokens: 11, completion_tokens: 7, total_tokens: 18 }
+    }), {
+      status: 200,
+      headers: { "content-type": "application/json" }
+    });
+  }
+});
+const retriedDecision = await deepSeekEmptyRetry.decide("{\"allowed_candidate_ids\":[\"play-strike\"]}");
+assert.equal(fetchCalls, 2);
+assert.equal(retriedDecision?.candidateId, "play-strike");
+assert.equal(retriedDecision?.providerAudit?.requestMode, "json_mode");
+assert.equal(retriedDecision?.providerAudit?.retryCount, 1);
+assert.equal(retriedDecision?.providerAudit?.emptyContentRetryCount, 1);
+assert.equal(retriedDecision?.providerAudit?.emptyContentRetrySucceeded, true);
 const previousProvider = process.env.STS2_LLM_PROVIDER;
 const previousDeepSeekKey = process.env.STS2_DEEPSEEK_API_KEY;
 const previousCommand = process.env.STS2_LLM_COMMAND;
@@ -328,6 +415,18 @@ try {
   else process.env.STS2_DEEPSEEK_API_KEY = previousDeepSeekKey;
   if (previousCommand === undefined) delete process.env.STS2_LLM_COMMAND;
   else process.env.STS2_LLM_COMMAND = previousCommand;
+}
+const previousShadowAlias = process.env.STS2_P8_MAX_SHADOW_CALLS;
+const previousShadowCanonical = process.env.STS2_P8_WORKSPACE_MAX_SHADOW_CALLS;
+try {
+  delete process.env.STS2_P8_WORKSPACE_MAX_SHADOW_CALLS;
+  process.env.STS2_P8_MAX_SHADOW_CALLS = "7";
+  assert.equal(workspaceOptionsFromEnv().maxShadowCalls, 7);
+} finally {
+  if (previousShadowAlias === undefined) delete process.env.STS2_P8_MAX_SHADOW_CALLS;
+  else process.env.STS2_P8_MAX_SHADOW_CALLS = previousShadowAlias;
+  if (previousShadowCanonical === undefined) delete process.env.STS2_P8_WORKSPACE_MAX_SHADOW_CALLS;
+  else process.env.STS2_P8_WORKSPACE_MAX_SHADOW_CALLS = previousShadowCanonical;
 }
 
 const collectedRecord = buildCollectedStateRecord({

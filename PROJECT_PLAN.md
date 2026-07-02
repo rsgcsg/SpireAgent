@@ -288,19 +288,25 @@ Current Phase 8 status:
 - P8.1 readiness and information-preservation scoring is implemented. The comparison records required legacy sections, preserved sections, missing sections, per-section token estimates, readiness reasons, and an information-preservation score.
 - P8.2 DeepSeek V4 Flash preparation is implemented without making live calls. The code has provider config, OpenAI-compatible request shape, response parser, short JSON schema, timeout/error handling, and explicit skipped/unavailable paths.
 - P8.3 shadow-call plumbing now includes the real DeepSeek V4 Flash provider path, conservative token/call/cost/timeout guards, response usage/latency capture, skipped budget outcomes, and shadow-only validation records. The system can record skipped/unavailable/valid/invalid/error outcomes, agreement/disagreement/missing-candidate, reason quality, risk tags, missing info, scaffold feedback, estimated/actual tokens, latency, and estimated cost, but it will not call a real model without `STS2_DEEPSEEK_API_KEY` and explicit flags.
+- P8.4 empty-content stabilization now hardens the DeepSeek request contract: `json_mode` uses `response_format: {"type":"json_object"}`, both system/user prompts explicitly demand JSON and show the target object shape, `temperature=0`, `top_p=0.1`, and `empty_content` can trigger at most one shorter rescue retry. Retry telemetry and provider mode remain shadow-only evidence.
+- P8.4 workspace-size ablation is shadow-only: `STS2_P8_WORKSPACE_ABLATION_MODE=full|compact|ultra_compact` changes only the structured shadow workspace sent to DeepSeek. All modes repeat allowed candidate ids at the prompt tail and end with `Return JSON now.`; live prompt, candidate generation, scoring, fallback, validation, and execution remain unchanged.
 - Feature flags:
   - `STS2_P8_WORKSPACE_SHADOW`: enables P8 readiness for shadow workspace evaluation. Default is off.
   - `STS2_P8_WORKSPACE_CALL`: allows an optional structured shadow LLM call when readiness is satisfied. Default is off.
   - `STS2_DEEPSEEK_API_KEY`: makes the DeepSeek V4 Flash provider available for an explicitly enabled shadow call.
   - `STS2_DEEPSEEK_MODEL`: optionally overrides the default P8 model id.
-  - `STS2_P8_WORKSPACE_MAX_SHADOW_CALLS`: max structured shadow calls per process, default `1`.
+  - `STS2_P8_WORKSPACE_MAX_SHADOW_CALLS`: canonical max structured shadow calls per process, default `1`. `STS2_P8_MAX_SHADOW_CALLS` remains a backward-compatible alias.
   - `STS2_P8_WORKSPACE_SOFT_INPUT_TOKENS` / `STS2_P8_WORKSPACE_HARD_INPUT_TOKENS`: input-token guard defaults `8000` / `12000`; hard excess records `token_budget_exceeded` and skips.
+  - `STS2_P8_WORKSPACE_ABLATION_MODE`: shadow-only workspace prompt mode, default `full`; `compact` and `ultra_compact` are for P8.4 provider ablation.
   - `STS2_DEEPSEEK_MAX_OUTPUT_TOKENS`: max output tokens, default `400`.
   - `STS2_DEEPSEEK_TIMEOUT_MS`: provider timeout, default `25000`.
   - `STS2_DEEPSEEK_RETRY_LIMIT`: retry count, default `0`.
+  - `STS2_DEEPSEEK_EMPTY_RETRY_LIMIT`: provider-level retry count for `empty_content`, default `1`, capped at `1`.
+  - `STS2_DEEPSEEK_OUTPUT_MODE`: `json_mode` (default) or `non_json_strict` for shadow A/B tests.
+  - `STS2_DEEPSEEK_TEMPERATURE` / `STS2_DEEPSEEK_TOP_P`: structured-output stability defaults `0` / `0.1`.
   - `STS2_P8_WORKSPACE_MAX_ESTIMATED_COST_USD`: estimated per-process cost guard, default `$0.05`.
 - New executor-logged transitions can carry `workspaceComparison` and `shadowWorkspaceDecision`.
-- Replay/eval/review expose P8 workspace coverage, readiness, decision class, information preservation, provider readiness, token budget status, skipped/unavailable shadow outcomes, shadow-call counts, agreement/disagreement, invalid output, missing candidate, reason quality, missing info, scaffold feedback, latency, cost estimate, and a P8.4 go/no-go rollout gate.
+- Replay/eval/review expose P8 workspace coverage, readiness, decision class, information preservation, provider readiness, token budget status, skipped/unavailable shadow outcomes, shadow-call counts, agreement/disagreement, invalid output, missing candidate, reason quality, missing info, scaffold feedback, provider mode, ablation mode, workspace size, retry count/success, latency, cost estimate, and a P8.4 go/no-go rollout gate.
 - Live LLM input path remains unchanged by default. P8 currently does not replace the legacy prompt, change candidate generation/order/scoring, change fallback, change validation, change execution, or write stable learning.
 - Next gated step is a real DeepSeek V4 Flash shadow call after user-provided API credentials and explicit authorization. A live-routing experiment remains later P8.5 work and must preserve legacy fallback and validation.
 
