@@ -1,19 +1,19 @@
 {
   "runId": "run-mr26a4yv-hdw5xr",
   "startedAt": "2026-07-01T14:30:16.231Z",
-  "updatedAt": "2026-07-02T02:15:47.633Z",
+  "updatedAt": "2026-07-02T02:23:42.665Z",
   "strategicDirection": [],
   "deficits": {
-    "damage": 0.4161939353327855,
-    "block": 0.2515332309355301,
+    "damage": 0.36688082650984866,
+    "block": 0.2501778993480456,
     "draw": 0.6999999999999998,
-    "energy": 0.40518777409614914,
+    "energy": 0.533197573189838,
     "scaling": 0.4500000000000002,
-    "aoe": 0.699999145978619,
+    "aoe": 0.39061007278369986,
     "deck_thinness": 0.35000000000000003,
     "status_control": 0.30000000000000004,
     "healing": 0.2500000000000001,
-    "potions": 0.6499999999992642
+    "potions": 0.6499999999999146
   },
   "routeBias": {
     "elites": 0,
@@ -26,1010 +26,6 @@
     "自身负面状态"
   ],
   "keyDecisions": [
-    {
-      "id": "decision-mr26abo9-do4djk",
-      "at": "2026-07-01T14:30:24.921Z",
-      "act": 1,
-      "floor": 3,
-      "screen": "combat",
-      "stateSummary": "screen=combat act=1 floor=3 hp=66/75 energy=3/3 round=1 incoming=6 enemies=[Corpse Slug:25/25 intent=Debuff status=Ravenous:4, Corpse Slug:26/26 intent=Attack 3x2 status=Ravenous:4] hand=[0:Zap, 1:Dualcast, 2:Defend, 3:Defend, 4:Strike]",
-      "chosen": "打出 Strike -> Corpse Slug",
-      "chosenBy": "local",
-      "route": "local_fast_combat",
-      "routeReasons": [
-        "low_confidence"
-      ],
-      "llm": {
-        "wanted": false,
-        "called": false,
-        "available": false,
-        "outcome": "not_needed"
-      },
-      "checkpoint": {
-        "kind": "soft",
-        "reasons": [
-          "player_energy_changed",
-          "enemy_hp_or_block_changed",
-          "discard_pile_count_changed",
-          "expected_card_removed_from_hand"
-        ],
-        "settled": true,
-        "polls": 1,
-        "preStateHash": "{\"stateType\":\"monster\",\"screen\":\"combat\",\"act\":1,\"floor\":3,\"round\":1,\"turn\":\"player\",\"isPlayPhase\":true,\"hp\":66,\"block\":0,\"energy\":3,\"hand\":[\"0:ZAP:Zap\",\"1:DUALCAST:Dualcast\",\"2:DEFEND_DEFECT:Defend\",\"3:DEFEND_DEFECT:Defend\",\"4:STRIKE_DEFECT:Strike\"],\"drawPileCount\":6,\"discardPileCount\":0,\"exhaustPileCount\":0,\"potions\":[],\"relics\":[\"CRACKED_CORE\",\"SILVER_CRUCIBLE\"],\"orbs\":[\"LIGHTNING_ORB:8\"],\"enemies\":[{\"id\":\"CORPSE_SLUG_0\",\"hp\":25,\"block\":0,\"intents\":[\"Debuff:\"]},{\"id\":\"CORPSE_SLUG_1\",\"hp\":26,\"block\":0,\"intents\":[\"Attack:3x2\"]}],\"options\":0,\"mapNodes\":0,\"rewards\":0}",
-        "postStateHash": "{\"stateType\":\"monster\",\"screen\":\"combat\",\"act\":1,\"floor\":3,\"round\":1,\"turn\":\"player\",\"isPlayPhase\":true,\"hp\":66,\"block\":0,\"energy\":2,\"hand\":[\"0:ZAP:Zap\",\"1:DUALCAST:Dualcast\",\"2:DEFEND_DEFECT:Defend\",\"3:DEFEND_DEFECT:Defend\"],\"drawPileCount\":6,\"discardPileCount\":1,\"exhaustPileCount\":0,\"potions\":[],\"relics\":[\"CRACKED_CORE\",\"SILVER_CRUCIBLE\"],\"orbs\":[\"LIGHTNING_ORB:8\"],\"enemies\":[{\"id\":\"CORPSE_SLUG_0\",\"hp\":25,\"block\":0,\"intents\":[\"Debuff:\"]},{\"id\":\"CORPSE_SLUG_1\",\"hp\":20,\"block\":0,\"intents\":[\"Attack:3x2\"]}],\"options\":0,\"mapNodes\":0,\"rewards\":0}",
-        "before": "screen=combat act=1 floor=3 hp=66/75 energy=3/3 round=1 incoming=6 enemies=[Corpse Slug:25/25 intent=Debuff status=Ravenous:4, Corpse Slug:26/26 intent=Attack 3x2 status=Ravenous:4] hand=[0:Zap, 1:Dualcast, 2:Defend, 3:Defend, 4:Strike]",
-        "after": "screen=combat act=1 floor=3 hp=66/75 energy=2/3 round=1 incoming=6 enemies=[Corpse Slug:25/25 intent=Debuff status=Ravenous:4, Corpse Slug:20/26 intent=Attack 3x2 status=Ravenous:4] hand=[0:Zap, 1:Dualcast, 2:Defend, 3:Defend]",
-        "changes": {
-          "actionKind": "play_card",
-          "screen": {
-            "changed": false,
-            "value": "combat"
-          },
-          "stateType": {
-            "changed": false,
-            "value": "monster"
-          },
-          "floor": {
-            "changed": false,
-            "value": 3
-          },
-          "round": {
-            "changed": false,
-            "value": 1
-          },
-          "turn": {
-            "changed": false,
-            "value": "player"
-          },
-          "isPlayPhase": {
-            "changed": false,
-            "value": true
-          },
-          "hp": {
-            "changed": false,
-            "value": 66
-          },
-          "block": {
-            "changed": false,
-            "value": 0
-          },
-          "energy": {
-            "changed": true,
-            "before": 3,
-            "after": 2
-          },
-          "handCount": {
-            "changed": true,
-            "before": 5,
-            "after": 4
-          },
-          "hand": {
-            "before": [
-              "0:ZAP:Zap",
-              "1:DUALCAST:Dualcast",
-              "2:DEFEND_DEFECT:Defend",
-              "3:DEFEND_DEFECT:Defend",
-              "4:STRIKE_DEFECT:Strike"
-            ],
-            "after": [
-              "0:ZAP:Zap",
-              "1:DUALCAST:Dualcast",
-              "2:DEFEND_DEFECT:Defend",
-              "3:DEFEND_DEFECT:Defend"
-            ]
-          },
-          "drawPileCount": {
-            "changed": false,
-            "value": 6
-          },
-          "discardPileCount": {
-            "changed": true,
-            "before": 0,
-            "after": 1
-          },
-          "exhaustPileCount": {
-            "changed": false,
-            "value": 0
-          },
-          "potionCount": {
-            "changed": false,
-            "value": 0
-          },
-          "orbCount": {
-            "changed": false,
-            "value": 1
-          },
-          "livingEnemies": {
-            "before": [
-              "CORPSE_SLUG_0",
-              "CORPSE_SLUG_1"
-            ],
-            "after": [
-              "CORPSE_SLUG_0",
-              "CORPSE_SLUG_1"
-            ],
-            "removed": [],
-            "added": []
-          },
-          "enemyDeltas": [
-            {
-              "id": "CORPSE_SLUG_1",
-              "name": "Corpse Slug",
-              "removed": false,
-              "hpBefore": 26,
-              "hpAfter": 20,
-              "hpDelta": -6,
-              "blockBefore": 0,
-              "blockAfter": 0,
-              "blockDelta": 0
-            }
-          ],
-          "rewardsCount": {
-            "changed": false,
-            "value": 0
-          },
-          "optionsCount": {
-            "changed": false,
-            "value": 0
-          },
-          "mapNodesCount": {
-            "changed": false,
-            "value": 0
-          }
-        }
-      },
-      "candidateCount": 7,
-      "topCandidate": {
-        "id": "play-4-CORPSE_SLUG_1",
-        "label": "打出 Strike -> Corpse Slug",
-        "score": 25.25999999999999,
-        "confidence": 0.43574999999999986
-      },
-      "score": 25.25999999999999,
-      "confidence": 0.43574999999999986,
-      "reasons": [
-        "输出 6",
-        "优先压低正在攻击的敌人",
-        "优先处理带成长/高威胁敌人"
-      ],
-      "candidates": [
-        {
-          "id": "play-4-CORPSE_SLUG_1",
-          "label": "打出 Strike -> Corpse Slug",
-          "score": 25.25999999999999,
-          "reasons": [
-            "输出 6",
-            "优先压低正在攻击的敌人",
-            "优先处理带成长/高威胁敌人"
-          ]
-        },
-        {
-          "id": "play-4-CORPSE_SLUG_0",
-          "label": "打出 Strike -> Corpse Slug",
-          "score": 21.25999999999999,
-          "reasons": [
-            "输出 6",
-            "优先处理带成长/高威胁敌人"
-          ]
-        },
-        {
-          "id": "play-1",
-          "label": "打出 Dualcast",
-          "score": 19.359999999999978,
-          "reasons": [
-            "输出 16"
-          ]
-        },
-        {
-          "id": "play-0",
-          "label": "打出 Zap",
-          "score": 16,
-          "reasons": [
-            "充能闪电球提供回合末伤害",
-            "可接 Dualcast 爆发"
-          ]
-        },
-        {
-          "id": "play-2",
-          "label": "打出 Defend",
-          "score": 6.550000000000001,
-          "reasons": [
-            "补格挡 5/6"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "decision-mr26abvo-8pvej2",
-      "at": "2026-07-01T14:30:25.188Z",
-      "act": 1,
-      "floor": 3,
-      "screen": "combat",
-      "stateSummary": "screen=combat act=1 floor=3 hp=66/75 energy=2/3 round=1 incoming=6 enemies=[Corpse Slug:25/25 intent=Debuff status=Ravenous:4, Corpse Slug:20/26 intent=Attack 3x2 status=Ravenous:4] hand=[0:Zap, 1:Dualcast, 2:Defend, 3:Defend]",
-      "chosen": "打出 Dualcast",
-      "chosenBy": "local",
-      "route": "local_fast_combat",
-      "routeReasons": [
-        "small_score_gap",
-        "low_confidence"
-      ],
-      "llm": {
-        "wanted": false,
-        "called": false,
-        "available": false,
-        "outcome": "not_needed"
-      },
-      "checkpoint": {
-        "kind": "hard",
-        "reasons": [
-          "orb_state_changed",
-          "player_energy_changed",
-          "enemy_hp_or_block_changed",
-          "discard_pile_count_changed",
-          "expected_card_removed_from_hand"
-        ],
-        "settled": true,
-        "polls": 1,
-        "preStateHash": "{\"stateType\":\"monster\",\"screen\":\"combat\",\"act\":1,\"floor\":3,\"round\":1,\"turn\":\"player\",\"isPlayPhase\":true,\"hp\":66,\"block\":0,\"energy\":2,\"hand\":[\"0:ZAP:Zap\",\"1:DUALCAST:Dualcast\",\"2:DEFEND_DEFECT:Defend\",\"3:DEFEND_DEFECT:Defend\"],\"drawPileCount\":6,\"discardPileCount\":1,\"exhaustPileCount\":0,\"potions\":[],\"relics\":[\"CRACKED_CORE\",\"SILVER_CRUCIBLE\"],\"orbs\":[\"LIGHTNING_ORB:8\"],\"enemies\":[{\"id\":\"CORPSE_SLUG_0\",\"hp\":25,\"block\":0,\"intents\":[\"Debuff:\"]},{\"id\":\"CORPSE_SLUG_1\",\"hp\":20,\"block\":0,\"intents\":[\"Attack:3x2\"]}],\"options\":0,\"mapNodes\":0,\"rewards\":0}",
-        "postStateHash": "{\"stateType\":\"monster\",\"screen\":\"combat\",\"act\":1,\"floor\":3,\"round\":1,\"turn\":\"player\",\"isPlayPhase\":true,\"hp\":66,\"block\":0,\"energy\":1,\"hand\":[\"0:ZAP:Zap\",\"1:DEFEND_DEFECT:Defend\",\"2:DEFEND_DEFECT:Defend\"],\"drawPileCount\":6,\"discardPileCount\":2,\"exhaustPileCount\":0,\"potions\":[],\"relics\":[\"CRACKED_CORE\",\"SILVER_CRUCIBLE\"],\"orbs\":[],\"enemies\":[{\"id\":\"CORPSE_SLUG_0\",\"hp\":17,\"block\":0,\"intents\":[\"Debuff:\"]},{\"id\":\"CORPSE_SLUG_1\",\"hp\":12,\"block\":0,\"intents\":[\"Attack:3x2\"]}],\"options\":0,\"mapNodes\":0,\"rewards\":0}",
-        "before": "screen=combat act=1 floor=3 hp=66/75 energy=2/3 round=1 incoming=6 enemies=[Corpse Slug:25/25 intent=Debuff status=Ravenous:4, Corpse Slug:20/26 intent=Attack 3x2 status=Ravenous:4] hand=[0:Zap, 1:Dualcast, 2:Defend, 3:Defend]",
-        "after": "screen=combat act=1 floor=3 hp=66/75 energy=1/3 round=1 incoming=6 enemies=[Corpse Slug:17/25 intent=Debuff status=Ravenous:4, Corpse Slug:12/26 intent=Attack 3x2 status=Ravenous:4] hand=[0:Zap, 1:Defend, 2:Defend]",
-        "changes": {
-          "actionKind": "play_card",
-          "screen": {
-            "changed": false,
-            "value": "combat"
-          },
-          "stateType": {
-            "changed": false,
-            "value": "monster"
-          },
-          "floor": {
-            "changed": false,
-            "value": 3
-          },
-          "round": {
-            "changed": false,
-            "value": 1
-          },
-          "turn": {
-            "changed": false,
-            "value": "player"
-          },
-          "isPlayPhase": {
-            "changed": false,
-            "value": true
-          },
-          "hp": {
-            "changed": false,
-            "value": 66
-          },
-          "block": {
-            "changed": false,
-            "value": 0
-          },
-          "energy": {
-            "changed": true,
-            "before": 2,
-            "after": 1
-          },
-          "handCount": {
-            "changed": true,
-            "before": 4,
-            "after": 3
-          },
-          "hand": {
-            "before": [
-              "0:ZAP:Zap",
-              "1:DUALCAST:Dualcast",
-              "2:DEFEND_DEFECT:Defend",
-              "3:DEFEND_DEFECT:Defend"
-            ],
-            "after": [
-              "0:ZAP:Zap",
-              "1:DEFEND_DEFECT:Defend",
-              "2:DEFEND_DEFECT:Defend"
-            ]
-          },
-          "drawPileCount": {
-            "changed": false,
-            "value": 6
-          },
-          "discardPileCount": {
-            "changed": true,
-            "before": 1,
-            "after": 2
-          },
-          "exhaustPileCount": {
-            "changed": false,
-            "value": 0
-          },
-          "potionCount": {
-            "changed": false,
-            "value": 0
-          },
-          "orbCount": {
-            "changed": true,
-            "before": 1,
-            "after": 0
-          },
-          "livingEnemies": {
-            "before": [
-              "CORPSE_SLUG_0",
-              "CORPSE_SLUG_1"
-            ],
-            "after": [
-              "CORPSE_SLUG_0",
-              "CORPSE_SLUG_1"
-            ],
-            "removed": [],
-            "added": []
-          },
-          "enemyDeltas": [
-            {
-              "id": "CORPSE_SLUG_0",
-              "name": "Corpse Slug",
-              "removed": false,
-              "hpBefore": 25,
-              "hpAfter": 17,
-              "hpDelta": -8,
-              "blockBefore": 0,
-              "blockAfter": 0,
-              "blockDelta": 0
-            },
-            {
-              "id": "CORPSE_SLUG_1",
-              "name": "Corpse Slug",
-              "removed": false,
-              "hpBefore": 20,
-              "hpAfter": 12,
-              "hpDelta": -8,
-              "blockBefore": 0,
-              "blockAfter": 0,
-              "blockDelta": 0
-            }
-          ],
-          "rewardsCount": {
-            "changed": false,
-            "value": 0
-          },
-          "optionsCount": {
-            "changed": false,
-            "value": 0
-          },
-          "mapNodesCount": {
-            "changed": false,
-            "value": 0
-          }
-        }
-      },
-      "candidateCount": 5,
-      "topCandidate": {
-        "id": "play-1",
-        "label": "打出 Dualcast",
-        "score": 19.359999999999978,
-        "confidence": 0.2819999999999997
-      },
-      "score": 19.359999999999978,
-      "confidence": 0.2819999999999997,
-      "reasons": [
-        "输出 16"
-      ],
-      "candidates": [
-        {
-          "id": "play-1",
-          "label": "打出 Dualcast",
-          "score": 19.359999999999978,
-          "reasons": [
-            "输出 16"
-          ]
-        },
-        {
-          "id": "play-0",
-          "label": "打出 Zap",
-          "score": 16,
-          "reasons": [
-            "充能闪电球提供回合末伤害",
-            "可接 Dualcast 爆发"
-          ]
-        },
-        {
-          "id": "play-2",
-          "label": "打出 Defend",
-          "score": 6.550000000000001,
-          "reasons": [
-            "补格挡 5/6"
-          ]
-        },
-        {
-          "id": "play-3",
-          "label": "打出 Defend",
-          "score": 6.550000000000001,
-          "reasons": [
-            "补格挡 5/6"
-          ]
-        },
-        {
-          "id": "end-turn",
-          "label": "结束回合",
-          "score": -25.72,
-          "reasons": []
-        }
-      ]
-    },
-    {
-      "id": "decision-mr26acq6-cn67ti",
-      "at": "2026-07-01T14:30:26.286Z",
-      "act": 1,
-      "floor": 3,
-      "screen": "combat",
-      "stateSummary": "screen=combat act=1 floor=3 hp=66/75 energy=1/3 round=1 incoming=6 enemies=[Corpse Slug:17/25 intent=Debuff status=Ravenous:4, Corpse Slug:12/26 intent=Attack 3x2 status=Ravenous:4] hand=[0:Zap, 1:Defend, 2:Defend]",
-      "chosen": "打出 Defend",
-      "chosenBy": "local",
-      "route": "local_fast_combat",
-      "routeReasons": [
-        "small_score_gap",
-        "low_confidence"
-      ],
-      "llm": {
-        "wanted": false,
-        "called": false,
-        "available": false,
-        "outcome": "not_needed"
-      },
-      "checkpoint": {
-        "kind": "unknown",
-        "reasons": [
-          "settlement_timeout_or_no_visible_change",
-          "player_block_changed",
-          "player_energy_changed",
-          "discard_pile_count_changed",
-          "expected_card_removed_from_hand"
-        ],
-        "settled": false,
-        "polls": 8,
-        "preStateHash": "{\"stateType\":\"monster\",\"screen\":\"combat\",\"act\":1,\"floor\":3,\"round\":1,\"turn\":\"player\",\"isPlayPhase\":true,\"hp\":66,\"block\":0,\"energy\":1,\"hand\":[\"0:ZAP:Zap\",\"1:DEFEND_DEFECT:Defend\",\"2:DEFEND_DEFECT:Defend\"],\"drawPileCount\":6,\"discardPileCount\":2,\"exhaustPileCount\":0,\"potions\":[],\"relics\":[\"CRACKED_CORE\",\"SILVER_CRUCIBLE\"],\"orbs\":[],\"enemies\":[{\"id\":\"CORPSE_SLUG_0\",\"hp\":17,\"block\":0,\"intents\":[\"Debuff:\"]},{\"id\":\"CORPSE_SLUG_1\",\"hp\":12,\"block\":0,\"intents\":[\"Attack:3x2\"]}],\"options\":0,\"mapNodes\":0,\"rewards\":0}",
-        "postStateHash": "{\"stateType\":\"monster\",\"screen\":\"combat\",\"act\":1,\"floor\":3,\"round\":1,\"turn\":\"player\",\"isPlayPhase\":true,\"hp\":66,\"block\":5,\"energy\":0,\"hand\":[\"0:ZAP:Zap\",\"1:DEFEND_DEFECT:Defend\"],\"drawPileCount\":6,\"discardPileCount\":3,\"exhaustPileCount\":0,\"potions\":[],\"relics\":[\"CRACKED_CORE\",\"SILVER_CRUCIBLE\"],\"orbs\":[],\"enemies\":[{\"id\":\"CORPSE_SLUG_0\",\"hp\":17,\"block\":0,\"intents\":[\"Debuff:\"]},{\"id\":\"CORPSE_SLUG_1\",\"hp\":12,\"block\":0,\"intents\":[\"Attack:3x2\"]}],\"options\":0,\"mapNodes\":0,\"rewards\":0}",
-        "before": "screen=combat act=1 floor=3 hp=66/75 energy=1/3 round=1 incoming=6 enemies=[Corpse Slug:17/25 intent=Debuff status=Ravenous:4, Corpse Slug:12/26 intent=Attack 3x2 status=Ravenous:4] hand=[0:Zap, 1:Defend, 2:Defend]",
-        "after": "screen=combat act=1 floor=3 hp=66/75 energy=0/3 round=1 incoming=6 enemies=[Corpse Slug:17/25 intent=Debuff status=Ravenous:4, Corpse Slug:12/26 intent=Attack 3x2 status=Ravenous:4] hand=[0:Zap, 1:Defend]",
-        "changes": {
-          "actionKind": "play_card",
-          "screen": {
-            "changed": false,
-            "value": "combat"
-          },
-          "stateType": {
-            "changed": false,
-            "value": "monster"
-          },
-          "floor": {
-            "changed": false,
-            "value": 3
-          },
-          "round": {
-            "changed": false,
-            "value": 1
-          },
-          "turn": {
-            "changed": false,
-            "value": "player"
-          },
-          "isPlayPhase": {
-            "changed": false,
-            "value": true
-          },
-          "hp": {
-            "changed": false,
-            "value": 66
-          },
-          "block": {
-            "changed": true,
-            "before": 0,
-            "after": 5
-          },
-          "energy": {
-            "changed": true,
-            "before": 1,
-            "after": 0
-          },
-          "handCount": {
-            "changed": true,
-            "before": 3,
-            "after": 2
-          },
-          "hand": {
-            "before": [
-              "0:ZAP:Zap",
-              "1:DEFEND_DEFECT:Defend",
-              "2:DEFEND_DEFECT:Defend"
-            ],
-            "after": [
-              "0:ZAP:Zap",
-              "1:DEFEND_DEFECT:Defend"
-            ]
-          },
-          "drawPileCount": {
-            "changed": false,
-            "value": 6
-          },
-          "discardPileCount": {
-            "changed": true,
-            "before": 2,
-            "after": 3
-          },
-          "exhaustPileCount": {
-            "changed": false,
-            "value": 0
-          },
-          "potionCount": {
-            "changed": false,
-            "value": 0
-          },
-          "orbCount": {
-            "changed": false,
-            "value": 0
-          },
-          "livingEnemies": {
-            "before": [
-              "CORPSE_SLUG_0",
-              "CORPSE_SLUG_1"
-            ],
-            "after": [
-              "CORPSE_SLUG_0",
-              "CORPSE_SLUG_1"
-            ],
-            "removed": [],
-            "added": []
-          },
-          "enemyDeltas": [],
-          "rewardsCount": {
-            "changed": false,
-            "value": 0
-          },
-          "optionsCount": {
-            "changed": false,
-            "value": 0
-          },
-          "mapNodesCount": {
-            "changed": false,
-            "value": 0
-          }
-        }
-      },
-      "candidateCount": 4,
-      "topCandidate": {
-        "id": "play-1",
-        "label": "打出 Defend",
-        "score": 6.550000000000001,
-        "confidence": 0.24000000000000002
-      },
-      "score": 6.550000000000001,
-      "confidence": 0.24000000000000002,
-      "reasons": [
-        "补格挡 5/6"
-      ],
-      "candidates": [
-        {
-          "id": "play-1",
-          "label": "打出 Defend",
-          "score": 6.550000000000001,
-          "reasons": [
-            "补格挡 5/6"
-          ]
-        },
-        {
-          "id": "play-2",
-          "label": "打出 Defend",
-          "score": 6.550000000000001,
-          "reasons": [
-            "补格挡 5/6"
-          ]
-        },
-        {
-          "id": "play-0",
-          "label": "打出 Zap",
-          "score": 4,
-          "reasons": [
-            "充能闪电球提供回合末伤害"
-          ]
-        },
-        {
-          "id": "end-turn",
-          "label": "结束回合",
-          "score": -23.72,
-          "reasons": []
-        }
-      ]
-    },
-    {
-      "id": "decision-mr26adve-u4reeu",
-      "at": "2026-07-01T14:30:27.770Z",
-      "act": 1,
-      "floor": 3,
-      "screen": "combat",
-      "stateSummary": "screen=combat act=1 floor=3 hp=66/75 energy=0/3 round=1 incoming=6 enemies=[Corpse Slug:17/25 intent=Debuff status=Ravenous:4, Corpse Slug:12/26 intent=Attack 3x2 status=Ravenous:4] hand=[0:Zap, 1:Defend]",
-      "chosen": "结束回合",
-      "chosenBy": "local",
-      "route": "forced_local",
-      "routeReasons": [
-        "single forced end_turn action"
-      ],
-      "llm": {
-        "wanted": false,
-        "called": false,
-        "available": false,
-        "outcome": "not_needed"
-      },
-      "checkpoint": {
-        "kind": "hard",
-        "reasons": [
-          "new_combat_round",
-          "player_hp_changed",
-          "player_block_changed",
-          "player_energy_changed",
-          "hand_count_changed",
-          "draw_pile_count_changed",
-          "discard_pile_count_changed"
-        ],
-        "settled": true,
-        "polls": 1,
-        "preStateHash": "{\"stateType\":\"monster\",\"screen\":\"combat\",\"act\":1,\"floor\":3,\"round\":1,\"turn\":\"player\",\"isPlayPhase\":true,\"hp\":66,\"block\":5,\"energy\":0,\"hand\":[\"0:ZAP:Zap\",\"1:DEFEND_DEFECT:Defend\"],\"drawPileCount\":6,\"discardPileCount\":3,\"exhaustPileCount\":0,\"potions\":[],\"relics\":[\"CRACKED_CORE\",\"SILVER_CRUCIBLE\"],\"orbs\":[],\"enemies\":[{\"id\":\"CORPSE_SLUG_0\",\"hp\":17,\"block\":0,\"intents\":[\"Debuff:\"]},{\"id\":\"CORPSE_SLUG_1\",\"hp\":12,\"block\":0,\"intents\":[\"Attack:3x2\"]}],\"options\":0,\"mapNodes\":0,\"rewards\":0}",
-        "postStateHash": "{\"stateType\":\"monster\",\"screen\":\"combat\",\"act\":1,\"floor\":3,\"round\":2,\"turn\":\"player\",\"isPlayPhase\":true,\"hp\":65,\"block\":0,\"energy\":3,\"hand\":[\"0:SUBROUTINE:Subroutine+\",\"1:DEFEND_DEFECT:Defend\",\"2:STRIKE_DEFECT:Strike\",\"3:DEFEND_DEFECT:Defend\",\"4:STRIKE_DEFECT:Strike\"],\"drawPileCount\":1,\"discardPileCount\":5,\"exhaustPileCount\":0,\"potions\":[],\"relics\":[\"CRACKED_CORE\",\"SILVER_CRUCIBLE\"],\"orbs\":[],\"enemies\":[{\"id\":\"CORPSE_SLUG_0\",\"hp\":17,\"block\":0,\"intents\":[\"Attack:3x2\"]},{\"id\":\"CORPSE_SLUG_1\",\"hp\":12,\"block\":0,\"intents\":[\"Attack:8\"]}],\"options\":0,\"mapNodes\":0,\"rewards\":0}",
-        "before": "screen=combat act=1 floor=3 hp=66/75 energy=0/3 round=1 incoming=6 enemies=[Corpse Slug:17/25 intent=Debuff status=Ravenous:4, Corpse Slug:12/26 intent=Attack 3x2 status=Ravenous:4] hand=[0:Zap, 1:Defend]",
-        "after": "screen=combat act=1 floor=3 hp=65/75 energy=3/3 round=2 incoming=14 selfStatus=[Frail:2] enemies=[Corpse Slug:17/25 intent=Attack 3x2 status=Ravenous:4, Corpse Slug:12/26 intent=Attack 8 status=Ravenous:4] hand=[0:Subroutine+, 1:Defend, 2:Strike, 3:Defend, 4:Strike]",
-        "changes": {
-          "actionKind": "end_turn",
-          "screen": {
-            "changed": false,
-            "value": "combat"
-          },
-          "stateType": {
-            "changed": false,
-            "value": "monster"
-          },
-          "floor": {
-            "changed": false,
-            "value": 3
-          },
-          "round": {
-            "changed": true,
-            "before": 1,
-            "after": 2
-          },
-          "turn": {
-            "changed": false,
-            "value": "player"
-          },
-          "isPlayPhase": {
-            "changed": false,
-            "value": true
-          },
-          "hp": {
-            "changed": true,
-            "before": 66,
-            "after": 65
-          },
-          "block": {
-            "changed": true,
-            "before": 5,
-            "after": 0
-          },
-          "energy": {
-            "changed": true,
-            "before": 0,
-            "after": 3
-          },
-          "handCount": {
-            "changed": true,
-            "before": 2,
-            "after": 5
-          },
-          "hand": {
-            "before": [
-              "0:ZAP:Zap",
-              "1:DEFEND_DEFECT:Defend"
-            ],
-            "after": [
-              "0:SUBROUTINE:Subroutine+",
-              "1:DEFEND_DEFECT:Defend",
-              "2:STRIKE_DEFECT:Strike",
-              "3:DEFEND_DEFECT:Defend",
-              "4:STRIKE_DEFECT:Strike"
-            ]
-          },
-          "drawPileCount": {
-            "changed": true,
-            "before": 6,
-            "after": 1
-          },
-          "discardPileCount": {
-            "changed": true,
-            "before": 3,
-            "after": 5
-          },
-          "exhaustPileCount": {
-            "changed": false,
-            "value": 0
-          },
-          "potionCount": {
-            "changed": false,
-            "value": 0
-          },
-          "orbCount": {
-            "changed": false,
-            "value": 0
-          },
-          "livingEnemies": {
-            "before": [
-              "CORPSE_SLUG_0",
-              "CORPSE_SLUG_1"
-            ],
-            "after": [
-              "CORPSE_SLUG_0",
-              "CORPSE_SLUG_1"
-            ],
-            "removed": [],
-            "added": []
-          },
-          "enemyDeltas": [],
-          "rewardsCount": {
-            "changed": false,
-            "value": 0
-          },
-          "optionsCount": {
-            "changed": false,
-            "value": 0
-          },
-          "mapNodesCount": {
-            "changed": false,
-            "value": 0
-          }
-        }
-      },
-      "candidateCount": 1,
-      "topCandidate": {
-        "id": "end-turn",
-        "label": "结束回合",
-        "score": 9.379999999999999,
-        "confidence": 0.25
-      },
-      "score": 9.379999999999999,
-      "confidence": 0.25,
-      "reasons": [
-        "能量已空"
-      ],
-      "candidates": [
-        {
-          "id": "end-turn",
-          "label": "结束回合",
-          "score": 9.379999999999999,
-          "reasons": [
-            "能量已空"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "decision-mr26ae3b-jagg82",
-      "at": "2026-07-01T14:30:28.055Z",
-      "act": 1,
-      "floor": 3,
-      "screen": "combat",
-      "stateSummary": "screen=combat act=1 floor=3 hp=65/75 energy=3/3 round=2 incoming=14 selfStatus=[Frail:2] enemies=[Corpse Slug:17/25 intent=Attack 3x2 status=Ravenous:4, Corpse Slug:12/26 intent=Attack 8 status=Ravenous:4] hand=[0:Subroutine+, 1:Defend, 2:Strike, 3:Defend, 4:Strike]",
-      "chosen": "打出 Strike -> Corpse Slug",
-      "chosenBy": "local",
-      "route": "obvious_local",
-      "routeReasons": [
-        "top candidate is obvious",
-        "score gap=0.0"
-      ],
-      "llm": {
-        "wanted": false,
-        "called": false,
-        "available": false,
-        "outcome": "not_needed"
-      },
-      "checkpoint": {
-        "kind": "soft",
-        "reasons": [
-          "player_energy_changed",
-          "enemy_hp_or_block_changed",
-          "discard_pile_count_changed",
-          "expected_card_removed_from_hand"
-        ],
-        "settled": true,
-        "polls": 1,
-        "preStateHash": "{\"stateType\":\"monster\",\"screen\":\"combat\",\"act\":1,\"floor\":3,\"round\":2,\"turn\":\"player\",\"isPlayPhase\":true,\"hp\":65,\"block\":0,\"energy\":3,\"hand\":[\"0:SUBROUTINE:Subroutine+\",\"1:DEFEND_DEFECT:Defend\",\"2:STRIKE_DEFECT:Strike\",\"3:DEFEND_DEFECT:Defend\",\"4:STRIKE_DEFECT:Strike\"],\"drawPileCount\":1,\"discardPileCount\":5,\"exhaustPileCount\":0,\"potions\":[],\"relics\":[\"CRACKED_CORE\",\"SILVER_CRUCIBLE\"],\"orbs\":[],\"enemies\":[{\"id\":\"CORPSE_SLUG_0\",\"hp\":17,\"block\":0,\"intents\":[\"Attack:3x2\"]},{\"id\":\"CORPSE_SLUG_1\",\"hp\":12,\"block\":0,\"intents\":[\"Attack:8\"]}],\"options\":0,\"mapNodes\":0,\"rewards\":0}",
-        "postStateHash": "{\"stateType\":\"monster\",\"screen\":\"combat\",\"act\":1,\"floor\":3,\"round\":2,\"turn\":\"player\",\"isPlayPhase\":true,\"hp\":65,\"block\":0,\"energy\":2,\"hand\":[\"0:SUBROUTINE:Subroutine+\",\"1:DEFEND_DEFECT:Defend\",\"2:DEFEND_DEFECT:Defend\",\"3:STRIKE_DEFECT:Strike\"],\"drawPileCount\":1,\"discardPileCount\":6,\"exhaustPileCount\":0,\"potions\":[],\"relics\":[\"CRACKED_CORE\",\"SILVER_CRUCIBLE\"],\"orbs\":[],\"enemies\":[{\"id\":\"CORPSE_SLUG_0\",\"hp\":17,\"block\":0,\"intents\":[\"Attack:3x2\"]},{\"id\":\"CORPSE_SLUG_1\",\"hp\":6,\"block\":0,\"intents\":[\"Attack:8\"]}],\"options\":0,\"mapNodes\":0,\"rewards\":0}",
-        "before": "screen=combat act=1 floor=3 hp=65/75 energy=3/3 round=2 incoming=14 selfStatus=[Frail:2] enemies=[Corpse Slug:17/25 intent=Attack 3x2 status=Ravenous:4, Corpse Slug:12/26 intent=Attack 8 status=Ravenous:4] hand=[0:Subroutine+, 1:Defend, 2:Strike, 3:Defend, 4:Strike]",
-        "after": "screen=combat act=1 floor=3 hp=65/75 energy=2/3 round=2 incoming=14 selfStatus=[Frail:2] enemies=[Corpse Slug:17/25 intent=Attack 3x2 status=Ravenous:4, Corpse Slug:6/26 intent=Attack 8 status=Ravenous:4] hand=[0:Subroutine+, 1:Defend, 2:Defend, 3:Strike]",
-        "changes": {
-          "actionKind": "play_card",
-          "screen": {
-            "changed": false,
-            "value": "combat"
-          },
-          "stateType": {
-            "changed": false,
-            "value": "monster"
-          },
-          "floor": {
-            "changed": false,
-            "value": 3
-          },
-          "round": {
-            "changed": false,
-            "value": 2
-          },
-          "turn": {
-            "changed": false,
-            "value": "player"
-          },
-          "isPlayPhase": {
-            "changed": false,
-            "value": true
-          },
-          "hp": {
-            "changed": false,
-            "value": 65
-          },
-          "block": {
-            "changed": false,
-            "value": 0
-          },
-          "energy": {
-            "changed": true,
-            "before": 3,
-            "after": 2
-          },
-          "handCount": {
-            "changed": true,
-            "before": 5,
-            "after": 4
-          },
-          "hand": {
-            "before": [
-              "0:SUBROUTINE:Subroutine+",
-              "1:DEFEND_DEFECT:Defend",
-              "2:STRIKE_DEFECT:Strike",
-              "3:DEFEND_DEFECT:Defend",
-              "4:STRIKE_DEFECT:Strike"
-            ],
-            "after": [
-              "0:SUBROUTINE:Subroutine+",
-              "1:DEFEND_DEFECT:Defend",
-              "2:DEFEND_DEFECT:Defend",
-              "3:STRIKE_DEFECT:Strike"
-            ]
-          },
-          "drawPileCount": {
-            "changed": false,
-            "value": 1
-          },
-          "discardPileCount": {
-            "changed": true,
-            "before": 5,
-            "after": 6
-          },
-          "exhaustPileCount": {
-            "changed": false,
-            "value": 0
-          },
-          "potionCount": {
-            "changed": false,
-            "value": 0
-          },
-          "orbCount": {
-            "changed": false,
-            "value": 0
-          },
-          "livingEnemies": {
-            "before": [
-              "CORPSE_SLUG_0",
-              "CORPSE_SLUG_1"
-            ],
-            "after": [
-              "CORPSE_SLUG_0",
-              "CORPSE_SLUG_1"
-            ],
-            "removed": [],
-            "added": []
-          },
-          "enemyDeltas": [
-            {
-              "id": "CORPSE_SLUG_1",
-              "name": "Corpse Slug",
-              "removed": false,
-              "hpBefore": 12,
-              "hpAfter": 6,
-              "hpDelta": -6,
-              "blockBefore": 0,
-              "blockAfter": 0,
-              "blockDelta": 0
-            }
-          ],
-          "rewardsCount": {
-            "changed": false,
-            "value": 0
-          },
-          "optionsCount": {
-            "changed": false,
-            "value": 0
-          },
-          "mapNodesCount": {
-            "changed": false,
-            "value": 0
-          }
-        }
-      },
-      "candidateCount": 8,
-      "topCandidate": {
-        "id": "play-2-CORPSE_SLUG_1",
-        "label": "打出 Strike -> Corpse Slug",
-        "score": 745.26,
-        "confidence": 0.95
-      },
-      "score": 745.26,
-      "confidence": 0.95,
-      "reasons": [
-        "输出 6",
-        "优先压低正在攻击的敌人",
-        "优先处理带成长/高威胁敌人",
-        "可接后续牌完成斩杀"
-      ],
-      "candidates": [
-        {
-          "id": "play-2-CORPSE_SLUG_1",
-          "label": "打出 Strike -> Corpse Slug",
-          "score": 745.26,
-          "reasons": [
-            "输出 6",
-            "优先压低正在攻击的敌人",
-            "优先处理带成长/高威胁敌人",
-            "可接后续牌完成斩杀"
-          ]
-        },
-        {
-          "id": "play-4-CORPSE_SLUG_1",
-          "label": "打出 Strike -> Corpse Slug",
-          "score": 745.26,
-          "reasons": [
-            "输出 6",
-            "优先压低正在攻击的敌人",
-            "优先处理带成长/高威胁敌人",
-            "可接后续牌完成斩杀"
-          ]
-        },
-        {
-          "id": "play-2-CORPSE_SLUG_0",
-          "label": "打出 Strike -> Corpse Slug",
-          "score": 25.25999999999999,
-          "reasons": [
-            "输出 6",
-            "优先压低正在攻击的敌人",
-            "优先处理带成长/高威胁敌人"
-          ]
-        },
-        {
-          "id": "play-4-CORPSE_SLUG_0",
-          "label": "打出 Strike -> Corpse Slug",
-          "score": 25.25999999999999,
-          "reasons": [
-            "输出 6",
-            "优先压低正在攻击的敌人",
-            "优先处理带成长/高威胁敌人"
-          ]
-        },
-        {
-          "id": "play-0",
-          "label": "打出 Subroutine+",
-          "score": 11.280000000000001,
-          "reasons": [
-            "能力牌提供成长"
-          ]
-        }
-      ]
-    },
     {
       "id": "decision-mr26aec3-u2lxu8",
       "at": "2026-07-01T14:30:28.371Z",
@@ -14963,17 +13959,1028 @@
           ]
         }
       ]
+    },
+    {
+      "id": "decision-mr2vrakp-4qx15j",
+      "at": "2026-07-02T02:23:27.049Z",
+      "act": 1,
+      "floor": 7,
+      "screen": "combat",
+      "stateSummary": "screen=combat act=1 floor=7 hp=37/75 energy=2/3 round=4 incoming=0 selfStatus=[Frail:4,Thunder:6] enemies=[Corpse Slug:14/26 intent=Stun status=Ravenous:4,Strength:4, Corpse Slug:24/27 intent=Stun status=Ravenous:4,Strength:4] hand=[0:Defend, 1:Chill+, 2:Rainbow+, 3:Strike]",
+      "chosen": "打出 Strike -> Corpse Slug",
+      "chosenBy": "local",
+      "route": "local_fast_combat",
+      "routeReasons": [
+        "small_score_gap",
+        "low_confidence"
+      ],
+      "llm": {
+        "wanted": false,
+        "called": false,
+        "available": false,
+        "outcome": "not_needed"
+      },
+      "checkpoint": {
+        "kind": "soft",
+        "reasons": [
+          "player_energy_changed",
+          "enemy_hp_or_block_changed",
+          "discard_pile_count_changed",
+          "expected_card_removed_from_hand"
+        ],
+        "settled": true,
+        "polls": 1,
+        "preStateHash": "{\"stateType\":\"monster\",\"screen\":\"combat\",\"act\":1,\"floor\":7,\"round\":4,\"turn\":\"player\",\"isPlayPhase\":true,\"hp\":37,\"block\":0,\"energy\":2,\"hand\":[\"0:DEFEND_DEFECT:Defend\",\"1:CHILL:Chill+\",\"2:RAINBOW:Rainbow+\",\"3:STRIKE_DEFECT:Strike\"],\"drawPileCount\":4,\"discardPileCount\":5,\"exhaustPileCount\":0,\"potions\":[],\"relics\":[\"CRACKED_CORE\",\"SILVER_CRUCIBLE\"],\"orbs\":[\"FROST_ORB:5\",\"FROST_ORB:5\"],\"enemies\":[{\"id\":\"CORPSE_SLUG_0\",\"hp\":14,\"block\":0,\"intents\":[\"Stun:\"]},{\"id\":\"CORPSE_SLUG_1\",\"hp\":24,\"block\":0,\"intents\":[\"Stun:\"]}],\"options\":0,\"mapNodes\":0,\"rewards\":0}",
+        "postStateHash": "{\"stateType\":\"monster\",\"screen\":\"combat\",\"act\":1,\"floor\":7,\"round\":4,\"turn\":\"player\",\"isPlayPhase\":true,\"hp\":37,\"block\":0,\"energy\":1,\"hand\":[\"0:DEFEND_DEFECT:Defend\",\"1:CHILL:Chill+\",\"2:RAINBOW:Rainbow+\"],\"drawPileCount\":4,\"discardPileCount\":6,\"exhaustPileCount\":0,\"potions\":[],\"relics\":[\"CRACKED_CORE\",\"SILVER_CRUCIBLE\"],\"orbs\":[\"FROST_ORB:5\",\"FROST_ORB:5\"],\"enemies\":[{\"id\":\"CORPSE_SLUG_0\",\"hp\":8,\"block\":0,\"intents\":[\"Stun:\"]},{\"id\":\"CORPSE_SLUG_1\",\"hp\":24,\"block\":0,\"intents\":[\"Stun:\"]}],\"options\":0,\"mapNodes\":0,\"rewards\":0}",
+        "before": "screen=combat act=1 floor=7 hp=37/75 energy=2/3 round=4 incoming=0 selfStatus=[Frail:4,Thunder:6] enemies=[Corpse Slug:14/26 intent=Stun status=Ravenous:4,Strength:4, Corpse Slug:24/27 intent=Stun status=Ravenous:4,Strength:4] hand=[0:Defend, 1:Chill+, 2:Rainbow+, 3:Strike]",
+        "after": "screen=combat act=1 floor=7 hp=37/75 energy=1/3 round=4 incoming=0 selfStatus=[Frail:4,Thunder:6] enemies=[Corpse Slug:8/26 intent=Stun status=Ravenous:4,Strength:4, Corpse Slug:24/27 intent=Stun status=Ravenous:4,Strength:4] hand=[0:Defend, 1:Chill+, 2:Rainbow+]",
+        "changes": {
+          "actionKind": "play_card",
+          "screen": {
+            "changed": false,
+            "value": "combat"
+          },
+          "stateType": {
+            "changed": false,
+            "value": "monster"
+          },
+          "floor": {
+            "changed": false,
+            "value": 7
+          },
+          "round": {
+            "changed": false,
+            "value": 4
+          },
+          "turn": {
+            "changed": false,
+            "value": "player"
+          },
+          "isPlayPhase": {
+            "changed": false,
+            "value": true
+          },
+          "hp": {
+            "changed": false,
+            "value": 37
+          },
+          "block": {
+            "changed": false,
+            "value": 0
+          },
+          "energy": {
+            "changed": true,
+            "before": 2,
+            "after": 1
+          },
+          "handCount": {
+            "changed": true,
+            "before": 4,
+            "after": 3
+          },
+          "hand": {
+            "before": [
+              "0:DEFEND_DEFECT:Defend",
+              "1:CHILL:Chill+",
+              "2:RAINBOW:Rainbow+",
+              "3:STRIKE_DEFECT:Strike"
+            ],
+            "after": [
+              "0:DEFEND_DEFECT:Defend",
+              "1:CHILL:Chill+",
+              "2:RAINBOW:Rainbow+"
+            ]
+          },
+          "drawPileCount": {
+            "changed": false,
+            "value": 4
+          },
+          "discardPileCount": {
+            "changed": true,
+            "before": 5,
+            "after": 6
+          },
+          "exhaustPileCount": {
+            "changed": false,
+            "value": 0
+          },
+          "potionCount": {
+            "changed": false,
+            "value": 0
+          },
+          "orbCount": {
+            "changed": false,
+            "value": 2
+          },
+          "livingEnemies": {
+            "before": [
+              "CORPSE_SLUG_0",
+              "CORPSE_SLUG_1"
+            ],
+            "after": [
+              "CORPSE_SLUG_0",
+              "CORPSE_SLUG_1"
+            ],
+            "removed": [],
+            "added": []
+          },
+          "enemyDeltas": [
+            {
+              "id": "CORPSE_SLUG_0",
+              "name": "Corpse Slug",
+              "removed": false,
+              "hpBefore": 14,
+              "hpAfter": 8,
+              "hpDelta": -6,
+              "blockBefore": 0,
+              "blockAfter": 0,
+              "blockDelta": 0
+            }
+          ],
+          "rewardsCount": {
+            "changed": false,
+            "value": 0
+          },
+          "optionsCount": {
+            "changed": false,
+            "value": 0
+          },
+          "mapNodesCount": {
+            "changed": false,
+            "value": 0
+          }
+        }
+      },
+      "candidateCount": 6,
+      "topCandidate": {
+        "id": "play-3-CORPSE_SLUG_0",
+        "label": "打出 Strike -> Corpse Slug",
+        "score": 18.25999999999999,
+        "confidence": 0.2282499999999999
+      },
+      "score": 18.25999999999999,
+      "confidence": 0.2282499999999999,
+      "reasons": [
+        "输出 6",
+        "优先处理带成长/高威胁敌人"
+      ],
+      "candidates": [
+        {
+          "id": "play-3-CORPSE_SLUG_0",
+          "label": "打出 Strike -> Corpse Slug",
+          "score": 18.25999999999999,
+          "reasons": [
+            "输出 6",
+            "优先处理带成长/高威胁敌人"
+          ]
+        },
+        {
+          "id": "play-3-CORPSE_SLUG_1",
+          "label": "打出 Strike -> Corpse Slug",
+          "score": 18.25999999999999,
+          "reasons": [
+            "输出 6",
+            "优先处理带成长/高威胁敌人"
+          ]
+        },
+        {
+          "id": "play-1",
+          "label": "打出 Chill+",
+          "score": 6,
+          "reasons": [
+            "0 费工具牌优先打出"
+          ]
+        },
+        {
+          "id": "play-2",
+          "label": "打出 Rainbow+",
+          "score": 1,
+          "reasons": [
+            "充能闪电球提供回合末伤害"
+          ]
+        },
+        {
+          "id": "play-0",
+          "label": "打出 Defend",
+          "score": -4.05,
+          "reasons": []
+        }
+      ]
+    },
+    {
+      "id": "decision-mr2vrf24-6yx4yl",
+      "at": "2026-07-02T02:23:32.861Z",
+      "act": 1,
+      "floor": 7,
+      "screen": "combat",
+      "stateSummary": "screen=combat act=1 floor=7 hp=37/75 energy=1/3 round=4 incoming=0 selfStatus=[Frail:4,Thunder:6] enemies=[Corpse Slug:8/26 intent=Stun status=Ravenous:4,Strength:4, Corpse Slug:24/27 intent=Stun status=Ravenous:4,Strength:4] hand=[0:Defend, 1:Chill+, 2:Rainbow+]",
+      "chosen": "打出 Chill+",
+      "chosenBy": "local",
+      "route": "local_fast_combat",
+      "routeReasons": [
+        "low_confidence"
+      ],
+      "llm": {
+        "wanted": false,
+        "called": false,
+        "available": false,
+        "outcome": "not_needed"
+      },
+      "checkpoint": {
+        "kind": "hard",
+        "reasons": [
+          "orb_state_changed",
+          "player_block_changed",
+          "discard_pile_count_changed",
+          "expected_card_removed_from_hand"
+        ],
+        "settled": true,
+        "polls": 1,
+        "preStateHash": "{\"stateType\":\"monster\",\"screen\":\"combat\",\"act\":1,\"floor\":7,\"round\":4,\"turn\":\"player\",\"isPlayPhase\":true,\"hp\":37,\"block\":0,\"energy\":1,\"hand\":[\"0:DEFEND_DEFECT:Defend\",\"1:CHILL:Chill+\",\"2:RAINBOW:Rainbow+\"],\"drawPileCount\":4,\"discardPileCount\":6,\"exhaustPileCount\":0,\"potions\":[],\"relics\":[\"CRACKED_CORE\",\"SILVER_CRUCIBLE\"],\"orbs\":[\"FROST_ORB:5\",\"FROST_ORB:5\"],\"enemies\":[{\"id\":\"CORPSE_SLUG_0\",\"hp\":8,\"block\":0,\"intents\":[\"Stun:\"]},{\"id\":\"CORPSE_SLUG_1\",\"hp\":24,\"block\":0,\"intents\":[\"Stun:\"]}],\"options\":0,\"mapNodes\":0,\"rewards\":0}",
+        "postStateHash": "{\"stateType\":\"monster\",\"screen\":\"combat\",\"act\":1,\"floor\":7,\"round\":4,\"turn\":\"player\",\"isPlayPhase\":true,\"hp\":37,\"block\":5,\"energy\":1,\"hand\":[\"0:DEFEND_DEFECT:Defend\",\"1:RAINBOW:Rainbow+\"],\"drawPileCount\":4,\"discardPileCount\":7,\"exhaustPileCount\":0,\"potions\":[],\"relics\":[\"CRACKED_CORE\",\"SILVER_CRUCIBLE\"],\"orbs\":[\"FROST_ORB:5\",\"FROST_ORB:5\",\"FROST_ORB:5\"],\"enemies\":[{\"id\":\"CORPSE_SLUG_0\",\"hp\":8,\"block\":0,\"intents\":[\"Stun:\"]},{\"id\":\"CORPSE_SLUG_1\",\"hp\":24,\"block\":0,\"intents\":[\"Stun:\"]}],\"options\":0,\"mapNodes\":0,\"rewards\":0}",
+        "before": "screen=combat act=1 floor=7 hp=37/75 energy=1/3 round=4 incoming=0 selfStatus=[Frail:4,Thunder:6] enemies=[Corpse Slug:8/26 intent=Stun status=Ravenous:4,Strength:4, Corpse Slug:24/27 intent=Stun status=Ravenous:4,Strength:4] hand=[0:Defend, 1:Chill+, 2:Rainbow+]",
+        "after": "screen=combat act=1 floor=7 hp=37/75 energy=1/3 round=4 incoming=0 selfStatus=[Frail:4,Thunder:6] enemies=[Corpse Slug:8/26 intent=Stun status=Ravenous:4,Strength:4, Corpse Slug:24/27 intent=Stun status=Ravenous:4,Strength:4] hand=[0:Defend, 1:Rainbow+]",
+        "changes": {
+          "actionKind": "play_card",
+          "screen": {
+            "changed": false,
+            "value": "combat"
+          },
+          "stateType": {
+            "changed": false,
+            "value": "monster"
+          },
+          "floor": {
+            "changed": false,
+            "value": 7
+          },
+          "round": {
+            "changed": false,
+            "value": 4
+          },
+          "turn": {
+            "changed": false,
+            "value": "player"
+          },
+          "isPlayPhase": {
+            "changed": false,
+            "value": true
+          },
+          "hp": {
+            "changed": false,
+            "value": 37
+          },
+          "block": {
+            "changed": true,
+            "before": 0,
+            "after": 5
+          },
+          "energy": {
+            "changed": false,
+            "value": 1
+          },
+          "handCount": {
+            "changed": true,
+            "before": 3,
+            "after": 2
+          },
+          "hand": {
+            "before": [
+              "0:DEFEND_DEFECT:Defend",
+              "1:CHILL:Chill+",
+              "2:RAINBOW:Rainbow+"
+            ],
+            "after": [
+              "0:DEFEND_DEFECT:Defend",
+              "1:RAINBOW:Rainbow+"
+            ]
+          },
+          "drawPileCount": {
+            "changed": false,
+            "value": 4
+          },
+          "discardPileCount": {
+            "changed": true,
+            "before": 6,
+            "after": 7
+          },
+          "exhaustPileCount": {
+            "changed": false,
+            "value": 0
+          },
+          "potionCount": {
+            "changed": false,
+            "value": 0
+          },
+          "orbCount": {
+            "changed": true,
+            "before": 2,
+            "after": 3
+          },
+          "livingEnemies": {
+            "before": [
+              "CORPSE_SLUG_0",
+              "CORPSE_SLUG_1"
+            ],
+            "after": [
+              "CORPSE_SLUG_0",
+              "CORPSE_SLUG_1"
+            ],
+            "removed": [],
+            "added": []
+          },
+          "enemyDeltas": [],
+          "rewardsCount": {
+            "changed": false,
+            "value": 0
+          },
+          "optionsCount": {
+            "changed": false,
+            "value": 0
+          },
+          "mapNodesCount": {
+            "changed": false,
+            "value": 0
+          }
+        }
+      },
+      "candidateCount": 3,
+      "topCandidate": {
+        "id": "play-1",
+        "label": "打出 Chill+",
+        "score": 6,
+        "confidence": 0.24000000000000002
+      },
+      "score": 6,
+      "confidence": 0.24000000000000002,
+      "reasons": [
+        "0 费工具牌优先打出"
+      ],
+      "candidates": [
+        {
+          "id": "play-1",
+          "label": "打出 Chill+",
+          "score": 6,
+          "reasons": [
+            "0 费工具牌优先打出"
+          ]
+        },
+        {
+          "id": "end-turn",
+          "label": "结束回合",
+          "score": -3,
+          "reasons": [
+            "已挡住来伤"
+          ]
+        },
+        {
+          "id": "play-0",
+          "label": "打出 Defend",
+          "score": -4.05,
+          "reasons": []
+        }
+      ]
+    },
+    {
+      "id": "decision-mr2vri8w-38o294",
+      "at": "2026-07-02T02:23:36.992Z",
+      "act": 1,
+      "floor": 7,
+      "screen": "combat",
+      "stateSummary": "screen=combat act=1 floor=7 hp=37/75 energy=1/3 round=4 incoming=0 selfStatus=[Frail:4,Thunder:6] enemies=[Corpse Slug:8/26 intent=Stun status=Ravenous:4,Strength:4, Corpse Slug:24/27 intent=Stun status=Ravenous:4,Strength:4] hand=[0:Defend, 1:Rainbow+]",
+      "chosen": "结束回合",
+      "chosenBy": "local",
+      "route": "local_fast_combat",
+      "routeReasons": [
+        "ordinary combat tick"
+      ],
+      "llm": {
+        "wanted": false,
+        "called": false,
+        "available": false,
+        "outcome": "not_needed"
+      },
+      "checkpoint": {
+        "kind": "hard",
+        "reasons": [
+          "new_combat_round",
+          "player_block_changed",
+          "player_energy_changed",
+          "hand_count_changed",
+          "draw_pile_count_changed",
+          "discard_pile_count_changed"
+        ],
+        "settled": true,
+        "polls": 1,
+        "preStateHash": "{\"stateType\":\"monster\",\"screen\":\"combat\",\"act\":1,\"floor\":7,\"round\":4,\"turn\":\"player\",\"isPlayPhase\":true,\"hp\":37,\"block\":5,\"energy\":1,\"hand\":[\"0:DEFEND_DEFECT:Defend\",\"1:RAINBOW:Rainbow+\"],\"drawPileCount\":4,\"discardPileCount\":7,\"exhaustPileCount\":0,\"potions\":[],\"relics\":[\"CRACKED_CORE\",\"SILVER_CRUCIBLE\"],\"orbs\":[\"FROST_ORB:5\",\"FROST_ORB:5\",\"FROST_ORB:5\"],\"enemies\":[{\"id\":\"CORPSE_SLUG_0\",\"hp\":8,\"block\":0,\"intents\":[\"Stun:\"]},{\"id\":\"CORPSE_SLUG_1\",\"hp\":24,\"block\":0,\"intents\":[\"Stun:\"]}],\"options\":0,\"mapNodes\":0,\"rewards\":0}",
+        "postStateHash": "{\"stateType\":\"monster\",\"screen\":\"combat\",\"act\":1,\"floor\":7,\"round\":5,\"turn\":\"player\",\"isPlayPhase\":true,\"hp\":37,\"block\":0,\"energy\":3,\"hand\":[\"0:STRIKE_DEFECT:Strike\",\"1:ZAP:Zap\",\"2:STRIKE_DEFECT:Strike\",\"3:DEFEND_DEFECT:Defend\",\"4:STRIKE_DEFECT:Strike\"],\"drawPileCount\":8,\"discardPileCount\":0,\"exhaustPileCount\":0,\"potions\":[],\"relics\":[\"CRACKED_CORE\",\"SILVER_CRUCIBLE\"],\"orbs\":[\"FROST_ORB:5\",\"FROST_ORB:5\",\"FROST_ORB:5\"],\"enemies\":[{\"id\":\"CORPSE_SLUG_0\",\"hp\":8,\"block\":0,\"intents\":[\"Attack:12\"]},{\"id\":\"CORPSE_SLUG_1\",\"hp\":24,\"block\":0,\"intents\":[\"Attack:7x2\"]}],\"options\":0,\"mapNodes\":0,\"rewards\":0}",
+        "before": "screen=combat act=1 floor=7 hp=37/75 energy=1/3 round=4 incoming=0 selfStatus=[Frail:4,Thunder:6] enemies=[Corpse Slug:8/26 intent=Stun status=Ravenous:4,Strength:4, Corpse Slug:24/27 intent=Stun status=Ravenous:4,Strength:4] hand=[0:Defend, 1:Rainbow+]",
+        "after": "screen=combat act=1 floor=7 hp=37/75 energy=3/3 round=5 incoming=26 selfStatus=[Frail:3,Thunder:6] enemies=[Corpse Slug:8/26 intent=Attack 12 status=Ravenous:4,Strength:4, Corpse Slug:24/27 intent=Attack 7x2 status=Ravenous:4,Strength:4] hand=[0:Strike, 1:Zap, 2:Strike, 3:Defend, 4:Strike]",
+        "changes": {
+          "actionKind": "end_turn",
+          "screen": {
+            "changed": false,
+            "value": "combat"
+          },
+          "stateType": {
+            "changed": false,
+            "value": "monster"
+          },
+          "floor": {
+            "changed": false,
+            "value": 7
+          },
+          "round": {
+            "changed": true,
+            "before": 4,
+            "after": 5
+          },
+          "turn": {
+            "changed": false,
+            "value": "player"
+          },
+          "isPlayPhase": {
+            "changed": false,
+            "value": true
+          },
+          "hp": {
+            "changed": false,
+            "value": 37
+          },
+          "block": {
+            "changed": true,
+            "before": 5,
+            "after": 0
+          },
+          "energy": {
+            "changed": true,
+            "before": 1,
+            "after": 3
+          },
+          "handCount": {
+            "changed": true,
+            "before": 2,
+            "after": 5
+          },
+          "hand": {
+            "before": [
+              "0:DEFEND_DEFECT:Defend",
+              "1:RAINBOW:Rainbow+"
+            ],
+            "after": [
+              "0:STRIKE_DEFECT:Strike",
+              "1:ZAP:Zap",
+              "2:STRIKE_DEFECT:Strike",
+              "3:DEFEND_DEFECT:Defend",
+              "4:STRIKE_DEFECT:Strike"
+            ]
+          },
+          "drawPileCount": {
+            "changed": true,
+            "before": 4,
+            "after": 8
+          },
+          "discardPileCount": {
+            "changed": true,
+            "before": 7,
+            "after": 0
+          },
+          "exhaustPileCount": {
+            "changed": false,
+            "value": 0
+          },
+          "potionCount": {
+            "changed": false,
+            "value": 0
+          },
+          "orbCount": {
+            "changed": false,
+            "value": 3
+          },
+          "livingEnemies": {
+            "before": [
+              "CORPSE_SLUG_0",
+              "CORPSE_SLUG_1"
+            ],
+            "after": [
+              "CORPSE_SLUG_0",
+              "CORPSE_SLUG_1"
+            ],
+            "removed": [],
+            "added": []
+          },
+          "enemyDeltas": [],
+          "rewardsCount": {
+            "changed": false,
+            "value": 0
+          },
+          "optionsCount": {
+            "changed": false,
+            "value": 0
+          },
+          "mapNodesCount": {
+            "changed": false,
+            "value": 0
+          }
+        }
+      },
+      "candidateCount": 2,
+      "topCandidate": {
+        "id": "end-turn",
+        "label": "结束回合",
+        "score": 9,
+        "confidence": 0.8
+      },
+      "score": 9,
+      "confidence": 0.8,
+      "reasons": [
+        "已挡住来伤"
+      ],
+      "candidates": [
+        {
+          "id": "end-turn",
+          "label": "结束回合",
+          "score": 9,
+          "reasons": [
+            "已挡住来伤"
+          ]
+        },
+        {
+          "id": "play-0",
+          "label": "打出 Defend",
+          "score": -1.0499999999999998,
+          "reasons": []
+        }
+      ]
+    },
+    {
+      "id": "decision-mr2vrmhe-903kst",
+      "at": "2026-07-02T02:23:42.482Z",
+      "act": 1,
+      "floor": 7,
+      "screen": "combat",
+      "stateSummary": "screen=combat act=1 floor=7 hp=37/75 energy=3/3 round=5 incoming=26 selfStatus=[Frail:3,Thunder:6] enemies=[Corpse Slug:8/26 intent=Attack 12 status=Ravenous:4,Strength:4, Corpse Slug:24/27 intent=Attack 7x2 status=Ravenous:4,Strength:4] hand=[0:Strike, 1:Zap, 2:Strike, 3:Defend, 4:Strike]",
+      "chosen": "打出 Strike -> Corpse Slug",
+      "chosenBy": "local",
+      "route": "obvious_local",
+      "routeReasons": [
+        "top candidate is obvious",
+        "score gap=0.0"
+      ],
+      "llm": {
+        "wanted": false,
+        "called": false,
+        "available": false,
+        "outcome": "not_needed"
+      },
+      "checkpoint": {
+        "kind": "soft",
+        "reasons": [
+          "player_energy_changed",
+          "enemy_hp_or_block_changed",
+          "discard_pile_count_changed",
+          "expected_card_removed_from_hand"
+        ],
+        "settled": true,
+        "polls": 1,
+        "preStateHash": "{\"stateType\":\"monster\",\"screen\":\"combat\",\"act\":1,\"floor\":7,\"round\":5,\"turn\":\"player\",\"isPlayPhase\":true,\"hp\":37,\"block\":0,\"energy\":3,\"hand\":[\"0:STRIKE_DEFECT:Strike\",\"1:ZAP:Zap\",\"2:STRIKE_DEFECT:Strike\",\"3:DEFEND_DEFECT:Defend\",\"4:STRIKE_DEFECT:Strike\"],\"drawPileCount\":8,\"discardPileCount\":0,\"exhaustPileCount\":0,\"potions\":[],\"relics\":[\"CRACKED_CORE\",\"SILVER_CRUCIBLE\"],\"orbs\":[\"FROST_ORB:5\",\"FROST_ORB:5\",\"FROST_ORB:5\"],\"enemies\":[{\"id\":\"CORPSE_SLUG_0\",\"hp\":8,\"block\":0,\"intents\":[\"Attack:12\"]},{\"id\":\"CORPSE_SLUG_1\",\"hp\":24,\"block\":0,\"intents\":[\"Attack:7x2\"]}],\"options\":0,\"mapNodes\":0,\"rewards\":0}",
+        "postStateHash": "{\"stateType\":\"monster\",\"screen\":\"combat\",\"act\":1,\"floor\":7,\"round\":5,\"turn\":\"player\",\"isPlayPhase\":true,\"hp\":37,\"block\":0,\"energy\":2,\"hand\":[\"0:ZAP:Zap\",\"1:STRIKE_DEFECT:Strike\",\"2:DEFEND_DEFECT:Defend\",\"3:STRIKE_DEFECT:Strike\"],\"drawPileCount\":8,\"discardPileCount\":1,\"exhaustPileCount\":0,\"potions\":[],\"relics\":[\"CRACKED_CORE\",\"SILVER_CRUCIBLE\"],\"orbs\":[\"FROST_ORB:5\",\"FROST_ORB:5\",\"FROST_ORB:5\"],\"enemies\":[{\"id\":\"CORPSE_SLUG_0\",\"hp\":2,\"block\":0,\"intents\":[\"Attack:12\"]},{\"id\":\"CORPSE_SLUG_1\",\"hp\":24,\"block\":0,\"intents\":[\"Attack:7x2\"]}],\"options\":0,\"mapNodes\":0,\"rewards\":0}",
+        "before": "screen=combat act=1 floor=7 hp=37/75 energy=3/3 round=5 incoming=26 selfStatus=[Frail:3,Thunder:6] enemies=[Corpse Slug:8/26 intent=Attack 12 status=Ravenous:4,Strength:4, Corpse Slug:24/27 intent=Attack 7x2 status=Ravenous:4,Strength:4] hand=[0:Strike, 1:Zap, 2:Strike, 3:Defend, 4:Strike]",
+        "after": "screen=combat act=1 floor=7 hp=37/75 energy=2/3 round=5 incoming=26 selfStatus=[Frail:3,Thunder:6] enemies=[Corpse Slug:2/26 intent=Attack 12 status=Ravenous:4,Strength:4, Corpse Slug:24/27 intent=Attack 7x2 status=Ravenous:4,Strength:4] hand=[0:Zap, 1:Strike, 2:Defend, 3:Strike]",
+        "changes": {
+          "actionKind": "play_card",
+          "screen": {
+            "changed": false,
+            "value": "combat"
+          },
+          "stateType": {
+            "changed": false,
+            "value": "monster"
+          },
+          "floor": {
+            "changed": false,
+            "value": 7
+          },
+          "round": {
+            "changed": false,
+            "value": 5
+          },
+          "turn": {
+            "changed": false,
+            "value": "player"
+          },
+          "isPlayPhase": {
+            "changed": false,
+            "value": true
+          },
+          "hp": {
+            "changed": false,
+            "value": 37
+          },
+          "block": {
+            "changed": false,
+            "value": 0
+          },
+          "energy": {
+            "changed": true,
+            "before": 3,
+            "after": 2
+          },
+          "handCount": {
+            "changed": true,
+            "before": 5,
+            "after": 4
+          },
+          "hand": {
+            "before": [
+              "0:STRIKE_DEFECT:Strike",
+              "1:ZAP:Zap",
+              "2:STRIKE_DEFECT:Strike",
+              "3:DEFEND_DEFECT:Defend",
+              "4:STRIKE_DEFECT:Strike"
+            ],
+            "after": [
+              "0:ZAP:Zap",
+              "1:STRIKE_DEFECT:Strike",
+              "2:DEFEND_DEFECT:Defend",
+              "3:STRIKE_DEFECT:Strike"
+            ]
+          },
+          "drawPileCount": {
+            "changed": false,
+            "value": 8
+          },
+          "discardPileCount": {
+            "changed": true,
+            "before": 0,
+            "after": 1
+          },
+          "exhaustPileCount": {
+            "changed": false,
+            "value": 0
+          },
+          "potionCount": {
+            "changed": false,
+            "value": 0
+          },
+          "orbCount": {
+            "changed": false,
+            "value": 3
+          },
+          "livingEnemies": {
+            "before": [
+              "CORPSE_SLUG_0",
+              "CORPSE_SLUG_1"
+            ],
+            "after": [
+              "CORPSE_SLUG_0",
+              "CORPSE_SLUG_1"
+            ],
+            "removed": [],
+            "added": []
+          },
+          "enemyDeltas": [
+            {
+              "id": "CORPSE_SLUG_0",
+              "name": "Corpse Slug",
+              "removed": false,
+              "hpBefore": 8,
+              "hpAfter": 2,
+              "hpDelta": -6,
+              "blockBefore": 0,
+              "blockAfter": 0,
+              "blockDelta": 0
+            }
+          ],
+          "rewardsCount": {
+            "changed": false,
+            "value": 0
+          },
+          "optionsCount": {
+            "changed": false,
+            "value": 0
+          },
+          "mapNodesCount": {
+            "changed": false,
+            "value": 0
+          }
+        }
+      },
+      "candidateCount": 9,
+      "topCandidate": {
+        "id": "play-0-CORPSE_SLUG_0",
+        "label": "打出 Strike -> Corpse Slug",
+        "score": 745.26,
+        "confidence": 0.95
+      },
+      "score": 745.26,
+      "confidence": 0.95,
+      "reasons": [
+        "输出 6",
+        "优先压低正在攻击的敌人",
+        "优先处理带成长/高威胁敌人",
+        "可接后续牌完成斩杀"
+      ],
+      "candidates": [
+        {
+          "id": "play-0-CORPSE_SLUG_0",
+          "label": "打出 Strike -> Corpse Slug",
+          "score": 745.26,
+          "reasons": [
+            "输出 6",
+            "优先压低正在攻击的敌人",
+            "优先处理带成长/高威胁敌人",
+            "可接后续牌完成斩杀"
+          ]
+        },
+        {
+          "id": "play-2-CORPSE_SLUG_0",
+          "label": "打出 Strike -> Corpse Slug",
+          "score": 745.26,
+          "reasons": [
+            "输出 6",
+            "优先压低正在攻击的敌人",
+            "优先处理带成长/高威胁敌人",
+            "可接后续牌完成斩杀"
+          ]
+        },
+        {
+          "id": "play-4-CORPSE_SLUG_0",
+          "label": "打出 Strike -> Corpse Slug",
+          "score": 745.26,
+          "reasons": [
+            "输出 6",
+            "优先压低正在攻击的敌人",
+            "优先处理带成长/高威胁敌人",
+            "可接后续牌完成斩杀"
+          ]
+        },
+        {
+          "id": "play-0-CORPSE_SLUG_1",
+          "label": "打出 Strike -> Corpse Slug",
+          "score": 22.25999999999999,
+          "reasons": [
+            "输出 6",
+            "优先压低正在攻击的敌人",
+            "优先处理带成长/高威胁敌人"
+          ]
+        },
+        {
+          "id": "play-2-CORPSE_SLUG_1",
+          "label": "打出 Strike -> Corpse Slug",
+          "score": 22.25999999999999,
+          "reasons": [
+            "输出 6",
+            "优先压低正在攻击的敌人",
+            "优先处理带成长/高威胁敌人"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "decision-mr2vrp0r-6tej5r",
+      "at": "2026-07-02T02:23:45.771Z",
+      "act": 1,
+      "floor": 7,
+      "screen": "combat",
+      "stateSummary": "screen=combat act=1 floor=7 hp=37/75 energy=2/3 round=5 incoming=26 selfStatus=[Frail:3,Thunder:6] enemies=[Corpse Slug:2/26 intent=Attack 12 status=Ravenous:4,Strength:4, Corpse Slug:24/27 intent=Attack 7x2 status=Ravenous:4,Strength:4] hand=[0:Zap, 1:Strike, 2:Defend, 3:Strike]",
+      "chosen": "打出 Strike -> Corpse Slug",
+      "chosenBy": "local",
+      "route": "obvious_local",
+      "routeReasons": [
+        "top candidate is obvious",
+        "score gap=0.0"
+      ],
+      "llm": {
+        "wanted": false,
+        "called": false,
+        "available": false,
+        "outcome": "not_needed"
+      },
+      "checkpoint": {
+        "kind": "hard",
+        "reasons": [
+          "enemy_removed_or_dead",
+          "player_energy_changed",
+          "enemy_hp_or_block_changed",
+          "discard_pile_count_changed",
+          "expected_card_removed_from_hand"
+        ],
+        "settled": true,
+        "polls": 1,
+        "preStateHash": "{\"stateType\":\"monster\",\"screen\":\"combat\",\"act\":1,\"floor\":7,\"round\":5,\"turn\":\"player\",\"isPlayPhase\":true,\"hp\":37,\"block\":0,\"energy\":2,\"hand\":[\"0:ZAP:Zap\",\"1:STRIKE_DEFECT:Strike\",\"2:DEFEND_DEFECT:Defend\",\"3:STRIKE_DEFECT:Strike\"],\"drawPileCount\":8,\"discardPileCount\":1,\"exhaustPileCount\":0,\"potions\":[],\"relics\":[\"CRACKED_CORE\",\"SILVER_CRUCIBLE\"],\"orbs\":[\"FROST_ORB:5\",\"FROST_ORB:5\",\"FROST_ORB:5\"],\"enemies\":[{\"id\":\"CORPSE_SLUG_0\",\"hp\":2,\"block\":0,\"intents\":[\"Attack:12\"]},{\"id\":\"CORPSE_SLUG_1\",\"hp\":24,\"block\":0,\"intents\":[\"Attack:7x2\"]}],\"options\":0,\"mapNodes\":0,\"rewards\":0}",
+        "postStateHash": "{\"stateType\":\"monster\",\"screen\":\"combat\",\"act\":1,\"floor\":7,\"round\":5,\"turn\":\"player\",\"isPlayPhase\":true,\"hp\":37,\"block\":0,\"energy\":1,\"hand\":[\"0:ZAP:Zap\",\"1:DEFEND_DEFECT:Defend\",\"2:STRIKE_DEFECT:Strike\"],\"drawPileCount\":8,\"discardPileCount\":2,\"exhaustPileCount\":0,\"potions\":[],\"relics\":[\"CRACKED_CORE\",\"SILVER_CRUCIBLE\"],\"orbs\":[\"FROST_ORB:5\",\"FROST_ORB:5\",\"FROST_ORB:5\"],\"enemies\":[{\"id\":\"CORPSE_SLUG_0\",\"hp\":24,\"block\":0,\"intents\":[\"Stun:\"]}],\"options\":0,\"mapNodes\":0,\"rewards\":0}",
+        "before": "screen=combat act=1 floor=7 hp=37/75 energy=2/3 round=5 incoming=26 selfStatus=[Frail:3,Thunder:6] enemies=[Corpse Slug:2/26 intent=Attack 12 status=Ravenous:4,Strength:4, Corpse Slug:24/27 intent=Attack 7x2 status=Ravenous:4,Strength:4] hand=[0:Zap, 1:Strike, 2:Defend, 3:Strike]",
+        "after": "screen=combat act=1 floor=7 hp=37/75 energy=1/3 round=5 incoming=0 selfStatus=[Frail:3,Thunder:6] enemies=[Corpse Slug:24/27 intent=Stun status=Ravenous:4,Strength:8] hand=[0:Zap, 1:Defend, 2:Strike]",
+        "changes": {
+          "actionKind": "play_card",
+          "screen": {
+            "changed": false,
+            "value": "combat"
+          },
+          "stateType": {
+            "changed": false,
+            "value": "monster"
+          },
+          "floor": {
+            "changed": false,
+            "value": 7
+          },
+          "round": {
+            "changed": false,
+            "value": 5
+          },
+          "turn": {
+            "changed": false,
+            "value": "player"
+          },
+          "isPlayPhase": {
+            "changed": false,
+            "value": true
+          },
+          "hp": {
+            "changed": false,
+            "value": 37
+          },
+          "block": {
+            "changed": false,
+            "value": 0
+          },
+          "energy": {
+            "changed": true,
+            "before": 2,
+            "after": 1
+          },
+          "handCount": {
+            "changed": true,
+            "before": 4,
+            "after": 3
+          },
+          "hand": {
+            "before": [
+              "0:ZAP:Zap",
+              "1:STRIKE_DEFECT:Strike",
+              "2:DEFEND_DEFECT:Defend",
+              "3:STRIKE_DEFECT:Strike"
+            ],
+            "after": [
+              "0:ZAP:Zap",
+              "1:DEFEND_DEFECT:Defend",
+              "2:STRIKE_DEFECT:Strike"
+            ]
+          },
+          "drawPileCount": {
+            "changed": false,
+            "value": 8
+          },
+          "discardPileCount": {
+            "changed": true,
+            "before": 1,
+            "after": 2
+          },
+          "exhaustPileCount": {
+            "changed": false,
+            "value": 0
+          },
+          "potionCount": {
+            "changed": false,
+            "value": 0
+          },
+          "orbCount": {
+            "changed": false,
+            "value": 3
+          },
+          "livingEnemies": {
+            "before": [
+              "CORPSE_SLUG_0",
+              "CORPSE_SLUG_1"
+            ],
+            "after": [
+              "CORPSE_SLUG_0"
+            ],
+            "removed": [
+              "CORPSE_SLUG_1"
+            ],
+            "added": []
+          },
+          "enemyDeltas": [
+            {
+              "id": "CORPSE_SLUG_0",
+              "name": "Corpse Slug",
+              "removed": false,
+              "hpBefore": 2,
+              "hpAfter": 24,
+              "hpDelta": 22,
+              "blockBefore": 0,
+              "blockAfter": 0,
+              "blockDelta": 0
+            },
+            {
+              "id": "CORPSE_SLUG_1",
+              "name": "Corpse Slug",
+              "removed": true,
+              "hpBefore": 24,
+              "hpAfter": 0,
+              "hpDelta": -24,
+              "blockBefore": 0,
+              "blockAfter": 0,
+              "blockDelta": 0
+            }
+          ],
+          "rewardsCount": {
+            "changed": false,
+            "value": 0
+          },
+          "optionsCount": {
+            "changed": false,
+            "value": 0
+          },
+          "mapNodesCount": {
+            "changed": false,
+            "value": 0
+          }
+        }
+      },
+      "candidateCount": 7,
+      "topCandidate": {
+        "id": "play-1-CORPSE_SLUG_0",
+        "label": "打出 Strike -> Corpse Slug",
+        "score": 825.26,
+        "confidence": 0.95
+      },
+      "score": 825.26,
+      "confidence": 0.95,
+      "reasons": [
+        "输出 6",
+        "优先压低正在攻击的敌人",
+        "优先处理带成长/高威胁敌人",
+        "可斩杀目标"
+      ],
+      "candidates": [
+        {
+          "id": "play-1-CORPSE_SLUG_0",
+          "label": "打出 Strike -> Corpse Slug",
+          "score": 825.26,
+          "reasons": [
+            "输出 6",
+            "优先压低正在攻击的敌人",
+            "优先处理带成长/高威胁敌人",
+            "可斩杀目标"
+          ]
+        },
+        {
+          "id": "play-3-CORPSE_SLUG_0",
+          "label": "打出 Strike -> Corpse Slug",
+          "score": 825.26,
+          "reasons": [
+            "输出 6",
+            "优先压低正在攻击的敌人",
+            "优先处理带成长/高威胁敌人",
+            "可斩杀目标"
+          ]
+        },
+        {
+          "id": "play-1-CORPSE_SLUG_1",
+          "label": "打出 Strike -> Corpse Slug",
+          "score": 22.25999999999999,
+          "reasons": [
+            "输出 6",
+            "优先压低正在攻击的敌人",
+            "优先处理带成长/高威胁敌人"
+          ]
+        },
+        {
+          "id": "play-3-CORPSE_SLUG_1",
+          "label": "打出 Strike -> Corpse Slug",
+          "score": 22.25999999999999,
+          "reasons": [
+            "输出 6",
+            "优先压低正在攻击的敌人",
+            "优先处理带成长/高威胁敌人"
+          ]
+        },
+        {
+          "id": "play-2",
+          "label": "打出 Defend",
+          "score": 7.351216216216217,
+          "reasons": [
+            "补格挡 3/26",
+            "高压回合优先保血",
+            "自身易伤/脆弱，优先稳血"
+          ]
+        }
+      ]
     }
   ],
   "recentCombat": {
     "statusBurden": 0,
-    "lastIncomingDamage": 14
+    "lastIncomingDamage": 26
   },
   "counters": {
-    "ticks": 149,
+    "ticks": 154,
     "llmCalls": 0,
     "llmWanted": 9,
-    "localDecisions": 88,
+    "localDecisions": 93,
     "uncertainDecisions": 9,
     "fallbackDecisions": 9,
     "forcedLocalDecisions": 21,
@@ -14982,8 +14989,8 @@
     "llmTimeoutFallbacks": 0,
     "conservativeFallbackDecisions": 3,
     "checkpointNone": 0,
-    "checkpointSoft": 25,
-    "checkpointHard": 58,
+    "checkpointSoft": 27,
+    "checkpointHard": 61,
     "checkpointUnknown": 14,
     "combats": 50,
     "elitesSeen": 0,
