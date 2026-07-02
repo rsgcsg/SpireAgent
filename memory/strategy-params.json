@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "updatedAt": "2026-07-01T14:30:10.555Z",
+  "updatedAt": "2026-07-02T06:50:23.951Z",
   "weights": {
-    "damage": 1.2099999999999986,
+    "damage": 1.2249999999999985,
     "block": 1.31,
     "lethal": 8,
     "draw": 0.55,
@@ -164,6 +164,14 @@
     },
     {
       "at": "2026-07-01T14:30:10.555Z",
+      "reason": "post-run reward feedback",
+      "changes": {
+        "weights.damage": 0.015
+      },
+      "rewardScore": -42
+    },
+    {
+      "at": "2026-07-02T06:50:23.951Z",
       "reason": "post-run reward feedback",
       "changes": {
         "weights.damage": 0.015

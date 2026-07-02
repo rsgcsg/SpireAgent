@@ -47,6 +47,7 @@ export interface DeepSeekV4FlashConfig {
   maxOutputTokens?: number;
   retryLimit?: number;
   emptyContentRetryLimit?: number;
+  truncationRetryLimit?: number;
   outputMode?: DeepSeekResponseMode;
   temperature?: number;
   topP?: number;
@@ -64,16 +65,20 @@ export interface DeepSeekWorkspaceDecision extends LlmDecision {
     contentPreview?: string;
     contentBytes?: number;
     parseState?: string;
+    cleanupReason?: string;
     requestMode?: DeepSeekResponseMode;
     retryCount?: number;
     emptyContentRetryCount?: number;
     emptyContentRetrySucceeded?: boolean;
+    truncationRetryCount?: number;
+    truncationRetrySucceeded?: boolean;
   };
   providerMetadata?: {
     provider: "deepseek";
     model: string;
     latencyMs: number;
     maxOutputTokens: number;
+    finishReason?: string;
     requestMode?: DeepSeekResponseMode;
     temperature?: number;
     topP?: number;
@@ -93,6 +98,7 @@ export class DeepSeekV4FlashDecider implements LlmDecider {
   private readonly maxOutputTokens: number;
   private readonly retryLimit: number;
   private readonly emptyContentRetryLimit: number;
+  private readonly truncationRetryLimit: number;
   private readonly outputMode: DeepSeekResponseMode;
   private readonly temperature: number;
   private readonly topP: number;
@@ -106,6 +112,7 @@ export class DeepSeekV4FlashDecider implements LlmDecider {
     this.maxOutputTokens = config.maxOutputTokens ?? numberFromEnv("STS2_DEEPSEEK_MAX_OUTPUT_TOKENS", 400);
     this.retryLimit = config.retryLimit ?? numberFromEnv("STS2_DEEPSEEK_RETRY_LIMIT", 0);
     this.emptyContentRetryLimit = clampRetryLimit(config.emptyContentRetryLimit ?? numberFromEnv("STS2_DEEPSEEK_EMPTY_RETRY_LIMIT", 1), 1);
+    this.truncationRetryLimit = clampRetryLimit(config.truncationRetryLimit ?? numberFromEnv("STS2_DEEPSEEK_TRUNCATION_RETRY_LIMIT", 1), 1);
     this.outputMode = config.outputMode ?? resolveDeepSeekResponseMode(process.env.STS2_DEEPSEEK_OUTPUT_MODE, process.env.STS2_DEEPSEEK_JSON_MODE);
     this.temperature = config.temperature ?? numberFromEnv("STS2_DEEPSEEK_TEMPERATURE", 0);
     this.topP = config.topP ?? numberFromEnv("STS2_DEEPSEEK_TOP_P", 0.1);
@@ -120,21 +127,34 @@ export class DeepSeekV4FlashDecider implements LlmDecider {
     if (!this.isAvailable()) return null;
     let lastError: unknown;
     let emptyContentRetryCount = 0;
+    let truncationRetryCount = 0;
     for (let attempt = 0; attempt <= this.retryLimit; attempt += 1) {
       try {
-        for (let rescue = 0; rescue <= this.emptyContentRetryLimit; rescue += 1) {
+        let rescue = 0;
+        let rescueMode: "empty" | "truncation" | undefined;
+        for (;;) {
           const requestKind = rescue > 0 ? "rescue" : "primary";
-          const result = await this.requestDecision(prompt, requestKind);
+          const result = await this.requestDecision(prompt, requestKind, rescueMode);
           const auditBase = {
             ...result.audit,
             requestMode: this.outputMode,
             retryCount: rescue,
             emptyContentRetryCount,
-            emptyContentRetrySucceeded: false
+            emptyContentRetrySucceeded: false,
+            truncationRetryCount,
+            truncationRetrySucceeded: false
           } satisfies NonNullable<DeepSeekWorkspaceDecision["providerAudit"]>;
           if (result.audit.contentKind === "empty") {
-            if (rescue < this.emptyContentRetryLimit) {
+            if (isTruncationLikely(result) && truncationRetryCount < this.truncationRetryLimit) {
+              truncationRetryCount += 1;
+              rescue += 1;
+              rescueMode = "truncation";
+              continue;
+            }
+            if (emptyContentRetryCount < this.emptyContentRetryLimit) {
               emptyContentRetryCount += 1;
+              rescue += 1;
+              rescueMode = "empty";
               continue;
             }
             return {
@@ -144,20 +164,27 @@ export class DeepSeekV4FlashDecider implements LlmDecider {
                 parseState: emptyContentRetryCount > 0 ? "empty_content_after_retry" : "empty_content"
               },
               providerMetadata: {
-                provider: "deepseek",
-                model: this.model,
-                latencyMs: result.latencyMs,
-                maxOutputTokens: this.maxOutputTokens,
-                requestMode: this.outputMode,
-                temperature: this.temperature,
-                topP: this.topP,
-                usage: result.usage
+              provider: "deepseek",
+              model: this.model,
+              latencyMs: result.latencyMs,
+              maxOutputTokens: this.maxOutputTokens,
+              finishReason: result.finishReason,
+              requestMode: this.outputMode,
+              temperature: this.temperature,
+              topP: this.topP,
+              usage: result.usage
               }
             };
           }
-          let decision: DeepSeekWorkspaceDecision | null;
+          if (isTruncationLikely(result) && truncationRetryCount < this.truncationRetryLimit) {
+            truncationRetryCount += 1;
+            rescue += 1;
+            rescueMode = "truncation";
+            continue;
+          }
+          let parsed: { decision: DeepSeekWorkspaceDecision | null; cleanupReason?: string };
           try {
-            decision = parseWorkspaceJsonDecision(result.content);
+            parsed = parseWorkspaceJsonDecision(result.content);
           } catch (error) {
             return {
               candidateId: "",
@@ -167,17 +194,19 @@ export class DeepSeekV4FlashDecider implements LlmDecider {
                 parseState: classifyWorkspaceParseFailure(error)
               },
               providerMetadata: {
-                provider: "deepseek",
-                model: this.model,
-                latencyMs: result.latencyMs,
-                maxOutputTokens: this.maxOutputTokens,
-                requestMode: this.outputMode,
-                temperature: this.temperature,
-                topP: this.topP,
-                usage: result.usage
+              provider: "deepseek",
+              model: this.model,
+              latencyMs: result.latencyMs,
+              maxOutputTokens: this.maxOutputTokens,
+              finishReason: result.finishReason,
+              requestMode: this.outputMode,
+              temperature: this.temperature,
+              topP: this.topP,
+              usage: result.usage
               }
             };
           }
+          const decision = parsed.decision;
           if (!decision) {
             return {
               candidateId: "",
@@ -190,6 +219,7 @@ export class DeepSeekV4FlashDecider implements LlmDecider {
                 model: this.model,
                 latencyMs: result.latencyMs,
                 maxOutputTokens: this.maxOutputTokens,
+                finishReason: result.finishReason,
                 requestMode: this.outputMode,
                 temperature: this.temperature,
                 topP: this.topP,
@@ -199,14 +229,24 @@ export class DeepSeekV4FlashDecider implements LlmDecider {
           }
           decision.providerAudit = {
             ...auditBase,
-            parseState: emptyContentRetryCount > 0 ? "parsed_after_empty_retry" : "parsed",
-            emptyContentRetrySucceeded: emptyContentRetryCount > 0
+            parseState:
+              truncationRetryCount > 0
+                ? "parsed_after_truncation_retry"
+                : emptyContentRetryCount > 0
+                  ? "parsed_after_empty_retry"
+                  : parsed.cleanupReason
+                    ? "parsed_after_cleanup"
+                    : "parsed",
+            cleanupReason: parsed.cleanupReason,
+            emptyContentRetrySucceeded: emptyContentRetryCount > 0,
+            truncationRetrySucceeded: truncationRetryCount > 0
           };
           decision.providerMetadata = {
             provider: "deepseek",
             model: this.model,
             latencyMs: result.latencyMs,
             maxOutputTokens: this.maxOutputTokens,
+            finishReason: result.finishReason,
             requestMode: this.outputMode,
             temperature: this.temperature,
             topP: this.topP,
@@ -224,16 +264,22 @@ export class DeepSeekV4FlashDecider implements LlmDecider {
 
   private async requestDecision(
     prompt: string,
-    requestKind: "primary" | "rescue"
+    requestKind: "primary" | "rescue",
+    rescueMode?: "empty" | "truncation"
   ): Promise<{
     content: string;
     audit: NonNullable<DeepSeekWorkspaceDecision["providerAudit"]>;
     usage: NonNullable<DeepSeekWorkspaceDecision["providerMetadata"]>["usage"];
     latencyMs: number;
+    finishReason?: string;
+    requestMaxOutputTokens: number;
   }> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
     const startedAt = Date.now();
+    const requestMaxOutputTokens = requestKind === "rescue" && rescueMode === "truncation"
+      ? Math.min(this.maxOutputTokens, 220)
+      : this.maxOutputTokens;
     try {
       const response = await this.fetchImpl(this.baseUrl, {
         method: "POST",
@@ -243,11 +289,12 @@ export class DeepSeekV4FlashDecider implements LlmDecider {
         },
         body: JSON.stringify(buildDeepSeekRequestBody({
           model: this.model,
-          maxOutputTokens: this.maxOutputTokens,
+          maxOutputTokens: requestMaxOutputTokens,
           temperature: this.temperature,
           topP: this.topP,
           outputMode: this.outputMode,
           requestKind,
+          rescueMode,
           prompt
         })),
         signal: controller.signal
@@ -262,7 +309,9 @@ export class DeepSeekV4FlashDecider implements LlmDecider {
         content,
         audit: createContentAudit(content),
         usage: extractDeepSeekUsage(json),
-        latencyMs: Date.now() - startedAt
+        latencyMs: Date.now() - startedAt,
+        finishReason: extractDeepSeekFinishReason(json),
+        requestMaxOutputTokens
       };
     } finally {
       clearTimeout(timeout);
@@ -367,11 +416,11 @@ function parseJsonDecision(output: string): LlmDecision | null {
   return parsed;
 }
 
-export function parseWorkspaceJsonDecision(output: string): DeepSeekWorkspaceDecision | null {
+export function parseWorkspaceJsonDecision(output: string): { decision: DeepSeekWorkspaceDecision | null; cleanupReason?: string } {
   const trimmed = output.trim();
-  if (!trimmed) return null;
+  if (!trimmed) return { decision: null };
   const parsed = parseLooseJsonObject(trimmed);
-  const decisionRecord = unwrapDecisionRecord(parsed);
+  const decisionRecord = unwrapDecisionRecord(parsed.value);
   if (!decisionRecord) {
     throw new Error("Workspace LLM output was not an object");
   }
@@ -387,21 +436,24 @@ export function parseWorkspaceJsonDecision(output: string): DeepSeekWorkspaceDec
     throw new Error("Workspace LLM decision missing candidateId or selectedCandidateId");
   }
   return {
-    candidateId,
-    confidence: numberValue(decisionRecord.confidence),
-    reason:
-      stringValue(decisionRecord.reason) ??
-      stringValue(decisionRecord.reasonBrief) ??
-      stringValue(decisionRecord.reason_brief) ??
-      stringValue(decisionRecord.rationale) ??
-      stringValue(decisionRecord.explanation),
-    memoryUpdates: isRecord(decisionRecord.memoryUpdates) ? decisionRecord.memoryUpdates : undefined,
-    parameterSuggestions: Array.isArray(decisionRecord.parameterSuggestions)
-      ? decisionRecord.parameterSuggestions.filter(isParameterSuggestion)
-      : undefined,
-    riskTags: stringArray(decisionRecord.riskTags ?? decisionRecord.risk_tags),
-    missingInfo: stringArray(decisionRecord.missingInfo ?? decisionRecord.missing_info),
-    scaffoldFeedback: stringArray(decisionRecord.scaffoldFeedback ?? decisionRecord.scaffold_feedback)
+    decision: {
+      candidateId,
+      confidence: numberValue(decisionRecord.confidence),
+      reason:
+        stringValue(decisionRecord.reason) ??
+        stringValue(decisionRecord.reasonBrief) ??
+        stringValue(decisionRecord.reason_brief) ??
+        stringValue(decisionRecord.rationale) ??
+        stringValue(decisionRecord.explanation),
+      memoryUpdates: isRecord(decisionRecord.memoryUpdates) ? decisionRecord.memoryUpdates : undefined,
+      parameterSuggestions: Array.isArray(decisionRecord.parameterSuggestions)
+        ? decisionRecord.parameterSuggestions.filter(isParameterSuggestion)
+        : undefined,
+      riskTags: stringArray(decisionRecord.riskTags ?? decisionRecord.risk_tags),
+      missingInfo: stringArray(decisionRecord.missingInfo ?? decisionRecord.missing_info),
+      scaffoldFeedback: stringArray(decisionRecord.scaffoldFeedback ?? decisionRecord.scaffold_feedback)
+    },
+    cleanupReason: parsed.cleanupReason
   };
 }
 
@@ -431,6 +483,7 @@ export function buildDeepSeekRequestBody(input: {
   topP: number;
   outputMode: DeepSeekResponseMode;
   requestKind: "primary" | "rescue";
+  rescueMode?: "empty" | "truncation";
   prompt: string;
 }): Record<string, unknown> {
   const body: Record<string, unknown> = {
@@ -441,11 +494,11 @@ export function buildDeepSeekRequestBody(input: {
     messages: [
       {
         role: "system",
-        content: buildDeepSeekSystemPrompt(input.requestKind)
+        content: buildDeepSeekSystemPrompt(input.requestKind, input.rescueMode)
       },
       {
         role: "user",
-        content: buildDeepSeekUserPrompt(input.prompt, input.requestKind)
+        content: buildDeepSeekUserPrompt(input.prompt, input.requestKind, input.rescueMode)
       }
     ]
   };
@@ -509,6 +562,13 @@ function extractDeepSeekUsage(value: unknown): NonNullable<DeepSeekWorkspaceDeci
   };
 }
 
+function extractDeepSeekFinishReason(value: unknown): string | undefined {
+  if (!isRecord(value)) return undefined;
+  const choices = value.choices;
+  if (!Array.isArray(choices) || choices.length === 0 || !isRecord(choices[0])) return undefined;
+  return stringValue(choices[0].finish_reason);
+}
+
 function stringValue(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
@@ -555,13 +615,12 @@ function createContentAudit(content: string): NonNullable<DeepSeekWorkspaceDecis
   };
 }
 
-function parseLooseJsonObject(text: string): unknown {
-  const jsonText = extractJsonObject(text);
-  try {
-    return JSON.parse(jsonText);
-  } catch {
-    return JSON.parse(repairPartialJsonObject(jsonText));
-  }
+function parseLooseJsonObject(text: string): { value: unknown; cleanupReason?: string } {
+  const extracted = extractFirstBalancedJsonValue(text);
+  return {
+    value: JSON.parse(extracted.jsonText),
+    cleanupReason: extracted.cleanupReason
+  };
 }
 
 function unwrapDecisionRecord(value: unknown): Record<string, unknown> | undefined {
@@ -608,6 +667,56 @@ function repairPartialJsonObject(text: string): string {
   return repaired;
 }
 
+function extractFirstBalancedJsonValue(text: string): { jsonText: string; cleanupReason?: string } {
+  const start = text.search(/[\[{]/u);
+  if (start === -1) {
+    throw new Error(`LLM output was not JSON: ${text.slice(0, 200)}`);
+  }
+  const opener = text[start];
+  const closer = opener === "[" ? "]" : "}";
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+  for (let index = start; index < text.length; index += 1) {
+    const char = text[index];
+    if (inString) {
+      if (escape) {
+        escape = false;
+      } else if (char === "\\") {
+        escape = true;
+      } else if (char === "\"") {
+        inString = false;
+      }
+      continue;
+    }
+    if (char === "\"") {
+      inString = true;
+      continue;
+    }
+    if (char === opener) depth += 1;
+    if (char === closer) {
+      depth -= 1;
+      if (depth === 0) {
+        const jsonText = text.slice(start, index + 1);
+        const trailing = text.slice(index + 1).trim();
+        return {
+          jsonText,
+          cleanupReason: classifyTrailingCleanup(trailing)
+        };
+      }
+    }
+  }
+  throw new Error("Workspace LLM output ended before completing one JSON object");
+}
+
+function classifyTrailingCleanup(trailing: string): string | undefined {
+  if (!trailing) return undefined;
+  if (/<.*thinking.*>/iu.test(trailing) || /end▁of▁thinking/iu.test(trailing)) return "trimmed_thinking_tail";
+  const trailingStart = trailing.search(/[\[{]/u);
+  if (trailingStart >= 0) return "trimmed_repeated_json_tail";
+  return "trimmed_explanatory_tail";
+}
+
 function classifyContentKind(trimmed: string): string {
   if (!trimmed) return "empty";
   if (trimmed.startsWith("{")) return "json_object_like";
@@ -621,45 +730,80 @@ function classifyWorkspaceParseFailure(error: unknown): string {
   if (/missing candidateId|selectedCandidateId/i.test(message)) return "missing_candidate_id";
   if (/not an object/i.test(message)) return "non_object_output";
   if (/not JSON/i.test(message)) return "non_json_output";
+  if (/ended before completing one JSON object/i.test(message)) return "truncated_json";
   return "parse_error";
 }
 
-function buildDeepSeekSystemPrompt(requestKind: "primary" | "rescue"): string {
+function buildDeepSeekSystemPrompt(
+  requestKind: "primary" | "rescue",
+  rescueMode?: "empty" | "truncation"
+): string {
+  if (requestKind === "rescue" && rescueMode === "truncation") {
+    return [
+      "You are the Slay the Spire 2 strategic workspace decider.",
+      "Return exactly one one-line minified JSON object and stop immediately.",
+      "No markdown. No prose. No chain-of-thought. No thinking marker. No second object.",
+      "selectedCandidateId must copy one allowed candidate id exactly.",
+      "Keep confidence compact.",
+      "Keep reasonBrief to one short sentence under 12 words.",
+      "riskTags, missingInfo, scaffoldFeedback must each be [] or contain at most 2 short items.",
+      `Exact JSON shape: ${workspaceDecisionExampleJson()}`
+    ].join(" ");
+  }
   if (requestKind === "rescue") {
     return [
       "You are the Slay the Spire 2 strategic workspace decider.",
-      "Return exactly one JSON object.",
-      "Do not return markdown, code fences, arrays, null, or prose.",
+      "Return exactly one one-line minified JSON object.",
+      "Do not return markdown, code fences, arrays, null, prose, chain-of-thought, thinking markers, or a second object.",
       "selectedCandidateId must copy one allowed candidate id exactly.",
-      "Use one-line minified JSON. Keep reasonBrief under 18 words. Use [] for optional arrays unless truly needed.",
+      "Keep reasonBrief to one short sentence under 12 words.",
+      "Use [] for optional arrays unless truly needed. If used, keep each array to at most 2 short items.",
       `Example JSON: ${workspaceDecisionExampleJson()}`
     ].join(" ");
   }
   return [
     "You are the Slay the Spire 2 strategic workspace decider.",
-    "Return exactly one compact JSON object and nothing else.",
+    "Return exactly one one-line minified JSON object and nothing else.",
     "The reply must be valid JSON, not markdown.",
+    "Do not emit chain-of-thought, thinking markers, tail text, or a second JSON object.",
     "selectedCandidateId must copy one allowed candidate id exactly.",
-    "Use one-line minified JSON. Keep reasonBrief under 18 words. Use [] for optional arrays unless truly needed.",
+    "Keep reasonBrief to one short sentence under 12 words.",
+    "Use [] for optional arrays unless truly needed. If used, keep each array to at most 2 short items.",
     `Example JSON: ${workspaceDecisionExampleJson()}`
   ].join(" ");
 }
 
-function buildDeepSeekUserPrompt(prompt: string, requestKind: "primary" | "rescue"): string {
-  const contract = requestKind === "rescue"
+function buildDeepSeekUserPrompt(
+  prompt: string,
+  requestKind: "primary" | "rescue",
+  rescueMode?: "empty" | "truncation"
+): string {
+  const contract = requestKind === "rescue" && rescueMode === "truncation"
+    ? [
+        "Your previous reply was truncated or contained extra trailing content.",
+        "Retry now with one one-line minified JSON object only.",
+        "Stop immediately after the closing brace.",
+        "No thinking marker. No explanation. No repeated object.",
+        "selectedCandidateId must come from allowed_candidate_ids in the workspace JSON.",
+        "reasonBrief must be one short sentence under 12 words.",
+        "riskTags, missingInfo, scaffoldFeedback must be [] or at most 2 short items.",
+        `Return this shape exactly: ${workspaceDecisionExampleJson()}`
+      ]
+    : requestKind === "rescue"
     ? [
         "Your previous reply was empty or unusable.",
-        "Retry now with exactly one JSON object.",
-        "No markdown. No explanation. No array. No null.",
+        "Retry now with exactly one one-line minified JSON object.",
+        "No markdown. No explanation. No array. No null. No chain-of-thought. No thinking marker. No second object.",
         "selectedCandidateId must come from allowed_candidate_ids in the workspace JSON.",
         "Use one-line minified JSON with short fields.",
         `Return this shape exactly: ${workspaceDecisionExampleJson()}`
       ]
     : [
-        "Return exactly one JSON object.",
-        "Do not add markdown or explanation.",
+        "Return exactly one one-line minified JSON object.",
+        "Do not add markdown, explanation, chain-of-thought, thinking markers, or a second object.",
         "selectedCandidateId must come from allowed_candidate_ids in the workspace JSON.",
-        "Use one-line minified JSON. Keep reasonBrief under 18 words. Use [] for optional arrays unless truly needed.",
+        "Keep reasonBrief under 12 words. Use [] for optional arrays unless truly needed.",
+        "If arrays are used, keep them to at most 2 short items each.",
         `Target JSON shape: ${workspaceDecisionExampleJson()}`
       ];
   return `${contract.join(" ")}\n\nWORKSPACE_JSON:\n${prompt}`;
@@ -667,6 +811,15 @@ function buildDeepSeekUserPrompt(prompt: string, requestKind: "primary" | "rescu
 
 function workspaceDecisionExampleJson(): string {
   return "{\"selectedCandidateId\":\"<allowed candidate id>\",\"confidence\":0.72,\"reasonBrief\":\"short strategic reason\",\"riskTags\":[],\"missingInfo\":[],\"scaffoldFeedback\":[]}";
+}
+
+function isTruncationLikely(result: {
+  finishReason?: string;
+  usage: NonNullable<DeepSeekWorkspaceDecision["providerMetadata"]>["usage"];
+  requestMaxOutputTokens: number;
+}): boolean {
+  return result.finishReason === "length" ||
+    (typeof result.usage?.completionTokens === "number" && result.usage.completionTokens >= result.requestMaxOutputTokens);
 }
 
 function isParameterSuggestion(value: unknown): value is { key: string; delta: number; reason: string } {

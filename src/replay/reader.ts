@@ -56,20 +56,32 @@ export interface ReplayShadowSliceStats {
   revisionTag?: string;
   transitions: number;
   shadowRecords: number;
+  plannedShadowCalls: number;
+  maxObservedShadowCallsUsed: number;
   called: number;
+  liveEligibleCalled: number;
   valid: number;
+  liveEligibleValid: number;
   invalidOutput: number;
+  liveEligibleInvalidOutput: number;
+  nonLiveInvalidOutput: number;
   invalidChoice: number;
+  liveEligibleInvalidChoice: number;
   error: number;
+  liveEligibleError: number;
   unavailable: number;
   skipped: number;
   missingCandidate: number;
+  liveEligibleMissingCandidate: number;
   agreementCounts: Record<string, number>;
   reasonQualityCounts: Record<string, number>;
   budgetStatusCounts: Record<string, number>;
   invalidBucketCounts: Record<string, number>;
   providerModeCounts: Record<string, number>;
   ablationModeCounts: Record<string, number>;
+  finishReasonCounts: Record<string, number>;
+  cleanupReasonCounts: Record<string, number>;
+  outputCapHits: number;
   retryCount: number;
   retriedCalls: number;
   retrySuccessCount: number;
@@ -78,11 +90,16 @@ export interface ReplayShadowSliceStats {
   workspacePromptSamples: number;
   estimatedCostUsd: number;
   actualOrEstimatedCostUsd: number;
+  skippedBudgetEstimatedCostUsd: number;
   averageLatencyMs: number;
   latencySamples: number;
   totalActualInputTokens: number;
   totalActualOutputTokens: number;
   totalActualTokens: number;
+  revisionTagCounts: Record<string, number>;
+  plannedShadowCallValueCounts: Record<string, number>;
+  mixedRevisionWindow: boolean;
+  mixedBudgetWindow: boolean;
   gate: {
     status: "go" | "no_go";
     reasons: string[];
@@ -357,15 +374,16 @@ export function buildReplayCognitiveCoverage(transitions: TransitionRecord[]): R
 
 export function buildReplayFreshShadowSlices(transitions: TransitionRecord[]): ReplayFreshShadowSlices {
   const latestRevisionTag = latestShadowRevisionTag(transitions);
+  const shadowTransitions = transitions.filter((transition) => isRecord(transition.shadowWorkspaceDecision));
   return {
-    last5: buildReplayShadowSliceStats("last5", transitions.slice(-5)),
-    last20: buildReplayShadowSliceStats("last20", transitions.slice(-20)),
-    last50: buildReplayShadowSliceStats("last50", transitions.slice(-50)),
+    last5: buildReplayShadowSliceStats("last5", shadowTransitions.slice(-5)),
+    last20: buildReplayShadowSliceStats("last20", shadowTransitions.slice(-20)),
+    last50: buildReplayShadowSliceStats("last50", shadowTransitions.slice(-50)),
     sinceLatestRevision: buildReplayShadowSliceStats(
       latestRevisionTag ? `since:${latestRevisionTag}` : "since:unversioned",
       latestRevisionTag
-        ? transitions.filter((transition) => shadowRevisionTag(transition) === latestRevisionTag)
-        : transitions,
+        ? shadowTransitions.filter((transition) => shadowRevisionTag(transition) === latestRevisionTag)
+        : shadowTransitions,
       latestRevisionTag
     )
   };
@@ -381,20 +399,32 @@ export function buildReplayShadowSliceStats(
     revisionTag,
     transitions: transitions.length,
     shadowRecords: 0,
+    plannedShadowCalls: 0,
+    maxObservedShadowCallsUsed: 0,
     called: 0,
+    liveEligibleCalled: 0,
     valid: 0,
+    liveEligibleValid: 0,
     invalidOutput: 0,
+    liveEligibleInvalidOutput: 0,
+    nonLiveInvalidOutput: 0,
     invalidChoice: 0,
+    liveEligibleInvalidChoice: 0,
     error: 0,
+    liveEligibleError: 0,
     unavailable: 0,
     skipped: 0,
     missingCandidate: 0,
+    liveEligibleMissingCandidate: 0,
     agreementCounts: {},
     reasonQualityCounts: {},
     budgetStatusCounts: {},
     invalidBucketCounts: {},
     providerModeCounts: {},
     ablationModeCounts: {},
+    finishReasonCounts: {},
+    cleanupReasonCounts: {},
+    outputCapHits: 0,
     retryCount: 0,
     retriedCalls: 0,
     retrySuccessCount: 0,
@@ -403,11 +433,16 @@ export function buildReplayShadowSliceStats(
     workspacePromptSamples: 0,
     estimatedCostUsd: 0,
     actualOrEstimatedCostUsd: 0,
+    skippedBudgetEstimatedCostUsd: 0,
     averageLatencyMs: 0,
     latencySamples: 0,
     totalActualInputTokens: 0,
     totalActualOutputTokens: 0,
     totalActualTokens: 0,
+    revisionTagCounts: {},
+    plannedShadowCallValueCounts: {},
+    mixedRevisionWindow: false,
+    mixedBudgetWindow: false,
     gate: {
       status: "no_go",
       reasons: ["no_shadow_records"]
@@ -417,17 +452,36 @@ export function buildReplayShadowSliceStats(
     if (!isRecord(transition.shadowWorkspaceDecision)) continue;
     stats.shadowRecords += 1;
     const shadow = transition.shadowWorkspaceDecision;
+    const liveEligible = shadowLiveEligible(transition);
     if (shadow.called === true) stats.called += 1;
+    if (shadow.called === true && liveEligible) stats.liveEligibleCalled += 1;
     const outcome = typeof shadow.outcome === "string" ? shadow.outcome : "unknown";
-    if (outcome === "valid") stats.valid += 1;
-    if (outcome === "invalid_output") stats.invalidOutput += 1;
-    if (outcome === "invalid_choice") stats.invalidChoice += 1;
-    if (outcome === "error") stats.error += 1;
+    if (outcome === "valid") {
+      stats.valid += 1;
+      if (liveEligible) stats.liveEligibleValid += 1;
+    }
+    if (outcome === "invalid_output") {
+      stats.invalidOutput += 1;
+      if (liveEligible) {
+        stats.liveEligibleInvalidOutput += 1;
+      } else {
+        stats.nonLiveInvalidOutput += 1;
+      }
+    }
+    if (outcome === "invalid_choice") {
+      stats.invalidChoice += 1;
+      if (liveEligible) stats.liveEligibleInvalidChoice += 1;
+    }
+    if (outcome === "error") {
+      stats.error += 1;
+      if (liveEligible) stats.liveEligibleError += 1;
+    }
     if (outcome === "unavailable") stats.unavailable += 1;
     if (outcome === "skipped") stats.skipped += 1;
     const agreement = typeof shadow.agreement === "string" ? shadow.agreement : "unknown";
     stats.agreementCounts[agreement] = (stats.agreementCounts[agreement] ?? 0) + 1;
     if (agreement === "missing_candidate") stats.missingCandidate += 1;
+    if (agreement === "missing_candidate" && liveEligible) stats.liveEligibleMissingCandidate += 1;
     if (typeof shadow.reasonQuality === "string") {
       stats.reasonQualityCounts[shadow.reasonQuality] = (stats.reasonQualityCounts[shadow.reasonQuality] ?? 0) + 1;
     }
@@ -437,14 +491,42 @@ export function buildReplayShadowSliceStats(
     if (typeof shadow.ablationMode === "string") {
       stats.ablationModeCounts[shadow.ablationMode] = (stats.ablationModeCounts[shadow.ablationMode] ?? 0) + 1;
     }
+    const revisionTag = shadowRevisionTag(transition);
+    if (revisionTag) {
+      stats.revisionTagCounts[revisionTag] = (stats.revisionTagCounts[revisionTag] ?? 0) + 1;
+    }
     if (typeof shadow.budgetStatus === "string") {
       stats.budgetStatusCounts[shadow.budgetStatus] = (stats.budgetStatusCounts[shadow.budgetStatus] ?? 0) + 1;
+    }
+    const finishReason = typeof shadow.providerFinishReason === "string" ? shadow.providerFinishReason : undefined;
+    if (finishReason) {
+      stats.finishReasonCounts[finishReason] = (stats.finishReasonCounts[finishReason] ?? 0) + 1;
+    }
+    if (typeof shadow.providerCleanupReason === "string") {
+      stats.cleanupReasonCounts[shadow.providerCleanupReason] = (stats.cleanupReasonCounts[shadow.providerCleanupReason] ?? 0) + 1;
+    }
+    if (shadowOutputCapHit(shadow)) stats.outputCapHits += 1;
+    const plannedShadowCalls = isRecord(transition.workspaceComparison) && isRecord(transition.workspaceComparison.budget) &&
+        typeof transition.workspaceComparison.budget.maxShadowCalls === "number"
+      ? transition.workspaceComparison.budget.maxShadowCalls
+      : undefined;
+    if (typeof plannedShadowCalls === "number") {
+      stats.plannedShadowCalls = Math.max(stats.plannedShadowCalls, plannedShadowCalls);
+      const key = String(plannedShadowCalls);
+      stats.plannedShadowCallValueCounts[key] = (stats.plannedShadowCallValueCounts[key] ?? 0) + 1;
+    }
+    const observedShadowCallsUsed = isRecord(transition.workspaceComparison) && isRecord(transition.workspaceComparison.budget) &&
+        typeof transition.workspaceComparison.budget.shadowCallsUsed === "number"
+      ? transition.workspaceComparison.budget.shadowCallsUsed
+      : undefined;
+    if (typeof observedShadowCallsUsed === "number") {
+      stats.maxObservedShadowCallsUsed = Math.max(stats.maxObservedShadowCallsUsed, observedShadowCallsUsed);
     }
     if (typeof shadow.retryCount === "number") {
       stats.retryCount += shadow.retryCount;
       if (shadow.retryCount > 0) stats.retriedCalls += 1;
     }
-    if (shadow.emptyContentRetrySucceeded === true) {
+    if (shadow.emptyContentRetrySucceeded === true || shadow.truncationRetrySucceeded === true) {
       stats.retrySuccessCount += 1;
     }
     if (typeof shadow.workspacePromptBytes === "number") {
@@ -470,7 +552,11 @@ export function buildReplayShadowSliceStats(
       stats.invalidBucketCounts[invalidBucket] = (stats.invalidBucketCounts[invalidBucket] ?? 0) + 1;
     }
     if (typeof shadow.estimatedCostUsd === "number") {
-      stats.actualOrEstimatedCostUsd += shadow.estimatedCostUsd;
+      if (shadow.called === true) {
+        stats.actualOrEstimatedCostUsd += shadow.estimatedCostUsd;
+      } else {
+        stats.skippedBudgetEstimatedCostUsd += shadow.estimatedCostUsd;
+      }
       stats.estimatedCostUsd += shadow.estimatedCostUsd;
     } else if (isRecord(transition.workspaceComparison) && isRecord(transition.workspaceComparison.budget) && typeof transition.workspaceComparison.budget.estimatedCostUsd === "number") {
       stats.estimatedCostUsd += transition.workspaceComparison.budget.estimatedCostUsd;
@@ -485,9 +571,12 @@ export function buildReplayShadowSliceStats(
   }
   stats.estimatedCostUsd = Number(stats.estimatedCostUsd.toFixed(6));
   stats.actualOrEstimatedCostUsd = Number(stats.actualOrEstimatedCostUsd.toFixed(6));
+  stats.skippedBudgetEstimatedCostUsd = Number(stats.skippedBudgetEstimatedCostUsd.toFixed(6));
   stats.averageLatencyMs = stats.latencySamples > 0 ? Number((stats.averageLatencyMs / stats.latencySamples).toFixed(1)) : 0;
   stats.averageWorkspacePromptBytes = stats.workspacePromptSamples > 0 ? Number((stats.averageWorkspacePromptBytes / stats.workspacePromptSamples).toFixed(1)) : 0;
   stats.averageWorkspacePromptTokens = stats.workspacePromptSamples > 0 ? Number((stats.averageWorkspacePromptTokens / stats.workspacePromptSamples).toFixed(1)) : 0;
+  stats.mixedRevisionWindow = Object.keys(stats.revisionTagCounts).length > 1;
+  stats.mixedBudgetWindow = Object.keys(stats.plannedShadowCallValueCounts).length > 1;
   stats.gate = buildReplayShadowSliceGate(stats);
   return stats;
 }
@@ -535,14 +624,27 @@ export function formatReplayShadowSliceStats(stats: ReplayShadowSliceStats): str
   return [
     `${stats.label}`,
     `called=${stats.called}`,
+    `liveEligibleCalled=${stats.liveEligibleCalled}`,
     `valid=${stats.valid}`,
+    `liveEligibleValid=${stats.liveEligibleValid}`,
     `invalid=${stats.invalidOutput + stats.invalidChoice}`,
+    `liveEligibleInvalid=${stats.liveEligibleInvalidOutput + stats.liveEligibleInvalidChoice}`,
+    `nonLiveInvalid=${stats.nonLiveInvalidOutput}`,
     `error=${stats.error}`,
+    `liveEligibleError=${stats.liveEligibleError}`,
     `missingCandidate=${stats.missingCandidate}`,
+    `liveEligibleMissingCandidate=${stats.liveEligibleMissingCandidate}`,
     `ablation=${JSON.stringify(stats.ablationModeCounts)}`,
     `modes=${JSON.stringify(stats.providerModeCounts)}`,
+    `finishReason=${JSON.stringify(stats.finishReasonCounts)}`,
+    `cleanup=${JSON.stringify(stats.cleanupReasonCounts)}`,
+    `outputCapHits=${stats.outputCapHits}`,
     `workspaceTokensAvg=${stats.averageWorkspacePromptTokens}`,
+    `costCalled=${stats.actualOrEstimatedCostUsd}`,
+    `costSkipped=${stats.skippedBudgetEstimatedCostUsd}`,
     `retries=${stats.retryCount}/${stats.retrySuccessCount}`,
+    `mixedRevision=${stats.mixedRevisionWindow}`,
+    `mixedBudget=${stats.mixedBudgetWindow}`,
     `invalidBuckets=${JSON.stringify(stats.invalidBucketCounts)}`,
     `gate=${stats.gate.status}`,
     `reasons=${JSON.stringify(stats.gate.reasons)}`
@@ -618,14 +720,21 @@ function summarizeTransition(transition: TransitionRecord, checkpointKind?: stri
 
 function buildReplayShadowSliceGate(stats: ReplayShadowSliceStats): ReplayShadowSliceStats["gate"] {
   const reasons: string[] = [];
+  const mixedWindow = stats.mixedRevisionWindow || stats.mixedBudgetWindow;
+  const callBudgetReachedPlannedSample = (stats.budgetStatusCounts.call_budget_exceeded ?? 0) > 0 &&
+    stats.plannedShadowCalls > 0 &&
+    (stats.called >= stats.plannedShadowCalls || stats.maxObservedShadowCallsUsed >= stats.plannedShadowCalls);
   if (stats.called === 0) reasons.push("no_real_shadow_calls");
-  if (stats.valid === 0) reasons.push("no_valid_shadow_decisions");
-  if (stats.invalidOutput > 0) reasons.push("invalid_output_present");
-  if (stats.invalidChoice > 0) reasons.push("invalid_choice_present");
-  if (stats.error > 0) reasons.push("shadow_error_present");
-  if (stats.missingCandidate > 0) reasons.push("missing_candidate_present");
+  if (stats.liveEligibleCalled === 0) reasons.push("no_live_eligible_shadow_calls");
+  if (stats.liveEligibleValid === 0) reasons.push("no_valid_live_eligible_shadow_decisions");
+  if (stats.liveEligibleInvalidOutput > 0) reasons.push("live_eligible_invalid_output_present");
+  if (stats.liveEligibleInvalidChoice > 0) reasons.push("live_eligible_invalid_choice_present");
+  if (stats.liveEligibleError > 0) reasons.push("live_eligible_shadow_error_present");
+  if (stats.liveEligibleMissingCandidate > 0) reasons.push("live_eligible_missing_candidate_present");
   if ((stats.budgetStatusCounts.token_budget_exceeded ?? 0) > 0) reasons.push("token_budget_exceeded");
-  if ((stats.budgetStatusCounts.call_budget_exceeded ?? 0) > 0) reasons.push("call_budget_exceeded");
+  if ((stats.budgetStatusCounts.call_budget_exceeded ?? 0) > 0 && !callBudgetReachedPlannedSample && !mixedWindow) {
+    reasons.push("call_budget_exceeded_before_planned_sample");
+  }
   if ((stats.budgetStatusCounts.cost_budget_exceeded ?? 0) > 0) reasons.push("cost_budget_exceeded");
   if ((stats.reasonQualityCounts.missing ?? 0) > 0) reasons.push("missing_reason_quality");
   return {
@@ -650,6 +759,26 @@ function shadowRevisionTag(transition: TransitionRecord): string | undefined {
     return transition.workspaceComparison.revisionTag;
   }
   return undefined;
+}
+
+function shadowLiveEligible(transition: TransitionRecord): boolean {
+  const shadow = isRecord(transition.shadowWorkspaceDecision) ? transition.shadowWorkspaceDecision : undefined;
+  if (!shadow) return false;
+  if (typeof shadow.liveEligibleClass === "boolean") return shadow.liveEligibleClass;
+  const decisionClass = typeof shadow.decisionClass === "string"
+    ? shadow.decisionClass
+    : isRecord(transition.workspaceComparison) && typeof transition.workspaceComparison.decisionClass === "string"
+      ? transition.workspaceComparison.decisionClass
+      : undefined;
+  return typeof decisionClass === "string" && /:llm_required$/u.test(decisionClass);
+}
+
+function shadowOutputCapHit(shadow: Record<string, unknown>): boolean {
+  if (shadow.outputCapHit === true) return true;
+  if (shadow.providerFinishReason === "length") return true;
+  const actualOutputTokens = typeof shadow.actualOutputTokens === "number" ? shadow.actualOutputTokens : undefined;
+  const maxOutputTokens = typeof shadow.maxOutputTokens === "number" ? shadow.maxOutputTokens : undefined;
+  return typeof actualOutputTokens === "number" && typeof maxOutputTokens === "number" && actualOutputTokens >= maxOutputTokens;
 }
 
 function proposalStableMutation(proposal: JsonRecord): boolean {

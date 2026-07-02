@@ -126,13 +126,21 @@ export interface EvalWorkspaceCoverage {
   structuredPromptAvailable: number;
   enabled: number;
   ready: number;
+  plannedShadowCalls: number;
+  maxObservedShadowCallsUsed: number;
   decisionClassCounts: Record<string, number>;
   shadowDecision: number;
   shadowCalled: number;
+  liveEligibleShadowCalled: number;
   validShadowDecision: number;
+  validLiveEligibleShadowDecision: number;
   invalidOutput: number;
+  liveEligibleInvalidOutput: number;
+  nonLiveInvalidOutput: number;
   invalidChoice: number;
+  liveEligibleInvalidChoice: number;
   errors: number;
+  liveEligibleErrors: number;
   agreementCounts: Record<string, number>;
   averageStructuredTokenEstimate: number;
   averageLegacyTokenEstimate: number;
@@ -148,7 +156,11 @@ export interface EvalWorkspaceCoverage {
   reasonQualityCounts: Record<string, number>;
   providerModeCounts: Record<string, number>;
   ablationModeCounts: Record<string, number>;
+  finishReasonCounts: Record<string, number>;
+  cleanupReasonCounts: Record<string, number>;
+  outputCapHits: number;
   missingCandidate: number;
+  liveEligibleMissingCandidate: number;
   missingInfoCount: number;
   scaffoldFeedbackCount: number;
   retryCount: number;
@@ -159,6 +171,7 @@ export interface EvalWorkspaceCoverage {
   workspacePromptSamples: number;
   estimatedCostUsd: number;
   actualOrEstimatedCostUsd: number;
+  skippedBudgetEstimatedCostUsd: number;
   averageLatencyMs: number;
   latencySamples: number;
   averageEstimatedInputTokens: number;
@@ -1042,13 +1055,21 @@ function createWorkspaceCoverage(): EvalWorkspaceCoverage {
     structuredPromptAvailable: 0,
     enabled: 0,
     ready: 0,
+    plannedShadowCalls: 0,
+    maxObservedShadowCallsUsed: 0,
     decisionClassCounts: {},
     shadowDecision: 0,
     shadowCalled: 0,
+    liveEligibleShadowCalled: 0,
     validShadowDecision: 0,
+    validLiveEligibleShadowDecision: 0,
     invalidOutput: 0,
+    liveEligibleInvalidOutput: 0,
+    nonLiveInvalidOutput: 0,
     invalidChoice: 0,
+    liveEligibleInvalidChoice: 0,
     errors: 0,
+    liveEligibleErrors: 0,
     agreementCounts: {},
     averageStructuredTokenEstimate: 0,
     averageLegacyTokenEstimate: 0,
@@ -1064,7 +1085,11 @@ function createWorkspaceCoverage(): EvalWorkspaceCoverage {
     reasonQualityCounts: {},
     providerModeCounts: {},
     ablationModeCounts: {},
+    finishReasonCounts: {},
+    cleanupReasonCounts: {},
+    outputCapHits: 0,
     missingCandidate: 0,
+    liveEligibleMissingCandidate: 0,
     missingInfoCount: 0,
     scaffoldFeedbackCount: 0,
     retryCount: 0,
@@ -1075,6 +1100,7 @@ function createWorkspaceCoverage(): EvalWorkspaceCoverage {
     workspacePromptSamples: 0,
     estimatedCostUsd: 0,
     actualOrEstimatedCostUsd: 0,
+    skippedBudgetEstimatedCostUsd: 0,
     averageLatencyMs: 0,
     latencySamples: 0,
     averageEstimatedInputTokens: 0,
@@ -1135,6 +1161,12 @@ function collectWorkspaceCoverage(coverage: EvalWorkspaceCoverage, transition: T
     if (isRecord(comparison.budget)) {
       const status = typeof comparison.budget.status === "string" ? comparison.budget.status : "unknown";
       coverage.budgetStatusCounts[status] = (coverage.budgetStatusCounts[status] ?? 0) + 1;
+      if (typeof comparison.budget.maxShadowCalls === "number") {
+        coverage.plannedShadowCalls = Math.max(coverage.plannedShadowCalls, comparison.budget.maxShadowCalls);
+      }
+      if (typeof comparison.budget.shadowCallsUsed === "number") {
+        coverage.maxObservedShadowCallsUsed = Math.max(coverage.maxObservedShadowCallsUsed, comparison.budget.shadowCallsUsed);
+      }
       const estimatedInputTokens = comparison.budget.estimatedInputTokens;
       if (typeof estimatedInputTokens === "number") {
         coverage.averageEstimatedInputTokens += estimatedInputTokens;
@@ -1152,16 +1184,35 @@ function collectWorkspaceCoverage(coverage: EvalWorkspaceCoverage, transition: T
   if (!shadowDecision) return;
   coverage.shadowDecision += 1;
   if (shadowDecision.called === true) coverage.shadowCalled += 1;
+  const liveEligible = isLiveEligibleShadowDecision(shadowDecision, comparison);
+  if (shadowDecision.called === true && liveEligible) coverage.liveEligibleShadowCalled += 1;
   const outcome = typeof shadowDecision.outcome === "string" ? shadowDecision.outcome : "unknown";
-  if (outcome === "valid") coverage.validShadowDecision += 1;
-  if (outcome === "invalid_output") coverage.invalidOutput += 1;
-  if (outcome === "invalid_choice") coverage.invalidChoice += 1;
-  if (outcome === "error") coverage.errors += 1;
+  if (outcome === "valid") {
+    coverage.validShadowDecision += 1;
+    if (liveEligible) coverage.validLiveEligibleShadowDecision += 1;
+  }
+  if (outcome === "invalid_output") {
+    coverage.invalidOutput += 1;
+    if (liveEligible) {
+      coverage.liveEligibleInvalidOutput += 1;
+    } else {
+      coverage.nonLiveInvalidOutput += 1;
+    }
+  }
+  if (outcome === "invalid_choice") {
+    coverage.invalidChoice += 1;
+    if (liveEligible) coverage.liveEligibleInvalidChoice += 1;
+  }
+  if (outcome === "error") {
+    coverage.errors += 1;
+    if (liveEligible) coverage.liveEligibleErrors += 1;
+  }
   if (outcome === "skipped") coverage.skipped += 1;
   if (outcome === "unavailable") coverage.unavailable += 1;
   const agreement = typeof shadowDecision.agreement === "string" ? shadowDecision.agreement : "unknown";
   coverage.agreementCounts[agreement] = (coverage.agreementCounts[agreement] ?? 0) + 1;
   if (agreement === "missing_candidate") coverage.missingCandidate += 1;
+  if (agreement === "missing_candidate" && liveEligible) coverage.liveEligibleMissingCandidate += 1;
   const budgetStatus = !comparison && typeof shadowDecision.budgetStatus === "string" ? shadowDecision.budgetStatus : undefined;
   if (budgetStatus) coverage.budgetStatusCounts[budgetStatus] = (coverage.budgetStatusCounts[budgetStatus] ?? 0) + 1;
   if (typeof shadowDecision.skippedReason === "string") {
@@ -1175,13 +1226,20 @@ function collectWorkspaceCoverage(coverage: EvalWorkspaceCoverage, transition: T
     ? shadowDecision.ablationMode
     : typeof comparison?.ablationMode === "string" ? comparison.ablationMode : undefined;
   if (ablationMode) coverage.ablationModeCounts[ablationMode] = (coverage.ablationModeCounts[ablationMode] ?? 0) + 1;
+  const finishReason = typeof shadowDecision.providerFinishReason === "string" ? shadowDecision.providerFinishReason : undefined;
+  if (finishReason) coverage.finishReasonCounts[finishReason] = (coverage.finishReasonCounts[finishReason] ?? 0) + 1;
+  const cleanupReason = typeof shadowDecision.providerCleanupReason === "string" ? shadowDecision.providerCleanupReason : undefined;
+  if (cleanupReason) coverage.cleanupReasonCounts[cleanupReason] = (coverage.cleanupReasonCounts[cleanupReason] ?? 0) + 1;
+  if (shadowOutputCapHit(shadowDecision)) coverage.outputCapHits += 1;
   if (Array.isArray(shadowDecision.missingInfo)) coverage.missingInfoCount += shadowDecision.missingInfo.length;
   if (Array.isArray(shadowDecision.scaffoldFeedback)) coverage.scaffoldFeedbackCount += shadowDecision.scaffoldFeedback.length;
   if (typeof shadowDecision.retryCount === "number") {
     coverage.retryCount += shadowDecision.retryCount;
     if (shadowDecision.retryCount > 0) coverage.retriedCalls += 1;
   }
-  if (shadowDecision.emptyContentRetrySucceeded === true) coverage.retrySuccessCount += 1;
+  if (shadowDecision.emptyContentRetrySucceeded === true || shadowDecision.truncationRetrySucceeded === true) {
+    coverage.retrySuccessCount += 1;
+  }
   const workspacePromptBytes = typeof shadowDecision.workspacePromptBytes === "number"
     ? shadowDecision.workspacePromptBytes
     : typeof comparison?.structuredPromptBytes === "number" ? comparison.structuredPromptBytes : undefined;
@@ -1195,7 +1253,13 @@ function collectWorkspaceCoverage(coverage: EvalWorkspaceCoverage, transition: T
   if (typeof workspacePromptTokens === "number") {
     coverage.averageWorkspacePromptTokens += workspacePromptTokens;
   }
-  if (typeof shadowDecision.estimatedCostUsd === "number") coverage.actualOrEstimatedCostUsd += shadowDecision.estimatedCostUsd;
+  if (typeof shadowDecision.estimatedCostUsd === "number") {
+    if (shadowDecision.called === true) {
+      coverage.actualOrEstimatedCostUsd += shadowDecision.estimatedCostUsd;
+    } else {
+      coverage.skippedBudgetEstimatedCostUsd += shadowDecision.estimatedCostUsd;
+    }
+  }
   if (typeof shadowDecision.latencyMs === "number") {
     coverage.averageLatencyMs += shadowDecision.latencyMs;
     coverage.latencySamples += 1;
@@ -1227,6 +1291,7 @@ function finishWorkspaceCoverage(coverage: EvalWorkspaceCoverage, transitionCoun
     : 0;
   coverage.estimatedCostUsd = Number(coverage.estimatedCostUsd.toFixed(6));
   coverage.actualOrEstimatedCostUsd = Number(coverage.actualOrEstimatedCostUsd.toFixed(6));
+  coverage.skippedBudgetEstimatedCostUsd = Number(coverage.skippedBudgetEstimatedCostUsd.toFixed(6));
   coverage.rolloutGate = buildP8RolloutGate(coverage);
   const rate = (value: number): number => (transitionCount > 0 ? Number((value / transitionCount).toFixed(3)) : 0);
   coverage.rates = {
@@ -1347,14 +1412,20 @@ function finishConsolidationCoverage(coverage: EvalConsolidationCoverage, transi
 
 function buildP8RolloutGate(coverage: EvalWorkspaceCoverage): EvalWorkspaceCoverage["rolloutGate"] {
   const reasons: string[] = [];
+  const callBudgetReachedPlannedSample = (coverage.budgetStatusCounts.call_budget_exceeded ?? 0) > 0 &&
+    coverage.plannedShadowCalls > 0 &&
+    (coverage.shadowCalled >= coverage.plannedShadowCalls || coverage.maxObservedShadowCallsUsed >= coverage.plannedShadowCalls);
   if (coverage.shadowCalled === 0) reasons.push("no_real_shadow_calls");
-  if (coverage.validShadowDecision === 0) reasons.push("no_valid_shadow_decisions");
-  if (coverage.invalidOutput > 0) reasons.push("invalid_output_present");
-  if (coverage.invalidChoice > 0) reasons.push("invalid_choice_present");
-  if (coverage.errors > 0) reasons.push("shadow_error_present");
-  if (coverage.missingCandidate > 0) reasons.push("missing_candidate_present");
+  if (coverage.liveEligibleShadowCalled === 0) reasons.push("no_live_eligible_shadow_calls");
+  if (coverage.validLiveEligibleShadowDecision === 0) reasons.push("no_valid_live_eligible_shadow_decisions");
+  if (coverage.liveEligibleInvalidOutput > 0) reasons.push("live_eligible_invalid_output_present");
+  if (coverage.liveEligibleInvalidChoice > 0) reasons.push("live_eligible_invalid_choice_present");
+  if (coverage.liveEligibleErrors > 0) reasons.push("live_eligible_shadow_error_present");
+  if (coverage.liveEligibleMissingCandidate > 0) reasons.push("live_eligible_missing_candidate_present");
   if ((coverage.budgetStatusCounts.token_budget_exceeded ?? 0) > 0) reasons.push("token_budget_exceeded");
-  if ((coverage.budgetStatusCounts.call_budget_exceeded ?? 0) > 0) reasons.push("call_budget_exceeded");
+  if ((coverage.budgetStatusCounts.call_budget_exceeded ?? 0) > 0 && !callBudgetReachedPlannedSample) {
+    reasons.push("call_budget_exceeded_before_planned_sample");
+  }
   if ((coverage.budgetStatusCounts.cost_budget_exceeded ?? 0) > 0) reasons.push("cost_budget_exceeded");
   if (coverage.averageInformationPreservationScore > 0 && coverage.averageInformationPreservationScore < 0.9) {
     reasons.push("low_information_preservation");
@@ -1488,6 +1559,27 @@ function buildP8WorkspaceWarnings(coverage: EvalWorkspaceCoverage, transitionCou
     });
   }
   return warnings;
+}
+
+function isLiveEligibleShadowDecision(
+  shadowDecision: Record<string, unknown>,
+  comparison?: Record<string, unknown>
+): boolean {
+  if (typeof shadowDecision.liveEligibleClass === "boolean") return shadowDecision.liveEligibleClass;
+  const decisionClass = typeof shadowDecision.decisionClass === "string"
+    ? shadowDecision.decisionClass
+    : typeof comparison?.decisionClass === "string"
+      ? comparison.decisionClass
+      : undefined;
+  return typeof decisionClass === "string" && /:llm_required$/u.test(decisionClass);
+}
+
+function shadowOutputCapHit(shadowDecision: Record<string, unknown>): boolean {
+  if (shadowDecision.outputCapHit === true) return true;
+  if (shadowDecision.providerFinishReason === "length") return true;
+  const actualOutputTokens = typeof shadowDecision.actualOutputTokens === "number" ? shadowDecision.actualOutputTokens : undefined;
+  const maxOutputTokens = typeof shadowDecision.maxOutputTokens === "number" ? shadowDecision.maxOutputTokens : undefined;
+  return typeof actualOutputTokens === "number" && typeof maxOutputTokens === "number" && actualOutputTokens >= maxOutputTokens;
 }
 
 function createStrategyMetrics(): EvalStrategyMetrics {

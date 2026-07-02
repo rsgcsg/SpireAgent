@@ -322,6 +322,22 @@
         "failed:combat-tempo"
       ],
       "successfulPatterns": []
+    },
+    {
+      "runId": "run-mr26a4yv-hdw5xr",
+      "at": "2026-07-02T06:50:23.951Z",
+      "character": "The Defect",
+      "result": "loss",
+      "act": 1,
+      "floor": 17,
+      "rewardScore": -42,
+      "summary": "loss score=-42 character=The Defect act=1 floor=17 hp=0/75 deficits=draw,healing",
+      "failureReasons": [
+        "failed:death-act-1-floor-17",
+        "failed:healing",
+        "failed:combat-tempo"
+      ],
+      "successfulPatterns": []
     }
   ],
   "lessons": [
@@ -347,9 +363,10 @@
         "run-mr25vou8-7z3ohm",
         "run-mr25xzxv-ta1b9f",
         "run-mr261um4-ct5yk6",
-        "run-mr266t2k-mi797t"
+        "run-mr266t2k-mi797t",
+        "run-mr26a4yv-hdw5xr"
       ],
-      "updatedAt": "2026-07-01T14:30:10.555Z"
+      "updatedAt": "2026-07-02T06:50:23.951Z"
     },
     {
       "id": "死亡局如果长期缺防御-下局提高防御牌-弱化-冰球和休息路线优先级-",

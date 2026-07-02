@@ -18,7 +18,7 @@ export const P8_DEEPSEEK_MODEL_FLAG = "STS2_DEEPSEEK_MODEL";
 export const P8_LIVE_ADDITIVE_FLAG = "STS2_P8_LIVE_ADDITIVE";
 export const P8_LIVE_DECISION_CLASSES_FLAG = "STS2_P8_LIVE_DECISION_CLASSES";
 export const P8_WORKSPACE_ABLATION_MODE_FLAG = "STS2_P8_WORKSPACE_ABLATION_MODE";
-export const P8_WORKSPACE_REVISION = "2026-07-02-workspace-ablation-v1";
+export const P8_WORKSPACE_REVISION = "2026-07-02-output-contract-v2-sample20";
 
 export type WorkspaceAblationMode = "full" | "compact" | "ultra_compact";
 
@@ -495,6 +495,8 @@ export async function buildP8WorkspaceShadow(input: ShadowWorkspaceDecisionInput
         available: true,
         outcome: validation.valid ? "valid" : validation.outcome ?? "invalid_output",
         agreement: validation.valid ? agreement : candidateId ? "missing_candidate" : "not_applicable",
+        decisionClass: input.comparison.decisionClass,
+        liveEligibleClass: isLiveEligibleDecisionClass(input.comparison.decisionClass),
         legacySelectedCandidateId: input.legacySelectedCandidateId,
         structuredSelectedCandidateId: candidateId,
         confidence: typeof decision?.confidence === "number" ? decision.confidence : undefined,
@@ -512,16 +514,23 @@ export async function buildP8WorkspaceShadow(input: ShadowWorkspaceDecisionInput
         providerOutputPreview: typeof providerAudit?.contentPreview === "string" ? providerAudit.contentPreview : undefined,
         providerOutputBytes: numberValue(providerAudit?.contentBytes),
         providerParseState: typeof providerAudit?.parseState === "string" ? providerAudit.parseState : undefined,
+        providerCleanupReason: typeof providerAudit?.cleanupReason === "string" ? providerAudit.cleanupReason : undefined,
+        outputCapHit: isOutputCapHit(decision, input.comparison),
         retryCount: numberValue(providerAudit?.retryCount),
         emptyContentRetryCount: numberValue(providerAudit?.emptyContentRetryCount),
         emptyContentRetrySucceeded: typeof providerAudit?.emptyContentRetrySucceeded === "boolean"
           ? providerAudit.emptyContentRetrySucceeded
+          : undefined,
+        truncationRetryCount: numberValue(providerAudit?.truncationRetryCount),
+        truncationRetrySucceeded: typeof providerAudit?.truncationRetrySucceeded === "boolean"
+          ? providerAudit.truncationRetrySucceeded
           : undefined,
         estimatedInputTokens: input.comparison.budget?.estimatedInputTokens,
         actualInputTokens: providerUsageNumber(decision, "promptTokens"),
         actualOutputTokens: providerUsageNumber(decision, "completionTokens"),
         actualTotalTokens: providerUsageNumber(decision, "totalTokens"),
         maxOutputTokens: input.comparison.budget?.maxOutputTokens,
+        providerFinishReason: providerMetadataString(decision, "finishReason"),
         latencyMs: providerMetadataNumber(decision, "latencyMs"),
         estimatedCostUsd: estimateActualOrBudgetCost(input.comparison, decision),
         budgetStatus: input.comparison.budget?.status,
@@ -751,7 +760,7 @@ function buildWorkspaceBudget(
   let skippedReason: string | undefined;
   if (shadowCallsUsedThisProcess >= maxShadowCalls) {
     status = "call_budget_exceeded";
-    skippedReason = "call_budget_exceeded";
+    skippedReason = "skipped_by_budget";
   } else if (estimatedInputTokens > hardInputTokenLimit) {
     status = "token_budget_exceeded";
     skippedReason = "token_budget_exceeded";
@@ -802,8 +811,32 @@ function providerMetadataNumber(decision: unknown, key: string): number | undefi
   return numberValue(decision.providerMetadata[key]);
 }
 
+function providerMetadataString(decision: unknown, key: string): string | undefined {
+  if (!isRecord(decision) || !isRecord(decision.providerMetadata)) return undefined;
+  const value = decision.providerMetadata[key];
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+function isOutputCapHit(
+  decision: unknown,
+  comparison: DeliberationWorkspaceComparison
+): boolean | undefined {
+  const finishReason = providerMetadataString(decision, "finishReason");
+  if (finishReason === "length") return true;
+  const completionTokens = providerUsageNumber(decision, "completionTokens");
+  const maxOutputTokens = comparison.budget?.maxOutputTokens;
+  if (typeof completionTokens === "number" && typeof maxOutputTokens === "number") {
+    return completionTokens >= maxOutputTokens;
+  }
+  return undefined;
+}
+
 function classifyShadowError(message: string): string {
   return /timed out|timeout|abort/i.test(message) ? "timeout" : "error";
+}
+
+function isLiveEligibleDecisionClass(decisionClass: string): boolean {
+  return /:llm_required$/u.test(decisionClass);
 }
 
 function hashText(text: string): string {

@@ -389,6 +389,8 @@ export interface ShadowWorkspaceDecision {
   validationError?: string;
   error?: string;
   promptHash?: string;
+  decisionClass?: string;
+  liveEligibleClass?: boolean;
   provider?: string;
   model?: string;
   providerMode?: string;
@@ -399,14 +401,19 @@ export interface ShadowWorkspaceDecision {
   providerOutputPreview?: string;
   providerOutputBytes?: number;
   providerParseState?: string;
+  providerCleanupReason?: string;
+  outputCapHit?: boolean;
   retryCount?: number;
   emptyContentRetryCount?: number;
   emptyContentRetrySucceeded?: boolean;
+  truncationRetryCount?: number;
+  truncationRetrySucceeded?: boolean;
   estimatedInputTokens?: number;
   actualInputTokens?: number;
   actualOutputTokens?: number;
   actualTotalTokens?: number;
   maxOutputTokens?: number;
+  providerFinishReason?: string;
   latencyMs?: number;
   estimatedCostUsd?: number;
   budgetStatus?: string;

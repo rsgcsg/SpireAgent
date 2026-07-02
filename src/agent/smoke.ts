@@ -36,6 +36,7 @@ import { scoreCandidates } from "./scoring.js";
 import {
   buildReplayCognitiveCoverage,
   buildReplayConsolidationProposalSurface,
+  buildReplayShadowSliceStats,
   buildReplayTimeline,
   readConsolidationProposals,
   readReplayRun,
@@ -319,7 +320,7 @@ const p8ShadowCallBudgetSkipped = await buildP8WorkspaceShadowFromPacket({
 });
 assert.equal(p8ShadowCallBudgetSkipped.shadowDecision.called, false);
 assert.equal(p8ShadowCallBudgetSkipped.shadowDecision.outcome, "skipped");
-assert.equal(p8ShadowCallBudgetSkipped.shadowDecision.skippedReason, "call_budget_exceeded");
+assert.equal(p8ShadowCallBudgetSkipped.shadowDecision.skippedReason, "skipped_by_budget");
 assert.equal(p8ShadowCallBudgetSkipped.shadowDecision.budgetStatus, "call_budget_exceeded");
 const parsedWorkspaceDecision = parseWorkspaceJsonDecision(JSON.stringify({
   selectedCandidateId: "play-strike",
@@ -329,8 +330,8 @@ const parsedWorkspaceDecision = parseWorkspaceJsonDecision(JSON.stringify({
   missingInfo: ["exact draw order"],
   scaffoldFeedback: ["candidate futures were clear"]
 }));
-assert.equal(parsedWorkspaceDecision?.candidateId, "play-strike");
-assert.deepEqual(parsedWorkspaceDecision?.riskTags, ["tempo"]);
+assert.equal(parsedWorkspaceDecision.decision?.candidateId, "play-strike");
+assert.deepEqual(parsedWorkspaceDecision.decision?.riskTags, ["tempo"]);
 const parsedNestedWorkspaceDecision = parseWorkspaceJsonDecision(JSON.stringify({
   decision: {
     selected_candidate_id: "play-strike",
@@ -340,14 +341,183 @@ const parsedNestedWorkspaceDecision = parseWorkspaceJsonDecision(JSON.stringify(
     scaffold_feedback: ["salience was useful"]
   }
 }));
-assert.equal(parsedNestedWorkspaceDecision?.candidateId, "play-strike");
-assert.equal(parsedNestedWorkspaceDecision?.reason, "Take the exact listed action.");
-assert.deepEqual(parsedNestedWorkspaceDecision?.riskTags, ["pressure"]);
-const parsedRepairedWorkspaceDecision = parseWorkspaceJsonDecision("{\"candidateId\":\"play-strike\",\"reasonBrief\":\"Close the turn safely\",");
-assert.equal(parsedRepairedWorkspaceDecision?.candidateId, "play-strike");
-assert.equal(parsedRepairedWorkspaceDecision?.reason, "Close the turn safely");
+assert.equal(parsedNestedWorkspaceDecision.decision?.candidateId, "play-strike");
+assert.equal(parsedNestedWorkspaceDecision.decision?.reason, "Take the exact listed action.");
+assert.deepEqual(parsedNestedWorkspaceDecision.decision?.riskTags, ["pressure"]);
 const parsedArrayWrappedWorkspaceDecision = parseWorkspaceJsonDecision("[{\"selectedCandidateId\":\"play-strike\",\"reasonBrief\":\"Array-wrapped but still explicit\"}]");
-assert.equal(parsedArrayWrappedWorkspaceDecision?.candidateId, "play-strike");
+assert.equal(parsedArrayWrappedWorkspaceDecision.decision?.candidateId, "play-strike");
+const parsedCleanupWorkspaceDecision = parseWorkspaceJsonDecision("{\"selectedCandidateId\":\"play-strike\",\"reasonBrief\":\"Clean finish\"}<｜end▁of▁thinking｜>{\"selectedCandidateId\":\"other\"}");
+assert.equal(parsedCleanupWorkspaceDecision.decision?.candidateId, "play-strike");
+assert.equal(parsedCleanupWorkspaceDecision.cleanupReason, "trimmed_thinking_tail");
+assert.throws(
+  () => parseWorkspaceJsonDecision("{\"candidateId\":\"play-strike\",\"reasonBrief\":\"Close the turn safely\","),
+  /ended before completing one JSON object/
+);
+const liveEligibleGate = buildReplayShadowSliceStats("test", [
+  {
+    schemaVersion: DOMAIN_SCHEMA_VERSION,
+    runId: "run-shadow-gate",
+    transitionId: "transition-shadow-1",
+    source: "agent",
+    captureMode: "executor_logged",
+    isGroundTruth: true,
+    confidence: 1,
+    uncertainty: [],
+    candidateActions: [],
+    tick: 1,
+    timestamp: new Date(0).toISOString(),
+    screen: "combat",
+    preStateRef: "snapshots/pre.json",
+    compactPreState: {},
+    legalActions: [],
+    selectedAction: null,
+    rawRefs: [],
+    shadowWorkspaceDecision: {
+      schemaVersion: DOMAIN_SCHEMA_VERSION,
+      phase: "P8",
+      mode: "shadow",
+      enabled: true,
+      attempted: true,
+      called: true,
+      available: true,
+      outcome: "invalid_output",
+      agreement: "not_applicable",
+      decisionClass: "combat:forced_local",
+      liveEligibleClass: false
+    }
+  } as TransitionRecord,
+  {
+    schemaVersion: DOMAIN_SCHEMA_VERSION,
+    runId: "run-shadow-gate",
+    transitionId: "transition-shadow-2",
+    source: "agent",
+    captureMode: "executor_logged",
+    isGroundTruth: true,
+    confidence: 1,
+    uncertainty: [],
+    candidateActions: [],
+    tick: 2,
+    timestamp: new Date(1).toISOString(),
+    screen: "combat",
+    preStateRef: "snapshots/pre.json",
+    compactPreState: {},
+    legalActions: [],
+    selectedAction: null,
+    rawRefs: [],
+    shadowWorkspaceDecision: {
+      schemaVersion: DOMAIN_SCHEMA_VERSION,
+      phase: "P8",
+      mode: "shadow",
+      enabled: true,
+      attempted: true,
+      called: true,
+      available: true,
+      outcome: "valid",
+      agreement: "agree",
+      decisionClass: "combat:llm_required",
+      liveEligibleClass: true,
+      reasonQuality: "adequate"
+    }
+  } as TransitionRecord
+]);
+assert.equal(liveEligibleGate.invalidOutput, 1);
+assert.equal(liveEligibleGate.liveEligibleInvalidOutput, 0);
+assert.equal(liveEligibleGate.nonLiveInvalidOutput, 1);
+assert.equal(liveEligibleGate.gate.status, "go");
+const budgetGuardAfterPlannedSampleGate = buildReplayShadowSliceStats("budget-after-sample", [
+  {
+    schemaVersion: DOMAIN_SCHEMA_VERSION,
+    runId: "run-shadow-budget",
+    transitionId: "transition-shadow-budget-1",
+    source: "agent",
+    captureMode: "executor_logged",
+    isGroundTruth: true,
+    confidence: 1,
+    uncertainty: [],
+    candidateActions: [],
+    tick: 1,
+    timestamp: new Date(0).toISOString(),
+    screen: "combat",
+    preStateRef: "snapshots/pre.json",
+    compactPreState: {},
+    legalActions: [],
+    selectedAction: null,
+    rawRefs: [],
+    workspaceComparison: {
+      schemaVersion: DOMAIN_SCHEMA_VERSION,
+      phase: "P8",
+      mode: "shadow",
+      revisionTag: "rev",
+      enabled: true,
+      structuredPromptAvailable: true,
+      legacyPromptAvailable: true,
+      decisionClass: "combat:llm_required",
+      budget: { maxShadowCalls: 50, shadowCallsUsed: 50 }
+    },
+    shadowWorkspaceDecision: {
+      schemaVersion: DOMAIN_SCHEMA_VERSION,
+      phase: "P8",
+      mode: "shadow",
+      enabled: true,
+      attempted: true,
+      called: true,
+      available: true,
+      outcome: "valid",
+      agreement: "agree",
+      decisionClass: "combat:llm_required",
+      liveEligibleClass: true,
+      reasonQuality: "adequate",
+      budgetStatus: "within_budget"
+    }
+  } as TransitionRecord,
+  {
+    schemaVersion: DOMAIN_SCHEMA_VERSION,
+    runId: "run-shadow-budget",
+    transitionId: "transition-shadow-budget-2",
+    source: "agent",
+    captureMode: "executor_logged",
+    isGroundTruth: true,
+    confidence: 1,
+    uncertainty: [],
+    candidateActions: [],
+    tick: 2,
+    timestamp: new Date(1).toISOString(),
+    screen: "combat",
+    preStateRef: "snapshots/pre.json",
+    compactPreState: {},
+    legalActions: [],
+    selectedAction: null,
+    rawRefs: [],
+    workspaceComparison: {
+      schemaVersion: DOMAIN_SCHEMA_VERSION,
+      phase: "P8",
+      mode: "shadow",
+      revisionTag: "rev",
+      enabled: true,
+      structuredPromptAvailable: true,
+      legacyPromptAvailable: true,
+      decisionClass: "combat:local_fast_combat",
+      budget: { maxShadowCalls: 50, shadowCallsUsed: 50, status: "call_budget_exceeded" }
+    },
+    shadowWorkspaceDecision: {
+      schemaVersion: DOMAIN_SCHEMA_VERSION,
+      phase: "P8",
+      mode: "shadow",
+      enabled: true,
+      attempted: true,
+      called: false,
+      available: true,
+      outcome: "skipped",
+      agreement: "not_applicable",
+      decisionClass: "combat:local_fast_combat",
+      liveEligibleClass: false,
+      budgetStatus: "call_budget_exceeded",
+      skippedReason: "skipped_by_budget"
+    }
+  } as TransitionRecord
+]);
+assert.equal(budgetGuardAfterPlannedSampleGate.gate.status, "go");
+assert.equal(budgetGuardAfterPlannedSampleGate.gate.reasons.includes("call_budget_exceeded_before_planned_sample"), false);
 assert.equal(resolveDeepSeekResponseMode(undefined, undefined), "json_mode");
 assert.equal(resolveDeepSeekResponseMode("non_json_strict", undefined), "non_json_strict");
 assert.equal(resolveDeepSeekResponseMode(undefined, "0"), "non_json_strict");
@@ -399,6 +569,40 @@ assert.equal(retriedDecision?.providerAudit?.requestMode, "json_mode");
 assert.equal(retriedDecision?.providerAudit?.retryCount, 1);
 assert.equal(retriedDecision?.providerAudit?.emptyContentRetryCount, 1);
 assert.equal(retriedDecision?.providerAudit?.emptyContentRetrySucceeded, true);
+let truncationFetchCalls = 0;
+const truncationRequestMaxTokens: number[] = [];
+const deepSeekTruncationRetry = new DeepSeekV4FlashDecider({
+  apiKey: "fixture-key",
+  emptyContentRetryLimit: 1,
+  truncationRetryLimit: 1,
+  retryLimit: 0,
+  fetchImpl: async (_url, init) => {
+    truncationFetchCalls += 1;
+    const body = JSON.parse(String(init?.body ?? "{}"));
+    truncationRequestMaxTokens.push(body.max_tokens);
+    const payload = truncationFetchCalls === 1
+      ? {
+          choices: [{ message: { content: "" }, finish_reason: "length" }],
+          usage: { prompt_tokens: 40, completion_tokens: 800, total_tokens: 840 }
+        }
+      : {
+          choices: [{ message: { content: "{\"selectedCandidateId\":\"play-strike\",\"reasonBrief\":\"Short rescue.\"}" }, finish_reason: "stop" }],
+          usage: { prompt_tokens: 18, completion_tokens: 28, total_tokens: 46 }
+        };
+    return new Response(JSON.stringify(payload), {
+      status: 200,
+      headers: { "content-type": "application/json" }
+    });
+  }
+});
+const truncationRetriedDecision = await deepSeekTruncationRetry.decide("{\"allowed_candidate_ids\":[\"play-strike\"]}");
+assert.equal(truncationFetchCalls, 2);
+assert.deepEqual(truncationRequestMaxTokens, [400, 220]);
+assert.equal(truncationRetriedDecision?.candidateId, "play-strike");
+assert.equal(truncationRetriedDecision?.providerAudit?.retryCount, 1);
+assert.equal(truncationRetriedDecision?.providerAudit?.emptyContentRetryCount, 0);
+assert.equal(truncationRetriedDecision?.providerAudit?.truncationRetryCount, 1);
+assert.equal(truncationRetriedDecision?.providerAudit?.truncationRetrySucceeded, true);
 const previousProvider = process.env.STS2_LLM_PROVIDER;
 const previousDeepSeekKey = process.env.STS2_DEEPSEEK_API_KEY;
 const previousCommand = process.env.STS2_LLM_COMMAND;
