@@ -175,6 +175,7 @@ P8 DeliberationPacket strategic workspace shadow surface:
   - required, preserved, and missing legacy-information sections
   - per-section token estimates
   - information-preservation score
+  - token/call/cost/timeout budget status
   - gated readiness and readiness reasons
   - provider readiness: `ready_for_shadow_call`, `needs_api_key`, or `not_ready`
   - P8.4/P8.5 rollout-gate metadata for future additive live experiments
@@ -182,12 +183,14 @@ P8 DeliberationPacket strategic workspace shadow surface:
   - whether shadow workspace evaluation was enabled, attempted, and called
   - whether an LLM bridge was available
   - provider/model identity when known
+  - estimated/actual tokens, max output tokens, latency, estimated cost, and budget status when available
   - outcome: not enabled, not ready, skipped, unavailable, valid, invalid output, invalid choice, or error
   - agreement/disagreement/missing-candidate against the live selected candidate
   - reason quality when a structured shadow LLM decision exists
   - short P8 schema fields: `selectedCandidateId`, `confidence`, `reasonBrief`, `riskTags`, `missingInfo`, and `scaffoldFeedback`
-- DeepSeek V4 Flash is prepared as the preferred P8 external provider, but real calls require an API key and explicit flags. Missing credentials must produce skipped/unavailable observability, not fake model output.
+- DeepSeek V4 Flash is prepared as the preferred P8 external provider, but real calls require `STS2_DEEPSEEK_API_KEY` and explicit flags. Missing credentials must produce skipped/unavailable observability, not fake model output.
 - `STS2_P8_WORKSPACE_SHADOW` defaults off; `STS2_P8_WORKSPACE_CALL` defaults off. Fresh transitions still record the comparison surface with both flags off.
+- Budget guard skips use reasons such as `token_budget_exceeded`, `call_budget_exceeded`, `cost_budget_exceeded`, or `timeout`. They are review/eval signals, not selected-action failures.
 - P8 fields are observability data. They do not replace `src/agent/prompt.ts`, alter action selection, change candidate generation/order/scoring, change fallback, change validation/execution, or write stable memory/derived/strategy updates.
 
 ## Ground Truth Rules

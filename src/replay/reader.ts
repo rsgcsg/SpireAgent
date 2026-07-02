@@ -41,6 +41,10 @@ export interface ReplayCognitiveCoverage {
   shadowWorkspaceDecision: number;
   shadowWorkspaceCalled: number;
   shadowWorkspaceSkipped: number;
+  shadowWorkspaceValid: number;
+  shadowWorkspaceInvalidOrError: number;
+  shadowWorkspaceAgreementCounts: Record<string, number>;
+  shadowWorkspaceBudgetStatusCounts: Record<string, number>;
   predictionError: number;
   replayFrame: number;
   consolidation: number;
@@ -233,6 +237,10 @@ export function buildReplayCognitiveCoverage(transitions: TransitionRecord[]): R
     shadowWorkspaceDecision: 0,
     shadowWorkspaceCalled: 0,
     shadowWorkspaceSkipped: 0,
+    shadowWorkspaceValid: 0,
+    shadowWorkspaceInvalidOrError: 0,
+    shadowWorkspaceAgreementCounts: {},
+    shadowWorkspaceBudgetStatusCounts: {},
     predictionError: 0,
     replayFrame: 0,
     consolidation: 0,
@@ -255,6 +263,9 @@ export function buildReplayCognitiveCoverage(transitions: TransitionRecord[]): R
     const hasShadowWorkspaceDecision = isRecord(transition.shadowWorkspaceDecision);
     const hasShadowWorkspaceCalled = hasShadowWorkspaceDecision && transition.shadowWorkspaceDecision?.called === true;
     const hasShadowWorkspaceSkipped = hasShadowWorkspaceDecision && transition.shadowWorkspaceDecision?.outcome === "skipped";
+    const shadowOutcome = hasShadowWorkspaceDecision && typeof transition.shadowWorkspaceDecision?.outcome === "string"
+      ? transition.shadowWorkspaceDecision.outcome
+      : undefined;
     const hasPredictionError = isRecord(transition.predictionError);
     const hasReplayFrame = isRecord(transition.replayFrame);
     const hasConsolidation = isRecord(transition.consolidation);
@@ -273,6 +284,22 @@ export function buildReplayCognitiveCoverage(transitions: TransitionRecord[]): R
     if (hasShadowWorkspaceDecision) coverage.shadowWorkspaceDecision += 1;
     if (hasShadowWorkspaceCalled) coverage.shadowWorkspaceCalled += 1;
     if (hasShadowWorkspaceSkipped) coverage.shadowWorkspaceSkipped += 1;
+    if (shadowOutcome === "valid") coverage.shadowWorkspaceValid += 1;
+    if (shadowOutcome === "invalid_output" || shadowOutcome === "invalid_choice" || shadowOutcome === "error") {
+      coverage.shadowWorkspaceInvalidOrError += 1;
+    }
+    if (hasShadowWorkspaceDecision && typeof transition.shadowWorkspaceDecision?.agreement === "string") {
+      const agreement = transition.shadowWorkspaceDecision.agreement;
+      coverage.shadowWorkspaceAgreementCounts[agreement] = (coverage.shadowWorkspaceAgreementCounts[agreement] ?? 0) + 1;
+    }
+    if (hasWorkspaceComparison && isRecord(transition.workspaceComparison?.budget) && typeof transition.workspaceComparison.budget.status === "string") {
+      const status = transition.workspaceComparison.budget.status;
+      coverage.shadowWorkspaceBudgetStatusCounts[status] = (coverage.shadowWorkspaceBudgetStatusCounts[status] ?? 0) + 1;
+    }
+    if (!hasWorkspaceComparison && hasShadowWorkspaceDecision && typeof transition.shadowWorkspaceDecision?.budgetStatus === "string") {
+      const status = transition.shadowWorkspaceDecision.budgetStatus;
+      coverage.shadowWorkspaceBudgetStatusCounts[status] = (coverage.shadowWorkspaceBudgetStatusCounts[status] ?? 0) + 1;
+    }
     if (hasPredictionError) coverage.predictionError += 1;
     if (hasReplayFrame) coverage.replayFrame += 1;
     if (hasConsolidation) coverage.consolidation += 1;
@@ -302,6 +329,10 @@ export function formatReplayCognitiveCoverage(coverage: ReplayCognitiveCoverage)
     item("shadowWorkspaceDecision", coverage.shadowWorkspaceDecision),
     item("shadowWorkspaceCalled", coverage.shadowWorkspaceCalled),
     item("shadowWorkspaceSkipped", coverage.shadowWorkspaceSkipped),
+    item("shadowWorkspaceValid", coverage.shadowWorkspaceValid),
+    item("shadowWorkspaceInvalidOrError", coverage.shadowWorkspaceInvalidOrError),
+    `shadowWorkspaceAgreement=${JSON.stringify(coverage.shadowWorkspaceAgreementCounts)}`,
+    `shadowWorkspaceBudget=${JSON.stringify(coverage.shadowWorkspaceBudgetStatusCounts)}`,
     item("predictionError", coverage.predictionError),
     item("replayFrame", coverage.replayFrame),
     item("consolidation", coverage.consolidation),

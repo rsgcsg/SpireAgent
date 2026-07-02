@@ -287,14 +287,20 @@ Current Phase 8 status:
 - `src/agent/workspace.ts` builds a compact structured prompt from `DeliberationPacket`, compares it with the legacy live prompt, records hashes, byte/token estimates, coverage, missing sections, decision class, and gated readiness.
 - P8.1 readiness and information-preservation scoring is implemented. The comparison records required legacy sections, preserved sections, missing sections, per-section token estimates, readiness reasons, and an information-preservation score.
 - P8.2 DeepSeek V4 Flash preparation is implemented without making live calls. The code has provider config, OpenAI-compatible request shape, response parser, short JSON schema, timeout/error handling, and explicit skipped/unavailable paths.
-- P8.3 non-API shadow-call plumbing is implemented. The system can record skipped/unavailable/valid/invalid/error outcomes, agreement/disagreement/missing-candidate, reason quality, risk tags, missing info, and scaffold feedback, but it will not call a real model without credentials and explicit flags.
+- P8.3 shadow-call plumbing now includes the real DeepSeek V4 Flash provider path, conservative token/call/cost/timeout guards, response usage/latency capture, skipped budget outcomes, and shadow-only validation records. The system can record skipped/unavailable/valid/invalid/error outcomes, agreement/disagreement/missing-candidate, reason quality, risk tags, missing info, scaffold feedback, estimated/actual tokens, latency, and estimated cost, but it will not call a real model without `STS2_DEEPSEEK_API_KEY` and explicit flags.
 - Feature flags:
   - `STS2_P8_WORKSPACE_SHADOW`: enables P8 readiness for shadow workspace evaluation. Default is off.
   - `STS2_P8_WORKSPACE_CALL`: allows an optional structured shadow LLM call when readiness is satisfied. Default is off.
-  - `STS2_DEEPSEEK_API_KEY` or `DEEPSEEK_API_KEY`: makes the DeepSeek V4 Flash provider available for an explicitly enabled shadow call.
+  - `STS2_DEEPSEEK_API_KEY`: makes the DeepSeek V4 Flash provider available for an explicitly enabled shadow call.
   - `STS2_DEEPSEEK_MODEL`: optionally overrides the default P8 model id.
+  - `STS2_P8_WORKSPACE_MAX_SHADOW_CALLS`: max structured shadow calls per process, default `1`.
+  - `STS2_P8_WORKSPACE_SOFT_INPUT_TOKENS` / `STS2_P8_WORKSPACE_HARD_INPUT_TOKENS`: input-token guard defaults `8000` / `12000`; hard excess records `token_budget_exceeded` and skips.
+  - `STS2_DEEPSEEK_MAX_OUTPUT_TOKENS`: max output tokens, default `400`.
+  - `STS2_DEEPSEEK_TIMEOUT_MS`: provider timeout, default `25000`.
+  - `STS2_DEEPSEEK_RETRY_LIMIT`: retry count, default `0`.
+  - `STS2_P8_WORKSPACE_MAX_ESTIMATED_COST_USD`: estimated per-process cost guard, default `$0.05`.
 - New executor-logged transitions can carry `workspaceComparison` and `shadowWorkspaceDecision`.
-- Replay/eval/review expose P8 workspace coverage, readiness, information preservation, provider readiness, skipped/unavailable shadow outcomes, shadow-call counts, agreement/disagreement, invalid output, missing candidate, and error stats.
+- Replay/eval/review expose P8 workspace coverage, readiness, decision class, information preservation, provider readiness, token budget status, skipped/unavailable shadow outcomes, shadow-call counts, agreement/disagreement, invalid output, missing candidate, reason quality, missing info, scaffold feedback, latency, cost estimate, and a P8.4 go/no-go rollout gate.
 - Live LLM input path remains unchanged by default. P8 currently does not replace the legacy prompt, change candidate generation/order/scoring, change fallback, change validation, change execution, or write stable learning.
 - Next gated step is a real DeepSeek V4 Flash shadow call after user-provided API credentials and explicit authorization. A live-routing experiment remains later P8.5 work and must preserve legacy fallback and validation.
 
@@ -313,7 +319,7 @@ P8.x completion route:
 - P8.3 structured shadow LLM call:
   - With explicit API key/user authorization, call the structured workspace in shadow mode only.
   - Record agreement/disagreement, invalid output, missing candidate, reason quality, and scaffold feedback.
-  - Current status: non-API prerequisite layer is implemented. Real DeepSeek shadow calls are deliberately blocked until credentials and explicit user authorization are present.
+  - Current status: real DeepSeek shadow path is implemented and validated on a one-call sample. DeepSeek remains shadow-only and is never executed as the live decision.
   - Go/no-go: no live action selection changes, all outputs pass candidate validation or are recorded as invalid/unavailable.
 - P8.4 shadow A/B and rollout gate:
   - Compare legacy and structured shadow results by decision class, token budget, readiness score, agreement, and review quality.
@@ -324,6 +330,7 @@ P8.x completion route:
   - First live integration must be additive: legacy prompt plus compact workspace summary, not structured-prompt-only by default.
   - Legacy fallback and current validation/execution remain mandatory.
   - Rollback: disable feature flags and return to legacy prompt immediately.
+  - Current preparation: compact workspace summary generation and rollout metadata exist behind `STS2_P8_LIVE_ADDITIVE` and `STS2_P8_LIVE_DECISION_CLASSES`, but the controller does not consume them yet. Default is still off.
 
 P8 final acceptance criteria:
 
@@ -337,9 +344,10 @@ P8 final acceptance criteria:
 
 Current autonomy boundary:
 
-- The project can complete P8.1 and most P8.2/P8.3 plumbing without a real API key.
-- Real DeepSeek V4 Flash shadow calls require user-provided API credentials and explicit authorization.
+- P8.3 can run real DeepSeek V4 Flash shadow calls when `STS2_DEEPSEEK_API_KEY` and explicit P8 flags are present.
+- DeepSeek shadow decisions remain review evidence only and are not executed.
 - Any gated live prompt integration requires a separate explicit request after shadow evidence is reviewed.
+- Shadow boundaries may only be relaxed gradually at the proper gates: P8.5 for additive prompt context, P9 for guarded stable updates, and P10 for the complete guarded learning loop. Each relaxation requires whitelist, fallback, eval/review evidence, and rollback.
 
 P8 effectiveness evaluation:
 

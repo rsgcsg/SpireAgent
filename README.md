@@ -11,6 +11,43 @@ npm install
 npm run check
 ```
 
+## Local API Keys
+
+Secrets are loaded from `.env.local` on this machine only. That file is ignored by git and must not be committed.
+
+To configure DeepSeek for P8 shadow workspace calls:
+
+```bash
+cp .env.example .env.local
+chmod 600 .env.local
+```
+
+Then edit `.env.local` and fill in:
+
+```bash
+STS2_DEEPSEEK_API_KEY=your_deepseek_api_key_here
+```
+
+Keep the variable name as `STS2_DEEPSEEK_API_KEY`. Do not put API keys in source files, docs, replay data, debug reports, commits, or command output.
+
+P8 DeepSeek calls are shadow-only and opt-in. A safe one-call test is:
+
+```bash
+npm run agent:tick -- --dry-run
+```
+
+With the default `.env.local` settings, the project allows at most one guarded shadow call per process and does not execute the DeepSeek decision.
+
+Do not enable live P8 integration by default. The first allowed live experiment is later P8.5-only and must be additive:
+
+```bash
+# future gated experiment only; keep off unless the P8.4 gate says go
+STS2_P8_LIVE_ADDITIVE=0
+STS2_P8_LIVE_DECISION_CLASSES=combat:llm_required,card_reward:llm_required
+```
+
+P8.5 may add a compact workspace summary beside the legacy prompt. P9/P10 are the places to gradually relax shadow boundaries for guarded learning updates, with whitelist, fallback, eval, and rollback still required.
+
 With Slay the Spire 2 and the external STS2 MCP mod running:
 
 ```bash

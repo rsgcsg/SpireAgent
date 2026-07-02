@@ -1,6 +1,5 @@
 node_modules/
 .DS_Store
-.env
 *.log
 dist/
 coverage/
@@ -9,3 +8,10 @@ data/runs/
 memory/collected/
 memory/snapshots/
 memory/decision-log.jsonl
+
+# Local secrets
+.env
+.env.local
+.env.local.*
+.envrc.local
+!.env.example

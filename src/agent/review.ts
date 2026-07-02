@@ -77,12 +77,45 @@ function summarizeCurrentRunCognitiveCoverage(runId: string): JsonRecord {
     counts[agreement] = (counts[agreement] ?? 0) + 1;
     return counts;
   }, {});
+  const workspaceDecisionClassCounts = transitions.reduce<Record<string, number>>((counts, transition) => {
+    if (!isRecord(transition.workspaceComparison) || typeof transition.workspaceComparison.decisionClass !== "string") return counts;
+    counts[transition.workspaceComparison.decisionClass] = (counts[transition.workspaceComparison.decisionClass] ?? 0) + 1;
+    return counts;
+  }, {});
   const workspaceProviderReadinessCounts = transitions.reduce<Record<string, number>>((counts, transition) => {
     if (!isRecord(transition.workspaceComparison) || typeof transition.workspaceComparison.providerReadiness !== "string") return counts;
     const readiness = transition.workspaceComparison.providerReadiness;
     counts[readiness] = (counts[readiness] ?? 0) + 1;
     return counts;
   }, {});
+  const workspaceBudgetStatusCounts = transitions.reduce<Record<string, number>>((counts, transition) => {
+    if (isRecord(transition.workspaceComparison) && isRecord(transition.workspaceComparison.budget) && typeof transition.workspaceComparison.budget.status === "string") {
+      counts[transition.workspaceComparison.budget.status] = (counts[transition.workspaceComparison.budget.status] ?? 0) + 1;
+    }
+    if (isRecord(transition.shadowWorkspaceDecision) && typeof transition.shadowWorkspaceDecision.budgetStatus === "string") {
+      counts[transition.shadowWorkspaceDecision.budgetStatus] = (counts[transition.shadowWorkspaceDecision.budgetStatus] ?? 0) + 1;
+    }
+    return counts;
+  }, {});
+  const workspaceReasonQualityCounts = transitions.reduce<Record<string, number>>((counts, transition) => {
+    if (!isRecord(transition.shadowWorkspaceDecision) || typeof transition.shadowWorkspaceDecision.reasonQuality !== "string") return counts;
+    counts[transition.shadowWorkspaceDecision.reasonQuality] = (counts[transition.shadowWorkspaceDecision.reasonQuality] ?? 0) + 1;
+    return counts;
+  }, {});
+  const workspaceCostEstimate = transitions.reduce((sum, transition) => {
+    if (isRecord(transition.shadowWorkspaceDecision) && typeof transition.shadowWorkspaceDecision.estimatedCostUsd === "number") {
+      return sum + transition.shadowWorkspaceDecision.estimatedCostUsd;
+    }
+    if (isRecord(transition.workspaceComparison) && isRecord(transition.workspaceComparison.budget) && typeof transition.workspaceComparison.budget.estimatedCostUsd === "number") {
+      return sum + transition.workspaceComparison.budget.estimatedCostUsd;
+    }
+    return sum;
+  }, 0);
+  const workspaceLatencies = transitions
+    .map((transition) => isRecord(transition.shadowWorkspaceDecision) && typeof transition.shadowWorkspaceDecision.latencyMs === "number"
+      ? transition.shadowWorkspaceDecision.latencyMs
+      : undefined)
+    .filter((value): value is number => value !== undefined);
   const workspacePreservationScores = transitions
     .map((transition) => {
       if (!isRecord(transition.workspaceComparison) || !isRecord(transition.workspaceComparison.coverage)) return undefined;
@@ -124,7 +157,22 @@ function summarizeCurrentRunCognitiveCoverage(runId: string): JsonRecord {
     shadowWorkspaceSkipped,
     shadowWorkspaceUnavailable,
     workspaceAgreementCounts,
+    workspaceDecisionClassCounts,
     workspaceProviderReadinessCounts,
+    workspaceBudgetStatusCounts,
+    workspaceReasonQualityCounts,
+    workspaceEstimatedCostUsd: round(workspaceCostEstimate),
+    averageWorkspaceLatencyMs:
+      workspaceLatencies.length > 0
+        ? round(workspaceLatencies.reduce((sum, value) => sum + value, 0) / workspaceLatencies.length)
+        : undefined,
+    p8RolloutGate: buildP8ReviewGate({
+      shadowWorkspaceCalled,
+      workspaceAgreementCounts,
+      workspaceBudgetStatusCounts,
+      workspaceReasonQualityCounts,
+      transitions
+    }),
     averageWorkspaceInformationPreservation:
       workspacePreservationScores.length > 0
         ? round(workspacePreservationScores.reduce((sum, score) => sum + score, 0) / workspacePreservationScores.length)
@@ -175,6 +223,33 @@ function summarizeRunMemory(run: RunMemory): JsonRecord {
     counters: run.counters,
     strategicDirection: run.strategicDirection.slice(-8),
     recentCombat: run.recentCombat
+  };
+}
+
+function buildP8ReviewGate(input: {
+  shadowWorkspaceCalled: number;
+  workspaceAgreementCounts: Record<string, number>;
+  workspaceBudgetStatusCounts: Record<string, number>;
+  workspaceReasonQualityCounts: Record<string, number>;
+  transitions: JsonRecord[];
+}): JsonRecord {
+  const invalidOrError = input.transitions.filter((transition) => {
+    if (!isRecord(transition.shadowWorkspaceDecision)) return false;
+    return ["invalid_output", "invalid_choice", "error"].includes(String(transition.shadowWorkspaceDecision.outcome ?? ""));
+  }).length;
+  const reasons: string[] = [];
+  if (input.shadowWorkspaceCalled === 0) reasons.push("no_real_shadow_calls");
+  if (invalidOrError > 0) reasons.push("invalid_or_error_shadow_outcome");
+  if ((input.workspaceAgreementCounts.missing_candidate ?? 0) > 0) reasons.push("missing_candidate_present");
+  if ((input.workspaceBudgetStatusCounts.token_budget_exceeded ?? 0) > 0) reasons.push("token_budget_exceeded");
+  if ((input.workspaceBudgetStatusCounts.call_budget_exceeded ?? 0) > 0) reasons.push("call_budget_exceeded");
+  if ((input.workspaceBudgetStatusCounts.cost_budget_exceeded ?? 0) > 0) reasons.push("cost_budget_exceeded");
+  if ((input.workspaceReasonQualityCounts.missing ?? 0) > 0) reasons.push("missing_reason_quality");
+  return {
+    status: reasons.length === 0 ? "go" : "no_go",
+    reasons,
+    firstLiveMode: "additive_legacy_prompt_plus_compact_workspace_summary",
+    structuredPromptOnlyDefaultAllowed: false
   };
 }
 

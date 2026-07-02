@@ -43,6 +43,7 @@ import { evaluateRun } from "../eval/runner.js";
 import { buildCognitiveScaffold, buildConsolidationRecord, buildPredictionErrorRecord } from "./cognitiveScaffold.js";
 import {
   buildP8WorkspaceShadowFromPacket,
+  buildCompactWorkspaceSummary,
   buildStructuredDeliberationWorkspacePrompt,
   buildWorkspaceComparison
 } from "./workspace.js";
@@ -234,6 +235,8 @@ const workspaceCandidate: ScoredCandidate = {
 };
 const structuredWorkspacePrompt = buildStructuredDeliberationWorkspacePrompt(deliberationPacket);
 assert.match(structuredWorkspacePrompt, /structured strategic workspace/);
+const compactWorkspaceSummary = buildCompactWorkspaceSummary(deliberationPacket);
+assert.match(compactWorkspaceSummary, /p8_workspace_summary/);
 const workspaceComparison = buildWorkspaceComparison({
   legacyPrompt: JSON.stringify({ candidates: [{ id: "play-strike" }] }),
   deliberationPacket,
@@ -250,6 +253,13 @@ assert.equal(workspaceComparison.coverage.informationPreservationScore, 1);
 assert.equal(workspaceComparison.coverage.missingLegacySections?.length, 0);
 assert.ok(workspaceComparison.coverage.sectionTokenEstimate?.candidateFutures);
 assert.equal(workspaceComparison.providerReadiness, "needs_api_key");
+assert.equal(workspaceComparison.budget?.maxShadowCalls, 1);
+assert.equal(workspaceComparison.budget?.maxOutputTokens, 400);
+assert.equal(workspaceComparison.budget?.status, "within_budget");
+assert.equal(workspaceComparison.rolloutGate?.liveIntegrationEnabled, false);
+assert.equal(workspaceComparison.rolloutGate?.liveReadiness, "not_enabled");
+assert.equal(workspaceComparison.rolloutGate?.structuredPromptOnlyDefaultAllowed, false);
+assert.equal(workspaceComparison.rolloutGate?.compactWorkspaceSummaryAvailable, true);
 const p8Shadow = await buildP8WorkspaceShadowFromPacket({
   legacyPrompt: JSON.stringify({ candidates: [{ id: "play-strike" }] }),
   deliberationPacket,
@@ -274,6 +284,22 @@ assert.equal(p8ShadowReadyButSkipped.comparison.gatedReadiness, "ready");
 assert.equal(p8ShadowReadyButSkipped.comparison.providerReadiness, "ready_for_shadow_call");
 assert.equal(p8ShadowReadyButSkipped.shadowDecision.outcome, "skipped");
 assert.equal(p8ShadowReadyButSkipped.shadowDecision.skippedReason, "STS2_P8_WORKSPACE_CALL=off");
+const p8ShadowCallBudgetSkipped = await buildP8WorkspaceShadowFromPacket({
+  legacyPrompt: JSON.stringify({ candidates: [{ id: "play-strike" }] }),
+  deliberationPacket,
+  candidates: [workspaceCandidate],
+  decisionClass: "combat:test",
+  llm: {
+    isAvailable: () => true,
+    decide: async () => ({ candidateId: "play-strike" })
+  },
+  legacySelectedCandidateId: "play-strike",
+  options: { shadowEnabled: true, callEnabled: true, providerAvailable: true, maxShadowCalls: 0 }
+});
+assert.equal(p8ShadowCallBudgetSkipped.shadowDecision.called, false);
+assert.equal(p8ShadowCallBudgetSkipped.shadowDecision.outcome, "skipped");
+assert.equal(p8ShadowCallBudgetSkipped.shadowDecision.skippedReason, "call_budget_exceeded");
+assert.equal(p8ShadowCallBudgetSkipped.shadowDecision.budgetStatus, "call_budget_exceeded");
 const parsedWorkspaceDecision = parseWorkspaceJsonDecision(JSON.stringify({
   selectedCandidateId: "play-strike",
   confidence: 0.66,
@@ -2152,6 +2178,9 @@ try {
   assert.equal(evalReport.summary.workspaceCoverage.averageInformationPreservationScore, 1);
   assert.equal(evalReport.summary.workspaceCoverage.providerReadinessCounts.needs_api_key, 1);
   assert.equal(evalReport.summary.workspaceCoverage.agreementCounts.not_applicable, 1);
+  assert.equal(evalReport.summary.workspaceCoverage.budgetStatusCounts.within_budget, 1);
+  assert.equal(evalReport.summary.workspaceCoverage.rolloutGate.status, "no_go");
+  assert.ok(evalReport.summary.workspaceCoverage.rolloutGate.reasons.includes("no_real_shadow_calls"));
   assert.equal(evalReport.summary.predictionErrorCoverage.predictionError, 1);
   assert.equal(evalReport.summary.predictionErrorCoverage.withTypedChecks, 1);
   assert.equal(evalReport.summary.predictionErrorCoverage.withAttribution, 1);

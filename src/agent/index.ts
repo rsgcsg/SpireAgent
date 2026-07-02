@@ -4,8 +4,10 @@ import { AgentDecisionRecorder } from "./decisionRecorder.js";
 import { createLlmDecider, createP8WorkspaceDecider } from "./llm.js";
 import { MemoryManager } from "./memory.js";
 import { buildReviewReport } from "./review.js";
+import { loadLocalEnv } from "./env.js";
 
 async function main(): Promise<void> {
+  loadLocalEnv();
   const command = process.argv[2] ?? "tick";
   const args = new Set(process.argv.slice(3));
   const client = new RestGameClient();

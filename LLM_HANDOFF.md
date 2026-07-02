@@ -58,18 +58,21 @@ P8 DeliberationPacket strategic workspace shadow surface is now implemented:
 - New transitions can carry `shadowWorkspaceDecision`, which records optional structured shadow LLM outcomes, skipped/unavailable provider paths, agreement/disagreement, missing candidate, invalid output, reason quality, risk tags, missing info, scaffold feedback, or error.
 - P8.1 readiness / information-preservation scoring is implemented.
 - P8.2 DeepSeek V4 Flash provider/parser/schema/error-path preparation is implemented without calling the provider by default. DeepSeek is wired as a P8 workspace decider, not as a replacement for the legacy live-prompt decider.
-- P8.3 non-API shadow-call plumbing is implemented; real shadow calls remain blocked until credentials and explicit authorization are supplied.
+- P8.3 real-provider shadow-call plumbing is implemented with conservative token/call/cost/timeout guards, usage/latency capture, and skipped budget outcomes. A real DeepSeek V4 Flash shadow call has been validated with one recorded sample; the shadow decision was valid, agreed with the live local choice, and was not executed.
 - `STS2_P8_WORKSPACE_SHADOW` defaults off and blocks readiness by default.
 - `STS2_P8_WORKSPACE_CALL` defaults off and blocks extra structured LLM calls by default.
-- `STS2_DEEPSEEK_API_KEY` or `DEEPSEEK_API_KEY` is required before DeepSeek V4 Flash can become available for shadow calls.
+- `STS2_DEEPSEEK_API_KEY` is required before DeepSeek V4 Flash can become available for shadow calls. The legacy live decider path does not read this key.
+- P8.4 A/B gate visibility is implemented in replay/eval/review: decision class, readiness, budget status, agreement/disagreement, missing sections, invalid/missing-candidate/error stats, reason quality, cost, latency, and go/no-go.
+- P8.5 preparation metadata and compact workspace summary generation are present, but live integration remains disabled. The only allowed first experiment is additive `legacy prompt + compact workspace summary`, not structured-prompt-only by default.
 - With default flags, live behavior is unchanged: legacy prompt remains the live prompt, candidate generation/order/scoring/fallback/validation/execution are unchanged, and no stable memory/derived/strategy updates occur.
 - Replay/eval/review expose P8 workspace coverage and stats. Disagreement is a review signal, not a program failure.
 
 P8.x next route:
 
-- P8.3 real shadow call: only after explicit API key/user authorization; record agreement/disagreement/invalid/missing-candidate/reason quality without executing the shadow decision.
-- P8.4: shadow A/B and rollout gate by decision class.
+- P8.3 real shadow call: continue collecting small real shadow samples by decision class; record agreement/disagreement/invalid/missing-candidate/reason quality/token/latency/cost without executing the shadow decision.
+- P8.4: collect real shadow A/B samples by decision class and keep disagreement as review signal, not FAIL.
 - P8.5: gated live prompt integration only after explicit request; first version must be additive with legacy prompt fallback, not structured-prompt-only by default.
+- P9/P10: gradually relax shadow boundaries only when guarded update/eval/rollback infrastructure exists. Do not jump directly from P8 shadow disagreement to stable memory, derived knowledge, strategy params, candidate ordering, or autonomous learning.
 
 STS2 console debug support:
 

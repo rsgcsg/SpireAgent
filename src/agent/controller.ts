@@ -12,6 +12,7 @@ import type {
   ExecutionCheckpoint
 } from "./types.js";
 import type { LlmDecider } from "./llm.js";
+import { NoopLlmDecider } from "./llm.js";
 import { validateLlmDecisionForCandidates } from "./llm.js";
 import { generateCandidates } from "./candidates.js";
 import { AgentDecisionRecorder } from "./decisionRecorder.js";
@@ -47,6 +48,7 @@ export interface TickResult {
 
 export class AgentController {
   private settlementBackoffUntilMs = 0;
+  private readonly workspaceShadowLlm: LlmDecider;
   private cardSelectGuard?: {
     fingerprint: string;
     kind: "select_card" | "combat_select_card";
@@ -59,7 +61,9 @@ export class AgentController {
     private readonly llm: LlmDecider,
     private readonly recorder?: AgentDecisionRecorder,
     private readonly workspaceLlm?: LlmDecider
-  ) {}
+  ) {
+    this.workspaceShadowLlm = workspaceLlm ?? new NoopLlmDecider();
+  }
 
   async tick(options: ControllerOptions = {}): Promise<TickResult> {
     const rawState = await this.client.getState("json");
@@ -117,7 +121,7 @@ export class AgentController {
             deliberationPacket: cognitive.deliberationPacket,
             candidates: [chosen],
             decisionClass: "game_over:forced_local",
-            llm: this.workspaceLlm ?? this.llm,
+            llm: this.workspaceShadowLlm,
             legacySelectedCandidateId: chosen.id
           });
           this.recorder?.recordAgentDecision({
@@ -306,7 +310,7 @@ export class AgentController {
       deliberationPacket: cognitive.deliberationPacket,
       candidates: scoring.candidates,
       decisionClass: `${state.screen}:${scoring.route.kind}`,
-      llm: this.workspaceLlm ?? this.llm,
+      llm: this.workspaceShadowLlm,
       legacySelectedCandidateId: chosen.id
     });
 

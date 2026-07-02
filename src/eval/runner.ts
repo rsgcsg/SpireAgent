@@ -124,6 +124,7 @@ export interface EvalWorkspaceCoverage {
   structuredPromptAvailable: number;
   enabled: number;
   ready: number;
+  decisionClassCounts: Record<string, number>;
   shadowDecision: number;
   shadowCalled: number;
   validShadowDecision: number;
@@ -140,6 +141,24 @@ export interface EvalWorkspaceCoverage {
   readinessReasons: Record<string, number>;
   providerReadinessCounts: Record<string, number>;
   providerReadinessReasons: Record<string, number>;
+  budgetStatusCounts: Record<string, number>;
+  skippedReasonCounts: Record<string, number>;
+  reasonQualityCounts: Record<string, number>;
+  missingCandidate: number;
+  missingInfoCount: number;
+  scaffoldFeedbackCount: number;
+  estimatedCostUsd: number;
+  actualOrEstimatedCostUsd: number;
+  averageLatencyMs: number;
+  latencySamples: number;
+  averageEstimatedInputTokens: number;
+  tokenSamples: number;
+  rolloutGate: {
+    status: "go" | "no_go";
+    reasons: string[];
+    firstLiveMode: "additive_legacy_prompt_plus_compact_workspace_summary";
+    structuredPromptOnlyDefaultAllowed: false;
+  };
   skipped: number;
   unavailable: number;
   rates: Record<string, number>;
@@ -1011,6 +1030,7 @@ function createWorkspaceCoverage(): EvalWorkspaceCoverage {
     structuredPromptAvailable: 0,
     enabled: 0,
     ready: 0,
+    decisionClassCounts: {},
     shadowDecision: 0,
     shadowCalled: 0,
     validShadowDecision: 0,
@@ -1027,6 +1047,24 @@ function createWorkspaceCoverage(): EvalWorkspaceCoverage {
     readinessReasons: {},
     providerReadinessCounts: {},
     providerReadinessReasons: {},
+    budgetStatusCounts: {},
+    skippedReasonCounts: {},
+    reasonQualityCounts: {},
+    missingCandidate: 0,
+    missingInfoCount: 0,
+    scaffoldFeedbackCount: 0,
+    estimatedCostUsd: 0,
+    actualOrEstimatedCostUsd: 0,
+    averageLatencyMs: 0,
+    latencySamples: 0,
+    averageEstimatedInputTokens: 0,
+    tokenSamples: 0,
+    rolloutGate: {
+      status: "no_go",
+      reasons: ["not_evaluated"],
+      firstLiveMode: "additive_legacy_prompt_plus_compact_workspace_summary",
+      structuredPromptOnlyDefaultAllowed: false
+    },
     skipped: 0,
     unavailable: 0,
     rates: {}
@@ -1041,6 +1079,9 @@ function collectWorkspaceCoverage(coverage: EvalWorkspaceCoverage, transition: T
     if (comparison.structuredPromptAvailable === true) coverage.structuredPromptAvailable += 1;
     if (comparison.enabled === true) coverage.enabled += 1;
     if (comparison.gatedReadiness === "ready") coverage.ready += 1;
+    if (typeof comparison.decisionClass === "string") {
+      coverage.decisionClassCounts[comparison.decisionClass] = (coverage.decisionClassCounts[comparison.decisionClass] ?? 0) + 1;
+    }
     if (typeof comparison.structuredTokenEstimate === "number") coverage.averageStructuredTokenEstimate += comparison.structuredTokenEstimate;
     if (typeof comparison.legacyTokenEstimate === "number") coverage.averageLegacyTokenEstimate += comparison.legacyTokenEstimate;
     if (typeof comparison.providerReadiness === "string") {
@@ -1071,6 +1112,20 @@ function collectWorkspaceCoverage(coverage: EvalWorkspaceCoverage, transition: T
     for (const reason of readinessReasons) {
       coverage.readinessReasons[reason] = (coverage.readinessReasons[reason] ?? 0) + 1;
     }
+    if (isRecord(comparison.budget)) {
+      const status = typeof comparison.budget.status === "string" ? comparison.budget.status : "unknown";
+      coverage.budgetStatusCounts[status] = (coverage.budgetStatusCounts[status] ?? 0) + 1;
+      const estimatedInputTokens = comparison.budget.estimatedInputTokens;
+      if (typeof estimatedInputTokens === "number") {
+        coverage.averageEstimatedInputTokens += estimatedInputTokens;
+        coverage.tokenSamples += 1;
+      }
+      const estimatedCostUsd = comparison.budget.estimatedCostUsd;
+      if (typeof estimatedCostUsd === "number") coverage.estimatedCostUsd += estimatedCostUsd;
+      if (typeof comparison.budget.skippedReason === "string") {
+        coverage.skippedReasonCounts[comparison.budget.skippedReason] = (coverage.skippedReasonCounts[comparison.budget.skippedReason] ?? 0) + 1;
+      }
+    }
   }
 
   const shadowDecision = isRecord(transition.shadowWorkspaceDecision) ? transition.shadowWorkspaceDecision : undefined;
@@ -1086,6 +1141,21 @@ function collectWorkspaceCoverage(coverage: EvalWorkspaceCoverage, transition: T
   if (outcome === "unavailable") coverage.unavailable += 1;
   const agreement = typeof shadowDecision.agreement === "string" ? shadowDecision.agreement : "unknown";
   coverage.agreementCounts[agreement] = (coverage.agreementCounts[agreement] ?? 0) + 1;
+  if (agreement === "missing_candidate") coverage.missingCandidate += 1;
+  const budgetStatus = !comparison && typeof shadowDecision.budgetStatus === "string" ? shadowDecision.budgetStatus : undefined;
+  if (budgetStatus) coverage.budgetStatusCounts[budgetStatus] = (coverage.budgetStatusCounts[budgetStatus] ?? 0) + 1;
+  if (typeof shadowDecision.skippedReason === "string") {
+    coverage.skippedReasonCounts[shadowDecision.skippedReason] = (coverage.skippedReasonCounts[shadowDecision.skippedReason] ?? 0) + 1;
+  }
+  const reasonQuality = typeof shadowDecision.reasonQuality === "string" ? shadowDecision.reasonQuality : undefined;
+  if (reasonQuality) coverage.reasonQualityCounts[reasonQuality] = (coverage.reasonQualityCounts[reasonQuality] ?? 0) + 1;
+  if (Array.isArray(shadowDecision.missingInfo)) coverage.missingInfoCount += shadowDecision.missingInfo.length;
+  if (Array.isArray(shadowDecision.scaffoldFeedback)) coverage.scaffoldFeedbackCount += shadowDecision.scaffoldFeedback.length;
+  if (typeof shadowDecision.estimatedCostUsd === "number") coverage.actualOrEstimatedCostUsd += shadowDecision.estimatedCostUsd;
+  if (typeof shadowDecision.latencyMs === "number") {
+    coverage.averageLatencyMs += shadowDecision.latencyMs;
+    coverage.latencySamples += 1;
+  }
 }
 
 function finishWorkspaceCoverage(coverage: EvalWorkspaceCoverage, transitionCount: number): void {
@@ -1099,6 +1169,15 @@ function finishWorkspaceCoverage(coverage: EvalWorkspaceCoverage, transitionCoun
   coverage.averageInformationPreservationScore = coverage.informationPreservationSamples > 0
     ? Number((coverage.averageInformationPreservationScore / coverage.informationPreservationSamples).toFixed(3))
     : 0;
+  coverage.averageLatencyMs = coverage.latencySamples > 0
+    ? Number((coverage.averageLatencyMs / coverage.latencySamples).toFixed(1))
+    : 0;
+  coverage.averageEstimatedInputTokens = coverage.tokenSamples > 0
+    ? Number((coverage.averageEstimatedInputTokens / coverage.tokenSamples).toFixed(1))
+    : 0;
+  coverage.estimatedCostUsd = Number(coverage.estimatedCostUsd.toFixed(6));
+  coverage.actualOrEstimatedCostUsd = Number(coverage.actualOrEstimatedCostUsd.toFixed(6));
+  coverage.rolloutGate = buildP8RolloutGate(coverage);
   const rate = (value: number): number => (transitionCount > 0 ? Number((value / transitionCount).toFixed(3)) : 0);
   coverage.rates = {
     comparison: rate(coverage.comparison),
@@ -1216,6 +1295,28 @@ function finishConsolidationCoverage(coverage: EvalConsolidationCoverage, transi
   };
 }
 
+function buildP8RolloutGate(coverage: EvalWorkspaceCoverage): EvalWorkspaceCoverage["rolloutGate"] {
+  const reasons: string[] = [];
+  if (coverage.shadowCalled === 0) reasons.push("no_real_shadow_calls");
+  if (coverage.validShadowDecision === 0) reasons.push("no_valid_shadow_decisions");
+  if (coverage.invalidOutput > 0) reasons.push("invalid_output_present");
+  if (coverage.invalidChoice > 0) reasons.push("invalid_choice_present");
+  if (coverage.errors > 0) reasons.push("shadow_error_present");
+  if (coverage.missingCandidate > 0) reasons.push("missing_candidate_present");
+  if ((coverage.budgetStatusCounts.token_budget_exceeded ?? 0) > 0) reasons.push("token_budget_exceeded");
+  if ((coverage.budgetStatusCounts.call_budget_exceeded ?? 0) > 0) reasons.push("call_budget_exceeded");
+  if ((coverage.budgetStatusCounts.cost_budget_exceeded ?? 0) > 0) reasons.push("cost_budget_exceeded");
+  if (coverage.averageInformationPreservationScore > 0 && coverage.averageInformationPreservationScore < 0.9) {
+    reasons.push("low_information_preservation");
+  }
+  return {
+    status: reasons.length === 0 ? "go" : "no_go",
+    reasons,
+    firstLiveMode: "additive_legacy_prompt_plus_compact_workspace_summary",
+    structuredPromptOnlyDefaultAllowed: false
+  };
+}
+
 function buildP1CoverageWarnings(
   deliberation: EvalDeliberationCoverage,
   promptParity: EvalPromptParityCoverage,
@@ -1293,6 +1394,18 @@ function buildP8WorkspaceWarnings(coverage: EvalWorkspaceCoverage, transitionCou
       category: "program_risk",
       severity: "warn",
       actionable: true
+    });
+  }
+  const budgetSkips = (coverage.budgetStatusCounts.token_budget_exceeded ?? 0) +
+    (coverage.budgetStatusCounts.call_budget_exceeded ?? 0) +
+    (coverage.budgetStatusCounts.cost_budget_exceeded ?? 0);
+  if (budgetSkips > 0) {
+    warnings.push({
+      code: "p8_shadow_workspace_budget_skip",
+      message: `P8 shadow workspace skipped by budget guard: ${JSON.stringify(coverage.budgetStatusCounts)}`,
+      category: "cognitive_coverage",
+      severity: "info",
+      actionable: false
     });
   }
   if (coverage.comparison > 0 && coverage.informationPreservationSamples === 0) {

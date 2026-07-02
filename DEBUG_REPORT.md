@@ -913,7 +913,7 @@ Implemented the next P8.x slice up to the real-provider boundary:
 - P8.2 DeepSeek V4 Flash preparation:
   - Added provider config, request shape, response parser, short JSON output schema, timeout/error handling, and unavailable/skipped paths.
   - Expected structured output fields are `selectedCandidateId`, `confidence`, `reasonBrief`, `riskTags`, `missingInfo`, and `scaffoldFeedback`.
-  - No real provider call is made without `STS2_DEEPSEEK_API_KEY` or `DEEPSEEK_API_KEY` plus explicit P8 flags.
+  - No real provider call is made without `STS2_DEEPSEEK_API_KEY` plus explicit P8 flags.
   - DeepSeek is kept on a P8 workspace-decider path, separate from the legacy live-prompt decider.
 - P8.3 non-API shadow-call plumbing:
   - `shadowWorkspaceDecision` can now record provider/model identity, skipped/unavailable/valid/invalid/error outcomes, agreement/disagreement/missing-candidate, risk tags, missing info, and scaffold feedback.
@@ -944,3 +944,30 @@ Current P8 gate:
 
 - Ready for a real DeepSeek V4 Flash shadow-call experiment only after the user provides credentials and explicitly enables the shadow call flags.
 - Not ready for gated live prompt integration. P8.4/P8.5 remain design-only until shadow evidence is collected and reviewed.
+
+## 2026-07-02 P8.3 Guarded DeepSeek Shadow Path And P8.4 Gate
+
+Implemented the guarded real-provider path while preserving live behavior:
+
+- DeepSeek V4 Flash remains a P8 workspace decider only; `createLlmDecider()` still ignores DeepSeek credentials and the legacy live prompt path is unchanged.
+- Removed the controller fallback from workspace shadow decider to legacy live decider. If no workspace decider is available, P8 records unavailable instead of borrowing the live decider.
+- Added conservative P8 shadow-call guards: max shadow calls default `1`, soft/hard input-token limits default `8000`/`12000`, max output tokens default `400`, timeout default `25000ms`, retry default `0`, and estimated cost cap default `$0.05`.
+- Budget excess records `skipped` with reasons such as `token_budget_exceeded`, `call_budget_exceeded`, or `cost_budget_exceeded`; these are review/eval signals, not FAIL.
+- Shadow decisions now record provider/model, estimated and actual tokens when returned by the provider, max output tokens, latency, estimated cost, budget status, selected candidate id, agreement/disagreement/missing candidate, risk tags, missing info, scaffold feedback, and reason quality.
+- Replay/eval/review now expose P8.4 gate data: decision class, readiness, token budget, missing sections, invalid/error/missing-candidate stats, reason quality, cost/latency, and go/no-go.
+- P8.5 remains preparation-only. The rollout metadata still permits only additive `legacy prompt + compact workspace summary`, behind a whitelist/feature flag/rollback path, and structured-prompt-only is not allowed by default.
+
+Validation note:
+
+- `collect:state` succeeded against MCP on Act 1 floor 7 combat.
+- `STS2_P8_WORKSPACE_SHADOW=1 STS2_P8_WORKSPACE_CALL=1 npm run agent:tick -- --dry-run` completed without executing an action, but did not call DeepSeek because `STS2_DEEPSEEK_API_KEY` was not visible in the shell environment.
+- `STS2_P8_WORKSPACE_SHADOW=1 STS2_P8_WORKSPACE_CALL=1 npm run agent:run -- --max-ticks 1 --delay-ms 120` executed one legacy/local live action and recorded P8 shadow unavailable/needs-key observability. No DeepSeek decision was executed.
+
+Follow-up after local `.env.local` configuration:
+
+- A real DeepSeek V4 Flash shadow dry-run completed without executing a DeepSeek decision.
+- A real `max-ticks 1` validation executed the legacy/local live action `play_card:3 Strike -> CORPSE_SLUG_1`.
+- The recorded P8 shadow call was valid and agreed with the live selected candidate.
+- Non-secret metrics from the recorded shadow call: estimated input tokens `5800`, actual input tokens `6791`, actual output tokens `202`, actual total tokens `6993`, max output tokens `400`, latency `3568ms`, estimated cost `$0.002159`, budget status `within_budget`, reason quality `adequate`.
+- P8.5 preparation now includes compact workspace summary generation plus rollout metadata behind `STS2_P8_LIVE_ADDITIVE` and `STS2_P8_LIVE_DECISION_CLASSES`. The controller does not consume this live path yet, and default live integration remains off.
+- Future shadow boundary relaxation should happen progressively: P8.5 additive live context, P9 guarded stable updates, and P10 full guarded learning loop, each with whitelist, fallback, eval/review evidence, and rollback.

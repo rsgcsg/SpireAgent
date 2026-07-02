@@ -44,12 +44,25 @@ export interface DeepSeekV4FlashConfig {
   baseUrl?: string;
   model?: string;
   timeoutMs?: number;
+  maxOutputTokens?: number;
+  retryLimit?: number;
 }
 
 export interface DeepSeekWorkspaceDecision extends LlmDecision {
   riskTags?: string[];
   missingInfo?: string[];
   scaffoldFeedback?: string[];
+  providerMetadata?: {
+    provider: "deepseek";
+    model: string;
+    latencyMs: number;
+    maxOutputTokens: number;
+    usage?: {
+      promptTokens?: number;
+      completionTokens?: number;
+      totalTokens?: number;
+    };
+  };
 }
 
 export class DeepSeekV4FlashDecider implements LlmDecider {
@@ -57,12 +70,16 @@ export class DeepSeekV4FlashDecider implements LlmDecider {
   private readonly baseUrl: string;
   private readonly model: string;
   private readonly timeoutMs: number;
+  private readonly maxOutputTokens: number;
+  private readonly retryLimit: number;
 
   constructor(config: DeepSeekV4FlashConfig = {}) {
-    this.apiKey = config.apiKey ?? process.env.STS2_DEEPSEEK_API_KEY ?? process.env.DEEPSEEK_API_KEY ?? "";
+    this.apiKey = config.apiKey ?? process.env.STS2_DEEPSEEK_API_KEY ?? "";
     this.baseUrl = config.baseUrl ?? process.env.STS2_DEEPSEEK_BASE_URL ?? "https://api.deepseek.com/chat/completions";
     this.model = config.model ?? process.env.STS2_DEEPSEEK_MODEL ?? "deepseek-v4-flash";
-    this.timeoutMs = config.timeoutMs ?? Number(process.env.STS2_DEEPSEEK_TIMEOUT_MS || 45000);
+    this.timeoutMs = config.timeoutMs ?? numberFromEnv("STS2_DEEPSEEK_TIMEOUT_MS", 25000);
+    this.maxOutputTokens = config.maxOutputTokens ?? numberFromEnv("STS2_DEEPSEEK_MAX_OUTPUT_TOKENS", 400);
+    this.retryLimit = config.retryLimit ?? numberFromEnv("STS2_DEEPSEEK_RETRY_LIMIT", 0);
   }
 
   isAvailable(): boolean {
@@ -71,42 +88,60 @@ export class DeepSeekV4FlashDecider implements LlmDecider {
 
   async decide(prompt: string): Promise<DeepSeekWorkspaceDecision | null> {
     if (!this.isAvailable()) return null;
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
-    try {
-      const response = await fetch(this.baseUrl, {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          authorization: `Bearer ${this.apiKey}`
-        },
-        body: JSON.stringify({
+    let lastError: unknown;
+    for (let attempt = 0; attempt <= this.retryLimit; attempt += 1) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
+      const startedAt = Date.now();
+      try {
+        const response = await fetch(this.baseUrl, {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${this.apiKey}`
+          },
+          body: JSON.stringify({
+            model: this.model,
+            temperature: 0.2,
+            max_tokens: this.maxOutputTokens,
+            response_format: { type: "json_object" },
+            messages: [
+              {
+                role: "system",
+                content: "You are the Slay the Spire 2 strategic workspace decider. Return short JSON only."
+              },
+              {
+                role: "user",
+                content: prompt
+              }
+            ]
+          }),
+          signal: controller.signal
+        });
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(`DeepSeek request failed ${response.status}: ${redactSecrets(text).slice(0, 240)}`);
+        }
+        const json = await response.json();
+        const content = extractDeepSeekContent(json);
+        const decision = parseWorkspaceJsonDecision(content);
+        if (!decision) return null;
+        decision.providerMetadata = {
+          provider: "deepseek",
           model: this.model,
-          temperature: 0.2,
-          response_format: { type: "json_object" },
-          messages: [
-            {
-              role: "system",
-              content: "You are the Slay the Spire 2 strategic workspace decider. Return short JSON only."
-            },
-            {
-              role: "user",
-              content: prompt
-            }
-          ]
-        }),
-        signal: controller.signal
-      });
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(`DeepSeek request failed ${response.status}: ${text.slice(0, 240)}`);
+          latencyMs: Date.now() - startedAt,
+          maxOutputTokens: this.maxOutputTokens,
+          usage: extractDeepSeekUsage(json)
+        };
+        return decision;
+      } catch (error) {
+        lastError = error;
+        if (attempt >= this.retryLimit) break;
+      } finally {
+        clearTimeout(timeout);
       }
-      const json = await response.json();
-      const content = extractDeepSeekContent(json);
-      return parseWorkspaceJsonDecision(content);
-    } finally {
-      clearTimeout(timeout);
     }
+    throw normalizeDeepSeekError(lastError, this.timeoutMs);
   }
 }
 
@@ -254,12 +289,40 @@ function extractDeepSeekContent(value: unknown): string {
   return message.content;
 }
 
+function extractDeepSeekUsage(value: unknown): NonNullable<DeepSeekWorkspaceDecision["providerMetadata"]>["usage"] {
+  if (!isRecord(value) || !isRecord(value.usage)) return undefined;
+  return {
+    promptTokens: numberValue(value.usage.prompt_tokens),
+    completionTokens: numberValue(value.usage.completion_tokens),
+    totalTokens: numberValue(value.usage.total_tokens)
+  };
+}
+
 function stringValue(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
 
 function numberValue(value: unknown): number | undefined {
   return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+function numberFromEnv(name: string, fallback: number): number {
+  const value = Number(process.env[name]);
+  return Number.isFinite(value) && value >= 0 ? value : fallback;
+}
+
+function normalizeDeepSeekError(error: unknown, timeoutMs: number): Error {
+  if (error instanceof Error && error.name === "AbortError") {
+    return new Error(`DeepSeek request timed out after ${timeoutMs}ms`);
+  }
+  const message = error instanceof Error ? error.message : String(error);
+  return new Error(redactSecrets(message));
+}
+
+function redactSecrets(value: string): string {
+  return value
+    .replace(/Bearer\s+[A-Za-z0-9._~+/=-]+/gi, "Bearer [REDACTED]")
+    .replace(/sk-[A-Za-z0-9._~+/=-]+/g, "sk-[REDACTED]");
 }
 
 function stringArray(value: unknown): string[] | undefined {

@@ -316,6 +316,21 @@ export interface DeliberationWorkspaceCoverage {
   sectionTokenEstimate?: Record<string, number>;
 }
 
+export interface DeliberationWorkspaceBudget {
+  maxShadowCalls: number;
+  shadowCallsUsed: number;
+  estimatedInputTokens: number;
+  softInputTokenLimit: number;
+  hardInputTokenLimit: number;
+  maxOutputTokens: number;
+  timeoutMs: number;
+  retryLimit: number;
+  estimatedCostUsd?: number;
+  maxEstimatedCostUsd?: number;
+  status: "within_budget" | "soft_token_limit_exceeded" | "token_budget_exceeded" | "call_budget_exceeded" | "cost_budget_exceeded";
+  skippedReason?: string;
+}
+
 export interface DeliberationWorkspaceComparison {
   schemaVersion: number;
   phase: "P8";
@@ -336,6 +351,7 @@ export interface DeliberationWorkspaceComparison {
   readinessReasons: string[];
   providerReadiness?: "ready_for_shadow_call" | "needs_api_key" | "not_ready";
   providerReadinessReasons?: string[];
+  budget?: DeliberationWorkspaceBudget;
   rolloutGate?: JsonRecord;
   summary: string;
 }
@@ -372,6 +388,14 @@ export interface ShadowWorkspaceDecision {
   promptHash?: string;
   provider?: string;
   model?: string;
+  estimatedInputTokens?: number;
+  actualInputTokens?: number;
+  actualOutputTokens?: number;
+  actualTotalTokens?: number;
+  maxOutputTokens?: number;
+  latencyMs?: number;
+  estimatedCostUsd?: number;
+  budgetStatus?: string;
   riskTags?: string[];
   missingInfo?: string[];
   scaffoldFeedback?: string[];
