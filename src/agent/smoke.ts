@@ -18,7 +18,15 @@ import {
   createSnapshotOnlyTransition
 } from "../data/transitionSchema.js";
 import { selectFallbackCandidate } from "./fallback.js";
-import { NoopLlmDecider, validateLlmDecisionForCandidates, type LlmDecider } from "./llm.js";
+import {
+  DeepSeekV4FlashDecider,
+  NoopLlmDecider,
+  createLlmDecider,
+  createP8WorkspaceDecider,
+  parseWorkspaceJsonDecision,
+  validateLlmDecisionForCandidates,
+  type LlmDecider
+} from "./llm.js";
 import { MemoryManager } from "./memory.js";
 import { cardDamage, normalizeGameState } from "./state.js";
 import { generateCandidates } from "./candidates.js";
@@ -188,10 +196,20 @@ const candidateFuture: CandidateFuture = {
 const deliberationPacket: DeliberationPacket = {
   schemaVersion: DOMAIN_SCHEMA_VERSION,
   stateSummary: "Combat with one attacking enemy and a small hand.",
+  screen: "combat",
+  stateFacts: { hp: "80/80", energy: 3 },
+  enemyIntent: [{ enemy: "Jaw Worm", intent: "Attack 6" }],
+  handSummary: [{ index: 0, name: "Strike", cost: 1 }],
+  deckSummary: { drawPileCount: 5, discardPileCount: 0 },
+  topCandidates: [{ id: "play-strike", label: "Strike Jaw Worm" }],
+  runMemorySummary: { riskFlags: [] },
+  derivedKnowledgeSummary: { present: true, facts: 0, rules: 1 },
   strategicImpression,
   salienceSignals: [salienceSignal],
   memoryActivation,
   candidateFutures: [candidateFuture],
+  uncertainty: ["test uncertainty"],
+  outputSchema: { selectedCandidateId: "string", confidence: "number", reasonBrief: "string" },
   validationConstraints: ["LLM must choose a provided candidate id"]
 };
 const predictionError: PredictionErrorRecord = {
@@ -228,6 +246,10 @@ assert.equal(workspaceComparison.structuredPromptAvailable, true);
 assert.equal(workspaceComparison.gatedReadiness, "not_ready");
 assert.ok(workspaceComparison.readinessReasons.includes("STS2_P8_WORKSPACE_SHADOW=off"));
 assert.ok(workspaceComparison.structuredPromptHash);
+assert.equal(workspaceComparison.coverage.informationPreservationScore, 1);
+assert.equal(workspaceComparison.coverage.missingLegacySections?.length, 0);
+assert.ok(workspaceComparison.coverage.sectionTokenEstimate?.candidateFutures);
+assert.equal(workspaceComparison.providerReadiness, "needs_api_key");
 const p8Shadow = await buildP8WorkspaceShadowFromPacket({
   legacyPrompt: JSON.stringify({ candidates: [{ id: "play-strike" }] }),
   deliberationPacket,
@@ -239,6 +261,48 @@ const p8Shadow = await buildP8WorkspaceShadowFromPacket({
 });
 assert.equal(p8Shadow.shadowDecision.called, false);
 assert.equal(p8Shadow.shadowDecision.outcome, "not_enabled");
+const p8ShadowReadyButSkipped = await buildP8WorkspaceShadowFromPacket({
+  legacyPrompt: JSON.stringify({ candidates: [{ id: "play-strike" }] }),
+  deliberationPacket,
+  candidates: [workspaceCandidate],
+  decisionClass: "combat:test",
+  llm: new NoopLlmDecider(),
+  legacySelectedCandidateId: "play-strike",
+  options: { shadowEnabled: true, callEnabled: false, providerAvailable: true }
+});
+assert.equal(p8ShadowReadyButSkipped.comparison.gatedReadiness, "ready");
+assert.equal(p8ShadowReadyButSkipped.comparison.providerReadiness, "ready_for_shadow_call");
+assert.equal(p8ShadowReadyButSkipped.shadowDecision.outcome, "skipped");
+assert.equal(p8ShadowReadyButSkipped.shadowDecision.skippedReason, "STS2_P8_WORKSPACE_CALL=off");
+const parsedWorkspaceDecision = parseWorkspaceJsonDecision(JSON.stringify({
+  selectedCandidateId: "play-strike",
+  confidence: 0.66,
+  reasonBrief: "Preserve tempo while checking incoming risk.",
+  riskTags: ["tempo"],
+  missingInfo: ["exact draw order"],
+  scaffoldFeedback: ["candidate futures were clear"]
+}));
+assert.equal(parsedWorkspaceDecision?.candidateId, "play-strike");
+assert.deepEqual(parsedWorkspaceDecision?.riskTags, ["tempo"]);
+const deepSeekWithoutKey = new DeepSeekV4FlashDecider({ apiKey: "" });
+assert.equal(deepSeekWithoutKey.isAvailable(), false);
+const previousProvider = process.env.STS2_LLM_PROVIDER;
+const previousDeepSeekKey = process.env.STS2_DEEPSEEK_API_KEY;
+const previousCommand = process.env.STS2_LLM_COMMAND;
+try {
+  delete process.env.STS2_LLM_COMMAND;
+  process.env.STS2_LLM_PROVIDER = "deepseek-v4-flash";
+  process.env.STS2_DEEPSEEK_API_KEY = "fixture-key";
+  assert.equal(createLlmDecider().isAvailable?.(), false);
+  assert.equal(createP8WorkspaceDecider().isAvailable?.(), true);
+} finally {
+  if (previousProvider === undefined) delete process.env.STS2_LLM_PROVIDER;
+  else process.env.STS2_LLM_PROVIDER = previousProvider;
+  if (previousDeepSeekKey === undefined) delete process.env.STS2_DEEPSEEK_API_KEY;
+  else process.env.STS2_DEEPSEEK_API_KEY = previousDeepSeekKey;
+  if (previousCommand === undefined) delete process.env.STS2_LLM_COMMAND;
+  else process.env.STS2_LLM_COMMAND = previousCommand;
+}
 
 const collectedRecord = buildCollectedStateRecord({
   rawStatePath: "memory/collected/snapshots/test.raw.json",
@@ -2058,8 +2122,10 @@ try {
   assert.equal(replayCoverage.fullShadowScaffold, 1);
   assert.equal(replayCoverage.candidateFuturePredictionChecks, 1);
   assert.equal(replayCoverage.workspaceComparison, 1);
+  assert.equal(replayCoverage.workspaceProviderReady, 0);
   assert.equal(replayCoverage.shadowWorkspaceDecision, 1);
   assert.equal(replayCoverage.shadowWorkspaceCalled, 0);
+  assert.equal(replayCoverage.shadowWorkspaceSkipped, 0);
   assert.equal(replayCoverage.replayFrame, 1);
   const proposalSurface = buildReplayConsolidationProposalSurface(readConsolidationProposals(runDir, replayRun.transitions));
   assert.equal(proposalSurface.proposals, 0);
@@ -2081,6 +2147,10 @@ try {
   assert.equal(evalReport.summary.workspaceCoverage.shadowDecision, 1);
   assert.equal(evalReport.summary.workspaceCoverage.enabled, 0);
   assert.equal(evalReport.summary.workspaceCoverage.shadowCalled, 0);
+  assert.equal(evalReport.summary.workspaceCoverage.skipped, 0);
+  assert.equal(evalReport.summary.workspaceCoverage.unavailable, 0);
+  assert.equal(evalReport.summary.workspaceCoverage.averageInformationPreservationScore, 1);
+  assert.equal(evalReport.summary.workspaceCoverage.providerReadinessCounts.needs_api_key, 1);
   assert.equal(evalReport.summary.workspaceCoverage.agreementCounts.not_applicable, 1);
   assert.equal(evalReport.summary.predictionErrorCoverage.predictionError, 1);
   assert.equal(evalReport.summary.predictionErrorCoverage.withTypedChecks, 1);

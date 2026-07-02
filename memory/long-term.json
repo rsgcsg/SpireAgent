@@ -178,6 +178,150 @@
         "failed:combat-tempo"
       ],
       "successfulPatterns": []
+    },
+    {
+      "runId": "run-mr20xf22-o5tlcp",
+      "at": "2026-07-01T14:09:01.445Z",
+      "character": "The Defect",
+      "result": "loss",
+      "act": 2,
+      "floor": 33,
+      "rewardScore": -6,
+      "summary": "loss score=-6 character=The Defect act=2 floor=33 hp=0/82 deficits=block,draw,scaling",
+      "failureReasons": [
+        "failed:death-act-2-floor-33",
+        "failed:scaling"
+      ],
+      "successfulPatterns": []
+    },
+    {
+      "runId": "run-mr25itca-8sd0mg",
+      "at": "2026-07-01T14:12:32.979Z",
+      "character": "The Defect",
+      "result": "loss",
+      "act": 2,
+      "floor": 33,
+      "rewardScore": -6,
+      "summary": "loss score=-6 character=The Defect act=2 floor=33 hp=0/75 deficits=scaling",
+      "failureReasons": [
+        "failed:death-act-2-floor-33",
+        "failed:scaling",
+        "failed:combat-tempo"
+      ],
+      "successfulPatterns": []
+    },
+    {
+      "runId": "run-mr25nck8-w6lkri",
+      "at": "2026-07-01T14:14:00.812Z",
+      "character": "The Defect",
+      "result": "loss",
+      "act": 1,
+      "floor": 13,
+      "rewardScore": -48,
+      "summary": "loss score=-48 character=The Defect act=1 floor=13 hp=0/75 deficits=block,healing",
+      "failureReasons": [
+        "failed:death-act-1-floor-13",
+        "failed:healing",
+        "failed:combat-tempo"
+      ],
+      "successfulPatterns": []
+    },
+    {
+      "runId": "run-mr25p8c0-lqoq57",
+      "at": "2026-07-01T14:16:02.293Z",
+      "character": "The Defect",
+      "result": "loss",
+      "act": 1,
+      "floor": 17,
+      "rewardScore": -42,
+      "summary": "loss score=-42 character=The Defect act=1 floor=17 hp=0/75 deficits=draw,healing",
+      "failureReasons": [
+        "failed:death-act-1-floor-17",
+        "failed:healing",
+        "failed:combat-tempo"
+      ],
+      "successfulPatterns": []
+    },
+    {
+      "runId": "run-mr25ru2i-84pkz0",
+      "at": "2026-07-01T14:19:02.140Z",
+      "character": "The Defect",
+      "result": "loss",
+      "act": 2,
+      "floor": 31,
+      "rewardScore": -9,
+      "summary": "loss score=-9 character=The Defect act=2 floor=31 hp=0/85 deficits=scaling,healing",
+      "failureReasons": [
+        "failed:death-act-2-floor-31",
+        "failed:scaling",
+        "failed:healing"
+      ],
+      "successfulPatterns": []
+    },
+    {
+      "runId": "run-mr25vou8-7z3ohm",
+      "at": "2026-07-01T14:20:49.837Z",
+      "character": "The Defect",
+      "result": "loss",
+      "act": 1,
+      "floor": 17,
+      "rewardScore": -42,
+      "summary": "loss score=-42 character=The Defect act=1 floor=17 hp=0/75 deficits=draw,healing",
+      "failureReasons": [
+        "failed:death-act-1-floor-17",
+        "failed:healing",
+        "failed:combat-tempo"
+      ],
+      "successfulPatterns": []
+    },
+    {
+      "runId": "run-mr25xzxv-ta1b9f",
+      "at": "2026-07-01T14:23:44.265Z",
+      "character": "The Defect",
+      "result": "loss",
+      "act": 1,
+      "floor": 17,
+      "rewardScore": -42,
+      "summary": "loss score=-42 character=The Defect act=1 floor=17 hp=0/75 deficits=block,healing",
+      "failureReasons": [
+        "failed:death-act-1-floor-17",
+        "failed:healing",
+        "failed:combat-tempo"
+      ],
+      "successfulPatterns": []
+    },
+    {
+      "runId": "run-mr261um4-ct5yk6",
+      "at": "2026-07-01T14:27:35.594Z",
+      "character": "The Defect",
+      "result": "loss",
+      "act": 2,
+      "floor": 33,
+      "rewardScore": -6,
+      "summary": "loss score=-6 character=The Defect act=2 floor=33 hp=0/75 deficits=block,draw,scaling,healing",
+      "failureReasons": [
+        "failed:death-act-2-floor-33",
+        "failed:scaling",
+        "failed:healing",
+        "failed:combat-tempo"
+      ],
+      "successfulPatterns": []
+    },
+    {
+      "runId": "run-mr266t2k-mi797t",
+      "at": "2026-07-01T14:30:10.555Z",
+      "character": "The Defect",
+      "result": "loss",
+      "act": 1,
+      "floor": 17,
+      "rewardScore": -42,
+      "summary": "loss score=-42 character=The Defect act=1 floor=17 hp=0/75 deficits=healing",
+      "failureReasons": [
+        "failed:death-act-1-floor-17",
+        "failed:healing",
+        "failed:combat-tempo"
+      ],
+      "successfulPatterns": []
     }
   ],
   "lessons": [
@@ -188,7 +332,7 @@
         "combat",
         "tempo"
       ],
-      "confidence": 0.8500000000000003,
+      "confidence": 1,
       "evidenceRunIds": [
         "run-mqzzausx-ke8fdq",
         "run-mr0ckah9-99khw3",
@@ -196,9 +340,16 @@
         "run-mr192jap-y1qb0x",
         "run-mr1bkl96-34bpvd",
         "run-mr208pud-fgye9c",
-        "run-mr20v8fn-rfn9xk"
+        "run-mr20v8fn-rfn9xk",
+        "run-mr25itca-8sd0mg",
+        "run-mr25nck8-w6lkri",
+        "run-mr25p8c0-lqoq57",
+        "run-mr25vou8-7z3ohm",
+        "run-mr25xzxv-ta1b9f",
+        "run-mr261um4-ct5yk6",
+        "run-mr266t2k-mi797t"
       ],
-      "updatedAt": "2026-07-01T12:00:24.692Z"
+      "updatedAt": "2026-07-01T14:30:10.555Z"
     },
     {
       "id": "死亡局如果长期缺防御-下局提高防御牌-弱化-冰球和休息路线优先级-",

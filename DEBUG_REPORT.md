@@ -902,3 +902,45 @@ Remaining P8 work:
 - Validate coverage on a fresh real transition.
 - Define acceptance thresholds for readiness and information preservation before any gated live experiment.
 - If a future gated experiment is attempted, preserve legacy fallback and current validation/execution.
+
+## 2026-07-02 P8.1-P8.3 Non-API Workspace Readiness Pass
+
+Implemented the next P8.x slice up to the real-provider boundary:
+
+- P8.1 readiness / information preservation:
+  - `workspaceComparison.coverage` now records required legacy-information sections, preserved sections, missing sections, per-section token estimates, and `informationPreservationScore`.
+  - Readiness reasons now distinguish missing information, feature flags, provider readiness, and low preservation.
+- P8.2 DeepSeek V4 Flash preparation:
+  - Added provider config, request shape, response parser, short JSON output schema, timeout/error handling, and unavailable/skipped paths.
+  - Expected structured output fields are `selectedCandidateId`, `confidence`, `reasonBrief`, `riskTags`, `missingInfo`, and `scaffoldFeedback`.
+  - No real provider call is made without `STS2_DEEPSEEK_API_KEY` or `DEEPSEEK_API_KEY` plus explicit P8 flags.
+  - DeepSeek is kept on a P8 workspace-decider path, separate from the legacy live-prompt decider.
+- P8.3 non-API shadow-call plumbing:
+  - `shadowWorkspaceDecision` can now record provider/model identity, skipped/unavailable/valid/invalid/error outcomes, agreement/disagreement/missing-candidate, risk tags, missing info, and scaffold feedback.
+  - Replay/eval/review surface provider readiness, skipped/unavailable counts, and information-preservation visibility.
+- Eval compatibility fix:
+  - Old P8.0 runs that do not contain `informationPreservationScore` are now reported as pre-P8.1 visibility, not as misleading low-preservation evidence.
+
+North Star boundary:
+
+- Live behavior remains unchanged by default.
+- Legacy prompt remains the live path.
+- No candidate generation, ordering, scoring, fallback, validation, execution, stable memory, derived knowledge, strategy params, or P7 proposal application was changed.
+- P8 remains a shadow strategic workspace until a real DeepSeek shadow call is explicitly authorized.
+
+Validation run for this patch:
+
+- `npm exec tsc -- --noEmit`: passed.
+- `npm run agent:smoke`: passed.
+- `npm run check`: passed.
+- `npm run data:replay -- --latest`: passed.
+- `npm run data:eval -- --latest`: `WARN`, 0 errors. Current WARNs are strategy quality plus pre-P8.1 visibility on the latest historical run.
+- `npm run agent:review`: passed.
+- `npm run collect:state`: passed. Current MCP state was Act 1 floor 7 combat, HP 37/75, block 10, energy 1, hand `[Defend, Subroutine+, Defend]`.
+- `npm run agent:tick -- --dry-run`: passed, selected `Defend`, executed nothing.
+- `STS2_P8_WORKSPACE_SHADOW=1 npm run agent:tick -- --dry-run`: passed, selected the same `Defend`, executed nothing, and did not call a real LLM.
+
+Current P8 gate:
+
+- Ready for a real DeepSeek V4 Flash shadow-call experiment only after the user provides credentials and explicitly enables the shadow call flags.
+- Not ready for gated live prompt integration. P8.4/P8.5 remain design-only until shadow evidence is collected and reviewed.

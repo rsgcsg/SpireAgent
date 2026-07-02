@@ -37,8 +37,10 @@ export interface ReplayCognitiveCoverage {
   promptParity: number;
   workspaceComparison: number;
   workspaceReady: number;
+  workspaceProviderReady: number;
   shadowWorkspaceDecision: number;
   shadowWorkspaceCalled: number;
+  shadowWorkspaceSkipped: number;
   predictionError: number;
   replayFrame: number;
   consolidation: number;
@@ -227,8 +229,10 @@ export function buildReplayCognitiveCoverage(transitions: TransitionRecord[]): R
     promptParity: 0,
     workspaceComparison: 0,
     workspaceReady: 0,
+    workspaceProviderReady: 0,
     shadowWorkspaceDecision: 0,
     shadowWorkspaceCalled: 0,
+    shadowWorkspaceSkipped: 0,
     predictionError: 0,
     replayFrame: 0,
     consolidation: 0,
@@ -247,8 +251,10 @@ export function buildReplayCognitiveCoverage(transitions: TransitionRecord[]): R
     const hasPromptParity = isRecord(transition.promptParity) || (hasDeliberationPacket && isRecord(transition.deliberationPacket?.promptParity));
     const hasWorkspaceComparison = isRecord(transition.workspaceComparison);
     const hasWorkspaceReady = hasWorkspaceComparison && transition.workspaceComparison?.gatedReadiness === "ready";
+    const hasWorkspaceProviderReady = hasWorkspaceComparison && transition.workspaceComparison?.providerReadiness === "ready_for_shadow_call";
     const hasShadowWorkspaceDecision = isRecord(transition.shadowWorkspaceDecision);
     const hasShadowWorkspaceCalled = hasShadowWorkspaceDecision && transition.shadowWorkspaceDecision?.called === true;
+    const hasShadowWorkspaceSkipped = hasShadowWorkspaceDecision && transition.shadowWorkspaceDecision?.outcome === "skipped";
     const hasPredictionError = isRecord(transition.predictionError);
     const hasReplayFrame = isRecord(transition.replayFrame);
     const hasConsolidation = isRecord(transition.consolidation);
@@ -263,8 +269,10 @@ export function buildReplayCognitiveCoverage(transitions: TransitionRecord[]): R
     if (hasPromptParity) coverage.promptParity += 1;
     if (hasWorkspaceComparison) coverage.workspaceComparison += 1;
     if (hasWorkspaceReady) coverage.workspaceReady += 1;
+    if (hasWorkspaceProviderReady) coverage.workspaceProviderReady += 1;
     if (hasShadowWorkspaceDecision) coverage.shadowWorkspaceDecision += 1;
     if (hasShadowWorkspaceCalled) coverage.shadowWorkspaceCalled += 1;
+    if (hasShadowWorkspaceSkipped) coverage.shadowWorkspaceSkipped += 1;
     if (hasPredictionError) coverage.predictionError += 1;
     if (hasReplayFrame) coverage.replayFrame += 1;
     if (hasConsolidation) coverage.consolidation += 1;
@@ -290,8 +298,10 @@ export function formatReplayCognitiveCoverage(coverage: ReplayCognitiveCoverage)
     item("promptParity", coverage.promptParity),
     item("workspaceComparison", coverage.workspaceComparison),
     item("workspaceReady", coverage.workspaceReady),
+    item("workspaceProviderReady", coverage.workspaceProviderReady),
     item("shadowWorkspaceDecision", coverage.shadowWorkspaceDecision),
     item("shadowWorkspaceCalled", coverage.shadowWorkspaceCalled),
+    item("shadowWorkspaceSkipped", coverage.shadowWorkspaceSkipped),
     item("predictionError", coverage.predictionError),
     item("replayFrame", coverage.replayFrame),
     item("consolidation", coverage.consolidation),

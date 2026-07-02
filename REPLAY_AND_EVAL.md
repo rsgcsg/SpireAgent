@@ -85,12 +85,20 @@ P7.5 adds a derived aggregation view over the same proposal surface. Aggregation
 
 As of P8, replay/eval/review also report the DeliberationPacket strategic workspace surface:
 
-- `workspaceComparison`: legacy prompt hash vs structured workspace hash, byte/token estimates, decision class, section coverage, missing sections, and gated readiness.
-- `shadowWorkspaceDecision`: optional structured-prompt LLM call result, agreement/disagreement with the live selected candidate, invalid output, missing candidate, reason quality, and errors.
+- `workspaceComparison`: legacy prompt hash vs structured workspace hash, byte/token estimates, decision class, section coverage, missing sections, required/preserved legacy-information sections, information-preservation score, provider readiness, and gated readiness.
+- `shadowWorkspaceDecision`: optional structured-prompt LLM call result, skipped/unavailable path, provider/model identity, agreement/disagreement with the live selected candidate, invalid output, missing candidate, reason quality, risk tags, missing info, scaffold feedback, and errors.
 - `STS2_P8_WORKSPACE_SHADOW` defaults off, so fresh transitions normally show comparison coverage with readiness blocked by the flag.
 - `STS2_P8_WORKSPACE_CALL` separately gates any structured shadow LLM call. With defaults, P8 never calls an extra LLM and never changes action selection.
+- DeepSeek V4 Flash provider plumbing is prepared, but missing credentials must be reported as `needs_api_key`, `skipped`, or `unavailable`; eval must not treat this as a fake model result.
 
 P8 disagreement is a review signal, not an eval failure. Invalid structured output or missing candidate is a WARN-level engineering signal unless it corrupts transition data or live validation.
+
+Console-assisted fixture runs:
+
+- The STS2 console can accelerate replay/eval scenario reproduction with commands such as `instant`, `travel`, `fight`, `event`, `card`, `draw`, `energy`, `gold`, `relic`, `potion`, `kill all`, `win`, and `die`.
+- Console-modified runs must be marked debug/fixture-only and excluded from real strategy baselines, win-rate analysis, stable memory evidence, derived knowledge promotion, and strategy-param updates.
+- Console fixtures are useful for P8 workspace readiness sampling, shop/event/combat/death boundary replay, prediction attribution fixtures, and adapter state mismatch debugging.
+- See `STS2_CONSOLE_DEBUG_RUNBOOK.md` for command groups, risks, and workflows.
 
 P7 proposal rules:
 

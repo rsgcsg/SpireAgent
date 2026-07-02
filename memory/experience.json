@@ -19,13 +19,14 @@
         "failed:death-act-2-floor-25",
         "failed:death-act-1-floor-9",
         "failed:death-act-2-floor-22",
-        "failed:death-act-1-floor-15"
+        "failed:death-act-1-floor-15",
+        "failed:death-act-2-floor-31"
       ],
       "tags": [],
-      "confidence": 0.6200000000000002,
+      "confidence": 0.8000000000000004,
       "wins": 0,
-      "losses": 11,
-      "updatedAt": "2026-07-01T12:00:24.692Z"
+      "losses": 20,
+      "updatedAt": "2026-07-01T14:30:10.555Z"
     }
   }
 }

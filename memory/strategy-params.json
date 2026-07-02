@@ -1,13 +1,13 @@
 {
   "version": 1,
-  "updatedAt": "2026-07-01T12:00:24.692Z",
+  "updatedAt": "2026-07-01T14:30:10.555Z",
   "weights": {
-    "damage": 1.1049999999999993,
+    "damage": 1.2099999999999986,
     "block": 1.31,
     "lethal": 8,
     "draw": 0.55,
     "energy": 0.5,
-    "scaling": 0.8200000000000001,
+    "scaling": 0.9400000000000002,
     "statusControl": 1.4,
     "deckThinness": 0.7,
     "routeEliteRisk": 1,
@@ -95,6 +95,80 @@
         "weights.damage": 0.015
       },
       "rewardScore": -45
+    },
+    {
+      "at": "2026-07-01T14:09:01.445Z",
+      "reason": "post-run reward feedback",
+      "changes": {
+        "weights.scaling": 0.03
+      },
+      "rewardScore": -6
+    },
+    {
+      "at": "2026-07-01T14:12:32.979Z",
+      "reason": "post-run reward feedback",
+      "changes": {
+        "weights.scaling": 0.03,
+        "weights.damage": 0.015
+      },
+      "rewardScore": -6
+    },
+    {
+      "at": "2026-07-01T14:14:00.812Z",
+      "reason": "post-run reward feedback",
+      "changes": {
+        "weights.damage": 0.015
+      },
+      "rewardScore": -48
+    },
+    {
+      "at": "2026-07-01T14:16:02.293Z",
+      "reason": "post-run reward feedback",
+      "changes": {
+        "weights.damage": 0.015
+      },
+      "rewardScore": -42
+    },
+    {
+      "at": "2026-07-01T14:19:02.140Z",
+      "reason": "post-run reward feedback",
+      "changes": {
+        "weights.scaling": 0.03
+      },
+      "rewardScore": -9
+    },
+    {
+      "at": "2026-07-01T14:20:49.838Z",
+      "reason": "post-run reward feedback",
+      "changes": {
+        "weights.damage": 0.015
+      },
+      "rewardScore": -42
+    },
+    {
+      "at": "2026-07-01T14:23:44.265Z",
+      "reason": "post-run reward feedback",
+      "changes": {
+        "weights.damage": 0.015
+      },
+      "rewardScore": -42
+    },
+    {
+      "at": "2026-07-01T14:27:35.595Z",
+      "reason": "post-run reward feedback",
+      "changes": {
+        "weights.scaling": 0.03,
+        "weights.damage": 0.015
+      },
+      "rewardScore": -6
+    },
+    {
+      "at": "2026-07-01T14:30:10.555Z",
+      "reason": "post-run reward feedback",
+      "changes": {
+        "weights.damage": 0.015
+      },
+      "rewardScore": -42
     }
   ]
 }

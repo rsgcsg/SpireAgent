@@ -20,7 +20,9 @@ Read first:
 
 The project has completed Phase 0, Phase 1, the Phase 2 minimum data-loop MVP, the Phase 2.5 offline engineering eval runner, and Phase 2.6 eval warning classification/noise reduction. The formal route now extends through Phase 10, where the target is a complete Guarded Learning Loop.
 
-The active North Star is now the LLM-centered predictive cognitive scaffold described in `PROJECT_NORTH_STAR.md` and `PROJECT_NORTH_STAR_CHINESE.md`. Phase 3.0 should migrate the existing working loop toward `StrategicImpression`, `SalienceSignal`, `MemoryActivation`, `CandidateFuture`, `DeliberationPacket`, `PredictionErrorRecord`, `ReplayFrame`, and `ConsolidationRecord` without large controller rewrites or untested strategy changes.
+The permanent mission is to build an agent scaffold system that lets a zero-experience LLM agent progressively unlock and express its full strategic potential through real play, structured perception, memory, candidate futures, deliberation, replay, prediction-error learning, and guarded improvement.
+
+The active North Star is the LLM-centered predictive cognitive scaffold described in `PROJECT_NORTH_STAR.md` and `PROJECT_NORTH_STAR_CHINESE.md`. Current work should migrate the existing working loop toward `StrategicImpression`, `SalienceSignal`, `MemoryActivation`, `CandidateFuture`, `DeliberationPacket`, `PredictionErrorRecord`, `ReplayFrame`, and `ConsolidationRecord` without large controller rewrites or untested strategy changes.
 
 P1 through P10 are a maturity route, not a checklist. The constraint is strict:
 
@@ -52,12 +54,27 @@ P1 shadow DeliberationPacket is now implemented:
 P8 DeliberationPacket strategic workspace shadow surface is now implemented:
 
 - `src/agent/workspace.ts` serializes the current `DeliberationPacket` into a structured LLM workspace.
-- New transitions can carry `workspaceComparison` with legacy prompt hash, structured prompt hash, byte/token estimates, decision class, coverage, missing sections, and gated readiness.
-- New transitions can carry `shadowWorkspaceDecision`, which records optional structured shadow LLM outcomes, agreement/disagreement, missing candidate, invalid output, reason quality, or error.
+- New transitions can carry `workspaceComparison` with legacy prompt hash, structured prompt hash, byte/token estimates, decision class, coverage, required/preserved/missing legacy sections, per-section token estimates, information-preservation score, provider readiness, and gated readiness.
+- New transitions can carry `shadowWorkspaceDecision`, which records optional structured shadow LLM outcomes, skipped/unavailable provider paths, agreement/disagreement, missing candidate, invalid output, reason quality, risk tags, missing info, scaffold feedback, or error.
+- P8.1 readiness / information-preservation scoring is implemented.
+- P8.2 DeepSeek V4 Flash provider/parser/schema/error-path preparation is implemented without calling the provider by default. DeepSeek is wired as a P8 workspace decider, not as a replacement for the legacy live-prompt decider.
+- P8.3 non-API shadow-call plumbing is implemented; real shadow calls remain blocked until credentials and explicit authorization are supplied.
 - `STS2_P8_WORKSPACE_SHADOW` defaults off and blocks readiness by default.
 - `STS2_P8_WORKSPACE_CALL` defaults off and blocks extra structured LLM calls by default.
+- `STS2_DEEPSEEK_API_KEY` or `DEEPSEEK_API_KEY` is required before DeepSeek V4 Flash can become available for shadow calls.
 - With default flags, live behavior is unchanged: legacy prompt remains the live prompt, candidate generation/order/scoring/fallback/validation/execution are unchanged, and no stable memory/derived/strategy updates occur.
 - Replay/eval/review expose P8 workspace coverage and stats. Disagreement is a review signal, not a program failure.
+
+P8.x next route:
+
+- P8.3 real shadow call: only after explicit API key/user authorization; record agreement/disagreement/invalid/missing-candidate/reason quality without executing the shadow decision.
+- P8.4: shadow A/B and rollout gate by decision class.
+- P8.5: gated live prompt integration only after explicit request; first version must be additive with legacy prompt fallback, not structured-prompt-only by default.
+
+STS2 console debug support:
+
+- `STS2_CONSOLE_DEBUG_RUNBOOK.md` documents console commands as debug/fixture tooling for adapter debugging, replay/eval fixtures, P8/P9 state reproduction, and cost-controlled testing.
+- Console-modified runs are debug/fixture data only and must not be used as real strategy baselines or stable learning evidence.
 
 Implemented and working:
 

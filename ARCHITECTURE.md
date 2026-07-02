@@ -208,8 +208,9 @@ P6 attribution status:
 P8 workspace status:
 
 - `src/agent/workspace.ts` turns the existing `DeliberationPacket` into a compact structured strategic workspace for LLM deliberation.
-- The controller records a `workspaceComparison` for fresh executor-logged transitions: legacy prompt hash, structured prompt hash, byte/token estimates, decision class, coverage, missing sections, and readiness.
+- The controller records a `workspaceComparison` for fresh executor-logged transitions: legacy prompt hash, structured prompt hash, byte/token estimates, decision class, coverage, missing sections, required/preserved legacy-information sections, per-section token estimate, information-preservation score, provider readiness, and readiness.
 - The controller can record `shadowWorkspaceDecision` when the P8 flags permit a structured shadow LLM call, but this decision is never executed.
+- DeepSeek V4 Flash is prepared as the preferred P8 external provider through config, request shape, parser, output schema, timeout/error handling, and skipped/unavailable paths. It is injected as a P8 workspace decider, not the legacy live-prompt decider. Real calls require credentials and explicit feature flags.
 - `STS2_P8_WORKSPACE_SHADOW` and `STS2_P8_WORKSPACE_CALL` both default off. With defaults, P8 records comparison visibility without extra LLM calls.
 - P8 does not replace the live prompt yet. It does not alter candidate generation, ordering, scoring, fallback, validation, execution, stable memory, derived knowledge, or strategy params.
 - This keeps the North Star boundary intact: the local scaffold shapes a better strategic workspace for the LLM, while the LLM remains the strategic player and all actions still pass through current validation/execution.

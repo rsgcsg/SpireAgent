@@ -2,6 +2,8 @@
 
 This is the current project book for the Slay the Spire 2 AI agent. It records the current diagnosis, target architecture, staged plan, risks, and acceptance criteria. Future agents should read this after `PROJECT_NORTH_STAR.md` before making structural changes.
 
+The permanent working mission is to build an agent scaffold system that lets a zero-experience LLM agent progressively unlock and express its full strategic potential through real play, structured perception, memory, candidate futures, deliberation, replay, prediction-error learning, and guarded improvement.
+
 The current formal route is Phase 0 through Phase 10. Phase 10 is the first target state for a complete Guarded Learning Loop: predictions are made before decisions, checked after execution, attributed in replay/eval, converted into evidence-gated consolidation proposals, and only then allowed to update stable memory/derived/strategy state with rollback.
 
 ## Maturity Route Constraint
@@ -283,13 +285,73 @@ Current Phase 8 status:
 
 - P8 shadow workspace surface is implemented.
 - `src/agent/workspace.ts` builds a compact structured prompt from `DeliberationPacket`, compares it with the legacy live prompt, records hashes, byte/token estimates, coverage, missing sections, decision class, and gated readiness.
+- P8.1 readiness and information-preservation scoring is implemented. The comparison records required legacy sections, preserved sections, missing sections, per-section token estimates, readiness reasons, and an information-preservation score.
+- P8.2 DeepSeek V4 Flash preparation is implemented without making live calls. The code has provider config, OpenAI-compatible request shape, response parser, short JSON schema, timeout/error handling, and explicit skipped/unavailable paths.
+- P8.3 non-API shadow-call plumbing is implemented. The system can record skipped/unavailable/valid/invalid/error outcomes, agreement/disagreement/missing-candidate, reason quality, risk tags, missing info, and scaffold feedback, but it will not call a real model without credentials and explicit flags.
 - Feature flags:
   - `STS2_P8_WORKSPACE_SHADOW`: enables P8 readiness for shadow workspace evaluation. Default is off.
   - `STS2_P8_WORKSPACE_CALL`: allows an optional structured shadow LLM call when readiness is satisfied. Default is off.
+  - `STS2_DEEPSEEK_API_KEY` or `DEEPSEEK_API_KEY`: makes the DeepSeek V4 Flash provider available for an explicitly enabled shadow call.
+  - `STS2_DEEPSEEK_MODEL`: optionally overrides the default P8 model id.
 - New executor-logged transitions can carry `workspaceComparison` and `shadowWorkspaceDecision`.
-- Replay/eval/review expose P8 workspace coverage, readiness, shadow-call counts, agreement/disagreement, invalid output, missing candidate, and error stats.
+- Replay/eval/review expose P8 workspace coverage, readiness, information preservation, provider readiness, skipped/unavailable shadow outcomes, shadow-call counts, agreement/disagreement, invalid output, missing candidate, and error stats.
 - Live LLM input path remains unchanged by default. P8 currently does not replace the legacy prompt, change candidate generation/order/scoring, change fallback, change validation, change execution, or write stable learning.
-- Next gated step is to define acceptance thresholds and a very narrow live-routing experiment, still preserving legacy fallback and validation.
+- Next gated step is a real DeepSeek V4 Flash shadow call after user-provided API credentials and explicit authorization. A live-routing experiment remains later P8.5 work and must preserve legacy fallback and validation.
+
+P8.x completion route:
+
+- P8.1 readiness / information preservation:
+  - Verify that structured workspace preserves legacy prompt essentials: state, phase/screen, hand/resource, enemy intent, legal/top candidates, selected candidate identity for comparison, StrategicImpression, SalienceSignal, MemoryActivation, derived knowledge, prediction checks, risks/unknowns, and validation constraints.
+  - Add or verify token estimate, section breakdown, missing sections, readiness reasons, and information-preservation score.
+  - No real LLM call.
+  - Current status: implemented. Go/no-go: fresh transitions should show structured workspace coverage, high information-preservation score, and no critical missing sections.
+- P8.2 DeepSeek V4 Flash preparation:
+  - Prepare provider config, request shape, response parser, output schema, error handling, and unavailable/skipped path for DeepSeek V4 Flash as the preferred P8 external model.
+  - Expected short JSON fields: `selectedCandidateId`, `confidence`, `reasonBrief`, `riskTags`, `missingInfo`, `scaffoldFeedback`.
+  - Must not fake real responses without an API key.
+  - Current status: implemented as provider/parser/unavailable plumbing. Go/no-go: parser fixtures pass and unavailable/skipped paths are visible in replay/eval/review.
+- P8.3 structured shadow LLM call:
+  - With explicit API key/user authorization, call the structured workspace in shadow mode only.
+  - Record agreement/disagreement, invalid output, missing candidate, reason quality, and scaffold feedback.
+  - Current status: non-API prerequisite layer is implemented. Real DeepSeek shadow calls are deliberately blocked until credentials and explicit user authorization are present.
+  - Go/no-go: no live action selection changes, all outputs pass candidate validation or are recorded as invalid/unavailable.
+- P8.4 shadow A/B and rollout gate:
+  - Compare legacy and structured shadow results by decision class, token budget, readiness score, agreement, and review quality.
+  - Disagreement remains review signal, not FAIL.
+  - Go/no-go: stable parser, acceptable token budget, no validation regressions, and enough replay/eval evidence.
+- P8.5 gated live prompt integration:
+  - Only after explicit authorization, enable a narrow whitelist of decision classes.
+  - First live integration must be additive: legacy prompt plus compact workspace summary, not structured-prompt-only by default.
+  - Legacy fallback and current validation/execution remain mandatory.
+  - Rollback: disable feature flags and return to legacy prompt immediately.
+
+P8 final acceptance criteria:
+
+- DeliberationPacket is demonstrably a better LLM strategic workspace than raw or legacy prompt-only context.
+- Readiness detects critical information loss before LLM calls.
+- Token budget remains controlled and explainable.
+- Structured output schema, parser, validation, unavailable path, and fallback are stable.
+- Replay/eval/review explain P8 behavior without treating disagreement as program failure.
+- LLM remains the strategic player; the scaffold does not become a hidden rules bot.
+- No stable memory, derived knowledge, strategy params, candidate ordering, fallback, validation, or execution behavior changes without later guarded phases.
+
+Current autonomy boundary:
+
+- The project can complete P8.1 and most P8.2/P8.3 plumbing without a real API key.
+- Real DeepSeek V4 Flash shadow calls require user-provided API credentials and explicit authorization.
+- Any gated live prompt integration requires a separate explicit request after shadow evidence is reviewed.
+
+P8 effectiveness evaluation:
+
+- After each P8.x slice, evaluate whether the work helps the LLM see, remember, imagine, or deliberate better.
+- Before real LLM calls, evaluate readiness, missing sections, token estimate, schema/parser stability, unavailable path, and replay/eval/review visibility.
+- Before gated live routing, evaluate rollout gates by decision class and confirm legacy fallback/rollback.
+- If P8 only increases fields or coverage without improving the strategic workspace, stop and reshape the P8 design before continuing.
+
+Debug/fixture accelerator:
+
+- STS2 console commands may be used to reproduce P8/P9 states faster, but only as debug/fixture data. See `STS2_CONSOLE_DEBUG_RUNBOOK.md`.
+- Console-modified runs must not be mixed into real strategy baselines or stable learning evidence.
 
 Phase 9: Guarded stable updates.
 

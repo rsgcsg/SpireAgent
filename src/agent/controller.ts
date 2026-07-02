@@ -57,7 +57,8 @@ export class AgentController {
     private readonly client: GameClient,
     private readonly memory: MemoryManager,
     private readonly llm: LlmDecider,
-    private readonly recorder?: AgentDecisionRecorder
+    private readonly recorder?: AgentDecisionRecorder,
+    private readonly workspaceLlm?: LlmDecider
   ) {}
 
   async tick(options: ControllerOptions = {}): Promise<TickResult> {
@@ -116,7 +117,7 @@ export class AgentController {
             deliberationPacket: cognitive.deliberationPacket,
             candidates: [chosen],
             decisionClass: "game_over:forced_local",
-            llm: this.llm,
+            llm: this.workspaceLlm ?? this.llm,
             legacySelectedCandidateId: chosen.id
           });
           this.recorder?.recordAgentDecision({
@@ -305,7 +306,7 @@ export class AgentController {
       deliberationPacket: cognitive.deliberationPacket,
       candidates: scoring.candidates,
       decisionClass: `${state.screen}:${scoring.route.kind}`,
-      llm: this.llm,
+      llm: this.workspaceLlm ?? this.llm,
       legacySelectedCandidateId: chosen.id
     });
 

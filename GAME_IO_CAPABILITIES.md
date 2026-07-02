@@ -63,6 +63,33 @@ Observed Phase 2.5 REST/candidate caveats:
 - Automatic potions such as `Fairy in a Bottle` cannot be manually used even though they may appear in the potion list.
 - Reward potion entries can remain visible when potion slots are full. The local generator should avoid direct `claim_reward` for blocked potion rewards and prefer proceed/skip or discard choices when available.
 
+## STS2 Console As Debug Capability
+
+The STS2 developer console is not part of the normal GameIO adapter and is not an agent capability. It is a debug/fixture tool that can dramatically reduce the cost of reproducing states for MCP debugging, adapter mismatch investigation, P8 workspace readiness sampling, P9 guarded-learning validation, and replay/eval fixture construction.
+
+Console commands are version-dependent and may require `full_console` config or a console-enabler mod. Current public/community sources include:
+
+- STS2 Mods command list: https://sts2mods.com/slay-the-spire-2-console-commands/
+- Nexus Dev Console Enabler: https://www.nexusmods.com/slaythespire2/mods/245
+- The Escapist command guide: https://www.escapistmagazine.com/news-slay-the-spire-2-console-commands/
+
+Useful debug command groups:
+
+- Speed/logs: `instant`, `log`, `getlogs`, `open`, `log-history`.
+- ID/fact alignment: `unlock`, `dump`.
+- Scene construction: `travel`, `act`, `room`, `fight`, `event`.
+- State construction: `card`, `draw`, `energy`, `gold`, `relic`, `potion`, `block`, `damage`, `heal`.
+- Boundary testing: `kill all`, `win`, `die`.
+
+Rules:
+
+- Console-modified runs must be tagged as debug/fixture data.
+- Console-modified runs must not be used as real strategy baselines, win-rate evidence, or stable memory/derived/strategy evidence.
+- Console commands must not replace candidate generation, validation, execution, or normal live strategy.
+- Risky commands such as save deletion, leaderboard changes, achievement mutation, or crash/sentry tests are debug-only and should not be routine workflow.
+
+Detailed workflows live in `STS2_CONSOLE_DEBUG_RUNBOOK.md`.
+
 ## Human Capture Levels
 
 `snapshot`

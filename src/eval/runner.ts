@@ -133,8 +133,15 @@ export interface EvalWorkspaceCoverage {
   agreementCounts: Record<string, number>;
   averageStructuredTokenEstimate: number;
   averageLegacyTokenEstimate: number;
+  averageInformationPreservationScore: number;
+  informationPreservationSamples: number;
   missingStructuredSections: Record<string, number>;
+  missingLegacySections: Record<string, number>;
   readinessReasons: Record<string, number>;
+  providerReadinessCounts: Record<string, number>;
+  providerReadinessReasons: Record<string, number>;
+  skipped: number;
+  unavailable: number;
   rates: Record<string, number>;
 }
 
@@ -1013,8 +1020,15 @@ function createWorkspaceCoverage(): EvalWorkspaceCoverage {
     agreementCounts: {},
     averageStructuredTokenEstimate: 0,
     averageLegacyTokenEstimate: 0,
+    averageInformationPreservationScore: 0,
+    informationPreservationSamples: 0,
     missingStructuredSections: {},
+    missingLegacySections: {},
     readinessReasons: {},
+    providerReadinessCounts: {},
+    providerReadinessReasons: {},
+    skipped: 0,
+    unavailable: 0,
     rates: {}
   };
 }
@@ -1029,12 +1043,29 @@ function collectWorkspaceCoverage(coverage: EvalWorkspaceCoverage, transition: T
     if (comparison.gatedReadiness === "ready") coverage.ready += 1;
     if (typeof comparison.structuredTokenEstimate === "number") coverage.averageStructuredTokenEstimate += comparison.structuredTokenEstimate;
     if (typeof comparison.legacyTokenEstimate === "number") coverage.averageLegacyTokenEstimate += comparison.legacyTokenEstimate;
+    if (typeof comparison.providerReadiness === "string") {
+      coverage.providerReadinessCounts[comparison.providerReadiness] = (coverage.providerReadinessCounts[comparison.providerReadiness] ?? 0) + 1;
+    }
+    const providerReadinessReasons = Array.isArray(comparison.providerReadinessReasons) ? comparison.providerReadinessReasons.map(String) : [];
+    for (const reason of providerReadinessReasons) {
+      coverage.providerReadinessReasons[reason] = (coverage.providerReadinessReasons[reason] ?? 0) + 1;
+    }
     const workspaceCoverage = isRecord(comparison.coverage) ? comparison.coverage : {};
+    if (typeof workspaceCoverage.informationPreservationScore === "number") {
+      coverage.averageInformationPreservationScore += workspaceCoverage.informationPreservationScore;
+      coverage.informationPreservationSamples += 1;
+    }
     const missingStructured = Array.isArray(workspaceCoverage.missingStructuredSections)
       ? workspaceCoverage.missingStructuredSections.map(String)
       : [];
     for (const section of missingStructured) {
       coverage.missingStructuredSections[section] = (coverage.missingStructuredSections[section] ?? 0) + 1;
+    }
+    const missingLegacy = Array.isArray(workspaceCoverage.missingLegacySections)
+      ? workspaceCoverage.missingLegacySections.map(String)
+      : [];
+    for (const section of missingLegacy) {
+      coverage.missingLegacySections[section] = (coverage.missingLegacySections[section] ?? 0) + 1;
     }
     const readinessReasons = Array.isArray(comparison.readinessReasons) ? comparison.readinessReasons.map(String) : [];
     for (const reason of readinessReasons) {
@@ -1051,6 +1082,8 @@ function collectWorkspaceCoverage(coverage: EvalWorkspaceCoverage, transition: T
   if (outcome === "invalid_output") coverage.invalidOutput += 1;
   if (outcome === "invalid_choice") coverage.invalidChoice += 1;
   if (outcome === "error") coverage.errors += 1;
+  if (outcome === "skipped") coverage.skipped += 1;
+  if (outcome === "unavailable") coverage.unavailable += 1;
   const agreement = typeof shadowDecision.agreement === "string" ? shadowDecision.agreement : "unknown";
   coverage.agreementCounts[agreement] = (coverage.agreementCounts[agreement] ?? 0) + 1;
 }
@@ -1063,6 +1096,9 @@ function finishWorkspaceCoverage(coverage: EvalWorkspaceCoverage, transitionCoun
   coverage.averageLegacyTokenEstimate = coverage.comparison > 0
     ? Number((coverage.averageLegacyTokenEstimate / coverage.comparison).toFixed(1))
     : 0;
+  coverage.averageInformationPreservationScore = coverage.informationPreservationSamples > 0
+    ? Number((coverage.averageInformationPreservationScore / coverage.informationPreservationSamples).toFixed(3))
+    : 0;
   const rate = (value: number): number => (transitionCount > 0 ? Number((value / transitionCount).toFixed(3)) : 0);
   coverage.rates = {
     comparison: rate(coverage.comparison),
@@ -1074,7 +1110,9 @@ function finishWorkspaceCoverage(coverage: EvalWorkspaceCoverage, transitionCoun
     validShadowDecision: rate(coverage.validShadowDecision),
     invalidOutput: rate(coverage.invalidOutput),
     invalidChoice: rate(coverage.invalidChoice),
-    errors: rate(coverage.errors)
+    errors: rate(coverage.errors),
+    skipped: rate(coverage.skipped),
+    unavailable: rate(coverage.unavailable)
   };
 }
 
@@ -1253,6 +1291,24 @@ function buildP8WorkspaceWarnings(coverage: EvalWorkspaceCoverage, transitionCou
       code: "p8_shadow_workspace_invalid_or_error",
       message: `P8 shadow workspace produced invalid/error outcomes: invalidOutput=${coverage.invalidOutput}, invalidChoice=${coverage.invalidChoice}, errors=${coverage.errors}`,
       category: "program_risk",
+      severity: "warn",
+      actionable: true
+    });
+  }
+  if (coverage.comparison > 0 && coverage.informationPreservationSamples === 0) {
+    warnings.push({
+      code: "p8_information_preservation_not_recorded",
+      message: "P8 workspace comparisons do not yet record information-preservation scores; this is expected for pre-P8.1 runs",
+      category: "cognitive_coverage",
+      severity: "info",
+      actionable: false
+    });
+  }
+  if (coverage.informationPreservationSamples > 0 && coverage.averageInformationPreservationScore < 0.9) {
+    warnings.push({
+      code: "p8_low_information_preservation",
+      message: `P8 workspace average information preservation is ${coverage.averageInformationPreservationScore}`,
+      category: "cognitive_coverage",
       severity: "warn",
       actionable: true
     });

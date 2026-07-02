@@ -77,6 +77,21 @@ function summarizeCurrentRunCognitiveCoverage(runId: string): JsonRecord {
     counts[agreement] = (counts[agreement] ?? 0) + 1;
     return counts;
   }, {});
+  const workspaceProviderReadinessCounts = transitions.reduce<Record<string, number>>((counts, transition) => {
+    if (!isRecord(transition.workspaceComparison) || typeof transition.workspaceComparison.providerReadiness !== "string") return counts;
+    const readiness = transition.workspaceComparison.providerReadiness;
+    counts[readiness] = (counts[readiness] ?? 0) + 1;
+    return counts;
+  }, {});
+  const workspacePreservationScores = transitions
+    .map((transition) => {
+      if (!isRecord(transition.workspaceComparison) || !isRecord(transition.workspaceComparison.coverage)) return undefined;
+      const score = transition.workspaceComparison.coverage.informationPreservationScore;
+      return typeof score === "number" ? score : undefined;
+    })
+    .filter((score): score is number => score !== undefined);
+  const shadowWorkspaceSkipped = count((transition) => isRecord(transition.shadowWorkspaceDecision) && transition.shadowWorkspaceDecision.outcome === "skipped");
+  const shadowWorkspaceUnavailable = count((transition) => isRecord(transition.shadowWorkspaceDecision) && transition.shadowWorkspaceDecision.outcome === "unavailable");
   const predictionError = count((transition) => isRecord(transition.predictionError));
   const predictionErrorAttributionBuckets = count((transition) =>
     isRecord(transition.predictionError) &&
@@ -106,7 +121,14 @@ function summarizeCurrentRunCognitiveCoverage(runId: string): JsonRecord {
     workspaceReady,
     shadowWorkspaceDecision,
     shadowWorkspaceCalled,
+    shadowWorkspaceSkipped,
+    shadowWorkspaceUnavailable,
     workspaceAgreementCounts,
+    workspaceProviderReadinessCounts,
+    averageWorkspaceInformationPreservation:
+      workspacePreservationScores.length > 0
+        ? round(workspacePreservationScores.reduce((sum, score) => sum + score, 0) / workspacePreservationScores.length)
+        : undefined,
     predictionError,
     predictionErrorAttributionBuckets,
     replayFrame,

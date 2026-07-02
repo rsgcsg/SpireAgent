@@ -1,7 +1,7 @@
 import { RestGameClient } from "./client.js";
 import { AgentController } from "./controller.js";
 import { AgentDecisionRecorder } from "./decisionRecorder.js";
-import { createLlmDecider } from "./llm.js";
+import { createLlmDecider, createP8WorkspaceDecider } from "./llm.js";
 import { MemoryManager } from "./memory.js";
 import { buildReviewReport } from "./review.js";
 
@@ -11,8 +11,9 @@ async function main(): Promise<void> {
   const client = new RestGameClient();
   const memory = new MemoryManager();
   const llm = createLlmDecider();
+  const workspaceLlm = createP8WorkspaceDecider();
   const recorder = new AgentDecisionRecorder();
-  const controller = new AgentController(client, memory, llm, recorder);
+  const controller = new AgentController(client, memory, llm, recorder, workspaceLlm);
 
   if (command === "tick") {
     const result = await controller.tick({

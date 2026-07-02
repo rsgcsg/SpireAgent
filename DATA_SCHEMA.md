@@ -172,13 +172,21 @@ P8 DeliberationPacket strategic workspace shadow surface:
   - decision class
   - covered/missing packet sections
   - structured workspace section coverage
+  - required, preserved, and missing legacy-information sections
+  - per-section token estimates
+  - information-preservation score
   - gated readiness and readiness reasons
+  - provider readiness: `ready_for_shadow_call`, `needs_api_key`, or `not_ready`
+  - P8.4/P8.5 rollout-gate metadata for future additive live experiments
 - `shadowWorkspaceDecision` records:
   - whether shadow workspace evaluation was enabled, attempted, and called
   - whether an LLM bridge was available
-  - outcome: not enabled, not ready, unavailable, valid, invalid output, invalid choice, or error
+  - provider/model identity when known
+  - outcome: not enabled, not ready, skipped, unavailable, valid, invalid output, invalid choice, or error
   - agreement/disagreement/missing-candidate against the live selected candidate
   - reason quality when a structured shadow LLM decision exists
+  - short P8 schema fields: `selectedCandidateId`, `confidence`, `reasonBrief`, `riskTags`, `missingInfo`, and `scaffoldFeedback`
+- DeepSeek V4 Flash is prepared as the preferred P8 external provider, but real calls require an API key and explicit flags. Missing credentials must produce skipped/unavailable observability, not fake model output.
 - `STS2_P8_WORKSPACE_SHADOW` defaults off; `STS2_P8_WORKSPACE_CALL` defaults off. Fresh transitions still record the comparison surface with both flags off.
 - P8 fields are observability data. They do not replace `src/agent/prompt.ts`, alter action selection, change candidate generation/order/scoring, change fallback, change validation/execution, or write stable memory/derived/strategy updates.
 

@@ -309,6 +309,11 @@ export interface DeliberationWorkspaceCoverage {
   structuredSections: string[];
   missingStructuredSections: string[];
   candidateFutureCount: number;
+  requiredLegacySections?: string[];
+  preservedLegacySections?: string[];
+  missingLegacySections?: string[];
+  informationPreservationScore?: number;
+  sectionTokenEstimate?: Record<string, number>;
 }
 
 export interface DeliberationWorkspaceComparison {
@@ -329,6 +334,9 @@ export interface DeliberationWorkspaceComparison {
   coverage: DeliberationWorkspaceCoverage;
   gatedReadiness: "ready" | "not_ready";
   readinessReasons: string[];
+  providerReadiness?: "ready_for_shadow_call" | "needs_api_key" | "not_ready";
+  providerReadinessReasons?: string[];
+  rolloutGate?: JsonRecord;
   summary: string;
 }
 
@@ -337,6 +345,7 @@ export type ShadowWorkspaceAgreement = "agree" | "disagree" | "missing_candidate
 export type ShadowWorkspaceDecisionOutcome =
   | "not_enabled"
   | "not_ready"
+  | "skipped"
   | "unavailable"
   | "valid"
   | "invalid_output"
@@ -361,6 +370,12 @@ export interface ShadowWorkspaceDecision {
   validationError?: string;
   error?: string;
   promptHash?: string;
+  provider?: string;
+  model?: string;
+  riskTags?: string[];
+  missingInfo?: string[];
+  scaffoldFeedback?: string[];
+  skippedReason?: string;
 }
 
 export type PredictionErrorLayer =

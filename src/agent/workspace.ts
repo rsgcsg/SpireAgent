@@ -13,10 +13,15 @@ import { isRecord } from "./utils.js";
 
 export const P8_WORKSPACE_SHADOW_FLAG = "STS2_P8_WORKSPACE_SHADOW";
 export const P8_WORKSPACE_CALL_FLAG = "STS2_P8_WORKSPACE_CALL";
+export const P8_DEEPSEEK_API_KEY_FLAG = "STS2_DEEPSEEK_API_KEY";
+export const P8_DEEPSEEK_MODEL_FLAG = "STS2_DEEPSEEK_MODEL";
 
 export interface WorkspaceShadowOptions {
   shadowEnabled?: boolean;
   callEnabled?: boolean;
+  providerAvailable?: boolean;
+  providerName?: string;
+  model?: string;
 }
 
 export interface WorkspaceComparisonInput {
@@ -45,7 +50,10 @@ export interface P8WorkspaceShadow {
 export function workspaceOptionsFromEnv(): WorkspaceShadowOptions {
   return {
     shadowEnabled: isEnabled(process.env[P8_WORKSPACE_SHADOW_FLAG]),
-    callEnabled: isEnabled(process.env[P8_WORKSPACE_CALL_FLAG])
+    callEnabled: isEnabled(process.env[P8_WORKSPACE_CALL_FLAG]),
+    providerAvailable: Boolean((process.env[P8_DEEPSEEK_API_KEY_FLAG] ?? process.env.DEEPSEEK_API_KEY ?? "").trim()),
+    providerName: "deepseek-v4-flash",
+    model: process.env[P8_DEEPSEEK_MODEL_FLAG] ?? "deepseek-v4-flash"
   };
 }
 
@@ -58,9 +66,12 @@ export function buildStructuredDeliberationWorkspacePrompt(packet: DeliberationP
       "choose an existing candidate id; do not invent actions"
     ],
     output_schema: packet.outputSchema ?? {
-      candidateId: "string",
+      selectedCandidateId: "string",
       confidence: "0..1 number",
-      reason: "short strategic reason"
+      reasonBrief: "short strategic reason",
+      riskTags: "string[]",
+      missingInfo: "string[]",
+      scaffoldFeedback: "string[]"
     },
     state_summary: packet.stateSummary,
     screen: packet.screen,
@@ -103,6 +114,11 @@ export function buildWorkspaceComparison(input: WorkspaceComparisonInput): Delib
   const missingSections = Array.isArray(promptParity.missingSections) ? promptParity.missingSections.map(String) : [];
   const structuredSections = structuredWorkspaceSections(input.deliberationPacket);
   const missingStructuredSections = requiredStructuredSections(input.deliberationPacket);
+  const requiredLegacySections = requiredLegacyPromptSections();
+  const preservedLegacySections = preservedLegacyPromptSections(input.deliberationPacket, input.candidates);
+  const missingLegacySections = requiredLegacySections.filter((section) => !preservedLegacySections.includes(section));
+  const sectionTokenEstimate = structuredSectionTokenEstimate(input.deliberationPacket);
+  const informationPreservationScore = Number((preservedLegacySections.length / requiredLegacySections.length).toFixed(3));
   const readinessReasons: string[] = [];
   const shadowEnabled = Boolean(options.shadowEnabled);
   if (!shadowEnabled) readinessReasons.push(`${P8_WORKSPACE_SHADOW_FLAG}=off`);
@@ -112,11 +128,21 @@ export function buildWorkspaceComparison(input: WorkspaceComparisonInput): Delib
   for (const section of missingStructuredSections) {
     readinessReasons.push(`missing_structured_section:${section}`);
   }
+  for (const section of missingLegacySections) {
+    readinessReasons.push(`missing_legacy_section:${section}`);
+  }
   const promptParityCoverage = typeof promptParity.coverage === "number" ? promptParity.coverage : undefined;
   if (promptParityCoverage !== undefined && promptParityCoverage < 0.8) readinessReasons.push(`low_prompt_parity_coverage:${promptParityCoverage}`);
+  if (informationPreservationScore < 0.9) readinessReasons.push(`low_information_preservation:${informationPreservationScore}`);
   const gatedReadiness = readinessReasons.length === 0 ? "ready" : "not_ready";
   const legacyPromptBytes = input.legacyPrompt ? Buffer.byteLength(input.legacyPrompt, "utf8") : undefined;
   const structuredPromptBytes = Buffer.byteLength(structuredPrompt, "utf8");
+  const providerAvailable = Boolean(options.providerAvailable);
+  const providerReadinessReasons: string[] = [];
+  if (!providerAvailable) providerReadinessReasons.push(`${P8_DEEPSEEK_API_KEY_FLAG}=missing`);
+  if (!shadowEnabled) providerReadinessReasons.push(`${P8_WORKSPACE_SHADOW_FLAG}=off`);
+  if (gatedReadiness !== "ready") providerReadinessReasons.push("workspace_not_ready");
+  const providerReadiness = providerReadinessReasons.length === 0 ? "ready_for_shadow_call" : providerAvailable ? "not_ready" : "needs_api_key";
   return {
     schemaVersion: DOMAIN_SCHEMA_VERSION,
     phase: "P8",
@@ -138,17 +164,34 @@ export function buildWorkspaceComparison(input: WorkspaceComparisonInput): Delib
       missingSections,
       structuredSections,
       missingStructuredSections,
-      candidateFutureCount: input.deliberationPacket.candidateFutures.length
+      candidateFutureCount: input.deliberationPacket.candidateFutures.length,
+      requiredLegacySections,
+      preservedLegacySections,
+      missingLegacySections,
+      informationPreservationScore,
+      sectionTokenEstimate
     },
     gatedReadiness,
     readinessReasons,
-    summary: `P8 structured workspace ${gatedReadiness}; legacy=${legacyPromptBytes ?? 0}B structured=${structuredPromptBytes}B candidates=${input.candidates.length}`
+    providerReadiness,
+    providerReadinessReasons,
+    rolloutGate: {
+      phase: "P8.4/P8.5_design_only",
+      liveIntegrationEnabled: false,
+      firstLiveMode: "additive_legacy_prompt_plus_compact_workspace_summary",
+      structuredPromptOnlyDefaultAllowed: false,
+      decisionClassWhitelist: [],
+      rollback: `unset ${P8_WORKSPACE_SHADOW_FLAG} and ${P8_WORKSPACE_CALL_FLAG}; keep legacy prompt path`
+    },
+    summary: `P8 structured workspace ${gatedReadiness}; preservation=${informationPreservationScore}; legacy=${legacyPromptBytes ?? 0}B structured=${structuredPromptBytes}B candidates=${input.candidates.length}; provider=${providerReadiness}`
   };
 }
 
 export async function buildP8WorkspaceShadow(input: ShadowWorkspaceDecisionInput): Promise<P8WorkspaceShadow> {
   const options = input.options ?? workspaceOptionsFromEnv();
   const callEnabled = Boolean(options.callEnabled);
+  const providerName = options.providerName ?? "deepseek-v4-flash";
+  const model = options.model ?? process.env[P8_DEEPSEEK_MODEL_FLAG] ?? "deepseek-v4-flash";
   const baseDecision = (outcome: ShadowWorkspaceDecision["outcome"], reason?: string): ShadowWorkspaceDecision => ({
     schemaVersion: DOMAIN_SCHEMA_VERSION,
     phase: "P8",
@@ -161,7 +204,9 @@ export async function buildP8WorkspaceShadow(input: ShadowWorkspaceDecisionInput
     agreement: "not_applicable",
     legacySelectedCandidateId: input.legacySelectedCandidateId,
     reason,
-    promptHash: input.comparison.structuredPromptHash
+    promptHash: input.comparison.structuredPromptHash,
+    provider: providerName,
+    model
   });
 
   if (!input.comparison.enabled) {
@@ -175,10 +220,17 @@ export async function buildP8WorkspaceShadow(input: ShadowWorkspaceDecisionInput
     };
   }
   if (!callEnabled) {
-    return { structuredPrompt: input.structuredPrompt, comparison: input.comparison, shadowDecision: baseDecision("unavailable", `${P8_WORKSPACE_CALL_FLAG}=off`) };
+    return {
+      structuredPrompt: input.structuredPrompt,
+      comparison: input.comparison,
+      shadowDecision: {
+        ...baseDecision("skipped", `${P8_WORKSPACE_CALL_FLAG}=off`),
+        skippedReason: `${P8_WORKSPACE_CALL_FLAG}=off`
+      }
+    };
   }
   if (!(input.llm.isAvailable?.() ?? true)) {
-    return { structuredPrompt: input.structuredPrompt, comparison: input.comparison, shadowDecision: baseDecision("unavailable", "llm_unavailable") };
+    return { structuredPrompt: input.structuredPrompt, comparison: input.comparison, shadowDecision: baseDecision("unavailable", `${providerName}_unavailable`) };
   }
 
   try {
@@ -209,7 +261,12 @@ export async function buildP8WorkspaceShadow(input: ShadowWorkspaceDecisionInput
         reason: typeof decision?.reason === "string" ? decision.reason : undefined,
         reasonQuality: reasonQuality(decision?.reason),
         validationError: validation.error,
-        promptHash: input.comparison.structuredPromptHash
+        promptHash: input.comparison.structuredPromptHash,
+        provider: providerName,
+        model,
+        riskTags: stringArray(isRecord(decision) ? decision.riskTags : undefined),
+        missingInfo: stringArray(isRecord(decision) ? decision.missingInfo : undefined),
+        scaffoldFeedback: stringArray(isRecord(decision) ? decision.scaffoldFeedback : undefined)
       }
     };
   } catch (error) {
@@ -261,6 +318,68 @@ function structuredWorkspaceSections(packet: DeliberationPacket): string[] {
   return sections.filter(([, present]) => present).map(([name]) => name);
 }
 
+function requiredLegacyPromptSections(): string[] {
+  return [
+    "task",
+    "output_schema",
+    "state",
+    "screen",
+    "state_facts",
+    "hand_resource",
+    "enemy_intent",
+    "run_memory",
+    "relevant_memory",
+    "derived_knowledge",
+    "top_candidates",
+    "candidate_futures",
+    "prediction_checks",
+    "risks_unknowns",
+    "validation_constraints"
+  ];
+}
+
+function preservedLegacyPromptSections(packet: DeliberationPacket, candidates: ScoredCandidate[]): string[] {
+  const sections: Array<[string, boolean]> = [
+    ["task", true],
+    ["output_schema", isRecord(packet.outputSchema)],
+    ["state", Boolean(packet.stateSummary)],
+    ["screen", Boolean(packet.screen)],
+    ["state_facts", isRecord(packet.stateFacts)],
+    ["hand_resource", Array.isArray(packet.handSummary) || isRecord(packet.deckSummary)],
+    ["enemy_intent", Array.isArray(packet.enemyIntent)],
+    ["run_memory", isRecord(packet.runMemorySummary)],
+    ["relevant_memory", isRecord(packet.memoryActivation)],
+    ["derived_knowledge", isRecord(packet.derivedKnowledgeSummary)],
+    ["top_candidates", Array.isArray(packet.topCandidates) && packet.topCandidates.length > 0 && candidates.length > 0],
+    ["candidate_futures", Array.isArray(packet.candidateFutures) && packet.candidateFutures.length > 0],
+    [
+      "prediction_checks",
+      packet.candidateFutures.some((future) => Array.isArray(future.predictionChecks) && future.predictionChecks.length > 0)
+    ],
+    [
+      "risks_unknowns",
+      (Array.isArray(packet.uncertainty) && packet.uncertainty.length > 0) ||
+        packet.candidateFutures.some((future) => (future.risk?.length ?? 0) > 0 || (future.uncertainty?.length ?? 0) > 0)
+    ],
+    ["validation_constraints", Array.isArray(packet.validationConstraints) && packet.validationConstraints.length > 0]
+  ];
+  return sections.filter(([, present]) => present).map(([section]) => section);
+}
+
+function structuredSectionTokenEstimate(packet: DeliberationPacket): Record<string, number> {
+  return {
+    state: estimateTokens(JSON.stringify({ stateSummary: packet.stateSummary, screen: packet.screen, stateFacts: packet.stateFacts })),
+    handResource: estimateTokens(JSON.stringify({ handSummary: packet.handSummary, deckSummary: packet.deckSummary })),
+    enemyIntent: estimateTokens(JSON.stringify(packet.enemyIntent ?? [])),
+    strategicImpression: estimateTokens(JSON.stringify(packet.strategicImpression ?? {})),
+    salienceSignals: estimateTokens(JSON.stringify(packet.salienceSignals ?? [])),
+    memoryActivation: estimateTokens(JSON.stringify(packet.memoryActivation ?? {})),
+    derivedKnowledge: estimateTokens(JSON.stringify(packet.derivedKnowledgeSummary ?? {})),
+    candidateFutures: estimateTokens(JSON.stringify(packet.candidateFutures ?? [])),
+    validation: estimateTokens(JSON.stringify({ validationConstraints: packet.validationConstraints, outputSchema: packet.outputSchema }))
+  };
+}
+
 function requiredStructuredSections(packet: DeliberationPacket): string[] {
   const present = new Set(structuredWorkspaceSections(packet));
   return ["state_summary", "strategic_impression", "salience_signals", "candidate_futures", "validation_constraints", "output_schema"]
@@ -278,6 +397,11 @@ function hashText(text: string): string {
 
 function estimateTokens(text: string): number {
   return Math.ceil(text.length / 4);
+}
+
+function stringArray(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  return value.map(String).map((item) => item.trim()).filter(Boolean);
 }
 
 function isEnabled(value: string | undefined): boolean {
