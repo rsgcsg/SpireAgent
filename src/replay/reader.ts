@@ -79,6 +79,7 @@ export interface ReplayShadowSliceStats {
   invalidBucketCounts: Record<string, number>;
   providerModeCounts: Record<string, number>;
   ablationModeCounts: Record<string, number>;
+  compressionModeCounts: Record<string, number>;
   finishReasonCounts: Record<string, number>;
   cleanupReasonCounts: Record<string, number>;
   outputCapHits: number;
@@ -88,6 +89,23 @@ export interface ReplayShadowSliceStats {
   averageWorkspacePromptBytes: number;
   averageWorkspacePromptTokens: number;
   workspacePromptSamples: number;
+  averageWorkspaceBytesBefore: number;
+  averageWorkspaceBytesAfter: number;
+  averageWorkspaceTokensBefore: number;
+  averageWorkspaceTokensAfter: number;
+  averageCandidateFuturesBytesBefore: number;
+  averageCandidateFuturesBytesAfter: number;
+  averageCandidateFuturesTokensBefore: number;
+  averageCandidateFuturesTokensAfter: number;
+  sizeTelemetrySamples: number;
+  futuresTruncated: number;
+  futuresOmitted: number;
+  truncatedFieldCounts: Record<string, number>;
+  averageInformationPreservationEstimate: number;
+  informationPreservationEstimateSamples: number;
+  largestFieldSourceBytes: Record<string, number>;
+  repeatedTextBytes: number;
+  repeatedTextCount: number;
   estimatedCostUsd: number;
   actualOrEstimatedCostUsd: number;
   skippedBudgetEstimatedCostUsd: number;
@@ -422,6 +440,7 @@ export function buildReplayShadowSliceStats(
     invalidBucketCounts: {},
     providerModeCounts: {},
     ablationModeCounts: {},
+    compressionModeCounts: {},
     finishReasonCounts: {},
     cleanupReasonCounts: {},
     outputCapHits: 0,
@@ -431,6 +450,23 @@ export function buildReplayShadowSliceStats(
     averageWorkspacePromptBytes: 0,
     averageWorkspacePromptTokens: 0,
     workspacePromptSamples: 0,
+    averageWorkspaceBytesBefore: 0,
+    averageWorkspaceBytesAfter: 0,
+    averageWorkspaceTokensBefore: 0,
+    averageWorkspaceTokensAfter: 0,
+    averageCandidateFuturesBytesBefore: 0,
+    averageCandidateFuturesBytesAfter: 0,
+    averageCandidateFuturesTokensBefore: 0,
+    averageCandidateFuturesTokensAfter: 0,
+    sizeTelemetrySamples: 0,
+    futuresTruncated: 0,
+    futuresOmitted: 0,
+    truncatedFieldCounts: {},
+    averageInformationPreservationEstimate: 0,
+    informationPreservationEstimateSamples: 0,
+    largestFieldSourceBytes: {},
+    repeatedTextBytes: 0,
+    repeatedTextCount: 0,
     estimatedCostUsd: 0,
     actualOrEstimatedCostUsd: 0,
     skippedBudgetEstimatedCostUsd: 0,
@@ -491,6 +527,12 @@ export function buildReplayShadowSliceStats(
     if (typeof shadow.ablationMode === "string") {
       stats.ablationModeCounts[shadow.ablationMode] = (stats.ablationModeCounts[shadow.ablationMode] ?? 0) + 1;
     }
+    const coverage = isRecord(transition.workspaceComparison) && isRecord(transition.workspaceComparison.coverage)
+      ? transition.workspaceComparison.coverage
+      : undefined;
+    if (typeof coverage?.compressionMode === "string") {
+      stats.compressionModeCounts[coverage.compressionMode] = (stats.compressionModeCounts[coverage.compressionMode] ?? 0) + 1;
+    }
     const revisionTag = shadowRevisionTag(transition);
     if (revisionTag) {
       stats.revisionTagCounts[revisionTag] = (stats.revisionTagCounts[revisionTag] ?? 0) + 1;
@@ -541,6 +583,58 @@ export function buildReplayShadowSliceStats(
     } else if (isRecord(transition.workspaceComparison) && typeof transition.workspaceComparison.structuredTokenEstimate === "number") {
       stats.averageWorkspacePromptTokens += transition.workspaceComparison.structuredTokenEstimate;
     }
+    if (coverage) {
+      const beforeBytes = typeof coverage.workspaceBytesBefore === "number" ? coverage.workspaceBytesBefore : undefined;
+      const afterBytes = typeof coverage.workspaceBytesAfter === "number" ? coverage.workspaceBytesAfter : undefined;
+      const beforeTokens = typeof coverage.workspaceTokensBefore === "number" ? coverage.workspaceTokensBefore : undefined;
+      const afterTokens = typeof coverage.workspaceTokensAfter === "number" ? coverage.workspaceTokensAfter : undefined;
+      const futureBytesBefore = typeof coverage.candidateFuturesBytesBefore === "number" ? coverage.candidateFuturesBytesBefore : undefined;
+      const futureBytesAfter = typeof coverage.candidateFuturesBytesAfter === "number" ? coverage.candidateFuturesBytesAfter : undefined;
+      const futureTokensBefore = typeof coverage.candidateFuturesTokensBefore === "number" ? coverage.candidateFuturesTokensBefore : undefined;
+      const futureTokensAfter = typeof coverage.candidateFuturesTokensAfter === "number" ? coverage.candidateFuturesTokensAfter : undefined;
+      if (
+        beforeBytes !== undefined &&
+        afterBytes !== undefined &&
+        beforeTokens !== undefined &&
+        afterTokens !== undefined &&
+        futureBytesBefore !== undefined &&
+        futureBytesAfter !== undefined &&
+        futureTokensBefore !== undefined &&
+        futureTokensAfter !== undefined
+      ) {
+        stats.averageWorkspaceBytesBefore += beforeBytes;
+        stats.averageWorkspaceBytesAfter += afterBytes;
+        stats.averageWorkspaceTokensBefore += beforeTokens;
+        stats.averageWorkspaceTokensAfter += afterTokens;
+        stats.averageCandidateFuturesBytesBefore += futureBytesBefore;
+        stats.averageCandidateFuturesBytesAfter += futureBytesAfter;
+        stats.averageCandidateFuturesTokensBefore += futureTokensBefore;
+        stats.averageCandidateFuturesTokensAfter += futureTokensAfter;
+        stats.sizeTelemetrySamples += 1;
+      }
+      if (typeof coverage.futuresTruncated === "number") stats.futuresTruncated += coverage.futuresTruncated;
+      if (typeof coverage.futuresOmitted === "number") stats.futuresOmitted += coverage.futuresOmitted;
+      if (isRecord(coverage.truncatedFields)) {
+        for (const [key, value] of Object.entries(coverage.truncatedFields)) {
+          if (typeof value === "number") {
+            stats.truncatedFieldCounts[key] = (stats.truncatedFieldCounts[key] ?? 0) + value;
+          }
+        }
+      }
+      if (typeof coverage.informationPreservationEstimate === "number") {
+        stats.averageInformationPreservationEstimate += coverage.informationPreservationEstimate;
+        stats.informationPreservationEstimateSamples += 1;
+      }
+      if (isRecord(coverage.largestFieldSources)) {
+        for (const [key, value] of Object.entries(coverage.largestFieldSources)) {
+          if (typeof value === "number") {
+            stats.largestFieldSourceBytes[key] = (stats.largestFieldSourceBytes[key] ?? 0) + value;
+          }
+        }
+      }
+      if (typeof coverage.repeatedTextBytes === "number") stats.repeatedTextBytes += coverage.repeatedTextBytes;
+      if (typeof coverage.repeatedTextCount === "number") stats.repeatedTextCount += coverage.repeatedTextCount;
+    }
     if (outcome === "invalid_output" || outcome === "invalid_choice" || outcome === "error") {
       const invalidBucket = [
         typeof shadow.providerParseState === "string" ? shadow.providerParseState : undefined,
@@ -575,6 +669,17 @@ export function buildReplayShadowSliceStats(
   stats.averageLatencyMs = stats.latencySamples > 0 ? Number((stats.averageLatencyMs / stats.latencySamples).toFixed(1)) : 0;
   stats.averageWorkspacePromptBytes = stats.workspacePromptSamples > 0 ? Number((stats.averageWorkspacePromptBytes / stats.workspacePromptSamples).toFixed(1)) : 0;
   stats.averageWorkspacePromptTokens = stats.workspacePromptSamples > 0 ? Number((stats.averageWorkspacePromptTokens / stats.workspacePromptSamples).toFixed(1)) : 0;
+  stats.averageWorkspaceBytesBefore = stats.sizeTelemetrySamples > 0 ? Number((stats.averageWorkspaceBytesBefore / stats.sizeTelemetrySamples).toFixed(1)) : 0;
+  stats.averageWorkspaceBytesAfter = stats.sizeTelemetrySamples > 0 ? Number((stats.averageWorkspaceBytesAfter / stats.sizeTelemetrySamples).toFixed(1)) : 0;
+  stats.averageWorkspaceTokensBefore = stats.sizeTelemetrySamples > 0 ? Number((stats.averageWorkspaceTokensBefore / stats.sizeTelemetrySamples).toFixed(1)) : 0;
+  stats.averageWorkspaceTokensAfter = stats.sizeTelemetrySamples > 0 ? Number((stats.averageWorkspaceTokensAfter / stats.sizeTelemetrySamples).toFixed(1)) : 0;
+  stats.averageCandidateFuturesBytesBefore = stats.sizeTelemetrySamples > 0 ? Number((stats.averageCandidateFuturesBytesBefore / stats.sizeTelemetrySamples).toFixed(1)) : 0;
+  stats.averageCandidateFuturesBytesAfter = stats.sizeTelemetrySamples > 0 ? Number((stats.averageCandidateFuturesBytesAfter / stats.sizeTelemetrySamples).toFixed(1)) : 0;
+  stats.averageCandidateFuturesTokensBefore = stats.sizeTelemetrySamples > 0 ? Number((stats.averageCandidateFuturesTokensBefore / stats.sizeTelemetrySamples).toFixed(1)) : 0;
+  stats.averageCandidateFuturesTokensAfter = stats.sizeTelemetrySamples > 0 ? Number((stats.averageCandidateFuturesTokensAfter / stats.sizeTelemetrySamples).toFixed(1)) : 0;
+  stats.averageInformationPreservationEstimate = stats.informationPreservationEstimateSamples > 0
+    ? Number((stats.averageInformationPreservationEstimate / stats.informationPreservationEstimateSamples).toFixed(3))
+    : 0;
   stats.mixedRevisionWindow = Object.keys(stats.revisionTagCounts).length > 1;
   stats.mixedBudgetWindow = Object.keys(stats.plannedShadowCallValueCounts).length > 1;
   stats.gate = buildReplayShadowSliceGate(stats);
@@ -635,11 +740,20 @@ export function formatReplayShadowSliceStats(stats: ReplayShadowSliceStats): str
     `missingCandidate=${stats.missingCandidate}`,
     `liveEligibleMissingCandidate=${stats.liveEligibleMissingCandidate}`,
     `ablation=${JSON.stringify(stats.ablationModeCounts)}`,
+    `compression=${JSON.stringify(stats.compressionModeCounts)}`,
     `modes=${JSON.stringify(stats.providerModeCounts)}`,
     `finishReason=${JSON.stringify(stats.finishReasonCounts)}`,
     `cleanup=${JSON.stringify(stats.cleanupReasonCounts)}`,
     `outputCapHits=${stats.outputCapHits}`,
     `workspaceTokensAvg=${stats.averageWorkspacePromptTokens}`,
+    `workspaceSize=${stats.averageWorkspaceBytesBefore}->${stats.averageWorkspaceBytesAfter}B/${stats.averageWorkspaceTokensBefore}->${stats.averageWorkspaceTokensAfter}tok`,
+    `candidateFuturesSize=${stats.averageCandidateFuturesBytesBefore}->${stats.averageCandidateFuturesBytesAfter}B/${stats.averageCandidateFuturesTokensBefore}->${stats.averageCandidateFuturesTokensAfter}tok`,
+    `futureTrim=${stats.futuresTruncated}`,
+    `futureOmit=${stats.futuresOmitted}`,
+    `fieldTrim=${JSON.stringify(stats.truncatedFieldCounts)}`,
+    `fieldBytes=${JSON.stringify(stats.largestFieldSourceBytes)}`,
+    `repeatedText=${stats.repeatedTextBytes}B/${stats.repeatedTextCount}`,
+    `preserve=${stats.averageInformationPreservationEstimate}`,
     `costCalled=${stats.actualOrEstimatedCostUsd}`,
     `costSkipped=${stats.skippedBudgetEstimatedCostUsd}`,
     `retries=${stats.retryCount}/${stats.retrySuccessCount}`,

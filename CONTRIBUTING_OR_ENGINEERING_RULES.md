@@ -70,3 +70,13 @@ When behavior changes, update the relevant docs:
 - `REPLAY_AND_EVAL.md`
 
 Do not let docs describe a system that the code does not implement.
+
+## Repository Hygiene
+
+This repository is meant to stay publishable on GitHub.
+
+- Never commit API keys, bearer tokens, cookies, or local `.env` files.
+- Never commit local replay/run outputs under `data/runs/`.
+- Never commit mutable runtime memory such as `memory/current-run.json`, `memory/experience.json`, `memory/long-term.json`, `memory/strategy-params.json`, `memory/decision-log.jsonl`, `memory/snapshots/`, or `memory/collected/`.
+- If a local runtime file is accidentally tracked, remove it from the Git index without deleting the local file before continuing.
+- If a secret was ever committed, rotate it first and then clean Git history before publishing.

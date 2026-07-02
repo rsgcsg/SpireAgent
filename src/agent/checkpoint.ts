@@ -61,7 +61,8 @@ export function stateHash(state: NormalizedState): string {
     })),
     options: state.options.length,
     mapNodes: state.mapNodes.length,
-    rewards: state.rewards.length
+    rewards: state.rewards.length,
+    crystalSphere: crystalSphereSnapshot(state)
   });
 }
 
@@ -112,7 +113,8 @@ function diffState(before: NormalizedState, after: NormalizedState, action: Agen
     enemyDeltas: enemyDeltas(before, after),
     rewardsCount: changed(before.rewards.length, after.rewards.length),
     optionsCount: changed(before.options.length, after.options.length),
-    mapNodesCount: changed(before.mapNodes.length, after.mapNodes.length)
+    mapNodesCount: changed(before.mapNodes.length, after.mapNodes.length),
+    crystalSphere: changed(crystalSphereSnapshot(before), crystalSphereSnapshot(after))
   };
 }
 
@@ -171,7 +173,10 @@ function hardCheckpointReasons(
     action.kind === "combat_confirm_selection" ||
     action.kind === "cancel_selection" ||
     action.kind === "menu_select" ||
-    action.kind === "proceed"
+    action.kind === "proceed" ||
+    action.kind === "crystal_sphere_set_tool" ||
+    action.kind === "crystal_sphere_click_cell" ||
+    action.kind === "crystal_sphere_proceed"
   ) {
     if (stateHash(before) !== stateHash(after)) reasons.push("screen_or_menu_flow_progressed");
   }
@@ -257,6 +262,32 @@ function livingEnemyIds(state: NormalizedState): string[] {
 
 function cardIdentity(card: { index: number; id: string; name: string }): string {
   return `${card.index}:${card.id}:${card.name}`;
+}
+
+function crystalSphereSnapshot(state: NormalizedState): JsonRecord | undefined {
+  if (state.stateType !== "crystal_sphere") return undefined;
+  const rawSphere = state.raw.crystal_sphere;
+  if (!isRecord(rawSphere)) return { visible: false };
+  const revealedItems = Array.isArray(rawSphere.revealed_items)
+    ? rawSphere.revealed_items.filter(isRecord).map((item) => ({
+        type: item.item_type,
+        x: item.x,
+        y: item.y,
+        width: item.width,
+        height: item.height,
+        good: item.is_good
+      }))
+    : [];
+  const clickableCells = Array.isArray(rawSphere.clickable_cells)
+    ? rawSphere.clickable_cells.filter(isRecord).map((cell) => `${String(cell.x)},${String(cell.y)}`)
+    : [];
+  return {
+    tool: rawSphere.tool,
+    canProceed: rawSphere.can_proceed ?? rawSphere.canProceed,
+    divinationsLeftText: rawSphere.divinations_left_text ?? rawSphere.divinationsLeftText,
+    clickableCells,
+    revealedItems
+  };
 }
 
 function changed<T>(before: T, after: T): JsonRecord {

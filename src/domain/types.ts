@@ -314,6 +314,22 @@ export interface DeliberationWorkspaceCoverage {
   missingLegacySections?: string[];
   informationPreservationScore?: number;
   sectionTokenEstimate?: Record<string, number>;
+  compressionMode?: string;
+  futuresTruncated?: number;
+  futuresOmitted?: number;
+  truncatedFields?: Record<string, number>;
+  candidateFuturesBytesBefore?: number;
+  candidateFuturesBytesAfter?: number;
+  candidateFuturesTokensBefore?: number;
+  candidateFuturesTokensAfter?: number;
+  workspaceBytesBefore?: number;
+  workspaceBytesAfter?: number;
+  workspaceTokensBefore?: number;
+  workspaceTokensAfter?: number;
+  informationPreservationEstimate?: number;
+  largestFieldSources?: Record<string, number>;
+  repeatedTextBytes?: number;
+  repeatedTextCount?: number;
 }
 
 export interface DeliberationWorkspaceBudget {
@@ -402,6 +418,7 @@ export interface ShadowWorkspaceDecision {
   providerOutputBytes?: number;
   providerParseState?: string;
   providerCleanupReason?: string;
+  providerAttempts?: JsonRecord[];
   outputCapHit?: boolean;
   retryCount?: number;
   emptyContentRetryCount?: number;

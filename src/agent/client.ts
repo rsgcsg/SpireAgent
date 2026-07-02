@@ -102,6 +102,12 @@ export function toRestBody(action: AgentAction): JsonRecord {
       return { action: "choose_event_option", index: action.index };
     case "shop_purchase":
       return { action: "shop_purchase", index: action.index };
+    case "crystal_sphere_set_tool":
+      return { action: "crystal_sphere_set_tool", tool: action.tool };
+    case "crystal_sphere_click_cell":
+      return { action: "crystal_sphere_click_cell", x: action.x, y: action.y };
+    case "crystal_sphere_proceed":
+      return { action: "crystal_sphere_proceed" };
     case "select_card":
       return { action: "select_card", index: action.index };
     case "combat_select_card":

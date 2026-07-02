@@ -248,10 +248,17 @@ assert.match(structuredWorkspacePrompt, /allowed_candidate_ids/);
 assert.match(structuredWorkspacePrompt, /choose_exactly_one_candidate_id_from_allowed_list/);
 assert.match(structuredWorkspacePrompt, /FINAL_ALLOWED_CANDIDATE_IDS/);
 assert.match(structuredWorkspacePrompt, /Return JSON now/);
+const combatBoundedWorkspacePrompt = buildDeliberationWorkspacePrompt(
+  { ...deliberationPacket, screen: "combat" },
+  [workspaceCandidate],
+  "full_bounded_candidate_futures"
+);
 const compactShadowPrompt = buildDeliberationWorkspacePrompt(deliberationPacket, [workspaceCandidate], "compact");
 const ultraCompactShadowPrompt = buildDeliberationWorkspacePrompt(deliberationPacket, [workspaceCandidate], "ultra_compact");
+assert.match(combatBoundedWorkspacePrompt, /full_bounded_candidate_futures/);
 assert.ok(compactShadowPrompt.length < structuredWorkspacePrompt.length);
 assert.ok(ultraCompactShadowPrompt.length < compactShadowPrompt.length);
+assert.equal(normalizeWorkspaceAblationMode("bounded"), "full_bounded_candidate_futures");
 assert.equal(normalizeWorkspaceAblationMode("compact"), "compact");
 assert.equal(normalizeWorkspaceAblationMode("ultra"), "ultra_compact");
 assert.equal(normalizeWorkspaceAblationMode("unknown"), "full");
@@ -272,6 +279,7 @@ assert.ok(workspaceComparison.structuredPromptHash);
 assert.equal(workspaceComparison.coverage.informationPreservationScore, 1);
 assert.equal(workspaceComparison.coverage.missingLegacySections?.length, 0);
 assert.ok(workspaceComparison.coverage.sectionTokenEstimate?.candidateFutures);
+assert.equal(workspaceComparison.coverage.compressionMode, "none");
 assert.equal(workspaceComparison.providerReadiness, "needs_api_key");
 assert.equal(workspaceComparison.budget?.maxShadowCalls, 1);
 assert.equal(workspaceComparison.budget?.maxOutputTokens, 400);
@@ -293,6 +301,17 @@ assert.equal(p8Shadow.shadowDecision.called, false);
 assert.equal(p8Shadow.shadowDecision.outcome, "not_enabled");
 assert.equal(p8Shadow.shadowDecision.ablationMode, "full");
 assert.ok(p8Shadow.shadowDecision.workspacePromptTokens);
+const boundedComparison = buildWorkspaceComparison({
+  legacyPrompt: JSON.stringify({ candidates: [{ id: "play-strike" }] }),
+  deliberationPacket: { ...deliberationPacket, screen: "combat" },
+  candidates: [workspaceCandidate],
+  decisionClass: "combat:test",
+  options: { shadowEnabled: false, callEnabled: false, ablationMode: "full_bounded_candidate_futures" }
+});
+assert.equal(boundedComparison.ablationMode, "full_bounded_candidate_futures");
+assert.equal(boundedComparison.coverage.compressionMode, "bounded_candidate_futures");
+assert.ok((boundedComparison.coverage.candidateFuturesBytesAfter ?? 0) > 0);
+assert.ok((boundedComparison.coverage.workspaceBytesBefore ?? 0) > 0);
 const p8ShadowReadyButSkipped = await buildP8WorkspaceShadowFromPacket({
   legacyPrompt: JSON.stringify({ candidates: [{ id: "play-strike" }] }),
   deliberationPacket,
@@ -569,6 +588,8 @@ assert.equal(retriedDecision?.providerAudit?.requestMode, "json_mode");
 assert.equal(retriedDecision?.providerAudit?.retryCount, 1);
 assert.equal(retriedDecision?.providerAudit?.emptyContentRetryCount, 1);
 assert.equal(retriedDecision?.providerAudit?.emptyContentRetrySucceeded, true);
+assert.equal(retriedDecision?.providerAudit?.attempts?.length, 2);
+assert.equal(retriedDecision?.providerAudit?.attempts?.[1]?.requestMaxOutputTokens, 140);
 let truncationFetchCalls = 0;
 const truncationRequestMaxTokens: number[] = [];
 const deepSeekTruncationRetry = new DeepSeekV4FlashDecider({
@@ -597,12 +618,14 @@ const deepSeekTruncationRetry = new DeepSeekV4FlashDecider({
 });
 const truncationRetriedDecision = await deepSeekTruncationRetry.decide("{\"allowed_candidate_ids\":[\"play-strike\"]}");
 assert.equal(truncationFetchCalls, 2);
-assert.deepEqual(truncationRequestMaxTokens, [400, 220]);
+assert.deepEqual(truncationRequestMaxTokens, [400, 120]);
 assert.equal(truncationRetriedDecision?.candidateId, "play-strike");
 assert.equal(truncationRetriedDecision?.providerAudit?.retryCount, 1);
 assert.equal(truncationRetriedDecision?.providerAudit?.emptyContentRetryCount, 0);
 assert.equal(truncationRetriedDecision?.providerAudit?.truncationRetryCount, 1);
 assert.equal(truncationRetriedDecision?.providerAudit?.truncationRetrySucceeded, true);
+assert.equal(truncationRetriedDecision?.providerAudit?.attempts?.length, 2);
+assert.equal(truncationRetriedDecision?.providerAudit?.attempts?.[1]?.requestMaxOutputTokens, 120);
 const previousProvider = process.env.STS2_LLM_PROVIDER;
 const previousDeepSeekKey = process.env.STS2_DEEPSEEK_API_KEY;
 const previousCommand = process.env.STS2_LLM_COMMAND;
@@ -1359,6 +1382,84 @@ try {
   });
   const eventDescriptionCandidates = generateCandidates(eventDescriptionState);
   assert.ok(eventDescriptionCandidates.some((candidate) => candidate.label.includes("Lose 14 HP")));
+
+  const crystalSphereState = normalizeGameState({
+    state_type: "crystal_sphere",
+    crystal_sphere: {
+      grid_width: 11,
+      grid_height: 11,
+      tool: "big",
+      can_use_big_tool: true,
+      can_use_small_tool: true,
+      can_proceed: false,
+      divinations_left_text: "3 Divinations remain",
+      clickable_cells: [
+        { x: 5, y: 5 },
+        { x: 4, y: 5 },
+        { x: 0, y: 0 }
+      ]
+    },
+    run: { act: 2, floor: 22, ascension: 0 },
+    player: {
+      character: "The Defect",
+      hp: 39,
+      max_hp: 75,
+      block: 0,
+      energy: 0,
+      max_energy: 3,
+      relics: [],
+      potions: [],
+      status: [],
+      draw_pile_count: 0,
+      discard_pile_count: 0,
+      exhaust_pile_count: 0,
+      gold: 329
+    }
+  });
+  assert.equal(crystalSphereState.screen, "crystal_sphere");
+  const crystalSphereCandidates = generateCandidates(crystalSphereState);
+  assert.ok(
+    crystalSphereCandidates.some(
+      (candidate) =>
+        candidate.action.kind === "crystal_sphere_click_cell" && candidate.action.x === 5 && candidate.action.y === 5
+    )
+  );
+  const crystalSphereScoring = scoreCandidates(crystalSphereState, crystalSphereCandidates, memory.run, memory.strategy);
+  assert.equal(crystalSphereScoring.top?.action.kind, "crystal_sphere_click_cell");
+
+  const crystalSphereToolSwitchState = normalizeGameState({
+    ...crystalSphereState.raw,
+    crystal_sphere: {
+      ...(crystalSphereState.raw.crystal_sphere as object),
+      tool: "small"
+    }
+  });
+  const crystalSphereToolSwitchScoring = scoreCandidates(
+    crystalSphereToolSwitchState,
+    generateCandidates(crystalSphereToolSwitchState),
+    memory.run,
+    memory.strategy
+  );
+  assert.equal(crystalSphereToolSwitchScoring.top?.action.kind, "crystal_sphere_set_tool");
+
+  const crystalSphereProceedState = normalizeGameState({
+    ...crystalSphereState.raw,
+    crystal_sphere: {
+      ...(crystalSphereState.raw.crystal_sphere as object),
+      can_proceed: true
+    }
+  });
+  assert.deepEqual(generateCandidates(crystalSphereProceedState)[0]?.action, { kind: "crystal_sphere_proceed" });
+  assert.deepEqual(toRestBody({ kind: "crystal_sphere_set_tool", tool: "big" }), {
+    action: "crystal_sphere_set_tool",
+    tool: "big"
+  });
+  assert.deepEqual(toRestBody({ kind: "crystal_sphere_click_cell", x: 4, y: 7 }), {
+    action: "crystal_sphere_click_cell",
+    x: 4,
+    y: 7
+  });
+  assert.deepEqual(toRestBody({ kind: "crystal_sphere_proceed" }), { action: "crystal_sphere_proceed" });
 
   const forcedEndTurnState = normalizeGameState({
     state_type: "combat",

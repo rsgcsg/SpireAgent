@@ -4,6 +4,26 @@ LLM-centered Slay the Spire 2 agent with a predictive cognitive scaffold, struct
 
 This repository contains the TypeScript agent package. It does not include the game, the STS2 MCP C# mod, the Python MCP server, build outputs, or `node_modules`.
 
+## GitHub Hygiene
+
+This repo is intended to be public and clonable. Keep the repository clean by treating these as local-only artifacts:
+
+- `.env.local`, `.env`, `.envrc.local`, and any backup variants such as `.env.local.save`
+- `data/runs/` replay outputs from local experiments
+- mutable runtime memory such as `memory/current-run.json`, `memory/experience.json`, `memory/long-term.json`, `memory/strategy-params.json`, `memory/decision-log.jsonl`, and `memory/snapshots/`
+- collected local state logs under `memory/collected/`
+
+Only commit templates and documentation such as `.env.example`, `memory/.gitkeep`, and `memory/README.md`.
+
+Before pushing to GitHub, run:
+
+```bash
+git status --short
+git ls-files memory data/runs
+```
+
+`git ls-files memory data/runs` should only show repository-owned files such as `memory/.gitkeep` and `memory/README.md`, not mutable run artifacts.
+
 ## Quick Start
 
 ```bash
@@ -30,6 +50,17 @@ STS2_DEEPSEEK_API_KEY=your_deepseek_api_key_here
 
 Keep the variable name as `STS2_DEEPSEEK_API_KEY`. Do not put API keys in source files, docs, replay data, debug reports, commits, or command output.
 
+If a secret is ever committed by mistake, rotate it immediately and scrub it from Git history before publishing a release or sharing the repository.
+
+If local runtime artifacts were already committed earlier, remove them from the index and amend history before publishing:
+
+```bash
+git rm --cached -- memory/current-run.json memory/experience.json memory/long-term.json memory/strategy-params.json
+git rm -r --cached -- data/runs
+```
+
+If a public branch already contains secrets or local run artifacts, use a history-rewrite tool such as `git filter-repo` before pushing a cleaned branch.
+
 P8 DeepSeek calls are shadow-only and opt-in. A safe one-call test is:
 
 ```bash
@@ -39,7 +70,7 @@ npm run agent:tick -- --dry-run
 With the default `.env.local` settings, the project allows at most one guarded shadow call per process and does not execute the DeepSeek decision.
 The canonical limit variable is `STS2_P8_WORKSPACE_MAX_SHADOW_CALLS`; `STS2_P8_MAX_SHADOW_CALLS` is accepted as a backward-compatible alias.
 DeepSeek shadow output defaults to `STS2_DEEPSEEK_OUTPUT_MODE=json_mode` with `response_format: { "type": "json_object" }`, `STS2_DEEPSEEK_TEMPERATURE=0`, `STS2_DEEPSEEK_TOP_P=0.1`, and a single `STS2_DEEPSEEK_EMPTY_RETRY_LIMIT=1` rescue retry for `empty_content`. Set `STS2_DEEPSEEK_OUTPUT_MODE=non_json_strict` only for A/B shadow testing.
-P8.4 shadow prompt ablation uses `STS2_P8_WORKSPACE_ABLATION_MODE=full` by default. For small shadow-only experiments, use `compact` or `ultra_compact`; these modes do not change the live prompt or execute the DeepSeek decision.
+P8.4 shadow prompt ablation uses `STS2_P8_WORKSPACE_ABLATION_MODE=full` by default. `full` remains the control group and does not apply bounded candidate-future compression. `full_bounded_candidate_futures` is the v5 combat-only bounded serialization experiment; `compact` and `ultra_compact` remain separate smaller ablations. None of these modes change the live prompt or execute the DeepSeek decision.
 
 Do not enable live P8 integration by default. The first allowed live experiment is later P8.5-only and must be additive:
 

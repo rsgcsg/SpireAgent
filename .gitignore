@@ -4,10 +4,15 @@ node_modules/
 dist/
 coverage/
 
+# Runtime outputs and local artifacts
 data/runs/
+memory/current-run.json
+memory/experience.json
+memory/long-term.json
+memory/strategy-params.json
+memory/decision-log.jsonl
 memory/collected/
 memory/snapshots/
-memory/decision-log.jsonl
 
 # Local secrets
 .env

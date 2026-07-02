@@ -13,6 +13,27 @@ This directory is runtime state for the local STS2 agent.
 
 The agent may update these files. Raw Spire Codex data stays in `data/spire-codex/` and should not be polluted with learned strategy.
 
+## GitHub Boundary
+
+This directory contains a mix of repository-owned placeholders and local runtime state.
+
+Commit:
+
+- `memory/.gitkeep`
+- `memory/README.md`
+
+Do not commit:
+
+- `current-run.json`
+- `long-term.json`
+- `experience.json`
+- `strategy-params.json`
+- `decision-log.jsonl`
+- anything under `snapshots/`
+- anything under `collected/`
+
+These files are local run products and may contain large replay/debug context. They should stay ignored even when the project is pushed to a public GitHub repository.
+
 ## Current Decision Log Shape
 
 New decision entries include route and LLM audit fields:

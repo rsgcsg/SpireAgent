@@ -72,6 +72,21 @@ export interface DeepSeekWorkspaceDecision extends LlmDecision {
     emptyContentRetrySucceeded?: boolean;
     truncationRetryCount?: number;
     truncationRetrySucceeded?: boolean;
+    attempts?: Array<{
+      requestKind: "primary" | "rescue";
+      rescueMode?: "empty" | "truncation";
+      requestMaxOutputTokens: number;
+      finishReason?: string;
+      latencyMs: number;
+      contentKind: string;
+      contentPreview?: string;
+      contentBytes?: number;
+      usage?: {
+        promptTokens?: number;
+        completionTokens?: number;
+        totalTokens?: number;
+      };
+    }>;
   };
   providerMetadata?: {
     provider: "deepseek";
@@ -132,9 +147,21 @@ export class DeepSeekV4FlashDecider implements LlmDecider {
       try {
         let rescue = 0;
         let rescueMode: "empty" | "truncation" | undefined;
+        const attempts: NonNullable<NonNullable<DeepSeekWorkspaceDecision["providerAudit"]>["attempts"]> = [];
         for (;;) {
           const requestKind = rescue > 0 ? "rescue" : "primary";
           const result = await this.requestDecision(prompt, requestKind, rescueMode);
+          attempts.push({
+            requestKind,
+            rescueMode,
+            requestMaxOutputTokens: result.requestMaxOutputTokens,
+            finishReason: result.finishReason,
+            latencyMs: result.latencyMs,
+            contentKind: result.audit.contentKind,
+            contentPreview: result.audit.contentPreview,
+            contentBytes: result.audit.contentBytes,
+            usage: result.usage
+          });
           const auditBase = {
             ...result.audit,
             requestMode: this.outputMode,
@@ -142,7 +169,8 @@ export class DeepSeekV4FlashDecider implements LlmDecider {
             emptyContentRetryCount,
             emptyContentRetrySucceeded: false,
             truncationRetryCount,
-            truncationRetrySucceeded: false
+            truncationRetrySucceeded: false,
+            attempts
           } satisfies NonNullable<DeepSeekWorkspaceDecision["providerAudit"]>;
           if (result.audit.contentKind === "empty") {
             if (isTruncationLikely(result) && truncationRetryCount < this.truncationRetryLimit) {
@@ -277,8 +305,10 @@ export class DeepSeekV4FlashDecider implements LlmDecider {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
     const startedAt = Date.now();
-    const requestMaxOutputTokens = requestKind === "rescue" && rescueMode === "truncation"
-      ? Math.min(this.maxOutputTokens, 220)
+    const requestMaxOutputTokens = requestKind === "rescue"
+      ? rescueMode === "truncation"
+        ? Math.min(this.maxOutputTokens, 120)
+        : Math.min(this.maxOutputTokens, 140)
       : this.maxOutputTokens;
     try {
       const response = await this.fetchImpl(this.baseUrl, {
@@ -744,10 +774,10 @@ function buildDeepSeekSystemPrompt(
       "Return exactly one one-line minified JSON object and stop immediately.",
       "No markdown. No prose. No chain-of-thought. No thinking marker. No second object.",
       "selectedCandidateId must copy one allowed candidate id exactly.",
-      "Keep confidence compact.",
-      "Keep reasonBrief to one short sentence under 12 words.",
-      "riskTags, missingInfo, scaffoldFeedback must each be [] or contain at most 2 short items.",
-      `Exact JSON shape: ${workspaceDecisionExampleJson()}`
+      "Use the shortest valid JSON that still selects one allowed candidate.",
+      "Omit optional fields unless they are truly necessary.",
+      "Keep reasonBrief to one very short sentence under 8 words.",
+      `Exact JSON shape: ${workspaceDecisionRescueJson()}`
     ].join(" ");
   }
   if (requestKind === "rescue") {
@@ -756,9 +786,10 @@ function buildDeepSeekSystemPrompt(
       "Return exactly one one-line minified JSON object.",
       "Do not return markdown, code fences, arrays, null, prose, chain-of-thought, thinking markers, or a second object.",
       "selectedCandidateId must copy one allowed candidate id exactly.",
-      "Keep reasonBrief to one short sentence under 12 words.",
-      "Use [] for optional arrays unless truly needed. If used, keep each array to at most 2 short items.",
-      `Example JSON: ${workspaceDecisionExampleJson()}`
+      "Omit optional fields unless they are truly necessary.",
+      "Keep reasonBrief to one very short sentence under 8 words.",
+      "Use [] for optional arrays unless truly needed. If used, keep each array to at most 1 short item.",
+      `Example JSON: ${workspaceDecisionRescueJson()}`
     ].join(" ");
   }
   return [
@@ -767,8 +798,9 @@ function buildDeepSeekSystemPrompt(
     "The reply must be valid JSON, not markdown.",
     "Do not emit chain-of-thought, thinking markers, tail text, or a second JSON object.",
     "selectedCandidateId must copy one allowed candidate id exactly.",
-    "Keep reasonBrief to one short sentence under 12 words.",
-    "Use [] for optional arrays unless truly needed. If used, keep each array to at most 2 short items.",
+    "Optional fields may be omitted to keep the JSON short.",
+    "Keep reasonBrief to one very short sentence under 8 words.",
+    "Use [] for optional arrays unless truly needed. If used, keep each array to at most 1 short item.",
     `Example JSON: ${workspaceDecisionExampleJson()}`
   ].join(" ");
 }
@@ -785,9 +817,10 @@ function buildDeepSeekUserPrompt(
         "Stop immediately after the closing brace.",
         "No thinking marker. No explanation. No repeated object.",
         "selectedCandidateId must come from allowed_candidate_ids in the workspace JSON.",
-        "reasonBrief must be one short sentence under 12 words.",
-        "riskTags, missingInfo, scaffoldFeedback must be [] or at most 2 short items.",
-        `Return this shape exactly: ${workspaceDecisionExampleJson()}`
+        "Use the shortest valid JSON that still chooses one allowed candidate.",
+        "reasonBrief must be one very short sentence under 8 words.",
+        "Omit optional fields unless they are truly necessary.",
+        `Return this shape exactly: ${workspaceDecisionRescueJson()}`
       ]
     : requestKind === "rescue"
     ? [
@@ -795,22 +828,28 @@ function buildDeepSeekUserPrompt(
         "Retry now with exactly one one-line minified JSON object.",
         "No markdown. No explanation. No array. No null. No chain-of-thought. No thinking marker. No second object.",
         "selectedCandidateId must come from allowed_candidate_ids in the workspace JSON.",
-        "Use one-line minified JSON with short fields.",
-        `Return this shape exactly: ${workspaceDecisionExampleJson()}`
+        "Use the shortest valid JSON with only required fields unless optional fields are truly necessary.",
+        "reasonBrief must be under 8 words.",
+        `Return this shape exactly: ${workspaceDecisionRescueJson()}`
       ]
     : [
         "Return exactly one one-line minified JSON object.",
         "Do not add markdown, explanation, chain-of-thought, thinking markers, or a second object.",
         "selectedCandidateId must come from allowed_candidate_ids in the workspace JSON.",
-        "Keep reasonBrief under 12 words. Use [] for optional arrays unless truly needed.",
-        "If arrays are used, keep them to at most 2 short items each.",
+        "Optional fields may be omitted to keep the JSON short.",
+        "Keep reasonBrief under 8 words. Use [] for optional arrays unless truly needed.",
+        "If arrays are used, keep them to at most 1 short item each.",
         `Target JSON shape: ${workspaceDecisionExampleJson()}`
       ];
   return `${contract.join(" ")}\n\nWORKSPACE_JSON:\n${prompt}`;
 }
 
 function workspaceDecisionExampleJson(): string {
-  return "{\"selectedCandidateId\":\"<allowed candidate id>\",\"confidence\":0.72,\"reasonBrief\":\"short strategic reason\",\"riskTags\":[],\"missingInfo\":[],\"scaffoldFeedback\":[]}";
+  return "{\"selectedCandidateId\":\"<allowed candidate id>\",\"reasonBrief\":\"short reason\",\"confidence\":0.72,\"riskTags\":[],\"missingInfo\":[],\"scaffoldFeedback\":[]}";
+}
+
+function workspaceDecisionRescueJson(): string {
+  return "{\"selectedCandidateId\":\"<allowed candidate id>\",\"reasonBrief\":\"short reason\"}";
 }
 
 function isTruncationLikely(result: {

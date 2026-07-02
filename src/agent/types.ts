@@ -9,6 +9,7 @@ export type ScreenKind =
   | "event"
   | "shop"
   | "treasure"
+  | "crystal_sphere"
   | "card_select"
   | "bundle_select"
   | "game_over"
@@ -96,6 +97,9 @@ export type AgentAction =
   | { kind: "skip_card_reward" }
   | { kind: "event_choose_option"; index: number }
   | { kind: "shop_purchase"; index: number }
+  | { kind: "crystal_sphere_set_tool"; tool: "big" | "small" }
+  | { kind: "crystal_sphere_click_cell"; x: number; y: number }
+  | { kind: "crystal_sphere_proceed" }
   | { kind: "select_card"; index: number; cardName?: string }
   | { kind: "combat_select_card"; index: number; cardName?: string }
   | { kind: "confirm_selection" }

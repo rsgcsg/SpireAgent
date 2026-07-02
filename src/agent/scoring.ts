@@ -253,6 +253,10 @@ function scoreCandidate(
       return scoreEventOption(state, candidate, run, strategy);
     case "shop_purchase":
       return scoreShopPurchase(candidate, run, strategy);
+    case "crystal_sphere_set_tool":
+    case "crystal_sphere_click_cell":
+    case "crystal_sphere_proceed":
+      return scoreCrystalSphere(state, candidate);
     case "select_card":
     case "combat_select_card":
       return scoreSelectCard(candidate);
@@ -334,6 +338,48 @@ function scoreBundleSelect(candidate: CandidateAction, run: RunMemory, strategy:
     unique(reasons).slice(0, 5).length ? unique(reasons).slice(0, 5) : ["卡包选择"],
     unique(risks).slice(0, 4)
   );
+}
+
+function scoreCrystalSphere(state: NormalizedState, candidate: CandidateAction): ScoredCandidate {
+  const rawSphere = isRecord(state.raw.crystal_sphere) ? state.raw.crystal_sphere : {};
+  const tool = asString(rawSphere.tool, "big").toLowerCase();
+  const divinationsLeft = asString(rawSphere.divinations_left_text ?? rawSphere.divinationsLeftText, "");
+  const remaining = Number(divinationsLeft.match(/\d+/)?.[0] ?? "0");
+  switch (candidate.kind) {
+    case "crystal_sphere_proceed":
+      return withScore(candidate, 80, 0.95, ["占卜完成，继续离开事件"], []);
+    case "crystal_sphere_set_tool": {
+      const action = candidate.action as Extract<CandidateAction["action"], { kind: "crystal_sphere_set_tool" }>;
+      const { tool: nextTool } = action;
+      if (nextTool === "big" && tool !== "big") {
+        return withScore(candidate, 72, 0.9, ["先切到大型占卜，扩大揭示范围"], []);
+      }
+      if (nextTool === "small" && tool !== "small" && remaining <= 1) {
+        return withScore(candidate, 18, 0.72, ["最后一次占卜可考虑小范围补点"], []);
+      }
+      return withScore(candidate, 8, 0.45, ["可切换占卜工具"], ["当前未必需要切工具"]);
+    }
+    case "crystal_sphere_click_cell": {
+      const action = candidate.action as Extract<CandidateAction["action"], { kind: "crystal_sphere_click_cell" }>;
+      const { x, y } = action;
+      const width = asNumber(rawSphere.grid_width ?? rawSphere.gridWidth, 11);
+      const height = asNumber(rawSphere.grid_height ?? rawSphere.gridHeight, 11);
+      const centerX = (width - 1) / 2;
+      const centerY = (height - 1) / 2;
+      const distance = Math.abs(x - centerX) + Math.abs(y - centerY);
+      const centerBias = Math.max(0, 12 - distance * 2);
+      const bigToolBonus = tool === "big" ? 10 : 0;
+      return withScore(
+        candidate,
+        40 + centerBias + bigToolBonus,
+        tool === "big" ? 0.82 : 0.68,
+        [`揭示水晶格 (${x},${y})`, tool === "big" ? "当前是大型占卜，优先吃中心覆盖" : "继续揭示隐藏格"],
+        []
+      );
+    }
+    default:
+      return withScore(candidate, 0, 0.2, ["未知动作"], ["unknown_action"]);
+  }
 }
 
 function scoreMenuSelect(candidate: CandidateAction, run: RunMemory): ScoredCandidate {

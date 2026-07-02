@@ -130,6 +130,14 @@ function summarizeCurrentRunCognitiveCoverage(runId: string): JsonRecord {
     if (mode) counts[mode] = (counts[mode] ?? 0) + 1;
     return counts;
   }, {});
+  const workspaceCompressionModeCounts = transitions.reduce<Record<string, number>>((counts, transition) => {
+    if (!isRecord(transition.workspaceComparison) || !isRecord(transition.workspaceComparison.coverage)) return counts;
+    const mode = typeof transition.workspaceComparison.coverage.compressionMode === "string"
+      ? transition.workspaceComparison.coverage.compressionMode
+      : undefined;
+    if (mode) counts[mode] = (counts[mode] ?? 0) + 1;
+    return counts;
+  }, {});
   const workspaceRetryCount = transitions.reduce((sum, transition) => (
     isRecord(transition.shadowWorkspaceDecision) && typeof transition.shadowWorkspaceDecision.retryCount === "number"
       ? sum + transition.shadowWorkspaceDecision.retryCount
@@ -193,6 +201,13 @@ function summarizeCurrentRunCognitiveCoverage(runId: string): JsonRecord {
       return typeof score === "number" ? score : undefined;
     })
     .filter((score): score is number => score !== undefined);
+  const workspaceSizeSamples = transitions
+    .map((transition) => {
+      if (!isRecord(transition.workspaceComparison) || !isRecord(transition.workspaceComparison.coverage)) return undefined;
+      return transition.workspaceComparison.coverage;
+    })
+    .filter((value): value is JsonRecord => value !== undefined);
+  const workspaceSizeSummary = averageWorkspaceSizeSummary(workspaceSizeSamples);
   const shadowWorkspaceSkipped = count((transition) => isRecord(transition.shadowWorkspaceDecision) && transition.shadowWorkspaceDecision.outcome === "skipped");
   const shadowWorkspaceUnavailable = count((transition) => isRecord(transition.shadowWorkspaceDecision) && transition.shadowWorkspaceDecision.outcome === "unavailable");
   const predictionError = count((transition) => isRecord(transition.predictionError));
@@ -236,9 +251,11 @@ function summarizeCurrentRunCognitiveCoverage(runId: string): JsonRecord {
     workspaceCleanupReasonCounts,
     workspaceProviderModeCounts,
     workspaceAblationModeCounts,
+    workspaceCompressionModeCounts,
     workspaceRetryCount,
     workspaceRetrySuccessCount,
     workspaceOutputCapHits,
+    workspaceSizeSummary,
     workspaceEstimatedCostUsd: round(workspaceCostEstimate),
     averageWorkspaceLatencyMs:
       workspaceLatencies.length > 0
@@ -404,6 +421,49 @@ function summarizeDecisions(decisions: DecisionLogEntry[]): JsonRecord {
             average: round(promptBytes.reduce((sum, value) => sum + value, 0) / promptBytes.length)
           }
         : undefined
+  };
+}
+
+function averageWorkspaceSizeSummary(items: JsonRecord[]): JsonRecord | undefined {
+  const numericAverage = (key: string): number | undefined => {
+    const values = items
+      .map((item) => item[key])
+      .filter((value): value is number => typeof value === "number");
+    if (values.length === 0) return undefined;
+    return round(values.reduce((sum, value) => sum + value, 0) / values.length);
+  };
+  const truncatedFieldCounts = items.reduce<Record<string, number>>((counts, item) => {
+    if (!isRecord(item.truncatedFields)) return counts;
+    for (const [key, value] of Object.entries(item.truncatedFields)) {
+      if (typeof value === "number") counts[key] = (counts[key] ?? 0) + value;
+    }
+    return counts;
+  }, {});
+  const largestFieldSources = items.reduce<Record<string, number>>((counts, item) => {
+    if (!isRecord(item.largestFieldSources)) return counts;
+    for (const [key, value] of Object.entries(item.largestFieldSources)) {
+      if (typeof value === "number") counts[key] = (counts[key] ?? 0) + value;
+    }
+    return counts;
+  }, {});
+  if (items.length === 0) return undefined;
+  return {
+    samples: items.length,
+    averageWorkspaceBytesBefore: numericAverage("workspaceBytesBefore"),
+    averageWorkspaceBytesAfter: numericAverage("workspaceBytesAfter"),
+    averageWorkspaceTokensBefore: numericAverage("workspaceTokensBefore"),
+    averageWorkspaceTokensAfter: numericAverage("workspaceTokensAfter"),
+    averageCandidateFuturesBytesBefore: numericAverage("candidateFuturesBytesBefore"),
+    averageCandidateFuturesBytesAfter: numericAverage("candidateFuturesBytesAfter"),
+    averageCandidateFuturesTokensBefore: numericAverage("candidateFuturesTokensBefore"),
+    averageCandidateFuturesTokensAfter: numericAverage("candidateFuturesTokensAfter"),
+    averageInformationPreservationEstimate: numericAverage("informationPreservationEstimate"),
+    futuresTruncated: items.reduce((sum, item) => sum + (typeof item.futuresTruncated === "number" ? item.futuresTruncated : 0), 0),
+    futuresOmitted: items.reduce((sum, item) => sum + (typeof item.futuresOmitted === "number" ? item.futuresOmitted : 0), 0),
+    truncatedFieldCounts,
+    largestFieldSources,
+    repeatedTextBytes: items.reduce((sum, item) => sum + (typeof item.repeatedTextBytes === "number" ? item.repeatedTextBytes : 0), 0),
+    repeatedTextCount: items.reduce((sum, item) => sum + (typeof item.repeatedTextCount === "number" ? item.repeatedTextCount : 0), 0)
   };
 }
 

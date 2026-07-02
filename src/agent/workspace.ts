@@ -18,9 +18,34 @@ export const P8_DEEPSEEK_MODEL_FLAG = "STS2_DEEPSEEK_MODEL";
 export const P8_LIVE_ADDITIVE_FLAG = "STS2_P8_LIVE_ADDITIVE";
 export const P8_LIVE_DECISION_CLASSES_FLAG = "STS2_P8_LIVE_DECISION_CLASSES";
 export const P8_WORKSPACE_ABLATION_MODE_FLAG = "STS2_P8_WORKSPACE_ABLATION_MODE";
-export const P8_WORKSPACE_REVISION = "2026-07-02-output-contract-v2-sample20";
+export const P8_WORKSPACE_REVISION = "2026-07-03-output-contract-v5-bounded-candidate-futures";
 
-export type WorkspaceAblationMode = "full" | "compact" | "ultra_compact";
+export type WorkspaceAblationMode = "full" | "full_bounded_candidate_futures" | "compact" | "ultra_compact";
+
+interface WorkspaceSerializationTelemetry {
+  compressionMode: string;
+  futuresTruncated: number;
+  futuresOmitted: number;
+  truncatedFields: Record<string, number>;
+  candidateFuturesBytesBefore: number;
+  candidateFuturesBytesAfter: number;
+  candidateFuturesTokensBefore: number;
+  candidateFuturesTokensAfter: number;
+  workspaceBytesBefore: number;
+  workspaceBytesAfter: number;
+  workspaceTokensBefore: number;
+  workspaceTokensAfter: number;
+  informationPreservationEstimate: number;
+  largestFieldSources: Record<string, number>;
+  repeatedTextBytes: number;
+  repeatedTextCount: number;
+}
+
+interface WorkspacePromptBuildArtifact {
+  prompt: string;
+  payload: JsonRecord;
+  telemetry: WorkspaceSerializationTelemetry;
+}
 
 let shadowCallsUsedThisProcess = 0;
 
@@ -96,6 +121,9 @@ export function workspaceAblationModeFromEnv(): WorkspaceAblationMode {
 export function normalizeWorkspaceAblationMode(value: unknown): WorkspaceAblationMode {
   if (typeof value !== "string") return "full";
   const normalized = value.trim().toLowerCase().replace(/-/g, "_");
+  if (normalized === "full_bounded_candidate_futures" || normalized === "bounded" || normalized === "bounded_candidate_futures") {
+    return "full_bounded_candidate_futures";
+  }
   if (normalized === "compact") return "compact";
   if (normalized === "ultra" || normalized === "ultra_compact" || normalized === "ultracompact") return "ultra_compact";
   return "full";
@@ -113,22 +141,34 @@ export function buildDeliberationWorkspacePrompt(
   candidates: ScoredCandidate[] = [],
   mode: WorkspaceAblationMode = "full"
 ): string {
+  return buildWorkspacePromptArtifact(packet, candidates, mode).prompt;
+}
+
+function buildWorkspacePromptArtifact(
+  packet: DeliberationPacket,
+  candidates: ScoredCandidate[] = [],
+  mode: WorkspaceAblationMode = "full"
+): WorkspacePromptBuildArtifact {
   const allowedCandidateIds = candidates.map((candidate) => candidate.id);
   const payload = mode === "ultra_compact"
     ? buildUltraCompactWorkspacePayload(packet, candidates, allowedCandidateIds)
     : mode === "compact"
       ? buildCompactWorkspacePayload(packet, candidates, allowedCandidateIds)
-      : buildFullWorkspacePayload(packet, candidates, allowedCandidateIds);
-  return `${JSON.stringify(payload)}\n${workspaceCandidateFooter(allowedCandidateIds)}`;
+      : buildFullWorkspacePayload(packet, candidates, allowedCandidateIds, mode);
+  const prompt = `${JSON.stringify(payload)}\n${workspaceCandidateFooter(allowedCandidateIds)}`;
+  const telemetry = workspaceSerializationTelemetry(packet, payload, prompt, candidates, mode);
+  return { prompt, payload, telemetry };
 }
 
 function buildFullWorkspacePayload(
   packet: DeliberationPacket,
   candidates: ScoredCandidate[],
-  allowedCandidateIds: string[]
+  allowedCandidateIds: string[],
+  mode: WorkspaceAblationMode
 ): JsonRecord {
+  const candidateFutureResult = buildWorkspaceCandidateFutures(packet, candidates, mode);
   return {
-    ablation_mode: "full",
+    ablation_mode: mode,
     task: "Choose exactly one candidate action for Slay the Spire 2 from the structured strategic workspace. Return short JSON only.",
     north_star_boundary: [
       "LLM is the strategic player",
@@ -142,11 +182,16 @@ function buildFullWorkspacePayload(
       never_return_empty_response: true,
       choose_exactly_one_candidate_id_from_allowed_list: true,
       if_uncertain_still_choose_one_allowed_candidate_id: true,
+      one_line_minified_json: true,
+      reasonBrief_max_words: 8,
+      optional_arrays_default_empty: true,
+      optional_arrays_max_items: 1,
+      optional_fields_may_be_omitted: ["confidence", "riskTags", "missingInfo", "scaffoldFeedback"],
       required_fields: ["selectedCandidateId", "reasonBrief"],
       preferred_shape: {
         selectedCandidateId: "<exact allowed candidate id>",
-        confidence: 0.0,
         reasonBrief: "short strategic reason",
+        confidence: 0.0,
         riskTags: [],
         missingInfo: [],
         scaffoldFeedback: []
@@ -171,19 +216,7 @@ function buildFullWorkspacePayload(
     salience_signals: packet.salienceSignals,
     memory_activation: packet.memoryActivation,
     derived_knowledge: packet.derivedKnowledgeSummary,
-    candidate_futures: packet.candidateFutures.slice(0, 8).map((future) => ({
-      id: future.sourceCandidateId ?? future.id,
-      futureId: future.id,
-      label: future.label,
-      plan: future.plan,
-      predictedOutcome: future.predictedOutcome,
-      predictionChecks: future.predictionChecks,
-      cost: future.cost,
-      risk: future.risk,
-      assumptions: future.assumptions,
-      invalidationTriggers: future.invalidationTriggers,
-      confidence: future.confidence
-    })),
+    candidate_futures: candidateFutureResult.serialized,
     top_candidates: packet.topCandidates,
     legal_actions_summary: packet.legalActionsSummary,
     deterministic_calculations: packet.deterministicCalculations,
@@ -298,7 +331,8 @@ export function buildCompactWorkspaceSummary(packet: DeliberationPacket): string
 export function buildWorkspaceComparison(input: WorkspaceComparisonInput): DeliberationWorkspaceComparison {
   const options = input.options ?? workspaceOptionsFromEnv();
   const ablationMode = options.ablationMode ?? "full";
-  const structuredPrompt = buildDeliberationWorkspacePrompt(input.deliberationPacket, input.candidates, ablationMode);
+  const structuredArtifact = buildWorkspacePromptArtifact(input.deliberationPacket, input.candidates, ablationMode);
+  const structuredPrompt = structuredArtifact.prompt;
   const compactWorkspaceSummary = buildCompactWorkspaceSummary(input.deliberationPacket);
   const promptParity = isRecord(input.deliberationPacket.promptParity) ? input.deliberationPacket.promptParity : {};
   const coveredSections = Array.isArray(promptParity.coveredSections) ? promptParity.coveredSections.map(String) : [];
@@ -374,7 +408,23 @@ export function buildWorkspaceComparison(input: WorkspaceComparisonInput): Delib
       preservedLegacySections,
       missingLegacySections,
       informationPreservationScore,
-      sectionTokenEstimate
+      sectionTokenEstimate,
+      compressionMode: structuredArtifact.telemetry.compressionMode,
+      futuresTruncated: structuredArtifact.telemetry.futuresTruncated,
+      futuresOmitted: structuredArtifact.telemetry.futuresOmitted,
+      truncatedFields: structuredArtifact.telemetry.truncatedFields,
+      candidateFuturesBytesBefore: structuredArtifact.telemetry.candidateFuturesBytesBefore,
+      candidateFuturesBytesAfter: structuredArtifact.telemetry.candidateFuturesBytesAfter,
+      candidateFuturesTokensBefore: structuredArtifact.telemetry.candidateFuturesTokensBefore,
+      candidateFuturesTokensAfter: structuredArtifact.telemetry.candidateFuturesTokensAfter,
+      workspaceBytesBefore: structuredArtifact.telemetry.workspaceBytesBefore,
+      workspaceBytesAfter: structuredArtifact.telemetry.workspaceBytesAfter,
+      workspaceTokensBefore: structuredArtifact.telemetry.workspaceTokensBefore,
+      workspaceTokensAfter: structuredArtifact.telemetry.workspaceTokensAfter,
+      informationPreservationEstimate: structuredArtifact.telemetry.informationPreservationEstimate,
+      largestFieldSources: structuredArtifact.telemetry.largestFieldSources,
+      repeatedTextBytes: structuredArtifact.telemetry.repeatedTextBytes,
+      repeatedTextCount: structuredArtifact.telemetry.repeatedTextCount
     },
     gatedReadiness,
     readinessReasons,
@@ -398,7 +448,7 @@ export function buildWorkspaceComparison(input: WorkspaceComparisonInput): Delib
       fallback: "legacy_prompt_only",
       rollback: `unset ${P8_LIVE_ADDITIVE_FLAG}; unset ${P8_WORKSPACE_SHADOW_FLAG} and ${P8_WORKSPACE_CALL_FLAG}; keep legacy prompt path`
     },
-    summary: `P8 structured workspace ${gatedReadiness}; ablation=${ablationMode}; preservation=${informationPreservationScore}; legacy=${legacyPromptBytes ?? 0}B structured=${structuredPromptBytes}B candidates=${input.candidates.length}; provider=${providerReadiness}`
+    summary: `P8 structured workspace ${gatedReadiness}; ablation=${ablationMode}; compression=${structuredArtifact.telemetry.compressionMode}; preservation=${informationPreservationScore}/${structuredArtifact.telemetry.informationPreservationEstimate}; legacy=${legacyPromptBytes ?? 0}B structured=${structuredPromptBytes}B candidates=${input.candidates.length}; provider=${providerReadiness}`
   };
 }
 
@@ -515,6 +565,27 @@ export async function buildP8WorkspaceShadow(input: ShadowWorkspaceDecisionInput
         providerOutputBytes: numberValue(providerAudit?.contentBytes),
         providerParseState: typeof providerAudit?.parseState === "string" ? providerAudit.parseState : undefined,
         providerCleanupReason: typeof providerAudit?.cleanupReason === "string" ? providerAudit.cleanupReason : undefined,
+        providerAttempts: Array.isArray(providerAudit?.attempts)
+          ? providerAudit.attempts
+              .filter(isRecord)
+              .map((attempt) => ({
+                requestKind: typeof attempt.requestKind === "string" ? attempt.requestKind : undefined,
+                rescueMode: typeof attempt.rescueMode === "string" ? attempt.rescueMode : undefined,
+                requestMaxOutputTokens: numberValue(attempt.requestMaxOutputTokens),
+                finishReason: typeof attempt.finishReason === "string" ? attempt.finishReason : undefined,
+                latencyMs: numberValue(attempt.latencyMs),
+                contentKind: typeof attempt.contentKind === "string" ? attempt.contentKind : undefined,
+                contentPreview: typeof attempt.contentPreview === "string" ? attempt.contentPreview : undefined,
+                contentBytes: numberValue(attempt.contentBytes),
+                usage: isRecord(attempt.usage)
+                  ? {
+                      promptTokens: numberValue(attempt.usage.promptTokens),
+                      completionTokens: numberValue(attempt.usage.completionTokens),
+                      totalTokens: numberValue(attempt.usage.totalTokens)
+                    }
+                  : undefined
+              }))
+          : undefined,
         outputCapHit: isOutputCapHit(decision, input.comparison),
         retryCount: numberValue(providerAudit?.retryCount),
         emptyContentRetryCount: numberValue(providerAudit?.emptyContentRetryCount),
@@ -560,7 +631,11 @@ export async function buildP8WorkspaceShadowFromPacket(input: WorkspaceCompariso
   legacySelectedCandidateId?: string;
 }): Promise<P8WorkspaceShadow> {
   const options = input.options ?? workspaceOptionsFromEnv();
-  const structuredPrompt = buildDeliberationWorkspacePrompt(input.deliberationPacket, input.candidates, options.ablationMode ?? "full");
+  const structuredPrompt = buildWorkspacePromptArtifact(
+    input.deliberationPacket,
+    input.candidates,
+    options.ablationMode ?? "full"
+  ).prompt;
   const comparison = buildWorkspaceComparison({ ...input, options });
   return buildP8WorkspaceShadow({
     comparison,
@@ -581,13 +656,15 @@ function workspaceResponseContract(): JsonRecord {
     never_return_empty_response: true,
     selectedCandidateId_must_be_from_allowed_candidate_ids: true,
     one_line_minified_json: true,
-    reasonBrief_max_words: 18,
+    reasonBrief_max_words: 8,
     optional_arrays_default_empty: true,
+    optional_arrays_max_items: 1,
+    optional_fields_may_be_omitted: ["confidence", "riskTags", "missingInfo", "scaffoldFeedback"],
     required_fields: ["selectedCandidateId", "reasonBrief"],
     preferred_shape: {
       selectedCandidateId: "<exact allowed candidate id>",
-      confidence: 0.0,
       reasonBrief: "short strategic reason",
+      confidence: 0.0,
       riskTags: [],
       missingInfo: [],
       scaffoldFeedback: []
@@ -601,10 +678,10 @@ function shortOutputSchema(packet: DeliberationPacket): JsonRecord {
     : {
         selectedCandidateId: "string from allowed_candidate_ids",
         confidence: "0..1 number",
-        reasonBrief: "short strategic reason",
-        riskTags: "short string[]",
-        missingInfo: "short string[]",
-        scaffoldFeedback: "short string[]"
+        reasonBrief: "very short strategic reason",
+        riskTags: "short string[] <=1",
+        missingInfo: "short string[] <=1",
+        scaffoldFeedback: "short string[] <=1"
       };
 }
 
@@ -620,6 +697,69 @@ function compactCandidate(candidate: ScoredCandidate): JsonRecord {
   };
 }
 
+function buildWorkspaceCandidateFutures(
+  packet: DeliberationPacket,
+  candidates: ScoredCandidate[],
+  mode: WorkspaceAblationMode
+): { serialized: JsonRecord[] } {
+  const fullSerialized = packet.candidateFutures.slice(0, 8).map(serializeFullCandidateFuture);
+  if (mode !== "full_bounded_candidate_futures" || packet.screen !== "combat") {
+    return { serialized: fullSerialized };
+  }
+  const rankedCandidates = new Map(candidates.map((candidate, index) => [candidate.id, index]));
+  return {
+    serialized: packet.candidateFutures
+      .map((future, index) => ({ future, index }))
+      .sort((left, right) =>
+        candidateFuturePriority(right.future, right.index, rankedCandidates) - candidateFuturePriority(left.future, left.index, rankedCandidates)
+      )
+      .slice(0, 6)
+      .map(({ future, index }) => serializeBoundedCandidateFuture(
+        future,
+        index,
+        candidateFuturePriority(future, index, rankedCandidates)
+      ))
+  };
+}
+
+function serializeFullCandidateFuture(future: DeliberationPacket["candidateFutures"][number]): JsonRecord {
+  return {
+    id: future.sourceCandidateId ?? future.id,
+    futureId: future.id,
+    label: future.label,
+    plan: future.plan,
+    predictedOutcome: future.predictedOutcome,
+    predictionChecks: future.predictionChecks,
+    cost: future.cost,
+    risk: future.risk,
+    assumptions: future.assumptions,
+    invalidationTriggers: future.invalidationTriggers,
+    confidence: future.confidence
+  };
+}
+
+function serializeBoundedCandidateFuture(
+  future: DeliberationPacket["candidateFutures"][number],
+  index: number,
+  priority: number
+): JsonRecord {
+  const highPriority = priority >= 8;
+  return compactObject({
+    id: future.sourceCandidateId ?? future.id,
+    label: trimText(future.label, highPriority ? 96 : 72),
+    plan: trimText(future.plan, highPriority ? 96 : 72),
+    deterministicCalculations: compactStructuredValue(future.deterministicCalculations, highPriority ? 4 : 3, 1, 72),
+    predictedOutcome: limitStringList(future.predictedOutcome, highPriority ? 2 : 1, highPriority ? 108 : 84),
+    predictionChecks: limitPredictionChecks(future.predictionChecks, highPriority ? 2 : 1, highPriority),
+    cost: limitStringList(future.cost, 2, 88),
+    risk: limitStringList(future.risk, highPriority ? 2 : 1, highPriority ? 96 : 72),
+    uncertainty: limitStringList(future.uncertainty, 1, 72),
+    assumptions: limitStringList(future.assumptions, 1, highPriority ? 72 : 60),
+    invalidationTriggers: limitStringList(future.invalidationTriggers, 1, highPriority ? 72 : 60),
+    confidence: future.confidence
+  });
+}
+
 function compactRecord(value: unknown, maxKeys: number): JsonRecord | unknown[] | undefined {
   if (Array.isArray(value)) return value.slice(0, maxKeys);
   if (!isRecord(value)) return undefined;
@@ -631,6 +771,53 @@ function compactValue(value: unknown): unknown {
   if (Array.isArray(value)) return value.slice(0, 5).map(compactValue);
   if (isRecord(value)) return Object.fromEntries(Object.entries(value).slice(0, 5).map(([key, item]) => [key, compactValue(item)]));
   return value;
+}
+
+function workspaceSerializationTelemetry(
+  packet: DeliberationPacket,
+  payload: JsonRecord,
+  prompt: string,
+  candidates: ScoredCandidate[],
+  mode: WorkspaceAblationMode
+): WorkspaceSerializationTelemetry {
+  const fullPayload = buildFullWorkspacePayload(packet, candidates, candidates.map((candidate) => candidate.id), "full");
+  const fullCandidateFutures = Array.isArray(fullPayload.candidate_futures) ? fullPayload.candidate_futures : [];
+  const promptFooter = workspaceCandidateFooter(candidates.map((candidate) => candidate.id));
+  const candidateFuturesBeforeBytes = Buffer.byteLength(JSON.stringify(fullCandidateFutures), "utf8");
+  const candidateFuturesBeforeTokens = estimateTokens(JSON.stringify(fullCandidateFutures));
+  const candidateFuturesAfter = Array.isArray(payload.candidate_futures) ? payload.candidate_futures : [];
+  const candidateFuturesAfterBytes = Buffer.byteLength(JSON.stringify(candidateFuturesAfter), "utf8");
+  const candidateFuturesAfterTokens = estimateTokens(JSON.stringify(candidateFuturesAfter));
+  const fullPrompt = `${JSON.stringify(fullPayload)}\n${promptFooter}`;
+  const fullPromptBytes = Buffer.byteLength(fullPrompt, "utf8");
+  const fullPromptTokens = estimateTokens(fullPrompt);
+  const fieldSizes = candidateFutureFieldSizes(fullCandidateFutures);
+  const afterIds = new Set(candidateFuturesAfter.map((future) => futureId(future)).filter(Boolean));
+  const beforeIds = fullCandidateFutures.map((future) => futureId(future)).filter(Boolean);
+  const futuresOmitted = beforeIds.filter((id) => !afterIds.has(id)).length;
+  return {
+    compressionMode:
+      mode === "full_bounded_candidate_futures"
+        ? packet.screen === "combat"
+          ? "bounded_candidate_futures"
+          : "bounded_passthrough_non_combat"
+        : "none",
+    futuresTruncated: countTruncatedStrings(candidateFuturesAfter),
+    futuresOmitted,
+    truncatedFields: truncatedFieldCounts(candidateFuturesAfter),
+    candidateFuturesBytesBefore: candidateFuturesBeforeBytes,
+    candidateFuturesBytesAfter: candidateFuturesAfterBytes,
+    candidateFuturesTokensBefore: candidateFuturesBeforeTokens,
+    candidateFuturesTokensAfter: candidateFuturesAfterTokens,
+    workspaceBytesBefore: fullPromptBytes,
+    workspaceBytesAfter: Buffer.byteLength(prompt, "utf8"),
+    workspaceTokensBefore: fullPromptTokens,
+    workspaceTokensAfter: estimateTokens(prompt),
+    informationPreservationEstimate: informationPreservationEstimate(fullCandidateFutures, candidateFuturesAfter),
+    largestFieldSources: topFieldSources(fieldSizes, 6),
+    repeatedTextBytes: repeatedTextSummary(fullCandidateFutures).bytes,
+    repeatedTextCount: repeatedTextSummary(fullCandidateFutures).count
+  };
 }
 
 function workspaceCandidateFooter(allowedCandidateIds: string[]): string {
@@ -646,6 +833,164 @@ function trimText(value: unknown, maxLength: number): string | undefined {
   const trimmed = value.trim();
   if (trimmed.length <= maxLength) return trimmed;
   return `${trimmed.slice(0, Math.max(0, maxLength - 3))}...`;
+}
+
+function limitStringList(value: unknown, maxItems: number, maxLength: number): string[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const items = value
+    .map((item) => trimText(item, maxLength))
+    .filter((item): item is string => typeof item === "string" && item.length > 0);
+  return items.length > 0 ? items.slice(0, maxItems) : undefined;
+}
+
+function limitPredictionChecks(value: unknown, maxItems: number, highPriority: boolean): JsonRecord[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const items = value
+    .filter(isRecord)
+    .slice(0, maxItems)
+    .map((check) => compactObject({
+      type: typeof check.type === "string" ? check.type : undefined,
+      severity: typeof check.severity === "string" ? check.severity : undefined,
+      prediction: trimText(check.prediction, highPriority ? 84 : 64),
+      expected: compactStructuredValue(check.expected, highPriority ? 3 : 2, 1, highPriority ? 56 : 40)
+    }));
+  return items.length > 0 ? items : undefined;
+}
+
+function compactStructuredValue(value: unknown, maxKeys: number, maxDepth: number, maxStringLength: number): unknown {
+  if (typeof value === "string") return trimText(value, maxStringLength);
+  if (Array.isArray(value)) return value.slice(0, maxKeys).map((item) => compactStructuredValue(item, maxKeys, maxDepth - 1, maxStringLength));
+  if (!isRecord(value) || maxDepth <= 0) return value;
+  return compactObject(
+    Object.fromEntries(
+      Object.entries(value)
+        .slice(0, maxKeys)
+        .map(([key, item]) => [key, compactStructuredValue(item, Math.max(2, maxKeys - 1), maxDepth - 1, maxStringLength)])
+    )
+  );
+}
+
+function compactObject<T extends JsonRecord>(value: T): T {
+  return Object.fromEntries(Object.entries(value).filter(([, item]) => item !== undefined)) as T;
+}
+
+function candidateFuturePriority(
+  future: DeliberationPacket["candidateFutures"][number],
+  index: number,
+  rankedCandidates: Map<string, number>
+): number {
+  let priority = Math.max(0, 8 - index);
+  const candidateRank = rankedCandidates.get(future.sourceCandidateId ?? future.id);
+  if (typeof candidateRank === "number") priority += Math.max(0, 6 - candidateRank);
+  if (matchesFutureSignal(future, /lethal|kill|survive|survival|incoming|block|death|boss/i)) priority += 6;
+  if (Array.isArray(future.risk) && future.risk.length > 0) priority += 2;
+  if (Array.isArray(future.predictionChecks) && future.predictionChecks.some((check) => isRecord(check) && check.severity === "critical")) {
+    priority += 4;
+  }
+  return priority;
+}
+
+function matchesFutureSignal(future: DeliberationPacket["candidateFutures"][number], pattern: RegExp): boolean {
+  const values = [
+    future.label,
+    future.plan,
+    ...(future.predictedOutcome ?? []),
+    ...(future.risk ?? []),
+    ...(future.uncertainty ?? []),
+    ...(future.assumptions ?? []),
+    ...(future.invalidationTriggers ?? [])
+  ];
+  return values.some((value) => typeof value === "string" && pattern.test(value));
+}
+
+function candidateFutureFieldSizes(candidateFutures: unknown[]): Record<string, number> {
+  const sizes: Record<string, number> = {};
+  for (const future of candidateFutures) {
+    if (!isRecord(future)) continue;
+    for (const [key, value] of Object.entries(future)) {
+      sizes[key] = (sizes[key] ?? 0) + Buffer.byteLength(JSON.stringify(value), "utf8");
+    }
+  }
+  return sizes;
+}
+
+function topFieldSources(sizes: Record<string, number>, limit: number): Record<string, number> {
+  return Object.fromEntries(
+    Object.entries(sizes)
+      .sort((left, right) => right[1] - left[1])
+      .slice(0, limit)
+  );
+}
+
+function repeatedTextSummary(candidateFutures: unknown[]): { bytes: number; count: number } {
+  const counts = new Map<string, number>();
+  for (const future of candidateFutures) {
+    for (const text of futureStrings(future)) {
+      counts.set(text, (counts.get(text) ?? 0) + 1);
+    }
+  }
+  let bytes = 0;
+  let count = 0;
+  for (const [text, occurrences] of counts) {
+    if (occurrences <= 1) continue;
+    count += occurrences - 1;
+    bytes += Buffer.byteLength(text, "utf8") * (occurrences - 1);
+  }
+  return { bytes, count };
+}
+
+function futureStrings(value: unknown): string[] {
+  if (typeof value === "string") return [value];
+  if (Array.isArray(value)) return value.flatMap(futureStrings);
+  if (!isRecord(value)) return [];
+  return Object.values(value).flatMap(futureStrings);
+}
+
+function countTruncatedStrings(value: unknown): number {
+  if (typeof value === "string") return value.endsWith("...") ? 1 : 0;
+  if (Array.isArray(value)) return value.reduce<number>((sum, item) => sum + countTruncatedStrings(item), 0);
+  if (!isRecord(value)) return 0;
+  return Object.values(value).reduce<number>((sum, item) => sum + countTruncatedStrings(item), 0);
+}
+
+function truncatedFieldCounts(value: unknown, path = ""): Record<string, number> {
+  const counts: Record<string, number> = {};
+  if (typeof value === "string") {
+    if (value.endsWith("...")) {
+      counts[path || "string"] = 1;
+    }
+    return counts;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      mergeCounts(counts, truncatedFieldCounts(item, path));
+    }
+    return counts;
+  }
+  if (!isRecord(value)) return counts;
+  for (const [key, item] of Object.entries(value)) {
+    mergeCounts(counts, truncatedFieldCounts(item, key));
+  }
+  return counts;
+}
+
+function mergeCounts(target: Record<string, number>, source: Record<string, number>): void {
+  for (const [key, value] of Object.entries(source)) {
+    target[key] = (target[key] ?? 0) + value;
+  }
+}
+
+function futureId(value: unknown): string | undefined {
+  if (!isRecord(value)) return undefined;
+  const candidateId = typeof value.id === "string" ? value.id : undefined;
+  return candidateId?.trim() || undefined;
+}
+
+function informationPreservationEstimate(before: unknown[], after: unknown[]): number {
+  const beforeBytes = Buffer.byteLength(JSON.stringify(before), "utf8");
+  const afterBytes = Buffer.byteLength(JSON.stringify(after), "utf8");
+  if (beforeBytes <= 0) return 1;
+  return Number(Math.min(1, Math.max(0, afterBytes / beforeBytes)).toFixed(3));
 }
 
 function structuredWorkspaceSections(packet: DeliberationPacket): string[] {

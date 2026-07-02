@@ -175,6 +175,7 @@ P8 DeliberationPacket strategic workspace shadow surface:
   - required, preserved, and missing legacy-information sections
   - per-section token estimates
   - information-preservation score
+  - v5 workspace-size telemetry: compression mode, candidate-futures bytes/tokens before vs after, full workspace bytes/tokens before vs after, futures truncated/omitted, truncated-field counts, largest field sources, repeated-text estimate, and information-preservation estimate
   - token/call/cost/timeout budget status
   - gated readiness and readiness reasons
   - provider readiness: `ready_for_shadow_call`, `needs_api_key`, or `not_ready`
@@ -188,6 +189,7 @@ P8 DeliberationPacket strategic workspace shadow surface:
   - agreement/disagreement/missing-candidate against the live selected candidate
   - reason quality when a structured shadow LLM decision exists
   - short P8 schema fields: `selectedCandidateId`, `confidence`, `reasonBrief`, `riskTags`, `missingInfo`, and `scaffoldFeedback`
+- `STS2_P8_WORKSPACE_ABLATION_MODE=full_bounded_candidate_futures` is a new v5 shadow-only experiment. It keeps `full` unchanged as the control group and only applies bounded serialization to combat `candidate_futures`.
 - DeepSeek V4 Flash is prepared as the preferred P8 external provider, but real calls require `STS2_DEEPSEEK_API_KEY` and explicit flags. Missing credentials must produce skipped/unavailable observability, not fake model output.
 - `STS2_P8_WORKSPACE_SHADOW` defaults off; `STS2_P8_WORKSPACE_CALL` defaults off. Fresh transitions still record the comparison surface with both flags off.
 - Budget guard skips use reasons such as `token_budget_exceeded`, `call_budget_exceeded`, `cost_budget_exceeded`, or `timeout`. They are review/eval signals, not selected-action failures.

@@ -156,6 +156,7 @@ export interface EvalWorkspaceCoverage {
   reasonQualityCounts: Record<string, number>;
   providerModeCounts: Record<string, number>;
   ablationModeCounts: Record<string, number>;
+  compressionModeCounts: Record<string, number>;
   finishReasonCounts: Record<string, number>;
   cleanupReasonCounts: Record<string, number>;
   outputCapHits: number;
@@ -169,6 +170,23 @@ export interface EvalWorkspaceCoverage {
   averageWorkspacePromptBytes: number;
   averageWorkspacePromptTokens: number;
   workspacePromptSamples: number;
+  averageWorkspaceBytesBefore: number;
+  averageWorkspaceBytesAfter: number;
+  averageWorkspaceTokensBefore: number;
+  averageWorkspaceTokensAfter: number;
+  averageCandidateFuturesBytesBefore: number;
+  averageCandidateFuturesBytesAfter: number;
+  averageCandidateFuturesTokensBefore: number;
+  averageCandidateFuturesTokensAfter: number;
+  sizeTelemetrySamples: number;
+  futuresTruncated: number;
+  futuresOmitted: number;
+  truncatedFieldCounts: Record<string, number>;
+  averageInformationPreservationEstimate: number;
+  informationPreservationEstimateSamples: number;
+  largestFieldSourceBytes: Record<string, number>;
+  repeatedTextBytes: number;
+  repeatedTextCount: number;
   estimatedCostUsd: number;
   actualOrEstimatedCostUsd: number;
   skippedBudgetEstimatedCostUsd: number;
@@ -602,8 +620,13 @@ function actionMatchesCandidate(selected: Record<string, unknown>, candidate: Ag
       return selected.index === candidate.index;
     case "menu_select":
       return selected.option === candidate.option;
+    case "crystal_sphere_set_tool":
+      return selected.tool === candidate.tool;
+    case "crystal_sphere_click_cell":
+      return selected.x === candidate.x && selected.y === candidate.y;
     case "end_turn":
     case "proceed":
+    case "crystal_sphere_proceed":
     case "skip_card_reward":
     case "confirm_selection":
     case "combat_confirm_selection":
@@ -1085,6 +1108,7 @@ function createWorkspaceCoverage(): EvalWorkspaceCoverage {
     reasonQualityCounts: {},
     providerModeCounts: {},
     ablationModeCounts: {},
+    compressionModeCounts: {},
     finishReasonCounts: {},
     cleanupReasonCounts: {},
     outputCapHits: 0,
@@ -1098,6 +1122,23 @@ function createWorkspaceCoverage(): EvalWorkspaceCoverage {
     averageWorkspacePromptBytes: 0,
     averageWorkspacePromptTokens: 0,
     workspacePromptSamples: 0,
+    averageWorkspaceBytesBefore: 0,
+    averageWorkspaceBytesAfter: 0,
+    averageWorkspaceTokensBefore: 0,
+    averageWorkspaceTokensAfter: 0,
+    averageCandidateFuturesBytesBefore: 0,
+    averageCandidateFuturesBytesAfter: 0,
+    averageCandidateFuturesTokensBefore: 0,
+    averageCandidateFuturesTokensAfter: 0,
+    sizeTelemetrySamples: 0,
+    futuresTruncated: 0,
+    futuresOmitted: 0,
+    truncatedFieldCounts: {},
+    averageInformationPreservationEstimate: 0,
+    informationPreservationEstimateSamples: 0,
+    largestFieldSourceBytes: {},
+    repeatedTextBytes: 0,
+    repeatedTextCount: 0,
     estimatedCostUsd: 0,
     actualOrEstimatedCostUsd: 0,
     skippedBudgetEstimatedCostUsd: 0,
@@ -1142,6 +1183,9 @@ function collectWorkspaceCoverage(coverage: EvalWorkspaceCoverage, transition: T
       coverage.averageInformationPreservationScore += workspaceCoverage.informationPreservationScore;
       coverage.informationPreservationSamples += 1;
     }
+    if (typeof workspaceCoverage.compressionMode === "string") {
+      coverage.compressionModeCounts[workspaceCoverage.compressionMode] = (coverage.compressionModeCounts[workspaceCoverage.compressionMode] ?? 0) + 1;
+    }
     const missingStructured = Array.isArray(workspaceCoverage.missingStructuredSections)
       ? workspaceCoverage.missingStructuredSections.map(String)
       : [];
@@ -1158,6 +1202,64 @@ function collectWorkspaceCoverage(coverage: EvalWorkspaceCoverage, transition: T
     for (const reason of readinessReasons) {
       coverage.readinessReasons[reason] = (coverage.readinessReasons[reason] ?? 0) + 1;
     }
+    const workspaceBytesBefore = typeof workspaceCoverage.workspaceBytesBefore === "number" ? workspaceCoverage.workspaceBytesBefore : undefined;
+    const workspaceBytesAfter = typeof workspaceCoverage.workspaceBytesAfter === "number" ? workspaceCoverage.workspaceBytesAfter : undefined;
+    const workspaceTokensBefore = typeof workspaceCoverage.workspaceTokensBefore === "number" ? workspaceCoverage.workspaceTokensBefore : undefined;
+    const workspaceTokensAfter = typeof workspaceCoverage.workspaceTokensAfter === "number" ? workspaceCoverage.workspaceTokensAfter : undefined;
+    const futureBytesBefore = typeof workspaceCoverage.candidateFuturesBytesBefore === "number"
+      ? workspaceCoverage.candidateFuturesBytesBefore
+      : undefined;
+    const futureBytesAfter = typeof workspaceCoverage.candidateFuturesBytesAfter === "number"
+      ? workspaceCoverage.candidateFuturesBytesAfter
+      : undefined;
+    const futureTokensBefore = typeof workspaceCoverage.candidateFuturesTokensBefore === "number"
+      ? workspaceCoverage.candidateFuturesTokensBefore
+      : undefined;
+    const futureTokensAfter = typeof workspaceCoverage.candidateFuturesTokensAfter === "number"
+      ? workspaceCoverage.candidateFuturesTokensAfter
+      : undefined;
+    if (
+      workspaceBytesBefore !== undefined &&
+      workspaceBytesAfter !== undefined &&
+      workspaceTokensBefore !== undefined &&
+      workspaceTokensAfter !== undefined &&
+      futureBytesBefore !== undefined &&
+      futureBytesAfter !== undefined &&
+      futureTokensBefore !== undefined &&
+      futureTokensAfter !== undefined
+    ) {
+      coverage.averageWorkspaceBytesBefore += workspaceBytesBefore;
+      coverage.averageWorkspaceBytesAfter += workspaceBytesAfter;
+      coverage.averageWorkspaceTokensBefore += workspaceTokensBefore;
+      coverage.averageWorkspaceTokensAfter += workspaceTokensAfter;
+      coverage.averageCandidateFuturesBytesBefore += futureBytesBefore;
+      coverage.averageCandidateFuturesBytesAfter += futureBytesAfter;
+      coverage.averageCandidateFuturesTokensBefore += futureTokensBefore;
+      coverage.averageCandidateFuturesTokensAfter += futureTokensAfter;
+      coverage.sizeTelemetrySamples += 1;
+    }
+    if (typeof workspaceCoverage.futuresTruncated === "number") coverage.futuresTruncated += workspaceCoverage.futuresTruncated;
+    if (typeof workspaceCoverage.futuresOmitted === "number") coverage.futuresOmitted += workspaceCoverage.futuresOmitted;
+    if (isRecord(workspaceCoverage.truncatedFields)) {
+      for (const [key, value] of Object.entries(workspaceCoverage.truncatedFields)) {
+        if (typeof value === "number") {
+          coverage.truncatedFieldCounts[key] = (coverage.truncatedFieldCounts[key] ?? 0) + value;
+        }
+      }
+    }
+    if (typeof workspaceCoverage.informationPreservationEstimate === "number") {
+      coverage.averageInformationPreservationEstimate += workspaceCoverage.informationPreservationEstimate;
+      coverage.informationPreservationEstimateSamples += 1;
+    }
+    if (isRecord(workspaceCoverage.largestFieldSources)) {
+      for (const [key, value] of Object.entries(workspaceCoverage.largestFieldSources)) {
+        if (typeof value === "number") {
+          coverage.largestFieldSourceBytes[key] = (coverage.largestFieldSourceBytes[key] ?? 0) + value;
+        }
+      }
+    }
+    if (typeof workspaceCoverage.repeatedTextBytes === "number") coverage.repeatedTextBytes += workspaceCoverage.repeatedTextBytes;
+    if (typeof workspaceCoverage.repeatedTextCount === "number") coverage.repeatedTextCount += workspaceCoverage.repeatedTextCount;
     if (isRecord(comparison.budget)) {
       const status = typeof comparison.budget.status === "string" ? comparison.budget.status : "unknown";
       coverage.budgetStatusCounts[status] = (coverage.budgetStatusCounts[status] ?? 0) + 1;
@@ -1288,6 +1390,33 @@ function finishWorkspaceCoverage(coverage: EvalWorkspaceCoverage, transitionCoun
     : 0;
   coverage.averageWorkspacePromptTokens = coverage.workspacePromptSamples > 0
     ? Number((coverage.averageWorkspacePromptTokens / coverage.workspacePromptSamples).toFixed(1))
+    : 0;
+  coverage.averageWorkspaceBytesBefore = coverage.sizeTelemetrySamples > 0
+    ? Number((coverage.averageWorkspaceBytesBefore / coverage.sizeTelemetrySamples).toFixed(1))
+    : 0;
+  coverage.averageWorkspaceBytesAfter = coverage.sizeTelemetrySamples > 0
+    ? Number((coverage.averageWorkspaceBytesAfter / coverage.sizeTelemetrySamples).toFixed(1))
+    : 0;
+  coverage.averageWorkspaceTokensBefore = coverage.sizeTelemetrySamples > 0
+    ? Number((coverage.averageWorkspaceTokensBefore / coverage.sizeTelemetrySamples).toFixed(1))
+    : 0;
+  coverage.averageWorkspaceTokensAfter = coverage.sizeTelemetrySamples > 0
+    ? Number((coverage.averageWorkspaceTokensAfter / coverage.sizeTelemetrySamples).toFixed(1))
+    : 0;
+  coverage.averageCandidateFuturesBytesBefore = coverage.sizeTelemetrySamples > 0
+    ? Number((coverage.averageCandidateFuturesBytesBefore / coverage.sizeTelemetrySamples).toFixed(1))
+    : 0;
+  coverage.averageCandidateFuturesBytesAfter = coverage.sizeTelemetrySamples > 0
+    ? Number((coverage.averageCandidateFuturesBytesAfter / coverage.sizeTelemetrySamples).toFixed(1))
+    : 0;
+  coverage.averageCandidateFuturesTokensBefore = coverage.sizeTelemetrySamples > 0
+    ? Number((coverage.averageCandidateFuturesTokensBefore / coverage.sizeTelemetrySamples).toFixed(1))
+    : 0;
+  coverage.averageCandidateFuturesTokensAfter = coverage.sizeTelemetrySamples > 0
+    ? Number((coverage.averageCandidateFuturesTokensAfter / coverage.sizeTelemetrySamples).toFixed(1))
+    : 0;
+  coverage.averageInformationPreservationEstimate = coverage.informationPreservationEstimateSamples > 0
+    ? Number((coverage.averageInformationPreservationEstimate / coverage.informationPreservationEstimateSamples).toFixed(3))
     : 0;
   coverage.estimatedCostUsd = Number(coverage.estimatedCostUsd.toFixed(6));
   coverage.actualOrEstimatedCostUsd = Number(coverage.actualOrEstimatedCostUsd.toFixed(6));

@@ -17,6 +17,8 @@ export function generateCandidates(state: NormalizedState): CandidateAction[] {
       return generateIndexedOptionCandidates(state, "event_choose_option", "事件选项", true);
     case "shop":
       return generateShopCandidates(state);
+    case "crystal_sphere":
+      return generateCrystalSphereCandidates(state);
     case "card_select":
       return generateCardSelectCandidates(state);
     case "bundle_select":
@@ -89,6 +91,62 @@ function generateMenuCandidates(state: NormalizedState): CandidateAction[] {
       }
     };
   });
+}
+
+function generateCrystalSphereCandidates(state: NormalizedState): CandidateAction[] {
+  const rawSphere = isRecord(state.raw.crystal_sphere) ? state.raw.crystal_sphere : {};
+  const tool = asString(rawSphere.tool, "big").toLowerCase();
+  const canUseBig = rawSphere.can_use_big_tool === true || rawSphere.canUseBigTool === true;
+  const canUseSmall = rawSphere.can_use_small_tool === true || rawSphere.canUseSmallTool === true;
+  const canProceed = rawSphere.can_proceed === true || rawSphere.canProceed === true;
+  const candidates: CandidateAction[] = [];
+
+  if (canProceed) {
+    candidates.push({
+      id: "crystal-sphere-proceed",
+      kind: "crystal_sphere_proceed" as const,
+      label: "结束占卜并继续",
+      action: { kind: "crystal_sphere_proceed" as const },
+      facts: { screen: "crystal_sphere" }
+    });
+    return candidates;
+  }
+
+  if (canUseBig && tool !== "big") {
+    candidates.push({
+      id: "crystal-sphere-tool-big",
+      kind: "crystal_sphere_set_tool" as const,
+      label: "切换到大型占卜",
+      action: { kind: "crystal_sphere_set_tool" as const, tool: "big" },
+      facts: { tool: "big" }
+    });
+  }
+  if (canUseSmall && tool !== "small") {
+    candidates.push({
+      id: "crystal-sphere-tool-small",
+      kind: "crystal_sphere_set_tool" as const,
+      label: "切换到小型占卜",
+      action: { kind: "crystal_sphere_set_tool" as const, tool: "small" },
+      facts: { tool: "small" }
+    });
+  }
+
+  const cells = crystalSphereClickableCells(rawSphere);
+  const limitedCells = cells
+    .sort((a, b) => a.distance - b.distance || a.y - b.y || a.x - b.x)
+    .slice(0, 12);
+
+  candidates.push(
+    ...limitedCells.map(({ x, y }) => ({
+      id: `crystal-sphere-cell-${x}-${y}`,
+      kind: "crystal_sphere_click_cell" as const,
+      label: `揭示水晶格 (${x},${y})`,
+      action: { kind: "crystal_sphere_click_cell" as const, x, y },
+      facts: { x, y, tool }
+    }))
+  );
+
+  return candidates;
 }
 
 function generateShopCandidates(state: NormalizedState): CandidateAction[] {
@@ -269,6 +327,26 @@ function generateBundleSelectCandidates(state: NormalizedState): CandidateAction
   }
 
   return candidates;
+}
+
+function crystalSphereClickableCells(rawSphere: JsonRecord): Array<{ x: number; y: number; distance: number }> {
+  const cells = Array.isArray(rawSphere.clickable_cells)
+    ? rawSphere.clickable_cells.filter(isRecord)
+    : Array.isArray(rawSphere.clickableCells)
+      ? rawSphere.clickableCells.filter(isRecord)
+      : [];
+  const width = asNumber(rawSphere.grid_width ?? rawSphere.gridWidth, 11);
+  const height = asNumber(rawSphere.grid_height ?? rawSphere.gridHeight, 11);
+  const centerX = (width - 1) / 2;
+  const centerY = (height - 1) / 2;
+  return cells
+    .map((cell) => {
+      const x = asNumber(cell.x, Number.NaN);
+      const y = asNumber(cell.y, Number.NaN);
+      if (!Number.isFinite(x) || !Number.isFinite(y)) return undefined;
+      return { x, y, distance: Math.abs(x - centerX) + Math.abs(y - centerY) };
+    })
+    .filter((cell): cell is { x: number; y: number; distance: number } => Boolean(cell));
 }
 
 function generateCombatCandidates(state: NormalizedState): CandidateAction[] {

@@ -383,6 +383,7 @@ function inferScreen(
   if (lower.includes("combat") || lower.includes("battle") || lower.includes("boss") || enemies.length > 0) return "combat";
   if (lower.includes("card_reward") || hasCardRewardPayload(raw)) return "card_reward";
   if (lower.includes("bundle_select") || isRecord(raw.bundle_select) || isRecord(raw.bundleSelect)) return "bundle_select";
+  if (lower.includes("crystal_sphere") || isRecord(raw.crystal_sphere) || isRecord(raw.crystalSphere)) return "crystal_sphere";
   if (lower.includes("reward") || rewards.length > 0) return "rewards";
   if (lower.includes("map") || mapNodes.length > 0) return "map";
   if (lower.includes("rest")) return "rest";
