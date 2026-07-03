@@ -9,6 +9,7 @@ import {
   readConsolidationProposals
 } from "../replay/reader.js";
 import { buildWorkspaceDecisionClassQuality } from "../replay/workspaceQuality.js";
+import { assessP8LiveReadiness } from "../replay/p8LiveReadiness.js";
 
 export function buildReviewReport(memory: MemoryManager): JsonRecord {
   const decisions = memory.run.keyDecisions;
@@ -239,6 +240,7 @@ function summarizeCurrentRunCognitiveCoverage(runId: string): JsonRecord {
   const proposalSurface = buildReplayConsolidationProposalSurface(readConsolidationProposals(path.dirname(transitionsPath), transitions));
   const freshSlices = buildReplayFreshShadowSlices(transitions as any);
   const workspaceDecisionClassQuality = buildWorkspaceDecisionClassQuality(transitions as any);
+  const p8LiveReadinessAssessment = assessP8LiveReadiness(freshSlices.sinceLatestRevision, workspaceDecisionClassQuality);
   const consolidationStatusCounts = transitions.reduce<Record<string, number>>((counts, transition) => {
     if (!isRecord(transition.consolidation)) return counts;
     const status = typeof transition.consolidation.status === "string" ? transition.consolidation.status : "unknown";
@@ -299,6 +301,7 @@ function summarizeCurrentRunCognitiveCoverage(runId: string): JsonRecord {
     }),
     freshSlices,
     workspaceDecisionClassQuality,
+    p8LiveReadinessAssessment,
     averageWorkspaceInformationPreservation:
       workspacePreservationScores.length > 0
         ? round(workspacePreservationScores.reduce((sum, score) => sum + score, 0) / workspacePreservationScores.length)

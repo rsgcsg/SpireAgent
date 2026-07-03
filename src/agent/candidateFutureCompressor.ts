@@ -314,7 +314,7 @@ function summarizeNonCombatStrategicFacts(
   if (routePressure) facts.add(routePressure);
   if (rewardExpectation) facts.add(rewardExpectation);
   for (const reason of nonEmptyStringArray(mechanics?.strategicReasons).slice(0, 2)) facts.add(reason);
-  for (const cue of futureCueStrings(future).filter((value) => /deck|route|elite|rest|shop|reward|scaling|draw|energy|bloat|skip/i.test(value)).slice(0, 2)) {
+  for (const cue of futureCueStrings(future).filter((value) => /deck|route|path|lock|elite|rest|shop|reward|timing|scaling|draw|energy|bloat|skip|hp|resource|monster|unknown|opportunity cost/i.test(value)).slice(0, 3)) {
     facts.add(cue);
   }
   const normalized = [...facts]

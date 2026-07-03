@@ -45,11 +45,14 @@ export interface DeepSeekV4FlashConfig {
   model?: string;
   timeoutMs?: number;
   maxOutputTokens?: number;
+  rescueEmptyMaxOutputTokens?: number;
+  rescueTruncationMaxOutputTokens?: number;
   retryLimit?: number;
   emptyContentRetryLimit?: number;
   truncationRetryLimit?: number;
   outputMode?: DeepSeekResponseMode;
   thinkingMode?: DeepSeekThinkingMode;
+  rescueThinkingMode?: DeepSeekThinkingMode;
   temperature?: number;
   topP?: number;
   fetchImpl?: typeof fetch;
@@ -78,13 +81,14 @@ export interface DeepSeekWorkspaceDecision extends LlmDecision {
     emptyContentRetrySucceeded?: boolean;
     truncationRetryCount?: number;
     truncationRetrySucceeded?: boolean;
-    attempts?: Array<{
-      requestKind: "primary" | "rescue";
-      rescueMode?: "empty" | "truncation";
-      requestMaxOutputTokens: number;
-      finishReason?: string;
-      latencyMs: number;
-      contentKind: string;
+      attempts?: Array<{
+        requestKind: "primary" | "rescue";
+        rescueMode?: "empty" | "truncation";
+        requestMaxOutputTokens: number;
+        requestedThinkingMode?: DeepSeekThinkingMode;
+        finishReason?: string;
+        latencyMs: number;
+        contentKind: string;
       contentSource?: "content" | "content_parts" | "reasoning_content" | "delta_content" | "missing";
       contentPreview?: string;
       contentBytes?: number;
@@ -120,11 +124,14 @@ export class DeepSeekV4FlashDecider implements LlmDecider {
   private readonly model: string;
   private readonly timeoutMs: number;
   private readonly maxOutputTokens: number;
+  private readonly rescueEmptyMaxOutputTokens: number;
+  private readonly rescueTruncationMaxOutputTokens: number;
   private readonly retryLimit: number;
   private readonly emptyContentRetryLimit: number;
   private readonly truncationRetryLimit: number;
   private readonly outputMode: DeepSeekResponseMode;
   private readonly thinkingMode: DeepSeekThinkingMode;
+  private readonly rescueThinkingMode: DeepSeekThinkingMode;
   private readonly temperature: number;
   private readonly topP: number;
   private readonly fetchImpl: typeof fetch;
@@ -135,11 +142,14 @@ export class DeepSeekV4FlashDecider implements LlmDecider {
     this.model = config.model ?? process.env.STS2_DEEPSEEK_MODEL ?? "deepseek-v4-flash";
     this.timeoutMs = config.timeoutMs ?? numberFromEnv("STS2_DEEPSEEK_TIMEOUT_MS", 25000);
     this.maxOutputTokens = config.maxOutputTokens ?? numberFromEnv("STS2_DEEPSEEK_MAX_OUTPUT_TOKENS", 400);
+    this.rescueEmptyMaxOutputTokens = config.rescueEmptyMaxOutputTokens ?? numberFromEnv("STS2_DEEPSEEK_EMPTY_RESCUE_MAX_OUTPUT_TOKENS", 320);
+    this.rescueTruncationMaxOutputTokens = config.rescueTruncationMaxOutputTokens ?? numberFromEnv("STS2_DEEPSEEK_TRUNCATION_RESCUE_MAX_OUTPUT_TOKENS", 256);
     this.retryLimit = config.retryLimit ?? numberFromEnv("STS2_DEEPSEEK_RETRY_LIMIT", 0);
     this.emptyContentRetryLimit = clampRetryLimit(config.emptyContentRetryLimit ?? numberFromEnv("STS2_DEEPSEEK_EMPTY_RETRY_LIMIT", 1), 1);
     this.truncationRetryLimit = clampRetryLimit(config.truncationRetryLimit ?? numberFromEnv("STS2_DEEPSEEK_TRUNCATION_RETRY_LIMIT", 1), 1);
     this.outputMode = config.outputMode ?? resolveDeepSeekResponseMode(process.env.STS2_DEEPSEEK_OUTPUT_MODE, process.env.STS2_DEEPSEEK_JSON_MODE);
     this.thinkingMode = config.thinkingMode ?? resolveDeepSeekThinkingMode(process.env.STS2_DEEPSEEK_THINKING_MODE);
+    this.rescueThinkingMode = config.rescueThinkingMode ?? resolveDeepSeekThinkingMode(process.env.STS2_DEEPSEEK_RESCUE_THINKING_MODE ?? "disabled");
     this.temperature = config.temperature ?? numberFromEnv("STS2_DEEPSEEK_TEMPERATURE", 0);
     this.topP = config.topP ?? numberFromEnv("STS2_DEEPSEEK_TOP_P", 0.1);
     this.fetchImpl = config.fetchImpl ?? fetch;
@@ -166,6 +176,7 @@ export class DeepSeekV4FlashDecider implements LlmDecider {
             requestKind,
             rescueMode,
             requestMaxOutputTokens: result.requestMaxOutputTokens,
+            requestedThinkingMode: result.requestedThinkingMode,
             finishReason: result.finishReason,
             latencyMs: result.latencyMs,
             contentKind: result.audit.contentKind,
@@ -319,15 +330,13 @@ export class DeepSeekV4FlashDecider implements LlmDecider {
     latencyMs: number;
     finishReason?: string;
     requestMaxOutputTokens: number;
+    requestedThinkingMode: DeepSeekThinkingMode;
   }> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
     const startedAt = Date.now();
-    const requestMaxOutputTokens = requestKind === "rescue"
-      ? rescueMode === "truncation"
-        ? Math.min(this.maxOutputTokens, 120)
-        : Math.min(this.maxOutputTokens, 140)
-      : this.maxOutputTokens;
+    const requestMaxOutputTokens = this.resolveRequestMaxOutputTokens(requestKind, rescueMode);
+    const requestedThinkingMode = requestKind === "rescue" ? this.rescueThinkingMode : this.thinkingMode;
     try {
       const response = await this.fetchImpl(this.baseUrl, {
         method: "POST",
@@ -341,7 +350,7 @@ export class DeepSeekV4FlashDecider implements LlmDecider {
           temperature: this.temperature,
           topP: this.topP,
           outputMode: this.outputMode,
-          thinkingMode: this.thinkingMode,
+          thinkingMode: requestedThinkingMode,
           requestKind,
           rescueMode,
           prompt
@@ -360,11 +369,23 @@ export class DeepSeekV4FlashDecider implements LlmDecider {
         usage: extractDeepSeekUsage(json),
         latencyMs: Date.now() - startedAt,
         finishReason: extractDeepSeekFinishReason(json),
-        requestMaxOutputTokens
+        requestMaxOutputTokens,
+        requestedThinkingMode
       };
     } finally {
       clearTimeout(timeout);
     }
+  }
+
+  private resolveRequestMaxOutputTokens(
+    requestKind: "primary" | "rescue",
+    rescueMode?: "empty" | "truncation"
+  ): number {
+    if (requestKind !== "rescue") return this.maxOutputTokens;
+    const configuredCap = rescueMode === "truncation"
+      ? this.rescueTruncationMaxOutputTokens
+      : this.rescueEmptyMaxOutputTokens;
+    return Math.min(this.maxOutputTokens, Math.max(1, configuredCap));
   }
 }
 

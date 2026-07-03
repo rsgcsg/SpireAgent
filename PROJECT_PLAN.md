@@ -337,6 +337,23 @@ P8.x completion route:
   - Legacy fallback and current validation/execution remain mandatory.
   - Rollback: disable feature flags and return to legacy prompt immediately.
   - Current preparation: compact workspace summary generation and rollout metadata exist behind `STS2_P8_LIVE_ADDITIVE` and `STS2_P8_LIVE_DECISION_CLASSES`, but the controller does not consume them yet. Default is still off.
+  - Live-readiness decision should be made per decision class, not globally.
+  - First allowed live candidate, if explicitly approved later, is `combat:llm_required` only.
+  - `card_reward:llm_required` requires separate fresh non-combat tradeoff-quality evidence before entry.
+  - `map:llm_required` must not enter the first live slice; it needs its own fresh called-evidence and reason-quality clearance.
+  - Hard blockers for any live additive enable:
+    - current-window live-eligible invalid/error
+    - `invalidChoice>0`
+    - `missingCandidate>0`
+    - provider truncation / empty-content still active in the target live slice
+    - reason quality still dominated by `thin` / `missing`
+    - any contamination of stable memory / derived / strategy state
+  - Required rollout discipline:
+    - keep `STS2_P8_LIVE_ADDITIVE=0` until explicit approval
+    - start with one narrow whitelist, one revision tag, and one clearly bounded review window
+    - keep legacy fallback and semantic validation unchanged
+    - evaluate rollout evidence separately from mixed historical outage windows
+    - rollback immediately on live-eligible invalid/error or tradeoff-quality collapse
 
 P8 final acceptance criteria:
 
@@ -360,6 +377,14 @@ P8 effectiveness evaluation:
 - After each P8.x slice, evaluate whether the work helps the LLM see, remember, imagine, or deliberate better.
 - Before real LLM calls, evaluate readiness, missing sections, token estimate, schema/parser stability, unavailable path, and replay/eval/review visibility.
 - Before gated live routing, evaluate rollout gates by decision class and confirm legacy fallback/rollback.
+- For future additive rollout A/B, record at minimum:
+  - decision class
+  - revision tag
+  - whether the window is `legacy_only`, `shadow_only`, or `live_additive_enabled`
+  - provider failure bucket
+  - live-eligible valid/invalid/error counts
+  - reason quality and thin-reason notes
+  - fallback/rollback triggers observed in the window
 - If P8 only increases fields or coverage without improving the strategic workspace, stop and reshape the P8 design before continuing.
 
 Debug/fixture accelerator:

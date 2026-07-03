@@ -73,6 +73,8 @@ P8 DeliberationPacket strategic workspace shadow surface is now implemented:
   - `full` remains the control group; smoke invariants still require `mode=full -> compressionMode=none`.
   - DeepSeek request telemetry now records whether thinking was left at the provider default or explicitly overridden, plus whether `reasoning_content` appeared in the response.
   - CandidateFuture quality review telemetry now records serialized-future completeness plus review-only shallow/missing signals and proposal-only improvement signals, so P8.4 can be judged on strategic workspace quality instead of only provider JSON validity.
+  - High-pressure combat provider blocker follow-up identified a specific failure mode on fresh `combat:llm_required` calls: `finishReason=length`, `content=""`, `reasoning_content` present, and both rescue attempts also hit `length` because they shrank output caps to `120/140` while leaving thinking at the provider default.
+  - The current minimal fix keeps primary shadow behavior unchanged, but hardens rescue behavior: rescue retries now use explicit disabled thinking by default via `STS2_DEEPSEEK_RESCUE_THINKING_MODE`, and rescue output caps are widened via `STS2_DEEPSEEK_TRUNCATION_RESCUE_MAX_OUTPUT_TOKENS` / `STS2_DEEPSEEK_EMPTY_RESCUE_MAX_OUTPUT_TOKENS` so `length+empty` can recover instead of repeating the same provider contract failure.
 - P8.5 preparation metadata and compact workspace summary generation are present, but live integration remains disabled. The only allowed first experiment is additive `legacy prompt + compact workspace summary`, not structured-prompt-only by default.
 - With default flags, live behavior is unchanged: legacy prompt remains the live prompt, candidate generation/order/scoring/fallback/validation/execution are unchanged, and no stable memory/derived/strategy updates occur.
 - Replay/eval/review expose P8 workspace coverage and stats. Disagreement is a review signal, not a program failure.
@@ -97,6 +99,61 @@ Latest live-readiness note:
 - Keep provider work limited to blocker-class failures. Do not keep widening the output contract or further shrinking `candidate_futures` unless fresh evidence shows a new blocker.
 - Fresh 20-call readiness sampling on `full_bounded_candidate_futures` improved `card_reward:llm_required` completeness from `0/4` to `4/8`, but `map:llm_required` is still shallow and fresh live-eligible evidence is still too thin to justify live additive.
 - Terminal `llm_unavailable` on executed decisions refers to the live LLM route staying disabled/unavailable; it does not mean the DeepSeek shadow provider was absent. Use `shadowWorkspaceDecision` / replay-eval-review telemetry for P8 readiness judgments, not the executor fallback banner alone.
+
+P8.5 live gate and rollout discipline:
+
+- Current state: `P8.5` may continue on static / pre-live audit, but additive live is still `no_go`.
+- Fresh `combat:llm_required` failures at transitions `transition-000130-agent-mr4sg5sl-xm6o7z` and `transition-000131-agent-mr4sh7t9-l925tb` currently keep readiness at `NOT_READY_LIVE_SAFETY_BLOCKER` until the new rescue contract is re-tested on the same high-pressure slice.
+- Default remains off: `STS2_P8_LIVE_ADDITIVE=0`.
+- The first allowed live experiment, when explicitly authorized, is additive only: legacy prompt plus compact workspace summary. Structured-prompt-only live routing is not allowed here.
+- `full` remains the control baseline. `full_bounded_candidate_futures` remains an experiment mode and must not silently replace `full`.
+- The first possible live whitelist is narrow: start with `combat:llm_required` only. `card_reward:llm_required` may be considered only after separate evidence clears non-combat tradeoff quality. `map:llm_required` must not enter the first live slice.
+- Hard blockers before any live additive enable:
+  - any live-eligible `invalid_output`, `invalid_choice`, `missing_candidate`, or `error` in the target decision class window
+  - provider reliability still being a current blocker rather than a historical bucketed issue
+  - fresh target-class evidence still dominated by `reasonQuality=thin|missing`
+  - CandidateFuture tradeoff/completeness regressions that make the additive context look like a shallow selector prompt
+  - any path that would write stable memory, derived knowledge, or strategy params
+- Acceptable WARNs for pre-live only:
+  - historical network outage buckets outside the fresh revision window
+  - shadow disagreement without validation failure
+  - budget-skipped shadow transitions
+- Recommended minimum pre-live evidence standard:
+  - provider/output contract stable enough in fresh target-class samples
+  - `invalidChoice=0`
+  - `missingCandidate=0`
+  - live prompt / candidate generation / scoring / fallback / validation / execution unchanged
+  - `reasonQuality` not collapsing into mostly `thin` / `missing`
+  - replay/eval/review can still separate provider failure, semantic invalidity, and candidate-quality issues
+- Rollout order once live is explicitly authorized:
+  - Step 1: enable additive live only for `combat:llm_required`
+  - Step 2: keep legacy fallback, semantic validation, and executor legality checks unchanged
+  - Step 3: record fresh rollout slices separately from mixed historical windows
+  - Step 4: review provider failure, live-eligible invalid/error, reason quality, and fallback rates before any whitelist expansion
+  - Step 5: only then consider `card_reward:llm_required`; `map:llm_required` needs its own fresh called evidence and tradeoff-quality pass first
+- Immediate rollback triggers for any future live additive test:
+  - any live-eligible invalid/error outcome
+  - any `invalid_choice` or `missing_candidate`
+  - provider truncation / empty-content failures recurring in the whitelisted live slice
+  - noticeable tradeoff-quality collapse or widespread `reasonQuality=missing`
+  - any hint that additive context is bypassing legacy validation/fallback boundaries
+- Rollback action is simple and mandatory:
+  - set `STS2_P8_LIVE_ADDITIVE=0`
+  - restore legacy-only prompt path
+  - preserve replay/eval/review evidence from the failed rollout window
+- A/B recording requirements for any future live additive window:
+  - distinguish `legacy_only`, `shadow_only`, and future `live_additive_enabled` windows
+  - always group by decision class, revision tag, and budget window
+  - do not mix historical outage windows into fresh rollout judgments
+  - keep disagreement as review signal, not FAIL, unless it crosses validation/safety boundaries
+- Fixed readiness status vocabulary now used for report-side judgments:
+  - `READY_FOR_P8_5_LIVE_COMBAT_ONLY`
+  - `READY_FOR_P8_5_LIVE_COMBAT_AND_CARD_REWARD`
+  - `NOT_READY_PROVIDER_BLOCKER`
+  - `NOT_READY_LIVE_SAFETY_BLOCKER`
+  - `NOT_READY_REASON_QUALITY`
+  - `NOT_READY_CANDIDATE_FUTURE_QUALITY`
+  - `NOT_READY_INSUFFICIENT_LIVE_ELIGIBLE_EVIDENCE`
 
 P8.x next route:
 

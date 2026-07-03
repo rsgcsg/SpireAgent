@@ -94,6 +94,12 @@ As of P8, replay/eval/review also report the DeliberationPacket strategic worksp
 - DeepSeek V4 Flash provider plumbing is prepared, but missing `STS2_DEEPSEEK_API_KEY` must be reported as `needs_api_key`, `skipped`, or `unavailable`; eval must not treat this as a fake model result.
 - P8.4 gate data is visible in replay/eval/review: decision class, readiness, token budget, agreement/disagreement, missing sections, invalid rate, missing candidate, reason quality, error rate, cost estimate, and go/no-go. Budget skips are not FAIL.
 - P8.5 remains preparation-only. The only allowed first live mode is additive `legacy prompt + compact workspace summary`, behind a whitelist/feature flag/rollback path; structured-prompt-only must not be enabled by default.
+- When P8.5 later reaches explicit live authorization, rollout evidence must still be interpreted with the same discipline:
+  - compare by decision class, revision tag, and bounded review window
+  - do not mix historical network-outage windows into fresh live judgments
+  - separate `legacy_only`, `shadow_only`, and `live_additive_enabled` windows
+  - treat disagreement as review signal unless it crosses validation/safety boundaries
+  - treat any live-eligible invalid/error as rollback-class evidence, not a cosmetic WARN
 
 P8 disagreement is a review signal, not an eval failure. Invalid structured output or missing candidate is a WARN-level engineering signal unless it corrupts transition data or live validation.
 

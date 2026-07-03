@@ -614,10 +614,12 @@ assert.equal(retriedDecision?.providerAudit?.retryCount, 1);
 assert.equal(retriedDecision?.providerAudit?.emptyContentRetryCount, 1);
 assert.equal(retriedDecision?.providerAudit?.emptyContentRetrySucceeded, true);
 assert.equal(retriedDecision?.providerAudit?.attempts?.length, 2);
-assert.equal(retriedDecision?.providerAudit?.attempts?.[1]?.requestMaxOutputTokens, 140);
+assert.equal(retriedDecision?.providerAudit?.attempts?.[1]?.requestMaxOutputTokens, 320);
 assert.equal(retriedDecision?.providerAudit?.requestedThinkingMode, "default_enabled");
+assert.equal(retriedDecision?.providerAudit?.attempts?.[1]?.requestedThinkingMode, "explicit_disabled");
 let truncationFetchCalls = 0;
 const truncationRequestMaxTokens: number[] = [];
+const truncationThinkingModes: unknown[] = [];
 const deepSeekTruncationRetry = new DeepSeekV4FlashDecider({
   apiKey: "fixture-key",
   emptyContentRetryLimit: 1,
@@ -627,6 +629,7 @@ const deepSeekTruncationRetry = new DeepSeekV4FlashDecider({
     truncationFetchCalls += 1;
     const body = JSON.parse(String(init?.body ?? "{}"));
     truncationRequestMaxTokens.push(body.max_tokens);
+    truncationThinkingModes.push(body.thinking?.type ?? "default_enabled");
     const payload = truncationFetchCalls === 1
       ? {
           choices: [{ message: { content: "" }, finish_reason: "length" }],
@@ -644,14 +647,16 @@ const deepSeekTruncationRetry = new DeepSeekV4FlashDecider({
 });
 const truncationRetriedDecision = await deepSeekTruncationRetry.decide("{\"allowed_candidate_ids\":[\"play-strike\"]}");
 assert.equal(truncationFetchCalls, 2);
-assert.deepEqual(truncationRequestMaxTokens, [400, 120]);
+assert.deepEqual(truncationRequestMaxTokens, [400, 256]);
+assert.deepEqual(truncationThinkingModes, ["default_enabled", "disabled"]);
 assert.equal(truncationRetriedDecision?.candidateId, "play-strike");
 assert.equal(truncationRetriedDecision?.providerAudit?.retryCount, 1);
 assert.equal(truncationRetriedDecision?.providerAudit?.emptyContentRetryCount, 0);
 assert.equal(truncationRetriedDecision?.providerAudit?.truncationRetryCount, 1);
 assert.equal(truncationRetriedDecision?.providerAudit?.truncationRetrySucceeded, true);
 assert.equal(truncationRetriedDecision?.providerAudit?.attempts?.length, 2);
-assert.equal(truncationRetriedDecision?.providerAudit?.attempts?.[1]?.requestMaxOutputTokens, 120);
+assert.equal(truncationRetriedDecision?.providerAudit?.attempts?.[1]?.requestMaxOutputTokens, 256);
+assert.equal(truncationRetriedDecision?.providerAudit?.attempts?.[1]?.requestedThinkingMode, "explicit_disabled");
 const previousProvider = process.env.STS2_LLM_PROVIDER;
 const previousDeepSeekKey = process.env.STS2_DEEPSEEK_API_KEY;
 const previousCommand = process.env.STS2_LLM_COMMAND;
@@ -1252,6 +1257,33 @@ try {
   assert.equal(lowHpMapScoring.shouldAskLlm, false);
   assert.equal(lowHpMapScoring.top?.action.kind, "choose_map_node");
   assert.equal(lowHpMapScoring.top?.action.kind === "choose_map_node" ? lowHpMapScoring.top.action.index : -1, 0);
+  const lowHpMapScaffold = buildCognitiveScaffold({
+    state: lowHpMapState,
+    run: memory.run,
+    candidates: lowHpMapScoring.candidates.slice(0, 2),
+    relevantMemories: [],
+    tags: ["map", "low_hp"],
+    route: lowHpMapScoring.route
+  });
+  const lowHpMapComparison = buildWorkspaceComparison({
+    legacyPrompt: JSON.stringify({ candidates: lowHpMapScoring.candidates.slice(0, 2).map((candidate) => ({ id: candidate.id })) }),
+    deliberationPacket: lowHpMapScaffold.deliberationPacket,
+    candidates: lowHpMapScoring.candidates.slice(0, 2),
+    decisionClass: "map:llm_required",
+    options: { shadowEnabled: false, callEnabled: false, ablationMode: "full_bounded_candidate_futures" }
+  });
+  assert.equal(lowHpMapComparison.coverage.candidateFutureCompleteness?.futureCount, 2);
+  assert.ok((lowHpMapComparison.coverage.candidateFutureCompleteness?.withCoreTradeoff ?? 0) >= 1);
+  assert.match(
+    lowHpMapComparison.summary,
+    /compression=(bounded_candidate_futures_non_combat|bounded_passthrough_non_combat)/
+  );
+  const lowHpMapPrompt = buildDeliberationWorkspacePrompt(
+    lowHpMapScaffold.deliberationPacket,
+    lowHpMapScoring.candidates.slice(0, 2),
+    "full_bounded_candidate_futures"
+  );
+  assert.match(lowHpMapPrompt, /opportunity cost|alternate route cost|route lock/i);
 
   const waitingMapState = normalizeGameState({
     state_type: "map",
@@ -2612,6 +2644,9 @@ try {
   assert.ok((evalReport.summary.workspaceCoverage.budgetStatusCounts.within_budget ?? 0) >= 0);
   assert.equal(evalReport.summary.workspaceCoverage.rolloutGate.status, "no_go");
   assert.ok(evalReport.summary.workspaceCoverage.rolloutGate.reasons.includes("no_real_shadow_calls"));
+  assert.equal(evalReport.summary.p8LiveReadinessAssessment.status, "NOT_READY_INSUFFICIENT_LIVE_ELIGIBLE_EVIDENCE");
+  assert.equal(evalReport.summary.p8LiveReadinessAssessment.staticPreAuditAllowed, true);
+  assert.ok(evalReport.summary.p8LiveReadinessAssessment.blockedDecisionClasses.includes("combat:llm_required"));
   const [firstWorkspaceDecisionClassQuality] = Object.values(evalReport.summary.workspaceDecisionClassQuality);
   assert.equal(firstWorkspaceDecisionClassQuality?.transitions, 1);
   assert.ok((firstWorkspaceDecisionClassQuality?.futureCount ?? 0) > 0);

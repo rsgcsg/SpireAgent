@@ -73,6 +73,22 @@
 - 没有放松 semantic validation，没有把空/截断输出洗成 valid。
 - 没有写 stable memory / derived / strategy，也没有提交 runtime memory 产物。
 
+追加 blocker 复盘：
+
+- fresh high-pressure `combat:llm_required` transitions `transition-000130-agent-mr4sg5sl-xm6o7z` 与 `transition-000131-agent-mr4sh7t9-l925tb` 都命中了 `provider_length_empty`。
+- 两个 case 都不是 `CandidateFuture` 退化成 shallow action list；bounded combat `candidate_futures` 仍保留了 tactical facts / tradeoff / risk / invalidation，且 serialized future completeness 为 completeEnough。
+- 这两个 case 的直接失败链路是：
+  - primary request `finishReason=length`
+  - `message.content=""`
+  - `reasoning_content` returned
+  - truncation rescue and empty rescue both also `finishReason=length`
+- 复盘结论更接近 provider contract / output-budget recovery 问题，而不是 parser、candidate choice、shadow execution 或 baseline `full` 语义问题。
+- 最小修复方向已落到 shadow-only provider recovery：
+  - primary request 保持原行为，便于和既有 evidence 对照
+  - rescue retries 默认显式 disable thinking
+  - rescue output caps widened from the earlier `120/140` style micro caps to dedicated rescue caps so `length+empty` can actually recover
+  - replay/eval/review 继续保留 finish reason、reasoning bytes、failure bucket、retry telemetry，不把 provider error 洗成 valid
+
 ## 2026-07-01 Desktop North Star Alignment Pass
 
 当前工作目录：
@@ -1224,3 +1240,47 @@ Current honest conclusion:
 
 - Non-combat CandidateFuture content is materially better in code than in the older historical telemetry windows.
 - P8.5 live is still `no_go` until fresh runtime evidence re-covers `map:llm_required` / `card_reward:llm_required` and shows that the improved futures actually reduce `missing_tradeoff` without introducing new provider failures.
+
+## 2026-07-03 P8.5 Map Quality Refinement
+
+- `map:llm_required` fresh called evidence was still thin even after provider recovery, so the next patch stayed strictly on the workspace side instead of touching provider / JSON / live behavior.
+- `src/agent/cognitiveScaffold.ts` now makes map futures spell out:
+  - route tradeoff
+  - opportunity cost versus shop/rest/monster timing
+  - alternate-route cost and path lock-in risk
+  - HP/resource pressure and reward expectation
+- `src/agent/candidateFutureCompressor.ts` now treats route/path/timing/opportunity-cost text as valid non-combat tactical facts during review serialization, so `map` futures are less likely to be misread as shallow when the strategic detail is genuinely present.
+- `src/agent/smoke.ts` now includes a small map-workspace regression guard to ensure bounded non-combat map prompts contain concrete tradeoff/path language.
+
+## 2026-07-03 P8.5 Live Gate Consolidation
+
+This pass did not enable live additive and did not change runtime behavior. It consolidated the live-readiness rules into project docs so later rollout decisions are made against explicit gates instead of ad-hoc judgment.
+
+Documented policy now says:
+
+- `P8.5` may keep moving on static / pre-live work, but live additive remains `no_go`.
+- `STS2_P8_LIVE_ADDITIVE` stays default-off until there is explicit approval plus fresh class-specific evidence.
+- The first allowed live slice, if approved later, is additive-only and should start with `combat:llm_required` only.
+- `card_reward:llm_required` requires separate non-combat reason/tradeoff evidence before live entry.
+- `map:llm_required` must not join the first live slice and still needs additional fresh called evidence.
+- Any future live additive test must keep legacy fallback, semantic validation, and executor legality checks unchanged.
+- Any live-eligible invalid/error, `invalid_choice`, `missing_candidate`, or fresh target-slice provider truncation/empty-content recurrence is an immediate rollback trigger.
+- Rollout evidence must be recorded and reviewed by decision class, revision tag, and bounded window, while keeping `legacy_only`, `shadow_only`, and future `live_additive_enabled` windows distinct.
+
+Current honest status after this consolidation:
+
+- `P8.4` is basically closed as provider-contract work.
+- `P8.5 static pre-audit` is allowed to continue.
+- `P8.5 live additive` is still blocked primarily by non-combat readiness evidence, not by provider reachability.
+
+Follow-up cleanup:
+
+- replay / eval / review now share a fixed report-side live-readiness vocabulary instead of relying only on generic `go/no_go`:
+  - `READY_FOR_P8_5_LIVE_COMBAT_ONLY`
+  - `READY_FOR_P8_5_LIVE_COMBAT_AND_CARD_REWARD`
+  - `NOT_READY_PROVIDER_BLOCKER`
+  - `NOT_READY_LIVE_SAFETY_BLOCKER`
+  - `NOT_READY_REASON_QUALITY`
+  - `NOT_READY_CANDIDATE_FUTURE_QUALITY`
+  - `NOT_READY_INSUFFICIENT_LIVE_ELIGIBLE_EVIDENCE`
+- This does not change runtime behavior; it only makes readiness interpretation more explicit and less ad-hoc.

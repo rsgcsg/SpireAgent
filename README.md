@@ -69,7 +69,7 @@ npm run agent:tick -- --dry-run
 
 With the default `.env.local` settings, the project allows at most one guarded shadow call per process and does not execute the DeepSeek decision.
 The canonical limit variable is `STS2_P8_WORKSPACE_MAX_SHADOW_CALLS`; `STS2_P8_MAX_SHADOW_CALLS` is accepted as a backward-compatible alias.
-DeepSeek shadow output defaults to `STS2_DEEPSEEK_OUTPUT_MODE=json_mode` with `response_format: { "type": "json_object" }`, `STS2_DEEPSEEK_TEMPERATURE=0`, `STS2_DEEPSEEK_TOP_P=0.1`, and a single `STS2_DEEPSEEK_EMPTY_RETRY_LIMIT=1` rescue retry for `empty_content`. The request currently leaves `thinking` unset unless `STS2_DEEPSEEK_THINKING_MODE` is explicitly provided, which means DeepSeek's API default remains in effect. Set `STS2_DEEPSEEK_OUTPUT_MODE=non_json_strict` only for A/B shadow testing.
+DeepSeek shadow output defaults to `STS2_DEEPSEEK_OUTPUT_MODE=json_mode` with `response_format: { "type": "json_object" }`, `STS2_DEEPSEEK_TEMPERATURE=0`, `STS2_DEEPSEEK_TOP_P=0.1`, and single rescue retries for `empty_content` / truncation. The primary request currently leaves `thinking` unset unless `STS2_DEEPSEEK_THINKING_MODE` is explicitly provided, which means DeepSeek's API default remains in effect; rescue retries can independently force `STS2_DEEPSEEK_RESCUE_THINKING_MODE=disabled` and use `STS2_DEEPSEEK_TRUNCATION_RESCUE_MAX_OUTPUT_TOKENS` / `STS2_DEEPSEEK_EMPTY_RESCUE_MAX_OUTPUT_TOKENS` for provider-recovery testing. Set `STS2_DEEPSEEK_OUTPUT_MODE=non_json_strict` only for A/B shadow testing.
 P8 provider telemetry now records whether the request kept DeepSeek's default thinking mode or explicitly set `thinking: { "type": "disabled" | "enabled" }`, whether `reasoning_content` was returned, the response content source, provider-failure buckets, and thin-reason notes. This is still shadow-only evidence and does not change live execution.
 P8.4 shadow prompt ablation uses `STS2_P8_WORKSPACE_ABLATION_MODE=full` by default. `full` remains the control group and does not apply bounded candidate-future compression. `full_bounded_candidate_futures` is the v5 combat-only bounded serialization experiment; `compact` and `ultra_compact` remain separate smaller ablations. None of these modes change the live prompt or execute the DeepSeek decision.
 
@@ -82,6 +82,13 @@ STS2_P8_LIVE_DECISION_CLASSES=combat:llm_required,card_reward:llm_required
 ```
 
 P8.5 may add a compact workspace summary beside the legacy prompt. P9/P10 are the places to gradually relax shadow boundaries for guarded learning updates, with whitelist, fallback, eval, and rollback still required.
+
+Current P8.5 status:
+
+- Static / pre-live audit may continue.
+- Live additive remains off and should stay off until there is explicit authorization plus fresh per-class evidence.
+- The first allowed live experiment, if later approved, is additive-only and should start with `combat:llm_required` rather than widening to all `:llm_required` classes at once.
+- `card_reward:llm_required` and especially `map:llm_required` require separate fresh called-evidence and reason-quality clearance before they should be considered for live additive.
 
 With Slay the Spire 2 and the external STS2 MCP mod running:
 

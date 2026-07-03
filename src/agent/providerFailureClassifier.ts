@@ -118,6 +118,7 @@ export function summarizeProviderAttempts(value: unknown): JsonRecord[] | undefi
       requestKind: typeof attempt.requestKind === "string" ? attempt.requestKind : undefined,
       rescueMode: typeof attempt.rescueMode === "string" ? attempt.rescueMode : undefined,
       requestMaxOutputTokens: numberValue(attempt.requestMaxOutputTokens),
+      requestedThinkingMode: typeof attempt.requestedThinkingMode === "string" ? attempt.requestedThinkingMode : undefined,
       finishReason: typeof attempt.finishReason === "string" ? attempt.finishReason : undefined,
       latencyMs: numberValue(attempt.latencyMs),
       contentKind: typeof attempt.contentKind === "string" ? attempt.contentKind : undefined,

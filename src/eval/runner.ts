@@ -12,9 +12,11 @@ import {
   readConsolidationProposals,
   resolveRunDir,
   type ReplayConsolidationProposalSurface,
-  type ReplayFreshShadowSlices
+  type ReplayFreshShadowSlices,
+  type ReplayShadowSliceStats
 } from "../replay/reader.js";
 import { buildWorkspaceDecisionClassQuality, type WorkspaceDecisionClassQualityStats } from "../replay/workspaceQuality.js";
+import { assessP8LiveReadiness, type P8LiveReadinessAssessment } from "../replay/p8LiveReadiness.js";
 
 export type EvalStatus = "PASS" | "WARN" | "FAIL";
 
@@ -83,6 +85,7 @@ export interface EvalSummary {
   promptParityCoverage: EvalPromptParityCoverage;
   workspaceCoverage: EvalWorkspaceCoverage;
   workspaceDecisionClassQuality: Record<string, WorkspaceDecisionClassQualityStats>;
+  p8LiveReadinessAssessment: P8LiveReadinessAssessment;
   predictionErrorCoverage: EvalPredictionErrorCoverage;
   consolidationCoverage: EvalConsolidationCoverage;
   consolidationProposalSurface: ReplayConsolidationProposalSurface;
@@ -400,6 +403,10 @@ export function evaluateRun(runIdOrPath?: string): EvalReport {
     .filter((transition): transition is TransitionRecord => Boolean(transition));
   workspaceCoverage.freshSlices = buildReplayFreshShadowSlices(validTransitions);
   const workspaceDecisionClassQuality = buildWorkspaceDecisionClassQuality(validTransitions);
+  const p8LiveReadinessAssessment = assessP8LiveReadiness(
+    workspaceCoverage.freshSlices?.sinceLatestRevision ?? emptyReplayShadowSlice("sinceLatestRevision"),
+    workspaceDecisionClassQuality
+  );
   const consolidationProposalSurface = buildReplayConsolidationProposalSurface(readConsolidationProposals(runDir, validTransitions));
   for (const issue of buildStrategyWarnings(strategyMetrics)) {
     addWarning(warnings, warningSummary, issue);
@@ -441,6 +448,7 @@ export function evaluateRun(runIdOrPath?: string): EvalReport {
       promptParityCoverage,
       workspaceCoverage,
       workspaceDecisionClassQuality,
+      p8LiveReadinessAssessment,
       predictionErrorCoverage,
       consolidationCoverage,
       consolidationProposalSurface
@@ -1585,6 +1593,80 @@ function buildP8RolloutGate(coverage: EvalWorkspaceCoverage): EvalWorkspaceCover
     reasons,
     firstLiveMode: "additive_legacy_prompt_plus_compact_workspace_summary",
     structuredPromptOnlyDefaultAllowed: false
+  };
+}
+
+function emptyReplayShadowSlice(label: string): ReplayShadowSliceStats {
+  return {
+    label,
+    transitions: 0,
+    shadowRecords: 0,
+    plannedShadowCalls: 0,
+    maxObservedShadowCallsUsed: 0,
+    called: 0,
+    liveEligibleCalled: 0,
+    valid: 0,
+    liveEligibleValid: 0,
+    invalidOutput: 0,
+    liveEligibleInvalidOutput: 0,
+    nonLiveInvalidOutput: 0,
+    invalidChoice: 0,
+    liveEligibleInvalidChoice: 0,
+    error: 0,
+    liveEligibleError: 0,
+    unavailable: 0,
+    skipped: 0,
+    missingCandidate: 0,
+    liveEligibleMissingCandidate: 0,
+    agreementCounts: {},
+    reasonQualityCounts: {},
+    reasonQualityNoteCounts: {},
+    budgetStatusCounts: {},
+    invalidBucketCounts: {},
+    failureCategoryCounts: {},
+    failureBucketCounts: {},
+    providerModeCounts: {},
+    ablationModeCounts: {},
+    compressionModeCounts: {},
+    finishReasonCounts: {},
+    cleanupReasonCounts: {},
+    outputCapHits: 0,
+    retryCount: 0,
+    retriedCalls: 0,
+    retrySuccessCount: 0,
+    averageWorkspacePromptBytes: 0,
+    averageWorkspacePromptTokens: 0,
+    workspacePromptSamples: 0,
+    averageWorkspaceBytesBefore: 0,
+    averageWorkspaceBytesAfter: 0,
+    averageWorkspaceTokensBefore: 0,
+    averageWorkspaceTokensAfter: 0,
+    averageCandidateFuturesBytesBefore: 0,
+    averageCandidateFuturesBytesAfter: 0,
+    averageCandidateFuturesTokensBefore: 0,
+    averageCandidateFuturesTokensAfter: 0,
+    sizeTelemetrySamples: 0,
+    futuresTruncated: 0,
+    futuresOmitted: 0,
+    truncatedFieldCounts: {},
+    averageInformationPreservationEstimate: 0,
+    informationPreservationEstimateSamples: 0,
+    largestFieldSourceBytes: {},
+    repeatedTextBytes: 0,
+    repeatedTextCount: 0,
+    estimatedCostUsd: 0,
+    actualOrEstimatedCostUsd: 0,
+    skippedBudgetEstimatedCostUsd: 0,
+    averageLatencyMs: 0,
+    latencySamples: 0,
+    totalActualInputTokens: 0,
+    totalActualOutputTokens: 0,
+    totalActualTokens: 0,
+    revisionTagCounts: {},
+    plannedShadowCallValueCounts: {},
+    mixedRevisionWindow: false,
+    mixedBudgetWindow: false,
+    gate: { status: "no_go", reasons: ["no_real_shadow_calls"] }
   };
 }
 

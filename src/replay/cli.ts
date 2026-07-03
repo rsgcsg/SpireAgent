@@ -12,6 +12,7 @@ import {
   readReplayRun
 } from "./reader.js";
 import { buildWorkspaceDecisionClassQuality, formatWorkspaceDecisionClassQuality } from "./workspaceQuality.js";
+import { assessP8LiveReadiness, formatP8LiveReadinessAssessment } from "./p8LiveReadiness.js";
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
@@ -27,11 +28,13 @@ async function main(): Promise<void> {
   const cognitiveCoverage = buildReplayCognitiveCoverage(run.transitions);
   const freshShadowSlices = buildReplayFreshShadowSlices(run.transitions);
   const workspaceDecisionClassQuality = buildWorkspaceDecisionClassQuality(run.transitions);
+  const p8LiveReadinessAssessment = assessP8LiveReadiness(freshShadowSlices.sinceLatestRevision, workspaceDecisionClassQuality);
   const proposalSurface = buildReplayConsolidationProposalSurface(readConsolidationProposals(run.runDir, run.transitions));
   console.log(`Run: ${path.basename(run.runDir)}`);
   console.log(`Transitions: ${run.transitions.length}`);
   console.log(`Cognitive coverage: ${formatReplayCognitiveCoverage(cognitiveCoverage)}`);
   console.log(`Fresh shadow slices: ${formatReplayFreshShadowSlices(freshShadowSlices)}`);
+  console.log(`P8.5 live readiness: ${formatP8LiveReadinessAssessment(p8LiveReadinessAssessment)}`);
   console.log(`Workspace quality by class: ${formatWorkspaceDecisionClassQuality(workspaceDecisionClassQuality)}`);
   console.log(`Consolidation proposal surface: ${formatReplayConsolidationProposalSurface(proposalSurface)}`);
   if (command === "proposals") {

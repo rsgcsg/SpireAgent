@@ -581,7 +581,11 @@ function planForCandidate(candidate: ScoredCandidate, state: NormalizedState, ru
     case "skip_card_reward":
       return `Skip the card reward if preserving draw quality matters more than this immediate patch for ${primaryDeckNeed(run)}, then re-read reward flow.`;
     case "choose_map_node":
-      return `Commit to ${mapNodeType(candidate) ?? `map node ${candidate.action.index}`} if its timing fits ${mapPressureSummary(state, run)}, then re-read remaining path options.`;
+      return compactStrings([
+        `Commit to ${mapNodeType(candidate) ?? `map node ${candidate.action.index}`} if it best answers ${mapPressureSummary(state, run)}.`,
+        mapRewardExpectation(candidate),
+        mapOpportunityCost(candidate, state, run)
+      ]).join(" ");
     case "use_potion":
       return `Use the potion, confirm the slot change and combat swing, then re-read state.`;
     case "end_turn":
@@ -608,9 +612,12 @@ function predictedOutcome(candidate: ScoredCandidate, state: NormalizedState, ru
       return ["potion slot changes", "combat/resource state may change"];
     case "choose_map_node":
       return compactStrings([
-        `map path advances toward selected node ${candidate.action.index}`,
+        `map path advances toward selected node ${candidate.action.index} to answer ${mapPressureSummary(state, run)}`,
         mapNodeDirection(candidate),
         mapRouteTiming(candidate, state, run),
+        mapRewardExpectation(candidate),
+        mapOpportunityCost(candidate, state, run),
+        mapAlternateRouteCost(candidate, state, run),
         positive ? `route leans toward ${positive}` : undefined,
         downside ? `watch route cost: ${downside}` : undefined
       ]);
@@ -647,7 +654,8 @@ function costForCandidate(candidate: ScoredCandidate, state: NormalizedState, ru
     `may leave ${primaryDeckNeed(run)} unresolved`
   ]);
   if (candidate.action.kind === "choose_map_node") return compactStrings([
-    "commits route and drops alternate node lines",
+    mapOpportunityCost(candidate, state, run),
+    mapAlternateRouteCost(candidate, state, run),
     mapPathLockRisk(candidate, state, run)
   ]);
   if (candidate.action.kind === "shop_purchase") return ["gold cost"];
@@ -1027,10 +1035,11 @@ function cardRewardSkipRisk(run: RunMemory): string | undefined {
 
 function mapPressureSummary(state: NormalizedState, run: RunMemory): string {
   const hpRatio = state.player.hp / Math.max(1, state.player.maxHp);
-  if (hpRatio <= 0.35) return "low HP recovery pressure";
-  if (run.deficits.block > 0.65 || run.deficits.potions > 0.6) return "fragile combat resources";
-  if (run.deficits.damage > 0.65 || run.deficits.scaling > 0.65) return "deck power-up pressure";
-  return "balanced route pressure";
+  if (hpRatio <= 0.35) return "low HP recovery pressure before the next hard fight";
+  if (run.deficits.block > 0.65 || run.deficits.potions > 0.6) return "block and resource pressure before the next hard fight";
+  if (run.deficits.damage > 0.65 || run.deficits.scaling > 0.65) return "damage and scaling pressure before the next elite or boss";
+  if (state.player.gold >= 100) return "shop conversion pressure while gold is still valuable";
+  return "balanced HP and route reward pressure";
 }
 
 function mapRouteTiming(candidate: ScoredCandidate, state: NormalizedState, run: RunMemory): string | undefined {
@@ -1048,6 +1057,28 @@ function mapRewardExpectation(candidate: ScoredCandidate): string | undefined {
   if (/monster|enemy/i.test(nodeType)) return "expected reward: card reward and normal combat";
   if (/\?|event|unknown/i.test(nodeType)) return "expected reward: flexible event upside with uncertainty";
   return "expected reward depends on node outcome";
+}
+
+function mapOpportunityCost(candidate: ScoredCandidate, state: NormalizedState, run: RunMemory): string | undefined {
+  const nodeType = mapNodeType(candidate);
+  if (!nodeType) return `route commitment spends flexibility that may be needed for ${mapPressureSummary(state, run)}`;
+  if (/shop/i.test(nodeType)) return "opportunity cost: skip immediate monster rewards or rest timing to convert gold now";
+  if (/rest|campfire/i.test(nodeType)) return "opportunity cost: skip immediate shop value or monster rewards to secure heal or upgrade timing";
+  if (/elite/i.test(nodeType)) return "opportunity cost: skip safer rest or shop timing for a higher-risk relic line";
+  if (/monster|enemy/i.test(nodeType)) return "opportunity cost: skip immediate shop or rest timing for a normal reward fight";
+  if (/\?|event|unknown/i.test(nodeType)) return "opportunity cost: skip reliable shop, rest, or monster rewards for uncertain event upside";
+  return `opportunity cost: commit the route instead of preserving flexibility for ${mapPressureSummary(state, run)}`;
+}
+
+function mapAlternateRouteCost(candidate: ScoredCandidate, state: NormalizedState, run: RunMemory): string | undefined {
+  const nodeType = mapNodeType(candidate);
+  if (!nodeType) return `alternate routes may better cover ${mapPressureSummary(state, run)}`;
+  if (/shop/i.test(nodeType)) return "alternate route cost: lose lines that preserve future rest or monster reward timing";
+  if (/rest|campfire/i.test(nodeType)) return "alternate route cost: lose lines that preserve shop spending windows or extra rewards";
+  if (/elite/i.test(nodeType)) return "alternate route cost: lose safer lines that preserve HP and potion resources";
+  if (/monster|enemy/i.test(nodeType)) return "alternate route cost: lose lines that preserve shop spending or heal timing";
+  if (/\?|event|unknown/i.test(nodeType)) return "alternate route cost: lose reliable lines with clearer reward timing";
+  return `alternate route cost: lock out lines better aligned with ${mapPressureSummary(state, run)}`;
 }
 
 function mapPathLockRisk(candidate: ScoredCandidate, state: NormalizedState, run: RunMemory): string | undefined {
