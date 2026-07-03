@@ -54,6 +54,8 @@ import {
   normalizeWorkspaceAblationMode,
   workspaceOptionsFromEnv
 } from "./workspace.js";
+import { normalizeBudgetGovernanceProfile } from "./budgetGovernance.js";
+import { summarizeProviderRecoveryPolicy } from "./providerRecoveryPolicy.js";
 import {
   DOMAIN_SCHEMA_VERSION,
   type CandidateFuture,
@@ -263,6 +265,11 @@ assert.equal(normalizeWorkspaceAblationMode("bounded"), "full_bounded_candidate_
 assert.equal(normalizeWorkspaceAblationMode("compact"), "compact");
 assert.equal(normalizeWorkspaceAblationMode("ultra"), "ultra_compact");
 assert.equal(normalizeWorkspaceAblationMode("unknown"), "full");
+assert.equal(normalizeBudgetGovernanceProfile(undefined), "shadow_exploration");
+assert.equal(normalizeBudgetGovernanceProfile("observe"), "observe_only");
+assert.equal(normalizeBudgetGovernanceProfile("shadow-readiness"), "shadow_readiness");
+assert.equal(normalizeBudgetGovernanceProfile("live_additive"), "live_additive_candidate");
+assert.equal(normalizeBudgetGovernanceProfile("stable_update"), "stable_update_candidate");
 const workspaceComparison = buildWorkspaceComparison({
   legacyPrompt: JSON.stringify({ candidates: [{ id: "play-strike" }] }),
   deliberationPacket,
@@ -288,6 +295,11 @@ assert.equal(workspaceComparison.providerReadiness, "needs_api_key");
 assert.equal(workspaceComparison.budget?.maxShadowCalls, 1);
 assert.equal(workspaceComparison.budget?.maxOutputTokens, 400);
 assert.equal(workspaceComparison.budget?.status, "within_budget");
+assert.equal(workspaceComparison.budget?.governanceProfile, "shadow_exploration");
+assert.equal(workspaceComparison.budget?.governancePolicy?.principle, "budget_is_guard_not_goal");
+assert.equal(workspaceComparison.budget?.governancePolicy?.recoveryBudget.separatedFromWorkspaceCompression, true);
+assert.equal(workspaceComparison.budget?.governancePolicy?.protectedPathBudget.liveAdditiveRequiresExplicitFlag, true);
+assert.equal(workspaceComparison.budget?.governancePolicy?.protectedPathBudget.stableMemoryWritesAllowed, false);
 assert.equal(workspaceComparison.rolloutGate?.liveIntegrationEnabled, false);
 assert.equal(workspaceComparison.rolloutGate?.liveReadiness, "not_enabled");
 assert.equal(workspaceComparison.rolloutGate?.structuredPromptOnlyDefaultAllowed, false);
@@ -344,6 +356,62 @@ const p8ShadowThinReason = await buildP8WorkspaceShadowFromPacket({
 });
 assert.equal(p8ShadowThinReason.shadowDecision.reasonQuality, "thin");
 assert.ok(p8ShadowThinReason.shadowDecision.reasonQualityNotes?.includes("missing_tradeoff"));
+const recoveryPolicySummary = summarizeProviderRecoveryPolicy({
+  outcome: "invalid_output",
+  failureBucket: "provider_length_empty",
+  parseState: "empty_content_after_retry",
+  finishReason: "length",
+  attempts: [
+    { requestKind: "primary", requestMaxOutputTokens: 400, finishReason: "length", contentKind: "empty" },
+    { requestKind: "rescue", rescueMode: "truncation", requestMaxOutputTokens: 256, finishReason: "length", contentKind: "empty" },
+    { requestKind: "rescue", rescueMode: "empty", requestMaxOutputTokens: 320, finishReason: "length", contentKind: "empty" }
+  ]
+});
+assert.equal(recoveryPolicySummary?.policyName, "p8_provider_json_recovery_v1");
+assert.equal(recoveryPolicySummary?.separatedFromWorkspaceCompression, true);
+assert.equal(recoveryPolicySummary?.semanticValidationRelaxed, false);
+assert.equal(recoveryPolicySummary?.rescueAttempts, 2);
+assert.equal(recoveryPolicySummary?.rescueOutputCapRelation, "rescue_smaller_than_primary");
+const p8ShadowRecoveryPolicy = await buildP8WorkspaceShadowFromPacket({
+  legacyPrompt: JSON.stringify({ candidates: [{ id: "play-strike" }] }),
+  deliberationPacket,
+  candidates: [workspaceCandidate],
+  decisionClass: "combat:test",
+  llm: {
+    isAvailable: () => true,
+    decide: async () => ({
+      candidateId: "play-strike",
+      reason: "Block while preserving tempo.",
+      providerAudit: {
+        contentKind: "json",
+        parseState: "parsed_after_empty_retry",
+        requestMode: "json_mode",
+        requestedThinkingMode: "default_enabled",
+        retryCount: 1,
+        emptyContentRetryCount: 1,
+        emptyContentRetrySucceeded: true,
+        attempts: [
+          { requestKind: "primary", requestMaxOutputTokens: 400, finishReason: "length", latencyMs: 10, contentKind: "empty" },
+          { requestKind: "rescue", rescueMode: "empty", requestMaxOutputTokens: 320, finishReason: "stop", latencyMs: 12, contentKind: "json" }
+        ]
+      },
+      providerMetadata: {
+        provider: "deepseek",
+        model: "test",
+        latencyMs: 22,
+        maxOutputTokens: 400,
+        finishReason: "stop",
+        requestMode: "json_mode",
+        requestedThinkingMode: "default_enabled"
+      }
+    })
+  },
+  legacySelectedCandidateId: "play-strike",
+  options: { shadowEnabled: true, callEnabled: true, providerAvailable: true, maxShadowCalls: 5 }
+});
+assert.equal(p8ShadowRecoveryPolicy.shadowDecision.providerRecoveryPolicyName, "p8_provider_json_recovery_v1");
+assert.equal(p8ShadowRecoveryPolicy.shadowDecision.providerRecoveryPolicy?.recovered, true);
+assert.equal(p8ShadowRecoveryPolicy.shadowDecision.providerRecoveryPolicy?.separatedFromWorkspaceCompression, true);
 const p8ShadowCallBudgetSkipped = await buildP8WorkspaceShadowFromPacket({
   legacyPrompt: JSON.stringify({ candidates: [{ id: "play-strike" }] }),
   deliberationPacket,
@@ -360,6 +428,8 @@ assert.equal(p8ShadowCallBudgetSkipped.shadowDecision.called, false);
 assert.equal(p8ShadowCallBudgetSkipped.shadowDecision.outcome, "skipped");
 assert.equal(p8ShadowCallBudgetSkipped.shadowDecision.skippedReason, "skipped_by_budget");
 assert.equal(p8ShadowCallBudgetSkipped.shadowDecision.budgetStatus, "call_budget_exceeded");
+assert.equal(p8ShadowCallBudgetSkipped.comparison.budget?.governancePolicy?.runBudget.status, "call_budget_exceeded");
+assert.equal(p8ShadowCallBudgetSkipped.comparison.budget?.governancePolicy?.runBudget.skippedReason, "skipped_by_budget");
 const parsedWorkspaceDecision = parseWorkspaceJsonDecision(JSON.stringify({
   selectedCandidateId: "play-strike",
   confidence: 0.66,
@@ -615,7 +685,7 @@ assert.equal(retriedDecision?.providerAudit?.emptyContentRetryCount, 1);
 assert.equal(retriedDecision?.providerAudit?.emptyContentRetrySucceeded, true);
 assert.equal(retriedDecision?.providerAudit?.attempts?.length, 2);
 assert.equal(retriedDecision?.providerAudit?.attempts?.[1]?.requestMaxOutputTokens, 320);
-assert.equal(retriedDecision?.providerAudit?.requestedThinkingMode, "default_enabled");
+assert.equal(retriedDecision?.providerAudit?.requestedThinkingMode, "explicit_disabled");
 assert.equal(retriedDecision?.providerAudit?.attempts?.[1]?.requestedThinkingMode, "explicit_disabled");
 let truncationFetchCalls = 0;
 const truncationRequestMaxTokens: number[] = [];
@@ -656,6 +726,7 @@ assert.equal(truncationRetriedDecision?.providerAudit?.truncationRetryCount, 1);
 assert.equal(truncationRetriedDecision?.providerAudit?.truncationRetrySucceeded, true);
 assert.equal(truncationRetriedDecision?.providerAudit?.attempts?.length, 2);
 assert.equal(truncationRetriedDecision?.providerAudit?.attempts?.[1]?.requestMaxOutputTokens, 256);
+assert.equal(truncationRetriedDecision?.providerAudit?.requestedThinkingMode, "explicit_disabled");
 assert.equal(truncationRetriedDecision?.providerAudit?.attempts?.[1]?.requestedThinkingMode, "explicit_disabled");
 const previousProvider = process.env.STS2_LLM_PROVIDER;
 const previousDeepSeekKey = process.env.STS2_DEEPSEEK_API_KEY;
@@ -2647,6 +2718,15 @@ try {
   assert.equal(evalReport.summary.p8LiveReadinessAssessment.status, "NOT_READY_INSUFFICIENT_LIVE_ELIGIBLE_EVIDENCE");
   assert.equal(evalReport.summary.p8LiveReadinessAssessment.staticPreAuditAllowed, true);
   assert.ok(evalReport.summary.p8LiveReadinessAssessment.blockedDecisionClasses.includes("combat:llm_required"));
+  assert.equal(evalReport.summary.p8LiveReadinessAssessment.evidenceBudget.status, "evidence_window_not_usable");
+  assert.ok(
+    Array.isArray(evalReport.summary.p8LiveReadinessAssessment.evidenceBudget.notes) &&
+      evalReport.summary.p8LiveReadinessAssessment.evidenceBudget.notes.includes("insufficient_live_eligible_shadow_calls")
+  );
+  assert.equal(evalReport.summary.p8LiveReadinessAssessment.rolloutBudget.explicitLiveFlagRequired, true);
+  assert.equal(evalReport.summary.p8LiveReadinessAssessment.rolloutBudget.humanAuthorizationRequired, true);
+  assert.equal(evalReport.summary.p8LiveReadinessAssessment.rolloutBudget.structuredPromptOnlyDefaultAllowed, false);
+  assert.equal(evalReport.summary.p8LiveReadinessAssessment.rolloutBudget.stableMemoryWritesAllowed, false);
   const [firstWorkspaceDecisionClassQuality] = Object.values(evalReport.summary.workspaceDecisionClassQuality);
   assert.equal(firstWorkspaceDecisionClassQuality?.transitions, 1);
   assert.ok((firstWorkspaceDecisionClassQuality?.futureCount ?? 0) > 0);

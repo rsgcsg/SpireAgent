@@ -4,6 +4,10 @@ LLM-centered Slay the Spire 2 agent with a predictive cognitive scaffold, struct
 
 This repository contains the TypeScript agent package. It does not include the game, the STS2 MCP C# mod, the Python MCP server, build outputs, or `node_modules`.
 
+## Documentation
+
+Start documentation navigation at [docs/00_START_HERE.md](/Users/fire/Desktop/SpireAgent/docs/00_START_HERE.md). The canonical short current-status snapshot lives at [docs/04_CURRENT_STATUS.md](/Users/fire/Desktop/SpireAgent/docs/04_CURRENT_STATUS.md).
+
 ## GitHub Hygiene
 
 This repo is intended to be public and clonable. Keep the repository clean by treating these as local-only artifacts:
@@ -132,6 +136,7 @@ Read these first:
 - [ARCHITECTURE.md](ARCHITECTURE.md): five-plane system architecture.
 - [GAME_IO_CAPABILITIES.md](GAME_IO_CAPABILITIES.md): adapter capability contract.
 - [DATA_SCHEMA.md](DATA_SCHEMA.md): transition and data schema contract.
+- [BUDGET_GOVERNANCE.md](BUDGET_GOVERNANCE.md): cross-cutting budget governance model for shadow/live/learning boundaries.
 - [LLM_HANDOFF.md](LLM_HANDOFF.md): current handoff state.
 
 Subsystem docs:

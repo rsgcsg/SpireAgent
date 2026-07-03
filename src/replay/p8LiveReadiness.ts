@@ -1,5 +1,8 @@
 import type { ReplayShadowSliceStats } from "./reader.js";
 import type { WorkspaceDecisionClassQualityStats } from "./workspaceQuality.js";
+import type { JsonRecord } from "../domain/types.js";
+import { buildP8EvidenceBudgetAssessment } from "./evidenceBudget.js";
+import { buildP8RolloutBudgetAssessment } from "./rolloutBudget.js";
 
 export type P8LiveReadinessStatus =
   | "READY_FOR_P8_5_LIVE_COMBAT_ONLY"
@@ -16,6 +19,8 @@ export interface P8LiveReadinessAssessment {
   staticPreAuditAllowed: boolean;
   recommendedFirstLiveWhitelist: string[];
   blockedDecisionClasses: string[];
+  evidenceBudget: JsonRecord;
+  rolloutBudget: JsonRecord;
 }
 
 export function assessP8LiveReadiness(
@@ -27,6 +32,7 @@ export function assessP8LiveReadiness(
   const combat = qualityByClass["combat:llm_required"];
   const cardReward = qualityByClass["card_reward:llm_required"];
   const map = qualityByClass["map:llm_required"];
+  const evidenceBudget = buildP8EvidenceBudgetAssessment(freshSlice, qualityByClass);
 
   if (
     freshSlice.liveEligibleInvalidOutput > 0 ||
@@ -38,7 +44,7 @@ export function assessP8LiveReadiness(
     if (freshSlice.liveEligibleInvalidChoice > 0) reasons.push("live_eligible_invalid_choice_present");
     if (freshSlice.liveEligibleError > 0) reasons.push("live_eligible_shadow_error_present");
     if (freshSlice.liveEligibleMissingCandidate > 0) reasons.push("live_eligible_missing_candidate_present");
-    return blocked("NOT_READY_LIVE_SAFETY_BLOCKER", reasons);
+    return blocked("NOT_READY_LIVE_SAFETY_BLOCKER", reasons, [], evidenceBudget);
   }
 
   if (hasProviderBlocker(freshSlice)) {
@@ -49,7 +55,7 @@ export function assessP8LiveReadiness(
     if ((freshSlice.failureBucketCounts.provider_length_truncated ?? 0) > 0) reasons.push("provider_length_truncated_present");
     if ((freshSlice.failureBucketCounts.provider_json_empty_content ?? 0) > 0) reasons.push("provider_json_empty_content_present");
     if ((freshSlice.failureBucketCounts.provider_request_error ?? 0) > 0) reasons.push("provider_request_error_present");
-    return blocked("NOT_READY_PROVIDER_BLOCKER", reasons);
+    return blocked("NOT_READY_PROVIDER_BLOCKER", reasons, [], evidenceBudget);
   }
 
   if (freshSlice.liveEligibleCalled < 2 || !combat || combat.liveEligibleCalled < 2) {
@@ -57,7 +63,7 @@ export function assessP8LiveReadiness(
     if (!combat || combat.liveEligibleCalled < 2) blockedDecisionClasses.push("combat:llm_required");
     if (!cardReward || cardReward.liveEligibleCalled < 2) blockedDecisionClasses.push("card_reward:llm_required");
     if (!map || map.liveEligibleCalled < 2) blockedDecisionClasses.push("map:llm_required");
-    return blocked("NOT_READY_INSUFFICIENT_LIVE_ELIGIBLE_EVIDENCE", reasons, blockedDecisionClasses);
+    return blocked("NOT_READY_INSUFFICIENT_LIVE_ELIGIBLE_EVIDENCE", reasons, blockedDecisionClasses, evidenceBudget);
   }
 
   if (classFutureShallow(combat) || classFutureShallow(cardReward) || classFutureShallow(map)) {
@@ -73,7 +79,7 @@ export function assessP8LiveReadiness(
       reasons.push("map_candidate_future_quality_not_clear");
       blockedDecisionClasses.push("map:llm_required");
     }
-    return blocked("NOT_READY_CANDIDATE_FUTURE_QUALITY", reasons, blockedDecisionClasses);
+    return blocked("NOT_READY_CANDIDATE_FUTURE_QUALITY", reasons, blockedDecisionClasses, evidenceBudget);
   }
 
   if (classReasonWeak(combat) || classReasonWeak(cardReward) || classReasonWeak(map)) {
@@ -89,33 +95,36 @@ export function assessP8LiveReadiness(
       reasons.push("map_reason_quality_not_clear");
       blockedDecisionClasses.push("map:llm_required");
     }
-    return blocked("NOT_READY_REASON_QUALITY", reasons, blockedDecisionClasses);
+    return blocked("NOT_READY_REASON_QUALITY", reasons, blockedDecisionClasses, evidenceBudget);
   }
 
   if (classReadyForLive(combat) && classReadyForLive(cardReward)) {
-    return {
+    return withRolloutBudget({
       status: "READY_FOR_P8_5_LIVE_COMBAT_AND_CARD_REWARD",
       reasons: ["combat_and_card_reward_windows_meet_current_live_gate"],
       staticPreAuditAllowed: true,
       recommendedFirstLiveWhitelist: ["combat:llm_required", "card_reward:llm_required"],
-      blockedDecisionClasses: classReadyForLive(map) ? [] : ["map:llm_required"]
-    };
+      blockedDecisionClasses: classReadyForLive(map) ? [] : ["map:llm_required"],
+      evidenceBudget
+    });
   }
 
   if (classReadyForLive(combat)) {
-    return {
+    return withRolloutBudget({
       status: "READY_FOR_P8_5_LIVE_COMBAT_ONLY",
       reasons: ["combat_window_meets_current_live_gate", "non_combat_live_classes_need_more_evidence"],
       staticPreAuditAllowed: true,
       recommendedFirstLiveWhitelist: ["combat:llm_required"],
-      blockedDecisionClasses: ["card_reward:llm_required", "map:llm_required"]
-    };
+      blockedDecisionClasses: ["card_reward:llm_required", "map:llm_required"],
+      evidenceBudget
+    });
   }
 
   return blocked(
     "NOT_READY_INSUFFICIENT_LIVE_ELIGIBLE_EVIDENCE",
     ["combat_live_gate_not_cleared"],
-    ["combat:llm_required", "card_reward:llm_required", "map:llm_required"]
+    ["combat:llm_required", "card_reward:llm_required", "map:llm_required"],
+    evidenceBudget
   );
 }
 
@@ -125,6 +134,7 @@ export function formatP8LiveReadinessAssessment(assessment: P8LiveReadinessAsses
     `static=${assessment.staticPreAuditAllowed ? "allowed" : "blocked"}`,
     `whitelist=${assessment.recommendedFirstLiveWhitelist.join(",") || "none"}`,
     `blocked=${assessment.blockedDecisionClasses.join(",") || "none"}`,
+    `evidence=${String(assessment.evidenceBudget.status ?? "unknown")}`,
     `reasons=${assessment.reasons.join(",") || "none"}`
   ].join(" ");
 }
@@ -177,14 +187,29 @@ function hasProviderBlocker(freshSlice: ReplayShadowSliceStats): boolean {
 function blocked(
   status: Exclude<P8LiveReadinessStatus, "READY_FOR_P8_5_LIVE_COMBAT_ONLY" | "READY_FOR_P8_5_LIVE_COMBAT_AND_CARD_REWARD">,
   reasons: string[],
-  blockedDecisionClasses: string[] = []
+  blockedDecisionClasses: string[] = [],
+  evidenceBudget: JsonRecord = {}
 ): P8LiveReadinessAssessment {
-  return {
+  return withRolloutBudget({
     status,
     reasons: dedupe(reasons),
     staticPreAuditAllowed: true,
     recommendedFirstLiveWhitelist: [],
-    blockedDecisionClasses: dedupe(blockedDecisionClasses)
+    blockedDecisionClasses: dedupe(blockedDecisionClasses),
+    evidenceBudget
+  });
+}
+
+function withRolloutBudget(assessment: Omit<P8LiveReadinessAssessment, "rolloutBudget">): P8LiveReadinessAssessment {
+  return {
+    ...assessment,
+    rolloutBudget: buildP8RolloutBudgetAssessment({
+      status: assessment.status,
+      reasons: assessment.reasons,
+      recommendedFirstLiveWhitelist: assessment.recommendedFirstLiveWhitelist,
+      blockedDecisionClasses: assessment.blockedDecisionClasses,
+      evidenceBudget: assessment.evidenceBudget
+    })
   };
 }
 

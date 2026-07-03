@@ -6,6 +6,8 @@ The permanent working mission is to build an agent scaffold system that lets a z
 
 The current formal route is Phase 0 through Phase 10. Phase 10 is the first target state for a complete Guarded Learning Loop: predictions are made before decisions, checked after execution, attributed in replay/eval, converted into evidence-gated consolidation proposals, and only then allowed to update stable memory/derived/strategy state with rollback.
 
+Budget governance is now treated as a cross-cutting engineering-governance concern, not just a provider tuning detail. See `BUDGET_GOVERNANCE.md` for the long-lived model. The short version is: strategic fidelity outranks token thrift, recovery budgets must be modeled separately from workspace compression, and rollout budgets must remain stricter than exploration budgets.
+
 ## Maturity Route Constraint
 
 P1 through P10 are not a task checklist. They are the North Star maturity route for keeping the LLM as the strategic player while the local system grows into a predictive cognitive scaffold that improves how the LLM can see, remember, imagine, deliberate, execute, replay, and learn.

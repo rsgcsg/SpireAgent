@@ -11,6 +11,12 @@ import { validateLlmDecisionForCandidates } from "./llm.js";
 import { serializeWorkspaceCandidateFutures } from "./candidateFutureCompressor.js";
 import { analyzeSerializedCandidateFutures } from "./candidateFutureReviewSignals.js";
 import { assessReasonQuality, classifyProviderFailure, summarizeProviderAttempts, summarizeReasonQualityNotes } from "./providerFailureClassifier.js";
+import {
+  budgetGovernanceProfileFromEnv,
+  buildBudgetGovernancePolicy,
+  type BudgetGovernanceProfileName
+} from "./budgetGovernance.js";
+import { summarizeProviderRecoveryPolicy } from "./providerRecoveryPolicy.js";
 import type { ScoredCandidate } from "./types.js";
 import { isRecord } from "./utils.js";
 import {
@@ -72,6 +78,7 @@ export interface WorkspaceShadowOptions {
   maxEstimatedCostUsd?: number;
   estimatedInputUsdPerMillionTokens?: number;
   estimatedOutputUsdPerMillionTokens?: number;
+  budgetGovernanceProfile?: BudgetGovernanceProfileName;
   ablationMode?: WorkspaceAblationMode;
   liveAdditiveEnabled?: boolean;
   liveDecisionClassWhitelist?: string[];
@@ -116,6 +123,7 @@ export function workspaceOptionsFromEnv(): WorkspaceShadowOptions {
     maxEstimatedCostUsd: numberFromEnv("STS2_P8_WORKSPACE_MAX_ESTIMATED_COST_USD", 0.05),
     estimatedInputUsdPerMillionTokens: numberFromEnv("STS2_DEEPSEEK_EST_INPUT_USD_PER_MTOK", 0.3),
     estimatedOutputUsdPerMillionTokens: numberFromEnv("STS2_DEEPSEEK_EST_OUTPUT_USD_PER_MTOK", 0.6),
+    budgetGovernanceProfile: budgetGovernanceProfileFromEnv(),
     ablationMode: workspaceAblationModeFromEnv(),
     liveAdditiveEnabled: isEnabled(process.env[P8_LIVE_ADDITIVE_FLAG]),
     liveDecisionClassWhitelist: parseList(process.env[P8_LIVE_DECISION_CLASSES_FLAG])
@@ -358,7 +366,7 @@ export function buildWorkspaceComparison(input: WorkspaceComparisonInput): Delib
   const structuredPromptBytes = Buffer.byteLength(structuredPrompt, "utf8");
   const structuredTokenEstimate = estimateTokens(structuredPrompt);
   const maxOutputTokens = positiveNumber(options.maxOutputTokens, 400);
-  const budget = buildWorkspaceBudget(options, structuredTokenEstimate, maxOutputTokens);
+  const budget = buildWorkspaceBudget(options, structuredTokenEstimate, maxOutputTokens, input.decisionClass);
   const providerAvailable = Boolean(options.providerAvailable);
   const providerReadinessReasons: string[] = [];
   if (!providerAvailable) providerReadinessReasons.push(`${P8_DEEPSEEK_API_KEY_FLAG}=missing`);
@@ -546,6 +554,13 @@ export async function buildP8WorkspaceShadow(input: ShadowWorkspaceDecisionInput
       providerOutputKind: typeof providerAudit?.contentKind === "string" ? providerAudit.contentKind : undefined,
       validationError: validation.error
     });
+    const providerRecoveryPolicy = summarizeProviderRecoveryPolicy({
+      attempts: providerAudit?.attempts,
+      outcome: validation.valid ? "valid" : validation.outcome ?? "invalid_output",
+      failureBucket: failure.bucket,
+      parseState: typeof providerAudit?.parseState === "string" ? providerAudit.parseState : undefined,
+      finishReason: providerMetadataString(decision, "finishReason")
+    });
     return {
       structuredPrompt: input.structuredPrompt,
       comparison: input.comparison,
@@ -588,6 +603,8 @@ export async function buildP8WorkspaceShadow(input: ShadowWorkspaceDecisionInput
         providerParseState: typeof providerAudit?.parseState === "string" ? providerAudit.parseState : undefined,
         providerCleanupReason: typeof providerAudit?.cleanupReason === "string" ? providerAudit.cleanupReason : undefined,
         providerAttempts: summarizeProviderAttempts(providerAudit?.attempts),
+        providerRecoveryPolicy,
+        providerRecoveryPolicyName: typeof providerRecoveryPolicy?.policyName === "string" ? providerRecoveryPolicy.policyName : undefined,
         failureCategory: failure.category,
         failureBucket: failure.bucket,
         outputCapHit: isOutputCapHit(decision, input.comparison),
@@ -1378,7 +1395,8 @@ function reasonQuality(reason: unknown): ShadowWorkspaceDecision["reasonQuality"
 function buildWorkspaceBudget(
   options: WorkspaceShadowOptions,
   estimatedInputTokens: number,
-  maxOutputTokens: number
+  maxOutputTokens: number,
+  decisionClass: string
 ): NonNullable<DeliberationWorkspaceComparison["budget"]> {
   const maxShadowCalls = positiveNumber(options.maxShadowCalls, 1);
   const softInputTokenLimit = positiveNumber(options.softInputTokenLimit, 8000);
@@ -1406,7 +1424,28 @@ function buildWorkspaceBudget(
   } else if (estimatedInputTokens > softInputTokenLimit) {
     status = "soft_token_limit_exceeded";
   }
+  const governanceProfile = options.budgetGovernanceProfile ?? "shadow_exploration";
+  const governancePolicy = buildBudgetGovernancePolicy({
+    profile: governanceProfile,
+    decisionClass,
+    liveAdditiveEnabled: Boolean(options.liveAdditiveEnabled),
+    liveDecisionClassWhitelist: options.liveDecisionClassWhitelist ?? [],
+    maxShadowCalls,
+    shadowCallsUsed: shadowCallsUsedThisProcess,
+    estimatedInputTokens,
+    softInputTokenLimit,
+    hardInputTokenLimit,
+    maxOutputTokens,
+    timeoutMs,
+    retryLimit,
+    estimatedCostUsd,
+    maxEstimatedCostUsd,
+    status,
+    skippedReason
+  });
   return {
+    governanceProfile,
+    governancePolicy,
     maxShadowCalls,
     shadowCallsUsed: shadowCallsUsedThisProcess,
     estimatedInputTokens,

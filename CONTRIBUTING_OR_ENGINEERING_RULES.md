@@ -59,6 +59,8 @@ Strategy improvements should happen after run review or natural checkpoints.
 
 When behavior changes, update the relevant docs:
 
+- `docs/00_START_HERE.md` for documentation-routing changes
+- `docs/04_CURRENT_STATUS.md` when the active blocker, milestone, or next step changed
 - `README.md`
 - `LLM_HANDOFF.md`
 - `DEBUG_REPORT.md`
@@ -66,10 +68,12 @@ When behavior changes, update the relevant docs:
 - `ARCHITECTURE.md`
 - `GAME_IO_CAPABILITIES.md`
 - `DATA_SCHEMA.md`
+- `BUDGET_GOVERNANCE.md`
 - `MEMORY_SYSTEM.md`
 - `REPLAY_AND_EVAL.md`
 
 Do not let docs describe a system that the code does not implement.
+Do not treat handoff/debug notes as the only source of truth when a canonical doc should be updated.
 
 ## Repository Hygiene
 

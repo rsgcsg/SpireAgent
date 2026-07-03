@@ -103,6 +103,36 @@ function summarizeCurrentRunCognitiveCoverage(runId: string): JsonRecord {
     }
     return counts;
   }, {});
+  const workspaceGovernanceProfileCounts = transitions.reduce<Record<string, number>>((counts, transition) => {
+    const budget = isRecord(transition.workspaceComparison) && isRecord(transition.workspaceComparison.budget)
+      ? transition.workspaceComparison.budget
+      : undefined;
+    if (!budget) return counts;
+    const profile = typeof budget.governanceProfile === "string"
+      ? budget.governanceProfile
+      : isRecord(budget.governancePolicy) && typeof budget.governancePolicy.profile === "string"
+        ? budget.governancePolicy.profile
+        : undefined;
+    if (profile) counts[profile] = (counts[profile] ?? 0) + 1;
+    return counts;
+  }, {});
+  const workspaceRecoveryPolicyCounts = transitions.reduce<Record<string, number>>((counts, transition) => {
+    if (!isRecord(transition.shadowWorkspaceDecision)) return counts;
+    const policyName = typeof transition.shadowWorkspaceDecision.providerRecoveryPolicyName === "string"
+      ? transition.shadowWorkspaceDecision.providerRecoveryPolicyName
+      : isRecord(transition.shadowWorkspaceDecision.providerRecoveryPolicy) &&
+          typeof transition.shadowWorkspaceDecision.providerRecoveryPolicy.policyName === "string"
+        ? transition.shadowWorkspaceDecision.providerRecoveryPolicy.policyName
+        : undefined;
+    if (policyName) counts[policyName] = (counts[policyName] ?? 0) + 1;
+    return counts;
+  }, {});
+  const workspaceRecoveryOutputCapRelationCounts = transitions.reduce<Record<string, number>>((counts, transition) => {
+    if (!isRecord(transition.shadowWorkspaceDecision) || !isRecord(transition.shadowWorkspaceDecision.providerRecoveryPolicy)) return counts;
+    const relation = transition.shadowWorkspaceDecision.providerRecoveryPolicy.rescueOutputCapRelation;
+    if (typeof relation === "string") counts[relation] = (counts[relation] ?? 0) + 1;
+    return counts;
+  }, {});
   const workspaceReasonQualityCounts = transitions.reduce<Record<string, number>>((counts, transition) => {
     if (!isRecord(transition.shadowWorkspaceDecision) || typeof transition.shadowWorkspaceDecision.reasonQuality !== "string") return counts;
     counts[transition.shadowWorkspaceDecision.reasonQuality] = (counts[transition.shadowWorkspaceDecision.reasonQuality] ?? 0) + 1;
@@ -267,6 +297,9 @@ function summarizeCurrentRunCognitiveCoverage(runId: string): JsonRecord {
     workspaceDecisionClassCounts,
     workspaceProviderReadinessCounts,
     workspaceBudgetStatusCounts,
+    workspaceGovernanceProfileCounts,
+    workspaceRecoveryPolicyCounts,
+    workspaceRecoveryOutputCapRelationCounts,
     workspaceReasonQualityCounts,
     workspaceReasonQualityNoteCounts,
     workspaceFinishReasonCounts,

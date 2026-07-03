@@ -4,6 +4,7 @@
 
 Before changing this project, read:
 
+- `docs/00_START_HERE.md`
 - `PROJECT_NORTH_STAR.md`
 - `PROJECT_NORTH_STAR_CHINESE.md` if Chinese context is helpful
 - `PROJECT_AUTHORITY_GUIDE.md`
@@ -18,6 +19,44 @@ Before changing this project, read:
 This repository is intended to be pushed to GitHub and redeployed by other users. Keep docs, commands, and tests in sync with behavior.
 
 Historical `docs/PROJECT_STEERING.md`, `docs/PROJECT_BOUNDARIES.md`, `docs/agent-system-principles.md`, and `docs/ai-agent-architecture.md` are redirect pointers only. Do not treat them as active architecture authority.
+
+## Documentation Operating System
+
+Treat the repository documentation as a small operating system, not as a pile of notes.
+
+Authority order:
+
+- `docs/00_START_HERE.md`: documentation entrypoint for humans and agents.
+- `PROJECT_NORTH_STAR.md`: highest-priority long-term constitution.
+- `docs/04_CURRENT_STATUS.md`: canonical current phase, blocker, and next-step snapshot.
+- `PROJECT_PLAN.md`: canonical long-horizon roadmap and phase book.
+- `ARCHITECTURE.md`, `DATA_SCHEMA.md`, `REPLAY_AND_EVAL.md`, `BUDGET_GOVERNANCE.md`: canonical subsystem sources.
+- `docs/decisions/*.md`: ADRs for durable project decisions.
+- `LLM_HANDOFF.md` and `DEBUG_REPORT.md`: working handoff and historical/debug context only, not canonical project truth.
+
+When you are changing docs, read `docs/00_START_HERE.md` first and update the canonical target instead of only editing handoff/debug notes.
+
+Write each kind of information in the right place:
+
+- current phase / blocker / next step: `docs/04_CURRENT_STATUS.md`
+- long-term roadmap and P1-P10 route: `PROJECT_PLAN.md`
+- architecture and boundaries: `ARCHITECTURE.md`
+- schemas and telemetry fields: `DATA_SCHEMA.md`
+- replay/eval/review behavior: `REPLAY_AND_EVAL.md`
+- durable governance decisions: `docs/decisions/*.md`
+- run procedures: `docs/` runbooks such as `docs/DEPLOYMENT.md` or `docs/ITERATION_GUIDE.md`
+- historical findings, debug chronology, and local context: `LLM_HANDOFF.md` / `DEBUG_REPORT.md`
+
+Do not let README, handoff notes, or debug logs become the only source of truth for current status or future plan.
+
+End-of-task documentation checklist:
+
+- update the canonical doc for any behavior or policy that changed
+- update `docs/04_CURRENT_STATUS.md` if current blocker, phase, or next step changed
+- add or update an ADR when the rule is durable and cross-cutting
+- add a short pointer in `LLM_HANDOFF.md` or `DEBUG_REPORT.md` only when historical context helps
+- keep redirects and archive material non-authoritative
+- keep docs synchronized with tests and commands
 
 `PROJECT_NORTH_STAR.md` is the highest-priority long-term constitution. The project is not trying to build the strongest arbitrary algorithmic bot; it is trying to maximize an LLM strategic player's game ability through a predictive cognitive scaffold.
 

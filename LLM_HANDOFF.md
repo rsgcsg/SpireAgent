@@ -1,5 +1,7 @@
 # LLM Handoff
 
+> Status note: this is a working handoff and recent engineering-context document, not the canonical source of truth for current phase, blocker, roadmap, or architecture. Start from `docs/00_START_HERE.md` and `docs/04_CURRENT_STATUS.md`, then use `PROJECT_NORTH_STAR.md`, `PROJECT_PLAN.md`, `ARCHITECTURE.md`, `DATA_SCHEMA.md`, and `REPLAY_AND_EVAL.md` for enduring authority.
+
 Current project directory:
 
 ```text
@@ -14,13 +16,24 @@ Read first:
 4. `ARCHITECTURE.md`
 5. `GAME_IO_CAPABILITIES.md`
 6. `DATA_SCHEMA.md`
-7. `CONTRIBUTING_OR_ENGINEERING_RULES.md`
+7. `BUDGET_GOVERNANCE.md`
+8. `CONTRIBUTING_OR_ENGINEERING_RULES.md`
 
 ## Current State
 
 The project has completed Phase 0, Phase 1, the Phase 2 minimum data-loop MVP, the Phase 2.5 offline engineering eval runner, and Phase 2.6 eval warning classification/noise reduction. The formal route now extends through Phase 10, where the target is a complete Guarded Learning Loop.
 
 The permanent mission is to build an agent scaffold system that lets a zero-experience LLM agent progressively unlock and express its full strategic potential through real play, structured perception, memory, candidate futures, deliberation, replay, prediction-error learning, and guarded improvement.
+
+Budget should now be read as a cross-cutting governance topic rather than a provider-only tuning topic. `BUDGET_GOVERNANCE.md` defines the intended separation between call budget, recovery budget, run budget, evidence budget, rollout budget, and protected-path budget.
+
+BG-1/BG-2 have an initial code anchor: `src/agent/budgetGovernance.ts` resolves `STS2_BUDGET_GOVERNANCE_PROFILE` and records structured governance metadata in `workspaceComparison.budget`. This is observability and policy interpretation only; it does not enable live additive or stable learning writes.
+
+BG-3 has an initial telemetry anchor: `src/agent/providerRecoveryPolicy.ts` summarizes existing DeepSeek primary/rescue attempts into `shadowWorkspaceDecision.providerRecoveryPolicy`. It is attempt-lineage reporting only; it does not alter retry behavior, output caps, workspace compression, validation, or live behavior.
+
+BG-4 has an initial readiness anchor: `src/replay/evidenceBudget.ts` adds `P8LiveReadinessAssessment.evidenceBudget`, making fresh sample sufficiency and mixed-window promotion risk explicit. It does not override provider/safety/reason-quality blockers.
+
+BG-5/BG-6 have an initial rollout/protected-path anchor: `src/replay/rolloutBudget.ts` adds `P8LiveReadinessAssessment.rolloutBudget`, documenting additive live authorization, rollback, whitelist, and stable-write constraints without enabling any live or learning mutation path.
 
 The active North Star is the LLM-centered predictive cognitive scaffold described in `PROJECT_NORTH_STAR.md` and `PROJECT_NORTH_STAR_CHINESE.md`. Current work should migrate the existing working loop toward `StrategicImpression`, `SalienceSignal`, `MemoryActivation`, `CandidateFuture`, `DeliberationPacket`, `PredictionErrorRecord`, `ReplayFrame`, and `ConsolidationRecord` without large controller rewrites or untested strategy changes.
 
@@ -103,7 +116,8 @@ Latest live-readiness note:
 P8.5 live gate and rollout discipline:
 
 - Current state: `P8.5` may continue on static / pre-live audit, but additive live is still `no_go`.
-- Fresh `combat:llm_required` failures at transitions `transition-000130-agent-mr4sg5sl-xm6o7z` and `transition-000131-agent-mr4sh7t9-l925tb` currently keep readiness at `NOT_READY_LIVE_SAFETY_BLOCKER` until the new rescue contract is re-tested on the same high-pressure slice.
+- Fresh `combat:llm_required` failures at transitions `transition-000130-agent-mr4sg5sl-xm6o7z` and `transition-000131-agent-mr4sh7t9-l925tb` were the blocker that forced the high-pressure recovery pass.
+- Targeted replay retest on current code recovered both transitions as valid with `reasonQuality=adequate`, `finishReason=stop`, `failureBucket=none`, and no semantic-validation relaxation. One retest explicitly exercised recovery: primary `length+empty`, then truncation rescue with `thinking=disabled` and independent rescue cap returned valid JSON. A second retest had both calls succeed on primary, so fresh runtime high-pressure evidence is still required before changing readiness.
 - Default remains off: `STS2_P8_LIVE_ADDITIVE=0`.
 - The first allowed live experiment, when explicitly authorized, is additive only: legacy prompt plus compact workspace summary. Structured-prompt-only live routing is not allowed here.
 - `full` remains the control baseline. `full_bounded_candidate_futures` remains an experiment mode and must not silently replace `full`.

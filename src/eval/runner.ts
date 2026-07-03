@@ -157,6 +157,9 @@ export interface EvalWorkspaceCoverage {
   providerReadinessCounts: Record<string, number>;
   providerReadinessReasons: Record<string, number>;
   budgetStatusCounts: Record<string, number>;
+  governanceProfileCounts: Record<string, number>;
+  recoveryPolicyCounts: Record<string, number>;
+  recoveryOutputCapRelationCounts: Record<string, number>;
   skippedReasonCounts: Record<string, number>;
   reasonQualityCounts: Record<string, number>;
   reasonQualityNoteCounts: Record<string, number>;
@@ -1119,6 +1122,9 @@ function createWorkspaceCoverage(): EvalWorkspaceCoverage {
     providerReadinessCounts: {},
     providerReadinessReasons: {},
     budgetStatusCounts: {},
+    governanceProfileCounts: {},
+    recoveryPolicyCounts: {},
+    recoveryOutputCapRelationCounts: {},
     skippedReasonCounts: {},
     reasonQualityCounts: {},
     reasonQualityNoteCounts: {},
@@ -1281,6 +1287,14 @@ function collectWorkspaceCoverage(coverage: EvalWorkspaceCoverage, transition: T
     if (isRecord(comparison.budget)) {
       const status = typeof comparison.budget.status === "string" ? comparison.budget.status : "unknown";
       coverage.budgetStatusCounts[status] = (coverage.budgetStatusCounts[status] ?? 0) + 1;
+      const governanceProfile = typeof comparison.budget.governanceProfile === "string"
+        ? comparison.budget.governanceProfile
+        : isRecord(comparison.budget.governancePolicy) && typeof comparison.budget.governancePolicy.profile === "string"
+          ? comparison.budget.governancePolicy.profile
+          : undefined;
+      if (governanceProfile) {
+        coverage.governanceProfileCounts[governanceProfile] = (coverage.governanceProfileCounts[governanceProfile] ?? 0) + 1;
+      }
       if (typeof comparison.budget.maxShadowCalls === "number") {
         coverage.plannedShadowCalls = Math.max(coverage.plannedShadowCalls, comparison.budget.maxShadowCalls);
       }
@@ -1335,6 +1349,21 @@ function collectWorkspaceCoverage(coverage: EvalWorkspaceCoverage, transition: T
   if (agreement === "missing_candidate" && liveEligible) coverage.liveEligibleMissingCandidate += 1;
   const budgetStatus = !comparison && typeof shadowDecision.budgetStatus === "string" ? shadowDecision.budgetStatus : undefined;
   if (budgetStatus) coverage.budgetStatusCounts[budgetStatus] = (coverage.budgetStatusCounts[budgetStatus] ?? 0) + 1;
+  const recoveryPolicyName = typeof shadowDecision.providerRecoveryPolicyName === "string"
+    ? shadowDecision.providerRecoveryPolicyName
+    : isRecord(shadowDecision.providerRecoveryPolicy) && typeof shadowDecision.providerRecoveryPolicy.policyName === "string"
+      ? shadowDecision.providerRecoveryPolicy.policyName
+      : undefined;
+  if (recoveryPolicyName) {
+    coverage.recoveryPolicyCounts[recoveryPolicyName] = (coverage.recoveryPolicyCounts[recoveryPolicyName] ?? 0) + 1;
+  }
+  const recoveryOutputCapRelation = isRecord(shadowDecision.providerRecoveryPolicy) &&
+      typeof shadowDecision.providerRecoveryPolicy.rescueOutputCapRelation === "string"
+    ? shadowDecision.providerRecoveryPolicy.rescueOutputCapRelation
+    : undefined;
+  if (recoveryOutputCapRelation) {
+    coverage.recoveryOutputCapRelationCounts[recoveryOutputCapRelation] = (coverage.recoveryOutputCapRelationCounts[recoveryOutputCapRelation] ?? 0) + 1;
+  }
   if (typeof shadowDecision.skippedReason === "string") {
     coverage.skippedReasonCounts[shadowDecision.skippedReason] = (coverage.skippedReasonCounts[shadowDecision.skippedReason] ?? 0) + 1;
   }
@@ -1622,6 +1651,9 @@ function emptyReplayShadowSlice(label: string): ReplayShadowSliceStats {
     reasonQualityCounts: {},
     reasonQualityNoteCounts: {},
     budgetStatusCounts: {},
+    governanceProfileCounts: {},
+    recoveryPolicyCounts: {},
+    recoveryOutputCapRelationCounts: {},
     invalidBucketCounts: {},
     failureCategoryCounts: {},
     failureBucketCounts: {},

@@ -349,7 +349,29 @@ export interface CandidateFutureCompletenessSummary {
   shallowFutureCount: number;
 }
 
+export type BudgetGovernanceProfileName =
+  | "observe_only"
+  | "shadow_exploration"
+  | "shadow_readiness"
+  | "live_additive_candidate"
+  | "protected_learning_preparation"
+  | "stable_update_candidate";
+
+export interface BudgetGovernancePolicy {
+  schemaVersion: number;
+  profile: BudgetGovernanceProfileName | string;
+  principle: "budget_is_guard_not_goal" | string;
+  callBudget: JsonRecord;
+  recoveryBudget: JsonRecord;
+  runBudget: JsonRecord;
+  evidenceBudget: JsonRecord;
+  rolloutBudget: JsonRecord;
+  protectedPathBudget: JsonRecord;
+}
+
 export interface DeliberationWorkspaceBudget {
+  governanceProfile?: BudgetGovernanceProfileName | string;
+  governancePolicy?: BudgetGovernancePolicy;
   maxShadowCalls: number;
   shadowCallsUsed: number;
   estimatedInputTokens: number;
@@ -441,6 +463,8 @@ export interface ShadowWorkspaceDecision {
   providerParseState?: string;
   providerCleanupReason?: string;
   providerAttempts?: JsonRecord[];
+  providerRecoveryPolicy?: JsonRecord;
+  providerRecoveryPolicyName?: string;
   failureCategory?: string;
   failureBucket?: string;
   outputCapHit?: boolean;

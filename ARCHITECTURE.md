@@ -132,6 +132,7 @@ Current code/docs:
 - `src/eval/runner.ts`
 - `src/eval/cli.ts`
 - `src/agent/smoke.ts`
+- `BUDGET_GOVERNANCE.md`
 - `DEBUG_REPORT.md`
 - `PROJECT_AUTHORITY_GUIDE.md`
 - `CONTRIBUTING_OR_ENGINEERING_RULES.md`
@@ -218,3 +219,7 @@ P8 workspace status:
 - P8.4 rollout-gate metadata is now visible in replay/eval/review. P8.5 remains preparation-only: compact workspace summaries and live-additive rollout metadata exist, but the first allowed live experiment is additive `legacy prompt + compact workspace summary`, not structured-prompt-only and not enabled by default.
 - Shadow boundaries should be relaxed only at the intended gates: P8.5 for additive prompt context, P9 for guarded stable updates, and P10 for the full guarded learning loop.
 - This keeps the North Star boundary intact: the local scaffold shapes a better strategic workspace for the LLM, while the LLM remains the strategic player and all actions still pass through current validation/execution.
+- Budget governance should be interpreted through `BUDGET_GOVERNANCE.md`: current P8 guards are early instances of call budget, recovery budget, run budget, evidence budget, and rollout budget, but they are not yet the finished governance architecture.
+- BG-1/BG-2 now have a small code anchor: `src/agent/budgetGovernance.ts` resolves named governance profiles and records structured budget-policy metadata inside P8 workspace comparisons. This is observability and guard interpretation only; it does not change live behavior.
+- BG-3 now has a small telemetry anchor: `src/agent/providerRecoveryPolicy.ts` summarizes existing provider recovery attempts so recovery budget can be audited separately from workspace compression. It does not change provider behavior.
+- BG-4/BG-5/BG-6 now have readiness-report anchors: `src/replay/evidenceBudget.ts` and `src/replay/rolloutBudget.ts` make evidence sufficiency, rollout authorization, rollback, and protected-path write bans explicit without enabling live or stable learning paths.

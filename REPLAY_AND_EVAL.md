@@ -93,6 +93,18 @@ As of P8, replay/eval/review also report the DeliberationPacket strategic worksp
 - `STS2_P8_WORKSPACE_CALL` separately gates any structured shadow LLM call. With defaults, P8 never calls an extra LLM and never changes action selection.
 - DeepSeek V4 Flash provider plumbing is prepared, but missing `STS2_DEEPSEEK_API_KEY` must be reported as `needs_api_key`, `skipped`, or `unavailable`; eval must not treat this as a fake model result.
 - P8.4 gate data is visible in replay/eval/review: decision class, readiness, token budget, agreement/disagreement, missing sections, invalid rate, missing candidate, reason quality, error rate, cost estimate, and go/no-go. Budget skips are not FAIL.
+- Budget telemetry should be interpreted as governance telemetry, not as a direct proxy for strategic quality. Replay/eval should help separate:
+  - provider contract failure
+  - strategic workspace quality failure
+  - evidence insufficiency
+  - budget stop / skip
+  - rollout blocker
+  See `BUDGET_GOVERNANCE.md`.
+- Fresh P8 transitions can now include a `budget.governanceProfile` and `budget.governancePolicy`. These fields make the call / recovery / run / evidence / rollout / protected-path interpretation explicit. Old transitions without these fields remain valid.
+- Replay/eval/review aggregate governance profile counts as reporting metadata. Profile counts clarify which budget interpretation produced a sample; they do not by themselves change go/no-go, validation, recovery, or rollout behavior.
+- Fresh P8 shadow decisions can also include `providerRecoveryPolicyName` and `providerRecoveryPolicy`. Replay/eval/review aggregate the recovery policy and rescue output-cap relation so provider recovery can be audited separately from workspace compression.
+- P8.5 readiness includes an `evidenceBudget` object. It records fresh live-eligible sample targets, per-decision-class evidence targets, mixed revision/budget window flags, and whether the window is usable for promotion. It is explanatory governance metadata, not a shortcut around provider, safety, reason-quality, or CandidateFuture-quality blockers.
+- P8.5 readiness also includes a `rolloutBudget` object. It records the additive first-live mode, whitelist proposal, blocked classes, explicit flag and human authorization requirements, rollback requirement, and protected-path write bans. It is not live enablement.
 - P8.5 remains preparation-only. The only allowed first live mode is additive `legacy prompt + compact workspace summary`, behind a whitelist/feature flag/rollback path; structured-prompt-only must not be enabled by default.
 - When P8.5 later reaches explicit live authorization, rollout evidence must still be interpreted with the same discipline:
   - compare by decision class, revision tag, and bounded review window

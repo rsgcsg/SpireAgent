@@ -77,6 +77,9 @@ export interface ReplayShadowSliceStats {
   reasonQualityCounts: Record<string, number>;
   reasonQualityNoteCounts: Record<string, number>;
   budgetStatusCounts: Record<string, number>;
+  governanceProfileCounts: Record<string, number>;
+  recoveryPolicyCounts: Record<string, number>;
+  recoveryOutputCapRelationCounts: Record<string, number>;
   invalidBucketCounts: Record<string, number>;
   failureCategoryCounts: Record<string, number>;
   failureBucketCounts: Record<string, number>;
@@ -441,6 +444,9 @@ export function buildReplayShadowSliceStats(
     reasonQualityCounts: {},
     reasonQualityNoteCounts: {},
     budgetStatusCounts: {},
+    governanceProfileCounts: {},
+    recoveryPolicyCounts: {},
+    recoveryOutputCapRelationCounts: {},
     invalidBucketCounts: {},
     failureCategoryCounts: {},
     failureBucketCounts: {},
@@ -556,6 +562,25 @@ export function buildReplayShadowSliceStats(
     }
     if (typeof shadow.budgetStatus === "string") {
       stats.budgetStatusCounts[shadow.budgetStatus] = (stats.budgetStatusCounts[shadow.budgetStatus] ?? 0) + 1;
+    }
+    const governanceProfile = workspaceGovernanceProfile(transition);
+    if (governanceProfile) {
+      stats.governanceProfileCounts[governanceProfile] = (stats.governanceProfileCounts[governanceProfile] ?? 0) + 1;
+    }
+    const recoveryPolicyName = typeof shadow.providerRecoveryPolicyName === "string"
+      ? shadow.providerRecoveryPolicyName
+      : isRecord(shadow.providerRecoveryPolicy) && typeof shadow.providerRecoveryPolicy.policyName === "string"
+        ? shadow.providerRecoveryPolicy.policyName
+        : undefined;
+    if (recoveryPolicyName) {
+      stats.recoveryPolicyCounts[recoveryPolicyName] = (stats.recoveryPolicyCounts[recoveryPolicyName] ?? 0) + 1;
+    }
+    const recoveryOutputCapRelation = isRecord(shadow.providerRecoveryPolicy) &&
+        typeof shadow.providerRecoveryPolicy.rescueOutputCapRelation === "string"
+      ? shadow.providerRecoveryPolicy.rescueOutputCapRelation
+      : undefined;
+    if (recoveryOutputCapRelation) {
+      stats.recoveryOutputCapRelationCounts[recoveryOutputCapRelation] = (stats.recoveryOutputCapRelationCounts[recoveryOutputCapRelation] ?? 0) + 1;
     }
     const finishReason = typeof shadow.providerFinishReason === "string" ? shadow.providerFinishReason : undefined;
     if (finishReason) {
@@ -758,6 +783,9 @@ export function formatReplayShadowSliceStats(stats: ReplayShadowSliceStats): str
     `liveEligibleMissingCandidate=${stats.liveEligibleMissingCandidate}`,
     `ablation=${JSON.stringify(stats.ablationModeCounts)}`,
     `compression=${JSON.stringify(stats.compressionModeCounts)}`,
+    `governance=${JSON.stringify(stats.governanceProfileCounts)}`,
+    `recovery=${JSON.stringify(stats.recoveryPolicyCounts)}`,
+    `recoveryCap=${JSON.stringify(stats.recoveryOutputCapRelationCounts)}`,
     `failureCategory=${JSON.stringify(stats.failureCategoryCounts)}`,
     `failureBucket=${JSON.stringify(stats.failureBucketCounts)}`,
     `modes=${JSON.stringify(stats.providerModeCounts)}`,
@@ -893,6 +921,16 @@ function shadowRevisionTag(transition: TransitionRecord): string | undefined {
     return transition.workspaceComparison.revisionTag;
   }
   return undefined;
+}
+
+function workspaceGovernanceProfile(transition: TransitionRecord): string | undefined {
+  const budget = isRecord(transition.workspaceComparison) && isRecord(transition.workspaceComparison.budget)
+    ? transition.workspaceComparison.budget
+    : undefined;
+  if (!budget) return undefined;
+  if (typeof budget.governanceProfile === "string") return budget.governanceProfile;
+  const policy = isRecord(budget.governancePolicy) ? budget.governancePolicy : undefined;
+  return typeof policy?.profile === "string" ? policy.profile : undefined;
 }
 
 function shadowLiveEligible(transition: TransitionRecord): boolean {

@@ -2,6 +2,8 @@
 
 > `PROJECT_NORTH_STAR.md` 是长期最高原则文档。  
 > 本文件是工程权威索引：定义文档权威层级、系统边界、阶段路线、下一步 Codex 工作方式和验收标准。它不替代子系统文档。
+>
+> 文档入口现已固定为 `docs/00_START_HERE.md`。当前 phase / blocker / next step 的 canonical 短状态写在 `docs/04_CURRENT_STATUS.md`，`LLM_HANDOFF.md` 与 `DEBUG_REPORT.md` 只保留为工作交接和历史调试上下文。
 
 ---
 
@@ -228,6 +230,14 @@ raw game state
 - live run policy。
 - documentation rule。
 
+#### `BUDGET_GOVERNANCE.md`
+
+用途：
+
+- 预算治理的长期原则文档。
+- 定义 token / output / retry / cost / evidence / rollout / protected-path 预算的边界。
+- 规定预算如何服务 North Star，而不是把预算误当成“尽量省 token”。
+
 ### Tier 2：子系统设计文档
 
 这些文档不应重复 Tier 1 的大架构，而应只维护各自子系统：
@@ -239,6 +249,8 @@ raw game state
 - `REPLAY_AND_EVAL.md`
 - `REWARD_AND_EXPERIMENTS.md`
 - `EXTERNAL_DEPENDENCIES.md`
+
+其中 `BUDGET_GOVERNANCE.md` 属于跨子系统治理文档：它高于单个 provider 或 P8 实验细节，但低于 `PROJECT_NORTH_STAR.md` / `PROJECT_PLAN.md` 的长期目标与阶段路线。
 
 ### Tier 3：操作手册、历史状态、portable、debug
 

@@ -1,6 +1,6 @@
 # Portable Agent Debug Report
 
-> Historical append-only debug log. This file records what was true during earlier engineering passes; older "current status" sections may be stale. Use `PROJECT_NORTH_STAR.md`, `PROJECT_AUTHORITY_GUIDE.md`, `PROJECT_PLAN.md`, `ARCHITECTURE.md`, `GAME_IO_CAPABILITIES.md`, and `DATA_SCHEMA.md` as source of truth.
+> Historical append-only debug log. This file records what was true during earlier engineering passes; older "current status" sections may be stale. It is not the canonical source for current phase, blocker, roadmap, or architecture. Start from `docs/00_START_HERE.md` and `docs/04_CURRENT_STATUS.md`, then use `PROJECT_NORTH_STAR.md`, `PROJECT_AUTHORITY_GUIDE.md`, `PROJECT_PLAN.md`, `ARCHITECTURE.md`, `GAME_IO_CAPABILITIES.md`, and `DATA_SCHEMA.md` as source of truth.
 
 ## 2026-07-01 Phase 6-10 Planning And P6 Attribution MVP
 
@@ -88,6 +88,49 @@
   - rescue retries 默认显式 disable thinking
   - rescue output caps widened from the earlier `120/140` style micro caps to dedicated rescue caps so `length+empty` can actually recover
   - replay/eval/review 继续保留 finish reason、reasoning bytes、failure bucket、retry telemetry，不把 provider error 洗成 valid
+
+2026-07-04 targeted replay retest:
+
+- 用当前代码重建并重测 `transition-000130-agent-mr4sg5sl-xm6o7z` 与 `transition-000131-agent-mr4sh7t9-l925tb`，只做 shadow call，不执行动作，不写 runtime memory。
+- 旧样本的原始根因仍然成立：bounded candidate futures 约 `2496B / 605 tokens`，完整 futures 约 `11.5KB`，最大字段来源是 `predictionChecks`，但 bounded 后 completeness 为 completeEnough，失败链路更像 provider output/recovery contract。
+- 第一次 targeted retest：
+  - 两个 transition 都 valid，`reasonQuality=adequate`，`failureBucket=none`。
+  - primary 仍出现 `finishReason=length` + empty content。
+  - truncation rescue 使用 `thinking=disabled` 与独立 rescue cap `256`，终端 `finishReason=stop`，成功返回 JSON。
+- 第二次 targeted retest：
+  - 两个 transition 都 primary success，`finishReason=stop`，`failureBucket=none`，`reasonQuality=adequate`。
+- 最小代码修正：
+  - `providerAudit.requestedThinkingMode` / provider metadata 现在记录终端 attempt 的 thinking mode，而不是始终显示 primary mode。
+  - `providerRecoveryPolicy` 现在汇总 primary/rescue thinking modes 和 terminal thinking mode。
+- 当前结论：同类 replayed high-pressure blocker 已被当前 recovery contract 救回；P8.5 live 仍 no-go，直到 fresh high-pressure runtime shadow window 证明 `provider_length_empty` 不再是当前 blocker。
+
+## 2026-07-03 Budget Governance Consolidation
+
+本轮把“预算”从 P8 provider 参数集合提升为项目级治理主题：
+
+- 新增 `BUDGET_GOVERNANCE.md`，明确预算不是单纯省 token，而是 North-Star-aligned governance：
+  - call budget
+  - recovery budget
+  - run budget
+  - evidence budget
+  - rollout budget
+  - protected-path budget
+- 文档明确指出当前项目的问题不是“没有 budget”，而是 budget 过度局部化在 P8 workspace shadow，且部分语义仍混在 token cap / retry / readiness / evidence 里。
+- 新文档要求：
+  - `full` 保持 control baseline
+  - compression 服从 strategic fidelity，而不是 token thrift
+  - rescue policy 与 workspace compression 分离
+  - live promotion 的预算必须比 shadow exploration 更严格
+- 已同步更新：
+  - `README.md`
+  - `PROJECT_AUTHORITY_GUIDE.md`
+  - `PROJECT_PLAN.md`
+  - `ARCHITECTURE.md`
+  - `DATA_SCHEMA.md`
+  - `REPLAY_AND_EVAL.md`
+  - `LLM_HANDOFF.md`
+  - `CONTRIBUTING_OR_ENGINEERING_RULES.md`
+- 这次工作只调整治理文档和后续工程路线，没有改变 live prompt、candidate generation/order/scoring、fallback、validation、execution、stable memory、derived 或 strategy 行为。
 
 ## 2026-07-01 Desktop North Star Alignment Pass
 
