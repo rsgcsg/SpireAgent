@@ -25,7 +25,9 @@ The project is building an LLM-centered Slay the Spire 2 agent where the LLM rem
 
 ## Current Blocker
 
-P8.5 live readiness is still blocked until high-pressure `combat:llm_required` provider recovery is confirmed on fresh runtime evidence.
+P8.5 live readiness is still blocked, but the active blocker has shifted.
+
+Fresh high-pressure `combat:llm_required` provider recovery has now been tested on current runtime evidence and did not reproduce the historical provider-length failure.
 
 Historical blocker shape:
 
@@ -38,14 +40,35 @@ Historical blocker shape:
 
 Targeted replay retest on current code recovered both transitions as valid, with `reasonQuality=adequate`, `finishReason=stop`, and `failureBucket=none`. One retest path demonstrated the intended recovery behavior: primary `length+empty` followed by truncation rescue with `thinking=disabled` and an independent rescue output cap.
 
+Fresh runtime evidence on the same revision:
+
+- run: `run-mr4rh1mb-tohmxl`
+- fresh slice: 3 shadow calls, including 2 live-eligible high-pressure `combat:llm_required` calls
+- result: valid=3, invalid=0, error=0
+- liveEligibleInvalid=0, liveEligibleError=0
+- failureBucket=`none`
+- finishReason=`stop`
+- outputCapHits=0
+- retries=0
+
+Do not erase or reinterpret the historical `provider_length_empty` transitions. They remain useful regression evidence, but current fresh evidence no longer supports treating provider length/empty as the active P8.5 blocker.
+
+The active no-go reason is now CandidateFuture/reason-quality readiness:
+
+- fresh combat still shows at least one `reasonQuality=thin` due `missing_tradeoff`
+- combat review signals still include `missing_survival_line`
+- broader live-eligible evidence is still too small for a live additive rollout
+
 ## Current Next Step
 
-Collect a small fresh high-pressure combat shadow window under the current recovery contract:
+Continue P8.5 live-readiness work without enabling live additive:
 
 - preserve `full` semantics and strategic fidelity
 - keep semantic validation strict
-- confirm live-eligible `combat:llm_required` has no current `provider_length_empty`
-- keep P8.5 live/additive disabled until fresh evidence clears the gate
+- keep provider work limited to blocker-class regressions
+- improve and verify combat survival/tradeoff presentation without turning CandidateFuture into a shallow action list
+- collect more targeted fresh live-eligible evidence before any live additive plan
+- keep P8.5 live/additive disabled until readiness clears the gate
 
 ## Documentation Notes
 

@@ -104,6 +104,33 @@
   - `providerRecoveryPolicy` 现在汇总 primary/rescue thinking modes 和 terminal thinking mode。
 - 当前结论：同类 replayed high-pressure blocker 已被当前 recovery contract 救回；P8.5 live 仍 no-go，直到 fresh high-pressure runtime shadow window 证明 `provider_length_empty` 不再是当前 blocker。
 
+2026-07-04 fresh high-pressure runtime shadow window:
+
+- 在用户手动调到高压 elite combat 后，跑了一个小 fresh shadow window，live additive 保持关闭。
+- Run: `run-mr4rh1mb-tohmxl`，新增 transitions `transition-000133-agent-mr525lng-9n0zi0` 到 `transition-000135-agent-mr525ums-jlubdn`。
+- Fresh slice since revision `2026-07-03-output-contract-v5.1.5-high-pressure-recovery`:
+  - shadow called=3
+  - valid=3
+  - invalid=0
+  - error=0
+  - liveEligibleCalled=2
+  - liveEligibleInvalid=0
+  - liveEligibleError=0
+  - failureBucket=`none`
+  - finishReason=`stop`
+  - outputCapHits=0
+  - retries=0
+- The two fresh live-eligible calls were both high-pressure `combat:llm_required`; neither reproduced `provider_length_empty`.
+- Primary requests succeeded directly in this small fresh window, so rescue was not exercised here. The earlier targeted replay still covers the rescue path where primary `length+empty` is recovered by explicit disabled-thinking rescue and an independent output cap.
+- Quality note:
+  - One fresh combat reason remained `thin` due `missing_tradeoff`.
+  - Fresh combat review signals still included `missing_survival_line`.
+  - CandidateFuture completeness stayed `completeEnough` with `shallowFutureCount=0`.
+- Current interpretation:
+  - Current-code provider recovery no longer looks like the active blocker for high-pressure combat.
+  - Historical `provider_length_empty` remains visible in all-history / mixed windows and must not be deleted or washed into success.
+  - P8.5 live remains no-go because readiness is now blocked by CandidateFuture / reason-quality evidence and small fresh live-eligible sample size, not by a reproduced provider-length failure.
+
 ## 2026-07-03 Budget Governance Consolidation
 
 本轮把“预算”从 P8 provider 参数集合提升为项目级治理主题：

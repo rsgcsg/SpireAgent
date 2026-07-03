@@ -118,6 +118,17 @@ P8.5 live gate and rollout discipline:
 - Current state: `P8.5` may continue on static / pre-live audit, but additive live is still `no_go`.
 - Fresh `combat:llm_required` failures at transitions `transition-000130-agent-mr4sg5sl-xm6o7z` and `transition-000131-agent-mr4sh7t9-l925tb` were the blocker that forced the high-pressure recovery pass.
 - Targeted replay retest on current code recovered both transitions as valid with `reasonQuality=adequate`, `finishReason=stop`, `failureBucket=none`, and no semantic-validation relaxation. One retest explicitly exercised recovery: primary `length+empty`, then truncation rescue with `thinking=disabled` and independent rescue cap returned valid JSON. A second retest had both calls succeed on primary, so fresh runtime high-pressure evidence is still required before changing readiness.
+- Fresh high-pressure runtime shadow evidence has now been collected on the same recovery revision:
+  - run `run-mr4rh1mb-tohmxl`
+  - fresh slice called=3, valid=3, invalid=0, error=0
+  - liveEligibleCalled=2, liveEligibleInvalid=0, liveEligibleError=0
+  - failureBucket=`none`
+  - finishReason=`stop`
+  - outputCapHits=0
+  - retries=0
+  - no fresh `provider_length_empty` reproduced
+- Interpretation: high-pressure combat provider length/empty is no longer the active blocker on current fresh evidence, but historical `provider_length_empty` must remain visible in mixed/all-history windows. Do not wash those old failures into success.
+- Remaining live-readiness blocker is quality/evidence, not provider reachability: one fresh combat reason was still `thin` due `missing_tradeoff`, combat review signals still include `missing_survival_line`, and the fresh live-eligible sample remains too small for live additive authorization.
 - Default remains off: `STS2_P8_LIVE_ADDITIVE=0`.
 - The first allowed live experiment, when explicitly authorized, is additive only: legacy prompt plus compact workspace summary. Structured-prompt-only live routing is not allowed here.
 - `full` remains the control baseline. `full_bounded_candidate_futures` remains an experiment mode and must not silently replace `full`.
