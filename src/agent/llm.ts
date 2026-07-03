@@ -49,12 +49,14 @@ export interface DeepSeekV4FlashConfig {
   emptyContentRetryLimit?: number;
   truncationRetryLimit?: number;
   outputMode?: DeepSeekResponseMode;
+  thinkingMode?: DeepSeekThinkingMode;
   temperature?: number;
   topP?: number;
   fetchImpl?: typeof fetch;
 }
 
 export type DeepSeekResponseMode = "json_mode" | "non_json_strict";
+export type DeepSeekThinkingMode = "default_enabled" | "explicit_enabled" | "explicit_disabled";
 
 export interface DeepSeekWorkspaceDecision extends LlmDecision {
   riskTags?: string[];
@@ -67,6 +69,10 @@ export interface DeepSeekWorkspaceDecision extends LlmDecision {
     parseState?: string;
     cleanupReason?: string;
     requestMode?: DeepSeekResponseMode;
+    requestedThinkingMode?: DeepSeekThinkingMode;
+    contentSource?: "content" | "content_parts" | "reasoning_content" | "delta_content" | "missing";
+    reasoningContentBytes?: number;
+    reasoningContentReturned?: boolean;
     retryCount?: number;
     emptyContentRetryCount?: number;
     emptyContentRetrySucceeded?: boolean;
@@ -79,8 +85,10 @@ export interface DeepSeekWorkspaceDecision extends LlmDecision {
       finishReason?: string;
       latencyMs: number;
       contentKind: string;
+      contentSource?: "content" | "content_parts" | "reasoning_content" | "delta_content" | "missing";
       contentPreview?: string;
       contentBytes?: number;
+      reasoningContentBytes?: number;
       usage?: {
         promptTokens?: number;
         completionTokens?: number;
@@ -95,6 +103,7 @@ export interface DeepSeekWorkspaceDecision extends LlmDecision {
     maxOutputTokens: number;
     finishReason?: string;
     requestMode?: DeepSeekResponseMode;
+    requestedThinkingMode?: DeepSeekThinkingMode;
     temperature?: number;
     topP?: number;
     usage?: {
@@ -115,6 +124,7 @@ export class DeepSeekV4FlashDecider implements LlmDecider {
   private readonly emptyContentRetryLimit: number;
   private readonly truncationRetryLimit: number;
   private readonly outputMode: DeepSeekResponseMode;
+  private readonly thinkingMode: DeepSeekThinkingMode;
   private readonly temperature: number;
   private readonly topP: number;
   private readonly fetchImpl: typeof fetch;
@@ -129,6 +139,7 @@ export class DeepSeekV4FlashDecider implements LlmDecider {
     this.emptyContentRetryLimit = clampRetryLimit(config.emptyContentRetryLimit ?? numberFromEnv("STS2_DEEPSEEK_EMPTY_RETRY_LIMIT", 1), 1);
     this.truncationRetryLimit = clampRetryLimit(config.truncationRetryLimit ?? numberFromEnv("STS2_DEEPSEEK_TRUNCATION_RETRY_LIMIT", 1), 1);
     this.outputMode = config.outputMode ?? resolveDeepSeekResponseMode(process.env.STS2_DEEPSEEK_OUTPUT_MODE, process.env.STS2_DEEPSEEK_JSON_MODE);
+    this.thinkingMode = config.thinkingMode ?? resolveDeepSeekThinkingMode(process.env.STS2_DEEPSEEK_THINKING_MODE);
     this.temperature = config.temperature ?? numberFromEnv("STS2_DEEPSEEK_TEMPERATURE", 0);
     this.topP = config.topP ?? numberFromEnv("STS2_DEEPSEEK_TOP_P", 0.1);
     this.fetchImpl = config.fetchImpl ?? fetch;
@@ -158,13 +169,16 @@ export class DeepSeekV4FlashDecider implements LlmDecider {
             finishReason: result.finishReason,
             latencyMs: result.latencyMs,
             contentKind: result.audit.contentKind,
+            contentSource: result.audit.contentSource,
             contentPreview: result.audit.contentPreview,
             contentBytes: result.audit.contentBytes,
+            reasoningContentBytes: result.audit.reasoningContentBytes,
             usage: result.usage
           });
           const auditBase = {
             ...result.audit,
             requestMode: this.outputMode,
+            requestedThinkingMode: this.thinkingMode,
             retryCount: rescue,
             emptyContentRetryCount,
             emptyContentRetrySucceeded: false,
@@ -198,6 +212,7 @@ export class DeepSeekV4FlashDecider implements LlmDecider {
               maxOutputTokens: this.maxOutputTokens,
               finishReason: result.finishReason,
               requestMode: this.outputMode,
+              requestedThinkingMode: this.thinkingMode,
               temperature: this.temperature,
               topP: this.topP,
               usage: result.usage
@@ -228,6 +243,7 @@ export class DeepSeekV4FlashDecider implements LlmDecider {
               maxOutputTokens: this.maxOutputTokens,
               finishReason: result.finishReason,
               requestMode: this.outputMode,
+              requestedThinkingMode: this.thinkingMode,
               temperature: this.temperature,
               topP: this.topP,
               usage: result.usage
@@ -249,6 +265,7 @@ export class DeepSeekV4FlashDecider implements LlmDecider {
                 maxOutputTokens: this.maxOutputTokens,
                 finishReason: result.finishReason,
                 requestMode: this.outputMode,
+                requestedThinkingMode: this.thinkingMode,
                 temperature: this.temperature,
                 topP: this.topP,
                 usage: result.usage
@@ -276,6 +293,7 @@ export class DeepSeekV4FlashDecider implements LlmDecider {
             maxOutputTokens: this.maxOutputTokens,
             finishReason: result.finishReason,
             requestMode: this.outputMode,
+            requestedThinkingMode: this.thinkingMode,
             temperature: this.temperature,
             topP: this.topP,
             usage: result.usage
@@ -323,6 +341,7 @@ export class DeepSeekV4FlashDecider implements LlmDecider {
           temperature: this.temperature,
           topP: this.topP,
           outputMode: this.outputMode,
+          thinkingMode: this.thinkingMode,
           requestKind,
           rescueMode,
           prompt
@@ -334,10 +353,10 @@ export class DeepSeekV4FlashDecider implements LlmDecider {
         throw new Error(`DeepSeek request failed ${response.status}: ${redactSecrets(text).slice(0, 240)}`);
       }
       const json = await response.json();
-      const content = extractDeepSeekContent(json);
+      const extracted = extractDeepSeekContent(json);
       return {
-        content,
-        audit: createContentAudit(content),
+        content: extracted.content,
+        audit: createContentAudit(extracted),
         usage: extractDeepSeekUsage(json),
         latencyMs: Date.now() - startedAt,
         finishReason: extractDeepSeekFinishReason(json),
@@ -512,6 +531,7 @@ export function buildDeepSeekRequestBody(input: {
   temperature: number;
   topP: number;
   outputMode: DeepSeekResponseMode;
+  thinkingMode: DeepSeekThinkingMode;
   requestKind: "primary" | "rescue";
   rescueMode?: "empty" | "truncation";
   prompt: string;
@@ -535,6 +555,11 @@ export function buildDeepSeekRequestBody(input: {
   if (input.outputMode === "json_mode") {
     body.response_format = { type: "json_object" };
   }
+  if (input.thinkingMode === "explicit_disabled") {
+    body.thinking = { type: "disabled" };
+  } else if (input.thinkingMode === "explicit_enabled") {
+    body.thinking = { type: "enabled" };
+  }
   return body;
 }
 
@@ -550,7 +575,11 @@ function extractJsonObject(text: string): string {
   return text.slice(start, end + 1);
 }
 
-function extractDeepSeekContent(value: unknown): string {
+function extractDeepSeekContent(value: unknown): {
+  content: string;
+  contentSource: "content" | "content_parts" | "reasoning_content" | "delta_content" | "missing";
+  reasoningContent?: string;
+} {
   if (!isRecord(value)) throw new Error("DeepSeek response was not an object");
   const choices = value.choices;
   if (!Array.isArray(choices) || choices.length === 0 || !isRecord(choices[0])) {
@@ -561,26 +590,48 @@ function extractDeepSeekContent(value: unknown): string {
     throw new Error("DeepSeek response missing message.content");
   }
   if (typeof message.content === "string") {
-    return message.content;
+    return {
+      content: message.content,
+      contentSource: "content",
+      reasoningContent: typeof message.reasoning_content === "string" ? message.reasoning_content : undefined
+    };
   }
   if (Array.isArray(message.content)) {
     const text = message.content
       .map((part) => (isRecord(part) && typeof part.text === "string" ? part.text : ""))
       .join("")
       .trim();
-    if (text) return text;
+    if (text) {
+      return {
+        content: text,
+        contentSource: "content_parts",
+        reasoningContent: typeof message.reasoning_content === "string" ? message.reasoning_content : undefined
+      };
+    }
   }
   if (typeof message.reasoning_content === "string" && message.reasoning_content.trim()) {
-    return message.reasoning_content;
+    return {
+      content: message.reasoning_content,
+      contentSource: "reasoning_content",
+      reasoningContent: message.reasoning_content
+    };
   }
   const firstChoice = choices[0] as Record<string, unknown>;
   if (isRecord(firstChoice.delta) && typeof firstChoice.delta.content === "string") {
-    return String(firstChoice.delta.content);
+    return {
+      content: String(firstChoice.delta.content),
+      contentSource: "delta_content",
+      reasoningContent: typeof message.reasoning_content === "string" ? message.reasoning_content : undefined
+    };
   }
   if (typeof message.content !== "string") {
     throw new Error("DeepSeek response missing message.content");
   }
-  return message.content;
+  return {
+    content: message.content,
+    contentSource: "missing",
+    reasoningContent: typeof message.reasoning_content === "string" ? message.reasoning_content : undefined
+  };
 }
 
 function extractDeepSeekUsage(value: unknown): NonNullable<DeepSeekWorkspaceDecision["providerMetadata"]>["usage"] {
@@ -612,6 +663,14 @@ function numberFromEnv(name: string, fallback: number): number {
   return Number.isFinite(value) && value >= 0 ? value : fallback;
 }
 
+export function resolveDeepSeekThinkingMode(value: unknown): DeepSeekThinkingMode {
+  if (typeof value !== "string") return "default_enabled";
+  const normalized = value.trim().toLowerCase();
+  if (["disabled", "disable", "off", "false", "0", "none"].includes(normalized)) return "explicit_disabled";
+  if (["enabled", "enable", "on", "true", "1"].includes(normalized)) return "explicit_enabled";
+  return "default_enabled";
+}
+
 function clampRetryLimit(value: number, maxValue: number): number {
   if (!Number.isFinite(value) || value < 0) return 0;
   return Math.min(maxValue, Math.floor(value));
@@ -636,12 +695,19 @@ function stringArray(value: unknown): string[] | undefined {
   return value.map(String).map((item) => item.trim()).filter(Boolean);
 }
 
-function createContentAudit(content: string): NonNullable<DeepSeekWorkspaceDecision["providerAudit"]> {
-  const trimmed = content.trim();
+function createContentAudit(input: {
+  content: string;
+  contentSource: "content" | "content_parts" | "reasoning_content" | "delta_content" | "missing";
+  reasoningContent?: string;
+}): NonNullable<DeepSeekWorkspaceDecision["providerAudit"]> {
+  const trimmed = input.content.trim();
   return {
     contentKind: classifyContentKind(trimmed),
     contentPreview: redactSecrets(trimmed).slice(0, 240),
-    contentBytes: Buffer.byteLength(content, "utf8")
+    contentBytes: Buffer.byteLength(input.content, "utf8"),
+    contentSource: input.contentSource,
+    reasoningContentBytes: typeof input.reasoningContent === "string" ? Buffer.byteLength(input.reasoningContent, "utf8") : undefined,
+    reasoningContentReturned: typeof input.reasoningContent === "string" && input.reasoningContent.trim().length > 0
   };
 }
 
@@ -776,7 +842,8 @@ function buildDeepSeekSystemPrompt(
       "selectedCandidateId must copy one allowed candidate id exactly.",
       "Use the shortest valid JSON that still selects one allowed candidate.",
       "Omit optional fields unless they are truly necessary.",
-      "Keep reasonBrief to one very short sentence under 8 words.",
+      "Keep reasonBrief to one short tactical or strategic sentence under 16 words.",
+      "reasonBrief must name the main tradeoff using both gain and cost when possible.",
       `Exact JSON shape: ${workspaceDecisionRescueJson()}`
     ].join(" ");
   }
@@ -787,7 +854,8 @@ function buildDeepSeekSystemPrompt(
       "Do not return markdown, code fences, arrays, null, prose, chain-of-thought, thinking markers, or a second object.",
       "selectedCandidateId must copy one allowed candidate id exactly.",
       "Omit optional fields unless they are truly necessary.",
-      "Keep reasonBrief to one very short sentence under 8 words.",
+      "Keep reasonBrief to one short tactical or strategic sentence under 16 words.",
+      "reasonBrief must name the main tradeoff using both gain and cost when possible.",
       "Use [] for optional arrays unless truly needed. If used, keep each array to at most 1 short item.",
       `Example JSON: ${workspaceDecisionRescueJson()}`
     ].join(" ");
@@ -799,7 +867,8 @@ function buildDeepSeekSystemPrompt(
     "Do not emit chain-of-thought, thinking markers, tail text, or a second JSON object.",
     "selectedCandidateId must copy one allowed candidate id exactly.",
     "Optional fields may be omitted to keep the JSON short.",
-    "Keep reasonBrief to one very short sentence under 8 words.",
+    "Keep reasonBrief to one short tactical or strategic sentence under 16 words.",
+    "reasonBrief must name the main tradeoff using both gain and cost when possible.",
     "Use [] for optional arrays unless truly needed. If used, keep each array to at most 1 short item.",
     `Example JSON: ${workspaceDecisionExampleJson()}`
   ].join(" ");
@@ -818,7 +887,8 @@ function buildDeepSeekUserPrompt(
         "No thinking marker. No explanation. No repeated object.",
         "selectedCandidateId must come from allowed_candidate_ids in the workspace JSON.",
         "Use the shortest valid JSON that still chooses one allowed candidate.",
-        "reasonBrief must be one very short sentence under 8 words.",
+        "reasonBrief must be one short tactical or strategic sentence under 16 words.",
+        "reasonBrief must name the main tradeoff using both gain and cost when possible.",
         "Omit optional fields unless they are truly necessary.",
         `Return this shape exactly: ${workspaceDecisionRescueJson()}`
       ]
@@ -829,7 +899,8 @@ function buildDeepSeekUserPrompt(
         "No markdown. No explanation. No array. No null. No chain-of-thought. No thinking marker. No second object.",
         "selectedCandidateId must come from allowed_candidate_ids in the workspace JSON.",
         "Use the shortest valid JSON with only required fields unless optional fields are truly necessary.",
-        "reasonBrief must be under 8 words.",
+        "reasonBrief must be one short tactical or strategic sentence under 16 words.",
+        "reasonBrief must name the main tradeoff using both gain and cost when possible.",
         `Return this shape exactly: ${workspaceDecisionRescueJson()}`
       ]
     : [
@@ -837,7 +908,7 @@ function buildDeepSeekUserPrompt(
         "Do not add markdown, explanation, chain-of-thought, thinking markers, or a second object.",
         "selectedCandidateId must come from allowed_candidate_ids in the workspace JSON.",
         "Optional fields may be omitted to keep the JSON short.",
-        "Keep reasonBrief under 8 words. Use [] for optional arrays unless truly needed.",
+        "Keep reasonBrief to one short tactical or strategic sentence under 16 words naming the main tradeoff. Use [] for optional arrays unless truly needed.",
         "If arrays are used, keep them to at most 1 short item each.",
         `Target JSON shape: ${workspaceDecisionExampleJson()}`
       ];
@@ -845,11 +916,11 @@ function buildDeepSeekUserPrompt(
 }
 
 function workspaceDecisionExampleJson(): string {
-  return "{\"selectedCandidateId\":\"<allowed candidate id>\",\"reasonBrief\":\"short reason\",\"confidence\":0.72,\"riskTags\":[],\"missingInfo\":[],\"scaffoldFeedback\":[]}";
+  return "{\"selectedCandidateId\":\"<allowed candidate id>\",\"reasonBrief\":\"Add scaling while avoiding deck bloat.\",\"confidence\":0.72,\"riskTags\":[],\"missingInfo\":[],\"scaffoldFeedback\":[]}";
 }
 
 function workspaceDecisionRescueJson(): string {
-  return "{\"selectedCandidateId\":\"<allowed candidate id>\",\"reasonBrief\":\"short reason\"}";
+  return "{\"selectedCandidateId\":\"<allowed candidate id>\",\"reasonBrief\":\"Preserve block while pushing damage.\"}";
 }
 
 function isTruncationLikely(result: {

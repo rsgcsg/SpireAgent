@@ -15,7 +15,7 @@ import {
 } from "../domain/types.js";
 import { getIncomingDamage, summarizeState } from "./state.js";
 import type { DecisionRoute, ExecutionCheckpoint, NormalizedState, RunMemory, ScoredCandidate } from "./types.js";
-import { isRecord } from "./utils.js";
+import { asString, isRecord } from "./utils.js";
 
 export interface CognitiveScaffoldInput {
   state: NormalizedState;
@@ -43,7 +43,7 @@ export function buildCognitiveScaffold(input: CognitiveScaffoldInput): Cognitive
   const salienceSignals = buildSalienceSignals(input);
   const strategicImpression = buildStrategicImpression(input.state, input.run, salienceSignals, input.route, input.uncertaintyReasons);
   const memoryActivation = buildMemoryActivation(input.relevantMemories, input.tags, salienceSignals);
-  const candidateFutures = buildCandidateFutures(input.candidates, input.state, input.route);
+  const candidateFutures = buildCandidateFutures(input.candidates, input.state, input.run, input.route);
   const promptParity = buildPromptParityReport(input, candidateFutures);
   const deliberationPacket: DeliberationPacket = {
     schemaVersion: DOMAIN_SCHEMA_VERSION,
@@ -363,14 +363,19 @@ export function buildMemoryActivation(relevantMemories: string[], tags: string[]
   };
 }
 
-export function buildCandidateFutures(candidates: ScoredCandidate[], state: NormalizedState, route?: DecisionRoute): CandidateFuture[] {
+export function buildCandidateFutures(
+  candidates: ScoredCandidate[],
+  state: NormalizedState,
+  run: RunMemory,
+  route?: DecisionRoute
+): CandidateFuture[] {
   return candidates.map((candidate, index) => {
-    const outcomes = predictedOutcome(candidate, state);
-    const mechanics = mechanicsExpectationForCandidate(candidate, state);
+    const outcomes = predictedOutcome(candidate, state, run);
+    const mechanics = mechanicsExpectationForCandidate(candidate, state, run);
     return {
       id: `future-${candidate.id}`,
       label: candidate.label,
-      plan: planForCandidate(candidate),
+      plan: planForCandidate(candidate, state, run),
       sourceCandidateId: candidate.id,
       actions: [candidate.action],
       deterministicCalculations: {
@@ -383,11 +388,11 @@ export function buildCandidateFutures(candidates: ScoredCandidate[], state: Norm
       },
       predictedOutcome: outcomes,
       predictionChecks: predictionChecksForCandidate(candidate, state, outcomes, mechanics),
-      cost: costForCandidate(candidate),
-      risk: candidate.risks.length > 0 ? candidate.risks : ["shallow_future_risk_model"],
+      cost: costForCandidate(candidate, state, run),
+      risk: futureRisksForCandidate(candidate, state, run),
       uncertainty: route?.shouldAskLlm ? ["local_scaffold_requested_llm_arbitration"] : [],
-      assumptions: assumptionsForCandidate(candidate),
-      invalidationTriggers: invalidationTriggersForCandidate(candidate),
+      assumptions: assumptionsForCandidate(candidate, state, run),
+      invalidationTriggers: invalidationTriggersForCandidate(candidate, state, run),
       executionRequirements: ["must_match_current_state", "must_pass_action_validation"],
       confidence: candidate.confidence
     };
@@ -569,11 +574,26 @@ function activationReason(tags: string[], salienceSignals: SalienceSignal[]): st
     .join(" | ");
 }
 
-function planForCandidate(candidate: ScoredCandidate): string {
-  return `Take action '${candidate.label}' and re-read state after execution.`;
+function planForCandidate(candidate: ScoredCandidate, state: NormalizedState, run: RunMemory): string {
+  switch (candidate.action.kind) {
+    case "select_card_reward":
+      return `Take '${candidate.action.cardName ?? candidate.label}' if it patches ${primaryDeckNeed(run)} without bloating the deck, then re-read reward flow.`;
+    case "skip_card_reward":
+      return `Skip the card reward if preserving draw quality matters more than this immediate patch for ${primaryDeckNeed(run)}, then re-read reward flow.`;
+    case "choose_map_node":
+      return `Commit to ${mapNodeType(candidate) ?? `map node ${candidate.action.index}`} if its timing fits ${mapPressureSummary(state, run)}, then re-read remaining path options.`;
+    case "use_potion":
+      return `Use the potion, confirm the slot change and combat swing, then re-read state.`;
+    case "end_turn":
+      return "End turn, watch enemy intent resolution, then re-read the next player state.";
+    default:
+      return `Take action '${candidate.label}' and re-read state after execution.`;
+  }
 }
 
-function predictedOutcome(candidate: ScoredCandidate, state: NormalizedState): string[] {
+function predictedOutcome(candidate: ScoredCandidate, state: NormalizedState, run: RunMemory): string[] {
+  const positive = strategicReasonFragment(candidate.reasons);
+  const downside = strategicReasonFragment(candidate.risks);
   switch (candidate.action.kind) {
     case "play_card":
       return [
@@ -587,11 +607,28 @@ function predictedOutcome(candidate: ScoredCandidate, state: NormalizedState): s
     case "use_potion":
       return ["potion slot changes", "combat/resource state may change"];
     case "choose_map_node":
-      return ["map path advances toward selected node"];
+      return compactStrings([
+        `map path advances toward selected node ${candidate.action.index}`,
+        mapNodeDirection(candidate),
+        mapRouteTiming(candidate, state, run),
+        positive ? `route leans toward ${positive}` : undefined,
+        downside ? `watch route cost: ${downside}` : undefined
+      ]);
     case "select_card_reward":
-      return ["deck changes and reward flow continues"];
+      return compactStrings([
+        `deck gains ${candidate.action.cardName || "the selected card"} and reward flow continues`,
+        cardRewardDirection(candidate),
+        cardRewardNeedLine(candidate, run),
+        cardRewardOpportunityCost(candidate, run),
+        positive ? `expected gain: ${positive}` : undefined,
+        downside ? `watch deck cost: ${downside}` : undefined
+      ]);
     case "skip_card_reward":
-      return ["deck remains unchanged and reward flow continues"];
+      return compactStrings([
+        "deck remains unchanged and reward flow continues",
+        `skip preserves current draw consistency but delays help for ${primaryDeckNeed(run)}`,
+        cardRewardSkipValue(run)
+      ]);
     case "event_choose_option":
       return ["event option resolves and may alter resources/deck/route"];
     default:
@@ -599,8 +636,20 @@ function predictedOutcome(candidate: ScoredCandidate, state: NormalizedState): s
   }
 }
 
-function costForCandidate(candidate: ScoredCandidate): string[] {
+function costForCandidate(candidate: ScoredCandidate, state: NormalizedState, run: RunMemory): string[] {
   if (candidate.action.kind === "play_card") return ["card energy cost if playable"];
+  if (candidate.action.kind === "select_card_reward") return compactStrings([
+    "adds one card to future draw cycles",
+    cardRewardOpportunityCost(candidate, run)
+  ]);
+  if (candidate.action.kind === "skip_card_reward") return compactStrings([
+    "forgoes immediate card power",
+    `may leave ${primaryDeckNeed(run)} unresolved`
+  ]);
+  if (candidate.action.kind === "choose_map_node") return compactStrings([
+    "commits route and drops alternate node lines",
+    mapPathLockRisk(candidate, state, run)
+  ]);
   if (candidate.action.kind === "shop_purchase") return ["gold cost"];
   if (candidate.action.kind === "use_potion") return ["potion slot consumed"];
   if (candidate.action.kind === "event_choose_option") return ["event-specific cost unknown until resolved"];
@@ -617,17 +666,21 @@ function playCardOutcomeHints(candidate: ScoredCandidate): string[] {
   return hints;
 }
 
-function assumptionsForCandidate(candidate: ScoredCandidate): string[] {
+function assumptionsForCandidate(candidate: ScoredCandidate, state: NormalizedState, run: RunMemory): string[] {
   const assumptions = ["candidate generated from current canonical state", "shadow candidate future is action-first"];
   if (candidate.action.kind === "play_card") assumptions.push("hand index remains current until execution");
+  if (candidate.action.kind === "select_card_reward") assumptions.push(`current deck still most needs ${primaryDeckNeed(run)}`);
+  if (candidate.action.kind === "choose_map_node") assumptions.push(`current HP/resources still support ${mapPressureSummary(state, run)}`);
   if ("index" in candidate.action) assumptions.push("indexed option remains current until execution");
   if ("target" in candidate.action && candidate.action.target) assumptions.push("target remains legal and alive");
   return assumptions;
 }
 
-function invalidationTriggersForCandidate(candidate: ScoredCandidate): string[] {
+function invalidationTriggersForCandidate(candidate: ScoredCandidate, state: NormalizedState, run: RunMemory): string[] {
   const triggers = ["state changes before execution", "adapter rejects action"];
   if (candidate.action.kind === "play_card") triggers.push("hand index shifted");
+  if (candidate.action.kind === "select_card_reward") triggers.push(`another reward option better patches ${primaryDeckNeed(run)}`);
+  if (candidate.action.kind === "choose_map_node") triggers.push(`route lock-in becomes worse than ${mapPressureSummary(state, run)}`);
   if ("target" in candidate.action && candidate.action.target) triggers.push("target disappeared or became illegal");
   if ("index" in candidate.action) triggers.push("option index shifted");
   return triggers;
@@ -828,7 +881,7 @@ function expectedForCandidateCheck(
     return {
       actionKind: action.kind,
       screenBefore: state.screen,
-      rewardCountBefore: state.rewards.length
+      rewardCountBefore: Array.isArray(state.rewards) ? state.rewards.length : 0
     };
   }
   if (type === "phase_or_visible_progress") {
@@ -841,12 +894,23 @@ function expectedForCandidateCheck(
   return {};
 }
 
-function mechanicsExpectationForCandidate(candidate: ScoredCandidate, state: NormalizedState): JsonRecord {
+function mechanicsExpectationForCandidate(candidate: ScoredCandidate, state: NormalizedState, run: RunMemory): JsonRecord {
   const action = candidate.action;
   if (action.kind !== "play_card") {
+    const card = isRecord(candidate.facts?.card) ? candidate.facts.card : undefined;
+    const node = isRecord(candidate.facts?.node) ? candidate.facts.node : undefined;
     return {
       actionKind: action.kind,
-      screen: state.screen
+      screen: state.screen,
+      cardName: action.kind === "select_card_reward" ? action.cardName : undefined,
+      cardType: asString(card?.type_key ?? card?.type, ""),
+      cardRarity: asString(card?.rarity_key ?? card?.rarity, ""),
+      nodeType: asString(node?.type ?? node?.node_type ?? node?.symbol ?? node?.name, ""),
+      strategicReasons: candidate.reasons.slice(0, 2),
+      strategicRisks: futureRisksForCandidate(candidate, state, run).slice(0, 2),
+      deckNeed: action.kind === "select_card_reward" || action.kind === "skip_card_reward" ? primaryDeckNeed(run) : undefined,
+      routePressure: action.kind === "choose_map_node" ? mapPressureSummary(state, run) : undefined,
+      routeRewardExpectation: action.kind === "choose_map_node" ? mapRewardExpectation(candidate) : undefined
     };
   }
   const card = isRecord(candidate.facts?.card) ? candidate.facts.card : state.player.hand.find((item) => item.index === action.cardIndex);
@@ -862,6 +926,154 @@ function mechanicsExpectationForCandidate(candidate: ScoredCandidate, state: Nor
     targetHpBefore: target?.hp,
     targetBlockBefore: target?.block
   };
+}
+
+function strategicReasonFragment(values: string[]): string | undefined {
+  const item = values
+    .map((value) => value.trim())
+    .find((value) => value.length > 0 && value.toLowerCase() !== "invalid");
+  return item;
+}
+
+function compactStrings(values: Array<string | undefined>): string[] {
+  return values.filter((value): value is string => typeof value === "string" && value.trim().length > 0);
+}
+
+function cardRewardDirection(candidate: ScoredCandidate): string {
+  const reasonsText = candidate.reasons.join(" ");
+  if (/输出|damage|attack/i.test(reasonsText)) return "candidate pushes deck toward stronger damage turns";
+  if (/防御|block|weak|冰|frost/i.test(reasonsText)) return "candidate pushes deck toward safer defense turns";
+  if (/抽牌|draw/i.test(reasonsText)) return "candidate improves deck cycling and consistency";
+  if (/成长|scaling|能量|energy/i.test(reasonsText)) return "candidate improves long-fight scaling";
+  return "candidate changes deck direction and future draw texture";
+}
+
+function mapNodeDirection(candidate: ScoredCandidate): string | undefined {
+  const node = isRecord(candidate.facts?.node) ? candidate.facts.node : undefined;
+  const nodeType = asString(node?.type ?? node?.node_type ?? node?.symbol ?? node?.name, "").trim();
+  if (!nodeType) return undefined;
+  return `route commits to ${nodeType} node rewards and risks`;
+}
+
+function futureRisksForCandidate(candidate: ScoredCandidate, state: NormalizedState, run: RunMemory): string[] {
+  if (candidate.risks.length > 0) return candidate.risks;
+  switch (candidate.action.kind) {
+    case "select_card_reward":
+      return compactStrings([
+        cardRewardOpportunityCost(candidate, run),
+        cardRewardBloatRisk(candidate, run)
+      ]);
+    case "skip_card_reward":
+      return compactStrings([
+        `skip delays help for ${primaryDeckNeed(run)}`,
+        cardRewardSkipRisk(run)
+      ]);
+    case "choose_map_node":
+      return compactStrings([
+        mapPathLockRisk(candidate, state, run),
+        mapUncertaintyRisk(candidate, state, run)
+      ]);
+    default:
+      return ["shallow_future_risk_model"];
+  }
+}
+
+function primaryDeckNeed(run: RunMemory): string {
+  const ordered: Array<[string, number, string]> = [
+    ["block", run.deficits.block, "block"],
+    ["damage", run.deficits.damage, "damage"],
+    ["draw", run.deficits.draw, "draw consistency"],
+    ["energy", run.deficits.energy, "energy"],
+    ["scaling", run.deficits.scaling, "long-fight scaling"],
+    ["status_control", run.deficits.status_control, "status control"]
+  ];
+  const top = ordered.sort((a, b) => b[1] - a[1])[0];
+  return top?.[2] ?? "deck quality";
+}
+
+function cardRewardNeedLine(candidate: ScoredCandidate, run: RunMemory): string | undefined {
+  const reasonsText = candidate.reasons.join(" ");
+  const need = primaryDeckNeed(run);
+  if (/成长|scaling/i.test(reasonsText)) return `helps scaling while the deck still needs ${need}`;
+  if (/抽牌|draw/i.test(reasonsText)) return `improves cycle while the deck still needs ${need}`;
+  if (/防御|block|弱化|冰|frost/i.test(reasonsText)) return `patches defense while the deck still needs ${need}`;
+  if (/输出|damage|attack/i.test(reasonsText)) return `adds immediate damage while the deck still needs ${need}`;
+  if (/能量|energy/i.test(reasonsText)) return `improves energy pacing while the deck still needs ${need}`;
+  return `changes deck direction while the deck still needs ${need}`;
+}
+
+function cardRewardOpportunityCost(candidate: ScoredCandidate, run: RunMemory): string | undefined {
+  if (candidate.action.kind !== "select_card_reward") return undefined;
+  const card = isRecord(candidate.facts?.card) ? candidate.facts.card : undefined;
+  const rarity = asString(card?.rarity_key ?? card?.rarity, "").toLowerCase();
+  if (rarity.includes("rare")) return "passing the other reward lines may miss a rare deck pivot";
+  return `passing other reward lines may leave ${primaryDeckNeed(run)} unresolved`;
+}
+
+function cardRewardBloatRisk(candidate: ScoredCandidate, run: RunMemory): string | undefined {
+  if (candidate.action.kind !== "select_card_reward") return undefined;
+  if (run.deficits.deck_thinness > 0.6) return "extra card can dilute future draws if the payoff is narrow";
+  return "card must justify its slot in future draw cycles";
+}
+
+function cardRewardSkipValue(run: RunMemory): string | undefined {
+  if (run.deficits.deck_thinness > 0.65) return "skip may be correct if none of the cards beat current deck consistency";
+  return "skip is safer only if the offered cards do not solve a real deck weakness";
+}
+
+function cardRewardSkipRisk(run: RunMemory): string | undefined {
+  return `skip may miss a needed patch for ${primaryDeckNeed(run)}`;
+}
+
+function mapPressureSummary(state: NormalizedState, run: RunMemory): string {
+  const hpRatio = state.player.hp / Math.max(1, state.player.maxHp);
+  if (hpRatio <= 0.35) return "low HP recovery pressure";
+  if (run.deficits.block > 0.65 || run.deficits.potions > 0.6) return "fragile combat resources";
+  if (run.deficits.damage > 0.65 || run.deficits.scaling > 0.65) return "deck power-up pressure";
+  return "balanced route pressure";
+}
+
+function mapRouteTiming(candidate: ScoredCandidate, state: NormalizedState, run: RunMemory): string | undefined {
+  const nodeType = mapNodeType(candidate);
+  if (!nodeType) return undefined;
+  return `${nodeType} timing is judged against ${mapPressureSummary(state, run)}`;
+}
+
+function mapRewardExpectation(candidate: ScoredCandidate): string | undefined {
+  const nodeType = mapNodeType(candidate);
+  if (!nodeType) return undefined;
+  if (/elite/i.test(nodeType)) return "expected reward: relic and higher-risk combat";
+  if (/rest|campfire/i.test(nodeType)) return "expected reward: heal or upgrade timing";
+  if (/shop/i.test(nodeType)) return "expected reward: spend gold for patching";
+  if (/monster|enemy/i.test(nodeType)) return "expected reward: card reward and normal combat";
+  if (/\?|event|unknown/i.test(nodeType)) return "expected reward: flexible event upside with uncertainty";
+  return "expected reward depends on node outcome";
+}
+
+function mapPathLockRisk(candidate: ScoredCandidate, state: NormalizedState, run: RunMemory): string | undefined {
+  const nodeType = mapNodeType(candidate);
+  if (!nodeType) return "route lock-in may cut off safer or richer lines";
+  return `${nodeType} path may lock out alternate lines better suited to ${mapPressureSummary(state, run)}`;
+}
+
+function mapUncertaintyRisk(candidate: ScoredCandidate, state: NormalizedState, run: RunMemory): string | undefined {
+  const nodeType = mapNodeType(candidate);
+  if (nodeType && /\?|event|unknown/i.test(nodeType)) return "unknown node may miss the next reliable heal/shop timing";
+  if (nodeType && /elite/i.test(nodeType)) return "elite path can punish low HP or weak block scaling";
+  return `future floor outcomes remain uncertain after this route commitment`;
+}
+
+function mapNodeType(candidate: ScoredCandidate): string | undefined {
+  const node = isRecord(candidate.facts?.node) ? candidate.facts.node : undefined;
+  const nodeType = asString(node?.type ?? node?.node_type ?? node?.symbol ?? node?.name, "").trim();
+  if (nodeType) return nodeType;
+  const label = candidate.label.toLowerCase();
+  if (label.includes("shop")) return "Shop";
+  if (label.includes("elite")) return "Elite";
+  if (label.includes("rest") || label.includes("campfire")) return "Rest";
+  if (label.includes("event") || label.includes("unknown") || label.includes("?")) return "Unknown";
+  if (label.includes("monster") || label.includes("enemy") || label.includes("combat")) return "Monster";
+  return undefined;
 }
 
 function parseEnergyCost(cost: unknown): number | undefined {

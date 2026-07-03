@@ -14,6 +14,7 @@ import {
   type ReplayConsolidationProposalSurface,
   type ReplayFreshShadowSlices
 } from "../replay/reader.js";
+import { buildWorkspaceDecisionClassQuality, type WorkspaceDecisionClassQualityStats } from "../replay/workspaceQuality.js";
 
 export type EvalStatus = "PASS" | "WARN" | "FAIL";
 
@@ -81,6 +82,7 @@ export interface EvalSummary {
   deliberationCoverage: EvalDeliberationCoverage;
   promptParityCoverage: EvalPromptParityCoverage;
   workspaceCoverage: EvalWorkspaceCoverage;
+  workspaceDecisionClassQuality: Record<string, WorkspaceDecisionClassQualityStats>;
   predictionErrorCoverage: EvalPredictionErrorCoverage;
   consolidationCoverage: EvalConsolidationCoverage;
   consolidationProposalSurface: ReplayConsolidationProposalSurface;
@@ -154,11 +156,14 @@ export interface EvalWorkspaceCoverage {
   budgetStatusCounts: Record<string, number>;
   skippedReasonCounts: Record<string, number>;
   reasonQualityCounts: Record<string, number>;
+  reasonQualityNoteCounts: Record<string, number>;
   providerModeCounts: Record<string, number>;
   ablationModeCounts: Record<string, number>;
   compressionModeCounts: Record<string, number>;
   finishReasonCounts: Record<string, number>;
   cleanupReasonCounts: Record<string, number>;
+  failureCategoryCounts: Record<string, number>;
+  failureBucketCounts: Record<string, number>;
   outputCapHits: number;
   missingCandidate: number;
   liveEligibleMissingCandidate: number;
@@ -394,6 +399,7 @@ export function evaluateRun(runIdOrPath?: string): EvalReport {
     .map((line) => line.transition)
     .filter((transition): transition is TransitionRecord => Boolean(transition));
   workspaceCoverage.freshSlices = buildReplayFreshShadowSlices(validTransitions);
+  const workspaceDecisionClassQuality = buildWorkspaceDecisionClassQuality(validTransitions);
   const consolidationProposalSurface = buildReplayConsolidationProposalSurface(readConsolidationProposals(runDir, validTransitions));
   for (const issue of buildStrategyWarnings(strategyMetrics)) {
     addWarning(warnings, warningSummary, issue);
@@ -434,6 +440,7 @@ export function evaluateRun(runIdOrPath?: string): EvalReport {
       deliberationCoverage,
       promptParityCoverage,
       workspaceCoverage,
+      workspaceDecisionClassQuality,
       predictionErrorCoverage,
       consolidationCoverage,
       consolidationProposalSurface
@@ -1106,11 +1113,14 @@ function createWorkspaceCoverage(): EvalWorkspaceCoverage {
     budgetStatusCounts: {},
     skippedReasonCounts: {},
     reasonQualityCounts: {},
+    reasonQualityNoteCounts: {},
     providerModeCounts: {},
     ablationModeCounts: {},
     compressionModeCounts: {},
     finishReasonCounts: {},
     cleanupReasonCounts: {},
+    failureCategoryCounts: {},
+    failureBucketCounts: {},
     outputCapHits: 0,
     missingCandidate: 0,
     liveEligibleMissingCandidate: 0,
@@ -1322,6 +1332,11 @@ function collectWorkspaceCoverage(coverage: EvalWorkspaceCoverage, transition: T
   }
   const reasonQuality = typeof shadowDecision.reasonQuality === "string" ? shadowDecision.reasonQuality : undefined;
   if (reasonQuality) coverage.reasonQualityCounts[reasonQuality] = (coverage.reasonQualityCounts[reasonQuality] ?? 0) + 1;
+  if (Array.isArray(shadowDecision.reasonQualityNotes)) {
+    for (const note of shadowDecision.reasonQualityNotes.map(String)) {
+      coverage.reasonQualityNoteCounts[note] = (coverage.reasonQualityNoteCounts[note] ?? 0) + 1;
+    }
+  }
   const providerMode = typeof shadowDecision.providerMode === "string" ? shadowDecision.providerMode : undefined;
   if (providerMode) coverage.providerModeCounts[providerMode] = (coverage.providerModeCounts[providerMode] ?? 0) + 1;
   const ablationMode = typeof shadowDecision.ablationMode === "string"
@@ -1332,6 +1347,12 @@ function collectWorkspaceCoverage(coverage: EvalWorkspaceCoverage, transition: T
   if (finishReason) coverage.finishReasonCounts[finishReason] = (coverage.finishReasonCounts[finishReason] ?? 0) + 1;
   const cleanupReason = typeof shadowDecision.providerCleanupReason === "string" ? shadowDecision.providerCleanupReason : undefined;
   if (cleanupReason) coverage.cleanupReasonCounts[cleanupReason] = (coverage.cleanupReasonCounts[cleanupReason] ?? 0) + 1;
+  if (typeof shadowDecision.failureCategory === "string") {
+    coverage.failureCategoryCounts[shadowDecision.failureCategory] = (coverage.failureCategoryCounts[shadowDecision.failureCategory] ?? 0) + 1;
+  }
+  if (typeof shadowDecision.failureBucket === "string") {
+    coverage.failureBucketCounts[shadowDecision.failureBucket] = (coverage.failureBucketCounts[shadowDecision.failureBucket] ?? 0) + 1;
+  }
   if (shadowOutputCapHit(shadowDecision)) coverage.outputCapHits += 1;
   if (Array.isArray(shadowDecision.missingInfo)) coverage.missingInfoCount += shadowDecision.missingInfo.length;
   if (Array.isArray(shadowDecision.scaffoldFeedback)) coverage.scaffoldFeedbackCount += shadowDecision.scaffoldFeedback.length;

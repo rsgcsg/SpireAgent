@@ -11,6 +11,7 @@ import {
   readConsolidationProposals,
   readReplayRun
 } from "./reader.js";
+import { buildWorkspaceDecisionClassQuality, formatWorkspaceDecisionClassQuality } from "./workspaceQuality.js";
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
@@ -25,11 +26,13 @@ async function main(): Promise<void> {
   const run = readReplayRun(runIdOrPath);
   const cognitiveCoverage = buildReplayCognitiveCoverage(run.transitions);
   const freshShadowSlices = buildReplayFreshShadowSlices(run.transitions);
+  const workspaceDecisionClassQuality = buildWorkspaceDecisionClassQuality(run.transitions);
   const proposalSurface = buildReplayConsolidationProposalSurface(readConsolidationProposals(run.runDir, run.transitions));
   console.log(`Run: ${path.basename(run.runDir)}`);
   console.log(`Transitions: ${run.transitions.length}`);
   console.log(`Cognitive coverage: ${formatReplayCognitiveCoverage(cognitiveCoverage)}`);
   console.log(`Fresh shadow slices: ${formatReplayFreshShadowSlices(freshShadowSlices)}`);
+  console.log(`Workspace quality by class: ${formatWorkspaceDecisionClassQuality(workspaceDecisionClassQuality)}`);
   console.log(`Consolidation proposal surface: ${formatReplayConsolidationProposalSurface(proposalSurface)}`);
   if (command === "proposals") {
     console.log(JSON.stringify(proposalSurface, null, 2));

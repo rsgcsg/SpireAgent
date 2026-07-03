@@ -34,6 +34,45 @@
 - 没有改变 live prompt、candidate ordering、fallback、validation 或 execution semantics。
 - 没有启用 P8 DeliberationPacket strategic workspace、P9 stable update applicator 或 P10 guarded learning loop。
 
+## 2026-07-03 P8 Cleanup / Provider-Contract Hardening Pass
+
+本轮目标不是推进 P8.5 live，而是把 P8 shadow 的结构和可审计性拉回清晰边界：
+
+- 维持 `full` 为 control group，不让 bounded candidate-future compression 静默污染 baseline。
+- 将 bounded combat `candidate_futures` 序列化抽到 `src/agent/candidateFutureCompressor.ts`，减少 `workspace.ts` 的职责缠绕。
+- 将 P8 flags/revision/mode 规范化抽到 `src/agent/workspaceExperimentConfig.ts`，避免 revision/mode/flag 常量继续散落。
+- 新增 `src/agent/providerFailureClassifier.ts`，统一区分：
+  - `provider_reliability`
+  - `semantic_validation`
+  - `candidate_safety`
+  以及更细的 bucket，例如 `provider_length_empty`、`provider_tail_noise_after_json`、`semantic_missing_candidate_id`。
+- `reasonQuality` 不再只按字符串长度判 thin；现在会额外记录 thin 原因，例如 `missing_tradeoff`、`missing_tactical_factor`、`templated_reason`。这仍然只是 report signal，不是 validation blocker。
+- DeepSeek request telemetry 现在会记录 thinking 请求模式：
+  - 未显式设置时，保留 provider default
+  - 可通过 `STS2_DEEPSEEK_THINKING_MODE=disabled|enabled` 做 shadow-only A/B
+  - 同时记录 response 是否返回 `reasoning_content`、content source、reasoning bytes
+- P8.4 收口标准已显式写清：
+  - provider/output contract 只需稳定到可分桶、可审计，不追求把所有低频 provider failure 清零
+  - `invalidChoice=0`
+  - `missingCandidate=0`
+  - live-eligible provider failure 低频且可解释
+  - `full` 保持 control group 原义
+  - `reasonQuality` 不出现大面积 missing 或严重变薄
+  - `CandidateFuture` 不能退化成 shallow action list
+  - shadow 不能污染 live / stable memory / derived / strategy
+- 新增 CandidateFuture quality review telemetry：
+  - `candidateFutureCompleteness` 统计 serialized future 是否仍保留 core tactical facts、benefit/cost、risk/uncertainty、assumption/invalidation、prediction-check trace、core tradeoff
+  - `candidateFutureReviewSignals` 记录 `shallow_candidate_future`、`missing_survival_line`、`missing_lethal_line`、`missing_resource_tradeoff`、`missing_card_reward_direction`、`missing_future_risk`
+  - `candidateFutureProposalSignals` 仅作为 review/eval 的 proposal-only signal，指向 candidate template / context feature / prediction-check refinement；不自动修改 candidate generator、stable memory、derived 或 strategy
+
+边界保持不变：
+
+- 没有启用 `STS2_P8_LIVE_ADDITIVE`。
+- DeepSeek 仍然只 shadow，不执行。
+- 没有改变 live prompt、candidate generation/order/scoring、fallback、validation、execution。
+- 没有放松 semantic validation，没有把空/截断输出洗成 valid。
+- 没有写 stable memory / derived / strategy，也没有提交 runtime memory 产物。
+
 ## 2026-07-01 Desktop North Star Alignment Pass
 
 当前工作目录：
@@ -971,3 +1010,217 @@ Follow-up after local `.env.local` configuration:
 - Non-secret metrics from the recorded shadow call: estimated input tokens `5800`, actual input tokens `6791`, actual output tokens `202`, actual total tokens `6993`, max output tokens `400`, latency `3568ms`, estimated cost `$0.002159`, budget status `within_budget`, reason quality `adequate`.
 - P8.5 preparation now includes compact workspace summary generation plus rollout metadata behind `STS2_P8_LIVE_ADDITIVE` and `STS2_P8_LIVE_DECISION_CLASSES`. The controller does not consume this live path yet, and default live integration remains off.
 - Future shadow boundary relaxation should happen progressively: P8.5 additive live context, P9 guarded stable updates, and P10 full guarded learning loop, each with whitelist, fallback, eval/review evidence, and rollback.
+
+## 2026-07-03 P8.4 DeepSeek Thinking-Mode Shadow A/B
+
+Shadow-only provider-contract A/B was run without changing live behavior:
+
+- Baseline remained `full_bounded_candidate_futures`; `full` was not redefined or used as the experimental target here.
+- DeepSeek remained shadow-only. No shadow decision entered execution, and `STS2_P8_LIVE_ADDITIVE` stayed off.
+- Request telemetry now confirms whether thinking was left at the provider default or explicitly disabled, whether JSON mode was used, whether `reasoning_content` was returned, the provider finish reason, output-cap hits, parse state, failure bucket/category, and thin-reason notes.
+
+Recorded A/B sample on `run-mr44lgba-d2qjrn`, revision `2026-07-03-output-contract-v5.1.4-provider-contract-hardening`:
+
+- A = provider default thinking (`providerThinkingMode=default_enabled`), 5 calls:
+  - valid `5/5`, invalid `0`, error `0`
+  - finish reason `stop=5`, output-cap hits `0`, `empty_content_after_retry=0`
+  - failure bucket/category `none=5`
+  - reason quality `adequate=2`, `thin=3`, thin note `missing_tradeoff=3`
+  - average actual input tokens `3587`, output tokens `365.8`, total tokens `3952.8`
+  - average latency `4699.6ms`
+  - `reasoning_content` returned on `5/5` calls, average `1293.8` bytes
+- B = explicit `thinking: {"type":"disabled"}` (`providerThinkingMode=explicit_disabled`), 5 calls:
+  - valid `5/5`, invalid `0`, error `0`
+  - finish reason `stop=5`, output-cap hits `0`, `empty_content_after_retry=0`
+  - failure bucket/category `none=5`
+  - reason quality `adequate=2`, `thin=3`, thin note `missing_tradeoff=3`
+  - average actual input tokens `3559.6`, output tokens `37.4`, total tokens `3597`
+  - average latency `1197.6ms`
+  - `reasoning_content` returned on `0/5` calls
+
+Interpretation:
+
+- This 5-vs-5 shadow sample does not show a validity difference. Both groups avoided `finish_reason=length`, output-cap hits, empty-content retry failure, and semantic invalid output.
+- Explicitly disabling thinking materially changed the provider contract:
+  - `reasoning_content` disappeared entirely
+  - output token usage dropped sharply
+  - latency dropped by roughly `3.9x`
+- This supports the concern that earlier `temperature=0` / `top_p=0.1` settings may not have been providing the expected stabilizing effect when DeepSeek default thinking was still active.
+- The sample is still too small to justify changing the default request behavior. The next safe step, if P8.4 continues, is a larger shadow-only disabled-thinking sample on comparable high-pressure combat slices.
+
+Audit note:
+
+- `npm run data:replay -- --latest`, `npm run data:eval -- --latest`, and `npm run agent:review` after the B pass pointed at the newest fresh run `run-mr4bsqiw-7kdmht`, which had zero real shadow calls because the 5-call budget had already been exhausted in the earlier run. This is expected but easy to misread; for provider A/B evidence, group by `shadowWorkspaceDecision.providerThinkingMode` on the actual call-bearing run instead of relying only on latest-run fresh slices.
+
+## 2026-07-03 P8.4 Thinking-Mode Expansion Check
+
+Follow-up expansion stayed shadow-only and kept live behavior unchanged:
+
+- DeepSeek remained shadow-only; no shadow decision entered execution.
+- `STS2_P8_LIVE_ADDITIVE` stayed off.
+- `full_bounded_candidate_futures` remained the only workspace ablation used for these runs.
+- No prompt, candidate generation, scoring, fallback, validation, or execution logic was changed during this expansion check.
+
+Expanded evidence on `run-mr4bsqiw-7kdmht` (grouped by `shadowWorkspaceDecision.providerThinkingMode`, not by mixed latest-run slices):
+
+- `explicit_disabled` 20-call sample:
+  - valid `20/20`, invalid `0`, error `0`
+  - live-eligible called `0`, live-eligible invalid `0`
+  - finish reason `stop=20`
+  - parse state `parsed=20`
+  - output-cap hits `0`
+  - `empty_content_after_retry=0`
+  - `parse_error=0`
+  - failure bucket/category `none=20`
+  - `reasoning_content` returned `0/20`
+  - average input tokens `3370.55`, output tokens `34.4`, total tokens `3404.95`
+  - average latency `1172ms`
+  - reason quality `adequate=4`, `thin=16`
+  - thin notes: `missing_tradeoff=16`, `missing_tactical_factor=5`
+- `default_enabled` 10-call control:
+  - valid `10/10`, invalid `0`, error `0`
+  - live-eligible called `0`, live-eligible invalid `0`
+  - finish reason `stop=10`
+  - parse state `parsed=10`
+  - output-cap hits `0`
+  - `empty_content_after_retry=0`
+  - `parse_error=0`
+  - failure bucket/category `none=10`
+  - `reasoning_content` returned `10/10`, average `1781.3` bytes
+  - average input tokens `3093.6`, output tokens `448.5`, total tokens `3542.1`
+  - average latency `6502.7ms`
+  - reason quality `adequate=3`, `thin=7`
+  - thin notes: `missing_tradeoff=6`, `missing_tactical_factor=4`
+
+Decision from this expansion pass:
+
+- Disabled thinking still looks provider-clean: no `length`, no output-cap hits, no empty-content retry failures, no parse errors, and no semantic invalid outputs appeared in the 20-call sample.
+- However, the expansion did not show a reliability improvement over the default-thinking control; both groups were fully valid in these samples.
+- Disabled thinking did preserve the earlier contract-level advantages:
+  - no `reasoning_content`
+  - much lower output-token usage
+  - much lower latency
+- But reason quality did not improve, and in this expansion it looked slightly worse rather than better:
+  - disabled `thin=16/20` (`80%`)
+  - default `thin=7/10` (`70%`)
+- Because the explicit user gate for continuing was “provider reliability and reason quality do not get worse,” the evidence was not strong enough to justify a 50-call disabled run or a default switch.
+
+Current recommendation:
+
+- Do not switch `STS2_DEEPSEEK_THINKING_MODE=disabled` to the P8 shadow default yet.
+- Treat disabled thinking as a useful provider-contract A/B mode, not a promoted default.
+- The next improvement target is reason quality and tradeoff expression under the existing shadow contract, not further token shaving.
+
+## 2026-07-03 P8.5 Live-Readiness Quality Pass
+
+This pass stayed inside the existing P8.4/P8.5 boundaries:
+
+- Live remained unchanged.
+- `STS2_P8_LIVE_ADDITIVE` stayed off.
+- DeepSeek remained shadow-only.
+- No stable memory, derived knowledge, or strategy params were written.
+- No candidate generation, ordering, scoring, fallback, validation, or execution logic was changed.
+
+Minimal quality/readiness refinements applied:
+
+- `src/agent/candidateFutureCompressor.ts` now preserves more combat-critical bounded facts from the existing `CandidateFuture` record:
+  - nested mechanics-aware facts such as card name, energy cost, expected damage, expected block gain, target block, and simple lethal cues
+  - a couple of short survival/lethal/resource cue strings when they already exist in predicted outcome / risk text
+- `src/agent/cognitiveScaffold.ts` now gives non-combat `CandidateFuture` records more strategic wording without changing candidate selection:
+  - card reward futures mention deck-direction effects and skip tradeoffs
+  - map futures mention route commitment and alternate-line cost
+  - non-combat mechanics summaries now carry limited strategic reasons/risks for review/eval visibility
+- `src/agent/candidateFutureReviewSignals.ts` now treats action-specific plan/outcome text as valid tactical-fact evidence when that detail is genuinely present in the serialized future, instead of requiring only structured mechanics fields.
+
+Why this was needed:
+
+- Post-recovery provider evidence was already clean, so continuing to over-focus on `selectedCandidateId` / retry / output-contract work would have been diminishing-return engineering.
+- The next honest blocker for P8.5 live-readiness is workspace quality: thin reason quality, `missing_survival_line` in bounded combat slices, and shallow `card_reward` / `map` futures.
+- This pass therefore targeted reviewable strategic content, not JSON-validity padding.
+
+Fresh readiness evidence after the quality pass:
+
+- A fresh post-recovery 20-call shadow sample on `full_bounded_candidate_futures` stayed shadow-only and kept live additive off.
+- The sample improved non-combat visibility:
+  - `card_reward:llm_required` completeness moved from `0/4` to `4/8`
+  - one fresh `card_reward:llm_required` shadow decision was `adequate`
+- But readiness is still `no_go`:
+  - fresh `last20` still had `invalid=3`, all bucketed as `provider_length_empty -> empty_content_after_retry`
+  - fresh `last20` reason quality stayed mixed: `adequate=8`, `thin=9`, `missing=3`
+  - fresh live-eligible evidence is still small (`liveEligibleCalled=2` in `last20`)
+  - `map:llm_required` remains shallow (`complete=0/2`, `shallow=2`)
+- The executor console may still show `fallbackReason=llm_unavailable` on live decisions because the live LLM path remains disabled/unavailable by design. That is separate from the P8 shadow DeepSeek telemetry, which continued recording valid/invalid shadow outcomes in replay/eval/review.
+
+## 2026-07-03 P8.5 CandidateFuture Quality Refinement
+
+This follow-up pass stayed shadow-only and did not change live behavior.
+
+What changed:
+
+- `src/agent/cognitiveScaffold.ts`
+  - `buildCandidateFutures()` now receives `run` so non-combat futures can explicitly reference current deck deficits, route pressure, and opportunity cost.
+  - `card_reward` futures now spell out:
+    - deck direction and current primary deck need
+    - skip value vs immediate patch value
+    - opportunity cost of passing other reward lines
+    - draw dilution / deck-bloat risk
+  - `map` futures now spell out:
+    - route commitment and alternate-line cost
+    - reward timing against HP/resources
+    - route pressure, reward expectation, and path lock-in risk
+  - Empty risk fields for `card_reward` / `map` now receive minimal strategic risk text instead of the generic `shallow_future_risk_model`.
+- `src/agent/llm.ts` and `src/agent/workspace.ts`
+  - `reasonBrief` guidance is still short and JSON-light, but now explicitly allows tactical or strategic tradeoff wording instead of only tactical wording.
+
+Fresh evidence after this refinement:
+
+- Fresh `last5` shadow slice was provider-clean: `called=5`, `valid=5`, `invalid=0`, `liveEligibleCalled=1`, `liveEligibleValid=1`, `finishReason.stop=5`, `outputCapHits=0`.
+- Fresh `last20` still remains `no_go` because reason quality is not yet strong enough:
+  - `called=20`, `valid=19`, `invalid=1`, `error=0`
+  - `liveEligibleCalled=3`, `liveEligibleValid=3`, `liveEligibleInvalid=0`, `liveEligibleError=0`
+  - reason quality `adequate=7`, `thin=12`, `missing=1`
+  - thin notes still led by `missing_tradeoff=10`
+- Aggregate readiness is still blocked:
+- `card_reward:llm_required` shows improved content shape but not enough new evidence to clear shallow risk globally
+- `map:llm_required` remains too sparse in the current evidence set
+- provider is not the main blocker here; tradeoff expression and non-combat strategic completeness remain the main blockers
+
+## 2026-07-03 P8.5 Non-Combat Follow-Up
+
+This pass stayed shadow-only and kept live additive off.
+
+What changed:
+
+- `src/agent/providerFailureClassifier.ts`
+  - `reasonQuality` now treats non-combat strategic language such as `deck`, `route`, `shop`, `rest`, `elite`, `scaling`, `synergy`, `skip`, `reward`, and `path` as valid tactical/strategic factors instead of grading everything through a combat-only vocabulary.
+- `src/agent/candidateFutureCompressor.ts`
+  - `full_bounded_candidate_futures` now serializes non-combat futures with explicit strategic facts and a compact `tradeoff` field instead of mirroring the old passthrough shape.
+- `src/agent/workspace.ts`
+  - non-combat bounded telemetry is now labeled `bounded_candidate_futures_non_combat` so review/eval no longer implies that `full_bounded_candidate_futures` skipped compression outside combat.
+- `src/agent/cognitiveScaffold.ts`
+  - `map` futures now recover node type from candidate label when raw node facts are sparse, which restores route commitment / reward expectation / lock-in language on map decisions.
+  - `reward_flow` prediction checks now tolerate historical simplified states that lack a `rewards` array, which keeps offline audit / replay-side reconstruction from crashing.
+
+What fresh runtime did and did not prove:
+
+- A fresh post-edit sample was still dominated by combat transitions, so it did not generate new live-eligible `map` or `card_reward` shadow records.
+- Because of that, this pass does not claim fresh runtime clearance for non-combat readiness.
+
+Offline rebuild evidence from recorded live-eligible transitions:
+
+- Rebuilding `transition-000293-agent-mr4erdtj-p10sgp` with the current scaffold now yields `map` futures that explicitly contain:
+  - route timing against `fragile combat resources`
+  - reward expectation for `Shop` vs `Monster`
+  - route lock-in cost
+  - future-floor uncertainty
+  - strategic reasons in the predicted outcome
+- Rebuilding `transition-000388-agent-mr4fptlo-zd80sv` with the current scaffold now yields `card_reward` futures that explicitly contain:
+  - primary deck need
+  - opportunity cost of passing other reward lines
+  - future draw-slot / deck-bloat risk
+  - clearer benefit-vs-cost tradeoff wording
+
+Current honest conclusion:
+
+- Non-combat CandidateFuture content is materially better in code than in the older historical telemetry windows.
+- P8.5 live is still `no_go` until fresh runtime evidence re-covers `map:llm_required` / `card_reward:llm_required` and shows that the improved futures actually reduce `missing_tradeoff` without introducing new provider failures.

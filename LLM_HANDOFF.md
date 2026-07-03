@@ -66,14 +66,43 @@ P8 DeliberationPacket strategic workspace shadow surface is now implemented:
 - P8.4 empty-content stabilization now hardens the DeepSeek request contract: `json_mode` uses `response_format: {"type":"json_object"}`, explicit JSON-only prompts with a target object example, `temperature=0`, `top_p=0.1`, and at most one provider-level rescue retry for `empty_content`. Replay/eval/review expose provider mode plus retry count/success.
 - P8.4 workspace ablation is shadow-only through `STS2_P8_WORKSPACE_ABLATION_MODE=full|full_bounded_candidate_futures|compact|ultra_compact`. `full` remains the unchanged control group. `full_bounded_candidate_futures` is the v5 combat-only bounded serialization experiment for `candidate_futures`; it does not alter live prompt/candidates/scoring/fallback/validation/execution.
 - P8 v5 also records workspace-size telemetry on `workspaceComparison.coverage`: compression mode, candidate-futures bytes/tokens before vs after, full workspace bytes/tokens before vs after, futures truncated/omitted, truncated-field counts, largest field sources, repeated-text estimate, and information-preservation estimate.
+- P8 cleanup/provider-contract hardening is now in progress as a follow-up to the v5 audit:
+  - bounded combat future serialization has a dedicated module seam (`candidateFutureCompressor`) instead of continuing to grow inside workspace assembly.
+  - workspace experiment flags/revision/mode normalization have a dedicated config module (`workspaceExperimentConfig`).
+  - provider failure classification and reason-quality assessment are centralized (`providerFailureClassifier`) so replay/eval/review can distinguish provider reliability, semantic validation, and candidate-safety failures.
+  - `full` remains the control group; smoke invariants still require `mode=full -> compressionMode=none`.
+  - DeepSeek request telemetry now records whether thinking was left at the provider default or explicitly overridden, plus whether `reasoning_content` appeared in the response.
+  - CandidateFuture quality review telemetry now records serialized-future completeness plus review-only shallow/missing signals and proposal-only improvement signals, so P8.4 can be judged on strategic workspace quality instead of only provider JSON validity.
 - P8.5 preparation metadata and compact workspace summary generation are present, but live integration remains disabled. The only allowed first experiment is additive `legacy prompt + compact workspace summary`, not structured-prompt-only by default.
 - With default flags, live behavior is unchanged: legacy prompt remains the live prompt, candidate generation/order/scoring/fallback/validation/execution are unchanged, and no stable memory/derived/strategy updates occur.
 - Replay/eval/review expose P8 workspace coverage and stats. Disagreement is a review signal, not a program failure.
+
+P8.4 stop criteria are now intentionally narrow:
+
+- provider/output contract is stable enough for shadow use; low-frequency provider failures are bucketed, not hidden
+- `invalidChoice=0` and `missingCandidate=0`
+- live-eligible provider failures stay low-frequency and explainable by telemetry
+- `full` remains unchanged as the control group
+- reason quality is not broadly collapsing into `missing` or thin template output
+- CandidateFuture serialization still preserves tactical facts, tradeoff, risk/uncertainty, and invalidation structure rather than collapsing into a shallow action list
+- shadow P8 does not alter live prompt behavior and does not write stable memory, derived knowledge, or strategy params
+
+Once those are true, additional `selectedCandidateId` / retry / compression tuning becomes diminishing-return work; the main focus should shift back toward CandidateFuture quality, missing/shallow candidate signals, and prediction-error learning evidence.
+
+Latest live-readiness note:
+
+- P8.5 static pre-audit is still passed, but additive live remains blocked by workspace-quality evidence rather than provider reachability.
+- `combat:llm_required` is now provider-clean post-recovery; remaining readiness work is to keep survival/tradeoff lines visible in bounded combat summaries.
+- `card_reward:llm_required` and `map:llm_required` should currently be treated as CandidateFuture quality/readiness work, not JSON-contract work.
+- Keep provider work limited to blocker-class failures. Do not keep widening the output contract or further shrinking `candidate_futures` unless fresh evidence shows a new blocker.
+- Fresh 20-call readiness sampling on `full_bounded_candidate_futures` improved `card_reward:llm_required` completeness from `0/4` to `4/8`, but `map:llm_required` is still shallow and fresh live-eligible evidence is still too thin to justify live additive.
+- Terminal `llm_unavailable` on executed decisions refers to the live LLM route staying disabled/unavailable; it does not mean the DeepSeek shadow provider was absent. Use `shadowWorkspaceDecision` / replay-eval-review telemetry for P8 readiness judgments, not the executor fallback banner alone.
 
 P8.x next route:
 
 - P8.3 real shadow call: continue collecting small real shadow samples by decision class; record agreement/disagreement/invalid/missing-candidate/reason quality/token/latency/cost without executing the shadow decision.
 - P8.4: collect real shadow A/B samples by decision class and keep disagreement as review signal, not FAIL.
+- Before more P8.4 tuning, prefer provider-contract clarity over further workspace shrinkage: verify thinking/json/output-budget behavior with small shadow-only A/B samples before changing defaults.
 - P8.5: gated live prompt integration only after explicit request; first version must be additive with legacy prompt fallback, not structured-prompt-only by default.
 - P9/P10: gradually relax shadow boundaries only when guarded update/eval/rollback infrastructure exists. Do not jump directly from P8 shadow disagreement to stable memory, derived knowledge, strategy params, candidate ordering, or autonomous learning.
 

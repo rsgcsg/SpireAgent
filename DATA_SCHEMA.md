@@ -176,6 +176,11 @@ P8 DeliberationPacket strategic workspace shadow surface:
   - per-section token estimates
   - information-preservation score
   - v5 workspace-size telemetry: compression mode, candidate-futures bytes/tokens before vs after, full workspace bytes/tokens before vs after, futures truncated/omitted, truncated-field counts, largest field sources, repeated-text estimate, and information-preservation estimate
+  - CandidateFuture quality review telemetry:
+    - `candidateFutureCompleteness`: counts of serialized futures that still expose core tactical facts, benefit/cost, risk or uncertainty, assumption or invalidation, prediction-check trace, and at least one core tradeoff
+      - `withCoreTacticalFacts` may come from explicit structured fields or from action-specific plan/outcome wording when the serialized future still carries concrete tactical detail in text form
+    - `candidateFutureReviewSignals`: review-only counts such as `shallow_candidate_future`, `missing_survival_line`, `missing_lethal_line`, `missing_resource_tradeoff`, `missing_card_reward_direction`, and `missing_future_risk`
+    - `candidateFutureProposalSignals`: proposal-only review signals such as `candidate_template_improvement_proposal`, `context_feature_proposal`, and `prediction_check_improvement_proposal`
   - token/call/cost/timeout budget status
   - gated readiness and readiness reasons
   - provider readiness: `ready_for_shadow_call`, `needs_api_key`, or `not_ready`
@@ -190,6 +195,7 @@ P8 DeliberationPacket strategic workspace shadow surface:
   - reason quality when a structured shadow LLM decision exists
   - short P8 schema fields: `selectedCandidateId`, `confidence`, `reasonBrief`, `riskTags`, `missingInfo`, and `scaffoldFeedback`
 - `STS2_P8_WORKSPACE_ABLATION_MODE=full_bounded_candidate_futures` is a new v5 shadow-only experiment. It keeps `full` unchanged as the control group and only applies bounded serialization to combat `candidate_futures`.
+- CandidateFuture completeness and missing/shallow signals are review/eval telemetry only. They do not change validation, candidate generation, fallback, execution, stable memory, derived knowledge, or strategy params.
 - DeepSeek V4 Flash is prepared as the preferred P8 external provider, but real calls require `STS2_DEEPSEEK_API_KEY` and explicit flags. Missing credentials must produce skipped/unavailable observability, not fake model output.
 - `STS2_P8_WORKSPACE_SHADOW` defaults off; `STS2_P8_WORKSPACE_CALL` defaults off. Fresh transitions still record the comparison surface with both flags off.
 - Budget guard skips use reasons such as `token_budget_exceeded`, `call_budget_exceeded`, `cost_budget_exceeded`, or `timeout`. They are review/eval signals, not selected-action failures.

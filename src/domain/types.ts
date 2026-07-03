@@ -330,6 +330,23 @@ export interface DeliberationWorkspaceCoverage {
   largestFieldSources?: Record<string, number>;
   repeatedTextBytes?: number;
   repeatedTextCount?: number;
+  candidateFutureCompleteness?: CandidateFutureCompletenessSummary;
+  candidateFutureReviewSignals?: Record<string, number>;
+  candidateFutureProposalSignals?: Record<string, number>;
+}
+
+export interface CandidateFutureCompletenessSummary {
+  futureCount: number;
+  withCoreTacticalFacts: number;
+  withBenefit: number;
+  withCost: number;
+  withBenefitOrCost: number;
+  withRiskOrUncertainty: number;
+  withAssumptionOrInvalidation: number;
+  withPredictionCheckTrace: number;
+  withCoreTradeoff: number;
+  completeEnough: number;
+  shallowFutureCount: number;
 }
 
 export interface DeliberationWorkspaceBudget {
@@ -402,6 +419,7 @@ export interface ShadowWorkspaceDecision {
   confidence?: number;
   reason?: string;
   reasonQuality?: "missing" | "thin" | "adequate";
+  reasonQualityNotes?: string[];
   validationError?: string;
   error?: string;
   promptHash?: string;
@@ -414,11 +432,17 @@ export interface ShadowWorkspaceDecision {
   workspacePromptBytes?: number;
   workspacePromptTokens?: number;
   providerOutputKind?: string;
+  providerContentSource?: string;
   providerOutputPreview?: string;
   providerOutputBytes?: number;
+  providerReasoningContentBytes?: number;
+  providerReasoningContentReturned?: boolean;
+  providerThinkingMode?: string;
   providerParseState?: string;
   providerCleanupReason?: string;
   providerAttempts?: JsonRecord[];
+  failureCategory?: string;
+  failureBucket?: string;
   outputCapHit?: boolean;
   retryCount?: number;
   emptyContentRetryCount?: number;

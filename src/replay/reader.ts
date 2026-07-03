@@ -75,8 +75,11 @@ export interface ReplayShadowSliceStats {
   liveEligibleMissingCandidate: number;
   agreementCounts: Record<string, number>;
   reasonQualityCounts: Record<string, number>;
+  reasonQualityNoteCounts: Record<string, number>;
   budgetStatusCounts: Record<string, number>;
   invalidBucketCounts: Record<string, number>;
+  failureCategoryCounts: Record<string, number>;
+  failureBucketCounts: Record<string, number>;
   providerModeCounts: Record<string, number>;
   ablationModeCounts: Record<string, number>;
   compressionModeCounts: Record<string, number>;
@@ -436,8 +439,11 @@ export function buildReplayShadowSliceStats(
     liveEligibleMissingCandidate: 0,
     agreementCounts: {},
     reasonQualityCounts: {},
+    reasonQualityNoteCounts: {},
     budgetStatusCounts: {},
     invalidBucketCounts: {},
+    failureCategoryCounts: {},
+    failureBucketCounts: {},
     providerModeCounts: {},
     ablationModeCounts: {},
     compressionModeCounts: {},
@@ -520,6 +526,17 @@ export function buildReplayShadowSliceStats(
     if (agreement === "missing_candidate" && liveEligible) stats.liveEligibleMissingCandidate += 1;
     if (typeof shadow.reasonQuality === "string") {
       stats.reasonQualityCounts[shadow.reasonQuality] = (stats.reasonQualityCounts[shadow.reasonQuality] ?? 0) + 1;
+    }
+    if (Array.isArray(shadow.reasonQualityNotes)) {
+      for (const note of shadow.reasonQualityNotes.map(String)) {
+        stats.reasonQualityNoteCounts[note] = (stats.reasonQualityNoteCounts[note] ?? 0) + 1;
+      }
+    }
+    if (typeof shadow.failureCategory === "string") {
+      stats.failureCategoryCounts[shadow.failureCategory] = (stats.failureCategoryCounts[shadow.failureCategory] ?? 0) + 1;
+    }
+    if (typeof shadow.failureBucket === "string") {
+      stats.failureBucketCounts[shadow.failureBucket] = (stats.failureBucketCounts[shadow.failureBucket] ?? 0) + 1;
     }
     if (typeof shadow.providerMode === "string") {
       stats.providerModeCounts[shadow.providerMode] = (stats.providerModeCounts[shadow.providerMode] ?? 0) + 1;
@@ -741,6 +758,8 @@ export function formatReplayShadowSliceStats(stats: ReplayShadowSliceStats): str
     `liveEligibleMissingCandidate=${stats.liveEligibleMissingCandidate}`,
     `ablation=${JSON.stringify(stats.ablationModeCounts)}`,
     `compression=${JSON.stringify(stats.compressionModeCounts)}`,
+    `failureCategory=${JSON.stringify(stats.failureCategoryCounts)}`,
+    `failureBucket=${JSON.stringify(stats.failureBucketCounts)}`,
     `modes=${JSON.stringify(stats.providerModeCounts)}`,
     `finishReason=${JSON.stringify(stats.finishReasonCounts)}`,
     `cleanup=${JSON.stringify(stats.cleanupReasonCounts)}`,
@@ -760,6 +779,7 @@ export function formatReplayShadowSliceStats(stats: ReplayShadowSliceStats): str
     `mixedRevision=${stats.mixedRevisionWindow}`,
     `mixedBudget=${stats.mixedBudgetWindow}`,
     `invalidBuckets=${JSON.stringify(stats.invalidBucketCounts)}`,
+    `thinReasons=${JSON.stringify(stats.reasonQualityNoteCounts)}`,
     `gate=${stats.gate.status}`,
     `reasons=${JSON.stringify(stats.gate.reasons)}`
   ].join(" ");

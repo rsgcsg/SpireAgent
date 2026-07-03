@@ -8,6 +8,7 @@ import {
   buildReplayFreshShadowSlices,
   readConsolidationProposals
 } from "../replay/reader.js";
+import { buildWorkspaceDecisionClassQuality } from "../replay/workspaceQuality.js";
 
 export function buildReviewReport(memory: MemoryManager): JsonRecord {
   const decisions = memory.run.keyDecisions;
@@ -106,6 +107,13 @@ function summarizeCurrentRunCognitiveCoverage(runId: string): JsonRecord {
     counts[transition.shadowWorkspaceDecision.reasonQuality] = (counts[transition.shadowWorkspaceDecision.reasonQuality] ?? 0) + 1;
     return counts;
   }, {});
+  const workspaceReasonQualityNoteCounts = transitions.reduce<Record<string, number>>((counts, transition) => {
+    if (!isRecord(transition.shadowWorkspaceDecision) || !Array.isArray(transition.shadowWorkspaceDecision.reasonQualityNotes)) return counts;
+    for (const note of transition.shadowWorkspaceDecision.reasonQualityNotes.map(String)) {
+      counts[note] = (counts[note] ?? 0) + 1;
+    }
+    return counts;
+  }, {});
   const workspaceFinishReasonCounts = transitions.reduce<Record<string, number>>((counts, transition) => {
     if (!isRecord(transition.shadowWorkspaceDecision) || typeof transition.shadowWorkspaceDecision.providerFinishReason !== "string") return counts;
     counts[transition.shadowWorkspaceDecision.providerFinishReason] = (counts[transition.shadowWorkspaceDecision.providerFinishReason] ?? 0) + 1;
@@ -119,6 +127,16 @@ function summarizeCurrentRunCognitiveCoverage(runId: string): JsonRecord {
   const workspaceProviderModeCounts = transitions.reduce<Record<string, number>>((counts, transition) => {
     if (!isRecord(transition.shadowWorkspaceDecision) || typeof transition.shadowWorkspaceDecision.providerMode !== "string") return counts;
     counts[transition.shadowWorkspaceDecision.providerMode] = (counts[transition.shadowWorkspaceDecision.providerMode] ?? 0) + 1;
+    return counts;
+  }, {});
+  const workspaceFailureCategoryCounts = transitions.reduce<Record<string, number>>((counts, transition) => {
+    if (!isRecord(transition.shadowWorkspaceDecision) || typeof transition.shadowWorkspaceDecision.failureCategory !== "string") return counts;
+    counts[transition.shadowWorkspaceDecision.failureCategory] = (counts[transition.shadowWorkspaceDecision.failureCategory] ?? 0) + 1;
+    return counts;
+  }, {});
+  const workspaceFailureBucketCounts = transitions.reduce<Record<string, number>>((counts, transition) => {
+    if (!isRecord(transition.shadowWorkspaceDecision) || typeof transition.shadowWorkspaceDecision.failureBucket !== "string") return counts;
+    counts[transition.shadowWorkspaceDecision.failureBucket] = (counts[transition.shadowWorkspaceDecision.failureBucket] ?? 0) + 1;
     return counts;
   }, {});
   const workspaceAblationModeCounts = transitions.reduce<Record<string, number>>((counts, transition) => {
@@ -220,6 +238,7 @@ function summarizeCurrentRunCognitiveCoverage(runId: string): JsonRecord {
   const consolidation = count((transition) => isRecord(transition.consolidation));
   const proposalSurface = buildReplayConsolidationProposalSurface(readConsolidationProposals(path.dirname(transitionsPath), transitions));
   const freshSlices = buildReplayFreshShadowSlices(transitions as any);
+  const workspaceDecisionClassQuality = buildWorkspaceDecisionClassQuality(transitions as any);
   const consolidationStatusCounts = transitions.reduce<Record<string, number>>((counts, transition) => {
     if (!isRecord(transition.consolidation)) return counts;
     const status = typeof transition.consolidation.status === "string" ? transition.consolidation.status : "unknown";
@@ -247,9 +266,12 @@ function summarizeCurrentRunCognitiveCoverage(runId: string): JsonRecord {
     workspaceProviderReadinessCounts,
     workspaceBudgetStatusCounts,
     workspaceReasonQualityCounts,
+    workspaceReasonQualityNoteCounts,
     workspaceFinishReasonCounts,
     workspaceCleanupReasonCounts,
     workspaceProviderModeCounts,
+    workspaceFailureCategoryCounts,
+    workspaceFailureBucketCounts,
     workspaceAblationModeCounts,
     workspaceCompressionModeCounts,
     workspaceRetryCount,
@@ -276,6 +298,7 @@ function summarizeCurrentRunCognitiveCoverage(runId: string): JsonRecord {
       transitions
     }),
     freshSlices,
+    workspaceDecisionClassQuality,
     averageWorkspaceInformationPreservation:
       workspacePreservationScores.length > 0
         ? round(workspacePreservationScores.reduce((sum, score) => sum + score, 0) / workspacePreservationScores.length)

@@ -8,19 +8,27 @@ import {
 } from "../domain/types.js";
 import type { LlmDecider } from "./llm.js";
 import { validateLlmDecisionForCandidates } from "./llm.js";
+import { serializeWorkspaceCandidateFutures } from "./candidateFutureCompressor.js";
+import { analyzeSerializedCandidateFutures } from "./candidateFutureReviewSignals.js";
+import { assessReasonQuality, classifyProviderFailure, summarizeProviderAttempts, summarizeReasonQualityNotes } from "./providerFailureClassifier.js";
 import type { ScoredCandidate } from "./types.js";
 import { isRecord } from "./utils.js";
+import {
+  P8_DEEPSEEK_API_KEY_FLAG,
+  P8_DEEPSEEK_MODEL_FLAG,
+  P8_LIVE_ADDITIVE_FLAG,
+  P8_LIVE_DECISION_CLASSES_FLAG,
+  P8_WORKSPACE_ABLATION_MODE_FLAG,
+  P8_WORKSPACE_CALL_FLAG,
+  P8_WORKSPACE_REVISION,
+  P8_WORKSPACE_SHADOW_FLAG,
+  WORKSPACE_REASON_BRIEF_MAX_WORDS,
+  type WorkspaceAblationMode,
+  normalizeWorkspaceAblationMode,
+  workspaceAblationModeFromEnv
+} from "./workspaceExperimentConfig.js";
 
-export const P8_WORKSPACE_SHADOW_FLAG = "STS2_P8_WORKSPACE_SHADOW";
-export const P8_WORKSPACE_CALL_FLAG = "STS2_P8_WORKSPACE_CALL";
-export const P8_DEEPSEEK_API_KEY_FLAG = "STS2_DEEPSEEK_API_KEY";
-export const P8_DEEPSEEK_MODEL_FLAG = "STS2_DEEPSEEK_MODEL";
-export const P8_LIVE_ADDITIVE_FLAG = "STS2_P8_LIVE_ADDITIVE";
-export const P8_LIVE_DECISION_CLASSES_FLAG = "STS2_P8_LIVE_DECISION_CLASSES";
-export const P8_WORKSPACE_ABLATION_MODE_FLAG = "STS2_P8_WORKSPACE_ABLATION_MODE";
-export const P8_WORKSPACE_REVISION = "2026-07-03-output-contract-v5-bounded-candidate-futures";
-
-export type WorkspaceAblationMode = "full" | "full_bounded_candidate_futures" | "compact" | "ultra_compact";
+export { normalizeWorkspaceAblationMode, workspaceAblationModeFromEnv } from "./workspaceExperimentConfig.js";
 
 interface WorkspaceSerializationTelemetry {
   compressionMode: string;
@@ -114,21 +122,6 @@ export function workspaceOptionsFromEnv(): WorkspaceShadowOptions {
   };
 }
 
-export function workspaceAblationModeFromEnv(): WorkspaceAblationMode {
-  return normalizeWorkspaceAblationMode(process.env[P8_WORKSPACE_ABLATION_MODE_FLAG]);
-}
-
-export function normalizeWorkspaceAblationMode(value: unknown): WorkspaceAblationMode {
-  if (typeof value !== "string") return "full";
-  const normalized = value.trim().toLowerCase().replace(/-/g, "_");
-  if (normalized === "full_bounded_candidate_futures" || normalized === "bounded" || normalized === "bounded_candidate_futures") {
-    return "full_bounded_candidate_futures";
-  }
-  if (normalized === "compact") return "compact";
-  if (normalized === "ultra" || normalized === "ultra_compact" || normalized === "ultracompact") return "ultra_compact";
-  return "full";
-}
-
 export function buildStructuredDeliberationWorkspacePrompt(
   packet: DeliberationPacket,
   candidates: ScoredCandidate[] = []
@@ -166,7 +159,7 @@ function buildFullWorkspacePayload(
   allowedCandidateIds: string[],
   mode: WorkspaceAblationMode
 ): JsonRecord {
-  const candidateFutureResult = buildWorkspaceCandidateFutures(packet, candidates, mode);
+  const candidateFutureResult = serializeWorkspaceCandidateFutures(packet, candidates, mode);
   return {
     ablation_mode: mode,
     task: "Choose exactly one candidate action for Slay the Spire 2 from the structured strategic workspace. Return short JSON only.",
@@ -183,14 +176,15 @@ function buildFullWorkspacePayload(
       choose_exactly_one_candidate_id_from_allowed_list: true,
       if_uncertain_still_choose_one_allowed_candidate_id: true,
       one_line_minified_json: true,
-      reasonBrief_max_words: 8,
+      reasonBrief_max_words: WORKSPACE_REASON_BRIEF_MAX_WORDS,
+      reasonBrief_style: "one short tactical or strategic sentence naming the main tradeoff",
       optional_arrays_default_empty: true,
       optional_arrays_max_items: 1,
       optional_fields_may_be_omitted: ["confidence", "riskTags", "missingInfo", "scaffoldFeedback"],
       required_fields: ["selectedCandidateId", "reasonBrief"],
       preferred_shape: {
         selectedCandidateId: "<exact allowed candidate id>",
-        reasonBrief: "short strategic reason",
+        reasonBrief: "short tactical sentence",
         confidence: 0.0,
         riskTags: [],
         missingInfo: [],
@@ -201,7 +195,7 @@ function buildFullWorkspacePayload(
     output_schema: packet.outputSchema ?? {
       selectedCandidateId: "string",
       confidence: "0..1 number",
-      reasonBrief: "short strategic reason",
+      reasonBrief: "short tactical or strategic sentence",
       riskTags: "string[]",
       missingInfo: "string[]",
       scaffoldFeedback: "string[]"
@@ -374,6 +368,14 @@ export function buildWorkspaceComparison(input: WorkspaceComparisonInput): Delib
   const liveAdditiveEnabled = Boolean(options.liveAdditiveEnabled);
   const decisionClassWhitelist = options.liveDecisionClassWhitelist ?? [];
   const decisionClassWhitelisted = decisionClassWhitelist.includes(input.decisionClass);
+  const serializedCandidateFutures = Array.isArray(structuredArtifact.payload.candidate_futures)
+    ? structuredArtifact.payload.candidate_futures
+    : [];
+  const candidateFutureReview = analyzeSerializedCandidateFutures(
+    input.deliberationPacket,
+    serializedCandidateFutures,
+    input.decisionClass
+  );
   const liveReadinessReasons: string[] = [];
   if (!liveAdditiveEnabled) liveReadinessReasons.push(`${P8_LIVE_ADDITIVE_FLAG}=off`);
   if (liveAdditiveEnabled && !decisionClassWhitelisted) liveReadinessReasons.push("decision_class_not_whitelisted");
@@ -424,7 +426,10 @@ export function buildWorkspaceComparison(input: WorkspaceComparisonInput): Delib
       informationPreservationEstimate: structuredArtifact.telemetry.informationPreservationEstimate,
       largestFieldSources: structuredArtifact.telemetry.largestFieldSources,
       repeatedTextBytes: structuredArtifact.telemetry.repeatedTextBytes,
-      repeatedTextCount: structuredArtifact.telemetry.repeatedTextCount
+      repeatedTextCount: structuredArtifact.telemetry.repeatedTextCount,
+      candidateFutureCompleteness: candidateFutureReview.completeness,
+      candidateFutureReviewSignals: candidateFutureReview.reviewSignals,
+      candidateFutureProposalSignals: candidateFutureReview.proposalSignals
     },
     gatedReadiness,
     readinessReasons,
@@ -526,11 +531,21 @@ export async function buildP8WorkspaceShadow(input: ShadowWorkspaceDecisionInput
     const validation = validateLlmDecisionForCandidates(decision, input.candidates);
     const candidateId = typeof decision?.candidateId === "string" ? decision.candidateId : undefined;
     const providerAudit = isRecord(decision) && isRecord(decision.providerAudit) ? decision.providerAudit : undefined;
+    const reasonAssessment = assessReasonQuality(decision?.reason);
     const agreement = candidateId === undefined
       ? "not_applicable"
       : input.candidates.some((candidate) => candidate.id === candidateId)
         ? candidateId === input.legacySelectedCandidateId ? "agree" : "disagree"
         : "missing_candidate";
+    const failure = classifyProviderFailure({
+      outcome: validation.valid ? "valid" : validation.outcome ?? "invalid_output",
+      agreement: validation.valid ? agreement : candidateId ? "missing_candidate" : "not_applicable",
+      providerFinishReason: providerMetadataString(decision, "finishReason"),
+      providerParseState: typeof providerAudit?.parseState === "string" ? providerAudit.parseState : undefined,
+      providerCleanupReason: typeof providerAudit?.cleanupReason === "string" ? providerAudit.cleanupReason : undefined,
+      providerOutputKind: typeof providerAudit?.contentKind === "string" ? providerAudit.contentKind : undefined,
+      validationError: validation.error
+    });
     return {
       structuredPrompt: input.structuredPrompt,
       comparison: input.comparison,
@@ -551,7 +566,8 @@ export async function buildP8WorkspaceShadow(input: ShadowWorkspaceDecisionInput
         structuredSelectedCandidateId: candidateId,
         confidence: typeof decision?.confidence === "number" ? decision.confidence : undefined,
         reason: typeof decision?.reason === "string" ? decision.reason : undefined,
-        reasonQuality: reasonQuality(decision?.reason),
+        reasonQuality: reasonAssessment.quality,
+        reasonQualityNotes: summarizeReasonQualityNotes(reasonAssessment.notes),
         validationError: validation.error,
         promptHash: input.comparison.structuredPromptHash,
         provider: providerName,
@@ -561,31 +577,19 @@ export async function buildP8WorkspaceShadow(input: ShadowWorkspaceDecisionInput
         workspacePromptBytes,
         workspacePromptTokens,
         providerOutputKind: typeof providerAudit?.contentKind === "string" ? providerAudit.contentKind : undefined,
+        providerContentSource: typeof providerAudit?.contentSource === "string" ? providerAudit.contentSource : undefined,
         providerOutputPreview: typeof providerAudit?.contentPreview === "string" ? providerAudit.contentPreview : undefined,
         providerOutputBytes: numberValue(providerAudit?.contentBytes),
+        providerReasoningContentBytes: numberValue(providerAudit?.reasoningContentBytes),
+        providerReasoningContentReturned: typeof providerAudit?.reasoningContentReturned === "boolean"
+          ? providerAudit.reasoningContentReturned
+          : undefined,
+        providerThinkingMode: typeof providerAudit?.requestedThinkingMode === "string" ? providerAudit.requestedThinkingMode : undefined,
         providerParseState: typeof providerAudit?.parseState === "string" ? providerAudit.parseState : undefined,
         providerCleanupReason: typeof providerAudit?.cleanupReason === "string" ? providerAudit.cleanupReason : undefined,
-        providerAttempts: Array.isArray(providerAudit?.attempts)
-          ? providerAudit.attempts
-              .filter(isRecord)
-              .map((attempt) => ({
-                requestKind: typeof attempt.requestKind === "string" ? attempt.requestKind : undefined,
-                rescueMode: typeof attempt.rescueMode === "string" ? attempt.rescueMode : undefined,
-                requestMaxOutputTokens: numberValue(attempt.requestMaxOutputTokens),
-                finishReason: typeof attempt.finishReason === "string" ? attempt.finishReason : undefined,
-                latencyMs: numberValue(attempt.latencyMs),
-                contentKind: typeof attempt.contentKind === "string" ? attempt.contentKind : undefined,
-                contentPreview: typeof attempt.contentPreview === "string" ? attempt.contentPreview : undefined,
-                contentBytes: numberValue(attempt.contentBytes),
-                usage: isRecord(attempt.usage)
-                  ? {
-                      promptTokens: numberValue(attempt.usage.promptTokens),
-                      completionTokens: numberValue(attempt.usage.completionTokens),
-                      totalTokens: numberValue(attempt.usage.totalTokens)
-                    }
-                  : undefined
-              }))
-          : undefined,
+        providerAttempts: summarizeProviderAttempts(providerAudit?.attempts),
+        failureCategory: failure.category,
+        failureBucket: failure.bucket,
         outputCapHit: isOutputCapHit(decision, input.comparison),
         retryCount: numberValue(providerAudit?.retryCount),
         emptyContentRetryCount: numberValue(providerAudit?.emptyContentRetryCount),
@@ -656,14 +660,15 @@ function workspaceResponseContract(): JsonRecord {
     never_return_empty_response: true,
     selectedCandidateId_must_be_from_allowed_candidate_ids: true,
     one_line_minified_json: true,
-    reasonBrief_max_words: 8,
+    reasonBrief_max_words: WORKSPACE_REASON_BRIEF_MAX_WORDS,
+    reasonBrief_style: "one short tactical or strategic sentence naming the main tradeoff",
     optional_arrays_default_empty: true,
     optional_arrays_max_items: 1,
     optional_fields_may_be_omitted: ["confidence", "riskTags", "missingInfo", "scaffoldFeedback"],
     required_fields: ["selectedCandidateId", "reasonBrief"],
     preferred_shape: {
       selectedCandidateId: "<exact allowed candidate id>",
-      reasonBrief: "short strategic reason",
+      reasonBrief: "short tactical or strategic sentence",
       confidence: 0.0,
       riskTags: [],
       missingInfo: [],
@@ -678,7 +683,7 @@ function shortOutputSchema(packet: DeliberationPacket): JsonRecord {
     : {
         selectedCandidateId: "string from allowed_candidate_ids",
         confidence: "0..1 number",
-        reasonBrief: "very short strategic reason",
+        reasonBrief: "short tactical or strategic sentence",
         riskTags: "short string[] <=1",
         missingInfo: "short string[] <=1",
         scaffoldFeedback: "short string[] <=1"
@@ -707,17 +712,19 @@ function buildWorkspaceCandidateFutures(
     return { serialized: fullSerialized };
   }
   const rankedCandidates = new Map(candidates.map((candidate, index) => [candidate.id, index]));
+  const pressureProfile = buildCombatCompressionProfile(packet);
   return {
     serialized: packet.candidateFutures
       .map((future, index) => ({ future, index }))
       .sort((left, right) =>
         candidateFuturePriority(right.future, right.index, rankedCandidates) - candidateFuturePriority(left.future, left.index, rankedCandidates)
       )
-      .slice(0, 6)
+      .slice(0, pressureProfile.maxFutures)
       .map(({ future, index }) => serializeBoundedCandidateFuture(
         future,
         index,
-        candidateFuturePriority(future, index, rankedCandidates)
+        candidateFuturePriority(future, index, rankedCandidates),
+        pressureProfile
       ))
   };
 }
@@ -741,21 +748,25 @@ function serializeFullCandidateFuture(future: DeliberationPacket["candidateFutur
 function serializeBoundedCandidateFuture(
   future: DeliberationPacket["candidateFutures"][number],
   index: number,
-  priority: number
+  priority: number,
+  pressureProfile: CombatCompressionProfile
 ): JsonRecord {
   const highPriority = priority >= 8;
+  const caps = fieldCapsForFuture(pressureProfile, highPriority);
   return compactObject({
     id: future.sourceCandidateId ?? future.id,
-    label: trimText(future.label, highPriority ? 96 : 72),
-    plan: trimText(future.plan, highPriority ? 96 : 72),
-    deterministicCalculations: compactStructuredValue(future.deterministicCalculations, highPriority ? 4 : 3, 1, 72),
-    predictedOutcome: limitStringList(future.predictedOutcome, highPriority ? 2 : 1, highPriority ? 108 : 84),
-    predictionChecks: limitPredictionChecks(future.predictionChecks, highPriority ? 2 : 1, highPriority),
-    cost: limitStringList(future.cost, 2, 88),
-    risk: limitStringList(future.risk, highPriority ? 2 : 1, highPriority ? 96 : 72),
-    uncertainty: limitStringList(future.uncertainty, 1, 72),
-    assumptions: limitStringList(future.assumptions, 1, highPriority ? 72 : 60),
-    invalidationTriggers: limitStringList(future.invalidationTriggers, 1, highPriority ? 72 : 60),
+    label: trimText(future.label, caps.label),
+    plan: pressureProfile.criticalPressure && !highPriority ? undefined : trimText(future.plan, caps.plan),
+    deterministicCalculations: compactStructuredValue(future.deterministicCalculations, caps.mechanicsKeys, 1, caps.text),
+    tacticalFacts: summarizeFutureTacticalFacts(future, caps.factItems, caps.text),
+    tradeoff: summarizeFutureTradeoff(future, caps.text),
+    predictedOutcome: pressureProfile.criticalPressure ? undefined : limitStringList(future.predictedOutcome, caps.outcomeItems, caps.outcomeText),
+    predictionChecks: limitPredictionChecks(future.predictionChecks, caps.predictionCheckItems, caps),
+    cost: limitStringList(future.cost, 1, caps.shortText),
+    risk: limitStringList(future.risk, caps.riskItems, caps.text),
+    uncertainty: limitStringList(future.uncertainty, 1, caps.shortText),
+    assumptions: limitStringList(future.assumptions, 1, caps.shortText),
+    invalidationTriggers: limitStringList(future.invalidationTriggers, 1, caps.shortText),
     confidence: future.confidence
   });
 }
@@ -800,7 +811,7 @@ function workspaceSerializationTelemetry(
       mode === "full_bounded_candidate_futures"
         ? packet.screen === "combat"
           ? "bounded_candidate_futures"
-          : "bounded_passthrough_non_combat"
+          : "bounded_candidate_futures_non_combat"
         : "none",
     futuresTruncated: countTruncatedStrings(candidateFuturesAfter),
     futuresOmitted,
@@ -843,17 +854,20 @@ function limitStringList(value: unknown, maxItems: number, maxLength: number): s
   return items.length > 0 ? items.slice(0, maxItems) : undefined;
 }
 
-function limitPredictionChecks(value: unknown, maxItems: number, highPriority: boolean): JsonRecord[] | undefined {
+function limitPredictionChecks(value: unknown, maxItems: number, caps: FutureFieldCaps): JsonRecord[] | undefined {
   if (!Array.isArray(value)) return undefined;
   const items = value
     .filter(isRecord)
     .slice(0, maxItems)
-    .map((check) => compactObject({
-      type: typeof check.type === "string" ? check.type : undefined,
-      severity: typeof check.severity === "string" ? check.severity : undefined,
-      prediction: trimText(check.prediction, highPriority ? 84 : 64),
-      expected: compactStructuredValue(check.expected, highPriority ? 3 : 2, 1, highPriority ? 56 : 40)
-    }));
+    .map((check) => {
+      const type = typeof check.type === "string" ? check.type : undefined;
+      return compactObject({
+        type,
+        severity: typeof check.severity === "string" ? check.severity : undefined,
+        prediction: trimText(check.prediction, caps.predictionText),
+        expected: summarizePredictionCheckExpected(type, check.expected, caps.expectedFacts, caps.expectedText)
+      });
+    });
   return items.length > 0 ? items : undefined;
 }
 
@@ -872,6 +886,283 @@ function compactStructuredValue(value: unknown, maxKeys: number, maxDepth: numbe
 
 function compactObject<T extends JsonRecord>(value: T): T {
   return Object.fromEntries(Object.entries(value).filter(([, item]) => item !== undefined)) as T;
+}
+
+interface CombatCompressionProfile {
+  boss: boolean;
+  highPressure: boolean;
+  criticalPressure: boolean;
+  multipleEnemies: boolean;
+  incomingDamage: number;
+  hpRatio: number | undefined;
+  maxFutures: number;
+}
+
+interface FutureFieldCaps {
+  label: number;
+  plan: number;
+  text: number;
+  shortText: number;
+  outcomeText: number;
+  outcomeItems: number;
+  riskItems: number;
+  predictionCheckItems: number;
+  predictionText: number;
+  expectedText: number;
+  expectedFacts: number;
+  mechanicsKeys: number;
+  factItems: number;
+}
+
+function buildCombatCompressionProfile(packet: DeliberationPacket): CombatCompressionProfile {
+  const stateFacts = isRecord(packet.stateFacts) ? packet.stateFacts : undefined;
+  const deterministic = isRecord(packet.deterministicCalculations) ? packet.deterministicCalculations : undefined;
+  const hp = firstNumber(stateFacts?.playerHp, stateFacts?.hp, deterministic?.playerHp, deterministic?.hp);
+  const maxHp = firstNumber(stateFacts?.playerMaxHp, stateFacts?.maxHp, deterministic?.playerMaxHp, deterministic?.maxHp);
+  const incomingDamage = firstNumber(
+    stateFacts?.incomingDamage,
+    deterministic?.incomingDamage,
+    stateFacts?.incomingIntentDamage
+  ) ?? 0;
+  const enemyCount = firstNumber(stateFacts?.enemyCount, deterministic?.enemyCount) ?? (Array.isArray(packet.enemyIntent) ? packet.enemyIntent.length : 0);
+  const stateType = firstNonEmptyString(
+    stateFacts?.combatType,
+    stateFacts?.encounterType,
+    stateFacts?.roomType,
+    deterministic?.combatType,
+    packet.stateSummary
+  );
+  const hpRatio = typeof hp === "number" && typeof maxHp === "number" && maxHp > 0 ? hp / maxHp : undefined;
+  const boss = /boss/i.test(stateType ?? "");
+  const multipleEnemies = enemyCount >= 2;
+  const highPressure = boss || multipleEnemies || incomingDamage >= 10 || (typeof hpRatio === "number" && hpRatio <= 0.6);
+  const criticalPressure = boss || incomingDamage >= 14 || (typeof hpRatio === "number" && hpRatio <= 0.45);
+  return {
+    boss,
+    highPressure,
+    criticalPressure,
+    multipleEnemies,
+    incomingDamage,
+    hpRatio,
+    maxFutures: criticalPressure ? 3 : highPressure ? (multipleEnemies ? 4 : 5) : 6
+  };
+}
+
+function fieldCapsForFuture(profile: CombatCompressionProfile, highPriority: boolean): FutureFieldCaps {
+  if (profile.criticalPressure) {
+    return {
+      label: highPriority ? 96 : 88,
+      plan: highPriority ? 96 : 80,
+      text: highPriority ? 64 : 56,
+      shortText: highPriority ? 56 : 48,
+      outcomeText: highPriority ? 60 : 52,
+      outcomeItems: 1,
+      riskItems: 1,
+      predictionCheckItems: 1,
+      predictionText: highPriority ? 56 : 44,
+      expectedText: highPriority ? 40 : 32,
+      expectedFacts: 1,
+      mechanicsKeys: 2,
+      factItems: highPriority ? 2 : 1
+    };
+  }
+  if (profile.highPressure) {
+    return {
+      label: highPriority ? 110 : 96,
+      plan: highPriority ? 112 : 96,
+      text: highPriority ? 84 : 72,
+      shortText: highPriority ? 72 : 60,
+      outcomeText: highPriority ? 76 : 64,
+      outcomeItems: 1,
+      riskItems: highPriority ? 2 : 1,
+      predictionCheckItems: 1,
+      predictionText: highPriority ? 72 : 56,
+      expectedText: highPriority ? 56 : 44,
+      expectedFacts: 1,
+      mechanicsKeys: 3,
+      factItems: highPriority ? 4 : 3
+    };
+  }
+  return {
+    label: highPriority ? 120 : 104,
+    plan: highPriority ? 120 : 104,
+    text: highPriority ? 92 : 80,
+    shortText: highPriority ? 76 : 64,
+    outcomeText: highPriority ? 84 : 72,
+    outcomeItems: highPriority ? 2 : 1,
+    riskItems: highPriority ? 2 : 1,
+    predictionCheckItems: highPriority ? 2 : 1,
+    predictionText: highPriority ? 76 : 60,
+    expectedText: highPriority ? 68 : 52,
+    expectedFacts: highPriority ? 2 : 1,
+    mechanicsKeys: 3,
+    factItems: highPriority ? 4 : 3
+  };
+}
+
+function summarizeFutureTacticalFacts(
+  future: DeliberationPacket["candidateFutures"][number],
+  maxItems: number,
+  maxLength: number
+): string[] | undefined {
+  const facts = new Set<string>();
+  const calculations = isRecord(future.deterministicCalculations) ? future.deterministicCalculations : undefined;
+  const cardName = firstNonEmptyString(calculations?.cardName, calculations?.primaryCard, calculations?.card);
+  const energyCost = firstNumber(calculations?.energyCost, calculations?.cost, calculations?.energySpend);
+  const score = firstNumber(calculations?.score, calculations?.candidateScore);
+  const rank = firstNumber(calculations?.rank, calculations?.candidateRank);
+  if (cardName) facts.add(trimText(cardName, maxLength) ?? cardName);
+  if (typeof energyCost === "number") facts.add(`cost ${energyCost}`);
+  if (typeof score === "number") facts.add(`score ${score.toFixed(1)}`);
+  if (typeof rank === "number") facts.add(`rank ${rank}`);
+  const normalized = [...facts]
+    .map((item) => trimText(item, maxLength))
+    .filter((item): item is string => typeof item === "string" && item.length > 0);
+  return normalized.length > 0 ? normalized.slice(0, maxItems) : undefined;
+}
+
+function summarizeFutureTradeoff(
+  future: DeliberationPacket["candidateFutures"][number],
+  maxLength: number
+): string | undefined {
+  const upside = firstNonEmptyString(...(future.predictedOutcome ?? []), ...(future.cost ?? []));
+  const downside = firstNonEmptyString(
+    ...(future.risk ?? []),
+    ...(future.uncertainty ?? []),
+    ...(future.assumptions ?? []),
+    ...(future.invalidationTriggers ?? [])
+  );
+  if (!upside && !downside) return undefined;
+  if (!upside) return trimText(`Watch ${downside}.`, maxLength);
+  if (!downside) return trimText(upside, maxLength);
+  return trimText(`${upside}; watch ${downside}.`, maxLength);
+}
+
+function summarizePredictionCheckExpected(
+  type: string | undefined,
+  expected: unknown,
+  maxFacts: number,
+  maxLength: number
+): string[] | string | undefined {
+  const facts = predictionCheckExpectedFacts(type, expected, maxFacts)
+    .map((fact) => trimText(fact, maxLength))
+    .filter((fact): fact is string => typeof fact === "string" && fact.length > 0);
+  if (facts.length > 0) return facts;
+  if (typeof expected === "string") return trimText(expected, maxLength);
+  return trimText(JSON.stringify(compactStructuredValue(expected, 2, 1, maxLength)), maxLength);
+}
+
+function predictionCheckExpectedFacts(type: string | undefined, expected: unknown, maxFacts: number): string[] {
+  const facts: string[] = [];
+  if (!isRecord(expected)) return facts;
+  switch (type) {
+    case "card_removed_from_hand":
+      buildCardExpectedFact(expected, facts);
+      buildHandCountFact(expected, facts);
+      break;
+    case "resource_delta":
+      buildEnergyExpectedFact(expected, facts);
+      break;
+    case "enemy_hp_or_block_delta":
+      buildHpExpectedFact(expected, facts, "enemy hp");
+      buildBlockExpectedFact(expected, facts, "enemy block");
+      break;
+    case "block_delta":
+      buildBlockExpectedFact(expected, facts, "block");
+      break;
+    case "player_hp_delta":
+      buildHpExpectedFact(expected, facts, "hp");
+      break;
+    case "phase_or_visible_progress":
+    case "phase_or_turn_change":
+    case "route_progress":
+      actionFact(expected, facts);
+      break;
+    default:
+      break;
+  }
+  booleanFact(expected, facts, "lethal");
+  booleanFact(expected, facts, "survive");
+  if (facts.length > 0) return facts.slice(0, maxFacts);
+  for (const [key, value] of Object.entries(expected)) {
+    if (facts.length >= maxFacts) break;
+    if (value === undefined || value === null) continue;
+    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+      facts.push(`${key}:${String(value)}`);
+    }
+  }
+  return facts.slice(0, maxFacts);
+}
+
+function buildCardExpectedFact(expected: JsonRecord, facts: string[]): void {
+  const name = firstNonEmptyString(expected.cardName, expected.card, expected.removedCardName);
+  const index = firstNumber(expected.handIndex, expected.cardIndex, expected.removedHandIndex);
+  if (name && typeof index === "number") {
+    facts.push(`remove ${name}@${index}`);
+    return;
+  }
+  if (name) facts.push(`remove ${name}`);
+}
+
+function buildHandCountFact(expected: JsonRecord, facts: string[]): void {
+  const before = firstNumber(expected.handCountBefore, expected.handBefore);
+  const after = firstNumber(expected.handCountAfter, expected.handAfter);
+  if (typeof before === "number" && typeof after === "number") facts.push(`hand ${before}->${after}`);
+}
+
+function buildEnergyExpectedFact(expected: JsonRecord, facts: string[]): void {
+  const before = firstNumber(expected.energyBefore, expected.before, expected.playerEnergyBefore);
+  const after = firstNumber(expected.energyAfter, expected.after, expected.playerEnergyAfter);
+  const cost = firstNumber(expected.energyCost, expected.cost, expected.delta);
+  if (expected.energyChanged === true) {
+    facts.push("energy changes");
+    return;
+  }
+  if (typeof before === "number" && typeof after === "number") {
+    facts.push(`energy ${before}->${after}`);
+    return;
+  }
+  if (typeof cost === "number") facts.push(`energy cost ${Math.abs(cost)}`);
+}
+
+function buildBlockExpectedFact(expected: JsonRecord, facts: string[], prefix: string): void {
+  const before = firstNumber(expected.blockBefore, expected.beforeBlock, expected.playerBlockBefore, expected.enemyBlockBefore);
+  const after = firstNumber(expected.blockAfter, expected.afterBlock, expected.playerBlockAfter, expected.enemyBlockAfter);
+  if (typeof before === "number" && typeof after === "number") facts.push(`${prefix} ${before}->${after}`);
+}
+
+function buildHpExpectedFact(expected: JsonRecord, facts: string[], prefix: string): void {
+  const before = firstNumber(expected.hpBefore, expected.beforeHp, expected.playerHpBefore, expected.enemyHpBefore);
+  const after = firstNumber(expected.hpAfter, expected.afterHp, expected.playerHpAfter, expected.enemyHpAfter);
+  if (typeof before === "number" && typeof after === "number") facts.push(`${prefix} ${before}->${after}`);
+}
+
+function actionFact(expected: JsonRecord, facts: string[]): void {
+  const action = firstNonEmptyString(expected.action, expected.transition, expected.progress, expected.phase);
+  const screen = firstNonEmptyString(expected.screen, expected.nextScreen);
+  if (action && screen) {
+    facts.push(`${action} -> ${screen}`);
+    return;
+  }
+  if (action) facts.push(action);
+}
+
+function booleanFact(expected: JsonRecord, facts: string[], key: string, label = key): void {
+  if (typeof expected[key] === "boolean") facts.push(`${label}:${expected[key] ? "yes" : "no"}`);
+}
+
+function firstNonEmptyString(...values: unknown[]): string | undefined {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim().length > 0) return value.trim();
+  }
+  return undefined;
+}
+
+function firstNumber(...values: unknown[]): number | undefined {
+  for (const value of values) {
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+  }
+  return undefined;
 }
 
 function candidateFuturePriority(
