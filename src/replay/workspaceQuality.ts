@@ -24,6 +24,8 @@ export interface WorkspaceDecisionClassQualityStats {
   shallowFutureCount: number;
   reviewSignals: Record<string, number>;
   proposalSignals: Record<string, number>;
+  cueAttributionSources: Record<string, number>;
+  reasonCueAttributionSources: Record<string, number>;
 }
 
 export function buildWorkspaceDecisionClassQuality(
@@ -78,6 +80,12 @@ export function buildWorkspaceDecisionClassQuality(
     }
     mergeCountMap(row.reviewSignals, coverage?.candidateFutureReviewSignals);
     mergeCountMap(row.proposalSignals, coverage?.candidateFutureProposalSignals);
+    if (isRecord(coverage?.candidateFutureCueAttribution)) {
+      mergeCountMap(row.cueAttributionSources, coverage.candidateFutureCueAttribution.sourceCounts);
+    }
+    if (isRecord(shadow?.reasonCueAttribution)) {
+      mergeCountMap(row.reasonCueAttributionSources, shadow.reasonCueAttribution.sourceCounts);
+    }
   }
   return Object.fromEntries(
     Object.entries(rows).sort((left, right) =>
@@ -106,7 +114,9 @@ export function formatWorkspaceDecisionClassQuality(
       : `complete=not_recorded(${stats.completenessMissingTransitions})`,
     `shallow=${stats.shallowFutureCount}`,
     `signals=${JSON.stringify(stats.reviewSignals)}`,
-    `proposals=${JSON.stringify(stats.proposalSignals)}`
+    `proposals=${JSON.stringify(stats.proposalSignals)}`,
+    `cueSources=${JSON.stringify(stats.cueAttributionSources)}`,
+    `reasonCueSources=${JSON.stringify(stats.reasonCueAttributionSources)}`
   ].join(" ")).join(" | ");
 }
 
@@ -133,7 +143,9 @@ function createWorkspaceDecisionClassQualityRow(): WorkspaceDecisionClassQuality
     completeEnough: 0,
     shallowFutureCount: 0,
     reviewSignals: {},
-    proposalSignals: {}
+    proposalSignals: {},
+    cueAttributionSources: {},
+    reasonCueAttributionSources: {}
   };
 }
 

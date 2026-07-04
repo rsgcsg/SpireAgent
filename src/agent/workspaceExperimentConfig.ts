@@ -5,7 +5,7 @@ export const P8_DEEPSEEK_MODEL_FLAG = "STS2_DEEPSEEK_MODEL";
 export const P8_LIVE_ADDITIVE_FLAG = "STS2_P8_LIVE_ADDITIVE";
 export const P8_LIVE_DECISION_CLASSES_FLAG = "STS2_P8_LIVE_DECISION_CLASSES";
 export const P8_WORKSPACE_ABLATION_MODE_FLAG = "STS2_P8_WORKSPACE_ABLATION_MODE";
-export const P8_WORKSPACE_REVISION = "2026-07-03-output-contract-v5.1.5-high-pressure-recovery";
+export const P8_WORKSPACE_REVISION = "2026-07-04-v5.1.6-survival-line-preservation";
 export const WORKSPACE_REASON_BRIEF_MAX_WORDS = 16;
 
 export type WorkspaceAblationMode = "full" | "full_bounded_candidate_futures" | "compact" | "ultra_compact";

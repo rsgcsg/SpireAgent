@@ -180,7 +180,9 @@ P8 DeliberationPacket strategic workspace shadow surface:
     - `candidateFutureCompleteness`: counts of serialized futures that still expose core tactical facts, benefit/cost, risk or uncertainty, assumption or invalidation, prediction-check trace, and at least one core tradeoff
       - `withCoreTacticalFacts` may come from explicit structured fields or from action-specific plan/outcome wording when the serialized future still carries concrete tactical detail in text form
     - `candidateFutureReviewSignals`: review-only counts such as `shallow_candidate_future`, `missing_survival_line`, `missing_lethal_line`, `missing_resource_tradeoff`, `missing_card_reward_direction`, and `missing_future_risk`
-    - `candidateFutureProposalSignals`: proposal-only review signals such as `candidate_template_improvement_proposal`, `context_feature_proposal`, and `prediction_check_improvement_proposal`
+    - `candidateFutureProposalSignals`: proposal-only review signals such as `candidate_template_improvement_proposal`, `combat_reason_policy_proposal`, `budget_policy_proposal`, `context_feature_proposal`, and `prediction_check_improvement_proposal`
+    - `candidateFutureCueAttribution`: source attribution for quality cues such as survival line, lethal line, resource tradeoff, future risk, card-reward direction, route risk, and general tradeoff. It records whether each cue existed in the original `CandidateFuture` set and whether it survived serialization, with source buckets such as `candidate_future_missing`, `compression_lost`, and `serialization_preserved`.
+      - high-pressure combat bounded serialization may include a short serialized-only `survivalLine` field when the original future already contains survival/block/incoming/mitigation cues. This does not add a new stable `CandidateFuture` domain field.
   - token/call/cost/timeout budget status
   - gated readiness and readiness reasons
   - provider readiness: `ready_for_shadow_call`, `needs_api_key`, or `not_ready`
@@ -194,8 +196,10 @@ P8 DeliberationPacket strategic workspace shadow surface:
   - agreement/disagreement/missing-candidate against the live selected candidate
   - reason quality when a structured shadow LLM decision exists
   - short P8 schema fields: `selectedCandidateId`, `confidence`, `reasonBrief`, `riskTags`, `missingInfo`, and `scaffoldFeedback`
+  - `reasonCueAttribution`: model-output attribution for the same quality cues when a shadow LLM reason is available. It helps distinguish `model_reason_omitted` from scaffold/compression loss. This remains telemetry only and does not change validation.
 - `STS2_P8_WORKSPACE_ABLATION_MODE=full_bounded_candidate_futures` is a new v5 shadow-only experiment. It keeps `full` unchanged as the control group and only applies bounded serialization to combat `candidate_futures`.
 - CandidateFuture completeness and missing/shallow signals are review/eval telemetry only. They do not change validation, candidate generation, fallback, execution, stable memory, derived knowledge, or strategy params.
+- Future proposal families such as `CombatReasonPolicy`, `CandidateTemplate`, or `BudgetPolicy` are inner-scaffold policy candidates only. They must begin as replay/eval/review evidence, remain shadow/proposal-only until fresh validation exists, and may not mutate validation, execution legality, live rollout flags, rollback authority, or fact/memory/derived separation.
 - DeepSeek V4 Flash is prepared as the preferred P8 external provider, but real calls require `STS2_DEEPSEEK_API_KEY` and explicit flags. Missing credentials must produce skipped/unavailable observability, not fake model output.
 - `STS2_P8_WORKSPACE_SHADOW` defaults off; `STS2_P8_WORKSPACE_CALL` defaults off. Fresh transitions still record the comparison surface with both flags off.
 - Budget guard skips use reasons such as `token_budget_exceeded`, `call_budget_exceeded`, `cost_budget_exceeded`, or `timeout`. They are review/eval signals, not selected-action failures.

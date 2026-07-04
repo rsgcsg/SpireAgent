@@ -95,6 +95,7 @@ function serializeBoundedCandidateFuture(
     plan: pressureProfile.criticalPressure && !highPriority ? undefined : trimText(future.plan, caps.plan),
     deterministicCalculations: compactStructuredValue(future.deterministicCalculations, caps.mechanicsKeys, 1, caps.text),
     tacticalFacts: summarizeFutureTacticalFacts(future, caps.factItems, caps.text),
+    survivalLine: pressureProfile.highPressure ? summarizeFutureSurvivalLine(future, caps.text) : undefined,
     tradeoff: summarizeFutureTradeoff(future, caps.text),
     predictedOutcome: pressureProfile.criticalPressure ? undefined : limitStringList(future.predictedOutcome, caps.outcomeItems, caps.outcomeText),
     predictionChecks: limitPredictionChecks(future.predictionChecks, caps.predictionCheckItems, caps),
@@ -291,6 +292,14 @@ function summarizeFutureTradeoff(
   return trimText(`Watch ${downside}.`, maxLength);
 }
 
+function summarizeFutureSurvivalLine(
+  future: DeliberationPacket["candidateFutures"][number],
+  maxLength: number
+): string | undefined {
+  const cue = allFutureStrings(future).find((value) => /surviv|survival|block|defend|mitigat|avoid damage|incoming damage|stabil/i.test(value));
+  return trimText(cue, maxLength);
+}
+
 function summarizeNonCombatStrategicFacts(
   future: DeliberationPacket["candidateFutures"][number],
   maxItems: number,
@@ -340,6 +349,13 @@ function futureCueStrings(future: DeliberationPacket["candidateFutures"][number]
     ...limitStringList(future.uncertainty, 1, 72) ?? []
   ];
   return values.filter((value) => /block|surviv|incoming damage|mitigat|lethal|kill|energy|draw|discard/i.test(value));
+}
+
+function allFutureStrings(value: unknown): string[] {
+  if (typeof value === "string") return value.trim().length > 0 ? [value.trim()] : [];
+  if (Array.isArray(value)) return value.flatMap((item) => allFutureStrings(item));
+  if (!isRecord(value)) return [];
+  return Object.values(value).flatMap((item) => allFutureStrings(item));
 }
 
 function limitPredictionChecks(value: unknown, maxItems: number, caps: FutureFieldCaps): JsonRecord[] | undefined {

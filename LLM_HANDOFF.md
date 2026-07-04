@@ -23,6 +23,18 @@ Read first:
 
 The project has completed Phase 0, Phase 1, the Phase 2 minimum data-loop MVP, the Phase 2.5 offline engineering eval runner, and Phase 2.6 eval warning classification/noise reduction. The formal route now extends through Phase 10, where the target is a complete Guarded Learning Loop.
 
+Latest narrow P8.5 readiness update:
+
+- provider is not the active fresh combat blocker right now; the fresh `combat:llm_required` window remains valid with `failureBucket=none`, `finishReason=stop`, and `outputCapHits=0`
+- the active blocker is still combat reason quality, specifically fresh `missing_tradeoff` on called combat shadow reasons
+- newest called samples showed this is not just evaluator noise: lines like `Reduce incoming damage with free attack.` and `Block incoming 21 with 0-cost Hotfix.` still describe only the gain, not the cost/delay/risk
+- a minimal combat-only workspace reason-contract refinement is now in place: for `combat:*`, the workspace prompt explicitly asks for one short sentence that states both the immediate gain and the main cost, delay, or risk this turn
+- this remains a temporary inner-scaffold policy, not a permanent hand-written rule pile; long-term promotion still has to come through replay/eval/review attribution and guarded proposal flow
+- first post-patch fresh called combat sample still came back thin: `transition-000152-agent-mr5qwaky-xkx56i` produced `Block immediately to survive, then scale later.` with `failureBucket=none`, `finishReason=stop`, `reasonQuality=thin`, `reasonQualityNotes=[\"missing_tradeoff\"]`
+- evaluator narrowing now treats temporal tradeoffs more fairly, but the next fresh called combat sample still came back thin for a real reason-contract miss: `transition-000155-agent-mr5r64iv-cljtlw` returned `Draw and energy gain to enable block.`
+- that means the active blocker is still fresh combat tradeoff expression, not provider stability and not mainly evaluator false negatives
+- next step is unchanged: run fresh `combat:llm_required` shadow validation and see whether `missing_tradeoff` actually falls
+
 The permanent mission is to build an agent scaffold system that lets a zero-experience LLM agent progressively unlock and express its full strategic potential through real play, structured perception, memory, candidate futures, deliberation, replay, prediction-error learning, and guarded improvement.
 
 Budget should now be read as a cross-cutting governance topic rather than a provider-only tuning topic. `BUDGET_GOVERNANCE.md` defines the intended separation between call budget, recovery budget, run budget, evidence budget, rollout budget, and protected-path budget.
@@ -78,6 +90,8 @@ P8 DeliberationPacket strategic workspace shadow surface is now implemented:
 - P8.4 A/B gate visibility is implemented in replay/eval/review: decision class, readiness, budget status, agreement/disagreement, missing sections, invalid/missing-candidate/error stats, reason quality, cost, latency, and go/no-go.
 - P8.4 empty-content stabilization now hardens the DeepSeek request contract: `json_mode` uses `response_format: {"type":"json_object"}`, explicit JSON-only prompts with a target object example, `temperature=0`, `top_p=0.1`, and at most one provider-level rescue retry for `empty_content`. Replay/eval/review expose provider mode plus retry count/success.
 - P8.4 workspace ablation is shadow-only through `STS2_P8_WORKSPACE_ABLATION_MODE=full|full_bounded_candidate_futures|compact|ultra_compact`. `full` remains the unchanged control group. `full_bounded_candidate_futures` is the v5 combat-only bounded serialization experiment for `candidate_futures`; it does not alter live prompt/candidates/scoring/fallback/validation/execution.
+- Latest narrow follow-up: combat `missing_tradeoff` is now treated as a telemetry-quality question first, not automatically as a workspace/provider failure. Fresh v5.1.6 combat evidence showed some `thin` reasons were false negatives (`without losing HP`, `sacrificing no energy`) rather than missing strategic tradeoffs.
+- This should not become a permanent manual keyword pile. Treat the current combat reason contract as an interim scaffold policy: future replay/eval/review should attribute gaps from `missing_tradeoff`, `missing_survival_line`, and prediction error, then generate proposal-only `CombatReasonPolicy`, `CandidateTemplate`, or `BudgetPolicy` candidates for shadow validation before any stable promotion.
 - P8 v5 also records workspace-size telemetry on `workspaceComparison.coverage`: compression mode, candidate-futures bytes/tokens before vs after, full workspace bytes/tokens before vs after, futures truncated/omitted, truncated-field counts, largest field sources, repeated-text estimate, and information-preservation estimate.
 - P8 cleanup/provider-contract hardening is now in progress as a follow-up to the v5 audit:
   - bounded combat future serialization has a dedicated module seam (`candidateFutureCompressor`) instead of continuing to grow inside workspace assembly.
@@ -115,6 +129,25 @@ Latest live-readiness note:
 
 P8.5 live gate and rollout discipline:
 
+- North Star alignment audit:
+  - Full report: `docs/reports/P8_NORTH_STAR_ALIGNMENT_AUDIT_2026-07-04.md`.
+  - Current judgment: P8 is still broadly aligned with the LLM-centered predictive scaffold doctrine, but inner scaffold mechanisms are becoming too fixed in places.
+  - Keep the outer shell hard: legality, validation, provider failure classification, `full` control group, live flag, rollback, stable-update promotion, replay/eval truth, and API-key hygiene.
+  - Only the inner scaffold may learn policy-like changes such as workspace presentation, candidate template shaping, memory activation emphasis, bounded compression, budget presentation, or combat reason contract. The outer shell must remain non-negotiable.
+  - Make the inner scaffold progressively learnable: CandidateFuture templates, survival/tradeoff generation, salience rules, memory activation conditions, prompt field selection, compression policy, budget allocation, and decision-class deliberation profiles.
+  - Treat `reasonQuality`, `missing_tradeoff`, and `missing_survival_line` as smoke alarms. Do not optimize them as final goals; first attribute the source of the gap across CandidateFuture generation, compression, prompt contract, model output, and review heuristic.
+  - Budget governance is still guard + telemetry plus early policy structure, not a full learning-aware Budget Governor. The next budget step is attribution/proposal-only, not automatic cap changes.
+- Minimal quality-source attribution telemetry is now implemented:
+  - `workspaceComparison.coverage.candidateFutureCueAttribution` compares original CandidateFuture cues against serialized workspace cues.
+  - `shadowWorkspaceDecision.reasonCueAttribution` checks whether the returned model reason used available cues.
+  - Replay/eval/review workspace-quality summaries now include `cueSources` and `reasonCueSources`.
+  - Fresh validation transition `transition-000136-agent-mr5p8cor-n0h5r7` populated the fields on `combat:llm_required`: `tradeoff`, `resource_tradeoff`, and `future_risk` were preserved; `survival_line` was `compression_lost`; `lethal_line` was `candidate_future_missing`; provider failure was `none`.
+  - Minimal high-pressure combat compressor refinement is now implemented: bounded serialization preserves a short `survivalLine` when the original future contains survival/block/incoming/mitigation cues.
+  - Fresh post-fix transitions `transition-000138-agent-mr5pj4ib-fx0yvq` and `transition-000139-agent-mr5pjdm4-spanei` both preserved `survival_line`, were valid, had `reasonQuality=adequate`, `failureBucket=none`, `finishReason=stop`, and `outputCapHit=false`.
+  - Missing `lethal_line` is still CandidateFuture/template evidence, not a compression issue.
+  - Extended fresh slice for revision `2026-07-04-v5.1.6-survival-line-preservation`: called=5, liveEligibleCalled=5, valid=5, invalid=0, error=0, failureBucket=`none`, finishReason=`stop`, outputCapHits=0.
+  - Remaining combat blocker is no longer survival-line loss. It is fresh `missing_tradeoff` thin reasons in 2/5 combat calls plus unresolved CandidateFuture/template gaps such as `lethal_line`.
+  - P8.5 live is still blocked by broader `NOT_READY_CANDIDATE_FUTURE_QUALITY` evidence, especially non-combat readiness and the remaining combat tradeoff-quality gap.
 - Current state: `P8.5` may continue on static / pre-live audit, but additive live is still `no_go`.
 - Fresh `combat:llm_required` failures at transitions `transition-000130-agent-mr4sg5sl-xm6o7z` and `transition-000131-agent-mr4sh7t9-l925tb` were the blocker that forced the high-pressure recovery pass.
 - Targeted replay retest on current code recovered both transitions as valid with `reasonQuality=adequate`, `finishReason=stop`, `failureBucket=none`, and no semantic-validation relaxation. One retest explicitly exercised recovery: primary `length+empty`, then truncation rescue with `thinking=disabled` and independent rescue cap returned valid JSON. A second retest had both calls succeed on primary, so fresh runtime high-pressure evidence is still required before changing readiness.

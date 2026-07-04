@@ -9,7 +9,7 @@ import {
 import type { LlmDecider } from "./llm.js";
 import { validateLlmDecisionForCandidates } from "./llm.js";
 import { serializeWorkspaceCandidateFutures } from "./candidateFutureCompressor.js";
-import { analyzeSerializedCandidateFutures } from "./candidateFutureReviewSignals.js";
+import { analyzeReasonCueAttribution, analyzeSerializedCandidateFutures } from "./candidateFutureReviewSignals.js";
 import { assessReasonQuality, classifyProviderFailure, summarizeProviderAttempts, summarizeReasonQualityNotes } from "./providerFailureClassifier.js";
 import {
   budgetGovernanceProfileFromEnv,
@@ -140,22 +140,24 @@ export function buildStructuredDeliberationWorkspacePrompt(
 export function buildDeliberationWorkspacePrompt(
   packet: DeliberationPacket,
   candidates: ScoredCandidate[] = [],
-  mode: WorkspaceAblationMode = "full"
+  mode: WorkspaceAblationMode = "full",
+  decisionClass?: string
 ): string {
-  return buildWorkspacePromptArtifact(packet, candidates, mode).prompt;
+  return buildWorkspacePromptArtifact(packet, candidates, mode, decisionClass).prompt;
 }
 
 function buildWorkspacePromptArtifact(
   packet: DeliberationPacket,
   candidates: ScoredCandidate[] = [],
-  mode: WorkspaceAblationMode = "full"
+  mode: WorkspaceAblationMode = "full",
+  decisionClass?: string
 ): WorkspacePromptBuildArtifact {
   const allowedCandidateIds = candidates.map((candidate) => candidate.id);
   const payload = mode === "ultra_compact"
-    ? buildUltraCompactWorkspacePayload(packet, candidates, allowedCandidateIds)
+    ? buildUltraCompactWorkspacePayload(packet, candidates, allowedCandidateIds, decisionClass)
     : mode === "compact"
-      ? buildCompactWorkspacePayload(packet, candidates, allowedCandidateIds)
-      : buildFullWorkspacePayload(packet, candidates, allowedCandidateIds, mode);
+      ? buildCompactWorkspacePayload(packet, candidates, allowedCandidateIds, decisionClass)
+      : buildFullWorkspacePayload(packet, candidates, allowedCandidateIds, mode, decisionClass);
   const prompt = `${JSON.stringify(payload)}\n${workspaceCandidateFooter(allowedCandidateIds)}`;
   const telemetry = workspaceSerializationTelemetry(packet, payload, prompt, candidates, mode);
   return { prompt, payload, telemetry };
@@ -165,11 +167,15 @@ function buildFullWorkspacePayload(
   packet: DeliberationPacket,
   candidates: ScoredCandidate[],
   allowedCandidateIds: string[],
-  mode: WorkspaceAblationMode
+  mode: WorkspaceAblationMode,
+  decisionClass?: string
 ): JsonRecord {
   const candidateFutureResult = serializeWorkspaceCandidateFutures(packet, candidates, mode);
+  const reasonBriefStyle = reasonBriefStyleForDecisionClass(decisionClass);
+  const reasonBriefRule = reasonBriefRuleForDecisionClass(decisionClass);
   return {
     ablation_mode: mode,
+    decision_class: decisionClass,
     task: "Choose exactly one candidate action for Slay the Spire 2 from the structured strategic workspace. Return short JSON only.",
     north_star_boundary: [
       "LLM is the strategic player",
@@ -185,7 +191,8 @@ function buildFullWorkspacePayload(
       if_uncertain_still_choose_one_allowed_candidate_id: true,
       one_line_minified_json: true,
       reasonBrief_max_words: WORKSPACE_REASON_BRIEF_MAX_WORDS,
-      reasonBrief_style: "one short tactical or strategic sentence naming the main tradeoff",
+      reasonBrief_style: reasonBriefStyle,
+      reasonBrief_rule: reasonBriefRule,
       optional_arrays_default_empty: true,
       optional_arrays_max_items: 1,
       optional_fields_may_be_omitted: ["confidence", "riskTags", "missingInfo", "scaffoldFeedback"],
@@ -231,10 +238,12 @@ function buildFullWorkspacePayload(
 function buildCompactWorkspacePayload(
   packet: DeliberationPacket,
   candidates: ScoredCandidate[],
-  allowedCandidateIds: string[]
+  allowedCandidateIds: string[],
+  decisionClass?: string
 ): JsonRecord {
   return {
     ablation_mode: "compact",
+    decision_class: decisionClass,
     task: "Choose exactly one allowed candidate id. Return JSON only.",
     response_contract: workspaceResponseContract(),
     allowed_candidate_ids: allowedCandidateIds,
@@ -274,10 +283,12 @@ function buildCompactWorkspacePayload(
 function buildUltraCompactWorkspacePayload(
   packet: DeliberationPacket,
   candidates: ScoredCandidate[],
-  allowedCandidateIds: string[]
+  allowedCandidateIds: string[],
+  decisionClass?: string
 ): JsonRecord {
   return {
     ablation_mode: "ultra_compact",
+    decision_class: decisionClass,
     task: "Pick one allowed candidate id. Return JSON only.",
     response_contract: workspaceResponseContract(),
     allowed_candidate_ids: allowedCandidateIds,
@@ -333,7 +344,12 @@ export function buildCompactWorkspaceSummary(packet: DeliberationPacket): string
 export function buildWorkspaceComparison(input: WorkspaceComparisonInput): DeliberationWorkspaceComparison {
   const options = input.options ?? workspaceOptionsFromEnv();
   const ablationMode = options.ablationMode ?? "full";
-  const structuredArtifact = buildWorkspacePromptArtifact(input.deliberationPacket, input.candidates, ablationMode);
+  const structuredArtifact = buildWorkspacePromptArtifact(
+    input.deliberationPacket,
+    input.candidates,
+    ablationMode,
+    input.decisionClass
+  );
   const structuredPrompt = structuredArtifact.prompt;
   const compactWorkspaceSummary = buildCompactWorkspaceSummary(input.deliberationPacket);
   const promptParity = isRecord(input.deliberationPacket.promptParity) ? input.deliberationPacket.promptParity : {};
@@ -437,7 +453,8 @@ export function buildWorkspaceComparison(input: WorkspaceComparisonInput): Delib
       repeatedTextCount: structuredArtifact.telemetry.repeatedTextCount,
       candidateFutureCompleteness: candidateFutureReview.completeness,
       candidateFutureReviewSignals: candidateFutureReview.reviewSignals,
-      candidateFutureProposalSignals: candidateFutureReview.proposalSignals
+      candidateFutureProposalSignals: candidateFutureReview.proposalSignals,
+      candidateFutureCueAttribution: candidateFutureReview.cueAttribution as unknown as JsonRecord
     },
     gatedReadiness,
     readinessReasons,
@@ -561,6 +578,10 @@ export async function buildP8WorkspaceShadow(input: ShadowWorkspaceDecisionInput
       parseState: typeof providerAudit?.parseState === "string" ? providerAudit.parseState : undefined,
       finishReason: providerMetadataString(decision, "finishReason")
     });
+    const reasonCueAttribution = analyzeReasonCueAttribution(
+      decision?.reason,
+      isRecord(input.comparison.coverage) ? input.comparison.coverage.candidateFutureCueAttribution : undefined
+    );
     return {
       structuredPrompt: input.structuredPrompt,
       comparison: input.comparison,
@@ -583,6 +604,7 @@ export async function buildP8WorkspaceShadow(input: ShadowWorkspaceDecisionInput
         reason: typeof decision?.reason === "string" ? decision.reason : undefined,
         reasonQuality: reasonAssessment.quality,
         reasonQualityNotes: summarizeReasonQualityNotes(reasonAssessment.notes),
+        reasonCueAttribution: reasonCueAttribution as JsonRecord | undefined,
         validationError: validation.error,
         promptHash: input.comparison.structuredPromptHash,
         provider: providerName,
@@ -1390,6 +1412,20 @@ function requiredStructuredSections(packet: DeliberationPacket): string[] {
 function reasonQuality(reason: unknown): ShadowWorkspaceDecision["reasonQuality"] {
   if (typeof reason !== "string" || reason.trim().length === 0) return "missing";
   return reason.trim().length < 24 ? "thin" : "adequate";
+}
+
+function reasonBriefStyleForDecisionClass(decisionClass?: string): string {
+  if (typeof decisionClass === "string" && decisionClass.startsWith("combat:")) {
+    return "one short tactical sentence naming the main gain and the main cost, delay, or risk this turn";
+  }
+  return "one short tactical or strategic sentence naming the main tradeoff";
+}
+
+function reasonBriefRuleForDecisionClass(decisionClass?: string): string | undefined {
+  if (typeof decisionClass === "string" && decisionClass.startsWith("combat:")) {
+    return "In combat, say both what this line gains now and what it gives up, delays, or risks.";
+  }
+  return undefined;
 }
 
 function buildWorkspaceBudget(

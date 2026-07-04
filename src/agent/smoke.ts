@@ -55,6 +55,7 @@ import {
   workspaceOptionsFromEnv
 } from "./workspace.js";
 import { normalizeBudgetGovernanceProfile } from "./budgetGovernance.js";
+import { assessReasonQuality } from "./providerFailureClassifier.js";
 import { summarizeProviderRecoveryPolicy } from "./providerRecoveryPolicy.js";
 import {
   DOMAIN_SCHEMA_VERSION,
@@ -254,11 +255,15 @@ assert.match(structuredWorkspacePrompt, /Return JSON now/);
 const combatBoundedWorkspacePrompt = buildDeliberationWorkspacePrompt(
   { ...deliberationPacket, screen: "combat" },
   [workspaceCandidate],
-  "full_bounded_candidate_futures"
+  "full_bounded_candidate_futures",
+  "combat:llm_required"
 );
 const compactShadowPrompt = buildDeliberationWorkspacePrompt(deliberationPacket, [workspaceCandidate], "compact");
 const ultraCompactShadowPrompt = buildDeliberationWorkspacePrompt(deliberationPacket, [workspaceCandidate], "ultra_compact");
 assert.match(combatBoundedWorkspacePrompt, /full_bounded_candidate_futures/);
+assert.match(combatBoundedWorkspacePrompt, /decision_class":"combat:llm_required/);
+assert.match(combatBoundedWorkspacePrompt, /main gain and the main cost, delay, or risk this turn/);
+assert.match(combatBoundedWorkspacePrompt, /say both what this line gains now and what it gives up, delays, or risks/);
 assert.ok(compactShadowPrompt.length < structuredWorkspacePrompt.length);
 assert.ok(ultraCompactShadowPrompt.length < compactShadowPrompt.length);
 assert.equal(normalizeWorkspaceAblationMode("bounded"), "full_bounded_candidate_futures");
@@ -356,6 +361,10 @@ const p8ShadowThinReason = await buildP8WorkspaceShadowFromPacket({
 });
 assert.equal(p8ShadowThinReason.shadowDecision.reasonQuality, "thin");
 assert.ok(p8ShadowThinReason.shadowDecision.reasonQualityNotes?.includes("missing_tradeoff"));
+assert.equal(assessReasonQuality("Draw for block without losing HP.").quality, "adequate");
+assert.equal(assessReasonQuality("0-cost draw 3 to find block, sacrificing no energy.").quality, "adequate");
+assert.equal(assessReasonQuality("Block immediately to survive, then scale later.").quality, "adequate");
+assert.equal(assessReasonQuality("Reduce incoming damage with free attack.").quality, "thin");
 const recoveryPolicySummary = summarizeProviderRecoveryPolicy({
   outcome: "invalid_output",
   failureBucket: "provider_length_empty",

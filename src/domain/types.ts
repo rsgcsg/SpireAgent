@@ -333,6 +333,7 @@ export interface DeliberationWorkspaceCoverage {
   candidateFutureCompleteness?: CandidateFutureCompletenessSummary;
   candidateFutureReviewSignals?: Record<string, number>;
   candidateFutureProposalSignals?: Record<string, number>;
+  candidateFutureCueAttribution?: JsonRecord;
 }
 
 export interface CandidateFutureCompletenessSummary {
@@ -442,6 +443,7 @@ export interface ShadowWorkspaceDecision {
   reason?: string;
   reasonQuality?: "missing" | "thin" | "adequate";
   reasonQualityNotes?: string[];
+  reasonCueAttribution?: JsonRecord;
   validationError?: string;
   error?: string;
   promptHash?: string;

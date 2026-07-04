@@ -5,6 +5,39 @@ export interface CandidateFutureReviewAnalysis {
   completeness: CandidateFutureCompletenessSummary;
   reviewSignals: Record<string, number>;
   proposalSignals: Record<string, number>;
+  cueAttribution: CandidateFutureCueAttributionSummary;
+}
+
+export interface CandidateFutureCueAttributionSummary {
+  cues: Record<string, CandidateFutureCueAttribution>;
+  sourceCounts: Record<string, number>;
+  missingInOriginal: string[];
+  lostInSerialization: string[];
+  preservedInSerialization: string[];
+}
+
+export interface CandidateFutureCueAttribution {
+  original: boolean;
+  serialized: boolean;
+  source: "not_applicable" | "candidate_future_missing" | "compression_lost" | "serialization_preserved";
+}
+
+export interface ReasonCueAttributionSummary {
+  cues: Record<string, ReasonCueAttribution>;
+  sourceCounts: Record<string, number>;
+  missingDespiteSerialized: string[];
+}
+
+export interface ReasonCueAttribution {
+  original: boolean;
+  serialized: boolean;
+  modelReason: boolean;
+  source:
+    | "not_applicable"
+    | "candidate_future_missing"
+    | "compression_lost"
+    | "model_reason_omitted"
+    | "model_reason_used";
 }
 
 export function analyzeSerializedCandidateFutures(
@@ -90,14 +123,120 @@ export function analyzeSerializedCandidateFutures(
     increment(proposalSignals, "prediction_check_improvement_proposal");
   }
 
-  return { completeness, reviewSignals, proposalSignals };
+  return {
+    completeness,
+    reviewSignals,
+    proposalSignals,
+    cueAttribution: buildCandidateFutureCueAttribution(packet, serialized, decisionClass)
+  };
+}
+
+export function analyzeReasonCueAttribution(
+  reason: unknown,
+  cueAttribution: unknown
+): ReasonCueAttributionSummary | undefined {
+  if (!isRecord(cueAttribution) || !isRecord(cueAttribution.cues)) return undefined;
+  const reasonText = typeof reason === "string" ? reason : "";
+  const cues: Record<string, ReasonCueAttribution> = {};
+  const sourceCounts: Record<string, number> = {};
+  const missingDespiteSerialized: string[] = [];
+  for (const [name, value] of Object.entries(cueAttribution.cues)) {
+    if (!isRecord(value)) continue;
+    const original = value.original === true;
+    const serialized = value.serialized === true;
+    const modelReason = cuePattern(name).test(reasonText);
+    const source = reasonCueSource(original, serialized, modelReason);
+    cues[name] = { original, serialized, modelReason, source };
+    increment(sourceCounts, source);
+    if (source === "model_reason_omitted") missingDespiteSerialized.push(name);
+  }
+  return {
+    cues,
+    sourceCounts,
+    missingDespiteSerialized
+  };
 }
 
 const SURVIVAL_PATTERN = /surviv|survival|block|defend|mitigat|avoid damage|incoming damage|stabil/i;
 const LETHAL_PATTERN = /lethal|kill|finish|execute|dead this turn/i;
 const RESOURCE_PATTERN = /energy|cost|draw|discard|retain|exhaust|gold|hp|potion|resource/i;
 const CARD_REWARD_PATTERN = /deck|curve|archetype|synergy|scaling|draw|block|damage|thin|upgrade|engine/i;
+const TRADEOFF_PATTERN = /\b(while|but|vs|tradeoff|trade-off|watch|preserve|risk|unless|avoid|delay|commit|lock-?in|opportunity cost|skip value|at the cost of|cost)\b/i;
 const SPECIFIC_TACTICAL_FACT_PATTERN = /deck|card|reward|route|map|node|elite|shop|rest|damage|block|energy|potion|enemy|hp/i;
+
+function buildCandidateFutureCueAttribution(
+  packet: DeliberationPacket,
+  serialized: JsonRecord[],
+  decisionClass: string
+): CandidateFutureCueAttributionSummary {
+  const cueNames = cueNamesForDecisionClass(decisionClass);
+  const cues: Record<string, CandidateFutureCueAttribution> = {};
+  const sourceCounts: Record<string, number> = {};
+  const missingInOriginal: string[] = [];
+  const lostInSerialization: string[] = [];
+  const preservedInSerialization: string[] = [];
+  for (const name of cueNames) {
+    const pattern = cuePattern(name);
+    const original = cuePresentInOriginal(packet, pattern);
+    const serializedCue = cuePresentInSerialized(serialized, pattern);
+    const source = cueSource(original, serializedCue);
+    cues[name] = { original, serialized: serializedCue, source };
+    increment(sourceCounts, source);
+    if (source === "candidate_future_missing") missingInOriginal.push(name);
+    if (source === "compression_lost") lostInSerialization.push(name);
+    if (source === "serialization_preserved") preservedInSerialization.push(name);
+  }
+  return {
+    cues,
+    sourceCounts,
+    missingInOriginal,
+    lostInSerialization,
+    preservedInSerialization
+  };
+}
+
+function cueNamesForDecisionClass(decisionClass: string): string[] {
+  const names = ["tradeoff", "resource_tradeoff", "future_risk"];
+  if (/^combat:/u.test(decisionClass)) names.push("survival_line", "lethal_line");
+  if (/^card_reward:/u.test(decisionClass)) names.push("card_reward_direction");
+  if (/^map:/u.test(decisionClass)) names.push("route_risk");
+  return names;
+}
+
+function cuePattern(name: string): RegExp {
+  switch (name) {
+    case "survival_line":
+      return SURVIVAL_PATTERN;
+    case "lethal_line":
+      return LETHAL_PATTERN;
+    case "resource_tradeoff":
+      return RESOURCE_PATTERN;
+    case "card_reward_direction":
+      return CARD_REWARD_PATTERN;
+    case "future_risk":
+    case "route_risk":
+      return /risk|uncertain|assum|invalid|elite|rest|shop|path|route|lock|danger|future/i;
+    case "tradeoff":
+      return TRADEOFF_PATTERN;
+    default:
+      return new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
+  }
+}
+
+function cueSource(original: boolean, serialized: boolean): CandidateFutureCueAttribution["source"] {
+  if (!original && !serialized) return "candidate_future_missing";
+  if (original && !serialized) return "compression_lost";
+  if (serialized) return "serialization_preserved";
+  return "not_applicable";
+}
+
+function reasonCueSource(original: boolean, serialized: boolean, modelReason: boolean): ReasonCueAttribution["source"] {
+  if (!original && !serialized) return "candidate_future_missing";
+  if (original && !serialized) return "compression_lost";
+  if (serialized && !modelReason) return "model_reason_omitted";
+  if (modelReason) return "model_reason_used";
+  return "not_applicable";
+}
 
 function hasCoreTacticalFacts(future: JsonRecord): boolean {
   if (nonEmptyStringArray(future.tacticalFacts).length > 0 || objectSize(future.deterministicCalculations) > 0) return true;

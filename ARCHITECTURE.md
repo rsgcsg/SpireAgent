@@ -80,6 +80,8 @@ Responsibilities:
 - validate LLM JSON and candidate IDs
 - choose fallback safely when LLM is unavailable or invalid
 
+Future learning-facing scaffold policies should live in this plane, but only as evidence-backed, proposal-driven inner-loop adjustments. Examples include a future `CombatReasonPolicy`, `CandidateTemplate` refinement, bounded-workspace presentation policy, or decision-class-specific `BudgetPolicy`. They may change how the LLM sees tradeoffs, survival lines, or future structure, but they must not directly mutate validation, execution legality, live flags, rollback authority, or fact/memory/derived separation.
+
 Current code:
 
 - `src/agent/candidates.ts`
@@ -102,6 +104,16 @@ Responsibilities:
 - apply conservative, auditable updates
 
 P2 shadow refinement retrieves a small read-only derived snapshot from `derived/` and records it in the cognitive scaffold. This supports prompt-parity and prediction-error inspection without replacing the live prompt or changing candidate ordering.
+
+Replay/eval/review should be able to attribute whether a quality gap came from:
+
+- missing candidate future content
+- compression loss
+- model reason omission
+- provider reliability
+- budget/recovery policy
+
+Only after that attribution should the system propose inner-scaffold policy updates such as `CombatReasonPolicy`, `CandidateTemplate`, or `BudgetPolicy` changes. Promotion remains guarded, reviewed, and rollback-capable.
 
 Current code:
 

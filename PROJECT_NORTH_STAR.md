@@ -1433,6 +1433,26 @@ Future changes must not remove or weaken these principles:
 14. **Experimental freedom.** Aggressive exploration may exist, but it must be isolated from stable strategy.
 15. **Maintainability.** The project should become clearer as it grows, not more chaotic.
 
+Inside these boundaries, some scaffold policies may evolve over time, but they must do so through replayable evidence rather than by silently accreting hand-written rules. Examples include:
+
+* workspace-side reason contracts;
+* candidate templates and future-completeness policies;
+* compression and budget presentation policies;
+* memory-activation prioritization policies.
+
+These are legitimate learning targets for the inner scaffold. They are not allowed to bypass or rewrite the outer shell.
+
+The outer shell must remain hard:
+
+* legality and execution safety;
+* semantic validation;
+* live flags and rollout authorization;
+* rollback and protected-path promotion rules;
+* fact / memory / derived separation;
+* stable-promotion requirements.
+
+The LLM may help improve the inner scaffold only inside that shell.
+
 ---
 
 ## 25. What Counts as Progress
@@ -1546,4 +1566,3 @@ If the answer is unclear, the change should be redesigned before implementation.
 ## 28. Enduring One-Sentence Summary
 
 Build a real-game Slay the Spire 2 LLM agent where the LLM remains the core strategic player, and a predictive cognitive scaffold transforms raw state into Strategic Impressions, activates relevant memory, generates validated Candidate Futures, lets the LLM deliberate in a compact but strategically complete context, and uses safe execution, transition recording, replay evaluation, and prediction-error learning to help the LLM progressively approach the strongest strategic performance it is capable of through repeated play.
-

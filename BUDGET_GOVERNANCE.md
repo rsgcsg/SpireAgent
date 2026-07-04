@@ -100,6 +100,8 @@ Examples of budget failure relative to the North Star:
 
 Budget is a guard, not a goal.
 
+The same principle applies to temporary manual contract fixes. A hand-tuned reason contract such as "combat reasons should express benefit plus cost, delay, or risk" can be a legitimate short-term scaffold repair, but it must not calcify into an unreviewed permanent rule pile. Long term, that policy should be attributable, proposal-driven, replay-validated, and rollback-capable like other inner-scaffold policies.
+
 ---
 
 ## 3. Budget Is Not Just Tokens
@@ -208,6 +210,15 @@ Some operations are inherently more dangerous than others:
 - strategy-param mutation
 
 These should not share one flat notion of “budget”.
+
+Related implication:
+
+- workspace-side reason contract
+- candidate-template shaping
+- compression policy
+- decision-class budget policy
+
+should be treated as inner-scaffold policies that may be proposed and promoted under evidence. They are not allowed to cross into protected-path governance. The outer shell still owns semantic validation, execution safety, live authorization, rollback, and stable-write bans.
 
 ---
 
@@ -869,9 +880,121 @@ Given the current codebase and current risks:
    not cost alone
 6. Do not allow budget pressure to justify live additive promotion.
 
+Current North Star audit note:
+
+- The active P8.5 issue is no longer primarily provider reachability or provider-length recovery on fresh evidence.
+- The active issue is quality attribution: whether missing survival/tradeoff information originates in CandidateFuture generation, compression, prompt contract, model output, or review heuristics.
+- Budget governance should not respond by blindly raising caps or shrinking workspace. It should first preserve attribution evidence.
+
 ---
 
-## 16. Success Criteria For Budget Governance
+## 16. Learning-Aware Budget Governor Route
+
+The long-term target is not a larger set of fixed caps. It is a learning-aware Budget Governor that can propose, test, promote, and roll back budget/compression policy while the outer safety shell remains fixed.
+
+This must be staged carefully.
+
+### Stage 0: Guard + telemetry
+
+Current state:
+
+- env/config caps guard calls
+- provider recovery is classified and summarized
+- evidence and rollout budgets are reported
+- protected paths remain closed
+
+This is useful, but it is not yet a learning-aware governor.
+
+### Stage 1: Attribution-only budget analysis
+
+Goal:
+
+- determine whether a quality failure was caused by budget/compression, CandidateFuture generation, prompt contract, provider output, or review heuristic
+
+Allowed behavior:
+
+- record before/after compression survival/tradeoff presence
+- record whether the final model reason used available scaffold information
+- record whether rescue policy changed terminal output quality
+
+Forbidden behavior:
+
+- automatically change caps
+- automatically promote compression policy
+- use budget attribution to bypass validation
+
+### Stage 2: Proposal-only policy changes
+
+Goal:
+
+- generate reviewable proposals such as:
+  - preserve survival lines in high-pressure combat
+  - allocate more non-combat future budget to card-reward deck direction
+  - shorten repeated prediction-check prose while preserving expected facts
+  - use disabled-thinking rescue for `length+empty` failures
+
+Proposal requirements:
+
+- decision class
+- triggering conditions
+- affected budget layer
+- expected quality benefit
+- cost/latency/risk estimate
+- rollback path
+- required shadow evidence
+
+These proposals must not mutate runtime policy by themselves.
+
+### Stage 3: Shadow budget experiments
+
+Goal:
+
+- compare named policies without live execution
+
+Examples:
+
+- `full` control
+- `full_bounded_candidate_futures`
+- high-pressure combat survival-preserving profile
+- non-combat strategic compact profile
+- provider recovery profile variants
+
+Experiments must report provider reliability, reason quality, CandidateFuture completeness, cost, latency, and evidence-window cleanliness.
+
+### Stage 4: Guarded policy promotion
+
+Goal:
+
+- promote a budget/compression policy only after clean shadow evidence
+
+Promotion requires:
+
+- fresh target-class evidence
+- no live-eligible invalid/error
+- no strategic-fidelity regression against `full`
+- explicit rollback
+- versioned policy identity
+- human authorization for any live or protected-path use
+
+### Stage 5: Decision-class deliberation profiles
+
+Long-term target:
+
+- budget policy becomes part of a typed deliberation profile:
+  - workspace depth
+  - candidate count
+  - memory activation depth
+  - prompt fields
+  - compression policy
+  - output cap
+  - rescue policy
+  - evidence target
+
+The LLM may propose these profiles inside the experimental scaffold, but the outer shell must still enforce hard caps, validation, live gating, and stable-update promotion rules.
+
+---
+
+## 17. Success Criteria For Budget Governance
 
 The budget system is healthy when:
 
@@ -898,7 +1021,7 @@ The budget system is unhealthy when:
 
 ---
 
-## 17. Final Position
+## 18. Final Position
 
 The project should treat budget governance as part of the agent’s safety and epistemology, not merely part of provider configuration.
 

@@ -89,7 +89,9 @@ export function assessReasonQuality(reason: unknown): ReasonQualityAssessment {
   const lower = normalized.toLowerCase();
   const notes: string[] = [];
   const words = normalized.split(/\s+/u).filter(Boolean);
-  const mentionsTradeoff = /\b(while|but|vs|tradeoff|trade-off|watch|preserve|risk|unless|avoid|delay|commit|lock-?in|opportunity cost|skip value|at the cost of)\b/u.test(lower);
+  const mentionsTradeoff =
+    /\b(while|but|vs|tradeoff|trade-off|watch|preserve|risk|unless|avoid|delay|commit|lock-?in|opportunity cost|skip value|at the cost of|without|sacrific(?:e|ing)|save|saving|keep)\b/u.test(lower) ||
+    mentionsTemporalTradeoff(lower);
   const mentionsTacticalFactor = /\b(block|damage|hp|health|energy|resource|draw|lethal|survive|survival|tempo|kill|attack|defend|deck|route|map|elite|rest|shop|event|scaling|synergy|upgrade|remove|removal|skip|bloat|reward|relic|boss|path|floor)\b/u.test(lower);
   const templated = /^(good|best|safe|better|pick|choose|take)\b/u.test(lower) && words.length <= 4;
   if (normalized.length < 24 || words.length < 4) notes.push("too_short");
@@ -100,6 +102,11 @@ export function assessReasonQuality(reason: unknown): ReasonQualityAssessment {
     quality: notes.length === 0 ? "adequate" : "thin",
     notes
   };
+}
+
+function mentionsTemporalTradeoff(lower: string): boolean {
+  return /\b(now|immediately|first)\b[\s\S]{0,48}\b(then|later|after)\b/u.test(lower) ||
+    /\b(then|later|after)\b[\s\S]{0,48}\b(scale|recover|draw|attack|block|survive|kill|set up|setup)\b/u.test(lower);
 }
 
 export function summarizeReasonQualityNotes(value: unknown): string[] | undefined {

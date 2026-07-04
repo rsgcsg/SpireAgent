@@ -2,6 +2,27 @@
 
 > Historical append-only debug log. This file records what was true during earlier engineering passes; older "current status" sections may be stale. It is not the canonical source for current phase, blocker, roadmap, or architecture. Start from `docs/00_START_HERE.md` and `docs/04_CURRENT_STATUS.md`, then use `PROJECT_NORTH_STAR.md`, `PROJECT_AUTHORITY_GUIDE.md`, `PROJECT_PLAN.md`, `ARCHITECTURE.md`, `GAME_IO_CAPABILITIES.md`, and `DATA_SCHEMA.md` as source of truth.
 
+## 2026-07-04 Narrow Combat Reason-Contract Follow-Up
+
+- Fresh combat replay review confirmed provider is no longer the active blocker in the latest `combat:llm_required` window: fresh called samples are valid with `failureBucket=none`, `finishReason=stop`, and `outputCapHits=0`.
+- The remaining blocker is still reason quality, not provider recovery.
+- Latest called combat samples split into:
+  - adequate tradeoff expression, for example `Scrape deals damage and draws 4 cards, but risks missing block.`
+  - still-thin benefit-only lines, for example `Reduce incoming damage with free attack.` and `Block incoming 21 with 0-cost Hotfix.`
+- That means the remaining `missing_tradeoff` signal is not purely evaluator noise.
+- Minimal code fix applied:
+  - no provider change
+  - no live-path change
+  - no candidate/scoring/execution change
+  - combat workspace prompt now carries a decision-class-specific reason contract asking for one short sentence that states both immediate gain and the main cost, delay, or risk this turn
+- This is explicitly a temporary inner-scaffold patch. Long term it should be replaced by proposal-driven refinement from replay/eval/review attribution rather than a growing pile of hand-written combat phrases.
+- First post-patch fresh called sample:
+  - `transition-000152-agent-mr5qwaky-xkx56i`
+  - provider stayed clean: `failureBucket=none`, `finishReason=stop`, `outputCapHit=false`
+  - returned reason: `Block immediately to survive, then scale later.`
+  - current evaluator still marks it `reasonQuality=thin`, `reasonQualityNotes=["missing_tradeoff"]`
+  - practical takeaway: the patch did not yet produce a clear fresh reduction in combat `missing_tradeoff`
+
 ## 2026-07-01 Phase 6-10 Planning And P6 Attribution MVP
 
 本轮完成：
@@ -78,6 +99,45 @@
 - fresh high-pressure `combat:llm_required` transitions `transition-000130-agent-mr4sg5sl-xm6o7z` 与 `transition-000131-agent-mr4sh7t9-l925tb` 都命中了 `provider_length_empty`。
 - 两个 case 都不是 `CandidateFuture` 退化成 shallow action list；bounded combat `candidate_futures` 仍保留了 tactical facts / tradeoff / risk / invalidation，且 serialized future completeness 为 completeEnough。
 - 这两个 case 的直接失败链路是：
+
+## 2026-07-04 Combat Missing-Tradeoff Narrow Audit
+
+本轮只盯 `combat` 的 `missing_tradeoff`，不继续扩面到 provider、live path、candidate generation、scoring 或 execution。
+
+结论：
+
+- v5.1.6 fresh combat 样本里，至少一部分 `missing_tradeoff` 不是 CandidateFuture 压缩丢失，也不是 provider 问题，而是 `reasonQuality` 规则误判。
+- 新增 cue attribution 已证明相关 combat reason 使用了保留的 tradeoff/resource/survival cues，例如：
+  - `Draw for block without losing HP.`
+  - `0-cost draw 3 to find block, sacrificing no energy.`
+- 这些句子已经表达了 gain-vs-cost / gain-vs-risk，但旧规则只识别 `while/but/avoid/...`，没有把 `without`、`sacrificing`、`save/saving`、`keep` 这类 combat 常见 tradeoff 句式算进去。
+
+最小修复：
+
+- 只调整 `assessReasonQuality()` 的 tradeoff 识别词表：
+  - 新增 `without`
+  - 新增 `sacrifice/sacrificing`
+  - 新增 `save/saving`
+  - 新增 `keep`
+- 这不会改变 provider contract、workspace 内容、candidate 顺序、validation 或 live 行为。
+- 这只是 quality telemetry 修正，不会把 invalid output 洗成 valid，也不会放松 semantic validation。
+
+补充设计结论：
+
+- 当前人工修复的 `combat reason contract` 符合 North Star，因为它仍然是在改善 LLM 看到和表达 tradeoff 的 scaffold，而不是把 LLM 降级成按钮选择器，也没有触碰 live、validation、execution 或 stable 写路径。
+- 但它不应长期停留在“继续手写更多关键词”的状态。
+- 长期正确方向应是：
+  - replay/eval/review 用 `missing_tradeoff`、`missing_survival_line`、prediction error、cue attribution 区分来源；
+  - 形成 proposal-only 的 `CombatReasonPolicy`、`CandidateTemplate`、`BudgetPolicy` 候选；
+  - 在 shadow/fresh evidence 中验证；
+  - 只有满足 evidence、review、rollback、stable-promotion 条件后，才允许 promotion。
+- 外层死硬边界不进入学习面：
+  - semantic validation
+  - execution safety
+  - live flags / rollout authorization
+  - rollback authority
+  - fact / memory / derived separation
+  - stable promotion rules
   - primary request `finishReason=length`
   - `message.content=""`
   - `reasoning_content` returned
@@ -130,6 +190,90 @@
   - Current-code provider recovery no longer looks like the active blocker for high-pressure combat.
   - Historical `provider_length_empty` remains visible in all-history / mixed windows and must not be deleted or washed into success.
   - P8.5 live remains no-go because readiness is now blocked by CandidateFuture / reason-quality evidence and small fresh live-eligible sample size, not by a reproduced provider-length failure.
+
+## 2026-07-04 P8 North Star Alignment Audit
+
+Full report: `docs/reports/P8_NORTH_STAR_ALIGNMENT_AUDIT_2026-07-04.md`.
+
+Summary:
+
+- P8 is still broadly aligned with the North Star. The outer safety shell is intact, shadow decisions do not execute, `full` remains a control group, provider errors are classified instead of hidden, and cognitive scaffold objects are replayable.
+- The largest drift risk is not live safety right now; it is inner scaffold hardening by accumulation:
+  - fixed CandidateFuture templates and local scoring heuristics
+  - fixed compression caps and prompt fields
+  - fixed budget/recovery profiles
+  - lexical `reasonQuality` and review signals that can become goals instead of diagnostics
+  - historical memory/strategy update paths that predate the stricter P9/P10 promotion doctrine
+- Current `reasonQuality=thin`, `missing_tradeoff`, and `missing_survival_line` should be treated as useful smoke alarms, not final objectives.
+- The next P8.5 step should be attribution, not blind tuning: determine whether survival/tradeoff gaps come from CandidateFuture generation, compression, prompt contract, model output, or review heuristic.
+- Future budget governance should evolve toward a learning-aware Budget Governor through attribution-only reporting, proposal-only policy changes, shadow experiments, guarded promotion, and decision-class deliberation profiles.
+
+No code logic was changed for this audit. No live/additive path was enabled.
+
+## 2026-07-04 P8.5 Quality Source Attribution Telemetry
+
+本轮实现最小 attribution telemetry，用来把 `missing_tradeoff` / `missing_survival_line` 从单纯红灯拆成可归因信号。
+
+新增字段：
+
+- `workspaceComparison.coverage.candidateFutureCueAttribution`
+  - 比较原始 `CandidateFuture` 与序列化 workspace 后的 cue 状态
+  - source buckets: `candidate_future_missing`, `compression_lost`, `serialization_preserved`
+  - 覆盖 cue: `tradeoff`, `resource_tradeoff`, `future_risk`, combat 的 `survival_line` / `lethal_line`, card reward 的 `card_reward_direction`, map 的 `route_risk`
+- `shadowWorkspaceDecision.reasonCueAttribution`
+  - 当 shadow LLM 返回 reason 时，检查模型是否使用了已经保留下来的 cue
+  - source buckets: `candidate_future_missing`, `compression_lost`, `model_reason_omitted`, `model_reason_used`
+
+报表：
+
+- `Workspace quality by class` 现在汇总 `cueSources` 和 `reasonCueSources`。
+- 这些字段只是 review/eval telemetry，不改变 live prompt、candidate generation/order/scoring、fallback、validation、execution、stable memory、derived knowledge 或 strategy params。
+
+当前预期用途：
+
+- 如果 cue 在原始 futures 中缺失，修 CandidateFuture/template。
+- 如果 cue 在原始 futures 中存在但序列化后缺失，修 compressor/policy。
+- 如果 cue 保留下来但模型 reason 没用，修 prompt/reason contract 或继续采样判断是否是模型输出问题。
+- 如果 cue 存在且被使用，但 review 仍报 thin，修 review heuristic。
+
+Fresh validation:
+
+- Generated fresh transition `transition-000136-agent-mr5p8cor-n0h5r7` in run `run-mr4rh1mb-tohmxl`.
+- Decision class: `combat:llm_required`.
+- Shadow result: valid, `reasonQuality=adequate`, `failureBucket=none`, `finishReason=stop`, `outputCapHit=false`.
+- `candidateFutureCueAttribution`:
+  - `tradeoff`, `resource_tradeoff`, and `future_risk`: `serialization_preserved`
+  - `survival_line`: `compression_lost`
+  - `lethal_line`: `candidate_future_missing`
+- `reasonCueAttribution`:
+  - `tradeoff` and `future_risk`: `model_reason_used`
+  - `resource_tradeoff`: `model_reason_omitted`
+  - `survival_line`: still attributed to `compression_lost` because it was absent from serialized candidate futures
+  - `lethal_line`: `candidate_future_missing`
+- Interpretation:
+  - The current `missing_survival_line` blocker is at least partly a compressor/presentation issue in high-pressure combat.
+  - Missing lethal-line evidence should be treated separately as CandidateFuture/template evidence.
+  - Provider recovery was not the blocker in this sample.
+
+Minimal fix:
+
+- Updated high-pressure combat bounded serialization to preserve a short `survivalLine` when the original future contains survival, block, incoming-damage, mitigation, or stabilization cues.
+- This only changes P8 shadow workspace serialization in `full_bounded_candidate_futures`.
+- It does not change `full`, live prompt, candidate generation/order/scoring, fallback, validation, execution, provider recovery, stable memory, derived knowledge, or strategy params.
+
+Fresh post-fix validation:
+
+- New transitions:
+  - `transition-000138-agent-mr5pj4ib-fx0yvq`
+  - `transition-000139-agent-mr5pjdm4-spanei`
+- Both are `combat:llm_required`.
+- Both shadow calls were valid with `reasonQuality=adequate`, `failureBucket=none`, `finishReason=stop`, and `outputCapHit=false`.
+- In both samples:
+  - `tradeoff`, `resource_tradeoff`, `future_risk`, and `survival_line` were `serialization_preserved`
+  - `lethal_line` remained `candidate_future_missing`
+  - `candidateFutureReviewSignals` did not add `missing_survival_line`
+- Since-revision fresh slice after these samples: valid=7, liveEligibleValid=5, liveEligibleInvalid=0, error=0, failureBucket=`none`, outputCapHits=0, gate=go.
+- P8.5 live remains no-go because overall readiness still reports `NOT_READY_CANDIDATE_FUTURE_QUALITY`, with non-combat and broader evidence still incomplete.
 
 ## 2026-07-03 Budget Governance Consolidation
 
