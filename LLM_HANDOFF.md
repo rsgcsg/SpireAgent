@@ -94,6 +94,33 @@ Latest narrow P8.5 readiness update:
   - replay now reports `READY_FOR_P8_5_LIVE_COMBAT_ONLY`
   - provider remained clean: `failureBucket=none`, `finishReason=stop`, `outputCapHits=0`, invalid=0, error=0
   - non-combat classes are still out of scope for first live whitelist because fresh evidence is still insufficient
+- follow-up controlled combat-only live window on the same run strengthened the slice:
+  - `run-mr6gnmo8-egk8sr` now has 12 transitions total
+  - `combat:llm_required` transitions: 10
+  - fresh live-eligible called shadow decisions: 6
+  - replay still reports `READY_FOR_P8_5_LIVE_COMBAT_ONLY`
+  - provider remained clean and there was no repeated no-progress regression
+  - one `Coolheaded` transition was `checkpoint.kind=unknown` with `settlement_timeout_or_no_visible_change`, but eval classed it as acceptable low-visibility flow rather than a live blocker
+  - remaining quality debt is narrower now: live combat still shows 2 thin reasons with `missing_tradeoff`
+- next, a slightly more formal combat-only rollout step was run under the same whitelist and temporary-env constraints
+- result:
+  - same run `run-mr6gnmo8-egk8sr` expanded to 17 transitions and 13 `combat:llm_required`
+  - provider stayed clean: `failureBucket=none`, `finishReason=stop`, `outputCapHits=0`, invalid=0, error=0
+  - but replay honestly regressed from `READY_FOR_P8_5_LIVE_COMBAT_ONLY` to `NOT_READY_CANDIDATE_FUTURE_QUALITY`
+  - active blocker is now fresh combat review telemetry: `liveSignals={\"missing_survival_line\":2}`
+  - there is also a new `end_turn` transition with `checkpoint.kind=unknown`, which eval tags as `needs_fixture_bug_candidate`
+- latest narrow audit of those signals:
+  - the two fresh live-eligible `missing_survival_line` transitions are `transition-000027-agent-mr6h1qwn-tpxci4` and `transition-000030-agent-mr6h28hh-5kylgc`
+  - both show `candidateFutureCueAttribution.cues.survival_line.source=\"compression_lost\"`
+  - both still show `candidateFutureCompleteness.completeEnough` and `shallowFutureCount=0`
+  - honest read: this is a bounded serialization / cue-preservation problem, not a proof that raw CandidateFuture generation forgot survival logic
+  - the same run also contains earlier non-live-eligible `missing_survival_line` warnings with the same attribution, so keep separating class-wide review smoke alarms from called/live-eligible rollout evidence
+  - the new `end_turn` unknown checkpoint is `transition-000032-agent-mr6h2hek-umgnbj`, but it is `forced_local`, single-action, `energy=0`, and ends in an enemy-turn death tail with `hp=0`
+  - because the user used manual `room boss` console positioning and reported post-death tail weirdness, this should currently be read as low-visibility / console-amplified runtime evidence, not as a provider or additive live-path regression
+- honest read:
+  - this is not a provider failure
+  - it is not a reason to broaden whitelist
+  - it means the longer combat-only rollout step surfaced fresh quality debt that should be re-audited before claiming combat rollout is clean enough to accelerate
 - fresh promotion-quality combat window now clears the current combat-only shadow gate strongly enough to draft, but not execute, a constrained additive live-enable plan
 - latest run: `run-mr648yt5-h2h1dw`
 - fresh combat slice:

@@ -37,7 +37,43 @@
 - Honest interpretation:
   - the guard removes one source of local runtime pollution and makes replay/eval cleaner
   - it does not itself advance P8.5 authorization
-  - the active blocker remains insufficient promotion-usable fresh `combat:llm_required` evidence under the same budget/rules
+- the active blocker remains insufficient promotion-usable fresh `combat:llm_required` evidence under the same budget/rules
+
+## 2026-07-05 Fresh Combat Survival-Cue Audit And Forced-Local Death Tail Review
+
+- Re-audited the fresh `run-mr6gnmo8-egk8sr` combat blocker instead of assuming the new `missing_survival_line` warnings were raw CandidateFuture regressions.
+- The two fresh live-eligible combat hits are:
+  - `transition-000027-agent-mr6h1qwn-tpxci4`
+  - `transition-000030-agent-mr6h28hh-5kylgc`
+- Both are high-pressure `combat:llm_required` transitions with provider-clean outcomes, and both record:
+  - `candidateFutureCompleteness.completeEnough > 0`
+  - `shallowFutureCount=0`
+  - `candidateFutureCueAttribution.cues.survival_line = { original: true, serialized: false, source: "compression_lost" }`
+- Honest interpretation:
+  - this is not "CandidateFuture never contained survival reasoning"
+  - it is specifically "survival cue existed in the original future set but did not survive the serialized/bounded representation strongly enough for the detector"
+  - in the same transitions, `tradeoff`, `resource_tradeoff`, and `future_risk` remain `serialization_preserved`
+  - `lethal_line` is still absent or weak, but that is a separate review warning
+- There are also earlier non-live-eligible transitions in the same run with the same shape:
+  - `transition-000020-agent-mr6gz7zd-qmwy4a`
+  - `transition-000024-agent-mr6gz9js-02y385`
+- That matters because it confirms two things at once:
+  - the warning is not confined to a single called sample
+  - the warning is still specifically a compression/presentation problem, not proof that the raw future generator dropped survival content
+- Separate audit of the new `end_turn` unknown checkpoint:
+  - `transition-000032-agent-mr6h2hek-umgnbj`
+  - route: `forced_local`
+  - chosenBy: `local`
+  - only legal action left: `end_turn`
+  - execution returned `status="ok"`
+  - pre-state: player already on a death-edge turn (`hp=26`, `incoming=36`, `energy=0`)
+  - post-state: enemy-turn death tail (`hp=0`, `turn="enemy"`, `isPlayPhase=false`)
+- The user also reported using an STS2 console `room boss` command, and that after death the game can get stuck in a non-progress tail.
+- Honest interpretation of `transition-000032-agent-mr6h2hek-umgnbj`:
+  - do not call it a provider failure
+  - do not call it an additive live-path execution regression
+  - keep it as a runtime/program-risk candidate until reproduced without manual console positioning
+  - for current rollout judgment, it reads more like a low-visibility forced-local death tail than a new combat-additive blocker
 
 ## 2026-07-05 Bridge-Responder Operational Root Cause And Corrected Tiny Live Window
 

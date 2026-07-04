@@ -154,6 +154,32 @@ The active no-go reason is now CandidateFuture/reason-quality readiness:
   - `failureBucket=none`, `finishReason=stop`, `outputCapHits=0`, invalid=0, error=0
   - replay now reports `READY_FOR_P8_5_LIVE_COMBAT_ONLY`
   - broad P8.5 still remains blocked by missing fresh `card_reward:llm_required` and `map:llm_required` evidence
+- follow-up controlled combat-only live window on the same run:
+  - run remains `run-mr6gnmo8-egk8sr`
+  - total transitions now 12, with `combat:llm_required` transitions 10 and fresh live-eligible called shadow decisions 6
+  - latest replay remains `READY_FOR_P8_5_LIVE_COMBAT_ONLY`
+  - provider stayed clean: `failureBucket=none`, `finishReason=stop`, `outputCapHits=0`, invalid=0, error=0
+  - one low-visibility `Coolheaded` action produced an acceptable `unknown` checkpoint with settlement timeout, but did not repeat into no-progress churn and did not create a live safety blocker
+  - fresh `combat:llm_required` reason quality is usable but not perfect: `adequate=4`, `thin=2`, both thin cases remain `missing_tradeoff`
+- more formal narrow combat-only rollout step:
+  - same whitelist, same temporary flags, same active bridge responder
+  - run `run-mr6gnmo8-egk8sr` now has 17 transitions total and 13 `combat:llm_required`
+  - provider is still clean: `failureBucket=none`, `finishReason=stop`, `outputCapHits=0`, invalid=0, error=0
+  - however, the longer fresh window re-opened a quality blocker: replay now reports `NOT_READY_CANDIDATE_FUTURE_QUALITY`
+  - current combat blocker is no longer provider; it is fresh live combat review telemetry: `liveSignals={"missing_survival_line":2}`
+  - one new `end_turn` transition also finished with `checkpoint.kind=unknown`, which eval classed as `needs_fixture_bug_candidate`; this is not a provider failure, but it is rollout-relevant evidence that the longer slice is not fully clean yet
+- narrow audit of those fresh combat warnings:
+  - the two live-eligible `missing_survival_line` samples in `run-mr6gnmo8-egk8sr` are `transition-000027-agent-mr6h1qwn-tpxci4` and `transition-000030-agent-mr6h28hh-5kylgc`
+  - both transitions have `candidateFutureCueAttribution.cues.survival_line = { original: true, serialized: false, source: "compression_lost" }`
+  - honest read: this is not a raw CandidateFuture-generation miss; the original combat futures already contained survival cues, and the warning is coming from bounded presentation / cue-detection semantics after serialization
+  - those same transitions still show `candidateFutureCompleteness.completeEnough` and `shallowFutureCount=0`; the blocker is specifically survival-cue preservation, not whole-future collapse
+  - the same run also contains earlier non-live-eligible `missing_survival_line` samples (`transition-000020-agent-mr6gz7zd-qmwy4a`, `transition-000024-agent-mr6gz9js-02y385`) with the same `compression_lost` attribution, so review and readiness must keep distinguishing called/live-eligible evidence from class-wide smoke alarms
+- narrow audit of the new `end_turn` unknown checkpoint:
+  - `transition-000032-agent-mr6h2hek-umgnbj` is `decisionAudit.route="forced_local"` and `chosenBy="local"`, not an additive/provider decision
+  - the action is a single forced `end_turn` at `energy=0` with only one legal action left; execution returned `status="ok"`
+  - post-state is an enemy-turn death state (`hp=0`, `turn="enemy"`, `isPlayPhase=false`), which matches the reported manual `room boss` console positioning and death-tail behavior
+  - honest read: this is more likely a low-visibility / console-induced tail state than a new provider or live-path regression
+  - keep it as a runtime/program-risk candidate until it is disproved without console injection, but do not treat it as evidence that the additive combat path itself regressed
 
 ## Current Next Step
 
@@ -168,7 +194,13 @@ Continue P8.5 combat-only live rollout under `P8_5_LIVE_ROLLOUT_POLICY.md`:
 - do not expand live after the latest larger combat-only window; replay now honestly blocks on insufficient promotion-usable live-eligible evidence
 - inspect missing survival/tradeoff/lethal cue attribution before another combat rollout window
 - readiness attribution / evidence-window semantics fix is now in place
-- the next narrow step is no longer blind runtime positioning; it is deciding whether to draft the next approved combat-only additive rollout window from the now-usable live evidence
+- the next narrow step is no longer just "run a bigger combat window"
+- first re-audit the fresh combat `missing_survival_line` and the new `end_turn` unknown checkpoint in the current run
+- if those reduce to review-semantics / acceptable low-visibility cases, combat-only rollout can continue
+- if they reflect real survival-cue loss in called live-eligible combat, combat-only remains narrowed but not yet rollout-clean
+- current honest read is mixed:
+  - the fresh `missing_survival_line` blocker is real enough to matter, but it points to bounded survival-cue loss rather than raw CandidateFuture absence
+  - the `end_turn` unknown checkpoint is not currently strong evidence of a live-path blocker because it sits on a forced-local death tail and may be amplified by manual `room boss` console usage
 - continue separate non-combat freshness work for `card_reward:llm_required` and especially `map:llm_required`
 - keep P8.5 live/additive default-off outside explicitly approved bounded windows
 
