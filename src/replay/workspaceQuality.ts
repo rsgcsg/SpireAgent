@@ -22,7 +22,12 @@ export interface WorkspaceDecisionClassQualityStats {
   withCoreTradeoff: number;
   completeEnough: number;
   shallowFutureCount: number;
+  liveEligibleCalledCompletenessRecordedTransitions: number;
+  liveEligibleCalledFutureCount: number;
+  liveEligibleCalledCompleteEnough: number;
+  liveEligibleCalledShallowFutureCount: number;
   reviewSignals: Record<string, number>;
+  liveEligibleCalledReviewSignals: Record<string, number>;
   proposalSignals: Record<string, number>;
   cueAttributionSources: Record<string, number>;
   reasonCueAttributionSources: Record<string, number>;
@@ -75,10 +80,19 @@ export function buildWorkspaceDecisionClassQuality(
       addNumber(row, "withCoreTradeoff", completeness.withCoreTradeoff);
       addNumber(row, "completeEnough", completeness.completeEnough);
       addNumber(row, "shallowFutureCount", completeness.shallowFutureCount);
+      if (shadow?.called === true && liveEligible) {
+        row.liveEligibleCalledCompletenessRecordedTransitions += 1;
+        addNumber(row, "liveEligibleCalledFutureCount", completeness.futureCount);
+        addNumber(row, "liveEligibleCalledCompleteEnough", completeness.completeEnough);
+        addNumber(row, "liveEligibleCalledShallowFutureCount", completeness.shallowFutureCount);
+      }
     } else if (coverage) {
       row.completenessMissingTransitions += 1;
     }
     mergeCountMap(row.reviewSignals, coverage?.candidateFutureReviewSignals);
+    if (shadow?.called === true && liveEligible) {
+      mergeCountMap(row.liveEligibleCalledReviewSignals, coverage?.candidateFutureReviewSignals);
+    }
     mergeCountMap(row.proposalSignals, coverage?.candidateFutureProposalSignals);
     if (isRecord(coverage?.candidateFutureCueAttribution)) {
       mergeCountMap(row.cueAttributionSources, coverage.candidateFutureCueAttribution.sourceCounts);
@@ -112,8 +126,13 @@ export function formatWorkspaceDecisionClassQuality(
     stats.completenessRecordedTransitions > 0
       ? `complete=${stats.completeEnough}/${stats.futureCount}`
       : `complete=not_recorded(${stats.completenessMissingTransitions})`,
+    stats.liveEligibleCalledCompletenessRecordedTransitions > 0
+      ? `liveComplete=${stats.liveEligibleCalledCompleteEnough}/${stats.liveEligibleCalledFutureCount}`
+      : "liveComplete=not_recorded",
     `shallow=${stats.shallowFutureCount}`,
+    `liveShallow=${stats.liveEligibleCalledShallowFutureCount}`,
     `signals=${JSON.stringify(stats.reviewSignals)}`,
+    `liveSignals=${JSON.stringify(stats.liveEligibleCalledReviewSignals)}`,
     `proposals=${JSON.stringify(stats.proposalSignals)}`,
     `cueSources=${JSON.stringify(stats.cueAttributionSources)}`,
     `reasonCueSources=${JSON.stringify(stats.reasonCueAttributionSources)}`
@@ -142,7 +161,12 @@ function createWorkspaceDecisionClassQualityRow(): WorkspaceDecisionClassQuality
     withCoreTradeoff: 0,
     completeEnough: 0,
     shallowFutureCount: 0,
+    liveEligibleCalledCompletenessRecordedTransitions: 0,
+    liveEligibleCalledFutureCount: 0,
+    liveEligibleCalledCompleteEnough: 0,
+    liveEligibleCalledShallowFutureCount: 0,
     reviewSignals: {},
+    liveEligibleCalledReviewSignals: {},
     proposalSignals: {},
     cueAttributionSources: {},
     reasonCueAttributionSources: {}

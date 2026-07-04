@@ -86,12 +86,13 @@ STS2_P8_LIVE_DECISION_CLASSES=combat:llm_required,card_reward:llm_required
 ```
 
 P8.5 may add a compact workspace summary beside the legacy prompt. P9/P10 are the places to gradually relax shadow boundaries for guarded learning updates, with whitelist, fallback, eval, and rollback still required.
+The controller consumes this additive context only when `STS2_P8_LIVE_ADDITIVE=1` and the current decision class is explicitly whitelisted. It does not make DeepSeek shadow decisions execute.
 
 Current P8.5 status:
 
 - Static / pre-live audit may continue.
-- Live additive remains off and should stay off until there is explicit authorization plus fresh per-class evidence.
-- The first allowed live experiment, if later approved, is additive-only and should start with `combat:llm_required` rather than widening to all `:llm_required` classes at once.
+- Live additive remains off by default and needs explicit authorization plus fresh per-class evidence.
+- The first allowed live experiment, when approved and when a live LLM command is configured, is additive-only and should start with `combat:llm_required` rather than widening to all `:llm_required` classes at once.
 - `card_reward:llm_required` and especially `map:llm_required` require separate fresh called-evidence and reason-quality clearance before they should be considered for live additive.
 
 With Slay the Spire 2 and the external STS2 MCP mod running:

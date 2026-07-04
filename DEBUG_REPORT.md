@@ -2,6 +2,65 @@
 
 > Historical append-only debug log. This file records what was true during earlier engineering passes; older "current status" sections may be stale. It is not the canonical source for current phase, blocker, roadmap, or architecture. Start from `docs/00_START_HERE.md` and `docs/04_CURRENT_STATUS.md`, then use `PROJECT_NORTH_STAR.md`, `PROJECT_AUTHORITY_GUIDE.md`, `PROJECT_PLAN.md`, `ARCHITECTURE.md`, `GAME_IO_CAPABILITIES.md`, and `DATA_SCHEMA.md` as source of truth.
 
+## 2026-07-05 Narrow No-Progress Guard For Unknown Checkpoints
+
+- This was a runtime safety cleanup, not a live-readiness feature expansion.
+- Triggering evidence came from repeated local fast-combat transitions in `run-mr648yt5-h2h1dw`, where the controller kept replaying the same `Offering` action after no visible progress:
+  - `transition-000029-agent-mr6fs2lk-loobvo`
+  - `transition-000034-agent-mr6fscdm-c75iob`
+  - `transition-000038-agent-mr6fsgdu-zttedk`
+  - `transition-000043-agent-mr6fslwy-4box8n`
+- Scope read:
+  - route: `local_fast_combat`
+  - chosenBy: `local`
+  - not a `combat:llm_required` additive-provider failure
+  - not a CandidateFuture/provider-contract issue
+- Narrow fix in `src/agent/controller.ts`:
+  - after an execution checkpoint with `kind="unknown"`, `preStateHash === postStateHash`, and reason `settlement_timeout_or_no_visible_change`
+  - remember the action signature plus state fingerprint
+  - on the next tick, block the exact same action on the exact same state instead of immediately repeating it
+- Guard boundaries:
+  - no provider/recovery change
+  - no live additive policy change
+  - no candidate generation/order/scoring change
+  - no semantic validation change
+  - no execution legality change
+  - no alternative candidate auto-promotion; the controller simply waits instead of repeating the exact no-progress action
+- Smoke coverage was added in `src/agent/smoke.ts` for the repeated-no-progress path.
+- Validation after the patch:
+  - `npm exec tsc -- --noEmit`
+  - `npm run check`
+  - both passed
+- First temporary-env retest after the patch:
+  - did not reproduce the repeated `Offering` loop
+  - did not add new fresh `combat:llm_required` live-eligible additive evidence either
+- Honest interpretation:
+  - the guard removes one source of local runtime pollution and makes replay/eval cleaner
+  - it does not itself advance P8.5 authorization
+  - the active blocker remains insufficient promotion-usable fresh `combat:llm_required` evidence under the same budget/rules
+
+## 2026-07-05 Bridge-Responder Operational Root Cause And Corrected Tiny Live Window
+
+- Re-audited the repeated "silent runtime window" behavior after multiple additive combat attempts produced no new transitions.
+- Root cause was not the combat window itself:
+  - `npm run agent:run:bridge` uses `STS2_LLM_COMMAND="node scripts/llm-bridge-decider.mjs"`
+  - that script writes a request into `/tmp/sts2-llm-bridge/` and then blocks waiting for `response-<id>.json`
+  - without an active external/manual/Codex responder, `tick()` waits inside the LLM command path and no transition is recorded
+- Direct evidence:
+  - `scripts/llm-bridge-decider.mjs` writes `latest-request.json`, `pending-id.txt`, and waits up to `STS2_LLM_BRIDGE_TIMEOUT_MS`
+  - `/tmp/sts2-llm-bridge/latest-request.json` and `pending-id.txt` showed live pending requests during the failed silent attempts
+  - single `tick` calls also hung until manually interrupted, confirming this was not just a `run` logging quirk
+- Important conclusion:
+  - prior silent attempts were invalid rollout evidence because the bridge responder was absent
+  - this was an operational usage mistake, not a provider regression, not a game-window issue, and not a new code regression in the additive path
+- Corrected tiny live window with an active bridge responder:
+  - run: `run-mr6gnmo8-egk8sr`
+  - 4 fresh transitions, all `combat:llm_required`
+  - all 4 additive live decisions were called, valid, executed, and recorded
+  - `failureBucket=none`, `finishReason=stop`, `outputCapHits=0`, invalid=0, error=0
+  - replay status moved to `READY_FOR_P8_5_LIVE_COMBAT_ONLY`
+  - `card_reward:llm_required` and `map:llm_required` remain blocked by missing fresh evidence
+
 ## 2026-07-04 Narrow Combat Reason-Contract Follow-Up
 
 - Combat-only additive live-enable plan has now been drafted in `docs/04_CURRENT_STATUS.md`.
@@ -32,6 +91,221 @@
   - `combat:llm_required` can move from whitelist candidate to ready-to-draft combat-only additive live-enable plan
   - broad P8.5 remains no-go
   - live still requires explicit human approval before any flag change
+- Follow-up after explicit human approval:
+  - implemented the minimal controller-side additive prompt consumption behind `STS2_P8_LIVE_ADDITIVE` and `STS2_P8_LIVE_DECISION_CLASSES`
+  - the additive prompt remains JSON-shaped and appends `p8_live_additive` context to the legacy prompt only when the current decision class is explicitly whitelisted
+  - added live LLM audit fields for `promptMode`, `liveAdditiveEnabled`, `liveAdditiveApplied`, `liveAdditiveDecisionClass`, `liveAdditiveWhitelist`, and `liveAdditiveSummaryBytes`
+  - preserved candidate generation/order/scoring, fallback, validation, execution, provider recovery, stable memory, derived knowledge, and strategy behavior
+  - preflight found no persistent `STS2_LLM_COMMAND`; the later live test used the existing bridge adapter through temporary process env only
+  - DeepSeek remains P8 shadow-only and was not repurposed as the live executor
+
+## 2026-07-04 Combat CandidateFuture Quality Attribution Audit
+
+- Audited the latest combat blocker `combat_candidate_future_quality_not_clear` instead of continuing blind live windows.
+- The key finding is that the current blocker is not primarily a fresh called-combat CandidateFuture collapse.
+- Current combat future-quality gate logic in `src/replay/p8LiveReadiness.ts` trips on any class-level `reviewSignals.missing_survival_line`, `missing_future_risk`, `missing_resource_tradeoff`, or `shallow_candidate_future`.
+- Current aggregation in `src/replay/workspaceQuality.ts` merges `candidateFutureReviewSignals` across all transitions in the class, including `called=false` and budget-skipped transitions.
+- The specific `missing_survival_line` currently poisoning combat readiness is:
+  - `transition-000026-agent-mr6f5b3k-fx42ij`
+  - `decisionClass=combat:llm_required`
+  - `called=false`
+  - `outcome=skipped`
+  - `budget.status=call_budget_exceeded`
+  - cue attribution:
+    - `survival_line`: `original=true`, `serialized=false`, `source=compression_lost`
+    - `lethal_line`: `original=false`, `serialized=false`, `source=candidate_future_missing`
+- Honest interpretation of that sample:
+  - it is a real bounded-compression warning and should remain visible in review telemetry
+  - it is not fresh called live-eligible evidence
+  - using it as a direct live-readiness blocker mixes review smoke alarms with rollout authorization evidence
+- Fresh called combat evidence from the same run paints a narrower picture:
+  - `transition-000001-agent-mr649465-7hdlvb`
+    - `called=true`, `liveEligible=true`, `outcome=valid`
+    - `reasonQuality=thin`, `thinReasons=["missing_tradeoff"]`
+    - cue attribution preserved `tradeoff`, `resource_tradeoff`, `future_risk`, `survival_line`
+    - `lethal_line` was `compression_lost`
+    - reason attribution shows `tradeoff` was `model_reason_omitted`, not missing from the serialized CandidateFuture
+  - `transition-000002-agent-mr6498uu-ovos54`
+    - `called=true`, `liveEligible=true`, `outcome=valid`
+    - `reasonQuality=adequate`
+    - `lethal_line` again `compression_lost`, but `survival_line` preserved
+  - `transition-000004-agent-mr649j14-q7t9tb`
+    - `called=true`, `liveEligible=true`, `outcome=valid`
+    - `reasonQuality=adequate`
+    - `lethal_line` was already missing in the original future (`candidate_future_missing`)
+- Root-cause split after audit:
+  - `missing_survival_line`: currently an attribution / aggregation problem first, compression warning second
+  - `missing_lethal_line`: real compression or source-future warning, but currently review-only rather than a readiness blocker
+  - old `missing_tradeoff`: current fresh sample points to `model_reason_omitted`, not CandidateFuture content loss
+  - cue attribution telemetry is functioning correctly and is valuable; the main ambiguity is how replay/readiness consumes it
+- Most honest next engineering move:
+  - do not broaden live
+  - do not blindly keep tuning combat wording
+  - first decide whether combat live-readiness should gate on all class-level review signals, or only on called/live-eligible/current-window evidence
+  - keep `missing_lethal_line` and compression-lost cues visible as review signals even if readiness gating becomes narrower
+
+## 2026-07-04 Readiness Attribution Semantics Narrowing
+
+- Implemented the narrowest possible fix:
+  - no provider change
+  - no prompt change
+  - no candidate/scoring/fallback/validation/execution change
+  - no live flag change
+- `src/replay/workspaceQuality.ts` now keeps two parallel views for CandidateFuture quality:
+  - full class-level review telemetry: `signals=` and overall completeness
+  - live-readiness telemetry: `liveSignals=` and `liveComplete=` derived only from `called=true && liveEligible=true`
+- `src/replay/p8LiveReadiness.ts` now gates `classFutureShallow()` on the `liveEligibleCalled` view instead of all class transitions.
+- This preserves review visibility while preventing `budget.status=call_budget_exceeded` / `called=false` samples from directly blocking combat live readiness.
+- Verification result on latest run `run-mr648yt5-h2h1dw`:
+  - replay status moved from `NOT_READY_CANDIDATE_FUTURE_QUALITY` to `NOT_READY_INSUFFICIENT_LIVE_ELIGIBLE_EVIDENCE`
+  - combat quality line now reads:
+    - `complete=51/51`
+    - `liveComplete=27/27`
+    - `signals={"missing_lethal_line":2,"missing_survival_line":1}`
+    - `liveSignals={"missing_lethal_line":2}`
+  - honest interpretation:
+    - the old `missing_survival_line` remains visible as a historical/budget-skipped compression warning
+    - it no longer blocks current combat rollout judgment
+    - the remaining blocker is evidence-window usability and non-combat readiness, not combat CandidateFuture collapse
+- What did not change:
+  - `missing_lethal_line` remains visible on fresh called combat as review telemetry
+  - `missing_tradeoff` remains a reason-quality issue where present
+  - broad P8.5 remains no-go
+  - `map` and `card_reward` are still outside first-whitelist readiness
+
+## 2026-07-04 Tiny Combat-Only Additive Live Window
+
+This was an explicitly approved, temporary-env, combat-only additive rollout. It did not persist `STS2_P8_LIVE_ADDITIVE=1`, did not write API keys, and did not expand the whitelist beyond `combat:llm_required`.
+
+Pre-run stop-condition discovery:
+
+- The first bridge preflight surfaced a non-whitelisted `card_select:local_recommended_llm_arbitrate` live request with no additive context.
+- That was treated as a stop condition because enabling `STS2_LLM_COMMAND` could otherwise let non-combat legacy live LLM calls occur during a combat-only rollout.
+- The process was stopped before a response was written and before the action executed.
+- Minimal fix: live LLM calls are now blocked before provider invocation when `STS2_P8_LIVE_ADDITIVE=1` and the decision class is not in `STS2_P8_LIVE_DECISION_CLASSES`.
+
+Actual tiny rollout:
+
+- run: `run-mr648yt5-h2h1dw`
+- temporary env included:
+  - `STS2_LLM_COMMAND="node scripts/llm-bridge-decider.mjs"`
+  - `STS2_P8_LIVE_ADDITIVE=1`
+  - `STS2_P8_LIVE_DECISION_CLASSES=combat:llm_required`
+  - `STS2_P8_WORKSPACE_ABLATION_MODE=full_bounded_candidate_futures`
+- non-whitelist guard:
+  - one `card_select:local_recommended_llm_arbitrate` transition was blocked before live LLM call
+  - fallback reason: `live_additive_decision_class_not_whitelisted`
+  - audit outcome: `disabled_by_live_whitelist`
+- live additive combat decisions:
+  - Scrape: `play-4-MECHA_KNIGHT_0`, reason `Scrape deals damage and draws toward block, but risks taking most incoming.`
+  - Defend: `play-5`, reason `Defend reduces incoming damage, but delays offense and leaves most attack unblocked.`
+- audit:
+  - prompt mode: `additive_legacy_prompt_plus_compact_workspace_summary`
+  - whitelist: `combat:llm_required`
+  - live additive applied: true for both combat decisions
+  - invalid=0, error=0, execution mismatch=0
+- latest replay interpretation:
+  - latest run remains provider/shadow clean in fresh slices: `failureBucket=none`, `finishReason=stop`, `outputCapHits=0`
+  - readiness now reports `NOT_READY_INSUFFICIENT_LIVE_ELIGIBLE_EVIDENCE` because the latest promotion window is mixed-budget / not usable as clean class-level authorization evidence
+  - do not wash or delete historical failures; also do not let them obscure the successful tiny combat smoke window
+
+Current conclusion:
+
+- The combat-only additive path has passed one tiny live smoke window.
+- Broad P8.5 remains no-go.
+- `map:llm_required` and `card_reward:llm_required` remain excluded from the first live whitelist.
+- The next live step, if approved, should be another clean same-budget combat-only window rather than whitelist expansion.
+
+## 2026-07-04 Same-Budget Combat-Only Follow-Up
+
+This follow-up did not change code or widen the whitelist. It only tried to improve combat-only rollout evidence with the same temporary-env additive setup.
+
+- same temporary env:
+  - `STS2_LLM_COMMAND="node scripts/llm-bridge-decider.mjs"`
+  - `STS2_P8_LIVE_ADDITIVE=1`
+  - `STS2_P8_LIVE_DECISION_CLASSES=combat:llm_required`
+  - `STS2_P8_WORKSPACE_MAX_SHADOW_CALLS=4`
+- one additional additive live combat decision executed:
+  - `play-1-MECHA_KNIGHT_0` / Ultimate Strike
+  - reason `Ultimate Strike pushes damage now, but leaves most incoming damage unblocked.`
+- later ticks in the same combat naturally routed to `combat:local_fast_combat`:
+  - `Uproar`
+  - `Cascade`
+  - `TURBO`
+  - `Catastrophe`
+- honest read:
+  - this is good boundary behavior because the agent did not force every combat tick through live additive
+  - it is bad for evidence volume because only one additional `combat:llm_required` call landed in the clean same-budget slice
+
+Replay/eval after the follow-up:
+
+- `last5` is now a clean same-budget slice:
+  - `plannedShadowCallValueCounts={"4":5}`
+  - `mixedBudget=false`
+  - `called=5`, `valid=5`, `invalid=0`, `error=0`
+  - `failureBucket=none`, `finishReason=stop`, `outputCapHits=0`
+- but `last5` still has only `liveEligibleCalled=1`
+- broader readiness therefore remains `NOT_READY_INSUFFICIENT_LIVE_ELIGIBLE_EVIDENCE`
+  - not because provider failed
+  - not because the additive live path failed
+  - but because the clean same-budget slice still has too little live-eligible combat volume, and the broader since-revision promotion window still mixes earlier budget profiles
+
+## 2026-07-04 P8.5 Live Rollout Policy
+
+- Added `docs/P8_5_LIVE_ROLLOUT_POLICY.md` as the durable policy for P8.5 additive live rollout.
+- The policy records the current engineering judgment:
+  - clean same-budget `combat:llm_required` evidence is the right promotion unit
+  - acceleration means larger windows inside the same whitelist, not broader whitelist
+  - first whitelist remains exactly `combat:llm_required`
+  - `map`, `card_reward`, shop, reward, route, event, rest, menu, and card-select classes remain excluded
+  - temporary process env is allowed for bounded windows; persistent live flag edits are not
+  - stable memory, derived knowledge, strategy params, candidate generation/order/scoring/fallback/validation/execution remain protected
+- Current policy tier:
+  - tiny live smoke has passed
+  - clean same-budget evidence exists
+  - usable combat-only rollout evidence is still insufficient because the clean same-budget slice has only one live-eligible combat call
+- This policy does not enable live by itself and does not change schema or runtime behavior.
+
+## 2026-07-04 Larger Combat-Only Additive Window
+
+This window followed `docs/P8_5_LIVE_ROLLOUT_POLICY.md` and kept the whitelist at `combat:llm_required`.
+
+- temporary env only:
+  - `STS2_P8_LIVE_ADDITIVE=1`
+  - `STS2_P8_LIVE_DECISION_CLASSES=combat:llm_required`
+  - `STS2_LLM_COMMAND="node scripts/llm-bridge-decider.mjs"`
+  - `STS2_P8_WORKSPACE_MAX_SHADOW_CALLS=4`
+- no persistent `.env.local` change
+- no whitelist expansion
+- no provider/recovery/candidate/scoring/fallback/validation/execution change
+- no stable memory, derived knowledge, or strategy write
+
+Live combat decisions executed in the larger window:
+
+- Offering: `Offering digs for block and tempo now, but spends a card slot before damage.`
+- Charge Battery: `Charge Battery blocks incoming damage now, but delays attack pressure on the minion.`
+- Backflip: `Backflip adds block and digs for answers, but delays killing the attacking minion.`
+- Ultimate Strike: `Ultimate Strike pressures the attacker now, but still leaves some incoming damage unblocked.`
+- Rocket Punch: `Rocket Punch damages the attacker and cycles, but adds status burden and leaves damage leaking.`
+- Defend: `Defend nearly covers the remaining attack, but gives up tempo and damage this turn.`
+- Feral: `Feral adds scaling for later turns, but accepts a small block deficit now.`
+- Loop: `Loop improves orb scaling for later, but does not fully cover this attack.`
+
+Validation result:
+
+- `npm run check`: pass
+- `npm run data:replay -- --latest`: completed
+- `npm run data:eval -- --latest`: `WARN`, no errors
+- `npm run agent:review`: completed
+- live execution symptoms: invalid output 0, provider failure 0, output cap hits 0, missing candidate 0, execution mismatch 0
+
+Important readiness result:
+
+- Replay now reports `NOT_READY_CANDIDATE_FUTURE_QUALITY`
+- Reason: `combat_candidate_future_quality_not_clear`
+- This is a stop signal for rollout acceleration.
+- The failure is not provider reliability or live execution safety; it is the quality gate saying combat CandidateFuture/reason cue evidence is not yet clean enough across the readiness window.
+- Next engineering step should inspect the cue attribution behind `missing_survival_line`, `missing_lethal_line`, and older `missing_tradeoff`, not broaden live or continue blind live windows.
 
 - Fresh promotion-quality combat shadow window on the same revision now supports a narrower readiness conclusion than earlier logs in this file.
 - Run: `run-mr648yt5-h2h1dw`

@@ -24,7 +24,8 @@ import { selectFallbackCandidate } from "./fallback.js";
 import { isRecord, nowIso, stableId } from "./utils.js";
 import { buildCognitiveScaffold, buildConsolidationRecord, buildPredictionErrorRecord } from "./cognitiveScaffold.js";
 import { buildDerivedSnapshot } from "./derivedKnowledge.js";
-import { buildP8WorkspaceShadowFromPacket } from "./workspace.js";
+import { buildCompactWorkspaceSummary, buildP8WorkspaceShadowFromPacket } from "./workspace.js";
+import { P8_LIVE_ADDITIVE_FLAG, P8_LIVE_DECISION_CLASSES_FLAG } from "./workspaceExperimentConfig.js";
 
 export interface ControllerOptions {
   dryRun?: boolean;
@@ -46,6 +47,62 @@ export interface TickResult {
   message: string;
 }
 
+export interface LiveAdditivePromptBuild {
+  prompt: string;
+  promptMode: "legacy_only" | "additive_legacy_prompt_plus_compact_workspace_summary";
+  enabled: boolean;
+  applied: boolean;
+  decisionClass: string;
+  whitelist: string[];
+  summaryBytes?: number;
+}
+
+export function buildP8LiveAdditivePrompt(input: {
+  legacyPrompt: string;
+  compactWorkspaceSummary: string;
+  decisionClass: string;
+  liveAdditiveEnabled?: boolean;
+  liveDecisionClassWhitelist?: string[];
+}): LiveAdditivePromptBuild {
+  const enabled = Boolean(input.liveAdditiveEnabled);
+  const whitelist = input.liveDecisionClassWhitelist ?? [];
+  const whitelisted = whitelist.includes(input.decisionClass);
+  const summary = input.compactWorkspaceSummary.trim();
+  if (!enabled || !whitelisted || !summary) {
+    return {
+      prompt: input.legacyPrompt,
+      promptMode: "legacy_only",
+      enabled,
+      applied: false,
+      decisionClass: input.decisionClass,
+      whitelist,
+      summaryBytes: summary ? Buffer.byteLength(summary, "utf8") : undefined
+    };
+  }
+
+  const additive = {
+    mode: "additive_legacy_prompt_plus_compact_workspace_summary",
+    decisionClass: input.decisionClass,
+    constraints: [
+      "Use this only as additional strategic context.",
+      "Choose candidateId only from the legacy candidates list.",
+      "Do not invent actions, candidate ids, memory writes, derived knowledge, or strategy changes.",
+      "Legacy validation, fallback, and execution remain authoritative."
+    ],
+    workspace_summary: parseJsonOrString(summary)
+  };
+
+  return {
+    prompt: addJsonField(input.legacyPrompt, "p8_live_additive", additive),
+    promptMode: "additive_legacy_prompt_plus_compact_workspace_summary",
+    enabled,
+    applied: true,
+    decisionClass: input.decisionClass,
+    whitelist,
+    summaryBytes: Buffer.byteLength(summary, "utf8")
+  };
+}
+
 export class AgentController {
   private settlementBackoffUntilMs = 0;
   private readonly workspaceShadowLlm: LlmDecider;
@@ -53,6 +110,10 @@ export class AgentController {
     fingerprint: string;
     kind: "select_card" | "combat_select_card";
     selectedIndices: Set<number>;
+  };
+  private noProgressActionGuard?: {
+    fingerprint: string;
+    actionSignature: string;
   };
 
   constructor(
@@ -217,6 +278,7 @@ export class AgentController {
       outcome: llmWanted ? "unavailable" : "not_needed"
     };
     const promptCandidates = scoring.candidates.slice(0, this.memory.strategy.thresholds.maxLlmCandidates);
+    const decisionClass = `${state.screen}:${scoring.route.kind}`;
     const legacyPrompt = buildDecisionPrompt({
       state,
       run: this.memory.run,
@@ -224,15 +286,34 @@ export class AgentController {
       memories: relevantMemories,
       uncertaintyReasons: scoring.uncertaintyReasons
     });
+    const liveAdditivePrompt = buildP8LiveAdditivePrompt({
+      legacyPrompt,
+      compactWorkspaceSummary: buildCompactWorkspaceSummary(cognitive.deliberationPacket),
+      decisionClass,
+      liveAdditiveEnabled: isEnabledEnv(process.env[P8_LIVE_ADDITIVE_FLAG]),
+      liveDecisionClassWhitelist: parseEnvList(process.env[P8_LIVE_DECISION_CLASSES_FLAG])
+    });
+    const liveAdditiveBlocksLlmCall = liveAdditivePrompt.enabled && !liveAdditivePrompt.applied;
 
     const shouldAskLlm =
       llmWanted &&
-      (options.maxLlmPerTick ?? 1) > 0;
+      (options.maxLlmPerTick ?? 1) > 0 &&
+      !liveAdditiveBlocksLlmCall;
 
     if (llmWanted && (options.maxLlmPerTick ?? 1) <= 0) {
       chosenBy = "fallback";
       fallbackReason = "llm_disabled_by_tick_limit";
       llmAudit.outcome = "disabled_by_tick_limit";
+    } else if (llmWanted && liveAdditiveBlocksLlmCall) {
+      chosenBy = "fallback";
+      fallbackReason = "live_additive_decision_class_not_whitelisted";
+      llmAudit.outcome = "disabled_by_live_whitelist";
+      llmAudit.promptMode = liveAdditivePrompt.promptMode;
+      llmAudit.liveAdditiveEnabled = liveAdditivePrompt.enabled;
+      llmAudit.liveAdditiveApplied = liveAdditivePrompt.applied;
+      llmAudit.liveAdditiveDecisionClass = liveAdditivePrompt.decisionClass;
+      llmAudit.liveAdditiveWhitelist = liveAdditivePrompt.whitelist;
+      llmAudit.liveAdditiveSummaryBytes = liveAdditivePrompt.summaryBytes;
     } else if (shouldAskLlm) {
       if (!llmAudit.available) {
         chosenBy = "fallback";
@@ -240,14 +321,20 @@ export class AgentController {
         llmAudit.outcome = "unavailable";
       } else {
         llmAudit.called = true;
-        llmAudit.promptBytes = Buffer.byteLength(legacyPrompt, "utf8");
+        llmAudit.promptBytes = Buffer.byteLength(liveAdditivePrompt.prompt, "utf8");
         llmAudit.candidatesSent = promptCandidates.length;
+        llmAudit.promptMode = liveAdditivePrompt.promptMode;
+        llmAudit.liveAdditiveEnabled = liveAdditivePrompt.enabled;
+        llmAudit.liveAdditiveApplied = liveAdditivePrompt.applied;
+        llmAudit.liveAdditiveDecisionClass = liveAdditivePrompt.decisionClass;
+        llmAudit.liveAdditiveWhitelist = liveAdditivePrompt.whitelist;
+        llmAudit.liveAdditiveSummaryBytes = liveAdditivePrompt.summaryBytes;
         cognitive.promptParity.livePromptUsed = true;
         cognitive.promptParity.livePromptBytes = llmAudit.promptBytes;
         cognitive.deliberationPacket.promptParity = cognitive.promptParity;
 
         try {
-          llmDecision = await this.llm.decide(legacyPrompt);
+          llmDecision = await this.llm.decide(liveAdditivePrompt.prompt);
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
           const outcome = classifyLlmError(message);
@@ -309,7 +396,7 @@ export class AgentController {
       legacyPrompt,
       deliberationPacket: cognitive.deliberationPacket,
       candidates: scoring.candidates,
-      decisionClass: `${state.screen}:${scoring.route.kind}`,
+      decisionClass,
       llm: this.workspaceShadowLlm,
       legacySelectedCandidateId: chosen.id
     });
@@ -331,6 +418,20 @@ export class AgentController {
         };
       }
       chosen = guardedChoice;
+      if (this.shouldBlockRepeatedNoProgressAction(state, chosen.action)) {
+        return {
+          state,
+          chosen,
+          chosenBy: "none",
+          route: scoring.route.kind,
+          routeReasons: scoring.route.reasons,
+          fallbackReason,
+          fallbackPolicy,
+          llm: llmAudit,
+          executed: false,
+          message: `Waiting after no-progress guard for ${chosen.label}`
+        };
+      }
 
       let executionResult: unknown;
       let settlement: { state: NormalizedState; settled: boolean; polls: number };
@@ -344,6 +445,7 @@ export class AgentController {
           settled: settlement.settled,
           polls: settlement.polls
         });
+        this.noteNoProgressGuardFromCheckpoint(checkpoint, chosen.action, settlement.state);
         this.noteSettlement(settlement.settled, chosen.action, settlement.state);
       } catch (error) {
         if (isActionsDisabledWhileSettling(error)) {
@@ -522,6 +624,65 @@ export class AgentController {
     }
     this.cardSelectGuard.selectedIndices.add(action.index);
   }
+
+  private shouldBlockRepeatedNoProgressAction(state: NormalizedState, action: AgentAction): boolean {
+    if (!this.noProgressActionGuard) return false;
+    const fingerprint = stateFingerprint(state);
+    if (this.noProgressActionGuard.fingerprint !== fingerprint) {
+      this.noProgressActionGuard = undefined;
+      return false;
+    }
+    return this.noProgressActionGuard.actionSignature === actionSignature(action);
+  }
+
+  private noteNoProgressGuardFromCheckpoint(
+    checkpoint: ExecutionCheckpoint,
+    action: AgentAction,
+    postState?: NormalizedState
+  ): void {
+    const noVisibleProgress =
+      checkpoint.kind === "unknown" &&
+      checkpoint.preStateHash === checkpoint.postStateHash &&
+      checkpoint.reasons.includes("settlement_timeout_or_no_visible_change");
+    if (!noVisibleProgress || !postState) {
+      this.noProgressActionGuard = undefined;
+      return;
+    }
+    this.noProgressActionGuard = {
+      fingerprint: stateFingerprint(postState),
+      actionSignature: actionSignature(action)
+    };
+  }
+}
+
+function isEnabledEnv(value: string | undefined): boolean {
+  if (!value) return false;
+  return ["1", "true", "yes", "on"].includes(value.trim().toLowerCase());
+}
+
+function parseEnvList(value: string | undefined): string[] {
+  if (!value) return [];
+  return value.split(",").map((item) => item.trim()).filter(Boolean);
+}
+
+function parseJsonOrString(value: string): unknown {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+}
+
+function addJsonField(source: string, field: string, value: unknown): string {
+  try {
+    const parsed = JSON.parse(source);
+    if (isRecord(parsed)) {
+      return JSON.stringify({ ...parsed, [field]: value });
+    }
+  } catch {
+    // Fall through to a text append for non-JSON live prompt adapters.
+  }
+  return `${source}\n\n${field}: ${JSON.stringify(value)}`;
 }
 
 function buildDecisionEntry(
@@ -699,6 +860,36 @@ function stateFingerprint(state: NormalizedState): string {
     mapNodes: state.mapNodes.length,
     rewards: state.rewards.length
   });
+}
+
+function actionSignature(action: AgentAction): string {
+  switch (action.kind) {
+    case "play_card":
+      return `${action.kind}:${action.cardIndex}:${action.cardName ?? ""}:${action.target ?? ""}`;
+    case "use_potion":
+      return `${action.kind}:${action.slot}:${action.target ?? ""}`;
+    case "discard_potion":
+      return `${action.kind}:${action.slot}`;
+    case "choose_map_node":
+    case "choose_rest_option":
+    case "claim_reward":
+    case "claim_treasure_relic":
+    case "select_card_reward":
+    case "event_choose_option":
+    case "shop_purchase":
+    case "select_card":
+    case "combat_select_card":
+    case "bundle_select":
+      return `${action.kind}:${action.index}`;
+    case "menu_select":
+      return `${action.kind}:${String(action.option)}:${action.seed ?? ""}`;
+    case "crystal_sphere_set_tool":
+      return `${action.kind}:${action.tool}`;
+    case "crystal_sphere_click_cell":
+      return `${action.kind}:${action.x}:${action.y}`;
+    default:
+      return action.kind;
+  }
 }
 
 function sleep(ms: number): Promise<void> {

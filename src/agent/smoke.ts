@@ -7,6 +7,7 @@ import type { GameClient } from "./client.js";
 import { toRestBody } from "./client.js";
 import { getSts2McpRestCapabilities } from "../adapters/sts2mcp/capabilities.js";
 import { AgentController } from "./controller.js";
+import { buildP8LiveAdditivePrompt } from "./controller.js";
 import { AgentDecisionRecorder } from "./decisionRecorder.js";
 import { buildExecutionCheckpoint } from "./checkpoint.js";
 import { buildCollectedStateRecord } from "./collector.js";
@@ -94,7 +95,12 @@ function makeWorkspaceDecisionClassQualityStats(
     withCoreTradeoff: 0,
     completeEnough: 0,
     shallowFutureCount: 0,
+    liveEligibleCalledCompletenessRecordedTransitions: 0,
+    liveEligibleCalledFutureCount: 0,
+    liveEligibleCalledCompleteEnough: 0,
+    liveEligibleCalledShallowFutureCount: 0,
     reviewSignals: {},
+    liveEligibleCalledReviewSignals: {},
     proposalSignals: {},
     cueAttributionSources: {},
     reasonCueAttributionSources: {},
@@ -168,6 +174,19 @@ class InvalidShapeLlmDecider implements LlmDecider {
 
   async decide(): Promise<any> {
     return { reason: "missing candidate id" };
+  }
+}
+
+class CountingLlmDecider implements LlmDecider {
+  calls = 0;
+
+  isAvailable(): boolean {
+    return true;
+  }
+
+  async decide(): Promise<{ candidateId: string; reason: string }> {
+    this.calls += 1;
+    return { candidateId: "select-card-0", reason: "test selection" };
   }
 }
 
@@ -281,6 +300,27 @@ const baselineStructuredWorkspacePrompt = buildStructuredDeliberationWorkspacePr
 assert.match(baselineStructuredWorkspacePrompt, /structured strategic workspace/);
 const compactWorkspaceSummary = buildCompactWorkspaceSummary(deliberationPacket);
 assert.match(compactWorkspaceSummary, /p8_workspace_summary/);
+const liveAdditiveSkippedPrompt = buildP8LiveAdditivePrompt({
+  legacyPrompt: JSON.stringify({ candidates: [{ id: "play-strike" }] }),
+  compactWorkspaceSummary,
+  decisionClass: "map:llm_required",
+  liveAdditiveEnabled: true,
+  liveDecisionClassWhitelist: ["combat:llm_required"]
+});
+assert.equal(liveAdditiveSkippedPrompt.applied, false);
+assert.equal(liveAdditiveSkippedPrompt.promptMode, "legacy_only");
+assert.doesNotMatch(liveAdditiveSkippedPrompt.prompt, /p8_live_additive/);
+const liveAdditiveCombatPrompt = buildP8LiveAdditivePrompt({
+  legacyPrompt: JSON.stringify({ candidates: [{ id: "play-strike" }] }),
+  compactWorkspaceSummary,
+  decisionClass: "combat:llm_required",
+  liveAdditiveEnabled: true,
+  liveDecisionClassWhitelist: ["combat:llm_required"]
+});
+assert.equal(liveAdditiveCombatPrompt.applied, true);
+assert.equal(liveAdditiveCombatPrompt.promptMode, "additive_legacy_prompt_plus_compact_workspace_summary");
+assert.match(liveAdditiveCombatPrompt.prompt, /p8_live_additive/);
+assert.match(liveAdditiveCombatPrompt.prompt, /p8_workspace_summary/);
 const structuredWorkspacePrompt = buildStructuredDeliberationWorkspacePrompt(deliberationPacket, [workspaceCandidate]);
 assert.match(structuredWorkspacePrompt, /allowed_candidate_ids/);
 assert.match(structuredWorkspacePrompt, /choose_exactly_one_candidate_id_from_allowed_list/);
@@ -958,6 +998,33 @@ assert.ok(!rewardCandidates.some((candidate) => candidate.kind === "proceed"));
     assert.equal(invalidShapeResult.fallbackReason, "llm_invalid_output");
     assert.equal(invalidShapeResult.llm?.called, true);
     assert.equal(invalidShapeResult.llm?.outcome, "invalid_output");
+
+    const previousLiveAdditive = process.env.STS2_P8_LIVE_ADDITIVE;
+    const previousLiveClasses = process.env.STS2_P8_LIVE_DECISION_CLASSES;
+    const countingLlm = new CountingLlmDecider();
+    try {
+      process.env.STS2_P8_LIVE_ADDITIVE = "1";
+      process.env.STS2_P8_LIVE_DECISION_CLASSES = "combat:llm_required";
+      const nonWhitelistedController = new AgentController(
+        new FakeClient(rewardState.raw),
+        memory,
+        countingLlm
+      );
+      const nonWhitelistedResult = await nonWhitelistedController.tick({ dryRun: true });
+      assert.equal(nonWhitelistedResult.chosenBy, "fallback");
+      assert.equal(nonWhitelistedResult.fallbackReason, "live_additive_decision_class_not_whitelisted");
+      assert.equal(nonWhitelistedResult.llm?.called, false);
+      assert.equal(nonWhitelistedResult.llm?.outcome, "disabled_by_live_whitelist");
+      assert.equal(nonWhitelistedResult.llm?.promptMode, "legacy_only");
+      assert.equal(nonWhitelistedResult.llm?.liveAdditiveEnabled, true);
+      assert.equal(nonWhitelistedResult.llm?.liveAdditiveApplied, false);
+      assert.equal(countingLlm.calls, 0);
+    } finally {
+      if (previousLiveAdditive === undefined) delete process.env.STS2_P8_LIVE_ADDITIVE;
+      else process.env.STS2_P8_LIVE_ADDITIVE = previousLiveAdditive;
+      if (previousLiveClasses === undefined) delete process.env.STS2_P8_LIVE_DECISION_CLASSES;
+      else process.env.STS2_P8_LIVE_DECISION_CLASSES = previousLiveClasses;
+    }
 
     const characterSelectState = normalizeGameState({
       state_type: "menu",
@@ -2781,8 +2848,11 @@ try {
   const combatOnlyReady = makeWorkspaceDecisionClassQualityStats({
     liveEligibleCalled: 3,
     completenessRecordedTransitions: 3,
+    liveEligibleCalledCompletenessRecordedTransitions: 3,
     futureCount: 6,
+    liveEligibleCalledFutureCount: 6,
     completeEnough: 6,
+    liveEligibleCalledCompleteEnough: 6,
     reasonQualityCounts: { adequate: 3 }
   });
   const mixedCombatAssessment = assessP8LiveReadiness(mixedCombatEvidenceSlice, {
@@ -2962,6 +3032,19 @@ try {
   const staleResult = await staleController.tick();
   assert.ok((staleResult.checkpoint?.polls ?? 0) >= 2);
   assert.match(staleResult.checkpoint?.after ?? "", /hand=\[0:Defend\]/);
+
+  const noProgressClient = new FakeClient(combatState(), combatState());
+  const noProgressController = new AgentController(noProgressClient, memory, new NoopLlmDecider());
+  const firstNoProgress = await noProgressController.tick();
+  assert.equal(firstNoProgress.executed, true);
+  assert.equal(firstNoProgress.checkpoint?.kind, "unknown");
+  assert.ok(firstNoProgress.checkpoint?.reasons.includes("settlement_timeout_or_no_visible_change"));
+  (noProgressController as any).settlementBackoffUntilMs = 0;
+  const secondNoProgress = await noProgressController.tick();
+  assert.equal(secondNoProgress.executed, false);
+  assert.equal(secondNoProgress.chosenBy, "none");
+  assert.match(secondNoProgress.message, /Waiting after no-progress guard/);
+  assert.equal(noProgressClient.executed.length, 1);
   console.log(JSON.stringify({ result, executed: client.executed }, null, 2));
 } finally {
   rmSync(smokeMemoryDir, { recursive: true, force: true });

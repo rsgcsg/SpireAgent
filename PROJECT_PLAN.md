@@ -338,7 +338,7 @@ P8.x completion route:
   - First live integration must be additive: legacy prompt plus compact workspace summary, not structured-prompt-only by default.
   - Legacy fallback and current validation/execution remain mandatory.
   - Rollback: disable feature flags and return to legacy prompt immediately.
-  - Current preparation: compact workspace summary generation and rollout metadata exist behind `STS2_P8_LIVE_ADDITIVE` and `STS2_P8_LIVE_DECISION_CLASSES`, but the controller does not consume them yet. Default is still off.
+  - Current preparation: compact workspace summary generation, rollout metadata, and controller-side additive prompt consumption exist behind `STS2_P8_LIVE_ADDITIVE` and `STS2_P8_LIVE_DECISION_CLASSES`. Default is still off, and DeepSeek workspace shadow decisions still do not execute.
   - Live-readiness decision should be made per decision class, not globally.
   - First allowed live candidate, if explicitly approved later, is `combat:llm_required` only.
   - `card_reward:llm_required` requires separate fresh non-combat tradeoff-quality evidence before entry.

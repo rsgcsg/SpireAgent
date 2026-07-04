@@ -208,6 +208,14 @@ P8 DeliberationPacket strategic workspace shadow surface:
 - `ShadowWorkspaceDecision.providerRecoveryPolicyName` and `providerRecoveryPolicy` are the first BG-3 recovery-policy anchors. They summarize existing provider attempts, rescue cap relationships, primary/rescue thinking modes, terminal attempt state, and recovery outcome; they do not change retry behavior, semantic validation, workspace compression, or candidate choice.
 - `P8LiveReadinessAssessment.evidenceBudget` is the first BG-4 evidence-budget anchor. It explains fresh sample sufficiency and mixed-window promotion risk without changing the underlying readiness status.
 - `P8LiveReadinessAssessment.rolloutBudget` is the first BG-5/BG-6 rollout/protected-path anchor. It records explicit live-flag, human-authorization, rollback, structured-prompt-only, and stable-write constraints without enabling any protected path.
+- Live LLM audit may include P8.5 additive prompt fields when a manually authorized live window is run:
+  - `promptMode`: `legacy_only` or `additive_legacy_prompt_plus_compact_workspace_summary`
+  - `liveAdditiveEnabled`
+  - `liveAdditiveApplied`
+  - `liveAdditiveDecisionClass`
+  - `liveAdditiveWhitelist`
+  - `liveAdditiveSummaryBytes`
+  These fields explain whether compact P8 workspace context was appended to the live LLM prompt. They do not change candidate generation, scoring, fallback, validation, execution, stable memory, derived knowledge, or strategy params.
 - P8 fields are observability data. They do not replace `src/agent/prompt.ts`, alter action selection, change candidate generation/order/scoring, change fallback, change validation/execution, or write stable memory/derived/strategy updates.
 
 ## Ground Truth Rules

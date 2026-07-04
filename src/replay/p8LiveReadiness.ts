@@ -169,14 +169,14 @@ function classReasonWeak(stats?: WorkspaceDecisionClassQualityStats): boolean {
 
 function classFutureShallow(stats?: WorkspaceDecisionClassQualityStats): boolean {
   if (!stats) return true;
-  if (stats.completenessRecordedTransitions === 0) return true;
-  if (stats.shallowFutureCount > 0) return true;
-  if (stats.completeEnough <= 0) return true;
-  if ((stats.reviewSignals.shallow_candidate_future ?? 0) > 0) return true;
-  if ((stats.reviewSignals.missing_survival_line ?? 0) > 0) return true;
-  if ((stats.reviewSignals.missing_future_risk ?? 0) > 0) return true;
-  if ((stats.reviewSignals.missing_resource_tradeoff ?? 0) > 0) return true;
-  if ((stats.reviewSignals.missing_card_reward_direction ?? 0) > 0) return true;
+  if (stats.liveEligibleCalledCompletenessRecordedTransitions === 0) return true;
+  if (stats.liveEligibleCalledShallowFutureCount > 0) return true;
+  if (stats.liveEligibleCalledCompleteEnough <= 0) return true;
+  if ((stats.liveEligibleCalledReviewSignals.shallow_candidate_future ?? 0) > 0) return true;
+  if ((stats.liveEligibleCalledReviewSignals.missing_survival_line ?? 0) > 0) return true;
+  if ((stats.liveEligibleCalledReviewSignals.missing_future_risk ?? 0) > 0) return true;
+  if ((stats.liveEligibleCalledReviewSignals.missing_resource_tradeoff ?? 0) > 0) return true;
+  if ((stats.liveEligibleCalledReviewSignals.missing_card_reward_direction ?? 0) > 0) return true;
   return false;
 }
 

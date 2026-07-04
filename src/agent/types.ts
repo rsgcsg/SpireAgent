@@ -147,6 +147,7 @@ export type LlmAuditOutcome =
   | "selected"
   | "unavailable"
   | "disabled_by_tick_limit"
+  | "disabled_by_live_whitelist"
   | "timeout"
   | "invalid_output"
   | "invalid_choice"
@@ -161,6 +162,12 @@ export interface DecisionLlmAudit {
   error?: string;
   promptBytes?: number;
   candidatesSent?: number;
+  promptMode?: "legacy_only" | "additive_legacy_prompt_plus_compact_workspace_summary";
+  liveAdditiveEnabled?: boolean;
+  liveAdditiveApplied?: boolean;
+  liveAdditiveDecisionClass?: string;
+  liveAdditiveWhitelist?: string[];
+  liveAdditiveSummaryBytes?: number;
 }
 
 export type FallbackPolicyName = "local_top" | "conservative_combat";
