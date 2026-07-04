@@ -4,6 +4,35 @@
 
 ## 2026-07-04 Narrow Combat Reason-Contract Follow-Up
 
+- Combat-only additive live-enable plan has now been drafted in `docs/04_CURRENT_STATUS.md`.
+- This is a planning artifact only. It does not enable live, does not set `STS2_P8_LIVE_ADDITIVE=1`, and does not change provider/recovery, candidate generation, scoring, fallback, validation, execution, stable memory, derived knowledge, or strategy behavior.
+- The plan is supported by the fresh promotion-quality evidence from `run-mr648yt5-h2h1dw`:
+  - `combat:llm_required` live-eligible called samples: 3
+  - valid=4, invalid=0, error=0 across called shadow decisions
+  - liveEligibleValid=3, liveEligibleInvalid=0, liveEligibleError=0
+  - `failureBucket=none`
+  - `finishReason=stop`
+  - `outputCapHits=0`
+  - `retryCount=0`
+  - CandidateFuture remained completeEnough with `shallowFutureCount=0`
+  - tradeoff/resource/future-risk/survival cues were preserved through serialization
+- Plan boundary:
+  - first whitelist may only be `combat:llm_required`
+  - `map:llm_required`, `card_reward:llm_required`, shop/reward/route/event/rest/menu/card-select classes remain excluded
+  - first mode may only be additive legacy prompt plus compact workspace summary
+  - structured-prompt-only live remains forbidden
+  - selected-candidate validation and semantic validation remain unchanged
+  - execution remains unchanged
+- Required rollback:
+  - set `STS2_P8_LIVE_ADDITIVE=0`
+  - preserve failed rollout evidence
+  - return to legacy-only / shadow-only behavior before any tuning
+- Immediate stop conditions include provider failure, unrecovered `finishReason=length`, output cap hit, invalid/error, semantic validation failure, illegal or nonexistent selected candidate id, unexpected fallback behavior, execution mismatch, reason-quality collapse, missing survival/tradeoff cues returning, or any uncertainty about live-path boundaries.
+- Honest interpretation:
+  - `combat:llm_required` can move from whitelist candidate to ready-to-draft combat-only additive live-enable plan
+  - broad P8.5 remains no-go
+  - live still requires explicit human approval before any flag change
+
 - Fresh promotion-quality combat shadow window on the same revision now supports a narrower readiness conclusion than earlier logs in this file.
 - Run: `run-mr648yt5-h2h1dw`
 - Fresh combat-only slice:

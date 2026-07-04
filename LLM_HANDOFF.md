@@ -25,6 +25,15 @@ The project has completed Phase 0, Phase 1, the Phase 2 minimum data-loop MVP, t
 
 Latest narrow P8.5 readiness update:
 
+- A very narrow combat-only additive live-enable plan is now drafted in `docs/04_CURRENT_STATUS.md`; this is not authorization to enable live.
+- The plan is North Star-aligned because it keeps the LLM as strategic player while preserving the hard outer shell: legacy fallback, candidate generation/order/scoring, selected-candidate validation, semantic validation, execution, rollback, and stable memory/derived/strategy boundaries.
+- First whitelist in the draft plan is exactly `combat:llm_required`.
+- Explicitly excluded from first whitelist: `map:llm_required`, `card_reward:llm_required`, shop, reward, route, event, rest, menu, card select, and all other non-combat classes.
+- First live mode, if later authorized, must be additive-only: legacy prompt plus compact workspace summary. Structured-prompt-only live remains forbidden.
+- Manual approval is required before any rollout. Do not set `STS2_P8_LIVE_ADDITIVE=1` without that approval.
+- Rollback is simple and mandatory: set `STS2_P8_LIVE_ADDITIVE=0`, preserve rollout evidence, and return to legacy-only / shadow-only behavior before any tuning.
+- Immediate stop conditions include provider failure, unrecovered `finishReason=length`, `outputCapHit`, invalid/error, semantic validation failure, illegal or nonexistent `selectedCandidateId`, unexpected fallback shape, execution mismatch, reason-quality collapse, missing survival/tradeoff cue returning, or any uncertainty about live-path boundaries.
+- Post-rollout review commands, once a rollout is separately authorized, are `npm run check`, `npm run data:replay -- --latest`, `npm run data:eval -- --latest`, `npm run agent:review`, and `git status --short`.
 - fresh promotion-quality combat window now clears the current combat-only shadow gate strongly enough to draft, but not execute, a constrained additive live-enable plan
 - latest run: `run-mr648yt5-h2h1dw`
 - fresh combat slice:

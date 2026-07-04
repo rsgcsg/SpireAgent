@@ -127,6 +127,91 @@ Continue P8.5 live-readiness work without enabling live additive:
 - continue separate non-combat freshness work for `card_reward:llm_required` and especially `map:llm_required`
 - keep P8.5 live/additive disabled until an explicit live-enable plan is reviewed and authorized
 
+## Draft P8.5 Combat-Only Live-Enable Plan
+
+Status: draft only. This plan is not authorization to enable live additive.
+
+North Star fit:
+
+- The plan keeps the LLM as the strategic player for a narrow live-eligible combat slice.
+- The additive context may only improve the LLM's strategic view of validated `CandidateFuture` tradeoffs; it must not replace candidate generation, scoring, fallback, validation, or execution.
+- The outer safety shell stays fixed: selected candidate validation, semantic validation, executor legality checks, fallback, rollback, stable memory boundaries, and replay/eval review remain non-negotiable.
+
+Scope:
+
+- First whitelist: `combat:llm_required` only.
+- Excluded from the first whitelist: `map:llm_required`, `card_reward:llm_required`, shop, reward, route, event, rest, menu, card select, and any non-combat decision class.
+- Mode: additive-only `legacy prompt + compact workspace summary`.
+- Forbidden first-live mode: structured-prompt-only replacement.
+- Live execution path: unchanged.
+- Legacy fallback: unchanged and always available.
+- Provider/recovery policy: unchanged.
+- Candidate generation/order/scoring: unchanged.
+- Semantic validation and `selectedCandidateId` validation: unchanged.
+- Stable memory, derived knowledge, and strategy writes: forbidden.
+
+Manual gate:
+
+- `STS2_P8_LIVE_ADDITIVE` must remain off until a human explicitly approves the rollout.
+- The first authorized rollout must also set the decision-class whitelist to `combat:llm_required` only.
+- Any broader whitelist requires a separate fresh evidence window and a separate plan update.
+
+Rollback:
+
+- Primary rollback flag: set `STS2_P8_LIVE_ADDITIVE=0`.
+- Keep replay data from the failed rollout window; do not delete or wash failed transitions.
+- Return to shadow-only / legacy-only behavior before further tuning.
+
+Immediate stop conditions:
+
+- Any provider failure in the live slice, including network, unavailable provider, `provider_length_empty`, or unrecovered empty content.
+- Any `finishReason=length` that cannot be recovered.
+- Any `outputCapHit=true`.
+- Any invalid output or error.
+- Any semantic validation failure.
+- Any illegal, missing, or nonexistent `selectedCandidateId`.
+- Any unexpected fallback shape or fallback rate spike that cannot be explained by normal budget or provider guards.
+- Any execution mismatch or illegal action attempt.
+- Any reason-quality collapse into mostly `thin` or any `missing` live decision reason.
+- Any return of missing survival/tradeoff cues in the additive context.
+- Any uncertainty about whether additive context changed live execution, validation, candidate generation, scoring, or fallback behavior.
+
+Audit fields required for the first rollout window:
+
+- run id, transition id, decision class, live whitelist, live/additive flag state, and revision tag
+- legacy-only versus additive-live marker
+- selected candidate id and validation result
+- provider failure category and bucket
+- finish reason, output cap hit, retry count, recovery policy, and latency/cost/tokens
+- fallback reason and fallback policy
+- reasonQuality and thin reasons
+- CandidateFuture completeness, shallow count, cue attribution, and reason cue attribution
+- execution checkpoint result and mismatch indicators
+
+Fresh rollout window:
+
+- Start with a tiny manually authorized combat-only window.
+- Stop after the first few live-eligible combat decisions for review.
+- Do not include `map` or `card_reward` decisions in the live whitelist even if they appear during the run.
+- Treat disagreement as review signal, not failure, unless validation or execution safety is touched.
+
+Post-rollout review commands:
+
+```bash
+npm run check
+npm run data:replay -- --latest
+npm run data:eval -- --latest
+npm run agent:review
+git status --short
+```
+
+Current planning conclusion:
+
+- `combat:llm_required` is ready to draft this plan.
+- It is not live-authorized until a human approves the manual flag rollout.
+- Broad P8.5 remains no-go.
+- `map:llm_required` and `card_reward:llm_required` need separate fresh readiness evidence before any whitelist expansion.
+
 ## Documentation Notes
 
 - Long-term roadmap changes go to `../PROJECT_PLAN.md`
