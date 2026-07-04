@@ -4,6 +4,47 @@
 
 ## 2026-07-04 Narrow Combat Reason-Contract Follow-Up
 
+- Fresh promotion-quality combat shadow window on the same revision now supports a narrower readiness conclusion than earlier logs in this file.
+- Run: `run-mr648yt5-h2h1dw`
+- Fresh combat-only slice:
+  - called=4
+  - liveEligibleCalled=3
+  - valid=4
+  - invalid=0
+  - error=0
+  - `failureBucket=none`
+  - `finishReason=stop`
+  - `outputCapHits=0`
+  - `retryCount=0`
+- The 3 fresh live-eligible `combat:llm_required` samples were:
+  - `transition-000001-agent-mr649465-7hdlvb`
+    - reason: `Use free draw to find block or combo.`
+    - `reasonQuality=thin`
+    - `thinReasons=["missing_tradeoff"]`
+    - provider remained clean: `failureBucket=none`, `finishReason=stop`
+    - serialized cues preserved `tradeoff`, `resource_tradeoff`, `future_risk`, `survival_line`; `lethal_line` was `compression_lost`
+    - reason attribution shows the issue is `model_reason_omitted` on `tradeoff`, not provider failure and not missing CandidateFuture content
+  - `transition-000002-agent-mr6498uu-ovos54`
+    - reason: `Search scaling while losing tempo.`
+    - `reasonQuality=adequate`
+    - provider clean: `failureBucket=none`, `finishReason=stop`
+    - CandidateFuture completeness stayed completeEnough with `shallowFutureCount=0`
+  - `transition-000004-agent-mr649j14-q7t9tb`
+    - reason: `Tutor for block while conserving energy.`
+    - `reasonQuality=adequate`
+    - provider clean: `failureBucket=none`, `finishReason=stop`
+    - CandidateFuture completeness stayed completeEnough with `shallowFutureCount=0`
+- Honest interpretation:
+  - provider is still not the active blocker on fresh combat evidence
+  - combat serialization is preserving the core survival/tradeoff/future-risk cues
+  - one fresh thin reason still exists, but it is now attributable to model omission rather than workspace collapse or provider truncation
+  - this is enough to move combat from `whitelist candidate` to `ready to draft combat-only additive live-enable plan`
+  - it is not enough to declare broad P8.5 ready, and it does not authorize live by itself
+- Historical-window interpretation:
+  - older `provider_length_empty`, network outages, and broader mixed-window quality failures remain valid historical evidence
+  - they should stay visible in all-history and mixed-window reporting
+  - they should not be misread as describing the current fresh combat-only window on this revision
+
 - Fresh combat replay review confirmed provider is no longer the active blocker in the latest `combat:llm_required` window: fresh called samples are valid with `failureBucket=none`, `finishReason=stop`, and `outputCapHits=0`.
 - The remaining blocker is still reason quality, not provider recovery.
 - Latest called combat samples split into:
@@ -22,6 +63,33 @@
   - returned reason: `Block immediately to survive, then scale later.`
   - current evaluator still marks it `reasonQuality=thin`, `reasonQualityNotes=["missing_tradeoff"]`
   - practical takeaway: the patch did not yet produce a clear fresh reduction in combat `missing_tradeoff`
+- Follow-up narrow fix:
+  - wired the combat-specific system prompt to the workspace prompt too, so the combat tradeoff contract now activates on both system and user prompt paths
+  - no provider change
+  - no live-path change
+  - no candidate/scoring/execution change
+- Fresh runtime after that wiring:
+  - run `run-mr4rh1mb-tohmxl`
+  - replay/eval `last5`: called=3, liveEligibleCalled=1, valid=3, invalid=0, error=0
+  - `failureBucket=none`, `finishReason=stop`, `outputCapHits=0`
+  - `reasonQualityCounts={"adequate":3}` for the called slice
+- Honest interpretation:
+  - this is a good fresh signal that the narrowed combat contract is helping
+  - it is not enough to declare live readiness on its own
+  - the broader `last20` slice still carries `missing_tradeoff` history, so one more fresh combat shadow window should confirm repeatability before any live-enable planning
+- Follow-up fresh high-pressure combat window on the same run:
+  - replay/eval `last5`: called=4, liveEligibleCalled=3, valid=4, invalid=0, error=0
+  - `failureBucket=none`, `finishReason=stop`, `outputCapHits=0`
+  - live-eligible combat reasons:
+    - `Block 6 to survive, but leaves 44 damage unblocked.`
+    - `Block 6 to survive 50 damage, but no damage output.`
+    - `Damage Spectral Knight to reduce incoming, but leaves block deficit.`
+  - all 3 were graded `reasonQuality=adequate`
+  - the only fresh thin reason in the slice was a non-live-eligible `combat:forced_local` death-state reason
+- Updated interpretation:
+  - the combat-specific missing-tradeoff blocker is now materially reduced on fresh high-pressure `combat:llm_required`
+  - provider still is not the blocker
+  - remaining no-go is broader readiness evidence, especially mixed historical windows and non-combat quality/readiness coverage, not this narrow combat contract itself
 
 ## 2026-07-01 Phase 6-10 Planning And P6 Attribution MVP
 

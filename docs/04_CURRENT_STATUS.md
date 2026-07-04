@@ -26,7 +26,7 @@ The project is building an LLM-centered Slay the Spire 2 agent where the LLM rem
 
 ## Current Blocker
 
-P8.5 live readiness is still blocked, but the active blocker has shifted.
+Broad P8.5 live readiness is still blocked, but the blocker has narrowed.
 
 Fresh high-pressure `combat:llm_required` provider recovery has now been tested on current runtime evidence and did not reproduce the historical provider-length failure.
 
@@ -83,6 +83,36 @@ The active no-go reason is now CandidateFuture/reason-quality readiness:
 - follow-up evaluator narrowing for temporal tradeoffs is now in place, but the next fresh called combat sample (`transition-000155-agent-mr5r64iv-cljtlw`) still came back benefit-only: `Draw and energy gain to enable block.`
 - this makes the current conclusion sharper: the remaining blocker is not provider and not mainly evaluator noise; fresh combat still needs stronger tradeoff expression from the reason contract itself
 - this manual combat reason-contract fix is acceptable as a P8.5 transition repair, but it is now explicitly treated as a future learnable scaffold policy rather than a forever hand-written rule. Long term it should become proposal-driven through replay/eval/review attribution (`missing_tradeoff`, `missing_survival_line`, prediction error) and guarded promotion of `CombatReasonPolicy` / `CandidateTemplate` / `BudgetPolicy` candidates.
+- latest fresh combat follow-up after wiring the combat-specific system prompt as well as the user prompt:
+  - run: `run-mr4rh1mb-tohmxl`
+  - fresh slice `last5`: called=3, liveEligibleCalled=1, valid=3, invalid=0, error=0
+  - `failureBucket=none`, `finishReason=stop`, `outputCapHits=0`
+  - `reasonQuality=adequate` for all 3 called fresh samples in the slice
+  - this is the first fresh slice after the narrowed contract fix that shows a clean called window instead of mixed adequate/thin combat reasons
+- follow-up fresh high-pressure combat window on the same run strengthened that result:
+  - fresh slice `last5`: called=4, liveEligibleCalled=3, valid=4, invalid=0, error=0
+  - the 3 live-eligible combat reasons were:
+    - `Block 6 to survive, but leaves 44 damage unblocked.`
+    - `Block 6 to survive 50 damage, but no damage output.`
+    - `Damage Spectral Knight to reduce incoming, but leaves block deficit.`
+  - all 3 were `reasonQuality=adequate`, `finishReason=stop`, `failureBucket=none`
+  - the only fresh thin reason in the slice was a non-live-eligible `combat:forced_local` end-state line
+- latest promotion-quality fresh combat window:
+  - run: `run-mr648yt5-h2h1dw`
+  - fresh slice: called=4, liveEligibleCalled=3, valid=4, invalid=0, error=0
+  - liveEligibleValid=3, liveEligibleInvalid=0, liveEligibleError=0
+  - `failureBucket=none`, `finishReason=stop`, `outputCapHits=0`, `retryCount=0`
+  - the 3 fresh live-eligible `combat:llm_required` reasons were:
+    - `Use free draw to find block or combo.` (`thin`, `missing_tradeoff`)
+    - `Search scaling while losing tempo.` (`adequate`)
+    - `Tutor for block while conserving energy.` (`adequate`)
+  - all 3 kept `candidateFutureCompleteness.completeEnough`, `shallowFutureCount=0`, and preserved `tradeoff`, `resource_tradeoff`, `future_risk`, and `survival_line` through serialization
+- current canonical readiness result from replay/eval/review:
+  - `READY_FOR_P8_5_LIVE_COMBAT_ONLY`
+  - this does **not** authorize live by itself; it means the evidence is now strong enough to draft a constrained combat-only additive live-enable plan
+  - broad P8.5 is still no-go because `card_reward:llm_required` and `map:llm_required` remain blocked
+  - `map:llm_required` is still a clear evidence gap: current fresh runtime evidence has `0` called fresh samples in the latest run, so it stays out of the first whitelist
+  - historical provider/network failures remain visible in mixed and all-history windows and must not be washed away, but they no longer describe the current fresh combat slice
 
 ## Current Next Step
 
@@ -91,13 +121,11 @@ Continue P8.5 live-readiness work without enabling live additive:
 - preserve `full` semantics and strategic fidelity
 - keep semantic validation strict
 - keep provider work limited to blocker-class regressions
-- collect more fresh live-eligible quality evidence after the survival-line compressor fix and combat reason-contract refinement
-- treat missing lethal-line cues as CandidateFuture/template evidence, not a compression issue
-- keep the remaining combat `missing_tradeoff` work narrow: verify whether the new combat reason contract reduces fresh thin reasons before changing CandidateFuture content again
-- after this narrow fix, the next step is still fresh `combat:llm_required` shadow validation, not more keyword expansion
-- continue non-combat `card_reward` / `map` readiness work before any P8.5 live enablement
-- collect more targeted fresh live-eligible evidence before any live additive plan
-- keep P8.5 live/additive disabled until readiness clears the gate
+- do not do more combat wording tuning unless fresh combat evidence regresses
+- use the current combat-only status to draft a constrained additive live-enable plan, not to enable live yet
+- keep the first whitelist narrow: `combat:llm_required` only, with legacy fallback preserved and execution unchanged
+- continue separate non-combat freshness work for `card_reward:llm_required` and especially `map:llm_required`
+- keep P8.5 live/additive disabled until an explicit live-enable plan is reviewed and authorized
 
 ## Documentation Notes
 

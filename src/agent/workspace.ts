@@ -193,6 +193,8 @@ function buildFullWorkspacePayload(
       reasonBrief_max_words: WORKSPACE_REASON_BRIEF_MAX_WORDS,
       reasonBrief_style: reasonBriefStyle,
       reasonBrief_rule: reasonBriefRule,
+      reasonBrief_examples: reasonBriefExamplesForDecisionClass(decisionClass),
+      reasonBrief_invalid_examples: reasonBriefInvalidExamplesForDecisionClass(decisionClass),
       optional_arrays_default_empty: true,
       optional_arrays_max_items: 1,
       optional_fields_may_be_omitted: ["confidence", "riskTags", "missingInfo", "scaffoldFeedback"],
@@ -1423,7 +1425,29 @@ function reasonBriefStyleForDecisionClass(decisionClass?: string): string {
 
 function reasonBriefRuleForDecisionClass(decisionClass?: string): string | undefined {
   if (typeof decisionClass === "string" && decisionClass.startsWith("combat:")) {
-    return "In combat, say both what this line gains now and what it gives up, delays, or risks.";
+    return "In combat, say both what this line gains now and what it gives up, delays, or risks. Benefit-only reasons are not acceptable.";
+  }
+  return undefined;
+}
+
+function reasonBriefExamplesForDecisionClass(decisionClass?: string): string[] | undefined {
+  if (typeof decisionClass === "string" && decisionClass.startsWith("combat:")) {
+    return [
+      "Gain block now, but delay damage.",
+      "Draw into block, while risking less damage this turn.",
+      "Apply setup now, but give up immediate damage."
+    ];
+  }
+  return undefined;
+}
+
+function reasonBriefInvalidExamplesForDecisionClass(decisionClass?: string): string[] | undefined {
+  if (typeof decisionClass === "string" && decisionClass.startsWith("combat:")) {
+    return [
+      "Gain block now.",
+      "Reduce incoming damage.",
+      "Draw and energy gain to enable block."
+    ];
   }
   return undefined;
 }

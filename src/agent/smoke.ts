@@ -43,6 +43,8 @@ import {
   readReplayRun,
   readTransitionJsonl
 } from "../replay/reader.js";
+import { assessP8LiveReadiness } from "../replay/p8LiveReadiness.js";
+import type { WorkspaceDecisionClassQualityStats } from "../replay/workspaceQuality.js";
 import { evaluateRun } from "../eval/runner.js";
 import { buildCognitiveScaffold, buildConsolidationRecord, buildPredictionErrorRecord } from "./cognitiveScaffold.js";
 import {
@@ -67,6 +69,38 @@ import {
   type StrategicImpression,
   type TransitionRecord
 } from "../domain/types.js";
+
+function makeWorkspaceDecisionClassQualityStats(
+  overrides: Partial<WorkspaceDecisionClassQualityStats> = {}
+): WorkspaceDecisionClassQualityStats {
+  return {
+    transitions: 0,
+    liveEligibleTransitions: 0,
+    shadowCalled: 0,
+    liveEligibleCalled: 0,
+    liveEligibleInvalid: 0,
+    liveEligibleMissingCandidate: 0,
+    reasonQualityCounts: {},
+    thinReasonCounts: {},
+    completenessRecordedTransitions: 0,
+    completenessMissingTransitions: 0,
+    futureSamples: 0,
+    futureCount: 0,
+    withCoreTacticalFacts: 0,
+    withBenefitOrCost: 0,
+    withRiskOrUncertainty: 0,
+    withAssumptionOrInvalidation: 0,
+    withPredictionCheckTrace: 0,
+    withCoreTradeoff: 0,
+    completeEnough: 0,
+    shallowFutureCount: 0,
+    reviewSignals: {},
+    proposalSignals: {},
+    cueAttributionSources: {},
+    reasonCueAttributionSources: {},
+    ...overrides
+  };
+}
 
 class FakeClient implements GameClient {
   executed: AgentAction[] = [];
@@ -2739,6 +2773,39 @@ try {
   const [firstWorkspaceDecisionClassQuality] = Object.values(evalReport.summary.workspaceDecisionClassQuality);
   assert.equal(firstWorkspaceDecisionClassQuality?.transitions, 1);
   assert.ok((firstWorkspaceDecisionClassQuality?.futureCount ?? 0) > 0);
+
+  const mixedCombatEvidenceSlice = buildReplayShadowSliceStats("sinceLatestRevision", []);
+  mixedCombatEvidenceSlice.liveEligibleCalled = 3;
+  mixedCombatEvidenceSlice.mixedRevisionWindow = false;
+  mixedCombatEvidenceSlice.mixedBudgetWindow = true;
+  const combatOnlyReady = makeWorkspaceDecisionClassQualityStats({
+    liveEligibleCalled: 3,
+    completenessRecordedTransitions: 3,
+    futureCount: 6,
+    completeEnough: 6,
+    reasonQualityCounts: { adequate: 3 }
+  });
+  const mixedCombatAssessment = assessP8LiveReadiness(mixedCombatEvidenceSlice, {
+    "combat:llm_required": combatOnlyReady
+  });
+  assert.equal(mixedCombatAssessment.status, "NOT_READY_INSUFFICIENT_LIVE_ELIGIBLE_EVIDENCE");
+  assert.deepEqual(mixedCombatAssessment.recommendedFirstLiveWhitelist, ["combat:llm_required"]);
+  assert.ok(mixedCombatAssessment.reasons.includes("combat_window_meets_current_live_gate"));
+  assert.ok(mixedCombatAssessment.reasons.includes("promotion_window_not_usable"));
+  assert.ok(mixedCombatAssessment.blockedDecisionClasses.includes("map:llm_required"));
+
+  const cleanCombatEvidenceSlice = buildReplayShadowSliceStats("sinceLatestRevision", []);
+  cleanCombatEvidenceSlice.liveEligibleCalled = 3;
+  cleanCombatEvidenceSlice.mixedRevisionWindow = false;
+  cleanCombatEvidenceSlice.mixedBudgetWindow = false;
+  const cleanCombatAssessment = assessP8LiveReadiness(cleanCombatEvidenceSlice, {
+    "combat:llm_required": combatOnlyReady
+  });
+  assert.equal(cleanCombatAssessment.status, "READY_FOR_P8_5_LIVE_COMBAT_ONLY");
+  assert.deepEqual(cleanCombatAssessment.recommendedFirstLiveWhitelist, ["combat:llm_required"]);
+  assert.ok(cleanCombatAssessment.blockedDecisionClasses.includes("card_reward:llm_required"));
+  assert.ok(cleanCombatAssessment.blockedDecisionClasses.includes("map:llm_required"));
+
   assert.equal(evalReport.summary.predictionErrorCoverage.predictionError, 1);
   assert.equal(evalReport.summary.predictionErrorCoverage.withTypedChecks, 1);
   assert.equal(evalReport.summary.predictionErrorCoverage.withAttribution, 1);

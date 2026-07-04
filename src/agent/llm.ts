@@ -565,7 +565,7 @@ export function buildDeepSeekRequestBody(input: {
     messages: [
       {
         role: "system",
-        content: buildDeepSeekSystemPrompt(input.requestKind, input.rescueMode)
+        content: buildDeepSeekSystemPrompt(input.requestKind, input.rescueMode, input.prompt)
       },
       {
         role: "user",
@@ -853,8 +853,16 @@ function classifyWorkspaceParseFailure(error: unknown): string {
 
 function buildDeepSeekSystemPrompt(
   requestKind: "primary" | "rescue",
-  rescueMode?: "empty" | "truncation"
+  rescueMode?: "empty" | "truncation",
+  prompt?: string
 ): string {
+  const combatTradeoffRule = workspaceNeedsCombatTradeoff(prompt)
+    ? [
+        "For combat decisions, reasonBrief must include both the immediate gain and the cost, delay, or risk.",
+        "Benefit-only combat reasons are invalid.",
+        "Use an explicit tradeoff shape like 'gain X, but delay Y' or 'do X now while risking Y'."
+      ].join(" ")
+    : undefined;
   if (requestKind === "rescue" && rescueMode === "truncation") {
     return [
       "You are the Slay the Spire 2 strategic workspace decider.",
@@ -865,8 +873,9 @@ function buildDeepSeekSystemPrompt(
       "Omit optional fields unless they are truly necessary.",
       "Keep reasonBrief to one short tactical or strategic sentence under 16 words.",
       "reasonBrief must name the main tradeoff using both gain and cost when possible.",
+      combatTradeoffRule,
       `Exact JSON shape: ${workspaceDecisionRescueJson()}`
-    ].join(" ");
+    ].filter(Boolean).join(" ");
   }
   if (requestKind === "rescue") {
     return [
@@ -877,9 +886,10 @@ function buildDeepSeekSystemPrompt(
       "Omit optional fields unless they are truly necessary.",
       "Keep reasonBrief to one short tactical or strategic sentence under 16 words.",
       "reasonBrief must name the main tradeoff using both gain and cost when possible.",
+      combatTradeoffRule,
       "Use [] for optional arrays unless truly needed. If used, keep each array to at most 1 short item.",
       `Example JSON: ${workspaceDecisionRescueJson()}`
-    ].join(" ");
+    ].filter(Boolean).join(" ");
   }
   return [
     "You are the Slay the Spire 2 strategic workspace decider.",
@@ -890,9 +900,10 @@ function buildDeepSeekSystemPrompt(
     "Optional fields may be omitted to keep the JSON short.",
     "Keep reasonBrief to one short tactical or strategic sentence under 16 words.",
     "reasonBrief must name the main tradeoff using both gain and cost when possible.",
+    combatTradeoffRule,
     "Use [] for optional arrays unless truly needed. If used, keep each array to at most 1 short item.",
     `Example JSON: ${workspaceDecisionExampleJson()}`
-  ].join(" ");
+  ].filter(Boolean).join(" ");
 }
 
 function buildDeepSeekUserPrompt(
@@ -900,6 +911,12 @@ function buildDeepSeekUserPrompt(
   requestKind: "primary" | "rescue",
   rescueMode?: "empty" | "truncation"
 ): string {
+  const combatTradeoffRule = workspaceNeedsCombatTradeoff(prompt)
+    ? [
+        "If decision_class is combat, reasonBrief must state both gain and cost/delay/risk.",
+        "Do not return benefit-only combat reasons like 'Gain block now.' or 'Reduce incoming damage.'"
+      ].join(" ")
+    : undefined;
   const contract = requestKind === "rescue" && rescueMode === "truncation"
     ? [
         "Your previous reply was truncated or contained extra trailing content.",
@@ -910,6 +927,7 @@ function buildDeepSeekUserPrompt(
         "Use the shortest valid JSON that still chooses one allowed candidate.",
         "reasonBrief must be one short tactical or strategic sentence under 16 words.",
         "reasonBrief must name the main tradeoff using both gain and cost when possible.",
+        combatTradeoffRule,
         "Omit optional fields unless they are truly necessary.",
         `Return this shape exactly: ${workspaceDecisionRescueJson()}`
       ]
@@ -922,6 +940,7 @@ function buildDeepSeekUserPrompt(
         "Use the shortest valid JSON with only required fields unless optional fields are truly necessary.",
         "reasonBrief must be one short tactical or strategic sentence under 16 words.",
         "reasonBrief must name the main tradeoff using both gain and cost when possible.",
+        combatTradeoffRule,
         `Return this shape exactly: ${workspaceDecisionRescueJson()}`
       ]
     : [
@@ -930,10 +949,15 @@ function buildDeepSeekUserPrompt(
         "selectedCandidateId must come from allowed_candidate_ids in the workspace JSON.",
         "Optional fields may be omitted to keep the JSON short.",
         "Keep reasonBrief to one short tactical or strategic sentence under 16 words naming the main tradeoff. Use [] for optional arrays unless truly needed.",
+        combatTradeoffRule,
         "If arrays are used, keep them to at most 1 short item each.",
         `Target JSON shape: ${workspaceDecisionExampleJson()}`
       ];
-  return `${contract.join(" ")}\n\nWORKSPACE_JSON:\n${prompt}`;
+  return `${contract.filter(Boolean).join(" ")}\n\nWORKSPACE_JSON:\n${prompt}`;
+}
+
+function workspaceNeedsCombatTradeoff(prompt?: string): boolean {
+  return typeof prompt === "string" && /"decision_class":"combat:/u.test(prompt);
 }
 
 function workspaceDecisionExampleJson(): string {

@@ -25,6 +25,32 @@ The project has completed Phase 0, Phase 1, the Phase 2 minimum data-loop MVP, t
 
 Latest narrow P8.5 readiness update:
 
+- fresh promotion-quality combat window now clears the current combat-only shadow gate strongly enough to draft, but not execute, a constrained additive live-enable plan
+- latest run: `run-mr648yt5-h2h1dw`
+- fresh combat slice:
+  - called=4
+  - liveEligibleCalled=3
+  - valid=4
+  - invalid=0
+  - error=0
+  - `failureBucket=none`
+  - `finishReason=stop`
+  - `outputCapHits=0`
+  - `retryCount=0`
+- fresh live-eligible `combat:llm_required` transitions:
+  - `transition-000001-agent-mr649465-7hdlvb` -> `reasonQuality=thin`, `thinReasons=["missing_tradeoff"]`, but provider clean and survival/tradeoff cues preserved in serialization; gap is best read as `model_reason_omitted`
+  - `transition-000002-agent-mr6498uu-ovos54` -> `reasonQuality=adequate`
+  - `transition-000004-agent-mr649j14-q7t9tb` -> `reasonQuality=adequate`
+- replay/eval/review now report canonical readiness as `READY_FOR_P8_5_LIVE_COMBAT_ONLY`
+- interpret that status narrowly:
+  - it means combat has enough fresh shadow evidence to draft a combat-only additive live-enable plan
+  - it does not authorize turning live on
+  - live remains off, legacy fallback stays intact, and execution remains unchanged
+- broad P8.5 still stays no-go:
+  - `card_reward:llm_required` and `map:llm_required` remain blocked from first live whitelist
+  - `map:llm_required` has `0` fresh called samples in the latest run, so it is blocked first by missing evidence
+  - historical provider/network failures remain part of all-history reporting and must not be washed away
+- next honest step is no longer more combat wording work unless regression appears; it is to draft the constrained combat-only additive live-enable plan and separately gather non-combat fresh evidence
 - provider is not the active fresh combat blocker right now; the fresh `combat:llm_required` window remains valid with `failureBucket=none`, `finishReason=stop`, and `outputCapHits=0`
 - the active blocker is still combat reason quality, specifically fresh `missing_tradeoff` on called combat shadow reasons
 - newest called samples showed this is not just evaluator noise: lines like `Reduce incoming damage with free attack.` and `Block incoming 21 with 0-cost Hotfix.` still describe only the gain, not the cost/delay/risk
@@ -33,7 +59,27 @@ Latest narrow P8.5 readiness update:
 - first post-patch fresh called combat sample still came back thin: `transition-000152-agent-mr5qwaky-xkx56i` produced `Block immediately to survive, then scale later.` with `failureBucket=none`, `finishReason=stop`, `reasonQuality=thin`, `reasonQualityNotes=[\"missing_tradeoff\"]`
 - evaluator narrowing now treats temporal tradeoffs more fairly, but the next fresh called combat sample still came back thin for a real reason-contract miss: `transition-000155-agent-mr5r64iv-cljtlw` returned `Draw and energy gain to enable block.`
 - that means the active blocker is still fresh combat tradeoff expression, not provider stability and not mainly evaluator false negatives
-- next step is unchanged: run fresh `combat:llm_required` shadow validation and see whether `missing_tradeoff` actually falls
+- narrow follow-up fix landed: the combat-specific system prompt now receives the workspace prompt too, so the combat tradeoff contract is enforced on both system and user sides instead of only the user prompt
+- first fresh runtime after that wiring stayed provider-clean and improved the narrow combat slice:
+  - run `run-mr4rh1mb-tohmxl`
+  - fresh `last5`: called=3, liveEligibleCalled=1, valid=3, invalid=0, error=0
+  - `failureBucket=none`, `finishReason=stop`, `outputCapHits=0`
+  - replay/eval mark all 3 called samples in the slice as `reasonQuality=adequate`
+- second fresh high-pressure combat follow-up on the same run reinforced the signal:
+  - fresh `last5`: called=4, liveEligibleCalled=3, valid=4, invalid=0, error=0
+  - the 3 live-eligible combat reasons were all explicit tradeoffs and all graded `adequate`:
+    - `Block 6 to survive, but leaves 44 damage unblocked.`
+    - `Block 6 to survive 50 damage, but no damage output.`
+    - `Damage Spectral Knight to reduce incoming, but leaves block deficit.`
+  - `failureBucket=none`, `finishReason=stop`, `outputCapHits=0`
+  - the only fresh thin reason in that slice was a non-live-eligible `combat:forced_local` death-state reason
+- do not treat that as live-ready proof yet; the broader `last20` window still has `missing_tradeoff` cases, so one more fresh combat window should confirm that this was not a lucky slice
+- for combat specifically, the post-fix clean slice has now repeated strongly enough that more hand-tuning would likely be diminishing-return work unless fresh evidence regresses
+- readiness synthesis outcome:
+  - the first plausible live whitelist is still `combat:llm_required` only
+  - however, current canonical readiness still does not clear even combat-only live, because the broader since-revision `combat:llm_required` class summary still contains historical quality warnings (`missing_survival_line`, `missing_lethal_line`, older `missing_tradeoff` / `empty_reason`)
+  - `map:llm_required` is behind combat by a larger margin: the latest run has `0` called `map:llm_required` fresh samples, so it is blocked first by missing fresh evidence, then by unresolved quality readiness
+  - this means the next honest step is not more combat wording tweaks; it is one clean promotion-quality combat evidence window plus separate fresh `map` evidence before any live-enable plan can be justified
 
 The permanent mission is to build an agent scaffold system that lets a zero-experience LLM agent progressively unlock and express its full strategic potential through real play, structured perception, memory, candidate futures, deliberation, replay, prediction-error learning, and guarded improvement.
 
