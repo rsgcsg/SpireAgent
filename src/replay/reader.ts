@@ -137,6 +137,20 @@ export interface ReplayFreshShadowSlices {
   sinceLatestRevision: ReplayShadowSliceStats;
 }
 
+export interface ReplayFocusedShadowSlice {
+  label: string;
+  decisionClass: string;
+  revisionTag?: string;
+  plannedShadowCalls?: number;
+  transitionIds: string[];
+  ticks: number[];
+  stats: ReplayShadowSliceStats;
+}
+
+export interface ReplayFocusedShadowSlices {
+  combatLiveEligibleFresh: ReplayFocusedShadowSlice;
+}
+
 export interface ReplayConsolidationProposalSurface {
   proposals: number;
   fromProposalLog: number;
@@ -410,6 +424,12 @@ export function buildReplayFreshShadowSlices(transitions: TransitionRecord[]): R
         : shadowTransitions,
       latestRevisionTag
     )
+  };
+}
+
+export function buildReplayFocusedShadowSlices(transitions: TransitionRecord[]): ReplayFocusedShadowSlices {
+  return {
+    combatLiveEligibleFresh: buildReplayFocusedShadowSlice(transitions, "combat:llm_required")
   };
 }
 
@@ -767,6 +787,10 @@ export function formatReplayFreshShadowSlices(slices: ReplayFreshShadowSlices): 
   ].join(" | ");
 }
 
+export function formatReplayFocusedShadowSlices(slices: ReplayFocusedShadowSlices): string {
+  return [formatReplayFocusedShadowSlice(slices.combatLiveEligibleFresh)].join(" | ");
+}
+
 export function formatReplayShadowSliceStats(stats: ReplayShadowSliceStats): string {
   return [
     `${stats.label}`,
@@ -810,6 +834,18 @@ export function formatReplayShadowSliceStats(stats: ReplayShadowSliceStats): str
     `thinReasons=${JSON.stringify(stats.reasonQualityNoteCounts)}`,
     `gate=${stats.gate.status}`,
     `reasons=${JSON.stringify(stats.gate.reasons)}`
+  ].join(" ");
+}
+
+export function formatReplayFocusedShadowSlice(slice: ReplayFocusedShadowSlice): string {
+  return [
+    slice.label,
+    `decisionClass=${slice.decisionClass}`,
+    `revision=${slice.revisionTag ?? "unversioned"}`,
+    `plannedShadowCalls=${slice.plannedShadowCalls ?? "unknown"}`,
+    `samples=${slice.transitionIds.length}`,
+    `ids=${JSON.stringify(slice.transitionIds)}`,
+    formatReplayShadowSliceStats(slice.stats)
   ].join(" ");
 }
 
@@ -913,6 +949,30 @@ function latestShadowRevisionTag(transitions: TransitionRecord[]): string | unde
   return undefined;
 }
 
+function buildReplayFocusedShadowSlice(
+  transitions: TransitionRecord[],
+  decisionClass: string
+): ReplayFocusedShadowSlice {
+  const latestMatching = [...transitions].reverse().find((transition) => isFocusedShadowSliceTransition(transition, decisionClass));
+  const revisionTag = latestMatching ? shadowRevisionTag(latestMatching) : latestShadowRevisionTag(transitions);
+  const plannedShadowCalls = latestMatching ? workspacePlannedShadowCalls(latestMatching) : undefined;
+  const filtered = transitions.filter((transition) =>
+    isFocusedShadowSliceTransition(transition, decisionClass) &&
+    (revisionTag ? shadowRevisionTag(transition) === revisionTag : true) &&
+    (plannedShadowCalls !== undefined ? workspacePlannedShadowCalls(transition) === plannedShadowCalls : true)
+  );
+  const window = filtered.slice(-5);
+  return {
+    label: `${decisionClass}:fresh_live_eligible`,
+    decisionClass,
+    revisionTag,
+    plannedShadowCalls,
+    transitionIds: window.map((transition) => transition.transitionId),
+    ticks: window.map((transition) => transition.tick),
+    stats: buildReplayShadowSliceStats(`${decisionClass}:fresh_live_eligible`, window, revisionTag)
+  };
+}
+
 function shadowRevisionTag(transition: TransitionRecord): string | undefined {
   if (isRecord(transition.shadowWorkspaceDecision) && typeof transition.shadowWorkspaceDecision.revisionTag === "string") {
     return transition.shadowWorkspaceDecision.revisionTag;
@@ -921,6 +981,30 @@ function shadowRevisionTag(transition: TransitionRecord): string | undefined {
     return transition.workspaceComparison.revisionTag;
   }
   return undefined;
+}
+
+function workspacePlannedShadowCalls(transition: TransitionRecord): number | undefined {
+  return isRecord(transition.workspaceComparison) &&
+      isRecord(transition.workspaceComparison.budget) &&
+      typeof transition.workspaceComparison.budget.maxShadowCalls === "number"
+    ? transition.workspaceComparison.budget.maxShadowCalls
+    : undefined;
+}
+
+function decisionClassForTransition(transition: TransitionRecord): string | undefined {
+  if (isRecord(transition.workspaceComparison) && typeof transition.workspaceComparison.decisionClass === "string") {
+    return transition.workspaceComparison.decisionClass;
+  }
+  if (isRecord(transition.shadowWorkspaceDecision) && typeof transition.shadowWorkspaceDecision.decisionClass === "string") {
+    return transition.shadowWorkspaceDecision.decisionClass;
+  }
+  return undefined;
+}
+
+function isFocusedShadowSliceTransition(transition: TransitionRecord, decisionClass: string): boolean {
+  if (!isRecord(transition.shadowWorkspaceDecision) || transition.shadowWorkspaceDecision.called !== true) return false;
+  if (!shadowLiveEligible(transition)) return false;
+  return decisionClassForTransition(transition) === decisionClass;
 }
 
 function workspaceGovernanceProfile(transition: TransitionRecord): string | undefined {

@@ -40,6 +40,66 @@
   - provider is not the blocker
   - current caution is mostly evidence synthesis and promotion depth, not a reopened combat regression
 
+## 2026-07-05 Focused Fresh Combat Slice For Rollout Judgment
+
+- To reduce evidence-retrieval churn, replay/eval/review now expose a focused rollout slice instead of forcing operators to infer from raw `last5`.
+- Canonical combat-only rollout slice:
+  - `combat:llm_required:fresh_live_eligible`
+- It filters to:
+  - `decisionClass="combat:llm_required"`
+  - `called=true`
+  - `liveEligible=true`
+  - same revision
+  - same `plannedShadowCalls`
+- This intentionally excludes trailing `combat:local_fast_combat` and `combat:forced_local` tails from the rollout judgment unit.
+- Latest focused slice on `run-mr71izvf-roz0yp`:
+  - samples=5
+  - transitions:
+    - `transition-000045-agent-mr7dj2e4-0txyci`
+    - `transition-000050-agent-mr7dqa5v-c5tx6x`
+    - `transition-000053-agent-mr7dyyfy-ylbli2`
+    - `transition-000055-agent-mr7dzyc1-3ahlwm`
+    - `transition-000061-agent-mr7ea81s-rnm5rs`
+  - `called=5`, `liveEligibleCalled=5`, `valid=5`, `liveEligibleValid=5`
+  - `invalid=0`, `liveEligibleInvalid=0`, `error=0`, `liveEligibleError=0`
+  - `failureBucket={"none":5}`
+  - `finishReason={"stop":5}`
+  - `outputCapHits=0`
+  - `thinReasons={"missing_tradeoff":1}`
+- Operational interpretation:
+  - provider and recovery are currently clean on the combat-only evidence unit that matters
+  - raw trailing windows like `last5` are still useful for situational debugging, but not for first-whitelist rollout judgment
+  - this does not broaden authorization: `map`, `card_reward`, and other non-combat classes remain outside the first live whitelist
+
+## 2026-07-05 Slightly More Aggressive Combat-Only Continuation
+
+- Ran one slightly more aggressive but still narrow rollout window:
+  - same whitelist: `combat:llm_required`
+  - same temporary-env additive mode
+  - same active bridge responder
+  - no provider/recovery/candidate/scoring/fallback/validation/execution changes
+- Fresh additive combat transitions:
+  - `transition-000053-agent-mr7dyb2f-txe4z9`
+    - reason: `Push heavier damage now, but it leaves the 30 incoming mostly unanswered.`
+    - `failureBucket=none`, `finishReason=stop`, `outputCapHit=false`
+  - `transition-000055-agent-mr7dzyc1-3ahlwm`
+    - reason: `Take the free chip now, but it still leaves most of the 30 incoming unanswered.`
+    - `failureBucket=none`, `finishReason=stop`, `outputCapHit=false`
+- These were followed by local tail transitions:
+  - `transition-000056-agent-mr7e03eg-kdwmxu` (`combat:local_fast_combat`)
+  - `transition-000057-agent-mr7e03p9-l5g8lo` (`combat:local_fast_combat`)
+  - `transition-000058-agent-mr7e03xf-0cr4e7` (`combat:local_fast_combat`)
+  - `transition-000059-agent-mr7e049f-0cmjlr` (`combat:forced_local`)
+- Replay/eval interpretation:
+  - `last20`: called=16, liveEligibleCalled=7, valid=16, liveEligibleValid=7, invalid=0, error=0
+  - `failureBucket={"none":16}`, `finishReason={"stop":16}`, `outputCapHits=0`
+  - `reasonQuality={"adequate":12,"thin":4}`
+  - `last5` looks mixed, but only one of those five transitions is fresh live-eligible combat (`transition-000055-agent-mr7dzyc1-3ahlwm`)
+- Honest interpretation:
+  - this is not a provider wobble
+  - this is not a new additive-combat regression
+  - it is another example of why combat rollout judgment should stay centered on the fresh `liveEligible combat` slice rather than the raw trailing `last5`
+
 ## 2026-07-05 Narrow No-Progress Guard For Unknown Checkpoints
 
 - This was a runtime safety cleanup, not a live-readiness feature expansion.

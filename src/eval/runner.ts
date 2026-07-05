@@ -8,10 +8,12 @@ import { normalizeGameState } from "../agent/state.js";
 import { agentRoot, isRecord } from "../agent/utils.js";
 import {
   buildReplayConsolidationProposalSurface,
+  buildReplayFocusedShadowSlices,
   buildReplayFreshShadowSlices,
   readConsolidationProposals,
   resolveRunDir,
   type ReplayConsolidationProposalSurface,
+  type ReplayFocusedShadowSlices,
   type ReplayFreshShadowSlices,
   type ReplayShadowSliceStats
 } from "../replay/reader.js";
@@ -212,6 +214,7 @@ export interface EvalWorkspaceCoverage {
     structuredPromptOnlyDefaultAllowed: false;
   };
   freshSlices?: ReplayFreshShadowSlices;
+  focusedFreshSlices?: ReplayFocusedShadowSlices;
   skipped: number;
   unavailable: number;
   rates: Record<string, number>;
@@ -405,6 +408,7 @@ export function evaluateRun(runIdOrPath?: string): EvalReport {
     .map((line) => line.transition)
     .filter((transition): transition is TransitionRecord => Boolean(transition));
   workspaceCoverage.freshSlices = buildReplayFreshShadowSlices(validTransitions);
+  workspaceCoverage.focusedFreshSlices = buildReplayFocusedShadowSlices(validTransitions);
   const workspaceDecisionClassQuality = buildWorkspaceDecisionClassQuality(validTransitions);
   const p8LiveReadinessAssessment = assessP8LiveReadiness(
     workspaceCoverage.freshSlices?.sinceLatestRevision ?? emptyReplayShadowSlice("sinceLatestRevision"),

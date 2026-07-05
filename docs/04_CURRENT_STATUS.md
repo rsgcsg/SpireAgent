@@ -132,6 +132,54 @@ The active no-go reason is now CandidateFuture/reason-quality readiness:
     - `liveEligibleInvalid=0`, `liveEligibleError=0`
     - `failureBucket={"none":4}`, `finishReason={"stop":4}`, `outputCapHits=0`
   - honest read: this is another clean fresh combat slice under the same rollout rules, but top-level readiness is still conservative because promotion evidence is being judged class-wide rather than only from this narrow continuation
+- slightly more aggressive controlled continuation was then run under the same constraints (`combat:llm_required` only, manual flag, active bridge responder, temporary env only):
+  - fresh additive combat transitions:
+    - `transition-000053-agent-mr7dyb2f-txe4z9`
+      - reason: `Push heavier damage now, but it leaves the 30 incoming mostly unanswered.`
+      - `failureBucket=none`, `finishReason=stop`, `outputCapHit=false`
+    - `transition-000055-agent-mr7dzyc1-3ahlwm`
+      - reason: `Take the free chip now, but it still leaves most of the 30 incoming unanswered.`
+      - `failureBucket=none`, `finishReason=stop`, `outputCapHit=false`
+  - both remained inside `combat:llm_required`, both executed cleanly, and neither introduced review signals
+  - replay after the window:
+    - `last20`: called=16, liveEligibleCalled=7, valid=16, liveEligibleValid=7, invalid=0, error=0
+    - `failureBucket={"none":16}`, `finishReason={"stop":16}`, `outputCapHits=0`
+    - `reasonQuality={"adequate":12,"thin":4}`
+  - important slice read:
+    - `last5` looks mixed again, but only one of those five transitions is fresh live-eligible combat (`transition-000055-agent-mr7dzyc1-3ahlwm`)
+    - the trailing tail is `combat:local_fast_combat` / `combat:forced_local`, so it should not be used to downgrade the combat-only rollout judgment
+  - honest read:
+    - provider remains clean
+    - fresh live-eligible combat evidence remains healthy
+    - the remaining conservatism is still mostly evidence-window synthesis, not a new combat-provider regression
+- evidence retrieval has now been narrowed to the unit that actually matters for combat-only rollout judgment:
+  - replay/eval/review now expose `Focused fresh slices`
+  - canonical slice for current combat rollout judgment is `combat:llm_required:fresh_live_eligible`
+  - it filters to:
+    - same `decisionClass`
+    - `called=true`
+    - `liveEligible=true`
+    - same revision
+    - same `plannedShadowCalls`
+  - this prevents trailing `combat:local_fast_combat` / `combat:forced_local` transitions from polluting rollout judgment
+- latest focused combat slice on current revision and same budget:
+  - run: `run-mr71izvf-roz0yp`
+  - slice: `combat:llm_required:fresh_live_eligible`
+  - samples=5
+  - transitions:
+    - `transition-000045-agent-mr7dj2e4-0txyci`
+    - `transition-000050-agent-mr7dqa5v-c5tx6x`
+    - `transition-000053-agent-mr7dyyfy-ylbli2`
+    - `transition-000055-agent-mr7dzyc1-3ahlwm`
+    - `transition-000061-agent-mr7ea81s-rnm5rs`
+  - `called=5`, `liveEligibleCalled=5`, `valid=5`, `liveEligibleValid=5`
+  - `invalid=0`, `liveEligibleInvalid=0`, `error=0`, `liveEligibleError=0`
+  - `failureBucket={"none":5}`, `finishReason={"stop":5}`, `outputCapHits=0`
+  - `thinReasons={"missing_tradeoff":1}`
+  - honest read:
+    - provider/recovery is currently clean on the evidence unit that matters for combat-only rollout
+    - combat-only acceleration should now be judged from this focused slice, not raw `last5`
+    - broad P8.5 is still no-go because this does not authorize `map`, `card_reward`, or any non-combat class
 - latest blocker audit for `combat_candidate_future_quality_not_clear`:
   - the active `missing_survival_line` that trips the class-level combat future-quality gate comes from `transition-000026-agent-mr6f5b3k-fx42ij`
   - that transition was `called=false`, `outcome=skipped`, `budget.status=call_budget_exceeded`, so it is not fresh called live-eligible evidence
@@ -234,7 +282,15 @@ Continue P8.5 combat-only live rollout under `P8_5_LIVE_ROLLOUT_POLICY.md`:
 - keep the first whitelist narrow: `combat:llm_required` only, with legacy fallback preserved and execution unchanged
 - use temporary process env only for approved rollout windows
 - keep judging readiness on the fresh `combat:llm_required` live-eligible slice rather than `local_fast_combat` or forced-local tails
-- if the next same-budget combat-only continuation stays this clean, combat-only can continue accelerating under the rollout policy; `map` / `card_reward` still remain out of the first whitelist
+- combat-only can continue accelerating under the rollout policy, but keep the observation unit narrow: fresh `liveEligible combat` first, broader class aggregate second
+- replay/eval/review now expose a focused evidence surface for this: `Focused fresh slices -> combat:llm_required:fresh_live_eligible`
+  - it is same-revision, same-budget, called/live-eligible only, and excludes trailing `local_fast_combat` / `forced_local` tails
+- latest focused combat slice is currently clean:
+  - samples=5
+  - valid=5, liveEligibleValid=5, invalid=0, error=0
+  - `failureBucket={"none":5}`, `finishReason={"stop":5}`, `outputCapHits=0`
+  - `thinReasons={}` on the focused slice
+- `map` / `card_reward` still remain out of the first whitelist
 - inspect missing survival/tradeoff/lethal cue attribution before another combat rollout window
 - readiness attribution / evidence-window semantics fix is now in place
 - the fresh `missing_survival_line` re-audit is now complete on the current revision

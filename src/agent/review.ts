@@ -5,6 +5,7 @@ import type { MemoryManager } from "./memory.js";
 import { agentRoot, isRecord } from "./utils.js";
 import {
   buildReplayConsolidationProposalSurface,
+  buildReplayFocusedShadowSlices,
   buildReplayFreshShadowSlices,
   readConsolidationProposals
 } from "../replay/reader.js";
@@ -269,6 +270,7 @@ function summarizeCurrentRunCognitiveCoverage(runId: string): JsonRecord {
   const consolidation = count((transition) => isRecord(transition.consolidation));
   const proposalSurface = buildReplayConsolidationProposalSurface(readConsolidationProposals(path.dirname(transitionsPath), transitions));
   const freshSlices = buildReplayFreshShadowSlices(transitions as any);
+  const focusedFreshSlices = buildReplayFocusedShadowSlices(transitions as any);
   const workspaceDecisionClassQuality = buildWorkspaceDecisionClassQuality(transitions as any);
   const p8LiveReadinessAssessment = assessP8LiveReadiness(freshSlices.sinceLatestRevision, workspaceDecisionClassQuality);
   const consolidationStatusCounts = transitions.reduce<Record<string, number>>((counts, transition) => {
@@ -333,6 +335,7 @@ function summarizeCurrentRunCognitiveCoverage(runId: string): JsonRecord {
       transitions
     }),
     freshSlices,
+    focusedFreshSlices,
     workspaceDecisionClassQuality,
     p8LiveReadinessAssessment,
     averageWorkspaceInformationPreservation:

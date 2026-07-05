@@ -38,6 +38,7 @@ import { scoreCandidates } from "./scoring.js";
 import {
   buildReplayCognitiveCoverage,
   buildReplayConsolidationProposalSurface,
+  buildReplayFocusedShadowSlices,
   buildReplayShadowSliceStats,
   buildReplayTimeline,
   readConsolidationProposals,
@@ -3114,6 +3115,57 @@ try {
   assert.deepEqual(cleanCombatAssessment.recommendedFirstLiveWhitelist, ["combat:llm_required"]);
   assert.ok(cleanCombatAssessment.blockedDecisionClasses.includes("card_reward:llm_required"));
   assert.ok(cleanCombatAssessment.blockedDecisionClasses.includes("map:llm_required"));
+
+  const focusedFreshSlices = buildReplayFocusedShadowSlices([
+    {
+      transitionId: "transition-local-tail",
+      tick: 1,
+      workspaceComparison: { decisionClass: "combat:local_fast_combat", budget: { maxShadowCalls: 4 } },
+      shadowWorkspaceDecision: { called: false, liveEligibleClass: false, revisionTag: "rev-a", outcome: "not_needed" }
+    },
+    {
+      transitionId: "transition-combat-a",
+      tick: 2,
+      workspaceComparison: { decisionClass: "combat:llm_required", budget: { maxShadowCalls: 4 } },
+      shadowWorkspaceDecision: {
+        called: true,
+        liveEligibleClass: true,
+        revisionTag: "rev-a",
+        outcome: "valid",
+        reasonQuality: "adequate",
+        failureBucket: "none",
+        providerFinishReason: "stop"
+      }
+    },
+    {
+      transitionId: "transition-combat-b",
+      tick: 3,
+      workspaceComparison: { decisionClass: "combat:llm_required", budget: { maxShadowCalls: 4 } },
+      shadowWorkspaceDecision: {
+        called: true,
+        liveEligibleClass: true,
+        revisionTag: "rev-a",
+        outcome: "valid",
+        reasonQuality: "adequate",
+        failureBucket: "none",
+        providerFinishReason: "stop"
+      }
+    },
+    {
+      transitionId: "transition-forced-tail",
+      tick: 4,
+      workspaceComparison: { decisionClass: "combat:forced_local", budget: { maxShadowCalls: 4 } },
+      shadowWorkspaceDecision: { called: false, liveEligibleClass: false, revisionTag: "rev-a", outcome: "not_needed" }
+    }
+  ] as unknown as TransitionRecord[]);
+  assert.deepEqual(
+    focusedFreshSlices.combatLiveEligibleFresh.transitionIds,
+    ["transition-combat-a", "transition-combat-b"]
+  );
+  assert.equal(focusedFreshSlices.combatLiveEligibleFresh.stats.called, 2);
+  assert.equal(focusedFreshSlices.combatLiveEligibleFresh.stats.liveEligibleCalled, 2);
+  assert.equal(focusedFreshSlices.combatLiveEligibleFresh.stats.valid, 2);
+  assert.equal(focusedFreshSlices.combatLiveEligibleFresh.stats.reasonQualityCounts.adequate, 2);
 
   assert.equal(evalReport.summary.predictionErrorCoverage.predictionError, 1);
   assert.equal(evalReport.summary.predictionErrorCoverage.withTypedChecks, 1);

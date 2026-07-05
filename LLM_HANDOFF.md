@@ -218,6 +218,31 @@ Latest narrow P8.5 readiness update:
   - smoke regression added in `src/agent/smoke.ts`
   - `tsc`, `agent:smoke`, and `check` all pass
   - replay/eval/review remain unchanged on `run-mr71izvf-roz0yp` until we collect fresh runtime evidence on the patched revision
+- newest evidence-surface improvement:
+  - replay/eval/review now expose `Focused fresh slices`
+  - use `combat:llm_required:fresh_live_eligible` for combat-only rollout judgment instead of raw `last5`
+  - it filters to same revision + same `plannedShadowCalls` + `called=true` + `liveEligible=true`
+  - this is specifically to stop trailing `local_fast_combat` / `forced_local` tails from muddying combat-only rollout reads
+- latest focused combat slice:
+  - run: `run-mr71izvf-roz0yp`
+  - slice: `combat:llm_required:fresh_live_eligible`
+  - samples=5
+  - ids:
+    - `transition-000045-agent-mr7dj2e4-0txyci`
+    - `transition-000050-agent-mr7dqa5v-c5tx6x`
+    - `transition-000053-agent-mr7dyyfy-ylbli2`
+    - `transition-000055-agent-mr7dzyc1-3ahlwm`
+    - `transition-000061-agent-mr7ea81s-rnm5rs`
+  - `called=5`, `liveEligibleCalled=5`, `valid=5`, `liveEligibleValid=5`
+  - `invalid=0`, `liveEligibleInvalid=0`, `error=0`, `liveEligibleError=0`
+  - `failureBucket={"none":5}`, `finishReason={"stop":5}`, `outputCapHits=0`
+  - `thinReasons={"missing_tradeoff":1}`
+- honest operational read:
+  - combat-only acceleration is healthy on the right evidence unit
+  - provider is not the blocker
+  - broad P8.5 remains no-go
+  - do not expand whitelist beyond `combat:llm_required`
+  - next rollout decisions should key off the focused combat slice, not generic `last5`
   - next step is now very narrow and concrete: rerun one same-budget combat-only additive window and check whether a fresh `transition-000027`-style `missing_survival_line` disappears
 - that fresh retest has now been collected on the patched revision:
   - run: `run-mr71izvf-roz0yp`
@@ -280,6 +305,31 @@ Latest narrow P8.5 readiness update:
     - do not let `local_fast_combat` / forced-local tails drive rollout judgment
     - broad P8.5 is still no-go
     - `map` / `card_reward` still remain out of the first whitelist
+- one slightly more aggressive continuation was then run under the same narrow policy:
+  - fresh additive combat transitions:
+    - `transition-000053-agent-mr7dyb2f-txe4z9`
+    - `transition-000055-agent-mr7dzyc1-3ahlwm`
+  - persisted reasons:
+    - `Push heavier damage now, but it leaves the 30 incoming mostly unanswered.`
+    - `Take the free chip now, but it still leaves most of the 30 incoming unanswered.`
+  - both were provider-clean: `failureBucket=none`, `finishReason=stop`, `outputCapHit=false`
+  - both stayed within `combat:llm_required`; no whitelist expansion happened
+  - the trailing `last5` slice is noisy again only because the run then rolled into:
+    - `combat:local_fast_combat`
+    - `combat:forced_local`
+  - replay/eval therefore need to be read carefully:
+    - `last20` remains the healthier combat evidence surface here: called=16, liveEligibleCalled=7, valid=16, liveEligibleValid=7, invalid=0, error=0
+    - `last5` should not be over-read as a combat-live blocker because only one transition in that slice is fresh live-eligible combat
+- current honest posture:
+  - combat-only can keep accelerating under the rollout policy
+  - provider is still not the blocker
+  - broad P8.5 remains no-go
+  - `map` / `card_reward` still do not belong in the first whitelist
+- new evidence-reading rule is now partially institutionalized in tooling:
+  - replay prints `Focused fresh slices`
+  - the important one for current rollout is `combat:llm_required:fresh_live_eligible`
+  - it is same-revision, same-budget, called/live-eligible only, so it avoids false wobble from trailing `local_fast_combat` / `forced_local` transitions
+  - current focused combat slice is clean: samples=5, valid=5, invalid=0, error=0, `failureBucket={"none":5}`, `finishReason={"stop":5}`, `outputCapHits=0`, `thinReasons={}`
 - fresh combat slice:
   - called=4
   - liveEligibleCalled=3
