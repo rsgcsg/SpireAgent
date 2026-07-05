@@ -71,6 +71,44 @@
   - raw trailing windows like `last5` are still useful for situational debugging, but not for first-whitelist rollout judgment
   - this does not broaden authorization: `map`, `card_reward`, and other non-combat classes remain outside the first live whitelist
 
+## 2026-07-05 Additional Narrow Combat-Only Promotion Window
+
+- Ran another narrow temporary-env combat-only additive window under the same constraints:
+  - whitelist still exactly `combat:llm_required`
+  - active bridge responder
+  - no provider/recovery change
+  - no candidate/scoring/fallback/validation/execution change
+- New fresh live-eligible combat transitions:
+  - `transition-000069-agent-mr7r6hxy-jswnps`
+    - reason: `Draw now to find block, but it delays immediate mitigation against the 20 incoming.`
+  - `transition-000070-agent-mr7r782s-sgiz56`
+    - reason: `Scale damage now, but it spends the turn without adding block into the 20 incoming.`
+  - `transition-000072-agent-mr7r9tzc-kv2xer`
+    - reason: `Push damage now, but it still leaves the 22 incoming largely unanswered.`
+  - `transition-000073-agent-mr7ranf5-lhmmrk`
+    - reason: `Chip damage now, but it still leaves the 22 incoming mostly unanswered.`
+- Fresh replay results:
+  - raw `last5`: `called=4`, `liveEligibleCalled=4`, `valid=4`, `liveEligibleValid=4`
+  - `reasonQuality={"adequate":4}`
+  - `failureBucket={"none":4}`, `finishReason={"stop":4}`, `outputCapHits=0`
+- Updated focused rollout slice:
+  - `combat:llm_required:fresh_live_eligible`
+  - ids:
+    - `transition-000061-agent-mr7ea81s-rnm5rs`
+    - `transition-000069-agent-mr7r6hxy-jswnps`
+    - `transition-000070-agent-mr7r782s-sgiz56`
+    - `transition-000072-agent-mr7r9tzc-kv2xer`
+    - `transition-000073-agent-mr7ranf5-lhmmrk`
+  - `called=5`, `liveEligibleCalled=5`, `valid=5`, `liveEligibleValid=5`
+  - `invalid=0`, `liveEligibleInvalid=0`, `error=0`, `liveEligibleError=0`
+  - `failureBucket={"none":5}`, `finishReason={"stop":5}`, `outputCapHits=0`
+  - `thinReasons={"missing_tradeoff":1}`
+- Honest interpretation:
+  - provider is still not the blocker
+  - the focused combat-only evidence surface is now promotion-usable
+  - top-level broad readiness still says `NOT_READY_CANDIDATE_FUTURE_QUALITY`, but that remains a broader class-level read and does not authorize broad P8.5
+  - this window is enough to justify entering a more formal combat-only rollout step, while still keeping the whitelist narrow and additive-only
+
 ## 2026-07-05 Slightly More Aggressive Combat-Only Continuation
 
 - Ran one slightly more aggressive but still narrow rollout window:

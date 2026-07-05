@@ -243,6 +243,26 @@ Latest narrow P8.5 readiness update:
   - broad P8.5 remains no-go
   - do not expand whitelist beyond `combat:llm_required`
   - next rollout decisions should key off the focused combat slice, not generic `last5`
+- newest narrow continuation strengthened that conclusion:
+  - additional fresh live-eligible combat transitions:
+    - `transition-000069-agent-mr7r6hxy-jswnps`
+    - `transition-000070-agent-mr7r782s-sgiz56`
+    - `transition-000072-agent-mr7r9tzc-kv2xer`
+    - `transition-000073-agent-mr7ranf5-lhmmrk`
+  - latest focused slice `combat:llm_required:fresh_live_eligible` is now:
+    - `called=5`, `liveEligibleCalled=5`, `valid=5`, `liveEligibleValid=5`
+    - `invalid=0`, `liveEligibleInvalid=0`, `error=0`, `liveEligibleError=0`
+    - `failureBucket={"none":5}`, `finishReason={"stop":5}`, `outputCapHits=0`
+    - `thinReasons={"missing_tradeoff":1}`
+  - latest raw `last5` also came back clean on the same narrow window:
+    - `called=4`, `liveEligibleCalled=4`, `valid=4`, `liveEligibleValid=4`
+    - `reasonQuality={"adequate":4}`
+    - `failureBucket={"none":4}`, `finishReason={"stop":4}`, `outputCapHits=0`
+- honest next-step read:
+  - combat-only additive is now strong enough to move into a more formal combat-only rollout step
+  - broad P8.5 is still no-go
+  - keep first whitelist exactly `combat:llm_required`
+  - do not expand to `map`, `card_reward`, or any non-combat class
   - next step is now very narrow and concrete: rerun one same-budget combat-only additive window and check whether a fresh `transition-000027`-style `missing_survival_line` disappears
 - that fresh retest has now been collected on the patched revision:
   - run: `run-mr71izvf-roz0yp`

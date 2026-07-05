@@ -180,6 +180,31 @@ The active no-go reason is now CandidateFuture/reason-quality readiness:
     - provider/recovery is currently clean on the evidence unit that matters for combat-only rollout
     - combat-only acceleration should now be judged from this focused slice, not raw `last5`
     - broad P8.5 is still no-go because this does not authorize `map`, `card_reward`, or any non-combat class
+- additional narrow same-budget combat-only additive continuation stayed clean:
+  - new fresh live-eligible transitions:
+    - `transition-000069-agent-mr7r6hxy-jswnps`
+    - `transition-000070-agent-mr7r782s-sgiz56`
+    - `transition-000072-agent-mr7r9tzc-kv2xer`
+    - `transition-000073-agent-mr7ranf5-lhmmrk`
+  - latest focused slice `combat:llm_required:fresh_live_eligible` is now:
+    - ids:
+      - `transition-000061-agent-mr7ea81s-rnm5rs`
+      - `transition-000069-agent-mr7r6hxy-jswnps`
+      - `transition-000070-agent-mr7r782s-sgiz56`
+      - `transition-000072-agent-mr7r9tzc-kv2xer`
+      - `transition-000073-agent-mr7ranf5-lhmmrk`
+    - `called=5`, `liveEligibleCalled=5`, `valid=5`, `liveEligibleValid=5`
+    - `invalid=0`, `liveEligibleInvalid=0`, `error=0`, `liveEligibleError=0`
+    - `failureBucket={"none":5}`, `finishReason={"stop":5}`, `outputCapHits=0`
+    - `thinReasons={"missing_tradeoff":1}`
+  - latest raw `last5` is also now clean enough to match the focused read:
+    - `called=4`, `liveEligibleCalled=4`, `valid=4`, `liveEligibleValid=4`
+    - `reasonQuality={"adequate":4}`
+    - `failureBucket={"none":4}`, `finishReason={"stop":4}`, `outputCapHits=0`
+  - honest read:
+    - combat-only additive evidence is now strong enough to move from "near-ready" to "ready to enter a more formal combat-only rollout step"
+    - broad P8.5 remains no-go
+    - first whitelist still must remain only `combat:llm_required`
 - latest blocker audit for `combat_candidate_future_quality_not_clear`:
   - the active `missing_survival_line` that trips the class-level combat future-quality gate comes from `transition-000026-agent-mr6f5b3k-fx42ij`
   - that transition was `called=false`, `outcome=skipped`, `budget.status=call_budget_exceeded`, so it is not fresh called live-eligible evidence
