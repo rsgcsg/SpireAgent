@@ -251,6 +251,21 @@ Continue P8.5 combat-only live rollout under `P8_5_LIVE_ROLLOUT_POLICY.md`:
   - replay/eval still read the full run as `READY_FOR_P8_5_LIVE_COMBAT_ONLY`
   - nuance: after those two live calls, the fight naturally fell back into `local_fast_combat`, so `last5` is no longer a clean combat-live slice even though the full same-revision window remains clean
   - honest read: this strengthens combat-only evidence, but if we want a cleaner promotion slice than `last20`, the next runtime window should stop earlier right after the next 1-2 live-eligible combat calls
+- newest early-stop promotion window:
+  - same run `run-mr71izvf-roz0yp`, now at `act=3 floor=16`
+  - this time the window was cut much cleaner: `last5` now contains 4 live-eligible called `combat:llm_required` decisions plus 1 preceding local-fast transition
+  - replay `last5` is now:
+    - called=`4`, liveEligibleCalled=`4`, valid=`4`, liveEligibleValid=`4`
+    - invalid=`0`, error=`0`
+    - `failureBucket=none`, `finishReason=stop`, `outputCapHits=0`
+    - `reasonQuality={"adequate":3,"thin":1}`
+    - `thinReasons={"missing_tradeoff":1}`
+  - the four fresh called combat reasons were:
+    - `Push damage now, but it still leaves a block deficit.`
+    - `Push damage now, but it still leaves a block deficit.`
+    - `Use setup now, but it delays immediate block.` (`thin`)
+    - `Add scaling now, but it spends tempo against this attack.`
+  - honest read: this is the cleanest current promotion slice for combat-only additive rollout; provider remains clean and the only remaining quality wobble in the slice is one setup-oriented `missing_tradeoff` call
 - current honest read is now narrower:
   - historical `missing_survival_line` still matters as review telemetry and should not be erased
   - current fresh called/live-eligible combat evidence points away from active survival-cue loss and provider instability

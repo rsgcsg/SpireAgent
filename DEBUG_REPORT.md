@@ -226,6 +226,46 @@
   - combat-only rollout evidence is stronger than before
   - if we want a cleaner promotion-quality slice than the current `last20`, the next narrow runtime window should stop immediately after the next 1-2 live-eligible combat calls
 
+## 2026-07-05 Early-Stop Promotion Window On `run-mr71izvf-roz0yp`
+
+- Ran another same-budget combat-only additive window after repositioning to a fresh high-pressure combat (`act=3 floor=16`, `Test Subject #C8`).
+- This time the window was intentionally cut earlier to preserve a cleaner promotion slice.
+- Fresh called/live additive combat transitions:
+  - `transition-000022-agent-mr77u775-nx55b7`
+    - `All for One -> Test Subject #C8`
+    - reason: `Push damage now, but it still leaves a block deficit.`
+    - `reasonQuality=adequate`
+  - `transition-000023-agent-mr77uc8e-myim33`
+    - `Bolas -> Test Subject #C8`
+    - reason: `Push damage now, but it still leaves a block deficit.`
+    - `reasonQuality=adequate`
+  - `transition-000024-agent-mr77ufh3-ns9kpu`
+    - `Master of Strategy`
+    - reason: `Use setup now, but it delays immediate block.`
+    - `reasonQuality=thin`
+    - `reasonQualityNotes=["missing_tradeoff"]`
+  - `transition-000025-agent-mr77ultm-ekpp5v`
+    - `Panache`
+    - reason: `Add scaling now, but it spends tempo against this attack.`
+    - `reasonQuality=adequate`
+- All four transitions are:
+  - `decisionClass=combat:llm_required`
+  - `chosenBy="llm"`
+  - `outcome=valid`
+  - `failureBucket=none`
+  - `finishReason=stop`
+  - `outputCapHit=false`
+- Replay after this window:
+  - `run-mr71izvf-roz0yp`
+  - `Transitions=22`
+  - `last5`: called=`4`, liveEligibleCalled=`4`, valid=`4`, invalid=`0`, error=`0`
+  - `last5` is the cleanest current combat-only promotion slice
+- Honest interpretation:
+  - combat-only additive evidence is now materially stronger than before
+  - provider is still not the blocker
+  - the remaining wobble in the clean slice is narrow and specific: one setup-style reason still trips `missing_tradeoff`
+  - broad P8.5 still remains out of scope because this evidence says nothing new about `map` or `card_reward`
+
 ## 2026-07-05 Bridge-Responder Operational Root Cause And Corrected Tiny Live Window
 
 - Re-audited the repeated "silent runtime window" behavior after multiple additive combat attempts produced no new transitions.

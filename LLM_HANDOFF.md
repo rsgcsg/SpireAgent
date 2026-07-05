@@ -179,6 +179,20 @@ Latest narrow P8.5 readiness update:
   - not more persistence debugging for this window
   - instead, keep rollout judgment focused on evidence scope: combat-only is supported; `map` / `card_reward` still are not
   - if a cleaner promotion slice than `last20` is desired, stop the next narrow runtime window immediately after the next 1-2 live-eligible combat calls rather than letting later local-fast transitions dilute `last5`
+- that cleaner slice now exists:
+  - same run `run-mr71izvf-roz0yp`, later repositioned to `act=3 floor=16`
+  - latest `last5` now contains 4 live-eligible called `combat:llm_required` decisions and only 1 preceding local-fast transition
+  - replay `last5` is now:
+    - called=`4`, liveEligibleCalled=`4`, valid=`4`, invalid=`0`, error=`0`
+    - `failureBucket=none`, `finishReason=stop`, `outputCapHits=0`
+    - `reasonQuality={"adequate":3,"thin":1}`
+    - `thinReasons={"missing_tradeoff":1}`
+  - the 4 fresh combat reasons are:
+    - `Push damage now, but it still leaves a block deficit.`
+    - `Push damage now, but it still leaves a block deficit.`
+    - `Use setup now, but it delays immediate block.` (`thin`)
+    - `Add scaling now, but it spends tempo against this attack.`
+  - honest read: this is currently the cleanest combat-only promotion slice; provider is clean, live path stayed bounded, and the only remaining fresh quality wobble is one setup-oriented tradeoff miss
 - fresh promotion-quality combat window now clears the current combat-only shadow gate strongly enough to draft, but not execute, a constrained additive live-enable plan
 - latest run: `run-mr648yt5-h2h1dw`
 - fresh combat slice:
