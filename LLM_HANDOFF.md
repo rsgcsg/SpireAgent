@@ -117,10 +117,68 @@ Latest narrow P8.5 readiness update:
   - the same run also contains earlier non-live-eligible `missing_survival_line` warnings with the same attribution, so keep separating class-wide review smoke alarms from called/live-eligible rollout evidence
   - the new `end_turn` unknown checkpoint is `transition-000032-agent-mr6h2hek-umgnbj`, but it is `forced_local`, single-action, `energy=0`, and ends in an enemy-turn death tail with `hp=0`
   - because the user used manual `room boss` console positioning and reported post-death tail weirdness, this should currently be read as low-visibility / console-amplified runtime evidence, not as a provider or additive live-path regression
+- latest narrow fix:
+  - bounded combat futures now preserve survival cues more explicitly through a normalized `survivalLine`
+  - survival cue detection now recognizes current Chinese combat risk phrasing, reducing false `compression_lost` reads when the serialized future kept the signal in Chinese rather than English
+  - revision tag bumped to `2026-07-05-v5.1.7-survival-cue-preservation`
+  - this has now been exercised on a fresh run window, so we do have current-revision runtime evidence
+- newest fresh current-revision confirmation:
+  - run stays `run-mr6gnmo8-egk8sr`
+  - replay slice `since:2026-07-05-v5.1.7-survival-cue-preservation` now shows `called=8`, `liveEligibleCalled=2`, `valid=8`, `invalid=0`, `error=0`
+  - provider remained clean: `failureBucket=none`, `finishReason=stop`, `outputCapHits=0`
+  - the two fresh called/live-eligible combat transitions are:
+    - `transition-000267-agent-mr71482w-j3adut`
+    - `transition-000283-agent-mr717m6i-si8tfm`
+  - both are `reasonQuality=adequate`
+  - both have `candidateFutureReviewSignals={}`
+  - both have `candidateFutureCompleteness.completeEnough=3` and `shallowFutureCount=0`
+  - both preserve `survival_line` as `serialization_preserved`
+  - honest read: fresh called/live-eligible `missing_survival_line` is no longer reproducing on the new revision
+- operational rule for future testing:
+  - if console commands like `room boss` were used for positioning, say so at the time and treat that window as `console-assisted`
+  - post-death or post-boss stuck tails from `console-assisted` windows should be logged, but should not be treated as canonical live-path regressions until reproduced without console help
 - honest read:
   - this is not a provider failure
-  - it is not a reason to broaden whitelist
-  - it means the longer combat-only rollout step surfaced fresh quality debt that should be re-audited before claiming combat rollout is clean enough to accelerate
+  - it is not yet a reason to broaden whitelist
+  - it means the older survival-cue warning has been narrowed down to historical review telemetry, and the next blocker is promotion-evidence thickness rather than current survival-cue loss
+- newest same-budget combat-only additive continuation:
+  - continue reading `run-mr6gnmo8-egk8sr`, not the later menu-only run `run-mr71izvf-roz0yp`
+  - three new live-eligible `combat:llm_required` transitions were added:
+    - `transition-000304-agent-mr71hk3l-vvda8x`
+    - `transition-000309-agent-mr71i98z-7s34bu`
+    - `transition-000310-agent-mr71iw2i-qdbksc`
+  - all 3 are `chosenBy="llm"`, `outcome=valid`, `failureBucket=none`, `finishReason=stop`, `outputCapHit=false`
+  - all 3 have `reasonQuality=adequate`
+  - all 3 preserve `survival_line` and `tradeoff`, with `candidateFutureReviewSignals={}` and `shallowFutureCount=0`
+  - replay on `run-mr6gnmo8-egk8sr` now shows `last5: called=3, liveEligibleCalled=2, valid=3, invalid=0, error=0`
+  - the only thin reason in that `last5` slice is a forced-local line, not a live-eligible additive combat decision
+  - honest read: the newest combat continuation is clean, but the full-run readiness status still carries older same-revision live signals; next step should be another clean combat evidence window, not more provider or survival-line patching
+- corrected read on that continuation:
+  - the `act=2 floor=11` additive combat bridge window did persist after all, in `run-mr71izvf-roz0yp`
+  - that run is not menu-only; it now contains 10 transitions total and 8 `combat:llm_required`
+  - replay/eval/review can read it directly, and it comes back provider-clean with `READY_FOR_P8_5_LIVE_COMBAT_ONLY`
+  - the earlier "missing persisted artifacts" conclusion was an audit timing/read-path mistake, not a recorder bug
+  - important tail nuance: the run ends on a real `combat -> card_select` transition after `Hologram`, so it is canonical combat evidence but not evidence for broadening the first whitelist
+- newest same-budget continuation on that same run:
+  - `run-mr71izvf-roz0yp` later expanded to 18 transitions total
+  - first new transition was `card_select:local_recommended_llm_arbitrate` and was correctly blocked by the combat-only whitelist:
+    - `transition-000011-agent-mr72t8hf-yr4any`
+    - `fallbackReason=live_additive_decision_class_not_whitelisted`
+  - this confirms an important game-flow nuance the user flagged: combat can create in-combat card-pick screens, and those should stay out of the first whitelist
+  - two further additive live combat calls then landed cleanly:
+    - `transition-000018-agent-mr72tqfd-hhc785` / `Charge Battery`
+    - `transition-000019-agent-mr72tr6y-9ea5oy` / `Tesla Coil -> The Insatiable`
+  - both were provider-clean and had explicit tradeoff reasons:
+    - `Block now to cut incoming, but it slows damage or scaling.`
+    - `Push damage now, but it still leaves a block deficit.`
+  - replay/eval still read the full run as `READY_FOR_P8_5_LIVE_COMBAT_ONLY`
+  - nuance: after those two live calls, the fight naturally fell into `local_fast_combat`, so `last5` is no longer a clean combat-live slice even though the same-revision aggregate remains clean
+- next honest engineering step has narrowed again:
+  - not more provider tuning
+  - not more survival-line tuning
+  - not more persistence debugging for this window
+  - instead, keep rollout judgment focused on evidence scope: combat-only is supported; `map` / `card_reward` still are not
+  - if a cleaner promotion slice than `last20` is desired, stop the next narrow runtime window immediately after the next 1-2 live-eligible combat calls rather than letting later local-fast transitions dilute `last5`
 - fresh promotion-quality combat window now clears the current combat-only shadow gate strongly enough to draft, but not execute, a constrained additive live-enable plan
 - latest run: `run-mr648yt5-h2h1dw`
 - fresh combat slice:

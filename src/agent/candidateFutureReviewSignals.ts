@@ -157,7 +157,8 @@ export function analyzeReasonCueAttribution(
   };
 }
 
-const SURVIVAL_PATTERN = /surviv|survival|block|defend|mitigat|avoid damage|incoming damage|stabil/i;
+const SURVIVAL_PATTERN =
+  /surviv|survival|block|defend|mitigat|avoid damage|incoming damage|stabil|生死|保命|补防|格挡|挡血|减伤|承伤|掉血|扛伤|不保命/i;
 const LETHAL_PATTERN = /lethal|kill|finish|execute|dead this turn/i;
 const RESOURCE_PATTERN = /energy|cost|draw|discard|retain|exhaust|gold|hp|potion|resource/i;
 const CARD_REWARD_PATTERN = /deck|curve|archetype|synergy|scaling|draw|block|damage|thin|upgrade|engine/i;

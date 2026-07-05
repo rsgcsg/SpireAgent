@@ -74,6 +74,157 @@
   - do not call it an additive live-path execution regression
   - keep it as a runtime/program-risk candidate until reproduced without manual console positioning
   - for current rollout judgment, it reads more like a low-visibility forced-local death tail than a new combat-additive blocker
+- Narrow follow-up fix:
+  - bounded combat futures now try to emit an explicit normalized `survivalLine` from `player_hp_delta` expectations
+  - survival cue review patterns now recognize both English and Chinese combat-survival phrasing such as `生死`, `保命`, `补防`, and `挡血`
+  - this is deliberately narrow: no provider policy change, no live-path change, no candidate/scoring/execution change
+- Console-assisted interpretation rule for this debugging lane:
+  - if a test window used STS2 console positioning like `room boss`, record it as console-assisted evidence
+  - treat post-boss or post-death stuck tails in that window as suspicious-but-noncanonical until reproduced without console
+  - this is supported by outside context as well: community bug reports mention getting stuck after defeating a boss, and console guides explicitly frame the STS2 dev console as a tool for testing and breaking normal flow rather than a stable gameplay path
+
+## 2026-07-05 Fresh Revision Confirmation For Survival-Cue Preservation
+
+- Ran another short fresh combat window on the same current run `run-mr6gnmo8-egk8sr` after the `v5.1.7` survival-cue-preservation patch.
+- Important runtime nuance:
+  - terminal output still showed some legacy `fallbackReason=\"llm_unavailable\"`
+  - this is the legacy/live LLM path because `STS2_LLM_COMMAND` is unset in the normal runtime
+  - it is not a P8 shadow provider failure and should not be confused with DeepSeek shadow health
+- Replay now shows for `since:2026-07-05-v5.1.7-survival-cue-preservation`:
+  - called=8
+  - liveEligibleCalled=2
+  - valid=8
+  - invalid=0
+  - error=0
+  - `failureBucket={\"none\":8}`
+  - `finishReason={\"stop\":8}`
+  - `outputCapHits=0`
+- The two fresh called/live-eligible combat samples are:
+  - `transition-000267-agent-mr71482w-j3adut`
+  - `transition-000283-agent-mr717m6i-si8tfm`
+- Both samples show:
+  - `reasonQuality=adequate`
+  - `candidateFutureReviewSignals={}`
+  - `candidateFutureCompleteness.completeEnough=3`
+  - `shallowFutureCount=0`
+  - `candidateFutureCueAttribution.cues.survival_line = { original: true, serialized: true, source: \"serialization_preserved\" }`
+- Honest interpretation:
+  - the fresh `missing_survival_line` blocker is no longer reproducing on called/live-eligible combat under the new revision
+  - the remaining blocker is now promotion evidence sufficiency and older aggregated smoke alarms, not current survival-cue loss
+  - broad P8.5 remains no-go, but the combat-specific problem has narrowed again
+
+## 2026-07-05 Same-Budget Combat-Only Additive Continuation
+
+- Continued the narrow additive rollout with the same basic constraints:
+  - temporary process env only
+  - whitelist still exactly `combat:llm_required`
+  - no provider/recovery change
+  - no candidate/scoring/fallback/validation/execution change
+- Operational note:
+  - after the combat window ended in death, a new 2-transition menu run `run-mr71izvf-roz0yp` was created automatically
+  - that run is only menu navigation and should not be used as the rollout evidence window
+  - the actual combat evidence is appended to the prior combat run `run-mr6gnmo8-egk8sr`
+- New live-eligible combat transitions in `run-mr6gnmo8-egk8sr`:
+  - `transition-000304-agent-mr71hk3l-vvda8x`
+    - reason: `Free damage on attacker, but leaves block deficit.`
+    - `reasonQuality=adequate`
+  - `transition-000309-agent-mr71i98z-7s34bu`
+    - reason: `Block 3 to reduce lethal damage but still risk death.`
+    - `reasonQuality=adequate`
+  - `transition-000310-agent-mr71iw2i-qdbksc`
+    - reason: `Prioritize scaling despite inevitable death risk.`
+    - `reasonQuality=adequate`
+- All three show:
+  - `chosenBy="llm"`
+  - `decisionClass="combat:llm_required"`
+  - `liveEligible=true`
+  - `outcome=valid`
+  - `failureBucket=none`
+  - `finishReason=stop`
+  - `outputCapHit=false`
+  - `candidateFutureReviewSignals={}`
+  - `candidateFutureCompleteness.completeEnough=3`
+  - `shallowFutureCount=0`
+  - `survival_line` and `tradeoff` preserved through serialization
+- Replay for `run-mr6gnmo8-egk8sr` after this continuation:
+  - `last5`: called=3, liveEligibleCalled=2, valid=3, invalid=0, error=0
+  - `failureBucket=none`, `finishReason=stop`, `outputCapHits=0`
+  - the only thin reason in `last5` is the forced-local `end_turn` line, not a live-eligible additive combat reason
+- Honest interpretation:
+  - the newest combat-only continuation is healthy
+  - it does not re-open provider or survival-cue blockers
+  - canonical readiness still reads `NOT_READY_CANDIDATE_FUTURE_QUALITY` on the full run because earlier same-revision live signals remain in the aggregate
+  - this argues for one more clean combat window or a fresh same-revision combat run, not another combat wording patch
+
+## 2026-07-05 Corrected Read On The `run-mr71izvf-roz0yp` Additive Combat Window
+
+- Re-audited the temporary-env, combat-only additive bridge window on `act=2 floor=11` against the persisted artifacts after the process had fully settled.
+- The earlier "missing persisted artifacts" read was wrong.
+- What actually happened:
+  - the additive combat decisions did persist into `data/runs/run-mr71izvf-roz0yp/transitions.jsonl`
+  - that run now contains 10 transitions total: 2 menu transitions plus 8 `combat:llm_required`
+  - `memory/current-run.json` and `transitions.jsonl` agree on the same run id and same combat sequence
+  - replay/eval/review all resolve the run cleanly
+- Persisted live combat sequence includes:
+  - `Scrape -> The Insatiable`
+  - `Offering`
+  - `Restlessness`
+  - `Strike+ -> The Insatiable`
+  - `Subroutine`
+  - `Chill`
+  - `Defend`
+  - `Hologram`
+- Current replay/eval read for `run-mr71izvf-roz0yp`:
+  - `Transitions=10`
+  - fresh live-eligible called combat shadow decisions: `4`
+  - valid=`4`, invalid=`0`, error=`0`
+  - `failureBucket=none`
+  - `finishReason=stop`
+  - `outputCapHits=0`
+  - `reasonQuality={"adequate":4}`
+  - readiness: `READY_FOR_P8_5_LIVE_COMBAT_ONLY`
+- Important nuance:
+  - this run ends on a persisted `combat -> card_select` transition after `Hologram`
+  - that is not a persistence bug; it is a real game-flow boundary where combat creates a card-selection sub-screen
+  - for rollout interpretation, the run is canonical evidence for `combat:llm_required`, but its tail should not be over-read as non-combat whitelist readiness
+- Honest correction:
+  - there is no active recorder / replay persistence blocker from this additive combat window
+  - the remaining blocker is still rollout evidence scope and class boundaries, not artifact loss
+
+## 2026-07-05 Additional Same-Budget Combat-Only Continuation On `run-mr71izvf-roz0yp`
+
+- Continued the same temporary-env additive setup without widening the whitelist.
+- First transition in the continuation was an in-combat generated-card choice:
+  - `transition-000011-agent-mr72t8hf-yr4any`
+  - `decisionClass=card_select:local_recommended_llm_arbitrate`
+  - `fallbackReason=live_additive_decision_class_not_whitelisted`
+  - Honest read: this is correct combat-only boundary behavior. It also confirms the user's reminder that combat can produce card-pick sub-screens, so rollout interpretation must not treat every mid-combat choice as part of the first whitelist.
+- After that boundary check, two additional additive live combat calls were recorded:
+  - `transition-000018-agent-mr72tqfd-hhc785`
+    - action: `Charge Battery`
+    - reason: `Block now to cut incoming, but it slows damage or scaling.`
+  - `transition-000019-agent-mr72tr6y-9ea5oy`
+    - action: `Tesla Coil -> The Insatiable`
+    - reason: `Push damage now, but it still leaves a block deficit.`
+- Both new live combat transitions are:
+  - `decisionClass=combat:llm_required`
+  - `chosenBy="llm"`
+  - `outcome=valid`
+  - `failureBucket=none`
+  - `finishReason=stop`
+  - `outputCapHit=false`
+- Replay after the continuation:
+  - run: `run-mr71izvf-roz0yp`
+  - transitions: `18`
+  - fresh window `last20`: called=`8`, liveEligibleCalled=`4`, valid=`8`, liveEligibleValid=`4`, invalid=`0`, error=`0`
+  - readiness remains `READY_FOR_P8_5_LIVE_COMBAT_ONLY`
+- Important nuance:
+  - the continuation did not end right after the two live calls
+  - the fight naturally moved into `local_fast_combat` (`Compile Driver`, `Frantic Escape`) and therefore `last5` is no longer a pure combat-live promotion slice
+  - this is not a readiness regression; it is a window-cutting issue
+- Honest next implication:
+  - combat-only rollout evidence is stronger than before
+  - if we want a cleaner promotion-quality slice than the current `last20`, the next narrow runtime window should stop immediately after the next 1-2 live-eligible combat calls
 
 ## 2026-07-05 Bridge-Responder Operational Root Cause And Corrected Tiny Live Window
 

@@ -33,6 +33,9 @@ interface FutureFieldCaps {
   factItems: number;
 }
 
+const SURVIVAL_CUE_PATTERN =
+  /surviv|survival|block|defend|mitigat|avoid damage|incoming damage|stabil|生死|保命|补防|格挡|挡血|减伤|承伤|掉血|扛伤|不保命/i;
+
 export function serializeWorkspaceCandidateFutures(
   packet: DeliberationPacket,
   candidates: ScoredCandidate[],
@@ -296,8 +299,36 @@ function summarizeFutureSurvivalLine(
   future: DeliberationPacket["candidateFutures"][number],
   maxLength: number
 ): string | undefined {
-  const cue = allFutureStrings(future).find((value) => /surviv|survival|block|defend|mitigat|avoid damage|incoming damage|stabil/i.test(value));
+  const normalized = buildNormalizedSurvivalLine(future, maxLength);
+  if (normalized) return normalized;
+  const cue = allFutureStrings(future).find((value) => SURVIVAL_CUE_PATTERN.test(value));
   return trimText(cue, maxLength);
+}
+
+function buildNormalizedSurvivalLine(
+  future: DeliberationPacket["candidateFutures"][number],
+  maxLength: number
+): string | undefined {
+  if (!Array.isArray(future.predictionChecks)) return undefined;
+  for (const check of future.predictionChecks) {
+    if (!isRecord(check) || check.type !== "player_hp_delta" || !isRecord(check.expected)) continue;
+    const hpBefore = firstNumber(check.expected.hpBefore, check.expected.beforeHp, check.expected.playerHpBefore);
+    const blockBefore = firstNumber(check.expected.blockBefore, check.expected.beforeBlock, check.expected.playerBlockBefore) ?? 0;
+    const incomingDamage = firstNumber(check.expected.incomingDamage);
+    const expectedHpLoss = firstNumber(check.expected.expectedHpLoss);
+    if (typeof hpBefore === "number" && typeof expectedHpLoss === "number" && expectedHpLoss >= hpBefore) {
+      const incomingText = typeof incomingDamage === "number" ? `incoming ${incomingDamage}` : "incoming lethal";
+      return trimText(`survival: ${incomingText} over ${blockBefore} block means this line dies unless it adds block or cuts damage.`, maxLength);
+    }
+    if (typeof hpBefore === "number" && typeof incomingDamage === "number") {
+      return trimText(`survival: facing ${incomingDamage} incoming with ${blockBefore} block; this line must preserve hp or reduce damage.`, maxLength);
+    }
+  }
+  const riskCue = nonEmptyStringArray(future.risk).find((value) => SURVIVAL_CUE_PATTERN.test(value));
+  if (riskCue) {
+    return trimText(`survival: ${riskCue}`, maxLength);
+  }
+  return undefined;
 }
 
 function summarizeNonCombatStrategicFacts(

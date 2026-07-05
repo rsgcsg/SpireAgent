@@ -60,6 +60,8 @@ import {
 import { normalizeBudgetGovernanceProfile } from "./budgetGovernance.js";
 import { assessReasonQuality } from "./providerFailureClassifier.js";
 import { summarizeProviderRecoveryPolicy } from "./providerRecoveryPolicy.js";
+import { analyzeSerializedCandidateFutures } from "./candidateFutureReviewSignals.js";
+import { serializeWorkspaceCandidateFutures } from "./candidateFutureCompressor.js";
 import {
   DOMAIN_SCHEMA_VERSION,
   type CandidateFuture,
@@ -408,6 +410,84 @@ assert.equal(boundedComparison.coverage.compressionMode, "bounded_candidate_futu
 assert.equal(boundedComparison.coverage.candidateFutureCompleteness?.futureCount, 1);
 assert.ok((boundedComparison.coverage.candidateFuturesBytesAfter ?? 0) > 0);
 assert.ok((boundedComparison.coverage.workspaceBytesBefore ?? 0) > 0);
+assert.equal(boundedComparison.revisionTag, "2026-07-05-v5.1.7-survival-cue-preservation");
+
+const survivalCuePacket: DeliberationPacket = {
+  ...deliberationPacket,
+  screen: "combat",
+  stateFacts: {
+    ...(deliberationPacket.stateFacts ?? {}),
+    hp: 18,
+    maxHp: 60,
+    block: 0,
+    incomingDamage: 21
+  },
+  strategicImpression: {
+    ...strategicImpression,
+    decisionType: "combat:llm_required"
+  },
+  candidateFutures: [
+    {
+      id: "future-survival",
+      label: "Play Leap",
+      plan: "Play Leap to survive the incoming turn.",
+      sourceCandidateId: "play-leap",
+      actions: [{ kind: "play_card", payload: { cardIndex: 0, cardName: "Leap" } }],
+      deterministicCalculations: {
+        score: 3,
+        confidence: 0.6,
+        rank: 1,
+        route: "llm_required",
+        screen: "combat",
+        mechanics: {
+          actionKind: "play_card",
+          cardName: "Leap",
+          energyCost: 1,
+          expectedBlockGain: 9
+        }
+      },
+      predictedOutcome: ["gain 9 block", "survive the incoming turn"],
+      predictionChecks: [
+        {
+          type: "player_hp_delta",
+          prediction: "player hp may change from enemy turn",
+          expected: {
+            hpBefore: 18,
+            blockBefore: 0,
+            incomingDamage: 21,
+            expectedHpLoss: 21
+          },
+          source: "candidate_future",
+          severity: "info"
+        }
+      ],
+      cost: ["spend 1 energy"],
+      risk: ["生死回合若不补防会直接死"],
+      uncertainty: ["draw order next turn"],
+      assumptions: ["state stays stable"],
+      invalidationTriggers: ["enemy intent changes"],
+      executionRequirements: ["must_match_current_state"],
+      confidence: 0.6
+    }
+  ]
+};
+const serializedSurvivalCueFutures = serializeWorkspaceCandidateFutures(
+  survivalCuePacket,
+  [{ id: "play-leap" } as ScoredCandidate],
+  "full_bounded_candidate_futures"
+).serialized;
+const survivalCueReview = analyzeSerializedCandidateFutures(
+  survivalCuePacket,
+  serializedSurvivalCueFutures,
+  "combat:llm_required"
+);
+assert.equal(survivalCueReview.reviewSignals.missing_survival_line ?? 0, 0);
+assert.equal(survivalCueReview.cueAttribution.cues.survival_line?.source, "serialization_preserved");
+assert.ok(
+  serializedSurvivalCueFutures.some((future) =>
+    typeof future.survivalLine === "string" && /survival:|生死|保命|补防/i.test(future.survivalLine)
+  )
+);
 const p8ShadowReadyButSkipped = await buildP8WorkspaceShadowFromPacket({
   legacyPrompt: JSON.stringify({ candidates: [{ id: "play-strike" }] }),
   deliberationPacket,

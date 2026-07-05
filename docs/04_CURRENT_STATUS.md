@@ -59,7 +59,7 @@ Do not erase or reinterpret the historical `provider_length_empty` transitions. 
 The active no-go reason is now CandidateFuture/reason-quality readiness:
 
 - fresh combat still shows at least one `reasonQuality=thin` due `missing_tradeoff`
-- combat review signals still include `missing_survival_line`
+- class-level combat review telemetry still includes historical `missing_survival_line`, but the newest called/live-eligible revision-window samples no longer reproduce it
 - broader live-eligible evidence is still too small for a live additive rollout
 - current `reasonQuality` / review signals are useful smoke alarms, not final objectives
 - minimal cue-source attribution telemetry is now implemented so fresh samples can distinguish CandidateFuture generation gaps, compression loss, and model reason omissions
@@ -140,13 +140,18 @@ The active no-go reason is now CandidateFuture/reason-quality readiness:
   - that retest also did not add new fresh `combat:llm_required` live-eligible evidence, so the blocker remains evidence volume rather than a local repeated-action bug
 - latest same-budget combat-only additive attempt after the guard:
   - used temporary process env only; no persistent live flag change
-  - produced no new recorded transitions in the latest run and therefore no new promotion-usable `combat:llm_required` evidence
-  - replay/review remain provider-clean on the latest recorded slices, but `last5` still has `liveEligibleCalled=0`
-  - honest read: this was an inconclusive runtime attempt, not a regression and not a readiness advance
-- root cause of those inconclusive windows is now clear:
+  - earlier we misread this window as a persistence gap because we inspected the run surface too early and treated `run-mr71izvf-roz0yp` as menu-only
+  - corrected audit shows the additive combat window did persist into `run-mr71izvf-roz0yp`, which now contains 10 transitions total and 8 `combat:llm_required`
+  - replay/eval/review all resolve that run cleanly, so there is no active recorder or replay-artifact blocker from this window
+  - honest read: the real remaining limit is evidence scope, not missing persistence
+- root cause of the earlier silent windows is now clear:
   - `npm run agent:run:bridge` is a manual/Codex bridge path, not a direct model caller
   - without an external bridge responder writing `/tmp/sts2-llm-bridge/response-<id>.json`, `tick()` blocks waiting for the LLM command and no new transition is recorded
   - this was an operational usage mistake, not a game-window problem and not a provider/runtime regression
+- separate corrected read for the later `run-mr71izvf-roz0yp` continuation:
+  - once the bridge responses were actually supplied, additive combat decisions were recorded normally
+  - that run is now canonical evidence, but it stops at a `combat -> card_select` transition after `Hologram`
+  - this matters for rollout reading: the persisted run is valid, yet its tail naturally leaves the combat-only whitelist surface and should not be over-read as non-combat readiness evidence
 - fresh corrected tiny live window with an active bridge responder:
   - run: `run-mr6gnmo8-egk8sr`
   - transitions: 4
@@ -180,6 +185,27 @@ The active no-go reason is now CandidateFuture/reason-quality readiness:
   - post-state is an enemy-turn death state (`hp=0`, `turn="enemy"`, `isPlayPhase=false`), which matches the reported manual `room boss` console positioning and death-tail behavior
   - honest read: this is more likely a low-visibility / console-induced tail state than a new provider or live-path regression
   - keep it as a runtime/program-risk candidate until it is disproved without console injection, but do not treat it as evidence that the additive combat path itself regressed
+- current narrow fix:
+  - bounded high-pressure combat futures now preserve survival cues more explicitly
+  - the compressor synthesizes a normalized `survivalLine` from `player_hp_delta` checks when possible and also recognizes current Chinese survival-risk phrasing
+  - the review detector now recognizes both English and Chinese survival cues instead of treating Chinese-only bounded cues as automatic `compression_lost`
+  - no provider/live/candidate/scoring/execution semantics changed
+- fresh post-fix revision-window confirmation:
+  - current run remains `run-mr6gnmo8-egk8sr`
+  - since revision `2026-07-05-v5.1.7-survival-cue-preservation`: called=8, liveEligibleCalled=2, valid=8, invalid=0, error=0
+  - provider stayed clean: `failureBucket=none`, `finishReason=stop`, `outputCapHits=0`
+  - the two fresh called/live-eligible combat samples are:
+    - `transition-000267-agent-mr71482w-j3adut`
+    - `transition-000283-agent-mr717m6i-si8tfm`
+  - both are `reasonQuality=adequate`
+  - both have `candidateFutureReviewSignals={}`
+  - both keep `candidateFutureCompleteness.completeEnough=3`, `shallowFutureCount=0`
+  - both record `candidateFutureCueAttribution.cues.survival_line = { original: true, serialized: true, source: "serialization_preserved" }`
+  - honest read: fresh called/live-eligible `missing_survival_line` has stopped reproducing on the new revision; the remaining blocker is promotion evidence depth plus older aggregated smoke alarms, not current survival-cue loss
+- console-assisted evidence rule for current milestone:
+  - if runtime positioning used STS2 console commands such as `room boss`, mark the window as `console-assisted`
+  - post-death or post-boss non-progression in a `console-assisted` window is review-relevant but not treated as canonical live-path regression unless it reproduces without console injection
+  - for future windows, explicitly note when console commands were used so replay/readiness interpretation does not overfit console side effects
 
 ## Current Next Step
 
@@ -194,12 +220,42 @@ Continue P8.5 combat-only live rollout under `P8_5_LIVE_ROLLOUT_POLICY.md`:
 - do not expand live after the latest larger combat-only window; replay now honestly blocks on insufficient promotion-usable live-eligible evidence
 - inspect missing survival/tradeoff/lethal cue attribution before another combat rollout window
 - readiness attribution / evidence-window semantics fix is now in place
-- the next narrow step is no longer just "run a bigger combat window"
-- first re-audit the fresh combat `missing_survival_line` and the new `end_turn` unknown checkpoint in the current run
-- if those reduce to review-semantics / acceptable low-visibility cases, combat-only rollout can continue
-- if they reflect real survival-cue loss in called live-eligible combat, combat-only remains narrowed but not yet rollout-clean
-- current honest read is mixed:
-  - the fresh `missing_survival_line` blocker is real enough to matter, but it points to bounded survival-cue loss rather than raw CandidateFuture absence
+- the fresh `missing_survival_line` re-audit is now complete on the current revision
+- current evidence says survival cues are preserved on fresh called/live-eligible combat samples
+- the next narrow step is no longer survival-cue repair or persistence debugging; it is collecting a slightly thicker same-budget combat promotion window without widening scope
+- latest same-budget combat-only additive continuation:
+  - additive live remained temporary-env only, whitelist still `combat:llm_required` only
+  - the later `act=2 floor=11` continuation did persist in `run-mr71izvf-roz0yp`; it is not a menu-only stub
+  - `run-mr71izvf-roz0yp` now contains 10 transitions total and 8 `combat:llm_required`
+  - replay/eval/review all read that run cleanly:
+    - valid live-eligible called combat shadow decisions: `4`
+    - invalid=`0`, error=`0`
+    - `failureBucket=none`, `finishReason=stop`, `outputCapHits=0`
+    - `reasonQuality={"adequate":4}`
+    - readiness: `READY_FOR_P8_5_LIVE_COMBAT_ONLY`
+  - the persisted combat sequence includes `Scrape`, `Offering`, `Restlessness`, `Strike+`, `Subroutine`, `Chill`, `Defend`, and `Hologram`
+  - honest read: there is no active recorder/persistence blocker here; this is canonical combat evidence
+- newest narrow continuation on the same run:
+  - run remains `run-mr71izvf-roz0yp`
+  - an in-combat `card_select:local_recommended_llm_arbitrate` screen appeared first and was correctly blocked by the combat-only whitelist:
+    - `transition-000011-agent-mr72t8hf-yr4any`
+    - `fallbackReason=live_additive_decision_class_not_whitelisted`
+    - this is healthy boundary behavior, not a rollout failure
+  - two additional additive live combat calls then landed cleanly:
+    - `transition-000018-agent-mr72tqfd-hhc785` / `Charge Battery`
+    - `transition-000019-agent-mr72tr6y-9ea5oy` / `Tesla Coil -> The Insatiable`
+  - both are `combat:llm_required`, `chosenBy="llm"`, `outcome=valid`, `failureBucket=none`, `finishReason=stop`, `outputCapHit=false`
+  - the model reasons were:
+    - `Block now to cut incoming, but it slows damage or scaling.`
+    - `Push damage now, but it still leaves a block deficit.`
+  - replay/eval still read the full run as `READY_FOR_P8_5_LIVE_COMBAT_ONLY`
+  - nuance: after those two live calls, the fight naturally fell back into `local_fast_combat`, so `last5` is no longer a clean combat-live slice even though the full same-revision window remains clean
+  - honest read: this strengthens combat-only evidence, but if we want a cleaner promotion slice than `last20`, the next runtime window should stop earlier right after the next 1-2 live-eligible combat calls
+- current honest read is now narrower:
+  - historical `missing_survival_line` still matters as review telemetry and should not be erased
+  - current fresh called/live-eligible combat evidence points away from active survival-cue loss and provider instability
+  - the remaining constraint is evidence scope and whitelist boundaries, not artifact persistence
+  - the run tail ends on a real `combat -> card_select` transition after `Hologram`, so it supports combat-only rollout judgment but not non-combat whitelist expansion
   - the `end_turn` unknown checkpoint is not currently strong evidence of a live-path blocker because it sits on a forced-local death tail and may be amplified by manual `room boss` console usage
 - continue separate non-combat freshness work for `card_reward:llm_required` and especially `map:llm_required`
 - keep P8.5 live/additive default-off outside explicitly approved bounded windows
