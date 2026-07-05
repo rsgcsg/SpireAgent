@@ -116,6 +116,22 @@ The active no-go reason is now CandidateFuture/reason-quality readiness:
   - broad P8.5 is still no-go because `card_reward:llm_required` and `map:llm_required` remain blocked
   - `map:llm_required` is still a clear evidence gap: current fresh runtime evidence has `0` called fresh samples in the latest run, so it stays out of the first whitelist
   - historical provider/network failures remain visible in mixed and all-history windows and must not be washed away, but they no longer describe the current fresh combat slice
+- newest controlled combat-only additive continuation on `run-mr71izvf-roz0yp` kept the same policy boundaries and added two more fresh `combat:llm_required` decisions:
+  - `transition-000050-agent-mr7dqa5v-c5tx6x`
+    - reason: `Push damage and draw now, but it spends this turn into 30 incoming.`
+    - `failureBucket=none`, `finishReason=stop`, `outputCapHit=false`, `retryCount=0`
+    - `candidateFutureReviewSignals={}`, `completeEnough=3`, `shallowFutureCount=0`
+    - `tradeoff`, `resource_tradeoff`, `future_risk`, and `survival_line` all remained `serialization_preserved`
+  - `transition-000051-agent-mr7dqzlx-f5ekbt`
+    - reason: `Take the free chip and preserve energy, but it still leaves the 30 incoming mostly unanswered.`
+    - `failureBucket=none`, `finishReason=stop`, `outputCapHit=false`
+    - `candidateFutureReviewSignals={}`, `completeEnough=3`, `shallowFutureCount=0`
+    - `tradeoff`, `resource_tradeoff`, and `survival_line` remained `serialization_preserved`; `future_risk` is still a review-only `compression_lost` cue, not a live blocker
+  - latest replay now reads:
+    - `last5`: called=4, valid=4, invalid=0, error=0, `reasonQuality={"adequate":4}`
+    - `liveEligibleInvalid=0`, `liveEligibleError=0`
+    - `failureBucket={"none":4}`, `finishReason={"stop":4}`, `outputCapHits=0`
+  - honest read: this is another clean fresh combat slice under the same rollout rules, but top-level readiness is still conservative because promotion evidence is being judged class-wide rather than only from this narrow continuation
 - latest blocker audit for `combat_candidate_future_quality_not_clear`:
   - the active `missing_survival_line` that trips the class-level combat future-quality gate comes from `transition-000026-agent-mr6f5b3k-fx42ij`
   - that transition was `called=false`, `outcome=skipped`, `budget.status=call_budget_exceeded`, so it is not fresh called live-eligible evidence
@@ -217,7 +233,8 @@ Continue P8.5 combat-only live rollout under `P8_5_LIVE_ROLLOUT_POLICY.md`:
 - do not do more combat wording tuning unless fresh combat evidence regresses
 - keep the first whitelist narrow: `combat:llm_required` only, with legacy fallback preserved and execution unchanged
 - use temporary process env only for approved rollout windows
-- do not expand live after the latest larger combat-only window; replay now honestly blocks on insufficient promotion-usable live-eligible evidence
+- keep judging readiness on the fresh `combat:llm_required` live-eligible slice rather than `local_fast_combat` or forced-local tails
+- if the next same-budget combat-only continuation stays this clean, combat-only can continue accelerating under the rollout policy; `map` / `card_reward` still remain out of the first whitelist
 - inspect missing survival/tradeoff/lethal cue attribution before another combat rollout window
 - readiness attribution / evidence-window semantics fix is now in place
 - the fresh `missing_survival_line` re-audit is now complete on the current revision
@@ -266,12 +283,97 @@ Continue P8.5 combat-only live rollout under `P8_5_LIVE_ROLLOUT_POLICY.md`:
     - `Use setup now, but it delays immediate block.` (`thin`)
     - `Add scaling now, but it spends tempo against this attack.`
   - honest read: this is the cleanest current promotion slice for combat-only additive rollout; provider remains clean and the only remaining quality wobble in the slice is one setup-oriented `missing_tradeoff` call
+- latest same-budget combat-only continuation on the same run:
+  - `run-mr71izvf-roz0yp` now extends through `transition-000029-agent-mr7cbln1-lkhqy4`
+  - fresh `last5` remains provider-clean:
+    - called=`5`, liveEligibleCalled=`4`, valid=`5`, liveEligibleValid=`4`
+    - invalid=`0`, error=`0`
+    - `failureBucket=none`, `finishReason=stop`, `outputCapHits=0`
+    - `reasonQuality={"adequate":3,"thin":2}`
+    - `thinReasons={"missing_tradeoff":2}`
+  - the fresh live-eligible additive combat samples were:
+    - `transition-000026-agent-mr7cac4b-nahdgw`: `Gain 8 block now, but still leave a block deficit.`; `reasonQuality=adequate`; `survival_line=serialization_preserved`
+    - `transition-000027-agent-mr7caxrt-be9f38`: `Gain block with 0-cost Chill, save energy for scaling.`; `reasonQuality=adequate`; review signal `missing_survival_line`; cue attribution `compression_lost`
+    - `transition-000028-agent-mr7cbfcx-t5y0um`: `Gain scaling for long fight, takes 18 damage.`; `reasonQuality=thin`; `thinReason=missing_tradeoff`
+  - `transition-000029-agent-mr7cbln1-lkhqy4` is a trailing `combat:local_fast_combat` thin sample and should not be read as live-eligible rollout evidence
+  - canonical replay result therefore tightened again:
+    - readiness=`NOT_READY_CANDIDATE_FUTURE_QUALITY`
+    - reason=`combat_candidate_future_quality_not_clear`
+  - honest read: provider is still not the blocker; the next narrow blocker is one fresh survival-cue compression miss plus one fresh setup/scaling tradeoff miss inside the live-eligible combat slice
+- fresh blocker audit and narrow fix:
+  - `transition-000027-agent-mr7caxrt-be9f38` was audited directly
+  - conclusion: this was not just a detector false positive
+  - the original packet had survival-relevant futures (`play-5` / `end-turn`), but critical-pressure bounded top-3 omitted them
+  - cue attribution was therefore accurate: `survival_line = { original: true, serialized: false, source: "compression_lost" }`
+  - narrow code fix now ensures high-pressure combat bounded serialization preserves at least one survival-relevant future when the original packet contains one
+  - this is intentionally a bounded-presentation fix only; provider/live/candidate/scoring/execution are unchanged
+  - smoke now includes a regression case where three higher-ranked setup futures previously pushed out `Defend` / `end-turn`; the bounded slice must now retain one survival future and avoid `missing_survival_line`
+  - current replay/readiness on `run-mr71izvf-roz0yp` is unchanged because artifacts were not regenerated; the next honest step is a fresh same-budget combat-only retest
 - current honest read is now narrower:
   - historical `missing_survival_line` still matters as review telemetry and should not be erased
   - current fresh called/live-eligible combat evidence points away from active survival-cue loss and provider instability
   - the remaining constraint is evidence scope and whitelist boundaries, not artifact persistence
   - the run tail ends on a real `combat -> card_select` transition after `Hologram`, so it supports combat-only rollout judgment but not non-combat whitelist expansion
   - the `end_turn` unknown checkpoint is not currently strong evidence of a live-path blocker because it sits on a forced-local death tail and may be amplified by manual `room boss` console usage
+- newest same-budget fresh combat continuation on the patched revision:
+  - run: `run-mr71izvf-roz0yp`
+  - new called/live `combat:llm_required` transitions:
+    - `transition-000030-agent-mr7d0vyd-l2dbfr`
+    - `transition-000031-agent-mr7d1h88-ypoya6`
+    - `transition-000032-agent-mr7d2657-026jl2`
+  - all 3 were provider-clean: `failureBucket=none`, `finishReason=stop`, `outputCapHits=0`, invalid=0, error=0
+  - direct cue audit:
+    - `transition-000030-agent-mr7d0vyd-l2dbfr`: `reasonQuality=adequate`; `survival_line=serialization_preserved`
+    - `transition-000031-agent-mr7d1h88-ypoya6`: `reasonQuality=adequate`; `survival_line=serialization_preserved`
+    - `transition-000032-agent-mr7d2657-026jl2`: `reasonQuality=thin`; `thinReason=missing_tradeoff`; `survival_line=serialization_preserved`
+  - honest read:
+    - the patched revision no longer reproduces fresh called/live `missing_survival_line`
+    - this does not mean the older warning was a detector mistake; `transition-000027-agent-mr7caxrt-be9f38` was a real bounded-presentation loss
+    - the active fresh wobble is now narrower: one setup/defense tradeoff reason is still too generic (`Gain block now, lose damage potential.`)
+- latest extra narrow promotion window on the same budget/rules:
+  - same run: `run-mr71izvf-roz0yp`
+  - one additional fresh called/live `combat:llm_required` sample:
+    - `transition-000034-agent-mr7d8f9g-6jybpc`
+  - persisted shadow reason: `High damage to reduce threat, but leaves block deficit.`
+  - replay now shows:
+    - `last5`: called=5, liveEligibleCalled=4, valid=5, invalid=0, error=0
+    - `reasonQuality={"adequate":4,"thin":1}`
+    - `thinReasons={"missing_tradeoff":1}`
+    - `failureBucket=none`, `finishReason=stop`, `outputCapHits=0`
+  - honest read:
+    - this tiny continuation did not reopen provider or survival-cue blockers
+    - `missing_tradeoff` is lower in the fresh `last5` slice than the broader historical slice, but not yet zero
+    - combat-only additive rollout is close, but broad P8.5 still cannot be widened and combat itself is still not at a fully clean promotion window
+- newest follow-up same-budget combat-only window:
+  - same run: `run-mr71izvf-roz0yp`
+  - one fresh live-eligible `combat:llm_required` sample:
+    - `transition-000038-agent-mr7dcn6k-6ju0ra`
+  - persisted reason: `Take block now, but it still leaves a large damage deficit this turn.`
+  - replay now reads:
+    - `last5`: called=5, liveEligibleCalled=3, valid=5, invalid=0, error=0
+    - `reasonQuality={"adequate":4,"thin":1}`
+    - `thinReasons={"missing_tradeoff":1}`
+    - `failureBucket=none`, `finishReason=stop`, `outputCapHits=0`
+  - honest read:
+    - the new fresh called/live sample itself is good and keeps the explicit tradeoff
+    - provider and survival-cue health remain clean
+    - but the fresh promotion slice still is not fully clean, so combat-only additive is close to the next rollout step, not yet fully through it
+- more formal but still narrow combat-only additive rollout step:
+  - same whitelist, same budget profile, same provider contract, temporary env only
+  - fresh additive `combat:llm_required` transitions:
+    - `transition-000044-agent-mr7dimll-zjv79w`
+    - `transition-000045-agent-mr7dj2e4-0txyci`
+  - both are provider-clean and `reasonQuality=adequate`
+  - persisted reasons:
+    - `Kill now to survive, save energy.`
+    - `Cycle to find scaling while using 0-cost.`
+  - replay `last5` still shows `thin=2`, but the exact sources are:
+    - `transition-000041-agent-mr7dh784-hejkc1` (`combat:local_fast_combat`)
+    - `transition-000043-agent-mr7dhc6r-xj7ddw` (`combat:forced_local`)
+  - honest read:
+    - the more formal combat-only additive step itself stayed clean
+    - the apparent `last5` wobble is tail contamination from non-live routes, not fresh additive-combat regression
+    - combat-only rollout evidence is now stronger than before, but broad P8.5 still stays no-go and `map/card_reward` remain excluded
 - continue separate non-combat freshness work for `card_reward:llm_required` and especially `map:llm_required`
 - keep P8.5 live/additive default-off outside explicitly approved bounded windows
 

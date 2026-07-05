@@ -52,19 +52,17 @@ export function serializeWorkspaceCandidateFutures(
   }
   const rankedCandidates = new Map(candidates.map((candidate, index) => [candidate.id, index]));
   const pressureProfile = buildCombatCompressionProfile(packet);
+  const rankedFutures = packet.candidateFutures
+    .map((future, index) => ({
+      future,
+      index,
+      priority: candidateFuturePriority(future, index, rankedCandidates)
+    }))
+    .sort((left, right) => right.priority - left.priority);
   return {
-    serialized: packet.candidateFutures
-      .map((future, index) => ({ future, index }))
-      .sort((left, right) =>
-        candidateFuturePriority(right.future, right.index, rankedCandidates) - candidateFuturePriority(left.future, left.index, rankedCandidates)
-      )
-      .slice(0, pressureProfile.maxFutures)
-      .map(({ future, index }) => serializeBoundedCandidateFuture(
-        future,
-        index,
-        candidateFuturePriority(future, index, rankedCandidates),
-        pressureProfile
-      ))
+    serialized: selectCombatFuturesForSerialization(rankedFutures, pressureProfile).map(({ future, index, priority }) =>
+      serializeBoundedCandidateFuture(future, index, priority, pressureProfile)
+    )
   };
 }
 
@@ -568,6 +566,58 @@ function candidateFuturePriority(
   const outcomeCount = (future.predictedOutcome?.length ?? 0) + (future.predictionChecks?.length ?? 0);
   const confidence = typeof future.confidence === "number" ? future.confidence : 0.5;
   return Math.max(0, 12 - candidateRank * 2) + Math.min(3, riskCount) + Math.min(2, outcomeCount) + Math.round(confidence * 2);
+}
+
+function selectCombatFuturesForSerialization(
+  rankedFutures: Array<{
+    future: DeliberationPacket["candidateFutures"][number];
+    index: number;
+    priority: number;
+  }>,
+  profile: CombatCompressionProfile
+): Array<{
+  future: DeliberationPacket["candidateFutures"][number];
+  index: number;
+  priority: number;
+}> {
+  const selected = rankedFutures.slice(0, profile.maxFutures);
+  if (!profile.highPressure) return selected;
+  if (selected.some(({ future }) => futureHasSurvivalCue(future))) return selected;
+  const fallbackSurvival = rankedFutures
+    .slice(profile.maxFutures)
+    .filter(({ future }) => futureHasSurvivalCue(future))
+    .sort((left, right) => survivalFuturePriority(right.future) - survivalFuturePriority(left.future))[0];
+  if (!fallbackSurvival) return selected;
+  const replaceIndex = [...selected]
+    .reverse()
+    .findIndex(({ future }) => !futureHasSurvivalCue(future));
+  if (replaceIndex < 0) return selected;
+  const actualIndex = selected.length - 1 - replaceIndex;
+  const next = selected.slice();
+  next[actualIndex] = fallbackSurvival;
+  return next;
+}
+
+function futureHasSurvivalCue(future: DeliberationPacket["candidateFutures"][number]): boolean {
+  if (typeof summarizeFutureSurvivalLine(future, 96) === "string") return true;
+  const mechanics = isRecord(future.deterministicCalculations) && isRecord(future.deterministicCalculations.mechanics)
+    ? future.deterministicCalculations.mechanics
+    : undefined;
+  return typeof firstNumber(mechanics?.expectedBlockGain) === "number";
+}
+
+function survivalFuturePriority(future: DeliberationPacket["candidateFutures"][number]): number {
+  const mechanics = isRecord(future.deterministicCalculations) && isRecord(future.deterministicCalculations.mechanics)
+    ? future.deterministicCalculations.mechanics
+    : undefined;
+  let priority = 0;
+  const expectedBlockGain = firstNumber(mechanics?.expectedBlockGain);
+  if (typeof expectedBlockGain === "number" && expectedBlockGain > 0) priority += 4 + expectedBlockGain;
+  if (Array.isArray(future.predictionChecks) && future.predictionChecks.some((check) => isRecord(check) && check.type === "player_hp_delta")) {
+    priority += 3;
+  }
+  if ((future.sourceCandidateId ?? future.id) === "end-turn") priority -= 1;
+  return priority;
 }
 
 function firstNumber(...values: unknown[]): number | undefined {

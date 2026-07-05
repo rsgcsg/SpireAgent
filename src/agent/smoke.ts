@@ -488,6 +488,165 @@ assert.ok(
     typeof future.survivalLine === "string" && /survival:|生死|保命|补防/i.test(future.survivalLine)
   )
 );
+const boundedSurvivalPreservationPacket: DeliberationPacket = {
+  ...survivalCuePacket,
+  candidateFutures: [
+    {
+      id: "future-setup-a",
+      label: "Play Setup A",
+      plan: "Play Setup A for long-term value.",
+      sourceCandidateId: "play-setup-a",
+      actions: [{ kind: "play_card", payload: { cardIndex: 0, cardName: "Setup A" } }],
+      deterministicCalculations: {
+        score: 12,
+        confidence: 0.3,
+        rank: 1,
+        route: "llm_required",
+        screen: "combat",
+        mechanics: { actionKind: "play_card", cardName: "Setup A", energyCost: 1 }
+      },
+      predictedOutcome: ["gain scaling", "combat state should change or settle"],
+      predictionChecks: [
+        { type: "resource_delta", prediction: "energy changes", expected: { energyBefore: 2, expectedEnergyCost: 1 }, source: "candidate_future", severity: "info" },
+        { type: "phase_or_visible_progress", prediction: "combat progresses", expected: { visibleProgress: true }, source: "candidate_future", severity: "info" }
+      ],
+      cost: ["spend 1 energy"],
+      risk: ["tempo loss this turn"],
+      uncertainty: [],
+      assumptions: ["state stays stable"],
+      invalidationTriggers: [],
+      executionRequirements: ["must_match_current_state"],
+      confidence: 0.3
+    },
+    {
+      id: "future-setup-b",
+      label: "Play Setup B",
+      plan: "Play Setup B for long-term value.",
+      sourceCandidateId: "play-setup-b",
+      actions: [{ kind: "play_card", payload: { cardIndex: 1, cardName: "Setup B" } }],
+      deterministicCalculations: {
+        score: 11,
+        confidence: 0.28,
+        rank: 2,
+        route: "llm_required",
+        screen: "combat",
+        mechanics: { actionKind: "play_card", cardName: "Setup B", energyCost: 1 }
+      },
+      predictedOutcome: ["gain scaling", "combat state should change or settle"],
+      predictionChecks: [
+        { type: "resource_delta", prediction: "energy changes", expected: { energyBefore: 2, expectedEnergyCost: 1 }, source: "candidate_future", severity: "info" },
+        { type: "phase_or_visible_progress", prediction: "combat progresses", expected: { visibleProgress: true }, source: "candidate_future", severity: "info" }
+      ],
+      cost: ["spend 1 energy"],
+      risk: ["tempo loss this turn"],
+      uncertainty: [],
+      assumptions: ["state stays stable"],
+      invalidationTriggers: [],
+      executionRequirements: ["must_match_current_state"],
+      confidence: 0.28
+    },
+    {
+      id: "future-setup-c",
+      label: "Play Setup C",
+      plan: "Play Setup C for long-term value.",
+      sourceCandidateId: "play-setup-c",
+      actions: [{ kind: "play_card", payload: { cardIndex: 2, cardName: "Setup C" } }],
+      deterministicCalculations: {
+        score: 10,
+        confidence: 0.27,
+        rank: 3,
+        route: "llm_required",
+        screen: "combat",
+        mechanics: { actionKind: "play_card", cardName: "Setup C", energyCost: 0 }
+      },
+      predictedOutcome: ["enable later combo", "combat state should change or settle"],
+      predictionChecks: [
+        { type: "resource_delta", prediction: "energy changes", expected: { energyBefore: 2, expectedEnergyCost: 0 }, source: "candidate_future", severity: "info" },
+        { type: "phase_or_visible_progress", prediction: "combat progresses", expected: { visibleProgress: true }, source: "candidate_future", severity: "info" }
+      ],
+      cost: [],
+      risk: ["tempo loss this turn"],
+      uncertainty: [],
+      assumptions: ["state stays stable"],
+      invalidationTriggers: [],
+      executionRequirements: ["must_match_current_state"],
+      confidence: 0.27
+    },
+    {
+      id: "future-defend",
+      label: "Play Defend",
+      plan: "Play Defend to reduce incoming damage.",
+      sourceCandidateId: "play-defend",
+      actions: [{ kind: "play_card", payload: { cardIndex: 3, cardName: "Defend" } }],
+      deterministicCalculations: {
+        score: 5,
+        confidence: 0.24,
+        rank: 4,
+        route: "llm_required",
+        screen: "combat",
+        mechanics: { actionKind: "play_card", cardName: "Defend", energyCost: 1, expectedBlockGain: 6 }
+      },
+      predictedOutcome: ["gain 6 block", "combat state should change or settle"],
+      predictionChecks: [
+        { type: "block_delta", prediction: "block increases", expected: { blockBefore: 8, expectedBlockGain: 6 }, source: "candidate_future", severity: "info" },
+        { type: "player_hp_delta", prediction: "player hp may change from enemy turn", expected: { hpBefore: 73, blockBefore: 8, incomingDamage: 24, expectedHpLoss: 10 }, source: "candidate_future", severity: "info" }
+      ],
+      cost: ["spend 1 energy"],
+      risk: ["still leaves some damage"],
+      uncertainty: [],
+      assumptions: ["state stays stable"],
+      invalidationTriggers: [],
+      executionRequirements: ["must_match_current_state"],
+      confidence: 0.24
+    },
+    {
+      id: "future-end-turn",
+      label: "End turn",
+      plan: "End turn and accept the enemy attack.",
+      sourceCandidateId: "end-turn",
+      actions: [{ kind: "end_turn" }],
+      deterministicCalculations: {
+        score: -50,
+        confidence: 0.2,
+        rank: 5,
+        route: "llm_required",
+        screen: "combat",
+        mechanics: { actionKind: "end_turn" }
+      },
+      predictedOutcome: ["enemy turn resolves", "player hp may change from enemy turn"],
+      predictionChecks: [
+        { type: "player_hp_delta", prediction: "player hp may change from enemy turn", expected: { hpBefore: 73, blockBefore: 8, incomingDamage: 24, expectedHpLoss: 16 }, source: "candidate_future", severity: "info" }
+      ],
+      cost: [],
+      risk: ["结束会掉 16 HP"],
+      uncertainty: [],
+      assumptions: ["state stays stable"],
+      invalidationTriggers: [],
+      executionRequirements: ["must_match_current_state"],
+      confidence: 0.2
+    }
+  ]
+};
+const boundedSurvivalSerialized = serializeWorkspaceCandidateFutures(
+  boundedSurvivalPreservationPacket,
+  [
+    { id: "play-setup-a" } as ScoredCandidate,
+    { id: "play-setup-b" } as ScoredCandidate,
+    { id: "play-setup-c" } as ScoredCandidate,
+    { id: "play-defend" } as ScoredCandidate,
+    { id: "end-turn" } as ScoredCandidate
+  ],
+  "full_bounded_candidate_futures"
+).serialized;
+const boundedSurvivalReview = analyzeSerializedCandidateFutures(
+  boundedSurvivalPreservationPacket,
+  boundedSurvivalSerialized,
+  "combat:llm_required"
+);
+assert.equal(boundedSurvivalSerialized.length, 3);
+assert.ok(boundedSurvivalSerialized.some((future) => future.id === "play-defend" || future.id === "end-turn"));
+assert.equal(boundedSurvivalReview.reviewSignals.missing_survival_line ?? 0, 0);
+assert.equal(boundedSurvivalReview.cueAttribution.cues.survival_line?.source, "serialization_preserved");
 const p8ShadowReadyButSkipped = await buildP8WorkspaceShadowFromPacket({
   legacyPrompt: JSON.stringify({ candidates: [{ id: "play-strike" }] }),
   deliberationPacket,
