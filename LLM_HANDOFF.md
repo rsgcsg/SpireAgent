@@ -25,6 +25,57 @@ The project has completed Phase 0, Phase 1, the Phase 2 minimum data-loop MVP, t
 
 Latest narrow P8.5 readiness update:
 
+- Latest controlled rollout synthesis:
+  - replay on `run-mr7s5gfl-edyce7` now reads `READY_FOR_P8_5_LIVE_COMBAT_ONLY`
+  - broad P8.5 remains no-go
+  - first whitelist still must remain only `combat:llm_required`
+  - `map:llm_required` and `card_reward:llm_required` still do not have first-batch authorization
+- The most recent more-formal combat-only boss rollout window stayed within the same boundaries:
+  - temporary process env only
+  - active bridge responder
+  - no provider/recovery change
+  - no candidate/scoring/fallback/validation/execution change
+  - no persistent flag enable
+- Current high-value evidence summary:
+  - run: `run-mr7s5gfl-edyce7`
+  - direct transition audit shows 10 additive `combat:llm_required` transitions with `chosenBy="llm"`:
+    - `transition-000194-agent-mr7smrum-sk2bgv`
+    - `transition-000214-agent-mr7sogqq-dks7cm`
+    - `transition-000218-agent-mr7sovfs-98f1pi`
+    - `transition-000223-agent-mr7spcbu-jveyzu`
+    - `transition-000232-agent-mr7sprmi-12owpe`
+    - `transition-000287-agent-mr7stati-sx07pz`
+    - `transition-000301-agent-mr7sud5x-mvyedy`
+    - `transition-000309-agent-mr7suta8-vo3xep`
+    - `transition-000314-agent-mr7svce8-zynmhl`
+    - `transition-000331-agent-mr7sw1dd-slpbqp`
+  - all were provider-clean and validation-clean:
+    - `failureBucket=none`
+    - no `finishReason=length`
+    - no `outputCapHit`
+    - no invalid/missing candidate
+  - candidate future quality on the called combat slice remained acceptable:
+    - `completeEnough`
+    - `shallowFutureCount=0`
+    - survival/tradeoff cue preserved on the called boss-combat samples
+- Latest replay summary to keep quoting accurately:
+  - `P8.5 live readiness: READY_FOR_P8_5_LIVE_COMBAT_ONLY`
+  - `blocked=card_reward:llm_required,map:llm_required`
+  - since revision `2026-07-05-v5.1.7-survival-cue-preservation`:
+    - `called=11`
+    - `liveEligibleCalled=2`
+    - `valid=11`
+    - `invalid=0`
+    - `error=0`
+    - `failureBucket={"none":11}`
+    - `finishReason={"stop":11}`
+    - `outputCapHits=0`
+- Honest next-step read:
+  - combat-only can continue under the rollout policy
+  - the next step is not more provider fixing
+  - the next step is a final human confirmation before any persistent-enable preplan
+  - if more runtime is needed, keep it combat-only, temporary-env only, and do not broaden the whitelist
+
 - Durable rollout policy now lives in `docs/P8_5_LIVE_ROLLOUT_POLICY.md`.
 - Use that policy before any further additive live window.
 - A very narrow combat-only additive live-enable plan is now drafted in `docs/04_CURRENT_STATUS.md`; this is not authorization to enable live.
@@ -814,3 +865,53 @@ Historical validation run:
 - current live state after the 200 tick verification: Act 1 floor 15 rewards, HP 39/75, gold 11
 
 This is sufficient to enter Phase 3 combat plan/checkpoint continuation. Do not tune strategy before preserving the eval categories and keeping zero-error replay/eval on a fresh run.
+## 2026-07-05 Bridge Timeout Handoff
+
+- The latest rollout anomaly was `LLM command timed out after 300000ms`.
+- Honest root cause:
+  - not a provider truncation/empty-output failure
+  - not a boss-end or `game_over` request
+  - a live combat bridge request was missed by the responder
+- Concrete missing request:
+  - `/tmp/sts2-llm-bridge/request-llm-mr7rz0nl-jxvshh.json`
+  - no matching response file was ever written
+  - payload is a real high-pressure `combat:llm_required` state (`hp=29/75`, `incoming=50`)
+- Minimal fix landed:
+  - `scripts/llm-bridge-decider.mjs`
+    - timeout reduced to `120000ms`
+    - writes `pending-request.json` and `pending-summary.txt`
+    - clears pending bridge files on success/timeout
+    - writes `timed-out-<id>.json` on timeout
+  - `package.json`
+    - `agent:run:bridge` now runs with `STS2_LLM_TIMEOUT_MS=120000` and `STS2_LLM_BRIDGE_TIMEOUT_MS=120000`
+- Post-fix status:
+  - no repeat of the old 5-minute bridge hang in the immediate follow-up runtime
+  - still no new promotion-quality fresh `combat:llm_required` called slice after the fix
+- Next honest step:
+  - collect one more clean focused `combat:llm_required` live window under the patched bridge
+  - if that window is clean, the line returns to “one manual confirmation away from persistent-enable plan”
+
+## 2026-07-05 Combat-Only Persistent Enable Handoff
+
+- Human approval was given to enter the persistent-enable plan for `combat:llm_required` only.
+- Local config now has:
+  - `STS2_P8_LIVE_ADDITIVE=1`
+  - `STS2_P8_LIVE_DECISION_CLASSES=combat:llm_required`
+- `STS2_LLM_COMMAND` is intentionally not persisted; use `npm run agent:run:bridge` for live bridge windows.
+- Verification through the bridge added `transition-000336-agent-mr7t3f1g-yku3n4`.
+- Provider/validation/execution remained clean:
+  - invalid `0`
+  - error `0`
+  - missing candidate `0`
+  - provider bucket `none`
+  - finish reason `stop`
+  - output cap hits `0`
+- A report-side attribution bug was fixed: live rollout readiness now evaluates the applied additive `llmDecision.reason` when `liveAdditiveApplied=true`, while preserving shadow reason quality as diagnostic evidence.
+- Latest replay status:
+  - `READY_FOR_P8_5_LIVE_COMBAT_ONLY`
+  - focused fresh `combat:llm_required` live-eligible samples `3`
+  - valid `3`
+  - invalid/error `0`
+  - focused thin reasons `{}`
+- Broad P8.5 remains no-go. Do not add `map`, `card_reward`, shop, reward, route, event, rest, menu, or card-select classes without separate fresh evidence and explicit approval.
+- Immediate rollback remains `STS2_P8_LIVE_ADDITIVE=0`.

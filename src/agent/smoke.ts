@@ -3152,20 +3152,40 @@ try {
       }
     },
     {
-      transitionId: "transition-forced-tail",
+      transitionId: "transition-combat-live-applied",
       tick: 4,
+      workspaceComparison: { decisionClass: "combat:llm_required", budget: { maxShadowCalls: 4 } },
+      decisionAudit: { raw: { llm: { liveAdditiveApplied: true } } },
+      llmDecision: {
+        reason: "Block most incoming now, but delay lethal setup and add draw risk."
+      },
+      shadowWorkspaceDecision: {
+        called: true,
+        liveEligibleClass: true,
+        revisionTag: "rev-a",
+        outcome: "valid",
+        reasonQuality: "thin",
+        reasonQualityNotes: ["missing_tradeoff"],
+        failureBucket: "none",
+        providerFinishReason: "stop"
+      }
+    },
+    {
+      transitionId: "transition-forced-tail",
+      tick: 5,
       workspaceComparison: { decisionClass: "combat:forced_local", budget: { maxShadowCalls: 4 } },
       shadowWorkspaceDecision: { called: false, liveEligibleClass: false, revisionTag: "rev-a", outcome: "not_needed" }
     }
   ] as unknown as TransitionRecord[]);
   assert.deepEqual(
     focusedFreshSlices.combatLiveEligibleFresh.transitionIds,
-    ["transition-combat-a", "transition-combat-b"]
+    ["transition-combat-a", "transition-combat-b", "transition-combat-live-applied"]
   );
-  assert.equal(focusedFreshSlices.combatLiveEligibleFresh.stats.called, 2);
-  assert.equal(focusedFreshSlices.combatLiveEligibleFresh.stats.liveEligibleCalled, 2);
-  assert.equal(focusedFreshSlices.combatLiveEligibleFresh.stats.valid, 2);
-  assert.equal(focusedFreshSlices.combatLiveEligibleFresh.stats.reasonQualityCounts.adequate, 2);
+  assert.equal(focusedFreshSlices.combatLiveEligibleFresh.stats.called, 3);
+  assert.equal(focusedFreshSlices.combatLiveEligibleFresh.stats.liveEligibleCalled, 3);
+  assert.equal(focusedFreshSlices.combatLiveEligibleFresh.stats.valid, 3);
+  assert.equal(focusedFreshSlices.combatLiveEligibleFresh.stats.reasonQualityCounts.adequate, 3);
+  assert.equal(focusedFreshSlices.combatLiveEligibleFresh.stats.reasonQualityNoteCounts.missing_tradeoff ?? 0, 0);
 
   assert.equal(evalReport.summary.predictionErrorCoverage.predictionError, 1);
   assert.equal(evalReport.summary.predictionErrorCoverage.withTypedChecks, 1);

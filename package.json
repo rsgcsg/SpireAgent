@@ -8,7 +8,7 @@
   "scripts": {
     "agent:tick": "tsx src/agent/index.ts tick",
     "agent:run": "tsx src/agent/index.ts run",
-    "agent:run:bridge": "STS2_LLM_COMMAND=\"node scripts/llm-bridge-decider.mjs\" STS2_LLM_TIMEOUT_MS=300000 STS2_LLM_BRIDGE_TIMEOUT_MS=300000 tsx src/agent/index.ts run",
+    "agent:run:bridge": "STS2_LLM_COMMAND=\"node scripts/llm-bridge-decider.mjs\" STS2_LLM_TIMEOUT_MS=120000 STS2_LLM_BRIDGE_TIMEOUT_MS=120000 tsx src/agent/index.ts run",
     "agent:review": "tsx src/agent/index.ts review",
     "agent:smoke": "tsx src/agent/smoke.ts",
     "typecheck": "tsc --noEmit",

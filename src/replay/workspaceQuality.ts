@@ -1,5 +1,6 @@
 import type { JsonRecord, TransitionRecord } from "../domain/types.js";
 import { isRecord } from "../agent/utils.js";
+import { transitionReasonQuality } from "./liveReasonQuality.js";
 
 export interface WorkspaceDecisionClassQualityStats {
   transitions: number;
@@ -58,11 +59,12 @@ export function buildWorkspaceDecisionClassQuality(
     if (shadow?.agreement === "missing_candidate" && liveEligible) {
       row.liveEligibleMissingCandidate += 1;
     }
-    if (typeof shadow?.reasonQuality === "string") {
-      row.reasonQualityCounts[shadow.reasonQuality] = (row.reasonQualityCounts[shadow.reasonQuality] ?? 0) + 1;
+    const reasonQuality = transitionReasonQuality(transition as JsonRecord, shadow);
+    if (typeof reasonQuality.quality === "string") {
+      row.reasonQualityCounts[reasonQuality.quality] = (row.reasonQualityCounts[reasonQuality.quality] ?? 0) + 1;
     }
-    if (Array.isArray(shadow?.reasonQualityNotes)) {
-      for (const note of shadow.reasonQualityNotes.map(String)) {
+    if (Array.isArray(reasonQuality.notes)) {
+      for (const note of reasonQuality.notes.map(String)) {
         row.thinReasonCounts[note] = (row.thinReasonCounts[note] ?? 0) + 1;
       }
     }

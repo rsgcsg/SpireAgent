@@ -80,9 +80,9 @@ P8.4 shadow prompt ablation uses `STS2_P8_WORKSPACE_ABLATION_MODE=full` by defau
 Do not enable live P8 integration by default. The first allowed live experiment is later P8.5-only and must be additive:
 
 ```bash
-# future gated experiment only; keep off unless the P8.4 gate says go
+# gated experiment only; keep off unless the P8.5 combat-only rollout gate says go
 STS2_P8_LIVE_ADDITIVE=0
-STS2_P8_LIVE_DECISION_CLASSES=combat:llm_required,card_reward:llm_required
+STS2_P8_LIVE_DECISION_CLASSES=combat:llm_required
 ```
 
 P8.5 may add a compact workspace summary beside the legacy prompt. P9/P10 are the places to gradually relax shadow boundaries for guarded learning updates, with whitelist, fallback, eval, and rollback still required.

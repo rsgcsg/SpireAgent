@@ -4,6 +4,7 @@ import type { JsonRecord } from "../domain/types.js";
 import type { TransitionRecord } from "../data/transitionSchema.js";
 import { assertGroundTruthInvariants } from "../data/transitionSchema.js";
 import { agentRoot, isRecord } from "../agent/utils.js";
+import { transitionReasonQuality } from "./liveReasonQuality.js";
 
 export interface ReplayRun {
   runDir: string;
@@ -550,11 +551,12 @@ export function buildReplayShadowSliceStats(
     stats.agreementCounts[agreement] = (stats.agreementCounts[agreement] ?? 0) + 1;
     if (agreement === "missing_candidate") stats.missingCandidate += 1;
     if (agreement === "missing_candidate" && liveEligible) stats.liveEligibleMissingCandidate += 1;
-    if (typeof shadow.reasonQuality === "string") {
-      stats.reasonQualityCounts[shadow.reasonQuality] = (stats.reasonQualityCounts[shadow.reasonQuality] ?? 0) + 1;
+    const reasonQuality = transitionReasonQuality(transition as unknown as JsonRecord, shadow);
+    if (typeof reasonQuality.quality === "string") {
+      stats.reasonQualityCounts[reasonQuality.quality] = (stats.reasonQualityCounts[reasonQuality.quality] ?? 0) + 1;
     }
-    if (Array.isArray(shadow.reasonQualityNotes)) {
-      for (const note of shadow.reasonQualityNotes.map(String)) {
+    if (Array.isArray(reasonQuality.notes)) {
+      for (const note of reasonQuality.notes.map(String)) {
         stats.reasonQualityNoteCounts[note] = (stats.reasonQualityNoteCounts[note] ?? 0) + 1;
       }
     }

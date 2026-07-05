@@ -298,9 +298,20 @@ As of the current P8.5 state:
 
 - `combat:llm_required` is the only live whitelist candidate.
 - Tiny live smoke has passed.
-- A larger combat-only additive window has executed with multiple live combat decisions and no provider/validation/execution failures.
-- Replay/eval still blocks promotion because combat CandidateFuture quality is not yet clear enough across the readiness window.
+- A larger combat-only additive boss-combat window has executed with multiple live combat decisions and no provider/validation/execution failures.
+- Replay now reads `READY_FOR_P8_5_LIVE_COMBAT_ONLY`.
+- Human approval has been given to enter the combat-only persistent-enable plan, and the narrow local persistent flag has been applied.
 - Broad P8.5 remains no-go.
 - `map:llm_required` and `card_reward:llm_required` remain blocked by missing fresh evidence and must not enter the first whitelist.
 
-The next healthy action is not broader live. It is to inspect the combat CandidateFuture-quality blocker, especially missing survival/tradeoff/lethal cue attribution, and only then decide whether another bounded combat-only window is useful.
+The current approved persistent-enable state is narrow:
+
+- persist `STS2_P8_LIVE_ADDITIVE=1`
+- persist `STS2_P8_LIVE_DECISION_CLASSES=combat:llm_required`
+- do not persist or broaden any non-combat live class
+- keep `STS2_LLM_COMMAND` supplied by the explicit bridge runner, not by the shared local env, so ordinary non-bridge runs do not block waiting for a manual responder
+- immediately roll back by setting `STS2_P8_LIVE_ADDITIVE=0` if any stop condition appears
+
+The first persistent-enabled verification run through the explicit bridge runner has completed cleanly for provider, validation, and execution. Replay now reads `READY_FOR_P8_5_LIVE_COMBAT_ONLY` after fixing report-side reason-quality attribution to evaluate the applied additive live reason when `liveAdditiveApplied=true`.
+
+Combat-only can remain persistently enabled under this policy. Any broader live scope still requires a separate evidence ladder and approval.

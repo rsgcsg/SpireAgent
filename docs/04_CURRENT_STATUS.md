@@ -11,8 +11,8 @@ The project is building an LLM-centered Slay the Spire 2 agent where the LLM rem
 ## Current Phase
 
 - Formal maturity route: P1-P10 in `../PROJECT_PLAN.md`
-- Active milestone: P8.5 combat-only additive live rollout review and CandidateFuture-quality blocker triage
-- Current live posture: live additive is default-off; one explicitly approved tiny `combat:llm_required` additive live window has been executed with temporary process env only
+- Active milestone: P8.5 combat-only additive persistent-enable under narrow whitelist and strict rollback
+- Current live posture: combat-only additive is locally persistently enabled; broad P8.5 remains off-limits
 
 ## Current State
 
@@ -20,7 +20,11 @@ The project is building an LLM-centered Slay the Spire 2 agent where the LLM rem
 - `full_bounded_candidate_futures` exists as a shadow-only experiment mode
 - P8.5 static pre-audit is passed
 - Broad P8.5 live/additive is not allowed yet
-- The first tiny `combat:llm_required` additive-only live window has executed; do not expand the whitelist without a separate evidence window and plan
+- Current replay readiness is `READY_FOR_P8_5_LIVE_COMBAT_ONLY`
+- First whitelist remains exactly `combat:llm_required`
+- `map:llm_required`, `card_reward:llm_required`, and all other non-combat classes remain outside the first whitelist
+- Combat-only rollout evidence has now advanced beyond tiny smoke into a more formal same-budget boss-combat window
+- Combat-only persistent-enable plan is approved and locally applied for `combat:llm_required` only
 - DeepSeek remains shadow-only and does not execute actions
 - Stable memory, derived knowledge, and strategy mutation remain outside the current live path
 - North Star alignment audit: P8 is still broadly aligned, but some inner scaffold policies are too fixed and should become evidence-backed, proposal-driven, and rollback-capable over time. See `reports/P8_NORTH_STAR_ALIGNMENT_AUDIT_2026-07-04.md`.
@@ -28,7 +32,77 @@ The project is building an LLM-centered Slay the Spire 2 agent where the LLM rem
 
 ## Current Blocker
 
-Broad P8.5 live readiness is still blocked, but the blocker has narrowed.
+Broad P8.5 live readiness is still blocked, but the blocker has narrowed to scope and promotion discipline rather than provider reliability.
+
+Current honest status:
+
+- `combat:llm_required` is the only live-authorized candidate slice
+- local persistent config is `STS2_P8_LIVE_ADDITIVE=1` plus `STS2_P8_LIVE_DECISION_CLASSES=combat:llm_required`
+- `STS2_LLM_COMMAND` is intentionally not persisted in `.env.local`; use `npm run agent:run:bridge` for live windows
+- current replay says `READY_FOR_P8_5_LIVE_COMBAT_ONLY`
+- broad P8.5 remains no-go because `map` and `card_reward` still lack equivalent fresh readiness evidence
+- persistent enable is authorized only for `combat:llm_required`; no non-combat class is authorized
+
+Newest focused combat rollout evidence:
+
+- latest replay run: `run-mr7s5gfl-edyce7`
+- same revision: `2026-07-05-v5.1.7-survival-cue-preservation`
+- replay readiness: `READY_FOR_P8_5_LIVE_COMBAT_ONLY`
+- since-revision shadow summary:
+  - called=`13`
+  - liveEligibleCalled=`3`
+  - valid=`13`
+  - invalid=`0`
+  - error=`0`
+  - `failureBucket={"none":13}`
+  - `finishReason={"stop":13}`
+  - `outputCapHits=0`
+- focused fresh `combat:llm_required` live-eligible slice:
+  - samples=`3`
+  - valid=`3`
+  - invalid/error=`0`
+  - `failureBucket=none`
+  - `finishReason=stop`
+  - `outputCapHits=0`
+  - reason-quality now evaluates the applied additive live reason when `liveAdditiveApplied=true`, while preserving shadow reason as diagnostic telemetry
+- direct transition audit on the current run shows 11 additive live combat decisions with `chosenBy="llm"`:
+  - `transition-000194-agent-mr7smrum-sk2bgv`
+  - `transition-000214-agent-mr7sogqq-dks7cm`
+  - `transition-000218-agent-mr7sovfs-98f1pi`
+  - `transition-000223-agent-mr7spcbu-jveyzu`
+  - `transition-000232-agent-mr7sprmi-12owpe`
+  - `transition-000287-agent-mr7stati-sx07pz`
+  - `transition-000301-agent-mr7sud5x-mvyedy`
+  - `transition-000309-agent-mr7suta8-vo3xep`
+  - `transition-000314-agent-mr7svce8-zynmhl`
+  - `transition-000331-agent-mr7sw1dd-slpbqp`
+  - `transition-000336-agent-mr7t3f1g-yku3n4`
+- all 11 were provider-clean and validation-clean:
+  - `chosenBy=llm`
+  - `liveAdditiveApplied=true`
+  - `failureBucket=none`
+  - no `finishReason=length`
+  - no `outputCapHit`
+  - no invalid candidate / missing candidate / execution mismatch
+- CandidateFuture quality remains acceptable on the current combat slice:
+  - `completeEnough`
+  - `shallowFutureCount=0`
+  - survival/tradeoff cues preserved on the called combat samples
+
+Persistent-enable plan:
+
+- persist `STS2_P8_LIVE_ADDITIVE=1` locally
+- persist `STS2_P8_LIVE_DECISION_CLASSES=combat:llm_required` locally
+- keep `STS2_LLM_COMMAND` out of shared local env; use `npm run agent:run:bridge` for live windows so a manual/active bridge responder is intentional
+- keep rollback trivial: set `STS2_P8_LIVE_ADDITIVE=0`
+- immediately roll back on provider failure, invalid output, missing/illegal candidate, execution mismatch, unexpected whitelist leak, or reason/cue collapse
+- first persistent-enabled verification has run through the bridge and replay/eval/review are clean for provider/validation/execution; continue only within the same whitelist and rollback rules
+
+What still blocks broader rollout:
+
+- `map:llm_required` still lacks fresh called rollout evidence on the live path
+- `card_reward:llm_required` still lacks fresh called rollout evidence on the live path
+- whitelist expansion still requires separate evidence and explicit approval
 
 Fresh high-pressure `combat:llm_required` provider recovery has now been tested on current runtime evidence and did not reproduce the historical provider-length failure.
 
@@ -587,3 +661,14 @@ Current planning conclusion:
 - Schema and telemetry changes go to `../DATA_SCHEMA.md`
 - Budget-governance changes go to `../BUDGET_GOVERNANCE.md`
 - Detailed history stays in `../LLM_HANDOFF.md` and `../DEBUG_REPORT.md`
+## 2026-07-05 Bridge Timeout Audit
+
+- The fresh `LLM command timed out after 300000ms` incident was re-audited as a rollout execution anomaly, not a provider JSON/output failure.
+- Evidence: `/tmp/sts2-llm-bridge/request-llm-mr7rz0nl-jxvshh.json` is a normal high-pressure `combat:llm_required` request and never received a matching `response-*.json`.
+- This means the bridge responder missed a live combat request; the request did not originate from a `game_over` or post-boss cleanup screen.
+- Minimal hardening landed in `scripts/llm-bridge-decider.mjs` and `package.json`:
+  - bridge timeout reduced from `300000ms` to `120000ms` for `agent:run:bridge`
+  - active pending request is now mirrored to `pending-request.json` and `pending-summary.txt`
+  - timeout now clears pending bridge artifacts and records `timed-out-<id>.json`
+- This does not change whitelist behavior, provider contract, validation, or live execution rules.
+- Immediate follow-up runtime after the patch did not reproduce the old 5-minute hang, but it also did not naturally produce a promotion-quality `combat:llm_required` called slice.
