@@ -11,8 +11,8 @@ The project is building an LLM-centered Slay the Spire 2 agent where the LLM rem
 ## Current Phase
 
 - Formal maturity route: P1-P10 in `../PROJECT_PLAN.md`
-- Active milestone: P8.5 combat-only additive persistent-enable under narrow whitelist and strict rollback
-- Current live posture: combat-only additive is locally persistently enabled; broad P8.5 remains off-limits
+- Active milestone: P8.5 targeted additive live expansion under narrow whitelist and strict rollback
+- Current live posture: targeted additive live is locally enabled for proven classes; broad P8.5 remains off-limits
 
 ## Current State
 
@@ -20,9 +20,9 @@ The project is building an LLM-centered Slay the Spire 2 agent where the LLM rem
 - `full_bounded_candidate_futures` exists as a shadow-only experiment mode
 - P8.5 static pre-audit is passed
 - Broad P8.5 live/additive is not allowed yet
-- Current replay readiness is `READY_FOR_P8_5_LIVE_COMBAT_ONLY`
-- First whitelist remains exactly `combat:llm_required`
-- `map:llm_required`, `card_reward:llm_required`, and all other non-combat classes remain outside the first whitelist
+- Current replay readiness still uses the historical combat-first gate and may report `READY_FOR_P8_5_LIVE_COMBAT_ONLY`
+- Current targeted whitelist on this local machine is `combat:llm_required`, `card_reward:llm_required`, `map:llm_required`, `rest:llm_required`, `shop:llm_required`, and `event:llm_required`
+- Broad card-selection, reward, route, menu, and unproven follow-up screens remain outside targeted live
 - Combat-only rollout evidence has now advanced beyond tiny smoke into a more formal same-budget boss-combat window
 - Combat-only persistent-enable plan is approved and locally applied for `combat:llm_required` only
 - DeepSeek now has a verified narrow live command adapter for `combat:llm_required`
@@ -36,14 +36,74 @@ Broad P8.5 live readiness is still blocked, but the blocker has narrowed to scop
 
 Current honest status:
 
-- `combat:llm_required` is the only live-authorized candidate slice
-- local persistent config is `STS2_P8_LIVE_ADDITIVE=1` plus `STS2_P8_LIVE_DECISION_CLASSES=combat:llm_required`
-- local persistent config now also includes `STS2_LLM_COMMAND=tsx src/agent/deepseekLiveCommand.ts`
-- the default combat-only live path remains `npm run agent:run:deepseek-combat-live`, and plain `npm run agent:run` now inherits the same local combat-only provider on this machine
+- `combat:llm_required`, `card_reward:llm_required`, `map:llm_required`, `rest:llm_required`, `shop:llm_required`, and `event:llm_required` are the current targeted live classes on this local machine
+- `shop:llm_required` is in targeted live after one clean tiny live purchase and a checkpoint visibility fix; it still needs continued close watching before it should be considered mature
+- `event:llm_required` is in targeted live after one clean live event choice; event follow-up `card_select` and `Proceed` screens remain local unless separately authorized
+- `rest:llm_required` now has two clean fresh live calls and has been added to the local targeted whitelist
+- `shop:llm_required` has workspace/candidate preparation and one clean provider/selection live call; it still needs a second shop node / small window before promotion
+- the first persistent live slice was `combat:llm_required`; later targeted validation expanded locally to `card_reward:llm_required` and `map:llm_required`
+- local persistent config is additive-only and must stay whitelist-based; it must not be replaced with broad `:llm_required` live
+- local persistent config includes `STS2_LLM_COMMAND=tsx src/agent/deepseekLiveCommand.ts`
+- the default targeted live path is now plain `npm run agent:run` with the local whitelist, or the explicit README command when testing from a clean shell
 - `npm run agent:run:bridge` remains available for manual bridge windows and debugging, but it is no longer the default recommended responder path
 - current replay says `READY_FOR_P8_5_LIVE_COMBAT_ONLY`
-- broad P8.5 remains no-go because `map` and `card_reward` still lack equivalent fresh readiness evidence
-- persistent enable is authorized only for `combat:llm_required`; no non-combat class is authorized
+- broad P8.5 remains no-go because route, reward, menu, broad card-selection, and other unproven/follow-up classes still lack equivalent fresh readiness evidence
+- persistent enable is authorized only for explicitly whitelisted targeted classes; whitelist expansion must remain auditable and reversible
+
+Rest/shop readiness note:
+
+- README now documents the default targeted live command and separate process-local validation commands for `rest:llm_required` and `shop:llm_required`
+- Rest and shop candidates now carry workspace-side strategic tradeoff facts; this is scaffold/presentation work only, not a change to validation or execution safety
+- `rest:llm_required` second evidence landed on floor 8 and was clean enough for targeted local whitelist promotion
+- Do not persist `shop:llm_required` into the local whitelist until its fresh evidence window is clean
+
+Fresh rest live evidence:
+
+- `transition-000073-agent-mr8njzqa-p4awfu`
+  - floor 6
+  - selected `choose_rest_option-1` / Smith
+  - provider `deepseek-live-command`
+  - provider/validation/execution clean
+- `transition-000095-agent-mr8nuch6-x4k208`
+  - floor 8
+  - selected `choose_rest_option-1` / Smith
+  - provider `deepseek-live-command`
+  - provider clean: `failureBucket=none`, `finishReason=stop`, `outputCapHits=0`
+  - invalid/missing candidate/error/execution mismatch: none observed
+- Replay still marks rest reasons as thin due `missing_tradeoff`, but the second live reason explicitly compared upgrade value against wasted full-HP rest. Treat this as reason-quality detector debt for rest, not a live safety blocker.
+
+Fresh shop live evidence:
+
+- `transition-000097-agent-mr8nzhtr-rh6f1j`
+  - floor 9
+  - selected `shop-4` / Bulk Up, `shop_purchase:4`
+  - provider `deepseek-live-command`
+  - provider clean: `failureBucket=none`, `finishReason=stop`, `outputCapHits=0`
+  - invalid/missing candidate/error/execution mismatch: none observed
+  - reason quality: replay classifies `shop:llm_required` as adequate with complete CandidateFutures (`complete=8/8`, `shallow=0`)
+  - execution result returned `ok`, and the recorded post-state gold changed from 74 to 35
+- A narrow checkpoint bug was found and fixed: `stateHash` / `stateDiff` did not include player gold, so successful shop purchases that only changed gold could be recorded as `unknown` settlement. Future shop purchases should now surface `player_gold_changed` and `screen_or_menu_flow_progressed`.
+- Current shop has no second purchase candidate left after the first buy; dry-run now routes `proceed` as forced local. A second shop live sample requires another shop node.
+
+Fresh event live evidence:
+
+- `transition-000100-agent-mr8po8ng-ksml69`
+  - floor 10
+  - selected event option `event_choose_option-1`
+  - provider `deepseek-live-command`
+  - provider clean: `failureBucket=none`, `finishReason=stop`, `outputCapHits=0`
+  - invalid/missing candidate/error/execution mismatch: none observed
+  - reason: `Address severe block deficit with Nimble enchant.`
+  - checkpoint hard: event choice advanced into card selection
+- `transition-000108-agent-mr8puyz8-yw1aae`
+  - floor 11
+  - selected event option `event_choose_option-0` / Bottle
+  - provider `deepseek-live-command`
+  - provider clean: `failureBucket=none`, `finishReason=stop`, `outputCapHits=0`
+  - invalid/missing candidate/error/execution mismatch: none observed
+  - checkpoint hard: event advanced to rewards
+- The immediate follow-up `card_select` stayed non-live because it was not whitelisted, then local `confirm_selection` returned to event and local `Proceed` advanced to map.
+- Interpretation: this supports targeted `event:llm_required` live under strict guardrails. It does not authorize broad card-selection, route, reward, or menu live.
 
 Fresh DeepSeek live-command verification:
 
@@ -751,3 +811,64 @@ Next step:
 - Collect one post-fix fresh map node sample to confirm the agent follows an active route plan as `obvious_local` when appropriate and only calls `map:llm_required` for actual replan/planning points.
 - Do not treat the pre-fix second map call as evidence against the new route-plan checkpoint behavior.
 - Do not treat the post-fix single-option `map:forced_local` as readiness evidence for `map:llm_required`; the next useful sample needs a multi-option map checkpoint.
+
+## 2026-07-06 Targeted Map/Card-Reward Live Enablement
+
+Fresh run:
+
+- `run-mr8n8h3s-b3c6qj`
+
+Applied live decisions:
+
+- `transition-000002-agent-mr8n92ns-nllv8v`
+  - `map:llm_required`
+  - provider `deepseek-live-command`
+  - selected `map-0`
+  - reason: route reward with path risk tradeoff
+- `transition-000020-agent-mr8n9s8y-6dtkak`
+  - `card_reward:llm_required`
+  - provider `deepseek-live-command`
+  - selected `card-reward-1` / `Charge Battery`
+  - reason: patches defense while adding energy
+- `transition-000070-agent-mr8nal16-e5zbtl`
+  - `combat:llm_required`
+  - provider `deepseek-live-command`
+  - selected `play-1-NIBBIT_0`
+  - reason: attack while enemy is buffing
+
+Safety outcome:
+
+- invalid output `0`
+- missing candidate `0`
+- provider error `0`
+- execution mismatch `0`
+- output cap hit `0`
+- finish reason `stop` for recorded provider calls
+- `event:llm_required` was correctly blocked by the whitelist and used fallback instead of live DeepSeek.
+
+Route-plan outcome:
+
+- The opening map decision used DeepSeek live to establish the route.
+- Subsequent map checkpoints followed the route locally, with reasons such as `follow route plan ...`.
+- This matches the intended human-like map behavior: plan at map start, follow checkpoints, replan only when the route becomes stale, blocked, or strategically invalidated.
+
+Local persistent whitelist:
+
+- `combat:llm_required`
+- `card_reward:llm_required`
+- `map:llm_required`
+- `rest:llm_required`
+
+Still excluded:
+
+- `event`
+- `shop`
+- `route`
+- `reward`
+- `menu`
+- broad card-selection classes outside the verified card-reward path
+
+Current conclusion:
+
+- Targeted P8.5 live is enabled locally for combat, card reward, map route-planning/checkpoint behavior, and rest-site choices.
+- Broad P8.5 remains not authorized; future classes need separate fresh evidence and stop conditions.

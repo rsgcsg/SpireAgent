@@ -15,7 +15,7 @@ import {
 } from "../domain/types.js";
 import { getIncomingDamage, summarizeState } from "./state.js";
 import type { DecisionRoute, ExecutionCheckpoint, NormalizedState, RunMemory, ScoredCandidate } from "./types.js";
-import { asString, isRecord } from "./utils.js";
+import { asNumber, asString, isRecord } from "./utils.js";
 
 export interface CognitiveScaffoldInput {
   state: NormalizedState;
@@ -638,6 +638,18 @@ function predictedOutcome(candidate: ScoredCandidate, state: NormalizedState, ru
       ]);
     case "event_choose_option":
       return ["event option resolves and may alter resources/deck/route"];
+    case "choose_rest_option":
+      return compactStrings([
+        "rest-site choice resolves and advances the run",
+        restOptionDirection(candidate, state),
+        restOptionOpportunityCost(candidate, state)
+      ]);
+    case "shop_purchase":
+      return compactStrings([
+        "shop purchase changes resources and future deck/relic texture",
+        shopPurchaseDirection(candidate),
+        shopPurchaseOpportunityCost(candidate, run)
+      ]);
     default:
       return [`${state.screen} flow should make visible progress`];
   }
@@ -658,7 +670,15 @@ function costForCandidate(candidate: ScoredCandidate, state: NormalizedState, ru
     mapAlternateRouteCost(candidate, state, run),
     mapPathLockRisk(candidate, state, run)
   ]);
-  if (candidate.action.kind === "shop_purchase") return ["gold cost"];
+  if (candidate.action.kind === "choose_rest_option") return compactStrings([
+    restOptionOpportunityCost(candidate, state),
+    restOptionRisk(candidate, state)
+  ]);
+  if (candidate.action.kind === "shop_purchase") return compactStrings([
+    "gold cost",
+    shopPurchaseOpportunityCost(candidate, run),
+    shopPurchaseRisk(candidate, run)
+  ]);
   if (candidate.action.kind === "use_potion") return ["potion slot consumed"];
   if (candidate.action.kind === "event_choose_option") return ["event-specific cost unknown until resolved"];
   return [];
@@ -679,6 +699,8 @@ function assumptionsForCandidate(candidate: ScoredCandidate, state: NormalizedSt
   if (candidate.action.kind === "play_card") assumptions.push("hand index remains current until execution");
   if (candidate.action.kind === "select_card_reward") assumptions.push(`current deck still most needs ${primaryDeckNeed(run)}`);
   if (candidate.action.kind === "choose_map_node") assumptions.push(`current HP/resources still support ${mapPressureSummary(state, run)}`);
+  if (candidate.action.kind === "choose_rest_option") assumptions.push("current HP and upgrade value still justify this rest-site option");
+  if (candidate.action.kind === "shop_purchase") assumptions.push("current gold and deck needs still justify this purchase");
   if ("index" in candidate.action) assumptions.push("indexed option remains current until execution");
   if ("target" in candidate.action && candidate.action.target) assumptions.push("target remains legal and alive");
   return assumptions;
@@ -689,6 +711,8 @@ function invalidationTriggersForCandidate(candidate: ScoredCandidate, state: Nor
   if (candidate.action.kind === "play_card") triggers.push("hand index shifted");
   if (candidate.action.kind === "select_card_reward") triggers.push(`another reward option better patches ${primaryDeckNeed(run)}`);
   if (candidate.action.kind === "choose_map_node") triggers.push(`route lock-in becomes worse than ${mapPressureSummary(state, run)}`);
+  if (candidate.action.kind === "choose_rest_option") triggers.push("HP or upgrade target assumptions change before choosing");
+  if (candidate.action.kind === "shop_purchase") triggers.push("gold, shop stock, or deck need assumptions change before purchase");
   if ("target" in candidate.action && candidate.action.target) triggers.push("target disappeared or became illegal");
   if ("index" in candidate.action) triggers.push("option index shifted");
   return triggers;
@@ -1031,6 +1055,67 @@ function cardRewardSkipValue(run: RunMemory): string | undefined {
 
 function cardRewardSkipRisk(run: RunMemory): string | undefined {
   return `skip may miss a needed patch for ${primaryDeckNeed(run)}`;
+}
+
+function restOptionDirection(candidate: ScoredCandidate, state: NormalizedState): string | undefined {
+  const text = restOptionText(candidate);
+  const hpRatio = state.player.hp / Math.max(1, state.player.maxHp);
+  if (/smith|upgrade|锻造|升级/.test(text)) return "upgrade converts current safety into long-term deck power";
+  if (/rest|休息|heal|治疗/.test(text)) return hpRatio < 0.55
+    ? "rest converts campfire tempo into survival margin"
+    : "rest gives safety but may waste a strong upgrade window at high HP";
+  return "rest-site option changes long-term route safety or deck power";
+}
+
+function restOptionOpportunityCost(candidate: ScoredCandidate, state: NormalizedState): string | undefined {
+  const text = restOptionText(candidate);
+  const hpRatio = state.player.hp / Math.max(1, state.player.maxHp);
+  if (/smith|upgrade|锻造|升级/.test(text)) return hpRatio < 0.55
+    ? "opportunity cost: upgrading may skip needed healing at low HP"
+    : "opportunity cost: upgrading spends the campfire instead of banking extra HP";
+  if (/rest|休息|heal|治疗/.test(text)) return "opportunity cost: resting delays the best available upgrade";
+  return "opportunity cost: choosing this option forgoes the other campfire mode";
+}
+
+function restOptionRisk(candidate: ScoredCandidate, state: NormalizedState): string | undefined {
+  const text = restOptionText(candidate);
+  const hpRatio = state.player.hp / Math.max(1, state.player.maxHp);
+  if (/smith|upgrade|锻造|升级/.test(text) && hpRatio < 0.55) return "low HP can make skipping rest unsafe";
+  if (/rest|休息|heal|治疗/.test(text) && hpRatio > 0.75) return "high HP can make resting low value";
+  return "campfire choice is irreversible until the next rest site";
+}
+
+function shopPurchaseDirection(candidate: ScoredCandidate): string | undefined {
+  const text = shopItemText(candidate);
+  if (/card|attack|skill|power|牌|攻击|技能|能力/.test(text)) return "purchase changes deck plan and future draw texture";
+  if (/relic|遗物/.test(text)) return "purchase converts gold into persistent run power";
+  if (/potion|药水/.test(text)) return "purchase converts gold into short-term safety";
+  if (/remove|移除|purge/.test(text)) return "purchase improves deck consistency by removing a weak card";
+  return "purchase converts gold into immediate strategic value";
+}
+
+function shopPurchaseOpportunityCost(candidate: ScoredCandidate, run: RunMemory): string | undefined {
+  const item = isRecord(candidate.facts?.item) ? candidate.facts.item : undefined;
+  const price = asNumber(item?.price, Number.NaN);
+  const priceLine = Number.isFinite(price) ? `spending ${price} gold` : "spending gold";
+  return `${priceLine} may block future shop answers for ${primaryDeckNeed(run)}`;
+}
+
+function shopPurchaseRisk(candidate: ScoredCandidate, run: RunMemory): string | undefined {
+  const text = shopItemText(candidate);
+  if (/card|牌/.test(text) && run.deficits.deck_thinness > 0.6) return "extra purchased card can dilute future draws";
+  if (/potion|药水/.test(text)) return "potion value depends on finding a fight where it matters";
+  return "shop stock is temporary but gold is also future flexibility";
+}
+
+function restOptionText(candidate: ScoredCandidate): string {
+  const option = isRecord(candidate.facts?.option) ? candidate.facts.option : undefined;
+  return `${candidate.label} ${option?.label ?? ""} ${option?.name ?? ""} ${option?.title ?? ""}`.toLowerCase();
+}
+
+function shopItemText(candidate: ScoredCandidate): string {
+  const item = isRecord(candidate.facts?.item) ? candidate.facts.item : undefined;
+  return `${candidate.label} ${item?.name ?? ""} ${item?.id ?? ""} ${item?.type ?? ""} ${item?.description ?? ""}`.toLowerCase();
 }
 
 function mapPressureSummary(state: NormalizedState, run: RunMemory): string {

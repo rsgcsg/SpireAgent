@@ -13,7 +13,7 @@ export function generateCandidates(state: NormalizedState): CandidateAction[] {
     case "map":
       return enrichMapCandidatesWithRoutePlan(state, generateMapCandidates(state));
     case "rest":
-      return generateIndexedOptionCandidates(state, "choose_rest_option", "休息点选项");
+      return generateIndexedOptionCandidates(state, "choose_rest_option", "休息点选项", true);
     case "event":
       return generateIndexedOptionCandidates(state, "event_choose_option", "事件选项", true);
     case "shop":
@@ -163,6 +163,7 @@ function generateShopCandidates(state: NormalizedState): CandidateAction[] {
         kind: "shop_purchase" as const,
         index: typeof item.index === "number" ? item.index : index
       },
+      requiresLlm: true,
       facts: { item }
     }));
 

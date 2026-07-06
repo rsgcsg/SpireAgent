@@ -77,12 +77,13 @@ DeepSeek shadow output defaults to `STS2_DEEPSEEK_OUTPUT_MODE=json_mode` with `r
 P8 provider telemetry now records whether the request kept DeepSeek's default thinking mode or explicitly set `thinking: { "type": "disabled" | "enabled" }`, whether `reasoning_content` was returned, the response content source, provider-failure buckets, and thin-reason notes. This is still shadow-only evidence and does not change live execution.
 P8.4 shadow prompt ablation uses `STS2_P8_WORKSPACE_ABLATION_MODE=full` by default. `full` remains the control group and does not apply bounded candidate-future compression. `full_bounded_candidate_futures` is the v5 combat-only bounded serialization experiment; `compact` and `ultra_compact` remain separate smaller ablations. None of these modes change the live prompt or execute the DeepSeek decision.
 
-Do not enable live P8 integration by default. The first allowed live experiment is later P8.5-only and must be additive:
+Do not enable broad P8 integration by default. P8.5 live rollout is additive-only and class-whitelisted:
 
 ```bash
-# gated experiment only; keep off unless the P8.5 combat-only rollout gate says go
-STS2_P8_LIVE_ADDITIVE=0
-STS2_P8_LIVE_DECISION_CLASSES=combat:llm_required
+# targeted live only; do not broaden to every :llm_required class
+STS2_P8_LIVE_ADDITIVE=1
+STS2_P8_LIVE_DECISION_CLASSES=combat:llm_required,card_reward:llm_required,map:llm_required,rest:llm_required,shop:llm_required,event:llm_required
+STS2_LLM_COMMAND=tsx src/agent/deepseekLiveCommand.ts
 ```
 
 P8.5 may add a compact workspace summary beside the legacy prompt. P9/P10 are the places to gradually relax shadow boundaries for guarded learning updates, with whitelist, fallback, eval, and rollback still required.
@@ -91,9 +92,11 @@ The controller consumes this additive context only when `STS2_P8_LIVE_ADDITIVE=1
 Current P8.5 status:
 
 - Static / pre-live audit may continue.
-- Live additive remains off by default and needs explicit authorization plus fresh per-class evidence.
-- The first allowed live experiment, when approved and when a live LLM command is configured, is additive-only and should start with `combat:llm_required` rather than widening to all `:llm_required` classes at once.
-- `card_reward:llm_required` and especially `map:llm_required` require separate fresh called-evidence and reason-quality clearance before they should be considered for live additive.
+- Targeted live is locally authorized for `combat:llm_required`, `card_reward:llm_required`, `map:llm_required`, `rest:llm_required`, `shop:llm_required`, and `event:llm_required`.
+- `map` live means opening route planning and true replan checkpoints; ordinary follow-plan map checkpoints should stay local.
+- Broad live is still not authorized. `reward`, `route`, `menu`, broad card-selection, and other unproven classes require separate evidence before entering the persistent whitelist.
+- `shop:llm_required` and `event:llm_required` are targeted-live classes only. They are not proof that all shop/event follow-up screens or broad card-selection are safe.
+- Any provider failure, invalid or missing candidate, execution mismatch, unexpected non-whitelist live call, or reason collapse is a stop condition.
 
 With Slay the Spire 2 and the external STS2 MCP mod running:
 
@@ -110,13 +113,43 @@ For manual/Codex bridge LLM decisions:
 npm run agent:run:bridge -- --max-ticks 500 --delay-ms 120
 ```
 
-Default recommended combat-only live path:
+Default recommended targeted live path:
 
 ```bash
-npm run agent:run:deepseek-combat-live -- --max-ticks 100 --delay-ms 120
+STS2_P8_LIVE_ADDITIVE=1 \
+STS2_P8_LIVE_DECISION_CLASSES='combat:llm_required,card_reward:llm_required,map:llm_required,rest:llm_required,shop:llm_required,event:llm_required' \
+STS2_LLM_COMMAND='tsx src/agent/deepseekLiveCommand.ts' \
+npm run agent:run -- --max-ticks 100 --delay-ms 120
 ```
 
-This command keeps the first whitelist at `combat:llm_required` and uses `STS2_LLM_COMMAND="tsx src/agent/deepseekLiveCommand.ts"`. It is now the default recommended combat-only live runner. It still relies on normal candidate validation and fallback. Do not use it to broaden live scope; `map`, `card_reward`, shop, reward, route, event, rest, menu, and card-select classes remain excluded until separately validated.
+Single-step targeted live:
+
+```bash
+STS2_P8_LIVE_ADDITIVE=1 \
+STS2_P8_LIVE_DECISION_CLASSES='combat:llm_required,card_reward:llm_required,map:llm_required,rest:llm_required,shop:llm_required,event:llm_required' \
+STS2_LLM_COMMAND='tsx src/agent/deepseekLiveCommand.ts' \
+npm run agent:tick
+```
+
+`rest:llm_required` was promoted after two clean fresh rest-site live calls. If validating rest from a clean shell, use the default targeted live command above.
+
+If you need to reproduce the pre-promotion shop-only validation shape from a clean shell, keep the same targeted whitelist and run a single tick:
+
+```bash
+STS2_P8_LIVE_ADDITIVE=1 \
+STS2_P8_LIVE_DECISION_CLASSES='combat:llm_required,card_reward:llm_required,map:llm_required,rest:llm_required,shop:llm_required' \
+STS2_LLM_COMMAND='tsx src/agent/deepseekLiveCommand.ts' \
+npm run agent:tick
+```
+
+Promotion guidance:
+
+- `rest:llm_required`: promoted locally after two clean fresh rest-site live calls; keep watching reason-quality detector debt, but it is not a current safety blocker.
+- `shop:llm_required`: locally targeted after a clean tiny purchase path and checkpoint fix; continue watching purchase/skip/leave-relevant evidence before treating it as mature.
+- `event:llm_required`: locally targeted after one clean live event choice; follow-up card-selection/proceed screens remain local unless separately authorized.
+- Broad P8.5 still requires separate evidence for every remaining decision class; do not replace the whitelist with every `:llm_required` class.
+
+The DeepSeek live command adapter still relies on normal candidate validation and fallback. Non-whitelisted classes must fall back/local rather than calling live DeepSeek.
 
 ## Main Commands
 

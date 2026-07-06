@@ -23,6 +23,62 @@ Read first:
 
 The project has completed Phase 0, Phase 1, the Phase 2 minimum data-loop MVP, the Phase 2.5 offline engineering eval runner, and Phase 2.6 eval warning classification/noise reduction. The formal route now extends through Phase 10, where the target is a complete Guarded Learning Loop.
 
+Latest targeted-live expansion:
+
+- Default targeted live remains whitelist-based, not broad live.
+- Current local targeted classes are `combat:llm_required`, `card_reward:llm_required`, `map:llm_required`, `rest:llm_required`, `shop:llm_required`, and `event:llm_required`.
+- `rest:llm_required` is locally promoted after two clean fresh live calls.
+- `shop:llm_required` is locally targeted after one clean tiny live purchase and a checkpoint visibility fix; keep watching purchase/skip/leave evidence before calling it mature.
+- `event:llm_required` is locally targeted after one clean live event choice; event follow-up `card_select` / `Proceed` screens remain local unless separately authorized.
+- README now contains explicit commands for:
+  - default targeted live
+  - one-screen rest validation
+  - one-screen shop validation
+- Rest candidates now require LLM arbitration; shop purchase candidates now require LLM arbitration. This does not relax validation or change execution safety.
+- Workspace-side rest/shop CandidateFuture facts now include strategic tradeoffs:
+  - rest: heal vs upgrade, HP pressure, upgrade opportunity cost, campfire irreversibility
+  - shop: item role, deck need, gold opportunity cost, bloat/resource/future flexibility risk
+- Rest live calls were clean:
+  - run `run-mr8n8h3s-b3c6qj`
+  - transition `transition-000073-agent-mr8njzqa-p4awfu`
+  - selected `choose_rest_option-1` / Smith
+  - provider `deepseek-live-command`, provider bucket none, no invalid/missing/error/mismatch
+  - transition `transition-000095-agent-mr8nuch6-x4k208`
+  - selected `choose_rest_option-1` / Smith
+  - provider `deepseek-live-command`, provider bucket none, no invalid/missing/error/mismatch
+- The second rest reason was `Upgrade strengthens deck, rest wasted at full HP.`
+- Replay still marks rest reasonQuality as thin due `missing_tradeoff`; treat that as rest detector debt rather than a live safety blocker unless future rest reasons become genuinely content-free.
+- After two clean rest calls, local whitelist promotion for `rest:llm_required` was applied.
+- Next step: move to shop and start with one tiny `shop:llm_required` live call.
+- First shop tiny live call has now landed:
+  - run `run-mr8n8h3s-b3c6qj`
+  - transition `transition-000097-agent-mr8nzhtr-rh6f1j`
+  - selected `shop-4` / Bulk Up
+  - provider `deepseek-live-command`, provider bucket none, no invalid/missing/error/mismatch
+  - execution result `ok`; post-state gold changed 74 -> 35
+- A narrow checkpoint bug was fixed after that call:
+  - player gold is now included in `stateHash`
+  - checkpoint `changes` now includes `gold`
+  - `player_gold_changed` is now a checkpoint reason
+  - smoke covers shop purchase checkpoint visibility
+- Current shop has no second purchase candidate after the first buy; dry-run routes `proceed` as forced local.
+- First event live call has now landed:
+  - run `run-mr8n8h3s-b3c6qj`
+  - transition `transition-000100-agent-mr8po8ng-ksml69`
+  - selected `event_choose_option-1`
+  - provider `deepseek-live-command`, provider bucket none, no invalid/missing/error/mismatch
+  - reason `Address severe block deficit with Nimble enchant.`
+  - checkpoint hard into `card_select`
+- Second event live call also landed cleanly:
+  - transition `transition-000108-agent-mr8puyz8-yw1aae`
+  - selected `event_choose_option-0` / Bottle
+  - provider `deepseek-live-command`, provider bucket none, no invalid/missing/error/mismatch
+  - checkpoint hard into `rewards`
+- The event follow-up card select did not use live:
+  - `card_select:local_recommended_llm_arbitrate` was disabled by whitelist and used local fallback
+  - `confirm_selection` and event `Proceed` then advanced locally
+- Next step: continue targeted live with the current whitelist, but do not broaden to reward/route/menu/broad card-selection until each has its own evidence. The current screen after the second event call is `rewards`.
+
 Latest narrow P8.5 readiness update:
 
 - First fresh `card_reward:llm_required` DeepSeek live call is now recorded:
@@ -1020,3 +1076,42 @@ This is sufficient to enter Phase 3 combat plan/checkpoint continuation. Do not 
   - current game is on `card_reward`, so ask the user to move to a multi-option map node when ready
   - run one post-fix fresh multi-option map sample
   - expected behavior: follow active route plan as `obvious_local` when the checkpoint matches; call `map:llm_required` only if planning/replanning is truly needed
+
+## 2026-07-06 Targeted Map/Card-Reward Live Handoff
+
+- A new fresh run from a map opening produced clean targeted live evidence:
+  - run `run-mr8n8h3s-b3c6qj`
+  - `map:llm_required`: `transition-000002-agent-mr8n92ns-nllv8v`
+  - `card_reward:llm_required`: `transition-000020-agent-mr8n9s8y-6dtkak`
+  - `combat:llm_required`: `transition-000070-agent-mr8nal16-e5zbtl`
+- All three used provider source `deepseek-live-command`.
+- Safety counters:
+  - invalid output `0`
+  - missing candidate `0`
+  - provider error `0`
+  - execution mismatch `0`
+  - output cap hit `0`
+- Whitelist containment is verified:
+  - `event:llm_required` appeared in the same run
+  - live was not applied because `event` is not whitelisted
+  - fallback handled it
+- Map route-plan checkpoint behavior now has useful evidence:
+  - opening map used live LLM for route planning
+  - later map checkpoints followed the route locally when there was no real branch to deliberate
+  - do not reintroduce per-branch map LLM calls unless the route is stale, blocked, divergent, or strategically invalidated
+- Local persistent whitelist has been updated, without printing secrets, to:
+  - `combat:llm_required`
+  - `card_reward:llm_required`
+  - `map:llm_required`
+  - `rest:llm_required`
+- Still excluded:
+  - `event`
+  - `shop`
+  - `route`
+  - `reward`
+  - `menu`
+  - broad card-selection classes outside the verified card-reward path
+- Next step:
+  - continue normal live runtime with this targeted whitelist
+  - stop on any provider failure, invalid/missing candidate, execution mismatch, unexpected non-whitelist live application, or reason collapse
+  - broad P8.5 should only expand class-by-class after separate fresh evidence

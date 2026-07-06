@@ -2569,6 +2569,24 @@ try {
     shopCandidates.map((candidate) => candidate.action),
     [{ kind: "shop_purchase", index: 2 }, { kind: "proceed" }]
   );
+  assert.equal(shopCandidates[0]?.requiresLlm, true);
+  const shopAfterPurchaseState = normalizeGameState({
+    ...shopState.raw,
+    player: {
+      ...(shopState.raw.player as object),
+      gold: 0
+    }
+  });
+  const shopPurchaseCheckpoint = buildExecutionCheckpoint({
+    before: shopState,
+    after: shopAfterPurchaseState,
+    action: { kind: "shop_purchase", index: 2 },
+    settled: true,
+    polls: 1
+  });
+  assert.equal(shopPurchaseCheckpoint.kind, "hard");
+  assert.ok(shopPurchaseCheckpoint.reasons.includes("screen_or_menu_flow_progressed"));
+  assert.ok(shopPurchaseCheckpoint.reasons.includes("player_gold_changed"));
 
   const openingTreasureState = normalizeGameState({
     state_type: "treasure",

@@ -2,6 +2,79 @@
 
 > Historical append-only debug log. This file records what was true during earlier engineering passes; older "current status" sections may be stale. It is not the canonical source for current phase, blocker, roadmap, or architecture. Start from `docs/00_START_HERE.md` and `docs/04_CURRENT_STATUS.md`, then use `PROJECT_NORTH_STAR.md`, `PROJECT_AUTHORITY_GUIDE.md`, `PROJECT_PLAN.md`, `ARCHITECTURE.md`, `GAME_IO_CAPABILITIES.md`, and `DATA_SCHEMA.md` as source of truth.
 
+## 2026-07-06 Rest/Shop Targeted Live Preparation
+
+- README now separates:
+  - default targeted live for `combat:llm_required`, `card_reward:llm_required`, and `map:llm_required`
+  - temporary process-local validation for `rest:llm_required`
+  - temporary process-local validation for `shop:llm_required`
+- Rest candidates are now marked LLM-required at the candidate layer, while ordinary post-rest card-select/proceed flow remains outside the rest whitelist unless separately authorized.
+- Shop purchase candidates are now marked LLM-required, while shop proceed/leave remains local flow unless future evidence justifies a separate live policy.
+- Workspace-side strategic facts were added for rest and shop:
+  - rest: heal vs upgrade direction, HP safety, upgrade opportunity cost, irreversible campfire choice
+  - shop: item type direction, gold opportunity cost, deck need, bloat/resource/future flexibility risk
+- First fresh rest live evidence already exists:
+  - run: `run-mr8n8h3s-b3c6qj`
+  - transition: `transition-000073-agent-mr8njzqa-p4awfu`
+  - decision class: `rest:llm_required`
+  - selected candidate: `choose_rest_option-1`
+  - action: Smith / upgrade
+  - provider source: `deepseek-live-command`
+  - provider clean: `failureBucket=none`, `finishReason=stop`, `outputCapHits=0`
+  - invalid/missing candidate/error/execution mismatch: none observed
+- That first rest reason was thin before the rest/shop workspace patch (`Full HP, upgrade increases power.`), so the second rest test should verify that the new scaffold makes the tradeoff explicit.
+- Second fresh rest live evidence now exists:
+  - run: `run-mr8n8h3s-b3c6qj`
+  - transition: `transition-000095-agent-mr8nuch6-x4k208`
+  - floor: 8
+  - decision class: `rest:llm_required`
+  - selected candidate: `choose_rest_option-1`
+  - action: Smith / upgrade
+  - provider source: `deepseek-live-command`
+  - provider clean: `failureBucket=none`, `finishReason=stop`, `outputCapHits=0`
+  - invalid/missing candidate/error/execution mismatch: none observed
+  - reason: `Upgrade strengthens deck, rest wasted at full HP.`
+- Replay still classifies both rest reasons as thin due `missing_tradeoff`; the second reason is semantically a rest-vs-upgrade tradeoff, so this is currently treated as rest reason-quality detector debt rather than a live safety blocker.
+- After the second clean call, `rest:llm_required` was added to the local targeted whitelist without printing or altering API keys.
+- At this point in the log, shop had code preparation but no fresh live evidence yet; the next section records the first shop live call.
+- No broad live authorization follows from this work.
+
+## 2026-07-06 First Fresh `shop:llm_required` DeepSeek Live Call
+
+- Started from a real `screen=shop` node at act 1 floor 9.
+- Temporary process-local live whitelist included:
+  - `combat:llm_required`
+  - `card_reward:llm_required`
+  - `map:llm_required`
+  - `rest:llm_required`
+  - `shop:llm_required`
+- Dry-run correctly routed the screen as `shop:llm_required` through `deepseek-live-command`.
+- Fresh real live call:
+  - run: `run-mr8n8h3s-b3c6qj`
+  - transition: `transition-000097-agent-mr8nzhtr-rh6f1j`
+  - selected candidate: `shop-4`
+  - action: `shop_purchase:4` / Bulk Up for 39 gold
+  - provider clean: `failureBucket=none`, `finishReason=stop`, `outputCapHits=0`
+  - no invalid candidate, no missing candidate, no provider error, no execution mismatch observed
+  - replay classified `shop:llm_required` as adequate, with `complete=8/8`, `shallow=0`, and preserved tradeoff/resource/future-risk cues
+- The action did execute:
+  - `executionResult.status=ok`
+  - recorded post-state gold changed from 74 to 35
+- Narrow telemetry/checkpoint bug found:
+  - `stateHash` and `stateDiff` did not include player gold
+  - therefore a successful shop purchase that only changed gold could be marked `unknown: settlement_timeout_or_no_visible_change`
+- Minimal fix:
+  - added player gold to `stateHash`
+  - added `gold` to checkpoint `changes`
+  - added `player_gold_changed` soft checkpoint reason
+  - added smoke coverage for shop purchase checkpoint visibility
+- Honest rollout interpretation:
+  - shop provider/selection path is proven for one fresh call
+  - the first recorded shop checkpoint was affected by pre-fix telemetry, not by provider or validation failure
+  - current shop has no second purchase candidate after buying Bulk Up; dry-run now routes `proceed` as forced local
+  - `shop:llm_required` still needs another shop node before local persistent promotion
+  - broad live remains not authorized from this single shop call
+
 ## 2026-07-05 More Formal Combat-Only Boss Rollout Window On `run-mr7s5gfl-edyce7`
 
 - Kept all rollout guards unchanged:
@@ -2681,3 +2754,87 @@ Follow-up cleanup:
 - Current honest blocker:
   - current game screen is `card_reward`, not map
   - need one post-fix multi-option map node to verify follow-plan `obvious_local` versus true `map:llm_required` replan behavior
+
+## 2026-07-06 Targeted Map/Card-Reward Live Evidence
+
+- Fresh run `run-mr8n8h3s-b3c6qj` started from a new map opening with two legal map nodes.
+- Dry-run and live execution both routed the opening map choice as `map:llm_required` through `deepseek-live-command`.
+- Applied live decisions in the run:
+  - `transition-000002-agent-mr8n92ns-nllv8v`
+    - `map:llm_required`
+    - selected `map-0`
+    - provider `deepseek-live-command`
+    - reason: `Gain card reward, risk suboptimal path.`
+  - `transition-000020-agent-mr8n9s8y-6dtkak`
+    - `card_reward:llm_required`
+    - selected `card-reward-1` / `Charge Battery`
+    - provider `deepseek-live-command`
+    - reason: `Patch defense while adding energy, addresses highest deficit.`
+  - `transition-000070-agent-mr8nal16-e5zbtl`
+    - `combat:llm_required`
+    - selected `play-1-NIBBIT_0`
+    - provider `deepseek-live-command`
+    - reason: `Strike now while enemy buffs, no block needed.`
+- Whitelist containment worked:
+  - `transition-000027-agent-mr8n9u3q-mvvaby` was `event:llm_required`
+  - live was not applied because `event` is not whitelisted
+  - fallback selected the local top event option
+- Map route-plan behavior:
+  - opening map created/used a live route decision
+  - subsequent single-option map checkpoints were local/forced
+  - route-plan reasons were preserved (`follow route plan ...`), so the system is no longer re-deliberating every branch when the plan already applies
+- Safety summary:
+  - invalid output `0`
+  - missing candidate `0`
+  - provider error `0`
+  - execution mismatch `0`
+  - output cap hit `0`
+- Local persistent whitelist now includes exactly:
+  - `combat:llm_required`
+  - `card_reward:llm_required`
+  - `map:llm_required`
+- Later on 2026-07-06, `rest:llm_required` was added after two clean fresh rest-site live calls.
+- Broad non-combat live remains excluded until each class has separate evidence.
+
+## 2026-07-06 Targeted Shop/Event Live Expansion
+
+- North Star recalibration:
+  - P8.5 should not become an endless hand-tuned prompt pile for every decision class.
+  - The correct direction is a guarded targeted-live scaffold that lets the LLM participate in real decisions while preserving validation, rollback, evidence, and replay/eval/review.
+  - Broad live is still not authorized, but targeted class coverage should move faster when provider/validation/execution evidence is clean.
+- Current local targeted whitelist now includes:
+  - `combat:llm_required`
+  - `card_reward:llm_required`
+  - `map:llm_required`
+  - `rest:llm_required`
+  - `shop:llm_required`
+  - `event:llm_required`
+- Shop evidence:
+  - `transition-000097-agent-mr8nzhtr-rh6f1j`
+  - selected `shop-4` / Bulk Up
+  - provider `deepseek-live-command`
+  - provider/validation/execution clean
+  - gold changed 74 -> 35
+  - follow-up fix: shop purchase checkpoint now includes gold diff and `player_gold_changed`
+- Event evidence:
+  - `transition-000100-agent-mr8po8ng-ksml69`
+  - selected `event_choose_option-1`
+  - provider `deepseek-live-command`
+  - provider bucket `none`, finish reason `stop`, output cap hit `0`
+  - invalid/missing candidate/error/execution mismatch: none observed
+  - reason: `Address severe block deficit with Nimble enchant.`
+  - checkpoint hard into `card_select`
+  - `transition-000108-agent-mr8puyz8-yw1aae`
+  - selected `event_choose_option-0` / Bottle
+  - provider `deepseek-live-command`
+  - provider bucket `none`, finish reason `stop`, output cap hit `0`
+  - invalid/missing candidate/error/execution mismatch: none observed
+  - checkpoint hard into `rewards`
+- Important boundary:
+  - event follow-up `card_select` did not become live
+  - it was `card_select:local_recommended_llm_arbitrate`, disabled by whitelist, and handled through local fallback
+  - local `confirm_selection` and event `Proceed` then advanced the run
+- Current conclusion:
+  - `shop:llm_required` and `event:llm_required` may continue in targeted live under strict stop conditions
+  - this is not broad P8.5 readiness
+  - reward, route, menu, broad card-selection, and unproven follow-up screens still require separate evidence

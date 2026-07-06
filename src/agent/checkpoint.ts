@@ -44,6 +44,7 @@ export function stateHash(state: NormalizedState): string {
     turn: state.turn,
     isPlayPhase: state.isPlayPhase,
     hp: state.player.hp,
+    gold: state.player.gold,
     block: state.player.block,
     energy: state.player.energy,
     hand: state.player.hand.map(cardIdentity),
@@ -92,6 +93,7 @@ function diffState(before: NormalizedState, after: NormalizedState, action: Agen
     turn: changed(before.turn, after.turn),
     isPlayPhase: changed(before.isPlayPhase, after.isPlayPhase),
     hp: changed(before.player.hp, after.player.hp),
+    gold: changed(before.player.gold, after.player.gold),
     block: changed(before.player.block, after.player.block),
     energy: changed(before.player.energy, after.player.energy),
     handCount: changed(before.player.hand.length, after.player.hand.length),
@@ -188,6 +190,7 @@ function softCheckpointReasons(before: NormalizedState, after: NormalizedState, 
   const reasons: string[] = [];
   if (stateHash(before) === stateHash(after)) return reasons;
   if (before.player.hp !== after.player.hp) reasons.push("player_hp_changed");
+  if (before.player.gold !== after.player.gold) reasons.push("player_gold_changed");
   if (before.player.block !== after.player.block) reasons.push("player_block_changed");
   if (before.player.energy !== after.player.energy) reasons.push("player_energy_changed");
   if (before.player.hand.length !== after.player.hand.length) reasons.push("hand_count_changed");
