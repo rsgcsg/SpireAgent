@@ -39,6 +39,15 @@ export class CommandJsonLlmDecider implements LlmDecider {
   }
 }
 
+export function describeLlmCommandSource(commandLine = process.env.STS2_LLM_COMMAND ?? ""):
+  "deepseek-live-command" | "bridge-command" | "custom-command" | "none" {
+  const normalized = commandLine.trim();
+  if (!normalized) return "none";
+  if (/deepseekLiveCommand\.ts|deepseek-live-decider\.mjs/u.test(normalized)) return "deepseek-live-command";
+  if (/llm-bridge-decider\.mjs/u.test(normalized)) return "bridge-command";
+  return "custom-command";
+}
+
 export interface DeepSeekV4FlashConfig {
   apiKey?: string;
   baseUrl?: string;

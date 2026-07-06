@@ -9,6 +9,11 @@ import { getSts2McpRestCapabilities } from "../adapters/sts2mcp/capabilities.js"
 import { AgentController } from "./controller.js";
 import { buildP8LiveAdditivePrompt } from "./controller.js";
 import { AgentDecisionRecorder } from "./decisionRecorder.js";
+import {
+  extractAllowedCandidates,
+  extractDecisionClass,
+  normalizeLiveDecision
+} from "./deepseekLiveCommand.js";
 import { buildExecutionCheckpoint } from "./checkpoint.js";
 import { buildCollectedStateRecord } from "./collector.js";
 import {
@@ -25,6 +30,7 @@ import {
   buildDeepSeekRequestBody,
   createLlmDecider,
   createP8WorkspaceDecider,
+  describeLlmCommandSource,
   parseWorkspaceJsonDecision,
   resolveDeepSeekResponseMode,
   resolveDeepSeekThinkingMode,
@@ -950,6 +956,11 @@ const budgetGuardAfterPlannedSampleGate = buildReplayShadowSliceStats("budget-af
 assert.equal(budgetGuardAfterPlannedSampleGate.gate.status, "go");
 assert.equal(budgetGuardAfterPlannedSampleGate.gate.reasons.includes("call_budget_exceeded_before_planned_sample"), false);
 assert.equal(resolveDeepSeekResponseMode(undefined, undefined), "json_mode");
+assert.equal(describeLlmCommandSource("tsx src/agent/deepseekLiveCommand.ts"), "deepseek-live-command");
+assert.equal(describeLlmCommandSource("node scripts/deepseek-live-decider.mjs"), "deepseek-live-command");
+assert.equal(describeLlmCommandSource("node scripts/llm-bridge-decider.mjs"), "bridge-command");
+assert.equal(describeLlmCommandSource("node custom-decider.mjs"), "custom-command");
+assert.equal(describeLlmCommandSource(""), "none");
 assert.equal(resolveDeepSeekResponseMode("non_json_strict", undefined), "non_json_strict");
 assert.equal(resolveDeepSeekResponseMode(undefined, "0"), "non_json_strict");
 assert.equal(resolveDeepSeekThinkingMode(undefined), "default_enabled");
@@ -1157,6 +1168,36 @@ assert.equal(manualSnapshot.isGroundTruth, false);
 assert.equal(validateLlmDecisionForCandidates({ candidateId: "a" }, [{ id: "a" }]).valid, true);
 assert.equal(validateLlmDecisionForCandidates({ candidateId: "missing" }, [{ id: "a" }]).outcome, "invalid_choice");
 assert.equal(validateLlmDecisionForCandidates({} as any, [{ id: "a" }]).outcome, "invalid_output");
+const deepSeekLivePrompt = {
+  state: "screen=combat hp=12/75 incoming=18",
+  candidates: [
+    { id: "play-block", label: "Block" },
+    { id: "play-attack", label: "Attack" }
+  ],
+  p8_live_additive: {
+    decisionClass: "combat:llm_required"
+  }
+};
+assert.equal(extractDecisionClass(deepSeekLivePrompt), "combat:llm_required");
+assert.deepEqual(extractAllowedCandidates(deepSeekLivePrompt), [{ id: "play-block" }, { id: "play-attack" }]);
+assert.deepEqual(
+  normalizeLiveDecision({
+    candidateId: "play-block",
+    confidence: 0.72,
+    reason: "Block now, but delay damage.",
+    memoryUpdates: { strategicDirection: ["do-not-emit"] },
+    parameterSuggestions: [{ key: "block", delta: 1, reason: "do-not-emit" }]
+  }),
+  { candidateId: "play-block", confidence: 0.72, reason: "Block now, but delay damage." }
+);
+assert.equal(
+  validateLlmDecisionForCandidates(normalizeLiveDecision({ candidateId: "play-block" }), extractAllowedCandidates(deepSeekLivePrompt)).valid,
+  true
+);
+assert.equal(
+  validateLlmDecisionForCandidates(normalizeLiveDecision({ candidateId: "missing" }), extractAllowedCandidates(deepSeekLivePrompt)).outcome,
+  "invalid_choice"
+);
 
 const rewardState = normalizeGameState({
   state_type: "card_reward",

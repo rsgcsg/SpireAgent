@@ -110,6 +110,14 @@ For manual/Codex bridge LLM decisions:
 npm run agent:run:bridge -- --max-ticks 500 --delay-ms 120
 ```
 
+Default recommended combat-only live path:
+
+```bash
+npm run agent:run:deepseek-combat-live -- --max-ticks 100 --delay-ms 120
+```
+
+This command keeps the first whitelist at `combat:llm_required` and uses `STS2_LLM_COMMAND="tsx src/agent/deepseekLiveCommand.ts"`. It is now the default recommended combat-only live runner. It still relies on normal candidate validation and fallback. Do not use it to broaden live scope; `map`, `card_reward`, shop, reward, route, event, rest, menu, and card-select classes remain excluded until separately validated.
+
 ## Main Commands
 
 ```bash
@@ -117,6 +125,7 @@ npm run sync:sts2-data
 npm run agent:tick
 npm run agent:run
 npm run agent:run:bridge
+npm run agent:run:deepseek-combat-live
 npm run agent:review
 npm run agent:smoke
 npm run data:replay -- --latest

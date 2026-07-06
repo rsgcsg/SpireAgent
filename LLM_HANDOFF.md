@@ -25,6 +25,30 @@ The project has completed Phase 0, Phase 1, the Phase 2 minimum data-loop MVP, t
 
 Latest narrow P8.5 readiness update:
 
+- DeepSeek live command adapter is now runtime-verified on real combat-only additive calls:
+  - run: `run-mr7v10pf-kdjvxe`
+  - fresh additive combat transitions:
+    - `transition-009862-agent-mr8hi280-t3yxk1`
+    - `transition-009863-agent-mr8hi7mc-dqa3fn`
+    - `transition-009864-agent-mr8hihrm-z5dblo`
+    - `transition-009865-agent-mr8hjs91-pxcun7`
+    - `transition-009866-agent-mr8hk2y5-c8i4tl`
+    - `transition-009867-agent-mr8hkcy6-zdl8kj`
+  - each records `providerSource="deepseek-live-command"`
+  - observed result:
+    - provider clean: `failureBucket=none`, `finishReason=stop`, `outputCapHits=0`
+    - invalid candidate=`0`
+    - missing candidate=`0`
+    - execution mismatch observed=`0`
+    - reasons non-empty and intelligible
+  - this is enough to treat `npm run agent:run:deepseek-combat-live` as the default recommended combat-only live runner
+  - `npm run agent:run:bridge` remains useful for manual bridge testing, but it is no longer the default recommended live path
+  - local machine state has now been aligned with that recommendation:
+    - `.env.local` keeps `STS2_P8_LIVE_ADDITIVE=1`
+    - `.env.local` keeps `STS2_P8_LIVE_DECISION_CLASSES=combat:llm_required`
+    - `.env.local` now also sets `STS2_LLM_COMMAND=tsx src/agent/deepseekLiveCommand.ts`
+  - on this machine, plain `npm run agent:run` now inherits the same combat-only DeepSeek live provider path
+
 - Latest controlled rollout synthesis:
   - replay on `run-mr7s5gfl-edyce7` now reads `READY_FOR_P8_5_LIVE_COMBAT_ONLY`
   - broad P8.5 remains no-go
@@ -92,7 +116,9 @@ Latest narrow P8.5 readiness update:
   - `STS2_P8_LIVE_ADDITIVE=1` plus whitelist match appends compact P8 workspace summary to the legacy live prompt
   - whitelist mismatch blocks the live LLM call before provider invocation and falls back with `fallbackReason=live_additive_decision_class_not_whitelisted`
   - validation/fallback/execution/candidate generation/scoring remain unchanged
-  - DeepSeek remains P8 shadow-only and is not used as the live executor
+- DeepSeek is no longer shadow-only in this narrow sense:
+  - it remains shadow-only outside live additive experiments and outside the combat whitelist
+  - but the built-in command adapter is now validated as the combat-only additive live provider path
 - The rollout used `STS2_LLM_COMMAND="node scripts/llm-bridge-decider.mjs"` as temporary process env only; it was not written to `.env.local`.
 - Pre-run stop-condition discovery:
   - an initial bridge preflight tried to request a non-whitelisted `card_select:local_recommended_llm_arbitrate` decision
@@ -915,3 +941,17 @@ This is sufficient to enter Phase 3 combat plan/checkpoint continuation. Do not 
   - focused thin reasons `{}`
 - Broad P8.5 remains no-go. Do not add `map`, `card_reward`, shop, reward, route, event, rest, menu, or card-select classes without separate fresh evidence and explicit approval.
 - Immediate rollback remains `STS2_P8_LIVE_ADDITIVE=0`.
+
+## 2026-07-06 DeepSeek Live Command Adapter Handoff
+
+- A minimal built-in DeepSeek command adapter now exists:
+  - `src/agent/deepseekLiveCommand.ts`
+  - `npm run agent:run:deepseek-combat-live`
+- This is intentionally still an `STS2_LLM_COMMAND` adapter, not a controller rewrite.
+- It keeps the first whitelist at `combat:llm_required`, validates DeepSeek's candidate against prompt candidates, and strips memory/parameter suggestion fields before stdout.
+- It has passed `tsc` and `npm run check`, but it has not yet produced fresh runtime live evidence.
+- Next safe step:
+  - run a tiny `combat:llm_required` DeepSeek live window only when the game is positioned for combat
+  - stop on provider failure, timeout, invalid output, missing candidate, execution mismatch, or reason/cue collapse
+  - run replay/eval/review immediately after
+- Broad P8.5 remains no-go and non-combat classes remain excluded.

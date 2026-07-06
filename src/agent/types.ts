@@ -158,6 +158,7 @@ export interface DecisionLlmAudit {
   called: boolean;
   available: boolean;
   outcome: LlmAuditOutcome;
+  providerSource?: "deepseek-live-command" | "bridge-command" | "custom-command" | "none";
   candidateId?: string;
   error?: string;
   promptBytes?: number;

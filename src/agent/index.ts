@@ -85,6 +85,7 @@ function printTick(result: Awaited<ReturnType<AgentController["tick"]>>): void {
               called: result.llm.called,
               available: result.llm.available,
               outcome: result.llm.outcome,
+              providerSource: result.llm.providerSource,
               promptBytes: result.llm.promptBytes,
               candidatesSent: result.llm.candidatesSent,
               candidateId: result.llm.candidateId,

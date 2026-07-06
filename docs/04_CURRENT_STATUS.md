@@ -25,7 +25,7 @@ The project is building an LLM-centered Slay the Spire 2 agent where the LLM rem
 - `map:llm_required`, `card_reward:llm_required`, and all other non-combat classes remain outside the first whitelist
 - Combat-only rollout evidence has now advanced beyond tiny smoke into a more formal same-budget boss-combat window
 - Combat-only persistent-enable plan is approved and locally applied for `combat:llm_required` only
-- DeepSeek remains shadow-only and does not execute actions
+- DeepSeek now has a verified narrow live command adapter for `combat:llm_required`
 - Stable memory, derived knowledge, and strategy mutation remain outside the current live path
 - North Star alignment audit: P8 is still broadly aligned, but some inner scaffold policies are too fixed and should become evidence-backed, proposal-driven, and rollback-capable over time. See `reports/P8_NORTH_STAR_ALIGNMENT_AUDIT_2026-07-04.md`.
 - P8.5 live rollout policy is now canonicalized in `P8_5_LIVE_ROLLOUT_POLICY.md`.
@@ -38,10 +38,37 @@ Current honest status:
 
 - `combat:llm_required` is the only live-authorized candidate slice
 - local persistent config is `STS2_P8_LIVE_ADDITIVE=1` plus `STS2_P8_LIVE_DECISION_CLASSES=combat:llm_required`
-- `STS2_LLM_COMMAND` is intentionally not persisted in `.env.local`; use `npm run agent:run:bridge` for live windows
+- local persistent config now also includes `STS2_LLM_COMMAND=tsx src/agent/deepseekLiveCommand.ts`
+- the default combat-only live path remains `npm run agent:run:deepseek-combat-live`, and plain `npm run agent:run` now inherits the same local combat-only provider on this machine
+- `npm run agent:run:bridge` remains available for manual bridge windows and debugging, but it is no longer the default recommended responder path
 - current replay says `READY_FOR_P8_5_LIVE_COMBAT_ONLY`
 - broad P8.5 remains no-go because `map` and `card_reward` still lack equivalent fresh readiness evidence
 - persistent enable is authorized only for `combat:llm_required`; no non-combat class is authorized
+
+Fresh DeepSeek live-command verification:
+
+- run: `run-mr7v10pf-kdjvxe`
+- actual combat state: act 3 boss combat, floor 11, `screen=combat`, high incoming pressure
+- runtime command path:
+  - `STS2_P8_LIVE_ADDITIVE=1`
+  - `STS2_P8_LIVE_DECISION_CLASSES=combat:llm_required`
+  - `STS2_LLM_COMMAND="tsx src/agent/deepseekLiveCommand.ts"`
+- fresh additive live transitions with provider source `deepseek-live-command`:
+  - `transition-009862-agent-mr8hi280-t3yxk1`
+  - `transition-009863-agent-mr8hi7mc-dqa3fn`
+  - `transition-009864-agent-mr8hihrm-z5dblo`
+  - `transition-009865-agent-mr8hjs91-pxcun7`
+  - `transition-009866-agent-mr8hk2y5-c8i4tl`
+  - `transition-009867-agent-mr8hkcy6-zdl8kj`
+- observed live-path result on this fresh window:
+  - provider source stayed `deepseek-live-command`
+  - `chosenBy="llm"` on the additive combat calls
+  - provider remained clean: `failureBucket=none`, `finishReason=stop`, `outputCapHits=0`, `retryCount<=1`
+  - no invalid candidate, no missing candidate, no execution mismatch, no timeout fallback
+  - reasons remained non-empty and replay/eval/review can identify the live calls
+- current recommendation:
+  - use `npm run agent:run:deepseek-combat-live -- --max-ticks <N> --delay-ms 120` as the default combat-only live runner
+  - keep `map`, `card_reward`, shop, reward, route, event, rest, menu, and card-select out of the first live whitelist
 
 Newest focused combat rollout evidence:
 
@@ -103,6 +130,7 @@ What still blocks broader rollout:
 - `map:llm_required` still lacks fresh called rollout evidence on the live path
 - `card_reward:llm_required` still lacks fresh called rollout evidence on the live path
 - whitelist expansion still requires separate evidence and explicit approval
+- the built-in DeepSeek live adapter now has fresh runtime combat evidence, but only for `combat:llm_required`
 
 Fresh high-pressure `combat:llm_required` provider recovery has now been tested on current runtime evidence and did not reproduce the historical provider-length failure.
 

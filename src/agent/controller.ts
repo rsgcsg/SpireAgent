@@ -12,6 +12,7 @@ import type {
   ExecutionCheckpoint
 } from "./types.js";
 import type { LlmDecider } from "./llm.js";
+import { describeLlmCommandSource } from "./llm.js";
 import { NoopLlmDecider } from "./llm.js";
 import { validateLlmDecisionForCandidates } from "./llm.js";
 import { generateCandidates } from "./candidates.js";
@@ -275,7 +276,8 @@ export class AgentController {
       wanted: llmWanted,
       called: false,
       available: this.llm.isAvailable?.() ?? true,
-      outcome: llmWanted ? "unavailable" : "not_needed"
+      outcome: llmWanted ? "unavailable" : "not_needed",
+      providerSource: describeLlmCommandSource()
     };
     const promptCandidates = scoring.candidates.slice(0, this.memory.strategy.thresholds.maxLlmCandidates);
     const decisionClass = `${state.screen}:${scoring.route.kind}`;

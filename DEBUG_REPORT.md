@@ -59,7 +59,65 @@
   - provider is no longer the blocker on combat-only
   - the combat-only slice is now promotion-usable and stronger than tiny smoke
   - broad P8.5 still must not be inferred from this
-  - the remaining step before any persistent-enable preplan is human approval, not more provider surgery
+- the remaining step before any persistent-enable preplan is human approval, not more provider surgery
+
+## 2026-07-06 DeepSeek Live Command Adapter Runtime Verification On `run-mr7v10pf-kdjvxe`
+
+- Goal of this pass:
+  - stop treating the DeepSeek live adapter as only a static/smoke-ready path
+  - prove that `STS2_LLM_COMMAND="tsx src/agent/deepseekLiveCommand.ts"` can act as the real combat-only live provider on fresh runtime combat calls
+- Guardrails stayed narrow:
+  - additive-only live
+  - whitelist still exactly `combat:llm_required`
+  - no provider/recovery rewrite
+  - no candidate/scoring/fallback/validation/execution change
+  - no non-combat live enable
+- New telemetry support:
+  - `llm.providerSource` is now recorded as `deepseek-live-command`, `bridge-command`, `custom-command`, or `none`
+  - this lets replay/review distinguish a real DeepSeek live-provider call from bridge/manual command usage
+- Fresh runtime verification:
+  - run: `run-mr7v10pf-kdjvxe`
+  - actual state entered: act 3 boss combat, floor 11, high incoming pressure
+  - dry-run first confirmed the live gate and provider path before execution:
+    - `chosenBy="llm"`
+    - `called=true`
+    - `providerSource="deepseek-live-command"`
+    - `liveAdditiveApplied=true`
+  - fresh additive live combat transitions then landed for real:
+    - `transition-009862-agent-mr8hi280-t3yxk1` / Offering
+    - `transition-009863-agent-mr8hi7mc-dqa3fn` / Null
+    - `transition-009864-agent-mr8hihrm-z5dblo` / Zap
+    - `transition-009865-agent-mr8hjs91-pxcun7` / Dualcast
+    - `transition-009866-agent-mr8hk2y5-c8i4tl` / Spinner
+    - `transition-009867-agent-mr8hkcy6-zdl8kj` / Volley
+- Cleanliness of the fresh DeepSeek live slice:
+  - provider source stayed `deepseek-live-command`
+  - `chosenBy="llm"` on the additive combat decisions
+  - provider remained clean: `failureBucket=none`, `finishReason=stop`, `outputCapHits=0`
+  - no invalid candidate
+  - no missing candidate
+  - no execution mismatch observed
+  - no timeout fallback observed
+  - reasons were non-empty and intelligible
+- Replay/eval/review after the run:
+  - replay focused fresh slice `combat:llm_required:fresh_live_eligible` now shows:
+    - samples=`2`
+    - valid=`2`
+    - invalid/error=`0`
+    - `failureBucket=none`
+    - `finishReason=stop`
+    - `outputCapHits=0`
+  - review now shows `llmCalls=6`, `llmSelected=6`, `invalidLlmOutputs=0`, `llmTimeoutFallbacks=0`
+  - eval stayed `WARN`, but the remaining warnings are not DeepSeek live-provider blockers:
+    - one historical repeated map no-progress risk
+    - one broad combat block-deficit strategy warning
+    - prediction-attribution proposal signals
+- Honest interpretation:
+  - DeepSeek live command adapter is now proven on the real combat-only live path
+  - replay/eval/review can identify those calls as live additive combat decisions
+  - this does not authorize broad P8.5
+  - it does justify switching the default recommended combat-only live runner from manual bridge to the built-in DeepSeek command adapter
+  - local rollout state has now been aligned with that recommendation by setting `STS2_LLM_COMMAND=tsx src/agent/deepseekLiveCommand.ts` in `.env.local` on this machine only
 
 ## 2026-07-05 Controlled Combat-Only Continuation On `run-mr71izvf-roz0yp`
 
@@ -2517,3 +2575,23 @@ Follow-up cleanup:
   - `map:llm_required` is not whitelisted
   - `card_reward:llm_required` is not whitelisted
   - no non-combat class has equivalent rollout evidence
+
+## 2026-07-06 DeepSeek Combat-Only Live Command Adapter
+
+- Added a minimal built-in DeepSeek live command adapter rather than wiring DeepSeek directly into the controller:
+  - `src/agent/deepseekLiveCommand.ts`
+  - `npm run agent:run:deepseek-combat-live`
+- Architecture boundary:
+  - controller still uses `STS2_LLM_COMMAND`
+  - validation/fallback/execution stay unchanged
+  - adapter emits only `{candidateId, confidence, reason}`
+  - memory updates and parameter suggestions from provider output are stripped before stdout
+- Safety guard:
+  - default allowed live class is exactly `combat:llm_required`
+  - prompt candidates are extracted and revalidated before emitting a decision
+  - invalid or missing candidate exits non-zero, causing the controller's existing fallback/error path rather than accepting an unsafe decision
+- This does not authorize `map`, `card_reward`, shop, reward, route, event, rest, menu, or card-select live decisions.
+- Current evidence status:
+  - static/type/smoke validation passes
+  - no fresh runtime DeepSeek-combat-live window has been run yet
+  - next verification should be a tiny `combat:llm_required` window with immediate rollback on provider failure, timeout, invalid output, or execution mismatch
