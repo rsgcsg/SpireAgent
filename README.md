@@ -77,7 +77,7 @@ DeepSeek shadow output defaults to `STS2_DEEPSEEK_OUTPUT_MODE=json_mode` with `r
 P8 provider telemetry now records whether the request kept DeepSeek's default thinking mode or explicitly set `thinking: { "type": "disabled" | "enabled" }`, whether `reasoning_content` was returned, the response content source, provider-failure buckets, and thin-reason notes. This is still shadow-only evidence and does not change live execution.
 P8.4 shadow prompt ablation uses `STS2_P8_WORKSPACE_ABLATION_MODE=full` by default. `full` remains the control group and does not apply bounded candidate-future compression. `full_bounded_candidate_futures` is the v5 combat-only bounded serialization experiment; `compact` and `ultra_compact` remain separate smaller ablations. None of these modes change the live prompt or execute the DeepSeek decision.
 
-Do not enable broad P8 integration by default. P8.5 live rollout is additive-only and class-whitelisted:
+Do not enable unbounded P8 integration by default. P8.5 live rollout is additive-only and class-whitelisted:
 
 ```bash
 # targeted live only; do not broaden to every :llm_required class
@@ -94,8 +94,9 @@ Current P8.5 status:
 - Static / pre-live audit may continue.
 - Targeted live is locally authorized for `combat:llm_required`, `card_reward:llm_required`, `map:llm_required`, `rest:llm_required`, `shop:llm_required`, and `event:llm_required`.
 - `map` live means opening route planning and true replan checkpoints; ordinary follow-plan map checkpoints should stay local.
-- Broad live is still not authorized. `reward`, `route`, `menu`, broad card-selection, and other unproven classes require separate evidence before entering the persistent whitelist.
-- `shop:llm_required` and `event:llm_required` are targeted-live classes only. They are not proof that all shop/event follow-up screens or broad card-selection are safe.
+- A guarded explicit broad-whitelist rollout is now available through `npm run agent:run:deepseek-broad-live`. This is not wildcard live; forced/local/obvious actions remain local, and only listed LLM-wanted classes call the DeepSeek live adapter.
+- `reward`, `route`, `menu`, and any unlisted classes remain outside live. `card_select:local_recommended_llm_arbitrate` is included only in the explicit broad-live runner for follow-up card-pick arbitration after events/potions, and remains a close-watch rollout class.
+- `shop:llm_required` and `event:llm_required` are targeted-live classes. They are not proof that all shop/event follow-up screens or every card-selection screen is safe.
 - Any provider failure, invalid or missing candidate, execution mismatch, unexpected non-whitelist live call, or reason collapse is a stop condition.
 
 With Slay the Spire 2 and the external STS2 MCP mod running:
@@ -122,6 +123,26 @@ STS2_LLM_COMMAND='tsx src/agent/deepseekLiveCommand.ts' \
 npm run agent:run -- --max-ticks 100 --delay-ms 120
 ```
 
+Explicit broad-whitelist live rollout path:
+
+```bash
+npm run agent:run:deepseek-broad-live -- --max-ticks 100 --delay-ms 120
+```
+
+This command enables only this explicit whitelist:
+
+```text
+combat:llm_required
+card_reward:llm_required
+map:llm_required
+rest:llm_required
+shop:llm_required
+event:llm_required
+card_select:local_recommended_llm_arbitrate
+```
+
+Use it as a guarded broad rollout runner, not as proof that every possible decision class is live-ready.
+
 Single-step targeted live:
 
 ```bash
@@ -147,7 +168,7 @@ Promotion guidance:
 - `rest:llm_required`: promoted locally after two clean fresh rest-site live calls; keep watching reason-quality detector debt, but it is not a current safety blocker.
 - `shop:llm_required`: locally targeted after a clean tiny purchase path and checkpoint fix; continue watching purchase/skip/leave-relevant evidence before treating it as mature.
 - `event:llm_required`: locally targeted after one clean live event choice; follow-up card-selection/proceed screens remain local unless separately authorized.
-- Broad P8.5 still requires separate evidence for every remaining decision class; do not replace the whitelist with every `:llm_required` class.
+- Broad P8.5 rollout now means expanding the explicit whitelist under replay/eval/review, not replacing it with every `:llm_required` class.
 
 The DeepSeek live command adapter still relies on normal candidate validation and fallback. Non-whitelisted classes must fall back/local rather than calling live DeepSeek.
 
@@ -159,6 +180,7 @@ npm run agent:tick
 npm run agent:run
 npm run agent:run:bridge
 npm run agent:run:deepseek-combat-live
+npm run agent:run:deepseek-broad-live
 npm run agent:review
 npm run agent:smoke
 npm run data:replay -- --latest

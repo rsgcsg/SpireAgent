@@ -11,18 +11,18 @@ The project is building an LLM-centered Slay the Spire 2 agent where the LLM rem
 ## Current Phase
 
 - Formal maturity route: P1-P10 in `../PROJECT_PLAN.md`
-- Active milestone: P8.5 targeted additive live expansion under narrow whitelist and strict rollback
-- Current live posture: targeted additive live is locally enabled for proven classes; broad P8.5 remains off-limits
+- Active milestone: P8.5 additive live expansion under explicit whitelist and strict rollback
+- Current live posture: targeted additive live is locally enabled for proven classes; guarded broad-whitelist rollout has begun, but wildcard/unbounded broad live remains off-limits
 
 ## Current State
 
 - `full` remains the sacred control-group workspace mode
 - `full_bounded_candidate_futures` exists as a shadow-only experiment mode
 - P8.5 static pre-audit is passed
-- Broad P8.5 live/additive is not allowed yet
+- Unbounded / wildcard P8.5 live-additive is not allowed
 - Current replay readiness still uses the historical combat-first gate and may report `READY_FOR_P8_5_LIVE_COMBAT_ONLY`
 - Current targeted whitelist on this local machine is `combat:llm_required`, `card_reward:llm_required`, `map:llm_required`, `rest:llm_required`, `shop:llm_required`, and `event:llm_required`
-- Broad card-selection, reward, route, menu, and unproven follow-up screens remain outside targeted live
+- The explicit broad-whitelist runner adds `card_select:local_recommended_llm_arbitrate` for follow-up card-pick arbitration. `reward`, `route`, `menu`, and unlisted classes remain outside live.
 - Combat-only rollout evidence has now advanced beyond tiny smoke into a more formal same-budget boss-combat window
 - Combat-only persistent-enable plan is approved and locally applied for `combat:llm_required` only
 - DeepSeek now has a verified narrow live command adapter for `combat:llm_required`
@@ -32,22 +32,23 @@ The project is building an LLM-centered Slay the Spire 2 agent where the LLM rem
 
 ## Current Blocker
 
-Broad P8.5 live readiness is still blocked, but the blocker has narrowed to scope and promotion discipline rather than provider reliability.
+Wildcard broad P8.5 live readiness is still blocked, but the project has now entered a guarded explicit broad-whitelist rollout. The current blocker has narrowed to scope, promotion discipline, and strategy-quality observation rather than provider reliability.
 
 Current honest status:
 
 - `combat:llm_required`, `card_reward:llm_required`, `map:llm_required`, `rest:llm_required`, `shop:llm_required`, and `event:llm_required` are the current targeted live classes on this local machine
-- `shop:llm_required` is in targeted live after one clean tiny live purchase and a checkpoint visibility fix; it still needs continued close watching before it should be considered mature
-- `event:llm_required` is in targeted live after one clean live event choice; event follow-up `card_select` and `Proceed` screens remain local unless separately authorized
+- `shop:llm_required` is in targeted live after a clean tiny live purchase and a checkpoint visibility fix; it still needs continued close watching before it should be considered mature
+- `event:llm_required` is in targeted live after clean event live choices; event `Proceed` remains local unless separately authorized
+- `card_select:local_recommended_llm_arbitrate` has entered the explicit broad-whitelist runner after clean transform / potion follow-up live calls; ordinary local-confident card-select remains local
 - `rest:llm_required` now has two clean fresh live calls and has been added to the local targeted whitelist
 - `shop:llm_required` has workspace/candidate preparation and one clean provider/selection live call; it still needs a second shop node / small window before promotion
 - the first persistent live slice was `combat:llm_required`; later targeted validation expanded locally to `card_reward:llm_required` and `map:llm_required`
-- local persistent config is additive-only and must stay whitelist-based; it must not be replaced with broad `:llm_required` live
+- local persistent config is additive-only and must stay whitelist-based; it must not be replaced with wildcard `:llm_required` live
 - local persistent config includes `STS2_LLM_COMMAND=tsx src/agent/deepseekLiveCommand.ts`
 - the default targeted live path is now plain `npm run agent:run` with the local whitelist, or the explicit README command when testing from a clean shell
 - `npm run agent:run:bridge` remains available for manual bridge windows and debugging, but it is no longer the default recommended responder path
-- current replay says `READY_FOR_P8_5_LIVE_COMBAT_ONLY`
-- broad P8.5 remains no-go because route, reward, menu, broad card-selection, and other unproven/follow-up classes still lack equivalent fresh readiness evidence
+- current replay's older static readiness vocabulary may still report combat-first no-go / insufficient shadow evidence; for live rollout, use the explicit live-applied transition audit plus replay/eval/review cleanliness
+- broad-whitelist rollout is now in progress, but wildcard broad P8.5 remains no-go because route, reward, menu, and unlisted classes still lack equivalent fresh readiness evidence
 - persistent enable is authorized only for explicitly whitelisted targeted classes; whitelist expansion must remain auditable and reversible
 
 Rest/shop readiness note:
@@ -55,7 +56,32 @@ Rest/shop readiness note:
 - README now documents the default targeted live command and separate process-local validation commands for `rest:llm_required` and `shop:llm_required`
 - Rest and shop candidates now carry workspace-side strategic tradeoff facts; this is scaffold/presentation work only, not a change to validation or execution safety
 - `rest:llm_required` second evidence landed on floor 8 and was clean enough for targeted local whitelist promotion
-- Do not persist `shop:llm_required` into the local whitelist until its fresh evidence window is clean
+- Keep watching `shop:llm_required` purchase/skip/leave evidence in small windows; it is locally whitelisted, but not yet considered mature.
+
+Fresh broad-whitelist live evidence:
+
+- latest replay run: `run-mr8pwmtm-4z75zt`
+- transition count after the current broad-whitelist window: 73
+- live additive decisions recorded: 15
+- live classes covered:
+  - `event:llm_required`: 3
+  - `card_reward:llm_required`: 5
+  - `map:llm_required`: 1
+  - `combat:llm_required`: 2
+  - `card_select:local_recommended_llm_arbitrate`: 4
+- provider/validation/execution cleanliness:
+  - provider source: `deepseek-live-command`
+  - invalid output: 0
+  - invalid choice: 0
+  - missing candidate: 0
+  - errors: 0
+  - output cap hits: 0
+  - fallback decisions: 0
+  - replay/eval/review can read the live calls
+- notable observations:
+  - one live `combat:llm_required` Defend transition was classified as an acceptable low-visibility `unknown` checkpoint despite visible block/energy/hand/discard changes; this is checkpoint/reporting conservatism, not an observed execution mismatch
+  - eval now warns on strategy quality (`strategy_block_deficit`), which is gameplay/learning evidence for P9/P10 rather than a live safety rollback trigger
+  - shadow readiness windows are still budget-skipped heavily and should not be confused with the live-applied audit
 
 Fresh rest live evidence:
 

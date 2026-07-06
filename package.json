@@ -10,6 +10,7 @@
     "agent:run": "tsx src/agent/index.ts run",
     "agent:run:bridge": "STS2_LLM_COMMAND=\"node scripts/llm-bridge-decider.mjs\" STS2_LLM_TIMEOUT_MS=120000 STS2_LLM_BRIDGE_TIMEOUT_MS=120000 tsx src/agent/index.ts run",
     "agent:run:deepseek-combat-live": "STS2_P8_LIVE_ADDITIVE=1 STS2_P8_LIVE_DECISION_CLASSES=combat:llm_required STS2_LLM_COMMAND=\"tsx src/agent/deepseekLiveCommand.ts\" STS2_LLM_TIMEOUT_MS=45000 tsx src/agent/index.ts run",
+    "agent:run:deepseek-broad-live": "STS2_P8_LIVE_ADDITIVE=1 STS2_P8_LIVE_DECISION_CLASSES=combat:llm_required,card_reward:llm_required,map:llm_required,rest:llm_required,shop:llm_required,event:llm_required,card_select:local_recommended_llm_arbitrate STS2_LLM_COMMAND=\"tsx src/agent/deepseekLiveCommand.ts\" STS2_LLM_TIMEOUT_MS=45000 tsx src/agent/index.ts run",
     "agent:review": "tsx src/agent/index.ts review",
     "agent:smoke": "tsx src/agent/smoke.ts",
     "typecheck": "tsc --noEmit",

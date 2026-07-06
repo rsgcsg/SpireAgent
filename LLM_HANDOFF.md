@@ -23,7 +23,36 @@ Read first:
 
 The project has completed Phase 0, Phase 1, the Phase 2 minimum data-loop MVP, the Phase 2.5 offline engineering eval runner, and Phase 2.6 eval warning classification/noise reduction. The formal route now extends through Phase 10, where the target is a complete Guarded Learning Loop.
 
-Latest targeted-live expansion:
+Latest broad-whitelist rollout update:
+
+- The current live posture is now a guarded explicit broad whitelist, not wildcard live.
+- The broad runner is:
+  - `npm run agent:run:deepseek-broad-live -- --max-ticks <N> --delay-ms 120`
+- The runner enables only:
+  - `combat:llm_required`
+  - `card_reward:llm_required`
+  - `map:llm_required`
+  - `rest:llm_required`
+  - `shop:llm_required`
+  - `event:llm_required`
+  - `card_select:local_recommended_llm_arbitrate`
+- `reward`, `route`, `menu`, ordinary forced/local choices, and unlisted decision classes still do not call live DeepSeek.
+- Latest broad-whitelist evidence:
+  - run: `run-mr8pwmtm-4z75zt`
+  - transitions: `73`
+  - live additive decisions: `15`
+  - live classes: `event:llm_required=3`, `card_reward:llm_required=5`, `map:llm_required=1`, `combat:llm_required=2`, `card_select:local_recommended_llm_arbitrate=4`
+  - provider source: `deepseek-live-command`
+  - invalid output / invalid choice / missing candidate / errors / fallback decisions: `0`
+  - output cap hits: `0`
+  - replay/eval/review can read the live calls
+- Current cautions:
+  - replay's older P8.5 readiness vocabulary still emphasizes shadow-budget evidence and may say `NOT_READY_INSUFFICIENT_LIVE_ELIGIBLE_EVIDENCE`; do not confuse that with the live-applied transition audit
+  - one live combat Defend transition was an acceptable low-visibility `unknown` checkpoint despite visible state changes; treat it as checkpoint/reporting conservatism unless reproduced as execution mismatch
+  - eval now reports a strategy-quality warning for block deficit; this is P9/P10 learning evidence, not a live rollback trigger by itself
+  - wildcard broad live remains forbidden
+
+Previous targeted-live expansion:
 
 - Default targeted live remains whitelist-based, not broad live.
 - Current local targeted classes are `combat:llm_required`, `card_reward:llm_required`, `map:llm_required`, `rest:llm_required`, `shop:llm_required`, and `event:llm_required`.

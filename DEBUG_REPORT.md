@@ -2,6 +2,50 @@
 
 > Historical append-only debug log. This file records what was true during earlier engineering passes; older "current status" sections may be stale. It is not the canonical source for current phase, blocker, roadmap, or architecture. Start from `docs/00_START_HERE.md` and `docs/04_CURRENT_STATUS.md`, then use `PROJECT_NORTH_STAR.md`, `PROJECT_AUTHORITY_GUIDE.md`, `PROJECT_PLAN.md`, `ARCHITECTURE.md`, `GAME_IO_CAPABILITIES.md`, and `DATA_SCHEMA.md` as source of truth.
 
+## 2026-07-06 Guarded Explicit Broad-Whitelist Live Rollout
+
+- Added and exercised a process command for guarded broad-whitelist live:
+  - `npm run agent:run:deepseek-broad-live -- --max-ticks <N> --delay-ms 120`
+- This is not wildcard live. It explicitly whitelists only:
+  - `combat:llm_required`
+  - `card_reward:llm_required`
+  - `map:llm_required`
+  - `rest:llm_required`
+  - `shop:llm_required`
+  - `event:llm_required`
+  - `card_select:local_recommended_llm_arbitrate`
+- The local safety interpretation is:
+  - forced/local/obvious actions stay local
+  - `reward`, `route`, `menu`, and unlisted decision classes remain outside live
+  - ordinary local-confident card-selection remains local
+  - `card_select:local_recommended_llm_arbitrate` is allowed only as a close-watch arbitration class for follow-up card-pick screens
+- Fresh broad-whitelist evidence:
+  - run: `run-mr8pwmtm-4z75zt`
+  - transitions after the latest broad window: `73`
+  - live additive decisions: `15`
+  - live decision classes observed:
+    - `event:llm_required`: `3`
+    - `card_reward:llm_required`: `5`
+    - `map:llm_required`: `1`
+    - `combat:llm_required`: `2`
+    - `card_select:local_recommended_llm_arbitrate`: `4`
+  - provider source: `deepseek-live-command`
+  - invalid output: `0`
+  - invalid choice: `0`
+  - missing candidate: `0`
+  - provider errors: `0`
+  - output cap hits: `0`
+  - fallback decisions: `0`
+  - replay/eval/review read the live calls
+- Important observations:
+  - one live combat Defend transition was classified as `unknown` checkpoint, but the state visibly changed by block/energy/hand/discard; this currently looks like low-visibility checkpoint conservatism, not execution mismatch
+  - eval now warns about block-deficit strategy quality; this is gameplay evidence for learning/review and not a provider or validation rollback condition by itself
+  - replay's older P8.5 readiness assessment still focuses on shadow-budget live-eligible evidence; for this rollout, use live-applied transition audit plus replay/eval/review cleanliness
+- North Star interpretation:
+  - this is aligned because the LLM is now making a wider set of real strategic choices inside a deterministic safety shell
+  - the shell still owns legal candidates, validation, execution, replay/eval/review, rollback, and stable-memory separation
+  - this should not turn into hand-coded per-screen perfection work; remaining strategy weakness should feed P9/P10 prediction-error learning and proposal review
+
 ## 2026-07-06 Rest/Shop Targeted Live Preparation
 
 - README now separates:
