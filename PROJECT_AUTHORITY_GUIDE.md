@@ -259,13 +259,13 @@ raw game state
 - `DEBUG_REPORT.md`
 - `PORTABLE_USAGE.md`
 - `BUNDLE_MANIFEST.md`
-- `docs/DEPLOYMENT.md`
-- `docs/ITERATION_GUIDE.md`
+- `docs/runbooks/DEPLOYMENT.md`
+- `docs/runbooks/ITERATION_GUIDE.md`
 - `docs/GITHUB_CHECKLIST.md`
-- `docs/MCP_USAGE.md`
-- `docs/LLM_BRIDGE.md`
-- `docs/ai-agent-defect-strategy.md`
-- `docs/ai-sts2-local-runbook.md`
+- `docs/runbooks/MCP_USAGE.md`
+- `docs/runbooks/LLM_BRIDGE.md`
+- `docs/archive/legacy/ai-agent-defect-strategy.md`
+- `docs/runbooks/ai-sts2-local-runbook.md`
 
 特别要求：
 
@@ -1320,13 +1320,13 @@ Operational / historical docs:
 - DEBUG_REPORT.md
 - BUNDLE_MANIFEST.md
 - PORTABLE_USAGE.md
-- docs/DEPLOYMENT.md
-- docs/ITERATION_GUIDE.md
+- docs/runbooks/DEPLOYMENT.md
+- docs/runbooks/ITERATION_GUIDE.md
 - docs/GITHUB_CHECKLIST.md
-- docs/MCP_USAGE.md
-- docs/LLM_BRIDGE.md
-- docs/ai-agent-defect-strategy.md
-- docs/ai-sts2-local-runbook.md
+- docs/runbooks/MCP_USAGE.md
+- docs/runbooks/LLM_BRIDGE.md
+- docs/archive/legacy/ai-agent-defect-strategy.md
+- docs/runbooks/ai-sts2-local-runbook.md
 
 Potentially duplicate / redirect candidates:
 - docs/PROJECT_STEERING.md

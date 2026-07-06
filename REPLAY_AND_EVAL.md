@@ -106,13 +106,26 @@ As of P8, replay/eval/review also report the DeliberationPacket strategic worksp
 - P8.5 readiness includes an `evidenceBudget` object. It records fresh live-eligible sample targets, per-decision-class evidence targets, mixed revision/budget window flags, and whether the window is usable for promotion. It is explanatory governance metadata, not a shortcut around provider, safety, reason-quality, or CandidateFuture-quality blockers.
 - P8.5 readiness also includes a `rolloutBudget` object. It records the additive first-live mode, whitelist proposal, blocked classes, explicit flag and human authorization requirements, rollback requirement, and protected-path write bans. It is not live enablement.
 - Workspace quality reporting now includes cue-source attribution. `candidateFutureCueAttribution` separates cues that were missing before serialization from cues lost during compression, while `reasonCueAttribution` separates scaffold/compression gaps from model reasons that omitted available cues. These fields are review telemetry only; they do not alter candidate generation, validation, execution, or live readiness by themselves.
-- P8.5 remains preparation-only. The only allowed first live mode is additive `legacy prompt + compact workspace summary`, behind a whitelist/feature flag/rollback path; structured-prompt-only must not be enabled by default.
-- When P8.5 later reaches explicit live authorization, rollout evidence must still be interpreted with the same discipline:
+- Replay/eval/review now also expose a separate `liveAppliedRollout` summary. This is a current live-facts view over transitions that actually applied additive live decisions. It reports live-applied count, chosen-by-LLM count, fallback count, decision-class counts, provider-source counts, prompt mode counts, and live invalid/error/missing-candidate signals.
+- `liveAppliedRollout` is intentionally separate from the older P8 shadow-readiness assessment. Use shadow readiness to understand workspace/provider exploration coverage. Use live-applied rollout to understand what was actually executed in current explicit whitelist live windows.
+- Live LLM audit can now record `protectedPathBlockedWrites` when a provider returns blocked memory-update intent. This is protected-path governance telemetry, not a fallback reason and not proof that stable learning exists.
+- P8.5 no longer exists only as preparation metadata. Explicit whitelist additive live has now been exercised. Replay/eval/review therefore need two distinct readings:
+  - shadow readiness and workspace-quality reading
+  - live-applied rollout reading
+- The two readings must not be confused. A stale shadow readiness warning is not by itself proof that a current explicit live-applied slice is unsafe, and a clean live-applied slice is not proof that wildcard broad live is authorized.
+- The allowed live mode remains additive `legacy prompt + compact workspace summary`; structured-prompt-only must not be enabled by default.
+- When reading live rollout evidence, use the same discipline:
   - compare by decision class, revision tag, and bounded review window
   - do not mix historical network-outage windows into fresh live judgments
   - separate `legacy_only`, `shadow_only`, and `live_additive_enabled` windows
   - treat disagreement as review signal unless it crosses validation/safety boundaries
   - treat any live-eligible invalid/error as rollback-class evidence, not a cosmetic WARN
+- A later P9 rollout reader should explicitly separate:
+  - shadow-only evidence budgets
+  - live-applied rollout slices
+  - console/fixture/debug slices
+  - stable-learning promotion slices
+  The new `liveAppliedRollout` summary is the first step in that separation, not the final P9 rollout reader.
 
 P8 disagreement is a review signal, not an eval failure. Invalid structured output or missing candidate is a WARN-level engineering signal unless it corrupts transition data or live validation.
 

@@ -13,6 +13,7 @@ import type {
 } from "./types.js";
 import { appendJsonl, agentRoot, clamp, ensureDir, nowIso, readJson, stableId, writeJsonAtomic } from "./utils.js";
 import { countProblemCards, getIncomingDamage, hasEntityStatus } from "./state.js";
+import { evaluateLegacyFinalizeStableWriteGate } from "./protectedPathGate.js";
 
 const defaultMemoryDir = path.join(agentRoot, "memory");
 
@@ -27,6 +28,7 @@ export class MemoryManager {
   private readonly strategyPath: string;
   private readonly decisionsPath: string;
   private readonly snapshotsDir: string;
+  private readonly legacyFinalizeAuditPath: string;
 
   constructor(memoryDir = defaultMemoryDir) {
     this.currentRunPath = path.join(memoryDir, "current-run.json");
@@ -35,6 +37,7 @@ export class MemoryManager {
     this.strategyPath = path.join(memoryDir, "strategy-params.json");
     this.decisionsPath = path.join(memoryDir, "decision-log.jsonl");
     this.snapshotsDir = path.join(memoryDir, "snapshots");
+    this.legacyFinalizeAuditPath = path.join(memoryDir, "legacy-finalize-audit.jsonl");
 
     ensureDir(memoryDir);
     ensureDir(this.snapshotsDir);
@@ -140,24 +143,39 @@ export class MemoryManager {
   finalizeRun(state: NormalizedState): RewardSummary {
     const reward = scoreRun(state, this.run);
     const summary = summarizeRun(state, this.run, reward);
+    const gate = evaluateLegacyFinalizeStableWriteGate();
 
-    this.longTerm.runs.push({
-      runId: this.run.runId,
-      at: nowIso(),
-      character: this.run.character,
-      result: reward.result,
-      act: this.run.act,
-      floor: this.run.floor,
-      rewardScore: reward.score,
-      summary,
-      failureReasons: reward.reasons.filter((reason) => reason.startsWith("failed:")),
-      successfulPatterns: reward.reasons.filter((reason) => reason.startsWith("success:"))
-    });
-    this.longTerm.runs = this.longTerm.runs.slice(-200);
+    if (gate.allowed) {
+      this.longTerm.runs.push({
+        runId: this.run.runId,
+        at: nowIso(),
+        character: this.run.character,
+        result: reward.result,
+        act: this.run.act,
+        floor: this.run.floor,
+        rewardScore: reward.score,
+        summary,
+        failureReasons: reward.reasons.filter((reason) => reason.startsWith("failed:")),
+        successfulPatterns: reward.reasons.filter((reason) => reason.startsWith("success:"))
+      });
+      this.longTerm.runs = this.longTerm.runs.slice(-200);
 
-    this.updateLessons(reward);
-    this.updateStrategyParams(reward);
-    this.updateExperience(reward);
+      this.updateLessons(reward);
+      this.updateStrategyParams(reward);
+      this.updateExperience(reward);
+    } else {
+      appendJsonl(this.legacyFinalizeAuditPath, {
+        at: nowIso(),
+        runId: this.run.runId,
+        result: reward.result,
+        score: reward.score,
+        summary,
+        reasons: reward.reasons,
+        blockedStableWrites: true,
+        gateReasons: gate.reasons,
+        mode: "legacy_finalize_blocked"
+      });
+    }
     this.archiveCurrentRun("finalized");
     this.run = defaultRunMemory();
     this.save();

@@ -7,6 +7,7 @@ This directory is runtime state for the local STS2 agent.
 - `experience.json`: learned card/relic/enemy/route experience.
 - `strategy-params.json`: conservative local weights and thresholds.
 - `decision-log.jsonl`: append-only decision audit log.
+- `legacy-finalize-audit.jsonl`: audit log for blocked legacy post-run stable writes.
 - `snapshots/`: archived run-memory snapshots for rollback/debugging.
 - `collected/state-log.jsonl`: read-only raw/compact state collection for replay, fixture, eval, and failure analysis.
 - `collected/snapshots/`: raw state snapshots referenced by collected JSONL records.
@@ -29,6 +30,7 @@ Do not commit:
 - `experience.json`
 - `strategy-params.json`
 - `decision-log.jsonl`
+- `legacy-finalize-audit.jsonl`
 - anything under `snapshots/`
 - anything under `collected/`
 
@@ -72,3 +74,13 @@ npm run collect:watch -- --max-ticks 60 --interval-ms 1000
 ```
 
 Collector records are read-only observations. They do not generate candidates, call LLM, execute actions, update strategy params, or write derived knowledge. Each record includes schemaVersion, runId, tick, timestamp, screen, floor, hp, gold, stateHash, rawStatePath, and compactState.
+
+## Protected-Path Note
+
+As part of P8 closeout and P9 entry hardening:
+
+- live/provider-originated memory updates are blocked by default
+- legacy `finalizeRun()` stable writes are blocked by default
+- blocked legacy stable-write attempts are recorded in `legacy-finalize-audit.jsonl`
+
+This keeps legacy learning behavior visible without allowing it to silently mutate stable memory or strategy state during P9 preparation.

@@ -394,21 +394,26 @@ Debug/fixture accelerator:
 - STS2 console commands may be used to reproduce P8/P9 states faster, but only as debug/fixture data. See `STS2_CONSOLE_DEBUG_RUNBOOK.md`.
 - Console-modified runs must not be mixed into real strategy baselines or stable learning evidence.
 
-Phase 9: Guarded stable updates.
+Phase 9: Proposal-driven guarded learning.
 
-- Add a guarded applicator for a narrow first class of stable updates, such as memory confidence adjustments or derived rule drafts.
-- Enforce evidence count, confidence threshold, scope condition, rollback metadata, and eval-before/after checks.
-- Write accepted updates as records, not silent mutations.
-- Keep strategy-param changes behind an experiment gate.
+- Harden protected paths before any stable learning work.
+- Turn replay/review evidence into typed pending proposals instead of direct stable updates.
+- Support proposal families such as memory, derived knowledge, candidate template, reason policy, budget/compression policy, classification policy, skill policy, and scaffold policy.
+- Require evidence slices, counterexamples, confidence, scope, promotion criteria, and rollback metadata before stable promotion.
+- Apply proposals in shadow before any stable promotion.
+- Keep strategy-param changes behind an explicit experiment gate and protected-path review.
 
 Target Phase 9 output:
 
-- The project can apply a small, reversible learning update from replay/eval evidence.
-- Stable updates are reviewable and can be rolled back.
+- The project can turn evidence into typed pending proposals.
+- A reviewer can inspect, approve, reject, expire, or revert proposals through a durable ledger.
+- At least one narrow inner-scaffold policy can be applied in shadow, validated, and rolled back.
+- Stable promotions remain reviewable and reversible.
 
 Current Phase 9 status:
 
 - Not implemented.
+- Entry is blocked by protected-path gating debt, stale broad-live readiness semantics, and missing proposal schema/store.
 
 Phase 10: Guarded Learning Loop.
 

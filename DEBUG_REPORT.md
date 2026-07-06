@@ -2,6 +2,26 @@
 
 > Historical append-only debug log. This file records what was true during earlier engineering passes; older "current status" sections may be stale. It is not the canonical source for current phase, blocker, roadmap, or architecture. Start from `docs/00_START_HERE.md` and `docs/04_CURRENT_STATUS.md`, then use `PROJECT_NORTH_STAR.md`, `PROJECT_AUTHORITY_GUIDE.md`, `PROJECT_PLAN.md`, `ARCHITECTURE.md`, `GAME_IO_CAPABILITIES.md`, and `DATA_SCHEMA.md` as source of truth.
 
+Current closeout / next-phase pointers:
+
+- `docs/phases/P8_CLOSEOUT.md`
+- `docs/debt/P8_P9_DEBT_REGISTER.md`
+- `docs/phases/P9_ENTRY_CRITERIA.md`
+- `docs/phases/P9_GUARDED_LEARNING_PLAN.md`
+
+## 2026-07-06 P9.0 Hardening Start
+
+- P8/P8.5 can now be treated as an explicit-whitelist live scaffold MVP, not as wildcard broad live or learning completion.
+- P9.0 hardening has partially landed:
+  - live/provider-originated memory updates are blocked by default
+  - legacy `finalizeRun()` stable writes are blocked by default and audited to `memory/legacy-finalize-audit.jsonl`
+  - replay/eval/review now expose a separate `liveAppliedRollout` summary so live facts are not forced through stale shadow-readiness semantics
+- This is still not proposal-driven learning:
+  - there is no typed pending `LearningProposal` store
+  - no promotion ledger
+  - no stable promotion gate
+  - no rollback-capable stable learning flow
+
 ## 2026-07-06 Guarded Explicit Broad-Whitelist Live Rollout
 
 - Added and exercised a process command for guarded broad-whitelist live:
@@ -1058,7 +1078,7 @@ Replay/eval after the follow-up:
 
 ## 2026-07-04 P8.5 Live Rollout Policy
 
-- Added `docs/P8_5_LIVE_ROLLOUT_POLICY.md` as the durable policy for P8.5 additive live rollout.
+- Added `docs/phases/P8_5_LIVE_ROLLOUT_POLICY.md` as the durable policy for P8.5 additive live rollout.
 - The policy records the current engineering judgment:
   - clean same-budget `combat:llm_required` evidence is the right promotion unit
   - acceleration means larger windows inside the same whitelist, not broader whitelist
@@ -1074,7 +1094,7 @@ Replay/eval after the follow-up:
 
 ## 2026-07-04 Larger Combat-Only Additive Window
 
-This window followed `docs/P8_5_LIVE_ROLLOUT_POLICY.md` and kept the whitelist at `combat:llm_required`.
+This window followed `docs/phases/P8_5_LIVE_ROLLOUT_POLICY.md` and kept the whitelist at `combat:llm_required`.
 
 - temporary env only:
   - `STS2_P8_LIVE_ADDITIVE=1`

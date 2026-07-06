@@ -8,6 +8,9 @@ Before changing this project, read:
 - `PROJECT_NORTH_STAR.md`
 - `PROJECT_NORTH_STAR_CHINESE.md` if Chinese context is helpful
 - `PROJECT_AUTHORITY_GUIDE.md`
+- `docs/phases/P8_CLOSEOUT.md`
+- `docs/phases/P9_ENTRY_CRITERIA.md`
+- `docs/phases/P9_GUARDED_LEARNING_PLAN.md` when working on P9-facing changes
 - `PROJECT_PLAN.md`
 - `ARCHITECTURE.md`
 - `DATA_SCHEMA.md`
@@ -29,6 +32,9 @@ Authority order:
 - `docs/00_START_HERE.md`: documentation entrypoint for humans and agents.
 - `PROJECT_NORTH_STAR.md`: highest-priority long-term constitution.
 - `docs/04_CURRENT_STATUS.md`: canonical current phase, blocker, and next-step snapshot.
+- `docs/phases/*.md`: canonical active phase closeout, rollout policy, and next-phase plan docs.
+- `docs/debt/*.md`: active debt registers and cleanup tracking.
+- `docs/runbooks/*.md`: operational procedures only.
 - `PROJECT_PLAN.md`: canonical long-horizon roadmap and phase book.
 - `ARCHITECTURE.md`, `DATA_SCHEMA.md`, `REPLAY_AND_EVAL.md`, `BUDGET_GOVERNANCE.md`: canonical subsystem sources.
 - `docs/decisions/*.md`: ADRs for durable project decisions.
@@ -39,12 +45,13 @@ When you are changing docs, read `docs/00_START_HERE.md` first and update the ca
 Write each kind of information in the right place:
 
 - current phase / blocker / next step: `docs/04_CURRENT_STATUS.md`
+- phase closeout / next-phase implementation plan: `docs/phases/*.md`
 - long-term roadmap and P1-P10 route: `PROJECT_PLAN.md`
 - architecture and boundaries: `ARCHITECTURE.md`
 - schemas and telemetry fields: `DATA_SCHEMA.md`
 - replay/eval/review behavior: `REPLAY_AND_EVAL.md`
 - durable governance decisions: `docs/decisions/*.md`
-- run procedures: `docs/` runbooks such as `docs/DEPLOYMENT.md` or `docs/ITERATION_GUIDE.md`
+- run procedures: `docs/runbooks/*.md`
 - historical findings, debug chronology, and local context: `LLM_HANDOFF.md` / `DEBUG_REPORT.md`
 
 Do not let README, handoff notes, or debug logs become the only source of truth for current status or future plan.
@@ -56,6 +63,7 @@ End-of-task documentation checklist:
 - add or update an ADR when the rule is durable and cross-cutting
 - add a short pointer in `LLM_HANDOFF.md` or `DEBUG_REPORT.md` only when historical context helps
 - keep redirects and archive material non-authoritative
+- push stale or low-priority docs toward `docs/archive/legacy/` and leave redirect stubs when path stability matters
 - keep docs synchronized with tests and commands
 
 `PROJECT_NORTH_STAR.md` is the highest-priority long-term constitution. The project is not trying to build the strongest arbitrary algorithmic bot; it is trying to maximize an LLM strategic player's game ability through a predictive cognitive scaffold.

@@ -8,6 +8,14 @@ This repository contains the TypeScript agent package. It does not include the g
 
 Start documentation navigation at [docs/00_START_HERE.md](/Users/fire/Desktop/SpireAgent/docs/00_START_HERE.md). The canonical short current-status snapshot lives at [docs/04_CURRENT_STATUS.md](/Users/fire/Desktop/SpireAgent/docs/04_CURRENT_STATUS.md).
 
+Current phase-heavy docs:
+
+- [P8_CLOSEOUT.md](/Users/fire/Desktop/SpireAgent/docs/phases/P8_CLOSEOUT.md)
+- [P8_P9_DEBT_REGISTER.md](/Users/fire/Desktop/SpireAgent/docs/debt/P8_P9_DEBT_REGISTER.md)
+- [P9_ENTRY_CRITERIA.md](/Users/fire/Desktop/SpireAgent/docs/phases/P9_ENTRY_CRITERIA.md)
+- [P9_GUARDED_LEARNING_PLAN.md](/Users/fire/Desktop/SpireAgent/docs/phases/P9_GUARDED_LEARNING_PLAN.md)
+- [LLM_RUN_MODES.md](/Users/fire/Desktop/SpireAgent/docs/runbooks/LLM_RUN_MODES.md)
+
 ## GitHub Hygiene
 
 This repo is intended to be public and clonable. Keep the repository clean by treating these as local-only artifacts:

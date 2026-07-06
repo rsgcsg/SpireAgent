@@ -161,6 +161,19 @@ P7.5 consolidation proposal aggregation:
 - Repeated weak evidence can be surfaced as a moderate review signal inside the aggregated view, but this is still shadow-only evidence. It does not write memory, derived knowledge, strategy params, candidate ordering, prompt behavior, fallback, validation, or execution.
 - Aggregation exists to help reviewers decide which fixture, attribution, or CandidateFuture mechanics work to do next. It is not a stable learning applicator.
 
+P9 guarded learning direction:
+
+- Current `ConsolidationRecord` is sufficient for P7 proposal evidence but not yet sufficient for P9 stable learning.
+- P9 should introduce typed pending proposal families such as memory, derived knowledge, candidate template, reason policy, budget/compression policy, classification policy, skill policy, and scaffold policy.
+- These future proposal records must still preserve:
+  - evidence
+  - counterexample handling
+  - scope
+  - confidence
+  - promotion criteria
+  - rollback plan
+  - protected-path impact
+
 P8 DeliberationPacket strategic workspace shadow surface:
 
 - `src/agent/workspace.ts` serializes the existing `DeliberationPacket` into a compact structured LLM workspace.
@@ -197,6 +210,7 @@ P8 DeliberationPacket strategic workspace shadow surface:
   - reason quality when a structured shadow LLM decision exists
   - short P8 schema fields: `selectedCandidateId`, `confidence`, `reasonBrief`, `riskTags`, `missingInfo`, and `scaffoldFeedback`
   - `reasonCueAttribution`: model-output attribution for the same quality cues when a shadow LLM reason is available. It helps distinguish `model_reason_omitted` from scaffold/compression loss. This remains telemetry only and does not change validation.
+  - `protectedPathBlockedWrites`: protected-path governance telemetry for blocked live/provider-originated write attempts such as memory updates that are denied by default
 - `STS2_P8_WORKSPACE_ABLATION_MODE=full_bounded_candidate_futures` is a new v5 shadow-only experiment. It keeps `full` unchanged as the control group and only applies bounded serialization to combat `candidate_futures`.
 - CandidateFuture completeness and missing/shallow signals are review/eval telemetry only. They do not change validation, candidate generation, fallback, execution, stable memory, derived knowledge, or strategy params.
 - Future proposal families such as `CombatReasonPolicy`, `CandidateTemplate`, or `BudgetPolicy` are inner-scaffold policy candidates only. They must begin as replay/eval/review evidence, remain shadow/proposal-only until fresh validation exists, and may not mutate validation, execution legality, live rollout flags, rollback authority, or fact/memory/derived separation.
@@ -208,6 +222,7 @@ P8 DeliberationPacket strategic workspace shadow surface:
 - `ShadowWorkspaceDecision.providerRecoveryPolicyName` and `providerRecoveryPolicy` are the first BG-3 recovery-policy anchors. They summarize existing provider attempts, rescue cap relationships, primary/rescue thinking modes, terminal attempt state, and recovery outcome; they do not change retry behavior, semantic validation, workspace compression, or candidate choice.
 - `P8LiveReadinessAssessment.evidenceBudget` is the first BG-4 evidence-budget anchor. It explains fresh sample sufficiency and mixed-window promotion risk without changing the underlying readiness status.
 - `P8LiveReadinessAssessment.rolloutBudget` is the first BG-5/BG-6 rollout/protected-path anchor. It records explicit live-flag, human-authorization, rollback, structured-prompt-only, and stable-write constraints without enabling any protected path.
+- Replay/eval/review may also derive a `liveAppliedRollout` summary from transition-level LLM audit fields. This is not a stored transition object; it is a report-layer aggregation over `liveAdditiveApplied`, `chosenBy`, provider source, prompt mode, and live invalid/error/missing-candidate signals.
 - Live LLM audit may include P8.5 additive prompt fields when a manually authorized live window is run:
   - `promptMode`: `legacy_only` or `additive_legacy_prompt_plus_compact_workspace_summary`
   - `liveAdditiveEnabled`
@@ -217,6 +232,11 @@ P8 DeliberationPacket strategic workspace shadow surface:
   - `liveAdditiveSummaryBytes`
   These fields explain whether compact P8 workspace context was appended to the live LLM prompt. They do not change candidate generation, scoring, fallback, validation, execution, stable memory, derived knowledge, or strategy params.
 - P8 fields are observability data. They do not replace `src/agent/prompt.ts`, alter action selection, change candidate generation/order/scoring, change fallback, change validation/execution, or write stable memory/derived/strategy updates.
+
+Protected-path governance note:
+
+- Runtime memory audit may now include `memory/legacy-finalize-audit.jsonl` for blocked legacy stable-write attempts.
+- This file is local runtime audit evidence, not a stable learning store and not a promotion ledger.
 
 ## Ground Truth Rules
 

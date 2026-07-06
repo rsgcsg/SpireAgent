@@ -139,6 +139,8 @@ Every future feature should strengthen this loop.
 
 Any feature that bypasses this loop, obscures it, silently replaces LLM strategic judgment, corrupts data truth, or makes failure harder to attribute should be rejected, isolated, or explicitly marked as an experimental baseline.
 
+Long term, the project should aim for a world where the inner soft scaffold becomes increasingly learnable and less permanently hand-authored. Humans should not need to forever maintain separate soft frameworks for combat, shop, card reward, event, and every other scene. Instead, under a fixed hard shell of validation, execution safety, rollback, and truth separation, the LLM should gradually learn to propose, validate, revise, and improve its own memory structure, first-impression structure, candidate templates, review style, scoring/scaffold heuristics, classification schemes, skills, and scaffold policies.
+
 ---
 
 ## 3. Core Cognitive Inspiration

@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import type { RunRecord, TransitionRecord } from "../domain/types.js";
+import type { JsonRecord, RunRecord, TransitionRecord } from "../domain/types.js";
 import { assertGroundTruthInvariants } from "../data/transitionSchema.js";
 import { generateCandidates } from "../agent/candidates.js";
 import type { AgentAction, CandidateAction, NormalizedState } from "../agent/types.js";
@@ -17,6 +17,7 @@ import {
   type ReplayFreshShadowSlices,
   type ReplayShadowSliceStats
 } from "../replay/reader.js";
+import { buildLiveAppliedRolloutSummary, type LiveAppliedRolloutSummary } from "../replay/liveAppliedRollout.js";
 import { buildWorkspaceDecisionClassQuality, type WorkspaceDecisionClassQualityStats } from "../replay/workspaceQuality.js";
 import { assessP8LiveReadiness, type P8LiveReadinessAssessment } from "../replay/p8LiveReadiness.js";
 
@@ -88,6 +89,7 @@ export interface EvalSummary {
   workspaceCoverage: EvalWorkspaceCoverage;
   workspaceDecisionClassQuality: Record<string, WorkspaceDecisionClassQualityStats>;
   p8LiveReadinessAssessment: P8LiveReadinessAssessment;
+  liveAppliedRollout: LiveAppliedRolloutSummary;
   predictionErrorCoverage: EvalPredictionErrorCoverage;
   consolidationCoverage: EvalConsolidationCoverage;
   consolidationProposalSurface: ReplayConsolidationProposalSurface;
@@ -414,6 +416,7 @@ export function evaluateRun(runIdOrPath?: string): EvalReport {
     workspaceCoverage.freshSlices?.sinceLatestRevision ?? emptyReplayShadowSlice("sinceLatestRevision"),
     workspaceDecisionClassQuality
   );
+  const liveAppliedRollout = buildLiveAppliedRolloutSummary(validTransitions as unknown as JsonRecord[]);
   const consolidationProposalSurface = buildReplayConsolidationProposalSurface(readConsolidationProposals(runDir, validTransitions));
   for (const issue of buildStrategyWarnings(strategyMetrics)) {
     addWarning(warnings, warningSummary, issue);
@@ -456,6 +459,7 @@ export function evaluateRun(runIdOrPath?: string): EvalReport {
       workspaceCoverage,
       workspaceDecisionClassQuality,
       p8LiveReadinessAssessment,
+      liveAppliedRollout,
       predictionErrorCoverage,
       consolidationCoverage,
       consolidationProposalSurface

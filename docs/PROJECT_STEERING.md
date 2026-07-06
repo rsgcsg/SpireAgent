@@ -1,12 +1,10 @@
 # Redirect: Project Steering
 
-This historical document has been consolidated.
+This legacy entry moved to:
 
-Authoritative replacements:
-
-- `../PROJECT_NORTH_STAR.md`
-- `../PROJECT_AUTHORITY_GUIDE.md`
-- `../PROJECT_PLAN.md`
-- `../ARCHITECTURE.md`
-
-Do not add new architecture content here.
+- `archive/legacy/PROJECT_STEERING.md` for the old compatibility pointer
+- `../PROJECT_NORTH_STAR.md` for long-term constitution
+- `../PROJECT_AUTHORITY_GUIDE.md` for authority and boundaries
+- `../PROJECT_PLAN.md` for the roadmap
+- `phases/P8_CLOSEOUT.md` for current P8 closeout
+- `phases/P9_GUARDED_LEARNING_PLAN.md` for the next engineering phase

@@ -2,6 +2,25 @@
 
 > Status note: this is a working handoff and recent engineering-context document, not the canonical source of truth for current phase, blocker, roadmap, or architecture. Start from `docs/00_START_HERE.md` and `docs/04_CURRENT_STATUS.md`, then use `PROJECT_NORTH_STAR.md`, `PROJECT_PLAN.md`, `ARCHITECTURE.md`, `DATA_SCHEMA.md`, and `REPLAY_AND_EVAL.md` for enduring authority.
 
+Closeout pointers:
+
+- `docs/phases/P8_CLOSEOUT.md`
+- `docs/debt/P8_P9_DEBT_REGISTER.md`
+- `docs/phases/P9_ENTRY_CRITERIA.md`
+- `docs/phases/P9_GUARDED_LEARNING_PLAN.md`
+
+## Immediate Engineering Truth
+
+- P8/P8.5 should now be described as an explicit-whitelist live scaffold MVP, not wildcard broad live and not learning completion.
+- P9.0 hardening has started:
+  - live/provider-originated memory updates are blocked by default
+  - legacy `finalizeRun()` stable writes are blocked by default and audited
+  - replay/eval/review now include a separate `liveAppliedRollout` summary
+- P9 proposal-driven learning has not started yet:
+  - no typed proposal store
+  - no promotion ledger
+  - no stable promotion gate
+
 Current project directory:
 
 ```text
@@ -209,7 +228,7 @@ Latest narrow P8.5 readiness update:
   - the next step is a final human confirmation before any persistent-enable preplan
   - if more runtime is needed, keep it combat-only, temporary-env only, and do not broaden the whitelist
 
-- Durable rollout policy now lives in `docs/P8_5_LIVE_ROLLOUT_POLICY.md`.
+- Durable rollout policy now lives in `docs/phases/P8_5_LIVE_ROLLOUT_POLICY.md`.
 - Use that policy before any further additive live window.
 - A very narrow combat-only additive live-enable plan is now drafted in `docs/04_CURRENT_STATUS.md`; this is not authorization to enable live.
 - The plan is North Star-aligned because it keeps the LLM as strategic player while preserving the hard outer shell: legacy fallback, candidate generation/order/scoring, selected-candidate validation, semantic validation, execution, rollback, and stable memory/derived/strategy boundaries.

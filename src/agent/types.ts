@@ -169,6 +169,7 @@ export interface DecisionLlmAudit {
   liveAdditiveDecisionClass?: string;
   liveAdditiveWhitelist?: string[];
   liveAdditiveSummaryBytes?: number;
+  protectedPathBlockedWrites?: string[];
 }
 
 export type FallbackPolicyName = "local_top" | "conservative_combat";

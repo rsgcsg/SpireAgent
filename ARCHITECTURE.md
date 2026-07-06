@@ -82,6 +82,8 @@ Responsibilities:
 
 Future learning-facing scaffold policies should live in this plane, but only as evidence-backed, proposal-driven inner-loop adjustments. Examples include a future `CombatReasonPolicy`, `CandidateTemplate` refinement, bounded-workspace presentation policy, or decision-class-specific `BudgetPolicy`. They may change how the LLM sees tradeoffs, survival lines, or future structure, but they must not directly mutate validation, execution legality, live flags, rollback authority, or fact/memory/derived separation.
 
+Long term, the project should move toward a thinner permanently hand-authored soft layer. Decision classes may remain useful hard-shell routing and audit labels, but the inner scaffold should become increasingly proposal-driven so the LLM can reshape memory activation, first impressions, candidate templates, review style, scoring/scaffold policy, classification policy, and future skill policy under fixed outer-shell governance.
+
 Current code:
 
 - `src/agent/candidates.ts`
@@ -228,9 +230,10 @@ P8 workspace status:
 - `STS2_P8_WORKSPACE_MAX_SHADOW_CALLS` is the canonical max-call guard and defaults to `1`; `STS2_P8_MAX_SHADOW_CALLS` is a backward-compatible alias. Hard token/cost/call budget excess records a skipped shadow decision and does not fail eval.
 - `STS2_P8_WORKSPACE_ABLATION_MODE` is a shadow-only P8.4 provider ablation switch. `full` preserves the structured workspace, while `compact` and `ultra_compact` reduce nested context to test DeepSeek `empty_content` sensitivity. All modes repeat allowed candidate ids at the prompt tail and remain non-executing.
 - P8 does not replace the live prompt yet. It does not alter candidate generation, ordering, scoring, fallback, validation, execution, stable memory, derived knowledge, or strategy params.
-- P8.4 rollout-gate metadata is now visible in replay/eval/review. P8.5 remains preparation-only: compact workspace summaries and live-additive rollout metadata exist, but the first allowed live experiment is additive `legacy prompt + compact workspace summary`, not structured-prompt-only and not enabled by default.
+- P8.4 rollout-gate metadata is now visible in replay/eval/review. P8.5 is no longer preparation-only in the narrow sense: additive `legacy prompt + compact workspace summary` has reached explicit whitelist live execution, but wildcard broad live remains forbidden.
 - Shadow boundaries should be relaxed only at the intended gates: P8.5 for additive prompt context, P9 for guarded stable updates, and P10 for the full guarded learning loop.
 - This keeps the North Star boundary intact: the local scaffold shapes a better strategic workspace for the LLM, while the LLM remains the strategic player and all actions still pass through current validation/execution.
+- P9 should not be interpreted as "direct stable memory writes". It should be implemented as proposal-driven guarded learning, with a hard protected shell around validation, execution, live authorization, rollback, and stable-write authority.
 - Budget governance should be interpreted through `BUDGET_GOVERNANCE.md`: current P8 guards are early instances of call budget, recovery budget, run budget, evidence budget, and rollout budget, but they are not yet the finished governance architecture.
 - BG-1/BG-2 now have a small code anchor: `src/agent/budgetGovernance.ts` resolves named governance profiles and records structured budget-policy metadata inside P8 workspace comparisons. This is observability and guard interpretation only; it does not change live behavior.
 - BG-3 now has a small telemetry anchor: `src/agent/providerRecoveryPolicy.ts` summarizes existing provider recovery attempts so recovery budget can be audited separately from workspace compression. It does not change provider behavior.

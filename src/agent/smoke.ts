@@ -70,6 +70,8 @@ import { summarizeProviderRecoveryPolicy } from "./providerRecoveryPolicy.js";
 import { analyzeSerializedCandidateFutures } from "./candidateFutureReviewSignals.js";
 import { serializeWorkspaceCandidateFutures } from "./candidateFutureCompressor.js";
 import { buildMapRoutePlanFromChoice } from "./mapRoutePlan.js";
+import { evaluateLegacyFinalizeStableWriteGate, evaluateLiveLlmMemoryUpdateGate } from "./protectedPathGate.js";
+import { buildLiveAppliedRolloutSummary } from "../replay/liveAppliedRollout.js";
 import {
   DOMAIN_SCHEMA_VERSION,
   type CandidateFuture,
@@ -1220,6 +1222,8 @@ assert.equal(
   validateLlmDecisionForCandidates(normalizeLiveDecision({ candidateId: "missing" }), extractAllowedCandidates(deepSeekLivePrompt)).outcome,
   "invalid_choice"
 );
+assert.equal(evaluateLiveLlmMemoryUpdateGate({}).allowed, false);
+assert.equal(evaluateLegacyFinalizeStableWriteGate({ STS2_ENABLE_LEGACY_FINALIZE_STABLE_WRITES: "1" } as NodeJS.ProcessEnv).allowed, true);
 
 const rewardState = normalizeGameState({
   state_type: "card_reward",
@@ -1329,6 +1333,39 @@ assert.ok(!rewardCandidates.some((candidate) => candidate.kind === "proceed"));
       else process.env.STS2_P8_LIVE_DECISION_CLASSES = previousLiveClasses;
     }
 
+    const previousLiveMemoryUpdates = process.env.STS2_ALLOW_LIVE_LLM_MEMORY_UPDATES;
+    try {
+      process.env.STS2_P8_LIVE_ADDITIVE = "1";
+      process.env.STS2_P8_LIVE_DECISION_CLASSES = "card_reward:llm_required";
+      delete process.env.STS2_ALLOW_LIVE_LLM_MEMORY_UPDATES;
+      const blockingController = new AgentController(
+        new FakeClient(rewardState.raw),
+        memory,
+        {
+          isAvailable: () => true,
+          async decide() {
+            return {
+              candidateId: rewardCandidates[0]!.id,
+              confidence: 0.8,
+              reason: "Take immediate power now.",
+              memoryUpdates: { strategicDirection: ["blocked-write"] }
+            };
+          }
+        }
+      );
+      const blockedMemoryUpdateResult = await blockingController.tick({ dryRun: true });
+      assert.equal(blockedMemoryUpdateResult.chosenBy, "llm");
+      assert.ok(blockedMemoryUpdateResult.llm?.protectedPathBlockedWrites?.includes("live_llm_memory_updates_blocked_by_default"));
+      assert.equal(memory.run.strategicDirection.includes("blocked-write"), false);
+    } finally {
+      if (previousLiveAdditive === undefined) delete process.env.STS2_P8_LIVE_ADDITIVE;
+      else process.env.STS2_P8_LIVE_ADDITIVE = previousLiveAdditive;
+      if (previousLiveClasses === undefined) delete process.env.STS2_P8_LIVE_DECISION_CLASSES;
+      else process.env.STS2_P8_LIVE_DECISION_CLASSES = previousLiveClasses;
+      if (previousLiveMemoryUpdates === undefined) delete process.env.STS2_ALLOW_LIVE_LLM_MEMORY_UPDATES;
+      else process.env.STS2_ALLOW_LIVE_LLM_MEMORY_UPDATES = previousLiveMemoryUpdates;
+    }
+
     const characterSelectState = normalizeGameState({
       state_type: "menu",
       menu_screen: "character_select",
@@ -1385,6 +1422,41 @@ assert.ok(!rewardCandidates.some((candidate) => candidate.kind === "proceed"));
     });
     assert.deepEqual(generateCandidates(runStartingMenuState), []);
   } finally {
+    rmSync(memoryDir, { recursive: true, force: true });
+  }
+}
+
+{
+  const memoryDir = mkdtempSync(path.join(tmpdir(), "sts2-agent-finalize-gate-"));
+  const previousLegacyFinalize = process.env.STS2_ENABLE_LEGACY_FINALIZE_STABLE_WRITES;
+  try {
+    delete process.env.STS2_ENABLE_LEGACY_FINALIZE_STABLE_WRITES;
+    const memory = new MemoryManager(memoryDir);
+    memory.updateFromState(rewardState);
+    memory.recordDecision({
+      id: "decision-test",
+      at: new Date(0).toISOString(),
+      screen: rewardState.screen,
+      stateSummary: "reward state",
+      chosen: "Take card",
+      chosenBy: "llm",
+      route: "llm_required",
+      routeReasons: [],
+      llm: { wanted: true, called: true, available: true, outcome: "selected" },
+      candidateCount: rewardCandidates.length,
+      topCandidate: { id: rewardCandidates[0]!.id, label: rewardCandidates[0]!.label, score: 1, confidence: 0.5 },
+      score: 1,
+      confidence: 0.5,
+      reasons: [],
+      candidates: []
+    });
+    const reward = memory.finalizeRun(rewardState);
+    assert.ok(reward.score <= 1000);
+    assert.equal(memory.longTerm.runs.length, 0);
+    assert.equal(existsSync(path.join(memoryDir, "legacy-finalize-audit.jsonl")), true);
+  } finally {
+    if (previousLegacyFinalize === undefined) delete process.env.STS2_ENABLE_LEGACY_FINALIZE_STABLE_WRITES;
+    else process.env.STS2_ENABLE_LEGACY_FINALIZE_STABLE_WRITES = previousLegacyFinalize;
     rmSync(memoryDir, { recursive: true, force: true });
   }
 }
@@ -3251,6 +3323,19 @@ try {
   assert.deepEqual(cleanCombatAssessment.recommendedFirstLiveWhitelist, ["combat:llm_required"]);
   assert.ok(cleanCombatAssessment.blockedDecisionClasses.includes("card_reward:llm_required"));
   assert.ok(cleanCombatAssessment.blockedDecisionClasses.includes("map:llm_required"));
+
+  const liveAppliedSummary = buildLiveAppliedRolloutSummary([
+    {
+      decisionAudit: { chosenBy: "llm", raw: { llm: { liveAdditiveApplied: true, liveAdditiveDecisionClass: "combat:llm_required", providerSource: "deepseek-live-command", outcome: "selected", promptMode: "additive_legacy_prompt_plus_compact_workspace_summary" } } }
+    },
+    {
+      decisionAudit: { chosenBy: "fallback", raw: { llm: { liveAdditiveApplied: true, liveAdditiveDecisionClass: "card_reward:llm_required", providerSource: "deepseek-live-command", outcome: "invalid_output", error: "missing candidate" } } }
+    }
+  ] as any);
+  assert.equal(liveAppliedSummary.liveAdditiveApplied, 2);
+  assert.equal(liveAppliedSummary.chosenByLlm, 1);
+  assert.equal(liveAppliedSummary.invalidOutput, 1);
+  assert.equal(liveAppliedSummary.missingCandidateSignals, 1);
 
   const focusedFreshSlices = buildReplayFocusedShadowSlices([
     {

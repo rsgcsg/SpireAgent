@@ -95,6 +95,7 @@ function printTick(result: Awaited<ReturnType<AgentController["tick"]>>): void {
               liveAdditiveDecisionClass: result.llm.liveAdditiveDecisionClass,
               liveAdditiveWhitelist: result.llm.liveAdditiveWhitelist,
               liveAdditiveSummaryBytes: result.llm.liveAdditiveSummaryBytes,
+              protectedPathBlockedWrites: result.llm.protectedPathBlockedWrites,
               error: result.llm.error
             }
           : undefined,

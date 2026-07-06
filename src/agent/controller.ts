@@ -28,6 +28,7 @@ import { buildDerivedSnapshot } from "./derivedKnowledge.js";
 import { buildCompactWorkspaceSummary, buildP8WorkspaceShadowFromPacket } from "./workspace.js";
 import { P8_LIVE_ADDITIVE_FLAG, P8_LIVE_DECISION_CLASSES_FLAG } from "./workspaceExperimentConfig.js";
 import { buildMapRoutePlanFromChoice } from "./mapRoutePlan.js";
+import { evaluateLiveLlmMemoryUpdateGate } from "./protectedPathGate.js";
 
 export interface ControllerOptions {
   dryRun?: boolean;
@@ -360,7 +361,15 @@ export class AgentController {
           chosenBy = "llm";
           llmAudit.outcome = "selected";
           if (llmDecision.memoryUpdates) {
-            this.memory.applyLlmMemoryUpdate(llmDecision.memoryUpdates);
+            const gate = evaluateLiveLlmMemoryUpdateGate();
+            if (gate.allowed) {
+              this.memory.applyLlmMemoryUpdate(llmDecision.memoryUpdates);
+            } else {
+              llmAudit.protectedPathBlockedWrites = [
+                ...(llmAudit.protectedPathBlockedWrites ?? []),
+                ...gate.reasons
+              ];
+            }
           }
         } else {
           chosenBy = "fallback";

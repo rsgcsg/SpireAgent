@@ -1,4 +1,5 @@
 import path from "node:path";
+import type { JsonRecord } from "../domain/types.js";
 import {
   buildReplayCognitiveCoverage,
   buildReplayConsolidationProposalSurface,
@@ -13,6 +14,7 @@ import {
   readConsolidationProposals,
   readReplayRun
 } from "./reader.js";
+import { buildLiveAppliedRolloutSummary, formatLiveAppliedRolloutSummary } from "./liveAppliedRollout.js";
 import { buildWorkspaceDecisionClassQuality, formatWorkspaceDecisionClassQuality } from "./workspaceQuality.js";
 import { assessP8LiveReadiness, formatP8LiveReadinessAssessment } from "./p8LiveReadiness.js";
 
@@ -33,12 +35,14 @@ async function main(): Promise<void> {
   const workspaceDecisionClassQuality = buildWorkspaceDecisionClassQuality(run.transitions);
   const p8LiveReadinessAssessment = assessP8LiveReadiness(freshShadowSlices.sinceLatestRevision, workspaceDecisionClassQuality);
   const proposalSurface = buildReplayConsolidationProposalSurface(readConsolidationProposals(run.runDir, run.transitions));
+  const liveAppliedRollout = buildLiveAppliedRolloutSummary(run.transitions as unknown as JsonRecord[]);
   console.log(`Run: ${path.basename(run.runDir)}`);
   console.log(`Transitions: ${run.transitions.length}`);
   console.log(`Cognitive coverage: ${formatReplayCognitiveCoverage(cognitiveCoverage)}`);
   console.log(`Fresh shadow slices: ${formatReplayFreshShadowSlices(freshShadowSlices)}`);
   console.log(`Focused fresh slices: ${formatReplayFocusedShadowSlices(focusedShadowSlices)}`);
   console.log(`P8.5 live readiness: ${formatP8LiveReadinessAssessment(p8LiveReadinessAssessment)}`);
+  console.log(`Live-applied rollout: ${formatLiveAppliedRolloutSummary(liveAppliedRollout)}`);
   console.log(`Workspace quality by class: ${formatWorkspaceDecisionClassQuality(workspaceDecisionClassQuality)}`);
   console.log(`Consolidation proposal surface: ${formatReplayConsolidationProposalSurface(proposalSurface)}`);
   if (command === "proposals") {
