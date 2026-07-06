@@ -27,6 +27,7 @@ import { buildCognitiveScaffold, buildConsolidationRecord, buildPredictionErrorR
 import { buildDerivedSnapshot } from "./derivedKnowledge.js";
 import { buildCompactWorkspaceSummary, buildP8WorkspaceShadowFromPacket } from "./workspace.js";
 import { P8_LIVE_ADDITIVE_FLAG, P8_LIVE_DECISION_CLASSES_FLAG } from "./workspaceExperimentConfig.js";
+import { buildMapRoutePlanFromChoice } from "./mapRoutePlan.js";
 
 export interface ControllerOptions {
   dryRun?: boolean;
@@ -460,6 +461,15 @@ export class AgentController {
           executed: false,
           message: `Action not accepted; waiting: ${error instanceof Error ? error.message : String(error)}`
         };
+      }
+
+      const nextMapRoutePlan = buildMapRoutePlanFromChoice({
+        state,
+        candidate: chosen,
+        run: this.memory.run
+      });
+      if (nextMapRoutePlan) {
+        this.memory.run.activeMapRoutePlan = nextMapRoutePlan;
       }
 
       const entry = buildDecisionEntry(

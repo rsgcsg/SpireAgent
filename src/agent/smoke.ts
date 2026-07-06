@@ -69,6 +69,7 @@ import { assessReasonQuality } from "./providerFailureClassifier.js";
 import { summarizeProviderRecoveryPolicy } from "./providerRecoveryPolicy.js";
 import { analyzeSerializedCandidateFutures } from "./candidateFutureReviewSignals.js";
 import { serializeWorkspaceCandidateFutures } from "./candidateFutureCompressor.js";
+import { buildMapRoutePlanFromChoice } from "./mapRoutePlan.js";
 import {
   DOMAIN_SCHEMA_VERSION,
   type CandidateFuture,
@@ -961,6 +962,27 @@ assert.equal(describeLlmCommandSource("node scripts/deepseek-live-decider.mjs"),
 assert.equal(describeLlmCommandSource("node scripts/llm-bridge-decider.mjs"), "bridge-command");
 assert.equal(describeLlmCommandSource("node custom-decider.mjs"), "custom-command");
 assert.equal(describeLlmCommandSource(""), "none");
+
+{
+  const previousDeepSeekLiveClasses = process.env.STS2_DEEPSEEK_LIVE_DECISION_CLASSES;
+  const previousLiveClasses = process.env.STS2_P8_LIVE_DECISION_CLASSES;
+  try {
+    delete process.env.STS2_DEEPSEEK_LIVE_DECISION_CLASSES;
+    process.env.STS2_P8_LIVE_DECISION_CLASSES = "combat:llm_required,card_reward:llm_required";
+    const allowed = extractDecisionClass({
+      p8_live_additive: {
+        decisionClass: "card_reward:llm_required",
+        allowedCandidateIds: ["card-reward-0", "skip-card-reward"]
+      }
+    });
+    assert.equal(allowed, "card_reward:llm_required");
+  } finally {
+    if (previousDeepSeekLiveClasses === undefined) delete process.env.STS2_DEEPSEEK_LIVE_DECISION_CLASSES;
+    else process.env.STS2_DEEPSEEK_LIVE_DECISION_CLASSES = previousDeepSeekLiveClasses;
+    if (previousLiveClasses === undefined) delete process.env.STS2_P8_LIVE_DECISION_CLASSES;
+    else process.env.STS2_P8_LIVE_DECISION_CLASSES = previousLiveClasses;
+  }
+}
 assert.equal(resolveDeepSeekResponseMode("non_json_strict", undefined), "non_json_strict");
 assert.equal(resolveDeepSeekResponseMode(undefined, "0"), "non_json_strict");
 assert.equal(resolveDeepSeekThinkingMode(undefined), "default_enabled");
@@ -1716,9 +1738,21 @@ try {
   });
   memory.updateFromState(lowHpMapState);
   const lowHpMapScoring = scoreCandidates(lowHpMapState, generateCandidates(lowHpMapState), memory.run, memory.strategy);
-  assert.equal(lowHpMapScoring.shouldAskLlm, false);
+  assert.equal(lowHpMapScoring.shouldAskLlm, true);
+  assert.equal(lowHpMapScoring.route.kind, "llm_required");
   assert.equal(lowHpMapScoring.top?.action.kind, "choose_map_node");
   assert.equal(lowHpMapScoring.top?.action.kind === "choose_map_node" ? lowHpMapScoring.top.action.index : -1, 0);
+  const lowHpMapPlan = buildMapRoutePlanFromChoice({
+    state: lowHpMapState,
+    candidate: lowHpMapScoring.top,
+    run: memory.run
+  });
+  assert.ok(lowHpMapPlan);
+  memory.run.activeMapRoutePlan = lowHpMapPlan;
+  const lowHpMapFollowScoring = scoreCandidates(lowHpMapState, generateCandidates(lowHpMapState), memory.run, memory.strategy);
+  assert.equal(lowHpMapFollowScoring.shouldAskLlm, false);
+  assert.equal(lowHpMapFollowScoring.route.kind, "obvious_local");
+  assert.match(lowHpMapFollowScoring.top?.reasons.join(" ") ?? "", /route plan|路线计划/i);
   const lowHpMapScaffold = buildCognitiveScaffold({
     state: lowHpMapState,
     run: memory.run,
@@ -1746,6 +1780,49 @@ try {
     "full_bounded_candidate_futures"
   );
   assert.match(lowHpMapPrompt, /opportunity cost|alternate route cost|route lock/i);
+
+  const routePlanMapState = normalizeGameState({
+    state_type: "map",
+    run: { act: 1, floor: 1, ascension: 1 },
+    player: {
+      character: "The Defect",
+      hp: 60,
+      max_hp: 75,
+      block: 0,
+      energy: 0,
+      max_energy: 3,
+      relics: [],
+      potions: [],
+      status: [],
+      draw_pile_count: 12,
+      discard_pile_count: 4,
+      exhaust_pile_count: 0,
+      gold: 99
+    },
+    map: {
+      current_position: { col: 3, row: 0, type: "Ancient" },
+      next_options: [
+        { index: 0, col: 2, row: 1, type: "Monster", leads_to: [{ col: 2, row: 2, type: "Unknown" }] },
+        { index: 1, col: 4, row: 1, type: "Monster", leads_to: [{ col: 4, row: 2, type: "Shop" }] }
+      ],
+      nodes: [
+        { col: 2, row: 1, type: "Monster", children: [[2, 2]] },
+        { col: 2, row: 2, type: "Unknown", children: [[2, 3]] },
+        { col: 2, row: 3, type: "RestSite", children: [] },
+        { col: 4, row: 1, type: "Monster", children: [[4, 2]] },
+        { col: 4, row: 2, type: "Shop", children: [] }
+      ]
+    }
+  });
+  const routePlanCandidates = generateCandidates(routePlanMapState);
+  const routePlanScored = scoreCandidates(routePlanMapState, routePlanCandidates, memory.run, memory.strategy);
+  assert.equal(routePlanScored.route.kind, "llm_required");
+  assert.equal(routePlanScored.top?.action.kind, "choose_map_node");
+  if (!routePlanScored.top) throw new Error("expected route plan map candidate");
+  const routePlan = buildMapRoutePlanFromChoice({ state: routePlanMapState, candidate: routePlanScored.top, run: memory.run });
+  assert.ok(routePlan);
+  assert.notEqual(routePlan.nextNode?.row, routePlan.routeLine[0]?.row);
+  assert.ok(routePlan.checkpoints.length >= 2);
 
   const waitingMapState = normalizeGameState({
     state_type: "map",

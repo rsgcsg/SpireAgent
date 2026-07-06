@@ -1,6 +1,7 @@
 import type { CandidateAction, JsonRecord, NormalizedCard, NormalizedState } from "./types.js";
 import { getLivingEnemies, isCombatActionable } from "./state.js";
 import { asNumber, asString, isRecord } from "./utils.js";
+import { enrichMapCandidatesWithRoutePlan } from "./mapRoutePlan.js";
 
 export function generateCandidates(state: NormalizedState): CandidateAction[] {
   switch (state.screen) {
@@ -10,7 +11,7 @@ export function generateCandidates(state: NormalizedState): CandidateAction[] {
     case "rewards":
       return generateRewardCandidates(state);
     case "map":
-      return generateMapCandidates(state);
+      return enrichMapCandidatesWithRoutePlan(state, generateMapCandidates(state));
     case "rest":
       return generateIndexedOptionCandidates(state, "choose_rest_option", "休息点选项");
     case "event":

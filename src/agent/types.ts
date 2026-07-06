@@ -227,6 +227,7 @@ export interface RunMemory {
     rests: number;
     events: number;
   };
+  activeMapRoutePlan?: MapRoutePlan;
   riskFlags: string[];
   keyDecisions: DecisionLogEntry[];
   recentCombat: {
@@ -254,6 +255,29 @@ export interface RunMemory {
     elitesSeen: number;
     restsUsed: number;
   };
+}
+
+export interface MapRoutePlan {
+  schemaVersion: 1;
+  id: string;
+  status: "active";
+  createdAt: string;
+  updatedAt: string;
+  act?: number;
+  originFloor?: number;
+  originNode?: MapRouteNodeSummary;
+  nextNode?: MapRouteNodeSummary;
+  routeLine: MapRouteNodeSummary[];
+  checkpoints: string[];
+  replanTriggers: string[];
+  rationale: string[];
+}
+
+export interface MapRouteNodeSummary {
+  index?: number;
+  col?: number;
+  row?: number;
+  type: string;
 }
 
 export interface DecisionLogEntry {

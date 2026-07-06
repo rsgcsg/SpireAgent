@@ -128,9 +128,30 @@ Persistent-enable plan:
 What still blocks broader rollout:
 
 - `map:llm_required` still lacks fresh called rollout evidence on the live path
-- `card_reward:llm_required` still lacks fresh called rollout evidence on the live path
+- `card_reward:llm_required` now has its first fresh DeepSeek live call, but still lacks enough follow-up evidence for default inclusion
 - whitelist expansion still requires separate evidence and explicit approval
 - the built-in DeepSeek live adapter now has fresh runtime combat evidence, but only for `combat:llm_required`
+
+Fresh `card_reward:llm_required` live verification:
+
+- run: `run-mr8ik0g5-as9nsn`
+- transition: `transition-000003-agent-mr8il8uh-ir8wps`
+- actual action: `select_card_reward:0:Boot Sequence`
+- live telemetry:
+  - `chosenBy="llm"`
+  - `providerSource="deepseek-live-command"`
+  - `liveAdditiveApplied=true`
+  - `liveAdditiveDecisionClass="card_reward:llm_required"`
+  - `candidateId="card-reward-0"`
+- outcome:
+  - provider clean: `failureBucket=none`, `finishReason=stop`, `outputCapHits=0`
+  - no invalid candidate, no missing candidate, no execution mismatch, no error
+  - reason quality: `adequate`
+  - replay/eval/review all read the call cleanly
+- honest interpretation:
+  - the `card_reward` live path is now proven end-to-end for one fresh call
+  - this is enough to justify asking for the next `card_reward` node
+  - it is not enough yet to add `card_reward:llm_required` to the default recommended live whitelist
 
 Fresh high-pressure `combat:llm_required` provider recovery has now been tested on current runtime evidence and did not reproduce the historical provider-length failure.
 
@@ -700,3 +721,33 @@ Current planning conclusion:
   - timeout now clears pending bridge artifacts and records `timed-out-<id>.json`
 - This does not change whitelist behavior, provider contract, validation, or live execution rules.
 - Immediate follow-up runtime after the patch did not reproduce the old 5-minute hang, but it also did not naturally produce a promotion-quality `combat:llm_required` called slice.
+
+## 2026-07-06 Map Route-Plan Checkpoint Pass
+
+Current status:
+
+- Combat and card-reward live evidence have advanced beyond the original combat-only smoke path, but broad P8.5 is still not a blanket live authorization.
+- `map:llm_required` is being treated as its own readiness slice, not silently folded into broad non-combat live.
+- The old map behavior was too local: it could deliberate at every branch instead of forming an opening route plan and following it through checkpoints.
+
+Minimal implementation now in place:
+
+- `src/agent/mapRoutePlan.ts` derives a runtime-only route plan from map candidates and raw map links.
+- Map candidates are enriched with route preview facts before scoring.
+- After a successful `choose_map_node`, the controller records an `activeMapRoutePlan` in current-run memory only.
+- Scoring follows the active route plan at matching checkpoints and asks for LLM replan only when the route plan is missing, stale, divergent, or blocked.
+- This does not write stable memory, derived knowledge, or strategy parameters, and it does not change candidate generation, execution validation, or non-map live scope.
+
+Evidence so far:
+
+- Typecheck/smoke/check pass after the route-plan implementation.
+- A first fresh map live call in `run-mr8je84c-yequhq` selected a map node through `deepseek-live-command` with provider bucket `none`, finish reason `stop`, invalid/error/missing candidate `0`, and adequate reason quality.
+- A follow-up runtime exposed a route-plan bug: the active plan initially pointed `nextNode` at the already-chosen first node, causing the next map branch to be read as a replan instead of a follow-plan checkpoint.
+- That bug was fixed by setting the next checkpoint to the second route-line node when available and by including the first linked `leads_to` node in the derived route line.
+- Post-fix runtime reached another map node, but it had only one legal map option and was correctly handled as `map:forced_local`; this validates safe execution but not the multi-branch follow-plan/replan behavior.
+
+Next step:
+
+- Collect one post-fix fresh map node sample to confirm the agent follows an active route plan as `obvious_local` when appropriate and only calls `map:llm_required` for actual replan/planning points.
+- Do not treat the pre-fix second map call as evidence against the new route-plan checkpoint behavior.
+- Do not treat the post-fix single-option `map:forced_local` as readiness evidence for `map:llm_required`; the next useful sample needs a multi-option map checkpoint.

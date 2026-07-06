@@ -25,6 +25,30 @@ The project has completed Phase 0, Phase 1, the Phase 2 minimum data-loop MVP, t
 
 Latest narrow P8.5 readiness update:
 
+- First fresh `card_reward:llm_required` DeepSeek live call is now recorded:
+  - run: `run-mr8ik0g5-as9nsn`
+  - transition: `transition-000003-agent-mr8il8uh-ir8wps`
+  - action: `select_card_reward:0:Boot Sequence`
+  - telemetry:
+    - `chosenBy="llm"`
+    - `providerSource="deepseek-live-command"`
+    - `liveAdditiveApplied=true`
+    - `liveAdditiveDecisionClass="card_reward:llm_required"`
+    - `candidateId="card-reward-0"`
+  - cleanliness:
+    - `failureBucket=none`
+    - `finishReason=stop`
+    - `outputCapHits=0`
+    - invalid candidate=`0`
+    - missing candidate=`0`
+    - execution mismatch observed=`0`
+    - reason quality=`adequate`
+  - replay/eval/review all read it directly
+  - next honest step: stop after this first clean call and ask for the next `card_reward` node
+- Narrow adapter cleanup also landed:
+  - `src/agent/deepseekLiveCommand.ts` now falls back to `STS2_P8_LIVE_DECISION_CLASSES`
+  - this removes one piece of step-specific whitelist duplication between controller and adapter
+
 - DeepSeek live command adapter is now runtime-verified on real combat-only additive calls:
   - run: `run-mr7v10pf-kdjvxe`
   - fresh additive combat transitions:
@@ -955,3 +979,44 @@ This is sufficient to enter Phase 3 combat plan/checkpoint continuation. Do not 
   - stop on provider failure, timeout, invalid output, missing candidate, execution mismatch, or reason/cue collapse
   - run replay/eval/review immediately after
 - Broad P8.5 remains no-go and non-combat classes remain excluded.
+
+## 2026-07-06 Map Route-Plan Checkpoint Handoff
+
+- The map system was corrected toward the North Star: map should build an opening route plan and then follow checkpoints, not ask the LLM at every branch unless the plan is missing, blocked, stale, or strategically invalidated.
+- New runtime-only module:
+  - `src/agent/mapRoutePlan.ts`
+- Touched map integration:
+  - `src/agent/candidates.ts`
+  - `src/agent/scoring.ts`
+  - `src/agent/controller.ts`
+  - `src/agent/types.ts`
+  - `src/agent/smoke.ts`
+- What changed:
+  - map candidates now include route preview facts
+  - successful map choice records `activeMapRoutePlan` in current-run memory only
+  - scoring follows the active route checkpoint locally when it still fits
+  - LLM is reserved for route-plan creation or true replan checkpoints
+- What did not change:
+  - no stable memory / derived / strategy writes
+  - no candidate generation/scoring/execution rewrite outside map route-plan context
+  - no validation relaxation
+  - no broad P8.5 live authorization
+- Evidence:
+  - first map live call in `run-mr8je84c-yequhq` was clean and readable by replay/eval/review
+  - a longer pre-fix runtime exposed that `nextNode` pointed at the already-selected map node, causing excessive replan behavior
+  - this was patched by advancing `nextNode` to the next checkpoint and including the immediate `leads_to` node in route derivation
+- Validation after the patch:
+  - `npm exec tsc -- --noEmit`: pass
+  - `npm run agent:smoke`: pass
+  - `npm run check`: pass
+  - `npm run data:replay -- --latest`: pass/readable
+  - `npm run data:eval -- --latest`: WARN, no errors; warnings are normal/acceptable checkpoint and evidence-window warnings
+  - `npm run agent:review`: readable
+- Post-fix runtime:
+  - a short window advanced from rewards to a floor 3 map node
+  - that node had only one legal option and correctly routed as `map:forced_local`
+  - this is safe but not sufficient evidence for multi-option map plan-following
+- Next step:
+  - current game is on `card_reward`, so ask the user to move to a multi-option map node when ready
+  - run one post-fix fresh multi-option map sample
+  - expected behavior: follow active route plan as `obvious_local` when the checkpoint matches; call `map:llm_required` only if planning/replanning is truly needed

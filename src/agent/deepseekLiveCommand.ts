@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import type { LlmDecision } from "./types.js";
 import { createDeepSeekV4FlashDecider, validateLlmDecisionForCandidates } from "./llm.js";
 import { isRecord } from "./utils.js";
+import { P8_LIVE_DECISION_CLASSES_FLAG } from "./workspaceExperimentConfig.js";
 
 const DEFAULT_ALLOWED_LIVE_CLASSES = ["combat:llm_required"];
 
@@ -11,6 +12,7 @@ export async function runDeepSeekLiveCommand(input = process.stdin): Promise<voi
   const parsedPrompt = parsePrompt(prompt);
   const decisionClass = extractDecisionClass(parsedPrompt);
   const allowedLiveClasses = parseList(process.env.STS2_DEEPSEEK_LIVE_DECISION_CLASSES)
+    ?? parseList(process.env[P8_LIVE_DECISION_CLASSES_FLAG])
     ?? DEFAULT_ALLOWED_LIVE_CLASSES;
   if (!decisionClass || !allowedLiveClasses.includes(decisionClass)) {
     throw new Error(`DeepSeek live command blocked decision class: ${decisionClass ?? "unknown"}`);

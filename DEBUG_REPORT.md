@@ -121,6 +121,49 @@
 
 ## 2026-07-05 Controlled Combat-Only Continuation On `run-mr71izvf-roz0yp`
 
+## 2026-07-06 First Fresh `card_reward:llm_required` DeepSeek Live Call
+
+- Started from a real `screen=card_reward` node at act 1 floor 6.
+- Initial dry-run exposed a narrow architecture bug:
+  - controller whitelist was widened to include `card_reward:llm_required`
+  - but `src/agent/deepseekLiveCommand.ts` still hard-blocked everything except combat unless `STS2_DEEPSEEK_LIVE_DECISION_CLASSES` was set separately
+  - this was a small North Star risk because it duplicated live-class policy inside a step-specific adapter
+- Minimal fix:
+  - the DeepSeek live adapter now falls back to `STS2_P8_LIVE_DECISION_CLASSES` before its own adapter-specific override
+  - controller and adapter now read the same whitelist by default
+- Fresh dry-run after the fix:
+  - `chosenBy="llm"`
+  - `providerSource="deepseek-live-command"`
+  - `liveAdditiveDecisionClass="card_reward:llm_required"`
+  - selected candidate `card-reward-0`
+- Fresh real live call:
+  - run: `run-mr8ik0g5-as9nsn`
+  - transition: `transition-000003-agent-mr8il8uh-ir8wps`
+  - action: `select_card_reward:0:Boot Sequence`
+  - provider clean: `failureBucket=none`, `finishReason=stop`, `outputCapHits=0`
+  - no invalid candidate, no missing candidate, no execution mismatch, no error
+  - reason quality: `adequate`
+  - review reason surfaced as `llm:Patch block weakness; avoid skip risk.`
+- Replay/eval/review all read the new evidence directly:
+  - replay:
+    - `card_reward:llm_required t=1 live=1/1 liveInvalid=0`
+    - `reasonQuality={"adequate":1}`
+    - `complete=4/4`
+    - `shallow=0`
+  - eval:
+    - run status `WARN`, but only due the normal hard checkpoint informational category
+    - no provider/validation/execution blocker
+  - review:
+    - `llmCalls=1`
+    - `llmSelected=1`
+    - `invalidLlmOutputs=0`
+- Honest interpretation:
+  - this proves the `card_reward` live path end-to-end for one fresh call
+  - it does not yet justify default-enabling `card_reward` in the recommended live whitelist
+  - next honest step is to stop here and ask for the next `card_reward` node
+
+## 2026-07-05 Controlled Combat-Only Continuation On `run-mr71izvf-roz0yp`
+
 - Kept the same narrow rollout boundaries:
   - temporary process env only
   - whitelist still only `combat:llm_required`
@@ -2595,3 +2638,46 @@ Follow-up cleanup:
   - static/type/smoke validation passes
   - no fresh runtime DeepSeek-combat-live window has been run yet
   - next verification should be a tiny `combat:llm_required` window with immediate rollback on provider failure, timeout, invalid output, or execution mismatch
+
+## 2026-07-06 Map Route-Plan Checkpoint Pass
+
+- Re-audited `map:llm_required` after the user correctly challenged the per-branch map behavior.
+- Root issue:
+  - `generateMapCandidates()` created immediate next-node choices only.
+  - `scoreMapNode()` scored each node locally.
+  - `isObviousLocalStrategicDecision()` could classify map choices without a persistent route-plan context.
+  - This made map decisions look like repeated local branch deliberation instead of a human-like opening route plan followed through checkpoints.
+- Minimal fix:
+  - added `src/agent/mapRoutePlan.ts`
+  - enriched map candidates with route preview facts
+  - recorded a runtime-only `activeMapRoutePlan` after successful `choose_map_node`
+  - made scoring prefer the active route checkpoint and require LLM replan when the active plan is missing/stale/divergent
+- Safety boundary:
+  - no stable memory / derived knowledge / strategy parameter writes
+  - no live execution path rewrite
+  - no validation relaxation
+  - no map whitelist broadening beyond explicit run-time env
+- First live evidence before the follow-plan bug fix:
+  - run `run-mr8je84c-yequhq`
+  - first map live call was clean: provider bucket `none`, finish reason `stop`, invalid/error/missing candidate `0`, reason quality adequate
+  - replay/eval/review read the transition independently
+- Bug found during the longer window:
+  - the active route plan initially set `nextNode` to the already-selected first route node
+  - this made the next map branch look like a divergent replan instead of a follow-plan checkpoint
+  - the route derivation also skipped the first `leads_to` node in some raw map shapes
+- Follow-up patch:
+  - `nextNode` now uses `line[1] ?? line[0]`
+  - raw `leads_to` route derivation now includes the immediate linked node before appending future children
+- Validation:
+  - `npm exec tsc -- --noEmit`: pass
+  - `npm run agent:smoke`: pass
+  - `npm run check`: pass
+  - latest replay/eval/review still read the existing run, but post-fix runtime map evidence is still needed
+- Post-fix runtime note:
+  - a short live window advanced from rewards to a floor 3 map node
+  - that map node had a single legal option and was correctly routed as `map:forced_local`
+  - no provider/validation/execution issue appeared
+  - this does not yet validate the desired multi-branch route-plan checkpoint behavior
+- Current honest blocker:
+  - current game screen is `card_reward`, not map
+  - need one post-fix multi-option map node to verify follow-plan `obvious_local` versus true `map:llm_required` replan behavior

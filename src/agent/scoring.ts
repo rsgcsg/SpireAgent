@@ -29,6 +29,7 @@ import {
   problemCardsCreatedBy
 } from "./state.js";
 import { asNumber, asString, isRecord } from "./utils.js";
+import { mapPlanCheckpointReason, mapPlanNeedsReplan, planFitForCandidate } from "./mapRoutePlan.js";
 
 export interface ScoringResult {
   candidates: ScoredCandidate[];
@@ -72,7 +73,7 @@ export function scoreCandidates(
     uncertaintyReasons.push("possible_combo");
   }
 
-  const route = classifyDecisionRoute(state, scored, uncertaintyReasons, top, second, gap, strategy);
+  const route = classifyDecisionRoute(state, scored, uncertaintyReasons, top, second, gap, run, strategy);
   const shouldAskLlm = route.shouldAskLlm;
 
   return {
@@ -91,6 +92,7 @@ function classifyDecisionRoute(
   top: ScoredCandidate | undefined,
   second: ScoredCandidate | undefined,
   gap: number,
+  run: RunMemory,
   strategy: StrategyParams
 ): DecisionRoute {
   if (!top) {
@@ -113,7 +115,7 @@ function classifyDecisionRoute(
   }
 
   const strategicScreen = state.screen !== "combat";
-  const obviousLocalStrategic = isObviousLocalStrategicDecision(state, top, second, gap, strategy);
+  const obviousLocalStrategic = isObviousLocalStrategicDecision(state, run, scored, top, second, gap, strategy);
   const obviousLocalCombat = isObviousLocalCombatDecision(state, top, second, gap, strategy);
   const strategicAmbiguity =
     strategicScreen &&
@@ -201,12 +203,16 @@ function isForcedLocalDecision(candidates: ScoredCandidate[]): boolean {
 
 function isObviousLocalStrategicDecision(
   state: NormalizedState,
+  run: RunMemory,
+  scored: ScoredCandidate[],
   top: ScoredCandidate | undefined,
   second: ScoredCandidate | undefined,
   gap: number,
   strategy: StrategyParams
 ): boolean {
   if (state.screen !== "map" || !top || top.action.kind !== "choose_map_node") return false;
+  if (mapPlanNeedsReplan(run.activeMapRoutePlan, state, scored)) return false;
+  if (planFitForCandidate(run.activeMapRoutePlan, state, top) === "matches_next_checkpoint") return true;
   if (top.score < 0 || hasSevereRouteRisk(top)) return false;
   if (gap >= strategy.thresholds.obviousScoreGap) return true;
   if (!second || second.action.kind !== "choose_map_node") return false;
@@ -1187,6 +1193,7 @@ function scoreMapNode(
   let score = 5;
   const reasons: string[] = [];
   const risks: string[] = [];
+  const planFit = planFitForCandidate(run.activeMapRoutePlan, state, candidate);
 
   if (/elite|精英/.test(text)) {
     score += run.routeBias.elites * 20 - (1 - hpRatio) * 28 * strategy.weights.routeEliteRisk;
@@ -1217,7 +1224,18 @@ function scoreMapNode(
     reasons.push("事件降低战斗压力");
   }
 
-  return withScore(candidate, score, 0.35, reasons, risks);
+  if (planFit === "matches_next_checkpoint") {
+    score += 36;
+    reasons.unshift(mapPlanCheckpointReason(run.activeMapRoutePlan) ?? "跟随当前路线计划");
+  } else if (planFit === "diverges_from_plan") {
+    score -= 10;
+    risks.push("偏离当前路线计划，需要有明确重规划理由");
+  } else if (planFit === "needs_replan") {
+    reasons.push("需要建立或刷新路线计划");
+  }
+
+  const confidence = planFit === "matches_next_checkpoint" ? 0.88 : 0.35;
+  return withScore(candidate, score, confidence, reasons, risks);
 }
 
 function scoreRestOption(
