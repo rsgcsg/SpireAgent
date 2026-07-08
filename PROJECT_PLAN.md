@@ -1,59 +1,189 @@
 # Project Plan
 
-This is the current project book for the Slay the Spire 2 AI agent. It records the project diagnosis, target architecture, staged plan, risks, boundaries, acceptance criteria, and guarded learning roadmap. Future agents should read this after `PROJECT_NORTH_STAR.md` before making structural changes.
+This is the current project book for the Slay the Spire 2 AI agent. Future agents should read this after `PROJECT_NORTH_STAR.md` and before making structural changes.
 
-The formal route is Phase 0 through Phase 10. Phase 10 is the first target state for a complete **Guarded Learning Loop**: candidate futures make structured predictions before execution; real execution produces checkpoint/state-diff evidence; replay/eval attributes prediction errors; repeated evidence generates consolidation proposals; and only guarded, reversible, evidence-backed updates may affect stable memory, derived knowledge, prompt inputs, or strategy parameters.
+This document is not the North Star itself. The North Star is the long-lived project philosophy. This plan records the working diagnosis, current phase reality, target architecture, staged roadmap, boundaries, acceptance criteria, and guarded learning route.
 
-The project must not become either:
+## 0. Executive Summary
 
-* a pure rules bot that replaces LLM strategic judgment; or
-* an opaque LLM wrapper that cannot explain, replay, validate, or improve its decisions.
+SpireAgent is an LLM-centered Slay the Spire 2 agent.
 
 The intended architecture is:
 
 ```text
 LLM = strategic player
-local system = legality, state normalization, salience, memory retrieval, candidate futures, prediction checks, replay/eval, guarded learning scaffold
+local system = legality, state normalization, salience, memory retrieval,
+candidate futures, prediction checks, replay/eval, guarded learning scaffold
 ```
 
-## Current Diagnosis
+The project must not become either:
+
+- a pure rules bot that replaces LLM strategic judgment; or
+- an opaque LLM wrapper that cannot explain, replay, validate, or improve its decisions.
+
+The current reality is:
+
+- P8/P8.5 can be honestly closed only as `explicit-whitelist live scaffold MVP complete`.
+- Explicit broad-whitelist live evidence exists, but wildcard live is still forbidden.
+- Stable learning is not implemented.
+- Proposal-driven guarded learning has not started in full engineering terms.
+- The active blocker is now the gap between P9.0 hardening and real proposal-driven learning.
+
+The next real work is not more live expansion.
+
+The next real work is:
+
+```text
+ProtectedPathGate
++ typed LearningProposal schema/store
++ ReverseScaffoldFeedback schema
++ EvidenceSliceReader
++ weak attribution
++ minimal prompt/context/budget telemetry
+```
+
+The long-term maturity route is now best understood as:
+
+```text
+P0-P8.5 = build, record, evaluate, scaffold, and safely live-route the LLM
+P9      = protected proposal-driven guarded learning
+P10     = continuous learning loop
+P11     = autonomous curriculum and meta-scaffold optimization
+P12     = self-optimizing Context OS / learned Prompt Compiler
+P13     = Compute/Budget OS
+```
+
+P12 and P13 are not immediate implementation work. Their schemas and telemetry may be seeded earlier, but their stable policy promotion belongs later.
+
+---
+
+## 1. Current Source-of-Truth Status
+
+### 1.1 Current Phase
+
+The active phase is:
+
+```text
+P8/P8.5 closeout + early P9.0 hardening
+```
+
+P8/P8.5 means:
+
+```text
+explicit-whitelist live scaffold MVP complete
+```
+
+It does not mean:
+
+- wildcard live complete;
+- all decision classes live-ready;
+- broad unbounded live enabled;
+- stable learning implemented;
+- proposal-driven learning complete;
+- autonomous self-improvement complete.
+
+### 1.2 Current Live Posture
+
+Current live posture:
+
+```text
+explicit additive whitelist live is real and locally exercised;
+wildcard broad live remains forbidden.
+```
+
+The currently exercised whitelist includes:
+
+- `combat:llm_required`
+- `card_reward:llm_required`
+- `map:llm_required`
+- `rest:llm_required`
+- `shop:llm_required`
+- `event:llm_required`
+- `card_select:local_recommended_llm_arbitrate`
+
+This is still not wildcard live. Unlisted classes remain local or follow existing fallback routes.
+
+### 1.3 Current P8/P8.5 Evidence
+
+The latest broad-whitelist live evidence recorded in current status is:
+
+- run id: `run-mr8pwmtm-4z75zt`
+- 73 transitions
+- 15 additive live decisions
+- provider source: `deepseek-live-command`
+- invalid output: `0`
+- invalid choice: `0`
+- missing candidate: `0`
+- provider error: `0`
+- output-cap hits: `0`
+- fallback live decisions: `0`
+
+This evidence supports the P8/P8.5 closeout claim, but it does not prove learning.
+
+### 1.4 Current Blocker
+
+The active blocker is no longer provider reachability or basic workspace survival.
+
+The current blocker is:
+
+```text
+P9.0 hardening has not fully become a real proposal-driven learning system.
+```
+
+Specific gaps:
+
+- protected-path gating is only partially landed;
+- older shadow-first readiness semantics still coexist with live-applied rollout reporting;
+- typed learning proposal schema/store has not started;
+- weak attribution, anti-vague-proposal rules, and stable promotion gates are documented but not implemented.
+
+---
+
+## 2. Current Diagnosis
 
 The current package is a working TypeScript agent, not a blank project.
 
 Reusable pieces:
 
-* `src/agent/client.ts` already isolates REST state reads and action execution behind small `StateSource` / `ActionExecutor` interfaces.
-* `src/agent/state.ts` normalizes current MCP JSON into a compact `NormalizedState`.
-* `src/agent/candidates.ts` generates candidates for combat, rewards, map, shop, events, rest, menu, card select, and bundle select.
-* `src/agent/scoring.ts` routes decisions into local, fallback, and LLM-needed paths.
-* `src/agent/controller.ts` runs the loop, calls LLM at most once per tick, executes actions, records checkpoints, and updates memory.
-* `src/agent/memory.ts` has run memory, long-term memory, experience memory, strategy params, lightweight reward, and conservative strategy updates.
-* `src/agent/checkpoint.ts` computes post-action state diff and checkpoint kind.
-* `src/agent/collector.ts` can capture read-only raw and compact state snapshots.
-* `src/agent/review.ts` summarizes decision routes, fallbacks, LLM usage, checkpoints, and shadow cognitive coverage.
-* `data/spire-codex/`, `derived/`, `memory/`, and `data/runs/` are already separated enough to support staged migration.
+- `src/agent/client.ts` isolates REST state reads and action execution behind small `StateSource` / `ActionExecutor` interfaces.
+- `src/agent/state.ts` normalizes MCP JSON into `NormalizedState`.
+- `src/agent/candidates.ts` generates candidates for combat, rewards, map, shop, events, rest, menu, card select, and bundle select.
+- `src/agent/scoring.ts` routes decisions into local, fallback, and LLM-needed paths.
+- `src/agent/controller.ts` runs the loop, calls LLM at most once per tick, executes actions, records checkpoints, and currently still owns too much orchestration.
+- `src/agent/memory.ts` has run memory, long-term memory, experience memory, strategy params, and conservative reward updates.
+- `src/agent/checkpoint.ts` computes post-action state diff and checkpoint kind.
+- `src/agent/collector.ts` captures read-only raw and compact state snapshots.
+- `src/agent/review.ts`, `src/replay/`, and `src/eval/` provide basic observability.
+- `derived/`, `memory/`, `data/spire-codex/`, and `data/runs/` are already separated.
 
 Current strengths:
 
-* Real executor transitions are recorded and replayable.
-* Eval can detect JSONL issues, transition consistency problems, ground-truth violations, selected-action mismatch, checkpoint categories, and lightweight strategy metrics.
-* Cognitive scaffold objects now exist in shadow form.
-* `CandidateFuture.predictionChecks`, `PredictionErrorRecord`, `ReplayFrame`, and proposal-only `ConsolidationRecord` have begun to form a guarded learning skeleton.
-* Live behavior remains protected: prompt, candidate generation, candidate ordering, fallback, validation, and execution have not been replaced by the shadow scaffold.
+- Real executor transitions are recorded and replayable.
+- Eval can detect JSONL issues, transition consistency problems, ground-truth violations, selected-action mismatch, checkpoint categories, and strategy metrics.
+- Cognitive scaffold records exist in shadow/live-adjacent form on fresh transitions.
+- `StrategicImpression`, `MemoryActivation`, `CandidateFuture`, `DeliberationPacket`, `PredictionErrorRecord`, `ReplayFrame`, and proposal-only `ConsolidationRecord` are established engineering objects.
+- P8 workspace comparison and provider telemetry are visible in replay/eval/review.
+- DeepSeek command live adapter can participate in explicit whitelist live execution.
 
 Main problems:
 
-* Some cognitive objects are still sparse because historical transitions predate the new schema.
-* `controller.ts` owns too much orchestration and should be decomposed gradually around stable builders and recorders.
-* `cognitiveScaffold.ts` risks becoming a large mixed-responsibility module if prediction checks, attribution, prompt parity, and consolidation proposal logic keep accumulating there.
-* Prediction checks are becoming typed, but without a small deterministic mechanics engine they can become pseudo-precise heuristics.
-* Current STS2MCP REST has no reliable event log or human UI event stream. `events.jsonl` is a forward-compatible sink, not proof of event-ground-truth capture.
-* Human action capture is not reliable and must not be treated as ground truth without an event-log adapter.
-* Combat is still mostly one action per tick. It has checkpoint detection, but not full segmented plans or continuation policy.
-* Coverage metrics can be misleading when old transitions are included in the denominator. Eval must distinguish all-run coverage from fresh-schema coverage.
-* Engineering correctness is better measured than playing strength. The project needs stable performance baselines, not just schema/replay coverage.
+- Stable learning does not exist.
+- P9 proposal schema/store has not started.
+- Protected-path governance is only partially hardened.
+- `controller.ts` remains too broad.
+- Some readiness metrics still reflect older shadow/combat-first semantics.
+- `cognitiveScaffold`-style responsibilities can become too broad if attribution, prompt parity, proposal logic, and workspace logic accumulate together.
+- Prediction checks need conservative deterministic mechanics support; unsupported mechanics must return `unknown`.
+- Current STS2MCP REST has no reliable event log or human UI event stream.
+- Human diff inference must never be treated as ground truth.
+- Combat is still mostly one action per tick; segmented plans and continuation policy are not implemented.
+- Coverage metrics must distinguish old transitions from fresh-schema transitions.
+- Performance baselines are still less mature than engineering correctness metrics.
+- Context OS and Compute/Budget OS are documented as long-term architecture, but should not yet change live behavior.
 
-## Recommended Architecture
+---
+
+## 3. Target Architecture
 
 The long-term architecture is:
 
@@ -61,43 +191,48 @@ The long-term architecture is:
 raw game state
   -> game-io adapter
   -> canonical state
-  -> deterministic mechanics engine
+  -> deterministic mechanics / fact layer
   -> strategic impression / salience
   -> memory activation
-  -> derived knowledge retrieval
-  -> candidate futures with typed prediction checks
-  -> deliberation packet
+  -> derived knowledge snapshot
+  -> candidate futures with prediction checks
+  -> deliberation packet / compiled workspace
   -> LLM strategic decision
   -> validation and safe execution
   -> transition recorder
-  -> replay frame
-  -> replay / evaluation / review
-  -> prediction-error attribution
-  -> consolidation proposals
-  -> guarded prompt / memory / derived / strategy updates
+  -> replay / eval / review
+  -> prediction attribution
+  -> reverse scaffold feedback
+  -> typed learning proposals
+  -> guarded shadow application
+  -> stable promotion gate
+  -> rollback if regression
 ```
 
 Target modules:
 
-* `domain-core`: versioned schemas for state, actions, transitions, memory, reward, experiments, capabilities, prediction checks, attribution, and consolidation records.
-* `game-io`: stable interfaces for state read, action execute, event read, and action-result read.
-* `adapters/sts2mcp`: current localhost REST adapter.
-* `adapters/spire-codex`: fact database sync/read adapter.
-* `state-normalizer`: raw state to canonical state.
-* `mechanics-engine`: deterministic legality, target, energy, affordability, damage, block, lethal, card flow, resource delta, simple phase expectations, and state diff helpers.
-* `fact-db`: objective cards, relics, characters, keywords, potions, enemies, encounters.
-* `derived-knowledge`: tags, synergies, anti-synergies, draft rules, strategy experience, and rule candidates.
-* `memory-system`: run memory, long-term memory, decision log, retrieval, compression, confidence, evidence, and rollback metadata.
-* `planning-scaffold`: candidate actions, candidate futures, shallow plans, combat continuation hints, route/shop/event/card-reward plans.
-* `llm-decision`: compact prompt, provider adapters, JSON validation, legacy prompt path, and gated structured prompt path.
-* `execution-loop`: execution, settlement, checkpoint, replan, and continuation control.
-* `data-recorder`: metadata, snapshots, events, transitions, replay frames, prediction errors, proposal logs.
-* `eval-runner`: engineering invariants, prediction attribution, coverage, performance baselines, go/no-go gates.
-* `reward-engine`: post-run scoring, strategy metrics, conservative feedback.
-* `experiment-manager`: proposals, feature flags, thresholds, rollout gates, rollback, and experiment reports.
-* `review-cli`, `replay-cli`, `eval-cli`: observability and offline evaluation.
+- `domain-core`: versioned schemas for state, action, transition, memory, prediction, attribution, proposals, promotion ledgers, budget records, and capabilities.
+- `game-io`: state read, action execute, event read, and action-result interfaces.
+- `adapters/sts2mcp`: current localhost REST adapter.
+- `adapters/spire-codex`: objective fact database sync/read adapter.
+- `state-normalizer`: raw state to canonical state.
+- `mechanics-engine`: deterministic legality, energy, target, damage, block, lethal, affordability, card flow, phase, and state-diff helpers.
+- `fact-db`: objective cards, relics, characters, keywords, potions, enemies, encounters, and game text.
+- `derived-knowledge`: tags, synergies, anti-synergies, draft rules, and strategy hints. Must not mutate raw facts silently.
+- `memory-system`: run memory, episodic memory, stable memory, retrieval, compression, confidence, evidence, applicability, and rollback metadata.
+- `planning-scaffold`: candidate actions, candidate futures, shallow plans, combat continuation hints, route/shop/event/card-reward plans.
+- `llm-decision`: compact prompt, provider adapters, output schema, JSON validation, legacy prompt, structured workspace, and gated prompt integration.
+- `execution-loop`: execution, settlement, checkpoint, re-read, replan, and continuation control.
+- `data-recorder`: metadata, snapshots, events, transitions, replay frames, prediction errors, proposal logs, prompt assembly records, and budget use records.
+- `eval-runner`: invariants, replay checks, prediction attribution, proposal health, performance baselines, and go/no-go gates.
+- `experiment-manager`: proposals, feature flags, thresholds, rollout gates, shadow overlays, stable promotion ledgers, and rollback.
+- `context-os`: long-term layer for prompt assembly, temporary working cache, expanded panels, context exclusion records, and learned Prompt Compiler policies.
+- `budget-os`: long-term layer for budget profiles, budget requests, BudgetUseRecord, BudgetROIDigest, and learned compute allocation policies.
+- `review-cli`, `replay-cli`, `eval-cli`: observability and offline evaluation.
 
-## Module Boundaries
+---
+
+## 4. Module Boundaries
 
 Dependency direction must stay low-to-high:
 
@@ -106,756 +241,837 @@ domain-core
   <- game-io / state-normalizer / mechanics-engine / fact-db
   <- derived-knowledge / memory-system
   <- planning-scaffold
-  <- llm-decision
+  <- llm-decision / context-os
   <- execution-loop
   <- recorder / replay / eval / review
+  <- experiment-manager / budget-os
   <- CLI
 ```
 
 Rules:
 
-* Game I/O does not know strategy.
-* Raw facts do not contain learned strategy.
-* Derived knowledge does not mutate raw facts silently.
-* Memory is structured, retrievable, compressible, confidence-rated, and auditable.
-* Mechanics calculations should be deterministic and conservative. If the engine cannot calculate a value reliably, it must return `unknown`, not fake precision.
-* LLM never directly executes game actions. It selects from validated candidates.
-* Recorder records decisions and transitions; it does not decide strategy.
-* Eval can warn, fail, summarize, and propose; it does not mutate stable strategy state.
-* Consolidation proposals are not stable learning until accepted by a guarded applicator.
-* External projects are hidden behind adapters and capability checks.
-* Human diff inference is never ground truth.
-* Old transition compatibility is required, but old data must not hide fresh-schema failures.
+- Game I/O does not know strategy.
+- Raw facts do not contain learned strategy.
+- Derived knowledge does not silently mutate raw facts.
+- Memory is structured, retrievable, compressible, confidence-rated, evidence-linked, and auditable.
+- Mechanics calculations must be deterministic and conservative. If not reliable, return `unknown`.
+- LLM never directly executes game actions. It selects from validated candidates.
+- Recorder records; it does not decide strategy.
+- Eval reports, warns, summarizes, and proposes; it does not mutate stable strategy.
+- Learning proposals are not stable learning until guarded acceptance.
+- External projects are hidden behind adapters and capability checks.
+- Human diff inference is never ground truth.
+- Old transition compatibility is required, but old data must not hide fresh-schema failures.
+- Prompt Compiler and Budget Manager are soft-shell policy surfaces, but they cannot be directly changed by LLM output.
+- Context expansion and budget increase require audit records and ROI review.
 
-## Engineering Corrections From Current Plan
+---
 
-This revision makes four corrections to the previous route.
+## 5. Hard Shell and Learnable Soft Shell
 
-### Correction 1: Phase 5 must distinguish agent events from human events
+### 5.1 Hard Shell
 
-Current STS2MCP REST supports state read and action execution, but not reliable event-log or human UI event stream. Therefore:
+The hard shell is sacred.
 
-```text
-agent executor transitions = ground truth for agent actions
-events.jsonl = forward-compatible event sink
-human diff inference = non-ground-truth
-human event recorder = blocked until event-log adapter exists
-```
+The LLM must not directly modify or bypass:
 
-Phase 5 should not pretend full human event capture exists.
+- allowed candidate legality;
+- action schema;
+- validation;
+- execution safety;
+- rollback authority;
+- provider boundary;
+- data truth separation;
+- protected path;
+- stable promotion gate;
+- audit log;
+- hard budget cap;
+- live whitelist / wildcard boundary;
+- API key / secret boundaries;
+- privacy/security boundary.
 
-### Correction 2: Phase 6 must include deterministic mechanics calculators
+Blocker changes include:
 
-Typed prediction checks are only useful if expected values come from deterministic, conservative calculators where possible. Otherwise typed checks become structured guesses.
+- provider or LLM can write stable memory directly;
+- runtime reflection can mutate derived knowledge or strategy params;
+- legacy finalize feedback bypasses `ProtectedPathGate`;
+- wildcard live is enabled casually;
+- validation is weakened to fit LLM output;
+- budget cap can be raised by LLM request;
+- console/fixture/debug evidence can be promoted as stable learning;
+- Prompt Compiler or Budget Manager changes live behavior without gate.
 
-Phase 6 must include small mechanics helpers for:
+### 5.2 Learnable Soft Shell
 
-```text
-damage
-block
-energy
-card flow
-kill expectation
-phase / visible progress
-```
+The soft shell is gradually learnable through guarded proposals.
 
-Unsupported mechanics must return `unknown`.
+Soft shell includes:
 
-### Correction 3: Guarded prompt integration should happen before guarded stable updates
+- Strategic Impression;
+- SalienceSignal;
+- MemoryActivation;
+- CandidateFuture;
+- candidate templates;
+- reason policy;
+- classification policy;
+- skill policy;
+- review rubric;
+- memory retrieval policy;
+- context expansion policy;
+- prompt assembly policy;
+- compression policy;
+- temporary cache policy;
+- token budget allocation policy;
+- reasoning profile policy;
+- learning compute policy.
 
-Changing live prompt input behind a feature flag is easier to roll back than writing stable memory, derived knowledge, or strategy parameters.
-
-Therefore:
-
-```text
-Phase 8 = guarded prompt integration
-Phase 9 = guarded stable memory / derived / scoring updates
-```
-
-Stable updates should wait until structured prompt use has been tested.
-
-### Correction 4: Eval must add performance baselines, not just schema coverage
-
-The project must track whether the agent gets better at playing, not just whether records are present.
-
-Minimum performance metrics:
-
-```text
-floor reached
-death floor
-combat HP loss
-invalid action count
-fallback rate
-LLM call rate
-settlement timeout rate
-bad checkpoint rate
-block deficit
-tempo loss
-potion use
-route/reward decision quality proxy
-prediction mismatch rate
-```
-
-Eval should separate:
+Soft shell changes must follow:
 
 ```text
-all-run coverage
-fresh-schema coverage
-latest-transition coverage
-performance baseline trend
+signal / feedback
+  -> weak attribution
+  -> typed pending proposal
+  -> evidence and counterexample search
+  -> human or strict review
+  -> shadow apply
+  -> replay/eval comparison
+  -> small-live validation when appropriate
+  -> stable promotion
+  -> usage tracking
+  -> rollback if regression
 ```
 
-## Long-Term Route
+A single LLM reflection is never stable learning.
 
-## Phase 0: Exploration and Project Book
+---
+
+## 6. Cross-Cutting New Architecture
+
+### 6.1 Reverse Scaffold Channel
+
+SpireAgent must support an LLM feedback path for criticizing the soft scaffold.
+
+The LLM may report:
+
+- missing information;
+- insufficient context;
+- bad compression;
+- missing candidate family;
+- weak candidate future;
+- wrong memory retrieval;
+- misleading first impression;
+- overly coarse classification;
+- prompt assembly issue;
+- budget insufficiency;
+- needed expanded panel;
+- skill that should have triggered.
+
+This feedback can only become telemetry, proposal seed, pending proposal, shadow policy, or stable policy after validation.
+
+It cannot directly change live execution, validation, allowed candidates, stable memory, derived knowledge, or budget caps.
+
+Minimal schema direction:
+
+```ts
+interface ReverseScaffoldFeedback {
+  informationRequests: InformationRequest[];
+  candidateSetFeedback: CandidateSetFeedback[];
+  compressionFeedback: CompressionFeedback[];
+  memoryRetrievalFeedback: MemoryRetrievalFeedback[];
+  impressionFeedback: ImpressionFeedback[];
+  classificationFeedback: ClassificationFeedback[];
+  promptAssemblyFeedback: PromptAssemblyFeedback[];
+  contextExpansionFeedback: ContextExpansionFeedback[];
+  temporaryCacheFeedback: TemporaryCacheFeedback[];
+  budgetFeedback: BudgetFeedback[];
+  skillFeedback: SkillFeedback[];
+  uncertainty: {
+    informationSufficiency: number;
+    mainAssumptions: string[];
+    suspectedMissingFactors: string[];
+  };
+}
+```
+
+P9 should record this feedback only. Later phases may convert it into proposals, shadow policies, and stable policies.
+
+### 6.2 Context OS / Learned Prompt Compiler
+
+Prompt construction is not a fixed template. It is a compiled workspace.
+
+Long-term structure:
+
+```text
+raw state
+  -> salience extraction
+  -> expandable panels
+  -> temporary working cache
+  -> memory retrieval
+  -> skill/scaffold policy retrieval
+  -> prompt compiler
+  -> LLM decision
+  -> reverse scaffold feedback
+  -> proposal/eval/promotion
+```
+
+Context OS layers:
+
+- Raw State Layer
+- Salience Layer
+- Expanded Panel Layer
+- Temporary Working Cache
+- Episodic Memory Layer
+- Stable Memory Layer
+- Skill / Scaffold Policy Layer
+- Prompt Compiler
+
+More context is not automatically better.
+
+The system must eventually learn both when to add context and when to remove noisy context.
+
+Required audit records for this direction:
+
+- `PromptAssemblyRecord`
+- `ContextExclusionRecord`
+- `MemoryExclusionRecord`
+- `CandidateFamilyExclusionRecord`
+- context ROI
+- prompt bloat / distractor tracking
+
+In P9, this is telemetry only.
+
+### 6.3 Compute/Budget OS
+
+Budget is a hard resource with learnable allocation.
+
+Future reasoning profiles may include:
+
+- `low`
+- `medium`
+- `high`
+- `research`
+
+The LLM may request more budget, but it cannot approve budget.
+
+Budget Manager must preserve hard budget caps and decide using:
+
+- remaining run budget;
+- floor / boss / elite / shop / reward value;
+- uncertainty;
+- information sufficiency;
+- historical ROI;
+- token cost;
+- latency;
+- provider health;
+- rollback/safety risk;
+- whether context has already been expanded;
+- whether the decision is low-value repetition.
+
+Required audit records:
+
+- `BudgetUseRecord`
+- `BudgetROIDigest`
+- denied request outcome tracking
+- false high-risk request tracking
+- cost-benefit review
+
+More tokens are not proof of better reasoning.
+
+In P9, this is telemetry only.
+
+---
+
+## 7. Updated Maturity Route
+
+The old Phase 0-10 plan remains historically useful, but the forward route should now be expressed as P0-P13.
+
+### P0-P2.6: Trusted Boundaries, Recording, Replay, and Eval
 
 Goal:
 
-Establish the project direction, architecture, risks, and source-of-truth documentation.
-
-Work:
-
-* Audit current code and docs.
-* Record project diagnosis and architecture.
-* Record external dependency evaluation.
-* Record human capture limits.
-* Record staged implementation plan and acceptance criteria.
-* Define the North Star: LLM as strategic player, local system as cognitive scaffold.
-
-Status:
-
-Completed.
-
-Acceptance:
-
-* `PROJECT_NORTH_STAR.md` exists.
-* `PROJECT_PLAN.md` exists.
-* Human capture limits are explicit.
-* The project is not treated as a blank rewrite.
-
-## Phase 1: Core Boundaries and Schema
-
-Goal:
-
-Create minimal stable boundaries without breaking existing commands.
-
-Work:
-
-* Add `domain-core` schemas.
-* Add `GameIO` interface and `AdapterCapabilities`.
-* Wrap current REST client as `STS2MCP` adapter.
-* Add transition schema.
-* Preserve existing commands and behavior.
-* Add minimal LLM candidate validation.
-
-Completed Phase 1 status:
-
-* Source-of-truth documentation was consolidated.
-* New code lands behind additive interfaces and schema helpers where possible.
-* Existing `src/agent/*` commands remain compatible.
-* Implemented anchors:
-
-  * `src/domain/types.ts`
-  * `src/game-io/types.ts`
-  * `src/adapters/sts2mcp/capabilities.ts`
-  * `src/data/transitionSchema.ts`
-  * minimal LLM candidate validation in `src/agent/llm.ts`
-
-Remaining gaps:
-
-* `domain-core` is still represented by additive TypeScript anchors rather than a fully separated package/module.
-* Runtime schema validation is minimal.
-* STS2MCP REST adapter is typed, but not fully isolated from legacy `src/agent` imports.
-
-Acceptance:
-
-* `npm exec tsc -- --noEmit` passes.
-* Existing commands remain compatible.
-* Adapter capabilities are explicit.
-* No live action semantics are changed.
-
-## Phase 2: Precise Agent Recording and Replay
-
-Goal:
-
-Make agent decisions replayable and auditable.
-
-Work:
-
-* Add `AgentDecisionRecorder`.
-* Create `data/runs/<runId>/`.
-* Write:
-
-  * `metadata.json`
-  * `snapshots/`
-  * `events.jsonl`
-  * `transitions.jsonl`
-  * `replay.json` placeholder or generated summary
-* Add state diff module and replay reader.
-* Keep `collect:state` and `collect:watch` compatible.
-
-Current Phase 2 status:
-
-* `src/agent/decisionRecorder.ts` writes executor-logged agent transitions around successful real agent actions.
-* `data/runs/<runId>/` contains metadata, snapshots, events, transitions, and replay placeholder.
-* Existing `memory/collected/` snapshot collection remains compatible.
-* `src/replay/reader.ts` and `src/replay/cli.ts` can read transitions and print a timeline.
-* `src/eval/runner.ts` and `src/eval/cli.ts` run offline engineering eval.
-* Smoke covers executor ground-truth transitions, snapshot-only mapping, JSONL parsing, replay reader loading, eval runner loading, and cognitive scaffold type anchors.
-
-Remaining gaps:
-
-* `HumanPlayRecorder` does not exist.
-* Human diff inference remains intentionally non-ground-truth.
-* `replay.json` is still secondary; replay is primarily derived from `transitions.jsonl`.
-
-Acceptance:
-
-* Live runs produce transition logs.
-* Replay can answer:
-
-  * what was seen;
-  * what candidates existed;
-  * what was selected;
-  * what changed;
-  * whether the transition is ground truth.
-* Snapshot-only or diff-inferred records are never treated as executor ground truth.
-
-## Phase 2.5: Offline Eval Runner
-
-Goal:
-
-Use replay data to catch program-level bugs and semantic mismatches.
-
-Work:
-
-* Eval latest run.
-* Check JSONL parse.
-* Check runId / transitionId / snapshot refs.
-* Check ground-truth invariants.
-* Re-normalize state where available.
-* Re-generate candidates where possible.
-* Match selected actions semantically.
-* Detect invalid action, stale index, illegal target, no candidates, and ground-truth violations.
-
-Status:
-
-Completed MVP.
-
-Acceptance:
-
-* `npm run data:eval -- --latest` works.
-* Program errors become eval errors, not hidden warnings.
-* Selected action matching is semantic, not only string-based.
-
-## Phase 2.6: Eval WARN Classification and Strategy Metrics
-
-Goal:
-
-Reduce warning noise while preserving real risks.
-
-Work:
-
-* Classify warnings:
-
-  * normal checkpoint;
-  * acceptable settlement timeout;
-  * real program risk;
-  * historical fixed evidence;
-  * strategy quality issue;
-  * shadow coverage gap.
-* Add lightweight strategy metrics:
-
-  * block deficit;
-  * fallback rate;
-  * potion use;
-  * tempo loss;
-  * checkpoint distribution;
-  * settlement timeout rate.
+Establish trusted boundaries, schema anchors, executor-grounded transition recording, replay, and eval.
 
 Status:
 
 Completed MVP.
 
-Acceptance:
+Key outputs:
 
-* Old known warnings do not hide new dangerous errors.
-* Invalid action, stale index, illegal target, no candidates, and ground-truth violations remain high-severity.
-* Eval output is actionable.
+- basic domain and adapter boundaries;
+- executor transition recording;
+- replay reader/CLI;
+- eval runner;
+- warning classification;
+- strategy metrics.
 
-## Phase 3: Predictive Cognitive Scaffold Migration
+Remaining concerns:
 
-Goal:
+- `domain-core` is not fully separated;
+- runtime schema validation is still light;
+- human event capture remains blocked;
+- old transition compatibility must remain preserved.
 
-Introduce cognitive objects in shadow mode before using them live.
-
-Work:
-
-* Populate `StrategicImpression` and `SalienceSignal` from canonical state.
-* Convert relevant memory retrieval into explicit `MemoryActivation`.
-* Wrap scored candidates as `CandidateFuture`.
-* Add structured `CandidateFuture.predictionChecks`.
-* Build `DeliberationPacket` from existing prompt inputs.
-* Add `PromptParityReport`.
-* Store cognitive objects on transitions.
-* Add `PredictionErrorRecord`.
-* Add `ReplayFrame` MVP.
-* Keep live prompt, candidate ordering, fallback, validation, and execution unchanged.
-
-Current Phase 3 status:
-
-* Strategic impression, salience, memory activation, candidate futures, DeliberationPacket, prompt parity, PredictionErrorRecord, typed checks, and ReplayFrame exist in shadow mode.
-* Candidate futures carry structured `predictionChecks` beside human-readable `predictedOutcome`.
-* PredictionErrorRecord prefers structured checks and falls back to text only for old transitions.
-
-Remaining gaps:
-
-* Cognitive objects are not present on historical transitions.
-* DeliberationPacket remains shadow-only.
-* Candidate futures are still action-first shallow futures, not full multi-step plans.
-* Segmented combat plans and checkpoint continuation are not implemented.
-* Some builders may need decomposition to avoid large mixed-responsibility files.
-
-Acceptance:
-
-* New transitions contain cognitive scaffold records.
-* Old transitions remain compatible.
-* Replay/eval/review show cognitive coverage.
-* Live decision behavior is unchanged.
-
-## Phase 4: Memory, Derived, Reward, and Proposal-Only Consolidation
+### P3-P6: Predictive Cognitive Scaffold and Attribution
 
 Goal:
 
-Make memory and derived knowledge explicit, auditable, and available to the shadow scaffold.
+Make Strategic Impression, salience, memory activation, candidate futures, DeliberationPacket, prediction checks, and attribution visible, replayable, and testable.
 
-Work:
+Status:
 
-* Make memory retrieval explicit.
-* Add derived retrieval snapshots.
-* Add structured reward/reflection records.
-* Add proposed `ConsolidationRecord` with:
+MVP implemented in shadow / replayable form.
 
-  * evidence;
-  * conditions;
-  * confidence;
-  * affected module;
-  * proposed change;
-  * rollback metadata;
-  * expiry or revalidation policy.
-* Add experiment log scaffolding.
+Key outputs:
 
-Current Phase 4 status:
+- cognitive scaffold records on fresh transitions;
+- DeliberationPacket and workspace comparison;
+- CandidateFuture prediction checks;
+- PredictionErrorRecord;
+- attribution buckets;
+- replay/eval/review visibility.
 
-* Derived retrieval snapshots are wired into shadow transitions.
-* Unsupported/unknown prediction errors can create proposed ConsolidationRecord objects.
-* Consolidation remains proposal-only.
-* No stable memory, derived knowledge, reward, or strategy update is applied from proposals.
+Remaining concerns:
 
-Remaining gaps:
+- old transitions are sparse;
+- candidate futures remain shallow;
+- mechanics helpers need more numeric expected-vs-actual coverage;
+- attribution modules should stay decomposed;
+- output remains non-mutating.
 
-* No full proposal/apply/rollback lifecycle.
-* No stable learning applicator.
-* No managed experiment subsystem.
-* No evidence threshold enforcement beyond shadow records.
-
-Acceptance:
-
-* Memory activation and derived knowledge summary are separately visible.
-* Derived knowledge does not silently mutate.
-* Consolidation proposals are auditable and non-mutating by default.
-
-## Phase 5: Event Log Adapter Capability
+### P7: Proposal Surface and Aggregation
 
 Goal:
 
-Prepare for reliable event logs while clearly documenting current limits.
+Turn prediction-error and unsupported/critical attribution into non-mutating proposal surfaces.
 
-Work:
+Status:
 
-* Maintain `events.jsonl` as a forward-compatible sink.
-* Parse `events.jsonl` in eval.
-* Keep adapter capabilities explicit.
-* Separate agent executor transitions from human UI events.
-* Design future event-log extension:
+Proposal surface MVP exists, but not a full guarded learning system.
 
-  * `GET /api/v1/events?since=<eventId>`;
-  * event IDs;
-  * action result events;
-  * reward events;
-  * room transition events;
-  * combat card play events;
-  * human UI events where possible.
+Key outputs:
 
-Current Phase 5 status:
+- proposal-only ConsolidationRecord;
+- proposal evidence fields;
+- proposal counts and grouped review visibility;
+- P7.5 aggregation surface.
 
-* Current STS2MCP REST has no reliable event log or human event stream.
-* `events.jsonl` exists and eval parses it.
-* `parsedEvents=0` is acceptable under current adapter capability.
-* Human diff inference remains non-ground-truth.
+Remaining concerns:
 
-Phase 5A: Agent executor event log.
+- no typed P9 LearningProposal schema/store yet;
+- no stable promotion;
+- no full review/approve/reject/revert lifecycle;
+- no proposal-to-shadow-to-stable pipeline.
 
-* Record all agent-executed actions as ground-truth executor transitions.
-* Optionally mirror executor actions into event-shaped records.
-* This is feasible now.
-
-Phase 5B: Human/UI event log.
-
-* Requires MCP/mod support.
-* Cannot be inferred reliably from snapshots.
-* Must remain blocked until adapter capabilities change.
-
-Remaining gaps:
-
-* No STS2MCP event-log extension.
-* No reliable human event stream.
-* No event-first human recorder.
-
-Acceptance:
-
-* Eval can parse event files.
-* Bad event JSONL becomes eval error.
-* Absence of events is a capability warning, not a program failure.
-* Human diff inference is never upgraded to ground truth.
-
-## Phase 6: Typed Prediction Attribution and Mechanics Engine
+### P8/P8.5: Structured Workspace and Explicit-Whitelist Live Scaffold
 
 Goal:
 
-Make prediction errors measurable, attributable, and testable with conservative deterministic mechanics.
+Let the DeliberationPacket enter the LLM workspace in an auditable, feature-flagged way, and allow additive live use only under explicit whitelist, validation, and rollback.
 
-Work:
+Status:
 
-* Extract a small `mechanics-engine` or equivalent helper layer for:
-
-  * legality;
-  * energy delta;
-  * card removed from hand;
-  * discard/exhaust/card flow;
-  * simple damage through known block;
-  * simple block gain;
-  * player HP delta where visible;
-  * kill expectation;
-  * phase or visible progress expectation.
-* Convert `CandidateFuture.predictionChecks` into structured attribution buckets:
-
-  * damage;
-  * block;
-  * HP;
-  * kill;
-  * phase change;
-  * card flow;
-  * resource use;
-  * route/reward consequence;
-  * unknown.
-* Prefer deterministic checkpoint/state-diff evidence over LLM reflection.
-* If a mechanic cannot be calculated reliably, return `unknown`, not guessed values.
-* Add fixture coverage:
-
-  * supported case;
-  * mismatch case;
-  * unknown case;
-  * unsupported case;
-  * unsupported/unknown -> proposal-only ConsolidationRecord case.
-* Keep all output shadow-only.
-
-Current Phase 6 status:
-
-* `PredictionErrorRecord.attributionBuckets` exists as shadow MVP.
-* Buckets are generated from `CandidateFuture.predictionChecks` and checkpoint/state-diff evidence.
-* Eval/review report attribution coverage.
-* Smoke covers supported and unknown attribution cases.
-
-Required Phase 6 improvements:
-
-* Move calculation logic out of broad scaffold files into focused modules:
-
-  * `predictionChecksBuilder`;
-  * `predictionAttribution`;
-  * `mechanicsEngine`;
-  * `consolidationProposal`.
-* Add numeric expected-vs-actual comparisons:
-
-  * `expectedEnemyHpDelta` vs `actualEnemyHpDelta`;
-  * `expectedBlockDelta` vs `actualBlockDelta`;
-  * `expectedPlayerHpDelta` vs `actualPlayerHpDelta`;
-  * `expectedEnergyDelta` vs `actualEnergyDelta`;
-  * `expectedCardRemoved` vs `actualCardRemoved`;
-  * `expectedKill` vs `actualKill`;
-  * `expectedPhaseChange` vs `actualPhaseChange`.
-* Add eval summaries:
-
-  * attribution coverage;
-  * mismatch by category;
-  * unknown by category;
-  * unsupported by category;
-  * critical unsupported predictions.
-
-Acceptance:
-
-* Prediction attribution is grouped and numeric where possible.
-* Unknowns are explicit.
-* Unsupported critical predictions become WARN, not learning updates.
-* Review can point to concrete prediction misses without inspecting raw transition JSON.
-* No stable memory or strategy update is applied from Phase 6 records.
-* Live prompt, candidate generation, scoring, fallback, validation, and execution remain unchanged.
-
-## Phase 7: Offline Learning Proposal Pipeline
-
-Goal:
-
-Convert repeated, scoped prediction errors into auditable learning proposals without mutating stable behavior.
-
-Work:
-
-* Aggregate PredictionErrorRecords across transitions and runs.
-* Detect repeated error patterns with scope:
-
-  * action;
-  * card;
-  * enemy;
-  * room phase;
-  * buff/debuff context;
-  * relic context;
-  * route/reward context.
-* Generate `LearningProposal` / `ConsolidationRecord` candidates only when evidence thresholds are met.
-* Required proposal fields:
-
-  * proposalId;
-  * sourceRunIds;
-  * sourceTransitionIds;
-  * evidenceCount;
-  * counterexampleCount;
-  * scopeCondition;
-  * confidence;
-  * severity;
-  * affectedModule;
-  * proposedChange;
-  * expectedBenefit;
-  * risk;
-  * rollbackPath;
-  * expiry;
-  * revalidationPolicy;
-  * status: proposed / accepted / rejected / expired / reverted.
-* Add CLI/review visibility for pending proposals.
-* Do not auto-apply proposals by default.
-
-Target Phase 7 output:
-
-* The system can explain what it would learn and why.
-* Learning remains auditable and non-mutating.
-* Repeated prediction errors become structured proposals instead of isolated warnings.
-
-Current Phase 7 status:
-
-* Not implemented beyond proposal-only ConsolidationRecord MVP.
-
-Acceptance:
-
-* Single-error proposals are either blocked or marked low confidence.
-* Repeated errors require evidence and counterexample checks.
-* Proposals do not mutate stable memory, derived knowledge, prompt, scoring, or strategy params.
-* Eval/review can list pending proposals and their evidence.
-
-## Phase 8: Guarded Prompt Integration
-
-Goal:
-
-Let the live LLM prompt consume a small, stable subset of `DeliberationPacket` under feature flag control.
-
-Rationale:
-
-Prompt integration is safer to roll back than stable memory or strategy mutation. Therefore it must happen before guarded stable updates.
-
-Work:
-
-* Add feature flag:
+Can be closed only as:
 
 ```text
-USE_DELIBERATION_PACKET_PROMPT=false
+P8/P8.5 explicit-whitelist live scaffold MVP complete
 ```
 
-* Keep legacy prompt as default.
-* Generate a compact structured prompt section from DeliberationPacket:
+What is complete:
 
-  * state summary;
-  * enemy intent summary;
-  * hand/deck summary;
-  * top candidates;
-  * memory activation summary;
-  * derived knowledge summary;
-  * prediction risk summary;
-  * known unknowns.
-* Start with additive prompt mode:
+- StrategicImpression, SalienceSignal, MemoryActivation, CandidateFuture, DeliberationPacket, PredictionErrorRecord, ReplayFrame, and ConsolidationRecord on fresh transitions.
+- P8 workspace comparison and provider telemetry in replay/eval/review.
+- DeepSeek shadow provider plumbing.
+- DeepSeek command live adapter.
+- Additive live prompting behind feature flag and explicit decision-class whitelist.
+- Separate live-applied rollout audit exists.
+- Latest broad-whitelist evidence demonstrates clean provider/validation/execution on a bounded explicit whitelist.
+
+What is not complete:
+
+- wildcard live;
+- all decision classes live-ready;
+- stable learning;
+- automatic derived knowledge writes;
+- strategy-param writes;
+- scaffold-policy promotion;
+- full proposal-driven learning;
+- fully hardened protected-path governance.
+
+Required next move:
+
+Do not expand live. Move to P9 hardening and proposal infrastructure.
+
+---
+
+## 8. P9: Protected Proposal-Driven Learning
+
+P9 is not “turn on automatic learning.”
+
+P9 is:
 
 ```text
-livePrompt = legacyPrompt + compactDeliberationSummary
+protected, typed, evidence-linked, rollback-capable proposal learning
 ```
-
-* Do not fully replace legacy prompt initially.
-* Add prompt parity thresholds before any wider rollout.
-* Add A/B or shadow comparison:
-
-  * legacy prompt output;
-  * structured prompt output;
-  * selected action difference;
-  * validation outcome;
-  * replay/eval result.
-* Preserve validation and fallback.
-
-Target Phase 8 output:
-
-* DeliberationPacket can influence selected live LLM context for gated decision classes.
-* Feature flag can disable it instantly.
-* Legacy prompt path remains available.
-* Structured prompt usage is evaluated before broader rollout.
-
-Current Phase 8 status:
-
-* Not implemented.
-* Live prompt remains unchanged.
-
-Acceptance:
-
-* Feature flag defaults off.
-* Prompt integration is additive first, not full replacement.
-* Replay/eval can compare structured vs legacy prompt decisions.
-* If metrics degrade, structured prompt can be disabled without data migration.
-* Candidate validation still prevents illegal actions.
-
-## Phase 9: Guarded Stable Updates and Scoring / Memory Calibration
 
 Goal:
 
-Allow a narrow first class of reversible stable updates only after evidence and eval gates pass.
+Turn replayable run evidence and scaffold feedback into typed pending proposals without weakening the hard shell.
 
-Work:
+P9 must include:
 
-* Add guarded applicator for limited update types:
+- `ProtectedPathGate`
+- typed `LearningProposal` schema/store
+- `ReverseScaffoldFeedback` schema
+- `EvidenceSliceReader`
+- weak attribution
+- anti-vague-proposal rules
+- pending vs stable separation
+- append-only proposal store
+- review CLI
+- shadow-before-stable flow
+- stable promotion ledger
+- rollback mechanism
+- minimal `PromptAssemblyRecord`
+- minimal `BudgetUseRecord`
 
-  * memory confidence adjustment;
-  * derived rule draft;
-  * prompt hint draft;
-  * prediction calibration note;
-  * low-risk scoring calibration behind experiment flag.
-* Enforce:
+P9 must not include:
 
-  * evidence count threshold;
-  * counterexample threshold;
-  * confidence threshold;
-  * scope condition;
-  * affected module;
-  * rollback metadata;
-  * expiry/revalidation;
-  * eval-before/after comparison.
-* Write accepted updates as records, not silent mutations.
-* Keep strategy-param changes behind experiment gate.
+- wildcard live;
+- automatic stable memory writes;
+- automatic stable derived knowledge writes;
+- automatic skill promotion;
+- automatic PromptCompiler behavior changes;
+- automatic BudgetManager behavior changes;
+- live behavior changes from context/budget feedback;
+- provider contract heroics as a substitute for learning.
 
-Feature flags:
-
-```text
-USE_MEMORY_CALIBRATION=false
-USE_DERIVED_RULE_DRAFTS=false
-USE_PREDICTION_CALIBRATION=false
-USE_SCORING_CALIBRATION=false
-```
-
-Target Phase 9 output:
-
-* The project can apply a small, reversible learning update from replay/eval evidence.
-* Stable updates are reviewable and rollbackable.
-* Strategy/scoring changes are gated and measurable.
-
-Current Phase 9 status:
-
-* Not implemented.
-
-Acceptance:
-
-* No proposal can become stable without evidence and rollback metadata.
-* Accepted updates are logged.
-* Reverted updates are logged.
-* Eval can compare before/after performance.
-* Strategy-param changes require experiment gate.
-
-## Phase 10: Guarded Learning Loop
+### P9.0 Protected Path Hardening
 
 Goal:
 
-Close the loop from prediction to execution evidence to attribution to proposal to guarded update to eval validation.
+Prevent accidental stable writes before learning infrastructure starts.
 
 Work:
 
-* Connect:
-
-  * candidate future prediction;
-  * execution evidence;
-  * prediction error;
-  * attribution;
-  * learning proposal;
-  * guarded acceptance;
-  * stable update;
-  * replay/eval validation;
-  * rollback if worse.
-* Keep facts, observations, inferences, memory, derived knowledge, LLM reflection, and stable learning records separate.
-* Add run-level reports:
-
-  * what was predicted;
-  * what happened;
-  * what mismatched;
-  * what was proposed;
-  * what was accepted;
-  * what was rejected;
-  * what was rolled back.
-* Add performance baseline tracking.
-* Add go/no-go deployment gate.
-
-Target Phase 10 output:
-
-* A complete guarded learning loop exists.
-* Learning is evidence-backed, scoped, confidence-rated, reversible, and evaluated.
-* The LLM remains the strategic player.
-* Local learning improves salience, memory activation, candidate futures, prompt context, and conservative calibration without turning the agent into an opaque rules bot.
-
-Current Phase 10 status:
-
-* Not implemented.
-* Phase 10 remains the target integration milestone after Phases 6-9 mature.
+- block live/provider-originated writes to protected paths;
+- isolate or gate legacy `finalizeRun()` stable write behavior;
+- label legacy feedback as legacy, gated, and auditable;
+- prevent bridge/live responders from writing memory/derived/strategy/skill;
+- add protected-path audit logs and fixtures.
 
 Acceptance:
 
-* Every stable learning update has evidence.
-* Every update has rollback.
-* Every deployment has before/after eval.
-* The system can explain what changed and why.
-* Performance does not degrade beyond accepted thresholds.
+- live LLM output cannot mutate stable memory, derived knowledge, strategy params, skill, or scaffold policy;
+- legacy stable-write paths are gated or disabled by default;
+- malicious or accidental `memoryUpdates` cannot bypass the gate;
+- explicit whitelist live remains behaviorally unchanged except for protection.
 
-## Cross-Phase Performance Baselines
+### P9.1 LearningProposal Schema and Store
 
-Engineering correctness is necessary but not sufficient. Starting from Phase 6, each phase should preserve or improve performance baselines.
+Goal:
+
+Replace free-form proposals with typed pending proposals.
+
+Required proposal families:
+
+- `MemoryProposal`
+- `DerivedKnowledgeProposal`
+- `CandidateTemplateProposal`
+- `ReasonPolicyProposal`
+- `BudgetCompressionPolicyProposal`
+- `ClassificationPolicyProposal`
+- `SkillProposal`
+- `ScaffoldPolicyProposal`
+- `RetrievalPolicyProposal`
+- `ImpressionPolicyProposal`
+- `ContextExpansionPolicyProposal`
+- `PromptAssemblyPolicyProposal`
+- `BudgetAllocationPolicyProposal`
+
+Minimum fields:
+
+- `id`
+- `schemaVersion`
+- `type`
+- `status`
+- `scope`
+- `targetLayer`
+- `targetObject`
+- `proposedPatch`
+- `evidence`
+- `counterexamples`
+- `confidence`
+- `riskLevel`
+- `promotionCriteria`
+- `rollbackPlan`
+- `createdFromRunIds`
+- `createdFromTransitionIds`
+- `protectedPathImpact`
+- `reviewHistory`
+- `revalidationResults`
+
+Acceptance:
+
+- proposals are append-only;
+- vague proposals are rejected or draft-only;
+- proposal store does not mutate live or stable behavior.
+
+### P9.2 Reverse Feedback and Weak Attribution
+
+Goal:
+
+Record why the LLM believes the scaffold was insufficient.
+
+Work:
+
+- add `ReverseScaffoldFeedback`;
+- record `informationSufficiency`;
+- record missing information;
+- record candidate set feedback;
+- record compression/memory/impression/classification/prompt/budget feedback;
+- map replay/review failures to suspected repair layers;
+- keep attribution weak.
+
+Acceptance:
+
+- feedback does not change live behavior;
+- all attribution is marked suspected unless validated;
+- counterexample requirements are recorded.
+
+### P9.3 EvidenceSliceReader
+
+Goal:
+
+Ensure promotion evidence is clean, scoped, and comparable.
+
+Work:
+
+- distinguish real live, shadow, bridge, console-assisted, fixture/debug, mixed budget, mixed revision, latest window, and historical windows;
+- exclude dirty evidence from stable promotion;
+- expose evidence windows to review CLI.
+
+Acceptance:
+
+- console/fixture/debug evidence cannot promote stable learning;
+- mixed windows are labeled;
+- latest live evidence remains separate from shadow-only readiness.
+
+### P9.4 Review CLI
+
+Goal:
+
+Let humans inspect, approve, reject, expire, and revert proposals.
+
+Acceptance:
+
+- `list`, `show`, `reject`, `approve-for-shadow`, `expire`, and `mark-counterexample-needed` paths exist;
+- approval for review is not stable application;
+- review history is recorded.
+
+### P9.5 Shadow Applicator
+
+Goal:
+
+Apply low-risk proposals in shadow first.
+
+Allowed early targets:
+
+- `ReasonPolicyProposal`
+- `CandidateTemplateProposal`
+- memory retrieval tags
+- classification policy labels
+
+Forbidden early targets:
+
+- validation;
+- execution;
+- action legality;
+- hard whitelist;
+- stable memory direct writes;
+- hard budget cap.
+
+### P9.6 Stable Promotion Gate
+
+Goal:
+
+Allow narrow stable promotion only after evidence, shadow comparison, and rollback readiness.
+
+Acceptance:
+
+- promotion ledger exists;
+- rollback snapshot exists;
+- before/after eval exists;
+- usage tracking exists;
+- regression blocks promotion.
+
+### P9.7 Retrieval / Scaffold Integration
+
+Goal:
+
+Let stable learned policies influence future scaffold construction in a recorded way.
+
+Acceptance:
+
+- transition records which learned policy was used;
+- review can explain policy impact;
+- rollback removes the effect.
+
+### P9.8 End-to-End Guarded Learning Window
+
+Goal:
+
+Demonstrate one full proposal lifecycle:
+
+```text
+error / scaffold feedback
+  -> proposal
+  -> evidence/counterexample
+  -> shadow validation
+  -> stable promotion
+  -> future use
+  -> rollback possible
+```
+
+First recommended stable target:
+
+- `ReasonPolicyProposal`, or
+- `CandidateTemplateProposal`
+
+Do not start with strategy params.
+
+---
+
+## 9. P10: Continuous Learning Loop
+
+Goal:
+
+Turn P9’s manual/small proposal loop into a continuous multi-run learning loop.
+
+P10 should include:
+
+- automatic aggregation of similar prediction errors;
+- automatic proposal candidate generation;
+- automatic evidence search;
+- automatic counterexample search;
+- shadow apply;
+- replay A/B comparison;
+- semi-automatic promotion;
+- rollback detection;
+- skill usage tracking;
+- retrieval usefulness tracking;
+- scaffold policy impact tracking;
+- cross-run generalization;
+- proposal survival metrics;
+- regression alerts.
+
+P10 should not mean full unsupervised self-modification.
+
+The human role changes from:
+
+```text
+writing rules
+```
+
+to:
+
+```text
+auditing learning system behavior
+```
+
+P10 demo:
+
+```text
+multi-run evidence
+  -> proposal candidates
+  -> counterexample search
+  -> shadow compare
+  -> semi-automatic promote
+  -> rollback if regression
+```
+
+---
+
+## 10. P11: Autonomous Curriculum and Meta-Scaffold Optimization
+
+Goal:
+
+Let the agent decide what it should study and which soft-scaffold policies need experiments.
+
+P11 should include:
+
+- autonomous curriculum;
+- multi-policy experiments;
+- scaffold ablation;
+- memory policy ablation;
+- candidate template ablation;
+- prompt assembly ablation;
+- budget policy ablation;
+- cross-run generalization;
+- cross-archetype generalization;
+- meta-scaffold policy proposals.
+
+The agent should be able to propose:
+
+- next scenario families to train;
+- skills that may be invalid;
+- memory policies to A/B test;
+- candidate templates that may overfit;
+- context panels worth adding;
+- budget profiles that may waste compute;
+- lessons that do not transfer across character/deck/boss contexts.
+
+P11 must still preserve:
+
+- hard shell;
+- evidence requirements;
+- rollback;
+- human/guarded review for promotion.
+
+P11 demo:
+
+```text
+agent identifies a weakness
+  -> proposes curriculum
+  -> proposes scaffold experiments
+  -> runs A/B or replay comparisons
+  -> recommends policy changes with evidence
+```
+
+---
+
+## 11. P12: Self-Optimizing Context OS / Learned Prompt Compiler
+
+Goal:
+
+Let the agent optimize what it sees, expands, compresses, caches, retrieves, orders, and uploads to the LLM.
+
+P12 is not about learning more game slogans.
+
+P12 is about learning how the agent should be fed information.
+
+P12 should include:
+
+- Context OS audit;
+- PromptAssemblyPolicy schema;
+- Temporary Working Cache;
+- Multi-layer Memory Routing;
+- Expand-and-Recompress Loop;
+- Learned Context Budget Allocation;
+- Context Ablation;
+- Prompt Assembly Lineage;
+- Context Exclusion Records;
+- Prompt Compiler Promotion;
+- End-to-end Context OS demo.
+
+P12 must not:
+
+- bypass hard budget cap;
+- let LLM directly rewrite PromptCompiler;
+- turn context expansion into raw-state dumping;
+- treat longer prompt as automatic improvement;
+- promote context policy without ROI and rollback.
+
+P12 required records:
+
+- `PromptAssemblyRecord`
+- `ContextExclusionRecord`
+- `MemoryExclusionRecord`
+- `CandidateFamilyExclusionRecord`
+
+P12 demo:
+
+```text
+agent requests expanded context in a key decision
+  -> system records whether expansion helped
+  -> evidence becomes a context policy proposal
+  -> shadow comparison validates it
+  -> future prompt/context policy changes in a rollbackable way
+```
+
+---
+
+## 12. P13: Compute/Budget OS
+
+Goal:
+
+Let the agent optimize compute allocation under a hard budget cap.
+
+P13 should answer:
+
+- when to use `low`;
+- when to use `medium`;
+- when to use `high`;
+- when to use `research`;
+- how to spend a fixed dollar/token budget;
+- how to reserve compute for boss/shop/card_reward/high-risk decisions;
+- how to measure whether more compute improved decisions;
+- how to avoid “more tokens but no improvement.”
+
+P13 should include:
+
+- Budget OS audit;
+- `BudgetUseRecord`;
+- `BudgetROIDigest`;
+- budget request approval policy;
+- denied request outcome tracking;
+- false high-risk request tracking;
+- reasoning profile A/B;
+- context expansion ROI;
+- critique budget ROI;
+- learning compute ROI;
+- BudgetPolicyPromotion.
+
+P13 must not:
+
+- let LLM approve its own spending;
+- let agent exceed spending cap;
+- make high budget the default;
+- treat pretty reasons as ROI;
+- ignore denied request outcomes.
+
+P13 demo:
+
+```text
+user gives 1 USD / 5 USD / fixed token budget
+  -> agent dynamically allocates low/medium/high/research profiles
+  -> system records cost and outcome
+  -> ROI review shows where compute helped or wasted
+  -> future budget policy improves under hard cap
+```
+
+---
+
+## 13. Cross-Phase Performance Baselines
+
+Engineering correctness is necessary but not sufficient.
+
+Starting from P6 and continuing through P13, each phase should preserve or improve performance baselines.
 
 Minimum metrics:
 
-```text
-floor reached
-death floor
-combat HP loss
-block deficit
-tempo loss
-fallback rate
-LLM call rate
-invalid action count
-illegal target count
-stale index count
-settlement timeout rate
-bad checkpoint rate
-prediction mismatch rate
-unknown prediction rate
-unsupported prediction rate
-potion use
-route/reward quality proxy
-```
+- floor reached
+- death floor
+- combat HP loss
+- block deficit
+- tempo loss
+- fallback rate
+- LLM call rate
+- invalid action count
+- illegal target count
+- stale index count
+- settlement timeout rate
+- bad checkpoint rate
+- prediction mismatch rate
+- unknown prediction rate
+- unsupported prediction rate
+- potion use
+- route/reward quality proxy
+- proposal survival rate
+- rollback frequency
+- retrieval usefulness
+- context expansion ROI
+- budget ROI
+- prompt bloat ratio
 
 Coverage must be separated:
 
@@ -865,175 +1081,233 @@ freshSchemaCoverage
 latestTransitionCoverage
 ```
 
-Recommended eval output:
+Go/no-go rules:
+
+- Schema coverage alone cannot justify live integration.
+- Prompt/scoring/memory/context/budget changes require performance comparison.
+- Any increase in invalid actions, illegal targets, stale indices, or ground-truth violations blocks rollout.
+- Any uncertain improvement remains shadow-only.
+- More context and more tokens are not automatically better.
+
+---
+
+## 14. Completion Gaps
+
+P8/P8.5 gaps:
+
+- wildcard live remains forbidden;
+- all-class live is not authorized;
+- stable learning is not implemented;
+- P8 readiness reporting still has older shadow-first semantics beside live-applied rollout reporting;
+- protected-path stable-write governance is only partially hardened;
+- replay/eval/review can surface proposal evidence, but do not yet drive a real promotion pipeline.
+
+P9 gaps:
+
+- `ProtectedPathGate` is not fully finished;
+- typed `LearningProposal` schema/store has not started;
+- `ReverseScaffoldFeedback` is not yet a durable transition surface;
+- `EvidenceSliceReader` is not implemented;
+- weak attribution exists in plan, not as a complete system;
+- review CLI for typed proposals is not implemented;
+- shadow applicator and stable promotion gate are not implemented.
+
+P10 gaps:
+
+- no continuous proposal aggregation loop;
+- no automatic evidence/counterexample search;
+- no proposal survival metrics;
+- no cross-run learning report.
+
+P11 gaps:
+
+- no autonomous curriculum engine;
+- no scaffold policy experiment manager;
+- no ablation framework for memory/candidate/prompt/budget policies.
+
+P12 gaps:
+
+- no Context OS as a promoted system;
+- no PromptAssemblyRecord as a first-class audit record;
+- no context exclusion records;
+- no expand-and-recompress loop;
+- no context ROI dashboard.
+
+P13 gaps:
+
+- no Budget OS as a promoted system;
+- no BudgetUseRecord or BudgetROIDigest;
+- no denied request outcome tracking;
+- no reasoning profile A/B.
+
+---
+
+## 15. Acceptance Criteria
+
+### Engineering Acceptance
+
+- `npm install` succeeds.
+- `npm exec tsc -- --noEmit` succeeds.
+- `npm run check` succeeds when code changes are made.
+- Existing `agent:run`, DeepSeek live runner, replay, eval, and review commands remain compatible.
+- STS2MCP capabilities remain explicit.
+- Human diff inference is never marked as ground truth.
+- Live runs produce transition logs.
+- Replay can answer what was seen, what candidates existed, what was selected, and what changed.
+- Eval separates errors, warnings, strategy issues, proposal health, and shadow coverage gaps.
+- LLM outputs are validated.
+- Prompt never includes full raw state, full fact DB, or full memory.
+- Program bugs become fixtures or smoke tests.
+- Old transition compatibility is preserved.
+
+### Cognitive Scaffold Acceptance
+
+- Fresh transitions expose strategic impression, salience, memory activation, derived summary, candidate futures, DeliberationPacket, prompt parity, prediction errors, and replay frames.
+- Shadow records do not change live action selection unless explicitly gated.
+- Candidate futures include typed prediction checks where supported.
+- Unknowns are explicit.
+- Missing candidate/context/memory signals can be recorded.
+
+### Prediction and Mechanics Acceptance
+
+- Expected-vs-actual comparison exists for supported mechanics.
+- Unsupported mechanics return `unknown`.
+- Attribution buckets are visible in replay/eval/review.
+- Critical mismatches become warnings or proposals, not stable learning.
+- Mechanics logic is decomposed enough to test.
+
+### Learning Acceptance
+
+- Learning proposals require evidence and counterexample tracking.
+- Stable updates require feature flag, threshold, rollback, and eval-before/after.
+- No stable memory, derived knowledge, scoring, strategy, prompt, context, or budget mutation happens silently.
+- Every applied update can be reverted.
+- Proposal evidence distinguishes live, shadow, bridge, console, fixture, historical, and latest windows.
+
+### Context/Budget Acceptance
+
+- Prompt assembly lineage is recorded before prompt policy changes.
+- Context exclusions are recorded for key decisions.
+- Budget requests and approvals are recorded before budget policy changes.
+- Context and budget policies require ROI review.
+- LLM can request more context/compute, but cannot approve it.
+- More context or more tokens do not count as success without decision-quality evidence.
+
+---
+
+## 16. Current Minimum Next Step
+
+Do not continue expanding live.
+
+Do not do wildcard.
+
+Do not let LLM write stable memory.
+
+Do not start automatic skill promotion.
+
+Do not start automatic PromptCompiler.
+
+Do not start adaptive budget behavior.
+
+The current minimum next step is:
+
+1. Finish `ProtectedPathGate`.
+2. Treat remaining legacy stable-write paths as gated legacy behavior, not normal learning.
+3. Keep live-applied rollout audit separate from stale shadow-only readiness semantics.
+4. Add typed `LearningProposal` schema/store.
+5. Add `ReverseScaffoldFeedback` schema to transition/review surfaces.
+6. Add `EvidenceSliceReader`.
+7. Add weak attribution fields.
+8. Add minimal `PromptAssemblyRecord`.
+9. Add minimal `BudgetUseRecord`.
+10. Keep all new feedback non-mutating.
+11. Use replay/review to produce draft proposals.
+12. Shadow-validate a low-risk `ReasonPolicyProposal` or `CandidateTemplateProposal`.
+13. Only then consider stable promotion.
+
+---
+
+## 17. What Must Not Be Misunderstood
+
+- Explicit whitelist live is not wildcard live.
+- Provider/validation/execution clean is not learning complete.
+- P8 workspace success is not P9 proposal learning.
+- Reflection is not stable knowledge.
+- A proposal is not stable learning.
+- Reason quality is a smoke alarm, not strategic truth.
+- Console/fixture/debug evidence is not stable-promotion proof.
+- More context is not automatically better.
+- More tokens are not automatically better.
+- The hard shell is not learnable.
+- Soft shell can become learnable only through evidence, shadow validation, promotion, and rollback.
+- The final product is not a rule engine.
+
+---
+
+## 18. Demonstration Milestones
+
+### P8.5 Demo
 
 ```text
-schemaCoverage:
-  allRun: ...
-  freshSchemaOnly: ...
-  latestTransition: ...
-
-predictionAttribution:
-  supported: ...
-  mismatch: ...
-  unknown: ...
-  unsupported: ...
-  byCategory: ...
-
-performance:
-  latestRun: ...
-  baselineComparison: ...
-  regressionWarnings: ...
+LLM safely plays through explicit whitelist live scaffold.
 ```
 
-Go/no-go rule:
+This is an engineering safety demo, not a learning demo.
 
-* Schema coverage alone cannot justify live integration.
-* Prompt/scoring/memory changes require performance comparison.
-* Any increase in invalid actions, illegal targets, or ground-truth violations blocks rollout.
-* Any uncertain improvement must remain shadow-only.
+### P9.8 Demo
 
-## Completion Gaps
+```text
+agent makes or detects an error
+  -> proposal is generated
+  -> evidence/counterexample is collected
+  -> shadow validation runs
+  -> stable promotion occurs
+  -> future decision uses it
+  -> rollback remains possible
+```
 
-Phase 1 gaps:
+This is the first real learning demo.
 
-* `domain-core` is not a fully separated package.
-* Runtime schema validation is still minimal.
-* STS2MCP adapter is not fully isolated from legacy agent imports.
+### P10 Demo
 
-Phase 2 gaps:
+```text
+multi-run continuous learning loop
+  -> repeated errors aggregate
+  -> proposals are generated
+  -> evidence and counterexamples are found
+  -> shadow compare runs
+  -> semi-automatic promotion and rollback alerts exist
+```
 
-* HumanPlayRecorder does not exist.
-* Human diff inference remains non-ground-truth.
-* Replay is primarily transition-derived.
+This is the first mature learning-system demo.
 
-Phase 3 gaps:
+### P11 Demo
 
-* Cognitive records are sparse on old transitions.
-* DeliberationPacket is not live prompt input.
-* Candidate futures are shallow, not multi-step plans.
-* Segmented combat plan is not implemented.
+```text
+agent proposes its own curriculum and scaffold experiments.
+```
 
-Phase 4 gaps:
+This is a meta-learning / research-style demo.
 
-* ConsolidationRecord is proposal-only.
-* Stable memory/derived/reward/strategy updates have no full lifecycle.
-* Experiment logging is not a managed subsystem.
+### P12 Demo
 
-Phase 5 gaps:
+```text
+agent requests expanded context in a key situation and turns that evidence into a future prompt/context policy.
+```
 
-* No reliable event-log extension.
-* No human UI event stream.
-* `events.jsonl` is a sink, not ground-truth proof.
+This is a self-optimizing Context OS demo.
 
-Phase 6 gaps:
+### P13 Demo
 
-* Mechanics engine is still incomplete.
-* Prediction attribution needs numeric expected-vs-actual comparison.
-* Unsupported and mismatch fixtures need stronger coverage.
-* Attribution logic should be decomposed into focused modules.
+```text
+user provides a fixed dollar/token budget and the agent allocates low/medium/high/research compute with ROI evidence.
+```
 
-Phase 7 gaps:
+This is a self-optimizing Compute/Budget OS demo.
 
-* No aggregation of repeated errors.
-* No evidence threshold.
-* No proposal lifecycle.
+---
 
-Phase 8 gaps:
+## 19. Enduring One-Sentence Plan
 
-* No guarded structured prompt integration.
-* No A/B prompt comparison.
-* No prompt parity acceptance threshold for live use.
-
-Phase 9 gaps:
-
-* No stable update applicator.
-* No rollback implementation.
-* No experiment gate for scoring/memory/derived changes.
-
-Phase 10 gaps:
-
-* No complete guarded learning loop.
-* No run-level learning report.
-* No deployment gate based on performance baseline.
-
-## Historical Phase 1 File Change List
-
-Phase 1 should touch only structural boundaries and tests:
-
-* Add `src/domain/types.ts` or `src/core/domain.ts` for stable schemas.
-* Add `src/game-io/types.ts` for `GameIO`, `StateReader`, `ActionExecutor`, `GameEventReader`, `AdapterCapabilities`.
-* Move or re-export current `AgentAction`, `NormalizedState`, and transition-related types without breaking imports.
-* Add `src/adapters/sts2mcp/capabilities.ts`.
-* Add `src/data/transitionSchema.ts`.
-* Add smoke assertions for adapter capabilities and LLM candidate validation.
-* Update `README.md`, `ARCHITECTURE.md`, `GAME_IO_CAPABILITIES.md`, and `DATA_SCHEMA.md`.
-
-Avoid in Phase 1:
-
-* No full controller rewrite.
-* No changing action semantics.
-* No deleting existing `src/agent/*`.
-* No new hard dependency on external packages unless justified.
-
-## Acceptance Criteria
-
-Early acceptance:
-
-* `npm install` succeeds.
-* `npm exec tsc -- --noEmit` succeeds.
-* `npm run agent:smoke` succeeds offline.
-* `npm run agent:review` works on existing memory.
-* `npm run collect:state` works when MCP is running.
-* `npm run agent:tick -- --dry-run` works when MCP is running.
-* Existing `agent:run` and `agent:run:bridge` scripts are preserved.
-* STS2MCP capabilities are explicit, including `canReadHumanEvents=false`.
-* Human diff inference is never marked ground truth.
-* New docs describe current limits and future path.
-
-Engineering acceptance:
-
-* Live runs produce transition logs.
-* Replay can answer what was seen, what was selected, and what changed.
-* Eval separates errors, warnings, strategy quality issues, and shadow coverage gaps.
-* LLM calls are short JSON and validated.
-* Prompt never includes full raw state, full Codex, or full memory.
-* Program bugs become fixtures or smoke tests.
-* Old transition compatibility is preserved.
-
-Cognitive scaffold acceptance:
-
-* Strategic impression, salience, memory activation, derived summary, candidate futures, DeliberationPacket, prompt parity, prediction errors, and replay frames are visible in new transitions.
-* Shadow records do not change live action selection.
-* Candidate futures include typed prediction checks where supported.
-* Unknowns are explicit.
-
-Mechanics and prediction acceptance:
-
-* Expected-vs-actual comparison exists for supported mechanics.
-* Unsupported mechanics return `unknown`.
-* Attribution buckets are grouped and visible in replay/eval/review.
-* Critical mismatches become warnings until enough evidence exists.
-
-Learning acceptance:
-
-* Learning proposals require evidence and counterexample tracking.
-* Stable updates require feature flag, threshold, rollback, and eval-before/after.
-* No stable memory, derived knowledge, scoring, or strategy mutation happens silently.
-* Every applied update can be reverted.
-
-Production-oriented acceptance:
-
-* Performance baselines are tracked.
-* Prompt/scoring/memory changes require baseline comparison.
-* Ground-truth violations block rollout.
-* Invalid actions, illegal targets, stale indices, and no-candidate failures block rollout.
-* The system can explain:
-
-  * what it predicted;
-  * what happened;
-  * what it learned;
-  * what it rejected;
-  * what it changed;
-  * what it rolled back.
+Build a real-game Slay the Spire 2 LLM agent where the LLM remains the core strategic player, the local system acts as a predictive cognitive scaffold, P8/P8.5 establishes safe explicit-whitelist live execution, P9 turns replayable evidence into guarded proposals, P10 makes that learning loop continuous, P11 lets the agent design curriculum and scaffold experiments, P12 makes context assembly learnable, and P13 makes compute allocation learnable under hard budget caps.
 
