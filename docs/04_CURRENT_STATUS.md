@@ -47,7 +47,8 @@ The real blocker is now the gap between P9.0 hardening and real proposal-driven 
 - live-applied rollout reporting now exists, but older shadow-first readiness semantics still coexist beside it
 - typed learning proposal schema/store has not started
 - typed reverse-scaffold feedback schema/store has not started
-- first-class evidence slicing has not started
+- first-class read-only evidence slicing has started; stable-promotion eligibility remains disabled until proposal/promotion gates exist
+- budget governance has a clearer staged roadmap, but runtime adaptive Budget/Compute OS behavior remains deferred to P13
 - weak prediction attribution, anti-vague-proposal rules, and stable-promotion gates are documented but not implemented
 
 ## What Is Explicitly Not True
@@ -64,8 +65,8 @@ Continue and complete P9.0 hardening:
 
 1. finish protected-path hardening by treating remaining legacy stable-write paths as gated legacy behavior, not normal learning
 2. keep live-applied rollout audit separate from stale shadow-only readiness semantics in replay/eval/review
-3. start typed learning proposal and reverse-scaffold schema/store work for P9.1
-4. define first-class evidence slicing before any proposal promotion path exists
+3. keep expanding read-only evidence slicing so mixed budget/profile, console/debug, live/shadow, and promotion evidence stay separate
+4. start typed learning proposal and reverse-scaffold schema/store work for P9.1
 
 ## Canonical Follow-On Docs
 

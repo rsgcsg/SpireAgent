@@ -80,6 +80,12 @@ It should not begin as:
 - automatic budget escalation
 - direct stable policy mutation
 
+Budget-specific rule:
+
+- `BudgetCompressionPolicyProposal` can exist in P9 as schema, telemetry, and proposal evidence.
+- It must not change runtime caps, rescue caps, thinking mode, model choice, retry behavior, compression behavior, validation, execution, or live rollout.
+- True Budget/Compute OS behavior belongs to P13 or later guarded phases after shadow validation, promotion gates, and rollback exist.
+
 Each proposal must include at least:
 
 - scope

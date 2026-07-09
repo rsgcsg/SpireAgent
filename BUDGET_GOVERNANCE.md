@@ -65,6 +65,44 @@ This document turns budget from an ad hoc cap collection into a governance model
 
 ---
 
+## 1.1 2026-07-09 Architecture Critique
+
+The current budget route has useful anchors, but it is not yet a mature runtime budget system.
+
+What is correct:
+
+- budget is treated as a guard rather than a goal
+- recovery budget is separated from workspace compression in telemetry
+- evidence budget and rollout budget are visible as different concepts
+- protected paths remain closed
+- P13 is correctly identified as the future Budget/Compute OS phase, not current behavior
+
+What is still weak or easy to misread:
+
+- Current fixed caps are provider-profile defaults, not a universal strategy for every decision class.
+- `maxOutputTokens`, rescue caps, timeouts, retry limits, thinking mode, response mode, model choice, and context depth are still scattered profile parameters rather than first-class governed profiles.
+- Cap exhaustion is still too easy to read as one generic `invalid_output` or `provider_length_empty` failure, when the recovery decision depends on what kind of cap failed.
+- Budget accounting and budget authorization are still partly fused in language. Recording cost/tokens/latency is not the same thing as permission to continue, promote, or mutate policy.
+- Field names such as `promotionUseAllowed` and `promotionAllowedByBudget` are useful local readiness flags, but they must not be read as stable-learning promotion authority.
+- P9 can introduce `BudgetPolicyProposal` schema and proposal evidence, but it must not backport P13 Budget OS behavior into live runtime.
+
+The honest current position:
+
+```text
+Current code is Stage 0 budget governance:
+hard caps + provider/recovery telemetry + evidence/rollout reporting.
+
+P9 may add attribution, schema, and proposal-only budget policy evidence.
+
+P13 is the first phase where learned Budget/Compute OS behavior may become runtime behavior,
+and only under hard caps, promotion gates, shadow validation, audit, and rollback.
+```
+
+The budget plan must therefore optimize for epistemic clarity before automation.
+It should make budget failures attributable, comparable, and reviewable before it lets any policy change live behavior.
+
+---
+
 ## 2. North Star Alignment
 
 The project is not trying to build the cheapest possible LLM loop.
@@ -123,6 +161,97 @@ For this project, budget has at least six dimensions:
 
 This is why “set `max_tokens` lower” is not a budget strategy.
 It is only one parameter inside one budget layer.
+
+### 3.1 Fixed Caps Are Hard Guards, Not Strategy
+
+Per-call hard caps are mandatory. A missing cap is unsafe.
+
+But a single fixed output cap for every decision class is not mature budget governance.
+Current values such as primary `maxOutputTokens`, empty-rescue caps, truncation-rescue caps, timeouts, retry limits, and thinking-mode defaults are current provider-profile defaults. They are not proof that combat, map, card reward, shop, event, and future learning proposals should all use the same deliberation budget.
+
+Long term, the following should be profile parameters:
+
+- model/provider tier
+- response mode
+- thinking mode or reasoning effort
+- max visible output tokens
+- reasoning/output reserve
+- timeout
+- max attempts
+- retry eligibility
+- rescue output caps
+- context panel budget
+- candidate-future budget
+- memory/retrieval depth
+- rollout authorization level
+- protected-path permissions
+
+Profile selection must remain explicit, observable, versioned, evidence-backed, and rollback-capable.
+It must never be an invisible heuristic that changes live behavior because a previous call ran out of tokens.
+
+### 3.2 Cap Exhaustion Is Not One Failure
+
+Budget/cap failures must be classified before recovery.
+
+Useful conceptual buckets:
+
+| Bucket | Meaning | Recovery implication |
+|---|---|---|
+| `output_cap_hit_with_partial` | visible content exists but likely truncated | repair or continuation may be possible if provider contract supports it |
+| `reasoning_budget_exhausted_no_visible_output` | provider used output/reasoning budget but returned no useful `content` | do not treat as ordinary invalid JSON; inspect thinking/reasoning mode and response contract |
+| `truncation_likely_empty` | finish reason and content shape suggest truncation caused empty output | try failure-class-specific rescue or classify as provider contract blocker |
+| `rescue_cap_insufficient` | the rescue cap is too small to succeed for the minimal valid object | do not call this compression success; revise rescue profile or surface blocker |
+| `context_window_pressure` | input/context size likely crowds the response budget | attribute to workspace/profile size before cutting strategic fields |
+| `schema_or_prompt_contract_too_large` | required output contract induces excessive answer length | simplify recovery contract, not semantic validation |
+| `invalid_json_not_length` | parse failure without length/cap evidence | repair prompt/schema or parser contract; do not raise budget automatically |
+| `invalid_choice_not_budget` | selected candidate is illegal or missing | semantic validation failure, not budget failure |
+| `provider_timeout` | provider did not complete under timeout | timeout/retry policy issue |
+| `provider_rate_limit` | provider refused or throttled | provider availability/run budget issue |
+
+Cap failure is attribution evidence.
+It is not automatic permission to raise live caps.
+
+Repeated cap failure under one profile should produce reviewable signals such as:
+
+- `budget_profile_blocked`
+- `cap_misestimation`
+- `recovery_contract_failed`
+- `profile_context_pressure`
+- `schema_output_contract_too_large`
+
+Those signals should feed `BudgetPolicyProposal` or human review, not hidden live mutation.
+
+### 3.3 Accounting Is Not Authorization
+
+Budget accounting records what happened:
+
+- actual or estimated tokens
+- cost
+- latency
+- finish reason
+- cap hit
+- retry lineage
+- rescue mode
+- model/provider
+- decision class
+- budget profile
+- quality outcome
+- validation outcome
+- evidence slice
+
+Budget authorization decides what may happen next:
+
+- continue
+- skip
+- retry
+- pause
+- stop
+- require human review
+- keep proposal draft-only
+- allow shadow experiment
+- allow stable-promotion review
+
+A single run token pool is insufficient because it can waste budget early, starve critical decisions later, hide per-decision-class ROI, obscure mixed evidence windows, and encourage budget-as-optimization rather than budget-as-governance.
 
 ---
 
@@ -372,6 +501,27 @@ and what is the smallest recovery change
 that preserves strategic meaning?
 ```
 
+Provider rescue should be failure-class-specific.
+
+The project should reject this shortcut:
+
+```text
+smaller rescue = safer rescue
+```
+
+A smaller rescue is only safer if the minimal valid response can actually fit and semantic validation remains intact.
+If a smaller cap guarantees another truncation, it is not conservative; it is noisy failure.
+
+Future recovery policy should distinguish:
+
+- continuation or repair when partial output exists
+- disabled-thinking rescue when reasoning budget crowds visible output
+- minimal JSON rescue when the output contract is too large
+- different response mode when JSON mode interacts poorly with provider behavior
+- explicit blocker when failure is semantic, non-retryable, rate-limited, or unsafe to guess
+
+Any new recovery behavior must begin as telemetry or shadow-only experiment unless separately reviewed.
+
 ### 6.5 Skip is better than hidden degradation
 
 If the project cannot call safely under a given profile, it should skip with traceable reasons.
@@ -558,6 +708,39 @@ Suggested long-lived profiles:
 
 These profiles are governance objects, not merely `.env` presets.
 
+### 8.1 Future `BudgetProfile` / `DeliberationProfile` Shape
+
+A mature profile should include enough identity and governance metadata to make budget decisions auditable.
+
+Suggested fields:
+
+- profile name and version
+- decision class or skill scope
+- risk tier
+- game pressure tier
+- provider/model tier
+- reasoning effort or thinking mode
+- max visible output tokens
+- reasoning/output reserve
+- context panel budget
+- CandidateFuture serialization budget
+- memory/retrieval depth
+- retry policy
+- timeout
+- max attempts
+- run-budget impact
+- evidence target
+- live allowed
+- protected-path permissions
+- rollback policy
+- owner or approval requirement
+- promotion criteria
+- known counterexamples
+
+P9 may define these as docs, telemetry, schema, or proposal-only records.
+P9 must not let them change live behavior.
+P13 is the phase where promoted profiles may become runtime Budget/Compute OS behavior.
+
 ---
 
 ## 9. What Must Stay Separate
@@ -686,6 +869,21 @@ Not every provider failure should trigger more workspace cutting.
 
 You can have enough evidence to continue shadow work without having enough evidence to enable live additive.
 
+### 11.6 Treat circuit breakers as review signals, not auto-escalation
+
+Repeated cap exhaustion, repeated rescue failure, repeated timeout, or repeated profile-context pressure should trip a conceptual circuit breaker.
+
+The breaker should produce evidence such as:
+
+- which profile failed
+- which decision class failed
+- whether failure was primary, rescue, or terminal
+- whether strategic fidelity was preserved
+- whether the failure repeated under the same revision/budget window
+
+The breaker should not automatically increase live caps or choose a higher-cost profile.
+It should create review evidence or a `BudgetPolicyProposal`.
+
 ---
 
 ## 12. Anti-Patterns
@@ -715,6 +913,14 @@ Mixed revision windows and mixed budget windows destroy causal interpretation.
 ### 12.6 “Compression success means workspace success”
 
 A smaller payload is only good if the strategic problem remains visible.
+
+### 12.7 “Budget field name means authority”
+
+Fields like `promotionUseAllowed` and `promotionAllowedByBudget` are local readiness/reporting terms.
+They do not authorize stable learning, policy mutation, protected-path writes, wildcard live, or LLM-approved spending.
+
+Budget can help say that an evidence window is clean enough to review.
+Budget alone cannot promote anything.
 
 ---
 
@@ -888,9 +1094,10 @@ Current North Star audit note:
 
 ---
 
-## 16. Learning-Aware Budget Governor Route
+## 16. Canonical Future Budget Roadmap
 
-The long-term target is not a larger set of fixed caps. It is a learning-aware Budget Governor that can propose, test, promote, and roll back budget/compression policy while the outer safety shell remains fixed.
+The long-term target is not a larger set of fixed caps.
+It is a guarded Budget/Compute OS that can propose, test, promote, and roll back budget/compression policy while the outer safety shell remains fixed.
 
 This must be staged carefully.
 
@@ -902,8 +1109,10 @@ Current state:
 - provider recovery is classified and summarized
 - evidence and rollout budgets are reported
 - protected paths remain closed
+- fixed caps exist as provider-profile defaults
 
-This is useful, but it is not yet a learning-aware governor.
+This is useful, but it is not Budget OS.
+It is the current SpireAgent budget state.
 
 ### Stage 1: Attribution-only budget analysis
 
@@ -922,6 +1131,7 @@ Forbidden behavior:
 - automatically change caps
 - automatically promote compression policy
 - use budget attribution to bypass validation
+- treat repeated cap failures as permission to increase live budget
 
 ### Stage 2: Proposal-only policy changes
 
@@ -938,12 +1148,15 @@ Proposal requirements:
 - decision class
 - triggering conditions
 - affected budget layer
+- affected profile parameter
 - expected quality benefit
 - cost/latency/risk estimate
+- counterexamples and known failure modes
 - rollback path
 - required shadow evidence
 
 These proposals must not mutate runtime policy by themselves.
+`BudgetPolicyProposal` is not Budget OS.
 
 ### Stage 3: Shadow budget experiments
 
@@ -961,13 +1174,13 @@ Examples:
 
 Experiments must report provider reliability, reason quality, CandidateFuture completeness, cost, latency, and evidence-window cleanliness.
 
-### Stage 4: Guarded policy promotion
+### Stage 4: Stable-promotion gate preparation
 
 Goal:
 
-- promote a budget/compression policy only after clean shadow evidence
+- prepare the machinery needed to promote budget/compression policy later without opening runtime mutation early
 
-Promotion requires:
+Required before any stable budget/compression policy promotion:
 
 - fresh target-class evidence
 - no live-eligible invalid/error
@@ -975,12 +1188,19 @@ Promotion requires:
 - explicit rollback
 - versioned policy identity
 - human authorization for any live or protected-path use
+- promotion ledger
+- rollback snapshot
+- counterexample search
+- protected-path impact review
 
-### Stage 5: Decision-class deliberation profiles
+Stage 4 may validate a proposal in shadow.
+It still does not let budget policy self-apply.
+
+### Stage 5 / P13: Budget/Compute OS behavior
 
 Long-term target:
 
-- budget policy becomes part of a typed deliberation profile:
+- budget policy becomes part of a typed, promoted deliberation profile:
   - workspace depth
   - candidate count
   - memory activation depth
@@ -990,7 +1210,50 @@ Long-term target:
   - rescue policy
   - evidence target
 
-The LLM may propose these profiles inside the experimental scaffold, but the outer shell must still enforce hard caps, validation, live gating, and stable-update promotion rules.
+The LLM may propose these profiles inside the experimental scaffold, but the outer shell must still enforce hard caps, validation, live gating, stable-promotion rules, and rollback.
+
+P13 must not begin as automatic budget escalation.
+It should begin as:
+
+- budget use records
+- ROI digests
+- profile proposal review
+- shadow profile experiments
+- narrow promoted profile application under hard caps
+- rollback if decision quality or safety regresses
+
+---
+
+## 16.1 Follow-Up PR Plan
+
+Do not implement all of this now. The staged follow-up order should be:
+
+### Near-term P9.0/P9.1
+
+1. `ProviderCapFailureClassifier`
+   - classify length/empty/partial/timeout/rate-limit/schema failures without changing retry behavior
+2. `BudgetUseRecord` schema draft
+   - record attempt lineage, profile identity, accounting, and authorization outcome
+3. `BudgetProfile` / `DeliberationProfile` schema draft
+   - schema/proposal-only, no runtime profile switching
+4. `BudgetPolicyProposal` fields
+   - scope, affected profile parameter, evidence, counterexample, expected effect, risk, promotion criteria, rollback
+
+### Mid P9 / P10
+
+5. EvidenceSliceReader budget-profile dimensions
+   - same profile, mixed profile, profile counterexamples, console/debug exclusion
+6. Budget circuit-breaker telemetry
+   - repeated cap/profile failures produce review evidence, not auto-escalation
+7. Profile-based shadow experiment runner
+   - compare profiles in shadow against `full` and current defaults
+
+### P13
+
+8. Budget ROI digest
+   - correlate profile cost with provider reliability, reason quality, decision consistency, and outcome
+9. Budget/Compute OS design and promotion gate
+   - allow only promoted, rollbackable profile behavior under hard caps
 
 ---
 

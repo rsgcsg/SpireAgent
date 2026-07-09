@@ -100,13 +100,20 @@ Status values:
 
 ### `budget_and_recovery_governance_still_p8_local`
 
-- Status: `open`
+- Status: `in_progress`
 - Evidence:
   - [BUDGET_GOVERNANCE.md](../../BUDGET_GOVERNANCE.md#L58)
   - [llm.ts](../../src/agent/llm.ts#L1)
 - Problem:
-  - Budget language is broader than current implementation.
-  - Recovery policy and readiness policy are still too fused to P8 workspace/shadow semantics.
+  - Budget language is now clearer than current implementation: current code is mostly Stage 0 guard + telemetry, not Budget OS.
+  - Recovery policy, cap failure attribution, and readiness policy are still partly P8 workspace/shadow semantics.
+  - Current fixed caps are provider-profile defaults, not a mature per-class deliberation profile system.
+- Current state:
+  - `BUDGET_GOVERNANCE.md` now distinguishes fixed call caps, cap-exhaustion failure classes, accounting vs authorization, recovery policy direction, circuit breakers, P9 proposal-only budget work, and P13 Budget/Compute OS behavior.
+- Minimum fix:
+  - add provider cap-failure classification as telemetry
+  - add `BudgetUseRecord` / `BudgetProfile` / `BudgetPolicyProposal` schema-only surfaces before any adaptive budget behavior
+  - keep dynamic budget selection deferred to P13 guarded promotion
 
 ### `reason_quality_detector_overfit_risk`
 

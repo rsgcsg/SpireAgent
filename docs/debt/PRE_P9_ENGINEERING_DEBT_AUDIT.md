@@ -174,7 +174,7 @@ Legend:
 | D-013 | Anti-vague proposal validation missing | proposal quality | P9 docs | open | critical | must_fix_before_formal_P9 | yes | advanced | PR-9 | Draft/reject vague proposals without evidence/scope/counterexample/validation plan |
 | D-014 | Controller owns too many concerns | architecture | `controller.ts` | open | high | P9.2_to_P9.8 | no | advanced | PR-11 optional | Narrow extraction only; broad rewrite deferred |
 | D-015 | LiveDecisionGateway missing | architecture | `controller.ts`, live adapter path | open | medium | should_fix_before_P9_if_safe | no | advanced | PR-11 optional | Extract live decision boundary only if tests stay small and rollback easy |
-| D-016 | Budget/recovery governance still P8-local | budget | `BUDGET_GOVERNANCE.md`, `llm.ts`, `workspace.ts` | open | high | should_fix_before_P9_if_safe | no | advanced | PR-6 | Separate call/recovery/run/evidence/protected-path budgets in docs/reporting |
+| D-016 | Budget/recovery governance still P8-local | budget | `BUDGET_GOVERNANCE.md`, `llm.ts`, `workspace.ts` | in_progress | high | should_fix_before_P9_if_safe | no | advanced | PR-6 | Separate call/recovery/run/evidence/protected-path budgets in docs/reporting |
 | D-017 | Prompt/context/budget telemetry incomplete for learned policy | telemetry | `workspace.ts`, `DATA_SCHEMA.md` | open | medium | P12/P13 | no | advanced | future | Keep telemetry read-only; no learned budget behavior before P13 |
 | D-018 | Memory-system boundary debt | memory | `MEMORY_SYSTEM.md`, `memory.ts` | open | high | must_fix_before_formal_P9 | yes | advanced | PR-2/3 | Stable targets cannot be mutated outside proposal/promotion path |
 | D-019 | Data/transition schema lacks P9 proposal/reverse feedback | schema | `domain/types.ts`, `DATA_SCHEMA.md` | open | high | P9.1_entry | yes | advanced | PR-7/8 | Schema docs and types align; old transitions remain readable |
@@ -732,7 +732,7 @@ Task:
 Clarify budget and recovery governance boundaries for P9 without changing live behavior.
 
 Context:
-Budget is a guard, not an optimization target. Recovery budget must stay separate from workspace compression and evidence budget.
+Budget is a guard, not an optimization target. Recovery budget must stay separate from workspace compression and evidence budget. Current fixed caps are provider-profile defaults, not universal strategy or Budget OS.
 
 Must read before editing:
 BUDGET_GOVERNANCE.md, docs/debt/PRE_P9_ENGINEERING_DEBT_AUDIT.md, DATA_SCHEMA.md, REPLAY_AND_EVAL.md, src/agent/llm.ts, src/agent/workspace.ts, src/replay/reader.ts.
@@ -741,19 +741,19 @@ Current phase and phase fit:
 Pre-P9 governance/reporting only unless a tiny telemetry fix is required.
 
 Allowed changes:
-Docs/reporting/telemetry clarification; tests if reporting changes.
+Docs/reporting/telemetry clarification; tests if reporting changes; schema-only direction for future `BudgetUseRecord`, `BudgetProfile`, and `BudgetPolicyProposal`.
 
 Forbidden changes:
 No provider contract rewrite, no live budget widening, no compression behavior change, no stable learning.
 
 Implementation requirements:
-Reports should distinguish call, recovery, run, evidence, rollout, and protected-path budgets.
+Reports should distinguish call, recovery, run, evidence, rollout, and protected-path budgets. Cap exhaustion should be classified before recovery. Repeated cap failure should create telemetry/proposal evidence, not automatic budget escalation.
 
 Tests/checks to run:
 npm run check; replay/eval/review if report output changes.
 
 Acceptance criteria:
-Budget language is auditable and does not imply token saving is a strategic goal.
+Budget language is auditable and does not imply token saving is a strategic goal. P9 budget work remains proposal-only; P13 owns runtime Budget/Compute OS behavior.
 
 Rollback/safety requirements:
 If runtime behavior changes, stop.

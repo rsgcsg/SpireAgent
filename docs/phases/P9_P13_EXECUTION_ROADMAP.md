@@ -46,6 +46,8 @@ The main corrections are:
    P9-P10 should only seed the data structures and review path needed for future context-policy learning.
 3. `Compute/Budget OS` is also a real long-term target, but P13 must stay downstream of guarded proposal infrastructure.
    The project should not let budget adaptation become an early hidden optimizer that changes live behavior without proposal review.
+   Current fixed call caps are provider-profile defaults, not a universal long-term budget strategy.
+   P9 may define budget telemetry and `BudgetPolicyProposal` schema, but it must not implement adaptive runtime budget selection.
 4. The project still has unfinished P8 debt that matters to P9:
    protected-path governance is only partially landed,
    live rollout reporting is still partly split-brain,
@@ -233,6 +235,13 @@ P9.1 must not:
 - apply proposals
 - mutate live behavior
 - write stable memory
+- change budget caps, rescue caps, thinking mode, provider retry behavior, compression, model choice, validation, or execution
+
+Budget-specific note:
+
+- `BudgetPolicyProposal` is schema/proposal-only in P9.1.
+- It may describe affected profile parameters, expected cost/latency/quality impact, counterexamples, promotion criteria, and rollback.
+- It must not approve spending or select a higher budget profile.
 
 ### P9.2 Weak Attribution And Reverse Scaffold Telemetry
 
@@ -269,11 +278,17 @@ Required slice dimensions:
 
 - revision
 - budget/governance profile
+- cap/recovery profile where recorded
 - rollout mode
 - decision class
 - live-applied vs shadow-only
 - console/debug assistance
 - counterexample inclusion
+
+Budget-specific rule:
+
+- mixed budget/profile windows can remain visible as debug evidence, but cannot silently satisfy stable-promotion evidence.
+- repeated cap exhaustion under one profile should become review/proposal evidence, not automatic budget escalation.
 
 This is the point where the project stops treating ad hoc replay summaries as sufficient promotion evidence.
 
@@ -414,6 +429,25 @@ It should begin with:
 - proposal-only budget changes
 - shadow validation
 - narrow stable promotion
+- budget use records
+- ROI digests
+- rollbackable profile versions
+
+P13 must preserve:
+
+- hard run/cost/time caps
+- provider failure classification before recovery
+- protected-path bans unless separately promoted
+- validation and execution safety
+- human or gate approval for promoted budget behavior
+
+P13 must not mean:
+
+- the LLM approves its own spending
+- higher budget becomes the default
+- valid JSON per dollar replaces strategic fidelity
+- cap exhaustion automatically increases live budget
+- budget policy weakens candidate legality, validation, rollback, or stable-write protection
 
 ## What Should Change In Canonical Docs
 

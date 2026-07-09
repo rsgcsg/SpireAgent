@@ -303,7 +303,7 @@ Blocker changes include:
 - legacy finalize feedback bypasses `ProtectedPathGate`;
 - wildcard live is enabled casually;
 - validation is weakened to fit LLM output;
-- budget cap can be raised by LLM request;
+- budget cap can be raised directly by LLM request without review, profile policy, hard cap, and rollback;
 - console/fixture/debug evidence can be promoted as stable learning;
 - Prompt Compiler or Budget Manager changes live behavior without gate.
 
@@ -458,6 +458,9 @@ Future reasoning profiles may include:
 - `research`
 
 The LLM may request more budget, but it cannot approve budget.
+
+In P9, such a request is proposal/review evidence only.
+It must not change runtime caps, rescue caps, thinking mode, provider retry behavior, compression, model choice, validation, or execution.
 
 Budget Manager must preserve hard budget caps and decide using:
 
@@ -1034,6 +1037,7 @@ P13 must not:
 - make high budget the default;
 - treat pretty reasons as ROI;
 - ignore denied request outcomes.
+- automatically raise live budget after cap exhaustion.
 
 P13 demo:
 
@@ -1042,7 +1046,7 @@ user gives 1 USD / 5 USD / fixed token budget
   -> agent dynamically allocates low/medium/high/research profiles
   -> system records cost and outcome
   -> ROI review shows where compute helped or wasted
-  -> future budget policy improves under hard cap
+  -> future budget policy improves under hard cap after proposal review, shadow validation, promotion gate, and rollback setup
 ```
 
 ---
