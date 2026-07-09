@@ -19,6 +19,7 @@ import {
 } from "../replay/reader.js";
 import { buildLiveAppliedRolloutSummary, type LiveAppliedRolloutSummary } from "../replay/liveAppliedRollout.js";
 import { buildEvidenceSliceSummary, type EvidenceSliceSummary } from "../replay/evidenceSliceReader.js";
+import { buildBudgetGovernanceSummary, type BudgetGovernanceSummary } from "../replay/budgetGovernanceSummary.js";
 import { buildWorkspaceDecisionClassQuality, type WorkspaceDecisionClassQualityStats } from "../replay/workspaceQuality.js";
 import { assessP8LiveReadiness, type P8LiveReadinessAssessment } from "../replay/p8LiveReadiness.js";
 
@@ -92,6 +93,7 @@ export interface EvalSummary {
   p8LiveReadinessAssessment: P8LiveReadinessAssessment;
   liveAppliedRollout: LiveAppliedRolloutSummary;
   evidenceSlices: EvidenceSliceSummary;
+  budgetGovernance: BudgetGovernanceSummary;
   predictionErrorCoverage: EvalPredictionErrorCoverage;
   consolidationCoverage: EvalConsolidationCoverage;
   consolidationProposalSurface: ReplayConsolidationProposalSurface;
@@ -420,6 +422,7 @@ export function evaluateRun(runIdOrPath?: string): EvalReport {
   );
   const liveAppliedRollout = buildLiveAppliedRolloutSummary(validTransitions as unknown as JsonRecord[]);
   const evidenceSlices = buildEvidenceSliceSummary(validTransitions as unknown as JsonRecord[]);
+  const budgetGovernance = buildBudgetGovernanceSummary(validTransitions as unknown as JsonRecord[]);
   const consolidationProposalSurface = buildReplayConsolidationProposalSurface(readConsolidationProposals(runDir, validTransitions));
   for (const issue of buildStrategyWarnings(strategyMetrics)) {
     addWarning(warnings, warningSummary, issue);
@@ -464,6 +467,7 @@ export function evaluateRun(runIdOrPath?: string): EvalReport {
       p8LiveReadinessAssessment,
       liveAppliedRollout,
       evidenceSlices,
+      budgetGovernance,
       predictionErrorCoverage,
       consolidationCoverage,
       consolidationProposalSurface

@@ -990,6 +990,7 @@ Current implementation note:
 - `STS2_BUDGET_GOVERNANCE_PROFILE` records the intended governance profile.
 - `workspaceComparison.budget.governanceProfile` and `governancePolicy` record profile, call budget, recovery budget, run budget, evidence budget, rollout budget, and protected-path budget interpretation.
 - Replay/eval/review aggregate governance profile counts so mixed-profile windows are visible during audits.
+- `src/replay/budgetGovernanceSummary.ts` derives a read-only report summary that displays call, recovery, run, evidence, rollout, and protected-path budget layers side by side.
 - This is metadata and guard interpretation only. It does not change live behavior or stable learning behavior.
 
 ### Phase BG-3: Recovery policy extraction

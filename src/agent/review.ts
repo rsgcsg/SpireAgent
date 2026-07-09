@@ -11,6 +11,7 @@ import {
 } from "../replay/reader.js";
 import { buildLiveAppliedRolloutSummary } from "../replay/liveAppliedRollout.js";
 import { buildEvidenceSliceSummary } from "../replay/evidenceSliceReader.js";
+import { buildBudgetGovernanceSummary } from "../replay/budgetGovernanceSummary.js";
 import { buildWorkspaceDecisionClassQuality } from "../replay/workspaceQuality.js";
 import { assessP8LiveReadiness } from "../replay/p8LiveReadiness.js";
 
@@ -277,6 +278,7 @@ function summarizeCurrentRunCognitiveCoverage(runId: string): JsonRecord {
   const p8LiveReadinessAssessment = assessP8LiveReadiness(freshSlices.sinceLatestRevision, workspaceDecisionClassQuality);
   const liveAppliedRollout = buildLiveAppliedRolloutSummary(transitions);
   const evidenceSlices = buildEvidenceSliceSummary(transitions);
+  const budgetGovernance = buildBudgetGovernanceSummary(transitions);
   const consolidationStatusCounts = transitions.reduce<Record<string, number>>((counts, transition) => {
     if (!isRecord(transition.consolidation)) return counts;
     const status = typeof transition.consolidation.status === "string" ? transition.consolidation.status : "unknown";
@@ -344,6 +346,7 @@ function summarizeCurrentRunCognitiveCoverage(runId: string): JsonRecord {
     p8LiveReadinessAssessment,
     liveAppliedRollout,
     evidenceSlices,
+    budgetGovernance,
     averageWorkspaceInformationPreservation:
       workspacePreservationScores.length > 0
         ? round(workspacePreservationScores.reduce((sum, score) => sum + score, 0) / workspacePreservationScores.length)

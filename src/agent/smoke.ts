@@ -3350,6 +3350,10 @@ try {
   assert.equal(evalReport.summary.p8LiveReadinessAssessment.rolloutBudget.humanAuthorizationRequired, true);
   assert.equal(evalReport.summary.p8LiveReadinessAssessment.rolloutBudget.structuredPromptOnlyDefaultAllowed, false);
   assert.equal(evalReport.summary.p8LiveReadinessAssessment.rolloutBudget.stableMemoryWritesAllowed, false);
+  assert.equal(evalReport.summary.budgetGovernance.accountingNotAuthorization, true);
+  assert.equal(evalReport.summary.budgetGovernance.p9BudgetPolicyProposalOnly, true);
+  assert.equal(evalReport.summary.budgetGovernance.runtimeBudgetOsDeferredTo, "P13");
+  assert.ok((evalReport.summary.budgetGovernance.callBudgetStatusCounts.within_budget ?? 0) >= 0);
   const [firstWorkspaceDecisionClassQuality] = Object.values(evalReport.summary.workspaceDecisionClassQuality);
   assert.equal(firstWorkspaceDecisionClassQuality?.transitions, 1);
   assert.ok((firstWorkspaceDecisionClassQuality?.futureCount ?? 0) > 0);
