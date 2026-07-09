@@ -70,7 +70,12 @@ import { summarizeProviderRecoveryPolicy } from "./providerRecoveryPolicy.js";
 import { analyzeSerializedCandidateFutures } from "./candidateFutureReviewSignals.js";
 import { serializeWorkspaceCandidateFutures } from "./candidateFutureCompressor.js";
 import { buildMapRoutePlanFromChoice } from "./mapRoutePlan.js";
-import { evaluateLegacyFinalizeStableWriteGate, evaluateLiveLlmMemoryUpdateGate } from "./protectedPathGate.js";
+import {
+  evaluateLegacyFinalizeStableWriteGate,
+  evaluateLiveLlmMemoryUpdateGate,
+  evaluateLiveLlmStableWriteGate,
+  protectedPathGateSnapshot
+} from "./protectedPathGate.js";
 import { buildLiveAppliedRolloutSummary } from "../replay/liveAppliedRollout.js";
 import {
   DOMAIN_SCHEMA_VERSION,
@@ -1223,6 +1228,25 @@ assert.equal(
   "invalid_choice"
 );
 assert.equal(evaluateLiveLlmMemoryUpdateGate({}).allowed, false);
+assert.deepEqual(evaluateLiveLlmStableWriteGate({
+  attemptedTargets: ["memory", "strategy_params"],
+  env: {}
+}).reasons, [
+  "live_llm_memory_updates_blocked_by_default",
+  "live_llm_strategy_params_blocked_by_default"
+]);
+const protectedPathSnapshot = protectedPathGateSnapshot({});
+assert.deepEqual(protectedPathSnapshot.stableWriteTargets, [
+  "memory",
+  "derived_knowledge",
+  "strategy_params",
+  "skills",
+  "prompt_policy",
+  "budget_policy",
+  "candidate_templates",
+  "classification_policy",
+  "scaffold_policy"
+]);
 assert.equal(evaluateLegacyFinalizeStableWriteGate({ STS2_ENABLE_LEGACY_FINALIZE_STABLE_WRITES: "1" } as NodeJS.ProcessEnv).allowed, true);
 
 const rewardState = normalizeGameState({
@@ -1348,14 +1372,17 @@ assert.ok(!rewardCandidates.some((candidate) => candidate.kind === "proceed"));
               candidateId: rewardCandidates[0]!.id,
               confidence: 0.8,
               reason: "Take immediate power now.",
-              memoryUpdates: { strategicDirection: ["blocked-write"] }
+              memoryUpdates: { strategicDirection: ["blocked-write"] },
+              parameterSuggestions: [{ key: "block", delta: 1, reason: "blocked-strategy-write" }]
             };
           }
         }
       );
       const blockedMemoryUpdateResult = await blockingController.tick({ dryRun: true });
       assert.equal(blockedMemoryUpdateResult.chosenBy, "llm");
+      assert.deepEqual(blockedMemoryUpdateResult.llm?.protectedPathAttemptedWrites, ["memory", "strategy_params"]);
       assert.ok(blockedMemoryUpdateResult.llm?.protectedPathBlockedWrites?.includes("live_llm_memory_updates_blocked_by_default"));
+      assert.ok(blockedMemoryUpdateResult.llm?.protectedPathBlockedWrites?.includes("live_llm_strategy_params_blocked_by_default"));
       assert.equal(memory.run.strategicDirection.includes("blocked-write"), false);
     } finally {
       if (previousLiveAdditive === undefined) delete process.env.STS2_P8_LIVE_ADDITIVE;

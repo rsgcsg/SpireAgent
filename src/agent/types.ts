@@ -169,6 +169,7 @@ export interface DecisionLlmAudit {
   liveAdditiveDecisionClass?: string;
   liveAdditiveWhitelist?: string[];
   liveAdditiveSummaryBytes?: number;
+  protectedPathAttemptedWrites?: string[];
   protectedPathBlockedWrites?: string[];
 }
 

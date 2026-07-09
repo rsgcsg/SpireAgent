@@ -20,7 +20,8 @@ Status values:
   - [controller.ts](../../src/agent/controller.ts#L362)
   - [memory.ts](../../src/agent/memory.ts#L140)
 - Problem:
-  - Live/provider-originated memory updates are now blocked by default, but protected-path governance is still not fully centralized.
+  - Live/provider-originated memory updates and strategy-parameter suggestions are now blocked/audited by default, and the future protected target vocabulary is explicit.
+  - Protected-path governance is still not the full future proposal/promotion surface.
   - Legacy run-finalization is now blocked by default and audited, but it still exists as a legacy path that has not yet been fully isolated behind a P9 promotion model.
 - Why it matters:
   - P9 cannot claim guarded learning while protected-path writes depend on provider obedience or legacy reward feedback.

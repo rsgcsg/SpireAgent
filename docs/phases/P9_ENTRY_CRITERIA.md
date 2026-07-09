@@ -17,7 +17,7 @@ P9 should start only when the project is ready to shift from live-scaffold expan
 
 - Keep a hard protected-path gate for live/provider-originated memory or strategy suggestions.
   Current state:
-  live/provider-originated memory updates are blocked by default, but the gate still needs to expand into the full future stable-write surface.
+  live/provider-originated memory updates and strategy-parameter suggestions are blocked/audited by default, and the future stable-write target vocabulary is explicit. The gate still needs to expand into the full future proposal/promotion surface before stable learning can be enabled.
 - Decide how legacy `finalizeRun()` writes are handled during P9:
   - freeze
   - isolate

@@ -28,7 +28,7 @@ import { buildDerivedSnapshot } from "./derivedKnowledge.js";
 import { buildCompactWorkspaceSummary, buildP8WorkspaceShadowFromPacket } from "./workspace.js";
 import { P8_LIVE_ADDITIVE_FLAG, P8_LIVE_DECISION_CLASSES_FLAG } from "./workspaceExperimentConfig.js";
 import { buildMapRoutePlanFromChoice } from "./mapRoutePlan.js";
-import { evaluateLiveLlmMemoryUpdateGate } from "./protectedPathGate.js";
+import { evaluateLiveLlmStableWriteGate, type ProtectedStableWriteTarget } from "./protectedPathGate.js";
 
 export interface ControllerOptions {
   dryRun?: boolean;
@@ -360,10 +360,15 @@ export class AgentController {
           chosen = llmChoice;
           chosenBy = "llm";
           llmAudit.outcome = "selected";
-          if (llmDecision.memoryUpdates) {
-            const gate = evaluateLiveLlmMemoryUpdateGate();
+          const protectedWriteTargets = liveLlmProtectedWriteTargets(llmDecision);
+          if (protectedWriteTargets.length > 0) {
+            const gate = evaluateLiveLlmStableWriteGate({ attemptedTargets: protectedWriteTargets });
+            llmAudit.protectedPathAttemptedWrites = [
+              ...(llmAudit.protectedPathAttemptedWrites ?? []),
+              ...gate.attemptedTargets
+            ];
             if (gate.allowed) {
-              this.memory.applyLlmMemoryUpdate(llmDecision.memoryUpdates);
+              if (llmDecision.memoryUpdates) this.memory.applyLlmMemoryUpdate(llmDecision.memoryUpdates);
             } else {
               llmAudit.protectedPathBlockedWrites = [
                 ...(llmAudit.protectedPathBlockedWrites ?? []),
@@ -684,6 +689,15 @@ function isEnabledEnv(value: string | undefined): boolean {
 function parseEnvList(value: string | undefined): string[] {
   if (!value) return [];
   return value.split(",").map((item) => item.trim()).filter(Boolean);
+}
+
+function liveLlmProtectedWriteTargets(decision: LlmDecision): ProtectedStableWriteTarget[] {
+  const targets: ProtectedStableWriteTarget[] = [];
+  if (decision.memoryUpdates) targets.push("memory");
+  if (Array.isArray(decision.parameterSuggestions) && decision.parameterSuggestions.length > 0) {
+    targets.push("strategy_params");
+  }
+  return [...new Set(targets)];
 }
 
 function parseJsonOrString(value: string): unknown {
