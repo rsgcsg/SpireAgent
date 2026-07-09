@@ -381,7 +381,10 @@ Current state:
 
 - read-only shadow overlay planning exists through `npm run learning:proposals -- plan --latest --id <proposalId>`
 - the plan names the affected soft layer, protected targets, and blockers
-- actual shadow application remains disabled; no workspace, prompt, candidate, classification, budget, memory, derived knowledge, strategy, validation, execution, or live behavior changes
+- P9.5A now applies only an explicit low-risk `reason_policy` or `candidate_template` overlay to a cloned offline `DeliberationPacket`, then compares baseline versus overlay workspace prompt hashes/bytes through `npm run learning:proposals -- shadow-compare --latest --id <proposalId> --transition-id <transitionId>`
+- eligibility requires actionable `pending_review`, low risk, organic promotion-eligible evidence, and a bounded structured overlay patch; unsupported proposal families and incomplete replay data are rejected
+- P9.5A performs no provider call and writes no run artifact. It does not change candidate facts/order, classification, budget, memory, derived knowledge, strategy, validation, execution, live behavior, or stable policy
+- P9.5B remains required: define same-slice shadow evaluation and regression signals before a proposal can become `shadow_validated`
 
 ### P9.6 Stable Promotion Gate
 

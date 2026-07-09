@@ -28,8 +28,12 @@ import {
   generateLearningProposalSeeds,
   summarizeGeneratedLearningProposals
 } from "./proposalGenerator.js";
+import { compareLearningProposalInShadowWorkspace } from "./shadowApplicator.js";
+import type { DeliberationPacket, JsonRecord } from "../domain/types.js";
+import type { ScoredCandidate } from "../agent/types.js";
+import { isRecord } from "../agent/utils.js";
 
-const READ_ONLY_COMMANDS = new Set(["summary", "list", "show", "feedback", "feedback-show", "reviews", "review-show", "generate", "plan"]);
+const READ_ONLY_COMMANDS = new Set(["summary", "list", "show", "feedback", "feedback-show", "reviews", "review-show", "generate", "plan", "shadow-compare"]);
 const REVIEW_LEDGER_COMMANDS = new Set(["approve", "reject", "expire"]);
 const FORBIDDEN_COMMANDS = new Set(["apply", "promote", "revert"]);
 
@@ -37,7 +41,7 @@ async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const command = args[0] && !args[0].startsWith("--") ? args[0] : "summary";
   if (FORBIDDEN_COMMANDS.has(command)) {
-    throw new Error(`Learning command '${command}' is intentionally unavailable in P9.1 audit-only mode.`);
+    throw new Error(`Learning command '${command}' is intentionally unavailable in guarded P9 mode.`);
   }
   if (!READ_ONLY_COMMANDS.has(command) && !REVIEW_LEDGER_COMMANDS.has(command)) {
     throw new Error(`Unknown learning proposal command: ${command}`);
@@ -98,6 +102,28 @@ async function main(): Promise<void> {
     printHeader(runDir);
     console.log(JSON.stringify(buildLearningProposalShadowOverlayPlan(proposal), null, 2));
     console.log("Shadow overlay plan is read-only: proposalMutationEnabled=false applyPathEnabled=false stablePromotionEnabled=false affectsLiveBehavior=false");
+    return;
+  }
+
+  if (command === "shadow-compare") {
+    const id = parseRequiredId(commandArgs);
+    const transitionId = optionValue(commandArgs, "--transition-id");
+    if (!transitionId) throw new Error("shadow-compare requires --transition-id <transitionId> to preserve evidence scope.");
+    const proposal = proposals.find((record) => record.id === id);
+    if (!proposal) throw new Error(`Learning proposal not found: ${id}`);
+    const run = readReplayRun(runDir);
+    const transition = run.transitions.find((record) => record.transitionId === transitionId);
+    if (!transition) throw new Error(`Transition not found in run: ${transitionId}`);
+    const packet = packetFromTransition(transition as unknown as JsonRecord);
+    const candidates = candidatesFromTransition(transition as unknown as JsonRecord);
+    printHeader(runDir);
+    console.log(JSON.stringify(compareLearningProposalInShadowWorkspace({
+      proposal,
+      packet,
+      candidates,
+      decisionClass: decisionClassFromTransition(transition as unknown as JsonRecord)
+    }), null, 2));
+    console.log("Offline shadow assembly only: providerCalls=0 runArtifactWrites=0 liveBehaviorChanges=0 stablePromotionEnabled=false");
     return;
   }
 
@@ -222,6 +248,45 @@ function parseRequiredId(args: string[]): string {
 function optionValue(args: string[], name: string): string | undefined {
   const index = args.indexOf(name);
   return index === -1 ? undefined : args[index + 1];
+}
+
+function packetFromTransition(transition: JsonRecord): DeliberationPacket {
+  if (!isRecord(transition.deliberationPacket) || !Array.isArray(transition.deliberationPacket.candidateFutures)) {
+    throw new Error("Transition has no replayable DeliberationPacket for shadow comparison.");
+  }
+  return transition.deliberationPacket as unknown as DeliberationPacket;
+}
+
+function candidatesFromTransition(transition: JsonRecord): ScoredCandidate[] {
+  const rawCandidates = Array.isArray(transition.candidateActions)
+    ? transition.candidateActions
+    : Array.isArray(transition.localScores)
+      ? transition.localScores
+      : [];
+  const candidates = rawCandidates.flatMap((candidate) => {
+    if (!isRecord(candidate) || typeof candidate.id !== "string" || !isRecord(candidate.action) || typeof candidate.action.kind !== "string") {
+      return [];
+    }
+    return [{
+      id: candidate.id,
+      action: candidate.action as ScoredCandidate["action"],
+      kind: candidate.action.kind as ScoredCandidate["kind"],
+      label: typeof candidate.label === "string" ? candidate.label : candidate.id,
+      score: typeof candidate.score === "number" ? candidate.score : 0,
+      confidence: typeof candidate.confidence === "number" ? candidate.confidence : 0,
+      reasons: Array.isArray(candidate.reasons) ? candidate.reasons.filter((reason): reason is string => typeof reason === "string") : [],
+      risks: Array.isArray(candidate.risks) ? candidate.risks.filter((risk): risk is string => typeof risk === "string") : []
+    }];
+  });
+  if (candidates.length === 0) throw new Error("Transition has no replayable scored candidates; refusing to synthesize allowed actions.");
+  return candidates;
+}
+
+function decisionClassFromTransition(transition: JsonRecord): string | undefined {
+  if (isRecord(transition.workspaceComparison) && typeof transition.workspaceComparison.decisionClass === "string") {
+    return transition.workspaceComparison.decisionClass;
+  }
+  return undefined;
 }
 
 main().catch((error) => {

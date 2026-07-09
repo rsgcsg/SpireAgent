@@ -289,6 +289,25 @@ export interface DeliberationPacket {
   validationConstraints?: string[];
   outputSchema?: JsonRecord;
   promptParity?: PromptParityReport | JsonRecord;
+  p9ShadowWorkspaceOverlay?: P9ShadowWorkspaceOverlay;
+}
+
+/**
+ * An in-memory-only P9 policy overlay attached by the offline shadow
+ * applicator. It is never authored by the normal scaffold builder and must
+ * never be read by validation, execution, or the live additive path.
+ */
+export interface P9ShadowWorkspaceOverlay {
+  schemaVersion: number;
+  source: "p9_shadow_workspace_applicator_v1";
+  proposalIds: string[];
+  guidance: Array<{
+    kind: "reason_guidance" | "candidate_future_guidance";
+    targetLayer: string;
+    text: string;
+    candidateFutureIds?: string[];
+  }>;
+  policy: "offline_shadow_only";
 }
 
 export interface PromptParityReport {

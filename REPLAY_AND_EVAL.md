@@ -171,7 +171,7 @@ P9.1 proposal and reverse-feedback visibility:
 - Replay/eval/review also expose `reverseScaffoldFeedbackSurface` when `reverse-scaffold-feedback.jsonl` exists. It is telemetry/proposal-seed material only and cannot change live behavior.
 - Replay/eval/review also expose `learningProposalReviewDecisionSurface` when `learning-proposal-review-decisions.jsonl` exists.
 - Review-decision records are audit-only. `approve`, `reject`, and `expire` record human/system judgment in a separate append-only ledger; they do not mutate proposal status, apply a patch, promote stable policy, or change live/runtime behavior.
-- `stableOrApplied`, `proposalMutationEnabled=false`, `applyPathEnabled=false`, and `stablePromotionEnabled=false` must stay visible until later guarded phases deliberately add a shadow applicator and promotion gate.
+- `stableOrApplied`, `proposalMutationEnabled=false`, `applyPathEnabled=false`, and `stablePromotionEnabled=false` remain required. P9.5A offline shadow comparison is not an apply path or promotion gate.
 - `npm run learning:proposals -- summary --latest` prints a summary for typed proposals, review decisions, and reverse feedback.
 - `npm run learning:proposals -- list --latest --status pending_review` lists typed proposals with optional filters such as `--type`, `--target-layer`, `--transition-id`, `--source-run-id`, and `--missing-field`.
 - `npm run learning:proposals -- show --latest --id <proposalId>` prints one typed proposal.
@@ -180,7 +180,8 @@ P9.1 proposal and reverse-feedback visibility:
 - `npm run learning:proposals -- expire --latest --id <proposalId> --notes "<why>"` records an audit-only expiry.
 - `npm run learning:proposals -- reviews --latest` and `review-show --id <decisionId>` inspect the review-decision ledger.
 - `npm run learning:proposals -- feedback --latest` and `feedback-show --id <feedbackId>` inspect reverse-scaffold feedback.
-- `npm run learning:proposals -- plan --latest --id <proposalId>` prints a read-only shadow overlay plan for one proposal. It identifies the affected soft layer and blockers, but `eligibleForShadowApplication=false`, `wouldAffectRuntimeDecision=false`, `applyPathEnabled=false`, and `stablePromotionEnabled=false`.
+- `npm run learning:proposals -- plan --latest --id <proposalId>` prints a read-only shadow overlay plan. `eligibleForShadowApplication=true` only means that an explicitly bounded low-risk proposal can be compared in an offline cloned packet; it never means runtime apply, provider call, approval, or promotion.
+- `npm run learning:proposals -- shadow-compare --latest --id <proposalId> --transition-id <transitionId>` assembles baseline and overlay workspace prompts without calling a provider or writing an artifact. It needs the exact transition to retain candidate/evidence scope and rejects incomplete replay data rather than inventing allowed actions.
 - `npm run learning:proposals -- generate --latest` runs the P9.2 weak-attribution proposal seed generator in dry-run mode. It summarizes proposal seeds and reverse-scaffold feedback seeds derived from replay/review evidence without writing anything.
 - `npm run learning:proposals -- generate --latest --write` explicitly appends generated seeds to the run-local append-only stores. This is still not proposal application, not stable promotion, not live mutation, and not a budget/classification/scaffold policy change.
 - Generation is evidence-slice aware. By default, console/debug/fixture, human-observed, snapshot-only, and unknown-provenance transitions are excluded and counted separately. `--include-ineligible-evidence` is a debug-only inspection flag, not a promotion or learning path.

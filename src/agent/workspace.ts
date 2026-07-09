@@ -233,6 +233,9 @@ function buildFullWorkspacePayload(
     deterministic_calculations: packet.deterministicCalculations,
     tradeoffs: packet.tradeoffs,
     uncertainty: packet.uncertainty,
+    // Present only on an offline P9 shadow packet. Normal and live assembly
+    // never create this field, so it cannot change the execution path.
+    p9_shadow_workspace_overlay: packet.p9ShadowWorkspaceOverlay,
     validation_constraints: packet.validationConstraints
   };
 }
@@ -278,6 +281,7 @@ function buildCompactWorkspacePayload(
       confidence: future.confidence
     })),
     top_candidates: candidates.slice(0, 6).map(compactCandidate),
+    p9_shadow_workspace_overlay: packet.p9ShadowWorkspaceOverlay,
     validation_constraints: (packet.validationConstraints ?? []).slice(0, 6).map((item) => trimText(String(item), 140))
   };
 }
@@ -307,6 +311,7 @@ function buildUltraCompactWorkspacePayload(
       outcome: trimText(future.predictedOutcome, 160),
       risk: future.risk?.slice(0, 1).map((item) => trimText(item, 100))
     })),
+    p9_shadow_workspace_overlay: packet.p9ShadowWorkspaceOverlay,
     validation_constraints: (packet.validationConstraints ?? []).slice(0, 4).map((item) => trimText(String(item), 120))
   };
 }

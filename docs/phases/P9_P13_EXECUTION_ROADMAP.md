@@ -348,8 +348,9 @@ Goal:
 Current state:
 
 - read-only shadow overlay planning exists through `npm run learning:proposals -- plan --latest --id <proposalId>`
-- this is a reviewer/audit surface only and keeps `eligibleForShadowApplication=false`
-- a real shadow applicator still does not exist and must not be inferred from the planning surface
+- P9.5A now supports an offline cloned-packet overlay comparison for explicit low-risk `reason_policy` and `candidate_template` proposals; it emits baseline/overlay prompt metadata only
+- `eligibleForShadowApplication=true` means eligible for that offline comparison only. It does not enable provider calls, run-artifact writes, runtime/live behavior, proposal application, or stable promotion.
+- P9.5B same-slice evaluation still does not exist; no proposal may become `shadow_validated` from P9.5A alone
 
 Safe first targets:
 

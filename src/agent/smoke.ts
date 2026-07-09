@@ -97,6 +97,7 @@ import {
   summarizeReverseScaffoldFeedback
 } from "../learning/proposals.js";
 import { generateLearningProposalSeeds } from "../learning/proposalGenerator.js";
+import { compareLearningProposalInShadowWorkspace } from "../learning/shadowApplicator.js";
 import {
   DOMAIN_SCHEMA_VERSION,
   type CandidateFuture,
@@ -1893,6 +1894,85 @@ try {
   assert.equal(actionableShadowPlan.wouldAffectRuntimeDecision, false);
   const vagueShadowPlan = buildLearningProposalShadowOverlayPlan(storedP9Proposals.find((proposal) => proposal.id === vagueProposal.id) ?? {});
   assert.ok(vagueShadowPlan.blockers.includes("proposal_not_actionable"));
+  const shadowSafeProposal = appendLearningProposal(p9ProposalDir, {
+    type: "reason_policy",
+    status: "pending_review",
+    scope: { decisionClasses: ["combat:llm_required"], conditions: ["reason omits the present benefit-cost tradeoff"] },
+    targetLayer: "reason_policy",
+    targetObject: "benefit_cost_tradeoff",
+    proposedPatch: {
+      proposalOnly: true,
+      shadowOverlay: {
+        kind: "reason_guidance",
+        guidance: "State the main benefit and the meaningful cost, delay, or risk using existing candidate facts only."
+      }
+    },
+    evidence: [{
+      source: "review",
+      runId: "run-p9-smoke",
+      transitionId: "transition-p9-smoke",
+      summary: "Organic combat review observed a missing tradeoff despite available candidate facts.",
+      strength: "weak",
+      tags: ["promotion_eligible:true"],
+      raw: { evidencePromotionEligible: true }
+    }],
+    counterexamples: [{ summary: "A concise reason can be adequate when the tradeoff is already explicit in a forced action.", condition: "forced_action" }],
+    weakAttribution: {
+      suspectedCause: "Reason presentation omitted an available tradeoff.",
+      confidence: 0.25,
+      counterexampleNeeded: ["fresh forced-action samples with concise but adequate reasons"],
+      alternativeHypotheses: ["detector_false_positive", "model_reason_omission"]
+    },
+    confidence: 0.25,
+    riskLevel: "low",
+    expectedEffect: "Compare a scoped reason-guidance overlay without changing candidate facts or runtime decisions.",
+    promotionCriteria: { evidenceRequired: ["organic same-revision comparison"], validationPlan: ["offline shadow workspace comparison"] },
+    rollbackPlan: { rollbackTrigger: ["overlay makes reasons more templated"], rollbackAction: "remove the in-memory overlay" },
+    protectedPathImpact: {
+      protectedTargets: ["prompt_policy"],
+      stableWriteRequired: true,
+      allowedBeforePromotion: false
+    },
+    createdFromRunIds: ["run-p9-smoke"],
+    createdFromTransitionIds: ["transition-p9-smoke"]
+  });
+  const shadowSafeStored = readLearningProposals(p9ProposalDir).find((proposal) => proposal.id === shadowSafeProposal.id) ?? {};
+  const shadowSafePlan = buildLearningProposalShadowOverlayPlan(shadowSafeStored);
+  assert.equal(shadowSafePlan.eligibleForShadowApplication, true);
+  const shadowWorkspaceComparison = compareLearningProposalInShadowWorkspace({
+    proposal: shadowSafeStored,
+    packet: deliberationPacket,
+    candidates: [workspaceCandidate],
+    decisionClass: "combat:llm_required"
+  });
+  assert.equal(shadowWorkspaceComparison.applied, true);
+  assert.equal(shadowWorkspaceComparison.wouldCallProvider, false);
+  assert.equal(shadowWorkspaceComparison.wouldWriteRunArtifact, false);
+  assert.equal(shadowWorkspaceComparison.wouldAffectLiveBehavior, false);
+  assert.equal(shadowWorkspaceComparison.stablePromotionEnabled, false);
+  assert.ok(shadowWorkspaceComparison.overlay?.containsP9Overlay);
+  assert.notEqual(shadowWorkspaceComparison.baseline.promptHash, shadowWorkspaceComparison.overlay?.promptHash);
+  assert.equal(deliberationPacket.p9ShadowWorkspaceOverlay, undefined);
+  const unknownFutureOverlay = compareLearningProposalInShadowWorkspace({
+    proposal: {
+      ...shadowSafeStored,
+      type: "candidate_template",
+      targetLayer: "candidate_future",
+      proposedPatch: {
+        proposalOnly: true,
+        shadowOverlay: {
+          kind: "candidate_future_guidance",
+          guidance: "Review the listed future without adding facts or actions.",
+          candidateFutureIds: ["future-not-present"]
+        }
+      }
+    },
+    packet: deliberationPacket,
+    candidates: [workspaceCandidate],
+    decisionClass: "combat:llm_required"
+  });
+  assert.equal(unknownFutureOverlay.applied, false);
+  assert.ok(unknownFutureOverlay.blockers.includes("unknown_candidate_future_ids:future-not-present"));
   const approvedReviewDecision = appendLearningProposalReviewDecision(p9ProposalDir, storedP9Proposals, {
     proposalId: actionableProposal.id,
     decision: "approve",

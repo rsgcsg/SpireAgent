@@ -10,6 +10,7 @@ import {
   type ReverseScaffoldFeedback
 } from "../domain/types.js";
 import { appendJsonl, isRecord, nowIso, stableId } from "../agent/utils.js";
+import { assessShadowWorkspaceOverlayEligibility } from "./shadowOverlayPolicy.js";
 
 export const LEARNING_PROPOSALS_FILE = "learning-proposals.jsonl";
 export const REVERSE_SCAFFOLD_FEEDBACK_FILE = "reverse-scaffold-feedback.jsonl";
@@ -73,7 +74,7 @@ export interface LearningProposalShadowOverlayPlan {
   targetLayer: string;
   targetObject: string;
   eligibleForShadowPreview: boolean;
-  eligibleForShadowApplication: false;
+  eligibleForShadowApplication: boolean;
   blockers: string[];
   affectedSoftLayer: string;
   protectedTargets: string[];
@@ -297,6 +298,8 @@ export function buildLearningProposalShadowOverlayPlan(proposal: JsonRecord): Le
     blockers.push("proposal_not_review_ready");
   }
   if (protectedTargets.length === 0) blockers.push("protected_targets_not_declared");
+  const offlineEligibility = assessShadowWorkspaceOverlayEligibility(proposal);
+  blockers.push(...offlineEligibility.blockers.filter((blocker) => !blockers.includes(blocker)));
   return {
     schemaVersion: DOMAIN_SCHEMA_VERSION,
     surface: "p9_learning_proposal_shadow_overlay_plan",
@@ -306,7 +309,7 @@ export function buildLearningProposalShadowOverlayPlan(proposal: JsonRecord): Le
     targetLayer: stringValue(proposal.targetLayer, "unknown"),
     targetObject: stringValue(proposal.targetObject, "unknown"),
     eligibleForShadowPreview: true,
-    eligibleForShadowApplication: false,
+    eligibleForShadowApplication: offlineEligibility.eligible,
     blockers,
     affectedSoftLayer: stringValue(proposal.targetLayer, "unknown"),
     protectedTargets,
@@ -317,7 +320,9 @@ export function buildLearningProposalShadowOverlayPlan(proposal: JsonRecord): Le
     notes: [
       "Shadow overlay planning is read-only.",
       "This does not alter workspace construction, live behavior, validation, execution, memory, derived knowledge, strategy, skills, or scaffold policy.",
-      "Actual shadow application remains disabled until a guarded P9.5 applicator is implemented and tested."
+      offlineEligibility.eligible
+        ? "Eligible only for an offline cloned-packet shadow workspace comparison; it cannot call a provider or mutate runtime state."
+        : "An explicit low-risk shadow overlay patch is required before offline shadow assembly."
     ]
   };
 }
