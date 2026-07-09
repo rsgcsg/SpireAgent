@@ -174,6 +174,14 @@ function transitionPromotionEligibility(transition: JsonRecord): { eligible: boo
   return { eligible: false, reason: provenance };
 }
 
+export function getTransitionPromotionEligibility(transition: JsonRecord): { eligible: boolean; reason: string } {
+  return transitionPromotionEligibility(transition);
+}
+
+export function classifyTransitionEvidenceProvenance(transition: JsonRecord): string {
+  return transitionProvenance(transition);
+}
+
 function transitionSource(transition: JsonRecord): string {
   return typeof transition.source === "string" ? transition.source : "unknown";
 }

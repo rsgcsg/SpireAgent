@@ -82,6 +82,7 @@ import {
   appendLearningProposal,
   appendLearningProposalReviewDecision,
   appendReverseScaffoldFeedback,
+  buildLearningProposalShadowOverlayPlan,
   buildLearningProposalSurface,
   buildLearningProposalReviewDecisionSurface,
   buildReverseScaffoldFeedbackSurface,
@@ -95,6 +96,7 @@ import {
   summarizeLearningProposal,
   summarizeReverseScaffoldFeedback
 } from "../learning/proposals.js";
+import { generateLearningProposalSeeds } from "../learning/proposalGenerator.js";
 import {
   DOMAIN_SCHEMA_VERSION,
   type CandidateFuture,
@@ -1883,6 +1885,14 @@ try {
   assert.equal(filterLearningProposals(storedP9Proposals, { status: "pending_review" }).length, 1);
   assert.equal(filterLearningProposals(storedP9Proposals, { missingRequiredField: "evidence" }).length, 1);
   assert.equal(summarizeLearningProposal(storedP9Proposals[0] ?? {}).applyPathEnabled, false);
+  const actionableShadowPlan = buildLearningProposalShadowOverlayPlan(storedP9Proposals.find((proposal) => proposal.id === actionableProposal.id) ?? {});
+  assert.equal(actionableShadowPlan.eligibleForShadowPreview, true);
+  assert.equal(actionableShadowPlan.eligibleForShadowApplication, false);
+  assert.equal(actionableShadowPlan.applyPathEnabled, false);
+  assert.equal(actionableShadowPlan.stablePromotionEnabled, false);
+  assert.equal(actionableShadowPlan.wouldAffectRuntimeDecision, false);
+  const vagueShadowPlan = buildLearningProposalShadowOverlayPlan(storedP9Proposals.find((proposal) => proposal.id === vagueProposal.id) ?? {});
+  assert.ok(vagueShadowPlan.blockers.includes("proposal_not_actionable"));
   const approvedReviewDecision = appendLearningProposalReviewDecision(p9ProposalDir, storedP9Proposals, {
     proposalId: actionableProposal.id,
     decision: "approve",
@@ -1925,6 +1935,75 @@ try {
   assert.equal(filterLearningProposalReviewDecisions(reviewDecisions, { proposalId: actionableProposal.id }).length, 1);
   assert.equal(filterLearningProposalReviewDecisions(reviewDecisions, { decision: "reject" }).length, 1);
   assert.equal(summarizeLearningProposalReviewDecision(reviewDecisions[0] ?? {}).applyPathEnabled, false);
+  const generatedLearning = generateLearningProposalSeeds("run-p9-generator-smoke", [
+    {
+      source: "agent",
+      captureMode: "executor_logged",
+      transitionId: "transition-p9-generator-combat",
+      screen: "combat",
+      workspaceComparison: {
+        decisionClass: "combat:llm_required",
+        budget: { status: "call_budget_exceeded" },
+        coverage: {
+          candidateFutureReviewSignals: { missing_survival_line: 1 },
+          candidateFutureProposalSignals: { candidate_template_improvement_proposal: 1 },
+          candidateFutureCueAttribution: {
+            missingInOriginal: ["survival_line"],
+            lostInSerialization: [],
+            sourceCounts: { candidate_future_missing: 1 }
+          }
+        }
+      },
+      shadowWorkspaceDecision: {
+        reasonQualityNotes: ["missing_tradeoff"]
+      },
+      predictionError: {
+        status: "open",
+        errorType: "prediction_partially_unknown",
+        attributedLayer: "candidate_future",
+        severity: "warning",
+        attributionBuckets: [
+          {
+            bucket: "defense",
+            status: "unsupported",
+            severity: "warning"
+          }
+        ]
+      }
+    }
+  ]);
+  assert.equal(generatedLearning.applyPathEnabled, false);
+  assert.equal(generatedLearning.stablePromotionEnabled, false);
+  assert.equal(generatedLearning.consideredTransitions, 1);
+  assert.equal(generatedLearning.excludedTransitions, 0);
+  assert.ok(generatedLearning.proposals.length >= 4);
+  assert.ok(generatedLearning.pendingReview >= 1);
+  assert.ok(generatedLearning.draft >= 1);
+  assert.ok(generatedLearning.reverseFeedback.length >= 1);
+  for (const proposal of generatedLearning.proposals) appendLearningProposal(p9ProposalDir, proposal);
+  for (const record of generatedLearning.reverseFeedback) appendReverseScaffoldFeedback(p9ProposalDir, record);
+  const generatedProposalSurface = buildLearningProposalSurface(readLearningProposals(p9ProposalDir));
+  assert.ok(generatedProposalSurface.proposals >= 6);
+  assert.equal(generatedProposalSurface.applyPathEnabled, false);
+  assert.equal(generatedProposalSurface.stablePromotionEnabled, false);
+  const excludedGeneratedLearning = generateLearningProposalSeeds("run-p9-generator-fixture-smoke", [
+    {
+      source: "console_fixture",
+      captureMode: "debug_fixture",
+      transitionId: "transition-p9-generator-fixture",
+      screen: "combat",
+      workspaceComparison: {
+        decisionClass: "combat:llm_required",
+        coverage: {
+          candidateFutureReviewSignals: { missing_survival_line: 1 }
+        }
+      }
+    }
+  ]);
+  assert.equal(excludedGeneratedLearning.consideredTransitions, 0);
+  assert.equal(excludedGeneratedLearning.excludedTransitions, 1);
+  assert.equal(excludedGeneratedLearning.exclusionReasonCounts.console_debug_or_fixture, 1);
+  assert.equal(excludedGeneratedLearning.proposals.length, 0);
   const feedback = appendReverseScaffoldFeedback(p9ProposalDir, {
     source: "review",
     targetLayer: "candidate_future",
@@ -1948,13 +2027,13 @@ try {
   });
   assert.equal(feedback.targetLayer, "candidate_future");
   const feedbackSurface = buildReverseScaffoldFeedbackSurface(readReverseScaffoldFeedback(p9ProposalDir));
-  assert.equal(feedbackSurface.feedback, 1);
-  assert.equal(feedbackSurface.targetLayerCounts.candidate_future, 1);
-  assert.equal(feedbackSurface.proposalSeedLinks, 1);
+  assert.equal(feedbackSurface.feedback, generatedLearning.reverseFeedback.length + 1);
+  assert.ok((feedbackSurface.targetLayerCounts.candidate_future ?? 0) >= 1);
+  assert.ok(feedbackSurface.proposalSeedLinks >= 1);
   assert.equal(feedbackSurface.affectsLiveBehavior, false);
   assert.equal(feedbackSurface.stablePromotionEnabled, false);
   const storedFeedback = readReverseScaffoldFeedback(p9ProposalDir);
-  assert.equal(filterReverseScaffoldFeedback(storedFeedback, { targetLayer: "candidate_future" }).length, 1);
+  assert.ok(filterReverseScaffoldFeedback(storedFeedback, { targetLayer: "candidate_future" }).length >= 1);
   assert.equal(filterReverseScaffoldFeedback(storedFeedback, { proposalSeedId: actionableProposal.id }).length, 1);
   assert.equal(summarizeReverseScaffoldFeedback(storedFeedback[0] ?? {}).affectsLiveBehavior, false);
   rmSync(p9ProposalDir, { recursive: true, force: true });

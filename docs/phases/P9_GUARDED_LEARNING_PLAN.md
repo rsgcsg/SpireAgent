@@ -337,11 +337,27 @@ Scope clarification:
 - P9.2 is the right place to introduce typed reverse-scaffold feedback
 - P9.2 is not the right place to introduce automatic second-pass prompting or live self-recompilation of context
 
+Current state:
+
+- `src/learning/proposalGenerator.ts` can generate weak-attribution proposal seeds from replay/review evidence
+- evidence sources currently include prediction errors, candidate-future review/proposal signals, cue attribution, reason-quality notes, and call-budget exhaustion telemetry
+- generation is evidence-slice aware; console/debug/fixture, human-observed, snapshot-only, and unknown-provenance transitions are excluded by default and counted as exclusions
+- `npm run learning:proposals -- generate --latest` is dry-run by default
+- `npm run learning:proposals -- generate --latest --write` explicitly appends generated proposal and reverse-feedback seeds to run-local append-only stores
+- `--include-ineligible-evidence` is debug-only inspection, not promotion-ready learning evidence
+- generated seeds remain draft or pending-review evidence only; they do not apply patches, promote stable policy, change live behavior, or mutate memory/derived/strategy
+
 ### P9.3 Evidence Slicing
 
 Goal:
 
 - ensure promotion evidence is clean, scoped, and comparable
+
+Current state:
+
+- `EvidenceSliceReader` reports source, capture mode, decision class, revision, budget, provider, live mode, and provenance dimensions
+- proposal seed generation now consumes this provenance boundary by default
+- stable-learning promotion remains disabled; clean slices can support review, but cannot apply stable changes
 
 ### P9.4 Review And Decision CLI
 
@@ -360,6 +376,12 @@ Current P9.1 state:
 Goal:
 
 - apply proposals only in shadow first
+
+Current state:
+
+- read-only shadow overlay planning exists through `npm run learning:proposals -- plan --latest --id <proposalId>`
+- the plan names the affected soft layer, protected targets, and blockers
+- actual shadow application remains disabled; no workspace, prompt, candidate, classification, budget, memory, derived knowledge, strategy, validation, execution, or live behavior changes
 
 ### P9.6 Stable Promotion Gate
 

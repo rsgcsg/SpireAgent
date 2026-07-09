@@ -191,7 +191,13 @@ P9 guarded learning direction:
 - The review-decision ledger records human/system audit judgment only. It does not mutate the proposal, apply the patch, promote stable policy, or change live/runtime behavior.
 - P9 also introduces `ReverseScaffoldFeedback` as telemetry/proposal-seed material. It records target scaffold layer, omitted or misleading information, evidence, confidence, risk, and proposal seed links.
 - Reverse feedback is stored in `data/runs/<runId>/reverse-scaffold-feedback.jsonl`. It does not change prompts, budgets, candidate generation, validation, execution, live rollout, memory, derived knowledge, strategy, skills, or scaffold policy.
-- `LearningProposal`, review-decision ledger, and `ReverseScaffoldFeedback` records are non-executable until later shadow application, promotion gate, and rollback infrastructure exists.
+- P9.2 adds weak-attribution proposal seed generation from existing replay/review evidence. Generated seeds can come from prediction errors, candidate-future review signals, cue attribution, reason-quality notes, and budget cap-exhaustion telemetry.
+- Proposal seed generation is evidence-slice aware. By default, console/debug/fixture, human-observed, snapshot-only, or unknown-provenance transitions are excluded from generation. Exclusions are reported through `consideredTransitions`, `excludedTransitions`, and `exclusionReasonCounts`.
+- `npm run learning:proposals -- generate --latest` is dry-run by default. `--write` explicitly appends generated records to the run-local `learning-proposals.jsonl` and `reverse-scaffold-feedback.jsonl` stores, with duplicate ids skipped.
+- `--include-ineligible-evidence` exists for debugging only. It may show what a proposal seed would look like from excluded evidence, but it must not be treated as promotion-ready learning evidence.
+- Generated proposal seeds are conservative. They carry `suspectedCause`, confidence, counterexample requirements, alternative hypotheses, scoped evidence, expected effect, validation plan, protected-path impact, and rollback text. Incomplete or smoke-alarm-only evidence remains `draft`.
+- `LearningProposal`, review-decision ledger, generated proposal seeds, and `ReverseScaffoldFeedback` records are non-executable until later shadow application, promotion gate, and rollback infrastructure exists.
+- A read-only `LearningProposalShadowOverlayPlan` can be derived for a proposal. It names the affected soft layer and blockers, but always reports `eligibleForShadowApplication=false`, `wouldAffectRuntimeDecision=false`, `applyPathEnabled=false`, and `stablePromotionEnabled=false` until a real guarded shadow applicator exists.
 
 P8 DeliberationPacket strategic workspace shadow surface:
 

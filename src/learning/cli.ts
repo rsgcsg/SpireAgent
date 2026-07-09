@@ -1,7 +1,10 @@
 import path from "node:path";
-import { resolveRunDir } from "../replay/reader.js";
+import { readReplayRun, resolveRunDir } from "../replay/reader.js";
 import {
+  appendLearningProposal,
   appendLearningProposalReviewDecision,
+  appendReverseScaffoldFeedback,
+  buildLearningProposalShadowOverlayPlan,
   buildLearningProposalSurface,
   buildLearningProposalReviewDecisionSurface,
   buildReverseScaffoldFeedbackSurface,
@@ -21,8 +24,12 @@ import {
   type LearningProposalFilter,
   type ReverseScaffoldFeedbackFilter
 } from "./proposals.js";
+import {
+  generateLearningProposalSeeds,
+  summarizeGeneratedLearningProposals
+} from "./proposalGenerator.js";
 
-const READ_ONLY_COMMANDS = new Set(["summary", "list", "show", "feedback", "feedback-show", "reviews", "review-show"]);
+const READ_ONLY_COMMANDS = new Set(["summary", "list", "show", "feedback", "feedback-show", "reviews", "review-show", "generate", "plan"]);
 const REVIEW_LEDGER_COMMANDS = new Set(["approve", "reject", "expire"]);
 const FORBIDDEN_COMMANDS = new Set(["apply", "promote", "revert"]);
 
@@ -84,6 +91,16 @@ async function main(): Promise<void> {
     return;
   }
 
+  if (command === "plan") {
+    const id = parseRequiredId(commandArgs);
+    const proposal = proposals.find((record) => record.id === id);
+    if (!proposal) throw new Error(`Learning proposal not found: ${id}`);
+    printHeader(runDir);
+    console.log(JSON.stringify(buildLearningProposalShadowOverlayPlan(proposal), null, 2));
+    console.log("Shadow overlay plan is read-only: proposalMutationEnabled=false applyPathEnabled=false stablePromotionEnabled=false affectsLiveBehavior=false");
+    return;
+  }
+
   if (command === "feedback") {
     printHeader(runDir);
     const filtered = filterReverseScaffoldFeedback(feedback, parseFeedbackFilter(commandArgs));
@@ -96,6 +113,45 @@ async function main(): Promise<void> {
     const [record] = filterReverseScaffoldFeedback(feedback, { ...parseFeedbackFilter(commandArgs), id });
     if (!record) throw new Error(`Reverse scaffold feedback not found: ${id}`);
     console.log(JSON.stringify(record, null, 2));
+    return;
+  }
+
+  if (command === "generate") {
+    const run = readReplayRun(runDir);
+    const includeIneligibleEvidence = args.includes("--include-ineligible-evidence");
+    const generated = generateLearningProposalSeeds(path.basename(run.runDir), run.transitions as unknown as Record<string, unknown>[], {
+      includeIneligibleEvidence
+    });
+    const write = args.includes("--write");
+    const existingProposalIds = new Set(proposals.map((proposal) => String(proposal.id ?? "")));
+    const existingFeedbackIds = new Set(feedback.map((record) => String(record.id ?? "")));
+    let appendedProposals = 0;
+    let appendedFeedback = 0;
+    if (write) {
+      for (const proposal of generated.proposals) {
+        if (typeof proposal.id === "string" && existingProposalIds.has(proposal.id)) continue;
+        appendLearningProposal(run.runDir, proposal);
+        if (typeof proposal.id === "string") existingProposalIds.add(proposal.id);
+        appendedProposals += 1;
+      }
+      for (const record of generated.reverseFeedback) {
+        if (typeof record.id === "string" && existingFeedbackIds.has(record.id)) continue;
+        appendReverseScaffoldFeedback(run.runDir, record);
+        if (typeof record.id === "string") existingFeedbackIds.add(record.id);
+        appendedFeedback += 1;
+      }
+    }
+    printHeader(run.runDir);
+    console.log(JSON.stringify({
+      ...summarizeGeneratedLearningProposals(generated),
+      dryRun: !write,
+      includeIneligibleEvidence,
+      appendedProposals,
+      appendedReverseFeedback: appendedFeedback,
+      proposals: generated.proposals.map(summarizeLearningProposal),
+      reverseFeedback: generated.reverseFeedback.map(summarizeReverseScaffoldFeedback)
+    }, null, 2));
+    console.log("Generation guardrails: proposal seeds only; applyPathEnabled=false stablePromotionEnabled=false affectsLiveBehavior=false");
     return;
   }
 

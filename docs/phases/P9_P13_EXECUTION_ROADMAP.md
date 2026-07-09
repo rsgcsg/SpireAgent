@@ -276,6 +276,16 @@ It should also introduce a typed `ReverseScaffoldFeedback` family, but only as:
 - proposal seed material
 - replay/review evidence
 
+Current state:
+
+- weak-attribution proposal seed generation has started in `src/learning/proposalGenerator.ts`
+- proposal seeds are generated from existing replay/review telemetry, not from a second live provider pass
+- proposal generation is evidence-slice aware and excludes console/debug/fixture, human-observed, snapshot-only, and unknown-provenance transitions by default
+- the CLI default is dry-run: `npm run learning:proposals -- generate --latest`
+- explicit `--write` appends run-local proposal and reverse-feedback seed artifacts only
+- `--include-ineligible-evidence` is debug-only inspection and does not make excluded evidence promotion-ready
+- generated seeds still cannot apply, promote, change live behavior, widen budgets, rewrite prompts, or mutate stable memory/derived/strategy
+
 Not as:
 
 - second-pass live prompt expansion
@@ -287,6 +297,12 @@ Not as:
 Goal:
 
 - make promotion evidence explicit, comparable, and reviewable
+
+Current state:
+
+- `EvidenceSliceReader` exists as read-only report-layer infrastructure
+- proposal seed generation now uses its provenance eligibility boundary by default
+- promotion remains disabled because shadow applicator, stable promotion ledger, rollback snapshots, and retrieval integration do not exist
 
 Required slice dimensions:
 
@@ -328,6 +344,12 @@ Approval here still does not mean stable promotion.
 Goal:
 
 - let low-risk policy proposals affect shadow assembly only
+
+Current state:
+
+- read-only shadow overlay planning exists through `npm run learning:proposals -- plan --latest --id <proposalId>`
+- this is a reviewer/audit surface only and keeps `eligibleForShadowApplication=false`
+- a real shadow applicator still does not exist and must not be inferred from the planning surface
 
 Safe first targets:
 

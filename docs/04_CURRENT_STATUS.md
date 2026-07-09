@@ -7,7 +7,7 @@ Do not turn it into a narrative log. Detailed history belongs in `../LLM_HANDOFF
 ## Current Phase
 
 - Formal route: P0-P13 in `../PROJECT_PLAN.md`
-- Active milestone: P8/P8.5 closeout, P9.0 hardening, and P9.1 read-only proposal infrastructure
+- Active milestone: P8/P8.5 closeout, P9.0 hardening, P9.1 read-only proposal infrastructure, and P9.2 weak-attribution proposal seeding
 - Live posture: explicit additive whitelist live is real and locally exercised; wildcard broad live remains forbidden
 
 ## Current Truth
@@ -48,7 +48,9 @@ The real blocker is now the gap between P9.0 hardening and real proposal-driven 
 - typed learning proposal schema/store has started as append-only read-only P9.1 infrastructure
 - typed reverse-scaffold feedback schema/store has started as append-only read-only telemetry
 - proposal review-decision ledger has started as append-only audit-only P9.1 infrastructure
-- first-class read-only evidence slicing has started; stable-promotion eligibility remains disabled until proposal/promotion gates exist
+- weak-attribution proposal seed generation has started as P9.2 infrastructure; default CLI mode is dry-run and explicit writes are append-only run artifacts
+- first-class read-only evidence slicing has started; proposal seed generation now excludes ineligible console/debug/fixture/unknown evidence by default; stable-promotion eligibility remains disabled until proposal/promotion gates exist
+- read-only shadow overlay planning exists for individual proposals; actual shadow application remains disabled
 - budget governance has a clearer staged roadmap, but runtime adaptive Budget/Compute OS behavior remains deferred to P13
 - weak proposal attribution and anti-vague proposal validation are implemented for pending proposals; stable-promotion gates are still not implemented
 
@@ -57,18 +59,18 @@ The real blocker is now the gap between P9.0 hardening and real proposal-driven 
 - wildcard broad live is not authorized
 - all decision classes are not live-ready
 - stable learning is not implemented
-- P9.1 typed proposal and review-decision infrastructure is append-only/audit-only; stable-promotion machinery has not started
+- P9.1/P9.2 typed proposal, review-decision, reverse-feedback, and proposal-seed infrastructure is append-only/audit-only; stable-promotion machinery has not started
 - `LLM_HANDOFF.md` and `DEBUG_REPORT.md` are not the canonical source of truth
 
 ## Next Step
 
-Continue P9.1 read-only proposal review infrastructure while keeping P9.0 hardening intact:
+Continue from P9.2/P9.3 proposal seeding and evidence slicing toward a real P9.5 shadow-only applicator while keeping P9.0 hardening intact:
 
 1. finish protected-path hardening by treating remaining legacy stable-write paths as gated legacy behavior, not normal learning
 2. keep live-applied rollout audit separate from stale shadow-only readiness semantics in replay/eval/review
 3. keep expanding read-only evidence slicing so mixed budget/profile, console/debug, live/shadow, and promotion evidence stay separate
-4. use `npm run learning:proposals` for inspection of typed proposals, audit-only review decisions, and reverse feedback
-5. next build P9.2 weak attribution / proposal generation so review decisions have evidence-backed proposals to inspect, still without apply or promotion
+4. use `npm run learning:proposals` for inspection of typed proposals, audit-only review decisions, reverse feedback, and dry-run proposal seed generation
+5. next design the real P9.5 shadow applicator so low-risk proposals can affect shadow assembly only, with no live/runtime/stable mutation
 
 ## Canonical Follow-On Docs
 

@@ -64,6 +64,26 @@ export interface LearningProposalReviewDecisionSurface {
   stablePromotionEnabled: false;
 }
 
+export interface LearningProposalShadowOverlayPlan {
+  schemaVersion: number;
+  surface: "p9_learning_proposal_shadow_overlay_plan";
+  proposalId: string;
+  type: string;
+  status: string;
+  targetLayer: string;
+  targetObject: string;
+  eligibleForShadowPreview: boolean;
+  eligibleForShadowApplication: false;
+  blockers: string[];
+  affectedSoftLayer: string;
+  protectedTargets: string[];
+  wouldAffectRuntimeDecision: false;
+  proposalMutationEnabled: false;
+  applyPathEnabled: false;
+  stablePromotionEnabled: false;
+  notes: string[];
+}
+
 export interface LearningProposalFilter {
   id?: string;
   runId?: string;
@@ -262,6 +282,43 @@ export function summarizeLearningProposal(proposal: JsonRecord): JsonRecord {
     sourceTransitions: proposal.createdFromTransitionIds,
     stablePromotionEnabled: false,
     applyPathEnabled: false
+  };
+}
+
+export function buildLearningProposalShadowOverlayPlan(proposal: JsonRecord): LearningProposalShadowOverlayPlan {
+  const validation = isRecord(proposal.validation) ? proposal.validation : {};
+  const impact = isRecord(proposal.protectedPathImpact) ? proposal.protectedPathImpact : {};
+  const protectedTargets = Array.isArray(impact.protectedTargets) ? impact.protectedTargets.map(String) : [];
+  const status = stringValue(proposal.status, "unknown");
+  const actionable = validation.actionable === true;
+  const blockers: string[] = [];
+  if (!actionable) blockers.push("proposal_not_actionable");
+  if (status !== "pending_review" && status !== "shadow_validated" && status !== "approved") {
+    blockers.push("proposal_not_review_ready");
+  }
+  if (protectedTargets.length === 0) blockers.push("protected_targets_not_declared");
+  return {
+    schemaVersion: DOMAIN_SCHEMA_VERSION,
+    surface: "p9_learning_proposal_shadow_overlay_plan",
+    proposalId: stringValue(proposal.id, "unknown"),
+    type: stringValue(proposal.type, "unknown"),
+    status,
+    targetLayer: stringValue(proposal.targetLayer, "unknown"),
+    targetObject: stringValue(proposal.targetObject, "unknown"),
+    eligibleForShadowPreview: true,
+    eligibleForShadowApplication: false,
+    blockers,
+    affectedSoftLayer: stringValue(proposal.targetLayer, "unknown"),
+    protectedTargets,
+    wouldAffectRuntimeDecision: false,
+    proposalMutationEnabled: false,
+    applyPathEnabled: false,
+    stablePromotionEnabled: false,
+    notes: [
+      "Shadow overlay planning is read-only.",
+      "This does not alter workspace construction, live behavior, validation, execution, memory, derived knowledge, strategy, skills, or scaffold policy.",
+      "Actual shadow application remains disabled until a guarded P9.5 applicator is implemented and tested."
+    ]
   };
 }
 

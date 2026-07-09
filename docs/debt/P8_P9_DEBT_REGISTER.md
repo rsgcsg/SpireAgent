@@ -136,11 +136,18 @@ Status values:
 
 ### `prediction_error_precision_overclaim_risk`
 
-- Status: `open`
+- Status: `in_progress`
 - Problem:
   - Slay the Spire failures are often delayed and multi-step, so exact causal attribution will often be false confidence.
 - Minimum fix:
   - start with weak attribution fields such as `suspectedCause`, `confidence`, `counterexampleNeeded`, and `alternativeHypotheses`
+- Current state:
+  - typed proposal records already carry weak-attribution fields
+  - P9.2 proposal seed generation now derives cautious repair hypotheses from prediction errors and review telemetry
+  - generated seeds remain draft or pending-review evidence only and cannot apply or promote
+- Remaining risk:
+  - the current generator is still a heuristic seed surface, not a validated causal attribution engine
+  - P9.3 evidence slicing and later shadow validation are still required before any proposal can influence future decisions
 
 ### `proposal_vagueness_risk`
 
@@ -154,14 +161,16 @@ Status values:
 
 ### `console_fixture_pollution_risk`
 
-- Status: `in_progress`
+- Status: `mitigated`
 - Problem:
   - Console-assisted runs are useful for reproduction but must stay out of stable learning evidence.
 - Current state:
   - `EvidenceSliceReader` now reports promotion provenance eligibility separately from general replay visibility.
   - Console/debug/fixture, human-observed, snapshot-only, and unknown-provenance transitions remain visible, but are counted as promotion-excluded evidence.
+  - P9.2 proposal seed generation excludes those ineligible transitions by default and reports excluded counts.
+  - `--include-ineligible-evidence` is debug-only inspection and does not make excluded evidence promotion-ready.
 - Remaining risk:
-  - Future P9 promotion code must consume this eligibility layer instead of reinterpreting raw latest windows.
+  - Future P9 promotion code must enforce this boundary again instead of reinterpreting raw latest windows.
 
 ### `run_modes_explainer_missing`
 
