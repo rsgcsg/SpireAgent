@@ -384,7 +384,8 @@ Current state:
 - P9.5A now applies only an explicit low-risk `reason_policy` or `candidate_template` overlay to a cloned offline `DeliberationPacket`, then compares baseline versus overlay workspace prompt hashes/bytes through `npm run learning:proposals -- shadow-compare --latest --id <proposalId> --transition-id <transitionId>`
 - eligibility requires actionable `pending_review`, low risk, organic promotion-eligible evidence, and a bounded structured overlay patch; unsupported proposal families and incomplete replay data are rejected
 - P9.5A performs no provider call and writes no run artifact. It does not change candidate facts/order, classification, budget, memory, derived knowledge, strategy, validation, execution, live behavior, or stable policy
-- P9.5B remains required: define same-slice shadow evaluation and regression signals before a proposal can become `shadow_validated`
+- P9.5B now evaluates supplied paired same-slice baseline/overlay outcomes. It requires exact transition, revision, budget, allowed-candidate, candidate-facts, and prompt-hash alignment; it detects provider/output-cap and reason-quality regressions without treating a different valid candidate as automatically wrong.
+- P9.5B remains read-only: `paired_evidence_ready_for_review` cannot mutate proposal status or become `shadow_validated`. A real pair plus counterexample review is still required before a future guarded status transition is even designed.
 
 ### P9.6 Stable Promotion Gate
 

@@ -147,7 +147,7 @@ Status values:
   - generated seeds remain draft or pending-review evidence only and cannot apply or promote
 - Remaining risk:
   - the current generator is still a heuristic seed surface, not a validated causal attribution engine
-  - P9.5A can now compare a bounded low-risk overlay in a cloned offline workspace, but P9.5B same-slice evaluation is still required before any proposal can be marked `shadow_validated` or influence future decisions
+  - P9.5A/P9.5B can now compare bounded low-risk overlays and evaluate supplied same-slice pairs, but no proposal can be marked `shadow_validated` or influence future decisions yet
 
 ### `shadow_applicator_validation_missing`
 
@@ -156,9 +156,10 @@ Status values:
   - P9.5A has a deliberately narrow offline applicator for explicit low-risk reason/candidate-future guidance.
   - It uses a cloned `DeliberationPacket`, emits baseline/overlay prompt metadata, makes no provider call, and writes no run artifact.
   - It rejects missing replay candidates, unknown future ids, ineligible evidence, unsupported policy families, and non-low-risk proposals.
+  - P9.5B now evaluates supplied same-slice pairs for evidence-scope and candidate/fact invariants, provider/output-cap failure, and reason-quality regression.
 - Remaining risk:
-  - Prompt change alone is not strategic improvement.
-  - P9.5B must define same-slice quality/regression comparison and explicit `shadow_validated` evidence before any P9.6 promotion ledger is designed.
+  - Prompt change and one clean paired outcome are not strategic improvement.
+  - A real paired sample, counterexample review, explicit status-transition rules, and rollback/retrieval design remain required before any P9.6 promotion ledger is designed.
 
 ### `proposal_vagueness_risk`
 

@@ -7,7 +7,7 @@ Do not turn it into a narrative log. Detailed history belongs in `../LLM_HANDOFF
 ## Current Phase
 
 - Formal route: P0-P13 in `../PROJECT_PLAN.md`
-- Active milestone: P8/P8.5 closeout, P9.0 hardening, P9.1 read-only proposal infrastructure, P9.2 weak-attribution proposal seeding, and P9.5A offline shadow-workspace comparison
+- Active milestone: P8/P8.5 closeout, P9.0 hardening, P9.1 read-only proposal infrastructure, P9.2 weak-attribution proposal seeding, and P9.5A/P9.5B offline shadow comparison/evaluation
 - Live posture: explicit additive whitelist live is real and locally exercised; wildcard broad live remains forbidden
 
 ## Current Truth
@@ -51,6 +51,7 @@ The real blocker is now the gap between P9.0 hardening and real proposal-driven 
 - weak-attribution proposal seed generation has started as P9.2 infrastructure; default CLI mode is dry-run and explicit writes are append-only run artifacts
 - first-class read-only evidence slicing has started; proposal seed generation now excludes ineligible console/debug/fixture/unknown evidence by default; stable-promotion eligibility remains disabled until proposal/promotion gates exist
 - P9.5A can assemble a low-risk proposal only into a cloned offline `DeliberationPacket` and compare baseline versus overlay workspace prompts; it cannot call a provider, write a run artifact, change live/runtime behavior, or promote stable policy
+- P9.5B can evaluate a supplied paired same-slice baseline/overlay shadow outcome for candidate/fact invariants, provider/output regressions, and reason smoke alarms; `paired_evidence_ready_for_review` is explicitly not `shadow_validated`
 - budget governance has a clearer staged roadmap, but runtime adaptive Budget/Compute OS behavior remains deferred to P13
 - weak proposal attribution and anti-vague proposal validation are implemented for pending proposals; stable-promotion gates are still not implemented
 
@@ -64,13 +65,13 @@ The real blocker is now the gap between P9.0 hardening and real proposal-driven 
 
 ## Next Step
 
-Continue from P9.2/P9.3 proposal seeding and P9.5A offline shadow assembly while keeping P9.0 hardening intact:
+Continue from P9.2/P9.3 proposal seeding and P9.5A/P9.5B offline shadow evidence while keeping P9.0 hardening intact:
 
 1. finish protected-path hardening by treating remaining legacy stable-write paths as gated legacy behavior, not normal learning
 2. keep live-applied rollout audit separate from stale shadow-only readiness semantics in replay/eval/review
 3. keep expanding read-only evidence slicing so mixed budget/profile, console/debug, live/shadow, and promotion evidence stay separate
 4. use `npm run learning:proposals` for inspection of typed proposals, audit-only review decisions, reverse feedback, and dry-run proposal seed generation
-5. next add P9.5B evaluation semantics: compare an eligible overlay against the same evidence slice without provider/live execution, then define what counts as shadow validation before any P9.6 design
+5. next collect a real paired same-slice shadow outcome for one eligible proposal and require counterexample review; only then design the P9.6 promotion ledger, rollback snapshot, and retrieval-trace prerequisites without enabling promotion
 
 ## Canonical Follow-On Docs
 

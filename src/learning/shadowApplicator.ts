@@ -30,6 +30,10 @@ export interface ShadowWorkspacePromptArtifact {
   promptHash: string;
   promptBytes: number;
   containsP9Overlay: boolean;
+  allowedCandidateIds: string[];
+  allowedCandidateIdsHash: string;
+  candidateFutureIdsHash: string;
+  candidateFutureFactsHash: string;
 }
 
 export function compareLearningProposalInShadowWorkspace(input: {
@@ -42,7 +46,7 @@ export function compareLearningProposalInShadowWorkspace(input: {
   const mode = input.mode ?? "full";
   const eligibility = assessShadowWorkspaceOverlayEligibility(input.proposal);
   const baselinePrompt = buildDeliberationWorkspacePrompt(input.packet, input.candidates, mode, input.decisionClass);
-  const baseline = summarizePrompt(baselinePrompt);
+  const baseline = summarizePrompt(baselinePrompt, input.packet, input.candidates);
   const proposalId = typeof input.proposal.id === "string" ? input.proposal.id : "unknown";
 
   if (!eligibility.eligible || !eligibility.patch) {
@@ -122,7 +126,7 @@ export function compareLearningProposalInShadowWorkspace(input: {
     changedPaths: ["deliberationPacket.p9ShadowWorkspaceOverlay", "workspace.p9_shadow_workspace_overlay"],
     matchedCandidateFutureIds,
     baseline,
-    overlay: summarizePrompt(overlayPrompt),
+    overlay: summarizePrompt(overlayPrompt, overlayPacket, input.candidates),
     wouldCallProvider: false,
     wouldWriteRunArtifact: false,
     wouldAffectLiveBehavior: false,
@@ -145,12 +149,24 @@ function clonePacketWithOverlay(packet: DeliberationPacket, overlay: P9ShadowWor
   };
 }
 
-function summarizePrompt(prompt: string): ShadowWorkspacePromptArtifact {
+function summarizePrompt(
+  prompt: string,
+  packet: DeliberationPacket,
+  candidates: ScoredCandidate[]
+): ShadowWorkspacePromptArtifact {
   return {
     promptHash: createHash("sha256").update(prompt).digest("hex").slice(0, 16),
     promptBytes: Buffer.byteLength(prompt, "utf8"),
-    containsP9Overlay: prompt.includes("p9_shadow_workspace_overlay")
+    containsP9Overlay: prompt.includes("p9_shadow_workspace_overlay"),
+    allowedCandidateIds: candidates.map((candidate) => candidate.id),
+    allowedCandidateIdsHash: hashJson(candidates.map((candidate) => candidate.id)),
+    candidateFutureIdsHash: hashJson(packet.candidateFutures.map((future) => future.id)),
+    candidateFutureFactsHash: hashJson(packet.candidateFutures)
   };
+}
+
+function hashJson(value: unknown): string {
+  return createHash("sha256").update(JSON.stringify(value)).digest("hex").slice(0, 16);
 }
 
 function stringValue(value: unknown, fallback: string): string {

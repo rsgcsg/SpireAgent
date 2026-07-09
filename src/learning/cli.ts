@@ -29,11 +29,16 @@ import {
   summarizeGeneratedLearningProposals
 } from "./proposalGenerator.js";
 import { compareLearningProposalInShadowWorkspace } from "./shadowApplicator.js";
+import {
+  evaluateLearningProposalShadowPair,
+  parseSameSliceShadowOutcomeEvidence,
+  type ShadowWorkspaceOutcomeEvidence
+} from "./shadowEvaluation.js";
 import type { DeliberationPacket, JsonRecord } from "../domain/types.js";
 import type { ScoredCandidate } from "../agent/types.js";
 import { isRecord } from "../agent/utils.js";
 
-const READ_ONLY_COMMANDS = new Set(["summary", "list", "show", "feedback", "feedback-show", "reviews", "review-show", "generate", "plan", "shadow-compare"]);
+const READ_ONLY_COMMANDS = new Set(["summary", "list", "show", "feedback", "feedback-show", "reviews", "review-show", "generate", "plan", "shadow-compare", "shadow-evaluate"]);
 const REVIEW_LEDGER_COMMANDS = new Set(["approve", "reject", "expire"]);
 const FORBIDDEN_COMMANDS = new Set(["apply", "promote", "revert"]);
 
@@ -124,6 +129,33 @@ async function main(): Promise<void> {
       decisionClass: decisionClassFromTransition(transition as unknown as JsonRecord)
     }), null, 2));
     console.log("Offline shadow assembly only: providerCalls=0 runArtifactWrites=0 liveBehaviorChanges=0 stablePromotionEnabled=false");
+    return;
+  }
+
+  if (command === "shadow-evaluate") {
+    const id = parseRequiredId(commandArgs);
+    const transitionId = optionValue(commandArgs, "--transition-id");
+    const overlayJson = optionValue(commandArgs, "--overlay-outcome-json");
+    if (!transitionId) throw new Error("shadow-evaluate requires --transition-id <transitionId> to preserve evidence scope.");
+    if (!overlayJson) throw new Error("shadow-evaluate requires --overlay-outcome-json <json> from a same-slice shadow result.");
+    const proposal = proposals.find((record) => record.id === id);
+    if (!proposal) throw new Error(`Learning proposal not found: ${id}`);
+    const run = readReplayRun(runDir);
+    const transition = run.transitions.find((record) => record.transitionId === transitionId);
+    if (!transition) throw new Error(`Transition not found in run: ${transitionId}`);
+    const transitionRecord = transition as unknown as JsonRecord;
+    const comparison = compareLearningProposalInShadowWorkspace({
+      proposal,
+      packet: packetFromTransition(transitionRecord),
+      candidates: candidatesFromTransition(transitionRecord),
+      decisionClass: decisionClassFromTransition(transitionRecord)
+    });
+    const baseline = recordedBaselineOutcome(transitionRecord, comparison);
+    const overlay = parseSameSliceShadowOutcomeEvidence(JSON.parse(overlayJson));
+    if (!overlay) throw new Error("overlay-outcome-json does not match the required same-slice shadow outcome evidence shape.");
+    printHeader(runDir);
+    console.log(JSON.stringify(evaluateLearningProposalShadowPair({ comparison, baseline, overlay }), null, 2));
+    console.log("Shadow evaluation is read-only: proposalStatusMutationEnabled=false shadowValidated=false stablePromotionEnabled=false");
     return;
   }
 
@@ -287,6 +319,42 @@ function decisionClassFromTransition(transition: JsonRecord): string | undefined
     return transition.workspaceComparison.decisionClass;
   }
   return undefined;
+}
+
+function recordedBaselineOutcome(
+  transition: JsonRecord,
+  comparison: ReturnType<typeof compareLearningProposalInShadowWorkspace>
+): ShadowWorkspaceOutcomeEvidence {
+  const shadow = isRecord(transition.shadowWorkspaceDecision) ? transition.shadowWorkspaceDecision : undefined;
+  if (!shadow || shadow.called !== true) {
+    throw new Error("Transition has no called baseline shadow outcome; refusing to infer paired evidence.");
+  }
+  const comparisonRecord = isRecord(transition.workspaceComparison) ? transition.workspaceComparison : {};
+  const budget = isRecord(comparisonRecord.budget) ? comparisonRecord.budget : {};
+  const maxShadowCalls = typeof budget.maxShadowCalls === "number" ? budget.maxShadowCalls : "unknown";
+  const profile = typeof budget.governanceProfile === "string" ? budget.governanceProfile : "unknown";
+  return {
+    source: "recorded_shadow",
+    transitionId: typeof transition.transitionId === "string" ? transition.transitionId : "unknown",
+    promptHash: typeof shadow.promptHash === "string" ? shadow.promptHash : "unknown",
+    allowedCandidateIdsHash: comparison.baseline.allowedCandidateIdsHash,
+    candidateFutureFactsHash: comparison.baseline.candidateFutureFactsHash,
+    revisionTag: typeof comparisonRecord.revisionTag === "string" ? comparisonRecord.revisionTag : "unknown",
+    budgetWindow: `shadow=${maxShadowCalls};profile=${profile}`,
+    outcome: normalizeShadowOutcome(shadow.outcome),
+    selectedCandidateId: typeof shadow.structuredSelectedCandidateId === "string" ? shadow.structuredSelectedCandidateId : undefined,
+    reason: typeof shadow.reason === "string" ? shadow.reason : undefined,
+    failureBucket: typeof shadow.failureBucket === "string" ? shadow.failureBucket : undefined,
+    finishReason: typeof shadow.providerFinishReason === "string" ? shadow.providerFinishReason : undefined,
+    outputCapHit: shadow.outputCapHit === true
+  };
+}
+
+function normalizeShadowOutcome(value: unknown): ShadowWorkspaceOutcomeEvidence["outcome"] {
+  if (value === "valid" || value === "invalid_output" || value === "invalid_choice" || value === "error" || value === "unavailable" || value === "skipped") {
+    return value;
+  }
+  return "error";
 }
 
 main().catch((error) => {

@@ -98,6 +98,7 @@ import {
 } from "../learning/proposals.js";
 import { generateLearningProposalSeeds } from "../learning/proposalGenerator.js";
 import { compareLearningProposalInShadowWorkspace } from "../learning/shadowApplicator.js";
+import { evaluateLearningProposalShadowPair } from "../learning/shadowEvaluation.js";
 import {
   DOMAIN_SCHEMA_VERSION,
   type CandidateFuture,
@@ -1973,6 +1974,110 @@ try {
   });
   assert.equal(unknownFutureOverlay.applied, false);
   assert.ok(unknownFutureOverlay.blockers.includes("unknown_candidate_future_ids:future-not-present"));
+  const pairedShadowEvaluation = evaluateLearningProposalShadowPair({
+    comparison: shadowWorkspaceComparison,
+    baseline: {
+      source: "recorded_shadow",
+      transitionId: "transition-p9-smoke",
+      promptHash: shadowWorkspaceComparison.baseline.promptHash,
+      allowedCandidateIdsHash: shadowWorkspaceComparison.baseline.allowedCandidateIdsHash,
+      candidateFutureFactsHash: shadowWorkspaceComparison.baseline.candidateFutureFactsHash,
+      revisionTag: "p9-smoke-revision",
+      budgetWindow: "shadow=1;profile=shadow_exploration",
+      outcome: "valid",
+      selectedCandidateId: workspaceCandidate.id,
+      reason: "Deal damage now but preserve enough defense for the incoming attack.",
+      failureBucket: "none",
+      finishReason: "stop",
+      outputCapHit: false
+    },
+    overlay: {
+      source: "same_slice_shadow",
+      transitionId: "transition-p9-smoke",
+      promptHash: shadowWorkspaceComparison.overlay?.promptHash ?? "missing",
+      allowedCandidateIdsHash: shadowWorkspaceComparison.overlay?.allowedCandidateIdsHash ?? "missing",
+      candidateFutureFactsHash: shadowWorkspaceComparison.overlay?.candidateFutureFactsHash ?? "missing",
+      revisionTag: "p9-smoke-revision",
+      budgetWindow: "shadow=1;profile=shadow_exploration",
+      outcome: "valid",
+      selectedCandidateId: workspaceCandidate.id,
+      reason: "Deal damage now but preserve defense against the incoming attack risk.",
+      failureBucket: "none",
+      finishReason: "stop",
+      outputCapHit: false
+    }
+  });
+  assert.equal(pairedShadowEvaluation.status, "paired_evidence_ready_for_review");
+  assert.equal(pairedShadowEvaluation.candidateFactsPreserved, true);
+  assert.equal(pairedShadowEvaluation.allowedCandidatesPreserved, true);
+  assert.equal(pairedShadowEvaluation.sameEvidenceSlice, true);
+  assert.equal(pairedShadowEvaluation.shadowValidated, false);
+  const regressedShadowEvaluation = evaluateLearningProposalShadowPair({
+    comparison: shadowWorkspaceComparison,
+    baseline: {
+      source: "recorded_shadow",
+      transitionId: "transition-p9-smoke",
+      promptHash: shadowWorkspaceComparison.baseline.promptHash,
+      allowedCandidateIdsHash: shadowWorkspaceComparison.baseline.allowedCandidateIdsHash,
+      candidateFutureFactsHash: shadowWorkspaceComparison.baseline.candidateFutureFactsHash,
+      revisionTag: "p9-smoke-revision",
+      budgetWindow: "shadow=1;profile=shadow_exploration",
+      outcome: "valid",
+      selectedCandidateId: workspaceCandidate.id,
+      reason: "Deal damage now but preserve enough defense for the incoming attack.",
+      failureBucket: "none",
+      finishReason: "stop"
+    },
+    overlay: {
+      source: "same_slice_shadow",
+      transitionId: "transition-p9-smoke",
+      promptHash: shadowWorkspaceComparison.overlay?.promptHash ?? "missing",
+      allowedCandidateIdsHash: shadowWorkspaceComparison.overlay?.allowedCandidateIdsHash ?? "missing",
+      candidateFutureFactsHash: shadowWorkspaceComparison.overlay?.candidateFutureFactsHash ?? "missing",
+      revisionTag: "p9-smoke-revision",
+      budgetWindow: "shadow=1;profile=shadow_exploration",
+      outcome: "valid",
+      selectedCandidateId: workspaceCandidate.id,
+      reason: "Pick it.",
+      failureBucket: "none",
+      finishReason: "stop"
+    }
+  });
+  assert.equal(regressedShadowEvaluation.status, "regression_detected");
+  assert.ok(regressedShadowEvaluation.blockers.includes("reason_quality_regressed"));
+  const illegalChoiceShadowEvaluation = evaluateLearningProposalShadowPair({
+    comparison: shadowWorkspaceComparison,
+    baseline: {
+      source: "recorded_shadow",
+      transitionId: "transition-p9-smoke",
+      promptHash: shadowWorkspaceComparison.baseline.promptHash,
+      allowedCandidateIdsHash: shadowWorkspaceComparison.baseline.allowedCandidateIdsHash,
+      candidateFutureFactsHash: shadowWorkspaceComparison.baseline.candidateFutureFactsHash,
+      revisionTag: "p9-smoke-revision",
+      budgetWindow: "shadow=1;profile=shadow_exploration",
+      outcome: "valid",
+      selectedCandidateId: workspaceCandidate.id,
+      reason: "Deal damage now but preserve enough defense for the incoming attack.",
+      failureBucket: "none",
+      finishReason: "stop"
+    },
+    overlay: {
+      source: "same_slice_shadow",
+      transitionId: "transition-p9-smoke",
+      promptHash: shadowWorkspaceComparison.overlay?.promptHash ?? "missing",
+      allowedCandidateIdsHash: shadowWorkspaceComparison.overlay?.allowedCandidateIdsHash ?? "missing",
+      candidateFutureFactsHash: shadowWorkspaceComparison.overlay?.candidateFutureFactsHash ?? "missing",
+      revisionTag: "p9-smoke-revision",
+      budgetWindow: "shadow=1;profile=shadow_exploration",
+      outcome: "valid",
+      selectedCandidateId: "invented-candidate",
+      reason: "Deal damage now but preserve defense against the incoming attack risk.",
+      failureBucket: "none",
+      finishReason: "stop"
+    }
+  });
+  assert.equal(illegalChoiceShadowEvaluation.status, "regression_detected");
+  assert.ok(illegalChoiceShadowEvaluation.blockers.includes("overlay_selected_candidate_not_allowed"));
   const approvedReviewDecision = appendLearningProposalReviewDecision(p9ProposalDir, storedP9Proposals, {
     proposalId: actionableProposal.id,
     decision: "approve",
