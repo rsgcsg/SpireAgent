@@ -28,6 +28,8 @@ P9 should start only when the project is ready to shift from live-scaffold expan
 - Define typed reverse-scaffold feedback schema and keep it telemetry/proposal-seed only at first.
 - Define promotion criteria and rollback fields before any stable proposal may be applied.
 - Define evidence-slice rules so mixed revision, mixed budget, and console fixture data cannot silently qualify stable promotion.
+  Current state:
+  a read-only `EvidenceSliceReader` now separates shadow readiness, live-applied rollout, and future stable-learning promotion slices. Promotion remains disabled and ineligible by default.
 - Accept that prediction attribution starts weak, not precise, and encode that in schema and review flow.
 - Reject vague proposals without evidence, scope, counterexample handling, and validation planning.
 

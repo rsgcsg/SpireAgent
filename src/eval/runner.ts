@@ -18,6 +18,7 @@ import {
   type ReplayShadowSliceStats
 } from "../replay/reader.js";
 import { buildLiveAppliedRolloutSummary, type LiveAppliedRolloutSummary } from "../replay/liveAppliedRollout.js";
+import { buildEvidenceSliceSummary, type EvidenceSliceSummary } from "../replay/evidenceSliceReader.js";
 import { buildWorkspaceDecisionClassQuality, type WorkspaceDecisionClassQualityStats } from "../replay/workspaceQuality.js";
 import { assessP8LiveReadiness, type P8LiveReadinessAssessment } from "../replay/p8LiveReadiness.js";
 
@@ -90,6 +91,7 @@ export interface EvalSummary {
   workspaceDecisionClassQuality: Record<string, WorkspaceDecisionClassQualityStats>;
   p8LiveReadinessAssessment: P8LiveReadinessAssessment;
   liveAppliedRollout: LiveAppliedRolloutSummary;
+  evidenceSlices: EvidenceSliceSummary;
   predictionErrorCoverage: EvalPredictionErrorCoverage;
   consolidationCoverage: EvalConsolidationCoverage;
   consolidationProposalSurface: ReplayConsolidationProposalSurface;
@@ -417,6 +419,7 @@ export function evaluateRun(runIdOrPath?: string): EvalReport {
     workspaceDecisionClassQuality
   );
   const liveAppliedRollout = buildLiveAppliedRolloutSummary(validTransitions as unknown as JsonRecord[]);
+  const evidenceSlices = buildEvidenceSliceSummary(validTransitions as unknown as JsonRecord[]);
   const consolidationProposalSurface = buildReplayConsolidationProposalSurface(readConsolidationProposals(runDir, validTransitions));
   for (const issue of buildStrategyWarnings(strategyMetrics)) {
     addWarning(warnings, warningSummary, issue);
@@ -460,6 +463,7 @@ export function evaluateRun(runIdOrPath?: string): EvalReport {
       workspaceDecisionClassQuality,
       p8LiveReadinessAssessment,
       liveAppliedRollout,
+      evidenceSlices,
       predictionErrorCoverage,
       consolidationCoverage,
       consolidationProposalSurface

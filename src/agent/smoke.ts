@@ -77,6 +77,7 @@ import {
   protectedPathGateSnapshot
 } from "./protectedPathGate.js";
 import { buildLiveAppliedRolloutSummary } from "../replay/liveAppliedRollout.js";
+import { buildEvidenceSliceSummary, formatEvidenceSliceSummary } from "../replay/evidenceSliceReader.js";
 import {
   DOMAIN_SCHEMA_VERSION,
   type CandidateFuture,
@@ -3400,6 +3401,32 @@ try {
   assert.equal(liveAppliedSummary.chosenByLlm, 1);
   assert.equal(liveAppliedSummary.invalidOutput, 1);
   assert.equal(liveAppliedSummary.missingCandidateSignals, 1);
+  const evidenceSliceSummary = buildEvidenceSliceSummary([
+    {
+      source: "agent",
+      captureMode: "executor_logged",
+      workspaceComparison: { decisionClass: "combat:llm_required", revisionTag: "rev-a", budget: { maxShadowCalls: 4, governanceProfile: "shadow_readiness" } },
+      shadowWorkspaceDecision: { called: true, revisionTag: "rev-a", providerSource: "deepseek-shadow" },
+      decisionAudit: { chosenBy: "llm", raw: { llm: { liveAdditiveApplied: true, liveAdditiveDecisionClass: "combat:llm_required", providerSource: "deepseek-live-command" } } }
+    },
+    {
+      source: "agent",
+      captureMode: "executor_logged",
+      workspaceComparison: { decisionClass: "combat:llm_required", revisionTag: "rev-b", budget: { maxShadowCalls: 8, governanceProfile: "shadow_readiness" } },
+      shadowWorkspaceDecision: { called: true, revisionTag: "rev-b", providerSource: "deepseek-shadow" },
+      decisionAudit: { provenance: "console_fixture", raw: { llm: { liveAdditiveApplied: false } } }
+    }
+  ] as any);
+  assert.equal(evidenceSliceSummary.mixedRevisionWindow, true);
+  assert.equal(evidenceSliceSummary.mixedBudgetWindow, true);
+  assert.equal(evidenceSliceSummary.consoleDebugOrFixtureTransitions, 1);
+  const promotionSlice = evidenceSliceSummary.slices.find((slice) => slice.kind === "stable_learning_promotion");
+  assert.equal(promotionSlice?.promotionUseAllowed, false);
+  assert.ok(promotionSlice?.reasons.includes("p9_promotion_not_implemented"));
+  assert.ok(promotionSlice?.reasons.includes("mixed_revision_window"));
+  assert.ok(promotionSlice?.reasons.includes("mixed_budget_window"));
+  assert.ok(promotionSlice?.reasons.includes("console_debug_or_fixture_present"));
+  assert.match(formatEvidenceSliceSummary(evidenceSliceSummary), /promotionAllowed=false/);
 
   const focusedFreshSlices = buildReplayFocusedShadowSlices([
     {

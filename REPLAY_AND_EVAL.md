@@ -126,6 +126,12 @@ As of P8, replay/eval/review also report the DeliberationPacket strategic worksp
   - console/fixture/debug slices
   - stable-learning promotion slices
   The new `liveAppliedRollout` summary is the first step in that separation, not the final P9 rollout reader.
+- A read-only `EvidenceSliceReader` now exposes this separation as report-layer evidence slicing:
+  - `shadow_readiness`: workspace/provider exploration and smoke-alarm evidence, not stable-learning proof
+  - `live_applied_rollout`: decisions actually executed through explicit-whitelist additive live, not stable-learning proof
+  - `stable_learning_promotion`: future P9 promotion evidence, currently always `promotionUseAllowed=false`
+- Evidence slices report source, capture mode, decision class, revision tag, budget window, provider source, live mode, and provenance counts. Mixed revision/budget windows, console/debug/fixture markers, unknown provenance, and the absence of a P9 promotion engine all keep promotion disabled.
+- This reader is intentionally read-only. It does not change P8 readiness, live rollout, validation, execution, proposal status, or memory/derived/strategy writes.
 
 P8 disagreement is a review signal, not an eval failure. Invalid structured output or missing candidate is a WARN-level engineering signal unless it corrupts transition data or live validation.
 

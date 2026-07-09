@@ -15,6 +15,7 @@ import {
   readReplayRun
 } from "./reader.js";
 import { buildLiveAppliedRolloutSummary, formatLiveAppliedRolloutSummary } from "./liveAppliedRollout.js";
+import { buildEvidenceSliceSummary, formatEvidenceSliceSummary } from "./evidenceSliceReader.js";
 import { buildWorkspaceDecisionClassQuality, formatWorkspaceDecisionClassQuality } from "./workspaceQuality.js";
 import { assessP8LiveReadiness, formatP8LiveReadinessAssessment } from "./p8LiveReadiness.js";
 
@@ -36,6 +37,7 @@ async function main(): Promise<void> {
   const p8LiveReadinessAssessment = assessP8LiveReadiness(freshShadowSlices.sinceLatestRevision, workspaceDecisionClassQuality);
   const proposalSurface = buildReplayConsolidationProposalSurface(readConsolidationProposals(run.runDir, run.transitions));
   const liveAppliedRollout = buildLiveAppliedRolloutSummary(run.transitions as unknown as JsonRecord[]);
+  const evidenceSlices = buildEvidenceSliceSummary(run.transitions as unknown as JsonRecord[]);
   console.log(`Run: ${path.basename(run.runDir)}`);
   console.log(`Transitions: ${run.transitions.length}`);
   console.log(`Cognitive coverage: ${formatReplayCognitiveCoverage(cognitiveCoverage)}`);
@@ -43,6 +45,7 @@ async function main(): Promise<void> {
   console.log(`Focused fresh slices: ${formatReplayFocusedShadowSlices(focusedShadowSlices)}`);
   console.log(`P8.5 live readiness: ${formatP8LiveReadinessAssessment(p8LiveReadinessAssessment)}`);
   console.log(`Live-applied rollout: ${formatLiveAppliedRolloutSummary(liveAppliedRollout)}`);
+  console.log(`Evidence slices: ${formatEvidenceSliceSummary(evidenceSlices)}`);
   console.log(`Workspace quality by class: ${formatWorkspaceDecisionClassQuality(workspaceDecisionClassQuality)}`);
   console.log(`Consolidation proposal surface: ${formatReplayConsolidationProposalSurface(proposalSurface)}`);
   if (command === "proposals") {

@@ -73,13 +73,14 @@ Status values:
 
 ### `evidence_slice_reader_missing`
 
-- Status: `open`
+- Status: `in_progress`
 - Problem:
-  - Promotion evidence still depends too much on replay summary interpretation instead of a first-class clean-slice reader.
+  - Promotion evidence is starting to move out of ad hoc replay summary interpretation into a first-class read-only slice reader.
+  - The current reader still deliberately keeps stable-learning promotion ineligible until P9 proposal/promotion gates exist.
 - Why it matters:
   - P9 cannot safely promote or reject policies if mixed revision, mixed budget, console-assisted, and live-vs-shadow evidence are not explicitly separable.
 - Minimum fix:
-  - add a first-class `EvidenceSliceReader`
+  - keep expanding the first-class `EvidenceSliceReader`
   - make slice dimensions explicit in code and docs
 
 ## High
