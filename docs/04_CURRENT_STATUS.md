@@ -6,7 +6,7 @@ Do not turn it into a narrative log. Detailed history belongs in `../LLM_HANDOFF
 
 ## Current Phase
 
-- Formal route: P1-P10 in `../PROJECT_PLAN.md`
+- Formal route: P0-P13 in `../PROJECT_PLAN.md`
 - Active milestone: P8/P8.5 closeout and early P9.0 hardening
 - Live posture: explicit additive whitelist live is real and locally exercised; wildcard broad live remains forbidden
 
@@ -46,6 +46,8 @@ The real blocker is now the gap between P9.0 hardening and real proposal-driven 
 - protected-path gating is only partially landed
 - live-applied rollout reporting now exists, but older shadow-first readiness semantics still coexist beside it
 - typed learning proposal schema/store has not started
+- typed reverse-scaffold feedback schema/store has not started
+- first-class evidence slicing has not started
 - weak prediction attribution, anti-vague-proposal rules, and stable-promotion gates are documented but not implemented
 
 ## What Is Explicitly Not True
@@ -62,13 +64,15 @@ Continue and complete P9.0 hardening:
 
 1. finish protected-path hardening by treating remaining legacy stable-write paths as gated legacy behavior, not normal learning
 2. keep live-applied rollout audit separate from stale shadow-only readiness semantics in replay/eval/review
-3. start typed learning proposal schema/store work for P9.1
+3. start typed learning proposal and reverse-scaffold schema/store work for P9.1
+4. define first-class evidence slicing before any proposal promotion path exists
 
 ## Canonical Follow-On Docs
 
-- [P8_CLOSEOUT.md](/Users/fire/Desktop/SpireAgent/docs/phases/P8_CLOSEOUT.md)
-- [P8_P9_DEBT_REGISTER.md](/Users/fire/Desktop/SpireAgent/docs/debt/P8_P9_DEBT_REGISTER.md)
-- [P9_ENTRY_CRITERIA.md](/Users/fire/Desktop/SpireAgent/docs/phases/P9_ENTRY_CRITERIA.md)
-- [P9_GUARDED_LEARNING_PLAN.md](/Users/fire/Desktop/SpireAgent/docs/phases/P9_GUARDED_LEARNING_PLAN.md)
-- [P8_5_LIVE_ROLLOUT_POLICY.md](/Users/fire/Desktop/SpireAgent/docs/phases/P8_5_LIVE_ROLLOUT_POLICY.md)
-- [LLM_RUN_MODES.md](/Users/fire/Desktop/SpireAgent/docs/runbooks/LLM_RUN_MODES.md)
+- [P8_CLOSEOUT.md](phases/P8_CLOSEOUT.md)
+- [P8_P9_DEBT_REGISTER.md](debt/P8_P9_DEBT_REGISTER.md)
+- [P9_ENTRY_CRITERIA.md](phases/P9_ENTRY_CRITERIA.md)
+- [P9_GUARDED_LEARNING_PLAN.md](phases/P9_GUARDED_LEARNING_PLAN.md)
+- [P9_P13_EXECUTION_ROADMAP.md](phases/P9_P13_EXECUTION_ROADMAP.md)
+- [P8_5_LIVE_ROLLOUT_POLICY.md](phases/P8_5_LIVE_ROLLOUT_POLICY.md)
+- [LLM_RUN_MODES.md](runbooks/LLM_RUN_MODES.md)

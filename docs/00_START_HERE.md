@@ -51,12 +51,13 @@ Start here before changing docs, planning a new phase, or deciding which documen
 
 ## Current High-Value Docs
 
-- [P8_CLOSEOUT.md](/Users/fire/Desktop/SpireAgent/docs/phases/P8_CLOSEOUT.md)
-- [P8_P9_DEBT_REGISTER.md](/Users/fire/Desktop/SpireAgent/docs/debt/P8_P9_DEBT_REGISTER.md)
-- [P9_ENTRY_CRITERIA.md](/Users/fire/Desktop/SpireAgent/docs/phases/P9_ENTRY_CRITERIA.md)
-- [P9_GUARDED_LEARNING_PLAN.md](/Users/fire/Desktop/SpireAgent/docs/phases/P9_GUARDED_LEARNING_PLAN.md)
-- [P8_5_LIVE_ROLLOUT_POLICY.md](/Users/fire/Desktop/SpireAgent/docs/phases/P8_5_LIVE_ROLLOUT_POLICY.md)
-- [LLM_RUN_MODES.md](/Users/fire/Desktop/SpireAgent/docs/runbooks/LLM_RUN_MODES.md)
+- [P8_CLOSEOUT.md](phases/P8_CLOSEOUT.md)
+- [P8_P9_DEBT_REGISTER.md](debt/P8_P9_DEBT_REGISTER.md)
+- [P9_ENTRY_CRITERIA.md](phases/P9_ENTRY_CRITERIA.md)
+- [P9_GUARDED_LEARNING_PLAN.md](phases/P9_GUARDED_LEARNING_PLAN.md)
+- [P9_P13_EXECUTION_ROADMAP.md](phases/P9_P13_EXECUTION_ROADMAP.md)
+- [P8_5_LIVE_ROLLOUT_POLICY.md](phases/P8_5_LIVE_ROLLOUT_POLICY.md)
+- [LLM_RUN_MODES.md](runbooks/LLM_RUN_MODES.md)
 
 ## Working And Historical Docs
 
@@ -90,9 +91,9 @@ These exist for engineering continuity and history. They must not become the onl
 - old redirect docs and stale low-priority material
   - `archive/legacy/*.md`
 
-## P1-P10 And P8.x
+## P0-P13 And P8.x
 
-`../PROJECT_PLAN.md` remains the canonical P1-P10 route.
+`../PROJECT_PLAN.md` remains the canonical P0-P13 route.
 
 Use `phases/*.md` for:
 
@@ -100,6 +101,7 @@ Use `phases/*.md` for:
 - P8.5 rollout policy
 - P9 entry criteria
 - P9 guarded learning implementation
+- P9-P13 execution ordering and realism checks
 
 Use `04_CURRENT_STATUS.md` for the short active snapshot only.
 

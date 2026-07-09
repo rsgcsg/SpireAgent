@@ -1,0 +1,446 @@
+# P9-P13 Execution Roadmap
+
+This document is the execution-oriented roadmap for P9 through P13.
+
+It is narrower than `PROJECT_PLAN.md`.
+It is not the North Star.
+It exists to answer a practical engineering question:
+
+```text
+What actually has to happen next,
+in what order,
+with what boundaries,
+so the project can move from P8/P8.5 live scaffold MVP
+to real proposal-driven guarded learning?
+```
+
+Read with:
+
+- `../../PROJECT_NORTH_STAR.md`
+- `../../PROJECT_PLAN.md`
+- `../../ARCHITECTURE.md`
+- `../../DATA_SCHEMA.md`
+- `../debt/P8_P9_DEBT_REGISTER.md`
+- `P9_ENTRY_CRITERIA.md`
+- `P9_GUARDED_LEARNING_PLAN.md`
+
+## Executive Verdict
+
+The direction in `CORE_LEARNING_ARCHITECTURE.md` is broadly correct.
+
+The most important correct ideas are:
+
+- explicit whitelist live is not the same thing as learning
+- the hard shell must remain outside LLM authority
+- the soft shell should become increasingly proposal-driven instead of permanently hand-authored
+- Context OS and Budget OS should eventually become learnable inner-scaffold policy layers
+- reverse feedback from the LLM back into the scaffold is necessary
+
+But the draft becomes too aggressive if read as an immediate implementation plan.
+
+The main corrections are:
+
+1. `ReverseScaffoldChannel` is strategically right, but it is not a P9.1 stable-learning feature.
+   In P9 it should start as telemetry and proposal seed material, not as a second-pass controller or live self-rewrite path.
+2. `Context OS` is a real long-term target, but P12 should not be backported into P9 by quietly replacing current prompt assembly with a large learned compiler.
+   P9-P10 should only seed the data structures and review path needed for future context-policy learning.
+3. `Compute/Budget OS` is also a real long-term target, but P13 must stay downstream of guarded proposal infrastructure.
+   The project should not let budget adaptation become an early hidden optimizer that changes live behavior without proposal review.
+4. The project still has unfinished P8 debt that matters to P9:
+   protected-path governance is only partially landed,
+   live rollout reporting is still partly split-brain,
+   and the current proposal surface is still P7 evidence, not a true P9 ledger.
+
+So the honest roadmap is:
+
+```text
+finish P8/P9 boundary hardening
+-> implement typed pending proposal infrastructure
+-> add weak attribution and reverse-scaffold telemetry
+-> add clean evidence slicing
+-> add review/shadow/stable promotion gates
+-> only then scale into P10-P13
+```
+
+## What Must Be True Before P9.1
+
+These items are still pre-P9.1 work, not optional polish.
+
+### 1. Protected-path governance must be unambiguous
+
+Current state:
+
+- live/provider memory updates are blocked by default
+- legacy `finalizeRun()` stable writes are blocked by default and audited
+
+Still missing:
+
+- a fuller protected-path model that clearly covers future derived/strategy/skill/scaffold promotions
+- explicit classification of legacy finalize behavior as legacy local learning rather than normal future learning
+
+### 2. Live-applied rollout and shadow readiness must stay separate
+
+Current state:
+
+- `liveAppliedRollout` now exists in replay/eval/review
+
+Still missing:
+
+- a clearer reader model that prevents future engineers from confusing:
+  - shadow workspace readiness
+  - live-applied rollout evidence
+  - console/debug slices
+  - stable-promotion evidence
+
+### 3. The current proposal surface is not enough
+
+Current `ConsolidationRecord` is useful P7 evidence.
+
+It is not enough for P9 because it does not yet provide:
+
+- proposal family typing
+- proposal lifecycle strong enough for promotion
+- weak-attribution fields
+- anti-vague-proposal enforcement
+- protected-path impact declaration
+- promotion ledger linkage
+
+### 4. Reverse scaffold feedback is still missing as a typed object
+
+The idea is correct and necessary.
+
+But right now the codebase has:
+
+- review signals
+- cue attribution
+- proposal-only candidate/template signals
+
+It does not yet have:
+
+- a typed `ReverseScaffoldFeedback`
+- a store for it
+- a rule for how it feeds proposal generation without changing live behavior
+
+### 5. Evidence slicing is still missing as a first-class component
+
+P9 cannot safely promote anything while evidence windows are still reconstructed ad hoc from replay summaries.
+
+The project needs a first-class `EvidenceSliceReader` that can explicitly separate:
+
+- same revision
+- same budget profile
+- same rollout mode
+- live-applied vs shadow-only
+- console/debug-assisted vs organic runtime
+- counterexample windows
+
+## Priority Order
+
+This is the honest engineering order.
+
+### Tier 1: Must finish before real P9.1
+
+1. finish protected-path hardening
+2. classify legacy finalize behavior
+3. define typed `LearningProposal` schema
+4. define typed `ReverseScaffoldFeedback` schema
+5. define `EvidenceSliceReader`
+6. define proposal lifecycle and promotion ledger
+
+### Tier 2: P9.1-P9.3 core learning infrastructure
+
+1. append-only pending proposal store
+2. weak-attribution engine
+3. reverse-scaffold telemetry capture
+4. proposal-generation rules
+5. review CLI / inspection path
+
+### Tier 3: P9.4-P9.8 guarded application
+
+1. shadow applicator
+2. stable-promotion gate
+3. rollback snapshots and ledger
+4. retrieval integration
+5. one end-to-end guarded learning demo
+
+### Tier 4: P10-P13 expansion
+
+1. continuous proposal loop
+2. curriculum and meta-scaffold experiments
+3. Context OS policy learning
+4. Budget/Compute OS policy learning
+
+## P9 Detailed Task Stack
+
+### P9.0 Complete Hardening
+
+Goal:
+
+- make sure live/provider paths cannot silently become learning paths
+
+Remaining tasks:
+
+- extend protected-path semantics beyond live memory updates
+- classify legacy finalize as legacy local learner or freeze-only path
+- record protected-path decisions in a durable, reviewable way
+
+Not allowed:
+
+- stable learning writes
+- provider-controlled strategy mutation
+- budget policy mutation
+
+### P9.1 Typed LearningProposal Schema And Store
+
+Goal:
+
+- replace free-form proposal evidence with an append-only, typed pending proposal family
+
+Required proposal families:
+
+- `MemoryProposal`
+- `DerivedKnowledgeProposal`
+- `CandidateTemplateProposal`
+- `ReasonPolicyProposal`
+- `BudgetPolicyProposal`
+- `ClassificationPolicyProposal`
+- `SkillProposal`
+- `ScaffoldPolicyProposal`
+
+Each proposal should include:
+
+- `id`
+- `schemaVersion`
+- `type`
+- `status`
+- `scope`
+- `targetLayer`
+- `targetObject`
+- `proposedPatch`
+- `evidence`
+- `counterexamples`
+- `confidence`
+- `riskLevel`
+- `promotionCriteria`
+- `rollbackPlan`
+- `protectedPathImpact`
+- `createdFromRunIds`
+- `createdFromTransitionIds`
+- `reviewHistory`
+
+P9.1 must not:
+
+- apply proposals
+- mutate live behavior
+- write stable memory
+
+### P9.2 Weak Attribution And Reverse Scaffold Telemetry
+
+Goal:
+
+- turn replay/review evidence into cautious repair hypotheses, not fake certainty
+
+This phase should introduce:
+
+- `suspectedCause`
+- `confidence`
+- `counterexampleNeeded`
+- `alternativeHypotheses`
+
+It should also introduce a typed `ReverseScaffoldFeedback` family, but only as:
+
+- telemetry
+- proposal seed material
+- replay/review evidence
+
+Not as:
+
+- second-pass live prompt expansion
+- automatic budget escalation
+- automatic scaffold rewriting
+
+### P9.3 EvidenceSliceReader
+
+Goal:
+
+- make promotion evidence explicit, comparable, and reviewable
+
+Required slice dimensions:
+
+- revision
+- budget/governance profile
+- rollout mode
+- decision class
+- live-applied vs shadow-only
+- console/debug assistance
+- counterexample inclusion
+
+This is the point where the project stops treating ad hoc replay summaries as sufficient promotion evidence.
+
+### P9.4 Proposal Review CLI
+
+Goal:
+
+- let humans inspect, approve, reject, expire, and revert proposals
+
+Required commands should eventually cover:
+
+- list
+- show
+- approve
+- reject
+- expire
+- revert
+
+Approval here still does not mean stable promotion.
+
+### P9.5 Shadow Applicator
+
+Goal:
+
+- let low-risk policy proposals affect shadow assembly only
+
+Safe first targets:
+
+- reason policy
+- candidate template presentation
+- budget explanation policy
+- classification hints
+
+Unsafe early targets:
+
+- strategy params
+- validation
+- execution
+- live whitelist
+
+### P9.6 Stable Promotion Gate
+
+Goal:
+
+- introduce a narrow path from shadow-validated proposal to stable policy
+
+Required:
+
+- promotion ledger
+- version diff
+- rollback record
+- regression criteria
+- protected-path impact review
+
+### P9.7 Retrieval Integration
+
+Goal:
+
+- allow promoted stable policies to be retrieved and used in future scaffold construction
+
+Critical rule:
+
+- every use of a promoted policy must be traceable in transitions/replay
+
+### P9.8 End-To-End Guarded Learning Demo
+
+Goal:
+
+- prove one full proposal lifecycle works
+
+The first demo should be low-risk.
+
+Recommended target:
+
+- `ReasonPolicyProposal` or `CandidateTemplateProposal`
+
+Not recommended as the first demo:
+
+- strategy params
+- derived knowledge mutation
+- permanent classification rewrite
+
+## P10-P13 Ordering
+
+### P10 Continuous Learning Loop
+
+This should begin only after one real P9 lifecycle works.
+
+Goal:
+
+- automate proposal candidate generation and validation loops across many runs
+
+Expected additions:
+
+- proposal aggregation
+- counterexample harvesting
+- proposal survival metrics
+- regression monitoring
+
+### P11 Autonomous Curriculum And Meta-Scaffold Optimization
+
+Goal:
+
+- let the system propose what to practice and which scaffold variants to compare
+
+This is where the project can honestly begin limited curriculum design and meta-scaffold experimentation.
+
+It is not where hard-shell authority is relaxed.
+
+### P12 Context OS / Learned Prompt Compiler
+
+Goal:
+
+- make context assembly itself a learnable soft-shell policy domain
+
+This phase should grow out of earlier proposal families, not appear as a giant prompt rewrite.
+
+Expected policy areas:
+
+- salience shaping
+- expanded panels
+- temporary working cache
+- memory layering
+- prompt assembly order
+- compression policy
+
+### P13 Compute/Budget OS
+
+Goal:
+
+- make compute allocation and budget policy proposal-driven under hard caps
+
+This phase should not start with automatic budget escalation.
+
+It should begin with:
+
+- budget policy telemetry
+- proposal-only budget changes
+- shadow validation
+- narrow stable promotion
+
+## What Should Change In Canonical Docs
+
+The following docs should stay aligned with this roadmap:
+
+- `PROJECT_PLAN.md`
+- `PROJECT_AUTHORITY_GUIDE.md`
+- `docs/04_CURRENT_STATUS.md`
+- `docs/phases/P9_ENTRY_CRITERIA.md`
+- `docs/phases/P9_GUARDED_LEARNING_PLAN.md`
+- `docs/debt/P8_P9_DEBT_REGISTER.md`
+- `README.md`
+
+## Honest Current Answer
+
+The project is not ready for full P9.1 implementation yet.
+
+The remaining pre-P9.1 blockers are:
+
+- incomplete protected-path hardening
+- no typed `LearningProposal` schema/store
+- no typed `ReverseScaffoldFeedback`
+- no first-class `EvidenceSliceReader`
+- no stable promotion ledger model
+
+That is the work to do now.
+
+Not more live expansion.
+Not more per-class prompt patching.
+Not more reason-detector tuning.

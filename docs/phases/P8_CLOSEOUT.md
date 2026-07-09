@@ -117,6 +117,6 @@ P9 must begin with hardening and proposal infrastructure, not with more live exp
 
 See:
 
-- [P8_P9_DEBT_REGISTER.md](/Users/fire/Desktop/SpireAgent/docs/debt/P8_P9_DEBT_REGISTER.md)
-- [P9_ENTRY_CRITERIA.md](/Users/fire/Desktop/SpireAgent/docs/phases/P9_ENTRY_CRITERIA.md)
-- [P9_GUARDED_LEARNING_PLAN.md](/Users/fire/Desktop/SpireAgent/docs/phases/P9_GUARDED_LEARNING_PLAN.md)
+- [P8_P9_DEBT_REGISTER.md](../debt/P8_P9_DEBT_REGISTER.md)
+- [P9_ENTRY_CRITERIA.md](P9_ENTRY_CRITERIA.md)
+- [P9_GUARDED_LEARNING_PLAN.md](P9_GUARDED_LEARNING_PLAN.md)

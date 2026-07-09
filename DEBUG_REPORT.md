@@ -1505,7 +1505,7 @@ Fresh post-fix validation:
 当前工作目录：
 
 ```text
-/Users/fire/Desktop/SpireAgent
+SpireAgent repository root
 ```
 
 本轮完成：

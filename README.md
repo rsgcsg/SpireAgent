@@ -6,15 +6,16 @@ This repository contains the TypeScript agent package. It does not include the g
 
 ## Documentation
 
-Start documentation navigation at [docs/00_START_HERE.md](/Users/fire/Desktop/SpireAgent/docs/00_START_HERE.md). The canonical short current-status snapshot lives at [docs/04_CURRENT_STATUS.md](/Users/fire/Desktop/SpireAgent/docs/04_CURRENT_STATUS.md).
+Start documentation navigation at [docs/00_START_HERE.md](docs/00_START_HERE.md). The canonical short current-status snapshot lives at [docs/04_CURRENT_STATUS.md](docs/04_CURRENT_STATUS.md).
 
 Current phase-heavy docs:
 
-- [P8_CLOSEOUT.md](/Users/fire/Desktop/SpireAgent/docs/phases/P8_CLOSEOUT.md)
-- [P8_P9_DEBT_REGISTER.md](/Users/fire/Desktop/SpireAgent/docs/debt/P8_P9_DEBT_REGISTER.md)
-- [P9_ENTRY_CRITERIA.md](/Users/fire/Desktop/SpireAgent/docs/phases/P9_ENTRY_CRITERIA.md)
-- [P9_GUARDED_LEARNING_PLAN.md](/Users/fire/Desktop/SpireAgent/docs/phases/P9_GUARDED_LEARNING_PLAN.md)
-- [LLM_RUN_MODES.md](/Users/fire/Desktop/SpireAgent/docs/runbooks/LLM_RUN_MODES.md)
+- [P8_CLOSEOUT.md](docs/phases/P8_CLOSEOUT.md)
+- [P8_P9_DEBT_REGISTER.md](docs/debt/P8_P9_DEBT_REGISTER.md)
+- [P9_ENTRY_CRITERIA.md](docs/phases/P9_ENTRY_CRITERIA.md)
+- [P9_GUARDED_LEARNING_PLAN.md](docs/phases/P9_GUARDED_LEARNING_PLAN.md)
+- [P9_P13_EXECUTION_ROADMAP.md](docs/phases/P9_P13_EXECUTION_ROADMAP.md)
+- [LLM_RUN_MODES.md](docs/runbooks/LLM_RUN_MODES.md)
 
 ## GitHub Hygiene
 
@@ -235,12 +236,14 @@ Operational docs live under `docs/` and are not architecture source of truth.
 
 ## Phase Route
 
-The formal route currently runs through Phase 10:
+The formal route now runs through P13:
 
-- Phase 1-2 established schema, capabilities, transition recording, replay, and eval.
-- Phase 3-5 migrate the loop toward shadow cognitive objects, derived/memory visibility, and event-log compatibility.
-- Phase 6-9 add typed prediction-error attribution, consolidation proposals, guarded stable updates, and controlled shadow-to-live deliberation migration.
-- Phase 10 is the Guarded Learning Loop: prediction -> execution evidence -> prediction error -> consolidation -> guarded update -> replay/eval validation -> rollback-capable review.
+- P1-P8.5 build the live scaffold, replay/eval, and explicit-whitelist live MVP.
+- P9 is protected proposal-driven guarded learning.
+- P10 is the continuous guarded learning loop.
+- P11 is autonomous curriculum and meta-scaffold optimization.
+- P12 is the self-optimizing Context OS / learned Prompt Compiler.
+- P13 is the Compute/Budget OS under hard caps.
 
 See [PROJECT_PLAN.md](PROJECT_PLAN.md) for current completion gaps and acceptance criteria.
 

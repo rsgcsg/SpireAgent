@@ -24,7 +24,7 @@ Closeout pointers:
 Current project directory:
 
 ```text
-/Users/fire/Desktop/SpireAgent
+SpireAgent repository root
 ```
 
 Read first:
@@ -912,7 +912,7 @@ Do not do long live runs before the offline baseline passes.
 
 ## Latest Desktop Validation
 
-On 2026-07-01 in `/Users/fire/Desktop/SpireAgent`, local validation passed:
+On 2026-07-01 in the repository root, local validation passed:
 
 - `npm install`
 - `npm exec tsc -- --noEmit`

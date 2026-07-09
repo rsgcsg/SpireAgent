@@ -15,8 +15,8 @@ Status values:
 
 - Status: `in_progress`
 - Evidence:
-  - [controller.ts](/Users/fire/Desktop/SpireAgent/src/agent/controller.ts:362)
-  - [memory.ts](/Users/fire/Desktop/SpireAgent/src/agent/memory.ts:140)
+  - [controller.ts](../../src/agent/controller.ts#L362)
+  - [memory.ts](../../src/agent/memory.ts#L140)
 - Problem:
   - Live/provider-originated memory updates are now blocked by default, but protected-path governance is still not fully centralized.
   - Legacy run-finalization is now blocked by default and audited, but it still exists as a legacy path that has not yet been fully isolated behind a P9 promotion model.
@@ -31,8 +31,8 @@ Status values:
 
 - Status: `in_progress`
 - Evidence:
-  - [p8LiveReadiness.ts](/Users/fire/Desktop/SpireAgent/src/replay/p8LiveReadiness.ts:26)
-  - [evidenceBudget.ts](/Users/fire/Desktop/SpireAgent/src/replay/evidenceBudget.ts:5)
+  - [p8LiveReadiness.ts](../../src/replay/p8LiveReadiness.ts#L26)
+  - [evidenceBudget.ts](../../src/replay/evidenceBudget.ts#L5)
 - Problem:
   - Replay readiness still encodes a shadow/combat-first worldview while the project already runs explicit broad-whitelist live windows.
   - A separate live-applied rollout summary now exists, but the old shadow-first readiness view still coexists and can still be misread.
@@ -47,13 +47,37 @@ Status values:
 
 - Status: `open`
 - Evidence:
-  - [types.ts](/Users/fire/Desktop/SpireAgent/src/domain/types.ts:547)
-  - [DATA_SCHEMA.md](/Users/fire/Desktop/SpireAgent/DATA_SCHEMA.md:147)
+  - [types.ts](../../src/domain/types.ts#L547)
+  - [DATA_SCHEMA.md](../../DATA_SCHEMA.md#L147)
 - Problem:
   - Current `ConsolidationRecord` is good P7 evidence but not enough for typed pending proposals, promotion criteria, or rollback.
   - The current system also lacks first-class weak-attribution fields and proposal-rejection rules for vague advice.
 - Minimum fix:
   - introduce a typed `LearningProposal` family and ledger
+
+### `reverse_scaffold_feedback_schema_missing`
+
+- Status: `open`
+- Problem:
+  - The project has review signals, cue attribution, and proposal-only improvement hints, but it still lacks a typed reverse-scaffold feedback object.
+  - That means the LLM still has no formal, reviewable channel for saying that the scaffold omitted information, compressed the wrong thing, retrieved the wrong memory, or needed a different panel/classification/budget framing.
+- Why it matters:
+  - Without a typed reverse feedback channel, the project risks drifting back toward human-authored per-class patching instead of proposal-driven soft-shell learning.
+- Minimum fix:
+  - add a typed `ReverseScaffoldFeedback` schema
+  - keep it telemetry/proposal-seed only at first
+  - do not let it directly alter live prompts, budgets, or stable policy
+
+### `evidence_slice_reader_missing`
+
+- Status: `open`
+- Problem:
+  - Promotion evidence still depends too much on replay summary interpretation instead of a first-class clean-slice reader.
+- Why it matters:
+  - P9 cannot safely promote or reject policies if mixed revision, mixed budget, console-assisted, and live-vs-shadow evidence are not explicitly separable.
+- Minimum fix:
+  - add a first-class `EvidenceSliceReader`
+  - make slice dimensions explicit in code and docs
 
 ## High
 
@@ -61,7 +85,7 @@ Status values:
 
 - Status: `open`
 - Evidence:
-  - [controller.ts](/Users/fire/Desktop/SpireAgent/src/agent/controller.ts:292)
+  - [controller.ts](../../src/agent/controller.ts#L292)
 - Problem:
   - Live additive prompt shaping, provider call, validation, memory side-effects, execution, and recording remain in one orchestration file.
 - Risk:
@@ -73,8 +97,8 @@ Status values:
 
 - Status: `open`
 - Evidence:
-  - [BUDGET_GOVERNANCE.md](/Users/fire/Desktop/SpireAgent/BUDGET_GOVERNANCE.md:58)
-  - [llm.ts](/Users/fire/Desktop/SpireAgent/src/agent/llm.ts:1)
+  - [BUDGET_GOVERNANCE.md](../../BUDGET_GOVERNANCE.md#L58)
+  - [llm.ts](../../src/agent/llm.ts#L1)
 - Problem:
   - Budget language is broader than current implementation.
   - Recovery policy and readiness policy are still too fused to P8 workspace/shadow semantics.

@@ -65,6 +65,21 @@ under the fixed outer shell of validation, execution safety, rollback, protected
 - `SkillProposal`
 - `ScaffoldPolicyProposal`
 
+`ReverseScaffoldFeedback` is adjacent but not identical to a proposal family.
+
+It should begin as:
+
+- telemetry
+- replay/review evidence
+- proposal seed material
+
+It should not begin as:
+
+- a second-pass live controller
+- automatic prompt expansion
+- automatic budget escalation
+- direct stable policy mutation
+
 Each proposal must include at least:
 
 - scope
@@ -126,6 +141,14 @@ Purpose:
 - turn repeated evidence into typed pending proposals
 - avoid direct mutation
 - reject vague advice that cannot be tied to evidence, scope, risk, and validation
+
+### `ReverseScaffoldFeedback`
+
+Purpose:
+
+- let the LLM report that the scaffold itself omitted information, candidates, memory, compression, classification, or budget framing
+- capture this as telemetry and proposal-seed material
+- avoid turning ad hoc human patching into the default repair loop
 
 ### `StablePromotionGate`
 
@@ -283,6 +306,12 @@ Allowed:
 Goal:
 
 - generate proposal candidates from replay/review evidence
+- capture weak reverse-scaffold feedback as structured telemetry
+
+Scope clarification:
+
+- P9.2 is the right place to introduce typed reverse-scaffold feedback
+- P9.2 is not the right place to introduce automatic second-pass prompting or live self-recompilation of context
 
 ### P9.3 Evidence Slicing
 

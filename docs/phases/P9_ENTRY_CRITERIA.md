@@ -24,6 +24,7 @@ P9 should start only when the project is ready to shift from live-scaffold expan
   Current state:
   legacy finalize stable writes are blocked by default and audited, but the legacy path still exists and must be explicitly classified before promotion work starts.
 - Define typed pending proposal schema.
+- Define typed reverse-scaffold feedback schema and keep it telemetry/proposal-seed only at first.
 - Define promotion criteria and rollback fields before any stable proposal may be applied.
 - Define evidence-slice rules so mixed revision, mixed budget, and console fixture data cannot silently qualify stable promotion.
 - Accept that prediction attribution starts weak, not precise, and encode that in schema and review flow.

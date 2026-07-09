@@ -1,5 +1,7 @@
 # STS2 故障机器人 Agent 速查
 
+> Historical archive only. This document predates the current P8/P9 closeout and should not be treated as active architecture, current strategy truth, or stable derived knowledge.
+
 资料检索日期：2026-06-29。面向当前 Early Access 版本的 AI 决策，不写成百科，写成“看到就怎么做”的短句规则。游戏仍在平衡，遇到补丁后优先相信当前牌面数值。
 
 ## 总纲
@@ -187,4 +189,3 @@
 - 已经有 2 张爪或 `All for One`：0 费牌优先级上调。
 - 已经有集中：冰球、球位、弹幕、冷却剂优先级上调。
 - 没有集中：不要裸抓太多球位牌。
-

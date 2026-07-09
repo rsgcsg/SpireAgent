@@ -42,6 +42,12 @@ ProtectedPathGate
 + minimal prompt/context/budget telemetry
 ```
 
+Execution ordering note:
+
+- `ReverseScaffoldFeedback` is strategically necessary, but it should enter P9 first as telemetry and proposal-seed material, not as an automatic live second-pass controller.
+- `Context OS` and `Compute/Budget OS` are real long-term targets, but P12/P13 should not be pulled forward by quietly rewriting current prompt assembly or budget behavior during P9.
+- For the execution-first ordering, read `docs/phases/P9_P13_EXECUTION_ROADMAP.md`.
+
 The long-term maturity route is now best understood as:
 
 ```text
@@ -1310,4 +1316,3 @@ This is a self-optimizing Compute/Budget OS demo.
 ## 19. Enduring One-Sentence Plan
 
 Build a real-game Slay the Spire 2 LLM agent where the LLM remains the core strategic player, the local system acts as a predictive cognitive scaffold, P8/P8.5 establishes safe explicit-whitelist live execution, P9 turns replayable evidence into guarded proposals, P10 makes that learning loop continuous, P11 lets the agent design curriculum and scaffold experiments, P12 makes context assembly learnable, and P13 makes compute allocation learnable under hard budget caps.
-

@@ -9,9 +9,20 @@
 
 ## 0. 这份文档的目的
 
-当前项目已经完成 Phase 0、Phase 1、Phase 2 数据闭环、Phase 2.5 offline eval runner、Phase 2.6 eval WARN 分类/降噪。当前 TypeScript agent 已能通过 install、tsc、smoke、check、review、replay/eval、collector、dry-run 等基本验证，并能在本地 MCP 在线时进行真实短跑和长跑记录。
+当前项目已经完成从早期 data loop、shadow scaffold、P8 workspace 到 P8.5 explicit-whitelist live scaffold MVP 的工程路径。当前 TypeScript agent 已能通过 install、tsc、smoke、check、review、replay/eval、collector、dry-run 等基本验证，并能在本地 MCP 在线时进行受控 live additive 运行。
 
-当前项目正在进入 Phase 3.0：根据新的 `PROJECT_NORTH_STAR.md`，把已有 transition/replay/eval 工程闭环升级为 LLM-centered predictive cognitive scaffold。第一阶段只做低风险、可测试、可回滚的对象锚定和渐进迁移，不大拆 controller，不改变 live 执行语义。
+当前项目不再处于“进入 Phase 3.0”的状态。当前真实阶段是：
+
+```text
+P8/P8.5 closeout + early P9.0 hardening
+```
+
+也就是：
+
+- explicit-whitelist live scaffold 已经成立
+- wildcard broad live 仍然禁止
+- proposal-driven guarded learning 还没有开始真正实现
+- 当前主线是补齐 P9.0/P9.1 前置护栏，而不是继续扩 live
 
 后续任何改变系统目标、schema、capability、memory、derived、reward、LLM 输出格式、collector/replay/eval 行为的代码修改，都必须同步更新对应权威文档。文档不能只在聊天记录里更新。
 
@@ -30,12 +41,12 @@
 - 定义哪些文档应该保留、合并、redirect 或 archive。
 - 定义 mod、adapter、本地 agent、data/memory/learning 的边界。
 - 定义当前和未来外部依赖的处理规则。
-- 定义 Phase 1 到 Phase 10 的长期路线。
+- 定义 P0 到 P13 的长期路线。
 - 给出下一轮 Codex 的长期 prompt，让它能自主阅读、审计、检索、构建、整理项目文档索引和项目架构。
 
-## 0.1 P1-P10 的强约束
+## 0.1 P0-P13 的强约束
 
-P1 到 P10 不是任务打卡表，而是 North Star 的成熟度路线：让 LLM 始终是 strategic player，本地系统作为 predictive cognitive scaffold，逐步增强它的 see / remember / imagine / deliberate / execute / replay / learn 能力。
+P0 到 P13 不是任务打卡表，而是 North Star 的成熟度路线：让 LLM 始终是 strategic player，本地系统作为 predictive cognitive scaffold，逐步增强它的 see / remember / imagine / deliberate / execute / replay / learn 能力。
 
 阶段推进的硬约束：
 
@@ -43,8 +54,11 @@ P1 到 P10 不是任务打卡表，而是 North Star 的成熟度路线：让 LL
 - P3 到 P6：把 `StrategicImpression`、`MemoryActivation`、`CandidateFuture`、`PredictionErrorRecord` 做成 shadow 可观测、可测试对象。
 - P7：把 prediction-error attribution 变成 evidence-backed learning proposals，但不自动学习。
 - P8：才开始让 `DeliberationPacket` 小范围进入 LLM strategic workspace，必须有 feature flag，并保留 legacy prompt。
-- P9：才考虑 guarded stable memory / derived / scoring updates，必须有证据、阈值、rollback。
-- P10：形成完整 guarded learning loop。
+- P9：才开始 protected proposal-driven guarded learning，先有 protected-path、typed proposal、weak attribution、evidence slicing、shadow apply、promotion gate。
+- P10：形成连续 guarded learning loop。
+- P11：让系统提出 curriculum 和 meta-scaffold experiment。
+- P12：让 Context OS / Prompt Compiler 逐渐成为可学习 soft shell。
+- P13：让 Compute/Budget OS 在硬上限内逐渐成为可学习 soft shell。
 
 任何推进都必须回答以下问题：
 
@@ -1005,7 +1019,7 @@ Future event-log mod:
 
 ## 12. Phase 路线
 
-当前正式路线是 Phase 0 到 Phase 10。Phase 10 的目标不是“自动训练一个黑箱 bot”，而是形成 Guarded Learning Loop：每次学习都必须来自可回放 transition、明确 prediction error、证据充分的 consolidation proposal、受保护的稳定更新和可回滚记录。
+当前正式路线是 Phase 0 到 Phase 13。P10 的目标不是“自动训练一个黑箱 bot”，而是形成 Guarded Learning Loop：每次学习都必须来自可回放 transition、明确 prediction error、证据充分的 consolidation proposal、受保护的稳定更新和可回滚记录。P11-P13 继续扩展 curriculum、Context OS、Compute/Budget OS，但仍然受 P9 的护栏约束。
 
 ### Phase 0：已完成
 
@@ -1289,10 +1303,10 @@ npm run agent:run -- --max-ticks 5 --delay-ms 120
 
 # 16. 下一步长期 Codex Prompt
 
-下面这段 prompt 是历史 Phase 1 交接参考，不再是当前执行指令。当前执行方向以 `PROJECT_NORTH_STAR.md`、`LLM_HANDOFF.md`、`PROJECT_PLAN.md` 和本文件前文的 Phase 3.0 说明为准。
+下面这段 prompt 是历史 Phase 1 交接参考，不再是当前执行指令。当前执行方向以 `PROJECT_NORTH_STAR.md`、`docs/04_CURRENT_STATUS.md`、`PROJECT_PLAN.md` 和本文件前文的 P8/P9 说明为准。
 
 ```text
-你现在在 /Users/fire/Desktop/SPIREAGENT 中继续开发 Slay the Spire 2 AI agent。请不要另起项目，也不要继续只堆文档。当前 Phase 0/1/2/2.5/2.6 已经完成，仓库中已有 PROJECT_NORTH_STAR.md、PROJECT_NORTH_STAR_CHINESE.md、PROJECT_PLAN.md、ARCHITECTURE.md、EXTERNAL_DEPENDENCIES.md、GAME_IO_CAPABILITIES.md、DATA_SCHEMA.md、MEMORY_SYSTEM.md、DERIVED_KNOWLEDGE.md、AGENT_LOOP.md、COMBAT_PLAN_AND_CHECKPOINT.md、HUMAN_CAPTURE_LIMITS.md、REPLAY_AND_EVAL.md、REWARD_AND_EXPERIMENTS.md、CONTRIBUTING_OR_ENGINEERING_RULES.md 等文档。现在的任务是小步进入 Phase 3.0：把已有 transition/replay/eval 闭环升级为 LLM-centered predictive cognitive scaffold。
+你现在在这个仓库中继续开发 Slay the Spire 2 AI agent。请不要另起项目，也不要继续只堆文档。当前 Phase 0/1/2/2.5/2.6 已经完成，仓库中已有 PROJECT_NORTH_STAR.md、PROJECT_NORTH_STAR_CHINESE.md、PROJECT_PLAN.md、ARCHITECTURE.md、EXTERNAL_DEPENDENCIES.md、GAME_IO_CAPABILITIES.md、DATA_SCHEMA.md、MEMORY_SYSTEM.md、DERIVED_KNOWLEDGE.md、AGENT_LOOP.md、COMBAT_PLAN_AND_CHECKPOINT.md、HUMAN_CAPTURE_LIMITS.md、REPLAY_AND_EVAL.md、REWARD_AND_EXPERIMENTS.md、CONTRIBUTING_OR_ENGINEERING_RULES.md 等文档。现在的任务是小步进入后续阶段：把已有 transition/replay/eval 闭环继续升级为 LLM-centered predictive cognitive scaffold，而不是把这段历史 prompt 当作当前执行指令。
 
 最终目标不变：把当前项目演进成一个 LLM 作为核心战略玩家、由预测型认知脚手架增强能力的 Slay the Spire 2 agent。核心链路是 raw game state -> canonical state -> Strategic Impression / Salience -> Memory Activation -> Candidate Futures -> Deliberation Packet -> LLM strategic decision -> validated safe execution -> transition recording -> replay / evaluation / review -> prediction-error-driven learning。
 
