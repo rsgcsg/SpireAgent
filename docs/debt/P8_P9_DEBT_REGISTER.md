@@ -82,6 +82,7 @@ Status values:
 - Minimum fix:
   - keep expanding the first-class `EvidenceSliceReader`
   - make slice dimensions explicit in code and docs
+  - keep stable-learning promotion disabled until proposal/promotion gates exist
 
 ## High
 
@@ -145,9 +146,14 @@ Status values:
 
 ### `console_fixture_pollution_risk`
 
-- Status: `open`
+- Status: `in_progress`
 - Problem:
   - Console-assisted runs are useful for reproduction but must stay out of stable learning evidence.
+- Current state:
+  - `EvidenceSliceReader` now reports promotion provenance eligibility separately from general replay visibility.
+  - Console/debug/fixture, human-observed, snapshot-only, and unknown-provenance transitions remain visible, but are counted as promotion-excluded evidence.
+- Remaining risk:
+  - Future P9 promotion code must consume this eligibility layer instead of reinterpreting raw latest windows.
 
 ### `run_modes_explainer_missing`
 

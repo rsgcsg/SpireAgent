@@ -3420,13 +3420,20 @@ try {
   assert.equal(evidenceSliceSummary.mixedRevisionWindow, true);
   assert.equal(evidenceSliceSummary.mixedBudgetWindow, true);
   assert.equal(evidenceSliceSummary.consoleDebugOrFixtureTransitions, 1);
+  assert.equal(evidenceSliceSummary.promotionEvidence.eligibleTransitions, 1);
+  assert.equal(evidenceSliceSummary.promotionEvidence.excludedTransitions, 1);
+  assert.equal(evidenceSliceSummary.promotionEvidence.exclusionReasonCounts.console_debug_or_fixture, 1);
   const promotionSlice = evidenceSliceSummary.slices.find((slice) => slice.kind === "stable_learning_promotion");
   assert.equal(promotionSlice?.promotionUseAllowed, false);
+  assert.equal(promotionSlice?.transitions, 1);
   assert.ok(promotionSlice?.reasons.includes("p9_promotion_not_implemented"));
   assert.ok(promotionSlice?.reasons.includes("mixed_revision_window"));
   assert.ok(promotionSlice?.reasons.includes("mixed_budget_window"));
   assert.ok(promotionSlice?.reasons.includes("console_debug_or_fixture_present"));
+  assert.ok(promotionSlice?.reasons.includes("promotion_evidence_exclusions_present"));
   assert.match(formatEvidenceSliceSummary(evidenceSliceSummary), /promotionAllowed=false/);
+  assert.match(formatEvidenceSliceSummary(evidenceSliceSummary), /promotionEligible=1/);
+  assert.match(formatEvidenceSliceSummary(evidenceSliceSummary), /promotionExcluded=1/);
 
   const focusedFreshSlices = buildReplayFocusedShadowSlices([
     {

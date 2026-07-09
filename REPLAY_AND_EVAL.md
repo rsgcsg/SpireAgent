@@ -131,6 +131,11 @@ As of P8, replay/eval/review also report the DeliberationPacket strategic worksp
   - `live_applied_rollout`: decisions actually executed through explicit-whitelist additive live, not stable-learning proof
   - `stable_learning_promotion`: future P9 promotion evidence, currently always `promotionUseAllowed=false`
 - Evidence slices report source, capture mode, decision class, revision tag, budget window, provider source, live mode, and provenance counts. Mixed revision/budget windows, console/debug/fixture markers, unknown provenance, and the absence of a P9 promotion engine all keep promotion disabled.
+- Evidence slices also report future-promotion provenance eligibility separately from general visibility:
+  - `promotionEvidence.eligibleTransitions`: organic agent runtime transitions that are not marked console/debug/fixture, human-observed, snapshot-only, or unknown provenance.
+  - `promotionEvidence.excludedTransitions`: transitions still visible in replay/eval/review, but ineligible for future stable-promotion evidence.
+  - `promotionEvidence.exclusionReasonCounts`: the reason a transition was excluded, such as `console_debug_or_fixture`, `human_observed`, `snapshot_only`, or `unknown`.
+  These fields are read-only labels. They do not implement promotion, do not delete historical data, and do not change live behavior.
 - This reader is intentionally read-only. It does not change P8 readiness, live rollout, validation, execution, proposal status, or memory/derived/strategy writes.
 
 P8 disagreement is a review signal, not an eval failure. Invalid structured output or missing candidate is a WARN-level engineering signal unless it corrupts transition data or live validation.
@@ -139,6 +144,7 @@ Console-assisted fixture runs:
 
 - The STS2 console can accelerate replay/eval scenario reproduction with commands such as `instant`, `travel`, `fight`, `event`, `card`, `draw`, `energy`, `gold`, `relic`, `potion`, `kill all`, `win`, and `die`.
 - Console-modified runs must be marked debug/fixture-only and excluded from real strategy baselines, win-rate analysis, stable memory evidence, derived knowledge promotion, and strategy-param updates.
+- Replay/eval/review should keep console/debug/fixture transitions visible, but they must be counted as promotion-excluded evidence. They may help reproduce bugs or inspect a scaffold, but they cannot satisfy future P9 stable-promotion slices by themselves.
 - Console fixtures are useful for P8 workspace readiness sampling, shop/event/combat/death boundary replay, prediction attribution fixtures, and adapter state mismatch debugging.
 - See `STS2_CONSOLE_DEBUG_RUNBOOK.md` for command groups, risks, and workflows.
 

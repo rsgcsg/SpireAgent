@@ -167,7 +167,7 @@ Legend:
 | D-006 | Explicit whitelist vs wildcard reporting ambiguity | live boundary | `README.md`, `docs/runbooks/LLM_RUN_MODES.md`, `liveAppliedRollout.ts` | in_progress | high | should_fix_before_P9_if_safe | no | mini/advanced | PR-4 | Reports distinguish explicit whitelist live from wildcard-forbidden |
 | D-007 | Shadow readiness and live-applied rollout semantics split | readiness | `p8LiveReadiness.ts`, `liveAppliedRollout.ts`, `REPLAY_AND_EVAL.md` | in_progress | critical | must_fix_before_formal_P9 | yes | advanced | PR-4 | Replay/eval/review expose separate evidence purposes without conflicting gates |
 | D-008 | EvidenceSliceReader read-only surface started | evidence | `reader.ts`, `evidenceBudget.ts`, P9 docs | in_progress | critical | must_fix_before_formal_P9 | yes | advanced | PR-4 | First-class read-only slice dimensions for run/revision/budget/live/shadow/console |
-| D-009 | Console/debug/fixture evidence pollution | evidence | `REPLAY_AND_EVAL.md`, console guidance | open | critical | must_fix_before_formal_P9 | yes | advanced | PR-5 | Console/debug evidence is labeled/excludable from promotion slices |
+| D-009 | Console/debug/fixture evidence pollution | evidence | `REPLAY_AND_EVAL.md`, console guidance | in_progress | critical | must_fix_before_formal_P9 | yes | advanced | PR-5 | Console/debug evidence is labeled/excludable from promotion slices |
 | D-010 | LearningProposal schema/store missing | P9 schema | `domain/types.ts`, `DATA_SCHEMA.md` | open | critical | P9.1_entry | yes | advanced | PR-7 | Typed proposal family, append-only pending store, no apply path |
 | D-011 | ReverseScaffoldFeedback schema/store missing | P9 schema | P9 docs, review signals | open | high | P9.1_entry | no, but needed early | advanced | PR-8 | Typed telemetry/proposal-seed surface, no live behavior change |
 | D-012 | Weak attribution not encoded | attribution | P9 docs, `cognitiveScaffold.ts` | open | critical | must_fix_before_formal_P9 | yes | advanced | PR-9 | Proposals require suspected cause, confidence, alternatives, counterexample need |
@@ -254,11 +254,19 @@ Minimum repair:
 Why it matters:
 
 - Console-assisted runs are valuable for reproducing scenarios, but they are not organic strategy evidence.
+- Debug evidence should remain inspectable, but its provenance must keep it out of future stable-promotion eligibility.
 
 Minimum repair:
 
 - label or infer debug/fixture provenance
 - block those slices from stable-promotion eligibility
+- report organic promotion-eligible transition counts separately from promotion-excluded transition counts
+
+Current state:
+
+- `EvidenceSliceReader` exposes `promotionEvidence.eligibleTransitions`, `promotionEvidence.excludedTransitions`, and `promotionEvidence.exclusionReasonCounts`.
+- Console/debug/fixture, human-observed, snapshot-only, and unknown-provenance transitions remain visible but cannot satisfy future stable-promotion slices.
+- Stable promotion itself remains unimplemented and disabled.
 
 ### D-010 LearningProposal Schema/Store
 

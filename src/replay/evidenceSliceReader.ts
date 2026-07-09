@@ -24,7 +24,14 @@ export interface EvidenceSliceSummary {
   mixedBudgetWindow: boolean;
   consoleDebugOrFixtureTransitions: number;
   unknownProvenanceTransitions: number;
+  promotionEvidence: EvidencePromotionEligibilitySummary;
   slices: EvidenceSlice[];
+}
+
+export interface EvidencePromotionEligibilitySummary {
+  eligibleTransitions: number;
+  excludedTransitions: number;
+  exclusionReasonCounts: Record<string, number>;
 }
 
 export interface EvidenceSlice {
@@ -51,12 +58,14 @@ export function buildEvidenceSliceSummary(transitions: JsonRecord[]): EvidenceSl
   const mixedBudgetWindow = Object.keys(removeUnknown(dimensions.budgetWindowCounts)).length > 1;
   const consoleDebugOrFixtureTransitions = dimensions.provenanceCounts.console_debug_or_fixture ?? 0;
   const unknownProvenanceTransitions = dimensions.provenanceCounts.unknown ?? 0;
+  const promotionEvidence = buildPromotionEvidenceSummary(transitions);
   const promotionReasons = promotionIneligibilityReasons({
     transitions: transitions.length,
     mixedRevisionWindow,
     mixedBudgetWindow,
     consoleDebugOrFixtureTransitions,
-    unknownProvenanceTransitions
+    unknownProvenanceTransitions,
+    promotionEvidence
   });
 
   return {
@@ -68,6 +77,7 @@ export function buildEvidenceSliceSummary(transitions: JsonRecord[]): EvidenceSl
     mixedBudgetWindow,
     consoleDebugOrFixtureTransitions,
     unknownProvenanceTransitions,
+    promotionEvidence,
     slices: [
       {
         kind: "shadow_readiness",
@@ -88,7 +98,7 @@ export function buildEvidenceSliceSummary(transitions: JsonRecord[]): EvidenceSl
       {
         kind: "stable_learning_promotion",
         purpose: "future P9 promotion evidence; read-only and disabled before proposal gates exist",
-        transitions: transitions.length,
+        transitions: promotionEvidence.eligibleTransitions,
         promotionUseAllowed: false,
         status: "not_promotion_eligible",
         reasons: promotionReasons
@@ -110,6 +120,9 @@ export function formatEvidenceSliceSummary(summary: EvidenceSliceSummary): strin
     `provider=${JSON.stringify(summary.dimensions.providerSourceCounts)}`,
     `liveMode=${JSON.stringify(summary.dimensions.liveModeCounts)}`,
     `provenance=${JSON.stringify(summary.dimensions.provenanceCounts)}`,
+    `promotionEligible=${summary.promotionEvidence.eligibleTransitions}`,
+    `promotionExcluded=${summary.promotionEvidence.excludedTransitions}`,
+    `promotionExclusionReasons=${JSON.stringify(summary.promotionEvidence.exclusionReasonCounts)}`,
     `mixedRevision=${summary.mixedRevisionWindow}`,
     `mixedBudget=${summary.mixedBudgetWindow}`,
     `promotionAllowed=${promotion?.promotionUseAllowed === true}`,
@@ -123,6 +136,7 @@ function promotionIneligibilityReasons(input: {
   mixedBudgetWindow: boolean;
   consoleDebugOrFixtureTransitions: number;
   unknownProvenanceTransitions: number;
+  promotionEvidence: EvidencePromotionEligibilitySummary;
 }): string[] {
   const reasons = ["p9_promotion_not_implemented"];
   if (input.transitions === 0) reasons.push("no_transitions");
@@ -130,7 +144,34 @@ function promotionIneligibilityReasons(input: {
   if (input.mixedBudgetWindow) reasons.push("mixed_budget_window");
   if (input.consoleDebugOrFixtureTransitions > 0) reasons.push("console_debug_or_fixture_present");
   if (input.unknownProvenanceTransitions > 0) reasons.push("unknown_provenance_without_first_class_marker");
+  if (input.promotionEvidence.excludedTransitions > 0) reasons.push("promotion_evidence_exclusions_present");
+  if (input.transitions > 0 && input.promotionEvidence.eligibleTransitions === 0) {
+    reasons.push("no_organic_agent_runtime_promotion_evidence");
+  }
   return reasons;
+}
+
+function buildPromotionEvidenceSummary(transitions: JsonRecord[]): EvidencePromotionEligibilitySummary {
+  return transitions.reduce<EvidencePromotionEligibilitySummary>((summary, transition) => {
+    const eligibility = transitionPromotionEligibility(transition);
+    if (eligibility.eligible) {
+      summary.eligibleTransitions += 1;
+    } else {
+      summary.excludedTransitions += 1;
+      summary.exclusionReasonCounts[eligibility.reason] = (summary.exclusionReasonCounts[eligibility.reason] ?? 0) + 1;
+    }
+    return summary;
+  }, {
+    eligibleTransitions: 0,
+    excludedTransitions: 0,
+    exclusionReasonCounts: {}
+  });
+}
+
+function transitionPromotionEligibility(transition: JsonRecord): { eligible: boolean; reason: string } {
+  const provenance = transitionProvenance(transition);
+  if (provenance === "organic_agent_runtime") return { eligible: true, reason: provenance };
+  return { eligible: false, reason: provenance };
 }
 
 function transitionSource(transition: JsonRecord): string {

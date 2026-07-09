@@ -16,6 +16,7 @@ Current closeout / next-phase pointers:
   - live/provider-originated memory updates are blocked by default
   - legacy `finalizeRun()` stable writes are blocked by default and audited to `memory/legacy-finalize-audit.jsonl`
   - replay/eval/review now expose a separate `liveAppliedRollout` summary so live facts are not forced through stale shadow-readiness semantics
+  - `EvidenceSliceReader` now keeps console/debug/fixture evidence visible while counting it as promotion-excluded rather than organic future-promotion evidence
 - This is still not proposal-driven learning:
   - there is no typed pending `LearningProposal` store
   - no promotion ledger
