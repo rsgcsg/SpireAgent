@@ -63,6 +63,26 @@ Long-term memory is updated after runs. It should record:
 
 Long-term memory is retrieved by tags. Do not dump the whole file into prompts.
 
+### Legacy Finalize Isolation
+
+The historical `finalizeRun()` path is a legacy local-learning path, not P9 proposal promotion.
+
+Default behavior:
+
+- legacy finalize stable writes are blocked by default
+- blocked attempts are appended to `memory/legacy-finalize-audit.jsonl`
+- audit entries are labeled `learningMode=legacy_local_learning`
+- audit entries explicitly set `proposalPromotion=false` and `stablePromotion=false`
+- attempted protected stable-write targets are recorded, currently `memory` and `strategy_params`
+
+Explicit opt-in behavior:
+
+- `STS2_ENABLE_LEGACY_FINALIZE_STABLE_WRITES=1` may enable the old local-learning writes for controlled local experiments
+- even when explicitly enabled, the path is audited as `legacy_finalize_explicitly_enabled`
+- explicit legacy writes are still not P9 stable promotion and must not be treated as proposal-driven guarded learning
+
+P9 stable learning must use typed pending proposals, evidence gates, promotion ledger, version diff, and rollback. It must not reuse legacy finalize as a shortcut.
+
 ## Memory Activation
 
 Each strategic decision should eventually produce a `MemoryActivation` record:

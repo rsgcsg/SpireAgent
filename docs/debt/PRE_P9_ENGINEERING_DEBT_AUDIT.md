@@ -163,7 +163,7 @@ Legend:
 | D-002 | Stale archive visibility | docs | `docs/archive/legacy/*.md` | in_progress | low | should_fix_before_P9_if_safe | no | mini | PR-1 | Archive docs clearly historical; no current-status claims |
 | D-003 | Hard-shell safety vocabulary not centralized enough | safety | North Star, P9 docs, protected gate docs | open | high | should_fix_before_P9_if_safe | no | advanced | PR-2 | P9 PR template uses hard-shell checklist; no runtime behavior weakened |
 | D-004 | Protected-path surface incomplete | protected path | `src/agent/protectedPathGate.ts`, `src/agent/controller.ts` | in_progress | critical | must_fix_before_formal_P9 | yes | advanced | PR-2 | Live/provider memory writes blocked by default; future stable targets enumerated; smoke covers blocked provider writes |
-| D-005 | Legacy finalize/local learning path not fully classified | memory | `src/agent/memory.ts` | in_progress | critical | must_fix_before_formal_P9 | yes | advanced | PR-3 | Legacy finalize stable writes blocked or labeled; audit log retained; rollback safe |
+| D-005 | Legacy finalize/local learning path classified | memory | `src/agent/memory.ts` | in_progress | critical | must_fix_before_formal_P9 | yes | advanced | PR-3 | Legacy finalize stable writes blocked by default or explicitly legacy-labeled; audit log retained; rollback safe |
 | D-006 | Explicit whitelist vs wildcard reporting ambiguity | live boundary | `README.md`, `docs/runbooks/LLM_RUN_MODES.md`, `liveAppliedRollout.ts` | in_progress | high | should_fix_before_P9_if_safe | no | mini/advanced | PR-4 | Reports distinguish explicit whitelist live from wildcard-forbidden |
 | D-007 | Shadow readiness and live-applied rollout semantics split | readiness | `p8LiveReadiness.ts`, `liveAppliedRollout.ts`, `REPLAY_AND_EVAL.md` | in_progress | critical | must_fix_before_formal_P9 | yes | advanced | PR-4 | Replay/eval/review expose separate evidence purposes without conflicting gates |
 | D-008 | EvidenceSliceReader missing | evidence | `reader.ts`, `evidenceBudget.ts`, P9 docs | open | critical | must_fix_before_formal_P9 | yes | advanced | PR-4 | First-class read-only slice dimensions for run/revision/budget/live/shadow/console |
@@ -216,7 +216,7 @@ Minimum repair:
 Why it matters:
 
 - `finalizeRun()` historically wrote long-term memory and strategy params.
-- Even if blocked now, it remains a semantic trap unless marked as legacy local learning or routed through the same protected path.
+- This path must remain impossible to confuse with P9 proposal promotion.
 
 Minimum repair:
 

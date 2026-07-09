@@ -23,7 +23,7 @@ P9 should start only when the project is ready to shift from live-scaffold expan
   - isolate
   - or gate behind explicit legacy-local-learning labeling
   Current state:
-  legacy finalize stable writes are blocked by default and audited, but the legacy path still exists and must be explicitly classified before promotion work starts.
+  legacy finalize stable writes are blocked by default, audited, and labeled as `legacy_local_learning`. If explicitly enabled, the path is still audited as legacy finalize and remains separate from P9 proposal promotion.
 - Define typed pending proposal schema.
 - Define typed reverse-scaffold feedback schema and keep it telemetry/proposal-seed only at first.
 - Define promotion criteria and rollback fields before any stable proposal may be applied.

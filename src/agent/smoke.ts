@@ -1480,7 +1480,44 @@ assert.ok(!rewardCandidates.some((candidate) => candidate.kind === "proceed"));
     const reward = memory.finalizeRun(rewardState);
     assert.ok(reward.score <= 1000);
     assert.equal(memory.longTerm.runs.length, 0);
-    assert.equal(existsSync(path.join(memoryDir, "legacy-finalize-audit.jsonl")), true);
+    const legacyFinalizeAuditPath = path.join(memoryDir, "legacy-finalize-audit.jsonl");
+    assert.equal(existsSync(legacyFinalizeAuditPath), true);
+    const blockedAudit = JSON.parse(readFileSync(legacyFinalizeAuditPath, "utf8").trim().split("\n").at(-1) ?? "{}");
+    assert.equal(blockedAudit.learningMode, "legacy_local_learning");
+    assert.equal(blockedAudit.proposalPromotion, false);
+    assert.equal(blockedAudit.stablePromotion, false);
+    assert.equal(blockedAudit.blockedStableWrites, true);
+    assert.deepEqual(blockedAudit.blockedStableWriteTargets, ["memory", "strategy_params"]);
+
+    process.env.STS2_ENABLE_LEGACY_FINALIZE_STABLE_WRITES = "1";
+    const enabledMemory = new MemoryManager(memoryDir);
+    enabledMemory.updateFromState(rewardState);
+    enabledMemory.recordDecision({
+      id: "decision-test-enabled",
+      at: new Date(0).toISOString(),
+      screen: rewardState.screen,
+      stateSummary: "reward state",
+      chosen: "Take card",
+      chosenBy: "local",
+      route: "local_confident",
+      routeReasons: [],
+      llm: { wanted: false, called: false, available: false, outcome: "not_needed" },
+      candidateCount: rewardCandidates.length,
+      topCandidate: { id: rewardCandidates[0]!.id, label: rewardCandidates[0]!.label, score: 1, confidence: 0.5 },
+      score: 1,
+      confidence: 0.5,
+      reasons: [],
+      candidates: []
+    });
+    enabledMemory.finalizeRun(rewardState);
+    assert.equal(enabledMemory.longTerm.runs.length, 1);
+    const enabledAudit = JSON.parse(readFileSync(legacyFinalizeAuditPath, "utf8").trim().split("\n").at(-1) ?? "{}");
+    assert.equal(enabledAudit.mode, "legacy_finalize_explicitly_enabled");
+    assert.equal(enabledAudit.learningMode, "legacy_local_learning");
+    assert.equal(enabledAudit.proposalPromotion, false);
+    assert.equal(enabledAudit.stablePromotion, false);
+    assert.equal(enabledAudit.blockedStableWrites, false);
+    assert.deepEqual(enabledAudit.appliedStableWriteTargets, ["memory", "strategy_params"]);
   } finally {
     if (previousLegacyFinalize === undefined) delete process.env.STS2_ENABLE_LEGACY_FINALIZE_STABLE_WRITES;
     else process.env.STS2_ENABLE_LEGACY_FINALIZE_STABLE_WRITES = previousLegacyFinalize;

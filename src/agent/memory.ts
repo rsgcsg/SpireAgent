@@ -144,6 +144,25 @@ export class MemoryManager {
     const reward = scoreRun(state, this.run);
     const summary = summarizeRun(state, this.run, reward);
     const gate = evaluateLegacyFinalizeStableWriteGate();
+    const auditBase = {
+      schemaVersion: 1,
+      at: nowIso(),
+      runId: this.run.runId,
+      source: "legacy_finalize_run",
+      learningMode: "legacy_local_learning",
+      proposalPromotion: false,
+      stablePromotion: false,
+      result: reward.result,
+      score: reward.score,
+      summary,
+      reasons: reward.reasons,
+      gate: gate.gate,
+      gateFlag: gate.flag,
+      gateAllowed: gate.allowed,
+      gateReasons: gate.reasons,
+      attemptedStableWriteTargets: gate.attemptedTargets,
+      protectedStableWriteTargets: gate.protectedTargets
+    };
 
     if (gate.allowed) {
       this.longTerm.runs.push({
@@ -163,16 +182,18 @@ export class MemoryManager {
       this.updateLessons(reward);
       this.updateStrategyParams(reward);
       this.updateExperience(reward);
+      appendJsonl(this.legacyFinalizeAuditPath, {
+        ...auditBase,
+        blockedStableWrites: false,
+        appliedStableWriteTargets: gate.attemptedTargets,
+        mode: "legacy_finalize_explicitly_enabled"
+      });
     } else {
       appendJsonl(this.legacyFinalizeAuditPath, {
-        at: nowIso(),
-        runId: this.run.runId,
-        result: reward.result,
-        score: reward.score,
-        summary,
-        reasons: reward.reasons,
+        ...auditBase,
         blockedStableWrites: true,
-        gateReasons: gate.reasons,
+        blockedStableWriteTargets: gate.attemptedTargets,
+        appliedStableWriteTargets: [],
         mode: "legacy_finalize_blocked"
       });
     }
