@@ -648,6 +648,30 @@ export interface LearningProposalReviewEvent {
   notes?: string;
 }
 
+export type LearningProposalReviewDecisionKind = "approve" | "reject" | "expire";
+
+export interface LearningProposalReviewDecision {
+  schemaVersion: number;
+  id: string;
+  proposalId: string;
+  decision: LearningProposalReviewDecisionKind;
+  reviewer: "human" | "agent" | "system" | string;
+  notes: string;
+  createdAt: string;
+  proposalSnapshot: {
+    status: LearningProposalStatus | string;
+    type?: LearningProposalType | string;
+    targetLayer?: string;
+    targetObject?: string;
+    actionable: boolean;
+    missingRequiredFields: string[];
+  };
+  reviewScope: "audit_only";
+  proposalMutationEnabled: false;
+  applyPathEnabled: false;
+  stablePromotionEnabled: false;
+}
+
 export interface LearningProposalWeakAttribution {
   suspectedCause: string;
   confidence: number;

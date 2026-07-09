@@ -58,6 +58,7 @@ Status values:
 - Resolution:
   - `src/domain/types.ts` defines typed proposal families, weak attribution, promotion criteria, rollback, protected-path impact, and review history.
   - `src/learning/proposals.ts` appends and reads `learning-proposals.jsonl` without any apply or promotion path.
+  - `learning-proposal-review-decisions.jsonl` records audit-only `approve`, `reject`, and `expire` decisions without mutating proposals.
 
 ### `reverse_scaffold_feedback_schema_missing`
 
@@ -143,10 +144,10 @@ Status values:
 
 ### `proposal_vagueness_risk`
 
-- Status: `open`
+- Status: `closed`
 - Problem:
   - LLM-generated proposals can easily collapse into non-actionable advice.
-- Minimum fix:
+- Resolution:
   - require evidence, scope, counterexample handling, risk, expected effect, promotion criteria, and rollback before non-draft status
 
 ## Medium

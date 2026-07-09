@@ -98,30 +98,27 @@ Still missing:
 
 Current `ConsolidationRecord` is useful P7 evidence.
 
-It is not enough for P9 because it does not yet provide:
+It was not enough for P9 because it did not provide:
 
 - proposal family typing
-- proposal lifecycle strong enough for promotion
 - weak-attribution fields
 - anti-vague-proposal enforcement
 - protected-path impact declaration
+- audit-only review decisions
 - promotion ledger linkage
 
-### 4. Reverse scaffold feedback is still missing as a typed object
+Current state:
+
+- typed proposals, weak-attribution fields, anti-vague validation, protected-path impact declarations, and audit-only review-decision ledger entries now exist
+- proposal lifecycle is still not strong enough for promotion because shadow applicator, stable promotion ledger, rollback snapshots, and retrieval integration do not exist
+
+### 4. Reverse scaffold feedback exists as typed telemetry
 
 The idea is correct and necessary.
 
-But right now the codebase has:
+The codebase now has typed `ReverseScaffoldFeedback` plus an append-only run store.
 
-- review signals
-- cue attribution
-- proposal-only candidate/template signals
-
-It does not yet have:
-
-- a typed `ReverseScaffoldFeedback`
-- a store for it
-- a rule for how it feeds proposal generation without changing live behavior
+It remains telemetry/proposal-seed material only. It still does not feed an automatic proposal generator or change live behavior.
 
 ### 5. Evidence slicing has started, but it is not yet promotion-grade
 
@@ -209,8 +206,9 @@ Current state:
 
 - typed `LearningProposal` schema and append-only `learning-proposals.jsonl` store have started
 - typed `ReverseScaffoldFeedback` schema and append-only `reverse-scaffold-feedback.jsonl` telemetry have started
-- replay/eval/review expose both surfaces
-- `npm run learning:proposals` provides read-only summary/list/show/filter inspection
+- audit-only `learning-proposal-review-decisions.jsonl` ledger has started
+- replay/eval/review expose proposal, review-decision, and reverse-feedback surfaces
+- `npm run learning:proposals` provides proposal/reverse-feedback inspection plus audit-only `approve`, `reject`, and `expire` review decisions
 - anti-vague validation keeps incomplete proposals in `draft` or `rejected` rather than actionable pending review
 - there is still no apply path, stable promotion, or live behavior change
 
@@ -479,12 +477,11 @@ The following docs should stay aligned with this roadmap:
 
 ## Honest Current Answer
 
-The project is ready to continue P9.1 read-only proposal infrastructure, but it is not ready for proposal application or stable learning.
+The project is ready to continue from P9.1 audit-only proposal infrastructure toward P9.2 weak attribution and proposal generation, but it is not ready for proposal application or stable learning.
 
 The remaining blockers before any proposal can affect future decisions are:
 
 - incomplete future promotion surface around protected-path hardening
-- no proposal review-decision ledger
 - no shadow applicator
 - no promotion-grade canonical `EvidenceSliceReader`
 - no stable promotion ledger model

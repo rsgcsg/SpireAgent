@@ -21,9 +21,12 @@ import { buildWorkspaceDecisionClassQuality, formatWorkspaceDecisionClassQuality
 import { assessP8LiveReadiness, formatP8LiveReadinessAssessment } from "./p8LiveReadiness.js";
 import {
   buildLearningProposalSurface,
+  buildLearningProposalReviewDecisionSurface,
   buildReverseScaffoldFeedbackSurface,
   formatLearningProposalSurface,
+  formatLearningProposalReviewDecisionSurface,
   formatReverseScaffoldFeedbackSurface,
+  readLearningProposalReviewDecisions,
   readLearningProposals,
   readReverseScaffoldFeedback
 } from "../learning/proposals.js";
@@ -49,6 +52,7 @@ async function main(): Promise<void> {
   const evidenceSlices = buildEvidenceSliceSummary(run.transitions as unknown as JsonRecord[]);
   const budgetGovernance = buildBudgetGovernanceSummary(run.transitions as unknown as JsonRecord[]);
   const learningProposalSurface = buildLearningProposalSurface(readLearningProposals(run.runDir));
+  const learningProposalReviewDecisionSurface = buildLearningProposalReviewDecisionSurface(readLearningProposalReviewDecisions(run.runDir));
   const reverseScaffoldFeedbackSurface = buildReverseScaffoldFeedbackSurface(readReverseScaffoldFeedback(run.runDir));
   console.log(`Run: ${path.basename(run.runDir)}`);
   console.log(`Transitions: ${run.transitions.length}`);
@@ -60,6 +64,7 @@ async function main(): Promise<void> {
   console.log(`Evidence slices: ${formatEvidenceSliceSummary(evidenceSlices)}`);
   console.log(`Budget governance: ${formatBudgetGovernanceSummary(budgetGovernance)}`);
   console.log(`Learning proposal surface: ${formatLearningProposalSurface(learningProposalSurface)}`);
+  console.log(`Learning proposal review decisions: ${formatLearningProposalReviewDecisionSurface(learningProposalReviewDecisionSurface)}`);
   console.log(`Reverse scaffold feedback: ${formatReverseScaffoldFeedbackSurface(reverseScaffoldFeedbackSurface)}`);
   console.log(`Workspace quality by class: ${formatWorkspaceDecisionClassQuality(workspaceDecisionClassQuality)}`);
   console.log(`Consolidation proposal surface: ${formatReplayConsolidationProposalSurface(proposalSurface)}`);

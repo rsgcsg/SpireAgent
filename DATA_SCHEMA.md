@@ -177,9 +177,21 @@ P9 guarded learning direction:
 - Learning proposals also carry weak-attribution fields: `suspectedCause`, `confidence`, `counterexampleNeeded`, and `alternativeHypotheses`.
 - The append-only pending store is `data/runs/<runId>/learning-proposals.jsonl`. It is a run artifact and not a stable learning store.
 - Proposal validation is intentionally conservative. Vague proposals without concrete evidence, scope, counterexamples, expected effect, validation plan, and rollback are kept as `draft` or `rejected` rather than actionable pending proposals.
+- P9.1 also has an append-only review-decision ledger at `data/runs/<runId>/learning-proposal-review-decisions.jsonl`.
+- Review-decision records preserve:
+  - `proposalId`
+  - `decision` (`approve`, `reject`, or `expire`)
+  - `reviewer`
+  - `notes`
+  - proposal status/actionability snapshot
+  - `reviewScope="audit_only"`
+  - `proposalMutationEnabled=false`
+  - `applyPathEnabled=false`
+  - `stablePromotionEnabled=false`
+- The review-decision ledger records human/system audit judgment only. It does not mutate the proposal, apply the patch, promote stable policy, or change live/runtime behavior.
 - P9 also introduces `ReverseScaffoldFeedback` as telemetry/proposal-seed material. It records target scaffold layer, omitted or misleading information, evidence, confidence, risk, and proposal seed links.
 - Reverse feedback is stored in `data/runs/<runId>/reverse-scaffold-feedback.jsonl`. It does not change prompts, budgets, candidate generation, validation, execution, live rollout, memory, derived knowledge, strategy, skills, or scaffold policy.
-- `LearningProposal` and `ReverseScaffoldFeedback` records are non-executable until later review, shadow application, promotion gate, and rollback infrastructure exists.
+- `LearningProposal`, review-decision ledger, and `ReverseScaffoldFeedback` records are non-executable until later shadow application, promotion gate, and rollback infrastructure exists.
 
 P8 DeliberationPacket strategic workspace shadow surface:
 

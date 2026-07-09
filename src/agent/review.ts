@@ -14,7 +14,9 @@ import { buildEvidenceSliceSummary } from "../replay/evidenceSliceReader.js";
 import { buildBudgetGovernanceSummary } from "../replay/budgetGovernanceSummary.js";
 import {
   buildLearningProposalSurface,
+  buildLearningProposalReviewDecisionSurface,
   buildReverseScaffoldFeedbackSurface,
+  readLearningProposalReviewDecisions,
   readLearningProposals,
   readReverseScaffoldFeedback
 } from "../learning/proposals.js";
@@ -287,6 +289,7 @@ function summarizeCurrentRunCognitiveCoverage(runId: string): JsonRecord {
   const budgetGovernance = buildBudgetGovernanceSummary(transitions);
   const runDir = path.dirname(transitionsPath);
   const learningProposalSurface = buildLearningProposalSurface(readLearningProposals(runDir));
+  const learningProposalReviewDecisionSurface = buildLearningProposalReviewDecisionSurface(readLearningProposalReviewDecisions(runDir));
   const reverseScaffoldFeedbackSurface = buildReverseScaffoldFeedbackSurface(readReverseScaffoldFeedback(runDir));
   const consolidationStatusCounts = transitions.reduce<Record<string, number>>((counts, transition) => {
     if (!isRecord(transition.consolidation)) return counts;
@@ -357,6 +360,7 @@ function summarizeCurrentRunCognitiveCoverage(runId: string): JsonRecord {
     evidenceSlices,
     budgetGovernance,
     learningProposalSurface,
+    learningProposalReviewDecisionSurface,
     reverseScaffoldFeedbackSurface,
     averageWorkspaceInformationPreservation:
       workspacePreservationScores.length > 0

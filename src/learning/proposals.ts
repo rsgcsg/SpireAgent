@@ -4,6 +4,8 @@ import {
   DOMAIN_SCHEMA_VERSION,
   type JsonRecord,
   type LearningProposal,
+  type LearningProposalReviewDecision,
+  type LearningProposalReviewDecisionKind,
   type LearningProposalStatus,
   type ReverseScaffoldFeedback
 } from "../domain/types.js";
@@ -11,6 +13,7 @@ import { appendJsonl, isRecord, nowIso, stableId } from "../agent/utils.js";
 
 export const LEARNING_PROPOSALS_FILE = "learning-proposals.jsonl";
 export const REVERSE_SCAFFOLD_FEEDBACK_FILE = "reverse-scaffold-feedback.jsonl";
+export const LEARNING_PROPOSAL_REVIEW_DECISIONS_FILE = "learning-proposal-review-decisions.jsonl";
 
 export interface LearningProposalSurface {
   schemaVersion: number;
@@ -46,6 +49,21 @@ export interface ReverseScaffoldFeedbackSurface {
   stablePromotionEnabled: false;
 }
 
+export interface LearningProposalReviewDecisionSurface {
+  schemaVersion: number;
+  surface: "p9_learning_proposal_review_decisions";
+  decisions: number;
+  approve: number;
+  reject: number;
+  expire: number;
+  reviewerCounts: Record<string, number>;
+  proposalIds: string[];
+  examples: JsonRecord[];
+  proposalMutationEnabled: false;
+  applyPathEnabled: false;
+  stablePromotionEnabled: false;
+}
+
 export interface LearningProposalFilter {
   id?: string;
   runId?: string;
@@ -63,6 +81,13 @@ export interface ReverseScaffoldFeedbackFilter {
   targetLayer?: string;
   source?: string;
   proposalSeedId?: string;
+}
+
+export interface LearningProposalReviewDecisionFilter {
+  id?: string;
+  proposalId?: string;
+  decision?: string;
+  reviewer?: string;
 }
 
 export function createLearningProposal(input: Partial<LearningProposal>): LearningProposal {
@@ -240,6 +265,142 @@ export function summarizeLearningProposal(proposal: JsonRecord): JsonRecord {
   };
 }
 
+export function createLearningProposalReviewDecision(
+  proposals: JsonRecord[],
+  input: Partial<LearningProposalReviewDecision>
+): LearningProposalReviewDecision {
+  const proposalId = typeof input.proposalId === "string" ? input.proposalId : "";
+  if (!proposalId) throw new Error("Learning proposal review decision requires proposalId.");
+  const proposal = proposals.find((record) => record.id === proposalId);
+  if (!proposal) throw new Error(`Learning proposal review decision target not found: ${proposalId}`);
+  const decision = normalizeReviewDecision(input.decision);
+  const validation = isRecord(proposal.validation) ? proposal.validation : {};
+  const missingRequiredFields = Array.isArray(validation.missingRequiredFields)
+    ? validation.missingRequiredFields.map(String)
+    : [];
+  const actionable = validation.actionable === true;
+  if (decision === "approve" && !actionable) {
+    throw new Error(`Cannot record approve decision for non-actionable proposal: ${proposalId}`);
+  }
+  const notes = typeof input.notes === "string" ? input.notes.trim() : "";
+  if (!notes) throw new Error("Learning proposal review decision requires notes.");
+  return {
+    schemaVersion: DOMAIN_SCHEMA_VERSION,
+    id: typeof input.id === "string" ? input.id : stableId("learning-proposal-review-decision"),
+    proposalId,
+    decision,
+    reviewer: typeof input.reviewer === "string" ? input.reviewer : "human",
+    notes,
+    createdAt: typeof input.createdAt === "string" ? input.createdAt : nowIso(),
+    proposalSnapshot: {
+      status: stringValue(proposal.status, "unknown"),
+      type: typeof proposal.type === "string" ? proposal.type : undefined,
+      targetLayer: typeof proposal.targetLayer === "string" ? proposal.targetLayer : undefined,
+      targetObject: typeof proposal.targetObject === "string" ? proposal.targetObject : undefined,
+      actionable,
+      missingRequiredFields
+    },
+    reviewScope: "audit_only",
+    proposalMutationEnabled: false,
+    applyPathEnabled: false,
+    stablePromotionEnabled: false
+  };
+}
+
+export function appendLearningProposalReviewDecision(
+  runDir: string,
+  proposals: JsonRecord[],
+  input: Partial<LearningProposalReviewDecision>
+): LearningProposalReviewDecision {
+  const decision = createLearningProposalReviewDecision(proposals, input);
+  appendJsonl(path.join(runDir, LEARNING_PROPOSAL_REVIEW_DECISIONS_FILE), decision);
+  return decision;
+}
+
+export function readLearningProposalReviewDecisions(runDir: string): JsonRecord[] {
+  return readJsonlIfExists(path.join(runDir, LEARNING_PROPOSAL_REVIEW_DECISIONS_FILE)).map((decision) => ({
+    ...decision,
+    sourceSurface: LEARNING_PROPOSAL_REVIEW_DECISIONS_FILE
+  }));
+}
+
+export function filterLearningProposalReviewDecisions(
+  decisions: JsonRecord[],
+  filter: LearningProposalReviewDecisionFilter
+): JsonRecord[] {
+  return decisions.filter((decision) => {
+    if (filter.id && decision.id !== filter.id) return false;
+    if (filter.proposalId && decision.proposalId !== filter.proposalId) return false;
+    if (filter.decision && decision.decision !== filter.decision) return false;
+    if (filter.reviewer && decision.reviewer !== filter.reviewer) return false;
+    return true;
+  });
+}
+
+export function buildLearningProposalReviewDecisionSurface(decisions: unknown[]): LearningProposalReviewDecisionSurface {
+  const records = decisions.filter(isRecord);
+  const surface: LearningProposalReviewDecisionSurface = {
+    schemaVersion: DOMAIN_SCHEMA_VERSION,
+    surface: "p9_learning_proposal_review_decisions",
+    decisions: records.length,
+    approve: 0,
+    reject: 0,
+    expire: 0,
+    reviewerCounts: {},
+    proposalIds: [],
+    examples: [],
+    proposalMutationEnabled: false,
+    applyPathEnabled: false,
+    stablePromotionEnabled: false
+  };
+  const proposalIds = new Set<string>();
+  for (const record of records) {
+    const decision = stringValue(record.decision, "unknown");
+    const reviewer = stringValue(record.reviewer, "unknown");
+    count(surface.reviewerCounts, reviewer);
+    if (decision === "approve") surface.approve += 1;
+    if (decision === "reject") surface.reject += 1;
+    if (decision === "expire") surface.expire += 1;
+    if (typeof record.proposalId === "string") proposalIds.add(record.proposalId);
+    if (surface.examples.length < 5) surface.examples.push(summarizeLearningProposalReviewDecision(record));
+  }
+  surface.proposalIds = [...proposalIds].sort();
+  return surface;
+}
+
+export function formatLearningProposalReviewDecisionSurface(surface: LearningProposalReviewDecisionSurface): string {
+  return [
+    `decisions=${surface.decisions}`,
+    `approve=${surface.approve}`,
+    `reject=${surface.reject}`,
+    `expire=${surface.expire}`,
+    `reviewers=${JSON.stringify(surface.reviewerCounts)}`,
+    `proposals=${surface.proposalIds.length}`,
+    `proposalMutationEnabled=${surface.proposalMutationEnabled}`,
+    `applyPathEnabled=${surface.applyPathEnabled}`,
+    `stablePromotionEnabled=${surface.stablePromotionEnabled}`
+  ].join(" ");
+}
+
+export function summarizeLearningProposalReviewDecision(decision: JsonRecord): JsonRecord {
+  const snapshot = isRecord(decision.proposalSnapshot) ? decision.proposalSnapshot : {};
+  return {
+    id: decision.id,
+    proposalId: decision.proposalId,
+    decision: decision.decision,
+    reviewer: decision.reviewer,
+    notes: decision.notes,
+    createdAt: decision.createdAt,
+    proposalStatus: snapshot.status,
+    proposalActionable: snapshot.actionable,
+    missingRequiredFields: Array.isArray(snapshot.missingRequiredFields) ? snapshot.missingRequiredFields : [],
+    reviewScope: decision.reviewScope,
+    proposalMutationEnabled: false,
+    applyPathEnabled: false,
+    stablePromotionEnabled: false
+  };
+}
+
 export function createReverseScaffoldFeedback(input: Partial<ReverseScaffoldFeedback>): ReverseScaffoldFeedback {
   return {
     schemaVersion: DOMAIN_SCHEMA_VERSION,
@@ -414,6 +575,11 @@ function missingProposalFields(proposal: LearningProposal): string[] {
 
 function normalizeRequestedStatus(status: unknown): LearningProposalStatus {
   return typeof status === "string" && isLearningProposalStatus(status) ? status : "draft";
+}
+
+function normalizeReviewDecision(decision: unknown): LearningProposalReviewDecisionKind {
+  if (decision === "approve" || decision === "reject" || decision === "expire") return decision;
+  throw new Error(`Unsupported learning proposal review decision: ${String(decision)}`);
 }
 
 function normalizeValidatedStatus(status: LearningProposalStatus, missingRequiredFields: string[]): LearningProposalStatus {

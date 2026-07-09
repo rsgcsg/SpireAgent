@@ -80,13 +80,18 @@ import { buildLiveAppliedRolloutSummary } from "../replay/liveAppliedRollout.js"
 import { buildEvidenceSliceSummary, formatEvidenceSliceSummary } from "../replay/evidenceSliceReader.js";
 import {
   appendLearningProposal,
+  appendLearningProposalReviewDecision,
   appendReverseScaffoldFeedback,
   buildLearningProposalSurface,
+  buildLearningProposalReviewDecisionSurface,
   buildReverseScaffoldFeedbackSurface,
+  filterLearningProposalReviewDecisions,
   filterLearningProposals,
   filterReverseScaffoldFeedback,
+  readLearningProposalReviewDecisions,
   readLearningProposals,
   readReverseScaffoldFeedback,
+  summarizeLearningProposalReviewDecision,
   summarizeLearningProposal,
   summarizeReverseScaffoldFeedback
 } from "../learning/proposals.js";
@@ -1878,6 +1883,48 @@ try {
   assert.equal(filterLearningProposals(storedP9Proposals, { status: "pending_review" }).length, 1);
   assert.equal(filterLearningProposals(storedP9Proposals, { missingRequiredField: "evidence" }).length, 1);
   assert.equal(summarizeLearningProposal(storedP9Proposals[0] ?? {}).applyPathEnabled, false);
+  const approvedReviewDecision = appendLearningProposalReviewDecision(p9ProposalDir, storedP9Proposals, {
+    proposalId: actionableProposal.id,
+    decision: "approve",
+    reviewer: "human",
+    notes: "Approved for future shadow review only; no apply or promotion."
+  });
+  assert.equal(approvedReviewDecision.decision, "approve");
+  assert.equal(approvedReviewDecision.reviewScope, "audit_only");
+  assert.equal(approvedReviewDecision.proposalMutationEnabled, false);
+  assert.equal(approvedReviewDecision.applyPathEnabled, false);
+  assert.equal(approvedReviewDecision.stablePromotionEnabled, false);
+  assert.equal(approvedReviewDecision.proposalSnapshot.actionable, true);
+  assert.throws(
+    () => appendLearningProposalReviewDecision(p9ProposalDir, storedP9Proposals, {
+      proposalId: vagueProposal.id,
+      decision: "approve",
+      reviewer: "human",
+      notes: "This must not be accepted because the proposal is vague."
+    }),
+    /non-actionable proposal/
+  );
+  const rejectedReviewDecision = appendLearningProposalReviewDecision(p9ProposalDir, storedP9Proposals, {
+    proposalId: vagueProposal.id,
+    decision: "reject",
+    reviewer: "human",
+    notes: "Rejected as vague advice; keep as audit evidence only."
+  });
+  assert.equal(rejectedReviewDecision.decision, "reject");
+  assert.equal(rejectedReviewDecision.proposalMutationEnabled, false);
+  assert.equal(readLearningProposals(p9ProposalDir).find((proposal) => proposal.id === vagueProposal.id)?.status, "draft");
+  const reviewDecisions = readLearningProposalReviewDecisions(p9ProposalDir);
+  const reviewDecisionSurface = buildLearningProposalReviewDecisionSurface(reviewDecisions);
+  assert.equal(reviewDecisionSurface.decisions, 2);
+  assert.equal(reviewDecisionSurface.approve, 1);
+  assert.equal(reviewDecisionSurface.reject, 1);
+  assert.equal(reviewDecisionSurface.expire, 0);
+  assert.equal(reviewDecisionSurface.proposalMutationEnabled, false);
+  assert.equal(reviewDecisionSurface.applyPathEnabled, false);
+  assert.equal(reviewDecisionSurface.stablePromotionEnabled, false);
+  assert.equal(filterLearningProposalReviewDecisions(reviewDecisions, { proposalId: actionableProposal.id }).length, 1);
+  assert.equal(filterLearningProposalReviewDecisions(reviewDecisions, { decision: "reject" }).length, 1);
+  assert.equal(summarizeLearningProposalReviewDecision(reviewDecisions[0] ?? {}).applyPathEnabled, false);
   const feedback = appendReverseScaffoldFeedback(p9ProposalDir, {
     source: "review",
     targetLayer: "candidate_future",
@@ -3630,6 +3677,9 @@ try {
   assert.equal(evalReport.summary.learningProposalSurface.proposals, 0);
   assert.equal(evalReport.summary.learningProposalSurface.stableOrApplied, 0);
   assert.equal(evalReport.summary.learningProposalSurface.applyPathEnabled, false);
+  assert.equal(evalReport.summary.learningProposalReviewDecisionSurface.decisions, 0);
+  assert.equal(evalReport.summary.learningProposalReviewDecisionSurface.applyPathEnabled, false);
+  assert.equal(evalReport.summary.learningProposalReviewDecisionSurface.stablePromotionEnabled, false);
   assert.equal(evalReport.summary.reverseScaffoldFeedbackSurface.feedback, 0);
   assert.equal(evalReport.summary.reverseScaffoldFeedbackSurface.affectsLiveBehavior, false);
   assert.ok(evalReport.warningSummary);

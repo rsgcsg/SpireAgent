@@ -24,10 +24,13 @@ import { buildWorkspaceDecisionClassQuality, type WorkspaceDecisionClassQualityS
 import { assessP8LiveReadiness, type P8LiveReadinessAssessment } from "../replay/p8LiveReadiness.js";
 import {
   buildLearningProposalSurface,
+  buildLearningProposalReviewDecisionSurface,
   buildReverseScaffoldFeedbackSurface,
+  readLearningProposalReviewDecisions,
   readLearningProposals,
   readReverseScaffoldFeedback,
   type LearningProposalSurface,
+  type LearningProposalReviewDecisionSurface,
   type ReverseScaffoldFeedbackSurface
 } from "../learning/proposals.js";
 
@@ -103,6 +106,7 @@ export interface EvalSummary {
   evidenceSlices: EvidenceSliceSummary;
   budgetGovernance: BudgetGovernanceSummary;
   learningProposalSurface: LearningProposalSurface;
+  learningProposalReviewDecisionSurface: LearningProposalReviewDecisionSurface;
   reverseScaffoldFeedbackSurface: ReverseScaffoldFeedbackSurface;
   predictionErrorCoverage: EvalPredictionErrorCoverage;
   consolidationCoverage: EvalConsolidationCoverage;
@@ -435,6 +439,7 @@ export function evaluateRun(runIdOrPath?: string): EvalReport {
   const budgetGovernance = buildBudgetGovernanceSummary(validTransitions as unknown as JsonRecord[]);
   const consolidationProposalSurface = buildReplayConsolidationProposalSurface(readConsolidationProposals(runDir, validTransitions));
   const learningProposalSurface = buildLearningProposalSurface(readLearningProposals(runDir));
+  const learningProposalReviewDecisionSurface = buildLearningProposalReviewDecisionSurface(readLearningProposalReviewDecisions(runDir));
   const reverseScaffoldFeedbackSurface = buildReverseScaffoldFeedbackSurface(readReverseScaffoldFeedback(runDir));
   for (const issue of buildStrategyWarnings(strategyMetrics)) {
     addWarning(warnings, warningSummary, issue);
@@ -481,6 +486,7 @@ export function evaluateRun(runIdOrPath?: string): EvalReport {
       evidenceSlices,
       budgetGovernance,
       learningProposalSurface,
+      learningProposalReviewDecisionSurface,
       reverseScaffoldFeedbackSurface,
       predictionErrorCoverage,
       consolidationCoverage,

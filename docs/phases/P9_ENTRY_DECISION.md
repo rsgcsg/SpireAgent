@@ -16,6 +16,7 @@ The project has enough guardrails to proceed with append-only proposal and rever
 - read-only evidence slicing exists, while stable-promotion eligibility remains disabled
 - typed `LearningProposal` and `ReverseScaffoldFeedback` surfaces exist as run artifacts
 - vague proposals cannot become actionable pending review without evidence, scope, counterexamples, expected effect, validation plan, and rollback
+- audit-only proposal review decisions can be recorded in an append-only ledger without mutating proposal status or enabling apply/promotion
 
 This is not approval for stable learning.
 
@@ -32,6 +33,7 @@ This is not approval for stable learning.
 | Stable writes protected | pass-with-watch | Current protected-path gate and legacy finalize isolation exist; future stable-promotion surface still needs a dedicated gate. |
 | Typed pending proposal schema/store | pass | `LearningProposal` plus `learning-proposals.jsonl`, append-only/read-only. |
 | Reverse scaffold feedback schema/store | pass | `ReverseScaffoldFeedback` plus `reverse-scaffold-feedback.jsonl`, telemetry/proposal seed only. |
+| Proposal review-decision ledger | pass-for-audit-only | `approve`, `reject`, and `expire` create append-only audit records only; proposal mutation, apply, and stable promotion remain disabled. |
 | Promotion criteria and rollback fields | pass-for-schema | Fields exist on proposals; no applicator or promotion gate exists yet. |
 | Evidence-slice rules | pass-for-read-only | First-class read-only slice reader exists; promotion-grade canonical slicing remains P9.3 work. |
 | Budget governance semantics | pass-for-P9.1 | Stage 0 guard + telemetry only; Budget/Compute OS remains P13. |
@@ -43,7 +45,6 @@ This is not approval for stable learning.
 The following are still not implemented:
 
 - stable promotion ledger
-- proposal review-decision ledger
 - shadow applicator
 - rollback snapshots
 - retrieval integration for stable learned policies
@@ -65,17 +66,17 @@ The extraction should be reconsidered before P9.5/P9.6, when proposal applicatio
 
 ## Next PR
 
-The next engineering PR after the read-only inspection CLI should be:
+The next engineering PR after the audit-only review-decision ledger should be:
 
 ```text
-P9.1 proposal review-decision ledger
+P9.2 weak attribution and proposal generation seed
 ```
 
 Recommended scope:
 
-- record human/system review decisions as append-only ledger events
-- support reject / expire as review metadata only if semantics are explicit
-- keep approve/apply/promote unavailable until shadow applicator and promotion gate exist
+- convert selected replay/eval/review signals into draft or pending `LearningProposal` records through weak attribution
+- keep proposal generation conservative and evidence-backed
+- keep apply/promote unavailable until shadow applicator and promotion gate exist
 
 Forbidden next step:
 

@@ -156,6 +156,15 @@ Purpose:
 - capture this as telemetry and proposal-seed material
 - avoid turning ad hoc human patching into the default repair loop
 
+### `LearningProposalReviewDecisionLedger`
+
+Purpose:
+
+- record human/system review decisions as append-only audit events
+- support `approve`, `reject`, and `expire` as review judgments only
+- preserve proposal status/actionability snapshots for later review
+- keep proposal mutation, apply, stable promotion, and live/runtime behavior disabled
+
 ### `StablePromotionGate`
 
 Purpose:
@@ -310,9 +319,9 @@ Allowed:
 Current state:
 
 - `LearningProposal` and `ReverseScaffoldFeedback` schemas exist
-- `learning-proposals.jsonl` and `reverse-scaffold-feedback.jsonl` are append-only run artifacts
-- replay/eval/review can report both surfaces
-- `npm run learning:proposals` provides a read-only inspection CLI for summary/list/show/filter operations
+- `learning-proposals.jsonl`, `learning-proposal-review-decisions.jsonl`, and `reverse-scaffold-feedback.jsonl` are append-only run artifacts
+- replay/eval/review can report proposal, review-decision, and reverse-feedback surfaces
+- `npm run learning:proposals` provides inspection plus audit-only `approve`, `reject`, and `expire` review-decision commands
 - vague proposals cannot become actionable pending review without evidence, scope, counterexamples, expected effect, validation plan, and rollback
 - no proposal apply, promotion, or stable write path exists
 
@@ -338,12 +347,12 @@ Goal:
 
 Goal:
 
-- let humans inspect, approve, reject, expire, and revert proposals
+- let humans inspect proposals and record review decisions
 
 Current P9.1 state:
 
-- inspect/list/show exists as read-only CLI
-- review-decision ledger operations are still future work
+- inspect/list/show exists for proposals, review decisions, and reverse feedback
+- `approve`, `reject`, and `expire` record audit-only ledger events
 - apply and stable promotion remain forbidden
 
 ### P9.5 Shadow Applicator

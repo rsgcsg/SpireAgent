@@ -47,6 +47,7 @@ The real blocker is now the gap between P9.0 hardening and real proposal-driven 
 - live-applied rollout reporting now exists, but older shadow-first readiness semantics still coexist beside it
 - typed learning proposal schema/store has started as append-only read-only P9.1 infrastructure
 - typed reverse-scaffold feedback schema/store has started as append-only read-only telemetry
+- proposal review-decision ledger has started as append-only audit-only P9.1 infrastructure
 - first-class read-only evidence slicing has started; stable-promotion eligibility remains disabled until proposal/promotion gates exist
 - budget governance has a clearer staged roadmap, but runtime adaptive Budget/Compute OS behavior remains deferred to P13
 - weak proposal attribution and anti-vague proposal validation are implemented for pending proposals; stable-promotion gates are still not implemented
@@ -56,7 +57,7 @@ The real blocker is now the gap between P9.0 hardening and real proposal-driven 
 - wildcard broad live is not authorized
 - all decision classes are not live-ready
 - stable learning is not implemented
-- P9.1 typed proposal infrastructure is append-only/read-only; stable-promotion machinery has not started
+- P9.1 typed proposal and review-decision infrastructure is append-only/audit-only; stable-promotion machinery has not started
 - `LLM_HANDOFF.md` and `DEBUG_REPORT.md` are not the canonical source of truth
 
 ## Next Step
@@ -66,8 +67,8 @@ Continue P9.1 read-only proposal review infrastructure while keeping P9.0 harden
 1. finish protected-path hardening by treating remaining legacy stable-write paths as gated legacy behavior, not normal learning
 2. keep live-applied rollout audit separate from stale shadow-only readiness semantics in replay/eval/review
 3. keep expanding read-only evidence slicing so mixed budget/profile, console/debug, live/shadow, and promotion evidence stay separate
-4. use `npm run learning:proposals` for read-only inspection of typed proposals and reverse feedback
-5. next add review-decision ledger commands only when approval/rejection semantics are ready, still without apply or promotion
+4. use `npm run learning:proposals` for inspection of typed proposals, audit-only review decisions, and reverse feedback
+5. next build P9.2 weak attribution / proposal generation so review decisions have evidence-backed proposals to inspect, still without apply or promotion
 
 ## Canonical Follow-On Docs
 

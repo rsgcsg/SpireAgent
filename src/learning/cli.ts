@@ -1,42 +1,56 @@
 import path from "node:path";
 import { resolveRunDir } from "../replay/reader.js";
 import {
+  appendLearningProposalReviewDecision,
   buildLearningProposalSurface,
+  buildLearningProposalReviewDecisionSurface,
   buildReverseScaffoldFeedbackSurface,
+  filterLearningProposalReviewDecisions,
   filterLearningProposals,
   filterReverseScaffoldFeedback,
   formatLearningProposalSurface,
+  formatLearningProposalReviewDecisionSurface,
   formatReverseScaffoldFeedbackSurface,
+  readLearningProposalReviewDecisions,
   readLearningProposals,
   readReverseScaffoldFeedback,
+  summarizeLearningProposalReviewDecision,
   summarizeLearningProposal,
   summarizeReverseScaffoldFeedback,
+  type LearningProposalReviewDecisionFilter,
   type LearningProposalFilter,
   type ReverseScaffoldFeedbackFilter
 } from "./proposals.js";
 
-const READ_ONLY_COMMANDS = new Set(["summary", "list", "show", "feedback", "feedback-show"]);
-const FORBIDDEN_COMMANDS = new Set(["approve", "apply", "promote", "reject", "expire", "revert"]);
+const READ_ONLY_COMMANDS = new Set(["summary", "list", "show", "feedback", "feedback-show", "reviews", "review-show"]);
+const REVIEW_LEDGER_COMMANDS = new Set(["approve", "reject", "expire"]);
+const FORBIDDEN_COMMANDS = new Set(["apply", "promote", "revert"]);
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const command = args[0] && !args[0].startsWith("--") ? args[0] : "summary";
   if (FORBIDDEN_COMMANDS.has(command)) {
-    throw new Error(`Learning command '${command}' is intentionally unavailable in P9.1 read-only mode.`);
+    throw new Error(`Learning command '${command}' is intentionally unavailable in P9.1 audit-only mode.`);
   }
-  if (!READ_ONLY_COMMANDS.has(command)) {
+  if (!READ_ONLY_COMMANDS.has(command) && !REVIEW_LEDGER_COMMANDS.has(command)) {
     throw new Error(`Unknown learning proposal command: ${command}`);
   }
   const commandArgs = command === args[0] ? args.slice(1) : args;
-  const runDir = resolveRunDir(parseRunArg(commandArgs, command !== "show" && command !== "feedback-show"));
+  const idCommand = command === "show" ||
+    command === "feedback-show" ||
+    command === "review-show" ||
+    REVIEW_LEDGER_COMMANDS.has(command);
+  const runDir = resolveRunDir(parseRunArg(commandArgs, !idCommand));
   const proposals = readLearningProposals(runDir);
   const feedback = readReverseScaffoldFeedback(runDir);
+  const reviewDecisions = readLearningProposalReviewDecisions(runDir);
 
   if (command === "summary") {
     printHeader(runDir);
     console.log(`Learning proposal surface: ${formatLearningProposalSurface(buildLearningProposalSurface(proposals))}`);
+    console.log(`Learning proposal review decisions: ${formatLearningProposalReviewDecisionSurface(buildLearningProposalReviewDecisionSurface(reviewDecisions))}`);
     console.log(`Reverse scaffold feedback: ${formatReverseScaffoldFeedbackSurface(buildReverseScaffoldFeedbackSurface(feedback))}`);
-    console.log("Read-only: applyPathEnabled=false stablePromotionEnabled=false affectsLiveBehavior=false");
+    console.log("Guardrails: proposalMutationEnabled=false applyPathEnabled=false stablePromotionEnabled=false affectsLiveBehavior=false");
     return;
   }
 
@@ -55,6 +69,21 @@ async function main(): Promise<void> {
     return;
   }
 
+  if (command === "reviews") {
+    printHeader(runDir);
+    const filtered = filterLearningProposalReviewDecisions(reviewDecisions, parseReviewDecisionFilter(commandArgs));
+    console.log(JSON.stringify(filtered.map(summarizeLearningProposalReviewDecision), null, 2));
+    return;
+  }
+
+  if (command === "review-show") {
+    const id = parseRequiredId(commandArgs);
+    const [decision] = filterLearningProposalReviewDecisions(reviewDecisions, { ...parseReviewDecisionFilter(commandArgs), id });
+    if (!decision) throw new Error(`Learning proposal review decision not found: ${id}`);
+    console.log(JSON.stringify(decision, null, 2));
+    return;
+  }
+
   if (command === "feedback") {
     printHeader(runDir);
     const filtered = filterReverseScaffoldFeedback(feedback, parseFeedbackFilter(commandArgs));
@@ -67,6 +96,20 @@ async function main(): Promise<void> {
     const [record] = filterReverseScaffoldFeedback(feedback, { ...parseFeedbackFilter(commandArgs), id });
     if (!record) throw new Error(`Reverse scaffold feedback not found: ${id}`);
     console.log(JSON.stringify(record, null, 2));
+    return;
+  }
+
+  if (REVIEW_LEDGER_COMMANDS.has(command)) {
+    const id = parseRequiredId(commandArgs);
+    const decision = appendLearningProposalReviewDecision(runDir, proposals, {
+      proposalId: id,
+      decision: command as "approve" | "reject" | "expire",
+      reviewer: optionValue(commandArgs, "--reviewer") ?? "human",
+      notes: optionValue(commandArgs, "--notes") ?? optionValue(commandArgs, "--reason") ?? ""
+    });
+    printHeader(runDir);
+    console.log(JSON.stringify(summarizeLearningProposalReviewDecision(decision as unknown as Record<string, unknown>), null, 2));
+    console.log("Audit-only: proposalMutationEnabled=false applyPathEnabled=false stablePromotionEnabled=false");
   }
 }
 
@@ -103,6 +146,14 @@ function parseFeedbackFilter(args: string[]): ReverseScaffoldFeedbackFilter {
     targetLayer: optionValue(args, "--target-layer"),
     source: optionValue(args, "--source"),
     proposalSeedId: optionValue(args, "--proposal-seed-id")
+  };
+}
+
+function parseReviewDecisionFilter(args: string[]): LearningProposalReviewDecisionFilter {
+  return {
+    proposalId: optionValue(args, "--proposal-id"),
+    decision: optionValue(args, "--decision"),
+    reviewer: optionValue(args, "--reviewer")
   };
 }
 

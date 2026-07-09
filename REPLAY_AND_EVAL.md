@@ -169,12 +169,18 @@ P9.1 proposal and reverse-feedback visibility:
 - `LearningProposal` records are append-only run artifacts. They are not stable memory, derived knowledge, strategy, skill, classification, candidate template, budget, or scaffold policy.
 - Anti-vague validation is conservative: proposals missing evidence, scope, counterexamples, expected effect, validation plan, rollback, protected-path impact, or source ids cannot enter actionable pending review.
 - Replay/eval/review also expose `reverseScaffoldFeedbackSurface` when `reverse-scaffold-feedback.jsonl` exists. It is telemetry/proposal-seed material only and cannot change live behavior.
-- `stableOrApplied`, `applyPathEnabled=false`, and `stablePromotionEnabled=false` must stay visible until later guarded phases deliberately add a shadow applicator and promotion gate.
-- `npm run learning:proposals -- summary --latest` prints a read-only summary for typed proposals and reverse feedback.
+- Replay/eval/review also expose `learningProposalReviewDecisionSurface` when `learning-proposal-review-decisions.jsonl` exists.
+- Review-decision records are audit-only. `approve`, `reject`, and `expire` record human/system judgment in a separate append-only ledger; they do not mutate proposal status, apply a patch, promote stable policy, or change live/runtime behavior.
+- `stableOrApplied`, `proposalMutationEnabled=false`, `applyPathEnabled=false`, and `stablePromotionEnabled=false` must stay visible until later guarded phases deliberately add a shadow applicator and promotion gate.
+- `npm run learning:proposals -- summary --latest` prints a summary for typed proposals, review decisions, and reverse feedback.
 - `npm run learning:proposals -- list --latest --status pending_review` lists typed proposals with optional filters such as `--type`, `--target-layer`, `--transition-id`, `--source-run-id`, and `--missing-field`.
 - `npm run learning:proposals -- show --latest --id <proposalId>` prints one typed proposal.
+- `npm run learning:proposals -- approve --latest --id <proposalId> --notes "<why>"` records an audit-only approval for an actionable pending proposal.
+- `npm run learning:proposals -- reject --latest --id <proposalId> --notes "<why>"` records an audit-only rejection.
+- `npm run learning:proposals -- expire --latest --id <proposalId> --notes "<why>"` records an audit-only expiry.
+- `npm run learning:proposals -- reviews --latest` and `review-show --id <decisionId>` inspect the review-decision ledger.
 - `npm run learning:proposals -- feedback --latest` and `feedback-show --id <feedbackId>` inspect reverse-scaffold feedback.
-- Mutating commands such as approve, apply, promote, reject, expire, and revert are intentionally unavailable in P9.1 read-only mode.
+- Mutating commands such as apply, promote, and revert remain intentionally unavailable. Review decisions are ledger entries only.
 
 Useful checks:
 
