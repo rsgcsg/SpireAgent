@@ -81,8 +81,8 @@ explicit-whitelist live scaffold MVP complete
 
 It does not mean:
 
-- wildcard live complete;
-- all decision classes live-ready;
+- wildcard live has been completed;
+- every decision class is live-ready;
 - broad unbounded live enabled;
 - stable learning implemented;
 - proposal-driven learning complete;
@@ -595,7 +595,7 @@ What is complete:
 What is not complete:
 
 - wildcard live;
-- all decision classes live-ready;
+- every decision class being live-ready;
 - stable learning;
 - automatic derived knowledge writes;
 - strategy-param writes;

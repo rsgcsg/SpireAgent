@@ -84,10 +84,10 @@ P8/P8.5 explicit-whitelist live scaffold MVP complete
 
 P8 cannot honestly be closed under any of these names:
 
-- broad wildcard live complete
-- autonomous learning complete
+- broad wildcard live completion
+- autonomous learning completion
 - stable scaffold-promotion complete
-- all decision classes live-ready
+- every decision class being live-ready
 - proposal-driven guarded learning complete
 
 ## Hard Closeout Conditions

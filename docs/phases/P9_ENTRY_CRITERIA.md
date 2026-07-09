@@ -8,6 +8,7 @@ P9 should start only when the project is ready to shift from live-scaffold expan
 - Latest replay/eval/review can read current live-applied evidence without provider/validation/execution corruption.
 - P8 closeout is written and accepted.
 - P8/P9 debt register exists and calls out protected-path and readiness-reporting debt.
+- The comprehensive pre-P9 engineering debt audit is reviewed, and any unresolved `must_fix_before_formal_P9` item is either fixed or explicitly accepted as a documented entry blocker.
 - Explicit whitelist live remains the only authorized live model.
 - Wildcard broad live remains forbidden.
 - Stable memory, derived knowledge, and strategy writes are still protected paths and not part of current live rollout.

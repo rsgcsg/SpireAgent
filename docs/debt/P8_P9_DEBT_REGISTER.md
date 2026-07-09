@@ -2,6 +2,8 @@
 
 This document tracks the debts that remain after P8/P8.5 closeout and before P9 guarded learning should begin.
 
+For the comprehensive pre-P9 audit, full classification matrix, repair order, and copy-paste follow-up PR prompts, see [PRE_P9_ENGINEERING_DEBT_AUDIT.md](PRE_P9_ENGINEERING_DEBT_AUDIT.md).
+
 Status values:
 
 - `open`
@@ -170,3 +172,23 @@ Status values:
   - Legacy redirect docs and old strategy notes are too close to active docs.
 - Fix:
   - move them under `docs/archive/legacy/` and keep redirect stubs
+
+## Comprehensive Audit Overlay
+
+The detailed audit adds broader debt IDs beyond this compact register, including:
+
+- `D-014` controller boundary / orchestration debt
+- `D-015` optional LiveDecisionGateway boundary debt
+- `D-020` candidate generation and scoring maintainability debt
+- `D-021` cognitiveScaffold responsibility creep debt
+- `D-022` mechanics-engine / deterministic prediction debt
+- `D-023` Game IO / event log / human recorder debt
+- `D-024` replay/eval benchmark maturity debt
+- `D-025` test coverage and CI/check debt
+- `D-026` adapter/capability boundary debt
+- `D-027` secrets/runtime artifact hygiene debt
+- `D-028` Context OS long-term debt
+- `D-029` Budget OS long-term debt
+- `D-030` team workflow / ADR / PR governance debt
+
+Keep this file as the compact active debt register. Use the comprehensive audit for repair sequencing and phase classification.

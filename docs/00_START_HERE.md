@@ -53,6 +53,7 @@ Start here before changing docs, planning a new phase, or deciding which documen
 
 - [P8_CLOSEOUT.md](phases/P8_CLOSEOUT.md)
 - [P8_P9_DEBT_REGISTER.md](debt/P8_P9_DEBT_REGISTER.md)
+- [PRE_P9_ENGINEERING_DEBT_AUDIT.md](debt/PRE_P9_ENGINEERING_DEBT_AUDIT.md)
 - [P9_ENTRY_CRITERIA.md](phases/P9_ENTRY_CRITERIA.md)
 - [P9_GUARDED_LEARNING_PLAN.md](phases/P9_GUARDED_LEARNING_PLAN.md)
 - [P9_P13_EXECUTION_ROADMAP.md](phases/P9_P13_EXECUTION_ROADMAP.md)
