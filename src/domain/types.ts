@@ -565,6 +565,159 @@ export interface ConsolidationRecord {
   status?: "proposed" | "accepted" | "rejected" | "expired" | "reverted" | "rolled_back";
 }
 
+export type LearningProposalType =
+  | "memory"
+  | "derived_knowledge"
+  | "candidate_template"
+  | "reason_policy"
+  | "budget_policy"
+  | "budget_compression_policy"
+  | "classification_policy"
+  | "skill"
+  | "scaffold_policy";
+
+export type LearningProposalStatus =
+  | "draft"
+  | "pending_review"
+  | "shadow_validated"
+  | "approved"
+  | "stable"
+  | "rejected"
+  | "expired"
+  | "reverted";
+
+export type LearningProposalRiskLevel = "low" | "medium" | "high" | "critical";
+
+export interface LearningProposalScope {
+  decisionClasses?: string[];
+  screens?: string[];
+  acts?: number[];
+  floors?: number[];
+  characters?: string[];
+  conditions?: string[];
+  exclusions?: string[];
+  notes?: string;
+}
+
+export interface LearningProposalEvidence {
+  runId?: string;
+  transitionId?: string;
+  source: "transition" | "replay" | "eval" | "review" | "manual" | "reverse_scaffold_feedback" | string;
+  summary: string;
+  strength?: "weak" | "moderate" | "strong";
+  observedOutcome?: string;
+  expectedOutcome?: string;
+  tags?: string[];
+  raw?: JsonRecord;
+}
+
+export interface LearningProposalCounterexample {
+  summary: string;
+  runId?: string;
+  transitionId?: string;
+  condition?: string;
+  impact?: string;
+}
+
+export interface LearningProposalPromotionCriteria {
+  evidenceRequired: string[];
+  validationPlan: string[];
+  minimumShadowRuns?: number;
+  minimumFreshRuns?: number;
+  successSignals?: string[];
+  stopSignals?: string[];
+}
+
+export interface LearningProposalRollbackPlan {
+  rollbackTrigger: string[];
+  rollbackAction: string;
+  owner?: "human" | "agent_review" | string;
+}
+
+export interface LearningProposalProtectedPathImpact {
+  protectedTargets: string[];
+  stableWriteRequired: boolean;
+  allowedBeforePromotion: boolean;
+  notes?: string;
+}
+
+export interface LearningProposalReviewEvent {
+  timestamp: string;
+  reviewer: "human" | "agent" | "system" | string;
+  decision: "created" | "marked_draft" | "pending_review" | "approved_for_shadow" | "rejected" | "expired" | "reverted" | string;
+  notes?: string;
+}
+
+export interface LearningProposalWeakAttribution {
+  suspectedCause: string;
+  confidence: number;
+  counterexampleNeeded: string[];
+  alternativeHypotheses: string[];
+}
+
+export interface LearningProposalValidation {
+  schemaVersion: number;
+  actionable: boolean;
+  normalizedStatus: LearningProposalStatus;
+  missingRequiredFields: string[];
+  reasons: string[];
+}
+
+export interface LearningProposal {
+  schemaVersion: number;
+  id: string;
+  type: LearningProposalType | string;
+  status: LearningProposalStatus;
+  scope: LearningProposalScope;
+  targetLayer: string;
+  targetObject: string;
+  proposedPatch: JsonRecord;
+  evidence: LearningProposalEvidence[];
+  counterexamples: LearningProposalCounterexample[];
+  weakAttribution: LearningProposalWeakAttribution;
+  confidence: number;
+  riskLevel: LearningProposalRiskLevel | string;
+  expectedEffect: string;
+  promotionCriteria: LearningProposalPromotionCriteria;
+  rollbackPlan: LearningProposalRollbackPlan;
+  protectedPathImpact: LearningProposalProtectedPathImpact;
+  createdFromRunIds: string[];
+  createdFromTransitionIds: string[];
+  reviewHistory: LearningProposalReviewEvent[];
+  validation: LearningProposalValidation;
+  createdAt: string;
+}
+
+export type ReverseScaffoldLayer =
+  | "strategic_impression"
+  | "memory_activation"
+  | "candidate_future"
+  | "deliberation_packet"
+  | "workspace_serialization"
+  | "compression"
+  | "classification"
+  | "budget"
+  | "reason_contract"
+  | "scoring"
+  | "unknown";
+
+export interface ReverseScaffoldFeedback {
+  schemaVersion: number;
+  id: string;
+  source: "llm" | "review" | "eval" | "manual" | string;
+  targetLayer: ReverseScaffoldLayer | string;
+  omittedInformation: string[];
+  misleadingInformation: string[];
+  requestedScaffoldChange: string;
+  evidence: LearningProposalEvidence[];
+  confidence: number;
+  riskLevel: LearningProposalRiskLevel | string;
+  proposalSeedIds: string[];
+  createdFromRunIds: string[];
+  createdFromTransitionIds: string[];
+  createdAt: string;
+}
+
 export interface ExecutionResult {
   status: "ok" | "error" | "unknown";
   message?: string;

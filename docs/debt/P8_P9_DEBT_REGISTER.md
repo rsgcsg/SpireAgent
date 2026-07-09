@@ -48,34 +48,34 @@ Status values:
 
 ### `p9_learning_schema_missing`
 
-- Status: `open`
+- Status: `closed`
 - Evidence:
   - [types.ts](../../src/domain/types.ts#L547)
   - [DATA_SCHEMA.md](../../DATA_SCHEMA.md#L147)
 - Problem:
-  - Current `ConsolidationRecord` is good P7 evidence but not enough for typed pending proposals, promotion criteria, or rollback.
-  - The current system also lacks first-class weak-attribution fields and proposal-rejection rules for vague advice.
-- Minimum fix:
-  - introduce a typed `LearningProposal` family and ledger
+  - Current `ConsolidationRecord` remains useful P7 evidence, but P9 now has a separate typed `LearningProposal` family and append-only pending store.
+  - Weak-attribution fields and anti-vague validation exist for pending proposals.
+- Resolution:
+  - `src/domain/types.ts` defines typed proposal families, weak attribution, promotion criteria, rollback, protected-path impact, and review history.
+  - `src/learning/proposals.ts` appends and reads `learning-proposals.jsonl` without any apply or promotion path.
 
 ### `reverse_scaffold_feedback_schema_missing`
 
-- Status: `open`
+- Status: `closed`
 - Problem:
-  - The project has review signals, cue attribution, and proposal-only improvement hints, but it still lacks a typed reverse-scaffold feedback object.
-  - That means the LLM still has no formal, reviewable channel for saying that the scaffold omitted information, compressed the wrong thing, retrieved the wrong memory, or needed a different panel/classification/budget framing.
+  - The project now has a typed reverse-scaffold feedback object and append-only run store.
+  - It remains telemetry/proposal-seed material only.
 - Why it matters:
   - Without a typed reverse feedback channel, the project risks drifting back toward human-authored per-class patching instead of proposal-driven soft-shell learning.
-- Minimum fix:
-  - add a typed `ReverseScaffoldFeedback` schema
-  - keep it telemetry/proposal-seed only at first
-  - do not let it directly alter live prompts, budgets, or stable policy
+- Resolution:
+  - `ReverseScaffoldFeedback` records target layer, omitted/misleading information, evidence, confidence, risk, and proposal seed links.
+  - `reverse-scaffold-feedback.jsonl` is visible in replay/eval/review and cannot alter live prompts, budgets, or stable policy.
 
 ### `evidence_slice_reader_missing`
 
 - Status: `in_progress`
 - Problem:
-  - Promotion evidence is starting to move out of ad hoc replay summary interpretation into a first-class read-only slice reader.
+  - Promotion evidence is moving out of ad hoc replay summary interpretation into a first-class read-only slice reader, but that reader is not yet the canonical promotion-grade slice authority.
   - The current reader still deliberately keeps stable-learning promotion ineligible until P9 proposal/promotion gates exist.
 - Why it matters:
   - P9 cannot safely promote or reject policies if mixed revision, mixed budget, console-assisted, and live-vs-shadow evidence are not explicitly separable.

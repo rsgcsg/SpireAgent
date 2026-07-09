@@ -164,8 +164,9 @@ P7.5 consolidation proposal aggregation:
 P9 guarded learning direction:
 
 - Current `ConsolidationRecord` is sufficient for P7 proposal evidence but not yet sufficient for P9 stable learning.
-- P9 should introduce typed pending proposal families such as memory, derived knowledge, candidate template, reason policy, budget/compression policy, classification policy, skill policy, and scaffold policy.
-- These future proposal records must still preserve:
+- P9 now introduces a typed `LearningProposal` schema and append-only pending proposal store surface. This is P9.1 read-only infrastructure, not stable learning.
+- `LearningProposal` families include memory, derived knowledge, candidate template, reason policy, budget/compression policy, classification policy, skill policy, and scaffold policy.
+- Learning proposal records preserve:
   - evidence
   - counterexample handling
   - scope
@@ -173,6 +174,12 @@ P9 guarded learning direction:
   - promotion criteria
   - rollback plan
   - protected-path impact
+- Learning proposals also carry weak-attribution fields: `suspectedCause`, `confidence`, `counterexampleNeeded`, and `alternativeHypotheses`.
+- The append-only pending store is `data/runs/<runId>/learning-proposals.jsonl`. It is a run artifact and not a stable learning store.
+- Proposal validation is intentionally conservative. Vague proposals without concrete evidence, scope, counterexamples, expected effect, validation plan, and rollback are kept as `draft` or `rejected` rather than actionable pending proposals.
+- P9 also introduces `ReverseScaffoldFeedback` as telemetry/proposal-seed material. It records target scaffold layer, omitted or misleading information, evidence, confidence, risk, and proposal seed links.
+- Reverse feedback is stored in `data/runs/<runId>/reverse-scaffold-feedback.jsonl`. It does not change prompts, budgets, candidate generation, validation, execution, live rollout, memory, derived knowledge, strategy, skills, or scaffold policy.
+- `LearningProposal` and `ReverseScaffoldFeedback` records are non-executable until later review, shadow application, promotion gate, and rollback infrastructure exists.
 
 P8 DeliberationPacket strategic workspace shadow surface:
 

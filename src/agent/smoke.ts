@@ -79,6 +79,18 @@ import {
 import { buildLiveAppliedRolloutSummary } from "../replay/liveAppliedRollout.js";
 import { buildEvidenceSliceSummary, formatEvidenceSliceSummary } from "../replay/evidenceSliceReader.js";
 import {
+  appendLearningProposal,
+  appendReverseScaffoldFeedback,
+  buildLearningProposalSurface,
+  buildReverseScaffoldFeedbackSurface,
+  filterLearningProposals,
+  filterReverseScaffoldFeedback,
+  readLearningProposals,
+  readReverseScaffoldFeedback,
+  summarizeLearningProposal,
+  summarizeReverseScaffoldFeedback
+} from "../learning/proposals.js";
+import {
   DOMAIN_SCHEMA_VERSION,
   type CandidateFuture,
   type DeliberationPacket,
@@ -1798,6 +1810,107 @@ try {
   assert.equal(aggregatedProposalSurface.groups[0]?.mutatingOrAccepted, 0);
   assert.equal(aggregatedProposalSurface.groups[0]?.stableMutation, false);
   assert.ok(aggregatedProposalSurface.groups[0]?.forbiddenNextSteps.includes("auto_write_memory"));
+  const p9ProposalDir = mkdtempSync(path.join(tmpdir(), "sts2-p9-proposals-"));
+  const actionableProposal = appendLearningProposal(p9ProposalDir, {
+    type: "classification_policy",
+    status: "pending_review",
+    scope: { decisionClasses: ["shop:llm_required"], conditions: ["low HP and deck scaling pressure"] },
+    targetLayer: "classification_policy",
+    targetObject: "shop_skill_routing",
+    proposedPatch: { proposalOnly: true, addSoftTag: "shop + survival-risk + deck-scaling" },
+    evidence: [
+      {
+        source: "review",
+        runId: "run-p9-smoke",
+        transitionId: "transition-p9-smoke",
+        summary: "Shop choice needed survival and scaling framing.",
+        strength: "weak"
+      }
+    ],
+    counterexamples: [{ summary: "High HP shops may favor scaling over survival buys.", condition: "high_hp" }],
+    weakAttribution: {
+      suspectedCause: "classification missed the survival-risk overlay",
+      confidence: 0.42,
+      counterexampleNeeded: ["fresh shop windows where survival overlay would be wrong"],
+      alternativeHypotheses: ["candidate template omitted defensive buy value"]
+    },
+    confidence: 0.42,
+    riskLevel: "medium",
+    expectedEffect: "Route shop decisions through a richer soft situation tag before any stable promotion.",
+    promotionCriteria: {
+      evidenceRequired: ["same-budget fresh shop evidence"],
+      validationPlan: ["shadow overlay comparison only"]
+    },
+    rollbackPlan: {
+      rollbackTrigger: ["worse reason quality", "candidate mismatch"],
+      rollbackAction: "remove proposed soft tag from shadow overlay"
+    },
+    protectedPathImpact: {
+      protectedTargets: ["classification_policy", "scaffold_policy"],
+      stableWriteRequired: true,
+      allowedBeforePromotion: false
+    },
+    createdFromRunIds: ["run-p9-smoke"],
+    createdFromTransitionIds: ["transition-p9-smoke"]
+  });
+  assert.equal(actionableProposal.status, "pending_review");
+  assert.equal(actionableProposal.validation.actionable, true);
+  const vagueProposal = appendLearningProposal(p9ProposalDir, {
+    type: "memory",
+    status: "pending_review",
+    targetLayer: "memory",
+    targetObject: "generic_advice",
+    proposedPatch: { advice: "be careful" },
+    expectedEffect: "Be better."
+  });
+  assert.equal(vagueProposal.status, "draft");
+  assert.equal(vagueProposal.validation.actionable, false);
+  assert.ok(vagueProposal.validation.missingRequiredFields.includes("evidence"));
+  const proposalSurfaceV2 = buildLearningProposalSurface(readLearningProposals(p9ProposalDir));
+  assert.equal(proposalSurfaceV2.proposals, 2);
+  assert.equal(proposalSurfaceV2.pendingReview, 1);
+  assert.equal(proposalSurfaceV2.actionablePending, 1);
+  assert.equal(proposalSurfaceV2.draft, 1);
+  assert.equal(proposalSurfaceV2.stableOrApplied, 0);
+  assert.equal(proposalSurfaceV2.applyPathEnabled, false);
+  assert.equal(proposalSurfaceV2.stablePromotionEnabled, false);
+  const storedP9Proposals = readLearningProposals(p9ProposalDir);
+  assert.equal(filterLearningProposals(storedP9Proposals, { status: "pending_review" }).length, 1);
+  assert.equal(filterLearningProposals(storedP9Proposals, { missingRequiredField: "evidence" }).length, 1);
+  assert.equal(summarizeLearningProposal(storedP9Proposals[0] ?? {}).applyPathEnabled, false);
+  const feedback = appendReverseScaffoldFeedback(p9ProposalDir, {
+    source: "review",
+    targetLayer: "candidate_future",
+    omittedInformation: ["skip value compared with deck bloat"],
+    misleadingInformation: [],
+    requestedScaffoldChange: "Expose skip value as a candidate-future tradeoff before card reward decisions.",
+    evidence: [
+      {
+        source: "review",
+        runId: "run-p9-smoke",
+        transitionId: "transition-p9-card-reward",
+        summary: "Card reward reason compared cards but did not explain skip value.",
+        strength: "weak"
+      }
+    ],
+    confidence: 0.55,
+    riskLevel: "low",
+    proposalSeedIds: [actionableProposal.id],
+    createdFromRunIds: ["run-p9-smoke"],
+    createdFromTransitionIds: ["transition-p9-card-reward"]
+  });
+  assert.equal(feedback.targetLayer, "candidate_future");
+  const feedbackSurface = buildReverseScaffoldFeedbackSurface(readReverseScaffoldFeedback(p9ProposalDir));
+  assert.equal(feedbackSurface.feedback, 1);
+  assert.equal(feedbackSurface.targetLayerCounts.candidate_future, 1);
+  assert.equal(feedbackSurface.proposalSeedLinks, 1);
+  assert.equal(feedbackSurface.affectsLiveBehavior, false);
+  assert.equal(feedbackSurface.stablePromotionEnabled, false);
+  const storedFeedback = readReverseScaffoldFeedback(p9ProposalDir);
+  assert.equal(filterReverseScaffoldFeedback(storedFeedback, { targetLayer: "candidate_future" }).length, 1);
+  assert.equal(filterReverseScaffoldFeedback(storedFeedback, { proposalSeedId: actionableProposal.id }).length, 1);
+  assert.equal(summarizeReverseScaffoldFeedback(storedFeedback[0] ?? {}).affectsLiveBehavior, false);
+  rmSync(p9ProposalDir, { recursive: true, force: true });
   const cardFlowSupportedPrediction = buildPredictionErrorRecord({
     selectedPlan: {
       id: "future-card-flow-supported",
@@ -3514,6 +3627,11 @@ try {
   assert.equal(evalReport.summary.predictionErrorCoverage.withTypedChecks, 1);
   assert.equal(evalReport.summary.predictionErrorCoverage.withAttribution, 1);
   assert.equal(evalReport.summary.consolidationProposalSurface.proposals, 0);
+  assert.equal(evalReport.summary.learningProposalSurface.proposals, 0);
+  assert.equal(evalReport.summary.learningProposalSurface.stableOrApplied, 0);
+  assert.equal(evalReport.summary.learningProposalSurface.applyPathEnabled, false);
+  assert.equal(evalReport.summary.reverseScaffoldFeedbackSurface.feedback, 0);
+  assert.equal(evalReport.summary.reverseScaffoldFeedbackSurface.affectsLiveBehavior, false);
   assert.ok(evalReport.warningSummary);
   assert.equal(evalReport.strategyMetrics.fallbackRate, 0);
   assert.deepEqual(evalReport.errors, []);

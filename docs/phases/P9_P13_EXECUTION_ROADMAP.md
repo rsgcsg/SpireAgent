@@ -123,11 +123,18 @@ It does not yet have:
 - a store for it
 - a rule for how it feeds proposal generation without changing live behavior
 
-### 5. Evidence slicing is still missing as a first-class component
+### 5. Evidence slicing has started, but it is not yet promotion-grade
 
-P9 cannot safely promote anything while evidence windows are still reconstructed ad hoc from replay summaries.
+P9 cannot safely promote anything while evidence windows are still partly reconstructed from replay summaries and report-layer readers.
 
-The project needs a first-class `EvidenceSliceReader` that can explicitly separate:
+The project now has a first-class read-only `EvidenceSliceReader` surface for:
+
+- shadow readiness
+- live-applied rollout
+- future stable-learning promotion slices that remain disabled
+- provenance-based promotion exclusion such as console/debug/fixture and unknown evidence
+
+What is still missing is the promotion-grade completion of that reader. It still needs to become the canonical slice authority for:
 
 - same revision
 - same budget profile
@@ -146,7 +153,7 @@ This is the honest engineering order.
 2. classify legacy finalize behavior
 3. define typed `LearningProposal` schema
 4. define typed `ReverseScaffoldFeedback` schema
-5. define `EvidenceSliceReader`
+5. complete `EvidenceSliceReader` into the canonical promotion-slice authority
 6. define proposal lifecycle and promotion ledger
 
 ### Tier 2: P9.1-P9.3 core learning infrastructure
@@ -197,6 +204,15 @@ Not allowed:
 Goal:
 
 - replace free-form proposal evidence with an append-only, typed pending proposal family
+
+Current state:
+
+- typed `LearningProposal` schema and append-only `learning-proposals.jsonl` store have started
+- typed `ReverseScaffoldFeedback` schema and append-only `reverse-scaffold-feedback.jsonl` telemetry have started
+- replay/eval/review expose both surfaces
+- `npm run learning:proposals` provides read-only summary/list/show/filter inspection
+- anti-vague validation keeps incomplete proposals in `draft` or `rejected` rather than actionable pending review
+- there is still no apply path, stable promotion, or live behavior change
 
 Required proposal families:
 
@@ -463,14 +479,14 @@ The following docs should stay aligned with this roadmap:
 
 ## Honest Current Answer
 
-The project is not ready for full P9.1 implementation yet.
+The project is ready to continue P9.1 read-only proposal infrastructure, but it is not ready for proposal application or stable learning.
 
-The remaining pre-P9.1 blockers are:
+The remaining blockers before any proposal can affect future decisions are:
 
-- incomplete protected-path hardening
-- no typed `LearningProposal` schema/store
-- no typed `ReverseScaffoldFeedback`
-- no first-class `EvidenceSliceReader`
+- incomplete future promotion surface around protected-path hardening
+- no proposal review-decision ledger
+- no shadow applicator
+- no promotion-grade canonical `EvidenceSliceReader`
 - no stable promotion ledger model
 
 That is the work to do now.

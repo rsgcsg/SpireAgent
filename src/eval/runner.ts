@@ -22,6 +22,14 @@ import { buildEvidenceSliceSummary, type EvidenceSliceSummary } from "../replay/
 import { buildBudgetGovernanceSummary, type BudgetGovernanceSummary } from "../replay/budgetGovernanceSummary.js";
 import { buildWorkspaceDecisionClassQuality, type WorkspaceDecisionClassQualityStats } from "../replay/workspaceQuality.js";
 import { assessP8LiveReadiness, type P8LiveReadinessAssessment } from "../replay/p8LiveReadiness.js";
+import {
+  buildLearningProposalSurface,
+  buildReverseScaffoldFeedbackSurface,
+  readLearningProposals,
+  readReverseScaffoldFeedback,
+  type LearningProposalSurface,
+  type ReverseScaffoldFeedbackSurface
+} from "../learning/proposals.js";
 
 export type EvalStatus = "PASS" | "WARN" | "FAIL";
 
@@ -94,6 +102,8 @@ export interface EvalSummary {
   liveAppliedRollout: LiveAppliedRolloutSummary;
   evidenceSlices: EvidenceSliceSummary;
   budgetGovernance: BudgetGovernanceSummary;
+  learningProposalSurface: LearningProposalSurface;
+  reverseScaffoldFeedbackSurface: ReverseScaffoldFeedbackSurface;
   predictionErrorCoverage: EvalPredictionErrorCoverage;
   consolidationCoverage: EvalConsolidationCoverage;
   consolidationProposalSurface: ReplayConsolidationProposalSurface;
@@ -424,6 +434,8 @@ export function evaluateRun(runIdOrPath?: string): EvalReport {
   const evidenceSlices = buildEvidenceSliceSummary(validTransitions as unknown as JsonRecord[]);
   const budgetGovernance = buildBudgetGovernanceSummary(validTransitions as unknown as JsonRecord[]);
   const consolidationProposalSurface = buildReplayConsolidationProposalSurface(readConsolidationProposals(runDir, validTransitions));
+  const learningProposalSurface = buildLearningProposalSurface(readLearningProposals(runDir));
+  const reverseScaffoldFeedbackSurface = buildReverseScaffoldFeedbackSurface(readReverseScaffoldFeedback(runDir));
   for (const issue of buildStrategyWarnings(strategyMetrics)) {
     addWarning(warnings, warningSummary, issue);
   }
@@ -468,6 +480,8 @@ export function evaluateRun(runIdOrPath?: string): EvalReport {
       liveAppliedRollout,
       evidenceSlices,
       budgetGovernance,
+      learningProposalSurface,
+      reverseScaffoldFeedbackSurface,
       predictionErrorCoverage,
       consolidationCoverage,
       consolidationProposalSurface

@@ -19,6 +19,14 @@ import { buildEvidenceSliceSummary, formatEvidenceSliceSummary } from "./evidenc
 import { buildBudgetGovernanceSummary, formatBudgetGovernanceSummary } from "./budgetGovernanceSummary.js";
 import { buildWorkspaceDecisionClassQuality, formatWorkspaceDecisionClassQuality } from "./workspaceQuality.js";
 import { assessP8LiveReadiness, formatP8LiveReadinessAssessment } from "./p8LiveReadiness.js";
+import {
+  buildLearningProposalSurface,
+  buildReverseScaffoldFeedbackSurface,
+  formatLearningProposalSurface,
+  formatReverseScaffoldFeedbackSurface,
+  readLearningProposals,
+  readReverseScaffoldFeedback
+} from "../learning/proposals.js";
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
@@ -40,6 +48,8 @@ async function main(): Promise<void> {
   const liveAppliedRollout = buildLiveAppliedRolloutSummary(run.transitions as unknown as JsonRecord[]);
   const evidenceSlices = buildEvidenceSliceSummary(run.transitions as unknown as JsonRecord[]);
   const budgetGovernance = buildBudgetGovernanceSummary(run.transitions as unknown as JsonRecord[]);
+  const learningProposalSurface = buildLearningProposalSurface(readLearningProposals(run.runDir));
+  const reverseScaffoldFeedbackSurface = buildReverseScaffoldFeedbackSurface(readReverseScaffoldFeedback(run.runDir));
   console.log(`Run: ${path.basename(run.runDir)}`);
   console.log(`Transitions: ${run.transitions.length}`);
   console.log(`Cognitive coverage: ${formatReplayCognitiveCoverage(cognitiveCoverage)}`);
@@ -49,6 +59,8 @@ async function main(): Promise<void> {
   console.log(`Live-applied rollout: ${formatLiveAppliedRolloutSummary(liveAppliedRollout)}`);
   console.log(`Evidence slices: ${formatEvidenceSliceSummary(evidenceSlices)}`);
   console.log(`Budget governance: ${formatBudgetGovernanceSummary(budgetGovernance)}`);
+  console.log(`Learning proposal surface: ${formatLearningProposalSurface(learningProposalSurface)}`);
+  console.log(`Reverse scaffold feedback: ${formatReverseScaffoldFeedbackSurface(reverseScaffoldFeedbackSurface)}`);
   console.log(`Workspace quality by class: ${formatWorkspaceDecisionClassQuality(workspaceDecisionClassQuality)}`);
   console.log(`Consolidation proposal surface: ${formatReplayConsolidationProposalSurface(proposalSurface)}`);
   if (command === "proposals") {

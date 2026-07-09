@@ -126,12 +126,12 @@ All requested categories were audited. Current visibility:
 | live whitelist/wildcard boundary | yes | partial | current docs are aligned; reporting still has split semantics |
 | legacy finalize/local learning | yes | yes | blocked by default, still needs explicit legacy classification |
 | replay/eval/readiness semantics | yes | yes | shadow readiness and live-applied audit coexist and can be misread |
-| EvidenceSliceReader/evidence window | yes | yes | missing as first-class module |
+| EvidenceSliceReader/evidence window | yes | yes | first-class read-only module started; not yet promotion-grade canonical slice authority |
 | console/debug/fixture pollution | yes | yes | documented; needs enforceable slice semantics |
-| LearningProposal schema/store | yes | yes | missing |
-| ReverseScaffoldFeedback schema/store | yes | yes | missing |
-| weak attribution/overclaim | yes | yes | documented; needs schema support |
-| anti-vague proposal validation | yes | yes | documented; missing implementation |
+| LearningProposal schema/store | yes | yes | append-only read-only store started; no apply path |
+| ReverseScaffoldFeedback schema/store | yes | yes | append-only telemetry/store started; proposal-seed only |
+| weak attribution/overclaim | yes | yes | encoded for pending proposals; attribution remains weak |
+| anti-vague proposal validation | yes | yes | implemented for pending proposal status normalization |
 | controller boundary/orchestration | yes | yes | high debt, but broad rewrite is not P9-entry work |
 | LiveDecisionGateway boundary | yes | partial | useful narrow extraction, optional before P9 |
 | budget/recovery governance | yes | yes | governance exists; implementation is still P8-local |
@@ -168,10 +168,10 @@ Legend:
 | D-007 | Shadow readiness and live-applied rollout semantics split | readiness | `p8LiveReadiness.ts`, `liveAppliedRollout.ts`, `REPLAY_AND_EVAL.md` | in_progress | critical | must_fix_before_formal_P9 | yes | advanced | PR-4 | Replay/eval/review expose separate evidence purposes without conflicting gates |
 | D-008 | EvidenceSliceReader read-only surface started | evidence | `reader.ts`, `evidenceBudget.ts`, P9 docs | in_progress | critical | must_fix_before_formal_P9 | yes | advanced | PR-4 | First-class read-only slice dimensions for run/revision/budget/live/shadow/console |
 | D-009 | Console/debug/fixture evidence pollution | evidence | `REPLAY_AND_EVAL.md`, console guidance | in_progress | critical | must_fix_before_formal_P9 | yes | advanced | PR-5 | Console/debug evidence is labeled/excludable from promotion slices |
-| D-010 | LearningProposal schema/store missing | P9 schema | `domain/types.ts`, `DATA_SCHEMA.md` | open | critical | P9.1_entry | yes | advanced | PR-7 | Typed proposal family, append-only pending store, no apply path |
-| D-011 | ReverseScaffoldFeedback schema/store missing | P9 schema | P9 docs, review signals | open | high | P9.1_entry | no, but needed early | advanced | PR-8 | Typed telemetry/proposal-seed surface, no live behavior change |
-| D-012 | Weak attribution not encoded | attribution | P9 docs, `cognitiveScaffold.ts` | open | critical | must_fix_before_formal_P9 | yes | advanced | PR-9 | Proposals require suspected cause, confidence, alternatives, counterexample need |
-| D-013 | Anti-vague proposal validation missing | proposal quality | P9 docs | open | critical | must_fix_before_formal_P9 | yes | advanced | PR-9 | Draft/reject vague proposals without evidence/scope/counterexample/validation plan |
+| D-010 | LearningProposal schema/store started | P9 schema | `domain/types.ts`, `DATA_SCHEMA.md`, `learning-proposals.jsonl` | closed | critical | P9.1_entry | no | advanced | PR-7 | Typed proposal family, append-only pending store, no apply path |
+| D-011 | ReverseScaffoldFeedback schema/store started | P9 schema | P9 docs, review signals, `reverse-scaffold-feedback.jsonl` | closed | high | P9.1_entry | no | advanced | PR-8 | Typed telemetry/proposal-seed surface, no live behavior change |
+| D-012 | Weak attribution encoded for proposals | attribution | P9 docs, `domain/types.ts` | closed | critical | must_fix_before_formal_P9 | no | advanced | PR-9 | Proposals require suspected cause, confidence, alternatives, counterexample need |
+| D-013 | Anti-vague proposal validation implemented | proposal quality | P9 docs, `learning/proposals.ts` | closed | critical | must_fix_before_formal_P9 | no | advanced | PR-9 | Draft/reject vague proposals without evidence/scope/counterexample/validation plan |
 | D-014 | Controller owns too many concerns | architecture | `controller.ts` | open | high | P9.2_to_P9.8 | no | advanced | PR-11 optional | Narrow extraction only; broad rewrite deferred |
 | D-015 | LiveDecisionGateway missing | architecture | `controller.ts`, live adapter path | open | medium | should_fix_before_P9_if_safe | no | advanced | PR-11 optional | Extract live decision boundary only if tests stay small and rollback easy |
 | D-016 | Budget/recovery governance still P8-local | budget | `BUDGET_GOVERNANCE.md`, `llm.ts`, `workspace.ts` | in_progress | high | should_fix_before_P9_if_safe | no | advanced | PR-6 | Separate call/recovery/run/evidence/protected-path budgets in docs/reporting |
@@ -237,7 +237,7 @@ Minimum repair:
 - replay/eval/review must say which layer each summary describes
 - P9 entry must use live-applied cleanliness plus proposal-safety readiness, not stale P8 combat-only heuristics
 
-### D-008 EvidenceSliceReader Missing
+### D-008 EvidenceSliceReader Started But Not Yet Promotion-Grade
 
 Why it matters:
 
@@ -274,12 +274,12 @@ Why it matters:
 
 - Current `ConsolidationRecord` is useful proposal evidence but too weak for P9.
 
-Minimum repair:
+Current state:
 
-- typed proposal family
-- append-only pending store
-- no apply path
-- no stable write
+- typed proposal family exists
+- append-only pending store exists
+- no apply path exists
+- no stable write exists
 
 ### D-012 Weak Attribution
 
@@ -288,9 +288,10 @@ Why it matters:
 - Slay the Spire failures are delayed and multi-causal.
 - P9 must not pretend exact single-transition causality.
 
-Minimum repair:
+Current state:
 
-- encode `suspectedCause`, `confidence`, `counterexampleNeeded`, and `alternativeHypotheses`
+- `LearningProposal` encodes `suspectedCause`, `confidence`, `counterexampleNeeded`, and `alternativeHypotheses`
+- attribution remains weak and cannot become stable truth without later evidence slices and promotion gates
 
 ### D-013 Anti-Vague Proposal Validation
 
@@ -298,9 +299,10 @@ Why it matters:
 
 - LLMs can generate plausible but useless advice.
 
-Minimum repair:
+Current state:
 
 - proposals missing evidence, scope, counterexample handling, expected effect, validation plan, or rollback plan stay draft/rejected
+- this validation only controls proposal status; it does not approve, apply, or promote proposals
 
 ### D-018 Memory-System Boundary
 
@@ -1048,14 +1050,14 @@ Before formal P9:
 - [ ] legacy finalize behavior is blocked, isolated, or labeled legacy-local-learning
 - [ ] EvidenceSliceReader or equivalent explicit slice semantics exist
 - [ ] console/debug/fixture evidence cannot qualify stable promotion
-- [ ] weak attribution fields are available or accepted as a P9.1 blocker
-- [ ] vague proposals cannot become actionable pending proposals
-- [ ] LearningProposal schema/store exists before proposal generation
-- [ ] ReverseScaffoldFeedback exists as telemetry/proposal-seed only
-- [ ] proposal apply/promotion remains deferred until later guarded phases
-- [ ] clean live rollout is not treated as learning proof
-- [ ] every decision class being live-ready is not required
-- [ ] runtime artifacts, provider outputs, snapshots, mutable memory, `.env.local`, and API keys are not tracked
+- [x] weak attribution fields are available or accepted as a P9.1 blocker
+- [x] vague proposals cannot become actionable pending proposals
+- [x] LearningProposal schema/store exists before proposal generation
+- [x] ReverseScaffoldFeedback exists as telemetry/proposal-seed only
+- [x] proposal apply/promotion remains deferred until later guarded phases
+- [x] clean live rollout is not treated as learning proof
+- [x] every decision class being live-ready is not required
+- [x] runtime artifacts, provider outputs, snapshots, mutable memory, `.env.local`, and API keys are not tracked
 
 ## Remaining Risks
 

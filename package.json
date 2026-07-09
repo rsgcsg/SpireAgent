@@ -19,6 +19,7 @@
     "collect:watch": "tsx src/agent/collector.ts watch",
     "data:replay": "tsx src/replay/cli.ts",
     "data:eval": "tsx src/eval/cli.ts",
+    "learning:proposals": "tsx src/learning/cli.ts",
     "sync:sts2-data": "node scripts/sync-sts2-data.mjs"
   },
   "engines": {

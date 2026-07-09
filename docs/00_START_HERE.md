@@ -55,6 +55,7 @@ Start here before changing docs, planning a new phase, or deciding which documen
 - [P8_P9_DEBT_REGISTER.md](debt/P8_P9_DEBT_REGISTER.md)
 - [PRE_P9_ENGINEERING_DEBT_AUDIT.md](debt/PRE_P9_ENGINEERING_DEBT_AUDIT.md)
 - [P9_ENTRY_CRITERIA.md](phases/P9_ENTRY_CRITERIA.md)
+- [P9_ENTRY_DECISION.md](phases/P9_ENTRY_DECISION.md)
 - [P9_GUARDED_LEARNING_PLAN.md](phases/P9_GUARDED_LEARNING_PLAN.md)
 - [P9_P13_EXECUTION_ROADMAP.md](phases/P9_P13_EXECUTION_ROADMAP.md)
 - [P8_5_LIVE_ROLLOUT_POLICY.md](phases/P8_5_LIVE_ROLLOUT_POLICY.md)
@@ -115,3 +116,21 @@ When a task changes project behavior, policy, or phase judgment:
 3. Update phase docs when a milestone judgment changed.
 4. Update handoff/debug only as supporting history.
 5. Prefer moving stale docs into `archive/legacy/` plus redirect stubs over leaving them mixed with active docs.
+
+## Status Drift Check
+
+When a subsystem status changes, update or verify all of the following together so active docs do not drift:
+
+1. `04_CURRENT_STATUS.md`
+2. the relevant `phases/*.md` roadmap or entry-criteria doc
+3. the relevant `debt/*.md` entry
+4. the relevant subsystem source doc such as `../REPLAY_AND_EVAL.md`, `../DATA_SCHEMA.md`, or `../BUDGET_GOVERNANCE.md`
+5. schema/eval wording if the change affects report semantics
+
+Important wording guardrails:
+
+- "started" is not the same as "complete"
+- "read-only evidence slicing" is not the same as "promotion-grade evidence"
+- "promotion-eligible evidence" is not the same as "promotion applied"
+- "budget telemetry" is not the same as "Budget OS"
+- "`BudgetPolicyProposal`" is not the same as runtime budget autonomy

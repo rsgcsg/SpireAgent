@@ -25,7 +25,11 @@ P9 should start only when the project is ready to shift from live-scaffold expan
   Current state:
   legacy finalize stable writes are blocked by default, audited, and labeled as `legacy_local_learning`. If explicitly enabled, the path is still audited as legacy finalize and remains separate from P9 proposal promotion.
 - Define typed pending proposal schema.
+  Current state:
+  typed `LearningProposal` schema and append-only `learning-proposals.jsonl` store exist. They are read-only proposal infrastructure and have no apply or promotion path.
 - Define typed reverse-scaffold feedback schema and keep it telemetry/proposal-seed only at first.
+  Current state:
+  typed `ReverseScaffoldFeedback` schema and append-only `reverse-scaffold-feedback.jsonl` telemetry exist. They do not affect live prompts, budgets, validation, execution, or stable policy.
 - Define promotion criteria and rollback fields before any stable proposal may be applied.
 - Define evidence-slice rules so mixed revision, mixed budget, and console fixture data cannot silently qualify stable promotion.
   Current state:
@@ -37,7 +41,11 @@ P9 should start only when the project is ready to shift from live-scaffold expan
   - repeated cap failure creates review/proposal evidence, not automatic escalation
   - `BudgetPolicyProposal` is proposal-only until later shadow validation and promotion gates exist
 - Accept that prediction attribution starts weak, not precise, and encode that in schema and review flow.
+  Current state:
+  pending proposals carry weak-attribution fields such as suspected cause, confidence, counterexample need, and alternative hypotheses.
 - Reject vague proposals without evidence, scope, counterexample handling, and validation planning.
+  Current state:
+  proposal validation keeps vague or incomplete records out of actionable pending review.
 
 ## Explicitly Not Required
 

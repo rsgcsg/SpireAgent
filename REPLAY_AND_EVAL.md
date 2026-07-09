@@ -162,6 +162,20 @@ P7 proposal rules:
 - Keep all proposals shadow-only and block automatic writes to memory, derived knowledge, strategy params, candidate ordering, prompt behavior, fallback, validation, and execution.
 - `npm run data:replay -- proposals --latest` prints the proposal surface and grouped proposal evidence for the latest run.
 
+P9.1 proposal and reverse-feedback visibility:
+
+- Replay/eval/review now expose a separate typed `learningProposalSurface` when `data/runs/<runId>/learning-proposals.jsonl` exists.
+- This surface reports pending, draft, rejected, actionable pending, stable/applied count, missing required fields, proposal type, target layer, and protected target counts.
+- `LearningProposal` records are append-only run artifacts. They are not stable memory, derived knowledge, strategy, skill, classification, candidate template, budget, or scaffold policy.
+- Anti-vague validation is conservative: proposals missing evidence, scope, counterexamples, expected effect, validation plan, rollback, protected-path impact, or source ids cannot enter actionable pending review.
+- Replay/eval/review also expose `reverseScaffoldFeedbackSurface` when `reverse-scaffold-feedback.jsonl` exists. It is telemetry/proposal-seed material only and cannot change live behavior.
+- `stableOrApplied`, `applyPathEnabled=false`, and `stablePromotionEnabled=false` must stay visible until later guarded phases deliberately add a shadow applicator and promotion gate.
+- `npm run learning:proposals -- summary --latest` prints a read-only summary for typed proposals and reverse feedback.
+- `npm run learning:proposals -- list --latest --status pending_review` lists typed proposals with optional filters such as `--type`, `--target-layer`, `--transition-id`, `--source-run-id`, and `--missing-field`.
+- `npm run learning:proposals -- show --latest --id <proposalId>` prints one typed proposal.
+- `npm run learning:proposals -- feedback --latest` and `feedback-show --id <feedbackId>` inspect reverse-scaffold feedback.
+- Mutating commands such as approve, apply, promote, reject, expire, and revert are intentionally unavailable in P9.1 read-only mode.
+
 Useful checks:
 
 - candidate generation is non-empty on actionable screens

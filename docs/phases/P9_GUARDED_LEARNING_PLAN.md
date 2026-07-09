@@ -307,6 +307,15 @@ Allowed:
 - append-only store
 - review CLI read path
 
+Current state:
+
+- `LearningProposal` and `ReverseScaffoldFeedback` schemas exist
+- `learning-proposals.jsonl` and `reverse-scaffold-feedback.jsonl` are append-only run artifacts
+- replay/eval/review can report both surfaces
+- `npm run learning:proposals` provides a read-only inspection CLI for summary/list/show/filter operations
+- vague proposals cannot become actionable pending review without evidence, scope, counterexamples, expected effect, validation plan, and rollback
+- no proposal apply, promotion, or stable write path exists
+
 ### P9.2 Attribution And Proposal Generation
 
 Goal:
@@ -330,6 +339,12 @@ Goal:
 Goal:
 
 - let humans inspect, approve, reject, expire, and revert proposals
+
+Current P9.1 state:
+
+- inspect/list/show exists as read-only CLI
+- review-decision ledger operations are still future work
+- apply and stable promotion remain forbidden
 
 ### P9.5 Shadow Applicator
 
