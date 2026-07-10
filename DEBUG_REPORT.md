@@ -10,6 +10,14 @@ Current closeout / next-phase pointers:
 - `docs/phases/P9_GUARDED_LEARNING_PLAN.md`
 - `docs/phases/P9_P15_EXECUTION_ROADMAP.md`
 
+## 2026-07-11 P9-G2 Authority And Environment Telemetry
+
+- Fresh executor-recorded transitions now carry audit-only decision-authorization and environment-scope records. This is telemetry only: it does not change routing, provider calls, validation, execution, live authorization, proposal application, or stable writes.
+- Authority mode is deliberately `unknown` unless a process explicitly declares it. A provider call that falls back locally is recorded as `local_fallback`; it does not inherit LLM authority.
+- Environment identity is `unknown`/`partial` unless all required values are explicitly supplied. Console/debug provenance is opt-in and promotion-excluded; older transitions remain readable but are `not_recorded` and promotion-excluded.
+- New actionable proposal and shadow-overlay checks require an explicit organic, exact environment scope and a classified behavior impact. This is an experiment-integrity gate, not promotion or policy application.
+- Fresh complete-scope, explicit-authority paired/counterexample evidence remains missing. Do not begin P9-G3 promotion-ledger, rollback-snapshot, or retrieval-trace design yet.
+
 ## 2026-07-11 P9-P15 Phase Architecture Audit
 
 - Documentation/architecture pass only; no runtime, live, provider, proposal status, stable policy, or budget behavior changed.

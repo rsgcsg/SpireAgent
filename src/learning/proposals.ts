@@ -4,9 +4,11 @@ import {
   DOMAIN_SCHEMA_VERSION,
   type JsonRecord,
   type LearningProposal,
+  type LearningProposalEnvironmentScope,
   type LearningProposalReviewDecision,
   type LearningProposalReviewDecisionKind,
   type LearningProposalStatus,
+  type ProposalBehaviorImpact,
   type ReverseScaffoldFeedback
 } from "../domain/types.js";
 import { appendJsonl, isRecord, nowIso, stableId } from "../agent/utils.js";
@@ -29,6 +31,8 @@ export interface LearningProposalSurface {
   statusCounts: Record<string, number>;
   typeCounts: Record<string, number>;
   targetLayerCounts: Record<string, number>;
+  behaviorImpactCounts: Record<string, number>;
+  environmentScopeStatusCounts: Record<string, number>;
   protectedTargetCounts: Record<string, number>;
   missingRequiredFieldCounts: Record<string, number>;
   sourceSurfaceCounts: Record<string, number>;
@@ -119,6 +123,7 @@ export function createLearningProposal(input: Partial<LearningProposal>): Learni
     type: typeof input.type === "string" ? input.type : "scaffold_policy",
     status: normalizeRequestedStatus(input.status),
     scope: isRecord(input.scope) ? input.scope : {},
+    environmentScope: normalizeEnvironmentScope(input.environmentScope),
     targetLayer: typeof input.targetLayer === "string" ? input.targetLayer : "",
     targetObject: typeof input.targetObject === "string" ? input.targetObject : "",
     proposedPatch: isRecord(input.proposedPatch) ? input.proposedPatch : {},
@@ -134,6 +139,7 @@ export function createLearningProposal(input: Partial<LearningProposal>): Learni
         },
     confidence: typeof input.confidence === "number" ? input.confidence : 0,
     riskLevel: typeof input.riskLevel === "string" ? input.riskLevel : "medium",
+    behaviorImpact: normalizeBehaviorImpact(input.behaviorImpact),
     expectedEffect: typeof input.expectedEffect === "string" ? input.expectedEffect : "",
     promotionCriteria: isRecord(input.promotionCriteria)
       ? input.promotionCriteria
@@ -170,10 +176,16 @@ export function appendLearningProposal(runDir: string, input: Partial<LearningPr
 }
 
 export function readLearningProposals(runDir: string): JsonRecord[] {
-  return readJsonlIfExists(path.join(runDir, LEARNING_PROPOSALS_FILE)).map((proposal) => ({
-    ...proposal,
-    sourceSurface: LEARNING_PROPOSALS_FILE
-  }));
+  return readJsonlIfExists(path.join(runDir, LEARNING_PROPOSALS_FILE)).map((proposal) => {
+    // Read-time validation keeps append-only historical records visible without
+    // allowing an older schema to retain actionable status under newer gates.
+    const normalized = createLearningProposal(proposal as Partial<LearningProposal>);
+    return {
+      ...normalized,
+      reviewHistory: Array.isArray(proposal.reviewHistory) ? proposal.reviewHistory : normalized.reviewHistory,
+      sourceSurface: LEARNING_PROPOSALS_FILE
+    };
+  });
 }
 
 export function filterLearningProposals(proposals: JsonRecord[], filter: LearningProposalFilter): JsonRecord[] {
@@ -207,6 +219,8 @@ export function buildLearningProposalSurface(proposals: unknown[]): LearningProp
     statusCounts: {},
     typeCounts: {},
     targetLayerCounts: {},
+    behaviorImpactCounts: {},
+    environmentScopeStatusCounts: {},
     protectedTargetCounts: {},
     missingRequiredFieldCounts: {},
     sourceSurfaceCounts: {},
@@ -222,6 +236,9 @@ export function buildLearningProposalSurface(proposals: unknown[]): LearningProp
     count(surface.statusCounts, status);
     count(surface.typeCounts, type);
     count(surface.targetLayerCounts, targetLayer);
+    count(surface.behaviorImpactCounts, stringValue(proposal.behaviorImpact, "unclassified"));
+    const environmentScope = isRecord(proposal.environmentScope) ? proposal.environmentScope : undefined;
+    count(surface.environmentScopeStatusCounts, stringValue(environmentScope?.scopeStatus, "unknown"));
     count(surface.sourceSurfaceCounts, stringValue(proposal.sourceSurface, "unknown"));
     if (status === "pending_review") surface.pendingReview += 1;
     if (status === "draft") surface.draft += 1;
@@ -244,6 +261,8 @@ export function buildLearningProposalSurface(proposals: unknown[]): LearningProp
         type,
         status,
         targetLayer,
+        behaviorImpact: stringValue(proposal.behaviorImpact, "unclassified"),
+        environmentScopeStatus: stringValue(environmentScope?.scopeStatus, "unknown"),
         actionable: validation?.actionable === true,
         missingRequiredFields: Array.isArray(validation?.missingRequiredFields) ? validation.missingRequiredFields : []
       });
@@ -261,6 +280,8 @@ export function formatLearningProposalSurface(surface: LearningProposalSurface):
     `rejected=${surface.rejected}`,
     `stableOrApplied=${surface.stableOrApplied}`,
     `types=${JSON.stringify(surface.typeCounts)}`,
+    `behaviorImpact=${JSON.stringify(surface.behaviorImpactCounts)}`,
+    `environmentScope=${JSON.stringify(surface.environmentScopeStatusCounts)}`,
     `missingRequired=${JSON.stringify(surface.missingRequiredFieldCounts)}`,
     `applyPathEnabled=${surface.applyPathEnabled}`,
     `stablePromotionEnabled=${surface.stablePromotionEnabled}`
@@ -275,8 +296,10 @@ export function summarizeLearningProposal(proposal: JsonRecord): JsonRecord {
     status: proposal.status,
     targetLayer: proposal.targetLayer,
     targetObject: proposal.targetObject,
+    environmentScope: proposal.environmentScope,
     confidence: proposal.confidence,
     riskLevel: proposal.riskLevel,
+    behaviorImpact: proposal.behaviorImpact,
     actionable: validation.actionable,
     missingRequiredFields: Array.isArray(validation.missingRequiredFields) ? validation.missingRequiredFields : [],
     sourceRuns: proposal.createdFromRunIds,
@@ -359,6 +382,7 @@ export function createLearningProposalReviewDecision(
       type: typeof proposal.type === "string" ? proposal.type : undefined,
       targetLayer: typeof proposal.targetLayer === "string" ? proposal.targetLayer : undefined,
       targetObject: typeof proposal.targetObject === "string" ? proposal.targetObject : undefined,
+      behaviorImpact: typeof proposal.behaviorImpact === "string" ? proposal.behaviorImpact : undefined,
       actionable,
       missingRequiredFields
     },
@@ -454,6 +478,7 @@ export function summarizeLearningProposalReviewDecision(decision: JsonRecord): J
     notes: decision.notes,
     createdAt: decision.createdAt,
     proposalStatus: snapshot.status,
+    proposalBehaviorImpact: snapshot.behaviorImpact,
     proposalActionable: snapshot.actionable,
     missingRequiredFields: Array.isArray(snapshot.missingRequiredFields) ? snapshot.missingRequiredFields : [],
     reviewScope: decision.reviewScope,
@@ -611,6 +636,7 @@ function missingProposalFields(proposal: LearningProposal): string[] {
   const missing: string[] = [];
   if (!proposal.type) missing.push("type");
   if (!hasScope(proposal.scope)) missing.push("scope");
+  if (!hasActionableEnvironmentScope(proposal.environmentScope)) missing.push("environmentScope");
   if (!proposal.targetLayer) missing.push("targetLayer");
   if (!proposal.targetObject) missing.push("targetObject");
   if (!isRecord(proposal.proposedPatch) || Object.keys(proposal.proposedPatch).length === 0) missing.push("proposedPatch");
@@ -625,6 +651,7 @@ function missingProposalFields(proposal: LearningProposal): string[] {
   }
   if (!proposal.expectedEffect) missing.push("expectedEffect");
   if (!proposal.riskLevel) missing.push("riskLevel");
+  if (!proposal.behaviorImpact || proposal.behaviorImpact === "unclassified") missing.push("behaviorImpact");
   if (!proposal.promotionCriteria.evidenceRequired.length) missing.push("promotionCriteria.evidenceRequired");
   if (!proposal.promotionCriteria.validationPlan.length) missing.push("promotionCriteria.validationPlan");
   if (!proposal.rollbackPlan.rollbackTrigger.length) missing.push("rollbackPlan.rollbackTrigger");
@@ -637,6 +664,54 @@ function missingProposalFields(proposal: LearningProposal): string[] {
 
 function normalizeRequestedStatus(status: unknown): LearningProposalStatus {
   return typeof status === "string" && isLearningProposalStatus(status) ? status : "draft";
+}
+
+function normalizeBehaviorImpact(value: unknown): ProposalBehaviorImpact {
+  if (
+    value === "presentation_only" ||
+    value === "deliberation_shaping" ||
+    value === "candidate_shaping" ||
+    value === "authority_shaping" ||
+    value === "action_shaping" ||
+    value === "hard_shell"
+  ) {
+    return value;
+  }
+  return "unclassified";
+}
+
+function normalizeEnvironmentScope(value: unknown): LearningProposalEnvironmentScope {
+  if (isRecord(value)) {
+    const scopeStatus = value.scopeStatus === "exact" || value.scopeStatus === "partial" || value.scopeStatus === "mixed"
+      ? value.scopeStatus
+      : "unknown";
+    return {
+      fingerprintHashes: Array.isArray(value.fingerprintHashes) ? value.fingerprintHashes.filter((item): item is string => typeof item === "string") : [],
+      scopeStatus,
+      captureProvenance: Array.isArray(value.captureProvenance)
+        ? value.captureProvenance.filter((item): item is LearningProposalEnvironmentScope["captureProvenance"][number] =>
+          item === "organic" || item === "console_debug" || item === "fixture" || item === "unknown")
+        : ["unknown"],
+      compatibilityStates: Array.isArray(value.compatibilityStates)
+        ? value.compatibilityStates.filter((item): item is LearningProposalEnvironmentScope["compatibilityStates"][number] =>
+          item === "compatible" || item === "degraded" || item === "quarantined" || item === "unsupported" || item === "unknown")
+        : ["unknown"],
+      notes: Array.isArray(value.notes) ? value.notes.filter((item): item is string => typeof item === "string") : []
+    };
+  }
+  return {
+    fingerprintHashes: [],
+    scopeStatus: "unknown",
+    captureProvenance: ["unknown"],
+    compatibilityStates: ["unknown"],
+    notes: ["environment_scope_not_recorded"]
+  };
+}
+
+function hasActionableEnvironmentScope(scope: LearningProposalEnvironmentScope): boolean {
+  return scope.scopeStatus === "exact" &&
+    scope.fingerprintHashes.length > 0 &&
+    scope.captureProvenance.includes("organic");
 }
 
 function normalizeReviewDecision(decision: unknown): LearningProposalReviewDecisionKind {

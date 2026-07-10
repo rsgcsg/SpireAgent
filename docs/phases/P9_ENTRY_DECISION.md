@@ -40,8 +40,8 @@ This is not approval for stable learning.
 | Budget governance semantics | pass-for-P9-G1 | Stage 0 guard + telemetry only; learned compute/provider orchestration remains deferred to P11B. Existing `P13` telemetry is a historical label. |
 | Weak attribution | pass-for-proposals | Proposal schema includes suspected cause, confidence, counterexample need, and alternative hypotheses. |
 | Anti-vague proposal validation | pass | Incomplete proposals are draft/rejected, not actionable pending review. |
-| Decision-authority foundation | blocker-before-P9-G3 | G2/P9.5D must make deliberation/selection/authorization/execution and proposal impact auditable without changing behavior. |
-| Environment identity and evidence scope | blocker-before-P9-G3 | G2/P9.5E must prevent unknown or incompatible game/mod/adapter evidence from qualifying stable promotion. |
+| Decision-authority foundation | pass-for-schema, blocker-for-G3 | Fresh executor-logged transitions now record the authority chain without changing behavior. Fresh explicit-mode coverage and old-record `not_recorded` review remain required. |
+| Environment identity and evidence scope | pass-for-schema, blocker-for-G3 | Fresh transitions now record explicit fingerprint/scope and exclude missing/partial scope from structural promotion evidence. Verified complete-scope organic paired evidence and future compatibility evaluation remain required. |
 
 ## Explicit Non-Readiness
 
@@ -51,8 +51,8 @@ The following are still not implemented:
 - rollback snapshots
 - retrieval integration for stable learned policies
 - promotion-grade canonical evidence slicing
-- complete decision-authority audit records
-- environment fingerprint, compatibility, quarantine, and revalidation scope
+- fresh authority-complete audit coverage across relevant paths
+- verified environment-complete paired evidence, compatibility evaluation, quarantine, and revalidation scope
 - wildcard live
 - learned compute/provider orchestration
 
@@ -75,9 +75,9 @@ The extraction remains accepted maintainability debt. G2 authority/environment s
 The next engineering sequence is:
 
 ```text
-P9-G2 decision-authority schema/telemetry
-  -> P9-G2 environment identity/evidence scope
-  -> additional comparable paired/counterexample evidence
+P9-G2 fresh authority/environment-complete capture
+  -> comparable paired/counterexample evidence
+  -> console/debug exclusion verification
   -> P9-G2 gate audit
   -> P9-G3 design only after pass
 ```

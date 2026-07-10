@@ -8,7 +8,7 @@ export type EvidenceSliceKind =
 
 export interface EvidenceSliceSummary {
   schemaVersion: number;
-  policyName: "pre_p9_evidence_slice_reader_v1";
+  policyName: "p9_g2_evidence_slice_reader_v2";
   transitions: number;
   dimensions: {
     sourceCounts: Record<string, number>;
@@ -19,6 +19,13 @@ export interface EvidenceSliceSummary {
     providerSourceCounts: Record<string, number>;
     liveModeCounts: Record<string, number>;
     provenanceCounts: Record<string, number>;
+    authorityModeCounts: Record<string, number>;
+    selectionSourceCounts: Record<string, number>;
+    authorizationSourceCounts: Record<string, number>;
+    executionSourceCounts: Record<string, number>;
+    environmentFingerprintCounts: Record<string, number>;
+    environmentScopeStatusCounts: Record<string, number>;
+    environmentCompatibilityStateCounts: Record<string, number>;
   };
   mixedRevisionWindow: boolean;
   mixedBudgetWindow: boolean;
@@ -52,7 +59,14 @@ export function buildEvidenceSliceSummary(transitions: JsonRecord[]): EvidenceSl
     budgetWindowCounts: countBy(transitions, transitionBudgetWindow),
     providerSourceCounts: countBy(transitions, transitionProviderSource),
     liveModeCounts: countBy(transitions, transitionLiveMode),
-    provenanceCounts: countBy(transitions, transitionProvenance)
+    provenanceCounts: countBy(transitions, transitionProvenance),
+    authorityModeCounts: countBy(transitions, transitionAuthorityMode),
+    selectionSourceCounts: countBy(transitions, transitionSelectionSource),
+    authorizationSourceCounts: countBy(transitions, transitionAuthorizationSource),
+    executionSourceCounts: countBy(transitions, transitionExecutionSource),
+    environmentFingerprintCounts: countBy(transitions, transitionEnvironmentFingerprintHash),
+    environmentScopeStatusCounts: countBy(transitions, transitionEnvironmentScopeStatus),
+    environmentCompatibilityStateCounts: countBy(transitions, transitionEnvironmentCompatibilityState)
   };
   const mixedRevisionWindow = Object.keys(removeUnknown(dimensions.revisionTagCounts)).length > 1;
   const mixedBudgetWindow = Object.keys(removeUnknown(dimensions.budgetWindowCounts)).length > 1;
@@ -70,7 +84,7 @@ export function buildEvidenceSliceSummary(transitions: JsonRecord[]): EvidenceSl
 
   return {
     schemaVersion: 1,
-    policyName: "pre_p9_evidence_slice_reader_v1",
+    policyName: "p9_g2_evidence_slice_reader_v2",
     transitions: transitions.length,
     dimensions,
     mixedRevisionWindow,
@@ -120,6 +134,13 @@ export function formatEvidenceSliceSummary(summary: EvidenceSliceSummary): strin
     `provider=${JSON.stringify(summary.dimensions.providerSourceCounts)}`,
     `liveMode=${JSON.stringify(summary.dimensions.liveModeCounts)}`,
     `provenance=${JSON.stringify(summary.dimensions.provenanceCounts)}`,
+    `authorityMode=${JSON.stringify(summary.dimensions.authorityModeCounts)}`,
+    `selection=${JSON.stringify(summary.dimensions.selectionSourceCounts)}`,
+    `authorization=${JSON.stringify(summary.dimensions.authorizationSourceCounts)}`,
+    `execution=${JSON.stringify(summary.dimensions.executionSourceCounts)}`,
+    `environmentFingerprint=${JSON.stringify(summary.dimensions.environmentFingerprintCounts)}`,
+    `environmentScope=${JSON.stringify(summary.dimensions.environmentScopeStatusCounts)}`,
+    `environmentCompatibility=${JSON.stringify(summary.dimensions.environmentCompatibilityStateCounts)}`,
     `promotionEligible=${summary.promotionEvidence.eligibleTransitions}`,
     `promotionExcluded=${summary.promotionEvidence.excludedTransitions}`,
     `promotionExclusionReasons=${JSON.stringify(summary.promotionEvidence.exclusionReasonCounts)}`,
@@ -170,6 +191,19 @@ function buildPromotionEvidenceSummary(transitions: JsonRecord[]): EvidencePromo
 
 function transitionPromotionEligibility(transition: JsonRecord): { eligible: boolean; reason: string } {
   const provenance = transitionProvenance(transition);
+  if (provenance === "console_debug_or_fixture") return { eligible: false, reason: provenance };
+  const scope = transitionEnvironmentScope(transition);
+  const fingerprint = transitionEnvironmentFingerprintRecord(transition);
+  if (!scope) return { eligible: false, reason: "missing_environment_scope" };
+  if (!fingerprint || fingerprint.identityStatus !== "complete") {
+    return { eligible: false, reason: "environment_fingerprint_incomplete" };
+  }
+  if (scope.scopeStatus !== "exact") {
+    return { eligible: false, reason: "environment_scope_" + String(scope.scopeStatus ?? "unknown") };
+  }
+  if (scope.captureProvenance !== "organic") {
+    return { eligible: false, reason: "capture_provenance_" + String(scope.captureProvenance ?? "unknown") };
+  }
   if (provenance === "organic_agent_runtime") return { eligible: true, reason: provenance };
   return { eligible: false, reason: provenance };
 }
@@ -245,10 +279,63 @@ function transitionLiveMode(transition: JsonRecord): string {
 
 function transitionProvenance(transition: JsonRecord): string {
   if (hasConsoleDebugMarker(transition)) return "console_debug_or_fixture";
+  const scope = transitionEnvironmentScope(transition);
+  if (scope?.captureProvenance === "console_debug" || scope?.captureProvenance === "fixture") {
+    return "console_debug_or_fixture";
+  }
+  if (scope?.captureProvenance === "organic") return "organic_agent_runtime";
+  if (scope?.captureProvenance === "unknown") return "unknown";
   if (transition.source === "agent" && transition.captureMode === "executor_logged") return "organic_agent_runtime";
   if (transition.source === "human_watch" || transition.source === "human") return "human_observed";
   if (transition.source === "collector" || transition.captureMode === "snapshot_only") return "snapshot_only";
   return "unknown";
+}
+
+function transitionAuthorityMode(transition: JsonRecord): string {
+  const authority = transitionDecisionAuthority(transition);
+  return typeof authority?.authorityMode === "string" ? authority.authorityMode : "not_recorded";
+}
+
+function transitionSelectionSource(transition: JsonRecord): string {
+  const authority = transitionDecisionAuthority(transition);
+  return typeof authority?.selectionSource === "string" ? authority.selectionSource : "not_recorded";
+}
+
+function transitionAuthorizationSource(transition: JsonRecord): string {
+  const authority = transitionDecisionAuthority(transition);
+  return typeof authority?.authorizationSource === "string" ? authority.authorizationSource : "not_recorded";
+}
+
+function transitionExecutionSource(transition: JsonRecord): string {
+  const authority = transitionDecisionAuthority(transition);
+  return typeof authority?.executionSource === "string" ? authority.executionSource : "not_recorded";
+}
+
+function transitionEnvironmentFingerprintRecord(transition: JsonRecord): JsonRecord | undefined {
+  return isRecord(transition.environmentFingerprint) ? transition.environmentFingerprint : undefined;
+}
+
+function transitionEnvironmentScope(transition: JsonRecord): JsonRecord | undefined {
+  return isRecord(transition.evidenceEnvironmentScope) ? transition.evidenceEnvironmentScope : undefined;
+}
+
+function transitionEnvironmentFingerprintHash(transition: JsonRecord): string {
+  const fingerprint = transitionEnvironmentFingerprintRecord(transition);
+  return typeof fingerprint?.fingerprintHash === "string" ? fingerprint.fingerprintHash : "not_recorded";
+}
+
+function transitionEnvironmentScopeStatus(transition: JsonRecord): string {
+  const scope = transitionEnvironmentScope(transition);
+  return typeof scope?.scopeStatus === "string" ? scope.scopeStatus : "not_recorded";
+}
+
+function transitionEnvironmentCompatibilityState(transition: JsonRecord): string {
+  const scope = transitionEnvironmentScope(transition);
+  return typeof scope?.compatibilityState === "string" ? scope.compatibilityState : "not_recorded";
+}
+
+function transitionDecisionAuthority(transition: JsonRecord): JsonRecord | undefined {
+  return isRecord(transition.decisionAuthority) ? transition.decisionAuthority : undefined;
 }
 
 function hasConsoleDebugMarker(transition: JsonRecord): boolean {

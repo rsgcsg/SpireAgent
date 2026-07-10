@@ -137,12 +137,12 @@ As of P8, replay/eval/review also report the DeliberationPacket strategic worksp
   - `shadow_readiness`: workspace/provider exploration and smoke-alarm evidence, not stable-learning proof
   - `live_applied_rollout`: decisions actually executed through explicit-whitelist additive live, not stable-learning proof
   - `stable_learning_promotion`: future P9 promotion evidence, currently always `promotionUseAllowed=false`
-- Evidence slices report source, capture mode, decision class, revision tag, budget window, provider source, live mode, and provenance counts. Mixed revision/budget windows, console/debug/fixture markers, unknown provenance, and the absence of a P9 promotion engine all keep promotion disabled.
-- P9.5E must extend this identity with game build/channel, content/mod set, adapter capability identity, fact snapshot, and environment compatibility. Until that exists, a clean provider/revision/budget slice is not automatically environment-compatible promotion evidence.
+- Evidence slices report source, capture mode, decision class, revision tag, budget window, provider source, live mode, provenance, authority-chain coverage, environment fingerprint, environment scope, and environment compatibility-state counts. Mixed revision/budget windows, console/debug/fixture markers, unknown provenance, missing authority/environment records, and the absence of a P9 promotion engine all keep promotion disabled.
+- Fresh P9-G2 transitions now record game build/channel, content/mod declaration, adapter capability identity, fact snapshot, agent revision, capture provenance, and scope status when explicitly provided. Old transitions remain readable but are reported as `not_recorded` and excluded from future stable-promotion evidence; no successful execution is inferred to be compatible.
 - Evidence slices also report future-promotion provenance eligibility separately from general visibility:
-  - `promotionEvidence.eligibleTransitions`: organic agent runtime transitions that are not marked console/debug/fixture, human-observed, snapshot-only, or unknown provenance.
+  - `promotionEvidence.eligibleTransitions`: organic executor-logged transitions with an explicit complete fingerprint and exact environment scope. This is structural evidence eligibility only, never promotion authority.
   - `promotionEvidence.excludedTransitions`: transitions still visible in replay/eval/review, but ineligible for future stable-promotion evidence.
-  - `promotionEvidence.exclusionReasonCounts`: the reason a transition was excluded, such as `console_debug_or_fixture`, `human_observed`, `snapshot_only`, or `unknown`.
+  - `promotionEvidence.exclusionReasonCounts`: the reason a transition was excluded, such as `console_debug_or_fixture`, `missing_environment_scope`, `environment_fingerprint_incomplete`, `environment_scope_partial`, `human_observed`, `snapshot_only`, or `unknown`.
   These fields are read-only labels. They do not implement promotion, do not delete historical data, and do not change live behavior.
 - This reader is intentionally read-only. It does not change P8 readiness, live rollout, validation, execution, proposal status, or memory/derived/strategy writes.
 
@@ -166,7 +166,7 @@ P7 proposal rules:
 P9.1 proposal and reverse-feedback visibility:
 
 - Replay/eval/review now expose a separate typed `learningProposalSurface` when `data/runs/<runId>/learning-proposals.jsonl` exists.
-- This surface reports pending, draft, rejected, actionable pending, stable/applied count, missing required fields, proposal type, target layer, and protected target counts.
+- This surface reports pending, draft, rejected, actionable pending, stable/applied count, missing required fields, proposal type, target layer, behavior impact, environment-scope status, and protected target counts. It revalidates historical proposal records read-only, so legacy statuses do not bypass current actionability requirements.
 - `LearningProposal` records are append-only run artifacts. They are not stable memory, derived knowledge, strategy, skill, classification, candidate template, budget, or scaffold policy.
 - Anti-vague validation is conservative: proposals missing evidence, scope, counterexamples, expected effect, validation plan, rollback, protected-path impact, or source ids cannot enter actionable pending review.
 - Replay/eval/review also expose `reverseScaffoldFeedbackSurface` when `reverse-scaffold-feedback.jsonl` exists. It is telemetry/proposal-seed material only and cannot change live behavior.
@@ -194,14 +194,14 @@ P9.1 proposal and reverse-feedback visibility:
 - Generation is evidence-slice aware. By default, console/debug/fixture, human-observed, snapshot-only, and unknown-provenance transitions are excluded and counted separately. `--include-ineligible-evidence` is a debug-only inspection flag, not a promotion or learning path.
 - Mutating commands such as apply, promote, and revert remain intentionally unavailable. Review decisions are ledger entries only.
 
-P9.5D/P9.5E reporting direction:
+P9-G2 authority/environment reporting:
 
-- `DecisionAuthorizationRecord` should distinguish deliberation owner, selection source, authorization source, execution source, plan origin, authority mode/level, and delegated skill. Historical `chosenBy` remains readable but incomplete.
-- `ProposalBehaviorImpact` should distinguish presentation, deliberation, candidate, authority, action, and hard-shell impact. The first P9.6 gate may only consider presentation-only policy.
-- `EnvironmentFingerprint` and evidence environment scope should distinguish exact/compatible/mixed/unknown evidence plus compatible/degraded/quarantined/unsupported policy state.
+- `DecisionAuthorizationRecord` now distinguishes deliberation owner, selection source, authorization source, execution source, plan origin, authority mode/level, and delegated skill. Historical `chosenBy` remains readable but incomplete; product authority mode is `unknown` unless explicitly configured.
+- Fresh `LearningProposal` records must declare `ProposalBehaviorImpact`. `unclassified` historical or incomplete records remain readable but cannot become actionable; G2 cloned shadow overlays accept only `presentation_only`.
+- `EnvironmentFingerprint` and `EvidenceEnvironmentScope` now distinguish exact/partial/unknown scope and compatible/degraded/quarantined/unsupported/unknown policy state. Pre-P12 telemetry records `unknown` compatibility rather than guessing it.
 - Provider identity remains experiment context. It must not be substituted for game/mod/adapter environment identity.
 - An observed successful action is not proof of environment compatibility or strategic correctness.
-- These additions begin as read-only reporting and must not change live routing, validation, execution, proposal state, or stable stores.
+- These additions are audit-only telemetry and must not change live routing, validation, execution, proposal state, or stable stores.
 
 Long-term learning-quality metrics must extend beyond reason wording alarms:
 

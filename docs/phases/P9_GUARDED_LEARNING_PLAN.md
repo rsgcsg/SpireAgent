@@ -66,7 +66,7 @@ The July 2026 architecture audit adds two prerequisites before stable promotion 
 
 ### Authority prerequisite
 
-Add schema and audit-only telemetry for:
+Implemented audit-only telemetry now records:
 
 - deliberation owner;
 - selection source;
@@ -81,16 +81,16 @@ This work must not change current routing, provider use, live authorization, fal
 
 ### Environment prerequisite
 
-Add read-only environment and compatibility identity for:
+Implemented read-only environment identity now records, when explicitly supplied:
 
 - game build/channel;
 - content/mod set;
 - adapter identity and capabilities;
 - fact snapshot and agent revision;
 - organic/console/debug/fixture provenance;
-- compatible/degraded/quarantined/unsupported state.
+- an environment compatibility-state field, emitted as `unknown` before P12 owns compatibility evaluation.
 
-Unknown or mixed incompatible environments must not qualify stable promotion. Historical evidence remains readable.
+Unknown or mixed incompatible environments must not qualify stable promotion. Historical evidence remains readable, but records without first-class scope are promotion-excluded. Pre-P12 compatibility remains `unknown`; a successful action cannot change it.
 
 ## Target Proposal Families
 
@@ -135,7 +135,7 @@ Each proposal must include at least:
 - risk
 - promotion criteria
 - rollback plan
-- behavior impact (`presentation_only`, `deliberation_shaping`, `candidate_shaping`, `authority_shaping`, `action_shaping`, or `hard_shell`)
+- behavior impact (`presentation_only`, `deliberation_shaping`, `candidate_shaping`, `authority_shaping`, `action_shaping`, or `hard_shell`; `unclassified` records are non-actionable)
 - environment scope and invalidation conditions
 
 ## Minimal Data Model
@@ -441,7 +441,7 @@ Goal:
 
 - make strategic agency auditable without changing who decides
 
-Required:
+Implemented schema/telemetry:
 
 - typed authority mode/level;
 - deliberation/selection/authorization/execution chain;
@@ -449,18 +449,30 @@ Required:
 - backward-compatible reporting for old `chosenBy` records;
 - hard rejection of executable authority/action/hard-shell promotion paths.
 
+Remaining G2 evidence work:
+
+- collect fresh transitions with explicit authority mode;
+- verify replay/eval/review coverage across LLM, local, and fallback paths;
+- retain old transitions as `not_recorded`, not inferred.
+
 ### G2/P9.5E Environment Identity And Evidence Scope
 
 Goal:
 
 - prevent stable learning from using unknown, stale, or incompatible game/mod/adapter evidence
 
-Required:
+Implemented schema/telemetry:
 
 - minimal `EnvironmentFingerprint`;
 - evidence environment scope and compatibility state;
 - mixed/unknown environment exclusion from promotion;
 - future policy invalidation and revalidation fields.
+
+Remaining G2 evidence work:
+
+- capture verified build/channel/content/mod/adapter/fact/revision fields for an organic paired slice;
+- prove console/debug provenance is excluded;
+- do not claim compatibility until P12 can perform an actual handshake and revalidation.
 
 ### G3/P9.6 Stable Promotion Gate
 

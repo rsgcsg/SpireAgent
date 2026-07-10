@@ -563,9 +563,9 @@ Current milestone maps to `P9-G2 Experiment Integrity`.
 Next sequence:
 
 1. close remaining G1 protected-surface gaps;
-2. add authority-chain and proposal-impact telemetry;
-3. add minimum environment fingerprint/evidence scope;
-4. collect comparable organic paired/counterexample evidence;
+2. collect fresh explicit-authority and complete-environment records across relevant paths;
+3. collect comparable organic paired/counterexample evidence under matching provider and environment scope;
+4. verify console/debug exclusion and old-record `not_recorded` reporting;
 5. produce a G2 audit;
 6. only then design G3 ledger, rollback, and retrieval.
 

@@ -13,6 +13,14 @@ Closeout pointers:
 - `docs/decisions/ADR-0003-strategic-authority-and-experience-shell.md`
 - `docs/decisions/ADR-0004-environment-scoped-evidence-and-knowledge.md`
 
+## 2026-07-11 P9-G2 Telemetry Handoff
+
+- Audit-only `DecisionAuthorizationRecord` and `EnvironmentFingerprint` / `EvidenceEnvironmentScope` records now land on fresh executor transitions and replay frames. They do not alter live, provider, validation, execution, proposal application, or stable storage.
+- Use `STS2_DECISION_AUTHORITY_MODE` only to declare authority for a controlled experiment; absent configuration is intentionally `unknown`. Local fallback after an LLM failure remains local fallback, not delegated LLM authority.
+- Use the documented P9-G2 environment variables only for controlled organic evidence. Omitted identity remains unknown; `STS2_EVIDENCE_PROVENANCE=console_debug` or `fixture` remains visible but cannot satisfy promotion evidence.
+- New proposals require classified behavior impact plus exact organic environment scope before becoming actionable pending review. Stable promotion is still disabled.
+- Next: collect fresh, same-scope paired and counterexample evidence, then audit G2. Do not start G3 ledger/snapshot/retrieval work first.
+
 ## 2026-07-11 Phase Architecture Handoff
 
 - The accepted mainline is P9-P15 plus optional research track R1. The intermediate P9-P16 route is historical.

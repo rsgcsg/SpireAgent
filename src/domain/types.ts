@@ -157,6 +157,100 @@ export interface DecisionAudit {
   raw?: JsonRecord;
 }
 
+/**
+ * Product authority is configured explicitly. It is intentionally separate
+ * from the actor that happened to produce a particular selection.
+ */
+export type DecisionAuthorityMode =
+  | "llm_primary"
+  | "llm_full_control"
+  | "local_shadow"
+  | "local_autonomy_experimental"
+  | "unknown";
+
+/**
+ * This describes the authority exercised for one selection, not a general
+ * claim that the corresponding component is qualified for broader control.
+ */
+export type DecisionAuthorityLevel =
+  | "mechanical_execution"
+  | "deterministic_bounded_skill"
+  | "qualified_delegated_skill"
+  | "long_horizon_strategy"
+  | "unclassified_local_scaffold"
+  | "unknown";
+
+export type DecisionAuthorityActor =
+  | "llm"
+  | "local_scaffold"
+  | "local_fallback"
+  | "local_mechanical"
+  | "human"
+  | "none"
+  | "unknown";
+
+export interface DecisionAuthorizationRecord {
+  schemaVersion: number;
+  authorityMode: DecisionAuthorityMode;
+  authorityLevel: DecisionAuthorityLevel;
+  deliberationOwner: DecisionAuthorityActor;
+  selectionSource: DecisionAuthorityActor;
+  authorizationSource: string;
+  executionSource: "agent_executor" | "human_executor" | "not_executed" | "unknown";
+  planOrigin?: string;
+  delegatedSkillId?: string;
+  fallbackOrEscalationReason?: string;
+  notes: string[];
+}
+
+export type ProposalBehaviorImpact =
+  | "presentation_only"
+  | "deliberation_shaping"
+  | "candidate_shaping"
+  | "authority_shaping"
+  | "action_shaping"
+  | "hard_shell"
+  | "unclassified";
+
+export type EnvironmentCaptureProvenance = "organic" | "console_debug" | "fixture" | "unknown";
+
+export interface EnvironmentModDescriptor {
+  id: string;
+  version?: string;
+  affectsGameplay?: boolean;
+  hash?: string;
+}
+
+export interface EnvironmentFingerprint {
+  schemaVersion: number;
+  gameId: "slay_the_spire_2";
+  gameBuild?: string;
+  releaseChannel: "main" | "beta" | "unknown";
+  contentManifestHash?: string;
+  mods: EnvironmentModDescriptor[];
+  modsDeclared: boolean;
+  adapter: {
+    id: string;
+    version?: string;
+    capabilityHash?: string;
+  };
+  factSnapshotVersion?: string;
+  agentRevision?: string;
+  captureProvenance: EnvironmentCaptureProvenance;
+  fingerprintHash?: string;
+  identityStatus: "complete" | "partial" | "unknown";
+  notes: string[];
+}
+
+export interface EvidenceEnvironmentScope {
+  schemaVersion: number;
+  fingerprintHash?: string;
+  scopeStatus: "exact" | "partial" | "unknown";
+  compatibilityState: "compatible" | "degraded" | "quarantined" | "unsupported" | "unknown";
+  captureProvenance: EnvironmentCaptureProvenance;
+  reasons: string[];
+}
+
 export interface LlmDecision {
   candidateId: string;
   confidence?: number;
@@ -560,6 +654,9 @@ export interface ReplayFrame {
   promptParity?: PromptParityReport | JsonRecord;
   workspaceComparison?: DeliberationWorkspaceComparison | JsonRecord;
   shadowWorkspaceDecision?: ShadowWorkspaceDecision | JsonRecord;
+  decisionAuthority?: DecisionAuthorizationRecord | JsonRecord;
+  environmentFingerprint?: EnvironmentFingerprint | JsonRecord;
+  evidenceEnvironmentScope?: EvidenceEnvironmentScope | JsonRecord;
   predictionError?: PredictionErrorRecord | JsonRecord;
 }
 
@@ -616,6 +713,14 @@ export interface LearningProposalScope {
   conditions?: string[];
   exclusions?: string[];
   notes?: string;
+}
+
+export interface LearningProposalEnvironmentScope {
+  fingerprintHashes: string[];
+  scopeStatus: "exact" | "partial" | "unknown" | "mixed";
+  captureProvenance: EnvironmentCaptureProvenance[];
+  compatibilityStates: Array<"compatible" | "degraded" | "quarantined" | "unsupported" | "unknown">;
+  notes: string[];
 }
 
 export interface LearningProposalEvidence {
@@ -682,6 +787,7 @@ export interface LearningProposalReviewDecision {
     type?: LearningProposalType | string;
     targetLayer?: string;
     targetObject?: string;
+    behaviorImpact?: ProposalBehaviorImpact | string;
     actionable: boolean;
     missingRequiredFields: string[];
   };
@@ -712,6 +818,7 @@ export interface LearningProposal {
   type: LearningProposalType | string;
   status: LearningProposalStatus;
   scope: LearningProposalScope;
+  environmentScope: LearningProposalEnvironmentScope;
   targetLayer: string;
   targetObject: string;
   proposedPatch: JsonRecord;
@@ -720,6 +827,7 @@ export interface LearningProposal {
   weakAttribution: LearningProposalWeakAttribution;
   confidence: number;
   riskLevel: LearningProposalRiskLevel | string;
+  behaviorImpact: ProposalBehaviorImpact | string;
   expectedEffect: string;
   promotionCriteria: LearningProposalPromotionCriteria;
   rollbackPlan: LearningProposalRollbackPlan;
@@ -804,6 +912,9 @@ export interface TransitionRecord {
   localScores?: unknown;
   llmDecision?: unknown;
   decisionAudit?: DecisionAudit;
+  decisionAuthority?: DecisionAuthorizationRecord | JsonRecord;
+  environmentFingerprint?: EnvironmentFingerprint | JsonRecord;
+  evidenceEnvironmentScope?: EvidenceEnvironmentScope | JsonRecord;
   derivedSnapshot?: DerivedSnapshot | JsonRecord;
   memorySnapshot?: MemorySnapshot | JsonRecord;
   strategicImpression?: StrategicImpression | JsonRecord;

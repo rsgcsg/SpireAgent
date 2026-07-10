@@ -176,7 +176,7 @@ P9 guarded learning direction:
   - protected-path impact
 - Learning proposals also carry weak-attribution fields: `suspectedCause`, `confidence`, `counterexampleNeeded`, and `alternativeHypotheses`.
 - The append-only pending store is `data/runs/<runId>/learning-proposals.jsonl`. It is a run artifact and not a stable learning store.
-- Proposal validation is intentionally conservative. Vague proposals without concrete evidence, scope, counterexamples, expected effect, validation plan, and rollback are kept as `draft` or `rejected` rather than actionable pending proposals.
+- Proposal validation is intentionally conservative. Vague proposals without concrete evidence, scope, counterexamples, expected effect, validation plan, rollback, classified behavior impact, and exact organic environment scope are kept as `draft` or `rejected` rather than actionable pending proposals. Read paths revalidate historical JSONL records without rewriting them, so an old `pending_review` label cannot bypass a newer safety requirement.
 - P9.1 also has an append-only review-decision ledger at `data/runs/<runId>/learning-proposal-review-decisions.jsonl`.
 - Review-decision records preserve:
   - `proposalId`
@@ -289,25 +289,30 @@ Protected-path governance note:
 - Runtime memory audit may now include `memory/legacy-finalize-audit.jsonl` for blocked legacy stable-write attempts.
 - This file is local runtime audit evidence, not a stable learning store and not a promotion ledger.
 
-## Planned P9.5D Decision Authority Records
+## P9-G2 Decision Authority Records
 
-These are design targets, not current runtime fields. Their addition must remain backward compatible and must not change current routing or execution.
+Fresh executor-logged transitions now carry an audit-only `DecisionAuthorizationRecord`. Old transitions remain readable and report `not_recorded`; their historical `chosenBy` value must not be reconstructed as a complete authority chain.
+
+The recorder derives the actor chain from current route, LLM audit, fallback, and executor facts. Product `authorityMode` is deliberately **not** inferred from provider, whitelist, or `chosenBy`; it is `unknown` until explicitly set through `STS2_DECISION_AUTHORITY_MODE`.
 
 ```ts
 type DecisionAuthorityMode =
   | "llm_primary"
   | "llm_full_control"
   | "local_shadow"
-  | "local_autonomy_experimental";
+  | "local_autonomy_experimental"
+  | "unknown";
 
 type DecisionAuthorityLevel =
   | "mechanical_execution"
   | "deterministic_bounded_skill"
   | "qualified_delegated_skill"
-  | "long_horizon_strategy";
+  | "long_horizon_strategy"
+  | "unclassified_local_scaffold"
+  | "unknown";
 
 interface DecisionAuthorizationRecord {
-  schemaVersion: string;
+  schemaVersion: number;
   authorityMode: DecisionAuthorityMode;
   authorityLevel: DecisionAuthorityLevel;
   deliberationOwner: string;
@@ -317,12 +322,13 @@ interface DecisionAuthorizationRecord {
   planOrigin?: string;
   delegatedSkillId?: string;
   fallbackOrEscalationReason?: string;
+  notes: string[];
 }
 ```
 
-`chosenBy` remains readable historical telemetry. It must not be treated as a complete authority chain once `DecisionAuthorizationRecord` exists.
+`unclassified_local_scaffold` is an explicit non-claim: a local score/fallback may have selected an action, but it is not thereby a qualified skill or a transfer of long-horizon strategic authority.
 
-Future proposal records must add:
+Fresh `LearningProposal` records also require:
 
 ```ts
 type ProposalBehaviorImpact =
@@ -331,23 +337,26 @@ type ProposalBehaviorImpact =
   | "candidate_shaping"
   | "authority_shaping"
   | "action_shaping"
-  | "hard_shell";
+  | "hard_shell"
+  | "unclassified";
 ```
 
-The first P9.6 stable path may consider only `presentation_only` proposals. The other values remain review/shadow labels until later governance explicitly authorizes them.
+Historical proposals without this field remain readable as `unclassified`, but cannot become actionable pending review. P9-G2 cloned shadow overlays accept only explicit low-risk `presentation_only` proposals. The first P9-G3 stable path may consider only `presentation_only`; other values remain review/shadow labels until later governance explicitly authorizes them.
 
 `ActionExplanationRecord` should summarize selected plan, evidence, tradeoff, uncertainty, authority chain, and policy/skill versions for audit. It must not claim to expose private chain-of-thought or prove causal reasoning.
 
-## Planned P9.5E Environment Identity Records
+## P9-G2 Environment Identity Records
 
-These are also design targets and do not yet imply current transition coverage.
+Fresh executor-logged transitions and their run metadata now carry an audit-only `EnvironmentFingerprint` and `EvidenceEnvironmentScope`. These records never self-mark a policy compatible: pre-P12 compatibility remains `unknown`.
+
+The fields are read only from explicitly named environment values and the fixed adapter capability description. Missing values remain missing. In particular, console assistance cannot be auto-detected from game state: the operator must set `STS2_EVIDENCE_PROVENANCE=console_debug` whenever console/debug setup was used.
 
 ```ts
 interface EnvironmentFingerprint {
-  schemaVersion: string;
+  schemaVersion: number;
   gameId: "slay_the_spire_2";
   gameBuild?: string;
-  releaseChannel?: "main" | "beta" | "unknown";
+  releaseChannel: "main" | "beta" | "unknown";
   contentManifestHash?: string;
   mods: Array<{
     id: string;
@@ -355,6 +364,7 @@ interface EnvironmentFingerprint {
     affectsGameplay?: boolean;
     hash?: string;
   }>;
+  modsDeclared: boolean;
   adapter: {
     id: string;
     version?: string;
@@ -363,16 +373,31 @@ interface EnvironmentFingerprint {
   factSnapshotVersion?: string;
   agentRevision?: string;
   captureProvenance: "organic" | "console_debug" | "fixture" | "unknown";
+  fingerprintHash?: string;
+  identityStatus: "complete" | "partial" | "unknown";
+  notes: string[];
 }
 
 type EnvironmentCompatibilityState =
   | "compatible"
   | "degraded"
   | "quarantined"
-  | "unsupported";
+  | "unsupported"
+  | "unknown";
+
+interface EvidenceEnvironmentScope {
+  schemaVersion: number;
+  fingerprintHash?: string;
+  scopeStatus: "exact" | "partial" | "unknown";
+  compatibilityState: EnvironmentCompatibilityState;
+  captureProvenance: "organic" | "console_debug" | "fixture" | "unknown";
+  reasons: string[];
+}
 ```
 
-Future evidence slices and stable learned objects must record:
+`identityStatus=complete` requires explicit game build/channel, content manifest, declared mod set, adapter version/capability identity, fact snapshot version, and agent revision. A complete identity can make evidence structurally comparable; it still does not enable promotion. Unknown, partial, console/debug, fixture, or missing-scope evidence remains visible but is excluded from future stable-promotion slices.
+
+Future stable learned objects must record:
 
 - environment fingerprint or explicit unknown fields;
 - exact/compatible/mixed/unknown scope;

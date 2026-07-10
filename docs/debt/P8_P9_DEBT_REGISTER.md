@@ -89,28 +89,28 @@ Status values:
 
 ### `decision_authority_audit_missing`
 
-- Status: `open`
+- Status: `in_progress`
 - Problem:
-  - Provider mode, rollout mode, learning mode, and strategic authority are not first-class independent records.
-  - Historical `chosenBy` cannot fully explain who deliberated, selected, authorized, executed, or originated a plan.
+  - Fresh executor-logged transitions now carry a read-only `DecisionAuthorizationRecord` with separate deliberation, selection, authorization, execution, plan-origin, and authority fields.
+  - Historical `chosenBy` remains incomplete and is deliberately reported as `not_recorded` rather than retroactively inferred.
 - Why it matters:
   - Learned capability could silently become authority, turning the main product into a local policy bot without an explicit North Star decision.
-- Minimum fix before P9.6:
-  - implement P9.5D schema/telemetry-only `DecisionAuthorityMode`, authority level, authorization chain, action explanation, delegated-skill identity, and proposal behavior impact
-  - keep routing and execution unchanged
-  - exclude authority/action/hard-shell proposals from the first stable promotion path
+- Remaining fix before P9-G3:
+  - capture fresh explicit authority-mode evidence across LLM, local, and fallback paths
+  - preserve routing and execution behavior
+  - retain exclusion of authority/action/hard-shell proposals from the first stable promotion path
 
 ### `environment_scoped_evidence_missing`
 
-- Status: `open`
+- Status: `in_progress`
 - Problem:
-  - Evidence is not yet scoped to a complete game build/channel, content/mod set, adapter capability, fact snapshot, and provenance fingerprint.
+  - Fresh transitions now carry read-only `EnvironmentFingerprint` and `EvidenceEnvironmentScope`, but fresh verified complete-scope evidence has not yet been collected.
   - Slay the Spire 2 Early Access updates can invalidate mechanics, content, serialization, and mod assumptions.
 - Why it matters:
   - P9 could promote stale knowledge or skills and then self-reinforce them under a different environment.
-- Minimum fix before P9.6:
-  - implement P9.5E read-only `EnvironmentFingerprint`, evidence scope, compatibility state, and mixed/unknown exclusion
-  - preserve historical evidence but block unknown/incompatible promotion use
+- Remaining fix before P9-G3:
+  - capture verified game build/channel, content/mod, adapter, fact snapshot, revision, and provenance fields for organic paired evidence
+  - preserve historical evidence but block missing/unknown/incompatible scope from structural promotion evidence
   - add future invalidation/revalidation fields to learned objects
 
 ## High

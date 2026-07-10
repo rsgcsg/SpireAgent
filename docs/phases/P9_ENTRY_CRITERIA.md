@@ -38,10 +38,14 @@ Forward phase reporting uses P9-G1 through P9-G4 from ADR-0005. Historical P9.0-
   - deliberation, selection, authorization, and execution sources are separable
   - proposal behavior impact is explicit
   - authority/action/hard-shell proposals are excluded from the first promotion path
+  Current state:
+  fresh executor-logged transitions now record an audit-only authority chain. Explicit authority mode coverage and fresh replay/eval/review evidence remain required before P9-G3.
 - Define a minimal `EnvironmentFingerprint` and evidence environment scope before any stable proposal may be applied:
   - unknown or mixed incompatible game/mod/adapter evidence cannot qualify promotion
   - historical evidence remains readable
   - promoted objects require compatibility, invalidation, and revalidation fields
+  Current state:
+  fresh executor-logged transitions now record an audit-only fingerprint and scope. Missing fields remain unknown and promotion-excluded; verified complete-scope paired evidence and compatibility evaluation remain required before P9-G3.
 - Define evidence-slice rules so mixed revision, mixed budget, and console fixture data cannot silently qualify stable promotion.
   Current state:
   a read-only `EvidenceSliceReader` now separates shadow readiness, live-applied rollout, and future stable-learning promotion slices. It also reports organic promotion-eligible transition counts separately from console/debug/fixture, human-observed, snapshot-only, and unknown-provenance exclusions. Promotion remains disabled and ineligible by default.

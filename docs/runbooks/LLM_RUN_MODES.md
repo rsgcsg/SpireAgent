@@ -15,7 +15,7 @@ Keep four dimensions separate:
 - **learning mode:** read-only, proposal-only, shadow overlay, or future guarded stable policy
 - **decision-authority mode:** `llm_primary`, `llm_full_control`, `local_shadow`, or isolated `local_autonomy_experimental`
 
-For example, `deepseek_explicit_whitelist_live` says which provider path and rollout gate were used. It does not give DeepSeek authority to write memory, approve learning, change budgets, or bypass validation. Current runs should be interpreted as `llm_primary` unless a future explicit authority record says otherwise.
+For example, `deepseek_explicit_whitelist_live` says which provider path and rollout gate were used. It does not give DeepSeek authority to write memory, approve learning, change budgets, or bypass validation. Product authority mode is `unknown` unless explicitly supplied as `STS2_DECISION_AUTHORITY_MODE`; it must never be inferred from a provider or whitelist.
 
 ## Mode Map
 
@@ -73,6 +73,27 @@ Manual bridge run:
 ```bash
 npm run agent:run:bridge -- --max-ticks <N> --delay-ms 120
 ```
+
+## P9-G2 Evidence Capture
+
+New transitions record an audit-only authority chain and environment scope. This does not alter live decisions or enable promotion.
+
+For an organic, promotion-comparable shadow or live window, set only verified values in the temporary process environment:
+
+```bash
+STS2_DECISION_AUTHORITY_MODE=llm_primary \
+STS2_EVIDENCE_PROVENANCE=organic \
+STS2_GAME_BUILD=<verified-game-build> \
+STS2_GAME_RELEASE_CHANNEL=<main-or-beta> \
+STS2_CONTENT_MANIFEST_HASH=<verified-content-manifest> \
+STS2_MODS_JSON='[]' \
+STS2_ADAPTER_VERSION=<verified-adapter-version> \
+STS2_FACT_SNAPSHOT_VERSION=<verified-fact-snapshot> \
+STS2_AGENT_REVISION=<verified-agent-revision> \
+npm run agent:run:deepseek-combat-live -- --max-ticks <N>
+```
+
+If console commands, fixtures, or debug state were used, replace `STS2_EVIDENCE_PROVENANCE=organic` with `STS2_EVIDENCE_PROVENANCE=console_debug`. Do not invent missing hashes or versions. Unknown/partial scope remains readable but cannot satisfy a future stable-promotion slice.
 
 ## Current Broad-Whitelist Meaning
 

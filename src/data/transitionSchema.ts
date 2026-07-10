@@ -3,8 +3,11 @@ import {
   type CandidateFuture,
   type CaptureMode,
   type ConsolidationRecord,
+  type DecisionAuthorizationRecord,
   type DeliberationPacket,
   type DeliberationWorkspaceComparison,
+  type EnvironmentFingerprint,
+  type EvidenceEnvironmentScope,
   type ExecutionResult,
   type JsonRecord,
   type MemoryActivation,
@@ -50,6 +53,9 @@ export interface TransitionBaseInput {
   promptParity?: PromptParityReport | JsonRecord;
   workspaceComparison?: DeliberationWorkspaceComparison | JsonRecord;
   shadowWorkspaceDecision?: ShadowWorkspaceDecision | JsonRecord;
+  decisionAuthority?: DecisionAuthorizationRecord | JsonRecord;
+  environmentFingerprint?: EnvironmentFingerprint | JsonRecord;
+  evidenceEnvironmentScope?: EvidenceEnvironmentScope | JsonRecord;
   selectedPlan?: CandidateFuture | JsonRecord;
   predictionError?: PredictionErrorRecord | JsonRecord;
   replayFrame?: ReplayFrame | JsonRecord;
@@ -211,6 +217,9 @@ function baseTransition(
     promptParity: input.promptParity,
     workspaceComparison: input.workspaceComparison,
     shadowWorkspaceDecision: input.shadowWorkspaceDecision,
+    decisionAuthority: input.decisionAuthority,
+    environmentFingerprint: input.environmentFingerprint,
+    evidenceEnvironmentScope: input.evidenceEnvironmentScope,
     selectedPlan: input.selectedPlan,
     predictionError: input.predictionError,
     replayFrame: input.replayFrame,

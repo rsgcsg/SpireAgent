@@ -33,6 +33,12 @@ export function assessShadowWorkspaceOverlayEligibility(proposal: JsonRecord): S
   if (proposal.type !== "reason_policy" && proposal.type !== "candidate_template") {
     blockers.push("proposal_type_not_shadow_overlay_safe");
   }
+  if (proposal.behaviorImpact !== "presentation_only") {
+    blockers.push("proposal_behavior_impact_not_presentation_only");
+  }
+  if (!hasExactOrganicEnvironmentScope(proposal.environmentScope)) {
+    blockers.push("proposal_environment_scope_not_exact_organic");
+  }
   if (!hasEligibleEvidence(proposal.evidence)) blockers.push("organic_promotion_eligible_evidence_missing");
   if (!patch) blockers.push("explicit_shadow_overlay_patch_missing_or_invalid");
   if (patch && proposal.type === "reason_policy" && patch.kind !== "reason_guidance") {
@@ -79,4 +85,13 @@ function hasEligibleEvidence(evidence: unknown): boolean {
     if (Array.isArray(item.tags) && item.tags.includes("promotion_eligible:true")) return true;
     return isRecord(item.raw) && item.raw.evidencePromotionEligible === true;
   });
+}
+
+function hasExactOrganicEnvironmentScope(value: unknown): boolean {
+  if (!isRecord(value)) return false;
+  return value.scopeStatus === "exact" &&
+    Array.isArray(value.fingerprintHashes) &&
+    value.fingerprintHashes.some((item) => typeof item === "string" && item.length > 0) &&
+    Array.isArray(value.captureProvenance) &&
+    value.captureProvenance.includes("organic");
 }

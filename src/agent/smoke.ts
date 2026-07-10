@@ -70,6 +70,12 @@ import { summarizeProviderRecoveryPolicy } from "./providerRecoveryPolicy.js";
 import { analyzeSerializedCandidateFutures } from "./candidateFutureReviewSignals.js";
 import { serializeWorkspaceCandidateFutures } from "./candidateFutureCompressor.js";
 import { buildMapRoutePlanFromChoice } from "./mapRoutePlan.js";
+import { buildDecisionAuthorizationRecord, resolveDecisionAuthorityMode } from "./decisionAuthority.js";
+import {
+  buildEnvironmentFingerprint,
+  buildEvidenceEnvironmentScope,
+  resolveEnvironmentCaptureProvenance
+} from "./environmentIdentity.js";
 import {
   evaluateLegacyFinalizeStableWriteGate,
   evaluateLiveLlmMemoryUpdateGate,
@@ -1827,6 +1833,13 @@ try {
     type: "classification_policy",
     status: "pending_review",
     scope: { decisionClasses: ["shop:llm_required"], conditions: ["low HP and deck scaling pressure"] },
+    environmentScope: {
+      fingerprintHashes: ["env-p9-smoke"],
+      scopeStatus: "exact",
+      captureProvenance: ["organic"],
+      compatibilityStates: ["unknown"],
+      notes: ["test-only exact scope"]
+    },
     targetLayer: "classification_policy",
     targetObject: "shop_skill_routing",
     proposedPatch: { proposalOnly: true, addSoftTag: "shop + survival-risk + deck-scaling" },
@@ -1848,6 +1861,7 @@ try {
     },
     confidence: 0.42,
     riskLevel: "medium",
+    behaviorImpact: "authority_shaping",
     expectedEffect: "Route shop decisions through a richer soft situation tag before any stable promotion.",
     promotionCriteria: {
       evidenceRequired: ["same-budget fresh shop evidence"],
@@ -1882,6 +1896,7 @@ try {
   assert.equal(proposalSurfaceV2.proposals, 2);
   assert.equal(proposalSurfaceV2.pendingReview, 1);
   assert.equal(proposalSurfaceV2.actionablePending, 1);
+  assert.equal(proposalSurfaceV2.environmentScopeStatusCounts.exact, 1);
   assert.equal(proposalSurfaceV2.draft, 1);
   assert.equal(proposalSurfaceV2.stableOrApplied, 0);
   assert.equal(proposalSurfaceV2.applyPathEnabled, false);
@@ -1890,6 +1905,36 @@ try {
   assert.equal(filterLearningProposals(storedP9Proposals, { status: "pending_review" }).length, 1);
   assert.equal(filterLearningProposals(storedP9Proposals, { missingRequiredField: "evidence" }).length, 1);
   assert.equal(summarizeLearningProposal(storedP9Proposals[0] ?? {}).applyPathEnabled, false);
+  const legacyProposalDir = mkdtempSync(path.join(tmpdir(), "sts2-p9-legacy-proposal-"));
+  writeFileSync(
+    path.join(legacyProposalDir, "learning-proposals.jsonl"),
+    `${JSON.stringify({
+      schemaVersion: 1,
+      id: "legacy-pending-proposal",
+      type: "reason_policy",
+      status: "pending_review",
+      scope: { decisionClasses: ["combat:llm_required"] },
+      targetLayer: "reason_contract",
+      targetObject: "legacy_reason_policy",
+      proposedPatch: { requireTradeoff: true },
+      evidence: [{ transitionId: "legacy-transition" }],
+      counterexamples: [{ transitionId: "legacy-counterexample" }],
+      weakAttribution: { suspectedCause: "legacy", confidence: 0.5, counterexampleNeeded: ["review"], alternativeHypotheses: ["other"] },
+      confidence: 0.5,
+      riskLevel: "low",
+      expectedEffect: "Legacy proposal should be revalidated.",
+      promotionCriteria: { evidenceRequired: ["paired"], validationPlan: ["review"] },
+      rollbackPlan: { rollbackTrigger: ["regression"], rollbackAction: "revert" },
+      protectedPathImpact: { protectedTargets: [], stableWriteRequired: false, allowedBeforePromotion: false },
+      createdFromRunIds: ["legacy-run"],
+      createdFromTransitionIds: ["legacy-transition"],
+      reviewHistory: []
+    })}\n`
+  );
+  const legacyProposal = readLearningProposals(legacyProposalDir)[0];
+  assert.equal(legacyProposal?.status, "draft");
+  assert.equal((legacyProposal?.validation as { actionable?: boolean } | undefined)?.actionable, false);
+  assert.ok(((legacyProposal?.validation as { missingRequiredFields?: string[] } | undefined)?.missingRequiredFields ?? []).includes("environmentScope"));
   const actionableShadowPlan = buildLearningProposalShadowOverlayPlan(storedP9Proposals.find((proposal) => proposal.id === actionableProposal.id) ?? {});
   assert.equal(actionableShadowPlan.eligibleForShadowPreview, true);
   assert.equal(actionableShadowPlan.eligibleForShadowApplication, false);
@@ -1902,6 +1947,13 @@ try {
     type: "reason_policy",
     status: "pending_review",
     scope: { decisionClasses: ["combat:llm_required"], conditions: ["reason omits the present benefit-cost tradeoff"] },
+    environmentScope: {
+      fingerprintHashes: ["env-p9-smoke"],
+      scopeStatus: "exact",
+      captureProvenance: ["organic"],
+      compatibilityStates: ["unknown"],
+      notes: ["test-only exact scope"]
+    },
     targetLayer: "reason_policy",
     targetObject: "benefit_cost_tradeoff",
     proposedPatch: {
@@ -1930,6 +1982,7 @@ try {
     },
     confidence: 0.25,
     riskLevel: "low",
+    behaviorImpact: "presentation_only",
     expectedEffect: "Compare a scoped reason-guidance overlay without changing candidate facts or runtime decisions.",
     promotionCriteria: { evidenceRequired: ["organic same-revision comparison"], validationPlan: ["offline shadow workspace comparison"] },
     rollbackPlan: { rollbackTrigger: ["overlay makes reasons more templated"], rollbackAction: "remove the in-memory overlay" },
@@ -2281,6 +2334,15 @@ try {
       captureMode: "executor_logged",
       transitionId: "transition-p9-generator-combat",
       screen: "combat",
+      environmentFingerprint: {
+        identityStatus: "complete",
+        fingerprintHash: "env-p9-generator"
+      },
+      evidenceEnvironmentScope: {
+        scopeStatus: "exact",
+        captureProvenance: "organic",
+        compatibilityState: "unknown"
+      },
       workspaceComparison: {
         decisionClass: "combat:llm_required",
         budget: { status: "call_budget_exceeded" },
@@ -3858,6 +3920,15 @@ try {
   assert.ok(parsedTransition.shadowWorkspaceDecision);
   assert.equal(parsedTransition.shadowWorkspaceDecision.outcome, "not_enabled");
   assert.equal(parsedTransition.shadowWorkspaceDecision.called, false);
+  assert.equal(parsedTransition.decisionAuthority.authorityMode, "unknown");
+  assert.equal(parsedTransition.decisionAuthority.selectionSource, "local_scaffold");
+  assert.equal(parsedTransition.decisionAuthority.executionSource, "agent_executor");
+  assert.equal(parsedTransition.environmentFingerprint.identityStatus, "unknown");
+  assert.equal(parsedTransition.evidenceEnvironmentScope.scopeStatus, "unknown");
+  assert.equal(parsedTransition.evidenceEnvironmentScope.compatibilityState, "unknown");
+  const parsedMetadata = JSON.parse(readFileSync(path.join(runDir, "metadata.json"), "utf8"));
+  assert.equal(parsedMetadata.metadata.environmentFingerprint.identityStatus, "unknown");
+  assert.equal(parsedMetadata.metadata.evidenceEnvironmentScope.scopeStatus, "unknown");
   assert.ok(!parsedTransition.promptParity.missingSections.includes("derived_knowledge"));
   assert.ok(parsedTransition.deliberationPacket.derivedKnowledgeSummary.present);
   assert.ok(parsedTransition.selectedPlan);
@@ -3937,6 +4008,59 @@ try {
   assert.equal(firstWorkspaceDecisionClassQuality?.transitions, 1);
   assert.ok((firstWorkspaceDecisionClassQuality?.futureCount ?? 0) > 0);
 
+  const explicitAuthority = buildDecisionAuthorizationRecord({
+    chosenBy: "llm",
+    route: "llm_required",
+    llmAudit: {
+      wanted: true,
+      called: true,
+      available: true,
+      outcome: "selected",
+      liveAdditiveApplied: true
+    },
+    executed: true,
+    authorityMode: "llm_primary"
+  });
+  assert.equal(explicitAuthority.authorityMode, "llm_primary");
+  assert.equal(explicitAuthority.deliberationOwner, "llm");
+  assert.equal(explicitAuthority.authorizationSource, "explicit_live_additive_whitelist");
+  assert.equal(resolveDecisionAuthorityMode("invalid"), "unknown");
+  const fallbackAuthority = buildDecisionAuthorizationRecord({
+    chosenBy: "fallback",
+    route: "llm_required",
+    llmAudit: {
+      wanted: true,
+      called: true,
+      available: true,
+      outcome: "invalid_output",
+      liveAdditiveApplied: false
+    },
+    fallbackReason: "empty_content_after_retry",
+    executed: true
+  });
+  assert.equal(fallbackAuthority.selectionSource, "local_fallback");
+  assert.equal(fallbackAuthority.authorityLevel, "unclassified_local_scaffold");
+  assert.equal(fallbackAuthority.authorizationSource, "local_fallback_policy");
+  assert.ok(fallbackAuthority.notes.includes("fallback_selection_does_not_transfer_authority"));
+
+  const completeEnvironmentFingerprint = buildEnvironmentFingerprint({
+    env: {
+      STS2_GAME_BUILD: "0.1.0-test",
+      STS2_GAME_RELEASE_CHANNEL: "beta",
+      STS2_CONTENT_MANIFEST_HASH: "content-test",
+      STS2_MODS_JSON: "[]",
+      STS2_ADAPTER_VERSION: "test-adapter",
+      STS2_FACT_SNAPSHOT_VERSION: "facts-test",
+      STS2_AGENT_REVISION: "agent-test",
+      STS2_EVIDENCE_PROVENANCE: "organic"
+    }
+  });
+  const completeEnvironmentScope = buildEvidenceEnvironmentScope(completeEnvironmentFingerprint);
+  assert.equal(completeEnvironmentFingerprint.identityStatus, "complete");
+  assert.equal(completeEnvironmentScope.scopeStatus, "exact");
+  assert.equal(completeEnvironmentScope.compatibilityState, "unknown");
+  assert.equal(resolveEnvironmentCaptureProvenance("console"), "console_debug");
+
   const mixedCombatEvidenceSlice = buildReplayShadowSliceStats("sinceLatestRevision", []);
   mixedCombatEvidenceSlice.liveEligibleCalled = 3;
   mixedCombatEvidenceSlice.mixedRevisionWindow = false;
@@ -3990,7 +4114,10 @@ try {
       captureMode: "executor_logged",
       workspaceComparison: { decisionClass: "combat:llm_required", revisionTag: "rev-a", budget: { maxShadowCalls: 4, governanceProfile: "shadow_readiness" } },
       shadowWorkspaceDecision: { called: true, revisionTag: "rev-a", providerSource: "deepseek-shadow" },
-      decisionAudit: { chosenBy: "llm", raw: { llm: { liveAdditiveApplied: true, liveAdditiveDecisionClass: "combat:llm_required", providerSource: "deepseek-live-command" } } }
+      decisionAudit: { chosenBy: "llm", raw: { llm: { liveAdditiveApplied: true, liveAdditiveDecisionClass: "combat:llm_required", providerSource: "deepseek-live-command" } } },
+      decisionAuthority: explicitAuthority,
+      environmentFingerprint: completeEnvironmentFingerprint,
+      evidenceEnvironmentScope: completeEnvironmentScope
     },
     {
       source: "agent",
@@ -4006,6 +4133,9 @@ try {
   assert.equal(evidenceSliceSummary.promotionEvidence.eligibleTransitions, 1);
   assert.equal(evidenceSliceSummary.promotionEvidence.excludedTransitions, 1);
   assert.equal(evidenceSliceSummary.promotionEvidence.exclusionReasonCounts.console_debug_or_fixture, 1);
+  assert.equal(evidenceSliceSummary.dimensions.authorityModeCounts.llm_primary, 1);
+  assert.equal(evidenceSliceSummary.dimensions.selectionSourceCounts.llm, 1);
+  assert.equal(evidenceSliceSummary.dimensions.environmentScopeStatusCounts.exact, 1);
   const promotionSlice = evidenceSliceSummary.slices.find((slice) => slice.kind === "stable_learning_promotion");
   assert.equal(promotionSlice?.promotionUseAllowed, false);
   assert.equal(promotionSlice?.transitions, 1);

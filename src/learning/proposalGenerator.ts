@@ -342,6 +342,7 @@ function buildProposal(input: {
   evidenceProvenance: string;
   evidencePromotionEligible: boolean;
   evidencePromotionReason: string;
+  environmentScope: LearningProposal["environmentScope"];
 }): Partial<LearningProposal> {
   return {
     id: input.id,
@@ -357,6 +358,7 @@ function buildProposal(input: {
       exclusions: ["console_debug_only_evidence_without_organic_confirmation"],
       notes: "P9.2 weak-attribution proposal seed; not an applied policy."
     },
+    environmentScope: input.environmentScope,
     targetLayer: input.targetLayer,
     targetObject: input.targetObject,
     proposedPatch: {
@@ -406,6 +408,7 @@ function buildProposal(input: {
     },
     confidence: input.confidence,
     riskLevel: input.riskLevel,
+    behaviorImpact: behaviorImpactFor(input.type, input.targetLayer),
     expectedEffect: input.expectedEffect,
     promotionCriteria: {
       evidenceRequired: [
@@ -435,6 +438,15 @@ function buildProposal(input: {
   };
 }
 
+function behaviorImpactFor(type: string, targetLayer: string): string {
+  if (type === "reason_policy" || targetLayer === "reason_policy") return "presentation_only";
+  if (type === "candidate_template" || targetLayer === "candidate_future") return "candidate_shaping";
+  if (type === "classification_policy" || targetLayer === "classification") return "authority_shaping";
+  if (type === "skill") return "authority_shaping";
+  if (type === "budget_policy" || targetLayer === "budget_policy") return "deliberation_shaping";
+  return "deliberation_shaping";
+}
+
 function addProposal(
   proposals: Array<Partial<LearningProposal>>,
   proposal: Partial<LearningProposal>,
@@ -449,12 +461,36 @@ function evidenceScopeOf(transition: JsonRecord): {
   evidenceProvenance: string;
   evidencePromotionEligible: boolean;
   evidencePromotionReason: string;
+  environmentScope: LearningProposal["environmentScope"];
 } {
   const eligibility = getTransitionPromotionEligibility(transition);
+  const fingerprint = isRecord(transition.environmentFingerprint) ? transition.environmentFingerprint : {};
+  const scope = isRecord(transition.evidenceEnvironmentScope) ? transition.evidenceEnvironmentScope : {};
+  const scopeStatus = scope.scopeStatus === "exact" || scope.scopeStatus === "partial" || scope.scopeStatus === "mixed"
+    ? scope.scopeStatus
+    : "unknown";
+  const provenance = scope.captureProvenance === "organic" || scope.captureProvenance === "console_debug" || scope.captureProvenance === "fixture"
+    ? scope.captureProvenance
+    : "unknown";
+  const compatibility = scope.compatibilityState === "compatible" ||
+    scope.compatibilityState === "degraded" ||
+    scope.compatibilityState === "quarantined" ||
+    scope.compatibilityState === "unsupported"
+    ? scope.compatibilityState
+    : "unknown";
   return {
     evidenceProvenance: eligibility.reason,
     evidencePromotionEligible: eligibility.eligible,
-    evidencePromotionReason: eligibility.reason
+    evidencePromotionReason: eligibility.reason,
+    environmentScope: {
+      fingerprintHashes: typeof fingerprint.fingerprintHash === "string" ? [fingerprint.fingerprintHash] : [],
+      scopeStatus,
+      captureProvenance: [provenance],
+      compatibilityStates: [compatibility],
+      notes: eligibility.eligible
+        ? ["source_transition_environment_scope_exact"]
+        : ["source_transition_environment_scope_ineligible:" + eligibility.reason]
+    }
   };
 }
 

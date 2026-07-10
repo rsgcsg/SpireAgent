@@ -22,13 +22,14 @@ It is not a game-specific strategy engine.
 
 ## Current State
 
-The repository records run, transition, provider, revision, budget, and some provenance metadata, but it does not yet have a complete first-class `EnvironmentFingerprint` or compatibility handshake.
+Fresh executor-logged transitions now record a first-class audit-only `EnvironmentFingerprint` and `EvidenceEnvironmentScope`; run metadata retains the most recent capture. They read only explicit build/channel/content/mod/adapter/fact/revision/provenance values and keep omissions as `unknown`.
 
 Therefore:
 
 - existing historical evidence remains useful for debugging and architecture review;
-- it must not be assumed compatible for stable promotion;
-- P9-G3 stable change remains blocked until the minimal G2/P9.5E foundation exists.
+- old or incomplete records remain promotion-excluded rather than being inferred compatible;
+- pre-P12 compatibility state remains `unknown`; no handshake, quarantine, or revalidation exists yet;
+- P9-G3 stable change remains blocked until fresh verified complete-scope paired evidence and the G2 audit exist.
 
 ## Minimum G2/P9.5E Foundation
 

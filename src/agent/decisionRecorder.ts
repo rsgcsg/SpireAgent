@@ -4,8 +4,11 @@ import {
   DOMAIN_SCHEMA_VERSION,
   type CandidateFuture,
   type ConsolidationRecord,
+  type DecisionAuthorizationRecord,
   type DeliberationPacket,
   type DeliberationWorkspaceComparison,
+  type EnvironmentFingerprint,
+  type EvidenceEnvironmentScope,
   type ExecutionResult,
   type JsonRecord,
   type MemoryActivation,
@@ -19,6 +22,8 @@ import {
 } from "../domain/types.js";
 import { createExecutorLoggedTransitionSkeleton, type TransitionRecord } from "../data/transitionSchema.js";
 import { compactStateForDataset } from "./collector.js";
+import { buildDecisionAuthorizationRecord } from "./decisionAuthority.js";
+import { buildEnvironmentFingerprint, buildEvidenceEnvironmentScope } from "./environmentIdentity.js";
 import type {
   AgentAction,
   DecisionLlmAudit,
@@ -71,6 +76,9 @@ export interface AgentDecisionRecordInput {
   predictionError?: PredictionErrorRecord | JsonRecord;
   replayFrame?: ReplayFrame | JsonRecord;
   consolidation?: ConsolidationRecord | JsonRecord;
+  decisionAuthority?: DecisionAuthorizationRecord | JsonRecord;
+  environmentFingerprint?: EnvironmentFingerprint | JsonRecord;
+  evidenceEnvironmentScope?: EvidenceEnvironmentScope | JsonRecord;
 }
 
 export interface AgentDecisionRecordResult {
@@ -97,6 +105,17 @@ export class AgentDecisionRecorder {
     const legalActions = input.legalActions.map(compactCandidate);
     const stateDiff = checkpointStateDiff(input.checkpoint);
     const consolidation = enrichConsolidation(input.consolidation, transitionId);
+    const decisionAuthority = input.decisionAuthority ?? buildDecisionAuthorizationRecord({
+      chosenBy: input.chosenBy,
+      route: input.route.kind,
+      llmAudit: input.llmAudit,
+      fallbackReason: input.fallbackReason,
+      executed: true,
+      planOrigin: planOriginFor(input)
+    });
+    const environmentFingerprint = input.environmentFingerprint ?? buildEnvironmentFingerprint();
+    const evidenceEnvironmentScope = input.evidenceEnvironmentScope ??
+      buildEvidenceEnvironmentScope(environmentFingerprint as EnvironmentFingerprint);
     const replayFrame = input.replayFrame ?? buildReplayFrame({
       transitionId,
       preState: input.preState,
@@ -110,6 +129,9 @@ export class AgentDecisionRecorder {
       promptParity: input.promptParity,
       workspaceComparison: input.workspaceComparison,
       shadowWorkspaceDecision: input.shadowWorkspaceDecision,
+      decisionAuthority,
+      environmentFingerprint,
+      evidenceEnvironmentScope,
       predictionError: input.predictionError
     });
     const transition = createExecutorLoggedTransitionSkeleton({
@@ -151,6 +173,9 @@ export class AgentDecisionRecorder {
           fallbackPolicy: input.fallbackPolicy
         }
       },
+      decisionAuthority,
+      environmentFingerprint,
+      evidenceEnvironmentScope,
       memorySnapshot: memorySnapshot(input.memoryRun),
       strategicImpression: input.strategicImpression,
       salienceSignals: input.salienceSignals,
@@ -186,7 +211,7 @@ export class AgentDecisionRecorder {
         selectedAction: input.selectedAction
       });
     }
-    this.updateMetadata(runDir, input);
+    this.updateMetadata(runDir, input, environmentFingerprint, evidenceEnvironmentScope);
     return { runDir, transitionPath, transition };
   }
 
@@ -234,7 +259,12 @@ export class AgentDecisionRecorder {
     return path.relative(agentRoot, snapshotPath);
   }
 
-  private updateMetadata(runDir: string, input: AgentDecisionRecordInput): void {
+  private updateMetadata(
+    runDir: string,
+    input: AgentDecisionRecordInput,
+    environmentFingerprint: EnvironmentFingerprint | JsonRecord,
+    evidenceEnvironmentScope: EvidenceEnvironmentScope | JsonRecord
+  ): void {
     const metadataPath = path.join(runDir, "metadata.json");
     const metadata = readJson<RunRecord>(metadataPath, {
       schemaVersion: DOMAIN_SCHEMA_VERSION,
@@ -251,7 +281,9 @@ export class AgentDecisionRecorder {
         latestScreen: input.postState.screen,
         latestFloor: input.postState.floor,
         latestHp: input.postState.player.hp,
-        latestGold: input.postState.player.gold
+        latestGold: input.postState.player.gold,
+        environmentFingerprint,
+        evidenceEnvironmentScope
       }
     });
   }
@@ -281,6 +313,9 @@ function buildReplayFrame(input: {
   promptParity?: PromptParityReport | JsonRecord;
   workspaceComparison?: DeliberationWorkspaceComparison | JsonRecord;
   shadowWorkspaceDecision?: ShadowWorkspaceDecision | JsonRecord;
+  decisionAuthority?: DecisionAuthorizationRecord | JsonRecord;
+  environmentFingerprint?: EnvironmentFingerprint | JsonRecord;
+  evidenceEnvironmentScope?: EvidenceEnvironmentScope | JsonRecord;
   predictionError?: PredictionErrorRecord | JsonRecord;
 }): ReplayFrame {
   return {
@@ -298,6 +333,9 @@ function buildReplayFrame(input: {
     promptParity: input.promptParity,
     workspaceComparison: input.workspaceComparison,
     shadowWorkspaceDecision: input.shadowWorkspaceDecision,
+    decisionAuthority: input.decisionAuthority,
+    environmentFingerprint: input.environmentFingerprint,
+    evidenceEnvironmentScope: input.evidenceEnvironmentScope,
     predictionError: input.predictionError
   };
 }
@@ -313,6 +351,16 @@ function compactCandidate(candidate: ScoredCandidate): JsonRecord {
     reasons: candidate.reasons,
     risks: candidate.risks
   };
+}
+
+function planOriginFor(input: AgentDecisionRecordInput): string {
+  if (
+    input.preState.screen === "map" &&
+    input.selectedCandidate.reasons.some((reason) => /follow route plan|跟随当前路线计划/i.test(reason))
+  ) {
+    return "map_route_plan";
+  }
+  return "candidate_generator";
 }
 
 function checkpointStateDiff(checkpoint: ExecutionCheckpoint): JsonRecord {

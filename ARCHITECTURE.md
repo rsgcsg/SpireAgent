@@ -52,7 +52,7 @@ The architecture must keep four mode families distinct:
 - learning mode: read-only, proposal-only, shadow overlay, or guarded stable policy;
 - authority mode: `llm_primary`, `llm_full_control`, `local_shadow`, or isolated `local_autonomy_experimental`.
 
-The current `chosenBy` field is useful historical telemetry but is not a sufficient long-term authority record. P9.5D should add an audit chain for deliberation owner, selection source, authorization source, execution source, plan origin, authority level, and delegated-skill identity.
+The current `chosenBy` field is useful historical telemetry but is not a sufficient long-term authority record. P9-G2 now adds an audit-only authority chain for fresh executor-logged transitions: deliberation owner, selection source, authorization source, execution source, plan origin, authority level, and delegated-skill identity. Product authority mode remains `unknown` until explicitly configured; no provider or whitelist implies it.
 
 In `llm_primary`, long-horizon and irreversible strategy remains LLM-owned. Local mechanics and skills may act only under explicit Level 0/1 or qualified Level 2 contracts. Level 3 strategic authority does not migrate automatically with measured competence.
 
@@ -66,8 +66,9 @@ Compatibility is explicit:
 - `degraded`
 - `quarantined`
 - `unsupported`
+- `unknown`
 
-Unknown identity remains unknown; it is not inferred from successful execution. P9-G2/P9.5E supplies the minimum read-only identity/scope foundation. `ENVIRONMENT_COMPATIBILITY.md` is the canonical subsystem direction, and P12 owns the full compatibility and revalidation system.
+Unknown identity remains unknown; it is not inferred from successful execution. P9-G2/P9.5E now supplies the minimum read-only identity/scope foundation for fresh transitions, while P12 owns compatibility determination, quarantine, and revalidation.
 
 ## Plane 1: Game Integration
 

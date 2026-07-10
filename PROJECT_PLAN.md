@@ -139,7 +139,7 @@ The current blocker is:
 
 ```text
 P9-G2 evidence is not yet sufficient for stable-change design, and the
-decision-authority and environment-identity foundations are still missing.
+fresh authority-complete and environment-complete paired evidence is still missing.
 ```
 
 Specific gaps:
@@ -148,8 +148,8 @@ Specific gaps:
 - older shadow-first readiness semantics still coexist with live-applied rollout reporting;
 - typed proposal/reverse-feedback stores, weak attribution, evidence slicing, review-decision ledger, and bounded shadow comparison have started;
 - stable promotion, rollback snapshots, and traced stable retrieval are not implemented;
-- current decision records do not yet provide a complete authority chain;
-- promotion-grade evidence is not yet scoped to a first-class game/mod/adapter environment fingerprint.
+- fresh decision records now provide an audit-only authority chain, while historical records remain incomplete by design;
+- fresh decision records now provide an audit-only environment fingerprint/scope, but no verified complete-scope paired evidence exists.
 
 ---
 
@@ -1151,8 +1151,8 @@ P9 gaps:
 
 - protected-path governance must cover the complete future promotion surface;
 - P9-G2 counterexample and comparable paired evidence is incomplete;
-- decision-authority records and proposal-impact classes are not implemented;
-- environment fingerprint and evidence-scope compatibility are not implemented;
+- fresh decision-authority records and proposal-impact classes are implemented, but lack broad fresh explicit-mode coverage;
+- fresh environment fingerprints and evidence scopes are implemented, but lack verified complete-scope paired evidence and compatibility evaluation;
 - stable promotion ledger, rollback snapshot, status transition, and traced retrieval are not implemented.
 
 P10 gaps:
@@ -1268,12 +1268,11 @@ The current minimum next step is:
 
 1. Preserve the existing P9-G1 and partial G2 non-mutating boundaries.
 2. Close remaining protected-surface gaps in G1.
-3. Implement G2 decision-authority types and audit-only telemetry.
-4. Implement G2 environment fingerprint and evidence-scope telemetry.
-5. Continue comparable organic pairs and explicit counterexample review under matching provider and environment scope.
-6. Audit proposal behavior impact and exclude authority/action/hard-shell changes from the first promotion.
-7. Only then design G3 promotion ledger, immutable version diff, rollback snapshot, status transition, and retrieval trace.
-8. Keep stable promotion disabled until those prerequisites pass.
+3. Capture G2 fresh authority-complete and environment-complete evidence under explicitly declared provenance.
+4. Continue comparable organic pairs and explicit counterexample review under matching provider and environment scope.
+5. Audit proposal behavior impact and exclude authority/action/hard-shell changes from the first promotion.
+6. Only then design G3 promotion ledger, immutable version diff, rollback snapshot, status transition, and retrieval trace.
+7. Keep stable promotion disabled until those prerequisites pass.
 
 ---
 
