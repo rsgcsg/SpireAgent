@@ -11,6 +11,9 @@ Before changing this project, read:
 - `docs/phases/P8_CLOSEOUT.md`
 - `docs/phases/P9_ENTRY_CRITERIA.md`
 - `docs/phases/P9_GUARDED_LEARNING_PLAN.md` when working on P9-facing changes
+- `docs/phases/P9_P16_EXECUTION_ROADMAP.md` for forward phase ordering
+- `docs/decisions/ADR-0003-strategic-authority-and-experience-shell.md`
+- `docs/decisions/ADR-0004-environment-scoped-evidence-and-knowledge.md`
 - `PROJECT_PLAN.md`
 - `ARCHITECTURE.md`
 - `DATA_SCHEMA.md`
@@ -36,7 +39,7 @@ Authority order:
 - `docs/debt/*.md`: active debt registers and cleanup tracking.
 - `docs/runbooks/*.md`: operational procedures only.
 - `PROJECT_PLAN.md`: canonical long-horizon roadmap and phase book.
-- `ARCHITECTURE.md`, `DATA_SCHEMA.md`, `REPLAY_AND_EVAL.md`, `BUDGET_GOVERNANCE.md`: canonical subsystem sources.
+- `ARCHITECTURE.md`, `DATA_SCHEMA.md`, `REPLAY_AND_EVAL.md`, `BUDGET_GOVERNANCE.md`, `ENVIRONMENT_COMPATIBILITY.md`: canonical subsystem sources.
 - `docs/decisions/*.md`: ADRs for durable project decisions.
 - `LLM_HANDOFF.md` and `DEBUG_REPORT.md`: working handoff and historical/debug context only, not canonical project truth.
 
@@ -87,14 +90,17 @@ raw game state
 Keep these boundaries intact:
 
 - The LLM is the core strategic player; local scaffold must not quietly replace it.
+- The main product is LLM-centered, not LLM-exclusive. Provider mode, rollout mode, learning mode, and decision-authority mode are independent.
+- Capability, confidence, execution permission, and strategic authority are not interchangeable. Local skills require explicit scope, qualification, termination, escalation, versioning, and rollback.
 - Local code should shape the decision problem through salience, candidate futures, validation, and replayable evidence.
 - Prompt context should be compact but strategically complete, never a raw state dump.
 - Facts, observations, inference, memory, derived knowledge, LLM reflection, and prediction errors must stay separable.
 - Transition recording is the foundation for replay, eval, and learning.
 - Memory and strategy updates require evidence, conditions, confidence, and rollback.
 - External game projects are adapters, not architecture core. Mods are sensors/actuators, not the brain.
+- Promotion-grade evidence and learned objects must be environment-scoped. Unknown or incompatible game/mod/adapter evidence cannot silently support stable promotion.
 
-The formal route now runs through Phase 10. Phase 10 is the Guarded Learning Loop: candidate future prediction -> execution evidence -> typed prediction error -> consolidation proposal -> guarded stable update -> replay/eval validation -> rollback-capable review. Do not skip directly to automatic learning; Phase 6-9 must make prediction attribution, consolidation proposals, stable-update guards, and prompt migration safe first.
+The formal route now runs through Phase 16. P9 is proposal-driven guarded scaffold learning; P10 makes evidence and scaffold learning continuous; P11 governs curriculum, skill qualification, and delegation; P12 learns context assembly; P13 governs deliberation/compute; P14 handles environment compatibility and revalidation; P15 productizes the runtime; P16 is optional isolated local-autonomy research. Do not skip P9.5D authority records or P9.5E environment scope before designing P9.6 stable promotion.
 
 ## Live Testing Policy
 

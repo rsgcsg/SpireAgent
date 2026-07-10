@@ -8,6 +8,17 @@ Closeout pointers:
 - `docs/debt/P8_P9_DEBT_REGISTER.md`
 - `docs/phases/P9_ENTRY_CRITERIA.md`
 - `docs/phases/P9_GUARDED_LEARNING_PLAN.md`
+- `docs/phases/P9_P16_EXECUTION_ROADMAP.md`
+- `docs/decisions/ADR-0003-strategic-authority-and-experience-shell.md`
+- `docs/decisions/ADR-0004-environment-scoped-evidence-and-knowledge.md`
+
+## 2026-07-10 Authority And Environment Handoff
+
+- The main product identity is now explicit: LLM-centered, not LLM-exclusive. Local capability does not automatically grant strategic authority.
+- P9.5D decision-authority records and P9.5E environment-scoped evidence are new blockers before P9.6 promotion design.
+- Slay the Spire 2 Early Access update cadence makes game/mod/adapter/fact version scope a data-truth requirement, not later polish.
+- Continue P9.5C comparable/counterexample evidence, but do not treat it as the sole P9.6 prerequisite.
+- Canonical decisions and forward route are in the linked ADRs and `P9_P16_EXECUTION_ROADMAP.md`; this handoff is only recent context.
 
 ## P9.5C Handoff
 
@@ -23,10 +34,9 @@ Closeout pointers:
   - live/provider-originated memory updates are blocked by default
   - legacy `finalizeRun()` stable writes are blocked by default and audited
   - replay/eval/review now include a separate `liveAppliedRollout` summary
-- P9 proposal-driven learning has not started yet:
-  - no typed proposal store
-  - no promotion ledger
-  - no stable promotion gate
+- P9 proposal-driven infrastructure has started:
+  - typed append-only proposal/reverse-feedback stores, audit-only review decisions, weak proposal seeds, evidence slicing, and bounded P9.5 shadow comparison exist
+  - no promotion ledger, rollback snapshot, traced stable retrieval, or stable promotion gate exists
 
 Current project directory:
 

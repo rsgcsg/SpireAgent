@@ -43,6 +43,8 @@ Memory:
 
 Single-run observations must not directly overwrite derived knowledge. They should become proposals or low-confidence memories first.
 
+Derived knowledge informs deliberation; it does not own strategic authority. A high-confidence rule cannot directly authorize an action, expand live scope, alter validation, or grant a local skill Level 3 strategic authority.
+
 ## Required Update Shape
 
 Future derived updates should include:
@@ -58,6 +60,11 @@ Future derived updates should include:
 - `createdAt`
 - `updatedAt`
 - `rollback`
+- `environmentScope`
+- `dependencies`
+- `invalidationTriggers`
+- `lastValidatedEnvironment`
+- `promotionLedgerId`
 
 ## Prompt Use
 
@@ -70,6 +77,9 @@ Only a small relevant subset of derived knowledge should enter real-time prompts
 - relics
 - enemy names and intents
 - deck deficits
+- current environment compatibility
+
+Unknown, stale, or quarantined derived knowledge must remain visible for review but must not be activated as stable guidance. See `ENVIRONMENT_COMPATIBILITY.md`.
 
 ## Current Shadow Retrieval
 

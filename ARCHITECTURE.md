@@ -1,6 +1,8 @@
 # Architecture
 
-The system is an LLM-centered Slay the Spire 2 agent with a predictive cognitive scaffold. The LLM is the strategic player; local TypeScript code turns raw game data into compact strategic evidence, candidate futures, validation, execution, memory, and replayable learning signals.
+The system is an LLM-centered Slay the Spire 2 agent with a predictive cognitive and experience scaffold. In the main `llm_primary` product mode, the LLM owns strategic deliberation; local TypeScript code turns raw game data into compact strategic evidence, candidate futures, qualified bounded skills, validation, execution, memory, and replayable learning signals.
+
+LLM-centered does not mean LLM-exclusive. Capability, confidence, decision authority, and execution authority are separate. The durable authority decision is recorded in `docs/decisions/ADR-0003-strategic-authority-and-experience-shell.md`.
 
 This document follows `PROJECT_NORTH_STAR.md`. If an older phrase such as "layered local scaffold" conflicts with the North Star, interpret it as the local machinery that supports this flow:
 
@@ -27,6 +29,45 @@ Plane 3: Planning + LLM Decision
 Plane 4: Data + Memory + Learning
 Plane 5: Evaluation + Engineering Governance
 ```
+
+The five planes are crossed by two mandatory axes:
+
+```text
+Decision Authority Axis:
+  who deliberated -> who selected -> who authorized -> who executed
+
+Environment Identity Axis:
+  which game build -> content/mod set -> adapter capabilities -> fact snapshot
+  -> compatibility state -> evidence/knowledge validity
+```
+
+These are not additional strategy layers. They prevent provider mode, rollout mode, learned capability, and environment drift from silently changing the meaning of a decision.
+
+## Decision Authority Axis
+
+The architecture must keep four mode families distinct:
+
+- provider mode: DeepSeek, another LLM, bridge, or local component;
+- rollout mode: shadow, explicit-whitelist live, or another authorized window;
+- learning mode: read-only, proposal-only, shadow overlay, or guarded stable policy;
+- authority mode: `llm_primary`, `llm_full_control`, `local_shadow`, or isolated `local_autonomy_experimental`.
+
+The current `chosenBy` field is useful historical telemetry but is not a sufficient long-term authority record. P9.5D should add an audit chain for deliberation owner, selection source, authorization source, execution source, plan origin, authority level, and delegated-skill identity.
+
+In `llm_primary`, long-horizon and irreversible strategy remains LLM-owned. Local mechanics and skills may act only under explicit Level 0/1 or qualified Level 2 contracts. Level 3 strategic authority does not migrate automatically with measured competence.
+
+## Environment Identity Axis
+
+Evidence and learned objects must eventually be scoped to an `EnvironmentFingerprint` covering game build/channel, content or model manifest, mod set, adapter version/capabilities, fact snapshot, agent revision, and provenance where available.
+
+Compatibility is explicit:
+
+- `compatible`
+- `degraded`
+- `quarantined`
+- `unsupported`
+
+Unknown identity remains unknown; it is not inferred from successful execution. P9.5E supplies the minimum read-only identity/scope foundation. `ENVIRONMENT_COMPATIBILITY.md` is the canonical subsystem direction, and P14 owns the full compatibility and revalidation system.
 
 ## Plane 1: Game Integration
 
@@ -79,6 +120,8 @@ Responsibilities:
 - call LLM at most once per tick
 - validate LLM JSON and candidate IDs
 - choose fallback safely when LLM is unavailable or invalid
+- record decision authority without changing it implicitly
+- qualify and route future delegated skills only through explicit authority contracts
 
 Future learning-facing scaffold policies should live in this plane, but only as evidence-backed, proposal-driven inner-loop adjustments. Examples include a future `CombatReasonPolicy`, `CandidateTemplate` refinement, bounded-workspace presentation policy, or decision-class-specific `BudgetPolicy`. They may change how the LLM sees tradeoffs, survival lines, or future structure, but they must not directly mutate validation, execution legality, live flags, rollback authority, or fact/memory/derived separation.
 
@@ -104,6 +147,8 @@ Responsibilities:
 - score runs with lightweight reward
 - record prediction errors and replay frames for later attribution
 - apply conservative, auditable updates
+- scope evidence and learned objects to compatible environments
+- quarantine or revalidate learned objects when dependencies change
 
 P2 shadow refinement retrieves a small read-only derived snapshot from `derived/` and records it in the cognitive scaffold. This supports prompt-parity and prediction-error inspection without replacing the live prompt or changing candidate ordering.
 
@@ -156,19 +201,24 @@ Current code/docs:
 ```text
 GameIO.readState()
   -> normalizeGameState()
+  -> identify environment/capability scope
   -> build StrategicImpression + SalienceSignal[]
   -> activate memory and derived knowledge
   -> generate CandidateFuture[]
   -> build DeliberationPacket
-  -> local routing or LLM JSON decision
+  -> resolve explicit authority and rollout policy
+  -> local bounded skill or LLM JSON decision
   -> validate candidate
+  -> authorize execution
   -> execute via GameIO
   -> read post-state
   -> checkpoint/diff
-  -> record decision/transition
+  -> record decision/authority/environment/transition
   -> replay/eval/review
   -> prediction-error-driven learning proposal
 ```
+
+An observed outcome can support or challenge a proposal. It does not prove causal attribution and cannot bypass promotion gates.
 
 ## Current Implementation Boundary
 
@@ -234,6 +284,9 @@ P8 workspace status:
 - Shadow boundaries should be relaxed only at the intended gates: P8.5 for additive prompt context, P9 for guarded stable updates, and P10 for the full guarded learning loop.
 - This keeps the North Star boundary intact: the local scaffold shapes a better strategic workspace for the LLM, while the LLM remains the strategic player and all actions still pass through current validation/execution.
 - P9 should not be interpreted as "direct stable memory writes". It should be implemented as proposal-driven guarded learning, with a hard protected shell around validation, execution, live authorization, rollback, and stable-write authority.
+- Before P9.6 stable-promotion design, P9.5D must make decision authority auditable and P9.5E must make evidence environment-scoped. Neither foundation changes current live behavior.
+- P10 continuous learning improves the experience shell; it does not automatically transfer strategic authority.
+- P11 owns skill qualification and delegation governance, P12 owns learned context assembly, P13 owns guarded deliberation/compute allocation, P14 owns environment revalidation, P15 owns player productization, and P16 isolates optional local-autonomy research.
 - Budget governance should be interpreted through `BUDGET_GOVERNANCE.md`: current P8 guards are early instances of call budget, recovery budget, run budget, evidence budget, and rollout budget, but they are not yet the finished governance architecture.
 - BG-1/BG-2 now have a small code anchor: `src/agent/budgetGovernance.ts` resolves named governance profiles and records structured budget-policy metadata inside P8 workspace comparisons. This is observability and guard interpretation only; it does not change live behavior.
 - BG-3 now has a small telemetry anchor: `src/agent/providerRecoveryPolicy.ts` summarizes existing provider recovery attempts so recovery budget can be audited separately from workspace compression. It does not change provider behavior.

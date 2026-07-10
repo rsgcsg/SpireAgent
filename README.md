@@ -1,6 +1,8 @@
 # STS2 AI Agent Portable
 
-LLM-centered Slay the Spire 2 agent with a predictive cognitive scaffold, structured memory, derived strategy knowledge, replay/eval data loop, lightweight learning, and replaceable game/fact adapters.
+LLM-centered Slay the Spire 2 agent with a predictive cognitive scaffold, structured memory, derived strategy knowledge, replay/eval data loop, proposal-driven learning infrastructure, and replaceable game/fact adapters. Stable learning is not enabled.
+
+The main product direction is **LLM-centered, not LLM-exclusive**: the LLM owns strategic deliberation in `llm_primary`, while the surrounding experience shell may learn memory, context, candidates, and bounded skills under a deterministic safety, authorization, environment-compatibility, and rollback shell. The current repository is an engineering runtime, not yet the finished installable player product.
 
 This repository contains the TypeScript agent package. It does not include the game, the STS2 MCP C# mod, the Python MCP server, build outputs, or `node_modules`.
 
@@ -14,7 +16,10 @@ Current phase-heavy docs:
 - [P8_P9_DEBT_REGISTER.md](docs/debt/P8_P9_DEBT_REGISTER.md)
 - [P9_ENTRY_CRITERIA.md](docs/phases/P9_ENTRY_CRITERIA.md)
 - [P9_GUARDED_LEARNING_PLAN.md](docs/phases/P9_GUARDED_LEARNING_PLAN.md)
-- [P9_P13_EXECUTION_ROADMAP.md](docs/phases/P9_P13_EXECUTION_ROADMAP.md)
+- [P9_P16_EXECUTION_ROADMAP.md](docs/phases/P9_P16_EXECUTION_ROADMAP.md)
+- [Strategic authority ADR](docs/decisions/ADR-0003-strategic-authority-and-experience-shell.md)
+- [Environment Compatibility](ENVIRONMENT_COMPATIBILITY.md)
+- [Player Product Vision](docs/PRODUCT_VISION.md)
 - [LLM_RUN_MODES.md](docs/runbooks/LLM_RUN_MODES.md)
 
 ## GitHub Hygiene
@@ -74,7 +79,7 @@ git rm -r --cached -- data/runs
 
 If a public branch already contains secrets or local run artifacts, use a history-rewrite tool such as `git filter-repo` before pushing a cleaned branch.
 
-P8 DeepSeek calls are shadow-only and opt-in. A safe one-call test is:
+P8 **workspace** DeepSeek calls are shadow-only and opt-in. They are separate from the explicit-whitelist DeepSeek live command adapter described later in this README. A safe workspace one-call test is:
 
 ```bash
 npm run agent:tick -- --dry-run
@@ -236,14 +241,17 @@ Operational docs live under `docs/` and are not architecture source of truth.
 
 ## Phase Route
 
-The formal route now runs through P13:
+The formal route now runs through P16:
 
 - P1-P8.5 build the live scaffold, replay/eval, and explicit-whitelist live MVP.
 - P9 is protected proposal-driven guarded learning.
 - P10 is the continuous guarded learning loop.
-- P11 is autonomous curriculum and meta-scaffold optimization.
-- P12 is the self-optimizing Context OS / learned Prompt Compiler.
-- P13 is the Compute/Budget OS under hard caps.
+- P11 is curriculum, skill qualification, and delegation governance.
+- P12 is the learned Context OS / Prompt Compiler.
+- P13 is the Deliberation and Compute/Budget OS under hard caps.
+- P14 is environment compatibility, knowledge invalidation, and revalidation.
+- P15 is the player product and provider-neutral runtime.
+- P16 is optional isolated local policy/world-model/autonomy research.
 
 See [PROJECT_PLAN.md](PROJECT_PLAN.md) for current completion gaps and acceptance criteria.
 

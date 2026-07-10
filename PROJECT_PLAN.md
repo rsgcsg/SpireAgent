@@ -16,6 +16,8 @@ local system = legality, state normalization, salience, memory retrieval,
 candidate futures, prediction checks, replay/eval, guarded learning scaffold
 ```
 
+The main product is **LLM-centered, not LLM-exclusive**. Provider choice, rollout mode, learning mode, and strategic authority are separate. Local capability or confidence never silently transfers Level 3 strategic authority away from the LLM in `llm_primary` mode.
+
 The project must not become either:
 
 - a pure rules bot that replaces LLM strategic judgment; or
@@ -26,27 +28,25 @@ The current reality is:
 - P8/P8.5 can be honestly closed only as `explicit-whitelist live scaffold MVP complete`.
 - Explicit broad-whitelist live evidence exists, but wildcard live is still forbidden.
 - Stable learning is not implemented.
-- Proposal-driven guarded learning has not started in full engineering terms.
-- The active blocker is now the gap between P9.0 hardening and real proposal-driven learning.
+- Proposal-driven guarded learning infrastructure has started through typed append-only proposals, weak attribution, evidence slicing, review decisions, and bounded P9.5 shadow comparison. Stable promotion is still disabled.
+- The active blocker before P9.6 is now the combination of insufficient promotion-grade paired/counterexample evidence, missing decision-authority audit foundations, and missing environment-scoped evidence foundations.
 
 The next real work is not more live expansion.
 
 The next real work is:
 
 ```text
-ProtectedPathGate
-+ typed LearningProposal schema/store
-+ ReverseScaffoldFeedback schema
-+ EvidenceSliceReader
-+ weak attribution
-+ minimal prompt/context/budget telemetry
+P9.5D Decision Authority Foundation
++ P9.5E Environment Identity And Evidence Scope
++ additional provider/environment-comparable P9.5C counterexample evidence
++ only then P9.6 promotion-ledger / rollback design
 ```
 
 Execution ordering note:
 
 - `ReverseScaffoldFeedback` is strategically necessary, but it should enter P9 first as telemetry and proposal-seed material, not as an automatic live second-pass controller.
 - `Context OS` and `Compute/Budget OS` are real long-term targets, but P12/P13 should not be pulled forward by quietly rewriting current prompt assembly or budget behavior during P9.
-- For the execution-first ordering, read `docs/phases/P9_P13_EXECUTION_ROADMAP.md`.
+- For the corrected execution-first ordering, read `docs/phases/P9_P16_EXECUTION_ROADMAP.md`.
 
 The long-term maturity route is now best understood as:
 
@@ -54,23 +54,28 @@ The long-term maturity route is now best understood as:
 P0-P8.5 = build, record, evaluate, scaffold, and safely live-route the LLM
 P9      = protected proposal-driven guarded learning
 P10     = continuous learning loop
-P11     = autonomous curriculum and meta-scaffold optimization
-P12     = self-optimizing Context OS / learned Prompt Compiler
-P13     = Compute/Budget OS
+P11     = curriculum, skill qualification, and delegation governance
+P12     = learned Context OS / Prompt Compiler
+P13     = Deliberation and Compute/Budget OS
+P14     = environment compatibility and revalidation OS
+P15     = player product and provider-neutral runtime
+P16     = optional isolated local policy/world-model/autonomy research
 ```
 
-P12 and P13 are not immediate implementation work. Their schemas and telemetry may be seeded earlier, but their stable policy promotion belongs later.
+P12-P16 are not immediate implementation work. Their minimum schema/provenance foundations may be seeded earlier, but their runtime behavior belongs in their own guarded phases. P16 is optional research and cannot silently redefine the main product.
 
 ---
 
 ## 1. Current Source-of-Truth Status
+
+This section is a roadmap-level summary. Exact current phase, blocker, and next step are canonical only in `docs/04_CURRENT_STATUS.md`.
 
 ### 1.1 Current Phase
 
 The active phase is:
 
 ```text
-P8/P8.5 closeout + early P9.0 hardening
+P8/P8.5 closeout + active P9.5 guarded shadow/evidence foundations
 ```
 
 P8/P8.5 means:
@@ -133,15 +138,18 @@ The active blocker is no longer provider reachability or basic workspace surviva
 The current blocker is:
 
 ```text
-P9.0 hardening has not fully become a real proposal-driven learning system.
+P9.5 evidence is not yet sufficient for stable promotion design, and the
+decision-authority and environment-identity foundations are still missing.
 ```
 
 Specific gaps:
 
 - protected-path gating is only partially landed;
 - older shadow-first readiness semantics still coexist with live-applied rollout reporting;
-- typed learning proposal schema/store has not started;
-- weak attribution, anti-vague-proposal rules, and stable promotion gates are documented but not implemented.
+- typed proposal/reverse-feedback stores, weak attribution, evidence slicing, review-decision ledger, and bounded shadow comparison have started;
+- stable promotion, rollback snapshots, and traced stable retrieval are not implemented;
+- current decision records do not yet provide a complete authority chain;
+- promotion-grade evidence is not yet scoped to a first-class game/mod/adapter environment fingerprint.
 
 ---
 
@@ -174,7 +182,7 @@ Current strengths:
 Main problems:
 
 - Stable learning does not exist.
-- P9 proposal schema/store has not started.
+- P9 typed proposal/reverse-feedback stores, audit-only review decisions, weak proposal seeds, evidence slicing, and P9.5 shadow comparison have started; none of them apply stable behavior.
 - Protected-path governance is only partially hardened.
 - `controller.ts` remains too broad.
 - Some readiness metrics still reflect older shadow/combat-first semantics.
@@ -492,7 +500,7 @@ In P9, this is telemetry only.
 
 ## 7. Updated Maturity Route
 
-The old Phase 0-10 plan remains historically useful, but the forward route should now be expressed as P0-P13.
+The old Phase 0-13 plan remains historically useful, but the forward route should now be expressed as P0-P16. See `docs/phases/P9_P16_EXECUTION_ROADMAP.md` for canonical forward ordering.
 
 ### P0-P2.6: Trusted Boundaries, Recording, Replay, and Eval
 
@@ -566,10 +574,10 @@ Key outputs:
 
 Remaining concerns:
 
-- no typed P9 LearningProposal schema/store yet;
-- no stable promotion;
-- no full review/approve/reject/revert lifecycle;
-- no proposal-to-shadow-to-stable pipeline.
+- typed P9 proposal infrastructure exists, but no stable promotion exists;
+- review decisions are audit-only and do not apply proposals;
+- P9.5 paired/counterexample evidence remains incomplete;
+- no proposal-to-shadow-to-stable lifecycle has completed.
 
 ### P8/P8.5: Structured Workspace and Explicit-Whitelist Live Scaffold
 
@@ -786,9 +794,7 @@ Apply low-risk proposals in shadow first.
 Allowed early targets:
 
 - `ReasonPolicyProposal`
-- `CandidateTemplateProposal`
-- memory retrieval tags
-- classification policy labels
+- presentation-only `CandidateTemplateProposal`
 
 Forbidden early targets:
 
@@ -798,6 +804,32 @@ Forbidden early targets:
 - hard whitelist;
 - stable memory direct writes;
 - hard budget cap.
+
+### P9.5D Decision Authority Foundation
+
+Goal:
+
+Make deliberation, selection, authorization, execution, plan origin, and delegated-skill identity independently auditable without changing current behavior.
+
+Acceptance:
+
+- provider/run mode is no longer treated as decision authority;
+- proposal behavior impact is explicit;
+- authority-changing proposals cannot enter the first stable-promotion path;
+- old transitions remain readable.
+
+### P9.5E Environment Identity And Evidence Scope
+
+Goal:
+
+Scope evidence and future learned objects to game build/channel, content/mod set, adapter capabilities, fact snapshot, agent revision, and provenance.
+
+Acceptance:
+
+- unknown and mixed incompatible environments cannot qualify stable promotion;
+- historical evidence remains readable;
+- compatibility and quarantine are explicit;
+- no live behavior changes.
 
 ### P9.6 Stable Promotion Gate
 
@@ -875,6 +907,8 @@ P10 should include:
 
 P10 should not mean full unsupervised self-modification.
 
+P10 also does not mean that accumulated evidence transfers strategic authority. It improves memory and scaffold policy under the current authorized mode.
+
 The human role changes from:
 
 ```text
@@ -900,11 +934,11 @@ multi-run evidence
 
 ---
 
-## 10. P11: Autonomous Curriculum and Meta-Scaffold Optimization
+## 10. P11: Curriculum, Skill Qualification, And Delegation Governance
 
 Goal:
 
-Let the agent decide what it should study and which soft-scaffold policies need experiments.
+Let the agent propose what it should study, qualify reusable bounded skills, and govern when those skills may be delegated without displacing LLM strategic ownership.
 
 P11 should include:
 
@@ -918,6 +952,11 @@ P11 should include:
 - cross-run generalization;
 - cross-archetype generalization;
 - meta-scaffold policy proposals.
+- `SkillProposal` and `DelegatedSkill` lifecycle;
+- skill entry, termination, invalidation, and uncertainty escalation;
+- competence-region and out-of-distribution checks;
+- decision-authority level and delegation ledger;
+- LLM takeover and rollback tests.
 
 The agent should be able to propose:
 
@@ -935,6 +974,7 @@ P11 must still preserve:
 - evidence requirements;
 - rollback;
 - human/guarded review for promotion.
+- Level 3 long-horizon strategic authority for the LLM in `llm_primary`.
 
 P11 demo:
 
@@ -942,17 +982,20 @@ P11 demo:
 agent identifies a weakness
   -> proposes curriculum
   -> proposes scaffold experiments
+  -> qualifies a bounded skill with termination and escalation
   -> runs A/B or replay comparisons
   -> recommends policy changes with evidence
 ```
 
 ---
 
-## 11. P12: Self-Optimizing Context OS / Learned Prompt Compiler
+## 11. P12: Learned Context OS / Prompt Compiler
 
 Goal:
 
 Let the agent optimize what it sees, expands, compresses, caches, retrieves, orders, and uploads to the LLM.
+
+P12 changes what enters deliberation. It does not change who owns deliberation.
 
 P12 is not about learning more game slogans.
 
@@ -999,11 +1042,13 @@ agent requests expanded context in a key decision
 
 ---
 
-## 12. P13: Compute/Budget OS
+## 12. P13: Deliberation And Compute/Budget OS
 
 Goal:
 
 Let the agent optimize compute allocation under a hard budget cap.
+
+Provider/profile routing must preserve the explicit decision-authority mode. More compute or a different provider does not grant a different component strategic authority.
 
 P13 should answer:
 
@@ -1038,6 +1083,7 @@ P13 must not:
 - treat pretty reasons as ROI;
 - ignore denied request outcomes.
 - automatically raise live budget after cap exhaustion.
+- silently transfer strategic authority through provider or profile routing.
 
 P13 demo:
 
@@ -1051,11 +1097,64 @@ user gives 1 USD / 5 USD / fixed token budget
 
 ---
 
+## 12.1 P14: Environment Compatibility And Revalidation OS
+
+Goal:
+
+Keep facts, evidence, learned policies, and skills valid across game, mod, adapter, schema, and fact-data changes.
+
+P14 should include:
+
+- startup environment fingerprint and compatibility handshake;
+- content/mod/adapter capability registry;
+- learned-object dependency graph;
+- compatible/degraded/quarantined/unsupported states;
+- revalidation queue, migration fixtures, and organic canary evidence;
+- compatibility-aware retrieval and skill delegation;
+- user-visible degraded and unsupported behavior.
+
+The minimum environment identity cannot wait until P14: P9.5E must exist before P9.6 stable promotion.
+
+## 12.2 P15: Player Product And Provider-Neutral Runtime
+
+Goal:
+
+Turn the local engineering runtime into an installable, understandable, controllable player product.
+
+P15 should include:
+
+- thin game mod packaging;
+- provider-neutral adapter contract;
+- local encrypted/keychain secret handling;
+- observe, copilot, LLM-primary, delegated-play, and review modes;
+- visible authority and learning controls;
+- pause, takeover, rollback, data inspection, and deletion;
+- compatibility UX and release/migration procedures.
+
+P15 must not move prompts, API keys, memory, learning, or strategic authority into the game mod.
+
+## 12.3 P16: Optional Local Policy And Autonomy Research
+
+Goal:
+
+Explore local policy/value/world models, strategic distillation, skill discovery, and architecture search in an isolated mode.
+
+P16 is optional and must:
+
+- use separate authorization, stores, and benchmarks;
+- compare against `llm_full_control`, `llm_primary`, and `local_shadow`;
+- remain `local_autonomy_experimental`;
+- require a new ADR and North Star review before changing main-product strategic authority.
+
+P16 failure or deferral does not invalidate the LLM-centered player product.
+
+---
+
 ## 13. Cross-Phase Performance Baselines
 
 Engineering correctness is necessary but not sufficient.
 
-Starting from P6 and continuing through P13, each phase should preserve or improve performance baselines.
+Starting from P6 and continuing through P16, each phase should preserve or improve performance baselines appropriate to its authority and environment scope.
 
 Minimum metrics:
 
@@ -1072,6 +1171,9 @@ Minimum metrics:
 - settlement timeout rate
 - bad checkpoint rate
 - prediction mismatch rate
+- prediction accuracy by horizon and environment scope
+- risk calibration and escalation quality
+- decision consistency under equivalent states
 - unknown prediction rate
 - unsupported prediction rate
 - potion use
@@ -1079,6 +1181,10 @@ Minimum metrics:
 - proposal survival rate
 - rollback frequency
 - retrieval usefulness
+- retrieval harm rate
+- delegated-skill success, termination, escalation, and OOD rate
+- authority-chain completeness and unauthorized-authority count
+- environment compatibility, quarantine, and revalidation rate
 - context expansion ROI
 - budget ROI
 - prompt bloat ratio
@@ -1114,13 +1220,11 @@ P8/P8.5 gaps:
 
 P9 gaps:
 
-- `ProtectedPathGate` is not fully finished;
-- typed `LearningProposal` schema/store has not started;
-- `ReverseScaffoldFeedback` is not yet a durable transition surface;
-- `EvidenceSliceReader` is not implemented;
-- weak attribution exists in plan, not as a complete system;
-- review CLI for typed proposals is not implemented;
-- shadow applicator and stable promotion gate are not implemented.
+- protected-path governance must cover the complete future promotion surface;
+- P9.5 counterexample and comparable paired evidence is incomplete;
+- decision-authority records and proposal-impact classes are not implemented;
+- environment fingerprint and evidence-scope compatibility are not implemented;
+- stable promotion ledger, rollback snapshot, status transition, and traced retrieval are not implemented.
 
 P10 gaps:
 
@@ -1131,9 +1235,9 @@ P10 gaps:
 
 P11 gaps:
 
-- no autonomous curriculum engine;
-- no scaffold policy experiment manager;
-- no ablation framework for memory/candidate/prompt/budget policies.
+- no curriculum proposal engine;
+- no skill qualification, delegation, termination, OOD, or escalation governance;
+- no authority-aware scaffold experiment manager.
 
 P12 gaps:
 
@@ -1149,6 +1253,21 @@ P13 gaps:
 - no BudgetUseRecord or BudgetROIDigest;
 - no denied request outcome tracking;
 - no reasoning profile A/B.
+
+P14 gaps:
+
+- no environment compatibility handshake;
+- no learned-object dependency graph, quarantine, or revalidation queue;
+- no compatibility-aware retrieval or canary process.
+
+P15 gaps:
+
+- no installable player-facing product, provider UI, keychain integration, authority UI, or complete takeover/rollback UX.
+
+P16 research gaps:
+
+- no isolated local policy/value/world-model benchmark;
+- no separate local-autonomy authority mode or North Star change process.
 
 ---
 
@@ -1221,19 +1340,13 @@ Do not start adaptive budget behavior.
 
 The current minimum next step is:
 
-1. Finish `ProtectedPathGate`.
-2. Treat remaining legacy stable-write paths as gated legacy behavior, not normal learning.
-3. Keep live-applied rollout audit separate from stale shadow-only readiness semantics.
-4. Add typed `LearningProposal` schema/store.
-5. Add `ReverseScaffoldFeedback` schema to transition/review surfaces.
-6. Add `EvidenceSliceReader`.
-7. Add weak attribution fields.
-8. Add minimal `PromptAssemblyRecord`.
-9. Add minimal `BudgetUseRecord`.
-10. Keep all new feedback non-mutating.
-11. Use replay/review to produce draft proposals.
-12. Shadow-validate a low-risk `ReasonPolicyProposal` or `CandidateTemplateProposal`.
-13. Only then consider stable promotion.
+1. Preserve the existing P9.0-P9.5C non-mutating boundaries.
+2. Implement P9.5D decision-authority types and audit-only telemetry.
+3. Implement P9.5E environment fingerprint and evidence-scope telemetry.
+4. Continue comparable organic P9.5C pairs and explicit counterexample review under matching provider and environment scope.
+5. Audit proposal behavior impact and exclude authority/action/hard-shell changes from the first promotion.
+6. Only then design the P9.6 promotion ledger, immutable version diff, rollback snapshot, status transition, and retrieval trace.
+7. Keep stable promotion disabled until those prerequisites pass.
 
 ---
 
@@ -1250,6 +1363,9 @@ The current minimum next step is:
 - More tokens are not automatically better.
 - The hard shell is not learnable.
 - Soft shell can become learnable only through evidence, shadow validation, promotion, and rollback.
+- Soft-shell capability does not automatically grant strategic authority.
+- A successful outcome is evidence, not precise causal proof.
+- Evidence from an unknown or incompatible environment is not promotion-grade.
 - The final product is not a rule engine.
 
 ---
@@ -1315,8 +1431,32 @@ user provides a fixed dollar/token budget and the agent allocates low/medium/hig
 
 This is a self-optimizing Compute/Budget OS demo.
 
+### P14 Demo
+
+```text
+a game/mod/adapter change is detected
+  -> affected learned objects are quarantined
+  -> compatibility and revalidation evidence is collected
+  -> compatible policies return or remain rolled back
+```
+
+### P15 Demo
+
+```text
+a player installs the product, selects a provider and authority mode,
+runs with visible compatibility/learning controls, and can pause, take over,
+inspect evidence, and roll back without handling repository internals
+```
+
+### P16 Research Demo
+
+```text
+an isolated local policy/world-model experiment is benchmarked against
+LLM-primary and local-shadow modes without changing the main product authority
+```
+
 ---
 
 ## 19. Enduring One-Sentence Plan
 
-Build a real-game Slay the Spire 2 LLM agent where the LLM remains the core strategic player, the local system acts as a predictive cognitive scaffold, P8/P8.5 establishes safe explicit-whitelist live execution, P9 turns replayable evidence into guarded proposals, P10 makes that learning loop continuous, P11 lets the agent design curriculum and scaffold experiments, P12 makes context assembly learnable, and P13 makes compute allocation learnable under hard budget caps.
+Build a real-game Slay the Spire 2 agent where the LLM remains the primary strategic deliberator in the main product mode, the local experience shell becomes increasingly learned and environment-aware, P9 establishes guarded proposal promotion, P10 makes evidence and scaffold learning continuous, P11 qualifies bounded skills and delegation, P12 learns context assembly, P13 learns deliberation/compute allocation under hard caps, P14 handles environment change and revalidation, P15 delivers the player product, and P16 isolates optional local-autonomy research.

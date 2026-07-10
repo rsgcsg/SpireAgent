@@ -4,6 +4,8 @@ This document tracks the debts that remain after P8/P8.5 closeout and before P9 
 
 For the comprehensive pre-P9 audit, full classification matrix, repair order, and copy-paste follow-up PR prompts, see [PRE_P9_ENGINEERING_DEBT_AUDIT.md](PRE_P9_ENGINEERING_DEBT_AUDIT.md).
 
+For the July 2026 strategic-authority/environment correction and forward phase order, see [NORTH_STAR_AUTHORITY_AND_ROADMAP_AUDIT_2026-07-10.md](../reports/NORTH_STAR_AUTHORITY_AND_ROADMAP_AUDIT_2026-07-10.md) and [P9_P16_EXECUTION_ROADMAP.md](../phases/P9_P16_EXECUTION_ROADMAP.md).
+
 Status values:
 
 - `open`
@@ -85,6 +87,32 @@ Status values:
   - make slice dimensions explicit in code and docs
   - keep stable-learning promotion disabled until proposal/promotion gates exist
 
+### `decision_authority_audit_missing`
+
+- Status: `open`
+- Problem:
+  - Provider mode, rollout mode, learning mode, and strategic authority are not first-class independent records.
+  - Historical `chosenBy` cannot fully explain who deliberated, selected, authorized, executed, or originated a plan.
+- Why it matters:
+  - Learned capability could silently become authority, turning the main product into a local policy bot without an explicit North Star decision.
+- Minimum fix before P9.6:
+  - implement P9.5D schema/telemetry-only `DecisionAuthorityMode`, authority level, authorization chain, action explanation, delegated-skill identity, and proposal behavior impact
+  - keep routing and execution unchanged
+  - exclude authority/action/hard-shell proposals from the first stable promotion path
+
+### `environment_scoped_evidence_missing`
+
+- Status: `open`
+- Problem:
+  - Evidence is not yet scoped to a complete game build/channel, content/mod set, adapter capability, fact snapshot, and provenance fingerprint.
+  - Slay the Spire 2 Early Access updates can invalidate mechanics, content, serialization, and mod assumptions.
+- Why it matters:
+  - P9 could promote stale knowledge or skills and then self-reinforce them under a different environment.
+- Minimum fix before P9.6:
+  - implement P9.5E read-only `EnvironmentFingerprint`, evidence scope, compatibility state, and mixed/unknown exclusion
+  - preserve historical evidence but block unknown/incompatible promotion use
+  - add future invalidation/revalidation fields to learned objects
+
 ## High
 
 ### `controller_owns_too_many_concerns`
@@ -133,6 +161,8 @@ Status values:
   - The project can drift into a permanent class-by-class manual tuning workflow.
 - Minimum fix:
   - make classification and scaffold policy proposal-driven in P9
+  - keep decision classes as hard-shell routing/audit labels rather than permanent definitions of inner thought
+  - require authority-impact review before classification/routing proposals can ever become executable
 
 ### `prediction_error_precision_overclaim_risk`
 
@@ -148,6 +178,7 @@ Status values:
 - Remaining risk:
   - the current generator is still a heuristic seed surface, not a validated causal attribution engine
   - P9.5A/P9.5B can compare bounded low-risk overlays and evaluate same-slice pairs. P9.5C has one real cloned-packet organic combat pair with matched provider profile, but no proposal can be marked `shadow_validated` or influence future decisions yet.
+  - Future pairs also need explicit environment compatibility and proposal authority-impact review before they can support P9.6.
 
 ### `shadow_applicator_validation_missing`
 
@@ -160,7 +191,7 @@ Status values:
   - P9.5C can obtain one overlay outcome with the recorded ablation/provider profile while remaining fully outside game/live/runtime/stable paths. Reason-policy overlays now require a structured review trigger, so an adequate baseline cannot be used to widen a one-case prompt repair.
 - Remaining risk:
   - Prompt change and one clean paired outcome are not strategic improvement.
-  - Counterexample review remains incomplete; one scope-bound clean pair and a reason detector improvement are not strategic improvement. A second matching sample diverged through provider recovery and is recorded as incomplete. Explicit status-transition rules and rollback/retrieval design remain required before any P9.6 promotion ledger is designed.
+  - Counterexample review remains incomplete; one scope-bound clean pair and a reason detector improvement are not strategic improvement. A second matching sample diverged through provider recovery and is recorded as incomplete. Decision-authority records, environment scope, explicit status-transition rules, and rollback/retrieval design remain required before any P9.6 promotion ledger is designed.
 
 ### `proposal_vagueness_risk`
 

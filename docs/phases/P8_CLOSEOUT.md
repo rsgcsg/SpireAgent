@@ -73,6 +73,8 @@ P8/P8.5 do not include:
 - Stable learning promotion does not exist.
 - Protected-path stable-write governance is only partially hardened.
 - Replay/eval/review can surface proposal evidence, but they do not yet drive a promotion pipeline.
+- P8's `chosenBy`/provider/live fields do not yet form a complete strategic-authority chain.
+- P8 evidence is not yet fully scoped to game build/channel, content/mod set, adapter capabilities, and fact snapshot.
 
 ## Honest Status
 
@@ -110,6 +112,8 @@ These are the main ways the project could mis-call P8 as complete:
 - treating adapter-side stripping as sufficient protection for stable writes
 - letting stale shadow-only readiness reports override live-applied evidence
 - continuing class-by-class manual perfection work instead of moving to proposal-driven guarded learning
+- confusing local/provider capability with strategic authority
+- promoting evidence across incompatible Early Access game/mod/adapter environments
 
 ## Required Follow-On
 
@@ -120,3 +124,4 @@ See:
 - [P8_P9_DEBT_REGISTER.md](../debt/P8_P9_DEBT_REGISTER.md)
 - [P9_ENTRY_CRITERIA.md](P9_ENTRY_CRITERIA.md)
 - [P9_GUARDED_LEARNING_PLAN.md](P9_GUARDED_LEARNING_PLAN.md)
+- [P9_P16_EXECUTION_ROADMAP.md](P9_P16_EXECUTION_ROADMAP.md)

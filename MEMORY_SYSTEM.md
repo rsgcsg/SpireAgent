@@ -52,7 +52,9 @@ Run memory must influence:
 
 ## Long-Term Memory
 
-Long-term memory is updated after runs. It should record:
+Long-term memory is a future guarded stable store. It is **not** updated automatically by the current P9 path. The legacy finalize path is blocked by default as described below.
+
+When guarded promotion exists, long-term memory should record:
 
 - why the run won or lost
 - repeated failure causes
@@ -60,8 +62,12 @@ Long-term memory is updated after runs. It should record:
 - lessons with confidence and evidence run IDs
 - conditions where the lesson applies
 - counterexamples or situations where the lesson should not be trusted
+- environment scope, dependencies, invalidation triggers, and last revalidation result
+- proposal and promotion-ledger identity
 
-Long-term memory is retrieved by tags. Do not dump the whole file into prompts.
+Long-term memory should be retrieved by scoped evidence and tags. Do not dump the whole file into prompts, and do not activate a quarantined or environment-incompatible lesson.
+
+Memory informs the LLM and bounded skills; it does not own strategic authority. A memory becoming confident or frequently retrieved cannot grant a local policy permission to make Level 3 strategic decisions.
 
 ### Legacy Finalize Isolation
 
@@ -82,6 +88,8 @@ Explicit opt-in behavior:
 - explicit legacy writes are still not P9 stable promotion and must not be treated as proposal-driven guarded learning
 
 P9 stable learning must use typed pending proposals, evidence gates, promotion ledger, version diff, and rollback. It must not reuse legacy finalize as a shortcut.
+
+The promotion ledger must also record proposal behavior impact, decision-authority mode, and environment compatibility. Unknown environment scope blocks stable memory promotion.
 
 ## Memory Activation
 
@@ -115,3 +123,5 @@ Current implementation stores history in `strategy-params.json`.
 - Add memory snapshots per transition.
 - Add `MemoryActivation` records per decision.
 - Add explicit rollback command for strategy params and derived changes.
+- Add environment-scoped stable memory identity, quarantine, and revalidation.
+- Add retrieval traces that record policy/memory version, authority mode, compatibility decision, and usefulness/harm evidence.

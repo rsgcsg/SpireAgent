@@ -16,6 +16,7 @@ Start here before changing docs, planning a new phase, or deciding which documen
    - `../REPLAY_AND_EVAL.md`
    - `../BUDGET_GOVERNANCE.md`
    - `../MEMORY_SYSTEM.md`
+   - `../ENVIRONMENT_COMPATIBILITY.md`
 
 ## Directory Map
 
@@ -48,6 +49,8 @@ Start here before changing docs, planning a new phase, or deciding which documen
   - replay/eval/review semantics
 - `../BUDGET_GOVERNANCE.md`
   - budget governance truth
+- `../ENVIRONMENT_COMPATIBILITY.md`
+  - game/mod/adapter identity, evidence scope, compatibility, quarantine, and revalidation truth
 
 ## Current High-Value Docs
 
@@ -57,7 +60,11 @@ Start here before changing docs, planning a new phase, or deciding which documen
 - [P9_ENTRY_CRITERIA.md](phases/P9_ENTRY_CRITERIA.md)
 - [P9_ENTRY_DECISION.md](phases/P9_ENTRY_DECISION.md)
 - [P9_GUARDED_LEARNING_PLAN.md](phases/P9_GUARDED_LEARNING_PLAN.md)
-- [P9_P13_EXECUTION_ROADMAP.md](phases/P9_P13_EXECUTION_ROADMAP.md)
+- [P9_P16_EXECUTION_ROADMAP.md](phases/P9_P16_EXECUTION_ROADMAP.md)
+- [Strategic authority ADR](decisions/ADR-0003-strategic-authority-and-experience-shell.md)
+- [Environment-scope ADR](decisions/ADR-0004-environment-scoped-evidence-and-knowledge.md)
+- [Player Product Vision](PRODUCT_VISION.md)
+- [North Star Authority And Roadmap Audit](reports/NORTH_STAR_AUTHORITY_AND_ROADMAP_AUDIT_2026-07-10.md)
 - [P8_5_LIVE_ROLLOUT_POLICY.md](phases/P8_5_LIVE_ROLLOUT_POLICY.md)
 - [LLM_RUN_MODES.md](runbooks/LLM_RUN_MODES.md)
 
@@ -93,9 +100,9 @@ These exist for engineering continuity and history. They must not become the onl
 - old redirect docs and stale low-priority material
   - `archive/legacy/*.md`
 
-## P0-P13 And P8.x
+## P0-P16 And P8.x
 
-`../PROJECT_PLAN.md` remains the canonical P0-P13 route.
+`../PROJECT_PLAN.md` remains the canonical P0-P16 route. `phases/P9_P16_EXECUTION_ROADMAP.md` is the forward execution ordering; `phases/P9_P13_EXECUTION_ROADMAP.md` is historical supporting detail.
 
 Use `phases/*.md` for:
 
@@ -103,7 +110,7 @@ Use `phases/*.md` for:
 - P8.5 rollout policy
 - P9 entry criteria
 - P9 guarded learning implementation
-- P9-P13 execution ordering and realism checks
+- P9-P16 execution ordering and realism checks
 
 Use `04_CURRENT_STATUS.md` for the short active snapshot only.
 
@@ -134,3 +141,7 @@ Important wording guardrails:
 - "promotion-eligible evidence" is not the same as "promotion applied"
 - "budget telemetry" is not the same as "Budget OS"
 - "`BudgetPolicyProposal`" is not the same as runtime budget autonomy
+- provider mode or rollout mode is not the same as decision-authority mode
+- measured capability is not automatic strategic authority
+- successful execution is not environment compatibility
+- an observed outcome is evidence, not precise causal proof

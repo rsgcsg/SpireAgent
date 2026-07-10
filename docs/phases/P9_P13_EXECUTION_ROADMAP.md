@@ -1,5 +1,7 @@
 # P9-P13 Execution Roadmap
 
+> Historical supporting roadmap. The canonical forward phase ordering is now [P9_P16_EXECUTION_ROADMAP.md](P9_P16_EXECUTION_ROADMAP.md), which adds the decision-authority and environment-scope prerequisites before P9.6 and extends the route through productization and optional autonomy research. Keep this file for the original P9-P13 implementation detail; do not use it alone to authorize new work.
+
 This document is the execution-oriented roadmap for P9 through P13.
 
 It is narrower than `PROJECT_PLAN.md`.

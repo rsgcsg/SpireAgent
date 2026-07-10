@@ -289,6 +289,100 @@ Protected-path governance note:
 - Runtime memory audit may now include `memory/legacy-finalize-audit.jsonl` for blocked legacy stable-write attempts.
 - This file is local runtime audit evidence, not a stable learning store and not a promotion ledger.
 
+## Planned P9.5D Decision Authority Records
+
+These are design targets, not current runtime fields. Their addition must remain backward compatible and must not change current routing or execution.
+
+```ts
+type DecisionAuthorityMode =
+  | "llm_primary"
+  | "llm_full_control"
+  | "local_shadow"
+  | "local_autonomy_experimental";
+
+type DecisionAuthorityLevel =
+  | "mechanical_execution"
+  | "deterministic_bounded_skill"
+  | "qualified_delegated_skill"
+  | "long_horizon_strategy";
+
+interface DecisionAuthorizationRecord {
+  schemaVersion: string;
+  authorityMode: DecisionAuthorityMode;
+  authorityLevel: DecisionAuthorityLevel;
+  deliberationOwner: string;
+  selectionSource: string;
+  authorizationSource: string;
+  executionSource: string;
+  planOrigin?: string;
+  delegatedSkillId?: string;
+  fallbackOrEscalationReason?: string;
+}
+```
+
+`chosenBy` remains readable historical telemetry. It must not be treated as a complete authority chain once `DecisionAuthorizationRecord` exists.
+
+Future proposal records must add:
+
+```ts
+type ProposalBehaviorImpact =
+  | "presentation_only"
+  | "deliberation_shaping"
+  | "candidate_shaping"
+  | "authority_shaping"
+  | "action_shaping"
+  | "hard_shell";
+```
+
+The first P9.6 stable path may consider only `presentation_only` proposals. The other values remain review/shadow labels until later governance explicitly authorizes them.
+
+`ActionExplanationRecord` should summarize selected plan, evidence, tradeoff, uncertainty, authority chain, and policy/skill versions for audit. It must not claim to expose private chain-of-thought or prove causal reasoning.
+
+## Planned P9.5E Environment Identity Records
+
+These are also design targets and do not yet imply current transition coverage.
+
+```ts
+interface EnvironmentFingerprint {
+  schemaVersion: string;
+  gameId: "slay_the_spire_2";
+  gameBuild?: string;
+  releaseChannel?: "main" | "beta" | "unknown";
+  contentManifestHash?: string;
+  mods: Array<{
+    id: string;
+    version?: string;
+    affectsGameplay?: boolean;
+    hash?: string;
+  }>;
+  adapter: {
+    id: string;
+    version?: string;
+    capabilityHash?: string;
+  };
+  factSnapshotVersion?: string;
+  agentRevision?: string;
+  captureProvenance: "organic" | "console_debug" | "fixture" | "unknown";
+}
+
+type EnvironmentCompatibilityState =
+  | "compatible"
+  | "degraded"
+  | "quarantined"
+  | "unsupported";
+```
+
+Future evidence slices and stable learned objects must record:
+
+- environment fingerprint or explicit unknown fields;
+- exact/compatible/mixed/unknown scope;
+- compatibility decision and reason;
+- dependencies and invalidation triggers;
+- last validation fingerprint;
+- revalidation and rollback status.
+
+Unknown or mixed incompatible environments remain visible but cannot qualify stable promotion. Provider/model profile is experiment context and must not be conflated with game/mod/adapter environment truth.
+
 ## Ground Truth Rules
 
 - Agent-selected executor actions: `captureMode=executor_logged`, `isGroundTruth=true`.

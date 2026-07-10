@@ -38,9 +38,15 @@ Protected paths include:
 - rollback authority
 - stable memory/derived/strategy writes
 
+Subsequent durable decisions add two more prerequisites:
+
+- [ADR-0003](ADR-0003-strategic-authority-and-experience-shell.md): learned capability does not automatically receive strategic authority
+- [ADR-0004](ADR-0004-environment-scoped-evidence-and-knowledge.md): promotion evidence and stable objects require compatible environment scope
+
 ## Consequences
 
 - P9 must begin with protected-path hardening, not with direct stable writes
 - the current `ConsolidationRecord` surface is not enough by itself for P9 promotion
 - class-by-class manual scaffold tuning should gradually be replaced by reviewable proposal families
 - explicit live rollout and stable learning are now separate concerns in both code and reporting
+- P9.6 promotion design must wait for decision-authority and environment-scope foundations

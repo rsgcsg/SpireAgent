@@ -138,6 +138,7 @@ As of P8, replay/eval/review also report the DeliberationPacket strategic worksp
   - `live_applied_rollout`: decisions actually executed through explicit-whitelist additive live, not stable-learning proof
   - `stable_learning_promotion`: future P9 promotion evidence, currently always `promotionUseAllowed=false`
 - Evidence slices report source, capture mode, decision class, revision tag, budget window, provider source, live mode, and provenance counts. Mixed revision/budget windows, console/debug/fixture markers, unknown provenance, and the absence of a P9 promotion engine all keep promotion disabled.
+- P9.5E must extend this identity with game build/channel, content/mod set, adapter capability identity, fact snapshot, and environment compatibility. Until that exists, a clean provider/revision/budget slice is not automatically environment-compatible promotion evidence.
 - Evidence slices also report future-promotion provenance eligibility separately from general visibility:
   - `promotionEvidence.eligibleTransitions`: organic agent runtime transitions that are not marked console/debug/fixture, human-observed, snapshot-only, or unknown provenance.
   - `promotionEvidence.excludedTransitions`: transitions still visible in replay/eval/review, but ineligible for future stable-promotion evidence.
@@ -192,6 +193,28 @@ P9.1 proposal and reverse-feedback visibility:
 - `npm run learning:proposals -- generate --latest --write` explicitly appends generated seeds to the run-local append-only stores. This is still not proposal application, not stable promotion, not live mutation, and not a budget/classification/scaffold policy change.
 - Generation is evidence-slice aware. By default, console/debug/fixture, human-observed, snapshot-only, and unknown-provenance transitions are excluded and counted separately. `--include-ineligible-evidence` is a debug-only inspection flag, not a promotion or learning path.
 - Mutating commands such as apply, promote, and revert remain intentionally unavailable. Review decisions are ledger entries only.
+
+P9.5D/P9.5E reporting direction:
+
+- `DecisionAuthorizationRecord` should distinguish deliberation owner, selection source, authorization source, execution source, plan origin, authority mode/level, and delegated skill. Historical `chosenBy` remains readable but incomplete.
+- `ProposalBehaviorImpact` should distinguish presentation, deliberation, candidate, authority, action, and hard-shell impact. The first P9.6 gate may only consider presentation-only policy.
+- `EnvironmentFingerprint` and evidence environment scope should distinguish exact/compatible/mixed/unknown evidence plus compatible/degraded/quarantined/unsupported policy state.
+- Provider identity remains experiment context. It must not be substituted for game/mod/adapter environment identity.
+- An observed successful action is not proof of environment compatibility or strategic correctness.
+- These additions begin as read-only reporting and must not change live routing, validation, execution, proposal state, or stable stores.
+
+Long-term learning-quality metrics must extend beyond reason wording alarms:
+
+- prediction accuracy by horizon and environment scope;
+- risk calibration and escalation/abstention quality;
+- decision consistency under equivalent states;
+- candidate coverage and missing-plan recovery;
+- retrieval usefulness and harm rate;
+- proposal survival, counterexample, and rollback rate;
+- delegated-skill success, termination, escalation, and OOD rate;
+- policy usage impact and regression rate.
+
+`reasonQuality`, `missing_tradeoff`, `survival_line`, and similar detectors remain smoke alarms. They are not strategic truth or optimization targets by themselves.
 
 Useful checks:
 

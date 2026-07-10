@@ -4,6 +4,8 @@ P9 is not "turn on automatic learning".
 
 P9 is the phase where the project turns replayable evidence into typed, guarded, proposal-driven inner-scaffold changes while keeping the outer safety shell fixed.
 
+P9 improves the experience shell. It does not automatically transfer strategic authority. The durable authority boundary is defined by `docs/decisions/ADR-0003-strategic-authority-and-experience-shell.md`; environment-scoped evidence is defined by `docs/decisions/ADR-0004-environment-scoped-evidence-and-knowledge.md`.
+
 ## Definition
 
 P9 should be understood as:
@@ -54,6 +56,40 @@ It means humans should not permanently hand-author separate combat/shop/card_rew
 
 under the fixed outer shell of validation, execution safety, rollback, protected-path governance, and fact/memory/derived separation.
 
+The experience shell becoming less hand-authored does not mean it becomes the unrestricted strategic principal. In `llm_primary`, Level 3 long-horizon and irreversible strategic deliberation remains LLM-owned. Learned local skills require explicit qualification and delegation governance.
+
+## New Pre-P9.6 Foundations
+
+The July 2026 architecture audit adds two prerequisites before stable promotion design:
+
+### Authority prerequisite
+
+Add schema and audit-only telemetry for:
+
+- deliberation owner;
+- selection source;
+- authorization source;
+- execution source;
+- plan origin;
+- decision authority mode and level;
+- delegated skill identity;
+- proposal behavior impact.
+
+This work must not change current routing, provider use, live authorization, fallback, validation, or execution.
+
+### Environment prerequisite
+
+Add read-only environment and compatibility identity for:
+
+- game build/channel;
+- content/mod set;
+- adapter identity and capabilities;
+- fact snapshot and agent revision;
+- organic/console/debug/fixture provenance;
+- compatible/degraded/quarantined/unsupported state.
+
+Unknown or mixed incompatible environments must not qualify stable promotion. Historical evidence remains readable.
+
 ## Target Proposal Families
 
 - `MemoryProposal`
@@ -97,6 +133,8 @@ Each proposal must include at least:
 - risk
 - promotion criteria
 - rollback plan
+- behavior impact (`presentation_only`, `deliberation_shaping`, `candidate_shaping`, `authority_shaping`, `action_shaping`, or `hard_shell`)
+- environment scope and invalidation conditions
 
 ## Minimal Data Model
 
@@ -108,6 +146,7 @@ transition/replay/review signal
   -> LearningProposalEngine
   -> pending proposal store
   -> EvidenceSliceReader
+  -> decision-authority and environment-scope review
   -> human review / guarded gate
   -> shadow applicator
   -> replay/eval/fresh validation
@@ -392,17 +431,52 @@ Current state:
 - One scope-bound P9.5C organic combat pair was collected for `transition-000194-agent-mr7smrum-sk2bgv`: candidate/fact invariants and provider profile matched, the legal selected candidate stayed the same, and the `missing_tradeoff` smoke alarm improved. It is only `paired_evidence_ready_for_review`; it does not mutate proposal status or become `shadow_validated`.
 - Counterexample review has begun but is not complete. An independent same-revision adequate combat reason was refused by the trigger guard, showing cue detectors are not strategic truth and that P9.5C must not become a reason-wording optimizer. A second matching `missing_tradeoff` baseline entered provider recovery and therefore changed terminal provider profile; it is `incomplete`, not confirming policy evidence. More than one provider-profile-comparable organic slice and explicit counterexample handling remain required before a future guarded status-transition design is considered.
 
+P9.5C completion is necessary but not sufficient for P9.6. Any future paired evidence used for promotion must also pass P9.5D authority-impact review and P9.5E environment-scope compatibility.
+
+### P9.5D Decision Authority Foundation
+
+Goal:
+
+- make strategic agency auditable without changing who decides
+
+Required:
+
+- typed authority mode/level;
+- deliberation/selection/authorization/execution chain;
+- proposal behavior-impact class;
+- backward-compatible reporting for old `chosenBy` records;
+- hard rejection of executable authority/action/hard-shell promotion paths.
+
+### P9.5E Environment Identity And Evidence Scope
+
+Goal:
+
+- prevent stable learning from using unknown, stale, or incompatible game/mod/adapter evidence
+
+Required:
+
+- minimal `EnvironmentFingerprint`;
+- evidence environment scope and compatibility state;
+- mixed/unknown environment exclusion from promotion;
+- future policy invalidation and revalidation fields.
+
 ### P9.6 Stable Promotion Gate
 
 Goal:
 
 - allow a narrow stable promotion path with rollback
 
+The first stable target must be `presentation_only`. `authority_shaping`, `action_shaping`, and `hard_shell` proposals remain non-executable. Promotion also requires an explicit compatible environment scope.
+
+The first stable promotion demonstrates ledger, scope, retrieval, revalidation, and rollback integrity. It must not be marketed as strategic learning merely because a reason-quality detector improved.
+
 ### P9.7 Retrieval Integration
 
 Goal:
 
 - let stable learned policies influence future scaffold construction in a recorded way
+
+Retrieval must record policy version, promotion ledger id, authority mode, environment compatibility decision, scope match, and fallback. A quarantined or incompatible policy must not be retrieved as active guidance.
 
 ### P9.8 End-To-End Guarded Learning Window
 

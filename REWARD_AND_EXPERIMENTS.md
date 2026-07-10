@@ -4,9 +4,9 @@ Reward is lightweight feedback, not neural reinforcement learning.
 
 ## Current Reward Behavior
 
-`src/agent/memory.ts` finalizes a run, scores it, records long-term run summaries, updates lessons, and applies bounded strategy weight updates.
+`src/agent/memory.ts` retains a historical finalize path, but stable writes are blocked by default and audited as `legacy_local_learning`. This path is not P9 proposal promotion and must not be re-enabled as a shortcut.
 
-This is useful but should be made more observable and reversible.
+Current P9 learning surfaces are append-only proposals, weak attribution, evidence slicing, review decisions, and bounded shadow comparison. Stable promotion remains disabled.
 
 ## Target Reward Inputs
 
@@ -42,12 +42,15 @@ Failure categories:
 
 ## Strategy Update Rules
 
-- One run can add observations.
-- Repeated patterns raise confidence.
-- Weight changes must be small and bounded.
+- One run can add observations or seed a draft hypothesis; it cannot establish causal truth.
+- Repeated patterns may raise empirical support only within a compatible environment and after counterexample review.
+- Future stable changes must be versioned, narrowly scoped, and bounded.
 - Every update needs evidence, reason, timestamp, and rollback data.
 - Reward never mutates raw fact data.
-- Derived updates should be proposals unless confidence and evidence are sufficient.
+- Memory, derived, strategy, skill, context, classification, and budget updates must begin as proposals; confidence alone is never sufficient for stable promotion.
+- Every promotion candidate needs environment scope, dependencies, invalidation triggers, authority impact, promotion criteria, and rollback.
+
+Win/loss and floor reached are delayed, confounded outcomes. They do not prove that the final action or any single earlier decision caused the result. Attribution must remain weak and record alternative hypotheses and needed counterexamples.
 
 ## Experiment Log
 
@@ -64,3 +67,8 @@ Future `memory/experiments.jsonl` entries should include:
 - `linkedRunIds`
 - `result`
 - `keepOrRollback`
+- `authorityMode`
+- `proposalBehaviorImpact`
+- `environmentScope`
+- `counterexamples`
+- `invalidationTriggers`

@@ -1,25 +1,25 @@
 # Agent Loop
 
-The agent loop should stay LLM-centered while using local scaffold for speed, reliability, and strategic framing. The local system shapes what the LLM sees; it must not silently become the strategic player.
+The agent loop should stay LLM-centered while using local scaffold for speed, reliability, strategic framing, and explicitly delegated bounded skills. The local system shapes what the LLM sees; capability does not silently make it the strategic player.
 
 ## Target Flow
 
 ```text
 1. Read raw state through GameIO.
-2. Normalize raw state into canonical state.
+2. Normalize raw state and record environment/capability identity.
 3. Build `StrategicImpression` and `SalienceSignal[]`.
 4. Update run memory and retrieve facts, derived knowledge, and relevant long-term memory.
 5. Record `MemoryActivation` with evidence, conditions, confidence, and omissions.
 6. Generate legal candidates and wrap them as `CandidateFuture[]`.
 7. Score candidates, estimate risks, and record assumptions/invalidation triggers.
 8. Build a compact `DeliberationPacket`.
-9. Route the decision.
-10. If low-dispute, choose locally with audit.
-11. If strategic or uncertain, ask LLM with the deliberation packet.
+9. Resolve rollout and decision-authority policy independently.
+10. If mechanically proven or explicitly delegated within a qualified bounded skill, choose locally with authority audit.
+11. If strategic, uncertain, out of skill scope, or invalidated, ask/escalate to the LLM with the deliberation packet.
 12. Validate LLM JSON and candidate id.
 13. Execute through GameIO.
 14. Read post-state and classify checkpoint.
-15. Record transition, decision audit, and cognitive scaffold snapshots.
+15. Record transition, authority chain, environment scope, decision audit, and cognitive scaffold snapshots.
 16. Use replay/eval/review to generate `PredictionErrorRecord` and conservative learning proposals.
 ```
 
@@ -76,4 +76,11 @@ The prompt must not include:
 
 ## Current Gap
 
-Current `src/agent/prompt.ts` already builds compact context and includes top scored candidates, run memory, uncertainty, and relevant memories. It is not yet a formal `DeliberationPacket`, and current candidates are still action-first rather than future-first. Phase 3 should bridge that gap with additive wrappers and tests before changing live strategy.
+`DeliberationPacket`, CandidateFuture, live/shadow telemetry, proposal infrastructure, and bounded P9.5 shadow comparison now exist. The current gaps before stable promotion are:
+
+- decision authority is not yet a first-class chain beyond historical routing/`chosenBy` fields;
+- evidence is not yet scoped to a complete game/mod/adapter environment fingerprint;
+- P9.5 paired/counterexample evidence is incomplete;
+- promotion ledger, rollback snapshot, and traced stable retrieval do not exist.
+
+P9.5D/P9.5E must add audit-only foundations without changing the existing live loop.

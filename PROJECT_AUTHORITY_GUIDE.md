@@ -9,20 +9,20 @@
 
 ## 0. 这份文档的目的
 
-当前项目已经完成从早期 data loop、shadow scaffold、P8 workspace 到 P8.5 explicit-whitelist live scaffold MVP 的工程路径。当前 TypeScript agent 已能通过 install、tsc、smoke、check、review、replay/eval、collector、dry-run 等基本验证，并能在本地 MCP 在线时进行受控 live additive 运行。
+当前项目已经完成从早期 data loop、shadow scaffold、P8 workspace 到 P8.5 explicit-whitelist live scaffold MVP 的工程路径，并已进入 P9 proposal/evidence/shadow infrastructure。当前精确 phase、blocker 和 next step 只以 `docs/04_CURRENT_STATUS.md` 为准。
 
-当前项目不再处于“进入 Phase 3.0”的状态。当前真实阶段是：
+当前项目不再处于“进入 Phase 3.0”的状态。当前阶段族是：
 
 ```text
-P8/P8.5 closeout + early P9.0 hardening
+P8/P8.5 closeout + active P9 guarded-learning foundations
 ```
 
 也就是：
 
 - explicit-whitelist live scaffold 已经成立
 - wildcard broad live 仍然禁止
-- proposal-driven guarded learning 还没有开始真正实现
-- 当前主线是补齐 P9.0/P9.1 前置护栏，而不是继续扩 live
+- proposal-driven guarded learning 的 non-mutating infrastructure 已开始，但 stable promotion 仍未启用
+- 当前主线是 P9.5 decision-authority / environment-scope / paired-evidence 前置，而不是继续扩 live
 
 后续任何改变系统目标、schema、capability、memory、derived、reward、LLM 输出格式、collector/replay/eval 行为的代码修改，都必须同步更新对应权威文档。文档不能只在聊天记录里更新。
 
@@ -41,12 +41,12 @@ P8/P8.5 closeout + early P9.0 hardening
 - 定义哪些文档应该保留、合并、redirect 或 archive。
 - 定义 mod、adapter、本地 agent、data/memory/learning 的边界。
 - 定义当前和未来外部依赖的处理规则。
-- 定义 P0 到 P13 的长期路线。
+- 索引 P0 到 P16 的长期路线；详细阶段以 `PROJECT_PLAN.md` 和 `docs/phases/P9_P16_EXECUTION_ROADMAP.md` 为准。
 - 给出下一轮 Codex 的长期 prompt，让它能自主阅读、审计、检索、构建、整理项目文档索引和项目架构。
 
-## 0.1 P0-P13 的强约束
+## 0.1 P0-P16 的强约束
 
-P0 到 P13 不是任务打卡表，而是 North Star 的成熟度路线：让 LLM 始终是 strategic player，本地系统作为 predictive cognitive scaffold，逐步增强它的 see / remember / imagine / deliberate / execute / replay / learn 能力。
+P0 到 P16 不是任务打卡表，而是 North Star 的成熟度路线：在主产品 `llm_primary` 模式中让 LLM 始终拥有主要战略深思权，本地系统作为 predictive cognitive and experience scaffold，逐步增强它的 see / remember / imagine / deliberate / execute / replay / learn 能力。
 
 阶段推进的硬约束：
 
@@ -59,6 +59,11 @@ P0 到 P13 不是任务打卡表，而是 North Star 的成熟度路线：让 LL
 - P11：让系统提出 curriculum 和 meta-scaffold experiment。
 - P12：让 Context OS / Prompt Compiler 逐渐成为可学习 soft shell。
 - P13：让 Compute/Budget OS 在硬上限内逐渐成为可学习 soft shell。
+- P14：让 environment compatibility、knowledge invalidation、revalidation 和 quarantine 成为一等系统。
+- P15：把工程 runtime 变成 provider-neutral、可安装、可接管、可回滚的玩家产品。
+- P16：隔离研究 local policy/value/world model 和 local autonomy；不得静默改变主产品主体性。
+
+横跨所有阶段的四个维度必须分开：provider mode、rollout mode、learning mode、decision-authority mode。能力与信心不能自动授予战略权力。任何 promotion-grade evidence 还必须带明确 environment scope。
 
 任何推进都必须回答以下问题：
 
@@ -107,7 +112,9 @@ raw game state
 
 ---
 
-## 2. 当前项目状态摘要
+## 2. 历史实现快照（非当前状态权威）
+
+> 本节保留早期工程上下文，可能落后于当前代码。当前状态只读 `docs/04_CURRENT_STATUS.md`；当前阶段路线只读 `PROJECT_PLAN.md` 和 `docs/phases/P9_P16_EXECUTION_ROADMAP.md`。
 
 当前项目不是空项目，而是一个已经能跑的 TypeScript agent 包。
 
@@ -168,16 +175,14 @@ raw game state
 
 用途：
 
-- 给下一位 Codex/LLM 的接手状态。
-- 当前实现状态。
-- 当前已验证命令。
-- 当前最值得做的下一步。
+- 工作窗口交接和历史上下文。
+- 它不是 phase、blocker、next step 或 roadmap 的 canonical source。
 
 要求：
 
 - 不承载完整长期架构。
 - 不复制 `PROJECT_PLAN.md` / `ARCHITECTURE.md` 的全部内容。
-- 每次 Phase 结束后更新“下一步”。
+- 只在近期交接确有价值时添加简短历史指针；canonical next step 写入 `docs/04_CURRENT_STATUS.md`。
 
 ### Tier 1：长期架构和规范 source of truth
 
@@ -185,7 +190,7 @@ raw game state
 
 即本文件。用途：
 
-- 最高层级项目指导。
+- North Star 之下的工程权威索引。
 - 定义文档权威层级。
 - 定义系统边界和长期路线。
 - 内置下一步长期 Codex prompt。
@@ -198,7 +203,7 @@ raw game state
 - 当前诊断。
 - 阶段路线。
 - 验收标准。
-- 当前 Phase 状态。
+- 长期 phase 定义；当前 phase 状态仍以 `docs/04_CURRENT_STATUS.md` 为准。
 
 #### `ARCHITECTURE.md`
 
@@ -251,6 +256,15 @@ raw game state
 - 预算治理的长期原则文档。
 - 定义 token / output / retry / cost / evidence / rollout / protected-path 预算的边界。
 - 规定预算如何服务 North Star，而不是把预算误当成“尽量省 token”。
+
+#### `ENVIRONMENT_COMPATIBILITY.md`
+
+用途：
+
+- 定义 game/build/channel、content/mod、adapter capability 和 fact snapshot 的环境身份。
+- 定义 compatible / degraded / quarantined / unsupported。
+- 定义 evidence、stable knowledge 和 skill 的版本作用域、失效与 revalidation。
+- 防止 Early Access 更新后的旧证据静默进入 promotion。
 
 ### Tier 2：子系统设计文档
 
@@ -1019,7 +1033,7 @@ Future event-log mod:
 
 ## 12. Phase 路线
 
-当前正式路线是 Phase 0 到 Phase 13。P10 的目标不是“自动训练一个黑箱 bot”，而是形成 Guarded Learning Loop：每次学习都必须来自可回放 transition、明确 prediction error、证据充分的 consolidation proposal、受保护的稳定更新和可回滚记录。P11-P13 继续扩展 curriculum、Context OS、Compute/Budget OS，但仍然受 P9 的护栏约束。
+当前正式路线是 Phase 0 到 Phase 16，详见 `PROJECT_PLAN.md` 和 `docs/phases/P9_P16_EXECUTION_ROADMAP.md`。本节下面的 Phase 0-10 文字是早期路线历史，不再单独授权当前工作。当前顺序是：P9 guarded scaffold learning；P10 continuous evidence/memory/scaffold learning；P11 skill qualification/delegation；P12 Context OS；P13 Deliberation/Compute OS；P14 environment revalidation；P15 player product；P16 optional isolated autonomy research。所有阶段仍受 P9 hard shell、decision-authority 和 environment-scope 护栏约束。
 
 ### Phase 0：已完成
 

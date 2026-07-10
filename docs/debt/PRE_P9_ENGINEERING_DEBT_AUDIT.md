@@ -1,5 +1,7 @@
 # Pre-P9 Engineering Debt Audit
 
+> Historical pre-P9 audit and PR prompt archive. Current phase/blocker truth lives in `docs/04_CURRENT_STATUS.md`; current forward ordering lives in `docs/phases/P9_P16_EXECUTION_ROADMAP.md`. Statements such as "P9 has not started" describe the audit date and must not be read as current implementation status.
+
 ## Purpose
 
 This document audits visible engineering debt before formal P9 work begins.

@@ -6,8 +6,8 @@ Do not turn it into a narrative log. Detailed history belongs in `../LLM_HANDOFF
 
 ## Current Phase
 
-- Formal route: P0-P13 in `../PROJECT_PLAN.md`
-- Active milestone: P8/P8.5 closeout, P9.0 hardening, P9.1 read-only proposal infrastructure, P9.2 weak-attribution proposal seeding, and P9.5A/P9.5C bounded shadow comparison/evaluation
+- Formal route: P0-P16 in `../PROJECT_PLAN.md` and `phases/P9_P16_EXECUTION_ROADMAP.md`
+- Active milestone: P8/P8.5 closeout complete as explicit-whitelist scaffold MVP; active work is P9.5C bounded shadow evidence plus the newly required P9.5D decision-authority and P9.5E environment-scope foundations
 - Live posture: explicit additive whitelist live is real and locally exercised; wildcard broad live remains forbidden
 
 ## Current Truth
@@ -41,7 +41,7 @@ Do not turn it into a narrative log. Detailed history belongs in `../LLM_HANDOFF
 
 The active blocker is no longer provider reachability or P8 workspace survival-cue preservation.
 
-The real blocker is now the gap between P9.0 hardening and real proposal-driven learning:
+The real blocker is now the gap between bounded P9.5 shadow evidence and a safe P9.6 promotion design:
 
 - protected-path gating is only partially landed
 - live-applied rollout reporting now exists, but older shadow-first readiness semantics still coexist beside it
@@ -53,6 +53,8 @@ The real blocker is now the gap between P9.0 hardening and real proposal-driven 
 - P9.5A can assemble a low-risk proposal only into a cloned offline `DeliberationPacket` and compare baseline versus overlay workspace prompts; it cannot call a provider, write a run artifact, change live/runtime behavior, or promote stable policy
 - P9.5B can evaluate a supplied paired same-slice baseline/overlay shadow outcome for candidate/fact invariants, provider/output regressions, and reason smoke alarms; `paired_evidence_ready_for_review` is explicitly not `shadow_validated`
 - P9.5C can run one explicit low-risk proposal against a cloned replay packet with the baseline's recorded provider profile. It has produced one **scope-bound** organic combat pair (`transition-000194-agent-mr7smrum-sk2bgv`): legal candidate unchanged, provider clean, and the `missing_tradeoff` reason smoke alarm improved. The overlay is refused for an independent adequate baseline without that trigger. A second matching baseline triggered provider recovery and changed its terminal profile, so it is explicitly `incomplete`, not a confirming pair. This is review evidence only, not a policy result.
+- Decision authority is not yet first-class telemetry: provider/run mode and historical `chosenBy` do not fully explain deliberation, selection, authorization, execution, or delegated-skill ownership.
+- Promotion evidence is not yet scoped to a first-class game build/channel, content/mod set, adapter capability, and fact-snapshot fingerprint. In the current Early Access environment, this is a stable-promotion blocker.
 - budget governance has a clearer staged roadmap, but runtime adaptive Budget/Compute OS behavior remains deferred to P13
 - weak proposal attribution and anti-vague proposal validation are implemented for pending proposals; stable-promotion gates are still not implemented
 
@@ -66,13 +68,13 @@ The real blocker is now the gap between P9.0 hardening and real proposal-driven 
 
 ## Next Step
 
-Continue from P9.2/P9.3 proposal seeding and P9.5A/P9.5B offline shadow evidence while keeping P9.0 hardening intact:
+Continue P9.5 without enabling stable promotion:
 
-1. finish protected-path hardening by treating remaining legacy stable-write paths as gated legacy behavior, not normal learning
-2. keep live-applied rollout audit separate from stale shadow-only readiness semantics in replay/eval/review
-3. keep expanding read-only evidence slicing so mixed budget/profile, console/debug, live/shadow, and promotion evidence stay separate
-4. use `npm run learning:proposals` for inspection of typed proposals, audit-only review decisions, reverse feedback, and dry-run proposal seed generation
-5. obtain more than one provider-profile-comparable organic P9.5C pair and complete counterexample review; recovery-divergent pairs remain provider evidence, not policy confirmation. Only then design the P9.6 promotion ledger, rollback snapshot, and retrieval-trace prerequisites without enabling promotion
+1. implement P9.5D decision-authority types and audit-only records without changing routing or execution
+2. implement P9.5E environment fingerprint and evidence-scope reporting without changing live behavior
+3. continue provider- and environment-comparable organic P9.5C pairs with explicit counterexample review
+4. keep `authority_shaping`, `action_shaping`, and `hard_shell` proposals outside the first promotion path
+5. only then design the P9.6 promotion ledger, immutable version diff, rollback snapshot, status transition, and retrieval trace; stable promotion remains disabled
 
 ## Canonical Follow-On Docs
 
@@ -81,6 +83,9 @@ Continue from P9.2/P9.3 proposal seeding and P9.5A/P9.5B offline shadow evidence
 - [P9_ENTRY_CRITERIA.md](phases/P9_ENTRY_CRITERIA.md)
 - [P9_ENTRY_DECISION.md](phases/P9_ENTRY_DECISION.md)
 - [P9_GUARDED_LEARNING_PLAN.md](phases/P9_GUARDED_LEARNING_PLAN.md)
-- [P9_P13_EXECUTION_ROADMAP.md](phases/P9_P13_EXECUTION_ROADMAP.md)
+- [P9_P16_EXECUTION_ROADMAP.md](phases/P9_P16_EXECUTION_ROADMAP.md)
+- [Strategic authority ADR](decisions/ADR-0003-strategic-authority-and-experience-shell.md)
+- [Environment-scope ADR](decisions/ADR-0004-environment-scoped-evidence-and-knowledge.md)
+- [Environment Compatibility](../ENVIRONMENT_COMPATIBILITY.md)
 - [P8_5_LIVE_ROLLOUT_POLICY.md](phases/P8_5_LIVE_ROLLOUT_POLICY.md)
 - [LLM_RUN_MODES.md](runbooks/LLM_RUN_MODES.md)

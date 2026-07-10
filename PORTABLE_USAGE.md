@@ -1,6 +1,6 @@
 # STS2 AI Agent Portable Usage
 
-这个文件夹是可搬走的 Slay the Spire 2 AI agent 项目包。复制到其他位置后，只要那台机器能连接已经运行的 STS2 MCP/REST 服务，就可以继续使用同一套 agent、结构化知识库、派生策略和记忆。
+这个文件夹是可搬走的 Slay the Spire 2 AI agent **工程运行时**。复制到其他位置后，只要那台机器能连接已经运行的 STS2 MCP/REST 服务，就可以继续使用同一套 agent、结构化知识库、派生策略和本地数据。它还不是已经完成的玩家安装产品；长期产品方向见 `docs/PRODUCT_VISION.md`。
 
 ## 包含什么
 
@@ -90,17 +90,15 @@ npm run agent:run -- --max-ticks 800 --delay-ms 80
 {
   "candidateId": "card-reward-1",
   "confidence": 0.72,
-  "reason": "补防御和抽牌",
-  "memoryUpdates": {
-    "strategicDirection": ["低血优先稳定防御"],
-    "riskFlags": ["避免低血进精英"]
-  }
+  "reason": "补防御和抽牌，同时接受较低的即时伤害收益"
 }
 ```
 
+Live/provider 输出不能直接写 stable memory、derived knowledge、strategy、skill 或 scaffold policy。任何学习意图必须先成为 typed proposal，经过 evidence、counterexample、shadow、promotion ledger 和 rollback gate；当前 stable promotion 仍未启用。
+
 ## 保留和迁移记忆
 
-`memory/` 是 agent 学习能力的一部分，搬包时应一起带走。
+`memory/` 包含本地运行状态和历史 legacy 数据。是否迁移应由用户明确决定；它不是自动可信的 stable learning store，也不应提交到 Git。
 
 - `memory/current-run.json`：当前局短期记忆。
 - `memory/long-term.json`：局后长期 lessons。
@@ -110,7 +108,7 @@ npm run agent:run -- --max-ticks 800 --delay-ms 80
 - `memory/snapshots/`：历史快照。
 - `memory/collected/`：raw snapshots 和 compact state JSONL，可用于后续 replay / fixture / eval。
 
-如果想开一个“干净新脑子”，备份后删除 `memory/*.json` 和 `memory/decision-log.jsonl`，再运行 agent 会自动重建默认记忆。
+如果想开一个干净的本地运行状态，应先备份并使用项目后续提供的受控 reset/migration 流程。不要把手工删除文件当成稳定知识 rollback；P9 的 promotion ledger 和 rollback snapshot 尚未完成。
 
 ## 更新结构化数据
 
@@ -141,7 +139,9 @@ cat /tmp/sts2-llm-bridge/latest-request.json
 - 本地脚手架负责整理状态、生成候选、组合/预算评估、记忆检索和快速执行。
 - collector 只负责只读采集 raw/compact/hash/timestamp，不参与策略。
 - LLM 是主要战略玩家，但只在关键分歧点介入。
+- Provider mode、rollout mode、learning mode 和 strategic authority mode 必须分开；本地能力增强不等于自动获得战略权力。
 - 不把所有数据塞进 prompt；只传当前 compact state、本局记忆、少量相关长期记忆和候选动作。
 - 脚本不能写死单张牌策略；本地判断必须结合当前状态、敌人意图、自身状态、手牌/抽弃牌摘要、记忆和策略参数。
-- 局后 reward 只做保守学习，不因一局大幅改权重。
+- 旧 `finalizeRun()` 学习属于默认阻断并审计的 legacy path，不是 P9 proposal promotion。
+- 游戏仍处于持续更新环境；未来 promotion evidence 必须绑定 game/mod/adapter/fact environment scope。
 - 真实跑局时不要因为普通掉血或策略争议频繁停下；只有程序 bug 才中途修，策略优化局后修。

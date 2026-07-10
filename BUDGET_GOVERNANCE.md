@@ -551,6 +551,23 @@ The closer a path gets to live behavior or stable learning, the stricter the bud
 A cheap sample is not the same thing as sufficient evidence.
 A passed shadow slice is not the same thing as promotion authority.
 
+### 6.9 Budget must not change strategic authority
+
+Provider choice, reasoning depth, retry policy, context size, and spend profile may change how deliberation is performed. They must not silently change who owns deliberation, selection, authorization, or execution.
+
+In particular:
+
+- switching from one provider to another does not change `DecisionAuthorityMode`;
+- a cheaper local model does not gain strategic authority because it is fast;
+- budget exhaustion may skip or escalate under policy, but cannot transfer a Level 3 decision to an unauthorized local skill;
+- P13 Deliberation/Compute OS proposals must record authority impact and preserve the authorized mode.
+
+### 6.10 Budget evidence is environment-scoped
+
+Cost, latency, context pressure, and provider-recovery evidence can change across game builds, adapters, provider versions, and content complexity. Future budget-policy evidence must record both provider profile and environment scope. These are separate identities.
+
+Unknown or mixed incompatible environment evidence may inform a draft budget hypothesis, but it cannot support stable budget-policy promotion.
+
 ---
 
 ## 7. The Target Governance Model
@@ -1197,7 +1214,7 @@ Required before any stable budget/compression policy promotion:
 Stage 4 may validate a proposal in shadow.
 It still does not let budget policy self-apply.
 
-### Stage 5 / P13: Budget/Compute OS behavior
+### Stage 5 / P13: Deliberation And Compute/Budget OS behavior
 
 Long-term target:
 
@@ -1214,6 +1231,8 @@ Long-term target:
 The LLM may propose these profiles inside the experimental scaffold, but the outer shell must still enforce hard caps, validation, live gating, stable-promotion rules, and rollback.
 
 P13 must not begin as automatic budget escalation.
+
+It must also not become automatic authority allocation. Provider/model/profile routing remains downstream of explicit decision-authority policy, and any authority-changing proposal remains outside the first P13 stable targets.
 It should begin as:
 
 - budget use records

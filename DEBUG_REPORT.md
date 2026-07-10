@@ -9,6 +9,15 @@ Current closeout / next-phase pointers:
 - `docs/phases/P9_ENTRY_CRITERIA.md`
 - `docs/phases/P9_GUARDED_LEARNING_PLAN.md`
 
+## 2026-07-10 North Star Authority And Environment Audit
+
+- Architecture-only review; no runtime/live/provider behavior changed.
+- Durable identity decision: `llm_primary` keeps strategic deliberation with the LLM while allowing mechanically proven and explicitly delegated bounded local skills.
+- Provider mode, rollout mode, learning mode, and decision-authority mode must remain separate.
+- P9.5D decision-authority telemetry and P9.5E environment fingerprint/evidence scope are now prerequisites before P9.6 stable-promotion design.
+- Official Early Access and recent mod/serialization updates make environment compatibility and revalidation a current evidence-safety concern.
+- Detailed critique and source links: `docs/reports/NORTH_STAR_AUTHORITY_AND_ROADMAP_AUDIT_2026-07-10.md`.
+
 ## 2026-07-10 P9.5C Same-Packet Shadow Evidence
 
 - Historical baseline: `run-mr7s5gfl-edyce7`, `transition-000194-agent-mr7smrum-sk2bgv`, an organic executor-logged `combat:llm_required` shadow call.

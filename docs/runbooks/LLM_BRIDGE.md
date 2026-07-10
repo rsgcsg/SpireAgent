@@ -63,15 +63,7 @@ response-<id>.json
 {
   "candidateId": "card-reward-1",
   "confidence": 0.72,
-  "reason": "补防御和抽牌",
-  "memoryUpdates": {
-    "strategicDirection": ["早期补防御"],
-    "riskFlags": ["避免低血进精英"],
-    "deficits": {
-      "block": 0.65,
-      "draw": 0.55
-    }
-  }
+  "reason": "补防御和抽牌，同时接受较低的即时伤害收益"
 }
 ```
 
@@ -131,5 +123,6 @@ NODE
 ## Notes
 
 - LLM 不能自由调用游戏工具，只能从候选动作里选一个。
-- LLM 的 `memoryUpdates` 会保守写入本局记忆。
-- 参数建议不会自动大幅改权重；局后 reward 机制负责小幅学习。
+- Bridge 是 provider/rollout mechanism，不是新的 decision-authority mode；它不能绕过 live authorization、validation 或 execution。
+- Live/provider 返回的 `memoryUpdates`、strategy suggestions 或其他 protected-write intent 默认阻断并审计，不能直接写 memory/derived/strategy/skill/scaffold policy。
+- 旧局后 finalize learning 默认阻断并标记为 legacy。P9 stable learning 必须走 typed proposal、scoped evidence、shadow validation、promotion ledger 和 rollback；当前 promotion 仍未启用。

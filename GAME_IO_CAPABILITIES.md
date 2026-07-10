@@ -53,6 +53,23 @@ Notes:
 - Legal actions are generated locally from normalized visible state, not listed directly by MCP.
 - The current runtime capability object is `STS2MCP_REST_CAPABILITIES`.
 
+## Future Environment Handshake
+
+`AdapterCapabilities` describes what the adapter says it can do. It is not enough to establish environment compatibility.
+
+P9.5E/P14 should add a separate handshake that can report, when available:
+
+- game build and main/beta channel;
+- content/model manifest identity;
+- enabled mod ids, versions, and gameplay-affecting status;
+- adapter id/version and capability hash;
+- fact snapshot/schema version;
+- compatible/degraded/quarantined/unsupported status.
+
+Unknown values must remain unknown. A successful state read or action is not proof that all mechanics, stable identifiers, serialization, or learned policies remain compatible.
+
+This is particularly important while the official game and mod framework continue to evolve. Official current update information is available at <https://steamcommunity.com/app/2868840/allnews/>.
+
 Observed Phase 2.5 REST/candidate caveats:
 
 - Some screens briefly expose loading or post-choice states where buttons are not enabled yet. The controller uses settlement/backoff instead of immediately treating those states as stable.

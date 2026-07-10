@@ -35,6 +35,7 @@ Recommended status:
 Risk:
 
 - Game and mod APIs may change.
+- Slay the Spire 2 Early Access builds may change content, serialization, mod loading, and visible behavior.
 - Human capture requires future mod work.
 - REST action names are external contracts and should be tested.
 
@@ -42,6 +43,8 @@ Isolation:
 
 - Keep all REST body mapping in the adapter/client layer.
 - Expose `GameIO` and `AdapterCapabilities` to the rest of the project.
+- Record adapter identity/capabilities plus game build/channel and mod-set identity in the future `EnvironmentFingerprint`.
+- Treat unknown or incompatible identity as degraded/quarantined evidence rather than guessing compatibility.
 
 ## Spire Codex
 
@@ -85,13 +88,13 @@ Isolation:
 
 Role:
 
-- Strategic decision maker.
+- Provider for strategic deliberation under an explicit decision-authority and rollout mode.
 - Connected through `STS2_LLM_COMMAND` or the bridge script.
 
 Contract:
 
 - Input: compact JSON prompt.
-- Output: short JSON with `candidateId`, optional confidence, reason, and memory updates.
+- Output: validated short decision JSON with `candidateId`, optional confidence, and an audit reason.
 
 Risk:
 
@@ -104,6 +107,8 @@ Isolation:
 
 - LLM output must be parsed and validated before execution.
 - Invalid or unavailable LLM falls back to local policy and is logged.
+- Provider output cannot directly write stable memory, derived knowledge, strategy, skill, budget, classification, or scaffold policy.
+- Switching provider must not silently change strategic authority, live authorization, learning mode, or hard-shell behavior.
 
 ## Other Future Dependencies
 
@@ -118,3 +123,4 @@ Adoption rule:
 
 - Introduce only after a small adapter and offline test exist.
 - Record license, capability, replacement cost, and rollback path.
+- Record environment/version dependencies and revalidation requirements.

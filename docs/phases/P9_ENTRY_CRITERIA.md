@@ -31,6 +31,15 @@ P9 should start only when the project is ready to shift from live-scaffold expan
   Current state:
   typed `ReverseScaffoldFeedback` schema and append-only `reverse-scaffold-feedback.jsonl` telemetry exist. They do not affect live prompts, budgets, validation, execution, or stable policy.
 - Define promotion criteria and rollback fields before any stable proposal may be applied.
+- Define the decision-authority chain before any learned policy may affect future decisions:
+  - provider/run mode is not authority mode
+  - deliberation, selection, authorization, and execution sources are separable
+  - proposal behavior impact is explicit
+  - authority/action/hard-shell proposals are excluded from the first promotion path
+- Define a minimal `EnvironmentFingerprint` and evidence environment scope before any stable proposal may be applied:
+  - unknown or mixed incompatible game/mod/adapter evidence cannot qualify promotion
+  - historical evidence remains readable
+  - promoted objects require compatibility, invalidation, and revalidation fields
 - Define evidence-slice rules so mixed revision, mixed budget, and console fixture data cannot silently qualify stable promotion.
   Current state:
   a read-only `EvidenceSliceReader` now separates shadow readiness, live-applied rollout, and future stable-learning promotion slices. It also reports organic promotion-eligible transition counts separately from console/debug/fixture, human-observed, snapshot-only, and unknown-provenance exclusions. Promotion remains disabled and ineligible by default.
@@ -76,3 +85,5 @@ apply one proposal in shadow,
 validate it,
 and roll it back if needed
 ```
+
+This success condition also requires the policy use to be traced under an explicit decision-authority mode and compatible environment scope.

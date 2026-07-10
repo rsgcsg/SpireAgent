@@ -36,8 +36,14 @@ Every non-trivial patch should state:
 - risk
 - tests
 - rollback path
+- decision-authority impact
+- environment/evidence compatibility impact when learning or replay data is involved
 
 Bottom-layer logic requires tests in the same patch or before it.
+
+Provider mode, rollout mode, learning mode, and decision-authority mode must not be conflated. A patch that changes who deliberates, selects, authorizes, or executes requires an explicit architecture decision; it cannot hide inside provider, budget, candidate, skill, or prompt work.
+
+Any patch that creates promotion-grade evidence or stable learned objects must define game/mod/adapter/fact environment scope, unknown handling, invalidation, and rollback. Successful execution alone is not compatibility proof.
 
 ## Live Run Policy
 
@@ -71,6 +77,7 @@ When behavior changes, update the relevant docs:
 - `BUDGET_GOVERNANCE.md`
 - `MEMORY_SYSTEM.md`
 - `REPLAY_AND_EVAL.md`
+- `ENVIRONMENT_COMPATIBILITY.md`
 
 Do not let docs describe a system that the code does not implement.
 Do not treat handoff/debug notes as the only source of truth when a canonical doc should be updated.

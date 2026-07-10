@@ -10,7 +10,9 @@
 
 ## 1. North Star
 
-The purpose of this project is to build a real-game Slay the Spire 2 agent where the LLM remains the core strategic player, while the local system acts as a predictive cognitive scaffold that maximizes what the LLM can perceive, remember, imagine, evaluate, execute, review, and learn.
+The purpose of this project is to build a real-game Slay the Spire 2 agent where the LLM remains the primary strategic deliberator in the main product mode, while the local system acts as a predictive cognitive and experience scaffold that maximizes what the LLM can perceive, remember, imagine, evaluate, execute, review, and learn.
+
+The project is **LLM-centered, not LLM-exclusive**. Safe mechanics, validated execution, and explicitly delegated bounded skills may live outside the LLM. Their capability does not silently grant them unrestricted strategic authority.
 
 This project is not trying to build the strongest possible AI under any arbitrary architecture.
 
@@ -140,6 +142,29 @@ Every future feature should strengthen this loop.
 Any feature that bypasses this loop, obscures it, silently replaces LLM strategic judgment, corrupts data truth, or makes failure harder to attribute should be rejected, isolated, or explicitly marked as an experimental baseline.
 
 Long term, the project should aim for a world where the inner soft scaffold becomes increasingly learnable and less permanently hand-authored. Humans should not need to forever maintain separate soft frameworks for combat, shop, card reward, event, and every other scene. Instead, under a fixed hard shell of validation, execution safety, rollback, and truth separation, the LLM should gradually learn to propose, validate, revise, and improve its own memory structure, first-impression structure, candidate templates, review style, scoring/scaffold heuristics, classification schemes, skills, and scaffold policies.
+
+"The soft shell should almost disappear" means that permanently hand-authored soft policy should disappear. It does not mean removing the external experience system, weakening the hard shell, or quietly transferring the main product's strategic identity to a local policy.
+
+### 2.1 Strategic Agency And Authority
+
+The project must distinguish:
+
+```text
+capability       != authority
+model confidence != empirical competence
+empirical skill  != mechanical proof
+deliberation     != selection != authorization != execution
+```
+
+In the default `llm_primary` product mode:
+
+* the LLM owns high-uncertainty, high-disagreement, long-horizon, and irreversible strategic deliberation;
+* the local system may perform mechanically proven actions and explicitly delegated, qualified, bounded skills;
+* every delegation must have scope, entry and termination conditions, invalidation, uncertainty escalation, telemetry, version identity, and rollback;
+* a local skill or policy becoming strong does not automatically transfer strategic authority;
+* broad local autonomy belongs only to an isolated experimental mode unless a future North Star decision explicitly changes the product identity.
+
+Provider choice, rollout mode, learning mode, and decision-authority mode are separate architectural dimensions. Changing one must not silently change another.
 
 ---
 
@@ -682,6 +707,16 @@ the predicted outcome is closer to reality;
 execution is safer;
 review is better at locating the cause.
 ```
+
+### 10.1 Environment Truth, Weak Causality, And Version Scope
+
+Observed state transitions in the real game are the strongest external outcome evidence available to the project. They are not precise causal truth.
+
+A win does not prove that every preceding decision was correct. A death may have been shaped by card choices, routing, resource use, prior damage, hidden state, game updates, or several interacting decisions. Prediction-error attribution must therefore begin as a scoped hypothesis with confidence, alternatives, counterexample requirements, and invalidation conditions.
+
+All promotion-grade evidence and stable learned objects must eventually be scoped to an explicit game, content, mod, adapter, fact-data, and agent environment identity. Old evidence remains readable, but it must not silently qualify a policy under an incompatible or unknown environment.
+
+The environment may correct the scaffold. It may not bypass proposal review, stable-promotion gates, or rollback.
 
 ---
 
@@ -1287,6 +1322,19 @@ Evaluation should examine:
 * reduction of repeated failures;
 * improvement over time.
 
+Long-term evaluation should also measure:
+
+* prediction accuracy by time horizon and environment scope;
+* risk calibration, abstention, and escalation quality;
+* decision consistency under strategically equivalent states;
+* retrieval usefulness and harm;
+* proposal survival, counterexample, regression, and rollback rates;
+* delegated-skill success, termination, invalidation, and out-of-distribution escalation;
+* authority-chain correctness;
+* environment compatibility and revalidation.
+
+Reason wording detectors such as `reasonQuality`, `missing_tradeoff`, or cue-presence checks are useful smoke alarms. They are not strategic truth and must not become the long-term optimization target.
+
 The evaluation system should help answer:
 
 ```text
@@ -1297,6 +1345,8 @@ Or because candidate futures became stronger?
 Or because mechanics became more accurate?
 Or because execution became safer?
 Or because replay identified errors better?
+Or because authority was delegated safely?
+Or because stale environment-scoped knowledge was quarantined?
 ```
 
 The project should prefer evidence over vibes.
@@ -1434,6 +1484,8 @@ Future changes must not remove or weaken these principles:
 13. **Conservative stable promotion.** Stable strategy changes require evidence, conditions, evaluation, and rollback.
 14. **Experimental freedom.** Aggressive exploration may exist, but it must be isolated from stable strategy.
 15. **Maintainability.** The project should become clearer as it grows, not more chaotic.
+16. **Explicit strategic authority.** Capability, provider choice, and execution permission must not silently transfer ownership of strategic deliberation.
+17. **Environment-scoped evidence.** Game, mod, adapter, and fact-version changes must be able to invalidate or quarantine learned claims and skills.
 
 Inside these boundaries, some scaffold policies may evolve over time, but they must do so through replayable evidence rather than by silently accreting hand-written rules. Examples include:
 
@@ -1516,8 +1568,8 @@ When goals conflict, prefer this order:
 4. **LLM as core strategic player.**
 5. **Quality of Strategic Impressions and Candidate Futures.**
 6. **Strategic play quality.**
-7. **Speed and token efficiency.**
-8. **Learning and adaptation.**
+7. **Learning integrity and adaptation.**
+8. **Speed and token efficiency.**
 9. **Convenience and short-term development speed.**
 
 A faster agent that cannot be audited is worse than a slower agent that can improve.
@@ -1567,4 +1619,4 @@ If the answer is unclear, the change should be redesigned before implementation.
 
 ## 28. Enduring One-Sentence Summary
 
-Build a real-game Slay the Spire 2 LLM agent where the LLM remains the core strategic player, and a predictive cognitive scaffold transforms raw state into Strategic Impressions, activates relevant memory, generates validated Candidate Futures, lets the LLM deliberate in a compact but strategically complete context, and uses safe execution, transition recording, replay evaluation, and prediction-error learning to help the LLM progressively approach the strongest strategic performance it is capable of through repeated play.
+Build a real-game Slay the Spire 2 agent where the LLM remains the primary strategic deliberator in the main product mode, while a learnable, environment-aware experience scaffold transforms raw state into Strategic Impressions, activates relevant memory, generates validated Candidate Futures, supports explicitly governed bounded skills, and uses safe execution, transition recording, replay evaluation, weak prediction-error attribution, guarded promotion, and rollback to help the LLM progressively approach the strongest strategic performance it is capable of through repeated play.
