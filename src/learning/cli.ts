@@ -28,17 +28,24 @@ import {
   generateLearningProposalSeeds,
   summarizeGeneratedLearningProposals
 } from "./proposalGenerator.js";
-import { compareLearningProposalInShadowWorkspace } from "./shadowApplicator.js";
+import {
+  compareLearningProposalInShadowWorkspace,
+  runLearningProposalInSameSliceShadow
+} from "./shadowApplicator.js";
 import {
   evaluateLearningProposalShadowPair,
   parseSameSliceShadowOutcomeEvidence,
+  type ShadowWorkspaceProviderAttempt,
   type ShadowWorkspaceOutcomeEvidence
 } from "./shadowEvaluation.js";
 import type { DeliberationPacket, JsonRecord } from "../domain/types.js";
 import type { ScoredCandidate } from "../agent/types.js";
+import { createDeepSeekV4FlashDecider, type DeepSeekResponseMode, type DeepSeekThinkingMode } from "../agent/llm.js";
 import { isRecord } from "../agent/utils.js";
 
 const READ_ONLY_COMMANDS = new Set(["summary", "list", "show", "feedback", "feedback-show", "reviews", "review-show", "generate", "plan", "shadow-compare", "shadow-evaluate"]);
+const APPEND_ONLY_COMMANDS = new Set(["record"]);
+const SAME_SLICE_SHADOW_COMMANDS = new Set(["shadow-run"]);
 const REVIEW_LEDGER_COMMANDS = new Set(["approve", "reject", "expire"]);
 const FORBIDDEN_COMMANDS = new Set(["apply", "promote", "revert"]);
 
@@ -48,14 +55,16 @@ async function main(): Promise<void> {
   if (FORBIDDEN_COMMANDS.has(command)) {
     throw new Error(`Learning command '${command}' is intentionally unavailable in guarded P9 mode.`);
   }
-  if (!READ_ONLY_COMMANDS.has(command) && !REVIEW_LEDGER_COMMANDS.has(command)) {
+  if (!READ_ONLY_COMMANDS.has(command) && !APPEND_ONLY_COMMANDS.has(command) && !SAME_SLICE_SHADOW_COMMANDS.has(command) && !REVIEW_LEDGER_COMMANDS.has(command)) {
     throw new Error(`Unknown learning proposal command: ${command}`);
   }
   const commandArgs = command === args[0] ? args.slice(1) : args;
   const idCommand = command === "show" ||
     command === "feedback-show" ||
     command === "review-show" ||
-    REVIEW_LEDGER_COMMANDS.has(command);
+    REVIEW_LEDGER_COMMANDS.has(command) ||
+    APPEND_ONLY_COMMANDS.has(command) ||
+    SAME_SLICE_SHADOW_COMMANDS.has(command);
   const runDir = resolveRunDir(parseRunArg(commandArgs, !idCommand));
   const proposals = readLearningProposals(runDir);
   const feedback = readReverseScaffoldFeedback(runDir);
@@ -126,7 +135,9 @@ async function main(): Promise<void> {
       proposal,
       packet,
       candidates,
-      decisionClass: decisionClassFromTransition(transition as unknown as JsonRecord)
+      decisionClass: decisionClassFromTransition(transition as unknown as JsonRecord),
+      mode: workspaceModeFromTransition(transition as unknown as JsonRecord),
+      baselineReasonQualityNotes: reasonQualityNotesFromTransition(transition as unknown as JsonRecord)
     }), null, 2));
     console.log("Offline shadow assembly only: providerCalls=0 runArtifactWrites=0 liveBehaviorChanges=0 stablePromotionEnabled=false");
     return;
@@ -148,7 +159,9 @@ async function main(): Promise<void> {
       proposal,
       packet: packetFromTransition(transitionRecord),
       candidates: candidatesFromTransition(transitionRecord),
-      decisionClass: decisionClassFromTransition(transitionRecord)
+      decisionClass: decisionClassFromTransition(transitionRecord),
+      mode: workspaceModeFromTransition(transitionRecord),
+      baselineReasonQualityNotes: reasonQualityNotesFromTransition(transitionRecord)
     });
     const baseline = recordedBaselineOutcome(transitionRecord, comparison);
     const overlay = parseSameSliceShadowOutcomeEvidence(JSON.parse(overlayJson));
@@ -156,6 +169,71 @@ async function main(): Promise<void> {
     printHeader(runDir);
     console.log(JSON.stringify(evaluateLearningProposalShadowPair({ comparison, baseline, overlay }), null, 2));
     console.log("Shadow evaluation is read-only: proposalStatusMutationEnabled=false shadowValidated=false stablePromotionEnabled=false");
+    return;
+  }
+
+  if (command === "shadow-run") {
+    const id = parseRequiredId(commandArgs);
+    const transitionId = optionValue(commandArgs, "--transition-id");
+    if (!transitionId) throw new Error("shadow-run requires --transition-id <transitionId> to preserve evidence scope.");
+    const proposal = proposals.find((record) => record.id === id);
+    if (!proposal) throw new Error(`Learning proposal not found: ${id}`);
+    const run = readReplayRun(runDir);
+    const transition = run.transitions.find((record) => record.transitionId === transitionId);
+    if (!transition) throw new Error(`Transition not found in run: ${transitionId}`);
+    const transitionRecord = transition as unknown as JsonRecord;
+    const comparison = compareLearningProposalInShadowWorkspace({
+      proposal,
+      packet: packetFromTransition(transitionRecord),
+      candidates: candidatesFromTransition(transitionRecord),
+      decisionClass: decisionClassFromTransition(transitionRecord),
+      mode: workspaceModeFromTransition(transitionRecord),
+      baselineReasonQualityNotes: reasonQualityNotesFromTransition(transitionRecord)
+    });
+    const baseline = recordedBaselineOutcome(transitionRecord, comparison);
+    const decider = createSameSliceDeepSeekDecider(transitionRecord);
+    const result = await runLearningProposalInSameSliceShadow({
+      proposal,
+      packet: packetFromTransition(transitionRecord),
+      candidates: candidatesFromTransition(transitionRecord),
+      decisionClass: decisionClassFromTransition(transitionRecord),
+      mode: workspaceModeFromTransition(transitionRecord),
+      baselineReasonQualityNotes: reasonQualityNotesFromTransition(transitionRecord),
+      decider,
+      evidenceScope: {
+        transitionId: baseline.transitionId,
+        revisionTag: baseline.revisionTag,
+        budgetWindow: baseline.budgetWindow,
+        providerProfile: baseline.providerProfile
+      }
+    });
+    printHeader(runDir);
+    console.log(JSON.stringify({
+      comparison: result.comparison,
+      baseline,
+      overlay: result.overlayOutcome,
+      evaluation: evaluateLearningProposalShadowPair({
+        comparison: result.comparison,
+        baseline,
+        overlay: result.overlayOutcome
+      })
+    }, null, 2));
+    console.log("Same-slice shadow only: providerCalls=1 maximum gameClientCalls=0 transitionWrites=0 proposalStatusMutationEnabled=false stablePromotionEnabled=false liveBehaviorChanges=0");
+    return;
+  }
+
+  if (command === "record") {
+    const rawProposal = optionValue(commandArgs, "--proposal-json");
+    if (!rawProposal) throw new Error("record requires --proposal-json <json> for an explicit append-only proposal.");
+    const parsed = JSON.parse(rawProposal);
+    if (!isRecord(parsed)) throw new Error("proposal-json must be a JSON object.");
+    if (parsed.status && parsed.status !== "draft" && parsed.status !== "pending_review") {
+      throw new Error("record accepts only draft or pending_review proposals; approval, promotion, and stable statuses are unavailable.");
+    }
+    const proposal = appendLearningProposal(runDir, parsed);
+    printHeader(runDir);
+    console.log(JSON.stringify(summarizeLearningProposal(proposal as unknown as JsonRecord), null, 2));
+    console.log("Append-only proposal record: review required; applyPathEnabled=false stablePromotionEnabled=false affectsLiveBehavior=false");
     return;
   }
 
@@ -321,6 +399,21 @@ function decisionClassFromTransition(transition: JsonRecord): string | undefined
   return undefined;
 }
 
+function workspaceModeFromTransition(transition: JsonRecord): "full" | "compact" | "ultra_compact" | "full_bounded_candidate_futures" {
+  const comparison = isRecord(transition.workspaceComparison) ? transition.workspaceComparison : undefined;
+  const mode = comparison?.ablationMode;
+  return mode === "compact" || mode === "ultra_compact" || mode === "full_bounded_candidate_futures"
+    ? mode
+    : "full";
+}
+
+function reasonQualityNotesFromTransition(transition: JsonRecord): string[] {
+  const shadow = isRecord(transition.shadowWorkspaceDecision) ? transition.shadowWorkspaceDecision : undefined;
+  return Array.isArray(shadow?.reasonQualityNotes)
+    ? shadow.reasonQualityNotes.filter((note): note is string => typeof note === "string")
+    : [];
+}
+
 function recordedBaselineOutcome(
   transition: JsonRecord,
   comparison: ReturnType<typeof compareLearningProposalInShadowWorkspace>
@@ -333,6 +426,10 @@ function recordedBaselineOutcome(
   const budget = isRecord(comparisonRecord.budget) ? comparisonRecord.budget : {};
   const maxShadowCalls = typeof budget.maxShadowCalls === "number" ? budget.maxShadowCalls : "unknown";
   const profile = typeof budget.governanceProfile === "string" ? budget.governanceProfile : "unknown";
+  const maxOutputTokens = typeof shadow.maxOutputTokens === "number" ? shadow.maxOutputTokens : "unknown";
+  const thinking = typeof shadow.providerThinkingMode === "string" ? shadow.providerThinkingMode : "unknown";
+  const mode = typeof shadow.providerMode === "string" ? shadow.providerMode : "unknown";
+  const retry = typeof shadow.retryCount === "number" ? shadow.retryCount : "unknown";
   return {
     source: "recorded_shadow",
     transitionId: typeof transition.transitionId === "string" ? transition.transitionId : "unknown",
@@ -341,6 +438,8 @@ function recordedBaselineOutcome(
     candidateFutureFactsHash: comparison.baseline.candidateFutureFactsHash,
     revisionTag: typeof comparisonRecord.revisionTag === "string" ? comparisonRecord.revisionTag : "unknown",
     budgetWindow: `shadow=${maxShadowCalls};profile=${profile}`,
+    providerProfile: `output=${maxOutputTokens};thinking=${thinking};mode=${mode};retry=${retry}`,
+    providerAttempts: providerAttemptsFromTransition(shadow.providerAttempts),
     outcome: normalizeShadowOutcome(shadow.outcome),
     selectedCandidateId: typeof shadow.structuredSelectedCandidateId === "string" ? shadow.structuredSelectedCandidateId : undefined,
     reason: typeof shadow.reason === "string" ? shadow.reason : undefined,
@@ -348,6 +447,48 @@ function recordedBaselineOutcome(
     finishReason: typeof shadow.providerFinishReason === "string" ? shadow.providerFinishReason : undefined,
     outputCapHit: shadow.outputCapHit === true
   };
+}
+
+function createSameSliceDeepSeekDecider(transition: JsonRecord) {
+  const shadow = isRecord(transition.shadowWorkspaceDecision) ? transition.shadowWorkspaceDecision : undefined;
+  const comparison = isRecord(transition.workspaceComparison) ? transition.workspaceComparison : undefined;
+  const budget = isRecord(comparison?.budget) ? comparison.budget : undefined;
+  const outputMode = parseResponseMode(shadow?.providerMode);
+  const thinkingMode = parseThinkingMode(shadow?.providerThinkingMode);
+  const maxOutputTokens = typeof shadow?.maxOutputTokens === "number" ? shadow.maxOutputTokens : undefined;
+  const timeoutMs = typeof budget?.timeoutMs === "number" ? budget.timeoutMs : undefined;
+  const retryLimit = typeof shadow?.retryCount === "number" ? shadow.retryCount : undefined;
+  if (!outputMode || !thinkingMode || !maxOutputTokens || !timeoutMs || retryLimit === undefined) {
+    throw new Error("Recorded baseline lacks an explicit provider profile; refusing a same-slice overlay call.");
+  }
+  return createDeepSeekV4FlashDecider({ outputMode, thinkingMode, maxOutputTokens, timeoutMs, retryLimit });
+}
+
+function parseResponseMode(value: unknown): DeepSeekResponseMode | undefined {
+  return value === "json_mode" || value === "non_json_strict" ? value : undefined;
+}
+
+function parseThinkingMode(value: unknown): DeepSeekThinkingMode | undefined {
+  return value === "default_enabled" || value === "explicit_enabled" || value === "explicit_disabled" ? value : undefined;
+}
+
+function providerAttemptsFromTransition(value: unknown): ShadowWorkspaceOutcomeEvidence["providerAttempts"] {
+  if (!Array.isArray(value)) return undefined;
+  const attempts = value.flatMap((attempt) => {
+    if (!isRecord(attempt)) return [];
+    const requestKind = attempt.requestKind;
+    if (requestKind !== "primary" && requestKind !== "rescue") return [];
+    const parsed: ShadowWorkspaceProviderAttempt = {
+      requestKind: requestKind as ShadowWorkspaceProviderAttempt["requestKind"],
+      rescueMode: attempt.rescueMode === "empty" || attempt.rescueMode === "truncation" ? attempt.rescueMode : undefined,
+      requestMaxOutputTokens: typeof attempt.requestMaxOutputTokens === "number" ? attempt.requestMaxOutputTokens : undefined,
+      requestedThinkingMode: typeof attempt.requestedThinkingMode === "string" ? attempt.requestedThinkingMode : undefined,
+      finishReason: typeof attempt.finishReason === "string" ? attempt.finishReason : undefined,
+      contentKind: typeof attempt.contentKind === "string" ? attempt.contentKind : undefined
+    };
+    return [parsed];
+  });
+  return attempts.length > 0 ? attempts : undefined;
 }
 
 function normalizeShadowOutcome(value: unknown): ShadowWorkspaceOutcomeEvidence["outcome"] {

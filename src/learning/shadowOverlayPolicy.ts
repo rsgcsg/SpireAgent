@@ -7,6 +7,7 @@ export interface ShadowWorkspaceOverlayPatch {
   kind: ShadowWorkspaceOverlayKind;
   guidance: string;
   candidateFutureIds?: string[];
+  requiredReasonQualityNote?: string;
 }
 
 export interface ShadowWorkspaceOverlayEligibility {
@@ -37,6 +38,9 @@ export function assessShadowWorkspaceOverlayEligibility(proposal: JsonRecord): S
   if (patch && proposal.type === "reason_policy" && patch.kind !== "reason_guidance") {
     blockers.push("reason_policy_requires_reason_guidance_patch");
   }
+  if (patch && proposal.type === "reason_policy" && !patch.requiredReasonQualityNote) {
+    blockers.push("reason_policy_requires_scoped_review_trigger");
+  }
   if (patch && proposal.type === "candidate_template" && patch.kind !== "candidate_future_guidance") {
     blockers.push("candidate_template_requires_candidate_future_guidance_patch");
   }
@@ -57,7 +61,15 @@ function parsePatch(value: JsonRecord): ShadowWorkspaceOverlayPatch | undefined 
   const candidateFutureIds = Array.isArray(value.candidateFutureIds)
     ? value.candidateFutureIds.filter((id): id is string => typeof id === "string" && id.length > 0).slice(0, 8)
     : undefined;
-  return { kind, guidance, candidateFutureIds: candidateFutureIds?.length ? candidateFutureIds : undefined };
+  const requiredReasonQualityNote = typeof value.requiredReasonQualityNote === "string" && value.requiredReasonQualityNote.length > 0
+    ? value.requiredReasonQualityNote
+    : undefined;
+  return {
+    kind,
+    guidance,
+    candidateFutureIds: candidateFutureIds?.length ? candidateFutureIds : undefined,
+    requiredReasonQualityNote
+  };
 }
 
 function hasEligibleEvidence(evidence: unknown): boolean {

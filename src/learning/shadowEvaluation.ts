@@ -11,12 +11,23 @@ export interface ShadowWorkspaceOutcomeEvidence {
   candidateFutureFactsHash: string;
   revisionTag: string;
   budgetWindow: string;
+  providerProfile: string;
+  providerAttempts?: ShadowWorkspaceProviderAttempt[];
   outcome: "valid" | "invalid_output" | "invalid_choice" | "error" | "unavailable" | "skipped";
   selectedCandidateId?: string;
   reason?: string;
   failureBucket?: string;
   finishReason?: string;
   outputCapHit?: boolean;
+}
+
+export interface ShadowWorkspaceProviderAttempt {
+  requestKind: "primary" | "rescue";
+  rescueMode?: "empty" | "truncation";
+  requestMaxOutputTokens?: number;
+  requestedThinkingMode?: string;
+  finishReason?: string;
+  contentKind?: string;
 }
 
 export interface LearningProposalShadowEvaluation {
@@ -31,6 +42,7 @@ export interface LearningProposalShadowEvaluation {
   baselineReasonNotes?: string[];
   overlayReasonNotes?: string[];
   selectedCandidateAgreement?: "same" | "different" | "not_observed";
+  providerProfileMatches: boolean;
   candidateFactsPreserved: boolean;
   allowedCandidatesPreserved: boolean;
   sameEvidenceSlice: boolean;
@@ -66,10 +78,13 @@ export function evaluateLearningProposalShadowPair(input: {
   if (input.baseline.source !== "recorded_shadow") blockers.push("baseline_source_not_recorded_shadow");
   if (overlay && overlay.source !== "same_slice_shadow") blockers.push("overlay_source_not_same_slice_shadow");
 
+  const providerProfileMatches = overlay !== undefined && input.baseline.providerProfile === overlay.providerProfile;
+  if (overlay && !providerProfileMatches) blockers.push("provider_profile_mismatch");
   const sameEvidenceSlice = overlay !== undefined && input.comparison.overlay !== undefined &&
     input.baseline.transitionId === overlay.transitionId &&
     input.baseline.revisionTag === overlay.revisionTag &&
     input.baseline.budgetWindow === overlay.budgetWindow &&
+    providerProfileMatches &&
     input.baseline.allowedCandidateIdsHash === overlay.allowedCandidateIdsHash &&
     input.baseline.candidateFutureFactsHash === overlay.candidateFutureFactsHash &&
     input.baseline.promptHash === input.comparison.baseline.promptHash &&
@@ -121,6 +136,7 @@ export function evaluateLearningProposalShadowPair(input: {
     selectedCandidateAgreement: !overlay || !input.baseline.selectedCandidateId || !overlay.selectedCandidateId
       ? "not_observed"
       : input.baseline.selectedCandidateId === overlay.selectedCandidateId ? "same" : "different",
+    providerProfileMatches,
     candidateFactsPreserved,
     allowedCandidatesPreserved,
     sameEvidenceSlice,
@@ -158,6 +174,8 @@ export function parseSameSliceShadowOutcomeEvidence(value: unknown): ShadowWorks
     candidateFutureFactsHash: value.candidateFutureFactsHash,
     revisionTag: value.revisionTag,
     budgetWindow: value.budgetWindow,
+    providerProfile: requiredString(value.providerProfile) ? value.providerProfile : "unknown",
+    providerAttempts: parseProviderAttempts(value.providerAttempts),
     outcome,
     selectedCandidateId: optionalString(value.selectedCandidateId),
     reason: optionalString(value.reason),
@@ -200,4 +218,23 @@ function requiredString(value: unknown): value is string {
 
 function optionalString(value: unknown): string | undefined {
   return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
+function parseProviderAttempts(value: unknown): ShadowWorkspaceProviderAttempt[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const attempts = value.flatMap((attempt) => {
+    if (!isRecord(attempt)) return [];
+    const requestKind = attempt.requestKind;
+    if (requestKind !== "primary" && requestKind !== "rescue") return [];
+    const parsed: ShadowWorkspaceProviderAttempt = {
+      requestKind: requestKind as ShadowWorkspaceProviderAttempt["requestKind"],
+      rescueMode: attempt.rescueMode === "empty" || attempt.rescueMode === "truncation" ? attempt.rescueMode : undefined,
+      requestMaxOutputTokens: typeof attempt.requestMaxOutputTokens === "number" ? attempt.requestMaxOutputTokens : undefined,
+      requestedThinkingMode: optionalString(attempt.requestedThinkingMode),
+      finishReason: optionalString(attempt.finishReason),
+      contentKind: optionalString(attempt.contentKind)
+    };
+    return [parsed];
+  });
+  return attempts.length > 0 ? attempts : undefined;
 }

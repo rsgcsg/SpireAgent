@@ -147,7 +147,7 @@ Status values:
   - generated seeds remain draft or pending-review evidence only and cannot apply or promote
 - Remaining risk:
   - the current generator is still a heuristic seed surface, not a validated causal attribution engine
-  - P9.5A/P9.5B can now compare bounded low-risk overlays and evaluate supplied same-slice pairs, but no proposal can be marked `shadow_validated` or influence future decisions yet
+  - P9.5A/P9.5B can compare bounded low-risk overlays and evaluate same-slice pairs. P9.5C has one real cloned-packet organic combat pair with matched provider profile, but no proposal can be marked `shadow_validated` or influence future decisions yet.
 
 ### `shadow_applicator_validation_missing`
 
@@ -156,10 +156,11 @@ Status values:
   - P9.5A has a deliberately narrow offline applicator for explicit low-risk reason/candidate-future guidance.
   - It uses a cloned `DeliberationPacket`, emits baseline/overlay prompt metadata, makes no provider call, and writes no run artifact.
   - It rejects missing replay candidates, unknown future ids, ineligible evidence, unsupported policy families, and non-low-risk proposals.
-  - P9.5B now evaluates supplied same-slice pairs for evidence-scope and candidate/fact invariants, provider/output-cap failure, and reason-quality regression.
+  - P9.5B now evaluates supplied same-slice pairs for evidence-scope and candidate/fact invariants, matched provider profile, provider/output-cap failure, and reason-quality regression.
+  - P9.5C can obtain one overlay outcome with the recorded ablation/provider profile while remaining fully outside game/live/runtime/stable paths. Reason-policy overlays now require a structured review trigger, so an adequate baseline cannot be used to widen a one-case prompt repair.
 - Remaining risk:
   - Prompt change and one clean paired outcome are not strategic improvement.
-  - A real paired sample, counterexample review, explicit status-transition rules, and rollback/retrieval design remain required before any P9.6 promotion ledger is designed.
+  - Counterexample review remains incomplete; one scope-bound clean pair and a reason detector improvement are not strategic improvement. A second matching sample diverged through provider recovery and is recorded as incomplete. Explicit status-transition rules and rollback/retrieval design remain required before any P9.6 promotion ledger is designed.
 
 ### `proposal_vagueness_risk`
 

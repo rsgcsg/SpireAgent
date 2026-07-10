@@ -9,6 +9,15 @@ Current closeout / next-phase pointers:
 - `docs/phases/P9_ENTRY_CRITERIA.md`
 - `docs/phases/P9_GUARDED_LEARNING_PLAN.md`
 
+## 2026-07-10 P9.5C Same-Packet Shadow Evidence
+
+- Historical baseline: `run-mr7s5gfl-edyce7`, `transition-000194-agent-mr7smrum-sk2bgv`, an organic executor-logged `combat:llm_required` shadow call.
+- An explicit low-risk, append-only `pending_review` reason-policy experiment was run only against a cloned packet. The final scoped v2 experiment required the baseline `missing_tradeoff` note, reconstructed `full_bounded_candidate_futures`, and used the recorded DeepSeek profile (`800`, default thinking, JSON mode, retry `0`).
+- Result: provider clean, legal candidate unchanged, candidate/fact fingerprints preserved, `finishReason=stop`, no output-cap hit; the reason smoke alarm changed from `thin/missing_tradeoff` to `adequate`.
+- This is only `paired_evidence_ready_for_review`, not `shadow_validated`, approval, runtime apply, live execution, stable promotion, or proof of strategic improvement. A first attempt with an incorrect `full` reconstruction was explicitly rejected by the pair invariant and is not counted.
+- Counterexample review found an independent same-revision adequate combat reason with partial cue omission. The scoped overlay was refused there because the required note was absent. Do not optimize to the detector; collect and review more organic slices before P9.6 design.
+- The second matching `missing_tradeoff` replay packet (`transition-000336-agent-mr7t3f1g-yku3n4`) returned a legal candidate and adequate reason only after provider recovery changed terminal profile to `256/explicit_disabled/retry=1`. P9.5B correctly marked it `incomplete`; do not count it as a second confirmation or patch provider from this one sample.
+
 ## 2026-07-06 P9.0 Hardening Start
 
 - P8/P8.5 can now be treated as an explicit-whitelist live scaffold MVP, not as wildcard broad live or learning completion.

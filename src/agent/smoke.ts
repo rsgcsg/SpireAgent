@@ -97,7 +97,10 @@ import {
   summarizeReverseScaffoldFeedback
 } from "../learning/proposals.js";
 import { generateLearningProposalSeeds } from "../learning/proposalGenerator.js";
-import { compareLearningProposalInShadowWorkspace } from "../learning/shadowApplicator.js";
+import {
+  compareLearningProposalInShadowWorkspace,
+  runLearningProposalInSameSliceShadow
+} from "../learning/shadowApplicator.js";
 import { evaluateLearningProposalShadowPair } from "../learning/shadowEvaluation.js";
 import {
   DOMAIN_SCHEMA_VERSION,
@@ -1905,7 +1908,8 @@ try {
       proposalOnly: true,
       shadowOverlay: {
         kind: "reason_guidance",
-        guidance: "State the main benefit and the meaningful cost, delay, or risk using existing candidate facts only."
+        guidance: "State the main benefit and the meaningful cost, delay, or risk using existing candidate facts only.",
+        requiredReasonQualityNote: "missing_tradeoff"
       }
     },
     evidence: [{
@@ -1944,7 +1948,8 @@ try {
     proposal: shadowSafeStored,
     packet: deliberationPacket,
     candidates: [workspaceCandidate],
-    decisionClass: "combat:llm_required"
+    decisionClass: "combat:llm_required",
+    baselineReasonQualityNotes: ["missing_tradeoff"]
   });
   assert.equal(shadowWorkspaceComparison.applied, true);
   assert.equal(shadowWorkspaceComparison.wouldCallProvider, false);
@@ -1954,6 +1959,109 @@ try {
   assert.ok(shadowWorkspaceComparison.overlay?.containsP9Overlay);
   assert.notEqual(shadowWorkspaceComparison.baseline.promptHash, shadowWorkspaceComparison.overlay?.promptHash);
   assert.equal(deliberationPacket.p9ShadowWorkspaceOverlay, undefined);
+  const scopedReasonOverlay = compareLearningProposalInShadowWorkspace({
+    proposal: {
+      ...shadowSafeStored,
+      proposedPatch: {
+        proposalOnly: true,
+        shadowOverlay: {
+          kind: "reason_guidance",
+          guidance: "State an existing benefit and material tradeoff.",
+          requiredReasonQualityNote: "missing_tradeoff"
+        }
+      }
+    },
+    packet: deliberationPacket,
+    candidates: [workspaceCandidate],
+    decisionClass: "combat:llm_required",
+    baselineReasonQualityNotes: ["missing_tradeoff"]
+  });
+  assert.equal(scopedReasonOverlay.applied, true);
+  const outOfScopeReasonOverlay = compareLearningProposalInShadowWorkspace({
+    proposal: {
+      ...shadowSafeStored,
+      proposedPatch: {
+        proposalOnly: true,
+        shadowOverlay: {
+          kind: "reason_guidance",
+          guidance: "State an existing benefit and material tradeoff.",
+          requiredReasonQualityNote: "missing_tradeoff"
+        }
+      }
+    },
+    packet: deliberationPacket,
+    candidates: [workspaceCandidate],
+    decisionClass: "combat:llm_required",
+    baselineReasonQualityNotes: []
+  });
+  assert.equal(outOfScopeReasonOverlay.applied, false);
+  assert.ok(outOfScopeReasonOverlay.blockers.includes("required_reason_quality_note_missing:missing_tradeoff"));
+  const sameSliceShadowRun = await runLearningProposalInSameSliceShadow({
+    proposal: shadowSafeStored,
+    packet: deliberationPacket,
+    candidates: [workspaceCandidate],
+    decisionClass: "combat:llm_required",
+    baselineReasonQualityNotes: ["missing_tradeoff"],
+    evidenceScope: {
+      transitionId: "transition-p9-smoke",
+      revisionTag: "p9-smoke-revision",
+      budgetWindow: "shadow=1;profile=shadow_exploration",
+      providerProfile: "output=800;thinking=default_enabled;mode=json_mode;retry=0"
+    },
+    decider: {
+      isAvailable: () => true,
+      async decide() {
+        return {
+          candidateId: workspaceCandidate.id,
+          reason: "Deal damage now, but preserve defense for the incoming attack risk.",
+          providerMetadata: {
+            maxOutputTokens: 800,
+            requestedThinkingMode: "default_enabled",
+            requestMode: "json_mode",
+            finishReason: "stop"
+          },
+          providerAudit: {
+            retryCount: 0,
+            parseState: "parsed",
+            contentKind: "json_object_like",
+            attempts: [{
+              requestKind: "primary",
+              requestMaxOutputTokens: 800,
+              requestedThinkingMode: "default_enabled",
+              finishReason: "stop",
+              contentKind: "json_object_like"
+            }]
+          }
+        } as unknown as Awaited<ReturnType<LlmDecider["decide"]>>;
+      }
+    }
+  });
+  assert.equal(sameSliceShadowRun.comparison.applied, true);
+  assert.equal(sameSliceShadowRun.overlayOutcome?.outcome, "valid");
+  assert.equal(sameSliceShadowRun.overlayOutcome?.providerProfile, "output=800;thinking=default_enabled;mode=json_mode;retry=0");
+  assert.equal(sameSliceShadowRun.overlayOutcome?.providerAttempts?.length, 1);
+  const sameSliceShadowRunEvaluation = evaluateLearningProposalShadowPair({
+    comparison: sameSliceShadowRun.comparison,
+    baseline: {
+      source: "recorded_shadow",
+      transitionId: "transition-p9-smoke",
+      promptHash: sameSliceShadowRun.comparison.baseline.promptHash,
+      allowedCandidateIdsHash: sameSliceShadowRun.comparison.baseline.allowedCandidateIdsHash,
+      candidateFutureFactsHash: sameSliceShadowRun.comparison.baseline.candidateFutureFactsHash,
+      revisionTag: "p9-smoke-revision",
+      budgetWindow: "shadow=1;profile=shadow_exploration",
+      providerProfile: "output=800;thinking=default_enabled;mode=json_mode;retry=0",
+      outcome: "valid",
+      selectedCandidateId: workspaceCandidate.id,
+      reason: "Deal damage now but preserve enough defense for the incoming attack.",
+      failureBucket: "none",
+      finishReason: "stop",
+      outputCapHit: false
+    },
+    overlay: sameSliceShadowRun.overlayOutcome
+  });
+  assert.equal(sameSliceShadowRunEvaluation.status, "paired_evidence_ready_for_review");
+  assert.equal(sameSliceShadowRunEvaluation.sameEvidenceSlice, true);
   const unknownFutureOverlay = compareLearningProposalInShadowWorkspace({
     proposal: {
       ...shadowSafeStored,
@@ -1984,6 +2092,7 @@ try {
       candidateFutureFactsHash: shadowWorkspaceComparison.baseline.candidateFutureFactsHash,
       revisionTag: "p9-smoke-revision",
       budgetWindow: "shadow=1;profile=shadow_exploration",
+      providerProfile: "output=800;thinking=default_enabled;mode=json_mode;retry=0",
       outcome: "valid",
       selectedCandidateId: workspaceCandidate.id,
       reason: "Deal damage now but preserve enough defense for the incoming attack.",
@@ -1999,6 +2108,7 @@ try {
       candidateFutureFactsHash: shadowWorkspaceComparison.overlay?.candidateFutureFactsHash ?? "missing",
       revisionTag: "p9-smoke-revision",
       budgetWindow: "shadow=1;profile=shadow_exploration",
+      providerProfile: "output=800;thinking=default_enabled;mode=json_mode;retry=0",
       outcome: "valid",
       selectedCandidateId: workspaceCandidate.id,
       reason: "Deal damage now but preserve defense against the incoming attack risk.",
@@ -2012,7 +2122,7 @@ try {
   assert.equal(pairedShadowEvaluation.allowedCandidatesPreserved, true);
   assert.equal(pairedShadowEvaluation.sameEvidenceSlice, true);
   assert.equal(pairedShadowEvaluation.shadowValidated, false);
-  const regressedShadowEvaluation = evaluateLearningProposalShadowPair({
+  const providerProfileMismatchEvaluation = evaluateLearningProposalShadowPair({
     comparison: shadowWorkspaceComparison,
     baseline: {
       source: "recorded_shadow",
@@ -2022,6 +2132,8 @@ try {
       candidateFutureFactsHash: shadowWorkspaceComparison.baseline.candidateFutureFactsHash,
       revisionTag: "p9-smoke-revision",
       budgetWindow: "shadow=1;profile=shadow_exploration",
+      providerProfile: "output=800;thinking=default_enabled;mode=json_mode;retry=0",
+      providerAttempts: [{ requestKind: "primary", requestMaxOutputTokens: 800, requestedThinkingMode: "default_enabled", finishReason: "stop" }],
       outcome: "valid",
       selectedCandidateId: workspaceCandidate.id,
       reason: "Deal damage now but preserve enough defense for the incoming attack.",
@@ -2036,6 +2148,47 @@ try {
       candidateFutureFactsHash: shadowWorkspaceComparison.overlay?.candidateFutureFactsHash ?? "missing",
       revisionTag: "p9-smoke-revision",
       budgetWindow: "shadow=1;profile=shadow_exploration",
+      providerProfile: "output=256;thinking=explicit_disabled;mode=json_mode;retry=1",
+      providerAttempts: [
+        { requestKind: "primary", requestMaxOutputTokens: 800, requestedThinkingMode: "default_enabled", finishReason: "length" },
+        { requestKind: "rescue", rescueMode: "truncation", requestMaxOutputTokens: 256, requestedThinkingMode: "explicit_disabled", finishReason: "stop" }
+      ],
+      outcome: "valid",
+      selectedCandidateId: workspaceCandidate.id,
+      reason: "Deal damage now, but preserve defense against the incoming attack risk.",
+      failureBucket: "none",
+      finishReason: "stop"
+    }
+  });
+  assert.equal(providerProfileMismatchEvaluation.status, "incomplete");
+  assert.equal(providerProfileMismatchEvaluation.providerProfileMatches, false);
+  assert.ok(providerProfileMismatchEvaluation.blockers.includes("provider_profile_mismatch"));
+  const regressedShadowEvaluation = evaluateLearningProposalShadowPair({
+    comparison: shadowWorkspaceComparison,
+    baseline: {
+      source: "recorded_shadow",
+      transitionId: "transition-p9-smoke",
+      promptHash: shadowWorkspaceComparison.baseline.promptHash,
+      allowedCandidateIdsHash: shadowWorkspaceComparison.baseline.allowedCandidateIdsHash,
+      candidateFutureFactsHash: shadowWorkspaceComparison.baseline.candidateFutureFactsHash,
+      revisionTag: "p9-smoke-revision",
+      budgetWindow: "shadow=1;profile=shadow_exploration",
+      providerProfile: "output=800;thinking=default_enabled;mode=json_mode;retry=0",
+      outcome: "valid",
+      selectedCandidateId: workspaceCandidate.id,
+      reason: "Deal damage now but preserve enough defense for the incoming attack.",
+      failureBucket: "none",
+      finishReason: "stop"
+    },
+    overlay: {
+      source: "same_slice_shadow",
+      transitionId: "transition-p9-smoke",
+      promptHash: shadowWorkspaceComparison.overlay?.promptHash ?? "missing",
+      allowedCandidateIdsHash: shadowWorkspaceComparison.overlay?.allowedCandidateIdsHash ?? "missing",
+      candidateFutureFactsHash: shadowWorkspaceComparison.overlay?.candidateFutureFactsHash ?? "missing",
+      revisionTag: "p9-smoke-revision",
+      budgetWindow: "shadow=1;profile=shadow_exploration",
+      providerProfile: "output=800;thinking=default_enabled;mode=json_mode;retry=0",
       outcome: "valid",
       selectedCandidateId: workspaceCandidate.id,
       reason: "Pick it.",
@@ -2055,6 +2208,7 @@ try {
       candidateFutureFactsHash: shadowWorkspaceComparison.baseline.candidateFutureFactsHash,
       revisionTag: "p9-smoke-revision",
       budgetWindow: "shadow=1;profile=shadow_exploration",
+      providerProfile: "output=800;thinking=default_enabled;mode=json_mode;retry=0",
       outcome: "valid",
       selectedCandidateId: workspaceCandidate.id,
       reason: "Deal damage now but preserve enough defense for the incoming attack.",
@@ -2069,6 +2223,7 @@ try {
       candidateFutureFactsHash: shadowWorkspaceComparison.overlay?.candidateFutureFactsHash ?? "missing",
       revisionTag: "p9-smoke-revision",
       budgetWindow: "shadow=1;profile=shadow_exploration",
+      providerProfile: "output=800;thinking=default_enabled;mode=json_mode;retry=0",
       outcome: "valid",
       selectedCandidateId: "invented-candidate",
       reason: "Deal damage now but preserve defense against the incoming attack risk.",

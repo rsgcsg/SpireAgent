@@ -9,6 +9,13 @@ Closeout pointers:
 - `docs/phases/P9_ENTRY_CRITERIA.md`
 - `docs/phases/P9_GUARDED_LEARNING_PLAN.md`
 
+## P9.5C Handoff
+
+- One valid **scope-bound** same-packet P9.5C provider pair now exists for organic combat transition `transition-000194-agent-mr7smrum-sk2bgv`. The v2 reason-policy overlay needs the recorded `missing_tradeoff` trigger and is refused for an adequate counterexample baseline. It is only review evidence: no live path, transition write, proposal status mutation, stable write, or promotion occurred.
+- The runner must reconstruct both the recorded ablation mode and provider profile. An initial mode mismatch was correctly rejected; do not cite that output as evidence.
+- A second matching sample reached provider recovery and produced terminal `256/explicit_disabled/retry=1` rather than the baseline profile; it is incomplete provider evidence, not a confirmation.
+- Next: counterexample review across additional provider-profile-comparable organic slices. Do not design P9.6 promotion ledger, rollback snapshot, or retrieval trace until that review is complete.
+
 ## Immediate Engineering Truth
 
 - P8/P8.5 should now be described as an explicit-whitelist live scaffold MVP, not wildcard broad live and not learning completion.
