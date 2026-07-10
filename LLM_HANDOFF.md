@@ -8,9 +8,18 @@ Closeout pointers:
 - `docs/debt/P8_P9_DEBT_REGISTER.md`
 - `docs/phases/P9_ENTRY_CRITERIA.md`
 - `docs/phases/P9_GUARDED_LEARNING_PLAN.md`
-- `docs/phases/P9_P16_EXECUTION_ROADMAP.md`
+- `docs/phases/P9_P15_EXECUTION_ROADMAP.md`
+- `docs/decisions/ADR-0005-phase-architecture-and-parallel-workstreams.md`
 - `docs/decisions/ADR-0003-strategic-authority-and-experience-shell.md`
 - `docs/decisions/ADR-0004-environment-scoped-evidence-and-knowledge.md`
+
+## 2026-07-11 Phase Architecture Handoff
+
+- The accepted mainline is P9-P15 plus optional research track R1. The intermediate P9-P16 route is historical.
+- Current work is P9-G2 Experiment Integrity. Historical P9.5A-P9.5E labels map into G2; stable change remains disabled until G2 passes.
+- P11 now owns learned context and compute/provider orchestration as separate A/B modules. P12 owns full environment revalidation, P13 player beta, P14 delegated-skill qualification, and P15 release/operations.
+- Open-ended autonomous curriculum is not a main phase. P10 may schedule only bounded evidence-gap, counterexample, regression, and revalidation experiments.
+- Canonical rationale and implementation gates live in the linked phase audit, ADR-0005, and P9-P15 roadmap.
 
 ## 2026-07-10 Authority And Environment Handoff
 
@@ -18,7 +27,7 @@ Closeout pointers:
 - P9.5D decision-authority records and P9.5E environment-scoped evidence are new blockers before P9.6 promotion design.
 - Slay the Spire 2 Early Access update cadence makes game/mod/adapter/fact version scope a data-truth requirement, not later polish.
 - Continue P9.5C comparable/counterexample evidence, but do not treat it as the sole P9.6 prerequisite.
-- Canonical decisions and forward route are in the linked ADRs and `P9_P16_EXECUTION_ROADMAP.md`; this handoff is only recent context.
+- Canonical decisions and forward route are in the linked ADRs and `P9_P15_EXECUTION_ROADMAP.md`; this handoff is only recent context.
 
 ## P9.5C Handoff
 

@@ -2,6 +2,8 @@
 
 P9 should start only when the project is ready to shift from live-scaffold expansion to guarded learning infrastructure.
 
+Forward phase reporting uses P9-G1 through P9-G4 from ADR-0005. Historical P9.0-P9.4 items below map to G1; P9.5A-P9.5E map to G2; P9.6-P9.7 map to G3; P9.8 maps to G4.
+
 ## Required
 
 - `npm run check` passes.

@@ -67,7 +67,7 @@ Compatibility is explicit:
 - `quarantined`
 - `unsupported`
 
-Unknown identity remains unknown; it is not inferred from successful execution. P9.5E supplies the minimum read-only identity/scope foundation. `ENVIRONMENT_COMPATIBILITY.md` is the canonical subsystem direction, and P14 owns the full compatibility and revalidation system.
+Unknown identity remains unknown; it is not inferred from successful execution. P9-G2/P9.5E supplies the minimum read-only identity/scope foundation. `ENVIRONMENT_COMPATIBILITY.md` is the canonical subsystem direction, and P12 owns the full compatibility and revalidation system.
 
 ## Plane 1: Game Integration
 
@@ -284,9 +284,9 @@ P8 workspace status:
 - Shadow boundaries should be relaxed only at the intended gates: P8.5 for additive prompt context, P9 for guarded stable updates, and P10 for the full guarded learning loop.
 - This keeps the North Star boundary intact: the local scaffold shapes a better strategic workspace for the LLM, while the LLM remains the strategic player and all actions still pass through current validation/execution.
 - P9 should not be interpreted as "direct stable memory writes". It should be implemented as proposal-driven guarded learning, with a hard protected shell around validation, execution, live authorization, rollback, and stable-write authority.
-- Before P9.6 stable-promotion design, P9.5D must make decision authority auditable and P9.5E must make evidence environment-scoped. Neither foundation changes current live behavior.
+- Before P9-G3 stable-change design, G2/P9.5D must make decision authority auditable and G2/P9.5E must make evidence environment-scoped. Neither foundation changes current live behavior.
 - P10 continuous learning improves the experience shell; it does not automatically transfer strategic authority.
-- P11 owns skill qualification and delegation governance, P12 owns learned context assembly, P13 owns guarded deliberation/compute allocation, P14 owns environment revalidation, P15 owns player productization, and P16 isolates optional local-autonomy research.
+- P10 owns repeatable experience-learning operations; P11 owns learned context and compute/provider orchestration; P12 owns environment revalidation; P13 owns player beta; P14 owns skill qualification/delegation; P15 owns product release/operations. Optional local-autonomy research is isolated track R1.
 - Budget governance should be interpreted through `BUDGET_GOVERNANCE.md`: current P8 guards are early instances of call budget, recovery budget, run budget, evidence budget, and rollout budget, but they are not yet the finished governance architecture.
 - BG-1/BG-2 now have a small code anchor: `src/agent/budgetGovernance.ts` resolves named governance profiles and records structured budget-policy metadata inside P8 workspace comparisons. This is observability and guard interpretation only; it does not change live behavior.
 - BG-3 now has a small telemetry anchor: `src/agent/providerRecoveryPolicy.ts` summarizes existing provider recovery attempts so recovery budget can be audited separately from workspace compression. It does not change provider behavior.

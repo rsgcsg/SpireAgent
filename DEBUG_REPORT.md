@@ -8,6 +8,16 @@ Current closeout / next-phase pointers:
 - `docs/debt/P8_P9_DEBT_REGISTER.md`
 - `docs/phases/P9_ENTRY_CRITERIA.md`
 - `docs/phases/P9_GUARDED_LEARNING_PLAN.md`
+- `docs/phases/P9_P15_EXECUTION_ROADMAP.md`
+
+## 2026-07-11 P9-P15 Phase Architecture Audit
+
+- Documentation/architecture pass only; no runtime, live, provider, proposal status, stable policy, or budget behavior changed.
+- The accepted mainline is P9 Trustworthy Change Kernel, P10 Repeatable Experience Learning, P11 Learned Deliberation OS, P12 Environment Compatibility, P13 Player Runtime Beta, P14 Delegated Skills, and P15 Release/Operations.
+- Optional local policy/world-model/autonomy work is R1 research, not a required P16.
+- Current P9 work is G2 Experiment Integrity; historical P9.5A-P9.5E labels map into that gate.
+- The former P13 runtime budget label remains historical telemetry compatibility; learned compute/provider policy now belongs to P11B.
+- Detailed evidence and rationale: `docs/reports/P9_P15_PHASE_ARCHITECTURE_AUDIT_2026-07-11.md` and ADR-0005.
 
 ## 2026-07-10 North Star Authority And Environment Audit
 

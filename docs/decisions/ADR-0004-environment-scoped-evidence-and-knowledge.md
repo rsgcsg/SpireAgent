@@ -68,10 +68,10 @@ Unknown scope defaults to quarantine for promotion and delegated-skill use.
 
 ## Phase Consequences
 
-- P9.5 must add a minimal read-only environment identity and evidence-scope foundation before P9.6 promotion design.
-- P9.6 promotion records must include environment scope and invalidation rules.
-- P9.7 retrieval must record why a learned object is considered compatible.
-- P14 owns the full compatibility, invalidation, revalidation, and canary system.
+- P9-G2/P9.5E must add a minimal read-only environment identity and evidence-scope foundation before G3 promotion design.
+- P9-G3/P9.6 promotion records must include environment scope and invalidation rules.
+- P9-G3/P9.7 retrieval must record why a learned object is considered compatible.
+- P12 owns the full compatibility, invalidation, revalidation, and canary system.
 - Product packaging must expose compatibility state rather than silently attempting unsafe operation.
 
 ## Official Environment Evidence

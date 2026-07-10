@@ -6,8 +6,8 @@ Do not turn it into a narrative log. Detailed history belongs in `../LLM_HANDOFF
 
 ## Current Phase
 
-- Formal route: P0-P16 in `../PROJECT_PLAN.md` and `phases/P9_P16_EXECUTION_ROADMAP.md`
-- Active milestone: P8/P8.5 closeout complete as explicit-whitelist scaffold MVP; active work is P9.5C bounded shadow evidence plus the newly required P9.5D decision-authority and P9.5E environment-scope foundations
+- Formal route: P0-P15 in `../PROJECT_PLAN.md` and `phases/P9_P15_EXECUTION_ROADMAP.md`; optional autonomy is research track R1
+- Active milestone: P9-G2 Experiment Integrity. Historical P9.5A-P9.5C shadow evidence and planned P9.5D authority/P9.5E environment work map into this gate
 - Live posture: explicit additive whitelist live is real and locally exercised; wildcard broad live remains forbidden
 
 ## Current Truth
@@ -41,7 +41,7 @@ Do not turn it into a narrative log. Detailed history belongs in `../LLM_HANDOFF
 
 The active blocker is no longer provider reachability or P8 workspace survival-cue preservation.
 
-The real blocker is now the gap between bounded P9.5 shadow evidence and a safe P9.6 promotion design:
+The real blocker is now the gap between partial P9-G2 shadow experiment evidence and a safe P9-G3 stable-change design:
 
 - protected-path gating is only partially landed
 - live-applied rollout reporting now exists, but older shadow-first readiness semantics still coexist beside it
@@ -55,7 +55,7 @@ The real blocker is now the gap between bounded P9.5 shadow evidence and a safe 
 - P9.5C can run one explicit low-risk proposal against a cloned replay packet with the baseline's recorded provider profile. It has produced one **scope-bound** organic combat pair (`transition-000194-agent-mr7smrum-sk2bgv`): legal candidate unchanged, provider clean, and the `missing_tradeoff` reason smoke alarm improved. The overlay is refused for an independent adequate baseline without that trigger. A second matching baseline triggered provider recovery and changed its terminal profile, so it is explicitly `incomplete`, not a confirming pair. This is review evidence only, not a policy result.
 - Decision authority is not yet first-class telemetry: provider/run mode and historical `chosenBy` do not fully explain deliberation, selection, authorization, execution, or delegated-skill ownership.
 - Promotion evidence is not yet scoped to a first-class game build/channel, content/mod set, adapter capability, and fact-snapshot fingerprint. In the current Early Access environment, this is a stable-promotion blocker.
-- budget governance has a clearer staged roadmap, but runtime adaptive Budget/Compute OS behavior remains deferred to P13
+- budget governance remains Stage 0 guard + telemetry; learned deliberation/compute policy belongs to P11B. Existing telemetry that says `P13` is a backward-compatible historical phase label, not current roadmap authority
 - weak proposal attribution and anti-vague proposal validation are implemented for pending proposals; stable-promotion gates are still not implemented
 
 ## What Is Explicitly Not True
@@ -68,13 +68,14 @@ The real blocker is now the gap between bounded P9.5 shadow evidence and a safe 
 
 ## Next Step
 
-Continue P9.5 without enabling stable promotion:
+Complete P9-G2 without enabling stable promotion:
 
-1. implement P9.5D decision-authority types and audit-only records without changing routing or execution
-2. implement P9.5E environment fingerprint and evidence-scope reporting without changing live behavior
-3. continue provider- and environment-comparable organic P9.5C pairs with explicit counterexample review
-4. keep `authority_shaping`, `action_shaping`, and `hard_shell` proposals outside the first promotion path
-5. only then design the P9.6 promotion ledger, immutable version diff, rollback snapshot, status transition, and retrieval trace; stable promotion remains disabled
+1. close remaining P9-G1 protected-surface gaps
+2. implement decision-authority types and audit-only records without changing routing or execution
+3. implement environment fingerprint and evidence-scope reporting without changing live behavior
+4. continue provider- and environment-comparable organic paired shadow evidence with explicit counterexample review
+5. keep `authority_shaping`, `action_shaping`, and `hard_shell` proposals outside the first promotion path
+6. audit G2; only then design P9-G3 promotion ledger, immutable version diff, rollback snapshot, status transition, and retrieval trace
 
 ## Canonical Follow-On Docs
 
@@ -83,7 +84,8 @@ Continue P9.5 without enabling stable promotion:
 - [P9_ENTRY_CRITERIA.md](phases/P9_ENTRY_CRITERIA.md)
 - [P9_ENTRY_DECISION.md](phases/P9_ENTRY_DECISION.md)
 - [P9_GUARDED_LEARNING_PLAN.md](phases/P9_GUARDED_LEARNING_PLAN.md)
-- [P9_P16_EXECUTION_ROADMAP.md](phases/P9_P16_EXECUTION_ROADMAP.md)
+- [P9_P15_EXECUTION_ROADMAP.md](phases/P9_P15_EXECUTION_ROADMAP.md)
+- [P9-P15 Phase Architecture Audit](reports/P9_P15_PHASE_ARCHITECTURE_AUDIT_2026-07-11.md)
 - [Strategic authority ADR](decisions/ADR-0003-strategic-authority-and-experience-shell.md)
 - [Environment-scope ADR](decisions/ADR-0004-environment-scoped-evidence-and-knowledge.md)
 - [Environment Compatibility](../ENVIRONMENT_COMPATIBILITY.md)

@@ -28,9 +28,9 @@ Therefore:
 
 - existing historical evidence remains useful for debugging and architecture review;
 - it must not be assumed compatible for stable promotion;
-- P9.6 stable promotion remains blocked until the minimal P9.5E foundation exists.
+- P9-G3 stable change remains blocked until the minimal G2/P9.5E foundation exists.
 
-## Minimum P9.5E Foundation
+## Minimum G2/P9.5E Foundation
 
 Add read-only identity and scope. Do not change live actions.
 
@@ -134,9 +134,9 @@ No LLM or local policy may mark itself compatible without the gate evidence.
 - Unknown environment evidence may seed a draft hypothesis, but cannot support stable promotion.
 - Provider/model version is experiment context, not game-environment truth; both should be recorded without conflating them.
 
-## P14 Full System
+## P12 Full System
 
-P14 expands the minimum foundation into:
+P12 expands the minimum foundation into:
 
 - startup compatibility handshake;
 - adapter and mod capability registry;
@@ -147,7 +147,7 @@ P14 expands the minimum foundation into:
 - user-facing degraded/unsupported status;
 - migration and rollback tooling.
 
-P14 does not permit the game adapter or mod to become the strategic brain.
+P12 does not permit the game adapter or mod to become the strategic brain.
 
 ## External Reality
 

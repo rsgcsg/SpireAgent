@@ -11,7 +11,7 @@ Before changing this project, read:
 - `docs/phases/P8_CLOSEOUT.md`
 - `docs/phases/P9_ENTRY_CRITERIA.md`
 - `docs/phases/P9_GUARDED_LEARNING_PLAN.md` when working on P9-facing changes
-- `docs/phases/P9_P16_EXECUTION_ROADMAP.md` for forward phase ordering
+- `docs/phases/P9_P15_EXECUTION_ROADMAP.md` for forward phase ordering
 - `docs/decisions/ADR-0003-strategic-authority-and-experience-shell.md`
 - `docs/decisions/ADR-0004-environment-scoped-evidence-and-knowledge.md`
 - `PROJECT_PLAN.md`
@@ -100,7 +100,7 @@ Keep these boundaries intact:
 - External game projects are adapters, not architecture core. Mods are sensors/actuators, not the brain.
 - Promotion-grade evidence and learned objects must be environment-scoped. Unknown or incompatible game/mod/adapter evidence cannot silently support stable promotion.
 
-The formal route now runs through Phase 16. P9 is proposal-driven guarded scaffold learning; P10 makes evidence and scaffold learning continuous; P11 governs curriculum, skill qualification, and delegation; P12 learns context assembly; P13 governs deliberation/compute; P14 handles environment compatibility and revalidation; P15 productizes the runtime; P16 is optional isolated local-autonomy research. Do not skip P9.5D authority records or P9.5E environment scope before designing P9.6 stable promotion.
+The formal mainline now runs through Phase 15: P9 Trustworthy Change Kernel; P10 Repeatable Experience Learning; P11 Learned Deliberation OS; P12 Environment Compatibility and Revalidation; P13 Player Runtime Beta; P14 Delegated Skills and Authority Qualification; P15 Product Release and Operations. Optional local-autonomy work is isolated research track R1, not a phase. Current P9.5D/P9.5E work maps to P9-G2; do not design P9-G3 stable change before authority, environment, paired-evidence, and counterexample integrity pass.
 
 ## Live Testing Policy
 

@@ -4,7 +4,9 @@ P9 is not "turn on automatic learning".
 
 P9 is the phase where the project turns replayable evidence into typed, guarded, proposal-driven inner-scaffold changes while keeping the outer safety shell fixed.
 
-P9 improves the experience shell. It does not automatically transfer strategic authority. The durable authority boundary is defined by `docs/decisions/ADR-0003-strategic-authority-and-experience-shell.md`; environment-scoped evidence is defined by `docs/decisions/ADR-0004-environment-scoped-evidence-and-knowledge.md`.
+P9 improves the experience shell. It does not automatically transfer strategic authority. The durable authority boundary is defined by `docs/decisions/ADR-0003-strategic-authority-and-experience-shell.md`; environment-scoped evidence is defined by `docs/decisions/ADR-0004-environment-scoped-evidence-and-knowledge.md`; finite gate ownership is defined by `docs/decisions/ADR-0005-phase-architecture-and-parallel-workstreams.md`.
+
+Forward execution uses P9-G1 through P9-G4. Historical P9.0-P9.5E labels remain implementation-history aliases: P9.0-P9.4 map to G1, P9.5A-P9.5E map to G2, P9.6-P9.7 map to G3, and P9.8 maps to G4.
 
 ## Definition
 
@@ -58,7 +60,7 @@ under the fixed outer shell of validation, execution safety, rollback, protected
 
 The experience shell becoming less hand-authored does not mean it becomes the unrestricted strategic principal. In `llm_primary`, Level 3 long-horizon and irreversible strategic deliberation remains LLM-owned. Learned local skills require explicit qualification and delegation governance.
 
-## New Pre-P9.6 Foundations
+## P9-G2 Foundations Before Stable Change
 
 The July 2026 architecture audit adds two prerequisites before stable promotion design:
 
@@ -120,7 +122,7 @@ Budget-specific rule:
 
 - `BudgetCompressionPolicyProposal` can exist in P9 as schema, telemetry, and proposal evidence.
 - It must not change runtime caps, rescue caps, thinking mode, model choice, retry behavior, compression behavior, validation, execution, or live rollout.
-- True Budget/Compute OS behavior belongs to P13 or later guarded phases after shadow validation, promotion gates, and rollback exist.
+- Learned compute/provider orchestration belongs to P11B after shadow validation, promotion gates, rollback, and P11A context-policy baselines exist. Current telemetry that says `P13` is a historical phase label.
 
 Each proposal must include at least:
 
@@ -431,9 +433,9 @@ Current state:
 - One scope-bound P9.5C organic combat pair was collected for `transition-000194-agent-mr7smrum-sk2bgv`: candidate/fact invariants and provider profile matched, the legal selected candidate stayed the same, and the `missing_tradeoff` smoke alarm improved. It is only `paired_evidence_ready_for_review`; it does not mutate proposal status or become `shadow_validated`.
 - Counterexample review has begun but is not complete. An independent same-revision adequate combat reason was refused by the trigger guard, showing cue detectors are not strategic truth and that P9.5C must not become a reason-wording optimizer. A second matching `missing_tradeoff` baseline entered provider recovery and therefore changed terminal provider profile; it is `incomplete`, not confirming policy evidence. More than one provider-profile-comparable organic slice and explicit counterexample handling remain required before a future guarded status-transition design is considered.
 
-P9.5C completion is necessary but not sufficient for P9.6. Any future paired evidence used for promotion must also pass P9.5D authority-impact review and P9.5E environment-scope compatibility.
+Comparable P9.5C evidence is necessary but not sufficient for P9-G3. Any future paired evidence used for promotion must also pass G2 authority-impact review and environment-scope compatibility.
 
-### P9.5D Decision Authority Foundation
+### G2/P9.5D Decision Authority Foundation
 
 Goal:
 
@@ -447,7 +449,7 @@ Required:
 - backward-compatible reporting for old `chosenBy` records;
 - hard rejection of executable authority/action/hard-shell promotion paths.
 
-### P9.5E Environment Identity And Evidence Scope
+### G2/P9.5E Environment Identity And Evidence Scope
 
 Goal:
 
@@ -460,7 +462,7 @@ Required:
 - mixed/unknown environment exclusion from promotion;
 - future policy invalidation and revalidation fields.
 
-### P9.6 Stable Promotion Gate
+### G3/P9.6 Stable Promotion Gate
 
 Goal:
 
@@ -470,7 +472,7 @@ The first stable target must be `presentation_only`. `authority_shaping`, `actio
 
 The first stable promotion demonstrates ledger, scope, retrieval, revalidation, and rollback integrity. It must not be marketed as strategic learning merely because a reason-quality detector improved.
 
-### P9.7 Retrieval Integration
+### G3/P9.7 Retrieval Integration
 
 Goal:
 
@@ -478,7 +480,7 @@ Goal:
 
 Retrieval must record policy version, promotion ledger id, authority mode, environment compatibility decision, scope match, and fallback. A quarantined or incompatible policy must not be retrieved as active guidance.
 
-### P9.8 End-To-End Guarded Learning Window
+### G4/P9.8 End-To-End Guarded Learning Window
 
 Goal:
 

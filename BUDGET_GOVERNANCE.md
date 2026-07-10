@@ -26,6 +26,14 @@ Read this after:
 
 ---
 
+## Roadmap Ownership Amendment
+
+ADR-0005 moves learned deliberation-profile and compute/provider policy from the former P13 Budget/Compute OS into **P11B Compute And Provider Orchestration**, after P11A establishes context-lineage baselines. This changes roadmap ownership, not current runtime behavior.
+
+Current code remains Stage 0 guard + telemetry. Existing fields such as `runtimeBudgetOsDeferredTo: "P13"` are backward-compatible historical labels until a deliberate schema migration; they are not evidence that a Budget OS exists. P9 budget proposals remain non-executable, and provider recovery remains operational infrastructure rather than a learned policy.
+
+---
+
 ## 1. Why This Document Exists
 
 The project already has budget-like controls:
@@ -75,7 +83,7 @@ What is correct:
 - recovery budget is separated from workspace compression in telemetry
 - evidence budget and rollout budget are visible as different concepts
 - protected paths remain closed
-- P13 is correctly identified as the future Budget/Compute OS phase, not current behavior
+- learned Budget/Compute behavior is correctly deferred beyond P9; under the accepted roadmap its owner is P11B, not the historical P13 label
 
 What is still weak or easy to misread:
 
@@ -84,7 +92,7 @@ What is still weak or easy to misread:
 - Cap exhaustion is still too easy to read as one generic `invalid_output` or `provider_length_empty` failure, when the recovery decision depends on what kind of cap failed.
 - Budget accounting and budget authorization are still partly fused in language. Recording cost/tokens/latency is not the same thing as permission to continue, promote, or mutate policy.
 - Field names such as `promotionUseAllowed` and `promotionAllowedByBudget` are useful local readiness flags, but they must not be read as stable-learning promotion authority.
-- P9 can introduce `BudgetPolicyProposal` schema and proposal evidence, but it must not backport P13 Budget OS behavior into live runtime.
+- P9 can introduce `BudgetPolicyProposal` schema and proposal evidence, but it must not backport P11B learned compute/provider behavior into live runtime.
 
 The honest current position:
 
@@ -94,7 +102,7 @@ hard caps + provider/recovery telemetry + evidence/rollout reporting.
 
 P9 may add attribution, schema, and proposal-only budget policy evidence.
 
-P13 is the first phase where learned Budget/Compute OS behavior may become runtime behavior,
+P11B is the first phase where learned compute/provider orchestration may become runtime behavior,
 and only under hard caps, promotion gates, shadow validation, audit, and rollback.
 ```
 
@@ -560,7 +568,7 @@ In particular:
 - switching from one provider to another does not change `DecisionAuthorityMode`;
 - a cheaper local model does not gain strategic authority because it is fast;
 - budget exhaustion may skip or escalate under policy, but cannot transfer a Level 3 decision to an unauthorized local skill;
-- P13 Deliberation/Compute OS proposals must record authority impact and preserve the authorized mode.
+- P11B deliberation-profile proposals must record authority impact and preserve the authorized mode.
 
 ### 6.10 Budget evidence is environment-scoped
 
@@ -756,7 +764,7 @@ Suggested fields:
 
 P9 may define these as docs, telemetry, schema, or proposal-only records.
 P9 must not let them change live behavior.
-P13 is the phase where promoted profiles may become runtime Budget/Compute OS behavior.
+P11B is the phase where promoted profiles may become learned runtime compute/provider orchestration.
 
 ---
 
@@ -1214,7 +1222,7 @@ Required before any stable budget/compression policy promotion:
 Stage 4 may validate a proposal in shadow.
 It still does not let budget policy self-apply.
 
-### Stage 5 / P13: Deliberation And Compute/Budget OS behavior
+### Stage 5 / P11B: Compute And Provider Orchestration
 
 Long-term target:
 
@@ -1230,9 +1238,9 @@ Long-term target:
 
 The LLM may propose these profiles inside the experimental scaffold, but the outer shell must still enforce hard caps, validation, live gating, stable-promotion rules, and rollback.
 
-P13 must not begin as automatic budget escalation.
+P11B must not begin as automatic budget escalation.
 
-It must also not become automatic authority allocation. Provider/model/profile routing remains downstream of explicit decision-authority policy, and any authority-changing proposal remains outside the first P13 stable targets.
+It must also not become automatic authority allocation. Provider/model/profile routing remains downstream of explicit decision-authority policy, and any authority-changing proposal remains outside the first P11B stable targets.
 It should begin as:
 
 - budget use records
@@ -1268,11 +1276,11 @@ Do not implement all of this now. The staged follow-up order should be:
 7. Profile-based shadow experiment runner
    - compare profiles in shadow against `full` and current defaults
 
-### P13
+### P11B
 
 8. Budget ROI digest
    - correlate profile cost with provider reliability, reason quality, decision consistency, and outcome
-9. Budget/Compute OS design and promotion gate
+9. Compute/provider orchestration design and promotion gate
    - allow only promoted, rollbackable profile behavior under hard caps
 
 ---

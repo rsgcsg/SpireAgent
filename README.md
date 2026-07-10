@@ -16,7 +16,7 @@ Current phase-heavy docs:
 - [P8_P9_DEBT_REGISTER.md](docs/debt/P8_P9_DEBT_REGISTER.md)
 - [P9_ENTRY_CRITERIA.md](docs/phases/P9_ENTRY_CRITERIA.md)
 - [P9_GUARDED_LEARNING_PLAN.md](docs/phases/P9_GUARDED_LEARNING_PLAN.md)
-- [P9_P16_EXECUTION_ROADMAP.md](docs/phases/P9_P16_EXECUTION_ROADMAP.md)
+- [P9_P15_EXECUTION_ROADMAP.md](docs/phases/P9_P15_EXECUTION_ROADMAP.md)
 - [Strategic authority ADR](docs/decisions/ADR-0003-strategic-authority-and-experience-shell.md)
 - [Environment Compatibility](ENVIRONMENT_COMPATIBILITY.md)
 - [Player Product Vision](docs/PRODUCT_VISION.md)
@@ -241,17 +241,17 @@ Operational docs live under `docs/` and are not architecture source of truth.
 
 ## Phase Route
 
-The formal route now runs through P16:
+The formal mainline now runs through P15:
 
 - P1-P8.5 build the live scaffold, replay/eval, and explicit-whitelist live MVP.
 - P9 is protected proposal-driven guarded learning.
-- P10 is the continuous guarded learning loop.
-- P11 is curriculum, skill qualification, and delegation governance.
-- P12 is the learned Context OS / Prompt Compiler.
-- P13 is the Deliberation and Compute/Budget OS under hard caps.
-- P14 is environment compatibility, knowledge invalidation, and revalidation.
-- P15 is the player product and provider-neutral runtime.
-- P16 is optional isolated local policy/world-model/autonomy research.
+- P10 makes the guarded lifecycle repeatable across accumulated experience.
+- P11 is the Learned Deliberation OS: context first, then compute/provider policy.
+- P12 is environment compatibility, knowledge invalidation, and revalidation.
+- P13 is the non-developer Player Runtime Beta.
+- P14 qualifies bounded delegated skills and authority.
+- P15 is product release and operations.
+- Optional local policy/world-model/autonomy work is isolated research track R1, not a required phase.
 
 See [PROJECT_PLAN.md](PROJECT_PLAN.md) for current completion gaps and acceptance criteria.
 

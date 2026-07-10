@@ -60,7 +60,9 @@ Start here before changing docs, planning a new phase, or deciding which documen
 - [P9_ENTRY_CRITERIA.md](phases/P9_ENTRY_CRITERIA.md)
 - [P9_ENTRY_DECISION.md](phases/P9_ENTRY_DECISION.md)
 - [P9_GUARDED_LEARNING_PLAN.md](phases/P9_GUARDED_LEARNING_PLAN.md)
-- [P9_P16_EXECUTION_ROADMAP.md](phases/P9_P16_EXECUTION_ROADMAP.md)
+- [P9_P15_EXECUTION_ROADMAP.md](phases/P9_P15_EXECUTION_ROADMAP.md)
+- [P9-P15 Phase Architecture Audit](reports/P9_P15_PHASE_ARCHITECTURE_AUDIT_2026-07-11.md)
+- [Phase Architecture ADR](decisions/ADR-0005-phase-architecture-and-parallel-workstreams.md)
 - [Strategic authority ADR](decisions/ADR-0003-strategic-authority-and-experience-shell.md)
 - [Environment-scope ADR](decisions/ADR-0004-environment-scoped-evidence-and-knowledge.md)
 - [Player Product Vision](PRODUCT_VISION.md)
@@ -100,9 +102,9 @@ These exist for engineering continuity and history. They must not become the onl
 - old redirect docs and stale low-priority material
   - `archive/legacy/*.md`
 
-## P0-P16 And P8.x
+## P0-P15, R1, And P8.x
 
-`../PROJECT_PLAN.md` remains the canonical P0-P16 route. `phases/P9_P16_EXECUTION_ROADMAP.md` is the forward execution ordering; `phases/P9_P13_EXECUTION_ROADMAP.md` is historical supporting detail.
+`../PROJECT_PLAN.md` remains the canonical P0-P15 mainline. `phases/P9_P15_EXECUTION_ROADMAP.md` is the forward execution ordering. `phases/P9_P13_EXECUTION_ROADMAP.md` and `phases/P9_P16_EXECUTION_ROADMAP.md` are historical supporting detail. Optional local-autonomy research is track R1, not a maturity phase.
 
 Use `phases/*.md` for:
 
@@ -110,7 +112,7 @@ Use `phases/*.md` for:
 - P8.5 rollout policy
 - P9 entry criteria
 - P9 guarded learning implementation
-- P9-P16 execution ordering and realism checks
+- P9-P15 execution ordering, phase gates, and parallel workstreams
 
 Use `04_CURRENT_STATUS.md` for the short active snapshot only.
 

@@ -28,41 +28,41 @@ The current reality is:
 - P8/P8.5 can be honestly closed only as `explicit-whitelist live scaffold MVP complete`.
 - Explicit broad-whitelist live evidence exists, but wildcard live is still forbidden.
 - Stable learning is not implemented.
-- Proposal-driven guarded learning infrastructure has started through typed append-only proposals, weak attribution, evidence slicing, review decisions, and bounded P9.5 shadow comparison. Stable promotion is still disabled.
-- The active blocker before P9.6 is now the combination of insufficient promotion-grade paired/counterexample evidence, missing decision-authority audit foundations, and missing environment-scoped evidence foundations.
+- Proposal-driven guarded learning infrastructure has started through typed append-only proposals, weak attribution, evidence slicing, review decisions, and bounded P9-G2 shadow comparison. Stable promotion is still disabled.
+- The active blocker before P9-G3 is now the combination of insufficient promotion-grade paired/counterexample evidence, missing decision-authority audit foundations, and missing environment-scoped evidence foundations.
 
 The next real work is not more live expansion.
 
 The next real work is:
 
 ```text
-P9.5D Decision Authority Foundation
-+ P9.5E Environment Identity And Evidence Scope
-+ additional provider/environment-comparable P9.5C counterexample evidence
-+ only then P9.6 promotion-ledger / rollback design
+P9-G2 Decision Authority Foundation
++ P9-G2 Environment Identity And Evidence Scope
++ provider/environment-comparable paired and counterexample evidence
++ only then P9-G3 promotion-ledger / rollback design
 ```
 
 Execution ordering note:
 
 - `ReverseScaffoldFeedback` is strategically necessary, but it should enter P9 first as telemetry and proposal-seed material, not as an automatic live second-pass controller.
-- `Context OS` and `Compute/Budget OS` are real long-term targets, but P12/P13 should not be pulled forward by quietly rewriting current prompt assembly or budget behavior during P9.
-- For the corrected execution-first ordering, read `docs/phases/P9_P16_EXECUTION_ROADMAP.md`.
+- Learned context and compute/provider orchestration are real long-term targets, but P11 must not be pulled forward by quietly rewriting prompt assembly or budget behavior during P9.
+- For the accepted execution ordering, read `docs/phases/P9_P15_EXECUTION_ROADMAP.md` and ADR-0005.
 
 The long-term maturity route is now best understood as:
 
 ```text
 P0-P8.5 = build, record, evaluate, scaffold, and safely live-route the LLM
-P9      = protected proposal-driven guarded learning
-P10     = continuous learning loop
-P11     = curriculum, skill qualification, and delegation governance
-P12     = learned Context OS / Prompt Compiler
-P13     = Deliberation and Compute/Budget OS
-P14     = environment compatibility and revalidation OS
-P15     = player product and provider-neutral runtime
-P16     = optional isolated local policy/world-model/autonomy research
+P9      = Trustworthy Change Kernel
+P10     = Repeatable Experience Learning
+P11     = Learned Deliberation OS
+P12     = Environment Compatibility And Revalidation
+P13     = Player Runtime Beta
+P14     = Delegated Skills And Authority Qualification
+P15     = Product Release And Operations
+R1      = optional isolated local policy/world-model/autonomy research
 ```
 
-P12-P16 are not immediate implementation work. Their minimum schema/provenance foundations may be seeded earlier, but their runtime behavior belongs in their own guarded phases. P16 is optional research and cannot silently redefine the main product.
+P10-P15 are not immediate implementation work. Their minimum schema/provenance and product-interface foundations may be seeded earlier, but learned runtime behavior belongs in its guarded owner phase. R1 is optional research and cannot silently redefine the main product.
 
 ---
 
@@ -75,7 +75,7 @@ This section is a roadmap-level summary. Exact current phase, blocker, and next 
 The active phase is:
 
 ```text
-P8/P8.5 closeout + active P9.5 guarded shadow/evidence foundations
+P8/P8.5 closeout + active P9-G2 experiment-integrity foundations
 ```
 
 P8/P8.5 means:
@@ -138,7 +138,7 @@ The active blocker is no longer provider reachability or basic workspace surviva
 The current blocker is:
 
 ```text
-P9.5 evidence is not yet sufficient for stable promotion design, and the
+P9-G2 evidence is not yet sufficient for stable-change design, and the
 decision-authority and environment-identity foundations are still missing.
 ```
 
@@ -182,7 +182,7 @@ Current strengths:
 Main problems:
 
 - Stable learning does not exist.
-- P9 typed proposal/reverse-feedback stores, audit-only review decisions, weak proposal seeds, evidence slicing, and P9.5 shadow comparison have started; none of them apply stable behavior.
+- P9 typed proposal/reverse-feedback stores, audit-only review decisions, weak proposal seeds, evidence slicing, and G2 shadow comparison have started; none of them apply stable behavior.
 - Protected-path governance is only partially hardened.
 - `controller.ts` remains too broad.
 - Some readiness metrics still reflect older shadow/combat-first semantics.
@@ -500,7 +500,7 @@ In P9, this is telemetry only.
 
 ## 7. Updated Maturity Route
 
-The old Phase 0-13 plan remains historically useful, but the forward route should now be expressed as P0-P16. See `docs/phases/P9_P16_EXECUTION_ROADMAP.md` for canonical forward ordering.
+The old Phase 0-13 and intermediate P9-P16 plans remain historically useful, but the accepted mainline is P0-P15 plus optional research track R1. See `docs/phases/P9_P15_EXECUTION_ROADMAP.md` and ADR-0005 for canonical forward ordering and historical mapping.
 
 ### P0-P2.6: Trusted Boundaries, Recording, Replay, and Eval
 
@@ -576,7 +576,7 @@ Remaining concerns:
 
 - typed P9 proposal infrastructure exists, but no stable promotion exists;
 - review decisions are audit-only and do not apply proposals;
-- P9.5 paired/counterexample evidence remains incomplete;
+- P9-G2 paired/counterexample evidence remains incomplete;
 - no proposal-to-shadow-to-stable lifecycle has completed.
 
 ### P8/P8.5: Structured Workspace and Explicit-Whitelist Live Scaffold
@@ -620,7 +620,7 @@ Do not expand live. Move to P9 hardening and proposal infrastructure.
 
 ---
 
-## 8. P9: Protected Proposal-Driven Learning
+## 8. P9: Trustworthy Change Kernel
 
 P9 is not “turn on automatic learning.”
 
@@ -632,7 +632,16 @@ protected, typed, evidence-linked, rollback-capable proposal learning
 
 Goal:
 
-Turn replayable run evidence and scaffold feedback into typed pending proposals without weakening the hard shell.
+Prove that one low-risk soft-shell policy can move from organic evidence to stable use and back to baseline through a complete, independently auditable lifecycle.
+
+P9 uses four finite gates. Existing P9.0-P9.8 names remain implementation-history aliases, not an endlessly extensible phase taxonomy:
+
+| Forward gate | Historical aliases | Purpose |
+| --- | --- | --- |
+| P9-G1 Evidence Safety | P9.0-P9.4 | protected paths, typed proposals, weak attribution, evidence provenance, audit-only review |
+| P9-G2 Experiment Integrity | P9.5A-P9.5E | comparable shadow overlays, counterexamples, decision authority, environment scope |
+| P9-G3 Stable Change | P9.6-P9.7 | promotion ledger, rollback, compatible retrieval, regression guards |
+| P9-G4 Lifecycle Demonstration | P9.8 | one complete low-risk lifecycle and rollback drill |
 
 P9 must include:
 
@@ -662,7 +671,11 @@ P9 must not include:
 - live behavior changes from context/budget feedback;
 - provider contract heroics as a substitute for learning.
 
-### P9.0 Protected Path Hardening
+### P9-G1 Evidence Safety
+
+Historical implementation packages P9.0-P9.4 live under this gate.
+
+#### P9.0 Protected Path Hardening
 
 Goal:
 
@@ -683,7 +696,7 @@ Acceptance:
 - malicious or accidental `memoryUpdates` cannot bypass the gate;
 - explicit whitelist live remains behaviorally unchanged except for protection.
 
-### P9.1 LearningProposal Schema and Store
+#### P9.1 LearningProposal Schema and Store
 
 Goal:
 
@@ -733,7 +746,7 @@ Acceptance:
 - vague proposals are rejected or draft-only;
 - proposal store does not mutate live or stable behavior.
 
-### P9.2 Reverse Feedback and Weak Attribution
+#### P9.2 Reverse Feedback and Weak Attribution
 
 Goal:
 
@@ -755,7 +768,7 @@ Acceptance:
 - all attribution is marked suspected unless validated;
 - counterexample requirements are recorded.
 
-### P9.3 EvidenceSliceReader
+#### P9.3 EvidenceSliceReader
 
 Goal:
 
@@ -773,7 +786,7 @@ Acceptance:
 - mixed windows are labeled;
 - latest live evidence remains separate from shadow-only readiness.
 
-### P9.4 Review CLI
+#### P9.4 Review CLI
 
 Goal:
 
@@ -785,7 +798,11 @@ Acceptance:
 - approval for review is not stable application;
 - review history is recorded.
 
-### P9.5 Shadow Applicator
+### P9-G2 Experiment Integrity
+
+Historical P9.5A-P9.5E work belongs to this gate. G2 must prove comparable experiment conditions and refusal/narrowing on counterexamples; a single improved reason string is not validation.
+
+#### P9.5 Shadow Applicator
 
 Goal:
 
@@ -805,7 +822,7 @@ Forbidden early targets:
 - stable memory direct writes;
 - hard budget cap.
 
-### P9.5D Decision Authority Foundation
+#### P9.5D Decision Authority Foundation
 
 Goal:
 
@@ -818,7 +835,7 @@ Acceptance:
 - authority-changing proposals cannot enter the first stable-promotion path;
 - old transitions remain readable.
 
-### P9.5E Environment Identity And Evidence Scope
+#### P9.5E Environment Identity And Evidence Scope
 
 Goal:
 
@@ -831,7 +848,11 @@ Acceptance:
 - compatibility and quarantine are explicit;
 - no live behavior changes.
 
-### P9.6 Stable Promotion Gate
+### P9-G3 Stable Change
+
+G3 may begin only after a written G2 audit passes. The first target must be presentation-only and incapable of changing candidates, facts, validation, execution, live authorization, or strategic authority.
+
+#### P9.6 Stable Promotion Gate
 
 Goal:
 
@@ -845,7 +866,7 @@ Acceptance:
 - usage tracking exists;
 - regression blocks promotion.
 
-### P9.7 Retrieval / Scaffold Integration
+#### P9.7 Retrieval / Scaffold Integration
 
 Goal:
 
@@ -857,7 +878,9 @@ Acceptance:
 - review can explain policy impact;
 - rollback removes the effect.
 
-### P9.8 End-to-End Guarded Learning Window
+### P9-G4 Lifecycle Demonstration
+
+#### P9.8 End-to-End Guarded Learning Window
 
 Goal:
 
@@ -880,273 +903,179 @@ First recommended stable target:
 
 Do not start with strategy params.
 
----
-
-## 9. P10: Continuous Learning Loop
-
-Goal:
-
-Turn P9’s manual/small proposal loop into a continuous multi-run learning loop.
-
-P10 should include:
-
-- automatic aggregation of similar prediction errors;
-- automatic proposal candidate generation;
-- automatic evidence search;
-- automatic counterexample search;
-- shadow apply;
-- replay A/B comparison;
-- semi-automatic promotion;
-- rollback detection;
-- skill usage tracking;
-- retrieval usefulness tracking;
-- scaffold policy impact tracking;
-- cross-run generalization;
-- proposal survival metrics;
-- regression alerts.
-
-P10 should not mean full unsupervised self-modification.
-
-P10 also does not mean that accumulated evidence transfers strategic authority. It improves memory and scaffold policy under the current authorized mode.
-
-The human role changes from:
-
-```text
-writing rules
-```
-
-to:
-
-```text
-auditing learning system behavior
-```
-
-P10 demo:
-
-```text
-multi-run evidence
-  -> proposal candidates
-  -> counterexample search
-  -> shadow compare
-  -> semi-automatic promote
-  -> rollback if regression
-```
+P9 exits after one independently auditable low-risk lifecycle and successful rollback drill. It does not remain open merely to add more proposal families.
 
 ---
 
-## 10. P11: Curriculum, Skill Qualification, And Delegation Governance
+## 9. P10: Repeatable Experience Learning
 
 Goal:
 
-Let the agent propose what it should study, qualify reusable bounded skills, and govern when those skills may be delegated without displacing LLM strategic ownership.
+Prove that the P9 lifecycle remains bounded, interpretable, and operational as evidence, proposals, policies, and environments accumulate.
 
-P11 should include:
+Engineering modules:
 
-- autonomous curriculum;
-- multi-policy experiments;
-- scaffold ablation;
-- memory policy ablation;
-- candidate template ablation;
-- prompt assembly ablation;
-- budget policy ablation;
-- cross-run generalization;
-- cross-archetype generalization;
-- meta-scaffold policy proposals.
-- `SkillProposal` and `DelegatedSkill` lifecycle;
-- skill entry, termination, invalidation, and uncertainty escalation;
-- competence-region and out-of-distribution checks;
-- decision-authority level and delegation ledger;
-- LLM takeover and rollback tests.
+- `ProposalAggregator` and `ProposalDeduplicator`;
+- conflict, supersession, expiry, and evidence-aging handling;
+- `CounterexampleHarvester`;
+- `RetrievalImpactTracker` and `RegressionMonitor`;
+- proposal survival, rollback, and policy-use impact reporting;
+- `CoverageGapDetector` and bounded `ExperimentQueue`;
+- backlog size, age, duplicate rate, and human-review load reporting.
 
-The agent should be able to propose:
+The scheduler may prioritize defined evidence gaps, counterexamples, regressions, and environment revalidation. It is not an open-ended autonomous curriculum and may not invent arbitrary objectives or approve its own policy changes.
 
-- next scenario families to train;
-- skills that may be invalid;
-- memory policies to A/B test;
-- candidate templates that may overfit;
-- context panels worth adding;
-- budget profiles that may waste compute;
-- lessons that do not transfer across character/deck/boss contexts.
+P10 exit matrix:
 
-P11 must still preserve:
+- three independent lifecycles;
+- at least two proposal families and distinct scopes;
+- one correctly rejected proposal;
+- one proposal narrowed after counterexamples;
+- one rollback or formal rollback drill;
+- one environment invalidation or expiry case;
+- retrieval usefulness and harm are both observable;
+- duplicates are suppressed and review backlog stays within documented limits.
 
-- hard shell;
-- evidence requirements;
-- rollback;
-- human/guarded review for promotion.
-- Level 3 long-horizon strategic authority for the LLM in `llm_primary`.
-
-P11 demo:
-
-```text
-agent identifies a weakness
-  -> proposes curriculum
-  -> proposes scaffold experiments
-  -> qualifies a bounded skill with termination and escalation
-  -> runs A/B or replay comparisons
-  -> recommends policy changes with evidence
-```
+P10 does not transfer strategic authority. It improves the experience shell under the current authorized mode.
 
 ---
 
-## 11. P12: Learned Context OS / Prompt Compiler
+## 10. P11: Learned Deliberation OS
 
 Goal:
 
-Let the agent optimize what it sees, expands, compresses, caches, retrieves, orders, and uploads to the LLM.
+Learn how the LLM should be informed and how much deliberation resource it should receive, while keeping strategic authority, hard caps, and provider failure handling explicit.
 
-P12 changes what enters deliberation. It does not change who owns deliberation.
+P11 combines context and compute policy at the phase level because both affect deliberation quality. They remain separate modules and gates.
 
-P12 is not about learning more game slogans.
+### P11A Context Compiler
 
-P12 is about learning how the agent should be fed information.
+Modules:
 
-P12 should include:
+- `SaliencePolicy`;
+- `MemoryRoutingPolicy`;
+- `CandidatePresentationPolicy`;
+- `ContextOmissionRecord`;
+- `CompressionPolicy`;
+- `PromptAssemblyLineage`;
+- `ContextPolicyEvaluator`.
 
-- Context OS audit;
-- PromptAssemblyPolicy schema;
-- Temporary Working Cache;
-- Multi-layer Memory Routing;
-- Expand-and-Recompress Loop;
-- Learned Context Budget Allocation;
-- Context Ablation;
-- Prompt Assembly Lineage;
-- Context Exclusion Records;
-- Prompt Compiler Promotion;
-- End-to-end Context OS demo.
+P11A may learn salience, memory inclusion, CandidateFuture presentation, context-panel expansion, compression, assembly order, and response to reverse-scaffold feedback. It must not use raw-state dumping, hide fact/candidate loss, or optimize merely for reason-detector wording.
 
-P12 must not:
+P11A exits when one context-policy family is promoted and rolled back through the P9/P10 kernel and shows downstream utility or information-preservation benefit on compatible slices without candidate/fact loss.
 
-- bypass hard budget cap;
-- let LLM directly rewrite PromptCompiler;
-- turn context expansion into raw-state dumping;
-- treat longer prompt as automatic improvement;
-- promote context policy without ROI and rollback.
+### P11B Compute And Provider Orchestration
 
-P12 required records:
+Modules:
 
-- `PromptAssemblyRecord`
-- `ContextExclusionRecord`
-- `MemoryExclusionRecord`
-- `CandidateFamilyExclusionRecord`
+- `DeliberationProfile` and `DeliberationProfileSelector`;
+- `ProviderCapabilityRegistry`;
+- `BudgetUseRecord` and `BudgetROIDigest`;
+- `BudgetPolicyEvaluator`;
+- second-opinion policy;
+- hard call, recovery, run, cost, time, and concurrency circuit breakers.
 
-P12 demo:
+P11B begins only after P11A provides context-lineage baselines. Provider recovery remains operational infrastructure and is not silently learned. More compute, another model, or a second opinion never grants strategic authority.
 
-```text
-agent requests expanded context in a key decision
-  -> system records whether expansion helped
-  -> evidence becomes a context policy proposal
-  -> shadow comparison validates it
-  -> future prompt/context policy changes in a rollbackable way
-```
+P11B must not allow self-approved spending, automatic cap escalation, provider-failure laundering, hidden context compression, or token saving as a strategic objective.
+
+P11B exits when a rollbackable deliberation-profile policy demonstrates a measured quality/cost/latency benefit under equivalent evidence and fixed authority without crossing hard caps.
 
 ---
 
-## 12. P13: Deliberation And Compute/Budget OS
+## 11. P12: Environment Compatibility And Revalidation
 
 Goal:
 
-Let the agent optimize compute allocation under a hard budget cap.
+Keep facts, evidence, learned policies, and qualified skills valid across game builds, content/mod sets, adapters, schemas, and fact snapshots.
 
-Provider/profile routing must preserve the explicit decision-authority mode. More compute or a different provider does not grant a different component strategic authority.
+Minimum read-only environment identity begins in P9-G2. P12 turns that foundation into an operating system.
 
-P13 should answer:
+Modules:
 
-- when to use `low`;
-- when to use `medium`;
-- when to use `high`;
-- when to use `research`;
-- how to spend a fixed dollar/token budget;
-- how to reserve compute for boss/shop/card_reward/high-risk decisions;
-- how to measure whether more compute improved decisions;
-- how to avoid “more tokens but no improvement.”
-
-P13 should include:
-
-- Budget OS audit;
-- `BudgetUseRecord`;
-- `BudgetROIDigest`;
-- budget request approval policy;
-- denied request outcome tracking;
-- false high-risk request tracking;
-- reasoning profile A/B;
-- context expansion ROI;
-- critique budget ROI;
-- learning compute ROI;
-- BudgetPolicyPromotion.
-
-P13 must not:
-
-- let LLM approve its own spending;
-- let agent exceed spending cap;
-- make high budget the default;
-- treat pretty reasons as ROI;
-- ignore denied request outcomes.
-- automatically raise live budget after cap exhaustion.
-- silently transfer strategic authority through provider or profile routing.
-
-P13 demo:
-
-```text
-user gives 1 USD / 5 USD / fixed token budget
-  -> agent dynamically allocates low/medium/high/research profiles
-  -> system records cost and outcome
-  -> ROI review shows where compute helped or wasted
-  -> future budget policy improves under hard cap after proposal review, shadow validation, promotion gate, and rollback setup
-```
-
----
-
-## 12.1 P14: Environment Compatibility And Revalidation OS
-
-Goal:
-
-Keep facts, evidence, learned policies, and skills valid across game, mod, adapter, schema, and fact-data changes.
-
-P14 should include:
-
-- startup environment fingerprint and compatibility handshake;
-- content/mod/adapter capability registry;
+- `EnvironmentHandshake` and `EnvironmentFingerprintStore`;
+- `CompatibilityRegistry`;
 - learned-object dependency graph;
-- compatible/degraded/quarantined/unsupported states;
-- revalidation queue, migration fixtures, and organic canary evidence;
-- compatibility-aware retrieval and skill delegation;
-- user-visible degraded and unsupported behavior.
+- `QuarantineManager` and `RevalidationQueue`;
+- adapter conformance suite and compatibility canaries;
+- compatibility-aware retrieval and delegated-skill eligibility;
+- user-visible compatible/degraded/quarantined/unsupported state.
 
-The minimum environment identity cannot wait until P14: P9.5E must exist before P9.6 stable promotion.
+P12 exits when an environment change can identify affected objects, quarantine only those objects, block incompatible use, run conformance/shadow/canary checks, and restore or preserve quarantine with an auditable migration record.
 
-## 12.2 P15: Player Product And Provider-Neutral Runtime
+---
+
+## 12. P13: Player Runtime Beta
 
 Goal:
 
-Turn the local engineering runtime into an installable, understandable, controllable player product.
+Expose the safe LLM-primary runtime to non-developer use early enough that operational reality can correct the architecture before release.
 
-P15 should include:
+Product-interface work may proceed as a parallel workstream before P13, but P13 is the beta acceptance gate.
 
-- thin game mod packaging;
-- provider-neutral adapter contract;
-- local encrypted/keychain secret handling;
-- observe, copilot, LLM-primary, delegated-play, and review modes;
-- visible authority and learning controls;
-- pause, takeover, rollback, data inspection, and deletion;
-- compatibility UX and release/migration procedures.
+Modules:
 
-P15 must not move prompts, API keys, memory, learning, or strategic authority into the game mod.
+- installer/bootstrap and environment diagnostics;
+- provider-neutral command/gateway contract;
+- local secret management;
+- observe, copilot, LLM-primary, pause, takeover, and review controls;
+- visible provider, authority, rollout, learning, and compatibility modes;
+- evidence/privacy controls and deletion/export;
+- secret-redacted support bundle;
+- crash recovery and degraded-mode behavior.
 
-## 12.3 P16: Optional Local Policy And Autonomy Research
+Delegated play is not required for beta. Wildcard live is not implied.
+
+P13 exits when multiple clean-machine beta installations complete normal play, provider failure, pause/takeover, rollback, update, and support-diagnostic scenarios without secret leakage or hidden authority changes.
+
+---
+
+## 12.1 P14: Delegated Skills And Authority Qualification
+
+Goal:
+
+Qualify bounded reusable skills without displacing LLM long-horizon strategic ownership in `llm_primary` mode.
+
+Modules:
+
+- `SkillProposal` and immutable skill artifact;
+- initiation, termination, invalidation, and escalation conditions;
+- competence-region and out-of-distribution evaluator;
+- environment compatibility requirement;
+- authority ledger and LLM takeover path;
+- canary, rollback, revocation, and regression monitoring.
+
+P14 must not infer authority from confidence, use a decision class as proof of competence, or let a skill expand its own scope.
+
+P14 exits only when one bounded skill passes organic evidence, counterexample, environment, takeover, rollback, and revocation tests. If none qualify, delegated play stays disabled and the core product may still proceed.
+
+## 12.2 P15: Product Release And Operations
+
+Goal:
+
+Release and operate a provider-neutral LLM-primary player product with explicit compatibility, authority, learning, privacy, update, and rollback controls.
+
+Modules:
+
+- signed/versioned packaging and release channels;
+- migration, upgrade, downgrade, and rollback tooling;
+- provider setup and capability diagnostics;
+- privacy, evidence retention, export, and deletion policy;
+- compatibility quarantine and recovery UX;
+- crash reporting and support diagnostics with secret redaction;
+- release canaries, incident response, and rollback runbooks.
+
+P15 exits when a release candidate passes clean install, upgrade, downgrade/rollback, secret-leak, data migration, compatibility quarantine, crash recovery, and support-diagnostic tests. Delegated play ships only if P14-qualified; otherwise it remains disabled.
+
+## 12.3 R1: Optional Local Policy, World Model, And Autonomy Research
 
 Goal:
 
 Explore local policy/value/world models, strategic distillation, skill discovery, and architecture search in an isolated mode.
 
-P16 is optional and must:
+R1 must remain separate from `llm_primary`, use separate authorization, stores, and benchmarks, preserve legality/validation/rollback/provenance/environment scope, and never treat capability gain as automatic authority transfer.
 
-- use separate authorization, stores, and benchmarks;
-- compare against `llm_full_control`, `llm_primary`, and `local_shadow`;
-- remain `local_autonomy_experimental`;
-- require a new ADR and North Star review before changing main-product strategic authority.
-
-P16 failure or deferral does not invalidate the LLM-centered player product.
+R1 failure or deferral does not invalidate the LLM-centered player product or P15 release.
 
 ---
 
@@ -1154,7 +1083,7 @@ P16 failure or deferral does not invalidate the LLM-centered player product.
 
 Engineering correctness is necessary but not sufficient.
 
-Starting from P6 and continuing through P16, each phase should preserve or improve performance baselines appropriate to its authority and environment scope.
+Starting from P6 and continuing through P15, each mainline phase should preserve or improve performance baselines appropriate to its authority and environment scope. R1 research must use separate benchmarks and must not contaminate mainline claims.
 
 Minimum metrics:
 
@@ -1221,50 +1150,47 @@ P8/P8.5 gaps:
 P9 gaps:
 
 - protected-path governance must cover the complete future promotion surface;
-- P9.5 counterexample and comparable paired evidence is incomplete;
+- P9-G2 counterexample and comparable paired evidence is incomplete;
 - decision-authority records and proposal-impact classes are not implemented;
 - environment fingerprint and evidence-scope compatibility are not implemented;
 - stable promotion ledger, rollback snapshot, status transition, and traced retrieval are not implemented.
 
 P10 gaps:
 
-- no continuous proposal aggregation loop;
-- no automatic evidence/counterexample search;
-- no proposal survival metrics;
-- no cross-run learning report.
+- no bounded proposal aggregation/deduplication operation;
+- no counterexample harvester or evidence-aging policy;
+- no proposal survival, retrieval-impact, or backlog-health report;
+- no bounded coverage-gap/regression experiment queue.
 
 P11 gaps:
 
-- no curriculum proposal engine;
-- no skill qualification, delegation, termination, OOD, or escalation governance;
-- no authority-aware scaffold experiment manager.
+- no promoted Context Compiler policy or complete prompt-assembly lineage;
+- no context omission/utility evaluator;
+- no deliberation-profile selector or provider capability registry;
+- no guarded compute/provider policy evaluation under hard caps.
 
 P12 gaps:
 
-- no Context OS as a promoted system;
-- no PromptAssemblyRecord as a first-class audit record;
-- no context exclusion records;
-- no expand-and-recompress loop;
-- no context ROI dashboard.
-
-P13 gaps:
-
-- no Budget OS as a promoted system;
-- no BudgetUseRecord or BudgetROIDigest;
-- no denied request outcome tracking;
-- no reasoning profile A/B.
-
-P14 gaps:
-
-- no environment compatibility handshake;
+- no full environment handshake or compatibility registry;
 - no learned-object dependency graph, quarantine, or revalidation queue;
 - no compatibility-aware retrieval or canary process.
 
+P13 gaps:
+
+- no non-developer clean-install beta;
+- no complete provider/authority/learning/compatibility controls;
+- no secret-redacted support bundle, privacy controls, or tested degraded-mode UX.
+
+P14 gaps:
+
+- no bounded skill artifact lifecycle;
+- no competence/OOD, initiation/termination, takeover, revocation, or authority qualification.
+
 P15 gaps:
 
-- no installable player-facing product, provider UI, keychain integration, authority UI, or complete takeover/rollback UX.
+- no release-grade packaging, migration, downgrade/rollback, incident response, or support operations.
 
-P16 research gaps:
+R1 research gaps:
 
 - no isolated local policy/value/world-model benchmark;
 - no separate local-autonomy authority mode or North Star change process.
@@ -1340,13 +1266,14 @@ Do not start adaptive budget behavior.
 
 The current minimum next step is:
 
-1. Preserve the existing P9.0-P9.5C non-mutating boundaries.
-2. Implement P9.5D decision-authority types and audit-only telemetry.
-3. Implement P9.5E environment fingerprint and evidence-scope telemetry.
-4. Continue comparable organic P9.5C pairs and explicit counterexample review under matching provider and environment scope.
-5. Audit proposal behavior impact and exclude authority/action/hard-shell changes from the first promotion.
-6. Only then design the P9.6 promotion ledger, immutable version diff, rollback snapshot, status transition, and retrieval trace.
-7. Keep stable promotion disabled until those prerequisites pass.
+1. Preserve the existing P9-G1 and partial G2 non-mutating boundaries.
+2. Close remaining protected-surface gaps in G1.
+3. Implement G2 decision-authority types and audit-only telemetry.
+4. Implement G2 environment fingerprint and evidence-scope telemetry.
+5. Continue comparable organic pairs and explicit counterexample review under matching provider and environment scope.
+6. Audit proposal behavior impact and exclude authority/action/hard-shell changes from the first promotion.
+7. Only then design G3 promotion ledger, immutable version diff, rollback snapshot, status transition, and retrieval trace.
+8. Keep stable promotion disabled until those prerequisites pass.
 
 ---
 
@@ -1380,7 +1307,7 @@ LLM safely plays through explicit whitelist live scaffold.
 
 This is an engineering safety demo, not a learning demo.
 
-### P9.8 Demo
+### P9-G4 Demo
 
 ```text
 agent makes or detects an error
@@ -1397,58 +1324,67 @@ This is the first real learning demo.
 ### P10 Demo
 
 ```text
-multi-run continuous learning loop
-  -> repeated errors aggregate
-  -> proposals are generated
-  -> evidence and counterexamples are found
-  -> shadow compare runs
-  -> semi-automatic promotion and rollback alerts exist
+multiple bounded learning lifecycles
+  -> proposals deduplicate and conflict visibly
+  -> counterexamples narrow or reject changes
+  -> retrieval impact and harm are measured
+  -> backlog remains reviewable
+  -> rollback and environment expiry are exercised
 ```
 
-This is the first mature learning-system demo.
+This is the first repeatable learning-operations demo.
 
 ### P11 Demo
 
 ```text
-agent proposes its own curriculum and scaffold experiments.
+context lineage identifies an omission or waste
+  -> context policy is proposed, compared, promoted, and rolled back
+  -> a separate deliberation profile improves quality/cost/latency under hard caps
+  -> authority and provider recovery remain unchanged
 ```
 
-This is a meta-learning / research-style demo.
+This is the Learned Deliberation OS demo, not autonomous curriculum.
 
 ### P12 Demo
 
 ```text
-agent requests expanded context in a key situation and turns that evidence into a future prompt/context policy.
+a game/mod/adapter change is detected
+  -> affected learned objects are quarantined
+  -> compatible objects remain available
+  -> revalidation and canary evidence restore or reject affected objects
 ```
 
-This is a self-optimizing Context OS demo.
+This is the environment compatibility and revalidation demo.
 
 ### P13 Demo
 
 ```text
-user provides a fixed dollar/token budget and the agent allocates low/medium/high/research compute with ROI evidence.
+a non-developer installs the beta, configures a provider safely,
+runs LLM-primary play, pauses or takes over, inspects evidence,
+and recovers from provider or environment degradation
 ```
 
-This is a self-optimizing Compute/Budget OS demo.
+This is the player-runtime beta demo.
 
 ### P14 Demo
 
 ```text
-a game/mod/adapter change is detected
-  -> affected learned objects are quarantined
-  -> compatibility and revalidation evidence is collected
-  -> compatible policies return or remain rolled back
+a bounded skill enters only inside its qualified competence region,
+terminates or escalates on uncertainty/OOD,
+returns control to the LLM, and can be revoked or rolled back
 ```
+
+This is delegated-skill and authority qualification, not general local control.
 
 ### P15 Demo
 
 ```text
-a player installs the product, selects a provider and authority mode,
+a player installs or upgrades the release, selects a provider and authority mode,
 runs with visible compatibility/learning controls, and can pause, take over,
-inspect evidence, and roll back without handling repository internals
+inspect evidence, roll back, and recover from migration or runtime failure
 ```
 
-### P16 Research Demo
+### R1 Research Demo
 
 ```text
 an isolated local policy/world-model experiment is benchmarked against
@@ -1459,4 +1395,4 @@ LLM-primary and local-shadow modes without changing the main product authority
 
 ## 19. Enduring One-Sentence Plan
 
-Build a real-game Slay the Spire 2 agent where the LLM remains the primary strategic deliberator in the main product mode, the local experience shell becomes increasingly learned and environment-aware, P9 establishes guarded proposal promotion, P10 makes evidence and scaffold learning continuous, P11 qualifies bounded skills and delegation, P12 learns context assembly, P13 learns deliberation/compute allocation under hard caps, P14 handles environment change and revalidation, P15 delivers the player product, and P16 isolates optional local-autonomy research.
+Build a real-game Slay the Spire 2 agent where the LLM remains the primary strategic deliberator in the main product mode, the local experience shell becomes increasingly learned and environment-aware, P9 proves one reversible stable change, P10 makes that lifecycle repeatable, P11 learns context and compute/provider deliberation policy under hard caps, P12 handles environment change and revalidation, P13 validates a player beta, P14 qualifies optional delegated skills, P15 releases and operates the product, and R1 isolates optional local-autonomy research.

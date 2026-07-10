@@ -113,4 +113,4 @@ The current repository does not yet provide:
 - automatic guarded learning;
 - unrestricted all-screen or wildcard autonomy.
 
-These gaps are planned across P14-P16. They must not be hidden by calling the current local runner a finished player product.
+These gaps are split across P13 Player Runtime Beta, P14 optional qualified delegation, and P15 Product Release and Operations. Optional local-autonomy research remains R1. They must not be hidden by calling the current local runner a finished player product.

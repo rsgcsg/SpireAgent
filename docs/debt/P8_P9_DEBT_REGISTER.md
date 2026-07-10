@@ -4,7 +4,7 @@ This document tracks the debts that remain after P8/P8.5 closeout and before P9 
 
 For the comprehensive pre-P9 audit, full classification matrix, repair order, and copy-paste follow-up PR prompts, see [PRE_P9_ENGINEERING_DEBT_AUDIT.md](PRE_P9_ENGINEERING_DEBT_AUDIT.md).
 
-For the July 2026 strategic-authority/environment correction and forward phase order, see [NORTH_STAR_AUTHORITY_AND_ROADMAP_AUDIT_2026-07-10.md](../reports/NORTH_STAR_AUTHORITY_AND_ROADMAP_AUDIT_2026-07-10.md) and [P9_P16_EXECUTION_ROADMAP.md](../phases/P9_P16_EXECUTION_ROADMAP.md).
+For the accepted forward phase order, see [P9-P15 Phase Architecture Audit](../reports/P9_P15_PHASE_ARCHITECTURE_AUDIT_2026-07-11.md), [P9_P15_EXECUTION_ROADMAP.md](../phases/P9_P15_EXECUTION_ROADMAP.md), and ADR-0005. The July 10 authority/environment audit remains supporting history.
 
 Status values:
 
@@ -138,11 +138,11 @@ Status values:
   - Recovery policy, cap failure attribution, and readiness policy are still partly P8 workspace/shadow semantics.
   - Current fixed caps are provider-profile defaults, not a mature per-class deliberation profile system.
 - Current state:
-  - `BUDGET_GOVERNANCE.md` now distinguishes fixed call caps, cap-exhaustion failure classes, accounting vs authorization, recovery policy direction, circuit breakers, P9 proposal-only budget work, and P13 Budget/Compute OS behavior.
+  - `BUDGET_GOVERNANCE.md` now distinguishes fixed call caps, cap-exhaustion failure classes, accounting vs authorization, recovery policy direction, circuit breakers, P9 proposal-only budget work, and future P11B compute/provider orchestration.
 - Minimum fix:
   - add provider cap-failure classification as telemetry
   - add `BudgetUseRecord` / `BudgetProfile` / `BudgetPolicyProposal` schema-only surfaces before any adaptive budget behavior
-  - keep dynamic budget selection deferred to P13 guarded promotion
+  - keep dynamic budget/profile selection deferred to P11B guarded promotion
 
 ### `reason_quality_detector_overfit_risk`
 

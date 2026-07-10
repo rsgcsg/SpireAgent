@@ -83,9 +83,9 @@ An action explanation is an audit record of the selected plan, evidence, tradeof
 
 - Existing decision-class whitelists remain rollout and audit scaffolding, not the permanent ontology of thought.
 - P9 must add authority records before stable policy promotion.
-- P10 continuous learning does not automatically transfer authority.
-- P11 owns skill qualification and delegation governance.
-- P12 context learning and P13 budget learning cannot silently alter decision authority.
+- P10 repeatable experience learning does not automatically transfer authority.
+- P11 context/compute learning cannot silently alter decision authority.
+- P14 owns skill qualification and delegation governance.
 - Broad local autonomy is retained only as an isolated future research track.
 - The mod remains a sensor/actuator and never becomes the strategic brain.
 

@@ -41,12 +41,12 @@ P8/P8.5 closeout + active P9 guarded-learning foundations
 - 定义哪些文档应该保留、合并、redirect 或 archive。
 - 定义 mod、adapter、本地 agent、data/memory/learning 的边界。
 - 定义当前和未来外部依赖的处理规则。
-- 索引 P0 到 P16 的长期路线；详细阶段以 `PROJECT_PLAN.md` 和 `docs/phases/P9_P16_EXECUTION_ROADMAP.md` 为准。
+- 索引 P0 到 P15 的主线与 R1 可选研究；详细阶段以 `PROJECT_PLAN.md` 和 `docs/phases/P9_P15_EXECUTION_ROADMAP.md` 为准。
 - 给出下一轮 Codex 的长期 prompt，让它能自主阅读、审计、检索、构建、整理项目文档索引和项目架构。
 
-## 0.1 P0-P16 的强约束
+## 0.1 P0-P15 与 R1 的强约束
 
-P0 到 P16 不是任务打卡表，而是 North Star 的成熟度路线：在主产品 `llm_primary` 模式中让 LLM 始终拥有主要战略深思权，本地系统作为 predictive cognitive and experience scaffold，逐步增强它的 see / remember / imagine / deliberate / execute / replay / learn 能力。
+P0 到 P15 不是任务打卡表，而是 North Star 的主线成熟度路线。R1 是可选、隔离的本地 policy/world-model/autonomy 研究，不是产品完成条件。在主产品 `llm_primary` 模式中，LLM 始终拥有主要战略深思权，本地系统作为 predictive cognitive and experience scaffold，逐步增强它的 see / remember / imagine / deliberate / execute / replay / learn 能力。
 
 阶段推进的硬约束：
 
@@ -54,14 +54,14 @@ P0 到 P16 不是任务打卡表，而是 North Star 的成熟度路线：在主
 - P3 到 P6：把 `StrategicImpression`、`MemoryActivation`、`CandidateFuture`、`PredictionErrorRecord` 做成 shadow 可观测、可测试对象。
 - P7：把 prediction-error attribution 变成 evidence-backed learning proposals，但不自动学习。
 - P8：才开始让 `DeliberationPacket` 小范围进入 LLM strategic workspace，必须有 feature flag，并保留 legacy prompt。
-- P9：才开始 protected proposal-driven guarded learning，先有 protected-path、typed proposal、weak attribution、evidence slicing、shadow apply、promotion gate。
-- P10：形成连续 guarded learning loop。
-- P11：让系统提出 curriculum 和 meta-scaffold experiment。
-- P12：让 Context OS / Prompt Compiler 逐渐成为可学习 soft shell。
-- P13：让 Compute/Budget OS 在硬上限内逐渐成为可学习 soft shell。
-- P14：让 environment compatibility、knowledge invalidation、revalidation 和 quarantine 成为一等系统。
-- P15：把工程 runtime 变成 provider-neutral、可安装、可接管、可回滚的玩家产品。
-- P16：隔离研究 local policy/value/world model 和 local autonomy；不得静默改变主产品主体性。
+- P9：以 G1-G4 有限 gate 建立 Trustworthy Change Kernel，证明一个低风险 soft-shell policy 可以稳定应用并回滚。
+- P10：让 P9 lifecycle 在多 run、多 proposal、反例、冲突和过期条件下可重复运作；只允许有界 evidence-gap experiment scheduling，不建立开放式 autonomous curriculum。
+- P11：建立 Learned Deliberation OS；P11A 学 context assembly，P11B 在硬上限下学 compute/provider profile，二者都不得改变战略授权。
+- P12：让 environment compatibility、knowledge invalidation、revalidation 和 quarantine 成为一等系统。
+- P13：通过非开发者 Player Runtime Beta 让真实使用反馈校正工程边界。
+- P14：对 bounded delegated skill 做 competence、OOD、termination、takeover、rollback 和 authority qualification。
+- P15：完成 product release、migration、support、privacy、incident response 和 operations。
+- R1：隔离研究 local policy/value/world model 和 local autonomy；不得静默改变主产品主体性，也不阻塞 P15。
 
 横跨所有阶段的四个维度必须分开：provider mode、rollout mode、learning mode、decision-authority mode。能力与信心不能自动授予战略权力。任何 promotion-grade evidence 还必须带明确 environment scope。
 
@@ -114,7 +114,7 @@ raw game state
 
 ## 2. 历史实现快照（非当前状态权威）
 
-> 本节保留早期工程上下文，可能落后于当前代码。当前状态只读 `docs/04_CURRENT_STATUS.md`；当前阶段路线只读 `PROJECT_PLAN.md` 和 `docs/phases/P9_P16_EXECUTION_ROADMAP.md`。
+> 本节保留早期工程上下文，可能落后于当前代码。当前状态只读 `docs/04_CURRENT_STATUS.md`；当前阶段路线只读 `PROJECT_PLAN.md` 和 `docs/phases/P9_P15_EXECUTION_ROADMAP.md`。
 
 当前项目不是空项目，而是一个已经能跑的 TypeScript agent 包。
 
@@ -1033,7 +1033,20 @@ Future event-log mod:
 
 ## 12. Phase 路线
 
-当前正式路线是 Phase 0 到 Phase 16，详见 `PROJECT_PLAN.md` 和 `docs/phases/P9_P16_EXECUTION_ROADMAP.md`。本节下面的 Phase 0-10 文字是早期路线历史，不再单独授权当前工作。当前顺序是：P9 guarded scaffold learning；P10 continuous evidence/memory/scaffold learning；P11 skill qualification/delegation；P12 Context OS；P13 Deliberation/Compute OS；P14 environment revalidation；P15 player product；P16 optional isolated autonomy research。所有阶段仍受 P9 hard shell、decision-authority 和 environment-scope 护栏约束。
+当前正式主线是 Phase 0 到 Phase 15，另有可选研究 track R1，详见 `PROJECT_PLAN.md`、`docs/phases/P9_P15_EXECUTION_ROADMAP.md` 和 ADR-0005。当前顺序是：
+
+```text
+P9   Trustworthy Change Kernel
+P10  Repeatable Experience Learning
+P11  Learned Deliberation OS
+P12  Environment Compatibility And Revalidation
+P13  Player Runtime Beta
+P14  Delegated Skills And Authority Qualification
+P15  Product Release And Operations
+R1   Optional Local Policy / World Model / Autonomy Research
+```
+
+P9 进一步按 G1 Evidence Safety、G2 Experiment Integrity、G3 Stable Change、G4 Lifecycle Demonstration 收口。历史 P9.0-P9.8 标签仍可用于实现追踪，但不能继续无限扩展 phase 编号。下面的 Phase 0-10 文字是早期路线历史，不再单独授权当前工作。所有阶段仍受 hard shell、decision-authority 和 environment-scope 护栏约束。
 
 ### Phase 0：已完成
 
@@ -1214,6 +1227,8 @@ Phase 1 禁止：
 ---
 
 ## 13. 当前最重要的工作优先级
+
+> 本节以下优先级保留早期路线历史。当前 blocker 和下一步只以 `docs/04_CURRENT_STATUS.md` 为准；当前 P9 work package 以 `docs/phases/P9_P15_EXECUTION_ROADMAP.md` 为准。
 
 ### P0：保护边界
 

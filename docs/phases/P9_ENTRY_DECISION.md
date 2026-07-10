@@ -6,7 +6,7 @@ It does not authorize stable learning, proposal application, wildcard live, live
 
 ## Verdict
 
-P9 proposal infrastructure may continue through bounded P9.5 shadow evidence work.
+P9 proposal infrastructure may continue through P9-G2 bounded shadow experiment-integrity work. Historical P9.5A-P9.5E labels remain implementation aliases.
 
 The project has enough guardrails to proceed with append-only proposal and reverse-feedback surfaces:
 
@@ -17,7 +17,7 @@ The project has enough guardrails to proceed with append-only proposal and rever
 - typed `LearningProposal` and `ReverseScaffoldFeedback` surfaces exist as run artifacts
 - vague proposals cannot become actionable pending review without evidence, scope, counterexamples, expected effect, validation plan, and rollback
 - audit-only proposal review decisions can be recorded in an append-only ledger without mutating proposal status or enabling apply/promotion
-- P9.5A-P9.5C can perform bounded offline/cloned-packet shadow comparison without changing live or stable behavior
+- P9-G2/P9.5A-P9.5C can perform bounded offline/cloned-packet shadow comparison without changing live or stable behavior
 
 This is not approval for stable learning.
 
@@ -37,11 +37,11 @@ This is not approval for stable learning.
 | Proposal review-decision ledger | pass-for-audit-only | `approve`, `reject`, and `expire` create append-only audit records only; proposal mutation, apply, and stable promotion remain disabled. |
 | Promotion criteria and rollback fields | pass-for-schema | Fields exist on proposals; no applicator or promotion gate exists yet. |
 | Evidence-slice rules | pass-for-read-only | First-class read-only slice reader exists; promotion-grade canonical slicing remains P9.3 work. |
-| Budget governance semantics | pass-for-P9.1 | Stage 0 guard + telemetry only; Budget/Compute OS remains P13. |
+| Budget governance semantics | pass-for-P9-G1 | Stage 0 guard + telemetry only; learned compute/provider orchestration remains deferred to P11B. Existing `P13` telemetry is a historical label. |
 | Weak attribution | pass-for-proposals | Proposal schema includes suspected cause, confidence, counterexample need, and alternative hypotheses. |
 | Anti-vague proposal validation | pass | Incomplete proposals are draft/rejected, not actionable pending review. |
-| Decision-authority foundation | blocker-before-P9.6 | P9.5D must make deliberation/selection/authorization/execution and proposal impact auditable without changing behavior. |
-| Environment identity and evidence scope | blocker-before-P9.6 | P9.5E must prevent unknown or incompatible game/mod/adapter evidence from qualifying stable promotion. |
+| Decision-authority foundation | blocker-before-P9-G3 | G2/P9.5D must make deliberation/selection/authorization/execution and proposal impact auditable without changing behavior. |
+| Environment identity and evidence scope | blocker-before-P9-G3 | G2/P9.5E must prevent unknown or incompatible game/mod/adapter evidence from qualifying stable promotion. |
 
 ## Explicit Non-Readiness
 
@@ -54,9 +54,9 @@ The following are still not implemented:
 - complete decision-authority audit records
 - environment fingerprint, compatibility, quarantine, and revalidation scope
 - wildcard live
-- Budget/Compute OS runtime behavior
+- learned compute/provider orchestration
 
-P9.5 shadow applicator/evaluation exists only in bounded, non-mutating form. One scope-bound organic pair and incomplete counterexample evidence do not authorize promotion.
+P9-G2 shadow applicator/evaluation exists only in bounded, non-mutating form. One scope-bound organic pair and incomplete counterexample evidence do not authorize promotion.
 
 ## PR-11 Decision
 
@@ -68,17 +68,18 @@ Reason:
 - The current request sequence prioritized schema/store/reporting safety.
 - Extracting live orchestration now would touch controller, provider, validation, and fallback-adjacent code with higher regression risk than benefit.
 
-The extraction remains accepted maintainability debt. P9.5D/P9.5E schema/telemetry work does not require it. Reconsider a narrow extraction before P9.7 runtime retrieval/application would add more controller pressure; do not make it a reason for a broad controller rewrite.
+The extraction remains accepted maintainability debt. G2 authority/environment schema work does not require it. Reconsider a narrow extraction before G3 runtime retrieval/application would add more controller pressure; do not make it a reason for a broad controller rewrite.
 
 ## Next Work
 
 The next engineering sequence is:
 
 ```text
-P9.5D decision-authority schema/telemetry
-  -> P9.5E environment identity/evidence scope
-  -> additional comparable P9.5C counterexample evidence
-  -> P9.6 design audit
+P9-G2 decision-authority schema/telemetry
+  -> P9-G2 environment identity/evidence scope
+  -> additional comparable paired/counterexample evidence
+  -> P9-G2 gate audit
+  -> P9-G3 design only after pass
 ```
 
 Recommended scope:
