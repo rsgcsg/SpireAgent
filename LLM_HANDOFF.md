@@ -41,6 +41,12 @@ Closeout pointers:
 - G2 remains blocked on a repeated, scoped, low-risk presentation deficiency that survives counterexample review and can justify a real same-slice overlay. Do not manufacture a proposal, manifest, or G3 design merely to advance the phase.
 - Use `npm run data:replay -- evidence ...` with the fixed budget/fingerprint/authority/provenance filters from `docs/runbooks/LLM_RUN_MODES.md` to inspect a G2 sub-window. Called workspace shadows now report their direct provider even when the intentionally disabled legacy command is `none`; execution provenance remains separately visible as local fallback where applicable.
 
+## 2026-07-11 G2 Rest Candidate Handoff
+
+- Fresh focused rest evidence: `transition-000127-agent-mrfrt2of-3oqlxw`, exact organic scope, `llm_primary`, `shadow=3;profile=shadow_exploration`, direct provider `deepseek-v4-flash`, valid/stop/no retry/no cap hit. The actual executed rest selection stayed local fallback because the controlled shadow child disabled the legacy command.
+- The model reason (`Upgrade for long-term power; HP is nearly full.`) may omit the heal-versus-upgrade opportunity cost. Treat it as a single weak, presentation-only candidate; do not create a proposal until a comparable organic rest/long-horizon counterexample confirms the omission is real rather than detector/context noise.
+- Two further bounded windows yielded explicit shop/combat tradeoff reasons and no second rest/long-horizon omission. A forced zero-energy thin reason is mechanical, and one combat call used retry=1, so neither is confirmation for a no-retry rest presentation pair. The rest candidate remains evidence-insufficient; do not manufacture a proposal.
+
 ## 2026-07-11 Phase Architecture Handoff
 
 - The accepted mainline is P9-P15 plus optional research track R1. The intermediate P9-P16 route is historical.

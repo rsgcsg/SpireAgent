@@ -37,6 +37,13 @@ Current closeout / next-phase pointers:
 - The window adds organic baselines/counterexamples only. No proposal artifact, experiment manifest, overlay provider pair, proposal status change, stable write, or G3 work was created.
 - `data:replay evidence` now reads a focused G2 slice by class/revision/budget/fingerprint/authority/provenance/shadow-call state and prints the selected transition IDs. For called workspace shadows it reports the workspace provider rather than inheriting `none` from a deliberately disabled legacy command. The slice remains read-only and `promotionAllowed=false`.
 
+## 2026-07-11 G2 Rest Tradeoff Candidate
+
+- Controlled rest-site capture added three valid exact-organic, fixed-budget direct-shadow calls to `run-mrfq2vw1-aap49m`; total valid direct-shadow calls are now fourteen. Provider results remained `stop`, `failureBucket=none`, and no retry/output-cap hit.
+- Focused slice `transition-000127-agent-mrfrt2of-3oqlxw` is `rest:llm_required`, `llm_primary`, exact organic scope, `shadow=3;profile=shadow_exploration`, and provider `deepseek-v4-flash`. Its reason, `Upgrade for long-term power; HP is nearly full.`, names a benefit and current HP but not the opportunity cost of declining rest/heal.
+- This is one weak presentation-deficiency candidate only. It must receive a comparable rest/long-horizon counterexample before a low-risk presentation-only proposal is even considered. The adjacent confirm-selection thin reason is mechanical flow, not strategic evidence. No proposal, manifest, overlay pair, or promotion work was created.
+- Two bounded follow-up windows added six further valid direct-shadow calls but no second comparable rest/long-horizon omission. Shop and combat reasons explicitly stated resource/HP tradeoffs; a forced zero-energy combat reason was thin but mechanical. One combat provider outcome retried once before a valid `stop` result, so it is profile-divergent for any future pair. The rest signal remains insufficient for proposal creation.
+
 ## 2026-07-11 P9-P15 Phase Architecture Audit
 
 - Documentation/architecture pass only; no runtime, live, provider, proposal status, stable policy, or budget behavior changed.
