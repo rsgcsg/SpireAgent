@@ -2,7 +2,7 @@
 
 P9 should start only when the project is ready to shift from live-scaffold expansion to guarded learning infrastructure.
 
-Forward phase reporting uses P9-G1 through P9-G4 from ADR-0005. Historical P9.0-P9.4 items below map to G1; P9.5A-P9.5E map to G2; P9.6-P9.7 map to G3; P9.8 maps to G4.
+Forward phase reporting uses P9-G1 through P9-G4 from ADR-0005. Historical P9.0-P9.4 items below map to G1; P9.5A-P9.5E map to G2; P9.6-P9.7 map to G3; P9.8 maps to G4. G3 is internally split: G3-A builds disabled safety infrastructure, G3-B qualifies a natural candidate, and G3-C alone may consider activation/canary/promotion.
 
 ## Required
 
@@ -33,6 +33,8 @@ Forward phase reporting uses P9-G1 through P9-G4 from ADR-0005. Historical P9.0-
   Current state:
   typed `ReverseScaffoldFeedback` schema and append-only `reverse-scaffold-feedback.jsonl` telemetry exist. They do not affect live prompts, budgets, validation, execution, or stable policy.
 - Define promotion criteria and rollback fields before any stable proposal may be applied.
+  Current state:
+  G3-A records disabled artifacts, append-only lifecycle events, dry-run exact-scope retrieval, rollback simulation, and quarantine diagnostics. They are run-local and cannot activate a policy or write stable state. G3-B qualification and G3-C activation/promotion remain blocked on natural evidence.
 - Define the decision-authority chain before any learned policy may affect future decisions:
   - provider/run mode is not authority mode
   - deliberation, selection, authorization, and execution sources are separable

@@ -132,16 +132,18 @@ Gate evidence:
 - authority fields and environment identity are complete enough for review; P9 makes no compatibility-range claim before P12;
 - no candidate/fact/validation regression.
 
-### P9-G3 Stable Change
+### P9-G3 Trustworthy Change Kernel
+
+G3 is split by ADR-0007. G3-A can build disabled append-only lifecycle records, exact-scope dry-run retrieval, quarantine diagnostics, and rollback simulation without a policy candidate. G3-B qualification remains blocked on natural repeated, counterexample-reviewed evidence. G3-C activation/canary/promotion remains forbidden until G3-B passes.
 
 Work packages:
 
-- append-only promotion ledger;
-- immutable policy artifact and before/after diff;
-- rollback snapshot and executable rollback command;
+- G3-A disabled append-only lifecycle artifact/event records and simulation-only rollback snapshot;
+- G3-B candidate qualification record and immutable before/after diff design;
+- G3-C promotion ledger plus executable rollback command only after qualification;
 - promotion criteria evaluator;
 - expiry/invalidation/revalidation record;
-- mode- and environment-aware retrieval trace;
+- G3-A mode- and environment-aware dry-run retrieval trace; active retrieval only in G3-C;
 - regression and emergency-disable path.
 
 First allowed target:

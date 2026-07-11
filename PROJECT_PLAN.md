@@ -29,7 +29,7 @@ The current reality is:
 - Explicit broad-whitelist live evidence exists, but wildcard live is still forbidden.
 - Stable learning is not implemented.
 - Proposal-driven guarded learning infrastructure has started through typed append-only proposals, weak attribution, evidence slicing, review decisions, and bounded P9-G2 shadow comparison. Stable promotion is still disabled.
-- The active blocker before P9-G3 is now the combination of insufficient promotion-grade paired/counterexample evidence, missing decision-authority audit foundations, and missing environment-scoped evidence foundations.
+- The active blocker before P9-G3B/G3C is insufficient promotion-grade paired/counterexample evidence. G2.1--G2.3 decision-authority and environment-scoped audit foundations are implemented but still require natural evidence. G3-A disabled change-kernel infrastructure may proceed without a policy candidate.
 
 The next real work is not more live expansion.
 
@@ -38,8 +38,9 @@ The next real work is:
 ```text
 P9-G2 Decision Authority Foundation
 + P9-G2 Environment Identity And Evidence Scope
-+ provider/environment-comparable paired and counterexample evidence
-+ only then P9-G3 promotion-ledger / rollback design
++ P9-G3A disabled change-kernel infrastructure
++ natural provider/environment-comparable paired and counterexample evidence
++ only then P9-G3B qualification and P9-G3C activation/canary design
 ```
 
 Execution ordering note:
@@ -851,9 +852,9 @@ Acceptance:
 - compatibility and quarantine are explicit;
 - no live behavior changes.
 
-### P9-G3 Stable Change
+### P9-G3 Trustworthy Change Kernel
 
-G3 may begin only after a written G2 audit passes. The first target must be a narrow human-approved **deliberation-shaping** policy that preserves facts, legal candidates, candidate order, validation, execution, live authorization, strategic authority, and protected paths. `presentation_only` is reserved for post-decision display/observability changes and cannot prove the meaningful soft-shell lifecycle.
+G3-A may begin after the G2 implementation audit: it creates disabled, run-local, append-only lifecycle artifacts, dry-run applicability, quarantine diagnostics, and rollback simulation without policy activation or stable writes. G3-B may begin only after a written G2 evidence audit passes; it qualifies one natural human-reviewed **deliberation-shaping** policy candidate. G3-C remains closed until a G3-B candidate has exact-scope paired/counterexample evidence and explicit approval; only then can a bounded organic canary and eventual promotion be designed. `presentation_only` is reserved for post-decision display/observability changes and cannot prove the meaningful soft-shell lifecycle.
 
 #### P9.6 Stable Promotion Gate
 

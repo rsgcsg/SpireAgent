@@ -55,6 +55,16 @@ Status values:
   - exercise the path only with fresh exact organic transition artifacts and a natural paired/counterexample review;
   - retain failure for unsupported, quarantined, degraded, or unresolved applicability. No apply or promotion path exists.
 
+### `g3_change_lifecycle_coupled_to_candidate_discovery`
+
+- Status: `in_progress`
+- Problem:
+  - Earlier phase wording coupled construction of ledger, rollback, and retrieval safety machinery to discovery of a naturally qualifying policy candidate. This would stall safety engineering whenever the evidence pipeline correctly rejects detector noise.
+- Resolution so far:
+  - ADR-0007 splits G3-A disabled change-kernel infrastructure from G3-B qualification and G3-C activation. G3-A artifacts are run-local, append-only, disabled or quarantined, dry-run only, and protected-path denied.
+- Remaining work:
+  - G3-B still needs a natural qualified candidate; G3-C activation, active retrieval, stable promotion, and organic canary remain prohibited.
+
 ### `protected_path_write_gate_missing`
 
 - Status: `closed`

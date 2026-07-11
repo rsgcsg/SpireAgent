@@ -100,7 +100,7 @@ Keep these boundaries intact:
 - External game projects are adapters, not architecture core. Mods are sensors/actuators, not the brain.
 - Promotion-grade evidence and learned objects must be environment-scoped. Unknown or incompatible game/mod/adapter evidence cannot silently support stable promotion.
 
-The formal mainline now runs through Phase 15: P9 Trustworthy Change Kernel; P10 Repeatable Experience Learning; P11 Learned Deliberation OS; P12 Environment Compatibility and Revalidation; P13 Player Runtime Beta; P14 Delegated Skills and Authority Qualification; P15 Product Release and Operations. Optional local-autonomy work is isolated research track R1, not a phase. Current P9.5D/P9.5E work maps to P9-G2; do not design P9-G3 stable change before authority, environment, paired-evidence, and counterexample integrity pass.
+The formal mainline now runs through Phase 15: P9 Trustworthy Change Kernel; P10 Repeatable Experience Learning; P11 Learned Deliberation OS; P12 Environment Compatibility and Revalidation; P13 Player Runtime Beta; P14 Delegated Skills and Authority Qualification; P15 Product Release and Operations. Optional local-autonomy work is isolated research track R1, not a phase. Current P9.5D/P9.5E work maps to P9-G2. G3-A may build disabled, non-executable change-kernel infrastructure after the G2 implementation audit; do not qualify, activate, retrieve, or promote a G3 policy before authority, environment, paired-evidence, semantic-state, and counterexample integrity pass.
 
 ## Live Testing Policy
 

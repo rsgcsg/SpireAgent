@@ -39,6 +39,7 @@ import {
   formatLearningExperimentManifestSurface,
   readLearningExperimentManifestStore
 } from "../learning/experimentManifest.js";
+import { readChangeKernelSurface } from "../learning/changeKernel.js";
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
@@ -78,6 +79,7 @@ async function main(): Promise<void> {
     experimentManifestStore.manifests,
     experimentManifestStore.digest
   );
+  const changeKernelSurface = readChangeKernelSurface(run.runDir);
   console.log(`Run: ${path.basename(run.runDir)}`);
   console.log(`Transitions: ${run.transitions.length}`);
   console.log(`Cognitive coverage: ${formatReplayCognitiveCoverage(cognitiveCoverage)}`);
@@ -91,6 +93,7 @@ async function main(): Promise<void> {
   console.log(`Learning proposal review decisions: ${formatLearningProposalReviewDecisionSurface(learningProposalReviewDecisionSurface)}`);
   console.log(`Reverse scaffold feedback: ${formatReverseScaffoldFeedbackSurface(reverseScaffoldFeedbackSurface)}`);
   console.log(`Learning experiment manifests: ${formatLearningExperimentManifestSurface(experimentManifestSurface)}`);
+  console.log(`G3-A change kernel: artifacts=${changeKernelSurface.artifacts} disabled=${changeKernelSurface.disabled} quarantined=${changeKernelSurface.quarantined} events=${changeKernelSurface.events} rollbackSnapshots=${changeKernelSurface.rollbackSnapshots} malformedLines=${changeKernelSurface.malformedArtifactLines + changeKernelSurface.malformedEventLines + changeKernelSurface.malformedRollbackSnapshotLines} activationEnabled=false stableWriteEnabled=false`);
   console.log(`Workspace quality by class: ${formatWorkspaceDecisionClassQuality(workspaceDecisionClassQuality)}`);
   console.log(`Consolidation proposal surface: ${formatReplayConsolidationProposalSurface(proposalSurface)}`);
   if (command === "proposals") {

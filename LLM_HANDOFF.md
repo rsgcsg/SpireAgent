@@ -13,6 +13,11 @@ Closeout pointers:
 - `docs/decisions/ADR-0003-strategic-authority-and-experience-shell.md`
 - `docs/decisions/ADR-0004-environment-scoped-evidence-and-knowledge.md`
 - `docs/decisions/ADR-0006-policy-influence-and-evidence-provenance.md`
+- `docs/decisions/ADR-0007-disabled-change-kernel-gating.md`
+
+## 2026-07-11 G3-A Handoff
+
+Use `src/learning/changeKernel.ts` only for disabled run-local lifecycle diagnostics. It cannot activate/retrieve a policy in runtime or write stable state. The next evidence task remains G3-B qualification of a natural, repeated, exact-scope, counterexample-reviewed `deliberation_shaping` deficiency; do not manufacture a proposal or start G3-C promotion/canary work.
 - `docs/reports/P9_P10_TRUSTWORTHY_CHANGE_KERNEL_AUDIT_2026-07-11.md`
 
 ## 2026-07-11 Latest G2 Handoff: Contracts Complete, Evidence Gate Still Closed
@@ -1273,3 +1278,4 @@ Historical handoff only; see [docs/04_CURRENT_STATUS.md](docs/04_CURRENT_STATUS.
 - Exclude `transition-000293-agent-mrg6hwaj-94w6yx` from any pair: it has an anomalous Waterfall Giant phase representation and a recovered `length` provider attempt. The next useful baseline must share one fixed evidence budget and provider-attempt profile and have semantically ordinary game state, not merely the same environment fingerprint.
 - `run-mrg6i7va-9reyby` / `transition-000071-agent-mrg6lh3l-txfvbb` is a fixed `shadow=10; capture=all` clean combat counterexample. It is adequate and provider-clean, so do not generate a broad combat missing-tradeoff proposal from earlier detector outputs.
 - Formal G2 result: reject the broad `missing_tradeoff` hypothesis. Fixed-profile event/rest records `transition-000063-agent-mrg6kx2n-829mkb` and `transition-000090-agent-mrg6p7kr-x921va` express their tradeoffs despite detector labels. Continue only for a different, semantically reviewed repeated deficiency.
+- Also reject broad combat short-reason / `missing_tactical_factor` tuning. Exact no-retry combat records `transition-000186-agent-mrg93lnn-57558r`, `transition-000200-agent-mrg93t89-7jtqb2`, and `transition-000195-agent-mrg94twy-42128t` are counterexamples to thin `transition-000157-agent-mrg90xg0-evwszc`. Do not create a generic reason-policy proposal from these detector labels.

@@ -65,6 +65,7 @@ Start here before changing docs, planning a new phase, or deciding which documen
 - [P9-P15 Phase Architecture Audit](reports/P9_P15_PHASE_ARCHITECTURE_AUDIT_2026-07-11.md)
 - [Phase Architecture ADR](decisions/ADR-0005-phase-architecture-and-parallel-workstreams.md)
 - [Policy influence and provenance ADR](decisions/ADR-0006-policy-influence-and-evidence-provenance.md)
+- [Disabled change-kernel gating ADR](decisions/ADR-0007-disabled-change-kernel-gating.md)
 - [Strategic authority ADR](decisions/ADR-0003-strategic-authority-and-experience-shell.md)
 - [Environment-scope ADR](decisions/ADR-0004-environment-scoped-evidence-and-knowledge.md)
 - [Player Product Vision](PRODUCT_VISION.md)

@@ -896,6 +896,76 @@ export interface LearningProposal {
   createdAt: string;
 }
 
+/**
+ * P9-G3A change-kernel records are deliberately non-executable. They model
+ * future policy lifecycle evidence without granting activation or stable write.
+ */
+export type PolicyArtifactStatus = "draft" | "disabled" | "quarantined" | "retired";
+
+export interface PolicyArtifact {
+  schemaVersion: number;
+  id: string;
+  semanticKey: string;
+  proposalId?: string;
+  behaviorImpact: ProposalBehaviorImpact | string;
+  version: number;
+  payload: JsonRecord;
+  environmentScope: LearningProposalEnvironmentScope;
+  providerExperimentFingerprintHash?: string;
+  protectedTargets: string[];
+  contentHash: string;
+  status: PolicyArtifactStatus;
+  quarantineReason?: string;
+  createdAt: string;
+  activationEnabled: false;
+  stableWriteEnabled: false;
+}
+
+export type PolicyChangeEventKind =
+  | "artifact_registered"
+  | "qualification_recorded"
+  | "activation_refused"
+  | "retrieval_dry_run"
+  | "rollback_simulated"
+  | "artifact_quarantined";
+
+export interface PolicyChangeEvent {
+  schemaVersion: number;
+  id: string;
+  artifactId: string;
+  kind: PolicyChangeEventKind;
+  actor: "system" | "human" | "agent" | string;
+  reason: string;
+  evidenceIds: string[];
+  createdAt: string;
+  activationEnabled: false;
+  stableWriteEnabled: false;
+}
+
+export interface PolicyRollbackSnapshot {
+  schemaVersion: number;
+  id: string;
+  artifactId: string;
+  artifactContentHash: string;
+  rollbackMode: "simulation_only";
+  reversible: true;
+  createdAt: string;
+  activationEnabled: false;
+  stableWriteEnabled: false;
+}
+
+export interface PolicyRetrievalTrace {
+  schemaVersion: number;
+  artifactId: string;
+  environmentFingerprintHash?: string;
+  applicability: "exact_match" | "scope_mismatch" | "unknown_scope" | "quarantined";
+  result: "disabled_no_activation" | "quarantined" | "scope_mismatch";
+  reasons: string[];
+  createdAt: string;
+  activationEnabled: false;
+  stableWriteEnabled: false;
+}
+
 export type ReverseScaffoldLayer =
   | "strategic_impression"
   | "memory_activation"

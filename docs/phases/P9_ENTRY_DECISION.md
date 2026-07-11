@@ -1,6 +1,6 @@
 # P9 Entry Decision
 
-This document is the current one-page decision record for whether formal P9 proposal infrastructure may continue.
+This document is the current one-page decision record for whether formal P9 proposal infrastructure may continue. The canonical phase snapshot remains `../04_CURRENT_STATUS.md`.
 
 It does not authorize stable learning, proposal application, wildcard live, live-class expansion, or provider-controlled mutation.
 
@@ -35,7 +35,7 @@ This is not approval for stable learning.
 | Typed pending proposal schema/store | pass | `LearningProposal` plus `learning-proposals.jsonl`, append-only/read-only. |
 | Reverse scaffold feedback schema/store | pass | `ReverseScaffoldFeedback` plus `reverse-scaffold-feedback.jsonl`, telemetry/proposal seed only. |
 | Proposal review-decision ledger | pass-for-audit-only | `approve`, `reject`, and `expire` create append-only audit records only; proposal mutation, apply, and stable promotion remain disabled. |
-| Promotion criteria and rollback fields | pass-for-schema | Fields exist on proposals; no applicator or promotion gate exists yet. |
+| Promotion criteria and rollback fields | pass-for-schema plus G3-A | Fields exist on proposals. Disabled run-local lifecycle artifacts, dry-run retrieval, rollback simulation, and quarantine diagnostics exist, but no active applicator or promotion gate exists. |
 | Evidence-slice rules | pass-for-read-only | First-class read-only slice reader exists; promotion-grade canonical slicing remains P9.3 work. |
 | Budget governance semantics | pass-for-P9-G1 | Stage 0 guard + telemetry only; learned compute/provider orchestration remains deferred to P11B. Existing `P13` telemetry is a historical label. |
 | Weak attribution | pass-for-proposals | Proposal schema includes suspected cause, confidence, counterexample need, and alternative hypotheses. |
@@ -45,18 +45,18 @@ This is not approval for stable learning.
 
 ## Explicit Non-Readiness
 
-The following are still not implemented:
+The following are still not implemented or authorized:
 
-- stable promotion ledger
-- rollback snapshots
-- retrieval integration for stable learned policies
+- G3-B qualified policy candidate
+- G3-C stable promotion ledger and activation events
+- active retrieval integration for stable learned policies
 - promotion-grade canonical evidence slicing
 - fresh authority-complete audit coverage across relevant paths
 - verified environment-complete paired evidence, compatibility evaluation, quarantine, and revalidation scope
 - wildcard live
 - learned compute/provider orchestration
 
-P9-G2 shadow applicator/evaluation exists only in bounded, non-mutating form. One scope-bound organic pair and incomplete counterexample evidence do not authorize promotion.
+P9-G2 shadow applicator/evaluation exists only in bounded, non-mutating form. G3-A rollback snapshots are simulation-only and dry-run retrieval always refuses activation. One scope-bound organic pair and incomplete counterexample evidence do not authorize qualification, activation, or promotion.
 
 ## PR-11 Decision
 
@@ -75,11 +75,12 @@ The extraction remains accepted maintainability debt. G2 authority/environment s
 The next engineering sequence is:
 
 ```text
-P9-G2 fresh authority/environment-complete capture
+complete the G3-A disabled-kernel audit
+  -> P9-G2 fresh authority/environment-complete capture
   -> comparable paired/counterexample evidence
   -> console/debug exclusion verification
-  -> P9-G2 gate audit
-  -> P9-G3 design only after pass
+  -> P9-G3B qualification audit
+  -> P9-G3C activation design only after pass
 ```
 
 Recommended scope:

@@ -507,23 +507,33 @@ Remaining G2 evidence work:
 - prove console/debug provenance is excluded;
 - exercise the implemented narrow P9 exact-identity applicability without claiming P12 compatibility; unsupported, quarantined, degraded, missing, or malformed scope must fail closed.
 
-### G3/P9.6 Stable Promotion Gate
+### G3-A/P9.6 Disabled Change-Kernel Infrastructure
 
 Goal:
 
-- allow a narrow stable promotion path with rollback
+- construct the safety machinery for a future change lifecycle without qualifying, activating, retrieving, or promoting a policy
 
-G3 is forbidden until a written G2 audit passes the selection-resolution, evidence-role, proposal-authorization, provider-fingerprint, manifest-integrity, and exact-identity checks. The first stable target must be a narrow **deliberation-shaping** policy with a facts/candidate/order/validation/execution/authority invariant. `presentation_only` display changes are not a meaningful learning lifecycle; `candidate_shaping`, `authority_shaping`, `action_shaping`, and `hard_shell` proposals remain outside the first stable path.
+G3-A is allowed after the G2 implementation audit even when no natural policy candidate exists. It contains only run-local append-only `PolicyArtifact`, `PolicyChangeEvent`, `PolicyRollbackSnapshot`, and dry-run `PolicyRetrievalTrace` records. Artifacts are `disabled` by default; malformed or incomplete artifacts are visible as quarantined; rollback is simulation-only; exact-scope retrieval always returns `disabled_no_activation`. The protected-path gate continues to deny `p9_stable_promotion`.
 
-The first stable promotion demonstrates immutable ledger events, scope, retrieval, organic canary, and rollback integrity. It must use exact P9 fingerprint equality rather than claim compatibility, and must not be marketed as strategic learning merely because a reason-quality detector improved.
+Fixtures may prove G3-A code behavior but cannot qualify a policy, satisfy paired evidence, or support promotion. G3-A must never connect to live prompt assembly, candidate generation, routing, execution, memory, derived knowledge, strategy, skills, or stable policy storage.
 
-### G3/P9.7 Retrieval Integration
+### G3-B/P9.6 Policy Qualification Gate
 
 Goal:
 
-- let stable learned policies influence future scaffold construction in a recorded way
+- determine whether one natural, low-risk **deliberation-shaping** policy candidate is qualified for a future canary
 
-Retrieval must record policy version, promotion ledger id, authority mode, environment compatibility decision, scope match, and fallback. A quarantined or incompatible policy must not be retrieved as active guidance.
+G3-B remains forbidden until a written G2 evidence audit passes the selection-resolution, evidence-role, proposal-authorization, provider-fingerprint, manifest-integrity, exact-identity, semantic-state, and counterexample checks. The candidate needs repeated same-scope natural evidence, an explicit counterexample or non-applicability condition, human semantic review, and a bounded risk surface. `presentation_only` display changes are not a meaningful learning lifecycle; `candidate_shaping`, `authority_shaping`, `action_shaping`, and `hard_shell` proposals remain outside the first path.
+
+### G3-C/P9.7 Activation, Retrieval, And Canary Gate
+
+Goal:
+
+- allow a qualified policy to be manually approved for a bounded organic canary, then only later consider stable promotion
+
+G3-C remains forbidden. Before it can open, a qualified G3-B candidate must have a review decision, immutable lifecycle ledger, exact-scope applicability, explicit activation/stop conditions, rollback snapshot, active retrieval trace, organic canary plan, and regression guards. It must use exact P9 fingerprint equality rather than claim P12 compatibility, and must not be marketed as strategic learning merely because a reason-quality detector improved.
+
+Active retrieval must record policy version, lifecycle event id, authority mode, environment applicability decision, scope match, and fallback. A quarantined or incompatible policy must not be retrieved as active guidance.
 
 ### G4/P9.8 End-To-End Guarded Learning Window
 

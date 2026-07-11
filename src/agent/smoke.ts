@@ -120,6 +120,15 @@ import {
   readLearningExperimentManifestStore
 } from "../learning/experimentManifest.js";
 import {
+  appendPolicyArtifact,
+  appendPolicyChangeEvent,
+  assessChangeKernelActivation,
+  createDisabledPolicyArtifact,
+  dryRunPolicyRetrieval,
+  readChangeKernelSurface,
+  simulatePolicyRollback
+} from "../learning/changeKernel.js";
+import {
   DOMAIN_SCHEMA_VERSION,
   type CandidateFuture,
   type DeliberationPacket,
@@ -2769,6 +2778,59 @@ try {
   assert.ok(filterReverseScaffoldFeedback(storedFeedback, { targetLayer: "candidate_future" }).length >= 1);
   assert.equal(filterReverseScaffoldFeedback(storedFeedback, { proposalSeedId: actionableProposal.id }).length, 1);
   assert.equal(summarizeReverseScaffoldFeedback(storedFeedback[0] ?? {}).affectsLiveBehavior, false);
+  const disabledArtifact = createDisabledPolicyArtifact({
+    semanticKey: "smoke.reason-policy.disabled",
+    proposalId: actionableProposal.id,
+    behaviorImpact: "deliberation_shaping",
+    payload: { guidance: "fixture-only, never retrieved by runtime" },
+    environmentScope: {
+      fingerprintHashes: ["env-p9-smoke"],
+      scopeStatus: "exact",
+      captureProvenance: ["organic"],
+      compatibilityStates: ["unknown"],
+      notes: ["smoke-only"]
+    },
+    providerExperimentFingerprintHash: "provider-p9-smoke",
+    protectedTargets: ["prompt_policy"]
+  });
+  appendPolicyArtifact(p9ProposalDir, disabledArtifact);
+  appendPolicyChangeEvent(p9ProposalDir, {
+    artifactId: disabledArtifact.id,
+    kind: "qualification_recorded",
+    actor: "system",
+    reason: "g3a_fixture_only_no_candidate_or_activation",
+    evidenceIds: [actionableProposal.id]
+  });
+  const retrievalTrace = dryRunPolicyRetrieval(disabledArtifact, "env-p9-smoke", "provider-p9-smoke");
+  assert.equal(retrievalTrace.applicability, "exact_match");
+  assert.equal(retrievalTrace.result, "disabled_no_activation");
+  assert.equal(retrievalTrace.activationEnabled, false);
+  assert.equal(dryRunPolicyRetrieval(disabledArtifact, "env-p9-smoke", "provider-other").result, "scope_mismatch");
+  const rollbackSnapshot = simulatePolicyRollback(p9ProposalDir, disabledArtifact);
+  assert.equal(rollbackSnapshot.rollbackMode, "simulation_only");
+  const kernelSurface = readChangeKernelSurface(p9ProposalDir);
+  assert.equal(kernelSurface.artifacts, 1);
+  assert.equal(kernelSurface.rollbackSnapshots, 1);
+  assert.equal(kernelSurface.malformedArtifactLines, 0);
+  assert.equal(kernelSurface.activationEnabled, false);
+  const quarantinedArtifact = createDisabledPolicyArtifact({
+    semanticKey: "",
+    behaviorImpact: "deliberation_shaping",
+    payload: {},
+    environmentScope: {
+      fingerprintHashes: [],
+      scopeStatus: "unknown",
+      captureProvenance: ["unknown"],
+      compatibilityStates: ["unknown"],
+      notes: ["invalid-fixture"]
+    },
+    protectedTargets: ["prompt_policy"]
+  });
+  assert.equal(quarantinedArtifact.status, "quarantined");
+  assert.equal(dryRunPolicyRetrieval(quarantinedArtifact, "env-p9-smoke").result, "quarantined");
+  const kernelGate = assessChangeKernelActivation();
+  assert.equal(kernelGate.activationEnabled, false);
+  assert.equal((kernelGate.protectedGate as { allowed?: boolean }).allowed, false);
   rmSync(p9ProposalDir, { recursive: true, force: true });
   const cardFlowSupportedPrediction = buildPredictionErrorRecord({
     selectedPlan: {

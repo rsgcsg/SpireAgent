@@ -4,9 +4,10 @@ This is the canonical short snapshot of the active phase, blocker, and next step
 
 ## Phase
 
-- Active milestone: **P9-G2 Experiment Integrity**.
+- Active milestone: **P9-G2 Experiment Integrity + P9-G3A disabled change-kernel infrastructure**.
 - P9-G1 protected-path hardening is complete.
-- P9-G3 stable change design, promotion ledger, rollback snapshot, and retrieval trace are **not authorized**.
+- P9-G3A may construct and audit disabled-by-default change-kernel records only. Its artifacts are run-local, append-only, non-retrievable, and cannot write stable state.
+- P9-G3B policy qualification has **no qualified candidate**. P9-G3C activation, promotion, and canary remain **forbidden**.
 - Explicit-whitelist additive live remains independently governed. Wildcard live remains forbidden.
 
 ## Implemented G2 Contracts
@@ -25,15 +26,18 @@ This is the canonical short snapshot of the active phase, blocker, and next step
 - `transition-000293-agent-mrg6hwaj-94w6yx` is intentionally excluded from comparison: an anomalous boss-phase state reported `Waterfall Giant` at near-`999999999` HP with `DeathBlow`, and its primary provider call hit `length`/empty content before a successful truncation rescue. It remains visible diagnostic evidence, but differs in both state semantics and provider-attempt profile. This establishes a remaining G2 risk: exact environment identity alone does not certify semantic state validity.
 - A later fixed-profile organic run, `run-mrg6i7va-9reyby`, produced `transition-000071-agent-mrg6lh3l-txfvbb`: exact, source-resolved, called `combat:llm_required`, provider-clean, and `reasonQuality=adequate`. It is a valid counterexample to a broad combat `missing_tradeoff` claim, not a proposal seed.
 - The same fixed-profile run then supplied further detector counterexamples: event `transition-000063-agent-mrg6kx2n-829mkb` states relic upside versus the Clumsy penalty, and rest `transition-000090-agent-mrg6p7kr-x921va` states upgrade scaling versus healing at sufficient HP. Both were lexically marked `missing_tradeoff` but semantically contain the tradeoff. The broad `missing_tradeoff` hypothesis is **rejected**; future evidence must identify a different, repeated, semantically reviewed deficiency.
+- Later ordinary combat records under the same exact `shadow=10; capture=all`, no-retry provider profile reject a second broad hypothesis: thin `transition-000157-agent-mrg90xg0-evwszc` is countered by adequate `transition-000186-agent-mrg93lnn-57558r` (damage versus 0-cost opportunity cost), `transition-000200-agent-mrg93t89-7jtqb2` (incoming damage versus chip damage), and Act 2 `transition-000195-agent-mrg94twy-42128t` (lethal setup versus follow-up energy). Do not turn short combat reasons or `missing_tactical_factor` into a generic reason-policy proposal.
 - No manifest with current exact provider identity and no natural, repeatable same-scope baseline/overlay/counterexample set exists yet.
 
 ## Current Blocker
 
-G2 implementation work is complete, but **G2 is not passed**. The next valid evidence must be naturally observed after these contracts are in place:
+G2 implementation work is complete, but **G2 is not passed for policy qualification**. The next valid evidence must be naturally observed after these contracts are in place:
 
 1. a fresh organic, executor-logged baseline with declared exact environment identity, a clean called workspace provider outcome, and a complete provider experiment fingerprint;
 2. a repeated low-risk, same-scope `deliberation_shaping` deficiency plus counterexample review; and
 3. only then, an explicitly approved same-slice shadow overlay comparison. No proposal may be manufactured merely to advance the phase.
+
+G3-A does not wait for that candidate: it exists to prove that lifecycle records, exact-scope dry-run retrieval, quarantine visibility, and rollback simulation are safe while disabled. It cannot qualify, activate, retrieve, or promote a policy.
 
 ## Non-Goals
 
@@ -44,7 +48,7 @@ G2 implementation work is complete, but **G2 is not passed**. The next valid evi
 
 ## Next Step
 
-Continue only naturally occurring, source-resolved, exact-scope observations under one fixed provider-attempt and evidence-budget profile. Exclude phase/anomaly states and recovered provider calls from comparison until semantic-state validity is represented explicitly. The broad `missing_tradeoff` hypothesis is rejected; wait for a different, repeated, low-risk `deliberation_shaping` positive and explicit counterexample review. Do not create a proposal merely because a reason smoke detector fires. Only after that review may a human-approved same-slice shadow overlay be considered. G3 ledger, rollback, retrieval, and canary design remain prohibited.
+Complete the G3-A disabled-kernel audit, then continue only naturally occurring, source-resolved, exact-scope observations under one fixed provider-attempt and evidence-budget profile. Exclude phase/anomaly states and recovered provider calls from comparison until semantic-state validity is represented explicitly. Broad `missing_tradeoff` and short-combat-reason / `missing_tactical_factor` hypotheses are rejected; wait for a different, repeated, low-risk `deliberation_shaping` positive and explicit counterexample review. Do not create a proposal merely because a reason smoke detector fires. Only after that review may G3-B qualification and a human-approved same-slice shadow overlay be considered. G3-C activation, stable promotion, active retrieval, and canary remain prohibited.
 
 ## Canonical References
 
@@ -53,3 +57,4 @@ Continue only naturally occurring, source-resolved, exact-scope observations und
 - [P8/P9 Debt Register](debt/P8_P9_DEBT_REGISTER.md)
 - [P9-P10 Trustworthy Change Kernel Audit](reports/P9_P10_TRUSTWORTHY_CHANGE_KERNEL_AUDIT_2026-07-11.md)
 - [ADR-0006: Policy Influence and Evidence Provenance](decisions/ADR-0006-policy-influence-and-evidence-provenance.md)
+- [ADR-0007: Disabled Change-Kernel Gating](decisions/ADR-0007-disabled-change-kernel-gating.md)

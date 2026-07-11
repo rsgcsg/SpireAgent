@@ -11,6 +11,11 @@ Current closeout / next-phase pointers:
 - `docs/phases/P9_P15_EXECUTION_ROADMAP.md`
 - `docs/reports/P9_P10_TRUSTWORTHY_CHANGE_KERNEL_AUDIT_2026-07-11.md`
 - `docs/decisions/ADR-0006-policy-influence-and-evidence-provenance.md`
+- `docs/decisions/ADR-0007-disabled-change-kernel-gating.md`
+
+## 2026-07-11 G3-A Disabled Change-Kernel Infrastructure
+
+Canonical status is in `docs/04_CURRENT_STATUS.md`. G3-A now has run-local append-only disabled/quarantined artifacts, lifecycle events, exact environment/provider dry-run retrieval, malformed-store diagnostics, and simulation-only rollback records. This is safety infrastructure only: no policy candidate is qualified, and G3-B qualification plus G3-C activation/promotion/canary remain forbidden.
 
 ## 2026-07-11 G2.1-G2.3 Implementation Complete, Evidence Still Pending
 
@@ -3030,3 +3035,4 @@ Historical/debug note only. Canonical phase and next step are in [docs/04_CURREN
 - Follow-up exact combat observation `transition-000293-agent-mrg6hwaj-94w6yx` is excluded: the boss state reported near-`999999999` HP with `DeathBlow 57`, and the workspace primary attempt ended `length` with empty content before the existing truncation rescue returned valid JSON. This is not a provider regression or learning positive: it has a different provider-attempt profile and questionable phase-state semantics. It demonstrates that G2 must require semantic state validity in addition to exact environment identity before comparison/promotion use.
 - A new fixed-budget organic run, `run-mrg6i7va-9reyby`, supplied the corresponding clean counterexample: `transition-000071-agent-mrg6lh3l-txfvbb` is exact, source-resolved, called combat shadow/live evidence with `reasonQuality=adequate`, `finishReason=stop`, no retry/cap/failure, and no cue-loss indication. It rejects a broad combat `missing_tradeoff` hypothesis; no proposal was recorded.
 - Additional fixed-profile counterexamples confirm that rejection: event `transition-000063-agent-mrg6kx2n-829mkb` says relic upside outweighs the Clumsy penalty; rest `transition-000090-agent-mrg6p7kr-x921va` says upgrade scaling is preferred because HP is sufficient to skip healing. Both contain real tradeoffs despite lexical `missing_tradeoff` labels. Do not optimize the reason contract for that detector.
+- The same organic fixed-profile run also rejects broad combat short-reason / `missing_tactical_factor` tuning. Thin `transition-000157-agent-mrg90xg0-evwszc` has no-retry, exact-scope adequate counterexamples: `transition-000186-agent-mrg93lnn-57558r` expresses damage versus 0-cost opportunity cost, `transition-000200-agent-mrg93t89-7jtqb2` expresses incoming-damage reduction versus chip damage, and `transition-000195-agent-mrg94twy-42128t` expresses immediate vulnerability versus follow-up energy. No reason-policy proposal was recorded.
