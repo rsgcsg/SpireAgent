@@ -18,8 +18,13 @@ This is the canonical short snapshot of the active phase, blocker, and next step
 ## Requalified Evidence
 
 - Existing records remain readable but do not gain new authority by inference.
-- The current latest run predates `SelectionResolutionRecord`; its live additive records are reported as legacy selection telemetry, not fresh `llm_selected_execution` evidence.
+- Fresh organic run `run-mrg5a33g-ko7axj` now carries complete environment identity `95503199bfa79d2c`, executor-logged `SelectionResolutionRecord`, and explicit `llm_primary` authority for fresh live selections. It is the first usable **exact baseline pool** under G2.1--G2.3; it is not yet a promotion-grade paired experiment.
+- Some earlier current-run records predate explicit authority configuration or used local fallback. They remain readable observation evidence, not fresh `llm_selected_execution` evidence.
 - Existing clean called workspace-shadow outcomes can remain review/proposal-seed observations only when their environment and source facts pass the shared classifier. They do not satisfy a G3 promotion gate.
+- `transition-000120-agent-mrg5imyb-m7pfyg` is a clean exact-organic `combat:llm_required` source-resolved baseline with a matching called workspace shadow. Its `missing_tradeoff` smoke signal is only a weak hypothesis: the CandidateFuture tradeoff/resource/future-risk/survival cues were preserved, and its reason already states an energy tradeoff. The analogous shop shadow also demonstrated that shadow reasons must be interpreted against the shadow-selected candidate, not the executed live candidate. No repeated, qualified positive deficiency has survived this counterexample review.
+- `transition-000293-agent-mrg6hwaj-94w6yx` is intentionally excluded from comparison: an anomalous boss-phase state reported `Waterfall Giant` at near-`999999999` HP with `DeathBlow`, and its primary provider call hit `length`/empty content before a successful truncation rescue. It remains visible diagnostic evidence, but differs in both state semantics and provider-attempt profile. This establishes a remaining G2 risk: exact environment identity alone does not certify semantic state validity.
+- A later fixed-profile organic run, `run-mrg6i7va-9reyby`, produced `transition-000071-agent-mrg6lh3l-txfvbb`: exact, source-resolved, called `combat:llm_required`, provider-clean, and `reasonQuality=adequate`. It is a valid counterexample to a broad combat `missing_tradeoff` claim, not a proposal seed.
+- The same fixed-profile run then supplied further detector counterexamples: event `transition-000063-agent-mrg6kx2n-829mkb` states relic upside versus the Clumsy penalty, and rest `transition-000090-agent-mrg6p7kr-x921va` states upgrade scaling versus healing at sufficient HP. Both were lexically marked `missing_tradeoff` but semantically contain the tradeoff. The broad `missing_tradeoff` hypothesis is **rejected**; future evidence must identify a different, repeated, semantically reviewed deficiency.
 - No manifest with current exact provider identity and no natural, repeatable same-scope baseline/overlay/counterexample set exists yet.
 
 ## Current Blocker
@@ -39,7 +44,7 @@ G2 implementation work is complete, but **G2 is not passed**. The next valid evi
 
 ## Next Step
 
-Requalify a naturally occurring fresh baseline through `learning:proposals shadow-preflight`. If it is exact and clean, collect the corresponding natural counterexample before designing any G3 ledger, rollback, retrieval, or canary. The first possible G3 target remains a narrow, human-approved `deliberation_shaping` canary, never a disguised `presentation_only` change.
+Continue only naturally occurring, source-resolved, exact-scope observations under one fixed provider-attempt and evidence-budget profile. Exclude phase/anomaly states and recovered provider calls from comparison until semantic-state validity is represented explicitly. The broad `missing_tradeoff` hypothesis is rejected; wait for a different, repeated, low-risk `deliberation_shaping` positive and explicit counterexample review. Do not create a proposal merely because a reason smoke detector fires. Only after that review may a human-approved same-slice shadow overlay be considered. G3 ledger, rollback, retrieval, and canary design remain prohibited.
 
 ## Canonical References
 

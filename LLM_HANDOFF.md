@@ -1261,3 +1261,15 @@ This is sufficient to enter Phase 3 combat plan/checkpoint continuation. Do not 
   - continue normal live runtime with this targeted whitelist
   - stop on any provider failure, invalid/missing candidate, execution mismatch, unexpected non-whitelist live application, or reason collapse
   - broad P8.5 should only expand class-by-class after separate fresh evidence
+## 2026-07-11 P9-G2 Organic Evidence Handoff
+
+Historical handoff only; see [docs/04_CURRENT_STATUS.md](docs/04_CURRENT_STATUS.md) for canonical state.
+
+- New natural run: `run-mrg5a33g-ko7axj`; exact environment fingerprint `95503199bfa79d2c`; no console/debug/fixture provenance; no gameplay mod declared.
+- Use the existing local live whitelist unchanged. Child evidence windows must keep `STS2_ALLOW_LIVE_LLM_MEMORY_UPDATES=0`, `STS2_ENABLE_LEGACY_FINALIZE_STABLE_WRITES=0`, `STS2_DECISION_AUTHORITY_MODE=llm_primary`, the verified identity fields, and `STS2_P8_WORKSPACE_MAX_SHADOW_CALLS=3`. Do not print the command/key values from `.env.local`.
+- Qualified baseline candidate: `transition-000120-agent-mrg5imyb-m7pfyg` (`combat:llm_required`, source-resolved LLM selection, called clean workspace shadow, exact organic scope). It remains **baseline only**, not a proposal.
+- The associated `missing_tradeoff` is currently a detector-level weak hypothesis, not a positive deficiency: serialized CandidateFuture cues were preserved and the model reason includes an energy tradeoff. The shop disagreement in `transition-000063-agent-mrg5dvgs-5ofdk5` confirms that a shadow reason must be matched to its shadow-selected candidate before judging the live executed action.
+- Continue only natural same-scope evidence collection. Require another comparable positive plus explicit counterexample review before recording any proposal or running `learning:proposals shadow-preflight`/`shadow-run`. P9-G3 remains prohibited.
+- Exclude `transition-000293-agent-mrg6hwaj-94w6yx` from any pair: it has an anomalous Waterfall Giant phase representation and a recovered `length` provider attempt. The next useful baseline must share one fixed evidence budget and provider-attempt profile and have semantically ordinary game state, not merely the same environment fingerprint.
+- `run-mrg6i7va-9reyby` / `transition-000071-agent-mrg6lh3l-txfvbb` is a fixed `shadow=10; capture=all` clean combat counterexample. It is adequate and provider-clean, so do not generate a broad combat missing-tradeoff proposal from earlier detector outputs.
+- Formal G2 result: reject the broad `missing_tradeoff` hypothesis. Fixed-profile event/rest records `transition-000063-agent-mrg6kx2n-829mkb` and `transition-000090-agent-mrg6p7kr-x921va` express their tradeoffs despite detector labels. Continue only for a different, semantically reviewed repeated deficiency.
