@@ -12,6 +12,13 @@ Closeout pointers:
 - `docs/decisions/ADR-0005-phase-architecture-and-parallel-workstreams.md`
 - `docs/decisions/ADR-0003-strategic-authority-and-experience-shell.md`
 - `docs/decisions/ADR-0004-environment-scoped-evidence-and-knowledge.md`
+- `docs/decisions/ADR-0006-policy-influence-and-evidence-provenance.md`
+- `docs/reports/P9_P10_TRUSTWORTHY_CHANGE_KERNEL_AUDIT_2026-07-11.md`
+
+## 2026-07-11 P9-G2 Corrective Handoff
+
+- Do not start G3 or collect more evidence as if the current G2 semantics were promotion-ready. Historical audit found two additive-live card-select proposal/final mismatches after a local guard, so affected records are execution history only, not LLM-selection evidence.
+- Next implementation order is G2.1 selection-resolution provenance, G2.2 shared evidence-role plus source-resolved eligibility, and G2.3 provider/environment/manifest integrity. The pre-decision `reason_policy` `presentation_only` label is legacy G2 comparison vocabulary, not G3 authorization.
 
 ## 2026-07-11 P9-G2 Telemetry Handoff
 

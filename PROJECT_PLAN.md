@@ -802,6 +802,8 @@ Acceptance:
 
 Historical P9.5A-P9.5E work belongs to this gate. G2 must prove comparable experiment conditions and refusal/narrowing on counterexamples; a single improved reason string is not validation.
 
+Before another pair can advance G2, the project must repair selection provenance, shared evidence-role classification, source-resolved proposal eligibility, provider experiment fingerprinting, manifest integrity, and P9 exact-identity applicability. See [ADR-0006](docs/decisions/ADR-0006-policy-influence-and-evidence-provenance.md) and the [P9-P10 corrective audit](docs/reports/P9_P10_TRUSTWORTHY_CHANGE_KERNEL_AUDIT_2026-07-11.md).
+
 #### P9.5 Shadow Applicator
 
 Goal:
@@ -810,8 +812,8 @@ Apply low-risk proposals in shadow first.
 
 Allowed early targets:
 
-- `ReasonPolicyProposal`
-- presentation-only `CandidateTemplateProposal`
+- cloned facts/order-preserving context projections for G2 comparison only
+- no G3 target is authorized by that cloned comparison alone
 
 Forbidden early targets:
 
@@ -831,7 +833,8 @@ Make deliberation, selection, authorization, execution, plan origin, and delegat
 Acceptance:
 
 - provider/run mode is no longer treated as decision authority;
-- proposal behavior impact is explicit;
+- proposed selection, final selection, local override, authorization, and execution are independently auditable;
+- proposal mutation surface and possible decision influence are explicit;
 - authority-changing proposals cannot enter the first stable-promotion path;
 - old transitions remain readable.
 
@@ -850,7 +853,7 @@ Acceptance:
 
 ### P9-G3 Stable Change
 
-G3 may begin only after a written G2 audit passes. The first target must be presentation-only and incapable of changing candidates, facts, validation, execution, live authorization, or strategic authority.
+G3 may begin only after a written G2 audit passes. The first target must be a narrow human-approved **deliberation-shaping** policy that preserves facts, legal candidates, candidate order, validation, execution, live authorization, strategic authority, and protected paths. `presentation_only` is reserved for post-decision display/observability changes and cannot prove the meaningful soft-shell lifecycle.
 
 #### P9.6 Stable Promotion Gate
 
@@ -898,8 +901,8 @@ error / scaffold feedback
 
 First recommended stable target:
 
-- `ReasonPolicyProposal`, or
-- `CandidateTemplateProposal`
+- no specific proposal family is pre-approved;
+- a future narrow context policy may qualify only with source-resolved evidence, counterexamples, exact identity match, provider-profile-comparable shadow evidence, retrieval trace, rollback, organic canary, and explicit human approval.
 
 Do not start with strategy params.
 
@@ -1144,23 +1147,26 @@ P8/P8.5 gaps:
 - all-class live is not authorized;
 - stable learning is not implemented;
 - P8 readiness reporting still has older shadow-first semantics beside live-applied rollout reporting;
-- protected-path stable-write governance is only partially hardened;
+- protected-path stable-write governance is closed for P9 origins but legacy-finalize and learned-store integrity remain auditable boundaries;
 - replay/eval/review can surface proposal evidence, but do not yet drive a real promotion pipeline.
 
 P9 gaps:
 
-- protected-path governance must cover the complete future promotion surface;
-- P9-G2 counterexample and comparable paired evidence is incomplete;
-- fresh decision-authority records and proposal-impact classes are implemented, but lack broad fresh explicit-mode coverage;
-- fresh environment fingerprints and evidence scopes are implemented, but lack verified complete-scope paired evidence and compatibility evaluation;
+- G2 selection provenance is not yet truthful when a local guard overrides a valid LLM proposal; historical mismatches need conservative exclusion;
+- replay, proposal, and manifest evidence-role classifiers need one shared structured source of truth;
+- proposal eligibility needs source-resolved evidence, non-empty protected targets, and one final fail-closed decision;
+- pre-decision policy overlays need mutation-surface/decision-influence semantics rather than `presentation_only` labelling;
+- P9-G2 counterexample and comparable paired evidence is incomplete after those integrity repairs;
+- fresh environment scope needs provider experiment fingerprinting, manifest diagnostics, and exact-identity applicability before P12 compatibility evaluation;
 - stable promotion ledger, rollback snapshot, status transition, and traced retrieval are not implemented.
 
 P10 gaps:
 
+- no immutable policy event projector, semantic key, scope lattice, corruption quarantine, or authority-policy evidence contract;
 - no bounded proposal aggregation/deduplication operation;
 - no counterexample harvester or evidence-aging policy;
-- no proposal survival, retrieval-impact, or backlog-health report;
-- no bounded coverage-gap/regression experiment queue.
+- no matched-slice impact hierarchy, proposal survival, retrieval-impact, or backlog-health report;
+- no bounded coverage-gap/regression experiment queue or candidate-challenge telemetry.
 
 P11 gaps:
 
@@ -1267,12 +1273,13 @@ Do not start adaptive budget behavior.
 The current minimum next step is:
 
 1. Preserve the existing P9-G1 and partial G2 non-mutating boundaries.
-2. Close remaining protected-surface gaps in G1.
-3. Capture G2 fresh authority-complete and environment-complete evidence under explicitly declared provenance.
-4. Continue comparable organic pairs and explicit counterexample review under matching provider and environment scope.
-5. Audit proposal behavior impact and exclude authority/action/hard-shell changes from the first promotion.
-6. Only then design G3 promotion ledger, immutable version diff, rollback snapshot, status transition, and retrieval trace.
-7. Keep stable promotion disabled until those prerequisites pass.
+2. Implement G2 selection-resolution provenance and conservative historical mismatch exclusion.
+3. Centralize evidence-role classification and source-resolved proposal authorization, preserving console/debug exclusion.
+4. Add provider experiment identity, manifest diagnostics, exact-identity applicability, and legacy-store contamination markers.
+5. Requalify existing evidence, then collect naturally occurring comparable pairs/counterexamples under matching environment/provider scope.
+6. Audit mutation surface and possible decision influence; keep authority/action/hard-shell and candidate-generation changes outside the first stable path.
+7. Only then design G3 event ledger, immutable version diff, rollback snapshot, status transition, retrieval trace, and canary.
+8. Keep stable promotion disabled until those prerequisites pass.
 
 ---
 

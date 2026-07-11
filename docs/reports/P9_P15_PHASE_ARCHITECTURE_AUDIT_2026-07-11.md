@@ -126,7 +126,7 @@ P9 changes the system from "can observe and propose" to "can safely change one l
 - evidence slicing and provenance exclusion;
 - audit-only review ledger.
 
-Current state: substantially implemented, with remaining protected-surface hardening debt.
+Current state: substantially implemented, but the later corrective audit found open G2 data-truth debt: final selection provenance, shared evidence-role semantics, source-resolved proposal eligibility, and policy-impact classification. See [P9-P10 Trustworthy Change Kernel Audit](P9_P10_TRUSTWORTHY_CHANGE_KERNEL_AUDIT_2026-07-11.md).
 
 #### P9-G2 Experiment Integrity
 
@@ -160,7 +160,7 @@ organic evidence -> proposal -> review -> shadow/counterexample
 
 ### Exit criterion
 
-P9 ends after one independently auditable `presentation_only` lifecycle and a successful rollback drill. It does not expand to additional policy families merely to make P9 appear more intelligent.
+P9 ends after one independently auditable narrow deliberation-shaping lifecycle and a successful rollback drill. `presentation_only` is reserved for post-decision display/observability and does not demonstrate policy influence. It does not expand to additional policy families merely to make P9 appear more intelligent.
 
 ## P10: Repeatable Experience Learning
 

@@ -62,7 +62,19 @@ The experience shell becoming less hand-authored does not mean it becomes the un
 
 ## P9-G2 Foundations Before Stable Change
 
-The July 2026 architecture audit adds two prerequisites before stable promotion design:
+The July 2026 architecture audits add prerequisites before stable promotion design. [ADR-0006](../decisions/ADR-0006-policy-influence-and-evidence-provenance.md) is binding for the corrections below.
+
+### Selection truth and policy-impact prerequisite
+
+Current G2 telemetry is not yet sufficient for G3:
+
+- historical additive-live card-select records show that a local guard can replace a valid LLM proposal after `chosenBy` becomes `llm`;
+- evidence-role classifiers currently use incompatible precedence when both workspace-shadow and LLM-selection facts are present;
+- current `reason_policy` guidance is injected before provider deliberation but labelled `presentation_only`.
+
+Before G3, G2 must introduce a `SelectionResolutionRecord` that preserves proposed and final candidate/source plus any guard transformation, replace exclusive role strings with a shared structured evidence observation, and separate mutation surface from decision influence. Raw historical transitions stay immutable; a detected proposal/final mismatch becomes a conservative derived exclusion from LLM-selection evidence.
+
+`presentation_only` is reserved for post-decision display/observability changes with no possible decision influence. It is not a meaningful first stable policy. Any prompt/workspace/context guidance applied before the LLM decides is `deliberation_shaping`, even when an offline clone currently leaves runtime unchanged.
 
 ### Authority prerequisite
 
@@ -135,7 +147,7 @@ Each proposal must include at least:
 - risk
 - promotion criteria
 - rollback plan
-- behavior impact (`presentation_only`, `deliberation_shaping`, `candidate_shaping`, `authority_shaping`, `action_shaping`, or `hard_shell`; `unclassified` records are non-actionable)
+- current behavior-impact label and, before G3, explicit mutation surface plus possible decision influence (`post_decision_display`, prompt/workspace context, candidate content/generation, routing/authority, execution, or hard shell). `unclassified` records are non-actionable.
 - environment scope and invalidation conditions
 
 ## Minimal Data Model
@@ -155,6 +167,17 @@ transition/replay/review signal
   -> stable promotion ledger
   -> rollback if regression
 ```
+
+## Evidence Tier Rule
+
+P9 uses complementary evidence tiers rather than pretending every artifact proves the same thing:
+
+- organic discovery proves a pattern occurs in runtime distribution;
+- reproducible fixture proves code/adapter behavior, not frequency or strategic prevalence;
+- controlled shadow comparison tests a bounded mechanism under matched conditions;
+- organic canary checks a scoped change for immediate regression.
+
+Console/debug/fixture artifacts remain visible but cannot independently satisfy organic discovery or organic canary requirements. A clean pair is evidence for review, not proof of exact causality or promotion authorization.
 
 ## Required Components
 
@@ -273,7 +296,8 @@ Once a bad lesson reaches stable memory, derived knowledge, skill, or scaffold p
 Therefore:
 
 - `ProtectedPathGate` is mandatory P9.0 work
-- live LLM, DeepSeek provider, bridge responder, runtime reflection, and legacy finalize feedback must not directly write stable memory / derived / strategy / skill
+- live LLM, DeepSeek provider, bridge responder, and runtime reflection must not directly write stable memory / derived / strategy / skill
+- legacy `finalizeRun()` remains separate `legacy_local_learning`: default-blocked and audited, and if explicitly enabled it is never P9 proposal promotion evidence or a P9 stable-policy writer
 - every stable write must go through:
   - pending proposal
   - evidence gate
@@ -423,13 +447,13 @@ Current state:
 
 - read-only shadow overlay planning exists through `npm run learning:proposals -- plan --latest --id <proposalId>`
 - the plan names the affected soft layer, protected targets, and blockers
-- P9.5A now applies only an explicit low-risk `reason_policy` or facts/order-preserving `candidate_template` presentation projection to a cloned offline `DeliberationPacket`, then compares baseline versus overlay workspace prompt hashes/bytes through `npm run learning:proposals -- shadow-compare --latest --id <proposalId> --transition-id <transitionId>`
+- P9.5A currently applies an explicit low-risk `reason_policy` or facts/order-preserving `candidate_template` projection to a cloned offline `DeliberationPacket`, then compares baseline versus overlay workspace prompt hashes/bytes through `npm run learning:proposals -- shadow-compare --latest --id <proposalId> --transition-id <transitionId>`
 - eligibility requires actionable `pending_review`, low risk, organic promotion-eligible evidence, and a bounded structured overlay patch; unsupported proposal families and incomplete replay data are rejected
 - P9.5A performs no provider call and writes no run artifact. It does not change candidate facts/order, classification, budget, memory, derived knowledge, strategy, validation, execution, live behavior, or stable policy
 - P9.5B now evaluates supplied paired same-slice baseline/overlay outcomes. It requires exact transition, revision, budget, allowed-candidate, candidate-facts, and prompt-hash alignment; it detects provider/output-cap and reason-quality regressions without treating a different valid candidate as automatically wrong.
 - P9.5C adds `npm run learning:proposals -- shadow-run --run-id <runId> --id <proposalId> --transition-id <transitionId>`. It reconstructs the recorded ablation mode and provider profile from a replayable called baseline, then makes at most one provider call for the cloned overlay packet. It has no game client, transition write, proposal-status mutation, runtime decision effect, or stable write.
 - P9-G2 now has an append-only `LearningExperimentManifest` that binds proposal, baseline/overlay outcomes, pair evaluation, authority record, environment scope, observed evidence roles, and invariant results. It is output by `shadow-run` and appended only with explicit `--record-manifest`; it is audit evidence, not a promotion ledger.
-- `shadow-preflight` refuses a same-slice provider call until authority, provenance, environment scope, executor capture, a called workspace-shadow baseline, and presentation-only impact are explicit. This prevents a non-comparable pair from being mistaken for G2 evidence.
+- `shadow-preflight` currently refuses a same-slice provider call until authority, provenance, environment scope, executor capture, a called workspace-shadow baseline, and the legacy `presentation_only` label are explicit. This is deliberately **not** a G3 authorization: G2 must replace the label with mutation-surface/decision-influence semantics and source-resolved eligibility before another pair can advance the gate.
 - G2 must distinguish a declared product authority mode from the observed evidence role. A direct workspace-provider shadow outcome can validate a bounded workspace comparison while the executed action remains local fallback; it is not LLM-selected execution evidence. Conversely, local fallback/scaffold/mechanical observations stay visible but draft-only and cannot independently make a proposal actionable.
 - A `reason_policy` overlay must carry an explicit `requiredReasonQualityNote`; otherwise it is rejected as unscoped. The runner passes recorded baseline notes into eligibility and refuses the overlay when that trigger is absent. This prevents a one-case reason fix from becoming a broad class prompt rule.
 - The same-slice invariant now includes provider profile (`output`, thinking mode, response mode, retry count) in addition to transition, revision, budget, candidate/fact, and prompt hashes. A missing or mismatched profile makes a pair incomplete.
@@ -437,10 +461,10 @@ Current state:
 - One scope-bound P9.5C organic combat pair was collected for `transition-000194-agent-mr7smrum-sk2bgv`: candidate/fact invariants and provider profile matched, the legal selected candidate stayed the same, and the `missing_tradeoff` smoke alarm improved. It is only `paired_evidence_ready_for_review`; it does not mutate proposal status or become `shadow_validated`.
 - Counterexample review has begun but is not complete. An independent same-revision adequate combat reason was refused by the trigger guard, showing cue detectors are not strategic truth and that P9.5C must not become a reason-wording optimizer. A second matching `missing_tradeoff` baseline entered provider recovery and therefore changed terminal provider profile; it is `incomplete`, not confirming policy evidence. More than one provider-profile-comparable organic slice and explicit counterexample handling remain required before a future guarded status-transition design is considered.
 - Targeted shadow capture may reserve a bounded provider-call budget for one evidence class, but it is only an evidence-collection aid. A different capture budget can refute a broad hypothesis contextually, yet cannot be presented as a same-profile paired result. If a repeated deficiency does not survive such counterexample review, reject the hypothesis rather than manufacture a proposal or expand a reason contract.
-- Candidate-template semantic boundary: a presentation-only projection may guide evaluation of existing CandidateFuture ids while preserving candidate facts/order and runtime behavior. Actual candidate-template/generation changes remain `candidate_shaping`; generated candidate-shaping seeds cannot use this projection path and must not be relabeled to bypass it.
+- Candidate-template semantic boundary: a facts/order-preserving projection may guide evaluation of existing CandidateFuture ids while preserving runtime behavior in the clone. If applied before deliberation later, it is still potentially deliberation-shaping; actual candidate-template/generation changes remain `candidate_shaping` and cannot use this projection path or be relabeled to bypass it.
 - Two exact-organic `card_select:local_recommended_llm_arbitrate` captures now repeat empty structured costs, generic shallow risk labels, and flow-only prediction checks in CandidateFutures. Their model reasons still expressed strategic tradeoffs, so this is a scoped candidate-shaping content debt with unproven decision impact, not a presentation-only overlay candidate.
 
-Comparable P9.5C evidence is necessary but not sufficient for P9-G3. Any future paired evidence used for promotion must also pass G2 authority-impact review and environment-scope compatibility.
+Comparable P9.5C evidence is necessary but not sufficient for P9-G3. Any future paired evidence used for promotion must also pass truthful selection resolution, shared evidence-role, source-resolved proposal eligibility, provider-fingerprint, exact-identity, authority-impact, and counterexample review.
 
 ### G2/P9.5D Decision Authority Foundation
 
@@ -458,9 +482,10 @@ Implemented schema/telemetry:
 
 Remaining G2 evidence work:
 
-- collect fresh transitions with explicit authority mode;
-- verify replay/eval/review coverage across LLM, local, and fallback paths;
-- retain old transitions as `not_recorded`, not inferred.
+- implement final selection-resolution telemetry and verify it across LLM accepted, local guard override, fallback, and forced-local paths;
+- replace competing evidence-role precedence rules with a shared structured classifier;
+- retain old transitions as `not_recorded` where fields never existed and derive proposal/final mismatch warnings where both values exist;
+- collect fresh transitions with explicit authority mode only after those semantics are truthful.
 
 ### G2/P9.5E Environment Identity And Evidence Scope
 
@@ -477,9 +502,9 @@ Implemented schema/telemetry:
 
 Remaining G2 evidence work:
 
-- repeat verified build/channel/content/mod/adapter/fact/revision fields in an organic **paired** slice; a verified exact organic baseline-only slice exists, but is not a pair or promotion evidence;
+- repeat verified build/channel/content/mod/adapter/fact/revision/provider-profile fields in an organic **paired** slice; a verified exact organic baseline-only slice exists, but is not a pair or promotion evidence;
 - prove console/debug provenance is excluded;
-- do not claim compatibility until P12 can perform an actual handshake and revalidation.
+- implement narrow P9 exact-identity applicability without claiming P12 compatibility; unsupported, quarantined, degraded, missing, or malformed scope must fail closed.
 
 ### G3/P9.6 Stable Promotion Gate
 
@@ -487,9 +512,9 @@ Goal:
 
 - allow a narrow stable promotion path with rollback
 
-The first stable target must be `presentation_only`. `authority_shaping`, `action_shaping`, and `hard_shell` proposals remain non-executable. Promotion also requires an explicit compatible environment scope.
+G3 is forbidden until a written G2 audit passes the selection-resolution, evidence-role, proposal-authorization, provider-fingerprint, manifest-integrity, and exact-identity checks. The first stable target must be a narrow **deliberation-shaping** policy with a facts/candidate/order/validation/execution/authority invariant. `presentation_only` display changes are not a meaningful learning lifecycle; `candidate_shaping`, `authority_shaping`, `action_shaping`, and `hard_shell` proposals remain outside the first stable path.
 
-The first stable promotion demonstrates ledger, scope, retrieval, revalidation, and rollback integrity. It must not be marketed as strategic learning merely because a reason-quality detector improved.
+The first stable promotion demonstrates immutable ledger events, scope, retrieval, organic canary, and rollback integrity. It must use exact P9 fingerprint equality rather than claim compatibility, and must not be marketed as strategic learning merely because a reason-quality detector improved.
 
 ### G3/P9.7 Retrieval Integration
 
@@ -509,12 +534,14 @@ Goal:
 
 The first P9 stable target should not be strategy params.
 
-The safest first target is one of:
+The first target is not selected yet. If G2 passes, it may be a narrowly scoped pre-decision context policy only when it:
 
-- `ReasonPolicyProposal`
-- `CandidateTemplateProposal`
+- preserves all recorded facts, legal candidate ids, candidate order, validation, execution, authority, and protected-path boundaries;
+- declares `deliberation_shaping` and possible decision influence honestly;
+- has source-resolved evidence, counterexamples, an exact identity scope, provider-fingerprint-comparable shadow evidence, a human approval, retrieval trace, and a rollback drill;
+- can be stopped by a bounded organic canary without widening live authority.
 
-because they affect scaffold presentation more naturally than protected-path execution behavior.
+Neither a `ReasonPolicyProposal` nor a `CandidateTemplateProposal` is automatically low risk merely because it changes wording or presentation.
 
 ## Out Of Scope
 

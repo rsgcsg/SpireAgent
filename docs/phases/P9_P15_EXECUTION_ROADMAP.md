@@ -94,13 +94,17 @@ Gate evidence:
 
 Work packages:
 
+- `SelectionResolutionRecord` and conservative historical proposal/final mismatch exclusion;
+- one shared structured evidence-role classifier for replay, proposal generation, and manifests;
+- source-resolved evidence references, non-empty protected-target validation, and one final overlay eligibility decision;
 - bounded shadow overlay planning;
 - cloned-packet baseline/overlay assembly;
-- same-slice provider comparison;
+- same-slice provider comparison with a non-secret provider experiment fingerprint;
 - candidate/fact/prompt/profile invariants;
 - counterexample review;
 - `DecisionAuthorizationRecord` and `ProposalBehaviorImpact`;
 - `EnvironmentFingerprint` and evidence environment scope;
+- manifest integrity diagnostics plus exact P9 identity applicability;
 - experiment manifest tying proposal, evidence, provider, authority, and environment together.
 
 Allowed:
@@ -119,10 +123,13 @@ Forbidden:
 
 Gate evidence:
 
-- more than one comparable organic pair where the target scope applies;
+- fresh final selection provenance distinguishes LLM proposal, local override, fallback, and executed candidate; historical mismatches are excluded from LLM-selection claims;
+- all G2 surfaces derive the same role/eligibility result from source-resolved records;
+- a pair has complete named provider experiment and exact-identity facts, or is explicitly incomplete;
+- more than one comparable organic pair where the target scope applies, when a real hypothesis survives integrity repair;
 - at least one out-of-scope or counterexample case correctly refuses/narrows the overlay;
 - provider/recovery divergence is separated from policy evidence;
-- authority and environment scope are complete enough for review;
+- authority fields and environment identity are complete enough for review; P9 makes no compatibility-range claim before P12;
 - no candidate/fact/validation regression.
 
 ### P9-G3 Stable Change
@@ -139,8 +146,9 @@ Work packages:
 
 First allowed target:
 
-- low-risk `presentation_only` `ReasonPolicyProposal`; or
-- presentation-only CandidateFuture formatting that cannot change candidate ids, order, or facts.
+- a narrow, human-approved `deliberation_shaping` context policy that preserves facts, legal candidate ids, candidate order, validation, execution, authority, and protected-path boundaries.
+
+`presentation_only` means post-decision display/observability only. It is not a meaningful first learned policy. A pre-decision reason or CandidateFuture presentation policy can influence selection and must not be relabeled as decision-neutral.
 
 Forbidden first targets:
 
@@ -155,7 +163,7 @@ Forbidden first targets:
 Gate evidence:
 
 - promotion and rollback are both reproducible from the ledger;
-- incompatible environment or expired scope blocks retrieval;
+- exact P9 identity mismatch, later incompatible environment, expired scope, or corrupt learned artifact blocks retrieval;
 - transition/replay records policy use and fallback;
 - no protected-path bypass exists.
 
@@ -189,33 +197,40 @@ Demonstrate that the P9 lifecycle remains bounded, interpretable, and useful acr
 
 ### Work Packages
 
-#### Proposal operations
+#### P10-A: Change semantics and integrity
+
+- canonical policy semantic key and typed patch canonicalization;
+- immutable event lifecycle/projector, idempotency, artifact digests, and corruption quarantine;
+- conflict, supersession, scope lattice, expiry, and policy invalidation semantics;
+- `AuthorityPolicy` evidence-eligibility contract without authority transfer;
+- legacy-store digest/invalidation boundary.
+
+#### P10-B: Proposal and evidence operations
 
 - `ProposalAggregator`
 - `ProposalDeduplicator`
-- conflict and supersession handling
 - backlog age, size, and review-load metrics
-
-#### Evidence operations
-
 - `CounterexampleHarvester`
 - `EvidenceAgingPolicy`
 - scope/environment invalidation
 - repeated-evidence and contradiction tracking
 
-#### Policy impact
+#### P10-C: Policy impact and evaluation
 
 - `RetrievalImpactTracker`
 - usefulness/harm attribution
 - regression monitor
 - rollback recommendation
+- matched-slice consistency, prediction/forecast calibration, candidate coverage, and bounded organic canary metrics;
+- reason-quality signals retained as warnings only.
 
-#### Bounded experiment scheduling
+#### P10-D: Bounded experiment scheduling and candidate challenge telemetry
 
 - `CoverageGapDetector`
 - `ExperimentQueue`
 - counterexample and regression-test selection
 - environment revalidation priority
+- non-executable `CandidateChallengeRecord` for reject-all/missing-candidate observations; no replan or invented action path yet.
 
 This scheduler prioritizes defined evidence gaps. It is not an autonomous curriculum or arbitrary task generator.
 
@@ -231,7 +246,7 @@ This scheduler prioritizes defined evidence gaps. It is not an autonomous curric
 
 - replay/eval/review report backlog, dedupe, contradictions, impact, and rollback;
 - deterministic fixtures cover proposal conflict, expiry, and environment invalidation;
-- organic windows validate retrieval impact;
+- controlled matched slices validate mechanism while organic windows validate bounded retrieval impact;
 - review workload is measured.
 
 ### P10 Exit Matrix
@@ -244,7 +259,9 @@ This scheduler prioritizes defined evidence gaps. It is not an autonomous curric
 - one environment invalidation/expiry case;
 - retrieval usefulness and harm both observable;
 - duplicate proposals suppressed;
-- backlog and review load remain within documented limits.
+- backlog and review load remain within documented limits;
+- event projection, source provenance, and learned-store corruption are auditable and fail closed;
+- no metric or scheduler has become an automatic strategy or authority mechanism.
 
 Human approval remains required for protected stable targets. Automation may prepare evidence, not approve itself.
 

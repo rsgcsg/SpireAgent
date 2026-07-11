@@ -2,7 +2,7 @@
 
 Date: 2026-07-10
 
-Status: historical architecture audit. Its authority/environment decisions remain valid, but its P9-P16 phase numbering was superseded by the [P9-P15 Phase Architecture Audit](P9_P15_PHASE_ARCHITECTURE_AUDIT_2026-07-11.md), [ADR-0005](../decisions/ADR-0005-phase-architecture-and-parallel-workstreams.md), and the [current roadmap](../phases/P9_P15_EXECUTION_ROADMAP.md). This report is not the current-status source of truth; use [Current Status](../04_CURRENT_STATUS.md).
+Status: historical architecture audit. Its authority/environment decisions remain valid, but its P9-P16 phase numbering was superseded by the [P9-P15 Phase Architecture Audit](P9_P15_PHASE_ARCHITECTURE_AUDIT_2026-07-11.md), [ADR-0005](../decisions/ADR-0005-phase-architecture-and-parallel-workstreams.md), and the [current roadmap](../phases/P9_P15_EXECUTION_ROADMAP.md). Its former first-promotion `presentation_only` wording is superseded by [ADR-0006](../decisions/ADR-0006-policy-influence-and-evidence-provenance.md). This report is not the current-status source of truth; use [Current Status](../04_CURRENT_STATUS.md).
 
 ## Executive Verdict
 

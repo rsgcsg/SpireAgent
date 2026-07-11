@@ -332,6 +332,10 @@ interface DecisionAuthorizationRecord {
 
 `unclassified_local_scaffold` is an explicit non-claim: a local score/fallback may have selected an action, but it is not thereby a qualified skill or a transfer of long-horizon strategic authority.
 
+### Pending G2 Selection Resolution Extension
+
+`DecisionAuthorizationRecord` alone is not sufficient when a safety guard changes a valid proposed candidate after selection. The next G2 schema repair will add a `SelectionResolutionRecord` that keeps proposed candidate/source, final candidate/source, resolution kind/reason, validation result, and LLM-selection-evidence eligibility separate. It is not emitted yet; until it is, replay must conservatively flag available historical proposal/final candidate mismatches rather than infer LLM-selected execution from `chosenBy` alone.
+
 Fresh `LearningProposal` records also require:
 
 ```ts
@@ -345,7 +349,9 @@ type ProposalBehaviorImpact =
   | "unclassified";
 ```
 
-Historical proposals without this field remain readable as `unclassified`, but cannot become actionable pending review. P9-G2 cloned shadow overlays accept only explicit low-risk `presentation_only` proposals. A `candidate_template` overlay is permitted only as a presentation projection over existing CandidateFuture facts: it may add bounded guidance and reference existing future ids, but cannot add, remove, reorder, or alter candidates/facts. Actual candidate-template/generation changes remain `candidate_shaping`. The first P9-G3 stable path may consider only `presentation_only`; other values remain review/shadow labels until later governance explicitly authorizes them.
+Historical proposals without this field remain readable as `unclassified`, but cannot become actionable pending review. P9-G2 cloned shadow overlays currently accept only explicit low-risk `presentation_only` proposals. A `candidate_template` overlay is permitted only as a facts/order-preserving projection over existing CandidateFuture facts: it may add bounded guidance and reference existing future ids, but cannot add, remove, reorder, or alter candidates/facts. Actual candidate-template/generation changes remain `candidate_shaping`. This is a temporary comparison restriction, not a claim that the first P9-G3 stable path is `presentation_only`.
+
+This emitted `ProposalBehaviorImpact` vocabulary is a **temporary G2 schema surface**, not the final policy-effect contract. The current `presentation_only` preflight restriction protects offline comparison scope, but it does not make a pre-decision prompt/workspace overlay decision-neutral. Before G3, schema must additionally represent mutation surface and possible decision influence. `presentation_only` will mean post-decision display/observability with no decision influence; prompt/workspace/memory-activation guidance is `deliberation_shaping`, while candidate content/generation, routing/authority, execution, and hard-shell changes remain distinct higher-risk surfaces. The first meaningful G3 policy is not authorized yet and cannot be justified solely by this current label.
 
 `ActionExplanationRecord` should summarize selected plan, evidence, tradeoff, uncertainty, authority chain, and policy/skill versions for audit. It must not claim to expose private chain-of-thought or prove causal reasoning.
 

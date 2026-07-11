@@ -15,6 +15,57 @@ Status values:
 
 ## Critical
 
+### `selection_resolution_provenance_mismatch`
+
+- Status: `open`
+- Evidence:
+  - [controller.ts](../../src/agent/controller.ts#L353)
+  - [controller.ts](../../src/agent/controller.ts#L421)
+  - historical live transitions `transition-000080-agent-mr95kwvx-rwmnfr` and `transition-000725-agent-mr9c3oam-5ehlu9`
+- Problem:
+  - A valid LLM candidate can set `chosenBy="llm"`, then the local card-select safety guard can replace the final candidate. The recorder retains the final candidate but does not record the transformation or change final selection provenance.
+  - The two cited additive-live records proposed `select-card-12` / `select-card-1` but executed `select-card-0` while their historical decision audit reported `chosenBy="llm"`.
+- Why it matters:
+  - It makes `llm_selected_execution` false or incomplete for affected records. Execution safety may still be correct, but authority, proposal, and future policy-impact evidence become untrustworthy.
+- Required G2 repair before G3:
+  - add a `SelectionResolutionRecord` containing proposed candidate/source, final candidate/source, transformation kind/reason, validation, and evidence eligibility;
+  - derive authority/replay evidence from final resolution, not `chosenBy` alone;
+  - retain raw history and add a conservative derived mismatch warning/exclusion instead of rewriting transitions;
+  - cover accepted LLM selection, local safety override, invalid fallback, and forced-local paths with smoke/replay fixtures.
+
+### `pre_decision_policy_impact_misclassification`
+
+- Status: `open`
+- Evidence:
+  - [proposalGenerator.ts](../../src/learning/proposalGenerator.ts#L446)
+  - [shadowOverlayPolicy.ts](../../src/learning/shadowOverlayPolicy.ts#L23)
+  - [experimentManifest.ts](../../src/learning/experimentManifest.ts#L77)
+- Problem:
+  - `reason_policy` guidance is placed into a packet before the provider decision but is classified and preflighted as `presentation_only`.
+- Why it matters:
+  - Offline clone isolation means no current runtime mutation; it does not mean a future application cannot change LLM deliberation. Treating it as decision-neutral understates risk and invalidates the former first-G3 target wording.
+- Required G2 repair before G3:
+  - split post-decision display from pre-decision `deliberation_shaping` using explicit mutation-surface and decision-influence semantics;
+  - retain fact/candidate/order invariants as safeguards, not proof of no decision influence;
+  - require the first G3 candidate to be a narrow deliberation-shaping canary with human approval, retrieval trace, and rollback.
+
+### `proposal_authorization_bypass_risk`
+
+- Status: `open`
+- Evidence:
+  - [proposals.ts](../../src/learning/proposals.ts#L312)
+  - [proposals.ts](../../src/learning/proposals.ts#L635)
+  - [shadowOverlayPolicy.ts](../../src/learning/shadowOverlayPolicy.ts#L81)
+- Problem:
+  - Empty protected-target arrays pass structural validation; one planner exposes blockers but delegates application eligibility to a separate checker; that checker trusts proposal-embedded evidence eligibility/role labels.
+- Why it matters:
+  - A malformed or forged proposal can look shadow-eligible without source-resolved evidence or complete protected-path declaration.
+- Required G2 repair before G3:
+  - require non-empty validated targets and target/layer compatibility;
+  - resolve evidence references and digests from source run/transition artifacts;
+  - make every preflight/applicator path consume the same final deny-by-default eligibility decision;
+  - fail closed for unsupported, quarantined, degraded, or unresolved applicability.
+
 ### `protected_path_write_gate_missing`
 
 - Status: `closed`
@@ -103,17 +154,18 @@ Status values:
   - [evidenceSliceReader.ts](../../src/replay/evidenceSliceReader.ts)
 - Problem:
   - Exact organic environment scope and a declared `llm_primary` mode do not prove that the LLM selected or executed the recorded action. Controlled direct-workspace shadow windows may intentionally execute local fallback while still yielding a valid provider outcome.
-  - Proposal seeds now preserve `evidenceRole`: local fallback/scaffold/mechanical observations are draft-only; actual `llm_selected_execution` and `workspace_shadow_provider` evidence are distinct review roles. Existing focused slice `promotionEligible` counts remain environment/provenance eligibility, not proof of execution authority.
+  - `EvidenceSliceReader` and proposal generation currently prioritize `llm_selected_execution`, while experiment manifests prioritize `workspace_shadow_provider`. The same transition can therefore receive incompatible roles across G2 surfaces.
+  - Existing focused slice `promotionEligible` counts remain environment/provenance eligibility, not proof of execution authority or authorization.
 - Why it matters:
   - Without this distinction, G2 could promote a shadow prompt-quality result as if it were evidence that an LLM-owned decision improved, or let local/mechanical smoke alarms become actionable soft-shell changes.
 - Minimum fix before P9-G3:
-  - focused replay now surfaces evidence-role counts; experiment manifests now record baseline/overlay roles and require a called workspace-shadow baseline
-  - retain explicit manifest integrity fields for baseline/overlay evidence role and observed authority chain
-  - require G3 to state whether a claim concerns shadow workspace quality, LLM-selected execution, or both
+  - replace local precedence rules with one shared structured observation classifier for workspace calls, proposed/final selection, execution, and provenance consistency;
+  - derive display roles from that one record, retain baseline/overlay role facts, and require a called workspace-shadow baseline for provider comparison;
+  - require G3 to state whether a claim concerns shadow workspace quality, LLM-selected execution, or both.
 
 ### `candidate_template_shadow_overlay_eligibility_mismatch`
 
-- Status: `closed`
+- Status: `in_progress`
 - Evidence:
   - [shadowOverlayPolicy.ts](../../src/learning/shadowOverlayPolicy.ts)
   - [proposalGenerator.ts](../../src/learning/proposalGenerator.ts)
@@ -121,7 +173,10 @@ Status values:
 - Resolution:
   - A cloned `candidate_template` overlay is only a facts/order-preserving presentation projection over existing CandidateFuture objects. It may add bounded guidance and reference existing ids, but cannot create, remove, reorder, or alter candidates/facts.
   - Actual candidate-template/generation change remains `candidate_shaping`; generated `candidate_future:card_flow` seeds therefore remain review-only and cannot use the presentation-only overlay path.
-  - Smoke coverage proves the permitted projection preserves candidate-fact hashes and has no runtime/live effect. The first P9-G3 stable path remains `presentation_only`.
+  - Smoke coverage proves the permitted projection preserves candidate-fact hashes and has no runtime/live effect.
+- Remaining repair:
+  - A presentation projection may still shape a future provider decision if applied before deliberation. It is G2 comparison tooling, not proof that a G3 policy is `presentation_only` or decision-neutral.
+  - Reclassify all pre-decision overlays under the mutation-surface/decision-influence contract from ADR-0006 before G3.
 
 ### `card_select_candidate_future_content_deficit`
 
@@ -147,9 +202,10 @@ Status values:
 - Why it matters:
   - P9 could promote stale knowledge or skills and then self-reinforce them under a different environment.
 - Remaining fix before P9-G3:
-  - repeat verified game build/channel, content/mod, adapter, fact snapshot, revision, and provenance fields in organic paired evidence
-  - preserve historical evidence but block missing/unknown/incompatible scope from structural promotion evidence
-  - add future invalidation/revalidation fields to learned objects
+  - repeat verified game build/channel, content/mod, adapter, fact snapshot, revision, provenance, and provider-experiment fingerprint fields in organic paired evidence;
+  - implement P9 exact-identity applicability: only exact complete fingerprint equality may support a first narrow policy, with no inferred compatibility before P12;
+  - preserve historical evidence but block missing or unknown **scope**, and unsupported/quarantined/degraded applicability, from structural promotion evidence; P9 exact identity may still carry compatibility as `not_evaluated_pre_p12` rather than infer it;
+  - add future invalidation/revalidation fields to learned objects.
 
 ## High
 
@@ -163,7 +219,40 @@ Status values:
 - Risk:
   - P9 learning hooks will further tangle live, shadow, memory, and rollout behavior.
 - Minimum fix:
-  - extract `LiveDecisionGateway` and `ProtectedPathGate` first
+  - first repair and test selection-resolution provenance in place;
+  - then extract a narrow `LiveDecisionGateway` only if it can preserve the new resolution/authority contract without changing prompt, provider, validation, execution, or whitelist behavior.
+
+### `manifest_and_stable_store_corruption_can_be_silent`
+
+- Status: `open`
+- Evidence:
+  - [experimentManifest.ts](../../src/learning/experimentManifest.ts#L181)
+  - [utils.ts](../../src/agent/utils.ts#L15)
+  - [memory.ts](../../src/agent/memory.ts#L143)
+- Problem:
+  - Malformed experiment-manifest JSONL lines are silently skipped. Generic stable-state reads fall back to defaults on any read or parse error.
+  - Legacy finalize remains explicitly gateable and can write long-term memory, experience, and strategy outside the future P9 policy store.
+- Why it matters:
+  - Future learned policy evidence could disappear from view or be overwritten after a corruption event. A changed legacy stable store could contaminate a promotion/evaluation window without an explicit digest/invalidation record.
+- Minimum fix:
+  - P9-G2 must expose malformed manifest diagnostics and record legacy-store digests in experiment evidence;
+  - P9-G3 must fail closed and quarantine learned-policy state on parse/digest failure;
+  - P10-A must use an immutable, idempotent policy event lifecycle and retain legacy read compatibility without treating legacy data as P9 promotion state.
+
+### `authority_telemetry_not_authority_enforcement`
+
+- Status: `open`
+- Evidence:
+  - [decisionAuthority.ts](../../src/agent/decisionAuthority.ts#L11)
+  - [controller.ts](../../src/agent/controller.ts#L270)
+- Problem:
+  - Authority mode is currently recorded from configuration, while controller routing still permits local scaffold selection and only labels it `unclassified_local_scaffold`.
+- Why it matters:
+  - The project can incorrectly claim LLM-primary strategic authority from provider/live configuration while local selection remains a material execution path.
+- Minimum fix:
+  - P9-G2 repairs truthful selection telemetry only;
+  - P10-A defines an `AuthorityPolicy` for evidence eligibility and impact reporting;
+  - P14 remains responsible for qualified skill delegation. No routing change is authorized by this debt entry alone.
 
 ### `budget_and_recovery_governance_still_p8_local`
 

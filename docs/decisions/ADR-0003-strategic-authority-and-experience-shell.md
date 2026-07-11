@@ -73,7 +73,7 @@ Every future learning proposal must declare its behavior impact:
 - `action_shaping`
 - `hard_shell`
 
-P9's first stable promotion may target only low-risk `presentation_only` policy and, after stronger evidence, narrowly bounded `deliberation_shaping` policy. `authority_shaping`, `action_shaping`, and `hard_shell` proposals remain non-executable until later phase-specific governance exists.
+`presentation_only` now means post-decision display/observability and is not a meaningful first stable learning policy. If P9-G2 passes, the first stable target may instead be a narrow human-approved `deliberation_shaping` policy with explicit possible decision influence, facts/candidate/validation/execution/authority invariants, exact identity scope, canary, retrieval trace, and rollback. `authority_shaping`, `action_shaping`, and `hard_shell` proposals remain non-executable until later phase-specific governance exists. See ADR-0006 for the selection-provenance and policy-effect contract.
 
 ## Explanation Boundary
 

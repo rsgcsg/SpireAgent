@@ -9,6 +9,13 @@ Current closeout / next-phase pointers:
 - `docs/phases/P9_ENTRY_CRITERIA.md`
 - `docs/phases/P9_GUARDED_LEARNING_PLAN.md`
 - `docs/phases/P9_P15_EXECUTION_ROADMAP.md`
+- `docs/reports/P9_P10_TRUSTWORTHY_CHANGE_KERNEL_AUDIT_2026-07-11.md`
+- `docs/decisions/ADR-0006-policy-influence-and-evidence-provenance.md`
+
+## 2026-07-11 P9-G2 Provenance Correction
+
+- Read-only history audit found two additive-live card-select transitions where a valid LLM proposal differed from the final executed candidate after a local guard. This is a selection-provenance/data-truth defect, not proof of illegal execution.
+- G3 remains prohibited until G2 records proposal versus final resolution, centralizes evidence-role classification, source-resolves proposal eligibility, and corrects the pre-decision `reason_policy` impact label. Canonical details and repair order are in the P9-P10 corrective audit and ADR-0006 above.
 
 ## 2026-07-11 P9-G2 Authority And Environment Telemetry
 

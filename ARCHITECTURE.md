@@ -54,6 +54,8 @@ The architecture must keep four mode families distinct:
 
 The current `chosenBy` field is useful historical telemetry but is not a sufficient long-term authority record. P9-G2 now adds an audit-only authority chain for fresh executor-logged transitions: deliberation owner, selection source, authorization source, execution source, plan origin, authority level, and delegated-skill identity. Product authority mode remains `unknown` until explicitly configured; no provider or whitelist implies it.
 
+Before P9-G3, fresh transitions also need a `SelectionResolutionRecord` between proposal and authorization. It must distinguish the candidate proposed by an LLM or local route from the final candidate after any local safety transformation, then record the transformation reason and final actor. A valid local override is still a safety success, but it is not LLM-selected execution. Historical records remain immutable; replay may conservatively flag proposal/final mismatch rather than rewrite them. See `docs/decisions/ADR-0006-policy-influence-and-evidence-provenance.md`.
+
 In `llm_primary`, long-horizon and irreversible strategy remains LLM-owned. Local mechanics and skills may act only under explicit Level 0/1 or qualified Level 2 contracts. Level 3 strategic authority does not migrate automatically with measured competence.
 
 ## Environment Identity Axis
@@ -125,6 +127,8 @@ Responsibilities:
 - qualify and route future delegated skills only through explicit authority contracts
 
 Future learning-facing scaffold policies should live in this plane, but only as evidence-backed, proposal-driven inner-loop adjustments. Examples include a future `CombatReasonPolicy`, `CandidateTemplate` refinement, bounded-workspace presentation policy, or decision-class-specific `BudgetPolicy`. They may change how the LLM sees tradeoffs, survival lines, or future structure, but they must not directly mutate validation, execution legality, live flags, rollback authority, or fact/memory/derived separation.
+
+Policy effect must be named honestly. A post-decision display policy may be decision-neutral. Any policy inserted into prompt serialization, workspace context, or memory activation before the LLM decides is deliberation-shaping and can alter selection, even if a cloned shadow experiment has no runtime effect. Candidate generation, classification/routing, authority, execution, and hard-shell boundaries are higher-risk mutation surfaces. P9-G2 must record this distinction before G3 considers a stable policy.
 
 Long term, the project should move toward a thinner permanently hand-authored soft layer. Decision classes may remain useful hard-shell routing and audit labels, but the inner scaffold should become increasingly proposal-driven so the LLM can reshape memory activation, first impressions, candidate templates, review style, scoring/scaffold policy, classification policy, and future skill policy under fixed outer-shell governance.
 

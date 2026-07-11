@@ -1,6 +1,6 @@
 # P9-P16 Execution Roadmap
 
-> Historical roadmap retained for phase-history compatibility. It was superseded on 2026-07-11 by [P9_P15_EXECUTION_ROADMAP.md](P9_P15_EXECUTION_ROADMAP.md) and [ADR-0005](../decisions/ADR-0005-phase-architecture-and-parallel-workstreams.md). Do not use this file to authorize new work.
+> Historical roadmap retained for phase-history compatibility. It was superseded on 2026-07-11 by [P9_P15_EXECUTION_ROADMAP.md](P9_P15_EXECUTION_ROADMAP.md), [ADR-0005](../decisions/ADR-0005-phase-architecture-and-parallel-workstreams.md), and [ADR-0006](../decisions/ADR-0006-policy-influence-and-evidence-provenance.md). Do not use this file to authorize new work. In particular, its former `presentation_only` first-promotion wording is obsolete.
 
 This file records the intermediate P9-P16 model that added authority/environment foundations and optional autonomy research. The accepted forward model keeps those foundations, restructures P9 as gates, merges deliberation context/compute, moves environment/product work earlier, and moves optional autonomy to research track R1.
 

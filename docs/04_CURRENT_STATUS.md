@@ -41,7 +41,13 @@ Do not turn it into a narrative log. Detailed history belongs in `../LLM_HANDOFF
 
 The active blocker is no longer provider reachability or P8 workspace survival-cue preservation.
 
-P9-G1 protected-path closure is complete. The real blocker is now the gap between partial P9-G2 shadow experiment evidence and a safe P9-G3 stable-change design:
+P9-G1 protected-path closure is complete. P9-G2 cannot pass or begin G3 until its data-truth and policy-impact contracts are repaired:
+
+- two historical additive-live `card_select` transitions recorded `chosenBy="llm"` while the final executed candidate differed from the valid LLM proposal after a local guard. They remain execution history but cannot support `llm_selected_execution` claims until derived mismatch exclusion and fresh `SelectionResolutionRecord` telemetry exist;
+- replay, proposal generation, and manifests still use inconsistent exclusive evidence-role precedence when one transition includes both a workspace-shadow call and an LLM selection;
+- a `reason_policy` injected before provider deliberation is currently labelled `presentation_only`. It is actually deliberation-shaping if ever applied, so the former "presentation-only first G3 policy" is invalid.
+
+The detailed findings, corrected architecture, and repair order are canonical in [P9-P10 Trustworthy Change Kernel Audit](reports/P9_P10_TRUSTWORTHY_CHANGE_KERNEL_AUDIT_2026-07-11.md) and [ADR-0006](decisions/ADR-0006-policy-influence-and-evidence-provenance.md). The following is implementation history and current G2 evidence, not authorization for G3:
 
 - protected-path governance now has one stable-write authorization evaluator across live LLM intent, legacy finalize, future P9 promotion, shadow experiment, and runtime reflection; P9/shadow/reflection origins are explicitly deny-only; ordinary runtime persistence writes run state only
 - live-applied rollout reporting now exists, but older shadow-first readiness semantics still coexist beside it
@@ -61,7 +67,7 @@ P9-G1 protected-path closure is complete. The real blocker is now the gap betwee
 - G2 proposal seeds now record an observed evidence role. Exact organic environment scope is necessary but insufficient: local fallback/scaffold/mechanical observations remain draft-only, while an actual LLM selection or called workspace provider outcome is required before a future seed can be actionable. This does not promote, apply, or alter any decision.
 - Focused replay slices now aggregate those observed evidence roles, so `llm_selected_execution`, `workspace_shadow_provider`, and local observation evidence are visible without manually inspecting transition JSON. The `promotionEligible` counter remains environment/provenance scope only and must be read beside `evidenceRole`.
 - G2 experiment manifests and `shadow-preflight` now record/require a called workspace-shadow baseline role for same-slice provider comparisons. A declared authority mode is not enough; a manifest remains audit-only and cannot promote.
-- Current dry-run inventory leaves two repeated `candidate_future:card_flow` seeds with `workspace_shadow_provider` evidence. They are `candidate_shaping`, not the first-path low-risk `presentation_only` class, so they are not a basis to start G3 or manufacture an overlay. P9.5 candidate-template wording is now clarified: only a facts/order-preserving presentation projection is overlay-eligible; actual candidate-template/generation change remains deferred.
+- Current dry-run inventory leaves two repeated `candidate_future:card_flow` seeds with `workspace_shadow_provider` evidence. They are `candidate_shaping`, not a basis to start G3 or manufacture an overlay. A facts/order-preserving presentation projection remains useful G2 comparison tooling only; it is not evidence that a future pre-decision policy is decision-neutral.
 - Two natural exact-organic `card_select:local_recommended_llm_arbitrate` captures (`transition-000391-agent-mrfu596y-ad2qik`, `transition-000433-agent-mrfun527-vddpuj`) repeat an action-first CandidateFuture template: empty structured costs, generic `shallow_future_risk_model`, and flow-only prediction checks. The model still expressed adequate scaling-versus-tempo and low-HP risk tradeoffs, making the lexical `missing_tradeoff` note a false positive and leaving causal decision harm unproven. This is a real `candidate_shaping` debt, not a low-risk `presentation_only` proposal seed; retain it for a later qualified candidate-template path rather than relabeling it to enter G3.
 - Fresh G2 organic evidence now exists in `run-mrfq2vw1-aap49m`: direct-shadow calls across combat, shop, event, rest, rewards, and card selection under exact environment scope and `llm_primary` mode. They have `finishReason=stop`, `failureBucket=none`, and no output-cap hit; one combat outcome used retry=1 and therefore cannot be mixed with no-retry pair evidence. Fixed budget/capture sub-windows are separately inspectable; other profiles must not be mixed into a future pair. A card-reward reason that explicitly named benefit and deck-bloat cost was labeled `missing_tradeoff`, so it remains a detector counterexample. The initial high-HP rest reason omitted an explicit heal-for-upgrade cost, but a separately captured low-HP rest outcome said `Heal to survive, but lose upgrade tempo.` The latter is a contextual counterexample, not a same-budget pair. Reject the global rest reason-policy hypothesis; do not create a proposal from the isolated high-HP wording. These records are baselines/counterexamples only, not paired policy results or promotion evidence.
 - A later three-call shadow-only combat slice in the same run now has a verified Steam build/depot, declared empty mod set, adapter/agent revision, facts snapshot hash, and organic provenance under fingerprint `389afd94acaf901d`. It is structurally exact but not a pair: one call was mechanical zero-energy flow, one was already adequate, and one stated the block-versus-damage tradeoff despite a `missing_tradeoff` smoke alarm. Two calls recovered through a different terminal provider profile. Treat this slice as environment and detector counterexample evidence, not a proposal trigger.
@@ -81,12 +87,12 @@ P9-G1 protected-path closure is complete. The real blocker is now the gap betwee
 Complete P9-G2 without enabling stable promotion:
 
 1. preserve `ProtectedPathGate` as the only future stable-write authorization entry; do not add a direct writer or enable any P9 origin
-2. record the rejected global rest reason-policy hypothesis and seek another naturally repeated, scoped, low-risk presentation deficiency; do not blind-sample rest or manufacture a proposal merely to obtain a pair
-3. preserve console/debug exclusion and old-transition `not_recorded` handling in replay/eval/review
-4. preserve the distinction between shadow-provider comparison evidence and LLM-selected execution evidence in every future G2 review
-5. keep candidate-template/generation changes as `candidate_shaping`; only facts/order-preserving presentation projections may enter a future P9.5 comparison
-6. keep `authority_shaping`, `action_shaping`, and `hard_shell` proposals outside the first promotion path
-7. audit G2; only then design P9-G3 promotion ledger, immutable version diff, rollback snapshot, status transition, and retrieval trace
+2. implement G2.1 `SelectionResolutionRecord` and conservative historical proposal/final mismatch exclusion before using more records as LLM-selection evidence
+3. implement G2.2 one structured evidence-role classifier and source-resolved proposal eligibility; console/debug exclusion and old `not_recorded` handling must remain intact
+4. implement G2.3 provider experiment fingerprint, authority/manifest integrity diagnostics, and P9 exact-identity applicability; do not infer P12 compatibility
+5. only after G2.1-G2.3, requalify existing slices and collect naturally occurring same-scope evidence/counterexamples; do not blind-sample or manufacture a proposal
+6. keep candidate-template/generation, classification, authority, action, and hard-shell changes outside the first stable path
+7. audit G2; only then design and seek approval for a narrow deliberation-shaping G3 ledger, rollback, retrieval trace, and canary
 
 ## Canonical Follow-On Docs
 
@@ -96,9 +102,11 @@ Complete P9-G2 without enabling stable promotion:
 - [P9_ENTRY_DECISION.md](phases/P9_ENTRY_DECISION.md)
 - [P9_GUARDED_LEARNING_PLAN.md](phases/P9_GUARDED_LEARNING_PLAN.md)
 - [P9_P15_EXECUTION_ROADMAP.md](phases/P9_P15_EXECUTION_ROADMAP.md)
+- [P9-P10 Trustworthy Change Kernel Audit](reports/P9_P10_TRUSTWORTHY_CHANGE_KERNEL_AUDIT_2026-07-11.md)
 - [P9-P15 Phase Architecture Audit](reports/P9_P15_PHASE_ARCHITECTURE_AUDIT_2026-07-11.md)
 - [Strategic authority ADR](decisions/ADR-0003-strategic-authority-and-experience-shell.md)
 - [Environment-scope ADR](decisions/ADR-0004-environment-scoped-evidence-and-knowledge.md)
+- [Policy influence and provenance ADR](decisions/ADR-0006-policy-influence-and-evidence-provenance.md)
 - [Environment Compatibility](../ENVIRONMENT_COMPATIBILITY.md)
 - [P8_5_LIVE_ROLLOUT_POLICY.md](phases/P8_5_LIVE_ROLLOUT_POLICY.md)
 - [LLM_RUN_MODES.md](runbooks/LLM_RUN_MODES.md)
