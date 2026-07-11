@@ -123,16 +123,31 @@ Status values:
   - Actual candidate-template/generation change remains `candidate_shaping`; generated `candidate_future:card_flow` seeds therefore remain review-only and cannot use the presentation-only overlay path.
   - Smoke coverage proves the permitted projection preserves candidate-fact hashes and has no runtime/live effect. The first P9-G3 stable path remains `presentation_only`.
 
+### `card_select_candidate_future_content_deficit`
+
+- Status: `in_progress`
+- Evidence:
+  - organic exact-scope workspace-provider transitions `transition-000391-agent-mrfu596y-ad2qik` and `transition-000433-agent-mrfun527-vddpuj`
+  - both `card_select:local_recommended_llm_arbitrate` captures under the same revision, environment fingerprint, and focused budget profile
+- Problem:
+  - Both CandidateFuture sets are action-first templates with empty structured `cost`, generic `shallow_future_risk_model` risk, and flow-only prediction checks. This is repeated scaffold-content weakness, not a one-off lexical reason issue.
+- Counterexample and boundary:
+  - The second model reason was adequate (`High reward scaling but risky at low hp.`), so the evidence does not establish that the template weakness caused a bad decision or that a presentation-only wording patch would help.
+  - The defect is `candidate_shaping`; it cannot enter the facts/order-preserving presentation overlay path or be relabeled to start P9-G3.
+- Minimum next step:
+  - retain the two records as scoped counterexample/review evidence;
+  - defer any candidate-template/generation proposal until a later qualified candidate-shaping experiment path exists with stronger causal and counterexample evidence.
+
 ### `environment_scoped_evidence_missing`
 
 - Status: `in_progress`
 - Problem:
-  - Fresh transitions now carry read-only `EnvironmentFingerprint` and `EvidenceEnvironmentScope`, but fresh verified complete-scope evidence has not yet been collected.
+  - Fresh transitions now carry read-only `EnvironmentFingerprint` and `EvidenceEnvironmentScope`; verified exact-organic baseline captures exist, but no verified complete-scope baseline/overlay pair exists.
   - Slay the Spire 2 Early Access updates can invalidate mechanics, content, serialization, and mod assumptions.
 - Why it matters:
   - P9 could promote stale knowledge or skills and then self-reinforce them under a different environment.
 - Remaining fix before P9-G3:
-  - capture verified game build/channel, content/mod, adapter, fact snapshot, revision, and provenance fields for organic paired evidence
+  - repeat verified game build/channel, content/mod, adapter, fact snapshot, revision, and provenance fields in organic paired evidence
   - preserve historical evidence but block missing/unknown/incompatible scope from structural promotion evidence
   - add future invalidation/revalidation fields to learned objects
 

@@ -438,6 +438,7 @@ Current state:
 - Counterexample review has begun but is not complete. An independent same-revision adequate combat reason was refused by the trigger guard, showing cue detectors are not strategic truth and that P9.5C must not become a reason-wording optimizer. A second matching `missing_tradeoff` baseline entered provider recovery and therefore changed terminal provider profile; it is `incomplete`, not confirming policy evidence. More than one provider-profile-comparable organic slice and explicit counterexample handling remain required before a future guarded status-transition design is considered.
 - Targeted shadow capture may reserve a bounded provider-call budget for one evidence class, but it is only an evidence-collection aid. A different capture budget can refute a broad hypothesis contextually, yet cannot be presented as a same-profile paired result. If a repeated deficiency does not survive such counterexample review, reject the hypothesis rather than manufacture a proposal or expand a reason contract.
 - Candidate-template semantic boundary: a presentation-only projection may guide evaluation of existing CandidateFuture ids while preserving candidate facts/order and runtime behavior. Actual candidate-template/generation changes remain `candidate_shaping`; generated candidate-shaping seeds cannot use this projection path and must not be relabeled to bypass it.
+- Two exact-organic `card_select:local_recommended_llm_arbitrate` captures now repeat empty structured costs, generic shallow risk labels, and flow-only prediction checks in CandidateFutures. Their model reasons still expressed strategic tradeoffs, so this is a scoped candidate-shaping content debt with unproven decision impact, not a presentation-only overlay candidate.
 
 Comparable P9.5C evidence is necessary but not sufficient for P9-G3. Any future paired evidence used for promotion must also pass G2 authority-impact review and environment-scope compatibility.
 
@@ -476,7 +477,7 @@ Implemented schema/telemetry:
 
 Remaining G2 evidence work:
 
-- capture verified build/channel/content/mod/adapter/fact/revision fields for an organic paired slice;
+- repeat verified build/channel/content/mod/adapter/fact/revision fields in an organic **paired** slice; a verified exact organic baseline-only slice exists, but is not a pair or promotion evidence;
 - prove console/debug provenance is excluded;
 - do not claim compatibility until P12 can perform an actual handshake and revalidation.
 

@@ -18,6 +18,24 @@ Current closeout / next-phase pointers:
 - New actionable proposal and shadow-overlay checks require an explicit organic, exact environment scope and a classified behavior impact. This is an experiment-integrity gate, not promotion or policy application.
 - Fresh complete-scope, explicit-authority paired/counterexample evidence remains missing. Do not begin P9-G3 promotion-ledger, rollback-snapshot, or retrieval-trace design yet.
 
+## 2026-07-11 G2 Verified Environment Baseline, No New Proposal Signal
+
+- A shadow-only, fixed-budget three-call combat slice in `run-mrfq2vw1-aap49m` recorded exact organic scope under fingerprint `389afd94acaf901d`. The temporary process read Steam build `24032229`, public-beta depot manifest `1977841934321910790`, an explicitly declared empty mod set, adapter/agent revision `3c7bb15e5874`, and a deterministic facts-source hash. It did not edit `.env.local` or enable live execution.
+- The focused slice contains `transition-000303-agent-mrftudf0-jpsgiy`, `transition-000304-agent-mrftulkn-fjzboc`, and `transition-000305-agent-mrftuu0u-r054x0`: all were valid direct workspace-provider calls with `failureBucket=none`. The first is forced zero-energy mechanical flow, the second already has an adequate survival reason, and the third explicitly says `Gain block 5/13, lose damage output.` despite a lexical `missing_tradeoff` note.
+- The latter two terminal outcomes required truncation recovery, so their provider profiles cannot confirm a no-retry pair. This is useful environment/detector counterexample evidence only: no repeated low-risk presentation deficiency, proposal, overlay, manifest, promotion, stable write, or G3 work was created.
+
+## 2026-07-11 G2 Natural Card-Select Candidate-Shaping Observation
+
+- Exact-organic `transition-000391-agent-mrfu596y-ad2qik` is a valid/no-retry `card_select:local_recommended_llm_arbitrate` workspace-provider outcome under the verified environment fingerprint. Its model reason, `Grab rare scaling, may slow early turns.`, names a strategic tradeoff even though the lexical detector emitted `missing_tradeoff`.
+- The underlying CandidateFutures were action-first: each had an empty structured cost list, generic `shallow_future_risk_model` risk, and only a visible-flow prediction check. The model compensated in its reason, but this exposes candidate-template/content quality rather than a bounded presentation defect.
+- Record this as a future `candidate_shaping` investigation. Do not create a presentation-only overlay, proposal, manifest, promotion, or G3 work from it; candidate generation/template semantics remain outside the first stable-change path.
+
+## 2026-07-11 G2 Card-Select Repetition And Counterexample Review
+
+- A second exact-organic same-scope card-select provider call, `transition-000433-agent-mrfun527-vddpuj`, reproduced the action-first CandidateFuture structure: empty costs, generic shallow risk, and flow-only checks.
+- Its reason, `High reward scaling but risky at low hp.`, was adequate and explicitly used the low-HP tradeoff despite the scaffold's sparse structured candidate facts. This confirms a candidate-template content debt but refutes a claim that the lexical reason detector or a presentation-only wording patch identifies the causal fix.
+- The repeated finding is recorded as `candidate_shaping` debt only. No proposal, overlay, manifest, promotion, stable write, or G3 work was created.
+
 ## 2026-07-11 P9-G2 Experiment Manifest
 
 - Added an append-only, run-local `learning-experiment-manifests.jsonl` audit surface for same-slice shadow pairs. It records proposal/pair/evaluation plus authority and environment scope, but is opt-in and non-promoting.

@@ -21,6 +21,22 @@ Closeout pointers:
 - New proposals require classified behavior impact plus exact organic environment scope before becoming actionable pending review. Stable promotion is still disabled.
 - Next: collect fresh, same-scope paired and counterexample evidence, then audit G2. Do not start G3 ledger/snapshot/retrieval work first.
 
+## 2026-07-11 G2 Verified Environment Baseline Handoff
+
+- A temporary shadow-only child process bound a verified Steam build/depot, public-beta channel, empty mod declaration, adapter/agent revision, and facts-source hash to fingerprint `389afd94acaf901d`; it did not edit `.env.local` or enable live execution.
+- Its three exact-organic direct workspace shadows are not a new proposal candidate: zero-energy flow was mechanical, one high-pressure reason was adequate, and one reason explicitly expressed block-versus-damage while the lexical detector still emitted `missing_tradeoff`. Two calls used truncation rescue, so the window is also provider-profile divergent from no-retry pair evidence.
+- Keep this as a G2 environment/detector counterexample. It proves the capture protocol, not a repeatable presentation deficiency or G3 readiness.
+
+## 2026-07-11 G2 Card-Select Boundary Handoff
+
+- Natural exact-organic `transition-000391-agent-mrfu596y-ad2qik` is provider-clean and its reason names a scaling-versus-tempo tradeoff despite a lexical `missing_tradeoff` note. Treat the note as a detector counterexample.
+- Its CandidateFutures have empty costs, generic shallow-risk labels, and flow-only checks. That is a real candidate-template/content observation, but it is `candidate_shaping`, not presentation-only. Keep it outside the G3 first path; do not manufacture an overlay or proposal.
+
+## 2026-07-11 G2 Card-Select Repetition Handoff
+
+- Second same-scope exact-organic card-select capture `transition-000433-agent-mrfun527-vddpuj` repeats the empty-cost/generic-risk/flow-check CandidateFuture template. This confirms the scaffold-content pattern.
+- The model nevertheless returned an adequate low-HP tradeoff reason. Therefore causal strategy harm and a presentation-only remedy remain unproven; register the issue as candidate-shaping debt, not as a G3 proposal trigger.
+
 ## 2026-07-11 P9-G2 Experiment Manifest Handoff
 
 - `shadow-run` now emits a typed, audit-only manifest binding proposal, pair outcomes, evaluation, authority, environment scope, and invariants. It writes only when explicitly invoked with `--record-manifest`.
