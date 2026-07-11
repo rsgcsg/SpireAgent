@@ -184,6 +184,7 @@ export type DecisionAuthorityActor =
   | "llm"
   | "local_scaffold"
   | "local_fallback"
+  | "local_safety_guard"
   | "local_mechanical"
   | "human"
   | "none"
@@ -200,6 +201,39 @@ export interface DecisionAuthorizationRecord {
   planOrigin?: string;
   delegatedSkillId?: string;
   fallbackOrEscalationReason?: string;
+  notes: string[];
+}
+
+/**
+ * Captures proposal versus final selection without changing execution.
+ * `chosenBy` is retained as legacy summary telemetry, not provenance truth.
+ */
+export type SelectionResolutionKind =
+  | "selected_as_proposed"
+  | "local_safety_override"
+  | "fallback_selected"
+  | "local_selected"
+  | "forced_local_selected"
+  | "selection_source_changed"
+  | "not_recorded";
+
+export interface SelectionResolutionRecord {
+  schemaVersion: number;
+  proposedSelection: {
+    candidateId?: string;
+    source: DecisionAuthorityActor;
+    candidateAllowed: boolean;
+    validationOutcome?: string;
+  };
+  finalSelection: {
+    candidateId?: string;
+    source: DecisionAuthorityActor;
+    candidateAllowed: boolean;
+  };
+  resolutionKind: SelectionResolutionKind;
+  resolutionReason?: string;
+  candidateIdMatch: boolean;
+  llmSelectionEvidenceEligible: boolean;
   notes: string[];
 }
 
@@ -249,6 +283,28 @@ export interface EvidenceEnvironmentScope {
   compatibilityState: "compatible" | "degraded" | "quarantined" | "unsupported" | "unknown";
   captureProvenance: EnvironmentCaptureProvenance;
   reasons: string[];
+}
+
+/**
+ * A secret-free identity for comparing provider experiments. It describes the
+ * observable decision contract, never credentials, endpoint headers, or raw
+ * provider output.
+ */
+export interface ProviderExperimentFingerprint {
+  schemaVersion: number;
+  provider?: string;
+  providerSource?: string;
+  model?: string;
+  responseMode?: string;
+  thinkingMode?: string;
+  maxOutputTokens?: number;
+  retryCount?: number;
+  recoveryPolicyName?: string;
+  primaryAttemptProfile?: JsonRecord;
+  rescueAttemptProfile?: JsonRecord;
+  fingerprintHash?: string;
+  identityStatus: "complete" | "partial" | "unknown";
+  notes: string[];
 }
 
 export interface LlmDecision {
@@ -655,6 +711,7 @@ export interface ReplayFrame {
   workspaceComparison?: DeliberationWorkspaceComparison | JsonRecord;
   shadowWorkspaceDecision?: ShadowWorkspaceDecision | JsonRecord;
   decisionAuthority?: DecisionAuthorizationRecord | JsonRecord;
+  selectionResolution?: SelectionResolutionRecord | JsonRecord;
   environmentFingerprint?: EnvironmentFingerprint | JsonRecord;
   evidenceEnvironmentScope?: EvidenceEnvironmentScope | JsonRecord;
   predictionError?: PredictionErrorRecord | JsonRecord;
@@ -913,6 +970,7 @@ export interface TransitionRecord {
   llmDecision?: unknown;
   decisionAudit?: DecisionAudit;
   decisionAuthority?: DecisionAuthorizationRecord | JsonRecord;
+  selectionResolution?: SelectionResolutionRecord | JsonRecord;
   environmentFingerprint?: EnvironmentFingerprint | JsonRecord;
   evidenceEnvironmentScope?: EvidenceEnvironmentScope | JsonRecord;
   derivedSnapshot?: DerivedSnapshot | JsonRecord;

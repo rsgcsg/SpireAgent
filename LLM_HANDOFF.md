@@ -15,6 +15,13 @@ Closeout pointers:
 - `docs/decisions/ADR-0006-policy-influence-and-evidence-provenance.md`
 - `docs/reports/P9_P10_TRUSTWORTHY_CHANGE_KERNEL_AUDIT_2026-07-11.md`
 
+## 2026-07-11 Latest G2 Handoff: Contracts Complete, Evidence Gate Still Closed
+
+- G2.1 records proposal, local safety resolution, and final selection without changing routing or execution. Historical proposal/final mismatches are read-only excluded; legacy `chosenBy` alone is not final-selection evidence.
+- G2.2 uses one source-resolved, fail-closed evidence classifier across replay, proposal generation, preflight, manifests, and live-rollout reporting. Overlay assembly additionally requires a caller-selected source run/transition named by the proposal and evidence records with matching exact scope. Protected targets must be non-empty and canonical; console/debug/fixture, provider failure, and unresolved provenance remain ineligible.
+- G2.3 records secret-free provider experiment identity and manifest-store diagnostics. No provider request, live setting, stable write, or promotion behavior changed.
+- Do not start G3. Wait for fresh exact-organic natural baseline/counterexample evidence under the new contracts; the first possible later canary is narrow, human-approved `deliberation_shaping`, never disguised `presentation_only`.
+
 ## 2026-07-11 P9-G2 Corrective Handoff
 
 - Do not start G3 or collect more evidence as if the current G2 semantics were promotion-ready. Historical audit found two additive-live card-select proposal/final mismatches after a local guard, so affected records are execution history only, not LLM-selection evidence.

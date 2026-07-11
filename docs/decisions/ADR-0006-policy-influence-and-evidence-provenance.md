@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted for P9-G2 correction. The implementation work described here is not yet complete.
+Accepted and implemented for P9-G2 correction. G2 evidence qualification remains incomplete; this ADR does not authorize G3.
 
 ## Context
 
@@ -28,7 +28,7 @@ candidate proposal(s)
   -> transition record
 ```
 
-Future `SelectionResolutionRecord` telemetry must retain, at minimum:
+Implemented `SelectionResolutionRecord` telemetry retains, at minimum:
 
 - proposed candidate id and proposing actor;
 - final candidate id and final-selection actor;
@@ -42,7 +42,7 @@ Historical transitions are not rewritten. Replay may derive a conservative `sele
 
 ### 2. Treat evidence roles as structured observations, not one exclusive string
 
-A transition can simultaneously contain a called workspace provider outcome, an LLM proposal, a local override, and an execution result. Future G2 code must use one shared classifier that reports independent facts such as:
+A transition can simultaneously contain a called workspace provider outcome, an LLM proposal, a local override, and an execution result. G2 code uses one shared classifier that reports independent facts such as:
 
 - workspace provider called;
 - proposed-selection source;
@@ -64,10 +64,11 @@ The first G3 target, if G2 passes, must therefore be described honestly as a nar
 
 ### 4. Proposal and experiment eligibility are source-resolved and fail closed
 
-Future eligibility must require:
+G2 eligibility requires:
 
 - non-empty, valid protected targets compatible with the proposal's layer and mutation surface;
 - source run/transition references resolved against recorded artifacts, rather than trusting self-asserted tags;
+- a caller-selected source transition matching both the proposal source IDs and declared exact environment scope before any offline overlay is assembled;
 - exact environment identity applicability for P9, with no implied cross-version compatibility;
 - a complete provider experiment fingerprint for provider comparisons;
 - visible manifest corruption or incompleteness, never silent omission;
@@ -77,7 +78,7 @@ P9 exact-identity applicability means a learned object can be considered only wh
 
 ## Consequences
 
-- P9-G3 remains prohibited until G2 implements and audits these contracts.
+- P9-G3 remains prohibited until a G2 evidence audit passes these implemented contracts with fresh natural paired/counterexample evidence.
 - Existing card-select records with proposal/final mismatch cannot be cited as LLM-selection evidence, although they are retained as execution-history evidence.
 - Existing P9.5 cloned-packet work remains valuable as isolated comparison tooling, but `wouldAffectRuntimeDecision=false` means only that the experiment did not alter runtime; it does not classify a future pre-decision policy as harmless.
 - Stable promotion, wildcard live, automatic learning, provider/budget autonomy, and authority transfer remain disabled.

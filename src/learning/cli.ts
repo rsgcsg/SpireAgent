@@ -43,9 +43,10 @@ import {
   buildLearningExperimentManifest,
   buildLearningExperimentManifestSurface,
   formatLearningExperimentManifestSurface,
-  readLearningExperimentManifests,
+  readLearningExperimentManifestStore,
   assessLearningExperimentPreflight
 } from "./experimentManifest.js";
+import { buildProviderExperimentFingerprintFromTransition } from "./providerExperimentFingerprint.js";
 import type { DeliberationPacket, JsonRecord } from "../domain/types.js";
 import type { ScoredCandidate } from "../agent/types.js";
 import { createDeepSeekV4FlashDecider, type DeepSeekResponseMode, type DeepSeekThinkingMode } from "../agent/llm.js";
@@ -78,14 +79,15 @@ async function main(): Promise<void> {
   const proposals = readLearningProposals(runDir);
   const feedback = readReverseScaffoldFeedback(runDir);
   const reviewDecisions = readLearningProposalReviewDecisions(runDir);
-  const experimentManifests = readLearningExperimentManifests(runDir);
+  const experimentManifestStore = readLearningExperimentManifestStore(runDir);
+  const experimentManifests = experimentManifestStore.manifests;
 
   if (command === "summary") {
     printHeader(runDir);
     console.log(`Learning proposal surface: ${formatLearningProposalSurface(buildLearningProposalSurface(proposals))}`);
     console.log(`Learning proposal review decisions: ${formatLearningProposalReviewDecisionSurface(buildLearningProposalReviewDecisionSurface(reviewDecisions))}`);
     console.log(`Reverse scaffold feedback: ${formatReverseScaffoldFeedbackSurface(buildReverseScaffoldFeedbackSurface(feedback))}`);
-    console.log(`Learning experiment manifests: ${formatLearningExperimentManifestSurface(buildLearningExperimentManifestSurface(experimentManifests))}`);
+    console.log(`Learning experiment manifests: ${formatLearningExperimentManifestSurface(buildLearningExperimentManifestSurface(experimentManifests, experimentManifestStore.digest))}`);
     console.log("Guardrails: proposalMutationEnabled=false applyPathEnabled=false stablePromotionEnabled=false affectsLiveBehavior=false");
     return;
   }
@@ -124,8 +126,10 @@ async function main(): Promise<void> {
     const id = parseRequiredId(commandArgs);
     const proposal = proposals.find((record) => record.id === id);
     if (!proposal) throw new Error(`Learning proposal not found: ${id}`);
+    const run = readReplayRun(runDir);
+    const sourceTransition = sourceTransitionForProposal(proposal, run.transitions as unknown as JsonRecord[]);
     printHeader(runDir);
-    console.log(JSON.stringify(buildLearningProposalShadowOverlayPlan(proposal), null, 2));
+    console.log(JSON.stringify(buildLearningProposalShadowOverlayPlan(proposal, sourceTransition), null, 2));
     console.log("Shadow overlay plan is read-only: proposalMutationEnabled=false applyPathEnabled=false stablePromotionEnabled=false affectsLiveBehavior=false");
     return;
   }
@@ -144,6 +148,7 @@ async function main(): Promise<void> {
     printHeader(runDir);
     console.log(JSON.stringify(compareLearningProposalInShadowWorkspace({
       proposal,
+      sourceTransition: transition as unknown as JsonRecord,
       packet,
       candidates,
       decisionClass: decisionClassFromTransition(transition as unknown as JsonRecord),
@@ -168,6 +173,7 @@ async function main(): Promise<void> {
     const transitionRecord = transition as unknown as JsonRecord;
     const comparison = compareLearningProposalInShadowWorkspace({
       proposal,
+      sourceTransition: transitionRecord,
       packet: packetFromTransition(transitionRecord),
       candidates: candidatesFromTransition(transitionRecord),
       decisionClass: decisionClassFromTransition(transitionRecord),
@@ -202,6 +208,7 @@ async function main(): Promise<void> {
     }
     const comparison = compareLearningProposalInShadowWorkspace({
       proposal,
+      sourceTransition: transitionRecord,
       packet: packetFromTransition(transitionRecord),
       candidates: candidatesFromTransition(transitionRecord),
       decisionClass: decisionClassFromTransition(transitionRecord),
@@ -212,6 +219,7 @@ async function main(): Promise<void> {
     const decider = createSameSliceDeepSeekDecider(transitionRecord);
     const result = await runLearningProposalInSameSliceShadow({
       proposal,
+      sourceTransition: transitionRecord,
       packet: packetFromTransition(transitionRecord),
       candidates: candidatesFromTransition(transitionRecord),
       decisionClass: decisionClassFromTransition(transitionRecord),
@@ -406,6 +414,14 @@ function optionValue(args: string[], name: string): string | undefined {
   return index === -1 ? undefined : args[index + 1];
 }
 
+function sourceTransitionForProposal(proposal: JsonRecord, transitions: JsonRecord[]): JsonRecord | undefined {
+  const transitionIds = Array.isArray(proposal.createdFromTransitionIds)
+    ? [...new Set(proposal.createdFromTransitionIds.filter((value): value is string => typeof value === "string"))]
+    : [];
+  if (transitionIds.length !== 1) return undefined;
+  return transitions.find((transition) => transition.transitionId === transitionIds[0]);
+}
+
 function packetFromTransition(transition: JsonRecord): DeliberationPacket {
   if (!isRecord(transition.deliberationPacket) || !Array.isArray(transition.deliberationPacket.candidateFutures)) {
     throw new Error("Transition has no replayable DeliberationPacket for shadow comparison.");
@@ -485,6 +501,7 @@ function recordedBaselineOutcome(
     revisionTag: typeof comparisonRecord.revisionTag === "string" ? comparisonRecord.revisionTag : "unknown",
     budgetWindow: `shadow=${maxShadowCalls};profile=${profile}`,
     providerProfile: `output=${maxOutputTokens};thinking=${thinking};mode=${mode};retry=${retry}`,
+    providerExperimentFingerprint: buildProviderExperimentFingerprintFromTransition(transition),
     providerAttempts: providerAttemptsFromTransition(shadow.providerAttempts),
     outcome: normalizeShadowOutcome(shadow.outcome),
     selectedCandidateId: typeof shadow.structuredSelectedCandidateId === "string" ? shadow.structuredSelectedCandidateId : undefined,

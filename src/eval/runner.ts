@@ -35,7 +35,7 @@ import {
 } from "../learning/proposals.js";
 import {
   buildLearningExperimentManifestSurface,
-  readLearningExperimentManifests,
+  readLearningExperimentManifestStore,
   type LearningExperimentManifestSurface
 } from "../learning/experimentManifest.js";
 
@@ -447,7 +447,11 @@ export function evaluateRun(runIdOrPath?: string): EvalReport {
   const learningProposalSurface = buildLearningProposalSurface(readLearningProposals(runDir));
   const learningProposalReviewDecisionSurface = buildLearningProposalReviewDecisionSurface(readLearningProposalReviewDecisions(runDir));
   const reverseScaffoldFeedbackSurface = buildReverseScaffoldFeedbackSurface(readReverseScaffoldFeedback(runDir));
-  const experimentManifestSurface = buildLearningExperimentManifestSurface(readLearningExperimentManifests(runDir));
+  const experimentManifestStore = readLearningExperimentManifestStore(runDir);
+  const experimentManifestSurface = buildLearningExperimentManifestSurface(
+    experimentManifestStore.manifests,
+    experimentManifestStore.digest
+  );
   for (const issue of buildStrategyWarnings(strategyMetrics)) {
     addWarning(warnings, warningSummary, issue);
   }

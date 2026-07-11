@@ -1,6 +1,10 @@
 import type { JsonRecord, LearningProposal, ReverseScaffoldFeedback } from "../domain/types.js";
 import { isRecord } from "../agent/utils.js";
-import { getTransitionPromotionEligibility } from "../replay/evidenceSliceReader.js";
+import {
+  classifyTransitionEvidenceRole,
+  evidenceRoleNames,
+  getTransitionProposalEvidenceEligibility
+} from "../replay/evidenceRoleClassifier.js";
 
 export interface LearningProposalGenerationResult {
   schemaVersion: number;
@@ -36,8 +40,9 @@ export function generateLearningProposalSeeds(
   let excludedTransitions = 0;
   const exclusionReasonCounts: Record<string, number> = {};
   for (const transition of transitions) {
-    const eligibility = getTransitionPromotionEligibility(transition);
-    if (!options.includeIneligibleEvidence && !eligibility.eligible) {
+    const eligibility = getTransitionProposalEvidenceEligibility(transition);
+    const draftOnlyLocalObservation = isDraftOnlyLocalObservation(eligibility.classification);
+    if (!options.includeIneligibleEvidence && !eligibility.eligible && !draftOnlyLocalObservation) {
       excludedTransitions += 1;
       exclusionReasonCounts[eligibility.reason] = (exclusionReasonCounts[eligibility.reason] ?? 0) + 1;
       continue;
@@ -126,7 +131,7 @@ function proposalsFromPredictionError(runId: string, transition: JsonRecord): Ar
       transitionId,
       decisionClass,
       type: target.type,
-      status: hasUnsupported && evidenceScope.evidencePromotionEligible ? "pending_review" : "draft",
+      status: hasUnsupported && evidenceScope.evidenceProposalSeedEligible ? "pending_review" : "draft",
       targetLayer: target.targetLayer,
       targetObject: `${target.targetLayer}:${bucketNames.join(",") || "open_prediction_error"}`,
       proposedPatch: {
@@ -340,9 +345,10 @@ function buildProposal(input: {
   validationPlan: string[];
   rollbackAction: string;
   evidenceProvenance: string;
-  evidencePromotionEligible: boolean;
-  evidencePromotionReason: string;
-  evidenceRole: string;
+  evidenceProposalSeedEligible: boolean;
+  evidenceEligibilityReason: string;
+  evidenceRoles: string[];
+  evidenceEligibility: JsonRecord;
   environmentScope: LearningProposal["environmentScope"];
 }): Partial<LearningProposal> {
   return {
@@ -354,8 +360,8 @@ function buildProposal(input: {
       conditions: [
         `generated_from:${input.evidenceSource}`,
         `evidence_provenance:${input.evidenceProvenance}`,
-        `evidence_role:${input.evidenceRole}`,
-        `evidence_promotion_eligible:${String(input.evidencePromotionEligible)}`
+        `evidence_roles:${input.evidenceRoles.join(",") || "none"}`,
+        `evidence_proposal_seed_eligible:${String(input.evidenceProposalSeedEligible)}`
       ],
       exclusions: ["console_debug_only_evidence_without_organic_confirmation"],
       notes: "P9.2 weak-attribution proposal seed; not an applied policy."
@@ -366,9 +372,10 @@ function buildProposal(input: {
     proposedPatch: {
       ...input.proposedPatch,
       evidenceProvenance: input.evidenceProvenance,
-      evidencePromotionEligible: input.evidencePromotionEligible,
-      evidencePromotionReason: input.evidencePromotionReason,
-      evidenceRole: input.evidenceRole
+      evidenceProposalSeedEligible: input.evidenceProposalSeedEligible,
+      evidenceEligibilityReason: input.evidenceEligibilityReason,
+      evidenceRoles: input.evidenceRoles,
+      evidenceEligibility: input.evidenceEligibility
     },
     evidence: [
       {
@@ -382,14 +389,15 @@ function buildProposal(input: {
           input.targetLayer,
           input.targetObject,
           `provenance:${input.evidenceProvenance}`,
-          `evidence_role:${input.evidenceRole}`,
-          `promotion_eligible:${String(input.evidencePromotionEligible)}`
+          ...input.evidenceRoles.map((role) => `evidence_role:${role}`),
+          `proposal_seed_eligible:${String(input.evidenceProposalSeedEligible)}`
         ],
         raw: {
           evidenceProvenance: input.evidenceProvenance,
-          evidencePromotionEligible: input.evidencePromotionEligible,
-          evidencePromotionReason: input.evidencePromotionReason,
-          evidenceRole: input.evidenceRole
+          evidenceProposalSeedEligible: input.evidenceProposalSeedEligible,
+          evidenceEligibilityReason: input.evidenceEligibilityReason,
+          evidenceRoles: input.evidenceRoles,
+          evidenceEligibility: input.evidenceEligibility
         }
       }
     ],
@@ -433,7 +441,7 @@ function buildProposal(input: {
       owner: "human"
     },
     protectedPathImpact: {
-      protectedTargets: [input.targetLayer],
+      protectedTargets: protectedTargetsFor(input.type, input.targetLayer),
       stableWriteRequired: true,
       allowedBeforePromotion: false,
       notes: "Generated proposal seed only; protected target may not change before guarded promotion."
@@ -444,12 +452,23 @@ function buildProposal(input: {
 }
 
 function behaviorImpactFor(type: string, targetLayer: string): string {
-  if (type === "reason_policy" || targetLayer === "reason_policy") return "presentation_only";
+  if (type === "reason_policy" || targetLayer === "reason_policy") return "deliberation_shaping";
   if (type === "candidate_template" || targetLayer === "candidate_future") return "candidate_shaping";
   if (type === "classification_policy" || targetLayer === "classification") return "authority_shaping";
   if (type === "skill") return "authority_shaping";
   if (type === "budget_policy" || targetLayer === "budget_policy") return "deliberation_shaping";
   return "deliberation_shaping";
+}
+
+function protectedTargetsFor(type: string, targetLayer: string): string[] {
+  if (type === "memory") return ["memory"];
+  if (type === "derived_knowledge") return ["derived_knowledge"];
+  if (type === "candidate_template" || targetLayer === "candidate_future") return ["candidate_templates"];
+  if (type === "reason_policy" || targetLayer === "reason_policy") return ["prompt_policy", "scaffold_policy"];
+  if (type === "budget_policy" || type === "budget_compression_policy" || targetLayer === "budget_policy") return ["budget_policy"];
+  if (type === "classification_policy" || targetLayer === "classification_policy") return ["classification_policy"];
+  if (type === "skill") return ["skills"];
+  return ["scaffold_policy"];
 }
 
 function addProposal(
@@ -464,15 +483,16 @@ function addProposal(
 
 function evidenceScopeOf(transition: JsonRecord): {
   evidenceProvenance: string;
-  evidencePromotionEligible: boolean;
-  evidencePromotionReason: string;
-  evidenceRole: string;
+  evidenceProposalSeedEligible: boolean;
+  evidenceEligibilityReason: string;
+  evidenceRoles: string[];
+  evidenceEligibility: JsonRecord;
   environmentScope: LearningProposal["environmentScope"];
 } {
-  const eligibility = getTransitionPromotionEligibility(transition);
-  const evidenceRole = proposalEvidenceRoleOf(transition);
-  const actionableEvidenceRole = evidenceRole === "llm_selected_execution" || evidenceRole === "workspace_shadow_provider";
-  const evidencePromotionEligible = eligibility.eligible && actionableEvidenceRole;
+  const eligibility = getTransitionProposalEvidenceEligibility(transition);
+  const classification = classifyTransitionEvidenceRole(transition);
+  const evidenceRoles = evidenceRoleNames(classification);
+  const evidenceProposalSeedEligible = eligibility.eligible;
   const fingerprint = isRecord(transition.environmentFingerprint) ? transition.environmentFingerprint : {};
   const scope = isRecord(transition.evidenceEnvironmentScope) ? transition.evidenceEnvironmentScope : {};
   const scopeStatus = scope.scopeStatus === "exact" || scope.scopeStatus === "partial" || scope.scopeStatus === "mixed"
@@ -488,38 +508,45 @@ function evidenceScopeOf(transition: JsonRecord): {
     ? scope.compatibilityState
     : "unknown";
   return {
-    evidenceProvenance: `${eligibility.reason}:${evidenceRole}`,
-    evidencePromotionEligible,
-    evidencePromotionReason: evidencePromotionEligible
-      ? `${eligibility.reason}:${evidenceRole}`
-      : eligibility.eligible
-        ? `observation_only_evidence_role:${evidenceRole}`
-        : eligibility.reason,
-    evidenceRole,
+    evidenceProvenance: `${eligibility.reason}:${evidenceRoles.join(",") || "none"}`,
+    evidenceProposalSeedEligible,
+    evidenceEligibilityReason: eligibility.reason,
+    evidenceRoles,
+    evidenceEligibility: {
+      schemaVersion: classification.eligibility.schemaVersion,
+      surface: classification.eligibility.surface,
+      exactOrganicEnvironment: classification.eligibility.exactOrganicEnvironment,
+      sourceResolved: classification.eligibility.sourceResolved,
+      proposalSeedEligible: classification.eligibility.proposalSeedEligible,
+      sameSliceProviderEligible: classification.eligibility.sameSliceProviderEligible,
+      promotionUseAllowed: false,
+      reasons: classification.eligibility.reasons
+    },
     environmentScope: {
       fingerprintHashes: typeof fingerprint.fingerprintHash === "string" ? [fingerprint.fingerprintHash] : [],
       scopeStatus,
       captureProvenance: [provenance],
       compatibilityStates: [compatibility],
-      notes: evidencePromotionEligible
-        ? ["source_transition_environment_scope_exact", `source_transition_evidence_role:${evidenceRole}`]
-        : eligibility.eligible
-          ? [`source_transition_observation_only_role:${evidenceRole}`]
-          : ["source_transition_environment_scope_ineligible:" + eligibility.reason]
+      notes: evidenceProposalSeedEligible
+        ? ["source_transition_environment_scope_exact", `source_transition_evidence_roles:${evidenceRoles.join(",")}`]
+        : ["source_transition_evidence_ineligible:" + eligibility.reason]
     }
   };
 }
 
-function proposalEvidenceRoleOf(transition: JsonRecord): string {
-  const authority = isRecord(transition.decisionAuthority) ? transition.decisionAuthority : {};
-  const selectionSource = typeof authority.selectionSource === "string" ? authority.selectionSource : "unknown";
-  if (selectionSource === "llm") return "llm_selected_execution";
-  const shadow = isRecord(transition.shadowWorkspaceDecision) ? transition.shadowWorkspaceDecision : {};
-  if (shadow.called === true) return "workspace_shadow_provider";
-  if (selectionSource === "local_fallback") return "local_fallback_observation";
-  if (selectionSource === "local_scaffold") return "local_scaffold_observation";
-  if (selectionSource === "local_mechanical") return "local_mechanical_observation";
-  return "unknown_observation";
+function isDraftOnlyLocalObservation(classification: ReturnType<typeof classifyTransitionEvidenceRole>): boolean {
+  if (!classification.eligibility.exactOrganicEnvironment) return false;
+  if (classification.selectionResolutionStatus === "legacy_mismatch_excluded") return false;
+  const localObservation = classification.sources.some((source) =>
+    source.role === "local_fallback_observation" ||
+    source.role === "local_scaffold_observation" ||
+    source.role === "local_safety_guard_observation" ||
+    source.role === "local_mechanical_observation"
+  );
+  const decisionOrProviderEvidence = classification.sources.some((source) =>
+    source.role === "llm_selected_execution" || source.role === "workspace_shadow_provider"
+  );
+  return localObservation && !decisionOrProviderEvidence;
 }
 
 function targetForPredictionLayer(layer: string, buckets: string[]): { type: string; targetLayer: string; suggestedChange: string } {

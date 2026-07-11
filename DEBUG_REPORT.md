@@ -12,6 +12,12 @@ Current closeout / next-phase pointers:
 - `docs/reports/P9_P10_TRUSTWORTHY_CHANGE_KERNEL_AUDIT_2026-07-11.md`
 - `docs/decisions/ADR-0006-policy-influence-and-evidence-provenance.md`
 
+## 2026-07-11 G2.1-G2.3 Implementation Complete, Evidence Still Pending
+
+- `SelectionResolutionRecord`, shared source-resolved evidence-role classification, canonical non-empty protected targets, provider experiment fingerprints, exact-identity diagnostics, and manifest-store malformed/legacy digests are now implemented as read-only G2 contracts.
+- This does not pass G2: current historical records are deliberately requalified or excluded rather than promoted by inference. The first valid next evidence is a fresh exact-organic baseline followed by a naturally repeated same-scope low-risk `deliberation_shaping` deficiency and counterexample review.
+- Canonical status and constraints are in `docs/04_CURRENT_STATUS.md`; do not infer G3 authorization from this historical log.
+
 ## 2026-07-11 P9-G2 Provenance Correction
 
 - Read-only history audit found two additive-live card-select transitions where a valid LLM proposal differed from the final executed candidate after a local guard. This is a selection-provenance/data-truth defect, not proof of illegal execution.

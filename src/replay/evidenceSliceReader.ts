@@ -1,5 +1,10 @@
 import type { JsonRecord } from "../domain/types.js";
 import { isRecord } from "../agent/utils.js";
+import {
+  classifyTransitionEvidenceRole,
+  evidenceRoleNames,
+  getTransitionProposalEvidenceEligibility
+} from "./evidenceRoleClassifier.js";
 
 export type EvidenceSliceKind =
   | "shadow_readiness"
@@ -8,7 +13,7 @@ export type EvidenceSliceKind =
 
 export interface EvidenceSliceSummary {
   schemaVersion: number;
-  policyName: "p9_g2_evidence_slice_reader_v3";
+  policyName: "p9_g2_evidence_slice_reader_v4";
   transitions: number;
   selection: EvidenceSliceSelection;
   dimensions: {
@@ -22,6 +27,7 @@ export interface EvidenceSliceSummary {
     provenanceCounts: Record<string, number>;
     authorityModeCounts: Record<string, number>;
     evidenceRoleCounts: Record<string, number>;
+    selectionResolutionStatusCounts: Record<string, number>;
     selectionSourceCounts: Record<string, number>;
     authorizationSourceCounts: Record<string, number>;
     executionSourceCounts: Record<string, number>;
@@ -33,7 +39,7 @@ export interface EvidenceSliceSummary {
   mixedBudgetWindow: boolean;
   consoleDebugOrFixtureTransitions: number;
   unknownProvenanceTransitions: number;
-  promotionEvidence: EvidencePromotionEligibilitySummary;
+  proposalEvidence: EvidenceProposalEligibilitySummary;
   slices: EvidenceSlice[];
 }
 
@@ -54,7 +60,7 @@ export interface EvidenceSliceSelection {
   transitionIds: string[];
 }
 
-export interface EvidencePromotionEligibilitySummary {
+export interface EvidenceProposalEligibilitySummary {
   eligibleTransitions: number;
   excludedTransitions: number;
   exclusionReasonCounts: Record<string, number>;
@@ -108,7 +114,8 @@ function buildSelectedEvidenceSliceSummary(
     liveModeCounts: countBy(transitions, transitionLiveMode),
     provenanceCounts: countBy(transitions, transitionProvenance),
     authorityModeCounts: countBy(transitions, transitionAuthorityMode),
-    evidenceRoleCounts: countBy(transitions, transitionEvidenceRole),
+    evidenceRoleCounts: countEvidenceRoles(transitions),
+    selectionResolutionStatusCounts: countBy(transitions, transitionSelectionResolutionStatus),
     selectionSourceCounts: countBy(transitions, transitionSelectionSource),
     authorizationSourceCounts: countBy(transitions, transitionAuthorizationSource),
     executionSourceCounts: countBy(transitions, transitionExecutionSource),
@@ -120,19 +127,19 @@ function buildSelectedEvidenceSliceSummary(
   const mixedBudgetWindow = Object.keys(removeUnknown(dimensions.budgetWindowCounts)).length > 1;
   const consoleDebugOrFixtureTransitions = dimensions.provenanceCounts.console_debug_or_fixture ?? 0;
   const unknownProvenanceTransitions = dimensions.provenanceCounts.unknown ?? 0;
-  const promotionEvidence = buildPromotionEvidenceSummary(transitions);
+  const proposalEvidence = buildProposalEvidenceSummary(transitions);
   const promotionReasons = promotionIneligibilityReasons({
     transitions: transitions.length,
     mixedRevisionWindow,
     mixedBudgetWindow,
     consoleDebugOrFixtureTransitions,
     unknownProvenanceTransitions,
-    promotionEvidence
+    proposalEvidence
   });
 
   return {
     schemaVersion: 1,
-    policyName: "p9_g2_evidence_slice_reader_v3",
+    policyName: "p9_g2_evidence_slice_reader_v4",
     transitions: transitions.length,
     selection,
     dimensions,
@@ -140,7 +147,7 @@ function buildSelectedEvidenceSliceSummary(
     mixedBudgetWindow,
     consoleDebugOrFixtureTransitions,
     unknownProvenanceTransitions,
-    promotionEvidence,
+    proposalEvidence,
     slices: [
       {
         kind: "shadow_readiness",
@@ -161,7 +168,7 @@ function buildSelectedEvidenceSliceSummary(
       {
         kind: "stable_learning_promotion",
         purpose: "future P9 promotion evidence; read-only and disabled before proposal gates exist",
-        transitions: promotionEvidence.eligibleTransitions,
+        transitions: proposalEvidence.eligibleTransitions,
         promotionUseAllowed: false,
         status: "not_promotion_eligible",
         reasons: promotionReasons
@@ -207,15 +214,16 @@ export function formatEvidenceSliceSummary(summary: EvidenceSliceSummary): strin
     `provenance=${JSON.stringify(summary.dimensions.provenanceCounts)}`,
     `authorityMode=${JSON.stringify(summary.dimensions.authorityModeCounts)}`,
     `evidenceRole=${JSON.stringify(summary.dimensions.evidenceRoleCounts)}`,
+    `selectionResolution=${JSON.stringify(summary.dimensions.selectionResolutionStatusCounts)}`,
     `selection=${JSON.stringify(summary.dimensions.selectionSourceCounts)}`,
     `authorization=${JSON.stringify(summary.dimensions.authorizationSourceCounts)}`,
     `execution=${JSON.stringify(summary.dimensions.executionSourceCounts)}`,
     `environmentFingerprint=${JSON.stringify(summary.dimensions.environmentFingerprintCounts)}`,
     `environmentScope=${JSON.stringify(summary.dimensions.environmentScopeStatusCounts)}`,
     `environmentCompatibility=${JSON.stringify(summary.dimensions.environmentCompatibilityStateCounts)}`,
-    `promotionEligible=${summary.promotionEvidence.eligibleTransitions}`,
-    `promotionExcluded=${summary.promotionEvidence.excludedTransitions}`,
-    `promotionExclusionReasons=${JSON.stringify(summary.promotionEvidence.exclusionReasonCounts)}`,
+    `proposalSeedEligible=${summary.proposalEvidence.eligibleTransitions}`,
+    `proposalSeedExcluded=${summary.proposalEvidence.excludedTransitions}`,
+    `proposalSeedExclusionReasons=${JSON.stringify(summary.proposalEvidence.exclusionReasonCounts)}`,
     `mixedRevision=${summary.mixedRevisionWindow}`,
     `mixedBudget=${summary.mixedBudgetWindow}`,
     `promotionAllowed=${promotion?.promotionUseAllowed === true}`,
@@ -229,7 +237,7 @@ function promotionIneligibilityReasons(input: {
   mixedBudgetWindow: boolean;
   consoleDebugOrFixtureTransitions: number;
   unknownProvenanceTransitions: number;
-  promotionEvidence: EvidencePromotionEligibilitySummary;
+  proposalEvidence: EvidenceProposalEligibilitySummary;
 }): string[] {
   const reasons = ["p9_promotion_not_implemented"];
   if (input.transitions === 0) reasons.push("no_transitions");
@@ -237,15 +245,15 @@ function promotionIneligibilityReasons(input: {
   if (input.mixedBudgetWindow) reasons.push("mixed_budget_window");
   if (input.consoleDebugOrFixtureTransitions > 0) reasons.push("console_debug_or_fixture_present");
   if (input.unknownProvenanceTransitions > 0) reasons.push("unknown_provenance_without_first_class_marker");
-  if (input.promotionEvidence.excludedTransitions > 0) reasons.push("promotion_evidence_exclusions_present");
-  if (input.transitions > 0 && input.promotionEvidence.eligibleTransitions === 0) {
-    reasons.push("no_organic_agent_runtime_promotion_evidence");
+  if (input.proposalEvidence.excludedTransitions > 0) reasons.push("proposal_evidence_exclusions_present");
+  if (input.transitions > 0 && input.proposalEvidence.eligibleTransitions === 0) {
+    reasons.push("no_exact_organic_source_resolved_proposal_evidence");
   }
   return reasons;
 }
 
-function buildPromotionEvidenceSummary(transitions: JsonRecord[]): EvidencePromotionEligibilitySummary {
-  return transitions.reduce<EvidencePromotionEligibilitySummary>((summary, transition) => {
+function buildProposalEvidenceSummary(transitions: JsonRecord[]): EvidenceProposalEligibilitySummary {
+  return transitions.reduce<EvidenceProposalEligibilitySummary>((summary, transition) => {
     const eligibility = transitionPromotionEligibility(transition);
     if (eligibility.eligible) {
       summary.eligibleTransitions += 1;
@@ -262,22 +270,8 @@ function buildPromotionEvidenceSummary(transitions: JsonRecord[]): EvidencePromo
 }
 
 function transitionPromotionEligibility(transition: JsonRecord): { eligible: boolean; reason: string } {
-  const provenance = transitionProvenance(transition);
-  if (provenance === "console_debug_or_fixture") return { eligible: false, reason: provenance };
-  const scope = transitionEnvironmentScope(transition);
-  const fingerprint = transitionEnvironmentFingerprintRecord(transition);
-  if (!scope) return { eligible: false, reason: "missing_environment_scope" };
-  if (!fingerprint || fingerprint.identityStatus !== "complete") {
-    return { eligible: false, reason: "environment_fingerprint_incomplete" };
-  }
-  if (scope.scopeStatus !== "exact") {
-    return { eligible: false, reason: "environment_scope_" + String(scope.scopeStatus ?? "unknown") };
-  }
-  if (scope.captureProvenance !== "organic") {
-    return { eligible: false, reason: "capture_provenance_" + String(scope.captureProvenance ?? "unknown") };
-  }
-  if (provenance === "organic_agent_runtime") return { eligible: true, reason: provenance };
-  return { eligible: false, reason: provenance };
+  const eligibility = getTransitionProposalEvidenceEligibility(transition);
+  return { eligible: eligibility.eligible, reason: eligibility.reason };
 }
 
 export function getTransitionPromotionEligibility(transition: JsonRecord): { eligible: boolean; reason: string } {
@@ -380,18 +374,15 @@ function transitionAuthorityMode(transition: JsonRecord): string {
 }
 
 function transitionSelectionSource(transition: JsonRecord): string {
+  const resolution = isRecord(transition.selectionResolution) ? transition.selectionResolution : undefined;
+  const finalSelection = isRecord(resolution?.finalSelection) ? resolution.finalSelection : undefined;
+  if (typeof finalSelection?.source === "string") return finalSelection.source;
   const authority = transitionDecisionAuthority(transition);
   return typeof authority?.selectionSource === "string" ? authority.selectionSource : "not_recorded";
 }
 
-function transitionEvidenceRole(transition: JsonRecord): string {
-  const authority = transitionDecisionAuthority(transition);
-  if (authority?.selectionSource === "llm") return "llm_selected_execution";
-  if (shadowWorkspaceCalled(transition)) return "workspace_shadow_provider";
-  if (authority?.selectionSource === "local_fallback") return "local_fallback_observation";
-  if (authority?.selectionSource === "local_scaffold") return "local_scaffold_observation";
-  if (authority?.selectionSource === "local_mechanical") return "local_mechanical_observation";
-  return "unknown_observation";
+function transitionSelectionResolutionStatus(transition: JsonRecord): string {
+  return classifyTransitionEvidenceRole(transition).selectionResolutionStatus;
 }
 
 function transitionAuthorizationSource(transition: JsonRecord): string {
@@ -448,6 +439,16 @@ function hasConsoleDebugMarker(transition: JsonRecord): boolean {
   ];
   return candidates.some((value) => typeof value === "string" && /console|debug|fixture/i.test(value)) ||
     candidates.some((value) => value === true);
+}
+
+function countEvidenceRoles(transitions: JsonRecord[]): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const transition of transitions) {
+    for (const role of evidenceRoleNames(classifyTransitionEvidenceRole(transition))) {
+      counts[role] = (counts[role] ?? 0) + 1;
+    }
+  }
+  return counts;
 }
 
 function hasShadowWorkspaceDecision(transition: JsonRecord): boolean {

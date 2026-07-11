@@ -17,54 +17,43 @@ Status values:
 
 ### `selection_resolution_provenance_mismatch`
 
-- Status: `open`
+- Status: `closed`
 - Evidence:
   - [controller.ts](../../src/agent/controller.ts#L353)
   - [controller.ts](../../src/agent/controller.ts#L421)
   - historical live transitions `transition-000080-agent-mr95kwvx-rwmnfr` and `transition-000725-agent-mr9c3oam-5ehlu9`
-- Problem:
-  - A valid LLM candidate can set `chosenBy="llm"`, then the local card-select safety guard can replace the final candidate. The recorder retains the final candidate but does not record the transformation or change final selection provenance.
-  - The two cited additive-live records proposed `select-card-12` / `select-card-1` but executed `select-card-0` while their historical decision audit reported `chosenBy="llm"`.
-- Why it matters:
-  - It makes `llm_selected_execution` false or incomplete for affected records. Execution safety may still be correct, but authority, proposal, and future policy-impact evidence become untrustworthy.
-- Required G2 repair before G3:
-  - add a `SelectionResolutionRecord` containing proposed candidate/source, final candidate/source, transformation kind/reason, validation, and evidence eligibility;
-  - derive authority/replay evidence from final resolution, not `chosenBy` alone;
-  - retain raw history and add a conservative derived mismatch warning/exclusion instead of rewriting transitions;
-  - cover accepted LLM selection, local safety override, invalid fallback, and forced-local paths with smoke/replay fixtures.
+- Resolution:
+  - Fresh executor-logged transitions now write `SelectionResolutionRecord` with proposed candidate/source, validation outcome, guard transformation, final candidate/source, and LLM-selection evidence eligibility.
+  - Authority and live-rollout reporting derive final selection from that record; `chosenBy` is retained as legacy summary telemetry only.
+  - The two cited historical records remain immutable and are derived as `selection_provenance_mismatch_excluded`; `chosenBy`-only history is `legacy_selection_provenance_not_recorded`.
+  - Smoke coverage includes accepted LLM selection, local safety override, fallback, forced-local, and historical mismatch exclusion paths.
 
 ### `pre_decision_policy_impact_misclassification`
 
-- Status: `open`
+- Status: `closed`
 - Evidence:
   - [proposalGenerator.ts](../../src/learning/proposalGenerator.ts#L446)
   - [shadowOverlayPolicy.ts](../../src/learning/shadowOverlayPolicy.ts#L23)
   - [experimentManifest.ts](../../src/learning/experimentManifest.ts#L77)
-- Problem:
-  - `reason_policy` guidance is placed into a packet before the provider decision but is classified and preflighted as `presentation_only`.
-- Why it matters:
-  - Offline clone isolation means no current runtime mutation; it does not mean a future application cannot change LLM deliberation. Treating it as decision-neutral understates risk and invalidates the former first-G3 target wording.
-- Required G2 repair before G3:
-  - split post-decision display from pre-decision `deliberation_shaping` using explicit mutation-surface and decision-influence semantics;
-  - retain fact/candidate/order invariants as safeguards, not proof of no decision influence;
-  - require the first G3 candidate to be a narrow deliberation-shaping canary with human approval, retrieval trace, and rollback.
+- Resolution:
+  - `presentation_only` is now reserved for post-decision display/observability. Pre-decision `reason_policy` guidance is `deliberation_shaping`.
+  - Facts/candidate/order invariants remain safeguards, not claims of decision neutrality.
+  - The first possible G3 target is explicitly a narrow, human-approved deliberation-shaping canary with rollback and retrieval trace; it remains unauthorized until G2 evidence passes.
 
 ### `proposal_authorization_bypass_risk`
 
-- Status: `open`
+- Status: `in_progress`
 - Evidence:
   - [proposals.ts](../../src/learning/proposals.ts#L312)
   - [proposals.ts](../../src/learning/proposals.ts#L635)
   - [shadowOverlayPolicy.ts](../../src/learning/shadowOverlayPolicy.ts#L81)
-- Problem:
-  - Empty protected-target arrays pass structural validation; one planner exposes blockers but delegates application eligibility to a separate checker; that checker trusts proposal-embedded evidence eligibility/role labels.
-- Why it matters:
-  - A malformed or forged proposal can look shadow-eligible without source-resolved evidence or complete protected-path declaration.
-- Required G2 repair before G3:
-  - require non-empty validated targets and target/layer compatibility;
-  - resolve evidence references and digests from source run/transition artifacts;
-  - make every preflight/applicator path consume the same final deny-by-default eligibility decision;
-  - fail closed for unsupported, quarantined, degraded, or unresolved applicability.
+- G2 implementation:
+  - `protectedPathImpact.protectedTargets` must be non-empty, canonical, and compatible with the target layer; unknown targets cannot become actionable.
+  - The proposal generator, planner, preflight, and shadow applicator use one transition-backed, source-resolved fail-closed evidence classifier rather than proposal-embedded labels. Overlay assembly requires a caller-selected transition named by both the proposal and its evidence record, with matching exact environment scope.
+  - Provider experiment manifests expose exact-identity diagnostics and a malformed/legacy-store digest rather than silently treating old records as current.
+- Remaining evidence work before G3:
+  - exercise the path only with fresh exact organic transition artifacts and a natural paired/counterexample review;
+  - retain failure for unsupported, quarantined, degraded, or unresolved applicability. No apply or promotion path exists.
 
 ### `protected_path_write_gate_missing`
 
@@ -123,21 +112,21 @@ Status values:
 
 - Status: `in_progress`
 - Problem:
-  - Promotion evidence is moving out of ad hoc replay summary interpretation into a first-class read-only slice reader, but that reader is not yet the canonical promotion-grade slice authority.
-  - The current reader still deliberately keeps stable-learning promotion ineligible until P9 proposal/promotion gates exist.
+  - A first-class read-only `EvidenceSliceReader` now exists, but it deliberately cannot become a promotion-grade authority until G3 gates exist.
+  - The reader reports additive source roles, selection-resolution status, and one fail-closed proposal-seed eligibility result; it keeps `promotionUseAllowed=false` for every G2 slice.
 - Why it matters:
   - P9 cannot safely promote or reject policies if mixed revision, mixed budget, console-assisted, and live-vs-shadow evidence are not explicitly separable.
 - Minimum fix:
-  - keep expanding the first-class `EvidenceSliceReader`
-  - make slice dimensions explicit in code and docs
+  - collect natural fresh evidence through the explicit dimensions rather than reinterpreting mixed latest windows
+  - keep source roles, proposal-seed eligibility, and future promotion authorization distinct
   - keep stable-learning promotion disabled until proposal/promotion gates exist
 
 ### `decision_authority_audit_missing`
 
 - Status: `in_progress`
 - Problem:
-  - Fresh executor-logged transitions now carry a read-only `DecisionAuthorizationRecord` with separate deliberation, selection, authorization, execution, plan-origin, and authority fields.
-  - Historical `chosenBy` remains incomplete and is deliberately reported as `not_recorded` rather than retroactively inferred.
+  - Fresh executor-logged transitions now carry a read-only `DecisionAuthorizationRecord` and `SelectionResolutionRecord` with separate proposed/final selection, guard override, deliberation, authorization, execution, plan-origin, and authority fields.
+  - Historical `chosenBy` remains incomplete and is deliberately reported as `not_recorded` or `selection_provenance_mismatch_excluded` rather than retroactively inferred.
 - Why it matters:
   - Learned capability could silently become authority, turning the main product into a local policy bot without an explicit North Star decision.
 - Remaining fix before P9-G3:
@@ -147,21 +136,15 @@ Status values:
 
 ### `evidence_role_and_authority_conflation`
 
-- Status: `in_progress`
+- Status: `closed`
 - Evidence:
   - [experimentManifest.ts](../../src/learning/experimentManifest.ts)
   - [proposalGenerator.ts](../../src/learning/proposalGenerator.ts)
   - [evidenceSliceReader.ts](../../src/replay/evidenceSliceReader.ts)
-- Problem:
-  - Exact organic environment scope and a declared `llm_primary` mode do not prove that the LLM selected or executed the recorded action. Controlled direct-workspace shadow windows may intentionally execute local fallback while still yielding a valid provider outcome.
-  - `EvidenceSliceReader` and proposal generation currently prioritize `llm_selected_execution`, while experiment manifests prioritize `workspace_shadow_provider`. The same transition can therefore receive incompatible roles across G2 surfaces.
-  - Existing focused slice `promotionEligible` counts remain environment/provenance eligibility, not proof of execution authority or authorization.
-- Why it matters:
-  - Without this distinction, G2 could promote a shadow prompt-quality result as if it were evidence that an LLM-owned decision improved, or let local/mechanical smoke alarms become actionable soft-shell changes.
-- Minimum fix before P9-G3:
-  - replace local precedence rules with one shared structured observation classifier for workspace calls, proposed/final selection, execution, and provenance consistency;
-  - derive display roles from that one record, retain baseline/overlay role facts, and require a called workspace-shadow baseline for provider comparison;
-  - require G3 to state whether a claim concerns shadow workspace quality, LLM-selected execution, or both.
+- Resolution:
+  - A shared structured classifier now derives additive workspace-call, proposed/final-selection, execution, provenance, and eligibility facts for replay, proposal generation, preflight, manifests, and live-rollout reporting.
+  - Exact organic scope and declared authority mode do not substitute for final LLM selection. A direct workspace shadow can coexist with local fallback execution without being relabeled as LLM-selected execution.
+  - G3, if later authorized, must state whether a claim concerns shadow workspace quality, LLM-selected execution, or both.
 
 ### `candidate_template_shadow_overlay_eligibility_mismatch`
 
@@ -171,12 +154,12 @@ Status values:
   - [proposalGenerator.ts](../../src/learning/proposalGenerator.ts)
   - [P9_GUARDED_LEARNING_PLAN.md](../phases/P9_GUARDED_LEARNING_PLAN.md)
 - Resolution:
-  - A cloned `candidate_template` overlay is only a facts/order-preserving presentation projection over existing CandidateFuture objects. It may add bounded guidance and reference existing ids, but cannot create, remove, reorder, or alter candidates/facts.
-  - Actual candidate-template/generation change remains `candidate_shaping`; generated `candidate_future:card_flow` seeds therefore remain review-only and cannot use the presentation-only overlay path.
-  - Smoke coverage proves the permitted projection preserves candidate-fact hashes and has no runtime/live effect.
+  - Candidate-template projection remains comparison/review tooling over existing CandidateFuture objects; it cannot create, remove, reorder, or alter candidates/facts.
+  - Actual candidate-template/generation change remains `candidate_shaping`; generated `candidate_future:card_flow` seeds are review-only and cannot use the first deliberation-shaping canary path.
+  - Smoke coverage proves the excluded candidate-template path has no runtime/live effect.
 - Remaining repair:
-  - A presentation projection may still shape a future provider decision if applied before deliberation. It is G2 comparison tooling, not proof that a G3 policy is `presentation_only` or decision-neutral.
-  - Reclassify all pre-decision overlays under the mutation-surface/decision-influence contract from ADR-0006 before G3.
+  - Any future pre-decision projection may still shape provider deliberation. It is G2 comparison tooling, not proof that a G3 policy is decision-neutral.
+  - Candidate shaping requires a later, separately qualified experiment path; it cannot be relabeled to enter the first G3 canary.
 
 ### `card_select_candidate_future_content_deficit`
 
@@ -197,13 +180,13 @@ Status values:
 
 - Status: `in_progress`
 - Problem:
-  - Fresh transitions now carry read-only `EnvironmentFingerprint` and `EvidenceEnvironmentScope`; verified exact-organic baseline captures exist, but no verified complete-scope baseline/overlay pair exists.
+  - Fresh transitions now carry read-only `EnvironmentFingerprint` and `EvidenceEnvironmentScope`; manifests additionally record a secret-free `ProviderExperimentFingerprint`, exact-identity comparison, and malformed/legacy-store digest. No verified complete-scope baseline/overlay/counterexample set exists yet.
   - Slay the Spire 2 Early Access updates can invalidate mechanics, content, serialization, and mod assumptions.
 - Why it matters:
   - P9 could promote stale knowledge or skills and then self-reinforce them under a different environment.
 - Remaining fix before P9-G3:
   - repeat verified game build/channel, content/mod, adapter, fact snapshot, revision, provenance, and provider-experiment fingerprint fields in organic paired evidence;
-  - implement P9 exact-identity applicability: only exact complete fingerprint equality may support a first narrow policy, with no inferred compatibility before P12;
+  - exercise the implemented P9 exact-identity applicability: only exact complete fingerprint equality may support a first narrow policy, with no inferred compatibility before P12;
   - preserve historical evidence but block missing or unknown **scope**, and unsupported/quarantined/degraded applicability, from structural promotion evidence; P9 exact identity may still carry compatibility as `not_evaluated_pre_p12` rather than infer it;
   - add future invalidation/revalidation fields to learned objects.
 
@@ -224,18 +207,18 @@ Status values:
 
 ### `manifest_and_stable_store_corruption_can_be_silent`
 
-- Status: `open`
+- Status: `in_progress`
 - Evidence:
   - [experimentManifest.ts](../../src/learning/experimentManifest.ts#L181)
   - [utils.ts](../../src/agent/utils.ts#L15)
   - [memory.ts](../../src/agent/memory.ts#L143)
 - Problem:
-  - Malformed experiment-manifest JSONL lines are silently skipped. Generic stable-state reads fall back to defaults on any read or parse error.
+  - G2 manifest reads now surface parsed, malformed, non-object, legacy, and current-record counts with a content digest; generic stable-state reads still fall back to defaults on any read or parse error.
   - Legacy finalize remains explicitly gateable and can write long-term memory, experience, and strategy outside the future P9 policy store.
 - Why it matters:
   - Future learned policy evidence could disappear from view or be overwritten after a corruption event. A changed legacy stable store could contaminate a promotion/evaluation window without an explicit digest/invalidation record.
 - Minimum fix:
-  - P9-G2 must expose malformed manifest diagnostics and record legacy-store digests in experiment evidence;
+  - P9-G2 has exposed manifest diagnostics and a legacy/malformed-store digest in experiment evidence;
   - P9-G3 must fail closed and quarantine learned-policy state on parse/digest failure;
   - P10-A must use an immutable, idempotent policy event lifecycle and retain legacy read compatibility without treating legacy data as P9 promotion state.
 

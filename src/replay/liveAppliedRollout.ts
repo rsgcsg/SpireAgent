@@ -1,10 +1,13 @@
 import type { JsonRecord } from "../domain/types.js";
 import { isRecord } from "../agent/utils.js";
+import { classifyTransitionEvidenceRole } from "./evidenceRoleClassifier.js";
 
 export interface LiveAppliedRolloutSummary {
   transitions: number;
   liveAdditiveApplied: number;
-  chosenByLlm: number;
+  llmSelectedExecution: number;
+  legacyChosenByLlmNotRecorded: number;
+  localSafetyOverrides: number;
   chosenByFallback: number;
   decisionClassCounts: Record<string, number>;
   providerSourceCounts: Record<string, number>;
@@ -20,7 +23,9 @@ export function buildLiveAppliedRolloutSummary(transitions: JsonRecord[]): LiveA
   const summary: LiveAppliedRolloutSummary = {
     transitions: transitions.length,
     liveAdditiveApplied: 0,
-    chosenByLlm: 0,
+    llmSelectedExecution: 0,
+    legacyChosenByLlmNotRecorded: 0,
+    localSafetyOverrides: 0,
     chosenByFallback: 0,
     decisionClassCounts: {},
     providerSourceCounts: {},
@@ -36,8 +41,17 @@ export function buildLiveAppliedRolloutSummary(transitions: JsonRecord[]): LiveA
     const llm = transitionLlmAudit(transition);
     if (!llm || llm.liveAdditiveApplied !== true) continue;
     summary.liveAdditiveApplied += 1;
+    const evidence = classifyTransitionEvidenceRole(transition);
+    if (evidence.sources.some((source) => source.role === "llm_selected_execution")) {
+      summary.llmSelectedExecution += 1;
+    }
+    if (evidence.sources.some((source) => source.role === "local_safety_guard_observation")) {
+      summary.localSafetyOverrides += 1;
+    }
+    if (transitionChosenBy(transition) === "llm" && evidence.selectionResolutionStatus === "not_recorded") {
+      summary.legacyChosenByLlmNotRecorded += 1;
+    }
     const chosenBy = transitionChosenBy(transition);
-    if (chosenBy === "llm") summary.chosenByLlm += 1;
     if (chosenBy === "fallback") summary.chosenByFallback += 1;
     increment(summary.decisionClassCounts, stringOr(llm.liveAdditiveDecisionClass, "unknown"));
     increment(summary.providerSourceCounts, stringOr(llm.providerSource, "unknown"));
@@ -55,7 +69,9 @@ export function buildLiveAppliedRolloutSummary(transitions: JsonRecord[]): LiveA
 export function formatLiveAppliedRolloutSummary(summary: LiveAppliedRolloutSummary): string {
   return [
     `applied=${summary.liveAdditiveApplied}`,
-    `chosenByLlm=${summary.chosenByLlm}`,
+    `llmSelectedExecution=${summary.llmSelectedExecution}`,
+    `legacyChosenByLlmNotRecorded=${summary.legacyChosenByLlmNotRecorded}`,
+    `localSafetyOverrides=${summary.localSafetyOverrides}`,
     `fallback=${summary.chosenByFallback}`,
     `classes=${JSON.stringify(summary.decisionClassCounts)}`,
     `provider=${JSON.stringify(summary.providerSourceCounts)}`,

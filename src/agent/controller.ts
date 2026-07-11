@@ -29,6 +29,7 @@ import { buildCompactWorkspaceSummary, buildP8WorkspaceShadowFromPacket } from "
 import { P8_LIVE_ADDITIVE_FLAG, P8_LIVE_DECISION_CLASSES_FLAG } from "./workspaceExperimentConfig.js";
 import { buildMapRoutePlanFromChoice } from "./mapRoutePlan.js";
 import { evaluateLiveLlmStableWriteGate, type ProtectedStableWriteTarget } from "./protectedPathGate.js";
+import { buildSelectionResolutionRecord, inferSelectionSource } from "./selectionResolution.js";
 
 export interface ControllerOptions {
   dryRun?: boolean;
@@ -273,6 +274,11 @@ export class AgentController {
     let fallbackReason: string | undefined;
     let fallbackPolicy: FallbackPolicyAudit | undefined;
     let checkpoint: ExecutionCheckpoint | undefined;
+    let proposedCandidateId = chosen?.id;
+    let proposedSelectionSource = inferSelectionSource({ chosenBy, route: scoring.route.kind });
+    let proposedValidationOutcome: string | undefined;
+    let selectionResolutionReason: string | undefined;
+    let finalSelectionSourceOverride: ReturnType<typeof inferSelectionSource> | "local_safety_guard" | undefined;
     const llmWanted = Boolean(chosen) && (options.forceLlm || scoring.shouldAskLlm);
     const llmAudit: DecisionLlmAudit = {
       wanted: llmWanted,
@@ -353,6 +359,9 @@ export class AgentController {
       if (llmDecision) {
         llmAudit.candidateId = llmDecision.candidateId;
         const validation = validateLlmDecisionForCandidates(llmDecision, scoring.candidates);
+        proposedCandidateId = llmDecision.candidateId;
+        proposedSelectionSource = "llm";
+        proposedValidationOutcome = validation.valid ? "selected" : validation.outcome ?? "invalid_choice";
         const llmChoice = validation.valid
           ? scoring.candidates.find((candidate) => candidate.id === llmDecision?.candidateId)
           : undefined;
@@ -434,6 +443,10 @@ export class AgentController {
           message: "Waiting for card selection state to expose new selectable cards or confirmation"
         };
       }
+      if (guardedChoice.id !== chosen.id) {
+        finalSelectionSourceOverride = "local_safety_guard";
+        selectionResolutionReason = "repeated_card_select_toggle_guard";
+      }
       chosen = guardedChoice;
       if (this.shouldBlockRepeatedNoProgressAction(state, chosen.action)) {
         return {
@@ -500,6 +513,16 @@ export class AgentController {
       );
       this.memory.recordDecision(entry);
       const selectedCandidateForRecord = chosen;
+      const selectionResolution = buildSelectionResolutionRecord({
+        proposedCandidateId,
+        proposedSelectionSource,
+        proposedValidationOutcome: proposedValidationOutcome ?? llmAudit.outcome,
+        finalCandidateId: selectedCandidateForRecord.id,
+        finalSelectionSource: finalSelectionSourceOverride ?? inferSelectionSource({ chosenBy, route: scoring.route.kind }),
+        allowedCandidateIds: scoring.candidates.map((candidate) => candidate.id),
+        resolutionReason: selectionResolutionReason,
+        notes: selectionResolutionReason ? ["selection_resolution_recorded_by_controller"] : []
+      });
       const selectedPlan = cognitive.candidateFutures.find((future) => future.sourceCandidateId === selectedCandidateForRecord.id);
       const predictionError = buildPredictionErrorRecord({ selectedPlan, checkpoint });
       const consolidation = buildConsolidationRecord({ selectedPlan, predictionError });
@@ -533,7 +556,8 @@ export class AgentController {
         shadowWorkspaceDecision: workspaceShadow.shadowDecision,
         selectedPlan,
         predictionError,
-        consolidation
+        consolidation,
+        selectionResolution
       });
     }
 

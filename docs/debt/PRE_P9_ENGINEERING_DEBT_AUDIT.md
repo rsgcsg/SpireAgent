@@ -16,9 +16,9 @@ It separates:
 
 This document does **not** authorize wildcard live, stable learning, automatic promotion, broad controller rewrites, or LLM/provider writes to stable memory, derived knowledge, strategy, skills, prompt policies, budget policies, or scaffold policies.
 
-## Current Phase Snapshot
+## Historical Phase Snapshot (Superseded)
 
-Current phase is P8/P8.5 closeout plus early P9.0 hardening.
+At the audit date, the phase was P8/P8.5 closeout plus early P9.0 hardening. The current phase is P9-G2 Experiment Integrity; use `docs/04_CURRENT_STATUS.md` rather than this archived snapshot.
 
 Honest status:
 
@@ -266,7 +266,7 @@ Minimum repair:
 
 Current state:
 
-- `EvidenceSliceReader` exposes `promotionEvidence.eligibleTransitions`, `promotionEvidence.excludedTransitions`, and `promotionEvidence.exclusionReasonCounts`.
+- At the audit date, the proposed reader surface was named `promotionEvidence.*`. Current G2 reporting uses source-resolved `proposalEvidence.*` and keeps `promotionUseAllowed=false`; see `REPLAY_AND_EVAL.md`.
 - Console/debug/fixture, human-observed, snapshot-only, and unknown-provenance transitions remain visible but cannot satisfy future stable-promotion slices.
 - Stable promotion itself remains unimplemented and disabled.
 

@@ -5,8 +5,10 @@ import type { WorkspaceAblationMode } from "../agent/workspaceExperimentConfig.j
 import type { ScoredCandidate } from "../agent/types.js";
 import type { LlmDecider } from "../agent/llm.js";
 import { classifyProviderFailure } from "../agent/providerFailureClassifier.js";
+import { P8_PROVIDER_RECOVERY_POLICY_NAME } from "../agent/providerRecoveryPolicy.js";
 import { isRecord } from "../agent/utils.js";
 import { assessShadowWorkspaceOverlayEligibility } from "./shadowOverlayPolicy.js";
+import { buildProviderExperimentFingerprint } from "./providerExperimentFingerprint.js";
 import type { ShadowWorkspaceOutcomeEvidence, ShadowWorkspaceProviderAttempt } from "./shadowEvaluation.js";
 
 export interface LearningProposalShadowWorkspaceComparison {
@@ -47,6 +49,7 @@ export interface SameSliceShadowRunResult {
 
 export function compareLearningProposalInShadowWorkspace(input: {
   proposal: JsonRecord;
+  sourceTransition?: JsonRecord;
   packet: DeliberationPacket;
   candidates: ScoredCandidate[];
   decisionClass?: string;
@@ -62,6 +65,7 @@ export function compareLearningProposalInShadowWorkspace(input: {
  */
 export async function runLearningProposalInSameSliceShadow(input: {
   proposal: JsonRecord;
+  sourceTransition?: JsonRecord;
   packet: DeliberationPacket;
   candidates: ScoredCandidate[];
   decisionClass?: string;
@@ -118,7 +122,18 @@ export async function runLearningProposalInSameSliceShadow(input: {
         finishReason: optionalString(metadata.finishReason),
         outputCapHit: optionalString(metadata.finishReason) === "length",
         providerProfile: providerProfile(metadata, audit),
-        providerAttempts: providerAttempts(audit)
+        providerAttempts: providerAttempts(audit),
+        providerExperimentFingerprint: buildProviderExperimentFingerprint({
+          provider: metadata.provider,
+          providerSource: "workspace_shadow",
+          model: metadata.model,
+          responseMode: metadata.requestMode ?? audit.requestMode,
+          thinkingMode: metadata.requestedThinkingMode ?? audit.requestedThinkingMode,
+          maxOutputTokens: metadata.maxOutputTokens,
+          retryCount: audit.retryCount,
+          recoveryPolicyName: P8_PROVIDER_RECOVERY_POLICY_NAME,
+          attempts: audit.attempts
+        })
       }
     };
   } catch {
@@ -139,6 +154,7 @@ export async function runLearningProposalInSameSliceShadow(input: {
 
 function assembleLearningProposalShadowWorkspace(input: {
   proposal: JsonRecord;
+  sourceTransition?: JsonRecord;
   packet: DeliberationPacket;
   candidates: ScoredCandidate[];
   decisionClass?: string;
@@ -146,7 +162,7 @@ function assembleLearningProposalShadowWorkspace(input: {
   baselineReasonQualityNotes?: string[];
 }): { comparison: LearningProposalShadowWorkspaceComparison; overlayPrompt?: string } {
   const mode = input.mode ?? "full";
-  const eligibility = assessShadowWorkspaceOverlayEligibility(input.proposal);
+  const eligibility = assessShadowWorkspaceOverlayEligibility(input.proposal, input.sourceTransition);
   const baselinePrompt = buildDeliberationWorkspacePrompt(input.packet, input.candidates, mode, input.decisionClass);
   const baseline = summarizePrompt(baselinePrompt, input.packet, input.candidates);
   const proposalId = typeof input.proposal.id === "string" ? input.proposal.id : "unknown";

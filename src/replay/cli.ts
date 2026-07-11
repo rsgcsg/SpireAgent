@@ -37,7 +37,7 @@ import {
 import {
   buildLearningExperimentManifestSurface,
   formatLearningExperimentManifestSurface,
-  readLearningExperimentManifests
+  readLearningExperimentManifestStore
 } from "../learning/experimentManifest.js";
 
 async function main(): Promise<void> {
@@ -73,7 +73,11 @@ async function main(): Promise<void> {
   const learningProposalSurface = buildLearningProposalSurface(readLearningProposals(run.runDir));
   const learningProposalReviewDecisionSurface = buildLearningProposalReviewDecisionSurface(readLearningProposalReviewDecisions(run.runDir));
   const reverseScaffoldFeedbackSurface = buildReverseScaffoldFeedbackSurface(readReverseScaffoldFeedback(run.runDir));
-  const experimentManifestSurface = buildLearningExperimentManifestSurface(readLearningExperimentManifests(run.runDir));
+  const experimentManifestStore = readLearningExperimentManifestStore(run.runDir);
+  const experimentManifestSurface = buildLearningExperimentManifestSurface(
+    experimentManifestStore.manifests,
+    experimentManifestStore.digest
+  );
   console.log(`Run: ${path.basename(run.runDir)}`);
   console.log(`Transitions: ${run.transitions.length}`);
   console.log(`Cognitive coverage: ${formatReplayCognitiveCoverage(cognitiveCoverage)}`);

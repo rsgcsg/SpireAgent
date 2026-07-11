@@ -70,6 +70,7 @@ import { summarizeProviderRecoveryPolicy } from "./providerRecoveryPolicy.js";
 import { analyzeSerializedCandidateFutures } from "./candidateFutureReviewSignals.js";
 import { serializeWorkspaceCandidateFutures } from "./candidateFutureCompressor.js";
 import { buildMapRoutePlanFromChoice } from "./mapRoutePlan.js";
+import { isRecord } from "./utils.js";
 import { buildDecisionAuthorizationRecord, resolveDecisionAuthorityMode } from "./decisionAuthority.js";
 import {
   buildEnvironmentFingerprint,
@@ -85,6 +86,7 @@ import {
 } from "./protectedPathGate.js";
 import { buildLiveAppliedRolloutSummary } from "../replay/liveAppliedRollout.js";
 import { buildEvidenceSliceSummary, formatEvidenceSliceSummary } from "../replay/evidenceSliceReader.js";
+import { classifyTransitionEvidenceRole, getTransitionProposalEvidenceEligibility } from "../replay/evidenceRoleClassifier.js";
 import {
   appendLearningProposal,
   appendLearningProposalReviewDecision,
@@ -114,12 +116,14 @@ import {
   assessLearningExperimentPreflight,
   buildLearningExperimentManifest,
   buildLearningExperimentManifestSurface,
-  readLearningExperimentManifests
+  LEARNING_EXPERIMENT_MANIFESTS_FILE,
+  readLearningExperimentManifestStore
 } from "../learning/experimentManifest.js";
 import {
   DOMAIN_SCHEMA_VERSION,
   type CandidateFuture,
   type DeliberationPacket,
+  type JsonRecord,
   type MemoryActivation,
   type PredictionErrorRecord,
   type SalienceSignal,
@@ -2028,8 +2032,20 @@ try {
       transitionId: "transition-p9-smoke",
       summary: "Organic combat review observed a missing tradeoff despite available candidate facts.",
       strength: "weak",
-      tags: ["promotion_eligible:true", "evidence_role:workspace_shadow_provider"],
-      raw: { evidencePromotionEligible: true, evidenceRole: "workspace_shadow_provider" }
+      tags: ["proposal_seed_eligible:true", "evidence_role:workspace_shadow_provider"],
+      raw: {
+        evidenceRoles: ["workspace_shadow_provider"],
+        evidenceEligibility: {
+          schemaVersion: 1,
+          surface: "p9_g2_evidence_eligibility",
+          exactOrganicEnvironment: true,
+          sourceResolved: true,
+          proposalSeedEligible: true,
+          sameSliceProviderEligible: true,
+          promotionUseAllowed: false,
+          reasons: []
+        }
+      }
     }],
     counterexamples: [{ summary: "A concise reason can be adequate when the tradeoff is already explicit in a forced action.", condition: "forced_action" }],
     weakAttribution: {
@@ -2040,7 +2056,7 @@ try {
     },
     confidence: 0.25,
     riskLevel: "low",
-    behaviorImpact: "presentation_only",
+    behaviorImpact: "deliberation_shaping",
     expectedEffect: "Compare a scoped reason-guidance overlay without changing candidate facts or runtime decisions.",
     promotionCriteria: { evidenceRequired: ["organic same-revision comparison"], validationPlan: ["offline shadow workspace comparison"] },
     rollbackPlan: { rollbackTrigger: ["overlay makes reasons more templated"], rollbackAction: "remove the in-memory overlay" },
@@ -2053,10 +2069,39 @@ try {
     createdFromTransitionIds: ["transition-p9-smoke"]
   });
   const shadowSafeStored = readLearningProposals(p9ProposalDir).find((proposal) => proposal.id === shadowSafeProposal.id) ?? {};
-  const shadowSafePlan = buildLearningProposalShadowOverlayPlan(shadowSafeStored);
+  const p9SourceTransition: JsonRecord = {
+    transitionId: "transition-p9-smoke",
+    source: "agent",
+    captureMode: "executor_logged",
+    environmentFingerprint: { identityStatus: "complete", fingerprintHash: "env-p9-smoke" },
+    evidenceEnvironmentScope: { scopeStatus: "exact", captureProvenance: "organic", compatibilityState: "unknown" },
+    shadowWorkspaceDecision: {
+      called: true,
+      outcome: "valid",
+      failureBucket: "none",
+      outputCapHit: false
+    }
+  };
+  const unresolvedShadowPlan = buildLearningProposalShadowOverlayPlan(shadowSafeStored);
+  assert.equal(unresolvedShadowPlan.eligibleForShadowApplication, false);
+  assert.ok(unresolvedShadowPlan.blockers.includes("source_transition_not_resolved"));
+  const mismatchedSourcePlan = buildLearningProposalShadowOverlayPlan(shadowSafeStored, {
+    ...p9SourceTransition,
+    transitionId: "transition-p9-other"
+  });
+  assert.equal(mismatchedSourcePlan.eligibleForShadowApplication, false);
+  assert.ok(mismatchedSourcePlan.blockers.includes("source_transition_not_referenced_by_proposal"));
+  const mismatchedSourceRunPlan = buildLearningProposalShadowOverlayPlan(shadowSafeStored, {
+    ...p9SourceTransition,
+    runId: "run-p9-other"
+  });
+  assert.equal(mismatchedSourceRunPlan.eligibleForShadowApplication, false);
+  assert.ok(mismatchedSourceRunPlan.blockers.includes("source_run_not_referenced_by_proposal"));
+  const shadowSafePlan = buildLearningProposalShadowOverlayPlan(shadowSafeStored, p9SourceTransition);
   assert.equal(shadowSafePlan.eligibleForShadowApplication, true);
   const shadowWorkspaceComparison = compareLearningProposalInShadowWorkspace({
     proposal: shadowSafeStored,
+    sourceTransition: p9SourceTransition,
     packet: deliberationPacket,
     candidates: [workspaceCandidate],
     decisionClass: "combat:llm_required",
@@ -2082,6 +2127,7 @@ try {
         }
       }
     },
+    sourceTransition: p9SourceTransition,
     packet: deliberationPacket,
     candidates: [workspaceCandidate],
     decisionClass: "combat:llm_required",
@@ -2100,6 +2146,7 @@ try {
         }
       }
     },
+    sourceTransition: p9SourceTransition,
     packet: deliberationPacket,
     candidates: [workspaceCandidate],
     decisionClass: "combat:llm_required",
@@ -2109,6 +2156,7 @@ try {
   assert.ok(outOfScopeReasonOverlay.blockers.includes("required_reason_quality_note_missing:missing_tradeoff"));
   const sameSliceShadowRun = await runLearningProposalInSameSliceShadow({
     proposal: shadowSafeStored,
+    sourceTransition: p9SourceTransition,
     packet: deliberationPacket,
     candidates: [workspaceCandidate],
     decisionClass: "combat:llm_required",
@@ -2126,6 +2174,8 @@ try {
           candidateId: workspaceCandidate.id,
           reason: "Deal damage now, but preserve defense for the incoming attack risk.",
           providerMetadata: {
+            provider: "deepseek",
+            model: "p9-smoke-model",
             maxOutputTokens: 800,
             requestedThinkingMode: "default_enabled",
             requestMode: "json_mode",
@@ -2206,6 +2256,22 @@ try {
     runId: "run-p9-smoke",
     proposal: shadowSafeStored,
     transition: {
+      source: "agent",
+      captureMode: "executor_logged",
+      shadowWorkspaceDecision: {
+        called: true,
+        outcome: "valid",
+        provider: "deepseek",
+        model: "p9-smoke-model",
+        providerMode: "json_mode",
+        providerThinkingMode: "default_enabled",
+        maxOutputTokens: 800,
+        retryCount: 0,
+        providerRecoveryPolicyName: "p8_provider_json_recovery_v1",
+        providerAttempts: [{ requestKind: "primary", requestMaxOutputTokens: 800, requestedThinkingMode: "default_enabled" }],
+        failureBucket: "none",
+        outputCapHit: false
+      },
       decisionAuthority: buildDecisionAuthorizationRecord({
         chosenBy: "llm",
         route: "llm_required",
@@ -2222,33 +2288,103 @@ try {
     evaluation: sameSliceShadowRunEvaluation
   });
   assert.equal(manifest.integrity.exactOrganicEnvironment, true);
-  assert.equal(manifest.integrity.baselineWorkspaceProviderEvidence, false);
+  assert.equal(manifest.integrity.baselineWorkspaceProviderEvidence, true);
+  assert.equal(manifest.integrity.providerExperimentIdentityExact, true);
+  assert.equal(manifest.providerExperiment.exactIdentityApplicable, true);
   assert.equal(manifest.stablePromotionEnabled, false);
-  const manifestPreflight = assessLearningExperimentPreflight({
+  const mismatchedScopePreflight = assessLearningExperimentPreflight({
     proposal: shadowSafeStored,
     transition: {
       transitionId: "transition-p9-smoke",
       source: "agent",
       captureMode: "executor_logged",
-      shadowWorkspaceDecision: { called: true },
+      shadowWorkspaceDecision: {
+        called: true,
+        outcome: "valid",
+        provider: "deepseek",
+        model: "p9-smoke-model",
+        providerMode: "json_mode",
+        providerThinkingMode: "default_enabled",
+        maxOutputTokens: 800,
+        retryCount: 0,
+        providerRecoveryPolicyName: "p8_provider_json_recovery_v1",
+        providerAttempts: [{ requestKind: "primary", requestMaxOutputTokens: 800, requestedThinkingMode: "default_enabled" }],
+        failureBucket: "none",
+        outputCapHit: false
+      },
+      decisionAuthority: manifest.authority,
+      environmentFingerprint: manifest.environmentFingerprint,
+      evidenceEnvironmentScope: manifest.environmentScope
+    }
+  });
+  assert.equal(mismatchedScopePreflight.eligibleForSameSliceProviderCall, false);
+  assert.ok(mismatchedScopePreflight.blockers.includes("proposal_environment_scope_does_not_match_source_transition"));
+  const manifestPreflight = assessLearningExperimentPreflight({
+    proposal: {
+      ...shadowSafeStored,
+      environmentScope: {
+        ...(isRecord(shadowSafeStored.environmentScope) ? shadowSafeStored.environmentScope : {}),
+        fingerprintHashes: [manifestEnvironmentFingerprint.fingerprintHash]
+      }
+    },
+    transition: {
+      transitionId: "transition-p9-smoke",
+      source: "agent",
+      captureMode: "executor_logged",
+      shadowWorkspaceDecision: {
+        called: true,
+        outcome: "valid",
+        provider: "deepseek",
+        model: "p9-smoke-model",
+        providerMode: "json_mode",
+        providerThinkingMode: "default_enabled",
+        maxOutputTokens: 800,
+        retryCount: 0,
+        providerRecoveryPolicyName: "p8_provider_json_recovery_v1",
+        providerAttempts: [{ requestKind: "primary", requestMaxOutputTokens: 800, requestedThinkingMode: "default_enabled" }],
+        failureBucket: "none",
+        outputCapHit: false
+      },
       decisionAuthority: manifest.authority,
       environmentFingerprint: manifest.environmentFingerprint,
       evidenceEnvironmentScope: manifest.environmentScope
     }
   });
   assert.equal(manifestPreflight.eligibleForSameSliceProviderCall, true);
-  assert.equal(manifestPreflight.baselineEvidenceRole, "workspace_shadow_provider");
+  assert.deepEqual(manifestPreflight.baselineEvidenceRoles, ["workspace_shadow_provider", "legacy_selection_provenance_not_recorded"]);
+  assert.equal(manifestPreflight.baselineSameSliceProviderEligible, true);
   const legacyPreflight = assessLearningExperimentPreflight({ proposal: shadowSafeStored, transition: {} });
   assert.equal(legacyPreflight.eligibleForSameSliceProviderCall, false);
   assert.ok(legacyPreflight.blockers.includes("baseline_workspace_shadow_not_called"));
   assert.ok(legacyPreflight.blockers.includes("environment_fingerprint_not_complete"));
   appendLearningExperimentManifest(p9ProposalDir, manifest);
-  const manifestSurface = buildLearningExperimentManifestSurface(readLearningExperimentManifests(p9ProposalDir));
+  const manifestStore = readLearningExperimentManifestStore(p9ProposalDir);
+  const manifestSurface = buildLearningExperimentManifestSurface(manifestStore.manifests, manifestStore.digest);
   assert.equal(manifestSurface.manifests, 1);
   assert.equal(manifestSurface.pairedReadyForReview, 1);
   assert.equal(manifestSurface.exactOrganicEnvironment, 1);
-  assert.equal(manifestSurface.baselineWorkspaceProviderEvidence, 0);
+  assert.equal(manifestSurface.baselineWorkspaceProviderEvidence, 1);
+  assert.equal(manifestSurface.providerExperimentIdentityExact, 1);
+  assert.equal(manifestStore.digest.status, "clean");
+  assert.equal(manifestStore.digest.currentRecords, 1);
+  assert.equal(manifestStore.digest.legacyRecords, 0);
   assert.equal(manifestSurface.stablePromotionEnabled, false);
+  {
+    const legacyManifestStoreDir = mkdtempSync(path.join(tmpdir(), "sts2-legacy-manifest-store-"));
+    try {
+      writeFileSync(
+        path.join(legacyManifestStoreDir, LEARNING_EXPERIMENT_MANIFESTS_FILE),
+        `${JSON.stringify({ schemaVersion: 1, surface: "p9_g2_experiment_manifest", id: "legacy-manifest" })}\nnot-json\n`
+      );
+      const legacyManifestStore = readLearningExperimentManifestStore(legacyManifestStoreDir);
+      assert.equal(legacyManifestStore.manifests.length, 1);
+      assert.equal(legacyManifestStore.digest.status, "degraded");
+      assert.equal(legacyManifestStore.digest.legacyRecords, 1);
+      assert.equal(legacyManifestStore.digest.malformedJsonLines, 1);
+    } finally {
+      rmSync(legacyManifestStoreDir, { recursive: true, force: true });
+    }
+  }
   const candidateGuidanceProjection = compareLearningProposalInShadowWorkspace({
     proposal: {
       ...shadowSafeStored,
@@ -2265,31 +2401,33 @@ try {
         }
       }
     },
+    sourceTransition: p9SourceTransition,
     packet: deliberationPacket,
     candidates: [workspaceCandidate],
     decisionClass: "combat:llm_required"
   });
-  assert.equal(candidateGuidanceProjection.applied, true);
-  assert.deepEqual(candidateGuidanceProjection.matchedCandidateFutureIds, [candidateFuture.id]);
+  assert.equal(candidateGuidanceProjection.applied, false);
+  assert.ok(candidateGuidanceProjection.blockers.includes("proposal_type_not_deliberation_shaping_canary_safe"));
   assert.equal(candidateGuidanceProjection.wouldAffectRuntimeDecision, false);
-  assert.equal(candidateGuidanceProjection.overlay?.candidateFutureFactsHash, candidateGuidanceProjection.baseline.candidateFutureFactsHash);
+  assert.equal(candidateGuidanceProjection.overlay, undefined);
   const unknownFutureOverlay = compareLearningProposalInShadowWorkspace({
     proposal: {
       ...shadowSafeStored,
-      type: "candidate_template",
-      targetLayer: "candidate_future",
       proposedPatch: {
         proposalOnly: true,
         shadowOverlay: {
-          kind: "candidate_future_guidance",
+          kind: "reason_guidance",
           guidance: "Review the listed future without adding facts or actions.",
-          candidateFutureIds: ["future-not-present"]
+          candidateFutureIds: ["future-not-present"],
+          requiredReasonQualityNote: "missing_tradeoff"
         }
       }
     },
+    sourceTransition: p9SourceTransition,
     packet: deliberationPacket,
     candidates: [workspaceCandidate],
-    decisionClass: "combat:llm_required"
+    decisionClass: "combat:llm_required",
+    baselineReasonQualityNotes: ["missing_tradeoff"]
   });
   assert.equal(unknownFutureOverlay.applied, false);
   assert.ok(unknownFutureOverlay.blockers.includes("unknown_candidate_future_ids:future-not-present"));
@@ -2516,6 +2654,9 @@ try {
       },
       shadowWorkspaceDecision: {
         called: true,
+        outcome: "valid",
+        failureBucket: "none",
+        outputCapHit: false,
         reasonQualityNotes: ["missing_tradeoff"]
       },
       predictionError: {
@@ -2541,9 +2682,14 @@ try {
   assert.ok(generatedLearning.pendingReview >= 1);
   assert.ok(generatedLearning.draft >= 1);
   assert.ok(generatedLearning.reverseFeedback.length >= 1);
-  assert.ok(generatedLearning.proposals.every((proposal) =>
-    proposal.evidence?.[0]?.raw?.evidenceRole === "workspace_shadow_provider"
-  ));
+  assert.ok(generatedLearning.proposals.every((proposal) => {
+    const raw = proposal.evidence?.[0]?.raw;
+    const eligibility = raw?.evidenceEligibility;
+    return Array.isArray(raw?.evidenceRoles) &&
+      raw.evidenceRoles.includes("workspace_shadow_provider") &&
+      isRecord(eligibility) &&
+      eligibility.proposalSeedEligible === true;
+  }));
   for (const proposal of generatedLearning.proposals) appendLearningProposal(p9ProposalDir, proposal);
   for (const record of generatedLearning.reverseFeedback) appendReverseScaffoldFeedback(p9ProposalDir, record);
   const generatedProposalSurface = buildLearningProposalSurface(readLearningProposals(p9ProposalDir));
@@ -2588,8 +2734,9 @@ try {
   ]);
   assert.equal(localOnlyGeneratedLearning.pendingReview, 0);
   assert.equal(localOnlyGeneratedLearning.proposals[0]?.status, "draft");
-  assert.equal(localOnlyGeneratedLearning.proposals[0]?.evidence?.[0]?.raw?.evidenceRole, "local_fallback_observation");
-  assert.equal(localOnlyGeneratedLearning.proposals[0]?.evidence?.[0]?.raw?.evidencePromotionEligible, false);
+  assert.deepEqual(localOnlyGeneratedLearning.proposals[0]?.evidence?.[0]?.raw?.evidenceRoles, ["local_fallback_observation"]);
+  const localEvidenceEligibility = localOnlyGeneratedLearning.proposals[0]?.evidence?.[0]?.raw?.evidenceEligibility;
+  assert.equal(isRecord(localEvidenceEligibility) ? localEvidenceEligibility.proposalSeedEligible : undefined, false);
   const feedback = appendReverseScaffoldFeedback(p9ProposalDir, {
     source: "review",
     targetLayer: "candidate_future",
@@ -3501,6 +3648,56 @@ try {
   assert.equal(secondRemove.chosen?.action.kind, "select_card");
   assert.equal(secondRemove.chosen?.action.kind === "select_card" ? secondRemove.chosen.action.index : -1, 1);
 
+  {
+    const selectionResolutionMemoryDir = mkdtempSync(path.join(tmpdir(), "sts2-selection-resolution-"));
+    const previousLiveAdditive = process.env.STS2_P8_LIVE_ADDITIVE;
+    const previousLiveClasses = process.env.STS2_P8_LIVE_DECISION_CLASSES;
+    try {
+      // Keep this recorder test independent of a developer's local live flags.
+      process.env.STS2_P8_LIVE_ADDITIVE = "0";
+      delete process.env.STS2_P8_LIVE_DECISION_CLASSES;
+      const selectionResolutionMemory = new MemoryManager(selectionResolutionMemoryDir);
+      const selectionResolutionRunsRoot = path.join(selectionResolutionMemoryDir, "runs");
+      const selectionResolutionClient = new FakeClient(multiRemoveState.raw, multiRemoveState.raw);
+      const selectionResolutionController = new AgentController(
+        selectionResolutionClient,
+        selectionResolutionMemory,
+        new CountingLlmDecider(),
+        new AgentDecisionRecorder({ runsRoot: selectionResolutionRunsRoot })
+      );
+      const firstSelection = await selectionResolutionController.tick({ forceLlm: true });
+      await new Promise((resolve) => setTimeout(resolve, 1250));
+      const guardedSelection = await selectionResolutionController.tick({ forceLlm: true });
+      assert.equal(firstSelection.chosenBy, "llm");
+      assert.equal(guardedSelection.chosenBy, "llm");
+      assert.equal(guardedSelection.chosen?.action.kind, "select_card");
+      assert.equal(guardedSelection.chosen?.action.kind === "select_card" ? guardedSelection.chosen.action.index : -1, 1);
+      const selectionTransitionsPath = path.join(
+        selectionResolutionRunsRoot,
+        selectionResolutionMemory.run.runId,
+        "transitions.jsonl"
+      );
+      const selectionTransitions = readFileSync(selectionTransitionsPath, "utf8")
+        .trim()
+        .split(/\r?\n/)
+        .filter(Boolean)
+        .map((line) => JSON.parse(line));
+      const guardedTransition = selectionTransitions.at(-1);
+      assert.equal(guardedTransition.decisionAudit.chosenBy, "llm");
+      assert.equal(guardedTransition.selectionResolution.proposedSelection.candidateId, "select-card-0");
+      assert.equal(guardedTransition.selectionResolution.finalSelection.candidateId, "select-card-1");
+      assert.equal(guardedTransition.selectionResolution.finalSelection.source, "local_safety_guard");
+      assert.equal(guardedTransition.selectionResolution.llmSelectionEvidenceEligible, false);
+      assert.equal(guardedTransition.decisionAuthority.selectionSource, "local_safety_guard");
+    } finally {
+      if (previousLiveAdditive === undefined) delete process.env.STS2_P8_LIVE_ADDITIVE;
+      else process.env.STS2_P8_LIVE_ADDITIVE = previousLiveAdditive;
+      if (previousLiveClasses === undefined) delete process.env.STS2_P8_LIVE_DECISION_CLASSES;
+      else process.env.STS2_P8_LIVE_DECISION_CLASSES = previousLiveClasses;
+      rmSync(selectionResolutionMemoryDir, { recursive: true, force: true });
+    }
+  }
+
   const shopState = normalizeGameState({
     state_type: "shop",
     shop: {
@@ -4289,17 +4486,48 @@ try {
     }
   ] as any);
   assert.equal(liveAppliedSummary.liveAdditiveApplied, 2);
-  assert.equal(liveAppliedSummary.chosenByLlm, 1);
+  assert.equal(liveAppliedSummary.llmSelectedExecution, 0);
+  assert.equal(liveAppliedSummary.legacyChosenByLlmNotRecorded, 1);
   assert.equal(liveAppliedSummary.invalidOutput, 1);
   assert.equal(liveAppliedSummary.missingCandidateSignals, 1);
+  const historicalSelectionMismatch = classifyTransitionEvidenceRole({
+    source: "agent",
+    captureMode: "executor_logged",
+    llmDecision: { candidateId: "select-card-12" },
+    decisionAudit: { chosenBy: "llm", raw: { chosenCandidateId: "select-card-0" } },
+    decisionAuthority: { selectionSource: "llm" },
+    environmentFingerprint: completeEnvironmentFingerprint,
+    evidenceEnvironmentScope: completeEnvironmentScope
+  });
+  assert.equal(historicalSelectionMismatch.selectionResolutionStatus, "legacy_mismatch_excluded");
+  assert.ok(historicalSelectionMismatch.sources.some((source) => source.role === "selection_provenance_mismatch_excluded"));
+  assert.equal(historicalSelectionMismatch.eligibility.sourceResolved, false);
+  assert.equal(historicalSelectionMismatch.eligibility.proposalSeedEligible, false);
+  assert.equal(getTransitionProposalEvidenceEligibility({
+    source: "agent",
+    captureMode: "executor_logged",
+    llmDecision: { candidateId: "select-card-12" },
+    decisionAudit: { chosenBy: "llm", raw: { chosenCandidateId: "select-card-0" } },
+    decisionAuthority: { selectionSource: "llm" },
+    environmentFingerprint: completeEnvironmentFingerprint,
+    evidenceEnvironmentScope: completeEnvironmentScope
+  }).eligible, false);
   const evidenceSliceSummary = buildEvidenceSliceSummary([
     {
       source: "agent",
       captureMode: "executor_logged",
       workspaceComparison: { decisionClass: "combat:llm_required", revisionTag: "rev-a", budget: { maxShadowCalls: 4, governanceProfile: "shadow_readiness" } },
-      shadowWorkspaceDecision: { called: true, revisionTag: "rev-a", providerSource: "deepseek-shadow" },
+      shadowWorkspaceDecision: { called: true, outcome: "valid", revisionTag: "rev-a", provider: "deepseek-shadow", failureBucket: "none", outputCapHit: false },
       decisionAudit: { chosenBy: "llm", raw: { llm: { liveAdditiveApplied: true, liveAdditiveDecisionClass: "combat:llm_required", providerSource: "deepseek-live-command" } } },
       decisionAuthority: explicitAuthority,
+      selectionResolution: {
+        proposedSelection: { candidateId: "candidate-1", source: "llm", candidateAllowed: true, validationOutcome: "selected" },
+        finalSelection: { candidateId: "candidate-1", source: "llm", candidateAllowed: true },
+        resolutionKind: "selected_as_proposed",
+        candidateIdMatch: true,
+        llmSelectionEvidenceEligible: true,
+        notes: []
+      },
       environmentFingerprint: completeEnvironmentFingerprint,
       evidenceEnvironmentScope: completeEnvironmentScope
     },
@@ -4307,19 +4535,19 @@ try {
       source: "agent",
       captureMode: "executor_logged",
       workspaceComparison: { decisionClass: "combat:llm_required", revisionTag: "rev-b", budget: { maxShadowCalls: 8, governanceProfile: "shadow_readiness" } },
-      shadowWorkspaceDecision: { called: true, revisionTag: "rev-b", providerSource: "deepseek-shadow" },
+      shadowWorkspaceDecision: { called: true, outcome: "valid", revisionTag: "rev-b", provider: "deepseek-shadow", failureBucket: "none", outputCapHit: false },
       decisionAudit: { provenance: "console_fixture", raw: { llm: { liveAdditiveApplied: false } } }
     }
   ] as any);
   assert.equal(evidenceSliceSummary.mixedRevisionWindow, true);
   assert.equal(evidenceSliceSummary.mixedBudgetWindow, true);
   assert.equal(evidenceSliceSummary.consoleDebugOrFixtureTransitions, 1);
-  assert.equal(evidenceSliceSummary.promotionEvidence.eligibleTransitions, 1);
-  assert.equal(evidenceSliceSummary.promotionEvidence.excludedTransitions, 1);
-  assert.equal(evidenceSliceSummary.promotionEvidence.exclusionReasonCounts.console_debug_or_fixture, 1);
+  assert.equal(evidenceSliceSummary.proposalEvidence.eligibleTransitions, 1);
+  assert.equal(evidenceSliceSummary.proposalEvidence.excludedTransitions, 1);
+  assert.equal(evidenceSliceSummary.proposalEvidence.exclusionReasonCounts.console_debug_or_fixture, 1);
   assert.equal(evidenceSliceSummary.dimensions.authorityModeCounts.llm_primary, 1);
   assert.equal(evidenceSliceSummary.dimensions.evidenceRoleCounts.llm_selected_execution, 1);
-  assert.equal(evidenceSliceSummary.dimensions.evidenceRoleCounts.workspace_shadow_provider, 1);
+  assert.equal(evidenceSliceSummary.dimensions.evidenceRoleCounts.workspace_shadow_provider, 2);
   assert.equal(evidenceSliceSummary.dimensions.selectionSourceCounts.llm, 1);
   assert.equal(evidenceSliceSummary.dimensions.environmentScopeStatusCounts.exact, 1);
   const promotionSlice = evidenceSliceSummary.slices.find((slice) => slice.kind === "stable_learning_promotion");
@@ -4329,18 +4557,18 @@ try {
   assert.ok(promotionSlice?.reasons.includes("mixed_revision_window"));
   assert.ok(promotionSlice?.reasons.includes("mixed_budget_window"));
   assert.ok(promotionSlice?.reasons.includes("console_debug_or_fixture_present"));
-  assert.ok(promotionSlice?.reasons.includes("promotion_evidence_exclusions_present"));
+  assert.ok(promotionSlice?.reasons.includes("proposal_evidence_exclusions_present"));
   assert.match(formatEvidenceSliceSummary(evidenceSliceSummary), /promotionAllowed=false/);
   assert.match(formatEvidenceSliceSummary(evidenceSliceSummary), /evidenceRole=/);
-  assert.match(formatEvidenceSliceSummary(evidenceSliceSummary), /promotionEligible=1/);
-  assert.match(formatEvidenceSliceSummary(evidenceSliceSummary), /promotionExcluded=1/);
+  assert.match(formatEvidenceSliceSummary(evidenceSliceSummary), /proposalSeedEligible=1/);
+  assert.match(formatEvidenceSliceSummary(evidenceSliceSummary), /proposalSeedExcluded=1/);
   const exactOrganicShadowSlice = buildEvidenceSliceSummary([
     {
       transitionId: "transition-exact-shadow",
       source: "agent",
       captureMode: "executor_logged",
       workspaceComparison: { decisionClass: "card_reward:llm_required", revisionTag: "rev-c", budget: { maxShadowCalls: 3, governanceProfile: "shadow_exploration" } },
-      shadowWorkspaceDecision: { called: true, revisionTag: "rev-c", provider: "deepseek-workspace" },
+      shadowWorkspaceDecision: { called: true, outcome: "valid", revisionTag: "rev-c", provider: "deepseek-workspace", failureBucket: "none", outputCapHit: false },
       decisionAuthority: explicitAuthority,
       environmentFingerprint: completeEnvironmentFingerprint,
       evidenceEnvironmentScope: completeEnvironmentScope
@@ -4350,7 +4578,7 @@ try {
       source: "agent",
       captureMode: "executor_logged",
       workspaceComparison: { decisionClass: "card_reward:llm_required", revisionTag: "rev-c", budget: { maxShadowCalls: 1, governanceProfile: "shadow_exploration" } },
-      shadowWorkspaceDecision: { called: true, revisionTag: "rev-c" },
+      shadowWorkspaceDecision: { called: true, outcome: "valid", revisionTag: "rev-c", provider: "deepseek-workspace", failureBucket: "none", outputCapHit: false },
       decisionAuthority: explicitAuthority,
       environmentFingerprint: completeEnvironmentFingerprint,
       evidenceEnvironmentScope: completeEnvironmentScope

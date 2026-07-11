@@ -1,5 +1,7 @@
 import type { JsonRecord } from "../domain/types.js";
 import { isRecord } from "../agent/utils.js";
+import { PROTECTED_STABLE_WRITE_TARGETS } from "../agent/protectedPathGate.js";
+import { classifyTransitionEvidenceRole } from "../replay/evidenceRoleClassifier.js";
 
 export type ShadowWorkspaceOverlayKind = "reason_guidance" | "candidate_future_guidance";
 
@@ -20,7 +22,10 @@ export interface ShadowWorkspaceOverlayEligibility {
  * This is deliberately narrower than proposal validation. A proposal may be
  * useful review evidence without being safe to place in an offline workspace.
  */
-export function assessShadowWorkspaceOverlayEligibility(proposal: JsonRecord): ShadowWorkspaceOverlayEligibility {
+export function assessShadowWorkspaceOverlayEligibility(
+  proposal: JsonRecord,
+  sourceTransition?: JsonRecord
+): ShadowWorkspaceOverlayEligibility {
   const blockers: string[] = [];
   const validation = isRecord(proposal.validation) ? proposal.validation : {};
   const patch = isRecord(proposal.proposedPatch) && isRecord(proposal.proposedPatch.shadowOverlay)
@@ -30,25 +35,23 @@ export function assessShadowWorkspaceOverlayEligibility(proposal: JsonRecord): S
   if (validation.actionable !== true) blockers.push("proposal_not_actionable");
   if (proposal.status !== "pending_review") blockers.push("proposal_not_pending_review");
   if (proposal.riskLevel !== "low") blockers.push("proposal_risk_not_low");
-  if (proposal.type !== "reason_policy" && proposal.type !== "candidate_template") {
-    blockers.push("proposal_type_not_shadow_overlay_safe");
+  if (proposal.type !== "reason_policy") {
+    blockers.push("proposal_type_not_deliberation_shaping_canary_safe");
   }
-  if (proposal.behaviorImpact !== "presentation_only") {
-    blockers.push("proposal_behavior_impact_not_presentation_only");
+  if (proposal.behaviorImpact !== "deliberation_shaping") {
+    blockers.push("proposal_behavior_impact_not_deliberation_shaping");
   }
+  if (!hasDeclaredProtectedTargets(proposal.protectedPathImpact)) blockers.push("protected_targets_not_declared");
   if (!hasExactOrganicEnvironmentScope(proposal.environmentScope)) {
     blockers.push("proposal_environment_scope_not_exact_organic");
   }
-  if (!hasEligibleEvidence(proposal.evidence)) blockers.push("organic_promotion_eligible_evidence_missing");
+  blockers.push(...sourceResolutionBlockers(proposal, sourceTransition));
   if (!patch) blockers.push("explicit_shadow_overlay_patch_missing_or_invalid");
   if (patch && proposal.type === "reason_policy" && patch.kind !== "reason_guidance") {
     blockers.push("reason_policy_requires_reason_guidance_patch");
   }
   if (patch && proposal.type === "reason_policy" && !patch.requiredReasonQualityNote) {
     blockers.push("reason_policy_requires_scoped_review_trigger");
-  }
-  if (patch && proposal.type === "candidate_template" && patch.kind !== "candidate_future_guidance") {
-    blockers.push("candidate_template_requires_candidate_future_guidance_patch");
   }
 
   return {
@@ -78,18 +81,71 @@ function parsePatch(value: JsonRecord): ShadowWorkspaceOverlayPatch | undefined 
   };
 }
 
-function hasEligibleEvidence(evidence: unknown): boolean {
-  if (!Array.isArray(evidence)) return false;
-  return evidence.some((item) => {
-    if (!isRecord(item)) return false;
-    const tags = Array.isArray(item.tags) ? item.tags : [];
-    const raw = isRecord(item.raw) ? item.raw : {};
-    const role = typeof raw.evidenceRole === "string"
-      ? raw.evidenceRole
-      : tags.find((tag): tag is string => typeof tag === "string" && tag.startsWith("evidence_role:"))?.slice("evidence_role:".length);
-    const eligible = tags.includes("promotion_eligible:true") || raw.evidencePromotionEligible === true;
-    return eligible && (role === "llm_selected_execution" || role === "workspace_shadow_provider");
-  });
+function sourceResolutionBlockers(proposal: JsonRecord, sourceTransition?: JsonRecord): string[] {
+  if (!sourceTransition) return ["source_transition_not_resolved"];
+  const transitionId = typeof sourceTransition.transitionId === "string" ? sourceTransition.transitionId : undefined;
+  if (!transitionId) return ["source_transition_id_not_recorded"];
+  if (!proposalReferencesTransition(proposal, transitionId)) {
+    return ["source_transition_not_referenced_by_proposal"];
+  }
+  const sourceRunId = typeof sourceTransition.runId === "string" ? sourceTransition.runId : undefined;
+  if (sourceRunId && !proposalReferencesRun(proposal, sourceRunId)) {
+    return ["source_run_not_referenced_by_proposal"];
+  }
+
+  const classification = classifyTransitionEvidenceRole(sourceTransition);
+  const blockers: string[] = [];
+  if (!classification.eligibility.proposalSeedEligible) {
+    blockers.push(...classification.eligibility.reasons.map((reason) => `source_transition_ineligible:${reason}`));
+  }
+  if (!proposalScopeMatchesTransition(proposal.environmentScope, sourceTransition)) {
+    blockers.push("proposal_environment_scope_does_not_match_source_transition");
+  }
+  return blockers;
+}
+
+function proposalReferencesTransition(proposal: JsonRecord, transitionId: string): boolean {
+  const createdFrom = Array.isArray(proposal.createdFromTransitionIds)
+    ? proposal.createdFromTransitionIds.filter((value): value is string => typeof value === "string")
+    : [];
+  const evidenceFrom = Array.isArray(proposal.evidence)
+    ? proposal.evidence
+      .filter(isRecord)
+      .map((evidence) => evidence.transitionId)
+      .filter((value): value is string => typeof value === "string")
+    : [];
+  return createdFrom.includes(transitionId) && evidenceFrom.includes(transitionId);
+}
+
+function proposalReferencesRun(proposal: JsonRecord, runId: string): boolean {
+  const createdFrom = Array.isArray(proposal.createdFromRunIds)
+    ? proposal.createdFromRunIds.filter((value): value is string => typeof value === "string")
+    : [];
+  return createdFrom.includes(runId);
+}
+
+function proposalScopeMatchesTransition(scope: unknown, transition: JsonRecord): boolean {
+  if (!isRecord(scope)) return false;
+  const fingerprint = isRecord(transition.environmentFingerprint) ? transition.environmentFingerprint : {};
+  const transitionHash = typeof fingerprint.fingerprintHash === "string" ? fingerprint.fingerprintHash : undefined;
+  const fingerprintHashes = Array.isArray(scope.fingerprintHashes)
+    ? scope.fingerprintHashes.filter((value): value is string => typeof value === "string")
+    : [];
+  const provenance = isRecord(transition.evidenceEnvironmentScope)
+    ? transition.evidenceEnvironmentScope.captureProvenance
+    : undefined;
+  const declaredProvenance = Array.isArray(scope.captureProvenance)
+    ? scope.captureProvenance.filter((value): value is string => typeof value === "string")
+    : [];
+  return Boolean(transitionHash && fingerprintHashes.includes(transitionHash) &&
+    typeof provenance === "string" && declaredProvenance.includes(provenance));
+}
+
+function hasDeclaredProtectedTargets(value: unknown): boolean {
+  if (!isRecord(value) || !Array.isArray(value.protectedTargets)) return false;
+  return value.protectedTargets.length > 0 && value.protectedTargets.every((target) =>
+    typeof target === "string" && PROTECTED_STABLE_WRITE_TARGETS.includes(target as typeof PROTECTED_STABLE_WRITE_TARGETS[number])
+  );
 }
 
 function hasExactOrganicEnvironmentScope(value: unknown): boolean {

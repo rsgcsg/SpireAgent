@@ -45,19 +45,19 @@ Forward phase reporting uses P9-G1 through P9-G4 from ADR-0005. Historical P9.0-
   - a local safety override must be explicit and must not retain LLM final-selection attribution
   - historical proposal/final mismatches must be conservatively excluded rather than rewritten
   Current state:
-  this is an open P9-G2 blocker. Two historical additive-live card-select records have a valid LLM proposal that differs from the final executed candidate.
+  G2.1 is implemented. Fresh executor-logged transitions emit `SelectionResolutionRecord`; final authority is derived from that record, and historical proposal/final mismatches are read-only excluded. The two historical additive-live card-select records remain execution history, not LLM-final-selection evidence. Fresh same-scope evidence under this contract is still required before G3.
 - Use one source-resolved evidence-role and proposal-authorization contract before shadow comparison can support G3:
   - workspace-provider call, proposed/final selection, execution, provenance, and eligibility are separate facts
   - evidence tags embedded in a proposal are display context, not authorization
   - protected targets must be non-empty and valid; malformed/missing source artifacts fail closed
   Current state:
-  this is an open P9-G2 blocker; replay, proposal generation, and manifests still have separate role precedence.
+  G2.2 is implemented. Replay, proposal generation, shadow preflight, manifests, and live-rollout reporting use the shared source-resolved evidence-role classifier. It records additive source roles, final selection provenance, and one fail-closed `proposalSeedEligible` result; malformed, unknown, or empty protected targets remain ineligible. Natural evidence under this contract is still required before G3.
 - Classify pre-decision policies honestly before the first stable target:
   - post-decision display is the only `presentation_only` surface
   - prompt/workspace/memory-activation guidance is `deliberation_shaping` with possible decision influence
   - candidate generation, routing/authority, execution, and hard-shell changes remain outside the first stable path
   Current state:
-  this is an open P9-G2 blocker; current reason-policy overlays use a legacy `presentation_only` label despite entering the pre-decision packet.
+  G2 semantics are implemented: prompt/workspace guidance is `deliberation_shaping`, while `presentation_only` is limited to post-decision observability. The first possible G3 target remains a narrow, human-approved deliberation-shaping canary; it is not yet authorized.
 - Define a minimal `EnvironmentFingerprint` and evidence environment scope before any stable proposal may be applied:
   - unknown or mixed incompatible game/mod/adapter evidence cannot qualify promotion
   - historical evidence remains readable
@@ -69,7 +69,7 @@ Forward phase reporting uses P9-G1 through P9-G4 from ADR-0005. Historical P9.0-
   - provider/model/sampling/response/retry/parser/prompt-assembly facts must be named or digested for a pair
   - malformed manifest or learned-policy artifacts must be visible and fail closed
   Current state:
-  this is an open P9-G2 blocker.
+  G2.3 is implemented. `ProviderExperimentFingerprint` records secret-free provider source/model/mode/thinking/output/retry/recovery-attempt identity, manifests report exact-identity applicability, and manifest readers expose malformed/legacy-store diagnostics. A fresh exact-identity natural baseline/overlay/counterexample set is still required before G3.
 - Define evidence-slice rules so mixed revision, mixed budget, and console fixture data cannot silently qualify stable promotion.
   Current state:
   a read-only `EvidenceSliceReader` now separates shadow readiness, live-applied rollout, and future stable-learning promotion slices. It also reports organic promotion-eligible transition counts separately from console/debug/fixture, human-observed, snapshot-only, and unknown-provenance exclusions. Promotion remains disabled and ineligible by default.

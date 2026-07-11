@@ -17,6 +17,7 @@ import {
   type ReplayFrame,
   type RunRecord,
   type SalienceSignal,
+  type SelectionResolutionRecord,
   type ShadowWorkspaceDecision,
   type StrategicImpression
 } from "../domain/types.js";
@@ -24,6 +25,7 @@ import { createExecutorLoggedTransitionSkeleton, type TransitionRecord } from ".
 import { compactStateForDataset } from "./collector.js";
 import { buildDecisionAuthorizationRecord } from "./decisionAuthority.js";
 import { buildEnvironmentFingerprint, buildEvidenceEnvironmentScope } from "./environmentIdentity.js";
+import { buildSelectionResolutionRecord, inferSelectionSource } from "./selectionResolution.js";
 import type {
   AgentAction,
   DecisionLlmAudit,
@@ -77,6 +79,7 @@ export interface AgentDecisionRecordInput {
   replayFrame?: ReplayFrame | JsonRecord;
   consolidation?: ConsolidationRecord | JsonRecord;
   decisionAuthority?: DecisionAuthorizationRecord | JsonRecord;
+  selectionResolution?: SelectionResolutionRecord | JsonRecord;
   environmentFingerprint?: EnvironmentFingerprint | JsonRecord;
   evidenceEnvironmentScope?: EvidenceEnvironmentScope | JsonRecord;
 }
@@ -105,13 +108,26 @@ export class AgentDecisionRecorder {
     const legalActions = input.legalActions.map(compactCandidate);
     const stateDiff = checkpointStateDiff(input.checkpoint);
     const consolidation = enrichConsolidation(input.consolidation, transitionId);
+    const selectionResolution = isSelectionResolutionRecord(input.selectionResolution)
+      ? input.selectionResolution
+      : buildSelectionResolutionRecord({
+        proposedCandidateId: proposalCandidateIdFor(input),
+        proposedSelectionSource: proposalSelectionSourceFor(input),
+        proposedValidationOutcome: input.llmAudit?.outcome,
+        finalCandidateId: input.selectedCandidate.id,
+        finalSelectionSource: inferredFinalSelectionSourceFor(input),
+        allowedCandidateIds: input.legalActions.map((candidate) => candidate.id),
+        resolutionReason: "recorder_inferred_from_legacy_input",
+        notes: ["selection_resolution_inferred_by_recorder"]
+      });
     const decisionAuthority = input.decisionAuthority ?? buildDecisionAuthorizationRecord({
       chosenBy: input.chosenBy,
       route: input.route.kind,
       llmAudit: input.llmAudit,
       fallbackReason: input.fallbackReason,
       executed: true,
-      planOrigin: planOriginFor(input)
+      planOrigin: planOriginFor(input),
+      selectionResolution
     });
     const environmentFingerprint = input.environmentFingerprint ?? buildEnvironmentFingerprint();
     const evidenceEnvironmentScope = input.evidenceEnvironmentScope ??
@@ -130,6 +146,7 @@ export class AgentDecisionRecorder {
       workspaceComparison: input.workspaceComparison,
       shadowWorkspaceDecision: input.shadowWorkspaceDecision,
       decisionAuthority,
+      selectionResolution,
       environmentFingerprint,
       evidenceEnvironmentScope,
       predictionError: input.predictionError
@@ -174,6 +191,7 @@ export class AgentDecisionRecorder {
         }
       },
       decisionAuthority,
+      selectionResolution,
       environmentFingerprint,
       evidenceEnvironmentScope,
       memorySnapshot: memorySnapshot(input.memoryRun),
@@ -314,6 +332,7 @@ function buildReplayFrame(input: {
   workspaceComparison?: DeliberationWorkspaceComparison | JsonRecord;
   shadowWorkspaceDecision?: ShadowWorkspaceDecision | JsonRecord;
   decisionAuthority?: DecisionAuthorizationRecord | JsonRecord;
+  selectionResolution?: SelectionResolutionRecord | JsonRecord;
   environmentFingerprint?: EnvironmentFingerprint | JsonRecord;
   evidenceEnvironmentScope?: EvidenceEnvironmentScope | JsonRecord;
   predictionError?: PredictionErrorRecord | JsonRecord;
@@ -334,6 +353,7 @@ function buildReplayFrame(input: {
     workspaceComparison: input.workspaceComparison,
     shadowWorkspaceDecision: input.shadowWorkspaceDecision,
     decisionAuthority: input.decisionAuthority,
+    selectionResolution: input.selectionResolution,
     environmentFingerprint: input.environmentFingerprint,
     evidenceEnvironmentScope: input.evidenceEnvironmentScope,
     predictionError: input.predictionError
@@ -361,6 +381,40 @@ function planOriginFor(input: AgentDecisionRecordInput): string {
     return "map_route_plan";
   }
   return "candidate_generator";
+}
+
+function proposalCandidateIdFor(input: AgentDecisionRecordInput): string | undefined {
+  return typeof input.llmDecision?.candidateId === "string"
+    ? input.llmDecision.candidateId
+    : input.selectedCandidate.id;
+}
+
+function proposalSelectionSourceFor(input: AgentDecisionRecordInput) {
+  return typeof input.llmDecision?.candidateId === "string"
+    ? "llm" as const
+    : inferSelectionSource({ chosenBy: input.chosenBy, route: input.route.kind });
+}
+
+function inferredFinalSelectionSourceFor(input: AgentDecisionRecordInput) {
+  const source = inferSelectionSource({ chosenBy: input.chosenBy, route: input.route.kind });
+  // Older/direct recorder callers did not carry guard provenance. Do not turn a
+  // proposal/final mismatch into an LLM-selection claim by inference.
+  if (
+    source === "llm" &&
+    typeof input.llmDecision?.candidateId === "string" &&
+    input.llmDecision.candidateId !== input.selectedCandidate.id
+  ) {
+    return "unknown" as const;
+  }
+  return source;
+}
+
+function isSelectionResolutionRecord(value: unknown): value is SelectionResolutionRecord {
+  if (!isRecord(value) || !isRecord(value.proposedSelection) || !isRecord(value.finalSelection)) return false;
+  return typeof value.resolutionKind === "string" &&
+    typeof value.candidateIdMatch === "boolean" &&
+    typeof value.llmSelectionEvidenceEligible === "boolean" &&
+    Array.isArray(value.notes);
 }
 
 function checkpointStateDiff(checkpoint: ExecutionCheckpoint): JsonRecord {

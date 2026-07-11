@@ -1,4 +1,4 @@
-import type { JsonRecord } from "../domain/types.js";
+import type { JsonRecord, ProviderExperimentFingerprint } from "../domain/types.js";
 import { assessReasonQuality } from "../agent/providerFailureClassifier.js";
 import { isRecord } from "../agent/utils.js";
 import type { LearningProposalShadowWorkspaceComparison } from "./shadowApplicator.js";
@@ -12,6 +12,7 @@ export interface ShadowWorkspaceOutcomeEvidence {
   revisionTag: string;
   budgetWindow: string;
   providerProfile: string;
+  providerExperimentFingerprint?: ProviderExperimentFingerprint;
   providerAttempts?: ShadowWorkspaceProviderAttempt[];
   outcome: "valid" | "invalid_output" | "invalid_choice" | "error" | "unavailable" | "skipped";
   selectedCandidateId?: string;
@@ -175,6 +176,7 @@ export function parseSameSliceShadowOutcomeEvidence(value: unknown): ShadowWorks
     revisionTag: value.revisionTag,
     budgetWindow: value.budgetWindow,
     providerProfile: requiredString(value.providerProfile) ? value.providerProfile : "unknown",
+    providerExperimentFingerprint: parseProviderExperimentFingerprint(value.providerExperimentFingerprint),
     providerAttempts: parseProviderAttempts(value.providerAttempts),
     outcome,
     selectedCandidateId: optionalString(value.selectedCandidateId),
@@ -237,4 +239,13 @@ function parseProviderAttempts(value: unknown): ShadowWorkspaceProviderAttempt[]
     return [parsed];
   });
   return attempts.length > 0 ? attempts : undefined;
+}
+
+function parseProviderExperimentFingerprint(value: unknown): ProviderExperimentFingerprint | undefined {
+  if (!isRecord(value) ||
+    (value.identityStatus !== "complete" && value.identityStatus !== "partial" && value.identityStatus !== "unknown") ||
+    !Array.isArray(value.notes)) {
+    return undefined;
+  }
+  return value as unknown as ProviderExperimentFingerprint;
 }

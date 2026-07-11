@@ -20,7 +20,7 @@ import {
   readLearningProposals,
   readReverseScaffoldFeedback
 } from "../learning/proposals.js";
-import { buildLearningExperimentManifestSurface, readLearningExperimentManifests } from "../learning/experimentManifest.js";
+import { buildLearningExperimentManifestSurface, readLearningExperimentManifestStore } from "../learning/experimentManifest.js";
 import { buildWorkspaceDecisionClassQuality } from "../replay/workspaceQuality.js";
 import { assessP8LiveReadiness } from "../replay/p8LiveReadiness.js";
 
@@ -292,7 +292,11 @@ function summarizeCurrentRunCognitiveCoverage(runId: string): JsonRecord {
   const learningProposalSurface = buildLearningProposalSurface(readLearningProposals(runDir));
   const learningProposalReviewDecisionSurface = buildLearningProposalReviewDecisionSurface(readLearningProposalReviewDecisions(runDir));
   const reverseScaffoldFeedbackSurface = buildReverseScaffoldFeedbackSurface(readReverseScaffoldFeedback(runDir));
-  const experimentManifestSurface = buildLearningExperimentManifestSurface(readLearningExperimentManifests(runDir));
+  const experimentManifestStore = readLearningExperimentManifestStore(runDir);
+  const experimentManifestSurface = buildLearningExperimentManifestSurface(
+    experimentManifestStore.manifests,
+    experimentManifestStore.digest
+  );
   const consolidationStatusCounts = transitions.reduce<Record<string, number>>((counts, transition) => {
     if (!isRecord(transition.consolidation)) return counts;
     const status = typeof transition.consolidation.status === "string" ? transition.consolidation.status : "unknown";

@@ -15,6 +15,7 @@ import {
   type PromptParityReport,
   type ReplayFrame,
   type SalienceSignal,
+  type SelectionResolutionRecord,
   type ShadowWorkspaceDecision,
   type StrategicImpression,
   type TransitionRecord,
@@ -54,6 +55,7 @@ export interface TransitionBaseInput {
   workspaceComparison?: DeliberationWorkspaceComparison | JsonRecord;
   shadowWorkspaceDecision?: ShadowWorkspaceDecision | JsonRecord;
   decisionAuthority?: DecisionAuthorizationRecord | JsonRecord;
+  selectionResolution?: SelectionResolutionRecord | JsonRecord;
   environmentFingerprint?: EnvironmentFingerprint | JsonRecord;
   evidenceEnvironmentScope?: EvidenceEnvironmentScope | JsonRecord;
   selectedPlan?: CandidateFuture | JsonRecord;
@@ -218,6 +220,7 @@ function baseTransition(
     workspaceComparison: input.workspaceComparison,
     shadowWorkspaceDecision: input.shadowWorkspaceDecision,
     decisionAuthority: input.decisionAuthority,
+    selectionResolution: input.selectionResolution,
     environmentFingerprint: input.environmentFingerprint,
     evidenceEnvironmentScope: input.evidenceEnvironmentScope,
     selectedPlan: input.selectedPlan,

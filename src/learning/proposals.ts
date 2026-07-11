@@ -12,6 +12,7 @@ import {
   type ReverseScaffoldFeedback
 } from "../domain/types.js";
 import { appendJsonl, isRecord, nowIso, stableId } from "../agent/utils.js";
+import { PROTECTED_STABLE_WRITE_TARGETS } from "../agent/protectedPathGate.js";
 import { assessShadowWorkspaceOverlayEligibility } from "./shadowOverlayPolicy.js";
 
 export const LEARNING_PROPOSALS_FILE = "learning-proposals.jsonl";
@@ -309,7 +310,10 @@ export function summarizeLearningProposal(proposal: JsonRecord): JsonRecord {
   };
 }
 
-export function buildLearningProposalShadowOverlayPlan(proposal: JsonRecord): LearningProposalShadowOverlayPlan {
+export function buildLearningProposalShadowOverlayPlan(
+  proposal: JsonRecord,
+  sourceTransition?: JsonRecord
+): LearningProposalShadowOverlayPlan {
   const validation = isRecord(proposal.validation) ? proposal.validation : {};
   const impact = isRecord(proposal.protectedPathImpact) ? proposal.protectedPathImpact : {};
   const protectedTargets = Array.isArray(impact.protectedTargets) ? impact.protectedTargets.map(String) : [];
@@ -321,7 +325,7 @@ export function buildLearningProposalShadowOverlayPlan(proposal: JsonRecord): Le
     blockers.push("proposal_not_review_ready");
   }
   if (protectedTargets.length === 0) blockers.push("protected_targets_not_declared");
-  const offlineEligibility = assessShadowWorkspaceOverlayEligibility(proposal);
+  const offlineEligibility = assessShadowWorkspaceOverlayEligibility(proposal, sourceTransition);
   blockers.push(...offlineEligibility.blockers.filter((blocker) => !blockers.includes(blocker)));
   return {
     schemaVersion: DOMAIN_SCHEMA_VERSION,
@@ -332,7 +336,7 @@ export function buildLearningProposalShadowOverlayPlan(proposal: JsonRecord): Le
     targetLayer: stringValue(proposal.targetLayer, "unknown"),
     targetObject: stringValue(proposal.targetObject, "unknown"),
     eligibleForShadowPreview: true,
-    eligibleForShadowApplication: offlineEligibility.eligible,
+    eligibleForShadowApplication: blockers.length === 0 && offlineEligibility.eligible,
     blockers,
     affectedSoftLayer: stringValue(proposal.targetLayer, "unknown"),
     protectedTargets,
@@ -656,7 +660,11 @@ function missingProposalFields(proposal: LearningProposal): string[] {
   if (!proposal.promotionCriteria.validationPlan.length) missing.push("promotionCriteria.validationPlan");
   if (!proposal.rollbackPlan.rollbackTrigger.length) missing.push("rollbackPlan.rollbackTrigger");
   if (!proposal.rollbackPlan.rollbackAction) missing.push("rollbackPlan.rollbackAction");
-  if (!Array.isArray(proposal.protectedPathImpact.protectedTargets)) missing.push("protectedPathImpact.protectedTargets");
+  if (!hasProtectedTargets(proposal.protectedPathImpact.protectedTargets)) {
+    missing.push("protectedPathImpact.protectedTargets");
+  } else if (!hasOnlyKnownProtectedTargets(proposal.protectedPathImpact.protectedTargets)) {
+    missing.push("protectedPathImpact.protectedTargets.unknown_target");
+  }
   if (!proposal.createdFromRunIds.length) missing.push("createdFromRunIds");
   if (!proposal.createdFromTransitionIds.length) missing.push("createdFromTransitionIds");
   return missing;
@@ -732,6 +740,18 @@ function isLearningProposalStatus(status: string): status is LearningProposalSta
 function hasScope(scope: unknown): boolean {
   if (!isRecord(scope)) return false;
   return Object.values(scope).some((value) => Array.isArray(value) ? value.length > 0 : Boolean(value));
+}
+
+function hasProtectedTargets(value: unknown): boolean {
+  return Array.isArray(value) && value.some((target) =>
+    typeof target === "string" && PROTECTED_STABLE_WRITE_TARGETS.includes(target as typeof PROTECTED_STABLE_WRITE_TARGETS[number])
+  );
+}
+
+function hasOnlyKnownProtectedTargets(value: unknown): boolean {
+  return Array.isArray(value) && value.length > 0 && value.every((target) =>
+    typeof target === "string" && PROTECTED_STABLE_WRITE_TARGETS.includes(target as typeof PROTECTED_STABLE_WRITE_TARGETS[number])
+  );
 }
 
 function readJsonlIfExists(filePath: string): JsonRecord[] {
