@@ -85,7 +85,7 @@ export class MemoryManager {
     this.recomputeDeficits(state);
     this.recomputeRouteBias(state);
     this.recomputeRiskFlags(state);
-    this.save();
+    this.saveRunState();
   }
 
   recordDecision(entry: DecisionLogEntry): void {
@@ -108,7 +108,7 @@ export class MemoryManager {
     if (entry.checkpoint?.kind === "unknown") this.run.counters.checkpointUnknown += 1;
     if (entry.chosenBy !== "local") this.run.counters.uncertainDecisions += 1;
     appendJsonl(this.decisionsPath, entry);
-    this.save();
+    this.saveRunState();
   }
 
   applyLlmMemoryUpdate(update: {
@@ -128,7 +128,7 @@ export class MemoryManager {
         this.run.deficits[deficitKey] = clamp(Number(value), 0, 1);
       }
     }
-    this.save();
+    this.saveRunState();
   }
 
   hasActiveRunEvidence(): boolean {
@@ -182,6 +182,7 @@ export class MemoryManager {
       this.updateLessons(reward);
       this.updateStrategyParams(reward);
       this.updateExperience(reward);
+      this.saveStableState();
       appendJsonl(this.legacyFinalizeAuditPath, {
         ...auditBase,
         blockedStableWrites: false,
@@ -199,7 +200,7 @@ export class MemoryManager {
     }
     this.archiveCurrentRun("finalized");
     this.run = defaultRunMemory();
-    this.save();
+    this.saveRunState();
     return reward;
   }
 
@@ -224,8 +225,11 @@ export class MemoryManager {
       .map((item) => item.text);
   }
 
-  save(): void {
+  private saveRunState(): void {
     writeJsonAtomic(this.currentRunPath, this.run);
+  }
+
+  private saveStableState(): void {
     writeJsonAtomic(this.longTermPath, this.longTerm);
     writeJsonAtomic(this.experiencePath, this.experience);
     writeJsonAtomic(this.strategyPath, this.strategy);

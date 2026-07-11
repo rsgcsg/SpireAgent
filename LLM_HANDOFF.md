@@ -52,6 +52,8 @@ Closeout pointers:
 - Current repeated provider-backed dry-run signals are `candidate_future:card_flow` and remain `candidate_shaping`; they are not a reason to start G3. P9.5 now permits only facts/order-preserving candidate-template presentation projections; actual candidate-template/generation changes must not be relabeled as presentation-only.
 - `data:replay evidence` now includes `evidenceRole` counts. Read them beside, not as a replacement for, environment scope and the declared authority mode.
 - `shadow-preflight` now rejects a same-slice provider comparison unless the baseline recorded a called workspace shadow, and manifests carry baseline/overlay evidence roles. This is not a promotion path.
+- Protected-path authorization is now centralized. Future P9 promotion, shadow experiment, and runtime reflection requests are deny-only; do not add direct stable writers or enable an origin outside `ProtectedPathGate`.
+- Ordinary runtime persistence now writes only current-run state. Stable memory/experience/strategy persistence is limited to the explicitly enabled, audited legacy-finalize compatibility path.
 
 ## 2026-07-11 Phase Architecture Handoff
 

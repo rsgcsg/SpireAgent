@@ -59,6 +59,12 @@ Current closeout / next-phase pointers:
 - Focused evidence summaries now report observed evidence-role counts separately from environment/provenance eligibility, preventing `llm_primary` or `promotionEligible` labels from being mistaken for LLM-selected execution.
 - G2 manifests/preflight now require and record a called workspace-shadow baseline for same-slice provider comparison. This is an audit integrity rule only; it does not call a provider by itself or enable promotion.
 
+## 2026-07-11 G2 Protected-Path Authorization Consolidation
+
+- `ProtectedPathGate` now provides the single stable-write authorization evaluator for live LLM intent, legacy finalize, future P9 promotion, shadow experiment, and runtime reflection. P9/shadow/reflection origins are hard deny-only; no writer, proposal apply, or promotion was added.
+- Existing live/provider and legacy-finalize behavior remains compatible and default-blocked. Smoke coverage verifies that future P9 promotion stays denied even when historical compatibility flags are supplied in a test-only environment.
+- Runtime state persistence no longer rewrites stable memory/experience/strategy files during ordinary ticks or decision recording. The explicitly enabled legacy-finalize path remains the only legacy stable writer and is audited.
+
 ## 2026-07-11 P9-P15 Phase Architecture Audit
 
 - Documentation/architecture pass only; no runtime, live, provider, proposal status, stable policy, or budget behavior changed.

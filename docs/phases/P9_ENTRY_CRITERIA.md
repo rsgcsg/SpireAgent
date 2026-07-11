@@ -19,13 +19,13 @@ Forward phase reporting uses P9-G1 through P9-G4 from ADR-0005. Historical P9.0-
 
 - Keep a hard protected-path gate for live/provider-originated memory or strategy suggestions.
   Current state:
-  live/provider-originated memory updates and strategy-parameter suggestions are blocked/audited by default, and the future stable-write target vocabulary is explicit. The gate still needs to expand into the full future proposal/promotion surface before stable learning can be enabled.
+  live/provider-originated memory updates and strategy-parameter suggestions are blocked/audited by default, and the future stable-write target vocabulary is explicit. `ProtectedPathGate` now centralizes authorization for live LLM, legacy finalize, future P9 promotion, shadow experiment, and runtime reflection origins; the latter three are deny-only. No stable-learning writer or promotion path exists.
 - Decide how legacy `finalizeRun()` writes are handled during P9:
   - freeze
   - isolate
   - or gate behind explicit legacy-local-learning labeling
   Current state:
-  legacy finalize stable writes are blocked by default, audited, and labeled as `legacy_local_learning`. If explicitly enabled, the path is still audited as legacy finalize and remains separate from P9 proposal promotion.
+  legacy finalize stable writes are blocked by default, audited, and labeled as `legacy_local_learning`. Ordinary runtime persistence writes only current-run state; if legacy finalize is explicitly enabled, the stable paths are written and audited as legacy finalize, remaining separate from P9 proposal promotion.
 - Define typed pending proposal schema.
   Current state:
   typed `LearningProposal` schema and append-only `learning-proposals.jsonl` store exist. They are read-only proposal infrastructure and have no apply or promotion path.

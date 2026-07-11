@@ -17,20 +17,14 @@ Status values:
 
 ### `protected_path_write_gate_missing`
 
-- Status: `in_progress`
+- Status: `closed`
 - Evidence:
   - [controller.ts](../../src/agent/controller.ts#L362)
   - [memory.ts](../../src/agent/memory.ts#L140)
-- Problem:
-  - Live/provider-originated memory updates and strategy-parameter suggestions are now blocked/audited by default, and the future protected target vocabulary is explicit.
-  - Protected-path governance is still not the full future proposal/promotion surface.
-  - Legacy run-finalization is now blocked by default, audited, and labeled as `legacy_local_learning`; it still exists as a legacy path that must not be confused with a P9 promotion model.
-- Why it matters:
-  - P9 cannot claim guarded learning while protected-path writes depend on provider obedience or legacy reward feedback.
-- Minimum fix:
-  - keep the controller-level protected-path gate as the single live/provider write authority
-  - keep legacy finalize behavior isolated as legacy local learning
-  - add the next protected-path gate layer for future derived/strategy/skill proposals
+- Resolution:
+  - `ProtectedPathGate` is now the single stable-write authorization evaluator. It centralizes explicit targets and origins for live LLM, legacy finalize, P9 stable promotion, shadow experiment, and runtime reflection.
+  - Existing live/legacy wrappers retain their compatibility behavior; P9 promotion, shadow experiment, and runtime reflection are deny-only even if historical flags are present.
+  - Ordinary runtime persistence writes only current-run state. Legacy finalize remains blocked by default, audited, and labeled `legacy_local_learning`; it is the only legacy path that writes the stable memory/experience/strategy stores when explicitly enabled. No P9 proposal/promotion writer exists.
 
 ### `readiness_semantics_stale_for_broad_live`
 

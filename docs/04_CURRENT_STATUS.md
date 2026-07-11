@@ -41,9 +41,9 @@ Do not turn it into a narrative log. Detailed history belongs in `../LLM_HANDOFF
 
 The active blocker is no longer provider reachability or P8 workspace survival-cue preservation.
 
-The real blocker is now the gap between partial P9-G2 shadow experiment evidence and a safe P9-G3 stable-change design:
+P9-G1 protected-path closure is complete. The real blocker is now the gap between partial P9-G2 shadow experiment evidence and a safe P9-G3 stable-change design:
 
-- protected-path gating is only partially landed
+- protected-path governance now has one stable-write authorization evaluator across live LLM intent, legacy finalize, future P9 promotion, shadow experiment, and runtime reflection; P9/shadow/reflection origins are explicitly deny-only; ordinary runtime persistence writes run state only
 - live-applied rollout reporting now exists, but older shadow-first readiness semantics still coexist beside it
 - typed learning proposal schema/store has started as append-only read-only P9.1 infrastructure
 - typed reverse-scaffold feedback schema/store has started as append-only read-only telemetry
@@ -78,9 +78,9 @@ The real blocker is now the gap between partial P9-G2 shadow experiment evidence
 
 Complete P9-G2 without enabling stable promotion:
 
-1. close remaining P9-G1 protected-surface gaps
+1. preserve `ProtectedPathGate` as the only future stable-write authorization entry; do not add a direct writer or enable any P9 origin
 2. record the rejected global rest reason-policy hypothesis and seek another naturally repeated, scoped, low-risk presentation deficiency; do not blind-sample rest or manufacture a proposal merely to obtain a pair
-3. verify console/debug exclusion and old-transition `not_recorded` handling in replay/eval/review
+3. preserve console/debug exclusion and old-transition `not_recorded` handling in replay/eval/review
 4. preserve the distinction between shadow-provider comparison evidence and LLM-selected execution evidence in every future G2 review
 5. keep candidate-template/generation changes as `candidate_shaping`; only facts/order-preserving presentation projections may enter a future P9.5 comparison
 6. keep `authority_shaping`, `action_shaping`, and `hard_shell` proposals outside the first promotion path

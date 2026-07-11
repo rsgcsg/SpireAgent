@@ -78,6 +78,7 @@ import {
 } from "./environmentIdentity.js";
 import {
   evaluateLegacyFinalizeStableWriteGate,
+  evaluateProtectedStableWriteAuthorization,
   evaluateLiveLlmMemoryUpdateGate,
   evaluateLiveLlmStableWriteGate,
   protectedPathGateSnapshot
@@ -1313,6 +1314,22 @@ assert.deepEqual(protectedPathSnapshot.stableWriteTargets, [
   "scaffold_policy"
 ]);
 assert.equal(evaluateLegacyFinalizeStableWriteGate({ STS2_ENABLE_LEGACY_FINALIZE_STABLE_WRITES: "1" } as NodeJS.ProcessEnv).allowed, true);
+const p9PromotionGate = evaluateProtectedStableWriteAuthorization({
+  origin: "p9_stable_promotion",
+  attemptedTargets: ["memory", "candidate_templates"],
+  env: {
+    STS2_ALLOW_LIVE_LLM_MEMORY_UPDATES: "1",
+    STS2_ENABLE_LEGACY_FINALIZE_STABLE_WRITES: "1"
+  } as NodeJS.ProcessEnv
+});
+assert.equal(p9PromotionGate.allowed, false);
+assert.equal(p9PromotionGate.gate, "p9_stable_promotion");
+assert.deepEqual(p9PromotionGate.reasons, ["p9_stable_promotion_not_implemented"]);
+assert.equal(evaluateProtectedStableWriteAuthorization({ origin: "shadow_experiment", env: {} }).allowed, false);
+assert.equal(evaluateProtectedStableWriteAuthorization({ origin: "runtime_reflection", env: {} }).allowed, false);
+assert.ok(Array.isArray(protectedPathSnapshot.stableWriteOrigins));
+assert.equal((protectedPathSnapshot.p9StablePromotion as { allowed?: boolean }).allowed, false);
+assert.equal((protectedPathSnapshot.shadowExperimentStableWrites as { allowed?: boolean }).allowed, false);
 
 const rewardState = normalizeGameState({
   state_type: "card_reward",
@@ -1525,6 +1542,10 @@ assert.ok(!rewardCandidates.some((candidate) => candidate.kind === "proceed"));
     delete process.env.STS2_ENABLE_LEGACY_FINALIZE_STABLE_WRITES;
     const memory = new MemoryManager(memoryDir);
     memory.updateFromState(rewardState);
+    assert.equal(existsSync(path.join(memoryDir, "current-run.json")), true);
+    assert.equal(existsSync(path.join(memoryDir, "long-term.json")), false);
+    assert.equal(existsSync(path.join(memoryDir, "experience.json")), false);
+    assert.equal(existsSync(path.join(memoryDir, "strategy-params.json")), false);
     memory.recordDecision({
       id: "decision-test",
       at: new Date(0).toISOString(),
@@ -1576,6 +1597,9 @@ assert.ok(!rewardCandidates.some((candidate) => candidate.kind === "proceed"));
     });
     enabledMemory.finalizeRun(rewardState);
     assert.equal(enabledMemory.longTerm.runs.length, 1);
+    assert.equal(existsSync(path.join(memoryDir, "long-term.json")), true);
+    assert.equal(existsSync(path.join(memoryDir, "experience.json")), true);
+    assert.equal(existsSync(path.join(memoryDir, "strategy-params.json")), true);
     const enabledAudit = JSON.parse(readFileSync(legacyFinalizeAuditPath, "utf8").trim().split("\n").at(-1) ?? "{}");
     assert.equal(enabledAudit.mode, "legacy_finalize_explicitly_enabled");
     assert.equal(enabledAudit.learningMode, "legacy_local_learning");
@@ -2216,6 +2240,7 @@ try {
   assert.equal(manifestPreflight.baselineEvidenceRole, "workspace_shadow_provider");
   const legacyPreflight = assessLearningExperimentPreflight({ proposal: shadowSafeStored, transition: {} });
   assert.equal(legacyPreflight.eligibleForSameSliceProviderCall, false);
+  assert.ok(legacyPreflight.blockers.includes("baseline_workspace_shadow_not_called"));
   assert.ok(legacyPreflight.blockers.includes("environment_fingerprint_not_complete"));
   appendLearningExperimentManifest(p9ProposalDir, manifest);
   const manifestSurface = buildLearningExperimentManifestSurface(readLearningExperimentManifests(p9ProposalDir));

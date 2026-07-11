@@ -247,6 +247,7 @@ P8 DeliberationPacket strategic workspace shadow surface:
   - `protectedPathAttemptedWrites`: protected-path governance telemetry for provider-originated stable-write intent targets that were observed on a live LLM decision, such as `memory` or `strategy_params`
   - `protectedPathBlockedWrites`: protected-path governance telemetry for blocked live/provider-originated write attempts such as memory updates or strategy-parameter suggestions that are denied by default
     - The current protected stable-write target vocabulary is `memory`, `derived_knowledge`, `strategy_params`, `skills`, `prompt_policy`, `budget_policy`, `candidate_templates`, `classification_policy`, and `scaffold_policy`.
+    - `ProtectedPathGate` is the single authorization evaluator for live LLM intent, legacy finalize, future P9 promotion, shadow experiment, and runtime reflection origins. Only the historical live/legacy compatibility origins have explicit flags; P9 promotion, shadow experiment, and runtime reflection are deny-only until a future gate is explicitly implemented.
     - This vocabulary is an audit and gate surface only. It does not enable stable learning, proposal application, wildcard live, or provider-controlled mutation of future decisions.
 - `memory/legacy-finalize-audit.jsonl` records legacy finalize-run learning attempts:
   - `learningMode=legacy_local_learning`
@@ -256,6 +257,7 @@ P8 DeliberationPacket strategic workspace shadow surface:
   - `protectedStableWriteTargets`
   - `blockedStableWrites` plus blocked/applied target lists
   - This audit stream is not a P9 proposal ledger and must not be used as stable-promotion proof.
+  - Runtime persistence is separated: ordinary state/decision updates write only `current-run.json`; `long-term.json`, `experience.json`, and `strategy-params.json` are written only by an explicitly allowed legacy-finalize stable update. This does not authorize P9 promotion.
 - `STS2_P8_WORKSPACE_ABLATION_MODE=full_bounded_candidate_futures` is a new v5 shadow-only experiment. It keeps `full` unchanged as the control group and only applies bounded serialization to combat `candidate_futures`.
 - CandidateFuture completeness and missing/shallow signals are review/eval telemetry only. They do not change validation, candidate generation, fallback, execution, stable memory, derived knowledge, or strategy params.
 - Future proposal families such as `CombatReasonPolicy`, `CandidateTemplate`, or `BudgetPolicy` are inner-scaffold policy candidates only. They must begin as replay/eval/review evidence, remain shadow/proposal-only until fresh validation exists, and may not mutate validation, execution legality, live rollout flags, rollback authority, or fact/memory/derived separation.
