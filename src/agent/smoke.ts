@@ -2198,6 +2198,7 @@ try {
     evaluation: sameSliceShadowRunEvaluation
   });
   assert.equal(manifest.integrity.exactOrganicEnvironment, true);
+  assert.equal(manifest.integrity.baselineWorkspaceProviderEvidence, false);
   assert.equal(manifest.stablePromotionEnabled, false);
   const manifestPreflight = assessLearningExperimentPreflight({
     proposal: shadowSafeStored,
@@ -2205,12 +2206,14 @@ try {
       transitionId: "transition-p9-smoke",
       source: "agent",
       captureMode: "executor_logged",
+      shadowWorkspaceDecision: { called: true },
       decisionAuthority: manifest.authority,
       environmentFingerprint: manifest.environmentFingerprint,
       evidenceEnvironmentScope: manifest.environmentScope
     }
   });
   assert.equal(manifestPreflight.eligibleForSameSliceProviderCall, true);
+  assert.equal(manifestPreflight.baselineEvidenceRole, "workspace_shadow_provider");
   const legacyPreflight = assessLearningExperimentPreflight({ proposal: shadowSafeStored, transition: {} });
   assert.equal(legacyPreflight.eligibleForSameSliceProviderCall, false);
   assert.ok(legacyPreflight.blockers.includes("environment_fingerprint_not_complete"));
@@ -2219,7 +2222,32 @@ try {
   assert.equal(manifestSurface.manifests, 1);
   assert.equal(manifestSurface.pairedReadyForReview, 1);
   assert.equal(manifestSurface.exactOrganicEnvironment, 1);
+  assert.equal(manifestSurface.baselineWorkspaceProviderEvidence, 0);
   assert.equal(manifestSurface.stablePromotionEnabled, false);
+  const candidateGuidanceProjection = compareLearningProposalInShadowWorkspace({
+    proposal: {
+      ...shadowSafeStored,
+      type: "candidate_template",
+      targetLayer: "candidate_future",
+      targetObject: "existing_future_tradeoff_presentation",
+      behaviorImpact: "presentation_only",
+      proposedPatch: {
+        proposalOnly: true,
+        shadowOverlay: {
+          kind: "candidate_future_guidance",
+          guidance: "Compare the existing benefit, cost, and invalidation facts without adding actions or facts.",
+          candidateFutureIds: [candidateFuture.id]
+        }
+      }
+    },
+    packet: deliberationPacket,
+    candidates: [workspaceCandidate],
+    decisionClass: "combat:llm_required"
+  });
+  assert.equal(candidateGuidanceProjection.applied, true);
+  assert.deepEqual(candidateGuidanceProjection.matchedCandidateFutureIds, [candidateFuture.id]);
+  assert.equal(candidateGuidanceProjection.wouldAffectRuntimeDecision, false);
+  assert.equal(candidateGuidanceProjection.overlay?.candidateFutureFactsHash, candidateGuidanceProjection.baseline.candidateFutureFactsHash);
   const unknownFutureOverlay = compareLearningProposalInShadowWorkspace({
     proposal: {
       ...shadowSafeStored,
@@ -4265,6 +4293,8 @@ try {
   assert.equal(evidenceSliceSummary.promotionEvidence.excludedTransitions, 1);
   assert.equal(evidenceSliceSummary.promotionEvidence.exclusionReasonCounts.console_debug_or_fixture, 1);
   assert.equal(evidenceSliceSummary.dimensions.authorityModeCounts.llm_primary, 1);
+  assert.equal(evidenceSliceSummary.dimensions.evidenceRoleCounts.llm_selected_execution, 1);
+  assert.equal(evidenceSliceSummary.dimensions.evidenceRoleCounts.workspace_shadow_provider, 1);
   assert.equal(evidenceSliceSummary.dimensions.selectionSourceCounts.llm, 1);
   assert.equal(evidenceSliceSummary.dimensions.environmentScopeStatusCounts.exact, 1);
   const promotionSlice = evidenceSliceSummary.slices.find((slice) => slice.kind === "stable_learning_promotion");
@@ -4276,6 +4306,7 @@ try {
   assert.ok(promotionSlice?.reasons.includes("console_debug_or_fixture_present"));
   assert.ok(promotionSlice?.reasons.includes("promotion_evidence_exclusions_present"));
   assert.match(formatEvidenceSliceSummary(evidenceSliceSummary), /promotionAllowed=false/);
+  assert.match(formatEvidenceSliceSummary(evidenceSliceSummary), /evidenceRole=/);
   assert.match(formatEvidenceSliceSummary(evidenceSliceSummary), /promotionEligible=1/);
   assert.match(formatEvidenceSliceSummary(evidenceSliceSummary), /promotionExcluded=1/);
   const exactOrganicShadowSlice = buildEvidenceSliceSummary([

@@ -55,7 +55,9 @@ Current closeout / next-phase pointers:
 
 - Read-only seed inventory found repeated cue smoke alarms in this run, but nearly all inspected `missing_lethal_line` / `missing_survival_line` examples were local fallback or budget-skipped transitions, not called provider outcomes. They are not repeated LLM reason/scaffold evidence.
 - Hardened seed eligibility so exact organic environment is not sufficient by itself: local fallback/scaffold/mechanical observations remain visible as draft-only; only an actual LLM selection or a called workspace-provider outcome can seed future actionable review. No proposal was appended, applied, or promoted.
-- The remaining repeated provider-backed dry-run seeds concern `candidate_future:card_flow`, which is `candidate_shaping`, not a low-risk presentation-only G3 candidate. Candidate-template shadow overlay is currently blocked by its behavior-impact gate despite older P9.5 wording; recorded as debt rather than bypassed.
+- The remaining repeated provider-backed dry-run seeds concern `candidate_future:card_flow`, which is `candidate_shaping`, not a low-risk presentation-only G3 candidate. P9.5 semantics are now explicit: only a facts/order-preserving candidate-template presentation projection can be shadowed; actual candidate-template/generation changes remain deferred.
+- Focused evidence summaries now report observed evidence-role counts separately from environment/provenance eligibility, preventing `llm_primary` or `promotionEligible` labels from being mistaken for LLM-selected execution.
+- G2 manifests/preflight now require and record a called workspace-shadow baseline for same-slice provider comparison. This is an audit integrity rule only; it does not call a provider by itself or enable promotion.
 
 ## 2026-07-11 P9-P15 Phase Architecture Audit
 

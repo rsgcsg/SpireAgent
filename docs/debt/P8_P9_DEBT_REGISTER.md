@@ -113,24 +113,21 @@ Status values:
 - Why it matters:
   - Without this distinction, G2 could promote a shadow prompt-quality result as if it were evidence that an LLM-owned decision improved, or let local/mechanical smoke alarms become actionable soft-shell changes.
 - Minimum fix before P9-G3:
-  - surface evidence-role counts in focused replay/eval/review summaries
-  - add explicit manifest integrity fields for baseline/overlay evidence role and observed authority chain
+  - focused replay now surfaces evidence-role counts; experiment manifests now record baseline/overlay roles and require a called workspace-shadow baseline
+  - retain explicit manifest integrity fields for baseline/overlay evidence role and observed authority chain
   - require G3 to state whether a claim concerns shadow workspace quality, LLM-selected execution, or both
 
 ### `candidate_template_shadow_overlay_eligibility_mismatch`
 
-- Status: `open`
+- Status: `closed`
 - Evidence:
   - [shadowOverlayPolicy.ts](../../src/learning/shadowOverlayPolicy.ts)
   - [proposalGenerator.ts](../../src/learning/proposalGenerator.ts)
   - [P9_GUARDED_LEARNING_PLAN.md](../phases/P9_GUARDED_LEARNING_PLAN.md)
-- Problem:
-  - P9.5 documentation names low-risk `candidate_template` guidance as a possible cloned-workspace overlay, but the current overlay gate accepts only `presentation_only` behavior impact. The generator correctly classifies candidate templates as `candidate_shaping`, making that documented path unreachable.
-- Why it matters:
-  - Silently relabeling candidate shaping as presentation-only would understate its strategic impact. Leaving the mismatch hidden would encourage reviewers to mistake a pending candidate-template seed for a testable G2 overlay.
-- Minimum fix:
-  - make one explicit choice before a future candidate-template experiment: either narrow P9.5 documentation to reason-policy presentation overlays, or introduce a separately bounded `candidate_shaping` shadow-only comparison profile with stronger candidate/fact invariants.
-  - do not change the first P9-G3 stable path, which remains `presentation_only`.
+- Resolution:
+  - A cloned `candidate_template` overlay is only a facts/order-preserving presentation projection over existing CandidateFuture objects. It may add bounded guidance and reference existing ids, but cannot create, remove, reorder, or alter candidates/facts.
+  - Actual candidate-template/generation change remains `candidate_shaping`; generated `candidate_future:card_flow` seeds therefore remain review-only and cannot use the presentation-only overlay path.
+  - Smoke coverage proves the permitted projection preserves candidate-fact hashes and has no runtime/live effect. The first P9-G3 stable path remains `presentation_only`.
 
 ### `environment_scoped_evidence_missing`
 

@@ -21,6 +21,7 @@ export interface EvidenceSliceSummary {
     liveModeCounts: Record<string, number>;
     provenanceCounts: Record<string, number>;
     authorityModeCounts: Record<string, number>;
+    evidenceRoleCounts: Record<string, number>;
     selectionSourceCounts: Record<string, number>;
     authorizationSourceCounts: Record<string, number>;
     executionSourceCounts: Record<string, number>;
@@ -107,6 +108,7 @@ function buildSelectedEvidenceSliceSummary(
     liveModeCounts: countBy(transitions, transitionLiveMode),
     provenanceCounts: countBy(transitions, transitionProvenance),
     authorityModeCounts: countBy(transitions, transitionAuthorityMode),
+    evidenceRoleCounts: countBy(transitions, transitionEvidenceRole),
     selectionSourceCounts: countBy(transitions, transitionSelectionSource),
     authorizationSourceCounts: countBy(transitions, transitionAuthorizationSource),
     executionSourceCounts: countBy(transitions, transitionExecutionSource),
@@ -204,6 +206,7 @@ export function formatEvidenceSliceSummary(summary: EvidenceSliceSummary): strin
     `liveMode=${JSON.stringify(summary.dimensions.liveModeCounts)}`,
     `provenance=${JSON.stringify(summary.dimensions.provenanceCounts)}`,
     `authorityMode=${JSON.stringify(summary.dimensions.authorityModeCounts)}`,
+    `evidenceRole=${JSON.stringify(summary.dimensions.evidenceRoleCounts)}`,
     `selection=${JSON.stringify(summary.dimensions.selectionSourceCounts)}`,
     `authorization=${JSON.stringify(summary.dimensions.authorizationSourceCounts)}`,
     `execution=${JSON.stringify(summary.dimensions.executionSourceCounts)}`,
@@ -379,6 +382,16 @@ function transitionAuthorityMode(transition: JsonRecord): string {
 function transitionSelectionSource(transition: JsonRecord): string {
   const authority = transitionDecisionAuthority(transition);
   return typeof authority?.selectionSource === "string" ? authority.selectionSource : "not_recorded";
+}
+
+function transitionEvidenceRole(transition: JsonRecord): string {
+  const authority = transitionDecisionAuthority(transition);
+  if (authority?.selectionSource === "llm") return "llm_selected_execution";
+  if (shadowWorkspaceCalled(transition)) return "workspace_shadow_provider";
+  if (authority?.selectionSource === "local_fallback") return "local_fallback_observation";
+  if (authority?.selectionSource === "local_scaffold") return "local_scaffold_observation";
+  if (authority?.selectionSource === "local_mechanical") return "local_mechanical_observation";
+  return "unknown_observation";
 }
 
 function transitionAuthorizationSource(transition: JsonRecord): string {
