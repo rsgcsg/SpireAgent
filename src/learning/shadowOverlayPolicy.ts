@@ -82,8 +82,13 @@ function hasEligibleEvidence(evidence: unknown): boolean {
   if (!Array.isArray(evidence)) return false;
   return evidence.some((item) => {
     if (!isRecord(item)) return false;
-    if (Array.isArray(item.tags) && item.tags.includes("promotion_eligible:true")) return true;
-    return isRecord(item.raw) && item.raw.evidencePromotionEligible === true;
+    const tags = Array.isArray(item.tags) ? item.tags : [];
+    const raw = isRecord(item.raw) ? item.raw : {};
+    const role = typeof raw.evidenceRole === "string"
+      ? raw.evidenceRole
+      : tags.find((tag): tag is string => typeof tag === "string" && tag.startsWith("evidence_role:"))?.slice("evidence_role:".length);
+    const eligible = tags.includes("promotion_eligible:true") || raw.evidencePromotionEligible === true;
+    return eligible && (role === "llm_selected_execution" || role === "workspace_shadow_provider");
   });
 }
 

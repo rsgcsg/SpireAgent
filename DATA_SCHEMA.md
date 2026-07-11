@@ -177,6 +177,7 @@ P9 guarded learning direction:
 - Learning proposals also carry weak-attribution fields: `suspectedCause`, `confidence`, `counterexampleNeeded`, and `alternativeHypotheses`.
 - The append-only pending store is `data/runs/<runId>/learning-proposals.jsonl`. It is a run artifact and not a stable learning store.
 - Proposal validation is intentionally conservative. Vague proposals without concrete evidence, scope, counterexamples, expected effect, validation plan, rollback, classified behavior impact, and exact organic environment scope are kept as `draft` or `rejected` rather than actionable pending proposals. Read paths revalidate historical JSONL records without rewriting them, so an old `pending_review` label cannot bypass a newer safety requirement.
+- Proposal evidence records also preserve an observed `evidenceRole`. Exact organic environment scope alone is not an LLM-learning claim: `local_fallback_observation`, `local_scaffold_observation`, and `local_mechanical_observation` remain visible as draft-only observations. Only `llm_selected_execution` or `workspace_shadow_provider` evidence may seed future actionable review, and neither role enables promotion.
 - P9.1 also has an append-only review-decision ledger at `data/runs/<runId>/learning-proposal-review-decisions.jsonl`.
 - Review-decision records preserve:
   - `proposalId`

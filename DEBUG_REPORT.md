@@ -51,6 +51,12 @@ Current closeout / next-phase pointers:
 - Its reason, `Heal to survive, but lose upgrade tempo.`, explicitly states the heal-versus-upgrade tradeoff that the earlier high-HP reason did not. The capture used `shadow=1;profile=shadow_exploration;capture=rest:llm_required`, so it is a contextual counterexample, **not** a same-budget/provider-profile pair for promotion.
 - Reject the broad claim that rest reasoning has a class-level missing heal-versus-upgrade contract. The earlier high-HP wording remains an isolated presentation observation; it does not justify a `ReasonPolicyProposal`, overlay, manifest, or P9-G3 work. Continue G2 only when another naturally repeated, scoped, low-risk deficiency survives counterexample review.
 
+## 2026-07-11 G2 Evidence-Role Audit
+
+- Read-only seed inventory found repeated cue smoke alarms in this run, but nearly all inspected `missing_lethal_line` / `missing_survival_line` examples were local fallback or budget-skipped transitions, not called provider outcomes. They are not repeated LLM reason/scaffold evidence.
+- Hardened seed eligibility so exact organic environment is not sufficient by itself: local fallback/scaffold/mechanical observations remain visible as draft-only; only an actual LLM selection or a called workspace-provider outcome can seed future actionable review. No proposal was appended, applied, or promoted.
+- The remaining repeated provider-backed dry-run seeds concern `candidate_future:card_flow`, which is `candidate_shaping`, not a low-risk presentation-only G3 candidate. Candidate-template shadow overlay is currently blocked by its behavior-impact gate despite older P9.5 wording; recorded as debt rather than bypassed.
+
 ## 2026-07-11 P9-P15 Phase Architecture Audit
 
 - Documentation/architecture pass only; no runtime, live, provider, proposal status, stable policy, or budget behavior changed.

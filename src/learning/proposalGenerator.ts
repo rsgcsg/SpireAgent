@@ -126,7 +126,7 @@ function proposalsFromPredictionError(runId: string, transition: JsonRecord): Ar
       transitionId,
       decisionClass,
       type: target.type,
-      status: hasUnsupported ? "pending_review" : "draft",
+      status: hasUnsupported && evidenceScope.evidencePromotionEligible ? "pending_review" : "draft",
       targetLayer: target.targetLayer,
       targetObject: `${target.targetLayer}:${bucketNames.join(",") || "open_prediction_error"}`,
       proposedPatch: {
@@ -342,6 +342,7 @@ function buildProposal(input: {
   evidenceProvenance: string;
   evidencePromotionEligible: boolean;
   evidencePromotionReason: string;
+  evidenceRole: string;
   environmentScope: LearningProposal["environmentScope"];
 }): Partial<LearningProposal> {
   return {
@@ -353,6 +354,7 @@ function buildProposal(input: {
       conditions: [
         `generated_from:${input.evidenceSource}`,
         `evidence_provenance:${input.evidenceProvenance}`,
+        `evidence_role:${input.evidenceRole}`,
         `evidence_promotion_eligible:${String(input.evidencePromotionEligible)}`
       ],
       exclusions: ["console_debug_only_evidence_without_organic_confirmation"],
@@ -365,7 +367,8 @@ function buildProposal(input: {
       ...input.proposedPatch,
       evidenceProvenance: input.evidenceProvenance,
       evidencePromotionEligible: input.evidencePromotionEligible,
-      evidencePromotionReason: input.evidencePromotionReason
+      evidencePromotionReason: input.evidencePromotionReason,
+      evidenceRole: input.evidenceRole
     },
     evidence: [
       {
@@ -379,12 +382,14 @@ function buildProposal(input: {
           input.targetLayer,
           input.targetObject,
           `provenance:${input.evidenceProvenance}`,
+          `evidence_role:${input.evidenceRole}`,
           `promotion_eligible:${String(input.evidencePromotionEligible)}`
         ],
         raw: {
           evidenceProvenance: input.evidenceProvenance,
           evidencePromotionEligible: input.evidencePromotionEligible,
-          evidencePromotionReason: input.evidencePromotionReason
+          evidencePromotionReason: input.evidencePromotionReason,
+          evidenceRole: input.evidenceRole
         }
       }
     ],
@@ -461,9 +466,13 @@ function evidenceScopeOf(transition: JsonRecord): {
   evidenceProvenance: string;
   evidencePromotionEligible: boolean;
   evidencePromotionReason: string;
+  evidenceRole: string;
   environmentScope: LearningProposal["environmentScope"];
 } {
   const eligibility = getTransitionPromotionEligibility(transition);
+  const evidenceRole = proposalEvidenceRoleOf(transition);
+  const actionableEvidenceRole = evidenceRole === "llm_selected_execution" || evidenceRole === "workspace_shadow_provider";
+  const evidencePromotionEligible = eligibility.eligible && actionableEvidenceRole;
   const fingerprint = isRecord(transition.environmentFingerprint) ? transition.environmentFingerprint : {};
   const scope = isRecord(transition.evidenceEnvironmentScope) ? transition.evidenceEnvironmentScope : {};
   const scopeStatus = scope.scopeStatus === "exact" || scope.scopeStatus === "partial" || scope.scopeStatus === "mixed"
@@ -479,19 +488,38 @@ function evidenceScopeOf(transition: JsonRecord): {
     ? scope.compatibilityState
     : "unknown";
   return {
-    evidenceProvenance: eligibility.reason,
-    evidencePromotionEligible: eligibility.eligible,
-    evidencePromotionReason: eligibility.reason,
+    evidenceProvenance: `${eligibility.reason}:${evidenceRole}`,
+    evidencePromotionEligible,
+    evidencePromotionReason: evidencePromotionEligible
+      ? `${eligibility.reason}:${evidenceRole}`
+      : eligibility.eligible
+        ? `observation_only_evidence_role:${evidenceRole}`
+        : eligibility.reason,
+    evidenceRole,
     environmentScope: {
       fingerprintHashes: typeof fingerprint.fingerprintHash === "string" ? [fingerprint.fingerprintHash] : [],
       scopeStatus,
       captureProvenance: [provenance],
       compatibilityStates: [compatibility],
-      notes: eligibility.eligible
-        ? ["source_transition_environment_scope_exact"]
-        : ["source_transition_environment_scope_ineligible:" + eligibility.reason]
+      notes: evidencePromotionEligible
+        ? ["source_transition_environment_scope_exact", `source_transition_evidence_role:${evidenceRole}`]
+        : eligibility.eligible
+          ? [`source_transition_observation_only_role:${evidenceRole}`]
+          : ["source_transition_environment_scope_ineligible:" + eligibility.reason]
     }
   };
+}
+
+function proposalEvidenceRoleOf(transition: JsonRecord): string {
+  const authority = isRecord(transition.decisionAuthority) ? transition.decisionAuthority : {};
+  const selectionSource = typeof authority.selectionSource === "string" ? authority.selectionSource : "unknown";
+  if (selectionSource === "llm") return "llm_selected_execution";
+  const shadow = isRecord(transition.shadowWorkspaceDecision) ? transition.shadowWorkspaceDecision : {};
+  if (shadow.called === true) return "workspace_shadow_provider";
+  if (selectionSource === "local_fallback") return "local_fallback_observation";
+  if (selectionSource === "local_scaffold") return "local_scaffold_observation";
+  if (selectionSource === "local_mechanical") return "local_mechanical_observation";
+  return "unknown_observation";
 }
 
 function targetForPredictionLayer(layer: string, buckets: string[]): { type: string; targetLayer: string; suggestedChange: string } {

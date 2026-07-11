@@ -58,6 +58,8 @@ The real blocker is now the gap between partial P9-G2 shadow experiment evidence
 - Fresh executor-logged transitions now carry audit-only `DecisionAuthorizationRecord` fields for deliberation, selection, authorization, execution, plan origin, authority mode/level, and delegation identity. Old transitions remain `not_recorded`; authority mode is `unknown` unless explicitly configured.
 - Fresh executor-logged transitions now carry audit-only `EnvironmentFingerprint` and `EvidenceEnvironmentScope`. Missing values stay unknown, console/debug provenance must be explicitly declared, and pre-P12 compatibility remains `unknown`. No fresh verified complete-scope paired evidence exists yet.
 - P9-G2 now has an append-only experiment manifest that binds a proposal, baseline/overlay pair, authority, environment, and invariants. It remains audit-only and is not a promotion ledger.
+- G2 proposal seeds now record an observed evidence role. Exact organic environment scope is necessary but insufficient: local fallback/scaffold/mechanical observations remain draft-only, while an actual LLM selection or called workspace provider outcome is required before a future seed can be actionable. This does not promote, apply, or alter any decision.
+- Current dry-run inventory leaves two repeated `candidate_future:card_flow` seeds with `workspace_shadow_provider` evidence. They are `candidate_shaping`, not the first-path low-risk `presentation_only` class, so they are not a basis to start G3 or manufacture an overlay. It also exposed a documented P9.5 mismatch: candidate-template overlays are described but presently blocked by the presentation-only overlay gate.
 - Fresh G2 organic evidence now exists in `run-mrfq2vw1-aap49m`: direct-shadow calls across combat, shop, event, rest, rewards, and card selection under exact environment scope and `llm_primary` mode. They have `finishReason=stop`, `failureBucket=none`, and no output-cap hit; one combat outcome used retry=1 and therefore cannot be mixed with no-retry pair evidence. Fixed budget/capture sub-windows are separately inspectable; other profiles must not be mixed into a future pair. A card-reward reason that explicitly named benefit and deck-bloat cost was labeled `missing_tradeoff`, so it remains a detector counterexample. The initial high-HP rest reason omitted an explicit heal-for-upgrade cost, but a separately captured low-HP rest outcome said `Heal to survive, but lose upgrade tempo.` The latter is a contextual counterexample, not a same-budget pair. Reject the global rest reason-policy hypothesis; do not create a proposal from the isolated high-HP wording. These records are baselines/counterexamples only, not paired policy results or promotion evidence.
 - budget governance remains Stage 0 guard + telemetry; learned deliberation/compute policy belongs to P11B. Existing telemetry that says `P13` is a backward-compatible historical phase label, not current roadmap authority
 - weak proposal attribution and anti-vague proposal validation are implemented for pending proposals; stable-promotion gates are still not implemented
@@ -77,8 +79,10 @@ Complete P9-G2 without enabling stable promotion:
 1. close remaining P9-G1 protected-surface gaps
 2. record the rejected global rest reason-policy hypothesis and seek another naturally repeated, scoped, low-risk presentation deficiency; do not blind-sample rest or manufacture a proposal merely to obtain a pair
 3. verify console/debug exclusion and old-transition `not_recorded` handling in replay/eval/review
-4. keep `authority_shaping`, `action_shaping`, and `hard_shell` proposals outside the first promotion path
-5. audit G2; only then design P9-G3 promotion ledger, immutable version diff, rollback snapshot, status transition, and retrieval trace
+4. verify evidence-role reporting and preserve the distinction between shadow-provider comparison evidence and LLM-selected execution evidence
+5. resolve the P9.5 candidate-template overlay eligibility mismatch before treating candidate-shaping seeds as overlay-ready
+6. keep `authority_shaping`, `action_shaping`, and `hard_shell` proposals outside the first promotion path
+7. audit G2; only then design P9-G3 promotion ledger, immutable version diff, rollback snapshot, status transition, and retrieval trace
 
 ## Canonical Follow-On Docs
 

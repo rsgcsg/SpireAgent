@@ -2004,8 +2004,8 @@ try {
       transitionId: "transition-p9-smoke",
       summary: "Organic combat review observed a missing tradeoff despite available candidate facts.",
       strength: "weak",
-      tags: ["promotion_eligible:true"],
-      raw: { evidencePromotionEligible: true }
+      tags: ["promotion_eligible:true", "evidence_role:workspace_shadow_provider"],
+      raw: { evidencePromotionEligible: true, evidenceRole: "workspace_shadow_provider" }
     }],
     counterexamples: [{ summary: "A concise reason can be adequate when the tradeoff is already explicit in a forced action.", condition: "forced_action" }],
     weakAttribution: {
@@ -2462,6 +2462,7 @@ try {
         }
       },
       shadowWorkspaceDecision: {
+        called: true,
         reasonQualityNotes: ["missing_tradeoff"]
       },
       predictionError: {
@@ -2487,6 +2488,9 @@ try {
   assert.ok(generatedLearning.pendingReview >= 1);
   assert.ok(generatedLearning.draft >= 1);
   assert.ok(generatedLearning.reverseFeedback.length >= 1);
+  assert.ok(generatedLearning.proposals.every((proposal) =>
+    proposal.evidence?.[0]?.raw?.evidenceRole === "workspace_shadow_provider"
+  ));
   for (const proposal of generatedLearning.proposals) appendLearningProposal(p9ProposalDir, proposal);
   for (const record of generatedLearning.reverseFeedback) appendReverseScaffoldFeedback(p9ProposalDir, record);
   const generatedProposalSurface = buildLearningProposalSurface(readLearningProposals(p9ProposalDir));
@@ -2511,6 +2515,28 @@ try {
   assert.equal(excludedGeneratedLearning.excludedTransitions, 1);
   assert.equal(excludedGeneratedLearning.exclusionReasonCounts.console_debug_or_fixture, 1);
   assert.equal(excludedGeneratedLearning.proposals.length, 0);
+  const localOnlyGeneratedLearning = generateLearningProposalSeeds("run-p9-generator-local-observation-smoke", [
+    {
+      source: "agent",
+      captureMode: "executor_logged",
+      transitionId: "transition-p9-generator-local-observation",
+      screen: "combat",
+      decisionAuthority: { selectionSource: "local_fallback" },
+      environmentFingerprint: { identityStatus: "complete", fingerprintHash: "env-p9-generator-local" },
+      evidenceEnvironmentScope: { scopeStatus: "exact", captureProvenance: "organic", compatibilityState: "unknown" },
+      predictionError: {
+        status: "open",
+        errorType: "prediction_partially_unknown",
+        attributedLayer: "candidate_future",
+        severity: "warning",
+        attributionBuckets: [{ bucket: "defense", status: "unsupported", severity: "warning" }]
+      }
+    }
+  ]);
+  assert.equal(localOnlyGeneratedLearning.pendingReview, 0);
+  assert.equal(localOnlyGeneratedLearning.proposals[0]?.status, "draft");
+  assert.equal(localOnlyGeneratedLearning.proposals[0]?.evidence?.[0]?.raw?.evidenceRole, "local_fallback_observation");
+  assert.equal(localOnlyGeneratedLearning.proposals[0]?.evidence?.[0]?.raw?.evidencePromotionEligible, false);
   const feedback = appendReverseScaffoldFeedback(p9ProposalDir, {
     source: "review",
     targetLayer: "candidate_future",
