@@ -115,6 +115,14 @@ env \
 
 `STS2_LLM_COMMAND=''` makes the legacy execution decider unavailable in that child so it cannot accidentally invoke the configured live adapter. The P8 workspace provider can still make explicitly budgeted shadow calls through its direct provider path; executed strategic routes may therefore use the existing local fallback. This is intentional evidence capture, not an LLM-live window. A run with a different `maxShadowCalls` is a different budget slice and cannot be mixed into a future paired comparison.
 
+For one declared G2 evidence class, reserve the provider-call budget without changing routing or live authorization:
+
+```bash
+STS2_P8_WORKSPACE_SHADOW_DECISION_CLASSES=rest:llm_required
+```
+
+This shadow-only filter skips direct workspace calls for other classes with `shadow_capture_class_not_selected`; it does not alter candidate generation, local fallback, validation, execution, or the live whitelist. The capture scope is included in the recorded budget window, so focused evidence inspection must use `capture=rest:llm_required`, not `capture=all`.
+
 Do not create a presentation-only overlay merely because a lexical smoke detector fired once. For example, a reason that states both immediate block value and deck-bloat cost can still be mislabeled `missing_tradeoff`; preserve it as a counterexample until repeated scoped evidence and review justify a proposal.
 
 Inspect a fixed-profile capture without letting the surrounding run's historical or budget-mixed transitions define the result:

@@ -805,6 +805,33 @@ assert.equal(p8ShadowCallBudgetSkipped.shadowDecision.skippedReason, "skipped_by
 assert.equal(p8ShadowCallBudgetSkipped.shadowDecision.budgetStatus, "call_budget_exceeded");
 assert.equal(p8ShadowCallBudgetSkipped.comparison.budget?.governancePolicy?.runBudget.status, "call_budget_exceeded");
 assert.equal(p8ShadowCallBudgetSkipped.comparison.budget?.governancePolicy?.runBudget.skippedReason, "skipped_by_budget");
+let filteredShadowProviderCalls = 0;
+const p8ShadowClassFiltered = await buildP8WorkspaceShadowFromPacket({
+  legacyPrompt: JSON.stringify({ candidates: [{ id: "play-strike" }] }),
+  deliberationPacket,
+  candidates: [workspaceCandidate],
+  decisionClass: "combat:test",
+  llm: {
+    isAvailable: () => true,
+    decide: async () => {
+      filteredShadowProviderCalls += 1;
+      return { candidateId: "play-strike" };
+    }
+  },
+  legacySelectedCandidateId: "play-strike",
+  options: {
+    shadowEnabled: true,
+    callEnabled: true,
+    providerAvailable: true,
+    maxShadowCalls: 5,
+    shadowDecisionClassFilter: ["rest:llm_required"]
+  }
+});
+assert.equal(filteredShadowProviderCalls, 0);
+assert.equal(p8ShadowClassFiltered.shadowDecision.called, false);
+assert.equal(p8ShadowClassFiltered.shadowDecision.skippedReason, "shadow_capture_class_not_selected");
+assert.deepEqual(p8ShadowClassFiltered.comparison.budget?.governancePolicy?.evidenceBudget.shadowDecisionClassFilter, ["rest:llm_required"]);
+assert.equal(p8ShadowClassFiltered.comparison.budget?.governancePolicy?.evidenceBudget.decisionClassSelectedForShadowCapture, false);
 const parsedWorkspaceDecision = parseWorkspaceJsonDecision(JSON.stringify({
   selectedCandidateId: "play-strike",
   confidence: 0.66,
@@ -4248,7 +4275,7 @@ try {
     }
   ] as any, {
     decisionClass: "card_reward:llm_required",
-    budgetWindow: "shadow=3;profile=shadow_exploration",
+    budgetWindow: "shadow=3;profile=shadow_exploration;capture=all",
     environmentFingerprintHash: completeEnvironmentFingerprint.fingerprintHash,
     authorityMode: "llm_primary",
     captureProvenance: "organic",

@@ -9,6 +9,7 @@ export interface BudgetGovernancePolicyInput {
   decisionClass: string;
   liveAdditiveEnabled: boolean;
   liveDecisionClassWhitelist: string[];
+  shadowDecisionClassFilter?: string[];
   maxShadowCalls: number;
   shadowCallsUsed: number;
   estimatedInputTokens: number;
@@ -77,6 +78,10 @@ export function buildBudgetGovernancePolicy(input: BudgetGovernancePolicyInput):
     },
     evidenceBudget: {
       decisionClass: input.decisionClass,
+      shadowDecisionClassFilter: input.shadowDecisionClassFilter ?? [],
+      decisionClassSelectedForShadowCapture: input.shadowDecisionClassFilter?.length
+        ? input.shadowDecisionClassFilter.includes(input.decisionClass)
+        : true,
       freshnessRequired: true,
       mixedRevisionWindowAllowedForPromotion: false,
       mixedBudgetWindowAllowedForPromotion: false

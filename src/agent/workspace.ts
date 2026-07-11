@@ -27,6 +27,7 @@ import {
   P8_WORKSPACE_ABLATION_MODE_FLAG,
   P8_WORKSPACE_CALL_FLAG,
   P8_WORKSPACE_REVISION,
+  P8_WORKSPACE_SHADOW_DECISION_CLASSES_FLAG,
   P8_WORKSPACE_SHADOW_FLAG,
   WORKSPACE_REASON_BRIEF_MAX_WORDS,
   type WorkspaceAblationMode,
@@ -82,6 +83,7 @@ export interface WorkspaceShadowOptions {
   ablationMode?: WorkspaceAblationMode;
   liveAdditiveEnabled?: boolean;
   liveDecisionClassWhitelist?: string[];
+  shadowDecisionClassFilter?: string[];
 }
 
 export interface WorkspaceComparisonInput {
@@ -126,7 +128,8 @@ export function workspaceOptionsFromEnv(): WorkspaceShadowOptions {
     budgetGovernanceProfile: budgetGovernanceProfileFromEnv(),
     ablationMode: workspaceAblationModeFromEnv(),
     liveAdditiveEnabled: isEnabled(process.env[P8_LIVE_ADDITIVE_FLAG]),
-    liveDecisionClassWhitelist: parseList(process.env[P8_LIVE_DECISION_CLASSES_FLAG])
+    liveDecisionClassWhitelist: parseList(process.env[P8_LIVE_DECISION_CLASSES_FLAG]),
+    shadowDecisionClassFilter: parseList(process.env[P8_WORKSPACE_SHADOW_DECISION_CLASSES_FLAG])
   };
 }
 
@@ -539,6 +542,17 @@ export async function buildP8WorkspaceShadow(input: ShadowWorkspaceDecisionInput
       shadowDecision: {
         ...baseDecision("skipped", `${P8_WORKSPACE_CALL_FLAG}=off`),
         skippedReason: `${P8_WORKSPACE_CALL_FLAG}=off`
+      }
+    };
+  }
+  const shadowDecisionClassFilter = options.shadowDecisionClassFilter ?? [];
+  if (shadowDecisionClassFilter.length > 0 && !shadowDecisionClassFilter.includes(input.comparison.decisionClass)) {
+    return {
+      structuredPrompt: input.structuredPrompt,
+      comparison: input.comparison,
+      shadowDecision: {
+        ...baseDecision("skipped", "shadow_capture_class_not_selected"),
+        skippedReason: "shadow_capture_class_not_selected"
       }
     };
   }
@@ -1495,6 +1509,7 @@ function buildWorkspaceBudget(
     decisionClass,
     liveAdditiveEnabled: Boolean(options.liveAdditiveEnabled),
     liveDecisionClassWhitelist: options.liveDecisionClassWhitelist ?? [],
+    shadowDecisionClassFilter: options.shadowDecisionClassFilter,
     maxShadowCalls,
     shadowCallsUsed: shadowCallsUsedThisProcess,
     estimatedInputTokens,

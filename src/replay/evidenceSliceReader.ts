@@ -324,8 +324,13 @@ function transitionBudgetWindow(transition: JsonRecord): string {
     : isRecord(budget?.governancePolicy) && typeof budget.governancePolicy.profile === "string"
       ? budget.governancePolicy.profile
       : undefined;
+  const governancePolicy = isRecord(budget?.governancePolicy) ? budget.governancePolicy : undefined;
+  const evidenceBudget = isRecord(governancePolicy?.evidenceBudget) ? governancePolicy.evidenceBudget : undefined;
+  const shadowDecisionClassFilter = Array.isArray(evidenceBudget?.shadowDecisionClassFilter)
+    ? evidenceBudget.shadowDecisionClassFilter.filter((value): value is string => typeof value === "string" && value.length > 0).sort().join(",")
+    : "";
   if (maxShadowCalls === undefined && governanceProfile === undefined) return "unknown";
-  return `shadow=${maxShadowCalls ?? "unknown"};profile=${governanceProfile ?? "unknown"}`;
+  return `shadow=${maxShadowCalls ?? "unknown"};profile=${governanceProfile ?? "unknown"};capture=${shadowDecisionClassFilter || "all"}`;
 }
 
 function transitionProviderSource(transition: JsonRecord): string {
