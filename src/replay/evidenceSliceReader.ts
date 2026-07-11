@@ -8,8 +8,9 @@ export type EvidenceSliceKind =
 
 export interface EvidenceSliceSummary {
   schemaVersion: number;
-  policyName: "p9_g2_evidence_slice_reader_v2";
+  policyName: "p9_g2_evidence_slice_reader_v3";
   transitions: number;
+  selection: EvidenceSliceSelection;
   dimensions: {
     sourceCounts: Record<string, number>;
     captureModeCounts: Record<string, number>;
@@ -35,6 +36,23 @@ export interface EvidenceSliceSummary {
   slices: EvidenceSlice[];
 }
 
+export interface EvidenceSliceFilter {
+  decisionClass?: string;
+  revisionTag?: string;
+  budgetWindow?: string;
+  environmentFingerprintHash?: string;
+  authorityMode?: string;
+  captureProvenance?: string;
+  shadowCalled?: boolean;
+}
+
+export interface EvidenceSliceSelection {
+  totalTransitions: number;
+  matchedTransitions: number;
+  appliedFilters: EvidenceSliceFilter;
+  transitionIds: string[];
+}
+
 export interface EvidencePromotionEligibilitySummary {
   eligibleTransitions: number;
   excludedTransitions: number;
@@ -50,7 +68,35 @@ export interface EvidenceSlice {
   reasons: string[];
 }
 
-export function buildEvidenceSliceSummary(transitions: JsonRecord[]): EvidenceSliceSummary {
+export function buildEvidenceSliceSummary(
+  transitions: JsonRecord[],
+  filter: EvidenceSliceFilter = {}
+): EvidenceSliceSummary {
+  const selectedTransitions = filterEvidenceSliceTransitions(transitions, filter);
+  const selection = buildEvidenceSliceSelection(transitions, selectedTransitions, filter);
+  return buildSelectedEvidenceSliceSummary(selectedTransitions, selection);
+}
+
+export function filterEvidenceSliceTransitions(
+  transitions: JsonRecord[],
+  filter: EvidenceSliceFilter = {}
+): JsonRecord[] {
+  return transitions.filter((transition) => {
+    if (filter.decisionClass && transitionDecisionClass(transition) !== filter.decisionClass) return false;
+    if (filter.revisionTag && transitionRevisionTag(transition) !== filter.revisionTag) return false;
+    if (filter.budgetWindow && transitionBudgetWindow(transition) !== filter.budgetWindow) return false;
+    if (filter.environmentFingerprintHash && transitionEnvironmentFingerprintHash(transition) !== filter.environmentFingerprintHash) return false;
+    if (filter.authorityMode && transitionAuthorityMode(transition) !== filter.authorityMode) return false;
+    if (filter.captureProvenance && transitionCaptureProvenance(transition) !== filter.captureProvenance) return false;
+    if (filter.shadowCalled !== undefined && shadowWorkspaceCalled(transition) !== filter.shadowCalled) return false;
+    return true;
+  });
+}
+
+function buildSelectedEvidenceSliceSummary(
+  transitions: JsonRecord[],
+  selection: EvidenceSliceSelection
+): EvidenceSliceSummary {
   const dimensions = {
     sourceCounts: countBy(transitions, transitionSource),
     captureModeCounts: countBy(transitions, transitionCaptureMode),
@@ -84,8 +130,9 @@ export function buildEvidenceSliceSummary(transitions: JsonRecord[]): EvidenceSl
 
   return {
     schemaVersion: 1,
-    policyName: "p9_g2_evidence_slice_reader_v2",
+    policyName: "p9_g2_evidence_slice_reader_v3",
     transitions: transitions.length,
+    selection,
     dimensions,
     mixedRevisionWindow,
     mixedBudgetWindow,
@@ -121,11 +168,33 @@ export function buildEvidenceSliceSummary(transitions: JsonRecord[]): EvidenceSl
   };
 }
 
+function buildEvidenceSliceSelection(
+  allTransitions: JsonRecord[],
+  selectedTransitions: JsonRecord[],
+  filter: EvidenceSliceFilter
+): EvidenceSliceSelection {
+  return {
+    totalTransitions: allTransitions.length,
+    matchedTransitions: selectedTransitions.length,
+    appliedFilters: Object.fromEntries(
+      Object.entries(filter).filter(([, value]) => value !== undefined && value !== "")
+    ) as EvidenceSliceFilter,
+    transitionIds: selectedTransitions
+      .map((transition) => typeof transition.transitionId === "string" ? transition.transitionId : undefined)
+      .filter((id): id is string => Boolean(id))
+      .slice(0, 25)
+  };
+}
+
 export function formatEvidenceSliceSummary(summary: EvidenceSliceSummary): string {
   const promotion = summary.slices.find((slice) => slice.kind === "stable_learning_promotion");
   return [
     `policy=${summary.policyName}`,
     `transitions=${summary.transitions}`,
+    `selection=${JSON.stringify(summary.selection.appliedFilters)}`,
+    `selectionTotal=${summary.selection.totalTransitions}`,
+    `selectionMatched=${summary.selection.matchedTransitions}`,
+    `selectionIds=${JSON.stringify(summary.selection.transitionIds)}`,
     `source=${JSON.stringify(summary.dimensions.sourceCounts)}`,
     `capture=${JSON.stringify(summary.dimensions.captureModeCounts)}`,
     `classes=${JSON.stringify(summary.dimensions.decisionClassCounts)}`,
@@ -261,10 +330,16 @@ function transitionBudgetWindow(transition: JsonRecord): string {
 
 function transitionProviderSource(transition: JsonRecord): string {
   const llm = transitionLlmAudit(transition);
-  if (llm && typeof llm.providerSource === "string") return llm.providerSource;
-  if (isRecord(transition.shadowWorkspaceDecision) && typeof transition.shadowWorkspaceDecision.providerSource === "string") {
-    return transition.shadowWorkspaceDecision.providerSource;
+  if (llm?.liveAdditiveApplied === true && typeof llm.providerSource === "string") return llm.providerSource;
+  if (isRecord(transition.shadowWorkspaceDecision) && transition.shadowWorkspaceDecision.called === true) {
+    if (typeof transition.shadowWorkspaceDecision.providerSource === "string") {
+      return transition.shadowWorkspaceDecision.providerSource;
+    }
+    if (typeof transition.shadowWorkspaceDecision.provider === "string") {
+      return transition.shadowWorkspaceDecision.provider;
+    }
   }
+  if (llm && typeof llm.providerSource === "string") return llm.providerSource;
   return "none";
 }
 
@@ -329,6 +404,11 @@ function transitionEnvironmentScopeStatus(transition: JsonRecord): string {
   return typeof scope?.scopeStatus === "string" ? scope.scopeStatus : "not_recorded";
 }
 
+function transitionCaptureProvenance(transition: JsonRecord): string {
+  const scope = transitionEnvironmentScope(transition);
+  return typeof scope?.captureProvenance === "string" ? scope.captureProvenance : "not_recorded";
+}
+
 function transitionEnvironmentCompatibilityState(transition: JsonRecord): string {
   const scope = transitionEnvironmentScope(transition);
   return typeof scope?.compatibilityState === "string" ? scope.compatibilityState : "not_recorded";
@@ -354,6 +434,10 @@ function hasConsoleDebugMarker(transition: JsonRecord): boolean {
 
 function hasShadowWorkspaceDecision(transition: JsonRecord): boolean {
   return isRecord(transition.shadowWorkspaceDecision);
+}
+
+function shadowWorkspaceCalled(transition: JsonRecord): boolean {
+  return isRecord(transition.shadowWorkspaceDecision) && transition.shadowWorkspaceDecision.called === true;
 }
 
 function isLiveAppliedTransition(transition: JsonRecord): boolean {

@@ -172,6 +172,7 @@ Purpose:
 - define clean evidence windows
 - exclude mixed revision/budget windows when needed
 - exclude console fixture/debug evidence from stable promotion
+- expose a read-only focused filter for decision class, revision, budget, environment fingerprint, authority mode, provenance, and shadow-call state; a selected slice must retain its filters and transition IDs for audit
 
 ### `PredictionErrorAttributor`
 
@@ -427,6 +428,8 @@ Current state:
 - P9.5A performs no provider call and writes no run artifact. It does not change candidate facts/order, classification, budget, memory, derived knowledge, strategy, validation, execution, live behavior, or stable policy
 - P9.5B now evaluates supplied paired same-slice baseline/overlay outcomes. It requires exact transition, revision, budget, allowed-candidate, candidate-facts, and prompt-hash alignment; it detects provider/output-cap and reason-quality regressions without treating a different valid candidate as automatically wrong.
 - P9.5C adds `npm run learning:proposals -- shadow-run --run-id <runId> --id <proposalId> --transition-id <transitionId>`. It reconstructs the recorded ablation mode and provider profile from a replayable called baseline, then makes at most one provider call for the cloned overlay packet. It has no game client, transition write, proposal-status mutation, runtime decision effect, or stable write.
+- P9-G2 now has an append-only `LearningExperimentManifest` that binds proposal, baseline/overlay outcomes, pair evaluation, authority record, environment scope, and invariant results. It is output by `shadow-run` and appended only with explicit `--record-manifest`; it is audit evidence, not a promotion ledger.
+- `shadow-preflight` refuses a same-slice provider call until authority, provenance, environment scope, executor capture, and presentation-only impact are explicit. This prevents a non-comparable pair from being mistaken for G2 evidence.
 - A `reason_policy` overlay must carry an explicit `requiredReasonQualityNote`; otherwise it is rejected as unscoped. The runner passes recorded baseline notes into eligibility and refuses the overlay when that trigger is absent. This prevents a one-case reason fix from becoming a broad class prompt rule.
 - The same-slice invariant now includes provider profile (`output`, thinking mode, response mode, retry count) in addition to transition, revision, budget, candidate/fact, and prompt hashes. A missing or mismatched profile makes a pair incomplete.
 - Each outcome may include the observed provider attempt trace (primary/rescue kind, cap, thinking mode, finish reason, and content kind). This is attribution telemetry: it separates a provider-recovery divergence from a candidate/fact or proposal-policy regression. It does not change recovery behavior.

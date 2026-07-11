@@ -95,6 +95,47 @@ npm run agent:run:deepseek-combat-live -- --max-ticks <N>
 
 If console commands, fixtures, or debug state were used, replace `STS2_EVIDENCE_PROVENANCE=organic` with `STS2_EVIDENCE_PROVENANCE=console_debug`. Do not invent missing hashes or versions. Unknown/partial scope remains readable but cannot satisfy a future stable-promotion slice.
 
+Use exported process variables or a safe parser for temporary evidence settings. Do **not** shell-source `.env.local`: it is parsed as data by the agent and may contain command-style values that are not valid shell syntax. Confirm the actual flags are `STS2_P8_WORKSPACE_SHADOW=1`, `STS2_P8_WORKSPACE_CALL=1`, and `STS2_P8_LIVE_ADDITIVE=0` for a shadow-only window.
+
+For a controlled direct-workspace shadow capture while local `.env.local` keeps additive live enabled, explicitly disable the legacy command in the child process and set one fixed shadow-call budget. This does not edit `.env.local` and must not be used as a live command:
+
+```bash
+env \
+  STS2_LLM_COMMAND='' \
+  STS2_P8_LIVE_ADDITIVE=0 \
+  STS2_P8_WORKSPACE_SHADOW=1 \
+  STS2_P8_WORKSPACE_CALL=1 \
+  STS2_P8_WORKSPACE_MAX_SHADOW_CALLS=3 \
+  STS2_P8_WORKSPACE_ABLATION_MODE=full_bounded_candidate_futures \
+  STS2_DECISION_AUTHORITY_MODE=llm_primary \
+  STS2_EVIDENCE_PROVENANCE=organic \
+  <verified-environment-fingerprint-vars> \
+  npm run agent:run -- --max-ticks <N> --delay-ms 220
+```
+
+`STS2_LLM_COMMAND=''` makes the legacy execution decider unavailable in that child so it cannot accidentally invoke the configured live adapter. The P8 workspace provider can still make explicitly budgeted shadow calls through its direct provider path; executed strategic routes may therefore use the existing local fallback. This is intentional evidence capture, not an LLM-live window. A run with a different `maxShadowCalls` is a different budget slice and cannot be mixed into a future paired comparison.
+
+Do not create a presentation-only overlay merely because a lexical smoke detector fired once. For example, a reason that states both immediate block value and deck-bloat cost can still be mislabeled `missing_tradeoff`; preserve it as a counterexample until repeated scoped evidence and review justify a proposal.
+
+Inspect a fixed-profile capture without letting the surrounding run's historical or budget-mixed transitions define the result:
+
+```bash
+npm run data:replay -- evidence --run-id <runId> \
+  --decision-class <class> \
+  --revision-tag <revision> \
+  --budget-window 'shadow=3;profile=shadow_exploration' \
+  --environment-fingerprint <fingerprint-hash> \
+  --authority-mode llm_primary \
+  --capture-provenance organic \
+  --shadow-called true
+```
+
+The resulting focused slice is an inspection aid. It does not approve a proposal, relax counterexample review, or enable promotion.
+
+For an already inspected, same-slice cloned-packet pair, `npm run learning:proposals -- shadow-run ... --record-manifest` appends an audit-only manifest to that run. Omit `--record-manifest` by default. The manifest never approves, applies, or promotes a proposal.
+
+Run `npm run learning:proposals -- shadow-preflight --run-id <runId> --id <proposalId> --transition-id <transitionId>` before a G2 provider call. A failed preflight is expected for historical records without explicit authority or complete organic environment scope; do not bypass it by inventing identity values.
+
 ## Current Broad-Whitelist Meaning
 
 The explicit broad-whitelist runner is still not wildcard live.

@@ -33,6 +33,11 @@ import {
   type LearningProposalReviewDecisionSurface,
   type ReverseScaffoldFeedbackSurface
 } from "../learning/proposals.js";
+import {
+  buildLearningExperimentManifestSurface,
+  readLearningExperimentManifests,
+  type LearningExperimentManifestSurface
+} from "../learning/experimentManifest.js";
 
 export type EvalStatus = "PASS" | "WARN" | "FAIL";
 
@@ -108,6 +113,7 @@ export interface EvalSummary {
   learningProposalSurface: LearningProposalSurface;
   learningProposalReviewDecisionSurface: LearningProposalReviewDecisionSurface;
   reverseScaffoldFeedbackSurface: ReverseScaffoldFeedbackSurface;
+  experimentManifestSurface: LearningExperimentManifestSurface;
   predictionErrorCoverage: EvalPredictionErrorCoverage;
   consolidationCoverage: EvalConsolidationCoverage;
   consolidationProposalSurface: ReplayConsolidationProposalSurface;
@@ -441,6 +447,7 @@ export function evaluateRun(runIdOrPath?: string): EvalReport {
   const learningProposalSurface = buildLearningProposalSurface(readLearningProposals(runDir));
   const learningProposalReviewDecisionSurface = buildLearningProposalReviewDecisionSurface(readLearningProposalReviewDecisions(runDir));
   const reverseScaffoldFeedbackSurface = buildReverseScaffoldFeedbackSurface(readReverseScaffoldFeedback(runDir));
+  const experimentManifestSurface = buildLearningExperimentManifestSurface(readLearningExperimentManifests(runDir));
   for (const issue of buildStrategyWarnings(strategyMetrics)) {
     addWarning(warnings, warningSummary, issue);
   }
@@ -488,6 +495,7 @@ export function evaluateRun(runIdOrPath?: string): EvalReport {
       learningProposalSurface,
       learningProposalReviewDecisionSurface,
       reverseScaffoldFeedbackSurface,
+      experimentManifestSurface,
       predictionErrorCoverage,
       consolidationCoverage,
       consolidationProposalSurface

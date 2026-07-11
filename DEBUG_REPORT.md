@@ -18,6 +18,25 @@ Current closeout / next-phase pointers:
 - New actionable proposal and shadow-overlay checks require an explicit organic, exact environment scope and a classified behavior impact. This is an experiment-integrity gate, not promotion or policy application.
 - Fresh complete-scope, explicit-authority paired/counterexample evidence remains missing. Do not begin P9-G3 promotion-ledger, rollback-snapshot, or retrieval-trace design yet.
 
+## 2026-07-11 P9-G2 Experiment Manifest
+
+- Added an append-only, run-local `learning-experiment-manifests.jsonl` audit surface for same-slice shadow pairs. It records proposal/pair/evaluation plus authority and environment scope, but is opt-in and non-promoting.
+
+## 2026-07-11 Fresh G2 Baseline Capture
+
+- Fresh run `run-mrfq2vw1-aap49m` recorded five complete exact-organic shadow calls under fingerprint `a79f70a43ba380f3` and `llm_primary` mode. They cover combat, shop, event, and card selection; each was valid with `finishReason=stop` and no output-cap hit.
+- This is baseline/counterexample evidence only. The live route was disabled and fell back locally; no proposal, overlay, manifest, promotion, stable write, or G3 work was created from it.
+- An earlier window inherited existing live settings because non-exported shell assignments do not reach a child process; treat it as an operator invocation error, not provider or G2 evidence. The runbook now prohibits shell-sourcing `.env.local` and names the exact shadow-only flags.
+
+## 2026-07-11 G2 Fixed-Budget Counterexample Capture
+
+- A follow-up direct-workspace shadow window in `run-mrfq2vw1-aap49m` used an explicit child-only profile: `live=0`, legacy command disabled, `full_bounded_candidate_futures`, `maxShadowCalls=3`, `llm_primary`, and exact organic environment scope. It did not edit `.env.local` or enable live execution.
+- Three same-budget direct-shadow outcomes were valid and provider-clean: combat `transition-000119-agent-mrfrg7k6-4wm75q`, rewards `transition-000121-agent-mrfrgbzy-bng586`, and card reward `transition-000122-agent-mrfrgekq-1ylwnc`. Each finished `stop`, used no retry, and had `failureBucket=none`.
+- The run currently contains eleven exact-organic valid direct-shadow calls in total, but only the three listed above share this fixed budget profile. Earlier same-run calls remain useful baseline material but must not be silently mixed into a future provider-profile-comparable pair.
+- The card-reward reason, `Patches block deficit now, slight deck bloat.`, received the lexical `missing_tradeoff` smoke note even though it names an immediate benefit and a cost. Treat this as a detector-too-strict counterexample candidate, not as a reason-policy defect or a reason to manufacture an overlay proposal.
+- The window adds organic baselines/counterexamples only. No proposal artifact, experiment manifest, overlay provider pair, proposal status change, stable write, or G3 work was created.
+- `data:replay evidence` now reads a focused G2 slice by class/revision/budget/fingerprint/authority/provenance/shadow-call state and prints the selected transition IDs. For called workspace shadows it reports the workspace provider rather than inheriting `none` from a deliberately disabled legacy command. The slice remains read-only and `promotionAllowed=false`.
+
 ## 2026-07-11 P9-P15 Phase Architecture Audit
 
 - Documentation/architecture pass only; no runtime, live, provider, proposal status, stable policy, or budget behavior changed.

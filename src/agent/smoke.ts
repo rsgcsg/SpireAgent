@@ -109,6 +109,13 @@ import {
 } from "../learning/shadowApplicator.js";
 import { evaluateLearningProposalShadowPair } from "../learning/shadowEvaluation.js";
 import {
+  appendLearningExperimentManifest,
+  assessLearningExperimentPreflight,
+  buildLearningExperimentManifest,
+  buildLearningExperimentManifestSurface,
+  readLearningExperimentManifests
+} from "../learning/experimentManifest.js";
+import {
   DOMAIN_SCHEMA_VERSION,
   type CandidateFuture,
   type DeliberationPacket,
@@ -2115,6 +2122,77 @@ try {
   });
   assert.equal(sameSliceShadowRunEvaluation.status, "paired_evidence_ready_for_review");
   assert.equal(sameSliceShadowRunEvaluation.sameEvidenceSlice, true);
+  const manifestEnvironmentFingerprint = buildEnvironmentFingerprint({
+    env: {
+      STS2_GAME_BUILD: "p9-smoke-build",
+      STS2_GAME_RELEASE_CHANNEL: "beta",
+      STS2_CONTENT_MANIFEST_HASH: "p9-smoke-content",
+      STS2_MODS_JSON: "[]",
+      STS2_ADAPTER_VERSION: "p9-smoke-adapter",
+      STS2_FACT_SNAPSHOT_VERSION: "p9-smoke-facts",
+      STS2_AGENT_REVISION: "p9-smoke-agent",
+      STS2_EVIDENCE_PROVENANCE: "organic"
+    }
+  });
+  const manifestEnvironmentScope = buildEvidenceEnvironmentScope(manifestEnvironmentFingerprint);
+  const manifestBaseline = {
+    source: "recorded_shadow" as const,
+    transitionId: "transition-p9-smoke",
+    promptHash: sameSliceShadowRun.comparison.baseline.promptHash,
+    allowedCandidateIdsHash: sameSliceShadowRun.comparison.baseline.allowedCandidateIdsHash,
+    candidateFutureFactsHash: sameSliceShadowRun.comparison.baseline.candidateFutureFactsHash,
+    revisionTag: "p9-smoke-revision",
+    budgetWindow: "shadow=1;profile=shadow_exploration",
+    providerProfile: "output=800;thinking=default_enabled;mode=json_mode;retry=0",
+    outcome: "valid" as const,
+    selectedCandidateId: workspaceCandidate.id,
+    reason: "Deal damage now but preserve enough defense for the incoming attack.",
+    failureBucket: "none",
+    finishReason: "stop",
+    outputCapHit: false
+  };
+  const manifest = buildLearningExperimentManifest({
+    runId: "run-p9-smoke",
+    proposal: shadowSafeStored,
+    transition: {
+      decisionAuthority: buildDecisionAuthorizationRecord({
+        chosenBy: "llm",
+        route: "llm_required",
+        llmAudit: { wanted: true, called: true, available: true, outcome: "selected" },
+        executed: true,
+        authorityMode: "llm_primary"
+      }),
+      environmentFingerprint: manifestEnvironmentFingerprint,
+      evidenceEnvironmentScope: manifestEnvironmentScope
+    },
+    comparison: sameSliceShadowRun.comparison,
+    baseline: manifestBaseline,
+    overlay: sameSliceShadowRun.overlayOutcome,
+    evaluation: sameSliceShadowRunEvaluation
+  });
+  assert.equal(manifest.integrity.exactOrganicEnvironment, true);
+  assert.equal(manifest.stablePromotionEnabled, false);
+  const manifestPreflight = assessLearningExperimentPreflight({
+    proposal: shadowSafeStored,
+    transition: {
+      transitionId: "transition-p9-smoke",
+      source: "agent",
+      captureMode: "executor_logged",
+      decisionAuthority: manifest.authority,
+      environmentFingerprint: manifest.environmentFingerprint,
+      evidenceEnvironmentScope: manifest.environmentScope
+    }
+  });
+  assert.equal(manifestPreflight.eligibleForSameSliceProviderCall, true);
+  const legacyPreflight = assessLearningExperimentPreflight({ proposal: shadowSafeStored, transition: {} });
+  assert.equal(legacyPreflight.eligibleForSameSliceProviderCall, false);
+  assert.ok(legacyPreflight.blockers.includes("environment_fingerprint_not_complete"));
+  appendLearningExperimentManifest(p9ProposalDir, manifest);
+  const manifestSurface = buildLearningExperimentManifestSurface(readLearningExperimentManifests(p9ProposalDir));
+  assert.equal(manifestSurface.manifests, 1);
+  assert.equal(manifestSurface.pairedReadyForReview, 1);
+  assert.equal(manifestSurface.exactOrganicEnvironment, 1);
+  assert.equal(manifestSurface.stablePromotionEnabled, false);
   const unknownFutureOverlay = compareLearningProposalInShadowWorkspace({
     proposal: {
       ...shadowSafeStored,
@@ -4147,6 +4225,42 @@ try {
   assert.match(formatEvidenceSliceSummary(evidenceSliceSummary), /promotionAllowed=false/);
   assert.match(formatEvidenceSliceSummary(evidenceSliceSummary), /promotionEligible=1/);
   assert.match(formatEvidenceSliceSummary(evidenceSliceSummary), /promotionExcluded=1/);
+  const exactOrganicShadowSlice = buildEvidenceSliceSummary([
+    {
+      transitionId: "transition-exact-shadow",
+      source: "agent",
+      captureMode: "executor_logged",
+      workspaceComparison: { decisionClass: "card_reward:llm_required", revisionTag: "rev-c", budget: { maxShadowCalls: 3, governanceProfile: "shadow_exploration" } },
+      shadowWorkspaceDecision: { called: true, revisionTag: "rev-c", provider: "deepseek-workspace" },
+      decisionAuthority: explicitAuthority,
+      environmentFingerprint: completeEnvironmentFingerprint,
+      evidenceEnvironmentScope: completeEnvironmentScope
+    },
+    {
+      transitionId: "transition-other-budget",
+      source: "agent",
+      captureMode: "executor_logged",
+      workspaceComparison: { decisionClass: "card_reward:llm_required", revisionTag: "rev-c", budget: { maxShadowCalls: 1, governanceProfile: "shadow_exploration" } },
+      shadowWorkspaceDecision: { called: true, revisionTag: "rev-c" },
+      decisionAuthority: explicitAuthority,
+      environmentFingerprint: completeEnvironmentFingerprint,
+      evidenceEnvironmentScope: completeEnvironmentScope
+    }
+  ] as any, {
+    decisionClass: "card_reward:llm_required",
+    budgetWindow: "shadow=3;profile=shadow_exploration",
+    environmentFingerprintHash: completeEnvironmentFingerprint.fingerprintHash,
+    authorityMode: "llm_primary",
+    captureProvenance: "organic",
+    shadowCalled: true
+  });
+  assert.equal(exactOrganicShadowSlice.transitions, 1);
+  assert.equal(exactOrganicShadowSlice.selection.totalTransitions, 2);
+  assert.deepEqual(exactOrganicShadowSlice.selection.transitionIds, ["transition-exact-shadow"]);
+  assert.equal(exactOrganicShadowSlice.mixedBudgetWindow, false);
+  assert.equal(exactOrganicShadowSlice.dimensions.providerSourceCounts["deepseek-workspace"], 1);
+  assert.equal(exactOrganicShadowSlice.slices.find((slice) => slice.kind === "stable_learning_promotion")?.promotionUseAllowed, false);
+  assert.match(formatEvidenceSliceSummary(exactOrganicShadowSlice), /selectionMatched=1/);
 
   const focusedFreshSlices = buildReplayFocusedShadowSlices([
     {

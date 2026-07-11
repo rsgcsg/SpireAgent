@@ -20,6 +20,7 @@ import {
   readLearningProposals,
   readReverseScaffoldFeedback
 } from "../learning/proposals.js";
+import { buildLearningExperimentManifestSurface, readLearningExperimentManifests } from "../learning/experimentManifest.js";
 import { buildWorkspaceDecisionClassQuality } from "../replay/workspaceQuality.js";
 import { assessP8LiveReadiness } from "../replay/p8LiveReadiness.js";
 
@@ -291,6 +292,7 @@ function summarizeCurrentRunCognitiveCoverage(runId: string): JsonRecord {
   const learningProposalSurface = buildLearningProposalSurface(readLearningProposals(runDir));
   const learningProposalReviewDecisionSurface = buildLearningProposalReviewDecisionSurface(readLearningProposalReviewDecisions(runDir));
   const reverseScaffoldFeedbackSurface = buildReverseScaffoldFeedbackSurface(readReverseScaffoldFeedback(runDir));
+  const experimentManifestSurface = buildLearningExperimentManifestSurface(readLearningExperimentManifests(runDir));
   const consolidationStatusCounts = transitions.reduce<Record<string, number>>((counts, transition) => {
     if (!isRecord(transition.consolidation)) return counts;
     const status = typeof transition.consolidation.status === "string" ? transition.consolidation.status : "unknown";
@@ -362,6 +364,7 @@ function summarizeCurrentRunCognitiveCoverage(runId: string): JsonRecord {
     learningProposalSurface,
     learningProposalReviewDecisionSurface,
     reverseScaffoldFeedbackSurface,
+    experimentManifestSurface,
     averageWorkspaceInformationPreservation:
       workspacePreservationScores.length > 0
         ? round(workspacePreservationScores.reduce((sum, score) => sum + score, 0) / workspacePreservationScores.length)

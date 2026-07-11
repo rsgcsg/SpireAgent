@@ -21,6 +21,26 @@ Closeout pointers:
 - New proposals require classified behavior impact plus exact organic environment scope before becoming actionable pending review. Stable promotion is still disabled.
 - Next: collect fresh, same-scope paired and counterexample evidence, then audit G2. Do not start G3 ledger/snapshot/retrieval work first.
 
+## 2026-07-11 P9-G2 Experiment Manifest Handoff
+
+- `shadow-run` now emits a typed, audit-only manifest binding proposal, pair outcomes, evaluation, authority, environment scope, and invariants. It writes only when explicitly invoked with `--record-manifest`.
+- The manifest is not a promotion ledger and cannot mutate proposal state, apply an overlay, or enable stable promotion. Fresh complete-scope paired/counterexample evidence is still the blocker.
+
+## 2026-07-11 Fresh G2 Baseline
+
+- `run-mrfq2vw1-aap49m` now has five fresh exact-organic valid shadow calls across combat, shop, event, and card selection under fingerprint `a79f70a43ba380f3`. All stopped cleanly without output-cap hits and had adequate reasons.
+- The executed routes remained local/fallback because live was deliberately disabled; shadow selection is evidence only. Adequate cross-class reasons are useful counterexamples to expanding a hand-written reason policy from isolated cue omissions, so no actionable overlay proposal was manufactured.
+- One initial operator invocation accidentally inherited `.env.local` live settings because its temporary variables were not exported. It is not G2 evidence. Use exported `STS2_P8_WORKSPACE_SHADOW/CALL` and `STS2_P8_LIVE_ADDITIVE=0`; never shell-source `.env.local`.
+
+## 2026-07-11 G2 Fixed-Budget Counterexample Handoff
+
+- `run-mrfq2vw1-aap49m` now also has a clean fixed-budget (`maxShadowCalls=3`) direct-workspace shadow sub-window. The child explicitly set `STS2_LLM_COMMAND=''` and `STS2_P8_LIVE_ADDITIVE=0`, so the configured local live adapter could not be invoked by the legacy execution path; this did not modify `.env.local`.
+- Fresh valid direct-shadow evidence: combat `transition-000119-agent-mrfrg7k6-4wm75q`, rewards `transition-000121-agent-mrfrgbzy-bng586`, and card reward `transition-000122-agent-mrfrgekq-1ylwnc`. Provider results were `stop`, no retry, `failureBucket=none`.
+- The run has eleven exact-organic valid direct-shadow calls total, but this three-call sub-window is the only one with the explicit fixed `maxShadowCalls=3` profile. Do not merge it with earlier budget profiles when assessing a future pair.
+- The last card-reward reason says both benefit and cost (`Patches block deficit now, slight deck bloat.`) but retained the lexical `missing_tradeoff` note. Record this as a counterexample to detector truth, not a justification for another hand-written reason contract.
+- G2 remains blocked on a repeated, scoped, low-risk presentation deficiency that survives counterexample review and can justify a real same-slice overlay. Do not manufacture a proposal, manifest, or G3 design merely to advance the phase.
+- Use `npm run data:replay -- evidence ...` with the fixed budget/fingerprint/authority/provenance filters from `docs/runbooks/LLM_RUN_MODES.md` to inspect a G2 sub-window. Called workspace shadows now report their direct provider even when the intentionally disabled legacy command is `none`; execution provenance remains separately visible as local fallback where applicable.
+
 ## 2026-07-11 Phase Architecture Handoff
 
 - The accepted mainline is P9-P15 plus optional research track R1. The intermediate P9-P16 route is historical.

@@ -38,12 +38,20 @@ import {
   type ShadowWorkspaceProviderAttempt,
   type ShadowWorkspaceOutcomeEvidence
 } from "./shadowEvaluation.js";
+import {
+  appendLearningExperimentManifest,
+  buildLearningExperimentManifest,
+  buildLearningExperimentManifestSurface,
+  formatLearningExperimentManifestSurface,
+  readLearningExperimentManifests,
+  assessLearningExperimentPreflight
+} from "./experimentManifest.js";
 import type { DeliberationPacket, JsonRecord } from "../domain/types.js";
 import type { ScoredCandidate } from "../agent/types.js";
 import { createDeepSeekV4FlashDecider, type DeepSeekResponseMode, type DeepSeekThinkingMode } from "../agent/llm.js";
 import { isRecord } from "../agent/utils.js";
 
-const READ_ONLY_COMMANDS = new Set(["summary", "list", "show", "feedback", "feedback-show", "reviews", "review-show", "generate", "plan", "shadow-compare", "shadow-evaluate"]);
+const READ_ONLY_COMMANDS = new Set(["summary", "list", "show", "feedback", "feedback-show", "reviews", "review-show", "generate", "plan", "shadow-compare", "shadow-evaluate", "shadow-preflight"]);
 const APPEND_ONLY_COMMANDS = new Set(["record"]);
 const SAME_SLICE_SHADOW_COMMANDS = new Set(["shadow-run"]);
 const REVIEW_LEDGER_COMMANDS = new Set(["approve", "reject", "expire"]);
@@ -62,6 +70,7 @@ async function main(): Promise<void> {
   const idCommand = command === "show" ||
     command === "feedback-show" ||
     command === "review-show" ||
+    command === "shadow-preflight" ||
     REVIEW_LEDGER_COMMANDS.has(command) ||
     APPEND_ONLY_COMMANDS.has(command) ||
     SAME_SLICE_SHADOW_COMMANDS.has(command);
@@ -69,12 +78,14 @@ async function main(): Promise<void> {
   const proposals = readLearningProposals(runDir);
   const feedback = readReverseScaffoldFeedback(runDir);
   const reviewDecisions = readLearningProposalReviewDecisions(runDir);
+  const experimentManifests = readLearningExperimentManifests(runDir);
 
   if (command === "summary") {
     printHeader(runDir);
     console.log(`Learning proposal surface: ${formatLearningProposalSurface(buildLearningProposalSurface(proposals))}`);
     console.log(`Learning proposal review decisions: ${formatLearningProposalReviewDecisionSurface(buildLearningProposalReviewDecisionSurface(reviewDecisions))}`);
     console.log(`Reverse scaffold feedback: ${formatReverseScaffoldFeedbackSurface(buildReverseScaffoldFeedbackSurface(feedback))}`);
+    console.log(`Learning experiment manifests: ${formatLearningExperimentManifestSurface(buildLearningExperimentManifestSurface(experimentManifests))}`);
     console.log("Guardrails: proposalMutationEnabled=false applyPathEnabled=false stablePromotionEnabled=false affectsLiveBehavior=false");
     return;
   }
@@ -182,6 +193,13 @@ async function main(): Promise<void> {
     const transition = run.transitions.find((record) => record.transitionId === transitionId);
     if (!transition) throw new Error(`Transition not found in run: ${transitionId}`);
     const transitionRecord = transition as unknown as JsonRecord;
+    const preflight = assessLearningExperimentPreflight({ proposal, transition: transitionRecord });
+    if (!preflight.eligibleForSameSliceProviderCall) {
+      printHeader(run.runDir);
+      console.log(JSON.stringify(preflight, null, 2));
+      console.log("Same-slice shadow refused before provider call: transitionWrites=0 proposalStatusMutationEnabled=false stablePromotionEnabled=false");
+      return;
+    }
     const comparison = compareLearningProposalInShadowWorkspace({
       proposal,
       packet: packetFromTransition(transitionRecord),
@@ -208,17 +226,45 @@ async function main(): Promise<void> {
       }
     });
     printHeader(runDir);
+    const evaluation = evaluateLearningProposalShadowPair({
+      comparison: result.comparison,
+      baseline,
+      overlay: result.overlayOutcome
+    });
+    const manifest = buildLearningExperimentManifest({
+      runId: path.basename(run.runDir),
+      proposal,
+      transition: transitionRecord,
+      comparison: result.comparison,
+      baseline,
+      overlay: result.overlayOutcome,
+      evaluation
+    });
+    const recordManifest = commandArgs.includes("--record-manifest");
+    if (recordManifest) appendLearningExperimentManifest(run.runDir, manifest);
     console.log(JSON.stringify({
       comparison: result.comparison,
       baseline,
       overlay: result.overlayOutcome,
-      evaluation: evaluateLearningProposalShadowPair({
-        comparison: result.comparison,
-        baseline,
-        overlay: result.overlayOutcome
-      })
+      evaluation,
+      experimentManifest: manifest,
+      manifestRecorded: recordManifest
     }, null, 2));
     console.log("Same-slice shadow only: providerCalls=1 maximum gameClientCalls=0 transitionWrites=0 proposalStatusMutationEnabled=false stablePromotionEnabled=false liveBehaviorChanges=0");
+    return;
+  }
+
+  if (command === "shadow-preflight") {
+    const id = parseRequiredId(commandArgs);
+    const transitionId = optionValue(commandArgs, "--transition-id");
+    if (!transitionId) throw new Error("shadow-preflight requires --transition-id <transitionId>.");
+    const proposal = proposals.find((record) => record.id === id);
+    if (!proposal) throw new Error(`Learning proposal not found: ${id}`);
+    const run = readReplayRun(runDir);
+    const transition = run.transitions.find((record) => record.transitionId === transitionId);
+    if (!transition) throw new Error(`Transition not found in run: ${transitionId}`);
+    printHeader(run.runDir);
+    console.log(JSON.stringify(assessLearningExperimentPreflight({ proposal, transition: transition as unknown as JsonRecord }), null, 2));
     return;
   }
 

@@ -15,7 +15,11 @@ import {
   readReplayRun
 } from "./reader.js";
 import { buildLiveAppliedRolloutSummary, formatLiveAppliedRolloutSummary } from "./liveAppliedRollout.js";
-import { buildEvidenceSliceSummary, formatEvidenceSliceSummary } from "./evidenceSliceReader.js";
+import {
+  buildEvidenceSliceSummary,
+  formatEvidenceSliceSummary,
+  type EvidenceSliceFilter
+} from "./evidenceSliceReader.js";
 import { buildBudgetGovernanceSummary, formatBudgetGovernanceSummary } from "./budgetGovernanceSummary.js";
 import { buildWorkspaceDecisionClassQuality, formatWorkspaceDecisionClassQuality } from "./workspaceQuality.js";
 import { assessP8LiveReadiness, formatP8LiveReadinessAssessment } from "./p8LiveReadiness.js";
@@ -30,6 +34,11 @@ import {
   readLearningProposals,
   readReverseScaffoldFeedback
 } from "../learning/proposals.js";
+import {
+  buildLearningExperimentManifestSurface,
+  formatLearningExperimentManifestSurface,
+  readLearningExperimentManifests
+} from "../learning/experimentManifest.js";
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
@@ -37,11 +46,21 @@ async function main(): Promise<void> {
   const commandArgs = command === args[0] ? args.slice(1) : args;
   const runIdOrPath = parseRunArg(commandArgs);
 
-  if (command !== "timeline" && command !== "proposals") {
+  if (command !== "timeline" && command !== "proposals" && command !== "evidence") {
     throw new Error(`Unknown replay command: ${command}`);
   }
 
   const run = readReplayRun(runIdOrPath);
+  if (command === "evidence") {
+    const evidenceSlices = buildEvidenceSliceSummary(
+      run.transitions as unknown as JsonRecord[],
+      parseEvidenceSliceFilter(commandArgs)
+    );
+    console.log(`Run: ${path.basename(run.runDir)}`);
+    console.log(`Focused evidence slice: ${formatEvidenceSliceSummary(evidenceSlices)}`);
+    console.log(JSON.stringify(evidenceSlices, null, 2));
+    return;
+  }
   const cognitiveCoverage = buildReplayCognitiveCoverage(run.transitions);
   const freshShadowSlices = buildReplayFreshShadowSlices(run.transitions);
   const focusedShadowSlices = buildReplayFocusedShadowSlices(run.transitions);
@@ -54,6 +73,7 @@ async function main(): Promise<void> {
   const learningProposalSurface = buildLearningProposalSurface(readLearningProposals(run.runDir));
   const learningProposalReviewDecisionSurface = buildLearningProposalReviewDecisionSurface(readLearningProposalReviewDecisions(run.runDir));
   const reverseScaffoldFeedbackSurface = buildReverseScaffoldFeedbackSurface(readReverseScaffoldFeedback(run.runDir));
+  const experimentManifestSurface = buildLearningExperimentManifestSurface(readLearningExperimentManifests(run.runDir));
   console.log(`Run: ${path.basename(run.runDir)}`);
   console.log(`Transitions: ${run.transitions.length}`);
   console.log(`Cognitive coverage: ${formatReplayCognitiveCoverage(cognitiveCoverage)}`);
@@ -66,6 +86,7 @@ async function main(): Promise<void> {
   console.log(`Learning proposal surface: ${formatLearningProposalSurface(learningProposalSurface)}`);
   console.log(`Learning proposal review decisions: ${formatLearningProposalReviewDecisionSurface(learningProposalReviewDecisionSurface)}`);
   console.log(`Reverse scaffold feedback: ${formatReverseScaffoldFeedbackSurface(reverseScaffoldFeedbackSurface)}`);
+  console.log(`Learning experiment manifests: ${formatLearningExperimentManifestSurface(experimentManifestSurface)}`);
   console.log(`Workspace quality by class: ${formatWorkspaceDecisionClassQuality(workspaceDecisionClassQuality)}`);
   console.log(`Consolidation proposal surface: ${formatReplayConsolidationProposalSurface(proposalSurface)}`);
   if (command === "proposals") {
@@ -74,6 +95,31 @@ async function main(): Promise<void> {
   }
   const timeline = buildReplayTimeline(run.transitions);
   console.log(formatReplayTimeline(timeline));
+}
+
+function parseEvidenceSliceFilter(args: string[]): EvidenceSliceFilter {
+  return {
+    decisionClass: optionValue(args, "--decision-class"),
+    revisionTag: optionValue(args, "--revision-tag"),
+    budgetWindow: optionValue(args, "--budget-window"),
+    environmentFingerprintHash: optionValue(args, "--environment-fingerprint"),
+    authorityMode: optionValue(args, "--authority-mode"),
+    captureProvenance: optionValue(args, "--capture-provenance"),
+    shadowCalled: booleanOption(args, "--shadow-called")
+  };
+}
+
+function optionValue(args: string[], name: string): string | undefined {
+  const index = args.indexOf(name);
+  const value = index === -1 ? undefined : args[index + 1];
+  return value && !value.startsWith("--") ? value : undefined;
+}
+
+function booleanOption(args: string[], name: string): boolean | undefined {
+  const value = optionValue(args, name);
+  if (value === "true") return true;
+  if (value === "false") return false;
+  return undefined;
 }
 
 function parseRunArg(args: string[]): string | undefined {
