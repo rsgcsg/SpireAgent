@@ -62,6 +62,7 @@ Status values:
   - Earlier phase wording coupled construction of ledger, rollback, and retrieval safety machinery to discovery of a naturally qualifying policy candidate. This would stall safety engineering whenever the evidence pipeline correctly rejects detector noise.
 - Resolution so far:
   - ADR-0007 splits G3-A disabled change-kernel infrastructure from G3-B qualification and G3-C activation. G3-A artifacts are run-local, append-only, disabled or quarantined, dry-run only, and protected-path denied.
+  - The 2026-07-12 G3-A audit passed: exact environment/provider identity is required for dry-run applicability; malformed/incomplete artifacts are visible; smoke confirms retrieval remains disabled and rollback is simulation-only.
 - Remaining work:
   - G3-B still needs a natural qualified candidate; G3-C activation, active retrieval, stable promotion, and organic canary remain prohibited.
 

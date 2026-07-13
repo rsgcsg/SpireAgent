@@ -62,6 +62,7 @@ Start here before changing docs, planning a new phase, or deciding which documen
 - [P9_GUARDED_LEARNING_PLAN.md](phases/P9_GUARDED_LEARNING_PLAN.md)
 - [P9_P15_EXECUTION_ROADMAP.md](phases/P9_P15_EXECUTION_ROADMAP.md)
 - [P9-P10 Trustworthy Change Kernel Audit](reports/P9_P10_TRUSTWORTHY_CHANGE_KERNEL_AUDIT_2026-07-11.md)
+- [P9 G3-A Disabled Change-Kernel Audit](reports/P9_G3A_DISABLED_CHANGE_KERNEL_AUDIT_2026-07-12.md)
 - [P9-P15 Phase Architecture Audit](reports/P9_P15_PHASE_ARCHITECTURE_AUDIT_2026-07-11.md)
 - [Phase Architecture ADR](decisions/ADR-0005-phase-architecture-and-parallel-workstreams.md)
 - [Policy influence and provenance ADR](decisions/ADR-0006-policy-influence-and-evidence-provenance.md)

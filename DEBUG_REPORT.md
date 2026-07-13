@@ -54,6 +54,26 @@ Canonical status is in `docs/04_CURRENT_STATUS.md`. G3-A now has run-local appen
 - Its reason, `High reward scaling but risky at low hp.`, was adequate and explicitly used the low-HP tradeoff despite the scaffold's sparse structured candidate facts. This confirms a candidate-template content debt but refutes a claim that the lexical reason detector or a presentation-only wording patch identifies the causal fix.
 - The repeated finding is recorded as `candidate_shaping` debt only. No proposal, overlay, manifest, promotion, stable write, or G3 work was created.
 
+## 2026-07-13 G3-B Organic Fixed-Profile Observation, No Candidate
+
+- With user-confirmed organic provenance, a child process verified Steam build `24032229`, beta depot manifest `1977841934321910790`, declared empty mods, current adapter/fact/agent identities, and exact fingerprint `3a3a06de70e10b7f`. It explicitly disabled additive live and the legacy command, retained protected writes disabled, and used `shadow=3; profile=shadow_exploration; capture=all`.
+- `transition-000136-agent-mrhv8ywl-sxvtgd`, `transition-000137-agent-mrhv91du-xh0vvc`, and `transition-000138-agent-mrhv93g6-xmh2mx` were direct workspace-provider outcomes with `failureBucket=none`, `finishReason=stop`, no output-cap hit, and no retry. The child execution path remained local/fallback only.
+- The first was an obvious lethal flow and the third was zero-energy forced end turn. The second, a high-pressure local-fast combat decision, used the short reason `Instant damage and orb generation over block.` CandidateFuture tradeoff/resource/future-risk/survival cues were all serialized without compression loss; the possible omission is inseparable from model brevity and action-first candidate content. It is a single ambiguous observation, not a G3-B positive deficiency.
+- This slice has a distinct exact identity and `shadow=3` budget, so it must not be mixed with the prior `shadow=10` evidence. No proposal, same-slice overlay, manifest, qualification, activation, stable write, or live expansion was created.
+
+## 2026-07-13 G3-B Second Same-Identity Observation, Still No Candidate
+
+- A second `shadow=3; profile=shadow_exploration; capture=all` child window continued under the same exact fingerprint. It produced clean direct workspace outcomes for forced rewards, a map route, and `shop:llm_required`; no provider failure, retry, output-cap hit, invalid output, or execution mismatch occurred.
+- The map reason, `Shop heals low HP now, risking deck delay.`, is an adequate explicit tradeoff counterexample. The shop reason, `Cheap block addresses low hp defense gap.`, was lexically thin, but all eight CandidateFutures preserved tradeoff/resource/future-risk cues with no compression loss. Its one terse reason cannot distinguish model brevity from candidate-content or strategic-quality causes.
+- Do not combine this shop sample with the prior combat sample as a repeated scope, and do not reopen the rejected broad `missing_tradeoff` hypothesis. Shop checkpoint visibility was sometimes `unknown` while gold changed and later screen flow progressed; record it as ordinary UI-settlement noise, not learning evidence or a program regression.
+
+## 2026-07-13 G3-B Long Organic Combat Window, Negative Result
+
+- A bounded `shadow=10` child window continued the user-confirmed organic run through a high-pressure Act 1 floor 8 combat and its natural loss. The ended run `run-mrg9bn3t-o0gig1` contains 17 valid direct workspace provider outcomes, no provider failure bucket, no invalid output, no output-cap hit, and no execution mismatch.
+- Its focused `combat:llm_required` slice has three clean calls: `transition-000168-agent-mrhvfpgl-409ulb` (`Play free draw to find block or scaling.`), `transition-000176-agent-mrhvghl8-0d6y1t` (`Max damage to kill threat while enabling follow-up.`), and `transition-000177-agent-mrhvgn1b-5eew5f` (`Kill crossbow with follow-up strike to survive.`). The first and third are lexically thin, but the middle same-scope reason is adequate. CandidateFuture tradeoff/resource/future-risk/survival cues were preserved with no compression loss in all three.
+- Zero-energy forced end-turn and game-over records are mechanically excluded. The run loss cannot be attributed to a single preceding action or reason. This is a negative G3-B result: no repeated, semantically established, low-risk deliberation-shaping deficiency exists, and no proposal/overlay/manifest/qualification was created.
+- `finalizeRun` emitted only a `legacy_finalize_blocked` audit record for memory/strategy targets; applied stable write targets are empty. It is not P9 learning or promotion.
+
 ## 2026-07-11 P9-G2 Experiment Manifest
 
 - Added an append-only, run-local `learning-experiment-manifests.jsonl` audit surface for same-slice shadow pairs. It records proposal/pair/evaluation plus authority and environment scope, but is opt-in and non-promoting.

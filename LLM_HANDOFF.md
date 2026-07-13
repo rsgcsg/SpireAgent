@@ -18,6 +18,14 @@ Closeout pointers:
 ## 2026-07-11 G3-A Handoff
 
 Use `src/learning/changeKernel.ts` only for disabled run-local lifecycle diagnostics. It cannot activate/retrieve a policy in runtime or write stable state. The next evidence task remains G3-B qualification of a natural, repeated, exact-scope, counterexample-reviewed `deliberation_shaping` deficiency; do not manufacture a proposal or start G3-C promotion/canary work.
+
+## 2026-07-13 G3-B Observation Handoff
+
+The newest exact-organic `shadow=3` slice is provider-clean but non-qualifying. One short high-pressure combat shadow reason is ambiguous because CandidateFuture cues were preserved and the observed decision was `combat:local_fast_combat`; its two peer calls were mechanical/forced. Wait for a repeated same-scope semantically ordinary deficiency and counterexample review. Do not reuse this slice to create a reason-policy proposal or mix it with prior `shadow=10` evidence.
+
+A second same-identity `shadow=3` window added an adequate map counterexample and one terse shop reason with fully preserved CandidateFuture cues. It remains non-qualifying and must not be combined cross-class with combat. Stop chasing lexical thin-reason alarms; wait for a different repeated same-scope deficiency.
+
+The bounded organic run then ended naturally at Act 1 floor 8. Its 17 clean direct shadow outcomes included three `combat:llm_required` calls but no qualified deficiency: two short reasons were countered by an adequate same-scope reason, all relevant cues were preserved, and mechanical zero-energy/game-over records are excluded. Legacy finalize was blocked/audited with no applied stable writes. A new organic run is required before further G3-B observation; do not manufacture a proposal from this loss.
 - `docs/reports/P9_P10_TRUSTWORTHY_CHANGE_KERNEL_AUDIT_2026-07-11.md`
 
 ## 2026-07-11 Latest G2 Handoff: Contracts Complete, Evidence Gate Still Closed

@@ -6,7 +6,7 @@ This is the canonical short snapshot of the active phase, blocker, and next step
 
 - Active milestone: **P9-G2 Experiment Integrity + P9-G3A disabled change-kernel infrastructure**.
 - P9-G1 protected-path hardening is complete.
-- P9-G3A may construct and audit disabled-by-default change-kernel records only. Its artifacts are run-local, append-only, non-retrievable, and cannot write stable state.
+- P9-G3A disabled change-kernel infrastructure and audit are complete. Its artifacts are run-local, append-only, non-retrievable, and cannot write stable state.
 - P9-G3B policy qualification has **no qualified candidate**. P9-G3C activation, promotion, and canary remain **forbidden**.
 - Explicit-whitelist additive live remains independently governed. Wildcard live remains forbidden.
 
@@ -27,6 +27,9 @@ This is the canonical short snapshot of the active phase, blocker, and next step
 - A later fixed-profile organic run, `run-mrg6i7va-9reyby`, produced `transition-000071-agent-mrg6lh3l-txfvbb`: exact, source-resolved, called `combat:llm_required`, provider-clean, and `reasonQuality=adequate`. It is a valid counterexample to a broad combat `missing_tradeoff` claim, not a proposal seed.
 - The same fixed-profile run then supplied further detector counterexamples: event `transition-000063-agent-mrg6kx2n-829mkb` states relic upside versus the Clumsy penalty, and rest `transition-000090-agent-mrg6p7kr-x921va` states upgrade scaling versus healing at sufficient HP. Both were lexically marked `missing_tradeoff` but semantically contain the tradeoff. The broad `missing_tradeoff` hypothesis is **rejected**; future evidence must identify a different, repeated, semantically reviewed deficiency.
 - Later ordinary combat records under the same exact `shadow=10; capture=all`, no-retry provider profile reject a second broad hypothesis: thin `transition-000157-agent-mrg90xg0-evwszc` is countered by adequate `transition-000186-agent-mrg93lnn-57558r` (damage versus 0-cost opportunity cost), `transition-000200-agent-mrg93t89-7jtqb2` (incoming damage versus chip damage), and Act 2 `transition-000195-agent-mrg94twy-42128t` (lethal setup versus follow-up energy). Do not turn short combat reasons or `missing_tactical_factor` into a generic reason-policy proposal.
+- A new organic fixed-budget shadow-only observation under exact fingerprint `3a3a06de70e10b7f` produced three clean direct workspace calls. Two were obvious/forced mechanical flow. The remaining high-pressure local-fast combat reason said `Instant damage and orb generation over block.` while CandidateFuture survival/resource/future-risk cues were preserved with no compression loss. This is one ambiguous model-expression/action-first-candidate observation, not a repeated low-risk `deliberation_shaping` deficiency and not a proposal seed.
+- A second same-identity `shadow=3` observation produced a map tradeoff counterexample and one `shop:llm_required` short reason, `Cheap block addresses low hp defense gap.` The shop CandidateFutures preserved tradeoff/resource/future-risk cues with no compression loss; its single terse reason does not establish whether the issue is model expression, candidate content, or decision quality. Do not combine it with combat as a repeated scope or reopen the rejected broad `missing_tradeoff` hypothesis.
+- The subsequent organic run ended naturally at Act 1 floor 8. Its fixed-profile `combat:llm_required` slice contains three provider-clean calls: two terse survival/draw reasons and one adequate same-scope lethal/follow-up reason. All preserve tradeoff/resource/future-risk/survival cues with no compression loss; forced zero-energy and game-over records are excluded. This is further counterexample evidence against treating short explanations as a low-risk deliberation-policy defect, not a G3-B candidate.
 - No manifest with current exact provider identity and no natural, repeatable same-scope baseline/overlay/counterexample set exists yet.
 
 ## Current Blocker
@@ -48,7 +51,7 @@ G3-A does not wait for that candidate: it exists to prove that lifecycle records
 
 ## Next Step
 
-Complete the G3-A disabled-kernel audit, then continue only naturally occurring, source-resolved, exact-scope observations under one fixed provider-attempt and evidence-budget profile. Exclude phase/anomaly states and recovered provider calls from comparison until semantic-state validity is represented explicitly. Broad `missing_tradeoff` and short-combat-reason / `missing_tactical_factor` hypotheses are rejected; wait for a different, repeated, low-risk `deliberation_shaping` positive and explicit counterexample review. Do not create a proposal merely because a reason smoke detector fires. Only after that review may G3-B qualification and a human-approved same-slice shadow overlay be considered. G3-C activation, stable promotion, active retrieval, and canary remain prohibited.
+Continue only naturally occurring, source-resolved, exact-scope observations under one fixed provider-attempt and evidence-budget profile. Exclude phase/anomaly states and recovered provider calls from comparison until semantic-state validity is represented explicitly. Broad `missing_tradeoff` and short-combat-reason / `missing_tactical_factor` hypotheses are rejected; wait for a different, repeated, low-risk `deliberation_shaping` positive and explicit counterexample review. Do not create a proposal merely because a reason smoke detector fires. Only after that review may G3-B qualification and a human-approved same-slice shadow overlay be considered. G3-C activation, stable promotion, active retrieval, and canary remain prohibited.
 
 ## Canonical References
 
@@ -58,3 +61,4 @@ Complete the G3-A disabled-kernel audit, then continue only naturally occurring,
 - [P9-P10 Trustworthy Change Kernel Audit](reports/P9_P10_TRUSTWORTHY_CHANGE_KERNEL_AUDIT_2026-07-11.md)
 - [ADR-0006: Policy Influence and Evidence Provenance](decisions/ADR-0006-policy-influence-and-evidence-provenance.md)
 - [ADR-0007: Disabled Change-Kernel Gating](decisions/ADR-0007-disabled-change-kernel-gating.md)
+- [G3-A Disabled Change-Kernel Audit](reports/P9_G3A_DISABLED_CHANGE_KERNEL_AUDIT_2026-07-12.md)
