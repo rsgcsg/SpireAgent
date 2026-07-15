@@ -1,0 +1,12 @@
+{
+  "state_type": "rest_site",
+  "run": { "act": 1, "floor": 13, "ascension": 0 },
+  "player": { "character": "The Defect", "hp": 13, "max_hp": 75, "gold": 217, "status": [], "relics": [], "potions": [], "max_potion_slots": 3 },
+  "rest_site": {
+    "options": [
+      { "index": 0, "id": "HEAL", "name": "Rest", "description": "Heal for 30% of Max HP.", "is_enabled": true },
+      { "index": 1, "id": "SMITH", "name": "Smith", "description": "Upgrade a card.", "is_enabled": true }
+    ],
+    "can_proceed": false
+  }
+}

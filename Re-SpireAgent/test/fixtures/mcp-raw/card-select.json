@@ -1,0 +1,12 @@
+{
+  "state_type": "card_select",
+  "run": { "act": 1, "floor": 7, "ascension": 0 },
+  "player": { "character": "The Defect", "hp": 22, "max_hp": 75, "gold": 44, "status": [], "relics": [], "potions": [], "max_potion_slots": 3 },
+  "card_select": {
+    "screen_type": "NDeckEnchantSelectScreen",
+    "prompt": "Choose a card to Enchant.",
+    "cards": [{ "id": "STRIKE_DEFECT", "name": "Strike", "type": "Attack", "cost": "1", "description": "Deal 6 damage.", "index": 0, "keywords": [] }],
+    "can_cancel": false,
+    "can_confirm": false
+  }
+}

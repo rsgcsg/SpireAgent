@@ -1,0 +1,16 @@
+{
+  "state_type": "crystal_sphere",
+  "run": { "act": 2, "floor": 22, "ascension": 0 },
+  "player": { "character": "The Defect", "hp": 39, "max_hp": 75, "gold": 329, "status": [], "relics": [], "potions": [], "max_potion_slots": 4 },
+  "crystal_sphere": {
+    "grid_width": 11,
+    "grid_height": 11,
+    "clickable_cells": [{ "x": 3, "y": 0 }, { "x": 4, "y": 0 }],
+    "revealed_items": [{ "item_type": "CrystalSphereGold", "x": 5, "y": 2, "width": 2, "height": 1, "is_good": true }],
+    "tool": "big",
+    "can_use_big_tool": true,
+    "can_use_small_tool": true,
+    "divinations_left_text": "1 Divinations remain",
+    "can_proceed": false
+  }
+}

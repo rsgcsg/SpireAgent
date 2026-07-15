@@ -1,0 +1,6 @@
+{
+  "state_type": "treasure",
+  "run": { "act": 1, "floor": 10, "ascension": 0 },
+  "player": { "character": "The Defect", "hp": 4, "max_hp": 75, "gold": 108, "status": [], "relics": [], "potions": [], "max_potion_slots": 3 },
+  "treasure": { "can_proceed": true }
+}

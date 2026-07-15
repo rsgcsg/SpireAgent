@@ -1,0 +1,13 @@
+{
+  "state_type": "shop",
+  "run": { "act": 1, "floor": 5, "ascension": 0 },
+  "player": { "character": "The Defect", "hp": 50, "max_hp": 75, "gold": 100, "status": [], "relics": [], "potions": [], "max_potion_slots": 3 },
+  "shop": {
+    "items": [
+      { "index": 0, "category": "card", "price": 74, "is_stocked": true, "can_afford": true, "card_id": "SYNTHESIS", "card_name": "Synthesis", "card_description": "Deal 14 damage." },
+      { "index": 1, "category": "relic", "price": 220, "is_stocked": true, "can_afford": false, "relic_id": "CHEMICAL_X", "relic_name": "Chemical X" },
+      { "index": 2, "category": "card", "price": 25, "is_stocked": false, "can_afford": true }
+    ],
+    "can_proceed": false
+  }
+}

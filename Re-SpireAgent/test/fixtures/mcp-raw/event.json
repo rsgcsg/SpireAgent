@@ -1,0 +1,13 @@
+{
+  "state_type": "event",
+  "run": { "act": 1, "floor": 8, "ascension": 0 },
+  "player": { "character": "The Defect", "hp": 22, "max_hp": 75, "gold": 44, "status": [], "relics": [], "potions": [], "max_potion_slots": 3 },
+  "event": {
+    "event_id": "SUNKEN_STATUE",
+    "event_name": "The Sunken Statue",
+    "is_ancient": false,
+    "in_dialogue": false,
+    "body": null,
+    "options": [{ "index": 0, "title": "Proceed", "description": "", "is_locked": false, "is_proceed": true }]
+  }
+}

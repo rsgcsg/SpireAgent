@@ -1,0 +1,122 @@
+import type { AllowedAction } from "../domain/actions/allowedAction.js";
+import type { ExecutableGameAction } from "../domain/actions/action.js";
+import type { NormalizedCurrentState } from "../domain/state/index.js";
+import type { NormalizationDiagnostics } from "../normalization/diagnostics.js";
+import type { PromptBundle } from "../prompting/promptBuilder.js";
+import type { LlmDecisionSession } from "../llm/types.js";
+import type { JsonValue } from "../shared/json.js";
+
+export type DecisionOutcome =
+  | "observation_failed"
+  | "not_executed_invalid_state"
+  | "not_executed_non_actionable_state"
+  | "not_executed_no_actions"
+  | "dry_run"
+  | "not_executed_llm_failure"
+  | "not_executed_invalid_decision"
+  | "not_executed_stale_state"
+  | "execution_failed"
+  | "executed_and_settled"
+  | "executed_unsettled";
+
+export interface RecordedState {
+  rawStateRef: string;
+  normalizedState: NormalizedCurrentState;
+  stateHash: string;
+  normalizedStateHash: string;
+  diagnostics: NormalizationDiagnostics;
+}
+
+export interface DecisionRecord {
+  recordSchemaVersion: 1;
+  decisionId: string;
+  runId: string;
+  tick: number;
+  startedAt: string;
+  completedAt: string;
+  preState?: RecordedState;
+  allowedActions: AllowedAction[];
+  prompt?: {
+    promptRef: string;
+    globalPromptId: string;
+    globalPromptVersion: number;
+    stateGuideId: string;
+    stateGuideVersion: number;
+    systemPromptHash: string;
+    userPromptHash: string;
+    systemPromptBytes: number;
+    userPromptBytes: number;
+  };
+  llm?: {
+    provider: "deepseek";
+    model: string;
+    responseRef?: string;
+    session: LlmDecisionSession;
+    validation: {
+      valid: boolean;
+      outcome: "valid" | "provider_failure" | "unknown_action_id";
+      error?: string;
+    };
+  };
+  execution: {
+    attempted: boolean;
+    selectedActionId?: string;
+    action?: ExecutableGameAction;
+    stateHashMatchedBeforeExecution?: boolean;
+    adapterResult?: JsonValue;
+    error?: string;
+  };
+  settlement?: {
+    status: "settled" | "timeout" | "read_error";
+    polls: number;
+    elapsedMs: number;
+    error?: string;
+  };
+  postState?: RecordedState;
+  outcome: DecisionOutcome;
+  error?: string;
+}
+
+export interface RunMetadata {
+  metadataSchemaVersion: 1;
+  runId: string;
+  startedAt: string;
+  agentVersion: string;
+  adapter: {
+    adapterId: string;
+    adapterVersion?: string;
+    endpoint: string;
+    capabilities: Record<string, unknown>;
+  };
+  provider: {
+    provider: "deepseek";
+    model: string;
+    thinkingMode: "enabled" | "disabled";
+    maxOutputTokens: number;
+  };
+  schemas: {
+    normalizedState: 1;
+    prompt: 1;
+    decisionRecord: 1;
+  };
+}
+
+export interface PreparedEvidence {
+  preState: RecordedState;
+  prompt?: DecisionRecord["prompt"];
+}
+
+export interface DecisionRecorder {
+  readonly runId: string;
+  initialize(): Promise<void>;
+  prepare(input: {
+    decisionId: string;
+    preRawState: JsonValue;
+    normalizedState: NormalizedCurrentState;
+    stateHash: string;
+    normalizedStateHash: string;
+    diagnostics: NormalizationDiagnostics;
+    prompt?: PromptBundle;
+  }): Promise<PreparedEvidence>;
+  append(record: DecisionRecord, evidence?: { postRawState?: JsonValue }): Promise<void>;
+}

@@ -1,0 +1,40 @@
+{
+  "state_type": "monster",
+  "run": { "act": 1, "floor": 2, "ascension": 0 },
+  "player": {
+    "character": "The Defect",
+    "hp": 75,
+    "max_hp": 75,
+    "block": 0,
+    "energy": 3,
+    "max_energy": 3,
+    "gold": 99,
+    "hand": [
+      { "id": "STRIKE_DEFECT", "name": "Strike", "type": "Attack", "cost": "1", "description": "Deal 6 damage.", "index": 0, "target_type": "AnyEnemy", "can_play": true },
+      { "id": "DEFEND_DEFECT", "name": "Defend", "type": "Skill", "cost": "1", "description": "Gain 5 Block.", "index": 1, "target_type": "Self", "can_play": true },
+      { "id": "VOID", "name": "Void", "type": "Status", "description": "Unplayable.", "index": 2, "target_type": "None", "can_play": false, "unplayable_reason": "Unplayable" }
+    ],
+    "draw_pile_count": 6,
+    "discard_pile_count": 0,
+    "exhaust_pile_count": 0,
+    "draw_pile": [{ "name": "Zap", "description": "Channel 1 Lightning." }],
+    "discard_pile": [],
+    "exhaust_pile": [],
+    "orbs": [{ "id": "LIGHTNING_ORB", "name": "Lightning", "passive_val": 3, "evoke_val": 8 }],
+    "orb_slots": 3,
+    "orb_empty_slots": 2,
+    "status": [],
+    "relics": [{ "id": "CRACKED_CORE", "name": "Cracked Core", "description": "Channel 1 Lightning at combat start.", "counter": null, "keywords": [] }],
+    "potions": [{ "id": "ATTACK_POTION", "name": "Attack Potion", "description": "Create an Attack.", "slot": 0, "can_use_in_combat": true, "target_type": "Self", "keywords": [] }],
+    "max_potion_slots": 3
+  },
+  "battle": {
+    "round": 1,
+    "turn": "player",
+    "is_play_phase": true,
+    "enemies": [
+      { "entity_id": "NIBBIT_0", "combat_id": 1, "name": "Nibbit", "hp": 43, "max_hp": 43, "block": 0, "status": [], "intents": [{ "type": "Attack", "label": "12", "description": "Attack for 12." }] },
+      { "entity_id": "INKLET_0", "combat_id": 2, "name": "Inklet", "hp": 7, "max_hp": 18, "block": 0, "status": [], "intents": [{ "type": "Buff", "label": "" }] }
+    ]
+  }
+}

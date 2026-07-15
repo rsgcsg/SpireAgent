@@ -1,0 +1,6 @@
+{
+  "state_type": "game_over",
+  "run": { "act": 1, "floor": 17, "ascension": 0 },
+  "player": { "character": "The Defect", "hp": 0, "max_hp": 75, "gold": 143, "status": [], "relics": [], "potions": [] },
+  "game_over": { "message": "Run ended.", "options": ["main_menu"] }
+}

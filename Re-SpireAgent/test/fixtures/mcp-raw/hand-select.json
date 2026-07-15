@@ -1,0 +1,15 @@
+{
+  "state_type": "hand_select",
+  "run": { "act": 1, "floor": 17, "ascension": 1 },
+  "player": { "character": "The Ironclad", "hp": 56, "max_hp": 80, "energy": 3, "hand": [], "gold": 194, "status": [], "relics": [], "potions": [], "max_potion_slots": 3 },
+  "battle": { "round": 1, "turn": "player", "is_play_phase": false, "enemies": [{ "entity_id": "VANTOM_0", "name": "Vantom", "hp": 173, "max_hp": 173, "intents": [] }] },
+  "hand_select": {
+    "mode": "simple_select",
+    "prompt": "Choose any number of cards to replace.",
+    "cards": [
+      { "id": "DEFEND_IRONCLAD", "name": "Defend", "type": "Skill", "cost": "1", "description": "Gain 5 Block.", "index": 0, "keywords": [] },
+      { "id": "STRIKE_IRONCLAD", "name": "Strike", "type": "Attack", "cost": "1", "description": "Deal 6 damage.", "index": 1, "keywords": [] }
+    ],
+    "can_confirm": true
+  }
+}
