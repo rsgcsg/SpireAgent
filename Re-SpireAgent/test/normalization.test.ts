@@ -37,6 +37,15 @@ describe("normalizeCurrentState", () => {
     expect(envelope.currentState.cardSelection.options).toHaveLength(2);
   });
 
+  it.each(["monster", "elite"])("treats the observed post-combat %s shell as a non-decision transition", async (stateType) => {
+    const raw = await fixture("post-combat-settling") as Record<string, unknown>;
+    raw.state_type = stateType;
+    const envelope = normalizeCurrentState(raw, TEST_ADAPTER);
+    expect(envelope.currentState.kind).toBe("transition");
+    expect(envelope.currentState.stability).toBe("transitioning");
+    expect(envelope.diagnostics.status).toBe("ok");
+  });
+
   it("fails closed on an unknown state type", async () => {
     const envelope = normalizeCurrentState(await fixture("unknown"), TEST_ADAPTER);
     expect(envelope.currentState.kind).toBe("unknown");

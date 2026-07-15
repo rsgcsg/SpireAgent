@@ -30,7 +30,11 @@ There is one provider path. It uses JSON mode and an explicit thinking policy, s
 
 ## Settlement
 
-Successful POST is only partial evidence. The watcher polls for a changed state hash and waits until the normalized state is no longer loading, settling, or transitioning. Timeout is recorded as `executed_unsettled`; the loop stops and never resends the action automatically.
+Successful POST is only partial evidence. The watcher polls for a changed state hash and requires two identical, non-transitional observations before settlement. Timeout is recorded as `executed_unsettled`; the loop stops and never resends the action automatically. Action-capable CLI commands also acquire an exclusive local lock, so two RE-P1 processes cannot concurrently drive the same MCP session.
+
+## Run Boundaries
+
+`agent:run` is a one-game command, not a menu automation loop. It stops and records a non-executed boundary when the next state is `game_over` or a top-level `menu`; it therefore cannot ask the model to restart a completed run. The lower-level `agent:tick` command intentionally retains the ability to exercise a supported menu action when a developer explicitly requests that protocol test.
 
 ## Explicit Inference
 

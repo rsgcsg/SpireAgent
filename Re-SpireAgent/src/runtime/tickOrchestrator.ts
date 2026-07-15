@@ -29,7 +29,7 @@ export interface TickResult {
 export class TickOrchestrator {
   constructor(private readonly dependencies: TickOrchestratorDependencies) {}
 
-  async runTick(tick: number, options: { dryRun?: boolean } = {}): Promise<TickResult> {
+  async runTick(tick: number, options: { dryRun?: boolean; stopAtRunBoundary?: boolean } = {}): Promise<TickResult> {
     const startedAt = new Date().toISOString();
     const decisionId = createDecisionId(tick);
     let pre: StateEnvelope;
@@ -64,6 +64,18 @@ export class TickOrchestrator {
         allowedActions,
         outcome: "not_executed_non_actionable_state",
         shouldStopRun: false
+      });
+    }
+    if (options.stopAtRunBoundary && isRunBoundary(pre.currentState.kind)) {
+      return this.recordWithoutDecision({
+        decisionId,
+        tick,
+        startedAt,
+        pre,
+        allowedActions,
+        outcome: "not_executed_non_actionable_state",
+        error: `Stopped at ${pre.currentState.kind} run boundary; agent:run never starts or restarts a run automatically`,
+        shouldStopRun: true
       });
     }
     if (allowedActions.length === 0) {
@@ -320,6 +332,10 @@ function recordedState(envelope: StateEnvelope): RecordedState {
     normalizedStateHash: envelope.normalizedStateHash,
     diagnostics: envelope.diagnostics
   };
+}
+
+function isRunBoundary(kind: StateEnvelope["currentState"]["kind"]): boolean {
+  return kind === "game_over" || kind === "menu";
 }
 
 function result(

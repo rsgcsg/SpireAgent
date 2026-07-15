@@ -57,6 +57,8 @@ const KNOWN_TOP_LEVEL_KEYS = new Set([
   "characters"
 ]);
 
+const COMBAT_STATE_TOKENS = ["monster", "boss", "elite", "combat", "battle"] as const;
+
 export function normalizeCurrentState(rawInput: unknown, source: AdapterDescriptor, capturedAt = new Date().toISOString()): StateEnvelope {
   const diagnostics = new DiagnosticsBuilder();
   const rawState = isJsonObject(rawInput) ? rawInput : {};
@@ -110,6 +112,7 @@ function buildCommon(raw: JsonObject, sourceStateType: string, diagnostics: Diag
 
 function normalizeSurface(raw: JsonObject, common: CurrentStateBase, diagnostics: DiagnosticsBuilder): NormalizedCurrentState {
   const lower = common.sourceStateType.toLowerCase();
+  const message = optionalString(raw.message);
 
   const handSelection = objectField(raw, "hand_select") ?? objectField(raw, "handSelect");
   if (handSelection) return normalizeCardSelection(common, handSelection, "combat", diagnostics);
@@ -124,7 +127,15 @@ function normalizeSurface(raw: JsonObject, common: CurrentStateBase, diagnostics
   if (objectField(raw, "crystal_sphere") || objectField(raw, "crystalSphere") || lower.includes("crystal_sphere")) {
     return normalizeCrystalSphere(common, objectField(raw, "crystal_sphere") ?? objectField(raw, "crystalSphere"), diagnostics);
   }
-  if (["monster", "boss", "combat", "battle"].some((token) => lower.includes(token))) {
+  if (isObservedPostCombatTransition(lower, message, objectField(raw, "battle"))) {
+    return {
+      ...common,
+      kind: "transition",
+      stability: "transitioning",
+      transition: { message, observedTopLevelKeys: Object.keys(raw).sort() }
+    };
+  }
+  if (COMBAT_STATE_TOKENS.some((token) => lower.includes(token))) {
     return normalizeCombat(common, objectField(raw, "battle"), diagnostics);
   }
   if (lower.includes("card_reward") || objectField(raw, "card_reward") || objectField(raw, "cardReward")) {
@@ -152,6 +163,11 @@ function normalizeSurface(raw: JsonObject, common: CurrentStateBase, diagnostics
 
   diagnostics.warn(`Unsupported state_type: ${common.sourceStateType}`);
   return unknownState(common, raw, `Unsupported state_type: ${common.sourceStateType}`);
+}
+
+function isObservedPostCombatTransition(sourceStateType: string, message: string | undefined, battle: JsonObject | undefined): boolean {
+  if (battle || !COMBAT_STATE_TOKENS.some((token) => sourceStateType.includes(token))) return false;
+  return /combat ended\.\s*waiting for rewards/i.test(message ?? "");
 }
 
 function normalizeCombat(common: CurrentStateBase, battle: JsonObject | undefined, diagnostics: DiagnosticsBuilder): NormalizedCurrentState {

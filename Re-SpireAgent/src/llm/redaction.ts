@@ -1,6 +1,7 @@
 import type { JsonValue } from "../shared/json.js";
 
-const SECRET_KEY_PATTERN = /api[-_]?key|authorization|bearer|token|secret|password/iu;
+// Token counts are telemetry, not credentials. Only redact a key when it names a credential value.
+const SECRET_KEY_PATTERN = /^(?:api[-_]?key|authorization|bearer|token|access[-_]?token|refresh[-_]?token|secret|password)$/iu;
 
 export function redactText(value: string): string {
   return value

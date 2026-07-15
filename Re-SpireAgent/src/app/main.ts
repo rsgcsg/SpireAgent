@@ -31,7 +31,13 @@ async function main(): Promise<void> {
     return;
   }
 
+  if (command !== "tick" && command !== "run") {
+    printHelp();
+    return;
+  }
+
   const runtime = await createRuntime(config);
+  try {
 
   if (command === "tick") {
     const dryRun = process.argv.includes("--dry-run");
@@ -48,14 +54,16 @@ async function main(): Promise<void> {
       maxTicks,
       delayMs,
       dryRun,
+      stopAtRunBoundary: true,
       onTick: (result) => printTick(runtime.recorder.runId, result)
     });
     const failures = results.filter((result) => result.shouldStopRun && result.outcome !== "executed_and_settled");
     process.exitCode = failures.length > 0 ? 1 : 0;
     return;
   }
-
-  printHelp();
+  } finally {
+    await runtime.release();
+  }
 }
 
 async function replay(dataDir: string, requestedRunId: string | undefined, decisionId: string | undefined): Promise<void> {

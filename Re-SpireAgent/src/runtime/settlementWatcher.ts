@@ -27,6 +27,7 @@ export class SettlementWatcher {
     const timeoutMs = action.kind === "end_turn" ? this.config.endTurnTimeoutMs : this.config.defaultTimeoutMs;
     let polls = 0;
     let last: StateEnvelope | undefined;
+    let stableCandidate: StateEnvelope | undefined;
 
     while (Date.now() - started < timeoutMs) {
       await this.sleep(this.config.pollMs);
@@ -42,8 +43,14 @@ export class SettlementWatcher {
         };
       }
       if (last.stateHash === before.stateHash) continue;
-      if (["loading", "settling", "transitioning"].includes(last.currentState.stability)) continue;
-      return { status: "settled", polls, elapsedMs: Date.now() - started, after: last };
+      if (["loading", "settling", "transitioning"].includes(last.currentState.stability)) {
+        stableCandidate = undefined;
+        continue;
+      }
+      if (stableCandidate?.stateHash === last.stateHash) {
+        return { status: "settled", polls, elapsedMs: Date.now() - started, after: last };
+      }
+      stableCandidate = last;
     }
 
     return {

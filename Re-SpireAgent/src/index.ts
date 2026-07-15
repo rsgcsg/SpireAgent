@@ -10,3 +10,4 @@ export * from "./normalization/normalizeCurrentState.js";
 export * from "./prompting/promptBuilder.js";
 export * from "./recording/types.js";
 export * from "./runtime/tickOrchestrator.js";
+export * from "./runtime/runtimeLock.js";

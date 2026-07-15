@@ -88,6 +88,10 @@ describe("DeepSeekDecisionProvider", () => {
     expect(requestBodies[0]?.thinking).toEqual({ type: "disabled" });
     expect(JSON.stringify(session)).not.toContain("test-secret-never-record");
     expect(JSON.stringify(session)).not.toContain("provider-secret");
+    const requestRecord = session.finalAttempt.requestBodyRedacted as Record<string, unknown>;
+    expect(requestRecord.max_tokens).toBe(320);
+    const providerRecord = session.finalAttempt.rawProviderResponse as { usage?: Record<string, unknown> };
+    expect(providerRecord.usage?.prompt_tokens).toBe(10);
   });
 
   it("classifies finish_reason length as truncation and does not accept partial JSON", async () => {

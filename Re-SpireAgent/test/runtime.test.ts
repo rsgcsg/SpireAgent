@@ -50,6 +50,21 @@ describe("TickOrchestrator", () => {
     expect(recorder.records[0]?.execution.stateHashMatchedBeforeExecution).toBe(false);
   });
 
+  it("waits for two identical non-transitional post-action observations before declaring settlement", async () => {
+    const pre = await fixture("combat") as Sts2McpRawState;
+    const intermediate = structuredClone(pre);
+    const final = structuredClone(pre);
+    if (typeof intermediate.player === "object" && intermediate.player && !Array.isArray(intermediate.player)) intermediate.player.energy = 2;
+    if (typeof final.player === "object" && final.player && !Array.isArray(final.player)) final.player.energy = 1;
+    const adapter = new FakeAdapter([pre, pre, intermediate, final, final]);
+    const recorder = new MemoryRecorder();
+    const result = await makeOrchestrator(adapter, fixedProvider("combat:end-turn"), recorder).runTick(1);
+
+    expect(result.outcome).toBe("executed_and_settled");
+    expect(recorder.records[0]?.postState?.stateHash).toBe(normalizeCurrentState(final, TEST_ADAPTER).stateHash);
+    expect(recorder.records[0]?.settlement?.polls).toBe(3);
+  });
+
   it("never executes a provider-selected id outside the whitelist", async () => {
     const pre = await fixture("combat") as Sts2McpRawState;
     const adapter = new FakeAdapter([pre]);
@@ -73,6 +88,21 @@ describe("TickOrchestrator", () => {
     expect(result.outcome).toBe("not_executed_invalid_state");
     expect(calls).toBe(0);
     expect(adapter.executed).toEqual([]);
+  });
+
+  it("stops a run before game-over actions can restart or leave the completed run", async () => {
+    const raw = await fixture("game-over") as Sts2McpRawState;
+    const adapter = new FakeAdapter([raw]);
+    const recorder = new MemoryRecorder();
+    let calls = 0;
+    const provider = fixedProvider("game-over:main_menu", () => { calls += 1; });
+
+    const result = await makeOrchestrator(adapter, provider, recorder).runTick(1, { stopAtRunBoundary: true });
+
+    expect(result).toMatchObject({ outcome: "not_executed_non_actionable_state", stateKind: "game_over", shouldStopRun: true });
+    expect(calls).toBe(0);
+    expect(adapter.executed).toEqual([]);
+    expect(recorder.records[0]?.error).toContain("run boundary");
   });
 });
 

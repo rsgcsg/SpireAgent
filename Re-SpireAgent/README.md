@@ -21,6 +21,7 @@ MCP raw state
 - DeepSeek returns only `selectedActionId`, `reasonBrief`, and optional `confidence`.
 - The executable MCP payload never comes from the model.
 - Unknown action IDs, invalid JSON, invalid schema, truncation, timeout, state drift, MCP rejection, and uncertain settlement are not executed or retried as actions.
+- Action-capable `tick` and `run` commands take an exclusive local runtime lock. This prevents two RE-P1 processes from driving one MCP session; it cannot prevent a human or a different program from acting in the game.
 - Raw MCP data is visible only to the adapter, normalizer, recorder, and diagnostic tooling. Planning code imports only the normalized state API.
 - Unknown or unverified MCP states become `UnknownCurrentState` and stop safely.
 - `.env.local`, API keys, and `data/runs/` are ignored by Git.
@@ -124,6 +125,8 @@ Run a bounded autonomous loop:
 npm run agent:run -- --max-ticks 20 --delay-ms 250
 ```
 
+`agent:run` is deliberately bounded to one game. When it observes `game_over` or a top-level `menu`, it records the boundary and stops before asking the model to select a restart or menu action. Use the explicit single-tick command only when deliberately testing a supported menu flow.
+
 The loop stops on invalid state, missing actions on an actionable screen, provider/decision failure, MCP rejection, or unsettled execution. Transitional/loading states are polled without calling DeepSeek.
 
 Replay the latest local run or one decision:
@@ -196,5 +199,5 @@ The only supported public TypeScript entrypoint is `src/index.ts`. Integration r
 - MCP does not list legal actions. The local allowed-action builder reconstructs them from observed normalized state and therefore needs a new fixture whenever the adapter adds or changes a state/action protocol.
 - Current MCP non-combat snapshots do not expose a complete deck on every screen. RE-P1 does not invent missing deck context, so card-reward and shop strategy is limited by what the current state actually contains.
 - Shop leaving is the one explicit protocol inference retained from verified legacy live behavior: the MCP `proceed` action leaves a shop even when `shop.can_proceed` is false. It is recorded in normalization diagnostics.
-- A changed state hash proves visible state drift, not perfect semantic settlement. The watcher waits for both visible change and a non-transitional normalized state, but animation/UI edge cases still require real-game verification.
+- A changed state hash proves visible state drift, not perfect semantic settlement. The watcher waits for two consecutive, identical, non-transitional observations after an action, but animation/UI edge cases still require real-game verification.
 - RE-P1 is an auditable baseline, not a strong strategic player yet.

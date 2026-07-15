@@ -6,6 +6,7 @@ import { normalizeCurrentState } from "../normalization/normalizeCurrentState.js
 import { createRunId, FileDecisionRecorder } from "../recording/fileDecisionRecorder.js";
 import type { RunMetadata } from "../recording/types.js";
 import { SettlementWatcher } from "../runtime/settlementWatcher.js";
+import { acquireRuntimeLock } from "../runtime/runtimeLock.js";
 import { TickOrchestrator } from "../runtime/tickOrchestrator.js";
 
 export async function createRuntime(config: RuntimeConfig): Promise<{
@@ -13,7 +14,10 @@ export async function createRuntime(config: RuntimeConfig): Promise<{
   llm: DeepSeekDecisionProvider;
   recorder: FileDecisionRecorder;
   orchestrator: TickOrchestrator;
+  release(): Promise<void>;
 }> {
+  const lock = await acquireRuntimeLock(config.runtime.dataDir);
+  try {
   const adapter = new Sts2McpRestAdapter(config.mcp.baseUrl, config.mcp.timeoutMs);
   const llm = new DeepSeekDecisionProvider(config.deepseek);
   const runId = createRunId();
@@ -48,5 +52,9 @@ export async function createRuntime(config: RuntimeConfig): Promise<{
     settlement,
     recorder
   });
-  return { adapter, llm, recorder, orchestrator };
+  return { adapter, llm, recorder, orchestrator, release: () => lock.release() };
+  } catch (error) {
+    await lock.release();
+    throw error;
+  }
 }

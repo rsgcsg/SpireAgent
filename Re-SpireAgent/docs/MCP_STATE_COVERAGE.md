@@ -4,7 +4,8 @@ Coverage is based on observed old-project raw snapshots and reduced fixture copi
 
 | MCP `state_type` / active payload | Normalized kind | Status | Action protocol |
 |---|---|---|---|
-| `monster`, `boss` | `combat` | fixture-backed | play card, potion, end turn |
+| `monster`, `boss`, `elite` | `combat` | fixture-backed | play card, potion, end turn |
+| `monster` or `elite` without `battle`, message `Combat ended. Waiting for rewards...` | `transition` | fixture-backed from real MCP smoke | none; poll for rewards |
 | active `hand_select` over combat | `card_selection` | fixture-backed | combat select/confirm |
 | `card_select` | `card_selection` | fixture-backed | select/confirm/cancel |
 | `card_reward` | `card_reward` | fixture-backed | take, skip, proceed when exposed |
@@ -15,8 +16,8 @@ Coverage is based on observed old-project raw snapshots and reduced fixture copi
 | `shop` | `shop` | fixture-backed with one documented inference | buy affordable stocked item, leave |
 | `treasure` | `treasure` | fixture-backed | take relic when exposed, proceed |
 | `crystal_sphere` | `crystal_sphere` | fixture-backed | switch tool, click observed cell, finish |
-| `menu` | `menu` | fixture-backed | choose enabled option |
-| `game_over` | `game_over` | fixture-backed | choose exposed menu option |
+| `menu` | `menu` | fixture-backed | explicit `agent:tick` protocol test only; `agent:run` stops at this boundary |
+| `game_over` | `game_over` | fixture-backed | explicit `agent:tick` protocol test only; `agent:run` stops before any restart action |
 | `bundle_select` | `unknown` | intentionally unsupported | none |
 | unrecognized future state | `unknown` | fail closed | none |
 
