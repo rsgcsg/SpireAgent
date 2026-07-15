@@ -36,7 +36,7 @@ Help the LLM see what a strong player would notice,
 imagine the futures a strong player would consider,
 remember the experiences that should change future judgment,
 deliberate over validated candidate futures,
-and improve how it sees, imagines, judges, and acts through prediction error.
+and improve how it sees, imagines, remenmbers, judges, and acts through prediction error.
 ```
 
 The core loop of the project is:
