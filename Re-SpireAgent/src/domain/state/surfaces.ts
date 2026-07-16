@@ -12,6 +12,7 @@ import type {
 /** Stable game meaning. It deliberately excludes the currently open UI protocol. */
 export type SemanticContext =
   | CombatContext
+  | RewardFlowContext
   | CardRewardContext
   | RewardsContext
   | MapContext
@@ -35,6 +36,7 @@ export interface CombatContext {
 }
 
 export interface CardRewardContext { kind: "card_reward"; }
+export interface RewardFlowContext { kind: "reward_flow"; rewardKind: "card_reward"; }
 export interface RewardsContext { kind: "rewards"; }
 export interface RestContext { kind: "rest"; }
 export interface ShopContext { kind: "shop"; }
@@ -77,6 +79,7 @@ export type InteractionSurface =
   | CombatTurnSurface
   | CardSelectionSurface
   | DeckEnchantSelectionSurface
+  | CardRewardSelectionSurface
   | CardRewardSurface
   | RewardClaimSurface
   | MapNavigationSurface
@@ -142,6 +145,21 @@ export interface DeckEnchantSelectionSurface {
   cancelable: boolean;
   enchantment: EnchantmentSnapshot;
   cards: CardSnapshot[];
+  legalActions: BridgeLegalActionSnapshot[];
+  completeness: BridgeSurfaceCompleteness;
+}
+
+export interface CardRewardSelectionSurface {
+  kind: "card_reward_selection";
+  bridgeStateId: string;
+  screenEntityId: string;
+  cards: CardSnapshot[];
+  alternatives: Array<{
+    entityId: string;
+    index: number;
+    label: string;
+    enabled: boolean;
+  }>;
   legalActions: BridgeLegalActionSnapshot[];
   completeness: BridgeSurfaceCompleteness;
 }

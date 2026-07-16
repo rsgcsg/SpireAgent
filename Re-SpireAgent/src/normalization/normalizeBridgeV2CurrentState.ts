@@ -2,8 +2,10 @@ import type { AdapterDescriptor } from "../game-io/adapter.js";
 import {
   NORMALIZED_STATE_SCHEMA_VERSION,
   type BridgeLegalActionSnapshot,
+  type BridgeDiagnosticSnapshot,
   type BridgeSurfaceCompleteness,
   type CardSnapshot,
+  type CardRewardSelectionSurface,
   type CombatTurnSurface,
   type DeckEnchantSelectionSurface,
   type EnemySnapshot,
@@ -18,12 +20,16 @@ import {
   decodeBridgeV2State,
   isBridgeV2CombatContext,
   isBridgeV2CombatTurnSurface,
+  isBridgeV2CardRewardSelectionSurface,
   isBridgeV2DeckEnchantSurface,
   isBridgeV2EventContext,
   isBridgeV2EventOptionSurface,
+  isBridgeV2RewardFlowContext,
   isBridgeV2UnsupportedSurface,
   type BridgeV2CombatContext,
+  type BridgeV2CardRewardSelectionSurface,
   type BridgeV2DeckEnchantSurface,
+  type BridgeV2Diagnostic,
   type BridgeV2EventOptionSurface,
   type BridgeV2LegalAction
 } from "../integrations/sts2mcp/bridgeV2Protocol.js";
@@ -45,7 +51,8 @@ const ACTION_KINDS = {
     "close_selection"
   ]),
   event_option: new Set(["choose_event_option", "proceed_event"]),
-  combat_turn: new Set(["play_card", "use_potion", "end_turn"])
+  combat_turn: new Set(["play_card", "use_potion", "end_turn"]),
+  card_reward_selection: new Set(["select_card_reward", "choose_card_reward_alternative"])
 } as const;
 
 export function normalizeBridgeV2CurrentState(
@@ -85,6 +92,8 @@ export function normalizeBridgeV2CurrentState(
   } else if (state && isBridgeV2CombatContext(state.context)) {
     context = projectCombatContext(state.context);
     player = projectCombatPlayer(state.context);
+  } else if (state && isBridgeV2RewardFlowContext(state.context)) {
+    context = { kind: "reward_flow", rewardKind: state.context.reward_kind };
   }
 
   if (inherited?.run || (inherited?.player && !isBridgeV2CombatContext(state?.context ?? { kind: "unknown" }))) {
@@ -99,7 +108,23 @@ export function normalizeBridgeV2CurrentState(
     normalizedSchemaVersion: NORMALIZED_STATE_SCHEMA_VERSION,
     sourceStateType: state ? `bridge_v2:${state.context.kind}:${state.surface.kind}` : "bridge_v2:invalid",
     ...(inherited?.run ? { run: inherited.run } : {}),
-    ...(player ? { player } : {})
+    ...(player ? { player } : {}),
+    ...(state && capabilities ? {
+      bridgeDiagnostics: [
+        ...capabilities.diagnostics.map((diagnostic) => projectDiagnostic(diagnostic, "capabilities")),
+        ...state.diagnostics.map((diagnostic) => projectDiagnostic(diagnostic, "state"))
+      ],
+      bridgeLegacyWarnings: [...capabilities.warnings, ...state.warnings],
+      bridgeInspectionPolicy: {
+        status: capabilities.inspections.status,
+        stateBound: capabilities.inspections.state_bound,
+        arbitraryQueriesAllowed: capabilities.inspections.arbitrary_queries_allowed,
+        entersCommandLedger: capabilities.inspections.enters_command_ledger,
+        visibilityClasses: [...capabilities.inspections.visibility_classes],
+        orderingSemantics: [...capabilities.inspections.ordering_semantics],
+        implementedKinds: [] as []
+      }
+    } : {})
   };
   let surface: NormalizedCurrentState["surface"] = unsupported(rawState, "Bridge v2 state could not be decoded");
   let stability: NormalizedCurrentState["stability"] = "invalid";
@@ -107,6 +132,11 @@ export function normalizeBridgeV2CurrentState(
 
   if (state && capabilities) {
     validateEnvelopeIdentity(state, capabilities, diagnostics);
+    validateStructuredDiagnostics(
+      [...capabilities.diagnostics, ...state.diagnostics],
+      state.legal_actions.length,
+      diagnostics
+    );
 
     if (!state.game.compatibility.action_execution_allowed || !capabilities.game.compatibility.action_execution_allowed) {
       diagnostics.invalid("bridge_v2.game.compatibility", state.game.compatibility, "exact-build action execution is disabled");
@@ -140,6 +170,9 @@ export function normalizeBridgeV2CurrentState(
       } else if (isBridgeV2CombatTurnSurface(state.surface) && isBridgeV2CombatContext(state.context)) {
         validateCombatTurnState(state.context, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
         surface = projectCombatTurnSurface(state.surface.room_entity_id, state.surface.can_end_turn, state.state_id, state.legal_actions, state.completeness);
+      } else if (isBridgeV2CardRewardSelectionSurface(state.surface) && isBridgeV2RewardFlowContext(state.context)) {
+        validateCardRewardSelectionState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
+        surface = projectCardRewardSelectionSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
       } else {
         diagnostics.invalid("bridge_v2.context_surface", {
           context: state.context.kind,
@@ -150,8 +183,6 @@ export function normalizeBridgeV2CurrentState(
       stability = state.readiness === "ready" ? "actionable" : "settling";
       actionAuthority = "bridge_advertised";
     }
-
-    for (const warning of state.warnings) diagnostics.warn(`Bridge v2: ${warning}`);
   }
 
   const builtDiagnostics = diagnostics.build();
@@ -211,6 +242,34 @@ function validateEnvelopeIdentity(
       || !capabilities.commands.state_bound
       || !capabilities.commands.idempotent_request_ids) {
     diagnostics.invalid("bridge_v2.commands", capabilities.commands, "required command safety capabilities are absent");
+  }
+  if (capabilities.inspections.status !== "disabled_not_implemented"
+      || !capabilities.inspections.state_bound
+      || capabilities.inspections.arbitrary_queries_allowed
+      || capabilities.inspections.enters_command_ledger
+      || capabilities.inspections.implemented_kinds.length > 0) {
+    diagnostics.invalid(
+      "bridge_v2.inspections",
+      capabilities.inspections,
+      "RE-P1 accepts only the disabled, state-bound, non-command inspection contract"
+    );
+  }
+}
+
+function validateStructuredDiagnostics(
+  bridgeDiagnostics: BridgeV2Diagnostic[],
+  actionCount: number,
+  diagnostics: DiagnosticsBuilder
+): void {
+  for (const diagnostic of bridgeDiagnostics) {
+    if (diagnostic.required_for_action === true && diagnostic.effect !== "actions_suppressed") {
+      diagnostics.invalid("bridge_v2.diagnostics.required_for_action", diagnostic, "required fields must explicitly suppress actions when absent");
+    }
+    if (actionCount > 0 && (diagnostic.effect === "actions_suppressed"
+      || diagnostic.effect === "surface_unsupported"
+      || diagnostic.effect === "outcome_unknown")) {
+      diagnostics.invalid("bridge_v2.diagnostics.effect", diagnostic, "an action-suppressing diagnostic cannot coexist with advertised actions");
+    }
   }
 }
 
@@ -304,6 +363,33 @@ function validateCombatTurnState(
   if (potionSlots.size !== context.player.potions.length) diagnostics.invalid("bridge_v2.context.player.potions", context.player.potions, "potion slots are not unique");
   if (readiness === "ready" && !context.is_play_phase) diagnostics.invalid("bridge_v2.context.is_play_phase", context.is_play_phase, "ready combat turn must be the player play phase");
   validateActions("combat_turn", stateId, actions, missing, advertisedOperations, readiness, diagnostics);
+}
+
+function validateCardRewardSelectionState(
+  surface: BridgeV2CardRewardSelectionSurface,
+  stateId: string,
+  actions: BridgeV2LegalAction[],
+  missing: string[],
+  advertisedOperations: ReadonlySet<string>,
+  readiness: string,
+  diagnostics: DiagnosticsBuilder
+): void {
+  const cardIds = new Set(surface.cards.map((card) => card.entity_id));
+  const alternativeIds = new Set(surface.alternatives.map((alternative) => alternative.entity_id));
+  const alternativeIndices = new Set(surface.alternatives.map((alternative) => alternative.index));
+  if (cardIds.size !== surface.cards.length) diagnostics.invalid("bridge_v2.surface.cards", surface.cards, "card reward entity ids are not unique");
+  if (alternativeIds.size !== surface.alternatives.length) diagnostics.invalid("bridge_v2.surface.alternatives", surface.alternatives, "alternative entity ids are not unique");
+  if (alternativeIndices.size !== surface.alternatives.length) diagnostics.invalid("bridge_v2.surface.alternatives", surface.alternatives, "alternative indices are not unique");
+  validateActions("card_reward_selection", stateId, actions, missing, advertisedOperations, readiness, diagnostics);
+  for (const action of actions) {
+    if (action.kind === "select_card_reward" && !surface.cards.some((card) => action.label.includes(card.name ?? card.definition_id))) {
+      diagnostics.invalid("bridge_v2.legal_actions.label", action.label, "card reward selection action does not identify a visible card");
+    }
+    if (action.kind === "choose_card_reward_alternative"
+        && !surface.alternatives.some((alternative) => alternative.enabled && alternative.label === action.label)) {
+      diagnostics.invalid("bridge_v2.legal_actions.label", action.label, "alternative action does not match an enabled visible alternative");
+    }
+  }
 }
 
 function validateExactGameIdentity(
@@ -494,6 +580,48 @@ function projectCombatTurnSurface(
     canEndTurn,
     legalActions: projectActions(actions),
     completeness: projectCompleteness(completeness)
+  };
+}
+
+function projectCardRewardSelectionSurface(
+  surface: BridgeV2CardRewardSelectionSurface,
+  stateId: string,
+  actions: BridgeV2LegalAction[],
+  completeness: RawCompleteness
+): CardRewardSelectionSurface {
+  return {
+    kind: "card_reward_selection",
+    bridgeStateId: stateId,
+    screenEntityId: surface.screen_entity_id,
+    cards: surface.cards.map(projectCard),
+    alternatives: surface.alternatives.map((alternative) => ({
+      entityId: alternative.entity_id,
+      index: alternative.index,
+      label: alternative.label,
+      enabled: alternative.enabled
+    })),
+    legalActions: projectActions(actions),
+    completeness: projectCompleteness(completeness)
+  };
+}
+
+function projectDiagnostic(
+  diagnostic: BridgeV2Diagnostic,
+  source: BridgeDiagnosticSnapshot["source"]
+): BridgeDiagnosticSnapshot {
+  return {
+    source,
+    code: diagnostic.code,
+    severity: diagnostic.severity,
+    category: diagnostic.category,
+    effect: diagnostic.effect,
+    recoverability: diagnostic.recoverability,
+    ...(diagnostic.path ? { path: diagnostic.path } : {}),
+    ...(diagnostic.visibility_class ? { visibilityClass: diagnostic.visibility_class } : {}),
+    ...(diagnostic.required_for_action !== null && diagnostic.required_for_action !== undefined
+      ? { requiredForAction: diagnostic.required_for_action }
+      : {}),
+    ...(diagnostic.safe_detail ? { safeDetail: diagnostic.safe_detail } : {})
   };
 }
 

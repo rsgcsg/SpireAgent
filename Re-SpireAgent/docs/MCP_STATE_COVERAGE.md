@@ -11,6 +11,7 @@ Coverage is based on observed old-project raw snapshots and reduced fixture copi
 | Bridge v2 `deck_enchant_selection` | Bridge `event`/`combat` context + `deck_enchant_selection` + `bridge_advertised` | organic Bridge + Re lifecycle passed | opaque select/preview/confirm/cancel/close only |
 | Bridge v2 `event_option` | Bridge `event` + `event_option` + `bridge_advertised` | organic Bridge + Re choose/settlement lifecycle passed for ordinary options | opaque choose/proceed only |
 | Bridge v2 `combat_turn` | Bridge `combat` + `combat_turn` + `bridge_advertised` | organic Bridge + Re targeted-card/settlement lifecycle passed | opaque play-card/potion/end-turn only |
+| Bridge v2 `card_reward_selection` | Bridge `reward_flow` + `card_reward_selection` + `bridge_advertised` | exact-source + fixture passed; organic pending | opaque card or separately labeled alternative only |
 | `card_reward` | `card_reward` | fixture-backed | take, skip, proceed when exposed |
 | `rewards` | `rewards` | fixture-backed | claim, potion discard, proceed |
 | `map` | `map` | fixture-backed | choose next node |
@@ -30,10 +31,11 @@ A new state is supported only after a real raw sample, normalized variant, allow
 
 ## Adapter Limits
 
-- v1 legal actions are reconstructed locally. Bridge v2 source `preview.2`
+- v1 legal actions are reconstructed locally. Bridge v2 source `preview.3`
   enumerates authoritative actions for deck enchant, ordinary event options,
-  and immediate player-phase combat. Deck enchant and ordinary event options
-  are organically qualified for their observed action shapes. Combat potion,
+  immediate player-phase combat, and card reward. The first three surfaces have
+  bounded organic evidence for their observed action shapes; card reward is
+  fixture-only until a fresh installed lifecycle passes. Combat potion,
   end-turn, non-enemy target, and overlay variants still require separate
   bounded evidence.
 - v1 action responses are partial; post-state observation verifies effects.

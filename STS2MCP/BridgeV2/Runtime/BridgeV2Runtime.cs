@@ -21,7 +21,7 @@ internal static class BridgeV2Runtime
         var warnings = new List<string>
         {
             "Bridge v2 is an incremental preview. Unlisted surfaces fail closed with no legal actions.",
-            "Singleplayer deck enchant, ordinary event option, and player-phase combat turn are the only game-bound v2 vertical slices in this revision."
+            "Singleplayer deck enchant, ordinary event option, player-phase combat turn, and card reward selection are the only game-bound v2 vertical slices in this revision."
         };
 
         if (!game.Compatibility.ActionExecutionAllowed)
@@ -48,7 +48,12 @@ internal static class BridgeV2Runtime
                     "combat_turn",
                     "implemented_exact_game_version",
                     new[] { "play_card", "use_potion", "end_turn" },
-                    "sts2-v0.108.0:CombatManager+PlayerCombatState+CardModel+NPlayerHand")
+                    "sts2-v0.108.0:CombatManager+PlayerCombatState+CardModel+NPlayerHand"),
+                new SurfaceCapability(
+                    "card_reward_selection",
+                    "implemented_exact_game_version",
+                    new[] { "select_card_reward", "choose_card_reward_alternative" },
+                    "sts2-v0.108.0:NCardRewardSelectionScreen+NGridCardHolder+NCardRewardAlternativeButton")
             },
             new CommandContractCapability(
                 OpaqueActionsOnly: true,
@@ -59,6 +64,30 @@ internal static class BridgeV2Runtime
                     "received", "validated", "started", "completed", "rejected", "failed", "timed_out"
                 },
                 OutcomeTimeoutMs: CommandOutcomeTimeoutMs),
+            new InspectionContractCapability(
+                Status: "disabled_not_implemented",
+                StateBound: true,
+                ArbitraryQueriesAllowed: false,
+                EntersCommandLedger: false,
+                VisibilityClasses: new[] { "on_screen", "normal_inspection", "count_only" },
+                OrderingSemantics: new[] { "unordered_multiset", "player_sorted" },
+                ImplementedKinds: Array.Empty<string>()),
+            new[]
+            {
+                BridgeDiagnostics.Create(
+                    "bridge.protocol.incremental_preview",
+                    "info",
+                    "compatibility",
+                    "none",
+                    "unknown"),
+                BridgeDiagnostics.Create(
+                    "bridge.inspection.disabled",
+                    "info",
+                    "visibility",
+                    "none",
+                    "unknown",
+                    "Read-only inspection has a contract boundary but no enabled endpoint or kind.")
+            },
             warnings);
     }
 
@@ -100,6 +129,7 @@ internal static class BridgeV2Runtime
                 BridgeIdentity(),
                 draft.Game,
                 ObservationPolicy(),
+                BridgeDiagnostics.ForObservation(draft),
                 draft.Warnings);
         }
     }

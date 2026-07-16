@@ -47,14 +47,13 @@ coverage.
   DeepSeek-selected targeted Strike passed state revalidation and command
   confirmation; the post-state showed the card left hand, energy spent, and
   enemy HP reduced. This qualifies the observed targeted-card shape only.
-- Three-surface composition/inspection/diagnostics audit completed. The
-  architecture keeps one semantic context, one active action-owning surface,
-  and explicit authority. Bridge-side active-surface resolution and typed
-  diagnostics must precede the fourth surface; read-only inspection remains a
-  separate, unimplemented capability.
-- Ordinary `reward_flow + card_reward_selection` is the next selected slice.
-  Visible reward alternatives must retain their own semantics and must not be
-  collapsed into an assumed `can_skip` flag.
+- Source `preview.3` implements the composition/inspection/diagnostics audit:
+  centralized overlay-vs-room active-surface ownership, typed diagnostics, and
+  a disabled/non-executable inspection contract.
+- Ordinary `reward_flow + card_reward_selection` is now exact-source and
+  fixture qualified. Visible reward alternatives retain their labels and are
+  never collapsed into `can_skip`; unreadable labels suppress all actions.
+  Organic Bridge/Re lifecycle evidence is still pending.
 
 ## Legacy Assessment
 
@@ -102,7 +101,7 @@ No memory, learning, scoring, strategic scaffold, shadow mode, live additive mod
 
 ## Validation
 
-On 2026-07-15, a clean `npm ci` reported zero vulnerabilities, then `npm run check` passed strict source-and-test typechecking, 39 tests across 6 files, and the production TypeScript build. On 2026-07-16 the MCP service became available: `inspect` normalized a live Neow event with `diagnostics.status=ok`; a dry run recorded its prompt/evidence; then DeepSeek selected a legal event option that MCP accepted and settled. The subsequent bounded run surfaced a real `monster` post-combat shell without `battle`, recorded it safely, and added fixture-backed transition support. The Bridge v2 context/surface/authority pass expanded contract coverage, and the current check passes 71 tests across 9 files. See the latest command output rather than treating these historical counts as a permanent invariant.
+On 2026-07-15, a clean `npm ci` reported zero vulnerabilities, then `npm run check` passed strict source-and-test typechecking, 39 tests across 6 files, and the production TypeScript build. On 2026-07-16 the MCP service became available: `inspect` normalized a live Neow event with `diagnostics.status=ok`; a dry run recorded its prompt/evidence; then DeepSeek selected a legal event option that MCP accepted and settled. The subsequent bounded run surfaced a real `monster` post-combat shell without `battle`, recorded it safely, and added fixture-backed transition support. The `preview.3` contract pass now succeeds with 74 Re tests and 27 Bridge tests. See the latest command output rather than treating these historical counts as a permanent invariant.
 
 ## Next Step
 
@@ -118,9 +117,8 @@ npm run agent:replay
 
 Start a fresh game manually, then run bounded windows and inspect each run with `npm run agent:replay`. Confirm that each record contains pre/post raw snapshots, the prompt, DeepSeek response, selected allowed action, MCP result, and settled post-state. Fix a repeatable protocol mismatch with a reduced raw fixture and contract test before running longer loops.
 
-Do not repeat event/combat qualification merely to widen claims. The next
-engineering window should add Bridge typed diagnostics alongside legacy
-warnings, centralize active-surface resolution without behavior change, and
-then implement and independently qualify the bounded card-reward slice. Keep
-inspection disabled until its exact-build bindings and state-bound read contract
-are implemented and tested.
+Do not add a fifth surface yet. Close the game, build/install the `preview.3`
+Bridge, restart, verify capabilities/state read-only, then independently qualify
+the bounded card-reward slice with one organic Bridge/Re lifecycle. Keep
+inspection disabled until exact-build read bindings, a state-bound endpoint,
+recording, and contract tests exist.

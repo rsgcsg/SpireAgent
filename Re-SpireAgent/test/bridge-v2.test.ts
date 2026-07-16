@@ -9,7 +9,7 @@ import type { JsonObject } from "../src/shared/json.js";
 import { fixture } from "./helpers.js";
 
 const CAPABILITIES = {
-  protocol_version: "2.0-preview.2",
+  protocol_version: "2.0-preview.3",
   bridge: { id: "sts2_mcp_bridge_v2", name: "STS2 Agent Bridge", version: "0.5.0-dev", upstream_commit: "upstream" },
   game: {
     version: "v0.108.0",
@@ -22,14 +22,32 @@ const CAPABILITIES = {
   surfaces: [
     { kind: "deck_enchant_selection", support: "implemented_exact_game_version", operations: ["toggle_card"], evidence: "test-contract" },
     { kind: "event_option", support: "implemented_exact_game_version", operations: ["choose_event_option", "proceed_event"], evidence: "test-contract" },
-    { kind: "combat_turn", support: "implemented_exact_game_version", operations: ["play_card", "use_potion", "end_turn"], evidence: "test-contract" }
+    { kind: "combat_turn", support: "implemented_exact_game_version", operations: ["play_card", "use_potion", "end_turn"], evidence: "test-contract" },
+    { kind: "card_reward_selection", support: "implemented_exact_game_version", operations: ["select_card_reward", "choose_card_reward_alternative"], evidence: "test-contract" }
   ],
   commands: { opaque_actions_only: true, state_bound: true, idempotent_request_ids: true, lifecycle_states: ["started", "completed"], outcome_timeout_ms: 10000 },
+  inspections: {
+    status: "disabled_not_implemented",
+    state_bound: true,
+    arbitrary_queries_allowed: false,
+    enters_command_ledger: false,
+    visibility_classes: ["on_screen", "normal_inspection", "count_only"],
+    ordering_semantics: ["unordered_multiset", "player_sorted"],
+    implemented_kinds: []
+  },
+  diagnostics: [{
+    code: "bridge.inspection.disabled",
+    severity: "info",
+    category: "visibility",
+    effect: "none",
+    recoverability: "unknown",
+    safe_detail: "Inspection is disabled."
+  }],
   warnings: []
 };
 
 const DECK_ENCHANT_STATE = {
-  protocol_version: "2.0-preview.2",
+  protocol_version: "2.0-preview.3",
   state_id: "state-test-1",
   state_sequence: 1,
   observed_at: "2026-07-16T00:00:00Z",
@@ -92,6 +110,7 @@ const DECK_ENCHANT_STATE = {
   bridge: CAPABILITIES.bridge,
   game: CAPABILITIES.game,
   observation_policy: CAPABILITIES.observation_policy,
+  diagnostics: [],
   warnings: []
 };
 
@@ -222,6 +241,61 @@ const COMBAT_TURN_STATE = {
   }
 };
 
+const CARD_REWARD_STATE = {
+  ...DECK_ENCHANT_STATE,
+  state_id: "state-card-reward-1",
+  state_sequence: 4,
+  context: { kind: "reward_flow", reward_kind: "card_reward" },
+  surface_kind: "card_reward_selection",
+  surface: {
+    kind: "card_reward_selection",
+    screen_entity_id: "card-reward-screen-1",
+    cards: [{
+      entity_id: "reward-card-1",
+      definition_id: "POMMEL_STRIKE",
+      name: "Pommel Strike",
+      type: "Attack",
+      cost: "1",
+      star_cost: null,
+      description: "Deal damage. Draw a card.",
+      rarity: "Common",
+      is_upgraded: false,
+      is_selected: false,
+      existing_enchantment: null
+    }],
+    alternatives: [
+      { entity_id: "reward-alt-1", index: 0, label: "Reroll", enabled: true },
+      { entity_id: "reward-alt-2", index: 1, label: "Sacrifice", enabled: true }
+    ]
+  },
+  legal_actions: [
+    {
+      action_id: "action-card-reward-card-1",
+      state_id: "state-card-reward-1",
+      kind: "select_card_reward",
+      category: "selection",
+      label: "Take Pommel Strike",
+      authority: "game_ui",
+      evidence_code: "NCardRewardSelectionScreen.SelectCard via NCardHolder.Pressed"
+    },
+    {
+      action_id: "action-card-reward-alt-1",
+      state_id: "state-card-reward-1",
+      kind: "choose_card_reward_alternative",
+      category: "alternative",
+      label: "Reroll",
+      authority: "game_ui",
+      evidence_code: "NCardRewardAlternativeButton.visible_label+ForceClick"
+    }
+  ],
+  completeness: {
+    player_visible_semantics: "contract_complete_for_card_reward_selection",
+    legal_actions: "derived_from_current_clickability_and_enabled_buttons",
+    sources: ["NCardRewardSelectionScreen.UI.CardRow", "NCardRewardSelectionScreen.UI.RewardAlternatives"],
+    missing: []
+  }
+};
+
 const TEST_SOURCE: AdapterDescriptor = {
   adapterId: "sts2mcp-rest-negotiated",
   endpoint: "http://adapter.test",
@@ -247,6 +321,87 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     expect(() => decodeBridgeV2State({ ...EVENT_OPTION_STATE, context: COMBAT_TURN_STATE.context })).toThrow(
       "event_option surface requires event context"
     );
+  });
+
+  it("strictly decodes card reward cards and separately labeled alternatives", () => {
+    expect(decodeBridgeV2State(CARD_REWARD_STATE).data.context.kind).toBe("reward_flow");
+    expect(decodeBridgeV2State(CARD_REWARD_STATE).data.surface.kind).toBe("card_reward_selection");
+    expect(() => decodeBridgeV2State({ ...CARD_REWARD_STATE, context: COMBAT_TURN_STATE.context })).toThrow(
+      "card_reward_selection surface requires reward_flow context"
+    );
+
+    const envelope = normalizeCurrentState(
+      wrapBridgeV2State({ state: structuredClone(CARD_REWARD_STATE), capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    );
+    expect(envelope.currentState).toMatchObject({
+      actionAuthority: "bridge_advertised",
+      context: { kind: "reward_flow", rewardKind: "card_reward" },
+      surface: { kind: "card_reward_selection", alternatives: [{ label: "Reroll" }, { label: "Sacrifice" }] },
+      bridgeInspectionPolicy: { status: "disabled_not_implemented", implementedKinds: [] }
+    });
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash).map((action) => action.id)).toEqual([
+      "action-card-reward-card-1",
+      "action-card-reward-alt-1"
+    ]);
+  });
+
+  it("preserves informational diagnostics but fails closed on contradictory action suppression", () => {
+    const informational = normalizeCurrentState(
+      wrapBridgeV2State({ state: structuredClone(DECK_ENCHANT_STATE), capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    );
+    expect(informational.currentState.bridgeDiagnostics).toEqual([
+      expect.objectContaining({ code: "bridge.inspection.disabled", effect: "none", source: "capabilities" })
+    ]);
+    expect(informational.currentState.actionAuthority).toBe("bridge_advertised");
+
+    const contradictory = structuredClone(DECK_ENCHANT_STATE) as unknown as JsonObject;
+    contradictory.diagnostics = [{
+      code: "bridge.action.blocked",
+      severity: "error",
+      category: "action",
+      effect: "actions_suppressed",
+      recoverability: "settle",
+      required_for_action: true
+    }];
+    const blocked = normalizeCurrentState(
+      wrapBridgeV2State({ state: contradictory, capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    );
+    expect(blocked.currentState.actionAuthority).toBe("none");
+    expect(blocked.currentState.stability).toBe("invalid");
+
+    const contradictoryCapabilities = structuredClone(CAPABILITIES) as unknown as JsonObject;
+    contradictoryCapabilities.diagnostics = [{
+      code: "bridge.capability.action.blocked",
+      severity: "error",
+      category: "action",
+      effect: "actions_suppressed",
+      recoverability: "update_bridge",
+      required_for_action: true
+    }];
+    const capabilityBlocked = normalizeCurrentState(
+      wrapBridgeV2State({ state: structuredClone(DECK_ENCHANT_STATE), capabilities: contradictoryCapabilities }),
+      TEST_SOURCE
+    );
+    expect(capabilityBlocked.currentState.actionAuthority).toBe("none");
+    expect(capabilityBlocked.currentState.stability).toBe("invalid");
+  });
+
+  it("rejects any inspection capability expansion while inspection is disabled", () => {
+    const expandedCapabilities = structuredClone(CAPABILITIES) as unknown as JsonObject;
+    const inspections = expandedCapabilities.inspections as JsonObject;
+    inspections.arbitrary_queries_allowed = true;
+
+    const envelope = normalizeCurrentState(
+      wrapBridgeV2State({ state: structuredClone(DECK_ENCHANT_STATE), capabilities: expandedCapabilities }),
+      TEST_SOURCE
+    );
+
+    expect(envelope.currentState.actionAuthority).toBe("none");
+    expect(envelope.currentState.stability).toBe("invalid");
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toEqual([]);
   });
 
   it("preserves enchant semantics and imports only advertised opaque actions", async () => {

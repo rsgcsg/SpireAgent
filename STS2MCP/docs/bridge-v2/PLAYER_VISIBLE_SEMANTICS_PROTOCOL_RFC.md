@@ -80,7 +80,8 @@ make the surface degraded/unsupported with no actions. Typed diagnostics must
 separate severity from effect: an inspection warning may omit a field without
 removing immediate action authority, while identity/action/completion errors
 must explicitly suppress actions or mark outcome unknown. Free-text warnings
-remain `preview.2` compatibility debt.
+remain preview compatibility debt; `preview.3` adds typed diagnostics alongside
+them.
 
 ## Evidence From Current Surfaces
 
@@ -89,8 +90,9 @@ remain `preview.2` compatibility debt.
 | deck enchant | overlay stage, per-instance identity, visible effect semantics, exact completion |
 | event option | narrative context must remain separate from simple option protocol |
 | combat turn | shared entities/resources, target legality, phase settling, performance, future inspection |
+| card reward | open-set alternatives, short settling interval, replacement-in-place completion |
 
-These three surfaces justify typed contexts, an explicit provider registry,
+These four source contracts justify typed contexts, an explicit provider registry,
 stable entity identity, and state-level authority. They do not justify a
 universal ECS, auto-discovered reflection providers, or a broad generic action
 schema.
@@ -105,11 +107,11 @@ a fact the UI already reveals.
 ## Resolved Reference-Audit Questions
 
 - Typed surface serialization: resolved with `IBridgeSurface` and converter.
-- Surface provider selection: resolved with an explicit ordered registry and
-  fail-closed ambiguous-match handling.
-- Re-SpireAgent v2 consumption: resolved for three fixture contracts; deck
+- Surface provider selection: resolved with a centralized overlay-vs-room
+  resolver and fail-closed ambiguous-match handling.
+- Re-SpireAgent v2 consumption: resolved for four fixture contracts; deck
   enchant, ordinary event option, and one targeted combat-card lifecycle have
-  bounded organic qualification.
+  bounded organic qualification, while card reward remains organic-pending.
 - `context.kind` as whole-state identity: rejected. Context, surface, and
   authority are independently visible.
 - Duplicate combat semantics in surface: rejected; combat player/potions live
@@ -117,7 +119,7 @@ a fact the UI already reveals.
 
 ## Open Questions
 
-- structured warning/diagnostic wire schema and compatibility rollout;
+- organic qualification of typed diagnostics and card reward;
 - process-global runtime/session isolation;
 - observation ID versus executable state ID;
 - scalable read-only zone/deck inspection;
@@ -132,15 +134,16 @@ The protocol will keep one context and one active action-owning surface. It will
 not serialize a recursive executable surface stack. Future card-selection and
 reward overlays replace the active surface while preserving the semantic
 context; the underlying surface contributes no actions until it becomes active
-again. A small active-surface resolver should capture `NOverlayStack.Peek()` and
-room/phase facts once before routing to one provider.
+again. A small active-surface resolver now captures `NOverlayStack.Peek()` once
+and routes only the active provider family. Broader room/phase facts remain
+owned by bounded providers rather than a universal UI model.
 
 ## Next Surface
 
-The next candidate is ordinary `reward_flow + card_reward_selection`. It must
-model each visible `NCardRewardAlternativeButton` as its own alternative rather
-than reducing every alternative to a `can_skip` boolean. It remains unimplemented
-until the resolver and diagnostic boundaries are contract-tested.
+Ordinary `reward_flow + card_reward_selection` is implemented in source. It
+models each visible `NCardRewardAlternativeButton` separately and fails closed
+if its player-facing label is unreadable. It remains unqualified for runtime
+until a fresh installed Bridge and Re-SpireAgent lifecycle smoke passes.
 
 ## Qualification Rule
 

@@ -33,11 +33,13 @@ Required client behavior:
 - never auto-retry unknown outcomes;
 - permit only one executor during v1/v2 dual-read tests.
 
-Source `2.0-preview.2` has strict projections for `deck_enchant_selection`,
-`event_option`, and `combat_turn`. Deck enchant and ordinary event option are
-organically qualified; combat remains fixture-only until its fresh smoke. In
-`auto` mode, unsupported v2 surfaces remain on v1; a v2-owned surface imports
-only bridge actions.
+Source `2.0-preview.3` has strict projections for `deck_enchant_selection`,
+`event_option`, `combat_turn`, and `card_reward_selection`, plus typed
+diagnostics and a disabled inspection policy. Deck enchant, ordinary event
+option, and one targeted combat action are organically qualified. Card reward
+is fixture-qualified and remains organic-pending until a fresh process loads
+the new DLL. In `auto` mode, unsupported v2 surfaces remain on v1; a v2-owned
+surface imports only bridge actions.
 Exact-build or context/surface incompatibility never silently falls back to v1
 authority. Runtime and prompt identity always expose `context.kind +
 surface.kind + actionAuthority`.

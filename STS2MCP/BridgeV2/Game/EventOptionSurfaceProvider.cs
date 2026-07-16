@@ -18,7 +18,10 @@ internal sealed class EventOptionSurfaceProvider : IBridgeSurfaceProvider
 {
     public string Kind => "event_option";
 
+    public BridgeSurfaceLayer Layer => BridgeSurfaceLayer.Room;
+
     public BridgeObservationDraft? TryBuild(
+        ActiveSurfaceSnapshot snapshot,
         BridgeEntityRegistry entities,
         GameBuildIdentity game)
     {
@@ -27,8 +30,7 @@ internal sealed class EventOptionSurfaceProvider : IBridgeSurfaceProvider
         if (runState?.CurrentRoom is not EventRoom eventRoom
             || room == null
             || !McpMod.IsLiveNode(room)
-            || CombatManager.Instance.IsInProgress
-            || NOverlayStack.Instance?.Peek() != null)
+            || CombatManager.Instance.IsInProgress)
         {
             return null;
         }

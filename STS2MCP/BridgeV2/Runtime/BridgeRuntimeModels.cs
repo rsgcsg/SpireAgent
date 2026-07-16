@@ -36,7 +36,11 @@ internal sealed record BridgeObservationDraft(
     StateCompleteness Completeness,
     GameBuildIdentity Game,
     IReadOnlyList<string> Warnings,
-    IReadOnlyList<BridgeActionDraft> Actions);
+    IReadOnlyList<BridgeActionDraft> Actions)
+{
+    public IReadOnlyList<BridgeDiagnostic> Diagnostics { get; init; } =
+        Array.Empty<BridgeDiagnostic>();
+}
 
 internal sealed record RegisteredBridgeAction(
     LegalAction Descriptor,

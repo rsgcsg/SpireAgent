@@ -10,15 +10,15 @@ fixture is not organic v2 qualification.
 | player-phase combat turn | player, hand, piles counts, statuses, relics, potions, orbs, enemies, intents | implemented | card left hand/subsurface, potion consumed, play phase ended | Bridge + Re targeted-card passed | runtime-qualified for immediate player turn |
 | ancient event dialogue | event context only | none | none | none | explicit unsupported |
 | combat card selection | combat parent context possible | none | none | none | unsupported |
-| card reward selection | planned `reward_flow` context | planned exact card/alternative actions | not implemented | none | selected next slice; still unsupported |
+| card reward selection | `reward_flow`, visible cards, separately labeled alternatives | exact card/alternative actions | overlay closes or option objects are replaced | none | source + fixture qualified; organic pending |
 | generic deck selection | none | none | none | none | unsupported |
 | bundle/relic selection | none | none | none | none | unsupported |
 | map/rest/shop/rewards/treasure | none | none | none | none | unsupported |
 | menu/game over | none | none | none | none | unsupported |
-| read-only deck/pile inspection | none | n/a | n/a | none | future inspection contract |
+| read-only deck/pile inspection | disabled capability contract only | n/a | n/a | none | no endpoint or implemented kind |
 | multiplayer | none | none | none | none | intentionally unsupported |
 
-## Shared Semantics Learned From Three Surfaces
+## Shared Semantics Learned From Four Source Contracts
 
 - `context.kind` answers which game situation exists; it does not identify the
   blocking interaction by itself.
@@ -31,6 +31,9 @@ fixture is not organic v2 qualification.
 - context/surface combinations are validated. `event + event_option` and
   `combat + combat_turn` have bounded organic lifecycle evidence; mismatches
   still fail closed.
+- Card reward alternatives are an open set of visible choices, not a skip
+  boolean. If any visible alternative lacks readable semantics, the whole
+  strategic choice fails closed rather than hiding an option.
 
 ## Known Visibility Gaps
 
@@ -59,3 +62,5 @@ fixture is not organic v2 qualification.
   blocking decision.
 - Structured diagnostics must distinguish action-suppressing gaps from
   non-blocking inspection omissions.
+- The inspection boundary is now machine-readable but remains disabled. It is
+  not evidence that pile/deck inspection has been implemented.

@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using MegaCrit.Sts2.Core.Runs;
 using STS2_MCP.BridgeV2.Protocol;
 using STS2_MCP.BridgeV2.Runtime;
 
@@ -12,6 +10,7 @@ internal static class BridgeSnapshotBuilder
     private static readonly IBridgeSurfaceProvider[] Providers =
     {
         new DeckEnchantSurfaceProvider(),
+        new CardRewardSurfaceProvider(),
         new CombatTurnSurfaceProvider(),
         new EventOptionSurfaceProvider()
     };
@@ -19,14 +18,42 @@ internal static class BridgeSnapshotBuilder
     public static BridgeObservationDraft Build(BridgeEntityRegistry entities)
     {
         GameBuildIdentity game = BridgeGameIdentity.Read();
+        ActiveSurfaceSnapshot snapshot;
+        try
+        {
+            snapshot = ActiveSurfaceResolver.Capture();
+        }
+        catch (Exception ex)
+        {
+            return Unsupported(
+                game,
+                "surface_capture_failed",
+                $"Active surface capture failed closed: {ex.GetType().Name}.",
+                new[] { $"active_surface_capture_failed:{ex.GetType().Name}" },
+                context: null,
+                BridgeDiagnostics.Create(
+                    "bridge.surface.capture_failed",
+                    "error",
+                    "surface",
+                    "actions_suppressed",
+                    "restart",
+                    ex.GetType().Name));
+        }
         if (!game.Compatibility.ActionExecutionAllowed)
         {
             return Unsupported(
                 game,
-                DetectSourceType(),
+                snapshot.SourceType,
                 game.Compatibility.Detail,
                 new[] { "game_build_identity_not_exact" },
-                context: null);
+                context: null,
+                BridgeDiagnostics.Create(
+                    "bridge.identity.exact_build_required",
+                    "error",
+                    "identity",
+                    "actions_suppressed",
+                    "update_bridge",
+                    game.Compatibility.Detail));
         }
 
         if (McpMod.IsMultiplayerRun())
@@ -36,47 +63,68 @@ internal static class BridgeSnapshotBuilder
                 "multiplayer_run",
                 "Bridge v2 multiplayer semantics are not implemented in this revision.",
                 new[] { "multiplayer_v2_not_implemented" },
-                context: null);
+                context: null,
+                BridgeDiagnostics.Create(
+                    "bridge.compatibility.multiplayer_not_implemented",
+                    "error",
+                    "compatibility",
+                    "surface_unsupported",
+                    "unknown"));
         }
 
-        var matches = new List<(string Kind, BridgeObservationDraft Draft)>();
-        foreach (IBridgeSurfaceProvider provider in Providers)
+        ActiveSurfaceResolution resolution = ActiveSurfaceResolver.Resolve(
+            snapshot,
+            Providers,
+            entities,
+            game);
+        if (resolution.Failure != null)
         {
-            try
-            {
-                BridgeObservationDraft? draft = provider.TryBuild(entities, game);
-                if (draft != null)
-                    matches.Add((provider.Kind, draft));
-            }
-            catch (Exception ex)
-            {
-                return Unsupported(
-                    game,
-                    DetectSourceType(),
-                    $"The {provider.Kind} provider failed closed: {ex.GetType().Name}.",
-                    new[] { $"surface_provider_failed:{provider.Kind}:{ex.GetType().Name}" },
-                    BridgeContextBuilder.Build(entities));
-            }
+            string provider = resolution.FailedProvider ?? "unknown";
+            return Unsupported(
+                game,
+                snapshot.SourceType,
+                $"The {provider} provider failed closed: {resolution.Failure.GetType().Name}.",
+                new[] { $"surface_provider_failed:{provider}:{resolution.Failure.GetType().Name}" },
+                BridgeContextBuilder.Build(entities),
+                BridgeDiagnostics.Create(
+                    "bridge.surface.provider_failed",
+                    "error",
+                    "runtime",
+                    "surface_unsupported",
+                    "restart",
+                    $"{provider}:{resolution.Failure.GetType().Name}"));
         }
 
-        if (matches.Count == 1)
-            return matches[0].Draft;
-        if (matches.Count > 1)
+        if (resolution.Draft != null)
+            return resolution.Draft;
+        if (resolution.MatchedKinds.Count > 1)
         {
             return Unsupported(
                 game,
-                DetectSourceType(),
-                $"Multiple Bridge v2 surface providers matched: {string.Join(", ", matches.Select(match => match.Kind))}.",
+                snapshot.SourceType,
+                $"Multiple Bridge v2 surface providers matched: {string.Join(", ", resolution.MatchedKinds)}.",
                 new[] { "ambiguous_surface_provider_match" },
-                BridgeContextBuilder.Build(entities));
+                BridgeContextBuilder.Build(entities),
+                BridgeDiagnostics.Create(
+                    "bridge.surface.ambiguous_owner",
+                    "error",
+                    "surface",
+                    "actions_suppressed",
+                    "restart"));
         }
 
         return Unsupported(
             game,
-            DetectSourceType(),
+            snapshot.SourceType,
             "This surface has not yet received a game-fact-audited v2 adapter.",
             new[] { "surface_not_implemented" },
-            BridgeContextBuilder.Build(entities));
+            BridgeContextBuilder.Build(entities),
+            BridgeDiagnostics.Create(
+                "bridge.surface.not_implemented",
+                "warning",
+                "surface",
+                "surface_unsupported",
+                "change_surface"));
     }
 
     private static BridgeObservationDraft Unsupported(
@@ -84,7 +132,8 @@ internal static class BridgeSnapshotBuilder
         string sourceType,
         string reason,
         IReadOnlyList<string> warnings,
-        IBridgeContext? context)
+        IBridgeContext? context,
+        BridgeDiagnostic diagnostic)
     {
         var surface = new UnsupportedSurface("unsupported", sourceType, reason);
         context ??= new UnknownBridgeContext(
@@ -106,22 +155,9 @@ internal static class BridgeSnapshotBuilder
             completeness,
             game,
             warnings,
-            Array.Empty<BridgeActionDraft>());
-    }
-
-    private static string DetectSourceType()
-    {
-        try
+            Array.Empty<BridgeActionDraft>())
         {
-            var overlay = MegaCrit.Sts2.Core.Nodes.Screens.Overlays.NOverlayStack.Instance?.Peek();
-            if (overlay != null)
-                return overlay.GetType().Name;
-
-            return RunManager.Instance.IsInProgress ? "run_without_overlay" : "menu_or_no_run";
-        }
-        catch (Exception ex)
-        {
-            return "unknown:" + ex.GetType().Name;
-        }
+            Diagnostics = new[] { diagnostic }
+        };
     }
 }

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using STS2_MCP.BridgeV2.Game;
 using STS2_MCP.BridgeV2.Protocol;
 using STS2_MCP.BridgeV2.Runtime;
 
@@ -65,6 +66,7 @@ public sealed class BridgeContractTests
             new BridgeServerIdentity("bridge", "Bridge", "test", "commit"),
             new GameBuildIdentity(null, null, null, null, new CompatibilityAssessment("unknown", Array.Empty<string>(), Array.Empty<string>(), false, "unknown")),
             new ObservationPolicyInfo("policy", "visible", false, "omit"),
+            Array.Empty<BridgeDiagnostic>(),
             Array.Empty<string>());
 
         string json = JsonSerializer.Serialize(envelope, options);
@@ -75,6 +77,82 @@ public sealed class BridgeContractTests
         Assert.Contains("\"surface\":{\"kind\":\"unsupported\"", json);
         Assert.Contains("\"source_type\":\"test\"", json);
         Assert.Contains("\"reason\":\"not implemented\"", json);
+    }
+
+    [Fact]
+    public void InspectionContractIsReadOnlyAndDisabledByDefault()
+    {
+        var contract = new InspectionContractCapability(
+            "disabled_not_implemented",
+            StateBound: true,
+            ArbitraryQueriesAllowed: false,
+            EntersCommandLedger: false,
+            new[] { "on_screen", "normal_inspection", "count_only" },
+            new[] { "unordered_multiset", "player_sorted" },
+            Array.Empty<string>());
+
+        Assert.True(contract.StateBound);
+        Assert.False(contract.ArbitraryQueriesAllowed);
+        Assert.False(contract.EntersCommandLedger);
+        Assert.Empty(contract.ImplementedKinds);
+        Assert.DoesNotContain("hidden", contract.VisibilityClasses);
+    }
+
+    [Fact]
+    public void StructuredDiagnosticSeparatesSeverityFromOperationalEffect()
+    {
+        var diagnostic = new BridgeDiagnostic(
+            "bridge.visibility.deferred_inspection",
+            "warning",
+            "visibility",
+            "field_omitted",
+            "unknown",
+            Path: "context.player.draw_pile",
+            VisibilityClass: "normal_inspection",
+            RequiredForAction: false,
+            SafeDetail: "Pile order is not exposed.");
+
+        Assert.Equal("warning", diagnostic.Severity);
+        Assert.Equal("field_omitted", diagnostic.Effect);
+        Assert.False(diagnostic.RequiredForAction);
+    }
+
+    [Fact]
+    public void ActiveSurfaceResolverGivesBlockingOverlayExclusivePrecedence()
+    {
+        Assert.Equal(BridgeSurfaceLayer.Overlay, ActiveSurfaceResolver.SelectLayer(true));
+        Assert.Equal(BridgeSurfaceLayer.Room, ActiveSurfaceResolver.SelectLayer(false));
+        Assert.True(ActiveSurfaceResolver.IsActiveLayer(BridgeSurfaceLayer.Overlay, true));
+        Assert.False(ActiveSurfaceResolver.IsActiveLayer(BridgeSurfaceLayer.Room, true));
+        Assert.True(ActiveSurfaceResolver.IsActiveLayer(BridgeSurfaceLayer.Room, false));
+        Assert.False(ActiveSurfaceResolver.IsActiveLayer(BridgeSurfaceLayer.Overlay, false));
+    }
+
+    [Fact]
+    public void CardRewardContractPreservesAlternativesInsteadOfCanSkip()
+    {
+        IBridgeContext context = new RewardFlowBridgeContext("reward_flow", "card_reward");
+        IBridgeSurface surface = new CardRewardSelectionSurface(
+            "card_reward_selection",
+            "screen-a",
+            Array.Empty<VisibleCard>(),
+            new[]
+            {
+                new VisibleCardRewardAlternative("alternative-a", 0, "Reroll", true),
+                new VisibleCardRewardAlternative("alternative-b", 1, "Sacrifice", true)
+            });
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+        };
+
+        string json = JsonSerializer.Serialize(new { context, surface }, options);
+
+        Assert.Contains("\"kind\":\"reward_flow\"", json);
+        Assert.Contains("\"kind\":\"card_reward_selection\"", json);
+        Assert.Contains("\"label\":\"Reroll\"", json);
+        Assert.Contains("\"label\":\"Sacrifice\"", json);
+        Assert.DoesNotContain("can_skip", json);
     }
 
     [Fact]
@@ -98,4 +176,5 @@ public sealed class BridgeContractTests
         Assert.Contains("\"surface\":{\"kind\":\"event_option\"", json);
         Assert.DoesNotContain("surface_kind", json);
     }
+
 }

@@ -7,7 +7,10 @@ internal interface IBridgeSurfaceProvider
 {
     string Kind { get; }
 
+    BridgeSurfaceLayer Layer { get; }
+
     BridgeObservationDraft? TryBuild(
+        ActiveSurfaceSnapshot snapshot,
         BridgeEntityRegistry entities,
         GameBuildIdentity game);
 }

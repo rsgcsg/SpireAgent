@@ -1,5 +1,12 @@
 # Bridge v2 Composition, Inspection, And Diagnostics Audit
 
+> Implementation follow-up: source `2.0-preview.3` now contains the typed
+> diagnostics contract, centralized overlay-vs-room `ActiveSurfaceResolver`, a
+> disabled/non-executable inspection capability boundary, and a fixture-backed
+> `reward_flow + card_reward_selection` slice. Organic card-reward lifecycle
+> evidence is still pending; the original three-surface evidence below remains
+> historical input rather than proof of the fourth slice.
+
 Status date: 2026-07-16
 
 ## Executive Verdict
@@ -334,4 +341,3 @@ de facto protocol.
 5. Run fixture, strict Re projection, and one bounded organic lifecycle smoke.
 6. Reassess whether combat card selection or run-deck inspection is the next
    higher-value slice.
-

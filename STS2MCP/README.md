@@ -14,13 +14,16 @@ Bridge v2 is an incremental preview, not a replacement for all v1 surfaces.
 - Runtime-qualified `2.0-preview.2` slices: singleplayer deck enchant,
   ordinary event options, and one immediate player-phase targeted-card combat
   lifecycle. Qualification remains bounded to those action shapes.
+- Source `2.0-preview.3` adds typed diagnostics, centralized active-surface
+  ownership, a disabled inspection boundary, and fixture-qualified card reward
+  selection. Card reward still awaits organic qualification in a fresh process.
 - All unimplemented or version-incompatible v2 surfaces fail closed with no
   legal actions.
 - v1 remains available for compatibility and has been made build-compatible
   with `v0.108.0`; its index-based action contract is legacy.
-- Static build/protocol tests and real `v0.108.0` Bridge plus Re-SpireAgent
-  lifecycle smokes pass for the three listed slices. Unlisted surfaces remain
-  unsupported.
+- Static build/protocol tests pass for all four source slices. Real `v0.108.0`
+  Bridge plus Re-SpireAgent lifecycle smokes pass for the first three; card
+  reward remains organic-pending. Unlisted surfaces remain unsupported.
 
 See [current status](docs/bridge-v2/CURRENT_STATUS.md), the
 [upstream/design audit](docs/bridge-v2/UPSTREAM_AUDIT.md), and the
@@ -83,7 +86,7 @@ dotnet test STS2_MCP.sln -p:STS2GameDir="$env:STS2_GAME_DIR"
 .\build.ps1 -GameDir "$env:STS2_GAME_DIR"
 ```
 
-The solution currently contains 23 pure contract/runtime/security tests covering stable
+The solution currently contains 27 pure contract/runtime/security tests covering stable
 state identity, entity identity, stale-state rejection, idempotent request IDs,
 completion observation, timeout-as-unknown, and JSON action shape.
 
@@ -183,9 +186,9 @@ Exact-build mismatch, context/surface mismatch, command-response identity
 mismatch, failed command, and timeout all fail closed.
 
 The deck-enchant, ordinary-event, and one targeted combat-card lifecycle are
-organically qualified. Planning code never reads arbitrary bridge JSON. The
-next selected slice is card reward, but typed diagnostics and centralized
-surface resolution come first.
+organically qualified. Planning code never reads arbitrary bridge JSON. Source
+`preview.3` also implements card reward without assuming alternative buttons
+mean skip; that slice remains pending organic Bridge and Re lifecycle evidence.
 
 ## Security And Observation Scope
 

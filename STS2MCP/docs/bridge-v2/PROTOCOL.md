@@ -1,6 +1,6 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.2`
+Protocol preview: `2.0-preview.3`
 
 ## Endpoints
 
@@ -25,7 +25,7 @@ Every state response contains:
 - typed surface data;
 - state-scoped opaque legal actions;
 - completeness sources and missing fields;
-- warnings.
+- typed diagnostics and legacy compatibility warnings.
 
 Timestamps and logging fields do not change `state_id`. Semantic context,
 surface data, or the legal action set does.
@@ -106,6 +106,13 @@ Additional preview.2 completion evidence:
 | combat potion | potion leaves its exact slot or combat ends |
 | combat end turn | local player play phase ends or combat ends |
 
+Additional preview.3 completion evidence:
+
+| Surface/action | Completion evidence |
+|---|---|
+| card reward card | reward overlay closes or the visible option object set is replaced |
+| card reward alternative | reward overlay closes or the visible option object set is replaced, including reroll |
+
 If the state changes but the predicate does not pass, the command fails with an
 unknown outcome. Unknown outcomes are never auto-retried.
 
@@ -114,6 +121,25 @@ Clients must verify that every command response repeats the submitted
 status/outcome pairs: pending lifecycle states use `pending`, `completed` uses
 `confirmed`, `rejected` uses `not_applied`, and `failed`/`timed_out` use
 `unknown`. A mismatch is an unknown client outcome, not success.
+
+## Diagnostics
+
+`diagnostics` is structured. `severity` describes importance; `effect`
+describes operational consequence. Only explicit effects and contract
+invariants affect action authority. An informational inspection diagnostic may
+coexist with actions; `actions_suppressed`, `surface_unsupported`, or
+`outcome_unknown` may not.
+
+Legacy `warnings` remain during preview migration. Clients preserve them for
+audit but do not infer safety from warning presence or absence.
+
+## Inspection Contract
+
+Capabilities currently advertise inspection as `disabled_not_implemented`:
+state-bound, no arbitrary queries, no hidden visibility, no command-ledger
+entry, and no implemented kinds. There is no inspection endpoint in
+`preview.3`. This contract prevents future read-only player inspection from
+being confused with an executable action or unrestricted object query.
 
 ## Error Codes
 

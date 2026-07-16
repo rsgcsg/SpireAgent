@@ -22,11 +22,14 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
 
     public string Kind => "deck_enchant_selection";
 
+    public BridgeSurfaceLayer Layer => BridgeSurfaceLayer.Overlay;
+
     public BridgeObservationDraft? TryBuild(
+        ActiveSurfaceSnapshot snapshot,
         BridgeEntityRegistry entities,
         GameBuildIdentity game)
     {
-        if (NOverlayStack.Instance?.Peek() is not NDeckEnchantSelectScreen screen)
+        if (snapshot.TopOverlay is not NDeckEnchantSelectScreen screen)
             return null;
         return Build(screen, entities, game);
     }

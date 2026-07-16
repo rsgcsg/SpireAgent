@@ -7,7 +7,7 @@ namespace STS2_MCP.BridgeV2.Protocol;
 
 public static class BridgeV2Contract
 {
-    public const string ProtocolVersion = "2.0-preview.2";
+    public const string ProtocolVersion = "2.0-preview.3";
     public const string ObservationPolicyId = "player_visible_ui_v1";
 }
 
@@ -50,6 +50,26 @@ public sealed record CommandContractCapability(
     IReadOnlyList<string> LifecycleStates,
     int OutcomeTimeoutMs);
 
+public sealed record InspectionContractCapability(
+    string Status,
+    bool StateBound,
+    bool ArbitraryQueriesAllowed,
+    bool EntersCommandLedger,
+    IReadOnlyList<string> VisibilityClasses,
+    IReadOnlyList<string> OrderingSemantics,
+    IReadOnlyList<string> ImplementedKinds);
+
+public sealed record BridgeDiagnostic(
+    string Code,
+    string Severity,
+    string Category,
+    string Effect,
+    string Recoverability,
+    string? Path = null,
+    string? VisibilityClass = null,
+    bool? RequiredForAction = null,
+    string? SafeDetail = null);
+
 public sealed record BridgeCapabilitiesResponse(
     string ProtocolVersion,
     BridgeServerIdentity Bridge,
@@ -57,6 +77,8 @@ public sealed record BridgeCapabilitiesResponse(
     ObservationPolicyInfo ObservationPolicy,
     IReadOnlyList<SurfaceCapability> Surfaces,
     CommandContractCapability Commands,
+    InspectionContractCapability Inspections,
+    IReadOnlyList<BridgeDiagnostic> Diagnostics,
     IReadOnlyList<string> Warnings);
 
 public sealed record StateCompleteness(
@@ -216,6 +238,10 @@ public sealed record CombatBridgeContext(
     VisibleCombatPlayer Player,
     IReadOnlyList<VisibleEnemy> Enemies) : IBridgeContext;
 
+public sealed record RewardFlowBridgeContext(
+    string Kind,
+    string RewardKind) : IBridgeContext;
+
 public sealed record UnknownBridgeContext(
     string Kind,
     string SourceType,
@@ -265,6 +291,18 @@ public sealed record CombatTurnSurface(
     string RoomEntityId,
     bool CanEndTurn) : IBridgeSurface;
 
+public sealed record VisibleCardRewardAlternative(
+    string EntityId,
+    int Index,
+    string Label,
+    bool Enabled);
+
+public sealed record CardRewardSelectionSurface(
+    string Kind,
+    string ScreenEntityId,
+    IReadOnlyList<VisibleCard> Cards,
+    IReadOnlyList<VisibleCardRewardAlternative> Alternatives) : IBridgeSurface;
+
 public sealed record UnsupportedSurface(
     string Kind,
     string SourceType,
@@ -283,6 +321,7 @@ public sealed record BridgeStateEnvelope(
     BridgeServerIdentity Bridge,
     GameBuildIdentity Game,
     ObservationPolicyInfo ObservationPolicy,
+    IReadOnlyList<BridgeDiagnostic> Diagnostics,
     IReadOnlyList<string> Warnings)
 {
     // Retain the preview.1 wire field while making surface.kind the sole source.

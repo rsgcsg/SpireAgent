@@ -42,17 +42,17 @@ the command ledger. Immediate context may keep compact pile counts while an
 inspection result supplies player-visible unordered contents. Hidden draw order
 and RNG are never normalized.
 
-Future structured diagnostics must preserve both severity and operational
-effect. Severity alone cannot grant or remove action authority; explicit
-readiness, completeness, and action-suppression semantics remain authoritative.
-Re should preserve unknown diagnostic codes for audit while rejecting malformed
-effects.
+Bridge v2 structured diagnostics preserve both severity and operational effect.
+Severity alone cannot grant or remove action authority; explicit readiness,
+completeness, and action-suppression semantics remain authoritative. Re
+preserves unknown diagnostic codes for audit when their structure is valid and
+rejects malformed or action-contradicting effects.
 
 ## Action Authority
 
 The action builder is deterministic but not strategic. It dispatches on the
 active surface and first enforces state-level authority. Legacy v1 states may
-reconstruct choices. Qualified Bridge deck-enchant/event/combat states import
+reconstruct choices. Qualified Bridge deck-enchant/event/combat/card-reward states import
 only current state-bound opaque actions. These authority sources never merge.
 
 DeepSeek sees summaries and returns one ID; the executable payload remains in process memory. A second state read must match both the prompt's pre-state hash and the selected action's source hash. That guard hashes the complete adapter snapshot, while a separate normalized-state hash remains available for semantic audit; unmodeled raw drift therefore stops execution rather than slipping past the normalizer.

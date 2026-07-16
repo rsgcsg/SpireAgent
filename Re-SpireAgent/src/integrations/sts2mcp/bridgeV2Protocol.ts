@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { isJsonObject, type JsonObject } from "../../shared/json.js";
 
-export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.2" as const;
+export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.3" as const;
 
 const compatibilitySchema = z.object({
   status: z.string().min(1),
@@ -145,6 +145,11 @@ const combatContextSchema = z.object({
   enemies: z.array(visibleEnemySchema)
 }).passthrough();
 
+const rewardFlowContextSchema = z.object({
+  kind: z.literal("reward_flow"),
+  reward_kind: z.literal("card_reward")
+}).passthrough();
+
 const unknownContextSchema = z.object({
   kind: z.literal("unknown"),
   source_type: z.string(),
@@ -191,6 +196,20 @@ const combatTurnSurfaceSchema = z.object({
   can_end_turn: z.boolean()
 }).passthrough();
 
+const visibleCardRewardAlternativeSchema = z.object({
+  entity_id: z.string().min(1),
+  index: z.number().int().nonnegative(),
+  label: z.string().min(1),
+  enabled: z.boolean()
+}).passthrough();
+
+const cardRewardSelectionSurfaceSchema = z.object({
+  kind: z.literal("card_reward_selection"),
+  screen_entity_id: z.string().min(1),
+  cards: z.array(visibleCardSchema),
+  alternatives: z.array(visibleCardRewardAlternativeSchema)
+}).passthrough();
+
 const unsupportedSurfaceSchema = z.object({
   kind: z.literal("unsupported"),
   source_type: z.string(),
@@ -216,6 +235,28 @@ const completenessSchema = z.object({
   missing: z.array(z.string())
 }).passthrough();
 
+const diagnosticSchema = z.object({
+  code: z.string().min(1),
+  severity: z.enum(["info", "warning", "error"]),
+  category: z.enum(["identity", "compatibility", "context", "surface", "visibility", "completeness", "action", "completion", "runtime"]),
+  effect: z.enum(["none", "field_omitted", "actions_suppressed", "surface_unsupported", "outcome_unknown"]),
+  recoverability: z.enum(["settle", "change_surface", "restart", "update_bridge", "unknown"]),
+  path: z.string().nullable().optional(),
+  visibility_class: z.enum(["on_screen", "normal_inspection", "count_only", "hidden"]).nullable().optional(),
+  required_for_action: z.boolean().nullable().optional(),
+  safe_detail: z.string().max(500).nullable().optional()
+}).passthrough();
+
+const inspectionContractSchema = z.object({
+  status: z.literal("disabled_not_implemented"),
+  state_bound: z.literal(true),
+  arbitrary_queries_allowed: z.literal(false),
+  enters_command_ledger: z.literal(false),
+  visibility_classes: z.array(z.enum(["on_screen", "normal_inspection", "count_only"])),
+  ordering_semantics: z.array(z.enum(["unordered_multiset", "player_sorted"])),
+  implemented_kinds: z.tuple([])
+}).passthrough();
+
 const stateBaseSchema = z.object({
   protocol_version: z.literal(SUPPORTED_BRIDGE_V2_PROTOCOL),
   state_id: z.string().min(1),
@@ -235,6 +276,7 @@ const stateBaseSchema = z.object({
     includes_hidden_information: z.boolean(),
     unknown_field_behavior: z.string()
   }).passthrough(),
+  diagnostics: z.array(diagnosticSchema),
   warnings: z.array(z.string())
 }).passthrough();
 
@@ -259,6 +301,8 @@ const capabilitiesSchema = z.object({
     lifecycle_states: z.array(z.string()),
     outcome_timeout_ms: z.number().int().positive()
   }).passthrough(),
+  inspections: inspectionContractSchema,
+  diagnostics: z.array(diagnosticSchema),
   warnings: z.array(z.string())
 }).passthrough();
 
@@ -285,15 +329,19 @@ export type BridgeV2LegalAction = z.infer<typeof legalActionSchema>;
 export type BridgeV2DeckEnchantSurface = z.infer<typeof deckEnchantSurfaceSchema>;
 export type BridgeV2EventContext = z.infer<typeof eventContextSchema>;
 export type BridgeV2CombatContext = z.infer<typeof combatContextSchema>;
+export type BridgeV2RewardFlowContext = z.infer<typeof rewardFlowContextSchema>;
 export type BridgeV2UnknownContext = z.infer<typeof unknownContextSchema>;
 export type BridgeV2EventOptionSurface = z.infer<typeof eventOptionSurfaceSchema>;
 export type BridgeV2CombatTurnSurface = z.infer<typeof combatTurnSurfaceSchema>;
+export type BridgeV2CardRewardSelectionSurface = z.infer<typeof cardRewardSelectionSurfaceSchema>;
+export type BridgeV2Diagnostic = z.infer<typeof diagnosticSchema>;
 export type BridgeV2UnsupportedSurface = z.infer<typeof unsupportedSurfaceSchema>;
 export type BridgeV2Command = z.infer<typeof commandSchema>;
 
 export type BridgeV2Context =
   | BridgeV2EventContext
   | BridgeV2CombatContext
+  | BridgeV2RewardFlowContext
   | BridgeV2UnknownContext
   | (Record<string, unknown> & { kind: string });
 
@@ -301,6 +349,7 @@ export type BridgeV2Surface =
   | BridgeV2DeckEnchantSurface
   | BridgeV2EventOptionSurface
   | BridgeV2CombatTurnSurface
+  | BridgeV2CardRewardSelectionSurface
   | BridgeV2UnsupportedSurface
   | (Record<string, unknown> & { kind: string });
 
@@ -347,6 +396,11 @@ export function decodeBridgeV2State(value: unknown): DecodedBridgePayload<Bridge
     if (context.kind !== "combat") {
       throw new BridgeV2DecodeError("Bridge v2 combat_turn surface requires combat context");
     }
+  } else if (decoded.data.surface.kind === "card_reward_selection") {
+    surface = parse(cardRewardSelectionSurfaceSchema, decoded.data.surface, "card_reward_selection surface");
+    if (context.kind !== "reward_flow") {
+      throw new BridgeV2DecodeError("Bridge v2 card_reward_selection surface requires reward_flow context");
+    }
   } else if (decoded.data.surface.kind === "unsupported") {
     surface = parse(unsupportedSurfaceSchema, decoded.data.surface, "unsupported surface");
   } else {
@@ -382,6 +436,10 @@ export function isBridgeV2CombatContext(context: BridgeV2Context): context is Br
   return context.kind === "combat";
 }
 
+export function isBridgeV2RewardFlowContext(context: BridgeV2Context): context is BridgeV2RewardFlowContext {
+  return context.kind === "reward_flow";
+}
+
 export function isBridgeV2EventOptionSurface(
   surface: BridgeV2Surface
 ): surface is BridgeV2EventOptionSurface {
@@ -394,9 +452,16 @@ export function isBridgeV2CombatTurnSurface(
   return surface.kind === "combat_turn";
 }
 
+export function isBridgeV2CardRewardSelectionSurface(
+  surface: BridgeV2Surface
+): surface is BridgeV2CardRewardSelectionSurface {
+  return surface.kind === "card_reward_selection";
+}
+
 function parseContext(value: z.infer<typeof contextBaseSchema>): BridgeV2Context {
   if (value.kind === "event") return parse(eventContextSchema, value, "event context");
   if (value.kind === "combat") return parse(combatContextSchema, value, "combat context");
+  if (value.kind === "reward_flow") return parse(rewardFlowContextSchema, value, "reward_flow context");
   if (value.kind === "unknown") return parse(unknownContextSchema, value, "unknown context");
   return value;
 }

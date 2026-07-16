@@ -18,6 +18,7 @@ export function buildAllowedActions(state: NormalizedCurrentState, sourceStateHa
     case "card_selection":
       return cardSelectionActions(state.surface, sourceStateHash);
     case "deck_enchant_selection":
+    case "card_reward_selection":
     case "event_option":
       return [];
     case "card_reward":
@@ -62,6 +63,7 @@ export function buildAllowedActions(state: NormalizedCurrentState, sourceStateHa
 
 function bridgeActions(state: NormalizedCurrentState, sourceStateHash: string): AllowedAction[] {
   const legalActions = state.surface.kind === "deck_enchant_selection"
+    || state.surface.kind === "card_reward_selection"
     || state.surface.kind === "event_option"
     || state.surface.kind === "combat_turn"
     ? state.surface.legalActions

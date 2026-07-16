@@ -23,7 +23,10 @@ internal sealed class CombatTurnSurfaceProvider : IBridgeSurfaceProvider
 {
     public string Kind => "combat_turn";
 
+    public BridgeSurfaceLayer Layer => BridgeSurfaceLayer.Room;
+
     public BridgeObservationDraft? TryBuild(
+        ActiveSurfaceSnapshot snapshot,
         BridgeEntityRegistry entities,
         GameBuildIdentity game)
     {
@@ -35,7 +38,6 @@ internal sealed class CombatTurnSurfaceProvider : IBridgeSurfaceProvider
             || room == null
             || hand == null
             || !McpMod.IsLiveNode(room)
-            || NOverlayStack.Instance?.Peek() != null
             || hand.IsInCardSelection)
         {
             return null;
@@ -109,7 +111,22 @@ internal sealed class CombatTurnSurfaceProvider : IBridgeSurfaceProvider
             {
                 "Draw/discard/exhaust pile contents are player-inspectable but intentionally deferred to a future read-only zone query; counts are present."
             },
-            actions);
+            actions)
+        {
+            Diagnostics = new[]
+            {
+                new BridgeDiagnostic(
+                    "bridge.visibility.combat_pile_contents_deferred",
+                    "info",
+                    "visibility",
+                    "field_omitted",
+                    "unknown",
+                    Path: "context.player.draw_discard_exhaust_piles",
+                    VisibilityClass: "normal_inspection",
+                    RequiredForAction: false,
+                    SafeDetail: "Pile counts are present; player-inspectable contents await a state-bound read contract.")
+            }
+        };
     }
 
     private static void AddCardActions(
