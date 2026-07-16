@@ -28,6 +28,7 @@ export const SURFACE_GUIDES: Record<InteractionSurfaceKind, StateGuide> = {
   card_reward: guide("surface-card-reward", "Active surface is card reward selection. Take, skip, or continue only when that exact allowed action exists."),
   reward_claim: guide("surface-reward-claim", "Active surface is reward claim. Choose an exposed claim, potion discard, or proceed action."),
   map_navigation: guide("surface-map-navigation", "Active surface is map navigation. Choose one currently selectable next node."),
+  event_option: guide("surface-event-option", "Active surface is a Bridge-authoritative event option protocol. Read event meaning from context, option text from surface, and choose only an opaque advertised action."),
   option_choice: guide("surface-option-choice", "Active surface is an indexed option choice. Choose one enabled option or explicit proceed action only."),
   shop_interaction: guide("surface-shop", "Active surface is shop interaction. Buy one listed affordable item or leave only via an allowed action."),
   treasure_claim: guide("surface-treasure", "Active surface is treasure claim. Choose an exposed relic or continue action."),

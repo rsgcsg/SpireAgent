@@ -8,7 +8,9 @@ Coverage is based on observed old-project raw snapshots and reduced fixture copi
 | `monster` or `elite` without `battle`, message `Combat ended. Waiting for rewards...` | `post_combat` + `no_action` | fixture-backed from real MCP smoke | none; poll for rewards |
 | active `hand_select` over combat | `combat` + `card_selection` | fixture-backed | combat select/confirm; combat facts retained |
 | `card_select` with no verified semantic origin | `unknown` + `card_selection` | partially verified from real MCP | card selection is verified; when MCP exposes `can_confirm`, only confirm/cancel are offered because selected IDs/capacity are absent. `NDeckEnchantSelectScreen` confirmation is currently an adapter completion gap: the REST endpoint returns success but did not advance the observed game state, so it is recorded as `executed_unsettled`, not treated as a settled action. |
-| Bridge v2 `deck_enchant_selection` | inherited v1 context when available + `deck_enchant_selection` | Bridge organic smoke; Re client fixture-tested | bridge-advertised opaque select/preview/confirm/cancel/close actions only; combined Re-to-game smoke pending |
+| Bridge v2 `deck_enchant_selection` | Bridge `event`/`combat` context + `deck_enchant_selection` + `bridge_advertised` | organic Bridge + Re lifecycle passed | opaque select/preview/confirm/cancel/close only |
+| Bridge v2 `event_option` | Bridge `event` + `event_option` + `bridge_advertised` | organic Bridge + Re choose/settlement lifecycle passed for ordinary options | opaque choose/proceed only |
+| Bridge v2 `combat_turn` | Bridge `combat` + `combat_turn` + `bridge_advertised` | organic Bridge + Re targeted-card/settlement lifecycle passed | opaque play-card/potion/end-turn only |
 | `card_reward` | `card_reward` | fixture-backed | take, skip, proceed when exposed |
 | `rewards` | `rewards` | fixture-backed | claim, potion discard, proceed |
 | `map` | `map` | fixture-backed | choose next node |
@@ -28,11 +30,18 @@ A new state is supported only after a real raw sample, normalized variant, allow
 
 ## Adapter Limits
 
-- v1 legal actions are reconstructed locally. Bridge v2 enumerates authoritative
-  actions only for deck enchant.
+- v1 legal actions are reconstructed locally. Bridge v2 source `preview.2`
+  enumerates authoritative actions for deck enchant, ordinary event options,
+  and immediate player-phase combat. Deck enchant and ordinary event options
+  are organically qualified for their observed action shapes. Combat potion,
+  end-turn, non-enemy target, and overlay variants still require separate
+  bounded evidence.
 - v1 action responses are partial; post-state observation verifies effects.
   Bridge v2 has a command lifecycle and action-specific completion evidence.
 - Some combat card effects open modal selection surfaces while retaining battle data.
 - Some screens briefly expose loading/settlement shapes.
 - Non-combat snapshots may omit deck/energy details that would improve strategy.
 - Sparse potion arrays require raw slot identity when available.
+- Combat v2 intentionally carries pile counts, not pile contents or draw order.
+  Player-triggered pile/deck viewing needs a separate future read-only
+  inspection contract rather than more fields in `combat_turn.surface`.

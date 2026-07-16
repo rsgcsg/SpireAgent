@@ -21,7 +21,7 @@ internal static class BridgeV2Runtime
         var warnings = new List<string>
         {
             "Bridge v2 is an incremental preview. Unlisted surfaces fail closed with no legal actions.",
-            "Singleplayer deck enchant selection is the only game-bound v2 vertical slice in this revision."
+            "Singleplayer deck enchant, ordinary event option, and player-phase combat turn are the only game-bound v2 vertical slices in this revision."
         };
 
         if (!game.Compatibility.ActionExecutionAllowed)
@@ -38,7 +38,17 @@ internal static class BridgeV2Runtime
                     "deck_enchant_selection",
                     "implemented_exact_game_version",
                     new[] { "toggle_card", "preview_selection", "confirm_selection", "cancel_preview", "close_selection" },
-                    "sts2-v0.108.0:NDeckEnchantSelectScreen+DeckEnchantScreenHandler")
+                    "sts2-v0.108.0:NDeckEnchantSelectScreen+DeckEnchantScreenHandler"),
+                new SurfaceCapability(
+                    "event_option",
+                    "implemented_exact_game_version",
+                    new[] { "choose_event_option", "proceed_event" },
+                    "sts2-v0.108.0:NEventRoom+NEventOptionButton+EventOption"),
+                new SurfaceCapability(
+                    "combat_turn",
+                    "implemented_exact_game_version",
+                    new[] { "play_card", "use_potion", "end_turn" },
+                    "sts2-v0.108.0:CombatManager+PlayerCombatState+CardModel+NPlayerHand")
             },
             new CommandContractCapability(
                 OpaqueActionsOnly: true,
@@ -83,6 +93,7 @@ internal static class BridgeV2Runtime
                 stateSequence,
                 DateTimeOffset.UtcNow,
                 draft.Readiness,
+                draft.Context,
                 draft.Surface,
                 descriptors,
                 draft.Completeness,

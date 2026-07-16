@@ -6,7 +6,7 @@ RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, 
 
 ```text
 MCP raw state
-  -> NormalizedCurrentState { context + surface }
+  -> NormalizedCurrentState { context + surface + actionAuthority }
   -> allowed actions
   -> versioned prompt
   -> DeepSeek strict JSON
@@ -113,14 +113,19 @@ Read and normalize the current state without creating a run or calling DeepSeek:
 npm run agent:inspect
 ```
 
-The output includes the negotiated adapter/protocol/build descriptor so an
-`auto` fallback can be distinguished from a v2-owned surface.
+The output includes the negotiated adapter/protocol/build descriptor and the
+normalized `context.kind`, `surface.kind`, and `actionAuthority`, so an `auto`
+fallback cannot be confused with a v2-owned surface.
 
 Build and record one prompt without calling DeepSeek or executing an action:
 
 ```bash
 npm run agent:tick -- --dry-run
 ```
+
+`npm run agent:tick -- --help` is non-actionable and prints usage. Unknown
+command options are rejected before the runtime, provider, or game adapter is
+created.
 
 Run one real decision:
 
@@ -191,10 +196,10 @@ RE-P1 has fixture-backed support for:
 - `menu`
 - `game_over`
 
-Bridge v2 currently replaces the local v1 action contract only for
-`deck_enchant_selection`. It preserves the visible enchantment, selection
-constraints, selected card instances, exact stage, completeness evidence, and
-opaque legal actions. See [BRIDGE_V2_INTEGRATION.md](docs/BRIDGE_V2_INTEGRATION.md).
+Bridge v2 source contracts now cover `deck_enchant_selection`, `event_option`,
+and `combat_turn`. Deck enchant is organically qualified; event and combat are
+strict fixture contracts pending organic qualification after the new mod is
+installed/restarted. See [BRIDGE_V2_INTEGRATION.md](docs/BRIDGE_V2_INTEGRATION.md).
 
 `bundle_select` and future state types are intentionally unsupported until a real raw fixture and verified action protocol are available. They fail closed instead of inheriting guessed fields from the old project. See [MCP_STATE_COVERAGE.md](docs/MCP_STATE_COVERAGE.md).
 
@@ -213,8 +218,11 @@ The only supported public TypeScript entrypoint is `src/index.ts`. Integration r
 ## Current Limitations
 
 - Real v1 MCP windows have exercised event, combat, rewards, card reward, map, rest, shop, treasure, and a boss fight. This proves protocol integration, not strategic quality or universal MCP coverage. The legacy v1 `NDeckEnchantSelectScreen` confirmation endpoint acknowledged the request without advancing state; Bridge v2 now has a separate qualified opaque-action contract for that surface.
-- Bridge v2 lists legal actions only for deck enchant. All other current surfaces reconstruct v1 actions locally and still require fixture-led protocol maintenance.
-- Bridge deck-enchant behavior has an organic exact-build smoke and the Re client has fixture-backed contract tests. A fresh combined Re-to-game deck-enchant lifecycle smoke is still pending.
+- Bridge v2 lists legal actions for deck enchant, ordinary event options, and
+  immediate player-phase combat in source `preview.2`; all unlisted surfaces
+  remain v1-local in `auto` mode.
+- Deck enchant has a complete organic Re lifecycle. Event/combat are not
+  runtime-qualified until the game reloads `preview.2` and bounded smokes pass.
 - Current MCP non-combat snapshots do not expose a complete deck on every screen. RE-P1 does not invent missing deck context, so card-reward and shop strategy is limited by what the current state actually contains.
 - Shop leaving is the one explicit protocol inference retained from verified legacy live behavior: the MCP `proceed` action leaves a shop even when `shop.can_proceed` is false. It is recorded in normalization diagnostics.
 - A changed state hash proves visible state drift, not perfect semantic settlement. The watcher waits for two consecutive, identical, non-transitional observations after an action, but animation/UI edge cases still require real-game verification.

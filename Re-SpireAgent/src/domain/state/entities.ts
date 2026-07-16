@@ -72,6 +72,7 @@ export interface PlayerSnapshot {
   block?: number;
   energy?: number;
   maxEnergy?: number;
+  stars?: number;
   gold?: number;
   hand: CardSnapshot[];
   drawPileCount?: number;

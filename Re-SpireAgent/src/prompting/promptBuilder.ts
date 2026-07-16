@@ -6,10 +6,11 @@ import { GLOBAL_PROMPT_ID, GLOBAL_PROMPT_VERSION, GLOBAL_SYSTEM_PROMPT } from ".
 import { CONTEXT_GUIDES, SURFACE_GUIDES } from "./stateGuides.js";
 
 export interface DecisionPromptPayload {
-  promptSchemaVersion: 2;
-  currentStateSchemaVersion: 2;
+  promptSchemaVersion: 3;
+  currentStateSchemaVersion: 3;
   contextKind: NormalizedCurrentState["context"]["kind"];
   surfaceKind: NormalizedCurrentState["surface"]["kind"];
+  actionAuthority: NormalizedCurrentState["actionAuthority"];
   contextGuideId: string;
   contextGuideVersion: number;
   surfaceGuideId: string;
@@ -42,10 +43,11 @@ export function buildDecisionPrompt(currentState: NormalizedCurrentState, allowe
   const contextGuide = CONTEXT_GUIDES[currentState.context.kind];
   const surfaceGuide = SURFACE_GUIDES[currentState.surface.kind];
   const payload: DecisionPromptPayload = {
-    promptSchemaVersion: 2,
-    currentStateSchemaVersion: 2,
+    promptSchemaVersion: 3,
+    currentStateSchemaVersion: 3,
     contextKind: currentState.context.kind,
     surfaceKind: currentState.surface.kind,
+    actionAuthority: currentState.actionAuthority,
     contextGuideId: contextGuide.id,
     contextGuideVersion: contextGuide.version,
     surfaceGuideId: surfaceGuide.id,

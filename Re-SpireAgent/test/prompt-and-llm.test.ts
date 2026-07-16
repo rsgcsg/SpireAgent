@@ -14,8 +14,11 @@ describe("prompt contract", () => {
     const payload = JSON.parse(prompt.userPrompt) as Record<string, any>;
 
     expect(prompt.systemPrompt).toContain("Return exactly one JSON object");
+    expect(payload.promptSchemaVersion).toBe(3);
+    expect(payload.currentStateSchemaVersion).toBe(3);
     expect(payload.contextKind).toBe("combat");
     expect(payload.surfaceKind).toBe("combat_turn");
+    expect(payload.actionAuthority).toBe("local_reconstruction");
     expect(payload.currentState.context.kind).toBe("combat");
     expect(payload.currentState.surface.kind).toBe("combat_turn");
     expect(payload.allowedActions).toHaveLength(actions.length);

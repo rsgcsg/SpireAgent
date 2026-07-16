@@ -9,8 +9,8 @@ normalizer with raw Bridge v2 JSON; it uses a parallel adapter:
 HTTP/MCP v2 response
   -> strict protocol decoder
   -> raw evidence record
-  -> supported-surface projection
-  -> Re-SpireAgent NormalizedCurrentState variant
+  -> typed context + supported-surface projection
+  -> Re-SpireAgent NormalizedCurrentState with action authority
   -> AllowedAction from legal_actions
   -> DeepSeek selects allowedActionId
   -> submit expected_state_id + action_id
@@ -33,11 +33,14 @@ Required client behavior:
 - never auto-retry unknown outcomes;
 - permit only one executor during v1/v2 dual-read tests.
 
-The first adapter supports only `deck_enchant_selection`. In `auto` mode,
-unsupported v2 surfaces remain on v1; a v2-owned surface imports only bridge
-actions. Exact-build incompatibility never silently falls back to v1 authority.
-Broader client types without broader bridge evidence would recreate the same
-false-completeness problem in a new layer.
+Source `2.0-preview.2` has strict projections for `deck_enchant_selection`,
+`event_option`, and `combat_turn`. Deck enchant and ordinary event option are
+organically qualified; combat remains fixture-only until its fresh smoke. In
+`auto` mode, unsupported v2 surfaces remain on v1; a v2-owned surface imports
+only bridge actions.
+Exact-build or context/surface incompatibility never silently falls back to v1
+authority. Runtime and prompt identity always expose `context.kind +
+surface.kind + actionAuthority`.
 
 See the rebuilt client's
 [Bridge v2 integration contract](../../../Re-SpireAgent/docs/BRIDGE_V2_INTEGRATION.md).

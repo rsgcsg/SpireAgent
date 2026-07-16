@@ -16,7 +16,12 @@ Dependencies point inward toward the domain. Raw MCP types do not cross into dec
 
 ## Current-State Contract
 
-`NormalizedCurrentState` represents shared run/player facts, one semantic `context`, and one active interaction `surface`. A combat hand-selection overlay therefore normalizes as `context.kind="combat"` plus `surface.kind="card_selection"`; enemy, intent, round, and turn facts remain visible while action construction exposes only selection actions. The surface's `selectionMode` describes an observed interaction contract, while the verified adapter payload remains inside the local `AllowedAction`.
+`NormalizedCurrentState` represents shared run/player facts, one semantic
+`context`, one active interaction `surface`, and explicit `actionAuthority`.
+A combat hand-selection overlay therefore normalizes as
+`context.kind="combat"` plus `surface.kind="card_selection"`; authority says
+whether executable actions are reconstructed locally, Bridge-advertised, or
+absent. No one discriminator represents the whole state.
 
 Context/surface compatibility is checked by the normalizer. A known combat context with an unverified overlay becomes `combat + unsupported`, retaining audit facts but exposing no actions. A newly observed event ID using the existing indexed-option protocol remains `event + option_choice`; identity is data, not a new protocol.
 
@@ -26,7 +31,10 @@ Critical field loss or an unknown potentially action-relevant nested field produ
 
 ## Action Authority
 
-The action builder is deterministic but not strategic. It dispatches on the active surface and consults context only for facts a protocol needs, such as combat targets. Most v1 surfaces still reconstruct choices because v1 does not list legal actions. A qualified Bridge v2 deck-enchant surface instead imports only the bridge's current state-bound opaque actions. These authority sources never merge for one surface.
+The action builder is deterministic but not strategic. It dispatches on the
+active surface and first enforces state-level authority. Legacy v1 states may
+reconstruct choices. Qualified Bridge deck-enchant/event/combat states import
+only current state-bound opaque actions. These authority sources never merge.
 
 DeepSeek sees summaries and returns one ID; the executable payload remains in process memory. A second state read must match both the prompt's pre-state hash and the selected action's source hash. That guard hashes the complete adapter snapshot, while a separate normalized-state hash remains available for semantic audit; unmodeled raw drift therefore stops execution rather than slipping past the normalizer.
 
@@ -56,4 +64,8 @@ The current MCP shop contract has one exception to raw-only capability discovery
 
 ## Schema Compatibility
 
-New decisions use normalized-state and prompt schema version 2 and decision-record version 2. Existing v1 JSONL remains append-only historical evidence and replay-readable as stored JSON, but it is not silently reinterpreted as a v2 context/surface projection.
+New decisions use normalized-state and prompt schema version 3 and
+decision-record version 2. State/prompt v3 adds explicit action authority to
+the existing context/surface split. Older JSONL remains append-only historical
+evidence and replay-readable as stored JSON, but it is not silently
+reinterpreted as a v3 projection.

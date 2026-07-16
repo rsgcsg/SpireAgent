@@ -80,6 +80,7 @@ export type InteractionSurface =
   | CardRewardSurface
   | RewardClaimSurface
   | MapNavigationSurface
+  | EventOptionSurface
   | OptionChoiceSurface
   | ShopInteractionSurface
   | TreasureClaimSurface
@@ -88,7 +89,21 @@ export type InteractionSurface =
   | NoActionSurface
   | UnsupportedSurface;
 
-export interface CombatTurnSurface { kind: "combat_turn"; }
+export interface BridgeSurfaceCompleteness {
+  playerVisibleSemantics: string;
+  legalActions: string;
+  sources: string[];
+  missing: string[];
+}
+
+export interface CombatTurnSurface {
+  kind: "combat_turn";
+  bridgeStateId?: string;
+  roomEntityId?: string;
+  canEndTurn?: boolean;
+  legalActions?: BridgeLegalActionSnapshot[];
+  completeness?: BridgeSurfaceCompleteness;
+}
 
 export interface CardSelectionSurface {
   kind: "card_selection";
@@ -128,17 +143,25 @@ export interface DeckEnchantSelectionSurface {
   enchantment: EnchantmentSnapshot;
   cards: CardSnapshot[];
   legalActions: BridgeLegalActionSnapshot[];
-  completeness: {
-    playerVisibleSemantics: string;
-    legalActions: string;
-    sources: string[];
-    missing: string[];
-  };
+  completeness: BridgeSurfaceCompleteness;
 }
 
 export interface CardRewardSurface { kind: "card_reward"; options: CardSnapshot[]; canSkip: boolean; canProceed: boolean; }
 export interface RewardClaimSurface { kind: "reward_claim"; items: RewardSnapshot[]; canProceed: boolean; }
 export interface MapNavigationSurface { kind: "map_navigation"; nextOptions: MapNodeSnapshot[]; }
+
+export interface EventOptionSurface {
+  kind: "event_option";
+  bridgeStateId: string;
+  screenEntityId: string;
+  options: Array<IndexedOptionSnapshot & {
+    entityId: string;
+    relicName?: string;
+    relicDescription?: string;
+  }>;
+  legalActions: BridgeLegalActionSnapshot[];
+  completeness: BridgeSurfaceCompleteness;
+}
 
 export interface OptionChoiceSurface {
   kind: "option_choice";

@@ -4,55 +4,58 @@ Status date: 2026-07-16
 
 ## Current Phase
 
-Protocol core plus the first exact-version game-bound vertical slice.
+Protocol core plus three exact-build, typed vertical slices. Runtime qualification
+is intentionally tracked per surface rather than inferred from compilation.
 
 ## Implemented
 
-- Clean import of upstream commit `20eadebde358a37cca41f8b38728099e6d0d19db`.
-- v1 build compatibility fixes for the installed Slay the Spire 2 `v0.108.0` API.
-- `/api/v2/capabilities`, `/api/v2/state`, `/api/v2/commands`, and command polling.
-- Stable semantic `state_id` and process-scoped object identities.
-- State-scoped opaque legal actions; v2 accepts no index or arbitrary target.
-- Idempotent request IDs and explicit command events.
-- Action-specific completion predicates; unexplained transitions become unknown
-  outcomes rather than successful completions.
-- Exact version/commit/main-assembly identity and fail-closed action execution.
-- Singleplayer `NDeckEnchantSelectScreen` support, including enchantment text,
-  min/max selection, selected cards, selecting/preview stage, and correct
-  preview confirm/cancel actions.
-- Thin Python MCP tools for v2.
-- Loopback-only browser Origin policy.
-- Typed surface DTOs with a wire-compatibility serialization regression test.
-- 22 pure protocol/runtime/security tests.
-- Installed-build deck enchant smoke on `v0.108.0`: exact build identity,
-  player-visible semantics, stale rejection, idempotency, select/preview/cancel,
-  select/preview/confirm, and action-specific completion all passed.
+- Protocol `2.0-preview.2` source contract with independent typed `context` and
+  typed `surface` objects.
+- Explicit ordered surface-provider registry with ambiguous multi-match
+  rejection.
+- Exact version/commit/main-assembly identity, state-scoped opaque actions,
+  execution-time revalidation, idempotent request IDs, and action-specific
+  completion.
+- `deck_enchant_selection`: exact semantics, selecting/preview stages, opaque
+  actions, and organic Bridge plus Re-SpireAgent lifecycle evidence.
+- `event_option`: event narrative in `context`; visible blocking options and
+  state-bound choose/proceed actions in `surface`.
+- `combat_turn`: player/enemy/hand/resource semantics in `context`; immediate
+  play-card, potion, and end-turn protocol in `surface`/`legal_actions`.
+- Re-SpireAgent strict decoding/projection for all three source contracts.
+- Client state identity is displayed as `context.kind + surface.kind +
+  actionAuthority`; no single discriminator is treated as the whole state.
+- Bridge tests: 23/23. Re-SpireAgent tests: 71/71 at this revision.
 
-## Not Yet Qualified
+## Qualification Matrix
 
-- Every v2 surface other than deck enchant selection is unsupported and returns
-  no legal actions.
-- Multiplayer v2 is intentionally unsupported.
-- The rebuilt client now has a strict v2 decoder/projector and negotiated
-  dual-read/single-executor adapter for deck enchant. Its contract tests pass,
-  but a fresh client-to-game organic lifecycle smoke is still pending.
-- A read-only Re-SpireAgent `auto` smoke negotiated the exact installed Bridge
-  identity and correctly delegated the unsupported main-menu surface to v1;
-  no model or action was invoked.
+| Surface | Build/contract | Re fixture | Organic Bridge | Organic Re lifecycle |
+|---|---|---|---|---|
+| `deck_enchant_selection` | pass | pass | pass | pass |
+| `event_option` | pass | pass | pass | pass |
+| `combat_turn` | pass | pass | pass | pass |
+
+The fresh event and combat lifecycles used `2.0-preview.2` on exact game
+identity `v0.108.0|58694f64|-2044609792`. The event smoke proves one ordinary
+`SUNKEN_STATUE` option choice and its resulting proceed state. The combat smoke
+proves one player-phase targeted-card lifecycle against a visible enemy. Neither
+proves ancient dialogue, event-specific secondary overlays, combat-selection
+overlays, every card target type, or every enemy-intent representation.
 
 ## Current Blocker
 
-No Bridge-side blocker remains for the deck enchant vertical slice. Broader v2
-adoption is blocked by missing per-surface game-fact adapters. Client adoption
-is implemented for this one surface but is not end-to-end qualified until a
-fresh organic Re-SpireAgent lifecycle smoke passes.
+All three implemented surfaces now have bounded organic Bridge and
+Re-SpireAgent lifecycle evidence. The next blocker is not a fourth action
+surface: it is an explicit audit of cross-surface composition, read-only
+inspection, structured diagnostics, and diversity limits before widening scope.
 
 ## Next Step
 
-1. Run a fresh organic Re-SpireAgent deck-enchant inspect/dry-run and one bounded
-   command lifecycle using the exact supported build.
-2. Choose the next game surface from observed client failures, audit its exact
-   game facts, and implement another narrow provider.
-3. Do not widen v2 support by reusing v1 indices or generic confirm fallbacks.
+1. Audit the three qualified slices together; retain their per-surface limits
+   instead of promoting them to generic game coverage.
+2. Keep ancient dialogue, combat card-selection overlays, post-close deck
+   inspection, and every unlisted surface fail-closed until independently
+   audited.
 
-Do not mark other surfaces supported based on v1 behavior or decompilation alone.
+See [the player-visible semantics RFC](PLAYER_VISIBLE_SEMANTICS_PROTOCOL_RFC.md)
+for the long-term layering and explicit non-goals.

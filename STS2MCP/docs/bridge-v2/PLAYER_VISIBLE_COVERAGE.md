@@ -1,44 +1,48 @@
 # Player-Visible Coverage Matrix
 
-Coverage is per exact game version and surface. "v1 exists" is not v2 support.
+Coverage is per exact game build and surface. “v1 exists”, decompiled code, or a
+fixture is not organic v2 qualification.
 
-| Surface | v2 state | Legal actions | Completion | Real smoke | Status |
+| Surface | Context semantics | Legal actions | Completion | Organic smoke | Status |
 |---|---|---|---|---|---|
-| deck enchant selection | implemented | implemented | action-specific | passed | runtime-qualified for exact build |
-| combat turn | none | none | none | none | unsupported |
-| combat card selection | none | none | none | none | unsupported |
+| deck enchant selection | event/combat parent context | implemented | action-specific | Bridge + Re passed | runtime-qualified |
+| ordinary event option | event id/name/body/dialogue flags | implemented | option applied/subsurface/room transition | Bridge + Re passed | runtime-qualified for ordinary options |
+| player-phase combat turn | player, hand, piles counts, statuses, relics, potions, orbs, enemies, intents | implemented | card left hand/subsurface, potion consumed, play phase ended | Bridge + Re targeted-card passed | runtime-qualified for immediate player turn |
+| ancient event dialogue | event context only | none | none | none | explicit unsupported |
+| combat card selection | combat parent context possible | none | none | none | unsupported |
 | card reward | none | none | none | none | unsupported |
 | generic deck selection | none | none | none | none | unsupported |
 | bundle/relic selection | none | none | none | none | unsupported |
-| map | none | none | none | none | unsupported |
-| event/dialogue | none | none | none | none | unsupported |
-| rest | none | none | none | none | unsupported |
-| shop | none | none | none | none | unsupported |
-| rewards/treasure | none | none | none | none | unsupported |
+| map/rest/shop/rewards/treasure | none | none | none | none | unsupported |
 | menu/game over | none | none | none | none | unsupported |
-| inspection/viewers | none | none | none | none | unsupported |
-| multiplayer | none | none | none | none | unsupported |
+| read-only deck/pile inspection | none | n/a | n/a | none | future inspection contract |
+| multiplayer | none | none | none | none | intentionally unsupported |
 
-Re-SpireAgent now has a fixture-tested v2 client projection for the deck-enchant
-row. A fresh combined Re-SpireAgent-to-game lifecycle smoke is still pending;
-the other rows remain v1-only in client `auto` mode and are not v2-qualified.
+## Shared Semantics Learned From Three Surfaces
 
-## Deck Enchant Field Coverage
+- `context.kind` answers which game situation exists; it does not identify the
+  blocking interaction by itself.
+- `surface.kind` answers which interaction protocol is active; it must not
+  duplicate the whole world state.
+- action authority is separate from both. Re-SpireAgent records
+  `bridge_advertised`, `local_reconstruction`, or `none`.
+- `legal_actions` are exact-state mutations/navigation. Read-only facts and
+  inspection are not fake actions.
+- context/surface combinations are validated. `event + event_option` and
+  `combat + combat_turn` have bounded organic lifecycle evidence; mismatches
+  still fail closed.
 
-| Fact | Visibility | Source | Required | Status |
-|---|---|---|---|---|
-| prompt | on_screen | `%BottomLabel.text` | no | implemented |
-| enchantment identity | on_screen/model identity | `_enchantment.Id` | yes | exact-version binding |
-| enchantment title | on_screen | `%EnchantmentTitle.text` | yes | implemented |
-| enchantment description | on_screen | `%EnchantmentDescription.text` | yes | implemented |
-| amount | on_screen semantics | `_enchantmentAmount` | yes | exact-version binding |
-| min/max selection | UI behavior | `_prefs` | yes | exact-version binding |
-| selected card instances | on_screen highlight | `_selectedCards` | yes | exact-version binding |
-| candidate card text | on_screen/inspection | rendered grid card model | yes | implemented |
-| selecting/preview stage | on_screen | dedicated enchant preview containers | yes | implemented |
-| exact enabled actions | on_screen/game rules | same controls and validators as execution | yes | implemented |
+## Known Visibility Gaps
 
-The installed-build smoke validated field values, stable state/action identity,
-stale rejection, select-to-preview, preview cancellation, final confirmation,
-and command settlement. It does not qualify generic card selection or deck
-inspection surfaces.
+- After deck enchant closes, v2 cannot yet re-read the complete deck to verify
+  the persistent enchant independently.
+- Combat includes pile counts but not draw/discard/exhaust contents. Those are
+  player-inspectable through separate UI flows and belong in a future read-only
+  inspection/query contract. Draw order remains hidden.
+- Ancient dialogue advancement has different lifecycle semantics from ordinary
+  event options and is intentionally not generalized.
+- No claim is made that the current enemy intent DTO covers every game-specific
+  intent presentation until organic combat diversity is observed.
+- The combat qualification includes one targeted card. Potions, self-target
+  cards, end turn, multi-target cards, combat overlays, and longer phase
+  transitions need their own bounded evidence before any broader claim.

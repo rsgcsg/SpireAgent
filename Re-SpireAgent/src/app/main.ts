@@ -4,19 +4,25 @@ import { Sts2McpHybridAdapter } from "../integrations/sts2mcp/hybridAdapter.js";
 import { normalizeCurrentState } from "../normalization/normalizeCurrentState.js";
 import { listRunIds, readRunMetadata, readRunRecords } from "../recording/fileDecisionRecorder.js";
 import { runLoop } from "../runtime/runLoop.js";
+import { parseCliInvocation } from "./cliArgs.js";
 import { createRuntime } from "./runtimeFactory.js";
 
 async function main(): Promise<void> {
-  loadEnvironment();
-  const config = readRuntimeConfig();
-  const command = process.argv[2] ?? "help";
-
-  if (command === "replay") {
-    await replay(config.runtime.dataDir, parseStringFlag("--run-id"), parseStringFlag("--decision-id"));
+  const invocation = parseCliInvocation(process.argv.slice(2));
+  if (invocation.command === "help") {
+    printHelp();
     return;
   }
 
-  if (command === "inspect") {
+  loadEnvironment();
+  const config = readRuntimeConfig();
+
+  if (invocation.command === "replay") {
+    await replay(config.runtime.dataDir, invocation.runId, invocation.decisionId);
+    return;
+  }
+
+  if (invocation.command === "inspect") {
     const adapter = new Sts2McpHybridAdapter(config.mcp.baseUrl, config.mcp.timeoutMs, {
       mode: config.mcp.protocolMode,
       commandPollMs: config.mcp.commandPollMs,
@@ -37,28 +43,21 @@ async function main(): Promise<void> {
     return;
   }
 
-  if (command !== "tick" && command !== "run") {
-    printHelp();
-    return;
-  }
-
   const runtime = await createRuntime(config);
   try {
-    if (command === "tick") {
-      const dryRun = process.argv.includes("--dry-run");
-      const result = await runtime.orchestrator.runTick(1, { dryRun });
+    if (invocation.command === "tick") {
+      const result = await runtime.orchestrator.runTick(1, { dryRun: invocation.dryRun });
       printTick(runtime.recorder.runId, result);
       return;
     }
 
-    if (command === "run") {
-      const maxTicks = parseIntegerFlag("--max-ticks") ?? config.runtime.maxTicks;
-      const delayMs = parseIntegerFlag("--delay-ms") ?? config.runtime.tickDelayMs;
-      const dryRun = process.argv.includes("--dry-run");
+    if (invocation.command === "run") {
+      const maxTicks = invocation.maxTicks ?? config.runtime.maxTicks;
+      const delayMs = invocation.delayMs ?? config.runtime.tickDelayMs;
       const results = await runLoop(runtime.orchestrator, {
         maxTicks,
         delayMs,
-        dryRun,
+        dryRun: invocation.dryRun,
         stopAtRunBoundary: true,
         onTick: (result) => printTick(runtime.recorder.runId, result)
       });
@@ -81,23 +80,25 @@ async function replay(dataDir: string, requestedRunId: string | undefined, decis
   process.stdout.write(`${JSON.stringify({ metadata, decisionCount: selected.length, decisions: selected }, null, 2)}\n`);
 }
 
-function printTick(runId: string, result: { decisionId: string; outcome: string; stateKind?: string; selectedActionId?: string }): void {
+function printTick(runId: string, result: {
+  decisionId: string;
+  outcome: string;
+  contextKind?: string;
+  surfaceKind?: string;
+  actionAuthority?: string;
+  selectedActionId?: string;
+}): void {
   process.stdout.write(
-    `${JSON.stringify({ runId, decisionId: result.decisionId, stateKind: result.stateKind, outcome: result.outcome, selectedActionId: result.selectedActionId })}\n`
+    `${JSON.stringify({
+      runId,
+      decisionId: result.decisionId,
+      contextKind: result.contextKind,
+      surfaceKind: result.surfaceKind,
+      authority: result.actionAuthority,
+      outcome: result.outcome,
+      selectedActionId: result.selectedActionId
+    })}\n`
   );
-}
-
-function parseStringFlag(name: string): string | undefined {
-  const index = process.argv.indexOf(name);
-  return index >= 0 ? process.argv[index + 1] : undefined;
-}
-
-function parseIntegerFlag(name: string): number | undefined {
-  const raw = parseStringFlag(name);
-  if (raw === undefined) return undefined;
-  const value = Number(raw);
-  if (!Number.isInteger(value) || value <= 0) throw new Error(`${name} must be a positive integer`);
-  return value;
 }
 
 function printHelp(): void {

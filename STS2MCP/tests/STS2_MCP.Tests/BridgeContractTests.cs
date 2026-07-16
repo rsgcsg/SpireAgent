@@ -58,6 +58,7 @@ public sealed class BridgeContractTests
             1,
             DateTimeOffset.UnixEpoch,
             "unsupported",
+            new UnknownBridgeContext("unknown", "test", "not implemented"),
             surface,
             Array.Empty<LegalAction>(),
             new StateCompleteness("not_implemented", "empty_fail_closed", Array.Empty<string>(), Array.Empty<string>()),
@@ -70,8 +71,31 @@ public sealed class BridgeContractTests
 
         Assert.Equal(surface.Kind, envelope.SurfaceKind);
         Assert.Contains("\"surface_kind\":\"unsupported\"", json);
+        Assert.Contains("\"context\":{\"kind\":\"unknown\"", json);
         Assert.Contains("\"surface\":{\"kind\":\"unsupported\"", json);
         Assert.Contains("\"source_type\":\"test\"", json);
         Assert.Contains("\"reason\":\"not implemented\"", json);
+    }
+
+    [Fact]
+    public void TypedContextsAndSurfacesKeepIndependentDiscriminators()
+    {
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+        };
+        IBridgeContext context = new EventBridgeContext(
+            "event", "EVENT_A", "Event A", false, false, "Visible narrative");
+        IBridgeSurface surface = new EventOptionSurface(
+            "event_option", "screen-a", new[]
+            {
+                new VisibleEventOption("option-a", 0, "Choose", "Visible result", false, false, false, null, null)
+            });
+
+        string json = JsonSerializer.Serialize(new { context, surface }, options);
+
+        Assert.Contains("\"context\":{\"kind\":\"event\"", json);
+        Assert.Contains("\"surface\":{\"kind\":\"event_option\"", json);
+        Assert.DoesNotContain("surface_kind", json);
     }
 }

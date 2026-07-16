@@ -7,7 +7,7 @@ namespace STS2_MCP.BridgeV2.Protocol;
 
 public static class BridgeV2Contract
 {
-    public const string ProtocolVersion = "2.0-preview.1";
+    public const string ProtocolVersion = "2.0-preview.2";
     public const string ObservationPolicyId = "player_visible_ui_v1";
 }
 
@@ -92,7 +92,134 @@ public sealed record VisibleCard(
     string Rarity,
     bool IsUpgraded,
     bool IsSelected,
-    VisibleEnchantment? ExistingEnchantment);
+    VisibleEnchantment? ExistingEnchantment,
+    string? TargetType = null,
+    bool? CanPlay = null,
+    string? UnplayableReason = null);
+
+public sealed record VisibleStatus(
+    string DefinitionId,
+    string? Name,
+    decimal Amount,
+    string Type,
+    string? Description);
+
+public sealed record VisibleIntent(
+    string Type,
+    string? Label,
+    string? Title,
+    string? Description);
+
+public sealed record VisibleEnemy(
+    string EntityId,
+    uint? CombatId,
+    string DefinitionId,
+    string? Name,
+    decimal Hp,
+    decimal MaxHp,
+    decimal Block,
+    IReadOnlyList<VisibleStatus> Statuses,
+    IReadOnlyList<VisibleIntent> Intents);
+
+public sealed record VisibleCombatPlayer(
+    string EntityId,
+    string? Character,
+    decimal Hp,
+    decimal MaxHp,
+    decimal Block,
+    int Energy,
+    int MaxEnergy,
+    int? Stars,
+    int Gold,
+    IReadOnlyList<VisibleCard> Hand,
+    int DrawPileCount,
+    int DiscardPileCount,
+    int ExhaustPileCount,
+    IReadOnlyList<VisibleStatus> Statuses,
+    IReadOnlyList<VisibleRelic> Relics,
+    IReadOnlyList<VisibleCombatPotion> Potions,
+    int MaxPotionSlots,
+    IReadOnlyList<VisibleOrb> Orbs,
+    int? OrbSlots);
+
+public sealed record VisibleCombatPotion(
+    string EntityId,
+    string DefinitionId,
+    string? Name,
+    string? Description,
+    int Slot,
+    string TargetType,
+    bool CanUse,
+    bool Automatic);
+
+public sealed record VisibleRelic(
+    string EntityId,
+    string DefinitionId,
+    string? Name,
+    string? Description,
+    decimal? Counter);
+
+public sealed record VisibleOrb(
+    string EntityId,
+    string DefinitionId,
+    string? Name,
+    string? Description,
+    decimal PassiveValue,
+    decimal EvokeValue);
+
+public sealed record VisibleEventOption(
+    string EntityId,
+    int Index,
+    string? Title,
+    string? Description,
+    bool IsLocked,
+    bool IsProceed,
+    bool WasChosen,
+    string? RelicName,
+    string? RelicDescription);
+
+[JsonConverter(typeof(BridgeContextJsonConverter))]
+public interface IBridgeContext
+{
+    string Kind { get; }
+}
+
+public sealed class BridgeContextJsonConverter : JsonConverter<IBridgeContext>
+{
+    public override IBridgeContext Read(
+        ref Utf8JsonReader reader,
+        Type typeToConvert,
+        JsonSerializerOptions options) =>
+        throw new JsonException("Bridge contexts are response-only protocol objects.");
+
+    public override void Write(
+        Utf8JsonWriter writer,
+        IBridgeContext value,
+        JsonSerializerOptions options) =>
+        JsonSerializer.Serialize(writer, value, value.GetType(), options);
+}
+
+public sealed record EventBridgeContext(
+    string Kind,
+    string EventId,
+    string? Name,
+    bool Ancient,
+    bool InDialogue,
+    string? Body) : IBridgeContext;
+
+public sealed record CombatBridgeContext(
+    string Kind,
+    string EncounterType,
+    int Round,
+    string TurnOwner,
+    bool IsPlayPhase,
+    VisibleCombatPlayer Player,
+    IReadOnlyList<VisibleEnemy> Enemies) : IBridgeContext;
+
+public sealed record UnknownBridgeContext(
+    string Kind,
+    string SourceType,
+    string Reason) : IBridgeContext;
 
 [JsonConverter(typeof(BridgeSurfaceJsonConverter))]
 public interface IBridgeSurface
@@ -128,6 +255,16 @@ public sealed record DeckEnchantSelectionSurface(
     VisibleEnchantment Enchantment,
     IReadOnlyList<VisibleCard> Cards) : IBridgeSurface;
 
+public sealed record EventOptionSurface(
+    string Kind,
+    string ScreenEntityId,
+    IReadOnlyList<VisibleEventOption> Options) : IBridgeSurface;
+
+public sealed record CombatTurnSurface(
+    string Kind,
+    string RoomEntityId,
+    bool CanEndTurn) : IBridgeSurface;
+
 public sealed record UnsupportedSurface(
     string Kind,
     string SourceType,
@@ -139,6 +276,7 @@ public sealed record BridgeStateEnvelope(
     long StateSequence,
     DateTimeOffset ObservedAt,
     string Readiness,
+    IBridgeContext Context,
     IBridgeSurface Surface,
     IReadOnlyList<LegalAction> LegalActions,
     StateCompleteness Completeness,

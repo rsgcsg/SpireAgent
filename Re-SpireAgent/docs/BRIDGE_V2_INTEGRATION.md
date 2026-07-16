@@ -2,79 +2,86 @@
 
 ## Current Scope
 
-Re-SpireAgent negotiates STS2MCP Bridge v2 while preserving v1 compatibility.
-Only `deck_enchant_selection` has a v2 domain projection and authoritative v2
-actions. Every other currently supported Re-SpireAgent surface remains on the
-legacy v1 endpoint in `auto` mode.
+Re-SpireAgent supports the `2.0-preview.2` source contract for:
+
+- `deck_enchant_selection`: organically end-to-end qualified;
+- `event_option`: organically end-to-end qualified for ordinary event options;
+- `combat_turn`: organically qualified for an immediate player-phase targeted
+  card lifecycle.
+
+The qualified event lifecycle used the exact supported `2.0-preview.2` game
+binding. Unlisted surfaces remain legacy v1 in `auto` mode and unsupported in
+strict `v2` mode.
+
+## State Identity
+
+No single kind represents the full current state. Runtime output and prompts
+carry:
+
+```text
+context.kind + surface.kind + actionAuthority
+```
+
+- context: semantic game situation (`event`, `combat`, etc.);
+- surface: currently blocking interaction protocol;
+- authority: `bridge_advertised`, `local_reconstruction`, or `none`.
+
+For Bridge combat, v2 context owns action-relevant player, hand, resource,
+enemy, intent, and target facts. A v1 sidecar may retain run metadata but cannot
+overwrite those facts or add actions.
 
 ## Modes
 
 | `STS2_MCP_PROTOCOL` | Behavior |
 |---|---|
-| `auto` | Negotiate v2. Use v2 as the sole executor for a qualified surface; use v1 for surfaces that v2 explicitly reports unsupported. |
-| `v1` | Use only `/api/v1/singleplayer` and locally reconstructed actions. |
-| `v2` | Require v2 state. Unsupported or degraded surfaces stop safely. |
+| `auto` | Negotiate v2. Use v2 as sole executor for a qualified surface; use v1 only when a coherent exact v2 response explicitly says unsupported. |
+| `v1` | Use only v1 and `local_reconstruction` authority. |
+| `v2` | Require v2. Unsupported, degraded, mismatched, or unknown contracts stop safely. |
 
-`auto` is the default migration mode. It is not a merge of two action lists.
-Strict `v2` also rejects any legacy executable action passed directly to the
-adapter API.
-
-The adapter records the authority granted by its latest successful state read.
-Execution before a read, a v1 action after a v2-owned read, or a v2 action after
-a v1-owned read is rejected locally as an authority mismatch.
+The adapter also remembers the authority from its latest successful read.
+Executing a legacy action after a v2-owned read, or a v2 action after a legacy
+read, is rejected locally.
 
 ## Data Flow
 
 ```text
 /api/v2/capabilities + /api/v2/state
   -> strict Zod protocol decoder
-  -> raw v2 evidence wrapper
-  -> exact identity and safety-capability validation
-  -> deck-enchant domain projection
+  -> exact identity and safety checks
+  -> context + surface compatibility validation
+  -> NormalizedCurrentState with explicit authority
   -> imported opaque legal actions
   -> DeepSeek selects one allowedActionId
-  -> submit request_id + expected_state_id + action_id
-  -> verify response identity and lifecycle semantics
-  -> poll to completed/rejected/failed/timed_out
-  -> append decision evidence
+  -> request_id + expected_state_id + action_id
+  -> command identity/lifecycle verification
+  -> append-only decision evidence
 ```
-
-When a v2 surface owns the interaction, a v1 sidecar may provide context, run,
-or player facts for the prompt. It cannot provide, remove, or execute actions.
 
 ## Fail-Closed Rules
 
-Execution is refused when any of these conditions holds:
+Execution is refused when protocol/build/observation identity differs, hidden
+information is declared, command safety guarantees are absent, the surface is
+not advertised, context and surface conflict, readiness/completeness is
+incoherent, an action is not state-bound/UI-authoritative/advertised, or command
+identity/status/outcome is inconsistent.
 
-- protocol version is not exactly supported;
-- state and capabilities bridge/game/observation identity differ;
-- exact game version, commit, or assembly hash is absent;
-- compatibility is not `supported_exact` or execution is disabled;
-- hidden-information observation is declared;
-- opaque, state-bound, idempotent command guarantees are absent;
-- the current surface is not advertised as exact-version implemented;
-- legal actions are stale, unknown, non-UI-authoritative, or not advertised;
-- ready-state completeness reports missing required semantics;
-- command response identity or status/outcome semantics are inconsistent.
-
-`completed/confirmed` is accepted. `rejected/not_applied` is a safe rejection.
+`completed/confirmed` is accepted. `rejected/not_applied` is safely rejected.
 `failed/unknown`, `timed_out/unknown`, transport uncertainty after submit, and
-client polling timeout are unknown outcomes. Unknown outcomes stop the run and
-are never automatically retried.
+poll timeout are unknown and never automatically retried.
 
 ## Evidence Status
 
-- Bridge deck-enchant behavior has an existing organic exact-build smoke.
-- Re-SpireAgent v2 decoding, projection, authority separation, exact identity,
-  and command handling have contract/fixture tests.
-- A fresh organic Re-SpireAgent-to-game deck-enchant lifecycle is still
-  required for end-to-end qualification.
-
-Fixtures prove client behavior only. They do not prove a current game build or
-new surface is compatible.
+- Deck enchant: organic Bridge and Re select/preview/confirm lifecycle passed.
+- Event option: organic Bridge and Re choose/settlement lifecycle passed for
+  an ordinary `SUNKEN_STATUE` option.
+- Combat turn: C# build plus Re decode/projection/authority fixture passed.
+- Combat turn: organic Bridge and Re targeted-card/settlement lifecycle passed
+  against a visible normal-combat enemy.
+- These qualifications do not extend to ancient dialogue, unimplemented
+  overlays, every card target type, potion use, or all combat phase changes.
 
 ## Non-Goals
 
-This integration does not add memory, learning, scoring, CandidateFuture,
-policy promotion, hidden-information access, arbitrary MCP calls, or broad v2
-surface coverage.
+This integration does not add memory, learning, scoring, hidden-information
+access, arbitrary MCP calls, generic action payloads, or broad v2 coverage.
+Read-only deck/pile inspection remains a separate future protocol concern.

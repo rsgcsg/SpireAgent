@@ -15,6 +15,6 @@ Each tick creates one append-only `DecisionRecord`, including non-execution outc
 
 Core outcomes distinguish observation failure, invalid/non-actionable/no-action state, dry run, provider failure, invalid decision, stale state, execution failure, settled execution, and unsettled execution. Adapter results may additionally classify the command as `accepted`, `rejected`, or `unknown`; unknown is never interpreted as safe rejection or retried automatically.
 
-`metadata.json` records adapter endpoint/capabilities, negotiated protocol/build/surface facts when available, provider model/thinking/output cap, agent version, and schema versions. v2 records contain separate semantic `context` and active interaction `surface`; it never records the API key.
+`metadata.json` records adapter endpoint/capabilities, negotiated protocol/build/surface facts when available, provider model/thinking/output cap, agent version, and schema versions. Normalized-state v3 records contain separate semantic `context`, active interaction `surface`, and `actionAuthority`; metadata never records the API key.
 
 The record is evidence of what this process observed and attempted. It is not proof that MCP exposed complete game truth or that a strategic choice was good.

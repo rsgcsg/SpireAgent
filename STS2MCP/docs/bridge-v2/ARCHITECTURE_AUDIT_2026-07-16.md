@@ -2,133 +2,138 @@
 
 ## Executive Verdict
 
-Bridge v2 has the right safety core but not broad player-visible coverage. Its
-exact-build binding, player-visible observation policy, state-scoped opaque
-actions, execution-time revalidation, idempotent command ledger, and honest
-completion lifecycle should be preserved. The bridge remains an adapter, not a
-strategic brain.
+Bridge v2 has the correct safety core but not broad player-visible coverage.
+Preserve exact-build identity, player-visible observation policy, state-bound
+opaque actions, execution revalidation, idempotency, and honest unknown
+outcomes. The bridge remains an adapter, never the strategic brain.
 
-At the audited baseline, the immediate architectural failure was at the client
-boundary: Re-SpireAgent consumed v1 index actions and could not use the one
-runtime-qualified v2 surface. That gap is now addressed by a strict decoder and
-an `auto` dual-read/single-executor adapter for `deck_enchant_selection` only.
-This does not make the protocol broadly complete.
+The first client gap is resolved: Re-SpireAgent can consume and execute a
+qualified v2 surface without merging legacy actions. Protocol source
+`2.0-preview.2` now defines three typed vertical slices. Only deck enchant is
+organically runtime-qualified; event and combat are build/fixture-qualified and
+must not be described as game-qualified before fresh smokes.
+
+## Runtime Follow-up
+
+The original audit wording above is historical. After its publication, the
+exact `2.0-preview.2` DLL was installed while the game was closed and three
+bounded organic lifecycles were observed: deck enchant, an ordinary
+`SUNKEN_STATUE` event choice, and one player-phase targeted combat card. Each
+used Bridge-advertised opaque actions, exact-state revalidation, command
+lifecycle evidence, and Re-SpireAgent settlement. The three slices are now
+runtime-qualified only within their stated surface and action diversity; this
+does not make Bridge v2 broad game coverage.
 
 ## Verified Baseline
 
-- Repository baseline audited: `ed610cdb57119b585b7a81895169caa51f04f0ab`.
-- Imported upstream baseline: `20eadebde358a37cca41f8b38728099e6d0d19db`.
-- Installed game identity observed during the existing smoke: game `v0.108.0`,
-  commit `58694f64`, main assembly hash `-2044609792`.
-- Bridge protocol: `2.0-preview.1`; bridge version: `0.5.0-dev`.
-- Runtime-qualified v2 surface: `deck_enchant_selection` only.
-- All other v2 surfaces remain unsupported with zero v2 legal actions.
+- Imported upstream: `20eadebde358a37cca41f8b38728099e6d0d19db`.
+- Exact game: `v0.108.0`, commit `58694f64`, assembly hash `-2044609792`.
+- Running game at audit time: protocol `2.0-preview.1`, deck capability only.
+- Source under test: protocol `2.0-preview.2`, deck/event/combat capabilities.
+- Organic deck Bridge and Re-SpireAgent select/confirm lifecycle: passed.
+- Event/combat C# build and Re strict contract fixtures: passed.
+- Event/combat organic lifecycle: pending mod install/restart.
 
-External version evidence reinforces this policy. The official Steam page
-describes the game as Early Access with further content and balance changes,
-and the official community page documents v0.108.0 plus modding changes. The
-upstream STS2MCP repository is useful prior art, but its published compatibility
-claims are not a substitute for this installed-build identity.
+Slay the Spire 2 is still evolving, so upstream claims and decompiled type
+compatibility are evidence inputs, not runtime qualification:
 
 - https://store.steampowered.com/app/2868840/Slay_the_Spire_2/
 - https://steamcommunity.com/app/2868840
 - https://github.com/Gennadiyev/STS2MCP
 
-The existing organic smoke proves the Bridge deck-enchant surface. The new
-Re-SpireAgent contract tests prove decoding, projection, authority selection,
-and command-result handling against fixtures. A fresh Re-SpireAgent-to-game
-deck-enchant smoke is still required before calling that client path
-end-to-end runtime-qualified.
-
-A read-only Re-SpireAgent `auto` negotiation smoke also passed at the main menu:
-it recorded Bridge `0.5.0-dev`, protocol `2.0-preview.1`, exact game identity,
-and `deck_enchant_selection` capability, then correctly used v1 for the menu
-because v2 reported that surface unsupported. It called no model and executed
-no action.
-
 ## Findings And Decisions
 
 | Severity | Finding | Decision |
 |---|---|---|
-| Critical, fixed | Re-SpireAgent had no v2 consumer and reconstructed index actions even where the bridge had authoritative opaque actions. | Add a parallel strict v2 decoder/projector and negotiated hybrid adapter. |
-| Critical, fixed | `auto` fallback could have hidden a drifted v2 state contract when the current surface was unsupported. | Permit v1 authority only when a coherent exact v2 contract explicitly reports the surface unsupported; otherwise retain the v2 wrapper and fail closed. |
-| Critical, fixed | A command response could be valid JSON yet carry a different request, state, or action identity. | Treat identity mismatch as unknown outcome, stop, and never retry automatically. |
-| Critical, fixed | Bridge command `failed` means unknown application outcome, not a safe rejection. | Classify `failed` and `timed_out` as unknown; only `rejected/not_applied` is safely rejected. |
-| High, fixed | Changing `surface` from `object` to an interface initially caused `System.Text.Json` to emit only `kind`. | Add a response-only converter and a wire regression test preserving all concrete fields. |
-| High, fixed | Exact-build authority could be represented by a boolean without requiring concrete version, commit, and assembly identity at the client. | Require `supported_exact`, execution permission, and non-empty exact identity; compare state and capabilities. |
-| High, fixed | Advertised surface operations and returned legal-action kinds were not cross-checked by the client. | Reject the surface if any action kind is not advertised for that exact surface. |
-| High, open | Bridge v2 exposes one surface, not a complete current-game semantic model. | Keep the coverage matrix honest; add one game-fact-audited vertical slice at a time. |
-| Medium, open | v1 sidecar context is incomplete and locally reconstructed. | Use it only as migration context, never as action authority for a v2-owned surface. |
-| Medium, deferred | The envelope has no universal context/entity/zone/inspection model. | Wait for a second real surface to expose shared requirements before adding abstractions. |
-| Medium, deferred | Runtime is static and providers are hand-selected. | Do not refactor until a second surface creates a concrete lifecycle/testability problem. |
+| Critical, fixed | Re previously reconstructed index actions where v2 had authoritative opaque actions. | One observed state has one executor; v2-owned surfaces import only Bridge actions. |
+| Critical, fixed | Unsupported-surface fallback could hide identity drift. | v1 fallback requires a coherent exact v2 unsupported response; all drift fails closed. |
+| Critical, fixed | Valid JSON command responses could carry the wrong request/state/action identity. | Identity mismatch is unknown outcome and never retried. |
+| Critical, fixed | `failed`/`timed_out` could be mistaken for safe rejection. | Only `rejected/not_applied` is safely rejected; failed/timeout remain unknown. |
+| High, fixed | Interface serialization initially emitted only `surface.kind`. | Response-only typed union converter plus wire regression test. |
+| High, fixed | `context.kind` was treated as if it named the whole state. | Display and validate `context.kind + surface.kind + action authority`. |
+| High, fixed | Surface risked becoming a world-state bag. | Add typed context; keep shared combat/player semantics out of `combat_turn.surface`. |
+| High, open | Three slices are not a complete player-visible protocol. | Keep exact per-surface coverage and explicit non-claims. |
+| Medium, fixed | Hand-selected branching would become ambiguous. | Explicit ordered provider registry; multiple matches fail closed. |
+| Medium, open | v1 sidecar may be incomplete or broader than v2 visibility. | It may supplement run/non-action shared facts only; Bridge combat context replaces action-relevant player/enemy facts. |
+| Medium, open | Player-visible deck/pile inspection does not fit immediate action surfaces. | Future state-scoped read-only inspection; never expose hidden order. |
+| Medium, open | Warnings remain free text. | Introduce structured diagnostics before broad coverage. |
+| Medium, open | Runtime state and entity registries are process-global. | Accept only bounded singleplayer now; isolate sessions before multiplayer/concurrency. |
+| Medium, open | Completion probes may under-model long transitions. | Add per-action evidence from organic event/combat smokes; never use generic “state changed” success. |
 
 ## Boundary Model
 
-The durable boundary is:
-
 ```text
-player-visible semantics
+exact environment identity
   -> semantic context
-  -> active interaction surface
-  -> bridge-advertised legal actions
-  -> state-bound opaque command
-  -> observed command outcome
+  -> player-visible common semantics
+  -> blocking interaction surface
+  -> effective action authority
+  -> state-bound opaque legal actions
+  -> command lifecycle and observed outcome
 ```
 
-These concepts must not collapse into one object:
+- context describes the game situation;
+- surface describes the blocking interaction protocol;
+- authority describes who may construct executable actions;
+- legal actions describe current mutations/navigation;
+- read-only inspection is not a fake mutation;
+- hidden RNG, draw order, unrevealed outcomes, future rewards, and future enemy
+  moves remain excluded.
 
-- semantics are facts a normal player can currently know;
-- context is the game situation;
-- surface is the active interaction protocol;
-- legal actions are currently valid mutations or necessary navigation.
+## Three-Surface Abstraction Review
 
-Ordinary read-only inspection should not be faked as a mutating legal action.
-Hidden draw order, RNG, unrevealed event outcomes, future rewards, and future
-enemy moves remain out of scope even if available in memory.
+Deck enchant validates overlay stage, per-instance identity, effect semantics,
+and exact completion. Event option validates that rich narrative context must
+remain separate from a simple option protocol. Combat validates common
+entities/resources, target legality, settling phases, and the need for future
+read-only pile inspection.
+
+Together they justify typed contexts, typed surfaces, state-level action
+authority, stable entity IDs, an explicit provider registry, and completeness
+metadata. They do not justify a universal ECS, reflection auto-discovery,
+generic action payloads, or a complete world model.
 
 ## Re-SpireAgent Migration Contract
 
-`STS2_MCP_PROTOCOL=auto` is the migration default:
+`STS2_MCP_PROTOCOL=auto` remains the migration default:
 
-- v2 capabilities and state are strictly decoded;
-- exact compatibility failure never silently regains v1 authority;
-- a qualified deck-enchant surface uses only v2 legal actions and v2 command
-  settlement;
-- the optional v1 sidecar may supplement context/run/player facts only;
-- unsupported v2 surfaces continue through the existing v1 path;
-- one observed state has one executor;
-- unknown command outcomes stop without automatic retry.
+- strict protocol, build, observation, context/surface, and action validation;
+- qualified v2 states use only Bridge actions and command settlement;
+- unsupported coherent v2 states may delegate to v1;
+- exact mismatch never silently regains v1 authority;
+- unknown command outcomes stop without retry;
+- planning code sees normalized state, not arbitrary Bridge JSON.
 
-`v1` remains a compatibility mode. `v2` is a strict mode and therefore stops on
-every surface not implemented in Bridge v2.
+Strict `v2` stops on every unsupported surface. `v1` remains compatibility
+mode and uses explicit `local_reconstruction` authority.
 
-## Deliberate Deferrals
+## Reference Audit Disposition
 
-The following ideas from the reference audit are plausible but premature:
-
-- a universal entity store or ECS-shaped protocol;
-- separate observation and decision state identifiers;
-- a generic inspection-query subsystem;
-- a provider registry and large runtime/session refactor;
-- generalized zones and narrative schemas;
-- broad protocol enums for facts not yet observed on a second surface.
-
-Adding them now would produce schema confidence without game evidence. The
-second real surface should determine which shared abstractions are necessary.
+- typed surface DTO: resolved;
+- client v2 integration: resolved for three fixture contracts, with two organic
+  qualifications pending;
+- provider registry: resolved narrowly;
+- context/surface conflation: resolved in schema and CLI;
+- post-close deck verification: open;
+- structured diagnostics: open;
+- global runtime singleton: open;
+- observation ID versus executable state ID: deferred pending real need;
+- read-only inspection/zone protocol: direction accepted, implementation open;
+- universal entity/world model: rejected as premature;
+- reflection-based automatic provider discovery: rejected.
 
 ## Next Qualification Steps
 
-1. At a fresh organic deck-enchant screen, run Re-SpireAgent inspect/dry-run and
-   one bounded action lifecycle; verify exact identity, opaque action import,
-   command identity, and terminal outcome.
-2. Keep all other surfaces on v1 in `auto` mode.
-3. Select the second v2 surface from repeated real client information/action
-   failures, then audit its exact game facts and normal UI before coding it.
-4. Only after two surfaces share a proven concept should it become a common
-   protocol abstraction.
+1. Reassess completion, performance, warning structure, and inspection needs
+   from the three organic slices before adding a fourth surface.
+2. Define a composition contract for known context plus overlay, rather than
+   treating any new screen as a generic extension of combat or event.
+3. Add structured diagnostics and a read-only inspection design before growing
+   broad player-visible coverage.
 
 ## Non-Claims
 
-This audit does not claim all player-visible information is exposed, that v1 is
-safe enough for long-term use, that fixture tests prove game compatibility, or
-that Re-SpireAgent has memory, learning, scoring, or autonomous policy changes.
+This audit does not claim all player-visible information is exposed, fixture
+tests prove game compatibility, v1 is a safe long-term authority, every
+event/combat variant is runtime-qualified, or Re-SpireAgent has memory,
+learning, scoring, or autonomous policy changes.

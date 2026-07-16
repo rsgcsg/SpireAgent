@@ -1,6 +1,6 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.1`
+Protocol preview: `2.0-preview.2`
 
 ## Endpoints
 
@@ -21,14 +21,27 @@ Every state response contains:
 - protocol, bridge, and exact game identity;
 - observation policy;
 - stable semantic `state_id` and monotonic process-session sequence;
-- readiness and surface kind;
+- readiness, typed semantic `context`, and surface kind;
 - typed surface data;
 - state-scoped opaque legal actions;
 - completeness sources and missing fields;
 - warnings.
 
-Timestamps and logging fields do not change `state_id`. Semantic surface data or
-the legal action set does.
+Timestamps and logging fields do not change `state_id`. Semantic context,
+surface data, or the legal action set does.
+
+`context.kind` is not a complete state discriminator. Clients must display and
+reason over at least:
+
+```text
+context.kind + surface.kind + action authority
+```
+
+The context contains durable current-situation semantics. The surface contains
+the currently blocking interaction protocol. Authority says whether actions
+were Bridge-advertised, locally reconstructed by a legacy client, or absent.
+Bridge wire actions always use `authority="game_ui"`; the higher-level client
+records the effective state authority separately.
 
 ## Legal Actions
 
@@ -83,6 +96,15 @@ received -> validated -> started -> completed
 | confirm preview | enchant screen closed |
 | cancel preview | preview closed and selected set cleared |
 | close selection | enchant screen closed |
+
+Additional preview.2 completion evidence:
+
+| Surface/action | Completion evidence |
+|---|---|
+| event choose/proceed | option chosen, room/subsurface transition, or a non-empty replacement option set |
+| combat play card | card leaves hand, required subsurface opens, or combat ends |
+| combat potion | potion leaves its exact slot or combat ends |
+| combat end turn | local player play phase ends or combat ends |
 
 If the state changes but the predicate does not pass, the command fails with an
 unknown outcome. Unknown outcomes are never auto-retried.

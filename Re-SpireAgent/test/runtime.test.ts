@@ -117,7 +117,13 @@ describe("TickOrchestrator", () => {
 
     const result = await makeOrchestrator(adapter, provider, recorder).runTick(1, { stopAtRunBoundary: true });
 
-    expect(result).toMatchObject({ outcome: "not_executed_non_actionable_state", stateKind: "run_ended", shouldStopRun: true });
+    expect(result).toMatchObject({
+      outcome: "not_executed_non_actionable_state",
+      contextKind: "run_ended",
+      surfaceKind: "menu_choice",
+      actionAuthority: "local_reconstruction",
+      shouldStopRun: true
+    });
     expect(calls).toBe(0);
     expect(adapter.executed).toEqual([]);
     expect(recorder.records[0]?.error).toContain("run boundary");

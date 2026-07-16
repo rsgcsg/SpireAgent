@@ -7,7 +7,13 @@ global system contract + semantic-context guide + interaction-surface guide
 runtime JSON payload
 ```
 
-The v2 runtime payload contains the complete normalized current state, `contextKind`, `surfaceKind`, both guide identities, action summaries, schema versions, and output contract. It never includes executable MCP payloads or an API key. This avoids a custom prompt for every context/surface combination while retaining combat facts under a selection overlay. Surface guides also prohibit factual claims about a standard card-selection's selected cards or remaining capacity when MCP does not expose them.
+The v3 runtime payload contains the complete normalized current state,
+`contextKind`, `surfaceKind`, `actionAuthority`, both guide identities, action
+summaries, schema versions, and output contract. It never includes executable
+MCP payloads or an API key. This avoids a custom prompt for every
+context/surface combination while retaining combat facts under an overlay and
+making the action source explicit. Surface guides also prohibit factual claims
+about selected cards or capacity when the adapter does not expose them.
 
 Expected model output:
 

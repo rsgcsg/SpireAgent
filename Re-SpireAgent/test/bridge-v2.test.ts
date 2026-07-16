@@ -9,7 +9,7 @@ import type { JsonObject } from "../src/shared/json.js";
 import { fixture } from "./helpers.js";
 
 const CAPABILITIES = {
-  protocol_version: "2.0-preview.1",
+  protocol_version: "2.0-preview.2",
   bridge: { id: "sts2_mcp_bridge_v2", name: "STS2 Agent Bridge", version: "0.5.0-dev", upstream_commit: "upstream" },
   game: {
     version: "v0.108.0",
@@ -19,17 +19,29 @@ const CAPABILITIES = {
     compatibility: { status: "supported_exact", action_execution_allowed: true, detail: "exact" }
   },
   observation_policy: { id: "player_visible_ui_v1", scope: "visible", includes_hidden_information: false, unknown_field_behavior: "omit" },
-  surfaces: [{ kind: "deck_enchant_selection", support: "implemented_exact_game_version", operations: ["toggle_card"], evidence: "test-contract" }],
+  surfaces: [
+    { kind: "deck_enchant_selection", support: "implemented_exact_game_version", operations: ["toggle_card"], evidence: "test-contract" },
+    { kind: "event_option", support: "implemented_exact_game_version", operations: ["choose_event_option", "proceed_event"], evidence: "test-contract" },
+    { kind: "combat_turn", support: "implemented_exact_game_version", operations: ["play_card", "use_potion", "end_turn"], evidence: "test-contract" }
+  ],
   commands: { opaque_actions_only: true, state_bound: true, idempotent_request_ids: true, lifecycle_states: ["started", "completed"], outcome_timeout_ms: 10000 },
   warnings: []
 };
 
 const DECK_ENCHANT_STATE = {
-  protocol_version: "2.0-preview.1",
+  protocol_version: "2.0-preview.2",
   state_id: "state-test-1",
   state_sequence: 1,
   observed_at: "2026-07-16T00:00:00Z",
   readiness: "ready",
+  context: {
+    kind: "event",
+    event_id: "SPIRALING_WHIRLPOOL",
+    name: "Spiraling Whirlpool",
+    ancient: false,
+    in_dialogue: false,
+    body: "Choose a card to enchant."
+  },
   surface_kind: "deck_enchant_selection",
   surface: {
     kind: "deck_enchant_selection",
@@ -83,6 +95,133 @@ const DECK_ENCHANT_STATE = {
   warnings: []
 };
 
+const EVENT_OPTION_STATE = {
+  ...DECK_ENCHANT_STATE,
+  state_id: "state-event-1",
+  state_sequence: 2,
+  context: {
+    kind: "event",
+    event_id: "SPIRALING_WHIRLPOOL",
+    name: "Spiraling Whirlpool",
+    ancient: false,
+    in_dialogue: false,
+    body: "The whirlpool settles."
+  },
+  surface_kind: "event_option",
+  surface: {
+    kind: "event_option",
+    screen_entity_id: "event-screen-1",
+    options: [{
+      entity_id: "event-option-1",
+      index: 0,
+      title: "Proceed",
+      description: "Return to the map.",
+      is_locked: false,
+      is_proceed: true,
+      was_chosen: false,
+      relic_name: null,
+      relic_description: null
+    }]
+  },
+  legal_actions: [{
+    action_id: "action-event-1",
+    state_id: "state-event-1",
+    kind: "proceed_event",
+    category: "navigation",
+    label: "Proceed",
+    authority: "game_ui",
+    evidence_code: "NEventRoom.OptionButtonClicked+NEventOptionButton"
+  }]
+};
+
+const COMBAT_TURN_STATE = {
+  ...DECK_ENCHANT_STATE,
+  state_id: "state-combat-1",
+  state_sequence: 3,
+  context: {
+    kind: "combat",
+    encounter_type: "elite",
+    round: 2,
+    turn_owner: "player",
+    is_play_phase: true,
+    player: {
+      entity_id: "player-1",
+      character: "Ironclad",
+      hp: 61,
+      max_hp: 80,
+      block: 3,
+      energy: 3,
+      max_energy: 3,
+      stars: null,
+      gold: 112,
+      hand: [{
+        entity_id: "combat-card-1",
+        definition_id: "STRIKE",
+        name: "Strike",
+        type: "Attack",
+        cost: "1",
+        star_cost: null,
+        description: "Deal 6 damage.",
+        rarity: "Basic",
+        is_upgraded: false,
+        is_selected: false,
+        existing_enchantment: null,
+        target_type: "AnyEnemy",
+        can_play: true,
+        unplayable_reason: null
+      }],
+      draw_pile_count: 5,
+      discard_pile_count: 2,
+      exhaust_pile_count: 0,
+      statuses: [],
+      relics: [],
+      potions: [],
+      max_potion_slots: 3,
+      orbs: [],
+      orb_slots: null
+    },
+    enemies: [{
+      entity_id: "enemy-1",
+      combat_id: 1,
+      definition_id: "CULTIST",
+      name: "Cultist",
+      hp: 42,
+      max_hp: 50,
+      block: 0,
+      statuses: [],
+      intents: [{ type: "Attack", label: "6", title: "Attack", description: "Intends to attack for 6." }]
+    }]
+  },
+  surface_kind: "combat_turn",
+  surface: { kind: "combat_turn", room_entity_id: "combat-room-1", can_end_turn: true },
+  legal_actions: [
+    {
+      action_id: "action-combat-play-1",
+      state_id: "state-combat-1",
+      kind: "play_card",
+      category: "combat",
+      label: "Play Strike on Cultist",
+      authority: "game_ui",
+      evidence_code: "CardModel.CanPlay+CombatState.HittableEnemies+CardModel.TryManualPlay"
+    },
+    {
+      action_id: "action-combat-end-1",
+      state_id: "state-combat-1",
+      kind: "end_turn",
+      category: "commit",
+      label: "End turn",
+      authority: "game_ui",
+      evidence_code: "PlayerCmd.EndTurn+NEndTurnButton.CanTurnBeEnded guards"
+    }
+  ],
+  completeness: {
+    player_visible_semantics: "contract_complete_for_immediate_combat_turn",
+    legal_actions: "derived_from_same_validator_as_execution",
+    sources: ["CombatManager.DebugOnlyGetState", "CardModel.CanPlay"],
+    missing: []
+  }
+};
+
 const TEST_SOURCE: AdapterDescriptor = {
   adapterId: "sts2mcp-rest-negotiated",
   endpoint: "http://adapter.test",
@@ -102,6 +241,14 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     expect(() => decodeBridgeV2State({ ...DECK_ENCHANT_STATE, surface_kind: "other" })).toThrow("does not match");
   });
 
+  it("strictly decodes event and combat contracts and rejects context/surface mismatch", () => {
+    expect(decodeBridgeV2State(EVENT_OPTION_STATE).data.context.kind).toBe("event");
+    expect(decodeBridgeV2State(COMBAT_TURN_STATE).data.surface.kind).toBe("combat_turn");
+    expect(() => decodeBridgeV2State({ ...EVENT_OPTION_STATE, context: COMBAT_TURN_STATE.context })).toThrow(
+      "event_option surface requires event context"
+    );
+  });
+
   it("preserves enchant semantics and imports only advertised opaque actions", async () => {
     const legacyState = await fixture("event") as JsonObject;
     const wrapped = wrapBridgeV2State({
@@ -112,6 +259,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     const envelope = normalizeCurrentState(wrapped, TEST_SOURCE);
 
     expect(envelope.currentState.context.kind).toBe("event");
+    expect(envelope.currentState.actionAuthority).toBe("bridge_advertised");
     expect(envelope.currentState.surface.kind).toBe("deck_enchant_selection");
     if (envelope.currentState.surface.kind !== "deck_enchant_selection") throw new Error("unexpected surface");
     expect(envelope.currentState.surface.enchantment).toMatchObject({ definitionId: "SLITHER", name: "Slither" });
@@ -131,6 +279,39 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     })]);
   });
 
+  it("keeps event meaning separate from its option surface and imports only event bridge actions", () => {
+    const envelope = normalizeCurrentState(
+      wrapBridgeV2State({ state: structuredClone(EVENT_OPTION_STATE), capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    );
+    expect(envelope.currentState).toMatchObject({
+      actionAuthority: "bridge_advertised",
+      context: { kind: "event", eventId: "SPIRALING_WHIRLPOOL", body: "The whirlpool settles." },
+      surface: { kind: "event_option", screenEntityId: "event-screen-1" }
+    });
+    if (envelope.currentState.surface.kind !== "event_option") throw new Error("unexpected surface");
+    expect(envelope.currentState.surface.options[0]).toMatchObject({ title: "Proceed", proceed: true, enabled: true });
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toEqual([
+      expect.objectContaining({ id: "action-event-1", action: expect.objectContaining({ kind: "bridge_v2_action" }) })
+    ]);
+  });
+
+  it("uses Bridge combat context as player-visible truth and never reconstructs combat actions locally", () => {
+    const envelope = normalizeCurrentState(
+      wrapBridgeV2State({ state: structuredClone(COMBAT_TURN_STATE), capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    );
+    expect(envelope.currentState).toMatchObject({
+      actionAuthority: "bridge_advertised",
+      context: { kind: "combat", encounterType: "elite", round: 2, enemies: [{ entityId: "enemy-1" }] },
+      player: { character: "Ironclad", energy: 3, hand: [{ entityId: "combat-card-1", canPlay: true }] },
+      surface: { kind: "combat_turn", roomEntityId: "combat-room-1", canEndTurn: true }
+    });
+    const actions = buildAllowedActions(envelope.currentState, envelope.stateHash);
+    expect(actions.map((action) => action.id)).toEqual(["action-combat-play-1", "action-combat-end-1"]);
+    expect(actions.every((action) => action.action.kind === "bridge_v2_action")).toBe(true);
+  });
+
   it("fails closed instead of importing an unknown advertised action kind", () => {
     const raw = structuredClone(DECK_ENCHANT_STATE);
     raw.legal_actions[0]!.kind = "invented_operation";
@@ -139,6 +320,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(envelope.currentState.stability).toBe("invalid");
+    expect(envelope.currentState.actionAuthority).toBe("none");
     expect(envelope.currentState.surface.kind).toBe("unsupported");
     expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toEqual([]);
   });

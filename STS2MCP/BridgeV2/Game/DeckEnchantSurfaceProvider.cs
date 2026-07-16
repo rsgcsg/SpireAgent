@@ -16,11 +16,22 @@ using STS2_MCP.BridgeV2.Runtime;
 
 namespace STS2_MCP.BridgeV2.Game;
 
-internal static class DeckEnchantSurfaceProvider
+internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
 {
     private const string ReflectionEvidence = "sts2-v0.108.0:cached_reflection:NDeckEnchantSelectScreen";
 
-    public static BridgeObservationDraft Build(
+    public string Kind => "deck_enchant_selection";
+
+    public BridgeObservationDraft? TryBuild(
+        BridgeEntityRegistry entities,
+        GameBuildIdentity game)
+    {
+        if (NOverlayStack.Instance?.Peek() is not NDeckEnchantSelectScreen screen)
+            return null;
+        return Build(screen, entities, game);
+    }
+
+    private static BridgeObservationDraft Build(
         NDeckEnchantSelectScreen screen,
         BridgeEntityRegistry entities,
         GameBuildIdentity game)
@@ -46,6 +57,7 @@ internal static class DeckEnchantSurfaceProvider
             return new BridgeObservationDraft(
                 degradedSignature,
                 "degraded",
+                BridgeContextBuilder.Build(entities),
                 degradedSurface,
                 degradedCompleteness,
                 game,
@@ -127,6 +139,7 @@ internal static class DeckEnchantSurfaceProvider
         return new BridgeObservationDraft(
             signature,
             missing.Count == 0 ? "ready" : "degraded",
+            BridgeContextBuilder.Build(entities),
             surface,
             completeness,
             game,

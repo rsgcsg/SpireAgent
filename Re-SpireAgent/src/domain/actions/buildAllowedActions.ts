@@ -8,25 +8,18 @@ import type { AllowedAction } from "./allowedAction.js";
  */
 export function buildAllowedActions(state: NormalizedCurrentState, sourceStateHash: string): AllowedAction[] {
   if (state.stability !== "actionable") return [];
+  if (state.actionAuthority === "none") return [];
+  if (state.actionAuthority === "bridge_advertised") {
+    return bridgeActions(state, sourceStateHash);
+  }
   switch (state.surface.kind) {
     case "combat_turn":
       return state.context.kind === "combat" && state.player ? combatActions(state.context, state.player, sourceStateHash) : [];
     case "card_selection":
       return cardSelectionActions(state.surface, sourceStateHash);
     case "deck_enchant_selection":
-      return state.surface.legalActions.map((action) => ({
-        id: action.actionId,
-        kind: action.kind,
-        label: action.label,
-        description: `Bridge-validated ${action.evidenceCode}`,
-        action: {
-          kind: "bridge_v2_action",
-          actionId: action.actionId,
-          expectedStateId: action.stateId,
-          bridgeActionKind: action.kind
-        },
-        sourceStateHash
-      }));
+    case "event_option":
+      return [];
     case "card_reward":
       return [
         ...state.surface.options.flatMap((card) => card.index === undefined ? [] : [allowed(`card-reward:${card.index}`, `Take ${card.name}`, { kind: "select_card_reward", index: card.index }, sourceStateHash, card.description)]),
@@ -65,6 +58,28 @@ export function buildAllowedActions(state: NormalizedCurrentState, sourceStateHa
     case "unsupported":
       return [];
   }
+}
+
+function bridgeActions(state: NormalizedCurrentState, sourceStateHash: string): AllowedAction[] {
+  const legalActions = state.surface.kind === "deck_enchant_selection"
+    || state.surface.kind === "event_option"
+    || state.surface.kind === "combat_turn"
+    ? state.surface.legalActions
+    : undefined;
+  if (!legalActions) return [];
+  return legalActions.map((action) => ({
+    id: action.actionId,
+    kind: action.kind,
+    label: action.label,
+    description: `Bridge-validated ${action.evidenceCode}`,
+    action: {
+      kind: "bridge_v2_action",
+      actionId: action.actionId,
+      expectedStateId: action.stateId,
+      bridgeActionKind: action.kind
+    },
+    sourceStateHash
+  }));
 }
 
 function combatActions(context: CombatContext, player: PlayerSnapshot, sourceStateHash: string): AllowedAction[] {

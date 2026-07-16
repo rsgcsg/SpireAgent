@@ -25,7 +25,7 @@ untrusted MCP JSON
 - On a Bridge v2-owned surface, the allowed IDs and executable opaque actions
   come only from the exact current bridge state. Never merge them with v1
   reconstructed actions.
-- `NormalizedCurrentState` is the only current-state contract available to planning, prompting, and action generation. Its `context` records semantic game meaning; its `surface` records the active interaction protocol. Do not replace this with combination-specific top-level types.
+- `NormalizedCurrentState` is the only current-state contract available to planning, prompting, and action generation. Its `context` records semantic game meaning; its `surface` records the active interaction protocol; its `actionAuthority` records who may construct executable actions. Always inspect all three. Do not replace this with one `kind` or combination-specific top-level types.
 - Missing and unknown facts stay missing or unknown. Critical missing fields make the state invalid.
 - Failures are evidence. They are not hidden by local strategic fallback or JSON repair.
 

@@ -31,6 +31,7 @@ internal sealed record BridgeActionDraft(
 internal sealed record BridgeObservationDraft(
     string Signature,
     string Readiness,
+    IBridgeContext Context,
     IBridgeSurface Surface,
     StateCompleteness Completeness,
     GameBuildIdentity Game,

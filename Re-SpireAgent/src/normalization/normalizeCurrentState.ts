@@ -68,6 +68,7 @@ function normalizeLegacyCurrentState(rawInput: unknown, source: AdapterDescripto
   let currentState: NormalizedCurrentState = {
     ...base,
     stability: determineStability(surface, builtDiagnostics.status),
+    actionAuthority: surface.kind === "unsupported" || surface.kind === "no_action" ? "none" : "local_reconstruction",
     context,
     surface
   };
@@ -76,6 +77,7 @@ function normalizeLegacyCurrentState(rawInput: unknown, source: AdapterDescripto
     currentState = {
       ...base,
       stability: "invalid",
+      actionAuthority: "none",
       context: unknownContext(rawState, `Normalization failed for observed state ${base.sourceStateType}`),
       surface: unsupportedSurface(rawState, "malformed_known_state", "A required field or action-relevant schema contract was invalid")
     };
@@ -93,7 +95,11 @@ function normalizeLegacyCurrentState(rawInput: unknown, source: AdapterDescripto
   };
 }
 
-function buildBase(raw: JsonObject, sourceStateType: string, diagnostics: DiagnosticsBuilder): Omit<NormalizedStateBase, "stability"> {
+function buildBase(
+  raw: JsonObject,
+  sourceStateType: string,
+  diagnostics: DiagnosticsBuilder
+): Omit<NormalizedStateBase, "stability" | "actionAuthority"> {
   const run = parseRun(objectField(raw, "run"));
   const player = parsePlayer(objectField(raw, "player"), diagnostics);
   return {
@@ -302,6 +308,7 @@ function determineStability(surface: InteractionSurface, diagnosticsStatus: "ok"
   if (surface.kind === "card_reward") return surface.options.length > 0 || surface.canSkip || surface.canProceed ? "actionable" : "loading";
   if (surface.kind === "reward_claim") return surface.items.length > 0 || surface.canProceed ? "actionable" : "loading";
   if (surface.kind === "map_navigation") return surface.nextOptions.length > 0 ? "actionable" : "loading";
+  if (surface.kind === "event_option") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "option_choice") return surface.options.some((option) => option.enabled) || surface.canProceed ? "actionable" : "loading";
   if (surface.kind === "shop_interaction") return "actionable";
   if (surface.kind === "treasure_claim") return surface.relics.length > 0 || surface.canProceed ? "actionable" : "loading";
@@ -316,7 +323,7 @@ function isCompatible(context: SemanticContext, surface: InteractionSurface): bo
     rewards: ["reward_claim", "card_selection", "no_action", "unsupported"],
     map: ["map_navigation", "no_action", "unsupported"],
     rest: ["option_choice", "card_selection", "no_action", "unsupported"],
-    event: ["option_choice", "card_selection", "no_action", "unsupported"],
+    event: ["event_option", "option_choice", "card_selection", "no_action", "unsupported"],
     shop: ["shop_interaction", "no_action", "unsupported"],
     treasure: ["treasure_claim", "no_action", "unsupported"],
     crystal_sphere: ["grid_interaction", "no_action", "unsupported"],

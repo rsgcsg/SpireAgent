@@ -11,13 +11,15 @@ state-bound protocol intended for the rebuilt `Re-SpireAgent` client.
 Bridge v2 is an incremental preview, not a replacement for all v1 surfaces.
 
 - Current exact game binding: Slay the Spire 2 `v0.108.0`.
-- Implemented v2 vertical slice: singleplayer deck enchant selection.
+- Runtime-qualified v2 slice: singleplayer deck enchant selection.
+- Build/fixture-qualified `2.0-preview.2` slices awaiting organic smoke:
+  ordinary event options and player-phase combat turns.
 - All unimplemented or version-incompatible v2 surfaces fail closed with no
   legal actions.
 - v1 remains available for compatibility and has been made build-compatible
   with `v0.108.0`; its index-based action contract is legacy.
-- Static build/protocol tests and a real `v0.108.0` deck-enchant lifecycle smoke
-  pass. Other surfaces remain unsupported.
+- Static build/protocol tests and a real `v0.108.0` deck-enchant Bridge plus
+  Re-SpireAgent lifecycle smoke pass. Unlisted surfaces remain unsupported.
 
 See [current status](docs/bridge-v2/CURRENT_STATUS.md), the
 [upstream/design audit](docs/bridge-v2/UPSTREAM_AUDIT.md), and the
@@ -31,7 +33,9 @@ game outcome is known. Bridge v2 instead uses:
 
 ```text
 player-visible game facts
-  -> semantic surface
+  -> semantic context
+  -> blocking interaction surface
+  -> explicit action authority
   -> stable state_id
   -> state-scoped opaque legal_actions
   -> exact-state revalidation
@@ -78,7 +82,7 @@ dotnet test STS2_MCP.sln -p:STS2GameDir="$env:STS2_GAME_DIR"
 .\build.ps1 -GameDir "$env:STS2_GAME_DIR"
 ```
 
-The solution currently contains 22 pure contract/runtime/security tests covering stable
+The solution currently contains 23 pure contract/runtime/security tests covering stable
 state identity, entity identity, stale-state rejection, idempotent request IDs,
 completion observation, timeout-as-unknown, and JSON action shape.
 
@@ -170,15 +174,16 @@ not be retried automatically.
 
 ## Re-SpireAgent Integration
 
-The rebuilt SpireAgent now has a separate strict v2 decoder/projector and a
-negotiated hybrid adapter. In the default `auto` mode, the qualified deck
-enchant surface uses Bridge-advertised opaque actions as its sole executor;
-unsupported v2 surfaces remain on v1 during migration. Exact-build mismatch,
-command-response identity mismatch, failed command, and timeout all fail closed.
+The rebuilt SpireAgent has a strict v2 decoder/projector and negotiated hybrid
+adapter. It displays `context.kind + surface.kind + authority`. In default
+`auto` mode, a qualified v2 surface uses Bridge-advertised opaque actions as its
+sole executor; unsupported v2 surfaces remain on v1 during migration.
+Exact-build mismatch, context/surface mismatch, command-response identity
+mismatch, failed command, and timeout all fail closed.
 
-The client contract is fixture-tested. A fresh organic Re-SpireAgent deck
-enchant lifecycle smoke is still required before calling the combined path
-end-to-end runtime-qualified. Planning code never reads arbitrary bridge JSON.
+The deck-enchant combined lifecycle is organically qualified. Event and combat
+client contracts are fixture-tested only until `preview.2` is installed and
+smoked in the game. Planning code never reads arbitrary bridge JSON.
 
 ## Security And Observation Scope
 

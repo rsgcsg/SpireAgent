@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { isJsonObject, type JsonObject } from "../../shared/json.js";
 
-export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.1" as const;
+export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.2" as const;
 
 const compatibilitySchema = z.object({
   status: z.string().min(1),
@@ -43,8 +43,115 @@ const visibleCardSchema = z.object({
   rarity: z.string(),
   is_upgraded: z.boolean(),
   is_selected: z.boolean(),
-  existing_enchantment: visibleEnchantmentSchema.nullable().optional()
+  existing_enchantment: visibleEnchantmentSchema.nullable().optional(),
+  target_type: z.string().nullable().optional(),
+  can_play: z.boolean().nullable().optional(),
+  unplayable_reason: z.string().nullable().optional()
 }).passthrough();
+
+const visibleStatusSchema = z.object({
+  definition_id: z.string().min(1),
+  name: z.string().nullable().optional(),
+  amount: z.number(),
+  type: z.string(),
+  description: z.string().nullable().optional()
+}).passthrough();
+
+const visibleIntentSchema = z.object({
+  type: z.string().min(1),
+  label: z.string().nullable().optional(),
+  title: z.string().nullable().optional(),
+  description: z.string().nullable().optional()
+}).passthrough();
+
+const visibleEnemySchema = z.object({
+  entity_id: z.string().min(1),
+  combat_id: z.number().int().nonnegative().nullable().optional(),
+  definition_id: z.string().min(1),
+  name: z.string().nullable().optional(),
+  hp: z.number(),
+  max_hp: z.number(),
+  block: z.number(),
+  statuses: z.array(visibleStatusSchema),
+  intents: z.array(visibleIntentSchema)
+}).passthrough();
+
+const visiblePotionSchema = z.object({
+  entity_id: z.string().min(1),
+  definition_id: z.string().min(1),
+  name: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  slot: z.number().int().nonnegative(),
+  target_type: z.string(),
+  can_use: z.boolean(),
+  automatic: z.boolean()
+}).passthrough();
+
+const visibleRelicSchema = z.object({
+  entity_id: z.string().min(1),
+  definition_id: z.string().min(1),
+  name: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  counter: z.number().nullable().optional()
+}).passthrough();
+
+const visibleOrbSchema = z.object({
+  entity_id: z.string().min(1),
+  definition_id: z.string().min(1),
+  name: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  passive_value: z.number(),
+  evoke_value: z.number()
+}).passthrough();
+
+const visibleCombatPlayerSchema = z.object({
+  entity_id: z.string().min(1),
+  character: z.string().nullable().optional(),
+  hp: z.number(),
+  max_hp: z.number(),
+  block: z.number(),
+  energy: z.number().int(),
+  max_energy: z.number().int(),
+  stars: z.number().int().nullable().optional(),
+  gold: z.number().int(),
+  hand: z.array(visibleCardSchema),
+  draw_pile_count: z.number().int().nonnegative(),
+  discard_pile_count: z.number().int().nonnegative(),
+  exhaust_pile_count: z.number().int().nonnegative(),
+  statuses: z.array(visibleStatusSchema),
+  relics: z.array(visibleRelicSchema),
+  potions: z.array(visiblePotionSchema),
+  max_potion_slots: z.number().int().nonnegative(),
+  orbs: z.array(visibleOrbSchema),
+  orb_slots: z.number().int().nonnegative().nullable().optional()
+}).passthrough();
+
+const eventContextSchema = z.object({
+  kind: z.literal("event"),
+  event_id: z.string().min(1),
+  name: z.string().nullable().optional(),
+  ancient: z.boolean(),
+  in_dialogue: z.boolean(),
+  body: z.string().nullable().optional()
+}).passthrough();
+
+const combatContextSchema = z.object({
+  kind: z.literal("combat"),
+  encounter_type: z.enum(["normal", "elite", "boss", "unknown"]),
+  round: z.number().int().nonnegative(),
+  turn_owner: z.string().min(1),
+  is_play_phase: z.boolean(),
+  player: visibleCombatPlayerSchema,
+  enemies: z.array(visibleEnemySchema)
+}).passthrough();
+
+const unknownContextSchema = z.object({
+  kind: z.literal("unknown"),
+  source_type: z.string(),
+  reason: z.string()
+}).passthrough();
+
+const contextBaseSchema = z.object({ kind: z.string().min(1) }).passthrough();
 
 const deckEnchantSurfaceSchema = z.object({
   kind: z.literal("deck_enchant_selection"),
@@ -58,6 +165,30 @@ const deckEnchantSurfaceSchema = z.object({
   cancelable: z.boolean(),
   enchantment: visibleEnchantmentSchema,
   cards: z.array(visibleCardSchema)
+}).passthrough();
+
+const visibleEventOptionSchema = z.object({
+  entity_id: z.string().min(1),
+  index: z.number().int().nonnegative(),
+  title: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  is_locked: z.boolean(),
+  is_proceed: z.boolean(),
+  was_chosen: z.boolean(),
+  relic_name: z.string().nullable().optional(),
+  relic_description: z.string().nullable().optional()
+}).passthrough();
+
+const eventOptionSurfaceSchema = z.object({
+  kind: z.literal("event_option"),
+  screen_entity_id: z.string().min(1),
+  options: z.array(visibleEventOptionSchema)
+}).passthrough();
+
+const combatTurnSurfaceSchema = z.object({
+  kind: z.literal("combat_turn"),
+  room_entity_id: z.string().min(1),
+  can_end_turn: z.boolean()
 }).passthrough();
 
 const unsupportedSurfaceSchema = z.object({
@@ -91,6 +222,7 @@ const stateBaseSchema = z.object({
   state_sequence: z.number().int().nonnegative(),
   observed_at: z.string(),
   readiness: z.string().min(1),
+  context: contextBaseSchema,
   surface_kind: z.string().min(1),
   surface: surfaceBaseSchema,
   legal_actions: z.array(legalActionSchema),
@@ -151,15 +283,29 @@ const commandSchema = z.object({
 export type BridgeV2Capabilities = z.infer<typeof capabilitiesSchema>;
 export type BridgeV2LegalAction = z.infer<typeof legalActionSchema>;
 export type BridgeV2DeckEnchantSurface = z.infer<typeof deckEnchantSurfaceSchema>;
+export type BridgeV2EventContext = z.infer<typeof eventContextSchema>;
+export type BridgeV2CombatContext = z.infer<typeof combatContextSchema>;
+export type BridgeV2UnknownContext = z.infer<typeof unknownContextSchema>;
+export type BridgeV2EventOptionSurface = z.infer<typeof eventOptionSurfaceSchema>;
+export type BridgeV2CombatTurnSurface = z.infer<typeof combatTurnSurfaceSchema>;
 export type BridgeV2UnsupportedSurface = z.infer<typeof unsupportedSurfaceSchema>;
 export type BridgeV2Command = z.infer<typeof commandSchema>;
 
+export type BridgeV2Context =
+  | BridgeV2EventContext
+  | BridgeV2CombatContext
+  | BridgeV2UnknownContext
+  | (Record<string, unknown> & { kind: string });
+
 export type BridgeV2Surface =
   | BridgeV2DeckEnchantSurface
+  | BridgeV2EventOptionSurface
+  | BridgeV2CombatTurnSurface
   | BridgeV2UnsupportedSurface
   | (Record<string, unknown> & { kind: string });
 
 export type BridgeV2State = z.infer<typeof stateBaseSchema> & {
+  context: BridgeV2Context;
   surface: BridgeV2Surface;
 };
 
@@ -187,16 +333,27 @@ export function decodeBridgeV2State(value: unknown): DecodedBridgePayload<Bridge
     );
   }
 
+  const context = parseContext(decoded.data.context);
   let surface: BridgeV2Surface;
   if (decoded.data.surface.kind === "deck_enchant_selection") {
     surface = parse(deckEnchantSurfaceSchema, decoded.data.surface, "deck_enchant_selection surface");
+  } else if (decoded.data.surface.kind === "event_option") {
+    surface = parse(eventOptionSurfaceSchema, decoded.data.surface, "event_option surface");
+    if (context.kind !== "event") {
+      throw new BridgeV2DecodeError("Bridge v2 event_option surface requires event context");
+    }
+  } else if (decoded.data.surface.kind === "combat_turn") {
+    surface = parse(combatTurnSurfaceSchema, decoded.data.surface, "combat_turn surface");
+    if (context.kind !== "combat") {
+      throw new BridgeV2DecodeError("Bridge v2 combat_turn surface requires combat context");
+    }
   } else if (decoded.data.surface.kind === "unsupported") {
     surface = parse(unsupportedSurfaceSchema, decoded.data.surface, "unsupported surface");
   } else {
     surface = decoded.data.surface;
   }
 
-  return { raw: decoded.raw, data: { ...decoded.data, surface } };
+  return { raw: decoded.raw, data: { ...decoded.data, context, surface } };
 }
 
 export function decodeBridgeV2Command(value: unknown): DecodedBridgePayload<BridgeV2Command> {
@@ -215,6 +372,33 @@ export function isBridgeV2UnsupportedSurface(
   return surface.kind === "unsupported"
     && typeof surface.source_type === "string"
     && typeof surface.reason === "string";
+}
+
+export function isBridgeV2EventContext(context: BridgeV2Context): context is BridgeV2EventContext {
+  return context.kind === "event";
+}
+
+export function isBridgeV2CombatContext(context: BridgeV2Context): context is BridgeV2CombatContext {
+  return context.kind === "combat";
+}
+
+export function isBridgeV2EventOptionSurface(
+  surface: BridgeV2Surface
+): surface is BridgeV2EventOptionSurface {
+  return surface.kind === "event_option";
+}
+
+export function isBridgeV2CombatTurnSurface(
+  surface: BridgeV2Surface
+): surface is BridgeV2CombatTurnSurface {
+  return surface.kind === "combat_turn";
+}
+
+function parseContext(value: z.infer<typeof contextBaseSchema>): BridgeV2Context {
+  if (value.kind === "event") return parse(eventContextSchema, value, "event context");
+  if (value.kind === "combat") return parse(combatContextSchema, value, "combat context");
+  if (value.kind === "unknown") return parse(unknownContextSchema, value, "unknown context");
+  return value;
 }
 
 function decode<T>(value: unknown, schema: z.ZodType<T>, label: string): DecodedBridgePayload<T> {

@@ -97,8 +97,8 @@ export interface RunMetadata {
     maxOutputTokens: number;
   };
   schemas: {
-    normalizedState: 1 | 2;
-    prompt: 1 | 2;
+    normalizedState: 1 | 2 | 3;
+    prompt: 1 | 2 | 3;
     decisionRecord: 1 | 2;
   };
 }

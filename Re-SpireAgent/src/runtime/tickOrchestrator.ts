@@ -21,7 +21,9 @@ export interface TickOrchestratorDependencies {
 export interface TickResult {
   decisionId: string;
   outcome: DecisionOutcome;
-  stateKind?: string;
+  contextKind?: StateEnvelope["currentState"]["context"]["kind"];
+  surfaceKind?: StateEnvelope["currentState"]["surface"]["kind"];
+  actionAuthority?: StateEnvelope["currentState"]["actionAuthority"];
   selectedActionId?: string;
   shouldStopRun: boolean;
 }
@@ -107,7 +109,7 @@ export class TickOrchestrator {
       record.allowedActions = allowedActions;
       if (prepared.prompt) record.prompt = prepared.prompt;
       await this.dependencies.recorder.append(record);
-      return result(decisionId, record.outcome, pre.currentState.context.kind, undefined, false);
+      return result(decisionId, record.outcome, pre.currentState, undefined, false);
     }
 
     let session;
@@ -124,7 +126,7 @@ export class TickOrchestrator {
       if (prepared.prompt) record.prompt = prepared.prompt;
       record.error = safeError(error);
       await this.dependencies.recorder.append(record);
-      return result(decisionId, record.outcome, pre.currentState.context.kind, undefined, true);
+      return result(decisionId, record.outcome, pre.currentState, undefined, true);
     }
 
     const validation = validateDecisionForActions(session.finalAttempt, allowedActions);
@@ -142,7 +144,7 @@ export class TickOrchestrator {
       };
       record.error = validation.error;
       await this.dependencies.recorder.append(record);
-      return result(decisionId, record.outcome, pre.currentState.context.kind, undefined, true);
+      return result(decisionId, record.outcome, pre.currentState, undefined, true);
     }
 
     let latest: StateEnvelope;
@@ -162,7 +164,7 @@ export class TickOrchestrator {
         error: `Could not re-read state before execution: ${safeError(error)}`
       });
       await this.dependencies.recorder.append(record);
-      return result(decisionId, record.outcome, pre.currentState.context.kind, validation.selectedAction.id, true);
+      return result(decisionId, record.outcome, pre.currentState, validation.selectedAction.id, true);
     }
 
     if (latest.stateHash !== pre.stateHash || validation.selectedAction.sourceStateHash !== latest.stateHash) {
@@ -183,7 +185,7 @@ export class TickOrchestrator {
         error: "State changed after prompt construction and before execution"
       });
       await this.dependencies.recorder.append(record, { postRawState: latest.rawState });
-      return result(decisionId, record.outcome, pre.currentState.context.kind, validation.selectedAction.id, false);
+      return result(decisionId, record.outcome, pre.currentState, validation.selectedAction.id, false);
     }
 
     let adapterResult: GameExecutionResult;
@@ -206,7 +208,7 @@ export class TickOrchestrator {
         error: safeError(error)
       });
       await this.dependencies.recorder.append(record);
-      return result(decisionId, record.outcome, pre.currentState.context.kind, validation.selectedAction.id, true);
+      return result(decisionId, record.outcome, pre.currentState, validation.selectedAction.id, true);
     }
 
     if (!adapterResult.accepted) {
@@ -231,7 +233,7 @@ export class TickOrchestrator {
         error
       });
       await this.dependencies.recorder.append(record);
-      return result(decisionId, record.outcome, pre.currentState.context.kind, validation.selectedAction.id, true);
+      return result(decisionId, record.outcome, pre.currentState, validation.selectedAction.id, true);
     }
 
     const settlement = await this.dependencies.settlement.waitForNextState(pre, validation.selectedAction.action);
@@ -260,7 +262,7 @@ export class TickOrchestrator {
       ...(settlement.error ? { error: settlement.error } : {})
     });
     await this.dependencies.recorder.append(record, settlement.after ? { postRawState: settlement.after.rawState } : undefined);
-    return result(decisionId, record.outcome, pre.currentState.context.kind, validation.selectedAction.id, outcome !== "executed_and_settled");
+    return result(decisionId, record.outcome, pre.currentState, validation.selectedAction.id, outcome !== "executed_and_settled");
   }
 
   private async recordWithoutDecision(input: {
@@ -286,7 +288,7 @@ export class TickOrchestrator {
     record.allowedActions = input.allowedActions;
     if (input.error) record.error = input.error;
     await this.dependencies.recorder.append(record);
-    return result(input.decisionId, input.outcome, input.pre.currentState.context.kind, undefined, input.shouldStopRun);
+    return result(input.decisionId, input.outcome, input.pre.currentState, undefined, input.shouldStopRun);
   }
 }
 
@@ -366,14 +368,18 @@ function isRunBoundary(kind: StateEnvelope["currentState"]["context"]["kind"]): 
 function result(
   decisionId: string,
   outcome: DecisionOutcome,
-  stateKind: string | undefined,
+  state: StateEnvelope["currentState"] | undefined,
   selectedActionId: string | undefined,
   shouldStopRun: boolean
 ): TickResult {
   return {
     decisionId,
     outcome,
-    ...(stateKind ? { stateKind } : {}),
+    ...(state ? {
+      contextKind: state.context.kind,
+      surfaceKind: state.surface.kind,
+      actionAuthority: state.actionAuthority
+    } : {}),
     ...(selectedActionId ? { selectedActionId } : {}),
     shouldStopRun
   };
