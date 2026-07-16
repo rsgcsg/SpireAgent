@@ -465,7 +465,8 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
     }
 
     private static bool IsCurrentScreen(NDeckEnchantSelectScreen screen) =>
-        McpMod.IsLiveNode(screen) && ReferenceEquals(NOverlayStack.Instance?.Peek(), screen);
+        ActiveSurfaceResolver.IsVisibleActiveOverlay(screen)
+        && ReferenceEquals(NOverlayStack.Instance?.Peek(), screen);
 
     private static bool IsPreviewVisible(NDeckEnchantSelectScreen screen) =>
         GetVisiblePreview(screen) != null;

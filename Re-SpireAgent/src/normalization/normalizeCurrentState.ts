@@ -309,7 +309,10 @@ function determineStability(surface: InteractionSurface, diagnosticsStatus: "ok"
   if (surface.kind === "deck_enchant_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "card_reward_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "card_reward") return surface.options.length > 0 || surface.canSkip || surface.canProceed ? "actionable" : "loading";
-  if (surface.kind === "reward_claim") return surface.items.length > 0 || surface.canProceed ? "actionable" : "loading";
+  if (surface.kind === "reward_claim") {
+    if ("legalActions" in surface) return surface.legalActions.length > 0 ? "actionable" : "loading";
+    return surface.items.length > 0 || surface.canProceed ? "actionable" : "loading";
+  }
   if (surface.kind === "map_navigation") return surface.nextOptions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "event_option") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "option_choice") return surface.options.some((option) => option.enabled) || surface.canProceed ? "actionable" : "loading";
@@ -322,7 +325,7 @@ function determineStability(surface: InteractionSurface, diagnosticsStatus: "ok"
 function isCompatible(context: SemanticContext, surface: InteractionSurface): boolean {
   const allowed: Record<SemanticContext["kind"], readonly InteractionSurface["kind"][]> = {
     combat: ["combat_turn", "card_selection", "no_action", "unsupported"],
-    reward_flow: ["card_reward_selection", "no_action", "unsupported"],
+    reward_flow: ["card_reward_selection", "reward_claim", "no_action", "unsupported"],
     card_reward: ["card_reward", "card_selection", "no_action", "unsupported"],
     rewards: ["reward_claim", "card_selection", "no_action", "unsupported"],
     map: ["map_navigation", "no_action", "unsupported"],

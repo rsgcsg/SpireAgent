@@ -1,13 +1,13 @@
 import type { AllowedAction, PromptAllowedAction } from "../domain/actions/allowedAction.js";
 import { toPromptAllowedAction } from "../domain/actions/allowedAction.js";
-import type { NormalizedCurrentState } from "../domain/state/index.js";
+import { NORMALIZED_STATE_SCHEMA_VERSION, type NormalizedCurrentState } from "../domain/state/index.js";
 import { stateHash } from "../runtime/stateHash.js";
 import { GLOBAL_PROMPT_ID, GLOBAL_PROMPT_VERSION, GLOBAL_SYSTEM_PROMPT } from "./globalPrompt.js";
 import { CONTEXT_GUIDES, SURFACE_GUIDES } from "./stateGuides.js";
 
 export interface DecisionPromptPayload {
   promptSchemaVersion: 3;
-  currentStateSchemaVersion: 3;
+  currentStateSchemaVersion: typeof NORMALIZED_STATE_SCHEMA_VERSION;
   contextKind: NormalizedCurrentState["context"]["kind"];
   surfaceKind: NormalizedCurrentState["surface"]["kind"];
   actionAuthority: NormalizedCurrentState["actionAuthority"];
@@ -44,7 +44,7 @@ export function buildDecisionPrompt(currentState: NormalizedCurrentState, allowe
   const surfaceGuide = SURFACE_GUIDES[currentState.surface.kind];
   const payload: DecisionPromptPayload = {
     promptSchemaVersion: 3,
-    currentStateSchemaVersion: 3,
+    currentStateSchemaVersion: NORMALIZED_STATE_SCHEMA_VERSION,
     contextKind: currentState.context.kind,
     surfaceKind: currentState.surface.kind,
     actionAuthority: currentState.actionAuthority,
@@ -67,7 +67,7 @@ export function buildDecisionPrompt(currentState: NormalizedCurrentState, allowe
     globalPromptId: GLOBAL_PROMPT_ID,
     globalPromptVersion: GLOBAL_PROMPT_VERSION,
     stateGuideId: `${contextGuide.id}+${surfaceGuide.id}`,
-    stateGuideVersion: 2,
+    stateGuideVersion: Math.max(contextGuide.version, surfaceGuide.version),
     systemPrompt,
     userPrompt,
     systemPromptHash: stateHash(systemPrompt),

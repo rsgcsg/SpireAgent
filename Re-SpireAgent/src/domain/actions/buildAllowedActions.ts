@@ -28,6 +28,7 @@ export function buildAllowedActions(state: NormalizedCurrentState, sourceStateHa
         ...(state.surface.canProceed ? [allowed("card-reward:proceed", "Continue", { kind: "proceed" }, sourceStateHash)] : [])
       ];
     case "reward_claim":
+      if ("legalActions" in state.surface) return [];
       return rewardActions(state.player, state.surface.items, state.surface.canProceed, sourceStateHash);
     case "map_navigation":
       return state.surface.nextOptions.map((node, position) => allowed(`map:${node.index ?? position}`, `Choose ${node.type} node${node.col !== undefined && node.row !== undefined ? ` at (${node.col},${node.row})` : ""}`, { kind: "choose_map_node", index: node.index ?? position }, sourceStateHash, node.leadsTo.length > 0 ? `Leads to ${node.leadsTo.map((next) => `${next.type ?? "node"}@${next.col},${next.row}`).join(", ")}` : undefined));
@@ -62,12 +63,7 @@ export function buildAllowedActions(state: NormalizedCurrentState, sourceStateHa
 }
 
 function bridgeActions(state: NormalizedCurrentState, sourceStateHash: string): AllowedAction[] {
-  const legalActions = state.surface.kind === "deck_enchant_selection"
-    || state.surface.kind === "card_reward_selection"
-    || state.surface.kind === "event_option"
-    || state.surface.kind === "combat_turn"
-    ? state.surface.legalActions
-    : undefined;
+  const legalActions = "legalActions" in state.surface ? state.surface.legalActions : undefined;
   if (!legalActions) return [];
   return legalActions.map((action) => ({
     id: action.actionId,

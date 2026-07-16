@@ -11,6 +11,7 @@ internal static class BridgeSnapshotBuilder
     {
         new DeckEnchantSurfaceProvider(),
         new CardRewardSurfaceProvider(),
+        new RewardClaimSurfaceProvider(),
         new CombatTurnSurfaceProvider(),
         new EventOptionSurfaceProvider()
     };

@@ -23,7 +23,8 @@ const CAPABILITIES = {
     { kind: "deck_enchant_selection", support: "implemented_exact_game_version", operations: ["toggle_card"], evidence: "test-contract" },
     { kind: "event_option", support: "implemented_exact_game_version", operations: ["choose_event_option", "proceed_event"], evidence: "test-contract" },
     { kind: "combat_turn", support: "implemented_exact_game_version", operations: ["play_card", "use_potion", "end_turn"], evidence: "test-contract" },
-    { kind: "card_reward_selection", support: "implemented_exact_game_version", operations: ["select_card_reward", "choose_card_reward_alternative"], evidence: "test-contract" }
+    { kind: "card_reward_selection", support: "implemented_exact_game_version", operations: ["select_card_reward", "choose_card_reward_alternative"], evidence: "test-contract" },
+    { kind: "reward_claim", support: "implemented_exact_game_version", operations: ["claim_reward", "proceed_rewards"], evidence: "test-contract" }
   ],
   commands: { opaque_actions_only: true, state_bound: true, idempotent_request_ids: true, lifecycle_states: ["started", "completed"], outcome_timeout_ms: 10000 },
   inspections: {
@@ -296,6 +297,53 @@ const CARD_REWARD_STATE = {
   }
 };
 
+const REWARD_CLAIM_STATE = {
+  ...DECK_ENCHANT_STATE,
+  state_id: "state-reward-claim-1",
+  state_sequence: 5,
+  context: { kind: "reward_flow", reward_kind: "room_rewards" },
+  surface_kind: "reward_claim",
+  surface: {
+    kind: "reward_claim",
+    screen_entity_id: "rewards-screen-1",
+    rewards: [{
+      entity_id: "reward-gold-1",
+      kind: "gold",
+      label: "25 Gold",
+      description: "25 Gold",
+      enabled: true
+    }],
+    can_proceed: true,
+    proceed_skips_remaining_rewards: true
+  },
+  legal_actions: [
+    {
+      action_id: "action-reward-claim-1",
+      state_id: "state-reward-claim-1",
+      kind: "claim_reward",
+      category: "claim",
+      label: "Claim 25 Gold",
+      authority: "game_ui",
+      evidence_code: "NRewardButton.Reward+NRewardButton.ForceClick"
+    },
+    {
+      action_id: "action-reward-proceed-1",
+      state_id: "state-reward-claim-1",
+      kind: "proceed_rewards",
+      category: "navigation",
+      label: "Skip remaining rewards and continue",
+      authority: "game_ui",
+      evidence_code: "NRewardsScreen.ProceedButton+NProceedButton.ForceClick"
+    }
+  ],
+  completeness: {
+    player_visible_semantics: "contract_complete_for_reward_claim",
+    legal_actions: "derived_from_same_current_ui_controls_as_execution",
+    sources: ["NRewardsScreen._rewardButtons rendered as NRewardButton", "NRewardButton.Reward", "NRewardsScreen.ProceedButton"],
+    missing: []
+  }
+};
+
 const TEST_SOURCE: AdapterDescriptor = {
   adapterId: "sts2mcp-rest-negotiated",
   endpoint: "http://adapter.test",
@@ -343,6 +391,28 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     expect(buildAllowedActions(envelope.currentState, envelope.stateHash).map((action) => action.id)).toEqual([
       "action-card-reward-card-1",
       "action-card-reward-alt-1"
+    ]);
+  });
+
+  it("keeps outer room rewards separate from card reward selection and imports only opaque claims", () => {
+    expect(decodeBridgeV2State(REWARD_CLAIM_STATE).data.surface.kind).toBe("reward_claim");
+    expect(() => decodeBridgeV2State({
+      ...REWARD_CLAIM_STATE,
+      context: { kind: "reward_flow", reward_kind: "card_reward" }
+    })).toThrow("reward_claim surface requires room_rewards reward_flow context");
+
+    const envelope = normalizeCurrentState(
+      wrapBridgeV2State({ state: structuredClone(REWARD_CLAIM_STATE), capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    );
+    expect(envelope.currentState).toMatchObject({
+      actionAuthority: "bridge_advertised",
+      context: { kind: "reward_flow", rewardKind: "room_rewards" },
+      surface: { kind: "reward_claim", rewards: [{ kind: "gold", label: "25 Gold" }], proceedSkipsRemainingRewards: true }
+    });
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash).map((action) => action.id)).toEqual([
+      "action-reward-claim-1",
+      "action-reward-proceed-1"
     ]);
   });
 

@@ -6,6 +6,7 @@ import {
   type BridgeSurfaceCompleteness,
   type CardSnapshot,
   type CardRewardSelectionSurface,
+  type BridgeRewardClaimSurface,
   type CombatTurnSurface,
   type DeckEnchantSelectionSurface,
   type EnemySnapshot,
@@ -21,6 +22,7 @@ import {
   isBridgeV2CombatContext,
   isBridgeV2CombatTurnSurface,
   isBridgeV2CardRewardSelectionSurface,
+  isBridgeV2RewardClaimSurface,
   isBridgeV2DeckEnchantSurface,
   isBridgeV2EventContext,
   isBridgeV2EventOptionSurface,
@@ -28,6 +30,7 @@ import {
   isBridgeV2UnsupportedSurface,
   type BridgeV2CombatContext,
   type BridgeV2CardRewardSelectionSurface,
+  type BridgeV2RewardClaimSurface,
   type BridgeV2DeckEnchantSurface,
   type BridgeV2Diagnostic,
   type BridgeV2EventOptionSurface,
@@ -52,7 +55,8 @@ const ACTION_KINDS = {
   ]),
   event_option: new Set(["choose_event_option", "proceed_event"]),
   combat_turn: new Set(["play_card", "use_potion", "end_turn"]),
-  card_reward_selection: new Set(["select_card_reward", "choose_card_reward_alternative"])
+  card_reward_selection: new Set(["select_card_reward", "choose_card_reward_alternative"]),
+  reward_claim: new Set(["claim_reward", "proceed_rewards"])
 } as const;
 
 export function normalizeBridgeV2CurrentState(
@@ -173,6 +177,11 @@ export function normalizeBridgeV2CurrentState(
       } else if (isBridgeV2CardRewardSelectionSurface(state.surface) && isBridgeV2RewardFlowContext(state.context)) {
         validateCardRewardSelectionState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
         surface = projectCardRewardSelectionSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
+      } else if (isBridgeV2RewardClaimSurface(state.surface)
+          && isBridgeV2RewardFlowContext(state.context)
+          && state.context.reward_kind === "room_rewards") {
+        validateRewardClaimState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
+        surface = projectRewardClaimSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
       } else {
         diagnostics.invalid("bridge_v2.context_surface", {
           context: state.context.kind,
@@ -392,6 +401,28 @@ function validateCardRewardSelectionState(
   }
 }
 
+function validateRewardClaimState(
+  surface: BridgeV2RewardClaimSurface,
+  stateId: string,
+  actions: BridgeV2LegalAction[],
+  missing: string[],
+  advertisedOperations: ReadonlySet<string>,
+  readiness: string,
+  diagnostics: DiagnosticsBuilder
+): void {
+  const rewardIds = new Set(surface.rewards.map((reward) => reward.entity_id));
+  if (rewardIds.size !== surface.rewards.length) diagnostics.invalid("bridge_v2.surface.rewards", surface.rewards, "reward entity ids are not unique");
+  validateActions("reward_claim", stateId, actions, missing, advertisedOperations, readiness, diagnostics);
+  for (const action of actions) {
+    if (action.kind === "claim_reward" && !surface.rewards.some((reward) => reward.enabled && action.label === `Claim ${reward.label}`)) {
+      diagnostics.invalid("bridge_v2.legal_actions.label", action.label, "claim action does not identify an enabled visible reward");
+    }
+    if (action.kind === "proceed_rewards" && !surface.can_proceed) {
+      diagnostics.invalid("bridge_v2.legal_actions.kind", action.kind, "proceed action appeared while the proceed control is disabled");
+    }
+  }
+}
+
 function validateExactGameIdentity(
   path: string,
   game: {
@@ -600,6 +631,30 @@ function projectCardRewardSelectionSurface(
       label: alternative.label,
       enabled: alternative.enabled
     })),
+    legalActions: projectActions(actions),
+    completeness: projectCompleteness(completeness)
+  };
+}
+
+function projectRewardClaimSurface(
+  surface: BridgeV2RewardClaimSurface,
+  stateId: string,
+  actions: BridgeV2LegalAction[],
+  completeness: RawCompleteness
+): BridgeRewardClaimSurface {
+  return {
+    kind: "reward_claim",
+    bridgeStateId: stateId,
+    screenEntityId: surface.screen_entity_id,
+    rewards: surface.rewards.map((reward) => ({
+      entityId: reward.entity_id,
+      kind: reward.kind,
+      label: reward.label,
+      ...(reward.description ? { description: reward.description } : {}),
+      enabled: reward.enabled
+    })),
+    canProceed: surface.can_proceed,
+    proceedSkipsRemainingRewards: surface.proceed_skips_remaining_rewards,
     legalActions: projectActions(actions),
     completeness: projectCompleteness(completeness)
   };

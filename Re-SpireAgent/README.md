@@ -197,10 +197,11 @@ RE-P1 has fixture-backed support for:
 - `game_over`
 
 Bridge v2 source `preview.3` contracts cover `deck_enchant_selection`,
-`event_option`, `combat_turn`, and `card_reward_selection`. The first three have
-bounded organic Bridge plus Re-SpireAgent lifecycle evidence on the exact
-supported build. Card reward is exact-source and fixture qualified but still
-awaits a fresh installed organic lifecycle. Qualification is per action shape,
+`event_option`, `combat_turn`, `card_reward_selection`, and `reward_claim`.
+The first four have bounded organic Bridge plus Re-SpireAgent lifecycle evidence
+on the exact supported build. `reward_claim` has bounded ordinary claim and
+Proceed/Skip Bridge command-lifecycle evidence; it still needs a model-selected
+Re lifecycle before that stronger claim is made. Qualification is per action shape,
 not broad surface or game coverage. See
 [BRIDGE_V2_INTEGRATION.md](docs/BRIDGE_V2_INTEGRATION.md).
 
@@ -222,7 +223,8 @@ The only supported public TypeScript entrypoint is `src/index.ts`. Integration r
 
 - Real v1 MCP windows have exercised event, combat, rewards, card reward, map, rest, shop, treasure, and a boss fight. This proves protocol integration, not strategic quality or universal MCP coverage. The legacy v1 `NDeckEnchantSelectScreen` confirmation endpoint acknowledged the request without advancing state; Bridge v2 now has a separate qualified opaque-action contract for that surface.
 - Bridge v2 source `preview.3` lists legal actions for deck enchant, ordinary
-  event options, immediate player-phase combat, and card reward. The running
+  event options, immediate player-phase combat, card reward selection, and
+  outer reward claim. The running
   game may still expose `preview.2` until the mod is rebuilt, installed while
   closed, and restarted. All unlisted surfaces remain v1-local in `auto` mode.
 - Deck enchant, one ordinary event-option flow, and one targeted combat-card
@@ -233,9 +235,10 @@ The only supported public TypeScript entrypoint is `src/index.ts`. Integration r
   text must not be mistaken for an action-authority decision.
 - Read-only deck/pile inspection has a disabled contract boundary only. There
   is no endpoint or implemented inspection kind.
-- Ordinary card reward is implemented in Bridge/Re source and fixtures. It is
-  not runtime-qualified until `preview.3` is installed in a fresh game process
-  and a bounded organic lifecycle passes.
+- Ordinary card reward is runtime-qualified for one card/Skip lifecycle under
+  `preview.3`. Outer reward claim is separately source/fixture-qualified and
+  remains pending an installed-game lifecycle smoke; it is not merged with
+  card selection.
 - Current MCP non-combat snapshots do not expose a complete deck on every screen. RE-P1 does not invent missing deck context, so card-reward and shop strategy is limited by what the current state actually contains.
 - Shop leaving is the one explicit protocol inference retained from verified legacy live behavior: the MCP `proceed` action leaves a shop even when `shop.can_proceed` is false. It is recorded in normalization diagnostics.
 - A changed state hash proves visible state drift, not perfect semantic settlement. The watcher waits for two consecutive, identical, non-transitional observations after an action, but animation/UI edge cases still require real-game verification.

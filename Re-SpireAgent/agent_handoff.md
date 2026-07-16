@@ -53,7 +53,19 @@ coverage.
 - Ordinary `reward_flow + card_reward_selection` is now exact-source and
   fixture qualified. Visible reward alternatives retain their labels and are
   never collapsed into `can_skip`; unreadable labels suppress all actions.
-  Organic Bridge/Re lifecycle evidence is still pending.
+  A fresh `preview.3` Bridge/Re lifecycle is now passed: DeepSeek selected a
+  legal Glam `Barrage`, Bridge completed, and Re settled to outer rewards.
+- Source now also has a separate `reward_flow(room_rewards) + reward_claim`
+  contract for the outer `NRewardsScreen`: visible ordinary rewards and an
+  enabled Proceed/Skip button become opaque Bridge actions. Linked reward sets
+  still suppress actions until their distinct choice protocol is audited.
+- Fresh installed-game evidence: an opaque `Claim 12 Gold` command completed
+  through the full Bridge lifecycle and the observed Gold increased from 104 to
+  116. A post-fix opaque `Proceed/Skip` command then completed as confirmed;
+  its follow-up Re read projected `map` and exposed no stale reward actions.
+  The resolver now gives the game's explicit `NMapScreen.IsOpen` state priority
+  over retained reward overlays during room exit. These are Bridge command
+  lifecycles, not yet a model-selected Re decision lifecycle.
 
 ## Legacy Assessment
 
@@ -117,8 +129,8 @@ npm run agent:replay
 
 Start a fresh game manually, then run bounded windows and inspect each run with `npm run agent:replay`. Confirm that each record contains pre/post raw snapshots, the prompt, DeepSeek response, selected allowed action, MCP result, and settled post-state. Fix a repeatable protocol mismatch with a reduced raw fixture and contract test before running longer loops.
 
-Do not add a fifth surface yet. Close the game, build/install the `preview.3`
-Bridge, restart, verify capabilities/state read-only, then independently qualify
-the bounded card-reward slice with one organic Bridge/Re lifecycle. Keep
-inspection disabled until exact-build read bindings, a state-bound endpoint,
-recording, and contract tests exist.
+If needed, the next bounded smoke is a single model-selected outer
+`reward_flow + reward_claim` lifecycle, with prompt/response/action/settlement
+recorded. Keep linked reward sets unsupported and inspection disabled until
+exact-build read bindings, a state-bound endpoint, recording, and contract
+tests exist.

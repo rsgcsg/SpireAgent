@@ -36,7 +36,11 @@ export interface CombatContext {
 }
 
 export interface CardRewardContext { kind: "card_reward"; }
-export interface RewardFlowContext { kind: "reward_flow"; rewardKind: "card_reward"; }
+/** The reward flow is semantic context; the active reward UI owns its surface. */
+export interface RewardFlowContext {
+  kind: "reward_flow";
+  rewardKind: "card_reward" | "room_rewards";
+}
 export interface RewardsContext { kind: "rewards"; }
 export interface RestContext { kind: "rest"; }
 export interface ShopContext { kind: "shop"; }
@@ -80,6 +84,7 @@ export type InteractionSurface =
   | CardSelectionSurface
   | DeckEnchantSelectionSurface
   | CardRewardSelectionSurface
+  | BridgeRewardClaimSurface
   | CardRewardSurface
   | RewardClaimSurface
   | MapNavigationSurface
@@ -160,6 +165,24 @@ export interface CardRewardSelectionSurface {
     label: string;
     enabled: boolean;
   }>;
+  legalActions: BridgeLegalActionSnapshot[];
+  completeness: BridgeSurfaceCompleteness;
+}
+
+/** Bridge-authoritative outer room rewards; card choice is a separate surface. */
+export interface BridgeRewardClaimSurface {
+  kind: "reward_claim";
+  bridgeStateId: string;
+  screenEntityId: string;
+  rewards: Array<{
+    entityId: string;
+    kind: "gold" | "potion" | "relic" | "card" | "other_visible_reward";
+    label: string;
+    description?: string;
+    enabled: boolean;
+  }>;
+  canProceed: boolean;
+  proceedSkipsRemainingRewards: boolean;
   legalActions: BridgeLegalActionSnapshot[];
   completeness: BridgeSurfaceCompleteness;
 }

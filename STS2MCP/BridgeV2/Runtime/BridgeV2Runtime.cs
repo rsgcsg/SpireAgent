@@ -21,7 +21,7 @@ internal static class BridgeV2Runtime
         var warnings = new List<string>
         {
             "Bridge v2 is an incremental preview. Unlisted surfaces fail closed with no legal actions.",
-            "Singleplayer deck enchant, ordinary event option, player-phase combat turn, and card reward selection are the only game-bound v2 vertical slices in this revision."
+            "Singleplayer deck enchant, ordinary event option, player-phase combat turn, card reward selection, and room reward claim are the only game-bound v2 vertical slices in this revision."
         };
 
         if (!game.Compatibility.ActionExecutionAllowed)
@@ -53,7 +53,12 @@ internal static class BridgeV2Runtime
                     "card_reward_selection",
                     "implemented_exact_game_version",
                     new[] { "select_card_reward", "choose_card_reward_alternative" },
-                    "sts2-v0.108.0:NCardRewardSelectionScreen+NGridCardHolder+NCardRewardAlternativeButton")
+                    "sts2-v0.108.0:NCardRewardSelectionScreen+NGridCardHolder+NCardRewardAlternativeButton"),
+                new SurfaceCapability(
+                    "reward_claim",
+                    "implemented_exact_game_version",
+                    new[] { "claim_reward", "proceed_rewards" },
+                    "sts2-v0.108.0:NRewardsScreen+NRewardButton+NProceedButton")
             },
             new CommandContractCapability(
                 OpaqueActionsOnly: true,

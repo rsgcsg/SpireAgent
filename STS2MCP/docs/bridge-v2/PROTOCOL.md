@@ -112,6 +112,8 @@ Additional preview.3 completion evidence:
 |---|---|
 | card reward card | reward overlay closes or the visible option object set is replaced |
 | card reward alternative | reward overlay closes or the visible option object set is replaced, including reroll |
+| outer reward claim | its exact reward button is removed, or a child card-reward overlay replaces the outer screen |
+| outer rewards proceed | outer rewards screen exits, its visible reward control set is replaced, or the player-visible map opens |
 
 If the state changes but the predicate does not pass, the command fails with an
 unknown outcome. Unknown outcomes are never auto-retried.

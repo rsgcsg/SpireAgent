@@ -15,15 +15,17 @@ Bridge v2 is an incremental preview, not a replacement for all v1 surfaces.
   ordinary event options, and one immediate player-phase targeted-card combat
   lifecycle. Qualification remains bounded to those action shapes.
 - Source `2.0-preview.3` adds typed diagnostics, centralized active-surface
-  ownership, a disabled inspection boundary, and fixture-qualified card reward
-  selection. Card reward still awaits organic qualification in a fresh process.
+  ownership, a disabled inspection boundary, organic-qualified card reward
+  selection, and source/fixture-qualified outer reward claim. The latter still
+  awaits an installed-process lifecycle smoke.
 - All unimplemented or version-incompatible v2 surfaces fail closed with no
   legal actions.
 - v1 remains available for compatibility and has been made build-compatible
   with `v0.108.0`; its index-based action contract is legacy.
-- Static build/protocol tests pass for all four source slices. Real `v0.108.0`
-  Bridge plus Re-SpireAgent lifecycle smokes pass for the first three; card
-  reward remains organic-pending. Unlisted surfaces remain unsupported.
+- Static build/protocol tests pass for all five source slices. Real `v0.108.0`
+  Bridge plus Re-SpireAgent lifecycle smokes pass for deck enchant, event,
+  combat, and card reward selection; outer reward claim remains
+  organic-pending. Unlisted surfaces remain unsupported.
 
 See [current status](docs/bridge-v2/CURRENT_STATUS.md), the
 [upstream/design audit](docs/bridge-v2/UPSTREAM_AUDIT.md), and the
@@ -185,10 +187,11 @@ sole executor; unsupported v2 surfaces remain on v1 during migration.
 Exact-build mismatch, context/surface mismatch, command-response identity
 mismatch, failed command, and timeout all fail closed.
 
-The deck-enchant, ordinary-event, and one targeted combat-card lifecycle are
-organically qualified. Planning code never reads arbitrary bridge JSON. Source
-`preview.3` also implements card reward without assuming alternative buttons
-mean skip; that slice remains pending organic Bridge and Re lifecycle evidence.
+The deck-enchant, ordinary-event, one targeted combat-card, and ordinary card
+reward lifecycles are organically qualified. Planning code never reads arbitrary
+bridge JSON. Source `preview.3` also implements outer reward claim without
+collapsing a card reward into its later card-selection surface; that slice
+remains pending organic Bridge and Re lifecycle evidence.
 
 ## Security And Observation Scope
 

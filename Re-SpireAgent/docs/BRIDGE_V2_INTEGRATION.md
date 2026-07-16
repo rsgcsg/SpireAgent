@@ -7,14 +7,16 @@ Re-SpireAgent supports the strict `2.0-preview.3` source contract for:
 - `deck_enchant_selection`: organically end-to-end qualified;
 - `event_option`: organically qualified for ordinary event options;
 - `combat_turn`: organically qualified for one immediate targeted-card flow;
-- `card_reward_selection`: exact-source and fixture qualified, organic
-  lifecycle pending.
+- `card_reward_selection`: organically qualified for one ordinary card/Skip
+  lifecycle.
+- `reward_claim`: ordinary claim and Proceed/Skip have bounded installed-game
+  Bridge command lifecycles; a model-selected Re lifecycle is still untested.
 
 The first three organic lifecycles used exact game identity
-`v0.108.0|58694f64|-2044609792` under `preview.2`. The currently running game
-still has that DLL loaded. Source `preview.3` must be installed in a fresh game
-process before its diagnostics, inspection contract, resolver, or card reward
-can count as organic evidence.
+`v0.108.0|58694f64|-2044609792` under `preview.2`. A fresh process loaded
+`preview.3` and completed an ordinary card reward: the bridge exposed cards and
+Skip separately, DeepSeek selected legal `Barrage`, the command completed, and
+Re settled back to the outer rewards screen.
 
 ## State Identity
 
@@ -34,10 +36,12 @@ but cannot overwrite action-relevant v2 facts or add actions.
 
 ## Active Surface Ownership
 
-Bridge captures the top overlay once. A blocking overlay selects only overlay
-providers; otherwise room/turn providers are considered. Exactly one provider
-may own the executable surface. Ambiguous ownership, provider failure, or an
-unimplemented surface produces no legal actions and a typed diagnostic.
+Bridge captures the active player-facing surface once. An explicitly open map
+takes precedence over a reward overlay retained during room exit; otherwise a
+visible blocking overlay selects only overlay providers, and room/turn
+providers are considered. Exactly one provider may own the executable surface.
+Ambiguous ownership, provider failure, or an unimplemented surface produces no
+legal actions and a typed diagnostic.
 
 Re consumes exactly one action-owning surface and never merges actions from a
 suspended surface, the legacy sidecar, or multiple providers. Re keeps explicit
@@ -81,6 +85,16 @@ labels, containers, or other action-critical facts suppress the entire surface.
 Completion requires the overlay to close or the visible option object set to be
 replaced, which covers reroll without assuming closure.
 
+## Outer Reward Claim Contract
+
+Outer room rewards use `reward_flow(room_rewards) + reward_claim`. This surface
+contains the rendered ordinary reward buttons and the enabled Proceed/Skip
+control, with only opaque `claim_reward` and `proceed_rewards` actions. A card
+reward claim is a transition into the separate `card_reward_selection` surface;
+it does not expose or invent card alternatives early. If a visible linked reward
+set is present, the entire surface suppresses actions until that selection
+protocol is independently audited.
+
 ## Modes
 
 | `STS2_MCP_PROTOCOL` | Behavior |
@@ -122,10 +136,11 @@ poll timeout are unknown and never automatically retried.
 
 ## Evidence And Next Step
 
-The next step is not a fifth surface. Build and install `preview.3` while the
-game is closed, restart, verify capabilities/state read-only, then run one
-bounded card-reward Bridge plus Re lifecycle smoke. A fixture proves client and
-serializer behavior only; it does not prove the current game process.
+Outer `reward_flow(room_rewards) + reward_claim` is not a generic reward
+protocol. Its source/fixture implementation preserves that card/relic/potion/
+gold claims and continuation have different completion shapes. The observed
+ordinary Gold claim and Proceed/Skip shapes are runtime-qualified at the Bridge
+command layer. A model-selected Re lifecycle remains a separate bounded smoke.
 
 This integration does not add memory, learning, scoring, hidden-information
 access, arbitrary MCP calls, generic action payloads, or broad v2 coverage.

@@ -297,11 +297,29 @@ public sealed record VisibleCardRewardAlternative(
     string Label,
     bool Enabled);
 
+/// <summary>
+/// A player-visible room reward. The bridge deliberately exposes only the
+/// semantic kind and the text already rendered by the reward button.
+/// </summary>
+public sealed record VisibleReward(
+    string EntityId,
+    string Kind,
+    string Label,
+    string? Description,
+    bool Enabled);
+
 public sealed record CardRewardSelectionSurface(
     string Kind,
     string ScreenEntityId,
     IReadOnlyList<VisibleCard> Cards,
     IReadOnlyList<VisibleCardRewardAlternative> Alternatives) : IBridgeSurface;
+
+public sealed record RewardClaimSurface(
+    string Kind,
+    string ScreenEntityId,
+    IReadOnlyList<VisibleReward> Rewards,
+    bool CanProceed,
+    bool ProceedSkipsRemainingRewards) : IBridgeSurface;
 
 public sealed record UnsupportedSurface(
     string Kind,

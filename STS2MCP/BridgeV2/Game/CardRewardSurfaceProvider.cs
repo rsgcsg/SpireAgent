@@ -268,7 +268,8 @@ internal sealed class CardRewardSurfaceProvider : IBridgeSurfaceProvider
         ClickableField?.GetValue(holder) is true;
 
     private static bool IsCurrent(NCardRewardSelectionScreen screen) =>
-        McpMod.IsLiveNode(screen) && ReferenceEquals(NOverlayStack.Instance?.Peek(), screen);
+        ActiveSurfaceResolver.IsVisibleActiveOverlay(screen)
+        && ReferenceEquals(NOverlayStack.Instance?.Peek(), screen);
 
     private static string? ReadAlternativeLabel(NCardRewardAlternativeButton button)
     {

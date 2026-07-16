@@ -156,6 +156,30 @@ public sealed class BridgeContractTests
     }
 
     [Fact]
+    public void RewardClaimContractKeepsVisibleRewardsAndProceedSemanticsSeparate()
+    {
+        IBridgeContext context = new RewardFlowBridgeContext("reward_flow", "room_rewards");
+        IBridgeSurface surface = new RewardClaimSurface(
+            "reward_claim",
+            "screen-a",
+            new[] { new VisibleReward("reward-a", "gold", "25 Gold", "25 Gold", true) },
+            CanProceed: true,
+            ProceedSkipsRemainingRewards: true);
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+        };
+
+        string json = JsonSerializer.Serialize(new { context, surface }, options);
+
+        Assert.Contains("\"reward_kind\":\"room_rewards\"", json);
+        Assert.Contains("\"kind\":\"reward_claim\"", json);
+        Assert.Contains("\"label\":\"25 Gold\"", json);
+        Assert.Contains("\"proceed_skips_remaining_rewards\":true", json);
+        Assert.DoesNotContain("index", json, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void TypedContextsAndSurfacesKeepIndependentDiscriminators()
     {
         var options = new JsonSerializerOptions

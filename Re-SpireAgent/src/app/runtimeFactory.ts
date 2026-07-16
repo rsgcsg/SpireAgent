@@ -1,5 +1,6 @@
 import type { RuntimeConfig } from "../config/env.js";
 import { buildAllowedActions } from "../domain/actions/buildAllowedActions.js";
+import { NORMALIZED_STATE_SCHEMA_VERSION } from "../domain/state/index.js";
 import { Sts2McpHybridAdapter } from "../integrations/sts2mcp/hybridAdapter.js";
 import { DeepSeekDecisionProvider } from "../llm/deepseekProvider.js";
 import { normalizeCurrentState } from "../normalization/normalizeCurrentState.js";
@@ -40,7 +41,7 @@ export async function createRuntime(config: RuntimeConfig): Promise<{
         ...(adapterDescription.negotiated ? { negotiated: adapterDescription.negotiated } : {})
       },
       provider: llm.describe(),
-      schemas: { normalizedState: 3, prompt: 3, decisionRecord: 2 }
+      schemas: { normalizedState: NORMALIZED_STATE_SCHEMA_VERSION, prompt: 3, decisionRecord: 2 }
     };
     const recorder = new FileDecisionRecorder(config.runtime.dataDir, metadata);
     await recorder.initialize();
