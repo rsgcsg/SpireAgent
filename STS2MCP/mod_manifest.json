@@ -1,0 +1,11 @@
+{
+  "id": "STS2_MCP",
+  "name": "STS2 MCP",
+  "author": "kunology",
+  "description": "Version-scoped agent bridge for Slay the Spire 2",
+  "version": "0.5.0-dev",
+  "has_pck": false,
+  "has_dll": true,
+  "affects_gameplay": false,
+  "min_game_version": "0.108.0"
+}

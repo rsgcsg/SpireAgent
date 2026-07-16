@@ -1,0 +1,23 @@
+bin/
+obj/
+out/
+TestResults/
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+mcp/.venv/
+
+# Claude Code
+# .claude/
+.mcp.json
+.env
+.env.local
+CLAUDE.md
+GUIDE.md
+.claude/settings.local.json
+
+# Qoder
+.qoder.json
