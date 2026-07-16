@@ -15,7 +15,7 @@ describe("prompt contract", () => {
 
     expect(prompt.systemPrompt).toContain("Return exactly one JSON object");
     expect(payload.promptSchemaVersion).toBe(3);
-    expect(payload.currentStateSchemaVersion).toBe(4);
+    expect(payload.currentStateSchemaVersion).toBe(5);
     expect(prompt.stateGuideVersion).toBe(3);
     expect(payload.contextKind).toBe("combat");
     expect(payload.surfaceKind).toBe("combat_turn");

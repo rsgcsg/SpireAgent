@@ -1,5 +1,9 @@
 # Bridge v2 And Re-SpireAgent Integration Audit - 2026-07-16
 
+> Historical audit snapshot. The deck/pile inspection debt identified below
+> was implemented in `2.0-preview.4`; see
+> [the follow-up audit](RUN_DECK_PILE_INSPECTION_AUDIT_2026-07-16.md).
+
 ## Executive Verdict
 
 Bridge v2 has the correct safety core but not broad player-visible coverage.

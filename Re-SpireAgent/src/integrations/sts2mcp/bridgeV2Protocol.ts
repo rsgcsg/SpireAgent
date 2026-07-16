@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { isJsonObject, type JsonObject } from "../../shared/json.js";
 
-export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.3" as const;
+export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.4" as const;
 
 const compatibilitySchema = z.object({
   status: z.string().min(1),
@@ -264,13 +264,60 @@ const diagnosticSchema = z.object({
 }).passthrough();
 
 const inspectionContractSchema = z.object({
-  status: z.literal("disabled_not_implemented"),
+  status: z.literal("implemented_read_only"),
   state_bound: z.literal(true),
   arbitrary_queries_allowed: z.literal(false),
   enters_command_ledger: z.literal(false),
   visibility_classes: z.array(z.enum(["on_screen", "normal_inspection", "count_only"])),
   ordering_semantics: z.array(z.enum(["unordered_multiset", "player_sorted"])),
-  implemented_kinds: z.tuple([])
+  implemented_kinds: z.array(z.enum(["run_deck", "combat_piles"]))
+}).passthrough();
+
+const inspectionCompletenessSchema = z.object({
+  player_visible_semantics: z.string().min(1),
+  sources: z.array(z.string()),
+  missing: z.array(z.string())
+}).passthrough();
+
+const runDeckInspectionContentSchema = z.object({
+  kind: z.literal("run_deck"),
+  card_count: z.number().int().nonnegative(),
+  cards: z.array(visibleCardSchema)
+}).passthrough();
+
+const combatPileZoneSchema = z.object({
+  zone: z.enum(["draw", "discard", "exhaust"]),
+  card_count: z.number().int().nonnegative(),
+  ordering_semantics: z.literal("unordered_multiset"),
+  cards: z.array(visibleCardSchema)
+}).passthrough();
+
+const combatPilesInspectionContentSchema = z.object({
+  kind: z.literal("combat_piles"),
+  zones: z.array(combatPileZoneSchema).length(3)
+}).passthrough();
+
+const inspectionSchema = z.object({
+  protocol_version: z.literal(SUPPORTED_BRIDGE_V2_PROTOCOL),
+  inspection_id: z.string().min(1),
+  expected_state_id: z.string().min(1),
+  observed_state_id: z.string().min(1),
+  observed_at: z.string().min(1),
+  kind: z.enum(["run_deck", "combat_piles"]),
+  visibility_class: z.literal("normal_inspection"),
+  ordering_semantics: z.literal("unordered_multiset"),
+  content: z.discriminatedUnion("kind", [
+    runDeckInspectionContentSchema,
+    combatPilesInspectionContentSchema
+  ]),
+  completeness: inspectionCompletenessSchema,
+  bridge: bridgeIdentitySchema,
+  game: gameSchema,
+  observation_policy: z.object({
+    id: z.string().min(1),
+    includes_hidden_information: z.boolean()
+  }).passthrough(),
+  diagnostics: z.array(diagnosticSchema)
 }).passthrough();
 
 const stateBaseSchema = z.object({
@@ -352,6 +399,7 @@ export type BridgeV2CombatTurnSurface = z.infer<typeof combatTurnSurfaceSchema>;
 export type BridgeV2CardRewardSelectionSurface = z.infer<typeof cardRewardSelectionSurfaceSchema>;
 export type BridgeV2RewardClaimSurface = z.infer<typeof rewardClaimSurfaceSchema>;
 export type BridgeV2Diagnostic = z.infer<typeof diagnosticSchema>;
+export type BridgeV2Inspection = z.infer<typeof inspectionSchema>;
 export type BridgeV2UnsupportedSurface = z.infer<typeof unsupportedSurfaceSchema>;
 export type BridgeV2Command = z.infer<typeof commandSchema>;
 
@@ -435,6 +483,16 @@ export function decodeBridgeV2State(value: unknown): DecodedBridgePayload<Bridge
 
 export function decodeBridgeV2Command(value: unknown): DecodedBridgePayload<BridgeV2Command> {
   return decode(value, commandSchema, "Bridge v2 command");
+}
+
+export function decodeBridgeV2Inspection(value: unknown): DecodedBridgePayload<BridgeV2Inspection> {
+  const decoded = decode(value, inspectionSchema, "Bridge v2 inspection");
+  if (decoded.data.kind !== decoded.data.content.kind) {
+    throw new BridgeV2DecodeError(
+      `Bridge v2 inspection kind ${decoded.data.kind} does not match content.kind ${decoded.data.content.kind}`
+    );
+  }
+  return decoded;
 }
 
 export function isBridgeV2DeckEnchantSurface(

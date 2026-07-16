@@ -91,16 +91,37 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
     // explicitly says this surface is unsupported. Any contract drift remains
     // visible to the strict normalizer and fails closed.
     if (this.options.mode === "v2" || !isSafeExplicitLegacyFallback(capabilities.data, state.data)) {
-      const legacyState = await this.tryReadLegacySidecar();
+      const [legacyState, inspections] = await Promise.all([
+        this.tryReadLegacySidecar(),
+        this.readInspectionSidecars(capabilities.data, state.data)
+      ]);
+      const verifiedState = await this.bridge.state();
+      if (verifiedState.data.state_id !== state.data.state_id) {
+        throw new Error("Bridge v2 state changed while read-only inspection evidence was being captured");
+      }
       this.lastReadAuthority = "bridge";
       return wrapBridgeV2State({
-        state: state.raw,
+        state: verifiedState.raw,
         capabilities: capabilities.raw,
+        ...(Object.keys(inspections).length > 0 ? { inspections } : {}),
         ...(legacyState ? { legacyState } : {})
       });
     }
 
-    return this.readLegacyAuthoritativeState();
+    const [legacyState, inspections] = await Promise.all([
+      this.legacy.readCurrentState(),
+      this.readInspectionSidecars(capabilities.data, state.data)
+    ]);
+    const verifiedState = await this.bridge.state();
+    if (verifiedState.data.state_id !== state.data.state_id) {
+      throw new Error("Bridge v2 state changed while read-only inspection evidence was being captured");
+    }
+    this.lastReadAuthority = "legacy";
+    return {
+      ...legacyState,
+      bridge_v2_capabilities: capabilities.raw,
+      ...(Object.keys(inspections).length > 0 ? { bridge_v2_inspections: inspections } : {})
+    };
   }
 
   async execute(action: ExecutableGameAction): Promise<McpExecutionResult> {
@@ -168,6 +189,37 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
     } catch {
       return undefined;
     }
+  }
+
+  private async readInspectionSidecars(
+    capabilities: BridgeV2Capabilities,
+    state: BridgeV2State
+  ): Promise<Partial<Record<"run_deck" | "combat_piles", JsonObject>>> {
+    const implemented = new Set(capabilities.inspections.implemented_kinds);
+    const requested: Array<"run_deck" | "combat_piles"> = [];
+    if (implemented.has("run_deck")) requested.push("run_deck");
+    if (implemented.has("combat_piles") && state.context.kind === "combat") {
+      requested.push("combat_piles");
+    }
+
+    const entries = await Promise.all(requested.map(async (kind) => {
+      try {
+        const inspection = await this.bridge.inspect(kind, state.state_id);
+        return [kind, inspection.raw] as const;
+      } catch (error) {
+        // A fixed inspection capability may be unavailable in a state where
+        // its backing player object does not exist (for example, main menu).
+        // Every other transport, identity, scope, and stale-state failure
+        // remains fail-closed.
+        if (error instanceof BridgeV2HttpError && error.errorCode === "inspection_not_available") {
+          return undefined;
+        }
+        throw error;
+      }
+    }));
+    return Object.fromEntries(
+      entries.filter((entry): entry is readonly ["run_deck" | "combat_piles", JsonObject] => entry !== undefined)
+    ) as Partial<Record<"run_deck" | "combat_piles", JsonObject>>;
   }
 
   private async readLegacyAuthoritativeState(): Promise<Sts2McpRawState> {

@@ -4,7 +4,6 @@ import {
   type BridgeLegalActionSnapshot,
   type BridgeDiagnosticSnapshot,
   type BridgeSurfaceCompleteness,
-  type CardSnapshot,
   type CardRewardSelectionSurface,
   type BridgeRewardClaimSurface,
   type CombatTurnSurface,
@@ -38,12 +37,16 @@ import {
 } from "../integrations/sts2mcp/bridgeV2Protocol.js";
 import {
   bridgeV2CapabilitiesFromWrapper,
+  bridgeV2InspectionIdentity,
+  bridgeV2InspectionsFromWrapper,
   bridgeV2StateFromWrapper,
   legacyStateFromBridgeV2Wrapper,
   type Sts2McpRawState
 } from "../integrations/sts2mcp/rawState.js";
 import { stateHash } from "../runtime/stateHash.js";
 import { DiagnosticsBuilder } from "./diagnostics.js";
+import { projectBridgeV2Card } from "./bridgeV2CardProjection.js";
+import { projectBridgeV2Inspections } from "./bridgeV2InspectionProjection.js";
 
 const ACTION_KINDS = {
   deck_enchant_selection: new Set([
@@ -100,6 +103,23 @@ export function normalizeBridgeV2CurrentState(
     context = { kind: "reward_flow", rewardKind: state.context.reward_kind };
   }
 
+  const inspectionRaw = bridgeV2InspectionsFromWrapper(rawState);
+  const projectedInspections = projectBridgeV2Inspections(
+    capabilitiesRaw,
+    inspectionRaw,
+    state?.state_id,
+    diagnostics
+  );
+  if (player) {
+    player = {
+      ...player,
+      ...(projectedInspections.runDeck ? { runDeck: projectedInspections.runDeck } : {}),
+      ...(projectedInspections.drawPile ? { drawPile: projectedInspections.drawPile } : {}),
+      ...(projectedInspections.discardPile ? { discardPile: projectedInspections.discardPile } : {}),
+      ...(projectedInspections.exhaustPile ? { exhaustPile: projectedInspections.exhaustPile } : {})
+    };
+  }
+
   if (inherited?.run || (inherited?.player && !isBridgeV2CombatContext(state?.context ?? { kind: "unknown" }))) {
     diagnostics.infer(
       "run/non_action_shared_state",
@@ -116,7 +136,8 @@ export function normalizeBridgeV2CurrentState(
     ...(state && capabilities ? {
       bridgeDiagnostics: [
         ...capabilities.diagnostics.map((diagnostic) => projectDiagnostic(diagnostic, "capabilities")),
-        ...state.diagnostics.map((diagnostic) => projectDiagnostic(diagnostic, "state"))
+        ...state.diagnostics.map((diagnostic) => projectDiagnostic(diagnostic, "state")),
+        ...projectedInspections.diagnostics
       ],
       bridgeLegacyWarnings: [...capabilities.warnings, ...state.warnings],
       bridgeInspectionPolicy: {
@@ -126,8 +147,9 @@ export function normalizeBridgeV2CurrentState(
         entersCommandLedger: capabilities.inspections.enters_command_ledger,
         visibilityClasses: [...capabilities.inspections.visibility_classes],
         orderingSemantics: [...capabilities.inspections.ordering_semantics],
-        implementedKinds: [] as []
-      }
+        implementedKinds: [...capabilities.inspections.implemented_kinds]
+      },
+      bridgeInspections: projectedInspections.evidence
     } : {})
   };
   let surface: NormalizedCurrentState["surface"] = unsupported(rawState, "Bridge v2 state could not be decoded");
@@ -218,7 +240,11 @@ export function normalizeBridgeV2CurrentState(
     diagnostics: builtDiagnostics,
     // observed_at is excluded. The state id owns action identity while the
     // sidecar hash protects prompt-visible shared state against stale execution.
-    stateHash: stateHash({ bridgeStateId: state?.state_id ?? null, legacyState: legacyRaw ?? null }),
+    stateHash: stateHash({
+      bridgeStateId: state?.state_id ?? null,
+      legacyState: legacyRaw ?? null,
+      inspections: bridgeV2InspectionIdentity(inspectionRaw)
+    }),
     normalizedStateHash: stateHash(currentState)
   };
 }
@@ -252,15 +278,16 @@ function validateEnvelopeIdentity(
       || !capabilities.commands.idempotent_request_ids) {
     diagnostics.invalid("bridge_v2.commands", capabilities.commands, "required command safety capabilities are absent");
   }
-  if (capabilities.inspections.status !== "disabled_not_implemented"
+  const inspectionKinds = [...capabilities.inspections.implemented_kinds].sort();
+  if (capabilities.inspections.status !== "implemented_read_only"
       || !capabilities.inspections.state_bound
       || capabilities.inspections.arbitrary_queries_allowed
       || capabilities.inspections.enters_command_ledger
-      || capabilities.inspections.implemented_kinds.length > 0) {
+      || inspectionKinds.join(",") !== "combat_piles,run_deck") {
     diagnostics.invalid(
       "bridge_v2.inspections",
       capabilities.inspections,
-      "RE-P1 accepts only the disabled, state-bound, non-command inspection contract"
+      "RE-P1 requires exactly the state-bound, non-command run_deck and combat_piles inspection contract"
     );
   }
 }
@@ -474,7 +501,7 @@ function projectCombatPlayer(context: BridgeV2CombatContext): PlayerSnapshot {
     maxEnergy: player.max_energy,
     ...(player.stars !== null && player.stars !== undefined ? { stars: player.stars } : {}),
     gold: player.gold,
-    hand: player.hand.map(projectCard),
+    hand: player.hand.map(projectBridgeV2Card),
     drawPileCount: player.draw_pile_count,
     discardPileCount: player.discard_pile_count,
     exhaustPileCount: player.exhaust_pile_count,
@@ -565,7 +592,7 @@ function projectDeckEnchantSurface(
       amount: surface.enchantment.amount,
       ...(surface.enchantment.observation_source ? { observationSource: surface.enchantment.observation_source } : {})
     },
-    cards: surface.cards.map(projectCard),
+    cards: surface.cards.map(projectBridgeV2Card),
     legalActions: projectActions(actions),
     completeness: projectCompleteness(completeness)
   };
@@ -624,7 +651,7 @@ function projectCardRewardSelectionSurface(
     kind: "card_reward_selection",
     bridgeStateId: stateId,
     screenEntityId: surface.screen_entity_id,
-    cards: surface.cards.map(projectCard),
+    cards: surface.cards.map(projectBridgeV2Card),
     alternatives: surface.alternatives.map((alternative) => ({
       entityId: alternative.entity_id,
       index: alternative.index,
@@ -705,34 +732,6 @@ function projectCompleteness(completeness: RawCompleteness): BridgeSurfaceComple
     legalActions: completeness.legal_actions,
     sources: [...completeness.sources],
     missing: [...completeness.missing]
-  };
-}
-
-function projectCard(card: BridgeV2DeckEnchantSurface["cards"][number]): CardSnapshot {
-  return {
-    id: card.definition_id,
-    entityId: card.entity_id,
-    name: card.name ?? card.definition_id,
-    type: card.type,
-    cost: card.cost,
-    ...(card.star_cost !== null && card.star_cost !== undefined ? { starCost: card.star_cost } : {}),
-    ...(card.description ? { description: card.description } : {}),
-    rarity: card.rarity,
-    upgraded: card.is_upgraded,
-    selected: card.is_selected,
-    ...(card.target_type ? { targetType: card.target_type } : {}),
-    ...(card.can_play !== null && card.can_play !== undefined ? { canPlay: card.can_play } : {}),
-    ...(card.unplayable_reason !== undefined ? { unplayableReason: card.unplayable_reason } : {}),
-    keywords: [],
-    ...(card.existing_enchantment ? {
-      existingEnchantment: {
-        definitionId: card.existing_enchantment.definition_id,
-        ...(card.existing_enchantment.name ? { name: card.existing_enchantment.name } : {}),
-        ...(card.existing_enchantment.description ? { description: card.existing_enchantment.description } : {}),
-        amount: card.existing_enchantment.amount,
-        ...(card.existing_enchantment.observation_source ? { observationSource: card.existing_enchantment.observation_source } : {})
-      }
-    } : {})
   };
 }
 

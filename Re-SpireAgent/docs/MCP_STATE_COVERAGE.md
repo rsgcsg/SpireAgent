@@ -12,7 +12,9 @@ Coverage is based on observed old-project raw snapshots and reduced fixture copi
 | Bridge v2 `event_option` | Bridge `event` + `event_option` + `bridge_advertised` | organic Bridge + Re choose/settlement lifecycle passed for ordinary options | opaque choose/proceed only |
 | Bridge v2 `combat_turn` | Bridge `combat` + `combat_turn` + `bridge_advertised` | organic Bridge + Re targeted-card/settlement lifecycle passed | opaque play-card/potion/end-turn only |
 | Bridge v2 `card_reward_selection` | Bridge `reward_flow(card_reward)` + `card_reward_selection` + `bridge_advertised` | organic Bridge + Re lifecycle passed | opaque card or separately labeled alternative only |
-| Bridge v2 `reward_claim` | Bridge `reward_flow(room_rewards)` + `reward_claim` + `bridge_advertised` | ordinary Gold claim and post-fix Proceed/Skip have completed Bridge command lifecycles; a model-selected Re lifecycle remains untested | opaque visible reward claim or explicit proceed only |
+| Bridge v2 `reward_claim` | Bridge `reward_flow(room_rewards)` + `reward_claim` + `bridge_advertised` | ordinary Gold claim and post-fix Proceed/Skip have completed Bridge and model-selected Re lifecycles | opaque visible reward claim or explicit proceed only |
+| Bridge v2 `run_deck` inspection | optional typed player run-deck evidence on supported and legacy-fallback states | organic post-reward Glam reinspection passed | none; read-only evidence |
+| Bridge v2 `combat_piles` inspection | optional typed unordered draw/discard/exhaust evidence in combat | non-empty draw/discard and empty exhaust organic smoke passed | none; read-only evidence |
 | `card_reward` | `card_reward` | fixture-backed | take, skip, proceed when exposed |
 | `rewards` | `rewards` | fixture-backed | claim, potion discard, proceed |
 | `map` | `map` | fixture-backed | choose next node |
@@ -32,7 +34,7 @@ A new state is supported only after a real raw sample, normalized variant, allow
 
 ## Adapter Limits
 
-- v1 legal actions are reconstructed locally. Bridge v2 source `preview.3`
+- v1 legal actions are reconstructed locally. Bridge v2 source `preview.4`
   enumerates authoritative actions for deck enchant, ordinary event options,
   immediate player-phase combat, card reward selection, and outer room reward
   claims. The first four surfaces have bounded organic Re evidence for their
@@ -46,6 +48,6 @@ A new state is supported only after a real raw sample, normalized variant, allow
 - Some screens briefly expose loading/settlement shapes.
 - Non-combat snapshots may omit deck/energy details that would improve strategy.
 - Sparse potion arrays require raw slot identity when available.
-- Combat v2 intentionally carries pile counts, not pile contents or draw order.
-  Player-triggered pile/deck viewing needs a separate future read-only
-  inspection contract rather than more fields in `combat_turn.surface`.
+- Combat context intentionally carries immediate pile counts. Fixed read-only
+  inspection carries pile contents without adding fields to
+  `combat_turn.surface`; draw order is never exposed.

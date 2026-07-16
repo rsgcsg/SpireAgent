@@ -1,11 +1,9 @@
 # Bridge v2 Composition, Inspection, And Diagnostics Audit
 
-> Implementation follow-up: source `2.0-preview.3` now contains the typed
-> diagnostics contract, centralized overlay-vs-room `ActiveSurfaceResolver`, a
-> disabled/non-executable inspection capability boundary, and a fixture-backed
-> `reward_flow + card_reward_selection` slice. Organic card-reward lifecycle
-> evidence is still pending; the original three-surface evidence below remains
-> historical input rather than proof of the fourth slice.
+> Historical design input. Source `2.0-preview.4` now implements the typed
+> diagnostics, centralized resolver, card/reward surfaces, and fixed read-only
+> inspection boundary proposed here. Current inspection evidence and residual
+> risks are in [the run-deck/pile audit](RUN_DECK_PILE_INSPECTION_AUDIT_2026-07-16.md).
 
 Status date: 2026-07-16
 

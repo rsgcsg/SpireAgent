@@ -45,6 +45,20 @@ Allowed facts:
 The selection constraints and selected set require exact `v0.108.0` private
 field bindings. The title/description prefer rendered UI text.
 
+## Read-Only Deck And Pile Inspection
+
+`run_deck` exposes the same card instances a player can inspect through
+`NDeckViewScreen`, including upgrades and enchantments. `combat_piles` exposes
+the contents shown by the draw, discard, and exhaust pile viewers. These facts
+are evidence only: they add no action authority and never enter the command
+ledger.
+
+The game sorts the draw-pile viewer for presentation, so the bridge publishes
+all three pile collections as unordered multisets. It never exposes underlying
+draw order even though internal model access could reveal it. An inspection
+timestamp is audit metadata and is excluded from client stale-state identity;
+inspection content and state binding remain included.
+
 ## Explicit Exclusions
 
 - draw-pile order;

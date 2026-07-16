@@ -1,17 +1,20 @@
 import {
   decodeBridgeV2Capabilities,
   decodeBridgeV2Command,
+  decodeBridgeV2Inspection,
   decodeBridgeV2State,
   type DecodedBridgePayload,
   type BridgeV2Capabilities,
   type BridgeV2Command,
+  type BridgeV2Inspection,
   type BridgeV2State
 } from "./bridgeV2Protocol.js";
 
 export class BridgeV2HttpError extends Error {
   constructor(
     message: string,
-    readonly statusCode?: number
+    readonly statusCode?: number,
+    readonly errorCode?: string
   ) {
     super(message);
     this.name = "BridgeV2HttpError";
@@ -35,6 +38,20 @@ export class BridgeV2RestClient {
     const response = await this.request(`${this.baseUrl}/api/v2/state`, { method: "GET" });
     if (!response.response.ok) throw httpError("Bridge v2 state", response.response, response.value);
     return decodeBridgeV2State(response.value);
+  }
+
+  async inspect(
+    kind: "run_deck" | "combat_piles",
+    expectedStateId: string
+  ): Promise<DecodedBridgePayload<BridgeV2Inspection>> {
+    const encodedKind = encodeURIComponent(kind);
+    const encodedState = encodeURIComponent(expectedStateId);
+    const response = await this.request(
+      `${this.baseUrl}/api/v2/inspections/${encodedKind}?expected_state_id=${encodedState}`,
+      { method: "GET" }
+    );
+    if (!response.response.ok) throw httpError(`Bridge v2 ${kind} inspection`, response.response, response.value);
+    return decodeBridgeV2Inspection(response.value);
   }
 
   async submit(input: {
@@ -85,7 +102,20 @@ export class BridgeV2RestClient {
 
 function httpError(operation: string, response: Response, body: unknown): BridgeV2HttpError {
   const detail = typeof body === "object" && body !== null ? JSON.stringify(body).slice(0, 300) : "no JSON error body";
-  return new BridgeV2HttpError(`${operation} failed with HTTP ${response.status}: ${detail}`, response.status);
+  const errorCode = typeof body === "object"
+      && body !== null
+      && "error" in body
+      && typeof body.error === "object"
+      && body.error !== null
+      && "code" in body.error
+      && typeof body.error.code === "string"
+    ? body.error.code
+    : undefined;
+  return new BridgeV2HttpError(
+    `${operation} failed with HTTP ${response.status}: ${detail}`,
+    response.status,
+    errorCode
+  );
 }
 
 function safeMessage(value: unknown): string {

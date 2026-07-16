@@ -16,7 +16,8 @@ fixture is not organic v2 qualification.
 | bundle/relic selection | none | none | none | none | unsupported |
 | map/rest/shop/rewards/treasure | none | none | none | none | unsupported |
 | menu/game over | none | none | none | none | unsupported |
-| read-only deck/pile inspection | disabled capability contract only | n/a | n/a | none | no endpoint or implemented kind |
+| `run_deck` inspection | per-instance deck card, upgrade, enchantment | none; read-only | state-bound exact read | post-card-reward Glam reinspection passed | runtime-qualified for observed singleplayer run deck |
+| `combat_piles` inspection | unordered draw/discard/exhaust contents | none; read-only | state-bound exact read | non-empty draw/discard and empty exhaust passed | runtime-qualified for observed pile shapes; non-empty exhaust still needs diversity |
 | multiplayer | none | none | none | none | intentionally unsupported |
 
 ## Shared Semantics Learned From Five Source Contracts
@@ -45,11 +46,12 @@ fixture is not organic v2 qualification.
 
 ## Known Visibility Gaps
 
-- After deck enchant closes, v2 cannot yet re-read the complete deck to verify
-  the persistent enchant independently.
-- Combat includes pile counts but not draw/discard/exhaust contents. Those are
-  player-inspectable through separate UI flows and belong in a future read-only
-  inspection/query contract. Draw order remains hidden.
+- Non-empty exhaust contents have contract/fixture coverage but not yet an
+  independent organic sample.
+- Generated, transformed, retained, or temporarily modified combat cards need
+  diversity evidence; the inspection contract preserves per-instance identity
+  but does not claim all mechanics are qualified.
+- Draw order remains intentionally hidden.
 - Ancient dialogue advancement has different lifecycle semantics from ordinary
   event options and is intentionally not generalized.
 - No claim is made that the current enemy intent DTO covers every game-specific
@@ -70,5 +72,6 @@ fixture is not organic v2 qualification.
   blocking decision.
 - Structured diagnostics must distinguish action-suppressing gaps from
   non-blocking inspection omissions.
-- The inspection boundary is now machine-readable but remains disabled. It is
-  not evidence that pile/deck inspection has been implemented.
+- The inspection boundary is machine-readable and implemented only for the two
+  fixed kinds above. It remains non-executable and is not an arbitrary object
+  query API.

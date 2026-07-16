@@ -221,6 +221,16 @@ public static partial class McpMod
                 else
                     SendError(response, 405, "Method not allowed");
             }
+            else if (path.StartsWith("/api/v2/inspections/", StringComparison.Ordinal))
+            {
+                if (request.HttpMethod == "GET")
+                    HandleGetBridgeV2Inspection(
+                        path["/api/v2/inspections/".Length..],
+                        request,
+                        response);
+                else
+                    SendError(response, 405, "Method not allowed");
+            }
             else if (path == "/api/v2/commands")
             {
                 if (request.HttpMethod == "POST")

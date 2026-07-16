@@ -2,14 +2,14 @@ import { describe, expect, it } from "vitest";
 import { buildAllowedActions } from "../src/domain/actions/buildAllowedActions.js";
 import type { AdapterDescriptor } from "../src/game-io/adapter.js";
 import { Sts2McpHybridAdapter } from "../src/integrations/sts2mcp/hybridAdapter.js";
-import { decodeBridgeV2State } from "../src/integrations/sts2mcp/bridgeV2Protocol.js";
+import { decodeBridgeV2Inspection, decodeBridgeV2State } from "../src/integrations/sts2mcp/bridgeV2Protocol.js";
 import { isBridgeV2WrappedState, wrapBridgeV2State } from "../src/integrations/sts2mcp/rawState.js";
 import { normalizeCurrentState } from "../src/normalization/normalizeCurrentState.js";
 import type { JsonObject } from "../src/shared/json.js";
 import { fixture } from "./helpers.js";
 
 const CAPABILITIES = {
-  protocol_version: "2.0-preview.3",
+  protocol_version: "2.0-preview.4",
   bridge: { id: "sts2_mcp_bridge_v2", name: "STS2 Agent Bridge", version: "0.5.0-dev", upstream_commit: "upstream" },
   game: {
     version: "v0.108.0",
@@ -28,27 +28,27 @@ const CAPABILITIES = {
   ],
   commands: { opaque_actions_only: true, state_bound: true, idempotent_request_ids: true, lifecycle_states: ["started", "completed"], outcome_timeout_ms: 10000 },
   inspections: {
-    status: "disabled_not_implemented",
+    status: "implemented_read_only",
     state_bound: true,
     arbitrary_queries_allowed: false,
     enters_command_ledger: false,
     visibility_classes: ["on_screen", "normal_inspection", "count_only"],
     ordering_semantics: ["unordered_multiset", "player_sorted"],
-    implemented_kinds: []
+    implemented_kinds: ["run_deck", "combat_piles"]
   },
   diagnostics: [{
-    code: "bridge.inspection.disabled",
+    code: "bridge.inspection.read_only_enabled",
     severity: "info",
     category: "visibility",
     effect: "none",
     recoverability: "unknown",
-    safe_detail: "Inspection is disabled."
+    safe_detail: "Run-deck and combat-pile inspection are read-only."
   }],
   warnings: []
 };
 
 const DECK_ENCHANT_STATE = {
-  protocol_version: "2.0-preview.3",
+  protocol_version: "2.0-preview.4",
   state_id: "state-test-1",
   state_sequence: 1,
   observed_at: "2026-07-16T00:00:00Z",
@@ -344,6 +344,92 @@ const REWARD_CLAIM_STATE = {
   }
 };
 
+function visibleInspectionCard(overrides: Record<string, unknown> = {}) {
+  return {
+    entity_id: "deck-card-1",
+    definition_id: "STRIKE",
+    name: "Strike",
+    type: "Attack",
+    cost: "1",
+    star_cost: null,
+    description: "Deal damage.",
+    rarity: "Basic",
+    is_upgraded: false,
+    is_selected: false,
+    existing_enchantment: {
+      definition_id: "SLITHER",
+      name: "Slither",
+      description: "When drawn, randomize this card's cost.",
+      amount: 1,
+      observation_source: "visible_ui"
+    },
+    ...overrides
+  };
+}
+
+function runDeckInspection(stateId: string, cards = [visibleInspectionCard()]) {
+  return {
+    protocol_version: "2.0-preview.4",
+    inspection_id: `inspection-run-deck-${stateId}`,
+    expected_state_id: stateId,
+    observed_state_id: stateId,
+    observed_at: "2026-07-16T00:00:01Z",
+    kind: "run_deck",
+    visibility_class: "normal_inspection",
+    ordering_semantics: "unordered_multiset",
+    content: { kind: "run_deck", card_count: cards.length, cards },
+    completeness: {
+      player_visible_semantics: "complete_for_player_run_deck_contents_without_semantic_order",
+      sources: ["NDeckViewScreen.ShowScreen(Player)", "PileType.Deck.GetPile(Player).Cards"],
+      missing: []
+    },
+    bridge: CAPABILITIES.bridge,
+    game: CAPABILITIES.game,
+    observation_policy: CAPABILITIES.observation_policy,
+    diagnostics: []
+  };
+}
+
+function combatPilesInspection(stateId: string) {
+  return {
+    protocol_version: "2.0-preview.4",
+    inspection_id: `inspection-combat-piles-${stateId}`,
+    expected_state_id: stateId,
+    observed_state_id: stateId,
+    observed_at: "2026-07-16T00:00:01Z",
+    kind: "combat_piles",
+    visibility_class: "normal_inspection",
+    ordering_semantics: "unordered_multiset",
+    content: {
+      kind: "combat_piles",
+      zones: [
+        {
+          zone: "draw",
+          card_count: 1,
+          ordering_semantics: "unordered_multiset",
+          cards: [visibleInspectionCard({ entity_id: "draw-card-1", existing_enchantment: null })]
+        },
+        {
+          zone: "discard",
+          card_count: 1,
+          ordering_semantics: "unordered_multiset",
+          cards: [visibleInspectionCard({ entity_id: "discard-card-1", definition_id: "DEFEND", name: "Defend", type: "Skill", existing_enchantment: null })]
+        },
+        { zone: "exhaust", card_count: 0, ordering_semantics: "unordered_multiset", cards: [] }
+      ]
+    },
+    completeness: {
+      player_visible_semantics: "complete_for_player_visible_combat_pile_contents_without_draw_order",
+      sources: ["NCardPileScreen.Pile.Cards"],
+      missing: ["draw_pile_order_hidden_by_policy"]
+    },
+    bridge: CAPABILITIES.bridge,
+    game: CAPABILITIES.game,
+    observation_policy: CAPABILITIES.observation_policy,
+    diagnostics: []
+  };
+}
+
 const TEST_SOURCE: AdapterDescriptor = {
   adapterId: "sts2mcp-rest-negotiated",
   endpoint: "http://adapter.test",
@@ -386,7 +472,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       actionAuthority: "bridge_advertised",
       context: { kind: "reward_flow", rewardKind: "card_reward" },
       surface: { kind: "card_reward_selection", alternatives: [{ label: "Reroll" }, { label: "Sacrifice" }] },
-      bridgeInspectionPolicy: { status: "disabled_not_implemented", implementedKinds: [] }
+      bridgeInspectionPolicy: { status: "implemented_read_only", implementedKinds: ["run_deck", "combat_piles"] }
     });
     expect(buildAllowedActions(envelope.currentState, envelope.stateHash).map((action) => action.id)).toEqual([
       "action-card-reward-card-1",
@@ -422,7 +508,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(informational.currentState.bridgeDiagnostics).toEqual([
-      expect.objectContaining({ code: "bridge.inspection.disabled", effect: "none", source: "capabilities" })
+      expect.objectContaining({ code: "bridge.inspection.read_only_enabled", effect: "none", source: "capabilities" })
     ]);
     expect(informational.currentState.actionAuthority).toBe("bridge_advertised");
 
@@ -459,7 +545,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     expect(capabilityBlocked.currentState.stability).toBe("invalid");
   });
 
-  it("rejects any inspection capability expansion while inspection is disabled", () => {
+  it("rejects unsafe inspection capability expansion", () => {
     const expandedCapabilities = structuredClone(CAPABILITIES) as unknown as JsonObject;
     const inspections = expandedCapabilities.inspections as JsonObject;
     inspections.arbitrary_queries_allowed = true;
@@ -472,6 +558,101 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     expect(envelope.currentState.actionAuthority).toBe("none");
     expect(envelope.currentState.stability).toBe("invalid");
     expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toEqual([]);
+  });
+
+  it("projects state-bound run-deck and combat-pile evidence without granting action authority", () => {
+    const deckInspection = runDeckInspection(COMBAT_TURN_STATE.state_id);
+    const pileInspection = combatPilesInspection(COMBAT_TURN_STATE.state_id);
+    expect(decodeBridgeV2Inspection(deckInspection).data.content.kind).toBe("run_deck");
+    expect(decodeBridgeV2Inspection(pileInspection).data.content.kind).toBe("combat_piles");
+
+    const wrapped = wrapBridgeV2State({
+      state: structuredClone(COMBAT_TURN_STATE),
+      capabilities: structuredClone(CAPABILITIES),
+      inspections: {
+        run_deck: structuredClone(deckInspection),
+        combat_piles: structuredClone(pileInspection)
+      }
+    });
+    const envelope = normalizeCurrentState(wrapped, TEST_SOURCE);
+
+    expect(envelope.currentState.actionAuthority).toBe("bridge_advertised");
+    expect(envelope.currentState.player?.runDeck).toEqual([
+      expect.objectContaining({
+        entityId: "deck-card-1",
+        id: "STRIKE",
+        existingEnchantment: expect.objectContaining({ definitionId: "SLITHER" })
+      })
+    ]);
+    expect(envelope.currentState.player?.drawPile).toEqual([
+      expect.objectContaining({ entityId: "draw-card-1", id: "STRIKE" })
+    ]);
+    expect(envelope.currentState.player?.discardPile).toEqual([
+      expect.objectContaining({ entityId: "discard-card-1", id: "DEFEND" })
+    ]);
+    expect(envelope.currentState.player?.exhaustPile).toEqual([]);
+    expect(envelope.currentState.bridgeInspections).toEqual([
+      expect.objectContaining({ kind: "run_deck", orderingSemantics: "unordered_multiset", missing: [] }),
+      expect.objectContaining({
+        kind: "combat_piles",
+        orderingSemantics: "unordered_multiset",
+        missing: ["draw_pile_order_hidden_by_policy"]
+      })
+    ]);
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash).map((action) => action.id)).toEqual([
+      "action-combat-play-1",
+      "action-combat-end-1"
+    ]);
+  });
+
+  it("includes inspection evidence in stale-state identity and fails closed on inspection drift", () => {
+    const firstInspection = runDeckInspection(DECK_ENCHANT_STATE.state_id);
+    const laterEquivalentInspection = {
+      ...runDeckInspection(DECK_ENCHANT_STATE.state_id),
+      observed_at: "2026-07-16T00:00:09Z"
+    };
+    const secondInspection = runDeckInspection(DECK_ENCHANT_STATE.state_id, [
+      visibleInspectionCard({ entity_id: "deck-card-2", definition_id: "DEFEND", name: "Defend", type: "Skill" })
+    ]);
+    const first = normalizeCurrentState(
+      wrapBridgeV2State({
+        state: structuredClone(DECK_ENCHANT_STATE),
+        capabilities: structuredClone(CAPABILITIES),
+        inspections: { run_deck: firstInspection }
+      }),
+      TEST_SOURCE
+    );
+    const second = normalizeCurrentState(
+      wrapBridgeV2State({
+        state: structuredClone(DECK_ENCHANT_STATE),
+        capabilities: structuredClone(CAPABILITIES),
+        inspections: { run_deck: secondInspection }
+      }),
+      TEST_SOURCE
+    );
+    const laterEquivalent = normalizeCurrentState(
+      wrapBridgeV2State({
+        state: structuredClone(DECK_ENCHANT_STATE),
+        capabilities: structuredClone(CAPABILITIES),
+        inspections: { run_deck: laterEquivalentInspection }
+      }),
+      TEST_SOURCE
+    );
+    expect(first.stateHash).toBe(laterEquivalent.stateHash);
+    expect(first.stateHash).not.toBe(second.stateHash);
+
+    const mismatched = runDeckInspection("state-other");
+    const invalid = normalizeCurrentState(
+      wrapBridgeV2State({
+        state: structuredClone(DECK_ENCHANT_STATE),
+        capabilities: structuredClone(CAPABILITIES),
+        inspections: { run_deck: mismatched }
+      }),
+      TEST_SOURCE
+    );
+    expect(invalid.currentState.stability).toBe("invalid");
+    expect(invalid.currentState.actionAuthority).toBe("none");
+    expect(buildAllowedActions(invalid.currentState, invalid.stateHash)).toEqual([]);
   });
 
   it("preserves enchant semantics and imports only advertised opaque actions", async () => {
@@ -578,6 +759,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       requests.push({ url, ...(init ? { init } : {}), ...(init?.body ? { body: JSON.parse(String(init.body)) } : {}) });
       if (url.endsWith("/api/v2/capabilities")) return json(CAPABILITIES);
       if (url.endsWith("/api/v2/state")) return json(DECK_ENCHANT_STATE);
+      if (url.includes("/api/v2/inspections/run_deck?")) return json(runDeckInspection(DECK_ENCHANT_STATE.state_id));
       if (url.endsWith("/api/v1/singleplayer?format=json")) return json(await fixture("event"));
       if (url.endsWith("/api/v2/commands") && init?.method === "POST") {
         return json(command(requests.at(-1)?.body.request_id, "started"), 202);
@@ -633,13 +815,55 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       calls.push(url);
       if (url.endsWith("/api/v2/capabilities")) return json(CAPABILITIES);
       if (url.endsWith("/api/v2/state")) return json(unsupported);
-      if (url.endsWith("/api/v1/singleplayer?format=json")) return json({ state_type: "menu", options: [] });
+      if (url.includes("/api/v2/inspections/run_deck?")) return json(runDeckInspection(unsupported.state_id));
+      if (url.endsWith("/api/v1/singleplayer?format=json")) return json(await fixture("map"));
       throw new Error(`Unexpected request ${url}`);
     });
 
     const state = await adapter.readCurrentState();
-    expect(state).toMatchObject({ state_type: "menu" });
+    expect(state).toMatchObject({ state_type: "map" });
     expect(calls).toContain("http://adapter.test/api/v1/singleplayer?format=json");
+    const envelope = normalizeCurrentState(state, adapter.describe());
+    expect(envelope.currentState.actionAuthority).toBe("local_reconstruction");
+    expect(envelope.currentState.player?.runDeck).toEqual([
+      expect.objectContaining({ entityId: "deck-card-1", id: "STRIKE" })
+    ]);
+    expect(envelope.currentState.bridgeInspections).toEqual([
+      expect.objectContaining({ kind: "run_deck", expectedStateId: unsupported.state_id })
+    ]);
+  });
+
+  it("treats an unavailable run deck as absent evidence but keeps stale inspection failures hard", async () => {
+    const unsupported = {
+      ...DECK_ENCHANT_STATE,
+      readiness: "unsupported",
+      surface_kind: "unsupported",
+      surface: { kind: "unsupported", source_type: "menu", reason: "not implemented" },
+      legal_actions: []
+    };
+    const makeAdapter = (errorCode: string) => new Sts2McpHybridAdapter(
+      "http://adapter.test",
+      1_000,
+      { mode: "auto", commandPollMs: 1, commandTimeoutMs: 100 },
+      async (input) => {
+        const url = String(input);
+        if (url.endsWith("/api/v2/capabilities")) return json(CAPABILITIES);
+        if (url.endsWith("/api/v2/state")) return json(unsupported);
+        if (url.includes("/api/v2/inspections/run_deck?")) {
+          return json({ error: { code: errorCode, detail: "test failure" } }, 409);
+        }
+        if (url.endsWith("/api/v1/singleplayer?format=json")) {
+          return json({ state_type: "menu", options: [] });
+        }
+        throw new Error(`Unexpected request ${url}`);
+      }
+    );
+
+    await expect(makeAdapter("inspection_not_available").readCurrentState()).resolves.toMatchObject({
+      state_type: "menu",
+      bridge_v2_capabilities: expect.any(Object)
+    });
+    await expect(makeAdapter("stale_state").readCurrentState()).rejects.toThrow("stale_state");
   });
 
   it("preserves the bridge reason when strict v2 sees an unsupported surface", () => {
@@ -691,6 +915,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       requests.push(url);
       if (url.endsWith("/api/v2/capabilities")) return json(CAPABILITIES);
       if (url.endsWith("/api/v2/state")) return json(DECK_ENCHANT_STATE);
+      if (url.includes("/api/v2/inspections/run_deck?")) return json(runDeckInspection(DECK_ENCHANT_STATE.state_id));
       if (url.endsWith("/api/v1/singleplayer?format=json")) return json(await fixture("event"));
       throw new Error(`Unexpected request ${url}`);
     });
@@ -723,6 +948,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       calls.push(url);
       if (url.endsWith("/api/v2/capabilities")) return json(incompatibleCapabilities);
       if (url.endsWith("/api/v2/state")) return json(incompatibleState);
+      if (url.includes("/api/v2/inspections/run_deck?")) return json(runDeckInspection(incompatibleState.state_id));
       if (url.endsWith("/api/v1/singleplayer?format=json")) return json(await fixture("event"));
       throw new Error(`Unexpected request ${url}`);
     });
@@ -753,6 +979,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       calls.push(url);
       if (url.endsWith("/api/v2/capabilities")) return json(CAPABILITIES);
       if (url.endsWith("/api/v2/state")) return json(driftedUnsupported);
+      if (url.includes("/api/v2/inspections/run_deck?")) return json(runDeckInspection(driftedUnsupported.state_id));
       if (url.endsWith("/api/v1/singleplayer?format=json")) return json(await fixture("event"));
       throw new Error(`Unexpected request ${url}`);
     });
@@ -814,6 +1041,7 @@ function commandAdapter(
     const url = String(input);
     if (url.endsWith("/api/v2/capabilities")) return json(CAPABILITIES);
     if (url.endsWith("/api/v2/state")) return json(DECK_ENCHANT_STATE);
+    if (url.includes("/api/v2/inspections/run_deck?")) return json(runDeckInspection(DECK_ENCHANT_STATE.state_id));
     if (url.endsWith("/api/v1/singleplayer?format=json")) return json(await fixture("event"));
     if (url.endsWith("/api/v2/commands") && init?.method === "POST") {
       const requestId = JSON.parse(String(init.body)).request_id as string;

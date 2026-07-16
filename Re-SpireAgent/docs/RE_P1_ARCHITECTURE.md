@@ -36,10 +36,10 @@ The normalizer remains a set of explicit context and surface decoders rather tha
 Critical field loss or an unknown potentially action-relevant nested field produces `diagnostics.status="invalid"`, an unknown context, and an unsupported surface. Harmless nested drift remains visible in diagnostics without automatically invalidating a known state. Non-critical inference is recorded as `degraded`, never hidden.
 
 Read-only inspection is a separate evidence path, not an executable surface or
-an arbitrary raw-object escape hatch. Future inspection results must be
-state-bound, typed, visibility-labeled, separately recorded, and excluded from
-the command ledger. Immediate context may keep compact pile counts while an
-inspection result supplies player-visible unordered contents. Hidden draw order
+an arbitrary raw-object escape hatch. The fixed `run_deck` and `combat_piles`
+results are state-bound, typed, visibility-labeled, separately recorded, and
+excluded from the command ledger. Immediate context keeps compact pile counts
+while inspection supplies player-visible unordered contents. Hidden draw order
 and RNG are never normalized.
 
 Bridge v2 structured diagnostics preserve both severity and operational effect.

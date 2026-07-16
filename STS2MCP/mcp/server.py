@@ -124,6 +124,16 @@ async def _v2_command_request(method: str, path: str, body: dict | None = None) 
     return r.text
 
 
+async def _v2_inspection_request(kind: str, expected_state_id: str) -> str:
+    r = await _get_client().get(
+        _v2_url(f"inspections/{kind}"),
+        params={"expected_state_id": expected_state_id},
+    )
+    # Stale/scope-mismatch responses are structured protocol results. Preserve
+    # them so clients can re-observe instead of guessing or retrying an action.
+    return r.text
+
+
 async def _wait_for_profile(profile_id: int, fallback: str) -> str:
     last_profiles: dict | None = None
     for _ in range(30):
@@ -198,6 +208,32 @@ async def get_agent_state_v2() -> str:
     """
     try:
         return await _v2_get("state")
+    except Exception as e:
+        return _handle_error(e)
+
+
+@mcp.tool()
+async def inspect_run_deck_v2(expected_state_id: str) -> str:
+    """Read the current player's visible run deck without granting actions.
+
+    The result is bound to expected_state_id, has unordered_multiset semantics,
+    and includes upgrades/enchantments. It does not enter the command ledger.
+    """
+    try:
+        return await _v2_inspection_request("run_deck", expected_state_id)
+    except Exception as e:
+        return _handle_error(e)
+
+
+@mcp.tool()
+async def inspect_combat_piles_v2(expected_state_id: str) -> str:
+    """Read visible draw/discard/exhaust contents for the current combat.
+
+    The result deliberately omits draw order and exposes no executable action.
+    It is valid only for the exact qualified combat state_id.
+    """
+    try:
+        return await _v2_inspection_request("combat_piles", expected_state_id)
     except Exception as e:
         return _handle_error(e)
 

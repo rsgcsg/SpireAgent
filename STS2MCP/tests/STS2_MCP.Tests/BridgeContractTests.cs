@@ -80,22 +80,75 @@ public sealed class BridgeContractTests
     }
 
     [Fact]
-    public void InspectionContractIsReadOnlyAndDisabledByDefault()
+    public void InspectionContractIsReadOnlyAndLimitedToFixedKinds()
     {
         var contract = new InspectionContractCapability(
-            "disabled_not_implemented",
+            "implemented_read_only",
             StateBound: true,
             ArbitraryQueriesAllowed: false,
             EntersCommandLedger: false,
             new[] { "on_screen", "normal_inspection", "count_only" },
             new[] { "unordered_multiset", "player_sorted" },
-            Array.Empty<string>());
+            new[] { "run_deck", "combat_piles" });
 
         Assert.True(contract.StateBound);
         Assert.False(contract.ArbitraryQueriesAllowed);
         Assert.False(contract.EntersCommandLedger);
-        Assert.Empty(contract.ImplementedKinds);
+        Assert.Equal(new[] { "run_deck", "combat_piles" }, contract.ImplementedKinds);
         Assert.DoesNotContain("hidden", contract.VisibilityClasses);
+    }
+
+    [Fact]
+    public void InspectionResponseCarriesVisibleCardEvidenceWithoutCommandAuthority()
+    {
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+        };
+        var card = new VisibleCard(
+            "card-a",
+            "STRIKE",
+            "Strike",
+            "Attack",
+            "1",
+            null,
+            "Deal damage.",
+            "Basic",
+            false,
+            false,
+            new VisibleEnchantment("SLITHER", "Slither", "Randomize cost when drawn.", 1, "visible_ui"));
+        var response = new BridgeInspectionResponse(
+            BridgeV2Contract.ProtocolVersion,
+            "inspection-a",
+            "state-a",
+            "state-a",
+            DateTimeOffset.UnixEpoch,
+            "run_deck",
+            "normal_inspection",
+            "unordered_multiset",
+            new RunDeckInspectionContent("run_deck", 1, new[] { card }),
+            new InspectionCompleteness(
+                "complete_for_player_run_deck_contents_without_semantic_order",
+                new[] { "NDeckViewScreen" },
+                Array.Empty<string>()),
+            new BridgeServerIdentity("bridge", "Bridge", "test", "commit"),
+            new GameBuildIdentity(
+                "v0.108.0",
+                "commit",
+                "branch",
+                1,
+                new CompatibilityAssessment("supported_exact", new[] { "v0.108.0" }, new[] { "fingerprint" }, true, "exact")),
+            new ObservationPolicyInfo("player_visible_ui_v1", "visible", false, "omit"),
+            Array.Empty<BridgeDiagnostic>());
+
+        string json = JsonSerializer.Serialize(response, options);
+
+        Assert.Contains("\"kind\":\"run_deck\"", json);
+        Assert.Contains("\"existing_enchantment\"", json);
+        Assert.Contains("\"definition_id\":\"SLITHER\"", json);
+        Assert.Contains("\"ordering_semantics\":\"unordered_multiset\"", json);
+        Assert.DoesNotContain("action_id", json, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("request_id", json, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

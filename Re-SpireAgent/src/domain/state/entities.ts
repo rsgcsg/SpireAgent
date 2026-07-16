@@ -74,6 +74,7 @@ export interface PlayerSnapshot {
   maxEnergy?: number;
   stars?: number;
   gold?: number;
+  runDeck?: CardSnapshot[];
   hand: CardSnapshot[];
   drawPileCount?: number;
   discardPileCount?: number;

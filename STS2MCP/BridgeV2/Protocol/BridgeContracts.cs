@@ -7,7 +7,7 @@ namespace STS2_MCP.BridgeV2.Protocol;
 
 public static class BridgeV2Contract
 {
-    public const string ProtocolVersion = "2.0-preview.3";
+    public const string ProtocolVersion = "2.0-preview.4";
     public const string ObservationPolicyId = "player_visible_ui_v1";
 }
 
@@ -80,6 +80,63 @@ public sealed record BridgeCapabilitiesResponse(
     InspectionContractCapability Inspections,
     IReadOnlyList<BridgeDiagnostic> Diagnostics,
     IReadOnlyList<string> Warnings);
+
+public sealed record InspectionCompleteness(
+    string PlayerVisibleSemantics,
+    IReadOnlyList<string> Sources,
+    IReadOnlyList<string> Missing);
+
+[JsonConverter(typeof(BridgeInspectionContentJsonConverter))]
+public interface IBridgeInspectionContent
+{
+    string Kind { get; }
+}
+
+public sealed class BridgeInspectionContentJsonConverter : JsonConverter<IBridgeInspectionContent>
+{
+    public override IBridgeInspectionContent Read(
+        ref Utf8JsonReader reader,
+        Type typeToConvert,
+        JsonSerializerOptions options) =>
+        throw new JsonException("Bridge inspection content is response-only.");
+
+    public override void Write(
+        Utf8JsonWriter writer,
+        IBridgeInspectionContent value,
+        JsonSerializerOptions options) =>
+        JsonSerializer.Serialize(writer, value, value.GetType(), options);
+}
+
+public sealed record RunDeckInspectionContent(
+    string Kind,
+    int CardCount,
+    IReadOnlyList<VisibleCard> Cards) : IBridgeInspectionContent;
+
+public sealed record CombatPileInspectionZone(
+    string Zone,
+    int CardCount,
+    string OrderingSemantics,
+    IReadOnlyList<VisibleCard> Cards);
+
+public sealed record CombatPilesInspectionContent(
+    string Kind,
+    IReadOnlyList<CombatPileInspectionZone> Zones) : IBridgeInspectionContent;
+
+public sealed record BridgeInspectionResponse(
+    string ProtocolVersion,
+    string InspectionId,
+    string ExpectedStateId,
+    string ObservedStateId,
+    DateTimeOffset ObservedAt,
+    string Kind,
+    string VisibilityClass,
+    string OrderingSemantics,
+    IBridgeInspectionContent Content,
+    InspectionCompleteness Completeness,
+    BridgeServerIdentity Bridge,
+    GameBuildIdentity Game,
+    ObservationPolicyInfo ObservationPolicy,
+    IReadOnlyList<BridgeDiagnostic> Diagnostics);
 
 public sealed record StateCompleteness(
     string PlayerVisibleSemantics,

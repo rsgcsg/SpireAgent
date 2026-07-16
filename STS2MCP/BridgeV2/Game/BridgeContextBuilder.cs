@@ -111,7 +111,8 @@ internal static class BridgeContextBuilder
         CardModel card,
         string entityId,
         bool selected = false,
-        bool includeCombatLegality = false)
+        bool includeCombatLegality = false,
+        PileType displayPile = PileType.Hand)
     {
         string cost = card.EnergyCost.CostsX ? "X" : card.EnergyCost.GetAmountToSpend().ToString();
         string? starCost = card.HasStarCostX
@@ -120,7 +121,7 @@ internal static class BridgeContextBuilder
         string? description;
         try
         {
-            description = McpMod.StripRichTextTags(card.GetDescriptionForPile(PileType.Hand)).Replace("\n", " ");
+            description = McpMod.StripRichTextTags(card.GetDescriptionForPile(displayPile)).Replace("\n", " ");
         }
         catch
         {

@@ -1,12 +1,13 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.3`
+Protocol preview: `2.0-preview.4`
 
 ## Endpoints
 
 ```text
 GET  /api/v2/capabilities
 GET  /api/v2/state
+GET  /api/v2/inspections/{kind}?expected_state_id={state_id}
 POST /api/v2/commands
 GET  /api/v2/commands/{request_id}
 ```
@@ -137,11 +138,24 @@ audit but do not infer safety from warning presence or absence.
 
 ## Inspection Contract
 
-Capabilities currently advertise inspection as `disabled_not_implemented`:
-state-bound, no arbitrary queries, no hidden visibility, no command-ledger
-entry, and no implemented kinds. There is no inspection endpoint in
-`preview.3`. This contract prevents future read-only player inspection from
-being confused with an executable action or unrestricted object query.
+Capabilities advertise exactly two `implemented_read_only` inspection kinds:
+
+- `run_deck`: current local player's run deck, including per-instance upgrade
+  and enchantment semantics;
+- `combat_piles`: draw, discard, and exhaust contents while a qualified combat
+  context exists.
+
+Both return `visibility_class=normal_inspection` and
+`ordering_semantics=unordered_multiset`. Serialization order is deterministic
+but has no game meaning. In particular, real draw order is never returned and
+is declared as `draw_pile_order_hidden_by_policy`.
+
+Inspection requests require the exact current `state_id`, exact supported game
+identity, and a fixed advertised kind. They do not return actions, mutate the
+game, or enter the command ledger. `inspection_not_available` means the
+player/run object does not exist in the current state; clients may treat that
+as absent evidence. Stale state, identity mismatch, binding failure, malformed
+content, and unsupported expansion remain hard failures.
 
 ## Error Codes
 
@@ -152,6 +166,10 @@ being confused with an executable action or unrestricted object query.
 | `request_id_conflict` | idempotency key reused for another payload |
 | `command_capacity_exhausted` | bounded session ledger is full; restart required |
 | `stale_state` | expected state no longer current |
+| `inspection_not_available` | fixed inspection has no backing player/run object in this state |
+| `inspection_scope_mismatch` | inspection requested outside its qualified context |
+| `inspection_kind_not_implemented` | kind is not one of the fixed advertised inspections |
+| `inspection_binding_failed` | exact-version player-visible binding failed closed |
 | `unknown_or_stale_action` | action not registered for current state |
 | `screen_stage_changed` | surface changed before execution |
 | `card_not_actionable` | bound card/UI object no longer actionable |

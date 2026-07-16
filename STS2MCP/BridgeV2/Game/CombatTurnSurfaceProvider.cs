@@ -78,7 +78,7 @@ internal sealed class CombatTurnSurfaceProvider : IBridgeSurfaceProvider
             canEndTurn);
         string readiness = context.IsPlayPhase ? "ready" : "settling";
         var completeness = new StateCompleteness(
-            "contract_complete_for_immediate_combat_turn; pile contents require future read-only inspection",
+            "contract_complete_for_immediate_combat_turn; pile contents available through separate read-only inspection",
             context.IsPlayPhase
                 ? "derived_from_same_validator_as_execution"
                 : "empty_during_non_player_phase",
@@ -107,24 +107,21 @@ internal sealed class CombatTurnSurfaceProvider : IBridgeSurfaceProvider
             surface,
             completeness,
             game,
-            new[]
-            {
-                "Draw/discard/exhaust pile contents are player-inspectable but intentionally deferred to a future read-only zone query; counts are present."
-            },
+            Array.Empty<string>(),
             actions)
         {
             Diagnostics = new[]
             {
                 new BridgeDiagnostic(
-                    "bridge.visibility.combat_pile_contents_deferred",
+                    "bridge.visibility.combat_pile_contents_externalized",
                     "info",
                     "visibility",
-                    "field_omitted",
+                    "none",
                     "unknown",
                     Path: "context.player.draw_discard_exhaust_piles",
                     VisibilityClass: "normal_inspection",
                     RequiredForAction: false,
-                    SafeDetail: "Pile counts are present; player-inspectable contents await a state-bound read contract.")
+                    SafeDetail: "Pile counts remain in immediate context; player-inspectable contents use the state-bound inspection contract.")
             }
         };
     }

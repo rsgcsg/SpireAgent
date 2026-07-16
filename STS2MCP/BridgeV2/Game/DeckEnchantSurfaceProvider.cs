@@ -83,7 +83,11 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
             CardModel card = holder.CardModel;
             string entityId = entities.GetId(card, "card");
             cardIds[card] = entityId;
-            cards.Add(BuildCard(card, entityId, selectedCards.Contains(card)));
+            cards.Add(BridgeContextBuilder.BuildCard(
+                card,
+                entityId,
+                selectedCards.Contains(card),
+                displayPile: PileType.Deck));
         }
 
         string[] selectedIds = selectedCards
@@ -374,45 +378,6 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
         ReadField(screen, "_selectedCards") is IEnumerable<CardModel> cards
             ? cards.ToArray()
             : Array.Empty<CardModel>();
-
-    private static VisibleCard BuildCard(CardModel card, string entityId, bool selected)
-    {
-        string cost = card.EnergyCost.CostsX ? "X" : card.EnergyCost.GetAmountToSpend().ToString();
-        string? starCost = card.HasStarCostX
-            ? "X"
-            : card.CurrentStarCost >= 0 ? card.GetStarCostWithModifiers().ToString() : null;
-        string? description = null;
-        try
-        {
-            description = McpMod.StripRichTextTags(card.GetDescriptionForPile(PileType.Deck)).Replace("\n", " ");
-        }
-        catch
-        {
-            description = McpMod.SafeGetText(() => card.Description)?.Replace("\n", " ");
-        }
-
-        VisibleEnchantment? existing = card.Enchantment == null
-            ? null
-            : new VisibleEnchantment(
-                card.Enchantment.Id.Entry,
-                McpMod.SafeGetText(() => card.Enchantment.Title),
-                McpMod.SafeGetText(() => card.Enchantment.DynamicDescription),
-                card.Enchantment.Amount,
-                "card_hover_semantics");
-
-        return new VisibleCard(
-            entityId,
-            card.Id.Entry,
-            McpMod.SafeGetText(() => card.Title),
-            card.Type.ToString(),
-            cost,
-            starCost,
-            description,
-            card.Rarity.ToString(),
-            card.IsUpgraded,
-            selected,
-            existing);
-    }
 
     private static VisibleEnchantment BuildEnchantment(
         NDeckEnchantSelectScreen screen,

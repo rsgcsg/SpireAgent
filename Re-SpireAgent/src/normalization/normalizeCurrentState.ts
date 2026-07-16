@@ -11,10 +11,18 @@ import {
   type StateStability
 } from "../domain/state/index.js";
 import { isJsonObject, type JsonObject, type JsonValue } from "../shared/json.js";
-import { isBridgeV2WrappedState, legacyStateFromBridgeV2Wrapper } from "../integrations/sts2mcp/rawState.js";
+import {
+  bridgeV2CapabilitiesSidecarFromRaw,
+  bridgeV2InspectionIdentity,
+  bridgeV2InspectionsFromWrapper,
+  isBridgeV2WrappedState,
+  legacyStateFromBridgeV2Wrapper
+} from "../integrations/sts2mcp/rawState.js";
+import { decodeBridgeV2Capabilities } from "../integrations/sts2mcp/bridgeV2Protocol.js";
 import { stateHash } from "../runtime/stateHash.js";
 import { normalizeBridgeV2CurrentState } from "./normalizeBridgeV2CurrentState.js";
 import { DiagnosticsBuilder } from "./diagnostics.js";
+import { projectBridgeV2Inspections } from "./bridgeV2InspectionProjection.js";
 import {
   objectArray,
   objectField,
@@ -34,7 +42,8 @@ const KNOWN_TOP_LEVEL_KEYS = new Set([
   "state_type", "stateType", "run", "player", "battle", "card_reward", "cardReward", "rewards", "map",
   "rest_site", "restSite", "event", "shop", "treasure", "card_select", "cardSelect", "hand_select",
   "handSelect", "bundle_select", "bundleSelect", "crystal_sphere", "crystalSphere", "game_over", "gameOver",
-  "menu_screen", "menuScreen", "message", "options", "characters"
+  "menu_screen", "menuScreen", "message", "options", "characters",
+  "bridge_v2_capabilities", "bridge_v2_inspections"
 ]);
 const COMBAT_STATE_TOKENS = ["monster", "boss", "elite", "combat", "battle"] as const;
 
@@ -55,7 +64,50 @@ function normalizeLegacyCurrentState(rawInput: unknown, source: AdapterDescripto
 
   const sourceStateType = optionalString(rawState.state_type ?? rawState.stateType);
   if (!sourceStateType) diagnostics.missing("state_type");
-  const base = buildBase(rawState, sourceStateType ?? "unknown", diagnostics);
+  let base = buildBase(rawState, sourceStateType ?? "unknown", diagnostics);
+  const inspectionRaw = bridgeV2InspectionsFromWrapper(rawState);
+  const capabilitiesRaw = bridgeV2CapabilitiesSidecarFromRaw(rawState);
+  const projectedInspections = projectBridgeV2Inspections(
+    capabilitiesRaw,
+    inspectionRaw,
+    undefined,
+    diagnostics
+  );
+  if (base.player) {
+    base = {
+      ...base,
+      player: {
+        ...base.player,
+        ...(projectedInspections.runDeck ? { runDeck: projectedInspections.runDeck } : {}),
+        ...(projectedInspections.drawPile ? { drawPile: projectedInspections.drawPile } : {}),
+        ...(projectedInspections.discardPile ? { discardPile: projectedInspections.discardPile } : {}),
+        ...(projectedInspections.exhaustPile ? { exhaustPile: projectedInspections.exhaustPile } : {})
+      },
+      bridgeInspections: projectedInspections.evidence,
+      ...(projectedInspections.diagnostics.length > 0
+        ? { bridgeDiagnostics: projectedInspections.diagnostics }
+        : {})
+    };
+  }
+  if (capabilitiesRaw) {
+    try {
+      const capabilities = decodeBridgeV2Capabilities(capabilitiesRaw).data;
+      base = {
+        ...base,
+        bridgeInspectionPolicy: {
+          status: capabilities.inspections.status,
+          stateBound: capabilities.inspections.state_bound,
+          arbitraryQueriesAllowed: capabilities.inspections.arbitrary_queries_allowed,
+          entersCommandLedger: capabilities.inspections.enters_command_ledger,
+          visibilityClasses: [...capabilities.inspections.visibility_classes],
+          orderingSemantics: [...capabilities.inspections.ordering_semantics],
+          implementedKinds: [...capabilities.inspections.implemented_kinds]
+        }
+      };
+    } catch (error) {
+      diagnostics.invalid("bridge_v2_capabilities", capabilitiesRaw, String(error).slice(0, 500));
+    }
+  }
   const context = normalizeContext(rawState, base.sourceStateType, diagnostics);
   let surface = normalizeSurface(rawState, context, diagnostics);
 
@@ -83,6 +135,9 @@ function normalizeLegacyCurrentState(rawInput: unknown, source: AdapterDescripto
     };
   }
 
+  const rawStateForIdentity = Object.keys(inspectionRaw).length > 0
+    ? { ...rawState, bridge_v2_inspections: bridgeV2InspectionIdentity(inspectionRaw) }
+    : rawState;
   return {
     envelopeSchemaVersion: 2,
     capturedAt,
@@ -90,7 +145,7 @@ function normalizeLegacyCurrentState(rawInput: unknown, source: AdapterDescripto
     rawState,
     currentState,
     diagnostics: builtDiagnostics,
-    stateHash: stateHash(rawState),
+    stateHash: stateHash(rawStateForIdentity),
     normalizedStateHash: stateHash(currentState)
   };
 }

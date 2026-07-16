@@ -5,6 +5,11 @@ using STS2_MCP.BridgeV2.Protocol;
 
 namespace STS2_MCP.BridgeV2.Runtime;
 
+internal sealed record BridgeInspectionReadResult(
+    BridgeInspectionResponse? Inspection,
+    string? ErrorCode,
+    string? Detail);
+
 internal static class BridgeV2Runtime
 {
     public const int CommandOutcomeTimeoutMs = 10_000;
@@ -21,7 +26,8 @@ internal static class BridgeV2Runtime
         var warnings = new List<string>
         {
             "Bridge v2 is an incremental preview. Unlisted surfaces fail closed with no legal actions.",
-            "Singleplayer deck enchant, ordinary event option, player-phase combat turn, card reward selection, and room reward claim are the only game-bound v2 vertical slices in this revision."
+            "Singleplayer deck enchant, ordinary event option, player-phase combat turn, card reward selection, and room reward claim are the only game-bound v2 action slices in this revision.",
+            "Run-deck and combat-pile inspections are read-only evidence. They do not grant action authority or enter the command ledger."
         };
 
         if (!game.Compatibility.ActionExecutionAllowed)
@@ -70,13 +76,17 @@ internal static class BridgeV2Runtime
                 },
                 OutcomeTimeoutMs: CommandOutcomeTimeoutMs),
             new InspectionContractCapability(
-                Status: "disabled_not_implemented",
+                Status: "implemented_read_only",
                 StateBound: true,
                 ArbitraryQueriesAllowed: false,
                 EntersCommandLedger: false,
                 VisibilityClasses: new[] { "on_screen", "normal_inspection", "count_only" },
                 OrderingSemantics: new[] { "unordered_multiset", "player_sorted" },
-                ImplementedKinds: Array.Empty<string>()),
+                ImplementedKinds: new[]
+                {
+                    BridgeInspectionBuilder.RunDeckKind,
+                    BridgeInspectionBuilder.CombatPilesKind
+                }),
             new[]
             {
                 BridgeDiagnostics.Create(
@@ -86,12 +96,12 @@ internal static class BridgeV2Runtime
                     "none",
                     "unknown"),
                 BridgeDiagnostics.Create(
-                    "bridge.inspection.disabled",
+                    "bridge.inspection.read_only_enabled",
                     "info",
                     "visibility",
                     "none",
                     "unknown",
-                    "Read-only inspection has a contract boundary but no enabled endpoint or kind.")
+                    "Run-deck and combat-pile inspection are state-bound reads with no command authority.")
             },
             warnings);
     }
@@ -153,6 +163,54 @@ internal static class BridgeV2Runtime
     {
         BridgeStateEnvelope current = Observe();
         return CommandLedger.Poll(requestId, current.StateId);
+    }
+
+    public static BridgeInspectionReadResult Inspect(string kind, string expectedStateId)
+    {
+        BridgeStateEnvelope current = Observe();
+        if (!string.Equals(current.StateId, expectedStateId, StringComparison.Ordinal))
+        {
+            return new BridgeInspectionReadResult(
+                null,
+                "stale_state",
+                "The expected state is no longer current; obtain a fresh state before inspecting.");
+        }
+        if (!current.Game.Compatibility.ActionExecutionAllowed)
+        {
+            return new BridgeInspectionReadResult(
+                null,
+                "inspection_identity_not_exact",
+                "Inspection requires the exact supported game build even though it is read-only.");
+        }
+
+        BridgeInspectionBuildResult built = BridgeInspectionBuilder.Build(kind, current, EntityRegistry);
+        if (built.Draft == null)
+            return new BridgeInspectionReadResult(null, built.ErrorCode, built.Detail);
+
+        BridgeInspectionDraft draft = built.Draft;
+        string inspectionId = "inspection_" + BridgeHash.Object(new
+        {
+            current.StateId,
+            draft.Kind,
+            draft.Content,
+            draft.Completeness
+        })[..20];
+        var response = new BridgeInspectionResponse(
+            BridgeV2Contract.ProtocolVersion,
+            inspectionId,
+            expectedStateId,
+            current.StateId,
+            DateTimeOffset.UtcNow,
+            draft.Kind,
+            draft.VisibilityClass,
+            draft.OrderingSemantics,
+            draft.Content,
+            draft.Completeness,
+            BridgeIdentity(),
+            current.Game,
+            ObservationPolicy(),
+            Array.Empty<BridgeDiagnostic>());
+        return new BridgeInspectionReadResult(response, null, null);
     }
 
     private static BridgeServerIdentity BridgeIdentity() => new(

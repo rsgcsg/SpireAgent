@@ -1,10 +1,9 @@
 # RE-P1 Handoff
 
 Status: one real Act 1 v1 run has been exercised through boss defeat. Exact-build
-Bridge v2 deck-enchant, ordinary event-option, and one immediate targeted
-combat-card path now have organic Re-SpireAgent lifecycles. RE-P1 remains a
-protocol baseline, not a verified strategic player or a claim of broad game
-coverage.
+Bridge v2 has bounded organic evidence for five executable surfaces plus
+read-only run-deck and combat-pile inspection. RE-P1 remains a protocol
+baseline, not a verified strategic player or a claim of broad game coverage.
 
 ## Completed
 
@@ -47,7 +46,7 @@ coverage.
   DeepSeek-selected targeted Strike passed state revalidation and command
   confirmation; the post-state showed the card left hand, energy spent, and
   enemy HP reduced. This qualifies the observed targeted-card shape only.
-- Source `preview.3` implements the composition/inspection/diagnostics audit:
+- Historical source `preview.3` implemented the first composition/diagnostics audit:
   centralized overlay-vs-room active-surface ownership, typed diagnostics, and
   a disabled/non-executable inspection contract.
 - Ordinary `reward_flow + card_reward_selection` is now exact-source and
@@ -64,8 +63,23 @@ coverage.
   116. A post-fix opaque `Proceed/Skip` command then completed as confirmed;
   its follow-up Re read projected `map` and exposed no stale reward actions.
   The resolver now gives the game's explicit `NMapScreen.IsOpen` state priority
-  over retained reward overlays during room exit. These are Bridge command
-  lifecycles, not yet a model-selected Re decision lifecycle.
+  over retained reward overlays during room exit. Later model-selected claim,
+  card-selection, and Proceed decisions also passed the same boundary.
+- Source `preview.4` implements fixed `run_deck` and `combat_piles` read-only
+  inspections. Re validates exact state/build/policy identity, re-reads state
+  around capture, projects evidence into typed player facts, and never derives
+  actions from it. Main-menu unavailability is tolerated only for the explicit
+  `inspection_not_available` code; all stale/identity/transport failures stop.
+- Organic inspection evidence closed the persistent enchantment gap: after a
+  model-selected Glam `Barrage`, the next run-deck read contained eleven cards
+  and preserved `GLAM` plus its Replay description on the same card instance.
+  In combat, draw=6/discard=0/exhaust=0 matched immediate counts; after playing
+  Barrage, discard=1 retained Glam and all counts still matched. Draw order was
+  explicitly withheld.
+- Organic testing found a stale-identity bug: inspection timestamps changed on
+  every read. Re now excludes only `observed_at` from stale hashing while
+  retaining inspection ID, state binding, and content. The action was safely
+  blocked before the fix and executed normally after it.
 
 ## Legacy Assessment
 
@@ -109,11 +123,15 @@ No memory, learning, scoring, strategic scaffold, shadow mode, live additive mod
 - Combat v2 has one targeted-card lifecycle smoke. Do not treat it as evidence
   for potion, end-turn, self/friendly/multi-target cards, card-selection
   overlays, or all phase-transition completion behavior.
-- Combat pile contents and post-close deck reinspection remain absent. These belong in a future read-only inspection protocol; hidden draw order must remain excluded.
+- Non-empty exhaust and unusual generated/transformed cards remain inspection
+  diversity gaps. Hidden draw order remains excluded by policy.
 
 ## Validation
 
-On 2026-07-15, a clean `npm ci` reported zero vulnerabilities, then `npm run check` passed strict source-and-test typechecking, 39 tests across 6 files, and the production TypeScript build. On 2026-07-16 the MCP service became available: `inspect` normalized a live Neow event with `diagnostics.status=ok`; a dry run recorded its prompt/evidence; then DeepSeek selected a legal event option that MCP accepted and settled. The subsequent bounded run surfaced a real `monster` post-combat shell without `battle`, recorded it safely, and added fixture-backed transition support. The `preview.3` contract pass now succeeds with 74 Re tests and 27 Bridge tests. See the latest command output rather than treating these historical counts as a permanent invariant.
+On 2026-07-16, the `preview.4` inspection pass completed with 78 Re tests,
+29 Bridge tests, strict typecheck, production build, Python MCP syntax check,
+and exact-build organic deck/pile smoke. See the latest command output rather
+than treating historical counts as a permanent invariant.
 
 ## Next Step
 
@@ -129,8 +147,7 @@ npm run agent:replay
 
 Start a fresh game manually, then run bounded windows and inspect each run with `npm run agent:replay`. Confirm that each record contains pre/post raw snapshots, the prompt, DeepSeek response, selected allowed action, MCP result, and settled post-state. Fix a repeatable protocol mismatch with a reduced raw fixture and contract test before running longer loops.
 
-If needed, the next bounded smoke is a single model-selected outer
-`reward_flow + reward_claim` lifecycle, with prompt/response/action/settlement
-recorded. Keep linked reward sets unsupported and inspection disabled until
-exact-build read bindings, a state-bound endpoint, recording, and contract
-tests exist.
+If a natural non-empty exhaust or generated/transformed card state appears,
+capture it as bounded inspection diversity evidence. Keep linked reward sets
+and every unlisted executable surface unsupported until exact-build bindings,
+state-bound actions, completion evidence, and contract tests exist.

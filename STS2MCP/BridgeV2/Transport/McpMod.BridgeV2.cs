@@ -38,6 +38,61 @@ public static partial class McpMod
         }
     }
 
+    private static void HandleGetBridgeV2Inspection(
+        string encodedKind,
+        HttpListenerRequest request,
+        HttpListenerResponse response)
+    {
+        string kind;
+        try
+        {
+            kind = Uri.UnescapeDataString(encodedKind);
+        }
+        catch (UriFormatException)
+        {
+            SendBridgeV2Error(response, 400, "invalid_inspection_kind", "Inspection kind is not valid URI data.");
+            return;
+        }
+
+        string? expectedStateId = request.QueryString["expected_state_id"];
+        if (!IsSafeBridgeIdentifier(kind, 64) || !IsSafeBridgeIdentifier(expectedStateId, 128))
+        {
+            SendBridgeV2Error(
+                response,
+                400,
+                "invalid_inspection_contract",
+                "A fixed inspection kind and expected_state_id are required.");
+            return;
+        }
+
+        try
+        {
+            var task = RunOnMainThread(() => BridgeV2Runtime.Inspect(kind, expectedStateId!));
+            BridgeInspectionReadResult result = task.GetAwaiter().GetResult();
+            if (result.Inspection != null)
+            {
+                SendJson(response, result.Inspection);
+                return;
+            }
+
+            int statusCode = result.ErrorCode switch
+            {
+                "inspection_kind_not_implemented" => 404,
+                "inspection_binding_failed" => 500,
+                _ => 409
+            };
+            SendBridgeV2Error(
+                response,
+                statusCode,
+                result.ErrorCode ?? "inspection_failed",
+                result.Detail ?? "Inspection failed closed.");
+        }
+        catch (Exception ex)
+        {
+            SendBridgeV2InternalError(response, "inspection_failed", ex);
+        }
+    }
+
     private static void HandlePostBridgeV2Command(
         HttpListenerRequest request,
         HttpListenerResponse response)

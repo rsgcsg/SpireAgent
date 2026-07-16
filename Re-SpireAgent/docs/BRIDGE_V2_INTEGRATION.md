@@ -2,19 +2,20 @@
 
 ## Current Scope
 
-Re-SpireAgent supports the strict `2.0-preview.3` source contract for:
+Re-SpireAgent supports the strict `2.0-preview.4` source contract for:
 
 - `deck_enchant_selection`: organically end-to-end qualified;
 - `event_option`: organically qualified for ordinary event options;
 - `combat_turn`: organically qualified for one immediate targeted-card flow;
 - `card_reward_selection`: organically qualified for one ordinary card/Skip
-  lifecycle.
+  lifecycle;
 - `reward_claim`: ordinary claim and Proceed/Skip have bounded installed-game
-  Bridge command lifecycles; a model-selected Re lifecycle is still untested.
+  and model-selected Re lifecycles;
+- `run_deck` and `combat_piles`: fixed read-only, state-bound evidence.
 
 The first three organic lifecycles used exact game identity
 `v0.108.0|58694f64|-2044609792` under `preview.2`. A fresh process loaded
-`preview.3` and completed an ordinary card reward: the bridge exposed cards and
+`preview.4` and completed an ordinary card reward: the bridge exposed cards and
 Skip separately, DeepSeek selected legal `Barrage`, the command completed, and
 Re settled back to the outer rewards screen.
 
@@ -60,17 +61,23 @@ degrades or grants authority.
 
 ## Inspection Boundary
 
-`preview.3` exposes only a disabled capability contract:
+`preview.4` exposes exactly two fixed read-only kinds:
 
-- `status=disabled_not_implemented`;
+- `run_deck` for per-instance deck/upgrade/enchantment semantics;
+- `combat_piles` for unordered draw/discard/exhaust contents;
+- `status=implemented_read_only`;
 - exact-state bound;
 - no arbitrary queries;
 - no command-ledger entry;
 - no hidden visibility;
-- no implemented inspection kinds.
+- no draw-order semantics.
 
-Re accepts only that disabled shape. There is no inspection endpoint, result
-store, or pile/deck retrieval yet. This is a boundary definition, not a feature.
+Re reads state, captures applicable inspections, and re-reads state before
+accepting the combined snapshot. It validates kind/content, exact identity,
+counts, zones, visibility policy, and state binding. Inspection evidence enters
+the stale-state hash and normalized player facts, but never creates actions.
+Volatile `observed_at` is excluded from stale identity; inspection content and
+IDs are not. `inspection_not_available` is the only safely absent condition.
 
 ## Card Reward Contract
 
@@ -110,7 +117,7 @@ rejected locally.
 ## Data Flow
 
 ```text
-/api/v2/capabilities + /api/v2/state
+/api/v2/capabilities + /api/v2/state + fixed inspections
   -> strict Zod protocol decoder
   -> exact identity, inspection, diagnostics, and safety checks
   -> context + surface compatibility validation
@@ -126,7 +133,7 @@ rejected locally.
 
 Execution is refused when protocol/build/observation identity differs, hidden
 information is declared, command guarantees are absent, inspection claims more
-than the disabled contract, the surface is not advertised, context and surface
+than the fixed read-only contract, the surface is not advertised, context and surface
 conflict, diagnostics contradict actions, readiness/completeness is incoherent,
 or command identity/status/outcome is inconsistent.
 
@@ -136,11 +143,11 @@ poll timeout are unknown and never automatically retried.
 
 ## Evidence And Next Step
 
-Outer `reward_flow(room_rewards) + reward_claim` is not a generic reward
-protocol. Its source/fixture implementation preserves that card/relic/potion/
-gold claims and continuation have different completion shapes. The observed
-ordinary Gold claim and Proceed/Skip shapes are runtime-qualified at the Bridge
-command layer. A model-selected Re lifecycle remains a separate bounded smoke.
+Fresh exact-build evidence now includes persistent Glam post-state through
+`run_deck`, plus non-empty draw/discard and empty exhaust through
+`combat_piles`. Draw order remains intentionally hidden. Non-empty exhaust and
+unusual generated/transformed cards remain diversity gaps, not reasons to
+weaken the contract.
 
 This integration does not add memory, learning, scoring, hidden-information
 access, arbitrary MCP calls, generic action payloads, or broad v2 coverage.
