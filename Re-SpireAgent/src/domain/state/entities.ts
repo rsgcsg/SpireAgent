@@ -32,6 +32,7 @@ export interface PotionSnapshot {
 
 export interface CardSnapshot {
   id: string;
+  entityId?: string;
   name: string;
   index?: number;
   type?: string;
@@ -44,6 +45,16 @@ export interface CardSnapshot {
   targetType?: string;
   canPlay?: boolean;
   unplayableReason?: string | null;
+  selected?: boolean;
+  existingEnchantment?: EnchantmentSnapshot;
+}
+
+export interface EnchantmentSnapshot {
+  definitionId: string;
+  name?: string;
+  description?: string;
+  amount: number;
+  observationSource?: string;
 }
 
 export interface OrbSnapshot {

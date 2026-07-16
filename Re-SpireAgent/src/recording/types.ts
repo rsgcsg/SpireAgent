@@ -88,6 +88,7 @@ export interface RunMetadata {
     adapterVersion?: string;
     endpoint: string;
     capabilities: Record<string, unknown>;
+    negotiated?: JsonValue;
   };
   provider: {
     provider: "deepseek";

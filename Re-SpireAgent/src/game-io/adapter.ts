@@ -4,6 +4,7 @@ export type RawGameState = JsonObject;
 
 export interface GameExecutionResult {
   accepted: boolean;
+  outcome?: "accepted" | "rejected" | "unknown";
   response: JsonValue;
 }
 
@@ -12,6 +13,8 @@ export interface AdapterCapabilities {
   canExecuteActions: boolean;
   canListLegalActions: boolean;
   actionResults: "none" | "partial" | "complete";
+  legalActionAuthority?: "local_reconstruction" | "bridge_advertised" | "mixed";
+  protocols?: Array<"sts2mcp_v1" | "bridge_v2">;
 }
 
 export interface AdapterDescriptor {
@@ -19,6 +22,7 @@ export interface AdapterDescriptor {
   adapterVersion?: string;
   endpoint: string;
   capabilities: AdapterCapabilities;
+  negotiated?: JsonObject;
 }
 
 export interface GameAdapter<TRawState, TAction, TExecutionResult> {

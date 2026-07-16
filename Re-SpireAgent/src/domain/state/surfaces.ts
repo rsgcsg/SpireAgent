@@ -1,6 +1,7 @@
 import type { NormalizedStateBase } from "./common.js";
 import type {
   CardSnapshot,
+  EnchantmentSnapshot,
   EnemySnapshot,
   IndexedOptionSnapshot,
   MapNodeSnapshot,
@@ -75,6 +76,7 @@ export interface UnknownContext {
 export type InteractionSurface =
   | CombatTurnSurface
   | CardSelectionSurface
+  | DeckEnchantSelectionSurface
   | CardRewardSurface
   | RewardClaimSurface
   | MapNavigationSurface
@@ -100,6 +102,38 @@ export interface CardSelectionSurface {
   maximumSelections?: number;
   canConfirm: boolean;
   canCancel: boolean;
+}
+
+export interface BridgeLegalActionSnapshot {
+  actionId: string;
+  stateId: string;
+  kind: string;
+  label: string;
+  authority: string;
+  evidenceCode: string;
+  category?: string;
+}
+
+export interface DeckEnchantSelectionSurface {
+  kind: "deck_enchant_selection";
+  stage: "selecting" | "preview";
+  bridgeStateId: string;
+  screenEntityId: string;
+  prompt?: string;
+  minimumSelections: number;
+  maximumSelections: number;
+  selectedCount: number;
+  selectedCardEntityIds: string[];
+  cancelable: boolean;
+  enchantment: EnchantmentSnapshot;
+  cards: CardSnapshot[];
+  legalActions: BridgeLegalActionSnapshot[];
+  completeness: {
+    playerVisibleSemantics: string;
+    legalActions: string;
+    sources: string[];
+    missing: string[];
+  };
 }
 
 export interface CardRewardSurface { kind: "card_reward"; options: CardSnapshot[]; canSkip: boolean; canProceed: boolean; }

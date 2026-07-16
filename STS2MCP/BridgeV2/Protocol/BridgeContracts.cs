@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace STS2_MCP.BridgeV2.Protocol;
 
@@ -92,6 +94,27 @@ public sealed record VisibleCard(
     bool IsSelected,
     VisibleEnchantment? ExistingEnchantment);
 
+[JsonConverter(typeof(BridgeSurfaceJsonConverter))]
+public interface IBridgeSurface
+{
+    string Kind { get; }
+}
+
+public sealed class BridgeSurfaceJsonConverter : JsonConverter<IBridgeSurface>
+{
+    public override IBridgeSurface Read(
+        ref Utf8JsonReader reader,
+        Type typeToConvert,
+        JsonSerializerOptions options) =>
+        throw new JsonException("Bridge surfaces are response-only protocol objects.");
+
+    public override void Write(
+        Utf8JsonWriter writer,
+        IBridgeSurface value,
+        JsonSerializerOptions options) =>
+        JsonSerializer.Serialize(writer, value, value.GetType(), options);
+}
+
 public sealed record DeckEnchantSelectionSurface(
     string Kind,
     string Stage,
@@ -103,12 +126,12 @@ public sealed record DeckEnchantSelectionSurface(
     IReadOnlyList<string> SelectedCardEntityIds,
     bool Cancelable,
     VisibleEnchantment Enchantment,
-    IReadOnlyList<VisibleCard> Cards);
+    IReadOnlyList<VisibleCard> Cards) : IBridgeSurface;
 
 public sealed record UnsupportedSurface(
     string Kind,
     string SourceType,
-    string Reason);
+    string Reason) : IBridgeSurface;
 
 public sealed record BridgeStateEnvelope(
     string ProtocolVersion,
@@ -116,14 +139,17 @@ public sealed record BridgeStateEnvelope(
     long StateSequence,
     DateTimeOffset ObservedAt,
     string Readiness,
-    string SurfaceKind,
-    object Surface,
+    IBridgeSurface Surface,
     IReadOnlyList<LegalAction> LegalActions,
     StateCompleteness Completeness,
     BridgeServerIdentity Bridge,
     GameBuildIdentity Game,
     ObservationPolicyInfo ObservationPolicy,
-    IReadOnlyList<string> Warnings);
+    IReadOnlyList<string> Warnings)
+{
+    // Retain the preview.1 wire field while making surface.kind the sole source.
+    public string SurfaceKind => Surface.Kind;
+}
 
 public sealed record BridgeCommandRequest(
     string? RequestId,

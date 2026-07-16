@@ -2,7 +2,8 @@ import type { ExecutableGameAction } from "./action.js";
 
 export interface AllowedAction {
   id: string;
-  kind: ExecutableGameAction["kind"];
+  /** Strategic/display kind. The executable transport action remains private. */
+  kind: string;
   label: string;
   description?: string;
   action: ExecutableGameAction;
@@ -11,7 +12,7 @@ export interface AllowedAction {
 
 export interface PromptAllowedAction {
   id: string;
-  kind: ExecutableGameAction["kind"];
+  kind: string;
   label: string;
   description?: string;
 }

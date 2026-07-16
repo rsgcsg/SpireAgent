@@ -43,4 +43,35 @@ public sealed class BridgeContractTests
         Assert.Equal(BridgeHash.Object(new { value = 1 }), BridgeHash.Object(new { value = 1 }));
         Assert.NotEqual(BridgeHash.Object(new { value = 1 }), BridgeHash.Object(new { value = 2 }));
     }
+
+    [Fact]
+    public void SurfaceKindIsDerivedFromTheTypedSurface()
+    {
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+        };
+        IBridgeSurface surface = new UnsupportedSurface("unsupported", "test", "not implemented");
+        var envelope = new BridgeStateEnvelope(
+            BridgeV2Contract.ProtocolVersion,
+            "state-a",
+            1,
+            DateTimeOffset.UnixEpoch,
+            "unsupported",
+            surface,
+            Array.Empty<LegalAction>(),
+            new StateCompleteness("not_implemented", "empty_fail_closed", Array.Empty<string>(), Array.Empty<string>()),
+            new BridgeServerIdentity("bridge", "Bridge", "test", "commit"),
+            new GameBuildIdentity(null, null, null, null, new CompatibilityAssessment("unknown", Array.Empty<string>(), Array.Empty<string>(), false, "unknown")),
+            new ObservationPolicyInfo("policy", "visible", false, "omit"),
+            Array.Empty<string>());
+
+        string json = JsonSerializer.Serialize(envelope, options);
+
+        Assert.Equal(surface.Kind, envelope.SurfaceKind);
+        Assert.Contains("\"surface_kind\":\"unsupported\"", json);
+        Assert.Contains("\"surface\":{\"kind\":\"unsupported\"", json);
+        Assert.Contains("\"source_type\":\"test\"", json);
+        Assert.Contains("\"reason\":\"not implemented\"", json);
+    }
 }

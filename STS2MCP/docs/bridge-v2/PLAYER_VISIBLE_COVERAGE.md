@@ -19,6 +19,10 @@ Coverage is per exact game version and surface. "v1 exists" is not v2 support.
 | inspection/viewers | none | none | none | none | unsupported |
 | multiplayer | none | none | none | none | unsupported |
 
+Re-SpireAgent now has a fixture-tested v2 client projection for the deck-enchant
+row. A fresh combined Re-SpireAgent-to-game lifecycle smoke is still pending;
+the other rows remain v1-only in client `auto` mode and are not v2-qualified.
+
 ## Deck Enchant Field Coverage
 
 | Fact | Visibility | Source | Required | Status |

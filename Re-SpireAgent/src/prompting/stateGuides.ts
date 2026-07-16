@@ -24,6 +24,7 @@ export const CONTEXT_GUIDES: Record<SemanticContextKind, StateGuide> = {
 export const SURFACE_GUIDES: Record<InteractionSurfaceKind, StateGuide> = {
   combat_turn: guide("surface-combat-turn", "Active surface is a combat turn. Choose one immediate card, potion, or end-turn action. Targets and indices are encoded in allowed action ids."),
   card_selection: guide("surface-card-selection", "Active surface is card selection. Read selectionMode, purpose, prompt, options, and confirm/cancel availability. Choose exactly one immediate selection action. If the state does not expose selected cards or remaining capacity, do not claim which cards are selected or whether another selection is legal."),
+  deck_enchant_selection: guide("surface-deck-enchant", "Active surface is a two-stage deck enchant selection. Read the target enchantment, selection constraints, selected card instances, candidate cards, and stage. Choose only a Bridge-advertised opaque action; selecting, previewing, cancelling, and applying are distinct actions."),
   card_reward: guide("surface-card-reward", "Active surface is card reward selection. Take, skip, or continue only when that exact allowed action exists."),
   reward_claim: guide("surface-reward-claim", "Active surface is reward claim. Choose an exposed claim, potion discard, or proceed action."),
   map_navigation: guide("surface-map-navigation", "Active surface is map navigation. Choose one currently selectable next node."),

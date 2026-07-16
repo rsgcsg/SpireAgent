@@ -1,6 +1,6 @@
 import { loadEnvironment, readRuntimeConfig } from "../config/env.js";
 import { buildAllowedActions } from "../domain/actions/buildAllowedActions.js";
-import { Sts2McpRestAdapter } from "../integrations/sts2mcp/restAdapter.js";
+import { Sts2McpHybridAdapter } from "../integrations/sts2mcp/hybridAdapter.js";
 import { normalizeCurrentState } from "../normalization/normalizeCurrentState.js";
 import { listRunIds, readRunMetadata, readRunRecords } from "../recording/fileDecisionRecorder.js";
 import { runLoop } from "../runtime/runLoop.js";
@@ -17,11 +17,17 @@ async function main(): Promise<void> {
   }
 
   if (command === "inspect") {
-    const adapter = new Sts2McpRestAdapter(config.mcp.baseUrl, config.mcp.timeoutMs);
+    const adapter = new Sts2McpHybridAdapter(config.mcp.baseUrl, config.mcp.timeoutMs, {
+      mode: config.mcp.protocolMode,
+      commandPollMs: config.mcp.commandPollMs,
+      commandTimeoutMs: config.mcp.commandTimeoutMs
+    });
+    await adapter.initialize();
     const raw = await adapter.readCurrentState();
     const envelope = normalizeCurrentState(raw, adapter.describe());
     const allowedActions = buildAllowedActions(envelope.currentState, envelope.stateHash);
     process.stdout.write(`${JSON.stringify({
+      adapter: adapter.describe(),
       stateHash: envelope.stateHash,
       normalizedStateHash: envelope.normalizedStateHash,
       diagnostics: envelope.diagnostics,
@@ -38,29 +44,28 @@ async function main(): Promise<void> {
 
   const runtime = await createRuntime(config);
   try {
+    if (command === "tick") {
+      const dryRun = process.argv.includes("--dry-run");
+      const result = await runtime.orchestrator.runTick(1, { dryRun });
+      printTick(runtime.recorder.runId, result);
+      return;
+    }
 
-  if (command === "tick") {
-    const dryRun = process.argv.includes("--dry-run");
-    const result = await runtime.orchestrator.runTick(1, { dryRun });
-    printTick(runtime.recorder.runId, result);
-    return;
-  }
-
-  if (command === "run") {
-    const maxTicks = parseIntegerFlag("--max-ticks") ?? config.runtime.maxTicks;
-    const delayMs = parseIntegerFlag("--delay-ms") ?? config.runtime.tickDelayMs;
-    const dryRun = process.argv.includes("--dry-run");
-    const results = await runLoop(runtime.orchestrator, {
-      maxTicks,
-      delayMs,
-      dryRun,
-      stopAtRunBoundary: true,
-      onTick: (result) => printTick(runtime.recorder.runId, result)
-    });
-    const failures = results.filter((result) => result.shouldStopRun && result.outcome !== "executed_and_settled");
-    process.exitCode = failures.length > 0 ? 1 : 0;
-    return;
-  }
+    if (command === "run") {
+      const maxTicks = parseIntegerFlag("--max-ticks") ?? config.runtime.maxTicks;
+      const delayMs = parseIntegerFlag("--delay-ms") ?? config.runtime.tickDelayMs;
+      const dryRun = process.argv.includes("--dry-run");
+      const results = await runLoop(runtime.orchestrator, {
+        maxTicks,
+        delayMs,
+        dryRun,
+        stopAtRunBoundary: true,
+        onTick: (result) => printTick(runtime.recorder.runId, result)
+      });
+      const failures = results.filter((result) => result.shouldStopRun && result.outcome !== "executed_and_settled");
+      process.exitCode = failures.length > 0 ? 1 : 0;
+      return;
+    }
   } finally {
     await runtime.release();
   }

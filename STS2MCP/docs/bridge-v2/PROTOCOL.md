@@ -87,6 +87,12 @@ received -> validated -> started -> completed
 If the state changes but the predicate does not pass, the command fails with an
 unknown outcome. Unknown outcomes are never auto-retried.
 
+Clients must verify that every command response repeats the submitted
+`request_id`, `expected_state_id`, and `action_id`. They must also enforce the
+status/outcome pairs: pending lifecycle states use `pending`, `completed` uses
+`confirmed`, `rejected` uses `not_applied`, and `failed`/`timed_out` use
+`unknown`. A mismatch is an unknown client outcome, not success.
+
 ## Error Codes
 
 | Code | Meaning |

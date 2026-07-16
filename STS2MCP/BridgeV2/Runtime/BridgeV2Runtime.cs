@@ -83,7 +83,6 @@ internal static class BridgeV2Runtime
                 stateSequence,
                 DateTimeOffset.UtcNow,
                 draft.Readiness,
-                draft.SurfaceKind,
                 draft.Surface,
                 descriptors,
                 draft.Completeness,

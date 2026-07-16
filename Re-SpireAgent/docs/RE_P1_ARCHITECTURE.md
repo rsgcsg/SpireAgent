@@ -26,7 +26,9 @@ Critical field loss or an unknown potentially action-relevant nested field produ
 
 ## Action Authority
 
-The action builder is deterministic but not strategic. It dispatches on the active surface and consults context only for facts a protocol needs, such as combat targets. It reconstructs action choices because the current MCP adapter does not list legal actions. DeepSeek sees summaries and returns one ID; the executable payload remains in process memory. A second state read must match both the prompt's pre-state hash and the selected action's source hash. That guard hashes the complete adapter snapshot, while a separate normalized-state hash remains available for semantic audit; unmodeled raw drift therefore stops execution rather than slipping past the normalizer.
+The action builder is deterministic but not strategic. It dispatches on the active surface and consults context only for facts a protocol needs, such as combat targets. Most v1 surfaces still reconstruct choices because v1 does not list legal actions. A qualified Bridge v2 deck-enchant surface instead imports only the bridge's current state-bound opaque actions. These authority sources never merge for one surface.
+
+DeepSeek sees summaries and returns one ID; the executable payload remains in process memory. A second state read must match both the prompt's pre-state hash and the selected action's source hash. That guard hashes the complete adapter snapshot, while a separate normalized-state hash remains available for semantic audit; unmodeled raw drift therefore stops execution rather than slipping past the normalizer.
 
 RE-P1 deliberately retains one small executable-action union and one adapter serializer instead of adding a duplicate `DomainOperation` plus binding layer. The union is local-only, never model-visible, and every member maps directly to a verified MCP request. A second mirror type would not remove adapter coupling yet; introduce it only if multiple adapters or materially different execution backends appear.
 
@@ -36,7 +38,9 @@ There is one provider path. It uses JSON mode and an explicit thinking policy, s
 
 ## Settlement
 
-Successful POST is only partial evidence. The watcher polls for a changed state hash and requires two identical, non-transitional observations before settlement. Timeout is recorded as `executed_unsettled`; the loop stops and never resends the action automatically. Action-capable CLI commands also acquire an exclusive local lock, so two RE-P1 processes cannot concurrently drive the same MCP session.
+For v1, successful POST is only partial evidence. The watcher polls for a changed state hash and requires two identical, non-transitional observations before settlement. For v2, the adapter first verifies the submitted command identity and polls the bridge's action-specific lifecycle. Only `completed/confirmed` reaches the ordinary settlement watcher. `rejected/not_applied` is an execution rejection; `failed/unknown`, `timed_out/unknown`, transport uncertainty, or inconsistent command identity is recorded as unsettled/unknown and stops without retry.
+
+Action-capable CLI commands also acquire an exclusive local lock, so two RE-P1 processes cannot concurrently drive the same MCP session.
 
 ## Run Boundaries
 

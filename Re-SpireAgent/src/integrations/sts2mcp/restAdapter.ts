@@ -48,7 +48,7 @@ export class Sts2McpRestAdapter implements GameAdapter<Sts2McpRawState, Executab
     if (body.status === "error" || typeof body.error === "string") {
       throw new Error(`MCP rejected action: ${safeMessage(body.message ?? body.error)}`);
     }
-    return { accepted: true, response: body };
+    return { accepted: true, outcome: "accepted", response: body };
   }
 
   private async request(url: string, init: RequestInit): Promise<Response> {

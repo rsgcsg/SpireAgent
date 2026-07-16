@@ -60,7 +60,6 @@ internal static class BridgeSnapshotBuilder
         return new BridgeObservationDraft(
             signature,
             "unsupported",
-            "unsupported",
             surface,
             completeness,
             game,

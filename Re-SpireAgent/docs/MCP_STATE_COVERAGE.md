@@ -8,6 +8,7 @@ Coverage is based on observed old-project raw snapshots and reduced fixture copi
 | `monster` or `elite` without `battle`, message `Combat ended. Waiting for rewards...` | `post_combat` + `no_action` | fixture-backed from real MCP smoke | none; poll for rewards |
 | active `hand_select` over combat | `combat` + `card_selection` | fixture-backed | combat select/confirm; combat facts retained |
 | `card_select` with no verified semantic origin | `unknown` + `card_selection` | partially verified from real MCP | card selection is verified; when MCP exposes `can_confirm`, only confirm/cancel are offered because selected IDs/capacity are absent. `NDeckEnchantSelectScreen` confirmation is currently an adapter completion gap: the REST endpoint returns success but did not advance the observed game state, so it is recorded as `executed_unsettled`, not treated as a settled action. |
+| Bridge v2 `deck_enchant_selection` | inherited v1 context when available + `deck_enchant_selection` | Bridge organic smoke; Re client fixture-tested | bridge-advertised opaque select/preview/confirm/cancel/close actions only; combined Re-to-game smoke pending |
 | `card_reward` | `card_reward` | fixture-backed | take, skip, proceed when exposed |
 | `rewards` | `rewards` | fixture-backed | claim, potion discard, proceed |
 | `map` | `map` | fixture-backed | choose next node |
@@ -27,8 +28,10 @@ A new state is supported only after a real raw sample, normalized variant, allow
 
 ## Adapter Limits
 
-- Legal actions are reconstructed locally; MCP does not enumerate them.
-- Action responses are partial; post-state observation verifies effects.
+- v1 legal actions are reconstructed locally. Bridge v2 enumerates authoritative
+  actions only for deck enchant.
+- v1 action responses are partial; post-state observation verifies effects.
+  Bridge v2 has a command lifecycle and action-specific completion evidence.
 - Some combat card effects open modal selection surfaces while retaining battle data.
 - Some screens briefly expose loading/settlement shapes.
 - Non-combat snapshots may omit deck/energy details that would improve strategy.

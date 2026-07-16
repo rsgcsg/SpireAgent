@@ -90,6 +90,24 @@ describe("TickOrchestrator", () => {
     expect(adapter.executed).toEqual([]);
   });
 
+  it("does not treat an adapter-declared unknown command outcome as success", async () => {
+    const pre = await fixture("combat") as Sts2McpRawState;
+    const adapter = new FakeAdapter([pre, pre], {
+      accepted: false,
+      outcome: "unknown",
+      response: { status: "client_outcome_unknown" }
+    });
+    const recorder = new MemoryRecorder();
+
+    const result = await makeOrchestrator(adapter, fixedProvider("combat:end-turn"), recorder).runTick(1);
+
+    expect(result.outcome).toBe("executed_unsettled");
+    expect(result.shouldStopRun).toBe(true);
+    expect(adapter.executed).toEqual([{ kind: "end_turn" }]);
+    expect(recorder.records[0]?.execution.adapterResult).toEqual({ status: "client_outcome_unknown" });
+    expect(recorder.records[0]?.error).toContain("will not be retried");
+  });
+
   it("stops a run before game-over actions can restart or leave the completed run", async () => {
     const raw = await fixture("game-over") as Sts2McpRawState;
     const adapter = new FakeAdapter([raw]);
@@ -110,7 +128,10 @@ class FakeAdapter implements GameAdapter<Sts2McpRawState, ExecutableGameAction, 
   readonly executed: ExecutableGameAction[] = [];
   private readIndex = 0;
 
-  constructor(private readonly states: Sts2McpRawState[]) {}
+  constructor(
+    private readonly states: Sts2McpRawState[],
+    private readonly executionResult: McpExecutionResult = { accepted: true, response: { status: "ok" } }
+  ) {}
 
   describe() {
     return TEST_ADAPTER;
@@ -125,7 +146,7 @@ class FakeAdapter implements GameAdapter<Sts2McpRawState, ExecutableGameAction, 
 
   async execute(action: ExecutableGameAction): Promise<McpExecutionResult> {
     this.executed.push(action);
-    return { accepted: true, response: { status: "ok" } };
+    return this.executionResult;
   }
 }
 

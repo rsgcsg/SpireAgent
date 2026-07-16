@@ -209,6 +209,31 @@ export class TickOrchestrator {
       return result(decisionId, record.outcome, pre.currentState.context.kind, validation.selectedAction.id, true);
     }
 
+    if (!adapterResult.accepted) {
+      const outcome: DecisionOutcome = adapterResult.outcome === "unknown" ? "executed_unsettled" : "execution_failed";
+      const error = adapterResult.outcome === "unknown"
+        ? "Adapter command outcome is unknown; the action will not be retried automatically"
+        : "Adapter rejected the selected action";
+      const record = decisionRecordWithLlm({
+        runId: this.dependencies.recorder.runId,
+        decisionId,
+        tick,
+        startedAt,
+        outcome,
+        preState: prepared.preState,
+        allowedActions,
+        prompt: prepared.prompt,
+        session,
+        selectedActionId: validation.selectedAction.id,
+        selectedAction: validation.selectedAction.action,
+        stateHashMatched: true,
+        adapterResult: adapterResult.response,
+        error
+      });
+      await this.dependencies.recorder.append(record);
+      return result(decisionId, record.outcome, pre.currentState.context.kind, validation.selectedAction.id, true);
+    }
+
     const settlement = await this.dependencies.settlement.waitForNextState(pre, validation.selectedAction.action);
     const outcome = settlement.status === "settled" ? "executed_and_settled" : "executed_unsettled";
     const record = decisionRecordWithLlm({

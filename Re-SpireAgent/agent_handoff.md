@@ -1,6 +1,6 @@
 # RE-P1 Handoff
 
-Status: one real Act 1 run has been exercised through boss defeat. RE-P1 completed repeated state reads, DeepSeek JSON decisions, state validation, MCP execution, settlement, and evidence recording across combat and non-combat surfaces. It remains a protocol baseline, not a verified strategic player.
+Status: one real Act 1 v1 run has been exercised through boss defeat. RE-P1 now also contains a strict, negotiated Bridge v2 client for the exact-build `deck_enchant_selection` surface. The Bridge slice has organic smoke evidence and the Re client has contract tests; the combined Re-to-game lifecycle still needs a fresh organic smoke. RE-P1 remains a protocol baseline, not a verified strategic player.
 
 ## Completed
 
@@ -24,6 +24,11 @@ Status: one real Act 1 run has been exercised through boss defeat. RE-P1 complet
 - Normalized-state v2 separates semantic context from the active interaction surface. `hand_select` retains combat facts while exposing a card-selection surface; known contexts with unknown overlays fail closed without losing audit context.
 - Bounded real-game windows covered event, combat, rewards, card reward, map, rest, shop, and a boss fight. Clean windows recorded only `valid_json` responses with `finishReason=stop`, settled executions, and no stale execution.
 - `agent:run` now stops at `game_over` or a top-level `menu` before the model can choose a restart; this was added after a real boss defeat showed that an unconstrained loop could otherwise cross the one-game boundary.
+- Negotiated STS2MCP protocol modes: default `auto`, compatibility-only `v1`, and strict `v2`.
+- Strict Bridge v2 capability/state/command decoders, raw evidence preservation, exact build and observation-policy checks, and one supported domain projection for deck enchant.
+- Dual-read/single-executor behavior: v1 sidecar context cannot add actions to a v2-owned surface; exact-build denial cannot silently regain v1 authority.
+- v2 command response identity and status/outcome consistency checks. Failed, timed-out, or transport-uncertain commands stop as unknown and are never retried.
+- Read-only `agent:inspect` negotiation against the installed game passed at the main menu: Bridge v2 exact identity was visible and `auto` correctly used v1 for the unsupported menu surface without calling DeepSeek or executing an action.
 
 ## Legacy Assessment
 
@@ -63,11 +68,11 @@ No memory, learning, scoring, strategic scaffold, shadow mode, live additive mod
 - One real combat action was rejected by MCP after a matching pre-execution snapshot reported a playable hand index. The same index also succeeded in other windows, so RE-P1 records this as a low-frequency MCP/UI synchronization risk rather than hard-coding a strategic restriction. Reproduce before changing the action protocol.
 - The real Act 1 run ended in a boss defeat. Strategic quality has not been evaluated; current evidence verifies the closed-loop protocol only.
 - Existing v1 local JSONL remains readable as historical JSON but must not be treated as a v2 normalized projection without an explicit migration.
-- Real `NDeckEnchantSelectScreen` evidence showed that a selected standard card can make `can_confirm=true` without exposing selected IDs or remaining capacity. RE-P1 now offers confirm/cancel only in that state; it does not guess that another selection is legal. On 2026-07-16, the corresponding `confirm_selection` request returned MCP `status: ok` / `Confirming selection` but the next 15 polls remained byte-for-byte on the same card-select state. This is an adapter completion-contract gap, not a model, normalizer, or strategy failure. RE-P1 records it as `executed_unsettled` and stops the run; do not add a screen-specific fallback until the MCP action contract can be verified.
+- Legacy v1 `NDeckEnchantSelectScreen` evidence showed that a selected standard card can make `can_confirm=true` without exposing selected IDs or remaining capacity. The v1 path still stops conservatively in that state. The new v2 deck-enchant path supplies selected IDs, constraints, stage, semantics, opaque actions, and action-specific completion; do not generalize that evidence to other card-selection surfaces.
 
 ## Validation
 
-On 2026-07-15, a clean `npm ci` reported zero vulnerabilities, then `npm run check` passed strict source-and-test typechecking, 39 tests across 6 files, and the production TypeScript build. On 2026-07-16 the MCP service became available: `inspect` normalized a live Neow event with `diagnostics.status=ok`; a dry run recorded its prompt/evidence; then DeepSeek selected a legal event option that MCP accepted and settled. The subsequent bounded run surfaced a real `monster` post-combat shell without `battle`, recorded it safely, and added fixture-backed transition support.
+On 2026-07-15, a clean `npm ci` reported zero vulnerabilities, then `npm run check` passed strict source-and-test typechecking, 39 tests across 6 files, and the production TypeScript build. On 2026-07-16 the MCP service became available: `inspect` normalized a live Neow event with `diagnostics.status=ok`; a dry run recorded its prompt/evidence; then DeepSeek selected a legal event option that MCP accepted and settled. The subsequent bounded run surfaced a real `monster` post-combat shell without `battle`, recorded it safely, and added fixture-backed transition support. The Bridge v2 integration pass later expanded contract coverage to 65 tests across 8 files; see the latest command output rather than treating these historical counts as a permanent invariant.
 
 ## Next Step
 
@@ -82,3 +87,5 @@ npm run agent:replay
 ```
 
 Start a fresh game manually, then run bounded windows and inspect each run with `npm run agent:replay`. Confirm that each record contains pre/post raw snapshots, the prompt, DeepSeek response, selected allowed action, MCP result, and settled post-state. Fix a repeatable protocol mismatch with a reduced raw fixture and contract test before running longer loops.
+
+For Bridge v2 qualification, first use `agent:inspect` at an organic deck-enchant screen, then a dry run, then one bounded action. Confirm that metadata records exact game identity, allowed actions are opaque bridge IDs, and the command reaches an identity-consistent terminal outcome. Do not mark other v2 surfaces qualified from this result.

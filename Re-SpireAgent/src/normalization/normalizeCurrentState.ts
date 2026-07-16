@@ -11,7 +11,9 @@ import {
   type StateStability
 } from "../domain/state/index.js";
 import { isJsonObject, type JsonObject, type JsonValue } from "../shared/json.js";
+import { isBridgeV2WrappedState, legacyStateFromBridgeV2Wrapper } from "../integrations/sts2mcp/rawState.js";
 import { stateHash } from "../runtime/stateHash.js";
+import { normalizeBridgeV2CurrentState } from "./normalizeBridgeV2CurrentState.js";
 import { DiagnosticsBuilder } from "./diagnostics.js";
 import {
   objectArray,
@@ -37,6 +39,15 @@ const KNOWN_TOP_LEVEL_KEYS = new Set([
 const COMBAT_STATE_TOKENS = ["monster", "boss", "elite", "combat", "battle"] as const;
 
 export function normalizeCurrentState(rawInput: unknown, source: AdapterDescriptor, capturedAt = new Date().toISOString()): StateEnvelope {
+  if (isBridgeV2WrappedState(rawInput)) {
+    const legacyRaw = legacyStateFromBridgeV2Wrapper(rawInput);
+    const legacyEnvelope = legacyRaw ? normalizeLegacyCurrentState(legacyRaw, source, capturedAt) : undefined;
+    return normalizeBridgeV2CurrentState(rawInput, source, capturedAt, legacyEnvelope);
+  }
+  return normalizeLegacyCurrentState(rawInput, source, capturedAt);
+}
+
+function normalizeLegacyCurrentState(rawInput: unknown, source: AdapterDescriptor, capturedAt: string): StateEnvelope {
   const diagnostics = new DiagnosticsBuilder();
   const rawState = isJsonObject(rawInput) ? rawInput : {};
   if (!isJsonObject(rawInput)) diagnostics.invalid("$", rawInput, "MCP state must be a JSON object");
@@ -287,6 +298,7 @@ function determineStability(surface: InteractionSurface, diagnosticsStatus: "ok"
   if (surface.kind === "no_action") return surface.reason;
   if (surface.kind === "combat_turn") return "actionable";
   if (surface.kind === "card_selection") return surface.options.length > 0 || surface.canConfirm || surface.canCancel ? "actionable" : "loading";
+  if (surface.kind === "deck_enchant_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "card_reward") return surface.options.length > 0 || surface.canSkip || surface.canProceed ? "actionable" : "loading";
   if (surface.kind === "reward_claim") return surface.items.length > 0 || surface.canProceed ? "actionable" : "loading";
   if (surface.kind === "map_navigation") return surface.nextOptions.length > 0 ? "actionable" : "loading";

@@ -22,6 +22,9 @@ untrusted MCP JSON
 
 - The LLM is the decision maker. Local code defines safe choices and validates execution; it does not score or secretly choose a strategic action.
 - The model chooses an ID, never an MCP payload.
+- On a Bridge v2-owned surface, the allowed IDs and executable opaque actions
+  come only from the exact current bridge state. Never merge them with v1
+  reconstructed actions.
 - `NormalizedCurrentState` is the only current-state contract available to planning, prompting, and action generation. Its `context` records semantic game meaning; its `surface` records the active interaction protocol. Do not replace this with combination-specific top-level types.
 - Missing and unknown facts stay missing or unknown. Critical missing fields make the state invalid.
 - Failures are evidence. They are not hidden by local strategic fallback or JSON repair.
@@ -64,6 +67,8 @@ Unknown states remain unsupported until these steps are complete.
 - execution after invalid JSON, unknown action ID, stale state, or uncertain validation
 - parsing code fences, tail text, repaired JSON, or reasoning content as executable decisions
 - automatic repeat after settlement timeout
+- automatic retry after a Bridge v2 `failed`, `timed_out`, transport-unknown,
+  or command-identity-mismatched outcome
 - logging headers, API keys, `.env.local`, or secret-bearing errors
 - committing `data/runs/`, local provider outputs, or `.env.local`
 

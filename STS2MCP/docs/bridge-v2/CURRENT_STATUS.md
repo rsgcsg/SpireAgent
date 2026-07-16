@@ -22,7 +22,8 @@ Protocol core plus the first exact-version game-bound vertical slice.
   preview confirm/cancel actions.
 - Thin Python MCP tools for v2.
 - Loopback-only browser Origin policy.
-- 21 pure protocol/runtime/security tests.
+- Typed surface DTOs with a wire-compatibility serialization regression test.
+- 22 pure protocol/runtime/security tests.
 - Installed-build deck enchant smoke on `v0.108.0`: exact build identity,
   player-visible semantics, stale rejection, idempotency, select/preview/cancel,
   select/preview/confirm, and action-specific completion all passed.
@@ -32,18 +33,24 @@ Protocol core plus the first exact-version game-bound vertical slice.
 - Every v2 surface other than deck enchant selection is unsupported and returns
   no legal actions.
 - Multiplayer v2 is intentionally unsupported.
-- `Re-SpireAgent` has not yet received a v2 decoder/domain adapter.
+- The rebuilt client now has a strict v2 decoder/projector and negotiated
+  dual-read/single-executor adapter for deck enchant. Its contract tests pass,
+  but a fresh client-to-game organic lifecycle smoke is still pending.
+- A read-only Re-SpireAgent `auto` smoke negotiated the exact installed Bridge
+  identity and correctly delegated the unsupported main-menu surface to v1;
+  no model or action was invoked.
 
 ## Current Blocker
 
-No blocker remains for the deck enchant vertical slice. Broader v2 adoption is
-blocked by missing per-surface game-fact adapters and the missing Re-SpireAgent
-v2 decoder/projector, not by this slice's command contract.
+No Bridge-side blocker remains for the deck enchant vertical slice. Broader v2
+adoption is blocked by missing per-surface game-fact adapters. Client adoption
+is implemented for this one surface but is not end-to-end qualified until a
+fresh organic Re-SpireAgent lifecycle smoke passes.
 
 ## Next Step
 
-1. Add a separate Re-SpireAgent v2 decoder/projector for
-   `deck_enchant_selection`, with one executor during dual-read.
+1. Run a fresh organic Re-SpireAgent deck-enchant inspect/dry-run and one bounded
+   command lifecycle using the exact supported build.
 2. Choose the next game surface from observed client failures, audit its exact
    game facts, and implement another narrow provider.
 3. Do not widen v2 support by reusing v1 indices or generic confirm fallbacks.

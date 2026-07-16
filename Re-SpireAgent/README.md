@@ -1,6 +1,6 @@
 # Re-SpireAgent RE-P1
 
-Re-SpireAgent is a small, independent Slay the Spire 2 agent runtime. It reads the current state from the external STS2 MCP REST adapter, normalizes that untrusted JSON into a strongly typed current-state contract with separate semantic context and interaction surface, builds deterministic legal action choices, asks DeepSeek to select one action ID, validates the selection against the in-memory whitelist, executes it only if the state is unchanged, waits for settlement, and records the complete evidence.
+Re-SpireAgent is a small, independent Slay the Spire 2 agent runtime. It reads the current state from the external STS2 MCP REST adapter, negotiates Bridge v2 when available, normalizes untrusted JSON into a strongly typed current-state contract with separate semantic context and interaction surface, asks DeepSeek to select one allowed action ID, validates the selection, executes it only if the state is unchanged, waits for settlement, and records the complete evidence.
 
 RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, shadow/live modes, policy promotion, or the old project's phase machinery. Its job is to make one decision path correct and auditable.
 
@@ -24,6 +24,8 @@ MCP raw state
 - Action-capable `tick` and `run` commands take an exclusive local runtime lock. This prevents two RE-P1 processes from driving one MCP session; it cannot prevent a human or a different program from acting in the game.
 - Raw MCP data is visible only to the adapter, normalizer, recorder, and diagnostic tooling. Planning code imports only the normalized state API.
 - Unknown semantic contexts or unverified interaction surfaces become structured `unknown`/`unsupported` state components and stop safely.
+- A Bridge v2-owned surface imports only state-bound opaque actions advertised by the bridge. v1 sidecar data cannot add or execute actions.
+- `failed`, `timed_out`, transport-uncertain, or identity-mismatched v2 command results stop as unknown outcomes and are never automatically retried.
 - `.env.local`, API keys, and `data/runs/` are ignored by Git.
 
 ## Requirements
@@ -70,11 +72,12 @@ npm run check
 ```bash
 curl -sS http://localhost:15526/
 curl -sS 'http://localhost:15526/api/v1/singleplayer?format=json'
+curl -sS http://localhost:15526/api/v2/capabilities
 ```
 
 If the adapter uses another address, set `STS2_API_URL` in `.env.local`.
 
-The first command should return an adapter health response. The second should return a JSON object with a `state_type`. If either command fails, fix the game/mod connection before running the agent.
+The first command should return an adapter health response. The second should return a JSON object with a `state_type`. A current Bridge v2 mod should also return capabilities from the third command. In default `auto` mode, a missing v2 endpoint falls back to v1; malformed or exact-build-incompatible v2 does not silently regain action authority.
 
 ## Configuration
 
@@ -84,6 +87,9 @@ All values are optional except the API key for real model decisions.
 |---|---:|---|
 | `STS2_API_URL` | `http://localhost:15526` | MCP REST base URL |
 | `STS2_MCP_TIMEOUT_MS` | `5000` | State/action request timeout |
+| `STS2_MCP_PROTOCOL` | `auto` | `auto`, compatibility-only `v1`, or strict `v2` |
+| `STS2_MCP_V2_COMMAND_POLL_MS` | `75` | v2 command lifecycle poll interval |
+| `STS2_MCP_V2_COMMAND_TIMEOUT_MS` | `12000` | client guard for a submitted v2 command; timeout is unknown, never retryable |
 | `DEEPSEEK_API_KEY` | none | Secret, loaded from environment only |
 | `DEEPSEEK_BASE_URL` | `https://api.deepseek.com/chat/completions` | Chat Completions endpoint |
 | `DEEPSEEK_MODEL` | `deepseek-v4-flash` | Provider model |
@@ -106,6 +112,9 @@ Read and normalize the current state without creating a run or calling DeepSeek:
 ```bash
 npm run agent:inspect
 ```
+
+The output includes the negotiated adapter/protocol/build descriptor so an
+`auto` fallback can be distinguished from a v2-owned surface.
 
 Build and record one prompt without calling DeepSeek or executing an action:
 
@@ -182,6 +191,11 @@ RE-P1 has fixture-backed support for:
 - `menu`
 - `game_over`
 
+Bridge v2 currently replaces the local v1 action contract only for
+`deck_enchant_selection`. It preserves the visible enchantment, selection
+constraints, selected card instances, exact stage, completeness evidence, and
+opaque legal actions. See [BRIDGE_V2_INTEGRATION.md](docs/BRIDGE_V2_INTEGRATION.md).
+
 `bundle_select` and future state types are intentionally unsupported until a real raw fixture and verified action protocol are available. They fail closed instead of inheriting guessed fields from the old project. See [MCP_STATE_COVERAGE.md](docs/MCP_STATE_COVERAGE.md).
 
 ## Architecture And Development
@@ -190,6 +204,7 @@ RE-P1 has fixture-backed support for:
 - [MCP_STATE_COVERAGE.md](docs/MCP_STATE_COVERAGE.md)
 - [PROMPT_CONTRACT.md](docs/PROMPT_CONTRACT.md)
 - [DECISION_RECORD_SCHEMA.md](docs/DECISION_RECORD_SCHEMA.md)
+- [BRIDGE_V2_INTEGRATION.md](docs/BRIDGE_V2_INTEGRATION.md)
 - [AGENT.md](AGENT.md)
 - [agent_handoff.md](agent_handoff.md)
 
@@ -197,8 +212,9 @@ The only supported public TypeScript entrypoint is `src/index.ts`. Integration r
 
 ## Current Limitations
 
-- Real MCP windows have exercised event, combat, rewards, card reward, map, rest, shop, treasure, and a boss fight. This proves protocol integration, not strategic quality or universal MCP coverage. Standard `card_select` selection itself is verified, but the observed `NDeckEnchantSelectScreen` confirmation endpoint currently acknowledged the request without advancing state; RE-P1 records that condition as `executed_unsettled` and stops rather than retrying or inventing another action.
-- MCP does not list legal actions. The local allowed-action builder reconstructs them from observed normalized state and therefore needs a new fixture whenever the adapter adds or changes a state/action protocol.
+- Real v1 MCP windows have exercised event, combat, rewards, card reward, map, rest, shop, treasure, and a boss fight. This proves protocol integration, not strategic quality or universal MCP coverage. The legacy v1 `NDeckEnchantSelectScreen` confirmation endpoint acknowledged the request without advancing state; Bridge v2 now has a separate qualified opaque-action contract for that surface.
+- Bridge v2 lists legal actions only for deck enchant. All other current surfaces reconstruct v1 actions locally and still require fixture-led protocol maintenance.
+- Bridge deck-enchant behavior has an organic exact-build smoke and the Re client has fixture-backed contract tests. A fresh combined Re-to-game deck-enchant lifecycle smoke is still pending.
 - Current MCP non-combat snapshots do not expose a complete deck on every screen. RE-P1 does not invent missing deck context, so card-reward and shop strategy is limited by what the current state actually contains.
 - Shop leaving is the one explicit protocol inference retained from verified legacy live behavior: the MCP `proceed` action leaves a shop even when `shop.can_proceed` is false. It is recorded in normalization diagnostics.
 - A changed state hash proves visible state drift, not perfect semantic settlement. The watcher waits for two consecutive, identical, non-transitional observations after an action, but animation/UI edge cases still require real-game verification.

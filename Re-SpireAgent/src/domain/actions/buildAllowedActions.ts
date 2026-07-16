@@ -13,6 +13,20 @@ export function buildAllowedActions(state: NormalizedCurrentState, sourceStateHa
       return state.context.kind === "combat" && state.player ? combatActions(state.context, state.player, sourceStateHash) : [];
     case "card_selection":
       return cardSelectionActions(state.surface, sourceStateHash);
+    case "deck_enchant_selection":
+      return state.surface.legalActions.map((action) => ({
+        id: action.actionId,
+        kind: action.kind,
+        label: action.label,
+        description: `Bridge-validated ${action.evidenceCode}`,
+        action: {
+          kind: "bridge_v2_action",
+          actionId: action.actionId,
+          expectedStateId: action.stateId,
+          bridgeActionKind: action.kind
+        },
+        sourceStateHash
+      }));
     case "card_reward":
       return [
         ...state.surface.options.flatMap((card) => card.index === undefined ? [] : [allowed(`card-reward:${card.index}`, `Take ${card.name}`, { kind: "select_card_reward", index: card.index }, sourceStateHash, card.description)]),

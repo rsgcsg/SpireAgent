@@ -46,7 +46,6 @@ internal static class DeckEnchantSurfaceProvider
             return new BridgeObservationDraft(
                 degradedSignature,
                 "degraded",
-                "deck_enchant_selection",
                 degradedSurface,
                 degradedCompleteness,
                 game,
@@ -128,7 +127,6 @@ internal static class DeckEnchantSurfaceProvider
         return new BridgeObservationDraft(
             signature,
             missing.Count == 0 ? "ready" : "degraded",
-            "deck_enchant_selection",
             surface,
             completeness,
             game,

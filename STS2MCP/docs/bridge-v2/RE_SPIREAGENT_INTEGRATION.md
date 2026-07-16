@@ -2,7 +2,8 @@
 
 In this project, "SpireAgent" means `Re-SpireAgent` by default.
 
-Do not replace its v1 normalizer with raw Bridge v2 JSON. Add a parallel adapter:
+The rebuilt client now implements this boundary. It does not replace its v1
+normalizer with raw Bridge v2 JSON; it uses a parallel adapter:
 
 ```text
 HTTP/MCP v2 response
@@ -26,9 +27,17 @@ Required client behavior:
 - never infer an index, target, or MCP operation from an action label;
 - retain raw request/response and parsed evidence separately;
 - treat `started` as pending and `timed_out` as unknown;
+- verify every command response repeats the submitted request, state, and action
+  identity;
+- treat both `failed` and `timed_out` as unknown outcomes;
 - never auto-retry unknown outcomes;
 - permit only one executor during v1/v2 dual-read tests.
 
-The first adapter should support only `deck_enchant_selection`. Broader client
-types without broader bridge evidence would recreate the same false-completeness
-problem in a new layer.
+The first adapter supports only `deck_enchant_selection`. In `auto` mode,
+unsupported v2 surfaces remain on v1; a v2-owned surface imports only bridge
+actions. Exact-build incompatibility never silently falls back to v1 authority.
+Broader client types without broader bridge evidence would recreate the same
+false-completeness problem in a new layer.
+
+See the rebuilt client's
+[Bridge v2 integration contract](../../../Re-SpireAgent/docs/BRIDGE_V2_INTEGRATION.md).

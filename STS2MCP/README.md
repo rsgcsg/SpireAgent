@@ -78,7 +78,7 @@ dotnet test STS2_MCP.sln -p:STS2GameDir="$env:STS2_GAME_DIR"
 .\build.ps1 -GameDir "$env:STS2_GAME_DIR"
 ```
 
-The solution currently contains 21 pure contract/runtime/security tests covering stable
+The solution currently contains 22 pure contract/runtime/security tests covering stable
 state identity, entity identity, stale-state rejection, idempotent request IDs,
 completion observation, timeout-as-unknown, and JSON action shape.
 
@@ -170,13 +170,15 @@ not be retried automatically.
 
 ## Re-SpireAgent Integration
 
-The rebuilt SpireAgent should add a separate v2 adapter rather than weakening
-its v1 normalizer. It must validate the v2 envelope, preserve raw evidence,
-project the supported surface into its own domain union, choose only an
-advertised action ID, and poll command completion. Planning code must never
-read arbitrary bridge JSON directly.
+The rebuilt SpireAgent now has a separate strict v2 decoder/projector and a
+negotiated hybrid adapter. In the default `auto` mode, the qualified deck
+enchant surface uses Bridge-advertised opaque actions as its sole executor;
+unsupported v2 surfaces remain on v1 during migration. Exact-build mismatch,
+command-response identity mismatch, failed command, and timeout all fail closed.
 
-That client migration is intentionally not coupled to the first bridge commit.
+The client contract is fixture-tested. A fresh organic Re-SpireAgent deck
+enchant lifecycle smoke is still required before calling the combined path
+end-to-end runtime-qualified. Planning code never reads arbitrary bridge JSON.
 
 ## Security And Observation Scope
 

@@ -3,6 +3,8 @@ import type { JsonObject } from "../../shared/json.js";
 
 export function serializeSts2McpAction(action: ExecutableGameAction): JsonObject {
   switch (action.kind) {
+    case "bridge_v2_action":
+      throw new Error("Bridge v2 opaque actions must be executed by the Bridge v2 client");
     case "play_card":
       return { action: "play_card", card_index: action.cardIndex, ...(action.targetId ? { target: action.targetId } : {}) };
     case "end_turn":

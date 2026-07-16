@@ -24,6 +24,7 @@ describe("Sts2McpRestAdapter", () => {
 
     await expect(adapter.execute({ kind: "play_card", cardIndex: 2, targetId: "TARGET_0" })).resolves.toEqual({
       accepted: true,
+      outcome: "accepted",
       response: { status: "ok", action: "play_card" }
     });
     expect(sentBody).toEqual({ action: "play_card", card_index: 2, target: "TARGET_0" });

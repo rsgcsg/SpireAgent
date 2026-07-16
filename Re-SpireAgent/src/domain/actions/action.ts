@@ -1,4 +1,10 @@
 export type ExecutableGameAction =
+  | {
+      kind: "bridge_v2_action";
+      actionId: string;
+      expectedStateId: string;
+      bridgeActionKind: string;
+    }
   | { kind: "play_card"; cardIndex: number; targetId?: string }
   | { kind: "end_turn" }
   | { kind: "use_potion"; slot: number; targetId?: string }
