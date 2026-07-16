@@ -9,9 +9,9 @@ outcomes. The bridge remains an adapter, never the strategic brain.
 
 The first client gap is resolved: Re-SpireAgent can consume and execute a
 qualified v2 surface without merging legacy actions. Protocol source
-`2.0-preview.2` now defines three typed vertical slices. Only deck enchant is
-organically runtime-qualified; event and combat are build/fixture-qualified and
-must not be described as game-qualified before fresh smokes.
+`2.0-preview.2` defines three typed vertical slices. At the time of the original
+audit only deck enchant was organically runtime-qualified; the runtime follow-up
+below supersedes that historical qualification status.
 
 ## Runtime Follow-up
 
@@ -28,11 +28,13 @@ does not make Bridge v2 broad game coverage.
 
 - Imported upstream: `20eadebde358a37cca41f8b38728099e6d0d19db`.
 - Exact game: `v0.108.0`, commit `58694f64`, assembly hash `-2044609792`.
-- Running game at audit time: protocol `2.0-preview.1`, deck capability only.
+- Running game at original audit time: protocol `2.0-preview.1`, deck capability
+  only. This is historical environment evidence, not current status.
 - Source under test: protocol `2.0-preview.2`, deck/event/combat capabilities.
 - Organic deck Bridge and Re-SpireAgent select/confirm lifecycle: passed.
 - Event/combat C# build and Re strict contract fixtures: passed.
-- Event/combat organic lifecycle: pending mod install/restart.
+- Later exact-build event and targeted-card combat organic lifecycles: passed
+  within their explicitly bounded action shapes.
 
 Slay the Spire 2 is still evolving, so upstream claims and decompiled type
 compatibility are evidence inputs, not runtime qualification:
@@ -110,8 +112,8 @@ mode and uses explicit `local_reconstruction` authority.
 ## Reference Audit Disposition
 
 - typed surface DTO: resolved;
-- client v2 integration: resolved for three fixture contracts, with two organic
-  qualifications pending;
+- client v2 integration: resolved for three fixture contracts and bounded
+  organic qualification of all three implemented slices;
 - provider registry: resolved narrowly;
 - context/surface conflation: resolved in schema and CLI;
 - post-close deck verification: open;
@@ -124,12 +126,11 @@ mode and uses explicit `local_reconstruction` authority.
 
 ## Next Qualification Steps
 
-1. Reassess completion, performance, warning structure, and inspection needs
-   from the three organic slices before adding a fourth surface.
-2. Define a composition contract for known context plus overlay, rather than
-   treating any new screen as a generic extension of combat or event.
-3. Add structured diagnostics and a read-only inspection design before growing
-   broad player-visible coverage.
+The reassessment and composition/inspection/diagnostics design are now recorded
+in
+[the three-surface audit](COMPOSITION_INSPECTION_DIAGNOSTICS_AUDIT_2026-07-16.md).
+The next implementation steps are typed diagnostics, centralized active-surface
+resolution, and only then the bounded card-reward slice.
 
 ## Non-Claims
 

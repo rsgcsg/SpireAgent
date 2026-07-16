@@ -11,15 +11,16 @@ state-bound protocol intended for the rebuilt `Re-SpireAgent` client.
 Bridge v2 is an incremental preview, not a replacement for all v1 surfaces.
 
 - Current exact game binding: Slay the Spire 2 `v0.108.0`.
-- Runtime-qualified v2 slice: singleplayer deck enchant selection.
-- Build/fixture-qualified `2.0-preview.2` slices awaiting organic smoke:
-  ordinary event options and player-phase combat turns.
+- Runtime-qualified `2.0-preview.2` slices: singleplayer deck enchant,
+  ordinary event options, and one immediate player-phase targeted-card combat
+  lifecycle. Qualification remains bounded to those action shapes.
 - All unimplemented or version-incompatible v2 surfaces fail closed with no
   legal actions.
 - v1 remains available for compatibility and has been made build-compatible
   with `v0.108.0`; its index-based action contract is legacy.
-- Static build/protocol tests and a real `v0.108.0` deck-enchant Bridge plus
-  Re-SpireAgent lifecycle smoke pass. Unlisted surfaces remain unsupported.
+- Static build/protocol tests and real `v0.108.0` Bridge plus Re-SpireAgent
+  lifecycle smokes pass for the three listed slices. Unlisted surfaces remain
+  unsupported.
 
 See [current status](docs/bridge-v2/CURRENT_STATUS.md), the
 [upstream/design audit](docs/bridge-v2/UPSTREAM_AUDIT.md), and the
@@ -181,9 +182,10 @@ sole executor; unsupported v2 surfaces remain on v1 during migration.
 Exact-build mismatch, context/surface mismatch, command-response identity
 mismatch, failed command, and timeout all fail closed.
 
-The deck-enchant combined lifecycle is organically qualified. Event and combat
-client contracts are fixture-tested only until `preview.2` is installed and
-smoked in the game. Planning code never reads arbitrary bridge JSON.
+The deck-enchant, ordinary-event, and one targeted combat-card lifecycle are
+organically qualified. Planning code never reads arbitrary bridge JSON. The
+next selected slice is card reward, but typed diagnostics and centralized
+surface resolution come first.
 
 ## Security And Observation Scope
 

@@ -25,9 +25,28 @@ absent. No one discriminator represents the whole state.
 
 Context/surface compatibility is checked by the normalizer. A known combat context with an unverified overlay becomes `combat + unsupported`, retaining audit facts but exposing no actions. A newly observed event ID using the existing indexed-option protocol remains `event + option_choice`; identity is data, not a new protocol.
 
+Exactly one active surface owns executable actions. A blocking overlay replaces
+the active surface while preserving context; an underlying surface is suspended
+and contributes no actions. Bridge owns overlay precedence and must resolve it
+before serialization. Re-SpireAgent validates the resulting single-owner
+contract instead of recursively composing executable surfaces.
+
 The normalizer remains a set of explicit context and surface decoders rather than a generic plugin registry. At RE-P1 scale, a registry would obscure precedence and add configuration machinery without reducing a verified decoder's responsibility. The precedence is documented in `normalizeContext` and overlays are resolved separately by `normalizeSurface`; split those functions into modules only when a future protocol makes their local ownership unclear.
 
 Critical field loss or an unknown potentially action-relevant nested field produces `diagnostics.status="invalid"`, an unknown context, and an unsupported surface. Harmless nested drift remains visible in diagnostics without automatically invalidating a known state. Non-critical inference is recorded as `degraded`, never hidden.
+
+Read-only inspection is a separate evidence path, not an executable surface or
+an arbitrary raw-object escape hatch. Future inspection results must be
+state-bound, typed, visibility-labeled, separately recorded, and excluded from
+the command ledger. Immediate context may keep compact pile counts while an
+inspection result supplies player-visible unordered contents. Hidden draw order
+and RNG are never normalized.
+
+Future structured diagnostics must preserve both severity and operational
+effect. Severity alone cannot grant or remove action authority; explicit
+readiness, completeness, and action-suppression semantics remain authoritative.
+Re should preserve unknown diagnostic codes for audit while rejecting malformed
+effects.
 
 ## Action Authority
 

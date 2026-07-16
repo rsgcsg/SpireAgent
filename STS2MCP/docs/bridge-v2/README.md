@@ -4,6 +4,7 @@
 - [Audited baseline](BASELINE.md)
 - [Upstream and design audit](UPSTREAM_AUDIT.md)
 - [Bridge v2 and Re-SpireAgent architecture audit](ARCHITECTURE_AUDIT_2026-07-16.md)
+- [Composition, inspection, and diagnostics audit](COMPOSITION_INSPECTION_DIAGNOSTICS_AUDIT_2026-07-16.md)
 - [Protocol and errors](PROTOCOL.md)
 - [Observation policy](OBSERVATION_POLICY.md)
 - [Player-visible coverage](PLAYER_VISIBLE_COVERAGE.md)

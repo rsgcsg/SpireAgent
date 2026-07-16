@@ -47,6 +47,14 @@ coverage.
   DeepSeek-selected targeted Strike passed state revalidation and command
   confirmation; the post-state showed the card left hand, energy spent, and
   enemy HP reduced. This qualifies the observed targeted-card shape only.
+- Three-surface composition/inspection/diagnostics audit completed. The
+  architecture keeps one semantic context, one active action-owning surface,
+  and explicit authority. Bridge-side active-surface resolution and typed
+  diagnostics must precede the fourth surface; read-only inspection remains a
+  separate, unimplemented capability.
+- Ordinary `reward_flow + card_reward_selection` is the next selected slice.
+  Visible reward alternatives must retain their own semantics and must not be
+  collapsed into an assumed `can_skip` flag.
 
 ## Legacy Assessment
 
@@ -110,7 +118,9 @@ npm run agent:replay
 
 Start a fresh game manually, then run bounded windows and inspect each run with `npm run agent:replay`. Confirm that each record contains pre/post raw snapshots, the prompt, DeepSeek response, selected allowed action, MCP result, and settled post-state. Fix a repeatable protocol mismatch with a reduced raw fixture and contract test before running longer loops.
 
-For Bridge v2 qualification, close/install/restart the new mod, then use
-`agent:inspect` and one bounded action first at an ordinary event option and
-then at a player-phase combat turn. Confirm context/surface/authority identity,
-opaque actions, command identity, and action-specific completion independently.
+Do not repeat event/combat qualification merely to widen claims. The next
+engineering window should add Bridge typed diagnostics alongside legacy
+warnings, centralize active-surface resolution without behavior change, and
+then implement and independently qualify the bounded card-reward slice. Keep
+inspection disabled until its exact-build bindings and state-bound read contract
+are implemented and tested.

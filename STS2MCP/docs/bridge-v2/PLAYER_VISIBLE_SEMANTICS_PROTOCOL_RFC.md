@@ -44,8 +44,10 @@ reflection-driven dump of game internals.
 
 Surface answers “what blocks progress right now?” It owns interaction-specific
 semantics such as event options or deck-enchant selection stage. It does not own
-all context facts. Multiple providers matching simultaneously is an error,
-unless a future explicit composition contract defines precedence.
+all context facts. Exactly one active surface owns executable actions. An
+underlying surface is suspended rather than merged, and multiple action-owning
+matches are a fail-closed error. Overlay precedence must be resolved centrally
+before provider dispatch as coverage grows.
 
 ### Legal Actions And Authority
 
@@ -65,13 +67,20 @@ Player-visible information that requires opening a viewer or pile is a
 read-only inspection/query, not a fake command. Future inspection responses
 must be state-scoped, must record visibility source, and must not expose hidden
 order. Immediate decision snapshots may carry counts while inspection carries
-visible contents.
+visible contents. Inspection capabilities must be advertised as opaque,
+state-bound reads; clients cannot submit arbitrary zones or reflection paths.
+Inspection results do not enter the command ledger. If a physical viewer is
+already open and blocks progress, closing it may be an interaction action, but
+the viewed facts still belong to inspection evidence.
 
 ### Completeness And Diagnostics
 
 Each provider reports sources and missing fields. Missing action-critical facts
-make the surface degraded/unsupported with no actions. Diagnostics should
-eventually become structured codes; free-text warnings remain preview debt.
+make the surface degraded/unsupported with no actions. Typed diagnostics must
+separate severity from effect: an inspection warning may omit a field without
+removing immediate action authority, while identity/action/completion errors
+must explicitly suppress actions or mark outcome unknown. Free-text warnings
+remain `preview.2` compatibility debt.
 
 ## Evidence From Current Surfaces
 
@@ -99,8 +108,8 @@ a fact the UI already reveals.
 - Surface provider selection: resolved with an explicit ordered registry and
   fail-closed ambiguous-match handling.
 - Re-SpireAgent v2 consumption: resolved for three fixture contracts; deck
-  enchant and ordinary event option have organic lifecycle qualification.
-  Combat remains pending.
+  enchant, ordinary event option, and one targeted combat-card lifecycle have
+  bounded organic qualification.
 - `context.kind` as whole-state identity: rejected. Context, surface, and
   authority are independently visible.
 - Duplicate combat semantics in surface: rejected; combat player/potions live
@@ -108,7 +117,7 @@ a fact the UI already reveals.
 
 ## Open Questions
 
-- structured warning/diagnostic schema;
+- structured warning/diagnostic wire schema and compatibility rollout;
 - process-global runtime/session isolation;
 - observation ID versus executable state ID;
 - scalable read-only zone/deck inspection;
@@ -117,9 +126,27 @@ a fact the UI already reveals.
 - richer completion probes for long animations and phase transitions;
 - organic performance and semantic diversity under combat load.
 
+## Composition Decision
+
+The protocol will keep one context and one active action-owning surface. It will
+not serialize a recursive executable surface stack. Future card-selection and
+reward overlays replace the active surface while preserving the semantic
+context; the underlying surface contributes no actions until it becomes active
+again. A small active-surface resolver should capture `NOverlayStack.Peek()` and
+room/phase facts once before routing to one provider.
+
+## Next Surface
+
+The next candidate is ordinary `reward_flow + card_reward_selection`. It must
+model each visible `NCardRewardAlternativeButton` as its own alternative rather
+than reducing every alternative to a `can_skip` boolean. It remains unimplemented
+until the resolver and diagnostic boundaries are contract-tested.
+
 ## Qualification Rule
 
 For each new surface: exact game-fact audit, typed provider, same-validator legal
 actions, action-specific completion, C# contract tests, Re strict decode and
 authority tests, then bounded organic Bridge and Re lifecycle smoke. A fixture
 proves software behavior only; it never proves current-game compatibility.
+
+See [the three-surface composition, inspection, and diagnostics audit](COMPOSITION_INSPECTION_DIAGNOSTICS_AUDIT_2026-07-16.md).

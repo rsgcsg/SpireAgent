@@ -10,7 +10,7 @@ fixture is not organic v2 qualification.
 | player-phase combat turn | player, hand, piles counts, statuses, relics, potions, orbs, enemies, intents | implemented | card left hand/subsurface, potion consumed, play phase ended | Bridge + Re targeted-card passed | runtime-qualified for immediate player turn |
 | ancient event dialogue | event context only | none | none | none | explicit unsupported |
 | combat card selection | combat parent context possible | none | none | none | unsupported |
-| card reward | none | none | none | none | unsupported |
+| card reward selection | planned `reward_flow` context | planned exact card/alternative actions | not implemented | none | selected next slice; still unsupported |
 | generic deck selection | none | none | none | none | unsupported |
 | bundle/relic selection | none | none | none | none | unsupported |
 | map/rest/shop/rewards/treasure | none | none | none | none | unsupported |
@@ -46,3 +46,16 @@ fixture is not organic v2 qualification.
 - The combat qualification includes one targeted card. Potions, self-target
   cards, end turn, multi-target cards, combat overlays, and longer phase
   transitions need their own bounded evidence before any broader claim.
+
+## Composition And Inspection Boundary
+
+- One topmost verified blocking surface owns all executable actions; context
+  remains visible below it.
+- Underlying surfaces are suspended, not nested with executable actions.
+- Combat pile contents and run-deck contents belong to state-bound read-only
+  inspection; count snapshots remain in immediate context.
+- `unsupported` means no verified interaction contract. A future typed
+  `none`/`transition` surface should represent known contexts with no current
+  blocking decision.
+- Structured diagnostics must distinguish action-suppressing gaps from
+  non-blocking inspection omissions.

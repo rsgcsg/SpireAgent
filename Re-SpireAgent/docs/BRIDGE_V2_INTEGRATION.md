@@ -13,6 +13,10 @@ The qualified event lifecycle used the exact supported `2.0-preview.2` game
 binding. Unlisted surfaces remain legacy v1 in `auto` mode and unsupported in
 strict `v2` mode.
 
+The Bridge-side three-surface architecture audit is canonical for the next
+protocol step:
+[`COMPOSITION_INSPECTION_DIAGNOSTICS_AUDIT_2026-07-16.md`](../../STS2MCP/docs/bridge-v2/COMPOSITION_INSPECTION_DIAGNOSTICS_AUDIT_2026-07-16.md).
+
 ## State Identity
 
 No single kind represents the full current state. Runtime output and prompts
@@ -29,6 +33,31 @@ context.kind + surface.kind + actionAuthority
 For Bridge combat, v2 context owns action-relevant player, hand, resource,
 enemy, intent, and target facts. A v1 sidecar may retain run metadata but cannot
 overwrite those facts or add actions.
+
+## Composition Boundary
+
+Re-SpireAgent consumes exactly one active action-owning surface. A verified
+blocking overlay replaces the active surface while preserving its semantic
+context; the underlying surface contributes no actions. Re never merges actions
+from a suspended surface, a v1 sidecar, or two Bridge providers. Bridge owns
+surface precedence and must fail closed on ambiguous ownership.
+
+The Bridge should centralize that routing before adding its fourth surface. The
+Re normalizer can remain an explicit set of strict surface decoders; it does not
+need a generic plugin registry merely because Bridge routing becomes explicit.
+
+## Inspection And Diagnostics Boundary
+
+Read-only deck/pile inspection is a separate state-bound capability. It is not a
+legal action, command-lifecycle event, arbitrary raw query, or field copied into
+every immediate state. Re must record an inspection result separately and retain
+its visibility and ordering semantics. Draw-pile contents may be an unordered or
+player-sorted multiset; hidden draw order and RNG remain excluded.
+
+Future typed Bridge diagnostics must be preserved for audit. Re may fail closed
+on malformed or action-suppressing effects, but it must not infer authority from
+severity or from the absence of warnings. Unknown namespaced codes may remain
+auditable when their structural effect is valid.
 
 ## Modes
 
@@ -85,3 +114,11 @@ poll timeout are unknown and never automatically retried.
 This integration does not add memory, learning, scoring, hidden-information
 access, arbitrary MCP calls, generic action payloads, or broad v2 coverage.
 Read-only deck/pile inspection remains a separate future protocol concern.
+
+## Next Surface
+
+The next selected Bridge slice is ordinary
+`reward_flow + card_reward_selection`. Every visible enabled reward alternative
+must retain its own visible semantics; neither Bridge nor Re may reduce the
+first `NCardRewardAlternativeButton` to an assumed `skip` boolean. This is a
+planned slice, not current support.

@@ -4,8 +4,10 @@ Status date: 2026-07-16
 
 ## Current Phase
 
-Protocol core plus three exact-build, typed vertical slices. Runtime qualification
-is intentionally tracked per surface rather than inferred from compilation.
+Three exact-build, typed, organically qualified vertical slices plus a completed
+composition/inspection/diagnostics architecture audit. Runtime qualification is
+intentionally tracked per surface and action shape rather than inferred from
+compilation.
 
 ## Implemented
 
@@ -45,17 +47,23 @@ overlays, every card target type, or every enemy-intent representation.
 ## Current Blocker
 
 All three implemented surfaces now have bounded organic Bridge and
-Re-SpireAgent lifecycle evidence. The next blocker is not a fourth action
-surface: it is an explicit audit of cross-surface composition, read-only
-inspection, structured diagnostics, and diversity limits before widening scope.
+Re-SpireAgent lifecycle evidence. The cross-surface composition, read-only
+inspection, structured-diagnostics, and diversity audit is complete.
+Implementation blockers before the fourth surface are a behavior-preserving
+active-surface resolver and typed diagnostics. The inspection contract is
+designed but remains future infrastructure, not an implemented capability.
 
 ## Next Step
 
-1. Audit the three qualified slices together; retain their per-surface limits
-   instead of promoting them to generic game coverage.
-2. Keep ancient dialogue, combat card-selection overlays, post-close deck
-   inspection, and every unlisted surface fail-closed until independently
-   audited.
+1. Add typed diagnostics alongside compatibility warnings without changing
+   action authority.
+2. Centralize active-surface resolution without adding a new surface.
+3. Implement the next bounded slice as
+   `reward_flow + card_reward_selection`, preserving every visible alternative
+   instead of assuming the first alternative means skip.
+4. Keep inspection and every unlisted surface fail-closed until independently
+   implemented and qualified.
 
 See [the player-visible semantics RFC](PLAYER_VISIBLE_SEMANTICS_PROTOCOL_RFC.md)
-for the long-term layering and explicit non-goals.
+and [the three-surface audit](COMPOSITION_INSPECTION_DIAGNOSTICS_AUDIT_2026-07-16.md)
+for the long-term layering, next-surface decision, and explicit non-goals.
