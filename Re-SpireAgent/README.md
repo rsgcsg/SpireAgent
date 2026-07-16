@@ -1,12 +1,12 @@
 # Re-SpireAgent RE-P1
 
-Re-SpireAgent is a small, independent Slay the Spire 2 agent runtime. It reads the current state from the external STS2 MCP REST adapter, normalizes that untrusted JSON into a strongly typed current-state union, builds deterministic legal action choices, asks DeepSeek to select one action ID, validates the selection against the in-memory whitelist, executes it only if the state is unchanged, waits for settlement, and records the complete evidence.
+Re-SpireAgent is a small, independent Slay the Spire 2 agent runtime. It reads the current state from the external STS2 MCP REST adapter, normalizes that untrusted JSON into a strongly typed current-state contract with separate semantic context and interaction surface, builds deterministic legal action choices, asks DeepSeek to select one action ID, validates the selection against the in-memory whitelist, executes it only if the state is unchanged, waits for settlement, and records the complete evidence.
 
 RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, shadow/live modes, policy promotion, or the old project's phase machinery. Its job is to make one decision path correct and auditable.
 
 ```text
 MCP raw state
-  -> NormalizedCurrentState
+  -> NormalizedCurrentState { context + surface }
   -> allowed actions
   -> versioned prompt
   -> DeepSeek strict JSON
@@ -23,7 +23,7 @@ MCP raw state
 - Unknown action IDs, invalid JSON, invalid schema, truncation, timeout, state drift, MCP rejection, and uncertain settlement are not executed or retried as actions.
 - Action-capable `tick` and `run` commands take an exclusive local runtime lock. This prevents two RE-P1 processes from driving one MCP session; it cannot prevent a human or a different program from acting in the game.
 - Raw MCP data is visible only to the adapter, normalizer, recorder, and diagnostic tooling. Planning code imports only the normalized state API.
-- Unknown or unverified MCP states become `UnknownCurrentState` and stop safely.
+- Unknown semantic contexts or unverified interaction surfaces become structured `unknown`/`unsupported` state components and stop safely.
 - `.env.local`, API keys, and `data/runs/` are ignored by Git.
 
 ## Requirements
@@ -160,9 +160,11 @@ data/runs/<run-id>/
   responses/<decision-id>.response.json
 ```
 
-Prompt files preserve the full system prompt, state guide, user payload, hashes, and byte counts. Response files preserve all provider attempts, redacted raw provider response, raw content, parsed decision, finish reason, usage, and safe error classification. `decisions.jsonl` links those artifacts to pre/post normalized state, full-raw stale-guard hashes, normalized projection hashes, allowed actions, validation, execution, and settlement.
+Prompt files preserve the full system prompt, context and surface guides, user payload, hashes, and byte counts. Response files preserve all provider attempts, redacted raw provider response, raw content, parsed decision, finish reason, usage, and safe error classification. `decisions.jsonl` links those artifacts to pre/post normalized state, full-raw stale-guard hashes, normalized projection hashes, allowed actions, validation, execution, and settlement.
 
 ## Supported State Coverage
+
+`context` answers where the run is semantically (`combat`, `event`, `map`, and so on); `surface` answers what interaction protocol is active (`combat_turn`, `card_selection`, `option_choice`, and so on). A combat card-selection overlay therefore retains combat enemies and turn facts while exposing only selection actions. A new event ID with ordinary indexed options is data, not a new TypeScript type. A new interaction protocol needs a fixture, normalizer support, action mapping, serializer verification, tests, and a real smoke.
 
 RE-P1 has fixture-backed support for:
 
@@ -195,7 +197,7 @@ The only supported public TypeScript entrypoint is `src/index.ts`. Integration r
 
 ## Current Limitations
 
-- The external MCP service was not available during the final offline build, so a fresh real-game read/execute smoke remains required.
+- Real MCP windows have exercised event, combat, rewards, card reward, map, rest, shop, treasure, and a boss fight. This proves protocol integration, not strategic quality or universal MCP coverage. Standard `card_select` selection itself is verified, but the observed `NDeckEnchantSelectScreen` confirmation endpoint currently acknowledged the request without advancing state; RE-P1 records that condition as `executed_unsettled` and stops rather than retrying or inventing another action.
 - MCP does not list legal actions. The local allowed-action builder reconstructs them from observed normalized state and therefore needs a new fixture whenever the adapter adds or changes a state/action protocol.
 - Current MCP non-combat snapshots do not expose a complete deck on every screen. RE-P1 does not invent missing deck context, so card-reward and shop strategy is limited by what the current state actually contains.
 - Shop leaving is the one explicit protocol inference retained from verified legacy live behavior: the MCP `proceed` action leaves a shop even when `shop.can_proceed` is false. It is recorded in normalization diagnostics.

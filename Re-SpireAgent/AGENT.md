@@ -22,7 +22,7 @@ untrusted MCP JSON
 
 - The LLM is the decision maker. Local code defines safe choices and validates execution; it does not score or secretly choose a strategic action.
 - The model chooses an ID, never an MCP payload.
-- `NormalizedCurrentState` is the only current-state contract available to planning, prompting, and action generation.
+- `NormalizedCurrentState` is the only current-state contract available to planning, prompting, and action generation. Its `context` records semantic game meaning; its `surface` records the active interaction protocol. Do not replace this with combination-specific top-level types.
 - Missing and unknown facts stay missing or unknown. Critical missing fields make the state invalid.
 - Failures are evidence. They are not hidden by local strategic fallback or JSON repair.
 
@@ -45,9 +45,9 @@ Higher layers must not import `integrations/sts2mcp/rawState.ts`. The action bui
 
 1. Capture a real raw MCP sample without secrets or user-identifying data.
 2. Add a minimal fixture under `test/fixtures/mcp-raw/` and document provenance/limitations in `docs/MCP_STATE_COVERAGE.md`.
-3. Add or extend a discriminated state variant.
-4. Normalize all action-relevant fields and emit diagnostics for inference/defaults.
-5. Add allowed actions from normalized fields only.
+3. Add or extend a context or surface only when the observed meaning or interaction protocol is genuinely new.
+4. Normalize all action-relevant fields and emit diagnostics for inference/defaults/schema drift.
+5. Add allowed actions from normalized surface fields only; context may supplement target facts but must not be replaced by raw traversal.
 6. Add a state guide that explains schema/action semantics, not hand-written strategy.
 7. Add normalization, action, prompt, serializer, stale-state, and recording tests as applicable.
 8. Run `npm run check` before real MCP smoke.
@@ -75,3 +75,4 @@ Unknown states remain unsupported until these steps are complete.
 - Any behavior change must update tests and the corresponding doc in `docs/`.
 - Keep README commands runnable from a fresh clone.
 - Real-game strategy disagreement is not a program bug. Invalid action, stale execution, missing actionable choices, accepted invalid model output, settlement loops, and corrupted evidence are program bugs.
+- A known context with an unsupported surface must retain context for audit, set `surface.kind="unsupported"`, and fail closed. A new event ID with a known option protocol remains ordinary event data.

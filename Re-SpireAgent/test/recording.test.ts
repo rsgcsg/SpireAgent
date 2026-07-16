@@ -1,17 +1,38 @@
-import { mkdtemp, readFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { buildAllowedActions } from "../src/domain/actions/buildAllowedActions.js";
 import { normalizeCurrentState } from "../src/normalization/normalizeCurrentState.js";
 import { buildDecisionPrompt } from "../src/prompting/promptBuilder.js";
-import { FileDecisionRecorder, readRunMetadata } from "../src/recording/fileDecisionRecorder.js";
+import { FileDecisionRecorder, readRunMetadata, readRunRecords } from "../src/recording/fileDecisionRecorder.js";
 import type { DecisionRecord, RunMetadata } from "../src/recording/types.js";
 import { fixture, TEST_ADAPTER } from "./helpers.js";
 
 describe("FileDecisionRecorder", () => {
   it("rejects unsafe replay path segments", async () => {
     await expect(readRunMetadata("data/runs", "../outside")).rejects.toThrow("Unsafe path segment");
+  });
+
+  it("keeps a v1 decision record replay-readable without reinterpreting its normalized state", async () => {
+    const dataRoot = await mkdtemp(join(tmpdir(), "re-spire-agent-legacy-"));
+    await mkdir(join(dataRoot, "run-v1"), { recursive: true });
+    await writeFile(join(dataRoot, "run-v1", "decisions.jsonl"), `${JSON.stringify({
+      recordSchemaVersion: 1,
+      decisionId: "legacy-decision",
+      runId: "run-v1",
+      tick: 1,
+      startedAt: "2026-01-01T00:00:00.000Z",
+      completedAt: "2026-01-01T00:00:00.001Z",
+      allowedActions: [],
+      execution: { attempted: false },
+      outcome: "dry_run"
+    })}\n`);
+
+    const records = await readRunRecords(dataRoot, "run-v1");
+
+    expect(records).toHaveLength(1);
+    expect(records[0]?.recordSchemaVersion).toBe(1);
   });
 
   it("persists pre/post raw state, full prompt, provider response, and the decision record", async () => {
@@ -23,7 +44,7 @@ describe("FileDecisionRecorder", () => {
       agentVersion: "test",
       adapter: { adapterId: "sts2mcp-rest", endpoint: "http://localhost:15526", capabilities: {} },
       provider: { provider: "deepseek", model: "fake", thinkingMode: "disabled", maxOutputTokens: 100 },
-      schemas: { normalizedState: 1, prompt: 1, decisionRecord: 1 }
+      schemas: { normalizedState: 2, prompt: 2, decisionRecord: 2 }
     };
     const recorder = new FileDecisionRecorder(dataRoot, metadata);
     await recorder.initialize();
@@ -54,7 +75,7 @@ describe("FileDecisionRecorder", () => {
       finishReason: "stop"
     };
     const record: DecisionRecord = {
-      recordSchemaVersion: 1,
+      recordSchemaVersion: 2,
       decisionId: "decision-1",
       runId: recorder.runId,
       tick: 1,

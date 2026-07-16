@@ -3,14 +3,17 @@ import { toPromptAllowedAction } from "../domain/actions/allowedAction.js";
 import type { NormalizedCurrentState } from "../domain/state/index.js";
 import { stateHash } from "../runtime/stateHash.js";
 import { GLOBAL_PROMPT_ID, GLOBAL_PROMPT_VERSION, GLOBAL_SYSTEM_PROMPT } from "./globalPrompt.js";
-import { STATE_GUIDES } from "./stateGuides.js";
+import { CONTEXT_GUIDES, SURFACE_GUIDES } from "./stateGuides.js";
 
 export interface DecisionPromptPayload {
-  promptSchemaVersion: 1;
-  currentStateSchemaVersion: 1;
-  stateKind: NormalizedCurrentState["kind"];
-  stateGuideId: string;
-  stateGuideVersion: number;
+  promptSchemaVersion: 2;
+  currentStateSchemaVersion: 2;
+  contextKind: NormalizedCurrentState["context"]["kind"];
+  surfaceKind: NormalizedCurrentState["surface"]["kind"];
+  contextGuideId: string;
+  contextGuideVersion: number;
+  surfaceGuideId: string;
+  surfaceGuideVersion: number;
   task: "select_one_allowed_action";
   currentState: NormalizedCurrentState;
   allowedActions: PromptAllowedAction[];
@@ -36,13 +39,17 @@ export interface PromptBundle {
 }
 
 export function buildDecisionPrompt(currentState: NormalizedCurrentState, allowedActions: AllowedAction[]): PromptBundle {
-  const guide = STATE_GUIDES[currentState.kind];
+  const contextGuide = CONTEXT_GUIDES[currentState.context.kind];
+  const surfaceGuide = SURFACE_GUIDES[currentState.surface.kind];
   const payload: DecisionPromptPayload = {
-    promptSchemaVersion: 1,
-    currentStateSchemaVersion: 1,
-    stateKind: currentState.kind,
-    stateGuideId: guide.id,
-    stateGuideVersion: guide.version,
+    promptSchemaVersion: 2,
+    currentStateSchemaVersion: 2,
+    contextKind: currentState.context.kind,
+    surfaceKind: currentState.surface.kind,
+    contextGuideId: contextGuide.id,
+    contextGuideVersion: contextGuide.version,
+    surfaceGuideId: surfaceGuide.id,
+    surfaceGuideVersion: surfaceGuide.version,
     task: "select_one_allowed_action",
     currentState,
     allowedActions: allowedActions.map(toPromptAllowedAction),
@@ -52,13 +59,13 @@ export function buildDecisionPrompt(currentState: NormalizedCurrentState, allowe
       confidence: "optional_number_0_to_1"
     }
   };
-  const systemPrompt = `${GLOBAL_SYSTEM_PROMPT}\n\nState guide:\n${guide.text}`;
+  const systemPrompt = `${GLOBAL_SYSTEM_PROMPT}\n\nSemantic context guide:\n${contextGuide.text}\n\nInteraction surface guide:\n${surfaceGuide.text}`;
   const userPrompt = JSON.stringify(payload);
   return {
     globalPromptId: GLOBAL_PROMPT_ID,
     globalPromptVersion: GLOBAL_PROMPT_VERSION,
-    stateGuideId: guide.id,
-    stateGuideVersion: guide.version,
+    stateGuideId: `${contextGuide.id}+${surfaceGuide.id}`,
+    stateGuideVersion: 2,
     systemPrompt,
     userPrompt,
     systemPromptHash: stateHash(systemPrompt),

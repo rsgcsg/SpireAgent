@@ -1,4 +1,6 @@
-export const NORMALIZED_STATE_SCHEMA_VERSION = 1 as const;
+import type { PlayerSnapshot } from "./entities.js";
+
+export const NORMALIZED_STATE_SCHEMA_VERSION = 2 as const;
 
 export type StateStability =
   | "actionable"
@@ -18,10 +20,10 @@ export interface RunSnapshot {
   seed?: string;
 }
 
-export interface CurrentStateBase {
+export interface NormalizedStateBase {
   normalizedSchemaVersion: typeof NORMALIZED_STATE_SCHEMA_VERSION;
   sourceStateType: string;
   stability: StateStability;
   run?: RunSnapshot;
-  player?: import("./entities.js").PlayerSnapshot;
+  player?: PlayerSnapshot;
 }

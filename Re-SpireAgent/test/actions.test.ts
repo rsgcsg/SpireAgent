@@ -37,6 +37,31 @@ describe("buildAllowedActions", () => {
     ]);
   });
 
+  it("uses a verified standard card-selection surface without inventing its semantic origin", async () => {
+    const envelope = normalizeCurrentState(await fixture("card-select"), TEST_ADAPTER);
+    expect(envelope.currentState.context.kind).toBe("unknown");
+    expect(envelope.currentState.surface).toMatchObject({ kind: "card_selection", selectionMode: "standard" });
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash).map((action) => action.id)).toEqual([
+      "card-selection:0"
+    ]);
+  });
+
+  it("does not invent a generic proceed action for an event option surface", async () => {
+    const raw = await fixture("event") as Record<string, any>;
+    raw.event.can_proceed = true;
+    const envelope = normalizeCurrentState(raw, TEST_ADAPTER);
+    const actions = buildAllowedActions(envelope.currentState, envelope.stateHash);
+    expect(actions.some((action) => action.id === "event:proceed")).toBe(false);
+  });
+
+  it("only exposes confirmation after MCP reports a valid standard selection without selected-id metadata", async () => {
+    const envelope = normalizeCurrentState(await fixture("card-select-confirm"), TEST_ADAPTER);
+    expect(envelope.currentState.surface).toMatchObject({ kind: "card_selection", selectionMode: "standard", canConfirm: true });
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash).map((action) => action.id)).toEqual([
+      "card-selection:confirm"
+    ]);
+  });
+
   it("does not offer unaffordable or unstocked shop items", async () => {
     const envelope = normalizeCurrentState(await fixture("shop"), TEST_ADAPTER);
     expect(buildAllowedActions(envelope.currentState, envelope.stateHash).map((action) => action.id)).toEqual([

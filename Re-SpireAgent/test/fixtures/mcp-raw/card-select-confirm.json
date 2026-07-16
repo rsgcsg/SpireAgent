@@ -1,0 +1,13 @@
+{
+  "state_type": "card_select",
+  "run": { "act": 1, "floor": 5, "ascension": 0 },
+  "player": { "character": "The Defect", "hp": 59, "max_hp": 75, "gold": 473, "status": [], "relics": [], "potions": [], "max_potion_slots": 3 },
+  "card_select": {
+    "screen_type": "NDeckEnchantSelectScreen",
+    "prompt": "Choose a card to Enchant.",
+    "cards": [{ "id": "BEAM_CELL", "name": "Beam Cell", "type": "Attack", "cost": "0", "description": "Deal 3 damage.", "index": 10, "keywords": [] }],
+    "preview_showing": false,
+    "can_cancel": false,
+    "can_confirm": true
+  }
+}

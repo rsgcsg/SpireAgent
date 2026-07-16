@@ -14,8 +14,10 @@ describe("prompt contract", () => {
     const payload = JSON.parse(prompt.userPrompt) as Record<string, any>;
 
     expect(prompt.systemPrompt).toContain("Return exactly one JSON object");
-    expect(payload.currentState.kind).toBe("combat");
-    expect(payload.currentState.cardReward).toBeUndefined();
+    expect(payload.contextKind).toBe("combat");
+    expect(payload.surfaceKind).toBe("combat_turn");
+    expect(payload.currentState.context.kind).toBe("combat");
+    expect(payload.currentState.surface.kind).toBe("combat_turn");
     expect(payload.allowedActions).toHaveLength(actions.length);
     expect(payload.allowedActions[0].action).toBeUndefined();
     expect(prompt.userPrompt).not.toContain("DEEPSEEK_API_KEY");

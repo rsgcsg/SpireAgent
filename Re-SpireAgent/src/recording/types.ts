@@ -28,7 +28,8 @@ export interface RecordedState {
 }
 
 export interface DecisionRecord {
-  recordSchemaVersion: 1;
+  /** v1 records remain replay-readable; v2 carries context/surface normalized state. */
+  recordSchemaVersion: 1 | 2;
   decisionId: string;
   runId: string;
   tick: number;
@@ -95,9 +96,9 @@ export interface RunMetadata {
     maxOutputTokens: number;
   };
   schemas: {
-    normalizedState: 1;
-    prompt: 1;
-    decisionRecord: 1;
+    normalizedState: 1 | 2;
+    prompt: 1 | 2;
+    decisionRecord: 1 | 2;
   };
 }
 

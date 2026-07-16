@@ -34,7 +34,7 @@ export async function createRuntime(config: RuntimeConfig): Promise<{
       capabilities: { ...adapterDescription.capabilities }
     },
     provider: llm.describe(),
-    schemas: { normalizedState: 1, prompt: 1, decisionRecord: 1 }
+    schemas: { normalizedState: 2, prompt: 2, decisionRecord: 2 }
   };
   const recorder = new FileDecisionRecorder(config.runtime.dataDir, metadata);
   await recorder.initialize();

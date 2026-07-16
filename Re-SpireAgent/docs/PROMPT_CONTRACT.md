@@ -3,11 +3,11 @@
 RE-P1 has one prompt path:
 
 ```text
-global system contract + state guide
+global system contract + semantic-context guide + interaction-surface guide
 runtime JSON payload
 ```
 
-The runtime payload contains the complete normalized current state, action summaries, schema versions, guide identity, and output contract. It never includes executable MCP payloads or an API key.
+The v2 runtime payload contains the complete normalized current state, `contextKind`, `surfaceKind`, both guide identities, action summaries, schema versions, and output contract. It never includes executable MCP payloads or an API key. This avoids a custom prompt for every context/surface combination while retaining combat facts under a selection overlay. Surface guides also prohibit factual claims about a standard card-selection's selected cards or remaining capacity when MCP does not expose them.
 
 Expected model output:
 

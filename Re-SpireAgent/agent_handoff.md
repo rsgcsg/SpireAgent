@@ -21,6 +21,7 @@ Status: one real Act 1 run has been exercised through boss defeat. RE-P1 complet
 - Real post-combat `monster` and `elite` shells recognized as transitions rather than invalid combat states
 - Provider evidence redaction preserves output caps and usage counts while still removing credential-bearing fields
 - Action-capable CLI commands use a local exclusive lock; settlement requires two matching stable observations
+- Normalized-state v2 separates semantic context from the active interaction surface. `hand_select` retains combat facts while exposing a card-selection surface; known contexts with unknown overlays fail closed without losing audit context.
 - Bounded real-game windows covered event, combat, rewards, card reward, map, rest, shop, and a boss fight. Clean windows recorded only `valid_json` responses with `finishReason=stop`, settled executions, and no stale execution.
 - `agent:run` now stops at `game_over` or a top-level `menu` before the model can choose a restart; this was added after a real boss defeat showed that an unconstrained loop could otherwise cross the one-game boundary.
 
@@ -61,6 +62,8 @@ No memory, learning, scoring, strategic scaffold, shadow mode, live additive mod
 - A human or unrelated external process can still act in the same game session; the local lock prevents only concurrent RE-P1 processes. State drift remains recorded and blocks stale execution.
 - One real combat action was rejected by MCP after a matching pre-execution snapshot reported a playable hand index. The same index also succeeded in other windows, so RE-P1 records this as a low-frequency MCP/UI synchronization risk rather than hard-coding a strategic restriction. Reproduce before changing the action protocol.
 - The real Act 1 run ended in a boss defeat. Strategic quality has not been evaluated; current evidence verifies the closed-loop protocol only.
+- Existing v1 local JSONL remains readable as historical JSON but must not be treated as a v2 normalized projection without an explicit migration.
+- Real `NDeckEnchantSelectScreen` evidence showed that a selected standard card can make `can_confirm=true` without exposing selected IDs or remaining capacity. RE-P1 now offers confirm/cancel only in that state; it does not guess that another selection is legal. On 2026-07-16, the corresponding `confirm_selection` request returned MCP `status: ok` / `Confirming selection` but the next 15 polls remained byte-for-byte on the same card-select state. This is an adapter completion-contract gap, not a model, normalizer, or strategy failure. RE-P1 records it as `executed_unsettled` and stops the run; do not add a screen-specific fallback until the MCP action contract can be verified.
 
 ## Validation
 

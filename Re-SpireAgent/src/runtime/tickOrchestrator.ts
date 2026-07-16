@@ -43,7 +43,7 @@ export class TickOrchestrator {
     }
 
     const allowedActions = this.dependencies.buildAllowedActions(pre.currentState, pre.stateHash);
-    if (pre.diagnostics.status === "invalid" || pre.currentState.stability === "invalid" || pre.currentState.kind === "unknown") {
+    if (pre.diagnostics.status === "invalid" || pre.currentState.stability === "invalid" || pre.currentState.surface.kind === "unsupported") {
       return this.recordWithoutDecision({
         decisionId,
         tick,
@@ -51,7 +51,7 @@ export class TickOrchestrator {
         pre,
         allowedActions,
         outcome: "not_executed_invalid_state",
-        error: pre.currentState.kind === "unknown" ? pre.currentState.unknown.reason : "Normalization diagnostics are invalid",
+        error: pre.currentState.surface.kind === "unsupported" ? pre.currentState.surface.reason : "Normalization diagnostics are invalid",
         shouldStopRun: true
       });
     }
@@ -66,7 +66,7 @@ export class TickOrchestrator {
         shouldStopRun: false
       });
     }
-    if (options.stopAtRunBoundary && isRunBoundary(pre.currentState.kind)) {
+    if (options.stopAtRunBoundary && isRunBoundary(pre.currentState.context.kind)) {
       return this.recordWithoutDecision({
         decisionId,
         tick,
@@ -74,7 +74,7 @@ export class TickOrchestrator {
         pre,
         allowedActions,
         outcome: "not_executed_non_actionable_state",
-        error: `Stopped at ${pre.currentState.kind} run boundary; agent:run never starts or restarts a run automatically`,
+        error: `Stopped at ${pre.currentState.context.kind} run boundary; agent:run never starts or restarts a run automatically`,
         shouldStopRun: true
       });
     }
@@ -86,7 +86,7 @@ export class TickOrchestrator {
         pre,
         allowedActions,
         outcome: "not_executed_no_actions",
-        error: `Actionable ${pre.currentState.kind} state produced no allowed actions`,
+        error: `Actionable ${pre.currentState.context.kind}/${pre.currentState.surface.kind} state produced no allowed actions`,
         shouldStopRun: true
       });
     }
@@ -107,7 +107,7 @@ export class TickOrchestrator {
       record.allowedActions = allowedActions;
       if (prepared.prompt) record.prompt = prepared.prompt;
       await this.dependencies.recorder.append(record);
-      return result(decisionId, record.outcome, pre.currentState.kind, undefined, false);
+      return result(decisionId, record.outcome, pre.currentState.context.kind, undefined, false);
     }
 
     let session;
@@ -124,7 +124,7 @@ export class TickOrchestrator {
       if (prepared.prompt) record.prompt = prepared.prompt;
       record.error = safeError(error);
       await this.dependencies.recorder.append(record);
-      return result(decisionId, record.outcome, pre.currentState.kind, undefined, true);
+      return result(decisionId, record.outcome, pre.currentState.context.kind, undefined, true);
     }
 
     const validation = validateDecisionForActions(session.finalAttempt, allowedActions);
@@ -142,7 +142,7 @@ export class TickOrchestrator {
       };
       record.error = validation.error;
       await this.dependencies.recorder.append(record);
-      return result(decisionId, record.outcome, pre.currentState.kind, undefined, true);
+      return result(decisionId, record.outcome, pre.currentState.context.kind, undefined, true);
     }
 
     let latest: StateEnvelope;
@@ -162,7 +162,7 @@ export class TickOrchestrator {
         error: `Could not re-read state before execution: ${safeError(error)}`
       });
       await this.dependencies.recorder.append(record);
-      return result(decisionId, record.outcome, pre.currentState.kind, validation.selectedAction.id, true);
+      return result(decisionId, record.outcome, pre.currentState.context.kind, validation.selectedAction.id, true);
     }
 
     if (latest.stateHash !== pre.stateHash || validation.selectedAction.sourceStateHash !== latest.stateHash) {
@@ -183,7 +183,7 @@ export class TickOrchestrator {
         error: "State changed after prompt construction and before execution"
       });
       await this.dependencies.recorder.append(record, { postRawState: latest.rawState });
-      return result(decisionId, record.outcome, pre.currentState.kind, validation.selectedAction.id, false);
+      return result(decisionId, record.outcome, pre.currentState.context.kind, validation.selectedAction.id, false);
     }
 
     let adapterResult: GameExecutionResult;
@@ -206,7 +206,7 @@ export class TickOrchestrator {
         error: safeError(error)
       });
       await this.dependencies.recorder.append(record);
-      return result(decisionId, record.outcome, pre.currentState.kind, validation.selectedAction.id, true);
+      return result(decisionId, record.outcome, pre.currentState.context.kind, validation.selectedAction.id, true);
     }
 
     const settlement = await this.dependencies.settlement.waitForNextState(pre, validation.selectedAction.action);
@@ -235,7 +235,7 @@ export class TickOrchestrator {
       ...(settlement.error ? { error: settlement.error } : {})
     });
     await this.dependencies.recorder.append(record, settlement.after ? { postRawState: settlement.after.rawState } : undefined);
-    return result(decisionId, record.outcome, pre.currentState.kind, validation.selectedAction.id, outcome !== "executed_and_settled");
+    return result(decisionId, record.outcome, pre.currentState.context.kind, validation.selectedAction.id, outcome !== "executed_and_settled");
   }
 
   private async recordWithoutDecision(input: {
@@ -261,13 +261,13 @@ export class TickOrchestrator {
     record.allowedActions = input.allowedActions;
     if (input.error) record.error = input.error;
     await this.dependencies.recorder.append(record);
-    return result(input.decisionId, input.outcome, input.pre.currentState.kind, undefined, input.shouldStopRun);
+    return result(input.decisionId, input.outcome, input.pre.currentState.context.kind, undefined, input.shouldStopRun);
   }
 }
 
 function baseRecord(runId: string, decisionId: string, tick: number, startedAt: string, outcome: DecisionOutcome): DecisionRecord {
   return {
-    recordSchemaVersion: 1,
+    recordSchemaVersion: 2,
     decisionId,
     runId,
     tick,
@@ -334,8 +334,8 @@ function recordedState(envelope: StateEnvelope): RecordedState {
   };
 }
 
-function isRunBoundary(kind: StateEnvelope["currentState"]["kind"]): boolean {
-  return kind === "game_over" || kind === "menu";
+function isRunBoundary(kind: StateEnvelope["currentState"]["context"]["kind"]): boolean {
+  return kind === "run_ended" || kind === "menu";
 }
 
 function result(

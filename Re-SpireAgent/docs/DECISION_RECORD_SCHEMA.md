@@ -1,6 +1,6 @@
 # Decision Record Schema
 
-Schema version: 1.
+Current schema version: 2. Version 1 remains local historical evidence and is replay-readable as stored JSON, but its old normalized projection is not silently reinterpreted as v2.
 
 Each tick creates one append-only `DecisionRecord`, including non-execution outcomes. Large evidence has stable relative references:
 
@@ -15,6 +15,6 @@ Each tick creates one append-only `DecisionRecord`, including non-execution outc
 
 Core outcomes distinguish observation failure, invalid/non-actionable/no-action state, dry run, provider failure, invalid decision, stale state, execution failure, settled execution, and unsettled execution.
 
-`metadata.json` records adapter endpoint/capabilities, provider model/thinking/output cap, agent version, and schema versions. It never records the API key.
+`metadata.json` records adapter endpoint/capabilities, provider model/thinking/output cap, agent version, and schema versions. v2 records contain separate semantic `context` and active interaction `surface`; it never records the API key.
 
 The record is evidence of what this process observed and attempted. It is not proof that MCP exposed complete game truth or that a strategic choice was good.

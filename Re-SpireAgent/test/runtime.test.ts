@@ -31,8 +31,8 @@ describe("TickOrchestrator", () => {
       execution: { attempted: true, selectedActionId: "combat:end-turn", stateHashMatchedBeforeExecution: true },
       settlement: { status: "settled" }
     });
-    expect(recorder.records[0]?.preState?.normalizedState.kind).toBe("combat");
-    expect(recorder.records[0]?.postState?.normalizedState.kind).toBe("combat");
+    expect(recorder.records[0]?.preState?.normalizedState.context.kind).toBe("combat");
+    expect(recorder.records[0]?.postState?.normalizedState.context.kind).toBe("combat");
   });
 
   it("aborts without execution when state changes while the LLM is deciding", async () => {
@@ -99,7 +99,7 @@ describe("TickOrchestrator", () => {
 
     const result = await makeOrchestrator(adapter, provider, recorder).runTick(1, { stopAtRunBoundary: true });
 
-    expect(result).toMatchObject({ outcome: "not_executed_non_actionable_state", stateKind: "game_over", shouldStopRun: true });
+    expect(result).toMatchObject({ outcome: "not_executed_non_actionable_state", stateKind: "run_ended", shouldStopRun: true });
     expect(calls).toBe(0);
     expect(adapter.executed).toEqual([]);
     expect(recorder.records[0]?.error).toContain("run boundary");
