@@ -15,6 +15,7 @@ internal static class BridgeSnapshotBuilder
         new DeckUpgradeSelectionSurfaceProvider(),
         new CombatPileCardSelectionSurfaceProvider(),
         new CombatHandCardSelectionSurfaceProvider(),
+        new EventCardAcquisitionSurfaceProvider(),
         new GeneratedCardChoiceSurfaceProvider(),
         new CardBundleSelectionSurfaceProvider(),
         new CardRewardSurfaceProvider(),

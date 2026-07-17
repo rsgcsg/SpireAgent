@@ -21,14 +21,19 @@ internal static class BridgeGameIdentity
     {
         "deck_removal_selection",
         "deck_upgrade_selection",
-        "combat_turn"
+        "combat_turn",
+        "combat_hand_card_selection",
+        "rest_site"
     };
     private static readonly string[] ScopedQualifiedInspectionKinds = { "run_deck" };
     private static readonly string[] ScopedActionCanarySurfaceKinds =
     {
+        "event_card_acquisition",
         "reward_claim",
         "card_reward_selection",
         "map_navigation",
+        "shop_inventory",
+        "shop_room",
         "treasure_room"
     };
 
@@ -82,7 +87,7 @@ internal static class BridgeGameIdentity
                     InspectionCanaryKinds: Array.Empty<string>(),
                     ObservationOnlySurfaceKinds: Array.Empty<string>(),
                     ObservationCandidateBuildFingerprints: Array.Empty<string>(),
-                    Detail: $"Game build {Fingerprint(release)} is exactly qualified for deck_removal_selection, event/rest deck_upgrade_selection, and observed ordinary combat_turn actions plus run_deck inspection; reward_claim, card_reward_selection, map_navigation, and treasure_room are limited to action canaries, and every unlisted surface and inspection remains disabled.")
+                Detail: $"Game build {Fingerprint(release)} is exactly qualified for deck_removal_selection, event/rest deck_upgrade_selection, ordinary combat_turn, combat_hand_card_selection, and ordinary single-player rest_site actions plus run_deck inspection; event_card_acquisition, reward_claim, card_reward_selection, map_navigation, shop_inventory, shop_room, and treasure_room are limited to action canaries, and every unlisted surface and inspection remains disabled.")
             : new CompatibilityAssessment(
                 version == null ? "unknown" : "untested",
                 TestedVersions,

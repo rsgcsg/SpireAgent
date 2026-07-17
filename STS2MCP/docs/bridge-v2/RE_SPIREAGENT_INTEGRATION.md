@@ -33,21 +33,26 @@ Required client behavior:
 - never auto-retry unknown outcomes;
 - permit only one executor during v1/v2 dual-read tests.
 
-Source `2.0-preview.18` has strict projections for fifteen bounded executable
-surfaces: deck enchant, merchant deck removal, ancient dialogue, ordinary event options, rest controls,
-combat turn, three combat selectors, atomic card bundles, card rewards, outer
-room rewards, map navigation, and separate shop room/inventory ownership. It
-also preserves typed diagnostics and fixed
-read-only `run_deck`/`combat_piles` evidence. Every current executable surface
-has organic evidence for at least one observed shape; this does not qualify
-unobserved variants or unsupported screens. Run-deck Glam post-state and
-non-empty draw/discard/exhaust inspection are organically qualified; hidden draw
-order remains excluded. In
-`auto` mode, unsupported v2 surfaces remain on v1 while inspection sidecars may
-still add typed player facts; a v2-owned surface imports only bridge actions.
-Exact-build or context/surface incompatibility never silently falls back to v1
-authority. Runtime and prompt identity always expose `context.kind +
-surface.kind + actionAuthority`.
+Source `2.0-preview.25` retains strict purpose-specific projections for
+event/rest deck upgrade, event card acquisition, and the treasure-room
+lifecycle. On exact v0.109, merchant removal, deck upgrade, ordinary combat
+turn, combat hand selection, and run-deck Inspection are scoped-qualified;
+event card acquisition, reward, card reward, map, and treasure are action
+canaries. All other historical
+contracts remain non-executable on this build unless capabilities explicitly
+list them.
+
+In `auto` mode, a v2-owned Surface imports only Bridge actions and top-level
+`shared_state` supplies persistent run/player HUD facts. Re does not issue a v1
+state read for a Bridge-owned semantic state. Exact identity, shared-state,
+context/surface, capability, or authority incompatibility fails closed. Runtime
+and prompt identity expose `shared_state + context.kind + surface.kind +
+actionAuthority`.
+
+Re requires `shared_state` on every semantic Bridge state, records its evidence,
+and validates combat player/potion identities against it. Shared state creates
+no actions. Unsupported legacy-owned states may still use v1 for their complete
+Context/Surface contract, but that fallback cannot merge into Bridge authority.
 
 The shop integration preserves affordability separately from authority and
 accepts omitted nullable product fields without weakening stocked-product or
@@ -61,6 +66,16 @@ eligibility, and completion remain separate. Exact-source review found that
 selector closure precedes the async merchant transaction, so Bridge completion
 now waits for selected-card/deck/gold/counter/service post-state while Re keeps
 the same command consumer and stable post-command settlement.
+
+Deck upgrade reuses only non-authoritative bounded-selection facts while
+retaining its own eligibility, action set, visible upgraded preview, and exact
+upgraded-card completion. Event card acquisition likewise reuses only grid
+mechanics: exact event source, run-deck destination, selection constraints,
+commit, and same-instance deck completion remain purpose-specific. Brain Leech
+one-card commit has current-build evidence; Room Full of Cheese two-card commit
+does not. Treasure remains independent from outer rewards:
+choose and Proceed have current-build organic completion evidence, while chest
+open and relic skip remain unqualified canary variants.
 
 See the rebuilt client's
 [Bridge v2 integration contract](../../../Re-SpireAgent/docs/BRIDGE_V2_INTEGRATION.md).

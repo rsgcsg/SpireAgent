@@ -2,10 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Context;
+using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.RestSite;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.RestSite;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
+using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using MegaCrit.Sts2.Core.Rooms;
@@ -44,6 +47,21 @@ internal sealed class RestSiteSurfaceProvider : IBridgeSurfaceProvider
         }
 
         RestSiteOption[] options = restRoom.Options.ToArray();
+        RestSiteOption? unsupportedEnabledOption = options.FirstOrDefault(option =>
+            option.IsEnabled
+            && option is not HealRestSiteOption
+            && option is not SmithRestSiteOption);
+        if (unsupportedEnabledOption != null)
+        {
+            return BindingUnavailable(
+                game,
+                $"Enabled rest option {unsupportedEnabledOption.OptionId} has no purpose-specific v0.109 completion witness.");
+        }
+
+        Player? localPlayer = LocalContext.GetMe(runState);
+        if (localPlayer == null)
+            return BindingUnavailable(game, "The local rest-site player is unavailable.");
+
         NRestSiteButton[] buttons = McpMod.FindAll<NRestSiteButton>(room)
             .Where(McpMod.IsLiveNode)
             .ToArray();
@@ -79,7 +97,7 @@ internal sealed class RestSiteSurfaceProvider : IBridgeSurfaceProvider
                 "selection",
                 McpMod.SafeGetText(() => option.Title) ?? option.OptionId,
                 "RestSiteRoom.Options+NRestSiteButton.ForceClick",
-                () => StartOption(restRoom, room, option, button, index),
+                () => StartOption(restRoom, room, localPlayer, option, button, index),
                 new[] { new ActionEntityBinding("rest_option", optionId) }));
         }
 
@@ -136,6 +154,7 @@ internal sealed class RestSiteSurfaceProvider : IBridgeSurfaceProvider
     private static BridgeActionStartResult StartOption(
         RestSiteRoom expectedRestRoom,
         NRestSiteRoom expectedUiRoom,
+        Player expectedPlayer,
         RestSiteOption expectedOption,
         NRestSiteButton expectedButton,
         int expectedIndex)
@@ -145,6 +164,7 @@ internal sealed class RestSiteSurfaceProvider : IBridgeSurfaceProvider
         if (!ReferenceEquals(runState?.CurrentRoom, expectedRestRoom)
             || !ReferenceEquals(NRestSiteRoom.Instance, expectedUiRoom)
             || !McpMod.IsLiveNode(expectedUiRoom)
+            || !ReferenceEquals(LocalContext.GetMe(runState), expectedPlayer)
             || expectedIndex < 0
             || expectedIndex >= currentOptions.Length
             || !ReferenceEquals(currentOptions[expectedIndex], expectedOption)
@@ -158,15 +178,58 @@ internal sealed class RestSiteSurfaceProvider : IBridgeSurfaceProvider
                 "The advertised rest-site option is no longer current and selectable.");
         }
 
+        int beforeHp = expectedPlayer.Creature.CurrentHp;
+        int expectedHealHp = beforeHp;
+        if (expectedOption is HealRestSiteOption)
+        {
+            decimal healAmount = HealRestSiteOption.GetHealAmount(expectedPlayer);
+            expectedHealHp = (int)Math.Min(
+                (decimal)expectedPlayer.Creature.MaxHp,
+                (decimal)beforeHp + healAmount);
+        }
+
         expectedButton.ForceClick();
+        Func<bool> completion = expectedOption switch
+        {
+            HealRestSiteOption => () => IsHealCompleted(
+                expectedRestRoom,
+                expectedUiRoom,
+                expectedPlayer,
+                expectedOption,
+                expectedHealHp),
+            SmithRestSiteOption => () => NOverlayStack.Instance?.Peek() is NDeckUpgradeSelectScreen,
+            _ => () => false
+        };
+        string completionEvidence = expectedOption switch
+        {
+            HealRestSiteOption => "rest_heal_exact_hp_and_option_progress_observed",
+            SmithRestSiteOption => "rest_smith_exact_upgrade_child_opened",
+            _ => "rest_option_completion_not_implemented"
+        };
         return BridgeActionStartResult.Started(
-            () => !ReferenceEquals(RunManager.Instance.DebugOnlyGetState()?.CurrentRoom, expectedRestRoom)
-                  || !ReferenceEquals(NRestSiteRoom.Instance, expectedUiRoom)
-                  || NOverlayStack.Instance?.Peek() != null
-                  || !expectedRestRoom.Options.Any(option => ReferenceEquals(option, expectedOption))
-                  || expectedUiRoom.ProceedButton.IsEnabled,
-            "rest_option_removed_overlay_opened_or_proceed_enabled",
+            completion,
+            completionEvidence,
             allowIntermediateStateChanges: true);
+    }
+
+    private static bool IsHealCompleted(
+        RestSiteRoom expectedRestRoom,
+        NRestSiteRoom expectedUiRoom,
+        Player expectedPlayer,
+        RestSiteOption expectedOption,
+        int expectedHealHp)
+    {
+        RunState? runState = RunManager.Instance.DebugOnlyGetState();
+        if (!ReferenceEquals(runState?.CurrentRoom, expectedRestRoom)
+            || !ReferenceEquals(LocalContext.GetMe(runState), expectedPlayer)
+            || expectedPlayer.Creature.CurrentHp != expectedHealHp)
+        {
+            return false;
+        }
+
+        return !ReferenceEquals(NRestSiteRoom.Instance, expectedUiRoom)
+               || !expectedRestRoom.Options.Any(option => ReferenceEquals(option, expectedOption))
+               || expectedUiRoom.ProceedButton.IsEnabled;
     }
 
     private static BridgeActionStartResult StartProceed(

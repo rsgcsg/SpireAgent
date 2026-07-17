@@ -69,7 +69,7 @@ internal static class BridgeV2Runtime
                 "rest_site",
                 "implemented_exact_game_version",
                 new[] { "choose_rest_option", "proceed_rest_site" },
-                "sts2-v0.108.0:RestSiteRoom.Options+NRestSiteButton+NProceedButton+NMapScreen"),
+                "sts2-v0.109.0:RestSiteRoom.Options+NRestSiteButton+HealRestSiteOption exact HP witness+Smith exact upgrade-child witness+NProceedButton+NMapScreen"),
             new SurfaceCapability(
                 "event_option",
                 "implemented_exact_game_version",
@@ -89,7 +89,12 @@ internal static class BridgeV2Runtime
                 "combat_hand_card_selection",
                 "implemented_exact_game_version",
                 new[] { "select_combat_hand_card", "deselect_combat_hand_card", "confirm_combat_hand_selection", "close_combat_hand_peek" },
-                "sts2-v0.108.0:NPlayerHand+CardSelectorPrefs+NSelectedHandCardContainer+NUpgradePreview"),
+                "sts2-v0.109.0:NPlayerHand._prefs+_selectedCards+ActiveHolders+NSelectedHandCardContainer+NUpgradePreview+NConfirmButton exact-source revalidation"),
+            new SurfaceCapability(
+                "event_card_acquisition",
+                "implemented_exact_game_version",
+                new[] { "select_event_card_acquisition", "deselect_event_card_acquisition" },
+                "sts2-v0.109.0:BrainLeech+RoomFullOfCheese+EventModel.SelectCardsToAddToDeckFromGrid+NSimpleCardSelectScreen+semantic-run-deck-witness"),
             new SurfaceCapability(
                 "generated_card_choice",
                 "implemented_exact_game_version",
@@ -123,12 +128,12 @@ internal static class BridgeV2Runtime
                     "purchase_shop_card", "purchase_shop_relic", "purchase_shop_potion",
                     "open_shop_card_removal", "close_shop_inventory"
                 },
-                "sts2-v0.108.0:MerchantInventory+typed MerchantEntry+NMerchantSlot+NMerchantInventory"),
+                "sts2-v0.109.0:MerchantInventory+typed MerchantEntry+NMerchantSlot+NMerchantInventory+semantic-category-witnesses"),
             new SurfaceCapability(
                 "shop_room",
                 "implemented_exact_game_version",
                 new[] { "open_shop_inventory", "proceed_shop" },
-                "sts2-v0.108.0:NMerchantRoom+NMerchantButton+NProceedButton"),
+                "sts2-v0.109.0:NMerchantRoom+NMerchantButton+NProceedButton+exact-navigation-witnesses"),
             new SurfaceCapability(
                 "treasure_room",
                 "implemented_exact_game_version",
@@ -167,6 +172,21 @@ internal static class BridgeV2Runtime
             BridgeIdentity(),
             game,
             ObservationPolicy(),
+            new SharedStateContractCapability(
+                "implemented_read_only_current_build",
+                "active_single_player_run_hud",
+                CreatesActionAuthority: false,
+                IncludedInStateIdentity: true,
+                IncludedFacts: new[]
+                {
+                    "act_floor_ascension", "visible_bosses", "run_modifiers",
+                    "local_player_identity_hp_gold", "relics", "potions_and_capacity"
+                },
+                ExcludedFacts: new[]
+                {
+                    "deck_contents_use_inspection", "hidden_rng", "draw_order",
+                    "future_events", "future_rewards", "run_timer"
+                }),
             surfaces,
             new CommandContractCapability(
                 OpaqueActionsOnly: true,
@@ -222,10 +242,20 @@ internal static class BridgeV2Runtime
     public static BridgeStateEnvelope Observe()
     {
         BridgeObservationDraft draft = BridgeSnapshotBuilder.Build(EntityRegistry);
+        BridgeSharedVisibleStateBuildResult shared = draft.Game.Compatibility.StateObservationAllowed
+            ? BridgeSharedVisibleStateBuilder.Build(EntityRegistry)
+            : new BridgeSharedVisibleStateBuildResult(false, null, null);
+        if (shared.RunActive && shared.State == null)
+            draft = FailClosedForMissingSharedState(draft, shared.Failure);
+        string compositeSignature = BridgeHash.Object(new
+        {
+            draft.Signature,
+            shared.State
+        });
 
         lock (Gate)
         {
-            (string stateId, long stateSequence) = StateIdentity.Observe(draft.Signature);
+            (string stateId, long stateSequence) = StateIdentity.Observe(compositeSignature);
 
             Actions.Clear();
             var descriptors = new List<LegalAction>(draft.Actions.Count);
@@ -251,6 +281,7 @@ internal static class BridgeV2Runtime
                 stateSequence,
                 DateTimeOffset.UtcNow,
                 draft.Readiness,
+                shared.State,
                 draft.Context,
                 draft.Surface,
                 draft.AuthorityHandoff,
@@ -262,6 +293,39 @@ internal static class BridgeV2Runtime
                 BridgeDiagnostics.ForObservation(draft),
                 draft.Warnings);
         }
+    }
+
+    private static BridgeObservationDraft FailClosedForMissingSharedState(
+        BridgeObservationDraft draft,
+        BridgeDiagnostic? failure)
+    {
+        var surface = new UnsupportedSurface(
+            "unsupported",
+            "shared_visible_state",
+            "The active run HUD could not be projected completely; actions are suppressed.");
+        var completeness = new StateCompleteness(
+            "incomplete_active_run_shared_state",
+            "empty_fail_closed",
+            draft.Completeness.Sources,
+            draft.Completeness.Missing.Append("shared_visible_state").Distinct().ToArray());
+        return new BridgeObservationDraft(
+            BridgeHash.Object(new { draft.Signature, sharedStateFailure = true }),
+            "unsupported",
+            draft.Context,
+            surface,
+            completeness,
+            draft.Game,
+            draft.Warnings.Append("active_run_shared_visible_state_unavailable").ToArray(),
+            Array.Empty<BridgeActionDraft>())
+        {
+            AuthorityHandoff = new AuthorityHandoff(
+                "none_fail_closed",
+                null,
+                "Bridge v2 cannot grant action authority without the strategy-relevant persistent run HUD."),
+            Diagnostics = failure == null
+                ? draft.Diagnostics
+                : draft.Diagnostics.Append(failure).ToArray()
+        };
     }
 
     public static BridgeCommandResponse Submit(BridgeCommandRequest request)

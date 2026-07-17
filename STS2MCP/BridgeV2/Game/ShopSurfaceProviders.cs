@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Merchant;
 using MegaCrit.Sts2.Core.Entities.Players;
@@ -10,8 +11,10 @@ using MegaCrit.Sts2.Core.Hooks;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
+using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
+using MegaCrit.Sts2.Core.Nodes.Screens.ScreenContext;
 using MegaCrit.Sts2.Core.Nodes.Screens.Shops;
 using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Runs;
@@ -75,22 +78,26 @@ internal sealed class ShopInventorySurfaceProvider : IBridgeSurfaceProvider
         if (backButtons.Length != 1)
             return BindingUnavailable(game, "The open merchant inventory does not have exactly one live back button.");
         NBackButton backButton = backButtons[0];
+        bool inputReady = ActiveScreenContext.Instance.IsCurrent(inventoryUi)
+                          && backButton.IsEnabled
+                          && McpMod.IsNodeVisible(backButton);
 
         Player player = inventory.Player;
         int occupiedPotionSlots = ShopSurfaceFacts.OccupiedPotionSlots(player);
         bool potionSlotsFull = occupiedPotionSlots >= player.PotionSlots.Count;
         VisibleShopCardOffer[] cards = inventory.CardEntries.Select(entry =>
-            BuildCardOffer(entry, slotByEntry[entry], Array.IndexOf(entries, entry), entities)).ToArray();
+            BuildCardOffer(entry, slotByEntry[entry], Array.IndexOf(entries, entry), inputReady, entities)).ToArray();
         VisibleShopRelicOffer[] relics = inventory.RelicEntries.Select(entry =>
-            BuildRelicOffer(entry, slotByEntry[entry], Array.IndexOf(entries, entry), entities)).ToArray();
+            BuildRelicOffer(entry, slotByEntry[entry], Array.IndexOf(entries, entry), inputReady, entities)).ToArray();
         VisibleShopPotionOffer[] potions = inventory.PotionEntries.Select(entry =>
-            BuildPotionOffer(entry, slotByEntry[entry], Array.IndexOf(entries, entry), player, potionSlotsFull, entities)).ToArray();
+            BuildPotionOffer(entry, slotByEntry[entry], Array.IndexOf(entries, entry), player, potionSlotsFull, inputReady, entities)).ToArray();
         MerchantCardRemovalEntry? removalEntry = inventory.CardRemovalEntry;
         VisibleShopCardRemovalOffer? removal = removalEntry != null
             ? BuildRemovalOffer(
                 removalEntry,
                 slotByEntry[removalEntry],
                 Array.IndexOf(entries, removalEntry),
+                inputReady,
                 entities)
             : null;
 
@@ -100,52 +107,48 @@ internal sealed class ShopInventorySurfaceProvider : IBridgeSurfaceProvider
         {
             VisibleShopCardOffer offer = cards.Single(candidate => candidate.EntityId == entities.GetId(entry, "shop_entry"));
             CardModel purchasedCard = entry.CreationResult!.Card;
-            actions.Add(PurchaseAction(
+            actions.Add(CardPurchaseAction(
                 offer.EntityId,
-                "purchase_shop_card",
                 $"Buy {offer.Card?.Name ?? offer.Card?.DefinitionId ?? "card"} for {offer.Price} gold",
-                "MerchantCardEntry.OnTryPurchaseWrapper+CardPileCmd.Add",
                 merchantRoom,
                 room,
                 inventory,
                 entry,
                 slotByEntry[entry],
-                () => !ReferenceEquals(entry.CreationResult?.Card, purchasedCard)));
+                purchasedCard,
+                offer.Price));
         }
         foreach (MerchantRelicEntry entry in inventory.RelicEntries.Where(entry =>
                      relics.Single(offer => offer.EntityId == entities.GetId(entry, "shop_entry")).CanPurchase))
         {
             VisibleShopRelicOffer offer = relics.Single(candidate => candidate.EntityId == entities.GetId(entry, "shop_entry"));
             RelicModel purchasedRelic = entry.Model!;
-            actions.Add(PurchaseAction(
+            actions.Add(RelicPurchaseAction(
                 offer.EntityId,
-                "purchase_shop_relic",
                 $"Buy {offer.Relic?.Name ?? offer.Relic?.DefinitionId ?? "relic"} for {offer.Price} gold",
-                "MerchantRelicEntry.OnTryPurchaseWrapper+RelicCmd.Obtain",
                 merchantRoom,
                 room,
                 inventory,
                 entry,
                 slotByEntry[entry],
-                () => !ReferenceEquals(entry.Model, purchasedRelic)));
+                purchasedRelic,
+                offer.Price));
         }
         foreach (MerchantPotionEntry entry in inventory.PotionEntries.Where(entry =>
                      potions.Single(offer => offer.EntityId == entities.GetId(entry, "shop_entry")).CanPurchase))
         {
             VisibleShopPotionOffer offer = potions.Single(candidate => candidate.EntityId == entities.GetId(entry, "shop_entry"));
             PotionModel purchasedPotion = entry.Model!;
-            actions.Add(PurchaseAction(
+            actions.Add(PotionPurchaseAction(
                 offer.EntityId,
-                "purchase_shop_potion",
                 $"Buy {offer.Name ?? offer.DefinitionId ?? "potion"} for {offer.Price} gold",
-                "MerchantPotionEntry.OnTryPurchaseWrapper+PotionCmd.TryToProcure",
                 merchantRoom,
                 room,
                 inventory,
                 entry,
                 slotByEntry[entry],
-                () => !ReferenceEquals(entry.Model, purchasedPotion),
-                () => ShopSurfaceFacts.CanProcurePotion(player, entry.Model)));
+                purchasedPotion,
+                offer.Price));
         }
         if (removalEntry != null && removal?.CanPurchase == true)
         {
@@ -159,7 +162,7 @@ internal sealed class ShopInventorySurfaceProvider : IBridgeSurfaceProvider
                 new[] { new ActionEntityBinding("shop_card_removal", removal.EntityId) }));
         }
 
-        bool canClose = backButton.IsEnabled && McpMod.IsNodeVisible(backButton);
+        bool canClose = inputReady;
         if (canClose)
         {
             string screenId = entities.GetId(inventoryUi, "screen");
@@ -219,11 +222,12 @@ internal sealed class ShopInventorySurfaceProvider : IBridgeSurfaceProvider
         MerchantCardEntry entry,
         NMerchantSlot slot,
         int inventoryIndex,
+        bool inputReady,
         BridgeEntityRegistry entities)
     {
         bool stocked = entry.IsStocked && entry.CreationResult?.Card != null;
         bool visible = McpMod.IsNodeVisible(slot);
-        bool canPurchase = stocked && visible && entry.EnoughGold && slot.Hitbox.IsEnabled;
+        bool canPurchase = stocked && visible && inputReady && entry.EnoughGold && slot.Hitbox.IsEnabled;
         return new VisibleShopCardOffer(
             entities.GetId(entry, "shop_entry"),
             entities.GetId(slot, "shop_slot"),
@@ -247,18 +251,14 @@ internal sealed class ShopInventorySurfaceProvider : IBridgeSurfaceProvider
         MerchantRelicEntry entry,
         NMerchantSlot slot,
         int inventoryIndex,
+        bool inputReady,
         BridgeEntityRegistry entities)
     {
         bool stocked = entry.IsStocked && entry.Model != null;
         bool visible = McpMod.IsNodeVisible(slot);
-        bool canPurchase = stocked && visible && entry.EnoughGold && slot.Hitbox.IsEnabled;
+        bool canPurchase = stocked && visible && inputReady && entry.EnoughGold && slot.Hitbox.IsEnabled;
         VisibleRelic? relic = entry.Model is { } model
-            ? new VisibleRelic(
-                entities.GetId(model, "relic"),
-                model.Id.Entry,
-                McpMod.SafeGetText(() => model.Title),
-                McpMod.SafeGetText(() => model.DynamicDescription),
-                model.ShowCounter ? model.DisplayAmount : null)
+            ? BridgeVisibleEntityFacts.BuildRelic(model, entities)
             : null;
         return new VisibleShopRelicOffer(
             entities.GetId(entry, "shop_entry"),
@@ -279,6 +279,7 @@ internal sealed class ShopInventorySurfaceProvider : IBridgeSurfaceProvider
         int inventoryIndex,
         Player player,
         bool potionSlotsFull,
+        bool inputReady,
         BridgeEntityRegistry entities)
     {
         bool stocked = entry.IsStocked && entry.Model != null;
@@ -286,6 +287,7 @@ internal sealed class ShopInventorySurfaceProvider : IBridgeSurfaceProvider
         bool procurementAllowed = stocked && ShopSurfaceFacts.CanProcurePotion(player, entry.Model);
         bool canPurchase = stocked
                            && visible
+                           && inputReady
                            && entry.EnoughGold
                            && slot.Hitbox.IsEnabled
                            && !potionSlotsFull
@@ -318,11 +320,12 @@ internal sealed class ShopInventorySurfaceProvider : IBridgeSurfaceProvider
         MerchantCardRemovalEntry entry,
         NMerchantSlot slot,
         int inventoryIndex,
+        bool inputReady,
         BridgeEntityRegistry entities)
     {
         bool stocked = entry.IsStocked;
         bool visible = McpMod.IsNodeVisible(slot);
-        bool canPurchase = stocked && visible && entry.EnoughGold && slot.Hitbox.IsEnabled;
+        bool canPurchase = stocked && visible && inputReady && entry.EnoughGold && slot.Hitbox.IsEnabled;
         return new VisibleShopCardRemovalOffer(
             entities.GetId(entry, "shop_entry"),
             entities.GetId(slot, "shop_slot"),
@@ -337,32 +340,94 @@ internal sealed class ShopInventorySurfaceProvider : IBridgeSurfaceProvider
                 : ShopSurfaceFacts.BlockedReason(stocked, visible, entry.EnoughGold, canPurchase));
     }
 
-    private static BridgeActionDraft PurchaseAction(
+    private static BridgeActionDraft CardPurchaseAction(
         string offerId,
-        string kind,
         string label,
-        string evidence,
         MerchantRoom expectedMerchantRoom,
         NMerchantRoom expectedRoom,
         MerchantInventory expectedInventory,
-        MerchantEntry expectedEntry,
+        MerchantCardEntry expectedEntry,
         NMerchantSlot expectedSlot,
-        Func<bool> productChanged,
-        Func<bool>? extraValidator = null) =>
+        CardModel expectedCard,
+        int expectedPrice) =>
         new(
-            $"{kind}:{offerId}",
-            kind,
+            $"purchase_shop_card:{offerId}",
+            "purchase_shop_card",
             "purchase",
             label,
-            evidence,
+            "MerchantCardEntry.OnTryPurchaseWrapper+exact-card-deck-gold-entry-witness",
             () => StartPurchase(
                 expectedMerchantRoom,
                 expectedRoom,
                 expectedInventory,
                 expectedEntry,
                 expectedSlot,
-                productChanged,
-                extraValidator),
+                expectedPrice,
+                () => expectedInventory.Player.Deck.Cards.Any(card => ReferenceEquals(card, expectedCard)),
+                () => !ReferenceEquals(expectedEntry.CreationResult?.Card, expectedCard),
+                () => expectedInventory.Player.Deck.Cards.All(card => !ReferenceEquals(card, expectedCard)),
+                null,
+                "shop_card_purchase_committed_with_exact_card_gold_and_entry_witness"),
+            new[] { new ActionEntityBinding("shop_offer", offerId) });
+
+    private static BridgeActionDraft RelicPurchaseAction(
+        string offerId,
+        string label,
+        MerchantRoom expectedMerchantRoom,
+        NMerchantRoom expectedRoom,
+        MerchantInventory expectedInventory,
+        MerchantRelicEntry expectedEntry,
+        NMerchantSlot expectedSlot,
+        RelicModel expectedRelic,
+        int expectedPrice) =>
+        new(
+            $"purchase_shop_relic:{offerId}",
+            "purchase_shop_relic",
+            "purchase",
+            label,
+            "MerchantRelicEntry.OnTryPurchaseWrapper+exact-relic-gold-entry-witness",
+            () => StartPurchase(
+                expectedMerchantRoom,
+                expectedRoom,
+                expectedInventory,
+                expectedEntry,
+                expectedSlot,
+                expectedPrice,
+                () => expectedInventory.Player.Relics.Any(relic => ReferenceEquals(relic, expectedRelic)),
+                () => !ReferenceEquals(expectedEntry.Model, expectedRelic),
+                () => expectedInventory.Player.Relics.All(relic => !ReferenceEquals(relic, expectedRelic)),
+                null,
+                "shop_relic_purchase_committed_with_exact_relic_gold_and_entry_witness"),
+            new[] { new ActionEntityBinding("shop_offer", offerId) });
+
+    private static BridgeActionDraft PotionPurchaseAction(
+        string offerId,
+        string label,
+        MerchantRoom expectedMerchantRoom,
+        NMerchantRoom expectedRoom,
+        MerchantInventory expectedInventory,
+        MerchantPotionEntry expectedEntry,
+        NMerchantSlot expectedSlot,
+        PotionModel expectedPotion,
+        int expectedPrice) =>
+        new(
+            $"purchase_shop_potion:{offerId}",
+            "purchase_shop_potion",
+            "purchase",
+            label,
+            "MerchantPotionEntry.OnTryPurchaseWrapper+exact-potion-slot-gold-entry-witness",
+            () => StartPurchase(
+                expectedMerchantRoom,
+                expectedRoom,
+                expectedInventory,
+                expectedEntry,
+                expectedSlot,
+                expectedPrice,
+                () => ShopSurfaceFacts.ContainsPotionInstance(expectedInventory.Player, expectedPotion),
+                () => !ReferenceEquals(expectedEntry.Model, expectedPotion),
+                () => !ShopSurfaceFacts.ContainsPotionInstance(expectedInventory.Player, expectedPotion),
+                () => ShopSurfaceFacts.CanProcurePotion(expectedInventory.Player, expectedPotion),
+                "shop_potion_purchase_committed_with_exact_slot_gold_and_entry_witness"),
             new[] { new ActionEntityBinding("shop_offer", offerId) });
 
     private static BridgeActionStartResult StartPurchase(
@@ -371,15 +436,21 @@ internal sealed class ShopInventorySurfaceProvider : IBridgeSurfaceProvider
         MerchantInventory expectedInventory,
         MerchantEntry expectedEntry,
         NMerchantSlot expectedSlot,
-        Func<bool> productChanged,
-        Func<bool>? extraValidator)
+        int expectedPrice,
+        Func<bool> productAcquired,
+        Func<bool> entryAdvanced,
+        Func<bool> productAbsentBeforePurchase,
+        Func<bool>? extraValidator,
+        string completionEvidence)
     {
         if (!ShopSurfaceFacts.IsCurrentInventory(expectedMerchantRoom, expectedRoom, expectedInventory)
             || !ReferenceEquals(expectedSlot.Entry, expectedEntry)
             || !expectedEntry.IsStocked
             || !expectedEntry.EnoughGold
+            || expectedEntry.Cost != expectedPrice
             || !McpMod.IsNodeVisible(expectedSlot)
             || !expectedSlot.Hitbox.IsEnabled
+            || !productAbsentBeforePurchase()
             || extraValidator?.Invoke() == false)
         {
             return BridgeActionStartResult.Rejected(
@@ -387,12 +458,29 @@ internal sealed class ShopInventorySurfaceProvider : IBridgeSurfaceProvider
                 "The advertised shop offer is no longer current and purchasable.");
         }
 
-        TaskHelper.RunSafely(expectedEntry.OnTryPurchaseWrapper(expectedInventory));
+        int goldBeforePurchase = expectedInventory.Player.Gold;
+        Task<bool> purchaseTask;
+        try
+        {
+            purchaseTask = expectedEntry.OnTryPurchaseWrapper(expectedInventory);
+        }
+        catch (Exception)
+        {
+            return BridgeActionStartResult.Rejected(
+                "shop_purchase_start_failed",
+                "The exact merchant purchase command could not be started.");
+        }
+
         return BridgeActionStartResult.Started(
-            () => productChanged()
-                  || !ReferenceEquals(RunManager.Instance.DebugOnlyGetState()?.CurrentRoom, expectedMerchantRoom)
-                  || ActiveSurfaceResolver.IsVisibleActiveOverlay(NOverlayStack.Instance?.Peek()),
-            "shop_product_changed_child_surface_opened_or_room_left",
+            () => ShopPurchaseCompletionWitness.IsComplete(
+                purchaseTask.IsCompletedSuccessfully,
+                purchaseTask.IsCompletedSuccessfully && purchaseTask.Result,
+                goldBeforePurchase,
+                expectedInventory.Player.Gold,
+                expectedPrice,
+                productAcquired(),
+                entryAdvanced()),
+            completionEvidence,
             allowIntermediateStateChanges: true);
     }
 
@@ -418,9 +506,12 @@ internal sealed class ShopInventorySurfaceProvider : IBridgeSurfaceProvider
         TaskHelper.RunSafely(expectedEntry.OnTryPurchaseWrapper(expectedInventory));
         return BridgeActionStartResult.Started(
             () => expectedEntry.Used
-                  || ActiveSurfaceResolver.IsVisibleActiveOverlay(NOverlayStack.Instance?.Peek())
-                  || !ReferenceEquals(RunManager.Instance.DebugOnlyGetState()?.CurrentRoom, expectedMerchantRoom),
-            "shop_card_removal_selector_opened_completed_or_room_left",
+                  || (NOverlayStack.Instance?.Peek() is NDeckCardSelectScreen
+                      && ShopSurfaceFacts.IsCurrentMerchant(
+                          expectedMerchantRoom,
+                          expectedRoom,
+                          expectedInventory)),
+            "shop_card_removal_selector_opened_or_removal_completed",
             allowIntermediateStateChanges: true);
     }
 
@@ -633,6 +724,7 @@ internal static class ShopSurfaceFacts
         MerchantInventory inventory) =>
         IsCurrentMerchant(merchantRoom, room, inventory)
         && !ActiveSurfaceResolver.IsVisibleActiveOverlay(NOverlayStack.Instance?.Peek())
+        && ActiveScreenContext.Instance.IsCurrent(room)
         && NMapScreen.Instance?.IsOpen != true;
 
     public static bool IsCurrentMerchant(
@@ -648,8 +740,10 @@ internal static class ShopSurfaceFacts
         MerchantRoom merchantRoom,
         NMerchantRoom room,
         MerchantInventory inventory) =>
-        IsCurrentRoom(merchantRoom, room, inventory)
+        IsCurrentMerchant(merchantRoom, room, inventory)
+        && !ActiveSurfaceResolver.IsVisibleActiveOverlay(NOverlayStack.Instance?.Peek())
         && room.Inventory.IsOpen
+        && ActiveScreenContext.Instance.IsCurrent(room.Inventory)
         && McpMod.IsNodeVisible(room.Inventory);
 
     public static int OccupiedPotionSlots(Player player)
@@ -668,10 +762,38 @@ internal static class ShopSurfaceFacts
         && OccupiedPotionSlots(player) < player.PotionSlots.Count
         && Hook.ShouldProcurePotion(player.RunState, player.Creature.CombatState, potion, player);
 
+    public static bool ContainsPotionInstance(Player player, PotionModel expectedPotion)
+    {
+        for (int slot = 0; slot < player.PotionSlots.Count; slot++)
+        {
+            if (ReferenceEquals(player.GetPotionAtSlotIndex(slot), expectedPotion))
+                return true;
+        }
+        return false;
+    }
+
     public static string? BlockedReason(bool stocked, bool visible, bool affordable, bool canPurchase) =>
         !stocked ? "sold_out"
             : !visible ? "not_visible"
             : !affordable ? "insufficient_gold"
             : !canPurchase ? "ui_control_disabled"
             : null;
+}
+
+internal static class ShopPurchaseCompletionWitness
+{
+    public static bool IsComplete(
+        bool taskCompletedSuccessfully,
+        bool purchaseSucceeded,
+        int goldBeforePurchase,
+        int currentGold,
+        int expectedPrice,
+        bool productAcquired,
+        bool entryAdvanced) =>
+        taskCompletedSuccessfully
+        && purchaseSucceeded
+        && expectedPrice >= 0
+        && currentGold == goldBeforePurchase - expectedPrice
+        && productAcquired
+        && entryAdvanced;
 }

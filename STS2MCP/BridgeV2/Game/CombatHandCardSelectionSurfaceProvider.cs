@@ -24,7 +24,7 @@ internal sealed class CombatHandCardSelectionSurfaceProvider : IBridgeSurfacePro
 {
     private const string SurfaceKind = "combat_hand_card_selection";
     private const string ReflectionEvidence =
-        "sts2-v0.108.0:cached_reflection:NPlayerHand._prefs+_selectedCards";
+        "sts2-v0.109.0:cached_reflection:NPlayerHand._prefs+_selectedCards";
     private const BindingFlags Flags = BindingFlags.Instance | BindingFlags.NonPublic;
 
     private static readonly FieldInfo? PreferencesField =

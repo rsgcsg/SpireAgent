@@ -1,22 +1,23 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.18`
+Protocol preview: `2.0-preview.25`
 
 ## Build Compatibility
 
-This protocol describes the bounded v2 contract, not a permission to execute
-against every Steam build. The currently installed
-`v0.109.0|c12f634d|-840572606` has one exact action canary for
-`shop + deck_removal_selection` and one independent read-only inspection
-canary for `run_deck`. Preview.16 first captured that child without actions;
-preview.17 passed a bounded cancel lifecycle; preview.18 added the only
-post-state observer needed before destructive confirmation could be tested.
-One ordinary selection -> automatic preview -> confirmation lifecycle now has
-same-state run-deck evidence. This remains narrow exact-shape evidence, not a
-universal selector or build-wide v0.109 authority.
-`combat_piles`, every other inspection, every other surface, and all v1
-sidecar merging remain disabled for this candidate build. Historical `v0.108.0`
-evidence is not v0.109 authority.
+This protocol describes bounded v2 contracts, not permission to execute every
+contract against every Steam build. For exact identity
+`v0.109.0|c12f634d|-840572606`, capabilities separately advertise:
+
+- qualified actions: `deck_removal_selection`, `deck_upgrade_selection`,
+  `combat_turn`, `combat_hand_card_selection`, and ordinary single-player
+  `rest_site`;
+- action canaries: `event_card_acquisition`, `reward_claim`,
+  `card_reward_selection`, `map_navigation`, and `treasure_room`;
+- qualified read-only inspection: `run_deck`.
+
+Every unlisted Surface and Inspection remains disabled. Historical v0.108
+evidence does not grant current-build authority, and canary evidence does not
+silently become qualification.
 
 ## Endpoints
 
@@ -38,20 +39,21 @@ Every state response contains:
 - protocol, bridge, and exact game identity;
 - observation policy;
 - stable semantic `state_id` and monotonic process-session sequence;
+- explicit top-level `shared_state` (`null` when no single-player run exists);
 - readiness, typed semantic `context`, and surface kind;
 - typed surface data;
 - state-scoped opaque legal actions;
 - completeness sources and missing fields;
 - typed diagnostics and legacy compatibility warnings.
 
-Timestamps and logging fields do not change `state_id`. Semantic context,
-surface data, or the legal action set does.
+Timestamps and logging fields do not change `state_id`. Shared visible state,
+semantic context, surface data, or the legal action set does.
 
 `context.kind` is not a complete state discriminator. Clients must display and
 reason over at least:
 
 ```text
-context.kind + surface.kind + action authority
+shared_state + context.kind + surface.kind + action authority
 ```
 
 The context contains durable current-situation semantics. The surface contains
@@ -59,6 +61,14 @@ the currently blocking interaction protocol. Authority says whether actions
 were Bridge-advertised, locally reconstructed by a legacy client, or absent.
 Bridge wire actions always use `authority="game_ui"`; the higher-level client
 records the effective state authority separately.
+
+`shared_state` is a separate top-level read-only concern. Preview.25 serializes
+the active single-player run's act/floor/ascension, visible bosses/modifiers,
+and local player identity/HP/gold/relic/potion facts. It must not be copied into
+every Context, treated as an Inspection, or allowed to create actions. It is
+included in `state_id`; an active-run projection failure suppresses actions.
+Unknown hover-tip kinds fail closed instead of being silently omitted. Deck
+contents still require the fixed `run_deck` Inspection.
 
 Similar card grids do not imply a shared Surface. Selection limits, selected
 cards, preview controls, and opaque-card bindings may be shared structural
@@ -185,12 +195,18 @@ Current selection and reward completion evidence:
 | event dialogue advance | current revealed line advances or dialogue controls close |
 | card bundle preview/confirm/cancel | exact selected bundle enters preview, commits, or returns to choices |
 | map node choice | map closes or the exact current map coordinate reaches the selected node |
-| rest option | option disappears, Proceed enables, room leaves, or a verified child overlay opens |
+| rest Heal | exact source-calculated HP post-state and rest-option progression |
+| rest Smith | exact `deck_upgrade_selection` child opens; arbitrary overlays do not complete |
 | rest Proceed | map opens or the rest room leaves |
 | shop open/close | inventory `IsOpen` becomes true/false respectively |
 | typed shop purchase | exact product changes, its valid child overlay opens, or the merchant room exits |
 | shop card-removal launch | removal becomes used, the child selector opens, or the merchant room exits |
 | shop Proceed | map opens or the merchant room exits |
+| deck upgrade confirm | exact selected deck instance is upgraded and the selector closes |
+| event card acquisition select/deselect | exact selected membership changes, or final auto-commit closes the child, increases run-deck count by the committed selection count, and places every selected exact instance in the run deck |
+| treasure relic choose | exact relic ownership increases and the relic selection closes |
+| treasure skip | relic ownership is unchanged and the room advances |
+| treasure Proceed | treasure room leaves or the map opens |
 
 Shop uses two mutually exclusive action-owning Surfaces. `shop_inventory`
 contains separate card, relic, potion, and card-removal offer types; it never
@@ -201,14 +217,21 @@ Affordability is descriptive and is not action authority. Product fields and
 wire serializer when absent; stocked products must still expose their exact
 visible product semantics.
 
+Persistent gold and potion occupancy come from top-level `shared_state`, not
+the `shop` Context. Shop legality and execution still belong exclusively to the
+active shop Surface.
+
 If the state changes but the predicate does not pass, the command fails with an
 unknown outcome. Unknown outcomes are never auto-retried.
 
 For an asynchronous semantic commit, a Surface or panel closing is only an
 intermediate transition unless exact game source proves it is the terminal
 effect. Merchant removal therefore permits intermediate state IDs while its
-source-backed postcondition settles. This implementation hardening does not
-change the `2.0-preview.18` wire DTO or action IDs.
+source-backed postcondition settles. Preview.23 preserves opaque action identity
+while adding purpose-specific upgrade and treasure DTOs. Preview.24 changes
+state composition only; it grants no new executable Surface. Preview.25 adds a
+source-qualified event card-acquisition canary without generalizing other
+`NSimpleCardSelectScreen` purposes.
 
 Clients must verify that every command response repeats the submitted
 `request_id`, `expected_state_id`, and `action_id`. They must also enforce the
@@ -255,10 +278,10 @@ or inspection `stale_state` rejects the entire composite observation; clients
 must not mix facts from adjacent game states. A bounded client may retry that
 read as transient evidence, but never reuse an action from the rejected read.
 
-For the v0.109 candidate identity, capabilities instead advertise only the
-explicitly scoped `run_deck` `candidate_read_only_canary`; `combat_piles` is
-not advertised or accepted. Candidate inspection scope is independent of
-action scope and is never inferred from historical exact-build capabilities.
+For the current v0.109 identity, capabilities advertise only the explicitly
+scoped `run_deck` `qualified_read_only_scoped`; `combat_piles` is not advertised
+or accepted. Inspection scope is independent of action scope and is never
+inferred from historical capabilities.
 
 ## Error Codes
 

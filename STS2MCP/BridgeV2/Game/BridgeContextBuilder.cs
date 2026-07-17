@@ -79,29 +79,9 @@ internal static class BridgeContextBuilder
 
     public static ShopBridgeContext BuildShop(MerchantRoom room, BridgeEntityRegistry entities)
     {
-        MerchantInventory inventory = room.GetLocalInventory()
-            ?? throw new InvalidOperationException("Local merchant inventory is unavailable.");
-        Player player = inventory.Player
-            ?? throw new InvalidOperationException("Local merchant player is unavailable.");
-        var potions = new List<VisibleOwnedPotion>();
-        for (int slot = 0; slot < player.PotionSlots.Count; slot++)
-        {
-            PotionModel? potion = player.GetPotionAtSlotIndex(slot);
-            if (potion == null)
-                continue;
-            potions.Add(new VisibleOwnedPotion(
-                entities.GetId(potion, "potion"),
-                potion.Id.Entry,
-                McpMod.SafeGetText(() => potion.Title),
-                McpMod.SafeGetText(() => potion.DynamicDescription),
-                slot));
-        }
-
-        return new ShopBridgeContext(
-            "shop",
-            player.Gold,
-            player.PotionSlots.Count,
-            potions);
+        // Persistent player facts are owned by top-level shared_state. Shop
+        // context identifies only the semantic room; the Surface owns offers.
+        return new ShopBridgeContext("shop");
     }
 
     public static CombatBridgeContext BuildCombat(
@@ -222,12 +202,12 @@ internal static class BridgeContextBuilder
         return result;
     }
 
-    public static IReadOnlyList<VisibleCombatPotion> BuildPotions(
+    public static IReadOnlyList<VisibleCombatPotionState> BuildPotionStates(
         Player player,
         BridgeEntityRegistry entities,
         bool playPhase)
     {
-        var result = new List<VisibleCombatPotion>();
+        var result = new List<VisibleCombatPotionState>();
         for (int slot = 0; slot < player.PotionSlots.Count; slot++)
         {
             PotionModel? potion = player.GetPotionAtSlotIndex(slot);
@@ -240,12 +220,8 @@ internal static class BridgeContextBuilder
                           && !potion.Owner.Creature.IsDead
                           && potion.PassesCustomUsabilityCheck
                           && HasVisiblePotionTarget(potion, player);
-            result.Add(new VisibleCombatPotion(
+            result.Add(new VisibleCombatPotionState(
                 entities.GetId(potion, "potion"),
-                potion.Id.Entry,
-                McpMod.SafeGetText(() => potion.Title),
-                McpMod.SafeGetText(() => potion.DynamicDescription),
-                slot,
                 potion.TargetType.ToString(),
                 canUse,
                 automatic));
@@ -273,12 +249,6 @@ internal static class BridgeContextBuilder
         bool playPhase = combat.Phase == PlayerTurnPhase.Play
                          && CombatManager.Instance.IsPartOfPlayerTurn(player)
                          && !CombatManager.Instance.PlayerActionsDisabled;
-        VisibleRelic[] relics = player.Relics.Select(relic => new VisibleRelic(
-            entities.GetId(relic, "relic"),
-            relic.Id.Entry,
-            McpMod.SafeGetText(() => relic.Title),
-            McpMod.SafeGetText(() => relic.DynamicDescription),
-            relic.ShowCounter ? relic.DisplayAmount : null)).ToArray();
         VisibleOrb[] orbs = combat.OrbQueue?.Orbs.Select(orb => new VisibleOrb(
             entities.GetId(orb, "orb"),
             orb.Id.Entry,
@@ -289,22 +259,16 @@ internal static class BridgeContextBuilder
 
         return new VisibleCombatPlayer(
             entities.GetId(player.Creature, "player"),
-            McpMod.SafeGetText(() => player.Character.Title),
-            player.Creature.CurrentHp,
-            player.Creature.MaxHp,
             player.Creature.Block,
             combat.Energy,
             combat.MaxEnergy,
             player.Character.ShouldAlwaysShowStarCounter || combat.Stars > 0 ? combat.Stars : null,
-            player.Gold,
             combat.Hand.Cards.Select(card => BuildCard(card, entities.GetId(card, "card"), includeCombatLegality: true)).ToArray(),
             combat.DrawPile.Cards.Count,
             combat.DiscardPile.Cards.Count,
             combat.ExhaustPile.Cards.Count,
             BuildStatuses(player.Creature),
-            relics,
-            BuildPotions(player, entities, playPhase),
-            player.MaxPotionCount,
+            BuildPotionStates(player, entities, playPhase),
             orbs,
             combat.OrbQueue?.Capacity);
     }

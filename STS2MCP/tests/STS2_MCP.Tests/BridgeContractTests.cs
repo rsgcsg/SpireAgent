@@ -83,7 +83,8 @@ public sealed class BridgeContractTests
     {
         var options = new JsonSerializerOptions
         {
-            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
         };
         IBridgeSurface surface = new UnsupportedSurface("unsupported", "test", "not implemented");
         var envelope = new BridgeStateEnvelope(
@@ -92,6 +93,7 @@ public sealed class BridgeContractTests
             1,
             DateTimeOffset.UnixEpoch,
             "unsupported",
+            null,
             new UnknownBridgeContext("unknown", "test", "not implemented"),
             surface,
             new AuthorityHandoff("none_fail_closed", null, "test"),
@@ -119,6 +121,7 @@ public sealed class BridgeContractTests
         string json = JsonSerializer.Serialize(envelope, options);
 
         Assert.Equal(surface.Kind, envelope.SurfaceKind);
+        Assert.Contains("\"shared_state\":null", json);
         Assert.Contains("\"surface_kind\":\"unsupported\"", json);
         Assert.Contains("\"context\":{\"kind\":\"unknown\"", json);
         Assert.Contains("\"surface\":{\"kind\":\"unsupported\"", json);
@@ -424,10 +427,10 @@ public sealed class BridgeContractTests
             "player",
             true,
             new VisibleCombatPlayer(
-                "player-a", "Defect", 40, 75, 0, 2, 3, null, 50,
+                "player-a", 0, 2, 3, null,
                 Array.Empty<VisibleCard>(), 3, 6, 0,
-                Array.Empty<VisibleStatus>(), Array.Empty<VisibleRelic>(),
-                Array.Empty<VisibleCombatPotion>(), 3, Array.Empty<VisibleOrb>(), 3),
+                Array.Empty<VisibleStatus>(), Array.Empty<VisibleCombatPotionState>(),
+                Array.Empty<VisibleOrb>(), 3),
             Array.Empty<VisibleEnemy>());
         IBridgeSurface surface = new CombatPileCardSelectionSurface(
             "combat_pile_card_selection",
@@ -555,6 +558,39 @@ public sealed class BridgeContractTests
     }
 
     [Fact]
+    public void EventCardAcquisitionContractKeepsDestinationAndSelectedInstancesExplicit()
+    {
+        IBridgeSurface surface = new EventCardAcquisitionSurface(
+            "event_card_acquisition",
+            "screen-event-cards",
+            "Choose a Card",
+            "run_deck",
+            MinSelect: 1,
+            MaxSelect: 1,
+            SelectedCount: 0,
+            SelectedCardEntityIds: Array.Empty<string>(),
+            RequireManualConfirmation: false,
+            Cards: new[]
+            {
+                new VisibleCard(
+                    "event-card", "TWIN_STRIKE", "Twin Strike", "Attack", "1", null,
+                    "Deal damage twice.", "Common", false, false, null)
+            });
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+        };
+
+        string json = JsonSerializer.Serialize(surface, options);
+
+        Assert.Contains("\"kind\":\"event_card_acquisition\"", json);
+        Assert.Contains("\"destination\":\"run_deck\"", json);
+        Assert.Contains("\"require_manual_confirmation\":false", json);
+        Assert.Contains("\"entity_id\":\"event-card\"", json);
+        Assert.DoesNotContain("card_index", json, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void CardBundleContractPreservesAtomicPackageAndPreviewStage()
     {
         IBridgeSurface surface = new CardBundleSelectionSurface(
@@ -648,15 +684,7 @@ public sealed class BridgeContractTests
     [Fact]
     public void ShopContractSeparatesInventoryFromRoomControlsAndPurchaseKinds()
     {
-        IBridgeContext context = new ShopBridgeContext(
-            "shop",
-            Gold: 26,
-            MaxPotionSlots: 2,
-            Potions: new[]
-            {
-                new VisibleOwnedPotion("owned-potion-a", "POWER_POTION", "Power Potion", "Choose a Power.", 0),
-                new VisibleOwnedPotion("owned-potion-b", "ASHWATER", "Ashwater", "Gain Block.", 1)
-            });
+        IBridgeContext context = new ShopBridgeContext("shop");
         IBridgeSurface inventory = new ShopInventorySurface(
             "shop_inventory",
             "shop-screen",
@@ -698,12 +726,75 @@ public sealed class BridgeContractTests
         Assert.Contains("\"kind\":\"shop_inventory\"", inventoryJson);
         Assert.Contains("\"on_sale\":true", inventoryJson);
         Assert.Contains("\"blocked_reason\":\"insufficient_gold\"", inventoryJson);
-        Assert.Contains("\"max_potion_slots\":2", inventoryJson);
+        Assert.DoesNotContain("max_potion_slots", inventoryJson, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("can_proceed", inventoryJson, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("\"kind\":\"shop_room\"", roomJson);
         Assert.Contains("\"can_open_inventory\":true", roomJson);
         Assert.Contains("\"can_proceed\":true", roomJson);
         Assert.DoesNotContain("cards", roomJson, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void SharedRunHudIsTopLevelReadOnlyStateRatherThanContextOrSurfaceAuthority()
+    {
+        var shared = new SharedVisibleState(
+            "active_single_player_run",
+            new VisibleRunHud(
+                2,
+                "OVERGROWTH",
+                "The Overgrowth",
+                18,
+                5,
+                new[] { new VisibleBoss("TEST_SUBJECTS", "Test Subjects", 0) },
+                new[]
+                {
+                    new VisibleRunModifier(
+                        "LETHAL_ENEMIES",
+                        "Lethal Enemies",
+                        "Enemies are more dangerous.",
+                        Array.Empty<VisibleKeyword>())
+                }),
+            new VisiblePlayerHud(
+                "player-a",
+                "DEFECT",
+                "The Defect",
+                40,
+                75,
+                126,
+                new[]
+                {
+                    new VisibleRelic(
+                        "relic-a", "BAG_OF_MARBLES", "Bag of Marbles", "Apply Vulnerable.",
+                        null, Array.Empty<VisibleKeyword>())
+                },
+                new[]
+                {
+                    new VisibleOwnedPotion(
+                        "potion-a", "POWER_POTION", "Power Potion", "Choose a Power.", 0,
+                        Array.Empty<VisibleKeyword>())
+                },
+                3),
+            new SharedStateCompleteness(
+                "complete_for_strategy_relevant_persistent_single_player_hud",
+                new[] { "NTopBar" },
+                Array.Empty<string>()));
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+        };
+
+        string json = JsonSerializer.Serialize(new
+        {
+            shared_state = shared,
+            context = new ShopBridgeContext("shop"),
+            surface = new ShopRoomSurface("shop_room", "room-a", true, true)
+        }, options);
+
+        Assert.Contains("\"scope\":\"active_single_player_run\"", json);
+        Assert.Contains("\"bosses\"", json);
+        Assert.Contains("\"modifiers\"", json);
+        Assert.Contains("\"max_potion_slots\":3", json);
+        Assert.DoesNotContain("legal_actions", json, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -714,6 +805,66 @@ public sealed class BridgeContractTests
         Assert.Equal("insufficient_gold", ShopSurfaceFacts.BlockedReason(true, true, false, false));
         Assert.Equal("ui_control_disabled", ShopSurfaceFacts.BlockedReason(true, true, true, false));
         Assert.Null(ShopSurfaceFacts.BlockedReason(true, true, true, true));
+    }
+
+    [Fact]
+    public void ShopPurchaseCompletionRequiresAsyncSuccessAndEverySemanticWitness()
+    {
+        Assert.True(ShopPurchaseCompletionWitness.IsComplete(
+            taskCompletedSuccessfully: true,
+            purchaseSucceeded: true,
+            goldBeforePurchase: 150,
+            currentGold: 100,
+            expectedPrice: 50,
+            productAcquired: true,
+            entryAdvanced: true));
+
+        Assert.False(ShopPurchaseCompletionWitness.IsComplete(
+            taskCompletedSuccessfully: false,
+            purchaseSucceeded: false,
+            goldBeforePurchase: 150,
+            currentGold: 150,
+            expectedPrice: 50,
+            productAcquired: false,
+            entryAdvanced: false));
+        Assert.False(ShopPurchaseCompletionWitness.IsComplete(
+            taskCompletedSuccessfully: true,
+            purchaseSucceeded: true,
+            goldBeforePurchase: 150,
+            currentGold: 100,
+            expectedPrice: 50,
+            productAcquired: false,
+            entryAdvanced: true));
+        Assert.False(ShopPurchaseCompletionWitness.IsComplete(
+            taskCompletedSuccessfully: true,
+            purchaseSucceeded: true,
+            goldBeforePurchase: 150,
+            currentGold: 100,
+            expectedPrice: 50,
+            productAcquired: true,
+            entryAdvanced: false));
+        Assert.False(ShopPurchaseCompletionWitness.IsComplete(
+            taskCompletedSuccessfully: true,
+            purchaseSucceeded: true,
+            goldBeforePurchase: 150,
+            currentGold: 101,
+            expectedPrice: 50,
+            productAcquired: true,
+            entryAdvanced: true));
+    }
+
+    [Fact]
+    public void TreasureRelicIsNotPlayerVisibleBeforeCollectionOpens()
+    {
+        Assert.False(TreasureVisibilityFacts.CanReadSingleplayerRelic(
+            collectionOpen: false,
+            currentRelicCount: 1));
+        Assert.False(TreasureVisibilityFacts.CanReadSingleplayerRelic(
+            collectionOpen: true,
+            currentRelicCount: 0));
+        Assert.True(TreasureVisibilityFacts.CanReadSingleplayerRelic(
+            collectionOpen: true,
+            currentRelicCount: 1));
     }
 
     [Fact]

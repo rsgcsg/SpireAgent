@@ -10,20 +10,25 @@ state-bound protocol intended for the rebuilt `Re-SpireAgent` client.
 
 Bridge v2 is an incremental preview, not a replacement for all v1 surfaces.
 
-- Current exact game binding: Slay the Spire 2 `v0.108.0`.
-- Source `2.0-preview.14` includes typed diagnostics, centralized active-surface
-  ownership, fourteen bounded executable surfaces, and two fixed read-only
-  inspections: `run_deck` and `combat_piles`.
+- Current exact game binding: Slay the Spire 2
+  `v0.109.0|c12f634d|-840572606`.
+- Source `2.0-preview.25` keeps centralized active-surface ownership, typed
+  diagnostics, purpose-specific deck upgrade and event card acquisition,
+  staged treasure semantics, and a top-level read-only shared run/player HUD
+  contract.
+  Current-build capabilities distinguish scoped-qualified actions, action
+  canaries, and read-only Inspection instead of treating implementation as
+  permission.
 - All unimplemented or version-incompatible v2 surfaces fail closed with no
   legal actions.
-- v1 remains available for compatibility and has been made build-compatible
-  with `v0.108.0`; its index-based action contract is legacy.
-- Static build/protocol tests pass. Real `v0.108.0` Bridge plus Re-SpireAgent
-  smokes cover every current surface family for at least one bounded
-  interaction shape, including the normal merchant open/close/card-purchase/
-  Proceed lifecycle, persistent Glam run-deck reinspection, non-empty
-  draw/discard/exhaust evidence, and full-belt potion discard/claim. Unlisted
-  surfaces remain unsupported and draw order remains hidden.
+- v1 remains available only for explicit legacy-owned Surface fallback; its
+  index-based action contract is legacy. Bridge-owned states no longer use it
+  for shared run/player facts.
+- Current v0.109 organic evidence qualifies merchant removal, event/rest
+  upgrade, ordinary combat turn, combat hand selection, ordinary single-player
+  rest, and read-only run deck. Event card acquisition, reward, card reward,
+  map, and treasure remain action canaries. Unlisted surfaces are disabled and
+  draw order remains hidden.
 
 See [current status](docs/bridge-v2/CURRENT_STATUS.md), the
 [upstream/design audit](docs/bridge-v2/UPSTREAM_AUDIT.md), and the
@@ -86,7 +91,7 @@ dotnet test STS2_MCP.sln -p:STS2GameDir="$env:STS2_GAME_DIR"
 .\build.ps1 -GameDir "$env:STS2_GAME_DIR"
 ```
 
-The solution currently contains 41 pure contract/runtime/security tests covering stable
+The solution currently contains 55 pure contract/runtime/security tests covering stable
 state identity, entity identity, stale-state rejection, idempotent request IDs,
 completion observation, timeout-as-unknown, and JSON action shape.
 
@@ -188,14 +193,11 @@ sole executor; unsupported v2 surfaces remain on v1 during migration.
 Exact-build mismatch, context/surface mismatch, command-response identity
 mismatch, failed command, and timeout all fail closed.
 
-All fourteen current executable surfaces have bounded organic evidence for at
-least one observed family shape, including ancient dialogue, rest controls,
-generated cards, bundles, map navigation, and normal merchant controls.
-Qualification remains action/category-specific: shop relic, potion, and card
-removal actions do not inherit the card-purchase organic evidence. Planning
-code never reads arbitrary bridge JSON. Source `preview.14`
-also projects state-bound run-deck and combat-pile inspections into typed
-player facts without creating actions or entering the command ledger.
+Current permissions come only from exact-build capability lists. Planning code
+never reads arbitrary Bridge JSON. Source `preview.25` projects top-level
+shared run/player HUD facts and the scoped run-deck Inspection into typed player
+facts without creating actions or entering the command ledger. Historical
+v0.108 surfaces remain implementation history, not v0.109 authority.
 
 ## Security And Observation Scope
 

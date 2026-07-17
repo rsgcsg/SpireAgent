@@ -7,7 +7,7 @@ namespace STS2_MCP.BridgeV2.Protocol;
 
 public static class BridgeV2Contract
 {
-    public const string ProtocolVersion = "2.0-preview.23";
+    public const string ProtocolVersion = "2.0-preview.25";
     public const string ObservationPolicyId = "player_visible_ui_v1";
 }
 
@@ -69,6 +69,14 @@ public sealed record InspectionContractCapability(
     IReadOnlyList<string> OrderingSemantics,
     IReadOnlyList<string> ImplementedKinds);
 
+public sealed record SharedStateContractCapability(
+    string Status,
+    string Scope,
+    bool CreatesActionAuthority,
+    bool IncludedInStateIdentity,
+    IReadOnlyList<string> IncludedFacts,
+    IReadOnlyList<string> ExcludedFacts);
+
 public sealed record BridgeDiagnostic(
     string Code,
     string Severity,
@@ -85,6 +93,7 @@ public sealed record BridgeCapabilitiesResponse(
     BridgeServerIdentity Bridge,
     GameBuildIdentity Game,
     ObservationPolicyInfo ObservationPolicy,
+    SharedStateContractCapability SharedState,
     IReadOnlyList<SurfaceCapability> Surfaces,
     CommandContractCapability Commands,
     InspectionContractCapability Inspections,
@@ -221,25 +230,25 @@ public sealed record VisibleEnemy(
     IReadOnlyList<VisibleIntent> Intents);
 
 public sealed record VisibleCombatPlayer(
-    string EntityId,
-    string? Character,
-    decimal Hp,
-    decimal MaxHp,
+    string PlayerEntityId,
     decimal Block,
     int Energy,
     int MaxEnergy,
     int? Stars,
-    int Gold,
     IReadOnlyList<VisibleCard> Hand,
     int DrawPileCount,
     int DiscardPileCount,
     int ExhaustPileCount,
     IReadOnlyList<VisibleStatus> Statuses,
-    IReadOnlyList<VisibleRelic> Relics,
-    IReadOnlyList<VisibleCombatPotion> Potions,
-    int MaxPotionSlots,
+    IReadOnlyList<VisibleCombatPotionState> PotionStates,
     IReadOnlyList<VisibleOrb> Orbs,
     int? OrbSlots);
+
+public sealed record VisibleCombatPotionState(
+    string EntityId,
+    string TargetType,
+    bool CanUse,
+    bool Automatic);
 
 public sealed record VisibleCombatPotion(
     string EntityId,
@@ -256,11 +265,58 @@ public sealed record VisibleRelic(
     string DefinitionId,
     string? Name,
     string? Description,
-    decimal? Counter);
+    decimal? Counter,
+    IReadOnlyList<VisibleKeyword> Keywords);
 
 public sealed record VisibleKeyword(
     string Name,
     string? Description);
+
+public sealed record VisibleBoss(
+    string DefinitionId,
+    string? Name,
+    int Order);
+
+public sealed record VisibleRunModifier(
+    string DefinitionId,
+    string? Name,
+    string? Description,
+    IReadOnlyList<VisibleKeyword> Keywords);
+
+public sealed record VisibleRunHud(
+    int Act,
+    string ActDefinitionId,
+    string? ActName,
+    int Floor,
+    int Ascension,
+    IReadOnlyList<VisibleBoss> Bosses,
+    IReadOnlyList<VisibleRunModifier> Modifiers);
+
+public sealed record VisiblePlayerHud(
+    string EntityId,
+    string CharacterDefinitionId,
+    string? CharacterName,
+    decimal Hp,
+    decimal MaxHp,
+    int Gold,
+    IReadOnlyList<VisibleRelic> Relics,
+    IReadOnlyList<VisibleOwnedPotion> Potions,
+    int MaxPotionSlots);
+
+public sealed record SharedStateCompleteness(
+    string PlayerVisibleSemantics,
+    IReadOnlyList<string> Sources,
+    IReadOnlyList<string> Missing);
+
+/// <summary>
+/// Persistent facts rendered by the normal single-player run HUD. This is
+/// read-only state, not a Surface, Inspection, or source of action authority.
+/// </summary>
+public sealed record SharedVisibleState(
+    string Scope,
+    VisibleRunHud Run,
+    VisiblePlayerHud Player,
+    SharedStateCompleteness Completeness);
 
 /// <summary>
 /// A relic currently rendered by the treasure-room holder. Rarity and keyword
@@ -346,13 +402,11 @@ public sealed record VisibleOwnedPotion(
     string DefinitionId,
     string? Name,
     string? Description,
-    int Slot);
+    int Slot,
+    IReadOnlyList<VisibleKeyword> Keywords);
 
 public sealed record ShopBridgeContext(
-    string Kind,
-    int Gold,
-    int MaxPotionSlots,
-    IReadOnlyList<VisibleOwnedPotion> Potions) : IBridgeContext;
+    string Kind) : IBridgeContext;
 
 public sealed record VisibleMapCoordinate(
     int Col,
@@ -590,6 +644,23 @@ public sealed record CombatHandCardSelectionSurface(
     bool IsPeeking,
     IReadOnlyList<VisibleCard> Cards) : IBridgeSurface;
 
+/// <summary>
+/// Audited event choice whose visible temporary cards are committed as exact
+/// instances to the persistent run deck. This is not a universal simple-grid
+/// selector; source qualification belongs to the provider.
+/// </summary>
+public sealed record EventCardAcquisitionSurface(
+    string Kind,
+    string ScreenEntityId,
+    string Prompt,
+    string Destination,
+    int MinSelect,
+    int MaxSelect,
+    int SelectedCount,
+    IReadOnlyList<string> SelectedCardEntityIds,
+    bool RequireManualConfirmation,
+    IReadOnlyList<VisibleCard> Cards) : IBridgeSurface;
+
 public sealed record VisibleCardRewardAlternative(
     string EntityId,
     int Index,
@@ -667,6 +738,7 @@ public sealed record BridgeStateEnvelope(
     long StateSequence,
     DateTimeOffset ObservedAt,
     string Readiness,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.Never)] SharedVisibleState? SharedState,
     IBridgeContext Context,
     IBridgeSurface Surface,
     AuthorityHandoff AuthorityHandoff,

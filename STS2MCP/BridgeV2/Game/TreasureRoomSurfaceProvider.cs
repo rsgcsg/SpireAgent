@@ -5,7 +5,6 @@ using System.Reflection;
 using Godot;
 using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
@@ -79,9 +78,11 @@ internal sealed class TreasureRoomSurfaceProvider : IBridgeSurfaceProvider
             RunManager.Instance.TreasureRoomRelicSynchronizer.CurrentRelics?.ToArray()
             ?? Array.Empty<RelicModel>();
         NTreasureRoomRelicHolder? holder = collection.SingleplayerRelicHolder;
-        bool holderMatches = currentRelics.Length == 1
+        bool holderMatches = TreasureVisibilityFacts.CanReadSingleplayerRelic(
+                                 collectionOpen,
+                                 currentRelics.Length)
                              && holder != null
-                             && holder.Relic?.Model is { } holderRelic
+                             && TryReadHolderRelic(holder, out RelicModel? holderRelic)
                              && ReferenceEquals(holderRelic, currentRelics[0]);
         bool holderVisible = holderMatches
                              && McpMod.IsLiveNode(holder!)
@@ -219,34 +220,7 @@ internal sealed class TreasureRoomSurfaceProvider : IBridgeSurfaceProvider
             McpMod.SafeGetText(() => relic.Title),
             McpMod.SafeGetText(() => relic.DynamicDescription),
             relic.Rarity.ToString(),
-            BuildKeywords(relic));
-
-    private static IReadOnlyList<VisibleKeyword> BuildKeywords(RelicModel relic)
-    {
-        var result = new List<VisibleKeyword>();
-        var seen = new HashSet<string>(StringComparer.Ordinal);
-        try
-        {
-            foreach (IHoverTip tip in IHoverTip.RemoveDupes(relic.HoverTipsExcludingRelic))
-            {
-                string? name = null;
-                string? description = null;
-                if (tip is HoverTip hover)
-                {
-                    name = hover.Title == null ? null : McpMod.StripRichTextTags(hover.Title);
-                    description = McpMod.StripRichTextTags(hover.Description);
-                }
-                if (name is not null && seen.Add(name))
-                    result.Add(new VisibleKeyword(name, description));
-            }
-        }
-        catch
-        {
-            // Main relic semantics remain available; incomplete hover-tip
-            // semantics are surfaced by the empty keyword list, never guessed.
-        }
-        return result;
-    }
+            BridgeVisibleEntityFacts.BuildKeywords(relic.HoverTipsExcludingRelic));
 
     private static BridgeActionStartResult StartOpen(
         TreasureRoom expectedRoom,
@@ -295,7 +269,8 @@ internal sealed class TreasureRoomSurfaceProvider : IBridgeSurfaceProvider
             || !ReferenceEquals(expectedCollection.SingleplayerRelicHolder, expectedHolder)
             || current.Length != 1
             || !ReferenceEquals(current[0], expectedRelic)
-            || !ReferenceEquals(expectedHolder.Relic?.Model, expectedRelic)
+            || !TryReadHolderRelic(expectedHolder, out RelicModel? holderRelic)
+            || !ReferenceEquals(holderRelic, expectedRelic)
             || !expectedHolder.IsEnabled
             || !McpMod.IsNodeVisible(expectedHolder)
             || expectedHolder.MouseFilter == Control.MouseFilterEnum.Ignore
@@ -387,6 +362,25 @@ internal sealed class TreasureRoomSurfaceProvider : IBridgeSurfaceProvider
         return true;
     }
 
+    private static bool TryReadHolderRelic(
+        NTreasureRoomRelicHolder holder,
+        out RelicModel? relic)
+    {
+        relic = null;
+        try
+        {
+            relic = holder.Relic?.Model;
+            return relic != null;
+        }
+        catch (InvalidOperationException)
+        {
+            // The synchronizer generates relics when the room is entered, but
+            // the player-visible holder is not initialized until the chest is
+            // opened. Treat that interval as non-visible, never as evidence.
+            return false;
+        }
+    }
+
     private static BridgeObservationDraft BindingUnavailable(GameBuildIdentity game, string reason)
     {
         var context = new TreasureBridgeContext("treasure");
@@ -419,4 +413,10 @@ internal sealed class TreasureRoomSurfaceProvider : IBridgeSurfaceProvider
             }
         };
     }
+}
+
+internal static class TreasureVisibilityFacts
+{
+    public static bool CanReadSingleplayerRelic(bool collectionOpen, int currentRelicCount) =>
+        collectionOpen && currentRelicCount == 1;
 }
