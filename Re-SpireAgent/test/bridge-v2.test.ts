@@ -10,7 +10,7 @@ import type { JsonObject } from "../src/shared/json.js";
 import { fixture } from "./helpers.js";
 
 const CAPABILITIES = {
-  protocol_version: "2.0-preview.13",
+  protocol_version: "2.0-preview.14",
   bridge: { id: "sts2_mcp_bridge_v2", name: "STS2 Agent Bridge", version: "0.5.0-dev", upstream_commit: "upstream" },
   game: {
     version: "v0.108.0",
@@ -32,7 +32,9 @@ const CAPABILITIES = {
     { kind: "card_bundle_selection", support: "implemented_exact_game_version", operations: ["preview_card_bundle", "confirm_card_bundle", "cancel_card_bundle_preview"], evidence: "test-contract" },
     { kind: "card_reward_selection", support: "implemented_exact_game_version", operations: ["select_card_reward", "choose_card_reward_alternative"], evidence: "test-contract" },
     { kind: "reward_claim", support: "implemented_exact_game_version", operations: ["claim_reward", "discard_potion_for_reward", "proceed_rewards"], evidence: "test-contract" },
-    { kind: "map_navigation", support: "implemented_exact_game_version", operations: ["choose_map_node"], evidence: "test-contract" }
+    { kind: "map_navigation", support: "implemented_exact_game_version", operations: ["choose_map_node"], evidence: "test-contract" },
+    { kind: "shop_inventory", support: "implemented_exact_game_version", operations: ["purchase_shop_card", "purchase_shop_relic", "purchase_shop_potion", "open_shop_card_removal", "close_shop_inventory"], evidence: "test-contract" },
+    { kind: "shop_room", support: "implemented_exact_game_version", operations: ["open_shop_inventory", "proceed_shop"], evidence: "test-contract" }
   ],
   commands: { opaque_actions_only: true, state_bound: true, idempotent_request_ids: true, lifecycle_states: ["started", "completed"], outcome_timeout_ms: 10000 },
   inspections: {
@@ -56,7 +58,7 @@ const CAPABILITIES = {
 };
 
 const DECK_ENCHANT_STATE = {
-  protocol_version: "2.0-preview.13",
+  protocol_version: "2.0-preview.14",
   state_id: "state-test-1",
   state_sequence: 1,
   observed_at: "2026-07-16T00:00:00Z",
@@ -262,6 +264,193 @@ const REST_SITE_STATE = {
       entity_bindings: [{ role: "rest_option", entity_id: "rest-option-smith" }]
     }
   ]
+};
+
+const SHOP_INVENTORY_STATE = {
+  ...DECK_ENCHANT_STATE,
+  state_id: "state-shop-inventory-1",
+  state_sequence: 4,
+  context: {
+    kind: "shop",
+    gold: 26,
+    max_potion_slots: 2,
+    potions: [
+      {
+        entity_id: "owned-potion-power",
+        definition_id: "POWER_POTION",
+        name: "Power Potion",
+        description: "Choose 1 of 3 random Powers to add to your hand. It costs 0 this turn.",
+        slot: 0
+      },
+      {
+        entity_id: "owned-potion-ashwater",
+        definition_id: "ASHWATER",
+        name: "Ashwater",
+        description: "Gain a temporary combat benefit.",
+        slot: 1
+      }
+    ]
+  },
+  surface_kind: "shop_inventory",
+  surface: {
+    kind: "shop_inventory",
+    screen_entity_id: "shop-inventory-screen-1",
+    cards: [
+      {
+        entity_id: "shop-offer-card-armaments",
+        slot_entity_id: "shop-slot-card-2",
+        inventory_index: 2,
+        price: 26,
+        stocked: true,
+        visible: true,
+        affordable: true,
+        can_purchase: true,
+        blocked_reason: null,
+        on_sale: true,
+        card: {
+          entity_id: "shop-card-armaments",
+          definition_id: "ARMAMENTS",
+          name: "Armaments",
+          type: "Skill",
+          cost: "1",
+          star_cost: null,
+          description: "Gain Block. Upgrade a card in your hand for the rest of combat.",
+          rarity: "Common",
+          is_upgraded: false,
+          is_selected: false,
+          existing_enchantment: null
+        }
+      },
+      {
+        entity_id: "shop-offer-card-sold",
+        slot_entity_id: "shop-slot-card-0",
+        inventory_index: 0,
+        price: 50,
+        stocked: false,
+        visible: true,
+        affordable: false,
+        can_purchase: false,
+        blocked_reason: "sold_out",
+        on_sale: false,
+        card: null
+      }
+    ],
+    relics: [{
+      entity_id: "shop-offer-relic-1",
+      slot_entity_id: "shop-slot-relic-7",
+      inventory_index: 7,
+      price: 150,
+      stocked: true,
+      visible: true,
+      affordable: false,
+      can_purchase: false,
+      blocked_reason: "insufficient_gold",
+      relic: {
+        entity_id: "shop-relic-anchor",
+        definition_id: "ANCHOR",
+        name: "Anchor",
+        description: "Start each combat with Block.",
+        counter: null
+      }
+    }],
+    potions: [{
+      entity_id: "shop-offer-potion-1",
+      slot_entity_id: "shop-slot-potion-10",
+      inventory_index: 10,
+      price: 20,
+      stocked: true,
+      visible: true,
+      affordable: true,
+      can_purchase: false,
+      blocked_reason: "potion_slots_full" as string | null,
+      definition_id: "BLOCK_POTION",
+      name: "Block Potion",
+      description: "Gain Block.",
+      rarity: "Common"
+    }],
+    card_removal: {
+      entity_id: "shop-card-removal-1",
+      slot_entity_id: "shop-slot-removal-13",
+      inventory_index: 13,
+      price: 100,
+      next_price_increase: 25,
+      stocked: true,
+      visible: true,
+      affordable: false,
+      can_purchase: false,
+      blocked_reason: "insufficient_gold"
+    },
+    can_close: true
+  },
+  legal_actions: [
+    {
+      action_id: "action-shop-buy-armaments",
+      state_id: "state-shop-inventory-1",
+      kind: "purchase_shop_card",
+      category: "purchase",
+      label: "Buy Armaments for 26 gold",
+      authority: "game_ui",
+      evidence_code: "MerchantCardEntry.OnTryPurchaseWrapper",
+      entity_bindings: [{ role: "shop_offer", entity_id: "shop-offer-card-armaments" }]
+    },
+    {
+      action_id: "action-shop-close",
+      state_id: "state-shop-inventory-1",
+      kind: "close_shop_inventory",
+      category: "navigation",
+      label: "Close shop inventory",
+      authority: "game_ui",
+      evidence_code: "NMerchantInventory.BackButton",
+      entity_bindings: [{ role: "screen", entity_id: "shop-inventory-screen-1" }]
+    }
+  ],
+  completeness: {
+    player_visible_semantics: "contract_complete_for_visible_shop_inventory",
+    legal_actions: "derived_from_same_validator_as_execution",
+    sources: ["MerchantRoom.GetLocalInventory", "NMerchantInventory"],
+    missing: []
+  }
+};
+
+const SHOP_ROOM_STATE = {
+  ...SHOP_INVENTORY_STATE,
+  state_id: "state-shop-room-1",
+  state_sequence: 5,
+  surface_kind: "shop_room",
+  surface: {
+    kind: "shop_room",
+    room_entity_id: "shop-room-1",
+    can_open_inventory: true,
+    can_proceed: true
+  },
+  legal_actions: [
+    {
+      action_id: "action-shop-open",
+      state_id: "state-shop-room-1",
+      kind: "open_shop_inventory",
+      category: "navigation",
+      label: "Open shop inventory",
+      authority: "game_ui",
+      evidence_code: "NMerchantRoom.MerchantButton",
+      entity_bindings: [{ role: "room", entity_id: "shop-room-1" }]
+    },
+    {
+      action_id: "action-shop-proceed",
+      state_id: "state-shop-room-1",
+      kind: "proceed_shop",
+      category: "navigation",
+      label: "Proceed to map",
+      authority: "game_ui",
+      evidence_code: "NMerchantRoom.ProceedButton+NMapScreen.Open",
+      entity_bindings: [{ role: "room", entity_id: "shop-room-1" }]
+    }
+  ],
+  completeness: {
+    player_visible_semantics: "contract_complete_for_visible_shop_room_controls",
+    legal_actions: "derived_from_same_validator_as_execution",
+    sources: ["NMerchantRoom"],
+    missing: []
+  }
 };
 
 const COMBAT_TURN_STATE = {
@@ -933,7 +1122,7 @@ function visibleInspectionCard(overrides: Record<string, unknown> = {}) {
 
 function runDeckInspection(stateId: string, cards = [visibleInspectionCard()]) {
   return {
-    protocol_version: "2.0-preview.13",
+    protocol_version: "2.0-preview.14",
     inspection_id: `inspection-run-deck-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -956,7 +1145,7 @@ function runDeckInspection(stateId: string, cards = [visibleInspectionCard()]) {
 
 function combatPilesInspection(stateId: string) {
   return {
-    protocol_version: "2.0-preview.13",
+    protocol_version: "2.0-preview.14",
     inspection_id: `inspection-combat-piles-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -1028,7 +1217,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 13,
+      normalizedSchemaVersion: 14,
       actionAuthority: "bridge_advertised",
       context: { kind: "event", ancient: true, inDialogue: true },
       surface: {
@@ -1076,7 +1265,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 13,
+      normalizedSchemaVersion: 14,
       actionAuthority: "bridge_advertised",
       context: { kind: "rest" },
       surface: {
@@ -1145,6 +1334,163 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     expect(invalidEnvelope.currentState.actionAuthority).toBe("none");
   });
 
+  it("projects exact shop inventory semantics without conflating affordability and action authority", () => {
+    expect(decodeBridgeV2State(SHOP_INVENTORY_STATE).data.context.kind).toBe("shop");
+    expect(decodeBridgeV2State(SHOP_INVENTORY_STATE).data.surface.kind).toBe("shop_inventory");
+    const envelope = normalizeCurrentState(
+      wrapBridgeV2State({ state: structuredClone(SHOP_INVENTORY_STATE), capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    );
+
+    expect(envelope.currentState).toMatchObject({
+      normalizedSchemaVersion: 14,
+      stability: "actionable",
+      actionAuthority: "bridge_advertised",
+      context: {
+        kind: "shop",
+        gold: 26,
+        maxPotionSlots: 2,
+        potions: [{ slot: 0 }, { slot: 1 }]
+      },
+      surface: {
+        kind: "shop_inventory",
+        cards: [
+          { entityId: "shop-offer-card-armaments", onSale: true, affordable: true, canPurchase: true },
+          { entityId: "shop-offer-card-sold", stocked: false, canPurchase: false, blockedReason: "sold_out" }
+        ],
+        potions: [{ affordable: true, canPurchase: false, blockedReason: "potion_slots_full" }],
+        cardRemoval: { affordable: false, canPurchase: false, blockedReason: "insufficient_gold" },
+        canClose: true
+      }
+    });
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toEqual([
+      expect.objectContaining({
+        id: "action-shop-buy-armaments",
+        entityBindings: [{ role: "shop_offer", entityId: "shop-offer-card-armaments" }],
+        action: expect.objectContaining({ kind: "bridge_v2_action", bridgeActionKind: "purchase_shop_card" })
+      }),
+      expect.objectContaining({
+        id: "action-shop-close",
+        entityBindings: [{ role: "screen", entityId: "shop-inventory-screen-1" }],
+        action: expect.objectContaining({ kind: "bridge_v2_action", bridgeActionKind: "close_shop_inventory" })
+      })
+    ]);
+  });
+
+  it("accepts omitted nullable shop product fields from the Bridge wire format", () => {
+    const state = structuredClone(SHOP_INVENTORY_STATE);
+    Reflect.deleteProperty(state.surface.cards[1]!, "card");
+    expect(normalizeCurrentState(
+      wrapBridgeV2State({ state, capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    ).currentState).toMatchObject({
+      stability: "actionable",
+      surface: {
+        kind: "shop_inventory",
+        cards: [
+          expect.objectContaining({ entityId: "shop-offer-card-armaments", canPurchase: true }),
+          expect.objectContaining({ entityId: "shop-offer-card-sold", stocked: false, blockedReason: "sold_out" })
+        ]
+      }
+    });
+  });
+
+  it("keeps closed shop room controls separate from inventory offers", () => {
+    expect(decodeBridgeV2State(SHOP_ROOM_STATE).data.surface.kind).toBe("shop_room");
+    const envelope = normalizeCurrentState(
+      wrapBridgeV2State({ state: structuredClone(SHOP_ROOM_STATE), capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    );
+    expect(envelope.currentState).toMatchObject({
+      stability: "actionable",
+      actionAuthority: "bridge_advertised",
+      context: { kind: "shop", gold: 26 },
+      surface: { kind: "shop_room", canOpenInventory: true, canProceed: true }
+    });
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash).map((action) => action.action)).toEqual([
+      expect.objectContaining({ kind: "bridge_v2_action", bridgeActionKind: "open_shop_inventory" }),
+      expect.objectContaining({ kind: "bridge_v2_action", bridgeActionKind: "proceed_shop" })
+    ]);
+  });
+
+  it("fails closed for impossible shop capacity, blocked-offer actions, and universal purchase kinds", () => {
+    const fullBeltPurchase = structuredClone(SHOP_INVENTORY_STATE);
+    fullBeltPurchase.surface.potions[0]!.can_purchase = true;
+    fullBeltPurchase.surface.potions[0]!.blocked_reason = null;
+    fullBeltPurchase.legal_actions.push({
+      action_id: "action-shop-buy-potion",
+      state_id: "state-shop-inventory-1",
+      kind: "purchase_shop_potion",
+      category: "purchase",
+      label: "Buy Block Potion",
+      authority: "game_ui",
+      evidence_code: "MerchantPotionEntry.OnTryPurchaseWrapper",
+      entity_bindings: [{ role: "shop_offer", entity_id: "shop-offer-potion-1" }]
+    });
+    expect(normalizeCurrentState(
+      wrapBridgeV2State({ state: fullBeltPurchase, capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    ).currentState).toMatchObject({ stability: "invalid", actionAuthority: "none" });
+
+    const blockedRemovalAction = structuredClone(SHOP_INVENTORY_STATE);
+    blockedRemovalAction.legal_actions.push({
+      action_id: "action-shop-remove-card",
+      state_id: "state-shop-inventory-1",
+      kind: "open_shop_card_removal",
+      category: "purchase",
+      label: "Remove a card",
+      authority: "game_ui",
+      evidence_code: "MerchantCardRemovalEntry.OnTryPurchaseWrapper",
+      entity_bindings: [{ role: "shop_card_removal", entity_id: "shop-card-removal-1" }]
+    });
+    expect(normalizeCurrentState(
+      wrapBridgeV2State({ state: blockedRemovalAction, capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    ).currentState).toMatchObject({ stability: "invalid", actionAuthority: "none" });
+
+    const universalPurchase = structuredClone(SHOP_INVENTORY_STATE);
+    universalPurchase.legal_actions[0]!.kind = "purchase_shop_item";
+    expect(normalizeCurrentState(
+      wrapBridgeV2State({ state: universalPurchase, capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    ).currentState).toMatchObject({ stability: "invalid", actionAuthority: "none" });
+
+    const falseAffordability = structuredClone(SHOP_INVENTORY_STATE);
+    falseAffordability.surface.relics[0]!.affordable = true;
+    expect(normalizeCurrentState(
+      wrapBridgeV2State({ state: falseAffordability, capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    ).currentState).toMatchObject({ stability: "invalid", actionAuthority: "none" });
+
+    const missingBlockedReason = structuredClone(SHOP_INVENTORY_STATE);
+    Reflect.deleteProperty(missingBlockedReason.surface.card_removal, "blocked_reason");
+    expect(normalizeCurrentState(
+      wrapBridgeV2State({ state: missingBlockedReason, capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    ).currentState).toMatchObject({ stability: "invalid", actionAuthority: "none" });
+  });
+
+  it("rejects shop surfaces with the wrong context or purchase authority in the closed room", () => {
+    expect(() => decodeBridgeV2State({ ...SHOP_INVENTORY_STATE, context: { kind: "rest" } })).toThrow(
+      "shop_inventory surface requires shop context"
+    );
+    const roomWithPurchase = structuredClone(SHOP_ROOM_STATE);
+    roomWithPurchase.legal_actions.push({
+      action_id: "action-shop-room-buy",
+      state_id: "state-shop-room-1",
+      kind: "purchase_shop_card",
+      category: "purchase",
+      label: "Buy hidden card",
+      authority: "game_ui",
+      evidence_code: "invalid-test",
+      entity_bindings: [{ role: "room", entity_id: "shop-room-1" }]
+    });
+    expect(normalizeCurrentState(
+      wrapBridgeV2State({ state: roomWithPurchase, capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    ).currentState).toMatchObject({ stability: "invalid", actionAuthority: "none" });
+  });
+
   it("projects exact map topology separately from current opaque route choices", () => {
     const envelope = normalizeCurrentState(
       wrapBridgeV2State({ state: structuredClone(MAP_NAVIGATION_STATE), capabilities: structuredClone(CAPABILITIES) }),
@@ -1152,7 +1498,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 13,
+      normalizedSchemaVersion: 14,
       actionAuthority: "bridge_advertised",
       context: {
         kind: "map",
@@ -1548,7 +1894,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 13,
+      normalizedSchemaVersion: 14,
       actionAuthority: "bridge_advertised",
       context: { kind: "combat", encounterType: "elite" },
       surface: {
@@ -1602,7 +1948,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 13,
+      normalizedSchemaVersion: 14,
       actionAuthority: "bridge_advertised",
       context: { kind: "combat" },
       surface: {
@@ -1660,7 +2006,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 13,
+      normalizedSchemaVersion: 14,
       actionAuthority: "bridge_advertised",
       context: { kind: "combat" },
       surface: {
@@ -1697,7 +2043,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 13,
+      normalizedSchemaVersion: 14,
       actionAuthority: "bridge_advertised",
       context: { kind: "event", eventId: "NEOW" },
       surface: {

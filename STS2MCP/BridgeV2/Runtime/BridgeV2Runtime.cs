@@ -26,7 +26,7 @@ internal static class BridgeV2Runtime
         var warnings = new List<string>
         {
             "Bridge v2 is an incremental preview. Unlisted surfaces fail closed with no legal actions.",
-            "Singleplayer deck enchant, combat-pile, combat-hand, generated-card, and card-bundle selection, ancient event dialogue, ordinary event option, rest site, player-phase combat turn, card reward selection, room reward claim, and map navigation are the only game-bound v2 action slices in this revision.",
+            "Singleplayer deck enchant, combat-pile, combat-hand, generated-card, and card-bundle selection, ancient event dialogue, ordinary event option, rest site, player-phase combat turn, card reward selection, room reward claim, map navigation, and normal merchant shop controls are the only game-bound v2 action slices in this revision.",
             "Run-deck and combat-pile inspections are read-only evidence. They do not grant action authority or enter the command ledger."
         };
 
@@ -99,7 +99,21 @@ internal static class BridgeV2Runtime
                     "map_navigation",
                     "implemented_exact_game_version",
                     new[] { "choose_map_node" },
-                    "sts2-v0.108.0:NMapScreen+NMapPoint+RunState.Map+OnMapPointSelectedLocally")
+                    "sts2-v0.108.0:NMapScreen+NMapPoint+RunState.Map+OnMapPointSelectedLocally"),
+                new SurfaceCapability(
+                    "shop_inventory",
+                    "implemented_exact_game_version",
+                    new[]
+                    {
+                        "purchase_shop_card", "purchase_shop_relic", "purchase_shop_potion",
+                        "open_shop_card_removal", "close_shop_inventory"
+                    },
+                    "sts2-v0.108.0:MerchantInventory+typed MerchantEntry+NMerchantSlot+NMerchantInventory"),
+                new SurfaceCapability(
+                    "shop_room",
+                    "implemented_exact_game_version",
+                    new[] { "open_shop_inventory", "proceed_shop" },
+                    "sts2-v0.108.0:NMerchantRoom+NMerchantButton+NProceedButton")
             },
             new CommandContractCapability(
                 OpaqueActionsOnly: true,

@@ -535,6 +535,77 @@ public sealed class BridgeContractTests
     }
 
     [Fact]
+    public void ShopContractSeparatesInventoryFromRoomControlsAndPurchaseKinds()
+    {
+        IBridgeContext context = new ShopBridgeContext(
+            "shop",
+            Gold: 26,
+            MaxPotionSlots: 2,
+            Potions: new[]
+            {
+                new VisibleOwnedPotion("owned-potion-a", "POWER_POTION", "Power Potion", "Choose a Power.", 0),
+                new VisibleOwnedPotion("owned-potion-b", "ASHWATER", "Ashwater", "Gain Block.", 1)
+            });
+        IBridgeSurface inventory = new ShopInventorySurface(
+            "shop_inventory",
+            "shop-screen",
+            Cards: new[]
+            {
+                new VisibleShopCardOffer(
+                    "offer-card", "slot-card", 2, 26, Stocked: true, Visible: true,
+                    Affordable: true, CanPurchase: true, BlockedReason: null, OnSale: true,
+                    new VisibleCard(
+                        "card-armaments", "ARMAMENTS", "Armaments", "Skill", "1", null,
+                        "Gain Block. Upgrade a card in your Hand.", "Uncommon", false, false, null))
+            },
+            Relics: Array.Empty<VisibleShopRelicOffer>(),
+            Potions: new[]
+            {
+                new VisibleShopPotionOffer(
+                    "offer-potion", "slot-potion", 10, 50, Stocked: true, Visible: true,
+                    Affordable: false, CanPurchase: false, BlockedReason: "insufficient_gold",
+                    "FLEX_POTION", "Flex Potion", "Gain Strength.", "Common")
+            },
+            CardRemoval: new VisibleShopCardRemovalOffer(
+                "offer-removal", "slot-removal", 13, 100, 25, Stocked: true, Visible: true,
+                Affordable: false, CanPurchase: false, BlockedReason: "insufficient_gold"),
+            CanClose: true);
+        IBridgeSurface room = new ShopRoomSurface(
+            "shop_room",
+            "shop-room",
+            CanOpenInventory: true,
+            CanProceed: true);
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+        };
+
+        string inventoryJson = JsonSerializer.Serialize(new { context, surface = inventory }, options);
+        string roomJson = JsonSerializer.Serialize(new { context, surface = room }, options);
+
+        Assert.Contains("\"kind\":\"shop\"", inventoryJson);
+        Assert.Contains("\"kind\":\"shop_inventory\"", inventoryJson);
+        Assert.Contains("\"on_sale\":true", inventoryJson);
+        Assert.Contains("\"blocked_reason\":\"insufficient_gold\"", inventoryJson);
+        Assert.Contains("\"max_potion_slots\":2", inventoryJson);
+        Assert.DoesNotContain("can_proceed", inventoryJson, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("\"kind\":\"shop_room\"", roomJson);
+        Assert.Contains("\"can_open_inventory\":true", roomJson);
+        Assert.Contains("\"can_proceed\":true", roomJson);
+        Assert.DoesNotContain("cards", roomJson, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void ShopBlockedReasonDoesNotTreatAffordabilityAsPurchaseAuthority()
+    {
+        Assert.Equal("sold_out", ShopSurfaceFacts.BlockedReason(false, false, false, false));
+        Assert.Equal("not_visible", ShopSurfaceFacts.BlockedReason(true, false, true, false));
+        Assert.Equal("insufficient_gold", ShopSurfaceFacts.BlockedReason(true, true, false, false));
+        Assert.Equal("ui_control_disabled", ShopSurfaceFacts.BlockedReason(true, true, true, false));
+        Assert.Null(ShopSurfaceFacts.BlockedReason(true, true, true, true));
+    }
+
+    [Fact]
     public void RewardClaimContractCarriesVisibleFullPotionCapacityResolution()
     {
         IBridgeSurface surface = new RewardClaimSurface(

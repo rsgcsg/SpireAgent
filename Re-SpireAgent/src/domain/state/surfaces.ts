@@ -5,6 +5,7 @@ import type {
   EnemySnapshot,
   IndexedOptionSnapshot,
   MapNodeSnapshot,
+  RelicSnapshot,
   RewardSnapshot,
   ShopItemSnapshot
 } from "./entities.js";
@@ -43,7 +44,18 @@ export interface RewardFlowContext {
 }
 export interface RewardsContext { kind: "rewards"; }
 export interface RestContext { kind: "rest"; }
-export interface ShopContext { kind: "shop"; }
+export interface ShopContext {
+  kind: "shop";
+  gold?: number;
+  maxPotionSlots?: number;
+  potions?: Array<{
+    entityId: string;
+    id: string;
+    name?: string;
+    description?: string;
+    slot: number;
+  }>;
+}
 export interface TreasureContext { kind: "treasure"; }
 export interface CrystalSphereContext { kind: "crystal_sphere"; }
 
@@ -95,6 +107,8 @@ export type InteractionSurface =
   | EventDialogueSurface
   | EventOptionSurface
   | RestSiteSurface
+  | ShopInventorySurface
+  | ShopRoomSurface
   | OptionChoiceSurface
   | ShopInteractionSurface
   | TreasureClaimSurface
@@ -327,6 +341,54 @@ export interface RestSiteSurface {
     description?: string;
     enabled: boolean;
   }>;
+  canProceed: boolean;
+  legalActions: BridgeLegalActionSnapshot[];
+  completeness: BridgeSurfaceCompleteness;
+}
+
+export interface BridgeShopOfferBase {
+  entityId: string;
+  slotEntityId: string;
+  inventoryIndex: number;
+  price: number;
+  stocked: boolean;
+  visible: boolean;
+  affordable: boolean;
+  canPurchase: boolean;
+  blockedReason?: "sold_out" | "already_used" | "not_visible" | "insufficient_gold"
+    | "potion_slots_full" | "potion_procurement_forbidden" | "ui_control_disabled";
+}
+
+export interface ShopInventorySurface {
+  kind: "shop_inventory";
+  bridgeStateId: string;
+  screenEntityId: string;
+  cards: Array<BridgeShopOfferBase & {
+    onSale: boolean;
+    card?: CardSnapshot;
+  }>;
+  relics: Array<BridgeShopOfferBase & {
+    relic?: RelicSnapshot;
+  }>;
+  potions: Array<BridgeShopOfferBase & {
+    id?: string;
+    name?: string;
+    description?: string;
+    rarity?: string;
+  }>;
+  cardRemoval?: BridgeShopOfferBase & {
+    nextPriceIncrease: number;
+  };
+  canClose: boolean;
+  legalActions: BridgeLegalActionSnapshot[];
+  completeness: BridgeSurfaceCompleteness;
+}
+
+export interface ShopRoomSurface {
+  kind: "shop_room";
+  bridgeStateId: string;
+  roomEntityId: string;
+  canOpenInventory: boolean;
   canProceed: boolean;
   legalActions: BridgeLegalActionSnapshot[];
   completeness: BridgeSurfaceCompleteness;

@@ -18,6 +18,8 @@ organic qualification.
 | `card_reward_selection` | reward flow | exact cards and separately labeled alternatives | qualified | alternatives remain an open visible set |
 | `reward_claim` | outer room rewards | exact ordinary rewards, potion capacity/discard, Proceed/Skip | qualified for observed shapes | linked reward sets fail closed |
 | `map_navigation` | map | full visible topology, visit/travel state, current/next nodes, drawing mode | qualified for observed singleplayer map | multiplayer and special map modes unsupported |
+| `shop_room` | shop | current gold/potions plus merchant-open and Proceed controls | qualified for observed normal merchant | special merchant room variants need evidence |
+| `shop_inventory` | shop | typed inventory, price, stock, visibility, affordability, category eligibility, sale, potion capacity, removal price | card purchase/open/close qualified | relic/potion/removal actions need organic evidence; removal child selector unsupported |
 | `run_deck` inspection | active singleplayer run | per-instance card, upgrade and enchantment | qualified | no arbitrary queries |
 | `combat_piles` inspection | combat | unordered draw/discard/exhaust contents | qualified | draw order intentionally hidden |
 
@@ -25,7 +27,6 @@ organic qualification.
 
 | Interaction | Current authority | Status |
 |---|---|---|
-| shop inventory / purchase / leave / removal child flow | v1 local reconstruction | frequent organic evidence, no v2 source-complete contract |
 | treasure | v1 local reconstruction | stale-index risk remains; no v2 contract |
 | generic run-deck select/remove/transform/upgrade | v1 local reconstruction | observed, but completion and purpose semantics incomplete |
 | menu / character select / game over | v1 local reconstruction | character selected-state is not represented and can repeat |

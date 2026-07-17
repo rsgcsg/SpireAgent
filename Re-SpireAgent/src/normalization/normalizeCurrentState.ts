@@ -378,6 +378,7 @@ function determineStability(surface: InteractionSurface, diagnosticsStatus: "ok"
   if (surface.kind === "event_dialogue") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "event_option") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "rest_site") return surface.legalActions.length > 0 ? "actionable" : "loading";
+  if (surface.kind === "shop_inventory" || surface.kind === "shop_room") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "option_choice") return surface.options.some((option) => option.enabled) || surface.canProceed ? "actionable" : "loading";
   if (surface.kind === "shop_interaction") return "actionable";
   if (surface.kind === "treasure_claim") return surface.relics.length > 0 || surface.canProceed ? "actionable" : "loading";
@@ -394,7 +395,7 @@ function isCompatible(context: SemanticContext, surface: InteractionSurface): bo
     map: ["map_navigation", "no_action", "unsupported"],
     rest: ["rest_site", "option_choice", "card_selection", "no_action", "unsupported"],
     event: ["event_dialogue", "event_option", "option_choice", "card_selection", "card_bundle_selection", "no_action", "unsupported"],
-    shop: ["shop_interaction", "no_action", "unsupported"],
+    shop: ["shop_inventory", "shop_room", "shop_interaction", "no_action", "unsupported"],
     treasure: ["treasure_claim", "no_action", "unsupported"],
     crystal_sphere: ["grid_interaction", "no_action", "unsupported"],
     menu: ["menu_choice", "no_action", "unsupported"],

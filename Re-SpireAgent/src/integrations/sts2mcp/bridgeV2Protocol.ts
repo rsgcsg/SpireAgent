@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { isJsonObject, type JsonObject } from "../../shared/json.js";
 
-export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.13" as const;
+export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.14" as const;
 
 const compatibilitySchema = z.object({
   status: z.string().min(1),
@@ -154,6 +154,21 @@ const restContextSchema = z.object({
   kind: z.literal("rest")
 }).passthrough();
 
+const visibleOwnedPotionSchema = z.object({
+  entity_id: z.string().min(1),
+  definition_id: z.string().min(1),
+  name: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  slot: z.number().int().nonnegative()
+}).passthrough();
+
+const shopContextSchema = z.object({
+  kind: z.literal("shop"),
+  gold: z.number().int().nonnegative(),
+  max_potion_slots: z.number().int().nonnegative(),
+  potions: z.array(visibleOwnedPotionSchema)
+}).passthrough();
+
 const visibleMapCoordinateSchema = z.object({
   col: z.number().int(),
   row: z.number().int(),
@@ -246,6 +261,63 @@ const restSiteSurfaceSchema = z.object({
   kind: z.literal("rest_site"),
   screen_entity_id: z.string().min(1),
   options: z.array(visibleRestOptionSchema),
+  can_proceed: z.boolean()
+}).passthrough();
+
+const shopOfferBaseSchema = z.object({
+  entity_id: z.string().min(1),
+  slot_entity_id: z.string().min(1),
+  inventory_index: z.number().int().nonnegative(),
+  price: z.number().int().nonnegative(),
+  stocked: z.boolean(),
+  visible: z.boolean(),
+  affordable: z.boolean(),
+  can_purchase: z.boolean(),
+  blocked_reason: z.enum([
+    "sold_out",
+    "already_used",
+    "not_visible",
+    "insufficient_gold",
+    "potion_slots_full",
+    "potion_procurement_forbidden",
+    "ui_control_disabled"
+  ]).nullable().optional()
+}).passthrough();
+
+const visibleShopCardOfferSchema = shopOfferBaseSchema.extend({
+  on_sale: z.boolean(),
+  card: visibleCardSchema.nullable().optional()
+}).passthrough();
+
+const visibleShopRelicOfferSchema = shopOfferBaseSchema.extend({
+  relic: visibleRelicSchema.nullable().optional()
+}).passthrough();
+
+const visibleShopPotionOfferSchema = shopOfferBaseSchema.extend({
+  definition_id: z.string().min(1).nullable().optional(),
+  name: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  rarity: z.string().nullable().optional()
+}).passthrough();
+
+const visibleShopCardRemovalOfferSchema = shopOfferBaseSchema.extend({
+  next_price_increase: z.number().int().nonnegative()
+}).passthrough();
+
+const shopInventorySurfaceSchema = z.object({
+  kind: z.literal("shop_inventory"),
+  screen_entity_id: z.string().min(1),
+  cards: z.array(visibleShopCardOfferSchema),
+  relics: z.array(visibleShopRelicOfferSchema),
+  potions: z.array(visibleShopPotionOfferSchema),
+  card_removal: visibleShopCardRemovalOfferSchema.nullable().optional(),
+  can_close: z.boolean()
+}).passthrough();
+
+const shopRoomSurfaceSchema = z.object({
+  kind: z.literal("shop_room"),
+  room_entity_id: z.string().min(1),
+  can_open_inventory: z.boolean(),
   can_proceed: z.boolean()
 }).passthrough();
 
@@ -526,11 +598,14 @@ export type BridgeV2EventContext = z.infer<typeof eventContextSchema>;
 export type BridgeV2CombatContext = z.infer<typeof combatContextSchema>;
 export type BridgeV2RewardFlowContext = z.infer<typeof rewardFlowContextSchema>;
 export type BridgeV2RestContext = z.infer<typeof restContextSchema>;
+export type BridgeV2ShopContext = z.infer<typeof shopContextSchema>;
 export type BridgeV2MapContext = z.infer<typeof mapContextSchema>;
 export type BridgeV2UnknownContext = z.infer<typeof unknownContextSchema>;
 export type BridgeV2EventOptionSurface = z.infer<typeof eventOptionSurfaceSchema>;
 export type BridgeV2EventDialogueSurface = z.infer<typeof eventDialogueSurfaceSchema>;
 export type BridgeV2RestSiteSurface = z.infer<typeof restSiteSurfaceSchema>;
+export type BridgeV2ShopInventorySurface = z.infer<typeof shopInventorySurfaceSchema>;
+export type BridgeV2ShopRoomSurface = z.infer<typeof shopRoomSurfaceSchema>;
 export type BridgeV2CombatTurnSurface = z.infer<typeof combatTurnSurfaceSchema>;
 export type BridgeV2CombatPileCardSelectionSurface = z.infer<typeof combatPileCardSelectionSurfaceSchema>;
 export type BridgeV2CombatHandCardSelectionSurface = z.infer<typeof combatHandCardSelectionSurfaceSchema>;
@@ -549,6 +624,7 @@ export type BridgeV2Context =
   | BridgeV2CombatContext
   | BridgeV2RewardFlowContext
   | BridgeV2RestContext
+  | BridgeV2ShopContext
   | BridgeV2MapContext
   | BridgeV2UnknownContext
   | (Record<string, unknown> & { kind: string });
@@ -557,6 +633,8 @@ export type BridgeV2Surface =
   | BridgeV2DeckEnchantSurface
   | BridgeV2EventDialogueSurface
   | BridgeV2RestSiteSurface
+  | BridgeV2ShopInventorySurface
+  | BridgeV2ShopRoomSurface
   | BridgeV2EventOptionSurface
   | BridgeV2CombatTurnSurface
   | BridgeV2CombatPileCardSelectionSurface
@@ -611,6 +689,16 @@ export function decodeBridgeV2State(value: unknown): DecodedBridgePayload<Bridge
     surface = parse(restSiteSurfaceSchema, decoded.data.surface, "rest_site surface");
     if (context.kind !== "rest") {
       throw new BridgeV2DecodeError("Bridge v2 rest_site surface requires rest context");
+    }
+  } else if (decoded.data.surface.kind === "shop_inventory") {
+    surface = parse(shopInventorySurfaceSchema, decoded.data.surface, "shop_inventory surface");
+    if (context.kind !== "shop") {
+      throw new BridgeV2DecodeError("Bridge v2 shop_inventory surface requires shop context");
+    }
+  } else if (decoded.data.surface.kind === "shop_room") {
+    surface = parse(shopRoomSurfaceSchema, decoded.data.surface, "shop_room surface");
+    if (context.kind !== "shop") {
+      throw new BridgeV2DecodeError("Bridge v2 shop_room surface requires shop context");
     }
   } else if (decoded.data.surface.kind === "event_option") {
     surface = parse(eventOptionSurfaceSchema, decoded.data.surface, "event_option surface");
@@ -736,6 +824,10 @@ export function isBridgeV2RestContext(context: BridgeV2Context): context is Brid
   return context.kind === "rest";
 }
 
+export function isBridgeV2ShopContext(context: BridgeV2Context): context is BridgeV2ShopContext {
+  return context.kind === "shop";
+}
+
 export function isBridgeV2MapContext(context: BridgeV2Context): context is BridgeV2MapContext {
   return context.kind === "map";
 }
@@ -756,6 +848,18 @@ export function isBridgeV2RestSiteSurface(
   surface: BridgeV2Surface
 ): surface is BridgeV2RestSiteSurface {
   return surface.kind === "rest_site";
+}
+
+export function isBridgeV2ShopInventorySurface(
+  surface: BridgeV2Surface
+): surface is BridgeV2ShopInventorySurface {
+  return surface.kind === "shop_inventory";
+}
+
+export function isBridgeV2ShopRoomSurface(
+  surface: BridgeV2Surface
+): surface is BridgeV2ShopRoomSurface {
+  return surface.kind === "shop_room";
 }
 
 export function isBridgeV2CombatTurnSurface(
@@ -811,6 +915,7 @@ function parseContext(value: z.infer<typeof contextBaseSchema>): BridgeV2Context
   if (value.kind === "combat") return parse(combatContextSchema, value, "combat context");
   if (value.kind === "reward_flow") return parse(rewardFlowContextSchema, value, "reward_flow context");
   if (value.kind === "rest") return parse(restContextSchema, value, "rest context");
+  if (value.kind === "shop") return parse(shopContextSchema, value, "shop context");
   if (value.kind === "map") return parse(mapContextSchema, value, "map context");
   if (value.kind === "unknown") return parse(unknownContextSchema, value, "unknown context");
   return value;

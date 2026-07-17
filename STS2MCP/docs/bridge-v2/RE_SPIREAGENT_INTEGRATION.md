@@ -33,10 +33,11 @@ Required client behavior:
 - never auto-retry unknown outcomes;
 - permit only one executor during v1/v2 dual-read tests.
 
-Source `2.0-preview.13` has strict projections for twelve bounded executable
+Source `2.0-preview.14` has strict projections for fourteen bounded executable
 surfaces: deck enchant, ancient dialogue, ordinary event options, rest controls,
 combat turn, three combat selectors, atomic card bundles, card rewards, outer
-room rewards, and map navigation. It also preserves typed diagnostics and fixed
+room rewards, map navigation, and separate shop room/inventory ownership. It
+also preserves typed diagnostics and fixed
 read-only `run_deck`/`combat_piles` evidence. Every current executable surface
 has organic evidence for at least one observed shape; this does not qualify
 unobserved variants or unsupported screens. Run-deck Glam post-state and
@@ -47,6 +48,14 @@ still add typed player facts; a v2-owned surface imports only bridge actions.
 Exact-build or context/surface incompatibility never silently falls back to v1
 authority. Runtime and prompt identity always expose `context.kind +
 surface.kind + actionAuthority`.
+
+The shop integration preserves affordability separately from authority and
+accepts omitted nullable product fields without weakening stocked-product or
+action-binding checks. Organic preview.14 evidence covers room open,
+inventory close/reopen, one card purchase with sold-out and run-deck post-state,
+and Proceed to map. Relic, potion, and removal categories retain separate
+qualification; the removal child deck selector is not yet a qualified v2
+Surface.
 
 See the rebuilt client's
 [Bridge v2 integration contract](../../../Re-SpireAgent/docs/BRIDGE_V2_INTEGRATION.md).

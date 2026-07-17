@@ -7,7 +7,7 @@ namespace STS2_MCP.BridgeV2.Protocol;
 
 public static class BridgeV2Contract
 {
-    public const string ProtocolVersion = "2.0-preview.13";
+    public const string ProtocolVersion = "2.0-preview.14";
     public const string ObservationPolicyId = "player_visible_ui_v1";
 }
 
@@ -307,6 +307,19 @@ public sealed record RewardFlowBridgeContext(
 public sealed record RestBridgeContext(
     string Kind) : IBridgeContext;
 
+public sealed record VisibleOwnedPotion(
+    string EntityId,
+    string DefinitionId,
+    string? Name,
+    string? Description,
+    int Slot);
+
+public sealed record ShopBridgeContext(
+    string Kind,
+    int Gold,
+    int MaxPotionSlots,
+    IReadOnlyList<VisibleOwnedPotion> Potions) : IBridgeContext;
+
 public sealed record VisibleMapCoordinate(
     int Col,
     int Row,
@@ -397,6 +410,73 @@ public sealed record RestSiteSurface(
     string Kind,
     string ScreenEntityId,
     IReadOnlyList<VisibleRestOption> Options,
+    bool CanProceed) : IBridgeSurface;
+
+public sealed record VisibleShopCardOffer(
+    string EntityId,
+    string SlotEntityId,
+    int InventoryIndex,
+    int Price,
+    bool Stocked,
+    bool Visible,
+    bool Affordable,
+    bool CanPurchase,
+    string? BlockedReason,
+    bool OnSale,
+    VisibleCard? Card);
+
+public sealed record VisibleShopRelicOffer(
+    string EntityId,
+    string SlotEntityId,
+    int InventoryIndex,
+    int Price,
+    bool Stocked,
+    bool Visible,
+    bool Affordable,
+    bool CanPurchase,
+    string? BlockedReason,
+    VisibleRelic? Relic);
+
+public sealed record VisibleShopPotionOffer(
+    string EntityId,
+    string SlotEntityId,
+    int InventoryIndex,
+    int Price,
+    bool Stocked,
+    bool Visible,
+    bool Affordable,
+    bool CanPurchase,
+    string? BlockedReason,
+    string? DefinitionId,
+    string? Name,
+    string? Description,
+    string? Rarity);
+
+public sealed record VisibleShopCardRemovalOffer(
+    string EntityId,
+    string SlotEntityId,
+    int InventoryIndex,
+    int Price,
+    int NextPriceIncrease,
+    bool Stocked,
+    bool Visible,
+    bool Affordable,
+    bool CanPurchase,
+    string? BlockedReason);
+
+public sealed record ShopInventorySurface(
+    string Kind,
+    string ScreenEntityId,
+    IReadOnlyList<VisibleShopCardOffer> Cards,
+    IReadOnlyList<VisibleShopRelicOffer> Relics,
+    IReadOnlyList<VisibleShopPotionOffer> Potions,
+    VisibleShopCardRemovalOffer? CardRemoval,
+    bool CanClose) : IBridgeSurface;
+
+public sealed record ShopRoomSurface(
+    string Kind,
+    string RoomEntityId,
+    bool CanOpenInventory,
     bool CanProceed) : IBridgeSurface;
 
 public sealed record CombatTurnSurface(

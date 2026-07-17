@@ -11,16 +11,17 @@ state-bound protocol intended for the rebuilt `Re-SpireAgent` client.
 Bridge v2 is an incremental preview, not a replacement for all v1 surfaces.
 
 - Current exact game binding: Slay the Spire 2 `v0.108.0`.
-- Source `2.0-preview.13` includes typed diagnostics, centralized active-surface
-  ownership, twelve bounded executable surfaces, and two fixed read-only
+- Source `2.0-preview.14` includes typed diagnostics, centralized active-surface
+  ownership, fourteen bounded executable surfaces, and two fixed read-only
   inspections: `run_deck` and `combat_piles`.
 - All unimplemented or version-incompatible v2 surfaces fail closed with no
   legal actions.
 - v1 remains available for compatibility and has been made build-compatible
   with `v0.108.0`; its index-based action contract is legacy.
 - Static build/protocol tests pass. Real `v0.108.0` Bridge plus Re-SpireAgent
-  smokes cover all twelve current surfaces for at least one bounded interaction
-  shape, persistent Glam run-deck reinspection, non-empty
+  smokes cover every current surface family for at least one bounded
+  interaction shape, including the normal merchant open/close/card-purchase/
+  Proceed lifecycle, persistent Glam run-deck reinspection, non-empty
   draw/discard/exhaust evidence, and full-belt potion discard/claim. Unlisted
   surfaces remain unsupported and draw order remains hidden.
 
@@ -187,10 +188,12 @@ sole executor; unsupported v2 surfaces remain on v1 during migration.
 Exact-build mismatch, context/surface mismatch, command-response identity
 mismatch, failed command, and timeout all fail closed.
 
-All twelve current executable surfaces have bounded organic evidence for at
-least one observed shape, including ancient dialogue, rest controls, generated
-cards, bundles, and map navigation. Planning code never reads arbitrary bridge
-JSON. Source `preview.13`
+All fourteen current executable surfaces have bounded organic evidence for at
+least one observed family shape, including ancient dialogue, rest controls,
+generated cards, bundles, map navigation, and normal merchant controls.
+Qualification remains action/category-specific: shop relic, potion, and card
+removal actions do not inherit the card-purchase organic evidence. Planning
+code never reads arbitrary bridge JSON. Source `preview.14`
 also projects state-bound run-deck and combat-pile inspections into typed
 player facts without creating actions or entering the command ledger.
 

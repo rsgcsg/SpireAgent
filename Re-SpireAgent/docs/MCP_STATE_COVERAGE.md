@@ -20,6 +20,8 @@ Coverage is based on observed old-project raw snapshots and reduced fixture copi
 | Bridge v2 `map_navigation` | Bridge `map` + visible topology/current choices + `bridge_advertised` | repeated organic exact-node travel passed | opaque current-node choice only |
 | Bridge v2 `card_reward_selection` | Bridge `reward_flow(card_reward)` + `card_reward_selection` + `bridge_advertised` | organic Bridge + Re lifecycle passed | opaque card or separately labeled alternative only |
 | Bridge v2 `reward_claim` | Bridge `reward_flow(room_rewards)` + `reward_claim` + `bridge_advertised` | ordinary Gold, Proceed/Skip, and full-belt potion discard-then-claim completed | opaque visible claim, exact capacity discard, or explicit proceed only |
+| Bridge v2 `shop_room` | Bridge `shop` + room controls + `bridge_advertised` | open, close/reopen, and Proceed-to-map lifecycle passed | opaque merchant-open or Proceed only |
+| Bridge v2 `shop_inventory` | Bridge `shop` + typed inventory + `bridge_advertised` | one Armaments purchase, sold-out state, and run-deck post-state passed | typed category purchase or close; relic/potion/removal organic evidence pending |
 | Bridge v2 `run_deck` inspection | optional typed player run-deck evidence on supported and legacy-fallback states | organic post-reward Glam reinspection passed | none; read-only evidence |
 | Bridge v2 `combat_piles` inspection | optional typed unordered draw/discard/exhaust evidence in combat | non-empty draw/discard/exhaust organic smoke passed | none; read-only evidence |
 | `card_reward` | `card_reward` | fixture-backed | take, skip, proceed when exposed |
@@ -27,7 +29,7 @@ Coverage is based on observed old-project raw snapshots and reduced fixture copi
 | legacy `map` fallback | `map` | fixture-backed | only when v2 explicitly unsupported |
 | legacy `rest_site` fallback | `rest` | fixture-backed | only when v2 explicitly unsupported |
 | `event` | `event` | fixture-backed | choose visible option, including proceed option |
-| `shop` | `shop` | fixture-backed with one documented inference | buy affordable stocked item, leave |
+| legacy v1 `shop` fallback | `shop` + `shop_interaction` | fixture-backed with one documented inference | only when v2 explicitly unsupported |
 | `treasure` | `treasure` | fixture-backed | take relic when exposed, proceed |
 | `crystal_sphere` | `crystal_sphere` | fixture-backed | switch tool, click observed cell, finish |
 | `menu` | `menu` | fixture-backed | explicit `agent:tick` protocol test only; `agent:run` stops at this boundary |
@@ -41,8 +43,8 @@ A new state is supported only after a real raw sample, normalized variant, allow
 
 ## Adapter Limits
 
-- v1 legal actions are reconstructed locally. Bridge v2 source `preview.13`
-  enumerates authoritative actions for twelve bounded surfaces. Qualification
+- v1 legal actions are reconstructed locally. Bridge v2 source `preview.14`
+  enumerates authoritative actions for fourteen bounded surfaces. Qualification
   remains per observed action shape; unsupported screens never inherit a nearby
   surface's authority.
 - v1 action responses are partial; post-state observation verifies effects.
@@ -54,6 +56,10 @@ A new state is supported only after a real raw sample, normalized variant, allow
 - Some screens briefly expose loading/settlement shapes.
 - Non-combat snapshots may omit deck/energy details that would improve strategy.
 - Sparse potion arrays require raw slot identity when available.
+- Shop room and inventory are separate input owners. Price/affordability never
+  imply purchase authority, and one organic card purchase does not qualify
+  relic, potion, or removal categories. The removal child deck selector remains
+  a separate unsupported v2 boundary.
 - Combat context intentionally carries immediate pile counts. Fixed read-only
   inspection carries pile contents without adding fields to
   `combat_turn.surface`; draw order is never exposed.

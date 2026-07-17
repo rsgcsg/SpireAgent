@@ -19,6 +19,8 @@ import {
   type NormalizedCurrentState,
   type PlayerSnapshot,
   type RestSiteSurface,
+  type ShopInventorySurface,
+  type ShopRoomSurface,
   type SemanticContext,
   type StateEnvelope
 } from "../domain/state/index.js";
@@ -40,6 +42,9 @@ import {
   isBridgeV2RewardFlowContext,
   isBridgeV2RestContext,
   isBridgeV2RestSiteSurface,
+  isBridgeV2ShopContext,
+  isBridgeV2ShopInventorySurface,
+  isBridgeV2ShopRoomSurface,
   isBridgeV2MapContext,
   isBridgeV2MapNavigationSurface,
   isBridgeV2UnsupportedSurface,
@@ -51,6 +56,9 @@ import {
   type BridgeV2CardRewardSelectionSurface,
   type BridgeV2RewardClaimSurface,
   type BridgeV2RestSiteSurface,
+  type BridgeV2ShopContext,
+  type BridgeV2ShopInventorySurface,
+  type BridgeV2ShopRoomSurface,
   type BridgeV2MapContext,
   type BridgeV2MapNavigationSurface,
   type BridgeV2DeckEnchantSurface,
@@ -107,7 +115,15 @@ const ACTION_KINDS = {
   ]),
   card_reward_selection: new Set(["select_card_reward", "choose_card_reward_alternative"]),
   reward_claim: new Set(["claim_reward", "discard_potion_for_reward", "proceed_rewards"]),
-  map_navigation: new Set(["choose_map_node"])
+  map_navigation: new Set(["choose_map_node"]),
+  shop_inventory: new Set([
+    "purchase_shop_card",
+    "purchase_shop_relic",
+    "purchase_shop_potion",
+    "open_shop_card_removal",
+    "close_shop_inventory"
+  ]),
+  shop_room: new Set(["open_shop_inventory", "proceed_shop"])
 } as const;
 
 export function normalizeBridgeV2CurrentState(
@@ -151,6 +167,8 @@ export function normalizeBridgeV2CurrentState(
     context = { kind: "reward_flow", rewardKind: state.context.reward_kind };
   } else if (state && isBridgeV2RestContext(state.context)) {
     context = { kind: "rest" };
+  } else if (state && isBridgeV2ShopContext(state.context)) {
+    context = projectShopContext(state.context);
   } else if (state && isBridgeV2MapContext(state.context)) {
     context = projectMapContext(state.context);
   }
@@ -251,6 +269,12 @@ export function normalizeBridgeV2CurrentState(
       } else if (isBridgeV2RestSiteSurface(state.surface) && isBridgeV2RestContext(state.context)) {
         validateRestSiteState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
         surface = projectRestSiteSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
+      } else if (isBridgeV2ShopInventorySurface(state.surface) && isBridgeV2ShopContext(state.context)) {
+        validateShopInventoryState(state.context, state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
+        surface = projectShopInventorySurface(state.surface, state.state_id, state.legal_actions, state.completeness);
+      } else if (isBridgeV2ShopRoomSurface(state.surface) && isBridgeV2ShopContext(state.context)) {
+        validateShopRoomState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
+        surface = projectShopRoomSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
       } else if (isBridgeV2CombatTurnSurface(state.surface) && isBridgeV2CombatContext(state.context)) {
         validateCombatTurnState(state.context, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
         surface = projectCombatTurnSurface(state.surface.room_entity_id, state.surface.can_end_turn, state.state_id, state.legal_actions, state.completeness);
@@ -488,6 +512,154 @@ function validateRestSiteState(
       if (!surface.can_proceed || bindings.length !== 1 || bindings[0]?.entity_id !== surface.screen_entity_id) {
         diagnostics.invalid("bridge_v2.legal_actions.entity_bindings", action.entity_bindings, "rest proceed must bind the current screen and require can_proceed");
       }
+    }
+  }
+}
+
+function validateShopInventoryState(
+  context: BridgeV2ShopContext,
+  surface: BridgeV2ShopInventorySurface,
+  stateId: string,
+  actions: BridgeV2LegalAction[],
+  missing: string[],
+  advertisedOperations: ReadonlySet<string>,
+  readiness: string,
+  diagnostics: DiagnosticsBuilder
+): void {
+  const potionSlots = new Set(context.potions.map((potion) => potion.slot));
+  const ownedPotionIds = new Set(context.potions.map((potion) => potion.entity_id));
+  if (potionSlots.size !== context.potions.length || ownedPotionIds.size !== context.potions.length) {
+    diagnostics.invalid("bridge_v2.context.potions", context.potions, "shop potion slots and entity ids must be unique");
+  }
+  if (context.potions.length > context.max_potion_slots
+      || context.potions.some((potion) => potion.slot >= context.max_potion_slots)) {
+    diagnostics.invalid("bridge_v2.context.potions", context.potions, "shop potion occupancy exceeds visible capacity");
+  }
+
+  const offers = [
+    ...surface.cards.map((offer) => ({ category: "card" as const, offer })),
+    ...surface.relics.map((offer) => ({ category: "relic" as const, offer })),
+    ...surface.potions.map((offer) => ({ category: "potion" as const, offer })),
+    ...(surface.card_removal ? [{ category: "card_removal" as const, offer: surface.card_removal }] : [])
+  ];
+  const offerIds = new Set(offers.map(({ offer }) => offer.entity_id));
+  const slotIds = new Set(offers.map(({ offer }) => offer.slot_entity_id));
+  const inventoryIndices = new Set(offers.map(({ offer }) => offer.inventory_index));
+  if (offerIds.size !== offers.length || slotIds.size !== offers.length || inventoryIndices.size !== offers.length) {
+    diagnostics.invalid("bridge_v2.surface.shop_offers", offers, "shop offer, slot, and inventory identities must be unique");
+  }
+
+  for (const { category, offer } of offers) {
+    if (offer.affordable !== (context.gold >= offer.price)) {
+      diagnostics.invalid("bridge_v2.surface.shop_offers.affordable", offer, "shop affordability must match current visible gold and exact price");
+    }
+    if (offer.can_purchase
+        && (!offer.stocked || !offer.visible || !offer.affordable || offer.blocked_reason != null)) {
+      diagnostics.invalid("bridge_v2.surface.shop_offers.can_purchase", offer, "purchasable offer must be stocked, visible, affordable, and unblocked");
+    }
+    if (!offer.can_purchase && offer.blocked_reason == null) {
+      diagnostics.invalid("bridge_v2.surface.shop_offers.blocked_reason", offer, "unavailable shop offer must expose a bounded blocked reason");
+    }
+    if (!offer.stocked && offer.can_purchase) {
+      diagnostics.invalid("bridge_v2.surface.shop_offers.stocked", offer, "sold-out offer cannot be purchasable");
+    }
+    const expectedFactBlock = !offer.stocked
+      ? (category === "card_removal" ? "already_used" : "sold_out")
+      : !offer.visible
+        ? "not_visible"
+        : !offer.affordable
+          ? "insufficient_gold"
+          : category === "potion" && context.potions.length >= context.max_potion_slots
+            ? "potion_slots_full"
+            : null;
+    if (expectedFactBlock !== null && offer.blocked_reason !== expectedFactBlock) {
+      diagnostics.invalid("bridge_v2.surface.shop_offers.blocked_reason", offer, "shop blocked reason contradicts visible stock, visibility, affordability, or capacity");
+    }
+    if (category === "potion"
+        && context.potions.length >= context.max_potion_slots
+        && offer.can_purchase) {
+      diagnostics.invalid("bridge_v2.surface.potions.can_purchase", offer, "full potion capacity cannot advertise a potion purchase");
+    }
+    if (category === "card") {
+      const cardOffer = offer as BridgeV2ShopInventorySurface["cards"][number];
+      if (cardOffer.stocked !== Boolean(cardOffer.card)) {
+        diagnostics.invalid("bridge_v2.surface.cards.card", cardOffer, "stocked card offer must expose exactly its visible card");
+      }
+    } else if (category === "relic") {
+      const relicOffer = offer as BridgeV2ShopInventorySurface["relics"][number];
+      if (relicOffer.stocked !== Boolean(relicOffer.relic)) {
+        diagnostics.invalid("bridge_v2.surface.relics.relic", relicOffer, "stocked relic offer must expose exactly its visible relic");
+      }
+    } else if (category === "potion") {
+      const potionOffer = offer as BridgeV2ShopInventorySurface["potions"][number];
+      if (potionOffer.stocked !== Boolean(potionOffer.definition_id)) {
+        diagnostics.invalid("bridge_v2.surface.potions.definition_id", potionOffer, "stocked potion offer must expose potion semantics");
+      }
+    }
+  }
+
+  validateActions("shop_inventory", stateId, actions, missing, advertisedOperations, readiness, diagnostics);
+  const expectedPurchaseKinds: Record<(typeof offers)[number]["category"], string> = {
+    card: "purchase_shop_card",
+    relic: "purchase_shop_relic",
+    potion: "purchase_shop_potion",
+    card_removal: "open_shop_card_removal"
+  };
+  const purchaseActions = actions.filter((action) => action.kind !== "close_shop_inventory");
+  for (const { category, offer } of offers) {
+    const role = category === "card_removal" ? "shop_card_removal" : "shop_offer";
+    const bound = purchaseActions.filter((action) =>
+      action.entity_bindings.some((binding) => binding.role === role && binding.entity_id === offer.entity_id));
+    if (offer.can_purchase) {
+      if (bound.length !== 1 || bound[0]?.kind !== expectedPurchaseKinds[category]) {
+        diagnostics.invalid("bridge_v2.legal_actions.entity_bindings", bound, "each purchasable shop offer must have exactly one category-specific action");
+      }
+    } else if (bound.length > 0) {
+      diagnostics.invalid("bridge_v2.legal_actions.entity_bindings", bound, "blocked shop offer cannot have a purchase action");
+    }
+  }
+  for (const action of purchaseActions) {
+    const matchingOffers = offers.filter(({ category, offer }) => {
+      const role = category === "card_removal" ? "shop_card_removal" : "shop_offer";
+      return action.entity_bindings.some((binding) => binding.role === role && binding.entity_id === offer.entity_id);
+    });
+    if (matchingOffers.length !== 1 || !matchingOffers[0]!.offer.can_purchase) {
+      diagnostics.invalid("bridge_v2.legal_actions.entity_bindings", action.entity_bindings, "shop purchase action must bind exactly one visible purchasable offer");
+    }
+  }
+  const closeActions = actions.filter((action) => action.kind === "close_shop_inventory");
+  if (surface.can_close) {
+    if (closeActions.length !== 1
+        || closeActions[0]!.entity_bindings.filter((binding) =>
+          binding.role === "screen" && binding.entity_id === surface.screen_entity_id).length !== 1) {
+      diagnostics.invalid("bridge_v2.legal_actions.entity_bindings", closeActions, "open shop inventory must expose exactly one screen-bound close action");
+    }
+  } else if (closeActions.length > 0) {
+    diagnostics.invalid("bridge_v2.legal_actions.kind", closeActions, "shop close action appeared while can_close is false");
+  }
+}
+
+function validateShopRoomState(
+  surface: BridgeV2ShopRoomSurface,
+  stateId: string,
+  actions: BridgeV2LegalAction[],
+  missing: string[],
+  advertisedOperations: ReadonlySet<string>,
+  readiness: string,
+  diagnostics: DiagnosticsBuilder
+): void {
+  validateActions("shop_room", stateId, actions, missing, advertisedOperations, readiness, diagnostics);
+  const openActions = actions.filter((action) => action.kind === "open_shop_inventory");
+  const proceedActions = actions.filter((action) => action.kind === "proceed_shop");
+  if (openActions.length !== (surface.can_open_inventory ? 1 : 0)
+      || proceedActions.length !== (surface.can_proceed ? 1 : 0)) {
+    diagnostics.invalid("bridge_v2.legal_actions", actions, "shop room actions must match visible merchant and proceed controls");
+  }
+  for (const action of actions) {
+    const roomBindings = action.entity_bindings.filter((binding) =>
+      binding.role === "room" && binding.entity_id === surface.room_entity_id);
+    if (roomBindings.length !== 1) {
+      diagnostics.invalid("bridge_v2.legal_actions.entity_bindings", action.entity_bindings, "shop room action must bind the current room");
     }
   }
 }
@@ -881,6 +1053,21 @@ function projectCombatContext(context: BridgeV2CombatContext): SemanticContext {
   };
 }
 
+function projectShopContext(context: BridgeV2ShopContext): SemanticContext {
+  return {
+    kind: "shop",
+    gold: context.gold,
+    maxPotionSlots: context.max_potion_slots,
+    potions: context.potions.map((potion) => ({
+      entityId: potion.entity_id,
+      id: potion.definition_id,
+      ...(potion.name ? { name: potion.name } : {}),
+      ...(potion.description ? { description: potion.description } : {}),
+      slot: potion.slot
+    }))
+  };
+}
+
 function projectMapContext(context: BridgeV2MapContext): SemanticContext {
   const projectCoordinate = (coord: BridgeV2MapContext["visited"][number]) => ({
     col: coord.col,
@@ -1091,6 +1278,84 @@ function projectRestSiteSurface(
       ...(option.description ? { description: option.description } : {}),
       enabled: option.enabled
     })),
+    canProceed: surface.can_proceed,
+    legalActions: projectActions(actions),
+    completeness: projectCompleteness(completeness)
+  };
+}
+
+function projectShopInventorySurface(
+  surface: BridgeV2ShopInventorySurface,
+  stateId: string,
+  actions: BridgeV2LegalAction[],
+  completeness: RawCompleteness
+): ShopInventorySurface {
+  type ShopOffer = BridgeV2ShopInventorySurface["cards"][number]
+    | BridgeV2ShopInventorySurface["relics"][number]
+    | BridgeV2ShopInventorySurface["potions"][number]
+    | NonNullable<BridgeV2ShopInventorySurface["card_removal"]>;
+  const base = (offer: ShopOffer) => ({
+    entityId: offer.entity_id,
+    slotEntityId: offer.slot_entity_id,
+    inventoryIndex: offer.inventory_index,
+    price: offer.price,
+    stocked: offer.stocked,
+    visible: offer.visible,
+    affordable: offer.affordable,
+    canPurchase: offer.can_purchase,
+    ...(offer.blocked_reason ? { blockedReason: offer.blocked_reason } : {})
+  });
+  return {
+    kind: "shop_inventory",
+    bridgeStateId: stateId,
+    screenEntityId: surface.screen_entity_id,
+    cards: surface.cards.map((offer) => ({
+      ...base(offer),
+      onSale: offer.on_sale,
+      ...(offer.card ? { card: projectBridgeV2Card(offer.card) } : {})
+    })),
+    relics: surface.relics.map((offer) => ({
+      ...base(offer),
+      ...(offer.relic ? {
+        relic: {
+          id: offer.relic.definition_id,
+          ...(offer.relic.name ? { name: offer.relic.name } : {}),
+          ...(offer.relic.description ? { description: offer.relic.description } : {}),
+          ...(offer.relic.counter !== undefined ? { counter: offer.relic.counter } : {}),
+          keywords: []
+        }
+      } : {})
+    })),
+    potions: surface.potions.map((offer) => ({
+      ...base(offer),
+      ...(offer.definition_id ? { id: offer.definition_id } : {}),
+      ...(offer.name ? { name: offer.name } : {}),
+      ...(offer.description ? { description: offer.description } : {}),
+      ...(offer.rarity ? { rarity: offer.rarity } : {})
+    })),
+    ...(surface.card_removal ? {
+      cardRemoval: {
+        ...base(surface.card_removal),
+        nextPriceIncrease: surface.card_removal.next_price_increase
+      }
+    } : {}),
+    canClose: surface.can_close,
+    legalActions: projectActions(actions),
+    completeness: projectCompleteness(completeness)
+  };
+}
+
+function projectShopRoomSurface(
+  surface: BridgeV2ShopRoomSurface,
+  stateId: string,
+  actions: BridgeV2LegalAction[],
+  completeness: RawCompleteness
+): ShopRoomSurface {
+  return {
+    kind: "shop_room",
+    bridgeStateId: stateId,
+    roomEntityId: surface.room_entity_id,
+    canOpenInventory: surface.can_open_inventory,
     canProceed: surface.can_proceed,
     legalActions: projectActions(actions),
     completeness: projectCompleteness(completeness)

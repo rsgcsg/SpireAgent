@@ -26,6 +26,8 @@ export function buildAllowedActions(state: NormalizedCurrentState, sourceStateHa
     case "event_dialogue":
     case "event_option":
     case "rest_site":
+    case "shop_inventory":
+    case "shop_room":
       return [];
     case "card_reward":
       return [

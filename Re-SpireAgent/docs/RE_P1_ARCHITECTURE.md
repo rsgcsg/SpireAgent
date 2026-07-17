@@ -86,7 +86,12 @@ Action-capable CLI commands also acquire an exclusive local lock, so two RE-P1 p
 
 ## Explicit Inference
 
-The current MCP shop contract has one exception to raw-only capability discovery. Verified legacy live behavior shows that `proceed` leaves a shop even when `shop.can_proceed` is false. RE-P1 keeps this compatibility fact as `shop.canLeave=true` and records the inference in normalization diagnostics. It should be removed if a future adapter exposes an explicit leave action/capability.
+The legacy v1 shop fallback has one exception to raw-only capability discovery.
+Verified legacy behavior shows that `proceed` leaves a shop even when
+`shop.can_proceed` is false, so that fallback records an explicit inference.
+Bridge v2 preview.14 no longer uses it: `shop_room` advertises an exact opaque
+Proceed action, while `shop_inventory` owns purchases and close. A v2-owned
+shop never imports the v1 inference or its actions.
 
 ## Public API
 

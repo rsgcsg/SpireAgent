@@ -1,6 +1,6 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.13`
+Protocol preview: `2.0-preview.14`
 
 ## Endpoints
 
@@ -143,6 +143,19 @@ Current selection and reward completion evidence:
 | map node choice | map closes or the exact current map coordinate reaches the selected node |
 | rest option | option disappears, Proceed enables, room leaves, or a verified child overlay opens |
 | rest Proceed | map opens or the rest room leaves |
+| shop open/close | inventory `IsOpen` becomes true/false respectively |
+| typed shop purchase | exact product changes, its valid child overlay opens, or the merchant room exits |
+| shop card-removal launch | removal becomes used, the child selector opens, or the merchant room exits |
+| shop Proceed | map opens or the merchant room exits |
+
+Shop uses two mutually exclusive action-owning Surfaces. `shop_inventory`
+contains separate card, relic, potion, and card-removal offer types; it never
+publishes a generic purchase action. `shop_room` contains only merchant-open and
+Proceed controls. Shared gold and potion occupancy live in `shop` Context.
+Affordability is descriptive and is not action authority. Product fields and
+`blocked_reason` are nullable protocol semantics and may be omitted by the C#
+wire serializer when absent; stocked products must still expose their exact
+visible product semantics.
 
 If the state changes but the predicate does not pass, the command fails with an
 unknown outcome. Unknown outcomes are never auto-retried.

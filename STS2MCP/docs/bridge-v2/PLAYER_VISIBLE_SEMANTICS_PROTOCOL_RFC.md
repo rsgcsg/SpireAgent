@@ -91,8 +91,9 @@ them.
 | event option | narrative context must remain separate from simple option protocol |
 | combat turn | shared entities/resources, target legality, phase settling, performance, future inspection |
 | card reward | open-set alternatives, short settling interval, replacement-in-place completion |
+| normal shop | shared gold/capacity context, mutually exclusive room/inventory owners, typed category eligibility, asynchronous subtype completion |
 
-These four source contracts justify typed contexts, an explicit provider registry,
+These source contracts justify typed contexts, an explicit provider registry,
 stable entity identity, and state-level authority. They do not justify a
 universal ECS, auto-discovered reflection providers, or a broad generic action
 schema.
@@ -109,9 +110,9 @@ a fact the UI already reveals.
 - Typed surface serialization: resolved with `IBridgeSurface` and converter.
 - Surface provider selection: resolved with a centralized overlay-vs-room
   resolver and fail-closed ambiguous-match handling.
-- Re-SpireAgent v2 consumption: resolved for four fixture contracts; deck
-  enchant, ordinary event option, and one targeted combat-card lifecycle have
-  bounded organic qualification, while card reward remains organic-pending.
+- Re-SpireAgent v2 consumption: resolved for fourteen bounded Surface
+  contracts plus two fixed Inspections. Qualification remains per observed
+  shape and purchase category.
 - `context.kind` as whole-state identity: rejected. Context, surface, and
   authority are independently visible.
 - Duplicate combat semantics in surface: rejected; combat player/potions live
@@ -119,12 +120,11 @@ a fact the UI already reveals.
 
 ## Open Questions
 
-- organic qualification of typed diagnostics and card reward;
 - process-global runtime/session isolation;
 - observation ID versus executable state ID;
-- scalable read-only zone/deck inspection;
-- post-close enchant reinspection;
-- ancient dialogue and combat-selection subsurface composition;
+- generic deck-maintenance purpose/preview/completion without a universal
+  selector;
+- shop relic/potion/removal category diversity;
 - richer completion probes for long animations and phase transitions;
 - organic performance and semantic diversity under combat load.
 
@@ -140,10 +140,11 @@ owned by bounded providers rather than a universal UI model.
 
 ## Next Surface
 
-Ordinary `reward_flow + card_reward_selection` is implemented in source. It
-models each visible `NCardRewardAlternativeButton` separately and fails closed
-if its player-facing label is unreadable. It remains unqualified for runtime
-until a fresh installed Bridge and Re-SpireAgent lifecycle smoke passes.
+Preview.14 completed the normal merchant room and inventory contract for the
+observed card-purchase journey. Generic deck maintenance is a likely next
+high-value boundary because both rest Smith and shop removal open it, but source
+evidence must preserve purpose-specific eligibility, preview, commit, cancel,
+and completion. No universal card selector is authorized.
 
 ## Qualification Rule
 

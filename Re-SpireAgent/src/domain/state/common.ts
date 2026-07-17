@@ -1,6 +1,6 @@
 import type { PlayerSnapshot } from "./entities.js";
 
-export const NORMALIZED_STATE_SCHEMA_VERSION = 13 as const;
+export const NORMALIZED_STATE_SCHEMA_VERSION = 14 as const;
 
 export type StateStability =
   | "actionable"

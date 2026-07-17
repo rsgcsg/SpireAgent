@@ -6,6 +6,7 @@ using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Entities.Merchant;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.Potions;
 using MegaCrit.Sts2.Core.Models;
@@ -33,6 +34,8 @@ internal static class BridgeContextBuilder
                 return BuildEvent(eventRoom);
             if (runState?.CurrentRoom is RestSiteRoom)
                 return new RestBridgeContext("rest");
+            if (runState?.CurrentRoom is MerchantRoom merchantRoom)
+                return BuildShop(merchantRoom, entities);
             if (runState?.CurrentRoom is CombatRoom combatRoom && CombatManager.Instance.IsInProgress)
                 return BuildCombat(runState, combatRoom, entities);
 
@@ -70,6 +73,33 @@ internal static class BridgeContextBuilder
             ancient,
             inDialogue,
             ReadNodeText(uiRoom, "%EventDescription") ?? McpMod.SafeGetText(() => model.Description));
+    }
+
+    public static ShopBridgeContext BuildShop(MerchantRoom room, BridgeEntityRegistry entities)
+    {
+        MerchantInventory inventory = room.GetLocalInventory()
+            ?? throw new InvalidOperationException("Local merchant inventory is unavailable.");
+        Player player = inventory.Player
+            ?? throw new InvalidOperationException("Local merchant player is unavailable.");
+        var potions = new List<VisibleOwnedPotion>();
+        for (int slot = 0; slot < player.PotionSlots.Count; slot++)
+        {
+            PotionModel? potion = player.GetPotionAtSlotIndex(slot);
+            if (potion == null)
+                continue;
+            potions.Add(new VisibleOwnedPotion(
+                entities.GetId(potion, "potion"),
+                potion.Id.Entry,
+                McpMod.SafeGetText(() => potion.Title),
+                McpMod.SafeGetText(() => potion.DynamicDescription),
+                slot));
+        }
+
+        return new ShopBridgeContext(
+            "shop",
+            player.Gold,
+            player.PotionSlots.Count,
+            potions);
     }
 
     public static CombatBridgeContext BuildCombat(

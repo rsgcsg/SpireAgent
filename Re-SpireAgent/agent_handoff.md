@@ -1,7 +1,7 @@
 # RE-P1 Handoff
 
-Status: Bridge `2.0-preview.13` is loaded against exact game identity
-`v0.108.0|58694f64|-2044609792`. Twelve executable Surface contracts plus
+Status: Bridge `2.0-preview.14` is loaded against exact game identity
+`v0.108.0|58694f64|-2044609792`. Fourteen executable Surface contracts plus
 read-only run-deck/combat-pile Inspection have bounded organic evidence for at
 least one observed shape. RE-P1 remains a protocol baseline, not a verified
 strategic player or a claim of broad game coverage.
@@ -11,6 +11,12 @@ Canonical current Bridge status is maintained in
 as handoff history.
 
 ## Completed
+
+- Preview.14 added separate `shop_room` and `shop_inventory` contracts. A
+  saved-run organic smoke completed open, close/reopen, an Armaments purchase,
+  sold-out/run-deck post-state, and Proceed to map. The strict client accepts
+  C#-omitted nullable shop product fields but still rejects blocked-offer,
+  capacity, category, and binding contradictions.
 
 - Preview.13 closed the organic `rest_site -> deck selection -> proceed`
   boundary. `run-20260716182900-50gm7n` selected Smith through a settled
@@ -156,9 +162,10 @@ No memory, learning, scoring, strategic scaffold, shadow mode, live additive mod
   qualify every target type, card effect, selector mode, or phase transition.
 - Hidden draw order remains excluded by policy. Implemented surface variants
   beyond those organically observed still require their own evidence.
-- Shop, treasure, menu, and generic run-deck card-selection variants still
-  depend on explicitly labeled v1 local reconstruction in auto mode. Map and
-  rest controls are Bridge-owned; Smith's child selector remains legacy.
+- Treasure, menu, and generic run-deck card-selection variants still depend on
+  explicitly labeled v1 local reconstruction in auto mode. Normal shop room and
+  inventory controls are Bridge-owned, but relic/potion/removal actions still
+  need organic category evidence and the removal child selector remains legacy.
 - Composite state-plus-inspection drift is fail-closed but noisy during fast
   transitions. Future work may add bounded observable read retry or a coherent
   server observation token; it must never accept mixed adjacent states.
@@ -168,8 +175,8 @@ No memory, learning, scoring, strategic scaffold, shadow mode, live additive mod
 
 ## Validation
 
-On 2026-07-17, preview.13 passed 104/104 Re tests (including 40 Bridge tests),
-41/41 Bridge contract/runtime tests, strict typecheck, and production build.
+On 2026-07-17, preview.14 passed 109/109 Re tests (including 45 Bridge tests),
+43/43 Bridge contract/runtime tests, strict typecheck, and production build.
 See the latest command output rather than treating historical counts as a
 permanent invariant.
 
@@ -187,11 +194,13 @@ npm run agent:replay
 
 Start a fresh game manually, then run bounded windows and inspect each run with `npm run agent:replay`. Confirm that each record contains pre/post raw snapshots, the prompt, DeepSeek response, selected allowed action, MCP result, and settled post-state. Fix a repeatable protocol mismatch with a reduced raw fixture and contract test before running longer loops.
 
-The next high-frequency v2 coverage candidate is shop, but only after exact UI
-ownership, inventory semantics, child removal flow, affordability/capacity,
-leave, and asynchronous completion are audited. Keep linked reward sets and
-every unlisted executable surface unsupported until exact-build bindings,
-state-bound actions, completion evidence, and contract tests exist.
+The next high-frequency boundary should be chosen after reviewing preview.14's
+remaining evidence gaps. Generic deck maintenance is a strong candidate because
+both rest Smith and shop removal reach it, but it must preserve purpose-specific
+selection/preview/commit semantics rather than become a universal card selector.
+Keep linked reward sets and every unlisted executable surface unsupported until
+exact-build bindings, state-bound actions, completion evidence, and contract
+tests exist.
 
 Canonical Bridge status and the latest evidence are in
 `../STS2MCP/docs/bridge-v2/CURRENT_STATUS.md` and

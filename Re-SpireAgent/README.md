@@ -196,11 +196,12 @@ RE-P1 has fixture-backed support for:
 - `menu`
 - `game_over`
 
-Bridge v2 source `preview.13` contracts cover twelve bounded executable
+Bridge v2 source `preview.14` contracts cover fourteen bounded executable
 surfaces: deck enchant, ancient dialogue, ordinary events, rest controls,
 combat turn, three combat selectors, card bundles, card rewards, outer rewards,
-and map navigation. Every current surface has bounded organic Bridge plus
-Re-SpireAgent evidence for at least one observed shape. Fixed read-only
+map navigation, and separate shop room/inventory ownership. Every current
+surface family has bounded organic Bridge plus Re-SpireAgent evidence for at
+least one observed shape. Fixed read-only
 `run_deck` and `combat_piles` inspections also have bounded organic evidence.
 Qualification is per observed shape, not broad surface or game coverage. See
 [BRIDGE_V2_INTEGRATION.md](docs/BRIDGE_V2_INTEGRATION.md).
@@ -222,7 +223,7 @@ The only supported public TypeScript entrypoint is `src/index.ts`. Integration r
 ## Current Limitations
 
 - Real v1 MCP windows have exercised event, combat, rewards, card reward, map, rest, shop, treasure, and a boss fight. This proves protocol integration, not strategic quality or universal MCP coverage. The legacy v1 `NDeckEnchantSelectScreen` confirmation endpoint acknowledged the request without advancing state; Bridge v2 now has a separate qualified opaque-action contract for that surface.
-- Bridge v2 source `preview.13` lists legal actions for twelve bounded surfaces.
+- Bridge v2 source `preview.14` lists legal actions for fourteen bounded surfaces.
   All unlisted surfaces remain v1-local in `auto` mode.
 - Organic evidence now covers each listed surface for at least one shape. It
   does not qualify every selector mode, event origin, card target, or game UI.
@@ -243,10 +244,17 @@ The only supported public TypeScript entrypoint is `src/index.ts`. Integration r
   fields do not justify a universal selector.
 - Ordinary card reward and outer reward claim are distinct, organically
   qualified protocols; neither is flattened into the other.
+- Normal merchant inventory and room controls are distinct Bridge-owned
+  protocols. Organic evidence covers open, close/reopen, one card purchase with
+  sold-out/run-deck post-state, and Proceed to map. Relic, potion, and removal
+  categories do not inherit that card-purchase qualification; the removal child
+  deck selector remains separate.
 - Run-deck inspection supplies complete typed deck evidence when a local run
   exists, including on legacy-fallback map/shop states. It does not fabricate
   a deck at menu/no-run states.
-- Shop leaving is the one explicit protocol inference retained from verified legacy live behavior: the MCP `proceed` action leaves a shop even when `shop.can_proceed` is false. It is recorded in normalization diagnostics.
+- The documented shop-leave inference remains only in the legacy v1 fallback.
+  A preview.14 shop state instead executes exact Bridge-advertised room actions;
+  v1 `shop.can_proceed` cannot add or authorize an action there.
 - A changed state hash proves visible state drift, not perfect semantic settlement. The watcher waits for two consecutive, identical, non-transitional observations after an action, but animation/UI edge cases still require real-game verification.
 - RE-P1 is an auditable baseline, not a strong strategic player yet.
 

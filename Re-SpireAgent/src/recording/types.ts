@@ -109,7 +109,7 @@ export interface RunMetadata {
     maxOutputTokens: number;
   };
   schemas: {
-    normalizedState: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13;
+    normalizedState: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14;
     prompt: 1 | 2 | 3;
     decisionRecord: 1 | 2;
   };

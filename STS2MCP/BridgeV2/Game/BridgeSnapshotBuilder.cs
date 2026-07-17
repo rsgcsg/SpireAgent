@@ -18,6 +18,8 @@ internal static class BridgeSnapshotBuilder
         new RewardClaimSurfaceProvider(),
         new MapNavigationSurfaceProvider(),
         new CombatTurnSurfaceProvider(),
+        new ShopInventorySurfaceProvider(),
+        new ShopRoomSurfaceProvider(),
         new RestSiteSurfaceProvider(),
         new EventDialogueSurfaceProvider(),
         new EventOptionSurfaceProvider()
