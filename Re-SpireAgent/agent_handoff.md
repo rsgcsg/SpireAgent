@@ -13,6 +13,15 @@ All other execution and inspection remains disabled; a second independent
 merchant journey is the resilience follow-up. RE-P1 remains a protocol baseline, not a verified strategic player
 or a claim of broad game coverage.
 
+The 2026-07-17 architecture reassessment retained semantic Surfaces and added
+only non-authoritative bounded-selection fact reuse. It also found that the old
+merchant-removal confirm predicate completed on selector close before the exact
+async transaction necessarily committed. Bridge source now requires the exact
+selected instance to leave the deck, deck/gold deltas, removal-count increment,
+and service consumption, while allowing intermediate state IDs. C#/Re tests
+cover the contract; a second organic merchant journey is still required before
+current-build qualification.
+
 Canonical current Bridge status is maintained in
 `../STS2MCP/docs/bridge-v2/CURRENT_STATUS.md`; the chronology below is retained
 as handoff history.
@@ -191,10 +200,14 @@ No memory, learning, scoring, strategic scaffold, shadow mode, live additive mod
 
 ## Validation
 
-On 2026-07-17, preview.14 passed 109/109 Re tests (including 45 Bridge tests),
-43/43 Bridge contract/runtime tests, strict typecheck, and production build.
-See the latest command output rather than treating historical counts as a
-permanent invariant.
+On 2026-07-17, the architecture/completion hardening passed 115/115 Re tests,
+50/50 Bridge contract/runtime tests, strict typecheck, and both production
+builds; the Bridge Release build had zero warnings and zero errors. A clean
+Steam restart then exposed exact v0.109 candidate authority, fail-closed
+main-menu state, fast `inspection_not_available` for `run_deck`, and a read-only
+Re inspection with no allowed actions. The strengthened destructive completion
+witness still requires a second organic merchant journey. See the latest
+command output rather than treating test counts as a permanent invariant.
 
 ## Next Step
 

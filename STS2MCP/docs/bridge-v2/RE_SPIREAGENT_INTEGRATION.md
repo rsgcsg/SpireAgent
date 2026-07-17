@@ -33,8 +33,8 @@ Required client behavior:
 - never auto-retry unknown outcomes;
 - permit only one executor during v1/v2 dual-read tests.
 
-Source `2.0-preview.14` has strict projections for fourteen bounded executable
-surfaces: deck enchant, ancient dialogue, ordinary event options, rest controls,
+Source `2.0-preview.18` has strict projections for fifteen bounded executable
+surfaces: deck enchant, merchant deck removal, ancient dialogue, ordinary event options, rest controls,
 combat turn, three combat selectors, atomic card bundles, card rewards, outer
 room rewards, map navigation, and separate shop room/inventory ownership. It
 also preserves typed diagnostics and fixed
@@ -54,8 +54,13 @@ accepts omitted nullable product fields without weakening stocked-product or
 action-binding checks. Organic preview.14 evidence covers room open,
 inventory close/reopen, one card purchase with sold-out and run-deck post-state,
 and Proceed to map. Relic, potion, and removal categories retain separate
-qualification; the removal child deck selector is not yet a qualified v2
-Surface.
+qualification. The removal child is a narrow v0.109 candidate Surface, not a
+qualified generic selector. Re shares only bounded-selection consistency checks
+between enchantment and removal; context compatibility, action kinds,
+eligibility, and completion remain separate. Exact-source review found that
+selector closure precedes the async merchant transaction, so Bridge completion
+now waits for selected-card/deck/gold/counter/service post-state while Re keeps
+the same command consumer and stable post-command settlement.
 
 See the rebuilt client's
 [Bridge v2 integration contract](../../../Re-SpireAgent/docs/BRIDGE_V2_INTEGRATION.md).

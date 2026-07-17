@@ -631,12 +631,18 @@ internal static class ShopSurfaceFacts
         MerchantRoom merchantRoom,
         NMerchantRoom room,
         MerchantInventory inventory) =>
+        IsCurrentMerchant(merchantRoom, room, inventory)
+        && !ActiveSurfaceResolver.IsVisibleActiveOverlay(NOverlayStack.Instance?.Peek())
+        && NMapScreen.Instance?.IsOpen != true;
+
+    public static bool IsCurrentMerchant(
+        MerchantRoom merchantRoom,
+        NMerchantRoom room,
+        MerchantInventory inventory) =>
         TryGetCurrent(out MerchantRoom? currentRoom, out NMerchantRoom? currentUi, out MerchantInventory? currentInventory)
         && ReferenceEquals(currentRoom, merchantRoom)
         && ReferenceEquals(currentUi, room)
-        && ReferenceEquals(currentInventory, inventory)
-        && !ActiveSurfaceResolver.IsVisibleActiveOverlay(NOverlayStack.Instance?.Peek())
-        && NMapScreen.Instance?.IsOpen != true;
+        && ReferenceEquals(currentInventory, inventory);
 
     public static bool IsCurrentInventory(
         MerchantRoom merchantRoom,

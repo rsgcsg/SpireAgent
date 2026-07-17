@@ -58,6 +58,14 @@ The required sequence completed once on an ordinary merchant removal screen:
    no stale child actions. Its same-state `run_deck` inspection contained 10
    cards and no longer contained the selected instance.
 
+The post-state proved that this first transaction really committed, but the
+follow-up exact-source audit found that the original command predicate itself
+completed too early: selector closure precedes gold loss, deck mutation,
+counter increment, and service consumption. Source now keeps that command
+pending across intermediate states until all six semantic witnesses agree. A
+second independent journey must exercise this strengthened predicate before
+qualification; the historical post-state is not relabeled as that test.
+
 This establishes only the exact observed ordinary merchant-removal lifecycle.
 It does not qualify all merchant variants, rest Smith, transformations,
 enchantments, generic card selection, or any other v0.109 surface. A second

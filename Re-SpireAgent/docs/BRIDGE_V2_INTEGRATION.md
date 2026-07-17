@@ -104,7 +104,11 @@ merchant removal child is a different Surface. Preview.15 defines its exact
 ordinary journey. Its selection action entered preview directly in the observed
 shape; the current legal action set, rather than a declared preview operation,
 is authoritative. A second independent merchant journey is still needed before
-any resilience claim, and no other deck-selection owner is covered.
+any resilience claim, and no other deck-selection owner is covered. Exact-source
+review found that selector closure occurs before all merchant-removal effects
+finish, so Bridge completion now waits for the selected-instance/deck/gold/
+counter/service postcondition. Re consumes the same wire actions and still runs
+its ordinary stable post-state settlement after `completed/confirmed`.
 
 ## Typed Diagnostics
 

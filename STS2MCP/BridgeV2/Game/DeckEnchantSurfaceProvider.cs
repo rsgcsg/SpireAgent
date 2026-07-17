@@ -341,21 +341,25 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
         binding = null;
         error = null;
 
-        object? prefsValue = ReadField(screen, "_prefs");
-        object? selectedValue = ReadField(screen, "_selectedCards");
+        if (!BoundedCardSelectionFacts.TryRead(
+                screen,
+                out CardSelectorPrefs prefs,
+                out IReadOnlyList<CardModel> selected,
+                out string? selectionError))
+        {
+            error = selectionError;
+            return false;
+        }
+
         object? enchantmentValue = ReadField(screen, "_enchantment");
         object? amountValue = ReadField(screen, "_enchantmentAmount");
 
-        if (prefsValue is not CardSelectorPrefs prefs)
-            error = "Missing or incompatible _prefs binding.";
-        else if (selectedValue is not IEnumerable<CardModel> selected)
-            error = "Missing or incompatible _selectedCards binding.";
-        else if (enchantmentValue is not EnchantmentModel enchantment)
+        if (enchantmentValue is not EnchantmentModel enchantment)
             error = "Missing or incompatible _enchantment binding.";
         else if (amountValue is not int amount)
             error = "Missing or incompatible _enchantmentAmount binding.";
         else
-            binding = new Binding(prefs, selected.ToArray(), enchantment, amount);
+            binding = new Binding(prefs, selected, enchantment, amount);
 
         return binding != null;
     }
@@ -373,12 +377,10 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
     }
 
     private static bool IsCardSelected(NDeckEnchantSelectScreen screen, CardModel card) =>
-        ReadSelectedCards(screen).Any(selected => ReferenceEquals(selected, card));
+        BoundedCardSelectionFacts.IsSelected(screen, card);
 
     private static IReadOnlyList<CardModel> ReadSelectedCards(NDeckEnchantSelectScreen screen) =>
-        ReadField(screen, "_selectedCards") is IEnumerable<CardModel> cards
-            ? cards.ToArray()
-            : Array.Empty<CardModel>();
+        BoundedCardSelectionFacts.ReadSelectedCards(screen);
 
     private static VisibleEnchantment BuildEnchantment(
         NDeckEnchantSelectScreen screen,

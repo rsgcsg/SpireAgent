@@ -572,18 +572,7 @@ function validateDeckEnchantState(
   readiness: string,
   diagnostics: DiagnosticsBuilder
 ): void {
-  if (surface.min_select > surface.max_select) diagnostics.invalid("bridge_v2.surface.selection_range", surface, "min_select exceeds max_select");
-  if (surface.selected_count !== surface.selected_card_entity_ids.length) diagnostics.invalid("bridge_v2.surface.selected_count", surface.selected_count, "selected count and selected ids differ");
-  if (surface.selected_count > surface.max_select) diagnostics.invalid("bridge_v2.surface.selected_count", surface.selected_count, "selected count exceeds max_select");
-  const cardIds = new Set(surface.cards.map((card) => card.entity_id));
-  if (cardIds.size !== surface.cards.length) diagnostics.invalid("bridge_v2.surface.cards", surface.cards, "card entity ids are not unique");
-  const selectedIds = new Set(surface.selected_card_entity_ids);
-  for (const selectedId of selectedIds) {
-    if (!cardIds.has(selectedId)) diagnostics.invalid("bridge_v2.surface.selected_card_entity_ids", selectedId, "selected card is absent from cards");
-  }
-  for (const card of surface.cards) {
-    if (card.is_selected !== selectedIds.has(card.entity_id)) diagnostics.invalid("bridge_v2.surface.cards.is_selected", card, "card selected flag disagrees with selected ids");
-  }
+  validateBoundedCardSelectionFacts(surface, diagnostics);
   validateActions("deck_enchant_selection", stateId, actions, missing, advertisedOperations, readiness, diagnostics);
   for (const action of actions) {
     if (surface.stage === "selecting" && (action.kind === "confirm_selection" || action.kind === "cancel_preview")) diagnostics.invalid("bridge_v2.legal_actions.kind", action.kind, "preview-only action appeared during selecting stage");
@@ -610,6 +599,13 @@ function validateDeckRemovalState(
 
 function validateDeckRemovalFacts(
   surface: BridgeV2DeckRemovalSurface,
+  diagnostics: DiagnosticsBuilder
+): void {
+  validateBoundedCardSelectionFacts(surface, diagnostics);
+}
+
+function validateBoundedCardSelectionFacts(
+  surface: Pick<BridgeV2DeckEnchantSurface, "min_select" | "max_select" | "selected_count" | "selected_card_entity_ids" | "cards">,
   diagnostics: DiagnosticsBuilder
 ): void {
   if (surface.min_select > surface.max_select) diagnostics.invalid("bridge_v2.surface.selection_range", surface, "min_select exceeds max_select");

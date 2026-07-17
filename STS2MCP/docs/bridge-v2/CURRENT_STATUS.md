@@ -24,6 +24,15 @@ inspection disabled, and suppresses legacy-sidecar merging across the candidate
 build. No v0.109 action or inspection is generally qualified by v0.108 history
 or by these canaries.
 
+An exact-source architecture reassessment then found that the original removal
+command marked confirmation complete when the selector closed, before the
+game-owned async transaction necessarily finished. The historical run-deck
+post-state still proves that transaction committed. Source is now hardened to
+require selector closure, selected-instance removal, exact deck/gold delta,
+removal-count increment, and service consumption. This hardening is compiled
+and fixture-tested but still needs its own second organic journey; it is not
+retroactively called qualified runtime evidence.
+
 ## Canonical Model
 
 Runtime identity is:
@@ -59,7 +68,7 @@ context.kind + surface.kind + action authority
 | `map_navigation` | repeated exact-node travel and map close/current-coordinate completion | qualified for observed singleplayer map travel |
 | `shop_room` | saved-run restore, open inventory, close/reopen, Proceed to map | qualified for observed normal merchant room controls |
 | `shop_inventory` | typed inventory, card/relic/potion purchase, sold-out post-state, capacity suppression, removal-child launch | direct purchases and removal launch qualified for observed shapes; child selector remains pending |
-| `deck_removal_selection` | natural v0.109 selecting/automatic-preview/confirm lifecycle plus exact run-deck post-state | action-and-inspection canary; first full ordinary journey passed | a second independent merchant journey is required before any qualification decision; do not generalize to Smith, transform, enchantment, or a generic deck selector |
+| `deck_removal_selection` | natural v0.109 selecting/automatic-preview/confirm lifecycle plus exact run-deck post-state | action-and-inspection canary; first full ordinary journey passed, but a second independent merchant journey under the strengthened witness is required before any qualification decision; do not generalize to Smith, transform, enchantment, or a generic deck selector |
 
 Read-only `run_deck` and `combat_piles` inspections are organically qualified.
 They expose no action authority and never reveal draw order.
@@ -113,10 +122,22 @@ invariants.
 
 ## Verification
 
-- Bridge contract/runtime tests: 43/43.
-- Re-SpireAgent tests: 110/110, including Bridge integration coverage for the
-  static merchant-removal contract.
+- Bridge contract/runtime tests: 50/50, including exact positive and partial or
+  contradictory merchant-removal completion witnesses.
+- Re-SpireAgent tests: 115/115, including Bridge integration coverage for the
+  separate enchant/removal contracts and shared bounded-selection invariants.
 - Re-SpireAgent strict typecheck and production build pass.
+- The Release Bridge build completed with zero warnings and zero errors. The
+  rebuilt DLL was installed, the pre-existing game process was then explicitly
+  restarted, and the loaded process exposed exact identity
+  `v0.109.0|c12f634d|-840572606` with only `deck_removal_selection` and
+  `run_deck` canary authority. Main-menu state remained unsupported with zero
+  actions; `run_deck` returned the expected `inspection_not_available` response,
+  and Re-SpireAgent consumed that response read-only with `actionAuthority=none`.
+- Deployment freshness is part of runtime evidence: an earlier Steam URI only
+  focused a process started before the DLL mtime. Those reads were discarded as
+  new-build evidence. A disk hash alone does not prove which assembly a running
+  process loaded.
 - Preview.14 normal merchant open/close/reopen/card-purchase/Proceed lifecycle
   completed with confirmed action-specific evidence and no diagnostics.
 - Preview.13 organic run `run-20260716182900-50gm7n` recorded 71 settled actions
@@ -158,21 +179,23 @@ potion purchase are only qualified for their historical observed shapes.
 
 ## Current Blocker And Next Step
 
-Preview.18 has completed its first exact v0.109 merchant-removal lifecycle.
-The next value is an independent ordinary merchant journey for resilience, not
-new behavior: verify selecting -> automatic preview -> confirm and a
-same-state `run_deck` instance removal again, with the current exact identity
-and no legacy sidecar. Any command rejection, unexpected state transition,
-failed completion probe, missing evidence, or cross-surface action returns the
-candidate build to the narrower previous gate. Generic deck maintenance remains
-a future shared-boundary study: rest Smith and shop removal have purpose-specific
-selection/preview/confirmation semantics and must not become a universal card
-selector. Menu and treasure remain separate debt.
+Preview.18 has one exact v0.109 merchant-removal lifecycle and external
+post-state proof. The next value is an independent ordinary merchant journey
+under the strengthened command predicate: verify selecting -> automatic preview
+-> confirm, command completion only after the full semantic postcondition, and
+a same-state `run_deck` instance removal again. Any rejection, timeout,
+contradictory delta, missing evidence, or cross-surface action returns the
+candidate build to the narrower previous gate. Shared bounded-selection facts
+are now reused internally, but rest Smith, shop removal, transform, and enchant
+retain purpose-specific eligibility, actions, and completion. Menu and treasure
+remain separate debt.
 
 See [the preview.14 shop audit](PREVIEW_14_SHOP_SURFACE_AUDIT_2026-07-17.md),
 [the preview.13 closeout audit](PREVIEW_13_CLOSEOUT_AUDIT_2026-07-17.md),
 [the preview.16 candidate-observation audit](PREVIEW_16_CANDIDATE_OBSERVATION_GATE_2026-07-17.md),
 [the preview.17 action-canary plan](PREVIEW_17_DECK_REMOVAL_ACTION_CANARY_2026-07-17.md),
 [the preview.18 inspection-canary plan](PREVIEW_18_RUN_DECK_INSPECTION_CANARY_2026-07-17.md),
+[ADR-0003](ADR-0003-semantic-surfaces-shared-mechanics-and-completion.md),
+[the architecture reassessment](ARCHITECTURE_REASSESSMENT_2026-07-17.md),
 [the coverage matrix](PLAYER_VISIBLE_COVERAGE.md), and
 [the organic long-run audit](ORGANIC_LONG_RUN_AUDIT_2026-07-17.md).

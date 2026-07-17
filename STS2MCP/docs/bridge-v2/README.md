@@ -10,6 +10,8 @@
 - [Organic long-run audit](ORGANIC_LONG_RUN_AUDIT_2026-07-17.md)
 - [ADR-0001: visible action entity bindings](ADR-0001-visible-action-entity-bindings.md)
 - [ADR-0002: card-selection surface boundaries](ADR-0002-card-selection-surface-boundaries.md)
+- [ADR-0003: semantic surfaces, shared mechanics, and semantic completion](ADR-0003-semantic-surfaces-shared-mechanics-and-completion.md)
+- [2026-07-17 architecture reassessment](ARCHITECTURE_REASSESSMENT_2026-07-17.md)
 - [Protocol and errors](PROTOCOL.md)
 - [Observation policy](OBSERVATION_POLICY.md)
 - [Player-visible coverage](PLAYER_VISIBLE_COVERAGE.md)

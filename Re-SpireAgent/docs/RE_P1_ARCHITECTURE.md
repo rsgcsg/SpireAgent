@@ -53,6 +53,10 @@ similarity. Combat pile, combat hand, generated-card, reward-card, and deck
 enchant selection stay distinct because their card instances, readiness,
 action grammar, and completion witnesses differ. Shared serializers and entity
 binding checks are internal implementation laws, not a universal wire Surface.
+Deck enchant and merchant removal also share one bounded-selection consistency
+validator. It checks limits, selected membership, and visible identity only;
+purpose, eligibility, action authority, commit effects, and completion remain
+surface-specific.
 
 ## Action Authority
 

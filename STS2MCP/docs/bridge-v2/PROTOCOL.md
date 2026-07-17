@@ -159,7 +159,7 @@ unqualified.
 |---|---|
 | merchant removal toggle | selected membership changes, preview opens, or selector closes |
 | merchant removal preview | removal preview opens or selector closes |
-| merchant removal confirm | selector closes after confirmation |
+| merchant removal confirm | selector closes, exact selected instance leaves the run deck, deck count and gold reflect the captured transaction, removal count increments, and the exact service is used |
 | merchant removal preview cancel | preview closes and selector remains current |
 | merchant removal cancel | selector closes without committing |
 
@@ -203,6 +203,12 @@ visible product semantics.
 
 If the state changes but the predicate does not pass, the command fails with an
 unknown outcome. Unknown outcomes are never auto-retried.
+
+For an asynchronous semantic commit, a Surface or panel closing is only an
+intermediate transition unless exact game source proves it is the terminal
+effect. Merchant removal therefore permits intermediate state IDs while its
+source-backed postcondition settles. This implementation hardening does not
+change the `2.0-preview.18` wire DTO or action IDs.
 
 Clients must verify that every command response repeats the submitted
 `request_id`, `expected_state_id`, and `action_id`. They must also enforce the
