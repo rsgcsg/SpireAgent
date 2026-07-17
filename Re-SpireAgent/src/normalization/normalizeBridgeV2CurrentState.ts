@@ -324,7 +324,7 @@ export function normalizeBridgeV2CurrentState(
         diagnostics.infer(
           "bridge_v2.action_canary",
           ["bridge_v2.game.compatibility", "bridge_v2.state"],
-          "candidate-build action authority is restricted to the exact merchant-removal surface; no inspection or legacy sidecar is permitted"
+          "candidate-build action authority is restricted to the exact merchant-removal surface; only explicitly scoped v2 inspection is permitted and no legacy sidecar may merge"
         );
       }
     } else if (isBridgeV2UnsupportedSurface(state.surface)) {

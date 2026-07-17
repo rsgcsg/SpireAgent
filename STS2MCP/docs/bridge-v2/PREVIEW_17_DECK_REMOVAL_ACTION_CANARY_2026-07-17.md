@@ -3,6 +3,11 @@
 Status date: 2026-07-17  
 Protocol: `2.0-preview.17`
 
+> Historical record. Preview.18 supersedes this canary's current evidence
+> status with a scoped `run_deck` observer and one complete destructive
+> lifecycle. See `PREVIEW_18_RUN_DECK_INSPECTION_CANARY_2026-07-17.md` and
+> `CURRENT_STATUS.md`; preview.17 itself remains an inspection-disabled record.
+
 ## Authorization
 
 Preview.16 obtained a natural, exact-identity observation of the merchant

@@ -5,11 +5,12 @@ plus read-only run-deck/combat-pile Inspection. Organic evidence remains scoped
 to historical exact identity `v0.108.0|58694f64|-2044609792`. On installed
 `v0.109.0|c12f634d|-840572606`, preview.18 permits only a no-sidecar action
 canary for `shop + deck_removal_selection` plus a distinct read-only `run_deck`
-inspection canary. Its first opaque cancel lifecycle completed as `confirmed`
-on 2026-07-17 and settled outside the child surface with zero legal actions.
-All other execution and inspection remains disabled; destructive
-merchant-removal confirmation remains blocked pending a fresh v0.109 run-deck
-smoke and exact before/after post-state evidence. RE-P1 remains a protocol baseline, not a verified strategic player
+inspection canary. On 2026-07-17, the v0.109 ordinary merchant flow completed:
+cancel settled cleanly; a later visible Strike selection entered preview;
+confirmation settled to shop; same-state `run_deck` evidence changed 11 -> 10
+and no longer contained the selected instance. This is one exact journey only.
+All other execution and inspection remains disabled; a second independent
+merchant journey is the resilience follow-up. RE-P1 remains a protocol baseline, not a verified strategic player
 or a claim of broad game coverage.
 
 Canonical current Bridge status is maintained in
@@ -29,9 +30,9 @@ as handoff history.
 - Preview.15 adds `deck_removal_selection`: a narrow `shop +
   NDeckCardSelectScreen` child contract with opaque select, preview, confirm,
   and cancel actions. It deliberately excludes Smith, transform, enchant, and
-  generic deck selection. Static Bridge/Re tests pass, but the Steam update to
-  v0.109 invalidated the previous exact runtime identity before an action smoke;
-  no v0.109 action or inspection has been executed.
+  generic deck selection. Static Bridge/Re tests pass. Preview.18 has now
+  exercised one exact v0.109 ordinary merchant lifecycle, but does not turn
+  that evidence into a generic selection contract or broader v0.109 authority.
 
 - Preview.13 closed the organic `rest_site -> deck selection -> proceed`
   boundary. `run-20260716182900-50gm7n` selected Smith through a settled

@@ -110,7 +110,10 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
     if (this.options.mode === "v2" || !isSafeExplicitLegacyFallback(capabilities.data, state.data)) {
       const [legacyState, inspections] = await Promise.all([
         candidateBuild ? undefined : this.tryReadLegacySidecar(),
-        candidateBuild ? {} : this.readInspectionSidecars(capabilities.data, state.data)
+        // Candidate builds may expose a separately scoped, v2-owned
+        // inspection canary. Never merge v1 there, but do preserve an
+        // inspection explicitly authorized by the exact compatibility scope.
+        this.readInspectionSidecars(capabilities.data, state.data)
       ]);
       const verifiedState = await this.bridge.state();
       if (verifiedState.data.state_id !== state.data.state_id) {
@@ -212,9 +215,8 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
     capabilities: BridgeV2Capabilities,
     state: BridgeV2State
   ): Promise<Partial<Record<"run_deck" | "combat_piles", JsonObject>>> {
-    // Candidate-build observations deliberately do not imply that the fixed
-    // inspection contracts still have exact bindings. Keep those reads off
-    // until action-qualified identity is restored.
+    // A candidate build gets no inspection by default. The server must
+    // explicitly advertise both inspection authority and the allowed kind.
     if (!capabilities.game.compatibility.inspection_allowed) return {};
     const implemented = new Set(capabilities.inspections.implemented_kinds);
     const requested: Array<"run_deck" | "combat_piles"> = [];

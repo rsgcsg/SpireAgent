@@ -7,8 +7,10 @@ organic qualification.
 The installed Steam build is currently `v0.109.0|c12f634d|-840572606`; all rows
 below are historical for execution. Preview.18 additionally permits one
 no-sidecar action canary for `shop + deck_removal_selection` and one
-read-only `run_deck` inspection canary. It grants neither any other v0.109
-surface/inspection nor a completed destructive lifecycle qualification.
+read-only `run_deck` inspection canary. One exact ordinary merchant-removal
+lifecycle has now passed with same-state deck post-state evidence. This grants
+neither any other v0.109 surface/inspection nor a generic deck-selector
+qualification.
 
 | Surface / inspection | Context | Player-visible semantics | Organic status | Remaining boundary |
 |---|---|---|---|---|
@@ -26,8 +28,8 @@ surface/inspection nor a completed destructive lifecycle qualification.
 | `map_navigation` | map | full visible topology, visit/travel state, current/next nodes, drawing mode | qualified for observed singleplayer map | multiplayer and special map modes unsupported |
 | `shop_room` | shop | current gold/potions plus merchant-open and Proceed controls | qualified for observed normal merchant | special merchant room variants need evidence |
 | `shop_inventory` | shop | typed inventory, price, stock, visibility, affordability, category eligibility, sale, potion capacity, removal price | card/relic/potion purchase, open/close, capacity suppression, removal-child launch qualified | removal child is a separate, currently unqualified Surface |
-| `deck_removal_selection` | shop parent | exact selected deck cards, selection limits, preview/confirm/cancel controls | v0.109 narrow action canary; cancel lifecycle passed | requires preview/confirm plus exact deck post-state evidence |
-| `run_deck` inspection | active singleplayer run | per-instance card, upgrade and enchantment | historical qualified; v0.109 narrow read-only canary pending fresh runtime smoke | no arbitrary queries; `combat_piles` remains disabled on v0.109 |
+| `deck_removal_selection` | shop parent | exact selected deck cards, selection limits, preview/confirm/cancel controls | v0.109 narrow action-and-inspection canary: first full ordinary flow passed, select -> automatic preview -> confirm | second independent merchant journey required before qualification; never infer Smith/transform/enchant/general-selector semantics |
+| `run_deck` inspection | active singleplayer run | per-instance card, upgrade and enchantment | v0.109 narrow read-only canary runtime-smoked; used for exact 11 -> 10 removal proof | no arbitrary queries; `combat_piles` remains disabled on v0.109 |
 | `combat_piles` inspection | combat | unordered draw/discard/exhaust contents | qualified | draw order intentionally hidden |
 
 ## Unsupported Or Legacy-Owned
@@ -35,7 +37,7 @@ surface/inspection nor a completed destructive lifecycle qualification.
 | Interaction | Current authority | Status |
 |---|---|---|
 | treasure | v1 local reconstruction | stale-index risk remains; no v2 contract |
-| generic run-deck select/remove/transform/upgrade | v1 local reconstruction | removal now has a narrow preview.16 v2 observation candidate; it remains unqualified, while transform/upgrade remain legacy |
+| generic run-deck select/remove/transform/upgrade | v1 local reconstruction | one exact ordinary merchant removal flow has v2 candidate evidence; transform/upgrade and every other selector remain legacy |
 | menu / character select / game over | v1 local reconstruction | character selected-state is not represented and can repeat |
 | linked reward sets | none in v2 | fail closed |
 | multiplayer | none in v2 | intentionally unsupported |

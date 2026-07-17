@@ -2716,6 +2716,64 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     expect(requests.some((url) => url.includes("/api/v1/"))).toBe(false);
   });
 
+  it("reads only the explicitly scoped run-deck inspection in the v0.109 action canary", async () => {
+    const requests: string[] = [];
+    const capabilities = structuredClone(CAPABILITIES);
+    capabilities.game = {
+      version: "v0.109.0",
+      commit: "c12f634d",
+      branch: "v0.109.0",
+      main_assembly_hash: -840572606,
+      compatibility: {
+        status: "action_and_inspection_canary_candidate",
+        action_execution_allowed: true,
+        state_observation_allowed: true,
+        inspection_allowed: true,
+        action_execution_surface_kinds: ["deck_removal_selection"],
+        inspection_allowed_kinds: ["run_deck"],
+        observation_only_surface_kinds: [],
+        observation_candidate_build_fingerprints: ["v0.109.0|c12f634d|-840572606"],
+        detail: "merchant removal and run deck only"
+      }
+    };
+    capabilities.surfaces = capabilities.surfaces.map((surface) => ({
+      ...surface,
+      support: surface.kind === "deck_removal_selection"
+        ? "candidate_action_canary"
+        : "not_qualified_for_current_build"
+    }));
+    capabilities.inspections = {
+      ...capabilities.inspections,
+      status: "candidate_read_only_canary",
+      implemented_kinds: ["run_deck"]
+    };
+    const state = { ...structuredClone(DECK_REMOVAL_STATE), game: capabilities.game, diagnostics: [] };
+    const inspection = { ...runDeckInspection(state.state_id), game: capabilities.game };
+    const adapter = new Sts2McpHybridAdapter("http://adapter.test", 1_000, {
+      mode: "v2",
+      commandPollMs: 1,
+      commandTimeoutMs: 100
+    }, async (input) => {
+      const url = String(input);
+      requests.push(url);
+      if (url.endsWith("/api/v2/capabilities")) return json(capabilities);
+      if (url.endsWith("/api/v2/state")) return json(state);
+      if (url.includes("/api/v2/inspections/run_deck?")) return json(inspection);
+      throw new Error(`Unexpected action-canary request ${url}`);
+    });
+
+    const raw = await adapter.readCurrentState();
+    const envelope = normalizeCurrentState(raw, adapter.describe());
+    expect(envelope.currentState).toMatchObject({
+      stability: "actionable",
+      actionAuthority: "bridge_advertised",
+      bridgeInspectionFacts: { runDeck: [expect.objectContaining({ id: "STRIKE" })] }
+    });
+    expect(requests.some((url) => url.includes("/inspections/run_deck?"))).toBe(true);
+    expect(requests.some((url) => url.includes("/inspections/combat_piles?"))).toBe(false);
+    expect(requests.some((url) => url.includes("/api/v1/"))).toBe(false);
+  });
+
   it("keeps every exact candidate-build surface free of legacy or inspection contamination", async () => {
     const requests: string[] = [];
     const candidateCapabilities = structuredClone(CAPABILITIES);

@@ -42,6 +42,27 @@ required before it can witness a destructive action.
   It does not invent a full `PlayerSnapshot` in shop/rest contexts.
 - v1 sidecar merging remains disabled for the entire candidate build.
 
+## Observed Evidence
+
+The required sequence completed once on an ordinary merchant removal screen:
+
+1. `run_deck` was read with the current expected state ID and returned 11
+   visible per-instance cards with no command authority.
+2. The selected unupgraded Strike instance was present in that exact deck.
+3. The opaque selection action completed and the actual v0.109 screen advanced
+   directly to `preview`; no separately published `preview_deck_removal` action
+   appeared in this observed shape.
+4. A same-state preview inspection still contained all 11 cards, including the
+   selected instance.
+5. The opaque confirmation action completed. The settled shop context exposed
+   no stale child actions. Its same-state `run_deck` inspection contained 10
+   cards and no longer contained the selected instance.
+
+This establishes only the exact observed ordinary merchant-removal lifecycle.
+It does not qualify all merchant variants, rest Smith, transformations,
+enchantments, generic card selection, or any other v0.109 surface. A second
+independent ordinary merchant journey remains the resilience follow-up.
+
 ## Required Evidence Sequence
 
 1. On a fresh ordinary shop state, capture v2 state and read `run_deck` using
@@ -49,8 +70,10 @@ required before it can witness a destructive action.
    player-visible policy, and no command-ledger entry.
 2. Re-read state. Any drift rejects the composite observation.
 3. Only after that read is clean may a new merchant selection journey perform
-   select -> preview -> confirm. Capture the same deck inspection immediately
-   before and after; the selected visible instance must disappear and no stale
+   select -> preview -> confirm. In the observed v0.109 shape, selection itself
+   transitioned directly to preview; legal actions, not declared operations,
+   remain authoritative. Capture the same deck inspection immediately before
+   and after; the selected visible instance must disappear and no stale
    merchant-removal action may survive.
 
 ## Stop And Rollback

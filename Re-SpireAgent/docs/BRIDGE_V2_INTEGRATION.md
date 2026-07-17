@@ -24,8 +24,8 @@ Re-SpireAgent supports the strict `2.0-preview.18` source contract for:
 - `shop_inventory`: organically qualified for close/reopen, ordinary card,
   relic, and potion purchase with sold-out post-state, capacity suppression,
   and launch of the bounded removal child selector;
-- `deck_removal_selection`: narrow merchant-removal child contract, static
-  decoder/validation coverage only;
+- `deck_removal_selection`: narrow v0.109 candidate flow observed through
+  selection -> automatic preview -> confirmation and exact run-deck post-state;
 - `run_deck` and `combat_piles`: fixed read-only, state-bound evidence.
 
 All organic evidence is scoped to exact game identity
@@ -33,11 +33,15 @@ All organic evidence is scoped to exact game identity
 but does not silently qualify later previews or builds. The installed Steam
 build is `v0.109.0|c12f634d|-840572606`; preview.18 permits only a strict
 merchant-removal action canary and a separate read-only `run_deck` inspection
-canary. Inspection content is retained as `bridgeInspectionFacts`, independent
+canary. One exact ordinary merchant-removal journey is now verified: the
+selected visible instance survived into preview, then disappeared from a
+same-state 11 -> 10 `run_deck` post-state after confirmation. Inspection
+content is retained as `bridgeInspectionFacts`, independent
 of whether the active context has a full player projection. There is no
 candidate-build legacy sidecar merge and no authority for any other surface or
-inspection. These canaries are not organic qualification or broad execution
-authority.
+inspection. This is narrow candidate evidence for that exact journey only, not
+formal organic qualification, broad execution authority, or a reusable generic
+card-selector contract.
 
 ## State Identity
 
@@ -96,8 +100,11 @@ purchase, or action bound to an unavailable offer fails closed.
 Organic preview.14 evidence covers room open, inventory close/reopen, direct
 card/relic/potion purchases, sold-out post-states, and Proceed to map. The
 merchant removal child is a different Surface. Preview.15 defines its exact
-`shop + NDeckCardSelectScreen` contract, but the current v0.109 build must be
-revalidated before the strict client can treat it as executable.
+`shop + NDeckCardSelectScreen` contract. Preview.18 revalidated one v0.109
+ordinary journey. Its selection action entered preview directly in the observed
+shape; the current legal action set, rather than a declared preview operation,
+is authoritative. A second independent merchant journey is still needed before
+any resilience claim, and no other deck-selection owner is covered.
 
 ## Typed Diagnostics
 
@@ -112,7 +119,7 @@ degrades or grants authority.
 
 ## Inspection Boundary
 
-`preview.14` exposes exactly two fixed read-only kinds:
+Historical exact builds expose exactly two fixed read-only kinds:
 
 - `run_deck` for per-instance deck/upgrade/enchantment semantics;
 - `combat_piles` for unordered draw/discard/exhaust contents;
@@ -134,6 +141,10 @@ detected by an inspection `stale_state` response or the final state re-read,
 the adapter rejects the partial snapshot with a typed transient observation error.
 The settlement watcher may retry only this error within its existing timeout;
 decision and execution authorization reads remain fail-closed.
+
+The v0.109 candidate currently exposes only `run_deck` as an independently
+scoped read-only canary. It was runtime-smoked as part of the merchant-removal
+post-state lifecycle; `combat_piles` remains disabled.
 
 ## Card Reward Contract
 

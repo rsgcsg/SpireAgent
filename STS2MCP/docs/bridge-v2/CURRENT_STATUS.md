@@ -15,9 +15,10 @@ The currently installed Steam build is
 `v0.109.0|c12f634d|-840572606`. Preview.16 recorded a natural read-only
 merchant-removal child with the expected prompt, ten-card grid, limits, and no
 actions. Preview.17 passed one temporary action-canary lifecycle:
-`shop + deck_removal_selection` cancel. Preview.18 additionally permits only
-the state-bound, read-only `run_deck` inspection needed to observe a future
-destructive post-state. It keeps every other surface
+`shop + deck_removal_selection` cancel. Preview.18 then passed its exact
+state-bound `run_deck` inspection smoke and one ordinary destructive merchant
+removal lifecycle: select a visible deck instance -> automatic preview ->
+confirm -> exact run-deck post-state. It keeps every other surface
 `not_qualified_for_current_build`, keeps `combat_piles` and every other
 inspection disabled, and suppresses legacy-sidecar merging across the candidate
 build. No v0.109 action or inspection is generally qualified by v0.108 history
@@ -58,7 +59,7 @@ context.kind + surface.kind + action authority
 | `map_navigation` | repeated exact-node travel and map close/current-coordinate completion | qualified for observed singleplayer map travel |
 | `shop_room` | saved-run restore, open inventory, close/reopen, Proceed to map | qualified for observed normal merchant room controls |
 | `shop_inventory` | typed inventory, card/relic/potion purchase, sold-out post-state, capacity suppression, removal-child launch | direct purchases and removal launch qualified for observed shapes; child selector remains pending |
-| `deck_removal_selection` | static contract, natural v0.109 selecting stage, and settled cancel | temporary action canary only | smoke v0.109 `run_deck`, then separately test select/preview/confirm and exact deck/shop post-state before any qualification decision |
+| `deck_removal_selection` | natural v0.109 selecting/automatic-preview/confirm lifecycle plus exact run-deck post-state | action-and-inspection canary; first full ordinary journey passed | a second independent merchant journey is required before any qualification decision; do not generalize to Smith, transform, enchantment, or a generic deck selector |
 
 Read-only `run_deck` and `combat_piles` inspections are organically qualified.
 They expose no action authority and never reveal draw order.
@@ -128,9 +129,13 @@ invariants.
   `preview17-cancel-1784269191` cancelled the selecting child and settled to
   unsupported shop context with zero legal actions. This qualifies the bounded
   cancel transition only; it does not claim deck or merchant-service post-state
-  facts that the candidate build could not yet inspect. Preview.18 adds only
-  `run_deck` as a state-bound inspection canary; its runtime smoke remains
-  pending and `combat_piles` stays disabled.
+  facts that the candidate build could not yet inspect. Preview.18 then read
+  a same-state 11-card `run_deck` before selecting a visible Strike instance.
+  The selection completed into the actual v0.109 preview stage (no separately
+  published preview action was observed), confirmation completed, and the
+  exact post-state inspection at the settled shop context contained 10 cards
+  without that instance. `combat_piles` stays disabled. This is one narrow
+  observed merchant-removal lifecycle, not a general v0.109 qualification.
 
 ## Honest Completeness Boundary
 
@@ -146,23 +151,23 @@ the clearest preview.13 example: rest ownership is correct, but the whole
 multi-surface journey is not yet all-v2.
 
 Shop has the same honest child boundary: launching card removal is historically
-qualified. Preview.15 now has a narrow merchant removal child contract, but it
-is not yet runtime-qualified on the current game build. Card, relic, and potion
-purchase are only qualified for their historical observed shapes.
+qualified. Preview.18 now has one complete ordinary merchant-removal lifecycle
+at candidate authority on the current build, while Smith, transform,
+enchantment, and generic deck selection remain separate. Card, relic, and
+potion purchase are only qualified for their historical observed shapes.
 
 ## Current Blocker And Next Step
 
-The cancel action-canary lifecycle has passed. The next step is a fresh,
-same-state v0.109 `run_deck` inspection smoke. It must prove exact identity,
-player-visible policy, count/card consistency, and no command authority before
-any destructive confirmation. Only then may a separate fresh journey verify
-select -> preview -> confirm with the exact removed card plus deck/shop
-post-state. Any command rejection, unexpected state transition, failed
-completion probe, missing evidence, or cross-surface action immediately returns
-the build to the preview.16 observation-only gate. Generic deck maintenance
-remains a future shared-boundary study: rest Smith and shop removal have
-purpose-specific selection/preview/confirmation semantics and must not become a
-universal card selector. Menu and treasure remain separate debt.
+Preview.18 has completed its first exact v0.109 merchant-removal lifecycle.
+The next value is an independent ordinary merchant journey for resilience, not
+new behavior: verify selecting -> automatic preview -> confirm and a
+same-state `run_deck` instance removal again, with the current exact identity
+and no legacy sidecar. Any command rejection, unexpected state transition,
+failed completion probe, missing evidence, or cross-surface action returns the
+candidate build to the narrower previous gate. Generic deck maintenance remains
+a future shared-boundary study: rest Smith and shop removal have purpose-specific
+selection/preview/confirmation semantics and must not become a universal card
+selector. Menu and treasure remain separate debt.
 
 See [the preview.14 shop audit](PREVIEW_14_SHOP_SURFACE_AUDIT_2026-07-17.md),
 [the preview.13 closeout audit](PREVIEW_13_CLOSEOUT_AUDIT_2026-07-17.md),

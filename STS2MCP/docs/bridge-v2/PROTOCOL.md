@@ -9,8 +9,11 @@ against every Steam build. The currently installed
 `v0.109.0|c12f634d|-840572606` has one exact action canary for
 `shop + deck_removal_selection` and one independent read-only inspection
 canary for `run_deck`. Preview.16 first captured that child without actions;
-preview.17 passed a bounded cancel lifecycle; preview.18 adds the only
-post-state observer needed before destructive confirmation can be considered.
+preview.17 passed a bounded cancel lifecycle; preview.18 added the only
+post-state observer needed before destructive confirmation could be tested.
+One ordinary selection -> automatic preview -> confirmation lifecycle now has
+same-state run-deck evidence. This remains narrow exact-shape evidence, not a
+universal selector or build-wide v0.109 authority.
 `combat_piles`, every other inspection, every other surface, and all v1
 sidecar merging remain disabled for this candidate build. Historical `v0.108.0`
 evidence is not v0.109 authority.
@@ -160,6 +163,12 @@ unqualified.
 | merchant removal preview cancel | preview closes and selector remains current |
 | merchant removal cancel | selector closes without committing |
 
+On the observed ordinary v0.109 merchant-removal shape, the opaque selection
+action completed directly into the preview stage. No separate
+`preview_deck_removal` legal action was published. Declared provider operations
+are descriptive across supported shapes; the current legal-action array is the
+only execution authority for a concrete state.
+
 Current selection and reward completion evidence:
 
 | Surface/action | Completion evidence |
@@ -214,7 +223,8 @@ audit but do not infer safety from warning presence or absence.
 
 ## Inspection Contract
 
-Capabilities advertise exactly two `implemented_read_only` inspection kinds:
+Historical exact builds advertise exactly two `implemented_read_only` inspection
+kinds:
 
 - `run_deck`: current local player's run deck, including per-instance upgrade
   and enchantment semantics;
@@ -238,6 +248,11 @@ verify that the state remains identical after sidecar capture. A changed state
 or inspection `stale_state` rejects the entire composite observation; clients
 must not mix facts from adjacent game states. A bounded client may retry that
 read as transient evidence, but never reuse an action from the rejected read.
+
+For the v0.109 candidate identity, capabilities instead advertise only the
+explicitly scoped `run_deck` `candidate_read_only_canary`; `combat_piles` is
+not advertised or accepted. Candidate inspection scope is independent of
+action scope and is never inferred from historical exact-build capabilities.
 
 ## Error Codes
 
