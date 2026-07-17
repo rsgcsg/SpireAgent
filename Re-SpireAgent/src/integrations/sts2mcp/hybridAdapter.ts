@@ -49,13 +49,14 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
 
   describe(): AdapterDescriptor {
     const bridge = this.capabilitiesPayload?.data;
+    const bridgeExecutionAllowed = bridge?.game.compatibility.action_execution_allowed;
     return {
       adapterId: "sts2mcp-rest-negotiated",
       ...(bridge ? { adapterVersion: bridge.bridge.version } : {}),
       endpoint: this.baseUrl,
       capabilities: {
         canReadState: true,
-        canExecuteActions: true,
+        canExecuteActions: this.options.mode === "v1" || this.bridgeUnavailable || !bridge || bridgeExecutionAllowed === true,
         canListLegalActions: this.options.mode === "v2" || Boolean(bridge),
         actionResults: this.options.mode === "v2" ? "complete" : "partial",
         legalActionAuthority: this.options.mode === "v1" ? "local_reconstruction" : this.options.mode === "v2" ? "bridge_advertised" : "mixed",
@@ -72,7 +73,14 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
           main_assembly_hash: bridge.game.main_assembly_hash ?? null,
           compatibility_status: bridge.game.compatibility.status,
           action_execution_allowed: bridge.game.compatibility.action_execution_allowed,
-          supported_surfaces: bridge.surfaces.map((surface) => surface.kind)
+          state_observation_allowed: bridge.game.compatibility.state_observation_allowed,
+          observation_only_surface_kinds: bridge.game.compatibility.observation_only_surface_kinds,
+          supported_surfaces: bridge.surfaces
+            .filter((surface) => surface.support === "implemented_exact_game_version")
+            .map((surface) => surface.kind),
+          candidate_observation_surfaces: bridge.surfaces
+            .filter((surface) => surface.support === "candidate_observation_only")
+            .map((surface) => surface.kind)
         } : {})
       }
     };
@@ -87,14 +95,15 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
     const capabilities = this.capabilitiesPayload;
     if (!capabilities) throw new Error("Bridge v2 capabilities were not negotiated");
     const state = await this.bridge.state();
+    const candidateBuild = isCandidateBuild(capabilities.data, state.data);
 
     // Legacy fallback is allowed only when a coherent exact v2 contract
     // explicitly says this surface is unsupported. Any contract drift remains
     // visible to the strict normalizer and fails closed.
     if (this.options.mode === "v2" || !isSafeExplicitLegacyFallback(capabilities.data, state.data)) {
       const [legacyState, inspections] = await Promise.all([
-        this.tryReadLegacySidecar(),
-        this.readInspectionSidecars(capabilities.data, state.data)
+        candidateBuild ? undefined : this.tryReadLegacySidecar(),
+        candidateBuild ? {} : this.readInspectionSidecars(capabilities.data, state.data)
       ]);
       const verifiedState = await this.bridge.state();
       if (verifiedState.data.state_id !== state.data.state_id) {
@@ -196,6 +205,10 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
     capabilities: BridgeV2Capabilities,
     state: BridgeV2State
   ): Promise<Partial<Record<"run_deck" | "combat_piles", JsonObject>>> {
+    // Candidate-build observations deliberately do not imply that the fixed
+    // inspection contracts still have exact bindings. Keep those reads off
+    // until action-qualified identity is restored.
+    if (!capabilities.game.compatibility.action_execution_allowed) return {};
     const implemented = new Set(capabilities.inspections.implemented_kinds);
     const requested: Array<"run_deck" | "combat_piles"> = [];
     if (implemented.has("run_deck")) requested.push("run_deck");
@@ -269,6 +282,32 @@ function isSafeExplicitLegacyFallback(
     && capabilities.commands.opaque_actions_only
     && capabilities.commands.state_bound
     && capabilities.commands.idempotent_request_ids;
+}
+
+function isCandidateBuild(
+  capabilities: BridgeV2Capabilities,
+  state: BridgeV2State
+): boolean {
+  const capabilityCompatibility = capabilities.game.compatibility;
+  const stateCompatibility = state.game.compatibility;
+  return capabilityCompatibility.status === "observation_only_candidate"
+    && stateCompatibility.status === "observation_only_candidate"
+    && !capabilityCompatibility.action_execution_allowed
+    && !stateCompatibility.action_execution_allowed
+    && capabilityCompatibility.state_observation_allowed
+    && stateCompatibility.state_observation_allowed
+    && sameStrings(capabilityCompatibility.observation_only_surface_kinds, ["deck_removal_selection"])
+    && sameStrings(stateCompatibility.observation_only_surface_kinds, ["deck_removal_selection"])
+    && capabilityCompatibility.observation_candidate_build_fingerprints.includes(gameFingerprint(capabilities.game))
+    && stateCompatibility.observation_candidate_build_fingerprints.includes(gameFingerprint(state.game));
+}
+
+function gameFingerprint(game: BridgeV2Capabilities["game"]): string {
+  return `${game.version ?? "unknown"}|${game.commit ?? "unknown"}|${game.main_assembly_hash ?? "unknown"}`;
+}
+
+function sameStrings(left: readonly string[], right: readonly string[]): boolean {
+  return [...left].sort().join("\u0000") === [...right].sort().join("\u0000");
 }
 
 function commandContractError(

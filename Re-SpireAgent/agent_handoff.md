@@ -1,9 +1,12 @@
 # RE-P1 Handoff
 
-Status: Bridge `2.0-preview.14` is loaded against exact game identity
-`v0.108.0|58694f64|-2044609792`. Fourteen executable Surface contracts plus
-read-only run-deck/combat-pile Inspection have bounded organic evidence for at
-least one observed shape. RE-P1 remains a protocol baseline, not a verified
+Status: Bridge `2.0-preview.16` implements fifteen bounded surface contracts
+plus read-only run-deck/combat-pile Inspection. Organic evidence remains scoped
+to historical exact identity `v0.108.0|58694f64|-2044609792`. On installed
+`v0.109.0|c12f634d|-840572606`, preview.16 permits only a no-action,
+no-inspection, no-sidecar candidate observation for
+`shop + deck_removal_selection`; all execution stays disabled pending natural
+lifecycle revalidation. RE-P1 remains a protocol baseline, not a verified
 strategic player or a claim of broad game coverage.
 
 Canonical current Bridge status is maintained in
@@ -12,11 +15,20 @@ as handoff history.
 
 ## Completed
 
-- Preview.14 added separate `shop_room` and `shop_inventory` contracts. A
-  saved-run organic smoke completed open, close/reopen, an Armaments purchase,
-  sold-out/run-deck post-state, and Proceed to map. The strict client accepts
-  C#-omitted nullable shop product fields but still rejects blocked-offer,
-  capacity, category, and binding contradictions.
+- Preview.14 added separate `shop_room` and `shop_inventory` contracts. Organic
+  smokes completed open, close/reopen, an Armaments card purchase, a Blood Vial
+  relic purchase, a Fire Potion purchase, sold-out post-states, removal-child
+  launch, and Proceed to map. A full belt correctly suppresses potion actions
+  with `potion_slots_full`. The strict client accepts C#-omitted nullable shop
+  product fields but still rejects blocked-offer, capacity, category, and
+  binding contradictions.
+
+- Preview.15 adds `deck_removal_selection`: a narrow `shop +
+  NDeckCardSelectScreen` child contract with opaque select, preview, confirm,
+  and cancel actions. It deliberately excludes Smith, transform, enchant, and
+  generic deck selection. Static Bridge/Re tests pass, but the Steam update to
+  v0.109 invalidated the previous exact runtime identity before an action smoke;
+  no v0.109 action or inspection has been executed.
 
 - Preview.13 closed the organic `rest_site -> deck selection -> proceed`
   boundary. `run-20260716182900-50gm7n` selected Smith through a settled
@@ -163,9 +175,9 @@ No memory, learning, scoring, strategic scaffold, shadow mode, live additive mod
 - Hidden draw order remains excluded by policy. Implemented surface variants
   beyond those organically observed still require their own evidence.
 - Treasure, menu, and generic run-deck card-selection variants still depend on
-  explicitly labeled v1 local reconstruction in auto mode. Normal shop room and
-  inventory controls are Bridge-owned, but relic/potion/removal actions still
-  need organic category evidence and the removal child selector remains legacy.
+  explicitly labeled v1 local reconstruction in auto mode. Normal shop room,
+  card/relic/potion purchase, capacity suppression, and removal-child launch
+  are Bridge-owned; the removal child selector remains unqualified.
 - Composite state-plus-inspection drift is fail-closed but noisy during fast
   transitions. Future work may add bounded observable read retry or a coherent
   server observation token; it must never accept mixed adjacent states.

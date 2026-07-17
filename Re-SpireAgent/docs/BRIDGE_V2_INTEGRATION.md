@@ -2,7 +2,7 @@
 
 ## Current Scope
 
-Re-SpireAgent supports the strict `2.0-preview.14` source contract for:
+Re-SpireAgent supports the strict `2.0-preview.16` source contract for:
 
 - `deck_enchant_selection`: organically end-to-end qualified;
 - `event_option`: organically qualified for ordinary event options;
@@ -21,16 +21,21 @@ Re-SpireAgent supports the strict `2.0-preview.14` source contract for:
 - `rest_site`: organically qualified for option-to-child-overlay and Proceed-to-map boundaries;
 - `map_navigation`: organically qualified for repeated exact-node travel;
 - `shop_room`: organically qualified for open and Proceed ownership;
-- `shop_inventory`: organically qualified for close/reopen and one ordinary
-  card purchase with sold-out and run-deck post-state;
+- `shop_inventory`: organically qualified for close/reopen, ordinary card,
+  relic, and potion purchase with sold-out post-state, capacity suppression,
+  and launch of the bounded removal child selector;
+- `deck_removal_selection`: narrow merchant-removal child contract, static
+  decoder/validation coverage only;
 - `run_deck` and `combat_piles`: fixed read-only, state-bound evidence.
 
-All current evidence is scoped to exact game identity
+All organic evidence is scoped to exact game identity
 `v0.108.0|58694f64|-2044609792`. Historical earlier-preview evidence is retained
-but does not silently qualify later previews. Preview.12/13 organic runs cover
-the newly added surfaces without broadening qualification beyond observed
-interaction shapes; preview.14 shop evidence is independently scoped. Relic,
-potion, and card-removal actions remain separate category evidence gaps.
+but does not silently qualify later previews or builds. The installed Steam
+build is `v0.109.0|c12f634d|-840572606`; preview.16 permits only a strict
+candidate observation of `shop + deck_removal_selection`. It has no actions,
+no inspection, `actionAuthority=none`, and the exact candidate build performs
+no legacy sidecar merge on any surface. The merchant-removal child remains
+static/candidate coverage, not an organic qualification or execution authority.
 
 ## State Identity
 
@@ -50,7 +55,7 @@ but cannot overwrite action-relevant v2 facts or add actions.
 
 ## Action Entity Bindings
 
-`preview.14` keeps `action_id` as the only executable command argument, but each
+`preview.16` keeps `action_id` as the only executable command argument, but each
 legal action also carries non-executable role-to-entity bindings. Re requires
 every binding to resolve to an entity already present in the visible Context or
 Surface, preserves the bindings in normalized state and decision evidence, and
@@ -86,11 +91,11 @@ capacity cannot advertise purchase, and each purchasable category must bind
 exactly one category-specific action. A universal purchase kind, room-level
 purchase, or action bound to an unavailable offer fails closed.
 
-Organic preview.14 evidence covers room open, inventory close/reopen, an
-Armaments purchase, sold-out and run-deck post-state, and Proceed to map. The
-card-removal child deck selector is a different Surface and remains unsupported
-in strict v2; relic/potion/removal category actions still need their own organic
-evidence.
+Organic preview.14 evidence covers room open, inventory close/reopen, direct
+card/relic/potion purchases, sold-out post-states, and Proceed to map. The
+merchant removal child is a different Surface. Preview.15 defines its exact
+`shop + NDeckCardSelectScreen` contract, but the current v0.109 build must be
+revalidated before the strict client can treat it as executable.
 
 ## Typed Diagnostics
 

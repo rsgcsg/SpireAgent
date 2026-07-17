@@ -99,6 +99,7 @@ export type InteractionSurface =
   | CardBundleSelectionSurface
   | CardSelectionSurface
   | DeckEnchantSelectionSurface
+  | DeckRemovalSelectionSurface
   | CardRewardSelectionSurface
   | BridgeRewardClaimSurface
   | CardRewardSurface
@@ -238,6 +239,23 @@ export interface DeckEnchantSelectionSurface {
   selectedCardEntityIds: string[];
   cancelable: boolean;
   enchantment: EnchantmentSnapshot;
+  cards: CardSnapshot[];
+  legalActions: BridgeLegalActionSnapshot[];
+  completeness: BridgeSurfaceCompleteness;
+}
+
+/** Exact merchant removal child; not a universal deck selector. */
+export interface DeckRemovalSelectionSurface {
+  kind: "deck_removal_selection";
+  stage: "selecting" | "preview";
+  bridgeStateId: string;
+  screenEntityId: string;
+  prompt: string;
+  minimumSelections: number;
+  maximumSelections: number;
+  selectedCount: number;
+  selectedCardEntityIds: string[];
+  cancelable: boolean;
   cards: CardSnapshot[];
   legalActions: BridgeLegalActionSnapshot[];
   completeness: BridgeSurfaceCompleteness;

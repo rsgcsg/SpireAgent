@@ -4,6 +4,12 @@ Coverage is scoped to exact game identity `v0.108.0|58694f64|-2044609792` and
 the observed interaction shape. Source audit or fixture evidence alone is not
 organic qualification.
 
+The installed Steam build is currently `v0.109.0|c12f634d|-840572606`; all rows
+below are historical for execution. Preview.16 additionally permits one
+read-only, no-sidecar, no-inspection candidate observation of
+`shop + deck_removal_selection`; it grants neither action nor inspection
+authority and does not qualify any lifecycle.
+
 | Surface / inspection | Context | Player-visible semantics | Organic status | Remaining boundary |
 |---|---|---|---|---|
 | `deck_enchant_selection` | event/combat parent | exact eligible cards, selection, preview, enchantment | qualified | other enchantment variants need diversity |
@@ -19,7 +25,8 @@ organic qualification.
 | `reward_claim` | outer room rewards | exact ordinary rewards, potion capacity/discard, Proceed/Skip | qualified for observed shapes | linked reward sets fail closed |
 | `map_navigation` | map | full visible topology, visit/travel state, current/next nodes, drawing mode | qualified for observed singleplayer map | multiplayer and special map modes unsupported |
 | `shop_room` | shop | current gold/potions plus merchant-open and Proceed controls | qualified for observed normal merchant | special merchant room variants need evidence |
-| `shop_inventory` | shop | typed inventory, price, stock, visibility, affordability, category eligibility, sale, potion capacity, removal price | card purchase/open/close qualified | relic/potion/removal actions need organic evidence; removal child selector unsupported |
+| `shop_inventory` | shop | typed inventory, price, stock, visibility, affordability, category eligibility, sale, potion capacity, removal price | card/relic/potion purchase, open/close, capacity suppression, removal-child launch qualified | removal child is a separate, currently unqualified Surface |
+| `deck_removal_selection` | shop parent | exact selected deck cards, selection limits, preview/confirm/cancel controls | v0.109 candidate observation only; static contract | requires natural read-only child evidence, then separately qualified cancel and confirm/post-state lifecycles |
 | `run_deck` inspection | active singleplayer run | per-instance card, upgrade and enchantment | qualified | no arbitrary queries |
 | `combat_piles` inspection | combat | unordered draw/discard/exhaust contents | qualified | draw order intentionally hidden |
 
@@ -28,7 +35,7 @@ organic qualification.
 | Interaction | Current authority | Status |
 |---|---|---|
 | treasure | v1 local reconstruction | stale-index risk remains; no v2 contract |
-| generic run-deck select/remove/transform/upgrade | v1 local reconstruction | observed, but completion and purpose semantics incomplete |
+| generic run-deck select/remove/transform/upgrade | v1 local reconstruction | removal now has a narrow preview.16 v2 observation candidate; it remains unqualified, while transform/upgrade remain legacy |
 | menu / character select / game over | v1 local reconstruction | character selected-state is not represented and can repeat |
 | linked reward sets | none in v2 | fail closed |
 | multiplayer | none in v2 | intentionally unsupported |

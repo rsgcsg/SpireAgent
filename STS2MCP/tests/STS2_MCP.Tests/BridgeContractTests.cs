@@ -97,7 +97,15 @@ public sealed class BridgeContractTests
             Array.Empty<LegalAction>(),
             new StateCompleteness("not_implemented", "empty_fail_closed", Array.Empty<string>(), Array.Empty<string>()),
             new BridgeServerIdentity("bridge", "Bridge", "test", "commit"),
-            new GameBuildIdentity(null, null, null, null, new CompatibilityAssessment("unknown", Array.Empty<string>(), Array.Empty<string>(), false, "unknown")),
+            new GameBuildIdentity(null, null, null, null, new CompatibilityAssessment(
+                "unknown",
+                Array.Empty<string>(),
+                Array.Empty<string>(),
+                ActionExecutionAllowed: false,
+                StateObservationAllowed: false,
+                ObservationOnlySurfaceKinds: Array.Empty<string>(),
+                ObservationCandidateBuildFingerprints: Array.Empty<string>(),
+                Detail: "unknown")),
             new ObservationPolicyInfo("policy", "visible", false, "omit"),
             Array.Empty<BridgeDiagnostic>(),
             Array.Empty<string>());
@@ -170,7 +178,15 @@ public sealed class BridgeContractTests
                 "commit",
                 "branch",
                 1,
-                new CompatibilityAssessment("supported_exact", new[] { "v0.108.0" }, new[] { "fingerprint" }, true, "exact")),
+                new CompatibilityAssessment(
+                    "supported_exact",
+                    new[] { "v0.108.0" },
+                    new[] { "fingerprint" },
+                    ActionExecutionAllowed: true,
+                    StateObservationAllowed: true,
+                    ObservationOnlySurfaceKinds: Array.Empty<string>(),
+                    ObservationCandidateBuildFingerprints: Array.Empty<string>(),
+                    Detail: "exact")),
             new ObservationPolicyInfo("player_visible_ui_v1", "visible", false, "omit"),
             Array.Empty<BridgeDiagnostic>());
 

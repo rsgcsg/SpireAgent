@@ -1,6 +1,17 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.14`
+Protocol preview: `2.0-preview.16`
+
+## Build Compatibility
+
+This protocol describes the bounded v2 contract, not a permission to execute
+against every Steam build. The currently installed
+`v0.109.0|c12f634d|-840572606` is an exact **candidate-observation** binding
+only for `shop + deck_removal_selection`: static source/reflection checks passed,
+but Bridge publishes no actions, rejects inspection, and forbids legacy-sidecar
+merging for that state. Every other v0.109 surface remains unqualified. Organic
+lifecycle evidence is required before any action authority can be considered;
+historical `v0.108.0` evidence is not v0.109 authority.
 
 ## Endpoints
 
@@ -43,6 +54,13 @@ the currently blocking interaction protocol. Authority says whether actions
 were Bridge-advertised, locally reconstructed by a legacy client, or absent.
 Bridge wire actions always use `authority="game_ui"`; the higher-level client
 records the effective state authority separately.
+
+Similar card grids do not imply a shared Surface. Selection limits, selected
+cards, preview controls, and opaque-card bindings may be shared structural
+facts, but the effect-specific visible semantics, eligibility predicate,
+command path, and completion witness remain part of the owning Surface. For
+example, merchant removal and deck enchantment are distinct contracts even
+though both expose a deck-card selection lifecycle.
 
 ## Legal Actions
 
@@ -124,6 +142,21 @@ Additional preview.3 completion evidence:
 | card reward alternative | reward overlay closes or the visible option object set is replaced, including reroll |
 | outer reward claim | its exact reward button is removed, or a child card-reward overlay replaces the outer screen |
 | outer rewards proceed | outer rewards screen exits, its visible reward control set is replaced, or the player-visible map opens |
+
+Preview.15 defines a deliberately narrow merchant-removal child lifecycle. It
+is executable only on an exact supported build that observes
+`shop + NDeckCardSelectScreen`; it does not generalize other deck selectors.
+Preview.16 may observe that same child on its exact v0.109 candidate identity,
+but its legal action array is intentionally empty and the lifecycle remains
+unqualified.
+
+| Surface/action | Completion evidence |
+|---|---|
+| merchant removal toggle | selected membership changes, preview opens, or selector closes |
+| merchant removal preview | removal preview opens or selector closes |
+| merchant removal confirm | selector closes after confirmation |
+| merchant removal preview cancel | preview closes and selector remains current |
+| merchant removal cancel | selector closes without committing |
 
 Current selection and reward completion evidence:
 

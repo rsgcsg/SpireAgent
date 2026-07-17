@@ -7,7 +7,7 @@ namespace STS2_MCP.BridgeV2.Protocol;
 
 public static class BridgeV2Contract
 {
-    public const string ProtocolVersion = "2.0-preview.14";
+    public const string ProtocolVersion = "2.0-preview.16";
     public const string ObservationPolicyId = "player_visible_ui_v1";
 }
 
@@ -22,6 +22,9 @@ public sealed record CompatibilityAssessment(
     IReadOnlyList<string> TestedGameVersions,
     IReadOnlyList<string> TestedBuildFingerprints,
     bool ActionExecutionAllowed,
+    bool StateObservationAllowed,
+    IReadOnlyList<string> ObservationOnlySurfaceKinds,
+    IReadOnlyList<string> ObservationCandidateBuildFingerprints,
     string Detail);
 
 public sealed record GameBuildIdentity(
@@ -478,6 +481,22 @@ public sealed record ShopRoomSurface(
     string RoomEntityId,
     bool CanOpenInventory,
     bool CanProceed) : IBridgeSurface;
+
+/// <summary>
+/// Exact merchant card-removal child surface. This intentionally does not
+/// generalize other deck selectors whose effects and preview semantics differ.
+/// </summary>
+public sealed record DeckRemovalSelectionSurface(
+    string Kind,
+    string Stage,
+    string ScreenEntityId,
+    string Prompt,
+    int MinSelect,
+    int MaxSelect,
+    int SelectedCount,
+    IReadOnlyList<string> SelectedCardEntityIds,
+    bool Cancelable,
+    IReadOnlyList<VisibleCard> Cards) : IBridgeSurface;
 
 public sealed record CombatTurnSurface(
     string Kind,

@@ -18,6 +18,7 @@ export function buildAllowedActions(state: NormalizedCurrentState, sourceStateHa
     case "card_selection":
       return cardSelectionActions(state.surface, sourceStateHash);
     case "deck_enchant_selection":
+    case "deck_removal_selection":
     case "combat_pile_card_selection":
     case "combat_hand_card_selection":
     case "generated_card_choice":

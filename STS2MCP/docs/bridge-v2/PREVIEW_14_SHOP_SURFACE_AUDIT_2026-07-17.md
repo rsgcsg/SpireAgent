@@ -21,9 +21,10 @@ the inventory Back control. `shop_room` owns only the merchant-open and Proceed
 controls. Purchase and Proceed actions never coexist.
 
 The normal merchant main lifecycle is qualified for the observed exact build:
-open, close, reopen, one card purchase, sold-out post-state, and Proceed to map.
-This does not claim organic qualification for every purchasable category or the
-child deck-removal selector.
+open, close, reopen, card and relic purchase, sold-out post-state, and Proceed
+to map. Card removal is qualified only as a parent action that opens its child
+selector. This does not claim an all-v2 card-removal journey or a potion
+purchase with free capacity.
 
 ## Game-Fact Audit
 
@@ -126,6 +127,40 @@ product fields are omitted by C# serialization. The strict client now accepts
 omission only for those explicitly optional fields and preserves fail-closed
 semantic checks.
 
+### Follow-up Category Evidence
+
+With the same exact build and an organically restored merchant, a user-visible
+gold adjustment made all stocked card, relic, and removal offers affordable.
+The full 2/2 potion belt remained an independent, player-visible constraint:
+every stocked potion retained its flattened visible semantic fields but was
+published as `can_purchase=false` with `blocked_reason=potion_slots_full`; no
+potion action was advertised.
+
+The following additional bounded lifecycle evidence was then collected:
+
+1. `purchase_shop_relic(Blood Vial)` completed. Gold changed from `10025` to
+   `9824`; the exact relic offer became `sold_out`, invisible, and
+   non-actionable; and the player-visible relic list contained `BLOOD_VIAL`.
+   Re-SpireAgent strictly decoded the sold-out null relic payload and retained
+   the remaining typed shop actions.
+2. `open_shop_card_removal` completed. The next v2 state was fail-closed
+   `unsupported` with source type `NDeckCardSelectScreen`; no v2 actions were
+   published. The legacy read-only sidecar independently showed the exact
+   player-visible child contract: prompt `Choose a card to Remove.`, sixteen
+   offered deck cards, `can_cancel=true`, and `can_confirm=false` before a card
+   is selected.
+
+The child selector was intentionally not driven through a legacy index action.
+It confirms that removal is a parent-to-child lifecycle, not a universal shop
+purchase.
+
+After one occupied potion slot was visibly freed, `purchase_shop_potion(Fire
+Potion)` also completed. Gold changed from `9824` to `9772`; the obtained Fire
+Potion appeared in exact slot `0`; its exact shop offer became `sold_out`; and
+the now-full belt removed every potion purchase action. This qualifies the
+observed free-slot potion purchase shape as well as the full-belt suppression
+shape.
+
 ## Qualification Matrix
 
 | Shape | Source audit | Contract tests | Organic action | Qualification |
@@ -133,11 +168,11 @@ semantic checks.
 | room open/close ownership | yes | yes | yes | qualified for observed normal merchant |
 | card purchase and sold-out post-state | yes | yes | yes | qualified for observed ordinary card |
 | Proceed to map | yes | yes | yes | qualified |
-| relic purchase | yes | yes | no | implemented, organic category evidence pending |
-| potion purchase with free capacity | yes | yes | no | implemented, organic category evidence pending |
-| full-belt potion suppression | yes | yes | capacity visible; no affordable potion | implemented, isolated organic suppression pending |
-| card-removal service launch | yes | yes | visible but unaffordable | implemented, organic launch pending |
-| card-removal child selection and settlement | partial | no v2 child Surface | no | unsupported as an all-v2 journey |
+| relic purchase | yes | yes | yes | qualified for observed ordinary relic purchase |
+| potion purchase with free capacity | yes | yes | yes | qualified for observed Fire Potion purchase |
+| full-belt potion suppression | yes | yes | yes | qualified for observed capacity block; free-slot purchase remains pending |
+| card-removal service launch | yes | yes | yes | qualified only through child-selector open |
+| card-removal child selection and settlement | partial | no v2 child Surface | child observed, not executed | unsupported as an all-v2 journey |
 
 ## Architecture Assessment
 
@@ -151,9 +186,6 @@ The core abstraction remains healthy:
   completion without duplicating the entire shop implementation.
 
 The main remaining debt is coverage, not a need for a universal UI model.
-`NCardGridSelectionScreen` used by removal/upgrade/transform still requires its
-own source-derived Surface family or deliberately concrete variants. It must
-not be smuggled into `shop_inventory`. Relic and potion purchases also need
-bounded organic category evidence before their observed shapes are called
-qualified.
-
+`NDeckCardSelectScreen` used by removal and likely other deck-maintenance flows
+still requires its own source-derived Surface family or deliberately concrete
+variants. It must not be smuggled into `shop_inventory`.

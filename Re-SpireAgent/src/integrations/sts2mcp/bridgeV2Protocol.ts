@@ -1,11 +1,14 @@
 import { z } from "zod";
 import { isJsonObject, type JsonObject } from "../../shared/json.js";
 
-export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.14" as const;
+export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.16" as const;
 
 const compatibilitySchema = z.object({
   status: z.string().min(1),
   action_execution_allowed: z.boolean(),
+  state_observation_allowed: z.boolean(),
+  observation_only_surface_kinds: z.array(z.string().min(1)),
+  observation_candidate_build_fingerprints: z.array(z.string().min(1)),
   detail: z.string()
 }).passthrough();
 
@@ -211,6 +214,19 @@ const deckEnchantSurfaceSchema = z.object({
   selected_card_entity_ids: z.array(z.string().min(1)),
   cancelable: z.boolean(),
   enchantment: visibleEnchantmentSchema,
+  cards: z.array(visibleCardSchema)
+}).passthrough();
+
+const deckRemovalSurfaceSchema = z.object({
+  kind: z.literal("deck_removal_selection"),
+  stage: z.enum(["selecting", "preview"]),
+  screen_entity_id: z.string().min(1),
+  prompt: z.string().min(1),
+  min_select: z.number().int().nonnegative(),
+  max_select: z.number().int().nonnegative(),
+  selected_count: z.number().int().nonnegative(),
+  selected_card_entity_ids: z.array(z.string().min(1)),
+  cancelable: z.boolean(),
   cards: z.array(visibleCardSchema)
 }).passthrough();
 
@@ -594,6 +610,7 @@ const commandSchema = z.object({
 export type BridgeV2Capabilities = z.infer<typeof capabilitiesSchema>;
 export type BridgeV2LegalAction = z.infer<typeof legalActionSchema>;
 export type BridgeV2DeckEnchantSurface = z.infer<typeof deckEnchantSurfaceSchema>;
+export type BridgeV2DeckRemovalSurface = z.infer<typeof deckRemovalSurfaceSchema>;
 export type BridgeV2EventContext = z.infer<typeof eventContextSchema>;
 export type BridgeV2CombatContext = z.infer<typeof combatContextSchema>;
 export type BridgeV2RewardFlowContext = z.infer<typeof rewardFlowContextSchema>;
@@ -631,6 +648,7 @@ export type BridgeV2Context =
 
 export type BridgeV2Surface =
   | BridgeV2DeckEnchantSurface
+  | BridgeV2DeckRemovalSurface
   | BridgeV2EventDialogueSurface
   | BridgeV2RestSiteSurface
   | BridgeV2ShopInventorySurface
@@ -680,6 +698,11 @@ export function decodeBridgeV2State(value: unknown): DecodedBridgePayload<Bridge
   let surface: BridgeV2Surface;
   if (decoded.data.surface.kind === "deck_enchant_selection") {
     surface = parse(deckEnchantSurfaceSchema, decoded.data.surface, "deck_enchant_selection surface");
+  } else if (decoded.data.surface.kind === "deck_removal_selection") {
+    surface = parse(deckRemovalSurfaceSchema, decoded.data.surface, "deck_removal_selection surface");
+    if (context.kind !== "shop") {
+      throw new BridgeV2DecodeError("Bridge v2 deck_removal_selection surface requires shop context");
+    }
   } else if (decoded.data.surface.kind === "event_dialogue") {
     surface = parse(eventDialogueSurfaceSchema, decoded.data.surface, "event_dialogue surface");
     if (context.kind !== "event" || !context.ancient || !context.in_dialogue) {
@@ -798,6 +821,12 @@ export function isBridgeV2DeckEnchantSurface(
   surface: BridgeV2Surface
 ): surface is BridgeV2DeckEnchantSurface {
   return surface.kind === "deck_enchant_selection";
+}
+
+export function isBridgeV2DeckRemovalSurface(
+  surface: BridgeV2Surface
+): surface is BridgeV2DeckRemovalSurface {
+  return surface.kind === "deck_removal_selection";
 }
 
 export function isBridgeV2UnsupportedSurface(

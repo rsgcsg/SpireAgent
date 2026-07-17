@@ -364,6 +364,7 @@ function determineStability(surface: InteractionSurface, diagnosticsStatus: "ok"
   if (surface.kind === "combat_turn") return "actionable";
   if (surface.kind === "card_selection") return surface.options.length > 0 || surface.canConfirm || surface.canCancel ? "actionable" : "loading";
   if (surface.kind === "deck_enchant_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
+  if (surface.kind === "deck_removal_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "combat_pile_card_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "combat_hand_card_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "generated_card_choice") return surface.legalActions.length > 0 ? "actionable" : "loading";

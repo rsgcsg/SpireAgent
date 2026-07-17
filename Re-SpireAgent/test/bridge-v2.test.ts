@@ -10,18 +10,26 @@ import type { JsonObject } from "../src/shared/json.js";
 import { fixture } from "./helpers.js";
 
 const CAPABILITIES = {
-  protocol_version: "2.0-preview.14",
+  protocol_version: "2.0-preview.16",
   bridge: { id: "sts2_mcp_bridge_v2", name: "STS2 Agent Bridge", version: "0.5.0-dev", upstream_commit: "upstream" },
   game: {
     version: "v0.108.0",
     commit: "58694f64",
     branch: "v0.108.0",
     main_assembly_hash: -2044609792,
-    compatibility: { status: "supported_exact", action_execution_allowed: true, detail: "exact" }
+    compatibility: {
+      status: "supported_exact",
+      action_execution_allowed: true,
+      state_observation_allowed: true,
+      observation_only_surface_kinds: [] as string[],
+      observation_candidate_build_fingerprints: [] as string[],
+      detail: "exact"
+    }
   },
   observation_policy: { id: "player_visible_ui_v1", scope: "visible", includes_hidden_information: false, unknown_field_behavior: "omit" },
   surfaces: [
     { kind: "deck_enchant_selection", support: "implemented_exact_game_version", operations: ["toggle_card"], evidence: "test-contract" },
+    { kind: "deck_removal_selection", support: "implemented_exact_game_version", operations: ["toggle_deck_removal_card", "preview_deck_removal", "confirm_deck_removal", "cancel_deck_removal_preview", "cancel_deck_removal_selection"], evidence: "test-contract" },
     { kind: "event_dialogue", support: "implemented_exact_game_version", operations: ["advance_event_dialogue"], evidence: "test-contract" },
     { kind: "event_option", support: "implemented_exact_game_version", operations: ["choose_event_option", "proceed_event"], evidence: "test-contract" },
     { kind: "rest_site", support: "implemented_exact_game_version", operations: ["choose_rest_option", "proceed_rest_site"], evidence: "test-contract" },
@@ -58,7 +66,7 @@ const CAPABILITIES = {
 };
 
 const DECK_ENCHANT_STATE = {
-  protocol_version: "2.0-preview.14",
+  protocol_version: "2.0-preview.16",
   state_id: "state-test-1",
   state_sequence: 1,
   observed_at: "2026-07-16T00:00:00Z",
@@ -124,6 +132,59 @@ const DECK_ENCHANT_STATE = {
   observation_policy: CAPABILITIES.observation_policy,
   diagnostics: [],
   warnings: []
+};
+
+const DECK_REMOVAL_STATE = {
+  ...DECK_ENCHANT_STATE,
+  state_id: "state-shop-removal-1",
+  state_sequence: 15,
+  context: {
+    kind: "shop",
+    gold: 300,
+    max_potion_slots: 2,
+    potions: []
+  },
+  surface_kind: "deck_removal_selection",
+  surface: {
+    kind: "deck_removal_selection",
+    stage: "selecting",
+    screen_entity_id: "deck-removal-screen-1",
+    prompt: "Choose a card to Remove.",
+    min_select: 1,
+    max_select: 1,
+    selected_count: 0,
+    selected_card_entity_ids: [],
+    cancelable: true,
+    cards: [{
+      entity_id: "deck-card-strike-1",
+      definition_id: "STRIKE_IRONCLAD",
+      name: "Strike",
+      type: "Attack",
+      cost: "1",
+      star_cost: null,
+      description: "Deal 6 damage.",
+      rarity: "Basic",
+      is_upgraded: false,
+      is_selected: false,
+      existing_enchantment: null
+    }]
+  },
+  legal_actions: [{
+    action_id: "action-deck-removal-select-1",
+    state_id: "state-shop-removal-1",
+    kind: "toggle_deck_removal_card",
+    category: "selection",
+    label: "Select Strike to remove",
+    authority: "game_ui",
+    evidence_code: "NCardGrid.HolderPressed+NDeckCardSelectScreen selection",
+    entity_bindings: [{ role: "card", entity_id: "deck-card-strike-1" }]
+  }],
+  completeness: {
+    player_visible_semantics: "contract_complete_for_merchant_deck_removal_selection",
+    legal_actions: "derived_from_exact_visible_grid_and_current_controls",
+    sources: ["visible_ui"],
+    missing: []
+  }
 };
 
 const EVENT_OPTION_STATE = {
@@ -1122,7 +1183,7 @@ function visibleInspectionCard(overrides: Record<string, unknown> = {}) {
 
 function runDeckInspection(stateId: string, cards = [visibleInspectionCard()]) {
   return {
-    protocol_version: "2.0-preview.14",
+    protocol_version: "2.0-preview.16",
     inspection_id: `inspection-run-deck-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -1145,7 +1206,7 @@ function runDeckInspection(stateId: string, cards = [visibleInspectionCard()]) {
 
 function combatPilesInspection(stateId: string) {
   return {
-    protocol_version: "2.0-preview.14",
+    protocol_version: "2.0-preview.16",
     inspection_id: `inspection-combat-piles-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -1200,6 +1261,102 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
   it("strictly decodes the qualified surface and rejects discriminator mismatch", () => {
     expect(decodeBridgeV2State(DECK_ENCHANT_STATE).data.surface.kind).toBe("deck_enchant_selection");
     expect(() => decodeBridgeV2State({ ...DECK_ENCHANT_STATE, surface_kind: "other" })).toThrow("does not match");
+  });
+
+  it("keeps merchant deck removal separate from universal deck selection and fails closed outside shop", () => {
+    const decoded = decodeBridgeV2State(DECK_REMOVAL_STATE).data;
+    expect(decoded.surface.kind).toBe("deck_removal_selection");
+    const envelope = normalizeCurrentState(
+      wrapBridgeV2State({ state: structuredClone(DECK_REMOVAL_STATE), capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    );
+    expect(envelope.currentState).toMatchObject({
+      actionAuthority: "bridge_advertised",
+      context: { kind: "shop" },
+      surface: {
+        kind: "deck_removal_selection",
+        prompt: "Choose a card to Remove.",
+        selectedCount: 0
+      }
+    });
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toEqual([
+      expect.objectContaining({
+        kind: "toggle_deck_removal_card",
+        action: expect.objectContaining({ bridgeActionKind: "toggle_deck_removal_card" })
+      })
+    ]);
+    expect(() => decodeBridgeV2State({ ...DECK_REMOVAL_STATE, context: DECK_ENCHANT_STATE.context })).toThrow(
+      "deck_removal_selection surface requires shop context"
+    );
+    const previewWithSelectAction = structuredClone(DECK_REMOVAL_STATE);
+    previewWithSelectAction.surface.stage = "preview";
+    expect(normalizeCurrentState(
+      wrapBridgeV2State({ state: previewWithSelectAction, capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    ).currentState.stability).toBe("invalid");
+  });
+
+  it("projects the exact v0.109 removal candidate as non-executable evidence only", () => {
+    const candidateCapabilities = structuredClone(CAPABILITIES);
+    candidateCapabilities.game = {
+      version: "v0.109.0",
+      commit: "c12f634d",
+      branch: "v0.109.0",
+      main_assembly_hash: -840572606,
+      compatibility: {
+        status: "observation_only_candidate",
+        action_execution_allowed: false,
+        state_observation_allowed: true,
+        observation_only_surface_kinds: ["deck_removal_selection"],
+        observation_candidate_build_fingerprints: ["v0.109.0|c12f634d|-840572606"],
+        detail: "static bindings only"
+      }
+    };
+    candidateCapabilities.surfaces = candidateCapabilities.surfaces.map((surface) => ({
+      ...surface,
+      support: surface.kind === "deck_removal_selection"
+        ? "candidate_observation_only"
+        : "not_qualified_for_current_build"
+    }));
+    const candidateState = {
+      ...structuredClone(DECK_REMOVAL_STATE),
+      game: candidateCapabilities.game,
+      readiness: "observation_only",
+      legal_actions: [],
+      completeness: {
+        ...DECK_REMOVAL_STATE.completeness,
+        legal_actions: "suppressed_by_candidate_observation_gate"
+      },
+      diagnostics: [{
+        code: "bridge.identity.candidate_observation_only",
+        severity: "warning",
+        category: "identity",
+        effect: "actions_suppressed",
+        recoverability: "update_bridge"
+      }]
+    };
+
+    const envelope = normalizeCurrentState(
+      wrapBridgeV2State({ state: candidateState, capabilities: candidateCapabilities }),
+      TEST_SOURCE
+    );
+    expect(envelope.currentState).toMatchObject({
+      stability: "unknown",
+      actionAuthority: "none",
+      context: { kind: "shop" },
+      surface: { kind: "deck_removal_selection" }
+    });
+    expect(envelope.diagnostics.status).toBe("degraded");
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toEqual([]);
+
+    const candidateWithAction = {
+      ...candidateState,
+      legal_actions: structuredClone(DECK_REMOVAL_STATE.legal_actions)
+    };
+    expect(normalizeCurrentState(
+      wrapBridgeV2State({ state: candidateWithAction, capabilities: candidateCapabilities }),
+      TEST_SOURCE
+    ).currentState.stability).toBe("invalid");
   });
 
   it("strictly decodes event and combat contracts and rejects context/surface mismatch", () => {
@@ -2359,6 +2516,9 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     incompatibleCapabilities.game.compatibility = {
       status: "unsupported",
       action_execution_allowed: false,
+      state_observation_allowed: false,
+      observation_only_surface_kinds: [],
+      observation_candidate_build_fingerprints: [],
       detail: "build mismatch"
     };
     const incompatibleState = structuredClone(DECK_ENCHANT_STATE);
@@ -2380,8 +2540,129 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     const raw = await adapter.readCurrentState();
     const envelope = normalizeCurrentState(raw, adapter.describe());
     expect(isBridgeV2WrappedState(raw)).toBe(true);
+    expect(adapter.describe().capabilities.canExecuteActions).toBe(false);
     expect(envelope.currentState.stability).toBe("invalid");
     expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toEqual([]);
+  });
+
+  it("keeps candidate observation v2-only and skips both legacy and inspection reads", async () => {
+    const requests: string[] = [];
+    const candidateCapabilities = structuredClone(CAPABILITIES);
+    candidateCapabilities.game = {
+      version: "v0.109.0",
+      commit: "c12f634d",
+      branch: "v0.109.0",
+      main_assembly_hash: -840572606,
+      compatibility: {
+        status: "observation_only_candidate",
+        action_execution_allowed: false,
+        state_observation_allowed: true,
+        observation_only_surface_kinds: ["deck_removal_selection"],
+        observation_candidate_build_fingerprints: ["v0.109.0|c12f634d|-840572606"],
+        detail: "static bindings only"
+      }
+    };
+    candidateCapabilities.surfaces = candidateCapabilities.surfaces.map((surface) => ({
+      ...surface,
+      support: surface.kind === "deck_removal_selection"
+        ? "candidate_observation_only"
+        : "not_qualified_for_current_build"
+    }));
+    const candidateState = {
+      ...structuredClone(DECK_REMOVAL_STATE),
+      game: candidateCapabilities.game,
+      readiness: "observation_only",
+      legal_actions: [],
+      completeness: {
+        ...DECK_REMOVAL_STATE.completeness,
+        legal_actions: "suppressed_by_candidate_observation_gate"
+      },
+      diagnostics: []
+    };
+    const adapter = new Sts2McpHybridAdapter("http://adapter.test", 1_000, {
+      mode: "auto",
+      commandPollMs: 1,
+      commandTimeoutMs: 100
+    }, async (input) => {
+      const url = String(input);
+      requests.push(url);
+      if (url.endsWith("/api/v2/capabilities")) return json(candidateCapabilities);
+      if (url.endsWith("/api/v2/state")) return json(candidateState);
+      throw new Error(`Unexpected candidate-observation request ${url}`);
+    });
+
+    const raw = await adapter.readCurrentState();
+    const envelope = normalizeCurrentState(raw, adapter.describe());
+    expect(isBridgeV2WrappedState(raw)).toBe(true);
+    expect(envelope.currentState).toMatchObject({
+      stability: "unknown",
+      actionAuthority: "none",
+      surface: { kind: "deck_removal_selection" }
+    });
+    expect(requests.some((url) => url.includes("/inspections/"))).toBe(false);
+    expect(requests.some((url) => url.includes("/api/v1/"))).toBe(false);
+  });
+
+  it("keeps every exact candidate-build surface free of legacy or inspection contamination", async () => {
+    const requests: string[] = [];
+    const candidateCapabilities = structuredClone(CAPABILITIES);
+    candidateCapabilities.game = {
+      version: "v0.109.0",
+      commit: "c12f634d",
+      branch: "v0.109.0",
+      main_assembly_hash: -840572606,
+      compatibility: {
+        status: "observation_only_candidate",
+        action_execution_allowed: false,
+        state_observation_allowed: true,
+        observation_only_surface_kinds: ["deck_removal_selection"],
+        observation_candidate_build_fingerprints: ["v0.109.0|c12f634d|-840572606"],
+        detail: "static bindings only"
+      }
+    };
+    candidateCapabilities.surfaces = candidateCapabilities.surfaces.map((surface) => ({
+      ...surface,
+      support: surface.kind === "deck_removal_selection"
+        ? "candidate_observation_only"
+        : "not_qualified_for_current_build"
+    }));
+    const unsupportedCandidateState = {
+      ...structuredClone(DECK_REMOVAL_STATE),
+      game: candidateCapabilities.game,
+      readiness: "unsupported",
+      context: { kind: "unknown", source_type: "menu", reason: "menu is not candidate-observable" },
+      surface_kind: "unsupported",
+      surface: { kind: "unsupported", source_type: "menu", reason: "menu is not candidate-observable" },
+      legal_actions: [],
+      diagnostics: []
+    };
+    const adapter = new Sts2McpHybridAdapter("http://adapter.test", 1_000, {
+      mode: "v2",
+      commandPollMs: 1,
+      commandTimeoutMs: 100
+    }, async (input) => {
+      const url = String(input);
+      requests.push(url);
+      if (url.endsWith("/api/v2/capabilities")) return json(candidateCapabilities);
+      if (url.endsWith("/api/v2/state")) return json(unsupportedCandidateState);
+      throw new Error(`Unexpected candidate-build request ${url}`);
+    });
+
+    const raw = await adapter.readCurrentState();
+    expect(isBridgeV2WrappedState(raw)).toBe(true);
+    expect(raw).not.toHaveProperty("legacy_v1_state");
+    expect(adapter.describe().capabilities.canExecuteActions).toBe(false);
+    expect(adapter.describe().negotiated).toMatchObject({
+      supported_surfaces: [],
+      candidate_observation_surfaces: ["deck_removal_selection"]
+    });
+    expect(normalizeCurrentState(raw, adapter.describe()).currentState).toMatchObject({
+      stability: "unknown",
+      actionAuthority: "none",
+      surface: { kind: "unsupported" }
+    });
+    expect(requests.some((url) => url.includes("/inspections/"))).toBe(false);
+    expect(requests.some((url) => url.includes("/api/v1/"))).toBe(false);
   });
 
   it("does not hide v2 identity drift behind unsupported-surface v1 fallback", async () => {

@@ -4,12 +4,21 @@ Status date: 2026-07-17
 
 ## Current Phase
 
-Protocol `2.0-preview.14` is implemented and loaded against exact game identity
-`v0.108.0|58694f64|-2044609792`. It exposes fourteen bounded executable Surface
-contracts and two fixed read-only Inspection kinds. Every current executable
-surface family has organic evidence for at least one observed interaction
-shape, but qualification remains action/category-specific and does not imply
-full-game coverage.
+Protocol `2.0-preview.16` is implemented. Its historical exact qualification is
+`v0.108.0|58694f64|-2044609792`, where it exposes fifteen bounded executable
+Surface contracts and two fixed read-only Inspection kinds. Every formerly
+executable surface family has organic evidence for at least one observed shape,
+but that evidence remains action/category-specific and does not imply full-game
+coverage.
+
+The currently installed Steam build is
+`v0.109.0|c12f634d|-840572606`. Its merchant-removal private bindings passed a
+static audit. Preview.16 therefore permits one exact, **non-executable**
+candidate observation: `shop + deck_removal_selection`. It reports
+`state_observation_allowed=true`, `action_execution_allowed=false`, publishes
+no v2 actions, blocks all inspection endpoints, suppresses legacy-sidecar
+merging, and marks every other surface `not_qualified_for_current_build`.
+No v0.109 action is qualified by v0.108 history or by this observation gate.
 
 ## Canonical Model
 
@@ -45,7 +54,8 @@ context.kind + surface.kind + action authority
 | `reward_claim` | gold, card child surface, potion capacity/discard, Proceed/Skip | qualified for observed ordinary rewards; linked sets fail closed |
 | `map_navigation` | repeated exact-node travel and map close/current-coordinate completion | qualified for observed singleplayer map travel |
 | `shop_room` | saved-run restore, open inventory, close/reopen, Proceed to map | qualified for observed normal merchant room controls |
-| `shop_inventory` | full typed inventory, one card purchase, sold-out and run-deck post-state | card purchase qualified; relic/potion/removal category actions still need organic evidence |
+| `shop_inventory` | typed inventory, card/relic/potion purchase, sold-out post-state, capacity suppression, removal-child launch | direct purchases and removal launch qualified for observed shapes; child selector remains pending |
+| `deck_removal_selection` | merchant removal child source/contract/static tests; exact v0.109 candidate observation | observation-only candidate; not executable | read a natural merchant child, then separately test cancel and select/preview/confirm/post-state before any action qualification |
 
 Read-only `run_deck` and `combat_piles` inspections are organically qualified.
 They expose no action authority and never reveal draw order.
@@ -77,6 +87,21 @@ the purchase changed gold 26 to 0, changed that exact offer to sold out, and a
 state-bound run-deck inspection changed from 17 to 18 with Armaments present.
 Final Proceed completed to `map + map_navigation`.
 
+A follow-up at the same merchant with player-visible high gold exercised a
+typed Blood Vial relic purchase: gold changed 10025 to 9824, the exact offer
+became sold out, and the player relic list showed Blood Vial. It also confirmed
+that a full belt suppresses all potion purchase actions with
+`potion_slots_full`, even where the offer is stocked and affordable. Finally,
+the affordable removal service completed only as far as its child
+`NDeckCardSelectScreen`; Bridge v2 correctly surfaced that child as unsupported
+with no actions while the read-only sidecar exposed its prompt, cards, and
+cancel/confirm facts.
+
+After one visible potion slot was freed, the typed Fire Potion action completed
+with gold 9824 to 9772, Fire Potion in exact slot 0, and its source offer sold
+out. The full belt then again removed every potion purchase action. Direct
+shop purchase categories now each have bounded observed evidence.
+
 The organic strict-client read also caught nullable C# fields omitted on the
 wire. Re-SpireAgent now accepts omission for explicitly optional shop product
 and blocked-reason fields while retaining stocked/product and action-binding
@@ -85,7 +110,8 @@ invariants.
 ## Verification
 
 - Bridge contract/runtime tests: 43/43.
-- Re-SpireAgent tests: 109/109, including 45 Bridge integration tests.
+- Re-SpireAgent tests: 110/110, including Bridge integration coverage for the
+  static merchant-removal contract.
 - Re-SpireAgent strict typecheck and production build pass.
 - Preview.14 normal merchant open/close/reopen/card-purchase/Proceed lifecycle
   completed with confirmed action-specific evidence and no diagnostics.
@@ -93,6 +119,11 @@ invariants.
   before the legacy Smith confirm settlement stopped the bounded runner; the
   Bridge-owned rest option itself was settled.
 - Preview.13 Proceed rerun `run-20260717012922-la5ibg` settled and reached map.
+- Preview.16 adds an exact-identity candidate-observation gate for the narrow
+  `shop + NDeckCardSelectScreen` merchant-removal child. It compiled against
+  the current v0.109 API and passed Bridge/Re tests, but it deliberately
+  publishes no actions, performs no inspection, and has executed no v0.109
+  lifecycle step.
 
 ## Honest Completeness Boundary
 
@@ -107,23 +138,25 @@ obtains from the v1 sidecar or fixed inspection. Smith's child deck selection is
 the clearest preview.13 example: rest ownership is correct, but the whole
 multi-surface journey is not yet all-v2.
 
-Shop has the same honest child boundary: launching card removal is implemented,
-but its generic deck-removal selector is not yet a qualified v2 Surface. Relic,
-potion, and removal purchase categories are source/contract implemented but do
-not yet have organic action evidence.
+Shop has the same honest child boundary: launching card removal is historically
+qualified. Preview.15 now has a narrow merchant removal child contract, but it
+is not yet runtime-qualified on the current game build. Card, relic, and potion
+purchase are only qualified for their historical observed shapes.
 
 ## Current Blocker And Next Step
 
-The architecture blocker remains coverage breadth without dishonest
-generalization, not a failed core model. Shop no longer blocks the normal room
-and card-purchase journey. The next candidate should be selected from remaining
-frequent player-visible gaps, with generic deck maintenance likely higher value
-than another purchase category because both rest Smith and shop removal already
-reach that boundary. It still requires source-derived purpose, selection,
-preview, confirmation, cancellation, and completion semantics rather than a
-universal card selector. Menu and treasure remain separate debt.
+The immediate next step is a natural, read-only v0.109 merchant-removal child
+observation. It must verify `shop + deck_removal_selection`, player-visible
+prompt/cards/limits/stage, empty legal actions, and `actionAuthority=none`
+without legacy fallback or inspection. Only after that evidence may a separate,
+narrow action-qualification review consider cancel and
+select -> preview -> confirm -> deck/shop post-state smokes. Generic deck
+maintenance remains a future shared-boundary study: rest Smith and shop removal
+have purpose-specific selection/preview/confirmation semantics and must not
+become a universal card selector. Menu and treasure remain separate debt.
 
 See [the preview.14 shop audit](PREVIEW_14_SHOP_SURFACE_AUDIT_2026-07-17.md),
 [the preview.13 closeout audit](PREVIEW_13_CLOSEOUT_AUDIT_2026-07-17.md),
+[the preview.16 candidate-observation audit](PREVIEW_16_CANDIDATE_OBSERVATION_GATE_2026-07-17.md),
 [the coverage matrix](PLAYER_VISIBLE_COVERAGE.md), and
 [the organic long-run audit](ORGANIC_LONG_RUN_AUDIT_2026-07-17.md).

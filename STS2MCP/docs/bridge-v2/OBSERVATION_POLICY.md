@@ -45,6 +45,15 @@ Allowed facts:
 The selection constraints and selected set require exact `v0.108.0` private
 field bindings. The title/description prefer rendered UI text.
 
+## Merchant Deck Removal Selection
+
+Merchant removal exposes only the cards, prompt, selection constraints,
+selected set, and stage controls rendered by the active merchant child screen.
+Its `ShopBridgeContext` is a semantic guard, not merely metadata: the bridge
+does not infer removal from prompt text or treat every `NDeckCardSelectScreen`
+as removable. The selector may share card-grid mechanics with other deck
+maintenance flows, but its effect and post-state are removal-specific.
+
 ## Read-Only Deck And Pile Inspection
 
 `run_deck` exposes the same card instances a player can inspect through

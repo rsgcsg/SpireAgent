@@ -12,6 +12,7 @@ import {
   type BridgeRewardClaimSurface,
   type CombatTurnSurface,
   type DeckEnchantSelectionSurface,
+  type DeckRemovalSelectionSurface,
   type EnemySnapshot,
   type EventDialogueSurface,
   type EventOptionSurface,
@@ -36,6 +37,7 @@ import {
   isBridgeV2CardRewardSelectionSurface,
   isBridgeV2RewardClaimSurface,
   isBridgeV2DeckEnchantSurface,
+  isBridgeV2DeckRemovalSurface,
   isBridgeV2EventContext,
   isBridgeV2EventDialogueSurface,
   isBridgeV2EventOptionSurface,
@@ -62,6 +64,7 @@ import {
   type BridgeV2MapContext,
   type BridgeV2MapNavigationSurface,
   type BridgeV2DeckEnchantSurface,
+  type BridgeV2DeckRemovalSurface,
   type BridgeV2Diagnostic,
   type BridgeV2EventDialogueSurface,
   type BridgeV2EventOptionSurface,
@@ -87,6 +90,13 @@ const ACTION_KINDS = {
     "confirm_selection",
     "cancel_preview",
     "close_selection"
+  ]),
+  deck_removal_selection: new Set([
+    "toggle_deck_removal_card",
+    "preview_deck_removal",
+    "confirm_deck_removal",
+    "cancel_deck_removal_preview",
+    "cancel_deck_removal_selection"
   ]),
   event_dialogue: new Set(["advance_event_dialogue"]),
   event_option: new Set(["choose_event_option", "proceed_event"]),
@@ -227,6 +237,8 @@ export function normalizeBridgeV2CurrentState(
   let actionAuthority: NormalizedCurrentState["actionAuthority"] = "none";
 
   if (state && capabilities) {
+    const candidateBuild = isCandidateBuild(state, capabilities);
+    const observationOnlyCandidate = isObservationOnlyCandidate(state, capabilities);
     validateEnvelopeIdentity(state, capabilities, diagnostics);
     validateStructuredDiagnostics(
       [...capabilities.diagnostics, ...state.diagnostics],
@@ -235,8 +247,45 @@ export function normalizeBridgeV2CurrentState(
     );
 
     if (!state.game.compatibility.action_execution_allowed || !capabilities.game.compatibility.action_execution_allowed) {
-      diagnostics.invalid("bridge_v2.game.compatibility", state.game.compatibility, "exact-build action execution is disabled");
-      surface = unsupported(rawState, "Bridge v2 exact game-build compatibility did not pass");
+      if (observationOnlyCandidate) {
+        if (!isBridgeV2DeckRemovalSurface(state.surface) || !isBridgeV2ShopContext(state.context)) {
+          diagnostics.invalid("bridge_v2.observation_only.surface", state.surface, "candidate observation may expose only shop deck_removal_selection");
+        } else if (state.readiness !== "observation_only") {
+          diagnostics.invalid("bridge_v2.observation_only.readiness", state.readiness, "candidate observation must use observation_only readiness");
+        } else if (state.legal_actions.length !== 0) {
+          diagnostics.invalid("bridge_v2.observation_only.legal_actions", state.legal_actions, "candidate observation must not publish executable actions");
+        } else {
+          const advertised = capabilities.surfaces.find((candidate) => candidate.kind === state.surface.kind);
+          if (!advertised || advertised.support !== "candidate_observation_only") {
+            diagnostics.invalid(
+              "bridge_v2.capabilities.surfaces",
+              capabilities.surfaces,
+              "candidate observation surface must be explicitly advertised as candidate_observation_only"
+            );
+          }
+          validateDeckRemovalFacts(state.surface, diagnostics);
+          surface = projectDeckRemovalSurface(state.surface, state.state_id, [], state.completeness);
+          stability = "unknown";
+          actionAuthority = "none";
+          diagnostics.infer(
+            "bridge_v2.observation_only",
+            ["bridge_v2.game.compatibility", "bridge_v2.state"],
+            "candidate-build player-visible evidence is intentionally non-executable and cannot fall back to legacy execution"
+          );
+        }
+      } else if (candidateBuild && isBridgeV2UnsupportedSurface(state.surface) && state.readiness === "unsupported" && state.legal_actions.length === 0) {
+        surface = unsupported(rawState, "This surface is not qualified for the current Bridge v2 candidate build");
+        stability = "unknown";
+        actionAuthority = "none";
+        diagnostics.infer(
+          "bridge_v2.candidate_build.unqualified_surface",
+          ["bridge_v2.game.compatibility", "bridge_v2.state"],
+          "candidate-build observation authority is limited to deck_removal_selection; this surface remains safely unsupported"
+        );
+      } else {
+        diagnostics.invalid("bridge_v2.game.compatibility", state.game.compatibility, "exact-build action execution is disabled");
+        surface = unsupported(rawState, "Bridge v2 exact game-build compatibility did not pass");
+      }
     } else if (isBridgeV2UnsupportedSurface(state.surface)) {
       surface = unsupported(rawState, `Bridge v2 does not implement ${state.surface.source_type}: ${state.surface.reason}`);
       stability = "unknown";
@@ -260,6 +309,9 @@ export function normalizeBridgeV2CurrentState(
         }
         validateDeckEnchantState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
         surface = projectDeckEnchantSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
+      } else if (isBridgeV2DeckRemovalSurface(state.surface) && isBridgeV2ShopContext(state.context)) {
+        validateDeckRemovalState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
+        surface = projectDeckRemovalSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
       } else if (isBridgeV2EventDialogueSurface(state.surface) && isBridgeV2EventContext(state.context)) {
         validateEventDialogueState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
         surface = projectEventDialogueSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
@@ -357,13 +409,29 @@ function validateEnvelopeIdentity(
   if (state.game.compatibility.action_execution_allowed !== capabilities.game.compatibility.action_execution_allowed) {
     diagnostics.invalid("bridge_v2.game.compatibility", state.game.compatibility, "state and capabilities execution authority differ");
   }
+  if (state.game.compatibility.state_observation_allowed !== capabilities.game.compatibility.state_observation_allowed
+      || !sameStrings(
+        state.game.compatibility.observation_only_surface_kinds,
+        capabilities.game.compatibility.observation_only_surface_kinds
+      )
+      || !sameStrings(
+        state.game.compatibility.observation_candidate_build_fingerprints,
+        capabilities.game.compatibility.observation_candidate_build_fingerprints
+      )) {
+    diagnostics.invalid("bridge_v2.game.compatibility", state.game.compatibility, "state and capabilities observation authority differ");
+  }
   if (state.game.version !== capabilities.game.version
       || state.game.commit !== capabilities.game.commit
       || state.game.main_assembly_hash !== capabilities.game.main_assembly_hash) {
     diagnostics.invalid("bridge_v2.game.identity", state.game, "state and capabilities game identities differ");
   }
-  validateExactGameIdentity("bridge_v2.state.game", state.game, diagnostics);
-  validateExactGameIdentity("bridge_v2.capabilities.game", capabilities.game, diagnostics);
+  if (isCandidateBuild(state, capabilities)) {
+    validateCandidateObservationIdentity("bridge_v2.state.game", state.game, diagnostics);
+    validateCandidateObservationIdentity("bridge_v2.capabilities.game", capabilities.game, diagnostics);
+  } else {
+    validateExactGameIdentity("bridge_v2.state.game", state.game, diagnostics);
+    validateExactGameIdentity("bridge_v2.capabilities.game", capabilities.game, diagnostics);
+  }
   if (state.observation_policy.id !== capabilities.observation_policy.id) {
     diagnostics.invalid("bridge_v2.observation_policy.id", state.observation_policy.id, "state and capabilities observation policies differ");
   }
@@ -459,6 +527,41 @@ function validateDeckEnchantState(
   for (const action of actions) {
     if (surface.stage === "selecting" && (action.kind === "confirm_selection" || action.kind === "cancel_preview")) diagnostics.invalid("bridge_v2.legal_actions.kind", action.kind, "preview-only action appeared during selecting stage");
     if (surface.stage === "preview" && (action.kind === "toggle_card" || action.kind === "preview_selection" || action.kind === "close_selection")) diagnostics.invalid("bridge_v2.legal_actions.kind", action.kind, "selecting-only action appeared during preview stage");
+  }
+}
+
+function validateDeckRemovalState(
+  surface: BridgeV2DeckRemovalSurface,
+  stateId: string,
+  actions: BridgeV2LegalAction[],
+  missing: string[],
+  advertisedOperations: ReadonlySet<string>,
+  readiness: string,
+  diagnostics: DiagnosticsBuilder
+): void {
+  validateDeckRemovalFacts(surface, diagnostics);
+  validateActions("deck_removal_selection", stateId, actions, missing, advertisedOperations, readiness, diagnostics);
+  for (const action of actions) {
+    if (surface.stage === "selecting" && (action.kind === "confirm_deck_removal" || action.kind === "cancel_deck_removal_preview")) diagnostics.invalid("bridge_v2.legal_actions.kind", action.kind, "preview-only action appeared during selecting stage");
+    if (surface.stage === "preview" && (action.kind === "toggle_deck_removal_card" || action.kind === "preview_deck_removal" || action.kind === "cancel_deck_removal_selection")) diagnostics.invalid("bridge_v2.legal_actions.kind", action.kind, "selecting-only action appeared during preview stage");
+  }
+}
+
+function validateDeckRemovalFacts(
+  surface: BridgeV2DeckRemovalSurface,
+  diagnostics: DiagnosticsBuilder
+): void {
+  if (surface.min_select > surface.max_select) diagnostics.invalid("bridge_v2.surface.selection_range", surface, "min_select exceeds max_select");
+  if (surface.selected_count !== surface.selected_card_entity_ids.length) diagnostics.invalid("bridge_v2.surface.selected_count", surface.selected_count, "selected count and selected ids differ");
+  if (surface.selected_count > surface.max_select) diagnostics.invalid("bridge_v2.surface.selected_count", surface.selected_count, "selected count exceeds max_select");
+  const cardIds = new Set(surface.cards.map((card) => card.entity_id));
+  if (cardIds.size !== surface.cards.length) diagnostics.invalid("bridge_v2.surface.cards", surface.cards, "card entity ids are not unique");
+  const selectedIds = new Set(surface.selected_card_entity_ids);
+  for (const selectedId of selectedIds) {
+    if (!cardIds.has(selectedId)) diagnostics.invalid("bridge_v2.surface.selected_card_entity_ids", selectedId, "selected card is absent from cards");
+  }
+  for (const card of surface.cards) {
+    if (card.is_selected !== selectedIds.has(card.entity_id)) diagnostics.invalid("bridge_v2.surface.cards.is_selected", card, "card selected flag disagrees with selected ids");
   }
 }
 
@@ -1031,6 +1134,70 @@ function validateExactGameIdentity(
   }
 }
 
+function isCandidateBuild(
+  state: NonNullable<ReturnType<typeof decodeBridgeV2State>["data"]>,
+  capabilities: NonNullable<ReturnType<typeof decodeBridgeV2Capabilities>["data"]>
+): boolean {
+  const stateCompatibility = state.game.compatibility;
+  const capabilityCompatibility = capabilities.game.compatibility;
+  return stateCompatibility.status === "observation_only_candidate"
+    && capabilityCompatibility.status === "observation_only_candidate"
+    && !stateCompatibility.action_execution_allowed
+    && !capabilityCompatibility.action_execution_allowed
+    && stateCompatibility.state_observation_allowed
+    && capabilityCompatibility.state_observation_allowed
+    && sameStrings(stateCompatibility.observation_only_surface_kinds, ["deck_removal_selection"])
+    && sameStrings(capabilityCompatibility.observation_only_surface_kinds, ["deck_removal_selection"])
+    && stateCompatibility.observation_candidate_build_fingerprints.includes(gameFingerprint(state.game))
+    && capabilityCompatibility.observation_candidate_build_fingerprints.includes(gameFingerprint(capabilities.game));
+}
+
+function isObservationOnlyCandidate(
+  state: NonNullable<ReturnType<typeof decodeBridgeV2State>["data"]>,
+  capabilities: NonNullable<ReturnType<typeof decodeBridgeV2Capabilities>["data"]>
+): boolean {
+  return isCandidateBuild(state, capabilities)
+    && isBridgeV2DeckRemovalSurface(state.surface)
+    && capabilities.surfaces.some((surface) => surface.kind === state.surface.kind && surface.support === "candidate_observation_only");
+}
+
+function validateCandidateObservationIdentity(
+  path: string,
+  game: {
+    version?: string | null;
+    commit?: string | null;
+    main_assembly_hash?: number | null;
+    compatibility: {
+      status: string;
+      action_execution_allowed: boolean;
+      state_observation_allowed: boolean;
+      observation_only_surface_kinds: string[];
+      observation_candidate_build_fingerprints: string[];
+    };
+  },
+  diagnostics: DiagnosticsBuilder
+): void {
+  const fingerprint = gameFingerprint(game);
+  if (game.compatibility.status !== "observation_only_candidate"
+      || game.compatibility.action_execution_allowed
+      || !game.compatibility.state_observation_allowed
+      || !sameStrings(game.compatibility.observation_only_surface_kinds, ["deck_removal_selection"])
+      || !game.compatibility.observation_candidate_build_fingerprints.includes(fingerprint)) {
+    diagnostics.invalid(`${path}.compatibility`, game.compatibility, "Bridge v2 candidate observation requires its exact non-executable identity contract");
+  }
+  if (!game.version || !game.commit || game.main_assembly_hash === null || game.main_assembly_hash === undefined) {
+    diagnostics.invalid(path, game, "Bridge v2 candidate observation requires version, commit, and main assembly hash identity");
+  }
+}
+
+function gameFingerprint(game: { version?: string | null; commit?: string | null; main_assembly_hash?: number | null }): string {
+  return `${game.version ?? "unknown"}|${game.commit ?? "unknown"}|${game.main_assembly_hash ?? "unknown"}`;
+}
+
+function sameStrings(left: readonly string[], right: readonly string[]): boolean {
+  return [...left].sort().join("\u0000") === [...right].sort().join("\u0000");
+}
+
 function projectEventContext(context: { event_id: string; name?: string | null; ancient: boolean; in_dialogue: boolean; body?: string | null }): SemanticContext {
   return {
     kind: "event",
@@ -1204,6 +1371,29 @@ function projectDeckEnchantSurface(
       amount: surface.enchantment.amount,
       ...(surface.enchantment.observation_source ? { observationSource: surface.enchantment.observation_source } : {})
     },
+    cards: surface.cards.map(projectBridgeV2Card),
+    legalActions: projectActions(actions),
+    completeness: projectCompleteness(completeness)
+  };
+}
+
+function projectDeckRemovalSurface(
+  surface: BridgeV2DeckRemovalSurface,
+  stateId: string,
+  actions: BridgeV2LegalAction[],
+  completeness: RawCompleteness
+): DeckRemovalSelectionSurface {
+  return {
+    kind: "deck_removal_selection",
+    stage: surface.stage,
+    bridgeStateId: stateId,
+    screenEntityId: surface.screen_entity_id,
+    prompt: surface.prompt,
+    minimumSelections: surface.min_select,
+    maximumSelections: surface.max_select,
+    selectedCount: surface.selected_count,
+    selectedCardEntityIds: [...surface.selected_card_entity_ids],
+    cancelable: surface.cancelable,
     cards: surface.cards.map(projectBridgeV2Card),
     legalActions: projectActions(actions),
     completeness: projectCompleteness(completeness)

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using STS2_MCP.BridgeV2.Protocol;
 using STS2_MCP.BridgeV2.Runtime;
 
@@ -10,6 +11,7 @@ internal static class BridgeSnapshotBuilder
     private static readonly IBridgeSurfaceProvider[] Providers =
     {
         new DeckEnchantSurfaceProvider(),
+        new DeckRemovalSelectionSurfaceProvider(),
         new CombatPileCardSelectionSurfaceProvider(),
         new CombatHandCardSelectionSurfaceProvider(),
         new GeneratedCardChoiceSurfaceProvider(),
@@ -49,7 +51,7 @@ internal static class BridgeSnapshotBuilder
                     "restart",
                     ex.GetType().Name));
         }
-        if (!game.Compatibility.ActionExecutionAllowed)
+        if (!game.Compatibility.StateObservationAllowed)
         {
             return Unsupported(
                 game,
@@ -58,7 +60,7 @@ internal static class BridgeSnapshotBuilder
                 new[] { "game_build_identity_not_exact" },
                 context: null,
                 BridgeDiagnostics.Create(
-                    "bridge.identity.exact_build_required",
+                    "bridge.identity.observation_not_allowed",
                     "error",
                     "identity",
                     "actions_suppressed",
@@ -82,9 +84,12 @@ internal static class BridgeSnapshotBuilder
                     "unknown"));
         }
 
+        IReadOnlyList<IBridgeSurfaceProvider> eligibleProviders = game.Compatibility.ActionExecutionAllowed
+            ? Providers
+            : Providers.Where(provider => game.Compatibility.ObservationOnlySurfaceKinds.Contains(provider.Kind, StringComparer.Ordinal)).ToArray();
         ActiveSurfaceResolution resolution = ActiveSurfaceResolver.Resolve(
             snapshot,
-            Providers,
+            eligibleProviders,
             entities,
             game);
         if (resolution.Failure != null)
@@ -106,7 +111,9 @@ internal static class BridgeSnapshotBuilder
         }
 
         if (resolution.Draft != null)
-            return resolution.Draft;
+            return game.Compatibility.ActionExecutionAllowed
+                ? resolution.Draft
+                : SuppressActionsForCandidateObservation(resolution.Draft);
         if (resolution.MatchedKinds.Count > 1)
         {
             return Unsupported(
@@ -168,6 +175,45 @@ internal static class BridgeSnapshotBuilder
             Array.Empty<BridgeActionDraft>())
         {
             Diagnostics = new[] { diagnostic }
+        };
+    }
+
+    private static BridgeObservationDraft SuppressActionsForCandidateObservation(BridgeObservationDraft draft)
+    {
+        var completeness = draft.Completeness with
+        {
+            LegalActions = "suppressed_by_candidate_observation_gate"
+        };
+        IReadOnlyList<string> warnings = draft.Warnings
+            .Append("candidate_observation_only: no Bridge v2 action or inspection is authorized for this build.")
+            .ToArray();
+        IReadOnlyList<BridgeDiagnostic> diagnostics = draft.Diagnostics
+            .Append(BridgeDiagnostics.Create(
+                "bridge.identity.candidate_observation_only",
+                "warning",
+                "identity",
+                "actions_suppressed",
+                "update_bridge",
+                "Static bindings passed for this exact build, but UI lifecycle and completion evidence have not yet qualified action execution."))
+            .ToArray();
+        string signature = BridgeHash.Object(new
+        {
+            draft.Game.Version,
+            draft.Game.Commit,
+            draft.Game.MainAssemblyHash,
+            draft.Context,
+            draft.Surface,
+            observationOnly = true
+        });
+
+        return draft with
+        {
+            Signature = signature,
+            Readiness = "observation_only",
+            Completeness = completeness,
+            Warnings = warnings,
+            Actions = Array.Empty<BridgeActionDraft>(),
+            Diagnostics = diagnostics
         };
     }
 }
