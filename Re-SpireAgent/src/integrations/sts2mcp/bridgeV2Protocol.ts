@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { isJsonObject, type JsonObject } from "../../shared/json.js";
 
-export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.4" as const;
+export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.13" as const;
 
 const compatibilitySchema = z.object({
   status: z.string().min(1),
@@ -150,6 +150,33 @@ const rewardFlowContextSchema = z.object({
   reward_kind: z.enum(["card_reward", "room_rewards"])
 }).passthrough();
 
+const restContextSchema = z.object({
+  kind: z.literal("rest")
+}).passthrough();
+
+const visibleMapCoordinateSchema = z.object({
+  col: z.number().int(),
+  row: z.number().int(),
+  point_type: z.string().min(1).nullable().optional()
+}).passthrough();
+
+const visibleMapNodeSchema = z.object({
+  entity_id: z.string().min(1),
+  col: z.number().int(),
+  row: z.number().int(),
+  point_type: z.string().min(1),
+  state: z.enum(["none", "travelable", "traveled", "untravelable"]),
+  children: z.array(visibleMapCoordinateSchema)
+}).passthrough();
+
+const mapContextSchema = z.object({
+  kind: z.literal("map"),
+  act_index: z.number().int().nonnegative(),
+  current_position: visibleMapCoordinateSchema.nullable(),
+  visited: z.array(visibleMapCoordinateSchema),
+  nodes: z.array(visibleMapNodeSchema)
+}).passthrough();
+
 const unknownContextSchema = z.object({
   kind: z.literal("unknown"),
   source_type: z.string(),
@@ -190,10 +217,93 @@ const eventOptionSurfaceSchema = z.object({
   options: z.array(visibleEventOptionSchema)
 }).passthrough();
 
+const visibleDialogueLineSchema = z.object({
+  entity_id: z.string().min(1),
+  index: z.number().int().nonnegative(),
+  text: z.string().min(1),
+  speaker: z.enum(["ancient", "character", "unknown"]),
+  is_current: z.boolean()
+}).passthrough();
+
+const eventDialogueSurfaceSchema = z.object({
+  kind: z.literal("event_dialogue"),
+  screen_entity_id: z.string().min(1),
+  current_line_index: z.number().int().nonnegative(),
+  revealed_lines: z.array(visibleDialogueLineSchema).min(1),
+  advance_label: z.string().min(1)
+}).passthrough();
+
+const visibleRestOptionSchema = z.object({
+  entity_id: z.string().min(1),
+  index: z.number().int().nonnegative(),
+  option_id: z.string().min(1),
+  name: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  enabled: z.boolean()
+}).passthrough();
+
+const restSiteSurfaceSchema = z.object({
+  kind: z.literal("rest_site"),
+  screen_entity_id: z.string().min(1),
+  options: z.array(visibleRestOptionSchema),
+  can_proceed: z.boolean()
+}).passthrough();
+
 const combatTurnSurfaceSchema = z.object({
   kind: z.literal("combat_turn"),
   room_entity_id: z.string().min(1),
   can_end_turn: z.boolean()
+}).passthrough();
+
+const combatPileCardSelectionSurfaceSchema = z.object({
+  kind: z.literal("combat_pile_card_selection"),
+  screen_entity_id: z.string().min(1),
+  prompt: z.string().min(1),
+  pile_type: z.enum(["draw", "discard", "exhaust", "hand", "play"]),
+  min_select: z.number().int().nonnegative(),
+  max_select: z.number().int().nonnegative(),
+  selected_count: z.number().int().nonnegative(),
+  selected_card_entity_ids: z.array(z.string().min(1)),
+  require_manual_confirmation: z.boolean(),
+  cancelable: z.boolean(),
+  cards: z.array(visibleCardSchema)
+}).passthrough();
+
+const combatHandCardSelectionSurfaceSchema = z.object({
+  kind: z.literal("combat_hand_card_selection"),
+  hand_entity_id: z.string().min(1),
+  prompt: z.string().min(1),
+  selection_mode: z.enum(["simple_select", "upgrade_select"]),
+  min_select: z.number().int().nonnegative(),
+  max_select: z.number().int().nonnegative(),
+  selected_count: z.number().int().nonnegative(),
+  selected_card_entity_ids: z.array(z.string().min(1)),
+  require_manual_confirmation: z.boolean(),
+  is_peeking: z.boolean(),
+  cards: z.array(visibleCardSchema)
+}).passthrough();
+
+const generatedCardChoiceSurfaceSchema = z.object({
+  kind: z.literal("generated_card_choice"),
+  screen_entity_id: z.string().min(1),
+  prompt: z.string().min(1).nullable().optional(),
+  can_skip: z.boolean(),
+  is_peeking: z.boolean(),
+  cards: z.array(visibleCardSchema)
+}).passthrough();
+
+const visibleCardBundleSchema = z.object({
+  entity_id: z.string().min(1),
+  cards: z.array(visibleCardSchema).min(1)
+}).passthrough();
+
+const cardBundleSelectionSurfaceSchema = z.object({
+  kind: z.literal("card_bundle_selection"),
+  stage: z.enum(["choosing", "preview"]),
+  screen_entity_id: z.string().min(1),
+  prompt: z.string().min(1).nullable().optional(),
+  selected_bundle_entity_id: z.string().min(1).nullable().optional(),
+  bundles: z.array(visibleCardBundleSchema).min(1)
 }).passthrough();
 
 const visibleCardRewardAlternativeSchema = z.object({
@@ -222,8 +332,26 @@ const rewardClaimSurfaceSchema = z.object({
   kind: z.literal("reward_claim"),
   screen_entity_id: z.string().min(1),
   rewards: z.array(visibleRewardSchema),
+  potion_slots_full: z.boolean(),
+  discardable_potions: z.array(visiblePotionSchema),
   can_proceed: z.boolean(),
   proceed_skips_remaining_rewards: z.boolean()
+}).passthrough();
+
+const visibleMapChoiceSchema = z.object({
+  entity_id: z.string().min(1),
+  col: z.number().int(),
+  row: z.number().int(),
+  point_type: z.string().min(1)
+}).passthrough();
+
+const mapNavigationSurfaceSchema = z.object({
+  kind: z.literal("map_navigation"),
+  screen_entity_id: z.string().min(1),
+  travel_enabled: z.boolean(),
+  traveling: z.boolean(),
+  drawing_mode: z.enum(["none", "drawing", "erasing"]),
+  next_options: z.array(visibleMapChoiceSchema)
 }).passthrough();
 
 const unsupportedSurfaceSchema = z.object({
@@ -241,7 +369,11 @@ const legalActionSchema = z.object({
   category: z.string().optional(),
   label: z.string().min(1),
   authority: z.string().min(1),
-  evidence_code: z.string().min(1)
+  evidence_code: z.string().min(1),
+  entity_bindings: z.array(z.object({
+    role: z.string().min(1),
+    entity_id: z.string().min(1)
+  }))
 }).passthrough();
 
 const completenessSchema = z.object({
@@ -393,11 +525,20 @@ export type BridgeV2DeckEnchantSurface = z.infer<typeof deckEnchantSurfaceSchema
 export type BridgeV2EventContext = z.infer<typeof eventContextSchema>;
 export type BridgeV2CombatContext = z.infer<typeof combatContextSchema>;
 export type BridgeV2RewardFlowContext = z.infer<typeof rewardFlowContextSchema>;
+export type BridgeV2RestContext = z.infer<typeof restContextSchema>;
+export type BridgeV2MapContext = z.infer<typeof mapContextSchema>;
 export type BridgeV2UnknownContext = z.infer<typeof unknownContextSchema>;
 export type BridgeV2EventOptionSurface = z.infer<typeof eventOptionSurfaceSchema>;
+export type BridgeV2EventDialogueSurface = z.infer<typeof eventDialogueSurfaceSchema>;
+export type BridgeV2RestSiteSurface = z.infer<typeof restSiteSurfaceSchema>;
 export type BridgeV2CombatTurnSurface = z.infer<typeof combatTurnSurfaceSchema>;
+export type BridgeV2CombatPileCardSelectionSurface = z.infer<typeof combatPileCardSelectionSurfaceSchema>;
+export type BridgeV2CombatHandCardSelectionSurface = z.infer<typeof combatHandCardSelectionSurfaceSchema>;
+export type BridgeV2GeneratedCardChoiceSurface = z.infer<typeof generatedCardChoiceSurfaceSchema>;
+export type BridgeV2CardBundleSelectionSurface = z.infer<typeof cardBundleSelectionSurfaceSchema>;
 export type BridgeV2CardRewardSelectionSurface = z.infer<typeof cardRewardSelectionSurfaceSchema>;
 export type BridgeV2RewardClaimSurface = z.infer<typeof rewardClaimSurfaceSchema>;
+export type BridgeV2MapNavigationSurface = z.infer<typeof mapNavigationSurfaceSchema>;
 export type BridgeV2Diagnostic = z.infer<typeof diagnosticSchema>;
 export type BridgeV2Inspection = z.infer<typeof inspectionSchema>;
 export type BridgeV2UnsupportedSurface = z.infer<typeof unsupportedSurfaceSchema>;
@@ -407,15 +548,24 @@ export type BridgeV2Context =
   | BridgeV2EventContext
   | BridgeV2CombatContext
   | BridgeV2RewardFlowContext
+  | BridgeV2RestContext
+  | BridgeV2MapContext
   | BridgeV2UnknownContext
   | (Record<string, unknown> & { kind: string });
 
 export type BridgeV2Surface =
   | BridgeV2DeckEnchantSurface
+  | BridgeV2EventDialogueSurface
+  | BridgeV2RestSiteSurface
   | BridgeV2EventOptionSurface
   | BridgeV2CombatTurnSurface
+  | BridgeV2CombatPileCardSelectionSurface
+  | BridgeV2CombatHandCardSelectionSurface
+  | BridgeV2GeneratedCardChoiceSurface
+  | BridgeV2CardBundleSelectionSurface
   | BridgeV2CardRewardSelectionSurface
   | BridgeV2RewardClaimSurface
+  | BridgeV2MapNavigationSurface
   | BridgeV2UnsupportedSurface
   | (Record<string, unknown> & { kind: string });
 
@@ -452,6 +602,16 @@ export function decodeBridgeV2State(value: unknown): DecodedBridgePayload<Bridge
   let surface: BridgeV2Surface;
   if (decoded.data.surface.kind === "deck_enchant_selection") {
     surface = parse(deckEnchantSurfaceSchema, decoded.data.surface, "deck_enchant_selection surface");
+  } else if (decoded.data.surface.kind === "event_dialogue") {
+    surface = parse(eventDialogueSurfaceSchema, decoded.data.surface, "event_dialogue surface");
+    if (context.kind !== "event" || !context.ancient || !context.in_dialogue) {
+      throw new BridgeV2DecodeError("Bridge v2 event_dialogue surface requires active ancient event dialogue context");
+    }
+  } else if (decoded.data.surface.kind === "rest_site") {
+    surface = parse(restSiteSurfaceSchema, decoded.data.surface, "rest_site surface");
+    if (context.kind !== "rest") {
+      throw new BridgeV2DecodeError("Bridge v2 rest_site surface requires rest context");
+    }
   } else if (decoded.data.surface.kind === "event_option") {
     surface = parse(eventOptionSurfaceSchema, decoded.data.surface, "event_option surface");
     if (context.kind !== "event") {
@@ -462,6 +622,26 @@ export function decodeBridgeV2State(value: unknown): DecodedBridgePayload<Bridge
     if (context.kind !== "combat") {
       throw new BridgeV2DecodeError("Bridge v2 combat_turn surface requires combat context");
     }
+  } else if (decoded.data.surface.kind === "combat_pile_card_selection") {
+    surface = parse(combatPileCardSelectionSurfaceSchema, decoded.data.surface, "combat_pile_card_selection surface");
+    if (context.kind !== "combat") {
+      throw new BridgeV2DecodeError("Bridge v2 combat_pile_card_selection surface requires combat context");
+    }
+  } else if (decoded.data.surface.kind === "combat_hand_card_selection") {
+    surface = parse(combatHandCardSelectionSurfaceSchema, decoded.data.surface, "combat_hand_card_selection surface");
+    if (context.kind !== "combat") {
+      throw new BridgeV2DecodeError("Bridge v2 combat_hand_card_selection surface requires combat context");
+    }
+  } else if (decoded.data.surface.kind === "generated_card_choice") {
+    surface = parse(generatedCardChoiceSurfaceSchema, decoded.data.surface, "generated_card_choice surface");
+    if (context.kind !== "combat") {
+      throw new BridgeV2DecodeError("Bridge v2 generated_card_choice surface requires combat context");
+    }
+  } else if (decoded.data.surface.kind === "card_bundle_selection") {
+    // Bundle choice is a reusable UI protocol. Its semantic origin currently
+    // includes event rewards, but the surface contract must not fossilize that
+    // first observed context into a permanent event-only rule.
+    surface = parse(cardBundleSelectionSurfaceSchema, decoded.data.surface, "card_bundle_selection surface");
   } else if (decoded.data.surface.kind === "card_reward_selection") {
     surface = parse(cardRewardSelectionSurfaceSchema, decoded.data.surface, "card_reward_selection surface");
     if (context.kind !== "reward_flow") {
@@ -472,13 +652,40 @@ export function decodeBridgeV2State(value: unknown): DecodedBridgePayload<Bridge
     if (context.kind !== "reward_flow" || context.reward_kind !== "room_rewards") {
       throw new BridgeV2DecodeError("Bridge v2 reward_claim surface requires room_rewards reward_flow context");
     }
+  } else if (decoded.data.surface.kind === "map_navigation") {
+    surface = parse(mapNavigationSurfaceSchema, decoded.data.surface, "map_navigation surface");
+    if (context.kind !== "map") {
+      throw new BridgeV2DecodeError("Bridge v2 map_navigation surface requires map context");
+    }
   } else if (decoded.data.surface.kind === "unsupported") {
     surface = parse(unsupportedSurfaceSchema, decoded.data.surface, "unsupported surface");
   } else {
     surface = decoded.data.surface;
   }
 
+  const visibleEntityIds = collectEntityIds({ context, surface });
+  for (const action of decoded.data.legal_actions) {
+    for (const binding of action.entity_bindings) {
+      if (!visibleEntityIds.has(binding.entity_id)) {
+        throw new BridgeV2DecodeError(
+          `Bridge v2 action ${action.action_id} binds ${binding.role} to entity ${binding.entity_id}, which is absent from the visible context and surface`
+        );
+      }
+    }
+  }
+
   return { raw: decoded.raw, data: { ...decoded.data, context, surface } };
+}
+
+function collectEntityIds(value: unknown, result = new Set<string>()): Set<string> {
+  if (Array.isArray(value)) {
+    for (const entry of value) collectEntityIds(entry, result);
+    return result;
+  }
+  if (!isJsonObject(value)) return result;
+  if (typeof value.entity_id === "string") result.add(value.entity_id);
+  for (const entry of Object.values(value)) collectEntityIds(entry, result);
+  return result;
 }
 
 export function decodeBridgeV2Command(value: unknown): DecodedBridgePayload<BridgeV2Command> {
@@ -521,16 +728,60 @@ export function isBridgeV2RewardFlowContext(context: BridgeV2Context): context i
   return context.kind === "reward_flow";
 }
 
+export function isBridgeV2RestContext(context: BridgeV2Context): context is BridgeV2RestContext {
+  return context.kind === "rest";
+}
+
+export function isBridgeV2MapContext(context: BridgeV2Context): context is BridgeV2MapContext {
+  return context.kind === "map";
+}
+
 export function isBridgeV2EventOptionSurface(
   surface: BridgeV2Surface
 ): surface is BridgeV2EventOptionSurface {
   return surface.kind === "event_option";
 }
 
+export function isBridgeV2EventDialogueSurface(
+  surface: BridgeV2Surface
+): surface is BridgeV2EventDialogueSurface {
+  return surface.kind === "event_dialogue";
+}
+
+export function isBridgeV2RestSiteSurface(
+  surface: BridgeV2Surface
+): surface is BridgeV2RestSiteSurface {
+  return surface.kind === "rest_site";
+}
+
 export function isBridgeV2CombatTurnSurface(
   surface: BridgeV2Surface
 ): surface is BridgeV2CombatTurnSurface {
   return surface.kind === "combat_turn";
+}
+
+export function isBridgeV2CombatPileCardSelectionSurface(
+  surface: BridgeV2Surface
+): surface is BridgeV2CombatPileCardSelectionSurface {
+  return surface.kind === "combat_pile_card_selection";
+}
+
+export function isBridgeV2CombatHandCardSelectionSurface(
+  surface: BridgeV2Surface
+): surface is BridgeV2CombatHandCardSelectionSurface {
+  return surface.kind === "combat_hand_card_selection";
+}
+
+export function isBridgeV2GeneratedCardChoiceSurface(
+  surface: BridgeV2Surface
+): surface is BridgeV2GeneratedCardChoiceSurface {
+  return surface.kind === "generated_card_choice";
+}
+
+export function isBridgeV2CardBundleSelectionSurface(
+  surface: BridgeV2Surface
+): surface is BridgeV2CardBundleSelectionSurface {
+  return surface.kind === "card_bundle_selection";
 }
 
 export function isBridgeV2CardRewardSelectionSurface(
@@ -545,10 +796,18 @@ export function isBridgeV2RewardClaimSurface(
   return surface.kind === "reward_claim";
 }
 
+export function isBridgeV2MapNavigationSurface(
+  surface: BridgeV2Surface
+): surface is BridgeV2MapNavigationSurface {
+  return surface.kind === "map_navigation";
+}
+
 function parseContext(value: z.infer<typeof contextBaseSchema>): BridgeV2Context {
   if (value.kind === "event") return parse(eventContextSchema, value, "event context");
   if (value.kind === "combat") return parse(combatContextSchema, value, "combat context");
   if (value.kind === "reward_flow") return parse(rewardFlowContextSchema, value, "reward_flow context");
+  if (value.kind === "rest") return parse(restContextSchema, value, "rest context");
+  if (value.kind === "map") return parse(mapContextSchema, value, "map context");
   if (value.kind === "unknown") return parse(unknownContextSchema, value, "unknown context");
   return value;
 }

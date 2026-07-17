@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { ExecutableGameAction } from "../../domain/actions/action.js";
 import type { AdapterDescriptor, GameAdapter } from "../../game-io/adapter.js";
+import { TransientObservationError } from "../../game-io/observationError.js";
 import type { JsonObject } from "../../shared/json.js";
 import { BridgeV2HttpError, BridgeV2RestClient } from "./bridgeV2Client.js";
 import type { BridgeV2Capabilities, BridgeV2Command, BridgeV2State } from "./bridgeV2Protocol.js";
@@ -97,7 +98,7 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
       ]);
       const verifiedState = await this.bridge.state();
       if (verifiedState.data.state_id !== state.data.state_id) {
-        throw new Error("Bridge v2 state changed while read-only inspection evidence was being captured");
+        throw stateChangedDuringCompositeRead();
       }
       this.lastReadAuthority = "bridge";
       return wrapBridgeV2State({
@@ -114,7 +115,7 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
     ]);
     const verifiedState = await this.bridge.state();
     if (verifiedState.data.state_id !== state.data.state_id) {
-      throw new Error("Bridge v2 state changed while read-only inspection evidence was being captured");
+      throw stateChangedDuringCompositeRead();
     }
     this.lastReadAuthority = "legacy";
     return {
@@ -209,10 +210,14 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
       } catch (error) {
         // A fixed inspection capability may be unavailable in a state where
         // its backing player object does not exist (for example, main menu).
-        // Every other transport, identity, scope, and stale-state failure
-        // remains fail-closed.
+        // A stale response here means the game advanced after this adapter
+        // read the expected state. Reject the partial snapshot, but preserve a
+        // typed signal so settlement polling can retry the whole observation.
         if (error instanceof BridgeV2HttpError && error.errorCode === "inspection_not_available") {
           return undefined;
+        }
+        if (error instanceof BridgeV2HttpError && error.errorCode === "stale_state") {
+          throw stateChangedDuringCompositeRead(`${kind} inspection returned stale_state`);
         }
         throw error;
       }
@@ -227,6 +232,13 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
     this.lastReadAuthority = "legacy";
     return state;
   }
+}
+
+function stateChangedDuringCompositeRead(detail?: string): TransientObservationError {
+  return new TransientObservationError(
+    "state_changed_during_composite_read",
+    `Bridge v2 state changed while read-only inspection evidence was being captured${detail ? `: ${detail}` : ""}`
+  );
 }
 
 function isPending(status: BridgeV2Command["status"]): boolean {

@@ -6,6 +6,7 @@ using MegaCrit.Sts2.Core.Events;
 using MegaCrit.Sts2.Core.Models.Events;
 using MegaCrit.Sts2.Core.Nodes.Events;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
+using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Runs;
@@ -37,7 +38,7 @@ internal sealed class EventOptionSurfaceProvider : IBridgeSurfaceProvider
 
         EventBridgeContext context = BridgeContextBuilder.BuildEvent(eventRoom);
         if (context.InDialogue)
-            return UnsupportedDialogue(entities, game, context, room);
+            return null;
 
         NEventOptionButton[] allButtons = room.Layout?.OptionButtons.ToArray()
             ?? Array.Empty<NEventOptionButton>();
@@ -70,7 +71,8 @@ internal sealed class EventOptionSurfaceProvider : IBridgeSurfaceProvider
                     option.IsProceed ? "navigation" : "selection",
                     BuildLabel(option),
                     "NEventRoom.OptionButtonClicked+NEventOptionButton",
-                    () => StartOption(room, button, option, position)));
+                    () => StartOption(room, button, option, position),
+                    new[] { new ActionEntityBinding("option", entityId) }));
             }
         }
 
@@ -83,7 +85,7 @@ internal sealed class EventOptionSurfaceProvider : IBridgeSurfaceProvider
             missing.Add("context.name");
         if (options.Count == 0)
             missing.Add("surface.options");
-        string readiness = missing.Count > 0 ? "degraded" : actions.Count > 0 ? "ready" : "settling";
+        string readiness = ClassifyReadiness(context.Name != null, options.Count, actions.Count);
         var completeness = new StateCompleteness(
             missing.Count == 0 ? "contract_complete_for_supported_surface" : "partial",
             actions.Count > 0 ? "derived_from_same_validator_as_execution" : "temporarily_empty_while_ui_settles",
@@ -114,31 +116,19 @@ internal sealed class EventOptionSurfaceProvider : IBridgeSurfaceProvider
             actions);
     }
 
-    private static BridgeObservationDraft UnsupportedDialogue(
-        BridgeEntityRegistry entities,
-        GameBuildIdentity game,
-        EventBridgeContext context,
-        NEventRoom room)
+    internal static string ClassifyReadiness(
+        bool contextNameAvailable,
+        int visibleOptionCount,
+        int actionCount)
     {
-        var surface = new UnsupportedSurface(
-            "unsupported",
-            "ancient_event_dialogue",
-            "Ancient dialogue advancement has not yet received an action-specific completion contract.");
-        var completeness = new StateCompleteness(
-            "context_visible_surface_not_implemented",
-            "empty_fail_closed",
-            new[] { "NEventRoom", "NAncientEventLayout" },
-            new[] { "dialogue_lines", "dialogue_advance_completion" });
-        string signature = BridgeHash.Object(new { game.Version, context, surface, screen = entities.GetId(room, "screen") });
-        return new BridgeObservationDraft(
-            signature,
-            "unsupported",
-            context,
-            surface,
-            completeness,
-            game,
-            new[] { "ancient_event_dialogue_not_implemented" },
-            Array.Empty<BridgeActionDraft>());
+        // A normal event can render before its option buttons are attached.
+        // That is a known protocol in a transient state, not a malformed or
+        // unsupported surface. Missing context semantics remain degraded.
+        if (!contextNameAvailable)
+            return "degraded";
+        if (visibleOptionCount == 0)
+            return "settling";
+        return actionCount > 0 ? "ready" : "settling";
     }
 
     private static BridgeActionStartResult StartOption(
@@ -164,13 +154,17 @@ internal sealed class EventOptionSurfaceProvider : IBridgeSurfaceProvider
         }
 
         expectedButton.ForceClick();
+        string completionEvidence = expectedOption.IsProceed
+            ? "event_proceed_opened_map_or_left_room"
+            : "event_option_applied_or_required_subsurface_opened";
         return BridgeActionStartResult.Started(
-            () => expectedOption.WasChosen
+            () => (!expectedOption.IsProceed && expectedOption.WasChosen)
                   || !ReferenceEquals(NEventRoom.Instance, expectedRoom)
+                  || NMapScreen.Instance?.IsOpen == true
                   || CombatManager.Instance.IsInProgress
                   || NOverlayStack.Instance?.Peek() != null
                   || HasReplacementOptions(expectedRoom, currentButtons),
-            "event_option_applied_or_required_subsurface_opened");
+            completionEvidence);
     }
 
     private static bool HasReplacementOptions(

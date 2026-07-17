@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildAllowedActions } from "../src/domain/actions/buildAllowedActions.js";
+import { NORMALIZED_STATE_SCHEMA_VERSION } from "../src/domain/state/index.js";
 import { DeepSeekDecisionProvider } from "../src/llm/deepseekProvider.js";
 import { parseDecisionText, validateDecisionForActions } from "../src/llm/decisionSchema.js";
 import { normalizeCurrentState } from "../src/normalization/normalizeCurrentState.js";
@@ -15,7 +16,7 @@ describe("prompt contract", () => {
 
     expect(prompt.systemPrompt).toContain("Return exactly one JSON object");
     expect(payload.promptSchemaVersion).toBe(3);
-    expect(payload.currentStateSchemaVersion).toBe(5);
+    expect(payload.currentStateSchemaVersion).toBe(NORMALIZED_STATE_SCHEMA_VERSION);
     expect(prompt.stateGuideVersion).toBe(3);
     expect(payload.contextKind).toBe("combat");
     expect(payload.surfaceKind).toBe("combat_turn");

@@ -9,18 +9,20 @@ fixture is not organic v2 qualification.
 | ordinary event option | event id/name/body/dialogue flags | implemented | option applied/subsurface/room transition | Bridge + Re passed | runtime-qualified for ordinary options |
 | player-phase combat turn | player, hand, piles counts, statuses, relics, potions, orbs, enemies, intents | implemented | card left hand/subsurface, potion consumed, play phase ended | Bridge + Re targeted-card passed | runtime-qualified for immediate player turn |
 | ancient event dialogue | event context only | none | none | none | explicit unsupported |
-| combat card selection | combat parent context possible | none | none | none | unsupported |
+| combat pile card selection | combat facts + visible source pile, prompt, constraints, selected members | exact toggle/confirm/cancel/peek-close | membership change, auto-completion, commit/close | four select actions passed across two preview.9 runs | runtime-qualified for observed discard-pile single-pick shape |
+| combat hand card selection | combat facts + exact visible hand-card instances and constraints | exact toggle/confirm/cancel/peek-close | membership change or commit/close | one upgrade select + confirm flow passed | runtime-qualified only for observed upgrade shape |
+| generated card choice | combat facts + temporary visible generated cards, skip/peek state | exact card/skip/peek-close | overlay closes or peek closes | historical organic UI sample; no fresh preview.9 lifecycle | source/fixture qualified, organic qualification pending |
 | card reward selection | `reward_flow`, visible cards, separately labeled alternatives | exact card/alternative actions | overlay closes or option objects are replaced | Bridge + Re passed | runtime-qualified for ordinary card/Skip flow |
-| outer room reward claim | `reward_flow`, visible ordinary rewards and Proceed/Skip state | exact claim/proceed actions | reward button is removed, card-selection overlay replaces it, or screen exits | Gold claim and post-fix Proceed/Skip passed at Bridge command layer | runtime-qualified for observed ordinary claim/Proceed shapes; linked reward sets fail closed |
-| generic deck selection | none | none | none | none | unsupported |
+| outer room reward claim | `reward_flow`, visible ordinary rewards, potion capacity/discard operands, Proceed/Skip state | exact claim/discard/proceed actions | reward/slot set changes, child surface replaces it, or screen exits | Gold, Proceed/Skip, and full-belt discard-then-claim passed | runtime-qualified for observed ordinary and full-potion shapes; linked reward sets fail closed |
+| generic deck selection | none | none | none | rest upgrade still observed through v1 local reconstruction | unsupported; do not merge with the three combat selectors |
 | bundle/relic selection | none | none | none | none | unsupported |
-| map/rest/shop/rewards/treasure | none | none | none | none | unsupported |
+| map/rest/shop/treasure | v1 sidecar only | none in v2 | none in v2 | frequent organic local-reconstruction evidence | unsupported in v2; map is the highest-frequency remaining action owner |
 | menu/game over | none | none | none | none | unsupported |
 | `run_deck` inspection | per-instance deck card, upgrade, enchantment | none; read-only | state-bound exact read | post-card-reward Glam reinspection passed | runtime-qualified for observed singleplayer run deck |
-| `combat_piles` inspection | unordered draw/discard/exhaust contents | none; read-only | state-bound exact read | non-empty draw/discard and empty exhaust passed | runtime-qualified for observed pile shapes; non-empty exhaust still needs diversity |
+| `combat_piles` inspection | unordered draw/discard/exhaust contents | none; read-only | state-bound exact read | non-empty draw/discard/exhaust passed | runtime-qualified for observed pile shapes; draw order remains hidden |
 | multiplayer | none | none | none | none | intentionally unsupported |
 
-## Shared Semantics Learned From Five Source Contracts
+## Shared Semantics Learned From Multiple Source Contracts
 
 - `context.kind` answers which game situation exists; it does not identify the
   blocking interaction by itself.
@@ -43,22 +45,27 @@ fixture is not organic v2 qualification.
   retained rewards overlay. This prevents a finished Proceed action from
   publishing stale reward actions while preserving the separate reward and map
   protocols.
+- A shared card payload does not imply a shared Surface. Pile, hand, generated,
+  reward, and run-deck selection differ in object ownership, action grammar,
+  timing guards, and completion evidence. Common code may share visible-card
+  serialization and entity-binding laws without collapsing their wire kinds.
+- Full inventory is part of action legality. A visible potion reward is not a
+  legal claim while the belt is full; capacity resolution is an action on the
+  same reward surface, not hidden local strategy or a fabricated claim retry.
 
 ## Known Visibility Gaps
 
-- Non-empty exhaust contents have contract/fixture coverage but not yet an
-  independent organic sample.
-- Generated, transformed, retained, or temporarily modified combat cards need
-  diversity evidence; the inspection contract preserves per-instance identity
-  but does not claim all mechanics are qualified.
+- Generated, transformed, retained, or temporarily modified combat cards still
+  need diversity evidence. A historical generated-card choice motivated an
+  exact separate protocol, but preview.9 has not yet executed it organically.
 - Draw order remains intentionally hidden.
 - Ancient dialogue advancement has different lifecycle semantics from ordinary
   event options and is intentionally not generalized.
 - No claim is made that the current enemy intent DTO covers every game-specific
   intent presentation until organic combat diversity is observed.
-- The combat qualification includes one targeted card. Potions, self-target
-  cards, end turn, multi-target cards, combat overlays, and longer phase
-  transitions need their own bounded evidence before any broader claim.
+- Long runs now cover many combat-turn actions and four pile-selection actions,
+  but qualification remains per observed target/selector shape. Do not infer
+  every card effect or every phase transition from aggregate action counts.
 
 ## Composition And Inspection Boundary
 

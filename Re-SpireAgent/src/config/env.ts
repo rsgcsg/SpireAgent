@@ -24,6 +24,7 @@ export interface RuntimeConfig {
     settlementPollMs: number;
     settlementTimeoutMs: number;
     endTurnSettlementTimeoutMs: number;
+    roomTransitionSettlementTimeoutMs: number;
   };
 }
 
@@ -68,6 +69,11 @@ export function readRuntimeConfig(env: NodeJS.ProcessEnv = process.env): Runtime
         env.AGENT_END_TURN_SETTLEMENT_TIMEOUT_MS,
         8_000,
         "AGENT_END_TURN_SETTLEMENT_TIMEOUT_MS"
+      ),
+      roomTransitionSettlementTimeoutMs: positiveInteger(
+        env.AGENT_ROOM_TRANSITION_SETTLEMENT_TIMEOUT_MS,
+        8_000,
+        "AGENT_ROOM_TRANSITION_SETTLEMENT_TIMEOUT_MS"
       )
     }
   };

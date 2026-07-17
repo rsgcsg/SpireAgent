@@ -18,9 +18,10 @@ internal enum BridgeSurfaceLayer
 
 internal sealed record ActiveSurfaceSnapshot(
     IOverlayScreen? TopOverlay,
+    bool MapIsOpen,
     string SourceType)
 {
-    public bool HasBlockingOverlay => TopOverlay != null;
+    public bool HasBlockingSurface => TopOverlay != null || MapIsOpen;
 }
 
 internal sealed record ActiveSurfaceResolution(
@@ -44,7 +45,7 @@ internal static class ActiveSurfaceResolver
         IOverlayScreen? overlay = !mapIsOpen && IsVisibleActiveOverlay(candidate) ? candidate : null;
         string sourceType = overlay?.GetType().Name
             ?? (mapIsOpen ? "map_open" : RunManager.Instance.IsInProgress ? "run_without_visible_overlay" : "menu_or_no_run");
-        return new ActiveSurfaceSnapshot(overlay, sourceType);
+        return new ActiveSurfaceSnapshot(overlay, mapIsOpen, sourceType);
     }
 
     internal static bool IsVisibleActiveOverlay(IOverlayScreen? overlay) =>
@@ -60,7 +61,7 @@ internal static class ActiveSurfaceResolver
     {
         var matches = new List<(string Kind, BridgeObservationDraft Draft)>();
         foreach (IBridgeSurfaceProvider provider in providers.Where(provider =>
-                     IsActiveLayer(provider.Layer, snapshot.HasBlockingOverlay)))
+                     IsActiveLayer(provider.Layer, snapshot.TopOverlay != null, snapshot.MapIsOpen)))
         {
             try
             {
@@ -85,11 +86,12 @@ internal static class ActiveSurfaceResolver
             null);
     }
 
-    internal static BridgeSurfaceLayer SelectLayer(bool hasBlockingOverlay) =>
-        hasBlockingOverlay ? BridgeSurfaceLayer.Overlay : BridgeSurfaceLayer.Room;
+    internal static BridgeSurfaceLayer SelectLayer(bool hasVisibleOverlay, bool mapIsOpen) =>
+        hasVisibleOverlay || mapIsOpen ? BridgeSurfaceLayer.Overlay : BridgeSurfaceLayer.Room;
 
     internal static bool IsActiveLayer(
         BridgeSurfaceLayer providerLayer,
-        bool hasBlockingOverlay) =>
-        providerLayer == SelectLayer(hasBlockingOverlay);
+        bool hasVisibleOverlay,
+        bool mapIsOpen) =>
+        providerLayer == SelectLayer(hasVisibleOverlay, mapIsOpen);
 }

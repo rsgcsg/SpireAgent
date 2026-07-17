@@ -72,6 +72,18 @@ export interface DecisionRecord {
     polls: number;
     elapsedMs: number;
     error?: string;
+    transientObservationErrors?: number;
+    lastTransientObservationError?: {
+      code: string;
+      message: string;
+    };
+  };
+  runtimeGuard?: {
+    code: "repeated_exact_transition";
+    occurrence: number;
+    preStateHash: string;
+    postStateHash: string;
+    selectedActionId: string;
   };
   postState?: RecordedState;
   outcome: DecisionOutcome;
@@ -97,7 +109,7 @@ export interface RunMetadata {
     maxOutputTokens: number;
   };
   schemas: {
-    normalizedState: 1 | 2 | 3 | 4 | 5;
+    normalizedState: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13;
     prompt: 1 | 2 | 3;
     decisionRecord: 1 | 2;
   };

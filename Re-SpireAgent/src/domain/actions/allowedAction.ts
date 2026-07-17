@@ -6,6 +6,10 @@ export interface AllowedAction {
   kind: string;
   label: string;
   description?: string;
+  entityBindings?: Array<{
+    role: string;
+    entityId: string;
+  }>;
   action: ExecutableGameAction;
   sourceStateHash: string;
 }
@@ -15,6 +19,10 @@ export interface PromptAllowedAction {
   kind: string;
   label: string;
   description?: string;
+  entityBindings?: Array<{
+    role: string;
+    entityId: string;
+  }>;
 }
 
 export function toPromptAllowedAction(action: AllowedAction): PromptAllowedAction {
@@ -22,6 +30,7 @@ export function toPromptAllowedAction(action: AllowedAction): PromptAllowedActio
     id: action.id,
     kind: action.kind,
     label: action.label,
-    ...(action.description ? { description: action.description } : {})
+    ...(action.description ? { description: action.description } : {}),
+    ...(action.entityBindings?.length ? { entityBindings: action.entityBindings } : {})
   };
 }

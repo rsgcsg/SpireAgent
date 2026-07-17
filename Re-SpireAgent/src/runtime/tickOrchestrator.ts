@@ -2,6 +2,7 @@ import type { AllowedAction } from "../domain/actions/allowedAction.js";
 import type { ExecutableGameAction } from "../domain/actions/action.js";
 import type { StateEnvelope } from "../domain/state/index.js";
 import type { GameAdapter, GameExecutionResult, RawGameState } from "../game-io/adapter.js";
+import { TransientObservationError } from "../game-io/observationError.js";
 import { validateDecisionForActions } from "../llm/decisionSchema.js";
 import type { LlmDecisionProvider } from "../llm/types.js";
 import { buildDecisionPrompt } from "../prompting/promptBuilder.js";
@@ -26,9 +27,12 @@ export interface TickResult {
   actionAuthority?: StateEnvelope["currentState"]["actionAuthority"];
   selectedActionId?: string;
   shouldStopRun: boolean;
+  stopReason?: "repeated_exact_transition";
 }
 
 export class TickOrchestrator {
+  private readonly executedTransitionOccurrences = new Map<string, number>();
+
   constructor(private readonly dependencies: TickOrchestratorDependencies) {}
 
   async runTick(tick: number, options: { dryRun?: boolean; stopAtRunBoundary?: boolean } = {}): Promise<TickResult> {
@@ -41,7 +45,11 @@ export class TickOrchestrator {
       const record = baseRecord(this.dependencies.recorder.runId, decisionId, tick, startedAt, "observation_failed");
       record.error = safeError(error);
       await this.dependencies.recorder.append(record);
-      return result(decisionId, record.outcome, undefined, undefined, true);
+      // Composite state/inspection drift means this tick observed no coherent
+      // decision state. It is safe to skip only this tick; no prompt or action
+      // was produced. Every other observation failure remains terminal.
+      const shouldStopRun = !(error instanceof TransientObservationError);
+      return result(decisionId, record.outcome, undefined, undefined, shouldStopRun);
     }
 
     const allowedActions = this.dependencies.buildAllowedActions(pre.currentState, pre.stateHash);
@@ -238,6 +246,14 @@ export class TickOrchestrator {
 
     const settlement = await this.dependencies.settlement.waitForNextState(pre, validation.selectedAction.action);
     const outcome = settlement.status === "settled" ? "executed_and_settled" : "executed_unsettled";
+    const transitionKey = outcome === "executed_and_settled" && settlement.after
+      ? `${pre.stateHash}|${validation.selectedAction.id}|${settlement.after.stateHash}`
+      : undefined;
+    const transitionOccurrence = transitionKey
+      ? (this.executedTransitionOccurrences.get(transitionKey) ?? 0) + 1
+      : 0;
+    if (transitionKey) this.executedTransitionOccurrences.set(transitionKey, transitionOccurrence);
+    const repeatedExactTransition = transitionOccurrence >= 2 && settlement.after;
     const record = decisionRecordWithLlm({
       runId: this.dependencies.recorder.runId,
       decisionId,
@@ -257,12 +273,34 @@ export class TickOrchestrator {
         status: settlement.status,
         polls: settlement.polls,
         elapsedMs: settlement.elapsedMs,
-        ...(settlement.error ? { error: settlement.error } : {})
+        ...(settlement.error ? { error: settlement.error } : {}),
+        ...(settlement.transientObservationErrors
+          ? { transientObservationErrors: settlement.transientObservationErrors }
+          : {}),
+        ...(settlement.lastTransientObservationError
+          ? { lastTransientObservationError: settlement.lastTransientObservationError }
+          : {})
       },
       ...(settlement.error ? { error: settlement.error } : {})
     });
+    if (repeatedExactTransition && settlement.after) {
+      record.runtimeGuard = {
+        code: "repeated_exact_transition",
+        occurrence: transitionOccurrence,
+        preStateHash: pre.stateHash,
+        postStateHash: settlement.after.stateHash,
+        selectedActionId: validation.selectedAction.id
+      };
+    }
     await this.dependencies.recorder.append(record, settlement.after ? { postRawState: settlement.after.rawState } : undefined);
-    return result(decisionId, record.outcome, pre.currentState, validation.selectedAction.id, outcome !== "executed_and_settled");
+    return result(
+      decisionId,
+      record.outcome,
+      pre.currentState,
+      validation.selectedAction.id,
+      outcome !== "executed_and_settled" || Boolean(repeatedExactTransition),
+      repeatedExactTransition ? "repeated_exact_transition" : undefined
+    );
   }
 
   private async recordWithoutDecision(input: {
@@ -370,7 +408,8 @@ function result(
   outcome: DecisionOutcome,
   state: StateEnvelope["currentState"] | undefined,
   selectedActionId: string | undefined,
-  shouldStopRun: boolean
+  shouldStopRun: boolean,
+  stopReason?: TickResult["stopReason"]
 ): TickResult {
   return {
     decisionId,
@@ -381,6 +420,7 @@ function result(
       actionAuthority: state.actionAuthority
     } : {}),
     ...(selectedActionId ? { selectedActionId } : {}),
+    ...(stopReason ? { stopReason } : {}),
     shouldStopRun
   };
 }

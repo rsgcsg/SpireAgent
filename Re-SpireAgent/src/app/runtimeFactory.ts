@@ -49,7 +49,8 @@ export async function createRuntime(config: RuntimeConfig): Promise<{
     const settlement = new SettlementWatcher(adapter, normalize, {
       pollMs: config.runtime.settlementPollMs,
       defaultTimeoutMs: config.runtime.settlementTimeoutMs,
-      endTurnTimeoutMs: config.runtime.endTurnSettlementTimeoutMs
+      endTurnTimeoutMs: config.runtime.endTurnSettlementTimeoutMs,
+      roomTransitionTimeoutMs: config.runtime.roomTransitionSettlementTimeoutMs
     });
     const orchestrator = new TickOrchestrator({
       adapter,

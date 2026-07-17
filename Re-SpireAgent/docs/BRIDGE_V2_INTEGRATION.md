@@ -2,22 +2,27 @@
 
 ## Current Scope
 
-Re-SpireAgent supports the strict `2.0-preview.4` source contract for:
+Re-SpireAgent supports the strict `2.0-preview.9` source contract for:
 
 - `deck_enchant_selection`: organically end-to-end qualified;
 - `event_option`: organically qualified for ordinary event options;
-- `combat_turn`: organically qualified for one immediate targeted-card flow;
+- `combat_turn`: organically qualified for repeated immediate combat actions;
+- `combat_pile_card_selection`: four organically settled single-pick
+  discard-pile actions across two preview.9 runs;
+- `combat_hand_card_selection`: organically qualified for one upgrade select
+  and confirm shape;
+- `generated_card_choice`: exact-source and fixture qualified, but not yet
+  organically executed under preview.9;
 - `card_reward_selection`: organically qualified for one ordinary card/Skip
   lifecycle;
 - `reward_claim`: ordinary claim and Proceed/Skip have bounded installed-game
   and model-selected Re lifecycles;
 - `run_deck` and `combat_piles`: fixed read-only, state-bound evidence.
 
-The first three organic lifecycles used exact game identity
-`v0.108.0|58694f64|-2044609792` under `preview.2`. A fresh process loaded
-`preview.4` and completed an ordinary card reward: the bridge exposed cards and
-Skip separately, DeepSeek selected legal `Barrage`, the command completed, and
-Re settled back to the outer rewards screen.
+All current evidence is scoped to exact game identity
+`v0.108.0|58694f64|-2044609792`. Historical earlier-preview evidence is retained
+but does not silently qualify preview.9. Two fresh preview.9 runs executed 165
+Bridge-authorized actions without command failure or unsettled Bridge outcome.
 
 ## State Identity
 
@@ -34,6 +39,16 @@ context.kind + surface.kind + actionAuthority
 
 For Bridge-owned states, a v1 sidecar may retain compatible shared run metadata
 but cannot overwrite action-relevant v2 facts or add actions.
+
+## Action Entity Bindings
+
+`preview.9` keeps `action_id` as the only executable command argument, but each
+legal action also carries non-executable role-to-entity bindings. Re requires
+every binding to resolve to an entity already present in the visible Context or
+Surface, preserves the bindings in normalized state and decision evidence, and
+includes them in the LLM allowed-action payload. This closes ambiguity among
+duplicate cards, enemies, rewards, or event options without exposing target
+handles, indices, Godot paths, or any new authority.
 
 ## Active Surface Ownership
 
@@ -61,7 +76,7 @@ degrades or grants authority.
 
 ## Inspection Boundary
 
-`preview.4` exposes exactly two fixed read-only kinds:
+`preview.9` exposes exactly two fixed read-only kinds:
 
 - `run_deck` for per-instance deck/upgrade/enchantment semantics;
 - `combat_piles` for unordered draw/discard/exhaust contents;
@@ -78,6 +93,11 @@ counts, zones, visibility policy, and state binding. Inspection evidence enters
 the stale-state hash and normalized player facts, but never creates actions.
 Volatile `observed_at` is excluded from stale identity; inspection content and
 IDs are not. `inspection_not_available` is the only safely absent condition.
+If the state advances during composite state-plus-inspection capture, whether
+detected by an inspection `stale_state` response or the final state re-read,
+the adapter rejects the partial snapshot with a typed transient observation error.
+The settlement watcher may retry only this error within its existing timeout;
+decision and execution authorization reads remain fail-closed.
 
 ## Card Reward Contract
 
@@ -101,6 +121,24 @@ reward claim is a transition into the separate `card_reward_selection` surface;
 it does not expose or invent card alternatives early. If a visible linked reward
 set is present, the entire surface suppresses actions until that selection
 protocol is independently audited.
+
+Potion capacity is part of this same reward-input protocol. When a visible
+potion reward exists and all slots are occupied, the reward is visibly present
+but not advertised as claimable. The surface instead exposes exact
+`discard_potion_for_reward` actions for current visible potions. Execution
+revalidates the full belt, player, exact slot, potion instance, and still-visible
+reward before enqueueing the game's discard action. Claim is advertised only
+after capacity exists.
+
+## Card-Selection Boundaries
+
+Re has separate normalized surfaces and guides for combat pile, combat hand,
+generated card, card reward, and deck enchant selection. It validates every
+action binding against a card entity present in that exact visible surface.
+This is deliberate: temporary generated cards are not hand/deck cards; a pile
+single-pick may auto-complete; hand selection can require confirm; generated
+choice has an opening guard; reward cards persist into the run deck. Common
+serialization never grants common execution semantics.
 
 ## Modes
 
@@ -144,10 +182,15 @@ poll timeout are unknown and never automatically retried.
 ## Evidence And Next Step
 
 Fresh exact-build evidence now includes persistent Glam post-state through
-`run_deck`, plus non-empty draw/discard and empty exhaust through
-`combat_piles`. Draw order remains intentionally hidden. Non-empty exhaust and
-unusual generated/transformed cards remain diversity gaps, not reasons to
-weaken the contract.
+`run_deck`, plus non-empty draw/discard/exhaust through `combat_piles`. Draw
+order remains intentionally hidden. Generated-card choice remains an organic
+qualification gap, not a reason to weaken the contract.
+
+Composite state-plus-inspection reads are coherence checked. Two preview.9
+long runs recorded 23 transient drifts during fast game transitions; every one
+produced no prompt and no execution, and the next tick obtained a fresh state.
+This is observable retry/ergonomics debt, not permission to accept mixed
+evidence.
 
 This integration does not add memory, learning, scoring, hidden-information
 access, arbitrary MCP calls, generic action payloads, or broad v2 coverage.

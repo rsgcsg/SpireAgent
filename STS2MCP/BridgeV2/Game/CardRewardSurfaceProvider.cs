@@ -93,7 +93,8 @@ internal sealed class CardRewardSurfaceProvider : IBridgeSurfaceProvider
                 "selection",
                 $"Take {cardName}",
                 "NCardRewardSelectionScreen.SelectCard via NCardHolder.Pressed",
-                () => StartCardSelection(screen, cardRow, holder, card, holders, buttons)));
+                () => StartCardSelection(screen, cardRow, holder, card, holders, buttons),
+                new[] { new ActionEntityBinding("card", cardId) }));
         }
         foreach ((NCardRewardAlternativeButton button, int index) in buttons.Select((button, index) => (button, index)))
         {
@@ -107,7 +108,8 @@ internal sealed class CardRewardSurfaceProvider : IBridgeSurfaceProvider
                 "alternative",
                 label,
                 "NCardRewardAlternativeButton.visible_label+ForceClick",
-                () => StartAlternative(screen, alternativesContainer, button, holders, buttons)));
+                () => StartAlternative(screen, alternativesContainer, button, holders, buttons),
+                new[] { new ActionEntityBinding("alternative", alternativeId) }));
         }
 
         var surface = new CardRewardSelectionSurface(

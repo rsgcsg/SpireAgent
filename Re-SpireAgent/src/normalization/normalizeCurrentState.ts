@@ -268,14 +268,14 @@ function normalizeSurface(raw: JsonObject, context: SemanticContext, diagnostics
     case "reward_flow":
       return unsupportedSurface(raw, "missing_action_protocol", "reward_flow is available only through the verified Bridge v2 contract");
     case "unknown":
-      if (lower.includes("card_select")) return { kind: "card_selection", selectionMode: "standard", sourceType: lower, purpose: "unknown", options: [], canConfirm: false, canCancel: false };
+      if (lower.includes("card_select")) return { kind: "card_selection", selectionMode: "standard", sourceType: lower, purpose: "unknown", options: [], previewShowing: false, previewCards: [], canConfirm: false, canCancel: false };
       return unsupportedSurface(raw, "unknown_context", context.reason);
   }
 }
 
 function normalizeCardSelection(selection: JsonObject, selectionMode: "combat" | "standard", diagnostics: DiagnosticsBuilder): InteractionSurface {
   const path = selectionMode === "combat" ? "hand_select" : "card_select";
-  reportUnknownKeys(selection, path, new Set(["cards", "can_confirm", "canConfirm", "can_cancel", "canCancel", "screen_type", "screenType", "mode", "prompt", "minimum_selections", "minimumSelections", "maximum_selections", "maximumSelections"]), diagnostics);
+  reportUnknownKeys(selection, path, new Set(["cards", "preview_showing", "previewShowing", "preview_cards", "previewCards", "can_confirm", "canConfirm", "can_cancel", "canCancel", "screen_type", "screenType", "mode", "prompt", "minimum_selections", "minimumSelections", "maximum_selections", "maximumSelections"]), diagnostics);
   const sourceType = optionalString(selection.screen_type ?? selection.screenType ?? selection.mode) ?? path;
   return {
     kind: "card_selection",
@@ -284,6 +284,8 @@ function normalizeCardSelection(selection: JsonObject, selectionMode: "combat" |
     purpose: inferSelectionPurpose(sourceType, optionalString(selection.prompt)),
     ...(optionalString(selection.prompt) ? { prompt: optionalString(selection.prompt) } : {}),
     options: parseCards(selection.cards, `${path}.cards`, diagnostics, true),
+    previewShowing: optionalBoolean(selection.preview_showing ?? selection.previewShowing) ?? false,
+    previewCards: parseCards(selection.preview_cards ?? selection.previewCards, `${path}.preview_cards`, diagnostics, true),
     ...(optionalNumber(selection.minimum_selections ?? selection.minimumSelections) !== undefined ? { minimumSelections: optionalNumber(selection.minimum_selections ?? selection.minimumSelections) } : {}),
     ...(optionalNumber(selection.maximum_selections ?? selection.maximumSelections) !== undefined ? { maximumSelections: optionalNumber(selection.maximum_selections ?? selection.maximumSelections) } : {}),
     canConfirm: optionalBoolean(selection.can_confirm ?? selection.canConfirm) ?? false,
@@ -362,6 +364,10 @@ function determineStability(surface: InteractionSurface, diagnosticsStatus: "ok"
   if (surface.kind === "combat_turn") return "actionable";
   if (surface.kind === "card_selection") return surface.options.length > 0 || surface.canConfirm || surface.canCancel ? "actionable" : "loading";
   if (surface.kind === "deck_enchant_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
+  if (surface.kind === "combat_pile_card_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
+  if (surface.kind === "combat_hand_card_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
+  if (surface.kind === "generated_card_choice") return surface.legalActions.length > 0 ? "actionable" : "loading";
+  if (surface.kind === "card_bundle_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "card_reward_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "card_reward") return surface.options.length > 0 || surface.canSkip || surface.canProceed ? "actionable" : "loading";
   if (surface.kind === "reward_claim") {
@@ -369,7 +375,9 @@ function determineStability(surface: InteractionSurface, diagnosticsStatus: "ok"
     return surface.items.length > 0 || surface.canProceed ? "actionable" : "loading";
   }
   if (surface.kind === "map_navigation") return surface.nextOptions.length > 0 ? "actionable" : "loading";
+  if (surface.kind === "event_dialogue") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "event_option") return surface.legalActions.length > 0 ? "actionable" : "loading";
+  if (surface.kind === "rest_site") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "option_choice") return surface.options.some((option) => option.enabled) || surface.canProceed ? "actionable" : "loading";
   if (surface.kind === "shop_interaction") return "actionable";
   if (surface.kind === "treasure_claim") return surface.relics.length > 0 || surface.canProceed ? "actionable" : "loading";
@@ -379,20 +387,20 @@ function determineStability(surface: InteractionSurface, diagnosticsStatus: "ok"
 
 function isCompatible(context: SemanticContext, surface: InteractionSurface): boolean {
   const allowed: Record<SemanticContext["kind"], readonly InteractionSurface["kind"][]> = {
-    combat: ["combat_turn", "card_selection", "no_action", "unsupported"],
+    combat: ["combat_turn", "combat_pile_card_selection", "combat_hand_card_selection", "generated_card_choice", "card_selection", "no_action", "unsupported"],
     reward_flow: ["card_reward_selection", "reward_claim", "no_action", "unsupported"],
     card_reward: ["card_reward", "card_selection", "no_action", "unsupported"],
     rewards: ["reward_claim", "card_selection", "no_action", "unsupported"],
     map: ["map_navigation", "no_action", "unsupported"],
-    rest: ["option_choice", "card_selection", "no_action", "unsupported"],
-    event: ["event_option", "option_choice", "card_selection", "no_action", "unsupported"],
+    rest: ["rest_site", "option_choice", "card_selection", "no_action", "unsupported"],
+    event: ["event_dialogue", "event_option", "option_choice", "card_selection", "card_bundle_selection", "no_action", "unsupported"],
     shop: ["shop_interaction", "no_action", "unsupported"],
     treasure: ["treasure_claim", "no_action", "unsupported"],
     crystal_sphere: ["grid_interaction", "no_action", "unsupported"],
     menu: ["menu_choice", "no_action", "unsupported"],
     run_ended: ["menu_choice", "no_action", "unsupported"],
     post_combat: ["no_action", "unsupported"],
-    unknown: ["card_selection", "no_action", "unsupported"]
+    unknown: ["card_selection", "card_bundle_selection", "no_action", "unsupported"]
   };
   if (!allowed[context.kind].includes(surface.kind)) return false;
   if (surface.kind === "option_choice") return surface.protocol === context.kind;

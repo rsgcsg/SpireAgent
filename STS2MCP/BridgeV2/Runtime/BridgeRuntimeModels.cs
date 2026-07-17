@@ -9,15 +9,17 @@ internal sealed record BridgeActionStartResult(
     string? ErrorCode,
     string? Detail,
     Func<bool>? CompletionProbe,
-    string? CompletionEvidence)
+    string? CompletionEvidence,
+    bool AllowIntermediateStateChanges)
 {
     public static BridgeActionStartResult Started(
         Func<bool>? completionProbe = null,
-        string? completionEvidence = null) =>
-        new(true, null, null, completionProbe, completionEvidence);
+        string? completionEvidence = null,
+        bool allowIntermediateStateChanges = false) =>
+        new(true, null, null, completionProbe, completionEvidence, allowIntermediateStateChanges);
 
     public static BridgeActionStartResult Rejected(string code, string detail) =>
-        new(false, code, detail, null, null);
+        new(false, code, detail, null, null, false);
 }
 
 internal sealed record BridgeActionDraft(
@@ -26,7 +28,8 @@ internal sealed record BridgeActionDraft(
     string Category,
     string Label,
     string EvidenceCode,
-    Func<BridgeActionStartResult> Start);
+    Func<BridgeActionStartResult> Start,
+    IReadOnlyList<ActionEntityBinding>? EntityBindings = null);
 
 internal sealed record BridgeObservationDraft(
     string Signature,

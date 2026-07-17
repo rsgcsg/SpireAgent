@@ -26,7 +26,7 @@ internal static class BridgeV2Runtime
         var warnings = new List<string>
         {
             "Bridge v2 is an incremental preview. Unlisted surfaces fail closed with no legal actions.",
-            "Singleplayer deck enchant, ordinary event option, player-phase combat turn, card reward selection, and room reward claim are the only game-bound v2 action slices in this revision.",
+            "Singleplayer deck enchant, combat-pile, combat-hand, generated-card, and card-bundle selection, ancient event dialogue, ordinary event option, rest site, player-phase combat turn, card reward selection, room reward claim, and map navigation are the only game-bound v2 action slices in this revision.",
             "Run-deck and combat-pile inspections are read-only evidence. They do not grant action authority or enter the command ledger."
         };
 
@@ -46,6 +46,16 @@ internal static class BridgeV2Runtime
                     new[] { "toggle_card", "preview_selection", "confirm_selection", "cancel_preview", "close_selection" },
                     "sts2-v0.108.0:NDeckEnchantSelectScreen+DeckEnchantScreenHandler"),
                 new SurfaceCapability(
+                    "event_dialogue",
+                    "implemented_exact_game_version",
+                    new[] { "advance_event_dialogue" },
+                    "sts2-v0.108.0:NAncientEventLayout+NAncientDialogueLine+NAncientDialogueHitbox"),
+                new SurfaceCapability(
+                    "rest_site",
+                    "implemented_exact_game_version",
+                    new[] { "choose_rest_option", "proceed_rest_site" },
+                    "sts2-v0.108.0:RestSiteRoom.Options+NRestSiteButton+NProceedButton+NMapScreen"),
+                new SurfaceCapability(
                     "event_option",
                     "implemented_exact_game_version",
                     new[] { "choose_event_option", "proceed_event" },
@@ -56,6 +66,26 @@ internal static class BridgeV2Runtime
                     new[] { "play_card", "use_potion", "end_turn" },
                     "sts2-v0.108.0:CombatManager+PlayerCombatState+CardModel+NPlayerHand"),
                 new SurfaceCapability(
+                    "combat_pile_card_selection",
+                    "implemented_exact_game_version",
+                    new[] { "toggle_combat_pile_card", "confirm_combat_pile_selection", "cancel_combat_pile_selection" },
+                    "sts2-v0.108.0:NCombatPileCardSelectScreen+CardSelectorPrefs+CardPile+NCardGrid"),
+                new SurfaceCapability(
+                    "combat_hand_card_selection",
+                    "implemented_exact_game_version",
+                    new[] { "select_combat_hand_card", "deselect_combat_hand_card", "confirm_combat_hand_selection", "close_combat_hand_peek" },
+                    "sts2-v0.108.0:NPlayerHand+CardSelectorPrefs+NSelectedHandCardContainer+NUpgradePreview"),
+                new SurfaceCapability(
+                    "generated_card_choice",
+                    "implemented_exact_game_version",
+                    new[] { "select_generated_card", "skip_generated_card_choice", "close_generated_card_choice_peek" },
+                    "sts2-v0.108.0:NChooseACardSelectionScreen+NGridCardHolder+NChoiceSelectionSkipButton+NPeekButton"),
+                new SurfaceCapability(
+                    "card_bundle_selection",
+                    "implemented_exact_game_version",
+                    new[] { "preview_card_bundle", "confirm_card_bundle", "cancel_card_bundle_preview" },
+                    "sts2-v0.108.0:NChooseABundleSelectionScreen+NCardBundle+NConfirmButton+NBackButton"),
+                new SurfaceCapability(
                     "card_reward_selection",
                     "implemented_exact_game_version",
                     new[] { "select_card_reward", "choose_card_reward_alternative" },
@@ -63,8 +93,13 @@ internal static class BridgeV2Runtime
                 new SurfaceCapability(
                     "reward_claim",
                     "implemented_exact_game_version",
-                    new[] { "claim_reward", "proceed_rewards" },
-                    "sts2-v0.108.0:NRewardsScreen+NRewardButton+NProceedButton")
+                    new[] { "claim_reward", "discard_potion_for_reward", "proceed_rewards" },
+                    "sts2-v0.108.0:NRewardsScreen+NRewardButton+PotionReward+DiscardPotionGameAction+NProceedButton"),
+                new SurfaceCapability(
+                    "map_navigation",
+                    "implemented_exact_game_version",
+                    new[] { "choose_map_node" },
+                    "sts2-v0.108.0:NMapScreen+NMapPoint+RunState.Map+OnMapPointSelectedLocally")
             },
             new CommandContractCapability(
                 OpaqueActionsOnly: true,
@@ -126,7 +161,8 @@ internal static class BridgeV2Runtime
                     action.Category,
                     action.Label,
                     "game_ui",
-                    action.EvidenceCode);
+                    action.EvidenceCode,
+                    action.EntityBindings ?? Array.Empty<ActionEntityBinding>());
                 Actions[actionId] = new RegisteredBridgeAction(descriptor, action.Start);
                 descriptors.Add(descriptor);
             }

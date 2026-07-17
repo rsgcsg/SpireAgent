@@ -48,6 +48,12 @@ completeness, and action-suppression semantics remain authoritative. Re
 preserves unknown diagnostic codes for audit when their structure is valid and
 rejects malformed or action-contradicting effects.
 
+Card-bearing surfaces are modeled by input ownership rather than payload
+similarity. Combat pile, combat hand, generated-card, reward-card, and deck
+enchant selection stay distinct because their card instances, readiness,
+action grammar, and completion witnesses differ. Shared serializers and entity
+binding checks are internal implementation laws, not a universal wire Surface.
+
 ## Action Authority
 
 The action builder is deterministic but not strategic. It dispatches on the
@@ -65,7 +71,12 @@ There is one provider path. It uses JSON mode and an explicit thinking policy, s
 
 ## Settlement
 
-For v1, successful POST is only partial evidence. The watcher polls for a changed state hash and requires two identical, non-transitional observations before settlement. For v2, the adapter first verifies the submitted command identity and polls the bridge's action-specific lifecycle. Only `completed/confirmed` reaches the ordinary settlement watcher. `rejected/not_applied` is an execution rejection; `failed/unknown`, `timed_out/unknown`, transport uncertainty, or inconsistent command identity is recorded as unsettled/unknown and stops without retry.
+For v1, successful POST is only partial evidence. The watcher polls for a changed state hash and requires two identical, non-transitional observations before settlement. For v2, the adapter first verifies the submitted command identity and polls the bridge's action-specific lifecycle. Only `completed/confirmed` reaches the ordinary settlement watcher. `rejected/not_applied` is an execution rejection; `failed/unknown`, `timed_out/unknown`, transport uncertainty, or inconsistent command identity is recorded as unsettled/unknown and stops without retry. Settlement budgets follow semantic action lifecycles: opaque and legacy end-turn actions share the longer end-turn window, map navigation uses a separate room-transition window, and ordinary actions retain the default window. Longer windows never convert `loading`, `settling`, or `transitioning` into success; two identical complete snapshots are still required. If the game advances while a coherent state plus read-only inspection sidecars are being captured, the adapter returns a typed transient observation error rather than mixed evidence. Settlement polling may retry that observation within its existing timeout. A pre-decision occurrence aborts and records that tick without building a prompt or executing, but does not terminate a bounded run; its next tick must acquire a fresh coherent snapshot. Pre-execution occurrences remain terminal and fail closed.
+
+The bounded orchestrator also records and stops on the second occurrence of an
+identical pre-state/action/post-state transition. This catches deterministic
+short cycles such as select/cancel loops without treating repeated action kinds,
+normal combat damage, or strategically debatable decisions as program errors.
 
 Action-capable CLI commands also acquire an exclusive local lock, so two RE-P1 processes cannot concurrently drive the same MCP session.
 

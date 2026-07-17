@@ -87,6 +87,7 @@ function printTick(runId: string, result: {
   surfaceKind?: string;
   actionAuthority?: string;
   selectedActionId?: string;
+  stopReason?: string;
 }): void {
   process.stdout.write(
     `${JSON.stringify({
@@ -96,7 +97,8 @@ function printTick(runId: string, result: {
       surfaceKind: result.surfaceKind,
       authority: result.actionAuthority,
       outcome: result.outcome,
-      selectedActionId: result.selectedActionId
+      selectedActionId: result.selectedActionId,
+      stopReason: result.stopReason
     })}\n`
   );
 }

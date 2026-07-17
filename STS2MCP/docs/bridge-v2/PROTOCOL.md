@@ -1,6 +1,6 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.4`
+Protocol preview: `2.0-preview.9`
 
 ## Endpoints
 
@@ -46,7 +46,8 @@ records the effective state authority separately.
 
 ## Legal Actions
 
-Each legal action contains only:
+Each legal action contains an opaque executable identity plus auditable links
+to entities already exposed in the current player-visible context or surface:
 
 ```json
 {
@@ -56,12 +57,18 @@ Each legal action contains only:
   "category": "selection",
   "label": "Select Zap",
   "authority": "game_ui",
-  "evidence_code": "NCardGrid.HolderPressed"
+  "evidence_code": "NCardGrid.HolderPressed",
+  "entity_bindings": [
+    { "role": "card", "entity_id": "card_visible_1" }
+  ]
 }
 ```
 
-The label is explanatory, not executable. Subject, target, node, and call path
-remain inside the registry.
+The label and `entity_bindings` are explanatory, not executable. A binding may
+only reference an entity already present in the same visible Context/Surface;
+it lets clients distinguish duplicate cards, enemies, rewards, and options.
+The command still accepts only `action_id`: mutable game objects, target
+handles, node paths, indices, and call paths remain inside the registry.
 
 ## Command Submission
 
@@ -116,6 +123,20 @@ Additional preview.3 completion evidence:
 | outer reward claim | its exact reward button is removed, or a child card-reward overlay replaces the outer screen |
 | outer rewards proceed | outer rewards screen exits, its visible reward control set is replaced, or the player-visible map opens |
 
+Current selection and reward completion evidence:
+
+| Surface/action | Completion evidence |
+|---|---|
+| combat pile card toggle | selected membership changes or the single-pick surface auto-completes |
+| combat pile confirm/cancel/peek-close | required selection commits, selection closes, or peek closes respectively |
+| combat hand card toggle | exact selected-card instance membership changes |
+| combat hand confirm/cancel/peek-close | hand selection commits/closes or peek closes respectively |
+| generated card choice select | the choose-a-card overlay closes after its opening input guard |
+| generated card choice skip | the choose-a-card overlay closes |
+| generated card choice peek-close | peek mode closes without granting underlying combat actions |
+| full-belt reward discard | the exact potion leaves its exact slot or the reward surface is replaced |
+| potion reward claim | reward set changes or the reward surface is replaced, after capacity is revalidated |
+
 If the state changes but the predicate does not pass, the command fails with an
 unknown outcome. Unknown outcomes are never auto-retried.
 
@@ -156,6 +177,12 @@ game, or enter the command ledger. `inspection_not_available` means the
 player/run object does not exist in the current state; clients may treat that
 as absent evidence. Stale state, identity mismatch, binding failure, malformed
 content, and unsupported expansion remain hard failures.
+
+Clients constructing one decision observation from state plus inspections must
+verify that the state remains identical after sidecar capture. A changed state
+or inspection `stale_state` rejects the entire composite observation; clients
+must not mix facts from adjacent game states. A bounded client may retry that
+read as transient evidence, but never reuse an action from the rejected read.
 
 ## Error Codes
 

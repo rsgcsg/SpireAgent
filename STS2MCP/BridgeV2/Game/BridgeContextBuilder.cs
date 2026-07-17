@@ -31,6 +31,8 @@ internal static class BridgeContextBuilder
             RunState? runState = RunManager.Instance.DebugOnlyGetState();
             if (runState?.CurrentRoom is EventRoom eventRoom)
                 return BuildEvent(eventRoom);
+            if (runState?.CurrentRoom is RestSiteRoom)
+                return new RestBridgeContext("rest");
             if (runState?.CurrentRoom is CombatRoom combatRoom && CombatManager.Instance.IsInProgress)
                 return BuildCombat(runState, combatRoom, entities);
 

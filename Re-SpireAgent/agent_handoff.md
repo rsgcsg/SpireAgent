@@ -1,9 +1,11 @@
 # RE-P1 Handoff
 
-Status: one real Act 1 v1 run has been exercised through boss defeat. Exact-build
-Bridge v2 has bounded organic evidence for five executable surfaces plus
-read-only run-deck and combat-pile inspection. RE-P1 remains a protocol
-baseline, not a verified strategic player or a claim of broad game coverage.
+Status: Bridge `2.0-preview.9` is loaded against exact game identity
+`v0.108.0|58694f64|-2044609792`. Seven executable Surface contracts plus
+read-only run-deck/combat-pile Inspection have bounded organic evidence;
+`generated_card_choice` is source/fixture qualified but still awaits fresh
+preview.9 organic execution. RE-P1 remains a protocol baseline, not a verified
+strategic player or a claim of broad game coverage.
 
 ## Completed
 
@@ -80,6 +82,21 @@ baseline, not a verified strategic player or a claim of broad game coverage.
   every read. Re now excludes only `observed_at` from stale hashing while
   retaining inspection ID, state binding, and content. The action was safely
   blocked before the fix and executed normally after it.
+- Preview.9 now keeps combat pile, combat hand, generated-card, reward-card,
+  and deck-enchant selection as distinct input-owner protocols. Opaque action
+  bindings identify only visible entities; clients cannot submit card indices,
+  node paths, or game objects.
+- Full potion-belt reward handling was corrected from an impossible advertised
+  claim to exact `discard_potion_for_reward` actions. A targeted organic-state
+  discard then claim completed with exact slot/potion revalidation.
+- Two fresh organic preview.9 runs (`run-20260716165340-0v67y4` and
+  `run-20260716170107-xu494w`) produced 271 decision records, 194 settled
+  actions, and 165 settled Bridge-authorized actions. Four pile selectors
+  completed across both runs. No Bridge execution failure, unknown command
+  outcome, or unsettled Bridge action occurred.
+- The same runs preserved non-empty exhaust inspection evidence and recorded
+  23 coherent-snapshot drifts as non-executed ticks. One local treasure action
+  went stale during deliberation and was correctly not executed.
 
 ## Legacy Assessment
 
@@ -120,18 +137,26 @@ No memory, learning, scoring, strategic scaffold, shadow mode, live additive mod
 - The real Act 1 run ended in a boss defeat. Strategic quality has not been evaluated; current evidence verifies the closed-loop protocol only.
 - Existing v1 local JSONL remains readable as historical JSON but must not be treated as a v2 normalized projection without an explicit migration.
 - Legacy v1 `NDeckEnchantSelectScreen` evidence showed that a selected standard card can make `can_confirm=true` without exposing selected IDs or remaining capacity. The v1 path still stops conservatively in that state. The new v2 deck-enchant path supplies selected IDs, constraints, stage, semantics, opaque actions, and action-specific completion; do not generalize that evidence to other card-selection surfaces.
-- Combat v2 has one targeted-card lifecycle smoke. Do not treat it as evidence
-  for potion, end-turn, self/friendly/multi-target cards, card-selection
-  overlays, or all phase-transition completion behavior.
-- Non-empty exhaust and unusual generated/transformed cards remain inspection
-  diversity gaps. Hidden draw order remains excluded by policy.
+- Combat v2 now has repeated long-run evidence, but action counts do not
+  qualify every target type, card effect, selector mode, or phase transition.
+- Generated-card choice has exact source/fixture support and historical UI
+  motivation, but no fresh preview.9 organic execution. Hidden draw order
+  remains excluded by policy.
+- Map, shop, rest, treasure, menu, and run-deck card-selection variants still
+  depend on explicitly labeled v1 local reconstruction in auto mode.
+- Composite state-plus-inspection drift is fail-closed but noisy during fast
+  transitions. Future work may add bounded observable read retry or a coherent
+  server observation token; it must never accept mixed adjacent states.
+- Selecting a character through v1 changed UI-internal selection without a
+  normalized witness and recorded `executed_unsettled`. Treat this as legacy
+  menu lifecycle debt, not Bridge v2 failure.
 
 ## Validation
 
-On 2026-07-16, the `preview.4` inspection pass completed with 78 Re tests,
-29 Bridge tests, strict typecheck, production build, Python MCP syntax check,
-and exact-build organic deck/pile smoke. See the latest command output rather
-than treating historical counts as a permanent invariant.
+On 2026-07-17, the preview.9 pass completed with 95 Re tests, 35 Bridge tests,
+strict typecheck, production build, Python MCP syntax check, full-potion
+targeted organic-state smoke, and two bounded organic long runs. See the latest
+command output rather than treating historical counts as a permanent invariant.
 
 ## Next Step
 
@@ -147,7 +172,13 @@ npm run agent:replay
 
 Start a fresh game manually, then run bounded windows and inspect each run with `npm run agent:replay`. Confirm that each record contains pre/post raw snapshots, the prompt, DeepSeek response, selected allowed action, MCP result, and settled post-state. Fix a repeatable protocol mismatch with a reduced raw fixture and contract test before running longer loops.
 
-If a natural non-empty exhaust or generated/transformed card state appears,
-capture it as bounded inspection diversity evidence. Keep linked reward sets
-and every unlisted executable surface unsupported until exact-build bindings,
-state-bound actions, completion evidence, and contract tests exist.
+If a natural generated-card choice appears, capture it as bounded preview.9
+select/skip evidence. The next high-frequency v2 coverage candidate is map
+navigation, but only after exact UI ownership and completion are audited.
+Keep linked reward sets and every unlisted executable surface unsupported until
+exact-build bindings, state-bound actions, completion evidence, and contract
+tests exist.
+
+Canonical Bridge status and the latest evidence are in
+`../STS2MCP/docs/bridge-v2/CURRENT_STATUS.md` and
+`../STS2MCP/docs/bridge-v2/ORGANIC_LONG_RUN_AUDIT_2026-07-17.md`.

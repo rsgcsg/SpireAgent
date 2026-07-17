@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildAllowedActions } from "../src/domain/actions/buildAllowedActions.js";
 import type { ExecutableGameAction } from "../src/domain/actions/action.js";
 import type { GameAdapter } from "../src/game-io/adapter.js";
+import { TransientObservationError } from "../src/game-io/observationError.js";
 import type { Sts2McpRawState } from "../src/integrations/sts2mcp/rawState.js";
 import type { McpExecutionResult } from "../src/integrations/sts2mcp/restAdapter.js";
 import type { LlmDecisionProvider, LlmDecisionSession } from "../src/llm/types.js";
@@ -63,6 +64,150 @@ describe("TickOrchestrator", () => {
     expect(result.outcome).toBe("executed_and_settled");
     expect(recorder.records[0]?.postState?.stateHash).toBe(normalizeCurrentState(final, TEST_ADAPTER).stateHash);
     expect(recorder.records[0]?.settlement?.polls).toBe(3);
+  });
+
+  it("retries transient composite-read drift during settlement without weakening stable observation", async () => {
+    const pre = await fixture("combat") as Sts2McpRawState;
+    const post = structuredClone(pre);
+    if (typeof post.player === "object" && post.player && !Array.isArray(post.player)) post.player.energy = 2;
+    const drift = new TransientObservationError(
+      "state_changed_during_composite_read",
+      "fixture inspection capture drift"
+    );
+    const adapter = new FakeAdapter([pre, pre, post, drift, post, post]);
+    const recorder = new MemoryRecorder();
+    const result = await makeOrchestrator(adapter, fixedProvider("combat:end-turn"), recorder).runTick(1);
+
+    expect(result.outcome).toBe("executed_and_settled");
+    expect(recorder.records[0]?.settlement).toMatchObject({
+      status: "settled",
+      polls: 4,
+      transientObservationErrors: 1,
+      lastTransientObservationError: {
+        code: "state_changed_during_composite_read",
+        message: "fixture inspection capture drift"
+      }
+    });
+  });
+
+  it("skips one pre-decision tick after composite-read drift without executing or ending a bounded run", async () => {
+    const pre = await fixture("combat") as Sts2McpRawState;
+    const drift = new TransientObservationError(
+      "state_changed_during_composite_read",
+      "fixture initial observation drift"
+    );
+    const adapter = new FakeAdapter([drift, pre]);
+    const recorder = new MemoryRecorder();
+    const orchestrator = makeOrchestrator(adapter, fixedProvider("combat:end-turn"), recorder);
+
+    const skipped = await orchestrator.runTick(1);
+
+    expect(skipped).toMatchObject({
+      outcome: "observation_failed",
+      shouldStopRun: false
+    });
+    expect(adapter.executed).toEqual([]);
+    expect(recorder.records[0]?.error).toContain("fixture initial observation drift");
+  });
+
+  it("uses the end-turn settlement budget for an opaque Bridge v2 end-turn action", async () => {
+    const preRaw = await fixture("combat") as Sts2McpRawState;
+    const postRaw = structuredClone(preRaw);
+    if (typeof postRaw.player === "object" && postRaw.player && !Array.isArray(postRaw.player)) postRaw.player.energy = 2;
+    const adapter = new FakeAdapter([postRaw, postRaw]);
+    const watcher = new SettlementWatcher(adapter, (raw) => normalizeCurrentState(raw, TEST_ADAPTER), {
+      pollMs: 1,
+      defaultTimeoutMs: -1,
+      endTurnTimeoutMs: 20,
+      roomTransitionTimeoutMs: -1
+    }, async () => {});
+
+    const result = await watcher.waitForNextState(
+      normalizeCurrentState(preRaw, TEST_ADAPTER),
+      {
+        kind: "bridge_v2_action",
+        actionId: "action-end-turn",
+        expectedStateId: "state-before",
+        bridgeActionKind: "end_turn"
+      }
+    );
+
+    expect(result).toMatchObject({ status: "settled", polls: 2 });
+  });
+
+  it("uses a dedicated room-transition budget for map navigation", async () => {
+    const preRaw = await fixture("map") as Sts2McpRawState;
+    const loadingRaw = structuredClone(preRaw);
+    loadingRaw.state_type = "combat";
+    loadingRaw.combat = { turn: "enemy", is_play_phase: false, enemies: [] };
+    const postRaw = await fixture("combat") as Sts2McpRawState;
+    const adapter = new FakeAdapter([loadingRaw, postRaw, postRaw]);
+    const watcher = new SettlementWatcher(adapter, (raw) => normalizeCurrentState(raw, TEST_ADAPTER), {
+      pollMs: 1,
+      defaultTimeoutMs: -1,
+      endTurnTimeoutMs: -1,
+      roomTransitionTimeoutMs: 20
+    }, async () => {});
+
+    const result = await watcher.waitForNextState(
+      normalizeCurrentState(preRaw, TEST_ADAPTER),
+      { kind: "choose_map_node", index: 0 }
+    );
+
+    expect(result).toMatchObject({ status: "settled", polls: 3 });
+  });
+
+  it("stops after an exact state-action-state transition repeats", async () => {
+    const pre = await fixture("combat") as Sts2McpRawState;
+    const post = structuredClone(pre);
+    if (typeof post.player === "object" && post.player && !Array.isArray(post.player)) post.player.energy = 2;
+    const adapter = new FakeAdapter([pre, pre, post, post, pre, pre, post, post]);
+    const recorder = new MemoryRecorder();
+    const orchestrator = makeOrchestrator(adapter, fixedProvider("combat:end-turn"), recorder);
+
+    const first = await orchestrator.runTick(1);
+    const second = await orchestrator.runTick(2);
+
+    expect(first.shouldStopRun).toBe(false);
+    expect(second).toMatchObject({
+      outcome: "executed_and_settled",
+      shouldStopRun: true,
+      stopReason: "repeated_exact_transition"
+    });
+    expect(recorder.records[1]?.runtimeGuard).toMatchObject({
+      code: "repeated_exact_transition",
+      occurrence: 2,
+      selectedActionId: "combat:end-turn"
+    });
+  });
+
+  it("keeps transient composite-read drift fail-closed before execution", async () => {
+    const pre = await fixture("combat") as Sts2McpRawState;
+    const drift = new TransientObservationError(
+      "state_changed_during_composite_read",
+      "fixture pre-execution drift"
+    );
+    const adapter = new FakeAdapter([pre, drift]);
+    const recorder = new MemoryRecorder();
+    const result = await makeOrchestrator(adapter, fixedProvider("combat:end-turn"), recorder).runTick(1);
+
+    expect(result.outcome).toBe("not_executed_stale_state");
+    expect(adapter.executed).toEqual([]);
+    expect(recorder.records[0]?.error).toContain("fixture pre-execution drift");
+  });
+
+  it("does not retry generic settlement read failures", async () => {
+    const pre = await fixture("combat") as Sts2McpRawState;
+    const adapter = new FakeAdapter([pre, pre, new Error("fixture transport failure")]);
+    const recorder = new MemoryRecorder();
+    const result = await makeOrchestrator(adapter, fixedProvider("combat:end-turn"), recorder).runTick(1);
+
+    expect(result.outcome).toBe("executed_unsettled");
+    expect(recorder.records[0]?.settlement).toMatchObject({
+      status: "read_error",
+      polls: 1,
+      error: "fixture transport failure"
+    });
   });
 
   it("never executes a provider-selected id outside the whitelist", async () => {
@@ -135,7 +280,7 @@ class FakeAdapter implements GameAdapter<Sts2McpRawState, ExecutableGameAction, 
   private readIndex = 0;
 
   constructor(
-    private readonly states: Sts2McpRawState[],
+    private readonly states: Array<Sts2McpRawState | Error>,
     private readonly executionResult: McpExecutionResult = { accepted: true, response: { status: "ok" } }
   ) {}
 
@@ -147,6 +292,7 @@ class FakeAdapter implements GameAdapter<Sts2McpRawState, ExecutableGameAction, 
     const state = this.states[Math.min(this.readIndex, this.states.length - 1)];
     this.readIndex += 1;
     if (!state) throw new Error("No fake state");
+    if (state instanceof Error) throw state;
     return structuredClone(state);
   }
 
@@ -223,7 +369,8 @@ function makeOrchestrator(adapter: FakeAdapter, provider: LlmDecisionProvider, r
   const settlement = new SettlementWatcher(adapter, normalize, {
     pollMs: 1,
     defaultTimeoutMs: 20,
-    endTurnTimeoutMs: 20
+    endTurnTimeoutMs: 20,
+    roomTransitionTimeoutMs: 20
   }, async () => {});
   return new TickOrchestrator({ adapter, normalize, buildAllowedActions, llm: provider, settlement, recorder });
 }

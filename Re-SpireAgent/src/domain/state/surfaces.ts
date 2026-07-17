@@ -81,6 +81,10 @@ export interface UnknownContext {
 /** Current functional UI contract. This owns action availability, not strategic context. */
 export type InteractionSurface =
   | CombatTurnSurface
+  | CombatPileCardSelectionSurface
+  | CombatHandCardSelectionSurface
+  | GeneratedCardChoiceSurface
+  | CardBundleSelectionSurface
   | CardSelectionSurface
   | DeckEnchantSelectionSurface
   | CardRewardSelectionSurface
@@ -88,7 +92,9 @@ export type InteractionSurface =
   | CardRewardSurface
   | RewardClaimSurface
   | MapNavigationSurface
+  | EventDialogueSurface
   | EventOptionSurface
+  | RestSiteSurface
   | OptionChoiceSurface
   | ShopInteractionSurface
   | TreasureClaimSurface
@@ -113,6 +119,69 @@ export interface CombatTurnSurface {
   completeness?: BridgeSurfaceCompleteness;
 }
 
+export interface CombatPileCardSelectionSurface {
+  kind: "combat_pile_card_selection";
+  bridgeStateId: string;
+  screenEntityId: string;
+  prompt: string;
+  pileType: "draw" | "discard" | "exhaust" | "hand" | "play";
+  minimumSelections: number;
+  maximumSelections: number;
+  selectedCount: number;
+  selectedCardEntityIds: string[];
+  requireManualConfirmation: boolean;
+  cancelable: boolean;
+  cards: CardSnapshot[];
+  legalActions: BridgeLegalActionSnapshot[];
+  completeness: BridgeSurfaceCompleteness;
+}
+
+export interface CombatHandCardSelectionSurface {
+  kind: "combat_hand_card_selection";
+  bridgeStateId: string;
+  handEntityId: string;
+  prompt: string;
+  selectionMode: "simple_select" | "upgrade_select";
+  minimumSelections: number;
+  maximumSelections: number;
+  selectedCount: number;
+  selectedCardEntityIds: string[];
+  requireManualConfirmation: boolean;
+  isPeeking: boolean;
+  cards: CardSnapshot[];
+  legalActions: BridgeLegalActionSnapshot[];
+  completeness: BridgeSurfaceCompleteness;
+}
+
+/** One-of-N temporary generated card choice, distinct from rewards, hand, and pile selectors. */
+export interface GeneratedCardChoiceSurface {
+  kind: "generated_card_choice";
+  bridgeStateId: string;
+  screenEntityId: string;
+  prompt?: string;
+  canSkip: boolean;
+  isPeeking: boolean;
+  cards: CardSnapshot[];
+  legalActions: BridgeLegalActionSnapshot[];
+  completeness: BridgeSurfaceCompleteness;
+}
+
+/** Two-stage selection of one atomic visible package of cards. */
+export interface CardBundleSelectionSurface {
+  kind: "card_bundle_selection";
+  stage: "choosing" | "preview";
+  bridgeStateId: string;
+  screenEntityId: string;
+  prompt?: string;
+  selectedBundleEntityId?: string;
+  bundles: Array<{
+    entityId: string;
+    cards: CardSnapshot[];
+  }>;
+  legalActions: BridgeLegalActionSnapshot[];
+  completeness: BridgeSurfaceCompleteness;
+}
+
 export interface CardSelectionSurface {
   kind: "card_selection";
   /** Observed interaction mode, not an MCP payload. The adapter binding remains in AllowedAction. */
@@ -121,6 +190,8 @@ export interface CardSelectionSurface {
   purpose: "combat_effect" | "reward" | "upgrade" | "remove" | "transform" | "duplicate" | "unknown";
   prompt?: string;
   options: CardSnapshot[];
+  previewShowing: boolean;
+  previewCards: CardSnapshot[];
   minimumSelections?: number;
   maximumSelections?: number;
   canConfirm: boolean;
@@ -134,6 +205,10 @@ export interface BridgeLegalActionSnapshot {
   label: string;
   authority: string;
   evidenceCode: string;
+  entityBindings: Array<{
+    role: string;
+    entityId: string;
+  }>;
   category?: string;
 }
 
@@ -181,6 +256,14 @@ export interface BridgeRewardClaimSurface {
     description?: string;
     enabled: boolean;
   }>;
+  potionSlotsFull: boolean;
+  discardablePotions: Array<{
+    entityId: string;
+    id: string;
+    name?: string;
+    description?: string;
+    slot: number;
+  }>;
   canProceed: boolean;
   proceedSkipsRemainingRewards: boolean;
   legalActions: BridgeLegalActionSnapshot[];
@@ -189,7 +272,17 @@ export interface BridgeRewardClaimSurface {
 
 export interface CardRewardSurface { kind: "card_reward"; options: CardSnapshot[]; canSkip: boolean; canProceed: boolean; }
 export interface RewardClaimSurface { kind: "reward_claim"; items: RewardSnapshot[]; canProceed: boolean; }
-export interface MapNavigationSurface { kind: "map_navigation"; nextOptions: MapNodeSnapshot[]; }
+export interface MapNavigationSurface {
+  kind: "map_navigation";
+  nextOptions: MapNodeSnapshot[];
+  bridgeStateId?: string;
+  screenEntityId?: string;
+  travelEnabled?: boolean;
+  traveling?: boolean;
+  drawingMode?: "none" | "drawing" | "erasing";
+  legalActions?: BridgeLegalActionSnapshot[];
+  completeness?: BridgeSurfaceCompleteness;
+}
 
 export interface EventOptionSurface {
   kind: "event_option";
@@ -200,6 +293,41 @@ export interface EventOptionSurface {
     relicName?: string;
     relicDescription?: string;
   }>;
+  legalActions: BridgeLegalActionSnapshot[];
+  completeness: BridgeSurfaceCompleteness;
+}
+
+/** Revealed prefix of an Ancient event dialogue; future lines are never projected. */
+export interface EventDialogueSurface {
+  kind: "event_dialogue";
+  bridgeStateId: string;
+  screenEntityId: string;
+  currentLineIndex: number;
+  revealedLines: Array<{
+    entityId: string;
+    index: number;
+    text: string;
+    speaker: "ancient" | "character" | "unknown";
+    isCurrent: boolean;
+  }>;
+  advanceLabel: string;
+  legalActions: BridgeLegalActionSnapshot[];
+  completeness: BridgeSurfaceCompleteness;
+}
+
+export interface RestSiteSurface {
+  kind: "rest_site";
+  bridgeStateId: string;
+  screenEntityId: string;
+  options: Array<{
+    entityId: string;
+    index: number;
+    optionId: string;
+    name?: string;
+    description?: string;
+    enabled: boolean;
+  }>;
+  canProceed: boolean;
   legalActions: BridgeLegalActionSnapshot[];
   completeness: BridgeSurfaceCompleteness;
 }

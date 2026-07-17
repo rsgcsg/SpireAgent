@@ -10,9 +10,16 @@ internal static class BridgeSnapshotBuilder
     private static readonly IBridgeSurfaceProvider[] Providers =
     {
         new DeckEnchantSurfaceProvider(),
+        new CombatPileCardSelectionSurfaceProvider(),
+        new CombatHandCardSelectionSurfaceProvider(),
+        new GeneratedCardChoiceSurfaceProvider(),
+        new CardBundleSelectionSurfaceProvider(),
         new CardRewardSurfaceProvider(),
         new RewardClaimSurfaceProvider(),
+        new MapNavigationSurfaceProvider(),
         new CombatTurnSurfaceProvider(),
+        new RestSiteSurfaceProvider(),
+        new EventDialogueSurfaceProvider(),
         new EventOptionSurfaceProvider()
     };
 

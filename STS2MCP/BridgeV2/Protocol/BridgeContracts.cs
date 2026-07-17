@@ -7,7 +7,7 @@ namespace STS2_MCP.BridgeV2.Protocol;
 
 public static class BridgeV2Contract
 {
-    public const string ProtocolVersion = "2.0-preview.4";
+    public const string ProtocolVersion = "2.0-preview.13";
     public const string ObservationPolicyId = "player_visible_ui_v1";
 }
 
@@ -151,7 +151,12 @@ public sealed record LegalAction(
     string Category,
     string Label,
     string Authority,
-    string EvidenceCode);
+    string EvidenceCode,
+    IReadOnlyList<ActionEntityBinding> EntityBindings);
+
+public sealed record ActionEntityBinding(
+    string Role,
+    string EntityId);
 
 public sealed record VisibleEnchantment(
     string DefinitionId,
@@ -299,6 +304,29 @@ public sealed record RewardFlowBridgeContext(
     string Kind,
     string RewardKind) : IBridgeContext;
 
+public sealed record RestBridgeContext(
+    string Kind) : IBridgeContext;
+
+public sealed record VisibleMapCoordinate(
+    int Col,
+    int Row,
+    string? PointType = null);
+
+public sealed record VisibleMapNode(
+    string EntityId,
+    int Col,
+    int Row,
+    string PointType,
+    string State,
+    IReadOnlyList<VisibleMapCoordinate> Children);
+
+public sealed record MapBridgeContext(
+    string Kind,
+    int ActIndex,
+    VisibleMapCoordinate? CurrentPosition,
+    IReadOnlyList<VisibleMapCoordinate> Visited,
+    IReadOnlyList<VisibleMapNode> Nodes) : IBridgeContext;
+
 public sealed record UnknownBridgeContext(
     string Kind,
     string SourceType,
@@ -343,10 +371,64 @@ public sealed record EventOptionSurface(
     string ScreenEntityId,
     IReadOnlyList<VisibleEventOption> Options) : IBridgeSurface;
 
+public sealed record VisibleDialogueLine(
+    string EntityId,
+    int Index,
+    string Text,
+    string Speaker,
+    bool IsCurrent);
+
+public sealed record EventDialogueSurface(
+    string Kind,
+    string ScreenEntityId,
+    int CurrentLineIndex,
+    IReadOnlyList<VisibleDialogueLine> RevealedLines,
+    string AdvanceLabel) : IBridgeSurface;
+
+public sealed record VisibleRestOption(
+    string EntityId,
+    int Index,
+    string OptionId,
+    string? Name,
+    string? Description,
+    bool Enabled);
+
+public sealed record RestSiteSurface(
+    string Kind,
+    string ScreenEntityId,
+    IReadOnlyList<VisibleRestOption> Options,
+    bool CanProceed) : IBridgeSurface;
+
 public sealed record CombatTurnSurface(
     string Kind,
     string RoomEntityId,
     bool CanEndTurn) : IBridgeSurface;
+
+public sealed record CombatPileCardSelectionSurface(
+    string Kind,
+    string ScreenEntityId,
+    string Prompt,
+    string PileType,
+    int MinSelect,
+    int MaxSelect,
+    int SelectedCount,
+    IReadOnlyList<string> SelectedCardEntityIds,
+    bool RequireManualConfirmation,
+    bool Cancelable,
+    IReadOnlyList<VisibleCard> Cards) : IBridgeSurface;
+
+public sealed record CombatHandCardSelectionSurface(
+    string Kind,
+    string HandEntityId,
+    string Prompt,
+    string SelectionMode,
+    int MinSelect,
+    int MaxSelect,
+    int SelectedCount,
+    IReadOnlyList<string> SelectedCardEntityIds,
+    bool RequireManualConfirmation,
+    bool IsPeeking,
+    IReadOnlyList<VisibleCard> Cards) : IBridgeSurface;
 
 public sealed record VisibleCardRewardAlternative(
     string EntityId,
@@ -371,12 +453,48 @@ public sealed record CardRewardSelectionSurface(
     IReadOnlyList<VisibleCard> Cards,
     IReadOnlyList<VisibleCardRewardAlternative> Alternatives) : IBridgeSurface;
 
+public sealed record GeneratedCardChoiceSurface(
+    string Kind,
+    string ScreenEntityId,
+    string? Prompt,
+    bool CanSkip,
+    bool IsPeeking,
+    IReadOnlyList<VisibleCard> Cards) : IBridgeSurface;
+
+public sealed record VisibleCardBundle(
+    string EntityId,
+    IReadOnlyList<VisibleCard> Cards);
+
+public sealed record CardBundleSelectionSurface(
+    string Kind,
+    string Stage,
+    string ScreenEntityId,
+    string? Prompt,
+    string? SelectedBundleEntityId,
+    IReadOnlyList<VisibleCardBundle> Bundles) : IBridgeSurface;
+
 public sealed record RewardClaimSurface(
     string Kind,
     string ScreenEntityId,
     IReadOnlyList<VisibleReward> Rewards,
+    bool PotionSlotsFull,
+    IReadOnlyList<VisibleCombatPotion> DiscardablePotions,
     bool CanProceed,
     bool ProceedSkipsRemainingRewards) : IBridgeSurface;
+
+public sealed record VisibleMapChoice(
+    string EntityId,
+    int Col,
+    int Row,
+    string PointType);
+
+public sealed record MapNavigationSurface(
+    string Kind,
+    string ScreenEntityId,
+    bool TravelEnabled,
+    bool Traveling,
+    string DrawingMode,
+    IReadOnlyList<VisibleMapChoice> NextOptions) : IBridgeSurface;
 
 public sealed record UnsupportedSurface(
     string Kind,

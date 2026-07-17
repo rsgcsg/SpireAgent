@@ -111,9 +111,11 @@ export interface EnemySnapshot {
 
 export interface MapNodeSnapshot {
   index?: number;
+  entityId?: string;
   col?: number;
   row?: number;
   type: string;
+  state?: "none" | "travelable" | "traveled" | "untravelable";
   id?: string;
   leadsTo: Array<{ col: number; row: number; type?: string }>;
   children: Array<{ col: number; row: number }>;

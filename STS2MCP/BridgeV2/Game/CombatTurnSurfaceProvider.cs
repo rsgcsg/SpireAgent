@@ -150,7 +150,12 @@ internal sealed class CombatTurnSurfaceProvider : IBridgeSurfaceProvider
                         "combat",
                         $"Play {cardName} on {targetName}",
                         "CardModel.CanPlay+CombatState.HittableEnemies+CardModel.TryManualPlay",
-                        () => StartPlayCard(player, card, target)));
+                        () => StartPlayCard(player, card, target),
+                        new[]
+                        {
+                            new ActionEntityBinding("card", cardId),
+                            new ActionEntityBinding("target", targetId)
+                        }));
                 }
             }
             else
@@ -161,7 +166,8 @@ internal sealed class CombatTurnSurfaceProvider : IBridgeSurfaceProvider
                     "combat",
                     $"Play {cardName}",
                     "CardModel.CanPlay+CardModel.TryManualPlay",
-                    () => StartPlayCard(player, card, null)));
+                    () => StartPlayCard(player, card, null),
+                    new[] { new ActionEntityBinding("card", cardId) }));
             }
         }
     }
@@ -191,7 +197,12 @@ internal sealed class CombatTurnSurfaceProvider : IBridgeSurfaceProvider
                         "combat",
                         $"Use {potionName} on {targetName}",
                         "PotionModel.PassesCustomUsabilityCheck+CombatState.HittableEnemies",
-                        () => StartUsePotion(player, potion, capturedSlot, target)));
+                        () => StartUsePotion(player, potion, capturedSlot, target),
+                        new[]
+                        {
+                            new ActionEntityBinding("potion", potionId),
+                            new ActionEntityBinding("target", targetId)
+                        }));
                 }
             }
             else
@@ -210,7 +221,8 @@ internal sealed class CombatTurnSurfaceProvider : IBridgeSurfaceProvider
                     "combat",
                     $"Use {potionName}",
                     "PotionModel.PassesCustomUsabilityCheck",
-                    () => StartUsePotion(player, potion, capturedSlot, target)));
+                    () => StartUsePotion(player, potion, capturedSlot, target),
+                    new[] { new ActionEntityBinding("potion", potionId) }));
             }
         }
     }

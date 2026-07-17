@@ -79,7 +79,8 @@ internal sealed class BridgeCommandLedger
                         currentStateId,
                         _clock(),
                         start.CompletionProbe,
-                        start.CompletionEvidence);
+                        start.CompletionEvidence,
+                        start.AllowIntermediateStateChanges);
                 else
                     command.Reject(
                         start.ErrorCode ?? "action_rejected",
@@ -125,6 +126,7 @@ internal sealed class BridgeCommandLedger
                         command.Complete("state_changed_after_action_start", currentStateId, now);
                     }
                     else if (command.CompletionProbe != null
+                             && !command.AllowIntermediateStateChanges
                              && !string.Equals(command.ExpectedStateId, currentStateId, StringComparison.Ordinal))
                     {
                         command.Fail(
@@ -208,6 +210,7 @@ internal sealed class BridgeCommandLedger
         public DateTimeOffset? StartedAt { get; private set; }
         public Func<bool>? CompletionProbe { get; private set; }
         public string? CompletionEvidence { get; private set; }
+        public bool AllowIntermediateStateChanges { get; private set; }
 
         public void Validate(string observedStateId, DateTimeOffset now)
         {
@@ -220,7 +223,8 @@ internal sealed class BridgeCommandLedger
             string observedStateId,
             DateTimeOffset now,
             Func<bool>? completionProbe,
-            string? completionEvidence)
+            string? completionEvidence,
+            bool allowIntermediateStateChanges)
         {
             Status = "started";
             Outcome = "pending";
@@ -228,6 +232,7 @@ internal sealed class BridgeCommandLedger
             StartedAt = now;
             CompletionProbe = completionProbe;
             CompletionEvidence = completionEvidence;
+            AllowIntermediateStateChanges = allowIntermediateStateChanges;
             _events.Add(new BridgeCommandEvent("started", now, "ui_interaction_started", null, null));
         }
 

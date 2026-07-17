@@ -18,8 +18,14 @@ export function buildAllowedActions(state: NormalizedCurrentState, sourceStateHa
     case "card_selection":
       return cardSelectionActions(state.surface, sourceStateHash);
     case "deck_enchant_selection":
+    case "combat_pile_card_selection":
+    case "combat_hand_card_selection":
+    case "generated_card_choice":
+    case "card_bundle_selection":
     case "card_reward_selection":
+    case "event_dialogue":
     case "event_option":
+    case "rest_site":
       return [];
     case "card_reward":
       return [
@@ -70,6 +76,7 @@ function bridgeActions(state: NormalizedCurrentState, sourceStateHash: string): 
     kind: action.kind,
     label: action.label,
     description: `Bridge-validated ${action.evidenceCode}`,
+    ...(action.entityBindings.length > 0 ? { entityBindings: action.entityBindings } : {}),
     action: {
       kind: "bridge_v2_action",
       actionId: action.actionId,

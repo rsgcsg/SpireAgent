@@ -1,6 +1,7 @@
 import type { ExecutableGameAction } from "../domain/actions/action.js";
 import type { StateEnvelope } from "../domain/state/index.js";
 import type { GameAdapter, GameExecutionResult, RawGameState } from "../game-io/adapter.js";
+import { TransientObservationError } from "../game-io/observationError.js";
 
 export interface SettlementResult {
   status: "settled" | "timeout" | "read_error";
@@ -8,6 +9,11 @@ export interface SettlementResult {
   elapsedMs: number;
   after?: StateEnvelope;
   error?: string;
+  transientObservationErrors?: number;
+  lastTransientObservationError?: {
+    code: string;
+    message: string;
+  };
 }
 
 export class SettlementWatcher {
@@ -18,16 +24,23 @@ export class SettlementWatcher {
       pollMs: number;
       defaultTimeoutMs: number;
       endTurnTimeoutMs: number;
+      roomTransitionTimeoutMs: number;
     },
     private readonly sleep: (ms: number) => Promise<void> = defaultSleep
   ) {}
 
   async waitForNextState(before: StateEnvelope, action: ExecutableGameAction): Promise<SettlementResult> {
     const started = Date.now();
-    const timeoutMs = action.kind === "end_turn" ? this.config.endTurnTimeoutMs : this.config.defaultTimeoutMs;
+    const timeoutMs = isEndTurn(action)
+      ? this.config.endTurnTimeoutMs
+      : isRoomTransition(action)
+        ? this.config.roomTransitionTimeoutMs
+        : this.config.defaultTimeoutMs;
     let polls = 0;
     let last: StateEnvelope | undefined;
     let stableCandidate: StateEnvelope | undefined;
+    let transientObservationErrors = 0;
+    let lastTransientObservationError: SettlementResult["lastTransientObservationError"];
 
     while (Date.now() - started < timeoutMs) {
       await this.sleep(this.config.pollMs);
@@ -35,11 +48,18 @@ export class SettlementWatcher {
       try {
         last = this.normalize(await this.adapter.readCurrentState());
       } catch (error) {
+        if (error instanceof TransientObservationError) {
+          transientObservationErrors += 1;
+          lastTransientObservationError = { code: error.code, message: safeError(error) };
+          stableCandidate = undefined;
+          continue;
+        }
         return {
           status: "read_error",
           polls,
           elapsedMs: Date.now() - started,
-          error: safeError(error)
+          error: safeError(error),
+          ...transientTelemetry(transientObservationErrors, lastTransientObservationError)
         };
       }
       if (last.stateHash === before.stateHash) continue;
@@ -48,7 +68,13 @@ export class SettlementWatcher {
         continue;
       }
       if (stableCandidate?.stateHash === last.stateHash) {
-        return { status: "settled", polls, elapsedMs: Date.now() - started, after: last };
+        return {
+          status: "settled",
+          polls,
+          elapsedMs: Date.now() - started,
+          after: last,
+          ...transientTelemetry(transientObservationErrors, lastTransientObservationError)
+        };
       }
       stableCandidate = last;
     }
@@ -58,9 +84,28 @@ export class SettlementWatcher {
       polls,
       elapsedMs: Date.now() - started,
       ...(last ? { after: last } : {}),
-      error: "State did not reach a visibly changed, non-transitional checkpoint before timeout"
+      error: "State did not reach a visibly changed, non-transitional checkpoint before timeout",
+      ...transientTelemetry(transientObservationErrors, lastTransientObservationError)
     };
   }
+}
+
+function isEndTurn(action: ExecutableGameAction): boolean {
+  return action.kind === "end_turn"
+    || (action.kind === "bridge_v2_action" && action.bridgeActionKind === "end_turn");
+}
+
+function isRoomTransition(action: ExecutableGameAction): boolean {
+  return action.kind === "choose_map_node";
+}
+
+function transientTelemetry(
+  count: number,
+  last: SettlementResult["lastTransientObservationError"]
+): Pick<SettlementResult, "transientObservationErrors" | "lastTransientObservationError"> {
+  return count > 0
+    ? { transientObservationErrors: count, ...(last ? { lastTransientObservationError: last } : {}) }
+    : {};
 }
 
 function defaultSleep(ms: number): Promise<void> {

@@ -26,6 +26,39 @@ public sealed class BridgeContractTests
     }
 
     [Fact]
+    public void LegalActionBindingsReferenceVisibleEntitiesWithoutBecomingCommandArguments()
+    {
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+        };
+        var action = new LegalAction(
+            "action-a",
+            "state-a",
+            "play_card",
+            "combat",
+            "Play Strike on Cultist",
+            "game_ui",
+            "validator",
+            new[]
+            {
+                new ActionEntityBinding("card", "card-a"),
+                new ActionEntityBinding("target", "enemy-a")
+            });
+
+        string json = JsonSerializer.Serialize(action, options);
+        string commandJson = JsonSerializer.Serialize(
+            new BridgeCommandRequest("request-a", "state-a", "action-a"),
+            options);
+
+        Assert.Contains("\"entity_bindings\"", json);
+        Assert.Contains("\"role\":\"card\"", json);
+        Assert.Contains("\"entity_id\":\"enemy-a\"", json);
+        Assert.DoesNotContain("card-a", commandJson);
+        Assert.DoesNotContain("enemy-a", commandJson);
+    }
+
+    [Fact]
     public void EntityIdsAreStablePerObjectAndDistinctAcrossObjects()
     {
         var registry = new BridgeEntityRegistry();
@@ -171,14 +204,76 @@ public sealed class BridgeContractTests
     }
 
     [Fact]
-    public void ActiveSurfaceResolverGivesBlockingOverlayExclusivePrecedence()
+    public void ActiveSurfaceResolverGivesVisibleOverlayOrMapExclusivePrecedence()
     {
-        Assert.Equal(BridgeSurfaceLayer.Overlay, ActiveSurfaceResolver.SelectLayer(true));
-        Assert.Equal(BridgeSurfaceLayer.Room, ActiveSurfaceResolver.SelectLayer(false));
-        Assert.True(ActiveSurfaceResolver.IsActiveLayer(BridgeSurfaceLayer.Overlay, true));
-        Assert.False(ActiveSurfaceResolver.IsActiveLayer(BridgeSurfaceLayer.Room, true));
-        Assert.True(ActiveSurfaceResolver.IsActiveLayer(BridgeSurfaceLayer.Room, false));
-        Assert.False(ActiveSurfaceResolver.IsActiveLayer(BridgeSurfaceLayer.Overlay, false));
+        Assert.Equal(BridgeSurfaceLayer.Overlay, ActiveSurfaceResolver.SelectLayer(true, false));
+        Assert.Equal(BridgeSurfaceLayer.Overlay, ActiveSurfaceResolver.SelectLayer(false, true));
+        Assert.Equal(BridgeSurfaceLayer.Room, ActiveSurfaceResolver.SelectLayer(false, false));
+        Assert.True(ActiveSurfaceResolver.IsActiveLayer(BridgeSurfaceLayer.Overlay, false, true));
+        Assert.False(ActiveSurfaceResolver.IsActiveLayer(BridgeSurfaceLayer.Room, false, true));
+        Assert.True(ActiveSurfaceResolver.IsActiveLayer(BridgeSurfaceLayer.Room, false, false));
+        Assert.False(ActiveSurfaceResolver.IsActiveLayer(BridgeSurfaceLayer.Overlay, false, false));
+    }
+
+    [Fact]
+    public void MapNavigationRequiresExclusiveRouteInputReadiness()
+    {
+        Assert.True(MapNavigationSurfaceProvider.CanAdvertiseRouteActions(
+            isOpen: true,
+            travelEnabled: true,
+            traveling: false,
+            inputDisabled: false,
+            drawingModeNone: true));
+        Assert.False(MapNavigationSurfaceProvider.CanAdvertiseRouteActions(true, true, true, false, true));
+        Assert.False(MapNavigationSurfaceProvider.CanAdvertiseRouteActions(true, true, false, false, false));
+        Assert.False(MapNavigationSurfaceProvider.CanAdvertiseRouteActions(true, false, false, false, true));
+        Assert.False(MapNavigationSurfaceProvider.CanAdvertiseRouteActions(true, true, false, true, true));
+    }
+
+    [Fact]
+    public void MapContractSeparatesVisibleTopologyFromCurrentChoices()
+    {
+        IBridgeContext context = new MapBridgeContext(
+            "map",
+            0,
+            new VisibleMapCoordinate(3, 0, "ancient"),
+            new[] { new VisibleMapCoordinate(3, 0, "ancient") },
+            new[]
+            {
+                new VisibleMapNode(
+                    "map-node-start", 3, 0, "ancient", "traveled",
+                    new[] { new VisibleMapCoordinate(2, 1, "monster") }),
+                new VisibleMapNode(
+                    "map-node-next", 2, 1, "monster", "travelable",
+                    Array.Empty<VisibleMapCoordinate>())
+            });
+        IBridgeSurface surface = new MapNavigationSurface(
+            "map_navigation",
+            "map-screen",
+            TravelEnabled: true,
+            Traveling: false,
+            DrawingMode: "none",
+            new[] { new VisibleMapChoice("map-node-next", 2, 1, "monster") });
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+        };
+
+        string json = JsonSerializer.Serialize(new { context, surface }, options);
+
+        Assert.Contains("\"kind\":\"map\"", json);
+        Assert.Contains("\"kind\":\"map_navigation\"", json);
+        Assert.Contains("\"children\":[{\"col\":2,\"row\":1", json);
+        Assert.Contains("\"next_options\":[{\"entity_id\":\"map-node-next\"", json);
+        Assert.Contains("\"drawing_mode\":\"none\"", json);
+    }
+
+    [Fact]
+    public void KnownEventWithTemporarilyEmptyOptionsIsSettlingNotDegraded()
+    {
+        Assert.Equal("settling", EventOptionSurfaceProvider.ClassifyReadiness(true, 0, 0));
+        Assert.Equal("ready", EventOptionSurfaceProvider.ClassifyReadiness(true, 2, 2));
+        Assert.Equal("degraded", EventOptionSurfaceProvider.ClassifyReadiness(false, 0, 0));
     }
 
     [Fact]
@@ -209,6 +304,89 @@ public sealed class BridgeContractTests
     }
 
     [Fact]
+    public void CombatPileSelectionKeepsPileAndSelectionSemanticsExplicit()
+    {
+        IBridgeContext context = new CombatBridgeContext(
+            "combat",
+            "normal",
+            2,
+            "player",
+            true,
+            new VisibleCombatPlayer(
+                "player-a", "Defect", 40, 75, 0, 2, 3, null, 50,
+                Array.Empty<VisibleCard>(), 3, 6, 0,
+                Array.Empty<VisibleStatus>(), Array.Empty<VisibleRelic>(),
+                Array.Empty<VisibleCombatPotion>(), 3, Array.Empty<VisibleOrb>(), 3),
+            Array.Empty<VisibleEnemy>());
+        IBridgeSurface surface = new CombatPileCardSelectionSurface(
+            "combat_pile_card_selection",
+            "screen-a",
+            "Choose a card to put back in your Hand.",
+            "discard",
+            1,
+            1,
+            0,
+            Array.Empty<string>(),
+            RequireManualConfirmation: false,
+            Cancelable: false,
+            new[]
+            {
+                new VisibleCard(
+                    "card-a", "BALL_LIGHTNING", "Ball Lightning", "Attack", "1", null,
+                    "Deal 7 damage. Channel 1 Lightning.", "Common", false, false, null)
+            });
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+        };
+
+        string json = JsonSerializer.Serialize(new { context, surface }, options);
+
+        Assert.Contains("\"kind\":\"combat\"", json);
+        Assert.Contains("\"kind\":\"combat_pile_card_selection\"", json);
+        Assert.Contains("\"pile_type\":\"discard\"", json);
+        Assert.Contains("\"require_manual_confirmation\":false", json);
+        Assert.Contains("\"entity_id\":\"card-a\"", json);
+    }
+
+    [Fact]
+    public void CombatHandSelectionKeepsInstanceSelectionAndReplacementSemanticsExplicit()
+    {
+        IBridgeSurface surface = new CombatHandCardSelectionSurface(
+            "combat_hand_card_selection",
+            "hand-a",
+            "Confirm Card to Upgrade",
+            "upgrade_select",
+            1,
+            1,
+            1,
+            new[] { "card-selected" },
+            RequireManualConfirmation: true,
+            IsPeeking: false,
+            new[]
+            {
+                new VisibleCard(
+                    "card-option", "STRIKE", "Strike", "Attack", "1", null,
+                    "Deal 6 damage.", "Basic", false, false, null),
+                new VisibleCard(
+                    "card-selected", "STRIKE", "Strike", "Attack", "1", null,
+                    "Deal 6 damage.", "Basic", false, true, null)
+            });
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+        };
+
+        string json = JsonSerializer.Serialize(surface, options);
+
+        Assert.Contains("\"kind\":\"combat_hand_card_selection\"", json);
+        Assert.Contains("\"selection_mode\":\"upgrade_select\"", json);
+        Assert.Contains("\"selected_card_entity_ids\":[\"card-selected\"]", json);
+        Assert.Contains("\"require_manual_confirmation\":true", json);
+        Assert.Contains("\"is_selected\":true", json);
+    }
+
+    [Fact]
     public void RewardClaimContractKeepsVisibleRewardsAndProceedSemanticsSeparate()
     {
         IBridgeContext context = new RewardFlowBridgeContext("reward_flow", "room_rewards");
@@ -216,6 +394,8 @@ public sealed class BridgeContractTests
             "reward_claim",
             "screen-a",
             new[] { new VisibleReward("reward-a", "gold", "25 Gold", "25 Gold", true) },
+            PotionSlotsFull: false,
+            DiscardablePotions: Array.Empty<VisibleCombatPotion>(),
             CanProceed: true,
             ProceedSkipsRemainingRewards: true);
         var options = new JsonSerializerOptions
@@ -228,8 +408,159 @@ public sealed class BridgeContractTests
         Assert.Contains("\"reward_kind\":\"room_rewards\"", json);
         Assert.Contains("\"kind\":\"reward_claim\"", json);
         Assert.Contains("\"label\":\"25 Gold\"", json);
+        Assert.Contains("\"potion_slots_full\":false", json);
+        Assert.Contains("\"discardable_potions\":[]", json);
         Assert.Contains("\"proceed_skips_remaining_rewards\":true", json);
         Assert.DoesNotContain("index", json, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void GeneratedCardChoiceContractKeepsTemporaryOptionsAndSkipExplicit()
+    {
+        IBridgeSurface surface = new GeneratedCardChoiceSurface(
+            "generated_card_choice",
+            "screen-generated",
+            "Choose a Card",
+            CanSkip: true,
+            IsPeeking: false,
+            Cards: new[]
+            {
+                new VisibleCard(
+                    "generated-card", "PRIMAL_FORCE", "Primal Force", "Skill", "0", null,
+                    "Transform all Attacks in your Hand into Giant Rock.", "Rare", false, false, null)
+            });
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+        };
+
+        string json = JsonSerializer.Serialize(surface, options);
+
+        Assert.Contains("\"kind\":\"generated_card_choice\"", json);
+        Assert.Contains("\"prompt\":\"Choose a Card\"", json);
+        Assert.Contains("\"can_skip\":true", json);
+        Assert.Contains("\"is_peeking\":false", json);
+        Assert.Contains("\"entity_id\":\"generated-card\"", json);
+    }
+
+    [Fact]
+    public void CardBundleContractPreservesAtomicPackageAndPreviewStage()
+    {
+        IBridgeSurface surface = new CardBundleSelectionSurface(
+            "card_bundle_selection",
+            "preview",
+            "screen-bundle",
+            "Choose a bundle",
+            "bundle-a",
+            new[]
+            {
+                new VisibleCardBundle(
+                    "bundle-a",
+                    new[]
+                    {
+                        new VisibleCard(
+                            "bundle-card-a", "BLOOD_WALL", "Blood Wall", "Skill", "1", null,
+                            "Gain Block.", "Common", false, false, null),
+                        new VisibleCard(
+                            "bundle-card-b", "MOLTEN_FIST", "Molten Fist", "Attack", "2", null,
+                            "Deal damage.", "Common", false, false, null)
+                    })
+            });
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+        };
+
+        string json = JsonSerializer.Serialize(surface, options);
+
+        Assert.Contains("\"kind\":\"card_bundle_selection\"", json);
+        Assert.Contains("\"stage\":\"preview\"", json);
+        Assert.Contains("\"selected_bundle_entity_id\":\"bundle-a\"", json);
+        Assert.Contains("\"entity_id\":\"bundle-a\"", json);
+        Assert.Contains("\"entity_id\":\"bundle-card-a\"", json);
+        Assert.DoesNotContain("card_index", json, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void EventDialogueContractCarriesOnlyTheRevealedPrefixAndCurrentLine()
+    {
+        IBridgeSurface surface = new EventDialogueSurface(
+            "event_dialogue",
+            "screen-dialogue",
+            CurrentLineIndex: 1,
+            RevealedLines: new[]
+            {
+                new VisibleDialogueLine("line-0", 0, "Welcome back.", "ancient", false),
+                new VisibleDialogueLine("line-1", 1, "Choose your beginning.", "ancient", true)
+            },
+            AdvanceLabel: "Continue");
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+        };
+
+        string json = JsonSerializer.Serialize(surface, options);
+
+        Assert.Contains("\"kind\":\"event_dialogue\"", json);
+        Assert.Contains("\"current_line_index\":1", json);
+        Assert.Contains("\"entity_id\":\"line-1\"", json);
+        Assert.Contains("\"is_current\":true", json);
+        Assert.Contains("\"advance_label\":\"Continue\"", json);
+        Assert.DoesNotContain("future", json, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void RestSiteContractKeepsOptionChoiceAndProceedDistinct()
+    {
+        IBridgeSurface surface = new RestSiteSurface(
+            "rest_site",
+            "rest-screen",
+            new[]
+            {
+                new VisibleRestOption("rest-heal", 0, "HEAL", "Rest", "Heal HP.", true),
+                new VisibleRestOption("rest-smith", 1, "SMITH", "Smith", "Upgrade a card.", false)
+            },
+            CanProceed: false);
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+        };
+
+        string json = JsonSerializer.Serialize(surface, options);
+
+        Assert.Contains("\"kind\":\"rest_site\"", json);
+        Assert.Contains("\"option_id\":\"HEAL\"", json);
+        Assert.Contains("\"enabled\":false", json);
+        Assert.Contains("\"can_proceed\":false", json);
+    }
+
+    [Fact]
+    public void RewardClaimContractCarriesVisibleFullPotionCapacityResolution()
+    {
+        IBridgeSurface surface = new RewardClaimSurface(
+            "reward_claim",
+            "screen-a",
+            new[] { new VisibleReward("reward-potion", "potion", "Skill Potion", "Choose a Skill.", false) },
+            PotionSlotsFull: true,
+            DiscardablePotions: new[]
+            {
+                new VisibleCombatPotion(
+                    "potion-power", "POWER_POTION", "Power Potion", "Choose a Power.",
+                    Slot: 0, TargetType: "None", CanUse: false, Automatic: false)
+            },
+            CanProceed: true,
+            ProceedSkipsRemainingRewards: true);
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+        };
+
+        string json = JsonSerializer.Serialize(surface, options);
+
+        Assert.Contains("\"potion_slots_full\":true", json);
+        Assert.Contains("\"enabled\":false", json);
+        Assert.Contains("\"entity_id\":\"potion-power\"", json);
+        Assert.Contains("\"slot\":0", json);
     }
 
     [Fact]

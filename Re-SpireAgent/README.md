@@ -196,12 +196,15 @@ RE-P1 has fixture-backed support for:
 - `menu`
 - `game_over`
 
-Bridge v2 source `preview.4` contracts cover `deck_enchant_selection`,
-`event_option`, `combat_turn`, `card_reward_selection`, and `reward_claim`.
-All five have bounded organic Bridge plus Re-SpireAgent lifecycle evidence on
-the exact supported build. Fixed read-only `run_deck` and `combat_piles`
-inspections also have bounded organic evidence. Qualification is per observed
-shape, not broad surface or game coverage. See
+Bridge v2 source `preview.9` contracts cover `deck_enchant_selection`,
+`event_option`, `combat_turn`, `combat_pile_card_selection`,
+`combat_hand_card_selection`, `generated_card_choice`,
+`card_reward_selection`, and `reward_claim`. Seven have bounded organic Bridge
+plus Re-SpireAgent lifecycle evidence on the exact supported build;
+`generated_card_choice` is exact-source/fixture qualified but still awaits a
+fresh preview.9 organic lifecycle. Fixed read-only `run_deck` and
+`combat_piles` inspections also have bounded organic evidence. Qualification
+is per observed shape, not broad surface or game coverage. See
 [BRIDGE_V2_INTEGRATION.md](docs/BRIDGE_V2_INTEGRATION.md).
 
 `bundle_select` and future state types are intentionally unsupported until a real raw fixture and verified action protocol are available. They fail closed instead of inheriting guessed fields from the old project. See [MCP_STATE_COVERAGE.md](docs/MCP_STATE_COVERAGE.md).
@@ -221,9 +224,10 @@ The only supported public TypeScript entrypoint is `src/index.ts`. Integration r
 ## Current Limitations
 
 - Real v1 MCP windows have exercised event, combat, rewards, card reward, map, rest, shop, treasure, and a boss fight. This proves protocol integration, not strategic quality or universal MCP coverage. The legacy v1 `NDeckEnchantSelectScreen` confirmation endpoint acknowledged the request without advancing state; Bridge v2 now has a separate qualified opaque-action contract for that surface.
-- Bridge v2 source `preview.4` lists legal actions for deck enchant, ordinary
-  event options, immediate player-phase combat, card reward selection, and
-  outer reward claim. All unlisted surfaces remain v1-local in `auto` mode.
+- Bridge v2 source `preview.9` lists legal actions for deck enchant, ordinary
+  event options, immediate player-phase combat, pile/hand/generated combat-card
+  selectors, card reward selection, and outer reward claim. All unlisted
+  surfaces remain v1-local in `auto` mode.
 - Deck enchant, one ordinary event-option flow, and one targeted combat-card
   flow have organic Re lifecycles. This does not qualify ancient dialogue,
   combat overlays, every card target type, potion use, or end turn.
@@ -233,7 +237,14 @@ The only supported public TypeScript entrypoint is `src/index.ts`. Integration r
 - Read-only `run_deck` and `combat_piles` inspection is implemented, state-bound,
   non-executable, and excluded from the command ledger. Draw order remains
   hidden. Organic evidence covers persistent Glam post-state and non-empty
-  draw/discard contents; non-empty exhaust remains a diversity gap.
+  draw/discard/exhaust contents.
+- A full potion belt now makes a visible potion reward non-claimable and
+  exposes only exact, state-bound discard operands until capacity exists. The
+  discard-then-claim lifecycle passed against an organic full-belt screen.
+- Pile, hand, generated, reward, and run-deck card selection are not one generic
+  protocol. Their object ownership, timing guard, legal actions, and completion
+  evidence differ; shared visible-card fields do not justify a universal
+  selector.
 - Ordinary card reward and outer reward claim are distinct, organically
   qualified protocols; neither is flattened into the other.
 - Run-deck inspection supplies complete typed deck evidence when a local run
@@ -242,3 +253,6 @@ The only supported public TypeScript entrypoint is `src/index.ts`. Integration r
 - Shop leaving is the one explicit protocol inference retained from verified legacy live behavior: the MCP `proceed` action leaves a shop even when `shop.can_proceed` is false. It is recorded in normalization diagnostics.
 - A changed state hash proves visible state drift, not perfect semantic settlement. The watcher waits for two consecutive, identical, non-transitional observations after an action, but animation/UI edge cases still require real-game verification.
 - RE-P1 is an auditable baseline, not a strong strategic player yet.
+
+The latest exact-build organic long runs are summarized in
+[`STS2MCP/docs/bridge-v2/ORGANIC_LONG_RUN_AUDIT_2026-07-17.md`](../STS2MCP/docs/bridge-v2/ORGANIC_LONG_RUN_AUDIT_2026-07-17.md).

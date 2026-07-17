@@ -1,5 +1,10 @@
 # Run-Deck And Combat-Pile Inspection Audit
 
+> Historical implementation audit for preview.4. Fresh preview.9 evidence now
+> includes a non-empty exhaust pile; current qualification lives in
+> [CURRENT_STATUS.md](CURRENT_STATUS.md) and
+> [ORGANIC_LONG_RUN_AUDIT_2026-07-17.md](ORGANIC_LONG_RUN_AUDIT_2026-07-17.md).
+
 Status date: 2026-07-16  
 Protocol: `2.0-preview.4`  
 Game identity: `v0.108.0|58694f64|-2044609792`

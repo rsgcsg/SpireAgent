@@ -43,6 +43,25 @@ describe("normalizeCurrentState", () => {
     expect(envelope.currentState.context.enemies).toHaveLength(1);
   });
 
+  it("preserves player-visible card-selection preview semantics", async () => {
+    const raw = await fixture("card-select") as Record<string, any>;
+    raw.card_select.preview_showing = true;
+    raw.card_select.preview_cards = [
+      { ...raw.card_select.cards[0], name: "Strike+", is_upgraded: true, description: "Deal 9 damage." }
+    ];
+    raw.card_select.can_confirm = true;
+    const envelope = normalizeCurrentState(raw, TEST_ADAPTER);
+
+    expect(envelope.currentState.normalizedSchemaVersion).toBe(13);
+    expect(envelope.currentState.surface).toMatchObject({
+      kind: "card_selection",
+      previewShowing: true,
+      previewCards: [{ name: "Strike+", upgraded: true, description: "Deal 9 damage." }],
+      canConfirm: true
+    });
+    expect(envelope.diagnostics.unknownFields).not.toContain("card_select.preview_cards");
+  });
+
   it("treats a new event identity as data when it keeps the verified option protocol", async () => {
     const raw = await fixture("event") as Record<string, any>;
     raw.event.event_id = "unseen_event_id";

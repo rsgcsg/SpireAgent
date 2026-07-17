@@ -141,6 +141,37 @@ public sealed class BridgeCommandLedgerTests
     }
 
     [Fact]
+    public void ExplicitAsyncProbeMayCrossIntermediateStatesBeforeExactCompletion()
+    {
+        bool completed = false;
+        var ledger = new BridgeCommandLedger(10_000);
+        RegisteredBridgeAction action = Action(
+            "state-a",
+            "action-a",
+            () => BridgeActionStartResult.Started(
+                () => completed,
+                "exact_async_completion",
+                allowIntermediateStateChanges: true));
+
+        ledger.Submit(
+            new BridgeCommandRequest("request-a", "state-a", "action-a"),
+            "state-a",
+            action);
+        BridgeCommandResponse? intermediate = ledger.Poll("request-a", "state-traveling");
+
+        Assert.NotNull(intermediate);
+        Assert.Equal("started", intermediate.Status);
+        Assert.Equal("pending", intermediate.Outcome);
+
+        completed = true;
+        BridgeCommandResponse? result = ledger.Poll("request-a", "state-room-entered");
+        Assert.NotNull(result);
+        Assert.Equal("completed", result.Status);
+        Assert.Equal("confirmed", result.Outcome);
+        Assert.Equal("exact_async_completion", result.Events[^1].Evidence);
+    }
+
+    [Fact]
     public void ReusedRequestIdWithDifferentPayloadIsRejected()
     {
         var ledger = new BridgeCommandLedger(10_000);
@@ -175,7 +206,8 @@ public sealed class BridgeCommandLedgerTests
                 "test",
                 "Test action",
                 "game_ui",
-                "fixture"),
+                "fixture",
+                Array.Empty<ActionEntityBinding>()),
             start);
     }
 }

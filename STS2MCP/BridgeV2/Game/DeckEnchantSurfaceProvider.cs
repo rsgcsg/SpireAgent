@@ -186,7 +186,8 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
                     "selection",
                     selected ? $"Deselect {cardName}" : $"Select {cardName}",
                     "NCardGrid.HolderPressed",
-                    () => StartToggleCard(screen, card, binding.Enchantment)));
+                    () => StartToggleCard(screen, card, binding.Enchantment),
+                    new[] { new ActionEntityBinding("card", cardId) }));
             }
 
             NConfirmButton? mainConfirm = screen.GetNodeOrNull<NConfirmButton>("Confirm")
