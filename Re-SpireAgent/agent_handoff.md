@@ -1,17 +1,20 @@
 # RE-P1 Handoff
 
-Status: Bridge `2.0-preview.18` implements fifteen bounded surface contracts
-plus read-only run-deck/combat-pile Inspection. Organic evidence remains scoped
-to historical exact identity `v0.108.0|58694f64|-2044609792`. On installed
-`v0.109.0|c12f634d|-840572606`, preview.18 permits only a no-sidecar action
-canary for `shop + deck_removal_selection` plus a distinct read-only `run_deck`
-inspection canary. On 2026-07-17, the v0.109 ordinary merchant flow completed:
-cancel settled cleanly; a later visible Strike selection entered preview;
-confirmation settled to shop; same-state `run_deck` evidence changed 11 -> 10
-and no longer contained the selected instance. This is one exact journey only.
-All other execution and inspection remains disabled; a second independent
-merchant journey is the resilience follow-up. RE-P1 remains a protocol baseline, not a verified strategic player
-or a claim of broad game coverage.
+Status: Bridge `2.0-preview.25` is installed against exact identity
+`v0.109.0|c12f634d|-840572606`. Capabilities scoped-qualify merchant removal,
+event/rest deck upgrade, ordinary combat turn, combat hand selection, and
+ordinary single-player rest plus read-only run deck. Event card acquisition,
+reward, card reward, map, and treasure are action canaries; every unlisted
+contract is
+disabled. Current-build organic evidence includes exact removal and upgrade
+post-states, Brain Leech exact-card acquisition, one clean
+reward/card-reward/map journey, and treasure relic choose plus Proceed-to-map.
+Room Full of Cheese two-card acquisition, treasure open/skip, and every unlisted
+variant remain
+unqualified. RE-P1 remains a protocol baseline, not a verified strategic player
+or a claim of broad game coverage. Preview.24 adds a top-level read-only
+`shared_state`; Bridge-owned states no longer read v1 for persistent run/player
+HUD facts.
 
 The 2026-07-17 architecture reassessment retained semantic Surfaces and added
 only non-authoritative bounded-selection fact reuse. It also found that the old
@@ -19,14 +22,52 @@ merchant-removal confirm predicate completed on selector close before the exact
 async transaction necessarily committed. Bridge source now requires the exact
 selected instance to leave the deck, deck/gold deltas, removal-count increment,
 and service consumption, while allowing intermediate state IDs. C#/Re tests
-cover the contract; a second organic merchant journey is still required before
-current-build qualification.
+cover the contract. Preview.23 current-build qualification remains
+purpose-specific and does not create a generic deck selector.
 
 Canonical current Bridge status is maintained in
 `../STS2MCP/docs/bridge-v2/CURRENT_STATUS.md`; the chronology below is retained
 as handoff history.
 
 ## Completed
+
+- Preview.25 requalified ordinary single-player `rest_site` after replacing a
+  broad UI-progression completion predicate. Heal now requires exact HP
+  post-state, Smith requires the exact upgrade child, unknown enabled options
+  fail closed, and Proceed requires map/room transition. Final MVID
+  `e9a9e229-82b7-4752-afb7-46b910468f58` repeated Heal 56 -> 80 and Proceed;
+  regression run `run-20260717145202-b5ewm2` was 24/24 settled and entirely
+  `bridge_advertised`.
+
+- Preview.25 added purpose-specific `event_card_acquisition` for exact audited
+  event add-to-run-deck sources. Brain Leech request
+  `preview25-brain-leech-offering-20260718-1` completed with the exact selected
+  Offering instance in a run deck that increased from 12 to 13 cards. The
+  parent event remained legacy-owned and did not merge actions. Room Full of
+  Cheese two-card acquisition remains unqualified, so the Surface stays an
+  action canary.
+
+- Preview.24 now also qualifies `combat_hand_card_selection` on v0.109. Organic
+  run `run-20260717135207-gpeaut` exposed v1 same-name instance/hash ambiguity;
+  the final loaded MVID `3966756e-1b28-4995-91d1-1950a84ea6d3` completed an
+  opaque Touch of Insanity select/confirm journey and preserved the exact Bash
+  entity through its visible cost change from 2 to 0. The Surface remains
+  independent from pile/grid/deck selectors.
+
+- Preview.24 introduced `SharedVisibleState + Context + one Active Surface +
+  Authority`. The shared-state qualification MVID
+  `d2218a22-198a-4c74-bfba-c409e24c84d3` passed menu-null, active-run,
+  map/combat composition, and a confirmed Weak Potion post-state. Re consumes
+  normalized schema 17, validates shared/combat identities, and reports clean
+  `bridge_advertised` authority without a v1 shared-state sidecar. See the
+  preview.24 closeout report.
+
+- Preview.23 added purpose-specific `deck_upgrade_selection` for event/rest and
+  a separate staged `treasure_room` contract. Event Armaments+ and rest Prep
+  Time+ journeys confirmed exact upgrade post-state. Treasure request
+  `treasure-choose-1784288012` confirmed exact relic ownership and selection
+  closure; `treasure-proceed-1784288168` confirmed map transition. Chest open
+  and skip remain canary variants. See the Canonical Bridge closeout report.
 
 - Preview.14 added separate `shop_room` and `shop_inventory` contracts. Organic
   smokes completed open, close/reopen, an Armaments card purchase, a Blood Vial
@@ -77,8 +118,8 @@ as handoff history.
 - `agent:run` now stops at `game_over` or a top-level `menu` before the model can choose a restart; this was added after a real boss defeat showed that an unconstrained loop could otherwise cross the one-game boundary.
 - Negotiated STS2MCP protocol modes: default `auto`, compatibility-only `v1`, and strict `v2`.
 - Strict Bridge v2 capability/context/surface/command decoders, raw evidence preservation, exact build and observation-policy checks, and domain projections for deck enchant, ordinary event options, and immediate combat turns.
-- Runtime identity now reports `context.kind + surface.kind + actionAuthority`; Bridge contexts replace legacy action-relevant combat facts.
-- Dual-read/single-executor behavior: v1 sidecar context cannot add actions to a v2-owned surface; exact-build denial cannot silently regain v1 authority.
+- Runtime identity now reports `shared_state + context.kind + surface.kind + actionAuthority`; Bridge contexts replace legacy action-relevant combat facts.
+- Bridge-owned states use v2 shared facts and one Bridge executor. Explicitly legacy-owned states may use v1, but exact-build denial cannot silently regain v1 authority.
 - v2 command response identity and status/outcome consistency checks. Failed, timed-out, or transport-uncertain commands stop as unknown and are never retried.
 - Read-only `agent:inspect` negotiation against the installed game passed at the main menu: Bridge v2 exact identity was visible and `auto` correctly used v1 for the unsupported menu surface without calling DeepSeek or executing an action.
 - Organic Bridge v2 ordinary-event lifecycle: `SUNKEN_STATUE` exposed separate
@@ -187,10 +228,13 @@ No memory, learning, scoring, strategic scaffold, shadow mode, live additive mod
   qualify every target type, card effect, selector mode, or phase transition.
 - Hidden draw order remains excluded by policy. Implemented surface variants
   beyond those organically observed still require their own evidence.
-- Treasure, menu, and generic run-deck card-selection variants still depend on
-  explicitly labeled v1 local reconstruction in auto mode. Normal shop room,
-  card/relic/potion purchase, capacity suppression, and removal-child launch
-  are Bridge-owned; the removal child selector remains unqualified.
+- Treasure choose/Proceed are now Bridge v2 canary actions; open/skip remain
+  unqualified. Menu, character select, run start, game over, linked rewards,
+  transform, and unlisted maintenance variants still depend on explicit v1
+  ownership or fail closed.
+- Menu, character select, run start, and game over remain the largest v1
+  authority boundary. They need purpose-specific stages and semantic completion,
+  not a universal menu-click contract.
 - Composite state-plus-inspection drift is fail-closed but noisy during fast
   transitions. Future work may add bounded observable read retry or a coherent
   server observation token; it must never accept mixed adjacent states.
@@ -200,14 +244,13 @@ No memory, learning, scoring, strategic scaffold, shadow mode, live additive mod
 
 ## Validation
 
-On 2026-07-17, the architecture/completion hardening passed 115/115 Re tests,
-50/50 Bridge contract/runtime tests, strict typecheck, and both production
-builds; the Bridge Release build had zero warnings and zero errors. A clean
-Steam restart then exposed exact v0.109 candidate authority, fail-closed
-main-menu state, fast `inspection_not_available` for `run_deck`, and a read-only
-Re inspection with no allowed actions. The strengthened destructive completion
-witness still requires a second organic merchant journey. See the latest
-command output rather than treating test counts as a permanent invariant.
+On 2026-07-18, preview.25 passed 123/123 Re tests, 55/55 Bridge tests, strict
+typecheck, Re production build, and the exact-source Bridge Release build with
+zero warnings/errors. Installed and Release DLL hashes matched; the loaded
+runtime reported the expected protocol, module identity, and exact game build.
+The final loaded MVID completed a combat potion action and exact shared/combat
+post-state. Treasure choose and Proceed remain preview.23 evidence. See the
+latest command output rather than treating test counts as permanent.
 
 ## Next Step
 
@@ -223,14 +266,14 @@ npm run agent:replay
 
 Start a fresh game manually, then run bounded windows and inspect each run with `npm run agent:replay`. Confirm that each record contains pre/post raw snapshots, the prompt, DeepSeek response, selected allowed action, MCP result, and settled post-state. Fix a repeatable protocol mismatch with a reduced raw fixture and contract test before running longer loops.
 
-The next high-frequency boundary should be chosen after reviewing preview.14's
-remaining evidence gaps. Generic deck maintenance is a strong candidate because
-both rest Smith and shop removal reach it, but it must preserve purpose-specific
-selection/preview/commit semantics rather than become a universal card selector.
-Keep linked reward sets and every unlisted executable surface unsupported until
-exact-build bindings, state-bound actions, completion evidence, and contract
-tests exist.
+Preview.25 is closed as a scoped release. The next evidenced migration target
+is v0.109 shop requalification: one fresh organic run recorded three clean v1
+shop decisions because historical v2 shop permission is still v0.108-only.
+Re-audit typed inventory, purchases, removal child, close, and Proceed before
+enabling a canary. The largest later boundary remains menu -> character select
+-> run start -> game over. Keep each purpose/stage explicit and prove semantic
+completion; do not infer a universal menu or purchase protocol.
 
 Canonical Bridge status and the latest evidence are in
 `../STS2MCP/docs/bridge-v2/CURRENT_STATUS.md` and
-`../STS2MCP/docs/bridge-v2/ORGANIC_LONG_RUN_AUDIT_2026-07-17.md`.
+`../STS2MCP/docs/bridge-v2/PREVIEW_25_EVENT_CARD_ACQUISITION_CANARY_2026-07-18.md`.

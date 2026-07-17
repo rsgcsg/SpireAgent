@@ -52,7 +52,7 @@ describe("normalizeCurrentState", () => {
     raw.card_select.can_confirm = true;
     const envelope = normalizeCurrentState(raw, TEST_ADAPTER);
 
-    expect(envelope.currentState.normalizedSchemaVersion).toBe(16);
+    expect(envelope.currentState.normalizedSchemaVersion).toBe(17);
     expect(envelope.currentState.surface).toMatchObject({
       kind: "card_selection",
       previewShowing: true,

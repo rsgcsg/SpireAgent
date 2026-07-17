@@ -377,6 +377,7 @@ function determineStability(surface: InteractionSurface, diagnosticsStatus: "ok"
   if (surface.kind === "deck_upgrade_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "combat_pile_card_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "combat_hand_card_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
+  if (surface.kind === "event_card_acquisition") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "generated_card_choice") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "card_bundle_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "card_reward_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
@@ -406,7 +407,7 @@ function isCompatible(context: SemanticContext, surface: InteractionSurface): bo
     rewards: ["reward_claim", "card_selection", "no_action", "unsupported"],
     map: ["map_navigation", "no_action", "unsupported"],
     rest: ["rest_site", "option_choice", "card_selection", "deck_upgrade_selection", "no_action", "unsupported"],
-    event: ["event_dialogue", "event_option", "option_choice", "card_selection", "deck_upgrade_selection", "card_bundle_selection", "no_action", "unsupported"],
+    event: ["event_dialogue", "event_option", "event_card_acquisition", "option_choice", "card_selection", "deck_upgrade_selection", "card_bundle_selection", "no_action", "unsupported"],
     shop: ["shop_inventory", "shop_room", "shop_interaction", "no_action", "unsupported"],
     treasure: ["treasure_room", "treasure_claim", "no_action", "unsupported"],
     crystal_sphere: ["grid_interaction", "no_action", "unsupported"],

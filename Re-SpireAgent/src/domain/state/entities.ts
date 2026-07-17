@@ -13,6 +13,7 @@ export interface StatusSnapshot {
 
 export interface RelicSnapshot {
   id: string;
+  entityId?: string;
   name?: string;
   description?: string;
   counter?: number | null;
@@ -21,6 +22,7 @@ export interface RelicSnapshot {
 
 export interface PotionSnapshot {
   id: string;
+  entityId?: string;
   name?: string;
   description?: string;
   slot?: number;

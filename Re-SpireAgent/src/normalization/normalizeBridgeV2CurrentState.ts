@@ -6,6 +6,7 @@ import {
   type BridgeSurfaceCompleteness,
   type CombatPileCardSelectionSurface,
   type CombatHandCardSelectionSurface,
+  type EventCardAcquisitionSurface,
   type GeneratedCardChoiceSurface,
   type CardBundleSelectionSurface,
   type CardRewardSelectionSurface,
@@ -33,6 +34,7 @@ import {
   isBridgeV2CombatContext,
   isBridgeV2CombatPileCardSelectionSurface,
   isBridgeV2CombatHandCardSelectionSurface,
+  isBridgeV2EventCardAcquisitionSurface,
   isBridgeV2GeneratedCardChoiceSurface,
   isBridgeV2CardBundleSelectionSurface,
   isBridgeV2CombatTurnSurface,
@@ -58,10 +60,12 @@ import {
   type BridgeV2CombatContext,
   type BridgeV2CombatPileCardSelectionSurface,
   type BridgeV2CombatHandCardSelectionSurface,
+  type BridgeV2EventCardAcquisitionSurface,
   type BridgeV2GeneratedCardChoiceSurface,
   type BridgeV2CardBundleSelectionSurface,
   type BridgeV2CardRewardSelectionSurface,
   type BridgeV2RewardClaimSurface,
+  type BridgeV2SharedVisibleState,
   type BridgeV2RestSiteSurface,
   type BridgeV2ShopContext,
   type BridgeV2ShopInventorySurface,
@@ -126,6 +130,10 @@ const ACTION_KINDS = {
     "confirm_combat_hand_selection",
     "close_combat_hand_peek"
   ]),
+  event_card_acquisition: new Set([
+    "select_event_card_acquisition",
+    "deselect_event_card_acquisition"
+  ]),
   generated_card_choice: new Set([
     "select_generated_card",
     "skip_generated_card_choice",
@@ -181,23 +189,27 @@ export function normalizeBridgeV2CurrentState(
   }
 
   const inherited = legacyEnvelope?.diagnostics.status !== "invalid" ? legacyEnvelope?.currentState : undefined;
+  const sharedProjection = state?.shared_state ? projectSharedVisibleState(state.shared_state) : undefined;
+  const mayInheritLegacy = state?.surface.kind === "unsupported"
+    && state.authority_handoff.status !== "bridge_owned";
   let context: SemanticContext = {
     kind: "unknown",
     reason: "Bridge v2 context could not be decoded",
     observedTopLevelKeys: Object.keys(rawState).sort()
   };
-  let player = inherited?.player;
+  let run = sharedProjection?.run ?? (mayInheritLegacy ? inherited?.run : undefined);
+  let player = sharedProjection?.player ?? (mayInheritLegacy ? inherited?.player : undefined);
   if (state && isBridgeV2EventContext(state.context)) {
     context = projectEventContext(state.context);
   } else if (state && isBridgeV2CombatContext(state.context)) {
     context = projectCombatContext(state.context);
-    player = projectCombatPlayer(state.context);
+    if (state.shared_state) player = projectCombatPlayer(state.context, state.shared_state);
   } else if (state && isBridgeV2RewardFlowContext(state.context)) {
     context = { kind: "reward_flow", rewardKind: state.context.reward_kind };
   } else if (state && isBridgeV2RestContext(state.context)) {
     context = { kind: "rest" };
   } else if (state && isBridgeV2ShopContext(state.context)) {
-    context = projectShopContext(state.context);
+    context = projectShopContext(sharedProjection?.player);
   } else if (state && isBridgeV2TreasureContext(state.context)) {
     context = { kind: "treasure" };
   } else if (state && isBridgeV2MapContext(state.context)) {
@@ -227,20 +239,28 @@ export function normalizeBridgeV2CurrentState(
     ...(projectedInspections.exhaustPile ? { exhaustPile: projectedInspections.exhaustPile } : {})
   };
 
-  if (inherited?.run || (inherited?.player && !isBridgeV2CombatContext(state?.context ?? { kind: "unknown" }))) {
+  if (mayInheritLegacy && (inherited?.run || inherited?.player)) {
     diagnostics.infer(
       "run/non_action_shared_state",
       ["legacy_v1_state"],
-      "dual-read sidecar only; Bridge v2 context, surface, and legal actions retain action authority"
+      "legacy fallback state only; a Bridge-owned semantic surface may not inherit shared facts from v1"
     );
   }
 
   const base = {
     normalizedSchemaVersion: NORMALIZED_STATE_SCHEMA_VERSION,
     sourceStateType: state ? `bridge_v2:${state.context.kind}:${state.surface.kind}` : "bridge_v2:invalid",
-    ...(inherited?.run ? { run: inherited.run } : {}),
+    ...(run ? { run } : {}),
     ...(player ? { player } : {}),
     ...(state && capabilities ? {
+      ...(state.shared_state ? {
+        bridgeSharedStateEvidence: {
+          scope: state.shared_state.scope,
+          playerVisibleSemantics: state.shared_state.completeness.player_visible_semantics,
+          sources: [...state.shared_state.completeness.sources],
+          missing: [...state.shared_state.completeness.missing]
+        }
+      } : {}),
       bridgeDiagnostics: [
         ...capabilities.diagnostics.map((diagnostic) => projectDiagnostic(diagnostic, "capabilities")),
         ...state.diagnostics.map((diagnostic) => projectDiagnostic(diagnostic, "state")),
@@ -276,6 +296,7 @@ export function normalizeBridgeV2CurrentState(
       diagnostics
     );
     validateAuthorityHandoff(state, capabilities, diagnostics);
+    validateSharedVisibleState(state.shared_state, state.surface.kind, diagnostics);
 
     if (!state.game.compatibility.action_execution_allowed || !capabilities.game.compatibility.action_execution_allowed) {
       if (observationOnlyCandidate) {
@@ -404,7 +425,7 @@ export function normalizeBridgeV2CurrentState(
         validateRestSiteState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
         surface = projectRestSiteSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
       } else if (isBridgeV2ShopInventorySurface(state.surface) && isBridgeV2ShopContext(state.context)) {
-        validateShopInventoryState(state.context, state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
+        validateShopInventoryState(state.shared_state, state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
         surface = projectShopInventorySurface(state.surface, state.state_id, state.legal_actions, state.completeness);
       } else if (isBridgeV2ShopRoomSurface(state.surface) && isBridgeV2ShopContext(state.context)) {
         validateShopRoomState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
@@ -413,7 +434,7 @@ export function normalizeBridgeV2CurrentState(
         validateTreasureRoomState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
         surface = projectTreasureRoomSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
       } else if (isBridgeV2CombatTurnSurface(state.surface) && isBridgeV2CombatContext(state.context)) {
-        validateCombatTurnState(state.context, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
+        validateCombatTurnState(state.shared_state, state.context, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
         surface = projectCombatTurnSurface(state.surface.room_entity_id, state.surface.can_end_turn, state.state_id, state.legal_actions, state.completeness);
       } else if (isBridgeV2CombatPileCardSelectionSurface(state.surface) && isBridgeV2CombatContext(state.context)) {
         validateCombatPileCardSelectionState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
@@ -421,6 +442,9 @@ export function normalizeBridgeV2CurrentState(
       } else if (isBridgeV2CombatHandCardSelectionSurface(state.surface) && isBridgeV2CombatContext(state.context)) {
         validateCombatHandCardSelectionState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
         surface = projectCombatHandCardSelectionSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
+      } else if (isBridgeV2EventCardAcquisitionSurface(state.surface) && isBridgeV2EventContext(state.context)) {
+        validateEventCardAcquisitionState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
+        surface = projectEventCardAcquisitionSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
       } else if (isBridgeV2GeneratedCardChoiceSurface(state.surface) && isBridgeV2CombatContext(state.context)) {
         validateGeneratedCardChoiceState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
         surface = projectGeneratedCardChoiceSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
@@ -472,8 +496,9 @@ export function normalizeBridgeV2CurrentState(
     rawState,
     currentState,
     diagnostics: builtDiagnostics,
-    // observed_at is excluded. The state id owns action identity while the
-    // sidecar hash protects prompt-visible shared state against stale execution.
+    // observed_at is excluded. The Bridge state id already includes the
+    // top-level shared_state; legacy data participates only on unsupported
+    // states where the v1 fallback still owns observation.
     stateHash: stateHash({
       bridgeStateId: state?.state_id ?? null,
       legacyState: legacyRaw ?? null,
@@ -829,8 +854,41 @@ function validateRestSiteState(
   }
 }
 
+function validateSharedVisibleState(
+  shared: BridgeV2SharedVisibleState | null,
+  surfaceKind: string,
+  diagnostics: DiagnosticsBuilder
+): void {
+  if (!shared) {
+    if (surfaceKind !== "unsupported") {
+      diagnostics.invalid("bridge_v2.shared_state", shared, "semantic Bridge-owned state requires shared visible run facts");
+    }
+    return;
+  }
+  if (shared.player.hp > shared.player.max_hp) {
+    diagnostics.invalid("bridge_v2.shared_state.player.hp", shared.player, "current HP exceeds max HP");
+  }
+  const relicIds = new Set(shared.player.relics.map((relic) => relic.entity_id));
+  if (relicIds.size !== shared.player.relics.length) {
+    diagnostics.invalid("bridge_v2.shared_state.player.relics", shared.player.relics, "relic entity ids must be unique");
+  }
+  const potionIds = new Set(shared.player.potions.map((potion) => potion.entity_id));
+  const potionSlots = new Set(shared.player.potions.map((potion) => potion.slot));
+  if (potionIds.size !== shared.player.potions.length || potionSlots.size !== shared.player.potions.length) {
+    diagnostics.invalid("bridge_v2.shared_state.player.potions", shared.player.potions, "potion entity ids and slots must be unique");
+  }
+  if (shared.player.potions.length > shared.player.max_potion_slots
+      || shared.player.potions.some((potion) => potion.slot >= shared.player.max_potion_slots)) {
+    diagnostics.invalid("bridge_v2.shared_state.player.potions", shared.player, "potion occupancy exceeds visible capacity");
+  }
+  const bossOrders = new Set(shared.run.bosses.map((boss) => boss.order));
+  if (bossOrders.size !== shared.run.bosses.length) {
+    diagnostics.invalid("bridge_v2.shared_state.run.bosses", shared.run.bosses, "boss order values must be unique");
+  }
+}
+
 function validateShopInventoryState(
-  context: BridgeV2ShopContext,
+  shared: BridgeV2SharedVisibleState | null,
   surface: BridgeV2ShopInventorySurface,
   stateId: string,
   actions: BridgeV2LegalAction[],
@@ -839,15 +897,11 @@ function validateShopInventoryState(
   readiness: string,
   diagnostics: DiagnosticsBuilder
 ): void {
-  const potionSlots = new Set(context.potions.map((potion) => potion.slot));
-  const ownedPotionIds = new Set(context.potions.map((potion) => potion.entity_id));
-  if (potionSlots.size !== context.potions.length || ownedPotionIds.size !== context.potions.length) {
-    diagnostics.invalid("bridge_v2.context.potions", context.potions, "shop potion slots and entity ids must be unique");
+  if (!shared) {
+    diagnostics.invalid("bridge_v2.shared_state", shared, "shop inventory requires shared player gold and potion capacity");
+    return;
   }
-  if (context.potions.length > context.max_potion_slots
-      || context.potions.some((potion) => potion.slot >= context.max_potion_slots)) {
-    diagnostics.invalid("bridge_v2.context.potions", context.potions, "shop potion occupancy exceeds visible capacity");
-  }
+  const player = shared.player;
 
   const offers = [
     ...surface.cards.map((offer) => ({ category: "card" as const, offer })),
@@ -863,7 +917,7 @@ function validateShopInventoryState(
   }
 
   for (const { category, offer } of offers) {
-    if (offer.affordable !== (context.gold >= offer.price)) {
+    if (offer.affordable !== (player.gold >= offer.price)) {
       diagnostics.invalid("bridge_v2.surface.shop_offers.affordable", offer, "shop affordability must match current visible gold and exact price");
     }
     if (offer.can_purchase
@@ -882,14 +936,14 @@ function validateShopInventoryState(
         ? "not_visible"
         : !offer.affordable
           ? "insufficient_gold"
-          : category === "potion" && context.potions.length >= context.max_potion_slots
+        : category === "potion" && player.potions.length >= player.max_potion_slots
             ? "potion_slots_full"
             : null;
     if (expectedFactBlock !== null && offer.blocked_reason !== expectedFactBlock) {
       diagnostics.invalid("bridge_v2.surface.shop_offers.blocked_reason", offer, "shop blocked reason contradicts visible stock, visibility, affordability, or capacity");
     }
     if (category === "potion"
-        && context.potions.length >= context.max_potion_slots
+        && player.potions.length >= player.max_potion_slots
         && offer.can_purchase) {
       diagnostics.invalid("bridge_v2.surface.potions.can_purchase", offer, "full potion capacity cannot advertise a potion purchase");
     }
@@ -1060,6 +1114,7 @@ function validateEventDialogueState(
 }
 
 function validateCombatTurnState(
+  shared: BridgeV2SharedVisibleState | null,
   context: BridgeV2CombatContext,
   stateId: string,
   actions: BridgeV2LegalAction[],
@@ -1068,13 +1123,24 @@ function validateCombatTurnState(
   readiness: string,
   diagnostics: DiagnosticsBuilder
 ): void {
-  if (!context.player.character) diagnostics.invalid("bridge_v2.context.player.character", context.player.character, "combat player character is required");
+  if (!shared) {
+    diagnostics.invalid("bridge_v2.shared_state", shared, "combat turn requires shared player identity and persistent HUD facts");
+    return;
+  }
+  if (context.player.player_entity_id !== shared.player.entity_id) {
+    diagnostics.invalid("bridge_v2.context.player.player_entity_id", context.player, "combat player must reference shared player identity");
+  }
   const handIds = new Set(context.player.hand.map((card) => card.entity_id));
   const enemyIds = new Set(context.enemies.map((enemy) => enemy.entity_id));
-  const potionSlots = new Set(context.player.potions.map((potion) => potion.slot));
+  const sharedPotionIds = new Set(shared.player.potions.map((potion) => potion.entity_id));
+  const potionStateIds = new Set(context.player.potion_states.map((potion) => potion.entity_id));
   if (handIds.size !== context.player.hand.length) diagnostics.invalid("bridge_v2.context.player.hand", context.player.hand, "hand card entity ids are not unique");
   if (enemyIds.size !== context.enemies.length) diagnostics.invalid("bridge_v2.context.enemies", context.enemies, "enemy entity ids are not unique");
-  if (potionSlots.size !== context.player.potions.length) diagnostics.invalid("bridge_v2.context.player.potions", context.player.potions, "potion slots are not unique");
+  if (potionStateIds.size !== context.player.potion_states.length
+      || potionStateIds.size !== sharedPotionIds.size
+      || context.player.potion_states.some((potion) => !sharedPotionIds.has(potion.entity_id))) {
+    diagnostics.invalid("bridge_v2.context.player.potion_states", context.player.potion_states, "combat potion state must cover each visible shared potion exactly once");
+  }
   if (readiness === "ready" && !context.is_play_phase) diagnostics.invalid("bridge_v2.context.is_play_phase", context.is_play_phase, "ready combat turn must be the player play phase");
   validateActions("combat_turn", stateId, actions, missing, advertisedOperations, readiness, diagnostics);
 }
@@ -1171,6 +1237,66 @@ function validateCombatHandCardSelectionState(
     if (action.kind === "confirm_combat_hand_selection"
         && (surface.selected_count < surface.min_select || surface.selected_count > surface.max_select)) {
       diagnostics.invalid("bridge_v2.legal_actions.kind", action.kind, "confirm appeared outside the selection range");
+    }
+  }
+}
+
+function validateEventCardAcquisitionState(
+  surface: BridgeV2EventCardAcquisitionSurface,
+  stateId: string,
+  actions: BridgeV2LegalAction[],
+  missing: string[],
+  advertisedOperations: ReadonlySet<string>,
+  readiness: string,
+  diagnostics: DiagnosticsBuilder
+): void {
+  if (surface.min_select !== surface.max_select || surface.max_select > surface.cards.length) {
+    diagnostics.invalid(
+      "bridge_v2.surface.selection_range",
+      { min: surface.min_select, max: surface.max_select, cards: surface.cards.length },
+      "audited event acquisition requires one fixed non-empty selection count within the visible cards"
+    );
+  }
+  if (surface.selected_count > surface.max_select
+      || surface.selected_count !== surface.selected_card_entity_ids.length) {
+    diagnostics.invalid(
+      "bridge_v2.surface.selected_count",
+      surface.selected_count,
+      "selected count must match the selected card ids and remain within the fixed acquisition count"
+    );
+  }
+  const cardIds = new Set(surface.cards.map((card) => card.entity_id));
+  if (cardIds.size !== surface.cards.length) {
+    diagnostics.invalid("bridge_v2.surface.cards", surface.cards, "event acquisition card entity ids are not unique");
+  }
+  const selectedIds = new Set(surface.selected_card_entity_ids);
+  if (selectedIds.size !== surface.selected_card_entity_ids.length) {
+    diagnostics.invalid("bridge_v2.surface.selected_card_entity_ids", surface.selected_card_entity_ids, "selected card ids are not unique");
+  }
+  for (const card of surface.cards) {
+    if (card.is_selected !== selectedIds.has(card.entity_id)) {
+      diagnostics.invalid("bridge_v2.surface.cards.is_selected", card, "card selected flag disagrees with selected ids");
+    }
+  }
+  validateActions("event_card_acquisition", stateId, actions, missing, advertisedOperations, readiness, diagnostics);
+  for (const action of actions) {
+    const bindings = action.entity_bindings.filter((binding) => binding.role === "card");
+    const boundCard = bindings.length === 1
+      ? surface.cards.find((card) => card.entity_id === bindings[0]!.entity_id)
+      : undefined;
+    if (!boundCard) {
+      diagnostics.invalid(
+        "bridge_v2.legal_actions.entity_bindings",
+        action.entity_bindings,
+        "event acquisition actions must bind exactly one visible card"
+      );
+      continue;
+    }
+    if (action.kind === "select_event_card_acquisition" && boundCard.is_selected) {
+      diagnostics.invalid("bridge_v2.legal_actions.kind", action.kind, "select action cannot bind an already selected card");
+    }
+    if (action.kind === "deselect_event_card_acquisition" && !boundCard.is_selected) {
+      diagnostics.invalid("bridge_v2.legal_actions.kind", action.kind, "deselect action must bind a selected card");
     }
   }
 }
@@ -1621,18 +1747,20 @@ function projectCombatContext(context: BridgeV2CombatContext): SemanticContext {
   };
 }
 
-function projectShopContext(context: BridgeV2ShopContext): SemanticContext {
+function projectShopContext(player?: PlayerSnapshot): SemanticContext {
   return {
     kind: "shop",
-    gold: context.gold,
-    maxPotionSlots: context.max_potion_slots,
-    potions: context.potions.map((potion) => ({
-      entityId: potion.entity_id,
-      id: potion.definition_id,
-      ...(potion.name ? { name: potion.name } : {}),
-      ...(potion.description ? { description: potion.description } : {}),
-      slot: potion.slot
-    }))
+    ...(player?.gold !== undefined ? { gold: player.gold } : {}),
+    ...(player?.maxPotionSlots !== undefined ? { maxPotionSlots: player.maxPotionSlots } : {}),
+    ...(player ? {
+      potions: player.potions.map((potion) => ({
+        entityId: potion.entityId ?? potion.id,
+        id: potion.id,
+        ...(potion.name ? { name: potion.name } : {}),
+        ...(potion.description ? { description: potion.description } : {}),
+        slot: potion.slot ?? 0
+      }))
+    } : {})
   };
 }
 
@@ -1670,17 +1798,79 @@ function projectMapContext(context: BridgeV2MapContext): SemanticContext {
   };
 }
 
-function projectCombatPlayer(context: BridgeV2CombatContext): PlayerSnapshot {
-  const player = context.player;
+function projectSharedVisibleState(shared: BridgeV2SharedVisibleState): {
+  run: NonNullable<NormalizedCurrentState["run"]>;
+  player: PlayerSnapshot;
+} {
+  const keywords = (items: Array<{ name: string; description?: string | null }>) => items.map((item) => ({
+    name: item.name,
+    ...(item.description ? { description: item.description } : {})
+  }));
   return {
-    character: player.character ?? "unknown",
-    hp: player.hp,
-    maxHp: player.max_hp,
+    run: {
+      characterId: shared.player.character_definition_id,
+      act: shared.run.act,
+      actId: shared.run.act_definition_id,
+      ...(shared.run.act_name ? { actName: shared.run.act_name } : {}),
+      floor: shared.run.floor,
+      ascension: shared.run.ascension,
+      bosses: shared.run.bosses.map((boss) => ({
+        id: boss.definition_id,
+        ...(boss.name ? { name: boss.name } : {}),
+        order: boss.order
+      })),
+      modifiers: shared.run.modifiers.map((modifier) => ({
+        id: modifier.definition_id,
+        ...(modifier.name ? { name: modifier.name } : {}),
+        ...(modifier.description ? { description: modifier.description } : {}),
+        keywords: keywords(modifier.keywords)
+      }))
+    },
+    player: {
+      character: shared.player.character_name ?? shared.player.character_definition_id,
+      hp: shared.player.hp,
+      maxHp: shared.player.max_hp,
+      gold: shared.player.gold,
+      hand: [],
+      drawPile: [],
+      discardPile: [],
+      exhaustPile: [],
+      orbs: [],
+      statuses: [],
+      relics: shared.player.relics.map((relic) => ({
+        entityId: relic.entity_id,
+        id: relic.definition_id,
+        ...(relic.name ? { name: relic.name } : {}),
+        ...(relic.description ? { description: relic.description } : {}),
+        ...(relic.counter !== undefined ? { counter: relic.counter } : {}),
+        keywords: keywords(relic.keywords)
+      })),
+      potions: shared.player.potions.map((potion) => ({
+        entityId: potion.entity_id,
+        id: potion.definition_id,
+        ...(potion.name ? { name: potion.name } : {}),
+        ...(potion.description ? { description: potion.description } : {}),
+        slot: potion.slot,
+        keywords: keywords(potion.keywords)
+      })),
+      maxPotionSlots: shared.player.max_potion_slots
+    }
+  };
+}
+
+function projectCombatPlayer(
+  context: BridgeV2CombatContext,
+  shared: BridgeV2SharedVisibleState
+): PlayerSnapshot {
+  const player = context.player;
+  const persistent = projectSharedVisibleState(shared).player;
+  const potionStates = new Map(player.potion_states.map((potion) => [potion.entity_id, potion]));
+  return {
+    ...persistent,
     block: player.block,
     energy: player.energy,
     maxEnergy: player.max_energy,
     ...(player.stars !== null && player.stars !== undefined ? { stars: player.stars } : {}),
-    gold: player.gold,
     hand: player.hand.map(projectBridgeV2Card),
     drawPileCount: player.draw_pile_count,
     discardPileCount: player.discard_pile_count,
@@ -1695,24 +1885,17 @@ function projectCombatPlayer(context: BridgeV2CombatContext): PlayerSnapshot {
       type: status.type,
       ...(status.description ? { description: status.description } : {})
     })),
-    relics: player.relics.map((relic) => ({
-      id: relic.definition_id,
-      ...(relic.name ? { name: relic.name } : {}),
-      ...(relic.description ? { description: relic.description } : {}),
-      ...(relic.counter !== undefined ? { counter: relic.counter } : {}),
-      keywords: []
-    })),
-    potions: player.potions.map((potion) => ({
-      id: potion.definition_id,
-      ...(potion.name ? { name: potion.name } : {}),
-      ...(potion.description ? { description: potion.description } : {}),
-      slot: potion.slot,
-      targetType: potion.target_type,
-      canUseInCombat: potion.can_use,
-      automatic: potion.automatic,
-      keywords: []
-    })),
-    maxPotionSlots: player.max_potion_slots,
+    potions: persistent.potions.map((potion) => {
+      const state = potion.entityId ? potionStates.get(potion.entityId) : undefined;
+      return {
+        ...potion,
+        ...(state ? {
+          targetType: state.target_type,
+          canUseInCombat: state.can_use,
+          automatic: state.automatic
+        } : {})
+      };
+    }),
     orbs: player.orbs.map((orb) => ({
       id: orb.definition_id,
       ...(orb.name ? { name: orb.name } : {}),
@@ -1937,7 +2120,10 @@ function projectShopInventorySurface(
           ...(offer.relic.name ? { name: offer.relic.name } : {}),
           ...(offer.relic.description ? { description: offer.relic.description } : {}),
           ...(offer.relic.counter !== undefined ? { counter: offer.relic.counter } : {}),
-          keywords: []
+          keywords: offer.relic.keywords.map((keyword) => ({
+            name: keyword.name,
+            ...(keyword.description ? { description: keyword.description } : {})
+          }))
         }
       } : {})
     })),
@@ -2065,6 +2251,29 @@ function projectCombatHandCardSelectionSurface(
     selectedCardEntityIds: [...surface.selected_card_entity_ids],
     requireManualConfirmation: surface.require_manual_confirmation,
     isPeeking: surface.is_peeking,
+    cards: surface.cards.map(projectBridgeV2Card),
+    legalActions: projectActions(actions),
+    completeness: projectCompleteness(completeness)
+  };
+}
+
+function projectEventCardAcquisitionSurface(
+  surface: BridgeV2EventCardAcquisitionSurface,
+  stateId: string,
+  actions: BridgeV2LegalAction[],
+  completeness: RawCompleteness
+): EventCardAcquisitionSurface {
+  return {
+    kind: "event_card_acquisition",
+    bridgeStateId: stateId,
+    screenEntityId: surface.screen_entity_id,
+    prompt: surface.prompt,
+    destination: surface.destination,
+    minimumSelections: surface.min_select,
+    maximumSelections: surface.max_select,
+    selectedCount: surface.selected_count,
+    selectedCardEntityIds: [...surface.selected_card_entity_ids],
+    requireManualConfirmation: false,
     cards: surface.cards.map(projectBridgeV2Card),
     legalActions: projectActions(actions),
     completeness: projectCompleteness(completeness)

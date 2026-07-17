@@ -10,7 +10,7 @@ import type { JsonObject } from "../src/shared/json.js";
 import { fixture } from "./helpers.js";
 
 const CAPABILITIES = {
-  protocol_version: "2.0-preview.23",
+  protocol_version: "2.0-preview.25",
   bridge: {
     id: "sts2_mcp_bridge_v2",
     name: "STS2 Agent Bridge",
@@ -41,6 +41,14 @@ const CAPABILITIES = {
     }
   },
   observation_policy: { id: "player_visible_ui_v1", scope: "visible", includes_hidden_information: false, unknown_field_behavior: "omit" },
+  shared_state: {
+    status: "implemented_read_only_current_build",
+    scope: "active_single_player_run_hud",
+    creates_action_authority: false,
+    included_in_state_identity: true,
+    included_facts: ["act_floor_ascension", "local_player_identity_hp_gold", "relics", "potions_and_capacity"],
+    excluded_facts: ["deck_contents_use_inspection", "hidden_rng", "draw_order", "future_events", "future_rewards"]
+  },
   surfaces: [
     { kind: "deck_enchant_selection", support: "implemented_exact_game_version", operations: ["toggle_card"], evidence: "test-contract" },
     { kind: "deck_removal_selection", support: "implemented_exact_game_version", operations: ["toggle_deck_removal_card", "preview_deck_removal", "confirm_deck_removal", "cancel_deck_removal_preview", "cancel_deck_removal_selection"], evidence: "test-contract" },
@@ -51,6 +59,7 @@ const CAPABILITIES = {
     { kind: "combat_turn", support: "implemented_exact_game_version", operations: ["play_card", "use_potion", "end_turn"], evidence: "test-contract" },
     { kind: "combat_pile_card_selection", support: "implemented_exact_game_version", operations: ["toggle_combat_pile_card", "confirm_combat_pile_selection", "cancel_combat_pile_selection"], evidence: "test-contract" },
     { kind: "combat_hand_card_selection", support: "implemented_exact_game_version", operations: ["select_combat_hand_card", "deselect_combat_hand_card", "confirm_combat_hand_selection", "close_combat_hand_peek"], evidence: "test-contract" },
+    { kind: "event_card_acquisition", support: "implemented_exact_game_version", operations: ["select_event_card_acquisition", "deselect_event_card_acquisition"], evidence: "test-contract" },
     { kind: "generated_card_choice", support: "implemented_exact_game_version", operations: ["select_generated_card", "skip_generated_card_choice", "close_generated_card_choice_peek"], evidence: "test-contract" },
     { kind: "card_bundle_selection", support: "implemented_exact_game_version", operations: ["preview_card_bundle", "confirm_card_bundle", "cancel_card_bundle_preview"], evidence: "test-contract" },
     { kind: "card_reward_selection", support: "implemented_exact_game_version", operations: ["select_card_reward", "choose_card_reward_alternative"], evidence: "test-contract" },
@@ -81,12 +90,42 @@ const CAPABILITIES = {
   warnings: []
 };
 
+const SHARED_STATE = {
+  scope: "active_single_player_run",
+  run: {
+    act: 1,
+    act_definition_id: "OVERGROWTH",
+    act_name: "The Overgrowth",
+    floor: 6,
+    ascension: 0,
+    bosses: [{ definition_id: "TEST_SUBJECTS", name: "Test Subjects", order: 0 }],
+    modifiers: []
+  },
+  player: {
+    entity_id: "player-1",
+    character_definition_id: "IRONCLAD",
+    character_name: "Ironclad",
+    hp: 61,
+    max_hp: 80,
+    gold: 112,
+    relics: [],
+    potions: [],
+    max_potion_slots: 3
+  },
+  completeness: {
+    player_visible_semantics: "complete_for_strategy_relevant_persistent_single_player_hud",
+    sources: ["NTopBar"],
+    missing: []
+  }
+} satisfies JsonObject;
+
 const DECK_ENCHANT_STATE = {
-  protocol_version: "2.0-preview.23",
+  protocol_version: "2.0-preview.25",
   state_id: "state-test-1",
   state_sequence: 1,
   observed_at: "2026-07-16T00:00:00Z",
   readiness: "ready",
+  shared_state: SHARED_STATE,
   context: {
     kind: "event",
     event_id: "SPIRALING_WHIRLPOOL",
@@ -104,7 +143,7 @@ const DECK_ENCHANT_STATE = {
     min_select: 1,
     max_select: 1,
     selected_count: 0,
-    selected_card_entity_ids: [],
+    selected_card_entity_ids: [] as string[],
     cancelable: false,
     enchantment: {
       definition_id: "SLITHER",
@@ -160,10 +199,7 @@ const DECK_REMOVAL_STATE = {
   state_id: "state-shop-removal-1",
   state_sequence: 15,
   context: {
-    kind: "shop",
-    gold: 300,
-    max_potion_slots: 2,
-    potions: []
+    kind: "shop"
   },
   surface_kind: "deck_removal_selection",
   authority_handoff: { status: "bridge_owned", surface_kind: "deck_removal_selection", reason: "fixture ownership" },
@@ -456,27 +492,33 @@ const SHOP_INVENTORY_STATE = {
   ...DECK_ENCHANT_STATE,
   state_id: "state-shop-inventory-1",
   state_sequence: 4,
-  context: {
-    kind: "shop",
-    gold: 26,
-    max_potion_slots: 2,
-    potions: [
+  shared_state: {
+    ...SHARED_STATE,
+    player: {
+      ...SHARED_STATE.player,
+      gold: 26,
+      max_potion_slots: 2,
+      potions: [
       {
         entity_id: "owned-potion-power",
         definition_id: "POWER_POTION",
         name: "Power Potion",
         description: "Choose 1 of 3 random Powers to add to your hand. It costs 0 this turn.",
-        slot: 0
+        slot: 0,
+        keywords: []
       },
       {
         entity_id: "owned-potion-ashwater",
         definition_id: "ASHWATER",
         name: "Ashwater",
         description: "Gain a temporary combat benefit.",
-        slot: 1
+        slot: 1,
+        keywords: []
       }
-    ]
+      ]
+    }
   },
+  context: { kind: "shop" },
   surface_kind: "shop_inventory",
   authority_handoff: { status: "bridge_owned", surface_kind: "shop_inventory", reason: "fixture ownership" },
   surface: {
@@ -537,7 +579,8 @@ const SHOP_INVENTORY_STATE = {
         definition_id: "ANCHOR",
         name: "Anchor",
         description: "Start each combat with Block.",
-        counter: null
+        counter: null,
+        keywords: []
       }
     }],
     potions: [{
@@ -645,6 +688,15 @@ const COMBAT_TURN_STATE = {
   ...DECK_ENCHANT_STATE,
   state_id: "state-combat-1",
   state_sequence: 3,
+  shared_state: {
+    ...SHARED_STATE,
+    player: {
+      ...SHARED_STATE.player,
+      hp: 61,
+      max_hp: 80,
+      gold: 112
+    }
+  },
   context: {
     kind: "combat",
     encounter_type: "elite",
@@ -652,15 +704,11 @@ const COMBAT_TURN_STATE = {
     turn_owner: "player",
     is_play_phase: true,
     player: {
-      entity_id: "player-1",
-      character: "Ironclad",
-      hp: 61,
-      max_hp: 80,
+      player_entity_id: "player-1",
       block: 3,
       energy: 3,
       max_energy: 3,
       stars: null,
-      gold: 112,
       hand: [{
         entity_id: "combat-card-1",
         definition_id: "STRIKE",
@@ -681,9 +729,7 @@ const COMBAT_TURN_STATE = {
       discard_pile_count: 2,
       exhaust_pile_count: 0,
       statuses: [],
-      relics: [],
-      potions: [],
-      max_potion_slots: 3,
+      potion_states: [],
       orbs: [],
       orb_slots: null
     },
@@ -749,7 +795,7 @@ const COMBAT_PILE_CARD_SELECTION_STATE = {
     min_select: 1,
     max_select: 1,
     selected_count: 0,
-    selected_card_entity_ids: [],
+    selected_card_entity_ids: [] as string[],
     require_manual_confirmation: false,
     cancelable: false,
     cards: [
@@ -944,6 +990,79 @@ const GENERATED_CARD_CHOICE_STATE = {
     player_visible_semantics: "contract_complete_for_generated_combat_card_choice",
     legal_actions: "derived_from_exact_visible_choice_controls_and_opening_guard",
     sources: ["NChooseACardSelectionScreen", "NChoiceSelectionSkipButton", "NPeekButton"],
+    missing: []
+  }
+};
+
+const EVENT_CARD_ACQUISITION_STATE = {
+  ...DECK_ENCHANT_STATE,
+  state_id: "state-event-card-acquisition-1",
+  state_sequence: 9,
+  context: {
+    kind: "event",
+    event_id: "BRAIN_LEECH",
+    name: "Brain Leech",
+    ancient: false,
+    in_dialogue: false,
+    body: "Share knowledge."
+  },
+  surface_kind: "event_card_acquisition",
+  authority_handoff: { status: "bridge_owned", surface_kind: "event_card_acquisition", reason: "fixture ownership" },
+  surface: {
+    kind: "event_card_acquisition",
+    screen_entity_id: "event-card-screen-1",
+    prompt: "Choose a Card",
+    destination: "run_deck",
+    min_select: 1,
+    max_select: 1,
+    selected_count: 0,
+    selected_card_entity_ids: [] as string[],
+    require_manual_confirmation: false,
+    cards: [
+      {
+        entity_id: "event-card-1",
+        definition_id: "TWIN_STRIKE",
+        name: "Twin Strike",
+        type: "Attack",
+        cost: "1",
+        star_cost: null,
+        description: "Deal damage twice.",
+        rarity: "Common",
+        is_upgraded: false,
+        is_selected: false,
+        existing_enchantment: null
+      },
+      {
+        entity_id: "event-card-2",
+        definition_id: "OFFERING",
+        name: "Offering",
+        type: "Skill",
+        cost: "0",
+        star_cost: null,
+        description: "Lose HP. Gain energy. Draw cards.",
+        rarity: "Rare",
+        is_upgraded: false,
+        is_selected: false,
+        existing_enchantment: null
+      }
+    ]
+  },
+  legal_actions: [
+    {
+      action_id: "action-event-card-1",
+      state_id: "state-event-card-acquisition-1",
+      kind: "select_event_card_acquisition",
+      category: "selection",
+      label: "Choose Twin Strike to add to the run deck",
+      authority: "game_ui",
+      evidence_code: "NSimpleCardSelectScreen.NCardGrid.HolderPressed+EventModel.CardPileCmd.Add(Deck)",
+      entity_bindings: [{ role: "card", entity_id: "event-card-1" }]
+    }
+  ],
+  completeness: {
+    player_visible_semantics: "contract_complete_for_audited_event_card_acquisition",
+    legal_actions: "derived_from_exact_visible_grid_and_source_qualified_commit_semantics",
+    sources: ["BrainLeech.SelectCardsToAddToDeckFromGrid", "NSimpleCardSelectScreen"],
     missing: []
   }
 };
@@ -1318,7 +1437,7 @@ function visibleInspectionCard(overrides: Record<string, unknown> = {}) {
 
 function runDeckInspection(stateId: string, cards = [visibleInspectionCard()]) {
   return {
-        protocol_version: "2.0-preview.23",
+        protocol_version: "2.0-preview.25",
     inspection_id: `inspection-run-deck-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -1341,7 +1460,7 @@ function runDeckInspection(stateId: string, cards = [visibleInspectionCard()]) {
 
 function combatPilesInspection(stateId: string) {
   return {
-        protocol_version: "2.0-preview.23",
+        protocol_version: "2.0-preview.25",
     inspection_id: `inspection-combat-piles-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -1396,6 +1515,43 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
   it("strictly decodes the qualified surface and rejects discriminator mismatch", () => {
     expect(decodeBridgeV2State(DECK_ENCHANT_STATE).data.surface.kind).toBe("deck_enchant_selection");
     expect(() => decodeBridgeV2State({ ...DECK_ENCHANT_STATE, surface_kind: "other" })).toThrow("does not match");
+    expect(() => decodeBridgeV2State({ ...DECK_ENCHANT_STATE, shared_state: null })).toThrow(
+      "requires top-level shared_state"
+    );
+    const mismatchedCombatPlayer = structuredClone(COMBAT_TURN_STATE);
+    mismatchedCombatPlayer.context.player.player_entity_id = "other-player";
+    expect(() => decodeBridgeV2State(mismatchedCombatPlayer)).toThrow(
+      "does not match shared_state player entity_id"
+    );
+  });
+
+  it("uses shared_state as the sole persistent run/player authority on Bridge-owned states", async () => {
+    const legacyState = await fixture("event") as JsonObject;
+    const state = structuredClone(SHOP_ROOM_STATE);
+    (state.context as Record<string, unknown>).gold = 9999;
+    const envelope = normalizeCurrentState(wrapBridgeV2State({
+      state,
+      capabilities: structuredClone(CAPABILITIES),
+      legacyState
+    }), TEST_SOURCE);
+
+    expect(envelope.currentState).toMatchObject({
+      run: {
+        act: 1,
+        actId: "OVERGROWTH",
+        floor: 6,
+        bosses: [{ id: "TEST_SUBJECTS", order: 0 }]
+      },
+      player: { character: "Ironclad", hp: 61, maxHp: 80, gold: 26 },
+      context: { kind: "shop", gold: 26 },
+      bridgeSharedStateEvidence: {
+        scope: "active_single_player_run",
+        missing: []
+      }
+    });
+    expect(envelope.diagnostics.inferredFields).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ path: "run/non_action_shared_state" })
+    ]));
   });
 
   it("keeps merchant deck removal separate from universal deck selection and fails closed outside shop", () => {
@@ -1824,7 +1980,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 16,
+      normalizedSchemaVersion: 17,
       actionAuthority: "bridge_advertised",
       context: { kind: "event", ancient: true, inDialogue: true },
       surface: {
@@ -1872,7 +2028,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 16,
+      normalizedSchemaVersion: 17,
       actionAuthority: "bridge_advertised",
       context: { kind: "rest" },
       surface: {
@@ -1950,7 +2106,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 16,
+      normalizedSchemaVersion: 17,
       stability: "actionable",
       actionAuthority: "bridge_advertised",
       context: {
@@ -2105,7 +2261,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 16,
+      normalizedSchemaVersion: 17,
       actionAuthority: "bridge_advertised",
       context: {
         kind: "map",
@@ -2501,7 +2657,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 16,
+      normalizedSchemaVersion: 17,
       actionAuthority: "bridge_advertised",
       context: { kind: "combat", encounterType: "elite" },
       surface: {
@@ -2555,7 +2711,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 16,
+      normalizedSchemaVersion: 17,
       actionAuthority: "bridge_advertised",
       context: { kind: "combat" },
       surface: {
@@ -2613,7 +2769,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 16,
+      normalizedSchemaVersion: 17,
       actionAuthority: "bridge_advertised",
       context: { kind: "combat" },
       surface: {
@@ -2640,6 +2796,55 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     ]);
   });
 
+  it("keeps audited event acquisition separate and preserves its run-deck commit semantics", () => {
+    const envelope = normalizeCurrentState(
+      wrapBridgeV2State({
+        state: structuredClone(EVENT_CARD_ACQUISITION_STATE),
+        capabilities: structuredClone(CAPABILITIES)
+      }),
+      TEST_SOURCE
+    );
+
+    expect(envelope.currentState).toMatchObject({
+      normalizedSchemaVersion: 17,
+      actionAuthority: "bridge_advertised",
+      context: { kind: "event", eventId: "BRAIN_LEECH" },
+      surface: {
+        kind: "event_card_acquisition",
+        destination: "run_deck",
+        minimumSelections: 1,
+        maximumSelections: 1,
+        selectedCount: 0,
+        cards: [
+          { entityId: "event-card-1", id: "TWIN_STRIKE", selected: false },
+          { entityId: "event-card-2", id: "OFFERING", selected: false }
+        ]
+      }
+    });
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toEqual([
+      expect.objectContaining({
+        id: "action-event-card-1",
+        entityBindings: [{ role: "card", entityId: "event-card-1" }],
+        action: expect.objectContaining({
+          kind: "bridge_v2_action",
+          bridgeActionKind: "select_event_card_acquisition"
+        })
+      })
+    ]);
+  });
+
+  it("fails closed when event acquisition selected membership is inconsistent", () => {
+    const inconsistent = structuredClone(EVENT_CARD_ACQUISITION_STATE);
+    inconsistent.surface.selected_count = 1;
+    inconsistent.surface.selected_card_entity_ids = ["event-card-1"];
+    const envelope = normalizeCurrentState(
+      wrapBridgeV2State({ state: inconsistent, capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    );
+    expect(envelope.currentState.stability).toBe("invalid");
+    expect(envelope.currentState.actionAuthority).toBe("none");
+  });
+
   it("projects card bundles as atomic two-stage choices rather than independent cards", () => {
     const envelope = normalizeCurrentState(
       wrapBridgeV2State({
@@ -2650,7 +2855,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 16,
+      normalizedSchemaVersion: 17,
       actionAuthority: "bridge_advertised",
       context: { kind: "event", eventId: "NEOW" },
       surface: {
@@ -2819,6 +3024,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     expect(result).toMatchObject({ accepted: true, outcome: "accepted", response: { status: "completed" } });
     expect(pollCount).toBe(1);
     expect(requests.filter((request) => request.url.endsWith("/api/v1/singleplayer") && request.init?.method === "POST")).toHaveLength(0);
+    expect(requests.filter((request) => request.url.endsWith("/api/v1/singleplayer?format=json"))).toHaveLength(0);
     expect(requests.find((request) => request.url.endsWith("/api/v2/commands"))?.body).toMatchObject({
       expected_state_id: "state-test-1",
       action_id: "action-test-1"

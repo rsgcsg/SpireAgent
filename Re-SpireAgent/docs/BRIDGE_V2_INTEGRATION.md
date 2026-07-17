@@ -2,46 +2,29 @@
 
 ## Current Scope
 
-Re-SpireAgent supports the strict `2.0-preview.18` source contract for:
+Re-SpireAgent supports the strict `2.0-preview.25` source contract. Current
+v0.109 authority is read from capabilities rather than inferred from historical
+implementation:
 
-- `deck_enchant_selection`: organically end-to-end qualified;
-- `event_option`: organically qualified for ordinary event options;
-- `combat_turn`: organically qualified for repeated immediate combat actions;
-- `combat_pile_card_selection`: four organically settled single-pick
-  discard-pile actions across two earlier exact-build runs;
-- `combat_hand_card_selection`: organically qualified for one upgrade select
-  and confirm shape;
-- `generated_card_choice`: organically qualified for an observed temporary-card choice;
-- `card_bundle_selection`: organically qualified for an observed atomic bundle preview/commit;
-- `card_reward_selection`: organically qualified for one ordinary card/Skip
-  lifecycle;
-- `reward_claim`: ordinary claim and Proceed/Skip have bounded installed-game
-  and model-selected Re lifecycles;
-- `event_dialogue`: organically qualified for revealed-prefix advancement;
-- `rest_site`: organically qualified for option-to-child-overlay and Proceed-to-map boundaries;
-- `map_navigation`: organically qualified for repeated exact-node travel;
-- `shop_room`: organically qualified for open and Proceed ownership;
-- `shop_inventory`: organically qualified for close/reopen, ordinary card,
-  relic, and potion purchase with sold-out post-state, capacity suppression,
-  and launch of the bounded removal child selector;
-- `deck_removal_selection`: narrow v0.109 candidate flow observed through
-  selection -> automatic preview -> confirmation and exact run-deck post-state;
-- `run_deck` and `combat_piles`: fixed read-only, state-bound evidence.
+- scoped-qualified actions: `deck_removal_selection`,
+  `deck_upgrade_selection`, `combat_turn`, `combat_hand_card_selection`, and
+  ordinary single-player `rest_site`;
+- current-build action canaries: `event_card_acquisition`, `reward_claim`,
+  `card_reward_selection`, `map_navigation`, and `treasure_room`;
+- scoped-qualified read-only Inspection: `run_deck`;
+- every unlisted Surface and Inspection: disabled for this build.
 
-All organic evidence is scoped to exact game identity
-`v0.108.0|58694f64|-2044609792`. Historical earlier-preview evidence is retained
-but does not silently qualify later previews or builds. The installed Steam
-build is `v0.109.0|c12f634d|-840572606`; preview.18 permits only a strict
-merchant-removal action canary and a separate read-only `run_deck` inspection
-canary. One exact ordinary merchant-removal journey is now verified: the
-selected visible instance survived into preview, then disappeared from a
-same-state 11 -> 10 `run_deck` post-state after confirmation. Inspection
-content is retained as `bridgeInspectionFacts`, independent
-of whether the active context has a full player projection. There is no
-candidate-build legacy sidecar merge and no authority for any other surface or
-inspection. This is narrow candidate evidence for that exact journey only, not
-formal organic qualification, broad execution authority, or a reusable generic
-card-selector contract.
+Current-build organic evidence includes merchant removal with exact post-state,
+independent event/rest upgrade journeys, ordinary combat actions, a Touch of
+Insanity hand-select/confirm journey, ordinary rest Heal/Smith/Proceed, a Brain
+Leech exact-card acquisition, one coherent reward/card-reward/map journey, and
+treasure relic choose plus Proceed. Treasure
+open/skip, linked rewards, special map modes, and unlisted variants remain
+unqualified.
+
+Historical v0.108 evidence for enchantment, events, rest, shop, combat child
+selectors, bundles, and combat-pile Inspection remains protocol history only.
+It does not silently grant v0.109 execution authority.
 
 ## State Identity
 
@@ -49,19 +32,24 @@ No single kind represents the full current state. Runtime output and prompts
 carry:
 
 ```text
-context.kind + surface.kind + actionAuthority
+shared_state + context.kind + surface.kind + actionAuthority
 ```
 
+- shared state: persistent visible single-player run/player HUD facts;
 - context: semantic game situation (`event`, `combat`, `reward_flow`, etc.);
 - surface: currently blocking interaction protocol;
 - authority: `bridge_advertised`, `local_reconstruction`, or `none`.
 
-For Bridge-owned states, a v1 sidecar may retain compatible shared run metadata
-but cannot overwrite action-relevant v2 facts or add actions.
+For Bridge-owned states, top-level v2 `shared_state` is the sole persistent
+run/player authority. It is read-only, included in state identity, and cannot
+add actions. Re rejects a semantic Bridge state without it, mismatched combat
+player identity, or incomplete combat potion coverage. Unsupported
+legacy-owned states may still use v1 for their complete Context/Surface
+projection, but no v1 sidecar merges into a Bridge-owned state.
 
 ## Action Entity Bindings
 
-`preview.16` keeps `action_id` as the only executable command argument, but each
+Bridge v2 keeps `action_id` as the only executable command argument, but each
 legal action also carries non-executable role-to-entity bindings. Re requires
 every binding to resolve to an entity already present in the visible Context or
 Surface, preserves the bindings in normalized state and decision evidence, and
@@ -100,15 +88,21 @@ purchase, or action bound to an unavailable offer fails closed.
 Organic preview.14 evidence covers room open, inventory close/reopen, direct
 card/relic/potion purchases, sold-out post-states, and Proceed to map. The
 merchant removal child is a different Surface. Preview.15 defines its exact
-`shop + NDeckCardSelectScreen` contract. Preview.18 revalidated one v0.109
-ordinary journey. Its selection action entered preview directly in the observed
-shape; the current legal action set, rather than a declared preview operation,
-is authoritative. A second independent merchant journey is still needed before
-any resilience claim, and no other deck-selection owner is covered. Exact-source
-review found that selector closure occurs before all merchant-removal effects
-finish, so Bridge completion now waits for the selected-instance/deck/gold/
-counter/service postcondition. Re consumes the same wire actions and still runs
-its ordinary stable post-state settlement after `completed/confirmed`.
+`shop + NDeckCardSelectScreen` contract. Preview.23 keeps the exact strong
+merchant witness: selector closure alone is insufficient; selected instance,
+deck, gold, removal counter, and service state must agree. The event/rest
+`deck_upgrade_selection` contract shares only read/constraint mechanics and
+requires its own exact upgraded-card post-state. Neither contract creates a
+generic deck selector.
+
+## Treasure Contract
+
+Treasure uses `treasure + treasure_room`, not `reward_flow + reward_claim`.
+Stages are `closed`, `opening`, `relic_choice`, and `completed`. The opening
+animation publishes no actions. Relic choose completes only after exact relic
+ownership increases and the selection closes; Proceed completes only after the
+room leaves or map opens. Current organic evidence confirms choose and Proceed.
+Open and skip remain unqualified variants.
 
 ## Typed Diagnostics
 
@@ -146,9 +140,9 @@ the adapter rejects the partial snapshot with a typed transient observation erro
 The settlement watcher may retry only this error within its existing timeout;
 decision and execution authorization reads remain fail-closed.
 
-The v0.109 candidate currently exposes only `run_deck` as an independently
-scoped read-only canary. It was runtime-smoked as part of the merchant-removal
-post-state lifecycle; `combat_piles` remains disabled.
+The current v0.109 scope exposes only `run_deck` as
+`qualified_read_only_scoped`. It has supported merchant-removal and deck-upgrade
+post-state evidence. `combat_piles` remains disabled on this build.
 
 ## Card Reward Contract
 
@@ -162,6 +156,22 @@ advertised for the exact state may execute. Missing clickability, visible
 labels, containers, or other action-critical facts suppress the entire surface.
 Completion requires the overlay to close or the visible option object set to be
 replaced, which covers reroll without assuming closure.
+
+## Event Card-Acquisition Contract
+
+Event card acquisition uses `event + event_card_acquisition`. It is not the
+ordinary room-reward contract and not a universal simple-grid selector. The
+current source gate accepts only exact audited event add-to-run-deck call sites:
+Brain Leech with one of five cards and Room Full of Cheese with two of eight.
+Sealed Deck, Sea Glass, Choices Paradox, and unknown simple-grid sources fail
+closed.
+
+Re validates exact selection constraints, selected-card membership, visible
+card identities, and one-to-one opaque action bindings. Final auto-commit is
+accepted only when Bridge confirms child closure, the expected run-deck count
+increase, and every selected exact card instance in the run deck. Current
+organic evidence covers Brain Leech one-card commit only; the Surface remains
+an action canary until the distinct two-card flow is exercised.
 
 ## Outer Reward Claim Contract
 
@@ -195,10 +205,12 @@ serialization never grants common execution semantics.
 
 Ancient dialogue projects only the revealed prefix ending at the exact current
 line; game-created future line nodes are deliberately excluded. Rest owns only
-exact option controls and Proceed. Smith's deck selector is a separate surface
-and currently remains legacy-owned. Map projects visible topology and exact
-current choices; asynchronous completion requires map closure or the exact
-selected current coordinate, not an arbitrary state change.
+exact option controls and Proceed. On v0.109, ordinary single-player Heal uses
+an exact HP witness, Smith must open the exact upgrade child, and unknown
+enabled options suppress the Surface. Smith's deck selector remains a separate
+qualified Surface. Map projects visible topology and exact current choices;
+asynchronous completion requires map closure or the exact selected current
+coordinate, not an arbitrary state change.
 
 ## Modes
 
@@ -240,17 +252,19 @@ or command identity/status/outcome is inconsistent.
 poll timeout are unknown and never automatically retried.
 
 `completeness.playerVisibleSemantics` is scoped to the active bounded Surface.
-It does not assert that every visible HUD, hover tooltip, or other screen in the
-game has a Bridge projection. Re may merge only compatible shared v1 sidecar
-facts; those facts cannot add actions to a Bridge-owned surface.
+Top-level `shared_state.completeness` separately scopes persistent HUD facts.
+Neither asserts that every tooltip or other screen has a Bridge projection, and
+neither can add actions to a Bridge-owned surface.
 
 ## Evidence And Next Step
 
-Fresh exact-build evidence includes persistent Glam post-state through
-`run_deck`, non-empty draw/discard/exhaust through `combat_piles`, natural
-generated-card and bundle choices, ancient dialogue, repeated map travel, and
-the rest option -> child selector -> rest Proceed boundary. Draw order remains
-intentionally hidden.
+Current v0.109 evidence includes merchant removal, event/rest upgrade, ordinary
+rest, ordinary combat, Brain Leech event card acquisition,
+reward/card-reward/map canaries, and treasure choose/Proceed. Historical
+v0.108 evidence includes persistent Glam through `run_deck`, non-empty combat
+piles, generated-card and bundle choices, ancient dialogue, rest, shop, and
+other previously qualified shapes. Historical evidence remains visible but does
+not grant current-build authority. Draw order remains intentionally hidden.
 
 Composite state-plus-inspection reads are coherence checked. Earlier long runs
 long runs recorded 23 transient drifts during fast game transitions; every one
@@ -258,5 +272,11 @@ produced no prompt and no execution, and the next tick obtained a fresh state.
 This is observable retry/ergonomics debt, not permission to accept mixed
 evidence.
 
-This integration does not add memory, learning, scoring, hidden-information
-access, arbitrary MCP calls, generic action payloads, or broad v2 coverage.
+Preview.24 organically verified menu-null, active-run shared facts, map/combat
+composition, and an exact combat potion post-state on the final installed MVID.
+Preview.25 then verified a Brain Leech exact-card auto-commit and same-instance
+run-deck post-state. Continue the organic run to the next coherent blocking
+legacy boundary; the planned largest boundary remains the purpose-specific
+menu -> character select -> run start -> game-over journey. This integration
+does not add memory, learning, scoring, hidden-information access, arbitrary MCP
+calls, generic action payloads, or broad v2 coverage.

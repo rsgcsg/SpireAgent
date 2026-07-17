@@ -95,6 +95,7 @@ export type InteractionSurface =
   | CombatTurnSurface
   | CombatPileCardSelectionSurface
   | CombatHandCardSelectionSurface
+  | EventCardAcquisitionSurface
   | GeneratedCardChoiceSurface
   | CardBundleSelectionSurface
   | CardSelectionSurface
@@ -165,6 +166,23 @@ export interface CombatHandCardSelectionSurface {
   selectedCardEntityIds: string[];
   requireManualConfirmation: boolean;
   isPeeking: boolean;
+  cards: CardSnapshot[];
+  legalActions: BridgeLegalActionSnapshot[];
+  completeness: BridgeSurfaceCompleteness;
+}
+
+/** Audited event choice that commits selected exact cards to the run deck. */
+export interface EventCardAcquisitionSurface {
+  kind: "event_card_acquisition";
+  bridgeStateId: string;
+  screenEntityId: string;
+  prompt: string;
+  destination: "run_deck";
+  minimumSelections: number;
+  maximumSelections: number;
+  selectedCount: number;
+  selectedCardEntityIds: string[];
+  requireManualConfirmation: false;
   cards: CardSnapshot[];
   legalActions: BridgeLegalActionSnapshot[];
   completeness: BridgeSurfaceCompleteness;

@@ -77,6 +77,10 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
           action_execution_allowed: bridge.game.compatibility.action_execution_allowed,
           state_observation_allowed: bridge.game.compatibility.state_observation_allowed,
           inspection_allowed: bridge.game.compatibility.inspection_allowed,
+          shared_state_status: bridge.shared_state.status,
+          shared_state_scope: bridge.shared_state.scope,
+          shared_state_creates_action_authority: bridge.shared_state.creates_action_authority,
+          shared_state_included_in_state_identity: bridge.shared_state.included_in_state_identity,
           action_execution_surface_kinds: bridge.game.compatibility.action_execution_surface_kinds,
           action_canary_surface_kinds: bridge.game.compatibility.action_canary_surface_kinds,
           observation_only_surface_kinds: bridge.game.compatibility.observation_only_surface_kinds,
@@ -110,13 +114,15 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
     const state = await this.bridge.state();
     const candidateBuild = isCandidateBuild(capabilities.data, state.data);
     const scopedQualifiedBuild = isScopedQualifiedBuild(capabilities.data, state.data);
+    const bridgeOwnedState = state.data.authority_handoff.status === "bridge_owned"
+      && state.data.surface.kind !== "unsupported";
 
     // Legacy fallback is allowed only when a coherent exact v2 contract
     // explicitly says this surface is unsupported. Any contract drift remains
     // visible to the strict normalizer and fails closed.
     if (this.options.mode === "v2" || !isSafeExplicitLegacyFallback(capabilities.data, state.data)) {
       const [legacyState, inspections] = await Promise.all([
-        candidateBuild || scopedQualifiedBuild || this.options.mode === "v2"
+        candidateBuild || scopedQualifiedBuild || bridgeOwnedState || this.options.mode === "v2"
           ? undefined
           : this.tryReadLegacySidecar(),
         // Candidate builds may expose a separately scoped, v2-owned

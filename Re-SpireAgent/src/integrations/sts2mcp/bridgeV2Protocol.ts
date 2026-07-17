@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { isJsonObject, type JsonObject } from "../../shared/json.js";
 
-export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.23" as const;
+export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.25" as const;
 
 const compatibilitySchema = z.object({
   status: z.string().min(1),
@@ -105,17 +105,18 @@ const visiblePotionSchema = z.object({
   automatic: z.boolean()
 }).passthrough();
 
+const visibleKeywordSchema = z.object({
+  name: z.string().min(1),
+  description: z.string().nullable().optional()
+}).passthrough();
+
 const visibleRelicSchema = z.object({
   entity_id: z.string().min(1),
   definition_id: z.string().min(1),
   name: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
-  counter: z.number().nullable().optional()
-}).passthrough();
-
-const visibleKeywordSchema = z.object({
-  name: z.string().min(1),
-  description: z.string().nullable().optional()
+  counter: z.number().nullable().optional(),
+  keywords: z.array(visibleKeywordSchema)
 }).passthrough();
 
 const visibleTreasureRelicSchema = z.object({
@@ -137,23 +138,22 @@ const visibleOrbSchema = z.object({
 }).passthrough();
 
 const visibleCombatPlayerSchema = z.object({
-  entity_id: z.string().min(1),
-  character: z.string().nullable().optional(),
-  hp: z.number(),
-  max_hp: z.number(),
+  player_entity_id: z.string().min(1),
   block: z.number(),
   energy: z.number().int(),
   max_energy: z.number().int(),
   stars: z.number().int().nullable().optional(),
-  gold: z.number().int(),
   hand: z.array(visibleCardSchema),
   draw_pile_count: z.number().int().nonnegative(),
   discard_pile_count: z.number().int().nonnegative(),
   exhaust_pile_count: z.number().int().nonnegative(),
   statuses: z.array(visibleStatusSchema),
-  relics: z.array(visibleRelicSchema),
-  potions: z.array(visiblePotionSchema),
-  max_potion_slots: z.number().int().nonnegative(),
+  potion_states: z.array(z.object({
+    entity_id: z.string().min(1),
+    target_type: z.string(),
+    can_use: z.boolean(),
+    automatic: z.boolean()
+  }).passthrough()),
   orbs: z.array(visibleOrbSchema),
   orb_slots: z.number().int().nonnegative().nullable().optional()
 }).passthrough();
@@ -195,14 +195,50 @@ const visibleOwnedPotionSchema = z.object({
   definition_id: z.string().min(1),
   name: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
-  slot: z.number().int().nonnegative()
+  slot: z.number().int().nonnegative(),
+  keywords: z.array(visibleKeywordSchema)
 }).passthrough();
 
 const shopContextSchema = z.object({
-  kind: z.literal("shop"),
-  gold: z.number().int().nonnegative(),
-  max_potion_slots: z.number().int().nonnegative(),
-  potions: z.array(visibleOwnedPotionSchema)
+  kind: z.literal("shop")
+}).passthrough();
+
+const sharedVisibleStateSchema = z.object({
+  scope: z.literal("active_single_player_run"),
+  run: z.object({
+    act: z.number().int().positive(),
+    act_definition_id: z.string().min(1),
+    act_name: z.string().nullable().optional(),
+    floor: z.number().int().nonnegative(),
+    ascension: z.number().int().nonnegative(),
+    bosses: z.array(z.object({
+      definition_id: z.string().min(1),
+      name: z.string().nullable().optional(),
+      order: z.number().int().nonnegative()
+    }).passthrough()),
+    modifiers: z.array(z.object({
+      definition_id: z.string().min(1),
+      name: z.string().nullable().optional(),
+      description: z.string().nullable().optional(),
+      keywords: z.array(visibleKeywordSchema)
+    }).passthrough())
+  }).passthrough(),
+  player: z.object({
+    entity_id: z.string().min(1),
+    character_definition_id: z.string().min(1),
+    character_name: z.string().nullable().optional(),
+    hp: z.number(),
+    max_hp: z.number(),
+    gold: z.number().int().nonnegative(),
+    relics: z.array(visibleRelicSchema),
+    potions: z.array(visibleOwnedPotionSchema),
+    max_potion_slots: z.number().int().nonnegative()
+  }).passthrough(),
+  completeness: z.object({
+    player_visible_semantics: z.string().min(1),
+    sources: z.array(z.string().min(1)),
+    missing: z.array(z.string().min(1))
+  }).passthrough()
 }).passthrough();
 
 const visibleMapCoordinateSchema = z.object({
@@ -428,6 +464,19 @@ const combatHandCardSelectionSurfaceSchema = z.object({
   cards: z.array(visibleCardSchema)
 }).passthrough();
 
+const eventCardAcquisitionSurfaceSchema = z.object({
+  kind: z.literal("event_card_acquisition"),
+  screen_entity_id: z.string().min(1),
+  prompt: z.string().min(1),
+  destination: z.literal("run_deck"),
+  min_select: z.number().int().positive(),
+  max_select: z.number().int().positive(),
+  selected_count: z.number().int().nonnegative(),
+  selected_card_entity_ids: z.array(z.string().min(1)),
+  require_manual_confirmation: z.literal(false),
+  cards: z.array(visibleCardSchema).min(1)
+}).passthrough();
+
 const generatedCardChoiceSurfaceSchema = z.object({
   kind: z.literal("generated_card_choice"),
   screen_entity_id: z.string().min(1),
@@ -609,6 +658,7 @@ const stateBaseSchema = z.object({
   state_sequence: z.number().int().nonnegative(),
   observed_at: z.string(),
   readiness: z.string().min(1),
+  shared_state: sharedVisibleStateSchema.nullable(),
   context: contextBaseSchema,
   surface_kind: z.string().min(1),
   surface: surfaceBaseSchema,
@@ -634,6 +684,14 @@ const capabilitiesSchema = z.object({
   observation_policy: z.object({
     id: z.string().min(1),
     includes_hidden_information: z.boolean()
+  }).passthrough(),
+  shared_state: z.object({
+    status: z.literal("implemented_read_only_current_build"),
+    scope: z.literal("active_single_player_run_hud"),
+    creates_action_authority: z.literal(false),
+    included_in_state_identity: z.literal(true),
+    included_facts: z.array(z.string().min(1)),
+    excluded_facts: z.array(z.string().min(1))
   }).passthrough(),
   surfaces: z.array(z.object({
     kind: z.string().min(1),
@@ -693,6 +751,7 @@ export type BridgeV2TreasureRoomSurface = z.infer<typeof treasureRoomSurfaceSche
 export type BridgeV2CombatTurnSurface = z.infer<typeof combatTurnSurfaceSchema>;
 export type BridgeV2CombatPileCardSelectionSurface = z.infer<typeof combatPileCardSelectionSurfaceSchema>;
 export type BridgeV2CombatHandCardSelectionSurface = z.infer<typeof combatHandCardSelectionSurfaceSchema>;
+export type BridgeV2EventCardAcquisitionSurface = z.infer<typeof eventCardAcquisitionSurfaceSchema>;
 export type BridgeV2GeneratedCardChoiceSurface = z.infer<typeof generatedCardChoiceSurfaceSchema>;
 export type BridgeV2CardBundleSelectionSurface = z.infer<typeof cardBundleSelectionSurfaceSchema>;
 export type BridgeV2CardRewardSelectionSurface = z.infer<typeof cardRewardSelectionSurfaceSchema>;
@@ -727,6 +786,7 @@ export type BridgeV2Surface =
   | BridgeV2CombatTurnSurface
   | BridgeV2CombatPileCardSelectionSurface
   | BridgeV2CombatHandCardSelectionSurface
+  | BridgeV2EventCardAcquisitionSurface
   | BridgeV2GeneratedCardChoiceSurface
   | BridgeV2CardBundleSelectionSurface
   | BridgeV2CardRewardSelectionSurface
@@ -739,6 +799,8 @@ export type BridgeV2State = z.infer<typeof stateBaseSchema> & {
   context: BridgeV2Context;
   surface: BridgeV2Surface;
 };
+
+export type BridgeV2SharedVisibleState = z.infer<typeof sharedVisibleStateSchema>;
 
 export interface DecodedBridgePayload<T> {
   data: T;
@@ -761,6 +823,12 @@ export function decodeBridgeV2State(value: unknown): DecodedBridgePayload<Bridge
   if (decoded.data.surface_kind !== decoded.data.surface.kind) {
     throw new BridgeV2DecodeError(
       `Bridge v2 state surface_kind ${decoded.data.surface_kind} does not match surface.kind ${decoded.data.surface.kind}`
+    );
+  }
+
+  if (decoded.data.surface.kind !== "unsupported" && decoded.data.shared_state === null) {
+    throw new BridgeV2DecodeError(
+      "Bridge v2 semantic surface requires top-level shared_state for the active single-player run"
     );
   }
 
@@ -823,6 +891,11 @@ export function decodeBridgeV2State(value: unknown): DecodedBridgePayload<Bridge
     if (context.kind !== "combat") {
       throw new BridgeV2DecodeError("Bridge v2 combat_hand_card_selection surface requires combat context");
     }
+  } else if (decoded.data.surface.kind === "event_card_acquisition") {
+    surface = parse(eventCardAcquisitionSurfaceSchema, decoded.data.surface, "event_card_acquisition surface");
+    if (context.kind !== "event") {
+      throw new BridgeV2DecodeError("Bridge v2 event_card_acquisition surface requires event context");
+    }
   } else if (decoded.data.surface.kind === "generated_card_choice") {
     surface = parse(generatedCardChoiceSurfaceSchema, decoded.data.surface, "generated_card_choice surface");
     if (context.kind !== "combat") {
@@ -854,7 +927,14 @@ export function decodeBridgeV2State(value: unknown): DecodedBridgePayload<Bridge
     surface = decoded.data.surface;
   }
 
-  const visibleEntityIds = collectEntityIds({ context, surface });
+  if (isBridgeV2CombatContext(context) && decoded.data.shared_state
+      && context.player.player_entity_id !== decoded.data.shared_state.player.entity_id) {
+    throw new BridgeV2DecodeError(
+      "Bridge v2 combat player_entity_id does not match shared_state player entity_id"
+    );
+  }
+
+  const visibleEntityIds = collectEntityIds({ shared_state: decoded.data.shared_state, context, surface });
   for (const action of decoded.data.legal_actions) {
     for (const binding of action.entity_bindings) {
       if (!visibleEntityIds.has(binding.entity_id)) {
@@ -1003,6 +1083,12 @@ export function isBridgeV2CombatHandCardSelectionSurface(
   surface: BridgeV2Surface
 ): surface is BridgeV2CombatHandCardSelectionSurface {
   return surface.kind === "combat_hand_card_selection";
+}
+
+export function isBridgeV2EventCardAcquisitionSurface(
+  surface: BridgeV2Surface
+): surface is BridgeV2EventCardAcquisitionSurface {
+  return surface.kind === "event_card_acquisition";
 }
 
 export function isBridgeV2GeneratedCardChoiceSurface(

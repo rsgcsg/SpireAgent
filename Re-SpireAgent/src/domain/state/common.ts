@@ -2,7 +2,7 @@ import type { PlayerSnapshot } from "./entities.js";
 
 import type { CardSnapshot } from "./entities.js";
 
-export const NORMALIZED_STATE_SCHEMA_VERSION = 16 as const;
+export const NORMALIZED_STATE_SCHEMA_VERSION = 17 as const;
 
 export type StateStability =
   | "actionable"
@@ -70,9 +70,25 @@ export interface RunSnapshot {
   runId?: string;
   characterId?: string;
   act?: number;
+  actId?: string;
+  actName?: string;
   floor?: number;
   ascension?: number;
   seed?: string;
+  bosses?: Array<{ id: string; name?: string; order: number }>;
+  modifiers?: Array<{
+    id: string;
+    name?: string;
+    description?: string;
+    keywords: Array<{ name: string; description?: string }>;
+  }>;
+}
+
+export interface BridgeSharedStateEvidenceSnapshot {
+  scope: "active_single_player_run";
+  playerVisibleSemantics: string;
+  sources: string[];
+  missing: string[];
 }
 
 export interface NormalizedStateBase {
@@ -82,6 +98,7 @@ export interface NormalizedStateBase {
   actionAuthority: ActionAuthority;
   run?: RunSnapshot;
   player?: PlayerSnapshot;
+  bridgeSharedStateEvidence?: BridgeSharedStateEvidenceSnapshot;
   bridgeDiagnostics?: BridgeDiagnosticSnapshot[];
   bridgeLegacyWarnings?: string[];
   bridgeInspectionPolicy?: BridgeInspectionPolicySnapshot;
