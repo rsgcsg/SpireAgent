@@ -1,6 +1,6 @@
 # ADR-0001: Visible Action Entity Bindings
 
-Status: accepted; organically requalified under `2.0-preview.9`  
+Status: accepted; retained and organically exercised through `2.0-preview.13`
 Date: 2026-07-17
 
 ## Decision
@@ -11,8 +11,10 @@ role-to-entity references whose entity IDs must already occur in the current
 player-visible Context or Surface.
 
 Examples include `card -> card_x`, `target -> enemy_y`, `potion -> potion_z`,
-`reward -> reward_q`, and `option -> event_option_r`. Actions with no visible
-entity subject use an empty list.
+`reward -> reward_q`, `option -> event_option_r`, and
+`screen -> screen_entity_id`. Explicit identity fields named `entity_id` or
+`*_entity_id` are visible binding targets; arbitrary strings are not. Actions
+with no visible entity subject use an empty list.
 
 ## Evidence
 
@@ -42,7 +44,7 @@ They do not attempt to generalize action arguments or UI geometry.
 ## Migration
 
 The following records the original preview.4-to-preview.5 migration. The
-binding contract is unchanged in current preview.9; newer protocol increments
+binding contract is unchanged in current preview.13; newer protocol increments
 added separate Surface semantics rather than changing command authority.
 
 - protocol version advances from `2.0-preview.4` to `2.0-preview.5`;
@@ -61,6 +63,12 @@ card reward, reward claim, and deck enchant surfaces. Duplicate combat cards
 and enemies remained distinguishable through visible bindings. This qualifies
 the binding mechanism for observed shapes; it does not qualify every future
 entity role or Surface.
+
+Preview.13 found one strict-client omission through organic rest Proceed: the
+surface-level `screen_entity_id` was visible but the decoder originally indexed
+only nested `entity_id` fields. The client now indexes both explicit forms and
+still rejects absent IDs. This corrected referential integrity without
+weakening execution or allowing label-derived references.
 
 ## Rollback
 

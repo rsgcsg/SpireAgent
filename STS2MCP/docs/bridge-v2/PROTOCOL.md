@@ -1,6 +1,6 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.9`
+Protocol preview: `2.0-preview.13`
 
 ## Endpoints
 
@@ -65,7 +65,9 @@ to entities already exposed in the current player-visible context or surface:
 ```
 
 The label and `entity_bindings` are explanatory, not executable. A binding may
-only reference an entity already present in the same visible Context/Surface;
+only reference an entity already present in the same visible Context/Surface,
+including explicit root identities such as `screen_entity_id` and
+`room_entity_id`;
 it lets clients distinguish duplicate cards, enemies, rewards, and options.
 The command still accepts only `action_id`: mutable game objects, target
 handles, node paths, indices, and call paths remain inside the registry.
@@ -136,6 +138,11 @@ Current selection and reward completion evidence:
 | generated card choice peek-close | peek mode closes without granting underlying combat actions |
 | full-belt reward discard | the exact potion leaves its exact slot or the reward surface is replaced |
 | potion reward claim | reward set changes or the reward surface is replaced, after capacity is revalidated |
+| event dialogue advance | current revealed line advances or dialogue controls close |
+| card bundle preview/confirm/cancel | exact selected bundle enters preview, commits, or returns to choices |
+| map node choice | map closes or the exact current map coordinate reaches the selected node |
+| rest option | option disappears, Proceed enables, room leaves, or a verified child overlay opens |
+| rest Proceed | map opens or the rest room leaves |
 
 If the state changes but the predicate does not pass, the command fails with an
 unknown outcome. Unknown outcomes are never auto-retried.

@@ -33,14 +33,15 @@ Required client behavior:
 - never auto-retry unknown outcomes;
 - permit only one executor during v1/v2 dual-read tests.
 
-Source `2.0-preview.9` has strict projections for `deck_enchant_selection`,
-`event_option`, `combat_turn`, `combat_pile_card_selection`,
-`combat_hand_card_selection`, `generated_card_choice`,
-`card_reward_selection`, and `reward_claim`, plus typed diagnostics and fixed
-read-only `run_deck`/`combat_piles` evidence. Qualification is recorded per
-observed shape: generated-card choice still lacks fresh preview.9 organic
-execution. Run-deck Glam post-state and non-empty draw/discard/exhaust pile
-inspection are organically qualified; hidden draw order remains excluded. In
+Source `2.0-preview.13` has strict projections for twelve bounded executable
+surfaces: deck enchant, ancient dialogue, ordinary event options, rest controls,
+combat turn, three combat selectors, atomic card bundles, card rewards, outer
+room rewards, and map navigation. It also preserves typed diagnostics and fixed
+read-only `run_deck`/`combat_piles` evidence. Every current executable surface
+has organic evidence for at least one observed shape; this does not qualify
+unobserved variants or unsupported screens. Run-deck Glam post-state and
+non-empty draw/discard/exhaust inspection are organically qualified; hidden draw
+order remains excluded. In
 `auto` mode, unsupported v2 surfaces remain on v1 while inspection sidecars may
 still add typed player facts; a v2-owned surface imports only bridge actions.
 Exact-build or context/surface incompatibility never silently falls back to v1

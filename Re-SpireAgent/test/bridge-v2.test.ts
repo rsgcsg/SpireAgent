@@ -1105,6 +1105,46 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     expect(envelope.currentState.actionAuthority).toBe("none");
   });
 
+  it("accepts rest proceed bound to the visible surface screen and rejects an unknown screen", () => {
+    const state = structuredClone(REST_SITE_STATE);
+    state.surface.options = [];
+    state.surface.can_proceed = true;
+    state.legal_actions = [{
+      action_id: "action-rest-proceed",
+      state_id: "state-rest-1",
+      kind: "proceed_rest_site",
+      category: "navigation",
+      label: "Proceed to map",
+      authority: "game_ui",
+      evidence_code: "NRestSiteRoom.ProceedButton+NMapScreen.Open",
+      entity_bindings: [{ role: "screen", entity_id: "rest-screen-1" }]
+    }];
+
+    const envelope = normalizeCurrentState(
+      wrapBridgeV2State({ state, capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    );
+    expect(envelope.currentState).toMatchObject({
+      stability: "actionable",
+      actionAuthority: "bridge_advertised",
+      surface: { kind: "rest_site", canProceed: true }
+    });
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toEqual([
+      expect.objectContaining({
+        id: "action-rest-proceed",
+        entityBindings: [{ role: "screen", entityId: "rest-screen-1" }]
+      })
+    ]);
+
+    state.legal_actions[0]!.entity_bindings[0]!.entity_id = "missing-rest-screen";
+    const invalidEnvelope = normalizeCurrentState(
+      wrapBridgeV2State({ state, capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    );
+    expect(invalidEnvelope.currentState.stability).toBe("invalid");
+    expect(invalidEnvelope.currentState.actionAuthority).toBe("none");
+  });
+
   it("projects exact map topology separately from current opaque route choices", () => {
     const envelope = normalizeCurrentState(
       wrapBridgeV2State({ state: structuredClone(MAP_NAVIGATION_STATE), capabilities: structuredClone(CAPABILITIES) }),
@@ -1684,7 +1724,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
   it("accepts only selected-bundle confirm/cancel controls during bundle preview", () => {
     const preview = structuredClone(CARD_BUNDLE_SELECTION_STATE);
     preview.surface.stage = "preview";
-    preview.surface.selected_bundle_entity_id = "card-bundle-1";
+    (preview.surface as { selected_bundle_entity_id: string | null }).selected_bundle_entity_id = "card-bundle-1";
     preview.surface.bundles = [preview.surface.bundles[0]!];
     preview.legal_actions = [
       {
@@ -1717,7 +1757,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     });
 
     const contradictory = structuredClone(CARD_BUNDLE_SELECTION_STATE);
-    contradictory.surface.selected_bundle_entity_id = "card-bundle-1";
+    (contradictory.surface as { selected_bundle_entity_id: string | null }).selected_bundle_entity_id = "card-bundle-1";
     expect(normalizeCurrentState(
       wrapBridgeV2State({ state: contradictory, capabilities: structuredClone(CAPABILITIES) }),
       TEST_SOURCE

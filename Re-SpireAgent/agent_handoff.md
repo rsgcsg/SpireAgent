@@ -1,13 +1,28 @@
 # RE-P1 Handoff
 
-Status: Bridge `2.0-preview.9` is loaded against exact game identity
-`v0.108.0|58694f64|-2044609792`. Seven executable Surface contracts plus
-read-only run-deck/combat-pile Inspection have bounded organic evidence;
-`generated_card_choice` is source/fixture qualified but still awaits fresh
-preview.9 organic execution. RE-P1 remains a protocol baseline, not a verified
+Status: Bridge `2.0-preview.13` is loaded against exact game identity
+`v0.108.0|58694f64|-2044609792`. Twelve executable Surface contracts plus
+read-only run-deck/combat-pile Inspection have bounded organic evidence for at
+least one observed shape. RE-P1 remains a protocol baseline, not a verified
 strategic player or a claim of broad game coverage.
 
+Canonical current Bridge status is maintained in
+`../STS2MCP/docs/bridge-v2/CURRENT_STATUS.md`; the chronology below is retained
+as handoff history.
+
 ## Completed
+
+- Preview.13 closed the organic `rest_site -> deck selection -> proceed`
+  boundary. `run-20260716182900-50gm7n` selected Smith through a settled
+  Bridge action and opened a separate legacy deck selector;
+  `run-20260717012922-la5ibg` later settled the exact Bridge Proceed and reached
+  `map + map_navigation`.
+- The strict Bridge decoder now treats explicit `entity_id` and `*_entity_id`
+  fields as visible binding identities. This fixed the valid rest-screen
+  Proceed binding while preserving fail-closed rejection for absent IDs.
+- Preview.12/13 organic evidence also qualified ancient dialogue revealed-prefix
+  advancement, generated-card choice, card bundles, and repeated map travel for
+  their observed shapes.
 
 - Independent Node/TypeScript package in `Re-SpireAgent/`
 - Strongly typed discriminated `NormalizedCurrentState`
@@ -139,11 +154,11 @@ No memory, learning, scoring, strategic scaffold, shadow mode, live additive mod
 - Legacy v1 `NDeckEnchantSelectScreen` evidence showed that a selected standard card can make `can_confirm=true` without exposing selected IDs or remaining capacity. The v1 path still stops conservatively in that state. The new v2 deck-enchant path supplies selected IDs, constraints, stage, semantics, opaque actions, and action-specific completion; do not generalize that evidence to other card-selection surfaces.
 - Combat v2 now has repeated long-run evidence, but action counts do not
   qualify every target type, card effect, selector mode, or phase transition.
-- Generated-card choice has exact source/fixture support and historical UI
-  motivation, but no fresh preview.9 organic execution. Hidden draw order
-  remains excluded by policy.
-- Map, shop, rest, treasure, menu, and run-deck card-selection variants still
-  depend on explicitly labeled v1 local reconstruction in auto mode.
+- Hidden draw order remains excluded by policy. Implemented surface variants
+  beyond those organically observed still require their own evidence.
+- Shop, treasure, menu, and generic run-deck card-selection variants still
+  depend on explicitly labeled v1 local reconstruction in auto mode. Map and
+  rest controls are Bridge-owned; Smith's child selector remains legacy.
 - Composite state-plus-inspection drift is fail-closed but noisy during fast
   transitions. Future work may add bounded observable read retry or a coherent
   server observation token; it must never accept mixed adjacent states.
@@ -153,10 +168,10 @@ No memory, learning, scoring, strategic scaffold, shadow mode, live additive mod
 
 ## Validation
 
-On 2026-07-17, the preview.9 pass completed with 95 Re tests, 35 Bridge tests,
-strict typecheck, production build, Python MCP syntax check, full-potion
-targeted organic-state smoke, and two bounded organic long runs. See the latest
-command output rather than treating historical counts as a permanent invariant.
+On 2026-07-17, preview.13 passed 104/104 Re tests (including 40 Bridge tests),
+41/41 Bridge contract/runtime tests, strict typecheck, and production build.
+See the latest command output rather than treating historical counts as a
+permanent invariant.
 
 ## Next Step
 
@@ -172,12 +187,11 @@ npm run agent:replay
 
 Start a fresh game manually, then run bounded windows and inspect each run with `npm run agent:replay`. Confirm that each record contains pre/post raw snapshots, the prompt, DeepSeek response, selected allowed action, MCP result, and settled post-state. Fix a repeatable protocol mismatch with a reduced raw fixture and contract test before running longer loops.
 
-If a natural generated-card choice appears, capture it as bounded preview.9
-select/skip evidence. The next high-frequency v2 coverage candidate is map
-navigation, but only after exact UI ownership and completion are audited.
-Keep linked reward sets and every unlisted executable surface unsupported until
-exact-build bindings, state-bound actions, completion evidence, and contract
-tests exist.
+The next high-frequency v2 coverage candidate is shop, but only after exact UI
+ownership, inventory semantics, child removal flow, affordability/capacity,
+leave, and asynchronous completion are audited. Keep linked reward sets and
+every unlisted executable surface unsupported until exact-build bindings,
+state-bound actions, completion evidence, and contract tests exist.
 
 Canonical Bridge status and the latest evidence are in
 `../STS2MCP/docs/bridge-v2/CURRENT_STATUS.md` and

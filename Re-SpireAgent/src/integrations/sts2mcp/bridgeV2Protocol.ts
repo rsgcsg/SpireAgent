@@ -683,8 +683,12 @@ function collectEntityIds(value: unknown, result = new Set<string>()): Set<strin
     return result;
   }
   if (!isJsonObject(value)) return result;
-  if (typeof value.entity_id === "string") result.add(value.entity_id);
-  for (const entry of Object.values(value)) collectEntityIds(entry, result);
+  for (const [key, entry] of Object.entries(value)) {
+    if (typeof entry === "string" && (key === "entity_id" || key.endsWith("_entity_id"))) {
+      result.add(entry);
+    }
+    collectEntityIds(entry, result);
+  }
   return result;
 }
 

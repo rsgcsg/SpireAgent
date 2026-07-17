@@ -1,84 +1,59 @@
 # Player-Visible Coverage Matrix
 
-Coverage is per exact game build and surface. “v1 exists”, decompiled code, or a
-fixture is not organic v2 qualification.
+Coverage is scoped to exact game identity `v0.108.0|58694f64|-2044609792` and
+the observed interaction shape. Source audit or fixture evidence alone is not
+organic qualification.
 
-| Surface | Context semantics | Legal actions | Completion | Organic smoke | Status |
-|---|---|---|---|---|---|
-| deck enchant selection | event/combat parent context | implemented | action-specific | Bridge + Re passed | runtime-qualified |
-| ordinary event option | event id/name/body/dialogue flags | implemented | option applied/subsurface/room transition | Bridge + Re passed | runtime-qualified for ordinary options |
-| player-phase combat turn | player, hand, piles counts, statuses, relics, potions, orbs, enemies, intents | implemented | card left hand/subsurface, potion consumed, play phase ended | Bridge + Re targeted-card passed | runtime-qualified for immediate player turn |
-| ancient event dialogue | event context only | none | none | none | explicit unsupported |
-| combat pile card selection | combat facts + visible source pile, prompt, constraints, selected members | exact toggle/confirm/cancel/peek-close | membership change, auto-completion, commit/close | four select actions passed across two preview.9 runs | runtime-qualified for observed discard-pile single-pick shape |
-| combat hand card selection | combat facts + exact visible hand-card instances and constraints | exact toggle/confirm/cancel/peek-close | membership change or commit/close | one upgrade select + confirm flow passed | runtime-qualified only for observed upgrade shape |
-| generated card choice | combat facts + temporary visible generated cards, skip/peek state | exact card/skip/peek-close | overlay closes or peek closes | historical organic UI sample; no fresh preview.9 lifecycle | source/fixture qualified, organic qualification pending |
-| card reward selection | `reward_flow`, visible cards, separately labeled alternatives | exact card/alternative actions | overlay closes or option objects are replaced | Bridge + Re passed | runtime-qualified for ordinary card/Skip flow |
-| outer room reward claim | `reward_flow`, visible ordinary rewards, potion capacity/discard operands, Proceed/Skip state | exact claim/discard/proceed actions | reward/slot set changes, child surface replaces it, or screen exits | Gold, Proceed/Skip, and full-belt discard-then-claim passed | runtime-qualified for observed ordinary and full-potion shapes; linked reward sets fail closed |
-| generic deck selection | none | none | none | rest upgrade still observed through v1 local reconstruction | unsupported; do not merge with the three combat selectors |
-| bundle/relic selection | none | none | none | none | unsupported |
-| map/rest/shop/treasure | v1 sidecar only | none in v2 | none in v2 | frequent organic local-reconstruction evidence | unsupported in v2; map is the highest-frequency remaining action owner |
-| menu/game over | none | none | none | none | unsupported |
-| `run_deck` inspection | per-instance deck card, upgrade, enchantment | none; read-only | state-bound exact read | post-card-reward Glam reinspection passed | runtime-qualified for observed singleplayer run deck |
-| `combat_piles` inspection | unordered draw/discard/exhaust contents | none; read-only | state-bound exact read | non-empty draw/discard/exhaust passed | runtime-qualified for observed pile shapes; draw order remains hidden |
-| multiplayer | none | none | none | none | intentionally unsupported |
+| Surface / inspection | Context | Player-visible semantics | Organic status | Remaining boundary |
+|---|---|---|---|---|
+| `deck_enchant_selection` | event/combat parent | exact eligible cards, selection, preview, enchantment | qualified | other enchantment variants need diversity |
+| `event_dialogue` | ancient event in dialogue | revealed prefix, current line, speaker, advance label | qualified | future lines intentionally hidden |
+| `event_option` | event | title/body plus exact visible options and relic semantics when rendered | qualified | event-specific child surfaces remain separate |
+| `rest_site` | rest | exact enabled options/descriptions and Proceed | qualified | Smith/remove child deck selectors are not rest actions and remain legacy |
+| `combat_turn` | combat | player/enemy/hand/intents/statuses/relics/potions/orbs plus exact actions | qualified for observed shapes | uncommon intents, hover keywords and phase variants need evidence |
+| `combat_pile_card_selection` | combat | exact source pile, prompt, constraints, selected instances | qualified for observed discard single-pick | other piles/modes unqualified |
+| `combat_hand_card_selection` | combat | exact hand instances, prompt, constraints, selected instances | qualified for observed upgrade flows | other modes unqualified |
+| `generated_card_choice` | combat | temporary generated cards, skip/peek state | qualified for observed generated choice | more generated-card variants needed |
+| `card_bundle_selection` | event/other parent | atomic visible card bundles and two-stage preview/commit | qualified for observed bundle | other origins unqualified |
+| `card_reward_selection` | reward flow | exact cards and separately labeled alternatives | qualified | alternatives remain an open visible set |
+| `reward_claim` | outer room rewards | exact ordinary rewards, potion capacity/discard, Proceed/Skip | qualified for observed shapes | linked reward sets fail closed |
+| `map_navigation` | map | full visible topology, visit/travel state, current/next nodes, drawing mode | qualified for observed singleplayer map | multiplayer and special map modes unsupported |
+| `run_deck` inspection | active singleplayer run | per-instance card, upgrade and enchantment | qualified | no arbitrary queries |
+| `combat_piles` inspection | combat | unordered draw/discard/exhaust contents | qualified | draw order intentionally hidden |
 
-## Shared Semantics Learned From Multiple Source Contracts
+## Unsupported Or Legacy-Owned
 
-- `context.kind` answers which game situation exists; it does not identify the
-  blocking interaction by itself.
-- `surface.kind` answers which interaction protocol is active; it must not
-  duplicate the whole world state.
-- action authority is separate from both. Re-SpireAgent records
-  `bridge_advertised`, `local_reconstruction`, or `none`.
-- `legal_actions` are exact-state mutations/navigation. Read-only facts and
-  inspection are not fake actions.
-- context/surface combinations are validated. `event + event_option` and
-  `combat + combat_turn` have bounded organic lifecycle evidence; mismatches
-  still fail closed.
-- Card reward alternatives are an open set of visible choices, not a skip
-  boolean. If any visible alternative lacks readable semantics, the whole
-  strategic choice fails closed rather than hiding an option.
-- The outer rewards screen and its card-choice child are distinct interaction
-  protocols. A card reward claim is only the transition into card selection;
-  it must not manufacture card alternatives or card-selection semantics early.
-- During room exit, the game's explicit open map state takes precedence over a
-  retained rewards overlay. This prevents a finished Proceed action from
-  publishing stale reward actions while preserving the separate reward and map
-  protocols.
-- A shared card payload does not imply a shared Surface. Pile, hand, generated,
-  reward, and run-deck selection differ in object ownership, action grammar,
-  timing guards, and completion evidence. Common code may share visible-card
-  serialization and entity-binding laws without collapsing their wire kinds.
-- Full inventory is part of action legality. A visible potion reward is not a
-  legal claim while the belt is full; capacity resolution is an action on the
-  same reward surface, not hidden local strategy or a fabricated claim retry.
+| Interaction | Current authority | Status |
+|---|---|---|
+| shop inventory / purchase / leave / removal child flow | v1 local reconstruction | frequent organic evidence, no v2 source-complete contract |
+| treasure | v1 local reconstruction | stale-index risk remains; no v2 contract |
+| generic run-deck select/remove/transform/upgrade | v1 local reconstruction | observed, but completion and purpose semantics incomplete |
+| menu / character select / game over | v1 local reconstruction | character selected-state is not represented and can repeat |
+| linked reward sets | none in v2 | fail closed |
+| multiplayer | none in v2 | intentionally unsupported |
 
-## Known Visibility Gaps
+## Visibility Laws
 
-- Generated, transformed, retained, or temporarily modified combat cards still
-  need diversity evidence. A historical generated-card choice motivated an
-  exact separate protocol, but preview.9 has not yet executed it organically.
-- Draw order remains intentionally hidden.
-- Ancient dialogue advancement has different lifecycle semantics from ordinary
-  event options and is intentionally not generalized.
-- No claim is made that the current enemy intent DTO covers every game-specific
-  intent presentation until organic combat diversity is observed.
-- Long runs now cover many combat-turn actions and four pile-selection actions,
-  but qualification remains per observed target/selector shape. Do not infer
-  every card effect or every phase transition from aggregate action counts.
+- Context answers what situation exists; Surface answers which topmost
+  interaction grammar owns input; Authority answers who may execute.
+- Underlying surfaces are suspended. Their facts may remain in Context or
+  Inspection, but their actions never mix with the Active Surface.
+- Legal actions bind only to explicit visible entity identities and remain
+  executable solely by opaque action ID.
+- Inspection is read-only and state-bound; it never enters the command ledger.
+- Unknown or hidden facts are omitted and diagnosed, never guessed. RNG, real
+  draw order, future event dialogue/outcomes, future rewards, and future enemy
+  moves are outside the protocol.
+- Surface completeness is bounded. It must not be read as a claim of total UI
+  or full-game semantic completeness.
 
-## Composition And Inspection Boundary
+## Known Semantic Gaps
 
-- One topmost verified blocking surface owns all executable actions; context
-  remains visible below it.
-- Underlying surfaces are suspended, not nested with executable actions.
-- Combat pile contents and run-deck contents belong to state-bound read-only
-  inspection; count snapshots remain in immediate context.
-- `unsupported` means no verified interaction contract. A future typed
-  `none`/`transition` surface should represent known contexts with no current
-  blocking decision.
-- Structured diagnostics must distinguish action-suppressing gaps from
-  non-blocking inspection omissions.
-- The inspection boundary is machine-readable and implemented only for the two
-  fixed kinds above. It remains non-executable and is not an arbitrary object
-  query API.
+- Shared HUD/run facts are not yet a canonical Bridge context shared by every
+  non-combat surface; Re-SpireAgent still merges compatible v1 sidecar facts.
+- Rich hover/tool-tip keyword semantics are not uniformly projected for cards,
+  relics, potions, statuses, and intents.
+- Similar card payloads do not imply one selector protocol. Pile, hand,
+  generated, reward, bundle, enchantment, and deck-maintenance selectors retain
+  separate ownership and completion until repeated evidence proves a safe
+  shared abstraction.

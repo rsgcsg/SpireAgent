@@ -2,27 +2,31 @@
 
 ## Current Scope
 
-Re-SpireAgent supports the strict `2.0-preview.9` source contract for:
+Re-SpireAgent supports the strict `2.0-preview.13` source contract for:
 
 - `deck_enchant_selection`: organically end-to-end qualified;
 - `event_option`: organically qualified for ordinary event options;
 - `combat_turn`: organically qualified for repeated immediate combat actions;
 - `combat_pile_card_selection`: four organically settled single-pick
-  discard-pile actions across two preview.9 runs;
+  discard-pile actions across two earlier exact-build runs;
 - `combat_hand_card_selection`: organically qualified for one upgrade select
   and confirm shape;
-- `generated_card_choice`: exact-source and fixture qualified, but not yet
-  organically executed under preview.9;
+- `generated_card_choice`: organically qualified for an observed temporary-card choice;
+- `card_bundle_selection`: organically qualified for an observed atomic bundle preview/commit;
 - `card_reward_selection`: organically qualified for one ordinary card/Skip
   lifecycle;
 - `reward_claim`: ordinary claim and Proceed/Skip have bounded installed-game
   and model-selected Re lifecycles;
+- `event_dialogue`: organically qualified for revealed-prefix advancement;
+- `rest_site`: organically qualified for option-to-child-overlay and Proceed-to-map boundaries;
+- `map_navigation`: organically qualified for repeated exact-node travel;
 - `run_deck` and `combat_piles`: fixed read-only, state-bound evidence.
 
 All current evidence is scoped to exact game identity
 `v0.108.0|58694f64|-2044609792`. Historical earlier-preview evidence is retained
-but does not silently qualify preview.9. Two fresh preview.9 runs executed 165
-Bridge-authorized actions without command failure or unsettled Bridge outcome.
+but does not silently qualify later previews. Preview.12/13 organic runs cover
+the newly added surfaces without broadening qualification beyond observed
+interaction shapes.
 
 ## State Identity
 
@@ -42,7 +46,7 @@ but cannot overwrite action-relevant v2 facts or add actions.
 
 ## Action Entity Bindings
 
-`preview.9` keeps `action_id` as the only executable command argument, but each
+`preview.13` keeps `action_id` as the only executable command argument, but each
 legal action also carries non-executable role-to-entity bindings. Re requires
 every binding to resolve to an entity already present in the visible Context or
 Surface, preserves the bindings in normalized state and decision evidence, and
@@ -76,7 +80,7 @@ degrades or grants authority.
 
 ## Inspection Boundary
 
-`preview.9` exposes exactly two fixed read-only kinds:
+`preview.13` exposes exactly two fixed read-only kinds:
 
 - `run_deck` for per-instance deck/upgrade/enchantment semantics;
 - `combat_piles` for unordered draw/discard/exhaust contents;
@@ -140,6 +144,15 @@ single-pick may auto-complete; hand selection can require confirm; generated
 choice has an opening guard; reward cards persist into the run deck. Common
 serialization never grants common execution semantics.
 
+## Dialogue, Rest, And Map Boundaries
+
+Ancient dialogue projects only the revealed prefix ending at the exact current
+line; game-created future line nodes are deliberately excluded. Rest owns only
+exact option controls and Proceed. Smith's deck selector is a separate surface
+and currently remains legacy-owned. Map projects visible topology and exact
+current choices; asynchronous completion requires map closure or the exact
+selected current coordinate, not an arbitrary state change.
+
 ## Modes
 
 | `STS2_MCP_PROTOCOL` | Behavior |
@@ -179,14 +192,20 @@ or command identity/status/outcome is inconsistent.
 `failed/unknown`, `timed_out/unknown`, transport uncertainty after submit, and
 poll timeout are unknown and never automatically retried.
 
+`completeness.playerVisibleSemantics` is scoped to the active bounded Surface.
+It does not assert that every visible HUD, hover tooltip, or other screen in the
+game has a Bridge projection. Re may merge only compatible shared v1 sidecar
+facts; those facts cannot add actions to a Bridge-owned surface.
+
 ## Evidence And Next Step
 
-Fresh exact-build evidence now includes persistent Glam post-state through
-`run_deck`, plus non-empty draw/discard/exhaust through `combat_piles`. Draw
-order remains intentionally hidden. Generated-card choice remains an organic
-qualification gap, not a reason to weaken the contract.
+Fresh exact-build evidence includes persistent Glam post-state through
+`run_deck`, non-empty draw/discard/exhaust through `combat_piles`, natural
+generated-card and bundle choices, ancient dialogue, repeated map travel, and
+the rest option -> child selector -> rest Proceed boundary. Draw order remains
+intentionally hidden.
 
-Composite state-plus-inspection reads are coherence checked. Two preview.9
+Composite state-plus-inspection reads are coherence checked. Earlier long runs
 long runs recorded 23 transient drifts during fast game transitions; every one
 produced no prompt and no execution, and the next tick obtained a fresh state.
 This is observable retry/ergonomics debt, not permission to accept mixed

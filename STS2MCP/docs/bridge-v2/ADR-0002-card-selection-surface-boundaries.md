@@ -1,6 +1,6 @@
 # ADR-0002: Preserve Card-Selection Surface Boundaries
 
-Status: accepted for `2.0-preview.9`  
+Status: accepted and retained through `2.0-preview.13`
 Date: 2026-07-17
 
 ## Context

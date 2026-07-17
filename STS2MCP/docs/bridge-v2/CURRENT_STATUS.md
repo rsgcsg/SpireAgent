@@ -4,143 +4,98 @@ Status date: 2026-07-17
 
 ## Current Phase
 
-Protocol `2.0-preview.9` is implemented and loaded in the exact supported game.
-Eight executable Surface contracts and two fixed, non-executable Inspection
-kinds are present. Qualification remains per observed interaction shape: seven
-surfaces have bounded organic lifecycle evidence; `generated_card_choice` has
-exact-source and fixture qualification but still lacks a fresh preview.9
-organic lifecycle.
+Protocol `2.0-preview.13` is implemented and loaded against exact game identity
+`v0.108.0|58694f64|-2044609792`. It exposes twelve bounded executable Surface
+contracts and two fixed read-only Inspection kinds. Every current executable
+surface has organic evidence for at least one observed interaction shape, but
+qualification remains shape-specific and does not imply full-game coverage.
 
-## Implemented
+## Canonical Model
 
-- Independent typed `context`, active `surface`, and client action authority.
-- `ActiveSurfaceResolver`: the top blocking overlay exclusively selects the
-  overlay provider family; otherwise room/turn providers are considered.
-  Multiple matches in the active family fail closed.
-- Typed diagnostics with separate severity, operational effect, recovery hint,
-  optional path/visibility class, and action-critical status. Legacy warnings
-  remain compatibility text and do not independently grant or remove authority.
-- State-bound `run_deck` and `combat_piles` read endpoints. They exclude
-  arbitrary queries, hidden visibility, and draw order; they never grant action
-  authority or enter the command ledger.
-- Exact build identity, opaque state-bound actions, execution-time
-  revalidation, idempotent requests, and action-specific completion.
-- Legal actions carry non-executable `entity_bindings` to visible entities so
-  duplicate cards/targets/options remain strategically distinguishable without
-  exposing command arguments or hidden game objects.
-- `deck_enchant_selection`, `event_option`, and `combat_turn` organic slices.
-- `card_reward_selection` preserves visible cards and every separately labeled
-  enabled alternative. It does not collapse alternatives into `can_skip`.
-  Missing card-row, clickability, alternatives, or visible alternative labels
-  suppress all actions.
-- `reward_claim` is the outer `NRewardsScreen` protocol. It exposes visible
-  ordinary reward buttons and the enabled Proceed/Skip control as opaque
-  actions. Claiming a card reward completes when its distinct card-selection
-  overlay replaces the outer screen; it is not flattened into a reward index.
-  Visible linked reward sets remain fail-closed until they have their own
-  selection contract.
-- A full potion belt does not advertise an impossible potion claim. The same
-  `reward_claim` surface exposes exact, state-bound discard actions for the
-  currently visible potions; after capacity exists, the potion reward becomes
-  claimable. Capacity and exact slot identity are revalidated at execution.
-- `combat_pile_card_selection`, `combat_hand_card_selection`, and
-  `generated_card_choice` are separate blocking protocols. They share opaque
-  entity binding and fail-closed laws, but not wire actions or completion
-  semantics.
-- Re-SpireAgent strict `preview.9` decoding, binding referential-integrity
-  checks, inspection projection, context/surface compatibility, allowed-action
-  import, prompt guides, and tests.
+Runtime identity is:
 
-## Qualification Matrix
+```text
+context.kind + surface.kind + action authority
+```
 
-| Surface | Exact source/build | Contract/fixture | Organic Bridge | Organic Re lifecycle |
-|---|---|---|---|---|
-| `deck_enchant_selection` | pass | pass | pass | pass |
-| `event_option` | pass | pass | pass | pass |
-| `combat_turn` | pass | pass | pass | pass |
-| `combat_pile_card_selection` | pass | pass | pass | pass for four observed discard-pile, single-pick auto-complete actions across two runs |
-| `combat_hand_card_selection` | pass | pass | pass | pass for observed upgrade select + confirm; other modes remain unqualified |
-| `generated_card_choice` | pass | pass | historical pre-preview.9 UI evidence | not yet fresh preview.9 qualified |
-| `card_reward_selection` | pass | pass | pass | pass |
-| `reward_claim` ordinary claim | pass | pass | pass | pass |
-| `reward_claim` full-potion discard then claim | pass | pass | pass | targeted exact-state lifecycle passed |
-| `reward_claim` Proceed/Skip | pass | pass | pass | pass; map witness prevents stale reward actions |
-| `run_deck` inspection | pass | pass | pass | pass, including Glam post-state |
-| `combat_piles` inspection | pass | pass | pass | pass for non-empty draw/discard/exhaust while withholding draw order |
+- Context describes the current semantic game situation.
+- Exactly one Active Surface describes the topmost player-owned interaction
+  grammar and owns all executable actions.
+- Inspection contains state-bound player-inspectable facts that are not the
+  active input protocol.
+- Authority is independent: `bridge_advertised`, `local_reconstruction`, or
+  `none` in Re-SpireAgent.
+- Diagnostics report visibility/completeness/safety without inventing actions.
 
-All current organic slices use exact identity
-`v0.108.0|58694f64|-2044609792`. Historical observations qualify only the
-protocol revision and action shape they actually exercised; they do not
-silently qualify preview.9. Fresh preview.9 long runs qualify the current
-entity-binding and pile-selection paths but not generated-card choice.
+## Implemented And Organically Observed
+
+| Surface | Bounded organic evidence | Current qualification |
+|---|---|---|
+| `deck_enchant_selection` | select/preview/confirm and post-state deck inspection | qualified for observed Glam flow |
+| `event_dialogue` | two revealed-line advances, then transition to options | qualified; future dialogue lines withheld |
+| `event_option` | ordinary and Neow option/proceed flows | qualified for observed options |
+| `rest_site` | Smith option opens separate deck selector; later Proceed reaches map | qualified for rest controls; child deck selector remains legacy |
+| `combat_turn` | repeated card/potion/end-turn lifecycles | qualified for observed player-turn shapes |
+| `combat_pile_card_selection` | discard-pile single-pick | qualified only for observed shape |
+| `combat_hand_card_selection` | observed select/confirm upgrade flows | qualified only for observed modes |
+| `generated_card_choice` | natural generated-card selection in the preview.12 long run | qualified for observed temporary choice |
+| `card_bundle_selection` | natural bundle preview/commit lifecycle | qualified for observed bundle shape |
+| `card_reward_selection` | ordinary card and alternative selection | qualified for observed reward shapes |
+| `reward_claim` | gold, card child surface, potion capacity/discard, Proceed/Skip | qualified for observed ordinary rewards; linked sets fail closed |
+| `map_navigation` | repeated exact-node travel and map close/current-coordinate completion | qualified for observed singleplayer map travel |
+
+Read-only `run_deck` and `combat_piles` inspections are organically qualified.
+They expose no action authority and never reveal draw order.
+
+## Preview.13 Rest Lifecycle Evidence
+
+Organic run `run-20260716182900-50gm7n` reached floor 7 with exact Bridge-owned
+`rest + rest_site` state. Decision 71 selected Smith and completed with the
+action-specific overlay-open witness. The resulting deck card-selection overlay
+was intentionally owned by the legacy local adapter, not merged into rest.
+After the upgrade selection closed, preview.13 exposed only the exact
+`proceed_rest_site` action. Run `run-20260717012922-la5ibg`, decision 1,
+completed that action and the next Bridge state was `map + map_navigation` at
+the visited rest coordinate.
+
+This run found and fixed one strict-client bug: Re-SpireAgent originally did not
+count a surface-level `screen_entity_id` as a visible entity, so the valid
+Proceed binding was rejected before execution. The decoder now recognizes
+explicit `entity_id` and `*_entity_id` identity fields while continuing to
+reject bindings to absent IDs.
 
 ## Verification
 
-- Bridge tests: 35/35.
-- Re-SpireAgent tests: 95/95 plus strict typecheck and production build.
-- Exact game-source audit confirms card reward alternatives can represent skip,
-  reroll, sacrifice, and other relic-provided choices; their visible labels are
-  semantic data, not a boolean.
-- Fresh `preview.3` smoke: `reward_flow + card_reward_selection` exposed three
-  visible Glam cards and a separate Skip alternative; after the documented
-  short clickability settling interval, DeepSeek selected legal `Barrage`.
-  Bridge confirmed `received -> validated -> started -> completed`; Re settled
-  back to the outer reward screen in two polls.
-- Fresh ordinary reward smoke: `Claim 12 Gold` completed and changed observed
-  gold from 104 to 116. On a separate ordinary reward screen, one opaque
-  `proceed_rewards` request completed as `confirmed`; the follow-up v2/auto
-  read projected `map`, with no retained `reward_claim` surface or stale
-  reward actions. `NMapScreen.IsOpen` is an explicit game UI witness that
-  takes precedence over a retained rewards overlay during room exit.
-- Fresh run-deck smoke: the restored run exposed ten per-instance starter
-  cards. Selecting Glam `Barrage` increased the deck to eleven, and the next
-  independent inspection preserved `GLAM`, its description, amount, and card
-  instance identity.
-- Fresh combat-pile smoke: the first player turn exposed draw=6, discard=0,
-  exhaust=0 and matched immediate count fields. After playing Glam `Barrage`,
-  discard=1 preserved that enchantment; draw/discard/exhaust counts still
-  matched. The response explicitly withheld draw order.
-- A restored full-belt reward screen first exposed only exact potion-discard
-  actions, not the impossible Skill Potion claim. Request
-  `organic-full-potion-discard-1784219982` completed and made capacity; request
-  `organic-full-potion-claim-1784219999` then completed and consumed the
-  reward. These are targeted organic-state lifecycle tests, not autonomous
-  strategy evidence.
-- Preview.9 organic runs `run-20260716165340-0v67y4` and
-  `run-20260716170107-xu494w` recorded 271 decisions and 165 settled
-  Bridge-authorized actions with no Bridge execution failure, unknown command
-  outcome, or unsettled Bridge completion. Four pile-selection actions settled
-  through exact command lifecycles. A non-empty exhaust pile was observed.
-- The same runs recorded 23 fail-closed composite-read drifts during fast UI
-  transitions and one correctly blocked legacy treasure stale-state decision.
-  No prompt or action was produced from a mixed composite snapshot.
-- Real testing found and fixed one client identity bug: volatile inspection
-  `observed_at` initially made equivalent reads appear stale. Timestamps are now
-  excluded from stale identity while inspection IDs, state binding, and content
-  remain included.
+- Bridge contract/runtime tests: 41/41.
+- Re-SpireAgent tests: 104/104, including 40 Bridge integration tests.
+- Re-SpireAgent strict typecheck and production build pass.
+- Preview.13 organic run `run-20260716182900-50gm7n` recorded 71 settled actions
+  before the legacy Smith confirm settlement stopped the bounded runner; the
+  Bridge-owned rest option itself was settled.
+- Preview.13 Proceed rerun `run-20260717012922-la5ibg` settled and reached map.
 
-## Current Blocker
+## Honest Completeness Boundary
 
-The current blocker is breadth without dishonest generalization. Fresh
-preview.9 qualification is still missing for `generated_card_choice`; linked
-reward sets remain unsupported. Map, rest, shop, treasure, menu, and some deck
-selection flows still use explicitly labeled v1 local reconstruction in auto
-mode. Composite state-plus-inspection capture is coherent and fail-closed, but
-its transition-time retry/telemetry ergonomics remain measurable client debt.
+`contract_complete_for_visible_*` means complete for the bounded active Surface
+contract and its action-critical facts. It does **not** mean that Bridge v2
+already exposes every fact visible anywhere in the whole game UI.
 
-## Next Step
+Known gaps include shop, treasure, menu/game-over, generic deck
+remove/transform/upgrade selectors, linked reward sets, multiplayer, some hover
+keyword/tool-tip semantics, and shared run/HUD facts that Re-SpireAgent still
+obtains from the v1 sidecar or fixed inspection. Smith's child deck selection is
+the clearest preview.13 example: rest ownership is correct, but the whole
+multi-surface journey is not yet all-v2.
 
-1. Wait for a natural preview.9 generated-card choice and qualify its exact
-   select/skip lifecycle; do not manufacture organic evidence.
-2. Prioritize the most frequent remaining v1 action owner from organic runs
-   (map navigation is currently highest), but audit exact UI ownership and
-   completion before implementing it.
-3. Keep pile/hand/generated/reward/deck card selection and potion/relic flows as distinct
-   protocols; do not merge them into a generic reward action.
-4. Keep every unlisted executable surface fail closed until it has its own
-   game-fact audit, contract tests, and organic lifecycle evidence.
+## Current Blocker And Next Step
 
-See [the player-visible semantics RFC](PLAYER_VISIBLE_SEMANTICS_PROTOCOL_RFC.md)
-and [the composition/inspection/diagnostics audit](COMPOSITION_INSPECTION_DIAGNOSTICS_AUDIT_2026-07-16.md).
-The current organic evidence is summarized in
-[the July 17 long-run audit](ORGANIC_LONG_RUN_AUDIT_2026-07-17.md).
+The architecture blocker is coverage breadth without dishonest generalization,
+not a failed core model. Shop is now the highest-value frequent local action
+owner, but it needs an exact source/UI audit covering inventory identity,
+affordability, sold-out state, potion capacity, card-removal child flow, leave,
+and asynchronous purchase completion before receiving a v2 surface. Menu and
+generic deck-selection settlement remain separate debt.
+
+See [the preview.13 closeout audit](PREVIEW_13_CLOSEOUT_AUDIT_2026-07-17.md),
+[the coverage matrix](PLAYER_VISIBLE_COVERAGE.md), and
+[the organic long-run audit](ORGANIC_LONG_RUN_AUDIT_2026-07-17.md).

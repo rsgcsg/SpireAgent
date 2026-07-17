@@ -11,19 +11,18 @@ state-bound protocol intended for the rebuilt `Re-SpireAgent` client.
 Bridge v2 is an incremental preview, not a replacement for all v1 surfaces.
 
 - Current exact game binding: Slay the Spire 2 `v0.108.0`.
-- Source `2.0-preview.9` includes typed diagnostics, centralized active-surface
-  ownership, eight bounded executable surfaces, and two fixed read-only
+- Source `2.0-preview.13` includes typed diagnostics, centralized active-surface
+  ownership, twelve bounded executable surfaces, and two fixed read-only
   inspections: `run_deck` and `combat_piles`.
 - All unimplemented or version-incompatible v2 surfaces fail closed with no
   legal actions.
 - v1 remains available for compatibility and has been made build-compatible
   with `v0.108.0`; its index-based action contract is legacy.
 - Static build/protocol tests pass. Real `v0.108.0` Bridge plus Re-SpireAgent
-  smokes cover seven source slices, persistent Glam run-deck reinspection,
-  non-empty draw/discard/exhaust evidence, and full-belt potion discard/claim.
-  Generated-card choice is source/fixture qualified but still awaits fresh
-  preview.9 organic execution. Unlisted surfaces remain unsupported and draw
-  order remains hidden.
+  smokes cover all twelve current surfaces for at least one bounded interaction
+  shape, persistent Glam run-deck reinspection, non-empty
+  draw/discard/exhaust evidence, and full-belt potion discard/claim. Unlisted
+  surfaces remain unsupported and draw order remains hidden.
 
 See [current status](docs/bridge-v2/CURRENT_STATUS.md), the
 [upstream/design audit](docs/bridge-v2/UPSTREAM_AUDIT.md), and the
@@ -86,7 +85,7 @@ dotnet test STS2_MCP.sln -p:STS2GameDir="$env:STS2_GAME_DIR"
 .\build.ps1 -GameDir "$env:STS2_GAME_DIR"
 ```
 
-The solution currently contains 35 pure contract/runtime/security tests covering stable
+The solution currently contains 41 pure contract/runtime/security tests covering stable
 state identity, entity identity, stale-state rejection, idempotent request IDs,
 completion observation, timeout-as-unknown, and JSON action shape.
 
@@ -148,6 +147,8 @@ Bridge v2 MCP tools:
 
 - `get_agent_bridge_capabilities_v2()`
 - `get_agent_state_v2()`
+- `inspect_run_deck_v2(expected_state_id)`
+- `inspect_combat_piles_v2(expected_state_id)`
 - `submit_agent_action_v2(request_id, expected_state_id, action_id)`
 - `get_agent_command_v2(request_id)`
 
@@ -158,6 +159,7 @@ The existing v1 tools remain exposed during migration.
 ```text
 GET  /api/v2/capabilities
 GET  /api/v2/state
+GET  /api/v2/inspections/{kind}?expected_state_id={state_id}
 POST /api/v2/commands
 GET  /api/v2/commands/{request_id}
 ```
@@ -185,9 +187,10 @@ sole executor; unsupported v2 surfaces remain on v1 during migration.
 Exact-build mismatch, context/surface mismatch, command-response identity
 mismatch, failed command, and timeout all fail closed.
 
-Deck-enchant, ordinary-event, combat-turn, combat-pile, combat-hand, card-reward,
-and outer-reward lifecycles have bounded organic evidence for their observed
-shapes. Planning code never reads arbitrary bridge JSON. Source `preview.9`
+All twelve current executable surfaces have bounded organic evidence for at
+least one observed shape, including ancient dialogue, rest controls, generated
+cards, bundles, and map navigation. Planning code never reads arbitrary bridge
+JSON. Source `preview.13`
 also projects state-bound run-deck and combat-pile inspections into typed
 player facts without creating actions or entering the command ledger.
 

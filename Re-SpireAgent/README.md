@@ -196,15 +196,13 @@ RE-P1 has fixture-backed support for:
 - `menu`
 - `game_over`
 
-Bridge v2 source `preview.9` contracts cover `deck_enchant_selection`,
-`event_option`, `combat_turn`, `combat_pile_card_selection`,
-`combat_hand_card_selection`, `generated_card_choice`,
-`card_reward_selection`, and `reward_claim`. Seven have bounded organic Bridge
-plus Re-SpireAgent lifecycle evidence on the exact supported build;
-`generated_card_choice` is exact-source/fixture qualified but still awaits a
-fresh preview.9 organic lifecycle. Fixed read-only `run_deck` and
-`combat_piles` inspections also have bounded organic evidence. Qualification
-is per observed shape, not broad surface or game coverage. See
+Bridge v2 source `preview.13` contracts cover twelve bounded executable
+surfaces: deck enchant, ancient dialogue, ordinary events, rest controls,
+combat turn, three combat selectors, card bundles, card rewards, outer rewards,
+and map navigation. Every current surface has bounded organic Bridge plus
+Re-SpireAgent evidence for at least one observed shape. Fixed read-only
+`run_deck` and `combat_piles` inspections also have bounded organic evidence.
+Qualification is per observed shape, not broad surface or game coverage. See
 [BRIDGE_V2_INTEGRATION.md](docs/BRIDGE_V2_INTEGRATION.md).
 
 `bundle_select` and future state types are intentionally unsupported until a real raw fixture and verified action protocol are available. They fail closed instead of inheriting guessed fields from the old project. See [MCP_STATE_COVERAGE.md](docs/MCP_STATE_COVERAGE.md).
@@ -224,13 +222,10 @@ The only supported public TypeScript entrypoint is `src/index.ts`. Integration r
 ## Current Limitations
 
 - Real v1 MCP windows have exercised event, combat, rewards, card reward, map, rest, shop, treasure, and a boss fight. This proves protocol integration, not strategic quality or universal MCP coverage. The legacy v1 `NDeckEnchantSelectScreen` confirmation endpoint acknowledged the request without advancing state; Bridge v2 now has a separate qualified opaque-action contract for that surface.
-- Bridge v2 source `preview.9` lists legal actions for deck enchant, ordinary
-  event options, immediate player-phase combat, pile/hand/generated combat-card
-  selectors, card reward selection, and outer reward claim. All unlisted
-  surfaces remain v1-local in `auto` mode.
-- Deck enchant, one ordinary event-option flow, and one targeted combat-card
-  flow have organic Re lifecycles. This does not qualify ancient dialogue,
-  combat overlays, every card target type, potion use, or end turn.
+- Bridge v2 source `preview.13` lists legal actions for twelve bounded surfaces.
+  All unlisted surfaces remain v1-local in `auto` mode.
+- Organic evidence now covers each listed surface for at least one shape. It
+  does not qualify every selector mode, event origin, card target, or game UI.
 - Bridge v2 exposes one action-owning surface at a time through a centralized
   overlay-vs-room resolver. Typed diagnostics are implemented; legacy warning
   text must not be mistaken for an action-authority decision.
@@ -243,8 +238,9 @@ The only supported public TypeScript entrypoint is `src/index.ts`. Integration r
   discard-then-claim lifecycle passed against an organic full-belt screen.
 - Pile, hand, generated, reward, and run-deck card selection are not one generic
   protocol. Their object ownership, timing guard, legal actions, and completion
-  evidence differ; shared visible-card fields do not justify a universal
-  selector.
+  semantics remain distinct. Smith's child deck selector is still legacy even
+  though the surrounding rest controls are Bridge-owned; shared visible-card
+  fields do not justify a universal selector.
 - Ordinary card reward and outer reward claim are distinct, organically
   qualified protocols; neither is flattened into the other.
 - Run-deck inspection supplies complete typed deck evidence when a local run

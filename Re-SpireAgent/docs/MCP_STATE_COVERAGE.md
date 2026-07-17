@@ -11,17 +11,21 @@ Coverage is based on observed old-project raw snapshots and reduced fixture copi
 | Bridge v2 `deck_enchant_selection` | Bridge `event`/`combat` context + `deck_enchant_selection` + `bridge_advertised` | organic Bridge + Re lifecycle passed | opaque select/preview/confirm/cancel/close only |
 | Bridge v2 `event_option` | Bridge `event` + `event_option` + `bridge_advertised` | organic Bridge + Re choose/settlement lifecycle passed for ordinary options | opaque choose/proceed only |
 | Bridge v2 `combat_turn` | Bridge `combat` + `combat_turn` + `bridge_advertised` | organic Bridge + Re targeted-card/settlement lifecycle passed | opaque play-card/potion/end-turn only |
-| Bridge v2 `combat_pile_card_selection` | Bridge `combat` + exact pile selector + `bridge_advertised` | four preview.9 single-pick actions passed across two organic runs | opaque toggle/confirm/cancel/peek-close only |
+| Bridge v2 `combat_pile_card_selection` | Bridge `combat` + exact pile selector + `bridge_advertised` | four single-pick actions passed across two organic runs | opaque toggle/confirm/cancel/peek-close only |
 | Bridge v2 `combat_hand_card_selection` | Bridge `combat` + exact hand selector + `bridge_advertised` | organic upgrade select + confirm passed | opaque toggle/confirm/cancel/peek-close only |
-| Bridge v2 `generated_card_choice` | Bridge `combat` + temporary-card choice + `bridge_advertised` | exact-source and fixture backed; fresh preview.9 organic lifecycle pending | opaque temporary-card select/skip/peek-close only |
+| Bridge v2 `generated_card_choice` | Bridge `combat` + temporary-card choice + `bridge_advertised` | organic temporary-card lifecycle passed | opaque temporary-card select/skip/peek-close only |
+| Bridge v2 `card_bundle_selection` | exact parent context + atomic visible bundle choice + `bridge_advertised` | organic preview/commit lifecycle passed | opaque bundle preview/confirm/cancel only |
+| Bridge v2 `event_dialogue` | Bridge ancient `event` + revealed-prefix dialogue + `bridge_advertised` | two organic advances then option transition passed | opaque current-line advance only; future lines hidden |
+| Bridge v2 `rest_site` | Bridge `rest` + exact options/Proceed + `bridge_advertised` | Smith-to-child-overlay and Proceed-to-map passed | opaque rest option or Proceed; child deck selection separate |
+| Bridge v2 `map_navigation` | Bridge `map` + visible topology/current choices + `bridge_advertised` | repeated organic exact-node travel passed | opaque current-node choice only |
 | Bridge v2 `card_reward_selection` | Bridge `reward_flow(card_reward)` + `card_reward_selection` + `bridge_advertised` | organic Bridge + Re lifecycle passed | opaque card or separately labeled alternative only |
 | Bridge v2 `reward_claim` | Bridge `reward_flow(room_rewards)` + `reward_claim` + `bridge_advertised` | ordinary Gold, Proceed/Skip, and full-belt potion discard-then-claim completed | opaque visible claim, exact capacity discard, or explicit proceed only |
 | Bridge v2 `run_deck` inspection | optional typed player run-deck evidence on supported and legacy-fallback states | organic post-reward Glam reinspection passed | none; read-only evidence |
 | Bridge v2 `combat_piles` inspection | optional typed unordered draw/discard/exhaust evidence in combat | non-empty draw/discard/exhaust organic smoke passed | none; read-only evidence |
 | `card_reward` | `card_reward` | fixture-backed | take, skip, proceed when exposed |
 | `rewards` | `rewards` | fixture-backed | claim, potion discard, proceed |
-| `map` | `map` | fixture-backed | choose next node |
-| `rest_site` | `rest` | fixture-backed | choose option, explicit proceed |
+| legacy `map` fallback | `map` | fixture-backed | only when v2 explicitly unsupported |
+| legacy `rest_site` fallback | `rest` | fixture-backed | only when v2 explicitly unsupported |
 | `event` | `event` | fixture-backed | choose visible option, including proceed option |
 | `shop` | `shop` | fixture-backed with one documented inference | buy affordable stocked item, leave |
 | `treasure` | `treasure` | fixture-backed | take relic when exposed, proceed |
@@ -37,12 +41,10 @@ A new state is supported only after a real raw sample, normalized variant, allow
 
 ## Adapter Limits
 
-- v1 legal actions are reconstructed locally. Bridge v2 source `preview.9`
-  enumerates authoritative actions for deck enchant, ordinary event options,
-  immediate player-phase combat, three distinct combat card selectors, card
-  reward selection, and outer room reward claims. Qualification remains per
-  observed action shape; generated-card choice still lacks fresh preview.9
-  organic execution.
+- v1 legal actions are reconstructed locally. Bridge v2 source `preview.13`
+  enumerates authoritative actions for twelve bounded surfaces. Qualification
+  remains per observed action shape; unsupported screens never inherit a nearby
+  surface's authority.
 - v1 action responses are partial; post-state observation verifies effects.
   Bridge v2 has a command lifecycle and action-specific completion evidence.
 - Some combat card effects open modal selection surfaces while retaining battle data.
