@@ -1,15 +1,19 @@
 import { z } from "zod";
 import { isJsonObject, type JsonObject } from "../../shared/json.js";
 
-export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.18" as const;
+export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.23" as const;
 
 const compatibilitySchema = z.object({
   status: z.string().min(1),
+  tested_game_versions: z.array(z.string().min(1)),
+  tested_build_fingerprints: z.array(z.string().min(1)),
   action_execution_allowed: z.boolean(),
   state_observation_allowed: z.boolean(),
   inspection_allowed: z.boolean(),
   action_execution_surface_kinds: z.array(z.string().min(1)),
+  action_canary_surface_kinds: z.array(z.string().min(1)),
   inspection_allowed_kinds: z.array(z.enum(["run_deck", "combat_piles"])),
+  inspection_canary_kinds: z.array(z.enum(["run_deck", "combat_piles"])),
   observation_only_surface_kinds: z.array(z.string().min(1)),
   observation_candidate_build_fingerprints: z.array(z.string().min(1)),
   detail: z.string()
@@ -27,7 +31,15 @@ const bridgeIdentitySchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   version: z.string().min(1),
-  upstream_commit: z.string().min(1)
+  upstream_commit: z.string().min(1),
+  module_version_id: z.string().min(1),
+  runtime_instance_id: z.string().min(1)
+}).passthrough();
+
+const authorityHandoffSchema = z.object({
+  status: z.enum(["bridge_owned", "legacy_fallback_allowed", "none_fail_closed"]),
+  surface_kind: z.string().min(1).nullable().optional(),
+  reason: z.string().min(1)
 }).passthrough();
 
 const visibleEnchantmentSchema = z.object({
@@ -101,6 +113,20 @@ const visibleRelicSchema = z.object({
   counter: z.number().nullable().optional()
 }).passthrough();
 
+const visibleKeywordSchema = z.object({
+  name: z.string().min(1),
+  description: z.string().nullable().optional()
+}).passthrough();
+
+const visibleTreasureRelicSchema = z.object({
+  entity_id: z.string().min(1),
+  definition_id: z.string().min(1),
+  name: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  rarity: z.string().min(1),
+  keywords: z.array(visibleKeywordSchema)
+}).passthrough();
+
 const visibleOrbSchema = z.object({
   entity_id: z.string().min(1),
   definition_id: z.string().min(1),
@@ -158,6 +184,10 @@ const rewardFlowContextSchema = z.object({
 
 const restContextSchema = z.object({
   kind: z.literal("rest")
+}).passthrough();
+
+const treasureContextSchema = z.object({
+  kind: z.literal("treasure")
 }).passthrough();
 
 const visibleOwnedPotionSchema = z.object({
@@ -231,6 +261,20 @@ const deckRemovalSurfaceSchema = z.object({
   selected_card_entity_ids: z.array(z.string().min(1)),
   cancelable: z.boolean(),
   cards: z.array(visibleCardSchema)
+}).passthrough();
+
+const deckUpgradeSurfaceSchema = z.object({
+  kind: z.literal("deck_upgrade_selection"),
+  stage: z.enum(["selecting", "preview"]),
+  screen_entity_id: z.string().min(1),
+  prompt: z.string().min(1),
+  min_select: z.number().int().nonnegative(),
+  max_select: z.number().int().nonnegative(),
+  selected_count: z.number().int().nonnegative(),
+  selected_card_entity_ids: z.array(z.string().min(1)),
+  cancelable: z.boolean(),
+  cards: z.array(visibleCardSchema),
+  preview_cards: z.array(visibleCardSchema)
 }).passthrough();
 
 const visibleEventOptionSchema = z.object({
@@ -337,6 +381,16 @@ const shopRoomSurfaceSchema = z.object({
   kind: z.literal("shop_room"),
   room_entity_id: z.string().min(1),
   can_open_inventory: z.boolean(),
+  can_proceed: z.boolean()
+}).passthrough();
+
+const treasureRoomSurfaceSchema = z.object({
+  kind: z.literal("treasure_room"),
+  stage: z.enum(["closed", "opening", "relic_choice", "completed"]),
+  room_entity_id: z.string().min(1),
+  chest_opened: z.boolean(),
+  relics: z.array(visibleTreasureRelicSchema).max(1),
+  can_skip: z.boolean(),
   can_proceed: z.boolean()
 }).passthrough();
 
@@ -477,9 +531,9 @@ const completenessSchema = z.object({
 const diagnosticSchema = z.object({
   code: z.string().min(1),
   severity: z.enum(["info", "warning", "error"]),
-  category: z.enum(["identity", "compatibility", "context", "surface", "visibility", "completeness", "action", "completion", "runtime"]),
+  category: z.enum(["identity", "compatibility", "authority", "context", "surface", "visibility", "completeness", "action", "completion", "runtime"]),
   effect: z.enum(["none", "field_omitted", "actions_suppressed", "surface_unsupported", "outcome_unknown"]),
-  recoverability: z.enum(["settle", "change_surface", "restart", "update_bridge", "unknown"]),
+  recoverability: z.enum(["settle", "change_surface", "restart", "update_bridge", "legacy_adapter", "unknown"]),
   path: z.string().nullable().optional(),
   visibility_class: z.enum(["on_screen", "normal_inspection", "count_only", "hidden"]).nullable().optional(),
   required_for_action: z.boolean().nullable().optional(),
@@ -487,7 +541,13 @@ const diagnosticSchema = z.object({
 }).passthrough();
 
 const inspectionContractSchema = z.object({
-  status: z.enum(["implemented_read_only", "candidate_read_only_canary", "disabled_for_current_build"]),
+  status: z.enum([
+    "implemented_read_only",
+    "qualified_read_only_scoped",
+    "mixed_scoped_read_only",
+    "candidate_read_only_canary",
+    "disabled_for_current_build"
+  ]),
   state_bound: z.literal(true),
   arbitrary_queries_allowed: z.literal(false),
   enters_command_ledger: z.literal(false),
@@ -552,6 +612,7 @@ const stateBaseSchema = z.object({
   context: contextBaseSchema,
   surface_kind: z.string().min(1),
   surface: surfaceBaseSchema,
+  authority_handoff: authorityHandoffSchema,
   legal_actions: z.array(legalActionSchema),
   completeness: completenessSchema,
   bridge: bridgeIdentitySchema,
@@ -614,10 +675,12 @@ export type BridgeV2Capabilities = z.infer<typeof capabilitiesSchema>;
 export type BridgeV2LegalAction = z.infer<typeof legalActionSchema>;
 export type BridgeV2DeckEnchantSurface = z.infer<typeof deckEnchantSurfaceSchema>;
 export type BridgeV2DeckRemovalSurface = z.infer<typeof deckRemovalSurfaceSchema>;
+export type BridgeV2DeckUpgradeSurface = z.infer<typeof deckUpgradeSurfaceSchema>;
 export type BridgeV2EventContext = z.infer<typeof eventContextSchema>;
 export type BridgeV2CombatContext = z.infer<typeof combatContextSchema>;
 export type BridgeV2RewardFlowContext = z.infer<typeof rewardFlowContextSchema>;
 export type BridgeV2RestContext = z.infer<typeof restContextSchema>;
+export type BridgeV2TreasureContext = z.infer<typeof treasureContextSchema>;
 export type BridgeV2ShopContext = z.infer<typeof shopContextSchema>;
 export type BridgeV2MapContext = z.infer<typeof mapContextSchema>;
 export type BridgeV2UnknownContext = z.infer<typeof unknownContextSchema>;
@@ -626,6 +689,7 @@ export type BridgeV2EventDialogueSurface = z.infer<typeof eventDialogueSurfaceSc
 export type BridgeV2RestSiteSurface = z.infer<typeof restSiteSurfaceSchema>;
 export type BridgeV2ShopInventorySurface = z.infer<typeof shopInventorySurfaceSchema>;
 export type BridgeV2ShopRoomSurface = z.infer<typeof shopRoomSurfaceSchema>;
+export type BridgeV2TreasureRoomSurface = z.infer<typeof treasureRoomSurfaceSchema>;
 export type BridgeV2CombatTurnSurface = z.infer<typeof combatTurnSurfaceSchema>;
 export type BridgeV2CombatPileCardSelectionSurface = z.infer<typeof combatPileCardSelectionSurfaceSchema>;
 export type BridgeV2CombatHandCardSelectionSurface = z.infer<typeof combatHandCardSelectionSurfaceSchema>;
@@ -644,6 +708,7 @@ export type BridgeV2Context =
   | BridgeV2CombatContext
   | BridgeV2RewardFlowContext
   | BridgeV2RestContext
+  | BridgeV2TreasureContext
   | BridgeV2ShopContext
   | BridgeV2MapContext
   | BridgeV2UnknownContext
@@ -652,10 +717,12 @@ export type BridgeV2Context =
 export type BridgeV2Surface =
   | BridgeV2DeckEnchantSurface
   | BridgeV2DeckRemovalSurface
+  | BridgeV2DeckUpgradeSurface
   | BridgeV2EventDialogueSurface
   | BridgeV2RestSiteSurface
   | BridgeV2ShopInventorySurface
   | BridgeV2ShopRoomSurface
+  | BridgeV2TreasureRoomSurface
   | BridgeV2EventOptionSurface
   | BridgeV2CombatTurnSurface
   | BridgeV2CombatPileCardSelectionSurface
@@ -706,6 +773,11 @@ export function decodeBridgeV2State(value: unknown): DecodedBridgePayload<Bridge
     if (context.kind !== "shop") {
       throw new BridgeV2DecodeError("Bridge v2 deck_removal_selection surface requires shop context");
     }
+  } else if (decoded.data.surface.kind === "deck_upgrade_selection") {
+    surface = parse(deckUpgradeSurfaceSchema, decoded.data.surface, "deck_upgrade_selection surface");
+    if (context.kind !== "event" && context.kind !== "rest") {
+      throw new BridgeV2DecodeError("Bridge v2 deck_upgrade_selection surface requires event or rest context");
+    }
   } else if (decoded.data.surface.kind === "event_dialogue") {
     surface = parse(eventDialogueSurfaceSchema, decoded.data.surface, "event_dialogue surface");
     if (context.kind !== "event" || !context.ancient || !context.in_dialogue) {
@@ -725,6 +797,11 @@ export function decodeBridgeV2State(value: unknown): DecodedBridgePayload<Bridge
     surface = parse(shopRoomSurfaceSchema, decoded.data.surface, "shop_room surface");
     if (context.kind !== "shop") {
       throw new BridgeV2DecodeError("Bridge v2 shop_room surface requires shop context");
+    }
+  } else if (decoded.data.surface.kind === "treasure_room") {
+    surface = parse(treasureRoomSurfaceSchema, decoded.data.surface, "treasure_room surface");
+    if (context.kind !== "treasure") {
+      throw new BridgeV2DecodeError("Bridge v2 treasure_room surface requires treasure context");
     }
   } else if (decoded.data.surface.kind === "event_option") {
     surface = parse(eventOptionSurfaceSchema, decoded.data.surface, "event_option surface");
@@ -832,6 +909,12 @@ export function isBridgeV2DeckRemovalSurface(
   return surface.kind === "deck_removal_selection";
 }
 
+export function isBridgeV2DeckUpgradeSurface(
+  surface: BridgeV2Surface
+): surface is BridgeV2DeckUpgradeSurface {
+  return surface.kind === "deck_upgrade_selection";
+}
+
 export function isBridgeV2UnsupportedSurface(
   surface: BridgeV2Surface
 ): surface is BridgeV2UnsupportedSurface {
@@ -858,6 +941,10 @@ export function isBridgeV2RestContext(context: BridgeV2Context): context is Brid
 
 export function isBridgeV2ShopContext(context: BridgeV2Context): context is BridgeV2ShopContext {
   return context.kind === "shop";
+}
+
+export function isBridgeV2TreasureContext(context: BridgeV2Context): context is BridgeV2TreasureContext {
+  return context.kind === "treasure";
 }
 
 export function isBridgeV2MapContext(context: BridgeV2Context): context is BridgeV2MapContext {
@@ -892,6 +979,12 @@ export function isBridgeV2ShopRoomSurface(
   surface: BridgeV2Surface
 ): surface is BridgeV2ShopRoomSurface {
   return surface.kind === "shop_room";
+}
+
+export function isBridgeV2TreasureRoomSurface(
+  surface: BridgeV2Surface
+): surface is BridgeV2TreasureRoomSurface {
+  return surface.kind === "treasure_room";
 }
 
 export function isBridgeV2CombatTurnSurface(
@@ -947,6 +1040,7 @@ function parseContext(value: z.infer<typeof contextBaseSchema>): BridgeV2Context
   if (value.kind === "combat") return parse(combatContextSchema, value, "combat context");
   if (value.kind === "reward_flow") return parse(rewardFlowContextSchema, value, "reward_flow context");
   if (value.kind === "rest") return parse(restContextSchema, value, "rest context");
+  if (value.kind === "treasure") return parse(treasureContextSchema, value, "treasure context");
   if (value.kind === "shop") return parse(shopContextSchema, value, "shop context");
   if (value.kind === "map") return parse(mapContextSchema, value, "map context");
   if (value.kind === "unknown") return parse(unknownContextSchema, value, "unknown context");

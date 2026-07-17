@@ -68,6 +68,8 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
         ...(bridge ? {
           bridge_protocol_version: bridge.protocol_version,
           bridge_version: bridge.bridge.version,
+          bridge_module_version_id: bridge.bridge.module_version_id,
+          bridge_runtime_instance_id: bridge.bridge.runtime_instance_id,
           game_version: bridge.game.version ?? null,
           game_commit: bridge.game.commit ?? null,
           main_assembly_hash: bridge.game.main_assembly_hash ?? null,
@@ -76,9 +78,13 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
           state_observation_allowed: bridge.game.compatibility.state_observation_allowed,
           inspection_allowed: bridge.game.compatibility.inspection_allowed,
           action_execution_surface_kinds: bridge.game.compatibility.action_execution_surface_kinds,
+          action_canary_surface_kinds: bridge.game.compatibility.action_canary_surface_kinds,
           observation_only_surface_kinds: bridge.game.compatibility.observation_only_surface_kinds,
           supported_surfaces: bridge.surfaces
             .filter((surface) => surface.support === "implemented_exact_game_version")
+            .map((surface) => surface.kind),
+          qualified_scoped_surfaces: bridge.surfaces
+            .filter((surface) => surface.support === "qualified_exact_build")
             .map((surface) => surface.kind),
           candidate_observation_surfaces: bridge.surfaces
             .filter((surface) => surface.support === "candidate_observation_only")
@@ -103,13 +109,16 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
     if (!capabilities) throw new Error("Bridge v2 capabilities were not negotiated");
     const state = await this.bridge.state();
     const candidateBuild = isCandidateBuild(capabilities.data, state.data);
+    const scopedQualifiedBuild = isScopedQualifiedBuild(capabilities.data, state.data);
 
     // Legacy fallback is allowed only when a coherent exact v2 contract
     // explicitly says this surface is unsupported. Any contract drift remains
     // visible to the strict normalizer and fails closed.
     if (this.options.mode === "v2" || !isSafeExplicitLegacyFallback(capabilities.data, state.data)) {
       const [legacyState, inspections] = await Promise.all([
-        candidateBuild ? undefined : this.tryReadLegacySidecar(),
+        candidateBuild || scopedQualifiedBuild || this.options.mode === "v2"
+          ? undefined
+          : this.tryReadLegacySidecar(),
         // Candidate builds may expose a separately scoped, v2-owned
         // inspection canary. Never merge v1 there, but do preserve an
         // inspection explicitly authorized by the exact compatibility scope.
@@ -140,6 +149,7 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
     return {
       ...legacyState,
       bridge_v2_capabilities: capabilities.raw,
+      bridge_v2_authority_evidence: bridgeAuthorityEvidence(verifiedState.data),
       ...(Object.keys(inspections).length > 0 ? { bridge_v2_inspections: inspections } : {})
     };
   }
@@ -256,6 +266,54 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
   }
 }
 
+function bridgeAuthorityEvidence(state: BridgeV2State): JsonObject {
+  return {
+    protocol_version: state.protocol_version,
+    state_id: state.state_id,
+    readiness: state.readiness,
+    context_kind: state.context.kind,
+    surface_kind: state.surface.kind,
+    authority_handoff: {
+      status: state.authority_handoff.status,
+      ...(state.authority_handoff.surface_kind !== undefined
+        ? { surface_kind: state.authority_handoff.surface_kind ?? null }
+        : {}),
+      reason: state.authority_handoff.reason
+    },
+    bridge: {
+      id: state.bridge.id,
+      version: state.bridge.version,
+      upstream_commit: state.bridge.upstream_commit,
+      module_version_id: state.bridge.module_version_id,
+      runtime_instance_id: state.bridge.runtime_instance_id
+    },
+    game: {
+      ...(state.game.version !== undefined ? { version: state.game.version ?? null } : {}),
+      ...(state.game.commit !== undefined ? { commit: state.game.commit ?? null } : {}),
+      ...(state.game.branch !== undefined ? { branch: state.game.branch ?? null } : {}),
+      ...(state.game.main_assembly_hash !== undefined
+        ? { main_assembly_hash: state.game.main_assembly_hash ?? null }
+        : {}),
+      compatibility: {
+        status: state.game.compatibility.status,
+        tested_game_versions: state.game.compatibility.tested_game_versions,
+        tested_build_fingerprints: state.game.compatibility.tested_build_fingerprints,
+        action_execution_allowed: state.game.compatibility.action_execution_allowed,
+        state_observation_allowed: state.game.compatibility.state_observation_allowed,
+        inspection_allowed: state.game.compatibility.inspection_allowed,
+        action_execution_surface_kinds: state.game.compatibility.action_execution_surface_kinds,
+        action_canary_surface_kinds: state.game.compatibility.action_canary_surface_kinds,
+        inspection_allowed_kinds: state.game.compatibility.inspection_allowed_kinds,
+        inspection_canary_kinds: state.game.compatibility.inspection_canary_kinds,
+        observation_only_surface_kinds: state.game.compatibility.observation_only_surface_kinds,
+        observation_candidate_build_fingerprints:
+          state.game.compatibility.observation_candidate_build_fingerprints,
+        detail: state.game.compatibility.detail
+      }
+    }
+  };
+}
+
 function stateChangedDuringCompositeRead(detail?: string): TransientObservationError {
   return new TransientObservationError(
     "state_changed_during_composite_read",
@@ -275,22 +333,101 @@ function isSafeExplicitLegacyFallback(
   const stateGame = state.game;
   return state.surface.kind === "unsupported"
     && state.readiness === "unsupported"
-    && capabilityGame.compatibility.status === "supported_exact"
-    && stateGame.compatibility.status === "supported_exact"
+    && state.legal_actions.length === 0
+    && state.authority_handoff.status === "legacy_fallback_allowed"
+    && isExecutableExactStatus(capabilityGame.compatibility.status)
+    && stateGame.compatibility.status === capabilityGame.compatibility.status
     && capabilityGame.compatibility.action_execution_allowed
     && stateGame.compatibility.action_execution_allowed
     && Boolean(capabilityGame.version && capabilityGame.commit && capabilityGame.main_assembly_hash !== null && capabilityGame.main_assembly_hash !== undefined)
     && capabilityGame.version === stateGame.version
     && capabilityGame.commit === stateGame.commit
     && capabilityGame.main_assembly_hash === stateGame.main_assembly_hash
+    && capabilityGame.compatibility.tested_build_fingerprints.includes(gameFingerprint(capabilityGame))
+    && stateGame.compatibility.tested_build_fingerprints.includes(gameFingerprint(stateGame))
     && capabilities.bridge.id === state.bridge.id
+    && capabilities.bridge.name === state.bridge.name
     && capabilities.bridge.version === state.bridge.version
+    && capabilities.bridge.upstream_commit === state.bridge.upstream_commit
+    && capabilities.bridge.module_version_id === state.bridge.module_version_id
+    && capabilities.bridge.runtime_instance_id === state.bridge.runtime_instance_id
     && capabilities.observation_policy.id === state.observation_policy.id
     && !capabilities.observation_policy.includes_hidden_information
     && !state.observation_policy.includes_hidden_information
     && capabilities.commands.opaque_actions_only
     && capabilities.commands.state_bound
-    && capabilities.commands.idempotent_request_ids;
+    && capabilities.commands.idempotent_request_ids
+    && sameStrings(
+      capabilityGame.compatibility.action_execution_surface_kinds,
+      stateGame.compatibility.action_execution_surface_kinds
+    )
+    && sameStrings(
+      capabilityGame.compatibility.action_canary_surface_kinds,
+      stateGame.compatibility.action_canary_surface_kinds
+    )
+    && sameStrings(
+      capabilityGame.compatibility.inspection_allowed_kinds,
+      stateGame.compatibility.inspection_allowed_kinds
+    )
+    && sameStrings(
+      capabilityGame.compatibility.inspection_canary_kinds,
+      stateGame.compatibility.inspection_canary_kinds
+    )
+    && sameStrings(
+      capabilityGame.compatibility.observation_only_surface_kinds,
+      stateGame.compatibility.observation_only_surface_kinds
+    )
+    && sameStrings(
+      capabilityGame.compatibility.observation_candidate_build_fingerprints,
+      stateGame.compatibility.observation_candidate_build_fingerprints
+    )
+    && sameStrings(
+      capabilityGame.compatibility.tested_build_fingerprints,
+      stateGame.compatibility.tested_build_fingerprints
+    )
+    && (capabilityGame.compatibility.status !== "qualified_scoped"
+      || isScopedLegacyHandoff(capabilities, state));
+}
+
+function isExecutableExactStatus(status: string): boolean {
+  return status === "supported_exact" || status === "qualified_scoped";
+}
+
+function isScopedLegacyHandoff(
+  capabilities: BridgeV2Capabilities,
+  state: BridgeV2State
+): boolean {
+  const surfaceKind = state.authority_handoff.surface_kind;
+  if (!surfaceKind) return false;
+  if (capabilities.game.compatibility.action_execution_surface_kinds.includes(surfaceKind)
+      || capabilities.game.compatibility.action_canary_surface_kinds.includes(surfaceKind)) return false;
+  return capabilities.surfaces.some((surface) =>
+    surface.kind === surfaceKind && surface.support === "not_qualified_for_current_build");
+}
+
+function isScopedQualifiedBuild(
+  capabilities: BridgeV2Capabilities,
+  state: BridgeV2State
+): boolean {
+  const capabilityCompatibility = capabilities.game.compatibility;
+  const stateCompatibility = state.game.compatibility;
+  return capabilityCompatibility.status === "qualified_scoped"
+    && stateCompatibility.status === "qualified_scoped"
+    && capabilityCompatibility.action_execution_allowed
+    && stateCompatibility.action_execution_allowed
+    && capabilityCompatibility.state_observation_allowed
+    && stateCompatibility.state_observation_allowed
+    && capabilityCompatibility.action_execution_surface_kinds.length > 0
+    && sameStrings(
+      capabilityCompatibility.action_execution_surface_kinds,
+      stateCompatibility.action_execution_surface_kinds
+    )
+    && sameStrings(
+      capabilityCompatibility.action_canary_surface_kinds,
+      stateCompatibility.action_canary_surface_kinds
+    )
+    && capabilityCompatibility.tested_build_fingerprints.includes(gameFingerprint(capabilities.game))
+    && stateCompatibility.tested_build_fingerprints.includes(gameFingerprint(state.game));
 }
 
 function isCandidateBuild(

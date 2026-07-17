@@ -43,7 +43,7 @@ const KNOWN_TOP_LEVEL_KEYS = new Set([
   "rest_site", "restSite", "event", "shop", "treasure", "card_select", "cardSelect", "hand_select",
   "handSelect", "bundle_select", "bundleSelect", "crystal_sphere", "crystalSphere", "game_over", "gameOver",
   "menu_screen", "menuScreen", "message", "options", "characters",
-  "bridge_v2_capabilities", "bridge_v2_inspections"
+  "bridge_v2_capabilities", "bridge_v2_inspections", "bridge_v2_authority_evidence"
 ]);
 const COMBAT_STATE_TOKENS = ["monster", "boss", "elite", "combat", "battle"] as const;
 
@@ -374,6 +374,7 @@ function determineStability(surface: InteractionSurface, diagnosticsStatus: "ok"
   if (surface.kind === "card_selection") return surface.options.length > 0 || surface.canConfirm || surface.canCancel ? "actionable" : "loading";
   if (surface.kind === "deck_enchant_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "deck_removal_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
+  if (surface.kind === "deck_upgrade_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "combat_pile_card_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "combat_hand_card_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "generated_card_choice") return surface.legalActions.length > 0 ? "actionable" : "loading";
@@ -389,6 +390,7 @@ function determineStability(surface: InteractionSurface, diagnosticsStatus: "ok"
   if (surface.kind === "event_option") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "rest_site") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "shop_inventory" || surface.kind === "shop_room") return surface.legalActions.length > 0 ? "actionable" : "loading";
+  if (surface.kind === "treasure_room") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "option_choice") return surface.options.some((option) => option.enabled) || surface.canProceed ? "actionable" : "loading";
   if (surface.kind === "shop_interaction") return "actionable";
   if (surface.kind === "treasure_claim") return surface.relics.length > 0 || surface.canProceed ? "actionable" : "loading";
@@ -403,10 +405,10 @@ function isCompatible(context: SemanticContext, surface: InteractionSurface): bo
     card_reward: ["card_reward", "card_selection", "no_action", "unsupported"],
     rewards: ["reward_claim", "card_selection", "no_action", "unsupported"],
     map: ["map_navigation", "no_action", "unsupported"],
-    rest: ["rest_site", "option_choice", "card_selection", "no_action", "unsupported"],
-    event: ["event_dialogue", "event_option", "option_choice", "card_selection", "card_bundle_selection", "no_action", "unsupported"],
+    rest: ["rest_site", "option_choice", "card_selection", "deck_upgrade_selection", "no_action", "unsupported"],
+    event: ["event_dialogue", "event_option", "option_choice", "card_selection", "deck_upgrade_selection", "card_bundle_selection", "no_action", "unsupported"],
     shop: ["shop_inventory", "shop_room", "shop_interaction", "no_action", "unsupported"],
-    treasure: ["treasure_claim", "no_action", "unsupported"],
+    treasure: ["treasure_room", "treasure_claim", "no_action", "unsupported"],
     crystal_sphere: ["grid_interaction", "no_action", "unsupported"],
     menu: ["menu_choice", "no_action", "unsupported"],
     run_ended: ["menu_choice", "no_action", "unsupported"],

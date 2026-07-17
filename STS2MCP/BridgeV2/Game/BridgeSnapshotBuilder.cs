@@ -12,6 +12,7 @@ internal static class BridgeSnapshotBuilder
     {
         new DeckEnchantSurfaceProvider(),
         new DeckRemovalSelectionSurfaceProvider(),
+        new DeckUpgradeSelectionSurfaceProvider(),
         new CombatPileCardSelectionSurfaceProvider(),
         new CombatHandCardSelectionSurfaceProvider(),
         new GeneratedCardChoiceSurfaceProvider(),
@@ -22,6 +23,7 @@ internal static class BridgeSnapshotBuilder
         new CombatTurnSurfaceProvider(),
         new ShopInventorySurfaceProvider(),
         new ShopRoomSurfaceProvider(),
+        new TreasureRoomSurfaceProvider(),
         new RestSiteSurfaceProvider(),
         new EventDialogueSurfaceProvider(),
         new EventOptionSurfaceProvider()
@@ -86,8 +88,11 @@ internal static class BridgeSnapshotBuilder
 
         IReadOnlyList<IBridgeSurfaceProvider> eligibleProviders = game.Compatibility.ActionExecutionAllowed
             ? game.Compatibility.ActionExecutionSurfaceKinds.Count == 0
+              && game.Compatibility.ActionCanarySurfaceKinds.Count == 0
                 ? Providers
-                : Providers.Where(provider => game.Compatibility.ActionExecutionSurfaceKinds.Contains(provider.Kind, StringComparer.Ordinal)).ToArray()
+                : Providers.Where(provider =>
+                    game.Compatibility.ActionExecutionSurfaceKinds.Contains(provider.Kind, StringComparer.Ordinal)
+                    || game.Compatibility.ActionCanarySurfaceKinds.Contains(provider.Kind, StringComparer.Ordinal)).ToArray()
             : Providers.Where(provider => game.Compatibility.ObservationOnlySurfaceKinds.Contains(provider.Kind, StringComparer.Ordinal)).ToArray();
         ActiveSurfaceResolution resolution = ActiveSurfaceResolver.Resolve(
             snapshot,
@@ -132,6 +137,55 @@ internal static class BridgeSnapshotBuilder
                     "restart"));
         }
 
+        if (game.Compatibility.Status == "qualified_scoped")
+        {
+            IReadOnlyList<IBridgeSurfaceProvider> unqualifiedProviders = Providers
+                .Where(provider =>
+                    !game.Compatibility.ActionExecutionSurfaceKinds.Contains(provider.Kind, StringComparer.Ordinal)
+                    && !game.Compatibility.ActionCanarySurfaceKinds.Contains(provider.Kind, StringComparer.Ordinal))
+                .ToArray();
+            ActiveSurfaceResolution legacyResolution = ActiveSurfaceResolver.Resolve(
+                snapshot,
+                unqualifiedProviders,
+                entities,
+                game);
+            if (legacyResolution.Failure != null || legacyResolution.MatchedKinds.Count > 1)
+            {
+                return Unsupported(
+                    game,
+                    snapshot.SourceType,
+                    "Bridge v2 could not establish a unique unqualified semantic surface owner; legacy fallback is forbidden.",
+                    new[] { "legacy_fallback_owner_ambiguous" },
+                    BridgeContextBuilder.Build(entities),
+                    BridgeDiagnostics.Create(
+                        "bridge.authority.legacy_fallback_ambiguous",
+                        "error",
+                        "authority",
+                        "actions_suppressed",
+                        "change_surface"));
+            }
+            if (legacyResolution.Draft != null)
+            {
+                string legacySurfaceKind = legacyResolution.MatchedKinds[0];
+                return Unsupported(
+                    game,
+                    snapshot.SourceType,
+                    $"The current {legacySurfaceKind} surface is source-resolved but not qualified for Bridge v2 on this exact build.",
+                    new[] { $"surface_not_qualified_for_current_build:{legacySurfaceKind}" },
+                    BridgeContextBuilder.Build(entities),
+                    BridgeDiagnostics.Create(
+                        "bridge.authority.legacy_fallback_allowed",
+                        "info",
+                        "authority",
+                        "surface_unsupported",
+                        "legacy_adapter"),
+                    new AuthorityHandoff(
+                        "legacy_fallback_allowed",
+                        legacySurfaceKind,
+                        "Exactly one known semantic surface matched outside the current build's Bridge v2 qualification scope."));
+            }
+        }
+
         return Unsupported(
             game,
             snapshot.SourceType,
@@ -143,7 +197,13 @@ internal static class BridgeSnapshotBuilder
                 "warning",
                 "surface",
                 "surface_unsupported",
-                "change_surface"));
+                "change_surface"),
+            game.Compatibility.Status == "supported_exact"
+                ? new AuthorityHandoff(
+                    "legacy_fallback_allowed",
+                    null,
+                    "This fully tested legacy build preserves the previous explicit unsupported-surface fallback contract.")
+                : null);
     }
 
     private static BridgeObservationDraft Unsupported(
@@ -152,7 +212,8 @@ internal static class BridgeSnapshotBuilder
         string reason,
         IReadOnlyList<string> warnings,
         IBridgeContext? context,
-        BridgeDiagnostic diagnostic)
+        BridgeDiagnostic diagnostic,
+        AuthorityHandoff? authorityHandoff = null)
     {
         var surface = new UnsupportedSurface("unsupported", sourceType, reason);
         context ??= new UnknownBridgeContext(
@@ -176,6 +237,10 @@ internal static class BridgeSnapshotBuilder
             warnings,
             Array.Empty<BridgeActionDraft>())
         {
+            AuthorityHandoff = authorityHandoff ?? new AuthorityHandoff(
+                "none_fail_closed",
+                null,
+                "Bridge v2 could not prove a safe action-authority handoff for this state."),
             Diagnostics = new[] { diagnostic }
         };
     }

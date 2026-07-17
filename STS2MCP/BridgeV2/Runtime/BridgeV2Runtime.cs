@@ -20,6 +20,7 @@ internal static class BridgeV2Runtime
     private static readonly BridgeStateIdentityTracker StateIdentity = new();
     private static readonly BridgeCommandLedger CommandLedger = new(CommandOutcomeTimeoutMs);
     private static readonly Dictionary<string, RegisteredBridgeAction> Actions = new(StringComparer.Ordinal);
+    private static readonly string RuntimeInstanceId = Guid.NewGuid().ToString("N");
 
     public static BridgeCapabilitiesResponse GetCapabilities()
     {
@@ -27,7 +28,7 @@ internal static class BridgeV2Runtime
         var warnings = new List<string>
         {
             "Bridge v2 is an incremental preview. Unlisted surfaces fail closed with no legal actions.",
-            "Singleplayer deck enchant, merchant deck removal, combat-pile, combat-hand, generated-card, and card-bundle selection, ancient event dialogue, ordinary event option, rest site, player-phase combat turn, card reward selection, room reward claim, map navigation, and normal merchant shop controls are the only game-bound v2 action slices in this revision.",
+            "Capabilities distinguish historically implemented surfaces from the exact current-build qualified and canary lists. Only the explicit current-build lists may own actions.",
             "Run-deck and combat-pile inspections are read-only evidence. They do not grant action authority or enter the command ledger."
         };
 
@@ -49,7 +50,16 @@ internal static class BridgeV2Runtime
                     "toggle_deck_removal_card", "preview_deck_removal", "confirm_deck_removal",
                     "cancel_deck_removal_preview", "cancel_deck_removal_selection"
                 },
-                "sts2-v0.108.0:MerchantCardRemovalEntry+CardSelectCmd.FromDeckForRemoval+NDeckCardSelectScreen"),
+                "sts2-v0.109.0:MerchantCardRemovalEntry+CardSelectCmd.FromDeckForRemoval+NDeckCardSelectScreen+semantic-post-state-witness"),
+            new SurfaceCapability(
+                "deck_upgrade_selection",
+                "implemented_exact_game_version",
+                new[]
+                {
+                    "toggle_deck_upgrade_card", "confirm_deck_upgrade",
+                    "cancel_deck_upgrade_preview", "cancel_deck_upgrade_selection"
+                },
+                "sts2-v0.109.0:CardSelectCmd.FromDeckForUpgrade+NDeckUpgradeSelectScreen+semantic-post-state-canary"),
             new SurfaceCapability(
                 "event_dialogue",
                 "implemented_exact_game_version",
@@ -69,7 +79,7 @@ internal static class BridgeV2Runtime
                 "combat_turn",
                 "implemented_exact_game_version",
                 new[] { "play_card", "use_potion", "end_turn" },
-                "sts2-v0.108.0:CombatManager+PlayerCombatState+CardModel+NPlayerHand"),
+                "sts2-v0.109.0:CombatManager+PlayerCombatState+CardModel+NPlayerHand+organic-action-lifecycles"),
             new SurfaceCapability(
                 "combat_pile_card_selection",
                 "implemented_exact_game_version",
@@ -94,17 +104,17 @@ internal static class BridgeV2Runtime
                 "card_reward_selection",
                 "implemented_exact_game_version",
                 new[] { "select_card_reward", "choose_card_reward_alternative" },
-                "sts2-v0.108.0:NCardRewardSelectionScreen+NGridCardHolder+NCardRewardAlternativeButton"),
+                "sts2-v0.109.0:NCardRewardSelectionScreen+NGridCardHolder+NCardRewardAlternativeButton+exact-source-canary"),
             new SurfaceCapability(
                 "reward_claim",
                 "implemented_exact_game_version",
                 new[] { "claim_reward", "discard_potion_for_reward", "proceed_rewards" },
-                "sts2-v0.108.0:NRewardsScreen+NRewardButton+PotionReward+DiscardPotionGameAction+NProceedButton"),
+                "sts2-v0.109.0:NRewardsScreen+NRewardButton+PotionReward+DiscardPotionGameAction+NProceedButton+exact-source-canary"),
             new SurfaceCapability(
                 "map_navigation",
                 "implemented_exact_game_version",
                 new[] { "choose_map_node" },
-                "sts2-v0.108.0:NMapScreen+NMapPoint+RunState.Map+OnMapPointSelectedLocally"),
+                "sts2-v0.109.0:NMapScreen+NMapPoint+RunState.Map+OnMapPointSelectedLocally+exact-source-canary"),
             new SurfaceCapability(
                 "shop_inventory",
                 "implemented_exact_game_version",
@@ -118,15 +128,29 @@ internal static class BridgeV2Runtime
                 "shop_room",
                 "implemented_exact_game_version",
                 new[] { "open_shop_inventory", "proceed_shop" },
-                "sts2-v0.108.0:NMerchantRoom+NMerchantButton+NProceedButton")
+                "sts2-v0.108.0:NMerchantRoom+NMerchantButton+NProceedButton"),
+            new SurfaceCapability(
+                "treasure_room",
+                "implemented_exact_game_version",
+                new[]
+                {
+                    "open_treasure_chest", "choose_treasure_relic",
+                    "skip_treasure_relic", "proceed_treasure_room"
+                },
+                "sts2-v0.109.0:TreasureRoom+NTreasureRoom+NTreasureRoomRelicCollection+semantic-post-state-canary")
         };
         IReadOnlyList<SurfaceCapability> surfaces = game.Compatibility.ActionExecutionAllowed
             ? game.Compatibility.ActionExecutionSurfaceKinds.Count == 0
+              && game.Compatibility.ActionCanarySurfaceKinds.Count == 0
                 ? declaredSurfaces
                 : declaredSurfaces.Select(surface => new SurfaceCapability(
                     surface.Kind,
                     game.Compatibility.ActionExecutionSurfaceKinds.Contains(surface.Kind, StringComparer.Ordinal)
-                        ? "candidate_action_canary"
+                        ? game.Compatibility.Status == "qualified_scoped"
+                            ? "qualified_exact_build"
+                            : "candidate_action_canary"
+                        : game.Compatibility.ActionCanarySurfaceKinds.Contains(surface.Kind, StringComparer.Ordinal)
+                            ? "candidate_action_canary"
                         : "not_qualified_for_current_build",
                     surface.Operations,
                     surface.Evidence)).ToArray()
@@ -157,8 +181,15 @@ internal static class BridgeV2Runtime
                 Status: !game.Compatibility.InspectionAllowed
                     ? "disabled_for_current_build"
                     : game.Compatibility.InspectionAllowedKinds.Count == 0
+                      && game.Compatibility.InspectionCanaryKinds.Count == 0
                         ? "implemented_read_only"
-                        : "candidate_read_only_canary",
+                        : game.Compatibility.Status == "qualified_scoped"
+                          && game.Compatibility.InspectionCanaryKinds.Count == 0
+                            ? "qualified_read_only_scoped"
+                            : game.Compatibility.Status == "qualified_scoped"
+                              && game.Compatibility.InspectionAllowedKinds.Count > 0
+                                ? "mixed_scoped_read_only"
+                                : "candidate_read_only_canary",
                 StateBound: true,
                 ArbitraryQueriesAllowed: false,
                 EntersCommandLedger: false,
@@ -222,6 +253,7 @@ internal static class BridgeV2Runtime
                 draft.Readiness,
                 draft.Context,
                 draft.Surface,
+                draft.AuthorityHandoff,
                 descriptors,
                 draft.Completeness,
                 BridgeIdentity(),
@@ -300,7 +332,9 @@ internal static class BridgeV2Runtime
         "sts2_mcp_bridge_v2",
         "STS2 Agent Bridge",
         McpMod.Version,
-        "20eadebde358a37cca41f8b38728099e6d0d19db");
+        "20eadebde358a37cca41f8b38728099e6d0d19db",
+        typeof(McpMod).Assembly.ManifestModule.ModuleVersionId.ToString("D"),
+        RuntimeInstanceId);
 
     private static IReadOnlyList<string> AllowedInspectionKinds(CompatibilityAssessment compatibility)
     {
@@ -311,14 +345,19 @@ internal static class BridgeV2Runtime
         };
         if (!compatibility.InspectionAllowed) return Array.Empty<string>();
         return compatibility.InspectionAllowedKinds.Count == 0
+               && compatibility.InspectionCanaryKinds.Count == 0
             ? declared
-            : declared.Where(compatibility.InspectionAllowedKinds.Contains).ToArray();
+            : declared.Where(kind =>
+                compatibility.InspectionAllowedKinds.Contains(kind)
+                || compatibility.InspectionCanaryKinds.Contains(kind)).ToArray();
     }
 
     private static bool IsInspectionAllowed(CompatibilityAssessment compatibility, string kind) =>
         compatibility.InspectionAllowed
         && (compatibility.InspectionAllowedKinds.Count == 0
-            || compatibility.InspectionAllowedKinds.Contains(kind, StringComparer.Ordinal));
+            && compatibility.InspectionCanaryKinds.Count == 0
+            || compatibility.InspectionAllowedKinds.Contains(kind, StringComparer.Ordinal)
+            || compatibility.InspectionCanaryKinds.Contains(kind, StringComparer.Ordinal));
 
     private static ObservationPolicyInfo ObservationPolicy() => new(
         BridgeV2Contract.ObservationPolicyId,

@@ -100,6 +100,7 @@ export type InteractionSurface =
   | CardSelectionSurface
   | DeckEnchantSelectionSurface
   | DeckRemovalSelectionSurface
+  | DeckUpgradeSelectionSurface
   | CardRewardSelectionSurface
   | BridgeRewardClaimSurface
   | CardRewardSurface
@@ -110,6 +111,7 @@ export type InteractionSurface =
   | RestSiteSurface
   | ShopInventorySurface
   | ShopRoomSurface
+  | TreasureRoomSurface
   | OptionChoiceSurface
   | ShopInteractionSurface
   | TreasureClaimSurface
@@ -261,6 +263,24 @@ export interface DeckRemovalSelectionSurface {
   completeness: BridgeSurfaceCompleteness;
 }
 
+/** Purpose-specific deck upgrade selector with exact visible upgraded previews. */
+export interface DeckUpgradeSelectionSurface {
+  kind: "deck_upgrade_selection";
+  stage: "selecting" | "preview";
+  bridgeStateId: string;
+  screenEntityId: string;
+  prompt: string;
+  minimumSelections: number;
+  maximumSelections: number;
+  selectedCount: number;
+  selectedCardEntityIds: string[];
+  cancelable: boolean;
+  cards: CardSnapshot[];
+  previewCards: CardSnapshot[];
+  legalActions: BridgeLegalActionSnapshot[];
+  completeness: BridgeSurfaceCompleteness;
+}
+
 export interface CardRewardSelectionSurface {
   kind: "card_reward_selection";
   bridgeStateId: string;
@@ -407,6 +427,27 @@ export interface ShopRoomSurface {
   bridgeStateId: string;
   roomEntityId: string;
   canOpenInventory: boolean;
+  canProceed: boolean;
+  legalActions: BridgeLegalActionSnapshot[];
+  completeness: BridgeSurfaceCompleteness;
+}
+
+/** Purpose-specific Bridge treasure lifecycle; not the legacy indexed claim protocol. */
+export interface TreasureRoomSurface {
+  kind: "treasure_room";
+  stage: "closed" | "opening" | "relic_choice" | "completed";
+  bridgeStateId: string;
+  roomEntityId: string;
+  chestOpened: boolean;
+  relics: Array<{
+    entityId: string;
+    id: string;
+    name?: string;
+    description?: string;
+    rarity: string;
+    keywords: Array<{ name: string; description?: string }>;
+  }>;
+  canSkip: boolean;
   canProceed: boolean;
   legalActions: BridgeLegalActionSnapshot[];
   completeness: BridgeSurfaceCompleteness;

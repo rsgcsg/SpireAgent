@@ -6,22 +6,30 @@ namespace STS2_MCP.BridgeV2.Game;
 
 internal static class BridgeGameIdentity
 {
-    private static readonly string[] TestedVersions = { "0.108.0" };
+    private static readonly string[] TestedVersions = { "0.108.0", "0.109.0" };
     private const string TestedCommit = "58694f64";
     private const int TestedMainAssemblyHash = -2044609792;
-    private const string ObservationCandidateVersion = "0.109.0";
-    private const string ObservationCandidateCommit = "c12f634d";
-    private const int ObservationCandidateMainAssemblyHash = -840572606;
+    private const string ScopedQualifiedVersion = "0.109.0";
+    private const string ScopedQualifiedCommit = "c12f634d";
+    private const int ScopedQualifiedMainAssemblyHash = -840572606;
     private static readonly string[] TestedBuildFingerprints =
     {
-        $"v0.108.0|{TestedCommit}|{TestedMainAssemblyHash}"
+        $"v0.108.0|{TestedCommit}|{TestedMainAssemblyHash}",
+        $"v{ScopedQualifiedVersion}|{ScopedQualifiedCommit}|{ScopedQualifiedMainAssemblyHash}"
     };
-    private static readonly string[] ObservationOnlySurfaceKinds = { "deck_removal_selection" };
-    private static readonly string[] ActionCanarySurfaceKinds = { "deck_removal_selection" };
-    private static readonly string[] InspectionCanaryKinds = { "run_deck" };
-    private static readonly string[] ObservationCandidateBuildFingerprints =
+    private static readonly string[] ScopedQualifiedSurfaceKinds =
     {
-        $"v{ObservationCandidateVersion}|{ObservationCandidateCommit}|{ObservationCandidateMainAssemblyHash}"
+        "deck_removal_selection",
+        "deck_upgrade_selection",
+        "combat_turn"
+    };
+    private static readonly string[] ScopedQualifiedInspectionKinds = { "run_deck" };
+    private static readonly string[] ScopedActionCanarySurfaceKinds =
+    {
+        "reward_claim",
+        "card_reward_selection",
+        "map_navigation",
+        "treasure_room"
     };
 
     public static GameBuildIdentity Read()
@@ -38,21 +46,14 @@ internal static class BridgeGameIdentity
 
         string? version = release?.Version;
         string normalized = Normalize(version);
-        bool exactVersion = Array.Exists(TestedVersions, candidate => candidate == normalized);
-        bool exactBuild = exactVersion
+        bool fullExactBuild = normalized == "0.108.0"
                           && string.Equals(release?.Commit, TestedCommit, StringComparison.OrdinalIgnoreCase)
                           && release?.MainAssemblyHash == TestedMainAssemblyHash;
-        bool observationCandidate = Normalize(version) == ObservationCandidateVersion
-                                    && string.Equals(release?.Commit, ObservationCandidateCommit, StringComparison.OrdinalIgnoreCase)
-                                    && release?.MainAssemblyHash == ObservationCandidateMainAssemblyHash;
+        bool scopedQualifiedBuild = normalized == ScopedQualifiedVersion
+                                    && string.Equals(release?.Commit, ScopedQualifiedCommit, StringComparison.OrdinalIgnoreCase)
+                                    && release?.MainAssemblyHash == ScopedQualifiedMainAssemblyHash;
 
-        // This compile-time canary is deliberately build and surface scoped. It
-        // exists only to establish the two merchant-removal lifecycle witnesses
-        // after the natural preview.16 observation. It must never broaden v0.109
-        // into a whole-build exact approval.
-        bool actionCanary = observationCandidate;
-
-        CompatibilityAssessment compatibility = exactBuild
+        CompatibilityAssessment compatibility = fullExactBuild
             ? new CompatibilityAssessment(
                 "supported_exact",
                 TestedVersions,
@@ -61,36 +62,27 @@ internal static class BridgeGameIdentity
                 StateObservationAllowed: true,
                 InspectionAllowed: true,
                 ActionExecutionSurfaceKinds: Array.Empty<string>(),
+                ActionCanarySurfaceKinds: Array.Empty<string>(),
                 InspectionAllowedKinds: Array.Empty<string>(),
+                InspectionCanaryKinds: Array.Empty<string>(),
                 ObservationOnlySurfaceKinds: Array.Empty<string>(),
                 ObservationCandidateBuildFingerprints: Array.Empty<string>(),
                 Detail: $"Game build {Fingerprint(release)} matches the exact tested bridge binding.")
-            : actionCanary
+            : scopedQualifiedBuild
                 ? new CompatibilityAssessment(
-                    "action_and_inspection_canary_candidate",
+                    "qualified_scoped",
                     TestedVersions,
                     TestedBuildFingerprints,
                     ActionExecutionAllowed: true,
                     StateObservationAllowed: true,
                     InspectionAllowed: true,
-                    ActionExecutionSurfaceKinds: ActionCanarySurfaceKinds,
-                    InspectionAllowedKinds: InspectionCanaryKinds,
+                    ActionExecutionSurfaceKinds: ScopedQualifiedSurfaceKinds,
+                    ActionCanarySurfaceKinds: ScopedActionCanarySurfaceKinds,
+                    InspectionAllowedKinds: ScopedQualifiedInspectionKinds,
+                    InspectionCanaryKinds: Array.Empty<string>(),
                     ObservationOnlySurfaceKinds: Array.Empty<string>(),
-                    ObservationCandidateBuildFingerprints: ObservationCandidateBuildFingerprints,
-                    Detail: $"Game build {Fingerprint(release)} permits only the deck_removal_selection action canary and run_deck read-only inspection canary; every other surface and inspection remain disabled.")
-            : observationCandidate
-                ? new CompatibilityAssessment(
-                    "observation_only_candidate",
-                    TestedVersions,
-                    TestedBuildFingerprints,
-                    ActionExecutionAllowed: false,
-                    StateObservationAllowed: true,
-                    InspectionAllowed: false,
-                    ActionExecutionSurfaceKinds: Array.Empty<string>(),
-                    InspectionAllowedKinds: Array.Empty<string>(),
-                    ObservationOnlySurfaceKinds: ObservationOnlySurfaceKinds,
-                    ObservationCandidateBuildFingerprints: ObservationCandidateBuildFingerprints,
-                    Detail: $"Game build {Fingerprint(release)} passed static binding audit only; Bridge v2 permits read-only candidate observation for deck_removal_selection and suppresses every action and inspection.")
+                    ObservationCandidateBuildFingerprints: Array.Empty<string>(),
+                    Detail: $"Game build {Fingerprint(release)} is exactly qualified for deck_removal_selection, event/rest deck_upgrade_selection, and observed ordinary combat_turn actions plus run_deck inspection; reward_claim, card_reward_selection, map_navigation, and treasure_room are limited to action canaries, and every unlisted surface and inspection remains disabled.")
             : new CompatibilityAssessment(
                 version == null ? "unknown" : "untested",
                 TestedVersions,
@@ -99,7 +91,9 @@ internal static class BridgeGameIdentity
                 StateObservationAllowed: false,
                 InspectionAllowed: false,
                 ActionExecutionSurfaceKinds: Array.Empty<string>(),
+                ActionCanarySurfaceKinds: Array.Empty<string>(),
                 InspectionAllowedKinds: Array.Empty<string>(),
+                InspectionCanaryKinds: Array.Empty<string>(),
                 ObservationOnlySurfaceKinds: Array.Empty<string>(),
                 ObservationCandidateBuildFingerprints: Array.Empty<string>(),
                 Detail: version == null

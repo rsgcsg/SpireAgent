@@ -147,7 +147,10 @@ function validateIdentity(
     );
   }
   if (inspection.bridge.id !== capabilities.bridge.id
-      || inspection.bridge.version !== capabilities.bridge.version) {
+      || inspection.bridge.version !== capabilities.bridge.version
+      || inspection.bridge.upstream_commit !== capabilities.bridge.upstream_commit
+      || inspection.bridge.module_version_id !== capabilities.bridge.module_version_id
+      || inspection.bridge.runtime_instance_id !== capabilities.bridge.runtime_instance_id) {
     diagnostics.invalid(
       `bridge_v2_inspections.${inspection.kind}.bridge`,
       inspection.bridge,

@@ -36,6 +36,8 @@ internal static class BridgeContextBuilder
                 return new RestBridgeContext("rest");
             if (runState?.CurrentRoom is MerchantRoom merchantRoom)
                 return BuildShop(merchantRoom, entities);
+            if (runState?.CurrentRoom is TreasureRoom)
+                return new TreasureBridgeContext("treasure");
             if (runState?.CurrentRoom is CombatRoom combatRoom && CombatManager.Instance.IsInProgress)
                 return BuildCombat(runState, combatRoom, entities);
 

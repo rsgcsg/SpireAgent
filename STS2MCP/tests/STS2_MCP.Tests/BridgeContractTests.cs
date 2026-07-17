@@ -94,9 +94,10 @@ public sealed class BridgeContractTests
             "unsupported",
             new UnknownBridgeContext("unknown", "test", "not implemented"),
             surface,
+            new AuthorityHandoff("none_fail_closed", null, "test"),
             Array.Empty<LegalAction>(),
             new StateCompleteness("not_implemented", "empty_fail_closed", Array.Empty<string>(), Array.Empty<string>()),
-            new BridgeServerIdentity("bridge", "Bridge", "test", "commit"),
+            new BridgeServerIdentity("bridge", "Bridge", "test", "commit", "mvid", "runtime"),
             new GameBuildIdentity(null, null, null, null, new CompatibilityAssessment(
                 "unknown",
                 Array.Empty<string>(),
@@ -105,7 +106,9 @@ public sealed class BridgeContractTests
                 StateObservationAllowed: false,
                 InspectionAllowed: false,
                 ActionExecutionSurfaceKinds: Array.Empty<string>(),
+                ActionCanarySurfaceKinds: Array.Empty<string>(),
                 InspectionAllowedKinds: Array.Empty<string>(),
+                InspectionCanaryKinds: Array.Empty<string>(),
                 ObservationOnlySurfaceKinds: Array.Empty<string>(),
                 ObservationCandidateBuildFingerprints: Array.Empty<string>(),
                 Detail: "unknown")),
@@ -121,6 +124,74 @@ public sealed class BridgeContractTests
         Assert.Contains("\"surface\":{\"kind\":\"unsupported\"", json);
         Assert.Contains("\"source_type\":\"test\"", json);
         Assert.Contains("\"reason\":\"not implemented\"", json);
+    }
+
+    [Fact]
+    public void DeckUpgradeContractKeepsVisiblePreviewSeparateFromCurrentDeckCard()
+    {
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+        };
+        var current = new VisibleCard(
+            "deck-card-a", "STRIKE", "Strike", "Attack", "1", null,
+            "Deal 6 damage.", "Basic", false, true, null);
+        var preview = new VisibleCard(
+            "upgrade-preview-a", "STRIKE", "Strike+", "Attack", "1", null,
+            "Deal 9 damage.", "Basic", true, false, null);
+        var surface = new DeckUpgradeSelectionSurface(
+            "deck_upgrade_selection",
+            "preview",
+            "screen-a",
+            "Choose a card to Upgrade.",
+            1,
+            1,
+            1,
+            new[] { current.EntityId },
+            true,
+            new[] { current },
+            new[] { preview });
+
+        string json = JsonSerializer.Serialize(surface, options);
+
+        Assert.Contains("\"kind\":\"deck_upgrade_selection\"", json);
+        Assert.Contains("\"selected_card_entity_ids\":[\"deck-card-a\"]", json);
+        Assert.Contains("\"preview_cards\":[{\"entity_id\":\"upgrade-preview-a\"", json);
+        Assert.Contains("\"is_upgraded\":true", json);
+        Assert.DoesNotContain("index", json, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void TreasureContractKeepsLifecycleStageAndVisibleRelicSemanticsExplicit()
+    {
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+        };
+        var relic = new VisibleTreasureRelic(
+            "treasure-relic-a",
+            "BAG_OF_MARBLES",
+            "Bag of Marbles",
+            "Apply 1 Vulnerable to all enemies at combat start.",
+            "Common",
+            new[] { new VisibleKeyword("Vulnerable", "Receives more attack damage.") });
+        var surface = new TreasureRoomSurface(
+            "treasure_room",
+            "relic_choice",
+            "treasure-room-a",
+            ChestOpened: true,
+            new[] { relic },
+            CanSkip: true,
+            CanProceed: false);
+
+        string json = JsonSerializer.Serialize(surface, options);
+
+        Assert.Contains("\"kind\":\"treasure_room\"", json);
+        Assert.Contains("\"stage\":\"relic_choice\"", json);
+        Assert.Contains("\"rarity\":\"Common\"", json);
+        Assert.Contains("\"keywords\":[{\"name\":\"Vulnerable\"", json);
+        Assert.DoesNotContain("index", json, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("future", json, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -175,7 +246,7 @@ public sealed class BridgeContractTests
                 "complete_for_player_run_deck_contents_without_semantic_order",
                 new[] { "NDeckViewScreen" },
                 Array.Empty<string>()),
-            new BridgeServerIdentity("bridge", "Bridge", "test", "commit"),
+            new BridgeServerIdentity("bridge", "Bridge", "test", "commit", "mvid", "runtime"),
             new GameBuildIdentity(
                 "v0.108.0",
                 "commit",
@@ -189,7 +260,9 @@ public sealed class BridgeContractTests
                     StateObservationAllowed: true,
                     InspectionAllowed: true,
                     ActionExecutionSurfaceKinds: Array.Empty<string>(),
+                    ActionCanarySurfaceKinds: Array.Empty<string>(),
                     InspectionAllowedKinds: Array.Empty<string>(),
+                    InspectionCanaryKinds: Array.Empty<string>(),
                     ObservationOnlySurfaceKinds: Array.Empty<string>(),
                     ObservationCandidateBuildFingerprints: Array.Empty<string>(),
                     Detail: "exact")),
@@ -204,6 +277,22 @@ public sealed class BridgeContractTests
         Assert.Contains("\"ordering_semantics\":\"unordered_multiset\"", json);
         Assert.DoesNotContain("action_id", json, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("request_id", json, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void BridgeIdentityDistinguishesLoadedModuleFromRuntimeInstance()
+    {
+        var identity = new BridgeServerIdentity(
+            "bridge",
+            "Bridge",
+            "test",
+            "commit",
+            "7d5e15dc-7ce1-49ba-b91f-fd9010904f22",
+            "runtime-a");
+
+        Assert.NotEmpty(identity.ModuleVersionId);
+        Assert.NotEmpty(identity.RuntimeInstanceId);
+        Assert.NotEqual(identity.ModuleVersionId, identity.RuntimeInstanceId);
     }
 
     [Fact]

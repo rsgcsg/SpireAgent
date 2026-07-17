@@ -19,6 +19,7 @@ export function buildAllowedActions(state: NormalizedCurrentState, sourceStateHa
       return cardSelectionActions(state.surface, sourceStateHash);
     case "deck_enchant_selection":
     case "deck_removal_selection":
+    case "deck_upgrade_selection":
     case "combat_pile_card_selection":
     case "combat_hand_card_selection":
     case "generated_card_choice":
@@ -29,6 +30,7 @@ export function buildAllowedActions(state: NormalizedCurrentState, sourceStateHa
     case "rest_site":
     case "shop_inventory":
     case "shop_room":
+    case "treasure_room":
       return [];
     case "card_reward":
       return [

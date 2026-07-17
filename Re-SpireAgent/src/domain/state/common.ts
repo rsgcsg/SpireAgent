@@ -2,7 +2,7 @@ import type { PlayerSnapshot } from "./entities.js";
 
 import type { CardSnapshot } from "./entities.js";
 
-export const NORMALIZED_STATE_SCHEMA_VERSION = 14 as const;
+export const NORMALIZED_STATE_SCHEMA_VERSION = 16 as const;
 
 export type StateStability =
   | "actionable"
@@ -19,9 +19,9 @@ export interface BridgeDiagnosticSnapshot {
   source: "state" | "capabilities" | "inspection";
   code: string;
   severity: "info" | "warning" | "error";
-  category: "identity" | "compatibility" | "context" | "surface" | "visibility" | "completeness" | "action" | "completion" | "runtime";
+  category: "identity" | "compatibility" | "authority" | "context" | "surface" | "visibility" | "completeness" | "action" | "completion" | "runtime";
   effect: "none" | "field_omitted" | "actions_suppressed" | "surface_unsupported" | "outcome_unknown";
-  recoverability: "settle" | "change_surface" | "restart" | "update_bridge" | "unknown";
+  recoverability: "settle" | "change_surface" | "restart" | "update_bridge" | "legacy_adapter" | "unknown";
   path?: string;
   visibilityClass?: "on_screen" | "normal_inspection" | "count_only" | "hidden";
   requiredForAction?: boolean;
@@ -29,7 +29,12 @@ export interface BridgeDiagnosticSnapshot {
 }
 
 export interface BridgeInspectionPolicySnapshot {
-  status: "implemented_read_only" | "candidate_read_only_canary" | "disabled_for_current_build";
+  status:
+    | "implemented_read_only"
+    | "qualified_read_only_scoped"
+    | "mixed_scoped_read_only"
+    | "candidate_read_only_canary"
+    | "disabled_for_current_build";
   stateBound: true;
   arbitraryQueriesAllowed: false;
   entersCommandLedger: false;

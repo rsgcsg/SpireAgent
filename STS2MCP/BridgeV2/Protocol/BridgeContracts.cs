@@ -7,7 +7,7 @@ namespace STS2_MCP.BridgeV2.Protocol;
 
 public static class BridgeV2Contract
 {
-    public const string ProtocolVersion = "2.0-preview.18";
+    public const string ProtocolVersion = "2.0-preview.23";
     public const string ObservationPolicyId = "player_visible_ui_v1";
 }
 
@@ -15,7 +15,9 @@ public sealed record BridgeServerIdentity(
     string Id,
     string Name,
     string Version,
-    string UpstreamCommit);
+    string UpstreamCommit,
+    string ModuleVersionId,
+    string RuntimeInstanceId);
 
 public sealed record CompatibilityAssessment(
     string Status,
@@ -25,7 +27,9 @@ public sealed record CompatibilityAssessment(
     bool StateObservationAllowed,
     bool InspectionAllowed,
     IReadOnlyList<string> ActionExecutionSurfaceKinds,
+    IReadOnlyList<string> ActionCanarySurfaceKinds,
     IReadOnlyList<string> InspectionAllowedKinds,
+    IReadOnlyList<string> InspectionCanaryKinds,
     IReadOnlyList<string> ObservationOnlySurfaceKinds,
     IReadOnlyList<string> ObservationCandidateBuildFingerprints,
     string Detail);
@@ -150,6 +154,11 @@ public sealed record StateCompleteness(
     IReadOnlyList<string> Sources,
     IReadOnlyList<string> Missing);
 
+public sealed record AuthorityHandoff(
+    string Status,
+    string? SurfaceKind,
+    string Reason);
+
 public sealed record LegalAction(
     string ActionId,
     string StateId,
@@ -249,6 +258,22 @@ public sealed record VisibleRelic(
     string? Description,
     decimal? Counter);
 
+public sealed record VisibleKeyword(
+    string Name,
+    string? Description);
+
+/// <summary>
+/// A relic currently rendered by the treasure-room holder. Rarity and keyword
+/// hover tips belong to this surface because the normal UI exposes both.
+/// </summary>
+public sealed record VisibleTreasureRelic(
+    string EntityId,
+    string DefinitionId,
+    string? Name,
+    string? Description,
+    string Rarity,
+    IReadOnlyList<VisibleKeyword> Keywords);
+
 public sealed record VisibleOrb(
     string EntityId,
     string DefinitionId,
@@ -311,6 +336,9 @@ public sealed record RewardFlowBridgeContext(
     string RewardKind) : IBridgeContext;
 
 public sealed record RestBridgeContext(
+    string Kind) : IBridgeContext;
+
+public sealed record TreasureBridgeContext(
     string Kind) : IBridgeContext;
 
 public sealed record VisibleOwnedPotion(
@@ -486,6 +514,19 @@ public sealed record ShopRoomSurface(
     bool CanProceed) : IBridgeSurface;
 
 /// <summary>
+/// The single-player treasure-room lifecycle. Chest opening, relic choice,
+/// skip, and room departure are distinct semantic commits.
+/// </summary>
+public sealed record TreasureRoomSurface(
+    string Kind,
+    string Stage,
+    string RoomEntityId,
+    bool ChestOpened,
+    IReadOnlyList<VisibleTreasureRelic> Relics,
+    bool CanSkip,
+    bool CanProceed) : IBridgeSurface;
+
+/// <summary>
 /// Exact merchant card-removal child surface. This intentionally does not
 /// generalize other deck selectors whose effects and preview semantics differ.
 /// </summary>
@@ -500,6 +541,23 @@ public sealed record DeckRemovalSelectionSurface(
     IReadOnlyList<string> SelectedCardEntityIds,
     bool Cancelable,
     IReadOnlyList<VisibleCard> Cards) : IBridgeSurface;
+
+/// <summary>
+/// Purpose-specific deck upgrade selection. Preview cards are the exact
+/// upgraded card representations currently visible in the confirmation stage.
+/// </summary>
+public sealed record DeckUpgradeSelectionSurface(
+    string Kind,
+    string Stage,
+    string ScreenEntityId,
+    string Prompt,
+    int MinSelect,
+    int MaxSelect,
+    int SelectedCount,
+    IReadOnlyList<string> SelectedCardEntityIds,
+    bool Cancelable,
+    IReadOnlyList<VisibleCard> Cards,
+    IReadOnlyList<VisibleCard> PreviewCards) : IBridgeSurface;
 
 public sealed record CombatTurnSurface(
     string Kind,
@@ -611,6 +669,7 @@ public sealed record BridgeStateEnvelope(
     string Readiness,
     IBridgeContext Context,
     IBridgeSurface Surface,
+    AuthorityHandoff AuthorityHandoff,
     IReadOnlyList<LegalAction> LegalActions,
     StateCompleteness Completeness,
     BridgeServerIdentity Bridge,
