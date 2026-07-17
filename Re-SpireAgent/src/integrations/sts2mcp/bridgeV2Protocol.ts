@@ -1,12 +1,15 @@
 import { z } from "zod";
 import { isJsonObject, type JsonObject } from "../../shared/json.js";
 
-export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.16" as const;
+export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.18" as const;
 
 const compatibilitySchema = z.object({
   status: z.string().min(1),
   action_execution_allowed: z.boolean(),
   state_observation_allowed: z.boolean(),
+  inspection_allowed: z.boolean(),
+  action_execution_surface_kinds: z.array(z.string().min(1)),
+  inspection_allowed_kinds: z.array(z.enum(["run_deck", "combat_piles"])),
   observation_only_surface_kinds: z.array(z.string().min(1)),
   observation_candidate_build_fingerprints: z.array(z.string().min(1)),
   detail: z.string()
@@ -484,7 +487,7 @@ const diagnosticSchema = z.object({
 }).passthrough();
 
 const inspectionContractSchema = z.object({
-  status: z.literal("implemented_read_only"),
+  status: z.enum(["implemented_read_only", "candidate_read_only_canary", "disabled_for_current_build"]),
   state_bound: z.literal(true),
   arbitrary_queries_allowed: z.literal(false),
   enters_command_ledger: z.literal(false),

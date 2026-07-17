@@ -7,7 +7,7 @@ namespace STS2_MCP.BridgeV2.Protocol;
 
 public static class BridgeV2Contract
 {
-    public const string ProtocolVersion = "2.0-preview.16";
+    public const string ProtocolVersion = "2.0-preview.18";
     public const string ObservationPolicyId = "player_visible_ui_v1";
 }
 
@@ -23,6 +23,9 @@ public sealed record CompatibilityAssessment(
     IReadOnlyList<string> TestedBuildFingerprints,
     bool ActionExecutionAllowed,
     bool StateObservationAllowed,
+    bool InspectionAllowed,
+    IReadOnlyList<string> ActionExecutionSurfaceKinds,
+    IReadOnlyList<string> InspectionAllowedKinds,
     IReadOnlyList<string> ObservationOnlySurfaceKinds,
     IReadOnlyList<string> ObservationCandidateBuildFingerprints,
     string Detail);

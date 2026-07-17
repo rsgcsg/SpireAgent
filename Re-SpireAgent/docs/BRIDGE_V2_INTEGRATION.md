@@ -2,7 +2,7 @@
 
 ## Current Scope
 
-Re-SpireAgent supports the strict `2.0-preview.16` source contract for:
+Re-SpireAgent supports the strict `2.0-preview.18` source contract for:
 
 - `deck_enchant_selection`: organically end-to-end qualified;
 - `event_option`: organically qualified for ordinary event options;
@@ -31,11 +31,13 @@ Re-SpireAgent supports the strict `2.0-preview.16` source contract for:
 All organic evidence is scoped to exact game identity
 `v0.108.0|58694f64|-2044609792`. Historical earlier-preview evidence is retained
 but does not silently qualify later previews or builds. The installed Steam
-build is `v0.109.0|c12f634d|-840572606`; preview.16 permits only a strict
-candidate observation of `shop + deck_removal_selection`. It has no actions,
-no inspection, `actionAuthority=none`, and the exact candidate build performs
-no legacy sidecar merge on any surface. The merchant-removal child remains
-static/candidate coverage, not an organic qualification or execution authority.
+build is `v0.109.0|c12f634d|-840572606`; preview.18 permits only a strict
+merchant-removal action canary and a separate read-only `run_deck` inspection
+canary. Inspection content is retained as `bridgeInspectionFacts`, independent
+of whether the active context has a full player projection. There is no
+candidate-build legacy sidecar merge and no authority for any other surface or
+inspection. These canaries are not organic qualification or broad execution
+authority.
 
 ## State Identity
 

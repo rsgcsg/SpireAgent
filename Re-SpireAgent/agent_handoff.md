@@ -1,13 +1,16 @@
 # RE-P1 Handoff
 
-Status: Bridge `2.0-preview.16` implements fifteen bounded surface contracts
+Status: Bridge `2.0-preview.18` implements fifteen bounded surface contracts
 plus read-only run-deck/combat-pile Inspection. Organic evidence remains scoped
 to historical exact identity `v0.108.0|58694f64|-2044609792`. On installed
-`v0.109.0|c12f634d|-840572606`, preview.16 permits only a no-action,
-no-inspection, no-sidecar candidate observation for
-`shop + deck_removal_selection`; all execution stays disabled pending natural
-lifecycle revalidation. RE-P1 remains a protocol baseline, not a verified
-strategic player or a claim of broad game coverage.
+`v0.109.0|c12f634d|-840572606`, preview.18 permits only a no-sidecar action
+canary for `shop + deck_removal_selection` plus a distinct read-only `run_deck`
+inspection canary. Its first opaque cancel lifecycle completed as `confirmed`
+on 2026-07-17 and settled outside the child surface with zero legal actions.
+All other execution and inspection remains disabled; destructive
+merchant-removal confirmation remains blocked pending a fresh v0.109 run-deck
+smoke and exact before/after post-state evidence. RE-P1 remains a protocol baseline, not a verified strategic player
+or a claim of broad game coverage.
 
 Canonical current Bridge status is maintained in
 `../STS2MCP/docs/bridge-v2/CURRENT_STATUS.md`; the chronology below is retained

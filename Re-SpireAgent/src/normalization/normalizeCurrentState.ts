@@ -89,6 +89,15 @@ function normalizeLegacyCurrentState(rawInput: unknown, source: AdapterDescripto
         : {})
     };
   }
+  const bridgeInspectionFacts = {
+    ...(projectedInspections.runDeck ? { runDeck: projectedInspections.runDeck } : {}),
+    ...(projectedInspections.drawPile ? { drawPile: projectedInspections.drawPile } : {}),
+    ...(projectedInspections.discardPile ? { discardPile: projectedInspections.discardPile } : {}),
+    ...(projectedInspections.exhaustPile ? { exhaustPile: projectedInspections.exhaustPile } : {})
+  };
+  if (Object.keys(bridgeInspectionFacts).length > 0) {
+    base = { ...base, bridgeInspectionFacts };
+  }
   if (capabilitiesRaw) {
     try {
       const capabilities = decodeBridgeV2Capabilities(capabilitiesRaw).data;

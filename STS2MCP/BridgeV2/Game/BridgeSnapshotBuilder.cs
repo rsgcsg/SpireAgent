@@ -85,7 +85,9 @@ internal static class BridgeSnapshotBuilder
         }
 
         IReadOnlyList<IBridgeSurfaceProvider> eligibleProviders = game.Compatibility.ActionExecutionAllowed
-            ? Providers
+            ? game.Compatibility.ActionExecutionSurfaceKinds.Count == 0
+                ? Providers
+                : Providers.Where(provider => game.Compatibility.ActionExecutionSurfaceKinds.Contains(provider.Kind, StringComparer.Ordinal)).ToArray()
             : Providers.Where(provider => game.Compatibility.ObservationOnlySurfaceKinds.Contains(provider.Kind, StringComparer.Ordinal)).ToArray();
         ActiveSurfaceResolution resolution = ActiveSurfaceResolver.Resolve(
             snapshot,

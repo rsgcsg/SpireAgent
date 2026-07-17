@@ -3,6 +3,11 @@
 Status date: 2026-07-17  
 Protocol: `2.0-preview.16`
 
+> Historical gate record. Its natural selecting-stage observation is the input
+> to the narrowly scoped preview.17 action canary; it does not itself qualify
+> any action. See
+> [Preview.17 merchant removal action canary](PREVIEW_17_DECK_REMOVAL_ACTION_CANARY_2026-07-17.md).
+
 ## Verdict
 
 The installed Steam identity `v0.109.0|c12f634d|-840572606` passed a static

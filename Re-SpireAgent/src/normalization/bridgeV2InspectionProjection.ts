@@ -154,14 +154,17 @@ function validateIdentity(
       "inspection and capabilities bridge identities differ"
     );
   }
+  const allowedKinds = inspection.game.compatibility.inspection_allowed_kinds;
+  const inspectionKindAllowed = inspection.game.compatibility.inspection_allowed
+    && (allowedKinds.length === 0 || allowedKinds.includes(inspection.kind));
   if (inspection.game.version !== capabilities.game.version
       || inspection.game.commit !== capabilities.game.commit
       || inspection.game.main_assembly_hash !== capabilities.game.main_assembly_hash
-      || !inspection.game.compatibility.action_execution_allowed) {
+      || !inspectionKindAllowed) {
     diagnostics.invalid(
       `bridge_v2_inspections.${inspection.kind}.game`,
       inspection.game,
-      "inspection does not match the exact executable game identity"
+      "inspection does not match an identity with authority for this inspection kind"
     );
   }
   if (inspection.observation_policy.id !== capabilities.observation_policy.id

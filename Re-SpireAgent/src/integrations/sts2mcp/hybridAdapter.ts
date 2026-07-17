@@ -74,12 +74,19 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
           compatibility_status: bridge.game.compatibility.status,
           action_execution_allowed: bridge.game.compatibility.action_execution_allowed,
           state_observation_allowed: bridge.game.compatibility.state_observation_allowed,
+          inspection_allowed: bridge.game.compatibility.inspection_allowed,
+          action_execution_surface_kinds: bridge.game.compatibility.action_execution_surface_kinds,
           observation_only_surface_kinds: bridge.game.compatibility.observation_only_surface_kinds,
           supported_surfaces: bridge.surfaces
             .filter((surface) => surface.support === "implemented_exact_game_version")
             .map((surface) => surface.kind),
           candidate_observation_surfaces: bridge.surfaces
             .filter((surface) => surface.support === "candidate_observation_only")
+            .map((surface) => surface.kind),
+          // A canary is executable only in its explicitly advertised surface;
+          // keep it distinct from both exact qualification and read-only observation.
+          candidate_action_canary_surfaces: bridge.surfaces
+            .filter((surface) => surface.support === "candidate_action_canary")
             .map((surface) => surface.kind)
         } : {})
       }
@@ -208,7 +215,7 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
     // Candidate-build observations deliberately do not imply that the fixed
     // inspection contracts still have exact bindings. Keep those reads off
     // until action-qualified identity is restored.
-    if (!capabilities.game.compatibility.action_execution_allowed) return {};
+    if (!capabilities.game.compatibility.inspection_allowed) return {};
     const implemented = new Set(capabilities.inspections.implemented_kinds);
     const requested: Array<"run_deck" | "combat_piles"> = [];
     if (implemented.has("run_deck")) requested.push("run_deck");
@@ -290,14 +297,12 @@ function isCandidateBuild(
 ): boolean {
   const capabilityCompatibility = capabilities.game.compatibility;
   const stateCompatibility = state.game.compatibility;
-  return capabilityCompatibility.status === "observation_only_candidate"
-    && stateCompatibility.status === "observation_only_candidate"
-    && !capabilityCompatibility.action_execution_allowed
-    && !stateCompatibility.action_execution_allowed
+  const candidateStatus = capabilityCompatibility.status === "observation_only_candidate"
+    || capabilityCompatibility.status === "action_and_inspection_canary_candidate";
+  return candidateStatus
+    && stateCompatibility.status === capabilityCompatibility.status
     && capabilityCompatibility.state_observation_allowed
     && stateCompatibility.state_observation_allowed
-    && sameStrings(capabilityCompatibility.observation_only_surface_kinds, ["deck_removal_selection"])
-    && sameStrings(stateCompatibility.observation_only_surface_kinds, ["deck_removal_selection"])
     && capabilityCompatibility.observation_candidate_build_fingerprints.includes(gameFingerprint(capabilities.game))
     && stateCompatibility.observation_candidate_build_fingerprints.includes(gameFingerprint(state.game));
 }

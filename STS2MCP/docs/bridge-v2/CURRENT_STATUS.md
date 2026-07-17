@@ -4,7 +4,7 @@ Status date: 2026-07-17
 
 ## Current Phase
 
-Protocol `2.0-preview.16` is implemented. Its historical exact qualification is
+Protocol `2.0-preview.18` is implemented. Its historical exact qualification is
 `v0.108.0|58694f64|-2044609792`, where it exposes fifteen bounded executable
 Surface contracts and two fixed read-only Inspection kinds. Every formerly
 executable surface family has organic evidence for at least one observed shape,
@@ -12,13 +12,16 @@ but that evidence remains action/category-specific and does not imply full-game
 coverage.
 
 The currently installed Steam build is
-`v0.109.0|c12f634d|-840572606`. Its merchant-removal private bindings passed a
-static audit. Preview.16 therefore permits one exact, **non-executable**
-candidate observation: `shop + deck_removal_selection`. It reports
-`state_observation_allowed=true`, `action_execution_allowed=false`, publishes
-no v2 actions, blocks all inspection endpoints, suppresses legacy-sidecar
-merging, and marks every other surface `not_qualified_for_current_build`.
-No v0.109 action is qualified by v0.108 history or by this observation gate.
+`v0.109.0|c12f634d|-840572606`. Preview.16 recorded a natural read-only
+merchant-removal child with the expected prompt, ten-card grid, limits, and no
+actions. Preview.17 passed one temporary action-canary lifecycle:
+`shop + deck_removal_selection` cancel. Preview.18 additionally permits only
+the state-bound, read-only `run_deck` inspection needed to observe a future
+destructive post-state. It keeps every other surface
+`not_qualified_for_current_build`, keeps `combat_piles` and every other
+inspection disabled, and suppresses legacy-sidecar merging across the candidate
+build. No v0.109 action or inspection is generally qualified by v0.108 history
+or by these canaries.
 
 ## Canonical Model
 
@@ -55,7 +58,7 @@ context.kind + surface.kind + action authority
 | `map_navigation` | repeated exact-node travel and map close/current-coordinate completion | qualified for observed singleplayer map travel |
 | `shop_room` | saved-run restore, open inventory, close/reopen, Proceed to map | qualified for observed normal merchant room controls |
 | `shop_inventory` | typed inventory, card/relic/potion purchase, sold-out post-state, capacity suppression, removal-child launch | direct purchases and removal launch qualified for observed shapes; child selector remains pending |
-| `deck_removal_selection` | merchant removal child source/contract/static tests; exact v0.109 candidate observation | observation-only candidate; not executable | read a natural merchant child, then separately test cancel and select/preview/confirm/post-state before any action qualification |
+| `deck_removal_selection` | static contract, natural v0.109 selecting stage, and settled cancel | temporary action canary only | smoke v0.109 `run_deck`, then separately test select/preview/confirm and exact deck/shop post-state before any qualification decision |
 
 Read-only `run_deck` and `combat_piles` inspections are organically qualified.
 They expose no action authority and never reveal draw order.
@@ -119,11 +122,15 @@ invariants.
   before the legacy Smith confirm settlement stopped the bounded runner; the
   Bridge-owned rest option itself was settled.
 - Preview.13 Proceed rerun `run-20260717012922-la5ibg` settled and reached map.
-- Preview.16 adds an exact-identity candidate-observation gate for the narrow
-  `shop + NDeckCardSelectScreen` merchant-removal child. It compiled against
-  the current v0.109 API and passed Bridge/Re tests, but it deliberately
-  publishes no actions, performs no inspection, and has executed no v0.109
-  lifecycle step.
+- Preview.16 captured the exact non-executable v0.109 selecting stage. Preview.17
+  upgraded only that same child into a no-inspection action canary. Its first
+  lifecycle step completed on 2026-07-17: opaque request
+  `preview17-cancel-1784269191` cancelled the selecting child and settled to
+  unsupported shop context with zero legal actions. This qualifies the bounded
+  cancel transition only; it does not claim deck or merchant-service post-state
+  facts that the candidate build could not yet inspect. Preview.18 adds only
+  `run_deck` as a state-bound inspection canary; its runtime smoke remains
+  pending and `combat_piles` stays disabled.
 
 ## Honest Completeness Boundary
 
@@ -145,18 +152,22 @@ purchase are only qualified for their historical observed shapes.
 
 ## Current Blocker And Next Step
 
-The immediate next step is a natural, read-only v0.109 merchant-removal child
-observation. It must verify `shop + deck_removal_selection`, player-visible
-prompt/cards/limits/stage, empty legal actions, and `actionAuthority=none`
-without legacy fallback or inspection. Only after that evidence may a separate,
-narrow action-qualification review consider cancel and
-select -> preview -> confirm -> deck/shop post-state smokes. Generic deck
-maintenance remains a future shared-boundary study: rest Smith and shop removal
-have purpose-specific selection/preview/confirmation semantics and must not
-become a universal card selector. Menu and treasure remain separate debt.
+The cancel action-canary lifecycle has passed. The next step is a fresh,
+same-state v0.109 `run_deck` inspection smoke. It must prove exact identity,
+player-visible policy, count/card consistency, and no command authority before
+any destructive confirmation. Only then may a separate fresh journey verify
+select -> preview -> confirm with the exact removed card plus deck/shop
+post-state. Any command rejection, unexpected state transition, failed
+completion probe, missing evidence, or cross-surface action immediately returns
+the build to the preview.16 observation-only gate. Generic deck maintenance
+remains a future shared-boundary study: rest Smith and shop removal have
+purpose-specific selection/preview/confirmation semantics and must not become a
+universal card selector. Menu and treasure remain separate debt.
 
 See [the preview.14 shop audit](PREVIEW_14_SHOP_SURFACE_AUDIT_2026-07-17.md),
 [the preview.13 closeout audit](PREVIEW_13_CLOSEOUT_AUDIT_2026-07-17.md),
 [the preview.16 candidate-observation audit](PREVIEW_16_CANDIDATE_OBSERVATION_GATE_2026-07-17.md),
+[the preview.17 action-canary plan](PREVIEW_17_DECK_REMOVAL_ACTION_CANARY_2026-07-17.md),
+[the preview.18 inspection-canary plan](PREVIEW_18_RUN_DECK_INSPECTION_CANARY_2026-07-17.md),
 [the coverage matrix](PLAYER_VISIBLE_COVERAGE.md), and
 [the organic long-run audit](ORGANIC_LONG_RUN_AUDIT_2026-07-17.md).

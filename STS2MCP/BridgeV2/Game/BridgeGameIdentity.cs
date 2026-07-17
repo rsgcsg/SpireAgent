@@ -17,6 +17,8 @@ internal static class BridgeGameIdentity
         $"v0.108.0|{TestedCommit}|{TestedMainAssemblyHash}"
     };
     private static readonly string[] ObservationOnlySurfaceKinds = { "deck_removal_selection" };
+    private static readonly string[] ActionCanarySurfaceKinds = { "deck_removal_selection" };
+    private static readonly string[] InspectionCanaryKinds = { "run_deck" };
     private static readonly string[] ObservationCandidateBuildFingerprints =
     {
         $"v{ObservationCandidateVersion}|{ObservationCandidateCommit}|{ObservationCandidateMainAssemblyHash}"
@@ -44,6 +46,12 @@ internal static class BridgeGameIdentity
                                     && string.Equals(release?.Commit, ObservationCandidateCommit, StringComparison.OrdinalIgnoreCase)
                                     && release?.MainAssemblyHash == ObservationCandidateMainAssemblyHash;
 
+        // This compile-time canary is deliberately build and surface scoped. It
+        // exists only to establish the two merchant-removal lifecycle witnesses
+        // after the natural preview.16 observation. It must never broaden v0.109
+        // into a whole-build exact approval.
+        bool actionCanary = observationCandidate;
+
         CompatibilityAssessment compatibility = exactBuild
             ? new CompatibilityAssessment(
                 "supported_exact",
@@ -51,9 +59,25 @@ internal static class BridgeGameIdentity
                 TestedBuildFingerprints,
                 ActionExecutionAllowed: true,
                 StateObservationAllowed: true,
+                InspectionAllowed: true,
+                ActionExecutionSurfaceKinds: Array.Empty<string>(),
+                InspectionAllowedKinds: Array.Empty<string>(),
                 ObservationOnlySurfaceKinds: Array.Empty<string>(),
                 ObservationCandidateBuildFingerprints: Array.Empty<string>(),
                 Detail: $"Game build {Fingerprint(release)} matches the exact tested bridge binding.")
+            : actionCanary
+                ? new CompatibilityAssessment(
+                    "action_and_inspection_canary_candidate",
+                    TestedVersions,
+                    TestedBuildFingerprints,
+                    ActionExecutionAllowed: true,
+                    StateObservationAllowed: true,
+                    InspectionAllowed: true,
+                    ActionExecutionSurfaceKinds: ActionCanarySurfaceKinds,
+                    InspectionAllowedKinds: InspectionCanaryKinds,
+                    ObservationOnlySurfaceKinds: Array.Empty<string>(),
+                    ObservationCandidateBuildFingerprints: ObservationCandidateBuildFingerprints,
+                    Detail: $"Game build {Fingerprint(release)} permits only the deck_removal_selection action canary and run_deck read-only inspection canary; every other surface and inspection remain disabled.")
             : observationCandidate
                 ? new CompatibilityAssessment(
                     "observation_only_candidate",
@@ -61,6 +85,9 @@ internal static class BridgeGameIdentity
                     TestedBuildFingerprints,
                     ActionExecutionAllowed: false,
                     StateObservationAllowed: true,
+                    InspectionAllowed: false,
+                    ActionExecutionSurfaceKinds: Array.Empty<string>(),
+                    InspectionAllowedKinds: Array.Empty<string>(),
                     ObservationOnlySurfaceKinds: ObservationOnlySurfaceKinds,
                     ObservationCandidateBuildFingerprints: ObservationCandidateBuildFingerprints,
                     Detail: $"Game build {Fingerprint(release)} passed static binding audit only; Bridge v2 permits read-only candidate observation for deck_removal_selection and suppresses every action and inspection.")
@@ -70,6 +97,9 @@ internal static class BridgeGameIdentity
                 TestedBuildFingerprints,
                 ActionExecutionAllowed: false,
                 StateObservationAllowed: false,
+                InspectionAllowed: false,
+                ActionExecutionSurfaceKinds: Array.Empty<string>(),
+                InspectionAllowedKinds: Array.Empty<string>(),
                 ObservationOnlySurfaceKinds: Array.Empty<string>(),
                 ObservationCandidateBuildFingerprints: Array.Empty<string>(),
                 Detail: version == null

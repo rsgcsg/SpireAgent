@@ -31,7 +31,7 @@ internal static class BridgeV2Runtime
             "Run-deck and combat-pile inspections are read-only evidence. They do not grant action authority or enter the command ledger."
         };
 
-        if (!game.Compatibility.ActionExecutionAllowed)
+        if (!game.Compatibility.ActionExecutionAllowed || !game.Compatibility.InspectionAllowed)
             warnings.Add(game.Compatibility.Detail);
 
         SurfaceCapability[] declaredSurfaces =
@@ -121,7 +121,15 @@ internal static class BridgeV2Runtime
                 "sts2-v0.108.0:NMerchantRoom+NMerchantButton+NProceedButton")
         };
         IReadOnlyList<SurfaceCapability> surfaces = game.Compatibility.ActionExecutionAllowed
-            ? declaredSurfaces
+            ? game.Compatibility.ActionExecutionSurfaceKinds.Count == 0
+                ? declaredSurfaces
+                : declaredSurfaces.Select(surface => new SurfaceCapability(
+                    surface.Kind,
+                    game.Compatibility.ActionExecutionSurfaceKinds.Contains(surface.Kind, StringComparer.Ordinal)
+                        ? "candidate_action_canary"
+                        : "not_qualified_for_current_build",
+                    surface.Operations,
+                    surface.Evidence)).ToArray()
             : declaredSurfaces.Select(surface => new SurfaceCapability(
                 surface.Kind,
                 game.Compatibility.ObservationOnlySurfaceKinds.Contains(surface.Kind, StringComparer.Ordinal)
@@ -146,17 +154,17 @@ internal static class BridgeV2Runtime
                 },
                 OutcomeTimeoutMs: CommandOutcomeTimeoutMs),
             new InspectionContractCapability(
-                Status: "implemented_read_only",
+                Status: !game.Compatibility.InspectionAllowed
+                    ? "disabled_for_current_build"
+                    : game.Compatibility.InspectionAllowedKinds.Count == 0
+                        ? "implemented_read_only"
+                        : "candidate_read_only_canary",
                 StateBound: true,
                 ArbitraryQueriesAllowed: false,
                 EntersCommandLedger: false,
                 VisibilityClasses: new[] { "on_screen", "normal_inspection", "count_only" },
                 OrderingSemantics: new[] { "unordered_multiset", "player_sorted" },
-                ImplementedKinds: new[]
-                {
-                    BridgeInspectionBuilder.RunDeckKind,
-                    BridgeInspectionBuilder.CombatPilesKind
-                }),
+                ImplementedKinds: AllowedInspectionKinds(game.Compatibility)),
             new[]
             {
                 BridgeDiagnostics.Create(
@@ -166,12 +174,16 @@ internal static class BridgeV2Runtime
                     "none",
                     "unknown"),
                 BridgeDiagnostics.Create(
-                    "bridge.inspection.read_only_enabled",
+                    game.Compatibility.InspectionAllowed
+                        ? "bridge.inspection.read_only_enabled"
+                        : "bridge.inspection.disabled_for_current_build",
                     "info",
                     "visibility",
                     "none",
                     "unknown",
-                    "Run-deck and combat-pile inspection are state-bound reads with no command authority.")
+                    game.Compatibility.InspectionAllowed
+                        ? "Advertised inspection kinds are state-bound reads with no command authority."
+                        : "Inspection bindings are disabled for the current game build.")
             },
             warnings);
     }
@@ -246,12 +258,12 @@ internal static class BridgeV2Runtime
                 "stale_state",
                 "The expected state is no longer current; obtain a fresh state before inspecting.");
         }
-        if (!current.Game.Compatibility.ActionExecutionAllowed)
+        if (!IsInspectionAllowed(current.Game.Compatibility, kind))
         {
             return new BridgeInspectionReadResult(
                 null,
-                "inspection_identity_not_exact",
-                "Inspection requires the exact supported game build even though it is read-only.");
+                "inspection_not_qualified_for_current_build",
+                "This inspection kind is not qualified for the current game build.");
         }
 
         BridgeInspectionBuildResult built = BridgeInspectionBuilder.Build(kind, current, EntityRegistry);
@@ -289,6 +301,24 @@ internal static class BridgeV2Runtime
         "STS2 Agent Bridge",
         McpMod.Version,
         "20eadebde358a37cca41f8b38728099e6d0d19db");
+
+    private static IReadOnlyList<string> AllowedInspectionKinds(CompatibilityAssessment compatibility)
+    {
+        string[] declared =
+        {
+            BridgeInspectionBuilder.RunDeckKind,
+            BridgeInspectionBuilder.CombatPilesKind
+        };
+        if (!compatibility.InspectionAllowed) return Array.Empty<string>();
+        return compatibility.InspectionAllowedKinds.Count == 0
+            ? declared
+            : declared.Where(compatibility.InspectionAllowedKinds.Contains).ToArray();
+    }
+
+    private static bool IsInspectionAllowed(CompatibilityAssessment compatibility, string kind) =>
+        compatibility.InspectionAllowed
+        && (compatibility.InspectionAllowedKinds.Count == 0
+            || compatibility.InspectionAllowedKinds.Contains(kind, StringComparer.Ordinal));
 
     private static ObservationPolicyInfo ObservationPolicy() => new(
         BridgeV2Contract.ObservationPolicyId,

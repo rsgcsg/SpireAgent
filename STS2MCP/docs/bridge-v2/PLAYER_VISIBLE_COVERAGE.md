@@ -5,10 +5,10 @@ the observed interaction shape. Source audit or fixture evidence alone is not
 organic qualification.
 
 The installed Steam build is currently `v0.109.0|c12f634d|-840572606`; all rows
-below are historical for execution. Preview.16 additionally permits one
-read-only, no-sidecar, no-inspection candidate observation of
-`shop + deck_removal_selection`; it grants neither action nor inspection
-authority and does not qualify any lifecycle.
+below are historical for execution. Preview.18 additionally permits one
+no-sidecar action canary for `shop + deck_removal_selection` and one
+read-only `run_deck` inspection canary. It grants neither any other v0.109
+surface/inspection nor a completed destructive lifecycle qualification.
 
 | Surface / inspection | Context | Player-visible semantics | Organic status | Remaining boundary |
 |---|---|---|---|---|
@@ -26,8 +26,8 @@ authority and does not qualify any lifecycle.
 | `map_navigation` | map | full visible topology, visit/travel state, current/next nodes, drawing mode | qualified for observed singleplayer map | multiplayer and special map modes unsupported |
 | `shop_room` | shop | current gold/potions plus merchant-open and Proceed controls | qualified for observed normal merchant | special merchant room variants need evidence |
 | `shop_inventory` | shop | typed inventory, price, stock, visibility, affordability, category eligibility, sale, potion capacity, removal price | card/relic/potion purchase, open/close, capacity suppression, removal-child launch qualified | removal child is a separate, currently unqualified Surface |
-| `deck_removal_selection` | shop parent | exact selected deck cards, selection limits, preview/confirm/cancel controls | v0.109 candidate observation only; static contract | requires natural read-only child evidence, then separately qualified cancel and confirm/post-state lifecycles |
-| `run_deck` inspection | active singleplayer run | per-instance card, upgrade and enchantment | qualified | no arbitrary queries |
+| `deck_removal_selection` | shop parent | exact selected deck cards, selection limits, preview/confirm/cancel controls | v0.109 narrow action canary; cancel lifecycle passed | requires preview/confirm plus exact deck post-state evidence |
+| `run_deck` inspection | active singleplayer run | per-instance card, upgrade and enchantment | historical qualified; v0.109 narrow read-only canary pending fresh runtime smoke | no arbitrary queries; `combat_piles` remains disabled on v0.109 |
 | `combat_piles` inspection | combat | unordered draw/discard/exhaust contents | qualified | draw order intentionally hidden |
 
 ## Unsupported Or Legacy-Owned

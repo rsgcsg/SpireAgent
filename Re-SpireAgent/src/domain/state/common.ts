@@ -1,5 +1,7 @@
 import type { PlayerSnapshot } from "./entities.js";
 
+import type { CardSnapshot } from "./entities.js";
+
 export const NORMALIZED_STATE_SCHEMA_VERSION = 14 as const;
 
 export type StateStability =
@@ -27,7 +29,7 @@ export interface BridgeDiagnosticSnapshot {
 }
 
 export interface BridgeInspectionPolicySnapshot {
-  status: "implemented_read_only";
+  status: "implemented_read_only" | "candidate_read_only_canary" | "disabled_for_current_build";
   stateBound: true;
   arbitraryQueriesAllowed: false;
   entersCommandLedger: false;
@@ -46,6 +48,17 @@ export interface BridgeInspectionEvidenceSnapshot {
   playerVisibleSemantics: string;
   sources: string[];
   missing: string[];
+}
+
+/**
+ * Player-visible, state-bound inspection content. This stays separate from
+ * semantic context and never creates a synthetic full PlayerSnapshot.
+ */
+export interface BridgeInspectionFactsSnapshot {
+  runDeck?: CardSnapshot[];
+  drawPile?: CardSnapshot[];
+  discardPile?: CardSnapshot[];
+  exhaustPile?: CardSnapshot[];
 }
 
 export interface RunSnapshot {
@@ -68,4 +81,5 @@ export interface NormalizedStateBase {
   bridgeLegacyWarnings?: string[];
   bridgeInspectionPolicy?: BridgeInspectionPolicySnapshot;
   bridgeInspections?: BridgeInspectionEvidenceSnapshot[];
+  bridgeInspectionFacts?: BridgeInspectionFactsSnapshot;
 }

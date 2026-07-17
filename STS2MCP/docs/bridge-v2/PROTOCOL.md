@@ -1,17 +1,19 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.16`
+Protocol preview: `2.0-preview.18`
 
 ## Build Compatibility
 
 This protocol describes the bounded v2 contract, not a permission to execute
 against every Steam build. The currently installed
-`v0.109.0|c12f634d|-840572606` is an exact **candidate-observation** binding
-only for `shop + deck_removal_selection`: static source/reflection checks passed,
-but Bridge publishes no actions, rejects inspection, and forbids legacy-sidecar
-merging for that state. Every other v0.109 surface remains unqualified. Organic
-lifecycle evidence is required before any action authority can be considered;
-historical `v0.108.0` evidence is not v0.109 authority.
+`v0.109.0|c12f634d|-840572606` has one exact action canary for
+`shop + deck_removal_selection` and one independent read-only inspection
+canary for `run_deck`. Preview.16 first captured that child without actions;
+preview.17 passed a bounded cancel lifecycle; preview.18 adds the only
+post-state observer needed before destructive confirmation can be considered.
+`combat_piles`, every other inspection, every other surface, and all v1
+sidecar merging remain disabled for this candidate build. Historical `v0.108.0`
+evidence is not v0.109 authority.
 
 ## Endpoints
 
