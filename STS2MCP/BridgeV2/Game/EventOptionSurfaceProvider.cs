@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Events;
+using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models.Events;
 using MegaCrit.Sts2.Core.Nodes.Events;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
@@ -29,6 +31,7 @@ internal sealed class EventOptionSurfaceProvider : IBridgeSurfaceProvider
         RunState? runState = RunManager.Instance.DebugOnlyGetState();
         NEventRoom? room = NEventRoom.Instance;
         if (runState?.CurrentRoom is not EventRoom eventRoom
+            || runState.Players.Count != 1
             || room == null
             || !McpMod.IsLiveNode(room)
             || CombatManager.Instance.IsInProgress)
@@ -60,8 +63,10 @@ internal sealed class EventOptionSurfaceProvider : IBridgeSurfaceProvider
                 option.IsLocked,
                 option.IsProceed,
                 option.WasChosen,
+                ReadWillKillPlayer(button, option),
                 option.Relic == null ? null : McpMod.SafeGetText(() => option.Relic.Title),
-                option.Relic == null ? null : McpMod.SafeGetText(() => option.Relic.DynamicDescription)));
+                option.Relic == null ? null : McpMod.SafeGetText(() => option.Relic.DynamicDescription),
+                BuildTooltips(option.HoverTips, entities)));
 
             if (!option.IsLocked && button.IsEnabled)
             {
@@ -94,7 +99,9 @@ internal sealed class EventOptionSurfaceProvider : IBridgeSurfaceProvider
                 "NEventRoom.current_event",
                 "NEventLayout.rendered_text",
                 "NEventLayout.OptionButtons",
-                "NEventOptionButton.Option"
+                "NEventOptionButton.Option",
+                "EventOption.HoverTips",
+                "EventOption.WillKillPlayer"
             },
             missing);
         string signature = BridgeHash.Object(new
@@ -153,18 +160,23 @@ internal sealed class EventOptionSurfaceProvider : IBridgeSurfaceProvider
             return BridgeActionStartResult.Rejected("event_option_changed", "The event option is no longer enabled at the advertised position.");
         }
 
+        IOverlayScreen? previousOverlay = NOverlayStack.Instance?.Peek();
         expectedButton.ForceClick();
-        string completionEvidence = expectedOption.IsProceed
-            ? "event_proceed_opened_map_or_left_room"
-            : "event_option_applied_or_required_subsurface_opened";
+        if (expectedOption.IsProceed)
+        {
+            return BridgeActionStartResult.Started(
+                () => !ReferenceEquals(NEventRoom.Instance, expectedRoom)
+                      || NMapScreen.Instance?.IsOpen == true,
+                "event_proceed_opened_map_or_left_room");
+        }
+
         return BridgeActionStartResult.Started(
-            () => (!expectedOption.IsProceed && expectedOption.WasChosen)
-                  || !ReferenceEquals(NEventRoom.Instance, expectedRoom)
-                  || NMapScreen.Instance?.IsOpen == true
+            () => !ReferenceEquals(NEventRoom.Instance, expectedRoom)
                   || CombatManager.Instance.IsInProgress
-                  || NOverlayStack.Instance?.Peek() != null
+                  || (NOverlayStack.Instance?.Peek() is { } currentOverlay
+                      && !ReferenceEquals(currentOverlay, previousOverlay))
                   || HasReplacementOptions(expectedRoom, currentButtons),
-            completionEvidence);
+            "event_option_replaced_or_required_subsurface_opened");
     }
 
     private static bool HasReplacementOptions(
@@ -184,5 +196,47 @@ internal sealed class EventOptionSurfaceProvider : IBridgeSurfaceProvider
         string? title = McpMod.SafeGetText(() => option.Title);
         string? description = McpMod.SafeGetText(() => option.Description);
         return title ?? description ?? (option.IsProceed ? "Proceed" : "Choose event option");
+    }
+
+    private static bool ReadWillKillPlayer(NEventOptionButton button, EventOption option)
+    {
+        if (option.WillKillPlayer == null)
+            return false;
+        var owner = button.Event.Owner
+                    ?? throw new InvalidOperationException("A lethal event option has no current player owner.");
+        return option.WillKillPlayer(owner);
+    }
+
+    private static IReadOnlyList<VisibleEventOptionTooltip> BuildTooltips(
+        IEnumerable<IHoverTip> tips,
+        BridgeEntityRegistry entities)
+    {
+        var result = new List<VisibleEventOptionTooltip>();
+        foreach (IHoverTip tip in IHoverTip.RemoveDupes(tips))
+        {
+            switch (tip)
+            {
+                case HoverTip text:
+                    result.Add(new VisibleEventOptionTooltip(
+                        "text",
+                        text.Title == null ? null : McpMod.StripRichTextTags(text.Title),
+                        McpMod.StripRichTextTags(text.Description),
+                        null));
+                    break;
+                case CardHoverTip card:
+                    result.Add(new VisibleEventOptionTooltip(
+                        "card",
+                        null,
+                        null,
+                        BridgeContextBuilder.BuildCard(
+                            card.Card,
+                            entities.GetId(card.Card, "tooltip_card"),
+                            displayPile: PileType.Deck)));
+                    break;
+                default:
+                    throw new NotSupportedException($"Unsupported event-option hover-tip type: {tip.GetType().Name}");
+            }
+        }
+        return result;
     }
 }

@@ -4,6 +4,7 @@ using System.Linq;
 using Godot;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Nodes.Cards;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
@@ -50,6 +51,17 @@ internal sealed class CardBundleSelectionSurfaceProvider : IBridgeSurfaceProvide
             .ToArray();
         if (allBundles.Length == 0 || allBundles.Any(bundle => bundle.Bundle == null || bundle.Bundle.Count == 0))
             return BindingUnavailable(game, BridgeContextBuilder.Build(entities), "No complete visible card bundles are bound.");
+        CardModel[] allCards = allBundles.SelectMany(bundle => bundle.Bundle).ToArray();
+        if (allCards.Length == 0
+            || allCards.Any(card => !ReferenceEquals(card.Owner, allCards[0].Owner))
+            || !allCards[0].Owner.Relics.Any(relic => relic is ScrollBoxes)
+            || allCards.Any(card => allCards[0].Owner.Deck.Cards.Contains(card)))
+        {
+            return BindingUnavailable(
+                game,
+                BridgeContextBuilder.Build(entities),
+                "The bundle selector is not the exact source-qualified Scroll Boxes add-to-deck lifecycle.");
+        }
 
         bool previewShowing = preview.Visible;
         NCardBundle? selected = previewShowing ? ResolvePreviewedBundle(allBundles, previewCards) : null;
@@ -102,7 +114,7 @@ internal sealed class CardBundleSelectionSurfaceProvider : IBridgeSurfaceProvide
                     "confirm_card_bundle",
                     "commit",
                     "Add the previewed bundle to the run deck",
-                    "NChooseABundleSelectionScreen.%Confirm+ConfirmSelection",
+                    "NChooseABundleSelectionScreen.%Confirm+ScrollBoxes.CardPileCmd.Add(Deck)+exact-card-post-state",
                     () => StartConfirm(screen, selected, confirm),
                     new[] { new ActionEntityBinding("bundle", selectedId!) }));
             }
@@ -130,7 +142,8 @@ internal sealed class CardBundleSelectionSurfaceProvider : IBridgeSurfaceProvide
                 "NChooseABundleSelectionScreen visible overlay",
                 "NCardBundle.Bundle+Hitbox",
                 "NChooseABundleSelectionScreen.%BundlePreviewContainer+%Cards",
-                "NChooseABundleSelectionScreen.%Confirm+%Cancel"
+                "NChooseABundleSelectionScreen.%Confirm+%Cancel",
+                "ScrollBoxes.AfterObtained+CardSelectCmd.FromChooseABundleScreen+CardPileCmd.Add(Deck)"
             },
             Array.Empty<string>());
         string signature = BridgeHash.Object(new
@@ -180,10 +193,14 @@ internal sealed class CardBundleSelectionSurfaceProvider : IBridgeSurfaceProvide
         NConfirmButton expectedConfirm)
     {
         Control? previewCards = expectedScreen.GetNodeOrNull<Control>("%Cards");
+        CardModel[] expectedCards = expectedBundle.Bundle.ToArray();
         if (!IsCurrent(expectedScreen)
             || previewCards == null
             || !ReferenceEquals(ResolvePreviewedBundle(
                 McpMod.FindAll<NCardBundle>(expectedScreen).ToArray(), previewCards), expectedBundle)
+            || expectedCards.Length == 0
+            || expectedCards.Any(card => !ReferenceEquals(card.Owner, expectedCards[0].Owner))
+            || expectedCards.Any(card => expectedCards[0].Owner.Deck.Cards.Contains(card))
             || !expectedConfirm.IsEnabled
             || !McpMod.IsNodeVisible(expectedConfirm))
         {
@@ -192,8 +209,23 @@ internal sealed class CardBundleSelectionSurfaceProvider : IBridgeSurfaceProvide
 
         expectedConfirm.ForceClick();
         return BridgeActionStartResult.Started(
-            () => !IsCurrent(expectedScreen),
-            "bundle_selection_overlay_closed_after_confirm");
+            () => !IsCurrent(expectedScreen) && BundleCommittedToDeck(expectedCards),
+            "bundle_selection_closed_and_exact_cards_added_to_run_deck",
+            allowIntermediateStateChanges: true);
+    }
+
+    private static bool BundleCommittedToDeck(IReadOnlyList<CardModel> expectedCards)
+    {
+        try
+        {
+            return expectedCards.Count > 0
+                   && expectedCards.All(card => ReferenceEquals(card.Owner, expectedCards[0].Owner))
+                   && expectedCards.All(card => expectedCards[0].Owner.Deck.Cards.Contains(card));
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     private static BridgeActionStartResult StartCancel(

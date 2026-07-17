@@ -33,12 +33,13 @@ Required client behavior:
 - never auto-retry unknown outcomes;
 - permit only one executor during v1/v2 dual-read tests.
 
-Source `2.0-preview.25` retains strict purpose-specific projections for
-event/rest deck upgrade, event card acquisition, and the treasure-room
-lifecycle. On exact v0.109, merchant removal, deck upgrade, ordinary combat
-turn, combat hand selection, and run-deck Inspection are scoped-qualified;
-event card acquisition, reward, card reward, map, and treasure are action
-canaries. All other historical
+Source `2.0-preview.30` retains strict purpose-specific projections for
+event/rest deck upgrade, event card acquisition, card bundle, game-over,
+character select, dialogue/options, and the treasure-room lifecycle. On exact
+v0.109, merchant removal, deck upgrade, ordinary combat turn, combat hand
+selection, and run-deck Inspection are scoped-qualified; event card
+acquisition, reward, card reward, map, shop, treasure, game over, card bundle,
+character select, event dialogue, and event option are action canaries. All other historical
 contracts remain non-executable on this build unless capabilities explicitly
 list them.
 
@@ -49,9 +50,11 @@ context/surface, capability, or authority incompatibility fails closed. Runtime
 and prompt identity expose `shared_state + context.kind + surface.kind +
 actionAuthority`.
 
-Re requires `shared_state` on every semantic Bridge state, records its evidence,
-and validates combat player/potion identities against it. Shared state creates
-no actions. Unsupported legacy-owned states may still use v1 for their complete
+Re requires `shared_state` on every in-run semantic Bridge state, records its
+evidence, and validates combat player/potion identities against it. The narrow
+pre-run `character_select` Surface instead requires `shared_state=null`.
+Shared state creates no actions. Event-option hover semantics remain typed as
+text or card previews; unknown variants fail closed. Unsupported legacy-owned states may still use v1 for their complete
 Context/Surface contract, but that fallback cannot merge into Bridge authority.
 
 The shop integration preserves affordability separately from authority and

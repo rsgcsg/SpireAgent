@@ -1,6 +1,6 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.25`
+Protocol preview: `2.0-preview.30`
 
 ## Build Compatibility
 
@@ -12,7 +12,9 @@ contract against every Steam build. For exact identity
   `combat_turn`, `combat_hand_card_selection`, and ordinary single-player
   `rest_site`;
 - action canaries: `event_card_acquisition`, `reward_claim`,
-  `card_reward_selection`, `map_navigation`, and `treasure_room`;
+  `card_reward_selection`, `map_navigation`, `shop_inventory`, `shop_room`,
+  `treasure_room`, `game_over`, `card_bundle_selection`, `character_select`,
+  `event_dialogue`, and `event_option`;
 - qualified read-only inspection: `run_deck`.
 
 Every unlisted Surface and Inspection remains disabled. Historical v0.108
@@ -62,7 +64,9 @@ were Bridge-advertised, locally reconstructed by a legacy client, or absent.
 Bridge wire actions always use `authority="game_ui"`; the higher-level client
 records the effective state authority separately.
 
-`shared_state` is a separate top-level read-only concern. Preview.25 serializes
+`shared_state` is a separate top-level read-only concern. Active-run Surfaces
+require it. The purpose-specific `character_select` menu Surface requires it to
+be `null`, because no run exists yet. Preview.28+ serializes
 the active single-player run's act/floor/ascension, visible bosses/modifiers,
 and local player identity/HP/gold/relic/potion facts. It must not be copied into
 every Context, treated as an Inspection, or allowed to create actions. It is
@@ -144,7 +148,8 @@ Additional preview.2 completion evidence:
 
 | Surface/action | Completion evidence |
 |---|---|
-| event choose/proceed | option chosen, room/subsurface transition, or a non-empty replacement option set |
+| event choose | source-backed replacement option set, required child Surface, combat, or room transition; `WasChosen` alone is insufficient |
+| event proceed | map opens or the event room leaves |
 | combat play card | card leaves hand, required subsurface opens, or combat ends |
 | combat potion | potion leaves its exact slot or combat ends |
 | combat end turn | local player play phase ends or combat ends |
@@ -192,21 +197,32 @@ Current selection and reward completion evidence:
 | generated card choice peek-close | peek mode closes without granting underlying combat actions |
 | full-belt reward discard | the exact potion leaves its exact slot or the reward surface is replaced |
 | potion reward claim | reward set changes or the reward surface is replaced, after capacity is revalidated |
-| event dialogue advance | current revealed line advances or dialogue controls close |
-| card bundle preview/confirm/cancel | exact selected bundle enters preview, commits, or returns to choices |
+| event dialogue advance | exact current dialogue index advances or the event room closes |
+| card bundle preview/confirm/cancel | exact selected bundle enters preview; confirm closes the selector and every selected exact card instance appears in the run deck; cancel returns to choices |
 | map node choice | map closes or the exact current map coordinate reaches the selected node |
 | rest Heal | exact source-calculated HP post-state and rest-option progression |
 | rest Smith | exact `deck_upgrade_selection` child opens; arbitrary overlays do not complete |
 | rest Proceed | map opens or the rest room leaves |
 | shop open/close | inventory `IsOpen` becomes true/false respectively |
-| typed shop purchase | exact product changes, its valid child overlay opens, or the merchant room exits |
-| shop card-removal launch | removal becomes used, the child selector opens, or the merchant room exits |
+| typed shop card purchase | purchase task succeeds, exact card instance enters the run deck, exact gold is spent, and the typed entry advances |
+| typed shop relic purchase | purchase task succeeds, exact relic instance enters inventory, exact gold is spent, and the typed entry advances |
+| typed shop potion purchase | capacity is revalidated; purchase task succeeds, exact potion instance enters a slot, exact gold is spent, and the typed entry advances |
+| shop card-removal launch | exact merchant removal child opens or the exact service becomes used |
 | shop Proceed | map opens or the merchant room exits |
 | deck upgrade confirm | exact selected deck instance is upgraded and the selector closes |
 | event card acquisition select/deselect | exact selected membership changes, or final auto-commit closes the child, increases run-deck count by the committed selection count, and places every selected exact instance in the run deck |
 | treasure relic choose | exact relic ownership increases and the relic selection closes |
 | treasure skip | relic ownership is unchanged and the room advances |
 | treasure Proceed | treasure room leaves or the map opens |
+| game-over advance | exact current Continue starts `_isAnimatingSummary` and becomes disabled; container visibility alone is not evidence |
+| game-over return | game-over closes, the run is no longer in progress, and the main menu is loaded |
+| character select | exact selected character, exact Ascension delta, active run with selected character, or exact submenu departure |
+
+Event options expose the exact rendered title/description, lock/proceed/chosen
+state, visible lethal warning, optional relic semantics, and typed hover tips.
+Text hover tips remain text; `CardHoverTip` remains a full visible card preview.
+Unknown hover-tip types suppress the Surface instead of being flattened or
+silently dropped.
 
 Shop uses two mutually exclusive action-owning Surfaces. `shop_inventory`
 contains separate card, relic, potion, and card-removal offer types; it never

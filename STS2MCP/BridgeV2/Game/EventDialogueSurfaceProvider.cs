@@ -163,10 +163,8 @@ internal sealed class EventDialogueSurfaceProvider : IBridgeSurfaceProvider
         return BridgeActionStartResult.Started(
             () => !ReferenceEquals(NEventRoom.Instance, expectedRoom)
                   || !McpMod.IsLiveNode(expectedLayout)
-                  || (CurrentLineField?.GetValue(expectedLayout) is int nextLine && nextLine > expectedLine)
-                  || !McpMod.IsNodeVisible(expectedHitbox)
-                  || !expectedHitbox.IsEnabled,
-            "dialogue_index_advanced_or_dialogue_controls_closed");
+                  || (CurrentLineField?.GetValue(expectedLayout) is int nextLine && nextLine > expectedLine),
+            "exact_dialogue_index_advanced_or_event_room_closed");
     }
 
     private static string? ReadLineText(NAncientDialogueLine line)

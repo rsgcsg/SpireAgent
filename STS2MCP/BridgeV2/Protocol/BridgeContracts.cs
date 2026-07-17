@@ -7,7 +7,7 @@ namespace STS2_MCP.BridgeV2.Protocol;
 
 public static class BridgeV2Contract
 {
-    public const string ProtocolVersion = "2.0-preview.25";
+    public const string ProtocolVersion = "2.0-preview.30";
     public const string ObservationPolicyId = "player_visible_ui_v1";
 }
 
@@ -346,8 +346,16 @@ public sealed record VisibleEventOption(
     bool IsLocked,
     bool IsProceed,
     bool WasChosen,
+    bool WillKillPlayer,
     string? RelicName,
-    string? RelicDescription);
+    string? RelicDescription,
+    IReadOnlyList<VisibleEventOptionTooltip> Tooltips);
+
+public sealed record VisibleEventOptionTooltip(
+    string Kind,
+    string? Name,
+    string? Description,
+    VisibleCard? Card);
 
 [JsonConverter(typeof(BridgeContextJsonConverter))]
 public interface IBridgeContext
@@ -396,6 +404,18 @@ public sealed record RestBridgeContext(
 
 public sealed record TreasureBridgeContext(
     string Kind) : IBridgeContext;
+
+public sealed record GameOverBridgeContext(
+    string Kind,
+    string Result,
+    string GameMode,
+    int? Score,
+    int? FloorReached,
+    int? Ascension) : IBridgeContext;
+
+public sealed record MenuBridgeContext(
+    string Kind,
+    string Flow) : IBridgeContext;
 
 public sealed record VisibleOwnedPotion(
     string EntityId,
@@ -579,6 +599,60 @@ public sealed record TreasureRoomSurface(
     IReadOnlyList<VisibleTreasureRelic> Relics,
     bool CanSkip,
     bool CanProceed) : IBridgeSurface;
+
+/// <summary>
+/// The ordinary single-player game-over lifecycle. The intro and summary are
+/// separate stages; returning to the main menu is not legal before the actual
+/// summary control becomes visible and enabled.
+/// </summary>
+public sealed record GameOverSurface(
+    string Kind,
+    string Stage,
+    string ScreenEntityId,
+    string? ReturnDestination,
+    bool CanAdvanceSummary,
+    bool CanReturn) : IBridgeSurface;
+
+public sealed record VisibleCharacterChoice(
+    string EntityId,
+    int Index,
+    string CharacterId,
+    string Name,
+    bool IsLocked,
+    bool IsSelected,
+    bool IsRandom);
+
+public sealed record VisibleStartingRelic(
+    string DefinitionId,
+    string? Name,
+    string? Description);
+
+public sealed record VisibleSelectedCharacterDetails(
+    string CharacterId,
+    string Title,
+    string? Description,
+    int? StartingHp,
+    int? StartingGold,
+    VisibleStartingRelic? StartingRelic);
+
+/// <summary>
+/// Ordinary single-player character selection. This contract intentionally
+/// exposes only facts rendered by the current screen; it does not leak the
+/// starting deck or collection totals exposed by the legacy reconstruction.
+/// </summary>
+public sealed record CharacterSelectSurface(
+    string Kind,
+    string Stage,
+    string ScreenEntityId,
+    IReadOnlyList<VisibleCharacterChoice> Characters,
+    VisibleSelectedCharacterDetails? SelectedDetails,
+    int? Ascension,
+    string? AscensionTitle,
+    string? AscensionDescription,
+    bool CanDecreaseAscension,
+    bool CanIncreaseAscension,
+    bool CanEmbark,
+    bool CanGoBack) : IBridgeSurface;
 
 /// <summary>
 /// Exact merchant card-removal child surface. This intentionally does not

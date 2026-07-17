@@ -1,66 +1,76 @@
 # Player-Visible Coverage Matrix
 
 Current execution evidence is scoped to exact game identity
-`v0.109.0|c12f634d|-840572606` and the observed interaction shape. Source audit,
-fixtures, compilation, or historical `v0.108.0` runs alone are not current-build
-organic qualification.
+`v0.109.0|c12f634d|-840572606`. Compilation, fixtures, source review, old-build
+evidence, canary permission, and organic qualification are distinct states.
 
 ## Current-Build Contracts
 
-| Surface / inspection | Context | Current permission | Organic evidence | Remaining boundary |
-|---|---|---|---|---|
-| `deck_removal_selection` | shop | qualified | select -> automatic preview -> confirm; exact card/deck/gold/counter/service witness and `run_deck` post-state | merchant purpose only; no transform/upgrade/enchant inference |
-| `deck_upgrade_selection` | event or rest | qualified | independent event Armaments+ and rest Prep Time+ journeys | other upgrade origins and multi-select variants need evidence |
-| `combat_turn` | combat | qualified for observed ordinary shapes | repeated card, potion, target, and end-turn journeys | uncommon target/phase/intent variants remain evidence debt |
-| `combat_hand_card_selection` | combat | qualified for observed simple-select shape | Touch of Insanity exact-instance select -> confirm -> same-card cost 2 to 0 | upgrade/peek and other origins need current-build diversity |
-| `rest_site` | rest | qualified for ordinary single-player shape | Heal exact HP; Smith exact upgrade child and cancel; Proceed to map | unknown enabled relic/mod options and multiplayer fail closed |
-| `event_card_acquisition` | event | action canary | Brain Leech exact one-card auto-commit; same-instance run-deck count 12 -> 13 | Room Full of Cheese two-card lifecycle untested; other simple-grid purposes fail closed |
-| `reward_claim` | reward flow | action canary | ordinary claim/card-child/Proceed lifecycle | linked sets and uncommon reward kinds fail closed |
-| `card_reward_selection` | reward flow | action canary | ordinary card selection lifecycle | alternatives and special origins need diversity |
-| `map_navigation` | map | action canary | exact-node travel after reward and treasure | drawing, special modes, and multiplayer unsupported |
-| `treasure_room` | treasure | action canary | choose Bag of Marbles with owned-relic witness; Proceed with map witness | open and skip variants not yet qualified |
-| `run_deck` inspection | active single-player run | qualified read-only | exact per-instance removal and upgrade post-state | no arbitrary query; never action authority |
-| top-level `shared_state` | active single-player run HUD | qualified read-only composition | menu-null, active-run read, map/combat composition, final-MVID potion post-state | no actions; unsupported hover forms and multiplayer fail closed |
+| Surface / inspection | Permission | Current evidence | Remaining boundary |
+|---|---|---|---|
+| `deck_removal_selection` | qualified | merchant select -> preview -> confirm; exact deck/card/gold/service witness | merchant remove only; no generic maintenance inference |
+| `deck_upgrade_selection` | qualified | event and rest exact-instance upgrade journeys | other origins and multi-select variants need evidence |
+| `combat_turn` | qualified | repeated card, target, potion, and end-turn journeys | uncommon card/target/phase shapes remain evidence debt |
+| `combat_hand_card_selection` | qualified | Touch of Insanity exact-instance select/confirm/cost post-state | other hand-selection purposes need diversity |
+| `rest_site` | qualified | Heal exact HP, Smith exact child, Proceed to map | unknown enabled options and multiplayer fail closed |
+| `event_card_acquisition` | canary | Brain Leech exact one-card deck commit | two-card and other event origins remain unqualified |
+| `reward_claim` | canary | ordinary claim, potion-capacity, child, and Proceed flows | linked/special rewards fail closed |
+| `card_reward_selection` | canary | repeated ordinary choices | alternatives and special origins need diversity |
+| `map_navigation` | canary | repeated exact-node travel | drawings, special modes, and multiplayer unsupported |
+| `shop_room` | canary | open/close/Proceed current-build journeys | more lifecycle diversity required |
+| `shop_inventory` | canary | card/relic/potion purchases and removal launch with category-specific witnesses | final artifact still needs repeated organic category coverage |
+| `treasure_room` | canary | exact relic choose and Proceed; stale state correctly blocked | open/skip variants remain unqualified |
+| `card_bundle_selection` | canary | preview and exact three-card Scroll Boxes deck commit on preview.27 | other origins absent; preview.28 behavior unchanged but needs routine regression |
+| `game_over` | canary, not organically qualified | preview.27 natural intro exposed a real contract bug; preview.28 fix is source/test/build verified | fresh intro -> summary -> return journey required |
+| `character_select` | canary | select character, Ascension down/up, and Embark into a real Silent A10 run | root menus and first-run tutorial confirmation remain unsupported |
+| `event_dialogue` | canary | repeated v0.109 revealed-prefix advances with exact index witness | non-Neow/other ancient dialogue diversity remains evidence debt |
+| `event_option` | canary | typed text/card hover semantics, Neow Talisman effect, replacement options, and Proceed to map | ordinary non-Neow and lethal-option diversity remain evidence debt |
+| `run_deck` Inspection | qualified read-only | exact removal, upgrade, enchant, bundle post-states | no arbitrary query or action authority |
+| top-level `shared_state` | qualified read-only composition | active-run HUD composition across map/combat/reward | bounded strategic HUD, not all visible UI information |
 
-## Historical Implementations
+## Implemented But Disabled On v0.109
 
-These contracts are implemented and have bounded `v0.108.0` evidence, but are
-not executable on v0.109 unless separately listed above:
-
-| Surface / inspection | Player-visible semantics | Historical boundary |
+| Contract | Historical evidence | Why disabled now |
 |---|---|---|
-| `deck_enchant_selection` | exact eligible cards, selection, preview, enchantment | observed Glam flow only |
-| `event_dialogue` | revealed prefix, current line, speaker, advance | future lines intentionally hidden |
-| `event_option` | visible options and exact event semantics | event-specific children separate |
-| `combat_pile_card_selection` | exact source pile and selection constraints | observed discard single-pick only |
-| `generated_card_choice` | temporary visible cards and skip/peek | observed generated choice only |
-| `card_bundle_selection` | atomic visible bundles and preview/commit | observed bundle origin only |
-| `shop_room` | merchant open and Proceed | observed ordinary merchant only |
-| `shop_inventory` | typed stock, prices, affordability, purchases, removal launch | observed ordinary categories only |
-| `combat_piles` inspection | unordered draw/discard/exhaust contents | hidden draw order excluded |
+| `deck_enchant_selection` | v0.108 Glam lifecycle | current-build source/action/post-state requalification missing |
+| `combat_pile_card_selection` | v0.108 discard selection | v0.109 exact origins/lifecycle not requalified |
+| `generated_card_choice` | v0.108 temporary choice | v0.109 source and variants not requalified |
+| `combat_piles` Inspection | v0.108 read-only pile contents | current permission is only `run_deck` |
 
 ## Unsupported Or Legacy-Owned
 
-| Interaction / facts | Current authority | Status |
-|---|---|---|
-| menu / character select / run start / game over | v1 local reconstruction | lifecycle witnesses incomplete |
-| linked reward sets | none in v2 | fail closed |
-| transform and unlisted purpose-specific deck maintenance | v1 or none | must retain purpose-specific eligibility and completion |
-| treasure open/skip variants | treasure action canary | implemented but not organically qualified |
-| rich hover/keyword semantics | mixed | ordinary shared relic/potion keywords covered; unsupported forms need typed contracts |
-| multiplayer | none in v2 | intentionally unsupported |
+| Interaction / facts | Current status |
+|---|---|
+| main menu / single-player submenu | v1 local reconstruction or fail closed; no v2 semantic completion |
+| first-run character tutorial and non-standard run setup | explicit unsupported boundary; ordinary single-player character select is a canary |
+| generic or purpose-unknown card selectors | v1 or fail closed; source purpose must be proven before v2 authority |
+| transform, duplicate, and unlisted maintenance | no qualified v2 purpose-specific contract |
+| linked/special reward sets | fail closed |
+| treasure open/skip variants | implemented canary operations without organic qualification |
+| rich tooltip/keyword/hover variants | partial; unsupported forms fail closed rather than disappear silently |
+| compendium, settings, profile, timeline, daily/custom and multiplayer flows | unsupported by v2; multiplayer intentionally out of scope |
+
+## Coverage Interpretation
+
+- Twenty semantic Surface contracts exist in source; seventeen are permitted
+  on exact v0.109 (five qualified and twelve canaries), while three remain
+  current-build disabled.
+- This is roughly `60-75%` of major ordinary in-run interaction families, but
+  only about `50-65%` of practical v1 interaction parity and `30-45%` of all
+  single-player player-visible situations. These are engineering ranges, not
+  measured product metrics.
+- Safety/authority mechanics are substantially more mature than semantic
+  coverage. The protocol does not yet expose every fact the player can inspect.
 
 ## Visibility Laws
 
-- Shared visible state answers persistent player/run facts; Context answers what
-  situation exists; Surface answers which topmost interaction grammar owns
-  input; Authority answers who may execute.
-- Underlying surfaces are suspended. Their facts may remain in Context or
-  read-only data, but their actions never mix with the Active Surface.
-- Legal actions bind only to explicit visible entity identities and execute only
-  through opaque action IDs.
-- Inspection is read-only and state-bound; it never enters the command ledger.
-- Unknown or hidden facts are omitted and diagnosed, never guessed. RNG, real
-  draw order, future event dialogue/outcomes, future rewards, and future enemy
-  moves are outside the protocol.
-- Surface completeness is bounded and is never total-UI completeness.
+- Context describes the current game situation. The one Active Surface owns
+  current input. Stage is lifecycle state inside that Surface. Authority is a
+  separate execution decision.
+- Underlying Surfaces are suspended and never leak actions through an overlay.
+- Legal actions bind visible entity identities and execute only as opaque IDs.
+- Inspection is read-only and never enters the command ledger.
+- RNG, true draw order, future events/rewards/moves, and private game facts are
+  excluded.
+- Bounded Surface completeness is never total-screen or whole-game
+  completeness.

@@ -4,6 +4,9 @@ using System.Linq;
 using Godot;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
+using MegaCrit.Sts2.Core.Nodes;
+using MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect;
+using MegaCrit.Sts2.Core.Nodes.Screens.MainMenu;
 using MegaCrit.Sts2.Core.Runs;
 using STS2_MCP.BridgeV2.Protocol;
 using STS2_MCP.BridgeV2.Runtime;
@@ -13,15 +16,17 @@ namespace STS2_MCP.BridgeV2.Game;
 internal enum BridgeSurfaceLayer
 {
     Overlay,
-    Room
+    Room,
+    Menu
 }
 
 internal sealed record ActiveSurfaceSnapshot(
     IOverlayScreen? TopOverlay,
     bool MapIsOpen,
+    NSubmenu? MenuSubmenu,
     string SourceType)
 {
-    public bool HasBlockingSurface => TopOverlay != null || MapIsOpen;
+    public bool HasBlockingSurface => TopOverlay != null || MapIsOpen || MenuSubmenu != null;
 }
 
 internal sealed record ActiveSurfaceResolution(
@@ -43,9 +48,31 @@ internal static class ActiveSurfaceResolver
         // transition) after it has left the visible UI. It must not keep
         // publishing stale actions over the new room state.
         IOverlayScreen? overlay = !mapIsOpen && IsVisibleActiveOverlay(candidate) ? candidate : null;
+        NSubmenu? menuSubmenu = null;
+        if (overlay == null && !mapIsOpen && !RunManager.Instance.IsInProgress)
+        {
+            NSubmenu? stackTop = NGame.Instance?.MainMenu?.SubmenuStack?.Peek();
+            NCharacterSelectScreen? mountedCharacterSelect = NGame.Instance?.GetTree()?.Root is { } root
+                ? McpMod.FindFirst<NCharacterSelectScreen>(root)
+                : null;
+            bool mountedVisible = mountedCharacterSelect != null
+                                  && McpMod.IsLiveNode(mountedCharacterSelect)
+                                  && McpMod.IsNodeVisible(mountedCharacterSelect);
+            if (stackTop != null && mountedVisible && !ReferenceEquals(stackTop, mountedCharacterSelect))
+                throw new InvalidOperationException("Conflicting visible main-menu submenu ownership.");
+            menuSubmenu = stackTop is { } current
+                          && McpMod.IsLiveNode(current)
+                          && McpMod.IsNodeVisible(current)
+                ? current
+                : mountedVisible
+                    ? mountedCharacterSelect
+                    : null;
+        }
         string sourceType = overlay?.GetType().Name
             ?? (mapIsOpen ? "map_open" : RunManager.Instance.IsInProgress ? "run_without_visible_overlay" : "menu_or_no_run");
-        return new ActiveSurfaceSnapshot(overlay, mapIsOpen, sourceType);
+        if (menuSubmenu != null)
+            sourceType = menuSubmenu.GetType().Name;
+        return new ActiveSurfaceSnapshot(overlay, mapIsOpen, menuSubmenu, sourceType);
     }
 
     internal static bool IsVisibleActiveOverlay(IOverlayScreen? overlay) =>
@@ -61,7 +88,7 @@ internal static class ActiveSurfaceResolver
     {
         var matches = new List<(string Kind, BridgeObservationDraft Draft)>();
         foreach (IBridgeSurfaceProvider provider in providers.Where(provider =>
-                     IsActiveLayer(provider.Layer, snapshot.TopOverlay != null, snapshot.MapIsOpen)))
+                     IsActiveLayer(provider.Layer, snapshot.TopOverlay != null, snapshot.MapIsOpen, snapshot.MenuSubmenu != null)))
         {
             try
             {
@@ -86,12 +113,17 @@ internal static class ActiveSurfaceResolver
             null);
     }
 
-    internal static BridgeSurfaceLayer SelectLayer(bool hasVisibleOverlay, bool mapIsOpen) =>
-        hasVisibleOverlay || mapIsOpen ? BridgeSurfaceLayer.Overlay : BridgeSurfaceLayer.Room;
+    internal static BridgeSurfaceLayer SelectLayer(bool hasVisibleOverlay, bool mapIsOpen, bool hasMenuSubmenu = false) =>
+        hasMenuSubmenu
+            ? BridgeSurfaceLayer.Menu
+            : hasVisibleOverlay || mapIsOpen
+                ? BridgeSurfaceLayer.Overlay
+                : BridgeSurfaceLayer.Room;
 
     internal static bool IsActiveLayer(
         BridgeSurfaceLayer providerLayer,
         bool hasVisibleOverlay,
-        bool mapIsOpen) =>
-        providerLayer == SelectLayer(hasVisibleOverlay, mapIsOpen);
+        bool mapIsOpen,
+        bool hasMenuSubmenu = false) =>
+        providerLayer == SelectLayer(hasVisibleOverlay, mapIsOpen, hasMenuSubmenu);
 }

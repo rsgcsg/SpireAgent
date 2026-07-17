@@ -12,10 +12,9 @@ Bridge v2 is an incremental preview, not a replacement for all v1 surfaces.
 
 - Current exact game binding: Slay the Spire 2
   `v0.109.0|c12f634d|-840572606`.
-- Source `2.0-preview.25` keeps centralized active-surface ownership, typed
-  diagnostics, purpose-specific deck upgrade and event card acquisition,
-  staged treasure semantics, and a top-level read-only shared run/player HUD
-  contract.
+- Source `2.0-preview.30` keeps centralized overlay/room/menu ownership, typed
+  diagnostics, purpose-specific selection and event contracts, staged
+  completion semantics, and a top-level read-only shared run/player HUD.
   Current-build capabilities distinguish scoped-qualified actions, action
   canaries, and read-only Inspection instead of treating implementation as
   permission.
@@ -27,8 +26,11 @@ Bridge v2 is an incremental preview, not a replacement for all v1 surfaces.
 - Current v0.109 organic evidence qualifies merchant removal, event/rest
   upgrade, ordinary combat turn, combat hand selection, ordinary single-player
   rest, and read-only run deck. Event card acquisition, reward, card reward,
-  map, and treasure remain action canaries. Unlisted surfaces are disabled and
-  draw order remains hidden.
+  map, shop, treasure, game over, card bundles, ordinary character select,
+  revealed ancient dialogue, and ordinary single-player event options are action
+  canaries. Game over still needs a fresh preview.28+ lifecycle after an organic
+  preview.27 contract defect was fixed. Unlisted surfaces are disabled and draw
+  order remains hidden.
 
 See [current status](docs/bridge-v2/CURRENT_STATUS.md), the
 [upstream/design audit](docs/bridge-v2/UPSTREAM_AUDIT.md), and the
@@ -91,7 +93,7 @@ dotnet test STS2_MCP.sln -p:STS2GameDir="$env:STS2_GAME_DIR"
 .\build.ps1 -GameDir "$env:STS2_GAME_DIR"
 ```
 
-The solution currently contains 55 pure contract/runtime/security tests covering stable
+The solution currently contains 59 pure contract/runtime/security tests covering stable
 state identity, entity identity, stale-state rejection, idempotent request IDs,
 completion observation, timeout-as-unknown, and JSON action shape.
 
@@ -194,7 +196,7 @@ Exact-build mismatch, context/surface mismatch, command-response identity
 mismatch, failed command, and timeout all fail closed.
 
 Current permissions come only from exact-build capability lists. Planning code
-never reads arbitrary Bridge JSON. Source `preview.25` projects top-level
+never reads arbitrary Bridge JSON. Source `preview.30` projects top-level
 shared run/player HUD facts and the scoped run-deck Inspection into typed player
 facts without creating actions or entering the command ledger. Historical
 v0.108 surfaces remain implementation history, not v0.109 authority.

@@ -34,7 +34,12 @@ internal static class BridgeGameIdentity
         "map_navigation",
         "shop_inventory",
         "shop_room",
-        "treasure_room"
+        "treasure_room",
+        "game_over",
+        "card_bundle_selection",
+        "character_select",
+        "event_dialogue",
+        "event_option"
     };
 
     public static GameBuildIdentity Read()
@@ -87,7 +92,7 @@ internal static class BridgeGameIdentity
                     InspectionCanaryKinds: Array.Empty<string>(),
                     ObservationOnlySurfaceKinds: Array.Empty<string>(),
                     ObservationCandidateBuildFingerprints: Array.Empty<string>(),
-                Detail: $"Game build {Fingerprint(release)} is exactly qualified for deck_removal_selection, event/rest deck_upgrade_selection, ordinary combat_turn, combat_hand_card_selection, and ordinary single-player rest_site actions plus run_deck inspection; event_card_acquisition, reward_claim, card_reward_selection, map_navigation, shop_inventory, shop_room, and treasure_room are limited to action canaries, and every unlisted surface and inspection remains disabled.")
+                Detail: $"Game build {Fingerprint(release)} is exactly qualified for deck_removal_selection, event/rest deck_upgrade_selection, ordinary combat_turn, combat_hand_card_selection, and ordinary single-player rest_site actions plus run_deck inspection; event_card_acquisition, reward_claim, card_reward_selection, map_navigation, shop_inventory, shop_room, treasure_room, ordinary single-player game_over, source-qualified Scroll Boxes card_bundle_selection, ordinary single-player character_select, revealed-prefix ancient event_dialogue, and ordinary single-player event_option are limited to action canaries, and every unlisted surface and inspection remains disabled.")
             : new CompatibilityAssessment(
                 version == null ? "unknown" : "untested",
                 TestedVersions,

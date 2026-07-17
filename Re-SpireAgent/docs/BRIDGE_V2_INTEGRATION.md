@@ -2,7 +2,7 @@
 
 ## Current Scope
 
-Re-SpireAgent supports the strict `2.0-preview.25` source contract. Current
+Re-SpireAgent supports the strict `2.0-preview.30` source contract. Current
 v0.109 authority is read from capabilities rather than inferred from historical
 implementation:
 
@@ -10,20 +10,25 @@ implementation:
   `deck_upgrade_selection`, `combat_turn`, `combat_hand_card_selection`, and
   ordinary single-player `rest_site`;
 - current-build action canaries: `event_card_acquisition`, `reward_claim`,
-  `card_reward_selection`, `map_navigation`, and `treasure_room`;
+  `card_reward_selection`, `map_navigation`, `shop_inventory`, `shop_room`,
+  `treasure_room`, `game_over`, `card_bundle_selection`, `character_select`,
+  `event_dialogue`, and `event_option`;
 - scoped-qualified read-only Inspection: `run_deck`;
 - every unlisted Surface and Inspection: disabled for this build.
 
 Current-build organic evidence includes merchant removal with exact post-state,
 independent event/rest upgrade journeys, ordinary combat actions, a Touch of
 Insanity hand-select/confirm journey, ordinary rest Heal/Smith/Proceed, a Brain
-Leech exact-card acquisition, one coherent reward/card-reward/map journey, and
-treasure relic choose plus Proceed. Treasure
-open/skip, linked rewards, special map modes, and unlisted variants remain
-unqualified.
+Leech exact-card acquisition, coherent reward/card-reward/map/shop journeys,
+treasure relic choose plus Proceed, an exact Scroll Boxes bundle commit,
+ordinary character selection/run start, revealed Neow dialogue, and a typed
+Neow option/Talisman/Proceed journey.
+Preview.28 game-over code is source/test/build verified after a preview.27
+organic contract defect; its fresh complete lifecycle, treasure open/skip,
+linked rewards, special map modes, and unlisted variants remain unqualified.
 
-Historical v0.108 evidence for enchantment, events, rest, shop, combat child
-selectors, bundles, and combat-pile Inspection remains protocol history only.
+Historical v0.108 evidence for enchantment, combat child selectors, generated
+choices, and combat-pile Inspection remains protocol history only.
 It does not silently grant v0.109 execution authority.
 
 ## State Identity
@@ -40,12 +45,16 @@ shared_state + context.kind + surface.kind + actionAuthority
 - surface: currently blocking interaction protocol;
 - authority: `bridge_advertised`, `local_reconstruction`, or `none`.
 
-For Bridge-owned states, top-level v2 `shared_state` is the sole persistent
+For in-run Bridge-owned states, top-level v2 `shared_state` is the sole persistent
 run/player authority. It is read-only, included in state identity, and cannot
-add actions. Re rejects a semantic Bridge state without it, mismatched combat
+add actions. Re rejects an in-run semantic Bridge state without it, mismatched combat
 player identity, or incomplete combat potion coverage. Unsupported
 legacy-owned states may still use v1 for their complete Context/Surface
 projection, but no v1 sidecar merges into a Bridge-owned state.
+
+The pre-run `character_select` Surface is the only current exception and must
+carry `shared_state=null`. Event options preserve visible lethal warnings and
+typed `text`/`card` hover tips; unknown tooltip variants fail closed.
 
 ## Action Entity Bindings
 
@@ -275,8 +284,10 @@ evidence.
 Preview.24 organically verified menu-null, active-run shared facts, map/combat
 composition, and an exact combat potion post-state on the final installed MVID.
 Preview.25 then verified a Brain Leech exact-card auto-commit and same-instance
-run-deck post-state. Continue the organic run to the next coherent blocking
-legacy boundary; the planned largest boundary remains the purpose-specific
-menu -> character select -> run start -> game-over journey. This integration
+run-deck post-state. Preview.29-.30 verified a purpose-specific character-select
+run start, revealed-prefix dialogue, and typed event-option text/card tooltips
+through an exact Talisman/deck post-state and Proceed. Continue to the next
+coherent blocking legacy boundary; root menu/single-player setup and fresh
+game-over remain high-value. This integration
 does not add memory, learning, scoring, hidden-information access, arbitrary MCP
 calls, generic action payloads, or broad v2 coverage.

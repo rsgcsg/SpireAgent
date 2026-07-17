@@ -1,6 +1,18 @@
 # RE-P1 Handoff
 
-Status: Bridge `2.0-preview.25` is installed against exact identity
+Status update 2026-07-18: Bridge `2.0-preview.30` is installed against exact
+identity `v0.109.0|c12f634d|-840572606`. Preview.29 added narrow menu-owned
+character selection and current-build revealed ancient dialogue. Preview.30
+replaced an invalid flat-keyword assumption with typed event-option text/card
+tooltips, removed `WasChosen` as false completion evidence, and completed a
+fresh Neow dialogue -> option -> exact Talisman/deck post-state -> map journey.
+Character select, dialogue, and event option remain canaries, not broad
+qualification. Game-over still needs a fresh organic intro -> summary ->
+return journey. Current Canonical truth remains
+`../STS2MCP/docs/bridge-v2/CURRENT_STATUS.md`; the chronology below is
+historical handoff context.
+
+Previous status: Bridge `2.0-preview.25` was installed against exact identity
 `v0.109.0|c12f634d|-840572606`. Capabilities scoped-qualify merchant removal,
 event/rest deck upgrade, ordinary combat turn, combat hand selection, and
 ordinary single-player rest plus read-only run deck. Event card acquisition,
@@ -215,7 +227,9 @@ No memory, learning, scoring, strategic scaffold, shadow mode, live additive mod
 
 ## Known Limits
 
-- `bundle_select` has old-project examples but no verified organic raw fixture in the inspected run evidence, so it remains unsupported.
+- Legacy v1 `bundle_select` remains locally unsupported. Bridge v2 now has a
+  separate source-qualified Scroll Boxes contract with exact deck post-state;
+  that does not generalize v1 bundle payloads.
 - Complete deck context is not visible on every MCP state; the normalizer does not fabricate it.
 - Shop exit uses one documented, diagnostics-visible inference from verified old live behavior.
 - Game updates or MCP serialization changes may introduce unknown states, which stop safely and require fixture-led support.
@@ -228,13 +242,14 @@ No memory, learning, scoring, strategic scaffold, shadow mode, live additive mod
   qualify every target type, card effect, selector mode, or phase transition.
 - Hidden draw order remains excluded by policy. Implemented surface variants
   beyond those organically observed still require their own evidence.
-- Treasure choose/Proceed are now Bridge v2 canary actions; open/skip remain
-  unqualified. Menu, character select, run start, game over, linked rewards,
-  transform, and unlisted maintenance variants still depend on explicit v1
-  ownership or fail closed.
-- Menu, character select, run start, and game over remain the largest v1
-  authority boundary. They need purpose-specific stages and semantic completion,
-  not a universal menu-click contract.
+- Treasure choose/Proceed are Bridge v2 canary actions; open/skip remain
+  unqualified. Root menu, single-player submenu, linked rewards, transform,
+  and unlisted maintenance variants still depend on explicit v1 ownership or
+  fail closed. Game-over now has a preview.28 canary contract but still needs a
+  complete fresh organic lifecycle.
+- Root menu and single-player submenu remain a large v1 authority boundary.
+  Ordinary character select/run start now has a bounded canary; first-run
+  tutorial and non-standard modes still fail closed.
 - Composite state-plus-inspection drift is fail-closed but noisy during fast
   transitions. Future work may add bounded observable read retry or a coherent
   server observation token; it must never accept mixed adjacent states.
@@ -244,13 +259,13 @@ No memory, learning, scoring, strategic scaffold, shadow mode, live additive mod
 
 ## Validation
 
-On 2026-07-18, preview.25 passed 123/123 Re tests, 55/55 Bridge tests, strict
+On 2026-07-18, preview.30 passed 126/126 Re tests, 59/59 Bridge tests, strict
 typecheck, Re production build, and the exact-source Bridge Release build with
 zero warnings/errors. Installed and Release DLL hashes matched; the loaded
 runtime reported the expected protocol, module identity, and exact game build.
-The final loaded MVID completed a combat potion action and exact shared/combat
-post-state. Treasure choose and Proceed remain preview.23 evidence. See the
-latest command output rather than treating test counts as permanent.
+The final loaded MVID completed strict Re inspection and a fresh Neow event
+option/Proceed lifecycle with exact relic/deck post-state. See the latest
+command output rather than treating test counts as permanent.
 
 ## Next Step
 
@@ -266,14 +281,12 @@ npm run agent:replay
 
 Start a fresh game manually, then run bounded windows and inspect each run with `npm run agent:replay`. Confirm that each record contains pre/post raw snapshots, the prompt, DeepSeek response, selected allowed action, MCP result, and settled post-state. Fix a repeatable protocol mismatch with a reduced raw fixture and contract test before running longer loops.
 
-Preview.25 is closed as a scoped release. The next evidenced migration target
-is v0.109 shop requalification: one fresh organic run recorded three clean v1
-shop decisions because historical v2 shop permission is still v0.108-only.
-Re-audit typed inventory, purchases, removal child, close, and Proceed before
-enabling a canary. The largest later boundary remains menu -> character select
--> run start -> game over. Keep each purpose/stage explicit and prove semantic
-completion; do not infer a universal menu or purchase protocol.
+Preview.30 is closed as a scoped release. The next coherent migration target is
+the purpose-specific root menu -> single-player submenu path, followed by a
+fresh natural game-over lifecycle. Do not infer a universal menu protocol.
+Event option/dialogue/character select need diversity before promotion beyond
+canary.
 
 Canonical Bridge status and the latest evidence are in
 `../STS2MCP/docs/bridge-v2/CURRENT_STATUS.md` and
-`../STS2MCP/docs/bridge-v2/PREVIEW_25_EVENT_CARD_ACQUISITION_CANARY_2026-07-18.md`.
+`../STS2MCP/docs/bridge-v2/PREVIEW_29_30_MENU_DIALOGUE_AND_EVENT_OPTION_QUALIFICATION_2026-07-18.md`.

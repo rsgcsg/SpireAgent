@@ -3,14 +3,14 @@ import { buildAllowedActions } from "../src/domain/actions/buildAllowedActions.j
 import type { AdapterDescriptor } from "../src/game-io/adapter.js";
 import { Sts2McpHybridAdapter } from "../src/integrations/sts2mcp/hybridAdapter.js";
 import { TransientObservationError } from "../src/game-io/observationError.js";
-import { decodeBridgeV2Inspection, decodeBridgeV2State } from "../src/integrations/sts2mcp/bridgeV2Protocol.js";
+import { decodeBridgeV2Capabilities, decodeBridgeV2Inspection, decodeBridgeV2State } from "../src/integrations/sts2mcp/bridgeV2Protocol.js";
 import { isBridgeV2WrappedState, wrapBridgeV2State } from "../src/integrations/sts2mcp/rawState.js";
 import { normalizeCurrentState } from "../src/normalization/normalizeCurrentState.js";
 import type { JsonObject } from "../src/shared/json.js";
 import { fixture } from "./helpers.js";
 
 const CAPABILITIES = {
-  protocol_version: "2.0-preview.25",
+  protocol_version: "2.0-preview.30",
   bridge: {
     id: "sts2_mcp_bridge_v2",
     name: "STS2 Agent Bridge",
@@ -67,7 +67,9 @@ const CAPABILITIES = {
     { kind: "map_navigation", support: "implemented_exact_game_version", operations: ["choose_map_node"], evidence: "test-contract" },
     { kind: "shop_inventory", support: "implemented_exact_game_version", operations: ["purchase_shop_card", "purchase_shop_relic", "purchase_shop_potion", "open_shop_card_removal", "close_shop_inventory"], evidence: "test-contract" },
     { kind: "shop_room", support: "implemented_exact_game_version", operations: ["open_shop_inventory", "proceed_shop"], evidence: "test-contract" },
-    { kind: "treasure_room", support: "implemented_exact_game_version", operations: ["open_treasure_chest", "choose_treasure_relic", "skip_treasure_relic", "proceed_treasure_room"], evidence: "test-contract" }
+    { kind: "treasure_room", support: "implemented_exact_game_version", operations: ["open_treasure_chest", "choose_treasure_relic", "skip_treasure_relic", "proceed_treasure_room"], evidence: "test-contract" },
+    { kind: "game_over", support: "implemented_exact_game_version", operations: ["advance_game_over_summary", "return_game_over"], evidence: "test-contract" },
+    { kind: "character_select", support: "implemented_exact_game_version", operations: ["select_character", "decrease_ascension", "increase_ascension", "embark_standard_run", "back_from_character_select"], evidence: "test-contract" }
   ],
   commands: { opaque_actions_only: true, state_bound: true, idempotent_request_ids: true, lifecycle_states: ["started", "completed"], outcome_timeout_ms: 10000 },
   inspections: {
@@ -120,7 +122,7 @@ const SHARED_STATE = {
 } satisfies JsonObject;
 
 const DECK_ENCHANT_STATE = {
-  protocol_version: "2.0-preview.25",
+  protocol_version: "2.0-preview.30",
   state_id: "state-test-1",
   state_sequence: 1,
   observed_at: "2026-07-16T00:00:00Z",
@@ -345,6 +347,138 @@ const TREASURE_ROOM_STATE = {
   }
 };
 
+const GAME_OVER_STATE = {
+  ...DECK_ENCHANT_STATE,
+  state_id: "state-game-over-summary-1",
+  state_sequence: 18,
+  shared_state: SHARED_STATE,
+  context: {
+    kind: "game_over",
+    result: "loss",
+    game_mode: "standard",
+    score: 321,
+    floor_reached: 12,
+    ascension: 0
+  },
+  surface_kind: "game_over",
+  authority_handoff: { status: "bridge_owned", surface_kind: "game_over", reason: "fixture exact stage ownership" },
+  surface: {
+    kind: "game_over",
+    stage: "summary",
+    screen_entity_id: "game-over-screen-1",
+    return_destination: "main_menu",
+    can_advance_summary: false,
+    can_return: true
+  },
+  legal_actions: [{
+    action_id: "action-game-over-return-1",
+    state_id: "state-game-over-summary-1",
+    kind: "return_game_over",
+    category: "navigation",
+    label: "Return to the main menu",
+    authority: "game_ui",
+    evidence_code: "NGameOverScreen.%MainMenuButton+NGame.MainMenu-loaded",
+    entity_bindings: [{ role: "game_over_screen", entity_id: "game-over-screen-1" }]
+  }],
+  completeness: {
+    player_visible_semantics: "contract_complete_for_ordinary_single_player_game_over_navigation_and_summary",
+    legal_actions: "derived_from_exact_current_enabled_game_over_controls",
+    sources: ["NGameOverScreen exact controls"],
+    missing: []
+  }
+};
+
+const CHARACTER_SELECT_STATE = {
+  ...DECK_ENCHANT_STATE,
+  state_id: "state-character-select-1",
+  state_sequence: 19,
+  shared_state: null,
+  context: {
+    kind: "menu",
+    flow: "standard_run_setup"
+  },
+  surface_kind: "character_select",
+  authority_handoff: { status: "bridge_owned", surface_kind: "character_select", reason: "fixture exact menu ownership" },
+  surface: {
+    kind: "character_select",
+    stage: "choosing",
+    screen_entity_id: "character-screen-1",
+    characters: [{
+      entity_id: "character-ironclad",
+      index: 0,
+      character_id: "IRONCLAD",
+      name: "The Ironclad",
+      is_locked: false,
+      is_selected: true,
+      is_random: false
+    }, {
+      entity_id: "character-silent",
+      index: 1,
+      character_id: "SILENT",
+      name: "The Silent",
+      is_locked: false,
+      is_selected: false,
+      is_random: false
+    }],
+    selected_details: {
+      character_id: "IRONCLAD",
+      title: "The Ironclad",
+      description: "A survivor with reliable strength.",
+      starting_hp: 80,
+      starting_gold: 99,
+      starting_relic: {
+        definition_id: "BURNING_BLOOD",
+        name: "Burning Blood",
+        description: "Heal after combat."
+      }
+    },
+    ascension: null,
+    ascension_title: null,
+    ascension_description: null,
+    can_decrease_ascension: false,
+    can_increase_ascension: false,
+    can_embark: true,
+    can_go_back: true
+  },
+  legal_actions: [{
+    action_id: "action-character-silent",
+    state_id: "state-character-select-1",
+    kind: "select_character",
+    category: "selection",
+    label: "Select The Silent",
+    authority: "game_ui",
+    evidence_code: "NCharacterSelectButton.Select+exact-selected-button-witness",
+    entity_bindings: [{ role: "character_choice", entity_id: "character-silent" }]
+  }, {
+    action_id: "action-character-embark",
+    state_id: "state-character-select-1",
+    kind: "embark_standard_run",
+    category: "commit",
+    label: "Embark",
+    authority: "game_ui",
+    evidence_code: "NCharacterSelectScreen.ConfirmButton+RunManager-active-run-witness",
+    entity_bindings: [
+      { role: "screen", entity_id: "character-screen-1" },
+      { role: "character_choice", entity_id: "character-ironclad" }
+    ]
+  }, {
+    action_id: "action-character-back",
+    state_id: "state-character-select-1",
+    kind: "back_from_character_select",
+    category: "navigation",
+    label: "Back",
+    authority: "game_ui",
+    evidence_code: "NCharacterSelectScreen.BackButton+submenu-owner-change-witness",
+    entity_bindings: [{ role: "screen", entity_id: "character-screen-1" }]
+  }],
+  completeness: {
+    player_visible_semantics: "contract_complete_for_singleplayer_character_select",
+    legal_actions: "derived_from_exact_visible_character_and_menu_controls",
+    sources: ["NCharacterSelectScreen exact visible controls"],
+    missing: []
+  }
+};
+
 const EVENT_OPTION_STATE = {
   ...DECK_ENCHANT_STATE,
   state_id: "state-event-1",
@@ -370,8 +504,10 @@ const EVENT_OPTION_STATE = {
       is_locked: false,
       is_proceed: true,
       was_chosen: false,
+      will_kill_player: false,
       relic_name: null,
-      relic_description: null
+      relic_description: null,
+      tooltips: [{ kind: "text", name: "Return", description: "Leave this event." }]
     }]
   },
   legal_actions: [{
@@ -1437,7 +1573,7 @@ function visibleInspectionCard(overrides: Record<string, unknown> = {}) {
 
 function runDeckInspection(stateId: string, cards = [visibleInspectionCard()]) {
   return {
-        protocol_version: "2.0-preview.25",
+        protocol_version: "2.0-preview.30",
     inspection_id: `inspection-run-deck-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -1460,7 +1596,7 @@ function runDeckInspection(stateId: string, cards = [visibleInspectionCard()]) {
 
 function combatPilesInspection(stateId: string) {
   return {
-        protocol_version: "2.0-preview.25",
+        protocol_version: "2.0-preview.30",
     inspection_id: `inspection-combat-piles-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -1512,6 +1648,13 @@ const TEST_SOURCE: AdapterDescriptor = {
 };
 
 describe("Bridge v2 Re-SpireAgent integration", () => {
+  it("rejects duplicate capability surface declarations before authority evaluation", () => {
+    const duplicate = structuredClone(CAPABILITIES);
+    duplicate.surfaces.push(structuredClone(duplicate.surfaces[0]!));
+
+    expect(() => decodeBridgeV2Capabilities(duplicate)).toThrow("duplicate surface kinds");
+  });
+
   it("strictly decodes the qualified surface and rejects discriminator mismatch", () => {
     expect(decodeBridgeV2State(DECK_ENCHANT_STATE).data.surface.kind).toBe("deck_enchant_selection");
     expect(() => decodeBridgeV2State({ ...DECK_ENCHANT_STATE, surface_kind: "other" })).toThrow("does not match");
@@ -1734,6 +1877,134 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     completedWithChoice.surface.can_proceed = true;
     expect(normalizeCurrentState(
       wrapBridgeV2State({ state: completedWithChoice, capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    ).currentState.stability).toBe("invalid");
+  });
+
+  it("keeps game-over intro and summary as separate exact-control stages", () => {
+    const decoded = decodeBridgeV2State(GAME_OVER_STATE).data;
+    expect(decoded.context.kind).toBe("game_over");
+    expect(decoded.surface.kind).toBe("game_over");
+
+    const envelope = normalizeCurrentState(
+      wrapBridgeV2State({ state: structuredClone(GAME_OVER_STATE), capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    );
+    expect(envelope.currentState).toMatchObject({
+      normalizedSchemaVersion: 20,
+      stability: "actionable",
+      actionAuthority: "bridge_advertised",
+      context: {
+        kind: "run_ended",
+        result: "loss",
+        gameMode: "standard",
+        score: 321,
+        floorReached: 12,
+        ascension: 0
+      },
+      surface: {
+        kind: "game_over",
+        stage: "summary",
+        returnDestination: "main_menu",
+        canAdvanceSummary: false,
+        canReturn: true
+      }
+    });
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash).map((action) => action.kind)).toEqual([
+      "return_game_over"
+    ]);
+
+    const introStateId = "state-game-over-intro-1";
+    const intro = {
+      ...structuredClone(GAME_OVER_STATE),
+      state_id: introStateId,
+      context: {
+        kind: "game_over",
+        result: "loss",
+        game_mode: "standard",
+        score: null,
+        floor_reached: null,
+        ascension: null
+      },
+      surface: {
+        ...structuredClone(GAME_OVER_STATE.surface),
+        stage: "intro",
+        return_destination: null,
+        can_advance_summary: true,
+        can_return: false
+      },
+      legal_actions: [{
+        ...GAME_OVER_STATE.legal_actions[0]!,
+        action_id: "action-game-over-advance-1",
+        state_id: introStateId,
+        kind: "advance_game_over_summary",
+        label: "Continue to the run summary"
+      }]
+    };
+    expect(normalizeCurrentState(
+      wrapBridgeV2State({ state: intro, capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    ).currentState).toMatchObject({
+      stability: "actionable",
+      context: { kind: "run_ended", result: "loss" },
+      surface: { kind: "game_over", stage: "intro", canAdvanceSummary: true, canReturn: false }
+    });
+
+    const illegalMixedStage = structuredClone(GAME_OVER_STATE);
+    illegalMixedStage.surface.can_advance_summary = true;
+    expect(normalizeCurrentState(
+      wrapBridgeV2State({ state: illegalMixedStage, capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    ).currentState.stability).toBe("invalid");
+
+    expect(() => decodeBridgeV2State({ ...GAME_OVER_STATE, context: { kind: "treasure" } })).toThrow(
+      "game_over surface requires game_over context"
+    );
+  });
+
+  it("accepts menu-owned character selection without active-run shared state", () => {
+    const decoded = decodeBridgeV2State(CHARACTER_SELECT_STATE).data;
+    expect(decoded.context.kind).toBe("menu");
+    expect(decoded.surface.kind).toBe("character_select");
+
+    const envelope = normalizeCurrentState(
+      wrapBridgeV2State({ state: structuredClone(CHARACTER_SELECT_STATE), capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    );
+    expect(envelope.currentState).toMatchObject({
+      normalizedSchemaVersion: 20,
+      stability: "actionable",
+      actionAuthority: "bridge_advertised",
+      context: { kind: "menu", screen: "character_select" },
+      surface: {
+        kind: "character_select",
+        stage: "choosing",
+        canEmbark: true,
+        canGoBack: true,
+        selectedDetails: {
+          characterId: "IRONCLAD",
+          startingHp: 80,
+          startingGold: 99,
+          startingRelic: { id: "BURNING_BLOOD" }
+        }
+      }
+    });
+    expect(envelope.currentState.run).toBeUndefined();
+    expect(envelope.currentState.player).toBeUndefined();
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash).map((action) => action.kind)).toEqual([
+      "select_character",
+      "embark_standard_run",
+      "back_from_character_select"
+    ]);
+    expect(JSON.stringify(envelope.currentState)).not.toContain("starting_deck");
+
+    const invalidSharedState = { ...structuredClone(CHARACTER_SELECT_STATE), shared_state: structuredClone(SHARED_STATE) };
+    expect(() => decodeBridgeV2State(invalidSharedState)).toThrow("character_select must not carry active-run shared_state");
+
+    const invalidSelectedDetails = structuredClone(CHARACTER_SELECT_STATE);
+    invalidSelectedDetails.surface.selected_details.character_id = "SILENT";
+    expect(normalizeCurrentState(
+      wrapBridgeV2State({ state: invalidSelectedDetails, capabilities: structuredClone(CAPABILITIES) }),
       TEST_SOURCE
     ).currentState.stability).toBe("invalid");
   });
@@ -1980,7 +2251,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 17,
+      normalizedSchemaVersion: 20,
       actionAuthority: "bridge_advertised",
       context: { kind: "event", ancient: true, inDialogue: true },
       surface: {
@@ -2028,7 +2299,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 17,
+      normalizedSchemaVersion: 20,
       actionAuthority: "bridge_advertised",
       context: { kind: "rest" },
       surface: {
@@ -2106,7 +2377,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 17,
+      normalizedSchemaVersion: 20,
       stability: "actionable",
       actionAuthority: "bridge_advertised",
       context: {
@@ -2261,7 +2532,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 17,
+      normalizedSchemaVersion: 20,
       actionAuthority: "bridge_advertised",
       context: {
         kind: "map",
@@ -2625,7 +2896,13 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       surface: { kind: "event_option", screenEntityId: "event-screen-1" }
     });
     if (envelope.currentState.surface.kind !== "event_option") throw new Error("unexpected surface");
-    expect(envelope.currentState.surface.options[0]).toMatchObject({ title: "Proceed", proceed: true, enabled: true });
+    expect(envelope.currentState.surface.options[0]).toMatchObject({
+      title: "Proceed",
+      proceed: true,
+      enabled: true,
+      willKillPlayer: false,
+      tooltips: [{ kind: "text", name: "Return", description: "Leave this event." }]
+    });
     expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toEqual([
       expect.objectContaining({ id: "action-event-1", action: expect.objectContaining({ kind: "bridge_v2_action" }) })
     ]);
@@ -2657,7 +2934,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 17,
+      normalizedSchemaVersion: 20,
       actionAuthority: "bridge_advertised",
       context: { kind: "combat", encounterType: "elite" },
       surface: {
@@ -2711,7 +2988,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 17,
+      normalizedSchemaVersion: 20,
       actionAuthority: "bridge_advertised",
       context: { kind: "combat" },
       surface: {
@@ -2769,7 +3046,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 17,
+      normalizedSchemaVersion: 20,
       actionAuthority: "bridge_advertised",
       context: { kind: "combat" },
       surface: {
@@ -2806,7 +3083,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 17,
+      normalizedSchemaVersion: 20,
       actionAuthority: "bridge_advertised",
       context: { kind: "event", eventId: "BRAIN_LEECH" },
       surface: {
@@ -2855,7 +3132,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 17,
+      normalizedSchemaVersion: 20,
       actionAuthority: "bridge_advertised",
       context: { kind: "event", eventId: "NEOW" },
       surface: {

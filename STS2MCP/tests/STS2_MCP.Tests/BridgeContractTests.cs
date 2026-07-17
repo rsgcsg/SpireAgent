@@ -198,6 +198,32 @@ public sealed class BridgeContractTests
     }
 
     [Fact]
+    public void GameOverContractKeepsIntroAndSummaryAuthoritySeparate()
+    {
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+        };
+        var context = new GameOverBridgeContext(
+            "game_over", "loss", "standard", Score: 321, FloorReached: 12, Ascension: 0);
+        var surface = new GameOverSurface(
+            "game_over", "summary", "game-over-screen-a", "main_menu",
+            CanAdvanceSummary: false, CanReturn: true);
+
+        string contextJson = JsonSerializer.Serialize(context, options);
+        string surfaceJson = JsonSerializer.Serialize(surface, options);
+
+        Assert.Contains("\"result\":\"loss\"", contextJson);
+        Assert.Contains("\"floor_reached\":12", contextJson);
+        Assert.Contains("\"stage\":\"summary\"", surfaceJson);
+        Assert.Contains("\"return_destination\":\"main_menu\"", surfaceJson);
+        Assert.Contains("\"can_advance_summary\":false", surfaceJson);
+        Assert.Contains("\"can_return\":true", surfaceJson);
+        Assert.DoesNotContain("restart", surfaceJson, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void InspectionContractIsReadOnlyAndLimitedToFixedKinds()
     {
         var contract = new InspectionContractCapability(
@@ -323,10 +349,56 @@ public sealed class BridgeContractTests
         Assert.Equal(BridgeSurfaceLayer.Overlay, ActiveSurfaceResolver.SelectLayer(true, false));
         Assert.Equal(BridgeSurfaceLayer.Overlay, ActiveSurfaceResolver.SelectLayer(false, true));
         Assert.Equal(BridgeSurfaceLayer.Room, ActiveSurfaceResolver.SelectLayer(false, false));
+        Assert.Equal(BridgeSurfaceLayer.Menu, ActiveSurfaceResolver.SelectLayer(false, false, true));
         Assert.True(ActiveSurfaceResolver.IsActiveLayer(BridgeSurfaceLayer.Overlay, false, true));
         Assert.False(ActiveSurfaceResolver.IsActiveLayer(BridgeSurfaceLayer.Room, false, true));
         Assert.True(ActiveSurfaceResolver.IsActiveLayer(BridgeSurfaceLayer.Room, false, false));
         Assert.False(ActiveSurfaceResolver.IsActiveLayer(BridgeSurfaceLayer.Overlay, false, false));
+        Assert.True(ActiveSurfaceResolver.IsActiveLayer(BridgeSurfaceLayer.Menu, false, false, true));
+        Assert.False(ActiveSurfaceResolver.IsActiveLayer(BridgeSurfaceLayer.Room, false, false, true));
+    }
+
+    [Fact]
+    public void CharacterSelectContractExposesVisiblePanelWithoutLegacyDeckLeakage()
+    {
+        var surface = new CharacterSelectSurface(
+            "character_select",
+            "choosing",
+            "character-screen-a",
+            new[]
+            {
+                new VisibleCharacterChoice("choice-ironclad", 0, "IRONCLAD", "The Ironclad", false, true, false),
+                new VisibleCharacterChoice("choice-random", 1, "RANDOM_CHARACTER", "Random", false, false, true)
+            },
+            new VisibleSelectedCharacterDetails(
+                "IRONCLAD",
+                "The Ironclad",
+                "A survivor with reliable strength.",
+                80,
+                99,
+                new VisibleStartingRelic("BURNING_BLOOD", "Burning Blood", "Heal after combat.")),
+            Ascension: 1,
+            AscensionTitle: "Ascension 1",
+            AscensionDescription: "Elites are deadlier.",
+            CanDecreaseAscension: true,
+            CanIncreaseAscension: true,
+            CanEmbark: true,
+            CanGoBack: true);
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+        };
+
+        string json = JsonSerializer.Serialize(surface, options);
+
+        Assert.Contains("\"kind\":\"character_select\"", json);
+        Assert.Contains("\"character_id\":\"IRONCLAD\"", json);
+        Assert.Contains("\"starting_relic\":{\"definition_id\":\"BURNING_BLOOD\"", json);
+        Assert.Contains("\"ascension\":1", json);
+        Assert.DoesNotContain("starting_deck", json, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("total_cards", json, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("card_index", json, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -908,13 +980,20 @@ public sealed class BridgeContractTests
         IBridgeSurface surface = new EventOptionSurface(
             "event_option", "screen-a", new[]
             {
-                new VisibleEventOption("option-a", 0, "Choose", "Visible result", false, false, false, null, null)
+                new VisibleEventOption(
+                    "option-a", 0, "Choose", "Visible result", false, false, false,
+                    true, null, null, new[]
+                    {
+                        new VisibleEventOptionTooltip("text", "Guilty", "Cannot be played.", null)
+                    })
             });
 
         string json = JsonSerializer.Serialize(new { context, surface }, options);
 
         Assert.Contains("\"context\":{\"kind\":\"event\"", json);
         Assert.Contains("\"surface\":{\"kind\":\"event_option\"", json);
+        Assert.Contains("\"will_kill_player\":true", json);
+        Assert.Contains("\"tooltips\":[{\"kind\":\"text\",\"name\":\"Guilty\"", json);
         Assert.DoesNotContain("surface_kind", json);
     }
 

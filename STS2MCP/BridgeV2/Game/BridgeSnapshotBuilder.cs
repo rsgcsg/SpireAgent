@@ -25,6 +25,8 @@ internal static class BridgeSnapshotBuilder
         new ShopInventorySurfaceProvider(),
         new ShopRoomSurfaceProvider(),
         new TreasureRoomSurfaceProvider(),
+        new GameOverSurfaceProvider(),
+        new CharacterSelectSurfaceProvider(),
         new RestSiteSurfaceProvider(),
         new EventDialogueSurfaceProvider(),
         new EventOptionSurfaceProvider()

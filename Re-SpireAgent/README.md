@@ -4,6 +4,12 @@ Re-SpireAgent is a small, independent Slay the Spire 2 agent runtime. It reads t
 
 RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, shadow/live modes, policy promotion, or the old project's phase machinery. Its job is to make one decision path correct and auditable.
 
+The current strict client contract is Bridge `2.0-preview.30` on exact game
+identity `v0.109.0|c12f634d|-840572606`. Bridge v2 remains incremental:
+bounded Surface completeness and opaque action safety are real, but root menu,
+several selection variants, and total player-visible coverage are
+not complete. See [MCP state coverage](docs/MCP_STATE_COVERAGE.md).
+
 ```text
 MCP raw state
   -> NormalizedCurrentState { context + surface + actionAuthority }
@@ -196,10 +202,11 @@ RE-P1 has fixture-backed support for:
 - `menu`
 - `game_over`
 
-Bridge v2 source `preview.25` uses exact-build capabilities. On v0.109, merchant
+Bridge v2 source `preview.30` uses exact-build capabilities. On v0.109, merchant
 removal, event/rest upgrade, ordinary combat turn, combat hand selection, and
 ordinary single-player rest plus read-only run deck are scoped-qualified; event
-card acquisition, reward, card reward, map, and treasure are action canaries.
+card acquisition, reward, card reward, map, shop, treasure, game over, card
+bundles, character select, event dialogue, and event option are action canaries.
 Every unlisted contract is disabled even if it has historical v0.108 evidence.
 Qualification is per observed shape, not broad surface or game coverage. See
 [BRIDGE_V2_INTEGRATION.md](docs/BRIDGE_V2_INTEGRATION.md).
@@ -221,11 +228,12 @@ The only supported public TypeScript entrypoint is `src/index.ts`. Integration r
 ## Current Limitations
 
 - Real v1 MCP windows have exercised event, combat, rewards, card reward, map, rest, shop, treasure, and a boss fight. This proves protocol integration, not strategic quality or universal MCP coverage. The legacy v1 `NDeckEnchantSelectScreen` confirmation endpoint acknowledged the request without advancing state; Bridge v2 now has a separate qualified opaque-action contract for that surface.
-- Bridge v2 source `preview.25` is current. Exact v0.109 capabilities qualify
+- Bridge v2 source `preview.30` is current. Exact v0.109 capabilities qualify
   merchant removal, event/rest deck upgrade, ordinary combat turn, combat hand
   selection, ordinary single-player rest, and read-only run deck; event card
-  acquisition, reward, card reward, map, and treasure are explicit action
-  canaries. Every unlisted surface remains disabled or explicitly v1-owned in
+  acquisition, reward, card reward, map, shop, treasure, game over, card
+  bundles, character select, event dialogue, and event option are explicit
+  action canaries. Every unlisted surface remains disabled or explicitly v1-owned in
   `auto` mode.
 - Organic evidence covers the current scoped permissions only. It does not
   qualify every selector mode, event origin, card target, treasure variant, or
@@ -233,10 +241,10 @@ The only supported public TypeScript entrypoint is `src/index.ts`. Integration r
 - Bridge v2 exposes one action-owning surface at a time through a centralized
   overlay-vs-room resolver. Typed diagnostics are implemented; legacy warning
   text must not be mistaken for an action-authority decision.
-- Read-only `run_deck` and `combat_piles` inspection is implemented, state-bound,
-  non-executable, and excluded from the command ledger. Draw order remains
-  hidden. Organic evidence covers persistent Glam post-state and non-empty
-  draw/discard/exhaust contents.
+- Read-only `run_deck` and `combat_piles` inspection code is state-bound,
+  non-executable, and excluded from the command ledger. Only `run_deck` is
+  currently permitted on v0.109; historical combat-pile evidence grants no
+  current authority. Draw order remains hidden.
 - A full potion belt now makes a visible potion reward non-claimable and
   exposes only exact, state-bound discard operands until capacity exists. The
   discard-then-claim lifecycle passed against an organic full-belt screen.
@@ -249,10 +257,9 @@ The only supported public TypeScript entrypoint is `src/index.ts`. Integration r
 - Ordinary card reward and outer reward claim are distinct, organically
   qualified protocols; neither is flattened into the other.
 - Normal merchant inventory and room controls are distinct Bridge-owned
-  protocols. Organic evidence covers open, close/reopen, one card purchase with
-  sold-out/run-deck post-state, and Proceed to map. Relic, potion, and removal
-  categories do not inherit that card-purchase qualification; the removal child
-  deck selector remains separate.
+  protocols. Organic evidence covers open, close/reopen, typed card/relic/potion
+  purchases, removal launch, and Proceed to map. Each category retains its own
+  completion witness; the removal child deck selector remains separate.
 - Run-deck inspection supplies complete typed deck evidence when a local run
   exists, including on legacy-fallback map/shop states. It does not fabricate
   a deck at menu/no-run states.

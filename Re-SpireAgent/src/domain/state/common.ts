@@ -2,7 +2,7 @@ import type { PlayerSnapshot } from "./entities.js";
 
 import type { CardSnapshot } from "./entities.js";
 
-export const NORMALIZED_STATE_SCHEMA_VERSION = 17 as const;
+export const NORMALIZED_STATE_SCHEMA_VERSION = 20 as const;
 
 export type StateStability =
   | "actionable"

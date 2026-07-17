@@ -64,7 +64,7 @@ internal static class BridgeV2Runtime
                 "event_dialogue",
                 "implemented_exact_game_version",
                 new[] { "advance_event_dialogue" },
-                "sts2-v0.108.0:NAncientEventLayout+NAncientDialogueLine+NAncientDialogueHitbox"),
+                "sts2-v0.109.0:NAncientEventLayout+revealed-prefix-only+exact-dialogue-index-witness"),
             new SurfaceCapability(
                 "rest_site",
                 "implemented_exact_game_version",
@@ -74,7 +74,7 @@ internal static class BridgeV2Runtime
                 "event_option",
                 "implemented_exact_game_version",
                 new[] { "choose_event_option", "proceed_event" },
-                "sts2-v0.108.0:NEventRoom+NEventOptionButton+EventOption"),
+                "sts2-v0.109.0:NEventRoom+NEventOptionButton+EventOption+visible-hover-tips+semantic-transition-witness"),
             new SurfaceCapability(
                 "combat_turn",
                 "implemented_exact_game_version",
@@ -104,7 +104,7 @@ internal static class BridgeV2Runtime
                 "card_bundle_selection",
                 "implemented_exact_game_version",
                 new[] { "preview_card_bundle", "confirm_card_bundle", "cancel_card_bundle_preview" },
-                "sts2-v0.108.0:NChooseABundleSelectionScreen+NCardBundle+NConfirmButton+NBackButton"),
+                "sts2-v0.109.0:ScrollBoxes.AfterObtained+NChooseABundleSelectionScreen+exact-deck-post-state-canary"),
             new SurfaceCapability(
                 "card_reward_selection",
                 "implemented_exact_game_version",
@@ -142,7 +142,21 @@ internal static class BridgeV2Runtime
                     "open_treasure_chest", "choose_treasure_relic",
                     "skip_treasure_relic", "proceed_treasure_room"
                 },
-                "sts2-v0.109.0:TreasureRoom+NTreasureRoom+NTreasureRoomRelicCollection+semantic-post-state-canary")
+                "sts2-v0.109.0:TreasureRoom+NTreasureRoom+NTreasureRoomRelicCollection+semantic-post-state-canary"),
+            new SurfaceCapability(
+                "game_over",
+                "implemented_exact_game_version",
+                new[] { "advance_game_over_summary", "return_game_over" },
+                "sts2-v0.109.0:NGameOverScreen+exact-current-controls+summary-and-main-menu-witnesses"),
+            new SurfaceCapability(
+                "character_select",
+                "implemented_exact_game_version",
+                new[]
+                {
+                    "select_character", "decrease_ascension", "increase_ascension",
+                    "embark_standard_run", "back_from_character_select"
+                },
+                "sts2-v0.109.0:NCharacterSelectScreen+singleplayer-StartRunLobby+visible-controls+active-run-witness")
         };
         IReadOnlyList<SurfaceCapability> surfaces = game.Compatibility.ActionExecutionAllowed
             ? game.Compatibility.ActionExecutionSurfaceKinds.Count == 0

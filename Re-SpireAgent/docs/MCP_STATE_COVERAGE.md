@@ -1,72 +1,70 @@
 # MCP State Coverage
 
-Coverage is based on observed old-project raw snapshots and reduced fixture copies. A fixture proves the current parser/action contract for that shape; it does not guarantee future game or mod versions.
+Canonical Bridge permission and evidence status lives in
+[`STS2MCP/docs/bridge-v2/CURRENT_STATUS.md`](../../STS2MCP/docs/bridge-v2/CURRENT_STATUS.md)
+and the
+[`PLAYER_VISIBLE_COVERAGE.md`](../../STS2MCP/docs/bridge-v2/PLAYER_VISIBLE_COVERAGE.md)
+matrix. This document records the Re-SpireAgent consumption boundary.
 
-| MCP `state_type` / active payload | Normalized context + surface | Status | Action protocol |
-|---|---|---|---|
-| `monster`, `boss`, `elite` | `combat` + `combat_turn` | fixture-backed | play card, potion, end turn |
-| `monster` or `elite` without `battle`, message `Combat ended. Waiting for rewards...` | `post_combat` + `no_action` | fixture-backed from real MCP smoke | none; poll for rewards |
-| active `hand_select` over combat | `combat` + `card_selection` | fixture-backed | combat select/confirm; combat facts retained |
-| `card_select` with no verified semantic origin | `unknown` + `card_selection` | partially verified from real MCP | card selection is verified; when MCP exposes `can_confirm`, only confirm/cancel are offered because selected IDs/capacity are absent. `NDeckEnchantSelectScreen` confirmation is currently an adapter completion gap: the REST endpoint returns success but did not advance the observed game state, so it is recorded as `executed_unsettled`, not treated as a settled action. |
-| Bridge v2 `deck_enchant_selection` | Bridge `event`/`combat` context + `deck_enchant_selection` + `bridge_advertised` | organic Bridge + Re lifecycle passed | opaque select/preview/confirm/cancel/close only |
-| Bridge v2 `event_option` | Bridge `event` + `event_option` + `bridge_advertised` | organic Bridge + Re choose/settlement lifecycle passed for ordinary options | opaque choose/proceed only |
-| Bridge v2 `combat_turn` | Bridge `combat` + `combat_turn` + `bridge_advertised` | organic Bridge + Re targeted-card/settlement lifecycle passed | opaque play-card/potion/end-turn only |
-| Bridge v2 `combat_pile_card_selection` | Bridge `combat` + exact pile selector + `bridge_advertised` | four single-pick actions passed across two organic runs | opaque toggle/confirm/cancel/peek-close only |
-| Bridge v2 `combat_hand_card_selection` | Bridge `combat` + exact hand selector + `bridge_advertised` | v0.109 Touch of Insanity exact-instance select/confirm and same-card cost post-state passed | opaque select/replace/deselect/confirm/peek-close only |
-| Bridge v2 `generated_card_choice` | Bridge `combat` + temporary-card choice + `bridge_advertised` | organic temporary-card lifecycle passed | opaque temporary-card select/skip/peek-close only |
-| Bridge v2 `card_bundle_selection` | exact parent context + atomic visible bundle choice + `bridge_advertised` | organic preview/commit lifecycle passed | opaque bundle preview/confirm/cancel only |
-| Bridge v2 `event_dialogue` | Bridge ancient `event` + revealed-prefix dialogue + `bridge_advertised` | two organic advances then option transition passed | opaque current-line advance only; future lines hidden |
-| Bridge v2 `rest_site` | Bridge `rest` + exact options/Proceed + `bridge_advertised` | v0.109 Heal exact HP, Smith exact upgrade child/cancel, and Proceed-to-map passed | ordinary single-player Heal/Smith only; unknown enabled options fail closed |
-| Bridge v2 `deck_upgrade_selection` | Bridge event/rest parent + purpose-specific upgrade selector + `bridge_advertised` | v0.109 event Armaments+ and rest Prep Time+ journeys passed | opaque select/confirm/cancel only; exact upgraded-card completion |
-| Bridge v2 `event_card_acquisition` | Bridge event parent + purpose-specific add-to-run-deck selector + `bridge_advertised` | v0.109 Brain Leech exact Offering commit and same-instance deck post-state passed | opaque select/deselect only; Room Full of Cheese two-card flow remains unqualified |
-| Bridge v2 `map_navigation` | Bridge `map` + visible topology/current choices + `bridge_advertised` | repeated organic exact-node travel passed | opaque current-node choice only |
-| Bridge v2 `card_reward_selection` | Bridge `reward_flow(card_reward)` + `card_reward_selection` + `bridge_advertised` | organic Bridge + Re lifecycle passed | opaque card or separately labeled alternative only |
-| Bridge v2 `reward_claim` | Bridge `reward_flow(room_rewards)` + `reward_claim` + `bridge_advertised` | ordinary Gold, Proceed/Skip, and full-belt potion discard-then-claim completed | opaque visible claim, exact capacity discard, or explicit proceed only |
-| Bridge v2 `shop_room` | Bridge `shop` + room controls + `bridge_advertised` | open, close/reopen, and Proceed-to-map lifecycle passed | opaque merchant-open or Proceed only |
-| Bridge v2 `shop_inventory` | Bridge `shop` + typed inventory + `bridge_advertised` | one Armaments purchase, sold-out state, and run-deck post-state passed | typed category purchase or close; relic/potion/removal organic evidence pending |
-| Bridge v2 `deck_removal_selection` | Bridge `shop` + purpose-specific merchant removal + `bridge_advertised` | v0.109 select/automatic-preview/confirm and exact deck post-state passed | opaque merchant-removal actions; selector close alone is not completion |
-| Bridge v2 `treasure_room` | Bridge `treasure` + staged treasure lifecycle + `bridge_advertised` | v0.109 relic choose and Proceed-to-map passed | open/skip remain canary variants; never flattened into rewards |
-| Bridge v2 `run_deck` inspection | optional typed player run-deck evidence on supported and legacy-fallback states | organic post-reward Glam reinspection passed | none; read-only evidence |
-| Bridge v2 `combat_piles` inspection | optional typed unordered draw/discard/exhaust evidence in combat | non-empty draw/discard/exhaust organic smoke passed | none; read-only evidence |
-| `card_reward` | `card_reward` | fixture-backed | take, skip, proceed when exposed |
-| `rewards` | `rewards` | fixture-backed | claim, potion discard, proceed |
-| legacy `map` fallback | `map` | fixture-backed | only when v2 explicitly unsupported |
-| legacy `rest_site` fallback | `rest` | fixture-backed | only when v2 explicitly unsupported |
-| `event` | `event` | fixture-backed | choose visible option, including proceed option |
-| legacy v1 `shop` fallback | `shop` + `shop_interaction` | fixture-backed with one documented inference | only when v2 explicitly unsupported |
-| `treasure` | `treasure` | fixture-backed | take relic when exposed, proceed |
-| `crystal_sphere` | `crystal_sphere` | fixture-backed | switch tool, click observed cell, finish |
-| `menu` | `menu` | fixture-backed | explicit `agent:tick` protocol test only; `agent:run` stops at this boundary |
-| `game_over` | `game_over` | fixture-backed | explicit `agent:tick` protocol test only; `agent:run` stops before any restart action |
-| `bundle_select` over known context | known context + `unsupported` | intentionally unsupported | none |
-| unrecognized future state | `unknown` + `unsupported` | fail closed | none |
+## Bridge v2 Current Client Contract
 
-## Verification Rule
+Re strictly decodes `2.0-preview.30`. It accepts Bridge actions only when:
 
-A new state is supported only after a real raw sample, normalized variant, allowed-action mapping, serializer verification, state guide, and tests exist. Old smoke objects or game-class names without an observed adapter payload are not enough.
+- game and loaded Bridge identities match exact scoped capabilities;
+- the Surface kind appears exactly once and has no duplicate operation names;
+- context, Surface, stage, readiness, entity bindings, and legal-action kinds
+  are mutually consistent;
+- the capability permission list authorizes that Surface for this exact build;
+- the current Surface is `bridge_owned` and every action is state-bound.
 
-## Adapter Limits
+| Bridge contract | Re projection | Current v0.109 status |
+|---|---|---|
+| `combat_turn` | `combat + combat_turn + bridge_advertised` | qualified |
+| `combat_hand_card_selection` | `combat + combat_hand_card_selection + bridge_advertised` | qualified |
+| `deck_removal_selection` | `shop + deck_removal_selection + bridge_advertised` | qualified |
+| `deck_upgrade_selection` | event/rest parent + purpose-specific child | qualified |
+| `rest_site` | `rest + rest_site + bridge_advertised` | qualified |
+| event acquisition, reward, card reward, map, shop, treasure, card bundle | purpose-specific typed Context + Surface | current-build action canaries |
+| `character_select` | `menu + character_select` with no active-run shared state | current-build action canary |
+| `event_dialogue` / `event_option` | revealed prefix or typed visible options/tooltips | current-build action canaries |
+| `game_over` | `run_ended + game_over` | preview.28 client contract implemented; fresh organic lifecycle pending |
+| `run_deck` Inspection | typed player run-deck evidence | qualified read-only; no authority |
+| top-level `shared_state` | persistent run/player facts | read-only and state-bound |
 
-- v1 legal actions are reconstructed locally. Bridge v2 source `preview.25`
-  imports authority only from the exact-build qualified/canary lists.
-  Qualification remains per observed action shape; unsupported screens never
-  inherit a nearby surface's authority.
-- v1 action responses are partial; post-state observation verifies effects.
-  Bridge v2 has a command lifecycle and action-specific completion evidence.
-- Some combat card effects open modal selection surfaces while retaining battle data.
-- Similar card payloads do not imply one selector protocol. Pile, hand,
-  generated, reward, removal, upgrade, enchantment, and run-deck selectors
-  retain separate authority and completion semantics.
-- Some screens briefly expose loading/settlement shapes.
-- Non-combat snapshots may omit deck/energy details that would improve strategy.
-- Sparse potion arrays require raw slot identity when available.
-- Shop room and inventory are separate input owners. Price/affordability never
-  imply purchase authority, and one organic card purchase does not qualify
-  relic, potion, or removal categories. The removal child now has its own
-  purpose-specific v2 contract; it is not a generic shop or deck action.
-- Top-level v2 `shared_state` is the sole persistent run/player authority on
-  Bridge-owned states. It is read-only, state-bound, and cannot authorize
-  actions; v1 remains only for explicitly legacy-owned states.
-- Combat context intentionally carries immediate pile counts. Fixed read-only
-  inspection carries pile contents without adding fields to
-  `combat_turn.surface`; draw order is never exposed.
+## Explicit v1 Compatibility Boundary
+
+`auto` mode may use v1 only when Bridge returns one coherent
+`legacy_fallback_allowed` handoff. It never merges v1 actions into a
+Bridge-owned Surface.
+
+Observed or expected v1-owned families still include:
+
+- generic or purpose-unknown card selectors, including a fresh combat child;
+- root menu and single-player submenu; first-run character tutorial;
+- crystal-sphere and other special screens without a current v2 contract;
+- current-build-disabled deck enchant, combat-pile, and generated-card
+  variants.
+
+v1 reconstructs indices and settlement locally. It is compatibility code, not
+equivalent safety or semantic evidence. A v1-supported shape can still be
+unsupported in Re when the raw purpose is ambiguous.
+
+## Fail-Closed Rules
+
+- Unsupported, ambiguous, malformed, duplicate, exact-identity-mismatched, or
+  unqualified Bridge state has no executable Bridge action.
+- `failed`, `timed_out`, transport-uncertain, stale, or response-identity
+  mismatch is never automatically retried as an action.
+- Similar grids do not share authority. Pile, hand, generated, reward,
+  removal, upgrade, enchant, acquisition, and bundle protocols remain
+  purpose-specific.
+- Inspection is read-only. Hidden draw order, RNG, future rewards/events/moves,
+  and private state never become prompt facts.
+
+## Qualification Rule
+
+Fixtures prove decoder and action plumbing only. Current-build qualification
+requires exact source/UI audit, loaded artifact identity, organic action
+lifecycle, semantic post-state witness, Re settlement, and Canonical document
+update. Bounded Surface completeness is not whole-game player-visible
+completeness.

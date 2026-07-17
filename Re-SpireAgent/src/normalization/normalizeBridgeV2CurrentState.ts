@@ -25,6 +25,8 @@ import {
   type ShopInventorySurface,
   type ShopRoomSurface,
   type TreasureRoomSurface,
+  type GameOverSurface,
+  type CharacterSelectSurface,
   type SemanticContext,
   type StateEnvelope
 } from "../domain/state/index.js";
@@ -54,6 +56,10 @@ import {
   isBridgeV2ShopRoomSurface,
   isBridgeV2TreasureContext,
   isBridgeV2TreasureRoomSurface,
+  isBridgeV2GameOverContext,
+  isBridgeV2GameOverSurface,
+  isBridgeV2MenuContext,
+  isBridgeV2CharacterSelectSurface,
   isBridgeV2MapContext,
   isBridgeV2MapNavigationSurface,
   isBridgeV2UnsupportedSurface,
@@ -71,6 +77,9 @@ import {
   type BridgeV2ShopInventorySurface,
   type BridgeV2ShopRoomSurface,
   type BridgeV2TreasureRoomSurface,
+  type BridgeV2GameOverContext,
+  type BridgeV2GameOverSurface,
+  type BridgeV2CharacterSelectSurface,
   type BridgeV2MapContext,
   type BridgeV2MapNavigationSurface,
   type BridgeV2DeckEnchantSurface,
@@ -160,6 +169,14 @@ const ACTION_KINDS = {
     "choose_treasure_relic",
     "skip_treasure_relic",
     "proceed_treasure_room"
+  ]),
+  game_over: new Set(["advance_game_over_summary", "return_game_over"]),
+  character_select: new Set([
+    "select_character",
+    "decrease_ascension",
+    "increase_ascension",
+    "embark_standard_run",
+    "back_from_character_select"
   ])
 } as const;
 
@@ -212,6 +229,10 @@ export function normalizeBridgeV2CurrentState(
     context = projectShopContext(sharedProjection?.player);
   } else if (state && isBridgeV2TreasureContext(state.context)) {
     context = { kind: "treasure" };
+  } else if (state && isBridgeV2GameOverContext(state.context)) {
+    context = projectGameOverContext(state.context);
+  } else if (state && isBridgeV2MenuContext(state.context)) {
+    context = { kind: "menu", screen: "character_select", message: "Select a character and run settings." };
   } else if (state && isBridgeV2MapContext(state.context)) {
     context = projectMapContext(state.context);
   }
@@ -433,6 +454,12 @@ export function normalizeBridgeV2CurrentState(
       } else if (isBridgeV2TreasureRoomSurface(state.surface) && isBridgeV2TreasureContext(state.context)) {
         validateTreasureRoomState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
         surface = projectTreasureRoomSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
+      } else if (isBridgeV2GameOverSurface(state.surface) && isBridgeV2GameOverContext(state.context)) {
+        validateGameOverState(state.context, state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
+        surface = projectGameOverSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
+      } else if (isBridgeV2CharacterSelectSurface(state.surface) && isBridgeV2MenuContext(state.context)) {
+        validateCharacterSelectState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
+        surface = projectCharacterSelectSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
       } else if (isBridgeV2CombatTurnSurface(state.surface) && isBridgeV2CombatContext(state.context)) {
         validateCombatTurnState(state.shared_state, state.context, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
         surface = projectCombatTurnSurface(state.surface.room_entity_id, state.surface.can_end_turn, state.state_id, state.legal_actions, state.completeness);
@@ -860,7 +887,7 @@ function validateSharedVisibleState(
   diagnostics: DiagnosticsBuilder
 ): void {
   if (!shared) {
-    if (surfaceKind !== "unsupported") {
+    if (surfaceKind !== "unsupported" && surfaceKind !== "character_select") {
       diagnostics.invalid("bridge_v2.shared_state", shared, "semantic Bridge-owned state requires shared visible run facts");
     }
     return;
@@ -884,6 +911,80 @@ function validateSharedVisibleState(
   const bossOrders = new Set(shared.run.bosses.map((boss) => boss.order));
   if (bossOrders.size !== shared.run.bosses.length) {
     diagnostics.invalid("bridge_v2.shared_state.run.bosses", shared.run.bosses, "boss order values must be unique");
+  }
+}
+
+function validateCharacterSelectState(
+  surface: BridgeV2CharacterSelectSurface,
+  stateId: string,
+  actions: BridgeV2LegalAction[],
+  missing: string[],
+  advertisedOperations: ReadonlySet<string>,
+  readiness: string,
+  diagnostics: DiagnosticsBuilder
+): void {
+  validateActions("character_select", stateId, actions, missing, advertisedOperations, readiness, diagnostics);
+  const characterIds = new Set(surface.characters.map((choice) => choice.entity_id));
+  const definitionIds = new Set(surface.characters.map((choice) => choice.character_id));
+  if (characterIds.size !== surface.characters.length || definitionIds.size !== surface.characters.length) {
+    diagnostics.invalid("bridge_v2.surface.characters", surface.characters, "character choices must have unique entity and definition ids");
+  }
+  const selected = surface.characters.filter((choice) => choice.is_selected);
+  if (selected.length !== 1 || surface.selected_details?.character_id !== selected[0]?.character_id) {
+    diagnostics.invalid("bridge_v2.surface.selected_details", surface, "character select requires one selected choice and matching visible details");
+  }
+  if (selected[0]?.is_random) {
+    if (surface.selected_details?.starting_hp != null
+        || surface.selected_details?.starting_gold != null
+        || surface.selected_details?.starting_relic != null) {
+      diagnostics.invalid("bridge_v2.surface.selected_details", surface.selected_details, "random character must preserve hidden starting details");
+    }
+  } else if (surface.selected_details
+      && (surface.selected_details.starting_hp == null
+          || surface.selected_details.starting_gold == null
+          || surface.selected_details.starting_relic == null)) {
+    diagnostics.invalid("bridge_v2.surface.selected_details", surface.selected_details, "ordinary selected character must expose the visible HP, gold, and starting relic panel");
+  }
+  const ascensionFields = [surface.ascension, surface.ascension_title, surface.ascension_description];
+  const ascensionFieldCount = ascensionFields.filter((value) => value != null).length;
+  if (ascensionFieldCount !== 0 && ascensionFieldCount !== ascensionFields.length) {
+    diagnostics.invalid("bridge_v2.surface.ascension", surface, "visible Ascension facts must be recorded together or omitted together");
+  }
+  if (ascensionFieldCount === 0 && (surface.can_decrease_ascension || surface.can_increase_ascension)) {
+    diagnostics.invalid("bridge_v2.surface.ascension", surface, "Ascension controls cannot be actionable when the panel is not visible");
+  }
+
+  const expectedKinds = new Set<string>();
+  if (surface.characters.some((choice) => !choice.is_locked && !choice.is_selected)) expectedKinds.add("select_character");
+  if (surface.can_decrease_ascension) expectedKinds.add("decrease_ascension");
+  if (surface.can_increase_ascension) expectedKinds.add("increase_ascension");
+  if (surface.can_embark) expectedKinds.add("embark_standard_run");
+  if (surface.can_go_back) expectedKinds.add("back_from_character_select");
+  for (const action of actions) {
+    if (!expectedKinds.has(action.kind)) {
+      diagnostics.invalid("bridge_v2.legal_actions.kind", action.kind, "character-select action does not match a visible current control");
+      continue;
+    }
+    if (action.kind === "select_character") {
+      const bindings = action.entity_bindings.filter((binding) => binding.role === "character_choice");
+      const choice = bindings.length === 1
+        ? surface.characters.find((candidate) => candidate.entity_id === bindings[0]!.entity_id)
+        : undefined;
+      if (!choice || choice.is_locked || choice.is_selected) {
+        diagnostics.invalid("bridge_v2.legal_actions.entity_bindings", action.entity_bindings, "select-character action must bind one unlocked unselected visible choice");
+      }
+    } else if (action.kind === "embark_standard_run") {
+      const screenBindings = action.entity_bindings.filter((binding) => binding.role === "screen" && binding.entity_id === surface.screen_entity_id);
+      const characterBindings = action.entity_bindings.filter((binding) => binding.role === "character_choice" && binding.entity_id === selected[0]?.entity_id);
+      if (screenBindings.length !== 1 || characterBindings.length !== 1) {
+        diagnostics.invalid("bridge_v2.legal_actions.entity_bindings", action.entity_bindings, "embark must bind the exact screen and selected character");
+      }
+    } else {
+      const screenBindings = action.entity_bindings.filter((binding) => binding.role === "screen" && binding.entity_id === surface.screen_entity_id);
+      if (screenBindings.length !== 1) {
+        diagnostics.invalid("bridge_v2.legal_actions.entity_bindings", action.entity_bindings, "character-select control action must bind the current screen");
+      }
+    }
   }
 }
 
@@ -1074,6 +1175,58 @@ function validateTreasureRoomState(
       diagnostics.invalid("bridge_v2.legal_actions.kind", action.kind, "skip action appeared without the visible skip control");
     } else if (action.kind === "proceed_treasure_room" && (surface.stage !== "completed" || !surface.can_proceed)) {
       diagnostics.invalid("bridge_v2.legal_actions.kind", action.kind, "proceed action appeared before treasure completion");
+    }
+  }
+}
+
+function validateGameOverState(
+  context: BridgeV2GameOverContext,
+  surface: BridgeV2GameOverSurface,
+  stateId: string,
+  actions: BridgeV2LegalAction[],
+  missing: string[],
+  advertisedOperations: ReadonlySet<string>,
+  readiness: string,
+  diagnostics: DiagnosticsBuilder
+): void {
+  validateActions("game_over", stateId, actions, missing, advertisedOperations, readiness, diagnostics);
+
+  const advanceActions = actions.filter((action) => action.kind === "advance_game_over_summary");
+  const returnActions = actions.filter((action) => action.kind === "return_game_over");
+  if (surface.can_advance_summary && surface.can_return) {
+    diagnostics.invalid("bridge_v2.surface", surface, "game-over stages cannot publish intro and return authority together");
+  }
+  if (advanceActions.length !== (surface.can_advance_summary ? 1 : 0)
+      || returnActions.length !== (surface.can_return ? 1 : 0)
+      || actions.length !== advanceActions.length + returnActions.length) {
+    diagnostics.invalid("bridge_v2.legal_actions", actions, "game-over actions must exactly match the visible stage controls");
+  }
+  if (surface.stage === "intro") {
+    if (!surface.can_advance_summary || surface.can_return || surface.return_destination != null) {
+      diagnostics.invalid("bridge_v2.surface", surface, "game-over intro must expose only summary advance");
+    }
+  } else if (surface.stage === "summary") {
+    if (surface.can_advance_summary || !surface.can_return || surface.return_destination == null) {
+      diagnostics.invalid("bridge_v2.surface", surface, "game-over summary must expose one explicit return destination");
+    }
+  } else if (actions.length > 0 || surface.can_advance_summary || surface.can_return || surface.return_destination != null) {
+    diagnostics.invalid("bridge_v2.surface", surface, "animating game-over stages must remain actionless and destination-free");
+  }
+
+  const summaryFacts = [context.score, context.floor_reached, context.ascension];
+  const recordedFactCount = summaryFacts.filter((value) => value != null).length;
+  if (recordedFactCount !== 0 && recordedFactCount !== summaryFacts.length) {
+    diagnostics.invalid("bridge_v2.context", context, "game-over summary facts must be recorded together or omitted together");
+  }
+  if ((surface.stage === "intro" || surface.stage === "intro_animating") && recordedFactCount > 0) {
+    diagnostics.invalid("bridge_v2.context", context, "summary-only facts cannot appear before the summary is visible");
+  }
+
+  for (const action of actions) {
+    const bindings = action.entity_bindings.filter((binding) =>
+      binding.role === "game_over_screen" && binding.entity_id === surface.screen_entity_id);
+    if (bindings.length !== 1) {
+      diagnostics.invalid("bridge_v2.legal_actions.entity_bindings", action.entity_bindings, "game-over action must bind the exact current screen");
     }
   }
 }
@@ -1747,6 +1900,17 @@ function projectCombatContext(context: BridgeV2CombatContext): SemanticContext {
   };
 }
 
+function projectGameOverContext(context: BridgeV2GameOverContext): SemanticContext {
+  return {
+    kind: "run_ended",
+    result: context.result,
+    gameMode: context.game_mode,
+    ...(context.score != null ? { score: context.score } : {}),
+    ...(context.floor_reached != null ? { floorReached: context.floor_reached } : {}),
+    ...(context.ascension != null ? { ascension: context.ascension } : {})
+  };
+}
+
 function projectShopContext(player?: PlayerSnapshot): SemanticContext {
   return {
     kind: "shop",
@@ -2026,6 +2190,14 @@ function projectEventOptionSurface(
       enabled: !option.is_locked,
       proceed: option.is_proceed,
       chosen: option.was_chosen,
+      willKillPlayer: option.will_kill_player,
+      tooltips: option.tooltips.map((tooltip) => tooltip.kind === "card"
+        ? { kind: "card" as const, card: projectBridgeV2Card(tooltip.card) }
+        : {
+            kind: "text" as const,
+            ...(tooltip.name ? { name: tooltip.name } : {}),
+            ...(tooltip.description ? { description: tooltip.description } : {})
+          }),
       ...(option.relic_name ? { relicName: option.relic_name } : {}),
       ...(option.relic_description ? { relicDescription: option.relic_description } : {})
     })),
@@ -2187,6 +2359,73 @@ function projectTreasureRoomSurface(
     })),
     canSkip: surface.can_skip,
     canProceed: surface.can_proceed,
+    legalActions: projectActions(actions),
+    completeness: projectCompleteness(completeness)
+  };
+}
+
+function projectGameOverSurface(
+  surface: BridgeV2GameOverSurface,
+  stateId: string,
+  actions: BridgeV2LegalAction[],
+  completeness: RawCompleteness
+): GameOverSurface {
+  return {
+    kind: "game_over",
+    stage: surface.stage,
+    bridgeStateId: stateId,
+    screenEntityId: surface.screen_entity_id,
+    ...(surface.return_destination ? { returnDestination: surface.return_destination } : {}),
+    canAdvanceSummary: surface.can_advance_summary,
+    canReturn: surface.can_return,
+    legalActions: projectActions(actions),
+    completeness: projectCompleteness(completeness)
+  };
+}
+
+function projectCharacterSelectSurface(
+  surface: BridgeV2CharacterSelectSurface,
+  stateId: string,
+  actions: BridgeV2LegalAction[],
+  completeness: RawCompleteness
+): CharacterSelectSurface {
+  return {
+    kind: "character_select",
+    stage: surface.stage,
+    bridgeStateId: stateId,
+    screenEntityId: surface.screen_entity_id,
+    characters: surface.characters.map((choice) => ({
+      entityId: choice.entity_id,
+      index: choice.index,
+      characterId: choice.character_id,
+      name: choice.name,
+      locked: choice.is_locked,
+      selected: choice.is_selected,
+      random: choice.is_random
+    })),
+    ...(surface.selected_details ? {
+      selectedDetails: {
+        characterId: surface.selected_details.character_id,
+        title: surface.selected_details.title,
+        ...(surface.selected_details.description ? { description: surface.selected_details.description } : {}),
+        ...(surface.selected_details.starting_hp != null ? { startingHp: surface.selected_details.starting_hp } : {}),
+        ...(surface.selected_details.starting_gold != null ? { startingGold: surface.selected_details.starting_gold } : {}),
+        ...(surface.selected_details.starting_relic ? {
+          startingRelic: {
+            id: surface.selected_details.starting_relic.definition_id,
+            ...(surface.selected_details.starting_relic.name ? { name: surface.selected_details.starting_relic.name } : {}),
+            ...(surface.selected_details.starting_relic.description ? { description: surface.selected_details.starting_relic.description } : {})
+          }
+        } : {})
+      }
+    } : {}),
+    ...(surface.ascension != null ? { ascension: surface.ascension } : {}),
+    ...(surface.ascension_title ? { ascensionTitle: surface.ascension_title } : {}),
+    ...(surface.ascension_description ? { ascensionDescription: surface.ascension_description } : {}),
+    canDecreaseAscension: surface.can_decrease_ascension,
+    canIncreaseAscension: surface.can_increase_ascension,
+    canEmbark: surface.can_embark,
+    canGoBack: surface.can_go_back,
     legalActions: projectActions(actions),
     completeness: projectCompleteness(completeness)
   };

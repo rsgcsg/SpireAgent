@@ -81,7 +81,15 @@ export interface MenuContext {
   message?: string;
 }
 
-export interface RunEndedContext { kind: "run_ended"; message?: string; }
+export interface RunEndedContext {
+  kind: "run_ended";
+  message?: string;
+  result?: "win" | "loss";
+  gameMode?: "standard";
+  score?: number;
+  floorReached?: number;
+  ascension?: number;
+}
 export interface PostCombatContext { kind: "post_combat"; }
 
 export interface UnknownContext {
@@ -113,6 +121,8 @@ export type InteractionSurface =
   | ShopInventorySurface
   | ShopRoomSurface
   | TreasureRoomSurface
+  | GameOverSurface
+  | CharacterSelectSurface
   | OptionChoiceSurface
   | ShopInteractionSurface
   | TreasureClaimSurface
@@ -362,6 +372,11 @@ export interface EventOptionSurface {
     entityId: string;
     relicName?: string;
     relicDescription?: string;
+    willKillPlayer: boolean;
+    tooltips: Array<
+      | { kind: "text"; name?: string; description?: string }
+      | { kind: "card"; card: CardSnapshot }
+    >;
   }>;
   legalActions: BridgeLegalActionSnapshot[];
   completeness: BridgeSurfaceCompleteness;
@@ -467,6 +482,55 @@ export interface TreasureRoomSurface {
   }>;
   canSkip: boolean;
   canProceed: boolean;
+  legalActions: BridgeLegalActionSnapshot[];
+  completeness: BridgeSurfaceCompleteness;
+}
+
+export interface GameOverSurface {
+  kind: "game_over";
+  stage: "intro_animating" | "intro" | "summary_animating" | "summary";
+  bridgeStateId: string;
+  screenEntityId: string;
+  returnDestination?: "main_menu" | "timeline";
+  canAdvanceSummary: boolean;
+  canReturn: boolean;
+  legalActions: BridgeLegalActionSnapshot[];
+  completeness: BridgeSurfaceCompleteness;
+}
+
+export interface CharacterSelectSurface {
+  kind: "character_select";
+  stage: "choosing" | "transitioning";
+  bridgeStateId: string;
+  screenEntityId: string;
+  characters: Array<{
+    entityId: string;
+    index: number;
+    characterId: string;
+    name: string;
+    locked: boolean;
+    selected: boolean;
+    random: boolean;
+  }>;
+  selectedDetails?: {
+    characterId: string;
+    title: string;
+    description?: string;
+    startingHp?: number;
+    startingGold?: number;
+    startingRelic?: {
+      id: string;
+      name?: string;
+      description?: string;
+    };
+  };
+  ascension?: number;
+  ascensionTitle?: string;
+  ascensionDescription?: string;
+  canDecreaseAscension: boolean;
+  canIncreaseAscension: boolean;
+  canEmbark: boolean;
+  canGoBack: boolean;
   legalActions: BridgeLegalActionSnapshot[];
   completeness: BridgeSurfaceCompleteness;
 }

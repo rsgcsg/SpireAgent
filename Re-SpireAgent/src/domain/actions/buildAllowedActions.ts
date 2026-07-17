@@ -32,6 +32,8 @@ export function buildAllowedActions(state: NormalizedCurrentState, sourceStateHa
     case "shop_inventory":
     case "shop_room":
     case "treasure_room":
+    case "game_over":
+    case "character_select":
       return [];
     case "card_reward":
       return [
