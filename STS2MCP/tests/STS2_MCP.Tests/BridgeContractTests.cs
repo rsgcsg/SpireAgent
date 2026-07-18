@@ -26,6 +26,15 @@ public sealed class BridgeContractTests
             Detail: "historical exact identity with no current explicit surface permission");
 
         Assert.False(BridgeSurfacePermission.IsActionPermitted(compatibility, "combat_turn"));
+        Assert.False(BridgeSurfacePermission.IsInspectionPermitted(compatibility, "run_deck"));
+        Assert.Empty(BridgeSurfacePermission.PermittedInspectionKinds(
+            compatibility,
+            new[] { "run_deck", "combat_piles" }));
+        Assert.Equal(
+            "disabled_for_current_build",
+            BridgeSurfacePermission.InspectionSupportLevel(
+                compatibility,
+                new[] { "run_deck", "combat_piles" }));
         Assert.Equal(
             "not_qualified_for_current_build",
             BridgeSurfacePermission.SupportLevel(compatibility, "combat_turn"));
@@ -43,8 +52,8 @@ public sealed class BridgeContractTests
             InspectionAllowed: true,
             ActionExecutionSurfaceKinds: new[] { "combat_turn" },
             ActionCanarySurfaceKinds: new[] { "event_option" },
-            InspectionAllowedKinds: Array.Empty<string>(),
-            InspectionCanaryKinds: Array.Empty<string>(),
+            InspectionAllowedKinds: new[] { "run_deck" },
+            InspectionCanaryKinds: new[] { "combat_piles" },
             ObservationOnlySurfaceKinds: Array.Empty<string>(),
             ObservationCandidateBuildFingerprints: Array.Empty<string>(),
             Detail: "explicit scopes");
@@ -52,6 +61,19 @@ public sealed class BridgeContractTests
         Assert.True(BridgeSurfacePermission.IsActionPermitted(compatibility, "combat_turn"));
         Assert.True(BridgeSurfacePermission.IsActionPermitted(compatibility, "event_option"));
         Assert.False(BridgeSurfacePermission.IsActionPermitted(compatibility, "shop_room"));
+        Assert.True(BridgeSurfacePermission.IsInspectionPermitted(compatibility, "run_deck"));
+        Assert.True(BridgeSurfacePermission.IsInspectionPermitted(compatibility, "combat_piles"));
+        Assert.False(BridgeSurfacePermission.IsInspectionPermitted(compatibility, "future_inspection"));
+        Assert.Equal(
+            new[] { "run_deck", "combat_piles" },
+            BridgeSurfacePermission.PermittedInspectionKinds(
+                compatibility,
+                new[] { "run_deck", "combat_piles", "future_inspection" }));
+        Assert.Equal(
+            "mixed_scoped_read_only",
+            BridgeSurfacePermission.InspectionSupportLevel(
+                compatibility,
+                new[] { "run_deck", "combat_piles" }));
         Assert.Equal("qualified_exact_build", BridgeSurfacePermission.SupportLevel(compatibility, "combat_turn"));
         Assert.Equal("candidate_action_canary", BridgeSurfacePermission.SupportLevel(compatibility, "event_option"));
         Assert.Equal("not_qualified_for_current_build", BridgeSurfacePermission.SupportLevel(compatibility, "shop_room"));

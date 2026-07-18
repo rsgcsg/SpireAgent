@@ -268,8 +268,8 @@ audit but do not infer safety from warning presence or absence.
 
 ## Inspection Contract
 
-Historical exact builds advertise exactly two `implemented_read_only` inspection
-kinds:
+The Bridge declares two possible read-only Inspection kinds, but a build may
+advertise only the kinds that are explicitly permitted for that exact build:
 
 - `run_deck`: current local player's run deck, including per-instance upgrade
   and enchantment semantics;
@@ -294,16 +294,18 @@ or inspection `stale_state` rejects the entire composite observation; clients
 must not mix facts from adjacent game states. A bounded client may retry that
 read as transient evidence, but never reuse an action from the rejected read.
 
-For the current v0.109 identity, capabilities advertise only the explicitly
-scoped `run_deck` `qualified_read_only_scoped`; `combat_piles` is not advertised
-or accepted. Inspection scope is independent of action scope and is never
-inferred from historical capabilities.
+For the source-qualified v0.109 identity, capabilities advertise only the
+explicitly scoped `run_deck` `qualified_read_only_scoped`; `combat_piles` is not
+advertised or accepted. A different exact build may advertise no Inspection
+kinds and must then report `disabled_for_current_build`. Inspection scope is
+independent of action scope and is never inferred from historical capabilities.
 
-An empty qualified/canary Surface list is always an empty permission scope. It
-never means wildcard or all-declared-Surface authority. Historical exact build
-identity may permit an explicit legacy handoff, but no v2 Provider can publish
-an action unless its kind appears in the build's explicit qualified or canary
-list.
+An empty qualified/canary Surface or Inspection list is always an empty
+permission scope. It never means wildcard, all-declared-Surface authority, or
+all declared fixed Inspections. Historical exact build identity may permit an
+explicit legacy handoff, but no v2 Provider can publish an action and no fixed
+Inspection can answer unless its kind appears in the build's explicit qualified
+or canary list.
 
 ## Error Codes
 

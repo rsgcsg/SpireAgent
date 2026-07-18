@@ -4,6 +4,12 @@ Current execution evidence is scoped to exact game identity
 `v0.109.0|c12f634d|-840572606`. Compilation, fixtures, source review, old-build
 evidence, canary permission, and organic qualification are distinct states.
 
+The current local runtime observed on 2026-07-18 is
+`v0.109.0|c12f634d|1833084275`. It is a different exact build and has no v2
+Surface or Inspection permission. The matrix below describes the
+source-qualified target only; no row is inherited by the local runtime until
+that exact hash has independent source and lifecycle evidence.
+
 ## Current-Build Contracts
 
 | Surface / inspection | Permission | Current evidence | Remaining boundary |
@@ -53,8 +59,9 @@ evidence, canary permission, and organic qualification are distinct states.
 ## Coverage Interpretation
 
 - Twenty semantic Surface contracts exist in source; seventeen are permitted
-  on exact v0.109 (five qualified and twelve canaries), while three remain
-  current-build disabled.
+  on the exact source-qualified v0.109 target (five qualified and twelve
+  canaries), while three remain target-build disabled. The current local
+  `1833084275` build permits none.
 - This is roughly `60-75%` of major ordinary in-run interaction families, but
   only about `50-65%` of practical v1 interaction parity and `30-45%` of all
   single-player player-visible situations. These are engineering ranges, not

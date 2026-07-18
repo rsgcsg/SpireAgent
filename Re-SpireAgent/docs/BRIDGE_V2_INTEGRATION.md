@@ -6,6 +6,11 @@ Re-SpireAgent supports the strict `2.0-preview.31` source contract. Current
 v0.109 authority is read from capabilities rather than inferred from historical
 implementation:
 
+The permission list below is scoped to
+`v0.109.0|c12f634d|-840572606` only. A local runtime observed with
+`v0.109.0|c12f634d|1833084275` is a distinct untested build: Re preserves the
+Bridge fail-closed result and imports no v2 actions or Inspection facts.
+
 - scoped-qualified actions: `deck_removal_selection`,
   `deck_upgrade_selection`, `combat_turn`, `combat_hand_card_selection`, and
   ordinary single-player `rest_site`;

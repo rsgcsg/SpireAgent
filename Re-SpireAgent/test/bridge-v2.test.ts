@@ -33,8 +33,8 @@ const CAPABILITIES = {
       inspection_allowed: true,
       action_execution_surface_kinds: [] as string[],
       action_canary_surface_kinds: [] as string[],
-      inspection_allowed_kinds: [] as string[],
-      inspection_canary_kinds: [] as string[],
+      inspection_allowed_kinds: ["run_deck"],
+      inspection_canary_kinds: ["combat_piles"],
       observation_only_surface_kinds: [] as string[],
       observation_candidate_build_fingerprints: [] as string[],
       detail: "exact"
@@ -1653,6 +1653,35 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     duplicate.surfaces.push(structuredClone(duplicate.surfaces[0]!));
 
     expect(() => decodeBridgeV2Capabilities(duplicate)).toThrow("duplicate surface kinds");
+  });
+
+  it("rejects contradictory empty-scope Inspection capability declarations", () => {
+    const enabledWithoutKinds = structuredClone(CAPABILITIES);
+    enabledWithoutKinds.game.compatibility.inspection_allowed_kinds = [];
+    enabledWithoutKinds.game.compatibility.inspection_canary_kinds = [];
+    enabledWithoutKinds.inspections.status = "qualified_read_only_scoped";
+    enabledWithoutKinds.inspections.implemented_kinds = [];
+    expect(() => decodeBridgeV2Capabilities(enabledWithoutKinds)).toThrow(
+      "Inspection capability status requires at least one explicitly permitted kind"
+    );
+
+    const disabledWithKinds = structuredClone(CAPABILITIES);
+    disabledWithKinds.game.compatibility.inspection_canary_kinds = [];
+    disabledWithKinds.inspections.status = "disabled_for_current_build";
+    disabledWithKinds.inspections.implemented_kinds = ["run_deck"];
+    expect(() => decodeBridgeV2Capabilities(disabledWithKinds)).toThrow(
+      "disabled Inspection capability must not advertise kinds"
+    );
+
+    const emptyScope = structuredClone(CAPABILITIES);
+    emptyScope.game.compatibility.inspection_allowed = false;
+    emptyScope.game.compatibility.inspection_allowed_kinds = [];
+    emptyScope.game.compatibility.inspection_canary_kinds = [];
+    emptyScope.inspections.status = "implemented_read_only";
+    emptyScope.inspections.implemented_kinds = [];
+    expect(() => decodeBridgeV2Capabilities(emptyScope)).toThrow(
+      "Inspection capability status requires at least one explicitly permitted kind"
+    );
   });
 
   it("strictly decodes the qualified surface and rejects discriminator mismatch", () => {
@@ -3629,6 +3658,11 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       observation_only_surface_kinds: [],
       observation_candidate_build_fingerprints: [],
       detail: "build mismatch"
+    };
+    incompatibleCapabilities.inspections = {
+      ...incompatibleCapabilities.inspections,
+      status: "disabled_for_current_build",
+      implemented_kinds: []
     };
     const incompatibleState = structuredClone(DECK_ENCHANT_STATE);
     incompatibleState.game = incompatibleCapabilities.game;

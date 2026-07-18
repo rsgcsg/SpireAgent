@@ -5,33 +5,44 @@ Status date: 2026-07-18
 ## Current Contract
 
 - protocol: `2.0-preview.31`
-- exact game identity: `v0.109.0|c12f634d|-840572606`
+- source-qualified game identity: `v0.109.0|c12f634d|-840572606`
+- current local runtime game identity: `v0.109.0|c12f634d|1833084275`
 - installed/Release DLL SHA-256:
-  `d90b2a5cc7c0e8383f319e0bf5adac9fd985743cac82e9a06b74071045bfa760`
-- loaded module MVID: `bdc97168-3bc7-40c4-8a2e-bb0698169118`
-- loaded runtime instance: `93390677421c46ebb287c62b3b9da0b6`
+  `4028e3a19b4a5919b774e52b51da536cc2086b1192093631d61b2a8de02be0ff`
+- loaded module MVID: `ad025752-ed39-46a4-86c7-bdf2934e02a8`
+- loaded runtime instance: `d090682d350b4314bd86d917479e3548`
 
 Bridge v2 is an incremental, exact-build-scoped protocol. It is not full v1
 parity, all-game coverage, or complete player-visible truth.
 
-Preview.31 closes a backward permission leak: an empty per-build Surface scope
-is now unconditionally empty, never an implicit wildcard. Exact v0.109
-permissions are unchanged; recognized historical v0.108 identity has no
-current v2 Surface action authority and can only use explicit legacy handoff.
+Preview.31 closes a backward permission leak: an empty per-build Surface or
+Inspection scope is now unconditionally empty, never an implicit wildcard.
+The source-qualified v0.109 permissions are unchanged; recognized historical
+v0.108 identity has no current v2 Surface or Inspection authority and can only
+use explicit legacy handoff.
+
+The current local runtime identity has the same release version and commit as
+the source-qualified target but a different main-assembly hash. The loaded
+Bridge therefore reports `untested`, no action authority, no state observation,
+and no Inspection kinds. Compilation against that assembly proves only symbol
+binding; it does not qualify the changed build. No source-target permission or
+Organic evidence is inherited by `1833084275`.
 
 ## Current Permission Matrix
 
 | Permission | Contracts |
 |---|---|
-| `qualified_exact_build` | `deck_removal_selection`, `deck_upgrade_selection`, `combat_turn`, `combat_hand_card_selection`, `rest_site` |
-| `candidate_action_canary` | `event_card_acquisition`, `reward_claim`, `card_reward_selection`, `map_navigation`, `shop_inventory`, `shop_room`, `treasure_room`, `game_over`, `card_bundle_selection`, `character_select`, `event_dialogue`, `event_option` |
-| `qualified_read_only_scoped` | `run_deck` Inspection |
-| current-build disabled | `deck_enchant_selection`, `combat_pile_card_selection`, `generated_card_choice`, `combat_piles` Inspection, every unlisted contract |
+| source-qualified `v0.109.0|c12f634d|-840572606`: `qualified_exact_build` | `deck_removal_selection`, `deck_upgrade_selection`, `combat_turn`, `combat_hand_card_selection`, `rest_site` |
+| source-qualified `v0.109.0|c12f634d|-840572606`: `candidate_action_canary` | `event_card_acquisition`, `reward_claim`, `card_reward_selection`, `map_navigation`, `shop_inventory`, `shop_room`, `treasure_room`, `game_over`, `card_bundle_selection`, `character_select`, `event_dialogue`, `event_option` |
+| source-qualified `v0.109.0|c12f634d|-840572606`: `qualified_read_only_scoped` | `run_deck` Inspection |
+| source-qualified target: disabled | `deck_enchant_selection`, `combat_pile_card_selection`, `generated_card_choice`, `combat_piles` Inspection, every unlisted contract |
+| current local `v0.109.0|c12f634d|1833084275`: `untested` | all Surface actions, state observations, and Inspections disabled; no canary is authorized |
 
-Source implementation, permission, one action canary, and organic
-qualification are separate states. There are 20 declared semantic Surface
-contracts: five qualified, twelve canary-permitted, and three disabled on this
-build.
+Source implementation, target-build permission, local build/install/load,
+canary, and Organic qualification are separate states. There are 20 declared
+semantic Surface contracts: the source-qualified target has five qualified,
+twelve canary-permitted, and three disabled; the current local build has none
+permitted.
 
 ## Preview.29-.30 Evidence
 
@@ -57,10 +68,14 @@ build.
   before the asynchronous option effect finishes. Replacement event state,
   required child Surface, combat, map, or room transition is required.
 - The complete Neow Organic Journey belongs to loaded MVID
-  `f2604133-ed1a-41f3-a638-ab38829d3cb5`. The final installed MVID above adds
-  a stricter proceed/new-overlay completion predicate and is source-, test-,
-  build-, install-, and load-verified; that narrow final delta has not been
-  misrepresented as a repeated organic Neow lifecycle.
+  `f2604133-ed1a-41f3-a638-ab38829d3cb5`. Historical final target MVID
+  `bdc97168-3bc7-40c4-8a2e-bb0698169118` adds a stricter proceed/new-overlay
+  completion predicate and was source-, test-, build-, install-, and
+  load-verified on the source-qualified target; that narrow final delta has
+  not been misrepresented as a repeated organic Neow lifecycle.
+- The current local MVID `ad025752-ed39-46a4-86c7-bdf2934e02a8` is
+  source-, test-, build-, install-, and load-verified only. It has no action
+  canary or Organic qualification, and no previous journey is attributed to it.
 
 Detailed evidence is in
 [PREVIEW_29_30_MENU_DIALOGUE_AND_EVENT_OPTION_QUALIFICATION_2026-07-18.md](PREVIEW_29_30_MENU_DIALOGUE_AND_EVENT_OPTION_QUALIFICATION_2026-07-18.md).
@@ -98,6 +113,13 @@ never means the whole screen or game is completely exposed.
    special treasure, tooltip, and shared-HUD variants from exact evidence.
 5. Retire each v1 family only after source, strict client, loaded identity,
    organic lifecycle, and semantic completion all agree.
+6. Before any v2 action on the current local `1833084275` build, repeat the
+   exact source/UI audit and bounded canary lifecycle for that exact hash; do
+   not copy target-build authority merely because version and commit match.
 
 See the [coverage matrix](PLAYER_VISIBLE_COVERAGE.md) and
 [v1 retirement/completeness audit](BRIDGE_V2_V1_RETIREMENT_AND_COMPLETENESS_AUDIT_2026-07-18.md).
+
+The independent architecture decision and staged evolution plan are recorded
+in [ARCHITECTURE_AUDIT_2026-07-18.md](ARCHITECTURE_AUDIT_2026-07-18.md) and
+[ARCHITECTURE_EVOLUTION_PLAN.md](ARCHITECTURE_EVOLUTION_PLAN.md).

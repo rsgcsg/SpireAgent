@@ -4,8 +4,10 @@ Re-SpireAgent is a small, independent Slay the Spire 2 agent runtime. It reads t
 
 RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, shadow/live modes, policy promotion, or the old project's phase machinery. Its job is to make one decision path correct and auditable.
 
-The current strict client contract is Bridge `2.0-preview.31` on exact game
-identity `v0.109.0|c12f634d|-840572606`. Bridge v2 remains incremental:
+The current strict client contract is Bridge `2.0-preview.31` on the
+source-qualified exact game identity `v0.109.0|c12f634d|-840572606`. A local
+game with the same version/commit but another assembly hash remains untested
+and receives no v2 authority. Bridge v2 remains incremental:
 bounded Surface completeness and opaque action safety are real, but root menu,
 several selection variants, and total player-visible coverage are
 not complete. See [MCP state coverage](docs/MCP_STATE_COVERAGE.md).

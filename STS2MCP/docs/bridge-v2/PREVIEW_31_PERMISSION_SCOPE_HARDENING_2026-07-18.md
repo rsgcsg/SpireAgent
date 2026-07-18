@@ -16,11 +16,12 @@ implicitly exposed providers that were never qualified on that build.
 
 ## Fix
 
-`BridgeSurfacePermission` is now the single Surface permission interpreter.
-Only a kind explicitly present in the current build's qualified or canary list
-may publish v2 actions. Empty lists mean no v2 Surface authority. Capabilities
-and active-provider selection use the same helper, preventing publication and
-permission reporting from drifting.
+`BridgeSurfacePermission` is now the single Surface and Inspection permission
+interpreter. Only a kind explicitly present in the current build's qualified or
+canary list may publish v2 actions or answer a fixed Inspection request. Empty
+lists mean no v2 authority. Capabilities, active-provider selection, and
+Inspection capability/request filtering use the same helper, preventing
+publication and permission reporting from drifting.
 
 The exact v0.109 matrix remains five qualified, twelve canaries, and three
 disabled. Historical v0.108 identity remains recognizable for explicit legacy
@@ -29,10 +30,22 @@ handoff, but it grants no current v2 Surface action authority.
 ## Evidence Boundary
 
 This is safety hardening, not new semantic coverage. Unit tests prove empty
-scope fail-closed behavior and preserve qualified/canary distinctions. Release
-build, installed-module identity, and current-build read-only capabilities must
-be verified before closeout. No historical or fixture result qualifies a new
-Surface, and no prior Organic Journey is reassigned to preview.31.
+Surface and Inspection scopes fail closed and preserve qualified/canary
+distinctions. The Release build, installed DLL SHA-256, loaded MVID, and
+runtime instance were verified on 2026-07-18:
+
+- SHA-256: `6d9db06e2d3c19fbacf2a8fb5a613bff5839f0dd0074f838f89fcd19c4f7cc6f`;
+- loaded MVID: `07589587-06a0-437d-9ed8-b39441aecf21`;
+- runtime instance: `d8f3256c63434f618caa1c2f28ddff51`.
+
+The locally installed game reported
+`v0.109.0|c12f634d|1833084275`, not the source-qualified
+`v0.109.0|c12f634d|-840572606`. Capabilities correctly reported `untested`,
+an empty action/Inspection scope, and no legal actions. This verifies the
+hardening and loaded-module identity, but is neither a canary nor Organic
+qualification for the changed game build. No historical or fixture result
+qualifies a new Surface, and no prior Organic Journey is reassigned to this
+MVID.
 
 ## Abstraction Decision
 

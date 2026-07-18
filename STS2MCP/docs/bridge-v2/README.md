@@ -12,6 +12,8 @@
 - [ADR-0002: card-selection surface boundaries](ADR-0002-card-selection-surface-boundaries.md)
 - [ADR-0003: semantic surfaces, shared mechanics, and semantic completion](ADR-0003-semantic-surfaces-shared-mechanics-and-completion.md)
 - [2026-07-17 architecture reassessment](ARCHITECTURE_REASSESSMENT_2026-07-17.md)
+- [2026-07-18 independent architecture audit](ARCHITECTURE_AUDIT_2026-07-18.md)
+- [Architecture evolution plan](ARCHITECTURE_EVOLUTION_PLAN.md)
 - [Preview.23 upgrade and treasure closeout](PREVIEW_23_UPGRADE_TREASURE_CLOSEOUT_2026-07-17.md)
 - [Preview.24 shared visible state closeout](PREVIEW_24_SHARED_VISIBLE_STATE_CLOSEOUT_2026-07-17.md)
 - [Preview.24 combat hand-selection qualification](PREVIEW_24_COMBAT_HAND_SELECTION_QUALIFICATION_2026-07-17.md)

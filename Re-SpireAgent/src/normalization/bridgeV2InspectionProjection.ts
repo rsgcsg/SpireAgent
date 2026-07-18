@@ -157,9 +157,12 @@ function validateIdentity(
       "inspection and capabilities bridge identities differ"
     );
   }
-  const allowedKinds = inspection.game.compatibility.inspection_allowed_kinds;
+  const allowedKinds = [
+    ...inspection.game.compatibility.inspection_allowed_kinds,
+    ...inspection.game.compatibility.inspection_canary_kinds
+  ];
   const inspectionKindAllowed = inspection.game.compatibility.inspection_allowed
-    && (allowedKinds.length === 0 || allowedKinds.includes(inspection.kind));
+    && allowedKinds.includes(inspection.kind);
   if (inspection.game.version !== capabilities.game.version
       || inspection.game.commit !== capabilities.game.commit
       || inspection.game.main_assembly_hash !== capabilities.game.main_assembly_hash

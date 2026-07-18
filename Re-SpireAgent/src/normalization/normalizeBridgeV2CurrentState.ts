@@ -674,7 +674,7 @@ function validateEnvelopeIdentity(
     ? [...new Set([
       ...capabilities.game.compatibility.inspection_allowed_kinds,
       ...capabilities.game.compatibility.inspection_canary_kinds
-    ])].sort().join(",") || "combat_piles,run_deck"
+    ])].sort().join(",")
     : "";
   if (capabilities.inspections.status !== expectedInspectionStatus
       || !capabilities.inspections.state_bound

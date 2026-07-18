@@ -911,6 +911,23 @@ export function decodeBridgeV2Capabilities(value: unknown): DecodedBridgePayload
       throw new BridgeV2DecodeError(`Bridge v2 ${surface.kind} capability contains duplicate operations`);
     }
   }
+  const inspection = decoded.data.inspections;
+  const explicitInspectionKinds = [...new Set([
+    ...decoded.data.game.compatibility.inspection_allowed_kinds,
+    ...decoded.data.game.compatibility.inspection_canary_kinds
+  ])].sort();
+  const declaredInspectionKinds = [...inspection.implemented_kinds].sort();
+  if (declaredInspectionKinds.join(",") !== explicitInspectionKinds.join(",")) {
+    throw new BridgeV2DecodeError(
+      "Inspection capability kinds must match the exact qualified/canary scope"
+    );
+  }
+  if (inspection.status === "disabled_for_current_build" && inspection.implemented_kinds.length > 0) {
+    throw new BridgeV2DecodeError("disabled Inspection capability must not advertise kinds");
+  }
+  if (inspection.status !== "disabled_for_current_build" && inspection.implemented_kinds.length === 0) {
+    throw new BridgeV2DecodeError("Inspection capability status requires at least one explicitly permitted kind");
+  }
   return decoded;
 }
 

@@ -195,18 +195,9 @@ internal static class BridgeV2Runtime
                 },
                 OutcomeTimeoutMs: CommandOutcomeTimeoutMs),
             new InspectionContractCapability(
-                Status: !game.Compatibility.InspectionAllowed
-                    ? "disabled_for_current_build"
-                    : game.Compatibility.InspectionAllowedKinds.Count == 0
-                      && game.Compatibility.InspectionCanaryKinds.Count == 0
-                        ? "implemented_read_only"
-                        : game.Compatibility.Status == "qualified_scoped"
-                          && game.Compatibility.InspectionCanaryKinds.Count == 0
-                            ? "qualified_read_only_scoped"
-                            : game.Compatibility.Status == "qualified_scoped"
-                              && game.Compatibility.InspectionAllowedKinds.Count > 0
-                                ? "mixed_scoped_read_only"
-                                : "candidate_read_only_canary",
+                Status: BridgeSurfacePermission.InspectionSupportLevel(
+                    game.Compatibility,
+                    new[] { BridgeInspectionBuilder.RunDeckKind, BridgeInspectionBuilder.CombatPilesKind }),
                 StateBound: true,
                 ArbitraryQueriesAllowed: false,
                 EntersCommandLedger: false,
@@ -404,21 +395,11 @@ internal static class BridgeV2Runtime
             BridgeInspectionBuilder.RunDeckKind,
             BridgeInspectionBuilder.CombatPilesKind
         };
-        if (!compatibility.InspectionAllowed) return Array.Empty<string>();
-        return compatibility.InspectionAllowedKinds.Count == 0
-               && compatibility.InspectionCanaryKinds.Count == 0
-            ? declared
-            : declared.Where(kind =>
-                compatibility.InspectionAllowedKinds.Contains(kind)
-                || compatibility.InspectionCanaryKinds.Contains(kind)).ToArray();
+        return BridgeSurfacePermission.PermittedInspectionKinds(compatibility, declared);
     }
 
     private static bool IsInspectionAllowed(CompatibilityAssessment compatibility, string kind) =>
-        compatibility.InspectionAllowed
-        && (compatibility.InspectionAllowedKinds.Count == 0
-            && compatibility.InspectionCanaryKinds.Count == 0
-            || compatibility.InspectionAllowedKinds.Contains(kind, StringComparer.Ordinal)
-            || compatibility.InspectionCanaryKinds.Contains(kind, StringComparer.Ordinal));
+        BridgeSurfacePermission.IsInspectionPermitted(compatibility, kind);
 
     private static ObservationPolicyInfo ObservationPolicy() => new(
         BridgeV2Contract.ObservationPolicyId,
