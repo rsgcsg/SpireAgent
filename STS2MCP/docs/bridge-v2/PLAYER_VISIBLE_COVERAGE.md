@@ -62,6 +62,10 @@ that exact hash has independent source and lifecycle evidence.
   on the exact source-qualified v0.109 target (five qualified and twelve
   canaries), while three remain target-build disabled. The current local
   `1833084275` build permits none.
+- Canary permission is currently Surface-kind scoped. It permits the legal
+  operations published by that Provider for bounded canary execution, but it
+  does not qualify every operation or source origin. Operation and origin
+  evidence therefore remain explicit in each row.
 - This is roughly `60-75%` of major ordinary in-run interaction families, but
   only about `50-65%` of practical v1 interaction parity and `30-45%` of all
   single-player player-visible situations. These are engineering ranges, not

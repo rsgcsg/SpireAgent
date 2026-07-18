@@ -8,9 +8,9 @@ Status date: 2026-07-18
 - source-qualified game identity: `v0.109.0|c12f634d|-840572606`
 - current local runtime game identity: `v0.109.0|c12f634d|1833084275`
 - installed/Release DLL SHA-256:
-  `4028e3a19b4a5919b774e52b51da536cc2086b1192093631d61b2a8de02be0ff`
-- loaded module MVID: `ad025752-ed39-46a4-86c7-bdf2934e02a8`
-- loaded runtime instance: `d090682d350b4314bd86d917479e3548`
+  `7720a5e4e3f7abceeb1bd1e11efefda80d313a6c73619ae8acda09322d76df4d`
+- loaded module MVID: `8a915c2c-3ba3-48d3-92de-6ca9e612b191`
+- loaded runtime instance: `c3ffb7fd98d54dc88f37d2391ea6b4f6`
 
 Bridge v2 is an incremental, exact-build-scoped protocol. It is not full v1
 parity, all-game coverage, or complete player-visible truth.
@@ -44,6 +44,14 @@ semantic Surface contracts: the source-qualified target has five qualified,
 twelve canary-permitted, and three disabled; the current local build has none
 permitted.
 
+The current action permission model is scoped by Surface kind. A Surface in
+the canary list may publish any operation that its current Provider proves
+legal at runtime. This grants bounded canary execution, not operation- or
+origin-level qualification. For example, treasure open/skip remain without
+Organic Qualification even though they are implemented operations of the
+`treasure_room` canary. A future finer-grained permission model may narrow this
+authority; it must not broaden it.
+
 ## Preview.29-.30 Evidence
 
 - `character_select` added an explicit `Menu` input-owner layer without
@@ -73,7 +81,7 @@ permitted.
   completion predicate and was source-, test-, build-, install-, and
   load-verified on the source-qualified target; that narrow final delta has
   not been misrepresented as a repeated organic Neow lifecycle.
-- The current local MVID `ad025752-ed39-46a4-86c7-bdf2934e02a8` is
+- The current local MVID `8a915c2c-3ba3-48d3-92de-6ca9e612b191` is
   source-, test-, build-, install-, and load-verified only. It has no action
   canary or Organic qualification, and no previous journey is attributed to it.
 
@@ -103,17 +111,20 @@ never means the whole screen or game is completely exposed.
 
 ## Next Work
 
-1. Keep `event_option`, `event_dialogue`, and `character_select` at canary while
+1. Add a non-authorizing typed contract/evidence inventory and use
+   `treasure_room` to prove operation/origin-scoped canary narrowing without
+   changing any qualification.
+2. Keep `event_option`, `event_dialogue`, and `character_select` at canary while
    collecting ordinary non-Neow diversity and first-run/tutorial boundaries.
-2. Add purpose-specific root main-menu and single-player submenu contracts so
+3. Add purpose-specific root main-menu and single-player submenu contracts so
    a new or continued standard run can start without v1 reconstruction.
-3. Re-run a fresh natural preview.28+ game-over intro -> summary -> main-menu
+4. Re-run a fresh natural preview.28+ game-over intro -> summary -> main-menu
    journey; the fixed contract still lacks final organic qualification.
-4. Requalify high-value disabled selectors/Inspection and close linked reward,
+5. Requalify high-value disabled selectors/Inspection and close linked reward,
    special treasure, tooltip, and shared-HUD variants from exact evidence.
-5. Retire each v1 family only after source, strict client, loaded identity,
+6. Retire each v1 family only after source, strict client, loaded identity,
    organic lifecycle, and semantic completion all agree.
-6. Before any v2 action on the current local `1833084275` build, repeat the
+7. Before any v2 action on the current local `1833084275` build, repeat the
    exact source/UI audit and bounded canary lifecycle for that exact hash; do
    not copy target-build authority merely because version and commit match.
 

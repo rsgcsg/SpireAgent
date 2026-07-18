@@ -52,3 +52,11 @@ MVID.
 **B: internal no-authority helper.** The helper centralizes permission
 interpretation only. It does not resolve Surface purpose, create actions, or
 weaken purpose-specific Provider contracts.
+
+## Independent Revalidation
+
+The original artifact identity above remains historical and is not rewritten.
+The latest `develop` revalidation, including the separately fixed Inspection
+wildcard, current HEAD build/install/load identity, and remaining canary/evidence
+governance debt, is recorded in
+[PREVIEW_31_INDEPENDENT_REVALIDATION_2026-07-18.md](PREVIEW_31_INDEPENDENT_REVALIDATION_2026-07-18.md).

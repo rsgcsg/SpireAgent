@@ -37,14 +37,14 @@ silently expand exact-build authority.
 | Item | Current fact |
 |---|---|
 | branch | `develop` |
-| local HEAD | `89fecbb9e178f92dd2fe3c6eb7536a7a9cddec0e` |
+| local HEAD | `d4fb843ffc99aeefd69540f89707ef7c117211fc` |
 | `origin/develop` | same commit as local HEAD |
 | protocol | `2.0-preview.31` |
 | exact game process | `SlayTheSpire2.exe` from `E:\SteamLibrary\steamapps\common\Slay the Spire 2` |
 | loaded game identity | `v0.109.0|c12f634d|1833084275` |
-| Release/installed DLL SHA-256 | `4028E3A19B4A5919B774E52B51DA536CC2086B1192093631D61B2A8DE02BE0FF` |
-| loaded Bridge MVID | `ad025752-ed39-46a4-86c7-bdf2934e02a8` |
-| runtime instance | `d090682d350b4314bd86d917479e3548` |
+| Release/installed DLL SHA-256 | `7720A5E4E3F7ABCEEB1BD1E11EFEFDA80D313A6C73619AE8ACDA09322D76DF4D` |
+| loaded Bridge MVID | `8a915c2c-3ba3-48d3-92de-6ca9e612b191` |
+| runtime instance | `c3ffb7fd98d54dc88f37d2391ea6b4f6` |
 | loaded capability compatibility | `untested` |
 | loaded action/state/Inspection authority | all `false` |
 | loaded Inspection status | `disabled_for_current_build`, no kinds |
@@ -129,7 +129,7 @@ qualified or canary list.
 |---|---|---|
 | Neow Organic Journey | `f2604133-ed1a-41f3-a638-ab38829d3cb5` | Organic evidence for that loaded build only |
 | Historical final target build with stricter completion predicate | `bdc97168-3bc7-40c4-8a2e-bb0698169118` | source/test/build/install/load verified; no repeated Organic Journey attributed |
-| Current local Release and loaded build | `ad025752-ed39-46a4-86c7-bdf2934e02a8` | source/test/build/install/load verified; no canary and no Organic Qualification |
+| Current local Release and loaded build | `8a915c2c-3ba3-48d3-92de-6ca9e612b191` | source/test/build/install/load verified; no canary and no Organic Qualification |
 | Superseded pre-audit local load | `07589587-06a0-437d-9ed8-b39441aecf21` | historical deployment identity only; not the current loaded artifact |
 
 The current `SurfaceCapability.Evidence` field is useful for human context but
@@ -187,7 +187,7 @@ mechanics without deciding purpose, legality, authority, commit, or Completion.
 After this audit fix, the current source, C# capability computation, Re decoder,
 loaded runtime, and canonical status describe the same local-build truth:
 protocol `2.0-preview.31`, current exact game hash `1833084275`, loaded MVID
-`ad025752-ed39-46a4-86c7-bdf2934e02a8`, no current-build action or Inspection
+`8a915c2c-3ba3-48d3-92de-6ca9e612b191`, no current-build action or Inspection
 authority, and no Organic Qualification.
 
 The source-qualified target matrix remains historical target evidence. It is not

@@ -21,6 +21,13 @@ Every unlisted Surface and Inspection remains disabled. Historical v0.108
 evidence does not grant current-build authority, and canary evidence does not
 silently become qualification.
 
+The preview.31 canary list is scoped by Surface kind, not by individual
+operation or source origin. A listed canary Surface may publish any operation
+that its Provider validates on the exact build. This is controlled canary
+authority only; per-operation and per-origin Organic Qualification must still
+be recorded separately. Future permission refinement may narrow this scope but
+must not infer or expand authority from implementation alone.
+
 ## Endpoints
 
 ```text

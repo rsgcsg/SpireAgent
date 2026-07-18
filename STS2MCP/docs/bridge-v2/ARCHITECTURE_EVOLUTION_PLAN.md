@@ -23,6 +23,8 @@ Status: proposed, no permission change.
 Create a machine-readable inventory for each semantic contract containing:
 
 - Surface or Inspection kind and protocol revision;
+- operation and source-origin identifiers where canary evidence is narrower
+  than the whole Surface;
 - mechanism kind and source binding ID;
 - exact game identity and Bridge MVID;
 - supported operations and Re support;
@@ -33,6 +35,11 @@ Create a machine-readable inventory for each semantic contract containing:
 Use it to detect duplicate kinds, missing Re cases, stale evidence links, and
 permission/documentation drift. The inventory must validate declarations; it
 must not be able to authorize an action by existing in the repository.
+
+As the first permission-governance pilot, represent the currently documented
+`treasure_room` operation split: choose/proceed have Organic evidence while
+open/skip do not. The pilot may preserve or narrow current canary authority; it
+must not promote any operation or origin.
 
 ## Phase 2: Mechanism, Source Binding, And Shared Validator
 
@@ -104,4 +111,3 @@ fallback has been retired without ambiguity.
   implementation presence;
 - no expansion of current local hash `1833084275` authority by this plan;
 - no use of old MVID Organic evidence for a new DLL.
-
