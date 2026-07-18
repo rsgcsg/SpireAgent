@@ -5,10 +5,23 @@ Current execution evidence is scoped to exact game identity
 evidence, canary permission, and organic qualification are distinct states.
 
 The current local runtime observed on 2026-07-18 is
-`v0.109.0|c12f634d|1833084275`. It is a different exact build and has no v2
-Surface or Inspection permission. The matrix below describes the
-source-qualified target only; no row is inherited by the local runtime until
-that exact hash has independent source and lifecycle evidence.
+`v0.109.0|c12f634d|1833084275`. It is a different exact build. Preview.35
+permits only `event_option`, source-gated `event_card_acquisition`, and ordinary
+single-player `map_navigation` as independently source-audited and exercised
+action canaries; every other Surface and every Inspection remain disabled. The
+main matrix below describes the older source-qualified target and is not
+inherited by the local runtime.
+
+## Current Local Build
+
+| Surface / inspection | Permission | Current evidence | Remaining boundary |
+|---|---|---|---|
+| `event_option` | canary, not qualified | Brain Leech `Share Knowledge` on preview.32/33/34 MVIDs; not re-exercised on final preview.35 MVID | other options/origins, lethal warning, and final-MVID diversity |
+| `event_card_acquisition` | canary, not qualified | Brain Leech one-of-five exact `BEAM_CELL` on preview.33/34 MVIDs; not re-exercised on final preview.35 MVID | Room Full of Cheese two-of-eight and origin diversity remain unexercised |
+| `map_navigation` | canary, not qualified | final-MVID exact `(5,5)` node from `(5,4)`; Re agreement; shared controller reachability validator; semantic coordinate/map-close completion | live controller-mode, drawing mode, start-row FTUE, and special-mode diversity remain unexercised |
+| `combat_turn` | disabled | successor floor-five combat source-resolved after map canary | exact current-source and three-operation permission-scope audit required |
+| every other Surface | disabled | implementation or older-build evidence only | no authority until independently scoped |
+| all Inspection kinds | disabled | empty explicit qualified/canary lists | empty remains Fail Closed |
 
 ## Current-Build Contracts
 
@@ -61,7 +74,8 @@ that exact hash has independent source and lifecycle evidence.
 - Twenty semantic Surface contracts exist in source; seventeen are permitted
   on the exact source-qualified v0.109 target (five qualified and twelve
   canaries), while three remain target-build disabled. The current local
-  `1833084275` build permits none.
+  `1833084275` build permits three action canaries and no qualified contract or
+  Inspection.
 - Canary permission is currently Surface-kind scoped. It permits the legal
   operations published by that Provider for bounded canary execution, but it
   does not qualify every operation or source origin. Operation and origin

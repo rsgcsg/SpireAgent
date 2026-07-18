@@ -4,10 +4,12 @@ Re-SpireAgent is a small, independent Slay the Spire 2 agent runtime. It reads t
 
 RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, shadow/live modes, policy promotion, or the old project's phase machinery. Its job is to make one decision path correct and auditable.
 
-The current strict client contract is Bridge `2.0-preview.31` on the
+The current strict client contract is Bridge `2.0-preview.35` on the
 source-qualified exact game identity `v0.109.0|c12f634d|-840572606`. A local
-game with the same version/commit but another assembly hash remains untested
-and receives no v2 authority. Bridge v2 remains incremental:
+game with the same version/commit but another assembly hash remains separately
+scoped. Current local hash `1833084275` has only explicit `event_option`,
+`event_card_acquisition`, and `map_navigation` canaries, no qualified Surface,
+and no Inspection authority. Bridge v2 remains incremental:
 bounded Surface completeness and opaque action safety are real, but root menu,
 several selection variants, and total player-visible coverage are
 not complete. See [MCP state coverage](docs/MCP_STATE_COVERAGE.md).
@@ -204,7 +206,8 @@ RE-P1 has fixture-backed support for:
 - `menu`
 - `game_over`
 
-Bridge v2 source `preview.31` uses exact-build capabilities. On v0.109, merchant
+Bridge v2 source `preview.35` uses exact-build capabilities. On the
+source-qualified v0.109 target, merchant
 removal, event/rest upgrade, ordinary combat turn, combat hand selection, and
 ordinary single-player rest plus read-only run deck are scoped-qualified; event
 card acquisition, reward, card reward, map, shop, treasure, game over, card
@@ -230,13 +233,15 @@ The only supported public TypeScript entrypoint is `src/index.ts`. Integration r
 ## Current Limitations
 
 - Real v1 MCP windows have exercised event, combat, rewards, card reward, map, rest, shop, treasure, and a boss fight. This proves protocol integration, not strategic quality or universal MCP coverage. The legacy v1 `NDeckEnchantSelectScreen` confirmation endpoint acknowledged the request without advancing state; Bridge v2 now has a separate qualified opaque-action contract for that surface.
-- Bridge v2 source `preview.31` is current. Exact v0.109 capabilities qualify
+- Bridge v2 source `preview.35` is current. Source-target exact v0.109 capabilities qualify
   merchant removal, event/rest deck upgrade, ordinary combat turn, combat hand
   selection, ordinary single-player rest, and read-only run deck; event card
   acquisition, reward, card reward, map, shop, treasure, game over, card
   bundles, character select, event dialogue, and event option are explicit
   action canaries. Every unlisted surface remains disabled or explicitly v1-owned in
-  `auto` mode.
+  `auto` mode. The distinct local hash `1833084275` imports only event option,
+  event card acquisition, and map-navigation canaries; everything else remains
+  fail closed.
 - Organic evidence covers the current scoped permissions only. It does not
   qualify every selector mode, event origin, card target, treasure variant, or
   game UI.

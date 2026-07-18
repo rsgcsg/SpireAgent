@@ -1763,7 +1763,8 @@ function isScopedQualifiedBuild(
     && capabilityCompatibility.action_execution_allowed
     && stateCompatibility.state_observation_allowed
     && capabilityCompatibility.state_observation_allowed
-    && stateCompatibility.action_execution_surface_kinds.length > 0
+    && stateCompatibility.action_execution_surface_kinds.length
+      + stateCompatibility.action_canary_surface_kinds.length > 0
     && sameStrings(
       stateCompatibility.action_execution_surface_kinds,
       capabilityCompatibility.action_execution_surface_kinds

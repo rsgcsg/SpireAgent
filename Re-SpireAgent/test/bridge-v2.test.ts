@@ -10,7 +10,7 @@ import type { JsonObject } from "../src/shared/json.js";
 import { fixture } from "./helpers.js";
 
 const CAPABILITIES = {
-  protocol_version: "2.0-preview.31",
+  protocol_version: "2.0-preview.35",
   bridge: {
     id: "sts2_mcp_bridge_v2",
     name: "STS2 Agent Bridge",
@@ -122,7 +122,7 @@ const SHARED_STATE = {
 } satisfies JsonObject;
 
 const DECK_ENCHANT_STATE = {
-  protocol_version: "2.0-preview.31",
+  protocol_version: "2.0-preview.35",
   state_id: "state-test-1",
   state_sequence: 1,
   observed_at: "2026-07-16T00:00:00Z",
@@ -1573,7 +1573,7 @@ function visibleInspectionCard(overrides: Record<string, unknown> = {}) {
 
 function runDeckInspection(stateId: string, cards = [visibleInspectionCard()]) {
   return {
-        protocol_version: "2.0-preview.31",
+        protocol_version: "2.0-preview.35",
     inspection_id: `inspection-run-deck-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -1596,7 +1596,7 @@ function runDeckInspection(stateId: string, cards = [visibleInspectionCard()]) {
 
 function combatPilesInspection(stateId: string) {
   return {
-        protocol_version: "2.0-preview.31",
+        protocol_version: "2.0-preview.35",
     inspection_id: `inspection-combat-piles-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -2263,6 +2263,128 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       }),
       TEST_SOURCE
     ).currentState.stability).toBe("actionable");
+  });
+
+  it("accepts a current exact build with only explicit audited canaries", () => {
+    const canaryOnlyCapabilities = structuredClone(CAPABILITIES);
+    canaryOnlyCapabilities.game = {
+      version: "v0.109.0",
+      commit: "c12f634d",
+      branch: "v0.109.0",
+      main_assembly_hash: 1833084275,
+      compatibility: {
+        status: "qualified_scoped",
+        tested_game_versions: ["0.108.0", "0.109.0"],
+        tested_build_fingerprints: [
+          "v0.108.0|58694f64|-2044609792",
+          "v0.109.0|c12f634d|-840572606",
+          "v0.109.0|c12f634d|1833084275"
+        ],
+        action_execution_allowed: true,
+        state_observation_allowed: true,
+        inspection_allowed: false,
+        action_execution_surface_kinds: [],
+        action_canary_surface_kinds: ["event_option", "event_card_acquisition", "map_navigation"],
+        inspection_allowed_kinds: [],
+        inspection_canary_kinds: [],
+        observation_only_surface_kinds: [],
+        observation_candidate_build_fingerprints: [],
+        detail: "current-build event option, acquisition, and map canaries only"
+      }
+    };
+    canaryOnlyCapabilities.surfaces = canaryOnlyCapabilities.surfaces.map((surface) => ({
+      ...surface,
+      support: ["event_option", "event_card_acquisition", "map_navigation"].includes(surface.kind)
+        ? "candidate_action_canary"
+        : "not_qualified_for_current_build"
+    }));
+    canaryOnlyCapabilities.inspections = {
+      ...canaryOnlyCapabilities.inspections,
+      status: "disabled_for_current_build",
+      implemented_kinds: []
+    };
+    const eventState = {
+      ...structuredClone(EVENT_OPTION_STATE),
+      game: canaryOnlyCapabilities.game,
+      diagnostics: []
+    };
+
+    const envelope = normalizeCurrentState(
+      wrapBridgeV2State({ state: eventState, capabilities: canaryOnlyCapabilities }),
+      TEST_SOURCE
+    );
+    expect(envelope.currentState).toMatchObject({
+      stability: "actionable",
+      actionAuthority: "bridge_advertised",
+      context: { kind: "event" },
+      surface: { kind: "event_option" }
+    });
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toEqual([
+      expect.objectContaining({ kind: "proceed_event" })
+    ]);
+
+    const acquisitionState = {
+      ...structuredClone(EVENT_CARD_ACQUISITION_STATE),
+      game: canaryOnlyCapabilities.game,
+      diagnostics: []
+    };
+    const acquisition = normalizeCurrentState(
+      wrapBridgeV2State({ state: acquisitionState, capabilities: canaryOnlyCapabilities }),
+      TEST_SOURCE
+    );
+    expect(acquisition.currentState).toMatchObject({
+      stability: "actionable",
+      actionAuthority: "bridge_advertised",
+      context: { kind: "event" },
+      surface: { kind: "event_card_acquisition" }
+    });
+    expect(buildAllowedActions(acquisition.currentState, acquisition.stateHash)).toEqual([
+      expect.objectContaining({ kind: "select_event_card_acquisition" })
+    ]);
+
+    const mapState = {
+      ...structuredClone(MAP_NAVIGATION_STATE),
+      game: canaryOnlyCapabilities.game,
+      diagnostics: []
+    };
+    const map = normalizeCurrentState(
+      wrapBridgeV2State({ state: mapState, capabilities: canaryOnlyCapabilities }),
+      TEST_SOURCE
+    );
+    expect(map.currentState).toMatchObject({
+      stability: "actionable",
+      actionAuthority: "bridge_advertised",
+      context: { kind: "map" },
+      surface: { kind: "map_navigation" }
+    });
+    expect(buildAllowedActions(map.currentState, map.stateHash)).toHaveLength(2);
+
+    const nonCanaryState = {
+      ...structuredClone(DECK_REMOVAL_STATE),
+      game: canaryOnlyCapabilities.game,
+      diagnostics: []
+    };
+    expect(normalizeCurrentState(
+      wrapBridgeV2State({ state: nonCanaryState, capabilities: canaryOnlyCapabilities }),
+      TEST_SOURCE
+    ).currentState.stability).toBe("invalid");
+
+    const adapter = new Sts2McpHybridAdapter("http://adapter.test", 1_000, {
+      mode: "v2",
+      commandPollMs: 1,
+      commandTimeoutMs: 100
+    });
+    (adapter as unknown as { capabilitiesPayload: { data: typeof canaryOnlyCapabilities } }).capabilitiesPayload = {
+      data: canaryOnlyCapabilities
+    };
+    expect(adapter.describe().negotiated).toMatchObject({
+      action_execution_allowed: true,
+      inspection_allowed: false,
+      action_execution_surface_kinds: [],
+      action_canary_surface_kinds: ["event_option", "event_card_acquisition", "map_navigation"],
+      qualified_scoped_surfaces: [],
+      candidate_action_canary_surfaces: ["event_option", "event_card_acquisition", "map_navigation"]
+    });
   });
 
   it("strictly decodes event and combat contracts and rejects context/surface mismatch", () => {

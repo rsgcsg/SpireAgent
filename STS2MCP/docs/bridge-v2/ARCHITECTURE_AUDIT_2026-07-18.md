@@ -227,3 +227,112 @@ single contract, then record it in a typed evidence manifest keyed by the new
 MVID. Before that, implement the first shared pure validator and owner probe on
 two genuinely repeated bounded-selection flows, with no permission change until
 the resulting post-state evidence passes.
+
+## Preview.32 Addendum
+
+The identity table above is the preview.31 audit snapshot. Preview.32 later
+loaded exact game identity `v0.109.0|c12f634d|1833084275` with protocol
+`2.0-preview.32`, DLL SHA
+`7a0bb4801ad24d14d996c21690bb5ac8e555d4697efcf66db0a502a909fa7680`,
+MVID `e4902978-a8d2-4944-a59c-b8163f76eb0c`, and runtime instance
+`def0812ea2c44928b84a6b50ca2365b4`.
+
+This update does not invalidate the audit verdict. It validates one proposed
+governance improvement: canary-only exact Surface scopes now pass through Re
+without requiring a fake qualified entry. The current build explicitly permits
+only `event_option`; all Inspection lists remain empty and fail closed. A real
+Brain Leech option command completed with semantic child-Surface evidence, then
+the source-resolved `event_card_acquisition` successor stopped with zero v2
+actions. This is canary evidence for the exact MVID above, not qualification and
+not evidence for any future DLL.
+
+## Preview.33 Addendum
+
+Preview.33 exercised the first natural child Surface on a fresh module rather
+than treating preview.32 evidence as transferable. Loaded identity is protocol
+`2.0-preview.33`, DLL SHA
+`9fceb2887b9527e45ec2cdc3346a410c30a46bf41a7d376097940f3040de7248`,
+MVID `c5492a5b-8840-4557-9ba0-2c74bd7a31f0`, and runtime instance
+`15ca0dec2a134f699d2a8009880270de`.
+
+The exact current selector and both allowed event source patterns were audited;
+the existing Provider already separates shared grid mechanics from source and
+deck-completion semantics, so no new abstraction was justified. The current
+build permits only `event_option` and `event_card_acquisition` canaries. A real
+Brain Leech journey confirmed the exact selected card instance entered the run
+deck, then stopped at unqualified `map_navigation`. Inspection remains entirely
+disabled. These facts support the existing A/B judgment: retain the separate
+semantic contract and extract mechanics only after another real repeated flow
+demonstrates net value.
+
+## Preview.34 Addendum
+
+Preview.34 used a fresh module and did not transfer preview.33's event journey
+to it. Current loaded identity is protocol `2.0-preview.34`, exact game
+`v0.109.0|c12f634d|1833084275`, DLL SHA
+`b029d0119f70ba19c582c2dfe5148622b9c3f006fee66b4672dcb43a630acb97`,
+MVID `ff3537d8-ee16-4ae3-9e18-0796f87abe7e`, and runtime instance
+`8fd06a38d2c841debdd0b7796888af39`.
+
+**Proven for the exercised variant:** current `NMapScreen`, `NMapPoint`,
+run-coordinate, drawing-mode, FTUE, and travel lifecycle still match the
+bounded Provider. A real mouse/single-player `(4,3) -> (5,4)` command completed
+only after map closure or exact current-coordinate observation. Re
+independently accepted the same two opaque node actions and no Inspection
+facts.
+
+**Post-canary finding:** the shared exact-choice predicate covered travelable
+state, enabled UI, FTUE, node identity, and coordinate, but omitted the
+controller-only `NMapScreen.IsNodeOnScreen` condition in `NMapPoint.OnRelease`.
+The successful mouse journey remains evidence for its exact MVID and variant,
+but preview.34 was not a complete all-input-mode closeout.
+
+**Rejected assumption:** the current `NMapPoint.IsTravelable` access level does
+not create a Provider runtime hazard. Current IL and the generated Bridge IL
+show that the Provider never calls that protected getter; it uses public point
+state and clickability, matching its compiled current-assembly binding.
+
+**A/B decision:** no Mechanism Adapter, generic map Surface, or witness engine
+was justified. A small B-level shared validator fix was required before keeping
+the purpose-specific inline Completion.
+
+**Remaining architecture risk:** permission is still Surface-kind scoped.
+That is acceptably narrow for map's single operation, but a current-build
+`combat_turn` canary would expose play-card, potion, and end-turn operations as
+one scope. The next smallest work is a non-authorizing current-source audit and
+operation-granularity design check before any combat permission change.
+
+The loaded runtime advertises exactly three current-build action canaries,
+zero qualified Surfaces, and zero Inspection kinds. The map successor is a
+real combat Context; `combat_turn` remains unsupported, authority `none`, and
+zero actions. Preview.34 is canary-exercised only, not qualified.
+
+## Preview.35 Addendum
+
+Preview.35 closes the controller reachability gap without adding a Surface,
+operation, or permission. `CanAdvertiseMapChoice` is a pure shared validator
+for travelable state, enabled UI, FTUE, and input-mode reachability. Both
+publication and execution use it; controller mode requires the exact node to
+be on screen, mouse mode preserves scrollable map semantics, and a missing
+controller manager fails closed. The global snapshot builder continues to
+reject multiplayer before any Provider runs.
+
+Current loaded identity is protocol `2.0-preview.35`, exact game
+`v0.109.0|c12f634d|1833084275`, Release/installed SHA
+`505e9db42b79edc52fd7fd2aead6145a255e47dea54f3a07059b781e1b84dbe6`,
+MVID `547842a2-27d4-4c5d-8188-ca1d525d7e98`, and runtime instance
+`65ecb6bf7ee34d9d8c007fbd137eeda8`.
+
+Bridge `64/64`, Re `128/128`, strict typecheck, production build, Python
+compilation, Release rebuild, install hash, and cold-load identity all passed.
+Re accepted one exact `(5,5)` map action from `(5,4)`. Request
+`preview35-map-1784363763173` completed with
+`map_closed_or_current_map_coordinate_reached`; the successor combat again
+failed closed with no authority, Inspection, or action.
+
+Verdict: **B-level fix, A-level external contract retention**. Provider
+responsibility and inline Completion remain acceptable for this one-operation
+Surface. The next architecture boundary remains operation-granularity review
+before any three-operation `combat_turn` canary. Preview.35 map evidence is
+canary-exercised, not qualified; event evidence remains on its own earlier
+MVIDs.

@@ -2,26 +2,33 @@
 
 ## Current Scope
 
-Re-SpireAgent supports the strict `2.0-preview.31` source contract. Current
+Re-SpireAgent supports the strict `2.0-preview.35` source contract. Current
 v0.109 authority is read from capabilities rather than inferred from historical
 implementation:
 
-The permission list below is scoped to
-`v0.109.0|c12f634d|-840572606` only. A local runtime observed with
-`v0.109.0|c12f634d|1833084275` is a distinct untested build: Re preserves the
-Bridge fail-closed result and imports no v2 actions or Inspection facts.
+The broad permission list below is scoped to
+`v0.109.0|c12f634d|-840572606` only. Local runtime
+`v0.109.0|c12f634d|1833084275` is distinct: preview.35 imports only its explicit
+`event_option`, `event_card_acquisition`, and `map_navigation` action canaries,
+accepts an empty qualified list, and imports no Inspection facts. Every other
+Surface remains fail closed.
 
 - scoped-qualified actions: `deck_removal_selection`,
   `deck_upgrade_selection`, `combat_turn`, `combat_hand_card_selection`, and
   ordinary single-player `rest_site`;
-- current-build action canaries: `event_card_acquisition`, `reward_claim`,
+- source-target action canaries: `event_card_acquisition`, `reward_claim`,
   `card_reward_selection`, `map_navigation`, `shop_inventory`, `shop_room`,
   `treasure_room`, `game_over`, `card_bundle_selection`, `character_select`,
   `event_dialogue`, and `event_option`;
 - scoped-qualified read-only Inspection: `run_deck`;
 - every unlisted Surface and Inspection: disabled for this build.
 
-Current-build organic evidence includes merchant removal with exact post-state,
+Canary-only exact scopes are valid only when their explicit canary list is
+non-empty. Re compares capability and state scopes, checks the exact game and
+Bridge identity, and verifies capability support rows before importing actions;
+empty qualified, canary, or Inspection lists never imply wildcard authority.
+
+Source-target organic evidence includes merchant removal with exact post-state,
 independent event/rest upgrade journeys, ordinary combat actions, a Touch of
 Insanity hand-select/confirm journey, ordinary rest Heal/Smith/Proceed, a Brain
 Leech exact-card acquisition, coherent reward/card-reward/map/shop journeys,
@@ -31,6 +38,13 @@ Neow option/Talisman/Proceed journey.
 Preview.28 game-over code is source/test/build verified after a preview.27
 organic contract defect; its fresh complete lifecycle, treasure open/skip,
 linked rewards, special map modes, and unlisted variants remain unqualified.
+
+Current-local evidence is narrower. Brain Leech option/acquisition was
+canary-exercised on earlier preview MVIDs. Final preview.35 MVID
+`547842a2-27d4-4c5d-8188-ca1d525d7e98` independently exercised exact
+`(5,4) -> (5,5)` map travel after adding the controller-only screen
+reachability gate. The successor combat remains unsupported with no authority.
+This evidence does not qualify those Surfaces or transfer between MVIDs.
 
 Historical v0.108 evidence for enchantment, combat child selectors, generated
 choices, and combat-pile Inspection remains protocol history only.
@@ -224,7 +238,9 @@ an exact HP witness, Smith must open the exact upgrade child, and unknown
 enabled options suppress the Surface. Smith's deck selector remains a separate
 qualified Surface. Map projects visible topology and exact current choices;
 asynchronous completion requires map closure or the exact selected current
-coordinate, not an arbitrary state change.
+coordinate, not an arbitrary state change. Publication and execution share the
+same travelable/enabled/FTUE predicate; controller mode additionally requires
+the exact node to be on screen, matching `NMapPoint.OnRelease`.
 
 ## Modes
 

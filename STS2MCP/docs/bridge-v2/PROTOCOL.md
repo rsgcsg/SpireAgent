@@ -1,6 +1,6 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.31`
+Protocol preview: `2.0-preview.35`
 
 ## Build Compatibility
 
@@ -21,12 +21,25 @@ Every unlisted Surface and Inspection remains disabled. Historical v0.108
 evidence does not grant current-build authority, and canary evidence does not
 silently become qualification.
 
-The preview.31 canary list is scoped by Surface kind, not by individual
+For current local identity `v0.109.0|c12f634d|1833084275`, preview.35 advertises
+an independent canary-only exact scope: qualified actions are empty,
+`action_canary_surface_kinds=[event_option,event_card_acquisition,map_navigation]`,
+and both Inspection lists are empty. A scoped build is executable when the
+union of its explicit qualified and canary Surface lists is non-empty; an empty
+qualified list is not an error and never becomes a wildcard. Re requires the
+same lists in state and capabilities.
+
+The preview.35 canary lists are scoped by Surface kind, not by individual
 operation or source origin. A listed canary Surface may publish any operation
 that its Provider validates on the exact build. This is controlled canary
 authority only; per-operation and per-origin Organic Qualification must still
 be recorded separately. Future permission refinement may narrow this scope but
 must not infer or expand authority from implementation alone.
+
+For `map_navigation`, preview.35 uses the same exact-node predicate while
+publishing and immediately before execution. Besides run-state travelability,
+node enabled state, and FTUE gating, controller input requires the destination
+node to be on screen, matching the current `NMapPoint.OnRelease` path.
 
 ## Endpoints
 

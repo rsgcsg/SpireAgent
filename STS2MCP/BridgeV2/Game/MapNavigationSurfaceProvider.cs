@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using Godot;
 using MegaCrit.Sts2.Core.Map;
+using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.Saves;
@@ -81,7 +82,7 @@ internal sealed class MapNavigationSurfaceProvider : IBridgeSurfaceProvider
             inputDisabled,
             drawingMode == DrawingMode.None);
         NMapPoint[] travelable = routeInputReady
-            ? pointNodes.Where(IsExactUiTravelChoice).ToArray()
+            ? pointNodes.Where(node => IsExactUiTravelChoice(screen, node)).ToArray()
             : Array.Empty<NMapPoint>();
         VisibleMapChoice[] options = travelable.Select(node => new VisibleMapChoice(
             entities.GetId(node, "map_node"),
@@ -143,12 +144,29 @@ internal sealed class MapNavigationSurfaceProvider : IBridgeSurfaceProvider
         bool drawingModeNone) =>
         isOpen && travelEnabled && !traveling && !inputDisabled && drawingModeNone;
 
-    private static bool IsExactUiTravelChoice(NMapPoint node) =>
-        node.Point != null
-        && node.State == MapPointState.Travelable
-        && node.IsEnabled
-        && (node.Point.coord.row != 0
-            || SaveManager.Instance.SeenFtue("map_select_ftue"));
+    internal static bool CanAdvertiseMapChoice(
+        bool stateTravelable,
+        bool enabled,
+        bool ftueSatisfied,
+        bool usingController,
+        bool nodeOnScreen) =>
+        stateTravelable
+        && enabled
+        && ftueSatisfied
+        && (!usingController || nodeOnScreen);
+
+    private static bool IsExactUiTravelChoice(NMapScreen screen, NMapPoint node)
+    {
+        NControllerManager? controller = NControllerManager.Instance;
+        return node.Point != null
+               && controller != null
+               && CanAdvertiseMapChoice(
+                   node.State == MapPointState.Travelable,
+                   node.IsEnabled,
+                   node.Point.coord.row != 0 || SaveManager.Instance.SeenFtue("map_select_ftue"),
+                   controller.IsUsingController,
+                   screen.IsNodeOnScreen(node));
+    }
 
     private static VisibleMapNode BuildNode(NMapPoint node, BridgeEntityRegistry entities) =>
         new(
@@ -210,7 +228,7 @@ internal sealed class MapNavigationSurfaceProvider : IBridgeSurfaceProvider
             || !McpMod.FindAll<NMapPoint>(expectedScreen).Any(node => ReferenceEquals(node, expectedNode))
             || expectedNode.Point == null
             || !expectedNode.Point.coord.Equals(expectedCoord)
-            || !IsExactUiTravelChoice(expectedNode))
+            || !IsExactUiTravelChoice(expectedScreen, expectedNode))
         {
             return BridgeActionStartResult.Rejected(
                 "map_choice_changed",

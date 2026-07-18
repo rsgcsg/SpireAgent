@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { isJsonObject, type JsonObject } from "../../shared/json.js";
 
-export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.31" as const;
+export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.35" as const;
 
 const compatibilitySchema = z.object({
   status: z.string().min(1),

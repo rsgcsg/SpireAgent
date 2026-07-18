@@ -80,6 +80,57 @@ public sealed class BridgeContractTests
     }
 
     [Fact]
+    public void CanaryOnlyScopePermitsOnlyExplicitSurfaceAndNoInspection()
+    {
+        var compatibility = new CompatibilityAssessment(
+            "qualified_scoped",
+            new[] { "0.109.0" },
+            new[] { "v0.109.0|commit|1" },
+            ActionExecutionAllowed: true,
+            StateObservationAllowed: true,
+            InspectionAllowed: false,
+            ActionExecutionSurfaceKinds: Array.Empty<string>(),
+            ActionCanarySurfaceKinds: new[] { "event_option" },
+            InspectionAllowedKinds: Array.Empty<string>(),
+            InspectionCanaryKinds: Array.Empty<string>(),
+            ObservationOnlySurfaceKinds: Array.Empty<string>(),
+            ObservationCandidateBuildFingerprints: Array.Empty<string>(),
+            Detail: "current-build event option canary only");
+
+        Assert.True(BridgeSurfacePermission.IsActionPermitted(compatibility, "event_option"));
+        Assert.False(BridgeSurfacePermission.IsActionPermitted(compatibility, "combat_turn"));
+        Assert.False(BridgeSurfacePermission.IsInspectionPermitted(compatibility, "run_deck"));
+        Assert.Equal("candidate_action_canary", BridgeSurfacePermission.SupportLevel(compatibility, "event_option"));
+        Assert.Equal("not_qualified_for_current_build", BridgeSurfacePermission.SupportLevel(compatibility, "combat_turn"));
+        Assert.Equal(
+            "disabled_for_current_build",
+            BridgeSurfacePermission.InspectionSupportLevel(compatibility, new[] { "run_deck", "combat_piles" }));
+    }
+
+    [Fact]
+    public void CurrentGameIdentityGrantsOnlyExplicitAuditedCanaries()
+    {
+        CompatibilityAssessment compatibility = BridgeGameIdentity.Assess(
+            "v0.109.0",
+            "c12f634d",
+            1833084275);
+
+        Assert.Equal("qualified_scoped", compatibility.Status);
+        Assert.True(compatibility.ActionExecutionAllowed);
+        Assert.True(compatibility.StateObservationAllowed);
+        Assert.False(compatibility.InspectionAllowed);
+        Assert.Empty(compatibility.ActionExecutionSurfaceKinds);
+        Assert.Equal(
+            new[] { "event_option", "event_card_acquisition", "map_navigation" },
+            compatibility.ActionCanarySurfaceKinds);
+        Assert.Empty(compatibility.InspectionAllowedKinds);
+        Assert.Empty(compatibility.InspectionCanaryKinds);
+        Assert.Contains(
+            "v0.109.0|c12f634d|1833084275",
+            compatibility.TestedBuildFingerprints);
+    }
+
+    [Fact]
     public void CommandContractUsesOpaqueSnakeCaseIdentifiers()
     {
         var options = new JsonSerializerOptions
@@ -486,6 +537,22 @@ public sealed class BridgeContractTests
         Assert.False(MapNavigationSurfaceProvider.CanAdvertiseRouteActions(true, true, false, false, false));
         Assert.False(MapNavigationSurfaceProvider.CanAdvertiseRouteActions(true, false, false, false, true));
         Assert.False(MapNavigationSurfaceProvider.CanAdvertiseRouteActions(true, true, false, true, true));
+    }
+
+    [Fact]
+    public void MapNavigationMatchesControllerScreenReachability()
+    {
+        Assert.True(MapNavigationSurfaceProvider.CanAdvertiseMapChoice(
+            stateTravelable: true,
+            enabled: true,
+            ftueSatisfied: true,
+            usingController: false,
+            nodeOnScreen: false));
+        Assert.True(MapNavigationSurfaceProvider.CanAdvertiseMapChoice(true, true, true, true, true));
+        Assert.False(MapNavigationSurfaceProvider.CanAdvertiseMapChoice(true, true, true, true, false));
+        Assert.False(MapNavigationSurfaceProvider.CanAdvertiseMapChoice(false, true, true, false, true));
+        Assert.False(MapNavigationSurfaceProvider.CanAdvertiseMapChoice(true, false, true, false, true));
+        Assert.False(MapNavigationSurfaceProvider.CanAdvertiseMapChoice(true, true, false, false, true));
     }
 
     [Fact]

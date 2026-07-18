@@ -12,10 +12,14 @@ internal static class BridgeGameIdentity
     private const string ScopedQualifiedVersion = "0.109.0";
     private const string ScopedQualifiedCommit = "c12f634d";
     private const int ScopedQualifiedMainAssemblyHash = -840572606;
+    private const string CurrentCanaryVersion = "0.109.0";
+    private const string CurrentCanaryCommit = "c12f634d";
+    private const int CurrentCanaryMainAssemblyHash = 1833084275;
     private static readonly string[] TestedBuildFingerprints =
     {
         $"v0.108.0|{TestedCommit}|{TestedMainAssemblyHash}",
-        $"v{ScopedQualifiedVersion}|{ScopedQualifiedCommit}|{ScopedQualifiedMainAssemblyHash}"
+        $"v{ScopedQualifiedVersion}|{ScopedQualifiedCommit}|{ScopedQualifiedMainAssemblyHash}",
+        $"v{CurrentCanaryVersion}|{CurrentCanaryCommit}|{CurrentCanaryMainAssemblyHash}"
     };
     private static readonly string[] ScopedQualifiedSurfaceKinds =
     {
@@ -41,6 +45,12 @@ internal static class BridgeGameIdentity
         "event_dialogue",
         "event_option"
     };
+    private static readonly string[] CurrentActionCanarySurfaceKinds =
+    {
+        "event_option",
+        "event_card_acquisition",
+        "map_navigation"
+    };
 
     public static GameBuildIdentity Read()
     {
@@ -54,16 +64,36 @@ internal static class BridgeGameIdentity
             // Identity remains unknown and action execution fails closed.
         }
 
-        string? version = release?.Version;
+        CompatibilityAssessment compatibility = Assess(
+            release?.Version,
+            release?.Commit,
+            release?.MainAssemblyHash);
+
+        return new GameBuildIdentity(
+            release?.Version,
+            release?.Commit,
+            release?.Branch,
+            release?.MainAssemblyHash,
+            compatibility);
+    }
+
+    internal static CompatibilityAssessment Assess(
+        string? version,
+        string? commit,
+        int? mainAssemblyHash)
+    {
         string normalized = Normalize(version);
         bool fullExactBuild = normalized == "0.108.0"
-                          && string.Equals(release?.Commit, TestedCommit, StringComparison.OrdinalIgnoreCase)
-                          && release?.MainAssemblyHash == TestedMainAssemblyHash;
+                          && string.Equals(commit, TestedCommit, StringComparison.OrdinalIgnoreCase)
+                          && mainAssemblyHash == TestedMainAssemblyHash;
         bool scopedQualifiedBuild = normalized == ScopedQualifiedVersion
-                                    && string.Equals(release?.Commit, ScopedQualifiedCommit, StringComparison.OrdinalIgnoreCase)
-                                    && release?.MainAssemblyHash == ScopedQualifiedMainAssemblyHash;
+                                    && string.Equals(commit, ScopedQualifiedCommit, StringComparison.OrdinalIgnoreCase)
+                                    && mainAssemblyHash == ScopedQualifiedMainAssemblyHash;
+        bool currentCanaryBuild = normalized == CurrentCanaryVersion
+                                  && string.Equals(commit, CurrentCanaryCommit, StringComparison.OrdinalIgnoreCase)
+                                  && mainAssemblyHash == CurrentCanaryMainAssemblyHash;
 
-        CompatibilityAssessment compatibility = fullExactBuild
+        return fullExactBuild
             ? new CompatibilityAssessment(
                 "supported_exact",
                 TestedVersions,
@@ -77,7 +107,7 @@ internal static class BridgeGameIdentity
                 InspectionCanaryKinds: Array.Empty<string>(),
                 ObservationOnlySurfaceKinds: Array.Empty<string>(),
                 ObservationCandidateBuildFingerprints: Array.Empty<string>(),
-                Detail: $"Game build {Fingerprint(release)} is a recognized historical exact identity. Current Bridge v2 actions still require an explicit per-surface qualified or canary list; this identity currently grants no v2 Surface action authority and remains eligible only for explicit legacy handoff.")
+                Detail: $"Game build {Fingerprint(version, commit, mainAssemblyHash)} is a recognized historical exact identity. Current Bridge v2 actions still require an explicit per-surface qualified or canary list; this identity currently grants no v2 Surface action authority and remains eligible only for explicit legacy handoff.")
             : scopedQualifiedBuild
                 ? new CompatibilityAssessment(
                     "qualified_scoped",
@@ -92,7 +122,22 @@ internal static class BridgeGameIdentity
                     InspectionCanaryKinds: Array.Empty<string>(),
                     ObservationOnlySurfaceKinds: Array.Empty<string>(),
                     ObservationCandidateBuildFingerprints: Array.Empty<string>(),
-                Detail: $"Game build {Fingerprint(release)} is exactly qualified for deck_removal_selection, event/rest deck_upgrade_selection, ordinary combat_turn, combat_hand_card_selection, and ordinary single-player rest_site actions plus run_deck inspection; event_card_acquisition, reward_claim, card_reward_selection, map_navigation, shop_inventory, shop_room, treasure_room, ordinary single-player game_over, source-qualified Scroll Boxes card_bundle_selection, ordinary single-player character_select, revealed-prefix ancient event_dialogue, and ordinary single-player event_option are limited to action canaries, and every unlisted surface and inspection remains disabled.")
+                Detail: $"Game build {Fingerprint(version, commit, mainAssemblyHash)} is exactly qualified for deck_removal_selection, event/rest deck_upgrade_selection, ordinary combat_turn, combat_hand_card_selection, and ordinary single-player rest_site actions plus run_deck inspection; event_card_acquisition, reward_claim, card_reward_selection, map_navigation, shop_inventory, shop_room, treasure_room, ordinary single-player game_over, source-qualified Scroll Boxes card_bundle_selection, ordinary single-player character_select, revealed-prefix ancient event_dialogue, and ordinary single-player event_option are limited to action canaries, and every unlisted surface and inspection remains disabled.")
+            : currentCanaryBuild
+                ? new CompatibilityAssessment(
+                    "qualified_scoped",
+                    TestedVersions,
+                    TestedBuildFingerprints,
+                    ActionExecutionAllowed: true,
+                    StateObservationAllowed: true,
+                    InspectionAllowed: false,
+                    ActionExecutionSurfaceKinds: Array.Empty<string>(),
+                    ActionCanarySurfaceKinds: CurrentActionCanarySurfaceKinds,
+                    InspectionAllowedKinds: Array.Empty<string>(),
+                    InspectionCanaryKinds: Array.Empty<string>(),
+                    ObservationOnlySurfaceKinds: Array.Empty<string>(),
+                    ObservationCandidateBuildFingerprints: Array.Empty<string>(),
+                    Detail: $"Game build {Fingerprint(version, commit, mainAssemblyHash)} permits only the source-audited event_option, event_card_acquisition, and map_navigation action canaries; every qualified action scope, every other Surface canary, and every Inspection remain disabled pending current-build Organic Evidence.")
             : new CompatibilityAssessment(
                 version == null ? "unknown" : "untested",
                 TestedVersions,
@@ -108,21 +153,14 @@ internal static class BridgeGameIdentity
                 ObservationCandidateBuildFingerprints: Array.Empty<string>(),
                 Detail: version == null
                     ? "Game build identity is unavailable; v2 action execution is disabled."
-                    : $"Game build {Fingerprint(release)} is not an exact tested bridge binding; v2 action execution is disabled.");
-
-        return new GameBuildIdentity(
-            version,
-            release?.Commit,
-            release?.Branch,
-            release?.MainAssemblyHash,
-            compatibility);
+                    : $"Game build {Fingerprint(version, commit, mainAssemblyHash)} is not an exact tested bridge binding; v2 action execution is disabled.");
     }
 
     private static string Normalize(string? version) =>
         (version ?? string.Empty).Trim().TrimStart('v', 'V');
 
-    private static string Fingerprint(ReleaseInfo? release) =>
-        release == null
+    private static string Fingerprint(string? version, string? commit, int? mainAssemblyHash) =>
+        version == null
             ? "unknown"
-            : $"{release.Version}|{release.Commit}|{release.MainAssemblyHash}";
+            : $"{version}|{commit}|{mainAssemblyHash}";
 }
