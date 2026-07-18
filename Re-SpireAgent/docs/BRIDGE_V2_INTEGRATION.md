@@ -2,7 +2,7 @@
 
 ## Current Scope
 
-Re-SpireAgent supports the strict `2.0-preview.35` source contract. Current
+Re-SpireAgent supports the strict `2.0-preview.46` source contract. Current
 v0.109 authority is read from capabilities rather than inferred from historical
 implementation:
 
@@ -19,7 +19,10 @@ Surface remains fail closed.
 - source-target action canaries: `event_card_acquisition`, `reward_claim`,
   `card_reward_selection`, `map_navigation`, `shop_inventory`, `shop_room`,
   `treasure_room`, `game_over`, `card_bundle_selection`, `character_select`,
-  `event_dialogue`, and `event_option`;
+  `main_menu`, `singleplayer_menu`, `event_dialogue`, `event_option`, and
+  source-bound `deck_transform_selection`, exact Headbutt
+  `combat_pile_card_selection`, and exact Lead Paperweight plus
+  exact Colorless Potion `generated_card_choice` branches;
 - scoped-qualified read-only Inspection: `run_deck`;
 - every unlisted Surface and Inspection: disabled for this build.
 
@@ -27,6 +30,9 @@ Canary-only exact scopes are valid only when their explicit canary list is
 non-empty. Re compares capability and state scopes, checks the exact game and
 Bridge identity, and verifies capability support rows before importing actions;
 empty qualified, canary, or Inspection lists never imply wildcard authority.
+State, capabilities, and Inspection must also agree on the exact loaded Modset
+fingerprint. Re rejects an exact-permission claim unless the sole loaded Mod is
+the negotiated `STS2_MCP` assembly and its MVID matches the Bridge identity.
 
 Source-target organic evidence includes merchant removal with exact post-state,
 independent event/rest upgrade journeys, ordinary combat actions, a Touch of
@@ -35,9 +41,37 @@ Leech exact-card acquisition, coherent reward/card-reward/map/shop journeys,
 treasure relic choose plus Proceed, an exact Scroll Boxes bundle commit,
 ordinary character selection/run start, revealed Neow dialogue, and a typed
 Neow option/Talisman/Proceed journey.
-Preview.28 game-over code is source/test/build verified after a preview.27
-organic contract defect; its fresh complete lifecycle, treasure open/skip,
-linked rewards, special map modes, and unlisted variants remain unqualified.
+The current MVID has a fresh loss intro -> summary -> return game-over
+lifecycle. Win/timeline diversity, treasure open/skip, linked rewards, special
+map modes, and unlisted variants remain unqualified.
+
+Preview.38 adds only the exact Whispering Hollow random-transform child. Re
+requires `random_uncommitted_cycle`, rejects any claimed pre-commit replacement,
+and preserves the same selected entity bindings through confirm. Selection,
+confirm, and upgrade-view presentation have current-build Organic-canary
+evidence; other transform origins and cancel variants remain unqualified.
+
+Preview.42 adds only the exact Lead Paperweight generated run-deck child. Re
+requires `purpose=acquire_one_generated_card`,
+`sourceKind=lead_paperweight`, `destination=run_deck`, exact visible card
+bindings, and matching operation kinds. The Organic selection record proves
+the same exact chosen card entered the run deck. Similar combat, relic, effect,
+or Mod callers cannot inherit this authority.
+
+Preview.43 ensures a provider whose exact source binding fails emits only
+`unsupported + none_fail_closed` with zero actions. Preview.44 adds the exact
+Colorless Potion combat child as a separate discriminated branch. Re requires
+`purpose=choose_one_generated_combat_card`, `sourceKind=colorless_potion`,
+`destination=combat_hand`, `selectedCardCostPolicy=free_this_turn`, and the
+full-hand discard overflow declaration, plus source-specific operation kinds.
+Organic selection evidence proves the exact chosen entity reached the
+successor hand at cost zero. Skip, full-hand overflow Organic evidence, and
+every other generated-choice source remain unqualified.
+
+Preview.46 requires typed `card_previews` on bounded hover-bearing entities.
+Re projects them into read-only card facts and never converts them into allowed
+actions. Stable preview IDs prevent recreated UI-only card models from causing
+false state changes; interactive cards still require exact runtime identity.
 
 Current-local evidence is narrower. Brain Leech option/acquisition was
 canary-exercised on earlier preview MVIDs. Final preview.35 MVID
@@ -49,6 +83,13 @@ This evidence does not qualify those Surfaces or transfer between MVIDs.
 Historical v0.108 evidence for enchantment, combat child selectors, generated
 choices, and combat-pile Inspection remains protocol history only.
 It does not silently grant v0.109 execution authority.
+
+Preview.40 strictly decodes exact combat setup and resolution no-input
+transitions only when they are `settling`, have `none_fail_closed` authority,
+carry active-run shared state, publish no actions, and report no missing
+completeness field. They normalize to
+`combat_transition(setup|resolution) + no_action` and cannot inherit v1
+authority. No other context may compose with `no_action`.
 
 ## State Identity
 
@@ -71,8 +112,8 @@ player identity, or incomplete combat potion coverage. Unsupported
 legacy-owned states may still use v1 for their complete Context/Surface
 projection, but no v1 sidecar merges into a Bridge-owned state.
 
-The pre-run `character_select` Surface is the only current exception and must
-carry `shared_state=null`. Event options preserve visible lethal warnings and
+The pre-run `main_menu`, `singleplayer_menu`, and `character_select` Surfaces
+must carry `shared_state=null`. Event options preserve visible lethal warnings and
 typed `text`/`card` hover tips; unknown tooltip variants fail closed.
 
 ## Action Entity Bindings
@@ -168,9 +209,10 @@ the adapter rejects the partial snapshot with a typed transient observation erro
 The settlement watcher may retry only this error within its existing timeout;
 decision and execution authorization reads remain fail-closed.
 
-The current v0.109 scope exposes only `run_deck` as
-`qualified_read_only_scoped`. It has supported merchant-removal and deck-upgrade
-post-state evidence. `combat_piles` remains disabled on this build.
+The current v0.109 scope exposes `run_deck` as qualified and `combat_piles` as
+a separate read-only canary. Current-MVID combat snapshots matched context
+counts before and after an opaque end-turn lifecycle. Neither Inspection grants
+action authority, and combat pile serialization remains explicitly unordered.
 
 ## Card Reward Contract
 
@@ -307,8 +349,12 @@ composition, and an exact combat potion post-state on the final installed MVID.
 Preview.25 then verified a Brain Leech exact-card auto-commit and same-instance
 run-deck post-state. Preview.29-.30 verified a purpose-specific character-select
 run start, revealed-prefix dialogue, and typed event-option text/card tooltips
-through an exact Talisman/deck post-state and Proceed. Continue to the next
-coherent blocking legacy boundary; root menu/single-player setup and fresh
-game-over remain high-value. This integration
+through an exact Talisman/deck post-state and Proceed. Preview.37 adds bounded
+root and standard single-player menu contracts; Continue has final-MVID
+Organic evidence, while the hidden Single Player branch still needs its own
+lifecycle. Preview.41 fresh evidence now completes loss intro -> summary ->
+return. Re finishes that current-run lifecycle but stops at the resulting
+top-level menu with `stopReason=run_boundary`, before any continue/new-run
+decision. Win/timeline and result diversity remain evidence debt. This integration
 does not add memory, learning, scoring, hidden-information access, arbitrary MCP
 calls, generic action payloads, or broad v2 coverage.

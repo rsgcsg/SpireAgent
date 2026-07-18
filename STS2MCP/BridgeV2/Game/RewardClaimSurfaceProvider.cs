@@ -336,34 +336,14 @@ internal sealed class RewardClaimSurfaceProvider : IBridgeSurfaceProvider
         GameBuildIdentity game,
         string reason,
         IReadOnlyList<string> missing)
-    {
-        var unavailable = new UnsupportedSurface(SurfaceKind, nameof(NRewardsScreen), reason);
-        var completeness = new StateCompleteness(
-            "degraded",
-            "empty_fail_closed",
-            new[] { "NRewardsScreen exact-version binding" },
-            missing);
-        string signature = BridgeHash.Object(new { game.Version, unavailable, missing });
-        return new BridgeObservationDraft(
-            signature,
-            "degraded",
-            new RewardFlowBridgeContext("reward_flow", "room_rewards"),
-            unavailable,
-            completeness,
+        => BridgeFailClosedObservation.BindingUnavailable(
             game,
-            new[] { "reward_claim_binding_unavailable" },
-            Array.Empty<BridgeActionDraft>())
-        {
-            Diagnostics = new[]
-            {
-                BridgeDiagnostics.Create(
-                    "bridge.surface.reward_claim.binding_unavailable",
-                    "error",
-                    "surface",
-                    "actions_suppressed",
-                    "update_bridge",
-                    reason)
-            }
-        };
-    }
+            new RewardFlowBridgeContext("reward_flow", "room_rewards"),
+            nameof(NRewardsScreen),
+            reason,
+            new[] { "NRewardsScreen exact-version binding" },
+            missing,
+            "reward_claim_binding_unavailable",
+            "bridge.surface.reward_claim.binding_unavailable",
+            "Reward source, controls, or completion semantics are not exact.");
 }

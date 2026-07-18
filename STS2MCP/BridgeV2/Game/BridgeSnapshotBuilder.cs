@@ -1,10 +1,21 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Nodes.Rooms;
+using MegaCrit.Sts2.Core.Rooms;
+using MegaCrit.Sts2.Core.Runs;
 using STS2_MCP.BridgeV2.Protocol;
 using STS2_MCP.BridgeV2.Runtime;
 
 namespace STS2_MCP.BridgeV2.Game;
+
+internal enum CombatNoInputPhase
+{
+    None,
+    Setup,
+    Resolution
+}
 
 internal static class BridgeSnapshotBuilder
 {
@@ -15,6 +26,7 @@ internal static class BridgeSnapshotBuilder
         new("deck_enchant_selection", static () => new DeckEnchantSurfaceProvider()),
         new("deck_removal_selection", static () => new DeckRemovalSelectionSurfaceProvider()),
         new("deck_upgrade_selection", static () => new DeckUpgradeSelectionSurfaceProvider()),
+        new("deck_transform_selection", static () => new DeckTransformSelectionSurfaceProvider()),
         new("combat_pile_card_selection", static () => new CombatPileCardSelectionSurfaceProvider()),
         new("combat_hand_card_selection", static () => new CombatHandCardSelectionSurfaceProvider()),
         new("event_card_acquisition", static () => new EventCardAcquisitionSurfaceProvider()),
@@ -29,6 +41,8 @@ internal static class BridgeSnapshotBuilder
         new("treasure_room", static () => new TreasureRoomSurfaceProvider()),
         new("game_over", static () => new GameOverSurfaceProvider()),
         new("character_select", static () => new CharacterSelectSurfaceProvider()),
+        new("main_menu", static () => new MainMenuSurfaceProvider()),
+        new("singleplayer_menu", static () => new SingleplayerMenuSurfaceProvider()),
         new("rest_site", static () => new RestSiteSurfaceProvider()),
         new("event_dialogue", static () => new EventDialogueSurfaceProvider()),
         new("event_option", static () => new EventOptionSurfaceProvider())
@@ -145,6 +159,9 @@ internal static class BridgeSnapshotBuilder
                     "restart"));
         }
 
+        if (TryBuildCombatNoInputTransition(snapshot, entities, game) is { } transition)
+            return transition;
+
         if (game.Compatibility.Status == "qualified_scoped")
         {
             IReadOnlyList<IBridgeSurfaceProvider> unqualifiedProviders = providers
@@ -212,6 +229,106 @@ internal static class BridgeSnapshotBuilder
                     null,
                     "This fully tested legacy build preserves the previous explicit unsupported-surface fallback contract.")
                 : null);
+    }
+
+    private static BridgeObservationDraft? TryBuildCombatNoInputTransition(
+        ActiveSurfaceSnapshot snapshot,
+        BridgeEntityRegistry entities,
+        GameBuildIdentity game)
+    {
+        RunState? runState = RunManager.Instance.DebugOnlyGetState();
+        CombatState? combatState = CombatManager.Instance.DebugOnlyGetState();
+        NCombatRoom? room = NCombatRoom.Instance;
+        CombatNoInputPhase phase = ClassifyCombatNoInputTransition(
+            RunManager.Instance.IsInProgress,
+            runState?.CurrentRoom is CombatRoom,
+            CombatManager.Instance.IsStarting,
+            CombatManager.Instance.IsInProgress,
+            combatState != null,
+            snapshot.HasBlockingSurface,
+            room != null && McpMod.IsLiveNode(room));
+        if (phase == CombatNoInputPhase.None)
+            return null;
+
+        bool isSetup = phase == CombatNoInputPhase.Setup;
+        var context = new CombatTransitionBridgeContext(
+            "combat_transition",
+            isSetup ? "setup" : "resolution",
+            isSetup ? "awaiting_combat_start" : "awaiting_room_resolution");
+        var surface = new NoActionSurface(
+            "no_action",
+            "settling",
+            isSetup
+                ? "The combat room is initializing; no player input owner exists yet."
+                : "Combat has ended; the game is resolving room rewards or the next player-visible surface.");
+        var completeness = new StateCompleteness(
+            "complete_for_bounded_no_input_transition",
+            "none_no_input_owner",
+            new[]
+            {
+                "RunState.CurrentRoom",
+                "CombatManager.IsStarting",
+                "CombatManager.IsInProgress",
+                "CombatManager.DebugOnlyGetState",
+                "NCombatRoom",
+                "ActiveSurfaceResolver"
+            },
+            Array.Empty<string>());
+        string signature = BridgeHash.Object(new
+        {
+            game.Version,
+            game.Commit,
+            context,
+            surface,
+            runState!.CurrentActIndex,
+            runState.TotalFloor
+        });
+
+        return new BridgeObservationDraft(
+            signature,
+            "settling",
+            context,
+            surface,
+            completeness,
+            game,
+            Array.Empty<string>(),
+            Array.Empty<BridgeActionDraft>())
+        {
+            AuthorityHandoff = new AuthorityHandoff(
+                "none_fail_closed",
+                null,
+                "The exact combat transition has no player input owner; Bridge v2 will only observe and poll."),
+            Diagnostics = new[]
+            {
+                BridgeDiagnostics.Create(
+                    "bridge.lifecycle.no_input_transition",
+                    "info",
+                    "runtime",
+                    "none",
+                    "settle",
+                    isSetup
+                        ? "CombatRoom:combat_setup_before_input_surface"
+                        : "CombatRoom:combat_ended_before_reward_surface")
+            }
+        };
+    }
+
+    internal static CombatNoInputPhase ClassifyCombatNoInputTransition(
+        bool runInProgress,
+        bool currentRoomIsCombat,
+        bool combatIsStarting,
+        bool combatInProgress,
+        bool combatStatePresent,
+        bool hasBlockingSurface,
+        bool liveCombatRoomPresent)
+    {
+        if (!runInProgress || !currentRoomIsCombat || combatInProgress || hasBlockingSurface)
+            return CombatNoInputPhase.None;
+        if (combatIsStarting || !combatStatePresent)
+            return CombatNoInputPhase.Setup;
+        return liveCombatRoomPresent
+            ? CombatNoInputPhase.Resolution
+            : CombatNoInputPhase.None;
     }
 
     private static BridgeObservationDraft Unsupported(

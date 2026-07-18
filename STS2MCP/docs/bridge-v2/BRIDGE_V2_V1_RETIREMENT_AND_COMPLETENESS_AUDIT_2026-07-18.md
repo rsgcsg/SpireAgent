@@ -1,7 +1,11 @@
 # Bridge v2: v1 Retirement And Completeness Audit
 
 Date: 2026-07-18  
-Canonical protocol: `2.0-preview.35`
+Canonical protocol at latest audit amendment: `2.0-preview.46`
+
+> Historical audit amended on 2026-07-18. Canonical live status remains
+> [CURRENT_STATUS.md](CURRENT_STATUS.md); this report records the longer-form
+> retirement analysis and must not override the current permission matrix.
 
 ## Verdict
 
@@ -35,17 +39,20 @@ rejected a publication mismatch, and no game mutation occurred.
 
 ### Coverage
 
-- root menu and single-player setup have no v2 lifecycle; ordinary character
-  select and run start are now a bounded canary, but first-run tutorial and
-  non-standard setup are not covered;
-- deck enchant, combat-pile selection, and generated choice have
-  implementations but no v0.109 permission; event option/dialogue are current
-  canaries but lack broad variant evidence;
+- root menu and standard single-player setup now have bounded v2 canaries;
+  first-run tutorial, destructive/secondary menu choices, and non-standard
+  setup remain uncovered;
+- deck enchant has an implementation but no v0.109 permission; combat-pile
+  selection has only an exact Headbutt canary whose corrected completion still
+  lacks a natural repeat; generated choice has exact Lead Paperweight and Colorless Potion
+  source canaries but no generic caller authority; event option/dialogue are
+  current canaries but lack broad variant evidence;
 - generic/purpose-unknown combat card selectors still fall to v1 or stop;
 - transform, duplicate, linked reward, special treasure, daily/custom,
   timeline, profile, settings, compendium, and multiplayer are incomplete or
   intentionally unsupported;
-- game-over preview.28 still lacks a complete fresh organic lifecycle.
+- game-over loss intro/summary/return has a fresh lifecycle, while win and
+  timeline-destination diversity remain missing.
 
 ### Player-visible information
 
@@ -53,9 +60,11 @@ v2 exposes strong bounded facts for active qualified Surfaces and a useful
 persistent shared run/player projection. It does **not** expose every fact a
 normal player can inspect:
 
-- rich tooltip/keyword/hover variants are partial;
+- preview.46 covers text keywords and typed card previews for bounded shared,
+  shop, treasure, and event owners; other hover kinds remain partial;
 - run-deck is a separate Inspection, not always embedded;
-- combat pile contents are not currently permitted on v0.109;
+- combat pile contents are a current-build read-only canary, not yet broadly
+  qualified;
 - menu/profile/history/compendium/timeline information is absent;
 - special event, reward, map, shop, relic, potion, and card UI variants have
   not all been audited;
@@ -67,9 +76,12 @@ moves are intentionally excluded and are not completeness debt.
 
 ## Current Coverage Distance
 
-Source currently contains 20 semantic Surface contracts. Exact v0.109 permits
-17: five qualified and twelve action canaries. Three implemented contracts
-remain disabled on this build. One Inspection (`run_deck`) is qualified.
+Source currently contains 23 semantic Surface contracts. Exact source-qualified
+v0.109 permits 22: five qualified and seventeen action canaries. One
+implemented contract remains disabled on this build. The generated-choice
+canary remains source-scoped to exact Lead Paperweight and exact Colorless
+Potion branches. `run_deck` Inspection is qualified; `combat_piles` Inspection
+is a separate read-only canary.
 
 Approximate engineering ranges:
 
@@ -126,6 +138,23 @@ commit semantics remain in purpose-specific Surfaces.
    exact-environment permission, operation/origin qualification, and visibility
    completeness remain separate evidence systems rather than manifest-derived
    authority.
+8. Preview.40 adds source-bounded combat setup/resolution observation and Re
+   semantic-cycle/settlement guards without inventing action authority.
+9. Preview.41 confirms that read-only visibility can advance independently of
+   action coverage. `combat_piles` is canary-permitted, while the similarly
+   named selector remains disabled until caller-specific Source Binding and
+   Outcome Witnesses exist.
+10. Preview.42 confirms that a shared game UI can be reused without granting
+    shared business authority. Exact Lead Paperweight source binding and a
+    run-deck witness authorize one generated-choice origin; every other caller
+    remains fail closed.
+11. Preview.43 centralizes only the non-authorizing provider-failure wire
+    shape. It prevents a failed binding from retaining business ownership but
+    deliberately does not centralize source legality or completion.
+12. Preview.44 confirms the safer extension pattern: a second source can join
+    a strongly typed mechanic family only with its own Context, destination,
+    cost/overflow semantics, operations, and Outcome Witness. Surface-kind
+    permission still does not qualify unknown origins.
 
 ## Retirement Plan
 
@@ -134,9 +163,11 @@ commit semantics remain in purpose-specific Surfaces.
    existing character-select canary narrow.
 3. Collect ordinary non-Neow event option/dialogue variants before promotion
    beyond canary.
-4. Resolve naturally observed generic combat card-selection origins into
-   purpose-specific v2 contracts; reject unknown purpose.
-5. Requalify disabled high-use selectors and Inspection contracts.
+4. Resolve naturally observed combat-pile selection origins into bounded
+   source/outcome families; reject unknown purpose rather than trusting prompt
+   text or selector closure.
+5. Requalify disabled high-use selectors. Broaden `combat_piles` Inspection
+   only after more current-build pile/reshuffle diversity.
 6. Cover linked rewards, special maintenance, tooltip/keyword families, and
    remaining ordinary run variants.
 7. Retire each v1 action family only after the exact v2 replacement has source,

@@ -53,11 +53,18 @@ internal static class BridgeSharedVisibleStateBuilder
                     McpMod.SafeGetText(() => boss.Title),
                     index))
                 .ToArray();
-            VisibleRunModifier[] modifiers = run.Modifiers.Select(modifier => new VisibleRunModifier(
-                modifier.Id.Entry,
-                McpMod.SafeGetText(() => modifier.Title),
-                McpMod.SafeGetText(() => modifier.Description),
-                BridgeVisibleEntityFacts.BuildKeywords(modifier.HoverTips))).ToArray();
+            VisibleRunModifier[] modifiers = run.Modifiers.Select(modifier =>
+            {
+                string ownerEntityId = entities.GetId(modifier, "run_modifier");
+                BridgeVisibleEntityFacts.HoverFacts hover =
+                    BridgeVisibleEntityFacts.BuildHoverFacts(modifier.HoverTips, ownerEntityId);
+                return new VisibleRunModifier(
+                    modifier.Id.Entry,
+                    McpMod.SafeGetText(() => modifier.Title),
+                    McpMod.SafeGetText(() => modifier.Description),
+                    hover.Keywords,
+                    hover.CardPreviews);
+            }).ToArray();
             VisibleRelic[] relics = player.Relics
                 .Select(relic => BridgeVisibleEntityFacts.BuildRelic(relic, entities))
                 .ToArray();

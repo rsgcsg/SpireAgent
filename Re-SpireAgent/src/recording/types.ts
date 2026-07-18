@@ -17,6 +17,7 @@ export type DecisionOutcome =
   | "not_executed_stale_state"
   | "execution_failed"
   | "executed_and_settled"
+  | "executed_checkpoint_pending"
   | "executed_unsettled";
 
 export interface RecordedState {
@@ -78,13 +79,23 @@ export interface DecisionRecord {
       message: string;
     };
   };
-  runtimeGuard?: {
-    code: "repeated_exact_transition";
-    occurrence: number;
-    preStateHash: string;
-    postStateHash: string;
-    selectedActionId: string;
-  };
+  runtimeGuard?:
+    | {
+        code: "repeated_exact_transition";
+        occurrence: number;
+        preStateHash: string;
+        postStateHash: string;
+        selectedActionId: string;
+      }
+    | {
+        code: "repeated_semantic_transition";
+        occurrence: number;
+        preProgressHash: string;
+        postProgressHash: string;
+        actionProgressHash: string;
+        selectedActionId: string;
+        selectedActionKind: string;
+      };
   postState?: RecordedState;
   outcome: DecisionOutcome;
   error?: string;
@@ -109,7 +120,7 @@ export interface RunMetadata {
     maxOutputTokens: number;
   };
   schemas: {
-    normalizedState: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20;
+    normalizedState: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21;
     prompt: 1 | 2 | 3;
     decisionRecord: 1 | 2;
   };

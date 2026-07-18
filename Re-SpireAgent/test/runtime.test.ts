@@ -210,6 +210,69 @@ describe("TickOrchestrator", () => {
     });
   });
 
+  it("keeps polling on the next tick after a confirmed Bridge action reaches a changed transitional state", async () => {
+    const pre = await fixture("combat") as Sts2McpRawState;
+    const transitional = await fixture("post-combat-settling") as Sts2McpRawState;
+    const adapter = new FakeAdapter([pre, pre, transitional], {
+      accepted: true,
+      outcome: "accepted",
+      response: { status: "completed", outcome: "confirmed" }
+    });
+    const recorder = new MemoryRecorder();
+    const normalize = (raw: unknown) => normalizeCurrentState(raw, adapter.describe());
+    const settlement = new SettlementWatcher(adapter, normalize, {
+      pollMs: 1,
+      defaultTimeoutMs: 20,
+      endTurnTimeoutMs: 20,
+      roomTransitionTimeoutMs: 20
+    }, async () => {});
+    const bridgeAction = {
+      id: "bridge:end-turn",
+      kind: "end_turn",
+      label: "End turn",
+      action: {
+        kind: "bridge_v2_action" as const,
+        actionId: "action-end-turn",
+        expectedStateId: "state-before",
+        bridgeActionKind: "end_turn"
+      },
+      sourceStateHash: normalizeCurrentState(pre, adapter.describe()).stateHash
+    };
+    const orchestrator = new TickOrchestrator({
+      adapter,
+      normalize,
+      buildAllowedActions: () => [bridgeAction],
+      llm: fixedProvider(bridgeAction.id),
+      settlement,
+      recorder
+    });
+
+    const result = await orchestrator.runTick(1);
+
+    expect(result).toMatchObject({
+      outcome: "executed_checkpoint_pending",
+      shouldStopRun: false
+    });
+    expect(recorder.records[0]).toMatchObject({
+      outcome: "executed_checkpoint_pending",
+      execution: { adapterResult: { status: "completed", outcome: "confirmed" } },
+      settlement: { status: "timeout" }
+    });
+    expect(recorder.records[0]?.postState?.normalizedState.stability).toBe("transitioning");
+    expect(recorder.records[0]?.runtimeGuard).toBeUndefined();
+  });
+
+  it("does not treat a legacy acknowledgement as confirmed when the next checkpoint is pending", async () => {
+    const pre = await fixture("combat") as Sts2McpRawState;
+    const transitional = await fixture("post-combat-settling") as Sts2McpRawState;
+    const adapter = new FakeAdapter([pre, pre, transitional]);
+    const recorder = new MemoryRecorder();
+    const result = await makeOrchestrator(adapter, fixedProvider("combat:end-turn"), recorder).runTick(1);
+
+    expect(result.outcome).toBe("executed_unsettled");
+    expect(result.shouldStopRun).toBe(true);
+  });
+
   it("never executes a provider-selected id outside the whitelist", async () => {
     const pre = await fixture("combat") as Sts2McpRawState;
     const adapter = new FakeAdapter([pre]);
@@ -253,9 +316,10 @@ describe("TickOrchestrator", () => {
     expect(recorder.records[0]?.error).toContain("will not be retried");
   });
 
-  it("stops a run before game-over actions can restart or leave the completed run", async () => {
+  it("allows the current run to complete its game-over return lifecycle", async () => {
     const raw = await fixture("game-over") as Sts2McpRawState;
-    const adapter = new FakeAdapter([raw]);
+    const menu = await fixture("menu") as Sts2McpRawState;
+    const adapter = new FakeAdapter([raw, raw, menu, menu]);
     const recorder = new MemoryRecorder();
     let calls = 0;
     const provider = fixedProvider("game-over:main_menu", () => { calls += 1; });
@@ -263,15 +327,34 @@ describe("TickOrchestrator", () => {
     const result = await makeOrchestrator(adapter, provider, recorder).runTick(1, { stopAtRunBoundary: true });
 
     expect(result).toMatchObject({
-      outcome: "not_executed_non_actionable_state",
+      outcome: "executed_and_settled",
       contextKind: "run_ended",
       surfaceKind: "menu_choice",
       actionAuthority: "local_reconstruction",
-      shouldStopRun: true
+      shouldStopRun: false
+    });
+    expect(calls).toBe(1);
+    expect(adapter.executed).toEqual([{ kind: "menu_select", option: "main_menu" }]);
+  });
+
+  it("stops at the top-level menu before the model can start or continue another run", async () => {
+    const raw = await fixture("menu") as Sts2McpRawState;
+    const adapter = new FakeAdapter([raw]);
+    const recorder = new MemoryRecorder();
+    let calls = 0;
+    const provider = fixedProvider("menu:0", () => { calls += 1; });
+
+    const result = await makeOrchestrator(adapter, provider, recorder).runTick(1, { stopAtRunBoundary: true });
+
+    expect(result).toMatchObject({
+      outcome: "not_executed_non_actionable_state",
+      contextKind: "menu",
+      shouldStopRun: true,
+      stopReason: "run_boundary"
     });
     expect(calls).toBe(0);
     expect(adapter.executed).toEqual([]);
-    expect(recorder.records[0]?.error).toContain("run boundary");
+    expect(recorder.records[0]?.error).toContain("run-start boundary");
   });
 });
 
@@ -368,9 +451,12 @@ function makeOrchestrator(adapter: FakeAdapter, provider: LlmDecisionProvider, r
   const normalize = (raw: unknown) => normalizeCurrentState(raw, adapter.describe());
   const settlement = new SettlementWatcher(adapter, normalize, {
     pollMs: 1,
-    defaultTimeoutMs: 20,
-    endTurnTimeoutMs: 20,
-    roomTransitionTimeoutMs: 20
+    // The injected no-op sleep makes these fixture polls deterministic; the
+    // wider wall-clock guard prevents parallel test load from expiring the
+    // loop before the asserted observation sequence is consumed.
+    defaultTimeoutMs: 250,
+    endTurnTimeoutMs: 250,
+    roomTransitionTimeoutMs: 250
   }, async () => {});
   return new TickOrchestrator({ adapter, normalize, buildAllowedActions, llm: provider, settlement, recorder });
 }

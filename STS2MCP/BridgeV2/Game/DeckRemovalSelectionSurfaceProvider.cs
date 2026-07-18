@@ -487,36 +487,16 @@ internal sealed class DeckRemovalSelectionSurfaceProvider : IBridgeSurfaceProvid
         IBridgeContext context,
         string reason,
         IReadOnlyList<string> missing)
-    {
-        var unavailable = new UnsupportedSurface(SurfaceKind, nameof(NDeckCardSelectScreen), reason);
-        var completeness = new StateCompleteness(
-            "degraded",
-            "empty_fail_closed",
-            new[] { "NDeckCardSelectScreen exact-version binding" },
-            missing);
-        string signature = BridgeHash.Object(new { game.Version, context, unavailable, missing });
-        return new BridgeObservationDraft(
-            signature,
-            "degraded",
-            context,
-            unavailable,
-            completeness,
+        => BridgeFailClosedObservation.BindingUnavailable(
             game,
-            new[] { "merchant_deck_removal_binding_unavailable" },
-            Array.Empty<BridgeActionDraft>())
-        {
-            Diagnostics = new[]
-            {
-                BridgeDiagnostics.Create(
-                    "bridge.surface.deck_removal_selection.binding_unavailable",
-                    "error",
-                    "surface",
-                    "actions_suppressed",
-                    "update_bridge",
-                    reason)
-            }
-        };
-    }
+            context,
+            nameof(NDeckCardSelectScreen),
+            reason,
+            new[] { "NDeckCardSelectScreen exact-version binding" },
+            missing,
+            "merchant_deck_removal_binding_unavailable",
+            "bridge.surface.deck_removal_selection.binding_unavailable",
+            "Merchant removal source or completion semantics are not exact.");
 
     private sealed record Binding(
         CardSelectorPrefs Preferences,

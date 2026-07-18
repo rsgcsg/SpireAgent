@@ -4,7 +4,12 @@ import type { AdapterDescriptor, GameAdapter } from "../../game-io/adapter.js";
 import { TransientObservationError } from "../../game-io/observationError.js";
 import type { JsonObject } from "../../shared/json.js";
 import { BridgeV2HttpError, BridgeV2RestClient } from "./bridgeV2Client.js";
-import type { BridgeV2Capabilities, BridgeV2Command, BridgeV2State } from "./bridgeV2Protocol.js";
+import {
+  sameBridgeModsetIdentity,
+  type BridgeV2Capabilities,
+  type BridgeV2Command,
+  type BridgeV2State
+} from "./bridgeV2Protocol.js";
 import { wrapBridgeV2State, type Sts2McpRawState } from "./rawState.js";
 import { Sts2McpRestAdapter, type McpExecutionResult } from "./restAdapter.js";
 
@@ -73,6 +78,18 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
           game_version: bridge.game.version ?? null,
           game_commit: bridge.game.commit ?? null,
           main_assembly_hash: bridge.game.main_assembly_hash ?? null,
+          modset_status: bridge.game.modset.status,
+          modset_fingerprint: bridge.game.modset.fingerprint,
+          modset_exact_permission_eligible: bridge.game.modset.exact_permission_eligible,
+          loaded_mods: bridge.game.modset.mods.map((mod) => ({
+            id: mod.id,
+            version: mod.version ?? null,
+            source: mod.source,
+            load_state: mod.load_state,
+            affects_gameplay: mod.affects_gameplay,
+            workshop_id: mod.workshop_id ?? null,
+            assembly_module_version_ids: mod.assemblies.map((assembly) => assembly.module_version_id)
+          })),
           compatibility_status: bridge.game.compatibility.status,
           action_execution_allowed: bridge.game.compatibility.action_execution_allowed,
           state_observation_allowed: bridge.game.compatibility.state_observation_allowed,
@@ -300,6 +317,26 @@ function bridgeAuthorityEvidence(state: BridgeV2State): JsonObject {
       ...(state.game.main_assembly_hash !== undefined
         ? { main_assembly_hash: state.game.main_assembly_hash ?? null }
         : {}),
+      modset: {
+        status: state.game.modset.status,
+        fingerprint: state.game.modset.fingerprint,
+        fingerprint_scope: state.game.modset.fingerprint_scope,
+        exact_permission_eligible: state.game.modset.exact_permission_eligible,
+        mods: state.game.modset.mods.map((mod) => ({
+          id: mod.id,
+          ...(mod.version !== undefined ? { version: mod.version ?? null } : {}),
+          source: mod.source,
+          load_state: mod.load_state,
+          affects_gameplay: mod.affects_gameplay,
+          ...(mod.workshop_id !== undefined ? { workshop_id: mod.workshop_id ?? null } : {}),
+          assemblies: mod.assemblies.map((assembly) => ({
+            name: assembly.name,
+            ...(assembly.version !== undefined ? { version: assembly.version ?? null } : {}),
+            module_version_id: assembly.module_version_id
+          }))
+        })),
+        detail: state.game.modset.detail
+      },
       compatibility: {
         status: state.game.compatibility.status,
         tested_game_versions: state.game.compatibility.tested_game_versions,
@@ -349,6 +386,7 @@ function isSafeExplicitLegacyFallback(
     && capabilityGame.version === stateGame.version
     && capabilityGame.commit === stateGame.commit
     && capabilityGame.main_assembly_hash === stateGame.main_assembly_hash
+    && sameBridgeModsetIdentity(capabilityGame, stateGame)
     && capabilityGame.compatibility.tested_build_fingerprints.includes(gameFingerprint(capabilityGame))
     && stateGame.compatibility.tested_build_fingerprints.includes(gameFingerprint(stateGame))
     && capabilities.bridge.id === state.bridge.id
@@ -423,6 +461,7 @@ function isScopedQualifiedBuild(
     && stateCompatibility.action_execution_allowed
     && capabilityCompatibility.state_observation_allowed
     && stateCompatibility.state_observation_allowed
+    && sameBridgeModsetIdentity(capabilities.game, state.game)
     && capabilityCompatibility.action_execution_surface_kinds.length
       + capabilityCompatibility.action_canary_surface_kinds.length > 0
     && sameStrings(
@@ -449,6 +488,7 @@ function isCandidateBuild(
     && stateCompatibility.status === capabilityCompatibility.status
     && capabilityCompatibility.state_observation_allowed
     && stateCompatibility.state_observation_allowed
+    && sameBridgeModsetIdentity(capabilities.game, state.game)
     && capabilityCompatibility.observation_candidate_build_fingerprints.includes(gameFingerprint(capabilities.game))
     && stateCompatibility.observation_candidate_build_fingerprints.includes(gameFingerprint(state.game));
 }

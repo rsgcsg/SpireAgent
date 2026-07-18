@@ -75,7 +75,7 @@ There is one provider path. It uses JSON mode and an explicit thinking policy, s
 
 ## Settlement
 
-For v1, successful POST is only partial evidence. The watcher polls for a changed state hash and requires two identical, non-transitional observations before settlement. For v2, the adapter first verifies the submitted command identity and polls the bridge's action-specific lifecycle. Only `completed/confirmed` reaches the ordinary settlement watcher. `rejected/not_applied` is an execution rejection; `failed/unknown`, `timed_out/unknown`, transport uncertainty, or inconsistent command identity is recorded as unsettled/unknown and stops without retry. Settlement budgets follow semantic action lifecycles: opaque and legacy end-turn actions share the longer end-turn window, map navigation uses a separate room-transition window, and ordinary actions retain the default window. Longer windows never convert `loading`, `settling`, or `transitioning` into success; two identical complete snapshots are still required. If the game advances while a coherent state plus read-only inspection sidecars are being captured, the adapter returns a typed transient observation error rather than mixed evidence. Settlement polling may retry that observation within its existing timeout. A pre-decision occurrence aborts and records that tick without building a prompt or executing, but does not terminate a bounded run; its next tick must acquire a fresh coherent snapshot. Pre-execution occurrences remain terminal and fail closed.
+For v1, successful POST is only partial evidence. The watcher polls for a changed state hash and requires two identical, non-transitional observations before settlement. For v2, the adapter first verifies the submitted command identity and polls the bridge's action-specific lifecycle. Only `completed/confirmed` reaches the next-checkpoint watcher. `rejected/not_applied` is an execution rejection; `failed/unknown`, `timed_out/unknown`, transport uncertainty, or inconsistent command identity is recorded as unsettled/unknown and stops without retry. Settlement budgets follow semantic action lifecycles: opaque and legacy end-turn actions share the longer end-turn window, map navigation uses a separate room-transition window, and ordinary actions retain the default window. Longer windows never convert `loading`, `settling`, or `transitioning` into settled success; two identical complete snapshots are still required. If a confirmed Bridge action reaches a different valid state but that next decision checkpoint is still transitional or not stable twice when the timeout expires, Re records `executed_checkpoint_pending` and starts the next tick with a fresh read. It does not retry the action. v1 acknowledgement, unchanged state, read failure, or unknown Bridge outcome remain terminal. If the game advances while a coherent state plus read-only inspection sidecars are being captured, the adapter returns a typed transient observation error rather than mixed evidence. Settlement polling may retry that observation within its existing timeout. A pre-decision occurrence aborts and records that tick without building a prompt or executing, but does not terminate a bounded run; its next tick must acquire a fresh coherent snapshot. Pre-execution occurrences remain terminal and fail closed.
 
 The bounded orchestrator also records and stops on the second occurrence of an
 identical pre-state/action/post-state transition. This catches deterministic
@@ -86,7 +86,12 @@ Action-capable CLI commands also acquire an exclusive local lock, so two RE-P1 p
 
 ## Run Boundaries
 
-`agent:run` is a one-game command, not a menu automation loop. It stops and records a non-executed boundary when the next state is `game_over` or a top-level `menu`; it therefore cannot ask the model to restart a completed run. The lower-level `agent:tick` command intentionally retains the ability to exercise a supported menu action when a developer explicitly requests that protocol test.
+`agent:run` is a one-game command, not a menu automation loop. It may finish
+the current run's Bridge-owned game-over intro/summary/return lifecycle, but it
+stops and records a non-executed boundary at the next top-level `menu`; it
+therefore cannot ask the model to continue or start another run. The lower-level
+`agent:tick` command intentionally retains the ability to exercise a supported
+menu action when a developer explicitly requests that protocol test.
 
 ## Explicit Inference
 

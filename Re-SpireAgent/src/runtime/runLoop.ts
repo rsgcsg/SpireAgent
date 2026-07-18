@@ -4,7 +4,7 @@ export interface RunLoopOptions {
   maxTicks: number;
   delayMs: number;
   dryRun?: boolean;
-  /** Stop before the model can cross a game-over or top-level menu boundary. */
+  /** Finish game-over cleanup, then stop before any top-level menu action. */
   stopAtRunBoundary?: boolean;
   onTick?: (result: TickResult) => void;
 }

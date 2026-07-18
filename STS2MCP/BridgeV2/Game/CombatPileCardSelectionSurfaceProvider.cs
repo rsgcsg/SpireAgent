@@ -17,15 +17,15 @@ using STS2_MCP.BridgeV2.Runtime;
 namespace STS2_MCP.BridgeV2.Game;
 
 /// <summary>
-/// Exact-build adapter for selections from a combat pile. This deliberately
-/// does not generalize every NCardGridSelectionScreen subclass: pile source,
-/// auto-completion, and manual-confirmation semantics are specific here.
+/// Exact-build adapter for source-discriminated selections from a combat pile.
+/// The current contract authorizes only Headbutt's discard-to-draw-top child;
+/// other callers of the same game screen remain fail closed.
 /// </summary>
 internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfaceProvider
 {
     private const string SurfaceKind = "combat_pile_card_selection";
     private const string ReflectionEvidence =
-        "sts2-v0.108.0:cached_reflection:NCombatPileCardSelectScreen";
+        "sts2-v0.109.0:Headbutt.OnPlay+CardSelectCmd.FromCombatPile+NCombatPileCardSelectScreen";
     private const BindingFlags Flags = BindingFlags.Instance | BindingFlags.NonPublic;
 
     private static readonly FieldInfo? ClickableField =
@@ -42,16 +42,30 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
     {
         if (snapshot.TopOverlay is not NCombatPileCardSelectScreen screen)
             return null;
-        return Build(screen, entities, game);
+
+        IBridgeContext context = BridgeContextBuilder.Build(entities);
+        if (!CombatPileSelectionSourceBinding.TryGetUnique(
+                out CombatPileSelectionSourceBinding.HeadbuttBinding? source))
+        {
+            return BindingUnavailable(
+                game,
+                context,
+                "The combat-pile selector has no unique qualified source binding.",
+                new[] { "combat_pile_selection_source", "legal_actions" });
+        }
+
+        return Build(screen, source!, context, entities, game);
     }
 
     private static BridgeObservationDraft Build(
         NCombatPileCardSelectScreen screen,
+        CombatPileSelectionSourceBinding.HeadbuttBinding source,
+        IBridgeContext context,
         BridgeEntityRegistry entities,
         GameBuildIdentity game)
     {
-        IBridgeContext context = BridgeContextBuilder.Build(entities);
-        if (context is not CombatBridgeContext)
+        if (context is not CombatBridgeContext
+            || source.Player.PlayerCombatState is not { } combat)
         {
             return BindingUnavailable(
                 game,
@@ -71,13 +85,22 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
         }
 
         Binding exactBinding = binding!;
-        if (!exactBinding.Pile.IsCombatPile)
+        if (!ReferenceEquals(exactBinding.Pile, combat.DiscardPile)
+            || !exactBinding.Pile.IsCombatPile
+            || exactBinding.Pile.Type != PileType.Discard
+            || source.BaselineDiscard.Count != exactBinding.Pile.Cards.Count
+            || source.BaselineDiscard.Any(card =>
+                !exactBinding.Pile.Cards.Any(current => ReferenceEquals(current, card)))
+            || exactBinding.Preferences.MinSelect != 1
+            || exactBinding.Preferences.MaxSelect != 1
+            || exactBinding.Preferences.RequireManualConfirmation
+            || exactBinding.Preferences.Cancelable)
         {
             return BindingUnavailable(
                 game,
                 context,
-                $"NCombatPileCardSelectScreen referenced non-combat pile {exactBinding.Pile.Type}.",
-                new[] { "source_pile", "legal_actions" });
+                "The visible selector does not match exact Headbutt discard single-pick semantics.",
+                new[] { "source_pile", "selection_constraints", "source_semantics", "legal_actions" });
         }
 
         string? prompt = ReadNodeText(screen, "%BottomLabel");
@@ -127,7 +150,13 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
             SurfaceKind,
             entities.GetId(screen, "screen"),
             prompt,
+            "move_one_discard_card_to_draw_top",
+            "headbutt",
+            entities.GetId(source.SourceCard, "card"),
+            source.SourceCard.Id.Entry,
             exactBinding.Pile.Type.ToString().ToLowerInvariant(),
+            "draw",
+            "top",
             exactBinding.Preferences.MinSelect,
             exactBinding.Preferences.MaxSelect,
             selectedCards.Count,
@@ -138,24 +167,15 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
 
         List<BridgeActionDraft> actions = BuildActions(
             screen,
+            source,
             exactBinding,
             holders,
             selectedCards,
             cardIds);
-        bool cancelBindingMissing = exactBinding.Preferences.Cancelable
-                                    && !HasVisibleEnabledClose(screen);
-        if (cancelBindingMissing)
-        {
-            return BindingUnavailable(
-                game,
-                context,
-                "The selection is cancelable but its visible close control is not bound.",
-                new[] { "cancel_action", "legal_actions" });
-        }
 
         string readiness = actions.Count > 0 ? "ready" : "settling";
         var completeness = new StateCompleteness(
-            "contract_complete_for_combat_pile_card_selection",
+            "contract_complete_for_headbutt_discard_to_draw_top_selection",
             actions.Count > 0
                 ? "derived_from_exact_visible_grid_and_current_controls"
                 : "temporarily_empty_while_selection_completes_or_settles",
@@ -164,6 +184,9 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
                 "NCombatPileCardSelectScreen visible overlay",
                 "NCardGrid visible holders",
                 "NCardHolder._isClickable exact-version binding",
+                "Headbutt.OnPlay exact source task",
+                "CardSelectCmd.FromCombatPile(discard, exact-one)",
+                "CardPileCmd.Add(selected, draw, top)",
                 "NCombatPileCardSelectScreen.%BottomLabel",
                 ReflectionEvidence
             },
@@ -191,6 +214,7 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
 
     private static List<BridgeActionDraft> BuildActions(
         NCombatPileCardSelectScreen screen,
+        CombatPileSelectionSourceBinding.HeadbuttBinding source,
         Binding binding,
         IReadOnlyList<NGridCardHolder> holders,
         HashSet<CardModel> selectedCards,
@@ -207,50 +231,21 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
             string cardId = cardIds[card];
             string cardName = McpMod.SafeGetText(() => card.Title) ?? card.Id.Entry;
             actions.Add(new BridgeActionDraft(
-                $"toggle_combat_pile_card:{cardId}:{selected}",
-                "toggle_combat_pile_card",
+                $"headbutt_select_discard_for_draw_top:{cardId}",
+                "select_discard_card_for_draw_top",
                 "selection",
-                selected ? $"Deselect {cardName}" : $"Select {cardName}",
-                "NCardGrid.HolderPressed+NCombatPileCardSelectScreen.OnCardClicked",
-                () => StartToggleCard(screen, card, selected),
+                $"Put {cardName} on top of the Draw Pile",
+                "Headbutt.OnPlay+NCardGrid.HolderPressed+CardPileCmd.Add(Draw,Top)+exact-card-witness",
+                () => StartHeadbuttSelection(screen, source, card, selected),
                 new[] { new ActionEntityBinding("card", cardId) }));
-        }
-
-        if (binding.Preferences.RequireManualConfirmation)
-        {
-            NConfirmButton? confirm = screen.GetNodeOrNull<NConfirmButton>("%Confirm");
-            if (confirm is { IsEnabled: true } && McpMod.IsNodeVisible(confirm))
-            {
-                actions.Add(new BridgeActionDraft(
-                    "confirm_combat_pile_selection",
-                    "confirm_combat_pile_selection",
-                    "commit",
-                    "Confirm selected cards",
-                    "NCombatPileCardSelectScreen.%Confirm",
-                    () => StartConfirm(screen)));
-            }
-        }
-
-        if (binding.Preferences.Cancelable)
-        {
-            NBackButton? close = FindVisibleEnabledClose(screen);
-            if (close != null)
-            {
-                actions.Add(new BridgeActionDraft(
-                    "cancel_combat_pile_selection",
-                    "cancel_combat_pile_selection",
-                    "navigation",
-                    "Cancel card selection",
-                    "NCombatPileCardSelectScreen.%Close",
-                    () => StartCancel(screen)));
-            }
         }
 
         return actions;
     }
 
-    private static BridgeActionStartResult StartToggleCard(
+    private static BridgeActionStartResult StartHeadbuttSelection(
         NCombatPileCardSelectScreen expectedScreen,
+        CombatPileSelectionSourceBinding.HeadbuttBinding source,
         CardModel expectedCard,
         bool expectedSelected)
     {
@@ -271,37 +266,17 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
 
         grid.EmitSignal(NCardGrid.SignalName.HolderPressed, holder);
         return BridgeActionStartResult.Started(
-            () => !IsCurrent(expectedScreen)
-                  || IsSelected(expectedScreen, expectedCard) != expectedSelected,
-            "selected_membership_changed_or_auto_completed");
-    }
-
-    private static BridgeActionStartResult StartConfirm(NCombatPileCardSelectScreen expectedScreen)
-    {
-        if (!IsCurrent(expectedScreen))
-            return BridgeActionStartResult.Rejected("screen_changed", "Combat-pile selection is no longer current.");
-        NConfirmButton? confirm = expectedScreen.GetNodeOrNull<NConfirmButton>("%Confirm");
-        if (confirm is not { IsEnabled: true } || !McpMod.IsNodeVisible(confirm))
-            return BridgeActionStartResult.Rejected("confirm_not_available", "The selection confirm control is no longer enabled.");
-
-        confirm.ForceClick();
-        return BridgeActionStartResult.Started(
-            () => !IsCurrent(expectedScreen),
-            "combat_pile_selection_confirmed_and_closed");
-    }
-
-    private static BridgeActionStartResult StartCancel(NCombatPileCardSelectScreen expectedScreen)
-    {
-        if (!IsCurrent(expectedScreen))
-            return BridgeActionStartResult.Rejected("screen_changed", "Combat-pile selection is no longer current.");
-        NBackButton? close = FindVisibleEnabledClose(expectedScreen);
-        if (close == null)
-            return BridgeActionStartResult.Rejected("cancel_not_available", "The selection close control is no longer enabled.");
-
-        close.ForceClick();
-        return BridgeActionStartResult.Started(
-            () => !IsCurrent(expectedScreen),
-            "combat_pile_selection_cancelled_and_closed");
+            () => source.Player.PlayerCombatState is { } combat
+                  && HeadbuttCombatPileWitness.Selected(
+                      !CombatPileSelectionSourceBinding.IsActive(source.Token),
+                      !IsCurrent(expectedScreen),
+                      source.BaselineDiscard,
+                      source.BaselineDraw,
+                      combat.DiscardPile.Cards,
+                      combat.DrawPile.Cards,
+                      expectedCard),
+            "headbutt_source_completed_screen_closed_and_exact_card_moved_from_discard_to_draw_top",
+            allowIntermediateStateChanges: true);
     }
 
     private static bool TryReadBinding(
@@ -382,36 +357,16 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
         IBridgeContext context,
         string reason,
         IReadOnlyList<string> missing)
-    {
-        var unavailable = new UnsupportedSurface(SurfaceKind, nameof(NCombatPileCardSelectScreen), reason);
-        var completeness = new StateCompleteness(
-            "degraded",
-            "empty_fail_closed",
-            new[] { "NCombatPileCardSelectScreen exact-version binding" },
-            missing);
-        string signature = BridgeHash.Object(new { game.Version, unavailable, missing });
-        return new BridgeObservationDraft(
-            signature,
-            "degraded",
-            context,
-            unavailable,
-            completeness,
+        => BridgeFailClosedObservation.BindingUnavailable(
             game,
-            new[] { "combat_pile_card_selection_binding_unavailable" },
-            Array.Empty<BridgeActionDraft>())
-        {
-            Diagnostics = new[]
-            {
-                BridgeDiagnostics.Create(
-                    "bridge.surface.combat_pile_card_selection.binding_unavailable",
-                    "error",
-                    "surface",
-                    "actions_suppressed",
-                    "update_bridge",
-                    reason)
-            }
-        };
-    }
+            context,
+            nameof(NCombatPileCardSelectScreen),
+            reason,
+            new[] { "NCombatPileCardSelectScreen exact-version binding" },
+            missing,
+            "combat_pile_card_selection_binding_unavailable",
+            "bridge.surface.combat_pile_card_selection.binding_unavailable",
+            "Combat pile-selection source or completion semantics are not exact.");
 
     private sealed record Binding(
         CardSelectorPrefs Preferences,

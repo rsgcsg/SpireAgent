@@ -30,6 +30,7 @@ internal static class BridgeGameIdentity
         "rest_site"
     };
     private static readonly string[] ScopedQualifiedInspectionKinds = { "run_deck" };
+    private static readonly string[] ScopedCanaryInspectionKinds = { "combat_piles" };
     private static readonly string[] ScopedActionCanarySurfaceKinds =
     {
         "event_card_acquisition",
@@ -42,8 +43,13 @@ internal static class BridgeGameIdentity
         "game_over",
         "card_bundle_selection",
         "character_select",
+        "main_menu",
+        "singleplayer_menu",
         "event_dialogue",
-        "event_option"
+        "event_option",
+        "deck_transform_selection",
+        "generated_card_choice",
+        "combat_pile_card_selection"
     };
     private static readonly string[] CurrentActionCanarySurfaceKinds =
     {
@@ -64,17 +70,45 @@ internal static class BridgeGameIdentity
             // Identity remains unknown and action execution fails closed.
         }
 
-        CompatibilityAssessment compatibility = Assess(
+        CompatibilityAssessment gameCompatibility = Assess(
             release?.Version,
             release?.Commit,
             release?.MainAssemblyHash);
+        ModsetIdentity modset = BridgeModsetIdentity.Read();
+        CompatibilityAssessment compatibility = ApplyModset(gameCompatibility, modset);
 
         return new GameBuildIdentity(
             release?.Version,
             release?.Commit,
             release?.Branch,
             release?.MainAssemblyHash,
-            compatibility);
+            compatibility,
+            modset);
+    }
+
+    internal static CompatibilityAssessment ApplyModset(
+        CompatibilityAssessment gameCompatibility,
+        ModsetIdentity modset)
+    {
+        if (modset.ExactPermissionEligible)
+            return gameCompatibility;
+
+        return new CompatibilityAssessment(
+            gameCompatibility.StateObservationAllowed
+                ? "unqualified_modset"
+                : gameCompatibility.Status,
+            gameCompatibility.TestedGameVersions,
+            gameCompatibility.TestedBuildFingerprints,
+            ActionExecutionAllowed: false,
+            StateObservationAllowed: gameCompatibility.StateObservationAllowed,
+            InspectionAllowed: false,
+            ActionExecutionSurfaceKinds: Array.Empty<string>(),
+            ActionCanarySurfaceKinds: Array.Empty<string>(),
+            InspectionAllowedKinds: Array.Empty<string>(),
+            InspectionCanaryKinds: Array.Empty<string>(),
+            ObservationOnlySurfaceKinds: Array.Empty<string>(),
+            ObservationCandidateBuildFingerprints: gameCompatibility.ObservationCandidateBuildFingerprints,
+            Detail: $"{gameCompatibility.Detail} Modset {modset.Status} ({modset.Fingerprint}) is not explicitly qualified; action and Inspection scopes fail closed.");
     }
 
     internal static CompatibilityAssessment Assess(
@@ -119,10 +153,10 @@ internal static class BridgeGameIdentity
                     ActionExecutionSurfaceKinds: ScopedQualifiedSurfaceKinds,
                     ActionCanarySurfaceKinds: ScopedActionCanarySurfaceKinds,
                     InspectionAllowedKinds: ScopedQualifiedInspectionKinds,
-                    InspectionCanaryKinds: Array.Empty<string>(),
+                    InspectionCanaryKinds: ScopedCanaryInspectionKinds,
                     ObservationOnlySurfaceKinds: Array.Empty<string>(),
                     ObservationCandidateBuildFingerprints: Array.Empty<string>(),
-                Detail: $"Game build {Fingerprint(version, commit, mainAssemblyHash)} is exactly qualified for deck_removal_selection, event/rest deck_upgrade_selection, ordinary combat_turn, combat_hand_card_selection, and ordinary single-player rest_site actions plus run_deck inspection; event_card_acquisition, reward_claim, card_reward_selection, map_navigation, shop_inventory, shop_room, treasure_room, ordinary single-player game_over, source-qualified Scroll Boxes card_bundle_selection, ordinary single-player character_select, revealed-prefix ancient event_dialogue, and ordinary single-player event_option are limited to action canaries, and every unlisted surface and inspection remains disabled.")
+                Detail: $"Game build {Fingerprint(version, commit, mainAssemblyHash)} is exactly qualified for deck_removal_selection, event/rest deck_upgrade_selection, ordinary combat_turn, combat_hand_card_selection, and ordinary single-player rest_site actions plus run_deck inspection; combat_piles inspection is a read-only canary; event_card_acquisition, reward_claim, card_reward_selection, map_navigation, shop_inventory, shop_room, treasure_room, ordinary single-player game_over, source-qualified Scroll Boxes card_bundle_selection, ordinary single-player character_select, purpose-specific root/single-player menu navigation, revealed-prefix ancient event_dialogue, ordinary single-player event_option, Whispering Hollow deck_transform_selection, source-discriminated Lead Paperweight/Colorless Potion generated_card_choice branches, and exact Headbutt combat_pile_card_selection are limited to action canaries, and every unlisted surface and inspection remains disabled.")
             : currentCanaryBuild
                 ? new CompatibilityAssessment(
                     "qualified_scoped",

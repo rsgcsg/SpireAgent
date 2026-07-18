@@ -16,12 +16,19 @@ Bridge v2 is an incremental preview, not a replacement for all v1 surfaces.
   untested and has no v2 action or Inspection authority. Check
   [Bridge v2 current status](docs/bridge-v2/CURRENT_STATUS.md) before treating
   a local install as qualified.
-- Source `2.0-preview.35` keeps centralized overlay/room/menu ownership, typed
+- Source `2.0-preview.46` keeps centralized overlay/room/menu ownership, typed
   diagnostics, purpose-specific selection and event contracts, staged
   completion semantics, and a top-level read-only shared run/player HUD.
   Current-build capabilities distinguish scoped-qualified actions, action
   canaries, and read-only Inspection instead of treating implementation as
   permission.
+- Exact combat setup and post-combat settlement are exposed as non-authorizing
+  `combat_transition + no_action` phases; they grant no capability, action, or
+  fallback and do not generalize other no-overlay intervals.
+- Exact environment now includes a structured loaded Modset fingerprint.
+  Actions and Inspection fail closed unless the currently negotiated profile
+  sees only the exact loaded `STS2_MCP` module; native-UI reuse by another Mod
+  never inherits authority automatically.
 - All unimplemented or version-incompatible v2 surfaces fail closed with no
   legal actions.
 - v1 remains available only for explicit legacy-owned Surface fallback; its
@@ -29,12 +36,19 @@ Bridge v2 is an incremental preview, not a replacement for all v1 surfaces.
   for shared run/player facts.
 - Current v0.109 organic evidence qualifies merchant removal, event/rest
   upgrade, ordinary combat turn, combat hand selection, ordinary single-player
-  rest, and read-only run deck. Event card acquisition, reward, card reward,
+  rest, and read-only run deck. Read-only combat pile contents are a separate
+  current-build canary and never expose draw order or command authority. Event card acquisition, reward, card reward,
   map, shop, treasure, game over, card bundles, ordinary character select,
-  revealed ancient dialogue, and ordinary single-player event options are action
-  canaries. Game over still needs a fresh preview.28+ lifecycle after an organic
-  preview.27 contract defect was fixed. Unlisted surfaces are disabled and draw
-  order remains hidden.
+  revealed ancient dialogue, ordinary single-player event options, and the
+  exact Whispering Hollow random-transform child are action canaries. Only the
+  exact Lead Paperweight and exact Colorless Potion sources of
+  `generated_card_choice` are current-build canaries with separate destination,
+  cost, operation, and completion semantics; all other callers of the shared
+  selection UI remain fail closed. Exact Headbutt pile selection is a canary
+  whose corrected completion still needs an Organic repeat. Preview.46 also
+  exposes typed read-only card hover previews with stable owner-scoped identity;
+  these facts grant no actions. Unlisted surfaces are disabled and draw order
+  remains hidden.
 
 See [current status](docs/bridge-v2/CURRENT_STATUS.md), the
 [upstream/design audit](docs/bridge-v2/UPSTREAM_AUDIT.md), and the
@@ -97,7 +111,7 @@ dotnet test STS2_MCP.sln -p:STS2GameDir="$env:STS2_GAME_DIR"
 .\build.ps1 -GameDir "$env:STS2_GAME_DIR"
 ```
 
-The solution currently contains 68 pure contract/runtime/security tests covering stable
+The solution currently contains 90 pure contract/runtime/security tests covering stable
 state identity, entity identity, stale-state rejection, idempotent request IDs,
 completion observation, timeout-as-unknown, and JSON action shape.
 

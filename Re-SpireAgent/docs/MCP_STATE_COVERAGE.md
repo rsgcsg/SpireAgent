@@ -8,7 +8,7 @@ matrix. This document records the Re-SpireAgent consumption boundary.
 
 ## Bridge v2 Current Client Contract
 
-Re strictly decodes `2.0-preview.31`. It accepts Bridge actions only when:
+Re strictly decodes `2.0-preview.46`. It accepts Bridge actions only when:
 
 - game and loaded Bridge identities match exact scoped capabilities;
 - the Surface kind appears exactly once and has no duplicate operation names;
@@ -20,6 +20,7 @@ Re strictly decodes `2.0-preview.31`. It accepts Bridge actions only when:
 | Bridge contract | Re projection | Current v0.109 status |
 |---|---|---|
 | `combat_turn` | `combat + combat_turn + bridge_advertised` | qualified |
+| exact combat setup/resolution no-input transition | `combat_transition(setup|resolution) + no_action + none` | both phases organically observed on current MVID; not an action capability |
 | `combat_hand_card_selection` | `combat + combat_hand_card_selection + bridge_advertised` | qualified |
 | `deck_removal_selection` | `shop + deck_removal_selection + bridge_advertised` | qualified |
 | `deck_upgrade_selection` | event/rest parent + purpose-specific child | qualified |
@@ -27,9 +28,13 @@ Re strictly decodes `2.0-preview.31`. It accepts Bridge actions only when:
 | event acquisition, reward, card reward, map, shop, treasure, card bundle | purpose-specific typed Context + Surface | current-build action canaries |
 | `character_select` | `menu + character_select` with no active-run shared state | current-build action canary |
 | `event_dialogue` / `event_option` | revealed prefix or typed visible options/tooltips | current-build action canaries |
-| `game_over` | `run_ended + game_over` | preview.28 client contract implemented; fresh organic lifecycle pending |
+| `deck_transform_selection` | `event + deck_transform_selection`, exact selected instances and random-uncommitted preview | Whispering Hollow action canary; other origins fail closed |
+| `generated_card_choice` | source-discriminated `event` run-deck or `combat` hand choice with exact purpose/source/destination/cost/overflow semantics | exact Lead Paperweight and exact Colorless Potion selection canaries; Skip/overflow diversity pending; every other source fails closed |
+| exact Headbutt `combat_pile_card_selection` | exact discard candidate and draw-top purpose | action canary; corrected completion needs a natural repeat |
+| `game_over` | `run_ended + game_over` | current-MVID loss intro -> summary -> return lifecycle confirmed; win/timeline diversity pending |
 | `run_deck` Inspection | typed player run-deck evidence | qualified read-only; no authority |
-| top-level `shared_state` | persistent run/player facts | read-only and state-bound |
+| `combat_piles` Inspection | unordered draw/discard/exhaust card evidence | current-build read-only canary; no draw order or authority |
+| top-level `shared_state` | persistent run/player facts, text keywords, and typed read-only card previews | read-only and state-bound; preview facts grant no actions |
 
 ## Explicit v1 Compatibility Boundary
 
@@ -40,10 +45,13 @@ Bridge-owned Surface.
 Observed or expected v1-owned families still include:
 
 - generic or purpose-unknown card selectors, including a fresh combat child;
-- root menu and single-player submenu; first-run character tutorial;
+- unsupported root-menu choices and non-standard single-player modes;
+  first-run character tutorial; the bounded root/standard menu contracts are
+  Bridge v2 canaries;
 - crystal-sphere and other special screens without a current v2 contract;
-- current-build-disabled deck enchant, combat-pile, and generated-card
-  variants.
+- current-build-disabled deck enchant and combat-pile selectors, plus every
+  generated-card origin except exact Lead Paperweight and exact Colorless
+  Potion.
 
 v1 reconstructs indices and settlement locally. It is compatibility code, not
 equivalent safety or semantic evidence. A v1-supported shape can still be

@@ -61,7 +61,10 @@ async function main(): Promise<void> {
         stopAtRunBoundary: true,
         onTick: (result) => printTick(runtime.recorder.runId, result)
       });
-      const failures = results.filter((result) => result.shouldStopRun && result.outcome !== "executed_and_settled");
+      const failures = results.filter((result) =>
+        result.shouldStopRun
+        && result.stopReason !== "run_boundary"
+        && result.outcome !== "executed_and_settled");
       process.exitCode = failures.length > 0 ? 1 : 0;
       return;
     }

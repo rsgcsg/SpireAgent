@@ -4,15 +4,29 @@ Re-SpireAgent is a small, independent Slay the Spire 2 agent runtime. It reads t
 
 RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, shadow/live modes, policy promotion, or the old project's phase machinery. Its job is to make one decision path correct and auditable.
 
-The current strict client contract is Bridge `2.0-preview.35` on the
+The current strict client contract is Bridge `2.0-preview.46` on the
 source-qualified exact game identity `v0.109.0|c12f634d|-840572606`. A local
 game with the same version/commit but another assembly hash remains separately
-scoped. Current local hash `1833084275` has only explicit `event_option`,
+scoped. Re also requires the state and capabilities to agree on the exact
+loaded Modset fingerprint; an additional, failed, runtime-added, or mismatched
+Modset cannot import v2 action, Inspection, or legacy-fallback authority.
+Current local hash `1833084275` has only explicit `event_option`,
 `event_card_acquisition`, and `map_navigation` canaries, no qualified Surface,
 and no Inspection authority. Bridge v2 remains incremental:
-bounded Surface completeness and opaque action safety are real, but root menu,
+bounded Surface completeness and opaque action safety are real, but unsupported root-menu choices,
 several selection variants, and total player-visible coverage are
 not complete. See [MCP state coverage](docs/MCP_STATE_COVERAGE.md).
+
+Preview.46 strictly decodes typed read-only `card_previews` on visible relic,
+modifier, potion, shop-relic, and treasure-relic hover facts. These previews
+are normalized for reasoning but never create allowed actions. Ephemeral UI
+preview models have stable owner-scoped identities so repeated reads do not
+fabricate state changes.
+
+Exact no-input combat setup and post-combat resolution intervals normalize as
+`combat_transition(setup|resolution) + no_action + settling +
+actionAuthority=none`. They are polling states, not model decisions or legacy
+fallbacks. A generic missing overlay remains unsupported.
 
 ```text
 MCP raw state
@@ -32,10 +46,12 @@ MCP raw state
 - The executable MCP payload never comes from the model.
 - Unknown action IDs, invalid JSON, invalid schema, truncation, timeout, state drift, MCP rejection, and uncertain settlement are not executed or retried as actions.
 - Action-capable `tick` and `run` commands take an exclusive local runtime lock. This prevents two RE-P1 processes from driving one MCP session; it cannot prevent a human or a different program from acting in the game.
+- A bounded-run progress guard compares semantic state/action transitions rather than regenerated Bridge transport IDs. The second identical semantic transition stops as `repeated_semantic_transition`; business facts and entity bindings are never stripped from progress identity.
 - Raw MCP data is visible only to the adapter, normalizer, recorder, and diagnostic tooling. Planning code imports only the normalized state API.
 - Unknown semantic contexts or unverified interaction surfaces become structured `unknown`/`unsupported` state components and stop safely.
 - A Bridge v2-owned surface imports only state-bound opaque actions advertised by the bridge. Top-level shared state is read-only; v1 fallback cannot add or execute actions there.
 - `failed`, `timed_out`, transport-uncertain, or identity-mismatched v2 command results stop as unknown outcomes and are never automatically retried.
+- A Bridge-confirmed command and availability of the next stable decision checkpoint are recorded separately. If a changed valid state is still transitional at the checkpoint timeout, the record is `executed_checkpoint_pending`; the next tick re-reads state and never retries the action. v1 acknowledgement and unknown Bridge outcomes do not receive this treatment.
 - `.env.local`, API keys, and `data/runs/` are ignored by Git.
 
 ## Requirements
@@ -149,7 +165,11 @@ Run a bounded autonomous loop:
 npm run agent:run -- --max-ticks 20 --delay-ms 250
 ```
 
-`agent:run` is deliberately bounded to one game. When it observes `game_over` or a top-level `menu`, it records the boundary and stops before asking the model to select a restart or menu action. Use the explicit single-tick command only when deliberately testing a supported menu flow.
+`agent:run` is deliberately bounded to one game. It may finish that run's
+Bridge-owned game-over intro, summary, and return lifecycle, then stops at the
+top-level `menu` before asking the model to continue or start another run. Use
+the explicit single-tick command only when deliberately testing a supported
+menu flow.
 
 The loop stops on invalid state, missing actions on an actionable screen, provider/decision failure, MCP rejection, or unsettled execution. Transitional/loading states are polled without calling DeepSeek.
 
@@ -206,12 +226,14 @@ RE-P1 has fixture-backed support for:
 - `menu`
 - `game_over`
 
-Bridge v2 source `preview.35` uses exact-build capabilities. On the
+Bridge v2 source `preview.38` uses exact-game and exact-Modset capabilities. On the
 source-qualified v0.109 target, merchant
 removal, event/rest upgrade, ordinary combat turn, combat hand selection, and
 ordinary single-player rest plus read-only run deck are scoped-qualified; event
 card acquisition, reward, card reward, map, shop, treasure, game over, card
-bundles, character select, event dialogue, and event option are action canaries.
+bundles, character select, root/standard single-player menus, event dialogue,
+event option, and source-bound Whispering Hollow random transform are action
+canaries.
 Every unlisted contract is disabled even if it has historical v0.108 evidence.
 Qualification is per observed shape, not broad surface or game coverage. See
 [BRIDGE_V2_INTEGRATION.md](docs/BRIDGE_V2_INTEGRATION.md).
@@ -233,11 +255,12 @@ The only supported public TypeScript entrypoint is `src/index.ts`. Integration r
 ## Current Limitations
 
 - Real v1 MCP windows have exercised event, combat, rewards, card reward, map, rest, shop, treasure, and a boss fight. This proves protocol integration, not strategic quality or universal MCP coverage. The legacy v1 `NDeckEnchantSelectScreen` confirmation endpoint acknowledged the request without advancing state; Bridge v2 now has a separate qualified opaque-action contract for that surface.
-- Bridge v2 source `preview.35` is current. Source-target exact v0.109 capabilities qualify
+- Bridge v2 source `preview.38` is current. Source-target exact v0.109 capabilities qualify
   merchant removal, event/rest deck upgrade, ordinary combat turn, combat hand
   selection, ordinary single-player rest, and read-only run deck; event card
   acquisition, reward, card reward, map, shop, treasure, game over, card
-  bundles, character select, event dialogue, and event option are explicit
+  bundles, character select, root/standard single-player menus, event dialogue,
+  event option, and source-bound Whispering Hollow random transform are explicit
   action canaries. Every unlisted surface remains disabled or explicitly v1-owned in
   `auto` mode. The distinct local hash `1833084275` imports only event option,
   event card acquisition, and map-navigation canaries; everything else remains
@@ -249,9 +272,9 @@ The only supported public TypeScript entrypoint is `src/index.ts`. Integration r
   overlay-vs-room resolver. Typed diagnostics are implemented; legacy warning
   text must not be mistaken for an action-authority decision.
 - Read-only `run_deck` and `combat_piles` inspection code is state-bound,
-  non-executable, and excluded from the command ledger. Only `run_deck` is
-  currently permitted on v0.109; historical combat-pile evidence grants no
-  current authority. Draw order remains hidden.
+  non-executable, and excluded from the command ledger. `run_deck` is qualified
+  on the exact current build; unordered `combat_piles` is a separate read-only
+  canary. Neither creates action authority and draw order remains hidden.
 - A full potion belt now makes a visible potion reward non-claimable and
   exposes only exact, state-bound discard operands until capacity exists. The
   discard-then-claim lifecycle passed against an organic full-belt screen.

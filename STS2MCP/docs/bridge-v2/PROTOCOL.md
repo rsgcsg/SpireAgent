@@ -1,6 +1,6 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.35`
+Protocol preview: `2.0-preview.46`
 
 ## Build Compatibility
 
@@ -14,12 +14,35 @@ contract against every Steam build. For exact identity
 - action canaries: `event_card_acquisition`, `reward_claim`,
   `card_reward_selection`, `map_navigation`, `shop_inventory`, `shop_room`,
   `treasure_room`, `game_over`, `card_bundle_selection`, `character_select`,
-  `event_dialogue`, and `event_option`;
-- qualified read-only inspection: `run_deck`.
+  `main_menu`, `singleplayer_menu`, `event_dialogue`, `event_option`, and
+  source-bound `deck_transform_selection`, exact Headbutt
+  `combat_pile_card_selection`, and source-scoped
+  `generated_card_choice` for exact Lead Paperweight acquisition and exact
+  Colorless Potion combat choice;
+- qualified read-only inspection: `run_deck`;
+- read-only inspection canary: `combat_piles`.
 
 Every unlisted Surface and Inspection remains disabled. Historical v0.108
 evidence does not grant current-build authority, and canary evidence does not
 silently become qualification.
+
+Exact environment identity is the combination of exact game identity and the
+loaded Modset identity. `game.modset` records:
+
+- deterministic `fingerprint` and its declared `fingerprint_scope`;
+- ModManager status and whether exact permission is eligible;
+- every known Mod's manifest ID/version, source, load state, gameplay flag,
+  Workshop ID as an exact decimal string, and loaded assembly name/version/MVID;
+- a safe status/detail without local filesystem paths.
+
+The current permission profile requires `exact_bridge_only`: ModManager is
+initialized, the only loaded Mod is the negotiated exact `STS2_MCP` module,
+and its manifest version and loaded MVID agree with the Bridge identity.
+Additional loaded Mods, failed or runtime-added Mods, unavailable identity, or
+state/capability fingerprint mismatch fail closed for actions and Inspection.
+This is a permission gate, not a claim that disabled Mods or future native-UI
+Mods are semantically compatible. Such environments require independent source
+binding, visibility, legality, commit, completion, and canary evidence.
 
 For current local identity `v0.109.0|c12f634d|1833084275`, preview.35 advertises
 an independent canary-only exact scope: qualified actions are empty,
@@ -58,7 +81,7 @@ layers own transport only.
 
 Every state response contains:
 
-- protocol, bridge, and exact game identity;
+- protocol, bridge, exact game identity, and exact loaded Modset identity;
 - observation policy;
 - stable semantic `state_id` and monotonic process-session sequence;
 - explicit top-level `shared_state` (`null` when no single-player run exists);
@@ -85,14 +108,80 @@ Bridge wire actions always use `authority="game_ui"`; the higher-level client
 records the effective state authority separately.
 
 `shared_state` is a separate top-level read-only concern. Active-run Surfaces
-require it. The purpose-specific `character_select` menu Surface requires it to
-be `null`, because no run exists yet. Preview.28+ serializes
+require it. The purpose-specific `main_menu`, `singleplayer_menu`, and
+`character_select` Surfaces require it to be `null`, because no run exists yet.
+Preview.28+ serializes
 the active single-player run's act/floor/ascension, visible bosses/modifiers,
 and local player identity/HP/gold/relic/potion facts. It must not be copied into
 every Context, treated as an Inspection, or allowed to create actions. It is
 included in `state_id`; an active-run projection failure suppresses actions.
-Unknown hover-tip kinds fail closed instead of being silently omitted. Deck
-contents still require the fixed `run_deck` Inspection.
+Preview.46 represents bounded entity hover semantics as separate `keywords`
+and typed read-only `card_previews`. Relics, run modifiers, owned potions,
+shop relics, and treasure relics use this contract. Interactive cards keep
+runtime-instance identity; recreated tooltip cards use stable owner-scoped
+preview identity so presentation allocation cannot churn `state_id`. Preview
+identity grants no action authority. Unknown hover-tip kinds fail closed
+instead of being silently omitted. Deck contents still require the fixed
+`run_deck` Inspection.
+
+Preview.37 models root and single-player submenu navigation as distinct
+semantic Surfaces. They share a typed visible-choice component, not a universal
+menu action protocol. An option may be `actionable` or `visible_unsupported`;
+only the former may correspond to an opaque legal action. A live modal owns
+input above both menus and suppresses all menu actions.
+
+Preview.38 models the exact Whispering Hollow random-transform child as
+`event + deck_transform_selection`. It is not a universal card selector or a
+generic transform API. During preview it reports
+`preview_kind=random_uncommitted_cycle` and `replacement_known=false`; cycling
+cards are player-visible presentation and never disclose the committed random
+replacement or RNG. Confirmation requires screen closure, absence of every
+selected exact original instance, and preserved run-deck count.
+
+Preview.42 models only `LeadPaperweight.AfterObtained` as
+`event + generated_card_choice`. The Surface must declare
+`purpose=acquire_one_generated_card`, `source_kind=lead_paperweight`, and
+`destination=run_deck`. Legal operations are `select_generated_run_card` and
+`skip_generated_run_card_choice`. An exact active source binding is mandatory;
+the shared `NChooseACardSelectionScreen`, prompt text, card-grid shape, or relic
+ownership alone never supplies purpose or authority. Selection completion
+requires source-task completion, Surface closure, exact selected-card presence,
+and run-deck count `+1`. Skip requires source-task completion, Surface closure,
+unchanged deck count, and absence of all offered exact card references.
+
+Preview.43 standardizes provider binding failure without adding a semantic
+Surface: a provider that cannot prove its exact source returns
+`unsupported + none_fail_closed + legal_actions=[]` with typed diagnostics.
+It may retain safe Context for diagnosis, but it may not retain a business
+Surface kind or `bridge_owned` authority. This helper is a wire-safety
+mechanism and never grants permission.
+
+Preview.44 adds exact `ColorlessPotion.OnUse` as a second, discriminated
+`combat + generated_card_choice` branch. It must declare
+`purpose=choose_one_generated_combat_card`,
+`source_kind=colorless_potion`, `destination=combat_hand`,
+`selected_card_cost_policy=free_this_turn`, and
+`overflow_destination=combat_discard_if_hand_full`. Its legal operations are
+`select_generated_combat_card` and
+`skip_generated_combat_card_choice`. Selection completion requires the source
+task to finish, child closure, an exact offered reference newly present in
+hand or discard, combined hand/discard count `+1`, and the temporary free-cost
+modifier. Skip requires source completion, child closure, unchanged hand and
+discard counts, and absence of all offered references. Lead Paperweight and
+Colorless Potion share only bounded one-of-N mechanics; source, Context,
+destination, cost policy, operations, and witnesses remain distinct.
+
+Preview.40 models two source-bounded, non-authorizing combat lifecycle phases
+under one `combat_transition` Context. `phase=setup` requires the exact current
+room to be `CombatRoom`, no blocking Surface, combat not in progress, and
+either `CombatManager.IsStarting` or no combat state yet. It uses
+`transition=awaiting_combat_start`. `phase=resolution` requires retained combat
+state plus a live `NCombatRoom` after combat ended and uses
+`transition=awaiting_room_resolution`. Both compose only with `no_action`,
+readiness `settling`, zero actions, and `none_fail_closed`. They are absent
+from capabilities and permission manifests because they describe lack of
+input ownership, not executable Surfaces. Absence of a visible overlay in any
+other room remains insufficient evidence and fails closed.
 
 Similar card grids do not imply a shared Surface. Selection limits, selected
 cards, preview controls, and opaque-card bindings may be shared structural
@@ -230,6 +319,7 @@ Current selection and reward completion evidence:
 | shop card-removal launch | exact merchant removal child opens or the exact service becomes used |
 | shop Proceed | map opens or the merchant room exits |
 | deck upgrade confirm | exact selected deck instance is upgraded and the selector closes |
+| deck transform confirm | exact selected original instances are absent, run-deck count is preserved, and the selector closes; the random replacement is not disclosed before commit |
 | event card acquisition select/deselect | exact selected membership changes, or final auto-commit closes the child, increases run-deck count by the committed selection count, and places every selected exact instance in the run deck |
 | treasure relic choose | exact relic ownership increases and the relic selection closes |
 | treasure skip | relic ownership is unchanged and the room advances |
@@ -314,9 +404,9 @@ or inspection `stale_state` rejects the entire composite observation; clients
 must not mix facts from adjacent game states. A bounded client may retry that
 read as transient evidence, but never reuse an action from the rejected read.
 
-For the source-qualified v0.109 identity, capabilities advertise only the
-explicitly scoped `run_deck` `qualified_read_only_scoped`; `combat_piles` is not
-advertised or accepted. A different exact build may advertise no Inspection
+For the source-qualified v0.109 identity, capabilities advertise `run_deck` as
+qualified and `combat_piles` as a separate read-only canary, producing
+`mixed_scoped_read_only`. A different exact build may advertise no Inspection
 kinds and must then report `disabled_for_current_build`. Inspection scope is
 independent of action scope and is never inferred from historical capabilities.
 

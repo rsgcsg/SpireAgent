@@ -15,6 +15,7 @@ import {
   type DeckEnchantSelectionSurface,
   type DeckRemovalSelectionSurface,
   type DeckUpgradeSelectionSurface,
+  type DeckTransformSelectionSurface,
   type EnemySnapshot,
   type EventDialogueSurface,
   type EventOptionSurface,
@@ -27,12 +28,15 @@ import {
   type TreasureRoomSurface,
   type GameOverSurface,
   type CharacterSelectSurface,
+  type MainMenuSurface,
+  type SingleplayerMenuSurface,
   type SemanticContext,
   type StateEnvelope
 } from "../domain/state/index.js";
 import {
   decodeBridgeV2Capabilities,
   decodeBridgeV2State,
+  sameBridgeModsetIdentity,
   isBridgeV2CombatContext,
   isBridgeV2CombatPileCardSelectionSurface,
   isBridgeV2CombatHandCardSelectionSurface,
@@ -45,6 +49,7 @@ import {
   isBridgeV2DeckEnchantSurface,
   isBridgeV2DeckRemovalSurface,
   isBridgeV2DeckUpgradeSurface,
+  isBridgeV2DeckTransformSurface,
   isBridgeV2EventContext,
   isBridgeV2EventDialogueSurface,
   isBridgeV2EventOptionSurface,
@@ -60,8 +65,12 @@ import {
   isBridgeV2GameOverSurface,
   isBridgeV2MenuContext,
   isBridgeV2CharacterSelectSurface,
+  isBridgeV2MainMenuSurface,
+  isBridgeV2SingleplayerMenuSurface,
   isBridgeV2MapContext,
   isBridgeV2MapNavigationSurface,
+  isBridgeV2CombatTransitionContext,
+  isBridgeV2NoActionSurface,
   isBridgeV2UnsupportedSurface,
   type BridgeV2CombatContext,
   type BridgeV2CombatPileCardSelectionSurface,
@@ -80,11 +89,14 @@ import {
   type BridgeV2GameOverContext,
   type BridgeV2GameOverSurface,
   type BridgeV2CharacterSelectSurface,
+  type BridgeV2MainMenuSurface,
+  type BridgeV2SingleplayerMenuSurface,
   type BridgeV2MapContext,
   type BridgeV2MapNavigationSurface,
   type BridgeV2DeckEnchantSurface,
   type BridgeV2DeckRemovalSurface,
   type BridgeV2DeckUpgradeSurface,
+  type BridgeV2DeckTransformSurface,
   type BridgeV2Diagnostic,
   type BridgeV2EventDialogueSurface,
   type BridgeV2EventOptionSurface,
@@ -124,15 +136,19 @@ const ACTION_KINDS = {
     "cancel_deck_upgrade_preview",
     "cancel_deck_upgrade_selection"
   ]),
+  deck_transform_selection: new Set([
+    "toggle_deck_transform_card",
+    "preview_deck_transform",
+    "confirm_deck_transform",
+    "cancel_deck_transform_preview",
+    "cancel_deck_transform_selection",
+    "toggle_deck_transform_upgrade_view"
+  ]),
   event_dialogue: new Set(["advance_event_dialogue"]),
   event_option: new Set(["choose_event_option", "proceed_event"]),
   rest_site: new Set(["choose_rest_option", "proceed_rest_site"]),
   combat_turn: new Set(["play_card", "use_potion", "end_turn"]),
-  combat_pile_card_selection: new Set([
-    "toggle_combat_pile_card",
-    "confirm_combat_pile_selection",
-    "cancel_combat_pile_selection"
-  ]),
+  combat_pile_card_selection: new Set(["select_discard_card_for_draw_top"]),
   combat_hand_card_selection: new Set([
     "select_combat_hand_card",
     "deselect_combat_hand_card",
@@ -144,9 +160,10 @@ const ACTION_KINDS = {
     "deselect_event_card_acquisition"
   ]),
   generated_card_choice: new Set([
-    "select_generated_card",
-    "skip_generated_card_choice",
-    "close_generated_card_choice_peek"
+    "select_generated_run_card",
+    "skip_generated_run_card_choice",
+    "select_generated_combat_card",
+    "skip_generated_combat_card_choice"
   ]),
   card_bundle_selection: new Set([
     "preview_card_bundle",
@@ -177,7 +194,9 @@ const ACTION_KINDS = {
     "increase_ascension",
     "embark_standard_run",
     "back_from_character_select"
-  ])
+  ]),
+  main_menu: new Set(["continue_run", "open_singleplayer"]),
+  singleplayer_menu: new Set(["open_standard_run_setup", "back_from_singleplayer_menu"])
 } as const;
 
 export function normalizeBridgeV2CurrentState(
@@ -232,9 +251,17 @@ export function normalizeBridgeV2CurrentState(
   } else if (state && isBridgeV2GameOverContext(state.context)) {
     context = projectGameOverContext(state.context);
   } else if (state && isBridgeV2MenuContext(state.context)) {
-    context = { kind: "menu", screen: "character_select", message: "Select a character and run settings." };
+    context = state.context.flow === "root_navigation"
+      ? { kind: "menu", screen: "main_menu", message: "Navigate the visible root menu." }
+      : {
+          kind: "menu",
+          screen: state.surface.kind === "singleplayer_menu" ? "singleplayer_menu" : "character_select",
+          message: "Choose a standard run setup action."
+        };
   } else if (state && isBridgeV2MapContext(state.context)) {
     context = projectMapContext(state.context);
+  } else if (state && isBridgeV2CombatTransitionContext(state.context)) {
+    context = { kind: "combat_transition", phase: state.context.phase };
   }
 
   const inspectionRaw = bridgeV2InspectionsFromWrapper(rawState);
@@ -392,6 +419,23 @@ export function normalizeBridgeV2CurrentState(
           "candidate-build action authority is restricted to the exact merchant-removal surface; only explicitly scoped v2 inspection is permitted and no legacy sidecar may merge"
         );
       }
+    } else if (isBridgeV2NoActionSurface(state.surface) && isBridgeV2CombatTransitionContext(state.context)) {
+      if (state.readiness !== "settling"
+          || state.legal_actions.length !== 0
+          || state.completeness.missing.length !== 0) {
+        diagnostics.invalid(
+          "bridge_v2.no_action",
+          state,
+          "combat-transition no_action must be settling, complete, and publish no actions"
+        );
+      }
+      surface = {
+        kind: "no_action",
+        reason: "settling",
+        ...(state.surface.message ? { message: state.surface.message } : {})
+      };
+      stability = "settling";
+      actionAuthority = "none";
     } else if (isBridgeV2UnsupportedSurface(state.surface)) {
       surface = unsupported(rawState, `Bridge v2 does not implement ${state.surface.source_type}: ${state.surface.reason}`);
       stability = "unknown";
@@ -418,7 +462,9 @@ export function normalizeBridgeV2CurrentState(
           `current surface is not advertised as ${expectedSupport}`
         );
       }
-      if (state.readiness !== "ready" && state.readiness !== "settling") {
+      const blockedMenu = state.readiness === "blocked"
+        && (isBridgeV2MainMenuSurface(state.surface) || isBridgeV2SingleplayerMenuSurface(state.surface));
+      if (state.readiness !== "ready" && state.readiness !== "settling" && !blockedMenu) {
         diagnostics.invalid("bridge_v2.readiness", state.readiness, "supported surface must be ready or settling");
       }
 
@@ -436,6 +482,11 @@ export function normalizeBridgeV2CurrentState(
           && (isBridgeV2EventContext(state.context) || isBridgeV2RestContext(state.context))) {
         validateDeckUpgradeState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
         surface = projectDeckUpgradeSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
+      } else if (isBridgeV2DeckTransformSurface(state.surface)
+          && isBridgeV2EventContext(state.context)
+          && state.context.event_id === "WHISPERING_HOLLOW") {
+        validateDeckTransformState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
+        surface = projectDeckTransformSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
       } else if (isBridgeV2EventDialogueSurface(state.surface) && isBridgeV2EventContext(state.context)) {
         validateEventDialogueState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
         surface = projectEventDialogueSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
@@ -460,6 +511,16 @@ export function normalizeBridgeV2CurrentState(
       } else if (isBridgeV2CharacterSelectSurface(state.surface) && isBridgeV2MenuContext(state.context)) {
         validateCharacterSelectState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
         surface = projectCharacterSelectSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
+      } else if (isBridgeV2MainMenuSurface(state.surface)
+          && isBridgeV2MenuContext(state.context)
+          && state.context.flow === "root_navigation") {
+        validateMainMenuState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
+        surface = projectMainMenuSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
+      } else if (isBridgeV2SingleplayerMenuSurface(state.surface)
+          && isBridgeV2MenuContext(state.context)
+          && state.context.flow === "standard_run_setup") {
+        validateSingleplayerMenuState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
+        surface = projectSingleplayerMenuSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
       } else if (isBridgeV2CombatTurnSurface(state.surface) && isBridgeV2CombatContext(state.context)) {
         validateCombatTurnState(state.shared_state, state.context, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
         surface = projectCombatTurnSurface(state.surface.room_entity_id, state.surface.can_end_turn, state.state_id, state.legal_actions, state.completeness);
@@ -472,7 +533,12 @@ export function normalizeBridgeV2CurrentState(
       } else if (isBridgeV2EventCardAcquisitionSurface(state.surface) && isBridgeV2EventContext(state.context)) {
         validateEventCardAcquisitionState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
         surface = projectEventCardAcquisitionSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
-      } else if (isBridgeV2GeneratedCardChoiceSurface(state.surface) && isBridgeV2CombatContext(state.context)) {
+      } else if (isBridgeV2GeneratedCardChoiceSurface(state.surface)
+                 && ((state.surface.source_kind === "lead_paperweight"
+                      && isBridgeV2EventContext(state.context)
+                      && state.context.event_id === "NEOW")
+                     || (state.surface.source_kind === "colorless_potion"
+                         && isBridgeV2CombatContext(state.context)))) {
         validateGeneratedCardChoiceState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
         surface = projectGeneratedCardChoiceSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
       } else if (isBridgeV2CardBundleSelectionSurface(state.surface)) {
@@ -541,6 +607,18 @@ function validateAuthorityHandoff(
   diagnostics: DiagnosticsBuilder
 ): void {
   const handoff = state.authority_handoff;
+  if (isBridgeV2NoActionSurface(state.surface)) {
+    if (handoff.status !== "none_fail_closed"
+        || handoff.surface_kind != null
+        || state.legal_actions.length !== 0) {
+      diagnostics.invalid(
+        "bridge_v2.authority_handoff",
+        handoff,
+        "a no-input lifecycle transition must retain none_fail_closed authority and publish no actions"
+      );
+    }
+    return;
+  }
   if (!isBridgeV2UnsupportedSurface(state.surface)) {
     if (handoff.status !== "bridge_owned" || handoff.surface_kind !== state.surface.kind) {
       diagnostics.invalid(
@@ -631,7 +709,8 @@ function validateEnvelopeIdentity(
   }
   if (state.game.version !== capabilities.game.version
       || state.game.commit !== capabilities.game.commit
-      || state.game.main_assembly_hash !== capabilities.game.main_assembly_hash) {
+      || state.game.main_assembly_hash !== capabilities.game.main_assembly_hash
+      || !sameBridgeModsetIdentity(state.game, capabilities.game)) {
     diagnostics.invalid("bridge_v2.game.identity", state.game, "state and capabilities game identities differ");
   }
   if (isCandidateBuild(state, capabilities)) {
@@ -724,6 +803,9 @@ function validateActions(
   if (readiness === "settling" && actions.length > 0) {
     diagnostics.invalid("bridge_v2.legal_actions", actions, `settling ${surfaceKind} surface must not advertise executable actions`);
   }
+  if (readiness === "blocked" && actions.length > 0) {
+    diagnostics.invalid("bridge_v2.legal_actions", actions, `blocked ${surfaceKind} surface must not advertise executable actions`);
+  }
   const actionIds = new Set(actions.map((action) => action.action_id));
   if (actionIds.size !== actions.length) diagnostics.invalid("bridge_v2.legal_actions", actions, "action ids are not unique");
   for (const action of actions) {
@@ -809,6 +891,47 @@ function validateDeckUpgradeState(
   }
 }
 
+function validateDeckTransformState(
+  surface: BridgeV2DeckTransformSurface,
+  stateId: string,
+  actions: BridgeV2LegalAction[],
+  missing: string[],
+  advertisedOperations: ReadonlySet<string>,
+  readiness: string,
+  diagnostics: DiagnosticsBuilder
+): void {
+  validateBoundedCardSelectionFacts(surface, diagnostics);
+  validateActions("deck_transform_selection", stateId, actions, missing, advertisedOperations, readiness, diagnostics);
+  if (surface.showing_upgrade_previews && !surface.upgrade_toggle_visible) {
+    diagnostics.invalid("bridge_v2.surface.showing_upgrade_previews", surface, "hidden upgrade toggle cannot own an active upgraded preview mode");
+  }
+  if (surface.replacement_known !== false) {
+    diagnostics.invalid("bridge_v2.surface.replacement_known", surface.replacement_known, "random transform replacement must remain unknown before commit");
+  }
+  if (surface.stage === "selecting") {
+    if (surface.preview_kind !== "none") {
+      diagnostics.invalid("bridge_v2.surface.preview_kind", surface.preview_kind, "selecting stage cannot expose a transform preview");
+    }
+    for (const action of actions) {
+      if (action.kind === "confirm_deck_transform" || action.kind === "cancel_deck_transform_preview") {
+        diagnostics.invalid("bridge_v2.legal_actions.kind", action.kind, "preview-only transform action appeared during selecting stage");
+      }
+    }
+  } else {
+    if (surface.preview_kind !== "random_uncommitted_cycle" || surface.selected_count === 0) {
+      diagnostics.invalid("bridge_v2.surface.preview_kind", surface, "preview stage requires selected cards and explicit random-uncommitted semantics");
+    }
+    for (const action of actions) {
+      if (action.kind === "toggle_deck_transform_card"
+          || action.kind === "preview_deck_transform"
+          || action.kind === "cancel_deck_transform_selection"
+          || action.kind === "toggle_deck_transform_upgrade_view") {
+        diagnostics.invalid("bridge_v2.legal_actions.kind", action.kind, "selecting-only transform action appeared during preview stage");
+      }
+    }
+  }
+}
+
 function validateBoundedCardSelectionFacts(
   surface: Pick<BridgeV2DeckEnchantSurface, "min_select" | "max_select" | "selected_count" | "selected_card_entity_ids" | "cards">,
   diagnostics: DiagnosticsBuilder
@@ -887,7 +1010,10 @@ function validateSharedVisibleState(
   diagnostics: DiagnosticsBuilder
 ): void {
   if (!shared) {
-    if (surfaceKind !== "unsupported" && surfaceKind !== "character_select") {
+    if (surfaceKind !== "unsupported"
+        && surfaceKind !== "character_select"
+        && surfaceKind !== "main_menu"
+        && surfaceKind !== "singleplayer_menu") {
       diagnostics.invalid("bridge_v2.shared_state", shared, "semantic Bridge-owned state requires shared visible run facts");
     }
     return;
@@ -984,6 +1110,113 @@ function validateCharacterSelectState(
       if (screenBindings.length !== 1) {
         diagnostics.invalid("bridge_v2.legal_actions.entity_bindings", action.entity_bindings, "character-select control action must bind the current screen");
       }
+    }
+  }
+}
+
+function validateMainMenuState(
+  surface: BridgeV2MainMenuSurface,
+  stateId: string,
+  actions: BridgeV2LegalAction[],
+  missing: string[],
+  advertisedOperations: ReadonlySet<string>,
+  readiness: string,
+  diagnostics: DiagnosticsBuilder
+): void {
+  // Profile/Patch Notes hover detail is a visible-information debt, but the
+  // Bridge explicitly marks it non-required for the bounded Continue/Single
+  // Player actions. Any other future missing field still fails closed.
+  const actionRequiredMissing = missing.filter(
+    (field) => field !== "profile_and_patch_notes_hover_detail_not_exposed"
+  );
+  validateActions("main_menu", stateId, actions, actionRequiredMissing, advertisedOperations, readiness, diagnostics);
+  validateVisibleMenuChoices(surface.options, diagnostics);
+  const continueChoice = surface.options.find((choice) => choice.semantic_id === "continue");
+  if (continueChoice?.bridge_support === "actionable" && !surface.continue_run) {
+    diagnostics.invalid("bridge_v2.surface.continue_run", surface.continue_run, "actionable Continue requires its visible saved-run summary");
+  }
+  if (surface.continue_run && surface.continue_run.hp > surface.continue_run.max_hp) {
+    diagnostics.invalid("bridge_v2.surface.continue_run.hp", surface.continue_run, "saved-run HP exceeds max HP");
+  }
+  validateMenuActions(
+    surface.screen_entity_id,
+    surface.options,
+    actions,
+    new Map([
+      ["continue", "continue_run"],
+      ["singleplayer", "open_singleplayer"]
+    ]),
+    diagnostics
+  );
+}
+
+function validateSingleplayerMenuState(
+  surface: BridgeV2SingleplayerMenuSurface,
+  stateId: string,
+  actions: BridgeV2LegalAction[],
+  missing: string[],
+  advertisedOperations: ReadonlySet<string>,
+  readiness: string,
+  diagnostics: DiagnosticsBuilder
+): void {
+  validateActions("singleplayer_menu", stateId, actions, missing, advertisedOperations, readiness, diagnostics);
+  validateVisibleMenuChoices(surface.options, diagnostics);
+  validateMenuActions(
+    surface.screen_entity_id,
+    surface.options,
+    actions,
+    new Map([
+      ["standard", "open_standard_run_setup"],
+      ["back", "back_from_singleplayer_menu"]
+    ]),
+    diagnostics
+  );
+}
+
+function validateVisibleMenuChoices(
+  choices: BridgeV2MainMenuSurface["options"],
+  diagnostics: DiagnosticsBuilder
+): void {
+  const entityIds = new Set(choices.map((choice) => choice.entity_id));
+  const semanticIds = new Set(choices.map((choice) => choice.semantic_id));
+  if (entityIds.size !== choices.length || semanticIds.size !== choices.length) {
+    diagnostics.invalid("bridge_v2.surface.options", choices, "visible menu choices require unique entity and semantic ids");
+  }
+  for (const choice of choices) {
+    if (choice.bridge_support === "actionable" && (!choice.enabled || choice.blocked_reason)) {
+      diagnostics.invalid("bridge_v2.surface.options.bridge_support", choice, "an actionable menu choice must be enabled and unblocked");
+    }
+    if (choice.bridge_support === "visible_unsupported" && !choice.blocked_reason) {
+      diagnostics.invalid("bridge_v2.surface.options.blocked_reason", choice, "a visible unsupported menu choice requires an explicit reason");
+    }
+  }
+}
+
+function validateMenuActions(
+  screenEntityId: string,
+  choices: BridgeV2MainMenuSurface["options"],
+  actions: BridgeV2LegalAction[],
+  actionBySemanticId: ReadonlyMap<string, string>,
+  diagnostics: DiagnosticsBuilder
+): void {
+  const expectedKinds = new Set(
+    choices
+      .filter((choice) => choice.enabled && choice.bridge_support === "actionable")
+      .map((choice) => actionBySemanticId.get(choice.semantic_id))
+      .filter((kind): kind is string => kind !== undefined)
+  );
+  if (expectedKinds.size !== actions.length) {
+    diagnostics.invalid("bridge_v2.legal_actions", actions, "menu actions must correspond one-to-one with actionable visible choices");
+  }
+  for (const action of actions) {
+    if (!expectedKinds.has(action.kind)) {
+      diagnostics.invalid("bridge_v2.legal_actions.kind", action.kind, "menu action has no actionable visible semantic choice");
+    }
+    const screenBindings = action.entity_bindings.filter(
+      (binding) => binding.role === "menu_screen" && binding.entity_id === screenEntityId
+    );
+    if (screenBindings.length !== 1) {
+      diagnostics.invalid("bridge_v2.legal_actions.entity_bindings", action.entity_bindings, "menu action must bind the exact current menu screen");
     }
   }
 }
@@ -1333,11 +1566,17 @@ function validateCombatPileCardSelectionState(
   }
   validateActions("combat_pile_card_selection", stateId, actions, missing, advertisedOperations, readiness, diagnostics);
   for (const action of actions) {
-    if (action.kind === "confirm_combat_pile_selection" && !surface.require_manual_confirmation) {
-      diagnostics.invalid("bridge_v2.legal_actions.kind", action.kind, "confirm appeared for an auto-completing selection");
+    if (action.kind !== "select_discard_card_for_draw_top") {
+      diagnostics.invalid("bridge_v2.legal_actions.kind", action.kind, "action does not belong to the exact Headbutt source contract");
     }
-    if (action.kind === "cancel_combat_pile_selection" && !surface.cancelable) {
-      diagnostics.invalid("bridge_v2.legal_actions.kind", action.kind, "cancel appeared for a non-cancelable selection");
+    const cardBindings = action.entity_bindings.filter((binding) => binding.role === "card");
+    const boundCard = cardBindings.length === 1
+      ? surface.cards.find((card) => card.entity_id === cardBindings[0]!.entity_id)
+      : undefined;
+    if (!boundCard) {
+      diagnostics.invalid("bridge_v2.legal_actions.entity_bindings", action.entity_bindings, "Headbutt selection must bind exactly one visible discard card");
+    } else if (action.label !== `Put ${boundCard.name ?? boundCard.definition_id} on top of the Draw Pile`) {
+      diagnostics.invalid("bridge_v2.legal_actions.label", action.label, "Headbutt action label disagrees with its exact visible card and destination");
     }
   }
 }
@@ -1467,26 +1706,40 @@ function validateGeneratedCardChoiceState(
   if (cardIds.size !== surface.cards.length) {
     diagnostics.invalid("bridge_v2.surface.cards", surface.cards, "generated card entity ids are not unique");
   }
+  if (!surface.can_skip) {
+    diagnostics.invalid("bridge_v2.surface.can_skip", surface.can_skip, "qualified generated-card sources must expose their exact skip control");
+  }
   validateActions("generated_card_choice", stateId, actions, missing, advertisedOperations, readiness, diagnostics);
+  const selectKind = surface.source_kind === "lead_paperweight"
+    ? "select_generated_run_card"
+    : "select_generated_combat_card";
+  const skipKind = surface.source_kind === "lead_paperweight"
+    ? "skip_generated_run_card_choice"
+    : "skip_generated_combat_card_choice";
   for (const action of actions) {
-    if (surface.is_peeking && action.kind !== "close_generated_card_choice_peek") {
-      diagnostics.invalid("bridge_v2.legal_actions.kind", action.kind, "generated-card peek mode may advertise only its close action");
+    if (surface.is_peeking) {
+      diagnostics.invalid("bridge_v2.surface.is_peeking", surface.is_peeking, "generated-card selection cannot publish choice actions while combat peek mode owns input");
     }
-    if (!surface.is_peeking && action.kind === "close_generated_card_choice_peek") {
-      diagnostics.invalid("bridge_v2.legal_actions.kind", action.kind, "peek-close action appeared outside peek mode");
-    }
-    if (action.kind === "skip_generated_card_choice" && !surface.can_skip) {
+    if ((action.kind === "skip_generated_run_card_choice" || action.kind === "skip_generated_combat_card_choice")
+      && !surface.can_skip) {
       diagnostics.invalid("bridge_v2.legal_actions.kind", action.kind, "skip action appeared for a non-skippable generated-card choice");
     }
-    if (action.kind === "select_generated_card") {
+    if (action.kind !== selectKind && action.kind !== skipKind) {
+      diagnostics.invalid("bridge_v2.legal_actions.kind", action.kind, `action does not belong to ${surface.source_kind}`);
+    }
+    if (action.kind === selectKind) {
       const cardBindings = action.entity_bindings.filter((binding) => binding.role === "card");
       const boundCard = cardBindings.length === 1
         ? surface.cards.find((card) => card.entity_id === cardBindings[0]!.entity_id)
         : undefined;
       if (!boundCard) {
         diagnostics.invalid("bridge_v2.legal_actions.entity_bindings", action.entity_bindings, "generated-card selection must bind exactly one visible card");
-      } else if (action.label !== `Choose ${boundCard.name ?? boundCard.definition_id}`) {
+      } else if (surface.source_kind === "lead_paperweight"
+        && action.label !== `Add ${boundCard.name ?? boundCard.definition_id} to the run deck`) {
         diagnostics.invalid("bridge_v2.legal_actions.label", action.label, "generated-card selection label disagrees with its bound visible card");
+      } else if (surface.source_kind === "colorless_potion"
+        && action.label !== `Choose ${boundCard.name ?? boundCard.definition_id}; add it to the combat hand for free this turn`) {
+        diagnostics.invalid("bridge_v2.legal_actions.label", action.label, "Colorless Potion selection label disagrees with its exact destination and cost policy");
       }
     }
   }
@@ -1988,7 +2241,8 @@ function projectSharedVisibleState(shared: BridgeV2SharedVisibleState): {
         id: modifier.definition_id,
         ...(modifier.name ? { name: modifier.name } : {}),
         ...(modifier.description ? { description: modifier.description } : {}),
-        keywords: keywords(modifier.keywords)
+        keywords: keywords(modifier.keywords),
+        cardPreviews: modifier.card_previews.map(projectBridgeV2Card)
       }))
     },
     player: {
@@ -2008,7 +2262,8 @@ function projectSharedVisibleState(shared: BridgeV2SharedVisibleState): {
         ...(relic.name ? { name: relic.name } : {}),
         ...(relic.description ? { description: relic.description } : {}),
         ...(relic.counter !== undefined ? { counter: relic.counter } : {}),
-        keywords: keywords(relic.keywords)
+        keywords: keywords(relic.keywords),
+        cardPreviews: relic.card_previews.map(projectBridgeV2Card)
       })),
       potions: shared.player.potions.map((potion) => ({
         entityId: potion.entity_id,
@@ -2016,7 +2271,8 @@ function projectSharedVisibleState(shared: BridgeV2SharedVisibleState): {
         ...(potion.name ? { name: potion.name } : {}),
         ...(potion.description ? { description: potion.description } : {}),
         slot: potion.slot,
-        keywords: keywords(potion.keywords)
+        keywords: keywords(potion.keywords),
+        cardPreviews: potion.card_previews.map(projectBridgeV2Card)
       })),
       maxPotionSlots: shared.player.max_potion_slots
     }
@@ -2173,6 +2429,33 @@ function projectDeckUpgradeSurface(
   };
 }
 
+function projectDeckTransformSurface(
+  surface: BridgeV2DeckTransformSurface,
+  stateId: string,
+  actions: BridgeV2LegalAction[],
+  completeness: RawCompleteness
+): DeckTransformSelectionSurface {
+  return {
+    kind: "deck_transform_selection",
+    stage: surface.stage,
+    bridgeStateId: stateId,
+    screenEntityId: surface.screen_entity_id,
+    prompt: surface.prompt,
+    minimumSelections: surface.min_select,
+    maximumSelections: surface.max_select,
+    selectedCount: surface.selected_count,
+    selectedCardEntityIds: [...surface.selected_card_entity_ids],
+    cancelable: surface.cancelable,
+    upgradeToggleVisible: surface.upgrade_toggle_visible,
+    showingUpgradePreviews: surface.showing_upgrade_previews,
+    previewKind: surface.preview_kind,
+    replacementKnown: false,
+    cards: surface.cards.map(projectBridgeV2Card),
+    legalActions: projectActions(actions),
+    completeness: projectCompleteness(completeness)
+  };
+}
+
 function projectEventOptionSurface(
   surface: BridgeV2EventOptionSurface,
   stateId: string,
@@ -2296,7 +2579,8 @@ function projectShopInventorySurface(
           keywords: offer.relic.keywords.map((keyword) => ({
             name: keyword.name,
             ...(keyword.description ? { description: keyword.description } : {})
-          }))
+          })),
+          cardPreviews: offer.relic.card_previews.map(projectBridgeV2Card)
         }
       } : {})
     })),
@@ -2356,7 +2640,8 @@ function projectTreasureRoomSurface(
       rarity: relic.rarity,
       keywords: relic.keywords.flatMap((keyword) => keyword.name
         ? [{ name: keyword.name, ...(keyword.description ? { description: keyword.description } : {}) }]
-        : [])
+        : []),
+      cardPreviews: relic.card_previews.map(projectBridgeV2Card)
     })),
     canSkip: surface.can_skip,
     canProceed: surface.can_proceed,
@@ -2432,6 +2717,65 @@ function projectCharacterSelectSurface(
   };
 }
 
+function projectMainMenuSurface(
+  surface: BridgeV2MainMenuSurface,
+  stateId: string,
+  actions: BridgeV2LegalAction[],
+  completeness: RawCompleteness
+): MainMenuSurface {
+  return {
+    kind: "main_menu",
+    stage: surface.stage,
+    bridgeStateId: stateId,
+    screenEntityId: surface.screen_entity_id,
+    choices: projectMenuChoices(surface.options),
+    ...(surface.continue_run ? {
+      continueRun: {
+        characterId: surface.continue_run.character_id,
+        ...(surface.continue_run.character_name ? { characterName: surface.continue_run.character_name } : {}),
+        actId: surface.continue_run.act_id,
+        ...(surface.continue_run.act_name ? { actName: surface.continue_run.act_name } : {}),
+        floor: surface.continue_run.floor,
+        hp: surface.continue_run.hp,
+        maxHp: surface.continue_run.max_hp,
+        gold: surface.continue_run.gold,
+        ascension: surface.continue_run.ascension
+      }
+    } : {}),
+    legalActions: projectActions(actions),
+    completeness: projectCompleteness(completeness)
+  };
+}
+
+function projectSingleplayerMenuSurface(
+  surface: BridgeV2SingleplayerMenuSurface,
+  stateId: string,
+  actions: BridgeV2LegalAction[],
+  completeness: RawCompleteness
+): SingleplayerMenuSurface {
+  return {
+    kind: "singleplayer_menu",
+    stage: surface.stage,
+    bridgeStateId: stateId,
+    screenEntityId: surface.screen_entity_id,
+    choices: projectMenuChoices(surface.options),
+    legalActions: projectActions(actions),
+    completeness: projectCompleteness(completeness)
+  };
+}
+
+function projectMenuChoices(choices: BridgeV2MainMenuSurface["options"]): MainMenuSurface["choices"] {
+  return choices.map((choice) => ({
+    entityId: choice.entity_id,
+    semanticId: choice.semantic_id,
+    label: choice.label,
+    ...(choice.description ? { description: choice.description } : {}),
+    enabled: choice.enabled,
+    bridgeSupport: choice.bridge_support,
+    ...(choice.blocked_reason ? { blockedReason: choice.blocked_reason } : {})
+  }));
+}
+
 function projectCombatTurnSurface(
   roomEntityId: string,
   canEndTurn: boolean,
@@ -2460,7 +2804,13 @@ function projectCombatPileCardSelectionSurface(
     bridgeStateId: stateId,
     screenEntityId: surface.screen_entity_id,
     prompt: surface.prompt,
+    purpose: surface.purpose,
+    sourceKind: surface.source_kind,
+    sourceCardEntityId: surface.source_card_entity_id,
+    sourceCardDefinitionId: surface.source_card_definition_id,
     pileType: surface.pile_type,
+    destinationPile: surface.destination_pile,
+    destinationPosition: surface.destination_position,
     minimumSelections: surface.min_select,
     maximumSelections: surface.max_select,
     selectedCount: surface.selected_count,
@@ -2526,8 +2876,8 @@ function projectGeneratedCardChoiceSurface(
   actions: BridgeV2LegalAction[],
   completeness: RawCompleteness
 ): GeneratedCardChoiceSurface {
-  return {
-    kind: "generated_card_choice",
+  const base = {
+    kind: "generated_card_choice" as const,
     bridgeStateId: stateId,
     screenEntityId: surface.screen_entity_id,
     ...(surface.prompt ? { prompt: surface.prompt } : {}),
@@ -2537,6 +2887,22 @@ function projectGeneratedCardChoiceSurface(
     legalActions: projectActions(actions),
     completeness: projectCompleteness(completeness)
   };
+  return surface.source_kind === "lead_paperweight"
+    ? {
+        ...base,
+        purpose: surface.purpose,
+        sourceKind: surface.source_kind,
+        destination: surface.destination,
+        selectedCardCostPolicy: surface.selected_card_cost_policy
+      }
+    : {
+        ...base,
+        purpose: surface.purpose,
+        sourceKind: surface.source_kind,
+        destination: surface.destination,
+        selectedCardCostPolicy: surface.selected_card_cost_policy,
+        overflowDestination: surface.overflow_destination
+      };
 }
 
 function projectCardBundleSelectionSurface(

@@ -6,6 +6,7 @@ import type {
 import {
   decodeBridgeV2Capabilities,
   decodeBridgeV2Inspection,
+  sameBridgeModsetIdentity,
   type BridgeV2Capabilities,
   type BridgeV2Inspection
 } from "../integrations/sts2mcp/bridgeV2Protocol.js";
@@ -166,6 +167,7 @@ function validateIdentity(
   if (inspection.game.version !== capabilities.game.version
       || inspection.game.commit !== capabilities.game.commit
       || inspection.game.main_assembly_hash !== capabilities.game.main_assembly_hash
+      || !sameBridgeModsetIdentity(inspection.game, capabilities.game)
       || !inspectionKindAllowed) {
     diagnostics.invalid(
       `bridge_v2_inspections.${inspection.kind}.game`,

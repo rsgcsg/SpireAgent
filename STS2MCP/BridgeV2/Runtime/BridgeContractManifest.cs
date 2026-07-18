@@ -89,6 +89,26 @@ internal static class BridgeContractManifest
             "purpose_specific_deck_selection",
             new[] { "visible_deck_cards", "upgrade_preview", "selection", "controls" }),
         Entry(
+            "deck_transform_selection",
+            new[]
+            {
+                Operation("toggle_deck_transform_card", BridgeOperationEvidenceStatus.OrganicCanaryExercised,
+                    "PREVIEW_38_DECK_TRANSFORM_CLOSEOUT_2026-07-18.md#organic-canary"),
+                Operation("preview_deck_transform", BridgeOperationEvidenceStatus.SourceAudited,
+                    "PREVIEW_38_DECK_TRANSFORM_CLOSEOUT_2026-07-18.md#source-audit"),
+                Operation("confirm_deck_transform", BridgeOperationEvidenceStatus.OrganicCanaryExercised,
+                    "PREVIEW_38_DECK_TRANSFORM_CLOSEOUT_2026-07-18.md#organic-canary"),
+                Operation("cancel_deck_transform_preview", BridgeOperationEvidenceStatus.SourceAudited,
+                    "PREVIEW_38_DECK_TRANSFORM_CLOSEOUT_2026-07-18.md#source-audit"),
+                Operation("cancel_deck_transform_selection", BridgeOperationEvidenceStatus.SourceAudited,
+                    "PREVIEW_38_DECK_TRANSFORM_CLOSEOUT_2026-07-18.md#source-audit"),
+                Operation("toggle_deck_transform_upgrade_view", BridgeOperationEvidenceStatus.OrganicCanaryExercised,
+                    "PREVIEW_38_DECK_TRANSFORM_CLOSEOUT_2026-07-18.md#organic-canary")
+            },
+            "sts2-v0.109.0:WhisperingHollow.Hug+CardSelectCmd.FromDeckForTransformation+NDeckTransformSelectScreen+exact-instance-post-state-witness",
+            "purpose_specific_random_deck_transform",
+            new[] { "visible_deck_cards", "selection", "random_uncommitted_preview", "upgrade_view", "controls" }),
+        Entry(
             "event_dialogue",
             new[] { "advance_event_dialogue" },
             "sts2-v0.109.0:NAncientEventLayout+revealed-prefix-only+exact-dialogue-index-witness",
@@ -114,10 +134,10 @@ internal static class BridgeContractManifest
             new[] { "hand", "energy", "combatants", "intents", "potions", "end_turn_control" }),
         Entry(
             "combat_pile_card_selection",
-            new[] { "toggle_combat_pile_card", "confirm_combat_pile_selection", "cancel_combat_pile_selection" },
-            "sts2-v0.108.0:NCombatPileCardSelectScreen+CardSelectorPrefs+CardPile+NCardGrid",
-            "purpose_specific_combat_pile_selection",
-            new[] { "visible_pile_cards", "selection", "bounds", "controls" }),
+            new[] { "select_discard_card_for_draw_top" },
+            "sts2-v0.109.0:Headbutt.OnPlay+CardSelectCmd.FromCombatPile(Discard,1)+NCombatPileCardSelectScreen+CardPileCmd.Add(Draw,Top)+exact-card-post-state-witness",
+            "source_discriminated_combat_pile_selection",
+            new[] { "source_card", "purpose", "visible_pile_cards", "selection", "source_and_destination_piles", "destination_position", "controls" }),
         Entry(
             "combat_hand_card_selection",
             new[] { "select_combat_hand_card", "deselect_combat_hand_card", "confirm_combat_hand_selection", "close_combat_hand_peek" },
@@ -132,10 +152,10 @@ internal static class BridgeContractManifest
             new[] { "visible_card_choices", "selection", "selection_bounds" }),
         Entry(
             "generated_card_choice",
-            new[] { "select_generated_card", "skip_generated_card_choice", "close_generated_card_choice_peek" },
-            "sts2-v0.108.0:NChooseACardSelectionScreen+NGridCardHolder+NChoiceSelectionSkipButton+NPeekButton",
-            "generated_card_choice",
-            new[] { "visible_card_choices", "skip_control", "peek_state" }),
+            new[] { "select_generated_run_card", "skip_generated_run_card_choice", "select_generated_combat_card", "skip_generated_combat_card_choice" },
+            "sts2-v0.109.0:source-bound LeadPaperweight/ColorlessPotion+NChooseACardSelectionScreen+purpose-specific exact post-state witnesses",
+            "source_discriminated_generated_card_choice",
+            new[] { "visible_card_choices", "choice_purpose", "source_kind", "destination", "selected_card_cost_policy", "overflow_destination", "skip_control" }),
         Entry(
             "card_bundle_selection",
             new[] { "preview_card_bundle", "confirm_card_bundle", "cancel_card_bundle_preview" },
@@ -207,7 +227,25 @@ internal static class BridgeContractManifest
             },
             "sts2-v0.109.0:NCharacterSelectScreen+singleplayer-StartRunLobby+visible-controls+active-run-witness",
             "standard_run_character_select",
-            new[] { "visible_characters", "selected_character", "ascension", "embark_and_back_controls" })
+            new[] { "visible_characters", "selected_character", "ascension", "embark_and_back_controls" }),
+        Entry(
+            "main_menu",
+            new[]
+            {
+                Operation("continue_run", BridgeOperationEvidenceStatus.OrganicCanaryExercised,
+                    "PREVIEW_37_MENU_NAVIGATION_CLOSEOUT_2026-07-18.md#continue-organic-canary"),
+                Operation("open_singleplayer", BridgeOperationEvidenceStatus.SourceAudited,
+                    "PREVIEW_37_MENU_NAVIGATION_CLOSEOUT_2026-07-18.md#source-audit")
+            },
+            "sts2-v0.109.0:NMainMenu+exact-root-controls+modal-exclusion+run-or-submenu-witness",
+            "standard_run_root_navigation",
+            new[] { "visible_root_choices", "enabled_state", "continue_run_summary", "unsupported_choice_boundaries" }),
+        Entry(
+            "singleplayer_menu",
+            new[] { "open_standard_run_setup", "back_from_singleplayer_menu" },
+            "sts2-v0.109.0:NSingleplayerSubmenu+exact-controls+submenu-stack-witness",
+            "standard_run_singleplayer_navigation",
+            new[] { "visible_run_mode_choices", "enabled_state", "descriptions", "unsupported_mode_boundaries" })
     };
 
     public static readonly IReadOnlyList<BridgeInspectionManifestEntry> InspectionEntries = new[]
@@ -227,7 +265,7 @@ internal static class BridgeContractManifest
         new BridgeInspectionManifestEntry(
             BridgeInspectionBuilder.CombatPilesKind,
             BridgeV2Contract.ProtocolVersion,
-            "sts2-v0.108.0:NDrawPileButton+NDiscardPileButton+NExhaustPileButton+NCardPileScreen",
+            "sts2-v0.109.0:NDrawPileButton+NDiscardPileButton+NExhaustPileButton+NCardPileScreen+PlayerCombatState",
             "strict_bridge_v2_inspection_decoder",
             "normal_inspection",
             "unordered_multiset",

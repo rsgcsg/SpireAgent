@@ -18,7 +18,10 @@ that an empty scope has no authority.
 
 ## Phase 1: Typed Contract And Evidence Inventory
 
-Status: started in preview.35 infrastructure, no permission change.
+Status: started in preview.35 infrastructure; preview.36 adds loaded Modset
+identity and preview.37 adds operation-evidence distinction for menu canaries,
+while preview.38 applies the same distinction to a source-bound random
+transform, without qualification promotion.
 
 Create a machine-readable inventory for each semantic contract containing:
 
@@ -36,14 +39,17 @@ Use it to detect duplicate kinds, missing Re cases, stale evidence links, and
 permission/documentation drift. The inventory must validate declarations; it
 must not be able to authorize an action by existing in the repository.
 
-Implemented foundation: twenty typed Surface entries now own capability
+Implemented foundation: twenty-three typed Surface entries now own capability
 metadata, match the lazy Provider registry one-to-one, and derive support only
 through `BridgeSurfacePermission`. The two implemented Inspection contracts
 are inventoried separately and remain read-only/non-authorizing. Visible fact
 groups and test/doc references are present. This is not yet a complete external
 manifest: loaded-environment identity, per-origin qualification, field
 criticality, and full visibility completeness still require explicit evidence
-records.
+records. Preview.36 exposes an exact, deterministic loaded Modset identity and
+fails action/Inspection scopes closed unless only the negotiated Bridge module
+is loaded. This supplies the environment portion of the future manifest; it
+does not qualify any additional Mod or operation.
 
 As the first permission-governance pilot, represent the currently documented
 `treasure_room` operation split: choose/proceed have Organic canary evidence

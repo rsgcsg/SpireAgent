@@ -1,10 +1,47 @@
 # RE-P1 Handoff
 
-Status update 2026-07-18: Bridge `2.0-preview.31` is the current source contract
-against exact identity `v0.109.0|c12f634d|-840572606`. Preview.31 makes an
-empty per-build Surface scope fail closed rather than implicitly authorizing
-every registered Provider; current v0.109 permissions are unchanged and the
-historical v0.108 identity has no current v2 Surface action authority.
+Status update 2026-07-18: Bridge `2.0-preview.46` is the current source contract
+against exact identity `v0.109.0|c12f634d|-840572606` and an
+`exact_bridge_only` loaded Modset. Preview.46 adds typed read-only card hover
+facts and stable owner-scoped preview identity. Final MVID
+`9e6124ca-0082-451a-adb3-54b692a85d33` organically exposed Cursed Pearl,
+Greed, Eternal, and Unplayable; eight polls retained one state ID, strict-v2
+run-deck Inspection decoded cleanly, and Neow Proceed settled. Preview.45 adds
+only exact Headbutt pile selection as a canary. Its first Organic action ended
+unknown before an intermediate-state observer fix; the corrected completion
+has not naturally repeated, so it is not qualified. Preview.43 first made source-binding failure
+uniformly fail closed; a Colorless Potion child stopped as
+`unsupported + none_fail_closed` rather than inheriting Lead Paperweight
+semantics or crashing the client. Preview.44 then adds exact Colorless Potion
+as a second discriminated `generated_card_choice` source. Strict Re run
+`run-20260718172631-zcwq84`, decision
+`decision-000001-mrqn2a3i-syekxt`, selected Omnislice; Bridge confirmed only
+after the source task closed and the exact entity entered combat hand/discard
+with the free-this-turn modifier. The successor hand contained that same entity
+at cost zero. Lead Paperweight remains separately evidenced by run
+`run-20260718164741-suylea`. Both Skip branches, Organic full-hand overflow,
+Hefty Tablet, Knowledge Demon, other generators, unknown Mods, and every
+unlisted source remain unqualified. Preview.41 adds only a current-build
+read-only `combat_piles` canary. Two current-MVID snapshots matched context
+draw/discard/exhaust counts at `12/0/0` and `7/4/1`; strict Re projection was
+clean and true draw order remained hidden. Every non-Headbutt
+`combat_pile_card_selection` origin stays disabled because callers need
+purpose-specific Source Binding and Outcome Witnesses. Preview.40 supersedes preview.39's one-sided
+wire shape with source-bounded `combat_transition(setup|resolution) +
+no_action`. Both phases publish zero actions and cannot fall back to v1.
+Fresh discovery run `run-20260718162006-ub1nvb` then exposed a Re-only boundary
+bug: `agent:run` stopped before legal game-over actions. Re now finishes the
+current run's game-over intro/summary/return lifecycle and stops only at the
+resulting top-level menu. Run `run-20260718162449-yvvf7o` confirmed both v2
+actions; a menu-only check emitted `stopReason=run_boundary` with exit code 0.
+Organic current-MVID evidence captured two setup and two resolution states
+around Bridge-owned combat/reward/map journeys. Strict-v2 run
+`run-20260718155144-xkdstj` then completed 40/40 Bridge-advertised actions with
+no v1 action or command/settlement failure. Preview.38's source-bound Whispering Hollow
+random-transform canary remains unchanged; cycling preview cards remain
+uncommitted presentation and every other transform origin stays fail closed.
+Preview.31's empty-scope rule and all later exact-environment guards remain
+intact.
 
 Preview.30 was installed against exact
 identity `v0.109.0|c12f634d|-840572606`. Preview.29 added narrow menu-owned
@@ -13,8 +50,7 @@ replaced an invalid flat-keyword assumption with typed event-option text/card
 tooltips, removed `WasChosen` as false completion evidence, and completed a
 fresh Neow dialogue -> option -> exact Talisman/deck post-state -> map journey.
 Character select, dialogue, and event option remain canaries, not broad
-qualification. Game-over still needs a fresh organic intro -> summary ->
-return journey. Current Canonical truth remains
+qualification. Current Canonical truth remains
 `../STS2MCP/docs/bridge-v2/CURRENT_STATUS.md`; the chronology below is
 historical handoff context.
 
@@ -133,7 +169,10 @@ as handoff history.
 - Action-capable CLI commands use a local exclusive lock; settlement requires two matching stable observations
 - Normalized-state v2 separates semantic context from the active interaction surface. `hand_select` retains combat facts while exposing a card-selection surface; known contexts with unknown overlays fail closed without losing audit context.
 - Bounded real-game windows covered event, combat, rewards, card reward, map, rest, shop, and a boss fight. Clean windows recorded only `valid_json` responses with `finishReason=stop`, settled executions, and no stale execution.
-- `agent:run` now stops at `game_over` or a top-level `menu` before the model can choose a restart; this was added after a real boss defeat showed that an unconstrained loop could otherwise cross the one-game boundary.
+- `agent:run` now finishes the current run's game-over UI but stops at the
+  resulting top-level `menu` before the model can continue or start another
+  run. This preserves the one-game boundary without making the game-over v2
+  contract unreachable.
 - Negotiated STS2MCP protocol modes: default `auto`, compatibility-only `v1`, and strict `v2`.
 - Strict Bridge v2 capability/context/surface/command decoders, raw evidence preservation, exact build and observation-policy checks, and domain projections for deck enchant, ordinary event options, and immediate combat turns.
 - Runtime identity now reports `shared_state + context.kind + surface.kind + actionAuthority`; Bridge contexts replace legacy action-relevant combat facts.
@@ -249,13 +288,15 @@ No memory, learning, scoring, strategic scaffold, shadow mode, live additive mod
 - Hidden draw order remains excluded by policy. Implemented surface variants
   beyond those organically observed still require their own evidence.
 - Treasure choose/Proceed are Bridge v2 canary actions; open/skip remain
-  unqualified. Root menu, single-player submenu, linked rewards, transform,
-  and unlisted maintenance variants still depend on explicit v1 ownership or
+  unqualified. Preview.38 owns only the exact Whispering Hollow random
+  transform; unsupported root/submenu choices, linked rewards, other transform
+  origins, and unlisted maintenance variants still depend on explicit v1 ownership or
   fail closed. Game-over now has a preview.28 canary contract but still needs a
   complete fresh organic lifecycle.
-- Root menu and single-player submenu remain a large v1 authority boundary.
-  Ordinary character select/run start now has a bounded canary; first-run
-  tutorial and non-standard modes still fail closed.
+- Preview.37 adds bounded root and single-player submenu canaries. Final-MVID
+  Continue is organically exercised; Single Player/Standard/Back remain
+  source/fixture-only because the saved-run profile hid that branch.
+  First-run tutorial and non-standard modes still fail closed.
 - Composite state-plus-inspection drift is fail-closed but noisy during fast
   transitions. Future work may add bounded observable read retry or a coherent
   server observation token; it must never accept mixed adjacent states.
@@ -263,7 +304,28 @@ No memory, learning, scoring, strategic scaffold, shadow mode, live additive mod
   normalized witness and recorded `executed_unsettled`. Treat this as legacy
   menu lifecycle debt, not Bridge v2 failure.
 
-## Validation
+## Preview.40 Validation
+
+- Bridge `84/84`, Re `139/139`, strict typecheck, both production builds, and
+  zero-warning Bridge Release passed.
+- Release and installed DLL SHA are
+  `10d06ac79b63ce2bbbbcdd4c3e391f9c2a6a9fe59a1bf3d0b696d899dfd3b524`.
+  Loaded MVID is `ea77dcfb-2ad7-47a9-9e39-d7b3fc1fe015`; runtime is
+  `6c95a03082874ac1aa8f590d95c20abc`; Modset fingerprint is
+  `a6b92b0dc1c9b156f6ac7896c7c7deae7a73b8a4c87bf4da6be5695818cd9938`.
+- Organic semantic-cycle evidence `run-20260718154042-ftcmwf` stopped a
+  repeated shop open/close cycle at occurrence two even though transport IDs
+  changed. It did not alter Bridge legality, provider decisions, or game state.
+- Re settlement now separates a Bridge-confirmed command from readiness of the
+  next stable decision checkpoint. A changed transitional state at timeout is
+  recorded as `executed_checkpoint_pending` and the next tick re-reads; legacy
+  acknowledgement, unchanged state, read errors, and unknown command outcomes
+  remain terminal. No action is retried.
+- Organic regression run `run-20260718160447-f8yi48` completed 8/8 strict-v2
+  combat actions, including end-turn, as ordinary settled decisions. A natural
+  long-turn checkpoint-pending sample remains evidence debt.
+
+## Historical Validation
 
 On 2026-07-18, preview.30 passed 126/126 Re tests, 59/59 Bridge tests, strict
 typecheck, Re production build, and the exact-source Bridge Release build with
@@ -290,12 +352,16 @@ npm run agent:replay
 
 Start a fresh game manually, then run bounded windows and inspect each run with `npm run agent:replay`. Confirm that each record contains pre/post raw snapshots, the prompt, DeepSeek response, selected allowed action, MCP result, and settled post-state. Fix a repeatable protocol mismatch with a reduced raw fixture and contract test before running longer loops.
 
-Preview.30 is closed as a scoped release. The next coherent migration target is
-the purpose-specific root menu -> single-player submenu path, followed by a
-fresh natural game-over lifecycle. Do not infer a universal menu protocol.
+Preview.40 is closed as a bounded combat lifecycle correction, not a Surface
+or permission expansion. The semantic two-state no-progress cycle is guarded,
+and Bridge command completion is now distinct from next-checkpoint readiness.
+Do not infer a universal `no overlay => no_action` rule. The still-unexercised Single Player/Standard/Back
+branch and a fresh natural game-over lifecycle remain high-value evidence
+targets, but neither justifies forcing a synthetic path. Do not infer a
+universal menu or card-selection protocol.
 Event option/dialogue/character select need diversity before promotion beyond
 canary.
 
 Canonical Bridge status and the latest evidence are in
 `../STS2MCP/docs/bridge-v2/CURRENT_STATUS.md` and
-`../STS2MCP/docs/bridge-v2/PREVIEW_29_30_MENU_DIALOGUE_AND_EVENT_OPTION_QUALIFICATION_2026-07-18.md`.
+`../STS2MCP/docs/bridge-v2/PREVIEW_40_COMBAT_TRANSITION_AND_RUNTIME_PROGRESS_GUARD_CLOSEOUT_2026-07-18.md`.

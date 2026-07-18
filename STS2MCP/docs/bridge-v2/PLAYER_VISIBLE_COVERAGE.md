@@ -1,7 +1,10 @@
 # Player-Visible Coverage Matrix
 
 Current execution evidence is scoped to exact game identity
-`v0.109.0|c12f634d|-840572606`. Compilation, fixtures, source review, old-build
+`v0.109.0|c12f634d|-840572606` and exact loaded Modset fingerprint
+`01fd94643fe75b68a32a011e454263090560ce38223ec7b013a32761d72f1a1c`.
+That Modset contains only the exact loaded `STS2_MCP` module. Compilation,
+fixtures, source review, old-build
 evidence, canary permission, and organic qualification are distinct states.
 
 An alternate-device runtime observed on 2026-07-18 was
@@ -40,42 +43,49 @@ identity. Neither environment inherits permission from the other.
 | `shop_inventory` | canary | card/relic/potion purchases and removal launch with category-specific witnesses | final artifact still needs repeated organic category coverage |
 | `treasure_room` | canary | exact relic choose and Proceed; stale state correctly blocked | open/skip variants remain unqualified |
 | `card_bundle_selection` | canary | preview and exact three-card Scroll Boxes deck commit on preview.27 | other origins absent; preview.28 behavior unchanged but needs routine regression |
-| `game_over` | canary, not organically qualified | preview.27 natural intro exposed a real contract bug; preview.28 fix is source/test/build verified | fresh intro -> summary -> return journey required |
-| `character_select` | canary | select character, Ascension down/up, and Embark into a real Silent A10 run | root menus and first-run tutorial confirmation remain unsupported |
+| `game_over` | canary; fresh lifecycle exercised | preview.41 run `run-20260718162449-yvvf7o` completed intro -> summary -> return with both actions confirmed, then Re stopped at top-level menu | win/timeline destination and additional result variants remain evidence debt |
+| `character_select` | canary | select character, Ascension down/up, and Embark into a real Silent A10 run | first-run tutorial confirmation remains unsupported; root/menu contracts are tracked separately |
+| `main_menu` | canary; Continue exercised on final MVID | exact visible root choices, saved-run summary, unsupported-choice boundary, and confirmed Continue lifecycle | Single Player branch hidden by saved-run state; profile/patch hover detail incomplete |
+| `singleplayer_menu` | canary, source/fixture only | exact Standard/Daily/Custom/Back bindings and submenu-stack witnesses | no current-MVID Organic action lifecycle yet |
+| `deck_transform_selection` | canary; selection/confirm/upgrade-view exercised | exact Whispering Hollow source, selected instances, upgrade presentation, random-uncommitted preview, exact-instance/deck-count witness | other callers, explicit preview button, cancel paths, multi-select, Mods, and future builds remain unqualified |
+| `generated_card_choice` | source-scoped canary; Lead Paperweight and Colorless Potion selections exercised | exact `RelicCmd.Obtain` and `PotionModel.OnUseWrapper` source bindings; explicit run-deck vs combat-hand destinations; unchanged vs free-this-turn cost policies; exact-reference/deck or hand-discard witnesses | both Skip variants and Organic full-hand overflow remain pending; Hefty Tablet, Knowledge Demon, other generators, Mods, and unknown sources fail closed |
+| exact Headbutt `combat_pile_card_selection` | source-scoped canary; source/action observed, corrected completion not re-exercised | exact Headbutt source, visible discard candidates, exact-card discard-to-draw-top witness | first Organic action ended unknown before the intermediate-state observer fix; all other origins fail closed |
 | `event_dialogue` | canary | repeated v0.109 revealed-prefix advances with exact index witness | non-Neow/other ancient dialogue diversity remains evidence debt |
 | `event_option` | canary | typed text/card hover semantics, Neow Talisman effect, replacement options, and Proceed to map | ordinary non-Neow and lethal-option diversity remain evidence debt |
 | `run_deck` Inspection | qualified read-only | exact removal, upgrade, enchant, bundle post-states | no arbitrary query or action authority |
-| top-level `shared_state` | qualified read-only composition | active-run HUD composition across map/combat/reward | bounded strategic HUD, not all visible UI information |
+| `combat_piles` Inspection | read-only canary | current-MVID state-bound snapshots matched combat context at `12/0/0` and, after a confirmed end turn, `7/4/1`; Re decoded exact card multisets without diagnostics | more combat/pile diversity before qualification; draw order remains intentionally hidden |
+| top-level `shared_state` | qualified read-only composition | active-run HUD composition across map/combat/reward; preview.46 Cursed Pearl organically exposed Greed `card_previews` plus Eternal/Unplayable hover text with stable state identity | bounded strategic HUD, not all visible UI information; unknown hover-tip kinds still fail closed |
+| `combat_transition + no_action` lifecycle observation | non-authorizing, not a permission row | Current-MVID Organic setup and resolution observations around repeated `combat_turn -> reward_claim -> map -> combat_turn` journeys on preview.40 | exact `CombatRoom` setup/resolution only; early-load and other no-overlay gaps remain unsupported |
 
 ## Implemented But Disabled On v0.109
 
 | Contract | Historical evidence | Why disabled now |
 |---|---|---|
 | `deck_enchant_selection` | v0.108 Glam lifecycle | current-build source/action/post-state requalification missing |
-| `combat_pile_card_selection` | v0.108 discard selection | v0.109 exact origins/lifecycle not requalified |
-| `generated_card_choice` | v0.108 temporary choice | v0.109 source and variants not requalified |
-| `combat_piles` Inspection | v0.108 read-only pile contents | current permission is only `run_deck` |
+| non-Headbutt `combat_pile_card_selection` origins | v0.108 discard selection | only exact Headbutt is a v0.109 canary; other purposes remain source-unresolved |
 
 ## Unsupported Or Legacy-Owned
 
 | Interaction / facts | Current status |
 |---|---|
-| main menu / single-player submenu | v1 local reconstruction or fail closed; no v2 semantic completion |
+| main-menu unsupported choices / non-standard single-player modes | root and standard-entry contracts are v2 canaries; Abandon, Daily, Custom, and other unsupported choices remain visible facts without action authority |
 | first-run character tutorial and non-standard run setup | explicit unsupported boundary; ordinary single-player character select is a canary |
 | generic or purpose-unknown card selectors | v1 or fail closed; source purpose must be proven before v2 authority |
-| transform, duplicate, and unlisted maintenance | no qualified v2 purpose-specific contract |
+| other transform callers, duplicate, and unlisted maintenance | Whispering Hollow random transform is a bounded v2 canary; every other origin remains fail closed |
 | linked/special reward sets | fail closed |
 | treasure open/skip variants | implemented canary operations without organic qualification |
-| rich tooltip/keyword/hover variants | partial; unsupported forms fail closed rather than disappear silently |
+| rich tooltip/keyword/hover variants | preview.46 supports text keywords and typed card previews for bounded entity owners; unknown forms fail closed rather than disappear silently |
 | compendium, settings, profile, timeline, daily/custom and multiplayer flows | unsupported by v2; multiplayer intentionally out of scope |
 
 ## Coverage Interpretation
 
-- Twenty semantic Surface contracts exist in source; seventeen are permitted
-  on the exact source-qualified v0.109 target (five qualified and twelve
-  canaries), while three remain target-build disabled. The historical
-  `1833084275` alternate-device build permits three action canaries and no
-  qualified contract or Inspection.
+- Twenty-three semantic Surface contracts exist in source; twenty-two are
+  permitted on the exact source-qualified v0.109 target (five qualified and
+  seventeen canaries), while one remains target-build disabled. Generated choice
+  authority is narrower than the Surface kind: only exact Lead Paperweight and
+  exact Colorless Potion sources may publish their discriminated operations.
+  The historical `1833084275` alternate-device build permits three action
+  canaries and no qualified contract or Inspection.
 - Canary permission is currently Surface-kind scoped. It permits the legal
   operations published by that Provider for bounded canary execution, but it
   does not qualify every operation or source origin. Operation and origin
@@ -89,6 +99,22 @@ identity. Neither environment inherits permission from the other.
 - The typed contract inventory records visible fact groups and operation-level
   evidence, but it is not a claim of visibility completeness and cannot grant
   permission.
+- Preview.36 Modset identity closes an evidence-scope gap but adds no
+  player-visible Surface or Inspection coverage. Modded environments do not
+  inherit this matrix merely because they reuse native STS2 UI.
+- Preview.38 adds only the exact Whispering Hollow random-transform source.
+  Its visible cycling preview is presentation, not future-outcome evidence;
+  no other transform source or Mod inherits authority.
+- Preview.43 makes provider source-binding failure explicit
+  `unsupported + none_fail_closed`; this is safety behavior, not coverage.
+- Preview.44 adds one Colorless Potion branch without widening the shared
+  Surface to other combat generators. Its visible cards, destination,
+  temporary cost rule, overflow rule, and exact outcome are source-bound.
+- Preview.45 permits only exact Headbutt pile selection and retains its first
+  unknown outcome as negative evidence; corrected completion still needs a
+  natural repeat before qualification.
+- Preview.46 adds typed, read-only card hover facts and stable preview identity.
+  It adds no action permission and does not create a universal tooltip tree.
 
 ## Visibility Laws
 

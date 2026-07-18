@@ -214,13 +214,24 @@ internal sealed class TreasureRoomSurfaceProvider : IBridgeSurfaceProvider
     private static VisibleTreasureRelic BuildRelic(
         RelicModel relic,
         BridgeEntityRegistry entities) =>
-        new(
-            entities.GetId(relic, "treasure_relic"),
+        BuildVisibleRelic(relic, entities);
+
+    private static VisibleTreasureRelic BuildVisibleRelic(
+        RelicModel relic,
+        BridgeEntityRegistry entities)
+    {
+        string entityId = entities.GetId(relic, "treasure_relic");
+        BridgeVisibleEntityFacts.HoverFacts hover =
+            BridgeVisibleEntityFacts.BuildHoverFacts(relic.HoverTipsExcludingRelic, entityId);
+        return new VisibleTreasureRelic(
+            entityId,
             relic.Id.Entry,
             McpMod.SafeGetText(() => relic.Title),
             McpMod.SafeGetText(() => relic.DynamicDescription),
             relic.Rarity.ToString(),
-            BridgeVisibleEntityFacts.BuildKeywords(relic.HoverTipsExcludingRelic));
+            hover.Keywords,
+            hover.CardPreviews);
+    }
 
     private static BridgeActionStartResult StartOpen(
         TreasureRoom expectedRoom,

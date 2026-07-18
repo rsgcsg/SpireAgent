@@ -52,7 +52,7 @@ describe("normalizeCurrentState", () => {
     raw.card_select.can_confirm = true;
     const envelope = normalizeCurrentState(raw, TEST_ADAPTER);
 
-    expect(envelope.currentState.normalizedSchemaVersion).toBe(20);
+    expect(envelope.currentState.normalizedSchemaVersion).toBe(21);
     expect(envelope.currentState.surface).toMatchObject({
       kind: "card_selection",
       previewShowing: true,
@@ -103,7 +103,7 @@ describe("normalizeCurrentState", () => {
     const raw = await fixture("post-combat-settling") as Record<string, unknown>;
     raw.state_type = stateType;
     const envelope = normalizeCurrentState(raw, TEST_ADAPTER);
-    expect(envelope.currentState.context.kind).toBe("post_combat");
+    expect(envelope.currentState.context).toEqual({ kind: "combat_transition", phase: "resolution" });
     expect(envelope.currentState.surface.kind).toBe("no_action");
     expect(envelope.currentState.stability).toBe("transitioning");
     expect(envelope.diagnostics.status).toBe("ok");

@@ -38,6 +38,7 @@ export class SettlementWatcher {
         : this.config.defaultTimeoutMs;
     let polls = 0;
     let last: StateEnvelope | undefined;
+    let lastChanged: StateEnvelope | undefined;
     let stableCandidate: StateEnvelope | undefined;
     let transientObservationErrors = 0;
     let lastTransientObservationError: SettlementResult["lastTransientObservationError"];
@@ -63,6 +64,7 @@ export class SettlementWatcher {
         };
       }
       if (last.stateHash === before.stateHash) continue;
+      lastChanged = last;
       if (["loading", "settling", "transitioning"].includes(last.currentState.stability)) {
         stableCandidate = undefined;
         continue;
@@ -83,7 +85,7 @@ export class SettlementWatcher {
       status: "timeout",
       polls,
       elapsedMs: Date.now() - started,
-      ...(last ? { after: last } : {}),
+      ...(lastChanged ? { after: lastChanged } : {}),
       error: "State did not reach a visibly changed, non-transitional checkpoint before timeout",
       ...transientTelemetry(transientObservationErrors, lastTransientObservationError)
     };

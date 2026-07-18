@@ -7,7 +7,7 @@ namespace STS2_MCP.BridgeV2.Protocol;
 
 public static class BridgeV2Contract
 {
-    public const string ProtocolVersion = "2.0-preview.35";
+    public const string ProtocolVersion = "2.0-preview.46";
     public const string ObservationPolicyId = "player_visible_ui_v1";
 }
 
@@ -39,7 +39,30 @@ public sealed record GameBuildIdentity(
     string? Commit,
     string? Branch,
     int? MainAssemblyHash,
-    CompatibilityAssessment Compatibility);
+    CompatibilityAssessment Compatibility,
+    ModsetIdentity? Modset = null);
+
+public sealed record LoadedModAssemblyIdentity(
+    string Name,
+    string? Version,
+    string ModuleVersionId);
+
+public sealed record LoadedModIdentity(
+    string Id,
+    string? Version,
+    string Source,
+    string LoadState,
+    bool AffectsGameplay,
+    string? WorkshopId,
+    IReadOnlyList<LoadedModAssemblyIdentity> Assemblies);
+
+public sealed record ModsetIdentity(
+    string Status,
+    string Fingerprint,
+    string FingerprintScope,
+    bool ExactPermissionEligible,
+    IReadOnlyList<LoadedModIdentity> Mods,
+    string Detail);
 
 public sealed record ObservationPolicyInfo(
     string Id,
@@ -266,7 +289,8 @@ public sealed record VisibleRelic(
     string? Name,
     string? Description,
     decimal? Counter,
-    IReadOnlyList<VisibleKeyword> Keywords);
+    IReadOnlyList<VisibleKeyword> Keywords,
+    IReadOnlyList<VisibleCard> CardPreviews);
 
 public sealed record VisibleKeyword(
     string Name,
@@ -281,7 +305,8 @@ public sealed record VisibleRunModifier(
     string DefinitionId,
     string? Name,
     string? Description,
-    IReadOnlyList<VisibleKeyword> Keywords);
+    IReadOnlyList<VisibleKeyword> Keywords,
+    IReadOnlyList<VisibleCard> CardPreviews);
 
 public sealed record VisibleRunHud(
     int Act,
@@ -328,7 +353,8 @@ public sealed record VisibleTreasureRelic(
     string? Name,
     string? Description,
     string Rarity,
-    IReadOnlyList<VisibleKeyword> Keywords);
+    IReadOnlyList<VisibleKeyword> Keywords,
+    IReadOnlyList<VisibleCard> CardPreviews);
 
 public sealed record VisibleOrb(
     string EntityId,
@@ -423,7 +449,8 @@ public sealed record VisibleOwnedPotion(
     string? Name,
     string? Description,
     int Slot,
-    IReadOnlyList<VisibleKeyword> Keywords);
+    IReadOnlyList<VisibleKeyword> Keywords,
+    IReadOnlyList<VisibleCard> CardPreviews);
 
 public sealed record ShopBridgeContext(
     string Kind) : IBridgeContext;
@@ -447,6 +474,11 @@ public sealed record MapBridgeContext(
     VisibleMapCoordinate? CurrentPosition,
     IReadOnlyList<VisibleMapCoordinate> Visited,
     IReadOnlyList<VisibleMapNode> Nodes) : IBridgeContext;
+
+public sealed record CombatTransitionBridgeContext(
+    string Kind,
+    string Phase,
+    string Transition) : IBridgeContext;
 
 public sealed record UnknownBridgeContext(
     string Kind,
@@ -654,6 +686,39 @@ public sealed record CharacterSelectSurface(
     bool CanEmbark,
     bool CanGoBack) : IBridgeSurface;
 
+public sealed record VisibleMenuOption(
+    string EntityId,
+    string SemanticId,
+    string Label,
+    string? Description,
+    bool Enabled,
+    string BridgeSupport,
+    string? BlockedReason);
+
+public sealed record VisibleContinueRunSummary(
+    string CharacterId,
+    string? CharacterName,
+    string ActId,
+    string? ActName,
+    int Floor,
+    int Hp,
+    int MaxHp,
+    int Gold,
+    int Ascension);
+
+public sealed record MainMenuSurface(
+    string Kind,
+    string Stage,
+    string ScreenEntityId,
+    IReadOnlyList<VisibleMenuOption> Options,
+    VisibleContinueRunSummary? ContinueRun) : IBridgeSurface;
+
+public sealed record SingleplayerMenuSurface(
+    string Kind,
+    string Stage,
+    string ScreenEntityId,
+    IReadOnlyList<VisibleMenuOption> Options) : IBridgeSurface;
+
 /// <summary>
 /// Exact merchant card-removal child surface. This intentionally does not
 /// generalize other deck selectors whose effects and preview semantics differ.
@@ -687,6 +752,27 @@ public sealed record DeckUpgradeSelectionSurface(
     IReadOnlyList<VisibleCard> Cards,
     IReadOnlyList<VisibleCard> PreviewCards) : IBridgeSurface;
 
+/// <summary>
+/// Purpose-specific random deck transformation. PreviewKind describes the
+/// visible presentation, not a future outcome; ReplacementKnown must remain
+/// false for random transforms until after commit.
+/// </summary>
+public sealed record DeckTransformSelectionSurface(
+    string Kind,
+    string Stage,
+    string ScreenEntityId,
+    string Prompt,
+    int MinSelect,
+    int MaxSelect,
+    int SelectedCount,
+    IReadOnlyList<string> SelectedCardEntityIds,
+    bool Cancelable,
+    bool UpgradeToggleVisible,
+    bool ShowingUpgradePreviews,
+    string PreviewKind,
+    bool ReplacementKnown,
+    IReadOnlyList<VisibleCard> Cards) : IBridgeSurface;
+
 public sealed record CombatTurnSurface(
     string Kind,
     string RoomEntityId,
@@ -696,7 +782,13 @@ public sealed record CombatPileCardSelectionSurface(
     string Kind,
     string ScreenEntityId,
     string Prompt,
+    string Purpose,
+    string SourceKind,
+    string SourceCardEntityId,
+    string SourceCardDefinitionId,
     string PileType,
+    string DestinationPile,
+    string DestinationPosition,
     int MinSelect,
     int MaxSelect,
     int SelectedCount,
@@ -762,6 +854,11 @@ public sealed record GeneratedCardChoiceSurface(
     string Kind,
     string ScreenEntityId,
     string? Prompt,
+    string Purpose,
+    string SourceKind,
+    string Destination,
+    string SelectedCardCostPolicy,
+    string? OverflowDestination,
     bool CanSkip,
     bool IsPeeking,
     IReadOnlyList<VisibleCard> Cards) : IBridgeSurface;
@@ -805,6 +902,11 @@ public sealed record UnsupportedSurface(
     string Kind,
     string SourceType,
     string Reason) : IBridgeSurface;
+
+public sealed record NoActionSurface(
+    string Kind,
+    string Reason,
+    string? Message) : IBridgeSurface;
 
 public sealed record BridgeStateEnvelope(
     string ProtocolVersion,

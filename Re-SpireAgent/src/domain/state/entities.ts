@@ -18,6 +18,7 @@ export interface RelicSnapshot {
   description?: string;
   counter?: number | null;
   keywords: KeywordSnapshot[];
+  cardPreviews?: CardSnapshot[];
 }
 
 export interface PotionSnapshot {
@@ -30,6 +31,7 @@ export interface PotionSnapshot {
   targetType?: string;
   automatic?: boolean;
   keywords: KeywordSnapshot[];
+  cardPreviews?: CardSnapshot[];
 }
 
 export interface CardSnapshot {

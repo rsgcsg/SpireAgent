@@ -8,6 +8,7 @@ import type { LlmDecisionProvider } from "../llm/types.js";
 import { buildDecisionPrompt } from "../prompting/promptBuilder.js";
 import type { DecisionOutcome, DecisionRecord, DecisionRecorder, RecordedState } from "../recording/types.js";
 import type { JsonValue } from "../shared/json.js";
+import { ProgressCycleGuard } from "./progressCycleGuard.js";
 import type { SettlementWatcher } from "./settlementWatcher.js";
 
 export interface TickOrchestratorDependencies {
@@ -27,11 +28,12 @@ export interface TickResult {
   actionAuthority?: StateEnvelope["currentState"]["actionAuthority"];
   selectedActionId?: string;
   shouldStopRun: boolean;
-  stopReason?: "repeated_exact_transition";
+  stopReason?: "run_boundary" | "repeated_exact_transition" | "repeated_semantic_transition";
 }
 
 export class TickOrchestrator {
   private readonly executedTransitionOccurrences = new Map<string, number>();
+  private readonly progressCycleGuard = new ProgressCycleGuard();
 
   constructor(private readonly dependencies: TickOrchestratorDependencies) {}
 
@@ -76,7 +78,7 @@ export class TickOrchestrator {
         shouldStopRun: false
       });
     }
-    if (options.stopAtRunBoundary && isRunBoundary(pre.currentState.context.kind)) {
+    if (options.stopAtRunBoundary && isAutomaticRunStartBoundary(pre.currentState.context.kind)) {
       return this.recordWithoutDecision({
         decisionId,
         tick,
@@ -84,8 +86,9 @@ export class TickOrchestrator {
         pre,
         allowedActions,
         outcome: "not_executed_non_actionable_state",
-        error: `Stopped at ${pre.currentState.context.kind} run boundary; agent:run never starts or restarts a run automatically`,
-        shouldStopRun: true
+        error: `Stopped at ${pre.currentState.context.kind} run-start boundary; agent:run never starts or continues another run automatically`,
+        shouldStopRun: true,
+        stopReason: "run_boundary"
       });
     }
     if (allowedActions.length === 0) {
@@ -245,7 +248,15 @@ export class TickOrchestrator {
     }
 
     const settlement = await this.dependencies.settlement.waitForNextState(pre, validation.selectedAction.action);
-    const outcome = settlement.status === "settled" ? "executed_and_settled" : "executed_unsettled";
+    const bridgeCheckpointPending = settlement.status === "timeout"
+      && validation.selectedAction.action.kind === "bridge_v2_action"
+      && settlement.after !== undefined
+      && settlement.after.stateHash !== pre.stateHash;
+    const outcome: DecisionOutcome = settlement.status === "settled"
+      ? "executed_and_settled"
+      : bridgeCheckpointPending
+        ? "executed_checkpoint_pending"
+        : "executed_unsettled";
     const transitionKey = outcome === "executed_and_settled" && settlement.after
       ? `${pre.stateHash}|${validation.selectedAction.id}|${settlement.after.stateHash}`
       : undefined;
@@ -254,6 +265,9 @@ export class TickOrchestrator {
       : 0;
     if (transitionKey) this.executedTransitionOccurrences.set(transitionKey, transitionOccurrence);
     const repeatedExactTransition = transitionOccurrence >= 2 && settlement.after;
+    const repeatedSemanticTransition = outcome === "executed_and_settled" && settlement.after
+      ? this.progressCycleGuard.observe(pre.currentState, validation.selectedAction, settlement.after.currentState)
+      : undefined;
     const record = decisionRecordWithLlm({
       runId: this.dependencies.recorder.runId,
       decisionId,
@@ -291,6 +305,16 @@ export class TickOrchestrator {
         postStateHash: settlement.after.stateHash,
         selectedActionId: validation.selectedAction.id
       };
+    } else if (repeatedSemanticTransition) {
+      record.runtimeGuard = {
+        code: "repeated_semantic_transition",
+        occurrence: repeatedSemanticTransition.occurrence,
+        preProgressHash: repeatedSemanticTransition.preProgressHash,
+        postProgressHash: repeatedSemanticTransition.postProgressHash,
+        actionProgressHash: repeatedSemanticTransition.actionProgressHash,
+        selectedActionId: validation.selectedAction.id,
+        selectedActionKind: repeatedSemanticTransition.selectedActionKind
+      };
     }
     await this.dependencies.recorder.append(record, settlement.after ? { postRawState: settlement.after.rawState } : undefined);
     return result(
@@ -298,8 +322,12 @@ export class TickOrchestrator {
       record.outcome,
       pre.currentState,
       validation.selectedAction.id,
-      outcome !== "executed_and_settled" || Boolean(repeatedExactTransition),
-      repeatedExactTransition ? "repeated_exact_transition" : undefined
+      outcome === "executed_unsettled" || Boolean(repeatedExactTransition) || Boolean(repeatedSemanticTransition),
+      repeatedExactTransition
+        ? "repeated_exact_transition"
+        : repeatedSemanticTransition
+          ? "repeated_semantic_transition"
+          : undefined
     );
   }
 
@@ -312,6 +340,7 @@ export class TickOrchestrator {
     outcome: DecisionOutcome;
     error?: string;
     shouldStopRun: boolean;
+    stopReason?: TickResult["stopReason"];
   }): Promise<TickResult> {
     const prepared = await this.dependencies.recorder.prepare({
       decisionId: input.decisionId,
@@ -326,7 +355,14 @@ export class TickOrchestrator {
     record.allowedActions = input.allowedActions;
     if (input.error) record.error = input.error;
     await this.dependencies.recorder.append(record);
-    return result(input.decisionId, input.outcome, input.pre.currentState, undefined, input.shouldStopRun);
+    return result(
+      input.decisionId,
+      input.outcome,
+      input.pre.currentState,
+      undefined,
+      input.shouldStopRun,
+      input.stopReason
+    );
   }
 }
 
@@ -399,8 +435,10 @@ function recordedState(envelope: StateEnvelope): RecordedState {
   };
 }
 
-function isRunBoundary(kind: StateEnvelope["currentState"]["context"]["kind"]): boolean {
-  return kind === "run_ended" || kind === "menu";
+function isAutomaticRunStartBoundary(kind: StateEnvelope["currentState"]["context"]["kind"]): boolean {
+  // Finishing the current run's game-over UI is part of that run. The hard
+  // boundary is the top-level menu, before any continue/new-run action.
+  return kind === "menu";
 }
 
 function result(

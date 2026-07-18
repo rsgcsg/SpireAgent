@@ -9,12 +9,12 @@ Each tick creates one append-only `DecisionRecord`, including non-execution outc
 - `prompt`: prompt ref, versions, hashes, byte counts
 - `llm`: provider/model, all attempts, raw content, parsed decision, validation
 - `execution`: selected ID, local payload, stale-state result, adapter response/error
-- `settlement`: status, polls, elapsed time, error, plus optional transient-observation count and last safe error code/message when a coherent Bridge state changed during read-only sidecar capture
+- `settlement`: next-decision-checkpoint status, polls, elapsed time, error, plus optional transient-observation count and last safe error code/message when a coherent Bridge state changed during read-only sidecar capture
 - `runtimeGuard`: optional exact-transition cycle evidence; a second identical pre-state/action/post-state transition stops the bounded run without rewriting the successful action outcome
 - `postState`: raw ref, normalized state, diagnostics, full-raw stale-guard hash, and normalized projection hash
 - `outcome`: the terminal classification for this tick
 
-Core outcomes distinguish observation failure, invalid/non-actionable/no-action state, dry run, provider failure, invalid decision, stale state, execution failure, settled execution, and unsettled execution. Adapter results may additionally classify the command as `accepted`, `rejected`, or `unknown`; unknown is never interpreted as safe rejection or retried automatically.
+Core outcomes distinguish observation failure, invalid/non-actionable/no-action state, dry run, provider failure, invalid decision, stale state, execution failure, settled execution, confirmed Bridge execution with the next checkpoint still pending, and unsettled execution. `executed_checkpoint_pending` is allowed only after an opaque Bridge v2 command has completed and a different valid but not yet stable state was observed; the bounded run continues with a fresh read and never retries the action. A v1 acknowledgement, unchanged state, read error, or unknown command outcome cannot use that classification. Adapter results may additionally classify the command as `accepted`, `rejected`, or `unknown`; unknown is never interpreted as safe rejection or retried automatically.
 
 An `observation_failed` record caused by the typed
 `state_changed_during_composite_read` race contains no prompt or execution. A
