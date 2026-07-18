@@ -12,7 +12,7 @@ Bridge v2 is an incremental preview, not a replacement for all v1 surfaces.
 
 - Current exact game binding: Slay the Spire 2
   `v0.109.0|c12f634d|-840572606`.
-- Source `2.0-preview.30` keeps centralized overlay/room/menu ownership, typed
+- Source `2.0-preview.31` keeps centralized overlay/room/menu ownership, typed
   diagnostics, purpose-specific selection and event contracts, staged
   completion semantics, and a top-level read-only shared run/player HUD.
   Current-build capabilities distinguish scoped-qualified actions, action

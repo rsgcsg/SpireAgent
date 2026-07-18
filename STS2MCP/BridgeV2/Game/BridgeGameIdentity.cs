@@ -77,7 +77,7 @@ internal static class BridgeGameIdentity
                 InspectionCanaryKinds: Array.Empty<string>(),
                 ObservationOnlySurfaceKinds: Array.Empty<string>(),
                 ObservationCandidateBuildFingerprints: Array.Empty<string>(),
-                Detail: $"Game build {Fingerprint(release)} matches the exact tested bridge binding.")
+                Detail: $"Game build {Fingerprint(release)} is a recognized historical exact identity. Current Bridge v2 actions still require an explicit per-surface qualified or canary list; this identity currently grants no v2 Surface action authority and remains eligible only for explicit legacy handoff.")
             : scopedQualifiedBuild
                 ? new CompatibilityAssessment(
                     "qualified_scoped",

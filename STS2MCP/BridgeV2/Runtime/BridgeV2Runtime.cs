@@ -158,28 +158,11 @@ internal static class BridgeV2Runtime
                 },
                 "sts2-v0.109.0:NCharacterSelectScreen+singleplayer-StartRunLobby+visible-controls+active-run-witness")
         };
-        IReadOnlyList<SurfaceCapability> surfaces = game.Compatibility.ActionExecutionAllowed
-            ? game.Compatibility.ActionExecutionSurfaceKinds.Count == 0
-              && game.Compatibility.ActionCanarySurfaceKinds.Count == 0
-                ? declaredSurfaces
-                : declaredSurfaces.Select(surface => new SurfaceCapability(
-                    surface.Kind,
-                    game.Compatibility.ActionExecutionSurfaceKinds.Contains(surface.Kind, StringComparer.Ordinal)
-                        ? game.Compatibility.Status == "qualified_scoped"
-                            ? "qualified_exact_build"
-                            : "candidate_action_canary"
-                        : game.Compatibility.ActionCanarySurfaceKinds.Contains(surface.Kind, StringComparer.Ordinal)
-                            ? "candidate_action_canary"
-                        : "not_qualified_for_current_build",
-                    surface.Operations,
-                    surface.Evidence)).ToArray()
-            : declaredSurfaces.Select(surface => new SurfaceCapability(
-                surface.Kind,
-                game.Compatibility.ObservationOnlySurfaceKinds.Contains(surface.Kind, StringComparer.Ordinal)
-                    ? "candidate_observation_only"
-                    : "not_qualified_for_current_build",
-                surface.Operations,
-                surface.Evidence)).ToArray();
+        IReadOnlyList<SurfaceCapability> surfaces = declaredSurfaces.Select(surface => new SurfaceCapability(
+            surface.Kind,
+            BridgeSurfacePermission.SupportLevel(game.Compatibility, surface.Kind),
+            surface.Operations,
+            surface.Evidence)).ToArray();
 
         return new BridgeCapabilitiesResponse(
             BridgeV2Contract.ProtocolVersion,

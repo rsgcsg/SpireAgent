@@ -38,7 +38,7 @@ Character-select artifact before the preview.30 tooltip revision:
 - `shared_state=null` while the menu Surface owned input; Re accepted that
   exact exception and continues to require shared state for in-run Surfaces.
 
-Final preview.30 artifact:
+Organic preview.30 event-journey artifact:
 
 - Release/installed SHA-256:
   `d4f9e00fb52bd38543965a477fe6ebabae7082244621ffe01e5743e9f04a0c2a`
@@ -63,6 +63,21 @@ Fresh current-build commands:
 
 No command timed out, no stale action executed, and no v1 action was merged
 into a Bridge-owned state.
+
+Final installed preview.30 artifact after narrowing the completion predicates:
+
+- Release/installed SHA-256:
+  `d90b2a5cc7c0e8383f319e0bf5adac9fd985743cac82e9a06b74071045bfa760`
+- loaded MVID: `bdc97168-3bc7-40c4-8a2e-bb0698169118`
+- runtime instance: `93390677421c46ebb287c62b3b9da0b6`
+- exact identity remained `v0.109.0|c12f634d|-840572606` and capabilities
+  remained scoped-qualified with `event_option` only an action canary.
+
+The final delta separates proceed completion from option completion and only
+accepts a child overlay if it newly opened. It passed Bridge/Re tests, Release
+build, installed-hash equality, and loaded-module identity verification. The
+same Neow lifecycle was not organically repeated on this final MVID, so its
+Organic Evidence remains attributed to the earlier MVID above.
 
 ## Abstraction Review
 

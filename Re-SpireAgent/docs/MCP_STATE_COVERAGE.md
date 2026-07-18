@@ -8,7 +8,7 @@ matrix. This document records the Re-SpireAgent consumption boundary.
 
 ## Bridge v2 Current Client Contract
 
-Re strictly decodes `2.0-preview.30`. It accepts Bridge actions only when:
+Re strictly decodes `2.0-preview.31`. It accepts Bridge actions only when:
 
 - game and loaded Bridge identities match exact scoped capabilities;
 - the Surface kind appears exactly once and has no duplicate operation names;

@@ -1,6 +1,6 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.30`
+Protocol preview: `2.0-preview.31`
 
 ## Build Compatibility
 
@@ -298,6 +298,12 @@ For the current v0.109 identity, capabilities advertise only the explicitly
 scoped `run_deck` `qualified_read_only_scoped`; `combat_piles` is not advertised
 or accepted. Inspection scope is independent of action scope and is never
 inferred from historical capabilities.
+
+An empty qualified/canary Surface list is always an empty permission scope. It
+never means wildcard or all-declared-Surface authority. Historical exact build
+identity may permit an explicit legacy handoff, but no v2 Provider can publish
+an action unless its kind appears in the build's explicit qualified or canary
+list.
 
 ## Error Codes
 

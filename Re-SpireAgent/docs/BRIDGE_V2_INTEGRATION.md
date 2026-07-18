@@ -2,7 +2,7 @@
 
 ## Current Scope
 
-Re-SpireAgent supports the strict `2.0-preview.30` source contract. Current
+Re-SpireAgent supports the strict `2.0-preview.31` source contract. Current
 v0.109 authority is read from capabilities rather than inferred from historical
 implementation:
 

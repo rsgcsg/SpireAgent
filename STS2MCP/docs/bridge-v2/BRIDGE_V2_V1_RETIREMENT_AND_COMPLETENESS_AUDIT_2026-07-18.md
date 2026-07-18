@@ -1,7 +1,7 @@
 # Bridge v2: v1 Retirement And Completeness Audit
 
 Date: 2026-07-18  
-Canonical protocol: `2.0-preview.30`
+Canonical protocol: `2.0-preview.31`
 
 ## Verdict
 
@@ -117,6 +117,10 @@ commit semantics remain in purpose-specific Surfaces.
    and Surface separately rather than call a whole run “v2”.
 5. Canaries are too easy to describe as qualification. Permission, fixture,
    source audit, action canary, and organic qualification must remain distinct.
+6. Preview.30 still treated an empty exact-build Surface scope as an implicit
+   wildcard. Because the Provider registry grows over time, this could grant a
+   historical build access to newly added providers. Preview.31 centralizes
+   permission interpretation and makes every empty scope fail closed.
 
 ## Retirement Plan
 

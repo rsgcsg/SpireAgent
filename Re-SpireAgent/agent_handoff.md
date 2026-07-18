@@ -1,6 +1,12 @@
 # RE-P1 Handoff
 
-Status update 2026-07-18: Bridge `2.0-preview.30` is installed against exact
+Status update 2026-07-18: Bridge `2.0-preview.31` is the current source contract
+against exact identity `v0.109.0|c12f634d|-840572606`. Preview.31 makes an
+empty per-build Surface scope fail closed rather than implicitly authorizing
+every registered Provider; current v0.109 permissions are unchanged and the
+historical v0.108 identity has no current v2 Surface action authority.
+
+Preview.30 was installed against exact
 identity `v0.109.0|c12f634d|-840572606`. Preview.29 added narrow menu-owned
 character selection and current-build revealed ancient dialogue. Preview.30
 replaced an invalid flat-keyword assumption with typed event-option text/card
@@ -263,9 +269,12 @@ On 2026-07-18, preview.30 passed 126/126 Re tests, 59/59 Bridge tests, strict
 typecheck, Re production build, and the exact-source Bridge Release build with
 zero warnings/errors. Installed and Release DLL hashes matched; the loaded
 runtime reported the expected protocol, module identity, and exact game build.
-The final loaded MVID completed strict Re inspection and a fresh Neow event
-option/Proceed lifecycle with exact relic/deck post-state. See the latest
-command output rather than treating test counts as permanent.
+MVID `f2604133-ed1a-41f3-a638-ab38829d3cb5` completed strict Re inspection and
+the fresh Neow event option/Proceed lifecycle with exact relic/deck post-state.
+The final installed MVID `bdc97168-3bc7-40c4-8a2e-bb0698169118` only narrows
+proceed/new-overlay completion and is source/test/build/install/load verified;
+the Neow journey was not falsely reassigned to that final artifact. See the
+latest command output rather than treating test counts as permanent.
 
 ## Next Step
 

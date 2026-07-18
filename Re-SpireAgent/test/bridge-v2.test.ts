@@ -10,7 +10,7 @@ import type { JsonObject } from "../src/shared/json.js";
 import { fixture } from "./helpers.js";
 
 const CAPABILITIES = {
-  protocol_version: "2.0-preview.30",
+  protocol_version: "2.0-preview.31",
   bridge: {
     id: "sts2_mcp_bridge_v2",
     name: "STS2 Agent Bridge",
@@ -122,7 +122,7 @@ const SHARED_STATE = {
 } satisfies JsonObject;
 
 const DECK_ENCHANT_STATE = {
-  protocol_version: "2.0-preview.30",
+  protocol_version: "2.0-preview.31",
   state_id: "state-test-1",
   state_sequence: 1,
   observed_at: "2026-07-16T00:00:00Z",
@@ -1573,7 +1573,7 @@ function visibleInspectionCard(overrides: Record<string, unknown> = {}) {
 
 function runDeckInspection(stateId: string, cards = [visibleInspectionCard()]) {
   return {
-        protocol_version: "2.0-preview.30",
+        protocol_version: "2.0-preview.31",
     inspection_id: `inspection-run-deck-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -1596,7 +1596,7 @@ function runDeckInspection(stateId: string, cards = [visibleInspectionCard()]) {
 
 function combatPilesInspection(stateId: string) {
   return {
-        protocol_version: "2.0-preview.30",
+        protocol_version: "2.0-preview.31",
     inspection_id: `inspection-combat-piles-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,

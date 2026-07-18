@@ -4,7 +4,7 @@ Re-SpireAgent is a small, independent Slay the Spire 2 agent runtime. It reads t
 
 RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, shadow/live modes, policy promotion, or the old project's phase machinery. Its job is to make one decision path correct and auditable.
 
-The current strict client contract is Bridge `2.0-preview.30` on exact game
+The current strict client contract is Bridge `2.0-preview.31` on exact game
 identity `v0.109.0|c12f634d|-840572606`. Bridge v2 remains incremental:
 bounded Surface completeness and opaque action safety are real, but root menu,
 several selection variants, and total player-visible coverage are
@@ -202,7 +202,7 @@ RE-P1 has fixture-backed support for:
 - `menu`
 - `game_over`
 
-Bridge v2 source `preview.30` uses exact-build capabilities. On v0.109, merchant
+Bridge v2 source `preview.31` uses exact-build capabilities. On v0.109, merchant
 removal, event/rest upgrade, ordinary combat turn, combat hand selection, and
 ordinary single-player rest plus read-only run deck are scoped-qualified; event
 card acquisition, reward, card reward, map, shop, treasure, game over, card
@@ -228,7 +228,7 @@ The only supported public TypeScript entrypoint is `src/index.ts`. Integration r
 ## Current Limitations
 
 - Real v1 MCP windows have exercised event, combat, rewards, card reward, map, rest, shop, treasure, and a boss fight. This proves protocol integration, not strategic quality or universal MCP coverage. The legacy v1 `NDeckEnchantSelectScreen` confirmation endpoint acknowledged the request without advancing state; Bridge v2 now has a separate qualified opaque-action contract for that surface.
-- Bridge v2 source `preview.30` is current. Exact v0.109 capabilities qualify
+- Bridge v2 source `preview.31` is current. Exact v0.109 capabilities qualify
   merchant removal, event/rest deck upgrade, ordinary combat turn, combat hand
   selection, ordinary single-player rest, and read-only run deck; event card
   acquisition, reward, card reward, map, shop, treasure, game over, card

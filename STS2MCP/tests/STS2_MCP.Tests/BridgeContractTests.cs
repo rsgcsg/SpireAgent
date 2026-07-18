@@ -8,6 +8,56 @@ namespace STS2_MCP.Tests;
 public sealed class BridgeContractTests
 {
     [Fact]
+    public void EmptyCompatibilityScopeNeverMeansAllSurfaces()
+    {
+        var compatibility = new CompatibilityAssessment(
+            "supported_exact",
+            new[] { "0.108.0" },
+            new[] { "v0.108.0|commit|1" },
+            ActionExecutionAllowed: true,
+            StateObservationAllowed: true,
+            InspectionAllowed: true,
+            ActionExecutionSurfaceKinds: Array.Empty<string>(),
+            ActionCanarySurfaceKinds: Array.Empty<string>(),
+            InspectionAllowedKinds: Array.Empty<string>(),
+            InspectionCanaryKinds: Array.Empty<string>(),
+            ObservationOnlySurfaceKinds: Array.Empty<string>(),
+            ObservationCandidateBuildFingerprints: Array.Empty<string>(),
+            Detail: "historical exact identity with no current explicit surface permission");
+
+        Assert.False(BridgeSurfacePermission.IsActionPermitted(compatibility, "combat_turn"));
+        Assert.Equal(
+            "not_qualified_for_current_build",
+            BridgeSurfacePermission.SupportLevel(compatibility, "combat_turn"));
+    }
+
+    [Fact]
+    public void ExplicitQualifiedAndCanaryScopesRemainDistinct()
+    {
+        var compatibility = new CompatibilityAssessment(
+            "qualified_scoped",
+            new[] { "0.109.0" },
+            new[] { "v0.109.0|commit|1" },
+            ActionExecutionAllowed: true,
+            StateObservationAllowed: true,
+            InspectionAllowed: true,
+            ActionExecutionSurfaceKinds: new[] { "combat_turn" },
+            ActionCanarySurfaceKinds: new[] { "event_option" },
+            InspectionAllowedKinds: Array.Empty<string>(),
+            InspectionCanaryKinds: Array.Empty<string>(),
+            ObservationOnlySurfaceKinds: Array.Empty<string>(),
+            ObservationCandidateBuildFingerprints: Array.Empty<string>(),
+            Detail: "explicit scopes");
+
+        Assert.True(BridgeSurfacePermission.IsActionPermitted(compatibility, "combat_turn"));
+        Assert.True(BridgeSurfacePermission.IsActionPermitted(compatibility, "event_option"));
+        Assert.False(BridgeSurfacePermission.IsActionPermitted(compatibility, "shop_room"));
+        Assert.Equal("qualified_exact_build", BridgeSurfacePermission.SupportLevel(compatibility, "combat_turn"));
+        Assert.Equal("candidate_action_canary", BridgeSurfacePermission.SupportLevel(compatibility, "event_option"));
+        Assert.Equal("not_qualified_for_current_build", BridgeSurfacePermission.SupportLevel(compatibility, "shop_room"));
+    }
+
+    [Fact]
     public void CommandContractUsesOpaqueSnakeCaseIdentifiers()
     {
         var options = new JsonSerializerOptions

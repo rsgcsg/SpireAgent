@@ -4,15 +4,20 @@ Status date: 2026-07-18
 
 ## Current Contract
 
-- protocol: `2.0-preview.30`
+- protocol: `2.0-preview.31`
 - exact game identity: `v0.109.0|c12f634d|-840572606`
 - installed/Release DLL SHA-256:
-  `d4f9e00fb52bd38543965a477fe6ebabae7082244621ffe01e5743e9f04a0c2a`
-- loaded module MVID: `f2604133-ed1a-41f3-a638-ab38829d3cb5`
-- loaded runtime instance: `b50f7cff817f4c46be8c0b41625176d4`
+  `d90b2a5cc7c0e8383f319e0bf5adac9fd985743cac82e9a06b74071045bfa760`
+- loaded module MVID: `bdc97168-3bc7-40c4-8a2e-bb0698169118`
+- loaded runtime instance: `93390677421c46ebb287c62b3b9da0b6`
 
 Bridge v2 is an incremental, exact-build-scoped protocol. It is not full v1
 parity, all-game coverage, or complete player-visible truth.
+
+Preview.31 closes a backward permission leak: an empty per-build Surface scope
+is now unconditionally empty, never an implicit wildcard. Exact v0.109
+permissions are unchanged; recognized historical v0.108 identity has no
+current v2 Surface action authority and can only use explicit legacy handoff.
 
 ## Current Permission Matrix
 
@@ -51,6 +56,11 @@ build.
 - Generic event completion no longer accepts `WasChosen=true`; source sets it
   before the asynchronous option effect finishes. Replacement event state,
   required child Surface, combat, map, or room transition is required.
+- The complete Neow Organic Journey belongs to loaded MVID
+  `f2604133-ed1a-41f3-a638-ab38829d3cb5`. The final installed MVID above adds
+  a stricter proceed/new-overlay completion predicate and is source-, test-,
+  build-, install-, and load-verified; that narrow final delta has not been
+  misrepresented as a repeated organic Neow lifecycle.
 
 Detailed evidence is in
 [PREVIEW_29_30_MENU_DIALOGUE_AND_EVENT_OPTION_QUALIFICATION_2026-07-18.md](PREVIEW_29_30_MENU_DIALOGUE_AND_EVENT_OPTION_QUALIFICATION_2026-07-18.md).

@@ -33,7 +33,7 @@ Required client behavior:
 - never auto-retry unknown outcomes;
 - permit only one executor during v1/v2 dual-read tests.
 
-Source `2.0-preview.30` retains strict purpose-specific projections for
+Source `2.0-preview.31` retains strict purpose-specific projections for
 event/rest deck upgrade, event card acquisition, card bundle, game-over,
 character select, dialogue/options, and the treasure-room lifecycle. On exact
 v0.109, merchant removal, deck upgrade, ordinary combat turn, combat hand
