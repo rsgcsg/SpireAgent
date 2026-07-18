@@ -1,7 +1,7 @@
 # Bridge v2: v1 Retirement And Completeness Audit
 
 Date: 2026-07-18  
-Canonical protocol: `2.0-preview.31`
+Canonical protocol: `2.0-preview.35`
 
 ## Verdict
 
@@ -121,6 +121,11 @@ commit semantics remain in purpose-specific Surfaces.
    wildcard. Because the Provider registry grows over time, this could grant a
    historical build access to newly added providers. Preview.31 centralizes
    permission interpretation and makes every empty scope fail closed.
+7. Preview.35 starts a non-authorizing typed contract inventory and requires it
+   to match the lazy Provider registry. This reduces declaration drift, but
+   exact-environment permission, operation/origin qualification, and visibility
+   completeness remain separate evidence systems rather than manifest-derived
+   authority.
 
 ## Retirement Plan
 

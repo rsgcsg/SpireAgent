@@ -18,7 +18,7 @@ that an empty scope has no authority.
 
 ## Phase 1: Typed Contract And Evidence Inventory
 
-Status: proposed, no permission change.
+Status: started in preview.35 infrastructure, no permission change.
 
 Create a machine-readable inventory for each semantic contract containing:
 
@@ -36,10 +36,21 @@ Use it to detect duplicate kinds, missing Re cases, stale evidence links, and
 permission/documentation drift. The inventory must validate declarations; it
 must not be able to authorize an action by existing in the repository.
 
+Implemented foundation: twenty typed Surface entries now own capability
+metadata, match the lazy Provider registry one-to-one, and derive support only
+through `BridgeSurfacePermission`. The two implemented Inspection contracts
+are inventoried separately and remain read-only/non-authorizing. Visible fact
+groups and test/doc references are present. This is not yet a complete external
+manifest: loaded-environment identity, per-origin qualification, field
+criticality, and full visibility completeness still require explicit evidence
+records.
+
 As the first permission-governance pilot, represent the currently documented
-`treasure_room` operation split: choose/proceed have Organic evidence while
-open/skip do not. The pilot may preserve or narrow current canary authority; it
-must not promote any operation or origin.
+`treasure_room` operation split: choose/proceed have Organic canary evidence
+while open/skip are source-audited only. The implemented pilot records that
+split without changing Surface-level authority. A later permission change may
+only preserve or narrow current canary authority; it must not promote any
+operation or origin.
 
 ## Phase 2: Mechanism, Source Binding, And Shared Validator
 

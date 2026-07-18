@@ -16,7 +16,7 @@ Bridge v2 is an incremental preview, not a replacement for all v1 surfaces.
   untested and has no v2 action or Inspection authority. Check
   [Bridge v2 current status](docs/bridge-v2/CURRENT_STATUS.md) before treating
   a local install as qualified.
-- Source `2.0-preview.31` keeps centralized overlay/room/menu ownership, typed
+- Source `2.0-preview.35` keeps centralized overlay/room/menu ownership, typed
   diagnostics, purpose-specific selection and event contracts, staged
   completion semantics, and a top-level read-only shared run/player HUD.
   Current-build capabilities distinguish scoped-qualified actions, action
@@ -97,7 +97,7 @@ dotnet test STS2_MCP.sln -p:STS2GameDir="$env:STS2_GAME_DIR"
 .\build.ps1 -GameDir "$env:STS2_GAME_DIR"
 ```
 
-The solution currently contains 61 pure contract/runtime/security tests covering stable
+The solution currently contains 68 pure contract/runtime/security tests covering stable
 state identity, entity identity, stale-state rejection, idempotent request IDs,
 completion observation, timeout-as-unknown, and JSON action shape.
 

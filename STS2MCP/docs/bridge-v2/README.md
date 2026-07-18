@@ -14,6 +14,7 @@
 - [2026-07-17 architecture reassessment](ARCHITECTURE_REASSESSMENT_2026-07-17.md)
 - [2026-07-18 independent architecture audit](ARCHITECTURE_AUDIT_2026-07-18.md)
 - [Architecture evolution plan](ARCHITECTURE_EVOLUTION_PLAN.md)
+- [Preview.35 typed contract inventory closeout](PREVIEW_35_TYPED_CONTRACT_INVENTORY_CLOSEOUT_2026-07-18.md)
 - [Preview.31 permission-scope hardening](PREVIEW_31_PERMISSION_SCOPE_HARDENING_2026-07-18.md)
 - [Preview.31 independent revalidation](PREVIEW_31_INDEPENDENT_REVALIDATION_2026-07-18.md)
 - [Preview.23 upgrade and treasure closeout](PREVIEW_23_UPGRADE_TREASURE_CLOSEOUT_2026-07-17.md)

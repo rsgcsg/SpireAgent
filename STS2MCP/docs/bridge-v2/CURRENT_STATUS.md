@@ -6,11 +6,11 @@ Status date: 2026-07-18
 
 - protocol: `2.0-preview.35`
 - source-qualified game identity: `v0.109.0|c12f634d|-840572606`
-- current local runtime game identity: `v0.109.0|c12f634d|1833084275`
+- current workspace loaded game identity: `v0.109.0|c12f634d|-840572606`
 - installed/Release DLL SHA-256:
-  `505e9db42b79edc52fd7fd2aead6145a255e47dea54f3a07059b781e1b84dbe6`
-- loaded module MVID: `547842a2-27d4-4c5d-8188-ca1d525d7e98`
-- loaded runtime instance: `65ecb6bf7ee34d9d8c007fbd137eeda8`
+  `533e7db0ab7f6fdf04cc9ff0143133d6ba3ace2af5ef26a088ed379335366216`
+- loaded module MVID: `8842875a-c0e0-4381-a473-2b06d2d6fc9d`
+- loaded runtime instance: `4dab44137dec4350bad358cf5cc508a5`
 
 Bridge v2 is an incremental, exact-build-scoped protocol. It is not full v1
 parity, all-game coverage, or complete player-visible truth.
@@ -27,7 +27,13 @@ audit then found that the shared node predicate omitted the controller-only
 both publication and execution and re-exercises map travel on a fresh MVID. It
 does not copy the older source-target permission set. Every qualified action
 list and every Inspection list remain empty for `1833084275`; all unlisted
-contracts fail closed.
+contracts fail closed. That hash is a historical alternate-device environment,
+not the current workspace loaded identity.
+
+The current preview.35 infrastructure build starts a non-authorizing typed
+contract/evidence/visibility inventory. Capabilities remain byte-equivalent to
+the previous loaded build after excluding MVID/runtime identity. Manifest
+presence never grants permission; exact-environment lists remain authoritative.
 
 ## Current Permission Matrix
 
@@ -37,14 +43,14 @@ contracts fail closed.
 | source-qualified `v0.109.0|c12f634d|-840572606`: `candidate_action_canary` | `event_card_acquisition`, `reward_claim`, `card_reward_selection`, `map_navigation`, `shop_inventory`, `shop_room`, `treasure_room`, `game_over`, `card_bundle_selection`, `character_select`, `event_dialogue`, `event_option` |
 | source-qualified `v0.109.0|c12f634d|-840572606`: `qualified_read_only_scoped` | `run_deck` Inspection |
 | source-qualified target: disabled | `deck_enchant_selection`, `combat_pile_card_selection`, `generated_card_choice`, `combat_piles` Inspection, every unlisted contract |
-| current local `v0.109.0|c12f634d|1833084275`: `candidate_action_canary` | `event_option`, `event_card_acquisition`, `map_navigation` |
-| current local `v0.109.0|c12f634d|1833084275`: disabled | every qualified Surface scope, the other 17 declared Surfaces, `run_deck`, `combat_piles`, and every unlisted Inspection |
+| historical alternate-device `v0.109.0|c12f634d|1833084275`: `candidate_action_canary` | `event_option`, `event_card_acquisition`, `map_navigation` |
+| historical alternate-device `v0.109.0|c12f634d|1833084275`: disabled | every qualified Surface scope, the other 17 declared Surfaces, `run_deck`, `combat_piles`, and every unlisted Inspection |
 
 Source implementation, target-build permission, local build/install/load,
 canary, and Organic qualification are separate states. There are 20 declared
-semantic Surface contracts: the source-qualified target has five qualified,
-twelve canary-permitted, and three disabled; the current local build has three
-canaries and no qualified contract.
+semantic Surface contracts: the currently loaded source-qualified target has
+five qualified, twelve canary-permitted, and three disabled. The historical
+alternate-device build has three canaries and no qualified contract.
 
 ## Preview.35 Map Navigation Revalidation
 
@@ -231,13 +237,12 @@ never means the whole screen or game is completely exposed.
 
 ## Next Work
 
-1. Audit the current exact-build `combat_turn` Provider against the real
-   floor-five encounter now visible, but do not grant its three-operation
-   Surface scope until the permission granularity and current source bindings
-   are explicitly reviewed.
-2. Add a non-authorizing typed contract/evidence inventory and use
-   `treasure_room` to prove operation/origin-scoped canary narrowing without
-   changing any qualification.
+1. Use the new non-authorizing inventory to audit operation/origin permission
+   granularity for `treasure_room`. Do not promote any operation merely because
+   it is implemented or listed.
+2. Audit `combat_turn` at operation granularity before any future environment
+   permission changes; the currently loaded source target retains its existing
+   qualified scope unchanged.
 3. Keep `event_option`, `event_dialogue`, and `character_select` at canary while
    collecting ordinary non-Neow diversity and first-run/tutorial boundaries.
 4. Add purpose-specific root main-menu and single-player submenu contracts so
@@ -251,6 +256,9 @@ never means the whole screen or game is completely exposed.
 8. Continue treating each additional `1833084275` Surface as a separate
    source/UI audit and bounded canary; do not copy target-build authority merely
    because version and commit match.
+
+The typed inventory closeout and exact loaded identity are recorded in
+[PREVIEW_35_TYPED_CONTRACT_INVENTORY_CLOSEOUT_2026-07-18.md](PREVIEW_35_TYPED_CONTRACT_INVENTORY_CLOSEOUT_2026-07-18.md).
 
 See the [coverage matrix](PLAYER_VISIBLE_COVERAGE.md) and
 [v1 retirement/completeness audit](BRIDGE_V2_V1_RETIREMENT_AND_COMPLETENESS_AUDIT_2026-07-18.md).

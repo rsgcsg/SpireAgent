@@ -8,6 +8,109 @@ namespace STS2_MCP.Tests;
 public sealed class BridgeContractTests
 {
     [Fact]
+    public void NonAuthorizingContractManifestMatchesProviderRegistry()
+    {
+        string[] manifestKinds = BridgeContractManifest.Entries
+            .Select(entry => entry.Kind)
+            .OrderBy(kind => kind, StringComparer.Ordinal)
+            .ToArray();
+        string[] providerKinds = BridgeSnapshotBuilder.DeclaredProviderKinds
+            .OrderBy(kind => kind, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(20, manifestKinds.Length);
+        Assert.Equal(manifestKinds.Length, manifestKinds.Distinct(StringComparer.Ordinal).Count());
+        Assert.Equal(providerKinds, manifestKinds);
+        Assert.All(BridgeContractManifest.Entries, entry =>
+        {
+            Assert.Equal(BridgeV2Contract.ProtocolVersion, entry.ProtocolRevision);
+            Assert.False(string.IsNullOrWhiteSpace(entry.Mechanism));
+            Assert.False(string.IsNullOrWhiteSpace(entry.SourceBindingId));
+            Assert.False(string.IsNullOrWhiteSpace(entry.ReSupport));
+            Assert.NotEmpty(entry.VisibleFactGroups);
+            Assert.NotEmpty(entry.Operations);
+            Assert.NotEmpty(entry.TestReferences);
+            Assert.NotEmpty(entry.DocumentationReferences);
+        });
+    }
+
+    [Fact]
+    public void ContractManifestNeverOverridesExplicitPermissionScopes()
+    {
+        var compatibility = new CompatibilityAssessment(
+            "qualified_scoped",
+            new[] { "0.109.0" },
+            new[] { "v0.109.0|commit|1" },
+            ActionExecutionAllowed: true,
+            StateObservationAllowed: true,
+            InspectionAllowed: false,
+            ActionExecutionSurfaceKinds: Array.Empty<string>(),
+            ActionCanarySurfaceKinds: new[] { "event_option" },
+            InspectionAllowedKinds: Array.Empty<string>(),
+            InspectionCanaryKinds: Array.Empty<string>(),
+            ObservationOnlySurfaceKinds: Array.Empty<string>(),
+            ObservationCandidateBuildFingerprints: Array.Empty<string>(),
+            Detail: "explicit event-only scope");
+
+        IReadOnlyDictionary<string, SurfaceCapability> capabilities = BridgeContractManifest
+            .Capabilities(compatibility)
+            .ToDictionary(capability => capability.Kind, StringComparer.Ordinal);
+
+        Assert.Equal("candidate_action_canary", capabilities["event_option"].Support);
+        Assert.Equal("not_qualified_for_current_build", capabilities["combat_turn"].Support);
+        Assert.Equal("not_qualified_for_current_build", capabilities["treasure_room"].Support);
+    }
+
+    [Fact]
+    public void TreasureOperationEvidenceIsNarrowerThanSurfaceCanaryAuthority()
+    {
+        BridgeContractManifestEntry treasure = Assert.Single(
+            BridgeContractManifest.Entries,
+            entry => entry.Kind == "treasure_room");
+        IReadOnlyDictionary<string, BridgeOperationManifest> operations = treasure.Operations
+            .ToDictionary(operation => operation.Operation, StringComparer.Ordinal);
+
+        Assert.Equal(BridgeOperationEvidenceStatus.SourceAudited, operations["open_treasure_chest"].EvidenceStatus);
+        Assert.Equal(BridgeOperationEvidenceStatus.OrganicCanaryExercised, operations["choose_treasure_relic"].EvidenceStatus);
+        Assert.Equal(BridgeOperationEvidenceStatus.SourceAudited, operations["skip_treasure_relic"].EvidenceStatus);
+        Assert.Equal(BridgeOperationEvidenceStatus.OrganicCanaryExercised, operations["proceed_treasure_room"].EvidenceStatus);
+        Assert.DoesNotContain(treasure.Operations, operation =>
+            operation.EvidenceStatus == BridgeOperationEvidenceStatus.OrganicQualified);
+    }
+
+    [Fact]
+    public void InspectionInventoryIsReadOnlyAndNonAuthorizing()
+    {
+        Assert.Equal(
+            new[] { BridgeInspectionBuilder.RunDeckKind, BridgeInspectionBuilder.CombatPilesKind },
+            BridgeContractManifest.ImplementedInspectionKinds);
+        Assert.All(BridgeContractManifest.InspectionEntries, entry =>
+        {
+            Assert.Equal(BridgeV2Contract.ProtocolVersion, entry.ProtocolRevision);
+            Assert.False(string.IsNullOrWhiteSpace(entry.SourceBindingId));
+            Assert.False(string.IsNullOrWhiteSpace(entry.ReSupport));
+            Assert.NotEmpty(entry.VisibleFactGroups);
+            Assert.NotEmpty(entry.TestReferences);
+            Assert.NotEmpty(entry.DocumentationReferences);
+        });
+
+        CompatibilityAssessment alternateBuild = BridgeGameIdentity.Assess(
+            "v0.109.0",
+            "c12f634d",
+            1833084275);
+
+        Assert.False(alternateBuild.InspectionAllowed);
+        Assert.Empty(BridgeSurfacePermission.PermittedInspectionKinds(
+            alternateBuild,
+            BridgeContractManifest.ImplementedInspectionKinds));
+        Assert.Equal(
+            "disabled_for_current_build",
+            BridgeSurfacePermission.InspectionSupportLevel(
+                alternateBuild,
+                BridgeContractManifest.ImplementedInspectionKinds));
+    }
+
+    [Fact]
     public void EmptyCompatibilityScopeNeverMeansAllSurfaces()
     {
         var compatibility = new CompatibilityAssessment(

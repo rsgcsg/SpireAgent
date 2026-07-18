@@ -4,15 +4,15 @@ Current execution evidence is scoped to exact game identity
 `v0.109.0|c12f634d|-840572606`. Compilation, fixtures, source review, old-build
 evidence, canary permission, and organic qualification are distinct states.
 
-The current local runtime observed on 2026-07-18 is
+An alternate-device runtime observed on 2026-07-18 was
 `v0.109.0|c12f634d|1833084275`. It is a different exact build. Preview.35
 permits only `event_option`, source-gated `event_card_acquisition`, and ordinary
 single-player `map_navigation` as independently source-audited and exercised
-action canaries; every other Surface and every Inspection remain disabled. The
-main matrix below describes the older source-qualified target and is not
-inherited by the local runtime.
+action canaries; every other Surface and every Inspection remain disabled.
+The current workspace has since loaded the source-qualified `-840572606`
+identity. Neither environment inherits permission from the other.
 
-## Current Local Build
+## Historical Alternate-Device Build
 
 | Surface / inspection | Permission | Current evidence | Remaining boundary |
 |---|---|---|---|
@@ -73,9 +73,9 @@ inherited by the local runtime.
 
 - Twenty semantic Surface contracts exist in source; seventeen are permitted
   on the exact source-qualified v0.109 target (five qualified and twelve
-  canaries), while three remain target-build disabled. The current local
-  `1833084275` build permits three action canaries and no qualified contract or
-  Inspection.
+  canaries), while three remain target-build disabled. The historical
+  `1833084275` alternate-device build permits three action canaries and no
+  qualified contract or Inspection.
 - Canary permission is currently Surface-kind scoped. It permits the legal
   operations published by that Provider for bounded canary execution, but it
   does not qualify every operation or source origin. Operation and origin
@@ -86,6 +86,9 @@ inherited by the local runtime.
   measured product metrics.
 - Safety/authority mechanics are substantially more mature than semantic
   coverage. The protocol does not yet expose every fact the player can inspect.
+- The typed contract inventory records visible fact groups and operation-level
+  evidence, but it is not a claim of visibility completeness and cannot grant
+  permission.
 
 ## Visibility Laws
 

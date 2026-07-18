@@ -8,32 +8,41 @@ namespace STS2_MCP.BridgeV2.Game;
 
 internal static class BridgeSnapshotBuilder
 {
-    private static readonly IBridgeSurfaceProvider[] Providers =
+    private sealed record ProviderRegistration(string Kind, Func<IBridgeSurfaceProvider> Create);
+
+    private static readonly ProviderRegistration[] ProviderRegistrations =
     {
-        new DeckEnchantSurfaceProvider(),
-        new DeckRemovalSelectionSurfaceProvider(),
-        new DeckUpgradeSelectionSurfaceProvider(),
-        new CombatPileCardSelectionSurfaceProvider(),
-        new CombatHandCardSelectionSurfaceProvider(),
-        new EventCardAcquisitionSurfaceProvider(),
-        new GeneratedCardChoiceSurfaceProvider(),
-        new CardBundleSelectionSurfaceProvider(),
-        new CardRewardSurfaceProvider(),
-        new RewardClaimSurfaceProvider(),
-        new MapNavigationSurfaceProvider(),
-        new CombatTurnSurfaceProvider(),
-        new ShopInventorySurfaceProvider(),
-        new ShopRoomSurfaceProvider(),
-        new TreasureRoomSurfaceProvider(),
-        new GameOverSurfaceProvider(),
-        new CharacterSelectSurfaceProvider(),
-        new RestSiteSurfaceProvider(),
-        new EventDialogueSurfaceProvider(),
-        new EventOptionSurfaceProvider()
+        new("deck_enchant_selection", static () => new DeckEnchantSurfaceProvider()),
+        new("deck_removal_selection", static () => new DeckRemovalSelectionSurfaceProvider()),
+        new("deck_upgrade_selection", static () => new DeckUpgradeSelectionSurfaceProvider()),
+        new("combat_pile_card_selection", static () => new CombatPileCardSelectionSurfaceProvider()),
+        new("combat_hand_card_selection", static () => new CombatHandCardSelectionSurfaceProvider()),
+        new("event_card_acquisition", static () => new EventCardAcquisitionSurfaceProvider()),
+        new("generated_card_choice", static () => new GeneratedCardChoiceSurfaceProvider()),
+        new("card_bundle_selection", static () => new CardBundleSelectionSurfaceProvider()),
+        new("card_reward_selection", static () => new CardRewardSurfaceProvider()),
+        new("reward_claim", static () => new RewardClaimSurfaceProvider()),
+        new("map_navigation", static () => new MapNavigationSurfaceProvider()),
+        new("combat_turn", static () => new CombatTurnSurfaceProvider()),
+        new("shop_inventory", static () => new ShopInventorySurfaceProvider()),
+        new("shop_room", static () => new ShopRoomSurfaceProvider()),
+        new("treasure_room", static () => new TreasureRoomSurfaceProvider()),
+        new("game_over", static () => new GameOverSurfaceProvider()),
+        new("character_select", static () => new CharacterSelectSurfaceProvider()),
+        new("rest_site", static () => new RestSiteSurfaceProvider()),
+        new("event_dialogue", static () => new EventDialogueSurfaceProvider()),
+        new("event_option", static () => new EventOptionSurfaceProvider())
     };
+
+    internal static IReadOnlyList<string> DeclaredProviderKinds =>
+        ProviderRegistrations.Select(provider => provider.Kind).ToArray();
+
+    private static IReadOnlyList<IBridgeSurfaceProvider> CreateProviders() =>
+        ProviderRegistrations.Select(registration => registration.Create()).ToArray();
 
     public static BridgeObservationDraft Build(BridgeEntityRegistry entities)
     {
+        IReadOnlyList<IBridgeSurfaceProvider> providers = CreateProviders();
         GameBuildIdentity game = BridgeGameIdentity.Read();
         ActiveSurfaceSnapshot snapshot;
         try
@@ -90,9 +99,9 @@ internal static class BridgeSnapshotBuilder
         }
 
         IReadOnlyList<IBridgeSurfaceProvider> eligibleProviders = game.Compatibility.ActionExecutionAllowed
-            ? Providers.Where(provider =>
+            ? providers.Where(provider =>
                 BridgeSurfacePermission.IsActionPermitted(game.Compatibility, provider.Kind)).ToArray()
-            : Providers.Where(provider => game.Compatibility.ObservationOnlySurfaceKinds.Contains(provider.Kind, StringComparer.Ordinal)).ToArray();
+            : providers.Where(provider => game.Compatibility.ObservationOnlySurfaceKinds.Contains(provider.Kind, StringComparer.Ordinal)).ToArray();
         ActiveSurfaceResolution resolution = ActiveSurfaceResolver.Resolve(
             snapshot,
             eligibleProviders,
@@ -138,7 +147,7 @@ internal static class BridgeSnapshotBuilder
 
         if (game.Compatibility.Status == "qualified_scoped")
         {
-            IReadOnlyList<IBridgeSurfaceProvider> unqualifiedProviders = Providers
+            IReadOnlyList<IBridgeSurfaceProvider> unqualifiedProviders = providers
                 .Where(provider =>
                     !game.Compatibility.ActionExecutionSurfaceKinds.Contains(provider.Kind, StringComparer.Ordinal)
                     && !game.Compatibility.ActionCanarySurfaceKinds.Contains(provider.Kind, StringComparer.Ordinal))
