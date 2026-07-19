@@ -11,14 +11,22 @@ export function wrapBridgeV2State(input: {
   capabilities: JsonObject;
   legacyState?: JsonObject;
   inspections?: Partial<Record<"run_deck" | "combat_piles", JsonObject>>;
+  observation?: JsonObject;
 }): Sts2McpRawState {
   return {
     adapter_protocol: BRIDGE_V2_WRAPPER_PROTOCOL,
     bridge_v2_state: input.state,
     bridge_v2_capabilities: input.capabilities,
+    ...(input.observation ? { bridge_v2_observation: input.observation } : {}),
     ...(input.inspections ? { bridge_v2_inspections: input.inspections } : {}),
     ...(input.legacyState ? { legacy_v1_state: input.legacyState } : {})
   };
+}
+
+export function bridgeV2ObservationFromWrapper(value: Sts2McpRawState): JsonObject | undefined {
+  return isBridgeV2WrappedState(value) && isJsonObject(value.bridge_v2_observation)
+    ? value.bridge_v2_observation
+    : undefined;
 }
 
 export function bridgeV2InspectionsFromWrapper(

@@ -8,7 +8,7 @@ matrix. This document records the Re-SpireAgent consumption boundary.
 
 ## Bridge v2 Current Client Contract
 
-Re strictly decodes `2.0-preview.46`. It accepts Bridge actions only when:
+Re strictly decodes `2.0-preview.47`. It accepts Bridge actions only when:
 
 - game and loaded Bridge identities match exact scoped capabilities;
 - the Surface kind appears exactly once and has no duplicate operation names;
@@ -35,6 +35,9 @@ Re strictly decodes `2.0-preview.46`. It accepts Bridge actions only when:
 | `run_deck` Inspection | typed player run-deck evidence | qualified read-only; no authority |
 | `combat_piles` Inspection | unordered draw/discard/exhaust card evidence | current-build read-only canary; no draw order or authority |
 | top-level `shared_state` | persistent run/player facts, text keywords, and typed read-only card previews | read-only and state-bound; preview facts grant no actions |
+| `visibility` / `inspection_catalog` | bounded default-plus-inspection closure and available typed reads | read-only declarations; partial catalog; no action authority |
+| coherent observation bundle | one state plus requested catalogued Inspections under one state/environment identity | strict decoder and real shop + run-deck read exercised; drift fails the full read |
+| `contract_instance_shadow` | manifest contract, operations, legacy authority tier, and limitations | diagnostic only; always non-authorizing and not used to build allowed actions |
 
 ## Explicit v1 Compatibility Boundary
 
@@ -76,3 +79,7 @@ requires exact source/UI audit, loaded artifact identity, organic action
 lifecycle, semantic post-state witness, Re settlement, and Canonical document
 update. Bounded Surface completeness is not whole-game player-visible
 completeness.
+
+Run metadata provenance is separate from Bridge identity. `unrecorded`,
+operator-positioned, console-assisted, or fixture runs may expose coverage and
+defects, but do not independently satisfy Organic qualification.

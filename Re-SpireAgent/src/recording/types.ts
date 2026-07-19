@@ -119,6 +119,11 @@ export interface RunMetadata {
     thinkingMode: "enabled" | "disabled";
     maxOutputTokens: number;
   };
+  evidence: {
+    provenance: "unrecorded" | "ordinary_gameplay" | "operator_positioned" | "console_assisted" | "fixture";
+    declaredBy: "runtime_configuration";
+    qualificationUse: "coverage_only_unless_independently_reviewed";
+  };
   schemas: {
     normalizedState: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21;
     prompt: 1 | 2 | 3;

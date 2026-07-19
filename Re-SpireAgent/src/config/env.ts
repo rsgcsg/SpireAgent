@@ -19,6 +19,7 @@ export interface RuntimeConfig {
   };
   runtime: {
     dataDir: string;
+    evidenceProvenance: "unrecorded" | "ordinary_gameplay" | "operator_positioned" | "console_assisted" | "fixture";
     maxTicks: number;
     tickDelayMs: number;
     settlementPollMs: number;
@@ -42,6 +43,12 @@ export function readRuntimeConfig(env: NodeJS.ProcessEnv = process.env): Runtime
   if (protocolMode !== "auto" && protocolMode !== "v1" && protocolMode !== "v2") {
     throw new Error("STS2_MCP_PROTOCOL must be auto, v1, or v2");
   }
+  const evidenceProvenance = env.AGENT_EVIDENCE_PROVENANCE ?? "unrecorded";
+  if (!isEvidenceProvenance(evidenceProvenance)) {
+    throw new Error(
+      "AGENT_EVIDENCE_PROVENANCE must be unrecorded, ordinary_gameplay, operator_positioned, console_assisted, or fixture"
+    );
+  }
 
   return {
     mcp: {
@@ -61,6 +68,7 @@ export function readRuntimeConfig(env: NodeJS.ProcessEnv = process.env): Runtime
     },
     runtime: {
       dataDir: resolve(env.AGENT_DATA_DIR ?? "data/runs"),
+      evidenceProvenance,
       maxTicks: positiveInteger(env.AGENT_MAX_TICKS, 100, "AGENT_MAX_TICKS"),
       tickDelayMs: nonNegativeInteger(env.AGENT_TICK_DELAY_MS, 250, "AGENT_TICK_DELAY_MS"),
       settlementPollMs: positiveInteger(env.AGENT_SETTLEMENT_POLL_MS, 150, "AGENT_SETTLEMENT_POLL_MS"),
@@ -77,6 +85,10 @@ export function readRuntimeConfig(env: NodeJS.ProcessEnv = process.env): Runtime
       )
     }
   };
+}
+
+function isEvidenceProvenance(value: string): value is RuntimeConfig["runtime"]["evidenceProvenance"] {
+  return ["unrecorded", "ordinary_gameplay", "operator_positioned", "console_assisted", "fixture"].includes(value);
 }
 
 function stripTrailingSlash(value: string): string {

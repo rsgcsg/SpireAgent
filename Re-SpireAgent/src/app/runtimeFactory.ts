@@ -41,6 +41,11 @@ export async function createRuntime(config: RuntimeConfig): Promise<{
         ...(adapterDescription.negotiated ? { negotiated: adapterDescription.negotiated } : {})
       },
       provider: llm.describe(),
+      evidence: {
+        provenance: config.runtime.evidenceProvenance,
+        declaredBy: "runtime_configuration",
+        qualificationUse: "coverage_only_unless_independently_reviewed"
+      },
       schemas: { normalizedState: NORMALIZED_STATE_SCHEMA_VERSION, prompt: 3, decisionRecord: 2 }
     };
     const recorder = new FileDecisionRecorder(config.runtime.dataDir, metadata);

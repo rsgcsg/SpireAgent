@@ -106,11 +106,13 @@ import {
   bridgeV2CapabilitiesFromWrapper,
   bridgeV2InspectionIdentity,
   bridgeV2InspectionsFromWrapper,
+  bridgeV2ObservationFromWrapper,
   bridgeV2StateFromWrapper,
   legacyStateFromBridgeV2Wrapper,
   type Sts2McpRawState
 } from "../integrations/sts2mcp/rawState.js";
 import { stateHash } from "../runtime/stateHash.js";
+import type { JsonObject } from "../shared/json.js";
 import { DiagnosticsBuilder } from "./diagnostics.js";
 import { projectBridgeV2Card } from "./bridgeV2CardProjection.js";
 import { projectBridgeV2Inspections } from "./bridgeV2InspectionProjection.js";
@@ -265,6 +267,19 @@ export function normalizeBridgeV2CurrentState(
   }
 
   const inspectionRaw = bridgeV2InspectionsFromWrapper(rawState);
+  const observationRaw = bridgeV2ObservationFromWrapper(rawState);
+  if (state) {
+    const availableKinds = new Set(state.inspection_catalog.map((entry) => entry.kind));
+    for (const kind of Object.keys(inspectionRaw)) {
+      if (!availableKinds.has(kind as "run_deck" | "combat_piles")) {
+        diagnostics.invalid(
+          `bridge_v2_inspections.${kind}`,
+          inspectionRaw[kind as "run_deck" | "combat_piles"],
+          "inspection sidecar was not advertised by the current state-bound catalog"
+        );
+      }
+    }
+  }
   const projectedInspections = projectBridgeV2Inspections(
     capabilitiesRaw,
     inspectionRaw,
@@ -286,6 +301,10 @@ export function normalizeBridgeV2CurrentState(
     ...(projectedInspections.discardPile ? { discardPile: projectedInspections.discardPile } : {}),
     ...(projectedInspections.exhaustPile ? { exhaustPile: projectedInspections.exhaustPile } : {})
   };
+
+  const bridgeObservation = state && observationRaw
+    ? projectCoherentObservation(observationRaw, state.state_id, Object.keys(inspectionRaw), diagnostics)
+    : undefined;
 
   if (mayInheritLegacy && (inherited?.run || inherited?.player)) {
     diagnostics.infer(
@@ -324,6 +343,49 @@ export function normalizeBridgeV2CurrentState(
         orderingSemantics: [...capabilities.inspections.ordering_semantics],
         implementedKinds: [...capabilities.inspections.implemented_kinds]
       },
+      bridgeVisibility: {
+        profileId: state.visibility.profile_id,
+        coreStatus: state.visibility.core_status,
+        playerVisibleClosureStatus: state.visibility.player_visible_closure_status,
+        availableInspections: [...state.visibility.available_inspections],
+        linkedDetailKinds: [...state.visibility.linked_detail_kinds],
+        hiddenByPolicy: [...state.visibility.hidden_by_policy],
+        missing: [...state.visibility.missing],
+        unknownCriticalFieldBehavior: state.visibility.unknown_critical_field_behavior
+      },
+      bridgeInspectionCatalog: state.inspection_catalog.map((entry) => ({
+        kind: entry.kind,
+        scope: entry.scope,
+        availability: entry.availability,
+        visibilityBasis: entry.visibility_basis,
+        stateBound: entry.state_bound,
+        createsActionAuthority: entry.creates_action_authority,
+        orderingSemantics: entry.ordering_semantics,
+        estimatedCost: entry.estimated_cost,
+        recommendedFor: [...entry.recommended_for],
+        hiddenByPolicy: [...entry.hidden_by_policy]
+      })),
+      bridgeContractInstanceShadow: {
+        status: state.contract_instance_shadow.status,
+        instanceId: state.contract_instance_shadow.instance_id,
+        surfaceKind: state.contract_instance_shadow.surface_kind,
+        ...(state.contract_instance_shadow.semantic_contract_id
+          ? { semanticContractId: state.contract_instance_shadow.semantic_contract_id }
+          : {}),
+        ...(state.contract_instance_shadow.declared_binding
+          ? { declaredBinding: state.contract_instance_shadow.declared_binding }
+          : {}),
+        operations: state.contract_instance_shadow.operations.map((operation) => ({
+          operation: operation.operation,
+          evidenceStatus: operation.evidence_status,
+          published: operation.published
+        })),
+        currentAuthorityTier: state.contract_instance_shadow.current_authority_tier,
+        currentAuthorityBasis: state.contract_instance_shadow.current_authority_basis,
+        authorizing: state.contract_instance_shadow.authorizing,
+        limitations: [...state.contract_instance_shadow.limitations]
+      },
+      ...(bridgeObservation ? { bridgeObservation } : {}),
       bridgeInspections: projectedInspections.evidence,
       ...(Object.keys(bridgeInspectionFacts).length > 0 ? { bridgeInspectionFacts } : {})
     } : {})
@@ -3074,6 +3136,41 @@ function unsupported(rawState: Sts2McpRawState, reason: string): NormalizedCurre
     reason,
     classification: "missing_action_protocol",
     observedTopLevelKeys: Object.keys(rawState).sort()
+  };
+}
+
+function projectCoherentObservation(
+  raw: JsonObject,
+  expectedStateId: string,
+  observedInspectionKinds: string[],
+  diagnostics: DiagnosticsBuilder
+) {
+  const observationId = typeof raw.observation_id === "string" ? raw.observation_id : undefined;
+  const stateId = typeof raw.state_id === "string" ? raw.state_id : undefined;
+  const inspectionKinds = Array.isArray(raw.inspection_kinds)
+    ? raw.inspection_kinds.filter((value): value is "run_deck" | "combat_piles" =>
+        value === "run_deck" || value === "combat_piles")
+    : [];
+  const expectedKinds = observedInspectionKinds.filter((kind): kind is "run_deck" | "combat_piles" =>
+    kind === "run_deck" || kind === "combat_piles");
+  const coherent = raw.coherent === true;
+  if (!observationId
+      || !coherent
+      || stateId !== expectedStateId
+      || inspectionKinds.length !== (Array.isArray(raw.inspection_kinds) ? raw.inspection_kinds.length : -1)
+      || [...inspectionKinds].sort().join(",") !== [...expectedKinds].sort().join(",")) {
+    diagnostics.invalid(
+      "bridge_v2_observation",
+      raw,
+      "coherent observation metadata must match the enclosed state and inspection sidecars"
+    );
+    return undefined;
+  }
+  return {
+    observationId,
+    coherent: true as const,
+    stateId,
+    inspectionKinds
   };
 }
 

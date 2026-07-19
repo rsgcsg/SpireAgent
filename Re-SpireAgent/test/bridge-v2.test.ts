@@ -3,14 +3,14 @@ import { buildAllowedActions } from "../src/domain/actions/buildAllowedActions.j
 import type { AdapterDescriptor } from "../src/game-io/adapter.js";
 import { Sts2McpHybridAdapter } from "../src/integrations/sts2mcp/hybridAdapter.js";
 import { TransientObservationError } from "../src/game-io/observationError.js";
-import { decodeBridgeV2Capabilities, decodeBridgeV2Inspection, decodeBridgeV2State } from "../src/integrations/sts2mcp/bridgeV2Protocol.js";
+import { decodeBridgeV2Capabilities, decodeBridgeV2Inspection, decodeBridgeV2ObservationBundle, decodeBridgeV2State } from "../src/integrations/sts2mcp/bridgeV2Protocol.js";
 import { isBridgeV2WrappedState, wrapBridgeV2State } from "../src/integrations/sts2mcp/rawState.js";
 import { normalizeCurrentState } from "../src/normalization/normalizeCurrentState.js";
 import type { JsonObject } from "../src/shared/json.js";
 import { fixture } from "./helpers.js";
 
 const CAPABILITIES = {
-  protocol_version: "2.0-preview.46",
+  protocol_version: "2.0-preview.47",
   bridge: {
     id: "sts2_mcp_bridge_v2",
     name: "STS2 Agent Bridge",
@@ -144,8 +144,32 @@ const SHARED_STATE = {
   }
 } satisfies JsonObject;
 
+const RUN_DECK_CATALOG_ENTRY = {
+  kind: "run_deck",
+  scope: "active_run",
+  availability: "qualified",
+  visibility_basis: "player_can_open_deck_view",
+  state_bound: true,
+  creates_action_authority: false,
+  ordering_semantics: "unordered_multiset",
+  estimated_cost: "medium",
+  recommended_for: ["deck_strategy", "card_choice"],
+  hidden_by_policy: ["draw_order"]
+};
+
+const RUN_VISIBILITY = {
+  profile_id: "event.deck_enchant_selection.v1",
+  core_status: "complete",
+  player_visible_closure_status: "partial_catalog",
+  available_inspections: ["run_deck"],
+  linked_detail_kinds: [],
+  hidden_by_policy: ["rng_state", "draw_order", "future_outcomes"],
+  missing: ["tooltip_keyword_details_are_incremental"],
+  unknown_critical_field_behavior: "fail_closed"
+};
+
 const DECK_ENCHANT_STATE = {
-  protocol_version: "2.0-preview.46",
+  protocol_version: "2.0-preview.47",
   state_id: "state-test-1",
   state_sequence: 1,
   observed_at: "2026-07-16T00:00:00Z",
@@ -215,6 +239,20 @@ const DECK_ENCHANT_STATE = {
   bridge: CAPABILITIES.bridge,
   game: CAPABILITIES.game,
   observation_policy: CAPABILITIES.observation_policy,
+  visibility: RUN_VISIBILITY,
+  inspection_catalog: [RUN_DECK_CATALOG_ENTRY],
+  contract_instance_shadow: {
+    status: "resolved_manifest_contract",
+    instance_id: "contract-instance-deck-enchant-1",
+    surface_kind: "deck_enchant_selection",
+    semantic_contract_id: "bridge.surface.deck_enchant_selection.2.0-preview.47",
+    declared_binding: "fixture-declared-binding",
+    operations: [{ operation: "toggle_card", evidence_status: "surface_level_only", published: true }],
+    current_authority_tier: "canary",
+    current_authority_basis: "exact_environment_surface_kind_gate",
+    authorizing: false,
+    limitations: ["shadow_inventory_only", "authority_remains_surface_kind_scoped"]
+  },
   diagnostics: [],
   warnings: []
 };
@@ -234,6 +272,16 @@ const COMBAT_RESOLUTION_NO_ACTION_STATE = {
     kind: "no_action",
     reason: "settling",
     message: "Combat has ended; the game is resolving room rewards or the next player-visible surface."
+  },
+  contract_instance_shadow: {
+    status: "unresolved",
+    instance_id: "contract-instance-transition-1",
+    surface_kind: "no_action",
+    operations: [],
+    current_authority_tier: "disabled",
+    current_authority_basis: "exact_environment_surface_kind_gate",
+    authorizing: false,
+    limitations: ["shadow_inventory_only", "authority_remains_surface_kind_scoped"]
   },
   authority_handoff: {
     status: "none_fail_closed",
@@ -515,6 +563,13 @@ const CHARACTER_SELECT_STATE = {
   state_id: "state-character-select-1",
   state_sequence: 19,
   shared_state: null,
+  visibility: {
+    ...RUN_VISIBILITY,
+    profile_id: "menu.character_select.v1",
+    available_inspections: [],
+    linked_detail_kinds: []
+  },
+  inspection_catalog: [],
   context: {
     kind: "menu",
     flow: "standard_run_setup"
@@ -606,6 +661,13 @@ const MAIN_MENU_STATE = {
   state_id: "state-main-menu-1",
   state_sequence: 20,
   shared_state: null,
+  visibility: {
+    ...RUN_VISIBILITY,
+    profile_id: "menu.main_menu.v1",
+    available_inspections: [],
+    linked_detail_kinds: []
+  },
+  inspection_catalog: [],
   context: { kind: "menu", flow: "root_navigation" },
   surface_kind: "main_menu",
   authority_handoff: { status: "bridge_owned", surface_kind: "main_menu", reason: "fixture exact root-menu ownership" },
@@ -1148,6 +1210,27 @@ const COMBAT_TURN_STATE = {
       intents: [{ type: "Attack", label: "6", title: "Attack", description: "Intends to attack for 6." }]
     }]
   },
+  visibility: {
+    ...RUN_VISIBILITY,
+    profile_id: "combat.combat_turn.v1",
+    available_inspections: ["run_deck", "combat_piles"],
+    linked_detail_kinds: []
+  },
+  inspection_catalog: [
+    RUN_DECK_CATALOG_ENTRY,
+    {
+      kind: "combat_piles",
+      scope: "current_combat",
+      availability: "canary",
+      visibility_basis: "player_can_open_combat_piles",
+      state_bound: true,
+      creates_action_authority: false,
+      ordering_semantics: "unordered_multiset",
+      estimated_cost: "medium",
+      recommended_for: ["combat_planning"],
+      hidden_by_policy: ["draw_pile_true_order"]
+    }
+  ],
   surface_kind: "combat_turn",
   authority_handoff: { status: "bridge_owned", surface_kind: "combat_turn", reason: "fixture ownership" },
   surface: { kind: "combat_turn", room_entity_id: "combat-room-1", can_end_turn: true },
@@ -1343,6 +1426,11 @@ const GENERATED_CARD_CHOICE_STATE = {
     ancient: true,
     in_dialogue: false
   },
+  visibility: {
+    ...RUN_VISIBILITY,
+    profile_id: "event.generated_card_choice.v1"
+  },
+  inspection_catalog: [RUN_DECK_CATALOG_ENTRY],
   surface_kind: "generated_card_choice",
   authority_handoff: { status: "bridge_owned", surface_kind: "generated_card_choice", reason: "fixture ownership" },
   surface: {
@@ -1858,7 +1946,7 @@ function visibleInspectionCard(overrides: Record<string, unknown> = {}) {
 
 function runDeckInspection(stateId: string, cards = [visibleInspectionCard()]) {
   return {
-        protocol_version: "2.0-preview.46",
+    protocol_version: "2.0-preview.47",
     inspection_id: `inspection-run-deck-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -1881,7 +1969,7 @@ function runDeckInspection(stateId: string, cards = [visibleInspectionCard()]) {
 
 function combatPilesInspection(stateId: string) {
   return {
-        protocol_version: "2.0-preview.46",
+    protocol_version: "2.0-preview.47",
     inspection_id: `inspection-combat-piles-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -1915,6 +2003,29 @@ function combatPilesInspection(stateId: string) {
     bridge: CAPABILITIES.bridge,
     game: CAPABILITIES.game,
     observation_policy: CAPABILITIES.observation_policy,
+    diagnostics: []
+  };
+}
+
+function coherentObservationBundle(
+  state: Record<string, any>,
+  inspections?: Partial<Record<"run_deck" | "combat_piles", Record<string, unknown>>>
+) {
+  const defaultInspections = Object.fromEntries(state.inspection_catalog.map((entry: { kind: "run_deck" | "combat_piles" }) => {
+    const inspection = entry.kind === "run_deck"
+      ? runDeckInspection(state.state_id)
+      : combatPilesInspection(state.state_id);
+    return [entry.kind, { ...inspection, bridge: state.bridge, game: state.game }];
+  }));
+  const resolvedInspections = inspections ?? defaultInspections;
+  return {
+    protocol_version: "2.0-preview.47",
+    observation_id: `observation-${state.state_id}`,
+    coherent: true,
+    state,
+    inspections: resolvedInspections,
+    bridge: state.bridge,
+    game: state.game,
     diagnostics: []
   };
 }
@@ -1999,6 +2110,11 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
 
   it("strictly decodes the qualified surface and rejects discriminator mismatch", () => {
     expect(decodeBridgeV2State(DECK_ENCHANT_STATE).data.surface.kind).toBe("deck_enchant_selection");
+    const resolvedWithoutContractId = structuredClone(DECK_ENCHANT_STATE) as any;
+    delete resolvedWithoutContractId.contract_instance_shadow.semantic_contract_id;
+    expect(() => decodeBridgeV2State(resolvedWithoutContractId)).toThrow(
+      "resolved contract shadow requires semantic_contract_id"
+    );
     expect(() => decodeBridgeV2State({ ...DECK_ENCHANT_STATE, surface_kind: "other" })).toThrow("does not match");
     expect(() => decodeBridgeV2State({ ...DECK_ENCHANT_STATE, shared_state: null })).toThrow(
       "requires top-level shared_state"
@@ -2597,6 +2713,12 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     const candidateState = {
       ...structuredClone(DECK_REMOVAL_STATE),
       game: candidateCapabilities.game,
+      visibility: {
+        ...RUN_VISIBILITY,
+        available_inspections: [],
+        linked_detail_kinds: []
+      },
+      inspection_catalog: [],
       readiness: "observation_only",
       legal_actions: [],
       completeness: {
@@ -2715,6 +2837,11 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     const combatCanaryState = {
       ...structuredClone(COMBAT_TURN_STATE),
       game: canaryCapabilities.game,
+      visibility: {
+        ...RUN_VISIBILITY,
+        profile_id: "combat.combat_turn.v1"
+      },
+      inspection_catalog: [RUN_DECK_CATALOG_ENTRY],
       diagnostics: []
     };
     const combatCanary = normalizeCurrentState(
@@ -2780,7 +2907,9 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       wrapBridgeV2State({
         state: {
           ...combatCanaryState,
-          game: mixedInspectionCapabilities.game
+          game: mixedInspectionCapabilities.game,
+          visibility: structuredClone(COMBAT_TURN_STATE.visibility),
+          inspection_catalog: structuredClone(COMBAT_TURN_STATE.inspection_catalog)
         },
         capabilities: mixedInspectionCapabilities
       }),
@@ -2830,6 +2959,12 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     const eventState = {
       ...structuredClone(EVENT_OPTION_STATE),
       game: canaryOnlyCapabilities.game,
+      visibility: {
+        ...RUN_VISIBILITY,
+        available_inspections: [],
+        linked_detail_kinds: []
+      },
+      inspection_catalog: [],
       diagnostics: []
     };
 
@@ -2850,6 +2985,12 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     const acquisitionState = {
       ...structuredClone(EVENT_CARD_ACQUISITION_STATE),
       game: canaryOnlyCapabilities.game,
+      visibility: {
+        ...RUN_VISIBILITY,
+        available_inspections: [],
+        linked_detail_kinds: []
+      },
+      inspection_catalog: [],
       diagnostics: []
     };
     const acquisition = normalizeCurrentState(
@@ -2869,6 +3010,12 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     const mapState = {
       ...structuredClone(MAP_NAVIGATION_STATE),
       game: canaryOnlyCapabilities.game,
+      visibility: {
+        ...RUN_VISIBILITY,
+        available_inspections: [],
+        linked_detail_kinds: []
+      },
+      inspection_catalog: [],
       diagnostics: []
     };
     const map = normalizeCurrentState(
@@ -2886,6 +3033,12 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     const nonCanaryState = {
       ...structuredClone(DECK_REMOVAL_STATE),
       game: canaryOnlyCapabilities.game,
+      visibility: {
+        ...RUN_VISIBILITY,
+        available_inspections: [],
+        linked_detail_kinds: []
+      },
+      inspection_catalog: [],
       diagnostics: []
     };
     expect(normalizeCurrentState(
@@ -3435,6 +3588,26 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toEqual([]);
   });
 
+  it("rejects incoherent observation bundles before normalization", () => {
+    const valid = coherentObservationBundle(DECK_ENCHANT_STATE);
+    expect(decodeBridgeV2ObservationBundle(valid).data).toMatchObject({
+      coherent: true,
+      state: { state_id: DECK_ENCHANT_STATE.state_id },
+      inspections: { run_deck: { observed_state_id: DECK_ENCHANT_STATE.state_id } }
+    });
+
+    const staleInspection = structuredClone(valid);
+    staleInspection.inspections.run_deck!.observed_state_id = "state-stale";
+    expect(() => decodeBridgeV2ObservationBundle(staleInspection)).toThrow("is not coherent with its state");
+
+    const mismatchedIdentity = structuredClone(valid);
+    mismatchedIdentity.bridge = {
+      ...mismatchedIdentity.bridge,
+      runtime_instance_id: "different-runtime"
+    };
+    expect(() => decodeBridgeV2ObservationBundle(mismatchedIdentity)).toThrow("identity does not match");
+  });
+
   it("projects state-bound run-deck and combat-pile evidence without granting action authority", () => {
     const deckInspection = runDeckInspection(COMBAT_TURN_STATE.state_id);
     const pileInspection = combatPilesInspection(COMBAT_TURN_STATE.state_id);
@@ -3444,6 +3617,12 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     const wrapped = wrapBridgeV2State({
       state: structuredClone(COMBAT_TURN_STATE),
       capabilities: structuredClone(CAPABILITIES),
+      observation: {
+        observation_id: "observation-combat-1",
+        coherent: true,
+        state_id: COMBAT_TURN_STATE.state_id,
+        inspection_kinds: ["run_deck", "combat_piles"]
+      },
       inspections: {
         run_deck: structuredClone(deckInspection),
         combat_piles: structuredClone(pileInspection)
@@ -3473,6 +3652,21 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
         orderingSemantics: "unordered_multiset",
         missing: ["draw_pile_order_hidden_by_policy"]
       })
+    ]);
+    expect(envelope.currentState.bridgeObservation).toEqual({
+      observationId: "observation-combat-1",
+      coherent: true,
+      stateId: COMBAT_TURN_STATE.state_id,
+      inspectionKinds: ["run_deck", "combat_piles"]
+    });
+    expect(envelope.currentState.bridgeVisibility).toMatchObject({
+      profileId: "combat.combat_turn.v1",
+      playerVisibleClosureStatus: "partial_catalog",
+      availableInspections: ["run_deck", "combat_piles"]
+    });
+    expect(envelope.currentState.bridgeInspectionCatalog).toEqual([
+      expect.objectContaining({ kind: "run_deck", createsActionAuthority: false }),
+      expect.objectContaining({ kind: "combat_piles", createsActionAuthority: false })
     ]);
     expect(buildAllowedActions(envelope.currentState, envelope.stateHash).map((action) => action.id)).toEqual([
       "action-combat-play-1",
@@ -3644,7 +3838,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     const wrongContext = structuredClone(COMBAT_PILE_CARD_SELECTION_STATE);
     (wrongContext as { context: unknown }).context = structuredClone(DECK_ENCHANT_STATE.context);
     expect(() => decodeBridgeV2State(wrongContext)).toThrow(
-      "combat_pile_card_selection surface requires combat context"
+      "requires combat context"
     );
 
     const inconsistentSelection = structuredClone(COMBAT_PILE_CARD_SELECTION_STATE);
@@ -4068,6 +4262,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       requests.push({ url, ...(init ? { init } : {}), ...(init?.body ? { body: JSON.parse(String(init.body)) } : {}) });
       if (url.endsWith("/api/v2/capabilities")) return json(CAPABILITIES);
       if (url.endsWith("/api/v2/state")) return json(DECK_ENCHANT_STATE);
+      if (url.endsWith("/api/v2/observation-bundles")) return json(coherentObservationBundle(DECK_ENCHANT_STATE));
       if (url.includes("/api/v2/inspections/run_deck?")) return json(runDeckInspection(DECK_ENCHANT_STATE.state_id));
       if (url.endsWith("/api/v1/singleplayer?format=json")) return json(await fixture("event"));
       if (url.endsWith("/api/v2/commands") && init?.method === "POST") {
@@ -4130,6 +4325,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       calls.push(url);
       if (url.endsWith("/api/v2/capabilities")) return json(CAPABILITIES);
       if (url.endsWith("/api/v2/state")) return json(unsupported);
+      if (url.endsWith("/api/v2/observation-bundles")) return json(coherentObservationBundle(unsupported));
       if (url.includes("/api/v2/inspections/run_deck?")) return json(runDeckInspection(unsupported.state_id));
       if (url.endsWith("/api/v1/singleplayer?format=json")) return json(await fixture("map"));
       throw new Error(`Unexpected request ${url}`);
@@ -4212,6 +4408,11 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       calls.push(url);
       if (url.endsWith("/api/v2/capabilities")) return json(capabilities);
       if (url.endsWith("/api/v2/state")) return json(unsupported);
+      if (url.endsWith("/api/v2/observation-bundles")) {
+        return json(coherentObservationBundle(unsupported, {
+          run_deck: { ...runDeckInspection(unsupported.state_id), game: capabilities.game }
+        }));
+      }
       if (url.includes("/api/v2/inspections/run_deck?")) {
         return json({ ...runDeckInspection(unsupported.state_id), game: capabilities.game });
       }
@@ -4303,7 +4504,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     expect(envelope.currentState.actionAuthority).toBe("none");
   });
 
-  it("treats an unavailable run deck as absent evidence and types composite-read stale races", async () => {
+  it("fails closed on catalog/runtime inspection mismatch and types composite-read stale races", async () => {
     const unsupported = {
       ...DECK_ENCHANT_STATE,
       readiness: "unsupported",
@@ -4324,7 +4525,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
         const url = String(input);
         if (url.endsWith("/api/v2/capabilities")) return json(CAPABILITIES);
         if (url.endsWith("/api/v2/state")) return json(unsupported);
-        if (url.includes("/api/v2/inspections/run_deck?")) {
+        if (url.endsWith("/api/v2/observation-bundles")) {
           return json({ error: { code: errorCode, detail: "test failure" } }, 409);
         }
         if (url.endsWith("/api/v1/singleplayer?format=json")) {
@@ -4334,9 +4535,9 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       }
     );
 
-    await expect(makeAdapter("inspection_not_available").readCurrentState()).resolves.toMatchObject({
-      state_type: "menu",
-      bridge_v2_capabilities: expect.any(Object)
+    await expect(makeAdapter("inspection_not_available").readCurrentState()).rejects.toMatchObject({
+      name: "BridgeV2HttpError",
+      errorCode: "inspection_not_available"
     });
     await expect(makeAdapter("stale_state").readCurrentState()).rejects.toMatchObject({
       name: "TransientObservationError",
@@ -4398,6 +4599,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       requests.push(url);
       if (url.endsWith("/api/v2/capabilities")) return json(CAPABILITIES);
       if (url.endsWith("/api/v2/state")) return json(DECK_ENCHANT_STATE);
+      if (url.endsWith("/api/v2/observation-bundles")) return json(coherentObservationBundle(DECK_ENCHANT_STATE));
       if (url.includes("/api/v2/inspections/run_deck?")) return json(runDeckInspection(DECK_ENCHANT_STATE.state_id));
       if (url.endsWith("/api/v1/singleplayer?format=json")) return json(await fixture("event"));
       throw new Error(`Unexpected request ${url}`);
@@ -4437,6 +4639,12 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     };
     const incompatibleState = structuredClone(DECK_ENCHANT_STATE);
     incompatibleState.game = incompatibleCapabilities.game;
+    incompatibleState.visibility = {
+      ...RUN_VISIBILITY,
+      available_inspections: [],
+      linked_detail_kinds: []
+    };
+    incompatibleState.inspection_catalog = [];
     const adapter = new Sts2McpHybridAdapter("http://adapter.test", 1_000, {
       mode: "auto",
       commandPollMs: 1,
@@ -4446,6 +4654,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       calls.push(url);
       if (url.endsWith("/api/v2/capabilities")) return json(incompatibleCapabilities);
       if (url.endsWith("/api/v2/state")) return json(incompatibleState);
+      if (url.endsWith("/api/v2/observation-bundles")) return json(coherentObservationBundle(incompatibleState, {}));
       if (url.includes("/api/v2/inspections/run_deck?")) return json(runDeckInspection(incompatibleState.state_id));
       if (url.endsWith("/api/v1/singleplayer?format=json")) return json(await fixture("event"));
       throw new Error(`Unexpected request ${url}`);
@@ -4498,6 +4707,12 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     const candidateState = {
       ...structuredClone(DECK_REMOVAL_STATE),
       game: candidateCapabilities.game,
+      visibility: {
+        ...RUN_VISIBILITY,
+        available_inspections: [],
+        linked_detail_kinds: []
+      },
+      inspection_catalog: [],
       readiness: "observation_only",
       legal_actions: [],
       completeness: {
@@ -4515,6 +4730,9 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       requests.push(url);
       if (url.endsWith("/api/v2/capabilities")) return json(candidateCapabilities);
       if (url.endsWith("/api/v2/state")) return json(candidateState);
+      if (url.endsWith("/api/v2/observation-bundles")) {
+        return json(coherentObservationBundle(candidateState, {}));
+      }
       throw new Error(`Unexpected candidate-observation request ${url}`);
     });
 
@@ -4582,6 +4800,9 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       requests.push(url);
       if (url.endsWith("/api/v2/capabilities")) return json(capabilities);
       if (url.endsWith("/api/v2/state")) return json(state);
+      if (url.endsWith("/api/v2/observation-bundles")) {
+        return json(coherentObservationBundle(state, { run_deck: inspection }));
+      }
       if (url.includes("/api/v2/inspections/run_deck?")) return json(inspection);
       throw new Error(`Unexpected action-canary request ${url}`);
     });
@@ -4593,7 +4814,8 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       actionAuthority: "bridge_advertised",
       bridgeInspectionFacts: { runDeck: [expect.objectContaining({ id: "STRIKE" })] }
     });
-    expect(requests.some((url) => url.includes("/inspections/run_deck?"))).toBe(true);
+    expect(requests.some((url) => url.endsWith("/api/v2/observation-bundles"))).toBe(true);
+    expect(requests.some((url) => url.includes("/inspections/run_deck?"))).toBe(false);
     expect(requests.some((url) => url.includes("/inspections/combat_piles?"))).toBe(false);
     expect(requests.some((url) => url.includes("/api/v1/"))).toBe(false);
   });
@@ -4637,6 +4859,12 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     const unsupportedCandidateState = {
       ...structuredClone(DECK_REMOVAL_STATE),
       game: candidateCapabilities.game,
+      visibility: {
+        ...RUN_VISIBILITY,
+        available_inspections: [],
+        linked_detail_kinds: []
+      },
+      inspection_catalog: [],
       readiness: "unsupported",
       context: { kind: "unknown", source_type: "menu", reason: "menu is not candidate-observable" },
       surface_kind: "unsupported",
@@ -4658,6 +4886,9 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       requests.push(url);
       if (url.endsWith("/api/v2/capabilities")) return json(candidateCapabilities);
       if (url.endsWith("/api/v2/state")) return json(unsupportedCandidateState);
+      if (url.endsWith("/api/v2/observation-bundles")) {
+        return json(coherentObservationBundle(unsupportedCandidateState, {}));
+      }
       throw new Error(`Unexpected candidate-build request ${url}`);
     });
 
@@ -4702,6 +4933,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       calls.push(url);
       if (url.endsWith("/api/v2/capabilities")) return json(CAPABILITIES);
       if (url.endsWith("/api/v2/state")) return json(driftedUnsupported);
+      if (url.endsWith("/api/v2/observation-bundles")) return json(coherentObservationBundle(driftedUnsupported));
       if (url.includes("/api/v2/inspections/run_deck?")) return json(runDeckInspection(driftedUnsupported.state_id));
       if (url.endsWith("/api/v1/singleplayer?format=json")) return json(await fixture("event"));
       throw new Error(`Unexpected request ${url}`);
@@ -4764,6 +4996,7 @@ function commandAdapter(
     const url = String(input);
     if (url.endsWith("/api/v2/capabilities")) return json(CAPABILITIES);
     if (url.endsWith("/api/v2/state")) return json(DECK_ENCHANT_STATE);
+    if (url.endsWith("/api/v2/observation-bundles")) return json(coherentObservationBundle(DECK_ENCHANT_STATE));
     if (url.includes("/api/v2/inspections/run_deck?")) return json(runDeckInspection(DECK_ENCHANT_STATE.state_id));
     if (url.endsWith("/api/v1/singleplayer?format=json")) return json(await fixture("event"));
     if (url.endsWith("/api/v2/commands") && init?.method === "POST") {

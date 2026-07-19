@@ -44,6 +44,11 @@ describe("FileDecisionRecorder", () => {
       agentVersion: "test",
       adapter: { adapterId: "sts2mcp-rest", endpoint: "http://localhost:15526", capabilities: {} },
       provider: { provider: "deepseek", model: "fake", thinkingMode: "disabled", maxOutputTokens: 100 },
+      evidence: {
+        provenance: "fixture",
+        declaredBy: "runtime_configuration",
+        qualificationUse: "coverage_only_unless_independently_reviewed"
+      },
       schemas: { normalizedState: 2, prompt: 2, decisionRecord: 2 }
     };
     const recorder = new FileDecisionRecorder(dataRoot, metadata);

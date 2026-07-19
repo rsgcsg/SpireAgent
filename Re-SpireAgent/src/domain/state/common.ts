@@ -66,6 +66,54 @@ export interface BridgeInspectionFactsSnapshot {
   exhaustPile?: CardSnapshot[];
 }
 
+export interface BridgeInspectionCatalogEntrySnapshot {
+  kind: "run_deck" | "combat_piles";
+  scope: "active_run" | "current_combat";
+  availability: "qualified" | "canary";
+  visibilityBasis: string;
+  stateBound: true;
+  createsActionAuthority: false;
+  orderingSemantics: "unordered_multiset";
+  estimatedCost: "low" | "medium" | "high";
+  recommendedFor: string[];
+  hiddenByPolicy: string[];
+}
+
+export interface BridgeVisibilitySnapshot {
+  profileId: string;
+  coreStatus: "complete" | "partial";
+  playerVisibleClosureStatus: "complete" | "partial_catalog" | "partial";
+  availableInspections: Array<"run_deck" | "combat_piles">;
+  linkedDetailKinds: string[];
+  hiddenByPolicy: string[];
+  missing: string[];
+  unknownCriticalFieldBehavior: "fail_closed";
+}
+
+export interface BridgeObservationSnapshot {
+  observationId: string;
+  coherent: true;
+  stateId: string;
+  inspectionKinds: Array<"run_deck" | "combat_piles">;
+}
+
+export interface BridgeContractInstanceShadowSnapshot {
+  status: "resolved_manifest_contract" | "unresolved";
+  instanceId: string;
+  surfaceKind: string;
+  semanticContractId?: string;
+  declaredBinding?: string;
+  operations: Array<{
+    operation: string;
+    evidenceStatus: "surface_level_only" | "source_audited" | "organic_canary_exercised" | "organic_qualified" | "unregistered";
+    published: boolean;
+  }>;
+  currentAuthorityTier: "qualified" | "canary" | "observation_only" | "disabled";
+  currentAuthorityBasis: "exact_environment_surface_kind_gate";
+  authorizing: false;
+  limitations: string[];
+}
+
 export interface RunSnapshot {
   runId?: string;
   characterId?: string;
@@ -105,4 +153,8 @@ export interface NormalizedStateBase {
   bridgeInspectionPolicy?: BridgeInspectionPolicySnapshot;
   bridgeInspections?: BridgeInspectionEvidenceSnapshot[];
   bridgeInspectionFacts?: BridgeInspectionFactsSnapshot;
+  bridgeVisibility?: BridgeVisibilitySnapshot;
+  bridgeInspectionCatalog?: BridgeInspectionCatalogEntrySnapshot[];
+  bridgeObservation?: BridgeObservationSnapshot;
+  bridgeContractInstanceShadow?: BridgeContractInstanceShadowSnapshot;
 }

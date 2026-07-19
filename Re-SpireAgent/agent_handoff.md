@@ -1,6 +1,28 @@
 # RE-P1 Handoff
 
-Status update 2026-07-18: Bridge `2.0-preview.46` is the current source contract
+Status update 2026-07-19: Bridge `2.0-preview.47` is the current source contract
+against exact identity `v0.109.0|c12f634d|-840572606`, MVID
+`784bbdc5-e7b3-40e7-872f-3c8ba538f9b0`, runtime
+`0533bb421a334245b64cfde35394d64a`, and the exact bridge-only Modset recorded
+in the Bridge Canonical status. It adds coherent observation bundles,
+visibility/Inspection catalog fields, linked-reward completion support, and a
+non-authorizing contract-instance shadow. The permission matrix is unchanged.
+Intermediate preview.47 MVID `eb96741b-42ce-43e1-86b3-6d71a1caea4e` produced
+the Bridge-confirmed Continue and reached the saved-run shop; Re initially
+mislabeled settlement because an unresolved shadow omitted nullable fields.
+The decoder now accepts that legal transitional shape and still requires
+`authorizing=false`. Final MVID `784bbdc5-e7b3-40e7-872f-3c8ba538f9b0` has
+read-only bundle and strict Re inspection evidence plus an independently
+recorded operator-positioned Continue and 40-decision strict-v2 journey. Run
+`run-20260719150346-ptpq0a` settled 39 actions and safely rejected one stale
+combat action before execution; every decision used a coherent observation,
+Bridge-advertised authority, valid DeepSeek output, and a non-authorizing
+contract shadow. This is coverage/canary evidence, not an automatic
+qualification upgrade. Future run metadata records
+declared evidence provenance; historical runs remain `unrecorded` coverage,
+not automatic Organic qualification.
+
+Historical update 2026-07-18: Bridge `2.0-preview.46` was the source contract
 against exact identity `v0.109.0|c12f634d|-840572606` and an
 `exact_bridge_only` loaded Modset. Preview.46 adds typed read-only card hover
 facts and stable owner-scoped preview identity. Final MVID

@@ -8,6 +8,7 @@ import {
   sameBridgeModsetIdentity,
   type BridgeV2Capabilities,
   type BridgeV2Command,
+  type BridgeV2ObservationBundle,
   type BridgeV2State
 } from "./bridgeV2Protocol.js";
 import { wrapBridgeV2State, type Sts2McpRawState } from "./rawState.js";
@@ -138,42 +139,35 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
     // explicitly says this surface is unsupported. Any contract drift remains
     // visible to the strict normalizer and fails closed.
     if (this.options.mode === "v2" || !isSafeExplicitLegacyFallback(capabilities.data, state.data)) {
-      const [legacyState, inspections] = await Promise.all([
+      const [legacyState, observation] = await Promise.all([
         candidateBuild || scopedQualifiedBuild || bridgeOwnedState || this.options.mode === "v2"
           ? undefined
           : this.tryReadLegacySidecar(),
-        // Candidate builds may expose a separately scoped, v2-owned
-        // inspection canary. Never merge v1 there, but do preserve an
-        // inspection explicitly authorized by the exact compatibility scope.
-        this.readInspectionSidecars(capabilities.data, state.data)
+        this.readObservationBundle(capabilities.data, state.data)
       ]);
-      const verifiedState = await this.bridge.state();
-      if (verifiedState.data.state_id !== state.data.state_id) {
-        throw stateChangedDuringCompositeRead();
-      }
       this.lastReadAuthority = "bridge";
       return wrapBridgeV2State({
-        state: verifiedState.raw,
+        state: observation.rawState,
         capabilities: capabilities.raw,
-        ...(Object.keys(inspections).length > 0 ? { inspections } : {}),
+        ...(Object.keys(observation.inspections).length > 0 ? { inspections: observation.inspections } : {}),
+        observation: observation.evidence,
         ...(legacyState ? { legacyState } : {})
       });
     }
 
-    const [legacyState, inspections] = await Promise.all([
+    const [legacyState, observation] = await Promise.all([
       this.legacy.readCurrentState(),
-      this.readInspectionSidecars(capabilities.data, state.data)
+      this.readObservationBundle(capabilities.data, state.data)
     ]);
-    const verifiedState = await this.bridge.state();
-    if (verifiedState.data.state_id !== state.data.state_id) {
-      throw stateChangedDuringCompositeRead();
-    }
     this.lastReadAuthority = "legacy";
     return {
       ...legacyState,
       bridge_v2_capabilities: capabilities.raw,
-      bridge_v2_authority_evidence: bridgeAuthorityEvidence(verifiedState.data),
-      ...(Object.keys(inspections).length > 0 ? { bridge_v2_inspections: inspections } : {})
+      bridge_v2_authority_evidence: bridgeAuthorityEvidence(observation.state),
+      bridge_v2_observation: observation.evidence,
+      ...(Object.keys(observation.inspections).length > 0
+        ? { bridge_v2_inspections: observation.inspections }
+        : {})
     };
   }
 
@@ -244,42 +238,38 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
     }
   }
 
-  private async readInspectionSidecars(
+  private async readObservationBundle(
     capabilities: BridgeV2Capabilities,
     state: BridgeV2State
-  ): Promise<Partial<Record<"run_deck" | "combat_piles", JsonObject>>> {
-    // A candidate build gets no inspection by default. The server must
-    // explicitly advertise both inspection authority and the allowed kind.
-    if (!capabilities.game.compatibility.inspection_allowed) return {};
-    const implemented = new Set(capabilities.inspections.implemented_kinds);
-    const requested: Array<"run_deck" | "combat_piles"> = [];
-    if (implemented.has("run_deck")) requested.push("run_deck");
-    if (implemented.has("combat_piles") && state.context.kind === "combat") {
-      requested.push("combat_piles");
-    }
-
-    const entries = await Promise.all(requested.map(async (kind) => {
-      try {
-        const inspection = await this.bridge.inspect(kind, state.state_id);
-        return [kind, inspection.raw] as const;
-      } catch (error) {
-        // A fixed inspection capability may be unavailable in a state where
-        // its backing player object does not exist (for example, main menu).
-        // A stale response here means the game advanced after this adapter
-        // read the expected state. Reject the partial snapshot, but preserve a
-        // typed signal so settlement polling can retry the whole observation.
-        if (error instanceof BridgeV2HttpError && error.errorCode === "inspection_not_available") {
-          return undefined;
-        }
-        if (error instanceof BridgeV2HttpError && error.errorCode === "stale_state") {
-          throw stateChangedDuringCompositeRead(`${kind} inspection returned stale_state`);
-        }
-        throw error;
+  ): Promise<{
+    state: BridgeV2State;
+    rawState: JsonObject;
+    inspections: Partial<Record<"run_deck" | "combat_piles", JsonObject>>;
+    evidence: JsonObject;
+  }> {
+    // Availability is state-bound. Capabilities describe the vocabulary, but
+    // only the current catalog may authorize a read-only inspection request.
+    const requested = capabilities.game.compatibility.inspection_allowed
+      ? state.inspection_catalog.map((entry) => entry.kind)
+      : [];
+    let bundle;
+    try {
+      bundle = await this.bridge.observationBundle(state.state_id, requested);
+    } catch (error) {
+      if (error instanceof BridgeV2HttpError && error.errorCode === "stale_state") {
+        throw stateChangedDuringCompositeRead("coherent observation bundle returned stale_state");
       }
-    }));
-    return Object.fromEntries(
-      entries.filter((entry): entry is readonly ["run_deck" | "combat_piles", JsonObject] => entry !== undefined)
+      throw error;
+    }
+    const inspections = Object.fromEntries(
+      Object.entries(bundle.data.inspections).map(([kind, inspection]) => [kind, inspection])
     ) as Partial<Record<"run_deck" | "combat_piles", JsonObject>>;
+    return {
+      state: bundle.data.state,
+      rawState: bundle.data.state as unknown as JsonObject,
+      inspections,
+      evidence: observationEvidence(bundle.data)
+    };
   }
 
   private async readLegacyAuthoritativeState(): Promise<Sts2McpRawState> {
@@ -354,6 +344,15 @@ function bridgeAuthorityEvidence(state: BridgeV2State): JsonObject {
         detail: state.game.compatibility.detail
       }
     }
+  };
+}
+
+function observationEvidence(bundle: BridgeV2ObservationBundle): JsonObject {
+  return {
+    observation_id: bundle.observation_id,
+    coherent: bundle.coherent,
+    state_id: bundle.state.state_id,
+    inspection_kinds: Object.keys(bundle.inspections).sort()
   };
 }
 

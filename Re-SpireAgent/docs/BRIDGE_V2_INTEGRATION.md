@@ -2,7 +2,7 @@
 
 ## Current Scope
 
-Re-SpireAgent supports the strict `2.0-preview.46` source contract. Current
+Re-SpireAgent supports the strict `2.0-preview.47` source contract. Current
 v0.109 authority is read from capabilities rather than inferred from historical
 implementation:
 
@@ -33,6 +33,13 @@ empty qualified, canary, or Inspection lists never imply wildcard authority.
 State, capabilities, and Inspection must also agree on the exact loaded Modset
 fingerprint. Re rejects an exact-permission claim unless the sole loaded Mod is
 the negotiated `STS2_MCP` assembly and its MVID matches the Bridge identity.
+
+Preview.47 adds one coherent state-plus-Inspection observation bundle, a typed
+visibility/Inspection catalog, and non-authorizing contract-instance shadow
+telemetry. Re validates and preserves those fields but never uses the shadow as
+permission. Unresolved shadow contracts may omit nullable IDs during
+transitions. Evidence provenance is stored in run metadata and does not change
+execution or qualification.
 
 Source-target organic evidence includes merchant removal with exact post-state,
 independent event/rest upgrade journeys, ordinary combat actions, a Touch of

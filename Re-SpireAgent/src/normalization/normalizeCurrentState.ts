@@ -43,7 +43,7 @@ const KNOWN_TOP_LEVEL_KEYS = new Set([
   "rest_site", "restSite", "event", "shop", "treasure", "card_select", "cardSelect", "hand_select",
   "handSelect", "bundle_select", "bundleSelect", "crystal_sphere", "crystalSphere", "game_over", "gameOver",
   "menu_screen", "menuScreen", "message", "options", "characters",
-  "bridge_v2_capabilities", "bridge_v2_inspections", "bridge_v2_authority_evidence"
+  "bridge_v2_capabilities", "bridge_v2_inspections", "bridge_v2_authority_evidence", "bridge_v2_observation"
 ]);
 const COMBAT_STATE_TOKENS = ["monster", "boss", "elite", "combat", "battle"] as const;
 

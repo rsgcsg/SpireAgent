@@ -4,7 +4,7 @@ Re-SpireAgent is a small, independent Slay the Spire 2 agent runtime. It reads t
 
 RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, shadow/live modes, policy promotion, or the old project's phase machinery. Its job is to make one decision path correct and auditable.
 
-The current strict client contract is Bridge `2.0-preview.46` on the
+The current strict client contract is Bridge `2.0-preview.47` on the
 source-qualified exact game identity `v0.109.0|c12f634d|-840572606`. A local
 game with the same version/commit but another assembly hash remains separately
 scoped. Re also requires the state and capabilities to agree on the exact
@@ -22,6 +22,14 @@ modifier, potion, shop-relic, and treasure-relic hover facts. These previews
 are normalized for reasoning but never create allowed actions. Ephemeral UI
 preview models have stable owner-scoped identities so repeated reads do not
 fabricate state changes.
+
+Preview.47 additionally decodes a bounded visibility declaration, the current
+typed Inspection catalog, and a non-authorizing contract-instance shadow. Re
+uses one coherent observation bundle for the catalogued Inspections it elects
+to read, so state and sidecars cannot be assembled from different checkpoints.
+The shadow is telemetry only and never changes `actionAuthority` or allowed
+actions. Unresolved shadow contracts may omit nullable contract/binding fields
+without invalidating an otherwise valid transitional state.
 
 Exact no-input combat setup and post-combat resolution intervals normalize as
 `combat_transition(setup|resolution) + no_action + settling +
@@ -123,6 +131,7 @@ All values are optional except the API key for real model decisions.
 | `DEEPSEEK_MAX_OUTPUT_TOKENS` | `320` | Short JSON output guard |
 | `DEEPSEEK_THINKING_MODE` | `disabled` | Explicit provider thinking mode |
 | `AGENT_DATA_DIR` | `data/runs` | Local evidence directory |
+| `AGENT_EVIDENCE_PROVENANCE` | `unrecorded` | `ordinary_gameplay`, `operator_positioned`, `console_assisted`, `fixture`, or `unrecorded`; metadata only, never qualification authority |
 | `AGENT_MAX_TICKS` | `100` | Default run limit |
 | `AGENT_TICK_DELAY_MS` | `250` | Delay between decisions |
 | `AGENT_SETTLEMENT_POLL_MS` | `150` | Post-action poll interval |
@@ -205,6 +214,11 @@ data/runs/<run-id>/
 ```
 
 Prompt files preserve the full system prompt, context and surface guides, user payload, hashes, and byte counts. Response files preserve all provider attempts, redacted raw provider response, raw content, parsed decision, finish reason, usage, and safe error classification. `decisions.jsonl` links those artifacts to pre/post normalized state, full-raw stale-guard hashes, normalized projection hashes, allowed actions, validation, execution, and settlement.
+
+`metadata.json` also records declared evidence provenance. Historical or
+default `unrecorded` runs remain useful coverage/debug evidence but cannot
+independently be described as Organic qualification. The label never changes
+Bridge permission or execution behavior.
 
 ## Supported State Coverage
 

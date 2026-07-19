@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { isJsonObject, type JsonObject } from "../../shared/json.js";
 
-export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.46" as const;
+export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.47" as const;
 
 const compatibilitySchema = z.object({
   status: z.string().min(1),
@@ -865,6 +865,74 @@ const inspectionSchema = z.object({
   diagnostics: z.array(diagnosticSchema)
 }).passthrough();
 
+const inspectionCatalogEntrySchema = z.object({
+  kind: z.enum(["run_deck", "combat_piles"]),
+  scope: z.enum(["active_run", "current_combat"]),
+  availability: z.enum(["qualified", "canary"]),
+  visibility_basis: z.string().min(1),
+  state_bound: z.literal(true),
+  creates_action_authority: z.literal(false),
+  ordering_semantics: z.literal("unordered_multiset"),
+  estimated_cost: z.enum(["low", "medium", "high"]),
+  recommended_for: z.array(z.string().min(1)),
+  hidden_by_policy: z.array(z.string().min(1))
+}).passthrough();
+
+const visibilityStateSchema = z.object({
+  profile_id: z.string().min(1),
+  core_status: z.enum(["complete", "partial"]),
+  player_visible_closure_status: z.enum(["complete", "partial_catalog", "partial"]),
+  available_inspections: z.array(z.enum(["run_deck", "combat_piles"])),
+  linked_detail_kinds: z.array(z.string().min(1)),
+  hidden_by_policy: z.array(z.string().min(1)),
+  missing: z.array(z.string().min(1)),
+  unknown_critical_field_behavior: z.literal("fail_closed")
+}).passthrough();
+
+const contractOperationShadowSchema = z.object({
+  operation: z.string().min(1),
+  evidence_status: z.enum([
+    "surface_level_only",
+    "source_audited",
+    "organic_canary_exercised",
+    "organic_qualified",
+    "unregistered"
+  ]),
+  published: z.boolean()
+}).passthrough();
+
+const contractInstanceShadowSchema = z.object({
+  status: z.enum(["resolved_manifest_contract", "unresolved"]),
+  instance_id: z.string().min(1),
+  surface_kind: z.string().min(1),
+  // System.Text.Json omits nullable record fields in transitional/unresolved states.
+  // This inventory is non-authorizing, so absence must remain readable rather than
+  // turning an already confirmed command into a settlement read failure.
+  semantic_contract_id: z.string().min(1).nullable().optional(),
+  declared_binding: z.string().min(1).nullable().optional(),
+  operations: z.array(contractOperationShadowSchema),
+  current_authority_tier: z.enum(["qualified", "canary", "observation_only", "disabled"]),
+  current_authority_basis: z.literal("exact_environment_surface_kind_gate"),
+  authorizing: z.literal(false),
+  limitations: z.array(z.string().min(1))
+}).passthrough().superRefine((shadow, context) => {
+  if (shadow.status !== "resolved_manifest_contract") return;
+  if (!shadow.semantic_contract_id) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["semantic_contract_id"],
+      message: "resolved contract shadow requires semantic_contract_id"
+    });
+  }
+  if (!shadow.declared_binding) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["declared_binding"],
+      message: "resolved contract shadow requires declared_binding"
+    });
+  }
+});
+
 const stateBaseSchema = z.object({
   protocol_version: z.literal(SUPPORTED_BRIDGE_V2_PROTOCOL),
   state_id: z.string().min(1),
@@ -886,6 +954,9 @@ const stateBaseSchema = z.object({
     includes_hidden_information: z.boolean(),
     unknown_field_behavior: z.string()
   }).passthrough(),
+  visibility: visibilityStateSchema,
+  inspection_catalog: z.array(inspectionCatalogEntrySchema),
+  contract_instance_shadow: contractInstanceShadowSchema,
   diagnostics: z.array(diagnosticSchema),
   warnings: z.array(z.string())
 }).passthrough();
@@ -942,6 +1013,17 @@ const commandSchema = z.object({
   events: z.array(commandEventSchema)
 }).passthrough();
 
+const observationBundleSchema = z.object({
+  protocol_version: z.literal(SUPPORTED_BRIDGE_V2_PROTOCOL),
+  observation_id: z.string().min(1),
+  coherent: z.literal(true),
+  state: stateBaseSchema,
+  inspections: z.record(z.enum(["run_deck", "combat_piles"]), inspectionSchema),
+  bridge: bridgeIdentitySchema,
+  game: gameSchema,
+  diagnostics: z.array(diagnosticSchema)
+}).passthrough();
+
 export type BridgeV2Capabilities = z.infer<typeof capabilitiesSchema>;
 export type BridgeV2LegalAction = z.infer<typeof legalActionSchema>;
 export type BridgeV2DeckEnchantSurface = z.infer<typeof deckEnchantSurfaceSchema>;
@@ -980,6 +1062,9 @@ export type BridgeV2RewardClaimSurface = z.infer<typeof rewardClaimSurfaceSchema
 export type BridgeV2MapNavigationSurface = z.infer<typeof mapNavigationSurfaceSchema>;
 export type BridgeV2Diagnostic = z.infer<typeof diagnosticSchema>;
 export type BridgeV2Inspection = z.infer<typeof inspectionSchema>;
+export type BridgeV2InspectionCatalogEntry = z.infer<typeof inspectionCatalogEntrySchema>;
+export type BridgeV2VisibilityState = z.infer<typeof visibilityStateSchema>;
+export type BridgeV2ContractInstanceShadow = z.infer<typeof contractInstanceShadowSchema>;
 export type BridgeV2UnsupportedSurface = z.infer<typeof unsupportedSurfaceSchema>;
 export type BridgeV2NoActionSurface = z.infer<typeof noActionSurfaceSchema>;
 export type BridgeV2Command = z.infer<typeof commandSchema>;
@@ -1033,6 +1118,17 @@ export type BridgeV2State = z.infer<typeof stateBaseSchema> & {
   context: BridgeV2Context;
   surface: BridgeV2Surface;
 };
+
+export interface BridgeV2ObservationBundle {
+  protocol_version: typeof SUPPORTED_BRIDGE_V2_PROTOCOL;
+  observation_id: string;
+  coherent: true;
+  state: BridgeV2State;
+  inspections: Partial<Record<"run_deck" | "combat_piles", BridgeV2Inspection>>;
+  bridge: z.infer<typeof bridgeIdentitySchema>;
+  game: z.infer<typeof gameSchema>;
+  diagnostics: BridgeV2Diagnostic[];
+}
 
 export interface DecodedBridgePayload<T> {
   data: T;
@@ -1146,6 +1242,8 @@ export function decodeBridgeV2State(value: unknown): DecodedBridgePayload<Bridge
   if (preRunSurface && decoded.data.shared_state !== null) {
     throw new BridgeV2DecodeError(`Bridge v2 ${decoded.data.surface.kind} must not carry active-run shared_state`);
   }
+
+  validateVisibilityCatalog(decoded.data);
 
   const context = parseContext(decoded.data.context);
   let surface: BridgeV2Surface;
@@ -1341,6 +1439,67 @@ export function decodeBridgeV2Inspection(value: unknown): DecodedBridgePayload<B
     );
   }
   return decoded;
+}
+
+export function decodeBridgeV2ObservationBundle(
+  value: unknown
+): DecodedBridgePayload<BridgeV2ObservationBundle> {
+  const decoded = decode(value, observationBundleSchema, "Bridge v2 observation bundle");
+  const state = decodeBridgeV2State(decoded.data.state).data;
+  validateModsetPermissionBoundary(decoded.data.game, decoded.data.bridge);
+  if (decoded.data.bridge.module_version_id !== state.bridge.module_version_id
+      || decoded.data.bridge.runtime_instance_id !== state.bridge.runtime_instance_id
+      || decoded.data.game.modset.fingerprint !== state.game.modset.fingerprint) {
+    throw new BridgeV2DecodeError("Bridge v2 observation bundle identity does not match its enclosed state");
+  }
+
+  const inspections: Partial<Record<"run_deck" | "combat_piles", BridgeV2Inspection>> = {};
+  for (const [kind, value] of Object.entries(decoded.data.inspections)) {
+    const inspection = decodeBridgeV2Inspection(value).data;
+    if (inspection.kind !== kind
+        || inspection.expected_state_id !== state.state_id
+        || inspection.observed_state_id !== state.state_id
+        || inspection.bridge.module_version_id !== state.bridge.module_version_id
+        || inspection.bridge.runtime_instance_id !== state.bridge.runtime_instance_id
+        || inspection.game.modset.fingerprint !== state.game.modset.fingerprint) {
+      throw new BridgeV2DecodeError(`Bridge v2 observation bundle ${kind} inspection is not coherent with its state`);
+    }
+    inspections[kind as "run_deck" | "combat_piles"] = inspection;
+  }
+
+  return {
+    raw: decoded.raw,
+    data: {
+      ...decoded.data,
+      state,
+      inspections
+    }
+  };
+}
+
+function validateVisibilityCatalog(state: z.infer<typeof stateBaseSchema>): void {
+  const catalogKinds = state.inspection_catalog.map((entry) => entry.kind);
+  if (new Set(catalogKinds).size !== catalogKinds.length) {
+    throw new BridgeV2DecodeError("Bridge v2 inspection catalog contains duplicate kinds");
+  }
+  if ([...catalogKinds].sort().join(",") !== [...state.visibility.available_inspections].sort().join(",")) {
+    throw new BridgeV2DecodeError("Bridge v2 visibility available_inspections does not match inspection_catalog");
+  }
+
+  const qualified = new Set(state.game.compatibility.inspection_allowed_kinds);
+  const canary = new Set(state.game.compatibility.inspection_canary_kinds);
+  for (const entry of state.inspection_catalog) {
+    const expectedAvailability = qualified.has(entry.kind) ? "qualified" : canary.has(entry.kind) ? "canary" : undefined;
+    if (entry.availability !== expectedAvailability) {
+      throw new BridgeV2DecodeError(`Bridge v2 inspection catalog ${entry.kind} exceeds current scoped authority`);
+    }
+    if (entry.kind === "combat_piles" && state.context.kind !== "combat") {
+      throw new BridgeV2DecodeError("Bridge v2 combat_piles catalog entry requires combat context");
+    }
+    if (entry.kind === "run_deck" && state.shared_state === null) {
+      throw new BridgeV2DecodeError("Bridge v2 run_deck catalog entry requires an active run");
+    }
+  }
 }
 
 export function isBridgeV2DeckEnchantSurface(
