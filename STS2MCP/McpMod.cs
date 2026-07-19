@@ -231,6 +231,13 @@ public static partial class McpMod
                 else
                     SendError(response, 405, "Method not allowed");
             }
+            else if (path == "/api/v2/observation-bundles")
+            {
+                if (request.HttpMethod == "POST")
+                    HandlePostBridgeV2ObservationBundle(request, response);
+                else
+                    SendError(response, 405, "Method not allowed");
+            }
             else if (path == "/api/v2/commands")
             {
                 if (request.HttpMethod == "POST")

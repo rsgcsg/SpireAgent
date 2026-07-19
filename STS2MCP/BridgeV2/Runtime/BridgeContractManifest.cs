@@ -283,6 +283,9 @@ internal static class BridgeContractManifest
         Entries.Select(entry => entry.ToCapability(
             BridgeSurfacePermission.SupportLevel(compatibility, entry.Kind))).ToArray();
 
+    public static BridgeContractManifestEntry? Find(string surfaceKind) =>
+        Entries.SingleOrDefault(entry => string.Equals(entry.Kind, surfaceKind, StringComparison.Ordinal));
+
     private static BridgeContractManifestEntry Entry(
         string kind,
         IReadOnlyList<string> operations,

@@ -2,7 +2,7 @@
 
 Current execution evidence is scoped to exact game identity
 `v0.109.0|c12f634d|-840572606` and exact loaded Modset fingerprint
-`01fd94643fe75b68a32a011e454263090560ce38223ec7b013a32761d72f1a1c`.
+`3c3875309c60d02f18befd1e7a38ed3c51c0ca74ace16b48eb1b99911ecbd739`.
 That Modset contains only the exact loaded `STS2_MCP` module. Compilation,
 fixtures, source review, old-build
 evidence, canary permission, and organic qualification are distinct states.
@@ -45,7 +45,7 @@ identity. Neither environment inherits permission from the other.
 | `card_bundle_selection` | canary | preview and exact three-card Scroll Boxes deck commit on preview.27 | other origins absent; preview.28 behavior unchanged but needs routine regression |
 | `game_over` | canary; fresh lifecycle exercised | preview.41 run `run-20260718162449-yvvf7o` completed intro -> summary -> return with both actions confirmed, then Re stopped at top-level menu | win/timeline destination and additional result variants remain evidence debt |
 | `character_select` | canary | select character, Ascension down/up, and Embark into a real Silent A10 run | first-run tutorial confirmation remains unsupported; root/menu contracts are tracked separately |
-| `main_menu` | canary; Continue exercised on final MVID | exact visible root choices, saved-run summary, unsupported-choice boundary, and confirmed Continue lifecycle | Single Player branch hidden by saved-run state; profile/patch hover detail incomplete |
+| `main_menu` | canary; Continue exercised on intermediate and final preview.47 MVIDs | exact visible root choices, saved-run summary, unsupported-choice boundary, and Bridge-confirmed Continue into the saved-run shop; final-MVID command settled under operator-positioned provenance | Single Player branch hidden by saved-run state; profile/patch hover detail incomplete; final-MVID action is canary coverage, not qualification |
 | `singleplayer_menu` | canary, source/fixture only | exact Standard/Daily/Custom/Back bindings and submenu-stack witnesses | no current-MVID Organic action lifecycle yet |
 | `deck_transform_selection` | canary; selection/confirm/upgrade-view exercised | exact Whispering Hollow source, selected instances, upgrade presentation, random-uncommitted preview, exact-instance/deck-count witness | other callers, explicit preview button, cancel paths, multi-select, Mods, and future builds remain unqualified |
 | `generated_card_choice` | source-scoped canary; Lead Paperweight and Colorless Potion selections exercised | exact `RelicCmd.Obtain` and `PotionModel.OnUseWrapper` source bindings; explicit run-deck vs combat-hand destinations; unchanged vs free-this-turn cost policies; exact-reference/deck or hand-discard witnesses | both Skip variants and Organic full-hand overflow remain pending; Hefty Tablet, Knowledge Demon, other generators, Mods, and unknown sources fail closed |
@@ -55,6 +55,9 @@ identity. Neither environment inherits permission from the other.
 | `run_deck` Inspection | qualified read-only | exact removal, upgrade, enchant, bundle post-states | no arbitrary query or action authority |
 | `combat_piles` Inspection | read-only canary | current-MVID state-bound snapshots matched combat context at `12/0/0` and, after a confirmed end turn, `7/4/1`; Re decoded exact card multisets without diagnostics | more combat/pile diversity before qualification; draw order remains intentionally hidden |
 | top-level `shared_state` | qualified read-only composition | active-run HUD composition across map/combat/reward; preview.46 Cursed Pearl organically exposed Greed `card_previews` plus Eternal/Unplayable hover text with stable state identity | bounded strategic HUD, not all visible UI information; unknown hover-tip kinds still fail closed |
+| `visibility` + `inspection_catalog` | non-authorizing read-only declaration | preview.47 shop state declared `run_deck` availability, linked detail families, explicit hidden policy, and partial closure | catalog currently covers only two fixed Inspection kinds and does not prove whole-game closure |
+| coherent observation bundle | non-authorizing read-only transport | preview.47 returned shop state and `run_deck` under one exact state/MVID/runtime/Modset identity; strict Re consumed it | needs combat-pile and transition-drift runtime diversity; no command authority |
+| `contract_instance_shadow` | diagnostic only, always `authorizing=false` | preview.47 reports manifest contract, published operations, legacy tier, and limitations on real menu/shop states | declaration is not runtime semantic binding; actual permission remains exact environment + Surface kind |
 | `combat_transition + no_action` lifecycle observation | non-authorizing, not a permission row | Current-MVID Organic setup and resolution observations around repeated `combat_turn -> reward_claim -> map -> combat_turn` journeys on preview.40 | exact `CombatRoom` setup/resolution only; early-load and other no-overlay gaps remain unsupported |
 
 ## Implemented But Disabled On v0.109
@@ -72,7 +75,8 @@ identity. Neither environment inherits permission from the other.
 | first-run character tutorial and non-standard run setup | explicit unsupported boundary; ordinary single-player character select is a canary |
 | generic or purpose-unknown card selectors | v1 or fail closed; source purpose must be proven before v2 authority |
 | other transform callers, duplicate, and unlisted maintenance | Whispering Hollow random transform is a bounded v2 canary; every other origin remains fail closed |
-| linked/special reward sets | fail closed |
+| linked/special reward sets | Orrery-style linked reward continuation is implemented and fixture-tested in preview.47; unrelated linked/special reward transactions remain fail closed |
+| Pael's Tooth five-card maintenance transaction | current source/runtime identifies a purpose-specific selector, but no v2 semantic contract exists; fail closed rather than inherit merchant/upgrade authority |
 | treasure open/skip variants | implemented canary operations without organic qualification |
 | rich tooltip/keyword/hover variants | preview.46 supports text keywords and typed card previews for bounded entity owners; unknown forms fail closed rather than disappear silently |
 | compendium, settings, profile, timeline, daily/custom and multiplayer flows | unsupported by v2; multiplayer intentionally out of scope |
@@ -90,8 +94,8 @@ identity. Neither environment inherits permission from the other.
   operations published by that Provider for bounded canary execution, but it
   does not qualify every operation or source origin. Operation and origin
   evidence therefore remain explicit in each row.
-- This is roughly `60-75%` of major ordinary in-run interaction families, but
-  only about `50-65%` of practical v1 interaction parity and `30-45%` of all
+- This is roughly `65-78%` of major ordinary in-run interaction families, but
+  only about `55-68%` of practical v1 interaction parity and `35-50%` of all
   single-player player-visible situations. These are engineering ranges, not
   measured product metrics.
 - Safety/authority mechanics are substantially more mature than semantic
@@ -99,6 +103,22 @@ identity. Neither environment inherits permission from the other.
 - The typed contract inventory records visible fact groups and operation-level
   evidence, but it is not a claim of visibility completeness and cannot grant
   permission.
+- Preview.47 adds machine-readable visibility/catalog declarations, a coherent
+  observation bundle, and a non-authorizing contract-instance shadow. These
+  reduce observation drift and expose permission debt; they do not add a
+  Surface, qualify a contract, or authorize a new operation.
+- Runtime records created before explicit evidence provenance are classified as
+  `unrecorded`. They remain useful current-MVID coverage/debug evidence but
+  cannot independently satisfy Organic qualification.
+- Final preview.47 run `run-20260719150346-ptpq0a` explicitly records
+  `provenance=operator_positioned`. Its 40 strict-v2 decisions covered
+  `shop_room`, `shop_inventory`, merchant `deck_removal_selection`,
+  `map_navigation`, `combat_turn`, `reward_claim`, and
+  `card_reward_selection`. Thirty-nine settled; one combat action was rejected
+  before execution after the state hash changed. All 40 used
+  `bridge_advertised` authority and coherent observation bundles, DeepSeek
+  validation was 40/40 valid, and contract-instance shadow authority remained
+  false. This supports coverage and canary regression review only.
 - Preview.36 Modset identity closes an evidence-scope gap but adds no
   player-visible Surface or Inspection coverage. Modded environments do not
   inherit this matrix merely because they reuse native STS2 UI.

@@ -2,13 +2,17 @@
 
 ## Agent Bridge v2
 
-Bridge v2 is the safe path for the rebuilt `Re-SpireAgent`. It exposes only
-state-bound opaque actions and currently supports deck enchant selection:
+Bridge v2 is the safe path for the rebuilt `Re-SpireAgent`. It exposes bounded
+player-visible semantic state, typed read-only Inspection, and only state-bound
+opaque actions explicitly advertised by the current exact environment:
 
 | Tool | Description |
 |---|---|
 | `get_agent_bridge_capabilities_v2()` | Exact game/bridge identity and supported surfaces |
 | `get_agent_state_v2()` | Player-visible state plus state-scoped legal actions |
+| `inspect_run_deck_v2(expected_state_id)` | Typed state-bound run-deck read; no action authority |
+| `inspect_combat_piles_v2(expected_state_id)` | Typed unordered combat-pile read; no draw order or action authority |
+| `get_agent_observation_bundle_v2(expected_state_id, include_run_deck?, include_combat_piles?)` | One coherent state plus selected typed read-only Inspections |
 | `submit_agent_action_v2(request_id, expected_state_id, action_id)` | Start one advertised opaque action |
 | `get_agent_command_v2(request_id)` | Poll completion/rejection/unknown outcome |
 

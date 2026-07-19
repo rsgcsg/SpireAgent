@@ -269,7 +269,8 @@ internal sealed class RewardClaimSurfaceProvider : IBridgeSurfaceProvider
             () => !IsCurrent(expectedScreen)
                   || RewardSetChanged(expectedScreen, previousButtons)
                   || IsVisibleMapAfterRewards(),
-            "rewards_proceeded_or_visible_map_opened_or_reward_surface_replaced");
+            "rewards_proceeded_or_visible_map_opened_or_reward_surface_replaced",
+            allowIntermediateStateChanges: true);
     }
 
     private static BridgeActionStartResult StartDiscardPotion(

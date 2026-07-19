@@ -527,6 +527,27 @@ public sealed class BridgeContractTests
                 ObservationCandidateBuildFingerprints: Array.Empty<string>(),
                 Detail: "unknown")),
             new ObservationPolicyInfo("policy", "visible", false, "omit"),
+            new BridgeVisibilityState(
+                "unknown.unsupported.v1",
+                "partial",
+                "partial_catalog",
+                Array.Empty<string>(),
+                Array.Empty<string>(),
+                Array.Empty<string>(),
+                new[] { "not_implemented" },
+                "fail_closed"),
+            Array.Empty<BridgeInspectionCatalogEntry>(),
+            new BridgeContractInstanceShadow(
+                "unresolved",
+                "contract-instance-test",
+                "unsupported",
+                null,
+                null,
+                Array.Empty<BridgeContractOperationShadow>(),
+                "disabled",
+                "exact_environment_surface_kind_gate",
+                Authorizing: false,
+                new[] { "shadow_inventory_only" }),
             Array.Empty<BridgeDiagnostic>(),
             Array.Empty<string>());
 
@@ -539,6 +560,96 @@ public sealed class BridgeContractTests
         Assert.Contains("\"surface\":{\"kind\":\"unsupported\"", json);
         Assert.Contains("\"source_type\":\"test\"", json);
         Assert.Contains("\"reason\":\"not implemented\"", json);
+    }
+
+    [Fact]
+    public void VisibilityCatalogIsReadOnlyStateScopedAndDoesNotGrantAuthority()
+    {
+        var compatibility = new CompatibilityAssessment(
+            "qualified_scoped",
+            new[] { "0.109.0" },
+            new[] { "build" },
+            ActionExecutionAllowed: true,
+            StateObservationAllowed: true,
+            InspectionAllowed: true,
+            ActionExecutionSurfaceKinds: Array.Empty<string>(),
+            ActionCanarySurfaceKinds: Array.Empty<string>(),
+            InspectionAllowedKinds: new[] { "run_deck" },
+            InspectionCanaryKinds: new[] { "combat_piles" },
+            ObservationOnlySurfaceKinds: Array.Empty<string>(),
+            ObservationCandidateBuildFingerprints: Array.Empty<string>(),
+            Detail: "test");
+        var draft = new BridgeObservationDraft(
+            "sig",
+            "ready",
+            new UnknownBridgeContext("combat", "test", "test"),
+            new NoActionSurface("no_action", "settling", "test"),
+            new StateCompleteness("complete", "empty", Array.Empty<string>(), Array.Empty<string>()),
+            new GameBuildIdentity("v0.109.0", "commit", "branch", 1, compatibility),
+            Array.Empty<string>(),
+            Array.Empty<BridgeActionDraft>());
+
+        BridgeVisibilityProjection projection = BridgeVisibilityCatalog.Build(draft, activeRunSharedStateAvailable: true);
+
+        Assert.Equal(new[] { "run_deck", "combat_piles" }, projection.Visibility.AvailableInspections);
+        Assert.Equal("partial_catalog", projection.Visibility.PlayerVisibleClosureStatus);
+        Assert.All(projection.InspectionCatalog, entry =>
+        {
+            Assert.True(entry.StateBound);
+            Assert.False(entry.CreatesActionAuthority);
+        });
+        Assert.Equal("qualified", projection.InspectionCatalog.Single(entry => entry.Kind == "run_deck").Availability);
+        Assert.Equal("canary", projection.InspectionCatalog.Single(entry => entry.Kind == "combat_piles").Availability);
+        Assert.Contains("draw_pile_true_order", projection.Visibility.HiddenByPolicy);
+        Assert.Empty(projection.Visibility.LinkedDetailKinds);
+        Assert.Contains("linked_entity_detail_catalog_not_implemented", projection.Visibility.Missing);
+    }
+
+    [Fact]
+    public void ContractInstanceShadowReportsButNeverGrantsAuthority()
+    {
+        var compatibility = new CompatibilityAssessment(
+            "qualified_scoped",
+            new[] { "0.109.0" },
+            new[] { "build" },
+            ActionExecutionAllowed: true,
+            StateObservationAllowed: true,
+            InspectionAllowed: false,
+            ActionExecutionSurfaceKinds: new[] { "rest_site" },
+            ActionCanarySurfaceKinds: Array.Empty<string>(),
+            InspectionAllowedKinds: Array.Empty<string>(),
+            InspectionCanaryKinds: Array.Empty<string>(),
+            ObservationOnlySurfaceKinds: Array.Empty<string>(),
+            ObservationCandidateBuildFingerprints: Array.Empty<string>(),
+            Detail: "test");
+        var draft = new BridgeObservationDraft(
+            "rest-sig",
+            "ready",
+            new UnknownBridgeContext("rest", "test", "test"),
+            new RestSiteSurface("rest_site", "rest-screen", Array.Empty<VisibleRestOption>(), CanProceed: true),
+            new StateCompleteness("complete", "derived", Array.Empty<string>(), Array.Empty<string>()),
+            new GameBuildIdentity("v0.109.0", "commit", "branch", 1, compatibility),
+            Array.Empty<string>(),
+            new[]
+            {
+                new BridgeActionDraft(
+                    "proceed",
+                    "proceed_rest_site",
+                    "navigation",
+                    "Proceed",
+                    "test",
+                    () => BridgeActionStartResult.Started())
+            });
+
+        BridgeContractInstanceShadow shadow = BridgeContractInstanceShadowBuilder.Build(draft);
+
+        Assert.Equal("resolved_manifest_contract", shadow.Status);
+        Assert.Equal("qualified", shadow.CurrentAuthorityTier);
+        Assert.Equal("exact_environment_surface_kind_gate", shadow.CurrentAuthorityBasis);
+        Assert.False(shadow.Authorizing);
+        Assert.Contains(shadow.Operations, operation =>
+            operation.Operation == "proceed_rest_site" && operation.Published);
+        Assert.Contains("authority_remains_surface_kind_scoped", shadow.Limitations);
     }
 
     [Fact]
@@ -1570,46 +1681,77 @@ public sealed class BridgeContractTests
     public void ShopPurchaseCompletionRequiresAsyncSuccessAndEverySemanticWitness()
     {
         Assert.True(ShopPurchaseCompletionWitness.IsComplete(
+            taskCompleted: true,
             taskCompletedSuccessfully: true,
             purchaseSucceeded: true,
             goldBeforePurchase: 150,
             currentGold: 100,
             expectedPrice: 50,
             productAcquired: true,
-            entryAdvanced: true));
+            entryAdvanced: true,
+            linkedRewardContinuationVisible: false));
+
+        Assert.True(ShopPurchaseCompletionWitness.IsComplete(
+            taskCompleted: false,
+            taskCompletedSuccessfully: false,
+            purchaseSucceeded: false,
+            goldBeforePurchase: 150,
+            currentGold: 100,
+            expectedPrice: 50,
+            productAcquired: true,
+            entryAdvanced: true,
+            linkedRewardContinuationVisible: true));
 
         Assert.False(ShopPurchaseCompletionWitness.IsComplete(
+            taskCompleted: false,
             taskCompletedSuccessfully: false,
             purchaseSucceeded: false,
             goldBeforePurchase: 150,
             currentGold: 150,
             expectedPrice: 50,
             productAcquired: false,
-            entryAdvanced: false));
+            entryAdvanced: false,
+            linkedRewardContinuationVisible: false));
         Assert.False(ShopPurchaseCompletionWitness.IsComplete(
+            taskCompleted: true,
+            taskCompletedSuccessfully: false,
+            purchaseSucceeded: false,
+            goldBeforePurchase: 150,
+            currentGold: 100,
+            expectedPrice: 50,
+            productAcquired: true,
+            entryAdvanced: true,
+            linkedRewardContinuationVisible: true));
+        Assert.False(ShopPurchaseCompletionWitness.IsComplete(
+            taskCompleted: true,
             taskCompletedSuccessfully: true,
             purchaseSucceeded: true,
             goldBeforePurchase: 150,
             currentGold: 100,
             expectedPrice: 50,
             productAcquired: false,
-            entryAdvanced: true));
+            entryAdvanced: true,
+            linkedRewardContinuationVisible: false));
         Assert.False(ShopPurchaseCompletionWitness.IsComplete(
+            taskCompleted: true,
             taskCompletedSuccessfully: true,
             purchaseSucceeded: true,
             goldBeforePurchase: 150,
             currentGold: 100,
             expectedPrice: 50,
             productAcquired: true,
-            entryAdvanced: false));
+            entryAdvanced: false,
+            linkedRewardContinuationVisible: false));
         Assert.False(ShopPurchaseCompletionWitness.IsComplete(
+            taskCompleted: true,
             taskCompletedSuccessfully: true,
             purchaseSucceeded: true,
             goldBeforePurchase: 150,
             currentGold: 101,
             expectedPrice: 50,
             productAcquired: true,
-            entryAdvanced: true));
+            entryAdvanced: true,
+            linkedRewardContinuationVisible: false));
     }
 
     [Fact]

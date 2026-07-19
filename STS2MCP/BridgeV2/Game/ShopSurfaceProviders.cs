@@ -11,6 +11,7 @@ using MegaCrit.Sts2.Core.Hooks;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
+using MegaCrit.Sts2.Core.Nodes.Screens;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
@@ -473,16 +474,22 @@ internal sealed class ShopInventorySurfaceProvider : IBridgeSurfaceProvider
 
         return BridgeActionStartResult.Started(
             () => ShopPurchaseCompletionWitness.IsComplete(
+                purchaseTask.IsCompleted,
                 purchaseTask.IsCompletedSuccessfully,
                 purchaseTask.IsCompletedSuccessfully && purchaseTask.Result,
                 goldBeforePurchase,
                 expectedInventory.Player.Gold,
                 expectedPrice,
                 productAcquired(),
-                entryAdvanced()),
+                entryAdvanced(),
+                HasVisibleLinkedRewardContinuation()),
             completionEvidence,
             allowIntermediateStateChanges: true);
     }
+
+    private static bool HasVisibleLinkedRewardContinuation() =>
+        NOverlayStack.Instance?.Peek() is NRewardsScreen rewards
+        && ActiveSurfaceResolver.IsVisibleActiveOverlay(rewards);
 
     private static BridgeActionStartResult StartCardRemoval(
         MerchantRoom expectedMerchantRoom,
@@ -783,15 +790,17 @@ internal static class ShopSurfaceFacts
 internal static class ShopPurchaseCompletionWitness
 {
     public static bool IsComplete(
+        bool taskCompleted,
         bool taskCompletedSuccessfully,
         bool purchaseSucceeded,
         int goldBeforePurchase,
         int currentGold,
         int expectedPrice,
         bool productAcquired,
-        bool entryAdvanced) =>
-        taskCompletedSuccessfully
-        && purchaseSucceeded
+        bool entryAdvanced,
+        bool linkedRewardContinuationVisible) =>
+        ((taskCompletedSuccessfully && purchaseSucceeded)
+         || (!taskCompleted && linkedRewardContinuationVisible))
         && expectedPrice >= 0
         && currentGold == goldBeforePurchase - expectedPrice
         && productAcquired

@@ -1,7 +1,7 @@
 # Bridge v2: v1 Retirement And Completeness Audit
 
 Date: 2026-07-18  
-Canonical protocol at latest audit amendment: `2.0-preview.46`
+Canonical protocol at latest audit amendment: `2.0-preview.47`
 
 > Historical audit amended on 2026-07-18. Canonical live status remains
 > [CURRENT_STATUS.md](CURRENT_STATUS.md); this report records the longer-form
@@ -15,6 +15,12 @@ player-visible game.
 
 The v2 safety/authority kernel is healthy. Its semantic coverage is incomplete.
 Calling v2 “complete” today would be false.
+
+Preview.47 does not change this verdict. It reduces observation-composition
+drift, declares a partial player-visible closure/catalog, supports one bounded
+linked-reward continuation, and exposes a non-authorizing contract-instance
+shadow. It does not add a Surface, retire a v1 family, complete player-visible
+truth, or replace Surface-kind authority.
 
 ## What v2 Actually Fixes
 

@@ -134,6 +134,22 @@ async def _v2_inspection_request(kind: str, expected_state_id: str) -> str:
     return r.text
 
 
+async def _v2_observation_bundle_request(
+    expected_state_id: str,
+    inspection_kinds: list[str],
+) -> str:
+    r = await _get_client().post(
+        _v2_url("observation-bundles"),
+        json={
+            "expected_state_id": expected_state_id,
+            "inspections": [{"kind": kind} for kind in inspection_kinds],
+        },
+    )
+    # The bundle is a read-only protocol result. Preserve stale, unavailable,
+    # and scope-mismatch bodies so clients can re-observe without guessing.
+    return r.text
+
+
 async def _wait_for_profile(profile_id: int, fallback: str) -> str:
     last_profiles: dict | None = None
     for _ in range(30):
@@ -234,6 +250,32 @@ async def inspect_combat_piles_v2(expected_state_id: str) -> str:
     """
     try:
         return await _v2_inspection_request("combat_piles", expected_state_id)
+    except Exception as e:
+        return _handle_error(e)
+
+
+@mcp.tool()
+async def get_agent_observation_bundle_v2(
+    expected_state_id: str,
+    include_run_deck: bool = False,
+    include_combat_piles: bool = False,
+) -> str:
+    """Read one coherent v2 state plus selected typed Inspections.
+
+    The two booleans are the only supported Inspection requests. The complete
+    response is bound to expected_state_id and one exact environment identity.
+    It is read-only, does not enter the command ledger, and grants no actions.
+    """
+    inspection_kinds = []
+    if include_run_deck:
+        inspection_kinds.append("run_deck")
+    if include_combat_piles:
+        inspection_kinds.append("combat_piles")
+    try:
+        return await _v2_observation_bundle_request(
+            expected_state_id,
+            inspection_kinds,
+        )
     except Exception as e:
         return _handle_error(e)
 

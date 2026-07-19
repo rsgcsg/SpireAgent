@@ -33,6 +33,13 @@ Required client behavior:
 - never auto-retry unknown outcomes;
 - permit only one executor during v1/v2 dual-read tests.
 
+Source `2.0-preview.47` additionally requires strict decoding of the bounded
+visibility declaration, state-bound Inspection catalog, coherent observation
+bundle, and non-authorizing contract-instance shadow. Re may use the bundle to
+avoid mixed-checkpoint sidecars, but Inspection remains outside the command
+ledger. The shadow must never add, suppress, or reinterpret an action. Nullable
+contract/binding IDs may be absent for unresolved transition states.
+
 Source `2.0-preview.31` retains strict purpose-specific projections for
 event/rest deck upgrade, event card acquisition, card bundle, game-over,
 character select, dialogue/options, and the treasure-room lifecycle. On exact

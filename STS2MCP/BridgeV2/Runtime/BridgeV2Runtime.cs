@@ -11,6 +11,11 @@ internal sealed record BridgeInspectionReadResult(
     string? ErrorCode,
     string? Detail);
 
+internal sealed record BridgeObservationBundleReadResult(
+    BridgeObservationBundleResponse? Bundle,
+    string? ErrorCode,
+    string? Detail);
+
 internal static class BridgeV2Runtime
 {
     public const int CommandOutcomeTimeoutMs = 10_000;
@@ -113,6 +118,18 @@ internal static class BridgeV2Runtime
             draft.Signature,
             shared.State
         });
+        BridgeVisibilityProjection visibility = BridgeVisibilityCatalog.Build(
+            draft,
+            shared.State != null);
+        BridgeContractInstanceShadow contractInstanceShadow =
+            BridgeContractInstanceShadowBuilder.Build(draft);
+        compositeSignature = BridgeHash.Object(new
+        {
+            compositeSignature,
+            visibility.Visibility,
+            visibility.InspectionCatalog,
+            contractInstanceShadow
+        });
 
         lock (Gate)
         {
@@ -151,6 +168,9 @@ internal static class BridgeV2Runtime
                 BridgeIdentity(),
                 draft.Game,
                 ObservationPolicy(),
+                visibility.Visibility,
+                visibility.InspectionCatalog,
+                contractInstanceShadow,
                 BridgeDiagnostics.ForObservation(draft),
                 draft.Warnings);
         }
@@ -215,12 +235,67 @@ internal static class BridgeV2Runtime
                 "stale_state",
                 "The expected state is no longer current; obtain a fresh state before inspecting.");
         }
-        if (!IsInspectionAllowed(current.Game.Compatibility, kind))
+        return BuildInspection(current, kind, expectedStateId);
+    }
+
+    public static BridgeObservationBundleReadResult ObserveBundle(BridgeObservationBundleRequest request)
+    {
+        BridgeStateEnvelope current = Observe();
+        if (!string.Equals(current.StateId, request.ExpectedStateId, StringComparison.Ordinal))
+        {
+            return new BridgeObservationBundleReadResult(
+                null,
+                "stale_state",
+                "The expected state is no longer current; obtain a fresh state before requesting a coherent observation.");
+        }
+
+        var inspections = new Dictionary<string, BridgeInspectionResponse>(StringComparer.Ordinal);
+        foreach (BridgeObservationBundleInspectionRequest inspectionRequest in request.Inspections ?? Array.Empty<BridgeObservationBundleInspectionRequest>())
+        {
+            string kind = inspectionRequest.Kind ?? string.Empty;
+            BridgeInspectionReadResult result = BuildInspection(current, kind, current.StateId);
+            if (result.Inspection == null)
+            {
+                return new BridgeObservationBundleReadResult(
+                    null,
+                    result.ErrorCode,
+                    result.Detail);
+            }
+            inspections[kind] = result.Inspection;
+        }
+
+        string observationId = "observation_" + BridgeHash.Object(new
+        {
+            current.StateId,
+            inspectionIds = inspections.Values.Select(value => value.InspectionId).OrderBy(value => value, StringComparer.Ordinal).ToArray(),
+            current.Bridge.RuntimeInstanceId
+        })[..20];
+        return new BridgeObservationBundleReadResult(
+            new BridgeObservationBundleResponse(
+                BridgeV2Contract.ProtocolVersion,
+                observationId,
+                Coherent: true,
+                current,
+                inspections,
+                BridgeIdentity(),
+                current.Game,
+                Array.Empty<BridgeDiagnostic>()),
+            null,
+            null);
+    }
+
+    private static BridgeInspectionReadResult BuildInspection(
+        BridgeStateEnvelope current,
+        string kind,
+        string expectedStateId)
+    {
+        if (!IsInspectionAllowed(current.Game.Compatibility, kind)
+            || !current.InspectionCatalog.Any(entry => string.Equals(entry.Kind, kind, StringComparison.Ordinal)))
         {
             return new BridgeInspectionReadResult(
                 null,
-                "inspection_not_qualified_for_current_build",
-                "This inspection kind is not qualified for the current game build.");
+                "inspection_not_available",
+                "This inspection kind is not currently available under the state-bound visibility catalog.");
         }
 
         BridgeInspectionBuildResult built = BridgeInspectionBuilder.Build(kind, current, EntityRegistry);

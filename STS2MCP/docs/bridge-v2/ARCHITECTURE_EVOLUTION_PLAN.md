@@ -21,7 +21,8 @@ that an empty scope has no authority.
 Status: started in preview.35 infrastructure; preview.36 adds loaded Modset
 identity and preview.37 adds operation-evidence distinction for menu canaries,
 while preview.38 applies the same distinction to a source-bound random
-transform, without qualification promotion.
+transform. Preview.47 adds a runtime `contract_instance_shadow` over this
+inventory, without qualification promotion.
 
 Create a machine-readable inventory for each semantic contract containing:
 
@@ -51,12 +52,35 @@ fails action/Inspection scopes closed unless only the negotiated Bridge module
 is loaded. This supplies the environment portion of the future manifest; it
 does not qualify any additional Mod or operation.
 
+Preview.47 records the current legacy authority basis and published operations
+on each state. This makes the Surface-kind permission debt visible, but the
+shadow remains `authorizing=false`: manifest declarations and operation
+evidence still cannot grant or suppress an action.
+
 As the first permission-governance pilot, represent the currently documented
 `treasure_room` operation split: choose/proceed have Organic canary evidence
 while open/skip are source-audited only. The implemented pilot records that
 split without changing Surface-level authority. A later permission change may
 only preserve or narrow current canary authority; it must not promote any
 operation or origin.
+
+## Phase 1.5: Player-Visible Closure And Coherent Read
+
+Status: started in preview.47.
+
+- State declares a bounded visibility profile and current typed Inspection
+  catalog.
+- A coherent observation bundle returns one state plus requested typed,
+  read-only Inspections under one state/environment identity.
+- Re no longer needs per-Inspection reads followed by a final state re-read for
+  its current configured Inspection set.
+- Closure remains partial until linked detail families and normal
+  player-openable views are inventoried.
+
+Exit condition: action-critical facts are always in the default state; each
+Inspection is complete for its declared view; every other player-visible fact
+is linked, catalogued, or explicitly missing; hidden facts remain excluded.
+This phase cannot grant action authority.
 
 ## Phase 2: Mechanism, Source Binding, And Shared Validator
 
@@ -73,6 +97,10 @@ checks, but must consume the same core legality result.
 
 Exit condition: less duplicated legality code, unchanged opaque wire actions,
 unchanged authority boundary, and tests proving publication/execution parity.
+
+The first implementation must run as a shadow comparison against existing
+Providers. It may only reproduce or narrow actions. Automatic provisional
+execution is outside this phase and requires a separate authority decision.
 
 ## Phase 3: Observable Witnesses And Field Criticality
 

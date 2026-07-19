@@ -1,22 +1,65 @@
 # Bridge v2 Current Status
 
-Status date: 2026-07-18
+Status date: 2026-07-19
 
 ## Current Contract
 
-- protocol: `2.0-preview.46`
+- protocol: `2.0-preview.47`
 - source-qualified game identity: `v0.109.0|c12f634d|-840572606`
 - current workspace loaded game identity: `v0.109.0|c12f634d|-840572606`
 - installed/Release DLL SHA-256:
-  `264352a987fcdb508398f5179e25dc551e5ba719f667361a3db0594d943007ca`
-- loaded module MVID: `9e6124ca-0082-451a-adb3-54b692a85d33`
-- loaded runtime instance: `96e022a2f4ae431aa99c2bf80272fd6a`
+  `afb7c35eeda3f728553b6107d1dffdc362c4fac7e8e0aa6587608c094e7325fb`
+- loaded module MVID: `784bbdc5-e7b3-40e7-872f-3c8ba538f9b0`
+- loaded runtime instance: `0533bb421a334245b64cfde35394d64a`
 - loaded Modset status: `exact_bridge_only`
 - loaded Modset fingerprint:
-  `01fd94643fe75b68a32a011e454263090560ce38223ec7b013a32761d72f1a1c`
+  `3c3875309c60d02f18befd1e7a38ed3c51c0ca74ace16b48eb1b99911ecbd739`
+
+Wire field `bridge.upstream_commit=20eadebde358a37cca41f8b38728099e6d0d19db`
+identifies the original imported Gennadiyev baseline, not the current
+SpireAgent repository revision. Current built-code identity is bound by the
+Release/installed SHA, loaded MVID, runtime instance, and exact Modset above.
+The wire should eventually add an explicit repository source revision rather
+than overloading `upstream_commit`; this naming debt grants no permission.
 
 Bridge v2 is an incremental, exact-build-scoped protocol. It is not full v1
 parity, all-game coverage, or complete player-visible truth.
+
+Preview.47 closes evidence-backed contract gaps without changing the permission
+matrix. Orrery-style relic purchases can now acknowledge a visible linked
+reward continuation without waiting for the parent purchase task to finish;
+reward Proceed accepts its known intermediate transition. State now advertises
+a bounded `visibility` declaration and typed `inspection_catalog`, while
+`POST /api/v2/observation-bundles` returns one state plus requested read-only
+Inspections under one coherent state/environment identity. Re consumes that
+bundle instead of composing eager sidecars through multiple state reads.
+
+Preview.47 also emits a non-authorizing `contract_instance_shadow`. It exposes
+the manifest contract, published operations, current legacy authority tier,
+and known limitations, but remains `authorizing=false`; exact-environment plus
+Surface-kind lists still own real permission. Intermediate preview.47 MVID
+`eb96741b-42ce-43e1-86b3-6d71a1caea4e` confirmed Continue into the saved-run
+shop and returned a coherent shop + run-deck observation. The first Continue
+record was mislabeled unsettled only because Re treated omitted nullable shadow
+fields in a transitional state as required; that decoder bug is fixed without
+changing command or permission behavior. Final loaded MVID
+`784bbdc5-e7b3-40e7-872f-3c8ba538f9b0` has passed capabilities, state,
+coherent-bundle, strict Re inspection, and a bounded operator-positioned
+journey. Its `continue_run` settled, followed by 40 strict-v2 decisions across
+shop/removal, map, combat, reward, and card reward: 39 settled and one combat
+action was safely rejected before execution as stale. All 40 observations were
+coherent, all selected actions were Bridge-advertised, and the shadow remained
+`authorizing=false`. This is current-MVID coverage/canary evidence, not an
+automatic qualification upgrade; no evidence is transferred from the
+intermediate MVID.
+Run metadata now supports explicit evidence provenance; old records remain
+`unrecorded` and may support coverage/debugging but not qualification alone.
+
+Detailed evidence and architectural decisions are in
+[the preview.47 closeout](PREVIEW_47_LINKED_REWARDS_COHERENT_OBSERVATION_AND_AUTHORITY_SHADOW_2026-07-19.md),
+[ADR-0004](ADR-0004-contract-instance-authority-and-player-visible-closure.md),
+and the
+[authority/visibility architecture review](ARCHITECTURE_REVIEW_TIERED_AUTHORITY_AND_VISIBILITY_2026-07-19.md).
 
 Preview.31 closes a backward permission leak: an empty per-build Surface or
 Inspection scope is now unconditionally empty, never an implicit wildcard.
@@ -155,6 +198,23 @@ canary, and Organic qualification are separate states. There are 23 declared
 semantic Surface contracts: the currently loaded source-qualified target has
 five qualified, seventeen canary-permitted, and one disabled Surface kind. The historical
 alternate-device build has three canaries and no qualified contract.
+
+## Preview.47 Coherent Observation And Authority-Shadow Closeout
+
+- Bridge tests: `92/92`; Re strict tests: `145/145`; typecheck, production
+  builds, and Bridge Release build passed.
+- Release/installed SHA, loaded MVID/runtime, exact game identity, and Modset
+  are recorded in the current contract block above.
+- `continue_run` was Bridge `completed/confirmed` and reached
+  `shop + shop_room`; a Re decoder regression in an unresolved, non-authorizing
+  shadow field was corrected and covered by a transitional-state fixture.
+- A live `run_deck` observation bundle was coherent with the exact shop
+  `state_id`; strict Re inspect consumed the same contract with no action
+  authority from Inspection or shadow metadata.
+- Historical preview.46 runs identified linked Orrery rewards, reward Proceed
+  intermediate-state handling, Pael's Tooth unsupported semantics, and eager
+  sidecar drift. Their provenance is unrecorded and they remain scoped to the
+  preview.46 MVID.
 
 ## Preview.46 Typed Card-Hover Shared-State Closeout
 

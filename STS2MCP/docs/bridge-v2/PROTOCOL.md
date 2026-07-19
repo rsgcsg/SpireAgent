@@ -1,6 +1,13 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.46`
+Protocol preview: `2.0-preview.47`
+
+`bridge.upstream_commit` is the immutable imported upstream baseline, currently
+`20eadebde358a37cca41f8b38728099e6d0d19db`; it is not the current SpireAgent
+Git revision. Runtime evidence must use the loaded module MVID, runtime ID,
+Release/installed SHA, exact game identity, and Modset fingerprint. A future
+protocol may add a separately named repository source revision, but the legacy
+field must not be treated as current-build authority.
 
 ## Build Compatibility
 
@@ -70,6 +77,7 @@ node to be on screen, matching the current `NMapPoint.OnRelease` path.
 GET  /api/v2/capabilities
 GET  /api/v2/state
 GET  /api/v2/inspections/{kind}?expected_state_id={state_id}
+POST /api/v2/observation-bundles
 POST /api/v2/commands
 GET  /api/v2/commands/{request_id}
 ```
@@ -89,10 +97,51 @@ Every state response contains:
 - typed surface data;
 - state-scoped opaque legal actions;
 - completeness sources and missing fields;
+- a bounded `visibility` declaration and current typed
+  `inspection_catalog`;
+- a non-authorizing `contract_instance_shadow` describing the current gap
+  between declared semantic operations and legacy Surface-kind permission;
 - typed diagnostics and legacy compatibility warnings.
 
 Timestamps and logging fields do not change `state_id`. Shared visible state,
 semantic context, surface data, or the legal action set does.
+
+`visibility` distinguishes default core completeness, declared linked-detail
+families, currently available read-only Inspection kinds, explicit missing
+facts, and hidden-by-policy facts. `player_visible_closure_status` describes
+the declared default-plus-inspection closure; it is not a claim that one state
+payload contains every player-visible fact. Unknown execution-critical fields
+remain fail-closed.
+
+`inspection_catalog` is state-bound and deterministic. Every entry records its
+visibility basis, availability tier, ordering semantics, cost hint, recommended
+uses, and hidden policy. It grants no action authority and does not enter the
+command ledger.
+
+`contract_instance_shadow` is migration telemetry only. It may be unresolved
+and omit nullable contract/binding fields during transitions. It always reports
+`authorizing=false`; neither manifest presence nor operation evidence can add
+or suppress legal actions. Current execution permission remains the exact
+environment plus explicit qualified/canary Surface-kind lists.
+
+## Coherent Observation Bundle
+
+```json
+{
+  "expected_state_id": "state_opaque",
+  "inspections": [
+    { "kind": "run_deck" },
+    { "kind": "combat_piles" }
+  ]
+}
+```
+
+`POST /api/v2/observation-bundles` returns one state and the requested fixed,
+typed Inspections under the same exact state, Bridge MVID/runtime, game, and
+Modset identity. Requests are limited to the current catalog, at most eight
+distinct fixed kinds, and 8 KiB. Any stale state, permission mismatch, unknown
+kind, or observation drift rejects the complete bundle. The response is
+read-only, creates no command, and cannot be supplied as an execution payload.
 
 `context.kind` is not a complete state discriminator. Clients must display and
 reason over at least:
@@ -258,6 +307,8 @@ Additional preview.2 completion evidence:
 | Surface/action | Completion evidence |
 |---|---|
 | event choose | source-backed replacement option set, required child Surface, combat, or room transition; `WasChosen` alone is insufficient |
+| shop relic purchase with linked rewards | exact relic gained, exact gold delta, offer advanced, and exact visible linked reward child; a completed failed parent task is never accepted |
+| reward Proceed | the purpose-specific reward witness may pass through known intermediate state changes; an unknown outcome is never retried |
 | event proceed | map opens or the event room leaves |
 | combat play card | card leaves hand, required subsurface opens, or combat ends |
 | combat potion | potion leaves its exact slot or combat ends |

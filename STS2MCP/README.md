@@ -16,7 +16,7 @@ Bridge v2 is an incremental preview, not a replacement for all v1 surfaces.
   untested and has no v2 action or Inspection authority. Check
   [Bridge v2 current status](docs/bridge-v2/CURRENT_STATUS.md) before treating
   a local install as qualified.
-- Source `2.0-preview.46` keeps centralized overlay/room/menu ownership, typed
+- Source `2.0-preview.47` keeps centralized overlay/room/menu ownership, typed
   diagnostics, purpose-specific selection and event contracts, staged
   completion semantics, and a top-level read-only shared run/player HUD.
   Current-build capabilities distinguish scoped-qualified actions, action
@@ -46,9 +46,11 @@ Bridge v2 is an incremental preview, not a replacement for all v1 surfaces.
   cost, operation, and completion semantics; all other callers of the shared
   selection UI remain fail closed. Exact Headbutt pile selection is a canary
   whose corrected completion still needs an Organic repeat. Preview.46 also
-  exposes typed read-only card hover previews with stable owner-scoped identity;
-  these facts grant no actions. Unlisted surfaces are disabled and draw order
-  remains hidden.
+  exposes typed read-only card hover previews with stable owner-scoped identity.
+  Preview.47 adds a state-bound visibility/Inspection catalog, coherent
+  observation bundles, linked-reward completion support, and a non-authorizing
+  contract-instance shadow; none grants new actions. Unlisted surfaces are
+  disabled and draw order remains hidden.
 
 See [current status](docs/bridge-v2/CURRENT_STATUS.md), the
 [upstream/design audit](docs/bridge-v2/UPSTREAM_AUDIT.md), and the
@@ -111,7 +113,7 @@ dotnet test STS2_MCP.sln -p:STS2GameDir="$env:STS2_GAME_DIR"
 .\build.ps1 -GameDir "$env:STS2_GAME_DIR"
 ```
 
-The solution currently contains 90 pure contract/runtime/security tests covering stable
+The solution currently contains 92 pure contract/runtime/security tests covering stable
 state identity, entity identity, stale-state rejection, idempotent request IDs,
 completion observation, timeout-as-unknown, and JSON action shape.
 
@@ -137,6 +139,15 @@ enable the mod, then verify:
 curl -s http://localhost:15526/
 curl -s http://localhost:15526/api/v2/capabilities | python3 -m json.tool
 curl -s http://localhost:15526/api/v2/state | python3 -m json.tool
+```
+
+For one coherent state plus typed read-only inspections:
+
+```bash
+state_id="$(curl -sS http://localhost:15526/api/v2/state | python3 -c 'import json,sys; print(json.load(sys.stdin)["state_id"])')"
+curl -sS -X POST http://localhost:15526/api/v2/observation-bundles \
+  -H 'content-type: application/json' \
+  --data "{\"expected_state_id\":\"$state_id\",\"inspections\":[{\"kind\":\"run_deck\"}]}"
 ```
 
 The v2 capabilities response must report an exact supported game identity before
@@ -175,6 +186,7 @@ Bridge v2 MCP tools:
 - `get_agent_state_v2()`
 - `inspect_run_deck_v2(expected_state_id)`
 - `inspect_combat_piles_v2(expected_state_id)`
+- `get_agent_observation_bundle_v2(expected_state_id, include_run_deck?, include_combat_piles?)`
 - `submit_agent_action_v2(request_id, expected_state_id, action_id)`
 - `get_agent_command_v2(request_id)`
 

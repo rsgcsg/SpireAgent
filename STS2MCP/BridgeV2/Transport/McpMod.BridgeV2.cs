@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Text.Json;
 using Godot;
@@ -11,6 +12,7 @@ namespace STS2_MCP;
 public static partial class McpMod
 {
     private const int MaxBridgeV2CommandBodyBytes = 16 * 1024;
+    private const int MaxBridgeV2ObservationBundleBodyBytes = 8 * 1024;
 
     private static void HandleGetBridgeV2Capabilities(HttpListenerResponse response)
     {
@@ -90,6 +92,70 @@ public static partial class McpMod
         catch (Exception ex)
         {
             SendBridgeV2InternalError(response, "inspection_failed", ex);
+        }
+    }
+
+    private static void HandlePostBridgeV2ObservationBundle(
+        HttpListenerRequest request,
+        HttpListenerResponse response)
+    {
+        if (request.ContentLength64 > MaxBridgeV2ObservationBundleBodyBytes)
+        {
+            SendBridgeV2Error(response, 413, "request_too_large", "Observation bundle request exceeds 8 KiB.");
+            return;
+        }
+
+        string body;
+        using (var reader = new StreamReader(request.InputStream, request.ContentEncoding))
+            body = reader.ReadToEnd();
+
+        BridgeObservationBundleRequest? bundleRequest;
+        try
+        {
+            bundleRequest = JsonSerializer.Deserialize<BridgeObservationBundleRequest>(body, _jsonOptions);
+        }
+        catch (JsonException)
+        {
+            SendBridgeV2Error(response, 400, "invalid_json", "Request body must be valid JSON.");
+            return;
+        }
+
+        BridgeObservationBundleInspectionRequest[] inspections = bundleRequest?.Inspections?.ToArray()
+            ?? Array.Empty<BridgeObservationBundleInspectionRequest>();
+        if (bundleRequest == null
+            || !IsSafeBridgeIdentifier(bundleRequest.ExpectedStateId, 128)
+            || inspections.Length > 8
+            || inspections.Any(item => !IsSafeBridgeIdentifier(item.Kind, 64))
+            || inspections.Select(item => item.Kind).Distinct(StringComparer.Ordinal).Count() != inspections.Length)
+        {
+            SendBridgeV2Error(
+                response,
+                400,
+                "invalid_observation_bundle_contract",
+                "expected_state_id and at most eight distinct fixed inspection kinds are required.");
+            return;
+        }
+
+        try
+        {
+            var task = RunOnMainThread(() => BridgeV2Runtime.ObserveBundle(bundleRequest));
+            BridgeObservationBundleReadResult result = task.GetAwaiter().GetResult();
+            if (result.Bundle != null)
+            {
+                SendJson(response, result.Bundle);
+                return;
+            }
+
+            int statusCode = result.ErrorCode == "inspection_kind_not_implemented" ? 404 : 409;
+            SendBridgeV2Error(
+                response,
+                statusCode,
+                result.ErrorCode ?? "observation_bundle_failed",
+                result.Detail ?? "Observation bundle failed closed.");
+        }
+        catch (Exception ex)
+        {
+            SendBridgeV2InternalError(response, "observation_bundle_failed", ex);
         }
     }
 

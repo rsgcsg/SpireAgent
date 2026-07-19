@@ -7,7 +7,7 @@ namespace STS2_MCP.BridgeV2.Protocol;
 
 public static class BridgeV2Contract
 {
-    public const string ProtocolVersion = "2.0-preview.46";
+    public const string ProtocolVersion = "2.0-preview.47";
     public const string ObservationPolicyId = "player_visible_ui_v1";
 }
 
@@ -91,6 +91,45 @@ public sealed record InspectionContractCapability(
     IReadOnlyList<string> VisibilityClasses,
     IReadOnlyList<string> OrderingSemantics,
     IReadOnlyList<string> ImplementedKinds);
+
+public sealed record BridgeInspectionCatalogEntry(
+    string Kind,
+    string Scope,
+    string Availability,
+    string VisibilityBasis,
+    bool StateBound,
+    bool CreatesActionAuthority,
+    string OrderingSemantics,
+    string EstimatedCost,
+    IReadOnlyList<string> RecommendedFor,
+    IReadOnlyList<string> HiddenByPolicy);
+
+public sealed record BridgeVisibilityState(
+    string ProfileId,
+    string CoreStatus,
+    string PlayerVisibleClosureStatus,
+    IReadOnlyList<string> AvailableInspections,
+    IReadOnlyList<string> LinkedDetailKinds,
+    IReadOnlyList<string> HiddenByPolicy,
+    IReadOnlyList<string> Missing,
+    string UnknownCriticalFieldBehavior);
+
+public sealed record BridgeContractOperationShadow(
+    string Operation,
+    string EvidenceStatus,
+    bool Published);
+
+public sealed record BridgeContractInstanceShadow(
+    string Status,
+    string InstanceId,
+    string SurfaceKind,
+    string? SemanticContractId,
+    string? DeclaredBinding,
+    IReadOnlyList<BridgeContractOperationShadow> Operations,
+    string CurrentAuthorityTier,
+    string CurrentAuthorityBasis,
+    bool Authorizing,
+    IReadOnlyList<string> Limitations);
 
 public sealed record SharedStateContractCapability(
     string Status,
@@ -178,6 +217,22 @@ public sealed record BridgeInspectionResponse(
     BridgeServerIdentity Bridge,
     GameBuildIdentity Game,
     ObservationPolicyInfo ObservationPolicy,
+    IReadOnlyList<BridgeDiagnostic> Diagnostics);
+
+public sealed record BridgeObservationBundleInspectionRequest(string? Kind);
+
+public sealed record BridgeObservationBundleRequest(
+    string? ExpectedStateId,
+    IReadOnlyList<BridgeObservationBundleInspectionRequest>? Inspections);
+
+public sealed record BridgeObservationBundleResponse(
+    string ProtocolVersion,
+    string ObservationId,
+    bool Coherent,
+    BridgeStateEnvelope State,
+    IReadOnlyDictionary<string, BridgeInspectionResponse> Inspections,
+    BridgeServerIdentity Bridge,
+    GameBuildIdentity Game,
     IReadOnlyList<BridgeDiagnostic> Diagnostics);
 
 public sealed record StateCompleteness(
@@ -923,6 +978,9 @@ public sealed record BridgeStateEnvelope(
     BridgeServerIdentity Bridge,
     GameBuildIdentity Game,
     ObservationPolicyInfo ObservationPolicy,
+    BridgeVisibilityState Visibility,
+    IReadOnlyList<BridgeInspectionCatalogEntry> InspectionCatalog,
+    BridgeContractInstanceShadow ContractInstanceShadow,
     IReadOnlyList<BridgeDiagnostic> Diagnostics,
     IReadOnlyList<string> Warnings)
 {
