@@ -222,10 +222,28 @@ continue to use REST directly. A compact MCP adapter should derive its fixed
 Inspection requests from the advertised catalog and should not grow one
 content-specific tool per card, relic, potion, event, or transaction source.
 
-Logical headless operation is a separate deployment track. Running the real
-Godot engine without a display may be evaluated only after owner, visibility,
-Commit, timing, and Witness behavior shadow-match the visible runtime. It does
-not change action authority and it is not a reason to reimplement STS2 rules.
+Protocol and renderer neutrality are current gateway properties, not a
+Headless deployment. Running the real Godot engine without a display may be
+evaluated only after owner, visibility, Commit, timing, and Witness behavior
+shadow-match the visible runtime. It does not change action authority and it is
+not a reason to reimplement STS2 rules.
+
+## Deferred Headless Subproject Gate
+
+Status: documentation only; blocked on live-gateway admission criteria.
+
+Physical Headless STS2 is no longer part of the active Bridge phase sequence.
+It is a separate future subproject documented under
+[docs/headless](../../../docs/headless/README.md). Do not create a Headless
+runtime, shared-kernel package, permission profile, or adapter skeleton merely
+because the protocol is transport-neutral.
+
+The live path must first close its source-binding, transaction-correlation,
+shared-validation, Witness, adapter-catalog, and exact loaded-evidence gates.
+The full admission criteria, candidate host comparison, phases, acceptance,
+and rollback rules are in [the Headless target
+architecture](../../../docs/headless/TARGET_ARCHITECTURE.md). Passing that gate
+permits an isolated experiment only; it grants no Headless or live authority.
 
 ## Phase 5: Organic Qualification And v1 Retirement
 
@@ -257,3 +275,7 @@ The independent rationale, holdouts, and rollback gates are recorded in
 [the 2026-07-20 DecisionFrame/Transaction IR audit closeout](DECISION_FRAME_TRANSACTION_IR_ARCHITECTURE_AUDIT_CLOSEOUT_2026-07-20.md).
 The MCP/source/headless boundary is refined in
 [the 2026-07-20 semantic-gateway audit closeout](MCP_SEMANTIC_GATEWAY_HEADLESS_ARCHITECTURE_AUDIT_CLOSEOUT_2026-07-20.md).
+The active naming and ownership source is
+[the Live STS2 connection boundary](LIVE_GAME_CONNECTION_BOUNDARY.md), and the
+2026-07-21 docs-only decision is recorded in
+[the boundary closeout](LIVE_GATEWAY_HEADLESS_BOUNDARY_CLOSEOUT_2026-07-21.md).

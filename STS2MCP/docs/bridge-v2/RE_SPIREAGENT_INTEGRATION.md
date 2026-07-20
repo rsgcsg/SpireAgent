@@ -6,7 +6,7 @@ The rebuilt client now implements this boundary. It does not replace its v1
 normalizer with raw Bridge v2 JSON; it uses a parallel adapter:
 
 ```text
-HTTP/MCP v2 response
+Bridge v2 REST response (current Re path)
   -> strict protocol decoder
   -> raw evidence record
   -> typed context + supported-surface projection
@@ -17,6 +17,16 @@ HTTP/MCP v2 response
   -> poll command settlement
   -> before/after decision record
 ```
+
+The Python MCP server is an optional adapter for MCP clients and is not in
+Re-SpireAgent's strict-v2 path. The canonical ownership split is in
+[LIVE_GAME_CONNECTION_BOUNDARY.md](LIVE_GAME_CONNECTION_BOUNDARY.md).
+
+Re's game-connection responsibilities are limited to negotiation, strict
+decoding, coherent structural projection, advertised-action import,
+submission/polling, and exact identity/evidence recording. Re must not grow
+strict-v2 game legality, native Commit logic, transaction inference, Witness
+reconstruction, permission, or live-versus-Headless content branches.
 
 Required client behavior:
 

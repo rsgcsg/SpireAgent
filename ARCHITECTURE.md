@@ -74,6 +74,11 @@ Unknown identity remains unknown; it is not inferred from successful execution. 
 
 ## Plane 1: Game Integration
 
+The canonical component names and detailed ownership rules for the real-game
+path are defined in the [Live STS2 Connection
+Boundary](STS2MCP/docs/bridge-v2/LIVE_GAME_CONNECTION_BOUNDARY.md). Historical
+uses of "MCP" do not override that boundary.
+
 Responsibilities:
 
 - read raw game state
@@ -90,9 +95,10 @@ Current code:
 
 Boundary:
 
-- The game-side integration is a protocol-neutral semantic game gateway. Its
-  current implementation lives in the game-side mod; REST and MCP are transport
-  adapters over that gateway, not alternate owners of game semantics.
+- The game-side integration is the protocol-neutral Live Semantic Gateway. Its
+  current implementation lives in `STS2MCP/BridgeV2`; REST is Re's current
+  primary adapter and MCP is an optional thin adapter, not an alternate owner
+  of game semantics.
 - The gateway may expose player-visible state, one current input owner,
   state-bound opaque legal actions, exact entity bindings, command lifecycle,
   semantic outcomes, read-only Inspections, environment identity, and bounded
@@ -116,12 +122,16 @@ Current transport reality:
   legacy v1 tool surface. It is not the Bridge v2 semantic core.
 - Rendering mode is orthogonal to protocol choice. A Godot `--headless`
   process is not automatically a UI-independent game rules API.
+- Physical Headless STS2 is a deferred, separate future subproject. It may not
+  begin implementation or inherit live authority until the admission gate in
+  [the Headless target architecture](docs/headless/TARGET_ARCHITECTURE.md) is
+  explicitly passed.
 
 ## Plane 2: Canonical State + Mechanics
 
 Responsibilities:
 
-- normalize raw MCP/REST state into canonical state
+- normalize connector-delivered game state into canonical state
 - define domain schemas
 - validate legality, energy, targets, options, affordability
 - estimate damage, block, incoming damage, lethal, and deterministic risk

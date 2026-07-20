@@ -1,14 +1,15 @@
 # STS2 Agent Bridge Engineering Guide
 
 Read `docs/bridge-v2/CURRENT_STATUS.md`, `docs/bridge-v2/UPSTREAM_AUDIT.md`,
-`docs/bridge-v2/PROTOCOL.md`, and `docs/bridge-v2/OBSERVATION_POLICY.md` before
-changing Bridge v2.
+`docs/bridge-v2/PROTOCOL.md`, `docs/bridge-v2/OBSERVATION_POLICY.md`, and
+`docs/bridge-v2/LIVE_GAME_CONNECTION_BOUNDARY.md` before changing Bridge v2.
 
 ## Purpose
 
-This repository is the sensor/actuator adapter for Slay the Spire 2. It is not
-the strategic brain. In this workspace, "SpireAgent" means the rebuilt client
-under `../Re-SpireAgent/` unless a legacy system is named explicitly.
+This repository contains the current game-side Live Semantic Gateway for Slay
+the Spire 2 plus REST and optional MCP adapters. It is not the strategic brain.
+In this workspace, "SpireAgent" means the rebuilt client under
+`../Re-SpireAgent/` unless a legacy system is named explicitly.
 
 The bridge owns:
 

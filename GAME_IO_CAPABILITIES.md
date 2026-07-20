@@ -56,6 +56,13 @@ Notes:
 
 ## Bridge v2 Negotiated Capability Assessment
 
+Terminology and component ownership follow the [Live STS2 Connection
+Boundary](STS2MCP/docs/bridge-v2/LIVE_GAME_CONNECTION_BOUNDARY.md): the
+game-side Bridge is the Live Semantic Gateway, REST is Re-SpireAgent's current
+primary adapter, and MCP is optional transport. Capability vocabulary does not
+move legality, permission, Command, transaction, Witness, or evidence authority
+into a transport or client.
+
 Bridge v2 does not map cleanly onto one static `AdapterCapabilities` constant.
 Its capabilities are exact-environment, protocol, Surface, operation, and
 Inspection scoped. In a strict-v2 state with `bridge_advertised` authority:

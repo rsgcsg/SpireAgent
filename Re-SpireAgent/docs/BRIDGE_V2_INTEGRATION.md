@@ -1,5 +1,21 @@
 # Bridge v2 Integration
 
+## Connector Boundary
+
+Re-SpireAgent's current strict-v2 connection is direct REST through
+`BridgeV2RestClient`. The game-side Bridge is the protocol-neutral Live
+Semantic Gateway; the Python MCP server is optional and is not in this runtime
+path. The canonical cross-project ownership rules are in
+[the Live STS2 Connection Boundary](../../STS2MCP/docs/bridge-v2/LIVE_GAME_CONNECTION_BOUNDARY.md).
+
+Re owns connector negotiation, strict schema decoding, coherent structural
+projection, advertised-action import, submission/polling, and exact
+environment/evidence recording. It does not own or reconstruct strict-v2 game
+legality, runtime permission, native Commit, transaction completion, semantic
+Witnesses, or host-specific live/Headless rules. A Re change in this area must
+remain directly tied to connector, protocol adaptation, or structured state
+consumption.
+
 ## Current Scope
 
 Re-SpireAgent supports the strict `2.0-preview.54` source contract. Current

@@ -1,6 +1,6 @@
 # Bridge v2 Current Status
 
-Status date: 2026-07-20
+Status date: 2026-07-21
 
 ## Current Contract
 
@@ -56,6 +56,15 @@ non-authorizing adapter drift: Bridge/Re declare three Inspection kinds, while
 the Python MCP v2 observation helper currently exposes only `run_deck` and
 `combat_piles`, omitting `shop_catalog`. See
 [the semantic-gateway/headless audit closeout](MCP_SEMANTIC_GATEWAY_HEADLESS_ARCHITECTURE_AUDIT_CLOSEOUT_2026-07-20.md).
+
+The docs-only boundary audit at
+`develop@54b716261af47395176cb9e968b8aef45a3732db` independently rechecked the
+current Bridge/REST/MCP/Re ownership and read `wuhao21/sts2-cli` source at
+`d11aa883b582dd68bd39b331f3370746b30d447e`. It establishes
+[the Live connection boundary](LIVE_GAME_CONNECTION_BOUNDARY.md) and a
+separate, deferred [Headless future-project plan](../../../docs/headless/README.md).
+It made no protocol, code, permission, build, install, load, runtime, canary,
+qualification, or Organic-evidence change and did not execute `sts2-cli`.
 
 Preview.53 adds an exact native `Graveblast` branch to
 `combat_pile_card_selection`. Headbutt and Graveblast share only the visible
@@ -857,6 +866,9 @@ not change current authority.
 13. Continue treating each additional `1833084275` Surface as a separate
    source/UI audit and bounded canary; do not copy target-build authority merely
    because version and commit match.
+14. Keep Headless implementation blocked until the explicit live admission
+   gate in `docs/headless/TARGET_ARCHITECTURE.md` is passed. Do not extract a
+   speculative shared kernel or add live/Headless branches to Re.
 
 The typed inventory closeout and exact loaded identity are recorded in
 [PREVIEW_35_TYPED_CONTRACT_INVENTORY_CLOSEOUT_2026-07-18.md](PREVIEW_35_TYPED_CONTRACT_INVENTORY_CLOSEOUT_2026-07-18.md).

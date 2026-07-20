@@ -127,6 +127,11 @@ authority. Transport adapters may expose only fixed, capability-advertised
 operations and Inspection kinds. They must not reconstruct legal actions,
 invent source semantics, or provide arbitrary scene-tree/reflection queries.
 
+Canonical component names, ownership, and the deferred Headless boundary are
+defined in [LIVE_GAME_CONNECTION_BOUNDARY.md](LIVE_GAME_CONNECTION_BOUNDARY.md).
+This protocol document specifies current wire behavior; it does not make REST,
+MCP, or Re an owner of gateway semantics.
+
 Protocol choice and rendering mode are independent. Starting the real Godot
 runtime without a display does not create a new action contract and does not
 prove that STS2 gameplay is independent of scene/UI lifecycle.
