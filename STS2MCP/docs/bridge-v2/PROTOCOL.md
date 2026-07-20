@@ -22,7 +22,7 @@ contract against every Steam build. For exact identity
   `card_reward_selection`, `map_navigation`, `shop_inventory`, `shop_room`,
   `treasure_room`, `game_over`, `card_bundle_selection`, `character_select`,
   `main_menu`, `singleplayer_menu`, `event_dialogue`, `event_option`, and
-  source-bound `deck_transform_selection`, Self-Help Book
+  source-bound `deck_transform_selection`, Surface-level
   `deck_enchant_selection`, exact Headbutt
   `combat_pile_card_selection` for exact Headbutt/Graveblast, and source-scoped
   `generated_card_choice` for exact Lead Paperweight acquisition and native
@@ -39,6 +39,15 @@ overlay closes. The current event command applies the enchantment after the
 selection task resolves. Preview.49 therefore binds commit to the exact
 selected card instances plus enchantment ID/amount, revalidates those facts at
 dispatch, and requires both overlay closure and exact card-model post-state.
+
+The permission and Provider boundary is broader than the preview.49 evidence:
+the exact-build gate permits `deck_enchant_selection` by Surface kind, and the
+Provider matches `NDeckEnchantSelectScreen` without proving a Self-Help Book
+source token. Self-Help Book is the recorded canary journey and manifest source
+text, not a runtime-enforced origin whitelist. Other exact-build origins must
+not be described as qualified, but they are not currently suppressed by source
+binding once this Surface is permitted. This is a known governance gap and no
+permission is expanded by documenting it.
 
 Event option commands may cross a bounded asynchronous intermediate state
 before their existing semantic witness becomes true. Preview.50 opts only
@@ -211,6 +220,13 @@ generic transform API. During preview it reports
 cards are player-visible presentation and never disclose the committed random
 replacement or RNG. Confirmation requires screen closure, absence of every
 selected exact original instance, and preserved run-deck count.
+
+That child witness proves the bounded transform operation, not every remaining
+effect in the parent event transaction. Parent event-option completion may
+occur when a required child opens. The current wire has no transaction-wide
+obligation list assigning later parent effects to a command; this limitation is
+tracked by the 2026-07-20 architecture audit and must not be inferred away from
+the local child witness.
 
 Preview.42 models only `LeadPaperweight.AfterObtained` as
 `event + generated_card_choice`. The Surface must declare

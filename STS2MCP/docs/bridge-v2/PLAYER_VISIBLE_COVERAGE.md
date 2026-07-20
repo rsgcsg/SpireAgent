@@ -48,7 +48,7 @@ identity. Neither environment inherits permission from the other.
 | `main_menu` | canary; Continue exercised on intermediate and final preview.47 MVIDs | exact visible root choices, saved-run summary, unsupported-choice boundary, and Bridge-confirmed Continue into the saved-run shop; final-MVID command settled under operator-positioned provenance | Single Player branch hidden by saved-run state; profile/patch hover detail incomplete; final-MVID action is canary coverage, not qualification |
 | `singleplayer_menu` | canary, source/fixture only | exact Standard/Daily/Custom/Back bindings and submenu-stack witnesses | no current-MVID Organic action lifecycle yet |
 | `deck_transform_selection` | canary; selection/confirm/upgrade-view exercised | exact Whispering Hollow source, selected instances, upgrade presentation, random-uncommitted preview, exact-instance/deck-count witness | other callers, explicit preview button, cancel paths, multi-select, Mods, and future builds remain unqualified |
-| `deck_enchant_selection` | current-build canary; select/automatic preview/cancel/reselect/confirm exercised | exact Self-Help Book source, target enchantment ID/amount, exact selected instances, overlay stage, semantic exact-card enchantment witness, independent run-deck post-state | other callers, explicit preview button, cancelable close, multi-select, Mods, and future builds remain unqualified |
+| `deck_enchant_selection` | Surface-level current-build canary; only Self-Help Book select/automatic preview/cancel/reselect/confirm was exercised | exact target enchantment ID/amount, exact selected instances, overlay stage, semantic exact-card enchantment witness, independent run-deck post-state; current Provider does not runtime-bind the Self-Help Book source named by manifest/evidence | other callers remain unqualified but are not source-suppressed on the Surface-permitted exact build; explicit preview button, cancelable close, multi-select, parent-transaction side effects, Mods, and future builds remain evidence/architecture debt |
 | `generated_card_choice` | source-scoped canary; Lead Paperweight, Colorless Potion, and Attack Potion selections exercised; exact Splash implemented but not final-MVID exercised | exact `RelicCmd.Obtain`, sealed native Colorless/Attack/Skill/Power `PotionModel.OnUseWrapper`, and sealed native `Splash.OnPlayWrapper` bindings; explicit source/run-deck-vs-combat-hand/cost/overflow semantics; exact-reference/deck or hand-discard witnesses | Skill/Power/Splash Organic actions, Skip variants, and full-hand overflow remain pending; Hefty Tablet, Knowledge Demon, other generators, derived Mod types, and unknown sources fail closed |
 | exact Headbutt/Graveblast `combat_pile_card_selection` | source-scoped canary; Headbutt source/action observed but corrected completion not re-exercised; Graveblast source-audited and loaded without final-MVID action | exact source task, visible discard candidates, source-discriminated draw-top versus hand/full-hand-discard exact-card witness | both final completion branches still need natural action evidence; all other origins fail closed |
 | `event_dialogue` | canary | repeated v0.109 revealed-prefix advances with exact index witness | non-Neow/other ancient dialogue diversity remains evidence debt |
@@ -95,6 +95,12 @@ identity. Neither environment inherits permission from the other.
   operations published by that Provider for bounded canary execution, but it
   does not qualify every operation or source origin. Operation and origin
   evidence therefore remain explicit in each row.
+- `deck_enchant_selection` is the concrete warning against reading origin
+  evidence as an authority restriction. Only Self-Help Book has Organic canary
+  evidence, but the Provider currently matches the generic enchant screen and
+  the exact-build permission gate is Surface-level. The 2026-07-20 architecture
+  audit records this as an unresolved governance gap, not a permission
+  expansion or qualification of other native origins.
 - This is roughly `65-78%` of major ordinary in-run interaction families, but
   only about `55-68%` of practical v1 interaction parity and `35-50%` of all
   single-player player-visible situations. These are engineering ranges, not

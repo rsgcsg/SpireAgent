@@ -82,57 +82,105 @@ Inspection is complete for its declared view; every other player-visible fact
 is linked, catalogued, or explicitly missing; hidden facts remain excluded.
 This phase cannot grant action authority.
 
-## Phase 2: Mechanism, Source Binding, And Shared Validator
+## Phase 2: DecisionFrame Shadow And Shared Validator
 
-Status: proposed; begin with two repeated bounded card-selection flows.
+Status: proposed; independently revised on 2026-07-20. Begin with the generated
+combat-choice and combat-pile-choice families. Do not begin with a protocol or
+authority migration.
 
-Extract only structural mechanics first: visible candidates, exact references,
-selection membership, bounds, controls, and stage. Add a deterministic Source
-Binding that identifies the task/command/owner relationship. Keep purpose,
-eligibility, commit, and Completion in separate Semantic Contracts.
+Extract a typed, permissionless mechanism snapshot containing visible
+candidates, exact references, selection membership, bounds, controls, and
+stage. Bind it to a `DecisionFrame` that also records:
 
-Then move repeated legality into a pure validator used by both publication and
-execution. The execution path may add stale identity, current-owner, and timing
-checks, but must consume the same core legality result.
+- the one current input owner;
+- a game-owned task, command, or continuation token;
+- exact operands and legality constraints;
+- transaction phase (`already_applied`, `awaiting_choice`, `commit_pending`, or
+  `settling`);
+- explicit hidden and unavailable facts;
+- a closed mutation domain and completion obligations.
 
-Exit condition: less duplicated legality code, unchanged opaque wire actions,
-unchanged authority boundary, and tests proving publication/execution parity.
+Source/provenance is not automatically the semantic contract. A source literal
+may be optional when a qualified extractor can attest a complete current game
+transaction, but a trustworthy task/transaction binding is never optional.
+Registry data, UI shape, prompt text, or a Mod's own declaration cannot attest
+itself or grant authority.
 
-The first implementation must run as a shadow comparison against existing
-Providers. It may only reproduce or narrow actions. Automatic provisional
-execution is outside this phase and requires a separate authority decision.
+Move repeated legality into a pure validation result consumed by publication
+and execute-time revalidation. Execution may add liveness and timing checks but
+must not reinterpret the business predicate. The first implementation is a
+non-authorizing shadow beside existing Providers and must reproduce or narrow
+actions, operands, hidden policy, and failure behavior.
 
-## Phase 3: Observable Witnesses And Field Criticality
+Exit condition: two repeated families shadow-match existing behavior, negative
+fixtures reject incomplete/ambiguous frames, and no permission or wire action
+authority changes.
 
-Status: proposed.
+## Phase 3: Closed Transaction IR And Witness Obligation Plans
 
-Extract a small finite set of visible witness primitives such as exact entity
-presence/absence, collection count delta, currency delta, attribute change,
-control consumption, owner change, and room change. Compose them only into
-purpose-specific contracts.
+Status: proposed after Phase 2 shadow evidence.
+
+Introduce a closed, versioned Transaction IR only as a declaration of the
+game-owned transaction and its proof obligations. It is not an executable
+Effect DSL: Bridge must still invoke one qualified game-owned Commit adapter
+and must never replay damage, block, movement, rewards, hooks, or scripts from
+the IR.
+
+The IR may compose known, bounded primitives such as exact-card movement,
+enchantment application, transformation, currency delta, resource delta, and
+bounded child decisions. Each primitive must declare its Mutation Domain,
+operand types, hidden-information policy, and required witness rules. Unknown
+primitives, unbound operands, unbounded control flow, incomplete domains, and
+missing witnesses fail closed.
+
+Compile the declared obligations into a `WitnessPlan` using a finite set of
+observations: exact entity presence/absence, collection/cardinality delta,
+currency/resource delta, attribute change, control consumption, owner change,
+room change, and bounded child completion. A purpose-specific manual witness
+remains valid when hooks, asynchronous behavior, or a domain cannot be proved
+closed. Compilation must never weaken completion to page closure.
 
 In parallel, classify fields as identity-critical, legality-critical,
-Completion-critical, strategy-critical, or decorative. A field may become
-optional only after current-source and organic evidence proves that omission
-cannot make an advertised action unsafe.
+completion-critical, strategy-critical, or decorative. Unknown action-critical
+facts suppress authority; an independently missing strategy field may degrade
+strategy projection without invalidating an otherwise proven transaction.
 
-Exit condition: no Completion is weakened to a page-close predicate, and no
-unknown critical field is silently omitted.
+Exit condition: every shadow transaction owns all completion obligations across
+parent/child Surface boundaries, and no declared side effect lacks a witness or
+an explicit fail-closed reason.
 
-## Phase 4: Protocol And Compatibility Cost
+## Phase 4: Strategy Semantics And Structural Protocol
 
-Status: proposed, after repeated Phase 2 evidence.
+Status: proposed after repeated Phase 2/3 evidence.
 
-- Generate or golden-test structural C#/TypeScript protocol fixtures.
-- Keep semantic discriminators, authority rules, and hidden-information checks
-  hand-reviewed.
-- Add game, mechanism, source-binding, and contract fingerprints as diagnostic
-  layers.
-- Use targeted current-build canaries to identify affected contracts.
+Keep application semantics separate from future strategic semantics. For
+example, applying enchantment `X` amount `N` to exact card `C` is an executable
+transaction; explaining how `X` later modifies damage, block, triggers, or
+card-play count is a read-only strategy projection. Unknown future behavior
+must not grant or revoke execution authority unless it also makes current
+legality, visibility, or completion incomplete.
+
+After the shadow model is stable:
+
+- introduce a structural DecisionFrame/Transaction/Witness schema rather than
+  new Surface/source literals for each content item;
+- generate or golden-test structural C#/TypeScript fixtures and exhaustiveness;
+- keep primitive semantics, Commit adapters, authority, and hidden-information
+  checks hand-reviewed;
+- require a zero-core-code holdout gate for new content composed entirely from
+  existing mechanisms, primitives, adapters, and witness rules;
+- allow registry data, fixtures, and exact-build evidence to change without
+  handwritten Bridge/Re core changes;
+- add game, mechanism, adapter, transaction, and witness fingerprints only as
+  diagnostics and targeted requalification inputs.
+
+New UI mechanics, new primitive semantics, or a new game-owned Commit path may
+legitimately require code. New card/relic/potion/enchantment IDs and new bounded
+compositions of existing primitives must not.
 
 Layered fingerprints may reduce work after a pure data update, but final action
-permission remains exact-build and explicit. No fingerprint may inherit an old
-qualified list automatically.
+permission remains exact-environment and explicit. No fingerprint, registry,
+Mod contract, or old evidence may inherit authority automatically.
 
 ## Phase 5: Organic Qualification And v1 Retirement
 
@@ -151,8 +199,14 @@ fallback has been retired without ambiguity.
 ## Non-Goals
 
 - no universal selector, menu, purchase, or Effect DSL;
+- no Bridge execution of Transaction IR primitives or replay of game effects;
 - no low-level click language in the wire protocol;
 - no automatic permission from source reflection, class-name matching, or
   implementation presence;
+- no self-authorizing registry or Mod-declared contract;
+- no source literal whitelist as a substitute for complete transaction binding;
 - no expansion of current local hash `1833084275` authority by this plan;
 - no use of old MVID Organic evidence for a new DLL.
+
+The independent rationale, holdouts, and rollback gates are recorded in
+[the 2026-07-20 DecisionFrame/Transaction IR audit closeout](DECISION_FRAME_TRANSACTION_IR_ARCHITECTURE_AUDIT_CLOSEOUT_2026-07-20.md).

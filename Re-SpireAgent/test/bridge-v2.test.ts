@@ -1200,8 +1200,8 @@ const COMBAT_TURN_STATE = {
         name: "Osty",
         is_alive: true,
         health_bar_visible: true,
-        hp: 4,
-        max_hp: 6,
+        hp: 4 as number | null,
+        max_hp: 6 as number | null,
         block: 0,
         statuses: []
       }],

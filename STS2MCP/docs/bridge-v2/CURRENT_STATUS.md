@@ -5,22 +5,37 @@ Status date: 2026-07-20
 ## Current Contract
 
 - protocol: `2.0-preview.54`
-- source-qualified game identity: `v0.109.0|c12f634d|-840572606`
-- current workspace loaded game identity: `v0.109.0|c12f634d|-840572606`
-- installed/Release DLL SHA-256:
+- canonical source-qualified game identity: `v0.109.0|c12f634d|-840572606`
+- last verified source-target loaded game identity: `v0.109.0|c12f634d|-840572606`
+- last verified source-target installed/Release DLL SHA-256:
   `7bf3abca5f20594077b31f8e400ef0b27643353846256cb59cb633418a59a8b3`
-- loaded module MVID: `67b8d32b-8c0c-4514-9df7-fac4ac5fb738`
-- loaded runtime instance: `db112bc183354e9eb397f6c76121f484`
-- loaded Modset status: `exact_bridge_only`
-- loaded Modset fingerprint:
+- last verified source-target module MVID: `67b8d32b-8c0c-4514-9df7-fac4ac5fb738`
+- last verified source-target runtime instance: `db112bc183354e9eb397f6c76121f484`
+- last verified source-target Modset status: `exact_bridge_only`
+- last verified source-target Modset fingerprint:
   `8371ef20e96178fc38ae2427a749815e13a37747aef58d2d4c48e0a10b3d036b`
 
 Wire field `bridge.upstream_commit=20eadebde358a37cca41f8b38728099e6d0d19db`
 identifies the original imported Gennadiyev baseline, not the current
-SpireAgent repository revision. Current built-code identity is bound by the
-Release/installed SHA, loaded MVID, runtime instance, and exact Modset above.
+SpireAgent repository revision. The last verified source-target built-code
+identity is bound by the Release/installed SHA, loaded MVID, runtime instance,
+and exact Modset above.
 The wire should eventually add an explicit repository source revision rather
 than overloading `upstream_commit`; this naming debt grants no permission.
+
+Audit-time local state is separate from the source-target closeout above. The
+installed game now reports `v0.109.0|c12f634d|1833084275`. Available run
+`run-20260720065514-b80q0v` records installed Bridge MVID
+`0d002485-dc76-4641-8ade-578bef39ee69`, runtime
+`b5b3aa0a2eff44e99cdcbb73c0beb3ef`, and only the three explicit alternate-build
+action canaries. The Bridge endpoint was unavailable during the 2026-07-20
+architecture audit. The audit's Release test build produced SHA-256
+`236b5f8190b2d2dab7b9fe0ebffe893dc36f55e543472aa5274ff8d3469d82ae`, MVID
+`0d002485-dc76-4641-8ade-578bef39ee69`, byte-identical to the already-installed
+DLL; no installation or live-load verification was performed. Therefore the
+source-target identity above remains last verified historical runtime evidence,
+not a claim about a currently live process. See
+[the DecisionFrame/Transaction IR audit closeout](DECISION_FRAME_TRANSACTION_IR_ARCHITECTURE_AUDIT_CLOSEOUT_2026-07-20.md).
 
 Bridge v2 is an incremental, exact-build-scoped protocol. It is not full v1
 parity, all-game coverage, or complete player-visible truth.
@@ -341,18 +356,21 @@ authority was added by the new visible facts.
 | Permission | Contracts |
 |---|---|
 | source-qualified `v0.109.0|c12f634d|-840572606`: `qualified_exact_build` | `deck_removal_selection`, `deck_upgrade_selection`, `combat_turn`, `combat_hand_card_selection`, `rest_site` |
-| source-qualified `v0.109.0|c12f634d|-840572606`: `candidate_action_canary` | `event_card_acquisition`, `reward_claim`, `card_reward_selection`, `map_navigation`, `shop_inventory`, `shop_room`, `treasure_room`, `game_over`, `card_bundle_selection`, `character_select`, `main_menu`, `singleplayer_menu`, `event_dialogue`, `event_option`, `deck_transform_selection`, Self-Help Book `deck_enchant_selection`, exact Headbutt/Graveblast `combat_pile_card_selection`, source-scoped `generated_card_choice` |
+| source-qualified `v0.109.0|c12f634d|-840572606`: `candidate_action_canary` | `event_card_acquisition`, `reward_claim`, `card_reward_selection`, `map_navigation`, `shop_inventory`, `shop_room`, `treasure_room`, `game_over`, `card_bundle_selection`, `character_select`, `main_menu`, `singleplayer_menu`, `event_dialogue`, `event_option`, `deck_transform_selection`, Surface-level `deck_enchant_selection`, exact Headbutt/Graveblast `combat_pile_card_selection`, source-scoped `generated_card_choice` |
 | source-qualified `v0.109.0|c12f634d|-840572606`: `qualified_read_only_scoped` | `run_deck` Inspection |
 | source-qualified `v0.109.0|c12f634d|-840572606`: `candidate_read_only_canary` | `combat_piles`, `shop_catalog` Inspections |
-| source-qualified target: disabled | every non-Self-Help-Book `deck_enchant_selection` origin, every non-Headbutt/non-Graveblast `combat_pile_card_selection` origin, every unlisted contract; every `generated_card_choice` origin except exact Lead Paperweight, native Colorless/Attack/Skill/Power Potions, and native Splash remains fail closed |
-| historical alternate-device `v0.109.0|c12f634d|1833084275`: `candidate_action_canary` | `event_option`, `event_card_acquisition`, `map_navigation` |
-| historical alternate-device `v0.109.0|c12f634d|1833084275`: disabled | every qualified Surface scope, the other 20 declared Surfaces, `run_deck`, `combat_piles`, and every unlisted Inspection |
+| source-qualified target: disabled | every non-Headbutt/non-Graveblast `combat_pile_card_selection` origin, every unlisted contract; every `generated_card_choice` origin except exact Lead Paperweight, native Colorless/Attack/Skill/Power Potions, and native Splash remains fail closed |
+| source-qualified target: unresolved governance gap | only Self-Help Book has recorded `deck_enchant_selection` canary evidence, but the Provider does not runtime-bind that source; any matching native enchant screen on the Surface-permitted exact build can publish actions |
+| audit-time alternate-device `v0.109.0|c12f634d|1833084275`: `candidate_action_canary` | `event_option`, `event_card_acquisition`, `map_navigation` |
+| audit-time alternate-device `v0.109.0|c12f634d|1833084275`: disabled | every qualified Surface scope, the other 20 declared Surfaces, `run_deck`, `combat_piles`, and every unlisted Inspection |
 
 Source implementation, target-build permission, local build/install/load,
 canary, and Organic qualification are separate states. There are 23 declared
-semantic Surface contracts: the currently loaded source-qualified target has
-five qualified, seventeen canary-permitted, and one disabled Surface kind. The historical
-alternate-device build has three canaries and no qualified contract.
+semantic Surface contracts: the source-qualified target permission profile has
+five qualified, seventeen canary-permitted, and one disabled Surface kind. The
+audit-time alternate-device profile has three canaries and no qualified
+contract. These are code-level permission profiles, not claims that either
+artifact is currently loaded.
 
 ## Preview.47 Coherent Observation And Authority-Shadow Closeout
 
@@ -775,29 +793,44 @@ executable Surface stack, universal selector, or universal menu protocol.
 `contract_complete_for_*` means complete only for that bounded contract. It
 never means the whole screen or game is completely exposed.
 
+The 2026-07-20 independent audit retains that hard shell but finds two internal
+architecture gaps: `deck_enchant_selection` evidence is described as
+Self-Help-Book-scoped while runtime authority is Surface-scoped, and
+parent/child commands do not explicitly own every remaining source-transaction
+Witness obligation. A closed, non-executable Transaction IR plus attested
+DecisionFrame and WitnessPlan is approved for shadow evaluation only; it does
+not change current authority.
+
 ## Next Work
 
-1. Continue the current strict-v2 organic journey and select the first natural
-   `unsupported`, `legacy-owned`, degraded, or missing-visible-information
-   checkpoint. Do not add a Provider merely to increase Surface count.
-2. Keep `shop_catalog` at read-only canary until another ordinary shop and
+1. Before further Surface expansion, add a non-authorizing transaction/source
+   binding audit for `deck_enchant_selection` and parent/child Witness
+   obligations. Runtime authority must be narrowed or fail closed before prose
+   can call the Surface Self-Help-Book-scoped.
+2. Shadow-pilot an attested DecisionFrame, closed non-executable Transaction IR,
+   shared validator, and WitnessPlan on generated-card and combat-pile choices.
+   The shadow may only reproduce or narrow existing actions.
+3. Continue strict-v2 organic journeys on an explicitly installed and loaded
+   exact artifact, selecting the first natural `unsupported`, `legacy-owned`,
+   degraded, or missing-visible-information checkpoint.
+4. Keep `shop_catalog` at read-only canary until another ordinary shop and
    inventory-mutation journey independently confirm the same contract. It must
    never authorize purchase or navigation.
-3. Audit `combat_turn` at operation granularity before any future environment
-   permission changes; the currently loaded source target retains its existing
+5. Audit `combat_turn` at operation granularity before any future environment
+   permission changes; the source-target profile retains its existing
    qualified scope unchanged.
-4. Keep `event_option`, `event_dialogue`, and `character_select` at canary while
+6. Keep `event_option`, `event_dialogue`, and `character_select` at canary while
    collecting ordinary non-Neow diversity and first-run/tutorial boundaries.
-5. Collect the still-missing Organic `open_singleplayer` and submenu
+7. Collect the still-missing Organic `open_singleplayer` and submenu
    Standard/Back lifecycles when the profile naturally exposes that branch;
    do not destroy a saved run merely to manufacture evidence.
-5. Re-run a fresh natural preview.28+ game-over intro -> summary -> main-menu
+8. Re-run a fresh natural preview.28+ game-over intro -> summary -> main-menu
    journey; the fixed contract still lacks final organic qualification.
-6. Requalify high-value disabled selectors/Inspection and close linked reward,
+9. Requalify high-value disabled selectors/Inspection and close linked reward,
    special treasure, tooltip, and shared-HUD variants from exact evidence.
-7. Retire each v1 family only after source, strict client, loaded identity,
+10. Retire each v1 family only after source, strict client, loaded identity,
    organic lifecycle, and semantic completion all agree.
-8. Continue treating each additional `1833084275` Surface as a separate
+11. Continue treating each additional `1833084275` Surface as a separate
    source/UI audit and bounded canary; do not copy target-build authority merely
    because version and commit match.
 
@@ -811,4 +844,6 @@ See the [coverage matrix](PLAYER_VISIBLE_COVERAGE.md) and
 
 The independent architecture decision and staged evolution plan are recorded
 in [ARCHITECTURE_AUDIT_2026-07-18.md](ARCHITECTURE_AUDIT_2026-07-18.md) and
-[ARCHITECTURE_EVOLUTION_PLAN.md](ARCHITECTURE_EVOLUTION_PLAN.md).
+[ARCHITECTURE_EVOLUTION_PLAN.md](ARCHITECTURE_EVOLUTION_PLAN.md). The latest
+independent reassessment is
+[DECISION_FRAME_TRANSACTION_IR_ARCHITECTURE_AUDIT_CLOSEOUT_2026-07-20.md](DECISION_FRAME_TRANSACTION_IR_ARCHITECTURE_AUDIT_CLOSEOUT_2026-07-20.md).

@@ -211,3 +211,75 @@ Adopt **D at the diagnostic/visibility protocol level** and **C internally**:
   mechanics, validators, commits, and witnesses.
 - Reject a universal Surface, universal purchase/selector, executable effect
   DSL, and automatic authority from manifests or structural similarity.
+
+## 2026-07-20 Independent Reassessment Addendum
+
+This addendum does not rewrite the preview.47 evidence above. It records the
+independent review at `develop@ec8c84a976ab25ada65133a56ad39ed95eb08c3d` and
+supersedes only conclusions that were stated too broadly.
+
+### Conclusions Retained
+
+- The v2 hard shell remains fundamental: one input owner, player-visible
+  boundaries, opaque state-bound actions, exact operands, execute-time
+  revalidation, game-owned Commit paths, idempotent command lifecycle, unknown
+  outcomes without retry, semantic post-state evidence, exact environment
+  scope, and Fail Closed behavior.
+- A UI mechanism never grants effect semantics or authority.
+- Current Surface-level permission and non-authorizing manifest shadow are
+  transitional governance, not the target authority model.
+- Strategy projection and Inspection remain read-only and cannot enter the
+  command ledger.
+
+### Conclusions Narrowed
+
+The statement that a typed effect graph is categorically the wrong reuse level
+was too conservative. A **closed, typed Transaction IR** is acceptable when it
+is a non-executable declaration of a game-owned transaction, exact operands,
+Mutation Domain, phases, and witness obligations. It becomes unsafe if Bridge
+interprets it as permission to invoke arbitrary effects, methods, reflection,
+scripts, or low-level UI operations.
+
+Likewise, purpose-specific contracts need not imply one handwritten Surface or
+source literal per card, potion, relic, event, or enchantment. A qualified
+runtime task/transaction binding plus a complete DecisionFrame can be stronger
+than provenance. However, removing a source literal does not remove the need
+for trustworthy attestation: content/Mod registry data cannot attest itself.
+
+### Newly Verified Risks
+
+1. Re still contains handwritten Surface/source discriminators and action-kind
+   sets even though Bridge-owned action execution is already a generic opaque
+   pass-through. This is real dual-schema growth pressure.
+2. Providers commonly co-locate mechanics, source inference, projection,
+   legality, execution, and Completion. Publication and execution often repeat
+   predicates rather than consuming one typed validation result.
+3. `deck_enchant_selection` is authorized by exact environment plus Surface
+   kind, while `DeckEnchantSurfaceProvider` does not establish a runtime source
+   binding. Its manifest and Canonical prose name Self-Help Book, but that name
+   is evidence metadata rather than an enforced origin restriction.
+4. Parent actions may complete when a required child Surface opens, while the
+   child witness proves only its local mutation. Without transaction-level
+   obligation ownership, later source effects can fall between command
+   boundaries.
+
+The fourth point is supported by current Bridge code plus a targeted
+decompilation of the locally installed `v0.109.0|c12f634d|1833084275` assembly:
+`WhisperingHollow.Hug` transforms the selected card and then applies HP loss.
+This is an architecture counterexample, not source qualification for the
+different `-840572606` build.
+
+### Revised Decision
+
+- **A:** retain the v2 hard shell and independent semantic ownership.
+- **B:** continue extracting permissionless visible mechanics and typed facts.
+- **C:** shadow-pilot `DecisionFrame + closed Transaction IR + shared validator
+  + WitnessPlan` on generated-card and combat-pile choices. The IR describes
+  proof obligations; the game-owned adapter remains the only Commit path.
+- **D:** consider a structural wire revision only after the shadow passes
+  zero-core-code holdouts and negative composition tests without widening
+  authority.
+
+The complete evidence classification, examples, migration gates, and rollback
+requirements are in
+[the 2026-07-20 audit closeout](DECISION_FRAME_TRANSACTION_IR_ARCHITECTURE_AUDIT_CLOSEOUT_2026-07-20.md).
