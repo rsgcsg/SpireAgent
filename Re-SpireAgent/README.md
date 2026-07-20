@@ -4,13 +4,13 @@ Re-SpireAgent is a small, independent Slay the Spire 2 agent runtime. It reads t
 
 RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, shadow/live modes, policy promotion, or the old project's phase machinery. Its job is to make one decision path correct and auditable.
 
-The current strict client contract is Bridge `2.0-preview.47` on the
+The current strict client contract is Bridge `2.0-preview.54` on the
 source-qualified exact game identity `v0.109.0|c12f634d|-840572606`. A local
 game with the same version/commit but another assembly hash remains separately
 scoped. Re also requires the state and capabilities to agree on the exact
 loaded Modset fingerprint; an additional, failed, runtime-added, or mismatched
 Modset cannot import v2 action, Inspection, or legacy-fallback authority.
-Current local hash `1833084275` has only explicit `event_option`,
+The historical alternate-device hash `1833084275` has only explicit `event_option`,
 `event_card_acquisition`, and `map_navigation` canaries, no qualified Surface,
 and no Inspection authority. Bridge v2 remains incremental:
 bounded Surface completeness and opaque action safety are real, but unsupported root-menu choices,
@@ -30,6 +30,46 @@ to read, so state and sidecars cannot be assembled from different checkpoints.
 The shadow is telemetry only and never changes `actionAuthority` or allowed
 actions. Unresolved shadow contracts may omit nullable contract/binding fields
 without invalidating an otherwise valid transitional state.
+
+Preview.48 adds strict decoding and normalized read-only projection for the
+current merchant `shop_catalog`. It preserves fixed visible UI slots, prices,
+stock, affordability, potion-capacity blocks, and removal-service state while
+publishing no actions. The catalog is a current-build canary and remains
+separate from `shop_room` / `shop_inventory` action authority. The progress
+guard also excludes regenerated coherent-observation IDs from semantic cycle
+identity while preserving all business facts and entity bindings.
+
+Preview.49 enables only the source-bound Self-Help Book
+`deck_enchant_selection` as a current-build canary. Re already models its
+selecting/preview stages and imports only Bridge-advertised opaque actions;
+Bridge confirmation now requires the exact selected card instances to contain
+the expected enchantment ID and amount after the overlay closes.
+
+Preview.50 keeps global unknown-transition handling fail-closed while allowing
+only event option/Proceed commands to wait across a known asynchronous
+intermediate state for their existing semantic completion witness. Re still
+records a timeout or failed command as unknown and never retries it.
+
+Preview.51 adds strict combat companion decoding and normalized schema 22.
+The player snapshot carries exact player-visible pet identity, alive state,
+block, statuses, and health only while the native health bar is visible. A
+fresh Necrobinder run confirmed Osty facts reached the model prompt and were
+used in an `Unleash` damage decision; no new action or permission exists.
+
+Preview.52 expands only the exact native generated-combat-card potion family:
+Colorless, Attack, Skill, and Power Potion. Re requires their distinct
+`sourceKind`, combat Context, free-this-turn hand destination, discard overflow,
+and source-specific Bridge actions. Normalized schema 23 records the expanded
+discriminated union. Attack Potion has current-MVID Organic selection evidence;
+unknown generators and Mod-derived potion types remain fail closed.
+
+Preview.53 adds a source-discriminated Graveblast branch to
+`combat_pile_card_selection`; Re requires exact hand destination and native
+full-hand discard overflow rather than reusing Headbutt draw-top semantics.
+Preview.54 adds exact native Splash to `generated_card_choice` with
+`sourceKind=splash`. Normalized schema 25 preserves that source while retaining
+the existing free-this-turn hand/discard contract. Both branches remain
+current-build canaries until their final-MVID actions naturally recur.
 
 Exact no-input combat setup and post-combat resolution intervals normalize as
 `combat_transition(setup|resolution) + no_action + settling +
@@ -240,14 +280,15 @@ RE-P1 has fixture-backed support for:
 - `menu`
 - `game_over`
 
-Bridge v2 source `preview.38` uses exact-game and exact-Modset capabilities. On the
+Bridge v2 source `preview.54` uses exact-game and exact-Modset capabilities. On the
 source-qualified v0.109 target, merchant
 removal, event/rest upgrade, ordinary combat turn, combat hand selection, and
 ordinary single-player rest plus read-only run deck are scoped-qualified; event
 card acquisition, reward, card reward, map, shop, treasure, game over, card
-bundles, character select, root/standard single-player menus, event dialogue,
-event option, and source-bound Whispering Hollow random transform are action
-canaries.
+  bundles, character select, root/standard single-player menus, event dialogue,
+  event option, source-bound Whispering Hollow random transform, Self-Help Book
+  enchantment, exact Headbutt/Graveblast pile selection, and exact native
+  generated-card branches are action canaries.
 Every unlisted contract is disabled even if it has historical v0.108 evidence.
 Qualification is per observed shape, not broad surface or game coverage. See
 [BRIDGE_V2_INTEGRATION.md](docs/BRIDGE_V2_INTEGRATION.md).
@@ -269,13 +310,15 @@ The only supported public TypeScript entrypoint is `src/index.ts`. Integration r
 ## Current Limitations
 
 - Real v1 MCP windows have exercised event, combat, rewards, card reward, map, rest, shop, treasure, and a boss fight. This proves protocol integration, not strategic quality or universal MCP coverage. The legacy v1 `NDeckEnchantSelectScreen` confirmation endpoint acknowledged the request without advancing state; Bridge v2 now has a separate qualified opaque-action contract for that surface.
-- Bridge v2 source `preview.38` is current. Source-target exact v0.109 capabilities qualify
+- Bridge v2 source `preview.54` is current. Source-target exact v0.109 capabilities qualify
   merchant removal, event/rest deck upgrade, ordinary combat turn, combat hand
   selection, ordinary single-player rest, and read-only run deck; event card
   acquisition, reward, card reward, map, shop, treasure, game over, card
   bundles, character select, root/standard single-player menus, event dialogue,
-  event option, and source-bound Whispering Hollow random transform are explicit
-  action canaries. Every unlisted surface remains disabled or explicitly v1-owned in
+  event option, source-bound Whispering Hollow random transform, Self-Help Book
+  enchantment, exact Headbutt/Graveblast pile selection, and exact native
+  generated-card branches are explicit action canaries. Every unlisted surface
+  remains disabled or explicitly v1-owned in
   `auto` mode. The distinct local hash `1833084275` imports only event option,
   event card acquisition, and map-navigation canaries; everything else remains
   fail closed.
@@ -285,10 +328,11 @@ The only supported public TypeScript entrypoint is `src/index.ts`. Integration r
 - Bridge v2 exposes one action-owning surface at a time through a centralized
   overlay-vs-room resolver. Typed diagnostics are implemented; legacy warning
   text must not be mistaken for an action-authority decision.
-- Read-only `run_deck` and `combat_piles` inspection code is state-bound,
+- Read-only `run_deck`, `combat_piles`, and `shop_catalog` inspection code is state-bound,
   non-executable, and excluded from the command ledger. `run_deck` is qualified
   on the exact current build; unordered `combat_piles` is a separate read-only
-  canary. Neither creates action authority and draw order remains hidden.
+  canary; `shop_catalog` is also a current-build read-only canary. None creates
+  action authority and draw order remains hidden.
 - A full potion belt now makes a visible potion reward non-claimable and
   exposes only exact, state-bound discard operands until capacity exists. The
   discard-then-claim lifecycle passed against an organic full-belt screen.

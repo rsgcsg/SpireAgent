@@ -7,6 +7,7 @@ const TRANSPORT_IDENTITY_KEYS = new Set([
   "bridgeStateId",
   "expectedStateId",
   "inspectionId",
+  "observationId",
   "observedStateId",
   "stateId"
 ]);

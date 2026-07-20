@@ -2,7 +2,7 @@
 
 ## Current Scope
 
-Re-SpireAgent supports the strict `2.0-preview.47` source contract. Current
+Re-SpireAgent supports the strict `2.0-preview.54` source contract. Current
 v0.109 authority is read from capabilities rather than inferred from historical
 implementation:
 
@@ -20,10 +20,13 @@ Surface remains fail closed.
   `card_reward_selection`, `map_navigation`, `shop_inventory`, `shop_room`,
   `treasure_room`, `game_over`, `card_bundle_selection`, `character_select`,
   `main_menu`, `singleplayer_menu`, `event_dialogue`, `event_option`, and
-  source-bound `deck_transform_selection`, exact Headbutt
-  `combat_pile_card_selection`, and exact Lead Paperweight plus
-  exact Colorless Potion `generated_card_choice` branches;
+  source-bound `deck_transform_selection`, Self-Help Book
+  `deck_enchant_selection`, exact Headbutt
+  plus Graveblast `combat_pile_card_selection`, and exact Lead Paperweight,
+  native Colorless/Attack/Skill/Power Potion, plus native Splash
+  `generated_card_choice` branches;
 - scoped-qualified read-only Inspection: `run_deck`;
+- source-target read-only Inspection canaries: `combat_piles`, `shop_catalog`;
 - every unlisted Surface and Inspection: disabled for this build.
 
 Canary-only exact scopes are valid only when their explicit canary list is
@@ -40,6 +43,35 @@ telemetry. Re validates and preserves those fields but never uses the shadow as
 permission. Unresolved shadow contracts may omit nullable IDs during
 transitions. Evidence provenance is stored in run metadata and does not change
 execution or qualification.
+
+Preview.48 adds `shop_catalog` as a state-bound read-only canary in the current
+shop Context. Re projects exact fixed UI slots, prices, stock, affordability,
+potion-capacity blocks, and removal-service state into player facts. It does
+not import purchase or navigation actions from the Inspection; those remain
+owned by the one active shop Surface.
+
+Preview.51 extends only the qualified combat Context with exact player-visible
+`companions`. Re requires unique companion identities, enforces native health
+bar visibility against HP presence, and projects the facts into normalized
+schema 22. It does not derive actions, targets, or hidden pet state.
+
+Preview.52 keeps the same generated-combat-card destination and completion
+contract while preserving the exact native source as
+`colorless_potion|attack_potion|skill_potion|power_potion`. Re schema 23 accepts
+only those values under combat Context. Attack Potion is organically exercised;
+Skill/Power remain source-audited canaries, and other callers remain invalid.
+
+Preview.53 adds exact native Graveblast as a second source-discriminated branch
+of `combat_pile_card_selection`. It shares the exact-one visible discard-pile
+selection mechanics with Headbutt, but not the business outcome: Graveblast
+moves the selected reference to hand, with the native full-hand discard redirect,
+while Headbutt moves it to draw-pile top. Both branches retain independent
+completion evidence and unknown callers remain invalid.
+
+Preview.54 adds exact native Splash to `generated_card_choice` and normalized
+schema 25. It reuses only the generated-combat-card selection mechanics and the
+free-this-turn hand/discard completion witness. The source remains explicitly
+`splash`; no other card generator or Mod subtype inherits its authority.
 
 Source-target organic evidence includes merchant removal with exact post-state,
 independent event/rest upgrade journeys, ordinary combat actions, a Touch of
@@ -67,13 +99,14 @@ or Mod callers cannot inherit this authority.
 
 Preview.43 ensures a provider whose exact source binding fails emits only
 `unsupported + none_fail_closed` with zero actions. Preview.44 adds the exact
-Colorless Potion combat child as a separate discriminated branch. Re requires
-`purpose=choose_one_generated_combat_card`, `sourceKind=colorless_potion`,
+Colorless Potion combat child as a separate discriminated branch. Preview.52
+adds only the exact native Attack/Skill/Power siblings. Re requires
+`purpose=choose_one_generated_combat_card`, an exact supported potion `sourceKind`,
 `destination=combat_hand`, `selectedCardCostPolicy=free_this_turn`, and the
 full-hand discard overflow declaration, plus source-specific operation kinds.
-Organic selection evidence proves the exact chosen entity reached the
-successor hand at cost zero. Skip, full-hand overflow Organic evidence, and
-every other generated-choice source remain unqualified.
+Organic Colorless and Attack selection evidence proves the exact chosen entity
+reached the successor hand at cost zero. Skill/Power, Skip, full-hand overflow,
+and every other generated-choice source remain without Organic qualification.
 
 Preview.46 requires typed `card_previews` on bounded hover-bearing entities.
 Re projects them into read-only card facts and never converts them into allowed
@@ -193,33 +226,41 @@ degrades or grants authority.
 
 ## Inspection Boundary
 
-Historical exact builds expose exactly two fixed read-only kinds:
+The current source contract exposes exactly three fixed read-only kinds:
 
 - `run_deck` for per-instance deck/upgrade/enchantment semantics;
 - `combat_piles` for unordered draw/discard/exhaust contents;
-- `status=implemented_read_only`;
-- exact-state bound;
-- no arbitrary queries;
-- no command-ledger entry;
-- no hidden visibility;
-- no draw-order semantics.
+- `shop_catalog` for fixed visible merchant slots and service state in the
+  current shop Context.
 
-Re reads state, captures applicable inspections, and re-reads state before
-accepting the combined snapshot. It validates kind/content, exact identity,
-counts, zones, visibility policy, and state binding. Inspection evidence enters
-the stale-state hash and normalized player facts, but never creates actions.
-Volatile `observed_at` is excluded from stale identity; inspection content and
-IDs are not. `inspection_not_available` is the only safely absent condition.
-If the state advances during composite state-plus-inspection capture, whether
-detected by an inspection `stale_state` response or the final state re-read,
-the adapter rejects the partial snapshot with a typed transient observation error.
-The settlement watcher may retry only this error within its existing timeout;
-decision and execution authorization reads remain fail-closed.
+All three use `status=implemented_read_only`, are exact-state bound, support no
+arbitrary queries, create no command-ledger entry or action authority, and
+exclude hidden information. `run_deck` and `combat_piles` are unordered
+multisets; `shop_catalog` alone preserves fixed visible UI slots.
 
-The current v0.109 scope exposes `run_deck` as qualified and `combat_piles` as
-a separate read-only canary. Current-MVID combat snapshots matched context
-counts before and after an opaque end-turn lifecycle. Neither Inspection grants
-action authority, and combat pile serialization remains explicitly unordered.
+Re first reads the state-bound Inspection catalog and then requests one
+coherent Bridge observation bundle containing that state plus every advertised
+Inspection. It validates kind/content, exact identity, counts, zones,
+visibility policy, and state binding. Inspection evidence enters the stale-state
+hash and normalized player facts, but never creates actions. Volatile
+`observed_at` is excluded from stale identity; Inspection content and IDs are
+not. A bundle `stale_state` is typed as transient whole-read drift. For
+`inspection_scope_mismatch`, Re performs one non-authorizing fresh state read:
+only a changed `state_id` proves lifecycle drift and permits observation retry;
+the same mismatch against an unchanged state remains a hard contract error.
+No partial bundle is accepted, and decision/execution authorization remains
+fail closed.
+
+The current v0.109 scope exposes `run_deck` as qualified and `combat_piles`
+plus `shop_catalog` as separate read-only canaries. Current-MVID combat
+snapshots matched context counts before and after an opaque end-turn lifecycle;
+preview.48 shop reads matched the open/closed inventory and supported a direct
+leave decision without reopening it. No Inspection grants action authority,
+combat pile serialization remains explicitly unordered, and the shop catalog
+preserves fixed UI slot semantics rather than pretending to be a universal
+selector. Preview.52 follow-up run `run-20260719234320-ze6fp0` crossed closed
+shop inspection, inventory actions, map, event acquisition, and combat with
+15/15 settled Bridge-owned decisions after the bounded scope-drift fix.
 
 ## Card Reward Contract
 

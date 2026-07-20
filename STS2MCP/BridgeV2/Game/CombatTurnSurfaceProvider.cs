@@ -78,7 +78,7 @@ internal sealed class CombatTurnSurfaceProvider : IBridgeSurfaceProvider
             canEndTurn);
         string readiness = context.IsPlayPhase ? "ready" : "settling";
         var completeness = new StateCompleteness(
-            "contract_complete_for_immediate_combat_turn; pile contents available through separate read-only inspection",
+            "contract_complete_for_immediate_combat_turn_including_visible_companions; pile contents available through separate read-only inspection",
             context.IsPlayPhase
                 ? "derived_from_same_validator_as_execution"
                 : "empty_during_non_player_phase",
@@ -87,6 +87,7 @@ internal sealed class CombatTurnSurfaceProvider : IBridgeSurfaceProvider
                 "CombatManager.DebugOnlyGetState",
                 "LocalContext.GetMe",
                 "PlayerCombatState",
+                "PlayerCombatState.Pets+MonsterModel.IsHealthBarVisible",
                 "CardModel.CanPlay",
                 "CombatState.HittableEnemies",
                 "NPlayerHand play-phase guards"

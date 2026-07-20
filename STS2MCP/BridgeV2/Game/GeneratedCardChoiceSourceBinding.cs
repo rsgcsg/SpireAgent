@@ -4,10 +4,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Potions;
 using MegaCrit.Sts2.Core.Models.Relics;
 
@@ -20,8 +22,22 @@ namespace STS2_MCP.BridgeV2.Game;
 /// </summary>
 internal static class GeneratedCardChoiceSourceBinding
 {
+    private const string ColorlessPotionSourceKind = "colorless_potion";
+    private const string AttackPotionSourceKind = "attack_potion";
+    private const string SkillPotionSourceKind = "skill_potion";
+    private const string PowerPotionSourceKind = "power_potion";
+    private const string SplashSourceKind = "splash";
     private static readonly object Gate = new();
     private static readonly Dictionary<Guid, ActiveBinding> Active = new();
+
+    internal static IReadOnlyList<string> SupportedCombatPotionSourceKinds { get; } =
+        new[]
+        {
+            ColorlessPotionSourceKind,
+            AttackPotionSourceKind,
+            SkillPotionSourceKind,
+            PowerPotionSourceKind
+        };
 
     internal abstract record ActiveBinding(
         Guid Token,
@@ -35,13 +51,22 @@ internal static class GeneratedCardChoiceSourceBinding
         IReadOnlyList<CardModel> BaselineDeck)
         : ActiveBinding(Token, "lead_paperweight", Player);
 
-    internal sealed record ColorlessPotionBinding(
+    internal sealed record GeneratedCombatPotionBinding(
         Guid Token,
         Player Player,
         PotionModel SourcePotion,
+        string ExactSourceKind,
         IReadOnlyList<CardModel> BaselineHand,
         IReadOnlyList<CardModel> BaselineDiscard)
-        : ActiveBinding(Token, "colorless_potion", Player);
+        : ActiveBinding(Token, ExactSourceKind, Player);
+
+    internal sealed record SplashBinding(
+        Guid Token,
+        Player Player,
+        Splash SourceCard,
+        IReadOnlyList<CardModel> BaselineHand,
+        IReadOnlyList<CardModel> BaselineDiscard)
+        : ActiveBinding(Token, SplashSourceKind, Player);
 
     internal readonly record struct Scope(Guid Token)
     {
@@ -65,22 +90,64 @@ internal static class GeneratedCardChoiceSourceBinding
 
     internal static Scope BeginPotion(PotionModel potion, Creature? target)
     {
-        if (potion is not ColorlessPotion
+        string? sourceKind = CombatPotionSourceKind(potion.GetType());
+        if (sourceKind == null
             || target?.Player is not Player player
             || player.PlayerCombatState is not { } combat)
         {
             return default;
         }
 
-        var binding = new ColorlessPotionBinding(
+        var binding = new GeneratedCombatPotionBinding(
             Guid.NewGuid(),
             player,
             potion,
+            sourceKind,
             combat.Hand.Cards.ToArray(),
             combat.DiscardPile.Cards.ToArray());
         lock (Gate)
             Active.Add(binding.Token, binding);
         return new Scope(binding.Token);
+    }
+
+    internal static Scope BeginCard(CardModel card)
+    {
+        if (card.GetType() != typeof(Splash)
+            || card is not Splash splash
+            || card.Owner is not Player player
+            || player.PlayerCombatState is not { } combat)
+        {
+            return default;
+        }
+
+        var binding = new SplashBinding(
+            Guid.NewGuid(),
+            player,
+            splash,
+            combat.Hand.Cards.ToArray(),
+            combat.DiscardPile.Cards.ToArray());
+        lock (Gate)
+            Active.Add(binding.Token, binding);
+        return new Scope(binding.Token);
+    }
+
+    /// <summary>
+    /// Exact source whitelist for the four native combat potions whose v0.109
+    /// OnUse methods share the same choose-one, free-this-turn, hand-or-discard
+    /// business outcome. Type equality is deliberate: unknown or Mod-derived
+    /// potion behavior must not inherit this authority.
+    /// </summary>
+    internal static string? CombatPotionSourceKind(Type potionType)
+    {
+        if (potionType == typeof(ColorlessPotion))
+            return ColorlessPotionSourceKind;
+        if (potionType == typeof(AttackPotion))
+            return AttackPotionSourceKind;
+        if (potionType == typeof(SkillPotion))
+            return SkillPotionSourceKind;
+        if (potionType == typeof(PowerPotion))
+            return PowerPotionSourceKind;
+        return null;
     }
 
     internal static async Task<RelicModel> Complete(Task<RelicModel> task, Scope scope)
@@ -167,6 +234,35 @@ internal static class GeneratedCardChoicePotionUsePatch
         out GeneratedCardChoiceSourceBinding.Scope __state)
     {
         __state = GeneratedCardChoiceSourceBinding.BeginPotion(__instance, target);
+    }
+
+    private static void Postfix(
+        ref Task __result,
+        GeneratedCardChoiceSourceBinding.Scope __state)
+    {
+        if (__state.IsTracked)
+            __result = GeneratedCardChoiceSourceBinding.Complete(__result, __state);
+    }
+}
+
+[HarmonyPatch(
+    typeof(CardModel),
+    nameof(CardModel.OnPlayWrapper),
+    new[]
+    {
+        typeof(PlayerChoiceContext),
+        typeof(Creature),
+        typeof(bool),
+        typeof(ResourceInfo),
+        typeof(bool)
+    })]
+internal static class GeneratedCardChoiceCardPlayPatch
+{
+    private static void Prefix(
+        CardModel __instance,
+        out GeneratedCardChoiceSourceBinding.Scope __state)
+    {
+        __state = GeneratedCardChoiceSourceBinding.BeginCard(__instance);
     }
 
     private static void Postfix(

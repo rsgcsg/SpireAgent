@@ -1,6 +1,122 @@
 # RE-P1 Handoff
 
-Status update 2026-07-19: Bridge `2.0-preview.47` is the current source contract
+Status update 2026-07-20: Bridge `2.0-preview.54` and Re normalized schema 25
+are cold-loaded on exact game identity `v0.109.0|c12f634d|-840572606`, MVID
+`67b8d32b-8c0c-4514-9df7-fac4ac5fb738`, runtime
+`db112bc183354e9eb397f6c76121f484`, Release/installed SHA
+`7bf3abca5f20594077b31f8e400ef0b27643353846256cb59cb633418a59a8b3`,
+and exact bridge-only Modset fingerprint
+`8371ef20e96178fc38ae2427a749815e13a37747aef58d2d4c48e0a10b3d036b`.
+Natural preview.53 run `run-20260719235923-qz8bg5` safely stopped on native
+Splash because its shared generated-card screen lacked exact source evidence.
+Exact source now adds only `sourceKind=splash`, retaining the existing
+free-this-turn hand/full-hand-discard witness. Preview.53 also added an exact
+Graveblast discard-to-hand/full-hand-discard branch. Both are source/test/build/
+load complete but not final-MVID Organic-qualified. Four preview.54 strict-v2
+runs recorded 216 Bridge-advertised decisions: 211 settled, three stale-state
+refusals before dispatch, and two run boundaries, with no v1, unsupported
+Surface, or unknown outcome. Two treasure refusals are now exact-source
+explained: the relic holder is clickable before native Skip becomes enabled
+after 2.5 seconds, so the legal-action set legitimately changes during model
+deliberation. The guard prevents old-state execution and the next tick recovers;
+the contract is intentionally unchanged.
+
+Status update 2026-07-20: strict-v2 decision
+`decision-000054-mrsftkqc-u5zacb` exposed a Re settlement-read race, not a
+Bridge action failure. The map command was Bridge-confirmed and the game
+reached a shop, but the first coherent post-read crossed merchant lifecycle and
+returned `inspection_scope_mismatch`. Re now retries only when one fresh state
+read proves that `state_id` changed; the same error against an unchanged state
+still fails hard. Tests are `149/149`, typecheck/build pass, and follow-up run
+`run-20260719234320-ze6fp0` settled 15/15 Bridge-advertised actions across shop,
+map, event acquisition, and combat with no v1 or error. Protocol, DLL,
+permission matrix, and qualification tiers did not change.
+
+Historical preview.52 update 2026-07-20: Bridge `2.0-preview.52` was cold-loaded on exact game
+identity `v0.109.0|c12f634d|-840572606`, MVID
+`9dad6057-c901-401d-ba15-54f653432063`, runtime
+`6ff167a6698c46a6b62b7690bc232076`, Release/installed SHA
+`7d29dac5794c07ffe0da870878a79ff4910015c6e1538b9f90ec97a61472f2c6`,
+and bridge-only Modset fingerprint
+`f1ecc8c0a30eb006bc27581fc3a4a21f9dfb9e9597461dff4a8faf3f51878a8c`.
+Natural run `run-20260719231523-l68939` exposed an Attack Potion generated-card
+child that preview.51 safely rejected. Exact source audit supports one bounded
+native Colorless/Attack/Skill/Power Potion family; all other callers remain
+disabled. After cold load, `run-20260719232912-qd6f0j` organically chose exact
+Rattle through `sourceKind=attack_potion`; completion proved source closure,
+exact hand/discard delta, and free-cost policy, and post-state showed the same
+Rattle at cost zero. Re normalized schema is 23. Skill/Power actions, Skip, and
+full-hand overflow remain evidence debt rather than claimed qualification.
+
+Status update 2026-07-20: Bridge `2.0-preview.51` is cold-loaded on exact game
+identity `v0.109.0|c12f634d|-840572606`, MVID
+`e0e0a559-0f82-4f8c-896a-ca05975fe8b6`, runtime
+`f8991f08066044038c0a351dd9f52f14`, and bridge-only Modset fingerprint
+`4412a651dd2fe69cd9e6db337e1b3ae83e9724c79bd21bf258f5ea088641c16f`.
+It closes the Necrobinder/Osty visibility gap without changing actions or
+permission: combat Context now carries native `PlayerCombatState.Pets` as
+typed companions and exposes HP only when the native health bar is visible.
+Fresh strict-v2 run `run-20260719230912-qnblao` settled all 30 decisions across
+event, map, combat, rewards, and card reward. Normalized schema 22 preserved
+Osty `2/2` plus `Die for You` in the actual DeepSeek prompt, and the model used
+that value to calculate Unleash damage. Dead/hidden-health behavior remains
+source-audited and fixture-tested rather than Organic-qualified.
+
+Status update 2026-07-20: Bridge `2.0-preview.50` is cold-loaded on exact game
+identity `v0.109.0|c12f634d|-840572606`, MVID
+`f8cb2c05-4177-4dbc-b4ae-29843f40a25a`, runtime
+`e9240003a1bb46c19fba27a0da35ef40`, and bridge-only Modset fingerprint
+`3e135a5e5f044d222150591aa8660021356a376d0d1352b94355b7ca8020ee67`.
+Natural run `run-20260719224136-9a48po` found that `Nab the Map` changed state
+before replacement options were attached, causing an old-MVID
+`unexpected_state_transition`. Preview.50 leaves the global ledger default
+unchanged and opts only event option/Proceed into bounded intermediate-state
+waiting. The saved exact pre-choice state reproduced on the new MVID and the
+same action completed with its replacement-option semantic witness. Follow-up
+`run-20260719224802-jpyv00` recorded 32 confirmed strict-v2 actions and one run
+boundary through map, combat, combat-hand selection, game over, and menu with
+no v1, failure, timeout, stale dispatch, or unknown outcome.
+
+Historical preview.49 status: Bridge `2.0-preview.49` was cold-loaded on exact game
+identity `v0.109.0|c12f634d|-840572606`, MVID
+`edc6efd2-7964-4830-a32e-c6260c6e332f`, runtime
+`f2291b6d2e564ca39c7481475a065020`, and bridge-only Modset fingerprint
+`1f02c1c1307f3239cbcca57f33582b05782fee6a4c344f0eae17dff4533fa71e`.
+Self-Help Book `deck_enchant_selection` is now a current-build action canary.
+Selection, automatic preview, cancel/reset, reselection, and confirm completed;
+confirm required exact `Creative AI+ -> SWIFT x2` card-model post-state, which a
+state-bound run-deck Inspection independently observed. Strict-v2 continuation
+`run-20260719223336-z4erxn` recorded 50 Bridge-owned decisions through event,
+map, combat, game over, and main menu with no v1, command failure, timeout, or
+unknown outcome. Eleven dynamic-combat decisions were safely rejected before
+dispatch as stale and later ticks continued normally. This is canary evidence,
+not automatic qualification.
+
+Historical preview.48 status: Bridge `2.0-preview.48` was cold-loaded on exact
+game identity `v0.109.0|c12f634d|-840572606`, MVID
+`678bbefd-f263-4053-9ff7-d0d7c81b2958`, runtime
+`c940acb819e949c79fb46d871b02295b`, and bridge-only Modset fingerprint
+`7f081272156cb4816467a93618d2cfeed12a8970c9885e14f2b5b3d3684f71d7`.
+It adds the non-authorizing `shop_catalog` read-only canary. Strict Re decoded
+closed/open catalog content and run deck in one coherent observation; run
+`run-20260719215323-ej3no7` exercised purchases and merchant removal, while
+`run-20260719215617-longql` closed and left the shop without reopening it,
+then continued through map into combat. Execution-time state drift was rejected
+before action dispatch and later fresh decisions completed normally. The
+progress guard now ignores regenerated coherent `observationId` transport
+identity, so semantic open/close cycles stop instead of being hidden by fresh
+bundle IDs. No action permission was added and `shop_catalog` is not qualified.
+
+Status update 2026-07-20: operator-positioned strict-v2 run
+`run-20260719212015-orjrk6` found a client-only settlement read defect after a
+Bridge-confirmed `proceed_rewards`. The first transitional map observation
+legitimately omitted nullable `current_position`, but the Re decoder required
+the property and ended the run as `executed_unsettled`. The decoder now accepts
+omitted/null map position as settling state, publishes no inferred coordinate
+or route action, and retains all exact map legality checks. This does not change
+Bridge command, completion, permission, or qualification behavior.
+
+Historical status update 2026-07-19: Bridge `2.0-preview.47` was the source contract
 against exact identity `v0.109.0|c12f634d|-840572606`, MVID
 `784bbdc5-e7b3-40e7-872f-3c8ba538f9b0`, runtime
 `0533bb421a334245b64cfde35394d64a`, and the exact bridge-only Modset recorded

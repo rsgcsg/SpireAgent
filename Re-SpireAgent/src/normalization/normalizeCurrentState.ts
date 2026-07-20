@@ -93,7 +93,8 @@ function normalizeLegacyCurrentState(rawInput: unknown, source: AdapterDescripto
     ...(projectedInspections.runDeck ? { runDeck: projectedInspections.runDeck } : {}),
     ...(projectedInspections.drawPile ? { drawPile: projectedInspections.drawPile } : {}),
     ...(projectedInspections.discardPile ? { discardPile: projectedInspections.discardPile } : {}),
-    ...(projectedInspections.exhaustPile ? { exhaustPile: projectedInspections.exhaustPile } : {})
+    ...(projectedInspections.exhaustPile ? { exhaustPile: projectedInspections.exhaustPile } : {}),
+    ...(projectedInspections.shopCatalog ? { shopCatalog: projectedInspections.shopCatalog } : {})
   };
   if (Object.keys(bridgeInspectionFacts).length > 0) {
     base = { ...base, bridgeInspectionFacts };

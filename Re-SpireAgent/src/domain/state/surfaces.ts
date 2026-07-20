@@ -153,18 +153,13 @@ export interface CombatTurnSurface {
   completeness?: BridgeSurfaceCompleteness;
 }
 
-export interface CombatPileCardSelectionSurface {
+interface CombatPileCardSelectionSurfaceBase {
   kind: "combat_pile_card_selection";
   bridgeStateId: string;
   screenEntityId: string;
   prompt: string;
-  purpose: "move_one_discard_card_to_draw_top";
-  sourceKind: "headbutt";
   sourceCardEntityId: string;
-  sourceCardDefinitionId: "HEADBUTT";
   pileType: "discard";
-  destinationPile: "draw";
-  destinationPosition: "top";
   minimumSelections: number;
   maximumSelections: number;
   selectedCount: number;
@@ -175,6 +170,24 @@ export interface CombatPileCardSelectionSurface {
   legalActions: BridgeLegalActionSnapshot[];
   completeness: BridgeSurfaceCompleteness;
 }
+
+export type CombatPileCardSelectionSurface = CombatPileCardSelectionSurfaceBase & (
+  | {
+      purpose: "move_one_discard_card_to_draw_top";
+      sourceKind: "headbutt";
+      sourceCardDefinitionId: "HEADBUTT";
+      destinationPile: "draw";
+      destinationPosition: "top";
+    }
+  | {
+      purpose: "move_one_discard_card_to_hand";
+      sourceKind: "graveblast";
+      sourceCardDefinitionId: "GRAVEBLAST";
+      destinationPile: "hand";
+      destinationPosition: "bottom";
+      overflowDestination: "discard_if_hand_full";
+    }
+);
 
 export interface CombatHandCardSelectionSurface {
   kind: "combat_hand_card_selection";
@@ -231,10 +244,10 @@ export interface GeneratedRunDeckCardChoiceSurface extends GeneratedCardChoiceSu
   overflowDestination?: undefined;
 }
 
-/** Source-bound Colorless Potion choice; full hands redirect the generated card to discard. */
+/** Source-bound native generated-card potion; full hands redirect to discard. */
 export interface GeneratedCombatCardChoiceSurface extends GeneratedCardChoiceSurfaceBase {
   purpose: "choose_one_generated_combat_card";
-  sourceKind: "colorless_potion";
+  sourceKind: "colorless_potion" | "attack_potion" | "skill_potion" | "power_potion" | "splash";
   destination: "combat_hand";
   selectedCardCostPolicy: "free_this_turn";
   overflowDestination: "combat_discard_if_hand_full";

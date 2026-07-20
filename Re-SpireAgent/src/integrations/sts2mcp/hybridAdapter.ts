@@ -8,6 +8,7 @@ import {
   sameBridgeModsetIdentity,
   type BridgeV2Capabilities,
   type BridgeV2Command,
+  type BridgeV2InspectionKind,
   type BridgeV2ObservationBundle,
   type BridgeV2State
 } from "./bridgeV2Protocol.js";
@@ -244,7 +245,7 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
   ): Promise<{
     state: BridgeV2State;
     rawState: JsonObject;
-    inspections: Partial<Record<"run_deck" | "combat_piles", JsonObject>>;
+    inspections: Partial<Record<BridgeV2InspectionKind, JsonObject>>;
     evidence: JsonObject;
   }> {
     // Availability is state-bound. Capabilities describe the vocabulary, but
@@ -259,11 +260,26 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
       if (error instanceof BridgeV2HttpError && error.errorCode === "stale_state") {
         throw stateChangedDuringCompositeRead("coherent observation bundle returned stale_state");
       }
+      if (error instanceof BridgeV2HttpError && error.errorCode === "inspection_scope_mismatch") {
+        // A Surface can advance between the state read and its state-bound
+        // inspection capture. Retry only when a fresh state proves that drift;
+        // a mismatch against the same state remains a hard contract failure.
+        try {
+          const refreshed = await this.bridge.state();
+          if (refreshed.data.state_id !== state.state_id) {
+            throw stateChangedDuringCompositeRead(
+              `coherent observation inspection scope changed from ${state.state_id} to ${refreshed.data.state_id}`
+            );
+          }
+        } catch (refreshError) {
+          if (refreshError instanceof TransientObservationError) throw refreshError;
+        }
+      }
       throw error;
     }
     const inspections = Object.fromEntries(
       Object.entries(bundle.data.inspections).map(([kind, inspection]) => [kind, inspection])
-    ) as Partial<Record<"run_deck" | "combat_piles", JsonObject>>;
+    ) as Partial<Record<BridgeV2InspectionKind, JsonObject>>;
     return {
       state: bundle.data.state,
       rawState: bundle.data.state as unknown as JsonObject,

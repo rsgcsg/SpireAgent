@@ -34,6 +34,7 @@ import {
   type StateEnvelope
 } from "../domain/state/index.js";
 import {
+  BRIDGE_V2_INSPECTION_KINDS,
   decodeBridgeV2Capabilities,
   decodeBridgeV2State,
   sameBridgeModsetIdentity,
@@ -100,6 +101,7 @@ import {
   type BridgeV2Diagnostic,
   type BridgeV2EventDialogueSurface,
   type BridgeV2EventOptionSurface,
+  type BridgeV2InspectionKind,
   type BridgeV2LegalAction
 } from "../integrations/sts2mcp/bridgeV2Protocol.js";
 import {
@@ -150,7 +152,10 @@ const ACTION_KINDS = {
   event_option: new Set(["choose_event_option", "proceed_event"]),
   rest_site: new Set(["choose_rest_option", "proceed_rest_site"]),
   combat_turn: new Set(["play_card", "use_potion", "end_turn"]),
-  combat_pile_card_selection: new Set(["select_discard_card_for_draw_top"]),
+  combat_pile_card_selection: new Set([
+    "select_discard_card_for_draw_top",
+    "select_discard_card_for_hand"
+  ]),
   combat_hand_card_selection: new Set([
     "select_combat_hand_card",
     "deselect_combat_hand_card",
@@ -271,10 +276,10 @@ export function normalizeBridgeV2CurrentState(
   if (state) {
     const availableKinds = new Set(state.inspection_catalog.map((entry) => entry.kind));
     for (const kind of Object.keys(inspectionRaw)) {
-      if (!availableKinds.has(kind as "run_deck" | "combat_piles")) {
+      if (!availableKinds.has(kind as BridgeV2InspectionKind)) {
         diagnostics.invalid(
           `bridge_v2_inspections.${kind}`,
-          inspectionRaw[kind as "run_deck" | "combat_piles"],
+          inspectionRaw[kind as BridgeV2InspectionKind],
           "inspection sidecar was not advertised by the current state-bound catalog"
         );
       }
@@ -299,7 +304,8 @@ export function normalizeBridgeV2CurrentState(
     ...(projectedInspections.runDeck ? { runDeck: projectedInspections.runDeck } : {}),
     ...(projectedInspections.drawPile ? { drawPile: projectedInspections.drawPile } : {}),
     ...(projectedInspections.discardPile ? { discardPile: projectedInspections.discardPile } : {}),
-    ...(projectedInspections.exhaustPile ? { exhaustPile: projectedInspections.exhaustPile } : {})
+    ...(projectedInspections.exhaustPile ? { exhaustPile: projectedInspections.exhaustPile } : {}),
+    ...(projectedInspections.shopCatalog ? { shopCatalog: projectedInspections.shopCatalog } : {})
   };
 
   const bridgeObservation = state && observationRaw
@@ -599,7 +605,7 @@ export function normalizeBridgeV2CurrentState(
                  && ((state.surface.source_kind === "lead_paperweight"
                       && isBridgeV2EventContext(state.context)
                       && state.context.event_id === "NEOW")
-                     || (state.surface.source_kind === "colorless_potion"
+                     || (state.surface.source_kind !== "lead_paperweight"
                          && isBridgeV2CombatContext(state.context)))) {
         validateGeneratedCardChoiceState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
         surface = projectGeneratedCardChoiceSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
@@ -1579,10 +1585,31 @@ function validateCombatTurnState(
     diagnostics.invalid("bridge_v2.context.player.player_entity_id", context.player, "combat player must reference shared player identity");
   }
   const handIds = new Set(context.player.hand.map((card) => card.entity_id));
+  const companionIds = new Set(context.player.companions.map((companion) => companion.entity_id));
   const enemyIds = new Set(context.enemies.map((enemy) => enemy.entity_id));
   const sharedPotionIds = new Set(shared.player.potions.map((potion) => potion.entity_id));
   const potionStateIds = new Set(context.player.potion_states.map((potion) => potion.entity_id));
   if (handIds.size !== context.player.hand.length) diagnostics.invalid("bridge_v2.context.player.hand", context.player.hand, "hand card entity ids are not unique");
+  if (companionIds.size !== context.player.companions.length) {
+    diagnostics.invalid("bridge_v2.context.player.companions", context.player.companions, "companion entity ids are not unique");
+  }
+  if (context.player.companions.some((companion) => companion.entity_id === context.player.player_entity_id || enemyIds.has(companion.entity_id))) {
+    diagnostics.invalid("bridge_v2.context.player.companions", context.player.companions, "companion identities must be distinct from the player and enemies");
+  }
+  for (const companion of context.player.companions) {
+    const hasHp = companion.hp !== null && companion.hp !== undefined;
+    const hasMaxHp = companion.max_hp !== null && companion.max_hp !== undefined;
+    if (companion.health_bar_visible !== (hasHp && hasMaxHp)) {
+      diagnostics.invalid(
+        "bridge_v2.context.player.companions.health_bar",
+        companion,
+        "visible companion health bars require both hp fields, and hidden health bars must omit both"
+      );
+    }
+    if (hasHp && hasMaxHp && (companion.max_hp! <= 0 || companion.hp! < 0 || companion.hp! > companion.max_hp!)) {
+      diagnostics.invalid("bridge_v2.context.player.companions.hp", companion, "companion hp must be within visible max hp bounds");
+    }
+  }
   if (enemyIds.size !== context.enemies.length) diagnostics.invalid("bridge_v2.context.enemies", context.enemies, "enemy entity ids are not unique");
   if (potionStateIds.size !== context.player.potion_states.length
       || potionStateIds.size !== sharedPotionIds.size
@@ -1627,18 +1654,30 @@ function validateCombatPileCardSelectionState(
     }
   }
   validateActions("combat_pile_card_selection", stateId, actions, missing, advertisedOperations, readiness, diagnostics);
+  const expectedActionKind = surface.source_kind === "headbutt"
+    ? "select_discard_card_for_draw_top"
+    : "select_discard_card_for_hand";
   for (const action of actions) {
-    if (action.kind !== "select_discard_card_for_draw_top") {
-      diagnostics.invalid("bridge_v2.legal_actions.kind", action.kind, "action does not belong to the exact Headbutt source contract");
+    if (action.kind !== expectedActionKind) {
+      diagnostics.invalid(
+        "bridge_v2.legal_actions.kind",
+        action.kind,
+        `action does not belong to the exact ${surface.source_kind} source contract`
+      );
     }
     const cardBindings = action.entity_bindings.filter((binding) => binding.role === "card");
     const boundCard = cardBindings.length === 1
       ? surface.cards.find((card) => card.entity_id === cardBindings[0]!.entity_id)
       : undefined;
     if (!boundCard) {
-      diagnostics.invalid("bridge_v2.legal_actions.entity_bindings", action.entity_bindings, "Headbutt selection must bind exactly one visible discard card");
-    } else if (action.label !== `Put ${boundCard.name ?? boundCard.definition_id} on top of the Draw Pile`) {
-      diagnostics.invalid("bridge_v2.legal_actions.label", action.label, "Headbutt action label disagrees with its exact visible card and destination");
+      diagnostics.invalid("bridge_v2.legal_actions.entity_bindings", action.entity_bindings, `${surface.source_kind} selection must bind exactly one visible discard card`);
+    } else {
+      const expectedLabel = surface.source_kind === "headbutt"
+        ? `Put ${boundCard.name ?? boundCard.definition_id} on top of the Draw Pile`
+        : `Put ${boundCard.name ?? boundCard.definition_id} back in your Hand`;
+      if (action.label !== expectedLabel) {
+        diagnostics.invalid("bridge_v2.legal_actions.label", action.label, `${surface.source_kind} action label disagrees with its exact visible card and destination`);
+      }
     }
   }
 }
@@ -1799,9 +1838,9 @@ function validateGeneratedCardChoiceState(
       } else if (surface.source_kind === "lead_paperweight"
         && action.label !== `Add ${boundCard.name ?? boundCard.definition_id} to the run deck`) {
         diagnostics.invalid("bridge_v2.legal_actions.label", action.label, "generated-card selection label disagrees with its bound visible card");
-      } else if (surface.source_kind === "colorless_potion"
+      } else if (surface.source_kind !== "lead_paperweight"
         && action.label !== `Choose ${boundCard.name ?? boundCard.definition_id}; add it to the combat hand for free this turn`) {
-        diagnostics.invalid("bridge_v2.legal_actions.label", action.label, "Colorless Potion selection label disagrees with its exact destination and cost policy");
+        diagnostics.invalid("bridge_v2.legal_actions.label", action.label, "generated combat-potion selection label disagrees with its exact destination and cost policy");
       }
     }
   }
@@ -2316,6 +2355,7 @@ function projectSharedVisibleState(shared: BridgeV2SharedVisibleState): {
       drawPile: [],
       discardPile: [],
       exhaustPile: [],
+      companions: [],
       orbs: [],
       statuses: [],
       relics: shared.player.relics.map((relic) => ({
@@ -2361,6 +2401,23 @@ function projectCombatPlayer(
     drawPile: [],
     discardPile: [],
     exhaustPile: [],
+    companions: player.companions.map((companion) => ({
+      entityId: companion.entity_id,
+      id: companion.definition_id,
+      ...(companion.name ? { name: companion.name } : {}),
+      isAlive: companion.is_alive,
+      healthBarVisible: companion.health_bar_visible,
+      ...(companion.hp !== null && companion.hp !== undefined ? { hp: companion.hp } : {}),
+      ...(companion.max_hp !== null && companion.max_hp !== undefined ? { maxHp: companion.max_hp } : {}),
+      block: companion.block,
+      statuses: companion.statuses.map((status) => ({
+        id: status.definition_id,
+        ...(status.name ? { name: status.name } : {}),
+        amount: status.amount,
+        type: status.type,
+        ...(status.description ? { description: status.description } : {})
+      }))
+    })),
     statuses: player.statuses.map((status) => ({
       id: status.definition_id,
       ...(status.name ? { name: status.name } : {}),
@@ -2861,18 +2918,13 @@ function projectCombatPileCardSelectionSurface(
   actions: BridgeV2LegalAction[],
   completeness: RawCompleteness
 ): CombatPileCardSelectionSurface {
-  return {
-    kind: "combat_pile_card_selection",
+  const base = {
+    kind: "combat_pile_card_selection" as const,
     bridgeStateId: stateId,
     screenEntityId: surface.screen_entity_id,
     prompt: surface.prompt,
-    purpose: surface.purpose,
-    sourceKind: surface.source_kind,
     sourceCardEntityId: surface.source_card_entity_id,
-    sourceCardDefinitionId: surface.source_card_definition_id,
     pileType: surface.pile_type,
-    destinationPile: surface.destination_pile,
-    destinationPosition: surface.destination_position,
     minimumSelections: surface.min_select,
     maximumSelections: surface.max_select,
     selectedCount: surface.selected_count,
@@ -2883,6 +2935,24 @@ function projectCombatPileCardSelectionSurface(
     legalActions: projectActions(actions),
     completeness: projectCompleteness(completeness)
   };
+  return surface.source_kind === "graveblast"
+    ? {
+        ...base,
+        purpose: surface.purpose,
+        sourceKind: surface.source_kind,
+        sourceCardDefinitionId: surface.source_card_definition_id,
+        destinationPile: surface.destination_pile,
+        destinationPosition: surface.destination_position,
+        overflowDestination: surface.overflow_destination
+      }
+    : {
+        ...base,
+        purpose: surface.purpose,
+        sourceKind: surface.source_kind,
+        sourceCardDefinitionId: surface.source_card_definition_id,
+        destinationPile: surface.destination_pile,
+        destinationPosition: surface.destination_position
+      };
 }
 
 function projectCombatHandCardSelectionSurface(
@@ -3148,11 +3218,9 @@ function projectCoherentObservation(
   const observationId = typeof raw.observation_id === "string" ? raw.observation_id : undefined;
   const stateId = typeof raw.state_id === "string" ? raw.state_id : undefined;
   const inspectionKinds = Array.isArray(raw.inspection_kinds)
-    ? raw.inspection_kinds.filter((value): value is "run_deck" | "combat_piles" =>
-        value === "run_deck" || value === "combat_piles")
+    ? raw.inspection_kinds.filter(isBridgeV2InspectionKind)
     : [];
-  const expectedKinds = observedInspectionKinds.filter((kind): kind is "run_deck" | "combat_piles" =>
-    kind === "run_deck" || kind === "combat_piles");
+  const expectedKinds = observedInspectionKinds.filter(isBridgeV2InspectionKind);
   const coherent = raw.coherent === true;
   if (!observationId
       || !coherent
@@ -3172,6 +3240,11 @@ function projectCoherentObservation(
     stateId,
     inspectionKinds
   };
+}
+
+function isBridgeV2InspectionKind(value: unknown): value is BridgeV2InspectionKind {
+  return typeof value === "string"
+    && BRIDGE_V2_INSPECTION_KINDS.includes(value as BridgeV2InspectionKind);
 }
 
 function safeMessage(error: unknown): string {

@@ -1,5 +1,9 @@
 import type { RawGameState } from "../../game-io/adapter.js";
 import { isJsonObject, type JsonObject } from "../../shared/json.js";
+import {
+  BRIDGE_V2_INSPECTION_KINDS,
+  type BridgeV2InspectionKind
+} from "./bridgeV2Protocol.js";
 
 // The adapter response is untrusted JSON. Strong game semantics begin only after normalization.
 export type Sts2McpRawState = RawGameState;
@@ -10,7 +14,7 @@ export function wrapBridgeV2State(input: {
   state: JsonObject;
   capabilities: JsonObject;
   legacyState?: JsonObject;
-  inspections?: Partial<Record<"run_deck" | "combat_piles", JsonObject>>;
+  inspections?: Partial<Record<BridgeV2InspectionKind, JsonObject>>;
   observation?: JsonObject;
 }): Sts2McpRawState {
   return {
@@ -31,25 +35,23 @@ export function bridgeV2ObservationFromWrapper(value: Sts2McpRawState): JsonObje
 
 export function bridgeV2InspectionsFromWrapper(
   value: Sts2McpRawState
-): Partial<Record<"run_deck" | "combat_piles", JsonObject>> {
+): Partial<Record<BridgeV2InspectionKind, JsonObject>> {
   if (!isJsonObject(value) || !isJsonObject(value.bridge_v2_inspections)) return {};
-  const inspections: Partial<Record<"run_deck" | "combat_piles", JsonObject>> = {};
-  if (isJsonObject(value.bridge_v2_inspections.run_deck)) {
-    inspections.run_deck = value.bridge_v2_inspections.run_deck;
-  }
-  if (isJsonObject(value.bridge_v2_inspections.combat_piles)) {
-    inspections.combat_piles = value.bridge_v2_inspections.combat_piles;
+  const inspections: Partial<Record<BridgeV2InspectionKind, JsonObject>> = {};
+  for (const kind of BRIDGE_V2_INSPECTION_KINDS) {
+    const inspection = value.bridge_v2_inspections[kind];
+    if (isJsonObject(inspection)) inspections[kind] = inspection;
   }
   return inspections;
 }
 
 export function bridgeV2InspectionIdentity(
-  inspections: Partial<Record<"run_deck" | "combat_piles", JsonObject>>
-): Partial<Record<"run_deck" | "combat_piles", JsonObject>> {
+  inspections: Partial<Record<BridgeV2InspectionKind, JsonObject>>
+): Partial<Record<BridgeV2InspectionKind, JsonObject>> {
   return Object.fromEntries(Object.entries(inspections).map(([kind, inspection]) => {
     const { observed_at: _observedAt, ...stableInspection } = inspection;
     return [kind, stableInspection];
-  })) as Partial<Record<"run_deck" | "combat_piles", JsonObject>>;
+  })) as Partial<Record<BridgeV2InspectionKind, JsonObject>>;
 }
 
 export function bridgeV2CapabilitiesSidecarFromRaw(value: Sts2McpRawState): JsonObject | undefined {

@@ -8,7 +8,7 @@ matrix. This document records the Re-SpireAgent consumption boundary.
 
 ## Bridge v2 Current Client Contract
 
-Re strictly decodes `2.0-preview.47`. It accepts Bridge actions only when:
+Re strictly decodes `2.0-preview.54`. It accepts Bridge actions only when:
 
 - game and loaded Bridge identities match exact scoped capabilities;
 - the Surface kind appears exactly once and has no duplicate operation names;
@@ -19,7 +19,7 @@ Re strictly decodes `2.0-preview.47`. It accepts Bridge actions only when:
 
 | Bridge contract | Re projection | Current v0.109 status |
 |---|---|---|
-| `combat_turn` | `combat + combat_turn + bridge_advertised` | qualified |
+| `combat_turn` | `combat + combat_turn + bridge_advertised`, including exact visible `player.companions` | qualified; alive Osty projection consumed by DeepSeek on current MVID, dead/hidden-health Organic diversity pending |
 | exact combat setup/resolution no-input transition | `combat_transition(setup|resolution) + no_action + none` | both phases organically observed on current MVID; not an action capability |
 | `combat_hand_card_selection` | `combat + combat_hand_card_selection + bridge_advertised` | qualified |
 | `deck_removal_selection` | `shop + deck_removal_selection + bridge_advertised` | qualified |
@@ -29,15 +29,28 @@ Re strictly decodes `2.0-preview.47`. It accepts Bridge actions only when:
 | `character_select` | `menu + character_select` with no active-run shared state | current-build action canary |
 | `event_dialogue` / `event_option` | revealed prefix or typed visible options/tooltips | current-build action canaries |
 | `deck_transform_selection` | `event + deck_transform_selection`, exact selected instances and random-uncommitted preview | Whispering Hollow action canary; other origins fail closed |
-| `generated_card_choice` | source-discriminated `event` run-deck or `combat` hand choice with exact purpose/source/destination/cost/overflow semantics | exact Lead Paperweight and exact Colorless Potion selection canaries; Skip/overflow diversity pending; every other source fails closed |
-| exact Headbutt `combat_pile_card_selection` | exact discard candidate and draw-top purpose | action canary; corrected completion needs a natural repeat |
+| `deck_enchant_selection` | `event + deck_enchant_selection`, exact target enchantment, selected instances, and selecting/preview stages | Self-Help Book action canary; semantic exact-card post-state confirmed, other origins fail closed |
+| `generated_card_choice` | source-discriminated `event` run-deck or `combat` hand choice with exact purpose/source/destination/cost/overflow semantics | Lead Paperweight, Colorless Potion, and Attack Potion selections exercised; Skill/Power/Splash source-audited only; Skip/overflow diversity pending; every other source fails closed |
+| exact Headbutt/Graveblast `combat_pile_card_selection` | exact discard candidate plus source-discriminated draw-top or hand/full-hand-discard purpose | action canary; both final completion branches need a natural repeat |
 | `game_over` | `run_ended + game_over` | current-MVID loss intro -> summary -> return lifecycle confirmed; win/timeline diversity pending |
 | `run_deck` Inspection | typed player run-deck evidence | qualified read-only; no authority |
 | `combat_piles` Inspection | unordered draw/discard/exhaust card evidence | current-build read-only canary; no draw order or authority |
+| `shop_catalog` Inspection | fixed visible merchant slots, prices, stock, affordability, potion-capacity blocks, and removal-service state | current-build read-only canary; no purchase/navigation authority |
 | top-level `shared_state` | persistent run/player facts, text keywords, and typed read-only card previews | read-only and state-bound; preview facts grant no actions |
 | `visibility` / `inspection_catalog` | bounded default-plus-inspection closure and available typed reads | read-only declarations; partial catalog; no action authority |
-| coherent observation bundle | one state plus requested catalogued Inspections under one state/environment identity | strict decoder and real shop + run-deck read exercised; drift fails the full read |
+| coherent observation bundle | one state plus requested catalogued Inspections under one state/environment identity | strict decoder and real shop + run-deck read exercised; stale reads and scope mismatches with a freshly changed state retry as whole-read drift, while same-state mismatches fail hard |
 | `contract_instance_shadow` | manifest contract, operations, legacy authority tier, and limitations | diagnostic only; always non-authorizing and not used to build allowed actions |
+
+Map `current_position` is nullable and may be omitted by the Bridge serializer
+while the map first opens or transitions from rewards. Re treats that shape as
+a valid settling observation with no implied current coordinate or action; all
+published route choices still require the ordinary exact-node legality checks.
+
+The bounded-run progress guard excludes regenerated transport identities,
+including coherent `observationId`, from semantic transition comparison. It
+still hashes business facts, Surface/stage, entity bindings, and action
+semantics. This prevents an open/close loop from hiding behind fresh bundle
+IDs without weakening stale-state execution checks.
 
 ## Explicit v1 Compatibility Boundary
 
@@ -52,9 +65,9 @@ Observed or expected v1-owned families still include:
   first-run character tutorial; the bounded root/standard menu contracts are
   Bridge v2 canaries;
 - crystal-sphere and other special screens without a current v2 contract;
-- current-build-disabled deck enchant and combat-pile selectors, plus every
-  generated-card origin except exact Lead Paperweight and exact Colorless
-  Potion.
+- every non-Self-Help-Book deck-enchant and non-Headbutt/non-Graveblast
+  combat-pile selector, plus every generated-card origin except exact Lead
+  Paperweight, native Colorless/Attack/Skill/Power Potions, and native Splash.
 
 v1 reconstructs indices and settlement locally. It is compatibility code, not
 equivalent safety or semantic evidence. A v1-supported shape can still be

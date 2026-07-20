@@ -219,7 +219,7 @@ internal sealed class ShopInventorySurfaceProvider : IBridgeSurfaceProvider
             actions);
     }
 
-    private static VisibleShopCardOffer BuildCardOffer(
+    internal static VisibleShopCardOffer BuildCardOffer(
         MerchantCardEntry entry,
         NMerchantSlot slot,
         int inventoryIndex,
@@ -248,7 +248,7 @@ internal sealed class ShopInventorySurfaceProvider : IBridgeSurfaceProvider
                 : null);
     }
 
-    private static VisibleShopRelicOffer BuildRelicOffer(
+    internal static VisibleShopRelicOffer BuildRelicOffer(
         MerchantRelicEntry entry,
         NMerchantSlot slot,
         int inventoryIndex,
@@ -274,7 +274,7 @@ internal sealed class ShopInventorySurfaceProvider : IBridgeSurfaceProvider
             relic);
     }
 
-    private static VisibleShopPotionOffer BuildPotionOffer(
+    internal static VisibleShopPotionOffer BuildPotionOffer(
         MerchantPotionEntry entry,
         NMerchantSlot slot,
         int inventoryIndex,
@@ -317,7 +317,7 @@ internal sealed class ShopInventorySurfaceProvider : IBridgeSurfaceProvider
             potion?.Rarity.ToString());
     }
 
-    private static VisibleShopCardRemovalOffer BuildRemovalOffer(
+    internal static VisibleShopCardRemovalOffer BuildRemovalOffer(
         MerchantCardRemovalEntry entry,
         NMerchantSlot slot,
         int inventoryIndex,

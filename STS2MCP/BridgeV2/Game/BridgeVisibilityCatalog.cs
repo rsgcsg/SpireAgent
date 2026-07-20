@@ -53,6 +53,20 @@ internal static class BridgeVisibilityCatalog
                     new[] { "combat_planning", "discard_sensitive_effect", "exhaust_sensitive_effect" },
                     new[] { "draw_pile_true_order" }));
             }
+            else if (kind == BridgeInspectionBuilder.ShopCatalogKind && draft.Context.Kind == "shop")
+            {
+                entries.Add(new BridgeInspectionCatalogEntry(
+                    kind,
+                    "current_shop",
+                    Availability(draft.Game.Compatibility, kind),
+                    "player_openable_current_merchant_inventory",
+                    StateBound: true,
+                    CreatesActionAuthority: false,
+                    "fixed_ui_slots",
+                    "low",
+                    new[] { "shop_planning", "purchase_comparison", "leave_shop_decision" },
+                    Array.Empty<string>()));
+            }
         }
 
         string[] hidden = draft.Context.Kind == "combat"

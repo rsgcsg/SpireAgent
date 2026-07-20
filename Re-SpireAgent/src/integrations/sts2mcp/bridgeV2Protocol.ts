@@ -1,7 +1,9 @@
 import { z } from "zod";
 import { isJsonObject, type JsonObject } from "../../shared/json.js";
 
-export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.47" as const;
+export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.54" as const;
+export const BRIDGE_V2_INSPECTION_KINDS = ["run_deck", "combat_piles", "shop_catalog"] as const;
+const inspectionKindSchema = z.enum(BRIDGE_V2_INSPECTION_KINDS);
 
 const compatibilitySchema = z.object({
   status: z.string().min(1),
@@ -12,8 +14,8 @@ const compatibilitySchema = z.object({
   inspection_allowed: z.boolean(),
   action_execution_surface_kinds: z.array(z.string().min(1)),
   action_canary_surface_kinds: z.array(z.string().min(1)),
-  inspection_allowed_kinds: z.array(z.enum(["run_deck", "combat_piles"])),
-  inspection_canary_kinds: z.array(z.enum(["run_deck", "combat_piles"])),
+  inspection_allowed_kinds: z.array(inspectionKindSchema),
+  inspection_canary_kinds: z.array(inspectionKindSchema),
   observation_only_surface_kinds: z.array(z.string().min(1)),
   observation_candidate_build_fingerprints: z.array(z.string().min(1)),
   detail: z.string()
@@ -177,6 +179,17 @@ const visibleCombatPlayerSchema = z.object({
   discard_pile_count: z.number().int().nonnegative(),
   exhaust_pile_count: z.number().int().nonnegative(),
   statuses: z.array(visibleStatusSchema),
+  companions: z.array(z.object({
+    entity_id: z.string().min(1),
+    definition_id: z.string().min(1),
+    name: z.string().nullable().optional(),
+    is_alive: z.boolean(),
+    health_bar_visible: z.boolean(),
+    hp: z.number().nullable().optional(),
+    max_hp: z.number().nullable().optional(),
+    block: z.number(),
+    statuses: z.array(visibleStatusSchema)
+  }).passthrough()),
   potion_states: z.array(z.object({
     entity_id: z.string().min(1),
     target_type: z.string(),
@@ -308,7 +321,9 @@ const visibleMapNodeSchema = z.object({
 const mapContextSchema = z.object({
   kind: z.literal("map"),
   act_index: z.number().int().nonnegative(),
-  current_position: visibleMapCoordinateSchema.nullable(),
+  // System.Text.Json omits nullable record fields. A newly opened or
+  // transitioning map legitimately has no current coordinate yet.
+  current_position: visibleMapCoordinateSchema.nullable().optional(),
   visited: z.array(visibleMapCoordinateSchema),
   nodes: z.array(visibleMapNodeSchema)
 }).passthrough();
@@ -616,17 +631,12 @@ const combatTurnSurfaceSchema = z.object({
   can_end_turn: z.boolean()
 }).passthrough();
 
-const combatPileCardSelectionSurfaceSchema = z.object({
+const combatPileCardSelectionSurfaceBaseSchema = z.object({
   kind: z.literal("combat_pile_card_selection"),
   screen_entity_id: z.string().min(1),
   prompt: z.string().min(1),
-  purpose: z.literal("move_one_discard_card_to_draw_top"),
-  source_kind: z.literal("headbutt"),
   source_card_entity_id: z.string().min(1),
-  source_card_definition_id: z.literal("HEADBUTT"),
   pile_type: z.literal("discard"),
-  destination_pile: z.literal("draw"),
-  destination_position: z.literal("top"),
   min_select: z.number().int().nonnegative(),
   max_select: z.number().int().nonnegative(),
   selected_count: z.number().int().nonnegative(),
@@ -634,7 +644,30 @@ const combatPileCardSelectionSurfaceSchema = z.object({
   require_manual_confirmation: z.boolean(),
   cancelable: z.boolean(),
   cards: z.array(visibleCardSchema)
+});
+
+const headbuttCombatPileCardSelectionSurfaceSchema = combatPileCardSelectionSurfaceBaseSchema.extend({
+  purpose: z.literal("move_one_discard_card_to_draw_top"),
+  source_kind: z.literal("headbutt"),
+  source_card_definition_id: z.literal("HEADBUTT"),
+  destination_pile: z.literal("draw"),
+  destination_position: z.literal("top"),
+  overflow_destination: z.null().optional()
 }).passthrough();
+
+const graveblastCombatPileCardSelectionSurfaceSchema = combatPileCardSelectionSurfaceBaseSchema.extend({
+  purpose: z.literal("move_one_discard_card_to_hand"),
+  source_kind: z.literal("graveblast"),
+  source_card_definition_id: z.literal("GRAVEBLAST"),
+  destination_pile: z.literal("hand"),
+  destination_position: z.literal("bottom"),
+  overflow_destination: z.literal("discard_if_hand_full")
+}).passthrough();
+
+const combatPileCardSelectionSurfaceSchema = z.discriminatedUnion("source_kind", [
+  headbuttCombatPileCardSelectionSurfaceSchema,
+  graveblastCombatPileCardSelectionSurfaceSchema
+]);
 
 const combatHandCardSelectionSurfaceSchema = z.object({
   kind: z.literal("combat_hand_card_selection"),
@@ -680,9 +713,17 @@ const generatedRunDeckCardChoiceSurfaceSchema = generatedCardChoiceBaseSchema.ex
   overflow_destination: z.null().optional()
 }).passthrough();
 
+const generatedCombatSourceKindSchema = z.enum([
+  "colorless_potion",
+  "attack_potion",
+  "skill_potion",
+  "power_potion",
+  "splash"
+]);
+
 const generatedCombatCardChoiceSurfaceSchema = generatedCardChoiceBaseSchema.extend({
   purpose: z.literal("choose_one_generated_combat_card"),
-  source_kind: z.literal("colorless_potion"),
+  source_kind: generatedCombatSourceKindSchema,
   destination: z.literal("combat_hand"),
   selected_card_cost_policy: z.literal("free_this_turn"),
   overflow_destination: z.literal("combat_discard_if_hand_full")
@@ -814,8 +855,8 @@ const inspectionContractSchema = z.object({
   arbitrary_queries_allowed: z.literal(false),
   enters_command_ledger: z.literal(false),
   visibility_classes: z.array(z.enum(["on_screen", "normal_inspection", "count_only"])),
-  ordering_semantics: z.array(z.enum(["unordered_multiset", "player_sorted"])),
-  implemented_kinds: z.array(z.enum(["run_deck", "combat_piles"]))
+  ordering_semantics: z.array(z.enum(["unordered_multiset", "player_sorted", "fixed_ui_slots"])),
+  implemented_kinds: z.array(inspectionKindSchema)
 }).passthrough();
 
 const inspectionCompletenessSchema = z.object({
@@ -842,18 +883,28 @@ const combatPilesInspectionContentSchema = z.object({
   zones: z.array(combatPileZoneSchema).length(3)
 }).passthrough();
 
+const shopCatalogInspectionContentSchema = z.object({
+  kind: z.literal("shop_catalog"),
+  access_state: z.enum(["inventory_open", "inventory_closed_open_to_inspect"]),
+  cards: z.array(visibleShopCardOfferSchema),
+  relics: z.array(visibleShopRelicOfferSchema),
+  potions: z.array(visibleShopPotionOfferSchema),
+  card_removal: visibleShopCardRemovalOfferSchema.nullable().optional()
+}).passthrough();
+
 const inspectionSchema = z.object({
   protocol_version: z.literal(SUPPORTED_BRIDGE_V2_PROTOCOL),
   inspection_id: z.string().min(1),
   expected_state_id: z.string().min(1),
   observed_state_id: z.string().min(1),
   observed_at: z.string().min(1),
-  kind: z.enum(["run_deck", "combat_piles"]),
+  kind: inspectionKindSchema,
   visibility_class: z.literal("normal_inspection"),
-  ordering_semantics: z.literal("unordered_multiset"),
+  ordering_semantics: z.enum(["unordered_multiset", "fixed_ui_slots"]),
   content: z.discriminatedUnion("kind", [
     runDeckInspectionContentSchema,
-    combatPilesInspectionContentSchema
+    combatPilesInspectionContentSchema,
+    shopCatalogInspectionContentSchema
   ]),
   completeness: inspectionCompletenessSchema,
   bridge: bridgeIdentitySchema,
@@ -866,13 +917,13 @@ const inspectionSchema = z.object({
 }).passthrough();
 
 const inspectionCatalogEntrySchema = z.object({
-  kind: z.enum(["run_deck", "combat_piles"]),
-  scope: z.enum(["active_run", "current_combat"]),
+  kind: inspectionKindSchema,
+  scope: z.enum(["active_run", "current_combat", "current_shop"]),
   availability: z.enum(["qualified", "canary"]),
   visibility_basis: z.string().min(1),
   state_bound: z.literal(true),
   creates_action_authority: z.literal(false),
-  ordering_semantics: z.literal("unordered_multiset"),
+  ordering_semantics: z.enum(["unordered_multiset", "fixed_ui_slots"]),
   estimated_cost: z.enum(["low", "medium", "high"]),
   recommended_for: z.array(z.string().min(1)),
   hidden_by_policy: z.array(z.string().min(1))
@@ -882,7 +933,7 @@ const visibilityStateSchema = z.object({
   profile_id: z.string().min(1),
   core_status: z.enum(["complete", "partial"]),
   player_visible_closure_status: z.enum(["complete", "partial_catalog", "partial"]),
-  available_inspections: z.array(z.enum(["run_deck", "combat_piles"])),
+  available_inspections: z.array(inspectionKindSchema),
   linked_detail_kinds: z.array(z.string().min(1)),
   hidden_by_policy: z.array(z.string().min(1)),
   missing: z.array(z.string().min(1)),
@@ -1018,7 +1069,7 @@ const observationBundleSchema = z.object({
   observation_id: z.string().min(1),
   coherent: z.literal(true),
   state: stateBaseSchema,
-  inspections: z.record(z.enum(["run_deck", "combat_piles"]), inspectionSchema),
+  inspections: z.record(inspectionKindSchema, inspectionSchema),
   bridge: bridgeIdentitySchema,
   game: gameSchema,
   diagnostics: z.array(diagnosticSchema)
@@ -1061,6 +1112,7 @@ export type BridgeV2CardRewardSelectionSurface = z.infer<typeof cardRewardSelect
 export type BridgeV2RewardClaimSurface = z.infer<typeof rewardClaimSurfaceSchema>;
 export type BridgeV2MapNavigationSurface = z.infer<typeof mapNavigationSurfaceSchema>;
 export type BridgeV2Diagnostic = z.infer<typeof diagnosticSchema>;
+export type BridgeV2InspectionKind = z.infer<typeof inspectionKindSchema>;
 export type BridgeV2Inspection = z.infer<typeof inspectionSchema>;
 export type BridgeV2InspectionCatalogEntry = z.infer<typeof inspectionCatalogEntrySchema>;
 export type BridgeV2VisibilityState = z.infer<typeof visibilityStateSchema>;
@@ -1124,7 +1176,7 @@ export interface BridgeV2ObservationBundle {
   observation_id: string;
   coherent: true;
   state: BridgeV2State;
-  inspections: Partial<Record<"run_deck" | "combat_piles", BridgeV2Inspection>>;
+  inspections: Partial<Record<BridgeV2InspectionKind, BridgeV2Inspection>>;
   bridge: z.infer<typeof bridgeIdentitySchema>;
   game: z.infer<typeof gameSchema>;
   diagnostics: BridgeV2Diagnostic[];
@@ -1340,8 +1392,8 @@ export function decodeBridgeV2State(value: unknown): DecodedBridgePayload<Bridge
       && (context.kind !== "event" || context.event_id !== "NEOW")) {
       throw new BridgeV2DecodeError("Bridge v2 Lead Paperweight generated_card_choice requires the exact NEOW event context");
     }
-    if (surface.source_kind === "colorless_potion" && context.kind !== "combat") {
-      throw new BridgeV2DecodeError("Bridge v2 Colorless Potion generated_card_choice requires combat context");
+    if (surface.source_kind !== "lead_paperweight" && context.kind !== "combat") {
+      throw new BridgeV2DecodeError("Bridge v2 generated combat-potion card choice requires combat context");
     }
   } else if (decoded.data.surface.kind === "card_bundle_selection") {
     // Bundle choice is a reusable UI protocol. Its semantic origin currently
@@ -1453,7 +1505,7 @@ export function decodeBridgeV2ObservationBundle(
     throw new BridgeV2DecodeError("Bridge v2 observation bundle identity does not match its enclosed state");
   }
 
-  const inspections: Partial<Record<"run_deck" | "combat_piles", BridgeV2Inspection>> = {};
+  const inspections: Partial<Record<BridgeV2InspectionKind, BridgeV2Inspection>> = {};
   for (const [kind, value] of Object.entries(decoded.data.inspections)) {
     const inspection = decodeBridgeV2Inspection(value).data;
     if (inspection.kind !== kind
@@ -1464,7 +1516,7 @@ export function decodeBridgeV2ObservationBundle(
         || inspection.game.modset.fingerprint !== state.game.modset.fingerprint) {
       throw new BridgeV2DecodeError(`Bridge v2 observation bundle ${kind} inspection is not coherent with its state`);
     }
-    inspections[kind as "run_deck" | "combat_piles"] = inspection;
+    inspections[kind as BridgeV2InspectionKind] = inspection;
   }
 
   return {

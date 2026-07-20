@@ -268,9 +268,32 @@ internal static class BridgeContextBuilder
             combat.DiscardPile.Cards.Count,
             combat.ExhaustPile.Cards.Count,
             BuildStatuses(player.Creature),
+            BuildCompanions(combat, entities),
             BuildPotionStates(player, entities, playPhase),
             orbs,
             combat.OrbQueue?.Capacity);
+    }
+
+    private static IReadOnlyList<VisibleCombatCompanion> BuildCompanions(
+        PlayerCombatState combat,
+        BridgeEntityRegistry entities)
+    {
+        return combat.Pets.Select(companion =>
+        {
+            MonsterModel model = companion.Monster
+                ?? throw new InvalidOperationException("A player combat pet has no monster model.");
+            bool healthBarVisible = model.IsHealthBarVisible;
+            return new VisibleCombatCompanion(
+                entities.GetId(companion, "companion"),
+                model.Id.Entry,
+                McpMod.SafeGetText(() => model.Title),
+                companion.IsAlive,
+                healthBarVisible,
+                healthBarVisible ? companion.CurrentHp : null,
+                healthBarVisible ? companion.MaxHp : null,
+                companion.IsAlive ? companion.Block : 0m,
+                companion.IsAlive ? BuildStatuses(companion) : Array.Empty<VisibleStatus>());
+        }).ToArray();
     }
 
     private static VisibleEnemy BuildEnemy(Creature creature, BridgeEntityRegistry entities)

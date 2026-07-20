@@ -1,6 +1,6 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.47`
+Protocol preview: `2.0-preview.54`
 
 `bridge.upstream_commit` is the immutable imported upstream baseline, currently
 `20eadebde358a37cca41f8b38728099e6d0d19db`; it is not the current SpireAgent
@@ -22,16 +22,41 @@ contract against every Steam build. For exact identity
   `card_reward_selection`, `map_navigation`, `shop_inventory`, `shop_room`,
   `treasure_room`, `game_over`, `card_bundle_selection`, `character_select`,
   `main_menu`, `singleplayer_menu`, `event_dialogue`, `event_option`, and
-  source-bound `deck_transform_selection`, exact Headbutt
-  `combat_pile_card_selection`, and source-scoped
-  `generated_card_choice` for exact Lead Paperweight acquisition and exact
-  Colorless Potion combat choice;
+  source-bound `deck_transform_selection`, Self-Help Book
+  `deck_enchant_selection`, exact Headbutt
+  `combat_pile_card_selection` for exact Headbutt/Graveblast, and source-scoped
+  `generated_card_choice` for exact Lead Paperweight acquisition and native
+  Colorless/Attack/Skill/Power Potion plus native Splash combat choices;
 - qualified read-only inspection: `run_deck`;
-- read-only inspection canary: `combat_piles`.
+- read-only inspection canaries: `combat_piles` and `shop_catalog`.
 
 Every unlisted Surface and Inspection remains disabled. Historical v0.108
 evidence does not grant current-build authority, and canary evidence does not
 silently become qualification.
+
+`deck_enchant_selection.confirm_selection` is not complete merely because the
+overlay closes. The current event command applies the enchantment after the
+selection task resolves. Preview.49 therefore binds commit to the exact
+selected card instances plus enchantment ID/amount, revalidates those facts at
+dispatch, and requires both overlay closure and exact card-model post-state.
+
+Event option commands may cross a bounded asynchronous intermediate state
+before their existing semantic witness becomes true. Preview.50 opts only
+`choose_event_option` and `proceed_event` into ledger intermediate-state
+waiting. They still require replacement options, a required child Surface,
+combat entry, map opening, or room departure before the command completes;
+otherwise the command times out as unknown. The ledger default continues to
+fail an unexplained state change for every action that did not explicitly opt
+in.
+
+Combat `player.companions` is immediate read-only Context, not an executable
+Surface. It is sourced from the local player's exact `PlayerCombatState.Pets`
+collection used by native `NCombatRoom` pet rendering. Each entry carries
+stable entity identity, exact definition, visible name, alive state, block,
+and visible statuses. `hp` and `max_hp` are present only when the companion's
+native `MonsterModel.IsHealthBarVisible` is true; contradictory visibility and
+HP shapes fail strict Re validation. This contract does not create companion
+commands, infer hidden pet state, or expose future Summon results.
 
 Exact environment identity is the combination of exact game identity and the
 loaded Modset identity. `game.modset` records:
@@ -219,6 +244,36 @@ modifier. Skip requires source completion, child closure, unchanged hand and
 discard counts, and absence of all offered references. Lead Paperweight and
 Colorless Potion share only bounded one-of-N mechanics; source, Context,
 destination, cost policy, operations, and witnesses remain distinct.
+
+Preview.52 extends that combat branch only to native sealed `AttackPotion`,
+`SkillPotion`, and `PowerPotion`, whose exact v0.109 `OnUse` implementations
+have the same visible choice, free-this-turn mutation, hand destination,
+full-hand discard overflow, and source-task lifecycle as `ColorlessPotion`.
+The wire preserves exact `source_kind` values `colorless_potion`,
+`attack_potion`, `skill_potion`, and `power_potion`; exact type equality is
+required, so unknown potions, derived
+Mod types, card/relic generators, and other callers cannot inherit authority.
+Shared mechanics and witness topology do not erase the source identity or
+create a universal generated-card selector.
+
+Preview.53 extends `combat_pile_card_selection` only to exact sealed
+`Graveblast`. Its wire branch is discriminated from Headbutt by
+`source_kind=graveblast`, `purpose=move_one_discard_card_to_hand`,
+`destination_pile=hand`, `destination_position=bottom`, and
+`overflow_destination=discard_if_hand_full`. Completion requires source-task
+completion, child closure, exact-reference movement from discard to hand when
+capacity existed, or exact-reference retention in discard only when the
+baseline hand was full. Combined hand/discard cardinality must remain stable.
+The shared selector mechanics do not grant any other combat-pile caller
+authority.
+
+Preview.54 extends the generated-combat branch only to exact sealed native
+`Splash`. The source is tracked around `CardModel.OnPlayWrapper`; the offered
+set must contain exactly three transient Attack cards owned by the local
+player, with the same explicit free-this-turn hand/discard outcome used by the
+native source. Wire `source_kind=splash` remains distinct from potion sources.
+Unknown cards, derived types, relic generators, and other shared-screen callers
+remain fail closed.
 
 Preview.40 models two source-bounded, non-authorizing combat lifecycle phases
 under one `combat_transition` Context. `phase=setup` requires the exact current
@@ -429,18 +484,25 @@ audit but do not infer safety from warning presence or absence.
 
 ## Inspection Contract
 
-The Bridge declares two possible read-only Inspection kinds, but a build may
+The Bridge declares three possible read-only Inspection kinds, but a build may
 advertise only the kinds that are explicitly permitted for that exact build:
 
 - `run_deck`: current local player's run deck, including per-instance upgrade
   and enchantment semantics;
 - `combat_piles`: draw, discard, and exhaust contents while a qualified combat
-  context exists.
+  context exists;
+- `shop_catalog`: the current merchant's typed fixed-slot card, relic, potion,
+  and removal-service catalog while the player is in that shop Context. It
+  reports whether the inventory is open or closed, but never publishes
+  purchase or navigation actions.
 
-Both return `visibility_class=normal_inspection` and
-`ordering_semantics=unordered_multiset`. Serialization order is deterministic
-but has no game meaning. In particular, real draw order is never returned and
-is declared as `draw_pile_order_hidden_by_policy`.
+All return `visibility_class=normal_inspection`. `run_deck` and
+`combat_piles` use `ordering_semantics=unordered_multiset`; serialization order
+is deterministic but has no game meaning. In particular, real draw order is
+never returned and is declared as `draw_pile_order_hidden_by_policy`.
+`shop_catalog` uses `ordering_semantics=fixed_ui_slots`, preserving the exact
+visible merchant slot identities without creating a generic ordered-selector
+contract.
 
 Inspection requests require the exact current `state_id`, exact supported game
 identity, and a fixed advertised kind. They do not return actions, mutate the
@@ -456,10 +518,11 @@ must not mix facts from adjacent game states. A bounded client may retry that
 read as transient evidence, but never reuse an action from the rejected read.
 
 For the source-qualified v0.109 identity, capabilities advertise `run_deck` as
-qualified and `combat_piles` as a separate read-only canary, producing
-`mixed_scoped_read_only`. A different exact build may advertise no Inspection
-kinds and must then report `disabled_for_current_build`. Inspection scope is
-independent of action scope and is never inferred from historical capabilities.
+qualified and `combat_piles` plus `shop_catalog` as separate read-only
+canaries, producing `mixed_scoped_read_only`. A different exact build may
+advertise no Inspection kinds and must then report
+`disabled_for_current_build`. Inspection scope is independent of action scope
+and is never inferred from historical capabilities.
 
 An empty qualified/canary Surface or Inspection list is always an empty
 permission scope. It never means wildcard, all-declared-Surface authority, or

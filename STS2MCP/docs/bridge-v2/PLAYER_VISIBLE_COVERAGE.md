@@ -2,7 +2,7 @@
 
 Current execution evidence is scoped to exact game identity
 `v0.109.0|c12f634d|-840572606` and exact loaded Modset fingerprint
-`3c3875309c60d02f18befd1e7a38ed3c51c0ca74ace16b48eb1b99911ecbd739`.
+`f1ecc8c0a30eb006bc27581fc3a4a21f9dfb9e9597461dff4a8faf3f51878a8c`.
 That Modset contains only the exact loaded `STS2_MCP` module. Compilation,
 fixtures, source review, old-build
 evidence, canary permission, and organic qualification are distinct states.
@@ -32,7 +32,7 @@ identity. Neither environment inherits permission from the other.
 |---|---|---|---|
 | `deck_removal_selection` | qualified | merchant select -> preview -> confirm; exact deck/card/gold/service witness | merchant remove only; no generic maintenance inference |
 | `deck_upgrade_selection` | qualified | event and rest exact-instance upgrade journeys | other origins and multi-select variants need evidence |
-| `combat_turn` | qualified | repeated card, target, potion, and end-turn journeys | uncommon card/target/phase shapes remain evidence debt |
+| `combat_turn` | qualified | repeated card, target, potion, and end-turn journeys; preview.51 fresh Necrobinder run exposes exact alive Osty HP/block/status companion state and Re/DeepSeek consumes it | dead/hidden-health companion Organic lifecycle plus uncommon card/target/phase shapes remain evidence debt |
 | `combat_hand_card_selection` | qualified | Touch of Insanity exact-instance select/confirm/cost post-state | other hand-selection purposes need diversity |
 | `rest_site` | qualified | Heal exact HP, Smith exact child, Proceed to map | unknown enabled options and multiplayer fail closed |
 | `event_card_acquisition` | canary | Brain Leech exact one-card deck commit | two-card and other event origins remain unqualified |
@@ -41,22 +41,24 @@ identity. Neither environment inherits permission from the other.
 | `map_navigation` | canary | repeated exact-node travel | drawings, special modes, and multiplayer unsupported |
 | `shop_room` | canary | open/close/Proceed current-build journeys | more lifecycle diversity required |
 | `shop_inventory` | canary | card/relic/potion purchases and removal launch with category-specific witnesses | final artifact still needs repeated organic category coverage |
-| `treasure_room` | canary | exact relic choose and Proceed; stale state correctly blocked | open/skip variants remain unqualified |
+| `treasure_room` | canary | exact relic choose and Proceed; repeated pre-dispatch refusal preserves the native 2.5-second relic-clickable/Skip-disabled action-set boundary | open/skip/empty-chest/multiplayer variants remain unqualified |
 | `card_bundle_selection` | canary | preview and exact three-card Scroll Boxes deck commit on preview.27 | other origins absent; preview.28 behavior unchanged but needs routine regression |
 | `game_over` | canary; fresh lifecycle exercised | preview.41 run `run-20260718162449-yvvf7o` completed intro -> summary -> return with both actions confirmed, then Re stopped at top-level menu | win/timeline destination and additional result variants remain evidence debt |
 | `character_select` | canary | select character, Ascension down/up, and Embark into a real Silent A10 run | first-run tutorial confirmation remains unsupported; root/menu contracts are tracked separately |
 | `main_menu` | canary; Continue exercised on intermediate and final preview.47 MVIDs | exact visible root choices, saved-run summary, unsupported-choice boundary, and Bridge-confirmed Continue into the saved-run shop; final-MVID command settled under operator-positioned provenance | Single Player branch hidden by saved-run state; profile/patch hover detail incomplete; final-MVID action is canary coverage, not qualification |
 | `singleplayer_menu` | canary, source/fixture only | exact Standard/Daily/Custom/Back bindings and submenu-stack witnesses | no current-MVID Organic action lifecycle yet |
 | `deck_transform_selection` | canary; selection/confirm/upgrade-view exercised | exact Whispering Hollow source, selected instances, upgrade presentation, random-uncommitted preview, exact-instance/deck-count witness | other callers, explicit preview button, cancel paths, multi-select, Mods, and future builds remain unqualified |
-| `generated_card_choice` | source-scoped canary; Lead Paperweight and Colorless Potion selections exercised | exact `RelicCmd.Obtain` and `PotionModel.OnUseWrapper` source bindings; explicit run-deck vs combat-hand destinations; unchanged vs free-this-turn cost policies; exact-reference/deck or hand-discard witnesses | both Skip variants and Organic full-hand overflow remain pending; Hefty Tablet, Knowledge Demon, other generators, Mods, and unknown sources fail closed |
-| exact Headbutt `combat_pile_card_selection` | source-scoped canary; source/action observed, corrected completion not re-exercised | exact Headbutt source, visible discard candidates, exact-card discard-to-draw-top witness | first Organic action ended unknown before the intermediate-state observer fix; all other origins fail closed |
+| `deck_enchant_selection` | current-build canary; select/automatic preview/cancel/reselect/confirm exercised | exact Self-Help Book source, target enchantment ID/amount, exact selected instances, overlay stage, semantic exact-card enchantment witness, independent run-deck post-state | other callers, explicit preview button, cancelable close, multi-select, Mods, and future builds remain unqualified |
+| `generated_card_choice` | source-scoped canary; Lead Paperweight, Colorless Potion, and Attack Potion selections exercised; exact Splash implemented but not final-MVID exercised | exact `RelicCmd.Obtain`, sealed native Colorless/Attack/Skill/Power `PotionModel.OnUseWrapper`, and sealed native `Splash.OnPlayWrapper` bindings; explicit source/run-deck-vs-combat-hand/cost/overflow semantics; exact-reference/deck or hand-discard witnesses | Skill/Power/Splash Organic actions, Skip variants, and full-hand overflow remain pending; Hefty Tablet, Knowledge Demon, other generators, derived Mod types, and unknown sources fail closed |
+| exact Headbutt/Graveblast `combat_pile_card_selection` | source-scoped canary; Headbutt source/action observed but corrected completion not re-exercised; Graveblast source-audited and loaded without final-MVID action | exact source task, visible discard candidates, source-discriminated draw-top versus hand/full-hand-discard exact-card witness | both final completion branches still need natural action evidence; all other origins fail closed |
 | `event_dialogue` | canary | repeated v0.109 revealed-prefix advances with exact index witness | non-Neow/other ancient dialogue diversity remains evidence debt |
-| `event_option` | canary | typed text/card hover semantics, Neow Talisman effect, replacement options, and Proceed to map | ordinary non-Neow and lethal-option diversity remain evidence debt |
+| `event_option` | canary | typed text/card hover semantics, Neow Talisman effect, ordinary event replacement options, async `Nab the Map -> Proceed`, and Proceed to map | lethal-option and more linked-child diversity remain evidence debt |
 | `run_deck` Inspection | qualified read-only | exact removal, upgrade, enchant, bundle post-states | no arbitrary query or action authority |
 | `combat_piles` Inspection | read-only canary | current-MVID state-bound snapshots matched combat context at `12/0/0` and, after a confirmed end turn, `7/4/1`; Re decoded exact card multisets without diagnostics | more combat/pile diversity before qualification; draw order remains intentionally hidden |
+| `shop_catalog` Inspection | read-only canary | preview.48 current-MVID closed/open shop reads exposed fixed typed inventory, prices, stock, affordability, potion-capacity blocks, and used removal service; a strict-v2 follow-up left the shop without reopening inventory | additional ordinary shops and inventory mutations before qualification; Inspection never grants purchase/navigation authority |
 | top-level `shared_state` | qualified read-only composition | active-run HUD composition across map/combat/reward; preview.46 Cursed Pearl organically exposed Greed `card_previews` plus Eternal/Unplayable hover text with stable state identity | bounded strategic HUD, not all visible UI information; unknown hover-tip kinds still fail closed |
-| `visibility` + `inspection_catalog` | non-authorizing read-only declaration | preview.47 shop state declared `run_deck` availability, linked detail families, explicit hidden policy, and partial closure | catalog currently covers only two fixed Inspection kinds and does not prove whole-game closure |
-| coherent observation bundle | non-authorizing read-only transport | preview.47 returned shop state and `run_deck` under one exact state/MVID/runtime/Modset identity; strict Re consumed it | needs combat-pile and transition-drift runtime diversity; no command authority |
+| `visibility` + `inspection_catalog` | non-authorizing read-only declaration | preview.48 shop state declares `run_deck` and `shop_catalog`; combat declares `combat_piles`; linked detail families and hidden policy remain explicit | catalog covers only three fixed Inspection kinds and does not prove whole-game closure |
+| coherent observation bundle | non-authorizing read-only transport | preview.48 returned shop state, `run_deck`, and `shop_catalog` under one exact identity; preview.52 run `run-20260719234320-ze6fp0` crossed shop/map/event/combat with 15/15 settled reads after Re proved state-changing scope drift before retry | same-state catalog/runtime mismatch remains a hard error; needs more inspection-diversity evidence; no command authority |
 | `contract_instance_shadow` | diagnostic only, always `authorizing=false` | preview.47 reports manifest contract, published operations, legacy tier, and limitations on real menu/shop states | declaration is not runtime semantic binding; actual permission remains exact environment + Surface kind |
 | `combat_transition + no_action` lifecycle observation | non-authorizing, not a permission row | Current-MVID Organic setup and resolution observations around repeated `combat_turn -> reward_claim -> map -> combat_turn` journeys on preview.40 | exact `CombatRoom` setup/resolution only; early-load and other no-overlay gaps remain unsupported |
 
@@ -64,8 +66,7 @@ identity. Neither environment inherits permission from the other.
 
 | Contract | Historical evidence | Why disabled now |
 |---|---|---|
-| `deck_enchant_selection` | v0.108 Glam lifecycle | current-build source/action/post-state requalification missing |
-| non-Headbutt `combat_pile_card_selection` origins | v0.108 discard selection | only exact Headbutt is a v0.109 canary; other purposes remain source-unresolved |
+| non-Headbutt/non-Graveblast `combat_pile_card_selection` origins | v0.108 discard selection | only exact Headbutt and Graveblast are v0.109 canaries; other purposes remain source-unresolved |
 
 ## Unsupported Or Legacy-Owned
 

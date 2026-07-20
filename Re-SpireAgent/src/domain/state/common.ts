@@ -1,8 +1,6 @@
-import type { PlayerSnapshot } from "./entities.js";
+import type { CardSnapshot, PlayerSnapshot, RelicSnapshot } from "./entities.js";
 
-import type { CardSnapshot } from "./entities.js";
-
-export const NORMALIZED_STATE_SCHEMA_VERSION = 21 as const;
+export const NORMALIZED_STATE_SCHEMA_VERSION = 25 as const;
 
 export type StateStability =
   | "actionable"
@@ -14,6 +12,7 @@ export type StateStability =
   | "unknown";
 
 export type ActionAuthority = "local_reconstruction" | "bridge_advertised" | "none";
+export type BridgeInspectionKind = "run_deck" | "combat_piles" | "shop_catalog";
 
 export interface BridgeDiagnosticSnapshot {
   source: "state" | "capabilities" | "inspection";
@@ -39,17 +38,17 @@ export interface BridgeInspectionPolicySnapshot {
   arbitraryQueriesAllowed: false;
   entersCommandLedger: false;
   visibilityClasses: Array<"on_screen" | "normal_inspection" | "count_only">;
-  orderingSemantics: Array<"unordered_multiset" | "player_sorted">;
-  implementedKinds: Array<"run_deck" | "combat_piles">;
+  orderingSemantics: Array<"unordered_multiset" | "player_sorted" | "fixed_ui_slots">;
+  implementedKinds: BridgeInspectionKind[];
 }
 
 export interface BridgeInspectionEvidenceSnapshot {
   inspectionId: string;
-  kind: "run_deck" | "combat_piles";
+  kind: BridgeInspectionKind;
   expectedStateId: string;
   observedStateId: string;
   visibilityClass: "normal_inspection";
-  orderingSemantics: "unordered_multiset";
+  orderingSemantics: "unordered_multiset" | "fixed_ui_slots";
   playerVisibleSemantics: string;
   sources: string[];
   missing: string[];
@@ -64,16 +63,43 @@ export interface BridgeInspectionFactsSnapshot {
   drawPile?: CardSnapshot[];
   discardPile?: CardSnapshot[];
   exhaustPile?: CardSnapshot[];
+  shopCatalog?: BridgeShopCatalogSnapshot;
+}
+
+export interface BridgeShopCatalogOfferBaseSnapshot {
+  entityId: string;
+  slotEntityId: string;
+  inventoryIndex: number;
+  price: number;
+  stocked: boolean;
+  visible: boolean;
+  affordable: boolean;
+  canPurchase: boolean;
+  blockedReason?: "sold_out" | "already_used" | "not_visible" | "insufficient_gold"
+    | "potion_slots_full" | "potion_procurement_forbidden" | "ui_control_disabled";
+}
+
+export interface BridgeShopCatalogSnapshot {
+  accessState: "inventory_open" | "inventory_closed_open_to_inspect";
+  cards: Array<BridgeShopCatalogOfferBaseSnapshot & { onSale: boolean; card?: CardSnapshot }>;
+  relics: Array<BridgeShopCatalogOfferBaseSnapshot & { relic?: RelicSnapshot }>;
+  potions: Array<BridgeShopCatalogOfferBaseSnapshot & {
+    id?: string;
+    name?: string;
+    description?: string;
+    rarity?: string;
+  }>;
+  cardRemoval?: BridgeShopCatalogOfferBaseSnapshot & { nextPriceIncrease: number };
 }
 
 export interface BridgeInspectionCatalogEntrySnapshot {
-  kind: "run_deck" | "combat_piles";
-  scope: "active_run" | "current_combat";
+  kind: BridgeInspectionKind;
+  scope: "active_run" | "current_combat" | "current_shop";
   availability: "qualified" | "canary";
   visibilityBasis: string;
   stateBound: true;
   createsActionAuthority: false;
-  orderingSemantics: "unordered_multiset";
+  orderingSemantics: "unordered_multiset" | "fixed_ui_slots";
   estimatedCost: "low" | "medium" | "high";
   recommendedFor: string[];
   hiddenByPolicy: string[];
@@ -83,7 +109,7 @@ export interface BridgeVisibilitySnapshot {
   profileId: string;
   coreStatus: "complete" | "partial";
   playerVisibleClosureStatus: "complete" | "partial_catalog" | "partial";
-  availableInspections: Array<"run_deck" | "combat_piles">;
+  availableInspections: BridgeInspectionKind[];
   linkedDetailKinds: string[];
   hiddenByPolicy: string[];
   missing: string[];
@@ -94,7 +120,7 @@ export interface BridgeObservationSnapshot {
   observationId: string;
   coherent: true;
   stateId: string;
-  inspectionKinds: Array<"run_deck" | "combat_piles">;
+  inspectionKinds: BridgeInspectionKind[];
 }
 
 export interface BridgeContractInstanceShadowSnapshot {

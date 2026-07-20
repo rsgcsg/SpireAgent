@@ -5,6 +5,10 @@ using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Entities.Merchant;
+using MegaCrit.Sts2.Core.Nodes.Rooms;
+using MegaCrit.Sts2.Core.Nodes.Screens.Shops;
+using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Runs;
 using STS2_MCP.BridgeV2.Protocol;
 using STS2_MCP.BridgeV2.Runtime;
@@ -34,6 +38,7 @@ internal static class BridgeInspectionBuilder
 {
     public const string RunDeckKind = "run_deck";
     public const string CombatPilesKind = "combat_piles";
+    public const string ShopCatalogKind = "shop_catalog";
 
     public static BridgeInspectionBuildResult Build(
         string kind,
@@ -46,6 +51,7 @@ internal static class BridgeInspectionBuilder
             {
                 RunDeckKind => BuildRunDeck(entities),
                 CombatPilesKind => BuildCombatPiles(current, entities),
+                ShopCatalogKind => BuildShopCatalog(current, entities),
                 _ => BridgeInspectionBuildResult.Failure(
                     "inspection_kind_not_implemented",
                     $"Inspection kind '{kind}' is not implemented by this bridge revision.")
@@ -132,6 +138,102 @@ internal static class BridgeInspectionBuilder
                     "CardModel.GetDescriptionForPile"
                 },
                 new[] { "draw_pile_order_hidden_by_policy" })));
+    }
+
+    private static BridgeInspectionBuildResult BuildShopCatalog(
+        BridgeStateEnvelope current,
+        BridgeEntityRegistry entities)
+    {
+        if (current.Context is not ShopBridgeContext
+            || !ShopSurfaceFacts.TryGetCurrent(
+                out MerchantRoom? merchantRoom,
+                out NMerchantRoom? room,
+                out MerchantInventory? inventory)
+            || merchantRoom == null
+            || room == null
+            || inventory == null)
+        {
+            return BridgeInspectionBuildResult.Failure(
+                "inspection_scope_mismatch",
+                "Shop catalog inspection is available only for the current merchant context.");
+        }
+
+        MerchantEntry[] entries = inventory.AllEntries.ToArray();
+        NMerchantSlot[] slots = room.Inventory.GetAllSlots().ToArray();
+        var slotByEntry = new Dictionary<MerchantEntry, NMerchantSlot>();
+        foreach (MerchantEntry entry in entries)
+        {
+            NMerchantSlot[] matches = slots.Where(slot => ReferenceEquals(slot.Entry, entry)).ToArray();
+            if (matches.Length != 1)
+            {
+                return BridgeInspectionBuildResult.Failure(
+                    "inspection_binding_failed",
+                    $"Merchant entry {entry.GetType().Name} does not have exactly one UI slot.");
+            }
+            slotByEntry[entry] = matches[0];
+        }
+
+        bool inventoryOpen = room.Inventory.IsOpen;
+        bool inputReady = inventoryOpen
+                          && ShopSurfaceFacts.IsCurrentInventory(merchantRoom, room, inventory);
+        Player player = inventory.Player;
+        bool potionSlotsFull = ShopSurfaceFacts.OccupiedPotionSlots(player) >= player.PotionSlots.Count;
+        VisibleShopCardOffer[] cards = inventory.CardEntries.Select(entry =>
+            ShopInventorySurfaceProvider.BuildCardOffer(
+                entry,
+                slotByEntry[entry],
+                Array.IndexOf(entries, entry),
+                inputReady,
+                entities)).ToArray();
+        VisibleShopRelicOffer[] relics = inventory.RelicEntries.Select(entry =>
+            ShopInventorySurfaceProvider.BuildRelicOffer(
+                entry,
+                slotByEntry[entry],
+                Array.IndexOf(entries, entry),
+                inputReady,
+                entities)).ToArray();
+        VisibleShopPotionOffer[] potions = inventory.PotionEntries.Select(entry =>
+            ShopInventorySurfaceProvider.BuildPotionOffer(
+                entry,
+                slotByEntry[entry],
+                Array.IndexOf(entries, entry),
+                player,
+                potionSlotsFull,
+                inputReady,
+                entities)).ToArray();
+        MerchantCardRemovalEntry? removalEntry = inventory.CardRemovalEntry;
+        VisibleShopCardRemovalOffer? removal = removalEntry == null
+            ? null
+            : ShopInventorySurfaceProvider.BuildRemovalOffer(
+                removalEntry,
+                slotByEntry[removalEntry],
+                Array.IndexOf(entries, removalEntry),
+                inputReady,
+                entities);
+
+        var content = new ShopCatalogInspectionContent(
+            ShopCatalogKind,
+            inventoryOpen ? "inventory_open" : "inventory_closed_open_to_inspect",
+            cards,
+            relics,
+            potions,
+            removal);
+        return BridgeInspectionBuildResult.Success(new BridgeInspectionDraft(
+            ShopCatalogKind,
+            "normal_inspection",
+            "fixed_ui_slots",
+            content,
+            new InspectionCompleteness(
+                "complete_for_player_openable_standard_merchant_catalog_without_action_authority",
+                new[]
+                {
+                    "MerchantRoom.GetLocalInventory",
+                    "MerchantInventory typed entries",
+                    "NMerchantInventory.GetAllSlots",
+                    "MerchantEntry.Cost+EnoughGold+IsStocked",
+                    "Player.PotionSlots+Hook.ShouldProcurePotion"
+                },
+                Array.Empty<string>())));
     }
 
     private static CombatPileInspectionZone BuildZone(

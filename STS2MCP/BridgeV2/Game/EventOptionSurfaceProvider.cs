@@ -164,13 +164,13 @@ internal sealed class EventOptionSurfaceProvider : IBridgeSurfaceProvider
         expectedButton.ForceClick();
         if (expectedOption.IsProceed)
         {
-            return BridgeActionStartResult.Started(
+            return StartAsyncEventTransition(
                 () => !ReferenceEquals(NEventRoom.Instance, expectedRoom)
                       || NMapScreen.Instance?.IsOpen == true,
                 "event_proceed_opened_map_or_left_room");
         }
 
-        return BridgeActionStartResult.Started(
+        return StartAsyncEventTransition(
             () => !ReferenceEquals(NEventRoom.Instance, expectedRoom)
                   || CombatManager.Instance.IsInProgress
                   || (NOverlayStack.Instance?.Peek() is { } currentOverlay
@@ -178,6 +178,14 @@ internal sealed class EventOptionSurfaceProvider : IBridgeSurfaceProvider
                   || HasReplacementOptions(expectedRoom, currentButtons),
             "event_option_replaced_or_required_subsurface_opened");
     }
+
+    internal static BridgeActionStartResult StartAsyncEventTransition(
+        Func<bool> completionProbe,
+        string completionEvidence) =>
+        BridgeActionStartResult.Started(
+            completionProbe,
+            completionEvidence,
+            allowIntermediateStateChanges: true);
 
     private static bool HasReplacementOptions(
         NEventRoom expectedRoom,

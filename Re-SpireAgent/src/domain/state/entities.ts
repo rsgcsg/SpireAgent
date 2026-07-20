@@ -69,6 +69,18 @@ export interface OrbSnapshot {
   evokeValue?: number;
 }
 
+export interface CombatCompanionSnapshot {
+  entityId: string;
+  id: string;
+  name?: string;
+  isAlive: boolean;
+  healthBarVisible: boolean;
+  hp?: number;
+  maxHp?: number;
+  block?: number;
+  statuses: StatusSnapshot[];
+}
+
 export interface PlayerSnapshot {
   character: string;
   hp: number;
@@ -86,6 +98,7 @@ export interface PlayerSnapshot {
   drawPile: CardSnapshot[];
   discardPile: CardSnapshot[];
   exhaustPile: CardSnapshot[];
+  companions: CombatCompanionSnapshot[];
   orbs: OrbSnapshot[];
   orbSlots?: number;
   orbEmptySlots?: number;

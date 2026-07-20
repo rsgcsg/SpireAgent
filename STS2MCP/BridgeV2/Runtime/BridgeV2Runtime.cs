@@ -80,7 +80,7 @@ internal static class BridgeV2Runtime
                 ArbitraryQueriesAllowed: false,
                 EntersCommandLedger: false,
                 VisibilityClasses: new[] { "on_screen", "normal_inspection", "count_only" },
-                OrderingSemantics: new[] { "unordered_multiset", "player_sorted" },
+                OrderingSemantics: new[] { "unordered_multiset", "player_sorted", "fixed_ui_slots" },
                 ImplementedKinds: AllowedInspectionKinds(game.Compatibility)),
             new[]
             {

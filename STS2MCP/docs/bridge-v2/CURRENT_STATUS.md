@@ -1,19 +1,19 @@
 # Bridge v2 Current Status
 
-Status date: 2026-07-19
+Status date: 2026-07-20
 
 ## Current Contract
 
-- protocol: `2.0-preview.47`
+- protocol: `2.0-preview.54`
 - source-qualified game identity: `v0.109.0|c12f634d|-840572606`
 - current workspace loaded game identity: `v0.109.0|c12f634d|-840572606`
 - installed/Release DLL SHA-256:
-  `afb7c35eeda3f728553b6107d1dffdc362c4fac7e8e0aa6587608c094e7325fb`
-- loaded module MVID: `784bbdc5-e7b3-40e7-872f-3c8ba538f9b0`
-- loaded runtime instance: `0533bb421a334245b64cfde35394d64a`
+  `7bf3abca5f20594077b31f8e400ef0b27643353846256cb59cb633418a59a8b3`
+- loaded module MVID: `67b8d32b-8c0c-4514-9df7-fac4ac5fb738`
+- loaded runtime instance: `db112bc183354e9eb397f6c76121f484`
 - loaded Modset status: `exact_bridge_only`
 - loaded Modset fingerprint:
-  `3c3875309c60d02f18befd1e7a38ed3c51c0ca74ace16b48eb1b99911ecbd739`
+  `8371ef20e96178fc38ae2427a749815e13a37747aef58d2d4c48e0a10b3d036b`
 
 Wire field `bridge.upstream_commit=20eadebde358a37cca41f8b38728099e6d0d19db`
 identifies the original imported Gennadiyev baseline, not the current
@@ -24,6 +24,155 @@ than overloading `upstream_commit`; this naming debt grants no permission.
 
 Bridge v2 is an incremental, exact-build-scoped protocol. It is not full v1
 parity, all-game coverage, or complete player-visible truth.
+
+Preview.53 adds an exact native `Graveblast` branch to
+`combat_pile_card_selection`. Headbutt and Graveblast share only the visible
+exact-one discard selection mechanic; source identity, destination and semantic
+completion remain discriminated. Graveblast completion requires the exact
+selected reference to move from discard to hand, or remain in discard only
+under the native full-hand redirect, with combined cardinality preserved.
+Unknown callers remain fail closed. The final preview.53 MVID did not naturally
+replay Graveblast, so this branch is source/test/build/load complete but not
+Organic-qualified.
+
+Preview.54 closes a natural strict-v2 gap from
+`run-20260719235923-qz8bg5`: playing native `Splash` opened
+`NChooseACardSelectionScreen`, and preview.53 correctly returned
+`unsupported + authority=none` because the source was not tracked. Exact v0.109
+source proves a three-Attack, optional-Skip, free-this-turn, combat-hand choice
+with native full-hand discard redirect. Preview.54 tracks only exact sealed
+`Splash.OnPlayWrapper`; it reuses the generated-combat choice mechanics and
+exact hand/discard witness without granting authority to other card generators.
+
+The preview.54 Release was cold-loaded under the identity above. Four strict-v2
+runtime windows (`run-20260720000758-ycmcau`,
+`run-20260720000955-3zg1o9`, `run-20260720001351-ogghci`, and
+`run-20260720001906-r04a9h`) recorded 216 decisions: 211
+`executed_and_settled`, three execution-time stale-state refusals, and two
+run-boundary stops. Every decision was `bridge_advertised`; no v1 action,
+unknown outcome, unsupported Surface, or authority conflict occurred across
+combat, hand selection, reward/card reward, map, event, event/rest upgrade,
+treasure, shop, rest, game over, and menu. Splash itself did not naturally
+recur on the final MVID, so its branch remains a canary rather than qualified.
+
+Two of the three stale refusals repeated one exact native treasure lifecycle:
+the relic holder becomes clickable before `NTreasureRoom` enables Skip after
+its fixed 2.5-second delay. The complete legal-action set therefore changed
+during model deliberation. Re correctly rejected the old state-bound action and
+the next tick selected the same relic successfully. This is an explained,
+fail-closed efficiency cost, not a command or qualification failure; hiding the
+already-clickable relic or freezing state identity would be less truthful. See
+[the treasure skip-delay audit](TREASURE_SKIP_DELAY_STATE_DRIFT_AUDIT_2026-07-20.md).
+
+Re integration now distinguishes a real coherent-Inspection contract mismatch
+from lifecycle drift without weakening either boundary. In strict-v2 run
+`run-20260719233653-zsgua8`, a Bridge-confirmed map-to-shop action reached the
+shop, but the first settlement read crossed the merchant lifecycle and received
+`inspection_scope_mismatch` for `shop_catalog`. Re now performs one fresh,
+non-authorizing state read: only a changed `state_id` becomes retriable
+composite-read drift; a same-state mismatch remains a hard error. Follow-up run
+`run-20260719234320-ze6fp0` settled all 15 Bridge-advertised decisions across
+shop, map, event acquisition, and combat with no error or v1 action. This is a
+Re client fix only; preview.52 protocol, DLL identity, permissions, and
+qualification tiers are unchanged.
+
+Preview.52 closes a natural strict-v2 failure found at tick 79 of
+`run-20260719231523-l68939`. Attack Potion opened the shared generated-card
+screen, but preview.51 intentionally knew only Lead Paperweight and Colorless
+Potion sources and therefore returned `unsupported + authority=none`. Exact
+v0.109 source shows that native Colorless, Attack, Skill, and Power Potions
+share one business outcome: three generated choices, optional Skip, selected
+card free this turn, and hand insertion with discard overflow. The Bridge now
+tracks exactly those four sealed source types under one bounded combat-potion
+mechanism while retaining distinct `source_kind` values. Every other potion,
+generator, subclass, and Mod origin remains fail closed.
+
+After cold load, the saved floor-7 elite naturally replayed Attack Potion in
+`run-20260719232912-qd6f0j`. The child stayed non-actionable during its input
+guard, then exposed three exact Attack cards as `source_kind=attack_potion`.
+DeepSeek chose Rattle; command completion proved source-task completion, child
+closure, exact-reference hand/discard cardinality `+1`, and free-cost policy.
+The successor combat hand contained the same Rattle entity at cost `0`.
+Twenty-nine other actions settled; one coherent Inspection read observed a
+normal state race and was retried by the next tick without action dispatch.
+This is Organic canary evidence for Attack Potion only. Skill and Power Potion
+branches are exact-source audited and contract-tested, not Organic-qualified.
+
+Preview.51 fixes a combat visibility overclaim discovered by natural
+Necrobinder run `run-20260719225440-hb3j7n`: combat Context claimed immediate
+completeness while omitting Osty's current HP, Max HP, block, and visible
+statuses even though native `NCombatRoom` renders the pet and Osty's damage is
+defined from current HP. Exact v0.109 source identifies
+`PlayerCombatState.Pets` as the authoritative owner and
+`MonsterModel.IsHealthBarVisible` as the disclosure boundary. Combat player
+state now contains typed `companions`; HP values exist only while the native
+health bar is visible. This is read-only Context, not a new Surface or action.
+
+On the loaded identity above, fresh ordinary Necrobinder A0 run
+`run-20260719230912-qnblao` recorded 30/30 settled strict-v2 decisions across
+event, map, two combats, reward, and card reward. Its combat states exposed
+exact Osty instances and visible `2/2` HP plus `Die for You`; normalized schema
+22 preserved those facts in the DeepSeek prompt. A real response used the
+field to calculate `Unleash = 8 + 2`. There was no v1 authority, failed
+command, timeout, or unknown outcome. This qualifies the alive companion
+projection on this exact MVID; dead/hidden-health omission is source-audited
+and fixture-tested but still lacks an Organic lifecycle sample.
+
+Preview.50 fixes a command-lifecycle defect found by natural strict-v2 run
+`run-20260719224136-9a48po`. `The Legends Were True -> Nab the Map` changed
+state before its replacement Proceed option was attached, so the old event
+contract failed the command as `unexpected_state_transition` even though the
+business action had applied. The global ledger remains fail-closed; only the
+known asynchronous `event_option` and `proceed_event` transitions explicitly
+allow intermediate states while waiting for their existing semantic witness.
+
+After cold load, the saved run restored the exact pre-choice event. The same
+`Nab the Map` action remained pending across the intermediate state and then
+completed with `event_option_replaced_or_required_subsurface_opened` when the
+Proceed option appeared. Strict-v2 follow-up `run-20260719224802-jpyv00`
+recorded 33 Bridge-owned decisions through Proceed, map, combat, combat-hand
+selection, game over, and main menu: 32 confirmed actions and one non-actionable
+run boundary, with no v1, stale action, failed command, timeout, or unknown
+outcome. This is current-MVID regression evidence, not a permission expansion.
+
+Preview.49 requalifies `deck_enchant_selection` only as a current-build action
+canary. Exact v0.109 source shows that Self-Help Book awaits the selection
+overlay and applies the enchantment afterward, so overlay closure alone is not
+semantic completion. Confirm now captures the exact selected card instances,
+target enchantment ID, and amount; execution revalidates all of them and
+completes only after the overlay closes and every captured card contains that
+exact enchantment.
+
+On the loaded identity above, an operator-targeted Self-Help Book lifecycle
+exposed `SWIFT x2`, selected `Creative AI+`, exercised preview cancel and
+selection reset, then confirmed with evidence
+`enchantment_screen_closed_and_exact_cards_enchanted`. A state-bound
+`run_deck` Inspection independently observed the same card entity with
+`SWIFT x2`. Strict-v2 continuation `run-20260719223336-z4erxn` then recorded
+50 Bridge-owned decisions through event Proceed, map, combat, game over, and
+main menu: 36 settled, 11 safely rejected before dispatch as stale, one
+checkpoint-pending game-over transition, and two non-actionable boundaries.
+It used no v1 fallback and produced no failed, timed-out, or unknown command.
+This is bounded current-build canary and coverage evidence, not qualification.
+
+Preview.48 adds the state-bound, read-only `shop_catalog` Inspection for the
+current shop Context. It exposes the same exact typed merchant inventory,
+fixed UI slot order, prices, stock, affordability, potion-capacity blocks, and
+removal-service state that the player can inspect by opening the inventory.
+When the inventory is closed, every offer remains non-purchasable and the
+Inspection publishes no actions. It is a current-build canary, not a qualified
+Inspection and not a new command scope.
+
+The final preview.48 artifact was cold-loaded under the identity above. A
+strict Re read at closed and open inventory decoded `run_deck` plus
+`shop_catalog` without diagnostics. Operator-positioned run
+`run-20260719215323-ej3no7` exercised card/relic purchases and the full
+merchant removal child lifecycle; one action was safely rejected before
+execution after state drift. Follow-up run `run-20260719215617-longql` closed
+the inventory, left the shop directly from the catalog-bearing room state,
+travelled through map, and entered combat without reopening the catalog or
+using v1. This is bounded canary and integration evidence, not automatic
+qualification.
 
 Preview.47 closes evidence-backed contract gaps without changing the permission
 matrix. Orrery-style relic purchases can now acknowledge a visible linked
@@ -56,6 +205,12 @@ Run metadata now supports explicit evidence provenance; old records remain
 `unrecorded` and may support coverage/debugging but not qualification alone.
 
 Detailed evidence and architectural decisions are in
+[the Re observation-scope drift closeout](RE_OBSERVATION_SCOPE_DRIFT_CLOSEOUT_2026-07-20.md),
+[the preview.52 closeout](PREVIEW_52_GENERATED_COMBAT_POTION_FAMILY_CLOSEOUT_2026-07-20.md),
+[the preview.51 closeout](PREVIEW_51_COMBAT_COMPANION_VISIBILITY_CLOSEOUT_2026-07-20.md),
+[the preview.50 closeout](PREVIEW_50_EVENT_ASYNC_TRANSITION_CLOSEOUT_2026-07-20.md),
+[the preview.49 closeout](PREVIEW_49_DECK_ENCHANT_SEMANTIC_COMPLETION_CLOSEOUT_2026-07-20.md),
+[the preview.48 closeout](PREVIEW_48_SHOP_CATALOG_AND_PROGRESS_GUARD_CLOSEOUT_2026-07-20.md),
 [the preview.47 closeout](PREVIEW_47_LINKED_REWARDS_COHERENT_OBSERVATION_AND_AUTHORITY_SHADOW_2026-07-19.md),
 [ADR-0004](ADR-0004-contract-instance-authority-and-player-visible-closure.md),
 and the
@@ -186,10 +341,10 @@ authority was added by the new visible facts.
 | Permission | Contracts |
 |---|---|
 | source-qualified `v0.109.0|c12f634d|-840572606`: `qualified_exact_build` | `deck_removal_selection`, `deck_upgrade_selection`, `combat_turn`, `combat_hand_card_selection`, `rest_site` |
-| source-qualified `v0.109.0|c12f634d|-840572606`: `candidate_action_canary` | `event_card_acquisition`, `reward_claim`, `card_reward_selection`, `map_navigation`, `shop_inventory`, `shop_room`, `treasure_room`, `game_over`, `card_bundle_selection`, `character_select`, `main_menu`, `singleplayer_menu`, `event_dialogue`, `event_option`, `deck_transform_selection`, exact Headbutt `combat_pile_card_selection`, source-scoped `generated_card_choice` |
+| source-qualified `v0.109.0|c12f634d|-840572606`: `candidate_action_canary` | `event_card_acquisition`, `reward_claim`, `card_reward_selection`, `map_navigation`, `shop_inventory`, `shop_room`, `treasure_room`, `game_over`, `card_bundle_selection`, `character_select`, `main_menu`, `singleplayer_menu`, `event_dialogue`, `event_option`, `deck_transform_selection`, Self-Help Book `deck_enchant_selection`, exact Headbutt/Graveblast `combat_pile_card_selection`, source-scoped `generated_card_choice` |
 | source-qualified `v0.109.0|c12f634d|-840572606`: `qualified_read_only_scoped` | `run_deck` Inspection |
-| source-qualified `v0.109.0|c12f634d|-840572606`: `candidate_read_only_canary` | `combat_piles` Inspection |
-| source-qualified target: disabled | `deck_enchant_selection`, every non-Headbutt `combat_pile_card_selection` origin, every unlisted contract; every `generated_card_choice` origin except exact Lead Paperweight and exact Colorless Potion remains fail closed |
+| source-qualified `v0.109.0|c12f634d|-840572606`: `candidate_read_only_canary` | `combat_piles`, `shop_catalog` Inspections |
+| source-qualified target: disabled | every non-Self-Help-Book `deck_enchant_selection` origin, every non-Headbutt/non-Graveblast `combat_pile_card_selection` origin, every unlisted contract; every `generated_card_choice` origin except exact Lead Paperweight, native Colorless/Attack/Skill/Power Potions, and native Splash remains fail closed |
 | historical alternate-device `v0.109.0|c12f634d|1833084275`: `candidate_action_canary` | `event_option`, `event_card_acquisition`, `map_navigation` |
 | historical alternate-device `v0.109.0|c12f634d|1833084275`: disabled | every qualified Surface scope, the other 20 declared Surfaces, `run_deck`, `combat_piles`, and every unlisted Inspection |
 
@@ -622,15 +777,18 @@ never means the whole screen or game is completely exposed.
 
 ## Next Work
 
-1. Use the new non-authorizing inventory to audit operation/origin permission
-   granularity for `treasure_room`. Do not promote any operation merely because
-   it is implemented or listed.
-2. Audit `combat_turn` at operation granularity before any future environment
+1. Continue the current strict-v2 organic journey and select the first natural
+   `unsupported`, `legacy-owned`, degraded, or missing-visible-information
+   checkpoint. Do not add a Provider merely to increase Surface count.
+2. Keep `shop_catalog` at read-only canary until another ordinary shop and
+   inventory-mutation journey independently confirm the same contract. It must
+   never authorize purchase or navigation.
+3. Audit `combat_turn` at operation granularity before any future environment
    permission changes; the currently loaded source target retains its existing
    qualified scope unchanged.
-3. Keep `event_option`, `event_dialogue`, and `character_select` at canary while
+4. Keep `event_option`, `event_dialogue`, and `character_select` at canary while
    collecting ordinary non-Neow diversity and first-run/tutorial boundaries.
-4. Collect the still-missing Organic `open_singleplayer` and submenu
+5. Collect the still-missing Organic `open_singleplayer` and submenu
    Standard/Back lifecycles when the profile naturally exposes that branch;
    do not destroy a saved run merely to manufacture evidence.
 5. Re-run a fresh natural preview.28+ game-over intro -> summary -> main-menu

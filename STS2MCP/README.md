@@ -16,12 +16,15 @@ Bridge v2 is an incremental preview, not a replacement for all v1 surfaces.
   untested and has no v2 action or Inspection authority. Check
   [Bridge v2 current status](docs/bridge-v2/CURRENT_STATUS.md) before treating
   a local install as qualified.
-- Source `2.0-preview.47` keeps centralized overlay/room/menu ownership, typed
+- Source `2.0-preview.54` keeps centralized overlay/room/menu ownership, typed
   diagnostics, purpose-specific selection and event contracts, staged
   completion semantics, and a top-level read-only shared run/player HUD.
   Current-build capabilities distinguish scoped-qualified actions, action
   canaries, and read-only Inspection instead of treating implementation as
   permission.
+- Qualified combat Context includes exact player-visible companion state from
+  native `PlayerCombatState.Pets`. Companion HP is exposed only when the native
+  health bar is visible; this adds no companion action authority.
 - Exact combat setup and post-combat settlement are exposed as non-authorizing
   `combat_transition + no_action` phases; they grant no capability, action, or
   fallback and do not generalize other no-overlay intervals.
@@ -40,8 +43,9 @@ Bridge v2 is an incremental preview, not a replacement for all v1 surfaces.
   current-build canary and never expose draw order or command authority. Event card acquisition, reward, card reward,
   map, shop, treasure, game over, card bundles, ordinary character select,
   revealed ancient dialogue, ordinary single-player event options, and the
-  exact Whispering Hollow random-transform child are action canaries. Only the
-  exact Lead Paperweight and exact Colorless Potion sources of
+  exact Whispering Hollow random-transform child and Self-Help Book
+  deck-enchantment child are action canaries. Only the
+  exact Lead Paperweight and sealed native Colorless/Attack/Skill/Power Potion sources of
   `generated_card_choice` are current-build canaries with separate destination,
   cost, operation, and completion semantics; all other callers of the shared
   selection UI remain fail closed. Exact Headbutt pile selection is a canary
@@ -49,8 +53,10 @@ Bridge v2 is an incremental preview, not a replacement for all v1 surfaces.
   exposes typed read-only card hover previews with stable owner-scoped identity.
   Preview.47 adds a state-bound visibility/Inspection catalog, coherent
   observation bundles, linked-reward completion support, and a non-authorizing
-  contract-instance shadow; none grants new actions. Unlisted surfaces are
-  disabled and draw order remains hidden.
+  contract-instance shadow. Preview.48 adds a read-only current-shop catalog
+  canary with fixed typed slot semantics so a closed inventory can still be
+  reasoned about without granting purchase authority. Neither preview grants
+  new actions. Unlisted surfaces are disabled and draw order remains hidden.
 
 See [current status](docs/bridge-v2/CURRENT_STATUS.md), the
 [upstream/design audit](docs/bridge-v2/UPSTREAM_AUDIT.md), and the
@@ -186,7 +192,8 @@ Bridge v2 MCP tools:
 - `get_agent_state_v2()`
 - `inspect_run_deck_v2(expected_state_id)`
 - `inspect_combat_piles_v2(expected_state_id)`
-- `get_agent_observation_bundle_v2(expected_state_id, include_run_deck?, include_combat_piles?)`
+- `inspect_shop_catalog_v2(expected_state_id)`
+- `get_agent_observation_bundle_v2(expected_state_id, include_run_deck?, include_combat_piles?, include_shop_catalog?)`
 - `submit_agent_action_v2(request_id, expected_state_id, action_id)`
 - `get_agent_command_v2(request_id)`
 

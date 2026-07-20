@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Godot;
+using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Potions;
 using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
@@ -236,10 +238,15 @@ internal sealed class GeneratedCardChoiceSurfaceProvider : IBridgeSurfaceProvide
                         expectedCard),
                     "lead_paperweight_choice_closed_and_exact_generated_card_added_to_run_deck",
                     allowIntermediateStateChanges: true),
-            GeneratedCardChoiceSourceBinding.ColorlessPotionBinding potion =>
+            GeneratedCardChoiceSourceBinding.GeneratedCombatPotionBinding potion =>
                 BridgeActionStartResult.Started(
-                    () => ColorlessSelectionCompleted(potion, expectedScreen, expectedCard),
-                    "colorless_potion_choice_closed_and_exact_free_card_added_to_combat_hand_or_full_hand_discard",
+                    () => CombatPotionSelectionCompleted(potion, expectedScreen, expectedCard),
+                    $"{potion.SourceKind}_choice_closed_and_exact_free_card_added_to_combat_hand_or_full_hand_discard",
+                    allowIntermediateStateChanges: true),
+            GeneratedCardChoiceSourceBinding.SplashBinding splash =>
+                BridgeActionStartResult.Started(
+                    () => SplashSelectionCompleted(splash, expectedScreen, expectedCard),
+                    "splash_choice_closed_and_exact_free_card_added_to_combat_hand_or_full_hand_discard",
                     allowIntermediateStateChanges: true),
             _ => BridgeActionStartResult.Rejected("source_not_supported", "Generated-card source is not supported.")
         };
@@ -277,10 +284,15 @@ internal sealed class GeneratedCardChoiceSurfaceProvider : IBridgeSurfaceProvide
                         offeredCards),
                     "lead_paperweight_choice_skipped_and_run_deck_unchanged",
                     allowIntermediateStateChanges: true),
-            GeneratedCardChoiceSourceBinding.ColorlessPotionBinding potion =>
+            GeneratedCardChoiceSourceBinding.GeneratedCombatPotionBinding potion =>
                 BridgeActionStartResult.Started(
-                    () => ColorlessSkipCompleted(potion, expectedScreen, offeredCards),
-                    "colorless_potion_choice_skipped_and_combat_hand_discard_unchanged",
+                    () => CombatPotionSkipCompleted(potion, expectedScreen, offeredCards),
+                    $"{potion.SourceKind}_choice_skipped_and_combat_hand_discard_unchanged",
+                    allowIntermediateStateChanges: true),
+            GeneratedCardChoiceSourceBinding.SplashBinding splash =>
+                BridgeActionStartResult.Started(
+                    () => SplashSkipCompleted(splash, expectedScreen, offeredCards),
+                    "splash_choice_skipped_and_combat_hand_discard_unchanged",
                     allowIntermediateStateChanges: true),
             _ => BridgeActionStartResult.Rejected("source_not_supported", "Generated-card source is not supported.")
         };
@@ -295,10 +307,18 @@ internal sealed class GeneratedCardChoiceSurfaceProvider : IBridgeSurfaceProvide
             && string.Equals(eventContext.EventId, "NEOW", StringComparison.Ordinal)
             && lead.SourceRelic is LeadPaperweight
             && lead.Player.Relics.Any(relic => ReferenceEquals(relic, lead.SourceRelic)),
-        GeneratedCardChoiceSourceBinding.ColorlessPotionBinding potion =>
+        GeneratedCardChoiceSourceBinding.GeneratedCombatPotionBinding potion =>
             context is CombatBridgeContext
-            && potion.SourcePotion is ColorlessPotion
+            && string.Equals(
+                GeneratedCardChoiceSourceBinding.CombatPotionSourceKind(potion.SourcePotion.GetType()),
+                potion.SourceKind,
+                StringComparison.Ordinal)
             && potion.Player.PlayerCombatState != null,
+        GeneratedCardChoiceSourceBinding.SplashBinding splash =>
+            context is CombatBridgeContext
+            && splash.SourceCard.GetType() == typeof(Splash)
+            && ReferenceEquals(splash.SourceCard.Owner, splash.Player)
+            && splash.Player.PlayerCombatState != null,
         _ => false
     };
 
@@ -315,12 +335,19 @@ internal sealed class GeneratedCardChoiceSurfaceProvider : IBridgeSurfaceProvide
                 binding.Cards.Count == 2
                 && binding.Cards.All(card =>
                     card.Pile == null && !ContainsReference(lead.BaselineDeck, card)),
-            GeneratedCardChoiceSourceBinding.ColorlessPotionBinding potion =>
+            GeneratedCardChoiceSourceBinding.GeneratedCombatPotionBinding potion =>
                 binding.Cards.Count == 3
                 && binding.Cards.All(card =>
                     card.Pile == null
                     && !ContainsReference(potion.BaselineHand, card)
                     && !ContainsReference(potion.BaselineDiscard, card)),
+            GeneratedCardChoiceSourceBinding.SplashBinding splash =>
+                binding.Cards.Count == 3
+                && binding.Cards.All(card =>
+                    card.Pile == null
+                    && card.Type == CardType.Attack
+                    && !ContainsReference(splash.BaselineHand, card)
+                    && !ContainsReference(splash.BaselineDiscard, card)),
             _ => false
         };
     }
@@ -345,7 +372,7 @@ internal sealed class GeneratedCardChoiceSurfaceProvider : IBridgeSurfaceProvide
                 "LeadPaperweight.AfterObtained -> CardPileCmd.Add(Deck) exact outcome"
             },
             "This exact branch is limited to Lead Paperweight generated run-deck acquisition."),
-        GeneratedCardChoiceSourceBinding.ColorlessPotionBinding => new GeneratedChoiceSemantics(
+        GeneratedCardChoiceSourceBinding.GeneratedCombatPotionBinding potion => new GeneratedChoiceSemantics(
             "choose_one_generated_combat_card",
             "combat_hand",
             "free_this_turn",
@@ -353,21 +380,40 @@ internal sealed class GeneratedCardChoiceSurfaceProvider : IBridgeSurfaceProvide
             "select_generated_combat_card",
             "skip_generated_combat_card_choice",
             cardName => $"Choose {cardName}; add it to the combat hand for free this turn",
-            "ColorlessPotion.OnUse+NChooseACardSelectionScreen.SelectHolder+exact-combat-pile-and-free-cost-witness",
-            "ColorlessPotion.OnUse+NChooseACardSelectionScreen.OnSkipButtonReleased+unchanged-combat-piles-witness",
-            "contract_complete_for_colorless_potion_generated_combat_card_choice",
+            $"{potion.SourcePotion.GetType().Name}.OnUse+NChooseACardSelectionScreen.SelectHolder+exact-combat-pile-and-free-cost-witness",
+            $"{potion.SourcePotion.GetType().Name}.OnUse+NChooseACardSelectionScreen.OnSkipButtonReleased+unchanged-combat-piles-witness",
+            $"contract_complete_for_{potion.SourceKind}_generated_combat_card_choice",
             new[]
             {
-                "PotionModel.OnUseWrapper(ColorlessPotion) exact active source binding",
-                "ColorlessPotion.OnUse -> SetToFreeThisTurn -> CardPileCmd.AddGeneratedCardToCombat(Hand) exact outcome",
+                $"PotionModel.OnUseWrapper({potion.SourcePotion.GetType().Name}) exact active source binding",
+                $"{potion.SourcePotion.GetType().Name}.OnUse -> SetToFreeThisTurn -> CardPileCmd.AddGeneratedCardToCombat(Hand) exact outcome",
                 "CardPileCmd.Add hand-full redirect to combat discard"
             },
-            "This exact branch is limited to Colorless Potion; other combat generators remain disabled."),
+            $"This exact branch is limited to native {potion.SourcePotion.GetType().Name}; other combat generators remain disabled."),
+        GeneratedCardChoiceSourceBinding.SplashBinding => new GeneratedChoiceSemantics(
+            "choose_one_generated_combat_card",
+            "combat_hand",
+            "free_this_turn",
+            "combat_discard_if_hand_full",
+            "select_generated_combat_card",
+            "skip_generated_combat_card_choice",
+            cardName => $"Choose {cardName}; add it to the combat hand for free this turn",
+            "Splash.OnPlay+NChooseACardSelectionScreen.SelectHolder+exact-combat-pile-and-free-cost-witness",
+            "Splash.OnPlay+NChooseACardSelectionScreen.OnSkipButtonReleased+unchanged-combat-piles-witness",
+            "contract_complete_for_splash_generated_combat_card_choice",
+            new[]
+            {
+                "CardModel.OnPlayWrapper(Splash) exact active source binding",
+                "Splash.OnPlay -> SetToFreeThisTurn -> CardPileCmd.AddGeneratedCardToCombat(Hand) exact outcome",
+                "Splash generation restricted to three visible Attacks from another character pool",
+                "CardPileCmd.Add hand-full redirect to combat discard"
+            },
+            "This exact branch is limited to native sealed Splash; other combat card generators remain disabled."),
         _ => throw new InvalidOperationException("Unsupported generated-card source binding.")
     };
 
-    private static bool ColorlessSelectionCompleted(
-        GeneratedCardChoiceSourceBinding.ColorlessPotionBinding source,
+    private static bool CombatPotionSelectionCompleted(
+        GeneratedCardChoiceSourceBinding.GeneratedCombatPotionBinding source,
         NChooseACardSelectionScreen screen,
         CardModel selectedCard)
     {
@@ -384,8 +430,43 @@ internal sealed class GeneratedCardChoiceSurfaceProvider : IBridgeSurfaceProvide
             selectedCard.EnergyCost.HasLocalModifiers);
     }
 
-    private static bool ColorlessSkipCompleted(
-        GeneratedCardChoiceSourceBinding.ColorlessPotionBinding source,
+    private static bool CombatPotionSkipCompleted(
+        GeneratedCardChoiceSourceBinding.GeneratedCombatPotionBinding source,
+        NChooseACardSelectionScreen screen,
+        IReadOnlyCollection<CardModel> offeredCards)
+    {
+        if (source.Player.PlayerCombatState is not { } combat)
+            return false;
+        return GeneratedCombatCardChoiceWitness.Skipped(
+            !GeneratedCardChoiceSourceBinding.IsActive(source.Token),
+            !IsCurrent(screen),
+            source.BaselineHand,
+            source.BaselineDiscard,
+            combat.Hand.Cards,
+            combat.DiscardPile.Cards,
+            offeredCards);
+    }
+
+    private static bool SplashSelectionCompleted(
+        GeneratedCardChoiceSourceBinding.SplashBinding source,
+        NChooseACardSelectionScreen screen,
+        CardModel selectedCard)
+    {
+        if (source.Player.PlayerCombatState is not { } combat)
+            return false;
+        return GeneratedCombatCardChoiceWitness.Selected(
+            !GeneratedCardChoiceSourceBinding.IsActive(source.Token),
+            !IsCurrent(screen),
+            source.BaselineHand,
+            source.BaselineDiscard,
+            combat.Hand.Cards,
+            combat.DiscardPile.Cards,
+            selectedCard,
+            selectedCard.EnergyCost.HasLocalModifiers);
+    }
+
+    private static bool SplashSkipCompleted(
+        GeneratedCardChoiceSourceBinding.SplashBinding source,
         NChooseACardSelectionScreen screen,
         IReadOnlyCollection<CardModel> offeredCards)
     {

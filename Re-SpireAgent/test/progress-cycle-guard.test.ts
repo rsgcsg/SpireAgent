@@ -38,7 +38,7 @@ function shopState(
   gold: number
 ): NormalizedCurrentState {
   return {
-    normalizedSchemaVersion: 21,
+    normalizedSchemaVersion: 25,
     sourceStateType: `bridge_v2:shop:${kind}`,
     run: { characterId: "IRONCLAD", floor: 2 },
     player: {
@@ -50,6 +50,7 @@ function shopState(
       drawPile: [],
       discardPile: [],
       exhaustPile: [],
+      companions: [],
       orbs: [],
       statuses: [],
       relics: [],
@@ -69,6 +70,12 @@ function shopState(
     completeness: { playerVisibleSemantics: "fixture", missing: [] },
     bridgeDiagnostics: [],
     bridgeLegacyWarnings: [],
+    bridgeObservation: {
+      observationId: `observation-${bridgeStateId}`,
+      coherent: true,
+      stateId: bridgeStateId,
+      inspectionKinds: []
+    },
     stability: "actionable",
     actionAuthority: "bridge_advertised",
     context: { kind: "shop" },

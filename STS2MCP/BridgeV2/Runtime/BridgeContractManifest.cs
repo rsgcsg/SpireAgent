@@ -65,7 +65,7 @@ internal static class BridgeContractManifest
         Entry(
             "deck_enchant_selection",
             new[] { "toggle_card", "preview_selection", "confirm_selection", "cancel_preview", "close_selection" },
-            "sts2-v0.108.0:NDeckEnchantSelectScreen+DeckEnchantScreenHandler",
+            "sts2-v0.109.0:SelfHelpBook.ReadEntireBook+CardSelectCmd.FromDeckForEnchantment+NDeckEnchantSelectScreen+exact-card-enchantment-post-state-witness",
             "purpose_specific_deck_selection",
             new[] { "visible_deck_cards", "selection", "preview", "controls" }),
         Entry(
@@ -134,10 +134,10 @@ internal static class BridgeContractManifest
             new[] { "hand", "energy", "combatants", "intents", "potions", "end_turn_control" }),
         Entry(
             "combat_pile_card_selection",
-            new[] { "select_discard_card_for_draw_top" },
-            "sts2-v0.109.0:Headbutt.OnPlay+CardSelectCmd.FromCombatPile(Discard,1)+NCombatPileCardSelectScreen+CardPileCmd.Add(Draw,Top)+exact-card-post-state-witness",
+            new[] { "select_discard_card_for_draw_top", "select_discard_card_for_hand" },
+            "sts2-v0.109.0:Headbutt/Graveblast.OnPlay+CardSelectCmd.FromCombatPile(Discard,1)+NCombatPileCardSelectScreen+purpose-specific-CardPileCmd.Add+exact-card-post-state-witness",
             "source_discriminated_combat_pile_selection",
-            new[] { "source_card", "purpose", "visible_pile_cards", "selection", "source_and_destination_piles", "destination_position", "controls" }),
+            new[] { "source_card", "purpose", "visible_pile_cards", "selection", "source_and_destination_piles", "destination_position", "overflow_destination", "controls" }),
         Entry(
             "combat_hand_card_selection",
             new[] { "select_combat_hand_card", "deselect_combat_hand_card", "confirm_combat_hand_selection", "close_combat_hand_peek" },
@@ -153,7 +153,7 @@ internal static class BridgeContractManifest
         Entry(
             "generated_card_choice",
             new[] { "select_generated_run_card", "skip_generated_run_card_choice", "select_generated_combat_card", "skip_generated_combat_card_choice" },
-            "sts2-v0.109.0:source-bound LeadPaperweight/ColorlessPotion+NChooseACardSelectionScreen+purpose-specific exact post-state witnesses",
+            "sts2-v0.109.0:source-bound LeadPaperweight/native-generated-combat-card-potion/Splash+NChooseACardSelectionScreen+purpose-specific exact post-state witnesses",
             "source_discriminated_generated_card_choice",
             new[] { "visible_card_choices", "choice_purpose", "source_kind", "destination", "selected_card_cost_policy", "overflow_destination", "skip_control" }),
         Entry(
@@ -273,7 +273,19 @@ internal static class BridgeContractManifest
             new[] { "draw_pile_order" },
             BridgeOperationEvidenceStatus.SurfaceLevelOnly,
             new[] { ContractTest },
-            new[] { CoverageDoc, "docs/bridge-v2/RUN_DECK_PILE_INSPECTION_AUDIT_2026-07-16.md" })
+            new[] { CoverageDoc, "docs/bridge-v2/RUN_DECK_PILE_INSPECTION_AUDIT_2026-07-16.md" }),
+        new BridgeInspectionManifestEntry(
+            BridgeInspectionBuilder.ShopCatalogKind,
+            BridgeV2Contract.ProtocolVersion,
+            "sts2-v0.109.0:MerchantRoom.GetLocalInventory+typed MerchantEntry+NMerchantSlot+player-openable inventory",
+            "strict_bridge_v2_inspection_decoder",
+            "normal_inspection",
+            "fixed_ui_slots",
+            new[] { "shop_cards", "shop_relics", "shop_potions", "card_removal", "prices", "availability" },
+            Array.Empty<string>(),
+            BridgeOperationEvidenceStatus.SourceAudited,
+            new[] { ContractTest },
+            new[] { CoverageDoc, "docs/bridge-v2/PREVIEW_14_SHOP_SURFACE_AUDIT_2026-07-17.md" })
     };
 
     public static IReadOnlyList<string> ImplementedInspectionKinds =>

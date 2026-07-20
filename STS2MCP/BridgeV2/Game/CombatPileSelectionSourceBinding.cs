@@ -20,14 +20,29 @@ namespace STS2_MCP.BridgeV2.Game;
 internal static class CombatPileSelectionSourceBinding
 {
     private static readonly object Gate = new();
-    private static readonly Dictionary<Guid, HeadbuttBinding> Active = new();
+    private static readonly Dictionary<Guid, SourceBinding> Active = new();
+
+    internal abstract record SourceBinding(
+        Guid Token,
+        Player Player,
+        CardModel SourceCard,
+        IReadOnlyList<CardModel> BaselineDiscard);
 
     internal sealed record HeadbuttBinding(
         Guid Token,
         Player Player,
-        Headbutt SourceCard,
+        Headbutt Headbutt,
         IReadOnlyList<CardModel> BaselineDiscard,
-        IReadOnlyList<CardModel> BaselineDraw);
+        IReadOnlyList<CardModel> BaselineDraw)
+        : SourceBinding(Token, Player, Headbutt, BaselineDiscard);
+
+    internal sealed record GraveblastBinding(
+        Guid Token,
+        Player Player,
+        Graveblast Graveblast,
+        IReadOnlyList<CardModel> BaselineDiscard,
+        IReadOnlyList<CardModel> BaselineHand)
+        : SourceBinding(Token, Player, Graveblast, BaselineDiscard);
 
     internal readonly record struct Scope(Guid Token)
     {
@@ -36,19 +51,32 @@ internal static class CombatPileSelectionSourceBinding
 
     internal static Scope Begin(CardModel card)
     {
-        if (card is not Headbutt headbutt
-            || card.Owner is not Player player
+        if (card.Owner is not Player player
             || player.PlayerCombatState is not { } combat)
         {
             return default;
         }
 
-        var binding = new HeadbuttBinding(
-            Guid.NewGuid(),
-            player,
-            headbutt,
-            combat.DiscardPile.Cards.ToArray(),
-            combat.DrawPile.Cards.ToArray());
+        Guid token = Guid.NewGuid();
+        SourceBinding? binding = card switch
+        {
+            Headbutt headbutt => new HeadbuttBinding(
+                token,
+                player,
+                headbutt,
+                combat.DiscardPile.Cards.ToArray(),
+                combat.DrawPile.Cards.ToArray()),
+            Graveblast graveblast => new GraveblastBinding(
+                token,
+                player,
+                graveblast,
+                combat.DiscardPile.Cards.ToArray(),
+                combat.Hand.Cards.ToArray()),
+            _ => null
+        };
+        if (binding == null)
+            return default;
+
         lock (Gate)
             Active.Add(binding.Token, binding);
         return new Scope(binding.Token);
@@ -70,7 +98,7 @@ internal static class CombatPileSelectionSourceBinding
         }
     }
 
-    internal static bool TryGetUnique(out HeadbuttBinding? binding)
+    internal static bool TryGetUnique(out SourceBinding? binding)
     {
         lock (Gate)
         {
@@ -134,6 +162,37 @@ internal static class HeadbuttCombatPileWitness
         && ReferenceEquals(currentDraw[0], selectedCard)
         && currentDiscard.Count + currentDraw.Count
             == baselineDiscard.Count + baselineDraw.Count;
+
+    private static bool ContainsReference<T>(IEnumerable<T> cards, T expected) where T : class =>
+        cards.Any(card => ReferenceEquals(card, expected));
+}
+
+internal static class GraveblastCombatPileWitness
+{
+    internal static bool Selected<T>(
+        bool sourceCompleted,
+        bool surfaceClosed,
+        IReadOnlyCollection<T> baselineDiscard,
+        IReadOnlyCollection<T> baselineHand,
+        IReadOnlyList<T> currentDiscard,
+        IReadOnlyList<T> currentHand,
+        T selectedCard,
+        int maxHandSize) where T : class
+    {
+        bool handHadCapacity = baselineHand.Count < maxHandSize;
+        bool reachedExpectedPile = handHadCapacity
+            ? ContainsReference(currentHand, selectedCard)
+              && !ContainsReference(currentDiscard, selectedCard)
+            : ContainsReference(currentDiscard, selectedCard)
+              && !ContainsReference(currentHand, selectedCard);
+        return sourceCompleted
+               && surfaceClosed
+               && ContainsReference(baselineDiscard, selectedCard)
+               && !ContainsReference(baselineHand, selectedCard)
+               && reachedExpectedPile
+               && currentDiscard.Count + currentHand.Count
+                   == baselineDiscard.Count + baselineHand.Count;
+    }
 
     private static bool ContainsReference<T>(IEnumerable<T> cards, T expected) where T : class =>
         cards.Any(card => ReferenceEquals(card, expected));

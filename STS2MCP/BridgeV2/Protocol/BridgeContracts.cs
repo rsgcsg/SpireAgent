@@ -7,7 +7,7 @@ namespace STS2_MCP.BridgeV2.Protocol;
 
 public static class BridgeV2Contract
 {
-    public const string ProtocolVersion = "2.0-preview.47";
+    public const string ProtocolVersion = "2.0-preview.54";
     public const string ObservationPolicyId = "player_visible_ui_v1";
 }
 
@@ -203,6 +203,19 @@ public sealed record CombatPilesInspectionContent(
     string Kind,
     IReadOnlyList<CombatPileInspectionZone> Zones) : IBridgeInspectionContent;
 
+/// <summary>
+/// Read-only projection of the current merchant catalog. The entries describe
+/// facts a player can inspect by opening the merchant UI; they do not publish
+/// purchase authority when the inventory is closed.
+/// </summary>
+public sealed record ShopCatalogInspectionContent(
+    string Kind,
+    string AccessState,
+    IReadOnlyList<VisibleShopCardOffer> Cards,
+    IReadOnlyList<VisibleShopRelicOffer> Relics,
+    IReadOnlyList<VisibleShopPotionOffer> Potions,
+    VisibleShopCardRemovalOffer? CardRemoval) : IBridgeInspectionContent;
+
 public sealed record BridgeInspectionResponse(
     string ProtocolVersion,
     string InspectionId,
@@ -318,9 +331,21 @@ public sealed record VisibleCombatPlayer(
     int DiscardPileCount,
     int ExhaustPileCount,
     IReadOnlyList<VisibleStatus> Statuses,
+    IReadOnlyList<VisibleCombatCompanion> Companions,
     IReadOnlyList<VisibleCombatPotionState> PotionStates,
     IReadOnlyList<VisibleOrb> Orbs,
     int? OrbSlots);
+
+public sealed record VisibleCombatCompanion(
+    string EntityId,
+    string DefinitionId,
+    string? Name,
+    bool IsAlive,
+    bool HealthBarVisible,
+    decimal? Hp,
+    decimal? MaxHp,
+    decimal Block,
+    IReadOnlyList<VisibleStatus> Statuses);
 
 public sealed record VisibleCombatPotionState(
     string EntityId,
@@ -844,6 +869,7 @@ public sealed record CombatPileCardSelectionSurface(
     string PileType,
     string DestinationPile,
     string DestinationPosition,
+    string? OverflowDestination,
     int MinSelect,
     int MaxSelect,
     int SelectedCount,
