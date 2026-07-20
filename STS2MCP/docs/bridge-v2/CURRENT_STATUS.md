@@ -40,6 +40,23 @@ not a claim about a currently live process. See
 Bridge v2 is an incremental, exact-build-scoped protocol. It is not full v1
 parity, all-game coverage, or complete player-visible truth.
 
+The repository-level semantic-gateway/headless audit at
+`develop@af091244d9b72ad87a5b86e7b9e7ec691b8e7f86` made no protocol, permission,
+runtime, or qualification change. It directly re-ran 98 Bridge tests and 149
+Re tests plus typecheck/build. It independently decompiled only the audit-time
+alternate game assembly `v0.109.0|c12f634d|1833084275` with SHA-256
+`ee45848ff6319dfc7af2538d3a52d05d82bef35ee4c5fd0400dc9efe8f9054aa`;
+that source review is not evidence for the canonical `-840572606` build and no
+new live-load or Organic claim was made.
+
+The audit clarifies that the game-side Bridge is the protocol-neutral semantic
+gateway, REST is Re's current transport, and the Python MCP server is an
+optional adapter that still includes legacy v1 tools. It also found one
+non-authorizing adapter drift: Bridge/Re declare three Inspection kinds, while
+the Python MCP v2 observation helper currently exposes only `run_deck` and
+`combat_piles`, omitting `shop_catalog`. See
+[the semantic-gateway/headless audit closeout](MCP_SEMANTIC_GATEWAY_HEADLESS_ARCHITECTURE_AUDIT_CLOSEOUT_2026-07-20.md).
+
 Preview.53 adds an exact native `Graveblast` branch to
 `combat_pile_card_selection`. Headbutt and Graveblast share only the visible
 exact-one discard selection mechanic; source identity, destination and semantic
@@ -807,30 +824,37 @@ not change current authority.
    binding audit for `deck_enchant_selection` and parent/child Witness
    obligations. Runtime authority must be narrowed or fail closed before prose
    can call the Surface Self-Help-Book-scoped.
-2. Shadow-pilot an attested DecisionFrame, closed non-executable Transaction IR,
-   shared validator, and WitnessPlan on generated-card and combat-pile choices.
-   The shadow may only reproduce or narrow existing actions.
-3. Continue strict-v2 organic journeys on an explicitly installed and loaded
+2. Add a minimal non-authorizing transaction-correlation record around the
+   already-tracked generated-card and combat-pile native Task scopes. Shadow
+   owner, exact operands, child phase, source Task completion, and all Witness
+   obligations before introducing a broader IR or changing authority.
+3. After that record is stable, shadow-pilot an attested DecisionFrame, closed
+   non-executable Transaction IR, shared validator, and WitnessPlan on those
+   same families. The shadow may only reproduce or narrow existing actions.
+4. Fix the Python MCP v2 Inspection adapter drift by deriving bounded requests
+   from the fixed advertised catalog, with no arbitrary query language and no
+   permission change.
+5. Continue strict-v2 organic journeys on an explicitly installed and loaded
    exact artifact, selecting the first natural `unsupported`, `legacy-owned`,
    degraded, or missing-visible-information checkpoint.
-4. Keep `shop_catalog` at read-only canary until another ordinary shop and
+6. Keep `shop_catalog` at read-only canary until another ordinary shop and
    inventory-mutation journey independently confirm the same contract. It must
    never authorize purchase or navigation.
-5. Audit `combat_turn` at operation granularity before any future environment
+7. Audit `combat_turn` at operation granularity before any future environment
    permission changes; the source-target profile retains its existing
    qualified scope unchanged.
-6. Keep `event_option`, `event_dialogue`, and `character_select` at canary while
+8. Keep `event_option`, `event_dialogue`, and `character_select` at canary while
    collecting ordinary non-Neow diversity and first-run/tutorial boundaries.
-7. Collect the still-missing Organic `open_singleplayer` and submenu
+9. Collect the still-missing Organic `open_singleplayer` and submenu
    Standard/Back lifecycles when the profile naturally exposes that branch;
    do not destroy a saved run merely to manufacture evidence.
-8. Re-run a fresh natural preview.28+ game-over intro -> summary -> main-menu
+10. Re-run a fresh natural preview.28+ game-over intro -> summary -> main-menu
    journey; the fixed contract still lacks final organic qualification.
-9. Requalify high-value disabled selectors/Inspection and close linked reward,
+11. Requalify high-value disabled selectors/Inspection and close linked reward,
    special treasure, tooltip, and shared-HUD variants from exact evidence.
-10. Retire each v1 family only after source, strict client, loaded identity,
+12. Retire each v1 family only after source, strict client, loaded identity,
    organic lifecycle, and semantic completion all agree.
-11. Continue treating each additional `1833084275` Surface as a separate
+13. Continue treating each additional `1833084275` Surface as a separate
    source/UI audit and bounded canary; do not copy target-build authority merely
    because version and commit match.
 

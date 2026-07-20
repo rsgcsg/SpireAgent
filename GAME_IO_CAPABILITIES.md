@@ -26,9 +26,10 @@ interface AdapterCapabilities {
 }
 ```
 
-## Current STS2MCP REST Capability Assessment
+## Legacy STS2MCP v1 REST Capability Assessment
 
-Based on local source inspection and live endpoint shape:
+The original assessment below describes the legacy v1 adapter path. It must
+not be used as the capability truth for a negotiated strict Bridge v2 session:
 
 ```json
 {
@@ -52,6 +53,51 @@ Notes:
 - Human UI actions are not ground truth with the current adapter.
 - Legal actions are generated locally from normalized visible state, not listed directly by MCP.
 - The current runtime capability object is `STS2MCP_REST_CAPABILITIES`.
+
+## Bridge v2 Negotiated Capability Assessment
+
+Bridge v2 does not map cleanly onto one static `AdapterCapabilities` constant.
+Its capabilities are exact-environment, protocol, Surface, operation, and
+Inspection scoped. In a strict-v2 state with `bridge_advertised` authority:
+
+```json
+{
+  "canReadState": true,
+  "canReadRawState": true,
+  "canReadScreen": true,
+  "canExecuteActions": true,
+  "canReadAgentActionResults": true,
+  "canListLegalActions": true,
+  "canReadEventLog": false,
+  "canReadHumanEvents": false,
+  "canProvideFactData": true,
+  "canProvideVersionedFacts": true
+}
+```
+
+Important distinctions:
+
+- `legal_actions` are server-advertised opaque action IDs bound to one exact
+  `state_id`. Re does not reconstruct strict-v2 legality from visible fields.
+- Read-screen and fact-data capability means typed player-visible projection,
+  not raw scene-tree access. Execute capability means only the current exact
+  qualified/canary scopes, never a global action right.
+- A command result has an idempotent lifecycle and may settle only after an
+  action-specific semantic completion probe. Unknown outcomes are not retried.
+- Capability implementation is not authority. Empty qualified/canary scopes
+  are empty and fail closed.
+- Inspection is read-only, state-bound, outside the command ledger, and does
+  not grant action authority.
+- Re-SpireAgent currently calls `/api/v2/*` through `BridgeV2RestClient`; it
+  does not use the Python MCP server for strict Bridge v2 operation.
+- The Python MCP v2 adapter currently exposes explicit helpers for `run_deck`
+  and `combat_piles`, while the Bridge/Re catalog also includes
+  `shop_catalog`. This is adapter drift, not absence of the Bridge contract.
+  A future adapter should request only fixed catalog-advertised Inspection
+  kinds and must not add an arbitrary query language.
+
+The durable capability source is the live Bridge v2 handshake plus exact
+environment identity, not this prose summary.
 
 ## Future Environment Handshake
 

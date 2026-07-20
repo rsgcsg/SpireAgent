@@ -283,3 +283,43 @@ different `-840572606` build.
 The complete evidence classification, examples, migration gates, and rollback
 requirements are in
 [the 2026-07-20 audit closeout](DECISION_FRAME_TRANSACTION_IR_ARCHITECTURE_AUDIT_CLOSEOUT_2026-07-20.md).
+
+## 2026-07-20 Semantic Gateway, Source, And Headless Addendum
+
+This second addendum records the independent review at
+`develop@af091244d9b72ad87a5b86e7b9e7ec691b8e7f86`. It preserves all historical
+runtime evidence above and refines only the future architecture.
+
+### Boundary Corrections
+
+1. Bridge v2 domain behavior is a protocol-neutral STS2 Semantic Game Gateway.
+   REST is Re-SpireAgent's current transport; the Python MCP server is an
+   optional adapter and still carries the legacy v1 tool surface. MCP is not
+   the game semantic core.
+2. Cross-decision transaction identity and Witness-obligation ownership are
+   fundamental. A separate `TransactionLedger` class is a candidate storage
+   design, not itself a safety invariant.
+3. A source/decompilation workbench should be deep, exact-build aware, and
+   non-authorizing. It should follow a minimal transaction-correlation shadow,
+   not precede every manual binding as a mandatory gate.
+4. Runtime mutation tracing is debug/canary evidence. It must not become
+   ordinary LLM-visible truth or silently certify a closed Mutation Domain.
+5. Relevant loaded-patch attestation can narrow risk, but a global claim that
+   every Mod patch and dynamic effect has been semantically proved is not a
+   credible prerequisite or authority shortcut.
+6. Logical headless consumption and physical Godot `--headless` operation are
+   separate. The latter requires equivalence evidence and does not justify a
+   reimplemented STS2 rules engine.
+
+### Revised First Pilot
+
+Before introducing a broad Transaction IR, add a non-authorizing
+transaction-correlation record around the existing generated-card and
+combat-pile native Task tokens. Shadow current owner, exact operands, child
+phase, source Task status, and all remaining Witness obligations. Only after
+that record passes negative fixtures and old/new comparison should DecisionFrame
+or Witness compilation move closer to authority.
+
+The full evidence classification, MCP/gateway/Re boundaries, source-use policy,
+headless levels, holdouts, and rollback gates are recorded in
+[the semantic-gateway audit closeout](MCP_SEMANTIC_GATEWAY_HEADLESS_ARCHITECTURE_AUDIT_CLOSEOUT_2026-07-20.md).

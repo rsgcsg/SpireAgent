@@ -90,9 +90,32 @@ Current code:
 
 Boundary:
 
-- The game-side mod is a sensor and actuator.
-- The mod may expose state, actions, legal-action/raw-actionable data, action results, event logs, card instance IDs, target IDs, option IDs, and pre/post state hashes.
+- The game-side integration is a protocol-neutral semantic game gateway. Its
+  current implementation lives in the game-side mod; REST and MCP are transport
+  adapters over that gateway, not alternate owners of game semantics.
+- The gateway may expose player-visible state, one current input owner,
+  state-bound opaque legal actions, exact entity bindings, command lifecycle,
+  semantic outcomes, read-only Inspections, environment identity, and bounded
+  transaction/evidence correlation.
+- The gateway owns game-side legality and execute-time revalidation for strict
+  Bridge v2 actions. Plane 2 may still validate canonical strategy inputs and
+  legacy actions, but it must not reconstruct or broaden strict-v2 authority.
+- MCP tool discovery means that a transport operation exists. It does not mean
+  that a game action is currently legal, exact-build permitted, qualified, or
+  strategically desirable.
 - The mod must not contain LLM calls, prompts, API keys, memory, derived strategy, reward, experiment logic, replay/eval, vector DBs, or training export logic.
+- Offline source/decompilation analysis may propose bindings, transaction
+  contracts, compatibility fingerprints, and Witness obligations. Generated
+  artifacts are non-authorizing until reviewed, tested, and evidenced for an
+  explicit environment scope.
+
+Current transport reality:
+
+- Re-SpireAgent uses the Bridge v2 REST endpoints directly.
+- `STS2MCP/mcp/server.py` is an optional MCP adapter and still contains the
+  legacy v1 tool surface. It is not the Bridge v2 semantic core.
+- Rendering mode is orthogonal to protocol choice. A Godot `--headless`
+  process is not automatically a UI-independent game rules API.
 
 ## Plane 2: Canonical State + Mechanics
 

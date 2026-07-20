@@ -42,7 +42,7 @@ must not be able to authorize an action by existing in the repository.
 
 Implemented foundation: twenty-three typed Surface entries now own capability
 metadata, match the lazy Provider registry one-to-one, and derive support only
-through `BridgeSurfacePermission`. The two implemented Inspection contracts
+through `BridgeSurfacePermission`. The three implemented Inspection contracts
 are inventoried separately and remain read-only/non-authorizing. Visible fact
 groups and test/doc references are present. This is not yet a complete external
 manifest: loaded-environment identity, per-origin qualification, field
@@ -82,13 +82,21 @@ Inspection is complete for its declared view; every other player-visible fact
 is linked, catalogued, or explicitly missing; hidden facts remain excluded.
 This phase cannot grant action authority.
 
-## Phase 2: DecisionFrame Shadow And Shared Validator
+## Phase 2: Transaction Correlation And DecisionFrame Shadow
 
 Status: proposed; independently revised on 2026-07-20. Begin with the generated
 combat-choice and combat-pile-choice families. Do not begin with a protocol or
 authority migration.
 
-Extract a typed, permissionless mechanism snapshot containing visible
+First add a minimal, non-authorizing transaction-correlation record beside the
+existing command ledger. Seed it only from already-audited native Task scopes
+for generated-card and combat-pile choices. It should record source task token,
+owner, exact operands, current child decision, lifecycle phase, and outstanding
+Witness obligations. A separate production `TransactionLedger` class is one
+possible implementation, not a fundamental invariant; transaction ownership
+and obligation correlation are the required properties.
+
+Then extract a typed, permissionless mechanism snapshot containing visible
 candidates, exact references, selection membership, bounds, controls, and
 stage. Bind it to a `DecisionFrame` that also records:
 
@@ -112,9 +120,10 @@ must not reinterpret the business predicate. The first implementation is a
 non-authorizing shadow beside existing Providers and must reproduce or narrow
 actions, operands, hidden policy, and failure behavior.
 
-Exit condition: two repeated families shadow-match existing behavior, negative
-fixtures reject incomplete/ambiguous frames, and no permission or wire action
-authority changes.
+Exit condition: two repeated families shadow-match existing command actions
+and full native Task lifecycles; negative fixtures reject incomplete,
+ambiguous, orphaned, or concurrently owned frames; and no permission or wire
+action authority changes.
 
 ## Phase 3: Closed Transaction IR And Witness Obligation Plans
 
@@ -149,6 +158,32 @@ Exit condition: every shadow transaction owns all completion obligations across
 parent/child Surface boundaries, and no declared side effect lacks a witness or
 an explicit fail-closed reason.
 
+## Phase 3.5: Non-Authorizing Source Audit Workbench
+
+Status: proposed after the Phase 2 record has frozen the minimum facts that a
+real transaction needs.
+
+Build an offline, exact-assembly audit tool that can propose:
+
+- content and call indexes;
+- async Task ownership and continuation candidates;
+- known Commit paths and relevant Harmony patch surfaces;
+- candidate mutation domains, hidden-information hazards, and Witness
+  obligations;
+- structural diffs and compatibility-impact reports across exact builds.
+
+The workbench is an audit accelerator, not a runtime rules engine. Its output
+is open-domain and non-authorizing: unknown dispatch, hooks, reflection,
+unbounded control flow, or incomplete dataflow remain explicit. Runtime
+mutation tracing is restricted to debug/canary evidence and is never exposed
+as hidden strategy truth. Patch attestation should cover the action-relevant
+loaded Commit closure; a claim to have globally proved all patches or all Mod
+semantics is not required and must not be fabricated.
+
+Exit condition: the tool reproduces reviewed facts for at least two holdout
+families, reports known omissions instead of silently closing the domain, and
+cannot change permissions, capability tiers, or command execution.
+
 ## Phase 4: Strategy Semantics And Structural Protocol
 
 Status: proposed after repeated Phase 2/3 evidence.
@@ -182,6 +217,16 @@ Layered fingerprints may reduce work after a pure data update, but final action
 permission remains exact-environment and explicit. No fingerprint, registry,
 Mod contract, or old evidence may inherit authority automatically.
 
+MCP remains one transport adapter over this protocol-neutral gateway. Re may
+continue to use REST directly. A compact MCP adapter should derive its fixed
+Inspection requests from the advertised catalog and should not grow one
+content-specific tool per card, relic, potion, event, or transaction source.
+
+Logical headless operation is a separate deployment track. Running the real
+Godot engine without a display may be evaluated only after owner, visibility,
+Commit, timing, and Witness behavior shadow-match the visible runtime. It does
+not change action authority and it is not a reason to reimplement STS2 rules.
+
 ## Phase 5: Organic Qualification And v1 Retirement
 
 Status: ongoing operational work.
@@ -210,3 +255,5 @@ fallback has been retired without ambiguity.
 
 The independent rationale, holdouts, and rollback gates are recorded in
 [the 2026-07-20 DecisionFrame/Transaction IR audit closeout](DECISION_FRAME_TRANSACTION_IR_ARCHITECTURE_AUDIT_CLOSEOUT_2026-07-20.md).
+The MCP/source/headless boundary is refined in
+[the 2026-07-20 semantic-gateway audit closeout](MCP_SEMANTIC_GATEWAY_HEADLESS_ARCHITECTURE_AUDIT_CLOSEOUT_2026-07-20.md).

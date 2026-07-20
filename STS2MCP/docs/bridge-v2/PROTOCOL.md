@@ -119,6 +119,18 @@ GET  /api/v2/commands/{request_id}
 All game-object reads and mutations run on the Godot main thread. HTTP and MCP
 layers own transport only.
 
+The Bridge v2 contract is protocol-neutral domain behavior. The REST routes
+above are the current Re-SpireAgent integration. The Python MCP server is an
+optional adapter over the same routes; listing or calling an MCP tool does not
+grant action legality, exact-build permission, qualification, or strategy
+authority. Transport adapters may expose only fixed, capability-advertised
+operations and Inspection kinds. They must not reconstruct legal actions,
+invent source semantics, or provide arbitrary scene-tree/reflection queries.
+
+Protocol choice and rendering mode are independent. Starting the real Godot
+runtime without a display does not create a new action contract and does not
+prove that STS2 gameplay is independent of scene/UI lifecycle.
+
 ## State
 
 Every state response contains:
