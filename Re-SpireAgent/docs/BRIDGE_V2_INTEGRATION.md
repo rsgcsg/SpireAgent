@@ -18,7 +18,7 @@ consumption.
 
 ## Current Scope
 
-Re-SpireAgent supports the strict `2.0-preview.55` contract. Current v0.109
+Re-SpireAgent supports the strict `2.0-preview.56` contract. Current v0.109
 authority is read from capabilities rather than inferred from implementation
 or historical evidence.
 
@@ -83,6 +83,12 @@ Preview.54 adds exact native Splash to `generated_card_choice` and normalized
 schema 25. It reuses only the generated-combat-card selection mechanics and the
 free-this-turn hand/discard completion witness. The source remains explicitly
 `splash`; no other card generator or Mod subtype inherits its authority.
+
+Preview.56 adds exact native Discovery to that closed source registry. Re
+accepts only the new `discovery` literal and does not infer candidates,
+legality, destination, Commit, or completion. The Bridge may wait through
+combat animation state changes only while the original semantic Witness is
+pending; timeout remains unknown and is never retried.
 
 Source-target organic evidence includes merchant removal with exact post-state,
 independent event/rest upgrade journeys, ordinary combat actions, a Touch of

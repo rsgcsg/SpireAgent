@@ -9,7 +9,7 @@ waits for the Bridge command lifecycle, and records the complete evidence.
 
 RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, shadow/live modes, policy promotion, or the old project's phase machinery. Its job is to make one decision path correct and auditable.
 
-The current strict client contract is Bridge `2.0-preview.55` on exact game
+The current strict client contract is Bridge `2.0-preview.56` on exact game
 identity `v0.109.0|c12f634d|1833084275`. Re requires capabilities and every
 state/bundle/Inspection to agree on protocol, game identity, exact Modset
 fingerprint, Bridge assembly SHA-256, module MVID, and runtime instance. An
@@ -83,6 +83,13 @@ Preview.54 adds exact native Splash to `generated_card_choice` with
 `sourceKind=splash`. Normalized schema 25 preserves that source while retaining
 the existing free-this-turn hand/discard contract. Both branches remain
 current-build canaries until their final-MVID actions naturally recur.
+
+Preview.56 adds exact native Discovery as a second generated-combat-card
+source and preserves `sourceKind=discovery` through the same bounded child
+mechanics. Bridge still owns exact source binding and semantic completion; Re
+only decodes the new literal. Combat command polling may cross animation-only
+intermediate states while retaining the original card/potion/turn Witness.
+Neither change broadens the 71-operation canary permission inventory.
 
 Exact no-input combat setup and post-combat resolution intervals normalize as
 `combat_transition(setup|resolution) + no_action + settling +
@@ -293,7 +300,7 @@ RE-P1 has fixture-backed support for:
 - `menu`
 - `game_over`
 
-Bridge v2 source `preview.55` uses exact-game, exact-Modset, exact Bridge
+Bridge v2 source `preview.56` uses exact-game, exact-Modset, exact Bridge
 SHA/MVID/runtime, and per-operation capabilities. The current exact v0.109
 profile has 71 explicit canary operations, three read-only Inspection
 canaries, and no qualified scope. Every unlisted operation, origin, owner, and
@@ -322,12 +329,14 @@ The only supported public TypeScript entrypoint is `src/index.ts`. Integration r
   map, rest, shop, treasure, and a boss fight. This is historical protocol
   evidence only. The game REST service and Re production defaults no longer
   route actions through v1.
-- Bridge v2 source `preview.55` is current. The current exact v0.109 build has
+- Bridge v2 source `preview.56` is current. The current exact v0.109 build has
   no qualified operation; all executable operation scopes are explicit
   canaries. Historical source-target qualifications do not transfer.
-  A real-game 50-Tick preview.55 run exercised 11 action kinds across seven
-  Surface kinds with fixture decisions and no command failure. It is canary
-  evidence, not DeepSeek Organic qualification.
+  Final-MVID real-game windows recorded 46 ticks and then 20/20 settled ticks;
+  their metadata provenance remains `unrecorded`. A subsequent explicitly
+  declared fixture window completed 10/10. Together they exercised combat,
+  reward, map, shop, rest, and deck-upgrade flows without unknown outcome.
+  This is coverage evidence, not DeepSeek Organic qualification.
 - Historical Organic evidence remains attached to its recorded game hash,
   DLL SHA, MVID, runtime, and run. It does not qualify every selector mode,
   event origin, card target, treasure variant, or current build.

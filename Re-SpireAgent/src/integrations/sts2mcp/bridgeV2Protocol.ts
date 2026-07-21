@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { isJsonObject, type JsonObject } from "../../shared/json.js";
 
-export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.55" as const;
+export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.56" as const;
 export const BRIDGE_V2_INSPECTION_KINDS = ["run_deck", "combat_piles", "shop_catalog"] as const;
 const inspectionKindSchema = z.enum(BRIDGE_V2_INSPECTION_KINDS);
 
@@ -726,7 +726,8 @@ const generatedCombatSourceKindSchema = z.enum([
   "attack_potion",
   "skill_potion",
   "power_potion",
-  "splash"
+  "splash",
+  "discovery"
 ]);
 
 const generatedCombatCardChoiceSurfaceSchema = generatedCardChoiceBaseSchema.extend({

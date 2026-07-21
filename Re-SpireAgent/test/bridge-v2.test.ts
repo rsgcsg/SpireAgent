@@ -10,7 +10,7 @@ import type { JsonObject } from "../src/shared/json.js";
 import { fixture } from "./helpers.js";
 
 const CAPABILITIES = {
-  protocol_version: "2.0-preview.55",
+  protocol_version: "2.0-preview.56",
   bridge: {
     id: "sts2_mcp_bridge_v2",
     name: "STS2 Agent Bridge",
@@ -175,7 +175,7 @@ const RUN_VISIBILITY = {
 };
 
 const DECK_ENCHANT_STATE = {
-  protocol_version: "2.0-preview.55",
+  protocol_version: "2.0-preview.56",
   state_id: "state-test-1",
   state_sequence: 1,
   observed_at: "2026-07-16T00:00:00Z",
@@ -251,7 +251,7 @@ const DECK_ENCHANT_STATE = {
     status: "resolved_manifest_contract",
     instance_id: "contract-instance-deck-enchant-1",
     surface_kind: "deck_enchant_selection",
-    semantic_contract_id: "bridge.surface.deck_enchant_selection.2.0-preview.55",
+    semantic_contract_id: "bridge.surface.deck_enchant_selection.2.0-preview.56",
     declared_binding: "fixture-declared-binding",
     operations: [{ operation: "toggle_card", evidence_status: "surface_level_only", published: true }],
     current_authority_tier: "canary",
@@ -1963,7 +1963,7 @@ function visibleInspectionCard(overrides: Record<string, unknown> = {}) {
 
 function runDeckInspection(stateId: string, cards = [visibleInspectionCard()]) {
   return {
-    protocol_version: "2.0-preview.55",
+    protocol_version: "2.0-preview.56",
     inspection_id: `inspection-run-deck-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -1986,7 +1986,7 @@ function runDeckInspection(stateId: string, cards = [visibleInspectionCard()]) {
 
 function combatPilesInspection(stateId: string) {
   return {
-    protocol_version: "2.0-preview.55",
+    protocol_version: "2.0-preview.56",
     inspection_id: `inspection-combat-piles-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -2031,7 +2031,7 @@ function shopCatalogInspection(stateId: string) {
     blocked_reason: offer.stocked ? "not_visible" : offer.blocked_reason
   });
   return {
-    protocol_version: "2.0-preview.55",
+    protocol_version: "2.0-preview.56",
     inspection_id: `inspection-shop-catalog-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -2073,7 +2073,7 @@ function coherentObservationBundle(
   }));
   const resolvedInspections = inspections ?? defaultInspections;
   return {
-    protocol_version: "2.0-preview.55",
+    protocol_version: "2.0-preview.56",
     observation_id: `observation-${state.state_id}`,
     coherent: true,
     state,
@@ -4213,7 +4213,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
   });
 
   it("keeps exact native generated combat-card sources source-bound and explicit", () => {
-    for (const sourceKind of ["colorless_potion", "attack_potion", "skill_potion", "power_potion", "splash"] as const) {
+    for (const sourceKind of ["colorless_potion", "attack_potion", "skill_potion", "power_potion", "splash", "discovery"] as const) {
       const state = structuredClone(GENERATED_CARD_CHOICE_STATE) as any;
       state.state_id = `state-${sourceKind}-choice-1`;
       state.context = structuredClone(COMBAT_TURN_STATE.context);

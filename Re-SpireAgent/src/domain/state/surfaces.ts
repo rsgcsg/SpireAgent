@@ -247,7 +247,7 @@ export interface GeneratedRunDeckCardChoiceSurface extends GeneratedCardChoiceSu
 /** Source-bound native generated-card potion; full hands redirect to discard. */
 export interface GeneratedCombatCardChoiceSurface extends GeneratedCardChoiceSurfaceBase {
   purpose: "choose_one_generated_combat_card";
-  sourceKind: "colorless_potion" | "attack_potion" | "skill_potion" | "power_potion" | "splash";
+  sourceKind: "colorless_potion" | "attack_potion" | "skill_potion" | "power_potion" | "splash" | "discovery";
   destination: "combat_hand";
   selectedCardCostPolicy: "free_this_turn";
   overflowDestination: "combat_discard_if_hand_full";
