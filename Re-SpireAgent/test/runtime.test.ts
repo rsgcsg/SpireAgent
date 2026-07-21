@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { buildAllowedActions } from "../src/domain/actions/buildAllowedActions.js";
 import type { ExecutableGameAction } from "../src/domain/actions/action.js";
+import type { StateEnvelope } from "../src/domain/state/index.js";
+import { NORMALIZED_STATE_SCHEMA_VERSION } from "../src/domain/state/common.js";
 import type { GameAdapter } from "../src/game-io/adapter.js";
 import { TransientObservationError } from "../src/game-io/observationError.js";
 import type { Sts2McpRawState } from "../src/integrations/sts2mcp/rawState.js";
@@ -135,6 +137,58 @@ describe("TickOrchestrator", () => {
     expect(result).toMatchObject({ status: "settled", polls: 2 });
   });
 
+  it("captures one stable checkpoint without re-proving an adapter-confirmed command", async () => {
+    const preRaw = await fixture("combat") as Sts2McpRawState;
+    const adapter = new FakeAdapter([preRaw]);
+    const watcher = new SettlementWatcher(adapter, (raw) => normalizeCurrentState(raw, TEST_ADAPTER), {
+      pollMs: 1,
+      defaultTimeoutMs: 20,
+      endTurnTimeoutMs: 20,
+      roomTransitionTimeoutMs: 20
+    }, async () => {});
+
+    const result = await watcher.waitForNextState(
+      normalizeCurrentState(preRaw, TEST_ADAPTER),
+      {
+        kind: "bridge_v2_action",
+        actionId: "action-confirmed",
+        expectedStateId: "state-before",
+        bridgeActionKind: "play_card"
+      },
+      "adapter_confirmed"
+    );
+
+    expect(result).toMatchObject({ status: "settled", polls: 1 });
+  });
+
+  it("does not accept an action-preceding Bridge token after the command confirmed a newer state", async () => {
+    const adapter = new FakeAdapter([{ token: "state-old" }, { token: "state-new" }]);
+    const watcher = new SettlementWatcher(adapter, (raw) => {
+      const token = typeof raw === "object" && raw && "token" in raw ? String(raw.token) : "missing";
+      return bridgeEnvelope(token);
+    }, {
+      pollMs: 1,
+      defaultTimeoutMs: 20,
+      endTurnTimeoutMs: 20,
+      roomTransitionTimeoutMs: 20
+    }, async () => {});
+
+    const result = await watcher.waitForNextState(
+      bridgeEnvelope("state-old"),
+      {
+        kind: "bridge_v2_action",
+        actionId: "action-confirmed",
+        expectedStateId: "state-old",
+        bridgeActionKind: "play_card"
+      },
+      "adapter_confirmed",
+      "state-new"
+    );
+
+    expect(result).toMatchObject({ status: "settled", polls: 2 });
+    expect(result.after?.currentState.surface).toMatchObject({ bridgeStateId: "state-new" });
+  });
+
   it("uses a dedicated room-transition budget for map navigation", async () => {
     const preRaw = await fixture("map") as Sts2McpRawState;
     const loadingRaw = structuredClone(preRaw);
@@ -216,6 +270,8 @@ describe("TickOrchestrator", () => {
     const adapter = new FakeAdapter([pre, pre, transitional], {
       accepted: true,
       outcome: "accepted",
+      settlementAuthority: "adapter_confirmed",
+      confirmedStateToken: "state-after",
       response: { status: "completed", outcome: "confirmed" }
     });
     const recorder = new MemoryRecorder();
@@ -260,6 +316,29 @@ describe("TickOrchestrator", () => {
     });
     expect(recorder.records[0]?.postState?.normalizedState.stability).toBe("transitioning");
     expect(recorder.records[0]?.runtimeGuard).toBeUndefined();
+  });
+
+  it("does not turn an adapter-confirmed command into an unknown outcome when checkpoint reading fails", async () => {
+    const pre = await fixture("combat") as Sts2McpRawState;
+    const adapter = new FakeAdapter([pre, pre, new Error("fixture post-command read failure")], {
+      accepted: true,
+      outcome: "accepted",
+      settlementAuthority: "adapter_confirmed",
+      confirmedStateToken: "state-after",
+      response: { status: "completed", outcome: "confirmed" }
+    });
+    const recorder = new MemoryRecorder();
+
+    const result = await makeOrchestrator(adapter, fixedProvider("combat:end-turn"), recorder).runTick(1);
+
+    expect(result).toMatchObject({
+      outcome: "executed_checkpoint_pending",
+      shouldStopRun: false
+    });
+    expect(recorder.records[0]).toMatchObject({
+      execution: { adapterResult: { status: "completed", outcome: "confirmed" } },
+      settlement: { status: "read_error", error: "fixture post-command read failure" }
+    });
   });
 
   it("does not treat a legacy acknowledgement as confirmed when the next checkpoint is pending", async () => {
@@ -459,4 +538,38 @@ function makeOrchestrator(adapter: FakeAdapter, provider: LlmDecisionProvider, r
     roomTransitionTimeoutMs: 250
   }, async () => {});
   return new TickOrchestrator({ adapter, normalize, buildAllowedActions, llm: provider, settlement, recorder });
+}
+
+function bridgeEnvelope(bridgeStateId: string): StateEnvelope {
+  return {
+    envelopeSchemaVersion: 2,
+    capturedAt: "2026-07-21T00:00:00.000Z",
+    source: TEST_ADAPTER,
+    rawState: { token: bridgeStateId },
+    currentState: {
+      normalizedSchemaVersion: NORMALIZED_STATE_SCHEMA_VERSION,
+      sourceStateType: "bridge_v2:combat:combat_turn",
+      stability: "actionable",
+      actionAuthority: "bridge_advertised",
+      context: {
+        kind: "combat",
+        encounterType: "normal",
+        turnOwner: "player",
+        isPlayPhase: true,
+        enemies: []
+      },
+      surface: { kind: "combat_turn", bridgeStateId }
+    },
+    diagnostics: {
+      status: "ok",
+      missingRequiredFields: [],
+      invalidFields: [],
+      inferredFields: [],
+      defaultedFields: [],
+      unknownFields: [],
+      warnings: []
+    },
+    stateHash: bridgeStateId,
+    normalizedStateHash: bridgeStateId
+  };
 }

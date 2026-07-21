@@ -8,23 +8,30 @@ matrix. This document records the Re-SpireAgent consumption boundary.
 
 ## Bridge v2 Current Client Contract
 
-Re strictly decodes `2.0-preview.54`. It accepts Bridge actions only when:
+Re strictly decodes `2.0-preview.55`. It accepts Bridge actions only when:
 
-- game and loaded Bridge identities match exact scoped capabilities;
+- game, Modset, Bridge assembly SHA-256, MVID, and runtime identities match
+  exact scoped capabilities and state;
 - the Surface kind appears exactly once and has no duplicate operation names;
 - context, Surface, stage, readiness, entity bindings, and legal-action kinds
   are mutually consistent;
-- the capability permission list authorizes that Surface for this exact build;
-- the current Surface is `bridge_owned` and every action is state-bound.
+- one explicit capability scope authorizes that exact Surface operation for
+  this build;
+- the current Surface is Bridge-advertised and every action is state-bound.
+
+Current identity `v0.109.0|c12f634d|1833084275` has 71 canary operation
+scopes across 23 Surface kinds, no qualified operation, and three read-only
+Inspection canaries. The table describes supported projections and historical
+evidence diversity; every executable row is canary-only on this build.
 
 | Bridge contract | Re projection | Current v0.109 status |
 |---|---|---|
-| `combat_turn` | `combat + combat_turn + bridge_advertised`, including exact visible `player.companions` | qualified; alive Osty projection consumed by DeepSeek on current MVID, dead/hidden-health Organic diversity pending |
+| `combat_turn` | `combat + combat_turn + bridge_advertised`, including exact visible `player.companions` | current-build canary; real-game fixture-decision run exercised play/end/potion, historical Osty evidence belongs to an older MVID |
 | exact combat setup/resolution no-input transition | `combat_transition(setup|resolution) + no_action + none` | both phases organically observed on current MVID; not an action capability |
-| `combat_hand_card_selection` | `combat + combat_hand_card_selection + bridge_advertised` | qualified |
-| `deck_removal_selection` | `shop + deck_removal_selection + bridge_advertised` | qualified |
-| `deck_upgrade_selection` | event/rest parent + purpose-specific child | qualified |
-| `rest_site` | `rest + rest_site + bridge_advertised` | qualified |
+| `combat_hand_card_selection` | `combat + combat_hand_card_selection + bridge_advertised` | current-build canary; exercised in the 50-Tick runtime run |
+| `deck_removal_selection` | `shop + deck_removal_selection + bridge_advertised` | current-build canary; historical semantic evidence only on older identity |
+| `deck_upgrade_selection` | event/rest parent + purpose-specific child | current-build canary; publication/execution validator is shared |
+| `rest_site` | `rest + rest_site + bridge_advertised` | current-build canary |
 | event acquisition, reward, card reward, map, shop, treasure, card bundle | purpose-specific typed Context + Surface | current-build action canaries |
 | `character_select` | `menu + character_select` with no active-run shared state | current-build action canary |
 | `event_dialogue` / `event_option` | revealed prefix or typed visible options/tooltips | current-build action canaries |
@@ -33,7 +40,7 @@ Re strictly decodes `2.0-preview.54`. It accepts Bridge actions only when:
 | `generated_card_choice` | source-discriminated `event` run-deck or `combat` hand choice with exact purpose/source/destination/cost/overflow semantics | Lead Paperweight, Colorless Potion, and Attack Potion selections exercised; Skill/Power/Splash source-audited only; Skip/overflow diversity pending; every other source fails closed |
 | exact Headbutt/Graveblast `combat_pile_card_selection` | exact discard candidate plus source-discriminated draw-top or hand/full-hand-discard purpose | action canary; both final completion branches need a natural repeat |
 | `game_over` | `run_ended + game_over` | current-MVID loss intro -> summary -> return lifecycle confirmed; win/timeline diversity pending |
-| `run_deck` Inspection | typed player run-deck evidence | qualified read-only; no authority |
+| `run_deck` Inspection | typed player run-deck evidence | current-build read-only canary; no authority |
 | `combat_piles` Inspection | unordered draw/discard/exhaust card evidence | current-build read-only canary; no draw order or authority |
 | `shop_catalog` Inspection | fixed visible merchant slots, prices, stock, affordability, potion-capacity blocks, and removal-service state | current-build read-only canary; no purchase/navigation authority |
 | top-level `shared_state` | persistent run/player facts, text keywords, and typed read-only card previews | read-only and state-bound; preview facts grant no actions |
@@ -52,11 +59,12 @@ still hashes business facts, Surface/stage, entity bindings, and action
 semantics. This prevents an open/close loop from hiding behind fresh bundle
 IDs without weakening stale-state execution checks.
 
-## Explicit v1 Compatibility Boundary
+## Explicit v1 Diagnostics Boundary
 
-`auto` mode may use v1 only when Bridge returns one coherent
-`legacy_fallback_allowed` handoff. It never merges v1 actions into a
-Bridge-owned Surface.
+`v2` is the production default and `auto` is a strict-v2 alias. Neither uses
+v1. Explicit `v1` can still address a separately enabled legacy server for
+diagnostics, but it never participates in a Bridge v2 run or merges v1 facts
+or actions into a v2 Surface.
 
 Observed or expected v1-owned families still include:
 
@@ -69,9 +77,8 @@ Observed or expected v1-owned families still include:
   combat-pile selector, plus every generated-card origin except exact Lead
   Paperweight, native Colorless/Attack/Skill/Power Potions, and native Splash.
 
-v1 reconstructs indices and settlement locally. It is compatibility code, not
-equivalent safety or semantic evidence. A v1-supported shape can still be
-unsupported in Re when the raw purpose is ambiguous.
+v1 reconstructs indices and settlement locally. It is diagnostics compatibility
+code, not production authority or equivalent semantic evidence.
 
 ## Fail-Closed Rules
 

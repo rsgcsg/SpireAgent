@@ -1,5 +1,26 @@
 # RE-P1 Handoff
 
+Status update 2026-07-21: Bridge `2.0-preview.55` and Re normalized schema 25
+are the current Live Connector production contract. The loaded exact game is
+`v0.109.0|c12f634d|1833084275`; Bridge SHA is
+`0D463DDF2E573D911047FC943210D022F8FAFB75BA50C8E75255A0B0D4E15592`,
+MVID `f90391f3-9a38-49c1-80e3-7d5666fb46a8`, runtime
+`4641ab369de144148c2883f44a6a2f88`, and Modset fingerprint
+`ec71578d280eec85642314f2d0cc9a24b7804802f21acf7dcc7f00c1cac89250`.
+There are 71 explicit canary operation scopes across 23 Surface kinds, no
+qualified operation, and read-only canaries for all three Inspections.
+
+Re defaults to strict v2; `auto` is a strict-v2 alias. Game v1 routes are off
+by default and the default MCP server is a thin v2 adapter. Real-game run
+`run-20260721070742-fw1vd7` completed 50/50 Bridge-advertised actions with a
+local deterministic fixture decision source, crossing event, generated choice,
+map, combat, hand selection, reward, and card reward. This proves the current
+Connector lifecycle and transient settlement handling, not DeepSeek Organic
+qualification. DeepSeek remains unreachable from this device's network.
+
+The chronological records below preserve their original build-specific
+evidence and do not grant preview.55 qualification.
+
 Status update 2026-07-20: Bridge `2.0-preview.54` and Re normalized schema 25
 are cold-loaded on exact game identity `v0.109.0|c12f634d|-840572606`, MVID
 `67b8d32b-8c0c-4514-9df7-fac4ac5fb738`, runtime

@@ -135,7 +135,7 @@ export interface BridgeContractInstanceShadowSnapshot {
     published: boolean;
   }>;
   currentAuthorityTier: "qualified" | "canary" | "observation_only" | "disabled";
-  currentAuthorityBasis: "exact_environment_surface_kind_gate";
+  currentAuthorityBasis: "exact_environment_surface_operation_gate";
   authorizing: false;
   limitations: string[];
 }

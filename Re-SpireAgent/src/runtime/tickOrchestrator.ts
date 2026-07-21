@@ -247,11 +247,14 @@ export class TickOrchestrator {
       return result(decisionId, record.outcome, pre.currentState, validation.selectedAction.id, true);
     }
 
-    const settlement = await this.dependencies.settlement.waitForNextState(pre, validation.selectedAction.action);
-    const bridgeCheckpointPending = settlement.status === "timeout"
-      && validation.selectedAction.action.kind === "bridge_v2_action"
-      && settlement.after !== undefined
-      && settlement.after.stateHash !== pre.stateHash;
+    const settlement = await this.dependencies.settlement.waitForNextState(
+      pre,
+      validation.selectedAction.action,
+      adapterResult.settlementAuthority,
+      adapterResult.confirmedStateToken
+    );
+    const bridgeCheckpointPending = adapterResult.settlementAuthority === "adapter_confirmed"
+      && settlement.status !== "settled";
     const outcome: DecisionOutcome = settlement.status === "settled"
       ? "executed_and_settled"
       : bridgeCheckpointPending

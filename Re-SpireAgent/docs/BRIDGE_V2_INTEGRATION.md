@@ -18,40 +18,35 @@ consumption.
 
 ## Current Scope
 
-Re-SpireAgent supports the strict `2.0-preview.54` source contract. Current
-v0.109 authority is read from capabilities rather than inferred from historical
-implementation:
+Re-SpireAgent supports the strict `2.0-preview.55` contract. Current v0.109
+authority is read from capabilities rather than inferred from implementation
+or historical evidence.
 
-The broad permission list below is scoped to
-`v0.109.0|c12f634d|-840572606` only. Local runtime
-`v0.109.0|c12f634d|1833084275` is distinct: preview.35 imports only its explicit
-`event_option`, `event_card_acquisition`, and `map_navigation` action canaries,
-accepts an empty qualified list, and imports no Inspection facts. Every other
-Surface remains fail closed.
+For exact game identity `v0.109.0|c12f634d|1833084275`, the current profile
+contains 71 explicit canary operation scopes across 23 Surface kinds, no
+qualified operation, and three read-only Inspection canaries: `run_deck`,
+`combat_piles`, and `shop_catalog`. Every unlisted operation, source binding,
+Surface, and Inspection is disabled. Qualification from the historical
+`-840572606` game build or another Bridge MVID does not transfer.
 
-- scoped-qualified actions: `deck_removal_selection`,
-  `deck_upgrade_selection`, `combat_turn`, `combat_hand_card_selection`, and
-  ordinary single-player `rest_site`;
-- source-target action canaries: `event_card_acquisition`, `reward_claim`,
-  `card_reward_selection`, `map_navigation`, `shop_inventory`, `shop_room`,
-  `treasure_room`, `game_over`, `card_bundle_selection`, `character_select`,
-  `main_menu`, `singleplayer_menu`, `event_dialogue`, `event_option`, and
-  source-bound `deck_transform_selection`, Self-Help Book
-  `deck_enchant_selection`, exact Headbutt
-  plus Graveblast `combat_pile_card_selection`, and exact Lead Paperweight,
-  native Colorless/Attack/Skill/Power Potion, plus native Splash
-  `generated_card_choice` branches;
-- scoped-qualified read-only Inspection: `run_deck`;
-- source-target read-only Inspection canaries: `combat_piles`, `shop_catalog`;
-- every unlisted Surface and Inspection: disabled for this build.
+Re compares state and capability permission scopes exactly, rejects duplicate
+or unadvertised scopes, and imports a legal action only when its
+`surface_kind + operation` pair is explicitly advertised. Empty qualified,
+canary, or Inspection lists never imply wildcard authority. State,
+capabilities, bundles, and Inspections must agree on game identity, Modset
+fingerprint, Bridge assembly SHA-256, MVID, and runtime instance. Exact Modset
+permission additionally requires the negotiated loaded `STS2_MCP` module and
+no other loaded gameplay Mod.
 
-Canary-only exact scopes are valid only when their explicit canary list is
-non-empty. Re compares capability and state scopes, checks the exact game and
-Bridge identity, and verifies capability support rows before importing actions;
-empty qualified, canary, or Inspection lists never imply wildcard authority.
-State, capabilities, and Inspection must also agree on the exact loaded Modset
-fingerprint. Re rejects an exact-permission claim unless the sole loaded Mod is
-the negotiated `STS2_MCP` assembly and its MVID matches the Bridge identity.
+`STS2_MCP_PROTOCOL=v2` is the default. `auto` is a strict-v2 alias, not a v1
+fallback policy. Explicit `v1` remains available only for diagnostics against
+a separately enabled legacy server; it cannot merge facts or authority into a
+v2 state.
+
+Bridge command `completed` is the semantic settlement authority. Re verifies
+the echoed request/state/action identity, preserves `failed` and `timed_out`
+as unknown outcomes, and captures a coherent successor checkpoint after a
+confirmed command. A checkpoint read failure cannot cause action retry.
 
 Preview.47 adds one coherent state-plus-Inspection observation bundle, a typed
 visibility/Inspection catalog, and non-authorizing contract-instance shadow
@@ -267,8 +262,8 @@ the same mismatch against an unchanged state remains a hard contract error.
 No partial bundle is accepted, and decision/execution authorization remains
 fail closed.
 
-The current v0.109 scope exposes `run_deck` as qualified and `combat_piles`
-plus `shop_catalog` as separate read-only canaries. Current-MVID combat
+The current v0.109 scope exposes `run_deck`, `combat_piles`, and
+`shop_catalog` as separate read-only canaries. Historical combat
 snapshots matched context counts before and after an opaque end-turn lifecycle;
 preview.48 shop reads matched the open/closed inventory and supported a direct
 leave decision without reopening it. No Inspection grants action authority,
@@ -342,9 +337,10 @@ line; game-created future line nodes are deliberately excluded. Rest owns only
 exact option controls and Proceed. On v0.109, ordinary single-player Heal uses
 an exact HP witness, Smith must open the exact upgrade child, and unknown
 enabled options suppress the Surface. Smith's deck selector remains a separate
-qualified Surface. Map projects visible topology and exact current choices;
+purpose-specific Surface. Map projects visible topology and exact current choices;
 asynchronous completion requires map closure or the exact selected current
-coordinate, not an arbitrary state change. Publication and execution share the
+coordinate, not an arbitrary state change. Smith's child and map navigation
+are current-build canaries. Publication and execution share the
 same travelable/enabled/FTUE predicate; controller mode additionally requires
 the exact node to be on screen, matching `NMapPoint.OnRelease`.
 
@@ -352,13 +348,12 @@ the exact node to be on screen, matching `NMapPoint.OnRelease`.
 
 | `STS2_MCP_PROTOCOL` | Behavior |
 |---|---|
-| `auto` | Negotiate v2. Use v2 as sole executor for a qualified surface; use v1 only when a coherent exact v2 response explicitly says unsupported. |
-| `v1` | Use only v1 and `local_reconstruction` authority. |
-| `v2` | Require v2. Unsupported, degraded, mismatched, or unknown contracts stop safely. |
+| `auto` | Strict-v2 alias. No v1 probe or fallback. |
+| `v1` | Explicit diagnostics compatibility against a separately enabled legacy server. Never mixes with v2. |
+| `v2` | Production default. Unsupported, degraded, mismatched, or unknown contracts stop safely. |
 
-The adapter remembers authority from its latest successful read. Executing a
-legacy action after a v2-owned read, or a v2 action after a legacy read, is
-rejected locally.
+One adapter instance owns one configured protocol mode. It never mixes legacy
+and v2 authority in a run.
 
 ## Data Flow
 

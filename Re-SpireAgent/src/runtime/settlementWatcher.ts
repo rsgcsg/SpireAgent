@@ -29,7 +29,12 @@ export class SettlementWatcher {
     private readonly sleep: (ms: number) => Promise<void> = defaultSleep
   ) {}
 
-  async waitForNextState(before: StateEnvelope, action: ExecutableGameAction): Promise<SettlementResult> {
+  async waitForNextState(
+    before: StateEnvelope,
+    action: ExecutableGameAction,
+    settlementAuthority: GameExecutionResult["settlementAuthority"] = "client_observation_required",
+    confirmedStateToken?: string
+  ): Promise<SettlementResult> {
     const started = Date.now();
     const timeoutMs = isEndTurn(action)
       ? this.config.endTurnTimeoutMs
@@ -63,6 +68,24 @@ export class SettlementWatcher {
           ...transientTelemetry(transientObservationErrors, lastTransientObservationError)
         };
       }
+      if (settlementAuthority === "adapter_confirmed"
+          && !["loading", "settling", "transitioning"].includes(last.currentState.stability)) {
+        const beforeToken = bridgeStateToken(before);
+        const observedToken = bridgeStateToken(last);
+        if (confirmedStateToken
+            && beforeToken
+            && observedToken === beforeToken
+            && confirmedStateToken !== beforeToken) {
+          continue;
+        }
+        return {
+          status: "settled",
+          polls,
+          elapsedMs: Date.now() - started,
+          after: last,
+          ...transientTelemetry(transientObservationErrors, lastTransientObservationError)
+        };
+      }
       if (last.stateHash === before.stateHash) continue;
       lastChanged = last;
       if (["loading", "settling", "transitioning"].includes(last.currentState.stability)) {
@@ -90,6 +113,11 @@ export class SettlementWatcher {
       ...transientTelemetry(transientObservationErrors, lastTransientObservationError)
     };
   }
+}
+
+function bridgeStateToken(envelope: StateEnvelope): string | undefined {
+  const surface = envelope.currentState.surface as { bridgeStateId?: unknown };
+  return typeof surface.bridgeStateId === "string" ? surface.bridgeStateId : undefined;
 }
 
 function isEndTurn(action: ExecutableGameAction): boolean {

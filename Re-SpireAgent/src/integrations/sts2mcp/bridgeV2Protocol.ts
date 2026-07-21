@@ -1,9 +1,15 @@
 import { z } from "zod";
 import { isJsonObject, type JsonObject } from "../../shared/json.js";
 
-export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.54" as const;
+export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.55" as const;
 export const BRIDGE_V2_INSPECTION_KINDS = ["run_deck", "combat_piles", "shop_catalog"] as const;
 const inspectionKindSchema = z.enum(BRIDGE_V2_INSPECTION_KINDS);
+
+const actionPermissionScopeSchema = z.object({
+  surface_kind: z.string().min(1),
+  operation: z.string().min(1),
+  tier: z.enum(["qualified", "canary"])
+}).passthrough();
 
 const compatibilitySchema = z.object({
   status: z.string().min(1),
@@ -18,7 +24,8 @@ const compatibilitySchema = z.object({
   inspection_canary_kinds: z.array(inspectionKindSchema),
   observation_only_surface_kinds: z.array(z.string().min(1)),
   observation_candidate_build_fingerprints: z.array(z.string().min(1)),
-  detail: z.string()
+  detail: z.string(),
+  action_permission_scopes: z.array(actionPermissionScopeSchema)
 }).passthrough();
 
 const loadedModAssemblySchema = z.object({
@@ -62,11 +69,12 @@ const bridgeIdentitySchema = z.object({
   version: z.string().min(1),
   upstream_commit: z.string().min(1),
   module_version_id: z.string().min(1),
+  assembly_file_sha256: z.string().regex(/^[a-f0-9]{64}$/iu),
   runtime_instance_id: z.string().min(1)
 }).passthrough();
 
 const authorityHandoffSchema = z.object({
-  status: z.enum(["bridge_owned", "legacy_fallback_allowed", "none_fail_closed"]),
+  status: z.enum(["bridge_owned", "none_fail_closed"]),
   surface_kind: z.string().min(1).nullable().optional(),
   reason: z.string().min(1)
 }).passthrough();
@@ -963,7 +971,7 @@ const contractInstanceShadowSchema = z.object({
   declared_binding: z.string().min(1).nullable().optional(),
   operations: z.array(contractOperationShadowSchema),
   current_authority_tier: z.enum(["qualified", "canary", "observation_only", "disabled"]),
-  current_authority_basis: z.literal("exact_environment_surface_kind_gate"),
+  current_authority_basis: z.literal("exact_environment_surface_operation_gate"),
   authorizing: z.literal(false),
   limitations: z.array(z.string().min(1))
 }).passthrough().superRefine((shadow, context) => {
@@ -1500,6 +1508,7 @@ export function decodeBridgeV2ObservationBundle(
   const state = decodeBridgeV2State(decoded.data.state).data;
   validateModsetPermissionBoundary(decoded.data.game, decoded.data.bridge);
   if (decoded.data.bridge.module_version_id !== state.bridge.module_version_id
+      || decoded.data.bridge.assembly_file_sha256 !== state.bridge.assembly_file_sha256
       || decoded.data.bridge.runtime_instance_id !== state.bridge.runtime_instance_id
       || decoded.data.game.modset.fingerprint !== state.game.modset.fingerprint) {
     throw new BridgeV2DecodeError("Bridge v2 observation bundle identity does not match its enclosed state");
@@ -1512,6 +1521,7 @@ export function decodeBridgeV2ObservationBundle(
         || inspection.expected_state_id !== state.state_id
         || inspection.observed_state_id !== state.state_id
         || inspection.bridge.module_version_id !== state.bridge.module_version_id
+        || inspection.bridge.assembly_file_sha256 !== state.bridge.assembly_file_sha256
         || inspection.bridge.runtime_instance_id !== state.bridge.runtime_instance_id
         || inspection.game.modset.fingerprint !== state.game.modset.fingerprint) {
       throw new BridgeV2DecodeError(`Bridge v2 observation bundle ${kind} inspection is not coherent with its state`);

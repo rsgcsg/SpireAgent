@@ -10,13 +10,14 @@ import type { JsonObject } from "../src/shared/json.js";
 import { fixture } from "./helpers.js";
 
 const CAPABILITIES = {
-  protocol_version: "2.0-preview.54",
+  protocol_version: "2.0-preview.55",
   bridge: {
     id: "sts2_mcp_bridge_v2",
     name: "STS2 Agent Bridge",
     version: "0.5.0-dev",
     upstream_commit: "upstream",
     module_version_id: "fixture-module-v1",
+    assembly_file_sha256: "A".repeat(64),
     runtime_instance_id: "fixture-runtime-1"
   },
   game: {
@@ -37,7 +38,12 @@ const CAPABILITIES = {
       inspection_canary_kinds: ["combat_piles", "shop_catalog"],
       observation_only_surface_kinds: [] as string[],
       observation_candidate_build_fingerprints: [] as string[],
-      detail: "exact"
+      detail: "exact",
+      action_permission_scopes: [] as Array<{
+        surface_kind: string;
+        operation: string;
+        tier: "qualified" | "canary";
+      }>
     },
     modset: {
       status: "exact_bridge_only",
@@ -169,7 +175,7 @@ const RUN_VISIBILITY = {
 };
 
 const DECK_ENCHANT_STATE = {
-  protocol_version: "2.0-preview.54",
+  protocol_version: "2.0-preview.55",
   state_id: "state-test-1",
   state_sequence: 1,
   observed_at: "2026-07-16T00:00:00Z",
@@ -245,11 +251,11 @@ const DECK_ENCHANT_STATE = {
     status: "resolved_manifest_contract",
     instance_id: "contract-instance-deck-enchant-1",
     surface_kind: "deck_enchant_selection",
-    semantic_contract_id: "bridge.surface.deck_enchant_selection.2.0-preview.54",
+    semantic_contract_id: "bridge.surface.deck_enchant_selection.2.0-preview.55",
     declared_binding: "fixture-declared-binding",
     operations: [{ operation: "toggle_card", evidence_status: "surface_level_only", published: true }],
     current_authority_tier: "canary",
-    current_authority_basis: "exact_environment_surface_kind_gate",
+    current_authority_basis: "exact_environment_surface_operation_gate",
     authorizing: false,
     limitations: ["shadow_inventory_only", "authority_remains_surface_kind_scoped"]
   },
@@ -279,7 +285,7 @@ const COMBAT_RESOLUTION_NO_ACTION_STATE = {
     surface_kind: "no_action",
     operations: [],
     current_authority_tier: "disabled",
-    current_authority_basis: "exact_environment_surface_kind_gate",
+    current_authority_basis: "exact_environment_surface_operation_gate",
     authorizing: false,
     limitations: ["shadow_inventory_only", "authority_remains_surface_kind_scoped"]
   },
@@ -1957,7 +1963,7 @@ function visibleInspectionCard(overrides: Record<string, unknown> = {}) {
 
 function runDeckInspection(stateId: string, cards = [visibleInspectionCard()]) {
   return {
-    protocol_version: "2.0-preview.54",
+    protocol_version: "2.0-preview.55",
     inspection_id: `inspection-run-deck-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -1980,7 +1986,7 @@ function runDeckInspection(stateId: string, cards = [visibleInspectionCard()]) {
 
 function combatPilesInspection(stateId: string) {
   return {
-    protocol_version: "2.0-preview.54",
+    protocol_version: "2.0-preview.55",
     inspection_id: `inspection-combat-piles-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -2025,7 +2031,7 @@ function shopCatalogInspection(stateId: string) {
     blocked_reason: offer.stocked ? "not_visible" : offer.blocked_reason
   });
   return {
-    protocol_version: "2.0-preview.54",
+    protocol_version: "2.0-preview.55",
     inspection_id: `inspection-shop-catalog-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -2067,7 +2073,7 @@ function coherentObservationBundle(
   }));
   const resolvedInspections = inspections ?? defaultInspections;
   return {
-    protocol_version: "2.0-preview.54",
+    protocol_version: "2.0-preview.55",
     observation_id: `observation-${state.state_id}`,
     coherent: true,
     state,
@@ -2744,7 +2750,8 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
         inspection_canary_kinds: [],
         observation_only_surface_kinds: ["deck_removal_selection"],
         observation_candidate_build_fingerprints: ["v0.109.0|c12f634d|-840572606"],
-        detail: "static bindings only"
+        detail: "static bindings only",
+        action_permission_scopes: []
       }
     };
     candidateCapabilities.surfaces = candidateCapabilities.surfaces.map((surface) => ({
@@ -2807,6 +2814,18 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
 
   it("accepts only the explicit v0.109 qualified and canary action scopes", () => {
     const canaryCapabilities = structuredClone(CAPABILITIES);
+    const qualifiedKinds = ["deck_removal_selection", "deck_upgrade_selection", "combat_turn"];
+    const canaryKinds = ["reward_claim", "card_reward_selection", "map_navigation", "treasure_room", "deck_enchant_selection"];
+    const actionPermissionScopes = canaryCapabilities.surfaces.flatMap((surface) => {
+      const tier = qualifiedKinds.includes(surface.kind)
+        ? "qualified" as const
+        : canaryKinds.includes(surface.kind)
+          ? "canary" as const
+          : null;
+      return tier === null
+        ? []
+        : surface.operations.map((operation) => ({ surface_kind: surface.kind, operation, tier }));
+    });
     canaryCapabilities.game = {
       version: "v0.109.0",
       commit: "c12f634d",
@@ -2823,22 +2842,26 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
         action_execution_allowed: true,
         state_observation_allowed: true,
         inspection_allowed: true,
-        action_execution_surface_kinds: ["deck_removal_selection", "deck_upgrade_selection", "combat_turn"],
-        action_canary_surface_kinds: ["reward_claim", "card_reward_selection", "map_navigation", "treasure_room", "deck_enchant_selection"],
+        action_execution_surface_kinds: qualifiedKinds,
+        action_canary_surface_kinds: canaryKinds,
         inspection_allowed_kinds: ["run_deck"],
         inspection_canary_kinds: [],
         observation_only_surface_kinds: [],
         observation_candidate_build_fingerprints: [],
-        detail: "merchant removal qualified scope only"
+        detail: "merchant removal qualified scope only",
+        action_permission_scopes: actionPermissionScopes
       }
     };
     canaryCapabilities.surfaces = canaryCapabilities.surfaces.map((surface) => ({
       ...surface,
-      support: ["deck_removal_selection", "deck_upgrade_selection", "combat_turn"].includes(surface.kind)
+      support: qualifiedKinds.includes(surface.kind)
         ? "qualified_exact_build"
-        : ["reward_claim", "card_reward_selection", "map_navigation", "treasure_room", "deck_enchant_selection"].includes(surface.kind)
+        : canaryKinds.includes(surface.kind)
           ? "candidate_action_canary"
-        : "not_qualified_for_current_build"
+        : "not_qualified_for_current_build",
+      operations: qualifiedKinds.includes(surface.kind) || canaryKinds.includes(surface.kind)
+        ? surface.operations
+        : []
     }));
     canaryCapabilities.inspections = {
       ...canaryCapabilities.inspections,
@@ -2967,6 +2990,16 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
 
   it("accepts a current exact build with only explicit audited canaries", () => {
     const canaryOnlyCapabilities = structuredClone(CAPABILITIES);
+    const canaryKinds = ["event_option", "event_card_acquisition", "map_navigation"];
+    const actionPermissionScopes = canaryOnlyCapabilities.surfaces.flatMap((surface) =>
+      canaryKinds.includes(surface.kind)
+        ? surface.operations.map((operation) => ({
+          surface_kind: surface.kind,
+          operation,
+          tier: "canary" as const
+        }))
+        : []
+    );
     canaryOnlyCapabilities.game = {
       version: "v0.109.0",
       commit: "c12f634d",
@@ -2985,19 +3018,21 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
         state_observation_allowed: true,
         inspection_allowed: false,
         action_execution_surface_kinds: [],
-        action_canary_surface_kinds: ["event_option", "event_card_acquisition", "map_navigation"],
+        action_canary_surface_kinds: canaryKinds,
         inspection_allowed_kinds: [],
         inspection_canary_kinds: [],
         observation_only_surface_kinds: [],
         observation_candidate_build_fingerprints: [],
-        detail: "current-build event option, acquisition, and map canaries only"
+        detail: "current-build event option, acquisition, and map canaries only",
+        action_permission_scopes: actionPermissionScopes
       }
     };
     canaryOnlyCapabilities.surfaces = canaryOnlyCapabilities.surfaces.map((surface) => ({
       ...surface,
-      support: ["event_option", "event_card_acquisition", "map_navigation"].includes(surface.kind)
+      support: canaryKinds.includes(surface.kind)
         ? "candidate_action_canary"
-        : "not_qualified_for_current_build"
+        : "not_qualified_for_current_build",
+      operations: canaryKinds.includes(surface.kind) ? surface.operations : []
     }));
     canaryOnlyCapabilities.inspections = {
       ...canaryOnlyCapabilities.inspections,
@@ -4508,8 +4543,8 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     await adapter.initialize();
     expect(adapter.describe().capabilities).toMatchObject({
       canListLegalActions: true,
-      legalActionAuthority: "mixed",
-      protocols: ["sts2mcp_v1", "bridge_v2"]
+      legalActionAuthority: "bridge_advertised",
+      protocols: ["bridge_v2"]
     });
     const raw = await adapter.readCurrentState();
     const envelope = normalizeCurrentState(raw, adapter.describe());
@@ -4517,7 +4552,13 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     if (!action) throw new Error("missing imported action");
     const result = await adapter.execute(action);
 
-    expect(result).toMatchObject({ accepted: true, outcome: "accepted", response: { status: "completed" } });
+    expect(result).toMatchObject({
+      accepted: true,
+      outcome: "accepted",
+      settlementAuthority: "adapter_confirmed",
+      confirmedStateToken: "state-test-1",
+      response: { status: "completed" }
+    });
     expect(pollCount).toBe(1);
     expect(requests.filter((request) => request.url.endsWith("/api/v1/singleplayer") && request.init?.method === "POST")).toHaveLength(0);
     expect(requests.filter((request) => request.url.endsWith("/api/v1/singleplayer?format=json"))).toHaveLength(0);
@@ -4527,7 +4568,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     });
   });
 
-  it("auto mode keeps v1 ownership for an unsupported v2 surface", async () => {
+  it("auto mode keeps an unsupported v2 surface fail closed without v1 fallback", async () => {
     const calls: string[] = [];
     const unsupported = {
       ...DECK_ENCHANT_STATE,
@@ -4535,9 +4576,9 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       surface_kind: "unsupported",
       surface: { kind: "unsupported", source_type: "map", reason: "not implemented" },
       authority_handoff: {
-        status: "legacy_fallback_allowed",
+        status: "none_fail_closed",
         surface_kind: null,
-        reason: "fixture full-exact unsupported fallback"
+        reason: "fixture unsupported surface"
       },
       legal_actions: []
     };
@@ -4557,10 +4598,11 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     });
 
     const state = await adapter.readCurrentState();
-    expect(state).toMatchObject({ state_type: "map" });
-    expect(calls).toContain("http://adapter.test/api/v1/singleplayer?format=json");
+    expect(isBridgeV2WrappedState(state)).toBe(true);
+    expect(calls.some((url) => url.includes("/api/v1/"))).toBe(false);
     const envelope = normalizeCurrentState(state, adapter.describe());
-    expect(envelope.currentState.actionAuthority).toBe("local_reconstruction");
+    expect(envelope.currentState.actionAuthority).toBe("none");
+    expect(envelope.currentState.surface.kind).toBe("unsupported");
     expect(envelope.currentState.player?.runDeck).toEqual([
       expect.objectContaining({ entityId: "deck-card-1", id: "STRIKE" })
     ]);
@@ -4569,9 +4611,44 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     ]);
   });
 
-  it("hands scoped exact authority to v1 only for a source-resolved unqualified surface", async () => {
+  it("treats auto as strict v2 when the Bridge endpoint is missing", async () => {
+    const requests: string[] = [];
+    const adapter = new Sts2McpHybridAdapter("http://adapter.test", 1_000, {
+      mode: "auto",
+      commandPollMs: 1,
+      commandTimeoutMs: 100
+    }, async (input) => {
+      const url = String(input);
+      requests.push(url);
+      if (url.endsWith("/api/v2/capabilities")) {
+        return new Response('{"error":{"code":"not_found"}}', {
+          status: 404,
+          headers: { "content-type": "application/json" }
+        });
+      }
+      throw new Error(`Unexpected request ${url}`);
+    });
+
+    await expect(adapter.readCurrentState()).rejects.toMatchObject({ statusCode: 404 });
+    expect(requests.some((url) => url.includes("/api/v1/"))).toBe(false);
+    expect(adapter.describe().capabilities.protocols).toEqual(["bridge_v2"]);
+  });
+
+  it("keeps a source-resolved but unqualified scoped surface v2-only and fail closed", async () => {
     const calls: string[] = [];
     const capabilities = structuredClone(CAPABILITIES);
+    const qualifiedKinds = ["deck_removal_selection", "deck_upgrade_selection", "combat_turn"];
+    const canaryKinds = ["reward_claim", "card_reward_selection", "map_navigation", "treasure_room"];
+    const actionPermissionScopes = capabilities.surfaces.flatMap((surface) => {
+      const tier = qualifiedKinds.includes(surface.kind)
+        ? "qualified" as const
+        : canaryKinds.includes(surface.kind)
+          ? "canary" as const
+          : null;
+      return tier === null
+        ? []
+        : surface.operations.map((operation) => ({ surface_kind: surface.kind, operation, tier }));
+    });
     capabilities.game = {
       version: "v0.109.0",
       commit: "c12f634d",
@@ -4588,22 +4665,26 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
         action_execution_allowed: true,
         state_observation_allowed: true,
         inspection_allowed: true,
-        action_execution_surface_kinds: ["deck_removal_selection", "deck_upgrade_selection", "combat_turn"],
-        action_canary_surface_kinds: ["reward_claim", "card_reward_selection", "map_navigation", "treasure_room"],
+        action_execution_surface_kinds: qualifiedKinds,
+        action_canary_surface_kinds: canaryKinds,
         inspection_allowed_kinds: ["run_deck"],
         inspection_canary_kinds: [],
         observation_only_surface_kinds: [],
         observation_candidate_build_fingerprints: [],
-        detail: "scoped exact qualification"
+        detail: "scoped exact qualification",
+        action_permission_scopes: actionPermissionScopes
       }
     };
     capabilities.surfaces = capabilities.surfaces.map((surface) => ({
       ...surface,
-      support: ["deck_removal_selection", "deck_upgrade_selection", "combat_turn"].includes(surface.kind)
+      support: qualifiedKinds.includes(surface.kind)
         ? "qualified_exact_build"
-        : ["reward_claim", "card_reward_selection", "map_navigation", "treasure_room"].includes(surface.kind)
+        : canaryKinds.includes(surface.kind)
           ? "candidate_action_canary"
-        : "not_qualified_for_current_build"
+        : "not_qualified_for_current_build",
+      operations: qualifiedKinds.includes(surface.kind) || canaryKinds.includes(surface.kind)
+        ? surface.operations
+        : []
     }));
     capabilities.inspections = {
       ...capabilities.inspections,
@@ -4616,9 +4697,9 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       surface_kind: "unsupported",
       surface: { kind: "unsupported", source_type: "NMerchantInventory", reason: "not qualified" },
       authority_handoff: {
-        status: "legacy_fallback_allowed",
-        surface_kind: "shop_inventory",
-        reason: "one unqualified semantic owner"
+        status: "none_fail_closed",
+        surface_kind: null,
+        reason: "unqualified semantic owner cannot execute"
       },
       legal_actions: [],
       game: capabilities.game,
@@ -4647,23 +4728,10 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
 
     const raw = await adapter.readCurrentState();
     const envelope = normalizeCurrentState(raw, adapter.describe());
-    expect(isBridgeV2WrappedState(raw)).toBe(false);
-    expect(raw.bridge_v2_authority_evidence).toMatchObject({
-      state_id: unsupported.state_id,
-      context_kind: unsupported.context.kind,
-      surface_kind: "unsupported",
-      authority_handoff: {
-        status: "legacy_fallback_allowed",
-        surface_kind: "shop_inventory"
-      },
-      bridge: {
-        module_version_id: unsupported.bridge.module_version_id,
-        runtime_instance_id: unsupported.bridge.runtime_instance_id
-      }
-    });
-    expect(envelope.currentState.actionAuthority).toBe("local_reconstruction");
-    expect(envelope.diagnostics.unknownFields).not.toContain("bridge_v2_authority_evidence");
-    expect(calls).toContain("http://adapter.test/api/v1/singleplayer?format=json");
+    expect(isBridgeV2WrappedState(raw)).toBe(true);
+    expect(envelope.currentState.actionAuthority).toBe("none");
+    expect(envelope.currentState.surface.kind).toBe("unsupported");
+    expect(calls.some((url) => url.includes("/api/v1/"))).toBe(false);
     expect(adapter.describe().negotiated).toMatchObject({
       compatibility_status: "qualified_scoped",
       qualified_scoped_surfaces: ["deck_removal_selection", "deck_upgrade_selection", "combat_turn"],
@@ -4736,9 +4804,9 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       surface_kind: "unsupported",
       surface: { kind: "unsupported", source_type: "menu", reason: "not implemented" },
       authority_handoff: {
-        status: "legacy_fallback_allowed",
+        status: "none_fail_closed",
         surface_kind: null,
-        reason: "fixture full-exact unsupported fallback"
+        reason: "fixture unsupported surface"
       },
       legal_actions: []
     };
@@ -4777,9 +4845,9 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       surface_kind: "unsupported",
       surface: { kind: "unsupported", source_type: "menu", reason: "not implemented" },
       authority_handoff: {
-        status: "legacy_fallback_allowed",
+        status: "none_fail_closed",
         surface_kind: null,
-        reason: "fixture full-exact unsupported fallback"
+        reason: "fixture unsupported surface"
       },
       legal_actions: []
     };
@@ -4908,7 +4976,8 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       inspection_canary_kinds: [],
       observation_only_surface_kinds: [],
       observation_candidate_build_fingerprints: [],
-      detail: "build mismatch"
+      detail: "build mismatch",
+      action_permission_scopes: []
     };
     incompatibleCapabilities.inspections = {
       ...incompatibleCapabilities.inspections,
@@ -4968,7 +5037,8 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
         inspection_canary_kinds: [],
         observation_only_surface_kinds: ["deck_removal_selection"],
         observation_candidate_build_fingerprints: ["v0.109.0|c12f634d|-840572606"],
-        detail: "static bindings only"
+        detail: "static bindings only",
+        action_permission_scopes: []
       }
     };
     candidateCapabilities.surfaces = candidateCapabilities.surfaces.map((surface) => ({
@@ -5029,6 +5099,18 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
   it("reads only the explicitly scoped run-deck inspection in the v0.109 qualification", async () => {
     const requests: string[] = [];
     const capabilities = structuredClone(CAPABILITIES);
+    const qualifiedKinds = ["deck_removal_selection", "deck_upgrade_selection", "combat_turn"];
+    const canaryKinds = ["reward_claim", "card_reward_selection", "map_navigation", "treasure_room"];
+    const actionPermissionScopes = capabilities.surfaces.flatMap((surface) => {
+      const tier = qualifiedKinds.includes(surface.kind)
+        ? "qualified" as const
+        : canaryKinds.includes(surface.kind)
+          ? "canary" as const
+          : null;
+      return tier === null
+        ? []
+        : surface.operations.map((operation) => ({ surface_kind: surface.kind, operation, tier }));
+    });
     capabilities.game = {
       version: "v0.109.0",
       commit: "c12f634d",
@@ -5045,22 +5127,26 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
         action_execution_allowed: true,
         state_observation_allowed: true,
         inspection_allowed: true,
-        action_execution_surface_kinds: ["deck_removal_selection", "deck_upgrade_selection", "combat_turn"],
-        action_canary_surface_kinds: ["reward_claim", "card_reward_selection", "map_navigation", "treasure_room"],
+        action_execution_surface_kinds: qualifiedKinds,
+        action_canary_surface_kinds: canaryKinds,
         inspection_allowed_kinds: ["run_deck"],
         inspection_canary_kinds: [],
         observation_only_surface_kinds: [],
         observation_candidate_build_fingerprints: [],
-        detail: "qualified merchant removal and run deck only"
+        detail: "qualified merchant removal and run deck only",
+        action_permission_scopes: actionPermissionScopes
       }
     };
     capabilities.surfaces = capabilities.surfaces.map((surface) => ({
       ...surface,
-      support: ["deck_removal_selection", "deck_upgrade_selection", "combat_turn"].includes(surface.kind)
+      support: qualifiedKinds.includes(surface.kind)
         ? "qualified_exact_build"
-        : ["reward_claim", "card_reward_selection", "map_navigation", "treasure_room"].includes(surface.kind)
+        : canaryKinds.includes(surface.kind)
           ? "candidate_action_canary"
-        : "not_qualified_for_current_build"
+        : "not_qualified_for_current_build",
+      operations: qualifiedKinds.includes(surface.kind) || canaryKinds.includes(surface.kind)
+        ? surface.operations
+        : []
     }));
     capabilities.inspections = {
       ...capabilities.inspections,
@@ -5120,7 +5206,8 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
         inspection_canary_kinds: [],
         observation_only_surface_kinds: ["deck_removal_selection"],
         observation_candidate_build_fingerprints: ["v0.109.0|c12f634d|-840572606"],
-        detail: "static bindings only"
+        detail: "static bindings only",
+        action_permission_scopes: []
       }
     };
     candidateCapabilities.surfaces = candidateCapabilities.surfaces.map((surface) => ({
@@ -5195,9 +5282,9 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       surface_kind: "unsupported",
       surface: { kind: "unsupported", source_type: "menu", reason: "not implemented" },
       authority_handoff: {
-        status: "legacy_fallback_allowed",
+        status: "none_fail_closed",
         surface_kind: null,
-        reason: "fixture full-exact unsupported fallback"
+        reason: "fixture unsupported surface"
       },
       legal_actions: [],
       game: { ...CAPABILITIES.game, commit: "different-build" }

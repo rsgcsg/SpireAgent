@@ -39,7 +39,7 @@ export function readRuntimeConfig(env: NodeJS.ProcessEnv = process.env): Runtime
   if (thinkingMode !== "enabled" && thinkingMode !== "disabled") {
     throw new Error("DEEPSEEK_THINKING_MODE must be enabled or disabled");
   }
-  const protocolMode = env.STS2_MCP_PROTOCOL ?? "auto";
+  const protocolMode = env.STS2_MCP_PROTOCOL ?? "v2";
   if (protocolMode !== "auto" && protocolMode !== "v1" && protocolMode !== "v2") {
     throw new Error("STS2_MCP_PROTOCOL must be auto, v1, or v2");
   }

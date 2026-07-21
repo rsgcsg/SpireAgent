@@ -1,21 +1,34 @@
 # Re-SpireAgent RE-P1
 
-Re-SpireAgent is a small, independent Slay the Spire 2 agent runtime. It reads the current state from the external STS2 MCP REST adapter, negotiates Bridge v2 when available, normalizes untrusted JSON into a strongly typed current-state contract with separate semantic context and interaction surface, asks DeepSeek to select one allowed action ID, validates the selection, executes it only if the state is unchanged, waits for settlement, and records the complete evidence.
+Re-SpireAgent is a small, independent Slay the Spire 2 agent runtime. It reads
+strict Bridge v2 state from the Live Semantic Gateway REST adapter, normalizes
+untrusted JSON into a strongly typed current-state contract with separate
+semantic context and interaction Surface, asks DeepSeek to select one allowed
+action ID, validates the selection, executes it only if the state is unchanged,
+waits for the Bridge command lifecycle, and records the complete evidence.
 
 RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, shadow/live modes, policy promotion, or the old project's phase machinery. Its job is to make one decision path correct and auditable.
 
-The current strict client contract is Bridge `2.0-preview.54` on the
-source-qualified exact game identity `v0.109.0|c12f634d|-840572606`. A local
-game with the same version/commit but another assembly hash remains separately
-scoped. Re also requires the state and capabilities to agree on the exact
-loaded Modset fingerprint; an additional, failed, runtime-added, or mismatched
-Modset cannot import v2 action, Inspection, or legacy-fallback authority.
-The historical alternate-device hash `1833084275` has only explicit `event_option`,
-`event_card_acquisition`, and `map_navigation` canaries, no qualified Surface,
-and no Inspection authority. Bridge v2 remains incremental:
-bounded Surface completeness and opaque action safety are real, but unsupported root-menu choices,
-several selection variants, and total player-visible coverage are
-not complete. See [MCP state coverage](docs/MCP_STATE_COVERAGE.md).
+The current strict client contract is Bridge `2.0-preview.55` on exact game
+identity `v0.109.0|c12f634d|1833084275`. Re requires capabilities and every
+state/bundle/Inspection to agree on protocol, game identity, exact Modset
+fingerprint, Bridge assembly SHA-256, module MVID, and runtime instance. An
+additional, failed, runtime-added, or mismatched Mod cannot import action or
+Inspection authority.
+
+The current build exposes 71 explicit canary operation scopes across 23
+Surface kinds and three read-only Inspection canaries; no operation or
+Inspection is qualified. Empty permission lists never mean wildcard. Re also
+rejects legal actions outside the exact capability operation inventory.
+Historical qualification on another game hash or Bridge MVID remains
+historical evidence only. See [MCP state coverage](docs/MCP_STATE_COVERAGE.md).
+
+Preview.55 makes strict v2 the sole default connector path. `auto` is retained
+only as a strict-v2 alias; it does not probe or fall back to v1. Bridge-confirmed
+command completion is the semantic authority, while Re captures the first
+coherent successor checkpoint without trying to re-prove game business
+completion. A post-command read failure is recorded as checkpoint-pending, not
+as permission to retry an already confirmed action.
 
 Preview.46 strictly decodes typed read-only `card_previews` on visible relic,
 modifier, potion, shop-relic, and treasure-relic hover facts. These previews
@@ -77,13 +90,13 @@ actionAuthority=none`. They are polling states, not model decisions or legacy
 fallbacks. A generic missing overlay remains unsupported.
 
 ```text
-MCP raw state
+Bridge REST state
   -> NormalizedCurrentState { context + surface + actionAuthority }
   -> allowed actions
   -> versioned prompt
   -> DeepSeek strict JSON
   -> whitelist + stale-state validation
-  -> MCP action
+  -> Bridge action submission and command poll
   -> settlement polling
   -> full decision record
 ```
@@ -161,7 +174,7 @@ All values are optional except the API key for real model decisions.
 |---|---:|---|
 | `STS2_API_URL` | `http://localhost:15526` | MCP REST base URL |
 | `STS2_MCP_TIMEOUT_MS` | `5000` | State/action request timeout |
-| `STS2_MCP_PROTOCOL` | `auto` | `auto`, compatibility-only `v1`, or strict `v2` |
+| `STS2_MCP_PROTOCOL` | `v2` | strict `v2`; `auto` is a strict-v2 alias; explicit `v1` is diagnostics-only compatibility |
 | `STS2_MCP_V2_COMMAND_POLL_MS` | `75` | v2 command lifecycle poll interval |
 | `STS2_MCP_V2_COMMAND_TIMEOUT_MS` | `12000` | client guard for a submitted v2 command; timeout is unknown, never retryable |
 | `DEEPSEEK_API_KEY` | none | Secret, loaded from environment only |
@@ -280,17 +293,13 @@ RE-P1 has fixture-backed support for:
 - `menu`
 - `game_over`
 
-Bridge v2 source `preview.54` uses exact-game and exact-Modset capabilities. On the
-source-qualified v0.109 target, merchant
-removal, event/rest upgrade, ordinary combat turn, combat hand selection, and
-ordinary single-player rest plus read-only run deck are scoped-qualified; event
-card acquisition, reward, card reward, map, shop, treasure, game over, card
-  bundles, character select, root/standard single-player menus, event dialogue,
-  event option, source-bound Whispering Hollow random transform, Self-Help Book
-  enchantment, exact Headbutt/Graveblast pile selection, and exact native
-  generated-card branches are action canaries.
-Every unlisted contract is disabled even if it has historical v0.108 evidence.
-Qualification is per observed shape, not broad surface or game coverage. See
+Bridge v2 source `preview.55` uses exact-game, exact-Modset, exact Bridge
+SHA/MVID/runtime, and per-operation capabilities. The current exact v0.109
+profile has 71 explicit canary operations, three read-only Inspection
+canaries, and no qualified scope. Every unlisted operation, origin, owner, and
+Inspection is disabled even if another build or MVID has historical evidence.
+Qualification is per exact evidence scope, never broad Surface or game
+coverage. See
 [BRIDGE_V2_INTEGRATION.md](docs/BRIDGE_V2_INTEGRATION.md).
 
 `bundle_select` and future state types are intentionally unsupported until a real raw fixture and verified action protocol are available. They fail closed instead of inheriting guessed fields from the old project. See [MCP_STATE_COVERAGE.md](docs/MCP_STATE_COVERAGE.md).
@@ -309,30 +318,26 @@ The only supported public TypeScript entrypoint is `src/index.ts`. Integration r
 
 ## Current Limitations
 
-- Real v1 MCP windows have exercised event, combat, rewards, card reward, map, rest, shop, treasure, and a boss fight. This proves protocol integration, not strategic quality or universal MCP coverage. The legacy v1 `NDeckEnchantSelectScreen` confirmation endpoint acknowledged the request without advancing state; Bridge v2 now has a separate qualified opaque-action contract for that surface.
-- Bridge v2 source `preview.54` is current. Source-target exact v0.109 capabilities qualify
-  merchant removal, event/rest deck upgrade, ordinary combat turn, combat hand
-  selection, ordinary single-player rest, and read-only run deck; event card
-  acquisition, reward, card reward, map, shop, treasure, game over, card
-  bundles, character select, root/standard single-player menus, event dialogue,
-  event option, source-bound Whispering Hollow random transform, Self-Help Book
-  enchantment, exact Headbutt/Graveblast pile selection, and exact native
-  generated-card branches are explicit action canaries. Every unlisted surface
-  remains disabled or explicitly v1-owned in
-  `auto` mode. The distinct local hash `1833084275` imports only event option,
-  event card acquisition, and map-navigation canaries; everything else remains
-  fail closed.
-- Organic evidence covers the current scoped permissions only. It does not
-  qualify every selector mode, event origin, card target, treasure variant, or
-  game UI.
+- Historical v1 MCP windows exercised event, combat, rewards, card reward,
+  map, rest, shop, treasure, and a boss fight. This is historical protocol
+  evidence only. The game REST service and Re production defaults no longer
+  route actions through v1.
+- Bridge v2 source `preview.55` is current. The current exact v0.109 build has
+  no qualified operation; all executable operation scopes are explicit
+  canaries. Historical source-target qualifications do not transfer.
+  A real-game 50-Tick preview.55 run exercised 11 action kinds across seven
+  Surface kinds with fixture decisions and no command failure. It is canary
+  evidence, not DeepSeek Organic qualification.
+- Historical Organic evidence remains attached to its recorded game hash,
+  DLL SHA, MVID, runtime, and run. It does not qualify every selector mode,
+  event origin, card target, treasure variant, or current build.
 - Bridge v2 exposes one action-owning surface at a time through a centralized
   overlay-vs-room resolver. Typed diagnostics are implemented; legacy warning
   text must not be mistaken for an action-authority decision.
-- Read-only `run_deck`, `combat_piles`, and `shop_catalog` inspection code is state-bound,
-  non-executable, and excluded from the command ledger. `run_deck` is qualified
-  on the exact current build; unordered `combat_piles` is a separate read-only
-  canary; `shop_catalog` is also a current-build read-only canary. None creates
-  action authority and draw order remains hidden.
+- Read-only `run_deck`, `combat_piles`, and `shop_catalog` Inspection code is
+  state-bound, non-executable, excluded from the command ledger, and
+  canary-only on the current build. None creates action authority and draw
+  order remains hidden.
 - A full potion belt now makes a visible potion reward non-claimable and
   exposes only exact, state-bound discard operands until capacity exists. The
   discard-then-claim lifecycle passed against an organic full-belt screen.
@@ -357,10 +362,11 @@ The only supported public TypeScript entrypoint is `src/index.ts`. Integration r
 - Top-level read-only v2 `shared_state` now supplies persistent run/player HUD
   facts on Bridge-owned states and participates in state identity. It creates no
   actions; semantic Bridge states no longer merge a v1 shared sidecar.
-- The documented shop-leave inference remains only in the legacy v1 fallback.
-  A preview.14 shop state instead executes exact Bridge-advertised room actions;
-  v1 `shop.can_proceed` cannot add or authorize an action there.
-- A changed state hash proves visible state drift, not perfect semantic settlement. The watcher waits for two consecutive, identical, non-transitional observations after an action, but animation/UI edge cases still require real-game verification.
+- Historical shop-leave inference remains only in the explicit diagnostics
+  v1 adapter. It cannot add or authorize an action in strict v2.
+- Bridge Command completion proves the business witness. Re then captures a
+  coherent non-transitional checkpoint; it does not reinterpret arbitrary
+  state-hash drift as semantic completion.
 - RE-P1 is an auditable baseline, not a strong strategic player yet.
 
 The latest exact-build organic long runs are summarized in

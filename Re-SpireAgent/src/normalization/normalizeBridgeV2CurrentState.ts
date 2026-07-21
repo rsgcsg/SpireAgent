@@ -705,29 +705,11 @@ function validateAuthorityHandoff(
       "an unsupported surface cannot publish actions or claim Bridge v2 ownership"
     );
   }
-  if (handoff.status !== "legacy_fallback_allowed") return;
-
-  const scoped = capabilities.game.compatibility.status === "qualified_scoped";
-  if (scoped) {
-    const kind = handoff.surface_kind;
-    const advertised = kind
-      ? capabilities.surfaces.find((surface) => surface.kind === kind)
-      : undefined;
-    if (!kind
-        || capabilities.game.compatibility.action_execution_surface_kinds.includes(kind)
-        || capabilities.game.compatibility.action_canary_surface_kinds.includes(kind)
-        || advertised?.support !== "not_qualified_for_current_build") {
-      diagnostics.invalid(
-        "bridge_v2.authority_handoff",
-        handoff,
-        "scoped legacy fallback requires one source-resolved surface outside the qualified v2 scope"
-      );
-    }
-  } else if (capabilities.game.compatibility.status !== "supported_exact") {
+  if (handoff.status !== "none_fail_closed" || handoff.surface_kind != null) {
     diagnostics.invalid(
       "bridge_v2.authority_handoff",
       handoff,
-      "legacy fallback is forbidden for candidate, unknown, or untested build identities"
+      "an unsupported surface must retain none_fail_closed authority"
     );
   }
 }
@@ -741,6 +723,7 @@ function validateEnvelopeIdentity(
       || state.bridge.version !== capabilities.bridge.version
       || state.bridge.upstream_commit !== capabilities.bridge.upstream_commit
       || state.bridge.module_version_id !== capabilities.bridge.module_version_id
+      || state.bridge.assembly_file_sha256 !== capabilities.bridge.assembly_file_sha256
       || state.bridge.runtime_instance_id !== capabilities.bridge.runtime_instance_id) {
     diagnostics.invalid("bridge_v2.identity", state.bridge, "state and capabilities bridge identities differ");
   }
@@ -756,6 +739,10 @@ function validateEnvelopeIdentity(
       || !sameStrings(
         state.game.compatibility.action_canary_surface_kinds,
         capabilities.game.compatibility.action_canary_surface_kinds
+      )
+      || !sameActionPermissionScopes(
+        state.game.compatibility.action_permission_scopes,
+        capabilities.game.compatibility.action_permission_scopes
       )
       || !sameStrings(
         state.game.compatibility.inspection_allowed_kinds,
@@ -2038,6 +2025,11 @@ function validateScopedQualifiedIdentity(
       inspection_allowed: boolean;
       action_execution_surface_kinds: string[];
       action_canary_surface_kinds: string[];
+      action_permission_scopes: Array<{
+        surface_kind: string;
+        operation: string;
+        tier: "qualified" | "canary";
+      }>;
       inspection_allowed_kinds: string[];
       inspection_canary_kinds: string[];
       observation_only_surface_kinds: string[];
@@ -2052,6 +2044,7 @@ function validateScopedQualifiedIdentity(
       || !compatibility.action_execution_allowed
       || !compatibility.state_observation_allowed
       || compatibility.action_execution_surface_kinds.length + compatibility.action_canary_surface_kinds.length === 0
+      || compatibility.action_permission_scopes.length === 0
       || compatibility.observation_only_surface_kinds.length !== 0
       || compatibility.observation_candidate_build_fingerprints.length !== 0
       || !compatibility.tested_build_fingerprints.includes(fingerprint)) {
@@ -2059,6 +2052,24 @@ function validateScopedQualifiedIdentity(
   }
   if (compatibility.action_execution_surface_kinds.some((kind) => compatibility.action_canary_surface_kinds.includes(kind))) {
     diagnostics.invalid(`${path}.compatibility.action_scope`, compatibility, "qualified and canary action scopes must be disjoint");
+  }
+  const qualified = new Set(compatibility.action_execution_surface_kinds);
+  const canary = new Set(compatibility.action_canary_surface_kinds);
+  const scopeKeys = new Set<string>();
+  for (const scope of compatibility.action_permission_scopes) {
+    const key = `${scope.surface_kind}\u0000${scope.operation}`;
+    if (scopeKeys.has(key)) {
+      diagnostics.invalid(`${path}.compatibility.action_permission_scopes`, scope, "action permission scopes must be unique");
+    }
+    scopeKeys.add(key);
+    if ((scope.tier === "qualified" && !qualified.has(scope.surface_kind))
+        || (scope.tier === "canary" && !canary.has(scope.surface_kind))) {
+      diagnostics.invalid(
+        `${path}.compatibility.action_permission_scopes`,
+        scope,
+        "operation tier must match the explicit qualified or canary Surface scope"
+      );
+    }
   }
   if (compatibility.inspection_allowed !== (
     compatibility.inspection_allowed_kinds.length + compatibility.inspection_canary_kinds.length > 0
@@ -2127,6 +2138,10 @@ function isScopedQualifiedBuild(
       stateCompatibility.action_canary_surface_kinds,
       capabilityCompatibility.action_canary_surface_kinds
     )
+    && sameActionPermissionScopes(
+      stateCompatibility.action_permission_scopes,
+      capabilityCompatibility.action_permission_scopes
+    )
     && sameStrings(
       stateCompatibility.inspection_allowed_kinds,
       capabilityCompatibility.inspection_allowed_kinds
@@ -2141,10 +2156,21 @@ function isScopedQualifiedBuild(
   const advertisedCanary = capabilities.surfaces
     .filter((surface) => surface.support === "candidate_action_canary")
     .map((surface) => surface.kind);
+  const operationScopesBySurface = new Map<string, string[]>();
+  for (const scope of capabilityCompatibility.action_permission_scopes) {
+    const operations = operationScopesBySurface.get(scope.surface_kind) ?? [];
+    operations.push(scope.operation);
+    operationScopesBySurface.set(scope.surface_kind, operations);
+  }
+  const advertisedOperationsMatch = capabilities.surfaces.every((surface) => {
+    const expected = operationScopesBySurface.get(surface.kind) ?? [];
+    return sameStrings(surface.operations, expected);
+  });
   return advertisedQualified.length === qualifiedKinds.size
     && advertisedQualified.every((kind) => qualifiedKinds.has(kind))
     && advertisedCanary.length === canaryKinds.size
-    && advertisedCanary.every((kind) => canaryKinds.has(kind));
+    && advertisedCanary.every((kind) => canaryKinds.has(kind))
+    && advertisedOperationsMatch;
 }
 
 function isObservationOnlyCandidate(
@@ -2231,6 +2257,18 @@ function gameFingerprint(game: { version?: string | null; commit?: string | null
 
 function sameStrings(left: readonly string[], right: readonly string[]): boolean {
   return [...left].sort().join("\u0000") === [...right].sort().join("\u0000");
+}
+
+function sameActionPermissionScopes(
+  left: ReadonlyArray<{ surface_kind: string; operation: string; tier: string }>,
+  right: ReadonlyArray<{ surface_kind: string; operation: string; tier: string }>
+): boolean {
+  const keys = (scopes: ReadonlyArray<{ surface_kind: string; operation: string; tier: string }>) =>
+    scopes
+      .map((scope) => `${scope.surface_kind}\u0000${scope.operation}\u0000${scope.tier}`)
+      .sort()
+      .join("\u0001");
+  return keys(left) === keys(right);
 }
 
 function projectEventContext(context: { event_id: string; name?: string | null; ancient: boolean; in_dialogue: boolean; body?: string | null }): SemanticContext {
