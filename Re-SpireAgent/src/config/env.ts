@@ -1,5 +1,9 @@
+import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import { config as loadDotEnv } from "dotenv";
+
+/** Stable for both `tsx src/...` and compiled `dist/...` entrypoints. */
+export const RE_PROJECT_ROOT = resolve(fileURLToPath(new URL("../..", import.meta.url)));
 
 export interface RuntimeConfig {
   mcp: {
@@ -28,12 +32,12 @@ export interface RuntimeConfig {
   };
 }
 
-export function loadEnvironment(cwd = process.cwd()): void {
-  loadDotEnv({ path: resolve(cwd, ".env.local"), override: false, quiet: true });
-  loadDotEnv({ path: resolve(cwd, ".env"), override: false, quiet: true });
+export function loadEnvironment(projectRoot = RE_PROJECT_ROOT): void {
+  loadDotEnv({ path: resolve(projectRoot, ".env.local"), override: false, quiet: true });
+  loadDotEnv({ path: resolve(projectRoot, ".env"), override: false, quiet: true });
 }
 
-export function readRuntimeConfig(env: NodeJS.ProcessEnv = process.env): RuntimeConfig {
+export function readRuntimeConfig(env: NodeJS.ProcessEnv = process.env, projectRoot = RE_PROJECT_ROOT): RuntimeConfig {
   const thinkingMode = env.DEEPSEEK_THINKING_MODE ?? "disabled";
   if (thinkingMode !== "enabled" && thinkingMode !== "disabled") {
     throw new Error("DEEPSEEK_THINKING_MODE must be enabled or disabled");
@@ -64,7 +68,7 @@ export function readRuntimeConfig(env: NodeJS.ProcessEnv = process.env): Runtime
       thinkingMode
     },
     runtime: {
-      dataDir: resolve(env.AGENT_DATA_DIR ?? "data/runs"),
+      dataDir: resolve(projectRoot, env.AGENT_DATA_DIR ?? "data/runs"),
       evidenceProvenance,
       maxTicks: positiveInteger(env.AGENT_MAX_TICKS, 100, "AGENT_MAX_TICKS"),
       tickDelayMs: nonNegativeInteger(env.AGENT_TICK_DELAY_MS, 250, "AGENT_TICK_DELAY_MS"),

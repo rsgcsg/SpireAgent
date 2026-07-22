@@ -202,7 +202,7 @@ All values are optional except the API key for real model decisions.
 | `DEEPSEEK_TIMEOUT_MS` | `30000` | Model request timeout |
 | `DEEPSEEK_MAX_OUTPUT_TOKENS` | `320` | Short JSON output guard |
 | `DEEPSEEK_THINKING_MODE` | `disabled` | Explicit provider thinking mode |
-| `AGENT_DATA_DIR` | `data/runs` | Local evidence directory |
+| `AGENT_DATA_DIR` | `data/runs` under `Re-SpireAgent/` | Local evidence directory; relative paths are project-root anchored |
 | `AGENT_EVIDENCE_PROVENANCE` | `unrecorded` | `ordinary_gameplay`, `operator_positioned`, `console_assisted`, `fixture`, or `unrecorded`; metadata only, never qualification authority |
 | `AGENT_MAX_TICKS` | `100` | Default run limit |
 | `AGENT_TICK_DELAY_MS` | `250` | Delay between decisions |
@@ -243,6 +243,42 @@ npm run agent:tick -- --dry-run
 `npm run agent:tick -- --help` is non-actionable and prints usage. Unknown
 command options are rejected before the runtime, provider, or game adapter is
 created.
+
+Read aggregate Prompt size, Surface, state-component, and duplicated-fact
+statistics from ignored local records without opening the Gateway, calling a
+provider, or printing Prompt contents:
+
+```bash
+npm run agent:prompt-audit -- --limit-runs 5
+npm run agent:prompt-audit -- --run-id <run-id>
+```
+
+This is an architecture diagnostic, not replay, qualification evidence, or a
+compact-prompt runtime mode.
+
+Run one **provider-costing but non-executing** comparison over an exact recorded
+Prompt. It reads that artifact, calls DeepSeek once with the recorded full
+Prompt and once with the deterministic shadow projection, then emits only
+redacted outcome/latency/usage summaries. It never opens the Gateway, creates a
+run, submits an action, or writes a comparison artifact:
+
+```bash
+npm run agent:prompt-shadow-compare -- --run-id <run-id> --decision-id <decision-id>
+```
+
+Action agreement is a diagnostic only. A paired sample cannot prove strategic
+correctness or authorize a compact Prompt. The output's byte delta is signed,
+because small Prompts can grow when projection metadata costs more than it
+removes.
+
+Before interpreting a disagreement, establish bounded full-Prompt provider
+variation for the same recorded observation. This is also non-executing and
+hard-limited to two through five calls:
+
+```bash
+npm run agent:prompt-repeat-baseline -- --run-id <run-id> --decision-id <decision-id> --samples 3 --variant full
+npm run agent:prompt-repeat-baseline -- --run-id <run-id> --decision-id <decision-id> --samples 3 --variant shadow
+```
 
 Run one real decision:
 
@@ -286,7 +322,7 @@ npm run check
 Each run is local and append-only:
 
 ```text
-data/runs/<run-id>/
+Re-SpireAgent/data/runs/<run-id>/
   metadata.json
   decisions.jsonl
   snapshots/<decision-id>-pre.raw.json

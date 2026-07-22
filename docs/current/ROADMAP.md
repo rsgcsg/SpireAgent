@@ -25,6 +25,13 @@ surface, preview, and read-only inspection. Do not expose hidden RNG, draw
 order, future rewards/events, or private game state. Refactor only after
 multiple source/runtime examples demonstrate genuine shared mechanics.
 
+The current full-evidence Prompt remains the only runtime Prompt. Re's
+read-only `shadowStrategyProjection` is an offline measurement tool, not a
+Gateway protocol, action authority, compact-Prompt rollout, or evidence of
+strategy quality. It must pass paired provider shadow and semantic review
+before any Prompt-path change is considered. The first generic v1 projection
+failed that evidence gate on reward scopes and is rejected for runtime use.
+
 ## Gate 3: Secure Local Connector Alpha
 
 Introduce Gateway-authenticated sessions, a Gateway-enforced single-controller

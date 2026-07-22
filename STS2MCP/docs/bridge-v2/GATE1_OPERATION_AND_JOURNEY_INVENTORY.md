@@ -35,7 +35,7 @@ they do not silently fall back.
 
 | Journey | Current v2 boundary | Current exact-build evidence | Remaining Gate 1 work |
 |---|---|---|---|
-| root menu -> standard run setup | `main_menu`, `singleplayer_menu`, `character_select` | exact Re canaries reached a real run under one SHA/MVID/runtime identity | first-run tutorial and abandon confirmation remain unsupported; current operations are canary, not broadly qualified |
+| root menu -> standard run setup | `main_menu`, `singleplayer_menu`, `character_select` | exact Re canaries reached a real run; final-artifact recheck repeated `main_menu -> singleplayer_menu -> main_menu` with command completion and one-poll successors | first-run tutorial and abandon confirmation remain unsupported; current operations are canary, not broadly qualified |
 | run start -> Neow -> map | `event_option`, then `map_navigation` | 2026-07-22 exact Re journey selected Winged Boots, proceeded, and reached an actionable map | more event origins remain evidence debt |
 | map -> ordinary combat | `choose_map_node` -> `combat_turn` | 2026-07-22 exact Re journey settled after 9 polls / about 1.9 seconds | long-run diversity and unusual room transitions remain |
 | ordinary combat | `combat_turn` plus bounded child selectors | current contract is qualified for the exact build | uncommon card targets, phase transitions, generated choices, and pile-selection sources remain bounded debt |

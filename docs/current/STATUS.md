@@ -44,13 +44,25 @@ witnesses. The contract remains canary-only. See the
 [defect closeout](../../STS2MCP/docs/bridge-v2/GATE1_REAL_RUN_DEFECT_CLOSEOUT_2026-07-22.md).
 
 A read-only cross-component visibility audit found no new action-authority
-defect and changed no runtime status. It did find that Re currently sends the
+defect and changed no runtime status. It found that Re currently sends the
 complete normalized evidence state to the model, eagerly reads all advertised
-Inspections, and duplicates some Inspection/action representations. The next
-architecture investigation is a measured, shadow-only Prompt projection
-comparison; no projection, lazy Inspection, or model detail-request path is
-approved. See the
+Inspections, and duplicates some Inspection/action representations. A read-only
+Prompt audit plus deterministic `shadowStrategyProjection` v1 now measure that
+structure from recorded artifacts: the latest local five-run sample reduced
+median serialized Prompt bytes from `37,274` to `21,182`. This is not paired
+provider evidence and has not changed the live Prompt, lazy Inspection policy,
+or model detail-request behavior. Four first provider-shadow pairs were all
+valid JSON but had only two action agreements, including strategic reward/card
+selection disagreements. Repeat baselines then showed stable full-vs-shadow
+reward divergence and added card-reward shadow variation, so the generic v1
+projection is rejected as a cross-Surface candidate. The next investigation,
+if justified, is a single low-risk scope with protected semantic review; it is
+not more blind provider sampling. See the
 [visibility audit](audits/VISIBILITY_AND_OBSERVATION_ARCHITECTURE_AUDIT_2026-07-22.md).
+
+Re also now anchors `.env.local` loading and the default `AGENT_DATA_DIR` to
+`Re-SpireAgent/`, eliminating caller-working-directory-dependent evidence roots.
+Existing root-level local artifacts are not migrated or reclassified automatically.
 
 ## Explicit Non-Claims
 

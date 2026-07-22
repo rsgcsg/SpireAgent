@@ -4,7 +4,10 @@ export type CliInvocation =
   | { readonly command: "connector-canary"; readonly actionId: string }
   | { readonly command: "tick"; readonly dryRun: boolean }
   | { readonly command: "run"; readonly dryRun: boolean; readonly maxTicks?: number; readonly delayMs?: number }
-  | { readonly command: "replay"; readonly runId?: string; readonly decisionId?: string };
+  | { readonly command: "replay"; readonly runId?: string; readonly decisionId?: string }
+  | { readonly command: "prompt-audit"; readonly runId?: string; readonly limitRuns?: number }
+  | { readonly command: "prompt-shadow-compare"; readonly runId: string; readonly decisionId: string }
+  | { readonly command: "prompt-repeat-baseline"; readonly runId: string; readonly decisionId: string; readonly samples: number; readonly variant: "full" | "shadow" };
 
 /** Parses CLI arguments before any provider, adapter, or action-capable runtime is created. */
 export function parseCliInvocation(args: readonly string[]): CliInvocation {
@@ -41,6 +44,33 @@ export function parseCliInvocation(args: readonly string[]): CliInvocation {
         ...(parsed.values.get("--run-id") ? { runId: parsed.values.get("--run-id") } : {}),
         ...(parsed.values.get("--decision-id") ? { decisionId: parsed.values.get("--decision-id") } : {})
       };
+    }
+    case "prompt-audit": {
+      const parsed = parseFlags(command, flags, new Set(["--run-id", "--limit-runs"]), new Set(["--run-id", "--limit-runs"]));
+      return {
+        command,
+        ...(parsed.values.get("--run-id") ? { runId: parsed.values.get("--run-id") } : {}),
+        ...(parsed.values.get("--limit-runs")
+          ? { limitRuns: parsePositiveInteger("--limit-runs", parsed.values.get("--limit-runs")!) }
+          : {})
+      };
+    }
+    case "prompt-shadow-compare": {
+      const parsed = parseFlags(command, flags, new Set(["--run-id", "--decision-id"]), new Set(["--run-id", "--decision-id"]));
+      const runId = parsed.values.get("--run-id");
+      const decisionId = parsed.values.get("--decision-id");
+      if (!runId || !decisionId) throw new Error("prompt-shadow-compare requires --run-id and --decision-id");
+      return { command, runId, decisionId };
+    }
+    case "prompt-repeat-baseline": {
+      const parsed = parseFlags(command, flags, new Set(["--run-id", "--decision-id", "--samples", "--variant"]), new Set(["--run-id", "--decision-id", "--samples", "--variant"]));
+      const runId = parsed.values.get("--run-id");
+      const decisionId = parsed.values.get("--decision-id");
+      const samples = parsed.values.get("--samples");
+      if (!runId || !decisionId || !samples) throw new Error("prompt-repeat-baseline requires --run-id, --decision-id, and --samples");
+      const variant = parsed.values.get("--variant") ?? "full";
+      if (variant !== "full" && variant !== "shadow") throw new Error("--variant must be full or shadow");
+      return { command, runId, decisionId, samples: parseBoundedInteger("--samples", samples, 2, 5), variant };
     }
     default:
       throw new Error(`Unknown command: ${command}`);
@@ -85,5 +115,13 @@ function parseFlags(
 function parsePositiveInteger(name: string, raw: string): number {
   const value = Number(raw);
   if (!Number.isInteger(value) || value <= 0) throw new Error(`${name} must be a positive integer`);
+  return value;
+}
+
+function parseBoundedInteger(name: string, raw: string, minimum: number, maximum: number): number {
+  const value = Number(raw);
+  if (!Number.isInteger(value) || value < minimum || value > maximum) {
+    throw new Error(`${name} must be an integer from ${minimum} through ${maximum}`);
+  }
   return value;
 }

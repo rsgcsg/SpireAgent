@@ -269,6 +269,71 @@ bytes。`currentState` 主要分布为：
 Inspection facts；治理字段较小但仍不应默认成为策略输入。Prompt 大小本身
 也不证明决策质量下降，必须通过 paired shadow comparison 验证。
 
+### 8.1 审计后的离线实现状态（2026-07-22）
+
+本审计提出的 V-1 与 V-2 的**结构测量部分**已经以最小、无写入方式落地：
+
+- `npm run agent:prompt-audit` 只读 ignored Prompt artifact，不访问 Gateway、
+  不调用 provider、不打印 Prompt 正文；
+- `shadowStrategyProjection` v1 从同一记录生成确定性 compact candidate，带
+  source normalized-state hash 与 projection hash；
+- 它仅移除治理/evidence 字段、保留小型 information boundary、并且只在 JSON
+  完全相同的情况下去重 player 与 Inspection 的 pile 事实及 Surface action
+  summary；full normalized evidence 没有被修改或丢弃；
+- 最新相同五-run 本机样本的 compact candidate 为 min `8,904`、median
+  `21,182`、p95 `25,991`、max `29,788` bytes；相对 full Prompt 的 median
+  savings 为 `17,237` bytes。
+
+这不是 V-2 的通过结论。该结果没有调用同一 provider，没有比较 JSON validity、
+action agreement、reason omission、latency 或人工语义评审；也没有写入 runtime
+record、改变 live Prompt、Inspection 策略、动作权或 Gateway 协议。下一步仍是
+有界 paired provider shadow comparison；若它显示关键事实或决策质量下降，应拒绝
+或缩小 projection，而不是上线 compact Prompt。
+
+测试还保留一个必要反例：极小 Prompt 可能因 projection metadata 而变大。因此
+`savedUserPromptBytes` 是带符号的测量值，不是“compact 必然更小”的合同。
+
+### 8.2 首轮 provider shadow 结果（2026-07-22）
+
+在同一 ignored recorded run 的四条 exact recorded Prompt 上，使用相同
+`deepseek-v4-flash`、`thinking=disabled`、`maxOutputTokens=320` 配置执行了
+full 与 projection 的 sequential、non-executing provider calls。所有八个 final
+attempt 都为 `valid_json`，`finishReason=stop`，没有 format retry 或 Gateway
+request。输入 token 从合计 `40,763` 降至 `24,709`（约 `39%`），serialized user
+Prompt 从 `129,672` 降至 `75,106` bytes（约 `42%`）。
+
+| scope | decision | action agreement | 结论 |
+|---|---|---:|---|
+| `combat:combat_turn` | `decision-000001-mrw04hzz-ssvese` | yes | 两者均选 `end_turn` |
+| `reward_flow:reward_claim` | `decision-000016-mrw05kdt-nd7h0t` | no | full 选 card add reward；projection 选 stolen-card reward |
+| `reward_flow:card_reward_selection` | `decision-000017-mrw05m0r-gsp3a5` | no | full 选 `Gunk Up+`；projection 选 `Leap+` |
+| `map:map_navigation` | `decision-000023-mrw05xbe-o1s208` | yes | 两者均选同一 monster node |
+
+这条结果**拒绝**任何当前 compact Prompt rollout。两种 Prompt 的调用是顺序样本，
+没有 provider seed，也没有同一 full Prompt 的重复基线，因此不能诚实地把两次
+不一致归因给 projection；但 2/4 的战略性 action 差异足以证明目前没有安全的
+“agreement 已验证”主张。下一项仅限离线实验：对相同 full Prompt 取得受限的
+repeat baseline，再比较 projection disagreement 是否超过 provider 自身波动，并
+做不输出 reason 正文的人工语义 review。它仍不影响 live Prompt、Gateway、
+Inspection policy 或 action authority。
+
+### 8.3 受限 repeat baseline 后的裁决（2026-07-22）
+
+为了避免把 provider 自身波动误判为 projection 效果，对两条不一致记录的 full 与
+shadow 各执行了三次、同配置、non-executing repeat。所有 12 个 final attempt 都
+是 `valid_json` 与 `finishReason=stop`。
+
+| scope | full repeat | shadow repeat | 裁决 |
+|---|---|---|---|
+| `reward_flow:reward_claim` | `3/3` 选 card-add reward | `3/3` 选 stolen-card reward | v1 projection 在此 scope 稳定改变选择；拒绝使用 |
+| `reward_flow:card_reward_selection` | `3/3` 选 `Gunk Up+` | `2/3` 选 `Leap+`，`1/3` 选 `Gunk Up+` | projection 既改变 dominant choice 又增加可见波动；拒绝使用 |
+
+这仍不是“full 选择一定战略正确”的证明，也不解释哪个被省略事实造成变化；但它
+已经足以**拒绝 `shadowStrategyProjection` v1 作为跨 Surface compact Prompt
+candidate**。不要继续扩大 provider sampling。若未来重新研究，必须从一个单独、
+低风险、可解释的 scope 开始，保留完整 evidence 并通过 reason 的受控语义审阅
+定位具体 omission；不能用当前通用投影继续试探或接入 live。
+
 ## 9. 按严重程度排序的问题
 
 ### P0 - Full evidence 与 strategy input 没有边界（`E4`）

@@ -19,7 +19,12 @@ Gate 0 is now closed on the exact loaded artifact recorded in
 [the Gate 0 closeout](CONNECTOR_G0_CLOSEOUT_2026-07-22.md). Re completed
 `main_menu -> singleplayer_menu -> main_menu` through advertised opaque
 actions, Bridge command completion, and coherent successor observations under
-one SHA/MVID/runtime identity.
+one SHA/MVID/runtime identity. A later current-runtime recheck on the final
+SHA `61e659c7...de97`, MVID `35c2e71e-66bc-4423-9191-3f00c404c2ad`, and runtime
+`7d19e21d5ee84105b32988aabadacc69` repeated that exact two-action round trip:
+both commands settled after one poll. It rechecks the existing `main_menu` and
+`singleplayer_menu` canary boundary only; it does not widen permission or
+promote a tier.
 
 ## Required Repair Order
 
