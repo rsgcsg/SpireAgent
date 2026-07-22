@@ -145,7 +145,8 @@ internal static class BridgeV2Runtime
         });
         BridgeVisibilityProjection visibility = BridgeVisibilityCatalog.Build(
             draft,
-            shared.State != null);
+            shared.State != null,
+            ShopSurfaceFacts.TryGetCurrent(out _, out _, out _));
         BridgeContractInstanceShadow contractInstanceShadow =
             BridgeContractInstanceShadowBuilder.Build(draft);
         compositeSignature = BridgeHash.Object(new

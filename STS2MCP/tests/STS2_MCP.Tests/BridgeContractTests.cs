@@ -743,7 +743,10 @@ public sealed class BridgeContractTests
             Array.Empty<string>(),
             Array.Empty<BridgeActionDraft>());
 
-        BridgeVisibilityProjection projection = BridgeVisibilityCatalog.Build(draft, activeRunSharedStateAvailable: true);
+        BridgeVisibilityProjection projection = BridgeVisibilityCatalog.Build(
+            draft,
+            activeRunSharedStateAvailable: true,
+            shopCatalogSourceAvailable: false);
 
         Assert.Equal(new[] { "run_deck", "combat_piles" }, projection.Visibility.AvailableInspections);
         Assert.Equal("partial_catalog", projection.Visibility.PlayerVisibleClosureStatus);
@@ -786,7 +789,10 @@ public sealed class BridgeContractTests
             Array.Empty<string>(),
             Array.Empty<BridgeActionDraft>());
 
-        BridgeVisibilityProjection projection = BridgeVisibilityCatalog.Build(draft, activeRunSharedStateAvailable: true);
+        BridgeVisibilityProjection projection = BridgeVisibilityCatalog.Build(
+            draft,
+            activeRunSharedStateAvailable: true,
+            shopCatalogSourceAvailable: true);
 
         Assert.Equal(new[] { "run_deck", "shop_catalog" }, projection.Visibility.AvailableInspections);
         BridgeInspectionCatalogEntry catalog = projection.InspectionCatalog.Single(entry => entry.Kind == "shop_catalog");
@@ -794,6 +800,42 @@ public sealed class BridgeContractTests
         Assert.Equal("canary", catalog.Availability);
         Assert.Equal("fixed_ui_slots", catalog.OrderingSemantics);
         Assert.False(catalog.CreatesActionAuthority);
+    }
+
+    [Fact]
+    public void ShopVisibilityCatalogDoesNotAdvertiseWithoutExactMerchantBinding()
+    {
+        var compatibility = new CompatibilityAssessment(
+            "qualified_scoped",
+            new[] { "0.109.0" },
+            new[] { "build" },
+            ActionExecutionAllowed: true,
+            StateObservationAllowed: true,
+            InspectionAllowed: true,
+            ActionExecutionSurfaceKinds: Array.Empty<string>(),
+            ActionCanarySurfaceKinds: new[] { "shop_room" },
+            InspectionAllowedKinds: new[] { "run_deck" },
+            InspectionCanaryKinds: new[] { "shop_catalog" },
+            ObservationOnlySurfaceKinds: Array.Empty<string>(),
+            ObservationCandidateBuildFingerprints: Array.Empty<string>(),
+            Detail: "test");
+        var draft = new BridgeObservationDraft(
+            "sig",
+            "ready",
+            new ShopBridgeContext("shop"),
+            new ShopRoomSurface("shop_room", "room-a", CanOpenInventory: true, CanProceed: true),
+            new StateCompleteness("complete", "derived", Array.Empty<string>(), Array.Empty<string>()),
+            new GameBuildIdentity("v0.109.0", "commit", "branch", 1, compatibility),
+            Array.Empty<string>(),
+            Array.Empty<BridgeActionDraft>());
+
+        BridgeVisibilityProjection projection = BridgeVisibilityCatalog.Build(
+            draft,
+            activeRunSharedStateAvailable: true,
+            shopCatalogSourceAvailable: false);
+
+        Assert.Equal(new[] { "run_deck" }, projection.Visibility.AvailableInspections);
+        Assert.DoesNotContain(projection.InspectionCatalog, entry => entry.Kind == "shop_catalog");
     }
 
     [Fact]
@@ -1463,13 +1505,14 @@ public sealed class BridgeContractTests
         object otherDiscard = new();
         object oldDraw = new();
         object wrongTop = new();
+        object playedHeadbutt = new();
 
         Assert.True(HeadbuttCombatPileWitness.Selected(
             sourceCompleted: true,
             surfaceClosed: true,
             new[] { selected, otherDiscard },
             new[] { oldDraw },
-            new[] { otherDiscard },
+            new[] { otherDiscard, playedHeadbutt },
             new[] { selected, oldDraw },
             selected));
         Assert.False(HeadbuttCombatPileWitness.Selected(
@@ -1496,13 +1539,14 @@ public sealed class BridgeContractTests
         object selected = new();
         object otherDiscard = new();
         object handCard = new();
+        object playedGraveblast = new();
 
         Assert.True(GraveblastCombatPileWitness.Selected(
             sourceCompleted: true,
             surfaceClosed: true,
             new[] { selected, otherDiscard },
             new[] { handCard },
-            new[] { otherDiscard },
+            new[] { otherDiscard, playedGraveblast },
             new[] { handCard, selected },
             selected,
             maxHandSize: 10));

@@ -145,6 +145,8 @@ internal static class CombatPileSelectionCardPlayPatch
 
 internal static class HeadbuttCombatPileWitness
 {
+    // The played source card reaches its own post-play pile after this baseline,
+    // so aggregate pile counts are not an invariant of the selected-card move.
     internal static bool Selected<T>(
         bool sourceCompleted,
         bool surfaceClosed,
@@ -159,9 +161,7 @@ internal static class HeadbuttCombatPileWitness
         && !ContainsReference(baselineDraw, selectedCard)
         && !ContainsReference(currentDiscard, selectedCard)
         && currentDraw.Count > 0
-        && ReferenceEquals(currentDraw[0], selectedCard)
-        && currentDiscard.Count + currentDraw.Count
-            == baselineDiscard.Count + baselineDraw.Count;
+        && ReferenceEquals(currentDraw[0], selectedCard);
 
     private static bool ContainsReference<T>(IEnumerable<T> cards, T expected) where T : class =>
         cards.Any(card => ReferenceEquals(card, expected));
@@ -169,6 +169,8 @@ internal static class HeadbuttCombatPileWitness
 
 internal static class GraveblastCombatPileWitness
 {
+    // As above, completion proves the exact selected-card destination rather
+    // than imposing a false aggregate count invariant on the source card.
     internal static bool Selected<T>(
         bool sourceCompleted,
         bool surfaceClosed,
@@ -189,9 +191,7 @@ internal static class GraveblastCombatPileWitness
                && surfaceClosed
                && ContainsReference(baselineDiscard, selectedCard)
                && !ContainsReference(baselineHand, selectedCard)
-               && reachedExpectedPile
-               && currentDiscard.Count + currentHand.Count
-                   == baselineDiscard.Count + baselineHand.Count;
+               && reachedExpectedPile;
     }
 
     private static bool ContainsReference<T>(IEnumerable<T> cards, T expected) where T : class =>

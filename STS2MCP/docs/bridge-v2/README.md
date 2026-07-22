@@ -11,6 +11,7 @@ preview closeouts.
 - [Current status](CURRENT_STATUS.md)
 - [Source-truth repair closeout](SOURCE_TRUTH_REPAIR_CLOSEOUT_2026-07-22.md)
 - [Connector Gate 0 closeout](CONNECTOR_G0_CLOSEOUT_2026-07-22.md)
+- [Gate 1 real-run defect closeout](GATE1_REAL_RUN_DEFECT_CLOSEOUT_2026-07-22.md)
 - [Real connector architecture audit and migration plan](REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md)
 - [Protocol](PROTOCOL.md)
 - [Observation policy](OBSERVATION_POLICY.md)

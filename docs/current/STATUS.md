@@ -36,6 +36,13 @@ to distinguish v2 purpose splits from real fail-closed gaps. Do not infer
 qualification from implementation or widen scoped permissions without current
 exact-build evidence.
 
+Fresh Re runs also repaired an impossible Headbutt/Graveblast completion
+invariant, inconsistent shop Inspection advertisement, and raw power
+localization templates. Final-artifact Organic runs completed Headbutt draw-top
+three times and Graveblast hand selection twice with exact-card completion
+witnesses. The contract remains canary-only. See the
+[defect closeout](../../STS2MCP/docs/bridge-v2/GATE1_REAL_RUN_DEFECT_CLOSEOUT_2026-07-22.md).
+
 ## Explicit Non-Claims
 
 - Bridge v2 is not yet complete-game coverage or full v1 retirement.

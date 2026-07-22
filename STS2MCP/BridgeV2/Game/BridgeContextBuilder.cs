@@ -9,6 +9,7 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Merchant;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.Potions;
+using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Events;
 using MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine;
@@ -186,12 +187,18 @@ internal static class BridgeContextBuilder
                 continue;
             try
             {
+                HoverTip hoverTip = power.HoverTips
+                    .OfType<HoverTip>()
+                    .FirstOrDefault(tip => tip.Id == power.Id.ToString());
+                string? description = string.IsNullOrWhiteSpace(hoverTip.Description)
+                    ? McpMod.StripRichTextTags(power.DumbHoverTip.Description)
+                    : McpMod.StripRichTextTags(hoverTip.Description);
                 result.Add(new VisibleStatus(
                     power.Id.Entry,
                     McpMod.SafeGetText(() => power.Title),
                     power.DisplayAmount,
                     power.Type.ToString(),
-                    McpMod.SafeGetText(() => power.SmartDescription)));
+                    description));
             }
             catch
             {

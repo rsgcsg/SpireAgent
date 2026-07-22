@@ -98,14 +98,14 @@ an actionable map.
 
 After the Organic canary, replacement definition IDs were changed from local
 literals to the exact `ModelDb` definitions without changing protocol behavior.
-The resulting final source artifact was separately built, installed, and
+The resulting post-Wood source artifact was separately built, installed, and
 Steam-loaded as SHA
 `c9127d63c224f354d28baf88c5e9ba62bb36313e00054f7bbc411cd62facb117`,
 MVID `d5ae09de-cea9-4faf-818c-919f828c7eed`, runtime
 `aa43cb8b6bff4aa6871962caacd53802`. That proves installation and load identity,
 not transfer of the prior Organic action evidence to the new artifact.
 
-The same cold start exposed a Re supervision defect: native `continue_run`
+That artifact's cold start exposed a Re supervision defect: native `continue_run`
 loading could outlive the ordinary settlement budget. Re now classifies
 `continue_run` and `embark_standard_run` with map navigation as bounded long
 transitions. A real Re canary on the final artifact settled `continue_run` in

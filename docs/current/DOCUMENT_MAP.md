@@ -28,6 +28,9 @@ Component-owned truth:
   owns current operation-level v1 retirement and ordinary-journey blockers.
 - [Wood Carvings Gate 1 closeout](../../STS2MCP/docs/bridge-v2/GATE1_WOOD_CARVINGS_CLOSEOUT_2026-07-22.md)
   records the first organic fail-closed gap and its preview.56 canary closure.
+- [Gate 1 real-run defect closeout](../../STS2MCP/docs/bridge-v2/GATE1_REAL_RUN_DEFECT_CLOSEOUT_2026-07-22.md)
+  records the Headbutt completion, shop Inspection, and power-text repairs from
+  fresh Re runs, including exact evidence limitations.
 
 ## Historical Material
 

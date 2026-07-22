@@ -18,7 +18,8 @@ internal static class BridgeVisibilityCatalog
 {
     public static BridgeVisibilityProjection Build(
         BridgeObservationDraft draft,
-        bool activeRunSharedStateAvailable)
+        bool activeRunSharedStateAvailable,
+        bool shopCatalogSourceAvailable)
     {
         var entries = new List<BridgeInspectionCatalogEntry>();
         foreach (string kind in BridgeSurfacePermission.PermittedInspectionKinds(
@@ -53,7 +54,9 @@ internal static class BridgeVisibilityCatalog
                     new[] { "combat_planning", "discard_sensitive_effect", "exhaust_sensitive_effect" },
                     new[] { "draw_pile_true_order" }));
             }
-            else if (kind == BridgeInspectionBuilder.ShopCatalogKind && draft.Context.Kind == "shop")
+            else if (kind == BridgeInspectionBuilder.ShopCatalogKind
+                     && draft.Context.Kind == "shop"
+                     && shopCatalogSourceAvailable)
             {
                 entries.Add(new BridgeInspectionCatalogEntry(
                     kind,

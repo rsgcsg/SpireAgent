@@ -46,13 +46,26 @@ confirm, event successor, and run-deck post-state under loaded SHA
 `f881814b6b7a4492849d069d3236261e`. This is canary evidence, not qualification;
 see [the closeout](GATE1_WOOD_CARVINGS_CLOSEOUT_2026-07-22.md).
 
-The final source artifact replaces local replacement-ID literals with exact
-`ModelDb` identities and is Steam-loaded as SHA `c9127d63...b117`, MVID
+The post-Wood intermediate artifact replaced local replacement-ID literals with
+exact `ModelDb` identities and was Steam-loaded as SHA `c9127d63...b117`, MVID
 `d5ae09de-cea9-4faf-818c-919f828c7eed`, runtime
-`aa43cb8b6bff4aa6871962caacd53802`. The earlier Organic canary does not transfer
-to this artifact. A separate final-artifact Re canary proved `continue_run`
+`aa43cb8b6bff4aa6871962caacd53802`. The earlier Organic canary did not transfer
+to that artifact. A separate Re canary proved `continue_run`
 settlement in 11 polls / 2333 ms after Re assigned native load actions the
 bounded long-transition budget; no Gateway permission or completion changed.
+
+Fresh user runs then exposed three connector defects: impossible Headbutt/
+Graveblast aggregate-count completion, same-state shop Inspection advertisement
+without its exact merchant binding, and unexpanded player-visible power text.
+All three are repaired without changing permission scope. The current final
+artifact is loaded as SHA `61e659c7...de97`, MVID
+`35c2e71e-66bc-4423-9191-3f00c404c2ad`, runtime
+`7d19e21d5ee84105b32988aabadacc69`. A 100-decision predecessor-artifact run
+proved the shop and dynamic-text paths; final-artifact runs then reconfirmed
+dynamic text and command lifecycle and completed Headbutt draw-top three times
+plus Graveblast hand selection twice with exact-card semantic witnesses. These
+are current-build combat-pile canary results, not a tier promotion. See the
+[real-run defect closeout](GATE1_REAL_RUN_DEFECT_CLOSEOUT_2026-07-22.md).
 
 The detailed audit and migration sequence is
 [REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md](REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md).
@@ -81,8 +94,10 @@ a current v2 permission claim.
 
 ## Next High-Value Work
 
-Continue the resumed exact-identity journey from its current event/map path.
-The next known fail-closed candidates remain Crystal Sphere and manual potion
-discard outside reward handling. Stop at the next real unsupported semantic
-variant and close only that bounded contract. Do not convert canary support
-into qualification without repeated current exact-build Organic evidence.
+Continue the exact-identity journey until the next real unsupported semantic
+variant. The next known fail-closed candidates remain Crystal Sphere and manual
+potion discard outside reward handling. Track the recurring combat stale-state
+pre-dispatch rejections as a throughput observation, but do not weaken
+state-bound validation or retry rejected actions. Close only bounded contracts
+and do not convert canary support into qualification without repeated current
+exact-build Organic evidence.
