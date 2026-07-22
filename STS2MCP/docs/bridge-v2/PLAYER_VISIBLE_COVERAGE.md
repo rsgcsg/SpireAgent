@@ -6,6 +6,9 @@
 > per-operation Organic Qualification. Existing percentage estimates are planning
 > estimates, not measured player-visible closure or v1 parity. See the
 > [real connector audit and migration plan](REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md).
+> Exact identities below are evidence scopes, not necessarily the currently
+> loaded artifact. Current loaded identity and Gate status are owned by
+> [Bridge v2 Current Status](CURRENT_STATUS.md).
 
 Current Gate 0 execution evidence is scoped to exact game identity
 `v0.109.0|c12f634d|-840572606`, Gateway SHA

@@ -15,6 +15,15 @@ context/surface combination while retaining combat facts under an overlay and
 making the action source explicit. Surface guides also prohibit factual claims
 about selected cards or capacity when the adapter does not expose them.
 
+This full-state serialization is current behavior, not a settled compression
+architecture. The normalized state also contains evidence/governance metadata,
+and some Inspection and action facts appear in both normalized evidence and the
+model-oriented action list. A future compact projection must first be measured
+in shadow, remain deterministic/versioned/recorded, preserve the full state for
+replay and validation, and never create action authority. No such projection or
+model-driven detail-request path is implemented or approved. See the
+[visibility and observation audit](../../docs/current/audits/VISIBILITY_AND_OBSERVATION_ARCHITECTURE_AUDIT_2026-07-22.md).
+
 Expected model output:
 
 ```json

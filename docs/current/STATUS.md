@@ -43,6 +43,15 @@ three times and Graveblast hand selection twice with exact-card completion
 witnesses. The contract remains canary-only. See the
 [defect closeout](../../STS2MCP/docs/bridge-v2/GATE1_REAL_RUN_DEFECT_CLOSEOUT_2026-07-22.md).
 
+A read-only cross-component visibility audit found no new action-authority
+defect and changed no runtime status. It did find that Re currently sends the
+complete normalized evidence state to the model, eagerly reads all advertised
+Inspections, and duplicates some Inspection/action representations. The next
+architecture investigation is a measured, shadow-only Prompt projection
+comparison; no projection, lazy Inspection, or model detail-request path is
+approved. See the
+[visibility audit](audits/VISIBILITY_AND_OBSERVATION_ARCHITECTURE_AUDIT_2026-07-22.md).
+
 ## Explicit Non-Claims
 
 - Bridge v2 is not yet complete-game coverage or full v1 retirement.

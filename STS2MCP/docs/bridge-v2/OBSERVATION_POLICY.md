@@ -22,6 +22,20 @@ hidden policy. `inspection_catalog` reports which fixed views may be requested
 for this exact state. A partial catalog is an honest coverage boundary, not a
 claim that the missing views are invisible to the player.
 
+`inspection_catalog.availability` is an evidence/authority tier
+(`qualified|canary`), not a statement that the client has already read the
+facts. Catalog presence means a fixed read-only view may be requested for the
+exact state; the returned coherent bundle proves observation. Absence,
+not-applicability, read failure, hidden policy, and stale evidence are not one
+interchangeable state.
+
+The complete Gateway observation is an evidence and validation contract. It is
+not a requirement that every consumer pass every diagnostic, catalog entry, or
+Inspection sidecar to its strategy model. Any compact consumer projection must
+remain downstream, versioned, auditable, and incapable of creating authority.
+The current Re path does not yet have that projection; see the
+[cross-component visibility audit](../../../docs/current/audits/VISIBILITY_AND_OBSERVATION_ARCHITECTURE_AUDIT_2026-07-22.md).
+
 ## Source And Completeness
 
 Every supported surface declares source categories and missing fields. A field

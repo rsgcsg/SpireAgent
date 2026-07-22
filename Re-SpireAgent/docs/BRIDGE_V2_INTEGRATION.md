@@ -1,9 +1,9 @@
 # Bridge v2 Integration
 
 > Current source-truth status, 2026-07-22: Re and C# share the
-> `2.0-preview.56` consumer contract. The source/fixture repair is not current
-> end-to-end support until a Release build, installation, and loaded-runtime
-> identity are closed. See the
+> `2.0-preview.56` consumer contract. Gate 0 has exact loaded-runtime lifecycle
+> evidence and Gate 1 operation-level reliability/migration is active. This is
+> not complete-game qualification. See the
 > [real connector audit](../../STS2MCP/docs/bridge-v2/REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md).
 
 ## Connector Boundary
@@ -270,6 +270,14 @@ only a changed `state_id` proves lifecycle drift and permits observation retry;
 the same mismatch against an unchanged state remains a hard contract error.
 No partial bundle is accepted, and decision/execution authorization remains
 fail closed.
+
+The eager-all Inspection read and the direct full-state Prompt serialization
+are current consumer behavior, not Gateway permission requirements. The full
+observation remains the replay/validation evidence source; any future strategy
+projection or selective Inspection policy must be downstream, state-bound,
+shadow-validated, and non-authorizing. The current limitations and falsifiable
+experiments are recorded in the
+[visibility and observation audit](../../docs/current/audits/VISIBILITY_AND_OBSERVATION_ARCHITECTURE_AUDIT_2026-07-22.md).
 
 The current v0.109 scope exposes `run_deck`, `combat_piles`, and
 `shop_catalog` as separate read-only canaries. Historical combat

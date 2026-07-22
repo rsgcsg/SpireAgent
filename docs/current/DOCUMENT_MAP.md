@@ -18,6 +18,12 @@ not inherit authority from the archived root SpireAgent runtime.
 7. [Repository consolidation ADR](decisions/ADR-0001-current-mainline-and-legacy-archive.md):
    durable authority and archive decision.
 
+Current cross-component audits:
+
+- [Visibility and observation architecture audit](audits/VISIBILITY_AND_OBSERVATION_ARCHITECTURE_AUDIT_2026-07-22.md):
+  current Gateway/Re fact flow, Prompt projection debt, evidence limits, and
+  falsifiable next experiments. It is an audit, not an accepted protocol change.
+
 Component-owned truth:
 
 - `Re-SpireAgent/README.md`, `Re-SpireAgent/AGENT.md`, and `Re-SpireAgent/docs/`

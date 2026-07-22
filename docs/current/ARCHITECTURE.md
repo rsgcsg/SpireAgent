@@ -46,6 +46,23 @@ yet.
 ## Current Architectural Constraint
 
 The Gateway and Re now share one mechanically checked `2.0-preview.56`
-connector contract. The next boundary is operational: build, install, and prove
-one loaded artifact before adding Surface providers. This prevents source/test
-agreement from being mistaken for current runtime evidence.
+connector contract, and Gate 0 has exact loaded-runtime lifecycle evidence. The
+current operational boundary is Gate 1: close operation-level reliability,
+visible-information, and v1-retirement gaps under exact identities without
+turning implementation, fixtures, or an older artifact into permission or
+qualification.
+
+## Observation And Strategy Projection Boundary
+
+The Gateway's complete evidence contract is not the same thing as an Agent's
+strategy input, and neither grants action authority. Today Re serializes the
+complete `NormalizedCurrentState` into every model Prompt and eagerly reads all
+advertised Inspections. That is current behavior, not a settled long-term
+architecture. It preserves evidence but duplicates some Inspection/action data
+and sends governance metadata to the model.
+
+The next visibility work is measurement and shadow-only comparison, not a wire
+rewrite: retain full evidence for validation/replay, test a deterministic and
+versioned strategy projection, and introduce fact-group availability only if
+real ambiguity justifies it. See the
+[visibility and observation audit](audits/VISIBILITY_AND_OBSERVATION_ARCHITECTURE_AUDIT_2026-07-22.md).
