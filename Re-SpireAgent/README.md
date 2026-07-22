@@ -12,7 +12,7 @@
 > planned product places Gateway authentication/lease use, OS-backed secrets,
 > model brokering, Agent supervision, diagnostics, and recovery in a trusted
 > external Companion. None of that is implemented by this README. See the
-> [productization architecture audit](../docs/product/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md).
+> [productization architecture audit](../docs/current/audits/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md).
 
 Re-SpireAgent is a small, independent Slay the Spire 2 agent runtime. It reads
 strict Bridge v2 state from the Live Semantic Gateway REST adapter, normalizes
@@ -398,4 +398,4 @@ The only supported public TypeScript entrypoint is `src/index.ts`. Integration r
 - RE-P1 is an auditable baseline, not a strong strategic player yet.
 
 The latest exact-build organic long runs are summarized in
-[`STS2MCP/docs/bridge-v2/ORGANIC_LONG_RUN_AUDIT_2026-07-17.md`](../STS2MCP/docs/bridge-v2/ORGANIC_LONG_RUN_AUDIT_2026-07-17.md).
+[`archive/bridge-v2-previews/2026-07/ORGANIC_LONG_RUN_AUDIT_2026-07-17.md`](../archive/bridge-v2-previews/2026-07/ORGANIC_LONG_RUN_AUDIT_2026-07-17.md).

@@ -3,7 +3,7 @@
 Status: canonical architecture audit and migration decision, 2026-07-22.
 
 Productization addendum: this connector audit remains canonical for live-game
-binding and migration, but the later [productization architecture audit](../../../docs/product/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md)
+binding and migration, but the later [productization architecture audit](../../../docs/current/audits/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md)
 adds authentication, controller-session, restart, BYOK, Workshop, Companion,
 SDK, privacy, and release gates. Its repository baseline is
 `develop@79bb9d01e11ae7ad5b614cf42eb05e377143a83d`. The addendum does not claim

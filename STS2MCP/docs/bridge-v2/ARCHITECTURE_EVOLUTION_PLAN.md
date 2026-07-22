@@ -42,7 +42,7 @@ Before a release profile can accept mutations, it must also provide:
 - loaded Gateway/Modset identity verification rather than disk-file discovery;
 - provider secrets and third-party Agent code outside the game process.
 
-The [productization architecture audit](../../../docs/product/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md)
+The [productization architecture audit](../../../docs/current/audits/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md)
 defines the conditional product sequence. These requirements do not promote a
 Surface, grant authority, or prove that a Companion currently exists.
 
@@ -277,7 +277,7 @@ Status: documentation only; blocked on live-gateway admission criteria.
 
 Physical Headless STS2 is no longer part of the active Bridge phase sequence.
 It is a separate future subproject documented under
-[docs/headless](../../../docs/headless/README.md). Do not create a Headless
+[docs/current/headless](../../../docs/current/headless/README.md). Do not create a Headless
 runtime, shared-kernel package, permission profile, or adapter skeleton merely
 because the protocol is transport-neutral.
 
@@ -285,7 +285,7 @@ The live path must first close its source-binding, transaction-correlation,
 shared-validation, Witness, adapter-catalog, and exact loaded-evidence gates.
 The full admission criteria, candidate host comparison, phases, acceptance,
 and rollback rules are in [the Headless target
-architecture](../../../docs/headless/TARGET_ARCHITECTURE.md). Passing that gate
+architecture](../../../docs/current/headless/TARGET_ARCHITECTURE.md). Passing that gate
 permits an isolated experiment only; it grants no Headless or live authority.
 
 ## Phase 5: Organic Qualification And v1 Retirement
@@ -314,11 +314,8 @@ fallback has been retired without ambiguity.
 - no expansion of current local hash `1833084275` authority by this plan;
 - no use of old MVID Organic evidence for a new DLL.
 
-The independent rationale, holdouts, and rollback gates are recorded in
-[the 2026-07-20 DecisionFrame/Transaction IR audit closeout](DECISION_FRAME_TRANSACTION_IR_ARCHITECTURE_AUDIT_CLOSEOUT_2026-07-20.md).
-The MCP/source/headless boundary is refined in
-[the 2026-07-20 semantic-gateway audit closeout](MCP_SEMANTIC_GATEWAY_HEADLESS_ARCHITECTURE_AUDIT_CLOSEOUT_2026-07-20.md).
 The active naming and ownership source is
-[the Live STS2 connection boundary](LIVE_GAME_CONNECTION_BOUNDARY.md), and the
-2026-07-21 docs-only decision is recorded in
-[the boundary closeout](LIVE_GATEWAY_HEADLESS_BOUNDARY_CLOSEOUT_2026-07-21.md).
+[the Live STS2 connection boundary](LIVE_GAME_CONNECTION_BOUNDARY.md). Dated
+DecisionFrame, source/headless, and boundary closeouts remain available in the
+[Bridge preview archive](../../../archive/bridge-v2-previews/) as historical
+rationale and evidence, not current architecture authority.

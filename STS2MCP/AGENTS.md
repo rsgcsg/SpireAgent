@@ -1,6 +1,7 @@
 # STS2 Agent Bridge Engineering Guide
 
-Read `docs/bridge-v2/CURRENT_STATUS.md`, `docs/bridge-v2/UPSTREAM_AUDIT.md`,
+Read `docs/bridge-v2/CURRENT_STATUS.md`,
+`docs/bridge-v2/REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md`,
 `docs/bridge-v2/PROTOCOL.md`, `docs/bridge-v2/OBSERVATION_POLICY.md`, and
 `docs/bridge-v2/LIVE_GAME_CONNECTION_BOUNDARY.md` before changing Bridge v2.
 

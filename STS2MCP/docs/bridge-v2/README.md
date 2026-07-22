@@ -1,62 +1,28 @@
 # Bridge v2 Documentation
 
-- [2026-07-22 real STS2 connector architecture audit and migration plan](REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md)
+Bridge v2 is the active semantic Gateway protocol. It is currently blocked on
+source truth: C# source/installed DLL is `2.0-preview.54`; Re-SpireAgent
+requires `2.0-preview.56`. Start with the current status and migration audit,
+not historical preview closeouts.
+
+## Current Documents
+
 - [Current status](CURRENT_STATUS.md)
-- [Audited baseline](BASELINE.md)
-- [Upstream and design audit](UPSTREAM_AUDIT.md)
-- [Bridge v2 and Re-SpireAgent architecture audit](ARCHITECTURE_AUDIT_2026-07-16.md)
-- [Composition, inspection, and diagnostics audit](COMPOSITION_INSPECTION_DIAGNOSTICS_AUDIT_2026-07-16.md)
-- [Run-deck and combat-pile inspection audit](RUN_DECK_PILE_INSPECTION_AUDIT_2026-07-16.md)
-- [Preview.13 closeout audit](PREVIEW_13_CLOSEOUT_AUDIT_2026-07-17.md)
-- [Organic long-run audit](ORGANIC_LONG_RUN_AUDIT_2026-07-17.md)
+- [Real connector architecture audit and migration plan](REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md)
+- [Protocol](PROTOCOL.md)
+- [Observation policy](OBSERVATION_POLICY.md)
+- [Player-visible coverage matrix](PLAYER_VISIBLE_COVERAGE.md)
+- [Live STS2 connection boundary](LIVE_GAME_CONNECTION_BOUNDARY.md)
+- [Architecture evolution plan](ARCHITECTURE_EVOLUTION_PLAN.md)
+- [Re-SpireAgent integration boundary](RE_SPIREAGENT_INTEGRATION.md)
 - [ADR-0001: visible action entity bindings](ADR-0001-visible-action-entity-bindings.md)
 - [ADR-0002: card-selection surface boundaries](ADR-0002-card-selection-surface-boundaries.md)
 - [ADR-0003: semantic surfaces, shared mechanics, and semantic completion](ADR-0003-semantic-surfaces-shared-mechanics-and-completion.md)
 - [ADR-0004: contract-instance authority and player-visible closure](ADR-0004-contract-instance-authority-and-player-visible-closure.md)
-- [2026-07-17 architecture reassessment](ARCHITECTURE_REASSESSMENT_2026-07-17.md)
-- [2026-07-18 independent architecture audit](ARCHITECTURE_AUDIT_2026-07-18.md)
-- [Architecture evolution plan](ARCHITECTURE_EVOLUTION_PLAN.md)
-- [Canonical live-game connection boundary](LIVE_GAME_CONNECTION_BOUNDARY.md)
-- [2026-07-20 DecisionFrame and Transaction IR architecture audit closeout](DECISION_FRAME_TRANSACTION_IR_ARCHITECTURE_AUDIT_CLOSEOUT_2026-07-20.md)
-- [2026-07-20 MCP, semantic gateway, source, and headless architecture audit closeout](MCP_SEMANTIC_GATEWAY_HEADLESS_ARCHITECTURE_AUDIT_CLOSEOUT_2026-07-20.md)
-- [2026-07-21 live-gateway and Headless boundary closeout](LIVE_GATEWAY_HEADLESS_BOUNDARY_CLOSEOUT_2026-07-21.md)
-- [Deferred Headless future subproject](../../../docs/headless/README.md)
-- [Preview.35 typed contract inventory closeout](PREVIEW_35_TYPED_CONTRACT_INVENTORY_CLOSEOUT_2026-07-18.md)
-- [Preview.36 exact Modset identity closeout](PREVIEW_36_MODSET_IDENTITY_CLOSEOUT_2026-07-18.md)
-- [Preview.37 menu navigation closeout](PREVIEW_37_MENU_NAVIGATION_CLOSEOUT_2026-07-18.md)
-- [Preview.38 purpose-specific deck transform closeout](PREVIEW_38_DECK_TRANSFORM_CLOSEOUT_2026-07-18.md)
-- [Preview.39 post-combat no-input transition closeout](PREVIEW_39_POST_COMBAT_NO_INPUT_TRANSITION_CLOSEOUT_2026-07-18.md)
-- [Preview.40 combat transition and runtime progress-guard closeout](PREVIEW_40_COMBAT_TRANSITION_AND_RUNTIME_PROGRESS_GUARD_CLOSEOUT_2026-07-18.md)
-- [Preview.41 combat-piles Inspection canary](PREVIEW_41_COMBAT_PILES_INSPECTION_CANARY_2026-07-18.md)
-- [Preview.42 Lead Paperweight source-binding canary](PREVIEW_42_LEAD_PAPERWEIGHT_SOURCE_BINDING_CANARY_2026-07-18.md)
-- [Preview.43 fail-closed provider contract](PREVIEW_43_FAIL_CLOSED_PROVIDER_CONTRACT_2026-07-18.md)
-- [Preview.44 Colorless Potion source-binding canary](PREVIEW_44_COLORLESS_POTION_SOURCE_BINDING_CANARY_2026-07-18.md)
-- [Preview.45 Headbutt combat-pile source-binding canary](PREVIEW_45_HEADBUTT_COMBAT_PILE_SOURCE_BINDING_CANARY_2026-07-18.md)
-- [Preview.46 typed card-hover shared-state closeout](PREVIEW_46_TYPED_CARD_HOVER_SHARED_STATE_CLOSEOUT_2026-07-18.md)
-- [Preview.47 linked rewards, coherent observation, and authority shadow](PREVIEW_47_LINKED_REWARDS_COHERENT_OBSERVATION_AND_AUTHORITY_SHADOW_2026-07-19.md)
-- [Preview.53 Graveblast combat-pile source binding](PREVIEW_53_GRAVEBLAST_COMBAT_PILE_SOURCE_BINDING_CANARY_2026-07-20.md)
-- [Preview.54 Splash source binding and long-run closeout](PREVIEW_54_SPLASH_SOURCE_BINDING_AND_LONG_RUN_CLOSEOUT_2026-07-20.md)
-- [Treasure Skip-delay state-drift audit](TREASURE_SKIP_DELAY_STATE_DRIFT_AUDIT_2026-07-20.md)
-- [Re observation-scope drift closeout](RE_OBSERVATION_SCOPE_DRIFT_CLOSEOUT_2026-07-20.md)
-- [2026-07-19 tiered-authority and visibility architecture review](ARCHITECTURE_REVIEW_TIERED_AUTHORITY_AND_VISIBILITY_2026-07-19.md)
-- [Preview.31 permission-scope hardening](PREVIEW_31_PERMISSION_SCOPE_HARDENING_2026-07-18.md)
-- [Preview.31 independent revalidation](PREVIEW_31_INDEPENDENT_REVALIDATION_2026-07-18.md)
-- [Preview.23 upgrade and treasure closeout](PREVIEW_23_UPGRADE_TREASURE_CLOSEOUT_2026-07-17.md)
-- [Preview.24 shared visible state closeout](PREVIEW_24_SHARED_VISIBLE_STATE_CLOSEOUT_2026-07-17.md)
-- [Preview.24 combat hand-selection qualification](PREVIEW_24_COMBAT_HAND_SELECTION_QUALIFICATION_2026-07-17.md)
-- [Preview.25 event card-acquisition canary](PREVIEW_25_EVENT_CARD_ACQUISITION_CANARY_2026-07-18.md)
-- [Preview.25 rest-site requalification](PREVIEW_25_REST_REQUALIFICATION_2026-07-18.md)
-- [Preview.28 game-over, bundle, and contract alignment](PREVIEW_28_GAME_OVER_BUNDLE_AND_CONTRACT_ALIGNMENT_2026-07-18.md)
-- [Preview.29-.30 menu, dialogue, and event-option qualification](PREVIEW_29_30_MENU_DIALOGUE_AND_EVENT_OPTION_QUALIFICATION_2026-07-18.md)
-- [Bridge v2 v1-retirement and completeness audit](BRIDGE_V2_V1_RETIREMENT_AND_COMPLETENESS_AUDIT_2026-07-18.md)
-- [Protocol and errors](PROTOCOL.md)
-- [Observation policy](OBSERVATION_POLICY.md)
-- [Player-visible coverage](PLAYER_VISIBLE_COVERAGE.md)
-- [Deck enchant runtime smoke](SMOKE_2026-07-16.md)
-- [Re-SpireAgent integration boundary](RE_SPIREAGENT_INTEGRATION.md)
 
-The current-status file records the immediate compatibility blocker. The
-2026-07-22 real-connector audit owns the repair and migration order. Coverage
-records historical/source evidence and must not be read as current end-to-end
-support while source truth is broken. Older audits explain historical design
-decisions but do not override those three documents.
+## Historical Evidence
+
+Preview closeouts, dated audits, source-binding notes, and long-run records are
+preserved in the [Bridge preview archive](../../../archive/bridge-v2-previews/).
+They may document exact historical evidence scope but never establish current
+compatibility, authority, or qualification.

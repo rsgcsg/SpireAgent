@@ -1,5 +1,9 @@
 # Documentation Operating System
 
+> **Historical archive notice (2026-07-22):** This entrypoint belongs to the
+> retired root documentation system. Current documentation starts at
+> [`../../../docs/current/DOCUMENT_MAP.md`](../../../docs/current/DOCUMENT_MAP.md).
+
 This is the documentation entrypoint for both humans and coding agents.
 
 Start here before changing docs, planning a new phase, or deciding which document is authoritative.

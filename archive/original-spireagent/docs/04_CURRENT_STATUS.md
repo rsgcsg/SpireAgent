@@ -1,5 +1,9 @@
 # Current Status
 
+> **Historical archive notice (2026-07-22):** This was the current-state file
+> for the retired root runtime. It is frozen evidence only. For current status,
+> use [`../../../docs/current/STATUS.md`](../../../docs/current/STATUS.md).
+
 This is the canonical short snapshot of the active phase, blocker, and next step. Historical detail belongs in `../DEBUG_REPORT.md` and `../LLM_HANDOFF.md`.
 
 ## Phase

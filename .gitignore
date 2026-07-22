@@ -1,22 +1,35 @@
-node_modules/
+# Repository-wide local artifacts
 .DS_Store
 *.log
-dist/
-coverage/
+/node_modules/
 
-# Runtime outputs and local artifacts
-data/runs/
-memory/current-run.json
-memory/experience.json
-memory/long-term.json
-memory/strategy-params.json
-memory/decision-log.jsonl
-memory/collected/
-memory/snapshots/
+# Root paths are residues of the retired original runtime. They are intentionally
+# ignored rather than archived or committed as part of the current mainline.
+/data/
+/memory/
+/.env
+/.env.local
+/.env.local.*
+/.envrc.local
 
-# Local secrets
-.env
-.env.local
-.env.local.*
-.envrc.local
-!.env.example
+# Re-SpireAgent local artifacts and secrets
+/Re-SpireAgent/node_modules/
+/Re-SpireAgent/dist/
+/Re-SpireAgent/coverage/
+/Re-SpireAgent/.env
+/Re-SpireAgent/.env.*
+!/Re-SpireAgent/.env.example
+/Re-SpireAgent/data/runs/
+/Re-SpireAgent/data/tmp/
+
+# STS2MCP build, local configuration, and Python artifacts
+/STS2MCP/bin/
+/STS2MCP/obj/
+/STS2MCP/out/
+/STS2MCP/TestResults/
+/STS2MCP/mcp/.venv/
+/STS2MCP/mcp/__pycache__/
+/STS2MCP/mcp/*.py[cod]
+/STS2MCP/.env
+/STS2MCP/.env.local
+/STS2MCP/.mcp.json

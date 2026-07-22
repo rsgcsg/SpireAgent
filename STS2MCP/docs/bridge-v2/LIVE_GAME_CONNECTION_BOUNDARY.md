@@ -9,11 +9,11 @@ closes, this document defines the intended ownership boundary, not proof that a
 clean checkout currently negotiates end to end.
 
 Consumer distribution, local trust, Companion, BYOK, SDK, and release gates are
-defined in the [productization architecture audit](../../../docs/product/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md).
+defined in the [productization architecture audit](../../../docs/current/audits/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md).
 
 This document defines component names and ownership for the visible STS2
-runtime. Root [ARCHITECTURE.md](../../../ARCHITECTURE.md) remains authoritative
-for the whole SpireAgent system. Historical closeouts retain their original
+runtime. The repository-level [current architecture](../../../docs/current/ARCHITECTURE.md)
+defines the whole-project boundary. Historical closeouts retain their original
 evidence; when their use of "MCP", "Bridge", or "headless" is ambiguous, use
 the terms below.
 
@@ -217,12 +217,12 @@ a reason to expand permission.
 ## Headless Boundary
 
 Headless is deferred to the separate [Headless documentation
-area](../../../docs/headless/README.md). No Headless host, shared runtime
+area](../../../docs/current/headless/README.md). No Headless host, shared runtime
 kernel, permission profile, or equivalence claim is implemented by this
 boundary.
 
 Headless implementation may start only after the live admission gate in the
-[Headless target architecture](../../../docs/headless/TARGET_ARCHITECTURE.md)
+[Headless target architecture](../../../docs/current/headless/TARGET_ARCHITECTURE.md)
 is explicitly met. Until then, all game integration engineering should close
 the live gateway's transaction, source-binding, adapter-consistency, and exact
 runtime evidence gaps.

@@ -1,0 +1,270 @@
+# STS2 AI Agent Portable
+
+> **Historical archive notice (2026-07-22):** This is the former root runtime
+> README. It is preserved for provenance and is not the current project entry.
+> Use [`../../README.md`](../../README.md) and
+> [`../../docs/current/DOCUMENT_MAP.md`](../../docs/current/DOCUMENT_MAP.md)
+> for the active Re-SpireAgent and STS2MCP mainline.
+
+LLM-centered Slay the Spire 2 agent with a predictive cognitive scaffold, structured memory, derived strategy knowledge, replay/eval data loop, proposal-driven learning infrastructure, and replaceable game/fact adapters. Stable learning is not enabled.
+
+The main product direction is **LLM-centered, not LLM-exclusive**: the LLM owns strategic deliberation in `llm_primary`, while the surrounding experience shell may learn memory, context, candidates, and bounded skills under a deterministic safety, authorization, environment-compatibility, and rollback shell. The current repository is an engineering runtime, not yet the finished installable player product.
+
+This repository contains the root TypeScript agent plus the source for the
+`STS2MCP` Gateway/Python adapter and the independent `Re-SpireAgent` runtime. It
+does not contain the game, proprietary game assemblies, installed Mod binaries,
+local build outputs, secrets, or `node_modules`.
+
+## Documentation
+
+Start documentation navigation at [docs/00_START_HERE.md](docs/00_START_HERE.md). The canonical short current-status snapshot lives at [docs/04_CURRENT_STATUS.md](docs/04_CURRENT_STATUS.md).
+
+Current phase-heavy docs:
+
+- [P8_CLOSEOUT.md](docs/phases/P8_CLOSEOUT.md)
+- [P8_P9_DEBT_REGISTER.md](docs/debt/P8_P9_DEBT_REGISTER.md)
+- [P9_ENTRY_CRITERIA.md](docs/phases/P9_ENTRY_CRITERIA.md)
+- [P9_GUARDED_LEARNING_PLAN.md](docs/phases/P9_GUARDED_LEARNING_PLAN.md)
+- [P9_P15_EXECUTION_ROADMAP.md](docs/phases/P9_P15_EXECUTION_ROADMAP.md)
+- [Strategic authority ADR](docs/decisions/ADR-0003-strategic-authority-and-experience-shell.md)
+- [Environment Compatibility](ENVIRONMENT_COMPATIBILITY.md)
+- [Player Product Vision](docs/PRODUCT_VISION.md)
+- [Real Productization Architecture Audit And Roadmap](docs/product/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md)
+- [LLM_RUN_MODES.md](docs/runbooks/LLM_RUN_MODES.md)
+
+## GitHub Hygiene
+
+This repo is intended to be public and clonable. Keep the repository clean by treating these as local-only artifacts:
+
+- `.env.local`, `.env`, `.envrc.local`, and any backup variants such as `.env.local.save`
+- `data/runs/` replay outputs from local experiments
+- mutable runtime memory such as `memory/current-run.json`, `memory/experience.json`, `memory/long-term.json`, `memory/strategy-params.json`, `memory/decision-log.jsonl`, and `memory/snapshots/`
+- collected local state logs under `memory/collected/`
+
+Only commit templates and documentation such as `.env.example`, `memory/.gitkeep`, and `memory/README.md`.
+
+Before pushing to GitHub, run:
+
+```bash
+git status --short
+git ls-files memory data/runs
+```
+
+`git ls-files memory data/runs` should only show repository-owned files such as `memory/.gitkeep` and `memory/README.md`, not mutable run artifacts.
+
+## Quick Start
+
+```bash
+npm install
+npm run check
+```
+
+## Local API Keys
+
+Secrets are loaded from `.env.local` on this machine only. That file is ignored by git and must not be committed.
+
+To configure DeepSeek for P8 shadow workspace calls:
+
+```bash
+cp .env.example .env.local
+chmod 600 .env.local
+```
+
+Then edit `.env.local` and fill in:
+
+```bash
+STS2_DEEPSEEK_API_KEY=your_deepseek_api_key_here
+```
+
+Keep the variable name as `STS2_DEEPSEEK_API_KEY`. Do not put API keys in source files, docs, replay data, debug reports, commits, or command output.
+
+If a secret is ever committed by mistake, rotate it immediately and scrub it from Git history before publishing a release or sharing the repository.
+
+If local runtime artifacts were already committed earlier, remove them from the index and amend history before publishing:
+
+```bash
+git rm --cached -- memory/current-run.json memory/experience.json memory/long-term.json memory/strategy-params.json
+git rm -r --cached -- data/runs
+```
+
+If a public branch already contains secrets or local run artifacts, use a history-rewrite tool such as `git filter-repo` before pushing a cleaned branch.
+
+P8 **workspace** DeepSeek calls are shadow-only and opt-in. They are separate from the explicit-whitelist DeepSeek live command adapter described later in this README. A safe workspace one-call test is:
+
+```bash
+npm run agent:tick -- --dry-run
+```
+
+With the default `.env.local` settings, the project allows at most one guarded shadow call per process and does not execute the DeepSeek decision.
+The canonical limit variable is `STS2_P8_WORKSPACE_MAX_SHADOW_CALLS`; `STS2_P8_MAX_SHADOW_CALLS` is accepted as a backward-compatible alias.
+DeepSeek shadow output defaults to `STS2_DEEPSEEK_OUTPUT_MODE=json_mode` with `response_format: { "type": "json_object" }`, `STS2_DEEPSEEK_TEMPERATURE=0`, `STS2_DEEPSEEK_TOP_P=0.1`, and single rescue retries for `empty_content` / truncation. The primary request currently leaves `thinking` unset unless `STS2_DEEPSEEK_THINKING_MODE` is explicitly provided, which means DeepSeek's API default remains in effect; rescue retries can independently force `STS2_DEEPSEEK_RESCUE_THINKING_MODE=disabled` and use `STS2_DEEPSEEK_TRUNCATION_RESCUE_MAX_OUTPUT_TOKENS` / `STS2_DEEPSEEK_EMPTY_RESCUE_MAX_OUTPUT_TOKENS` for provider-recovery testing. Set `STS2_DEEPSEEK_OUTPUT_MODE=non_json_strict` only for A/B shadow testing.
+P8 provider telemetry now records whether the request kept DeepSeek's default thinking mode or explicitly set `thinking: { "type": "disabled" | "enabled" }`, whether `reasoning_content` was returned, the response content source, provider-failure buckets, and thin-reason notes. This is still shadow-only evidence and does not change live execution.
+P8.4 shadow prompt ablation uses `STS2_P8_WORKSPACE_ABLATION_MODE=full` by default. `full` remains the control group and does not apply bounded candidate-future compression. `full_bounded_candidate_futures` is the v5 combat-only bounded serialization experiment; `compact` and `ultra_compact` remain separate smaller ablations. None of these modes change the live prompt or execute the DeepSeek decision.
+
+Do not enable unbounded P8 integration by default. P8.5 live rollout is additive-only and class-whitelisted:
+
+```bash
+# targeted live only; do not broaden to every :llm_required class
+STS2_P8_LIVE_ADDITIVE=1
+STS2_P8_LIVE_DECISION_CLASSES=combat:llm_required,card_reward:llm_required,map:llm_required,rest:llm_required,shop:llm_required,event:llm_required
+STS2_LLM_COMMAND=tsx src/agent/deepseekLiveCommand.ts
+```
+
+P8.5 may add a compact workspace summary beside the legacy prompt. P9/P10 are the places to gradually relax shadow boundaries for guarded learning updates, with whitelist, fallback, eval, and rollback still required.
+The controller consumes this additive context only when `STS2_P8_LIVE_ADDITIVE=1` and the current decision class is explicitly whitelisted. It does not make DeepSeek shadow decisions execute.
+
+Current P8.5 status:
+
+- Static / pre-live audit may continue.
+- Targeted live is locally authorized for `combat:llm_required`, `card_reward:llm_required`, `map:llm_required`, `rest:llm_required`, `shop:llm_required`, and `event:llm_required`.
+- `map` live means opening route planning and true replan checkpoints; ordinary follow-plan map checkpoints should stay local.
+- A guarded explicit broad-whitelist rollout is now available through `npm run agent:run:deepseek-broad-live`. This is not wildcard live; forced/local/obvious actions remain local, and only listed LLM-wanted classes call the DeepSeek live adapter.
+- `reward`, `route`, `menu`, and any unlisted classes remain outside live. `card_select:local_recommended_llm_arbitrate` is included only in the explicit broad-live runner for follow-up card-pick arbitration after events/potions, and remains a close-watch rollout class.
+- `shop:llm_required` and `event:llm_required` are targeted-live classes. They are not proof that all shop/event follow-up screens or every card-selection screen is safe.
+- Any provider failure, invalid or missing candidate, execution mismatch, unexpected non-whitelist live call, or reason collapse is a stop condition.
+
+With Slay the Spire 2 and the external STS2 MCP mod running:
+
+```bash
+curl -s http://localhost:15526/
+npm run collect:state
+npm run agent:tick -- --dry-run
+npm run agent:run -- --max-ticks 500 --delay-ms 120
+```
+
+For manual/Codex bridge LLM decisions:
+
+```bash
+npm run agent:run:bridge -- --max-ticks 500 --delay-ms 120
+```
+
+Default recommended targeted live path:
+
+```bash
+STS2_P8_LIVE_ADDITIVE=1 \
+STS2_P8_LIVE_DECISION_CLASSES='combat:llm_required,card_reward:llm_required,map:llm_required,rest:llm_required,shop:llm_required,event:llm_required' \
+STS2_LLM_COMMAND='tsx src/agent/deepseekLiveCommand.ts' \
+npm run agent:run -- --max-ticks 100 --delay-ms 120
+```
+
+Explicit broad-whitelist live rollout path:
+
+```bash
+npm run agent:run:deepseek-broad-live -- --max-ticks 100 --delay-ms 120
+```
+
+This command enables only this explicit whitelist:
+
+```text
+combat:llm_required
+card_reward:llm_required
+map:llm_required
+rest:llm_required
+shop:llm_required
+event:llm_required
+card_select:local_recommended_llm_arbitrate
+```
+
+Use it as a guarded broad rollout runner, not as proof that every possible decision class is live-ready.
+
+Single-step targeted live:
+
+```bash
+STS2_P8_LIVE_ADDITIVE=1 \
+STS2_P8_LIVE_DECISION_CLASSES='combat:llm_required,card_reward:llm_required,map:llm_required,rest:llm_required,shop:llm_required,event:llm_required' \
+STS2_LLM_COMMAND='tsx src/agent/deepseekLiveCommand.ts' \
+npm run agent:tick
+```
+
+`rest:llm_required` was promoted after two clean fresh rest-site live calls. If validating rest from a clean shell, use the default targeted live command above.
+
+If you need to reproduce the pre-promotion shop-only validation shape from a clean shell, keep the same targeted whitelist and run a single tick:
+
+```bash
+STS2_P8_LIVE_ADDITIVE=1 \
+STS2_P8_LIVE_DECISION_CLASSES='combat:llm_required,card_reward:llm_required,map:llm_required,rest:llm_required,shop:llm_required' \
+STS2_LLM_COMMAND='tsx src/agent/deepseekLiveCommand.ts' \
+npm run agent:tick
+```
+
+Promotion guidance:
+
+- `rest:llm_required`: promoted locally after two clean fresh rest-site live calls; keep watching reason-quality detector debt, but it is not a current safety blocker.
+- `shop:llm_required`: locally targeted after a clean tiny purchase path and checkpoint fix; continue watching purchase/skip/leave-relevant evidence before treating it as mature.
+- `event:llm_required`: locally targeted after one clean live event choice; follow-up card-selection/proceed screens remain local unless separately authorized.
+- Broad P8.5 rollout now means expanding the explicit whitelist under replay/eval/review, not replacing it with every `:llm_required` class.
+
+The DeepSeek live command adapter still relies on normal candidate validation and fallback. Non-whitelisted classes must fall back/local rather than calling live DeepSeek.
+
+## Main Commands
+
+```bash
+npm run sync:sts2-data
+npm run agent:tick
+npm run agent:run
+npm run agent:run:bridge
+npm run agent:run:deepseek-combat-live
+npm run agent:run:deepseek-broad-live
+npm run agent:review
+npm run agent:smoke
+npm run data:replay -- --latest
+npm run data:eval -- --latest
+npm run check
+npm run collect:state
+npm run collect:watch
+```
+
+## Authority Docs
+
+Read these first:
+
+- [PROJECT_NORTH_STAR.md](PROJECT_NORTH_STAR.md): long-term constitution.
+- [PROJECT_NORTH_STAR_CHINESE.md](PROJECT_NORTH_STAR_CHINESE.md): Chinese long-term constitution.
+- [PROJECT_AUTHORITY_GUIDE.md](PROJECT_AUTHORITY_GUIDE.md): document authority, boundaries, phase route.
+- [PROJECT_PLAN.md](PROJECT_PLAN.md): current project book and phase plan.
+- [ARCHITECTURE.md](ARCHITECTURE.md): five-plane system architecture.
+- [GAME_IO_CAPABILITIES.md](GAME_IO_CAPABILITIES.md): adapter capability contract.
+- [DATA_SCHEMA.md](DATA_SCHEMA.md): transition and data schema contract.
+- [BUDGET_GOVERNANCE.md](BUDGET_GOVERNANCE.md): cross-cutting budget governance model for shadow/live/learning boundaries.
+- [LLM_HANDOFF.md](LLM_HANDOFF.md): current handoff state.
+
+Subsystem docs:
+
+- [AGENT_LOOP.md](AGENT_LOOP.md)
+- [MEMORY_SYSTEM.md](MEMORY_SYSTEM.md)
+- [DERIVED_KNOWLEDGE.md](DERIVED_KNOWLEDGE.md)
+- [COMBAT_PLAN_AND_CHECKPOINT.md](COMBAT_PLAN_AND_CHECKPOINT.md)
+- [HUMAN_CAPTURE_LIMITS.md](HUMAN_CAPTURE_LIMITS.md)
+- [REPLAY_AND_EVAL.md](REPLAY_AND_EVAL.md)
+- [REWARD_AND_EXPERIMENTS.md](REWARD_AND_EXPERIMENTS.md)
+- [EXTERNAL_DEPENDENCIES.md](EXTERNAL_DEPENDENCIES.md)
+- [CONTRIBUTING_OR_ENGINEERING_RULES.md](CONTRIBUTING_OR_ENGINEERING_RULES.md)
+
+Operational docs live under `docs/` and are not architecture source of truth.
+
+## Runtime Model
+
+- STS2 MCP/REST reads game state and executes validated actions.
+- Local TypeScript code normalizes state, identifies salience, activates memory, generates candidate futures, validates LLM choices, executes actions, records checkpoints, and maintains replayable data.
+- LLM remains the strategic player for high-dispute decisions, but only selects from validated candidates with compact strategic context.
+- Raw facts live in `data/spire-codex/`; learned strategy lives in `derived/` and `memory/`.
+
+## Phase Route
+
+The formal mainline now runs through P15:
+
+- P1-P8.5 build the live scaffold, replay/eval, and explicit-whitelist live MVP.
+- P9 is protected proposal-driven guarded learning.
+- P10 makes the guarded lifecycle repeatable across accumulated experience.
+- P11 is the Learned Deliberation OS: context first, then compute/provider policy.
+- P12 is environment compatibility, knowledge invalidation, and revalidation.
+- P13 is the non-developer Player Runtime Beta.
+- P14 qualifies bounded delegated skills and authority.
+- P15 is product release and operations.
+- Optional local policy/world-model/autonomy work is isolated research track R1, not a required phase.
+
+See [PROJECT_PLAN.md](PROJECT_PLAN.md) for current completion gaps and acceptance criteria.
+
+## Live Testing Policy
+
+Normal HP loss or imperfect strategy is gameplay data, not a reason to stop a live run. Stop mid-run only for software defects such as invalid REST actions, no candidates on actionable screens, repeated no-progress actions, stale hand indices, illegal targets, settlement failures, crashes, or invalid LLM output being accepted.

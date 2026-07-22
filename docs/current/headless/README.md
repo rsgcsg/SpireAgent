@@ -8,7 +8,7 @@ does not leak into the current live Bridge, Re-SpireAgent, permissions, or
 evidence.
 
 The current real-game connection is defined by
-[Live STS2 Connection Boundary](../../STS2MCP/docs/bridge-v2/LIVE_GAME_CONNECTION_BOUNDARY.md).
+[Live STS2 Connection Boundary](../../../STS2MCP/docs/bridge-v2/LIVE_GAME_CONNECTION_BOUNDARY.md).
 The future design, admission gate, phases, and acceptance criteria are in
 [TARGET_ARCHITECTURE.md](TARGET_ARCHITECTURE.md).
 
@@ -29,4 +29,3 @@ The future design, admission gate, phases, and acceptance criteria are in
 The `wuhao21/sts2-cli` project is a useful primary implementation reference,
 not an adopted SpireAgent architecture or evidence source. Source review alone
 does not qualify either project.
-

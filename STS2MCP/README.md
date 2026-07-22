@@ -23,7 +23,7 @@ is complete.
 > authentication, Gateway-enforced controller lease, or restart epoch, and v1
 > and v2 mutation routes share the listener. Localhost is not an authorization
 > boundary. Do not represent this as a consumer-safe Workshop product; see the
-> [productization architecture audit](../docs/product/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md).
+> [productization architecture audit](../docs/current/audits/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md).
 
 - Last historical source-qualified exact game binding: Slay the Spire 2
   `v0.109.0|c12f634d|-840572606`.
@@ -74,8 +74,8 @@ is complete.
   new actions. Unlisted surfaces are disabled and draw order remains hidden.
 
 See [current status](docs/bridge-v2/CURRENT_STATUS.md), the
-[upstream/design audit](docs/bridge-v2/UPSTREAM_AUDIT.md), and the
-[coverage matrix](docs/bridge-v2/PLAYER_VISIBLE_COVERAGE.md).
+[connector migration audit](docs/bridge-v2/REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md),
+and the [coverage matrix](docs/bridge-v2/PLAYER_VISIBLE_COVERAGE.md).
 
 ## Why v2
 

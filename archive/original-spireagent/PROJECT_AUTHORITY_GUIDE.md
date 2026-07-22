@@ -1,5 +1,9 @@
 # STS2 AI Agent 权威指导文档
 
+> **Historical archive notice (2026-07-22):** This authority guide belongs to
+> the retired root runtime and no longer governs current work. Use
+> [`../../docs/current/DOCUMENT_MAP.md`](../../docs/current/DOCUMENT_MAP.md).
+
 > `PROJECT_NORTH_STAR.md` 是长期最高原则文档。  
 > 本文件是工程权威索引：定义文档权威层级、系统边界、阶段路线、下一步 Codex 工作方式和验收标准。它不替代子系统文档。
 >

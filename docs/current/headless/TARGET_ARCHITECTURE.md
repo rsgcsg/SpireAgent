@@ -3,7 +3,7 @@
 Status: proposed future subproject; no implementation or authority.
 
 The product relationship and host-independent gates are also audited in the
-[Real Productization Architecture Audit And Roadmap](../product/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md).
+[Real Productization Architecture Audit And Roadmap](../audits/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md).
 
 ## Purpose
 

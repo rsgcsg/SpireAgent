@@ -1,5 +1,10 @@
 # PROJECT_NORTH_STAR.md
 
+> **Historical archive notice (2026-07-22):** This former root North Star is
+> retained as design history. It is not current project authority. The active
+> architecture and roadmap begin at
+> [`../../docs/current/DOCUMENT_MAP.md`](../../docs/current/DOCUMENT_MAP.md).
+
 > This is the long-term North Star document for the Slay the Spire 2 AI agent project.
 > It defines the project’s core philosophy, product direction, agent architecture, cognitive scaffold, learning doctrine, engineering boundaries, and enduring success criteria.
 > It should change rarely.

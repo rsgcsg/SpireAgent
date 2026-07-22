@@ -342,7 +342,8 @@ as handoff history.
   event context and event-option surface with only advertised opaque actions.
   DeepSeek selected a valid option; exact-state revalidation, Bridge command
   lifecycle, and two-poll settlement passed, with observed HP/gold effects
-  matching the chosen visible option. See `STS2MCP/docs/bridge-v2/SMOKE_2026-07-16.md`.
+  matching the chosen visible option. Historical evidence is preserved at
+  `../archive/bridge-v2-previews/2026-07/SMOKE_2026-07-16.md`.
 - CLI safety hardening: `--help` and unknown action-command options are parsed
   before runtime creation, so a help typo cannot create a provider call or
   execute a game action.
@@ -521,6 +522,6 @@ universal menu or card-selection protocol.
 Event option/dialogue/character select need diversity before promotion beyond
 canary.
 
-Canonical Bridge status and the latest evidence are in
-`../STS2MCP/docs/bridge-v2/CURRENT_STATUS.md` and
-`../STS2MCP/docs/bridge-v2/PREVIEW_40_COMBAT_TRANSITION_AND_RUNTIME_PROGRESS_GUARD_CLOSEOUT_2026-07-18.md`.
+Canonical Bridge status is in `../STS2MCP/docs/bridge-v2/CURRENT_STATUS.md`.
+The historical combat progress-guard closeout is preserved at
+`../archive/bridge-v2-previews/2026-07/PREVIEW_40_COMBAT_TRANSITION_AND_RUNTIME_PROGRESS_GUARD_CLOSEOUT_2026-07-18.md`.

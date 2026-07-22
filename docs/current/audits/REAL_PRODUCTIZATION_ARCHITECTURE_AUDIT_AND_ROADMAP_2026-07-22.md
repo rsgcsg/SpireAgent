@@ -9,10 +9,16 @@ Headless host already exists.
 
 The connector-specific architecture audit remains authoritative for the live
 game binding and migration details:
-[Real STS2 Connector Architecture Audit And Migration Plan](../../STS2MCP/docs/bridge-v2/REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md).
+[Real STS2 Connector Architecture Audit And Migration Plan](../../../STS2MCP/docs/bridge-v2/REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md).
 This report revises and extends that audit where product distribution, local
 security, player recovery, secrets, and third-party Agent execution change the
 engineering order.
+
+> Consolidation update: this audit's original repository observations remain
+> dated evidence. The former root P9--P15 program has since been retired to
+> `archive/original-spireagent/`; its phase dependencies are not current
+> authority. Use `../STATUS.md`, `../ROADMAP.md`, and the connector current
+> status for current checkout facts and next work.
 
 ## Executive Verdict
 
@@ -155,10 +161,10 @@ inferring behavior from status prose alone:
 - connector, visibility, migration, and host boundaries:
   `STS2MCP/docs/bridge-v2/CURRENT_STATUS.md`, `PROTOCOL.md`,
   `PLAYER_VISIBLE_COVERAGE.md`, `LIVE_GAME_CONNECTION_BOUNDARY.md`,
-  `ARCHITECTURE_EVOLUTION_PLAN.md`, the previous connector audit, and
-  `docs/headless/TARGET_ARCHITECTURE.md`;
-- project/product authority: `PROJECT_NORTH_STAR.md`, `ARCHITECTURE.md`,
-  `docs/04_CURRENT_STATUS.md`, `docs/PRODUCT_VISION.md`, and
+  `ARCHITECTURE_EVOLUTION_PLAN.md`, the connector audit, and
+  `docs/current/headless/TARGET_ARCHITECTURE.md`;
+- current repository/product authority: `docs/current/STATUS.md`,
+  `docs/current/ARCHITECTURE.md`, `docs/current/PRODUCT.md`, and
   `Re-SpireAgent/README.md`.
 
 The installed exact-build review separately examined the current release
@@ -735,20 +741,11 @@ needed, avoid duplicate actions, and offer only safe next steps.
 ## 16. Conditional Product Roadmap
 
 The stages are gated by engineering results, not dates. `PROD-*` is a
-cross-cutting product workstream, not a replacement phase book for the
-canonical P9-P15 mainline:
-
-| Product work | Mainline relationship |
-|---|---|
-| PROD-0 and PROD-1 | connector/product safety prerequisites that may proceed in parallel, without changing P9 learning state |
-| PROD-2 through PROD-4 | product-interface foundations that may be seeded early but must consume P12 compatibility/quarantine truth before beta |
-| PROD-5 | the operational execution of the P13 Player Runtime Beta gate; it cannot declare beta independently |
-| PROD-6 | post-beta SDK/ecosystem work; external Agent access does not grant P14 delegated-skill authority |
-| PROD-7 and H | separately approved platform/Headless decisions; neither is required to pretend P15 release readiness |
-
-P13 remains the non-developer beta acceptance gate and P15 remains the final
-release/operations gate. Product work completed early is prerequisite evidence,
-not an advance phase claim.
+cross-cutting product workstream aligned with the functional gates in
+[`../ROADMAP.md`](../ROADMAP.md). The former root P9--P15 phase book is
+historical and is not a dependency or authority for this roadmap. Product work
+completed early is prerequisite evidence, not an implementation or release
+claim.
 
 ### PROD-0: Product Truth And Threat Repair
 

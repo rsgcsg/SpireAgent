@@ -93,17 +93,17 @@ internal static class BridgeContractManifest
             new[]
             {
                 Operation("toggle_deck_transform_card", BridgeOperationEvidenceStatus.OrganicCanaryExercised,
-                    "PREVIEW_38_DECK_TRANSFORM_CLOSEOUT_2026-07-18.md#organic-canary"),
+                    "../archive/bridge-v2-previews/2026-07/PREVIEW_38_DECK_TRANSFORM_CLOSEOUT_2026-07-18.md#organic-canary"),
                 Operation("preview_deck_transform", BridgeOperationEvidenceStatus.SourceAudited,
-                    "PREVIEW_38_DECK_TRANSFORM_CLOSEOUT_2026-07-18.md#source-audit"),
+                    "../archive/bridge-v2-previews/2026-07/PREVIEW_38_DECK_TRANSFORM_CLOSEOUT_2026-07-18.md#source-audit"),
                 Operation("confirm_deck_transform", BridgeOperationEvidenceStatus.OrganicCanaryExercised,
-                    "PREVIEW_38_DECK_TRANSFORM_CLOSEOUT_2026-07-18.md#organic-canary"),
+                    "../archive/bridge-v2-previews/2026-07/PREVIEW_38_DECK_TRANSFORM_CLOSEOUT_2026-07-18.md#organic-canary"),
                 Operation("cancel_deck_transform_preview", BridgeOperationEvidenceStatus.SourceAudited,
-                    "PREVIEW_38_DECK_TRANSFORM_CLOSEOUT_2026-07-18.md#source-audit"),
+                    "../archive/bridge-v2-previews/2026-07/PREVIEW_38_DECK_TRANSFORM_CLOSEOUT_2026-07-18.md#source-audit"),
                 Operation("cancel_deck_transform_selection", BridgeOperationEvidenceStatus.SourceAudited,
-                    "PREVIEW_38_DECK_TRANSFORM_CLOSEOUT_2026-07-18.md#source-audit"),
+                    "../archive/bridge-v2-previews/2026-07/PREVIEW_38_DECK_TRANSFORM_CLOSEOUT_2026-07-18.md#source-audit"),
                 Operation("toggle_deck_transform_upgrade_view", BridgeOperationEvidenceStatus.OrganicCanaryExercised,
-                    "PREVIEW_38_DECK_TRANSFORM_CLOSEOUT_2026-07-18.md#organic-canary")
+                    "../archive/bridge-v2-previews/2026-07/PREVIEW_38_DECK_TRANSFORM_CLOSEOUT_2026-07-18.md#organic-canary")
             },
             "sts2-v0.109.0:WhisperingHollow.Hug+CardSelectCmd.FromDeckForTransformation+NDeckTransformSelectScreen+exact-instance-post-state-witness",
             "purpose_specific_random_deck_transform",
@@ -201,13 +201,13 @@ internal static class BridgeContractManifest
             new[]
             {
                 Operation("open_treasure_chest", BridgeOperationEvidenceStatus.SourceAudited,
-                    "PREVIEW_23_UPGRADE_TREASURE_CLOSEOUT_2026-07-17.md#source-audit"),
+                    "../archive/bridge-v2-previews/2026-07/PREVIEW_23_UPGRADE_TREASURE_CLOSEOUT_2026-07-17.md#source-audit"),
                 Operation("choose_treasure_relic", BridgeOperationEvidenceStatus.OrganicCanaryExercised,
-                    "PREVIEW_23_UPGRADE_TREASURE_CLOSEOUT_2026-07-17.md#organic-canary"),
+                    "../archive/bridge-v2-previews/2026-07/PREVIEW_23_UPGRADE_TREASURE_CLOSEOUT_2026-07-17.md#organic-canary"),
                 Operation("skip_treasure_relic", BridgeOperationEvidenceStatus.SourceAudited,
-                    "PREVIEW_23_UPGRADE_TREASURE_CLOSEOUT_2026-07-17.md#source-audit"),
+                    "../archive/bridge-v2-previews/2026-07/PREVIEW_23_UPGRADE_TREASURE_CLOSEOUT_2026-07-17.md#source-audit"),
                 Operation("proceed_treasure_room", BridgeOperationEvidenceStatus.OrganicCanaryExercised,
-                    "PREVIEW_23_UPGRADE_TREASURE_CLOSEOUT_2026-07-17.md#organic-canary")
+                    "../archive/bridge-v2-previews/2026-07/PREVIEW_23_UPGRADE_TREASURE_CLOSEOUT_2026-07-17.md#organic-canary")
             },
             "sts2-v0.109.0:TreasureRoom+NTreasureRoom+NTreasureRoomRelicCollection+semantic-post-state-canary",
             "treasure_room_flow",
@@ -233,9 +233,9 @@ internal static class BridgeContractManifest
             new[]
             {
                 Operation("continue_run", BridgeOperationEvidenceStatus.OrganicCanaryExercised,
-                    "PREVIEW_37_MENU_NAVIGATION_CLOSEOUT_2026-07-18.md#continue-organic-canary"),
+                    "../archive/bridge-v2-previews/2026-07/PREVIEW_37_MENU_NAVIGATION_CLOSEOUT_2026-07-18.md#continue-organic-canary"),
                 Operation("open_singleplayer", BridgeOperationEvidenceStatus.SourceAudited,
-                    "PREVIEW_37_MENU_NAVIGATION_CLOSEOUT_2026-07-18.md#source-audit")
+                    "../archive/bridge-v2-previews/2026-07/PREVIEW_37_MENU_NAVIGATION_CLOSEOUT_2026-07-18.md#source-audit")
             },
             "sts2-v0.109.0:NMainMenu+exact-root-controls+modal-exclusion+run-or-submenu-witness",
             "standard_run_root_navigation",
@@ -261,7 +261,7 @@ internal static class BridgeContractManifest
             Array.Empty<string>(),
             BridgeOperationEvidenceStatus.OrganicQualified,
             new[] { ContractTest },
-            new[] { CoverageDoc, "docs/bridge-v2/RUN_DECK_PILE_INSPECTION_AUDIT_2026-07-16.md" }),
+            new[] { CoverageDoc, "../archive/bridge-v2-previews/2026-07/RUN_DECK_PILE_INSPECTION_AUDIT_2026-07-16.md" }),
         new BridgeInspectionManifestEntry(
             BridgeInspectionBuilder.CombatPilesKind,
             BridgeV2Contract.ProtocolVersion,
@@ -273,7 +273,7 @@ internal static class BridgeContractManifest
             new[] { "draw_pile_order" },
             BridgeOperationEvidenceStatus.SurfaceLevelOnly,
             new[] { ContractTest },
-            new[] { CoverageDoc, "docs/bridge-v2/RUN_DECK_PILE_INSPECTION_AUDIT_2026-07-16.md" }),
+            new[] { CoverageDoc, "../archive/bridge-v2-previews/2026-07/RUN_DECK_PILE_INSPECTION_AUDIT_2026-07-16.md" }),
         new BridgeInspectionManifestEntry(
             BridgeInspectionBuilder.ShopCatalogKind,
             BridgeV2Contract.ProtocolVersion,
@@ -285,7 +285,7 @@ internal static class BridgeContractManifest
             Array.Empty<string>(),
             BridgeOperationEvidenceStatus.SourceAudited,
             new[] { ContractTest },
-            new[] { CoverageDoc, "docs/bridge-v2/PREVIEW_14_SHOP_SURFACE_AUDIT_2026-07-17.md" })
+            new[] { CoverageDoc, "../archive/bridge-v2-previews/2026-07/PREVIEW_14_SHOP_SURFACE_AUDIT_2026-07-17.md" })
     };
 
     public static IReadOnlyList<string> ImplementedInspectionKinds =>
