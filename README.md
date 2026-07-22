@@ -12,11 +12,11 @@ and do not define the current architecture, permission model, or roadmap.
 
 ## Current Truth
 
-The active connector is not yet a proven end-to-end release baseline: the C#
-Bridge source/installed DLL advertises `2.0-preview.54`, while Re-SpireAgent
-currently requires `2.0-preview.56`. Both projects can pass their independent
-checks, but source truth, cross-language contract compatibility, build/install,
-and loaded-runtime identity must agree before v2 coverage or permission grows.
+The active connector now shares a `2.0-preview.55` contract between C# and
+Re-SpireAgent. A Release DLL was installed and loaded by Steam with a matching
+SHA/MVID, and Re completed a read-only strict-v2 inspection. One bounded
+existing action/completion canary remains required before v2 coverage or
+permission grows.
 
 Bridge v2's safety kernel remains the current direction: one active input
 owner, opaque state-bound actions, execute-time validation, semantic completion,

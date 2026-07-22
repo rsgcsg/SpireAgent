@@ -2,9 +2,9 @@
 
 > Source-truth warning, 2026-07-22: this matrix inventories historical
 > qualification and source implementation. It is not proof that the current
-> clean checkout works end to end. The C# Bridge is `2.0-preview.54` while Re
-> requires `2.0-preview.56`, and no current loaded runtime identity was
-> available during the audit. Existing percentage estimates are planning
+> clean checkout works end to end. C# and Re now share `2.0-preview.55`, but no
+> current Release artifact or loaded runtime identity is available. Existing
+> percentage estimates are planning
 > estimates, not measured player-visible closure or v1 parity. See the
 > [real connector audit and migration plan](REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md).
 

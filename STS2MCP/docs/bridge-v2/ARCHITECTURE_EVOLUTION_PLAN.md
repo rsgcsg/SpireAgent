@@ -6,23 +6,23 @@ runtime authority.
 
 ## Mandatory Precondition: Source Truth Repair
 
-Status: blocked and highest priority as of 2026-07-22.
+Status: source contract complete; loaded-artifact qualification remains highest
+priority as of 2026-07-22.
 
-The C# Bridge remains `2.0-preview.54` while Re requires
-`2.0-preview.56` and contract fields/source branches absent from the C# source.
-Independent green test suites do not prove cross-language compatibility. Before
-any later phase or new Surface proceeds:
+C# and Re now share `2.0-preview.55`, with explicit operation scopes and a
+Gateway assembly digest. Independent green suites still do not prove a loaded
+game connector. Before any later phase or new Surface proceeds:
 
-- select and document one actual protocol revision;
-- align C#, Re, examples, installed artifact, and capability declarations;
-- add language-neutral compatibility fixtures decoded by the real Re decoder;
+- keep C#, Re, examples, installed artifact, and capability declarations on the
+  same revision;
 - build, install, load, and record exact SHA/MVID/runtime/game/Modset identity;
 - exercise read-only negotiation and one existing low-risk canary without
   expanding permission.
 
 See the [2026-07-22 real connector audit and migration plan](REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md).
 The phases below describe retained architecture work, but Phase 2 and later are
-not authorized until this precondition and a current reliability baseline pass.
+not authorized until this loaded-artifact precondition and a current reliability
+baseline pass.
 
 ## Product Release Safety Precondition
 

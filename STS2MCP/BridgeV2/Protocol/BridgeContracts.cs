@@ -7,7 +7,7 @@ namespace STS2_MCP.BridgeV2.Protocol;
 
 public static class BridgeV2Contract
 {
-    public const string ProtocolVersion = "2.0-preview.54";
+    public const string ProtocolVersion = "2.0-preview.55";
     public const string ObservationPolicyId = "player_visible_ui_v1";
 }
 
@@ -17,7 +17,16 @@ public sealed record BridgeServerIdentity(
     string Version,
     string UpstreamCommit,
     string ModuleVersionId,
-    string RuntimeInstanceId);
+    string RuntimeInstanceId)
+{
+    // The file digest identifies the loaded Gateway artifact without exposing its path.
+    public string AssemblyFileSha256 { get; init; } = string.Empty;
+}
+
+public sealed record ActionPermissionScope(
+    string SurfaceKind,
+    string Operation,
+    string Tier);
 
 public sealed record CompatibilityAssessment(
     string Status,
@@ -32,7 +41,12 @@ public sealed record CompatibilityAssessment(
     IReadOnlyList<string> InspectionCanaryKinds,
     IReadOnlyList<string> ObservationOnlySurfaceKinds,
     IReadOnlyList<string> ObservationCandidateBuildFingerprints,
-    string Detail);
+    string Detail)
+{
+    // Exact operation scopes are the sole action-authority source for strict clients.
+    public IReadOnlyList<ActionPermissionScope> ActionPermissionScopes { get; init; } =
+        Array.Empty<ActionPermissionScope>();
+}
 
 public sealed record GameBuildIdentity(
     string? Version,

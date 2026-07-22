@@ -5,13 +5,20 @@ Historical preview reports are preserved in
 [`../../../archive/bridge-v2-previews/`](../../../archive/bridge-v2-previews/)
 and do not grant current authority.
 
-## Current Source-Truth Blocker
+## Current Source-Truth Status
 
-The C# Bridge source and installed DLL advertise `2.0-preview.54`. Current
-Re-SpireAgent requires `2.0-preview.56`, including fields, operation scopes,
-and a `discovery` generated-card source branch absent from the C# source. The
-independent C# and TypeScript suites can therefore be green while the current
-checkout is not a proven end-to-end connector.
+The C# Bridge and Re-SpireAgent now share `2.0-preview.55`. C# derives explicit
+`surface_kind + operation + tier` scopes from the exact-build manifest,
+advertises only those operations, and publishes a path-free SHA-256 for its
+loaded assembly. Re decodes the same contract. The attempted `.56` Discovery
+branch was not retained because current C# source has no verified native source
+binding for it; unknown generated-card sources remain rejected.
+
+The Release artifact was installed and the Steam process loaded the same
+SHA/MVID; Re completed a strict read-only negotiated inspection. No command was
+submitted, so no action/completion qualification was renewed for this exact
+revision. The current checkout is therefore not an end-to-end qualified
+connector.
 
 No current loaded-game identity has been established for the clean checkout.
 Historical preview.54 evidence is scoped to its recorded game build, Modset,
@@ -20,15 +27,9 @@ current C# source, a different installed artifact, or another environment.
 
 ## Required Repair Order
 
-1. Choose one actual protocol revision and align C# source, Re decoder,
-   capabilities, protocol examples, and documentation.
-2. Add language-neutral fixtures emitted by the C# contract and decoded by the
-   real Re consumer.
-3. Produce one Release artifact, record its SHA/MVID, install it, and verify
-   the game process loaded the same artifact.
-4. Re-negotiate exact game/Modset/runtime identity and run a bounded read plus
-   existing low-risk action/completion canary.
-5. Only then reopen coverage or permission expansion one exact operation at a
+1. Run one existing low-risk action/completion canary and immediately verify
+   its successor state through Re.
+2. Only then reopen coverage or permission expansion one exact operation at a
    time.
 
 The detailed audit and migration sequence is
@@ -57,6 +58,7 @@ a current v2 permission claim.
 
 ## Next High-Value Work
 
-Source Truth Repair is the next task. Do not add another Surface, broaden
-capabilities, or mark an historical preview as current before the cross-language
-contract and loaded-artifact gap closes.
+The next task is an existing-scope action/completion canary. Do not add another
+Surface, broaden capabilities, or mark an historical preview as current before
+that exact-artifact action evidence exists. See the
+[source-truth repair closeout](SOURCE_TRUTH_REPAIR_CLOSEOUT_2026-07-22.md).

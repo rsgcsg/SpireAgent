@@ -27,9 +27,33 @@ internal static class BridgeV2Runtime
     private static readonly Dictionary<string, RegisteredBridgeAction> Actions = new(StringComparer.Ordinal);
     private static readonly string RuntimeInstanceId = Guid.NewGuid().ToString("N");
 
-    public static BridgeCapabilitiesResponse GetCapabilities()
+    internal static GameBuildIdentity ReadCurrentGameIdentity()
     {
         GameBuildIdentity game = BridgeGameIdentity.Read();
+        CompatibilityAssessment compatibility = BridgeContractManifest.WithExplicitActionScopes(
+            game.Compatibility);
+        if (BridgeAssemblyIdentity.LoadedAssemblySha256 == null)
+        {
+            compatibility = compatibility with
+            {
+                Status = "bridge_artifact_identity_unavailable",
+                ActionExecutionAllowed = false,
+                InspectionAllowed = false,
+                ActionExecutionSurfaceKinds = Array.Empty<string>(),
+                ActionCanarySurfaceKinds = Array.Empty<string>(),
+                InspectionAllowedKinds = Array.Empty<string>(),
+                InspectionCanaryKinds = Array.Empty<string>(),
+                ActionPermissionScopes = Array.Empty<ActionPermissionScope>(),
+                Detail = $"{compatibility.Detail} The loaded Gateway assembly digest is unavailable; action and Inspection authority fail closed."
+            };
+        }
+
+        return game with { Compatibility = compatibility };
+    }
+
+    public static BridgeCapabilitiesResponse GetCapabilities()
+    {
+        GameBuildIdentity game = ReadCurrentGameIdentity();
         var warnings = new List<string>
         {
             "Bridge v2 is an incremental preview. Unlisted surfaces fail closed with no legal actions.",
@@ -107,7 +131,8 @@ internal static class BridgeV2Runtime
 
     public static BridgeStateEnvelope Observe()
     {
-        BridgeObservationDraft draft = BridgeSnapshotBuilder.Build(EntityRegistry);
+        GameBuildIdentity game = ReadCurrentGameIdentity();
+        BridgeObservationDraft draft = BridgeSnapshotBuilder.Build(EntityRegistry, game);
         BridgeSharedVisibleStateBuildResult shared = draft.Game.Compatibility.StateObservationAllowed
             ? BridgeSharedVisibleStateBuilder.Build(EntityRegistry)
             : new BridgeSharedVisibleStateBuildResult(false, null, null);
@@ -334,7 +359,10 @@ internal static class BridgeV2Runtime
         McpMod.Version,
         "20eadebde358a37cca41f8b38728099e6d0d19db",
         typeof(McpMod).Assembly.ManifestModule.ModuleVersionId.ToString("D"),
-        RuntimeInstanceId);
+        RuntimeInstanceId)
+    {
+        AssemblyFileSha256 = BridgeAssemblyIdentity.LoadedAssemblySha256 ?? string.Empty
+    };
 
     private static IReadOnlyList<string> AllowedInspectionKinds(CompatibilityAssessment compatibility)
         => BridgeSurfacePermission.PermittedInspectionKinds(

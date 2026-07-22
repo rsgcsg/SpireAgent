@@ -57,8 +57,65 @@ public sealed class BridgeContractTests
             .ToDictionary(capability => capability.Kind, StringComparer.Ordinal);
 
         Assert.Equal("candidate_action_canary", capabilities["event_option"].Support);
+        Assert.Empty(capabilities["event_option"].Operations);
         Assert.Equal("not_qualified_for_current_build", capabilities["combat_turn"].Support);
         Assert.Equal("not_qualified_for_current_build", capabilities["treasure_room"].Support);
+    }
+
+    [Fact]
+    public void ExplicitActionScopesAreTheExactManifestProjectionForTheCurrentBuild()
+    {
+        CompatibilityAssessment compatibility = BridgeContractManifest.WithExplicitActionScopes(
+            BridgeGameIdentity.Assess("v0.109.0", "c12f634d", -840572606));
+        IReadOnlyDictionary<string, SurfaceCapability> capabilities = BridgeContractManifest
+            .Capabilities(compatibility)
+            .ToDictionary(capability => capability.Kind, StringComparer.Ordinal);
+
+        Assert.NotEmpty(compatibility.ActionPermissionScopes);
+        Assert.Equal(
+            compatibility.ActionPermissionScopes.Count,
+            compatibility.ActionPermissionScopes
+                .Select(scope => (scope.SurfaceKind, scope.Operation))
+                .Distinct()
+                .Count());
+        Assert.All(compatibility.ActionPermissionScopes, scope =>
+        {
+            Assert.Contains(scope.Tier, new[] { "qualified", "canary" });
+            Assert.True(BridgeSurfacePermission.IsActionPermitted(
+                compatibility,
+                scope.SurfaceKind,
+                scope.Operation));
+        });
+
+        foreach (SurfaceCapability capability in capabilities.Values)
+        {
+            string[] expected = compatibility.ActionPermissionScopes
+                .Where(scope => scope.SurfaceKind == capability.Kind)
+                .Select(scope => scope.Operation)
+                .OrderBy(operation => operation, StringComparer.Ordinal)
+                .ToArray();
+            Assert.Equal(expected, capability.Operations.OrderBy(operation => operation, StringComparer.Ordinal));
+        }
+        Assert.Contains(
+            compatibility.ActionPermissionScopes,
+            scope => scope.SurfaceKind == "deck_enchant_selection" && scope.Tier == "canary");
+    }
+
+    [Fact]
+    public void GatewayArtifactDigestIsAPathFreeSha256()
+    {
+        string path = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(path, "bridge-contract-fixture");
+            string? digest = BridgeAssemblyIdentity.HashFile(path);
+            Assert.Matches("^[0-9a-f]{64}$", digest ?? string.Empty);
+            Assert.DoesNotContain(path, digest ?? string.Empty, StringComparison.Ordinal);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
     }
 
     [Fact]
@@ -203,7 +260,7 @@ public sealed class BridgeContractTests
     [Fact]
     public void ExplicitQualifiedAndCanaryScopesRemainDistinct()
     {
-        var compatibility = new CompatibilityAssessment(
+        var compatibility = BridgeContractManifest.WithExplicitActionScopes(new CompatibilityAssessment(
             "qualified_scoped",
             new[] { "0.109.0" },
             new[] { "v0.109.0|commit|1" },
@@ -216,7 +273,7 @@ public sealed class BridgeContractTests
             InspectionCanaryKinds: new[] { "combat_piles" },
             ObservationOnlySurfaceKinds: Array.Empty<string>(),
             ObservationCandidateBuildFingerprints: Array.Empty<string>(),
-            Detail: "explicit scopes");
+            Detail: "explicit scopes"));
 
         Assert.True(BridgeSurfacePermission.IsActionPermitted(compatibility, "combat_turn"));
         Assert.True(BridgeSurfacePermission.IsActionPermitted(compatibility, "event_option"));
@@ -242,7 +299,7 @@ public sealed class BridgeContractTests
     [Fact]
     public void CanaryOnlyScopePermitsOnlyExplicitSurfaceAndNoInspection()
     {
-        var compatibility = new CompatibilityAssessment(
+        var compatibility = BridgeContractManifest.WithExplicitActionScopes(new CompatibilityAssessment(
             "qualified_scoped",
             new[] { "0.109.0" },
             new[] { "v0.109.0|commit|1" },
@@ -255,7 +312,7 @@ public sealed class BridgeContractTests
             InspectionCanaryKinds: Array.Empty<string>(),
             ObservationOnlySurfaceKinds: Array.Empty<string>(),
             ObservationCandidateBuildFingerprints: Array.Empty<string>(),
-            Detail: "current-build event option canary only");
+            Detail: "current-build event option canary only"));
 
         Assert.True(BridgeSurfacePermission.IsActionPermitted(compatibility, "event_option"));
         Assert.False(BridgeSurfacePermission.IsActionPermitted(compatibility, "combat_turn"));
@@ -293,10 +350,11 @@ public sealed class BridgeContractTests
     [Fact]
     public void SourceQualifiedIdentityKeepsCombatPileInspectionReadOnlyAndHeadbuttActionCanaryScoped()
     {
-        CompatibilityAssessment compatibility = BridgeGameIdentity.Assess(
-            "v0.109.0",
-            "c12f634d",
-            -840572606);
+        CompatibilityAssessment compatibility = BridgeContractManifest.WithExplicitActionScopes(
+            BridgeGameIdentity.Assess(
+                "v0.109.0",
+                "c12f634d",
+                -840572606));
 
         Assert.Equal("qualified_scoped", compatibility.Status);
         Assert.True(compatibility.InspectionAllowed);
@@ -684,7 +742,7 @@ public sealed class BridgeContractTests
     [Fact]
     public void ContractInstanceShadowReportsButNeverGrantsAuthority()
     {
-        var compatibility = new CompatibilityAssessment(
+        var compatibility = BridgeContractManifest.WithExplicitActionScopes(new CompatibilityAssessment(
             "qualified_scoped",
             new[] { "0.109.0" },
             new[] { "build" },
@@ -697,7 +755,7 @@ public sealed class BridgeContractTests
             InspectionCanaryKinds: Array.Empty<string>(),
             ObservationOnlySurfaceKinds: Array.Empty<string>(),
             ObservationCandidateBuildFingerprints: Array.Empty<string>(),
-            Detail: "test");
+            Detail: "test"));
         var draft = new BridgeObservationDraft(
             "rest-sig",
             "ready",
@@ -721,11 +779,11 @@ public sealed class BridgeContractTests
 
         Assert.Equal("resolved_manifest_contract", shadow.Status);
         Assert.Equal("qualified", shadow.CurrentAuthorityTier);
-        Assert.Equal("exact_environment_surface_kind_gate", shadow.CurrentAuthorityBasis);
+        Assert.Equal("exact_environment_surface_operation_gate", shadow.CurrentAuthorityBasis);
         Assert.False(shadow.Authorizing);
         Assert.Contains(shadow.Operations, operation =>
             operation.Operation == "proceed_rest_site" && operation.Published);
-        Assert.Contains("authority_remains_surface_kind_scoped", shadow.Limitations);
+        Assert.Contains("authority_remains_explicit_operation_scoped", shadow.Limitations);
     }
 
     [Fact]

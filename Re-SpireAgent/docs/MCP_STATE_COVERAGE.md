@@ -8,7 +8,7 @@ matrix. This document records the Re-SpireAgent consumption boundary.
 
 ## Bridge v2 Current Client Contract
 
-Re strictly decodes `2.0-preview.56`. It accepts Bridge actions only when:
+Re strictly decodes `2.0-preview.55`. It accepts Bridge actions only when:
 
 - game, Modset, Bridge assembly SHA-256, MVID, and runtime identities match
   exact scoped capabilities and state;
@@ -19,10 +19,10 @@ Re strictly decodes `2.0-preview.56`. It accepts Bridge actions only when:
   this build;
 - the current Surface is Bridge-advertised and every action is state-bound.
 
-Current identity `v0.109.0|c12f634d|1833084275` has 71 canary operation
-scopes across 23 Surface kinds, no qualified operation, and three read-only
-Inspection canaries. The table describes supported projections and historical
-evidence diversity; every executable row is canary-only on this build.
+The current exact identity determines the Gateway-emitted explicit operation
+scopes. The table describes supported projections and historical evidence
+diversity; it does not transfer permission between game builds or Gateway
+artifacts.
 
 | Bridge contract | Re projection | Current v0.109 status |
 |---|---|---|
@@ -37,7 +37,7 @@ evidence diversity; every executable row is canary-only on this build.
 | `event_dialogue` / `event_option` | revealed prefix or typed visible options/tooltips | current-build action canaries |
 | `deck_transform_selection` | `event + deck_transform_selection`, exact selected instances and random-uncommitted preview | Whispering Hollow action canary; other origins fail closed |
 | `deck_enchant_selection` | `event + deck_enchant_selection`, exact target enchantment, selected instances, and selecting/preview stages | Self-Help Book action canary; semantic exact-card post-state confirmed, other origins fail closed |
-| `generated_card_choice` | source-discriminated `event` run-deck or `combat` hand choice with exact purpose/source/destination/cost/overflow semantics | Lead Paperweight, Colorless Potion, and Attack Potion selections exercised on historical exact MVIDs; Splash and Discovery are exact-source audited, with Discovery exercised only on a superseded preview.56 MVID; final-MVID Skip/overflow/source diversity remains pending; every other source fails closed |
+| `generated_card_choice` | source-discriminated `event` run-deck or `combat` hand choice with exact purpose/source/destination/cost/overflow semantics | Lead Paperweight, Colorless/Attack/Skill/Power Potion, and Splash have C# source bindings; final-MVID source diversity remains pending. Discovery has no current binding and every other source fails closed. |
 | exact Headbutt/Graveblast `combat_pile_card_selection` | exact discard candidate plus source-discriminated draw-top or hand/full-hand-discard purpose | action canary; both final completion branches need a natural repeat |
 | `game_over` | `run_ended + game_over` | current-MVID loss intro -> summary -> return lifecycle confirmed; win/timeline diversity pending |
 | `run_deck` Inspection | typed player run-deck evidence | current-build read-only canary; no authority |
@@ -75,8 +75,7 @@ Observed or expected v1-owned families still include:
 - crystal-sphere and other special screens without a current v2 contract;
 - every non-Self-Help-Book deck-enchant and non-Headbutt/non-Graveblast
   combat-pile selector, plus every generated-card origin except exact Lead
-  Paperweight, native Colorless/Attack/Skill/Power Potions, native Splash, and
-  native Discovery.
+  Paperweight, native Colorless/Attack/Skill/Power Potions, and native Splash.
 
 v1 reconstructs indices and settlement locally. It is diagnostics compatibility
 code, not production authority or equivalent semantic evidence.

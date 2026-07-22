@@ -30,10 +30,12 @@ internal sealed record BridgeContractManifestEntry(
     IReadOnlyList<string> TestReferences,
     IReadOnlyList<string> DocumentationReferences)
 {
-    public SurfaceCapability ToCapability(string support) => new(
+    public SurfaceCapability ToCapability(
+        string support,
+        IReadOnlyList<string> permittedOperations) => new(
         Kind,
         support,
-        Operations.Select(operation => operation.Operation).ToArray(),
+        permittedOperations,
         SourceBindingId);
 }
 
@@ -291,9 +293,45 @@ internal static class BridgeContractManifest
     public static IReadOnlyList<string> ImplementedInspectionKinds =>
         InspectionEntries.Select(entry => entry.Kind).ToArray();
 
+    /// <summary>
+    /// Projects the exact-build surface tier into explicit operation scopes. The
+    /// manifest is inventory only; this method is the one place where current
+    /// compatibility may turn an implemented operation into advertised authority.
+    /// </summary>
+    public static CompatibilityAssessment WithExplicitActionScopes(
+        CompatibilityAssessment compatibility)
+    {
+        if (!compatibility.ActionExecutionAllowed)
+            return compatibility with { ActionPermissionScopes = Array.Empty<ActionPermissionScope>() };
+
+        IReadOnlyList<ActionPermissionScope> scopes = Entries
+            .SelectMany(entry => entry.Operations.Select(operation =>
+            {
+                string tier = compatibility.ActionExecutionSurfaceKinds.Contains(entry.Kind, StringComparer.Ordinal)
+                    ? "qualified"
+                    : compatibility.ActionCanarySurfaceKinds.Contains(entry.Kind, StringComparer.Ordinal)
+                        ? "canary"
+                        : string.Empty;
+                return new ActionPermissionScope(entry.Kind, operation.Operation, tier);
+            }))
+            .Where(scope => scope.Tier.Length > 0)
+            .OrderBy(scope => scope.SurfaceKind, StringComparer.Ordinal)
+            .ThenBy(scope => scope.Operation, StringComparer.Ordinal)
+            .ToArray();
+
+        return compatibility with { ActionPermissionScopes = scopes };
+    }
+
     public static IReadOnlyList<SurfaceCapability> Capabilities(CompatibilityAssessment compatibility) =>
         Entries.Select(entry => entry.ToCapability(
-            BridgeSurfacePermission.SupportLevel(compatibility, entry.Kind))).ToArray();
+            BridgeSurfacePermission.SupportLevel(compatibility, entry.Kind),
+            entry.Operations
+                .Select(operation => operation.Operation)
+                .Where(operation => BridgeSurfacePermission.IsActionPermitted(
+                    compatibility,
+                    entry.Kind,
+                    operation))
+                .ToArray())).ToArray();
 
     public static BridgeContractManifestEntry? Find(string surfaceKind) =>
         Entries.SingleOrDefault(entry => string.Equals(entry.Kind, surfaceKind, StringComparison.Ordinal));

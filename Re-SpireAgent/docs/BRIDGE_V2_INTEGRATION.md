@@ -1,10 +1,9 @@
 # Bridge v2 Integration
 
-> Current source-truth blocker, 2026-07-22: this document describes Re's
-> `2.0-preview.56` consumer contract, but the C# Bridge source and installed DLL
-> remain `2.0-preview.54`. The claimed preview.56 fields and authority inventory
-> are not current end-to-end support until Bridge/Re conformance, build,
-> install, and loaded-runtime identity are closed. See the
+> Current source-truth status, 2026-07-22: Re and C# share the
+> `2.0-preview.55` consumer contract. The source/fixture repair is not current
+> end-to-end support until a Release build, installation, and loaded-runtime
+> identity are closed. See the
 > [real connector audit](../../STS2MCP/docs/bridge-v2/REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md).
 
 ## Connector Boundary
@@ -25,17 +24,14 @@ consumption.
 
 ## Current Scope
 
-Re-SpireAgent implements the strict `2.0-preview.56` consumer contract. When a
+Re-SpireAgent implements the strict `2.0-preview.55` consumer contract. When a
 matching Bridge exists, authority is read from capabilities rather than
 inferred from implementation or historical evidence.
 
-For exact game identity `v0.109.0|c12f634d|1833084275`, Re's configured
-preview.56 profile contains 71 explicit canary operation scopes across 23
-Surface kinds, no
-qualified operation, and three read-only Inspection canaries: `run_deck`,
-`combat_piles`, and `shop_catalog`. Every unlisted operation, source binding,
-Surface, and Inspection is disabled. Qualification from the historical
-`-840572606` game build or another Bridge MVID does not transfer.
+For every exact identity, Re accepts only the Gateway's explicit
+`surface_kind + operation + tier` scope projection. Every unlisted operation,
+source binding, Surface, and Inspection is disabled. Qualification from another
+game build or Bridge MVID does not transfer.
 
 Re compares state and capability permission scopes exactly, rejects duplicate
 or unadvertised scopes, and imports a legal action only when its
@@ -92,11 +88,9 @@ schema 25. It reuses only the generated-combat-card selection mechanics and the
 free-this-turn hand/discard completion witness. The source remains explicitly
 `splash`; no other card generator or Mod subtype inherits its authority.
 
-Preview.56 adds exact native Discovery to that closed source registry. Re
-accepts only the new `discovery` literal and does not infer candidates,
-legality, destination, Commit, or completion. The Bridge may wait through
-combat animation state changes only while the original semantic Witness is
-pending; timeout remains unknown and is never retried.
+Discovery is deliberately absent from preview.55: no current C# source binding
+proves its native source, legality, destination, Commit, or completion. Re
+rejects it as unknown instead of widening the generated-card registry.
 
 Source-target organic evidence includes merchant removal with exact post-state,
 independent event/rest upgrade journeys, ordinary combat actions, a Touch of

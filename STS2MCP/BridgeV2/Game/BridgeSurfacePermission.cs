@@ -9,8 +9,17 @@ internal static class BridgeSurfacePermission
 {
     public static bool IsActionPermitted(CompatibilityAssessment compatibility, string surfaceKind) =>
         compatibility.ActionExecutionAllowed
-        && (compatibility.ActionExecutionSurfaceKinds.Contains(surfaceKind, StringComparer.Ordinal)
-            || compatibility.ActionCanarySurfaceKinds.Contains(surfaceKind, StringComparer.Ordinal));
+        && compatibility.ActionPermissionScopes.Any(scope =>
+            string.Equals(scope.SurfaceKind, surfaceKind, StringComparison.Ordinal));
+
+    public static bool IsActionPermitted(
+        CompatibilityAssessment compatibility,
+        string surfaceKind,
+        string operation) =>
+        compatibility.ActionExecutionAllowed
+        && compatibility.ActionPermissionScopes.Any(scope =>
+            string.Equals(scope.SurfaceKind, surfaceKind, StringComparison.Ordinal)
+            && string.Equals(scope.Operation, operation, StringComparison.Ordinal));
 
     public static bool IsInspectionPermitted(CompatibilityAssessment compatibility, string inspectionKind) =>
         compatibility.InspectionAllowed

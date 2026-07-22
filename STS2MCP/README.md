@@ -10,13 +10,12 @@ state-bound protocol intended for the rebuilt `Re-SpireAgent` client.
 
 Bridge v2 is an incremental preview, not a replacement for all v1 surfaces.
 
-Current source-truth blocker: the C# Bridge and installed DLL are
-`2.0-preview.54`, while current Re-SpireAgent requires
-`2.0-preview.56` and fields/source branches absent from the Bridge source.
-Separate green test suites therefore do not establish a working current
-end-to-end product. Do not expand coverage or permission until the
-[2026-07-22 connector audit Stage 0](docs/bridge-v2/REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md)
-is complete.
+The C# Bridge and Re now share `2.0-preview.55`, with strict explicit
+operation scopes and a path-free loaded-assembly digest. The Release artifact
+is installed and its Steam-loaded SHA/MVID matches the expected identity; Re
+completed a read-only negotiated inspection. Do not expand coverage or
+permission until the existing-scope action/completion canary described in
+[Bridge v2 current status](docs/bridge-v2/CURRENT_STATUS.md) completes.
 
 > Product security warning: the current HTTP listener is a developer preview.
 > It binds to loopback and filters browser Origin, but it has no client
@@ -31,7 +30,7 @@ is complete.
   untested and has no v2 action or Inspection authority. Check
   [Bridge v2 current status](docs/bridge-v2/CURRENT_STATUS.md) before treating
   a local install as qualified.
-- Source `2.0-preview.54` keeps centralized overlay/room/menu ownership, typed
+- Source `2.0-preview.55` keeps centralized overlay/room/menu ownership, typed
   diagnostics, purpose-specific selection and event contracts, staged
   completion semantics, and a top-level read-only shared run/player HUD.
   Current-build capabilities distinguish scoped-qualified actions, action

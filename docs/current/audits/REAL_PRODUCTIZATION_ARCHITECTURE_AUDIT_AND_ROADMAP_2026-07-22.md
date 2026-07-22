@@ -48,12 +48,18 @@ There is no Companion, authenticated Gateway session, Gateway-enforced
 controller lease, consumer key store, installer, signed updater, support
 bundle, Agent SDK, plugin sandbox, Workshop workspace, or Headless host.
 
+> **Post-audit update, 2026-07-22:** the source mismatch described below was
+> repaired in `2.0-preview.55`. Installed/loaded-artifact proof and all product
+> gates remain open; the audit baseline and recommendations below are retained
+> as historical analysis.
+
 The most important conclusions are:
 
-1. **Source Truth Repair remains first.** C# Bridge `2.0-preview.54` and Re
-   `2.0-preview.56` are still incompatible in the clean checkout. A platform
-   cannot be built on a contract that its two first-party implementations do
-   not share.
+1. **Source Truth Repair was first and is now source/loaded-read closed.** C#
+   Bridge and Re share `2.0-preview.55`, and the loaded Gateway was decoded by
+   Re. One existing-scope action/completion canary remains before this becomes
+   an operational reliability baseline. A platform still cannot be built on
+   unproven command behavior.
 2. **Product threat repair moves forward.** The current unauthenticated
    loopback server allows any same-user local process to call both v1 and v2
    mutation routes. Origin filtering mitigates browser-origin abuse, but it is

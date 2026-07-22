@@ -2,6 +2,12 @@
 
 Status: canonical architecture audit and migration decision, 2026-07-22.
 
+> **Post-audit update, 2026-07-22:** its source-mismatch findings were repaired
+> in `2.0-preview.55`: C# and Re now share explicit operation scopes and the
+> Gateway artifact digest. The audit's installed/loaded-artifact and Organic
+> evidence gaps remain open. The baseline facts below are historical audit
+> evidence, not current status.
+
 Productization addendum: this connector audit remains canonical for live-game
 binding and migration, but the later [productization architecture audit](../../../docs/current/audits/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md)
 adds authentication, controller-session, restart, BYOK, Workshop, Companion,

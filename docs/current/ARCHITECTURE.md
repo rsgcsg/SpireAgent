@@ -45,8 +45,7 @@ yet.
 
 ## Current Architectural Constraint
 
-The Gateway and Re must converge on one mechanically checked connector
-contract before adding more Surface providers. The C# source is currently
-`2.0-preview.54` and Re requires `2.0-preview.56`; the source-truth repair is
-more valuable than new coverage because it makes current evidence executable
-and prevents documentation from outrunning the loaded artifact.
+The Gateway and Re now share one mechanically checked `2.0-preview.55`
+connector contract. The next boundary is operational: build, install, and prove
+one loaded artifact before adding Surface providers. This prevents source/test
+agreement from being mistaken for current runtime evidence.

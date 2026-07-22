@@ -1,11 +1,11 @@
 # Re-SpireAgent RE-P1
 
-> Compatibility warning, 2026-07-22: Re currently requires Bridge
-> `2.0-preview.56`, while the C# Bridge source and installed DLL remain
-> `2.0-preview.54`. The independent test suites pass, but the clean checkout is
-> not a proven end-to-end runtime until the
+> Compatibility status, 2026-07-22: Re and C# now share
+> `2.0-preview.55`, including explicit operation scopes and the Gateway
+> assembly digest. The clean checkout is still not a proven end-to-end runtime:
+> a Release artifact must be installed and verified loaded before the
 > [source-truth repair](../STS2MCP/docs/bridge-v2/REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md)
-> completes.
+> can be considered operationally closed.
 
 > Product-boundary warning: direct Re-to-Gateway REST and `.env.local` provider
 > keys are developer workflows, not the target consumer architecture. The
@@ -23,17 +23,16 @@ waits for the Bridge command lifecycle, and records the complete evidence.
 
 RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, shadow/live modes, policy promotion, or the old project's phase machinery. Its job is to make one decision path correct and auditable.
 
-Re's current strict client contract is Bridge `2.0-preview.56` on exact game
+Re's current strict client contract is Bridge `2.0-preview.55` on exact game
 identity `v0.109.0|c12f634d|1833084275`. Re requires capabilities and every
 state/bundle/Inspection to agree on protocol, game identity, exact Modset
 fingerprint, Bridge assembly SHA-256, module MVID, and runtime instance. An
 additional, failed, runtime-added, or mismatched Mod cannot import action or
 Inspection authority.
 
-Re's preview.56 contract declares 71 explicit canary operation scopes across
-23 Surface kinds and three read-only Inspection canaries; no operation or
-Inspection is qualified. Empty permission lists never mean wildcard. Re also
-rejects legal actions outside the exact capability operation inventory.
+Re imports only explicit operation scopes emitted by the Gateway's exact-build
+manifest; empty permission lists never mean wildcard. It rejects legal actions
+outside the matching capability operation inventory.
 Historical qualification on another game hash or Bridge MVID remains
 historical evidence only. See [MCP state coverage](docs/MCP_STATE_COVERAGE.md).
 
@@ -98,12 +97,9 @@ Preview.54 adds exact native Splash to `generated_card_choice` with
 the existing free-this-turn hand/discard contract. Both branches remain
 current-build canaries until their final-MVID actions naturally recur.
 
-Preview.56 adds exact native Discovery as a second generated-combat-card
-source and preserves `sourceKind=discovery` through the same bounded child
-mechanics. Bridge still owns exact source binding and semantic completion; Re
-only decodes the new literal. Combat command polling may cross animation-only
-intermediate states while retaining the original card/potion/turn Witness.
-Neither change broadens the 71-operation canary permission inventory.
+The abandoned `.56` Discovery experiment is not part of the current contract:
+the C# Gateway has no current source binding for Discovery, so Re rejects that
+unknown generated-card source rather than inferring shared mechanics.
 
 Exact no-input combat setup and post-combat resolution intervals normalize as
 `combat_transition(setup|resolution) + no_action + settling +

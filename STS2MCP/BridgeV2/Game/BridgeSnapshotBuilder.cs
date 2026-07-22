@@ -56,8 +56,14 @@ internal static class BridgeSnapshotBuilder
 
     public static BridgeObservationDraft Build(BridgeEntityRegistry entities)
     {
+        return Build(entities, BridgeV2Runtime.ReadCurrentGameIdentity());
+    }
+
+    public static BridgeObservationDraft Build(
+        BridgeEntityRegistry entities,
+        GameBuildIdentity game)
+    {
         IReadOnlyList<IBridgeSurfaceProvider> providers = CreateProviders();
-        GameBuildIdentity game = BridgeGameIdentity.Read();
         ActiveSurfaceSnapshot snapshot;
         try
         {
@@ -141,7 +147,7 @@ internal static class BridgeSnapshotBuilder
 
         if (resolution.Draft != null)
             return game.Compatibility.ActionExecutionAllowed
-                ? resolution.Draft
+                ? SuppressActionsOutsideCurrentOperationScope(resolution.Draft)
                 : SuppressActionsForCandidateObservation(resolution.Draft);
         if (resolution.MatchedKinds.Count > 1)
         {
@@ -179,11 +185,11 @@ internal static class BridgeSnapshotBuilder
                 return Unsupported(
                     game,
                     snapshot.SourceType,
-                    "Bridge v2 could not establish a unique unqualified semantic surface owner; legacy fallback is forbidden.",
-                    new[] { "legacy_fallback_owner_ambiguous" },
+                    "Bridge v2 could not establish a unique unqualified semantic surface owner.",
+                    new[] { "unqualified_surface_owner_ambiguous" },
                     BridgeContextBuilder.Build(entities),
                     BridgeDiagnostics.Create(
-                        "bridge.authority.legacy_fallback_ambiguous",
+                        "bridge.authority.unqualified_surface_ambiguous",
                         "error",
                         "authority",
                         "actions_suppressed",
@@ -199,15 +205,15 @@ internal static class BridgeSnapshotBuilder
                     new[] { $"surface_not_qualified_for_current_build:{legacySurfaceKind}" },
                     BridgeContextBuilder.Build(entities),
                     BridgeDiagnostics.Create(
-                        "bridge.authority.legacy_fallback_allowed",
+                        "bridge.authority.unqualified_surface",
                         "info",
                         "authority",
                         "surface_unsupported",
-                        "legacy_adapter"),
+                        "change_surface"),
                     new AuthorityHandoff(
-                        "legacy_fallback_allowed",
-                        legacySurfaceKind,
-                        "Exactly one known semantic surface matched outside the current build's Bridge v2 qualification scope."));
+                        "none_fail_closed",
+                        null,
+                        "Exactly one source-resolved semantic surface matched outside the current Bridge v2 operation scope."));
             }
         }
 
@@ -223,12 +229,10 @@ internal static class BridgeSnapshotBuilder
                 "surface",
                 "surface_unsupported",
                 "change_surface"),
-            game.Compatibility.Status == "supported_exact"
-                ? new AuthorityHandoff(
-                    "legacy_fallback_allowed",
-                    null,
-                    "This fully tested legacy build preserves the previous explicit unsupported-surface fallback contract.")
-                : null);
+            new AuthorityHandoff(
+                "none_fail_closed",
+                null,
+                "No Bridge v2 semantic surface owns the current input state."));
     }
 
     private static BridgeObservationDraft? TryBuildCombatNoInputTransition(
@@ -406,6 +410,45 @@ internal static class BridgeSnapshotBuilder
             Warnings = warnings,
             Actions = Array.Empty<BridgeActionDraft>(),
             Diagnostics = diagnostics
+        };
+    }
+
+    private static BridgeObservationDraft SuppressActionsOutsideCurrentOperationScope(
+        BridgeObservationDraft draft)
+    {
+        IReadOnlyList<BridgeActionDraft> permitted = draft.Actions
+            .Where(action => BridgeSurfacePermission.IsActionPermitted(
+                draft.Game.Compatibility,
+                draft.Surface.Kind,
+                action.Kind))
+            .ToArray();
+        if (permitted.Count == draft.Actions.Count)
+            return draft;
+
+        var completeness = draft.Completeness with
+        {
+            LegalActions = "suppressed_by_explicit_operation_scope"
+        };
+        return draft with
+        {
+            Readiness = "unsupported",
+            Completeness = completeness,
+            Actions = Array.Empty<BridgeActionDraft>(),
+            Warnings = draft.Warnings
+                .Append("operation_scope_mismatch: source-resolved actions were not fully authorized for this exact environment.")
+                .ToArray(),
+            AuthorityHandoff = new AuthorityHandoff(
+                "none_fail_closed",
+                null,
+                "Bridge v2 operation scopes did not authorize every published action for the active Surface."),
+            Diagnostics = draft.Diagnostics
+                .Append(BridgeDiagnostics.Create(
+                    "bridge.authority.operation_scope_mismatch",
+                    "error",
+                    "authority",
+                    "actions_suppressed",
+                    "update_bridge"))
+                .ToArray()
         };
     }
 }

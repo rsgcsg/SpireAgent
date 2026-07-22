@@ -2,11 +2,11 @@
 
 Status: canonical architecture boundary for the current real-game connection.
 
-Current compatibility warning: the C# Bridge source is `2.0-preview.54` while
-Re-SpireAgent currently requires `2.0-preview.56`. Until the
-[source-truth repair](REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md)
-closes, this document defines the intended ownership boundary, not proof that a
-clean checkout currently negotiates end to end.
+Current compatibility status: C# and Re share `2.0-preview.55`, including
+operation scopes and a Gateway artifact digest. Until a Release artifact is
+installed and its loaded identity is verified, this document defines the
+intended ownership boundary, not proof that a clean checkout negotiates end to
+end.
 
 Consumer distribution, local trust, Companion, BYOK, SDK, and release gates are
 defined in the [productization architecture audit](../../../docs/current/audits/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md).

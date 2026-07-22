@@ -1,6 +1,15 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.54`
+Protocol preview: `2.0-preview.55`
+
+Preview.55 repairs the C#/Re source contract: `bridge.assembly_file_sha256`
+identifies the loaded Gateway artifact without disclosing a local path, and
+`game.compatibility.action_permission_scopes` is the exact, fail-closed
+projection of the current build's manifest operations. A Surface capability
+lists only operations present in that scope. `legacy_fallback_allowed` is not a
+strict-v2 authority handoff; source-resolved but unscoped surfaces publish no
+actions with `none_fail_closed`. This does not add a source binding for
+Discovery or grant it generated-card authority.
 
 `bridge.upstream_commit` is the immutable imported upstream baseline, currently
 `20eadebde358a37cca41f8b38728099e6d0d19db`; it is not the current SpireAgent

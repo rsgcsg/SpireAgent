@@ -52,27 +52,34 @@ internal static class BridgeContractInstanceShadowBuilder
             manifest?.SourceBindingId,
             operations,
             authorityTier,
-            "exact_environment_surface_kind_gate",
+            "exact_environment_surface_operation_gate",
             Authorizing: false,
             new[]
             {
                 "shadow_inventory_only",
                 "manifest_binding_is_not_runtime_binding_proof",
                 "operation_evidence_does_not_grant_permission",
-                "authority_remains_surface_kind_scoped"
+                "authority_remains_explicit_operation_scoped"
             });
     }
 
     private static string CurrentAuthorityTier(BridgeObservationDraft draft)
     {
         CompatibilityAssessment compatibility = draft.Game.Compatibility;
+        string[] actionTiers = compatibility.ActionPermissionScopes
+            .Where(scope => scope.SurfaceKind == draft.Surface.Kind)
+            .Select(scope => scope.Tier)
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
         if (draft.AuthorityHandoff.Status == "bridge_owned"
             && compatibility.ActionExecutionAllowed
-            && compatibility.ActionExecutionSurfaceKinds.Contains(draft.Surface.Kind, StringComparer.Ordinal))
+            && actionTiers.Length == 1
+            && actionTiers[0] == "qualified")
             return "qualified";
         if (draft.AuthorityHandoff.Status == "bridge_owned"
             && compatibility.ActionExecutionAllowed
-            && compatibility.ActionCanarySurfaceKinds.Contains(draft.Surface.Kind, StringComparer.Ordinal))
+            && actionTiers.Length == 1
+            && actionTiers[0] == "canary")
             return "canary";
         if (compatibility.StateObservationAllowed
             && compatibility.ObservationOnlySurfaceKinds.Contains(draft.Surface.Kind, StringComparer.Ordinal))

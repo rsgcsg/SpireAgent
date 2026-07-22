@@ -10,22 +10,19 @@ This is the canonical short current-state document for the rebuilt project.
 - **Legacy:** the original root runtime and P8--P15 roadmap are retired and
   archived. They are not active workstreams.
 
-## Current Blocker
+## Current Gate
 
-The source/installed C# Bridge advertises `2.0-preview.54`, while the current
-Re consumer contract requires `2.0-preview.56`. Independent suites can pass
-while the two implementations remain incompatible. No coverage expansion,
-permission widening, or product release claim is valid until the exact
-cross-language contract, Release artifact, installed DLL, and loaded runtime
-identity agree.
+The C# Gateway and Re consumer now share `2.0-preview.55`; the Release DLL was
+installed and the running Steam process proved the same SHA/MVID to Re during a
+read-only negotiated inspection. The next gate is one existing, low-risk
+action/completion canary on that exact environment. No coverage expansion,
+permission widening, or product release claim is valid yet.
 
 ## Immediate Next Step
 
-Complete the source-truth repair described in
-[`STS2MCP/docs/bridge-v2/REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md`](../../STS2MCP/docs/bridge-v2/REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md):
-add or mechanically derive cross-language fixtures, align the C# and Re
-contract, build/install one exact artifact, then obtain bounded loaded-game
-evidence before opening another coverage slice.
+Run one existing, low-risk action/completion canary on the loaded `.55` artifact
+and immediately verify its successor state through Re. This is required before
+opening another coverage slice. See the [source-truth repair closeout](../../STS2MCP/docs/bridge-v2/SOURCE_TRUTH_REPAIR_CLOSEOUT_2026-07-22.md).
 
 ## Explicit Non-Claims
 
