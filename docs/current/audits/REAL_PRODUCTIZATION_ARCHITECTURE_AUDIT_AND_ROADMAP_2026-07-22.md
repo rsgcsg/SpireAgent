@@ -1,5 +1,11 @@
 # Real Productization Architecture Audit And Roadmap
 
+> Post-audit current-status note: Connector Gate 0 later closed on
+> `2.0-preview.55`; Re is v2-only and Gateway v1 POST is disabled by default.
+> The baseline table below remains the evidence observed when this audit was
+> written, not current runtime truth. See `../STATUS.md` and the Connector Gate
+> 0 closeout for current status.
+
 Status: canonical productization audit and conditional roadmap, 2026-07-22.
 
 This document audits the long-term player product, distribution, security, and

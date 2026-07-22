@@ -2,14 +2,15 @@
 
 Bridge v2 is the active semantic Gateway protocol. C# and Re now share
 `2.0-preview.55`; the Release artifact is installed and loaded with matching
-identity. The remaining gate is one existing-scope action/completion canary,
-not a declared version mismatch. Start with the current status and migration
-audit, not historical preview closeouts.
+identity. Gate 0 is closed; Gate 1 operation-level reliability and migration is
+active. Start with the current status and migration audit, not historical
+preview closeouts.
 
 ## Current Documents
 
 - [Current status](CURRENT_STATUS.md)
 - [Source-truth repair closeout](SOURCE_TRUTH_REPAIR_CLOSEOUT_2026-07-22.md)
+- [Connector Gate 0 closeout](CONNECTOR_G0_CLOSEOUT_2026-07-22.md)
 - [Real connector architecture audit and migration plan](REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md)
 - [Protocol](PROTOCOL.md)
 - [Observation policy](OBSERVATION_POLICY.md)

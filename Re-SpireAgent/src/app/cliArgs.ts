@@ -1,6 +1,7 @@
 export type CliInvocation =
   | { readonly command: "help" }
   | { readonly command: "inspect" }
+  | { readonly command: "connector-canary"; readonly actionId: string }
   | { readonly command: "tick"; readonly dryRun: boolean }
   | { readonly command: "run"; readonly dryRun: boolean; readonly maxTicks?: number; readonly delayMs?: number }
   | { readonly command: "replay"; readonly runId?: string; readonly decisionId?: string };
@@ -16,6 +17,12 @@ export function parseCliInvocation(args: readonly string[]): CliInvocation {
     case "inspect":
       requireNoFlags(command, flags);
       return { command };
+    case "connector-canary": {
+      const parsed = parseFlags(command, flags, new Set(["--action-id"]), new Set(["--action-id"]));
+      const actionId = parsed.values.get("--action-id");
+      if (!actionId) throw new Error("connector-canary requires --action-id");
+      return { command, actionId };
+    }
     case "tick":
       return { command, dryRun: parseBooleanFlagSet(command, flags, new Set(["--dry-run"])).has("--dry-run") };
     case "run": {

@@ -5,7 +5,6 @@ export interface RuntimeConfig {
   mcp: {
     baseUrl: string;
     timeoutMs: number;
-    protocolMode: "auto" | "v1" | "v2";
     commandPollMs: number;
     commandTimeoutMs: number;
   };
@@ -39,9 +38,8 @@ export function readRuntimeConfig(env: NodeJS.ProcessEnv = process.env): Runtime
   if (thinkingMode !== "enabled" && thinkingMode !== "disabled") {
     throw new Error("DEEPSEEK_THINKING_MODE must be enabled or disabled");
   }
-  const protocolMode = env.STS2_MCP_PROTOCOL ?? "v2";
-  if (protocolMode !== "auto" && protocolMode !== "v1" && protocolMode !== "v2") {
-    throw new Error("STS2_MCP_PROTOCOL must be auto, v1, or v2");
+  if (env.STS2_MCP_PROTOCOL !== undefined && env.STS2_MCP_PROTOCOL !== "v2") {
+    throw new Error("Re-SpireAgent is v2-only; STS2_MCP_PROTOCOL may only be v2");
   }
   const evidenceProvenance = env.AGENT_EVIDENCE_PROVENANCE ?? "unrecorded";
   if (!isEvidenceProvenance(evidenceProvenance)) {
@@ -54,7 +52,6 @@ export function readRuntimeConfig(env: NodeJS.ProcessEnv = process.env): Runtime
     mcp: {
       baseUrl: stripTrailingSlash(env.STS2_API_URL ?? "http://localhost:15526"),
       timeoutMs: positiveInteger(env.STS2_MCP_TIMEOUT_MS, 5_000, "STS2_MCP_TIMEOUT_MS"),
-      protocolMode,
       commandPollMs: positiveInteger(env.STS2_MCP_V2_COMMAND_POLL_MS, 75, "STS2_MCP_V2_COMMAND_POLL_MS"),
       commandTimeoutMs: positiveInteger(env.STS2_MCP_V2_COMMAND_TIMEOUT_MS, 12_000, "STS2_MCP_V2_COMMAND_TIMEOUT_MS")
     },

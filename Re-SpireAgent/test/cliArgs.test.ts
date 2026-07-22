@@ -15,11 +15,16 @@ describe("CLI invocation parsing", () => {
       maxTicks: 5,
       delayMs: 25
     });
+    expect(parseCliInvocation(["connector-canary", "--action-id", "action_123"])).toEqual({
+      command: "connector-canary",
+      actionId: "action_123"
+    });
   });
 
   it("rejects unknown or malformed action-command options before runtime creation", () => {
     expect(() => parseCliInvocation(["tick", "--anything"])).toThrow("Unknown option");
     expect(() => parseCliInvocation(["run", "--max-ticks"])).toThrow("requires a value");
     expect(() => parseCliInvocation(["run", "--max-ticks", "0"])).toThrow("positive integer");
+    expect(() => parseCliInvocation(["connector-canary"])).toThrow("requires --action-id");
   });
 });

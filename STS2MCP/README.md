@@ -11,16 +11,16 @@ state-bound protocol intended for the rebuilt `Re-SpireAgent` client.
 Bridge v2 is an incremental preview, not a replacement for all v1 surfaces.
 
 The C# Bridge and Re now share `2.0-preview.55`, with strict explicit
-operation scopes and a path-free loaded-assembly digest. The Release artifact
-is installed and its Steam-loaded SHA/MVID matches the expected identity; Re
-completed a read-only negotiated inspection. Do not expand coverage or
-permission until the existing-scope action/completion canary described in
-[Bridge v2 current status](docs/bridge-v2/CURRENT_STATUS.md) completes.
+operation scopes and a path-free loaded-assembly digest. Gate 0 is closed on an
+installed, Steam-loaded artifact using two bounded Re action/completion/
+successor journeys. Gate 1 remains scoped and operation-driven; this is not
+complete-game qualification.
 
 > Product security warning: the current HTTP listener is a developer preview.
 > It binds to loopback and filters browser Origin, but it has no client
 > authentication, Gateway-enforced controller lease, or restart epoch, and v1
-> and v2 mutation routes share the listener. Localhost is not an authorization
+> and v2 routes share the listener. v1 mutation is now disabled by default,
+> but localhost is still not an authorization
 > boundary. Do not represent this as a consumer-safe Workshop product; see the
 > [productization architecture audit](../docs/current/audits/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md).
 
@@ -48,9 +48,9 @@ permission until the existing-scope action/completion canary described in
   never inherits authority automatically.
 - All unimplemented or version-incompatible v2 surfaces fail closed with no
   legal actions.
-- v1 remains available only for explicit legacy-owned Surface fallback; its
-  index-based action contract is legacy. Bridge-owned states no longer use it
-  for shared run/player facts.
+- v1 GET remains available for explicit legacy diagnostics. v1 POST mutation
+  is disabled by default and requires `enable_legacy_v1_mutations=true` in
+  `STS2_MCP.conf`; Re-SpireAgent has no v1 mutation transport.
 - Historical exact-v0.109 Organic evidence qualified merchant removal, event/rest
   upgrade, ordinary combat turn, combat hand selection, ordinary single-player
   rest, and read-only run deck. Read-only combat pile contents are a separate
@@ -133,7 +133,7 @@ dotnet test STS2_MCP.sln -p:STS2GameDir="$env:STS2_GAME_DIR"
 .\build.ps1 -GameDir "$env:STS2_GAME_DIR"
 ```
 
-The solution currently contains 98 pure contract/runtime/security tests covering stable
+The solution currently contains 108 pure contract/runtime/security tests covering stable
 state identity, entity identity, stale-state rejection, idempotent request IDs,
 completion observation, timeout-as-unknown, and JSON action shape.
 
@@ -151,6 +151,19 @@ mkdir -p "$MODS_DIR"
 cp out/STS2_MCP/STS2_MCP.dll "$MODS_DIR/STS2_MCP.dll"
 cp mod_manifest.json "$MODS_DIR/STS2_MCP.json"
 ```
+
+The generated `STS2_MCP.conf` defaults to:
+
+```json
+{
+  "port": 15526,
+  "enable_legacy_v1_mutations": false
+}
+```
+
+Leave legacy mutation disabled for Re and all Bridge v2 testing. Setting it to
+`true` restores old v1 POST compatibility only; it does not grant v2 support or
+qualification.
 
 Windows/Linux use the game's corresponding `mods/` directory. Launch the game,
 enable the mod, then verify:
@@ -215,7 +228,9 @@ Python MCP adapter does not expose it. That adapter gap is visible and
 non-authorizing; do not configure or document a nonexistent MCP tool as a
 fallback.
 
-The existing v1 tools remain exposed during migration.
+The existing v1 tools remain exposed during migration, but mutation tools
+receive HTTP 403 unless legacy mutations are explicitly enabled in the Mod
+configuration.
 
 ## V2 HTTP Contract
 
@@ -243,12 +258,11 @@ not be retried automatically.
 
 ## Re-SpireAgent Integration
 
-The rebuilt SpireAgent has a strict v2 decoder/projector and a compatibility
-adapter. It displays `context.kind + surface.kind + authority`. The default is
-strict `v2`; current `auto` is only a strict-v2 alias and does not fall back to
-v1. A Bridge-owned surface uses only Bridge-advertised opaque actions, while an
-unsupported or missing v2 surface fails closed. Explicit `v1` is retained only
-as a diagnostics-only compatibility mode. Exact-build mismatch,
+The rebuilt SpireAgent has a strict v2-only decoder/projector and Connector. It
+displays `context.kind + surface.kind + authority`. A Bridge-owned surface uses
+only Bridge-advertised opaque actions, while an unsupported or missing v2
+surface fails closed. Gateway v1 diagnostics are outside the Re runtime.
+Exact-build mismatch,
 context/surface mismatch, command-response identity mismatch, failed command,
 and timeout all fail closed.
 

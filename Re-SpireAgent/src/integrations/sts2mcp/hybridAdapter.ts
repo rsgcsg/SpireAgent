@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { ExecutableGameAction } from "../../domain/actions/action.js";
-import type { AdapterDescriptor, GameAdapter } from "../../game-io/adapter.js";
+import type { AdapterDescriptor, GameAdapter, GameExecutionResult } from "../../game-io/adapter.js";
 import { TransientObservationError } from "../../game-io/observationError.js";
 import type { JsonObject } from "../../shared/json.js";
 import { BridgeV2HttpError, BridgeV2RestClient } from "./bridgeV2Client.js";
@@ -12,21 +12,16 @@ import {
   type BridgeV2State
 } from "./bridgeV2Protocol.js";
 import { wrapBridgeV2State, type Sts2McpRawState } from "./rawState.js";
-import { Sts2McpRestAdapter, type McpExecutionResult } from "./restAdapter.js";
-
-export type Sts2McpProtocolMode = "auto" | "v1" | "v2";
 
 export interface HybridAdapterOptions {
-  mode: Sts2McpProtocolMode;
   commandPollMs: number;
   commandTimeoutMs: number;
 }
 
-export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, ExecutableGameAction, McpExecutionResult> {
-  private readonly legacy: Sts2McpRestAdapter;
+export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, ExecutableGameAction, GameExecutionResult> {
   private readonly bridge: BridgeV2RestClient;
   private capabilitiesPayload?: { data: BridgeV2Capabilities; raw: JsonObject };
-  private lastReadAuthority: "none" | "legacy" | "bridge" = "none";
+  private lastReadAuthority: "none" | "bridge" = "none";
 
   constructor(
     private readonly baseUrl: string,
@@ -35,33 +30,31 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
     fetchImpl: typeof fetch = fetch,
     private readonly sleep: (ms: number) => Promise<void> = defaultSleep
   ) {
-    this.legacy = new Sts2McpRestAdapter(baseUrl, timeoutMs, fetchImpl);
     this.bridge = new BridgeV2RestClient(baseUrl, timeoutMs, fetchImpl);
   }
 
   async initialize(): Promise<void> {
-    if (this.options.mode === "v1" || this.capabilitiesPayload) return;
+    if (this.capabilitiesPayload) return;
     this.capabilitiesPayload = await this.bridge.capabilities();
   }
 
   describe(): AdapterDescriptor {
     const bridge = this.capabilitiesPayload?.data;
     const bridgeExecutionAllowed = bridge?.game.compatibility.action_execution_allowed;
-    const legacySelected = this.options.mode === "v1";
     return {
       adapterId: "sts2mcp-rest-negotiated",
       ...(bridge ? { adapterVersion: bridge.bridge.version } : {}),
       endpoint: this.baseUrl,
       capabilities: {
         canReadState: true,
-        canExecuteActions: this.options.mode === "v1" || bridgeExecutionAllowed === true,
-        canListLegalActions: this.options.mode === "v2" || Boolean(bridge),
-        actionResults: legacySelected ? "partial" : "complete",
-        legalActionAuthority: legacySelected ? "local_reconstruction" : "bridge_advertised",
-        protocols: legacySelected ? ["sts2mcp_v1"] : ["bridge_v2"]
+        canExecuteActions: bridgeExecutionAllowed === true,
+        canListLegalActions: Boolean(bridge),
+        actionResults: "complete",
+        legalActionAuthority: "bridge_advertised",
+        protocols: ["bridge_v2"]
       },
       negotiated: {
-        protocol_mode: this.options.mode,
+        protocol_mode: "v2",
         bridge_available: Boolean(bridge),
         ...(bridge ? {
           bridge_protocol_version: bridge.protocol_version,
@@ -121,7 +114,6 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
 
   async readCurrentState(): Promise<Sts2McpRawState> {
     this.lastReadAuthority = "none";
-    if (this.options.mode === "v1") return this.readLegacyAuthoritativeState();
     await this.initialize();
 
     const capabilities = this.capabilitiesPayload;
@@ -137,13 +129,11 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
     });
   }
 
-  async execute(action: ExecutableGameAction): Promise<McpExecutionResult> {
+  async execute(action: ExecutableGameAction): Promise<GameExecutionResult> {
     if (action.kind !== "bridge_v2_action") {
-      return this.options.mode === "v2" || this.lastReadAuthority !== "legacy"
-        ? rejectedResult("action_authority_mismatch", "A legacy action was not authorized by the latest adapter state read.")
-        : this.legacy.execute(action);
+      return rejectedResult("action_authority_mismatch", "Re-SpireAgent accepts only Bridge v2 advertised actions.");
     }
-    if (this.options.mode === "v1" || this.lastReadAuthority !== "bridge") {
+    if (this.lastReadAuthority !== "bridge") {
       return rejectedResult("action_authority_mismatch", "A Bridge v2 action was not authorized by the latest adapter state read.");
     }
 
@@ -251,11 +241,6 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
     };
   }
 
-  private async readLegacyAuthoritativeState(): Promise<Sts2McpRawState> {
-    const state = await this.legacy.readCurrentState();
-    this.lastReadAuthority = "legacy";
-    return state;
-  }
 }
 
 function observationEvidence(bundle: BridgeV2ObservationBundle): JsonObject {
@@ -301,7 +286,7 @@ function commandContractError(
     : `Bridge command status ${command.status} is inconsistent with outcome ${command.outcome}.`;
 }
 
-function rejectedResult(code: string, detail: string): McpExecutionResult {
+function rejectedResult(code: string, detail: string): GameExecutionResult {
   return { accepted: false, outcome: "rejected", response: { status: "rejected", error: { code, detail } } };
 }
 
@@ -311,7 +296,7 @@ function unknownResult(
   code: string,
   detail: string,
   lastCommand?: JsonObject
-): McpExecutionResult {
+): GameExecutionResult {
   return {
     accepted: false,
     outcome: "unknown",

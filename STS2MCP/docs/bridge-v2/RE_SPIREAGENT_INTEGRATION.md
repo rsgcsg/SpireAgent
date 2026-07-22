@@ -32,8 +32,7 @@ Required client behavior:
 
 - reject unknown protocol major versions;
 - reject incompatible game/bridge identity for execution;
-- stop on unsupported/degraded state unless an explicitly separate v1 fallback
-  policy owns authority;
+- stop on unsupported/degraded state; Re has no v1 fallback policy;
 - never infer an index, target, or MCP operation from an action label;
 - retain raw request/response and parsed evidence separately;
 - treat `started` as pending and `timed_out` as unknown;
@@ -41,7 +40,7 @@ Required client behavior:
   identity;
 - treat both `failed` and `timed_out` as unknown outcomes;
 - never auto-retry unknown outcomes;
-- permit only one executor during v1/v2 dual-read tests.
+- permit only one action-capable Re process through its runtime lock.
 
 Source `2.0-preview.47` additionally requires strict decoding of the bounded
 visibility declaration, state-bound Inspection catalog, coherent observation
@@ -60,9 +59,8 @@ character select, event dialogue, and event option are action canaries. All othe
 contracts remain non-executable on this build unless capabilities explicitly
 list them.
 
-In `auto` mode, a v2-owned Surface imports only Bridge actions and top-level
-`shared_state` supplies persistent run/player HUD facts. Re does not issue a v1
-state read for a Bridge-owned semantic state. Exact identity, shared-state,
+Re imports only Bridge actions, and top-level `shared_state` supplies persistent
+run/player HUD facts. Re does not issue v1 state reads. Exact identity, shared-state,
 context/surface, capability, or authority incompatibility fails closed. Runtime
 and prompt identity expose `shared_state + context.kind + surface.kind +
 actionAuthority`.
@@ -71,8 +69,9 @@ Re requires `shared_state` on every in-run semantic Bridge state, records its
 evidence, and validates combat player/potion identities against it. The narrow
 pre-run `character_select` Surface instead requires `shared_state=null`.
 Shared state creates no actions. Event-option hover semantics remain typed as
-text or card previews; unknown variants fail closed. Unsupported legacy-owned states may still use v1 for their complete
-Context/Surface contract, but that fallback cannot merge into Bridge authority.
+text or card previews; unknown variants fail closed. Unsupported legacy-owned
+states remain fail closed in Re; separate Gateway v1 diagnostics do not grant
+Agent authority.
 
 The shop integration preserves affordability separately from authority and
 accepts omitted nullable product fields without weakening stocked-product or

@@ -14,23 +14,17 @@ loaded assembly. Re decodes the same contract. The attempted `.56` Discovery
 branch was not retained because current C# source has no verified native source
 binding for it; unknown generated-card sources remain rejected.
 
-The Release artifact was installed and the Steam process loaded the same
-SHA/MVID; Re completed a strict read-only negotiated inspection. No command was
-submitted, so no action/completion qualification was renewed for this exact
-revision. The current checkout is therefore not an end-to-end qualified
-connector.
-
-No current loaded-game identity has been established for the clean checkout.
-Historical preview.54 evidence is scoped to its recorded game build, Modset,
-Bridge SHA, MVID, runtime instance, and operation. It must not qualify the
-current C# source, a different installed artifact, or another environment.
+Gate 0 is now closed on the exact loaded artifact recorded in
+[the Gate 0 closeout](CONNECTOR_G0_CLOSEOUT_2026-07-22.md). Re completed
+`main_menu -> singleplayer_menu -> main_menu` through advertised opaque
+actions, Bridge command completion, and coherent successor observations under
+one SHA/MVID/runtime identity.
 
 ## Required Repair Order
 
-1. Run one existing low-risk action/completion canary and immediately verify
-   its successor state through Re.
-2. Only then reopen coverage or permission expansion one exact operation at a
-   time.
+1. Audit remaining v1 ownership per operation and coherent journey.
+2. Close normal-run v2 coverage and visible-information gaps one exact
+   operation at a time, preserving current permission tiers.
 
 The detailed audit and migration sequence is
 [REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md](REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md).
@@ -41,8 +35,9 @@ The detailed audit and migration sequence is
   publication/execution legality, main-thread commit, semantic completion,
   unknown-no-retry, independent read-only Inspection, and exact-environment
   capability scoping.
-- v1 remains active only as explicit legacy compatibility inside `STS2MCP`.
-  It is neither proof of v2 coverage nor eligible for silent retirement.
+- Re has no v1 mutation transport. Gateway v1 reads remain explicit legacy
+  compatibility; all Gateway v1 POST routes are disabled by default and require
+  the local `enable_legacy_v1_mutations=true` compatibility setting.
 - REST is Re's current transport. The Python MCP server is optional and must
   not become a second legality/completion engine.
 - The current HTTP listener is a developer preview, not a consumer-safe
@@ -58,7 +53,7 @@ a current v2 permission claim.
 
 ## Next High-Value Work
 
-The next task is an existing-scope action/completion canary. Do not add another
-Surface, broaden capabilities, or mark an historical preview as current before
-that exact-artifact action evidence exists. See the
-[source-truth repair closeout](SOURCE_TRUTH_REPAIR_CLOSEOUT_2026-07-22.md).
+The next task is Gate 1 operation-level migration: select the highest-value
+normal-run v1-owned or fail-closed step, prove its exact source/UI contract, and
+close Bridge/Re/completion/evidence together. Do not convert canary support into
+qualification without current exact-build Organic evidence.

@@ -9,6 +9,7 @@ import { buildDecisionPrompt } from "../prompting/promptBuilder.js";
 import type { DecisionOutcome, DecisionRecord, DecisionRecorder, RecordedState } from "../recording/types.js";
 import type { JsonValue } from "../shared/json.js";
 import { ProgressCycleGuard } from "./progressCycleGuard.js";
+import { executeAdvertisedAction } from "./advertisedActionExecutor.js";
 import type { SettlementWatcher } from "./settlementWatcher.js";
 
 export interface TickOrchestratorDependencies {
@@ -158,27 +159,15 @@ export class TickOrchestrator {
       return result(decisionId, record.outcome, pre.currentState, undefined, true);
     }
 
-    let latest: StateEnvelope;
-    try {
-      latest = this.dependencies.normalize(await this.dependencies.adapter.readCurrentState());
-    } catch (error) {
-      const record = decisionRecordWithLlm({
-        runId: this.dependencies.recorder.runId,
-        decisionId,
-        tick,
-        startedAt,
-        outcome: "not_executed_stale_state",
-        preState: prepared.preState,
-        allowedActions,
-        prompt: prepared.prompt,
-        session,
-        error: `Could not re-read state before execution: ${safeError(error)}`
-      });
-      await this.dependencies.recorder.append(record);
-      return result(decisionId, record.outcome, pre.currentState, validation.selectedAction.id, true);
-    }
+    const execution = await executeAdvertisedAction({
+      pre,
+      selectedAction: validation.selectedAction,
+      adapter: this.dependencies.adapter,
+      normalize: this.dependencies.normalize,
+      settlement: this.dependencies.settlement
+    });
 
-    if (latest.stateHash !== pre.stateHash || validation.selectedAction.sourceStateHash !== latest.stateHash) {
+    if (execution.stage === "preflight_failed") {
       const record = decisionRecordWithLlm({
         runId: this.dependencies.recorder.runId,
         decisionId,
@@ -189,20 +178,17 @@ export class TickOrchestrator {
         allowedActions,
         prompt: prepared.prompt,
         session,
-        postState: recordedState(latest),
+        ...(execution.latest ? { postState: recordedState(execution.latest) } : {}),
         selectedActionId: validation.selectedAction.id,
         selectedAction: validation.selectedAction.action,
         stateHashMatched: false,
-        error: "State changed after prompt construction and before execution"
+        error: execution.error
       });
-      await this.dependencies.recorder.append(record, { postRawState: latest.rawState });
-      return result(decisionId, record.outcome, pre.currentState, validation.selectedAction.id, false);
+      await this.dependencies.recorder.append(record, execution.latest ? { postRawState: execution.latest.rawState } : undefined);
+      return result(decisionId, record.outcome, pre.currentState, validation.selectedAction.id, !execution.latest);
     }
 
-    let adapterResult: GameExecutionResult;
-    try {
-      adapterResult = await this.dependencies.adapter.execute(validation.selectedAction.action);
-    } catch (error) {
+    if (execution.stage === "execution_failed") {
       const record = decisionRecordWithLlm({
         runId: this.dependencies.recorder.runId,
         decisionId,
@@ -216,23 +202,19 @@ export class TickOrchestrator {
         selectedActionId: validation.selectedAction.id,
         selectedAction: validation.selectedAction.action,
         stateHashMatched: true,
-        error: safeError(error)
+        error: execution.error
       });
       await this.dependencies.recorder.append(record);
       return result(decisionId, record.outcome, pre.currentState, validation.selectedAction.id, true);
     }
 
-    if (!adapterResult.accepted) {
-      const outcome: DecisionOutcome = adapterResult.outcome === "unknown" ? "executed_unsettled" : "execution_failed";
-      const error = adapterResult.outcome === "unknown"
-        ? "Adapter command outcome is unknown; the action will not be retried automatically"
-        : "Adapter rejected the selected action";
+    if (execution.stage === "adapter_terminal") {
       const record = decisionRecordWithLlm({
         runId: this.dependencies.recorder.runId,
         decisionId,
         tick,
         startedAt,
-        outcome,
+        outcome: execution.outcome,
         preState: prepared.preState,
         allowedActions,
         prompt: prepared.prompt,
@@ -240,26 +222,14 @@ export class TickOrchestrator {
         selectedActionId: validation.selectedAction.id,
         selectedAction: validation.selectedAction.action,
         stateHashMatched: true,
-        adapterResult: adapterResult.response,
-        error
+        adapterResult: execution.adapterResult.response,
+        error: execution.error
       });
       await this.dependencies.recorder.append(record);
       return result(decisionId, record.outcome, pre.currentState, validation.selectedAction.id, true);
     }
 
-    const settlement = await this.dependencies.settlement.waitForNextState(
-      pre,
-      validation.selectedAction.action,
-      adapterResult.settlementAuthority,
-      adapterResult.confirmedStateToken
-    );
-    const bridgeCheckpointPending = adapterResult.settlementAuthority === "adapter_confirmed"
-      && settlement.status !== "settled";
-    const outcome: DecisionOutcome = settlement.status === "settled"
-      ? "executed_and_settled"
-      : bridgeCheckpointPending
-        ? "executed_checkpoint_pending"
-        : "executed_unsettled";
+    const { settlement, adapterResult, outcome } = execution;
     const transitionKey = outcome === "executed_and_settled" && settlement.after
       ? `${pre.stateHash}|${validation.selectedAction.id}|${settlement.after.stateHash}`
       : undefined;
@@ -415,7 +385,7 @@ function decisionRecordWithLlm(input: {
         : { valid: true, outcome: "valid" }
     },
     execution: {
-      attempted: ["execution_failed", "executed_and_settled", "executed_unsettled"].includes(input.outcome),
+      attempted: ["execution_failed", "executed_and_settled", "executed_checkpoint_pending", "executed_unsettled"].includes(input.outcome),
       ...(input.selectedActionId ? { selectedActionId: input.selectedActionId } : {}),
       ...(input.selectedAction ? { action: input.selectedAction } : {}),
       ...(input.stateHashMatched !== undefined ? { stateHashMatchedBeforeExecution: input.stateHashMatched } : {}),

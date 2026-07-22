@@ -94,18 +94,14 @@ This is a permission gate, not a claim that disabled Mods or future native-UI
 Mods are semantically compatible. Such environments require independent source
 binding, visibility, legality, commit, completion, and canary evidence.
 
-For current local identity `v0.109.0|c12f634d|1833084275`, preview.35 advertises
-an independent canary-only exact scope: qualified actions are empty,
-`action_canary_surface_kinds=[event_option,event_card_acquisition,map_navigation]`,
-and both Inspection lists are empty. A scoped build is executable when the
-union of its explicit qualified and canary Surface lists is non-empty; an empty
-qualified list is not an error and never becomes a wildcard. Re requires the
-same lists in state and capabilities.
+For the current local identity `v0.109.0|c12f634d|-840572606`, preview.55
+advertises an explicit `surface_kind + operation + tier` inventory. A scoped
+build is executable only when the current state operation appears in that
+inventory; empty lists never become wildcard authority. Re requires identical
+operation scopes in state and capabilities.
 
-The preview.35 canary lists are scoped by Surface kind, not by individual
-operation or source origin. A listed canary Surface may publish any operation
-that its Provider validates on the exact build. This is controlled canary
-authority only; per-operation and per-origin Organic Qualification must still
+Canary authority remains operation-scoped permission, not Organic
+Qualification. Per-operation and per-origin qualification must still
 be recorded separately. Future permission refinement may narrow this scope but
 must not infer or expand authority from implementation alone.
 

@@ -61,10 +61,9 @@ IDs without weakening stale-state execution checks.
 
 ## Explicit v1 Diagnostics Boundary
 
-`v2` is the production default and `auto` is a strict-v2 alias. Neither uses
-v1. Explicit `v1` can still address a separately enabled legacy server for
-diagnostics, but it never participates in a Bridge v2 run or merges v1 facts
-or actions into a v2 Surface.
+Re is v2-only. The former `auto` and `v1` modes are rejected. Gateway v1 reads
+may remain available to separate diagnostic clients, but no Re runtime path can
+merge or execute them.
 
 Observed or expected v1-owned families still include:
 

@@ -42,10 +42,9 @@ fingerprint, Bridge assembly SHA-256, MVID, and runtime instance. Exact Modset
 permission additionally requires the negotiated loaded `STS2_MCP` module and
 no other loaded gameplay Mod.
 
-`STS2_MCP_PROTOCOL=v2` is the default. `auto` is a strict-v2 alias, not a v1
-fallback policy. Explicit `v1` remains available only for diagnostics against
-a separately enabled legacy server; it cannot merge facts or authority into a
-v2 state.
+Re's production Connector is v2-only. The former `auto` and explicit `v1`
+runtime modes are rejected; historical v1 raw-state records remain readable
+but no Re mutation transport can reach `/api/v1/*`.
 
 Bridge command `completed` is the semantic settlement authority. Re verifies
 the echoed request/state/action identity, preserves `failed` and `timed_out`
@@ -162,14 +161,16 @@ shared_state + context.kind + surface.kind + actionAuthority
 - shared state: persistent visible single-player run/player HUD facts;
 - context: semantic game situation (`event`, `combat`, `reward_flow`, etc.);
 - surface: currently blocking interaction protocol;
-- authority: `bridge_advertised`, `local_reconstruction`, or `none`.
+- authority: current runtime states are `bridge_advertised` or `none`;
+  `local_reconstruction` remains only in historical v1 record decoding.
 
 For in-run Bridge-owned states, top-level v2 `shared_state` is the sole persistent
 run/player authority. It is read-only, included in state identity, and cannot
 add actions. Re rejects an in-run semantic Bridge state without it, mismatched combat
-player identity, or incomplete combat potion coverage. Unsupported
-legacy-owned states may still use v1 for their complete Context/Surface
-projection, but no v1 sidecar merges into a Bridge-owned state.
+player identity, or incomplete combat potion coverage. Unsupported legacy-owned
+states remain fail closed in the current Re runtime. Historical v1 records can
+still be decoded, but no v1 sidecar or mutation path participates in a live
+decision.
 
 The pre-run `main_menu`, `singleplayer_menu`, and `character_select` Surfaces
 must carry `shared_state=null`. Event options preserve visible lethal warnings and
@@ -352,16 +353,10 @@ are current-build canaries. Publication and execution share the
 same travelable/enabled/FTUE predicate; controller mode additionally requires
 the exact node to be on screen, matching `NMapPoint.OnRelease`.
 
-## Modes
+## Connector Mode
 
-| `STS2_MCP_PROTOCOL` | Behavior |
-|---|---|
-| `auto` | Strict-v2 alias. No v1 probe or fallback. |
-| `v1` | Explicit diagnostics compatibility against a separately enabled legacy server. Never mixes with v2. |
-| `v2` | Production default. Unsupported, degraded, mismatched, or unknown contracts stop safely. |
-
-One adapter instance owns one configured protocol mode. It never mixes legacy
-and v2 authority in a run.
+Re uses Bridge v2 only. Unsupported, degraded, mismatched, or unknown contracts
+stop safely. Gateway v1 diagnostics are outside the Agent runtime.
 
 ## Data Flow
 

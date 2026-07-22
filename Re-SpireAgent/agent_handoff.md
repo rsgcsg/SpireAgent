@@ -1,5 +1,10 @@
 # RE-P1 Handoff
 
+> Historical/non-canonical chronological handoff. Current Connector status is
+> owned by `../docs/current/STATUS.md` and
+> `../STS2MCP/docs/bridge-v2/CURRENT_STATUS.md`. Older identity and mode claims
+> below are preserved as dated evidence and must not override those documents.
+
 Status update 2026-07-21: Bridge `2.0-preview.55` and Re normalized schema 25
 are the current Live Connector production contract. The loaded exact game is
 `v0.109.0|c12f634d|1833084275`; Bridge SHA is

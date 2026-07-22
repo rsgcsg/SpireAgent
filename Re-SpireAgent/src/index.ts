@@ -3,7 +3,6 @@ export * from "./domain/actions/allowedAction.js";
 export * from "./domain/actions/buildAllowedActions.js";
 export * from "./domain/state/index.js";
 export * from "./game-io/adapter.js";
-export * from "./integrations/sts2mcp/restAdapter.js";
 export * from "./integrations/sts2mcp/bridgeV2Client.js";
 export * from "./integrations/sts2mcp/bridgeV2Protocol.js";
 export * from "./integrations/sts2mcp/hybridAdapter.js";

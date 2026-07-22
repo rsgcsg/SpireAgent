@@ -4,8 +4,9 @@ Status: canonical architecture audit and migration decision, 2026-07-22.
 
 > **Post-audit update, 2026-07-22:** its source-mismatch findings were repaired
 > in `2.0-preview.55`: C# and Re now share explicit operation scopes and the
-> Gateway artifact digest. The audit's installed/loaded-artifact and Organic
-> evidence gaps remain open. The baseline facts below are historical audit
+> Gateway artifact digest. Gate 0 subsequently closed with a cold-loaded
+> artifact and two bounded Re command/successor lifecycles; Gateway v1 mutation
+> is now disabled by default and Re is v2-only. The baseline facts below are historical audit
 > evidence, not current status.
 
 Productization addendum: this connector audit remains canonical for live-game

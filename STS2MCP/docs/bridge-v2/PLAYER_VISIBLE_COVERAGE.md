@@ -1,18 +1,18 @@
 # Player-Visible Coverage Matrix
 
 > Source-truth warning, 2026-07-22: this matrix inventories historical
-> qualification and source implementation. It is not proof that the current
-> clean checkout works end to end. C# and Re now share `2.0-preview.55`, but no
-> current Release artifact or loaded runtime identity is available. Existing
-> percentage estimates are planning
+> qualification and source implementation. Gate 0 now has exact loaded-runtime
+> evidence for a bounded menu lifecycle, but that does not renew historical
+> per-operation Organic Qualification. Existing percentage estimates are planning
 > estimates, not measured player-visible closure or v1 parity. See the
 > [real connector audit and migration plan](REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md).
 
-Current execution evidence is scoped to exact game identity
-`v0.109.0|c12f634d|-840572606` and exact loaded Modset fingerprint
-`f1ecc8c0a30eb006bc27581fc3a4a21f9dfb9e9597461dff4a8faf3f51878a8c`.
-That Modset contains only the exact loaded `STS2_MCP` module. Compilation,
-fixtures, source review, old-build
+Current Gate 0 execution evidence is scoped to exact game identity
+`v0.109.0|c12f634d|-840572606`, Gateway SHA
+`89f94eb99996c2ff4636c1e2ab1119d3dd6eb20a64e59c0270821e2eb2f0e079`,
+MVID `3fd03b69-264a-4a41-9da7-1e9b50c7bc50`, and exact Bridge-only Modset
+fingerprint `f36fd123b9f272ac61e15a880b6f661489d15873177ec5b423c96fed71cebde2`.
+Compilation, fixtures, source review, old-build
 evidence, canary permission, and organic qualification are distinct states.
 
 An alternate-device runtime observed on 2026-07-18 was
@@ -20,9 +20,8 @@ An alternate-device runtime observed on 2026-07-18 was
 permits only `event_option`, source-gated `event_card_acquisition`, and ordinary
 single-player `map_navigation` as independently source-audited and exercised
 action canaries; every other Surface and every Inspection remain disabled.
-Historical records later loaded the source-qualified `-840572606` identity.
-Neither environment inherits permission from the other, and neither is a claim
-about a currently running process or the incompatible current checkout.
+The `1833084275` environment inherits no permission from the current loaded
+`-840572606` environment.
 
 ## Historical Alternate-Device Build
 

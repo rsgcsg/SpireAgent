@@ -25,6 +25,7 @@ public static partial class McpMod
 
     private static HttpListener? _listener;
     private static Thread? _serverThread;
+    private static bool _legacyV1MutationsEnabled;
     private static readonly ConcurrentQueue<Action> _mainThreadQueue = new();
     internal static readonly JsonSerializerOptions _jsonOptions = new()
     {
@@ -48,7 +49,11 @@ public static partial class McpMod
             {
                 try
                 {
-                    var defaultConfig = new Dictionary<string, object> { ["port"] = DefaultPort };
+                    var defaultConfig = new Dictionary<string, object>
+                    {
+                        ["port"] = DefaultPort,
+                        ["enable_legacy_v1_mutations"] = false
+                    };
                     string json = JsonSerializer.Serialize(defaultConfig, _jsonOptions);
                     File.WriteAllText(configPath, json);
                     GD.Print($"[STS2 MCP] Created default config at {configPath}");
@@ -62,6 +67,10 @@ public static partial class McpMod
 
             string content = File.ReadAllText(configPath);
             using var doc = JsonDocument.Parse(content);
+            _legacyV1MutationsEnabled = doc.RootElement.TryGetProperty(
+                    "enable_legacy_v1_mutations",
+                    out var legacyMutationElement)
+                && legacyMutationElement.ValueKind == JsonValueKind.True;
             if (doc.RootElement.TryGetProperty("port", out var portElem)
                 && portElem.TryGetInt32(out int port)
                 && port is > 0 and <= 65535)
@@ -105,6 +114,7 @@ public static partial class McpMod
             _serverThread.Start();
 
             GD.Print($"[STS2 MCP] v{Version} server started on http://localhost:{port}/");
+            GD.Print($"[STS2 MCP] Legacy v1 mutations: {(_legacyV1MutationsEnabled ? "explicitly enabled" : "disabled")}");
         }
         catch (Exception ex)
         {
@@ -202,6 +212,15 @@ public static partial class McpMod
             }
 
             string path = request.Url?.AbsolutePath ?? "/";
+
+            if (!LegacyV1MutationPolicy.IsAllowed(request.HttpMethod, path, _legacyV1MutationsEnabled))
+            {
+                SendError(
+                    response,
+                    403,
+                    "Legacy v1 mutations are disabled. Use Bridge v2 advertised actions, or explicitly enable legacy compatibility in STS2_MCP.conf.");
+                return;
+            }
 
             if (path == "/")
             {

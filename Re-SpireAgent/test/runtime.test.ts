@@ -3,10 +3,9 @@ import { buildAllowedActions } from "../src/domain/actions/buildAllowedActions.j
 import type { ExecutableGameAction } from "../src/domain/actions/action.js";
 import type { StateEnvelope } from "../src/domain/state/index.js";
 import { NORMALIZED_STATE_SCHEMA_VERSION } from "../src/domain/state/common.js";
-import type { GameAdapter } from "../src/game-io/adapter.js";
+import type { GameAdapter, GameExecutionResult } from "../src/game-io/adapter.js";
 import { TransientObservationError } from "../src/game-io/observationError.js";
 import type { Sts2McpRawState } from "../src/integrations/sts2mcp/rawState.js";
-import type { McpExecutionResult } from "../src/integrations/sts2mcp/restAdapter.js";
 import type { LlmDecisionProvider, LlmDecisionSession } from "../src/llm/types.js";
 import { normalizeCurrentState } from "../src/normalization/normalizeCurrentState.js";
 import type { DecisionRecord, DecisionRecorder, PreparedEvidence } from "../src/recording/types.js";
@@ -311,7 +310,7 @@ describe("TickOrchestrator", () => {
     });
     expect(recorder.records[0]).toMatchObject({
       outcome: "executed_checkpoint_pending",
-      execution: { adapterResult: { status: "completed", outcome: "confirmed" } },
+      execution: { attempted: true, adapterResult: { status: "completed", outcome: "confirmed" } },
       settlement: { status: "timeout" }
     });
     expect(recorder.records[0]?.postState?.normalizedState.stability).toBe("transitioning");
@@ -437,13 +436,13 @@ describe("TickOrchestrator", () => {
   });
 });
 
-class FakeAdapter implements GameAdapter<Sts2McpRawState, ExecutableGameAction, McpExecutionResult> {
+class FakeAdapter implements GameAdapter<Sts2McpRawState, ExecutableGameAction, GameExecutionResult> {
   readonly executed: ExecutableGameAction[] = [];
   private readIndex = 0;
 
   constructor(
     private readonly states: Array<Sts2McpRawState | Error>,
-    private readonly executionResult: McpExecutionResult = { accepted: true, response: { status: "ok" } }
+    private readonly executionResult: GameExecutionResult = { accepted: true, response: { status: "ok" } }
   ) {}
 
   describe() {
@@ -458,7 +457,7 @@ class FakeAdapter implements GameAdapter<Sts2McpRawState, ExecutableGameAction, 
     return structuredClone(state);
   }
 
-  async execute(action: ExecutableGameAction): Promise<McpExecutionResult> {
+  async execute(action: ExecutableGameAction): Promise<GameExecutionResult> {
     this.executed.push(action);
     return this.executionResult;
   }

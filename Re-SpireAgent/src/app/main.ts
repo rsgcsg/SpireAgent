@@ -5,6 +5,7 @@ import { normalizeCurrentState } from "../normalization/normalizeCurrentState.js
 import { listRunIds, readRunMetadata, readRunRecords } from "../recording/fileDecisionRecorder.js";
 import { runLoop } from "../runtime/runLoop.js";
 import { parseCliInvocation } from "./cliArgs.js";
+import { runConnectorCanary } from "./connectorCanary.js";
 import { createRuntime } from "./runtimeFactory.js";
 
 async function main(): Promise<void> {
@@ -24,7 +25,6 @@ async function main(): Promise<void> {
 
   if (invocation.command === "inspect") {
     const adapter = new Sts2McpHybridAdapter(config.mcp.baseUrl, config.mcp.timeoutMs, {
-      mode: config.mcp.protocolMode,
       commandPollMs: config.mcp.commandPollMs,
       commandTimeoutMs: config.mcp.commandTimeoutMs
     });
@@ -40,6 +40,12 @@ async function main(): Promise<void> {
       currentState: envelope.currentState,
       allowedActions: allowedActions.map(({ action: _action, sourceStateHash: _sourceStateHash, ...summary }) => summary)
     }, null, 2)}\n`);
+    return;
+  }
+
+  if (invocation.command === "connector-canary") {
+    const result = await runConnectorCanary(config, invocation.actionId);
+    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
     return;
   }
 
@@ -107,7 +113,7 @@ function printTick(runId: string, result: {
 }
 
 function printHelp(): void {
-  process.stdout.write(`RE-P1 commands:\n  npm run agent:inspect\n  npm run agent:tick -- --dry-run\n  npm run agent:tick\n  npm run agent:run -- --max-ticks 20 --delay-ms 250\n  npm run agent:replay -- --run-id <id> [--decision-id <id>]\n`);
+  process.stdout.write(`RE-P1 commands:\n  npm run agent:inspect\n  npm run agent:connector-canary -- --action-id <advertised-id>\n  npm run agent:tick -- --dry-run\n  npm run agent:tick\n  npm run agent:run -- --max-ticks 20 --delay-ms 250\n  npm run agent:replay -- --run-id <id> [--decision-id <id>]\n`);
 }
 
 main().catch((error) => {

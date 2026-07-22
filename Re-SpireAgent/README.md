@@ -2,10 +2,8 @@
 
 > Compatibility status, 2026-07-22: Re and C# now share
 > `2.0-preview.55`, including explicit operation scopes and the Gateway
-> assembly digest. The clean checkout is still not a proven end-to-end runtime:
-> a Release artifact must be installed and verified loaded before the
-> [source-truth repair](../STS2MCP/docs/bridge-v2/REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md)
-> can be considered operationally closed.
+> assembly digest. Connector Gate 0 is closed on the exact loaded artifact; see
+> the [Gate 0 closeout](../STS2MCP/docs/bridge-v2/CONNECTOR_G0_CLOSEOUT_2026-07-22.md).
 
 > Product-boundary warning: direct Re-to-Gateway REST and `.env.local` provider
 > keys are developer workflows, not the target consumer architecture. The
@@ -24,7 +22,7 @@ waits for the Bridge command lifecycle, and records the complete evidence.
 RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, shadow/live modes, policy promotion, or the old project's phase machinery. Its job is to make one decision path correct and auditable.
 
 Re's current strict client contract is Bridge `2.0-preview.55` on exact game
-identity `v0.109.0|c12f634d|1833084275`. Re requires capabilities and every
+identity `v0.109.0|c12f634d|-840572606`. Re requires capabilities and every
 state/bundle/Inspection to agree on protocol, game identity, exact Modset
 fingerprint, Bridge assembly SHA-256, module MVID, and runtime instance. An
 additional, failed, runtime-added, or mismatched Mod cannot import action or
@@ -36,8 +34,8 @@ outside the matching capability operation inventory.
 Historical qualification on another game hash or Bridge MVID remains
 historical evidence only. See [MCP state coverage](docs/MCP_STATE_COVERAGE.md).
 
-Preview.55 makes strict v2 the sole default connector path. `auto` is retained
-only as a strict-v2 alias; it does not probe or fall back to v1. Bridge-confirmed
+Preview.55 makes strict v2 the sole connector path. Re rejects legacy `v1` and
+the former `auto` mode; it cannot probe or fall back to v1. Bridge-confirmed
 command completion is the semantic authority, while Re captures the first
 coherent successor checkpoint without trying to re-prove game business
 completion. A post-command read failure is recorded as checkpoint-pending, not
@@ -181,12 +179,11 @@ curl -sS http://localhost:15526/api/v2/capabilities
 
 If the adapter uses another address, set `STS2_API_URL` in `.env.local`.
 
-The first command should return an adapter health response. The second should
-return a JSON object with a `state_type`. A current Bridge v2 mod should also
-return capabilities from the third command. Current `auto` mode is a strict-v2
-alias: a missing, malformed, or exact-build-incompatible v2 endpoint fails
-closed and does not fall back to v1 action authority. Explicit `v1` remains a
-diagnostics-only compatibility mode.
+The first command should return an adapter health response. The second is a
+legacy read-only diagnostic and should return a JSON object with a `state_type`.
+A current Bridge v2 mod should also return capabilities from the third command.
+Re uses only v2; a missing, malformed, or exact-build-incompatible endpoint
+fails closed.
 
 ## Configuration
 
@@ -196,7 +193,6 @@ All values are optional except the API key for real model decisions.
 |---|---:|---|
 | `STS2_API_URL` | `http://localhost:15526` | MCP REST base URL |
 | `STS2_MCP_TIMEOUT_MS` | `5000` | State/action request timeout |
-| `STS2_MCP_PROTOCOL` | `v2` | strict `v2`; `auto` is a strict-v2 alias; explicit `v1` is diagnostics-only compatibility |
 | `STS2_MCP_V2_COMMAND_POLL_MS` | `75` | v2 command lifecycle poll interval |
 | `STS2_MCP_V2_COMMAND_TIMEOUT_MS` | `12000` | client guard for a submitted v2 command; timeout is unknown, never retryable |
 | `DEEPSEEK_API_KEY` | none | Secret, loaded from environment only |
@@ -224,8 +220,18 @@ npm run agent:inspect
 ```
 
 The output includes the negotiated adapter/protocol/build descriptor and the
-normalized `context.kind`, `surface.kind`, and `actionAuthority`, so an `auto`
-fallback cannot be confused with a v2-owned surface.
+normalized `context.kind`, `surface.kind`, and `actionAuthority`.
+
+Execute one operator-selected action only when its ID is present in that fresh
+inspection:
+
+```bash
+npm run agent:connector-canary -- --action-id <advertised-id>
+```
+
+This diagnostic does not call DeepSeek. It uses the same strict observation,
+stale-state guard, v2 submit/poll, unknown-no-retry, and successor settlement
+implementation as a normal tick; it does not bypass Gateway legality.
 
 Build and record one prompt without calling DeepSeek or executing an action:
 

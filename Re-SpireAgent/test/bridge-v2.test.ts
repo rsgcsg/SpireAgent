@@ -2953,7 +2953,6 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     ).currentState.stability).toBe("invalid");
 
     const adapter = new Sts2McpHybridAdapter("http://adapter.test", 1_000, {
-      mode: "v2",
       commandPollMs: 1,
       commandTimeoutMs: 100
     });
@@ -3130,7 +3129,6 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     ).currentState.stability).toBe("invalid");
 
     const adapter = new Sts2McpHybridAdapter("http://adapter.test", 1_000, {
-      mode: "v2",
       commandPollMs: 1,
       commandTimeoutMs: 100
     });
@@ -4535,7 +4533,6 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       throw new Error(`Unexpected request ${url}`);
     };
     const adapter = new Sts2McpHybridAdapter("http://adapter.test", 1_000, {
-      mode: "auto",
       commandPollMs: 1,
       commandTimeoutMs: 100
     }, fetchImpl, async () => {});
@@ -4583,7 +4580,6 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       legal_actions: []
     };
     const adapter = new Sts2McpHybridAdapter("http://adapter.test", 1_000, {
-      mode: "auto",
       commandPollMs: 1,
       commandTimeoutMs: 100
     }, async (input) => {
@@ -4614,7 +4610,6 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
   it("treats auto as strict v2 when the Bridge endpoint is missing", async () => {
     const requests: string[] = [];
     const adapter = new Sts2McpHybridAdapter("http://adapter.test", 1_000, {
-      mode: "auto",
       commandPollMs: 1,
       commandTimeoutMs: 100
     }, async (input) => {
@@ -4706,7 +4701,6 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       diagnostics: []
     };
     const adapter = new Sts2McpHybridAdapter("http://adapter.test", 1_000, {
-      mode: "auto",
       commandPollMs: 1,
       commandTimeoutMs: 100
     }, async (input) => {
@@ -4813,7 +4807,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     const makeAdapter = (errorCode: string) => new Sts2McpHybridAdapter(
       "http://adapter.test",
       1_000,
-      { mode: "auto", commandPollMs: 1, commandTimeoutMs: 100 },
+      { commandPollMs: 1, commandTimeoutMs: 100 },
       async (input) => {
         const url = String(input);
         if (url.endsWith("/api/v2/capabilities")) return json(CAPABILITIES);
@@ -4860,7 +4854,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     const makeAdapter = (refreshedState: typeof unsupported) => new Sts2McpHybridAdapter(
       "http://adapter.test",
       1_000,
-      { mode: "auto", commandPollMs: 1, commandTimeoutMs: 100 },
+      { commandPollMs: 1, commandTimeoutMs: 100 },
       async (input) => {
         const url = String(input);
         if (url.endsWith("/api/v2/capabilities")) return json(CAPABILITIES);
@@ -4918,7 +4912,6 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
   it("rejects legacy actions at the strict v2 adapter boundary", async () => {
     let called = false;
     const adapter = new Sts2McpHybridAdapter("http://adapter.test", 1_000, {
-      mode: "v2",
       commandPollMs: 1,
       commandTimeoutMs: 100
     }, async () => {
@@ -4937,7 +4930,6 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
   it("enforces the latest read as the single executor authority in auto mode", async () => {
     const requests: string[] = [];
     const adapter = new Sts2McpHybridAdapter("http://adapter.test", 1_000, {
-      mode: "auto",
       commandPollMs: 1,
       commandTimeoutMs: 100
     }, async (input) => {
@@ -4993,7 +4985,6 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     };
     incompatibleState.inspection_catalog = [];
     const adapter = new Sts2McpHybridAdapter("http://adapter.test", 1_000, {
-      mode: "auto",
       commandPollMs: 1,
       commandTimeoutMs: 100
     }, async (input) => {
@@ -5070,7 +5061,6 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       diagnostics: []
     };
     const adapter = new Sts2McpHybridAdapter("http://adapter.test", 1_000, {
-      mode: "auto",
       commandPollMs: 1,
       commandTimeoutMs: 100
     }, async (input) => {
@@ -5156,7 +5146,6 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     const state = { ...structuredClone(DECK_REMOVAL_STATE), game: capabilities.game, diagnostics: [] };
     const inspection = { ...runDeckInspection(state.state_id), game: capabilities.game };
     const adapter = new Sts2McpHybridAdapter("http://adapter.test", 1_000, {
-      mode: "v2",
       commandPollMs: 1,
       commandTimeoutMs: 100
     }, async (input) => {
@@ -5243,7 +5232,6 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       diagnostics: []
     };
     const adapter = new Sts2McpHybridAdapter("http://adapter.test", 1_000, {
-      mode: "v2",
       commandPollMs: 1,
       commandTimeoutMs: 100
     }, async (input) => {
@@ -5290,7 +5278,6 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       game: { ...CAPABILITIES.game, commit: "different-build" }
     };
     const adapter = new Sts2McpHybridAdapter("http://adapter.test", 1_000, {
-      mode: "auto",
       commandPollMs: 1,
       commandTimeoutMs: 100
     }, async (input) => {
@@ -5354,7 +5341,6 @@ function commandAdapter(
   terminalOnSubmit = false
 ): Sts2McpHybridAdapter {
   return new Sts2McpHybridAdapter("http://adapter.test", 1_000, {
-    mode: "auto",
     commandPollMs: 1,
     commandTimeoutMs: 100
   }, async (input, init) => {
