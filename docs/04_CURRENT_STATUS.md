@@ -10,6 +10,18 @@ This is the canonical short snapshot of the active phase, blocker, and next step
 - P9-G3B policy qualification has **no qualified candidate**. P9-G3C activation, promotion, and canary remain **forbidden**.
 - Explicit-whitelist additive live remains independently governed. Wildcard live remains forbidden.
 
+## Real STS2 Connector Workstream
+
+- The current C# Bridge source/installed DLL is `2.0-preview.54`, while
+  Re-SpireAgent requires `2.0-preview.56`; separate green suites do not prove a
+  compatible current connector.
+- Bridge coverage and permission expansion are paused until source, Re,
+  contract fixtures, installed artifact, loaded identity, and docs agree.
+- Canonical repair order: [real connector architecture audit and migration plan](../STS2MCP/docs/bridge-v2/REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md).
+- Historical exact-environment v2 evidence remains historical; no current
+  qualification, live permission, root learning behavior, or wildcard-live
+  policy changed in this docs-only audit.
+
 ## Implemented G2 Contracts
 
 - **G2.1 Selection truth:** fresh executor-logged transitions now write `SelectionResolutionRecord` with the proposal, validation result, guard override, final selection, and LLM-selection evidence eligibility. `chosenBy` is retained only as legacy summary telemetry. Historical proposal/final mismatches remain immutable and are read-only excluded.

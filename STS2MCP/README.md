@@ -10,7 +10,15 @@ state-bound protocol intended for the rebuilt `Re-SpireAgent` client.
 
 Bridge v2 is an incremental preview, not a replacement for all v1 surfaces.
 
-- Source-qualified exact game binding: Slay the Spire 2
+Current source-truth blocker: the C# Bridge and installed DLL are
+`2.0-preview.54`, while current Re-SpireAgent requires
+`2.0-preview.56` and fields/source branches absent from the Bridge source.
+Separate green test suites therefore do not establish a working current
+end-to-end product. Do not expand coverage or permission until the
+[2026-07-22 connector audit Stage 0](docs/bridge-v2/REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md)
+is complete.
+
+- Last historical source-qualified exact game binding: Slay the Spire 2
   `v0.109.0|c12f634d|-840572606`.
 - A matching version/commit with a different main-assembly hash remains
   untested and has no v2 action or Inspection authority. Check
@@ -37,7 +45,7 @@ Bridge v2 is an incremental preview, not a replacement for all v1 surfaces.
 - v1 remains available only for explicit legacy-owned Surface fallback; its
   index-based action contract is legacy. Bridge-owned states no longer use it
   for shared run/player facts.
-- Current v0.109 organic evidence qualifies merchant removal, event/rest
+- Historical exact-v0.109 Organic evidence qualified merchant removal, event/rest
   upgrade, ordinary combat turn, combat hand selection, ordinary single-player
   rest, and read-only run deck. Read-only combat pile contents are a separate
   current-build canary and never expose draw order or command authority. Event card acquisition, reward, card reward,
@@ -119,7 +127,7 @@ dotnet test STS2_MCP.sln -p:STS2GameDir="$env:STS2_GAME_DIR"
 .\build.ps1 -GameDir "$env:STS2_GAME_DIR"
 ```
 
-The solution currently contains 92 pure contract/runtime/security tests covering stable
+The solution currently contains 98 pure contract/runtime/security tests covering stable
 state identity, entity identity, stale-state rejection, idempotent request IDs,
 completion observation, timeout-as-unknown, and JSON action shape.
 
@@ -192,10 +200,14 @@ Bridge v2 MCP tools:
 - `get_agent_state_v2()`
 - `inspect_run_deck_v2(expected_state_id)`
 - `inspect_combat_piles_v2(expected_state_id)`
-- `inspect_shop_catalog_v2(expected_state_id)`
-- `get_agent_observation_bundle_v2(expected_state_id, include_run_deck?, include_combat_piles?, include_shop_catalog?)`
+- `get_agent_observation_bundle_v2(expected_state_id, include_run_deck?, include_combat_piles?)`
 - `submit_agent_action_v2(request_id, expected_state_id, action_id)`
 - `get_agent_command_v2(request_id)`
+
+The REST Gateway and Re schema also define `shop_catalog`, but the current
+Python MCP adapter does not expose it. That adapter gap is visible and
+non-authorizing; do not configure or document a nonexistent MCP tool as a
+fallback.
 
 The existing v1 tools remain exposed during migration.
 

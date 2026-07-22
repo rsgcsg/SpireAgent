@@ -1,8 +1,34 @@
 # Bridge v2 Current Status
 
-Status date: 2026-07-21
+Status date: 2026-07-22
 
-## Current Contract
+## 2026-07-22 Source-Truth Blocker
+
+The current clean checkout is not an end-to-end compatible Bridge/Re product
+baseline. The C# Bridge source and installed DLL advertise
+`2.0-preview.54`, while current Re-SpireAgent requires
+`2.0-preview.56`, `bridge.assembly_file_sha256`, operation permission scopes,
+and a `discovery` source branch that the C# source does not implement. Both
+projects pass their own unit suites, but there is no cross-language conformance
+test that exercises a C# fixture through the current Re decoder.
+
+No game process was running during the 2026-07-22 audit, so there is no current
+loaded SHA/MVID/runtime identity. A fresh Release build produced SHA-256
+`274825c4c88cf9716732b4bcc871a906d599ced5c51a03199d206e67db92695e`,
+which is not byte-identical to the installed preview.54 DLL SHA-256
+`7bf3abca5f20594077b31f8e400ef0b27643353846256cb59cb633418a59a8b3`.
+This is an exact-artifact closure gap, not proof of a semantic difference.
+Historical preview.54 Organic evidence
+remains valid only for its exact recorded environment and cannot qualify the
+current checkout. Coverage expansion and new permission are paused until
+source, Re, installed artifact, loaded identity, capabilities, and docs agree.
+
+The mandatory repair and migration sequence is in the
+[real STS2 connector architecture audit](REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md).
+This blocker narrows current claims; it does not revoke or rewrite historical
+evidence.
+
+## Last Coherent Historical Contract
 
 - protocol: `2.0-preview.54`
 - canonical source-qualified game identity: `v0.109.0|c12f634d|-840572606`

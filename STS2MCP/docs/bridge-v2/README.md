@@ -1,5 +1,6 @@
 # Bridge v2 Documentation
 
+- [2026-07-22 real STS2 connector architecture audit and migration plan](REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md)
 - [Current status](CURRENT_STATUS.md)
 - [Audited baseline](BASELINE.md)
 - [Upstream and design audit](UPSTREAM_AUDIT.md)
@@ -54,5 +55,8 @@
 - [Deck enchant runtime smoke](SMOKE_2026-07-16.md)
 - [Re-SpireAgent integration boundary](RE_SPIREAGENT_INTEGRATION.md)
 
-The status and coverage files are the operational sources of truth. The audit
-records why the current architecture differs from the original task document.
+The current-status file records the immediate compatibility blocker. The
+2026-07-22 real-connector audit owns the repair and migration order. Coverage
+records historical/source evidence and must not be read as current end-to-end
+support while source truth is broken. Older audits explain historical design
+decisions but do not override those three documents.

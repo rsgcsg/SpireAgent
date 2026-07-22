@@ -4,6 +4,26 @@ This plan is subordinate to the current exact-build permission matrix. It is a
 sequence of verifiable reductions in duplication, not a proposal to broaden
 runtime authority.
 
+## Mandatory Precondition: Source Truth Repair
+
+Status: blocked and highest priority as of 2026-07-22.
+
+The C# Bridge remains `2.0-preview.54` while Re requires
+`2.0-preview.56` and contract fields/source branches absent from the C# source.
+Independent green test suites do not prove cross-language compatibility. Before
+any later phase or new Surface proceeds:
+
+- select and document one actual protocol revision;
+- align C#, Re, examples, installed artifact, and capability declarations;
+- add language-neutral compatibility fixtures decoded by the real Re decoder;
+- build, install, load, and record exact SHA/MVID/runtime/game/Modset identity;
+- exercise read-only negotiation and one existing low-risk canary without
+  expanding permission.
+
+See the [2026-07-22 real connector audit and migration plan](REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md).
+The phases below describe retained architecture work, but Phase 2 and later are
+not authorized until this precondition and a current reliability baseline pass.
+
 ## Phase 0: Governance Guardrails
 
 Status: completed in preview.31 and this audit.
@@ -84,9 +104,10 @@ This phase cannot grant action authority.
 
 ## Phase 2: Transaction Correlation And DecisionFrame Shadow
 
-Status: proposed; independently revised on 2026-07-20. Begin with the generated
-combat-choice and combat-pile-choice families. Do not begin with a protocol or
-authority migration.
+Status: deferred behind source-truth repair and a measured current reliability
+baseline. The 2026-07-20 design remains evidence input, not an implementation
+authorization. Do not begin with a protocol or authority migration, and do not
+introduce broad Transaction IR merely to preserve the old phase order.
 
 First add a minimal, non-authorizing transaction-correlation record beside the
 existing command ledger. Seed it only from already-audited native Task scopes

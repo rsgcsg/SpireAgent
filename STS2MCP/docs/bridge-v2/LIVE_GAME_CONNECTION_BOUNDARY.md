@@ -2,6 +2,12 @@
 
 Status: canonical architecture boundary for the current real-game connection.
 
+Current compatibility warning: the C# Bridge source is `2.0-preview.54` while
+Re-SpireAgent currently requires `2.0-preview.56`. Until the
+[source-truth repair](REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md)
+closes, this document defines the intended ownership boundary, not proof that a
+clean checkout currently negotiates end to end.
+
 This document defines component names and ownership for the visible STS2
 runtime. Root [ARCHITECTURE.md](../../../ARCHITECTURE.md) remains authoritative
 for the whole SpireAgent system. Historical closeouts retain their original
@@ -53,6 +59,27 @@ Re-SpireAgent does not use the Python MCP server in its strict Bridge v2 path.
 MCP tool discovery proves only adapter availability. It does not grant game
 legality, exact-build permission, qualification, or strategic authority.
 
+## Target Product Deployment Boundary
+
+The preferred product shape is a minimal in-game Gateway Mod plus an external
+Companion Runtime:
+
+```text
+Workshop-installed Gateway Mod
+  -> local versioned connector contract over REST/IPC
+  -> external Companion Runtime
+       - strict connector decoder and controller session
+       - model providers and BYOK secrets
+       - agent loop, records, diagnostics, and optional MCP adapter
+```
+
+The Gateway remains authoritative for native observation, input ownership,
+legality, commit, completion, and exact-environment permission. The Companion
+owns provider dependencies, API keys, orchestration, and product operations.
+Secrets and full Agent execution should not be embedded in the game process.
+This is a target deployment boundary, not a claim that a packaged Companion is
+already implemented.
+
 ## Ownership
 
 | Component | Owns | Must not own |
@@ -88,6 +115,13 @@ The live connection retains:
 - Fail Closed behavior for unknown identity, owner, semantics, permission, or
   outcome.
 
+The current Command Ledger is in-memory. Its honest guarantee is at-most-once
+handling within one gateway runtime, not durable exactly-once execution across
+restart. The target contract must carry a runtime epoch, report an unresolved
+post-restart request as unknown, and never replay it automatically. A short
+external mutation-controller lease is also required before multiple clients
+can be treated as safe; state binding alone does not serialize two controllers.
+
 These are protocol-independent domain properties. REST and MCP must preserve
 them rather than reimplement them.
 
@@ -104,6 +138,10 @@ Directly implemented at the current repository revision:
 - strict Re REST decoding, normalization, advertised-action import, and
   Command polling;
 - an optional Python MCP adapter over the REST routes.
+
+These are source implementation statements. Because the current C# and Re
+protocol revisions disagree, they are not a current end-to-end compatibility
+or loaded-runtime claim.
 
 Still incremental or proposed:
 
@@ -164,4 +202,3 @@ Headless implementation may start only after the live admission gate in the
 is explicitly met. Until then, all game integration engineering should close
 the live gateway's transaction, source-binding, adapter-consistency, and exact
 runtime evidence gaps.
-

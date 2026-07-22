@@ -1,5 +1,12 @@
 # Re-SpireAgent RE-P1
 
+> Compatibility warning, 2026-07-22: Re currently requires Bridge
+> `2.0-preview.56`, while the C# Bridge source and installed DLL remain
+> `2.0-preview.54`. The independent test suites pass, but the clean checkout is
+> not a proven end-to-end runtime until the
+> [source-truth repair](../STS2MCP/docs/bridge-v2/REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md)
+> completes.
+
 Re-SpireAgent is a small, independent Slay the Spire 2 agent runtime. It reads
 strict Bridge v2 state from the Live Semantic Gateway REST adapter, normalizes
 untrusted JSON into a strongly typed current-state contract with separate
@@ -9,15 +16,15 @@ waits for the Bridge command lifecycle, and records the complete evidence.
 
 RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, shadow/live modes, policy promotion, or the old project's phase machinery. Its job is to make one decision path correct and auditable.
 
-The current strict client contract is Bridge `2.0-preview.56` on exact game
+Re's current strict client contract is Bridge `2.0-preview.56` on exact game
 identity `v0.109.0|c12f634d|1833084275`. Re requires capabilities and every
 state/bundle/Inspection to agree on protocol, game identity, exact Modset
 fingerprint, Bridge assembly SHA-256, module MVID, and runtime instance. An
 additional, failed, runtime-added, or mismatched Mod cannot import action or
 Inspection authority.
 
-The current build exposes 71 explicit canary operation scopes across 23
-Surface kinds and three read-only Inspection canaries; no operation or
+Re's preview.56 contract declares 71 explicit canary operation scopes across
+23 Surface kinds and three read-only Inspection canaries; no operation or
 Inspection is qualified. Empty permission lists never mean wildcard. Re also
 rejects legal actions outside the exact capability operation inventory.
 Historical qualification on another game hash or Bridge MVID remains

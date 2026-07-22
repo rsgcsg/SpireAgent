@@ -1,5 +1,13 @@
 # Player-Visible Coverage Matrix
 
+> Source-truth warning, 2026-07-22: this matrix inventories historical
+> qualification and source implementation. It is not proof that the current
+> clean checkout works end to end. The C# Bridge is `2.0-preview.54` while Re
+> requires `2.0-preview.56`, and no current loaded runtime identity was
+> available during the audit. Existing percentage estimates are planning
+> estimates, not measured player-visible closure or v1 parity. See the
+> [real connector audit and migration plan](REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md).
+
 Current execution evidence is scoped to exact game identity
 `v0.109.0|c12f634d|-840572606` and exact loaded Modset fingerprint
 `f1ecc8c0a30eb006bc27581fc3a4a21f9dfb9e9597461dff4a8faf3f51878a8c`.
@@ -12,8 +20,9 @@ An alternate-device runtime observed on 2026-07-18 was
 permits only `event_option`, source-gated `event_card_acquisition`, and ordinary
 single-player `map_navigation` as independently source-audited and exercised
 action canaries; every other Surface and every Inspection remain disabled.
-The current workspace has since loaded the source-qualified `-840572606`
-identity. Neither environment inherits permission from the other.
+Historical records later loaded the source-qualified `-840572606` identity.
+Neither environment inherits permission from the other, and neither is a claim
+about a currently running process or the incompatible current checkout.
 
 ## Historical Alternate-Device Build
 
@@ -26,7 +35,7 @@ identity. Neither environment inherits permission from the other.
 | every other Surface | disabled | implementation or older-build evidence only | no authority until independently scoped |
 | all Inspection kinds | disabled | empty explicit qualified/canary lists | empty remains Fail Closed |
 
-## Current-Build Contracts
+## Historical Source-Target Contracts
 
 | Surface / inspection | Permission | Current evidence | Remaining boundary |
 |---|---|---|---|
@@ -84,8 +93,9 @@ identity. Neither environment inherits permission from the other.
 
 ## Coverage Interpretation
 
-- Twenty-three semantic Surface contracts exist in source; twenty-two are
-  permitted on the exact source-qualified v0.109 target (five qualified and
+- Twenty-three semantic Surface contracts exist in preview.54 source;
+  twenty-two were permitted on its exact historical source-qualified v0.109
+  target (five qualified and
   seventeen canaries), while one remains target-build disabled. Generated choice
   authority is narrower than the Surface kind: only exact Lead Paperweight and
   exact Colorless Potion sources may publish their discriminated operations.
@@ -101,10 +111,11 @@ identity. Neither environment inherits permission from the other.
   the exact-build permission gate is Surface-level. The 2026-07-20 architecture
   audit records this as an unresolved governance gap, not a permission
   expansion or qualification of other native origins.
-- This is roughly `65-78%` of major ordinary in-run interaction families, but
+- The historical inventory was estimated as roughly `65-78%` of major ordinary
+  in-run interaction families, but
   only about `55-68%` of practical v1 interaction parity and `35-50%` of all
-  single-player player-visible situations. These are engineering ranges, not
-  measured product metrics.
+  single-player player-visible situations. These are planning ranges, not
+  measured product metrics and not current-checkout support.
 - Safety/authority mechanics are substantially more mature than semantic
   coverage. The protocol does not yet expose every fact the player can inspect.
 - The typed contract inventory records visible fact groups and operation-level

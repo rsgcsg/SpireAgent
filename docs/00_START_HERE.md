@@ -74,6 +74,7 @@ Start here before changing docs, planning a new phase, or deciding which documen
 - [Environment-scope ADR](decisions/ADR-0004-environment-scoped-evidence-and-knowledge.md)
 - [Player Product Vision](PRODUCT_VISION.md)
 - [Live STS2 Connection Boundary](../STS2MCP/docs/bridge-v2/LIVE_GAME_CONNECTION_BOUNDARY.md)
+- [Real STS2 Connector Architecture Audit And Migration Plan](../STS2MCP/docs/bridge-v2/REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md)
 - [Deferred Headless STS2 Plan](headless/README.md)
 - [North Star Authority And Roadmap Audit](reports/NORTH_STAR_AUTHORITY_AND_ROADMAP_AUDIT_2026-07-10.md)
 - [P8_5_LIVE_ROLLOUT_POLICY.md](phases/P8_5_LIVE_ROLLOUT_POLICY.md)
