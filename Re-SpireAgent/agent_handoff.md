@@ -5,14 +5,23 @@
 > `../STS2MCP/docs/bridge-v2/CURRENT_STATUS.md`. Older identity and mode claims
 > below are preserved as dated evidence and must not override those documents.
 
-Status update 2026-07-22: current protocol is `2.0-preview.56`. Wood Carvings
+Status update 2026-07-22 (latest): current loaded `2.0-preview.56` artifact is
+SHA `61e659c7...de97`, MVID `35c2e71e-66bc-4423-9191-3f00c404c2ad`, runtime
+`7d19e21d5ee84105b32988aabadacc69`. Fresh runs repaired Headbutt/Graveblast
+completion, shop Inspection advertisement, and power-description formatting.
+Subsequent final-artifact Organic runs completed Headbutt draw-top three times
+and Graveblast hand selection twice with exact-card semantic witnesses. The
+contract remains source-scoped canary-only. See the canonical status and Gate 1
+real-run defect closeout.
+
+Earlier status update 2026-07-22: current protocol was `2.0-preview.56`. Wood Carvings
 Bird received a purpose-specific deterministic replacement Surface and a full
 select/cancel/reselect/confirm/run-deck Organic canary under SHA `8ad08daa...`;
 it remains canary-only. The final source artifact derives replacement IDs from
-`ModelDb` and is loaded as SHA `c9127d63...b117`, MVID
+`ModelDb` and was loaded as SHA `c9127d63...b117`, MVID
 `d5ae09de-cea9-4faf-818c-919f828c7eed`, runtime
 `aa43cb8b6bff4aa6871962caacd53802`; the earlier Organic evidence does not
-transfer. A final-artifact Re canary also proved `continue_run` settles under
+transfer. That artifact's Re canary also proved `continue_run` settles under
 the bounded long-transition budget (11 polls / 2333 ms). There are now 74
 explicit operation scopes across 24 Surface kinds. See the canonical current
 status rather than the chronological records below.
