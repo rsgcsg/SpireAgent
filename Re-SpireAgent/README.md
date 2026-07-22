@@ -7,6 +7,13 @@
 > [source-truth repair](../STS2MCP/docs/bridge-v2/REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md)
 > completes.
 
+> Product-boundary warning: direct Re-to-Gateway REST and `.env.local` provider
+> keys are developer workflows, not the target consumer architecture. The
+> planned product places Gateway authentication/lease use, OS-backed secrets,
+> model brokering, Agent supervision, diagnostics, and recovery in a trusted
+> external Companion. None of that is implemented by this README. See the
+> [productization architecture audit](../docs/product/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md).
+
 Re-SpireAgent is a small, independent Slay the Spire 2 agent runtime. It reads
 strict Bridge v2 state from the Live Semantic Gateway REST adapter, normalizes
 untrusted JSON into a strongly typed current-state contract with separate
@@ -178,7 +185,12 @@ curl -sS http://localhost:15526/api/v2/capabilities
 
 If the adapter uses another address, set `STS2_API_URL` in `.env.local`.
 
-The first command should return an adapter health response. The second should return a JSON object with a `state_type`. A current Bridge v2 mod should also return capabilities from the third command. In default `auto` mode, a missing v2 endpoint falls back to v1; malformed or exact-build-incompatible v2 does not silently regain action authority.
+The first command should return an adapter health response. The second should
+return a JSON object with a `state_type`. A current Bridge v2 mod should also
+return capabilities from the third command. Current `auto` mode is a strict-v2
+alias: a missing, malformed, or exact-build-incompatible v2 endpoint fails
+closed and does not fall back to v1 action authority. Explicit `v1` remains a
+diagnostics-only compatibility mode.
 
 ## Configuration
 

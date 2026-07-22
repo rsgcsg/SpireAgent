@@ -22,6 +22,22 @@ This is the canonical short snapshot of the active phase, blocker, and next step
   qualification, live permission, root learning behavior, or wildcard-live
   policy changed in this docs-only audit.
 
+## Productization Workstream
+
+- The canonical [productization architecture audit](product/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md)
+  selects a minimal trusted Gateway Mod plus an external Companion as the
+  target boundary; neither the Companion nor a consumer Workshop product is
+  implemented.
+- Public-product work remains blocked by connector source-truth drift and by
+  missing Gateway authentication, a Gateway-enforced controller lease, runtime
+  epoch/restart semantics, and an explicit v1 release policy. The next product
+  stage is `PROD-0 Product Truth And Threat Repair`, not Companion platform
+  implementation.
+- Current direct Re-to-REST and `.env.local` provider configuration are
+  developer paths. They are not the target consumer secret or control boundary.
+- This audit changed no protocol, runtime permission, live behavior, Surface,
+  provider, Mod manifest, or installed artifact.
+
 ## Implemented G2 Contracts
 
 - **G2.1 Selection truth:** fresh executor-logged transitions now write `SelectionResolutionRecord` with the proposal, validation result, guard override, final selection, and LLM-selection evidence eligibility. `chosenBy` is retained only as legacy summary telemetry. Historical proposal/final mismatches remain immutable and are read-only excluded.

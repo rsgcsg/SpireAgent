@@ -396,6 +396,13 @@ One environment-change scenario identifies affected objects, preserves unaffecte
 
 Expose the safe LLM-primary product to non-developer users early enough to validate installation, provider, authority, explanation, and takeover interfaces.
 
+The [productization architecture audit](../product/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md)
+defines a cross-cutting `PROD-*` engineering workstream. It does not replace
+this phase sequence: PROD-0/1 are connector/product safety prerequisites,
+PROD-2/3/4 may seed the interface and packaging foundation, and PROD-5 is the
+execution of this beta gate. None may claim P13 before the verification and exit
+conditions below pass, and they must consume P12 compatibility/quarantine truth.
+
 ### Work Packages
 
 - thin game mod/adapter package;
@@ -487,6 +494,10 @@ P14 is not required to enable unqualified delegated features in P15. Features th
 ### Objective
 
 Turn the player beta into a maintainable, upgradeable, supportable release.
+
+The `PROD-*` workstream supplies implementation and evidence inputs; P15 remains
+the sole release/operations acceptance gate. SDK, plugin, or Headless progress
+cannot substitute for the operational matrix below.
 
 ### Work Packages
 

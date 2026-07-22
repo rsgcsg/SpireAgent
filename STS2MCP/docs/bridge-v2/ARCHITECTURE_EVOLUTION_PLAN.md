@@ -24,6 +24,28 @@ See the [2026-07-22 real connector audit and migration plan](REAL_STS2_CONNECTOR
 The phases below describe retained architecture work, but Phase 2 and later are
 not authorized until this precondition and a current reliability baseline pass.
 
+## Product Release Safety Precondition
+
+Status: required before public Workshop control or a consumer Companion; not an
+authorization to change runtime behavior in this document.
+
+Source truth repair alone is insufficient for a public local-control product.
+Before a release profile can accept mutations, it must also provide:
+
+- authenticated local client sessions and a user-private runtime descriptor;
+- read-only observers plus one Gateway-enforced mutation-controller lease;
+- a runtime epoch binding state, actions, and Commands across restart;
+- explicit unknown-after-restart behavior with no automatic resubmission;
+- a release-default policy that prevents v1 mutation from bypassing v2;
+- an explicit `affects_gameplay`, co-op, duplicate-install, licensing, and
+  package-content decision;
+- loaded Gateway/Modset identity verification rather than disk-file discovery;
+- provider secrets and third-party Agent code outside the game process.
+
+The [productization architecture audit](../../../docs/product/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md)
+defines the conditional product sequence. These requirements do not promote a
+Surface, grant authority, or prove that a Companion currently exists.
+
 ## Phase 0: Governance Guardrails
 
 Status: completed in preview.31 and this audit.

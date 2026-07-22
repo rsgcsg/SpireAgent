@@ -33,6 +33,10 @@ Start here before changing docs, planning a new phase, or deciding which documen
 - `headless/`
   - deferred future Headless STS2 boundary, admission gate, phases, and
     acceptance criteria; no current implementation or authority
+- `product/`
+  - player-product, distribution, local-security, Companion, BYOK, SDK, and
+    release architecture audits; roadmap documents describe gates, not shipped
+    product capability
 - `archive/legacy/`
   - old redirects and low-priority historical docs that should not compete with active documents
 
@@ -54,6 +58,9 @@ Start here before changing docs, planning a new phase, or deciding which documen
   - budget governance truth
 - `../ENVIRONMENT_COMPATIBILITY.md`
   - game/mod/adapter identity, evidence scope, compatibility, quarantine, and revalidation truth
+- `product/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md`
+  - conditional player-product, Companion, Workshop, BYOK, SDK, security, and
+    distribution architecture; it is not a shipped-capability statement
 
 ## Current High-Value Docs
 
@@ -73,6 +80,7 @@ Start here before changing docs, planning a new phase, or deciding which documen
 - [Strategic authority ADR](decisions/ADR-0003-strategic-authority-and-experience-shell.md)
 - [Environment-scope ADR](decisions/ADR-0004-environment-scoped-evidence-and-knowledge.md)
 - [Player Product Vision](PRODUCT_VISION.md)
+- [Real Productization Architecture Audit And Roadmap](product/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md)
 - [Live STS2 Connection Boundary](../STS2MCP/docs/bridge-v2/LIVE_GAME_CONNECTION_BOUNDARY.md)
 - [Real STS2 Connector Architecture Audit And Migration Plan](../STS2MCP/docs/bridge-v2/REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md)
 - [Deferred Headless STS2 Plan](headless/README.md)
@@ -109,6 +117,8 @@ These exist for engineering continuity and history. They must not become the onl
   - `runbooks/*.md`
 - debt and cleanup tracking
   - `debt/*.md`
+- product packaging, Companion, BYOK, SDK, and distribution architecture
+  - `product/*.md`
 - old redirect docs and stale low-priority material
   - `archive/legacy/*.md`
 

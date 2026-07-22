@@ -8,6 +8,9 @@ Re-SpireAgent currently requires `2.0-preview.56`. Until the
 closes, this document defines the intended ownership boundary, not proof that a
 clean checkout currently negotiates end to end.
 
+Consumer distribution, local trust, Companion, BYOK, SDK, and release gates are
+defined in the [productization architecture audit](../../../docs/product/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md).
+
 This document defines component names and ownership for the visible STS2
 runtime. Root [ARCHITECTURE.md](../../../ARCHITECTURE.md) remains authoritative
 for the whole SpireAgent system. Historical closeouts retain their original
@@ -23,6 +26,8 @@ the terms below.
 | REST adapter | The current HTTP serialization of the gateway contract and Re-SpireAgent's primary connection |
 | MCP adapter | The optional Python MCP server that maps focused tools to gateway REST operations |
 | Re game connector | The strict decoder, REST client, structural projection, action submission, and settlement consumer in Re-SpireAgent |
+| Companion Core | The future trusted external supervisor for Gateway sessions, Agent/model processes, secrets, diagnostics, and recovery; not currently implemented |
+| Agent Runtime Contract | The future bounded observation/action-choice contract between Companion and an Agent; it is not the native Connector Contract |
 | Headless host | A future, separate runtime project; none is implemented or qualified in SpireAgent today |
 
 `STS2MCP` and `STS2_MCP` remain repository and installed-artifact names. They
@@ -59,6 +64,11 @@ Re-SpireAgent does not use the Python MCP server in its strict Bridge v2 path.
 MCP tool discovery proves only adapter availability. It does not grant game
 legality, exact-build permission, qualification, or strategic authority.
 
+The current loopback REST path is unauthenticated and has no Gateway-enforced
+controller lease. Localhost binding and Origin filtering are defense layers,
+not client identity. This is a developer connector path, not a completed
+consumer security boundary.
+
 ## Target Product Deployment Boundary
 
 The preferred product shape is a minimal in-game Gateway Mod plus an external
@@ -66,11 +76,12 @@ Companion Runtime:
 
 ```text
 Workshop-installed Gateway Mod
-  -> local versioned connector contract over REST/IPC
+  -> authenticated local versioned Connector Contract
   -> external Companion Runtime
-       - strict connector decoder and controller session
-       - model providers and BYOK secrets
-       - agent loop, records, diagnostics, and optional MCP adapter
+       - strict connector decoder, runtime epoch, and controller session
+       - provider broker and OS-backed BYOK secrets
+       - official Agent supervision, records, diagnostics, and recovery
+       - optional MCP and external Agent adapters
 ```
 
 The Gateway remains authoritative for native observation, input ownership,
@@ -88,8 +99,9 @@ already implemented.
 | Live Semantic Gateway | player-visible projection, unique input ownership, action and operand binding, runtime permission enforcement, shared publication/execution validation, native Commit adapters, Command lifecycle, transaction correlation, semantic Witness evaluation, environment/evidence binding | prompts, memory, scoring, learning, hidden strategy truth, arbitrary reflection or scripts |
 | REST adapter | HTTP routes, request limits, serialization, main-thread dispatch, typed transport errors | independent legality, source semantics, authority, or completion |
 | MCP adapter | focused discovery/read/submit/poll tools over fixed gateway operations | content-specific game rules, arbitrary queries, permission, or strategy |
+| Companion Core | authenticated discovery/session/lease use, strict Connector decode, Agent/model supervision, secrets, health, diagnostics, recovery, and product UX | game legality, native completion, new game actions, direct native objects, or hidden state |
 | Re game connector | strict decode, identity agreement, coherent structural projection, advertised-action import, submit/poll, unknown-outcome preservation | strict-v2 legality reconstruction, new action synthesis, game permission, native transaction inference, or semantic completion |
-| Re strategy and LLM scaffold | salience, candidates, deliberation, selection, memory, review, and learning under project authority policy | direct native object access, hidden state, or bypass of advertised actions |
+| Re strategy and LLM scaffold | salience, candidates, deliberation, selection, memory, review, and learning under project authority policy | Gateway credentials, provider secrets from the broker, direct native object access, hidden state, or bypass of advertised actions |
 
 Permission policy records may be authored and reviewed by repository governance,
 but the Live Semantic Gateway is the runtime enforcement point. A transport or
@@ -143,6 +155,15 @@ These are source implementation statements. Because the current C# and Re
 protocol revisions disagree, they are not a current end-to-end compatibility
 or loaded-runtime claim.
 
+Not implemented in the current product path:
+
+- Gateway client authentication or a user-private runtime descriptor;
+- read-only observer sessions and a Gateway-enforced mutation-controller lease;
+- a runtime epoch that scopes state, actions, and Commands across restart;
+- a packaged Companion, consumer secret store/model broker, installer, updater,
+  recovery UI, Agent SDK, plugin sandbox, or Headless host;
+- a public-release profile that prevents v1 mutation from bypassing v2.
+
 Still incremental or proposed:
 
 - a first-class native transaction record spanning parent and child decisions;
@@ -177,8 +198,11 @@ code.
 ## Transport Conformance
 
 REST is the primary Re transport because it is the current implemented path,
-not because HTTP is part of the domain model. The MCP adapter is optional and
-must remain thin:
+not because HTTP is part of the domain model. The first product repair should
+authenticate loopback REST and bind it to an explicit runtime epoch and
+controller lease; a cross-platform IPC rewrite should wait for measured need.
+The eventual product MCP adapter belongs behind Companion policy, defaults to
+stdio where practical, receives no Gateway credential, and must remain thin:
 
 - expose the fixed capability/state/Inspection/bundle/submit/poll operations;
 - derive bounded Inspection requests from the advertised fixed catalog;

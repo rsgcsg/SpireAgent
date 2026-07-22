@@ -2,6 +2,9 @@
 
 This document describes the intended player-facing product. It is a direction, not a claim that the current repository already ships this product.
 
+The conditional engineering gates and rejected alternatives are maintained in
+the [Real Productization Architecture Audit And Roadmap](product/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md).
+
 The current implementation is a local TypeScript agent connected to an external game adapter. Current commands and limitations remain in [README.md](../README.md), [PORTABLE_USAGE.md](../PORTABLE_USAGE.md), and [LLM_RUN_MODES.md](runbooks/LLM_RUN_MODES.md).
 
 ## Product Thesis
@@ -30,27 +33,40 @@ These are product modes, not provider names:
 
 ## Product Boundary
 
-The game-side mod should remain thin:
+The game-side Gateway Mod should remain small, but it is not a dumb transport.
+It owns the native game truth that an external process must not reconstruct:
 
-- observe state;
-- expose legal actions and stable identifiers;
-- execute validated actions;
-- support pause, takeover, and compatibility status;
-- expose relevant event/capability data.
+- player-visible semantic projection and loaded-environment identity;
+- exactly one active input owner and a Gateway-enforced controller lease;
+- legal opaque actions, stable exact operands, and state binding;
+- shared publication/execution legality plus execute-time revalidation;
+- native Commit, Command lifecycle, semantic completion, and unknown outcome;
+- exact-environment action/Inspection permission.
 
-The local runtime owns:
+The trusted external Companion owns product operations:
 
-- canonical state and mechanics;
-- memory and experience shell;
-- context compilation and candidate futures;
-- provider adapters;
-- strategic decision orchestration;
-- validation and rollback;
-- transition/replay/eval;
-- proposal-driven learning;
-- environment compatibility and revalidation.
+- Gateway discovery, authentication, compatibility negotiation, and lease use;
+- provider adapters, OS-backed BYOK secrets, and the model broker;
+- official Agent supervision, pause/takeover, diagnostics, recovery, and update
+  UX;
+- redacted records, replay/eval services, and optional ecosystem adapters such
+  as MCP.
 
-The mod must not contain provider secrets, prompts, stable memory, derived strategy, proposal promotion, or autonomous learning logic.
+The Re/Agent layer owns strategic state and deliberation:
+
+- normalized strategic projection, memory, and experience shell;
+- context compilation, candidate futures, and provider-independent selection;
+- transition/replay/eval and proposal-driven learning under protected paths.
+
+Companion, Re, MCP, and third-party Agents may narrow or reject Gateway actions.
+They must not synthesize new game actions, reconstruct native legality or
+completion, receive direct game-object access, or broaden exact-environment
+permission. The Mod must not contain provider secrets, prompts, stable memory,
+derived strategy, proposal promotion, or autonomous learning logic.
+
+This split is the target product architecture. The current repository still
+uses a direct Re-to-Gateway developer path and does not implement the packaged
+Companion or consumer secret store.
 
 Official Steam Workshop support and the integrated mod loader make a player-installable mod surface plausible, but recent official patches also show continuing mod/serialization compatibility work. Product packaging must therefore build on the environment handshake and revalidation system rather than assuming a permanently stable API: <https://steamcommunity.com/app/2868840/allnews/>.
 

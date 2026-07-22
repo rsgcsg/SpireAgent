@@ -4,7 +4,10 @@ LLM-centered Slay the Spire 2 agent with a predictive cognitive scaffold, struct
 
 The main product direction is **LLM-centered, not LLM-exclusive**: the LLM owns strategic deliberation in `llm_primary`, while the surrounding experience shell may learn memory, context, candidates, and bounded skills under a deterministic safety, authorization, environment-compatibility, and rollback shell. The current repository is an engineering runtime, not yet the finished installable player product.
 
-This repository contains the TypeScript agent package. It does not include the game, the STS2 MCP C# mod, the Python MCP server, build outputs, or `node_modules`.
+This repository contains the root TypeScript agent plus the source for the
+`STS2MCP` Gateway/Python adapter and the independent `Re-SpireAgent` runtime. It
+does not contain the game, proprietary game assemblies, installed Mod binaries,
+local build outputs, secrets, or `node_modules`.
 
 ## Documentation
 
@@ -20,6 +23,7 @@ Current phase-heavy docs:
 - [Strategic authority ADR](docs/decisions/ADR-0003-strategic-authority-and-experience-shell.md)
 - [Environment Compatibility](ENVIRONMENT_COMPATIBILITY.md)
 - [Player Product Vision](docs/PRODUCT_VISION.md)
+- [Real Productization Architecture Audit And Roadmap](docs/product/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md)
 - [LLM_RUN_MODES.md](docs/runbooks/LLM_RUN_MODES.md)
 
 ## GitHub Hygiene

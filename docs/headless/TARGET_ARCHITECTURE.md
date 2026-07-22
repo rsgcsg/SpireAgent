@@ -2,6 +2,9 @@
 
 Status: proposed future subproject; no implementation or authority.
 
+The product relationship and host-independent gates are also audited in the
+[Real Productization Architecture Audit And Roadmap](../product/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md).
+
 ## Purpose
 
 The Headless project may eventually support deterministic replay, evaluation,
@@ -62,20 +65,22 @@ permission profile begins until all of the following are explicitly recorded:
 
 1. The live gateway naming and ownership boundary is stable and current code,
    protocol, Re, capability, permission, and docs agree.
-2. The highest-risk live source-binding mismatch for
-   `deck_enchant_selection` is either runtime-bound or narrowed Fail Closed.
-3. At least one source-tracked parent/child family has a non-authorizing native
-   transaction-correlation shadow covering owner, exact operands, source Task,
-   child phase, completion obligations, timeout, fault, and cleanup.
-4. Publication/execution predicate parity and semantic Witness behavior have a
-   passing shadow comparison on that family without adding actions.
-5. The fixed Bridge/Re/MCP Inspection catalog drift is closed by a bounded
-   conformance check.
+2. Language-neutral Connector fixtures prove cross-language structural and
+   negative conformance; no single named Surface is used as a proxy for the
+   contract as a whole.
+3. Authenticated sessions, one controller lease, runtime epoch, restart, and
+   unknown-no-retry behavior are implemented and fault-tested on the live host.
+4. Representative source-bound parent/child lifecycles prove owner, exact
+   operands, publication/execution predicate parity, native Commit, semantic
+   completion, timeout/fault, and cleanup without broadening actions.
+5. The bounded visibility/Inspection contract is coherent and its remaining
+   incompleteness is explicit; adapter drift is detected by conformance checks.
 6. A freshly installed and loaded exact live artifact has environment identity
-   and representative Organic lifecycle evidence recorded without borrowing an
-   old MVID.
-7. A deliberate architecture review approves the extraction boundary and the
-   chosen first host experiment.
+   plus measured ordinary-journey and fault evidence without borrowing an old
+   MVID or another host's permission.
+7. A deliberate architecture review identifies a genuinely host-neutral
+   contract boundary, approves one first host experiment, and records licensing
+   and proprietary-dependency constraints.
 
 Passing this gate does not grant Headless action authority. It only permits an
 isolated implementation experiment.
@@ -224,4 +229,3 @@ layer.
   files?
 - Which timing differences are harmless, and which change hooks, owner overlap,
   RNG consumption, or transaction completion?
-

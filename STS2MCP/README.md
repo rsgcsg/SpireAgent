@@ -18,6 +18,13 @@ end-to-end product. Do not expand coverage or permission until the
 [2026-07-22 connector audit Stage 0](docs/bridge-v2/REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md)
 is complete.
 
+> Product security warning: the current HTTP listener is a developer preview.
+> It binds to loopback and filters browser Origin, but it has no client
+> authentication, Gateway-enforced controller lease, or restart epoch, and v1
+> and v2 mutation routes share the listener. Localhost is not an authorization
+> boundary. Do not represent this as a consumer-safe Workshop product; see the
+> [productization architecture audit](../docs/product/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md).
+
 - Last historical source-qualified exact game binding: Slay the Spire 2
   `v0.109.0|c12f634d|-840572606`.
 - A matching version/commit with a different main-assembly hash remains
@@ -237,12 +244,14 @@ not be retried automatically.
 
 ## Re-SpireAgent Integration
 
-The rebuilt SpireAgent has a strict v2 decoder/projector and negotiated hybrid
-adapter. It displays `context.kind + surface.kind + authority`. In default
-`auto` mode, a qualified v2 surface uses Bridge-advertised opaque actions as its
-sole executor; unsupported v2 surfaces remain on v1 during migration.
-Exact-build mismatch, context/surface mismatch, command-response identity
-mismatch, failed command, and timeout all fail closed.
+The rebuilt SpireAgent has a strict v2 decoder/projector and a compatibility
+adapter. It displays `context.kind + surface.kind + authority`. The default is
+strict `v2`; current `auto` is only a strict-v2 alias and does not fall back to
+v1. A Bridge-owned surface uses only Bridge-advertised opaque actions, while an
+unsupported or missing v2 surface fails closed. Explicit `v1` is retained only
+as a diagnostics-only compatibility mode. Exact-build mismatch,
+context/surface mismatch, command-response identity mismatch, failed command,
+and timeout all fail closed.
 
 Current permissions come only from exact-build capability lists. Planning code
 never reads arbitrary Bridge JSON. Source `preview.30` projects top-level
@@ -252,7 +261,8 @@ v0.108 surfaces remain implementation history, not v0.109 authority.
 
 ## Security And Observation Scope
 
-- Server binds to localhost only.
+- Server binds to localhost only, which limits network exposure but does not
+  authenticate native local clients or serialize multiple controllers.
 - v2 accepts no arbitrary game parameters.
 - Unknown state, stale state, untested build, or failed reflection means no
   execution.
