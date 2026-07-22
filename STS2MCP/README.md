@@ -10,7 +10,7 @@ state-bound protocol intended for the rebuilt `Re-SpireAgent` client.
 
 Bridge v2 is an incremental preview, not a replacement for all v1 surfaces.
 
-The C# Bridge and Re now share `2.0-preview.55`, with strict explicit
+The C# Bridge and Re now share `2.0-preview.56`, with strict explicit
 operation scopes and a path-free loaded-assembly digest. Gate 0 is closed on an
 installed, Steam-loaded artifact using two bounded Re action/completion/
 successor journeys. Gate 1 remains scoped and operation-driven; this is not
@@ -30,7 +30,7 @@ complete-game qualification.
   untested and has no v2 action or Inspection authority. Check
   [Bridge v2 current status](docs/bridge-v2/CURRENT_STATUS.md) before treating
   a local install as qualified.
-- Source `2.0-preview.55` keeps centralized overlay/room/menu ownership, typed
+- Source `2.0-preview.56` keeps centralized overlay/room/menu ownership, typed
   diagnostics, purpose-specific selection and event contracts, staged
   completion semantics, and a top-level read-only shared run/player HUD.
   Current-build capabilities distinguish scoped-qualified actions, action
@@ -133,7 +133,7 @@ dotnet test STS2_MCP.sln -p:STS2GameDir="$env:STS2_GAME_DIR"
 .\build.ps1 -GameDir "$env:STS2_GAME_DIR"
 ```
 
-The solution currently contains 108 pure contract/runtime/security tests covering stable
+The solution currently contains 110 pure contract/runtime/security tests covering stable
 state identity, entity identity, stale-state rejection, idempotent request IDs,
 completion observation, timeout-as-unknown, and JSON action shape.
 

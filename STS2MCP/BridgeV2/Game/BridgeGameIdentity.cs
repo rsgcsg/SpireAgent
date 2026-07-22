@@ -48,6 +48,7 @@ internal static class BridgeGameIdentity
         "event_dialogue",
         "event_option",
         "deck_transform_selection",
+        "wood_carvings_replacement_selection",
         "deck_enchant_selection",
         "generated_card_choice",
         "combat_pile_card_selection"
@@ -157,7 +158,7 @@ internal static class BridgeGameIdentity
                     InspectionCanaryKinds: ScopedCanaryInspectionKinds,
                     ObservationOnlySurfaceKinds: Array.Empty<string>(),
                     ObservationCandidateBuildFingerprints: Array.Empty<string>(),
-                Detail: $"Game build {Fingerprint(version, commit, mainAssemblyHash)} is exactly qualified for deck_removal_selection, event/rest deck_upgrade_selection, ordinary combat_turn, combat_hand_card_selection, and ordinary single-player rest_site actions plus run_deck inspection; combat_piles and shop_catalog inspections are read-only canaries; event_card_acquisition, reward_claim, card_reward_selection, map_navigation, shop_inventory, shop_room, treasure_room, ordinary single-player game_over, source-qualified Scroll Boxes card_bundle_selection, ordinary single-player character_select, purpose-specific root/single-player menu navigation, revealed-prefix ancient event_dialogue, ordinary single-player event_option, Whispering Hollow deck_transform_selection, Self-Help Book deck_enchant_selection, source-discriminated Lead Paperweight, native Colorless/Attack/Skill/Power Potion, and native Splash generated_card_choice branches, and exact Headbutt/Graveblast combat_pile_card_selection branches are limited to action canaries, and every unlisted surface and inspection remains disabled.")
+                Detail: $"Game build {Fingerprint(version, commit, mainAssemblyHash)} is exactly qualified for deck_removal_selection, event/rest deck_upgrade_selection, ordinary combat_turn, combat_hand_card_selection, and ordinary single-player rest_site actions plus run_deck inspection; combat_piles and shop_catalog inspections are read-only canaries; event_card_acquisition, reward_claim, card_reward_selection, map_navigation, shop_inventory, shop_room, treasure_room, ordinary single-player game_over, source-qualified Scroll Boxes card_bundle_selection, ordinary single-player character_select, purpose-specific root/single-player menu navigation, revealed-prefix ancient event_dialogue, ordinary single-player event_option, Whispering Hollow deck_transform_selection, Wood Carvings deterministic replacement, Self-Help Book deck_enchant_selection, source-discriminated Lead Paperweight, native Colorless/Attack/Skill/Power Potion, and native Splash generated_card_choice branches, and exact Headbutt/Graveblast combat_pile_card_selection branches are limited to action canaries, and every unlisted surface and inspection remains disabled.")
             : currentCanaryBuild
                 ? new CompatibilityAssessment(
                     "qualified_scoped",

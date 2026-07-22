@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "scope": "ordinary_single_player_and_explicit_legacy_boundaries",
+  "legacy_dispatch_actions": [
+    { "legacy_action": "play_card", "journey": "combat", "disposition": "v2_same_semantics", "v2_operations": ["play_card"] },
+    { "legacy_action": "use_potion", "journey": "combat", "disposition": "v2_same_semantics", "v2_operations": ["use_potion"] },
+    { "legacy_action": "discard_potion", "journey": "persistent_hud_and_reward", "disposition": "partial_v2", "v2_operations": ["discard_potion_for_reward"], "remaining_boundary": "Player-initiated potion discard outside a capacity-blocked reward is visible but has no v2 mutation authority." },
+    { "legacy_action": "end_turn", "journey": "combat", "disposition": "v2_same_semantics", "v2_operations": ["end_turn"] },
+    { "legacy_action": "choose_map_node", "journey": "map_to_room", "disposition": "v2_same_semantics", "v2_operations": ["choose_map_node"] },
+    { "legacy_action": "choose_event_option", "journey": "event", "disposition": "v2_same_semantics", "v2_operations": ["choose_event_option"] },
+    { "legacy_action": "advance_dialogue", "journey": "event_dialogue", "disposition": "v2_purpose_split", "v2_operations": ["advance_event_dialogue"] },
+    { "legacy_action": "choose_rest_option", "journey": "rest_site", "disposition": "v2_same_semantics", "v2_operations": ["choose_rest_option"] },
+    { "legacy_action": "shop_purchase", "journey": "shop", "disposition": "v2_purpose_split", "v2_operations": ["purchase_shop_card", "purchase_shop_relic", "purchase_shop_potion"] },
+    { "legacy_action": "claim_reward", "journey": "reward", "disposition": "v2_same_semantics", "v2_operations": ["claim_reward"] },
+    { "legacy_action": "select_card_reward", "journey": "card_reward", "disposition": "v2_same_semantics", "v2_operations": ["select_card_reward"] },
+    { "legacy_action": "skip_card_reward", "journey": "card_reward", "disposition": "v2_purpose_split", "v2_operations": ["choose_card_reward_alternative"] },
+    { "legacy_action": "proceed", "journey": "multi_surface_navigation", "disposition": "v2_purpose_split", "v2_operations": ["proceed_event", "proceed_rewards", "proceed_rest_site", "proceed_shop", "proceed_treasure_room"] },
+    { "legacy_action": "select_card", "journey": "purpose_specific_card_selection", "disposition": "v2_purpose_split", "v2_operations": ["toggle_card", "toggle_deck_removal_card", "toggle_deck_upgrade_card", "toggle_deck_transform_card", "select_event_card_acquisition", "select_generated_run_card", "select_generated_combat_card"] },
+    { "legacy_action": "confirm_selection", "journey": "purpose_specific_card_selection", "disposition": "v2_purpose_split", "v2_operations": ["confirm_selection", "confirm_deck_removal", "confirm_deck_upgrade", "confirm_deck_transform", "confirm_combat_hand_selection"] },
+    { "legacy_action": "cancel_selection", "journey": "purpose_specific_card_selection", "disposition": "v2_purpose_split", "v2_operations": ["cancel_preview", "close_selection", "cancel_deck_removal_preview", "cancel_deck_removal_selection", "cancel_deck_upgrade_preview", "cancel_deck_upgrade_selection", "cancel_deck_transform_preview", "cancel_deck_transform_selection", "close_combat_hand_peek"] },
+    { "legacy_action": "select_bundle", "journey": "card_bundle", "disposition": "v2_purpose_split", "v2_operations": ["preview_card_bundle"] },
+    { "legacy_action": "confirm_bundle_selection", "journey": "card_bundle", "disposition": "v2_purpose_split", "v2_operations": ["confirm_card_bundle"] },
+    { "legacy_action": "cancel_bundle_selection", "journey": "card_bundle", "disposition": "v2_purpose_split", "v2_operations": ["cancel_card_bundle_preview"] },
+    { "legacy_action": "combat_select_card", "journey": "combat_child_selection", "disposition": "v2_purpose_split", "v2_operations": ["select_combat_hand_card", "deselect_combat_hand_card", "select_discard_card_for_draw_top", "select_discard_card_for_hand"] },
+    { "legacy_action": "combat_confirm_selection", "journey": "combat_child_selection", "disposition": "v2_purpose_split", "v2_operations": ["confirm_combat_hand_selection"] },
+    { "legacy_action": "select_relic", "journey": "treasure", "disposition": "v2_purpose_split", "v2_operations": ["choose_treasure_relic"] },
+    { "legacy_action": "skip_relic_selection", "journey": "treasure", "disposition": "v2_purpose_split", "v2_operations": ["skip_treasure_relic"] },
+    { "legacy_action": "claim_treasure_relic", "journey": "treasure", "disposition": "v2_purpose_split", "v2_operations": ["open_treasure_chest", "choose_treasure_relic"] },
+    { "legacy_action": "crystal_sphere_set_tool", "journey": "crystal_sphere_event", "disposition": "fail_closed", "v2_operations": [], "remaining_boundary": "No v2 source-bound grid-tool contract or semantic completion witness." },
+    { "legacy_action": "crystal_sphere_click_cell", "journey": "crystal_sphere_event", "disposition": "fail_closed", "v2_operations": [], "remaining_boundary": "No v2 source-bound grid-cell contract or semantic completion witness." },
+    { "legacy_action": "crystal_sphere_proceed", "journey": "crystal_sphere_event", "disposition": "fail_closed", "v2_operations": [], "remaining_boundary": "No v2 Crystal Sphere completion contract." }
+  ],
+  "other_legacy_boundaries": [
+    { "legacy_operation": "menu_select", "scope": "standard_single_player", "disposition": "partial_v2", "v2_operations": ["open_singleplayer", "open_standard_run_setup", "select_character", "embark_standard_run", "back_from_character_select", "back_from_singleplayer_menu"], "remaining_boundary": "Continue is v2; first-run tutorial, abandon confirmation, Daily, Custom, seeded, profile, settings, timeline, compendium, and patch-note mutation paths remain unsupported or outside current scope." },
+    { "legacy_operation": "profile_switch_delete", "scope": "profile_management", "disposition": "out_of_scope", "v2_operations": [], "remaining_boundary": "Profile mutation is not part of the ordinary-run Gate 1 scope." },
+    { "legacy_operation": "multiplayer_dispatch", "scope": "multiplayer", "disposition": "out_of_scope", "v2_operations": [], "remaining_boundary": "Bridge v2 is explicitly single-player; no multiplayer authority is inherited." }
+  ]
+}

@@ -10,7 +10,7 @@ import type { JsonObject } from "../src/shared/json.js";
 import { fixture } from "./helpers.js";
 
 const CAPABILITIES = {
-  protocol_version: "2.0-preview.55",
+  protocol_version: "2.0-preview.56",
   bridge: {
     id: "sts2_mcp_bridge_v2",
     name: "STS2 Agent Bridge",
@@ -80,6 +80,7 @@ const CAPABILITIES = {
     { kind: "deck_removal_selection", support: "implemented_exact_game_version", operations: ["toggle_deck_removal_card", "preview_deck_removal", "confirm_deck_removal", "cancel_deck_removal_preview", "cancel_deck_removal_selection"], evidence: "test-contract" },
     { kind: "deck_upgrade_selection", support: "implemented_exact_game_version", operations: ["toggle_deck_upgrade_card", "confirm_deck_upgrade", "cancel_deck_upgrade_preview", "cancel_deck_upgrade_selection"], evidence: "test-contract" },
     { kind: "deck_transform_selection", support: "implemented_exact_game_version", operations: ["toggle_deck_transform_card", "preview_deck_transform", "confirm_deck_transform", "cancel_deck_transform_preview", "cancel_deck_transform_selection", "toggle_deck_transform_upgrade_view"], evidence: "test-contract" },
+    { kind: "wood_carvings_replacement_selection", support: "implemented_exact_game_version", operations: ["select_wood_carvings_replacement_card", "confirm_wood_carvings_replacement", "cancel_wood_carvings_replacement_preview"], evidence: "test-contract" },
     { kind: "event_dialogue", support: "implemented_exact_game_version", operations: ["advance_event_dialogue"], evidence: "test-contract" },
     { kind: "event_option", support: "implemented_exact_game_version", operations: ["choose_event_option", "proceed_event"], evidence: "test-contract" },
     { kind: "rest_site", support: "implemented_exact_game_version", operations: ["choose_rest_option", "proceed_rest_site"], evidence: "test-contract" },
@@ -175,7 +176,7 @@ const RUN_VISIBILITY = {
 };
 
 const DECK_ENCHANT_STATE = {
-  protocol_version: "2.0-preview.55",
+  protocol_version: "2.0-preview.56",
   state_id: "state-test-1",
   state_sequence: 1,
   observed_at: "2026-07-16T00:00:00Z",
@@ -251,7 +252,7 @@ const DECK_ENCHANT_STATE = {
     status: "resolved_manifest_contract",
     instance_id: "contract-instance-deck-enchant-1",
     surface_kind: "deck_enchant_selection",
-    semantic_contract_id: "bridge.surface.deck_enchant_selection.2.0-preview.55",
+    semantic_contract_id: "bridge.surface.deck_enchant_selection.2.0-preview.56",
     declared_binding: "fixture-declared-binding",
     operations: [{ operation: "toggle_card", evidence_status: "surface_level_only", published: true }],
     current_authority_tier: "canary",
@@ -468,6 +469,64 @@ const DECK_TRANSFORM_STATE = {
     player_visible_semantics: "contract_complete_for_whispering_hollow_random_transform_selection",
     legal_actions: "derived_from_same_current_transform_controls_as_execution",
     sources: ["visible_ui"],
+    missing: []
+  }
+};
+
+const WOOD_CARVINGS_REPLACEMENT_STATE = {
+  ...DECK_ENCHANT_STATE,
+  state_id: "state-wood-carvings-replacement-1",
+  context: {
+    kind: "event",
+    event_id: "WOOD_CARVINGS",
+    name: "Wood Carvings",
+    ancient: false,
+    in_dialogue: false,
+    body: "Choose a carving."
+  },
+  surface_kind: "wood_carvings_replacement_selection",
+  authority_handoff: { status: "bridge_owned", surface_kind: "wood_carvings_replacement_selection", reason: "fixture exact source binding" },
+  surface: {
+    kind: "wood_carvings_replacement_selection",
+    stage: "selecting",
+    screen_entity_id: "wood-carvings-screen-1",
+    prompt: "Choose a card to transform.",
+    branch: "bird",
+    replacement_definition_id: "PECK",
+    replacement_name: "Peck",
+    replacement_description: "Deal damage.",
+    min_select: 1,
+    max_select: 1,
+    selected_count: 0,
+    selected_card_entity_ids: [],
+    cards: [{
+      entity_id: "wood-carvings-strike-1",
+      definition_id: "STRIKE_IRONCLAD",
+      name: "Strike",
+      type: "Attack",
+      cost: "1",
+      star_cost: null,
+      description: "Deal 6 damage.",
+      rarity: "Basic",
+      is_upgraded: false,
+      is_selected: false,
+      existing_enchantment: null
+    }]
+  },
+  legal_actions: [{
+    action_id: "action-wood-carvings-select-1",
+    state_id: "state-wood-carvings-replacement-1",
+    kind: "select_wood_carvings_replacement_card",
+    category: "selection",
+    label: "Replace Strike with PECK",
+    authority: "game_ui",
+    evidence_code: "NCardGrid.HolderPressed+WoodCarvings source binding",
+    entity_bindings: [{ role: "card", entity_id: "wood-carvings-strike-1" }]
+  }],
+  completeness: {
+    player_visible_semantics: "contract_complete_for_wood_carvings_deterministic_replacement",
+    legal_actions: "derived_from_exact_source_binding_visible_grid_and_current_controls",
+    sources: ["visible_ui", "exact_source_task_binding"],
     missing: []
   }
 };
@@ -1963,7 +2022,7 @@ function visibleInspectionCard(overrides: Record<string, unknown> = {}) {
 
 function runDeckInspection(stateId: string, cards = [visibleInspectionCard()]) {
   return {
-    protocol_version: "2.0-preview.55",
+    protocol_version: "2.0-preview.56",
     inspection_id: `inspection-run-deck-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -1986,7 +2045,7 @@ function runDeckInspection(stateId: string, cards = [visibleInspectionCard()]) {
 
 function combatPilesInspection(stateId: string) {
   return {
-    protocol_version: "2.0-preview.55",
+    protocol_version: "2.0-preview.56",
     inspection_id: `inspection-combat-piles-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -2031,7 +2090,7 @@ function shopCatalogInspection(stateId: string) {
     blocked_reason: offer.stocked ? "not_visible" : offer.blocked_reason
   });
   return {
-    protocol_version: "2.0-preview.55",
+    protocol_version: "2.0-preview.56",
     inspection_id: `inspection-shop-catalog-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -2073,7 +2132,7 @@ function coherentObservationBundle(
   }));
   const resolvedInspections = inspections ?? defaultInspections;
   return {
-    protocol_version: "2.0-preview.55",
+    protocol_version: "2.0-preview.56",
     observation_id: `observation-${state.state_id}`,
     coherent: true,
     state,
@@ -2474,6 +2533,43 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     };
     expect(normalizeCurrentState(
       wrapBridgeV2State({ state: selectingWithCommit, capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    ).currentState.stability).toBe("invalid");
+  });
+
+  it("keeps Wood Carvings deterministic replacement separate from random transform", () => {
+    const decoded = decodeBridgeV2State(WOOD_CARVINGS_REPLACEMENT_STATE).data;
+    expect(decoded.surface.kind).toBe("wood_carvings_replacement_selection");
+    const selecting = normalizeCurrentState(
+      wrapBridgeV2State({ state: structuredClone(WOOD_CARVINGS_REPLACEMENT_STATE), capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    );
+    expect(selecting.currentState).toMatchObject({
+      stability: "actionable",
+      actionAuthority: "bridge_advertised",
+      context: { kind: "event", eventId: "WOOD_CARVINGS" },
+      surface: {
+        kind: "wood_carvings_replacement_selection",
+        stage: "selecting",
+        branch: "bird",
+        replacementDefinitionId: "PECK"
+      }
+    });
+    expect(buildAllowedActions(selecting.currentState, selecting.stateHash)).toEqual([
+      expect.objectContaining({
+        kind: "select_wood_carvings_replacement_card",
+        action: expect.objectContaining({ bridgeActionKind: "select_wood_carvings_replacement_card" })
+      })
+    ]);
+
+    expect(() => decodeBridgeV2State({
+      ...WOOD_CARVINGS_REPLACEMENT_STATE,
+      context: { ...WOOD_CARVINGS_REPLACEMENT_STATE.context, event_id: "OTHER_EVENT" }
+    })).toThrow("requires exact Wood Carvings event context");
+    const mismatchedReplacement = structuredClone(WOOD_CARVINGS_REPLACEMENT_STATE);
+    mismatchedReplacement.surface.replacement_definition_id = "TORIC_TOUGHNESS";
+    expect(normalizeCurrentState(
+      wrapBridgeV2State({ state: mismatchedReplacement, capabilities: structuredClone(CAPABILITIES) }),
       TEST_SOURCE
     ).currentState.stability).toBe("invalid");
   });

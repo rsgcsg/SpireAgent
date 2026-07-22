@@ -45,7 +45,7 @@ yet.
 
 ## Current Architectural Constraint
 
-The Gateway and Re now share one mechanically checked `2.0-preview.55`
+The Gateway and Re now share one mechanically checked `2.0-preview.56`
 connector contract. The next boundary is operational: build, install, and prove
 one loaded artifact before adding Surface providers. This prevents source/test
 agreement from being mistaken for current runtime evidence.

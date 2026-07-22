@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { isJsonObject, type JsonObject } from "../../shared/json.js";
 
-export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.55" as const;
+export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.56" as const;
 export const BRIDGE_V2_INSPECTION_KINDS = ["run_deck", "combat_piles", "shop_catalog"] as const;
 const inspectionKindSchema = z.enum(BRIDGE_V2_INSPECTION_KINDS);
 
@@ -412,6 +412,22 @@ const deckTransformSurfaceSchema = z.object({
   showing_upgrade_previews: z.boolean(),
   preview_kind: z.enum(["none", "random_uncommitted_cycle"]),
   replacement_known: z.literal(false),
+  cards: z.array(visibleCardSchema)
+}).passthrough();
+
+const woodCarvingsReplacementSurfaceSchema = z.object({
+  kind: z.literal("wood_carvings_replacement_selection"),
+  stage: z.enum(["selecting", "preview"]),
+  screen_entity_id: z.string().min(1),
+  prompt: z.string().min(1),
+  branch: z.enum(["bird", "torus"]),
+  replacement_definition_id: z.string().min(1),
+  replacement_name: z.string().nullable().optional(),
+  replacement_description: z.string().nullable().optional(),
+  min_select: z.literal(1),
+  max_select: z.literal(1),
+  selected_count: z.number().int().nonnegative(),
+  selected_card_entity_ids: z.array(z.string().min(1)),
   cards: z.array(visibleCardSchema)
 }).passthrough();
 
@@ -1089,6 +1105,7 @@ export type BridgeV2DeckEnchantSurface = z.infer<typeof deckEnchantSurfaceSchema
 export type BridgeV2DeckRemovalSurface = z.infer<typeof deckRemovalSurfaceSchema>;
 export type BridgeV2DeckUpgradeSurface = z.infer<typeof deckUpgradeSurfaceSchema>;
 export type BridgeV2DeckTransformSurface = z.infer<typeof deckTransformSurfaceSchema>;
+export type BridgeV2WoodCarvingsReplacementSurface = z.infer<typeof woodCarvingsReplacementSurfaceSchema>;
 export type BridgeV2EventContext = z.infer<typeof eventContextSchema>;
 export type BridgeV2CombatContext = z.infer<typeof combatContextSchema>;
 export type BridgeV2RewardFlowContext = z.infer<typeof rewardFlowContextSchema>;
@@ -1148,6 +1165,7 @@ export type BridgeV2Surface =
   | BridgeV2DeckRemovalSurface
   | BridgeV2DeckUpgradeSurface
   | BridgeV2DeckTransformSurface
+  | BridgeV2WoodCarvingsReplacementSurface
   | BridgeV2EventDialogueSurface
   | BridgeV2RestSiteSurface
   | BridgeV2ShopInventorySurface
@@ -1323,6 +1341,11 @@ export function decodeBridgeV2State(value: unknown): DecodedBridgePayload<Bridge
     surface = parse(deckTransformSurfaceSchema, decoded.data.surface, "deck_transform_selection surface");
     if (context.kind !== "event" || context.event_id !== "WHISPERING_HOLLOW") {
       throw new BridgeV2DecodeError("Bridge v2 deck_transform_selection surface requires exact Whispering Hollow event context");
+    }
+  } else if (decoded.data.surface.kind === "wood_carvings_replacement_selection") {
+    surface = parse(woodCarvingsReplacementSurfaceSchema, decoded.data.surface, "wood_carvings_replacement_selection surface");
+    if (context.kind !== "event" || context.event_id !== "WOOD_CARVINGS") {
+      throw new BridgeV2DecodeError("Bridge v2 wood_carvings_replacement_selection surface requires exact Wood Carvings event context");
     }
   } else if (decoded.data.surface.kind === "event_dialogue") {
     surface = parse(eventDialogueSurfaceSchema, decoded.data.surface, "event_dialogue surface");
@@ -1586,6 +1609,12 @@ export function isBridgeV2DeckTransformSurface(
   surface: BridgeV2Surface
 ): surface is BridgeV2DeckTransformSurface {
   return surface.kind === "deck_transform_selection";
+}
+
+export function isBridgeV2WoodCarvingsReplacementSurface(
+  surface: BridgeV2Surface
+): surface is BridgeV2WoodCarvingsReplacementSurface {
+  return surface.kind === "wood_carvings_replacement_selection";
 }
 
 export function isBridgeV2UnsupportedSurface(

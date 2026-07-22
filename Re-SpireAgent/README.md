@@ -1,7 +1,7 @@
 # Re-SpireAgent RE-P1
 
 > Compatibility status, 2026-07-22: Re and C# now share
-> `2.0-preview.55`, including explicit operation scopes and the Gateway
+> `2.0-preview.56`, including explicit operation scopes and the Gateway
 > assembly digest. Connector Gate 0 is closed on the exact loaded artifact; see
 > the [Gate 0 closeout](../STS2MCP/docs/bridge-v2/CONNECTOR_G0_CLOSEOUT_2026-07-22.md).
 
@@ -21,7 +21,7 @@ waits for the Bridge command lifecycle, and records the complete evidence.
 
 RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, shadow/live modes, policy promotion, or the old project's phase machinery. Its job is to make one decision path correct and auditable.
 
-Re's current strict client contract is Bridge `2.0-preview.55` on exact game
+Re's current strict client contract is Bridge `2.0-preview.56` on exact game
 identity `v0.109.0|c12f634d|-840572606`. Re requires capabilities and every
 state/bundle/Inspection to agree on protocol, game identity, exact Modset
 fingerprint, Bridge assembly SHA-256, module MVID, and runtime instance. An
@@ -128,6 +128,7 @@ Bridge REST state
 - A Bridge v2-owned surface imports only state-bound opaque actions advertised by the bridge. Top-level shared state is read-only; v1 fallback cannot add or execute actions there.
 - `failed`, `timed_out`, transport-uncertain, or identity-mismatched v2 command results stop as unknown outcomes and are never automatically retried.
 - A Bridge-confirmed command and availability of the next stable decision checkpoint are recorded separately. If a changed valid state is still transitional at the checkpoint timeout, the record is `executed_checkpoint_pending`; the next tick re-reads state and never retries the action. v1 acknowledgement and unknown Bridge outcomes do not receive this treatment.
+- Map navigation, `continue_run`, and `embark_standard_run` use the bounded long-transition settlement budget rather than the ordinary action budget.
 - `.env.local`, API keys, and `data/runs/` are ignored by Git.
 
 ## Requirements
@@ -323,7 +324,7 @@ RE-P1 has fixture-backed support for:
 
 Bridge v2 source `preview.56` uses exact-game, exact-Modset, exact Bridge
 SHA/MVID/runtime, and per-operation capabilities. The current exact v0.109
-profile has 71 explicit canary operations, three read-only Inspection
+profile has 74 explicit operation scopes, three read-only Inspection
 canaries, and no qualified scope. Every unlisted operation, origin, owner, and
 Inspection is disabled even if another build or MVID has historical evidence.
 Qualification is per exact evidence scope, never broad Surface or game

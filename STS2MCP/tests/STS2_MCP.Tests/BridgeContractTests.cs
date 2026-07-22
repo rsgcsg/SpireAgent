@@ -18,7 +18,7 @@ public sealed class BridgeContractTests
             .OrderBy(kind => kind, StringComparer.Ordinal)
             .ToArray();
 
-        Assert.Equal(23, manifestKinds.Length);
+        Assert.Equal(24, manifestKinds.Length);
         Assert.Equal(manifestKinds.Length, manifestKinds.Distinct(StringComparer.Ordinal).Count());
         Assert.Equal(providerKinds, manifestKinds);
         Assert.All(BridgeContractManifest.Entries, entry =>
@@ -135,6 +135,63 @@ public sealed class BridgeContractTests
         Assert.Equal(
             "candidate_action_canary",
             BridgeSurfacePermission.SupportLevel(compatibility, "deck_enchant_selection"));
+    }
+
+    [Fact]
+    public void WoodCarvingsReplacementIsCanaryOnlyAndRequiresExactSemanticWitness()
+    {
+        BridgeContractManifestEntry replacement = Assert.Single(
+            BridgeContractManifest.Entries,
+            entry => entry.Kind == "wood_carvings_replacement_selection");
+        CompatibilityAssessment compatibility = BridgeGameIdentity.Assess(
+            "v0.109.0",
+            "c12f634d",
+            -840572606);
+
+        Assert.Contains("exact-source-task-binding", replacement.SourceBindingId);
+        Assert.Contains("deterministic-replacement-witness", replacement.SourceBindingId);
+        Assert.Contains(replacement.Operations, operation => operation.Operation == "confirm_wood_carvings_replacement");
+        Assert.Contains("wood_carvings_replacement_selection", compatibility.ActionCanarySurfaceKinds);
+        Assert.DoesNotContain("wood_carvings_replacement_selection", compatibility.ActionExecutionSurfaceKinds);
+    }
+
+    [Fact]
+    public void DeterministicReplacementWitnessRejectsClosureWithoutExactDeckDelta()
+    {
+        object original = new();
+        object unchanged = new();
+        object replacement = new();
+        object other = new();
+        object[] baseline = { original, unchanged };
+
+        Assert.True(DeterministicDeckReplacementWitness.IsSatisfied(
+            sourceCompleted: true,
+            selectorClosed: true,
+            baseline,
+            new[] { unchanged, replacement },
+            original,
+            card => ReferenceEquals(card, replacement)));
+        Assert.False(DeterministicDeckReplacementWitness.IsSatisfied(
+            sourceCompleted: false,
+            selectorClosed: true,
+            baseline,
+            new[] { unchanged, replacement },
+            original,
+            card => ReferenceEquals(card, replacement)));
+        Assert.False(DeterministicDeckReplacementWitness.IsSatisfied(
+            sourceCompleted: true,
+            selectorClosed: true,
+            baseline,
+            new[] { unchanged, other },
+            original,
+            card => ReferenceEquals(card, replacement)));
+        Assert.False(DeterministicDeckReplacementWitness.IsSatisfied(
+            sourceCompleted: true,
+            selectorClosed: true,
+            baseline,
+            new[] { original, replacement },
+            original,
+            card => ReferenceEquals(card, replacement)));
     }
 
     [Fact]

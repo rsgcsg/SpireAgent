@@ -16,6 +16,7 @@ import {
   type DeckRemovalSelectionSurface,
   type DeckUpgradeSelectionSurface,
   type DeckTransformSelectionSurface,
+  type WoodCarvingsReplacementSelectionSurface,
   type EnemySnapshot,
   type EventDialogueSurface,
   type EventOptionSurface,
@@ -51,6 +52,7 @@ import {
   isBridgeV2DeckRemovalSurface,
   isBridgeV2DeckUpgradeSurface,
   isBridgeV2DeckTransformSurface,
+  isBridgeV2WoodCarvingsReplacementSurface,
   isBridgeV2EventContext,
   isBridgeV2EventDialogueSurface,
   isBridgeV2EventOptionSurface,
@@ -98,6 +100,7 @@ import {
   type BridgeV2DeckRemovalSurface,
   type BridgeV2DeckUpgradeSurface,
   type BridgeV2DeckTransformSurface,
+  type BridgeV2WoodCarvingsReplacementSurface,
   type BridgeV2Diagnostic,
   type BridgeV2EventDialogueSurface,
   type BridgeV2EventOptionSurface,
@@ -147,6 +150,11 @@ const ACTION_KINDS = {
     "cancel_deck_transform_preview",
     "cancel_deck_transform_selection",
     "toggle_deck_transform_upgrade_view"
+  ]),
+  wood_carvings_replacement_selection: new Set([
+    "select_wood_carvings_replacement_card",
+    "confirm_wood_carvings_replacement",
+    "cancel_wood_carvings_replacement_preview"
   ]),
   event_dialogue: new Set(["advance_event_dialogue"]),
   event_option: new Set(["choose_event_option", "proceed_event"]),
@@ -555,6 +563,11 @@ export function normalizeBridgeV2CurrentState(
           && state.context.event_id === "WHISPERING_HOLLOW") {
         validateDeckTransformState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
         surface = projectDeckTransformSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
+      } else if (isBridgeV2WoodCarvingsReplacementSurface(state.surface)
+          && isBridgeV2EventContext(state.context)
+          && state.context.event_id === "WOOD_CARVINGS") {
+        validateWoodCarvingsReplacementState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
+        surface = projectWoodCarvingsReplacementSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
       } else if (isBridgeV2EventDialogueSurface(state.surface) && isBridgeV2EventContext(state.context)) {
         validateEventDialogueState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
         surface = projectEventDialogueSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
@@ -983,6 +996,34 @@ function validateDeckTransformState(
           || action.kind === "toggle_deck_transform_upgrade_view") {
         diagnostics.invalid("bridge_v2.legal_actions.kind", action.kind, "selecting-only transform action appeared during preview stage");
       }
+    }
+  }
+}
+
+function validateWoodCarvingsReplacementState(
+  surface: BridgeV2WoodCarvingsReplacementSurface,
+  stateId: string,
+  actions: BridgeV2LegalAction[],
+  missing: string[],
+  advertisedOperations: ReadonlySet<string>,
+  readiness: string,
+  diagnostics: DiagnosticsBuilder
+): void {
+  validateBoundedCardSelectionFacts(surface, diagnostics);
+  validateActions("wood_carvings_replacement_selection", stateId, actions, missing, advertisedOperations, readiness, diagnostics);
+  const expectedReplacement = surface.branch === "bird" ? "PECK" : "TORIC_TOUGHNESS";
+  if (surface.replacement_definition_id !== expectedReplacement) {
+    diagnostics.invalid("bridge_v2.surface.replacement_definition_id", surface, "Wood Carvings branch and deterministic replacement disagree");
+  }
+  if (surface.stage === "selecting") {
+    if (surface.selected_count !== 0) diagnostics.invalid("bridge_v2.surface.selected_count", surface.selected_count, "Wood Carvings selecting stage must not retain a selected card");
+    for (const action of actions) {
+      if (action.kind !== "select_wood_carvings_replacement_card") diagnostics.invalid("bridge_v2.legal_actions.kind", action.kind, "preview-only Wood Carvings action appeared while selecting");
+    }
+  } else {
+    if (surface.selected_count !== 1) diagnostics.invalid("bridge_v2.surface.selected_count", surface.selected_count, "Wood Carvings preview requires exactly one selected card");
+    for (const action of actions) {
+      if (action.kind === "select_wood_carvings_replacement_card") diagnostics.invalid("bridge_v2.legal_actions.kind", action.kind, "selection action appeared during Wood Carvings preview");
     }
   }
 }
@@ -2607,6 +2648,32 @@ function projectDeckTransformSurface(
     showingUpgradePreviews: surface.showing_upgrade_previews,
     previewKind: surface.preview_kind,
     replacementKnown: false,
+    cards: surface.cards.map(projectBridgeV2Card),
+    legalActions: projectActions(actions),
+    completeness: projectCompleteness(completeness)
+  };
+}
+
+function projectWoodCarvingsReplacementSurface(
+  surface: BridgeV2WoodCarvingsReplacementSurface,
+  stateId: string,
+  actions: BridgeV2LegalAction[],
+  completeness: RawCompleteness
+): WoodCarvingsReplacementSelectionSurface {
+  return {
+    kind: "wood_carvings_replacement_selection",
+    stage: surface.stage,
+    bridgeStateId: stateId,
+    screenEntityId: surface.screen_entity_id,
+    prompt: surface.prompt,
+    branch: surface.branch,
+    replacementDefinitionId: surface.replacement_definition_id,
+    ...(surface.replacement_name ? { replacementName: surface.replacement_name } : {}),
+    ...(surface.replacement_description ? { replacementDescription: surface.replacement_description } : {}),
+    minimumSelections: 1,
+    maximumSelections: 1,
+    selectedCount: surface.selected_count,
+    selectedCardEntityIds: [...surface.selected_card_entity_ids],
     cards: surface.cards.map(projectBridgeV2Card),
     legalActions: projectActions(actions),
     completeness: projectCompleteness(completeness)

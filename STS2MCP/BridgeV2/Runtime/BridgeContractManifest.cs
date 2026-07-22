@@ -111,6 +111,20 @@ internal static class BridgeContractManifest
             "purpose_specific_random_deck_transform",
             new[] { "visible_deck_cards", "selection", "random_uncommitted_preview", "upgrade_view", "controls" }),
         Entry(
+            "wood_carvings_replacement_selection",
+            new[]
+            {
+                Operation("select_wood_carvings_replacement_card", BridgeOperationEvidenceStatus.OrganicCanaryExercised,
+                    "docs/bridge-v2/GATE1_WOOD_CARVINGS_CLOSEOUT_2026-07-22.md"),
+                Operation("confirm_wood_carvings_replacement", BridgeOperationEvidenceStatus.OrganicCanaryExercised,
+                    "docs/bridge-v2/GATE1_WOOD_CARVINGS_CLOSEOUT_2026-07-22.md"),
+                Operation("cancel_wood_carvings_replacement_preview", BridgeOperationEvidenceStatus.OrganicCanaryExercised,
+                    "docs/bridge-v2/GATE1_WOOD_CARVINGS_CLOSEOUT_2026-07-22.md")
+            },
+            "sts2-v0.109.0:WoodCarvings.Bird/Torus+CardSelectCmd.FromDeckGeneric+NDeckCardSelectScreen+exact-source-task-binding+deterministic-replacement-witness",
+            "purpose_specific_deterministic_deck_replacement",
+            new[] { "visible_deck_cards", "selection", "event_branch", "known_replacement", "preview", "controls" }),
+        Entry(
             "event_dialogue",
             new[] { "advance_event_dialogue" },
             "sts2-v0.109.0:NAncientEventLayout+revealed-prefix-only+exact-dialogue-index-witness",

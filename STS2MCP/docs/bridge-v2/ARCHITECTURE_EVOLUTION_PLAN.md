@@ -9,7 +9,7 @@ runtime authority.
 Status: source contract complete; loaded-artifact qualification remains highest
 priority as of 2026-07-22.
 
-C# and Re now share `2.0-preview.55`, with explicit operation scopes and a
+C# and Re now share `2.0-preview.56`, with explicit operation scopes and a
 Gateway assembly digest. Independent green suites still do not prove a loaded
 game connector. Before any later phase or new Surface proceeds:
 

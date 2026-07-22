@@ -38,7 +38,7 @@ export class SettlementWatcher {
     const started = Date.now();
     const timeoutMs = isEndTurn(action)
       ? this.config.endTurnTimeoutMs
-      : isRoomTransition(action)
+      : isLongTransition(action)
         ? this.config.roomTransitionTimeoutMs
         : this.config.defaultTimeoutMs;
     let polls = 0;
@@ -69,7 +69,7 @@ export class SettlementWatcher {
         };
       }
       if (settlementAuthority === "adapter_confirmed"
-          && !["loading", "settling", "transitioning"].includes(last.currentState.stability)) {
+          && isSemanticCheckpoint(last)) {
         const beforeToken = bridgeStateToken(before);
         const observedToken = bridgeStateToken(last);
         if (confirmedStateToken
@@ -88,7 +88,7 @@ export class SettlementWatcher {
       }
       if (last.stateHash === before.stateHash) continue;
       lastChanged = last;
-      if (["loading", "settling", "transitioning"].includes(last.currentState.stability)) {
+      if (!isSemanticCheckpoint(last)) {
         stableCandidate = undefined;
         continue;
       }
@@ -125,8 +125,17 @@ function isEndTurn(action: ExecutableGameAction): boolean {
     || (action.kind === "bridge_v2_action" && action.bridgeActionKind === "end_turn");
 }
 
-function isRoomTransition(action: ExecutableGameAction): boolean {
-  return action.kind === "choose_map_node";
+function isLongTransition(action: ExecutableGameAction): boolean {
+  return action.kind === "choose_map_node"
+    || (action.kind === "bridge_v2_action"
+      && (action.bridgeActionKind === "choose_map_node"
+        || action.bridgeActionKind === "continue_run"
+        || action.bridgeActionKind === "embark_standard_run"));
+}
+
+function isSemanticCheckpoint(envelope: StateEnvelope): boolean {
+  return envelope.currentState.stability === "actionable"
+    || envelope.currentState.stability === "non_actionable";
 }
 
 function transientTelemetry(

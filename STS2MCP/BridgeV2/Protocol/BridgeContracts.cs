@@ -7,7 +7,7 @@ namespace STS2_MCP.BridgeV2.Protocol;
 
 public static class BridgeV2Contract
 {
-    public const string ProtocolVersion = "2.0-preview.55";
+    public const string ProtocolVersion = "2.0-preview.56";
     public const string ObservationPolicyId = "player_visible_ui_v1";
 }
 
@@ -865,6 +865,25 @@ public sealed record DeckTransformSelectionSurface(
     bool ShowingUpgradePreviews,
     string PreviewKind,
     bool ReplacementKnown,
+    IReadOnlyList<VisibleCard> Cards) : IBridgeSurface;
+
+/// <summary>
+/// Native Wood Carvings Bird/Torus selector. The replacement is deterministic
+/// and player-visible before commit, unlike a random transform.
+/// </summary>
+public sealed record WoodCarvingsReplacementSelectionSurface(
+    string Kind,
+    string Stage,
+    string ScreenEntityId,
+    string Prompt,
+    string Branch,
+    string ReplacementDefinitionId,
+    string? ReplacementName,
+    string? ReplacementDescription,
+    int MinSelect,
+    int MaxSelect,
+    int SelectedCount,
+    IReadOnlyList<string> SelectedCardEntityIds,
     IReadOnlyList<VisibleCard> Cards) : IBridgeSurface;
 
 public sealed record CombatTurnSurface(

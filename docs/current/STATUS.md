@@ -13,7 +13,7 @@ This is the canonical short current-state document for the rebuilt project.
 ## Current Gate
 
 **Gate 0 is closed; Gate 1 connector reliability and operation-level migration
-is active.** The exact loaded `2.0-preview.55` environment completed two
+is active.** The exact loaded `2.0-preview.56` environment completed two
 state-bound Re journeys (`main_menu -> singleplayer_menu -> main_menu`) with
 Bridge command completion and coherent successor states. Re is now v2-only;
 Gateway v1 mutations are disabled by default while v1 reads remain explicit
@@ -21,10 +21,20 @@ compatibility diagnostics.
 
 ## Immediate Next Step
 
-Continue Gate 1 by auditing and retiring v1 per operation/journey, prioritizing
-normal-run blockers and visible-information gaps. Do not infer qualification
-from implementation or widen scoped permissions without current exact-build
-evidence. See the [Gate 0 closeout](../../STS2MCP/docs/bridge-v2/CONNECTOR_G0_CLOSEOUT_2026-07-22.md).
+Continue the resumed exact-identity Gate 1 journey from its current event/map
+path until the next real unsupported or fail-closed semantic variant. The first gap,
+Wood Carvings Bird/Torus deterministic starter replacement, is now a
+source-bound `preview.56` canary with a complete Bird select/cancel/reselect/
+confirm/run-deck Organic lifecycle. It remains canary-only. The current journey
+also closed a Re settlement defect where a transient unknown successor after
+Embark was misclassified as settled, plus a cold-load timeout where
+`continue_run` incorrectly used the ordinary settlement budget. The final
+artifact is loaded, but its prior Wood Carvings Organic evidence is not
+transferred across SHA/MVID. Use the
+[operation inventory](../../STS2MCP/docs/bridge-v2/GATE1_OPERATION_AND_JOURNEY_INVENTORY.md)
+to distinguish v2 purpose splits from real fail-closed gaps. Do not infer
+qualification from implementation or widen scoped permissions without current
+exact-build evidence.
 
 ## Explicit Non-Claims
 

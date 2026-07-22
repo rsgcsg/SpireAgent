@@ -15,6 +15,16 @@ fingerprint `f36fd123b9f272ac61e15a880b6f661489d15873177ec5b423c96fed71cebde2`.
 Compilation, fixtures, source review, old-build
 evidence, canary permission, and organic qualification are distinct states.
 
+Gate 1 added exact-identity, operator-directed Re coverage on the same loaded
+artifact without changing permission tiers. The bounded journey entered a new
+Ironclad run, selected a Neow option, proceeded to the map, entered and finished
+an ordinary combat with 17 v2 actions, claimed gold and a potion, selected a
+card reward, and returned to an actionable map. All explicit actions settled;
+v1 mutation fallback was unavailable. See the
+[Gate 1 operation inventory](GATE1_OPERATION_AND_JOURNEY_INVENTORY.md). This is
+current coverage/canary evidence, not autonomous strategy evidence or automatic
+Organic Qualification.
+
 An alternate-device runtime observed on 2026-07-18 was
 `v0.109.0|c12f634d|1833084275`. It is a different exact build. Preview.35
 permits only `event_option`, source-gated `event_card_acquisition`, and ordinary
@@ -44,9 +54,9 @@ The `1833084275` environment inherits no permission from the current loaded
 | `combat_hand_card_selection` | qualified | Touch of Insanity exact-instance select/confirm/cost post-state | other hand-selection purposes need diversity |
 | `rest_site` | qualified | Heal exact HP, Smith exact child, Proceed to map | unknown enabled options and multiplayer fail closed |
 | `event_card_acquisition` | canary | Brain Leech exact one-card deck commit | two-card and other event origins remain unqualified |
-| `reward_claim` | canary | ordinary claim, potion-capacity, child, and Proceed flows | linked/special rewards fail closed |
-| `card_reward_selection` | canary | repeated ordinary choices | alternatives and special origins need diversity |
-| `map_navigation` | canary | repeated exact-node travel | drawings, special modes, and multiplayer unsupported |
+| `reward_claim` | canary | ordinary claim, potion-capacity, child, and Proceed flows; fresh Gate 1 gold/potion/card/proceed journey on the exact loaded identity | linked/special rewards fail closed |
+| `card_reward_selection` | canary | repeated ordinary choices; fresh Gate 1 exact Headbutt selection | alternatives and special origins need diversity |
+| `map_navigation` | canary | repeated exact-node travel; fresh Gate 1 map-to-combat and reward-to-map journey | drawings, special modes, and multiplayer unsupported |
 | `shop_room` | canary | open/close/Proceed current-build journeys | more lifecycle diversity required |
 | `shop_inventory` | canary | card/relic/potion purchases and removal launch with category-specific witnesses | final artifact still needs repeated organic category coverage |
 | `treasure_room` | canary | exact relic choose and Proceed; repeated pre-dispatch refusal preserves the native 2.5-second relic-clickable/Skip-disabled action-set boundary | open/skip/empty-chest/multiplayer variants remain unqualified |
@@ -56,6 +66,7 @@ The `1833084275` environment inherits no permission from the current loaded
 | `main_menu` | canary; Continue exercised on intermediate and final preview.47 MVIDs | exact visible root choices, saved-run summary, unsupported-choice boundary, and Bridge-confirmed Continue into the saved-run shop; final-MVID command settled under operator-positioned provenance | Single Player branch hidden by saved-run state; profile/patch hover detail incomplete; final-MVID action is canary coverage, not qualification |
 | `singleplayer_menu` | canary, source/fixture only | exact Standard/Daily/Custom/Back bindings and submenu-stack witnesses | no current-MVID Organic action lifecycle yet |
 | `deck_transform_selection` | canary; selection/confirm/upgrade-view exercised | exact Whispering Hollow source, selected instances, upgrade presentation, random-uncommitted preview, exact-instance/deck-count witness | other callers, explicit preview button, cancel paths, multi-select, Mods, and future builds remain unqualified |
+| `wood_carvings_replacement_selection` | canary; Bird full lifecycle exercised on preview.56 | exact `WoodCarvings.Bird` source task, formatted known `PECK` semantics, select -> preview -> cancel -> reselect -> confirm, exact-original absent, PECK 0 -> 1, deck 12 -> 12, event Proceed -> map | Torus Organic lifecycle, repeated Bird evidence, Mods, and future builds remain unqualified; all other generic deck selectors fail closed |
 | `deck_enchant_selection` | Surface-level current-build canary; only Self-Help Book select/automatic preview/cancel/reselect/confirm was exercised | exact target enchantment ID/amount, exact selected instances, overlay stage, semantic exact-card enchantment witness, independent run-deck post-state; current Provider does not runtime-bind the Self-Help Book source named by manifest/evidence | other callers remain unqualified but are not source-suppressed on the Surface-permitted exact build; explicit preview button, cancelable close, multi-select, parent-transaction side effects, Mods, and future builds remain evidence/architecture debt |
 | `generated_card_choice` | source-scoped canary; Lead Paperweight, Colorless Potion, and Attack Potion selections exercised; exact Splash implemented but not final-MVID exercised | exact `RelicCmd.Obtain`, sealed native Colorless/Attack/Skill/Power `PotionModel.OnUseWrapper`, and sealed native `Splash.OnPlayWrapper` bindings; explicit source/run-deck-vs-combat-hand/cost/overflow semantics; exact-reference/deck or hand-discard witnesses | Skill/Power/Splash Organic actions, Skip variants, and full-hand overflow remain pending; Hefty Tablet, Knowledge Demon, other generators, derived Mod types, and unknown sources fail closed |
 | exact Headbutt/Graveblast `combat_pile_card_selection` | source-scoped canary; Headbutt source/action observed but corrected completion not re-exercised; Graveblast source-audited and loaded without final-MVID action | exact source task, visible discard candidates, source-discriminated draw-top versus hand/full-hand-discard exact-card witness | both final completion branches still need natural action evidence; all other origins fail closed |

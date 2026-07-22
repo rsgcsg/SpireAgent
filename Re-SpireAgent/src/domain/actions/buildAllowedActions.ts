@@ -21,6 +21,7 @@ export function buildAllowedActions(state: NormalizedCurrentState, sourceStateHa
     case "deck_removal_selection":
     case "deck_upgrade_selection":
     case "deck_transform_selection":
+    case "wood_carvings_replacement_selection":
     case "combat_pile_card_selection":
     case "combat_hand_card_selection":
     case "event_card_acquisition":

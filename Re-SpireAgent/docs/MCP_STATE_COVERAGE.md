@@ -8,7 +8,7 @@ matrix. This document records the Re-SpireAgent consumption boundary.
 
 ## Bridge v2 Current Client Contract
 
-Re strictly decodes `2.0-preview.55`. It accepts Bridge actions only when:
+Re strictly decodes `2.0-preview.56`. It accepts Bridge actions only when:
 
 - game, Modset, Bridge assembly SHA-256, MVID, and runtime identities match
   exact scoped capabilities and state;
@@ -36,6 +36,7 @@ artifacts.
 | `character_select` | `menu + character_select` with no active-run shared state | current-build action canary |
 | `event_dialogue` / `event_option` | revealed prefix or typed visible options/tooltips | current-build action canaries |
 | `deck_transform_selection` | `event + deck_transform_selection`, exact selected instances and random-uncommitted preview | Whispering Hollow action canary; other origins fail closed |
+| `wood_carvings_replacement_selection` | `event + wood_carvings_replacement_selection`, exact Bird/Torus branch and known deterministic replacement | Bird select/cancel/reselect/confirm and exact run-deck post-state exercised on preview.56; Torus and repeat diversity pending |
 | `deck_enchant_selection` | `event + deck_enchant_selection`, exact target enchantment, selected instances, and selecting/preview stages | Self-Help Book action canary; semantic exact-card post-state confirmed, other origins fail closed |
 | `generated_card_choice` | source-discriminated `event` run-deck or `combat` hand choice with exact purpose/source/destination/cost/overflow semantics | Lead Paperweight, Colorless/Attack/Skill/Power Potion, and Splash have C# source bindings; final-MVID source diversity remains pending. Discovery has no current binding and every other source fails closed. |
 | exact Headbutt/Graveblast `combat_pile_card_selection` | exact discard candidate plus source-discriminated draw-top or hand/full-hand-discard purpose | action canary; both final completion branches need a natural repeat |

@@ -188,6 +188,37 @@ describe("TickOrchestrator", () => {
     expect(result.after?.currentState.surface).toMatchObject({ bridgeStateId: "state-new" });
   });
 
+  it("does not accept an unsupported unknown checkpoint after an adapter-confirmed transition", async () => {
+    const transient = bridgeEnvelope("state-transient", "unknown");
+    const final = bridgeEnvelope("state-final");
+    const adapter = new FakeAdapter([{ token: "state-transient" }, { token: "state-final" }]);
+    const watcher = new SettlementWatcher(adapter, (raw) => {
+      const token = typeof raw === "object" && raw && "token" in raw ? String(raw.token) : "missing";
+      return token === "state-transient" ? transient : final;
+    }, {
+      pollMs: 1,
+      defaultTimeoutMs: 20,
+      endTurnTimeoutMs: 20,
+      roomTransitionTimeoutMs: 20
+    }, async () => {});
+
+    const result = await watcher.waitForNextState(
+      bridgeEnvelope("state-before"),
+      {
+        kind: "bridge_v2_action",
+        actionId: "action-embark",
+        expectedStateId: "state-before",
+        bridgeActionKind: "embark_standard_run"
+      },
+      "adapter_confirmed",
+      "state-transient"
+    );
+
+    expect(result).toMatchObject({ status: "settled", polls: 2 });
+    expect(result.after?.currentState.stability).toBe("actionable");
+    expect(result.after?.currentState.surface).toMatchObject({ bridgeStateId: "state-final" });
+  });
+
   it("uses a dedicated room-transition budget for map navigation", async () => {
     const preRaw = await fixture("map") as Sts2McpRawState;
     const loadingRaw = structuredClone(preRaw);
@@ -209,6 +240,60 @@ describe("TickOrchestrator", () => {
 
     expect(result).toMatchObject({ status: "settled", polls: 3 });
   });
+
+  it("uses the room-transition budget for an opaque Bridge v2 map action", async () => {
+    const preRaw = await fixture("map") as Sts2McpRawState;
+    const postRaw = await fixture("combat") as Sts2McpRawState;
+    const adapter = new FakeAdapter([postRaw, postRaw]);
+    const watcher = new SettlementWatcher(adapter, (raw) => normalizeCurrentState(raw, TEST_ADAPTER), {
+      pollMs: 1,
+      defaultTimeoutMs: -1,
+      endTurnTimeoutMs: -1,
+      roomTransitionTimeoutMs: 20
+    }, async () => {});
+
+    const result = await watcher.waitForNextState(
+      normalizeCurrentState(preRaw, TEST_ADAPTER),
+      {
+        kind: "bridge_v2_action",
+        actionId: "action-map-node",
+        expectedStateId: "state-before",
+        bridgeActionKind: "choose_map_node"
+      }
+    );
+
+    expect(result).toMatchObject({ status: "settled", polls: 2 });
+  });
+
+  it.each(["continue_run", "embark_standard_run"] as const)(
+    "uses the long-transition budget for the opaque Bridge v2 %s action",
+    async (bridgeActionKind) => {
+      const adapter = new FakeAdapter([{ token: "state-after" }]);
+      const watcher = new SettlementWatcher(adapter, (raw) => {
+        const token = typeof raw === "object" && raw && "token" in raw ? String(raw.token) : "missing";
+        return bridgeEnvelope(token);
+      }, {
+        pollMs: 1,
+        defaultTimeoutMs: -1,
+        endTurnTimeoutMs: -1,
+        roomTransitionTimeoutMs: 20
+      }, async () => {});
+
+      const result = await watcher.waitForNextState(
+        bridgeEnvelope("state-before"),
+        {
+          kind: "bridge_v2_action",
+          actionId: `action-${bridgeActionKind}`,
+          expectedStateId: "state-before",
+          bridgeActionKind
+        },
+        "adapter_confirmed",
+        "state-after"
+      );
+
+      expect(result).toMatchObject({ status: "settled", polls: 1 });
+    }
+  );
 
   it("stops after an exact state-action-state transition repeats", async () => {
     const pre = await fixture("combat") as Sts2McpRawState;
@@ -539,7 +624,10 @@ function makeOrchestrator(adapter: FakeAdapter, provider: LlmDecisionProvider, r
   return new TickOrchestrator({ adapter, normalize, buildAllowedActions, llm: provider, settlement, recorder });
 }
 
-function bridgeEnvelope(bridgeStateId: string): StateEnvelope {
+function bridgeEnvelope(
+  bridgeStateId: string,
+  stability: StateEnvelope["currentState"]["stability"] = "actionable"
+): StateEnvelope {
   return {
     envelopeSchemaVersion: 2,
     capturedAt: "2026-07-21T00:00:00.000Z",
@@ -548,8 +636,8 @@ function bridgeEnvelope(bridgeStateId: string): StateEnvelope {
     currentState: {
       normalizedSchemaVersion: NORMALIZED_STATE_SCHEMA_VERSION,
       sourceStateType: "bridge_v2:combat:combat_turn",
-      stability: "actionable",
-      actionAuthority: "bridge_advertised",
+      stability,
+      actionAuthority: stability === "actionable" ? "bridge_advertised" : "none",
       context: {
         kind: "combat",
         encounterType: "normal",

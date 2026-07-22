@@ -7,12 +7,13 @@ and do not grant current authority.
 
 ## Current Source-Truth Status
 
-The C# Bridge and Re-SpireAgent now share `2.0-preview.55`. C# derives explicit
+The C# Bridge and Re-SpireAgent now share `2.0-preview.56`. C# derives explicit
 `surface_kind + operation + tier` scopes from the exact-build manifest,
 advertises only those operations, and publishes a path-free SHA-256 for its
-loaded assembly. Re decodes the same contract. The attempted `.56` Discovery
-branch was not retained because current C# source has no verified native source
-binding for it; unknown generated-card sources remain rejected.
+loaded assembly. Re decodes the same contract. Preview.56 is the coordinated
+Wood Carvings deterministic replacement contract; it does not revive the
+rejected Discovery experiment, and unknown generated-card sources remain
+rejected.
 
 Gate 0 is now closed on the exact loaded artifact recorded in
 [the Gate 0 closeout](CONNECTOR_G0_CLOSEOUT_2026-07-22.md). Re completed
@@ -22,9 +23,36 @@ one SHA/MVID/runtime identity.
 
 ## Required Repair Order
 
-1. Audit remaining v1 ownership per operation and coherent journey.
+1. Maintain the machine-checked remaining v1 ownership inventory per operation
+   and coherent journey.
 2. Close normal-run v2 coverage and visible-information gaps one exact
    operation at a time, preserving current permission tiers.
+
+The current inventory and first Gate 1 runtime repair are recorded in
+[Gate 1 Operation And Journey Inventory](GATE1_OPERATION_AND_JOURNEY_INVENTORY.md).
+The fresh exact-identity run proved standard run entry through Neow and map,
+ordinary combat completion, ordinary reward/card-reward handling, and return
+to an actionable map. It also exposed and closed a Re-side settlement bug:
+transient `unknown/unsupported` observations no longer count as semantic successor
+checkpoints, and opaque v2 map actions now receive the room-transition timeout.
+No Gateway capability or permission tier changed.
+
+The next exact-identity map journey found the first real fail-closed gap at
+`WoodCarvings.Bird -> NDeckCardSelectScreen`. Preview.56 now source-binds Bird
+and Torus separately and exposes a purpose-specific deterministic replacement
+Surface. The Bird Organic canary exercised select, preview cancel, reselect,
+confirm, event successor, and run-deck post-state under loaded SHA
+`8ad08daa...36a0`, MVID `00124a4c-6046-45dd-b77a-8e83e80faece`, and runtime
+`f881814b6b7a4492849d069d3236261e`. This is canary evidence, not qualification;
+see [the closeout](GATE1_WOOD_CARVINGS_CLOSEOUT_2026-07-22.md).
+
+The final source artifact replaces local replacement-ID literals with exact
+`ModelDb` identities and is Steam-loaded as SHA `c9127d63...b117`, MVID
+`d5ae09de-cea9-4faf-818c-919f828c7eed`, runtime
+`aa43cb8b6bff4aa6871962caacd53802`. The earlier Organic canary does not transfer
+to this artifact. A separate final-artifact Re canary proved `continue_run`
+settlement in 11 polls / 2333 ms after Re assigned native load actions the
+bounded long-transition budget; no Gateway permission or completion changed.
 
 The detailed audit and migration sequence is
 [REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md](REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md).
@@ -53,7 +81,8 @@ a current v2 permission claim.
 
 ## Next High-Value Work
 
-The next task is Gate 1 operation-level migration: select the highest-value
-normal-run v1-owned or fail-closed step, prove its exact source/UI contract, and
-close Bridge/Re/completion/evidence together. Do not convert canary support into
-qualification without current exact-build Organic evidence.
+Continue the resumed exact-identity journey from its current event/map path.
+The next known fail-closed candidates remain Crystal Sphere and manual potion
+discard outside reward handling. Stop at the next real unsupported semantic
+variant and close only that bounded contract. Do not convert canary support
+into qualification without repeated current exact-build Organic evidence.

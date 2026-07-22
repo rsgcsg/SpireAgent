@@ -5,7 +5,19 @@
 > `../STS2MCP/docs/bridge-v2/CURRENT_STATUS.md`. Older identity and mode claims
 > below are preserved as dated evidence and must not override those documents.
 
-Status update 2026-07-21: Bridge `2.0-preview.55` and Re normalized schema 25
+Status update 2026-07-22: current protocol is `2.0-preview.56`. Wood Carvings
+Bird received a purpose-specific deterministic replacement Surface and a full
+select/cancel/reselect/confirm/run-deck Organic canary under SHA `8ad08daa...`;
+it remains canary-only. The final source artifact derives replacement IDs from
+`ModelDb` and is loaded as SHA `c9127d63...b117`, MVID
+`d5ae09de-cea9-4faf-818c-919f828c7eed`, runtime
+`aa43cb8b6bff4aa6871962caacd53802`; the earlier Organic evidence does not
+transfer. A final-artifact Re canary also proved `continue_run` settles under
+the bounded long-transition budget (11 polls / 2333 ms). There are now 74
+explicit operation scopes across 24 Surface kinds. See the canonical current
+status rather than the chronological records below.
+
+Status update 2026-07-21: Bridge `2.0-preview.56` and Re normalized schema 25
 are the current Live Connector production contract. The loaded exact game is
 `v0.109.0|c12f634d|1833084275`; Bridge SHA is
 `0D463DDF2E573D911047FC943210D022F8FAFB75BA50C8E75255A0B0D4E15592`,

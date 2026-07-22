@@ -2,7 +2,7 @@
 
 Status: canonical architecture boundary for the current real-game connection.
 
-Current compatibility status: C# and Re share `2.0-preview.55`, including
+Current compatibility status: C# and Re share `2.0-preview.56`, including
 operation scopes and a Gateway artifact digest. Until a Release artifact is
 installed and its loaded identity is verified, this document defines the
 intended ownership boundary, not proof that a clean checkout negotiates end to

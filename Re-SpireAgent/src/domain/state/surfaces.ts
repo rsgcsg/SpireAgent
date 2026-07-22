@@ -114,6 +114,7 @@ export type InteractionSurface =
   | DeckRemovalSelectionSurface
   | DeckUpgradeSelectionSurface
   | DeckTransformSelectionSurface
+  | WoodCarvingsReplacementSelectionSurface
   | CardRewardSelectionSurface
   | BridgeRewardClaimSurface
   | CardRewardSurface
@@ -371,6 +372,26 @@ export interface DeckTransformSelectionSurface {
   showingUpgradePreviews: boolean;
   previewKind: "none" | "random_uncommitted_cycle";
   replacementKnown: false;
+  cards: CardSnapshot[];
+  legalActions: BridgeLegalActionSnapshot[];
+  completeness: BridgeSurfaceCompleteness;
+}
+
+/** Wood Carvings deterministic starter replacement; never a random transform. */
+export interface WoodCarvingsReplacementSelectionSurface {
+  kind: "wood_carvings_replacement_selection";
+  stage: "selecting" | "preview";
+  bridgeStateId: string;
+  screenEntityId: string;
+  prompt: string;
+  branch: "bird" | "torus";
+  replacementDefinitionId: string;
+  replacementName?: string;
+  replacementDescription?: string;
+  minimumSelections: 1;
+  maximumSelections: 1;
+  selectedCount: number;
+  selectedCardEntityIds: string[];
   cards: CardSnapshot[];
   legalActions: BridgeLegalActionSnapshot[];
   completeness: BridgeSurfaceCompleteness;

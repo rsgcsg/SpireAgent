@@ -1,6 +1,15 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.55`
+Protocol preview: `2.0-preview.56`
+
+Preview.56 adds the source-bound `wood_carvings_replacement_selection`
+contract. It distinguishes native Wood Carvings Bird/Torus by the exact
+async event task rather than localized prompt text, exposes the deterministic
+replacement already visible to the player, and completes only after the
+source task ends, the selector closes, the exact original instance leaves the
+deck, the expected replacement count increases, and deck count is preserved.
+It is a current-identity action canary, not qualification or a universal deck
+selector.
 
 Preview.55 repairs the C#/Re source contract: `bridge.assembly_file_sha256`
 identifies the loaded Gateway artifact without disclosing a local path, and
@@ -31,7 +40,8 @@ contract against every Steam build. For exact identity
   `card_reward_selection`, `map_navigation`, `shop_inventory`, `shop_room`,
   `treasure_room`, `game_over`, `card_bundle_selection`, `character_select`,
   `main_menu`, `singleplayer_menu`, `event_dialogue`, `event_option`, and
-  source-bound `deck_transform_selection`, Surface-level
+  source-bound `deck_transform_selection`, source-bound
+  `wood_carvings_replacement_selection`, Surface-level
   `deck_enchant_selection`, exact Headbutt
   `combat_pile_card_selection` for exact Headbutt/Graveblast, and source-scoped
   `generated_card_choice` for exact Lead Paperweight acquisition and native

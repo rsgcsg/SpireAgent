@@ -12,7 +12,7 @@ and do not define the current architecture, permission model, or roadmap.
 
 ## Current Truth
 
-The active connector now shares a `2.0-preview.55` contract between C# and
+The active connector now shares a `2.0-preview.56` contract between C# and
 Re-SpireAgent. A Release DLL was installed and loaded by Steam with a matching
 SHA/MVID, and Re completed a read-only strict-v2 inspection. One bounded
 existing action/completion canary remains required before v2 coverage or

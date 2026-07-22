@@ -1,7 +1,7 @@
 # Bridge v2 Integration
 
 > Current source-truth status, 2026-07-22: Re and C# share the
-> `2.0-preview.55` consumer contract. The source/fixture repair is not current
+> `2.0-preview.56` consumer contract. The source/fixture repair is not current
 > end-to-end support until a Release build, installation, and loaded-runtime
 > identity are closed. See the
 > [real connector audit](../../STS2MCP/docs/bridge-v2/REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md).
@@ -24,7 +24,7 @@ consumption.
 
 ## Current Scope
 
-Re-SpireAgent implements the strict `2.0-preview.55` consumer contract. When a
+Re-SpireAgent implements the strict `2.0-preview.56` consumer contract. When a
 matching Bridge exists, authority is read from capabilities rather than
 inferred from implementation or historical evidence.
 
