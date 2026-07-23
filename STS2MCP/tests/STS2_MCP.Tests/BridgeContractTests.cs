@@ -1515,6 +1515,35 @@ public sealed class BridgeContractTests
         Assert.Contains("\"destination_pile\":\"hand\"", graveblastJson);
         Assert.Contains("\"destination_position\":\"bottom\"", graveblastJson);
         Assert.Contains("\"overflow_destination\":\"discard_if_hand_full\"", graveblastJson);
+
+        IBridgeSurface cleanseSurface = new CombatPileCardSelectionSurface(
+            "combat_pile_card_selection",
+            "screen-c",
+            "Choose a card to Exhaust.",
+            "exhaust_one_draw_card",
+            "cleanse",
+            "source-card-c",
+            "CLEANSE",
+            "draw",
+            "exhaust",
+            "bottom",
+            null,
+            1,
+            1,
+            0,
+            Array.Empty<string>(),
+            RequireManualConfirmation: false,
+            Cancelable: false,
+            Array.Empty<VisibleCard>());
+        string cleanseJson = JsonSerializer.Serialize(
+            new { context, surface = cleanseSurface },
+            options);
+
+        Assert.Contains("\"purpose\":\"exhaust_one_draw_card\"", cleanseJson);
+        Assert.Contains("\"source_kind\":\"cleanse\"", cleanseJson);
+        Assert.Contains("\"source_card_definition_id\":\"CLEANSE\"", cleanseJson);
+        Assert.Contains("\"pile_type\":\"draw\"", cleanseJson);
+        Assert.Contains("\"destination_pile\":\"exhaust\"", cleanseJson);
     }
 
     [Fact]
@@ -1587,6 +1616,39 @@ public sealed class BridgeContractTests
             new[] { handCard, selected },
             selected,
             maxHandSize: 10));
+    }
+
+    [Fact]
+    public void CleanseWitnessRequiresExactDrawToExhaustMove()
+    {
+        object selected = new();
+        object otherDraw = new();
+        object oldExhaust = new();
+
+        Assert.True(CleanseCombatPileWitness.Selected(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            new[] { selected, otherDraw },
+            new[] { oldExhaust },
+            new[] { otherDraw },
+            new[] { oldExhaust, selected },
+            selected));
+        Assert.False(CleanseCombatPileWitness.Selected(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            new[] { selected, otherDraw },
+            new[] { oldExhaust },
+            new[] { otherDraw },
+            new[] { oldExhaust },
+            selected));
+        Assert.False(CleanseCombatPileWitness.Selected(
+            sourceCompleted: false,
+            surfaceClosed: true,
+            new[] { selected, otherDraw },
+            new[] { oldExhaust },
+            new[] { otherDraw },
+            new[] { oldExhaust, selected },
+            selected));
     }
 
     [Fact]

@@ -150,8 +150,8 @@ internal static class BridgeContractManifest
             new[] { "hand", "energy", "combatants", "intents", "potions", "end_turn_control" }),
         Entry(
             "combat_pile_card_selection",
-            new[] { "select_discard_card_for_draw_top", "select_discard_card_for_hand" },
-            "sts2-v0.109.0:Headbutt/Graveblast.OnPlay+CardSelectCmd.FromCombatPile(Discard,1)+NCombatPileCardSelectScreen+purpose-specific-CardPileCmd.Add+exact-card-post-state-witness",
+            new[] { "select_discard_card_for_draw_top", "select_discard_card_for_hand", "select_draw_card_for_exhaust" },
+            "sts2-v0.109.0:Headbutt/Graveblast/Cleanse.OnPlay+CardSelectCmd.FromCombatPile(exact-pile,1)+NCombatPileCardSelectScreen+purpose-specific-commit+exact-card-post-state-witness",
             "source_discriminated_combat_pile_selection",
             new[] { "source_card", "purpose", "visible_pile_cards", "selection", "source_and_destination_piles", "destination_position", "overflow_destination", "controls" }),
         Entry(

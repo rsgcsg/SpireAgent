@@ -26,7 +26,7 @@ internal static class CombatPileSelectionSourceBinding
         Guid Token,
         Player Player,
         CardModel SourceCard,
-        IReadOnlyList<CardModel> BaselineDiscard);
+        IReadOnlyList<CardModel> BaselineSourcePile);
 
     internal sealed record HeadbuttBinding(
         Guid Token,
@@ -43,6 +43,14 @@ internal static class CombatPileSelectionSourceBinding
         IReadOnlyList<CardModel> BaselineDiscard,
         IReadOnlyList<CardModel> BaselineHand)
         : SourceBinding(Token, Player, Graveblast, BaselineDiscard);
+
+    internal sealed record CleanseBinding(
+        Guid Token,
+        Player Player,
+        Cleanse Cleanse,
+        IReadOnlyList<CardModel> BaselineDraw,
+        IReadOnlyList<CardModel> BaselineExhaust)
+        : SourceBinding(Token, Player, Cleanse, BaselineDraw);
 
     internal readonly record struct Scope(Guid Token)
     {
@@ -72,6 +80,12 @@ internal static class CombatPileSelectionSourceBinding
                 graveblast,
                 combat.DiscardPile.Cards.ToArray(),
                 combat.Hand.Cards.ToArray()),
+            Cleanse cleanse => new CleanseBinding(
+                token,
+                player,
+                cleanse,
+                combat.DrawPile.Cards.ToArray(),
+                combat.ExhaustPile.Cards.ToArray()),
             _ => null
         };
         if (binding == null)
@@ -193,6 +207,29 @@ internal static class GraveblastCombatPileWitness
                && !ContainsReference(baselineHand, selectedCard)
                && reachedExpectedPile;
     }
+
+    private static bool ContainsReference<T>(IEnumerable<T> cards, T expected) where T : class =>
+        cards.Any(card => ReferenceEquals(card, expected));
+}
+
+internal static class CleanseCombatPileWitness
+{
+    // Cleanse's source card may settle into a different post-play pile. The
+    // witness therefore proves only the selected draw-pile card's exact move.
+    internal static bool Selected<T>(
+        bool sourceCompleted,
+        bool surfaceClosed,
+        IReadOnlyCollection<T> baselineDraw,
+        IReadOnlyCollection<T> baselineExhaust,
+        IReadOnlyList<T> currentDraw,
+        IReadOnlyList<T> currentExhaust,
+        T selectedCard) where T : class =>
+        sourceCompleted
+        && surfaceClosed
+        && ContainsReference(baselineDraw, selectedCard)
+        && !ContainsReference(baselineExhaust, selectedCard)
+        && !ContainsReference(currentDraw, selectedCard)
+        && ContainsReference(currentExhaust, selectedCard);
 
     private static bool ContainsReference<T>(IEnumerable<T> cards, T expected) where T : class =>
         cards.Any(card => ReferenceEquals(card, expected));

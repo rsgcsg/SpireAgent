@@ -27,16 +27,25 @@ Headless, and post-training work remains gated.
 
 ## Immediate Next Step
 
-Build, install, and cold-start the current Gateway source before the next ordinary
-exact-identity map canary. A fresh Re run selected a map node that the UI marked
-travelable although the same `RunState.VisitedMapCoords` already contained it.
-The source now suppresses this contradictory map surface before publication and
-again at execution revalidation; the observed command remains correctly
-`unknown` and is not evidence of a successful map transition. This is a
-code-and-test repair that is now installed as Release SHA
-`386885c7...576df7`, but it is not loaded or exercised until the game is cold
-started. An ordinary-map canary must first verify the runtime identity. No
-capability tier changed.
+The map/repeated-observation repair is now loaded in the current exact
+environment: Release SHA `386885c7...576df7`, MVID
+`d307fd3c-4235-42ab-9fb9-ad7bf5714b6f`, runtime
+`696eb3ae18f74d2bb1815cef9e554a6a`. Fresh Re artifacts under that identity
+confirm that stale observation capture and pre-dispatch state drift remain
+explicit fail-closed outcomes. They also repeatedly reached the real
+`NCombatPileCardSelectScreen` after completed combat actions. That is a
+source-qualified child owner, not a generic card grid: `Cleanse` selects one
+draw-pile card to exhaust, `Dredge` selects discard cards to return to hand,
+and `Seance` selects draw-pile cards to transform.
+
+The working tree now adds only the exact `Cleanse` branch: its native source,
+visible one-card draw-pile selector, and exact draw-to-exhaust completion are
+source-audited and Gateway-tested. The new Release candidate is **not
+installed or loaded**, and has no Organic evidence or tier change. `Dredge`,
+`Seance`, and every other combat-pile origin remain fail closed. After a normal
+game shutdown, install/cold-start the candidate and run one bounded natural
+`Cleanse -> select -> exact exhaust post-state` canary before considering any
+new branch or permission change.
 
 The same run set exposed a Re bounded-run hygiene defect: an unchanged,
 non-actionable `event_option` state could consume the whole tick budget while

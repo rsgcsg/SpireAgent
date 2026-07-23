@@ -49,12 +49,13 @@ ultimately calls `EnterMapCoord`, which no-ops for an already visited coordinate
 The command therefore timed out as `unknown` without retry; it is neither a
 successful transition nor a normal-map regression. Current source suppresses
 that contradictory map surface before action publication and repeats the same
-run-state check at execution. Release SHA `386885c7...576df7` is installed in
-the local macOS mod directory, with the previously loaded
-`61e659c7...de97` DLL retained as a local rollback backup. It is not loaded or
-Organic evidence yet: cold-start, verify runtime identity, and run an ordinary
-exact-identity map canary before claiming any new map result. Permission
-remains canary-only and unchanged.
+run-state check at execution. Release SHA `386885c7...576df7` is now loaded in
+the local macOS game process as MVID `d307fd3c-4235-42ab-9fb9-ad7bf5714b6f` and
+runtime `696eb3ae18f74d2bb1815cef9e554a6a`; the previously loaded
+`61e659c7...de97` DLL remains a local rollback backup. This confirms
+installation and loading, but an ordinary-map canary still has not exercised
+the contradictory-coordinate repair. Permission remains canary-only and
+unchanged.
 
 Those runs also revealed a Re bounded-loop hygiene issue: a coherent,
 non-actionable `event_option` snapshot with no advertised actions could repeat
@@ -62,6 +63,17 @@ until `--max-ticks`. Re now records and stops on the eighth identical
 non-actionable observation without asking the provider or executing anything.
 It is a consumer-side stop guard only; the underlying unsupported/settling
 event remains neither action-authorized nor v2-qualified.
+
+Fresh runs on the loaded identity also repeatedly reached
+`NCombatPileCardSelectScreen` after completed `Cleanse`, `Dredge`, and
+`Seance` card plays. This is evidence against a universal selector: Cleanse is
+an exact-one draw-to-exhaust child, Dredge is a bounded discard-to-hand child,
+and Seance is a draw-to-transform child. The current working tree adds only
+the source-audited Cleanse contract, with a baseline draw pile, visible
+single-pick controls, and an exact selected-reference move to the exhaust
+pile. It is compiled and unit-tested but not installed/loaded and therefore
+has no Organic canary or new permission tier. Dredge, Seance, and every other
+unbound origin remain fail closed.
 
 The next exact-identity map journey found the first real fail-closed gap at
 `WoodCarvings.Bird -> NDeckCardSelectScreen`. Preview.56 now source-binds Bird
@@ -120,10 +132,12 @@ a current v2 permission claim.
 
 ## Next High-Value Work
 
-Continue the exact-identity journey until the next real unsupported semantic
-variant. The next known fail-closed candidates remain Crystal Sphere and manual
-potion discard outside reward handling. Track the recurring combat stale-state
-pre-dispatch rejections as a throughput observation, but do not weaken
-state-bound validation or retry rejected actions. Close only bounded contracts
-and do not convert canary support into qualification without repeated current
-exact-build Organic evidence.
+Install the current Release candidate only after the game exits, cold-start,
+and run one bounded natural Cleanse canary before treating its source branch as
+current runtime coverage. Then continue the exact-identity journey until the
+next real unsupported semantic variant. The next known fail-closed candidates
+remain Crystal Sphere and manual potion discard outside reward handling. Track
+the recurring combat stale-state pre-dispatch rejections as a throughput
+observation, but do not weaken state-bound validation or retry rejected
+actions. Close only bounded contracts and do not convert canary support into
+qualification without repeated current exact-build Organic evidence.

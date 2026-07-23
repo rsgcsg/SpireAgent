@@ -5,6 +5,7 @@ using System.Reflection;
 using Godot;
 using MegaCrit.Sts2.Core.CardSelection;
 using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Cards;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
@@ -18,9 +19,9 @@ namespace STS2_MCP.BridgeV2.Game;
 
 /// <summary>
 /// Exact-build adapter for source-discriminated selections from a combat pile.
-/// Headbutt and Graveblast share exact-one discard selection mechanics but
-/// retain independent source semantics and post-state witnesses. Every other
-/// caller of the same game screen remains fail closed.
+/// Headbutt, Graveblast, and Cleanse share exact-one selection mechanics, but
+/// retain independent source piles, business semantics, and post-state
+/// witnesses. Every other caller of the same game screen remains fail closed.
 /// </summary>
 internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfaceProvider
 {
@@ -89,11 +90,10 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
 
         Binding exactBinding = binding!;
         SourceSemantics semantics = sourceSemantics!;
-        if (!ReferenceEquals(exactBinding.Pile, combat.DiscardPile)
+        if (!IsExpectedSourcePile(exactBinding.Pile, combat, semantics.SourcePile)
             || !exactBinding.Pile.IsCombatPile
-            || exactBinding.Pile.Type != PileType.Discard
-            || source.BaselineDiscard.Count != exactBinding.Pile.Cards.Count
-            || source.BaselineDiscard.Any(card =>
+            || source.BaselineSourcePile.Count != exactBinding.Pile.Cards.Count
+            || source.BaselineSourcePile.Any(card =>
                 !exactBinding.Pile.Cards.Any(current => ReferenceEquals(current, card)))
             || exactBinding.Preferences.MinSelect != 1
             || exactBinding.Preferences.MaxSelect != 1
@@ -103,7 +103,7 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
             return BindingUnavailable(
                 game,
                 context,
-                $"The visible selector does not match exact {semantics.SourceKind} discard single-pick semantics.",
+                $"The visible selector does not match exact {semantics.SourceKind} {semantics.SourcePile} single-pick semantics.",
                 new[] { "source_pile", "selection_constraints", "source_semantics", "legal_actions" });
         }
 
@@ -173,6 +173,7 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
         List<BridgeActionDraft> actions = BuildActions(
             screen,
             source,
+            semantics,
             exactBinding,
             holders,
             selectedCards,
@@ -220,6 +221,7 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
     private static List<BridgeActionDraft> BuildActions(
         NCombatPileCardSelectScreen screen,
         CombatPileSelectionSourceBinding.SourceBinding source,
+        SourceSemantics semantics,
         Binding binding,
         IReadOnlyList<NGridCardHolder> holders,
         HashSet<CardModel> selectedCards,
@@ -235,22 +237,13 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
 
             string cardId = cardIds[card];
             string cardName = McpMod.SafeGetText(() => card.Title) ?? card.Id.Entry;
-            bool headbutt = source is CombatPileSelectionSourceBinding.HeadbuttBinding;
             actions.Add(new BridgeActionDraft(
-                headbutt
-                    ? $"headbutt_select_discard_for_draw_top:{cardId}"
-                    : $"graveblast_select_discard_for_hand:{cardId}",
-                headbutt
-                    ? "select_discard_card_for_draw_top"
-                    : "select_discard_card_for_hand",
+                $"{semantics.ActionKeyPrefix}:{cardId}",
+                semantics.Operation,
                 "selection",
-                headbutt
-                    ? $"Put {cardName} on top of the Draw Pile"
-                    : $"Put {cardName} back in your Hand",
-                headbutt
-                    ? "Headbutt.OnPlay+NCardGrid.HolderPressed+CardPileCmd.Add(Draw,Top)+exact-card-witness"
-                    : "Graveblast.OnPlay+NCardGrid.HolderPressed+CardPileCmd.Add(Hand)+exact-card-witness",
-                () => StartSelection(screen, source, card, selected),
+                semantics.ActionLabel(cardName),
+                semantics.CommitEvidence,
+                () => StartSelection(screen, source, semantics, card, selected),
                 new[] { new ActionEntityBinding("card", cardId) }));
         }
 
@@ -260,6 +253,7 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
     private static BridgeActionStartResult StartSelection(
         NCombatPileCardSelectScreen expectedScreen,
         CombatPileSelectionSourceBinding.SourceBinding source,
+        SourceSemantics semantics,
         CardModel expectedCard,
         bool expectedSelected)
     {
@@ -279,9 +273,6 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
         }
 
         grid.EmitSignal(NCardGrid.SignalName.HolderPressed, holder);
-        string evidence = source is CombatPileSelectionSourceBinding.HeadbuttBinding
-            ? "headbutt_source_completed_screen_closed_and_exact_card_moved_from_discard_to_draw_top"
-            : "graveblast_source_completed_screen_closed_and_exact_card_moved_from_discard_to_hand_or_full_hand_discard";
         return BridgeActionStartResult.Started(
             () => source.Player.PlayerCombatState is { } combat
                   && source switch
@@ -305,9 +296,18 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
                               combat.Hand.Cards,
                               expectedCard,
                               CardPile.MaxCardsInHand),
+                      CombatPileSelectionSourceBinding.CleanseBinding cleanse =>
+                          CleanseCombatPileWitness.Selected(
+                              !CombatPileSelectionSourceBinding.IsActive(cleanse.Token),
+                              !IsCurrent(expectedScreen),
+                              cleanse.BaselineDraw,
+                              cleanse.BaselineExhaust,
+                              combat.DrawPile.Cards,
+                              combat.ExhaustPile.Cards,
+                              expectedCard),
                       _ => false
                   },
-            evidence,
+            semantics.CompletionEvidence,
             allowIntermediateStateChanges: true);
     }
 
@@ -321,20 +321,44 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
                 "move_one_discard_card_to_draw_top",
                 "headbutt",
                 "Headbutt",
+                "discard",
                 "draw",
                 "top",
                 null,
                 "contract_complete_for_headbutt_discard_to_draw_top_selection",
-                "CardPileCmd.Add(selected, draw, top)"),
+                "Headbutt.OnPlay+NCardGrid.HolderPressed+CardPileCmd.Add(Draw,Top)+exact-card-witness",
+                "headbutt_select_discard_for_draw_top",
+                "select_discard_card_for_draw_top",
+                cardName => $"Put {cardName} on top of the Draw Pile",
+                "headbutt_source_completed_screen_closed_and_exact_card_moved_from_discard_to_draw_top"),
             CombatPileSelectionSourceBinding.GraveblastBinding => new SourceSemantics(
                 "move_one_discard_card_to_hand",
                 "graveblast",
                 "Graveblast",
+                "discard",
                 "hand",
                 "bottom",
                 "discard_if_hand_full",
                 "contract_complete_for_graveblast_discard_to_hand_selection",
-                "CardPileCmd.Add(selected, hand, bottom) with native full-hand discard redirect"),
+                "Graveblast.OnPlay+NCardGrid.HolderPressed+CardPileCmd.Add(Hand)+exact-card-witness",
+                "graveblast_select_discard_for_hand",
+                "select_discard_card_for_hand",
+                cardName => $"Put {cardName} back in your Hand",
+                "graveblast_source_completed_screen_closed_and_exact_card_moved_from_discard_to_hand_or_full_hand_discard"),
+            CombatPileSelectionSourceBinding.CleanseBinding => new SourceSemantics(
+                "exhaust_one_draw_card",
+                "cleanse",
+                "Cleanse",
+                "draw",
+                "exhaust",
+                "bottom",
+                null,
+                "contract_complete_for_cleanse_draw_to_exhaust_selection",
+                "Cleanse.OnPlay+NCardGrid.HolderPressed+CardCmd.Exhaust+exact-card-witness",
+                "cleanse_select_draw_for_exhaust",
+                "select_draw_card_for_exhaust",
+                cardName => $"Exhaust {cardName}",
+                "cleanse_source_completed_screen_closed_and_exact_card_moved_from_draw_to_exhaust"),
             _ => null
         };
         return semantics != null;
@@ -381,6 +405,17 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
 
     private static bool IsHolderClickable(NCardHolder holder) =>
         ClickableField?.GetValue(holder) is true;
+
+    private static bool IsExpectedSourcePile(
+        CardPile pile,
+        PlayerCombatState combat,
+        string sourcePile) =>
+        sourcePile switch
+        {
+            "discard" => ReferenceEquals(pile, combat.DiscardPile) && pile.Type == PileType.Discard,
+            "draw" => ReferenceEquals(pile, combat.DrawPile) && pile.Type == PileType.Draw,
+            _ => false
+        };
 
     private static bool HasVisibleEnabledClose(NCombatPileCardSelectScreen screen) =>
         FindVisibleEnabledClose(screen) != null;
@@ -438,9 +473,14 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
         string Purpose,
         string SourceKind,
         string SourceType,
+        string SourcePile,
         string DestinationPile,
         string DestinationPosition,
         string? OverflowDestination,
         string Completeness,
-        string CommitEvidence);
+        string CommitEvidence,
+        string ActionKeyPrefix,
+        string Operation,
+        Func<string, string> ActionLabel,
+        string CompletionEvidence);
 }

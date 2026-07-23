@@ -315,6 +315,18 @@ baseline hand was full. Combined hand/discard cardinality must remain stable.
 The shared selector mechanics do not grant any other combat-pile caller
 authority.
 
+The current working-tree candidate adds only exact sealed `Cleanse`, after
+fresh loaded-identity runs distinguished its child owner from `Dredge` and
+`Seance`. `Cleanse.OnPlay` opens `CardSelectCmd.FromCombatPile` for exactly one
+draw-pile card, then calls `CardCmd.Exhaust` for the selected reference. Its
+wire values are `source_kind=cleanse`, `purpose=exhaust_one_draw_card`,
+`pile_type=draw`, and `destination_pile=exhaust`. Completion requires the
+source task to finish, the child to close, and that exact card to leave the
+baseline draw pile and appear in the exhaust pile. This candidate is not
+installed, loaded, or Organic-qualified. `Dredge` (bounded discard-to-hand)
+and `Seance` (draw-to-transform) remain separate, unimplemented contracts;
+the shared screen and mechanics do not grant them authority.
+
 Preview.54 extends the generated-combat branch only to exact sealed native
 `Splash`. The source is tracked around `CardModel.OnPlayWrapper`; the offered
 set must contain exactly three transient Attack cards owned by the local
