@@ -7,6 +7,11 @@
 > 不作为仓库权威。  
 > **当前事实入口：** [`../STATUS.md`](../STATUS.md)。运行状态变化以后以该文件和
 > 组件证据为准，不以本审计的时间点快照为准。
+>
+> **Follow-up review:** 本文关于 evidence/consumer 分层、Gate 1 优先级和研究准入的
+> 结论仍保留；`C/R/P/X` lane 决定已由
+> [`PROGRAM_PLAN_SECOND_REVIEW_2026-07-23.md`](PROGRAM_PLAN_SECOND_REVIEW_2026-07-23.md)
+> 修订为 `C/D/A/P/X`。
 
 ## 1. 结论先行
 
@@ -428,4 +433,3 @@ unsupported/fail-closed gap，并把该证据同时更新到 operation inventory
 information gap 和 v1 retirement 状态。并行只允许一个无权限小切片：为未来
 authentication/controller lease/runtime epoch 写 threat model 与合同边界，不实现
 Companion 或扩大权限。
-

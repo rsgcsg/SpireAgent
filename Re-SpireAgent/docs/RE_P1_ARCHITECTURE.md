@@ -108,8 +108,9 @@ shop never imports the v1 inference or its actions.
 
 ## Schema Compatibility
 
-New decisions use normalized-state and prompt schema version 3 and
-decision-record version 2. State/prompt v3 adds explicit action authority to
-the existing context/surface split. Older JSONL remains append-only historical
-evidence and replay-readable as stored JSON, but it is not silently
-reinterpreted as a v3 projection.
+New decisions currently use normalized-state schema version 25, Prompt schema
+version 3, and decision-record version 2. The normalized schema has continued
+to evolve as current-build Surface and visible-state contracts were added;
+Prompt v3 retains explicit action authority in the context/surface split.
+Older JSONL remains append-only historical evidence and replay-readable as
+stored JSON, but it is not silently reinterpreted as the current projection.

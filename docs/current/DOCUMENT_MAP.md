@@ -13,11 +13,14 @@ not inherit authority from the archived root SpireAgent runtime.
 3. [Roadmap](ROADMAP.md): current functional gates and retirement sequence.
 4. [Program plan](PROGRAM_PLAN.md): cross-component dependencies and future
    admission gates without changing the current delivery priority.
-5. [Product](PRODUCT.md): product boundary and deferred product work.
-6. [Operations](OPERATIONS.md): safe local development and validation map.
-7. [Repository inventory](REPOSITORY_INVENTORY.md): current/legacy ownership
+5. [Internal development and evaluation](DEVELOPMENT_AND_EVALUATION.md):
+   current evidence/eval capabilities, honest non-claims, and staged D-lane
+   delivery.
+6. [Product](PRODUCT.md): product boundary and deferred product work.
+7. [Operations](OPERATIONS.md): safe local development and validation map.
+8. [Repository inventory](REPOSITORY_INVENTORY.md): current/legacy ownership
    classification and v1-retirement holdouts.
-8. [Repository consolidation ADR](decisions/ADR-0001-current-mainline-and-legacy-archive.md):
+9. [Repository consolidation ADR](decisions/ADR-0001-current-mainline-and-legacy-archive.md):
    durable authority and archive decision.
 
 Current cross-component audits:
@@ -28,6 +31,9 @@ Current cross-component audits:
 - [Future program and consumer architecture audit](audits/FUTURE_PROGRAM_AND_CONSUMER_ARCHITECTURE_AUDIT_2026-07-23.md):
   critical review of future-consumer requirements, program dependencies,
   rejected premature platforms, and the adopted macro sequencing.
+- [Program-plan second review](audits/PROGRAM_PLAN_SECOND_REVIEW_2026-07-23.md):
+  evidence-backed correction that makes internal D and official Agent A
+  distinct workstreams without claiming a public platform or SDK.
 
 Component-owned truth:
 

@@ -32,6 +32,7 @@ product.
 - [Current architecture](docs/current/ARCHITECTURE.md)
 - [Current functional roadmap](docs/current/ROADMAP.md)
 - [Current cross-component program plan](docs/current/PROGRAM_PLAN.md)
+- [Internal development and evaluation](docs/current/DEVELOPMENT_AND_EVALUATION.md)
 - [Product direction](docs/current/PRODUCT.md)
 - [Re-SpireAgent setup and commands](Re-SpireAgent/README.md)
 - [Gateway setup and commands](STS2MCP/README.md)

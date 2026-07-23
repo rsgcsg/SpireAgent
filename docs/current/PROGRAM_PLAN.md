@@ -22,9 +22,10 @@ Success is measured in this order:
 
 1. Connector reliability and honest operation coverage.
 2. Player-visible information completeness and provenance.
-3. Re runtime correctness, replayability, and evaluation quality.
-4. Secure player control, recovery, and distribution.
-5. Demonstrated Agent improvement under fixed baselines and guarded changes.
+3. Evidence integrity, replayability, and evaluation repeatability.
+4. Official Agent runtime correctness under a frozen baseline.
+5. Secure player control, recovery, and distribution.
+6. Demonstrated Agent improvement under guarded, reversible changes.
 
 ## Program Lanes
 
@@ -39,18 +40,34 @@ completion, Inspection, operation coverage, and v1 retirement.
 It must not absorb Prompt, memory, provider, learning, or external strategy
 concepts.
 
-### R: Agent Runtime And Evaluation
+### D: Internal Development And Evaluation Infrastructure
 
-**Status:** active only where it directly supports Re or Connector evidence.
+**Status:** active, internal, and subordinate to current Connector needs.
 
-Owns Re-SpireAgent, complete normalized evidence, consumer-specific views,
-model invocation, run records, replay, conformance, experiment hygiene, and
-future memory or learning experiments.
+Owns conformance checks, scenario and negative fixtures, evidence records,
+replay and inspection tooling, experiment definitions, graders, regression
+reporting, and developer diagnostics. These have independent data-quality and
+repeatability criteria; they are not incidental Agent features.
 
-Development tooling and the official Agent remain one lane until a second real
-consumer proves that a separate Agent SDK or general development platform
-reduces duplication. Existing inspect, canary, replay, and Prompt-audit tools
-are useful capabilities, not proof that a platform product exists.
+This is not a public platform, marketplace, Agent SDK, or second game-rule
+engine. Its current implementation is partial: inspect, canary, records,
+replay-printing, Prompt audit/comparison, tests, and inventory checks exist,
+but there is no versioned scenario corpus, unified eval runner, grader
+registry, public CI workflow, or qualification engine. See
+[Development and evaluation](DEVELOPMENT_AND_EVALUATION.md).
+
+### A: Official External Agent Runtime
+
+**Status:** active as the frozen RE-P1 baseline; learning remains disabled.
+
+Owns Re-SpireAgent's normalized evidence consumption, consumer views, Prompt
+construction, provider invocation, action-ID choice, bounded runtime
+orchestration, and future memory or learning experiments.
+
+The Agent is already a distinct external runtime, so its ownership should not
+wait for a second consumer. What remains gated is freezing a general Agent
+Runtime Contract or public SDK. D evaluates A; A must not define its own game
+truth, execution legality, semantic completion, or evidence qualification.
 
 ### P: Secure Product And Distribution
 
@@ -101,11 +118,14 @@ The following are governance constraints, not a separate feature program:
    unsupported or fail-closed gaps.
 2. Maintain a structured visible-information and v1-retirement inventory while
    those journeys expose real gaps.
-3. Keep R-lane work limited to conformance, records, replay, diagnostics, and
-   falsifiable read-only experiments that support C.
-4. Design P-lane authentication, controller lease, and restart-epoch contracts
+3. Advance D only through concrete evidence needs: offline checks, provenance,
+   replay truthfulness, scenario fixtures, diagnostics, and falsifiable
+   read-only experiments.
+4. Keep A at the frozen RE-P1 baseline while correcting runtime defects exposed
+   by C journeys; do not add persistent learning.
+5. Design P-lane authentication, controller lease, and restart-epoch contracts
    without changing current permissions.
-5. Keep H and T disabled beyond admission/data-governance documentation.
+6. Keep H and T disabled beyond admission/data-governance documentation.
 
 ### After Representative Gate 1 Reliability
 
@@ -120,13 +140,16 @@ Then:
 
 1. Advance Gate 2 visibility closure and fact-availability semantics from
    concrete ambiguities.
-2. Strengthen cross-language conformance, scenario corpus, replay, graders, and
-   experiment repeatability.
+2. Move D from ad hoc tools to a versioned scenario/evidence contract,
+   cross-language conformance, replay assertions, graders, and repeatable
+   experiment reports.
 3. Implement the smallest secure local Connector alpha: authentication,
    observer/controller roles, one-controller lease, runtime epoch, and typed
    recovery.
-4. Reassess whether a separate Agent Runtime Contract has a second real
-   consumer. Do not create an SDK from speculation alone.
+4. Establish an A-lane frozen Agent baseline over held-out scenarios before
+   changing context, memory, or orchestration.
+5. Reassess whether a general Agent Runtime Contract has a second real
+   consumer. Do not create a public SDK from speculation alone.
 
 ### After Secure Connector And Evaluation Baselines
 
@@ -141,10 +164,12 @@ Then:
 
 1. Build the smallest Companion around the official Re runtime and model
    broker.
-2. Experiment with read-only retrieval or memory behind frozen baselines.
-3. Introduce typed, bounded information requests only if eager complete
+2. Use D to compare A against frozen held-out baselines, including
+   counterexamples and rollback evidence.
+3. Experiment with read-only retrieval or memory behind those baselines.
+4. Introduce typed, bounded information requests only if eager complete
    evidence has a measured cost or coherence failure.
-4. Consider an out-of-process Agent SDK only after the official path is stable
+5. Consider an out-of-process Agent SDK only after the official path is stable
    and a second implementation validates the contract.
 
 ### Learning, Headless, And Post-Training Admission
@@ -181,9 +206,12 @@ When a lane status or dependency changes, update:
 - `STATUS.md` for current gate/blocker changes;
 - `ROADMAP.md` for functional gate changes;
 - this file for cross-lane dependency changes;
+- `DEVELOPMENT_AND_EVALUATION.md` for D capability or evidence changes;
 - the owning component protocol or architecture document;
 - evidence and coverage documents when runtime claims change.
 
-The detailed reasoning and rejected alternatives are recorded in the
+The original reasoning is recorded in the
 [future program and consumer architecture audit](audits/FUTURE_PROGRAM_AND_CONSUMER_ARCHITECTURE_AUDIT_2026-07-23.md).
+Its C/R/P/X lane decision is superseded by the
+[program-plan second review](audits/PROGRAM_PLAN_SECOND_REVIEW_2026-07-23.md).
 

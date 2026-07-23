@@ -20,8 +20,10 @@ Gateway v1 mutations are disabled by default while v1 reads remain explicit
 compatibility diagnostics.
 
 The [cross-component program plan](PROGRAM_PLAN.md) preserves Gate 1 as the
-only current delivery priority. Future Companion, learning, Headless, and
-post-training lanes remain gated and do not change current runtime authority.
+only current delivery priority. Internal development/evaluation (`D`) and the
+official frozen RE-P1 Agent baseline (`A`) now have explicit ownership, but
+neither changes current runtime authority. Future Companion, learning,
+Headless, and post-training work remains gated.
 
 ## Immediate Next Step
 
