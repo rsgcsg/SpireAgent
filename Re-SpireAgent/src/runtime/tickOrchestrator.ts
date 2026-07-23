@@ -29,12 +29,15 @@ export interface TickResult {
   actionAuthority?: StateEnvelope["currentState"]["actionAuthority"];
   selectedActionId?: string;
   shouldStopRun: boolean;
-  stopReason?: "run_boundary" | "repeated_exact_transition" | "repeated_semantic_transition";
+  stopReason?: "run_boundary" | "repeated_exact_transition" | "repeated_semantic_transition" | "repeated_non_actionable_state";
 }
 
 export class TickOrchestrator {
+  private static readonly maxRepeatedNonActionableState = 8;
   private readonly executedTransitionOccurrences = new Map<string, number>();
   private readonly progressCycleGuard = new ProgressCycleGuard();
+  private lastNonActionableStateKey?: string;
+  private nonActionableStateOccurrences = 0;
 
   constructor(private readonly dependencies: TickOrchestratorDependencies) {}
 
@@ -45,6 +48,7 @@ export class TickOrchestrator {
     try {
       pre = this.dependencies.normalize(await this.dependencies.adapter.readCurrentState());
     } catch (error) {
+      this.resetNonActionableStateGuard();
       const record = baseRecord(this.dependencies.recorder.runId, decisionId, tick, startedAt, "observation_failed");
       record.error = safeError(error);
       await this.dependencies.recorder.append(record);
@@ -69,6 +73,8 @@ export class TickOrchestrator {
       });
     }
     if (pre.currentState.stability !== "actionable") {
+      const occurrence = this.observeNonActionableState(pre);
+      const stalled = occurrence >= TickOrchestrator.maxRepeatedNonActionableState;
       return this.recordWithoutDecision({
         decisionId,
         tick,
@@ -76,9 +82,24 @@ export class TickOrchestrator {
         pre,
         allowedActions,
         outcome: "not_executed_non_actionable_state",
-        shouldStopRun: false
+        ...(stalled
+          ? {
+              error: `Same non-actionable ${pre.currentState.context.kind}/${pre.currentState.surface.kind} state persisted for ${occurrence} coherent observations; stopped without selecting or executing an action.`,
+              shouldStopRun: true,
+              stopReason: "repeated_non_actionable_state" as const,
+              runtimeGuard: {
+                code: "repeated_non_actionable_state" as const,
+                occurrence,
+                stateHash: pre.stateHash,
+                ...(bridgeStateToken(pre) ? { stateToken: bridgeStateToken(pre) } : {}),
+                contextKind: pre.currentState.context.kind,
+                surfaceKind: pre.currentState.surface.kind
+              }
+            }
+          : { shouldStopRun: false })
       });
     }
+    this.resetNonActionableStateGuard();
     if (options.stopAtRunBoundary && isAutomaticRunStartBoundary(pre.currentState.context.kind)) {
       return this.recordWithoutDecision({
         decisionId,
@@ -314,6 +335,7 @@ export class TickOrchestrator {
     error?: string;
     shouldStopRun: boolean;
     stopReason?: TickResult["stopReason"];
+    runtimeGuard?: DecisionRecord["runtimeGuard"];
   }): Promise<TickResult> {
     const prepared = await this.dependencies.recorder.prepare({
       decisionId: input.decisionId,
@@ -327,6 +349,7 @@ export class TickOrchestrator {
     record.preState = prepared.preState;
     record.allowedActions = input.allowedActions;
     if (input.error) record.error = input.error;
+    if (input.runtimeGuard) record.runtimeGuard = input.runtimeGuard;
     await this.dependencies.recorder.append(record);
     return result(
       input.decisionId,
@@ -337,6 +360,26 @@ export class TickOrchestrator {
       input.stopReason
     );
   }
+
+  private observeNonActionableState(pre: StateEnvelope): number {
+    const stateToken = bridgeStateToken(pre) ?? pre.stateHash;
+    const key = `${stateToken}|${pre.currentState.context.kind}|${pre.currentState.surface.kind}|${pre.currentState.stability}`;
+    this.nonActionableStateOccurrences = this.lastNonActionableStateKey === key
+      ? this.nonActionableStateOccurrences + 1
+      : 1;
+    this.lastNonActionableStateKey = key;
+    return this.nonActionableStateOccurrences;
+  }
+
+  private resetNonActionableStateGuard(): void {
+    this.lastNonActionableStateKey = undefined;
+    this.nonActionableStateOccurrences = 0;
+  }
+}
+
+function bridgeStateToken(envelope: StateEnvelope): string | undefined {
+  const surface = envelope.currentState.surface as { bridgeStateId?: unknown };
+  return typeof surface.bridgeStateId === "string" ? surface.bridgeStateId : undefined;
 }
 
 function baseRecord(runId: string, decisionId: string, tick: number, startedAt: string, outcome: DecisionOutcome): DecisionRecord {

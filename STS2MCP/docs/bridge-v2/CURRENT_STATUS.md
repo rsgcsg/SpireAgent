@@ -42,6 +42,27 @@ transient `unknown/unsupported` observations no longer count as semantic success
 checkpoints, and opaque v2 map actions now receive the room-transition timeout.
 No Gateway capability or permission tier changed.
 
+A later fresh Re run recorded a map action with a contradictory pre-state: the
+visible map point was `Travelable`, while `RunState.VisitedMapCoords` already
+contained its exact coordinate. The source audit confirms that native map travel
+ultimately calls `EnterMapCoord`, which no-ops for an already visited coordinate.
+The command therefore timed out as `unknown` without retry; it is neither a
+successful transition nor a normal-map regression. Current source suppresses
+that contradictory map surface before action publication and repeats the same
+run-state check at execution. Release SHA `386885c7...576df7` is installed in
+the local macOS mod directory, with the previously loaded
+`61e659c7...de97` DLL retained as a local rollback backup. It is not loaded or
+Organic evidence yet: cold-start, verify runtime identity, and run an ordinary
+exact-identity map canary before claiming any new map result. Permission
+remains canary-only and unchanged.
+
+Those runs also revealed a Re bounded-loop hygiene issue: a coherent,
+non-actionable `event_option` snapshot with no advertised actions could repeat
+until `--max-ticks`. Re now records and stops on the eighth identical
+non-actionable observation without asking the provider or executing anything.
+It is a consumer-side stop guard only; the underlying unsupported/settling
+event remains neither action-authorized nor v2-qualified.
+
 The next exact-identity map journey found the first real fail-closed gap at
 `WoodCarvings.Bird -> NDeckCardSelectScreen`. Preview.56 now source-binds Bird
 and Torus separately and exposes a purpose-specific deterministic replacement

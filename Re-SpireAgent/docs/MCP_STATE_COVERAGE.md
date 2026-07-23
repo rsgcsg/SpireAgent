@@ -53,6 +53,10 @@ Map `current_position` is nullable and may be omitted by the Bridge serializer
 while the map first opens or transitions from rewards. Re treats that shape as
 a valid settling observation with no implied current coordinate or action; all
 published route choices still require the ordinary exact-node legality checks.
+The Gateway also suppresses the whole map action surface when a node that the
+UI marks travelable is already present in the active run's visited-coordinate
+set. Re receives no replacement local action in that contradictory state and
+must preserve the Gateway's fail-closed result.
 
 The bounded-run progress guard excludes regenerated transport identities,
 including coherent `observationId`, from semantic transition comparison. It

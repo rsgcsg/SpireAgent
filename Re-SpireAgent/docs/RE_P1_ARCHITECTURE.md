@@ -77,6 +77,13 @@ There is one provider path. It uses JSON mode and an explicit thinking policy, s
 
 For v1, successful POST is only partial evidence. The watcher polls for a changed state hash and requires two identical, non-transitional observations before settlement. For v2, the adapter first verifies the submitted command identity and polls the bridge's action-specific lifecycle. Only `completed/confirmed` reaches the next-checkpoint watcher. `rejected/not_applied` is an execution rejection; `failed/unknown`, `timed_out/unknown`, transport uncertainty, or inconsistent command identity is recorded as unsettled/unknown and stops without retry. Settlement budgets follow semantic action lifecycles: opaque and legacy end-turn actions share the longer end-turn window, map navigation uses a separate room-transition window, and ordinary actions retain the default window. Longer windows never convert `loading`, `settling`, or `transitioning` into settled success; two identical complete snapshots are still required. If a confirmed Bridge action reaches a different valid state but that next decision checkpoint is still transitional or not stable twice when the timeout expires, Re records `executed_checkpoint_pending` and starts the next tick with a fresh read. It does not retry the action. v1 acknowledgement, unchanged state, read failure, or unknown Bridge outcome remain terminal. If the game advances while a coherent state plus read-only inspection sidecars are being captured, the adapter returns a typed transient observation error rather than mixed evidence. Settlement polling may retry that observation within its existing timeout. A pre-decision occurrence aborts and records that tick without building a prompt or executing, but does not terminate a bounded run; its next tick must acquire a fresh coherent snapshot. Pre-execution occurrences remain terminal and fail closed.
 
+When one coherent observation remains non-actionable with the same Bridge state
+identity, Context, Surface, and stability for eight consecutive ticks, the
+bounded run records `repeated_non_actionable_state` and stops without calling
+the provider or issuing an action. This is a liveness guard for a stalled UI
+observation, not evidence that the state settled, a retry policy, or a local
+replacement for Gateway support.
+
 The bounded orchestrator also records and stops on the second occurrence of an
 identical pre-state/action/post-state transition. This catches deterministic
 short cycles such as select/cancel loops without treating repeated action kinds,

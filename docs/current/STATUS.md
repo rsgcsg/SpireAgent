@@ -27,7 +27,25 @@ Headless, and post-training work remains gated.
 
 ## Immediate Next Step
 
-Continue the resumed exact-identity Gate 1 journey from its current event/map
+Build, install, and cold-start the current Gateway source before the next ordinary
+exact-identity map canary. A fresh Re run selected a map node that the UI marked
+travelable although the same `RunState.VisitedMapCoords` already contained it.
+The source now suppresses this contradictory map surface before publication and
+again at execution revalidation; the observed command remains correctly
+`unknown` and is not evidence of a successful map transition. This is a
+code-and-test repair that is now installed as Release SHA
+`386885c7...576df7`, but it is not loaded or exercised until the game is cold
+started. An ordinary-map canary must first verify the runtime identity. No
+capability tier changed.
+
+The same run set exposed a Re bounded-run hygiene defect: an unchanged,
+non-actionable `event_option` state could consume the whole tick budget while
+neither invoking the model nor executing an action. Re now stops after eight
+identical coherent non-actionable observations and records a
+`repeated_non_actionable_state` guard. This does not classify the underlying
+event as supported and does not retry or alter Gateway authority.
+
+Then continue the resumed exact-identity Gate 1 journey from its current event/map
 path until the next real unsupported or fail-closed semantic variant. The first gap,
 Wood Carvings Bird/Torus deterministic starter replacement, is now a
 source-bound `preview.56` canary with a complete Bird select/cancel/reselect/

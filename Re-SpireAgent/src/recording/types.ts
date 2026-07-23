@@ -95,6 +95,14 @@ export interface DecisionRecord {
         actionProgressHash: string;
         selectedActionId: string;
         selectedActionKind: string;
+      }
+    | {
+        code: "repeated_non_actionable_state";
+        occurrence: number;
+        stateHash: string;
+        stateToken?: string;
+        contextKind: string;
+        surfaceKind: string;
       };
   postState?: RecordedState;
   outcome: DecisionOutcome;

@@ -1329,6 +1329,25 @@ public sealed class BridgeContractTests
     }
 
     [Fact]
+    public void MapNavigationRejectsUiChoicesAlreadyVisitedByTheRun()
+    {
+        Assert.False(MapNavigationSurfaceProvider.CanAdvertiseMapChoice(
+            stateTravelable: true,
+            enabled: true,
+            ftueSatisfied: true,
+            usingController: false,
+            nodeOnScreen: true,
+            targetAlreadyVisited: true));
+        Assert.True(MapNavigationSurfaceProvider.CanAdvertiseMapChoice(
+            stateTravelable: true,
+            enabled: true,
+            ftueSatisfied: true,
+            usingController: false,
+            nodeOnScreen: true,
+            targetAlreadyVisited: false));
+    }
+
+    [Fact]
     public void MapContractSeparatesVisibleTopologyFromCurrentChoices()
     {
         IBridgeContext context = new MapBridgeContext(

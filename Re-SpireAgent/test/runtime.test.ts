@@ -461,6 +461,37 @@ describe("TickOrchestrator", () => {
     expect(adapter.executed).toEqual([]);
   });
 
+  it("stops a bounded run after a repeated coherent non-actionable state without calling the provider", async () => {
+    const raw = await fixture("event") as Sts2McpRawState;
+    const settling = structuredClone(raw);
+    if (typeof settling.event === "object" && settling.event && !Array.isArray(settling.event)) {
+      settling.event.options = [];
+    }
+    const adapter = new FakeAdapter(Array.from({ length: 8 }, () => settling));
+    const recorder = new MemoryRecorder();
+    let calls = 0;
+    const orchestrator = makeOrchestrator(adapter, fixedProvider("anything", () => { calls += 1; }), recorder);
+
+    let result;
+    for (let tick = 1; tick <= 8; tick += 1) {
+      result = await orchestrator.runTick(tick);
+    }
+
+    expect(result).toMatchObject({
+      outcome: "not_executed_non_actionable_state",
+      shouldStopRun: true,
+      stopReason: "repeated_non_actionable_state"
+    });
+    expect(calls).toBe(0);
+    expect(adapter.executed).toEqual([]);
+    expect(recorder.records[7]?.runtimeGuard).toMatchObject({
+      code: "repeated_non_actionable_state",
+      occurrence: 8,
+      contextKind: "event",
+      surfaceKind: "option_choice"
+    });
+  });
+
   it("does not treat an adapter-declared unknown command outcome as success", async () => {
     const pre = await fixture("combat") as Sts2McpRawState;
     const adapter = new FakeAdapter([pre, pre], {
