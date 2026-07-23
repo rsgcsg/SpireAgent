@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { isJsonObject, type JsonObject } from "../../shared/json.js";
 
-export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.56" as const;
+export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.59" as const;
 export const BRIDGE_V2_INSPECTION_KINDS = ["run_deck", "combat_piles", "shop_catalog"] as const;
 const inspectionKindSchema = z.enum(BRIDGE_V2_INSPECTION_KINDS);
 
@@ -59,6 +59,7 @@ const gameSchema = z.object({
   commit: z.string().nullable().optional(),
   branch: z.string().nullable().optional(),
   main_assembly_hash: z.number().int().nullable().optional(),
+  release_declared_main_assembly_hash: z.number().int().nullable().optional(),
   compatibility: compatibilitySchema,
   modset: modsetSchema
 }).passthrough();
@@ -384,6 +385,14 @@ const deckRemovalSurfaceSchema = z.object({
   cards: z.array(visibleCardSchema)
 }).passthrough();
 
+const relicDeckRemovalSurfaceSchema = deckRemovalSurfaceSchema.extend({
+  kind: z.literal("relic_deck_removal_selection")
+}).passthrough();
+
+const rewardDeckRemovalSurfaceSchema = deckRemovalSurfaceSchema.extend({
+  kind: z.literal("reward_deck_removal_selection")
+}).passthrough();
+
 const deckUpgradeSurfaceSchema = z.object({
   kind: z.literal("deck_upgrade_selection"),
   stage: z.enum(["selecting", "preview"]),
@@ -660,7 +669,7 @@ const combatPileCardSelectionSurfaceBaseSchema = z.object({
   screen_entity_id: z.string().min(1),
   prompt: z.string().min(1),
   source_card_entity_id: z.string().min(1),
-  pile_type: z.literal("discard"),
+  pile_type: z.enum(["discard", "draw"]),
   min_select: z.number().int().nonnegative(),
   max_select: z.number().int().nonnegative(),
   selected_count: z.number().int().nonnegative(),
@@ -688,9 +697,46 @@ const graveblastCombatPileCardSelectionSurfaceSchema = combatPileCardSelectionSu
   overflow_destination: z.literal("discard_if_hand_full")
 }).passthrough();
 
+const cleanseCombatPileCardSelectionSurfaceSchema = combatPileCardSelectionSurfaceBaseSchema.extend({
+  purpose: z.literal("exhaust_one_draw_card"),
+  source_kind: z.literal("cleanse"),
+  source_card_definition_id: z.literal("CLEANSE"),
+  pile_type: z.literal("draw"),
+  destination_pile: z.literal("exhaust"),
+  destination_position: z.literal("bottom"),
+  overflow_destination: z.null().optional()
+}).passthrough();
+
+const seanceCombatPileCardSelectionSurfaceSchema = combatPileCardSelectionSurfaceBaseSchema.extend({
+  purpose: z.literal("transform_one_draw_card_into_soul"),
+  source_kind: z.literal("seance"),
+  source_card_definition_id: z.literal("SEANCE"),
+  pile_type: z.literal("draw"),
+  destination_pile: z.literal("draw"),
+  destination_position: z.literal("same_index"),
+  overflow_destination: z.null().optional()
+}).passthrough();
+
+const dredgeCombatPileCardSelectionSurfaceSchema = combatPileCardSelectionSurfaceBaseSchema.extend({
+  purpose: z.literal("move_bounded_discard_cards_to_hand"),
+  source_kind: z.literal("dredge"),
+  source_card_definition_id: z.literal("DREDGE"),
+  pile_type: z.literal("discard"),
+  destination_pile: z.literal("hand"),
+  destination_position: z.literal("bottom"),
+  overflow_destination: z.null().optional(),
+  min_select: z.number().int().min(1).max(3),
+  max_select: z.number().int().min(1).max(3),
+  require_manual_confirmation: z.literal(false),
+  cancelable: z.literal(false)
+}).passthrough();
+
 const combatPileCardSelectionSurfaceSchema = z.discriminatedUnion("source_kind", [
   headbuttCombatPileCardSelectionSurfaceSchema,
-  graveblastCombatPileCardSelectionSurfaceSchema
+  graveblastCombatPileCardSelectionSurfaceSchema,
+  cleanseCombatPileCardSelectionSurfaceSchema,
+  seanceCombatPileCardSelectionSurfaceSchema,
+  dredgeCombatPileCardSelectionSurfaceSchema
 ]);
 
 const combatHandCardSelectionSurfaceSchema = z.object({
@@ -1103,6 +1149,8 @@ export type BridgeV2Capabilities = z.infer<typeof capabilitiesSchema>;
 export type BridgeV2LegalAction = z.infer<typeof legalActionSchema>;
 export type BridgeV2DeckEnchantSurface = z.infer<typeof deckEnchantSurfaceSchema>;
 export type BridgeV2DeckRemovalSurface = z.infer<typeof deckRemovalSurfaceSchema>;
+export type BridgeV2RelicDeckRemovalSurface = z.infer<typeof relicDeckRemovalSurfaceSchema>;
+export type BridgeV2RewardDeckRemovalSurface = z.infer<typeof rewardDeckRemovalSurfaceSchema>;
 export type BridgeV2DeckUpgradeSurface = z.infer<typeof deckUpgradeSurfaceSchema>;
 export type BridgeV2DeckTransformSurface = z.infer<typeof deckTransformSurfaceSchema>;
 export type BridgeV2WoodCarvingsReplacementSurface = z.infer<typeof woodCarvingsReplacementSurfaceSchema>;
@@ -1163,6 +1211,8 @@ export type BridgeV2Context =
 export type BridgeV2Surface =
   | BridgeV2DeckEnchantSurface
   | BridgeV2DeckRemovalSurface
+  | BridgeV2RelicDeckRemovalSurface
+  | BridgeV2RewardDeckRemovalSurface
   | BridgeV2DeckUpgradeSurface
   | BridgeV2DeckTransformSurface
   | BridgeV2WoodCarvingsReplacementSurface
@@ -1332,6 +1382,10 @@ export function decodeBridgeV2State(value: unknown): DecodedBridgePayload<Bridge
     if (context.kind !== "shop") {
       throw new BridgeV2DecodeError("Bridge v2 deck_removal_selection surface requires shop context");
     }
+  } else if (decoded.data.surface.kind === "relic_deck_removal_selection") {
+    surface = parse(relicDeckRemovalSurfaceSchema, decoded.data.surface, "relic_deck_removal_selection surface");
+  } else if (decoded.data.surface.kind === "reward_deck_removal_selection") {
+    surface = parse(rewardDeckRemovalSurfaceSchema, decoded.data.surface, "reward_deck_removal_selection surface");
   } else if (decoded.data.surface.kind === "deck_upgrade_selection") {
     surface = parse(deckUpgradeSurfaceSchema, decoded.data.surface, "deck_upgrade_selection surface");
     if (context.kind !== "event" && context.kind !== "rest") {
@@ -1597,6 +1651,18 @@ export function isBridgeV2DeckRemovalSurface(
   surface: BridgeV2Surface
 ): surface is BridgeV2DeckRemovalSurface {
   return surface.kind === "deck_removal_selection";
+}
+
+export function isBridgeV2RelicDeckRemovalSurface(
+  surface: BridgeV2Surface
+): surface is BridgeV2RelicDeckRemovalSurface {
+  return surface.kind === "relic_deck_removal_selection";
+}
+
+export function isBridgeV2RewardDeckRemovalSurface(
+  surface: BridgeV2Surface
+): surface is BridgeV2RewardDeckRemovalSurface {
+  return surface.kind === "reward_deck_removal_selection";
 }
 
 export function isBridgeV2DeckUpgradeSurface(

@@ -19,6 +19,8 @@ export function buildAllowedActions(state: NormalizedCurrentState, sourceStateHa
       return cardSelectionActions(state.surface, sourceStateHash);
     case "deck_enchant_selection":
     case "deck_removal_selection":
+    case "relic_deck_removal_selection":
+    case "reward_deck_removal_selection":
     case "deck_upgrade_selection":
     case "deck_transform_selection":
     case "wood_carvings_replacement_selection":

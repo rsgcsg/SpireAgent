@@ -5,6 +5,7 @@ import { DeepSeekDecisionProvider } from "../src/llm/deepseekProvider.js";
 import { parseDecisionText, validateDecisionForActions } from "../src/llm/decisionSchema.js";
 import { normalizeCurrentState } from "../src/normalization/normalizeCurrentState.js";
 import { buildDecisionPrompt } from "../src/prompting/promptBuilder.js";
+import { SURFACE_GUIDES } from "../src/prompting/stateGuides.js";
 import { fixture, TEST_ADAPTER } from "./helpers.js";
 
 describe("prompt contract", () => {
@@ -26,6 +27,15 @@ describe("prompt contract", () => {
     expect(payload.allowedActions).toHaveLength(actions.length);
     expect(payload.allowedActions[0].action).toBeUndefined();
     expect(prompt.userPrompt).not.toContain("DEEPSEEK_API_KEY");
+  });
+
+  it("versions combat-pile guidance independently and keeps source semantics data-driven", () => {
+    const guide = SURFACE_GUIDES.combat_pile_card_selection;
+
+    expect(guide.version).toBe(4);
+    expect(guide.text).toContain("source-bound");
+    expect(guide.text).toContain("Do not infer one source card's business outcome from another");
+    expect(guide.text).not.toContain("current Headbutt contract");
   });
 });
 

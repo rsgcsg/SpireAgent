@@ -18,7 +18,7 @@ public sealed class BridgeContractTests
             .OrderBy(kind => kind, StringComparer.Ordinal)
             .ToArray();
 
-        Assert.Equal(24, manifestKinds.Length);
+        Assert.Equal(26, manifestKinds.Length);
         Assert.Equal(manifestKinds.Length, manifestKinds.Distinct(StringComparer.Ordinal).Count());
         Assert.Equal(providerKinds, manifestKinds);
         Assert.All(BridgeContractManifest.Entries, entry =>
@@ -66,7 +66,7 @@ public sealed class BridgeContractTests
     public void ExplicitActionScopesAreTheExactManifestProjectionForTheCurrentBuild()
     {
         CompatibilityAssessment compatibility = BridgeContractManifest.WithExplicitActionScopes(
-            BridgeGameIdentity.Assess("v0.109.0", "c12f634d", -840572606));
+            BridgeGameIdentity.Assess("v0.109.0", "c12f634d", -1639417500));
         IReadOnlyDictionary<string, SurfaceCapability> capabilities = BridgeContractManifest
             .Capabilities(compatibility)
             .ToDictionary(capability => capability.Kind, StringComparer.Ordinal);
@@ -119,6 +119,27 @@ public sealed class BridgeContractTests
     }
 
     [Fact]
+    public void GameIdentitySeparatesRuntimeAndReleaseDeclaredAssemblyHashes()
+    {
+        var identity = new GameBuildIdentity(
+            "v0.109.0",
+            "c12f634d",
+            "v0.109.0",
+            -1639417500,
+            BridgeGameIdentity.Assess("v0.109.0", "c12f634d", -1639417500))
+        {
+            ReleaseDeclaredMainAssemblyHash = -840572606
+        };
+        string json = JsonSerializer.Serialize(identity, new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+        });
+
+        Assert.Contains("\"main_assembly_hash\":-1639417500", json);
+        Assert.Contains("\"release_declared_main_assembly_hash\":-840572606", json);
+    }
+
+    [Fact]
     public void DeckEnchantManifestRequiresSemanticPostStateWithoutGrantingQualifiedAuthority()
     {
         BridgeContractManifestEntry enchant = Assert.Single(
@@ -127,7 +148,7 @@ public sealed class BridgeContractTests
         CompatibilityAssessment compatibility = BridgeGameIdentity.Assess(
             "v0.109.0",
             "c12f634d",
-            -840572606);
+            -1639417500);
 
         Assert.Contains("exact-card-enchantment-post-state-witness", enchant.SourceBindingId);
         Assert.Contains("deck_enchant_selection", compatibility.ActionCanarySurfaceKinds);
@@ -146,7 +167,7 @@ public sealed class BridgeContractTests
         CompatibilityAssessment compatibility = BridgeGameIdentity.Assess(
             "v0.109.0",
             "c12f634d",
-            -840572606);
+            -1639417500);
 
         Assert.Contains("exact-source-task-binding", replacement.SourceBindingId);
         Assert.Contains("deterministic-replacement-witness", replacement.SourceBindingId);
@@ -405,13 +426,29 @@ public sealed class BridgeContractTests
     }
 
     [Fact]
+    public void ReleaseDeclaredHashCannotAuthorizeADifferentLoadedAssembly()
+    {
+        CompatibilityAssessment compatibility = BridgeGameIdentity.Assess(
+            "v0.109.0",
+            "c12f634d",
+            -840572606);
+
+        Assert.Equal("untested", compatibility.Status);
+        Assert.False(compatibility.ActionExecutionAllowed);
+        Assert.False(compatibility.StateObservationAllowed);
+        Assert.False(compatibility.InspectionAllowed);
+        Assert.Empty(compatibility.ActionExecutionSurfaceKinds);
+        Assert.Empty(compatibility.ActionCanarySurfaceKinds);
+    }
+
+    [Fact]
     public void SourceQualifiedIdentityKeepsCombatPileInspectionReadOnlyAndHeadbuttActionCanaryScoped()
     {
         CompatibilityAssessment compatibility = BridgeContractManifest.WithExplicitActionScopes(
             BridgeGameIdentity.Assess(
                 "v0.109.0",
                 "c12f634d",
-                -840572606));
+                -1639417500));
 
         Assert.Equal("qualified_scoped", compatibility.Status);
         Assert.True(compatibility.InspectionAllowed);
@@ -1544,6 +1581,66 @@ public sealed class BridgeContractTests
         Assert.Contains("\"source_card_definition_id\":\"CLEANSE\"", cleanseJson);
         Assert.Contains("\"pile_type\":\"draw\"", cleanseJson);
         Assert.Contains("\"destination_pile\":\"exhaust\"", cleanseJson);
+
+        IBridgeSurface seanceSurface = new CombatPileCardSelectionSurface(
+            "combat_pile_card_selection",
+            "screen-d",
+            "Choose a card to Transform into Soul.",
+            "transform_one_draw_card_into_soul",
+            "seance",
+            "source-card-d",
+            "SEANCE",
+            "draw",
+            "draw",
+            "same_index",
+            null,
+            1,
+            1,
+            0,
+            Array.Empty<string>(),
+            RequireManualConfirmation: false,
+            Cancelable: false,
+            Array.Empty<VisibleCard>());
+        string seanceJson = JsonSerializer.Serialize(
+            new { context, surface = seanceSurface },
+            options);
+
+        Assert.Contains("\"purpose\":\"transform_one_draw_card_into_soul\"", seanceJson);
+        Assert.Contains("\"source_kind\":\"seance\"", seanceJson);
+        Assert.Contains("\"source_card_definition_id\":\"SEANCE\"", seanceJson);
+        Assert.Contains("\"pile_type\":\"draw\"", seanceJson);
+        Assert.Contains("\"destination_pile\":\"draw\"", seanceJson);
+        Assert.Contains("\"destination_position\":\"same_index\"", seanceJson);
+
+        IBridgeSurface dredgeSurface = new CombatPileCardSelectionSurface(
+            "combat_pile_card_selection",
+            "screen-e",
+            "Choose 2 cards to put into your Hand.",
+            "move_bounded_discard_cards_to_hand",
+            "dredge",
+            "source-card-e",
+            "DREDGE",
+            "discard",
+            "hand",
+            "bottom",
+            null,
+            2,
+            2,
+            1,
+            new[] { "card-selected" },
+            RequireManualConfirmation: false,
+            Cancelable: false,
+            Array.Empty<VisibleCard>());
+        string dredgeJson = JsonSerializer.Serialize(
+            new { context, surface = dredgeSurface },
+            options);
+
+        Assert.Contains("\"purpose\":\"move_bounded_discard_cards_to_hand\"", dredgeJson);
+        Assert.Contains("\"source_kind\":\"dredge\"", dredgeJson);
+        Assert.Contains("\"source_card_definition_id\":\"DREDGE\"", dredgeJson);
+        Assert.Contains("\"min_select\":2", dredgeJson);
+        Assert.Contains("\"max_select\":2", dredgeJson);
+        Assert.Contains("\"selected_count\":1", dredgeJson);
     }
 
     [Fact]
@@ -1649,6 +1746,108 @@ public sealed class BridgeContractTests
             new[] { otherDraw },
             new[] { oldExhaust, selected },
             selected));
+    }
+
+    [Fact]
+    public void SeanceWitnessRequiresNewSoulAtSelectedDrawIndex()
+    {
+        object before = new();
+        object selected = new();
+        object after = new();
+        object soul = new();
+        object wrongReplacement = new();
+        object[] baseline = { before, selected, after };
+
+        Assert.True(SeanceCombatPileWitness.Selected(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            baseline,
+            new[] { before, soul, after },
+            selected,
+            candidate => ReferenceEquals(candidate, soul)));
+        Assert.False(SeanceCombatPileWitness.Selected(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            baseline,
+            new[] { before, wrongReplacement, after },
+            selected,
+            candidate => ReferenceEquals(candidate, soul)));
+        Assert.False(SeanceCombatPileWitness.Selected(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            baseline,
+            new[] { soul, before, after },
+            selected,
+            candidate => ReferenceEquals(candidate, soul)));
+        Assert.False(SeanceCombatPileWitness.Selected(
+            sourceCompleted: false,
+            surfaceClosed: true,
+            baseline,
+            new[] { before, soul, after },
+            selected,
+            candidate => ReferenceEquals(candidate, soul)));
+    }
+
+    [Fact]
+    public void DredgeWitnessSeparatesIntermediateSelectionFromExactBatchCommit()
+    {
+        object first = new();
+        object second = new();
+        object third = new();
+        object hand = new();
+
+        Assert.True(DredgeCombatPileWitness.SelectionChanged(
+            sourceActive: true,
+            surfaceOpen: true,
+            new[] { first, second, third },
+            new[] { hand },
+            new[] { first, second, third },
+            new[] { hand },
+            Array.Empty<object>(),
+            new[] { first },
+            first,
+            wasSelected: false));
+        Assert.True(DredgeCombatPileWitness.SelectionChanged(
+            sourceActive: true,
+            surfaceOpen: true,
+            new[] { first, second, third },
+            new[] { hand },
+            new[] { first, second, third },
+            new[] { hand },
+            new[] { first },
+            Array.Empty<object>(),
+            first,
+            wasSelected: true));
+        Assert.False(DredgeCombatPileWitness.SelectionChanged(
+            sourceActive: true,
+            surfaceOpen: true,
+            new[] { first, second, third },
+            new[] { hand },
+            new[] { second, third },
+            new[] { hand, first },
+            Array.Empty<object>(),
+            new[] { first },
+            first,
+            wasSelected: false));
+
+        Assert.True(DredgeCombatPileWitness.Completed(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            new[] { first, second, third },
+            new[] { hand },
+            new[] { third },
+            new[] { hand, first, second },
+            new[] { first, second },
+            expectedSelectionCount: 2));
+        Assert.False(DredgeCombatPileWitness.Completed(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            new[] { first, second, third },
+            new[] { hand },
+            new[] { second, third },
+            new[] { hand, first },
+            new[] { first, second },
+            expectedSelectionCount: 2));
     }
 
     [Fact]

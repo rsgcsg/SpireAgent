@@ -1,6 +1,29 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.56`
+Protocol preview: `2.0-preview.59`
+
+Preview.59 retains Preview.58 identity, Seance, and `CardRemovalReward`
+semantics and adds exact Dredge to `combat_pile_card_selection`. Dredge is
+discriminated by `source_kind=dredge`,
+`purpose=move_bounded_discard_cards_to_hand`, operation
+`toggle_discard_card_for_dredge`, and source-specific intermediate/final
+completion witnesses. Exact `CardRemovalReward` remains on the independent
+`reward_deck_removal_selection` Surface. These contracts share internal
+card-grid mechanics only; source binding, permission, cardinality, commit, and
+semantic completion remain independent.
+
+Preview.57 repairs exact game identity. `game.main_assembly_hash` is now the
+hash computed from the main assembly actually loaded by the current process,
+using the game's own `AssemblyHasher`. The separately named
+`game.release_declared_main_assembly_hash` preserves the value read from
+`release_info.json` for diagnosis only. A release declaration never grants
+permission when it disagrees with the loaded assembly. Capabilities, state,
+observation bundles, and Inspections must agree on both fields, while
+compatibility gates use only the actual runtime hash.
+The current `-1639417500` permission is specific to the audited macOS arm64
+assembly. A matching version/commit on x86_64, Windows, Linux, or a changed
+game binary must supply and qualify its own runtime hash; release metadata
+cannot bridge that gap.
 
 Preview.56 adds the source-bound `wood_carvings_replacement_selection`
 contract. It distinguishes native Wood Carvings Bird/Torus by the exact
@@ -30,8 +53,8 @@ field must not be treated as current-build authority.
 ## Build Compatibility
 
 This protocol describes bounded v2 contracts, not permission to execute every
-contract against every Steam build. For exact identity
-`v0.109.0|c12f634d|-840572606`, capabilities separately advertise:
+contract against every Steam build. For exact runtime identity
+`v0.109.0|c12f634d|-1639417500`, capabilities separately advertise:
 
 - qualified actions: `deck_removal_selection`, `deck_upgrade_selection`,
   `combat_turn`, `combat_hand_card_selection`, and ordinary single-player
@@ -42,8 +65,10 @@ contract against every Steam build. For exact identity
   `main_menu`, `singleplayer_menu`, `event_dialogue`, `event_option`, and
   source-bound `deck_transform_selection`, source-bound
   `wood_carvings_replacement_selection`, Surface-level
-  `deck_enchant_selection`, exact Headbutt
-  `combat_pile_card_selection` for exact Headbutt/Graveblast, and source-scoped
+  `deck_enchant_selection`, exact `relic_deck_removal_selection`,
+  exact `reward_deck_removal_selection`,
+  `combat_pile_card_selection` for exact Headbutt/Graveblast/Cleanse/Seance,
+  and source-scoped
   `generated_card_choice` for exact Lead Paperweight acquisition and native
   Colorless/Attack/Skill/Power Potion plus native Splash combat choices;
 - qualified read-only inspection: `run_deck`;
@@ -52,6 +77,21 @@ contract against every Steam build. For exact identity
 Every unlisted Surface and Inspection remains disabled. Historical v0.108
 evidence does not grant current-build authority, and canary evidence does not
 silently become qualification.
+
+`relic_deck_removal_selection` is a separately scoped canary contract for the
+exact native `Precise Scissors` acquisition task. It is not an alias for the
+qualified merchant `deck_removal_selection`: it has no shop Context, price,
+service-use counter, or merchant completion witness. Both reuse bounded
+selection mechanics internally, while source binding and semantic completion
+remain purpose-specific.
+
+`reward_deck_removal_selection` is independently source-bound to the exact
+active `CardRemovalReward.OnSelect` task. It is not inferred from Forbidden
+Grimoire history and does not inherit merchant or relic authority. Confirmation
+requires the selected exact card to leave the deck, deck count to decrease by
+one, the reward source task to complete, and the selector to close. Cancellation
+requires source completion, selector closure, and an unchanged exact-reference
+deck.
 
 `deck_enchant_selection.confirm_selection` is not complete merely because the
 overlay closes. The current event command applies the enchantment after the
@@ -104,7 +144,7 @@ This is a permission gate, not a claim that disabled Mods or future native-UI
 Mods are semantically compatible. Such environments require independent source
 binding, visibility, legality, commit, completion, and canary evidence.
 
-For the current local identity `v0.109.0|c12f634d|-840572606`, preview.55
+For the current local identity `v0.109.0|c12f634d|-1639417500`, preview.55
 advertises an explicit `surface_kind + operation + tier` inventory. A scoped
 build is executable only when the current state operation appears in that
 inventory; empty lists never become wildcard authority. Re requires identical
@@ -315,18 +355,46 @@ baseline hand was full. Combined hand/discard cardinality must remain stable.
 The shared selector mechanics do not grant any other combat-pile caller
 authority.
 
-The current working-tree candidate adds only exact sealed `Cleanse`, after
-fresh loaded-identity runs distinguished its child owner from `Dredge` and
-`Seance`. `Cleanse.OnPlay` opens `CardSelectCmd.FromCombatPile` for exactly one
+The current contract includes exact sealed `Cleanse` and Seance branches.
+`Cleanse.OnPlay` opens `CardSelectCmd.FromCombatPile` for exactly one
 draw-pile card, then calls `CardCmd.Exhaust` for the selected reference. Its
 wire values are `source_kind=cleanse`, `purpose=exhaust_one_draw_card`,
 `pile_type=draw`, and `destination_pile=exhaust`. Completion requires the
 source task to finish, the child to close, and that exact card to leave the
 baseline draw pile and appear in the exhaust pile. This candidate is not
-loaded or Organic-qualified; the Release is installed pending cold start.
-`Dredge` (bounded discard-to-hand)
-and `Seance` (draw-to-transform) remain separate, unimplemented contracts;
-the shared screen and mechanics do not grant them authority.
+Organic-qualified. Current Release loading and a read-only Re decode confirmed
+the explicit source discriminator, but two Organic plays then showed that the
+broad `CardModel.OnPlayWrapper` scope did not remain uniquely bound while the
+child was active. The corrected implementation binds the exact protected
+`Cleanse.OnPlay(PlayerChoiceContext, CardPlay)` task. This establishes an
+adaptation rule: shared selection mechanics may remain common, but source
+evidence must attach to the narrowest method whose task actually encloses the
+player-choice lifecycle. An Organic action later completed that exact Cleanse
+contract under its prior loaded Preview.57 identity; the evidence does not
+transfer to Preview.59 qualification.
+
+Seance uses `source_kind=seance`,
+`purpose=transform_one_draw_card_into_soul`, `pile_type=draw`,
+`destination_pile=draw`, and `destination_position=same_index`. Publication and
+execution require the same active `Seance.OnPlay` task. Success requires source
+completion, selector closure, selected-original absence, pile-count
+preservation, and a new exact `Soul` reference at the original draw-pile
+index. This branch is loaded and canary-scoped but not Organic-tested.
+
+Dredge uses `source_kind=dredge`,
+`purpose=move_bounded_discard_cards_to_hand`, `pile_type=discard`,
+`destination_pile=hand`, and `destination_position=bottom`. Its equal
+`min_select=max_select` is dynamically one to three from native hand capacity;
+it has no manual confirmation and no cancel. When more candidates exist than
+the required count, `toggle_discard_card_for_dredge` changes the visible
+selected set. An intermediate command completes only when that exact set
+changes while source/screen and both piles remain stable. The final toggle
+completes only when the source task finishes, the selector closes, and the
+exact selected batch moves discard to hand. When the native command can resolve
+without opening a selector because the candidate set is already bounded, no
+child Surface is required. A Preview.59 current-build Re canary exercised
+select, deselect, and exact-three automatic commit. All unknown origins remain
+unsupported.
 
 Preview.54 extends the generated-combat branch only to exact sealed native
 `Splash`. The source is tracked around `CardModel.OnPlayWrapper`; the offered

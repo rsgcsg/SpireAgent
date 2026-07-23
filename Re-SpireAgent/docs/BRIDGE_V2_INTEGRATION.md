@@ -1,7 +1,7 @@
 # Bridge v2 Integration
 
 > Current source-truth status, 2026-07-22: Re and C# share the
-> `2.0-preview.56` consumer contract. Gate 0 has exact loaded-runtime lifecycle
+> `2.0-preview.59` consumer contract. Gate 0 has exact loaded-runtime lifecycle
 > evidence and Gate 1 operation-level reliability/migration is active. This is
 > not complete-game qualification. See the
 > [real connector audit](../../STS2MCP/docs/bridge-v2/REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md).
@@ -24,7 +24,7 @@ consumption.
 
 ## Current Scope
 
-Re-SpireAgent implements the strict `2.0-preview.56` consumer contract. When a
+Re-SpireAgent implements the strict `2.0-preview.59` consumer contract. When a
 matching Bridge exists, authority is read from capabilities rather than
 inferred from implementation or historical evidence.
 
@@ -82,13 +82,35 @@ moves the selected reference to hand, with the native full-hand discard redirect
 while Headbutt moves it to draw-pile top. Both branches retain independent
 completion evidence and unknown callers remain invalid.
 
-The current Gateway working tree also contains an exact `Cleanse` candidate
-for the same Surface: its advertised branch is one visible draw-pile card to
-exhaust, with a selected-instance draw-to-exhaust witness. Its Release is
-installed but not loaded or Organic-tested, so Re must not describe it as
-current coverage.
-`Dredge`, `Seance`, and all other `NCombatPileCardSelectScreen` origins remain
-invalid rather than being decoded as generic card selection.
+Re now strictly decodes exact Cleanse, Seance, and Dredge branches on the same bounded
+`combat_pile_card_selection` mechanics. Cleanse exposes one visible draw-pile
+card to exhaust and completed a real exact-card lifecycle in
+`run-20260723105825-69ohhl` under the prior loaded Preview.57 identity. Seance
+exposes one visible draw-pile card to transform into a same-index `Soul` through
+`select_draw_card_for_soul_transform`; the Seance branch is source-audited,
+fixture-tested, installed, loaded, and canary-scoped but not Organic-exercised.
+Dredge exposes a source-scoped bounded one-to-three discard selection through
+`toggle_discard_card_for_dredge`; a Preview.59 current-build canary proved
+select, deselect, and exact-three automatic batch completion. The prompt guide
+remains source-neutral and tells the model to consume the Surface purpose,
+source/destination piles, selected set, bounds, overflow, and exact candidates.
+Every other unknown origin remains invalid.
+
+The current working tree additionally decodes the exact post-acquisition
+`Precise Scissors` deck-removal task as
+`unknown + relic_deck_removal_selection`, not as a shop removal or a generic
+card selector. Its only candidate authority is Gateway-advertised, exact
+`PreciseScissors.AfterObtained` binding plus the distinct canary scope. Re does
+not infer it from reward history and does not attach shop price/service facts.
+The source branch is compiled and fixture-tested only until a newly installed
+DLL completes an Organic select/preview/confirm/deck-post-state journey.
+
+Preview.58 separately decodes exact `CardRemovalReward` as
+`unknown + reward_deck_removal_selection`, never as merchant or relic removal.
+Re imports only the advertised opaque select/preview/confirm/cancel actions and
+does not infer the producer from prior combat. A current-build bounded canary
+completed the full selection lifecycle and an independent `run_deck` post-state
+with the selected exact card absent. This is canary evidence, not qualification.
 
 Preview.54 adds exact native Splash to `generated_card_choice` and normalized
 schema 25. It reuses only the generated-combat-card selection mechanics and the

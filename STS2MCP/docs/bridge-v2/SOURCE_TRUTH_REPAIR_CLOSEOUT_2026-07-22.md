@@ -1,5 +1,12 @@
 # Source-Truth Repair Closeout - 2026-07-22
 
+> Historical amendment, 2026-07-23: this closeout fixed C#/Re protocol and
+> Gateway artifact drift, but its `main_assembly_hash=-840572606` evidence came
+> from `release_info.json`. Preview.57 later separated that declaration from
+> the game-computed loaded assembly hash (`-1639417500`) and made only the
+> latter authorizing. The original evidence below is preserved rather than
+> retroactively relabeled as actual-binary attestation.
+
 ## Verdict
 
 The C#/Re protocol-version blocker is closed for the local exact environment.

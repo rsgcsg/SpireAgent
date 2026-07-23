@@ -5,7 +5,25 @@
 > `../STS2MCP/docs/bridge-v2/CURRENT_STATUS.md`. Older identity and mode claims
 > below are preserved as dated evidence and must not override those documents.
 
-Status update 2026-07-22 (latest): current loaded `2.0-preview.56` artifact is
+Status update 2026-07-23 (latest): loaded `2.0-preview.59` is SHA
+`afbcc870...17423`, MVID `49d2408c-7a43-4669-b37d-6c8f33308c48`, runtime
+`844706b0442e443db974f156103d7a00`. Exact Dredge now has a bounded
+one-to-three source branch on `combat_pile_card_selection`. A current-build Re
+canary exercised select, deselect, then exact-three automatic discard-to-hand
+completion. It remains canary-only; unknown selector origins remain fail
+closed. See the canonical status and Dredge closeout.
+
+Earlier status update 2026-07-23: loaded `2.0-preview.58` was SHA
+`992e6099...e8f15b1`, MVID `20d08a59-8b70-42f0-8676-2f8d1d34a6ad`, runtime
+`c196413151614ca8ac6abdf5a6baaca9`. Exact `CardRemovalReward`
+`reward_deck_removal_selection` completed a bounded select/preview/confirm/
+deck-post-state canary. Cleanse completed an exact Organic child action under
+the prior Preview.57 identity. Seance is now exact-source-bound and loaded but
+still needs a Preview.58 Organic lifecycle; Precise Scissors also remains
+Organic-pending. See the canonical status and the Gate 1 Seance/reward-removal
+closeout rather than treating this chronological handoff as authority.
+
+Status update 2026-07-22: loaded `2.0-preview.56` artifact was
 SHA `61e659c7...de97`, MVID `35c2e71e-66bc-4423-9191-3f00c404c2ad`, runtime
 `7d19e21d5ee84105b32988aabadacc69`. Fresh runs repaired Headbutt/Graveblast
 completion, shop Inspection advertisement, and power-description formatting.

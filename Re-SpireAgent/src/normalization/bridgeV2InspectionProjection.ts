@@ -232,6 +232,8 @@ function validateIdentity(
   if (inspection.game.version !== capabilities.game.version
       || inspection.game.commit !== capabilities.game.commit
       || inspection.game.main_assembly_hash !== capabilities.game.main_assembly_hash
+      || inspection.game.release_declared_main_assembly_hash
+        !== capabilities.game.release_declared_main_assembly_hash
       || !sameBridgeModsetIdentity(inspection.game, capabilities.game)
       || !inspectionKindAllowed) {
     diagnostics.invalid(

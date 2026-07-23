@@ -10,7 +10,7 @@ state-bound protocol intended for the rebuilt `Re-SpireAgent` client.
 
 Bridge v2 is an incremental preview, not a replacement for all v1 surfaces.
 
-The C# Bridge and Re now share `2.0-preview.56`, with strict explicit
+The C# Bridge and Re now share `2.0-preview.59`, with strict explicit
 operation scopes and a path-free loaded-assembly digest. Gate 0 is closed on an
 installed, Steam-loaded artifact using two bounded Re action/completion/
 successor journeys. Gate 1 remains scoped and operation-driven; this is not
@@ -24,13 +24,14 @@ complete-game qualification.
 > boundary. Do not represent this as a consumer-safe Workshop product; see the
 > [productization architecture audit](../docs/current/audits/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md).
 
-- Last historical source-qualified exact game binding: Slay the Spire 2
-  `v0.109.0|c12f634d|-840572606`.
+- Current source-qualified exact game binding: Slay the Spire 2
+  `v0.109.0|c12f634d|-1639417500`. The separate release declaration
+  `-840572606` is retained for diagnostics but cannot authorize actions.
 - A matching version/commit with a different main-assembly hash remains
   untested and has no v2 action or Inspection authority. Check
   [Bridge v2 current status](docs/bridge-v2/CURRENT_STATUS.md) before treating
   a local install as qualified.
-- Source `2.0-preview.56` keeps centralized overlay/room/menu ownership, typed
+- Source `2.0-preview.59` keeps centralized overlay/room/menu ownership, typed
   diagnostics, purpose-specific selection and event contracts, staged
   completion semantics, and a top-level read-only shared run/player HUD.
   Current-build capabilities distinguish scoped-qualified actions, action
@@ -62,8 +63,10 @@ complete-game qualification.
   exact Lead Paperweight and sealed native Colorless/Attack/Skill/Power Potion sources of
   `generated_card_choice` are current-build canaries with separate destination,
   cost, operation, and completion semantics; all other callers of the shared
-  selection UI remain fail closed. Exact Headbutt pile selection is a canary
-  whose corrected completion still needs an Organic repeat. Preview.46 also
+  selection UI remain fail closed. Exact combat-pile branches now include
+  Headbutt, Graveblast, Cleanse, Seance, and Dredge with independent source,
+  purpose, operation, and completion semantics. Dredge has a current-build
+  select/deselect/exact-three batch canary but remains canary-only. Preview.46 also
   exposes typed read-only card hover previews with stable owner-scoped identity.
   Preview.47 adds a state-bound visibility/Inspection catalog, coherent
   observation bundles, linked-reward completion support, and a non-authorizing

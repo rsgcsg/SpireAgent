@@ -7,7 +7,7 @@ namespace STS2_MCP.BridgeV2.Protocol;
 
 public static class BridgeV2Contract
 {
-    public const string ProtocolVersion = "2.0-preview.56";
+    public const string ProtocolVersion = "2.0-preview.59";
     public const string ObservationPolicyId = "player_visible_ui_v1";
 }
 
@@ -54,7 +54,12 @@ public sealed record GameBuildIdentity(
     string? Branch,
     int? MainAssemblyHash,
     CompatibilityAssessment Compatibility,
-    ModsetIdentity? Modset = null);
+    ModsetIdentity? Modset = null)
+{
+    // release_info.json is useful provenance, but only the runtime-computed
+    // main assembly hash participates in exact permission decisions.
+    public int? ReleaseDeclaredMainAssemblyHash { get; init; }
+}
 
 public sealed record LoadedModAssemblyIdentity(
     string Name,

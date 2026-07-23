@@ -78,15 +78,97 @@ internal sealed class DeckRemovalSelectionSurfaceProvider : IBridgeSurfaceProvid
             inventory,
             removalEntry,
             inventory.Player);
-        return Build(screen, context, transaction, entities, game);
+        return Build(
+            screen,
+            context,
+            SurfaceKind,
+            "merchant",
+            transaction,
+            entities,
+            game,
+            StartMerchantPreviewConfirm,
+            "MerchantCardRemovalEntry -> CardSelectCmd.FromDeckForRemoval",
+            "This adapter is limited to the observed merchant removal child and does not generalize other deck selection effects.");
+    }
+
+    /// <summary>
+    /// Reuses only the exact selector mechanics for Precise Scissors. The
+    /// caller supplies a task-local source binding and this method deliberately
+    /// publishes a distinct surface kind so merchant authority cannot leak.
+    /// </summary>
+    internal static BridgeObservationDraft? TryBuildPreciseScissors(
+        ActiveSurfaceSnapshot snapshot,
+        BridgeEntityRegistry entities,
+        GameBuildIdentity game)
+    {
+        if (snapshot.TopOverlay is not NDeckCardSelectScreen screen)
+            return null;
+        if (!PreciseScissorsRemovalSourceBinding.TryGetUnique(
+                out PreciseScissorsRemovalSourceBinding.ActiveBinding? source)
+            || source == null)
+        {
+            return null;
+        }
+
+        IBridgeContext context = BridgeContextBuilder.Build(entities);
+        return Build(
+            screen,
+            context,
+            "relic_deck_removal_selection",
+            "precise_scissors",
+            source,
+            entities,
+            game,
+            StartPreciseScissorsPreviewConfirm,
+            "PreciseScissors.AfterObtained -> CardSelectCmd.FromDeckForRemoval -> CardPileCmd.RemoveFromDeck",
+            "This adapter is limited to the exact Precise Scissors acquisition task and does not generalize other relic or deck-removal effects.");
+    }
+
+    /// <summary>
+    /// Reuses the selector mechanics for an exact CardRemovalReward task. The
+    /// reward is the business source even when Forbidden Grimoire created it.
+    /// Keeping a distinct permission surface prevents merchant qualification
+    /// from authorizing reward-originated removal.
+    /// </summary>
+    internal static BridgeObservationDraft? TryBuildReward(
+        ActiveSurfaceSnapshot snapshot,
+        BridgeEntityRegistry entities,
+        GameBuildIdentity game)
+    {
+        if (snapshot.TopOverlay is not NDeckCardSelectScreen screen)
+            return null;
+        if (!RewardCardRemovalSourceBinding.TryGetUnique(
+                out RewardCardRemovalSourceBinding.ActiveBinding? source)
+            || source == null)
+        {
+            return null;
+        }
+
+        IBridgeContext context = BridgeContextBuilder.Build(entities);
+        return Build(
+            screen,
+            context,
+            "reward_deck_removal_selection",
+            "card_removal_reward",
+            source,
+            entities,
+            game,
+            StartRewardPreviewConfirm,
+            "CardRemovalReward.OnSelect -> RewardSynchronizer.DoUnsyncedCardRemoval -> CardSelectCmd.FromDeckForRemoval -> CardPileCmd.RemoveFromDeck",
+            "This adapter is limited to one exact CardRemovalReward selection task; the originating card, relic, event, or other producer does not inherit authority.");
     }
 
     private static BridgeObservationDraft Build(
         NDeckCardSelectScreen screen,
         IBridgeContext context,
-        MerchantRemovalTransaction transaction,
+        string surfaceKind,
+        string sourceKind,
+        object source,
         BridgeEntityRegistry entities,
-        GameBuildIdentity game)
+        GameBuildIdentity game,
+        Func<NDeckCardSelectScreen, IReadOnlyCollection<CardModel>, object, BridgeActionStartResult> startConfirm,
+        string sourceEvidence,
+        string limitation)
     {
         if (!TryReadBinding(screen, out Binding? binding, out string? bindingError)
             || ClickableField == null)
@@ -94,8 +176,10 @@ internal sealed class DeckRemovalSelectionSurfaceProvider : IBridgeSurfaceProvid
             return BindingUnavailable(
                 game,
                 context,
-                bindingError ?? "The exact merchant deck-removal binding is unavailable.",
-                new[] { "selection_constraints", "selected_cards", "legal_actions" });
+                bindingError ?? "The exact deck-removal selector binding is unavailable.",
+                new[] { "selection_constraints", "selected_cards", "legal_actions" },
+                surfaceKind,
+                sourceKind);
         }
 
         Binding exactBinding = binding!;
@@ -106,8 +190,10 @@ internal sealed class DeckRemovalSelectionSurfaceProvider : IBridgeSurfaceProvid
             return BindingUnavailable(
                 game,
                 context,
-                "The player-visible merchant removal prompt is unavailable.",
-                new[] { "prompt", "legal_actions" });
+                "The player-visible deck-removal prompt is unavailable.",
+                new[] { "prompt", "legal_actions" },
+                surfaceKind,
+                sourceKind);
         }
 
         string stage = IsPreviewVisible(screen) ? "preview" : "selecting";
@@ -141,11 +227,13 @@ internal sealed class DeckRemovalSelectionSurfaceProvider : IBridgeSurfaceProvid
                 game,
                 context,
                 "A selected removal card is absent from the visible grid.",
-                new[] { "selected_cards", "legal_actions" });
+                new[] { "selected_cards", "legal_actions" },
+                surfaceKind,
+                sourceKind);
         }
 
         var surface = new DeckRemovalSelectionSurface(
-            SurfaceKind,
+            surfaceKind,
             stage,
             entities.GetId(screen, "screen"),
             prompt,
@@ -162,7 +250,8 @@ internal sealed class DeckRemovalSelectionSurfaceProvider : IBridgeSurfaceProvid
             holders,
             selectedCards,
             cardIds,
-            transaction);
+            source,
+            startConfirm);
 
         bool cancelBindingMissing = exactBinding.Preferences.Cancelable
                                     && stage == "selecting"
@@ -172,19 +261,21 @@ internal sealed class DeckRemovalSelectionSurfaceProvider : IBridgeSurfaceProvid
             return BindingUnavailable(
                 game,
                 context,
-                "Merchant removal is cancelable but its exact close control is unavailable.",
-                new[] { "cancel_action", "legal_actions" });
+                "Deck removal is cancelable but its exact close control is unavailable.",
+                new[] { "cancel_action", "legal_actions" },
+                surfaceKind,
+                sourceKind);
         }
 
         string readiness = actions.Count > 0 ? "ready" : "settling";
         var completeness = new StateCompleteness(
-            "contract_complete_for_merchant_deck_removal_selection",
+            $"contract_complete_for_{sourceKind}_deck_removal_selection",
             actions.Count > 0
                 ? "derived_from_exact_visible_grid_and_current_controls"
                 : "temporarily_empty_while_selection_completes_or_settles",
             new[]
             {
-                "MerchantCardRemovalEntry -> CardSelectCmd.FromDeckForRemoval",
+                sourceEvidence,
                 "NDeckCardSelectScreen visible overlay",
                 "NCardGrid visible holders",
                 "NCardHolder._isClickable exact-version binding",
@@ -205,10 +296,7 @@ internal sealed class DeckRemovalSelectionSurfaceProvider : IBridgeSurfaceProvid
             surface,
             completeness,
             game,
-            new[]
-            {
-                "This adapter is limited to the observed merchant removal child and does not generalize other deck selection effects."
-            },
+            new[] { limitation },
             actions);
     }
 
@@ -219,7 +307,8 @@ internal sealed class DeckRemovalSelectionSurfaceProvider : IBridgeSurfaceProvid
         IReadOnlyList<NGridCardHolder> holders,
         HashSet<CardModel> selectedCards,
         IReadOnlyDictionary<CardModel, string> cardIds,
-        MerchantRemovalTransaction transaction)
+        object source,
+        Func<NDeckCardSelectScreen, IReadOnlyCollection<CardModel>, object, BridgeActionStartResult> startConfirm)
     {
         var actions = new List<BridgeActionDraft>();
         if (stage == "selecting")
@@ -264,7 +353,7 @@ internal sealed class DeckRemovalSelectionSurfaceProvider : IBridgeSurfaceProvid
                     "navigation",
                     "Cancel card removal",
                     "NDeckCardSelectScreen._closeButton",
-                    () => StartClose(screen)));
+                    () => StartClose(screen, source)));
             }
         }
         else
@@ -278,7 +367,7 @@ internal sealed class DeckRemovalSelectionSurfaceProvider : IBridgeSurfaceProvid
                     "commit",
                     "Confirm removal of the selected card",
                     "NDeckCardSelectScreen._previewConfirmButton",
-                    () => StartPreviewConfirm(screen, selectedCards, transaction)));
+                    () => startConfirm(screen, selectedCards, source)));
             }
 
             NBackButton? cancel = FindControl<NBackButton>(screen, "_previewCancelButton");
@@ -339,11 +428,13 @@ internal sealed class DeckRemovalSelectionSurfaceProvider : IBridgeSurfaceProvid
             "removal_preview_opened_or_selection_closed");
     }
 
-    private static BridgeActionStartResult StartPreviewConfirm(
+    private static BridgeActionStartResult StartMerchantPreviewConfirm(
         NDeckCardSelectScreen expectedScreen,
         IReadOnlyCollection<CardModel> expectedSelectedCards,
-        MerchantRemovalTransaction transaction)
+        object source)
     {
+        if (source is not MerchantRemovalTransaction transaction)
+            return BridgeActionStartResult.Rejected("merchant_removal_source_changed", "The merchant removal source is no longer exact.");
         if (!IsCurrent(expectedScreen) || !IsPreviewVisible(expectedScreen))
             return BridgeActionStartResult.Rejected("screen_stage_changed", "Merchant removal confirmation is no longer current.");
         if (expectedSelectedCards.Count != 1)
@@ -389,6 +480,87 @@ internal sealed class DeckRemovalSelectionSurfaceProvider : IBridgeSurfaceProvid
             allowIntermediateStateChanges: true);
     }
 
+    private static BridgeActionStartResult StartPreciseScissorsPreviewConfirm(
+        NDeckCardSelectScreen expectedScreen,
+        IReadOnlyCollection<CardModel> expectedSelectedCards,
+        object source)
+    {
+        if (source is not PreciseScissorsRemovalSourceBinding.ActiveBinding binding)
+            return BridgeActionStartResult.Rejected("precise_scissors_source_changed", "The Precise Scissors source is no longer exact.");
+        if (!IsCurrent(expectedScreen) || !IsPreviewVisible(expectedScreen))
+            return BridgeActionStartResult.Rejected("screen_stage_changed", "Precise Scissors removal confirmation is no longer current.");
+        if (expectedSelectedCards.Count != 1)
+            return BridgeActionStartResult.Rejected("selection_changed", "Precise Scissors removal no longer has exactly one selected card.");
+
+        CardModel expectedCard = expectedSelectedCards.Single();
+        IReadOnlyList<CardModel> currentSelectedCards = BoundedCardSelectionFacts.ReadSelectedCards(expectedScreen);
+        if (currentSelectedCards.Count != 1
+            || !ReferenceEquals(currentSelectedCards[0], expectedCard)
+            || !binding.Player.Deck.Cards.Any(card => ReferenceEquals(card, expectedCard))
+            || !binding.Player.Relics.Any(relic => ReferenceEquals(relic, binding.SourceRelic))
+            || !PreciseScissorsRemovalSourceBinding.IsActive(binding.Token))
+        {
+            return BridgeActionStartResult.Rejected(
+                "precise_scissors_removal_transaction_changed",
+                "The selected card or Precise Scissors acquisition task changed before confirmation.");
+        }
+
+        NConfirmButton? confirm = FindControl<NConfirmButton>(expectedScreen, "_previewConfirmButton");
+        if (confirm is not { IsEnabled: true } || !McpMod.IsNodeVisible(confirm))
+            return BridgeActionStartResult.Rejected("confirm_not_available", "The removal confirmation control is no longer enabled.");
+
+        confirm.ForceClick();
+        return BridgeActionStartResult.Started(
+            () => PreciseScissorsRemovalCompletionWitness.IsSatisfied(
+                sourceCompleted: !PreciseScissorsRemovalSourceBinding.IsActive(binding.Token),
+                selectorClosed: !IsCurrent(expectedScreen),
+                baselineDeck: binding.BaselineDeck,
+                currentDeck: binding.Player.Deck.Cards,
+                selectedCard: expectedCard),
+            "precise_scissors_selected_card_absent_after_exact_relic_task_completion",
+            allowIntermediateStateChanges: true);
+    }
+
+    private static BridgeActionStartResult StartRewardPreviewConfirm(
+        NDeckCardSelectScreen expectedScreen,
+        IReadOnlyCollection<CardModel> expectedSelectedCards,
+        object source)
+    {
+        if (source is not RewardCardRemovalSourceBinding.ActiveBinding binding)
+            return BridgeActionStartResult.Rejected("reward_removal_source_changed", "The card-removal reward source is no longer exact.");
+        if (!IsCurrent(expectedScreen) || !IsPreviewVisible(expectedScreen))
+            return BridgeActionStartResult.Rejected("screen_stage_changed", "Reward card removal confirmation is no longer current.");
+        if (expectedSelectedCards.Count != 1)
+            return BridgeActionStartResult.Rejected("selection_changed", "Reward card removal no longer has exactly one selected card.");
+
+        CardModel expectedCard = expectedSelectedCards.Single();
+        IReadOnlyList<CardModel> currentSelectedCards = BoundedCardSelectionFacts.ReadSelectedCards(expectedScreen);
+        if (currentSelectedCards.Count != 1
+            || !ReferenceEquals(currentSelectedCards[0], expectedCard)
+            || !binding.Player.Deck.Cards.Any(card => ReferenceEquals(card, expectedCard))
+            || !RewardCardRemovalSourceBinding.IsActive(binding.Token))
+        {
+            return BridgeActionStartResult.Rejected(
+                "reward_removal_transaction_changed",
+                "The selected card or CardRemovalReward task changed before confirmation.");
+        }
+
+        NConfirmButton? confirm = FindControl<NConfirmButton>(expectedScreen, "_previewConfirmButton");
+        if (confirm is not { IsEnabled: true } || !McpMod.IsNodeVisible(confirm))
+            return BridgeActionStartResult.Rejected("confirm_not_available", "The reward-removal confirmation control is no longer enabled.");
+
+        confirm.ForceClick();
+        return BridgeActionStartResult.Started(
+            () => RewardCardRemovalCompletionWitness.IsSatisfied(
+                sourceCompleted: !RewardCardRemovalSourceBinding.IsActive(binding.Token),
+                selectorClosed: !IsCurrent(expectedScreen),
+                baselineDeck: binding.BaselineDeck,
+                currentDeck: binding.Player.Deck.Cards,
+                selectedCard: expectedCard),
+            "reward_removal_selected_card_absent_after_exact_reward_task_completion",
+            allowIntermediateStateChanges: true);
+    }
+
     private static BridgeActionStartResult StartPreviewCancel(NDeckCardSelectScreen expectedScreen)
     {
         if (!IsCurrent(expectedScreen) || !IsPreviewVisible(expectedScreen))
@@ -403,19 +575,37 @@ internal sealed class DeckRemovalSelectionSurfaceProvider : IBridgeSurfaceProvid
             "removal_preview_closed");
     }
 
-    private static BridgeActionStartResult StartClose(NDeckCardSelectScreen expectedScreen)
+    private static BridgeActionStartResult StartClose(
+        NDeckCardSelectScreen expectedScreen,
+        object source)
     {
         if (!IsCurrent(expectedScreen) || IsPreviewVisible(expectedScreen))
-            return BridgeActionStartResult.Rejected("screen_stage_changed", "Merchant removal is no longer cancelable from selection.");
+            return BridgeActionStartResult.Rejected("screen_stage_changed", "Deck removal is no longer cancelable from selection.");
         NBackButton? close = FindControl<NBackButton>(expectedScreen, "_closeButton");
         if (close is not { IsEnabled: true } || !McpMod.IsNodeVisible(close))
             return BridgeActionStartResult.Rejected("cancel_not_available", "The removal close control is no longer enabled.");
 
         close.ForceClick();
+        if (source is RewardCardRemovalSourceBinding.ActiveBinding reward)
+        {
+            return BridgeActionStartResult.Started(
+                () => !RewardCardRemovalSourceBinding.IsActive(reward.Token)
+                      && !IsCurrent(expectedScreen)
+                      && SameReferences(reward.BaselineDeck, reward.Player.Deck.Cards),
+                "reward_removal_cancelled_source_completed_and_deck_unchanged",
+                allowIntermediateStateChanges: true);
+        }
+
         return BridgeActionStartResult.Started(
             () => !IsCurrent(expectedScreen),
-            "merchant_removal_selection_cancelled_and_closed");
+            "deck_removal_selection_cancelled_and_closed");
     }
+
+    private static bool SameReferences<T>(
+        IReadOnlyCollection<T> expected,
+        IReadOnlyCollection<T> actual) where T : class =>
+        expected.Count == actual.Count
+        && expected.All(item => actual.Any(candidate => ReferenceEquals(candidate, item)));
 
     private static bool TryReadBinding(
         NDeckCardSelectScreen screen,
@@ -486,7 +676,9 @@ internal sealed class DeckRemovalSelectionSurfaceProvider : IBridgeSurfaceProvid
         GameBuildIdentity game,
         IBridgeContext context,
         string reason,
-        IReadOnlyList<string> missing)
+        IReadOnlyList<string> missing,
+        string surfaceKind = SurfaceKind,
+        string sourceKind = "merchant")
         => BridgeFailClosedObservation.BindingUnavailable(
             game,
             context,
@@ -494,9 +686,9 @@ internal sealed class DeckRemovalSelectionSurfaceProvider : IBridgeSurfaceProvid
             reason,
             new[] { "NDeckCardSelectScreen exact-version binding" },
             missing,
-            "merchant_deck_removal_binding_unavailable",
-            "bridge.surface.deck_removal_selection.binding_unavailable",
-            "Merchant removal source or completion semantics are not exact.");
+            $"{sourceKind}_deck_removal_binding_unavailable",
+            $"bridge.surface.{surfaceKind}.binding_unavailable",
+            $"{sourceKind} removal source or completion semantics are not exact.");
 
     private sealed record Binding(
         CardSelectorPrefs Preferences,

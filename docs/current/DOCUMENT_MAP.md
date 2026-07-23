@@ -48,6 +48,13 @@ Component-owned truth:
 - [Gate 1 real-run defect closeout](../../STS2MCP/docs/bridge-v2/GATE1_REAL_RUN_DEFECT_CLOSEOUT_2026-07-22.md)
   records the Headbutt completion, shop Inspection, and power-text repairs from
   fresh Re runs, including exact evidence limitations.
+- [Gate 1 Seance and reward-removal closeout](../../STS2MCP/docs/bridge-v2/GATE1_SEANCE_AND_REWARD_REMOVAL_CLOSEOUT_2026-07-23.md)
+  records the exact source split, Preview.58 identity, reward-removal Organic
+  canary, and Seance evidence boundary.
+- [Gate 1 Dredge closeout](../../STS2MCP/docs/bridge-v2/GATE1_DREDGE_CLOSEOUT_2026-07-23.md)
+  records Preview.59's source-scoped multi-step selection contract, exact
+  current-build canary, and the boundary between direct native completion and
+  an interactive child Surface.
 
 ## Historical Material
 

@@ -13,11 +13,11 @@ This is the canonical short current-state document for the rebuilt project.
 ## Current Gate
 
 **Gate 0 is closed; Gate 1 connector reliability and operation-level migration
-is active.** The exact loaded `2.0-preview.56` environment completed two
-state-bound Re journeys (`main_menu -> singleplayer_menu -> main_menu`) with
-Bridge command completion and coherent successor states. Re is now v2-only;
-Gateway v1 mutations are disabled by default while v1 reads remain explicit
-compatibility diagnostics.
+is active.** C# and Re share `2.0-preview.59`. Re is v2-only; Gateway v1
+mutations are disabled by default while v1 reads remain explicit compatibility
+diagnostics. Historical Gate 0 evidence remains scoped to its exact artifact.
+The current preview has its own bounded mutation evidence and does not inherit
+qualification from an older SHA/MVID.
 
 The [cross-component program plan](PROGRAM_PLAN.md) preserves Gate 1 as the
 only current delivery priority. Internal development/evaluation (`D`) and the
@@ -27,25 +27,39 @@ Headless, and post-training work remains gated.
 
 ## Immediate Next Step
 
-The map/repeated-observation repair is now loaded in the current exact
-environment: Release SHA `386885c7...576df7`, MVID
-`d307fd3c-4235-42ab-9fb9-ad7bf5714b6f`, runtime
-`696eb3ae18f74d2bb1815cef9e554a6a`. Fresh Re artifacts under that identity
-confirm that stale observation capture and pre-dispatch state drift remain
-explicit fail-closed outcomes. They also repeatedly reached the real
-`NCombatPileCardSelectScreen` after completed combat actions. That is a
-source-qualified child owner, not a generic card grid: `Cleanse` selects one
-draw-pile card to exhaust, `Dredge` selects discard cards to return to hand,
-and `Seance` selects draw-pile cards to transform.
+`2.0-preview.59` is built and was cold-start loaded as SHA
+`afbcc870...17423`, MVID `49d2408c-7a43-4669-b37d-6c8f33308c48`, runtime
+`844706b0442e443db974f156103d7a00`, under the exact bridge-only Modset.
+Runs `run-20260723105904-z3sy3r` and
+`run-20260723105825-69ohhl` exposed the missing exact Seance source contract;
+`run-20260723110000-1z5jqy` exposed Forbidden Grimoire's distinct post-combat
+`CardRemovalReward` child. Preview.58 now gives Seance its exact
+draw-pile-to-same-index-`Soul` contract and gives `CardRemovalReward` the
+independent `reward_deck_removal_selection` Surface.
 
-The working tree now adds only the exact `Cleanse` branch: its native source,
-visible one-card draw-pile selector, and exact draw-to-exhaust completion are
-source-audited and Gateway-tested. Release SHA `886216...cc1a` is installed
-but **not loaded** and has no Organic evidence or tier change. `Dredge`,
-`Seance`, and every other combat-pile origin remain fail closed. Cold-start the
-game, verify the loaded identity, then run one bounded natural
-`Cleanse -> select -> exact exhaust post-state` canary before considering any
-new branch or permission change.
+A bounded current-build Re canary completed reward claim, exact-card selection,
+preview, confirmation, semantic command completion, coherent successor reward
+state, and a `run_deck` post-state with the exact selected card absent. This is
+current-build canary evidence, not broad deck-removal qualification. The same
+run set also proves Cleanse completed its exact draw-to-exhaust child under the
+prior loaded preview.57 identity. Seance is compiled, tested, installed, loaded,
+and explicitly canary-scoped but still lacks a current-artifact Organic
+lifecycle; Precise Scissors also remains Organic-pending.
+
+Run `run-20260723113740-hafl26` then exposed exact Dredge as another source,
+not a generic selector. Preview.59 keeps the same combat-pile Surface but gives
+Dredge a bounded one-to-three toggle operation, separate intermediate-selection
+completion, and exact batch-to-hand completion. A current-build Re canary
+selected, deselected, then selected three cards; the exact references moved
+from discard to hand and the child returned to `combat_turn`. Dredge remains
+source-scoped canary-only. See the
+[Dredge closeout](../../STS2MCP/docs/bridge-v2/GATE1_DREDGE_CLOSEOUT_2026-07-23.md)
+and the
+[Seance and reward-removal closeout](../../STS2MCP/docs/bridge-v2/GATE1_SEANCE_AND_REWARD_REMOVAL_CLOSEOUT_2026-07-23.md).
+
+Run the still-missing Seance and Precise Scissors bounded natural lifecycles
+next, then continue until the next real unsupported source. Every other
+unbound selector source remains fail closed.
 
 The same run set exposed a Re bounded-run hygiene defect: an unchanged,
 non-actionable `event_option` state could consume the whole tick budget while

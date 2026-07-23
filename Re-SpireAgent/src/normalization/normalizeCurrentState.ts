@@ -377,6 +377,8 @@ function determineStability(surface: InteractionSurface, diagnosticsStatus: "ok"
   if (surface.kind === "card_selection") return surface.options.length > 0 || surface.canConfirm || surface.canCancel ? "actionable" : "loading";
   if (surface.kind === "deck_enchant_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "deck_removal_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
+  if (surface.kind === "relic_deck_removal_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
+  if (surface.kind === "reward_deck_removal_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "deck_upgrade_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "deck_transform_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "wood_carvings_replacement_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
@@ -422,7 +424,7 @@ function isCompatible(context: SemanticContext, surface: InteractionSurface): bo
     menu: ["main_menu", "singleplayer_menu", "character_select", "menu_choice", "no_action", "unsupported"],
     run_ended: ["game_over", "menu_choice", "no_action", "unsupported"],
     combat_transition: ["no_action", "unsupported"],
-    unknown: ["card_selection", "card_bundle_selection", "no_action", "unsupported"]
+    unknown: ["card_selection", "card_bundle_selection", "relic_deck_removal_selection", "reward_deck_removal_selection", "no_action", "unsupported"]
   };
   if (!allowed[context.kind].includes(surface.kind)) return false;
   if (surface.kind === "option_choice") return surface.protocol === context.kind;

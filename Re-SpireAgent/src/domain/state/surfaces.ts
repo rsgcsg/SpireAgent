@@ -112,6 +112,8 @@ export type InteractionSurface =
   | CardSelectionSurface
   | DeckEnchantSelectionSurface
   | DeckRemovalSelectionSurface
+  | RelicDeckRemovalSelectionSurface
+  | RewardDeckRemovalSelectionSurface
   | DeckUpgradeSelectionSurface
   | DeckTransformSelectionSurface
   | WoodCarvingsReplacementSelectionSurface
@@ -160,7 +162,7 @@ interface CombatPileCardSelectionSurfaceBase {
   screenEntityId: string;
   prompt: string;
   sourceCardEntityId: string;
-  pileType: "discard";
+  pileType: "discard" | "draw";
   minimumSelections: number;
   maximumSelections: number;
   selectedCount: number;
@@ -187,6 +189,32 @@ export type CombatPileCardSelectionSurface = CombatPileCardSelectionSurfaceBase 
       destinationPile: "hand";
       destinationPosition: "bottom";
       overflowDestination: "discard_if_hand_full";
+    }
+  | {
+      purpose: "exhaust_one_draw_card";
+      sourceKind: "cleanse";
+      sourceCardDefinitionId: "CLEANSE";
+      pileType: "draw";
+      destinationPile: "exhaust";
+      destinationPosition: "bottom";
+    }
+  | {
+      purpose: "transform_one_draw_card_into_soul";
+      sourceKind: "seance";
+      sourceCardDefinitionId: "SEANCE";
+      pileType: "draw";
+      destinationPile: "draw";
+      destinationPosition: "same_index";
+      overflowDestination: null;
+    }
+  | {
+      purpose: "move_bounded_discard_cards_to_hand";
+      sourceKind: "dredge";
+      sourceCardDefinitionId: "DREDGE";
+      pileType: "discard";
+      destinationPile: "hand";
+      destinationPosition: "bottom";
+      overflowDestination: null;
     }
 );
 
@@ -324,6 +352,40 @@ export interface DeckEnchantSelectionSurface {
 /** Exact merchant removal child; not a universal deck selector. */
 export interface DeckRemovalSelectionSurface {
   kind: "deck_removal_selection";
+  stage: "selecting" | "preview";
+  bridgeStateId: string;
+  screenEntityId: string;
+  prompt: string;
+  minimumSelections: number;
+  maximumSelections: number;
+  selectedCount: number;
+  selectedCardEntityIds: string[];
+  cancelable: boolean;
+  cards: CardSnapshot[];
+  legalActions: BridgeLegalActionSnapshot[];
+  completeness: BridgeSurfaceCompleteness;
+}
+
+/** Exact Precise Scissors acquisition child; merchant service semantics do not apply. */
+export interface RelicDeckRemovalSelectionSurface {
+  kind: "relic_deck_removal_selection";
+  stage: "selecting" | "preview";
+  bridgeStateId: string;
+  screenEntityId: string;
+  prompt: string;
+  minimumSelections: number;
+  maximumSelections: number;
+  selectedCount: number;
+  selectedCardEntityIds: string[];
+  cancelable: boolean;
+  cards: CardSnapshot[];
+  legalActions: BridgeLegalActionSnapshot[];
+  completeness: BridgeSurfaceCompleteness;
+}
+
+/** Exact CardRemovalReward child; producer and merchant service semantics do not apply. */
+export interface RewardDeckRemovalSelectionSurface {
+  kind: "reward_deck_removal_selection";
   stage: "selecting" | "preview";
   bridgeStateId: string;
   screenEntityId: string;

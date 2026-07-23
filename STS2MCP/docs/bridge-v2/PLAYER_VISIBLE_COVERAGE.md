@@ -10,11 +10,14 @@
 > loaded artifact. Current loaded identity and Gate status are owned by
 > [Bridge v2 Current Status](CURRENT_STATUS.md).
 
-Current Gate 0 execution evidence is scoped to exact game identity
-`v0.109.0|c12f634d|-840572606`, Gateway SHA
+Historical Gate 0 execution evidence recorded game version/commit plus the
+release-declared hash `-840572606`, Gateway SHA
 `89f94eb99996c2ff4636c1e2ab1119d3dd6eb20a64e59c0270821e2eb2f0e079`,
 MVID `3fd03b69-264a-4a41-9da7-1e9b50c7bc50`, and exact Bridge-only Modset
 fingerprint `f36fd123b9f272ac61e15a880b6f661489d15873177ec5b423c96fed71cebde2`.
+Preview.57 proved that field was not the actual loaded game assembly hash;
+the current runtime value is `-1639417500`. The historical lifecycle remains
+behavior evidence but does not itself attest the actual game binary.
 Compilation, fixtures, source review, old-build
 evidence, canary permission, and organic qualification are distinct states.
 
@@ -52,6 +55,8 @@ The `1833084275` environment inherits no permission from the current loaded
 | Surface / inspection | Permission | Current evidence | Remaining boundary |
 |---|---|---|---|
 | `deck_removal_selection` | qualified | merchant select -> preview -> confirm; exact deck/card/gold/service witness | merchant remove only; no generic maintenance inference |
+| exact `Precise Scissors` `relic_deck_removal_selection` | loaded canary implementation; no Organic action yet | current-source audit: `AfterObtained -> FromDeckForRemoval -> RemoveFromDeck`; C#/Re fixture and completion-witness tests pass; loaded SHA `4940133...e031c2` advertises the scoped operations | no current-DLL Organic select/preview/confirm/deck post-state yet; all other relic/event/remove callers remain fail closed |
+| exact `CardRemovalReward` `reward_deck_removal_selection` | current Preview.58 full-lifecycle Organic canary; not qualified | exact reward task source; select -> preview -> confirm; exact selected-card absent plus deck-count witness; coherent reward successor and independent `run_deck` post-state on SHA `992e6099...e8f15b1` | producer diversity, cancel lifecycle, repeated current-build evidence, Mods, and future builds remain unqualified |
 | `deck_upgrade_selection` | qualified | event and rest exact-instance upgrade journeys | other origins and multi-select variants need evidence |
 | `combat_turn` | qualified | repeated card, target, potion, and end-turn journeys; preview.51 fresh Necrobinder run exposes exact alive Osty HP/block/status companion state and Re/DeepSeek consumes it | dead/hidden-health companion Organic lifecycle plus uncommon card/target/phase shapes remain evidence debt |
 | `combat_hand_card_selection` | qualified | Touch of Insanity exact-instance select/confirm/cost post-state | other hand-selection purposes need diversity |
@@ -73,7 +78,9 @@ The `1833084275` environment inherits no permission from the current loaded
 | `deck_enchant_selection` | Surface-level current-build canary; only Self-Help Book select/automatic preview/cancel/reselect/confirm was exercised | exact target enchantment ID/amount, exact selected instances, overlay stage, semantic exact-card enchantment witness, independent run-deck post-state; current Provider does not runtime-bind the Self-Help Book source named by manifest/evidence | other callers remain unqualified but are not source-suppressed on the Surface-permitted exact build; explicit preview button, cancelable close, multi-select, parent-transaction side effects, Mods, and future builds remain evidence/architecture debt |
 | `generated_card_choice` | source-scoped canary; Lead Paperweight, Colorless Potion, and Attack Potion selections exercised; exact Splash implemented but not final-MVID exercised | exact `RelicCmd.Obtain`, sealed native Colorless/Attack/Skill/Power `PotionModel.OnUseWrapper`, and sealed native `Splash.OnPlayWrapper` bindings; explicit source/run-deck-vs-combat-hand/cost/overflow semantics; exact-reference/deck or hand-discard witnesses | Skill/Power/Splash Organic actions, Skip variants, and full-hand overflow remain pending; Hefty Tablet, Knowledge Demon, other generators, derived Mod types, and unknown sources fail closed |
 | exact Headbutt/Graveblast `combat_pile_card_selection` | source-scoped canary; final-artifact Organic runs completed Headbutt draw-top three times and Graveblast hand selection twice after the impossible aggregate-count witness was removed | exact source task, visible discard candidates, source-discriminated draw-top versus hand/full-hand-discard exact-card witness; played source-card destination is correctly outside the selected-card transaction | repeated diversity remains; this is not qualification |
-| exact Cleanse `combat_pile_card_selection` | source-audited Release candidate; installed but not loaded or Organic-tested | exact `Cleanse.OnPlay -> CardSelectCmd.FromCombatPile(Draw, 1) -> CardCmd.Exhaust`; visible draw-pile single pick and selected-reference draw-to-exhaust witness | no current runtime authority/evidence until a bounded cold-start canary; Dredge, Seance, and every other source remain fail closed |
+| exact Cleanse `combat_pile_card_selection` | source-scoped Organic canary on prior Preview.57 identity; not current-build qualified | run `run-20260723105825-69ohhl` completed `select_draw_card_for_exhaust` with exact source/screen/card-move witness | evidence does not transfer to Preview.59; repeated current-build diversity remains |
+| exact Seance `combat_pile_card_selection` | source-scoped loaded canary; no current-artifact Organic action yet | exact `Seance.OnPlay -> FromCombatPile(Draw, 1) -> TransformTo<Soul>`; exact original absence and same-index new-Soul witness; strict Re branch | run one bounded current-build lifecycle |
+| exact Dredge `combat_pile_card_selection` | Preview.59 source-scoped current-build canary; not qualified | real-game Re canary exercised `0 -> 1 -> 0 -> 1 -> 2 -> auto-commit 3`; exact selected references moved discard to hand and counts changed `5 -> 2` | dynamic hand-capacity counts 1/2 and repeated natural diversity remain; direct no-selector completion must not be misread as a missing Surface |
 | `event_dialogue` | canary | repeated v0.109 revealed-prefix advances with exact index witness | non-Neow/other ancient dialogue diversity remains evidence debt |
 | `event_option` | canary | typed text/card hover semantics, Neow Talisman effect, ordinary event replacement options, async `Nab the Map -> Proceed`, and Proceed to map | lethal-option and more linked-child diversity remain evidence debt |
 | `run_deck` Inspection | qualified read-only | exact removal, upgrade, enchant, bundle post-states | no arbitrary query or action authority |
@@ -89,7 +96,7 @@ The `1833084275` environment inherits no permission from the current loaded
 
 | Contract | Historical evidence | Why disabled now |
 |---|---|---|
-| non-Headbutt/non-Graveblast/non-Cleanse `combat_pile_card_selection` origins | mixed historical and fresh loaded-identity child appearances | Cleanse is only a not-yet-loaded source-audited candidate; Dredge, Seance, and all other purposes remain source-unresolved and fail closed |
+| non-Headbutt/non-Graveblast/non-Cleanse/non-Seance/non-Dredge `combat_pile_card_selection` origins | mixed historical and fresh loaded-identity child appearances | all other purposes remain source-unresolved and fail closed |
 
 ## Unsupported Or Legacy-Owned
 

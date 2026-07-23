@@ -14,6 +14,8 @@ import {
   type CombatTurnSurface,
   type DeckEnchantSelectionSurface,
   type DeckRemovalSelectionSurface,
+  type RelicDeckRemovalSelectionSurface,
+  type RewardDeckRemovalSelectionSurface,
   type DeckUpgradeSelectionSurface,
   type DeckTransformSelectionSurface,
   type WoodCarvingsReplacementSelectionSurface,
@@ -50,6 +52,8 @@ import {
   isBridgeV2RewardClaimSurface,
   isBridgeV2DeckEnchantSurface,
   isBridgeV2DeckRemovalSurface,
+  isBridgeV2RelicDeckRemovalSurface,
+  isBridgeV2RewardDeckRemovalSurface,
   isBridgeV2DeckUpgradeSurface,
   isBridgeV2DeckTransformSurface,
   isBridgeV2WoodCarvingsReplacementSurface,
@@ -98,6 +102,8 @@ import {
   type BridgeV2MapNavigationSurface,
   type BridgeV2DeckEnchantSurface,
   type BridgeV2DeckRemovalSurface,
+  type BridgeV2RelicDeckRemovalSurface,
+  type BridgeV2RewardDeckRemovalSurface,
   type BridgeV2DeckUpgradeSurface,
   type BridgeV2DeckTransformSurface,
   type BridgeV2WoodCarvingsReplacementSurface,
@@ -137,6 +143,20 @@ const ACTION_KINDS = {
     "cancel_deck_removal_preview",
     "cancel_deck_removal_selection"
   ]),
+  relic_deck_removal_selection: new Set([
+    "toggle_deck_removal_card",
+    "preview_deck_removal",
+    "confirm_deck_removal",
+    "cancel_deck_removal_preview",
+    "cancel_deck_removal_selection"
+  ]),
+  reward_deck_removal_selection: new Set([
+    "toggle_deck_removal_card",
+    "preview_deck_removal",
+    "confirm_deck_removal",
+    "cancel_deck_removal_preview",
+    "cancel_deck_removal_selection"
+  ]),
   deck_upgrade_selection: new Set([
     "toggle_deck_upgrade_card",
     "confirm_deck_upgrade",
@@ -162,7 +182,10 @@ const ACTION_KINDS = {
   combat_turn: new Set(["play_card", "use_potion", "end_turn"]),
   combat_pile_card_selection: new Set([
     "select_discard_card_for_draw_top",
-    "select_discard_card_for_hand"
+    "select_discard_card_for_hand",
+    "select_draw_card_for_exhaust",
+    "select_draw_card_for_soul_transform",
+    "toggle_discard_card_for_dredge"
   ]),
   combat_hand_card_selection: new Set([
     "select_combat_hand_card",
@@ -554,6 +577,12 @@ export function normalizeBridgeV2CurrentState(
       } else if (isBridgeV2DeckRemovalSurface(state.surface) && isBridgeV2ShopContext(state.context)) {
         validateDeckRemovalState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
         surface = projectDeckRemovalSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
+      } else if (isBridgeV2RelicDeckRemovalSurface(state.surface)) {
+        validateDeckRemovalState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
+        surface = projectRelicDeckRemovalSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
+      } else if (isBridgeV2RewardDeckRemovalSurface(state.surface)) {
+        validateDeckRemovalState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
+        surface = projectRewardDeckRemovalSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
       } else if (isBridgeV2DeckUpgradeSurface(state.surface)
           && (isBridgeV2EventContext(state.context) || isBridgeV2RestContext(state.context))) {
         validateDeckUpgradeState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
@@ -778,6 +807,8 @@ function validateEnvelopeIdentity(
   if (state.game.version !== capabilities.game.version
       || state.game.commit !== capabilities.game.commit
       || state.game.main_assembly_hash !== capabilities.game.main_assembly_hash
+      || state.game.release_declared_main_assembly_hash
+        !== capabilities.game.release_declared_main_assembly_hash
       || !sameBridgeModsetIdentity(state.game, capabilities.game)) {
     diagnostics.invalid("bridge_v2.game.identity", state.game, "state and capabilities game identities differ");
   }
@@ -902,7 +933,7 @@ function validateDeckEnchantState(
 }
 
 function validateDeckRemovalState(
-  surface: BridgeV2DeckRemovalSurface,
+  surface: BridgeV2DeckRemovalSurface | BridgeV2RelicDeckRemovalSurface | BridgeV2RewardDeckRemovalSurface,
   stateId: string,
   actions: BridgeV2LegalAction[],
   missing: string[],
@@ -911,7 +942,7 @@ function validateDeckRemovalState(
   diagnostics: DiagnosticsBuilder
 ): void {
   validateDeckRemovalFacts(surface, diagnostics);
-  validateActions("deck_removal_selection", stateId, actions, missing, advertisedOperations, readiness, diagnostics);
+  validateActions(surface.kind, stateId, actions, missing, advertisedOperations, readiness, diagnostics);
   for (const action of actions) {
     if (surface.stage === "selecting" && (action.kind === "confirm_deck_removal" || action.kind === "cancel_deck_removal_preview")) diagnostics.invalid("bridge_v2.legal_actions.kind", action.kind, "preview-only action appeared during selecting stage");
     if (surface.stage === "preview" && (action.kind === "toggle_deck_removal_card" || action.kind === "preview_deck_removal" || action.kind === "cancel_deck_removal_selection")) diagnostics.invalid("bridge_v2.legal_actions.kind", action.kind, "selecting-only action appeared during preview stage");
@@ -919,7 +950,7 @@ function validateDeckRemovalState(
 }
 
 function validateDeckRemovalFacts(
-  surface: BridgeV2DeckRemovalSurface,
+  surface: BridgeV2DeckRemovalSurface | BridgeV2RelicDeckRemovalSurface | BridgeV2RewardDeckRemovalSurface,
   diagnostics: DiagnosticsBuilder
 ): void {
   validateBoundedCardSelectionFacts(surface, diagnostics);
@@ -1666,6 +1697,28 @@ function validateCombatPileCardSelectionState(
   if (surface.selected_count > surface.max_select) {
     diagnostics.invalid("bridge_v2.surface.selected_count", surface.selected_count, "selected count exceeds max_select");
   }
+  if (surface.source_kind === "dredge") {
+    if (surface.min_select !== surface.max_select
+        || surface.min_select < 1
+        || surface.max_select > 3
+        || surface.require_manual_confirmation
+        || surface.cancelable) {
+      diagnostics.invalid(
+        "bridge_v2.surface.dredge_selection_contract",
+        surface,
+        "Dredge requires an exact dynamic 1..3 selection count, automatic final commit, and no cancel"
+      );
+    }
+  } else if (surface.min_select !== 1
+             || surface.max_select !== 1
+             || surface.require_manual_confirmation
+             || surface.cancelable) {
+    diagnostics.invalid(
+      "bridge_v2.surface.single_pick_contract",
+      surface,
+      `${surface.source_kind} requires exact-one automatic selection with no cancel`
+    );
+  }
   const cardIds = new Set(surface.cards.map((card) => card.entity_id));
   if (cardIds.size !== surface.cards.length) {
     diagnostics.invalid("bridge_v2.surface.cards", surface.cards, "combat-pile card entity ids are not unique");
@@ -1682,9 +1735,7 @@ function validateCombatPileCardSelectionState(
     }
   }
   validateActions("combat_pile_card_selection", stateId, actions, missing, advertisedOperations, readiness, diagnostics);
-  const expectedActionKind = surface.source_kind === "headbutt"
-    ? "select_discard_card_for_draw_top"
-    : "select_discard_card_for_hand";
+  const expectedActionKind = combatPileSelectionContract(surface.source_kind).operation;
   for (const action of actions) {
     if (action.kind !== expectedActionKind) {
       diagnostics.invalid(
@@ -1698,11 +1749,10 @@ function validateCombatPileCardSelectionState(
       ? surface.cards.find((card) => card.entity_id === cardBindings[0]!.entity_id)
       : undefined;
     if (!boundCard) {
-      diagnostics.invalid("bridge_v2.legal_actions.entity_bindings", action.entity_bindings, `${surface.source_kind} selection must bind exactly one visible discard card`);
+      diagnostics.invalid("bridge_v2.legal_actions.entity_bindings", action.entity_bindings, `${surface.source_kind} selection must bind exactly one visible ${surface.pile_type} card`);
     } else {
-      const expectedLabel = surface.source_kind === "headbutt"
-        ? `Put ${boundCard.name ?? boundCard.definition_id} on top of the Draw Pile`
-        : `Put ${boundCard.name ?? boundCard.definition_id} back in your Hand`;
+      const expectedLabel = combatPileSelectionContract(surface.source_kind)
+        .label(boundCard.name ?? boundCard.definition_id, boundCard.is_selected);
       if (action.label !== expectedLabel) {
         diagnostics.invalid("bridge_v2.legal_actions.label", action.label, `${surface.source_kind} action label disagrees with its exact visible card and destination`);
       }
@@ -2603,6 +2653,52 @@ function projectDeckRemovalSurface(
   };
 }
 
+function projectRelicDeckRemovalSurface(
+  surface: BridgeV2RelicDeckRemovalSurface,
+  stateId: string,
+  actions: BridgeV2LegalAction[],
+  completeness: RawCompleteness
+): RelicDeckRemovalSelectionSurface {
+  return {
+    kind: "relic_deck_removal_selection",
+    stage: surface.stage,
+    bridgeStateId: stateId,
+    screenEntityId: surface.screen_entity_id,
+    prompt: surface.prompt,
+    minimumSelections: surface.min_select,
+    maximumSelections: surface.max_select,
+    selectedCount: surface.selected_count,
+    selectedCardEntityIds: [...surface.selected_card_entity_ids],
+    cancelable: surface.cancelable,
+    cards: surface.cards.map(projectBridgeV2Card),
+    legalActions: projectActions(actions),
+    completeness: projectCompleteness(completeness)
+  };
+}
+
+function projectRewardDeckRemovalSurface(
+  surface: BridgeV2RewardDeckRemovalSurface,
+  stateId: string,
+  actions: BridgeV2LegalAction[],
+  completeness: RawCompleteness
+): RewardDeckRemovalSelectionSurface {
+  return {
+    kind: "reward_deck_removal_selection",
+    stage: surface.stage,
+    bridgeStateId: stateId,
+    screenEntityId: surface.screen_entity_id,
+    prompt: surface.prompt,
+    minimumSelections: surface.min_select,
+    maximumSelections: surface.max_select,
+    selectedCount: surface.selected_count,
+    selectedCardEntityIds: [...surface.selected_card_entity_ids],
+    cancelable: surface.cancelable,
+    cards: surface.cards.map(projectBridgeV2Card),
+    legalActions: projectActions(actions),
+    completeness: projectCompleteness(completeness)
+  };
+}
+
 function projectDeckUpgradeSurface(
   surface: BridgeV2DeckUpgradeSurface,
   stateId: string,
@@ -3040,8 +3136,9 @@ function projectCombatPileCardSelectionSurface(
     legalActions: projectActions(actions),
     completeness: projectCompleteness(completeness)
   };
-  return surface.source_kind === "graveblast"
-    ? {
+  switch (surface.source_kind) {
+    case "graveblast":
+      return {
         ...base,
         purpose: surface.purpose,
         sourceKind: surface.source_kind,
@@ -3049,8 +3146,9 @@ function projectCombatPileCardSelectionSurface(
         destinationPile: surface.destination_pile,
         destinationPosition: surface.destination_position,
         overflowDestination: surface.overflow_destination
-      }
-    : {
+      };
+    case "headbutt":
+      return {
         ...base,
         purpose: surface.purpose,
         sourceKind: surface.source_kind,
@@ -3058,6 +3156,74 @@ function projectCombatPileCardSelectionSurface(
         destinationPile: surface.destination_pile,
         destinationPosition: surface.destination_position
       };
+    case "cleanse":
+      return {
+        ...base,
+        purpose: surface.purpose,
+        sourceKind: surface.source_kind,
+        sourceCardDefinitionId: surface.source_card_definition_id,
+        pileType: surface.pile_type,
+        destinationPile: surface.destination_pile,
+        destinationPosition: surface.destination_position
+      };
+    case "seance":
+      return {
+        ...base,
+        purpose: surface.purpose,
+        sourceKind: surface.source_kind,
+        sourceCardDefinitionId: surface.source_card_definition_id,
+        pileType: surface.pile_type,
+        destinationPile: surface.destination_pile,
+        destinationPosition: surface.destination_position,
+        overflowDestination: surface.overflow_destination ?? null
+      };
+    case "dredge":
+      return {
+        ...base,
+        purpose: surface.purpose,
+        sourceKind: surface.source_kind,
+        sourceCardDefinitionId: surface.source_card_definition_id,
+        pileType: surface.pile_type,
+        destinationPile: surface.destination_pile,
+        destinationPosition: surface.destination_position,
+        overflowDestination: surface.overflow_destination ?? null
+      };
+  }
+}
+
+function combatPileSelectionContract(sourceKind: BridgeV2CombatPileCardSelectionSurface["source_kind"]): {
+  operation: string;
+  label: (cardName: string, selected?: boolean) => string;
+} {
+  switch (sourceKind) {
+    case "headbutt":
+      return {
+        operation: "select_discard_card_for_draw_top",
+        label: (cardName) => `Put ${cardName} on top of the Draw Pile`
+      };
+    case "graveblast":
+      return {
+        operation: "select_discard_card_for_hand",
+        label: (cardName) => `Put ${cardName} back in your Hand`
+      };
+    case "cleanse":
+      return {
+        operation: "select_draw_card_for_exhaust",
+        label: (cardName) => `Exhaust ${cardName}`
+      };
+    case "seance":
+      return {
+        operation: "select_draw_card_for_soul_transform",
+        label: (cardName) => `Transform ${cardName} into Soul`
+      };
+    case "dredge":
+      return {
+        operation: "toggle_discard_card_for_dredge",
+        label: (cardName, selected = false) => selected
+          ? `Deselect ${cardName} from Dredge`
+          : `Select ${cardName} for Dredge`
+      };
+  }
 }
 
 function projectCombatHandCardSelectionSurface(

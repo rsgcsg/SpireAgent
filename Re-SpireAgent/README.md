@@ -1,7 +1,8 @@
 # Re-SpireAgent RE-P1
 
 > Compatibility status, 2026-07-22: Re and C# now share
-> `2.0-preview.56`, including explicit operation scopes and the Gateway
+> `2.0-preview.59`, including explicit operation scopes, actual loaded-game
+> assembly identity, and the Gateway
 > assembly digest. Connector Gate 0 is closed on the exact loaded artifact; see
 > the [Gate 0 closeout](../STS2MCP/docs/bridge-v2/CONNECTOR_G0_CLOSEOUT_2026-07-22.md).
 
@@ -21,8 +22,10 @@ waits for the Bridge command lifecycle, and records the complete evidence.
 
 RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, shadow/live modes, policy promotion, or the old project's phase machinery. Its job is to make one decision path correct and auditable.
 
-Re's current strict client contract is Bridge `2.0-preview.56` on exact game
-identity `v0.109.0|c12f634d|-840572606`. Re requires capabilities and every
+Re's current strict client contract is Bridge `2.0-preview.59` on exact game
+identity `v0.109.0|c12f634d|-1639417500`. The separate
+`release_declared_main_assembly_hash=-840572606` is diagnostic provenance, not
+permission authority. Re requires capabilities and every
 state/bundle/Inspection to agree on protocol, game identity, exact Modset
 fingerprint, Bridge assembly SHA-256, module MVID, and runtime instance. An
 additional, failed, runtime-added, or mismatched Mod cannot import action or
@@ -98,6 +101,14 @@ current-build canaries until their final-MVID actions naturally recur.
 The abandoned `.56` Discovery experiment is not part of the current contract:
 the C# Gateway has no current source binding for Discovery, so Re rejects that
 unknown generated-card source rather than inferring shared mechanics.
+
+Preview.59 adds only exact Dredge to the existing
+`combat_pile_card_selection` mechanics. Re requires
+`sourceKind=dredge`, exact bounded one-to-three selection, no manual confirm or
+cancel, and the `toggle_discard_card_for_dredge` operation. A current-build Re
+canary proved select, deselect, intermediate selected-set preservation, and
+automatic exact-three discard-to-hand completion. This does not authorize a
+generic multi-selector or any other source.
 
 Exact no-input combat setup and post-combat resolution intervals normalize as
 `combat_transition(setup|resolution) + no_action + settling +
@@ -387,7 +398,7 @@ The only supported public TypeScript entrypoint is `src/index.ts`. Integration r
   map, rest, shop, treasure, and a boss fight. This is historical protocol
   evidence only. The game REST service and Re production defaults no longer
   route actions through v1.
-- Bridge v2 source `preview.56` is current. The current exact v0.109 build has
+- Bridge v2 source `preview.57` is current. The current exact v0.109 build has
   no qualified operation; all executable operation scopes are explicit
   canaries. Historical source-target qualifications do not transfer.
   Final-MVID real-game windows recorded 46 ticks and then 20/20 settled ticks;

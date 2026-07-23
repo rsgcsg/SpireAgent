@@ -65,6 +65,8 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
           game_version: bridge.game.version ?? null,
           game_commit: bridge.game.commit ?? null,
           main_assembly_hash: bridge.game.main_assembly_hash ?? null,
+          release_declared_main_assembly_hash:
+            bridge.game.release_declared_main_assembly_hash ?? null,
           modset_status: bridge.game.modset.status,
           modset_fingerprint: bridge.game.modset.fingerprint,
           modset_exact_permission_eligible: bridge.game.modset.exact_permission_eligible,

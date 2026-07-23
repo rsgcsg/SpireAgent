@@ -2,11 +2,11 @@
 
 Status: canonical architecture boundary for the current real-game connection.
 
-Current compatibility status: C# and Re share `2.0-preview.56`, including
-operation scopes and a Gateway artifact digest. Until a Release artifact is
-installed and its loaded identity is verified, this document defines the
-intended ownership boundary, not proof that a clean checkout negotiates end to
-end.
+Current compatibility status: C# and Re share `2.0-preview.59`, including
+operation scopes, a Gateway artifact digest, and separate actual-loaded versus
+release-declared game assembly hashes. The current Release is installed and
+loaded; that proves negotiation and identity reporting, not complete Surface
+qualification.
 
 Consumer distribution, local trust, Companion, BYOK, SDK, and release gates are
 defined in the [productization architecture audit](../../../docs/current/audits/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md).

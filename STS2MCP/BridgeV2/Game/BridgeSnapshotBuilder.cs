@@ -25,6 +25,8 @@ internal static class BridgeSnapshotBuilder
     {
         new("deck_enchant_selection", static () => new DeckEnchantSurfaceProvider()),
         new("deck_removal_selection", static () => new DeckRemovalSelectionSurfaceProvider()),
+        new("relic_deck_removal_selection", static () => new PreciseScissorsRemovalSurfaceProvider()),
+        new("reward_deck_removal_selection", static () => new RewardCardRemovalSurfaceProvider()),
         new("deck_upgrade_selection", static () => new DeckUpgradeSelectionSurfaceProvider()),
         new("deck_transform_selection", static () => new DeckTransformSelectionSurfaceProvider()),
         new("wood_carvings_replacement_selection", static () => new WoodCarvingsReplacementSurfaceProvider()),

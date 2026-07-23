@@ -12,12 +12,14 @@ and do not define the current architecture, permission model, or roadmap.
 
 ## Current Truth
 
-The active connector now shares a `2.0-preview.56` contract between C# and
+The active connector now shares a `2.0-preview.59` contract between C# and
 Re-SpireAgent. A Release DLL was installed and loaded by Steam with a matching
 SHA/MVID, and Re completed exact-state action/completion journeys that closed
-Gate 0. Gate 1 operation-level reliability, coverage, visible-information
-closure, and v1 retirement remain active; current evidence does not authorize
-wildcard coverage or consumer rollout.
+Gate 0. Gate 1 additionally has a current-build, source-scoped Dredge
+multi-selection canary with intermediate and exact-batch completion evidence.
+Gate 1 operation-level reliability, coverage, visible-information closure, and
+v1 retirement remain active; current evidence does not authorize wildcard
+coverage or consumer rollout.
 
 Bridge v2's safety kernel remains the current direction: one active input
 owner, opaque state-bound actions, execute-time validation, semantic completion,

@@ -1,7 +1,7 @@
 # Real Productization Architecture Audit And Roadmap
 
 > Current-status redirect, 2026-07-23: Connector Gate 0 is closed on the shared
-> `2.0-preview.56` contract; Re is v2-only and Gateway v1 POST is disabled by
+> `2.0-preview.59` contract; Re is v2-only and Gateway v1 POST is disabled by
 > default. Gate 1 remains active. The baseline table and dated post-audit notes
 > below preserve what was known when this audit was written; they are not
 > current runtime truth. See `../STATUS.md` and the Connector evidence for the
@@ -104,10 +104,11 @@ The audit was performed after fetching `origin/develop`.
 | `HEAD`, `origin/develop`, `FETCH_HEAD` | `79bb9d01e11ae7ad5b614cf42eb05e377143a83d` | Git |
 | Worktree at audit start | clean | Git |
 | Local STS2 release | `v0.109.0`, commit `c12f634d`, branch `v0.109.0` | installed `release_info.json` |
-| Local STS2 `main_assembly_hash` | `-840572606` | installed `release_info.json` |
+| Local STS2 actual loaded `main_assembly_hash` | `-1639417500` | game `AssemblyHasher` plus current Gateway runtime |
+| Local STS2 release-declared hash | `-840572606` | installed `release_info.json`; diagnostic only |
 | Local arm64 `sts2.dll` SHA-256 | `06c78d946ca70658e85abb28f6dc2ee0a023a4467faf0708ff542180fe5f4c82` | installed file |
 | C# Bridge protocol | `2.0-preview.54` | source |
-| Re protocol | `2.0-preview.56` | source |
+| Re protocol | `2.0-preview.59` | source and loaded negotiation |
 | Existing Release/installed Gateway DLL SHA-256 | `7bf3abca5f20594077b31f8e400ef0b27643353846256cb59cb633418a59a8b3` | local files |
 | Current game process | not running during this audit | process observation |
 | Current loaded Gateway/Modset identity | not established | missing runtime evidence |

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -52,6 +53,21 @@ internal static class CombatPileSelectionSourceBinding
         IReadOnlyList<CardModel> BaselineExhaust)
         : SourceBinding(Token, Player, Cleanse, BaselineDraw);
 
+    internal sealed record SeanceBinding(
+        Guid Token,
+        Player Player,
+        Seance Seance,
+        IReadOnlyList<CardModel> BaselineDraw)
+        : SourceBinding(Token, Player, Seance, BaselineDraw);
+
+    internal sealed record DredgeBinding(
+        Guid Token,
+        Player Player,
+        Dredge Dredge,
+        IReadOnlyList<CardModel> BaselineDiscard,
+        IReadOnlyList<CardModel> BaselineHand)
+        : SourceBinding(Token, Player, Dredge, BaselineDiscard);
+
     internal readonly record struct Scope(Guid Token)
     {
         public bool IsTracked => Token != Guid.Empty;
@@ -80,17 +96,67 @@ internal static class CombatPileSelectionSourceBinding
                 graveblast,
                 combat.DiscardPile.Cards.ToArray(),
                 combat.Hand.Cards.ToArray()),
-            Cleanse cleanse => new CleanseBinding(
-                token,
-                player,
-                cleanse,
-                combat.DrawPile.Cards.ToArray(),
-                combat.ExhaustPile.Cards.ToArray()),
             _ => null
         };
         if (binding == null)
             return default;
 
+        lock (Gate)
+            Active.Add(binding.Token, binding);
+        return new Scope(binding.Token);
+    }
+
+    internal static Scope BeginCleanse(Cleanse cleanse)
+    {
+        if (cleanse.Owner is not Player player
+            || player.PlayerCombatState is not { } combat)
+        {
+            return default;
+        }
+
+        var binding = new CleanseBinding(
+            Guid.NewGuid(),
+            player,
+            cleanse,
+            combat.DrawPile.Cards.ToArray(),
+            combat.ExhaustPile.Cards.ToArray());
+        lock (Gate)
+            Active.Add(binding.Token, binding);
+        return new Scope(binding.Token);
+    }
+
+    internal static Scope BeginSeance(Seance seance)
+    {
+        if (seance.Owner is not Player player
+            || player.PlayerCombatState is not { } combat)
+        {
+            return default;
+        }
+
+        var binding = new SeanceBinding(
+            Guid.NewGuid(),
+            player,
+            seance,
+            combat.DrawPile.Cards.ToArray());
+        lock (Gate)
+            Active.Add(binding.Token, binding);
+        return new Scope(binding.Token);
+    }
+
+    internal static Scope BeginDredge(Dredge dredge)
+    {
+        if (dredge.Owner is not Player player
+            || player.PlayerCombatState is not { } combat)
+        {
+            return default;
+        }
+
+        var binding = new DredgeBinding(
+            Guid.NewGuid(),
+            player,
+            dredge,
+            combat.DiscardPile.Cards.ToArray(),
+            combat.Hand.Cards.ToArray());
         lock (Gate)
             Active.Add(binding.Token, binding);
         return new Scope(binding.Token);
@@ -146,6 +212,105 @@ internal static class CombatPileSelectionCardPlayPatch
         out CombatPileSelectionSourceBinding.Scope __state)
     {
         __state = CombatPileSelectionSourceBinding.Begin(__instance);
+    }
+
+    private static void Postfix(
+        ref Task __result,
+        CombatPileSelectionSourceBinding.Scope __state)
+    {
+        if (__state.IsTracked)
+            __result = CombatPileSelectionSourceBinding.Complete(__result, __state);
+    }
+}
+
+/// <summary>
+/// Cleanse owns its pile choice inside the card-specific OnPlay task. Binding
+/// that exact task keeps source evidence local to the business effect and
+/// avoids depending on the broader wrapper lifecycle used by older sources.
+/// </summary>
+[HarmonyPatch]
+internal static class CleanseCombatPileSelectionSourcePatch
+{
+    internal static MethodBase ResolveTargetMethod() =>
+        AccessTools.DeclaredMethod(
+            typeof(Cleanse),
+            "OnPlay",
+            new[] { typeof(PlayerChoiceContext), typeof(CardPlay) })
+        ?? throw new MissingMethodException(typeof(Cleanse).FullName, "OnPlay");
+
+    private static MethodBase TargetMethod() => ResolveTargetMethod();
+
+    private static void Prefix(
+        Cleanse __instance,
+        out CombatPileSelectionSourceBinding.Scope __state)
+    {
+        __state = CombatPileSelectionSourceBinding.BeginCleanse(__instance);
+    }
+
+    private static void Postfix(
+        ref Task __result,
+        CombatPileSelectionSourceBinding.Scope __state)
+    {
+        if (__state.IsTracked)
+            __result = CombatPileSelectionSourceBinding.Complete(__result, __state);
+    }
+}
+
+/// <summary>
+/// Seance uses the same combat-pile screen as Cleanse but replaces the chosen
+/// draw-pile card with a new Soul instance. Keep its exact OnPlay task as the
+/// source binding so shared selector mechanics do not erase business purpose.
+/// </summary>
+[HarmonyPatch]
+internal static class SeanceCombatPileSelectionSourcePatch
+{
+    internal static MethodBase ResolveTargetMethod() =>
+        AccessTools.DeclaredMethod(
+            typeof(Seance),
+            "OnPlay",
+            new[] { typeof(PlayerChoiceContext), typeof(CardPlay) })
+        ?? throw new MissingMethodException(typeof(Seance).FullName, "OnPlay");
+
+    private static MethodBase TargetMethod() => ResolveTargetMethod();
+
+    private static void Prefix(
+        Seance __instance,
+        out CombatPileSelectionSourceBinding.Scope __state)
+    {
+        __state = CombatPileSelectionSourceBinding.BeginSeance(__instance);
+    }
+
+    private static void Postfix(
+        ref Task __result,
+        CombatPileSelectionSourceBinding.Scope __state)
+    {
+        if (__state.IsTracked)
+            __result = CombatPileSelectionSourceBinding.Complete(__result, __state);
+    }
+}
+
+/// <summary>
+/// Dredge has a bounded multi-pick transaction whose exact count depends on
+/// current hand capacity. Bind the card-specific task so intermediate selected
+/// states remain attributable without granting generic pile-grid authority.
+/// </summary>
+[HarmonyPatch]
+internal static class DredgeCombatPileSelectionSourcePatch
+{
+    internal static MethodBase ResolveTargetMethod() =>
+        AccessTools.DeclaredMethod(
+            typeof(Dredge),
+            "OnPlay",
+            new[] { typeof(PlayerChoiceContext), typeof(CardPlay) })
+        ?? throw new MissingMethodException(typeof(Dredge).FullName, "OnPlay");
+
+    private static MethodBase TargetMethod() => ResolveTargetMethod();
+
+    private static void Prefix(
+        Dredge __instance,
+        out CombatPileSelectionSourceBinding.Scope __state)
+    {
+        __state = CombatPileSelectionSourceBinding.BeginDredge(__instance);
     }
 
     private static void Postfix(
@@ -230,6 +395,116 @@ internal static class CleanseCombatPileWitness
         && !ContainsReference(baselineExhaust, selectedCard)
         && !ContainsReference(currentDraw, selectedCard)
         && ContainsReference(currentExhaust, selectedCard);
+
+    private static bool ContainsReference<T>(IEnumerable<T> cards, T expected) where T : class =>
+        cards.Any(card => ReferenceEquals(card, expected));
+}
+
+internal static class SeanceCombatPileWitness
+{
+    internal static bool Selected<T>(
+        bool sourceCompleted,
+        bool surfaceClosed,
+        IReadOnlyList<T> baselineDraw,
+        IReadOnlyList<T> currentDraw,
+        T selectedCard,
+        Func<T, bool> isSoul) where T : class
+    {
+        int selectedIndex = IndexOfReference(baselineDraw, selectedCard);
+        if (!sourceCompleted
+            || !surfaceClosed
+            || selectedIndex < 0
+            || currentDraw.Count != baselineDraw.Count
+            || ContainsReference(currentDraw, selectedCard))
+        {
+            return false;
+        }
+
+        T replacement = currentDraw[selectedIndex];
+        return isSoul(replacement)
+               && !ContainsReference(baselineDraw, replacement);
+    }
+
+    private static int IndexOfReference<T>(IReadOnlyList<T> cards, T expected) where T : class
+    {
+        for (int index = 0; index < cards.Count; index++)
+        {
+            if (ReferenceEquals(cards[index], expected))
+                return index;
+        }
+        return -1;
+    }
+
+    private static bool ContainsReference<T>(IEnumerable<T> cards, T expected) where T : class =>
+        cards.Any(card => ReferenceEquals(card, expected));
+}
+
+internal static class DredgeCombatPileWitness
+{
+    internal static bool SelectionChanged<T>(
+        bool sourceActive,
+        bool surfaceOpen,
+        IReadOnlyCollection<T> baselineDiscard,
+        IReadOnlyCollection<T> baselineHand,
+        IReadOnlyCollection<T> currentDiscard,
+        IReadOnlyCollection<T> currentHand,
+        IReadOnlyCollection<T> previousSelection,
+        IReadOnlyCollection<T> currentSelection,
+        T toggledCard,
+        bool wasSelected) where T : class
+    {
+        if (!sourceActive
+            || !surfaceOpen
+            || !SameReferences(baselineDiscard, currentDiscard)
+            || !SameReferences(baselineHand, currentHand))
+        {
+            return false;
+        }
+
+        var expected = previousSelection
+            .Where(card => !ReferenceEquals(card, toggledCard))
+            .ToList();
+        if (!wasSelected)
+            expected.Add(toggledCard);
+
+        return SameReferences(expected, currentSelection);
+    }
+
+    internal static bool Completed<T>(
+        bool sourceCompleted,
+        bool surfaceClosed,
+        IReadOnlyCollection<T> baselineDiscard,
+        IReadOnlyCollection<T> baselineHand,
+        IReadOnlyCollection<T> currentDiscard,
+        IReadOnlyCollection<T> currentHand,
+        IReadOnlyCollection<T> selectedCards,
+        int expectedSelectionCount) where T : class
+    {
+        if (!sourceCompleted
+            || !surfaceClosed
+            || selectedCards.Count != expectedSelectionCount
+            || currentDiscard.Count != baselineDiscard.Count - selectedCards.Count
+            || currentHand.Count != baselineHand.Count + selectedCards.Count
+            || !baselineHand.All(card => ContainsReference(currentHand, card)))
+        {
+            return false;
+        }
+
+        return selectedCards.All(card =>
+                   ContainsReference(baselineDiscard, card)
+                   && !ContainsReference(baselineHand, card)
+                   && !ContainsReference(currentDiscard, card)
+                   && ContainsReference(currentHand, card))
+               && baselineDiscard
+                   .Where(card => !ContainsReference(selectedCards, card))
+                   .All(card => ContainsReference(currentDiscard, card));
+    }
+
+    private static bool SameReferences<T>(
+        IReadOnlyCollection<T> expected,
+        IReadOnlyCollection<T> actual) where T : class =>
+        expected.Count == actual.Count
+        && expected.All(card => ContainsReference(actual, card));
 
     private static bool ContainsReference<T>(IEnumerable<T> cards, T expected) where T : class =>
         cards.Any(card => ReferenceEquals(card, expected));

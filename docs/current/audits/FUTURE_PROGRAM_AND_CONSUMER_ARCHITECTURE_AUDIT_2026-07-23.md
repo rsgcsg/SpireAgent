@@ -62,7 +62,7 @@
 
 - `Re-SpireAgent/` 与 `STS2MCP/` 是当前主线；原 root runtime 和 P8-P15 已归档。
   **证据：A。**
-- Connector Contract 当前为 `2.0-preview.56`，Gate 0 已关闭，Gate 1 活跃。
+- Connector Contract 当前为 `2.0-preview.59`，Gate 0 已关闭，Gate 1 活跃。
   **证据：A/B，详见 current status 与组件证据。**
 - Gateway 拥有玩家可见事实、动作发布、执行校验和 completion；Re 只选择广告动作。
   **证据：A。**

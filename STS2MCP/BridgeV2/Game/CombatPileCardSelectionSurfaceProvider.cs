@@ -7,6 +7,7 @@ using MegaCrit.Sts2.Core.CardSelection;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Nodes.Cards;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
@@ -19,15 +20,14 @@ namespace STS2_MCP.BridgeV2.Game;
 
 /// <summary>
 /// Exact-build adapter for source-discriminated selections from a combat pile.
-/// Headbutt, Graveblast, and Cleanse share exact-one selection mechanics, but
-/// retain independent source piles, business semantics, and post-state
-/// witnesses. Every other caller of the same game screen remains fail closed.
+/// Headbutt, Graveblast, Cleanse, Seance, and Dredge share bounded card-grid
+/// mechanics, but retain independent source piles, selection cardinality,
+/// business semantics, and post-state witnesses. Every other caller of the
+/// same game screen remains fail closed.
 /// </summary>
 internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfaceProvider
 {
     private const string SurfaceKind = "combat_pile_card_selection";
-    private const string ReflectionEvidence =
-        "sts2-v0.109.0:Headbutt/Graveblast.OnPlay+CardSelectCmd.FromCombatPile+NCombatPileCardSelectScreen";
     private const BindingFlags Flags = BindingFlags.Instance | BindingFlags.NonPublic;
 
     private static readonly FieldInfo? ClickableField =
@@ -95,15 +95,13 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
             || source.BaselineSourcePile.Count != exactBinding.Pile.Cards.Count
             || source.BaselineSourcePile.Any(card =>
                 !exactBinding.Pile.Cards.Any(current => ReferenceEquals(current, card)))
-            || exactBinding.Preferences.MinSelect != 1
-            || exactBinding.Preferences.MaxSelect != 1
-            || exactBinding.Preferences.RequireManualConfirmation
+            || !MatchesSelectionContract(source, exactBinding.Preferences)
             || exactBinding.Preferences.Cancelable)
         {
             return BindingUnavailable(
                 game,
                 context,
-                $"The visible selector does not match exact {semantics.SourceKind} {semantics.SourcePile} single-pick semantics.",
+                $"The visible selector does not match exact {semantics.SourceKind} {semantics.SourcePile} selection semantics.",
                 new[] { "source_pile", "selection_constraints", "source_semantics", "legal_actions" });
         }
 
@@ -191,10 +189,9 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
                 "NCardGrid visible holders",
                 "NCardHolder._isClickable exact-version binding",
                 $"{semantics.SourceType}.OnPlay exact source task",
-                "CardSelectCmd.FromCombatPile(discard, exact-one)",
+                $"CardSelectCmd.FromCombatPile({semantics.SourcePile}, source-specific-bounds)",
                 semantics.CommitEvidence,
-                "NCombatPileCardSelectScreen.%BottomLabel",
-                ReflectionEvidence
+                "NCombatPileCardSelectScreen.%BottomLabel"
             },
             Array.Empty<string>());
         string signature = BridgeHash.Object(new
@@ -241,7 +238,7 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
                 $"{semantics.ActionKeyPrefix}:{cardId}",
                 semantics.Operation,
                 "selection",
-                semantics.ActionLabel(cardName),
+                semantics.ActionLabel(cardName, selected),
                 semantics.CommitEvidence,
                 () => StartSelection(screen, source, semantics, card, selected),
                 new[] { new ActionEntityBinding("card", cardId) }));
@@ -272,7 +269,20 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
                 "The advertised combat-pile card or its selected state changed before execution.");
         }
 
+        IReadOnlyList<CardModel> previousSelection = ReadSelectedCards(expectedScreen);
+        bool dredgeCompletes = source is CombatPileSelectionSourceBinding.DredgeBinding
+                               && !expectedSelected
+                               && previousSelection.Count + 1 >= bindingMax(source);
+        IReadOnlyList<CardModel> finalDredgeSelection = dredgeCompletes
+            ? previousSelection.Append(expectedCard).ToArray()
+            : Array.Empty<CardModel>();
+
         grid.EmitSignal(NCardGrid.SignalName.HolderPressed, holder);
+        string completionEvidence = source is CombatPileSelectionSourceBinding.DredgeBinding
+            ? dredgeCompletes
+                ? "dredge_source_completed_screen_closed_and_all_exact_selected_cards_moved_from_discard_to_hand"
+                : "dredge_intermediate_selection_exactly_changed_without_pile_commit"
+            : semantics.CompletionEvidence;
         return BridgeActionStartResult.Started(
             () => source.Player.PlayerCombatState is { } combat
                   && source switch
@@ -305,10 +315,45 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
                               combat.DrawPile.Cards,
                               combat.ExhaustPile.Cards,
                               expectedCard),
+                      CombatPileSelectionSourceBinding.SeanceBinding seance =>
+                          SeanceCombatPileWitness.Selected(
+                              !CombatPileSelectionSourceBinding.IsActive(seance.Token),
+                              !IsCurrent(expectedScreen),
+                              seance.BaselineDraw,
+                              combat.DrawPile.Cards,
+                              expectedCard,
+                              card => card is Soul),
+                      CombatPileSelectionSourceBinding.DredgeBinding dredge =>
+                          dredgeCompletes
+                              ? DredgeCombatPileWitness.Completed(
+                                  !CombatPileSelectionSourceBinding.IsActive(dredge.Token),
+                                  !IsCurrent(expectedScreen),
+                                  dredge.BaselineDiscard,
+                                  dredge.BaselineHand,
+                                  combat.DiscardPile.Cards,
+                                  combat.Hand.Cards,
+                                  finalDredgeSelection,
+                                  bindingMax(dredge))
+                              : DredgeCombatPileWitness.SelectionChanged(
+                                  CombatPileSelectionSourceBinding.IsActive(dredge.Token),
+                                  IsCurrent(expectedScreen),
+                                  dredge.BaselineDiscard,
+                                  dredge.BaselineHand,
+                                  combat.DiscardPile.Cards,
+                                  combat.Hand.Cards,
+                                  previousSelection,
+                                  ReadSelectedCards(expectedScreen),
+                                  expectedCard,
+                                  expectedSelected),
                       _ => false
                   },
-            semantics.CompletionEvidence,
+            completionEvidence,
             allowIntermediateStateChanges: true);
+
+        static int bindingMax(CombatPileSelectionSourceBinding.SourceBinding binding) =>
+            binding is CombatPileSelectionSourceBinding.DredgeBinding dredge
+                ? Math.Min(3, CardPile.MaxCardsInHand - dredge.BaselineHand.Count)
+                : 1;
     }
 
     private static bool TryDescribeSource(
@@ -329,7 +374,7 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
                 "Headbutt.OnPlay+NCardGrid.HolderPressed+CardPileCmd.Add(Draw,Top)+exact-card-witness",
                 "headbutt_select_discard_for_draw_top",
                 "select_discard_card_for_draw_top",
-                cardName => $"Put {cardName} on top of the Draw Pile",
+                (cardName, _) => $"Put {cardName} on top of the Draw Pile",
                 "headbutt_source_completed_screen_closed_and_exact_card_moved_from_discard_to_draw_top"),
             CombatPileSelectionSourceBinding.GraveblastBinding => new SourceSemantics(
                 "move_one_discard_card_to_hand",
@@ -343,7 +388,7 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
                 "Graveblast.OnPlay+NCardGrid.HolderPressed+CardPileCmd.Add(Hand)+exact-card-witness",
                 "graveblast_select_discard_for_hand",
                 "select_discard_card_for_hand",
-                cardName => $"Put {cardName} back in your Hand",
+                (cardName, _) => $"Put {cardName} back in your Hand",
                 "graveblast_source_completed_screen_closed_and_exact_card_moved_from_discard_to_hand_or_full_hand_discard"),
             CombatPileSelectionSourceBinding.CleanseBinding => new SourceSemantics(
                 "exhaust_one_draw_card",
@@ -357,8 +402,38 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
                 "Cleanse.OnPlay+NCardGrid.HolderPressed+CardCmd.Exhaust+exact-card-witness",
                 "cleanse_select_draw_for_exhaust",
                 "select_draw_card_for_exhaust",
-                cardName => $"Exhaust {cardName}",
+                (cardName, _) => $"Exhaust {cardName}",
                 "cleanse_source_completed_screen_closed_and_exact_card_moved_from_draw_to_exhaust"),
+            CombatPileSelectionSourceBinding.SeanceBinding => new SourceSemantics(
+                "transform_one_draw_card_into_soul",
+                "seance",
+                "Seance",
+                "draw",
+                "draw",
+                "same_index",
+                null,
+                "contract_complete_for_seance_draw_card_to_soul_selection",
+                "Seance.OnPlay+NCardGrid.HolderPressed+CardCmd.TransformTo<Soul>+exact-replacement-witness",
+                "seance_select_draw_for_soul_transform",
+                "select_draw_card_for_soul_transform",
+                (cardName, _) => $"Transform {cardName} into Soul",
+                "seance_source_completed_screen_closed_and_exact_draw_card_replaced_by_new_soul_at_same_index"),
+            CombatPileSelectionSourceBinding.DredgeBinding => new SourceSemantics(
+                "move_bounded_discard_cards_to_hand",
+                "dredge",
+                "Dredge",
+                "discard",
+                "hand",
+                "bottom",
+                null,
+                "contract_complete_for_dredge_bounded_discard_to_hand_selection",
+                "Dredge.OnPlay+NCardGrid.HolderPressed+CardPileCmd.Add(Hand)+intermediate-selection-or-exact-batch-witness",
+                "dredge_toggle_discard_for_hand",
+                "toggle_discard_card_for_dredge",
+                (cardName, selected) => selected
+                    ? $"Deselect {cardName} from Dredge"
+                    : $"Select {cardName} for Dredge",
+                "dredge_selection_changed_or_source_completed_with_exact_batch_move"),
             _ => null
         };
         return semantics != null;
@@ -402,6 +477,29 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
     private static bool IsSelected(NCombatPileCardSelectScreen screen, CardModel card) =>
         ReadField(screen, "_selectedCards") is IEnumerable<CardModel> cards
         && cards.Any(selected => ReferenceEquals(selected, card));
+
+    private static IReadOnlyList<CardModel> ReadSelectedCards(NCombatPileCardSelectScreen screen) =>
+        ReadField(screen, "_selectedCards") is IEnumerable<CardModel> cards
+            ? cards.ToArray()
+            : Array.Empty<CardModel>();
+
+    private static bool MatchesSelectionContract(
+        CombatPileSelectionSourceBinding.SourceBinding source,
+        CardSelectorPrefs preferences)
+    {
+        if (preferences.RequireManualConfirmation)
+            return false;
+
+        if (source is CombatPileSelectionSourceBinding.DredgeBinding dredge)
+        {
+            int expected = Math.Min(3, CardPile.MaxCardsInHand - dredge.BaselineHand.Count);
+            return expected > 0
+                   && preferences.MinSelect == expected
+                   && preferences.MaxSelect == expected;
+        }
+
+        return preferences.MinSelect == 1 && preferences.MaxSelect == 1;
+    }
 
     private static bool IsHolderClickable(NCardHolder holder) =>
         ClickableField?.GetValue(holder) is true;
@@ -481,6 +579,6 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
         string CommitEvidence,
         string ActionKeyPrefix,
         string Operation,
-        Func<string, string> ActionLabel,
+        Func<string, bool, string> ActionLabel,
         string CompletionEvidence);
 }

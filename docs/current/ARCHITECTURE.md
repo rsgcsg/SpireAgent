@@ -45,7 +45,7 @@ yet.
 
 ## Current Architectural Constraint
 
-The Gateway and Re now share one mechanically checked `2.0-preview.56`
+The Gateway and Re now share one mechanically checked `2.0-preview.59`
 connector contract, and Gate 0 has exact loaded-runtime lifecycle evidence. The
 current operational boundary is Gate 1: close operation-level reliability,
 visible-information, and v1-retirement gaps under exact identities without

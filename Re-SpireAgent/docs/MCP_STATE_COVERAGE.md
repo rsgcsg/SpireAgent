@@ -8,7 +8,7 @@ matrix. This document records the Re-SpireAgent consumption boundary.
 
 ## Bridge v2 Current Client Contract
 
-Re strictly decodes `2.0-preview.56`. It accepts Bridge actions only when:
+Re strictly decodes `2.0-preview.59`. It accepts Bridge actions only when:
 
 - game, Modset, Bridge assembly SHA-256, MVID, and runtime identities match
   exact scoped capabilities and state;
@@ -30,6 +30,8 @@ artifacts.
 | exact combat setup/resolution no-input transition | `combat_transition(setup|resolution) + no_action + none` | both phases organically observed on current MVID; not an action capability |
 | `combat_hand_card_selection` | `combat + combat_hand_card_selection + bridge_advertised` | current-build canary; exercised in the 50-Tick runtime run |
 | `deck_removal_selection` | `shop + deck_removal_selection + bridge_advertised` | current-build canary; historical semantic evidence only on older identity |
+| exact `Precise Scissors` `relic_deck_removal_selection` | `unknown + relic_deck_removal_selection + bridge_advertised` | source-bound canary is loaded on SHA `4940133...e031c2`; C#/Re contract tests pass, but no Organic lifecycle has run |
+| exact `CardRemovalReward` `reward_deck_removal_selection` | `unknown + reward_deck_removal_selection + bridge_advertised` | Preview.58 full select/preview/confirm/deck-post-state Organic canary passed on SHA `992e6099...e8f15b1`; not qualified |
 | `deck_upgrade_selection` | event/rest parent + purpose-specific child | current-build canary; publication/execution validator is shared |
 | `rest_site` | `rest + rest_site + bridge_advertised` | current-build canary |
 | event acquisition, reward, card reward, map, shop, treasure, card bundle | purpose-specific typed Context + Surface | current-build action canaries |
@@ -40,7 +42,9 @@ artifacts.
 | `deck_enchant_selection` | `event + deck_enchant_selection`, exact target enchantment, selected instances, and selecting/preview stages | Self-Help Book action canary; semantic exact-card post-state confirmed, other origins fail closed |
 | `generated_card_choice` | source-discriminated `event` run-deck or `combat` hand choice with exact purpose/source/destination/cost/overflow semantics | Lead Paperweight, Colorless/Attack/Skill/Power Potion, and Splash have C# source bindings; final-MVID source diversity remains pending. Discovery has no current binding and every other source fails closed. |
 | exact Headbutt/Graveblast `combat_pile_card_selection` | exact discard candidate plus source-discriminated draw-top or hand/full-hand-discard purpose | action canary; both final completion branches need a natural repeat |
-| exact Cleanse `combat_pile_card_selection` | exact one-card draw-pile-to-exhaust purpose | C# candidate Release installed; not loaded or Organic-tested |
+| exact Cleanse `combat_pile_card_selection` | exact one-card draw-pile-to-exhaust purpose | prior Preview.57 Organic action completed with exact source/screen/card-move witness; evidence does not transfer to Preview.59 qualification |
+| exact Seance `combat_pile_card_selection` | exact one-card draw-pile-to-same-index-`Soul` purpose | strict decode/source binding/witness is built and loaded; no current-artifact Organic action yet |
+| exact Dredge `combat_pile_card_selection` | bounded one-to-three discard selection with visible selected set and automatic batch-to-hand commit | Preview.59 current-build Re canary exercised select, deselect, intermediate states, and exact-three completion; remains source-scoped canary |
 | `game_over` | `run_ended + game_over` | current-MVID loss intro -> summary -> return lifecycle confirmed; win/timeline diversity pending |
 | `run_deck` Inspection | typed player run-deck evidence | current-build read-only canary; no authority |
 | `combat_piles` Inspection | unordered draw/discard/exhaust card evidence | current-build read-only canary; no draw order or authority |
@@ -79,7 +83,7 @@ Observed or expected v1-owned families still include:
   Bridge v2 canaries;
 - crystal-sphere and other special screens without a current v2 contract;
 - every non-Self-Help-Book deck-enchant and non-Headbutt/non-Graveblast/
-  non-Cleanse combat-pile selector, plus every generated-card origin except exact Lead
+  non-Cleanse/non-Seance combat-pile selector, plus every generated-card origin except exact Lead
   Paperweight, native Colorless/Attack/Skill/Power Potions, and native Splash.
 
 v1 reconstructs indices and settlement locally. It is diagnostics compatibility
