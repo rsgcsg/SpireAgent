@@ -2,6 +2,9 @@
 
 This roadmap replaces the retired root P8--P15 sequence. Stages are functional
 gates, not claims that a document or fixture alone completed a product.
+The [program plan](PROGRAM_PLAN.md) places these gates in the wider
+Connector/runtime/product/research dependency graph; it does not create
+additional current permissions or delivery priorities.
 
 ## Gate 0: Source Truth Repair
 

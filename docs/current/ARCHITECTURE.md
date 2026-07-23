@@ -61,8 +61,12 @@ advertised Inspections. That is current behavior, not a settled long-term
 architecture. It preserves evidence but duplicates some Inspection/action data
 and sends governance metadata to the model.
 
-The next visibility work is measurement and shadow-only comparison, not a wire
-rewrite: retain full evidence for validation/replay, test a deterministic and
-versioned strategy projection, and introduce fact-group availability only if
-real ambiguity justifies it. See the
-[visibility and observation audit](audits/VISIBILITY_AND_OBSERVATION_ARCHITECTURE_AUDIT_2026-07-22.md).
+The first generic strategy projection failed its cross-Surface evidence gate
+and is not a runtime candidate. This does not make today's
+`NormalizedCurrentState` a permanent public SDK or reject all future
+consumer-specific views. Retain complete evidence for validation/replay,
+investigate another projection only within an evidenced scope, and introduce
+fact-group availability only when real ambiguity justifies it. See the
+[visibility and observation audit](audits/VISIBILITY_AND_OBSERVATION_ARCHITECTURE_AUDIT_2026-07-22.md)
+and the
+[future program audit](audits/FUTURE_PROGRAM_AND_CONSUMER_ARCHITECTURE_AUDIT_2026-07-23.md).

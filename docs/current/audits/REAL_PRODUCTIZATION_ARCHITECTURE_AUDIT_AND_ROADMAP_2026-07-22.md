@@ -1,10 +1,11 @@
 # Real Productization Architecture Audit And Roadmap
 
-> Post-audit current-status note: Connector Gate 0 later closed on
-> `2.0-preview.55`; Re is v2-only and Gateway v1 POST is disabled by default.
-> The baseline table below remains the evidence observed when this audit was
-> written, not current runtime truth. See `../STATUS.md` and the Connector Gate
-> 0 closeout for current status.
+> Current-status redirect, 2026-07-23: Connector Gate 0 is closed on the shared
+> `2.0-preview.56` contract; Re is v2-only and Gateway v1 POST is disabled by
+> default. Gate 1 remains active. The baseline table and dated post-audit notes
+> below preserve what was known when this audit was written; they are not
+> current runtime truth. See `../STATUS.md` and the Connector evidence for the
+> current checkout.
 
 Status: canonical productization audit and conditional roadmap, 2026-07-22.
 

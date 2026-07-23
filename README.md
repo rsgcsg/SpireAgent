@@ -14,9 +14,10 @@ and do not define the current architecture, permission model, or roadmap.
 
 The active connector now shares a `2.0-preview.56` contract between C# and
 Re-SpireAgent. A Release DLL was installed and loaded by Steam with a matching
-SHA/MVID, and Re completed a read-only strict-v2 inspection. One bounded
-existing action/completion canary remains required before v2 coverage or
-permission grows.
+SHA/MVID, and Re completed exact-state action/completion journeys that closed
+Gate 0. Gate 1 operation-level reliability, coverage, visible-information
+closure, and v1 retirement remain active; current evidence does not authorize
+wildcard coverage or consumer rollout.
 
 Bridge v2's safety kernel remains the current direction: one active input
 owner, opaque state-bound actions, execute-time validation, semantic completion,
@@ -30,6 +31,7 @@ product.
 - [Current status](docs/current/STATUS.md)
 - [Current architecture](docs/current/ARCHITECTURE.md)
 - [Current functional roadmap](docs/current/ROADMAP.md)
+- [Current cross-component program plan](docs/current/PROGRAM_PLAN.md)
 - [Product direction](docs/current/PRODUCT.md)
 - [Re-SpireAgent setup and commands](Re-SpireAgent/README.md)
 - [Gateway setup and commands](STS2MCP/README.md)

@@ -20,10 +20,13 @@ code. The Gateway must remain the sole authority for game observation,
 advertised actions, validation, and completion. MCP is optional ecosystem glue,
 not the core connector.
 
-Current product work is blocked by the source-truth mismatch and missing
-Gateway authentication, controller lease, and restart epoch. Do not represent
-the direct local REST path as a consumer-safe installation.
+Gate 0 source truth is repaired. Consumer rollout remains blocked by active
+Gate 1 coverage/reliability work plus missing Gateway authentication,
+controller lease, restart epoch, and recovery evidence. Do not represent the
+direct local REST path as a consumer-safe installation.
 
 For the full evidence boundary, alternatives considered, security analysis,
 and conditional product gates, read the
 [2026-07-22 productization audit](audits/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md).
+Cross-component sequencing is owned by the
+[program plan](PROGRAM_PLAN.md).

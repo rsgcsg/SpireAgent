@@ -11,11 +11,13 @@ not inherit authority from the archived root SpireAgent runtime.
 2. [Architecture](ARCHITECTURE.md): component ownership and non-negotiable
    connector boundaries.
 3. [Roadmap](ROADMAP.md): current functional gates and retirement sequence.
-4. [Product](PRODUCT.md): product boundary and deferred product work.
-5. [Operations](OPERATIONS.md): safe local development and validation map.
-6. [Repository inventory](REPOSITORY_INVENTORY.md): current/legacy ownership
+4. [Program plan](PROGRAM_PLAN.md): cross-component dependencies and future
+   admission gates without changing the current delivery priority.
+5. [Product](PRODUCT.md): product boundary and deferred product work.
+6. [Operations](OPERATIONS.md): safe local development and validation map.
+7. [Repository inventory](REPOSITORY_INVENTORY.md): current/legacy ownership
    classification and v1-retirement holdouts.
-7. [Repository consolidation ADR](decisions/ADR-0001-current-mainline-and-legacy-archive.md):
+8. [Repository consolidation ADR](decisions/ADR-0001-current-mainline-and-legacy-archive.md):
    durable authority and archive decision.
 
 Current cross-component audits:
@@ -23,6 +25,9 @@ Current cross-component audits:
 - [Visibility and observation architecture audit](audits/VISIBILITY_AND_OBSERVATION_ARCHITECTURE_AUDIT_2026-07-22.md):
   current Gateway/Re fact flow, Prompt projection debt, evidence limits, and
   falsifiable next experiments. It is an audit, not an accepted protocol change.
+- [Future program and consumer architecture audit](audits/FUTURE_PROGRAM_AND_CONSUMER_ARCHITECTURE_AUDIT_2026-07-23.md):
+  critical review of future-consumer requirements, program dependencies,
+  rejected premature platforms, and the adopted macro sequencing.
 
 Component-owned truth:
 

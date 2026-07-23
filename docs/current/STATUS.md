@@ -19,6 +19,10 @@ Bridge command completion and coherent successor states. Re is now v2-only;
 Gateway v1 mutations are disabled by default while v1 reads remain explicit
 compatibility diagnostics.
 
+The [cross-component program plan](PROGRAM_PLAN.md) preserves Gate 1 as the
+only current delivery priority. Future Companion, learning, Headless, and
+post-training lanes remain gated and do not change current runtime authority.
+
 ## Immediate Next Step
 
 Continue the resumed exact-identity Gate 1 journey from its current event/map
