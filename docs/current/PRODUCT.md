@@ -20,10 +20,11 @@ code. The Gateway must remain the sole authority for game observation,
 advertised actions, validation, and completion. MCP is optional ecosystem glue,
 not the core connector.
 
-Gate 0 source truth is repaired. Consumer rollout remains blocked by active
-Gate 1 coverage/reliability work plus missing Gateway authentication,
-controller lease, restart epoch, and recovery evidence. Do not represent the
-direct local REST path as a consumer-safe installation.
+Gate 1 is closed only as a bounded ordinary-single-player v2 mutation
+baseline. Consumer rollout remains blocked by Gate 2 visible-information
+closure plus missing Gateway authentication, controller lease, restart epoch,
+and recovery evidence. Do not represent the direct local REST path as a
+consumer-safe installation.
 
 For the full evidence boundary, alternatives considered, security analysis,
 and conditional product gates, read the

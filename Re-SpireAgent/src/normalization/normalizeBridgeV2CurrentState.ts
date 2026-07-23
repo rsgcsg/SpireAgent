@@ -181,12 +181,8 @@ const ACTION_KINDS = {
   rest_site: new Set(["choose_rest_option", "proceed_rest_site"]),
   combat_turn: new Set(["play_card", "use_potion", "end_turn"]),
   combat_pile_card_selection: new Set([
-    "select_discard_card_for_draw_top",
-    "select_discard_card_for_hand",
-    "select_draw_card_for_exhaust",
-    "select_draw_card_for_soul_transform",
-    "toggle_discard_card_for_dredge",
-    "toggle_draw_card_for_charge"
+    "toggle_combat_pile_card",
+    "confirm_combat_pile_selection"
   ]),
   combat_hand_card_selection: new Set([
     "select_combat_hand_card",
@@ -1701,37 +1697,47 @@ function validateCombatPileCardSelectionState(
   if (surface.selected_count > surface.max_select) {
     diagnostics.invalid("bridge_v2.surface.selected_count", surface.selected_count, "selected count exceeds max_select");
   }
-  if (surface.source_kind === "dredge") {
-    if (surface.min_select !== surface.max_select
-        || surface.min_select < 1
-        || surface.max_select > 3
-        || surface.require_manual_confirmation
-        || surface.cancelable) {
-      diagnostics.invalid(
-        "bridge_v2.surface.dredge_selection_contract",
-        surface,
-        "Dredge requires an exact dynamic 1..3 selection count, automatic final commit, and no cancel"
-      );
-    }
-  } else if (surface.source_kind === "charge") {
-    if (surface.min_select !== 2
-        || surface.max_select !== 2
-        || surface.require_manual_confirmation
-        || surface.cancelable) {
-      diagnostics.invalid(
-        "bridge_v2.surface.charge_selection_contract",
-        surface,
-        "CHARGE!! requires exact-two automatic selection and no cancel"
-      );
-    }
-  } else if (surface.min_select !== 1
-             || surface.max_select !== 1
-             || surface.require_manual_confirmation
-             || surface.cancelable) {
+  if (surface.cancelable) {
     diagnostics.invalid(
-      "bridge_v2.surface.single_pick_contract",
+      "bridge_v2.surface.cancelable",
       surface,
-      `${surface.source_kind} requires exact-one automatic selection with no cancel`
+      "combat-pile cancellation has no qualified native control contract"
+    );
+  }
+  if (surface.commit_mode === "automatic_at_max") {
+    if (surface.require_manual_confirmation
+        || surface.min_select < 1
+        || surface.min_select !== surface.max_select) {
+      diagnostics.invalid(
+        "bridge_v2.surface.commit_mode",
+        surface,
+        "automatic_at_max requires an exact positive selection count and no manual confirmation"
+      );
+    }
+  } else if (!surface.require_manual_confirmation || surface.max_select < 1) {
+    diagnostics.invalid(
+      "bridge_v2.surface.commit_mode",
+      surface,
+      "manual_confirm requires the native confirmation control and at least one selectable card"
+    );
+  }
+  if (surface.mutation_kind === "replace_selected_cards_same_index") {
+    if (surface.pile_type !== surface.destination_pile
+        || surface.destination_position !== "same_index"
+        || !surface.replacement_card_definition_id
+        || surface.overflow_destination != null) {
+      diagnostics.invalid(
+        "bridge_v2.surface.mutation_contract",
+        surface,
+        "same-index replacement requires one source/destination pile, an exact replacement definition, and no overflow"
+      );
+    }
+  } else if (surface.destination_position === "same_index"
+             || surface.replacement_card_definition_id != null) {
+    diagnostics.invalid(
+      "bridge_v2.surface.mutation_contract",
+      surface,
+      "card movement cannot declare replacement-only fields"
     );
   }
   const cardIds = new Set(surface.cards.map((card) => card.entity_id));
@@ -1750,28 +1756,44 @@ function validateCombatPileCardSelectionState(
     }
   }
   validateActions("combat_pile_card_selection", stateId, actions, missing, advertisedOperations, readiness, diagnostics);
-  const expectedActionKind = combatPileSelectionContract(surface.source_kind).operation;
+  let confirmActions = 0;
   for (const action of actions) {
-    if (action.kind !== expectedActionKind) {
+    if (action.kind === "confirm_combat_pile_selection") {
+      confirmActions += 1;
+      if (surface.commit_mode !== "manual_confirm"
+          || action.entity_bindings.length !== 0
+          || surface.selected_count < surface.min_select) {
+        diagnostics.invalid(
+          "bridge_v2.legal_actions.confirm",
+          action,
+          "combat-pile confirmation must belong to an eligible manual-confirm transaction"
+        );
+      }
+      continue;
+    }
+    if (action.kind !== "toggle_combat_pile_card") {
       diagnostics.invalid(
         "bridge_v2.legal_actions.kind",
         action.kind,
-        `action does not belong to the exact ${surface.source_kind} source contract`
+        "action does not belong to the structural combat-pile selection contract"
       );
+      continue;
     }
     const cardBindings = action.entity_bindings.filter((binding) => binding.role === "card");
     const boundCard = cardBindings.length === 1
       ? surface.cards.find((card) => card.entity_id === cardBindings[0]!.entity_id)
       : undefined;
     if (!boundCard) {
-      diagnostics.invalid("bridge_v2.legal_actions.entity_bindings", action.entity_bindings, `${surface.source_kind} selection must bind exactly one visible ${surface.pile_type} card`);
-    } else {
-      const expectedLabel = combatPileSelectionContract(surface.source_kind)
-        .label(boundCard.name ?? boundCard.definition_id, boundCard.is_selected);
-      if (action.label !== expectedLabel) {
-        diagnostics.invalid("bridge_v2.legal_actions.label", action.label, `${surface.source_kind} action label disagrees with its exact visible card and destination`);
-      }
+      diagnostics.invalid("bridge_v2.legal_actions.entity_bindings", action.entity_bindings, "combat-pile toggle must bind exactly one visible card");
     }
+  }
+  if (confirmActions > 1
+      || (surface.commit_mode === "automatic_at_max" && confirmActions !== 0)) {
+    diagnostics.invalid(
+      "bridge_v2.legal_actions.confirm",
+      confirmActions,
+      "combat-pile transaction exposed an invalid number of confirmation actions"
+    );
   }
 }
 
@@ -3150,13 +3172,22 @@ function projectCombatPileCardSelectionSurface(
   actions: BridgeV2LegalAction[],
   completeness: RawCompleteness
 ): CombatPileCardSelectionSurface {
-  const base = {
+  return {
     kind: "combat_pile_card_selection" as const,
     bridgeStateId: stateId,
     screenEntityId: surface.screen_entity_id,
     prompt: surface.prompt,
+    purpose: surface.purpose,
+    mutationKind: surface.mutation_kind,
+    commitMode: surface.commit_mode,
+    sourceKind: surface.source_kind,
     sourceCardEntityId: surface.source_card_entity_id,
+    sourceCardDefinitionId: surface.source_card_definition_id,
     pileType: surface.pile_type,
+    destinationPile: surface.destination_pile,
+    destinationPosition: surface.destination_position,
+    overflowDestination: surface.overflow_destination ?? null,
+    replacementCardDefinitionId: surface.replacement_card_definition_id ?? null,
     minimumSelections: surface.min_select,
     maximumSelections: surface.max_select,
     selectedCount: surface.selected_count,
@@ -3167,112 +3198,6 @@ function projectCombatPileCardSelectionSurface(
     legalActions: projectActions(actions),
     completeness: projectCompleteness(completeness)
   };
-  switch (surface.source_kind) {
-    case "graveblast":
-      return {
-        ...base,
-        purpose: surface.purpose,
-        sourceKind: surface.source_kind,
-        sourceCardDefinitionId: surface.source_card_definition_id,
-        destinationPile: surface.destination_pile,
-        destinationPosition: surface.destination_position,
-        overflowDestination: surface.overflow_destination
-      };
-    case "headbutt":
-      return {
-        ...base,
-        purpose: surface.purpose,
-        sourceKind: surface.source_kind,
-        sourceCardDefinitionId: surface.source_card_definition_id,
-        destinationPile: surface.destination_pile,
-        destinationPosition: surface.destination_position
-      };
-    case "cleanse":
-      return {
-        ...base,
-        purpose: surface.purpose,
-        sourceKind: surface.source_kind,
-        sourceCardDefinitionId: surface.source_card_definition_id,
-        pileType: surface.pile_type,
-        destinationPile: surface.destination_pile,
-        destinationPosition: surface.destination_position
-      };
-    case "seance":
-      return {
-        ...base,
-        purpose: surface.purpose,
-        sourceKind: surface.source_kind,
-        sourceCardDefinitionId: surface.source_card_definition_id,
-        pileType: surface.pile_type,
-        destinationPile: surface.destination_pile,
-        destinationPosition: surface.destination_position,
-        overflowDestination: surface.overflow_destination ?? null
-      };
-    case "dredge":
-      return {
-        ...base,
-        purpose: surface.purpose,
-        sourceKind: surface.source_kind,
-        sourceCardDefinitionId: surface.source_card_definition_id,
-        pileType: surface.pile_type,
-        destinationPile: surface.destination_pile,
-        destinationPosition: surface.destination_position,
-        overflowDestination: surface.overflow_destination ?? null
-      };
-    case "charge":
-      return {
-        ...base,
-        purpose: surface.purpose,
-        sourceKind: surface.source_kind,
-        sourceCardDefinitionId: surface.source_card_definition_id,
-        pileType: surface.pile_type,
-        destinationPile: surface.destination_pile,
-        destinationPosition: surface.destination_position,
-        overflowDestination: surface.overflow_destination ?? null
-      };
-  }
-}
-
-function combatPileSelectionContract(sourceKind: BridgeV2CombatPileCardSelectionSurface["source_kind"]): {
-  operation: string;
-  label: (cardName: string, selected?: boolean) => string;
-} {
-  switch (sourceKind) {
-    case "headbutt":
-      return {
-        operation: "select_discard_card_for_draw_top",
-        label: (cardName) => `Put ${cardName} on top of the Draw Pile`
-      };
-    case "graveblast":
-      return {
-        operation: "select_discard_card_for_hand",
-        label: (cardName) => `Put ${cardName} back in your Hand`
-      };
-    case "cleanse":
-      return {
-        operation: "select_draw_card_for_exhaust",
-        label: (cardName) => `Exhaust ${cardName}`
-      };
-    case "seance":
-      return {
-        operation: "select_draw_card_for_soul_transform",
-        label: (cardName) => `Transform ${cardName} into Soul`
-      };
-    case "dredge":
-      return {
-        operation: "toggle_discard_card_for_dredge",
-        label: (cardName, selected = false) => selected
-          ? `Deselect ${cardName} from Dredge`
-          : `Select ${cardName} for Dredge`
-      };
-    case "charge":
-      return {
-        operation: "toggle_draw_card_for_charge",
-        label: (cardName, selected = false) => selected
-          ? `Deselect ${cardName} from CHARGE!!`
-          : `Select ${cardName} for CHARGE!!`
-      };
-  }
 }
 
 function projectCombatHandCardSelectionSurface(

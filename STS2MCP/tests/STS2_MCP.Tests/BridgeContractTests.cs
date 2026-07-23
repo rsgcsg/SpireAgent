@@ -1484,12 +1484,15 @@ public sealed class BridgeContractTests
             "screen-a",
             "Choose a card to put on top of your Draw Pile.",
             "move_one_discard_card_to_draw_top",
+            "move_selected_cards",
+            "automatic_at_max",
             "headbutt",
             "source-card-a",
             "HEADBUTT",
             "discard",
             "draw",
             "top",
+            null,
             null,
             1,
             1,
@@ -1528,6 +1531,8 @@ public sealed class BridgeContractTests
             "screen-b",
             "Choose a card to put back in your Hand.",
             "move_one_discard_card_to_hand",
+            "move_selected_cards",
+            "automatic_at_max",
             "graveblast",
             "source-card-b",
             "GRAVEBLAST",
@@ -1535,6 +1540,7 @@ public sealed class BridgeContractTests
             "hand",
             "bottom",
             "discard_if_hand_full",
+            null,
             1,
             1,
             0,
@@ -1558,12 +1564,15 @@ public sealed class BridgeContractTests
             "screen-c",
             "Choose a card to Exhaust.",
             "exhaust_one_draw_card",
+            "move_selected_cards",
+            "automatic_at_max",
             "cleanse",
             "source-card-c",
             "CLEANSE",
             "draw",
             "exhaust",
             "bottom",
+            null,
             null,
             1,
             1,
@@ -1587,6 +1596,8 @@ public sealed class BridgeContractTests
             "screen-d",
             "Choose a card to Transform into Soul.",
             "transform_one_draw_card_into_soul",
+            "replace_selected_cards_same_index",
+            "automatic_at_max",
             "seance",
             "source-card-d",
             "SEANCE",
@@ -1594,6 +1605,7 @@ public sealed class BridgeContractTests
             "draw",
             "same_index",
             null,
+            "SOUL",
             1,
             1,
             0,
@@ -1617,12 +1629,15 @@ public sealed class BridgeContractTests
             "screen-e",
             "Choose 2 cards to put into your Hand.",
             "move_bounded_discard_cards_to_hand",
+            "move_selected_cards",
+            "automatic_at_max",
             "dredge",
             "source-card-e",
             "DREDGE",
             "discard",
             "hand",
             "bottom",
+            null,
             null,
             2,
             2,
@@ -1641,6 +1656,41 @@ public sealed class BridgeContractTests
         Assert.Contains("\"min_select\":2", dredgeJson);
         Assert.Contains("\"max_select\":2", dredgeJson);
         Assert.Contains("\"selected_count\":1", dredgeJson);
+
+        IBridgeSurface neowsFurySurface = new CombatPileCardSelectionSurface(
+            "combat_pile_card_selection",
+            "screen-f",
+            "Choose up to 2 cards to put into your Hand.",
+            "move_optional_discard_cards_to_hand",
+            "move_selected_cards",
+            "manual_confirm",
+            "neows_fury",
+            "source-card-f",
+            "NEOWS_FURY",
+            "discard",
+            "hand",
+            "bottom",
+            null,
+            null,
+            0,
+            2,
+            1,
+            new[] { "card-selected" },
+            RequireManualConfirmation: true,
+            Cancelable: false,
+            Array.Empty<VisibleCard>());
+        string neowsFuryJson = JsonSerializer.Serialize(
+            new { context, surface = neowsFurySurface },
+            options);
+
+        Assert.Contains("\"purpose\":\"move_optional_discard_cards_to_hand\"", neowsFuryJson);
+        Assert.Contains("\"mutation_kind\":\"move_selected_cards\"", neowsFuryJson);
+        Assert.Contains("\"commit_mode\":\"manual_confirm\"", neowsFuryJson);
+        Assert.Contains("\"source_kind\":\"neows_fury\"", neowsFuryJson);
+        Assert.Contains("\"source_card_definition_id\":\"NEOWS_FURY\"", neowsFuryJson);
+        Assert.Contains("\"min_select\":0", neowsFuryJson);
+        Assert.Contains("\"max_select\":2", neowsFuryJson);
+        Assert.Contains("\"require_manual_confirmation\":true", neowsFuryJson);
     }
 
     [Fact]
@@ -1887,9 +1937,67 @@ public sealed class BridgeContractTests
     }
 
     [Fact]
+    public void NeowsFuryWitnessSeparatesOptionalSelectionFromConfirmedBatchMove()
+    {
+        object first = new();
+        object second = new();
+        object third = new();
+        object hand = new();
+
+        Assert.True(NeowsFuryCombatPileWitness.SelectionChanged(
+            sourceActive: true,
+            surfaceOpen: true,
+            new[] { first, second, third },
+            new[] { hand },
+            new[] { first, second, third },
+            new[] { hand },
+            Array.Empty<object>(),
+            new[] { first },
+            first,
+            wasSelected: false));
+        Assert.True(NeowsFuryCombatPileWitness.Completed(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            new[] { first, second, third },
+            new[] { hand },
+            new[] { third },
+            new[] { hand, first, second },
+            new[] { first, second },
+            maxSelect: 2));
+        Assert.True(NeowsFuryCombatPileWitness.Completed(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            new[] { first, second, third },
+            new[] { hand },
+            new[] { first, second, third },
+            new[] { hand },
+            Array.Empty<object>(),
+            maxSelect: 2));
+        Assert.False(NeowsFuryCombatPileWitness.Completed(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            new[] { first, second, third },
+            new[] { hand },
+            new[] { second, third },
+            new[] { hand, first },
+            new[] { first, second },
+            maxSelect: 2));
+        Assert.False(NeowsFuryCombatPileWitness.Completed(
+            sourceCompleted: false,
+            surfaceClosed: true,
+            new[] { first, second, third },
+            new[] { hand },
+            new[] { third },
+            new[] { hand, first, second },
+            new[] { first, second },
+            maxSelect: 2));
+    }
+
+    [Fact]
     public void ExactCardSpecificSelectionBindingsResolveCurrentGameMethods()
     {
         Assert.Equal("OnPlay", ChargeCombatPileSelectionSourcePatch.ResolveTargetMethod().Name);
+        Assert.Equal("OnPlay", NeowsFuryCombatPileSelectionSourcePatch.ResolveTargetMethod().Name);
         Assert.Equal("ChooseCurse", GeneratedCardChoiceKnowledgeDemonPatch.ResolveTargetMethod().Name);
     }
 

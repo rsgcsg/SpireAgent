@@ -5,7 +5,7 @@ import type { JsonObject } from "../src/shared/json.js";
 describe("shadow strategy projection", () => {
   it("removes governance and repeated facts without mutating complete evidence", () => {
     const currentState: JsonObject = {
-      normalizedSchemaVersion: 25,
+      normalizedSchemaVersion: 26,
       actionAuthority: "bridge_advertised",
       player: { runDeck: [{ id: "STRIKE" }], drawPile: [] },
       bridgeInspectionFacts: {

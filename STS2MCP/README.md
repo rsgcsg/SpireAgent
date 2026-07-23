@@ -8,21 +8,22 @@ state-bound protocol intended for the rebuilt `Re-SpireAgent` client.
 
 ## Status
 
-Bridge v2 is an incremental preview, not a replacement for all v1 surfaces.
+Bridge v2 is the only mutation contract for the current Agent and default MCP
+adapter. It remains an incremental semantic/visibility preview, not
+complete-game coverage.
 
-The C# Bridge and Re source now share `2.0-preview.60`, with strict explicit
-operation scopes and a path-free loaded-assembly digest. Preview.60 is the
-verified loaded artifact; its new selector branches remain Organic-pending.
-Gate 0 is closed on an
-installed, Steam-loaded artifact using two bounded Re action/completion/
-successor journeys. Gate 1 remains scoped and operation-driven; this is not
-complete-game qualification.
+The C# Bridge and Re source share `2.0-preview.61`; Re normalized schema is
+`26`. Preview.61 structurally describes combat-pile mutation and commit
+semantics and adds exact Neow's Fury optional manual-confirm selection.
+Preview.60 remains the last installed and verified loaded artifact. Gate 1 is
+closed as a bounded ordinary-single-player v2 mutation baseline; Preview.61
+still requires install/load identity and an Organic Neow lifecycle.
 
 > Product security warning: the current HTTP listener is a developer preview.
 > It binds to loopback and filters browser Origin, but it has no client
-> authentication, Gateway-enforced controller lease, or restart epoch, and v1
-> and v2 routes share the listener. v1 mutation is now disabled by default,
-> but localhost is still not an authorization
+> authentication, Gateway-enforced controller lease, or restart epoch. The v1
+> namespace is retired, but
+> localhost is still not an authorization
 > boundary. Do not represent this as a consumer-safe Workshop product; see the
 > [productization architecture audit](../docs/current/audits/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md).
 
@@ -33,7 +34,7 @@ complete-game qualification.
   untested and has no v2 action or Inspection authority. Check
   [Bridge v2 current status](docs/bridge-v2/CURRENT_STATUS.md) before treating
   a local install as qualified.
-- Source `2.0-preview.60` keeps centralized overlay/room/menu ownership, typed
+- Source `2.0-preview.61` keeps centralized overlay/room/menu ownership, typed
   diagnostics, purpose-specific selection and event contracts, staged
   completion semantics, and a top-level read-only shared run/player HUD.
   Current-build capabilities distinguish scoped-qualified actions, action
@@ -51,9 +52,9 @@ complete-game qualification.
   never inherits authority automatically.
 - All unimplemented or version-incompatible v2 surfaces fail closed with no
   legal actions.
-- v1 GET remains available for explicit legacy diagnostics. v1 POST mutation
-  is disabled by default and requires `enable_legacy_v1_mutations=true` in
-  `STS2_MCP.conf`; Re-SpireAgent has no v1 mutation transport.
+- The complete `/api/v1` namespace is retired and returns `410 Gone`. Its code
+  and raw API references are preserved only under
+  `archive/legacy-connector-v1/`.
 - Historical exact-v0.109 Organic evidence qualified merchant removal, event/rest
   upgrade, ordinary combat turn, combat hand selection, ordinary single-player
   rest, and read-only run deck. Read-only combat pile contents are a separate
@@ -66,8 +67,9 @@ complete-game qualification.
   `generated_card_choice` are current-build canaries with separate destination,
   cost, operation, and completion semantics; all other callers of the shared
   selection UI remain fail closed. Exact combat-pile branches now include
-  Headbutt, Graveblast, Cleanse, Seance, and Dredge with independent source,
-  purpose, operation, and completion semantics. Dredge has a current-build
+  Headbutt, Graveblast, Cleanse, Seance, Dredge, Charge, and Neow's Fury under
+  one closed structural mutation/commit contract while retaining exact source
+  and completion semantics. Dredge has a current-build
   select/deselect/exact-three batch canary but remains canary-only. Preview.46 also
   exposes typed read-only card hover previews with stable owner-scoped identity.
   Preview.47 adds a state-bound visibility/Inspection catalog, coherent
@@ -157,18 +159,16 @@ cp out/STS2_MCP/STS2_MCP.dll "$MODS_DIR/STS2_MCP.dll"
 cp mod_manifest.json "$MODS_DIR/STS2_MCP.json"
 ```
 
-The generated `STS2_MCP.conf` defaults to:
+The generated `STS2_MCP.conf` contains only transport configuration:
 
 ```json
 {
-  "port": 15526,
-  "enable_legacy_v1_mutations": false
+  "port": 15526
 }
 ```
 
-Leave legacy mutation disabled for Re and all Bridge v2 testing. Setting it to
-`true` restores old v1 POST compatibility only; it does not grant v2 support or
-qualification.
+V1 mutation cannot be enabled. Use only state-bound actions advertised by the
+current Bridge v2 state.
 
 Windows/Linux use the game's corresponding `mods/` directory. Launch the game,
 enable the mod, then verify:
@@ -224,18 +224,13 @@ Bridge v2 MCP tools:
 - `get_agent_state_v2()`
 - `inspect_run_deck_v2(expected_state_id)`
 - `inspect_combat_piles_v2(expected_state_id)`
-- `get_agent_observation_bundle_v2(expected_state_id, include_run_deck?, include_combat_piles?)`
+- `inspect_shop_catalog_v2(expected_state_id)`
+- `get_agent_observation_bundle_v2(expected_state_id, include_run_deck?, include_combat_piles?, include_shop_catalog?)`
 - `submit_agent_action_v2(request_id, expected_state_id, action_id)`
 - `get_agent_command_v2(request_id)`
 
-The REST Gateway and Re schema also define `shop_catalog`, but the current
-Python MCP adapter does not expose it. That adapter gap is visible and
-non-authorizing; do not configure or document a nonexistent MCP tool as a
-fallback.
-
-The existing v1 tools remain exposed during migration, but mutation tools
-receive HTTP 403 unless legacy mutations are explicitly enabled in the Mod
-configuration.
+The default adapter exposes no v1 tools. The Gateway exposes no v1 state,
+profile, wiki, compendium, or mutation endpoint.
 
 ## V2 HTTP Contract
 
@@ -243,6 +238,7 @@ configuration.
 GET  /api/v2/capabilities
 GET  /api/v2/state
 GET  /api/v2/inspections/{kind}?expected_state_id={state_id}
+POST /api/v2/observation-bundles
 POST /api/v2/commands
 GET  /api/v2/commands/{request_id}
 ```
@@ -266,7 +262,7 @@ not be retried automatically.
 The rebuilt SpireAgent has a strict v2-only decoder/projector and Connector. It
 displays `context.kind + surface.kind + authority`. A Bridge-owned surface uses
 only Bridge-advertised opaque actions, while an unsupported or missing v2
-surface fails closed. Gateway v1 diagnostics are outside the Re runtime.
+surface fails closed. Historical v1 records are outside the Re runtime.
 Exact-build mismatch,
 context/surface mismatch, command-response identity mismatch, failed command,
 and timeout all fail closed.
@@ -292,5 +288,5 @@ v0.108 surfaces remain implementation history, not v0.109 authority.
 
 ## License
 
-MIT. See [LICENSE](LICENSE). The upstream origin and retained v1 code remain
+MIT. See [LICENSE](LICENSE). The upstream origin and archived v1 source remain
 covered by the same license.

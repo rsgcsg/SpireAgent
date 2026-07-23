@@ -10,7 +10,7 @@ import type { JsonObject } from "../src/shared/json.js";
 import { fixture } from "./helpers.js";
 
 const CAPABILITIES = {
-  protocol_version: "2.0-preview.60",
+  protocol_version: "2.0-preview.61",
   bridge: {
     id: "sts2_mcp_bridge_v2",
     name: "STS2 Agent Bridge",
@@ -86,7 +86,7 @@ const CAPABILITIES = {
     { kind: "event_option", support: "implemented_exact_game_version", operations: ["choose_event_option", "proceed_event"], evidence: "test-contract" },
     { kind: "rest_site", support: "implemented_exact_game_version", operations: ["choose_rest_option", "proceed_rest_site"], evidence: "test-contract" },
     { kind: "combat_turn", support: "implemented_exact_game_version", operations: ["play_card", "use_potion", "end_turn"], evidence: "test-contract" },
-    { kind: "combat_pile_card_selection", support: "implemented_exact_game_version", operations: ["select_discard_card_for_draw_top", "select_discard_card_for_hand", "select_draw_card_for_exhaust", "select_draw_card_for_soul_transform", "toggle_discard_card_for_dredge", "toggle_draw_card_for_charge"], evidence: "test-contract" },
+    { kind: "combat_pile_card_selection", support: "implemented_exact_game_version", operations: ["toggle_combat_pile_card", "confirm_combat_pile_selection"], evidence: "test-contract" },
     { kind: "combat_hand_card_selection", support: "implemented_exact_game_version", operations: ["select_combat_hand_card", "deselect_combat_hand_card", "confirm_combat_hand_selection", "close_combat_hand_peek"], evidence: "test-contract" },
     { kind: "event_card_acquisition", support: "implemented_exact_game_version", operations: ["select_event_card_acquisition", "deselect_event_card_acquisition"], evidence: "test-contract" },
     { kind: "generated_card_choice", support: "implemented_exact_game_version", operations: ["select_generated_run_card", "skip_generated_run_card_choice", "select_generated_combat_card", "skip_generated_combat_card_choice", "choose_quasar_card", "skip_quasar_choice", "choose_knowledge_demon_curse"], evidence: "test-contract" },
@@ -177,7 +177,7 @@ const RUN_VISIBILITY = {
 };
 
 const DECK_ENCHANT_STATE = {
-  protocol_version: "2.0-preview.60",
+  protocol_version: "2.0-preview.61",
   state_id: "state-test-1",
   state_sequence: 1,
   observed_at: "2026-07-16T00:00:00Z",
@@ -253,7 +253,7 @@ const DECK_ENCHANT_STATE = {
     status: "resolved_manifest_contract",
     instance_id: "contract-instance-deck-enchant-1",
     surface_kind: "deck_enchant_selection",
-    semantic_contract_id: "bridge.surface.deck_enchant_selection.2.0-preview.60",
+    semantic_contract_id: "bridge.surface.deck_enchant_selection.2.0-preview.61",
     declared_binding: "fixture-declared-binding",
     operations: [{ operation: "toggle_card", evidence_status: "surface_level_only", published: true }],
     current_authority_tier: "canary",
@@ -1355,12 +1355,15 @@ const COMBAT_PILE_CARD_SELECTION_STATE = {
     screen_entity_id: "combat-pile-screen-1",
     prompt: "Choose a card to put on top of your Draw Pile.",
     purpose: "move_one_discard_card_to_draw_top",
+    mutation_kind: "move_selected_cards",
+    commit_mode: "automatic_at_max",
     source_kind: "headbutt",
     source_card_entity_id: "combat-card-headbutt",
     source_card_definition_id: "HEADBUTT",
     pile_type: "discard",
     destination_pile: "draw",
     destination_position: "top",
+    replacement_card_definition_id: null,
     min_select: 1,
     max_select: 1,
     selected_count: 0,
@@ -1400,7 +1403,7 @@ const COMBAT_PILE_CARD_SELECTION_STATE = {
     {
       action_id: "action-combat-pile-card-2",
       state_id: "state-combat-pile-select-1",
-      kind: "select_discard_card_for_draw_top",
+      kind: "toggle_combat_pile_card",
       category: "selection",
       label: "Put Ball Lightning on top of the Draw Pile",
       authority: "game_ui",
@@ -2023,7 +2026,7 @@ function visibleInspectionCard(overrides: Record<string, unknown> = {}) {
 
 function runDeckInspection(stateId: string, cards = [visibleInspectionCard()]) {
   return {
-    protocol_version: "2.0-preview.60",
+    protocol_version: "2.0-preview.61",
     inspection_id: `inspection-run-deck-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -2046,7 +2049,7 @@ function runDeckInspection(stateId: string, cards = [visibleInspectionCard()]) {
 
 function combatPilesInspection(stateId: string) {
   return {
-    protocol_version: "2.0-preview.60",
+    protocol_version: "2.0-preview.61",
     inspection_id: `inspection-combat-piles-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -2091,7 +2094,7 @@ function shopCatalogInspection(stateId: string) {
     blocked_reason: offer.stocked ? "not_visible" : offer.blocked_reason
   });
   return {
-    protocol_version: "2.0-preview.60",
+    protocol_version: "2.0-preview.61",
     inspection_id: `inspection-shop-catalog-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -2133,7 +2136,7 @@ function coherentObservationBundle(
   }));
   const resolvedInspections = inspections ?? defaultInspections;
   return {
-    protocol_version: "2.0-preview.60",
+    protocol_version: "2.0-preview.61",
     observation_id: `observation-${state.state_id}`,
     coherent: true,
     state,
@@ -2760,7 +2763,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 25,
+      normalizedSchemaVersion: 26,
       stability: "actionable",
       actionAuthority: "bridge_advertised",
       context: {
@@ -2841,7 +2844,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 25,
+      normalizedSchemaVersion: 26,
       stability: "actionable",
       actionAuthority: "bridge_advertised",
       context: { kind: "menu", screen: "character_select" },
@@ -3374,7 +3377,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 25,
+      normalizedSchemaVersion: 26,
       actionAuthority: "bridge_advertised",
       context: { kind: "event", ancient: true, inDialogue: true },
       surface: {
@@ -3422,7 +3425,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 25,
+      normalizedSchemaVersion: 26,
       actionAuthority: "bridge_advertised",
       context: { kind: "rest" },
       surface: {
@@ -3500,7 +3503,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 25,
+      normalizedSchemaVersion: 26,
       stability: "actionable",
       actionAuthority: "bridge_advertised",
       context: {
@@ -3710,7 +3713,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 25,
+      normalizedSchemaVersion: 26,
       actionAuthority: "bridge_advertised",
       context: {
         kind: "map",
@@ -4220,7 +4223,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 25,
+      normalizedSchemaVersion: 26,
       actionAuthority: "bridge_advertised",
       context: { kind: "combat", encounterType: "elite" },
       surface: {
@@ -4246,7 +4249,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       expect.objectContaining({
         id: "action-combat-pile-card-2",
         entityBindings: [{ role: "card", entityId: "discard-card-2" }],
-        action: expect.objectContaining({ kind: "bridge_v2_action", bridgeActionKind: "select_discard_card_for_draw_top" })
+        action: expect.objectContaining({ kind: "bridge_v2_action", bridgeActionKind: "toggle_combat_pile_card" })
       })
     ]);
 
@@ -4267,7 +4270,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       ...graveblastState.legal_actions[0]!,
       action_id: "action-graveblast-discard-card-2",
       state_id: graveblastState.state_id,
-      kind: "select_discard_card_for_hand",
+      kind: "toggle_combat_pile_card",
       label: "Put Ball Lightning back in your Hand",
       evidence_code: "Graveblast.OnPlay+NCardGrid.HolderPressed+CardPileCmd.Add(Hand)+exact-card-witness"
     }];
@@ -4278,7 +4281,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(graveblastEnvelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 25,
+      normalizedSchemaVersion: 26,
       actionAuthority: "bridge_advertised",
       context: { kind: "combat" },
       surface: {
@@ -4294,7 +4297,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     expect(buildAllowedActions(graveblastEnvelope.currentState, graveblastEnvelope.stateHash)).toEqual([
       expect.objectContaining({
         id: "action-graveblast-discard-card-2",
-        action: expect.objectContaining({ kind: "bridge_v2_action", bridgeActionKind: "select_discard_card_for_hand" })
+        action: expect.objectContaining({ kind: "bridge_v2_action", bridgeActionKind: "toggle_combat_pile_card" })
       })
     ]);
 
@@ -4315,7 +4318,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       ...cleanseState.legal_actions[0]!,
       action_id: "action-cleanse-draw-card-2",
       state_id: cleanseState.state_id,
-      kind: "select_draw_card_for_exhaust",
+      kind: "toggle_combat_pile_card",
       label: "Exhaust Ball Lightning",
       evidence_code: "Cleanse.OnPlay+NCardGrid.HolderPressed+CardCmd.Exhaust+exact-card-witness"
     }];
@@ -4326,7 +4329,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(cleanseEnvelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 25,
+      normalizedSchemaVersion: 26,
       actionAuthority: "bridge_advertised",
       context: { kind: "combat" },
       surface: {
@@ -4342,29 +4345,31 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     expect(buildAllowedActions(cleanseEnvelope.currentState, cleanseEnvelope.stateHash)).toEqual([
       expect.objectContaining({
         id: "action-cleanse-draw-card-2",
-        action: expect.objectContaining({ kind: "bridge_v2_action", bridgeActionKind: "select_draw_card_for_exhaust" })
+        action: expect.objectContaining({ kind: "bridge_v2_action", bridgeActionKind: "toggle_combat_pile_card" })
       })
     ]);
 
-    const seanceState = structuredClone(COMBAT_PILE_CARD_SELECTION_STATE);
+    const seanceState = structuredClone(COMBAT_PILE_CARD_SELECTION_STATE) as any;
     seanceState.state_id = "state-seance-pile-select-1";
     seanceState.surface = {
       ...seanceState.surface,
       prompt: "Choose a card to transform into Soul.",
       purpose: "transform_one_draw_card_into_soul",
+      mutation_kind: "replace_selected_cards_same_index",
       source_kind: "seance",
       source_card_entity_id: "combat-card-seance",
       source_card_definition_id: "SEANCE",
       pile_type: "draw",
       destination_pile: "draw",
       destination_position: "same_index",
-      overflow_destination: null
-    } as typeof seanceState.surface;
+      overflow_destination: null,
+      replacement_card_definition_id: "SOUL"
+    };
     seanceState.legal_actions = [{
       ...seanceState.legal_actions[0]!,
       action_id: "action-seance-draw-card-2",
       state_id: seanceState.state_id,
-      kind: "select_draw_card_for_soul_transform",
+      kind: "toggle_combat_pile_card",
       label: "Transform Ball Lightning into Soul",
       evidence_code: "Seance.OnPlay+NCardGrid.HolderPressed+CardCmd.TransformTo<Soul>+exact-replacement-witness"
     }];
@@ -4375,18 +4380,21 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(seanceEnvelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 25,
+      normalizedSchemaVersion: 26,
       actionAuthority: "bridge_advertised",
       context: { kind: "combat" },
       surface: {
         kind: "combat_pile_card_selection",
         purpose: "transform_one_draw_card_into_soul",
+        mutationKind: "replace_selected_cards_same_index",
+        commitMode: "automatic_at_max",
         sourceKind: "seance",
         sourceCardDefinitionId: "SEANCE",
         pileType: "draw",
         destinationPile: "draw",
         destinationPosition: "same_index",
-        overflowDestination: null
+        overflowDestination: null,
+        replacementCardDefinitionId: "SOUL"
       }
     });
     expect(buildAllowedActions(seanceEnvelope.currentState, seanceEnvelope.stateHash)).toEqual([
@@ -4394,7 +4402,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
         id: "action-seance-draw-card-2",
         action: expect.objectContaining({
           kind: "bridge_v2_action",
-          bridgeActionKind: "select_draw_card_for_soul_transform"
+          bridgeActionKind: "toggle_combat_pile_card"
         })
       })
     ]);
@@ -4427,7 +4435,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       ...dredgeState.legal_actions[0]!,
       action_id: "action-dredge-deselect-card-1",
       state_id: dredgeState.state_id,
-      kind: "toggle_discard_card_for_dredge",
+      kind: "toggle_combat_pile_card",
       label: "Deselect Ball Lightning from Dredge",
       evidence_code: "Dredge.OnPlay+NCardGrid.HolderPressed+intermediate-selection-witness",
       entity_bindings: [{ role: "card", entity_id: "discard-card-1" }]
@@ -4435,7 +4443,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       ...dredgeState.legal_actions[0]!,
       action_id: "action-dredge-select-card-2",
       state_id: dredgeState.state_id,
-      kind: "toggle_discard_card_for_dredge",
+      kind: "toggle_combat_pile_card",
       label: "Select Ball Lightning for Dredge",
       evidence_code: "Dredge.OnPlay+NCardGrid.HolderPressed+exact-batch-witness",
       entity_bindings: [{ role: "card", entity_id: "discard-card-2" }]
@@ -4448,7 +4456,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(dredgeEnvelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 25,
+      normalizedSchemaVersion: 26,
       actionAuthority: "bridge_advertised",
       context: { kind: "combat" },
       surface: {
@@ -4469,11 +4477,11 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       .toEqual([
         expect.objectContaining({
           id: "action-dredge-deselect-card-1",
-          action: expect.objectContaining({ bridgeActionKind: "toggle_discard_card_for_dredge" })
+          action: expect.objectContaining({ bridgeActionKind: "toggle_combat_pile_card" })
         }),
         expect.objectContaining({
           id: "action-dredge-select-card-2",
-          action: expect.objectContaining({ bridgeActionKind: "toggle_discard_card_for_dredge" })
+          action: expect.objectContaining({ bridgeActionKind: "toggle_combat_pile_card" })
         })
       ]);
 
@@ -4483,6 +4491,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       ...chargeState.surface,
       prompt: "Choose 2 cards to Transform.",
       purpose: "transform_two_draw_cards_into_minion_dive_bombs",
+      mutation_kind: "replace_selected_cards_same_index",
       source_kind: "charge",
       source_card_entity_id: "combat-card-charge",
       source_card_definition_id: "CHARGE",
@@ -4490,6 +4499,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       destination_pile: "draw",
       destination_position: "same_index",
       overflow_destination: null,
+      replacement_card_definition_id: "MINION_DIVE_BOMB",
       min_select: 2,
       max_select: 2,
       selected_count: 1,
@@ -4505,7 +4515,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       ...chargeState.legal_actions[0],
       action_id: "action-charge-select-card-2",
       state_id: chargeState.state_id,
-      kind: "toggle_draw_card_for_charge",
+      kind: "toggle_combat_pile_card",
       label: "Select Ball Lightning for CHARGE!!",
       evidence_code: "Charge.OnPlay+NCardGrid.HolderPressed+CardCmd.TransformTo<MinionDiveBomb>+exact-two-replacement-witness",
       entity_bindings: [{ role: "card", entity_id: "discard-card-2" }]
@@ -4524,11 +4534,14 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       surface: {
         kind: "combat_pile_card_selection",
         purpose: "transform_two_draw_cards_into_minion_dive_bombs",
+        mutationKind: "replace_selected_cards_same_index",
+        commitMode: "automatic_at_max",
         sourceKind: "charge",
         sourceCardDefinitionId: "CHARGE",
         pileType: "draw",
         destinationPile: "draw",
         destinationPosition: "same_index",
+        replacementCardDefinitionId: "MINION_DIVE_BOMB",
         minimumSelections: 2,
         maximumSelections: 2,
         selectedCount: 1
@@ -4537,9 +4550,137 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     expect(buildAllowedActions(chargeEnvelope.currentState, chargeEnvelope.stateHash)).toEqual([
       expect.objectContaining({
         id: "action-charge-select-card-2",
-        action: expect.objectContaining({ bridgeActionKind: "toggle_draw_card_for_charge" })
+        action: expect.objectContaining({ bridgeActionKind: "toggle_combat_pile_card" })
       })
     ]);
+
+    const neowsFuryState = structuredClone(COMBAT_PILE_CARD_SELECTION_STATE) as any;
+    neowsFuryState.state_id = "state-neows-fury-pile-select-1";
+    neowsFuryState.surface = {
+      ...neowsFuryState.surface,
+      prompt: "Choose up to 2 cards to put into your Hand.",
+      purpose: "move_optional_discard_cards_to_hand",
+      mutation_kind: "move_selected_cards",
+      commit_mode: "manual_confirm",
+      source_kind: "neows_fury",
+      source_card_entity_id: "combat-card-neows-fury",
+      source_card_definition_id: "NEOWS_FURY",
+      pile_type: "discard",
+      destination_pile: "hand",
+      destination_position: "bottom",
+      overflow_destination: null,
+      replacement_card_definition_id: null,
+      min_select: 0,
+      max_select: 2,
+      selected_count: 1,
+      selected_card_entity_ids: ["discard-card-1"],
+      require_manual_confirmation: true,
+      cancelable: false,
+      cards: neowsFuryState.surface.cards.map((card: any, index: number) => ({
+        ...card,
+        is_selected: index === 0
+      }))
+    };
+    neowsFuryState.legal_actions = [{
+      ...neowsFuryState.legal_actions[0],
+      action_id: "action-neows-fury-deselect-card-1",
+      state_id: neowsFuryState.state_id,
+      kind: "toggle_combat_pile_card",
+      label: "Deselect Ball Lightning from Neow's Fury",
+      entity_bindings: [{ role: "card", entity_id: "discard-card-1" }]
+    }, {
+      ...neowsFuryState.legal_actions[0],
+      action_id: "action-neows-fury-select-card-2",
+      state_id: neowsFuryState.state_id,
+      kind: "toggle_combat_pile_card",
+      label: "Select Ball Lightning for Neow's Fury",
+      entity_bindings: [{ role: "card", entity_id: "discard-card-2" }]
+    }, {
+      ...neowsFuryState.legal_actions[0],
+      action_id: "action-neows-fury-confirm",
+      state_id: neowsFuryState.state_id,
+      kind: "confirm_combat_pile_selection",
+      category: "commit",
+      label: "Confirm selected cards",
+      entity_bindings: []
+    }];
+
+    const neowsFuryEnvelope = normalizeCurrentState(
+      wrapBridgeV2State({ state: neowsFuryState, capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    );
+    expect(neowsFuryEnvelope.currentState).toMatchObject({
+      stability: "actionable",
+      actionAuthority: "bridge_advertised",
+      context: { kind: "combat" },
+      surface: {
+        kind: "combat_pile_card_selection",
+        purpose: "move_optional_discard_cards_to_hand",
+        mutationKind: "move_selected_cards",
+        commitMode: "manual_confirm",
+        sourceKind: "neows_fury",
+        sourceCardDefinitionId: "NEOWS_FURY",
+        minimumSelections: 0,
+        maximumSelections: 2,
+        selectedCount: 1
+      }
+    });
+    expect(buildAllowedActions(neowsFuryEnvelope.currentState, neowsFuryEnvelope.stateHash))
+      .toEqual([
+        expect.objectContaining({
+          id: "action-neows-fury-deselect-card-1",
+          action: expect.objectContaining({ bridgeActionKind: "toggle_combat_pile_card" })
+        }),
+        expect.objectContaining({
+          id: "action-neows-fury-select-card-2",
+          action: expect.objectContaining({ bridgeActionKind: "toggle_combat_pile_card" })
+        }),
+        expect.objectContaining({
+          id: "action-neows-fury-confirm",
+          action: expect.objectContaining({ bridgeActionKind: "confirm_combat_pile_selection" })
+        })
+      ]);
+
+    const zeroSelectionState = structuredClone(neowsFuryState);
+    zeroSelectionState.state_id = "state-neows-fury-zero-select";
+    zeroSelectionState.surface.selected_count = 0;
+    zeroSelectionState.surface.selected_card_entity_ids = [];
+    zeroSelectionState.surface.cards = zeroSelectionState.surface.cards.map((card: any) => ({
+      ...card,
+      is_selected: false
+    }));
+    zeroSelectionState.legal_actions = zeroSelectionState.legal_actions
+      .filter((action: any) => action.kind !== "confirm_combat_pile_selection")
+      .map((action: any) => ({ ...action, state_id: zeroSelectionState.state_id }));
+    zeroSelectionState.legal_actions.push({
+      ...neowsFuryState.legal_actions[2],
+      action_id: "action-neows-fury-confirm-zero",
+      state_id: zeroSelectionState.state_id
+    });
+
+    const zeroSelectionEnvelope = normalizeCurrentState(
+      wrapBridgeV2State({ state: zeroSelectionState, capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    );
+    expect(zeroSelectionEnvelope.currentState).toMatchObject({
+      stability: "actionable",
+      actionAuthority: "bridge_advertised",
+      surface: {
+        kind: "combat_pile_card_selection",
+        commitMode: "manual_confirm",
+        minimumSelections: 0,
+        selectedCount: 0
+      }
+    });
+    expect(buildAllowedActions(
+      zeroSelectionEnvelope.currentState,
+      zeroSelectionEnvelope.stateHash
+    )).toContainEqual(expect.objectContaining({
+      id: "action-neows-fury-confirm-zero",
+      action: expect.objectContaining({
+        bridgeActionKind: "confirm_combat_pile_selection"
+      })
+    }));
   });
 
   it("rejects a combat-pile selection without combat context or consistent selected-card evidence", () => {
@@ -4559,13 +4700,21 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     expect(envelope.currentState.stability).toBe("invalid");
     expect(envelope.currentState.actionAuthority).toBe("none");
 
-    const wrongSource = structuredClone(COMBAT_PILE_CARD_SELECTION_STATE);
-    (wrongSource.surface as { source_kind: string }).source_kind = "hologram";
-    expect(() => decodeBridgeV2State(wrongSource)).toThrow();
+    const structurallyCompatibleNewSource = structuredClone(COMBAT_PILE_CARD_SELECTION_STATE);
+    structurallyCompatibleNewSource.surface.source_kind = "future_source";
+    structurallyCompatibleNewSource.surface.source_card_definition_id = "FUTURE_SOURCE";
+    expect(() => decodeBridgeV2State(structurallyCompatibleNewSource)).not.toThrow();
 
-    const contradictoryKnownSource = structuredClone(COMBAT_PILE_CARD_SELECTION_STATE);
-    (contradictoryKnownSource.surface as { source_kind: string }).source_kind = "graveblast";
-    expect(() => decodeBridgeV2State(contradictoryKnownSource)).toThrow();
+    const contradictoryMutation = structuredClone(COMBAT_PILE_CARD_SELECTION_STATE);
+    contradictoryMutation.surface.mutation_kind = "replace_selected_cards_same_index";
+    contradictoryMutation.surface.destination_position = "same_index";
+    contradictoryMutation.surface.replacement_card_definition_id = null;
+    const contradictoryEnvelope = normalizeCurrentState(
+      wrapBridgeV2State({ state: contradictoryMutation, capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    );
+    expect(contradictoryEnvelope.currentState.stability).toBe("invalid");
+    expect(contradictoryEnvelope.currentState.actionAuthority).toBe("none");
   });
 
   it("preserves selected instance identity and replacement actions for combat-hand selection", () => {
@@ -4578,7 +4727,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 25,
+      normalizedSchemaVersion: 26,
       actionAuthority: "bridge_advertised",
       context: { kind: "combat" },
       surface: {
@@ -4636,7 +4785,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 25,
+      normalizedSchemaVersion: 26,
       actionAuthority: "bridge_advertised",
       context: { kind: "event", eventId: "NEOW" },
       surface: {
@@ -4703,7 +4852,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
         TEST_SOURCE
       );
       expect(envelope.currentState).toMatchObject({
-        normalizedSchemaVersion: 25,
+        normalizedSchemaVersion: 26,
         stability: "actionable",
         actionAuthority: "bridge_advertised",
         context: { kind: "combat" },
@@ -4874,7 +5023,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 25,
+      normalizedSchemaVersion: 26,
       actionAuthority: "bridge_advertised",
       context: { kind: "event", eventId: "BRAIN_LEECH" },
       surface: {
@@ -4923,7 +5072,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 25,
+      normalizedSchemaVersion: 26,
       actionAuthority: "bridge_advertised",
       context: { kind: "event", eventId: "NEOW" },
       surface: {

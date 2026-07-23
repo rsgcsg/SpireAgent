@@ -6,13 +6,13 @@ runtime authority.
 
 ## Mandatory Precondition: Source Truth Repair
 
-Status: source contract complete; loaded-artifact qualification remains highest
-priority as of 2026-07-22.
+Status: Gate 1 source contract and bounded v2 mutation baseline closed on
+2026-07-24; Preview.61 loaded verification remains the first Gate 2 task.
 
-C# and Re source now share `2.0-preview.60`, with explicit operation scopes, actual
+C# and Re source now share `2.0-preview.61`, with explicit operation scopes, actual
 loaded-game assembly identity, and a
 Gateway assembly digest. Independent green suites still do not prove a loaded
-game connector. Before any later phase or new Surface proceeds:
+game connector. Before Preview.61 can provide current-build runtime evidence:
 
 - keep C#, Re, examples, installed artifact, and capability declarations on the
   same revision;
@@ -37,7 +37,9 @@ Before a release profile can accept mutations, it must also provide:
 - read-only observers plus one Gateway-enforced mutation-controller lease;
 - a runtime epoch binding state, actions, and Commands across restart;
 - explicit unknown-after-restart behavior with no automatic resubmission;
-- a release-default policy that prevents v1 mutation from bypassing v2;
+- permanent retirement of the complete v1 HTTP namespace, already implemented,
+  plus a
+  consumer-authenticated release policy for remaining v2 mutation;
 - an explicit `affects_gameplay`, co-op, duplicate-install, licensing, and
   package-content decision;
 - loaded Gateway/Modset identity verification rather than disk-file discovery;
@@ -127,10 +129,11 @@ This phase cannot grant action authority.
 
 ## Phase 2: Transaction Correlation And DecisionFrame Shadow
 
-Status: deferred behind source-truth repair and a measured current reliability
-baseline. The 2026-07-20 design remains evidence input, not an implementation
-authorization. Do not begin with a protocol or authority migration, and do not
-introduce broad Transaction IR merely to preserve the old phase order.
+Status: next non-authorizing architecture slice after Preview.61 loaded
+identity and bounded Neow's Fury verification. The 2026-07-20 design remains
+evidence input, not an implementation authorization. Do not begin with a
+protocol or authority migration, and do not introduce broad Transaction IR
+merely to preserve the old phase order.
 
 First add a minimal, non-authorizing transaction-correlation record beside the
 existing command ledger. Seed it only from already-audited native Task scopes
@@ -289,15 +292,17 @@ and rollback rules are in [the Headless target
 architecture](../../../docs/current/headless/TARGET_ARCHITECTURE.md). Passing that gate
 permits an isolated experiment only; it grants no Headless or live authority.
 
-## Phase 5: Organic Qualification And v1 Retirement
+## Phase 5: Organic Qualification After v1 Retirement
 
-Status: ongoing operational work.
+Status: the complete v1 HTTP namespace was retired at the bounded Gate 1
+closeout; Organic qualification remains ongoing per contract and exact
+environment.
 
 For each contract, record source audit, fixture tests, strict Re tests,
 Release/build, install, loaded identity, observation, canary, semantic
-post-state, and Organic Qualification separately. Retire a v1 action family
-only when the exact current MVID and the rebuilt client agree on the same
-contract and no hidden-information or ownership gap remains.
+post-state, and Organic Qualification separately. Unsupported contracts remain
+explicitly fail closed; they never regain authority through a v1 fallback.
+Historical v1 operation mappings remain audit evidence only.
 
 The success metric is not Surface count. It is the number of ordinary player
 journeys whose semantic contracts are independently evidenced and whose v1

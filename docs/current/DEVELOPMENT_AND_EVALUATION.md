@@ -135,11 +135,11 @@ platform product.
 
 ## Near-Term Priority
 
-D must not displace Gate 1. Its next small implementation slice should be D1
-offline CI because it makes existing checks visible and repeatable without
-changing runtime behavior. The next data-model slice should be D2 only after
-the team chooses concrete representative fixtures from Gate 1 evidence.
+D must not displace the current Gate 2 connector work. Its next small
+implementation slice should be D1 offline CI because it makes existing checks
+visible and repeatable without changing runtime behavior. The next data-model
+slice should be D2 only after the team chooses concrete representative
+fixtures from the closed Gate 1 evidence and new Gate 2 ambiguities.
 
 No D artifact grants live permission, canary status, qualification, stable
 learning, or product readiness.
-

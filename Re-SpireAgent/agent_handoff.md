@@ -5,7 +5,18 @@
 > `../STS2MCP/docs/bridge-v2/CURRENT_STATUS.md`. Older identity and mode claims
 > below are preserved as dated evidence and must not override those documents.
 
-Status update 2026-07-24 (latest): source contract is `2.0-preview.60`.
+Status update 2026-07-24 (latest): source contract is `2.0-preview.61`; Re
+normalized schema is `26`. Gate 1 is closed as a bounded v2 mutation baseline.
+Run `run-20260723150256-d2thtq` exposed exact Neow's Fury optional
+discard-to-hand selection. Preview.61 adds its manual-confirm source/witness and
+migrates Re from source-card literals to structural combat-pile transaction
+semantics. The entire Gateway v1 namespace is retired, its implementation is
+archived, and the default MCP adapter is v2-only. Preview.61 is built but not
+installed because the game remained
+open; no Organic Neow evidence exists. See canonical status and the Gate 1
+closeout audit.
+
+Earlier status update 2026-07-24: source contract was `2.0-preview.60`.
 Two Preview.59 real-run stops shared
 `generated_card_choice.binding_unavailable`: one was exact Quasar, while the
 other was Knowledge Demon's forced curse choice, not Charge. Preview.60 adds

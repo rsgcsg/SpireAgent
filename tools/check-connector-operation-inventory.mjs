@@ -1,17 +1,61 @@
+import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const inventoryPath = path.join(root, "STS2MCP/docs/bridge-v2/OPERATION_RETIREMENT_INVENTORY.json");
-const legacySourcePath = path.join(root, "STS2MCP/McpMod.Actions.cs");
+const legacySourcePath = path.join(root, "archive/legacy-connector-v1/McpMod.Actions.cs");
+const activeLegacySourcePaths = [
+  "McpMod.Actions.cs",
+  "McpMod.MultiplayerActions.cs",
+  "McpMod.StateBuilder.cs",
+  "McpMod.MultiplayerState.cs",
+  "McpMod.Formatting.cs",
+  "McpMod.Profile.cs",
+  "McpMod.Compendium.cs",
+  "McpMod.Wiki.cs"
+].map((name) => path.join(root, "STS2MCP", name));
+const gatewayHostPath = path.join(root, "STS2MCP/McpMod.cs");
+const legacyRoutePolicyPath = path.join(root, "STS2MCP/LegacyV1RoutePolicy.cs");
+const mcpServerPath = path.join(root, "STS2MCP/mcp/server.py");
 const manifestPath = path.join(root, "STS2MCP/BridgeV2/Runtime/BridgeContractManifest.cs");
 
 const inventory = JSON.parse(await readFile(inventoryPath, "utf8"));
 const legacySource = await readFile(legacySourcePath, "utf8");
+const gatewayHostSource = await readFile(gatewayHostPath, "utf8");
+const legacyRoutePolicySource = await readFile(legacyRoutePolicyPath, "utf8");
+const mcpServerSource = await readFile(mcpServerPath, "utf8");
 const manifestSource = await readFile(manifestPath, "utf8");
 
-if (inventory.schema_version !== 1) fail("unsupported inventory schema_version");
+if (inventory.schema_version !== 2) fail("unsupported inventory schema_version");
+if (inventory.gate_1_status !== "closed_bounded_v2_baseline") {
+  fail("gate_1_status must name the bounded Gate 1 closeout");
+}
+if (inventory.legacy_mutation_authority !== "retired") {
+  fail("legacy_mutation_authority must remain retired");
+}
+if (inventory.legacy_get_compatibility !== "retired") {
+  fail("legacy GET compatibility must remain retired");
+}
+if (inventory.default_mcp_action_transport !== "bridge_v2_only") {
+  fail("default MCP action transport must remain Bridge v2-only");
+}
+if (gatewayHostSource.includes("enable_legacy_v1_mutations")) {
+  fail("Gateway config must not contain a v1 mutation re-enable switch");
+}
+if (activeLegacySourcePaths.some((sourcePath) => existsSync(sourcePath))) {
+  fail("retired v1 state or mutation source remains in the active Gateway build");
+}
+if (!gatewayHostSource.includes("Legacy v1 is retired")) {
+  fail("Gateway host must return an explicit retired response for v1");
+}
+if (!legacyRoutePolicySource.includes("IsRetiredPath")) {
+  fail("legacy v1 route policy must retire the entire v1 namespace");
+}
+if (mcpServerSource.includes("/api/v1/")) {
+  fail("default MCP adapter must not route through v1");
+}
 if (!Array.isArray(inventory.legacy_dispatch_actions)) fail("legacy_dispatch_actions must be an array");
 
 const dispatchBlock = legacySource.match(/return action switch\s*\{([\s\S]*?)\n\s*_ =>/u)?.[1];
@@ -52,7 +96,7 @@ for (const entry of [...inventory.legacy_dispatch_actions, ...(inventory.other_l
 }
 
 process.stdout.write(
-  `Connector operation inventory OK: ${sourceActions.length} legacy dispatch actions accounted for.\n`
+  `Connector operation inventory OK: v1 namespace retired; ${sourceActions.length} historical dispatch actions accounted for.\n`
 );
 
 function assertUnique(values, label) {

@@ -1,3 +1,4 @@
+// Historical v1 profile API, retired from the active Gateway build.
 using System;
 using System.Collections.Generic;
 using System.IO;

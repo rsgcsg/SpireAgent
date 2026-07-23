@@ -11,8 +11,8 @@ preserve the detailed migration provenance.
 |---|---|
 | `Re-SpireAgent/` | Rebuilt Agent runtime, tests, config example, decision records, and current Agent documentation. |
 | `STS2MCP/BridgeV2/` | Current game-side semantic Gateway and protocol implementation. |
-| `STS2MCP/McpMod*.cs` | Active Gateway/v1 compatibility code; v1 retirement is not yet safe. |
-| `STS2MCP/mcp/` | Optional current MCP adapter over the Gateway. |
+| `STS2MCP/McpMod.cs`, `McpMod.Helpers.cs`, `McpMod.SettingsUI.cs` | Active Gateway host, shared read helpers, and local port configuration. No v1 state/action route remains. |
+| `STS2MCP/mcp/` | Optional current Bridge v2-only MCP adapter. |
 | `STS2MCP/tests/` | Current Bridge contract/runtime test suite. |
 | `STS2MCP/docs/bridge-v2/` remaining files | Current protocol, coverage, permission, migration, and ownership documents. |
 | `docs/current/` | Repository-level current status, architecture, roadmap, operations, and product truth. |
@@ -40,6 +40,7 @@ contract, tests, and rollback boundary. The archive is not a shared library.
 |---|---|---|
 | `archive/original-spireagent/` | Retired root TypeScript runtime, P8--P15 plans, old data/schema, handoffs, and learning artifacts. | Historical implementation, prior evidence, and migration source only. |
 | `archive/bridge-v2-previews/2026-07/` | Dated preview closeouts, canaries, source audits, and early architecture records. | Exact environment-scoped lifecycle evidence only. |
+| `archive/legacy-connector-v1/` | Retired v1 state reconstruction, index actions, profile/wiki/compendium API, and raw API references. | Historical operation inventory and failure evidence only; excluded from the active build. |
 
 ## DELETE_GENERATED_OR_DUPLICATE
 
@@ -52,9 +53,6 @@ locally without changing the repository, but this task did not delete them.
 
 | Path family | Why it remains | Release condition |
 |---|---|---|
-| `STS2MCP/McpMod*.cs` v1 routes and state/action helpers | v1 still supplies explicitly legacy-owned compatibility and diagnostic paths. | A v2 equivalent must have exact source/UI audit, advertised action contract, shared execution validation, semantic completion, current loaded identity, bounded Organic evidence, and explicit release policy. |
-| `STS2MCP/mcp/server.py` legacy tools | The optional MCP edge still exposes legacy v1 behavior for diagnostics. | The Gateway contract must support the required focused tools and product policy must decide the v1 release posture. |
-| `STS2MCP/docs/raw-full.md` and `raw-simplified.md` | They document legacy raw API shapes used by compatibility and diagnostics. | Replace with a decided v2-only or formally supported compatibility contract; do not erase a still-routable client interface. |
 | Historical Bridge manifest references | Current operation manifests still cite exact historical evidence files. | Replace only after a current exact-environment evidence record supersedes the cited scope; never erase provenance to make coverage look newer. |
 
 ## Classification Rules

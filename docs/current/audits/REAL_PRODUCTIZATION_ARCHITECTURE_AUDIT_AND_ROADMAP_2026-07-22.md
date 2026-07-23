@@ -1,11 +1,11 @@
 # Real Productization Architecture Audit And Roadmap
 
-> Current-status redirect, 2026-07-23: Connector Gate 0 is closed on the shared
-> `2.0-preview.59` contract; Re is v2-only and Gateway v1 POST is disabled by
-> default. Gate 1 remains active. The baseline table and dated post-audit notes
+> Current-status redirect, 2026-07-24: Gate 1 is closed as a bounded v2
+> mutation baseline on source `2.0-preview.61`; Re/default MCP are v2-only and
+> the full Gateway v1 namespace is retired. Preview.60 remains the last loaded
+> artifact and Gate 2 is next. The baseline table and dated post-audit notes
 > below preserve what was known when this audit was written; they are not
-> current runtime truth. See `../STATUS.md` and the Connector evidence for the
-> current checkout.
+> current runtime truth. See `../STATUS.md` and the Connector evidence.
 
 Status: canonical productization audit and conditional roadmap, 2026-07-22.
 
@@ -157,8 +157,8 @@ unnecessary ceremony.
 The implementation audit used these primary repository entrypoints rather than
 inferring behavior from status prose alone:
 
-- Gateway listener and v1 routes: `STS2MCP/McpMod.cs` and
-  `STS2MCP/McpMod.Actions.cs`;
+- Gateway listener and historical v1 routes: `STS2MCP/McpMod.cs` and
+  `archive/legacy-connector-v1/McpMod.Actions.cs`;
 - v2 transport, Origin defense, protocol, and in-memory command state:
   `STS2MCP/BridgeV2/Transport/McpMod.BridgeV2.cs`,
   `STS2MCP/BridgeV2/Transport/LoopbackOriginPolicy.cs`,
@@ -232,7 +232,7 @@ move model logic, prompts, memory, or learning into the Mod.
 | No Gateway authentication | plain loopback REST client/server; no authorization header | another local process submits a v1 or v2 mutation | ephemeral authenticated session, release-default deny |
 | No Gateway controller lease | only Re data-dir lock exists | two clients read the same state and race mutations | Gateway-enforced one-controller lease plus read-only observers |
 | Restart ambiguity | command ledger is process-memory only | game restarts after commit and poll returns no record | runtime epoch and explicit `unknown_after_restart`; no replay |
-| v1 mutation bypass | v1 and v2 routes share the same listener | client bypasses v2 state/action/completion contract | release-default disable or separately authorize v1 mutations |
+| v1 mutation bypass | resolved after this dated audit: the complete v1 namespace is retired | client could bypass v2 state/action/completion contract | preserve full retirement; never restore a compatibility fallback |
 | No consumer secret boundary | Re reads API key directly from environment | plugin/Agent process inherits or reads provider credentials | Companion-owned OS-backed key store and model broker |
 | No installed/loaded product handshake | files and local hashes only | Companion sees stale or duplicate Gateway package | loaded identity and compatibility negotiation before control |
 | No recovery UX | no Companion state machine/support bundle | timeout or incompatibility looks like a hung Agent | typed health states, pause, takeover, support bundle, recovery |
@@ -287,7 +287,7 @@ missing product boundary both need repair.
 | exact-environment permission | retain | separate read degradation from mutation denial; never auto-promote |
 | typed operation/transaction abstractions | defer broad forms | product auth, epoch, conformance, and recovery are higher priority |
 | Headless after a specific provider/transaction pilot | revise | gate on host-neutral contract and live reliability, not one Surface name |
-| v1 retirement per operation/journey | retain | public release also disables unmediated v1 mutation by default |
+| v1 retirement per operation/journey | completed more strongly after this audit | the complete v1 namespace is retired; preserve the archive only as migration evidence |
 | Agent platform later | split | schema/fixtures can start after connector alpha; code marketplace remains late |
 
 ### 4.1 What the previous audit omitted
@@ -928,14 +928,15 @@ Exit and permission remain host-scoped. Headless cannot inherit live evidence.
 1. **Contract truth fixture PR:** select one protocol revision; emit
    language-neutral golden/negative fixtures; decode with real Re code.
 2. **Gateway threat-contract PR:** document and test auth roles, runtime epoch,
-   lease state machine, restart and v1 release policy without broad coverage.
+   lease state machine, restart policy, and permanent v1 retirement without
+   broad coverage.
 3. **Authenticated descriptor PR:** rotate a local credential per Gateway
    runtime, protect the descriptor, redact logs, reject unauthenticated calls.
 4. **Controller lease PR:** one mutation lease, observer sessions, expiry,
    revoke/takeover, conflict diagnostics.
 5. **Epoch/command PR:** bind state/actions/commands to runtime epoch and make
    restart unknown explicit.
-6. **Release-profile PR:** disable unmediated v1 mutation in product profile;
+6. **Release-profile PR:** verify that packaged artifacts cannot restore v1;
    decide manifest/co-op/licensing; add package-content checks.
 7. **Companion skeleton PR:** discovery, health model, strict Connector client,
    no Agent/plugin abstraction yet.

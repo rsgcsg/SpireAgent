@@ -1,19 +1,31 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.60`
+Protocol preview: `2.0-preview.61`
 
-Preview.60 retains Preview.59 identity and Dredge semantics. It adds exact
+Preview.61 keeps exact source/task binding and purpose-specific semantic
+completion in the Gateway while making the combat-pile wire contract
+structural. `combat_pile_card_selection` now reports `mutation_kind`,
+`commit_mode`, optional `replacement_card_definition_id`, source/destination
+piles, bounds, and exact selected instances. Its only operations are
+`toggle_combat_pile_card` and, when the native enabled control exists,
+`confirm_combat_pile_selection`. `source_kind` remains provenance and an
+internal authorization input; a client must not use a source literal to infer
+legality or completion.
+
+Preview.61 also adds exact Neow's Fury. Its native transaction is an optional
+`min_select=0`, dynamic-max discard-to-hand selection with manual confirmation.
+The completion witness requires the source task to finish, the child to close,
+unselected baseline discard cards to remain, baseline hand cards to remain,
+and every selected exact reference to move from discard to hand. It does not
+authorize another caller of the same native screen.
+
+Preview.60 retained Preview.59 identity and Dredge semantics and added exact
 Quasar and Knowledge Demon branches to `generated_card_choice`, plus exact
 Charge to `combat_pile_card_selection`. Quasar, Knowledge Demon, and Charge
 reuse only bounded interaction mechanics; their source, purpose, cardinality,
-skip policy, commit, and semantic completion remain independent. Dredge is
-discriminated by `source_kind=dredge`,
-`purpose=move_bounded_discard_cards_to_hand`, operation
-`toggle_discard_card_for_dredge`, and source-specific intermediate/final
-completion witnesses. Exact `CardRemovalReward` remains on the independent
-`reward_deck_removal_selection` Surface. These contracts share internal
-card-grid mechanics only; source binding, permission, cardinality, commit, and
-semantic completion remain independent.
+skip policy, commit, and semantic completion remain independent. Exact
+`CardRemovalReward` remains on the independent
+`reward_deck_removal_selection` Surface.
 
 Preview.57 repairs exact game identity. `game.main_assembly_hash` is now the
 hash computed from the main assembly actually loaded by the current process,
@@ -71,7 +83,7 @@ contract against every Steam build. For exact runtime identity
   `deck_enchant_selection`, exact `relic_deck_removal_selection`,
   exact `reward_deck_removal_selection`,
   `combat_pile_card_selection` for exact
-  Headbutt/Graveblast/Cleanse/Seance/Dredge/Charge,
+  Headbutt/Graveblast/Cleanse/Seance/Dredge/Charge/Neow's Fury,
   and source-scoped
   `generated_card_choice` for exact Lead Paperweight acquisition and native
   Colorless/Attack/Skill/Power Potion, native Splash, native Quasar, and
@@ -388,11 +400,13 @@ index. This branch is loaded and canary-scoped but not Organic-tested.
 
 Dredge uses `source_kind=dredge`,
 `purpose=move_bounded_discard_cards_to_hand`, `pile_type=discard`,
-`destination_pile=hand`, and `destination_position=bottom`. Its equal
+`mutation_kind=move_selected_cards`,
+`commit_mode=automatic_at_max`, `destination_pile=hand`, and
+`destination_position=bottom`. Its equal
 `min_select=max_select` is dynamically one to three from native hand capacity;
 it has no manual confirmation and no cancel. When more candidates exist than
-the required count, `toggle_discard_card_for_dredge` changes the visible
-selected set. An intermediate command completes only when that exact set
+the required count, `toggle_combat_pile_card` changes the visible selected set.
+An intermediate command completes only when that exact set
 changes while source/screen and both piles remain stable. The final toggle
 completes only when the source task finishes, the selector closes, and the
 exact selected batch moves discard to hand. When the native command can resolve
@@ -401,19 +415,32 @@ child Surface is required. A Preview.59 current-build Re canary exercised
 select, deselect, and exact-three automatic commit. All unknown origins remain
 unsupported.
 
-Preview.60 adds exact Charge under the same bounded pile-selection mechanics.
-Its wire branch is `source_kind=charge`,
+Preview.60 added exact Charge under the same bounded pile-selection mechanics.
+In Preview.61 its structural branch is `source_kind=charge`,
 `purpose=transform_two_draw_cards_into_minion_dive_bombs`,
-`pile_type=draw`, `min_select=max_select=2`,
+`mutation_kind=replace_selected_cards_same_index`,
+`commit_mode=automatic_at_max`, `pile_type=draw`,
+`min_select=max_select=2`,
 `destination_pile=draw`, and `destination_position=same_index`. The operation
-`toggle_draw_card_for_charge` completes an intermediate command only when the
+`toggle_combat_pile_card` completes an intermediate command only when the
 exact selected set changes without pile mutation. Final completion requires
 source task and child closure, both exact originals absent, unchanged draw-pile
 count, and new exact `MinionDiveBomb` references at both original indices.
 Upgraded Charge additionally requires upgraded replacements. This witness does
 not authorize any other pile transformation.
 
-Preview.60 also adds two exact generated-card branches. Quasar uses
+Preview.61 adds exact Neow's Fury as a distinct manually committed branch:
+`source_kind=neows_fury`,
+`purpose=move_optional_discard_cards_to_hand`,
+`mutation_kind=move_selected_cards`, `commit_mode=manual_confirm`,
+`pile_type=discard`, `destination_pile=hand`, `min_select=0`, and a dynamic
+maximum bounded by the native card value and free hand slots. Toggle commands
+prove only a selected-set change with stable piles. The Gateway advertises
+`confirm_combat_pile_selection` only when the current native confirm control is
+visible and enabled. Confirmation may commit an empty set; completion uses the
+exact source task and post-state movement witness described above.
+
+Preview.60 also added two exact generated-card branches. Quasar uses
 `source_kind=quasar`, `destination=combat_hand`,
 `selected_card_cost_policy=unchanged`, and allows
 `select_generated_combat_card` or `skip_generated_combat_card_choice`.

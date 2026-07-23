@@ -13,6 +13,7 @@ const tracked = execFileSync(
 
 const files = tracked.filter((file) =>
   file.endsWith(".md") &&
+  existsSync(path.resolve(root, file)) &&
   !file.startsWith("archive/") &&
   !file.startsWith("Re-SpireAgent/dist/") &&
   !file.startsWith("STS2MCP/out/"),

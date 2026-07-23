@@ -170,10 +170,10 @@ internal static class BridgeContractManifest
             new[] { "hand", "energy", "combatants", "intents", "potions", "end_turn_control" }),
         Entry(
             "combat_pile_card_selection",
-            new[] { "select_discard_card_for_draw_top", "select_discard_card_for_hand", "select_draw_card_for_exhaust", "select_draw_card_for_soul_transform", "toggle_discard_card_for_dredge", "toggle_draw_card_for_charge" },
-            "sts2-v0.109.0:Headbutt/Graveblast/Cleanse/Seance/Dredge/Charge.OnPlay+CardSelectCmd.FromCombatPile(exact-pile,source-specific-bounds)+NCombatPileCardSelectScreen+purpose-specific-intermediate-or-commit-witness",
-            "source_discriminated_combat_pile_selection",
-            new[] { "source_card", "purpose", "visible_pile_cards", "selection", "source_and_destination_piles", "destination_position", "overflow_destination", "controls" }),
+            new[] { "toggle_combat_pile_card", "confirm_combat_pile_selection" },
+            "sts2-v0.109.0:qualified-card-task+CardSelectCmd.FromCombatPile(exact-pile,bounds,commit-mode)+NCombatPileCardSelectScreen+structural-mutation-contract+purpose-specific-witness",
+            "source_qualified_structural_combat_pile_transaction",
+            new[] { "source_card_provenance", "mutation_kind", "commit_mode", "visible_pile_cards", "selection", "source_and_destination_piles", "destination_position", "replacement", "overflow_destination", "controls" }),
         Entry(
             "combat_hand_card_selection",
             new[] { "select_combat_hand_card", "deselect_combat_hand_card", "confirm_combat_hand_selection", "close_combat_hand_peek" },

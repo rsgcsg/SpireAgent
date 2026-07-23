@@ -1,3 +1,4 @@
+// Historical v1 mutation dispatcher, retired from the active Gateway build.
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;

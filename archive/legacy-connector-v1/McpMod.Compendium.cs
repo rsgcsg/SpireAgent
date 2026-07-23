@@ -1,3 +1,4 @@
+// Historical v1 compendium API, retired from the active Gateway build.
 using System;
 using System.Collections;
 using System.Collections.Generic;

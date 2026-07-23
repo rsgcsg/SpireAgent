@@ -1,3 +1,4 @@
+// Historical v1 multiplayer state reconstruction, retired from the active Gateway build.
 using System;
 using System.Collections.Generic;
 using System.Linq;

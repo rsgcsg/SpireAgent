@@ -156,13 +156,22 @@ export interface CombatTurnSurface {
   completeness?: BridgeSurfaceCompleteness;
 }
 
-interface CombatPileCardSelectionSurfaceBase {
+export interface CombatPileCardSelectionSurface {
   kind: "combat_pile_card_selection";
   bridgeStateId: string;
   screenEntityId: string;
   prompt: string;
+  purpose: string;
+  mutationKind: "move_selected_cards" | "replace_selected_cards_same_index";
+  commitMode: "automatic_at_max" | "manual_confirm";
+  sourceKind: string;
   sourceCardEntityId: string;
+  sourceCardDefinitionId: string;
   pileType: "discard" | "draw";
+  destinationPile: "discard" | "draw" | "hand" | "exhaust";
+  destinationPosition: "top" | "bottom" | "same_index";
+  overflowDestination: "discard_if_hand_full" | null;
+  replacementCardDefinitionId: string | null;
   minimumSelections: number;
   maximumSelections: number;
   selectedCount: number;
@@ -173,59 +182,6 @@ interface CombatPileCardSelectionSurfaceBase {
   legalActions: BridgeLegalActionSnapshot[];
   completeness: BridgeSurfaceCompleteness;
 }
-
-export type CombatPileCardSelectionSurface = CombatPileCardSelectionSurfaceBase & (
-  | {
-      purpose: "move_one_discard_card_to_draw_top";
-      sourceKind: "headbutt";
-      sourceCardDefinitionId: "HEADBUTT";
-      destinationPile: "draw";
-      destinationPosition: "top";
-    }
-  | {
-      purpose: "move_one_discard_card_to_hand";
-      sourceKind: "graveblast";
-      sourceCardDefinitionId: "GRAVEBLAST";
-      destinationPile: "hand";
-      destinationPosition: "bottom";
-      overflowDestination: "discard_if_hand_full";
-    }
-  | {
-      purpose: "exhaust_one_draw_card";
-      sourceKind: "cleanse";
-      sourceCardDefinitionId: "CLEANSE";
-      pileType: "draw";
-      destinationPile: "exhaust";
-      destinationPosition: "bottom";
-    }
-  | {
-      purpose: "transform_one_draw_card_into_soul";
-      sourceKind: "seance";
-      sourceCardDefinitionId: "SEANCE";
-      pileType: "draw";
-      destinationPile: "draw";
-      destinationPosition: "same_index";
-      overflowDestination: null;
-    }
-  | {
-      purpose: "move_bounded_discard_cards_to_hand";
-      sourceKind: "dredge";
-      sourceCardDefinitionId: "DREDGE";
-      pileType: "discard";
-      destinationPile: "hand";
-      destinationPosition: "bottom";
-      overflowDestination: null;
-    }
-  | {
-      purpose: "transform_two_draw_cards_into_minion_dive_bombs";
-      sourceKind: "charge";
-      sourceCardDefinitionId: "CHARGE";
-      pileType: "draw";
-      destinationPile: "draw";
-      destinationPosition: "same_index";
-      overflowDestination: null;
-    }
-);
 
 export interface CombatHandCardSelectionSurface {
   kind: "combat_hand_card_selection";

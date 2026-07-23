@@ -31,6 +31,18 @@ closeouts, baseline, upstream, smoke, and long-run records moved to
 policy, player-visible coverage, live boundary, migration audit, ADRs, and Re
 integration remain under `STS2MCP/docs/bridge-v2/`.
 
+## Legacy Connector v1 Archive
+
+On 2026-07-24 the active Gateway retired the complete `/api/v1` namespace.
+The old single-player/multiplayer state builders, index mutation dispatchers,
+profile/compendium/wiki handlers, formatter, and raw API references moved from
+`STS2MCP/` into `archive/legacy-connector-v1/`.
+
+The move followed evidence that nominal v1 GET state construction was not
+strictly read-only: treasure and fake-merchant builders could invoke native
+controls. The archive preserves the 27-action migration source and historical
+failure context, but none of its C# files is compiled by the active project.
+
 ## Notes
 
 - Per-file rename provenance is retained by Git's move history for this

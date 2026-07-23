@@ -45,13 +45,20 @@ yet.
 
 ## Current Architectural Constraint
 
-The Gateway and Re now share one mechanically checked `2.0-preview.60`
-source contract. Gate 0 has exact loaded-runtime lifecycle evidence on its
-recorded artifact; newer source does not inherit that evidence. The
-current operational boundary is Gate 1: close operation-level reliability,
-visible-information, and v1-retirement gaps under exact identities without
-turning implementation, fixtures, or an older artifact into permission or
-qualification.
+The Gateway and Re share the mechanically checked `2.0-preview.61` source
+contract. Gate 1 is closed as a bounded v2 mutation baseline: Re and the
+default MCP adapter are v2-only, and the entire Gateway v1 HTTP surface is
+retired.
+V1 GET is diagnostic compatibility, not action authority. Preview.61 is built
+but not yet installed or loaded, so it inherits no runtime qualification from
+Preview.60.
+
+Combat-pile choice is the first production structural transaction contract.
+Re reads closed mutation and commit semantics rather than a union of source
+card names. The Gateway still proves the exact native source task, publishes
+only opaque actions, resumes the game-owned continuation, and checks a semantic
+post-state witness. This reduces consumer coupling without creating a universal
+effect API or automatic authority for unknown sources.
 
 ## Observation And Strategy Projection Boundary
 

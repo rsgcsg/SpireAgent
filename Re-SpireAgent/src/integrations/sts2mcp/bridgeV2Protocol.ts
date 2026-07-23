@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { isJsonObject, type JsonObject } from "../../shared/json.js";
 
-export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.60" as const;
+export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.61" as const;
 export const BRIDGE_V2_INSPECTION_KINDS = ["run_deck", "combat_piles", "shop_catalog"] as const;
 const inspectionKindSchema = z.enum(BRIDGE_V2_INSPECTION_KINDS);
 
@@ -668,8 +668,17 @@ const combatPileCardSelectionSurfaceBaseSchema = z.object({
   kind: z.literal("combat_pile_card_selection"),
   screen_entity_id: z.string().min(1),
   prompt: z.string().min(1),
+  purpose: z.string().min(1),
+  mutation_kind: z.enum(["move_selected_cards", "replace_selected_cards_same_index"]),
+  commit_mode: z.enum(["automatic_at_max", "manual_confirm"]),
+  source_kind: z.string().min(1),
   source_card_entity_id: z.string().min(1),
+  source_card_definition_id: z.string().min(1),
   pile_type: z.enum(["discard", "draw"]),
+  destination_pile: z.enum(["discard", "draw", "hand", "exhaust"]),
+  destination_position: z.enum(["top", "bottom", "same_index"]),
+  overflow_destination: z.enum(["discard_if_hand_full"]).nullable().optional(),
+  replacement_card_definition_id: z.string().min(1).nullable().optional(),
   min_select: z.number().int().nonnegative(),
   max_select: z.number().int().nonnegative(),
   selected_count: z.number().int().nonnegative(),
@@ -677,82 +686,9 @@ const combatPileCardSelectionSurfaceBaseSchema = z.object({
   require_manual_confirmation: z.boolean(),
   cancelable: z.boolean(),
   cards: z.array(visibleCardSchema)
-});
-
-const headbuttCombatPileCardSelectionSurfaceSchema = combatPileCardSelectionSurfaceBaseSchema.extend({
-  purpose: z.literal("move_one_discard_card_to_draw_top"),
-  source_kind: z.literal("headbutt"),
-  source_card_definition_id: z.literal("HEADBUTT"),
-  destination_pile: z.literal("draw"),
-  destination_position: z.literal("top"),
-  overflow_destination: z.null().optional()
 }).passthrough();
 
-const graveblastCombatPileCardSelectionSurfaceSchema = combatPileCardSelectionSurfaceBaseSchema.extend({
-  purpose: z.literal("move_one_discard_card_to_hand"),
-  source_kind: z.literal("graveblast"),
-  source_card_definition_id: z.literal("GRAVEBLAST"),
-  destination_pile: z.literal("hand"),
-  destination_position: z.literal("bottom"),
-  overflow_destination: z.literal("discard_if_hand_full")
-}).passthrough();
-
-const cleanseCombatPileCardSelectionSurfaceSchema = combatPileCardSelectionSurfaceBaseSchema.extend({
-  purpose: z.literal("exhaust_one_draw_card"),
-  source_kind: z.literal("cleanse"),
-  source_card_definition_id: z.literal("CLEANSE"),
-  pile_type: z.literal("draw"),
-  destination_pile: z.literal("exhaust"),
-  destination_position: z.literal("bottom"),
-  overflow_destination: z.null().optional()
-}).passthrough();
-
-const seanceCombatPileCardSelectionSurfaceSchema = combatPileCardSelectionSurfaceBaseSchema.extend({
-  purpose: z.literal("transform_one_draw_card_into_soul"),
-  source_kind: z.literal("seance"),
-  source_card_definition_id: z.literal("SEANCE"),
-  pile_type: z.literal("draw"),
-  destination_pile: z.literal("draw"),
-  destination_position: z.literal("same_index"),
-  overflow_destination: z.null().optional()
-}).passthrough();
-
-const dredgeCombatPileCardSelectionSurfaceSchema = combatPileCardSelectionSurfaceBaseSchema.extend({
-  purpose: z.literal("move_bounded_discard_cards_to_hand"),
-  source_kind: z.literal("dredge"),
-  source_card_definition_id: z.literal("DREDGE"),
-  pile_type: z.literal("discard"),
-  destination_pile: z.literal("hand"),
-  destination_position: z.literal("bottom"),
-  overflow_destination: z.null().optional(),
-  min_select: z.number().int().min(1).max(3),
-  max_select: z.number().int().min(1).max(3),
-  require_manual_confirmation: z.literal(false),
-  cancelable: z.literal(false)
-}).passthrough();
-
-const chargeCombatPileCardSelectionSurfaceSchema = combatPileCardSelectionSurfaceBaseSchema.extend({
-  purpose: z.literal("transform_two_draw_cards_into_minion_dive_bombs"),
-  source_kind: z.literal("charge"),
-  source_card_definition_id: z.literal("CHARGE"),
-  pile_type: z.literal("draw"),
-  destination_pile: z.literal("draw"),
-  destination_position: z.literal("same_index"),
-  overflow_destination: z.null().optional(),
-  min_select: z.literal(2),
-  max_select: z.literal(2),
-  require_manual_confirmation: z.literal(false),
-  cancelable: z.literal(false)
-}).passthrough();
-
-const combatPileCardSelectionSurfaceSchema = z.discriminatedUnion("source_kind", [
-  headbuttCombatPileCardSelectionSurfaceSchema,
-  graveblastCombatPileCardSelectionSurfaceSchema,
-  cleanseCombatPileCardSelectionSurfaceSchema,
-  seanceCombatPileCardSelectionSurfaceSchema,
-  dredgeCombatPileCardSelectionSurfaceSchema,
-  chargeCombatPileCardSelectionSurfaceSchema
-]);
+const combatPileCardSelectionSurfaceSchema = combatPileCardSelectionSurfaceBaseSchema;
 
 const combatHandCardSelectionSurfaceSchema = z.object({
   kind: z.literal("combat_hand_card_selection"),

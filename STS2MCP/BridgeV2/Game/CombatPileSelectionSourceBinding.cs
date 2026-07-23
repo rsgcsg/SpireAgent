@@ -75,6 +75,15 @@ internal static class CombatPileSelectionSourceBinding
         IReadOnlyList<CardModel> BaselineDraw)
         : SourceBinding(Token, Player, Charge, BaselineDraw);
 
+    internal sealed record NeowsFuryBinding(
+        Guid Token,
+        Player Player,
+        NeowsFury NeowsFury,
+        IReadOnlyList<CardModel> BaselineDiscard,
+        IReadOnlyList<CardModel> BaselineHand,
+        int MaxSelect)
+        : SourceBinding(Token, Player, NeowsFury, BaselineDiscard);
+
     internal readonly record struct Scope(Guid Token)
     {
         public bool IsTracked => Token != Guid.Empty;
@@ -182,6 +191,32 @@ internal static class CombatPileSelectionSourceBinding
             player,
             charge,
             combat.DrawPile.Cards.ToArray());
+        lock (Gate)
+            Active.Add(binding.Token, binding);
+        return new Scope(binding.Token);
+    }
+
+    internal static Scope BeginNeowsFury(NeowsFury neowsFury)
+    {
+        if (neowsFury.Owner is not Player player
+            || player.PlayerCombatState is not { } combat)
+        {
+            return default;
+        }
+
+        int maxSelect = Math.Min(
+            neowsFury.DynamicVars.Cards.IntValue,
+            CardPile.MaxCardsInHand - combat.Hand.Cards.Count);
+        if (maxSelect <= 0)
+            return default;
+
+        var binding = new NeowsFuryBinding(
+            Guid.NewGuid(),
+            player,
+            neowsFury,
+            combat.DiscardPile.Cards.ToArray(),
+            combat.Hand.Cards.ToArray(),
+            maxSelect);
         lock (Gate)
             Active.Add(binding.Token, binding);
         return new Scope(binding.Token);
@@ -380,6 +415,38 @@ internal static class ChargeCombatPileSelectionSourcePatch
     }
 }
 
+/// <summary>
+/// Neow's Fury is an optional, manually confirmed discard-to-hand transaction.
+/// Keep its source task distinct from exact-count auto-commit selectors.
+/// </summary>
+[HarmonyPatch]
+internal static class NeowsFuryCombatPileSelectionSourcePatch
+{
+    internal static MethodBase ResolveTargetMethod() =>
+        AccessTools.DeclaredMethod(
+            typeof(NeowsFury),
+            "OnPlay",
+            new[] { typeof(PlayerChoiceContext), typeof(CardPlay) })
+        ?? throw new MissingMethodException(typeof(NeowsFury).FullName, "OnPlay");
+
+    private static MethodBase TargetMethod() => ResolveTargetMethod();
+
+    private static void Prefix(
+        NeowsFury __instance,
+        out CombatPileSelectionSourceBinding.Scope __state)
+    {
+        __state = CombatPileSelectionSourceBinding.BeginNeowsFury(__instance);
+    }
+
+    private static void Postfix(
+        ref Task __result,
+        CombatPileSelectionSourceBinding.Scope __state)
+    {
+        if (__state.IsTracked)
+            __result = CombatPileSelectionSourceBinding.Complete(__result, __state);
+    }
+}
+
 internal static class HeadbuttCombatPileWitness
 {
     // The played source card reaches its own post-play pile after this baseline,
@@ -563,6 +630,63 @@ internal static class DredgeCombatPileWitness
         IReadOnlyCollection<T> actual) where T : class =>
         expected.Count == actual.Count
         && expected.All(card => ContainsReference(actual, card));
+
+    private static bool ContainsReference<T>(IEnumerable<T> cards, T expected) where T : class =>
+        cards.Any(card => ReferenceEquals(card, expected));
+}
+
+internal static class NeowsFuryCombatPileWitness
+{
+    internal static bool SelectionChanged<T>(
+        bool sourceActive,
+        bool surfaceOpen,
+        IReadOnlyCollection<T> baselineDiscard,
+        IReadOnlyCollection<T> baselineHand,
+        IReadOnlyCollection<T> currentDiscard,
+        IReadOnlyCollection<T> currentHand,
+        IReadOnlyCollection<T> previousSelection,
+        IReadOnlyCollection<T> currentSelection,
+        T toggledCard,
+        bool wasSelected) where T : class =>
+        DredgeCombatPileWitness.SelectionChanged(
+            sourceActive,
+            surfaceOpen,
+            baselineDiscard,
+            baselineHand,
+            currentDiscard,
+            currentHand,
+            previousSelection,
+            currentSelection,
+            toggledCard,
+            wasSelected);
+
+    internal static bool Completed<T>(
+        bool sourceCompleted,
+        bool surfaceClosed,
+        IReadOnlyCollection<T> baselineDiscard,
+        IReadOnlyCollection<T> baselineHand,
+        IReadOnlyCollection<T> currentDiscard,
+        IReadOnlyCollection<T> currentHand,
+        IReadOnlyCollection<T> selectedCards,
+        int maxSelect) where T : class
+    {
+        if (!sourceCompleted
+            || !surfaceClosed
+            || selectedCards.Count > maxSelect
+            || !baselineHand.All(card => ContainsReference(currentHand, card))
+            || !baselineDiscard
+                .Where(card => !ContainsReference(selectedCards, card))
+                .All(card => ContainsReference(currentDiscard, card)))
+        {
+            return false;
+        }
+
+        return selectedCards.All(card =>
+            ContainsReference(baselineDiscard, card)
+            && !ContainsReference(baselineHand, card)
+            && !ContainsReference(currentDiscard, card)
+            && ContainsReference(currentHand, card));
+    }
 
     private static bool ContainsReference<T>(IEnumerable<T> cards, T expected) where T : class =>
         cards.Any(card => ReferenceEquals(card, expected));

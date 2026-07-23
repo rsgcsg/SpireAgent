@@ -1,8 +1,8 @@
-# STS2 MCP v1 - Legacy API Quick Reference
+# STS2 MCP v1 - Retired API Quick Reference
 
-> **Legacy compatibility only.** This document describes old index-based tools,
-> not Bridge v2 completeness or authority. See
-> [`docs/bridge-v2/README.md`](bridge-v2/README.md) for current work.
+> **Historical only.** These endpoints are retired and return `410 Gone`.
+> See the current
+> [`Bridge v2 index`](../../STS2MCP/docs/bridge-v2/README.md).
 
 HTTP API on `localhost:15526`. No authentication.
 

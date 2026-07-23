@@ -1,10 +1,9 @@
 # Bridge v2 Integration
 
-> Current source-truth status, 2026-07-22: Re and C# share the
-> `2.0-preview.60` source consumer contract. Gate 0 has exact loaded-runtime lifecycle
-> evidence and Gate 1 operation-level reliability/migration is active. This is
-> not complete-game qualification. See the
-> [real connector audit](../../STS2MCP/docs/bridge-v2/REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md).
+> Current source-truth status, 2026-07-24: Re and C# share the
+> `2.0-preview.61` source consumer contract; Re normalized schema is `26`.
+> Gate 1 is closed as a bounded v2 mutation baseline. Preview.60 remains the
+> last loaded artifact, so Preview.61 has no inherited Organic qualification.
 
 ## Connector Boundary
 
@@ -24,7 +23,7 @@ consumption.
 
 ## Current Scope
 
-Re-SpireAgent implements the strict `2.0-preview.60` consumer contract. When a
+Re-SpireAgent implements the strict `2.0-preview.61` consumer contract. When a
 matching Bridge exists, authority is read from capabilities rather than
 inferred from implementation or historical evidence.
 
@@ -82,19 +81,15 @@ moves the selected reference to hand, with the native full-hand discard redirect
 while Headbutt moves it to draw-pile top. Both branches retain independent
 completion evidence and unknown callers remain invalid.
 
-Re now strictly decodes exact Cleanse, Seance, and Dredge branches on the same bounded
-`combat_pile_card_selection` mechanics. Cleanse exposes one visible draw-pile
-card to exhaust and completed a real exact-card lifecycle in
-`run-20260723105825-69ohhl` under the prior loaded Preview.57 identity. Seance
-exposes one visible draw-pile card to transform into a same-index `Soul` through
-`select_draw_card_for_soul_transform`; the Seance branch is source-audited,
-fixture-tested, installed, loaded, and canary-scoped but not Organic-exercised.
-Dredge exposes a source-scoped bounded one-to-three discard selection through
-`toggle_discard_card_for_dredge`; a Preview.59 current-build canary proved
-select, deselect, and exact-three automatic batch completion. The prompt guide
-remains source-neutral and tells the model to consume the Surface purpose,
-source/destination piles, selected set, bounds, overflow, and exact candidates.
-Every other unknown origin remains invalid.
+Re now decodes one structural `combat_pile_card_selection` contract rather than
+one TypeScript branch per source card. It validates closed movement or
+same-index replacement semantics, automatic-at-max versus manual-confirm
+commit, exact selected instances, and bounds. Gateway source provenance remains
+visible but does not create client-side authority. Unknown structurally valid
+provenance can be decoded only when the exact Gateway has already published
+scoped opaque actions; unknown Gateway source binding still produces no
+actions. See the
+[Gate 1 selector audit](../../STS2MCP/docs/bridge-v2/GATE1_CLOSEOUT_AND_SELECTOR_TRANSACTION_AUDIT_2026-07-24.md).
 
 The current working tree additionally decodes the exact post-acquisition
 `Precise Scissors` deck-removal task as
@@ -394,7 +389,7 @@ the exact node to be on screen, matching `NMapPoint.OnRelease`.
 ## Connector Mode
 
 Re uses Bridge v2 only. Unsupported, degraded, mismatched, or unknown contracts
-stop safely. Gateway v1 diagnostics are outside the Agent runtime.
+stop safely. Historical v1 records are outside the Agent runtime.
 
 ## Data Flow
 

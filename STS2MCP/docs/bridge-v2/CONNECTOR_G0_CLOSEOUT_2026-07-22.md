@@ -2,6 +2,11 @@
 
 Date: 2026-07-22
 
+> Historical boundary: this report records Gate 0 at its original artifact.
+> The later Gate 1 closeout fully retired the Gateway `/api/v1` namespace and
+> archived its implementation. Any v1 compatibility statements below are not
+> current runtime instructions.
+
 ## Verdict
 
 Gate 0 is closed for the exact local environment recorded below. This proves a

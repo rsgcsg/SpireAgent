@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
-using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -25,7 +24,6 @@ public static partial class McpMod
 
     private static HttpListener? _listener;
     private static Thread? _serverThread;
-    private static bool _legacyV1MutationsEnabled;
     private static readonly ConcurrentQueue<Action> _mainThreadQueue = new();
     internal static readonly JsonSerializerOptions _jsonOptions = new()
     {
@@ -51,8 +49,7 @@ public static partial class McpMod
                 {
                     var defaultConfig = new Dictionary<string, object>
                     {
-                        ["port"] = DefaultPort,
-                        ["enable_legacy_v1_mutations"] = false
+                        ["port"] = DefaultPort
                     };
                     string json = JsonSerializer.Serialize(defaultConfig, _jsonOptions);
                     File.WriteAllText(configPath, json);
@@ -67,10 +64,6 @@ public static partial class McpMod
 
             string content = File.ReadAllText(configPath);
             using var doc = JsonDocument.Parse(content);
-            _legacyV1MutationsEnabled = doc.RootElement.TryGetProperty(
-                    "enable_legacy_v1_mutations",
-                    out var legacyMutationElement)
-                && legacyMutationElement.ValueKind == JsonValueKind.True;
             if (doc.RootElement.TryGetProperty("port", out var portElem)
                 && portElem.TryGetInt32(out int port)
                 && port is > 0 and <= 65535)
@@ -114,7 +107,7 @@ public static partial class McpMod
             _serverThread.Start();
 
             GD.Print($"[STS2 MCP] v{Version} server started on http://localhost:{port}/");
-            GD.Print($"[STS2 MCP] Legacy v1 mutations: {(_legacyV1MutationsEnabled ? "explicitly enabled" : "disabled")}");
+            GD.Print("[STS2 MCP] Legacy v1 HTTP namespace: retired");
         }
         catch (Exception ex)
         {
@@ -213,12 +206,12 @@ public static partial class McpMod
 
             string path = request.Url?.AbsolutePath ?? "/";
 
-            if (!LegacyV1MutationPolicy.IsAllowed(request.HttpMethod, path, _legacyV1MutationsEnabled))
+            if (LegacyV1RoutePolicy.IsRetiredPath(path))
             {
                 SendError(
                     response,
-                    403,
-                    "Legacy v1 mutations are disabled. Use Bridge v2 advertised actions, or explicitly enable legacy compatibility in STS2_MCP.conf.");
+                    410,
+                    "Legacy v1 is retired. Use the Bridge v2 contract.");
                 return;
             }
 
@@ -271,71 +264,6 @@ public static partial class McpMod
                 else
                     SendError(response, 405, "Method not allowed");
             }
-            else if (path == "/api/v1/singleplayer")
-            {
-                // Hard-block singleplayer endpoint during multiplayer runs
-                // to prevent calling the non-sync-safe end_turn path
-                if (IsMultiplayerRun())
-                {
-                    SendError(response, 409,
-                        "Multiplayer run is active. Use /api/v1/multiplayer instead.");
-                    return;
-                }
-
-                if (request.HttpMethod == "GET")
-                    HandleGetState(request, response);
-                else if (request.HttpMethod == "POST")
-                    HandlePostAction(request, response);
-                else
-                    SendError(response, 405, "Method not allowed");
-            }
-            else if (path == "/api/v1/multiplayer")
-            {
-                // Guard: reject multiplayer endpoint during singleplayer runs
-                if (!IsMultiplayerRun())
-                {
-                    SendError(response, 409,
-                        "Not in a multiplayer run. Use /api/v1/singleplayer instead.");
-                    return;
-                }
-
-                if (request.HttpMethod == "GET")
-                    HandleGetMultiplayerState(request, response);
-                else if (request.HttpMethod == "POST")
-                    HandlePostMultiplayerAction(request, response);
-                else
-                    SendError(response, 405, "Method not allowed");
-            }
-            else if (path == "/api/v1/profiles")
-            {
-                if (request.HttpMethod == "GET")
-                    HandleGetProfiles(response);
-                else if (request.HttpMethod == "POST")
-                    HandlePostProfiles(request, response);
-                else
-                    SendError(response, 405, "Method not allowed");
-            }
-            else if (path == "/api/v1/profile")
-            {
-                if (request.HttpMethod == "GET")
-                    HandleGetProfile(response);
-                else
-                    SendError(response, 405, "Method not allowed");
-            }
-            else if (path == "/api/v1/compendium")
-            {
-                if (request.HttpMethod == "GET")
-                    HandleGetCompendium(response);
-                else
-                    SendError(response, 405, "Method not allowed");
-            }
-            else if (path == "/api/v1/wiki")
-            {
-                if (request.HttpMethod == "GET")
-                    HandleGetWiki(request, response);
-                else
-                    SendError(response, 405, "Method not allowed");
-            }
             else
             {
                 SendError(response, 404, "Not found");
@@ -364,195 +292,4 @@ public static partial class McpMod
         catch { return false; }
     }
 
-    private static void HandleGetMultiplayerState(HttpListenerRequest request, HttpListenerResponse response)
-    {
-        string format = request.QueryString["format"] ?? "json";
-
-        try
-        {
-            var stateTask = RunOnMainThread(() => BuildMultiplayerGameState());
-            var state = stateTask.GetAwaiter().GetResult();
-
-            if (format == "markdown")
-            {
-                string md = FormatAsMarkdown(state);
-                SendText(response, md, "text/markdown");
-            }
-            else
-            {
-                SendJson(response, state);
-            }
-        }
-        catch (Exception ex)
-        {
-            GD.PrintErr($"[STS2 MCP] HandleGetMultiplayerState: {ex}");
-            try
-            {
-                response.StatusCode = 500;
-                SendJson(response, new Dictionary<string, object?>
-                {
-                    ["error"] = $"Failed to read multiplayer game state: {ex.Message}",
-                    ["exception_type"] = ex.GetType().FullName,
-                    ["stack_trace"] = ex.StackTrace
-                });
-            }
-            catch { /* response may be unusable */ }
-        }
-    }
-
-    private static void HandlePostMultiplayerAction(HttpListenerRequest request, HttpListenerResponse response)
-    {
-        string body;
-        using (var reader = new StreamReader(request.InputStream, request.ContentEncoding))
-            body = reader.ReadToEnd();
-
-        Dictionary<string, JsonElement>? parsed;
-        try
-        {
-            parsed = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(body);
-        }
-        catch
-        {
-            SendError(response, 400, "Invalid JSON");
-            return;
-        }
-
-        if (parsed == null || !parsed.TryGetValue("action", out var actionElem))
-        {
-            SendError(response, 400, "Missing 'action' field");
-            return;
-        }
-
-        string action = actionElem.GetString() ?? "";
-
-        // Menu actions (FTUE/popup dismissal, game-over, character select, etc.) are
-        // scene-tree-driven and equally valid in MP. Route them to the shared handler
-        // so MP clients can dismiss blocking FTUE prompts without going through the
-        // run-mode-specific dispatcher.
-        if (action == "menu_select")
-        {
-            try
-            {
-                var option = parsed.TryGetValue("option", out var optElem) ? optElem.GetString() ?? "" : "";
-                var seed = parsed.TryGetValue("seed", out var seedElem) ? seedElem.GetString() : null;
-                var resultTask = RunOnMainThread(() => ExecuteMenuSelect(option, seed));
-                var result = resultTask.GetAwaiter().GetResult();
-                SendJson(response, result);
-            }
-            catch (Exception ex)
-            {
-                SendError(response, 500, $"Menu action failed: {ex.Message}");
-            }
-            return;
-        }
-
-        try
-        {
-            var resultTask = RunOnMainThread(() => ExecuteMultiplayerAction(action, parsed));
-            var result = resultTask.GetAwaiter().GetResult();
-            SendJson(response, result);
-        }
-        catch (Exception ex)
-        {
-            SendError(response, 500, $"Multiplayer action failed: {ex.Message}");
-        }
-    }
-
-    private static void HandleGetState(HttpListenerRequest request, HttpListenerResponse response)
-    {
-        string format = request.QueryString["format"] ?? "json";
-
-        try
-        {
-            var stateTask = RunOnMainThread(() => BuildGameState());
-            var state = stateTask.GetAwaiter().GetResult();
-
-            if (format == "markdown")
-            {
-                try
-                {
-                    SendText(response, FormatAsMarkdown(state), "text/markdown");
-                }
-                catch (Exception ex)
-                {
-                    GD.PrintErr($"[STS2 MCP] FormatAsMarkdown failed, returning JSON: {ex}");
-                    SendJson(response, state);
-                }
-            }
-            else
-            {
-                SendJson(response, state);
-            }
-        }
-        catch (Exception ex)
-        {
-            GD.PrintErr($"[STS2 MCP] HandleGetState: {ex}");
-            try
-            {
-                response.StatusCode = 500;
-                SendJson(response, new Dictionary<string, object?>
-                {
-                    ["error"] = $"Failed to read game state: {ex.Message}",
-                    ["exception_type"] = ex.GetType().FullName,
-                    ["stack_trace"] = ex.StackTrace
-                });
-            }
-            catch { /* response may be unusable */ }
-        }
-    }
-
-    private static void HandlePostAction(HttpListenerRequest request, HttpListenerResponse response)
-    {
-        string body;
-        using (var reader = new StreamReader(request.InputStream, request.ContentEncoding))
-            body = reader.ReadToEnd();
-
-        Dictionary<string, JsonElement>? parsed;
-        try
-        {
-            parsed = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(body);
-        }
-        catch
-        {
-            SendError(response, 400, "Invalid JSON");
-            return;
-        }
-
-        if (parsed == null || !parsed.TryGetValue("action", out var actionElem))
-        {
-            SendError(response, 400, "Missing 'action' field");
-            return;
-        }
-
-        string action = actionElem.GetString() ?? "";
-
-        // Handle menu actions separately (no run required)
-        if (action == "menu_select")
-        {
-            try
-            {
-                var option = parsed.TryGetValue("option", out var optElem) ? optElem.GetString() ?? "" : "";
-                var seed = parsed.TryGetValue("seed", out var seedElem) ? seedElem.GetString() : null;
-                var resultTask = RunOnMainThread(() => ExecuteMenuSelect(option, seed));
-                var result = resultTask.GetAwaiter().GetResult();
-                SendJson(response, result);
-            }
-            catch (Exception ex)
-            {
-                SendError(response, 500, $"Menu action failed: {ex.Message}");
-            }
-            return;
-        }
-
-        try
-        {
-            var resultTask = RunOnMainThread(() => ExecuteAction(action, parsed));
-            var result = resultTask.GetAwaiter().GetResult();
-            SendJson(response, result);
-        }
-        catch (Exception ex)
-        {
-            SendError(response, 500, $"Action failed: {ex.Message}");
-        }
-    }
 }

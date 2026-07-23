@@ -7,7 +7,7 @@ namespace STS2_MCP.BridgeV2.Protocol;
 
 public static class BridgeV2Contract
 {
-    public const string ProtocolVersion = "2.0-preview.60";
+    public const string ProtocolVersion = "2.0-preview.61";
     public const string ObservationPolicyId = "player_visible_ui_v1";
 }
 
@@ -901,6 +901,8 @@ public sealed record CombatPileCardSelectionSurface(
     string ScreenEntityId,
     string Prompt,
     string Purpose,
+    string MutationKind,
+    string CommitMode,
     string SourceKind,
     string SourceCardEntityId,
     string SourceCardDefinitionId,
@@ -908,6 +910,7 @@ public sealed record CombatPileCardSelectionSurface(
     string DestinationPile,
     string DestinationPosition,
     string? OverflowDestination,
+    string? ReplacementCardDefinitionId,
     int MinSelect,
     int MaxSelect,
     int SelectedCount,

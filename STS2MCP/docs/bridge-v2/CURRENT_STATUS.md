@@ -7,29 +7,43 @@ and do not grant current authority.
 
 ## Current Source-Truth Status
 
-The C# Bridge and Re-SpireAgent now share source contract `2.0-preview.60`.
-Preview.60 retains
-the Preview.57 source-truth repair discovered during cold-start verification:
-the previous
-identity gate used `release_info.json.main_assembly_hash=-840572606`, while
-the game's own `AssemblyHasher` proved the loaded arm64 assembly is
-`-1639417500`. `game.main_assembly_hash` now reports and authorizes only the
-actual runtime value; `release_declared_main_assembly_hash` keeps the release
-claim as non-authorizing diagnostic provenance. C# derives explicit
-`surface_kind + operation + tier` scopes from the exact-build manifest,
-advertises only those operations, and publishes a path-free SHA-256 for its
-loaded assembly. Re decodes the same contract. Preview.58 additionally binds
-exact Seance and `CardRemovalReward` child transactions without granting
-generic card-selection authority. Preview.59 adds exact Dredge as a
-source-scoped bounded multi-selection branch with separate intermediate and
-exact-batch completion. Preview.60 adds three exact branches without granting a
-generic selector: Quasar is a skippable generated combat-hand choice whose
-selected cost remains unchanged; Knowledge Demon is a forced immediate-effect
-choice; Charge selects exactly two draw-pile cards and transforms each into an
-exact same-index `MinionDiveBomb`. Preview.56 remains the
-coordinated Wood Carvings deterministic replacement contract; it does not revive the
-rejected Discovery experiment, and unknown generated-card sources remain
-rejected.
+The C# Gateway and Re-SpireAgent source now share contract
+`2.0-preview.61`; Re normalized schema is `26`. Gate 1 is closed as a bounded
+ordinary-single-player v2 mutation baseline:
+
+- Re and the default Python MCP adapter submit only advertised Bridge v2
+  actions;
+- the entire Gateway `/api/v1` namespace is retired and returns `410 Gone`;
+- historical v1 state/action/profile/wiki source is outside the active build;
+- unsupported Crystal Sphere, standalone manual potion discard, non-standard
+  menu/profile flows, multiplayer, and unknown selector origins remain
+  explicit fail-closed or out-of-scope rows.
+
+Run `run-20260723150256-d2thtq` stopped safely on exact Neow's Fury because the
+last loaded Preview.60 artifact had no unique source binding for its optional
+discard-to-hand selector. Preview.61 adds that exact native task, a structural
+combat-pile transaction contract, generic state-bound toggle/confirm
+operations, and an exact post-state witness. Source identity remains Gateway
+provenance and authority input rather than a Re type union.
+
+Preview.61 passes source/unit/type/build checks. The final local Release build
+SHA is
+`0b58699410e2619e144d69250d9880cb11a2620ba125f14c90017faaf1082f42`;
+this is build evidence only. It is not installed or loaded because the game
+remained open during this closeout, and it has no Organic Neow's Fury
+evidence. The last loaded identity remains Preview.60:
+
+```text
+SHA     49e403b7fb953121256e13f96edbe1eb435a03ce8eac9ddfb17dff473b81d996
+MVID    1219fb20-6db0-4b97-a754-57695e2585f8
+runtime ec2901d029a241e08831fdece0691a2d
+game    v0.109.0|c12f634d|-1639417500
+```
+
+## Dated Evidence Chronology
+
+The chronology below records prior artifacts and repairs. It does not transfer
+Organic qualification or permission to Preview.61.
 
 Gate 0 is now closed on the exact loaded artifact recorded in
 [the Gate 0 closeout](CONNECTOR_G0_CLOSEOUT_2026-07-22.md). Re completed
@@ -54,10 +68,11 @@ compatibility only. The prior Preview.59 Dredge journey does not transfer Gate
 
 ## Required Repair Order
 
-1. Maintain the machine-checked remaining v1 ownership inventory per operation
-   and coherent journey.
-2. Close normal-run v2 coverage and visible-information gaps one exact
-   operation at a time, preserving current permission tiers.
+1. Close the game, install Preview.61, cold-start, record exact loaded identity,
+   and run one bounded Neow's Fury select/deselect/confirm lifecycle.
+2. Begin Gate 2 with non-authorizing transaction correlation and concrete
+   player-visible-information closure; preserve current permission tiers.
+3. Maintain the machine-checked closed Gate 1/v1 retirement inventory.
 
 The current inventory and first Gate 1 runtime repair are recorded in
 [Gate 1 Operation And Journey Inventory](GATE1_OPERATION_AND_JOURNEY_INVENTORY.md).
@@ -179,9 +194,8 @@ The detailed audit and migration sequence is
   publication/execution legality, main-thread commit, semantic completion,
   unknown-no-retry, independent read-only Inspection, and exact-environment
   capability scoping.
-- Re has no v1 mutation transport. Gateway v1 reads remain explicit legacy
-  compatibility; all Gateway v1 POST routes are disabled by default and require
-  the local `enable_legacy_v1_mutations=true` compatibility setting.
+- Re and the default MCP adapter have no v1 transport. The Gateway v1 namespace
+  and its old state/action/profile/wiki implementation are fully retired.
 - REST is Re's current transport. The Python MCP server is optional and must
   not become a second legality/completion engine.
 - The current HTTP listener is a developer preview, not a consumer-safe
@@ -197,13 +211,11 @@ a current v2 permission claim.
 
 ## Next High-Value Work
 
-Run bounded Quasar and Knowledge Demon lifecycles and exact Charge when
-naturally available under the recorded Preview.60 identity. Also retain the
-pending Seance and Precise Scissors
-completion canaries. Continue the exact-identity journey only after those
-results are recorded. Other known fail-closed candidates remain Crystal Sphere
-and manual potion discard outside reward handling. Track the
-recurring combat stale-state pre-dispatch rejections as a throughput
-observation, but do not weaken state-bound validation or retry rejected
-actions. Close only bounded contracts and do not convert canary support into
-qualification without repeated current exact-build Organic evidence.
+Install and cold-load Preview.61 only after the game exits. Verify its exact
+SHA/MVID/runtime/game/Modset identity, then run the bounded Neow's Fury
+select/deselect/confirm lifecycle. Quasar, Knowledge Demon, Charge, Seance, and
+Precise Scissors remain evidence debt rather than Gate 1 blockers. Gate 2 may
+then advance through a non-authorizing transaction-correlation shadow and
+visible-information closure. Do not weaken state binding, retry unknown
+outcomes, restore v1, or convert source/build evidence into canary or
+qualification claims.

@@ -1,3 +1,4 @@
+// Historical v1 state reconstruction. It is not part of the active Gateway build.
 using System;
 using System.Collections.Generic;
 using System.Linq;

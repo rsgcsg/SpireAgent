@@ -12,15 +12,12 @@ and do not define the current architecture, permission model, or roadmap.
 
 ## Current Truth
 
-The active connector source now shares a `2.0-preview.60` contract between C#
-and Re-SpireAgent. Preview.60 is Steam-loaded and strict Re inspection
-negotiates its exact SHA/MVID/runtime/Modset identity; the new selectors still
-require bounded Organic action verification. Earlier exact-state journeys closed
-Gate 0. Gate 1 additionally has a current-build, source-scoped Dredge
-multi-selection canary with intermediate and exact-batch completion evidence.
-Gate 1 operation-level reliability, coverage, visible-information closure, and
-v1 retirement remain active; current evidence does not authorize wildcard
-coverage or consumer rollout.
+The active connector source shares `2.0-preview.61` between C# and
+Re-SpireAgent; Re normalized schema is `26`. Gate 1 is closed as a bounded
+ordinary-single-player v2 mutation baseline: Re and the default MCP adapter are
+v2-only, and the entire Gateway `/api/v1` namespace is retired. Preview.60 remains the
+last Steam-loaded artifact. Preview.61 is tested and built but still needs
+cold-load identity and a bounded Neow's Fury Organic lifecycle.
 
 Bridge v2's safety kernel remains the current direction: one active input
 owner, opaque state-bound actions, execute-time validation, semantic completion,

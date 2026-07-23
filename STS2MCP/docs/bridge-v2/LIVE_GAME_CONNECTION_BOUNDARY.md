@@ -2,11 +2,12 @@
 
 Status: canonical architecture boundary for the current real-game connection.
 
-Current source compatibility status: C# and Re share `2.0-preview.60`, including
-operation scopes, a Gateway artifact digest, and separate actual-loaded versus
-release-declared game assembly hashes. Preview.60 is verified as installed and
-loaded; that proves negotiation and identity reporting, not complete Surface
-qualification.
+Current source compatibility status: C# and Re share `2.0-preview.61`, including
+operation scopes, a Gateway artifact digest, separate actual-loaded versus
+release-declared game assembly hashes, and structural combat-pile transaction
+semantics. Preview.61 is built but not installed or loaded. Preview.60 remains
+the last verified loaded artifact; that proves its negotiation and identity
+reporting, not Preview.61 behavior or complete Surface qualification.
 
 Consumer distribution, local trust, Companion, BYOK, SDK, and release gates are
 defined in the [productization architecture audit](../../../docs/current/audits/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md).
@@ -151,9 +152,8 @@ Directly implemented at the current repository revision:
   Command polling;
 - an optional Python MCP adapter over the REST routes.
 
-These are source implementation statements. Because the current C# and Re
-protocol revisions disagree, they are not a current end-to-end compatibility
-or loaded-runtime claim.
+These are source implementation statements. C# and Re agree on Preview.61, but
+source agreement is not a loaded-runtime or Organic qualification claim.
 
 Not implemented in the current product path:
 
@@ -162,7 +162,8 @@ Not implemented in the current product path:
 - a runtime epoch that scopes state, actions, and Commands across restart;
 - a packaged Companion, consumer secret store/model broker, installer, updater,
   recovery UI, Agent SDK, plugin sandbox, or Headless host;
-- a public-release profile that prevents v1 mutation from bypassing v2.
+- a consumer release profile with authentication and controller-session
+  policy. The Gateway v1 namespace is already fully retired.
 
 Still incremental or proposed:
 
@@ -209,10 +210,9 @@ stdio where practical, receives no Gateway credential, and must remain thin:
 - preserve exact request, state, action, and error identity;
 - never add arbitrary scene, reflection, method, script, or content tools.
 
-Current known drift remains non-authorizing: the Python MCP helper exposes
-`run_deck` and `combat_piles` but not the third fixed `shop_catalog` Inspection.
-That is an adapter completeness issue, not a missing gateway contract and not
-a reason to expand permission.
+The default Python MCP adapter is now v2-only and exposes all three fixed
+Inspection kinds: `run_deck`, `combat_piles`, and `shop_catalog`. Tool
+availability remains transport completeness, not game authority.
 
 ## Headless Boundary
 

@@ -1,3 +1,4 @@
+// Historical v1 wiki API, retired from the active Gateway build.
 using System;
 using System.Collections.Generic;
 using System.Linq;

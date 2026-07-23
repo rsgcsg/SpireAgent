@@ -34,6 +34,9 @@ Current cross-component audits:
 - [Program-plan second review](audits/PROGRAM_PLAN_SECOND_REVIEW_2026-07-23.md):
   evidence-backed correction that makes internal D and official Agent A
   distinct workstreams without claiming a public platform or SDK.
+- [Gate 1 closeout and selector transaction audit](../../STS2MCP/docs/bridge-v2/GATE1_CLOSEOUT_AND_SELECTOR_TRANSACTION_AUDIT_2026-07-24.md):
+  exact Neow's Fury failure attribution, structural selector migration, v1
+  mutation retirement, evidence limits, and Gate 2 entry order.
 
 Component-owned truth:
 
@@ -62,6 +65,9 @@ Component-owned truth:
   contains the retired root runtime and P8--P15 documentation tree.
 - [`../../archive/bridge-v2-previews/`](../../archive/bridge-v2-previews/)
   contains preview closeouts, dated audits, and historical runtime evidence.
+- [`../../archive/legacy-connector-v1/`](../../archive/legacy-connector-v1/)
+  contains the retired v1 state reconstruction, index actions, and raw API
+  references. It is excluded from the active Gateway build.
 
 Historical records may explain a decision or evidence scope. They never grant
 current action permission, runtime compatibility, or roadmap authority.

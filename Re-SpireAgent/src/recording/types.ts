@@ -133,7 +133,7 @@ export interface RunMetadata {
     qualificationUse: "coverage_only_unless_independently_reviewed";
   };
   schemas: {
-    normalizedState: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25;
+    normalizedState: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26;
     prompt: 1 | 2 | 3;
     decisionRecord: 1 | 2;
   };

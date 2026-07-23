@@ -1,11 +1,11 @@
 # Bridge v2 Documentation
 
 Bridge v2 is the active semantic Gateway protocol. C# and Re source now share
-`2.0-preview.60`; that Release is installed and cold-start loaded with strict
-Re read compatibility. The new Quasar, Knowledge Demon, and Charge canaries
-still require bounded Organic action verification. Gate 0 is closed; Gate 1 operation-level reliability and
-migration is active. Start with current status, not historical preview
-closeouts.
+`2.0-preview.61`; Re normalized schema is `26`. Gate 1 is closed as a bounded
+v2 mutation baseline and the complete v1 HTTP namespace is retired. Preview.60 remains the last
+installed/cold-loaded artifact; Preview.61 still requires loaded identity and
+bounded Neow's Fury Organic evidence. Start with current status, not historical
+preview closeouts.
 
 ## Current Documents
 
@@ -16,6 +16,7 @@ closeouts.
 - [Gate 1 Seance and reward-removal closeout](GATE1_SEANCE_AND_REWARD_REMOVAL_CLOSEOUT_2026-07-23.md)
 - [Gate 1 Dredge closeout](GATE1_DREDGE_CLOSEOUT_2026-07-23.md)
 - [Gate 1 Quasar, Knowledge Demon, and Charge closeout](GATE1_QUASAR_KNOWLEDGE_DEMON_CHARGE_CLOSEOUT_2026-07-24.md)
+- [Gate 1 closeout and selector transaction audit](GATE1_CLOSEOUT_AND_SELECTOR_TRANSACTION_AUDIT_2026-07-24.md)
 - [Real connector architecture audit and migration plan](REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md)
 - [Protocol](PROTOCOL.md)
 - [Observation policy](OBSERVATION_POLICY.md)

@@ -1,10 +1,9 @@
 # Re-SpireAgent RE-P1
 
-> Compatibility status, 2026-07-22: Re and C# now share
-> source contract `2.0-preview.60`, including explicit operation scopes, actual loaded-game
-> assembly identity, and the Gateway
-> assembly digest. Connector Gate 0 is closed on the exact loaded artifact; see
-> the [Gate 0 closeout](../STS2MCP/docs/bridge-v2/CONNECTOR_G0_CLOSEOUT_2026-07-22.md).
+> Compatibility status, 2026-07-24: Re and C# share source contract
+> `2.0-preview.61`; Re normalized schema is `26`. Gate 1 is closed as a
+> bounded v2 mutation baseline. Preview.60 is the last loaded artifact;
+> Preview.61 still needs cold-load identity and Organic Neow's Fury evidence.
 
 > Product-boundary warning: direct Re-to-Gateway REST and `.env.local` provider
 > keys are developer workflows, not the target consumer architecture. The
@@ -22,7 +21,7 @@ waits for the Bridge command lifecycle, and records the complete evidence.
 
 RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, shadow/live modes, policy promotion, or the old project's phase machinery. Its job is to make one decision path correct and auditable.
 
-Re's current strict client contract is Bridge `2.0-preview.60` on exact game
+Re's current strict client contract is Bridge `2.0-preview.61` on exact game
 identity `v0.109.0|c12f634d|-1639417500`. The separate
 `release_declared_main_assembly_hash=-840572606` is diagnostic provenance, not
 permission authority. Re requires capabilities and every
@@ -102,13 +101,14 @@ The abandoned `.56` Discovery experiment is not part of the current contract:
 the C# Gateway has no current source binding for Discovery, so Re rejects that
 unknown generated-card source rather than inferring shared mechanics.
 
-Preview.59 adds only exact Dredge to the existing
-`combat_pile_card_selection` mechanics. Re requires
-`sourceKind=dredge`, exact bounded one-to-three selection, no manual confirm or
-cancel, and the `toggle_discard_card_for_dredge` operation. A current-build Re
-canary proved select, deselect, intermediate selected-set preservation, and
-automatic exact-three discard-to-hand completion. This does not authorize a
-generic multi-selector or any other source.
+Preview.59 added exact Dredge to the combat-pile mechanics. Preview.61 replaces
+the Re source-card union with a closed structural transaction contract:
+`mutationKind`, `commitMode`, pile/position/overflow/replacement semantics,
+exact selected instances, and bounds. Source names remain provenance; action
+authority still comes only from the Gateway's opaque advertised actions.
+Preview.61 also adds exact Neow's Fury optional discard-to-hand selection with
+manual confirm and zero-selection support. This does not authorize a universal
+selector or client-supplied effect payload.
 
 Preview.60 adds exact Quasar and Knowledge Demon without treating their shared
 card grid as shared business semantics: Quasar is skippable and preserves
@@ -157,7 +157,9 @@ Bridge REST state
 - An external STS2 MCP mod exposing the REST API on `http://localhost:15526` by default
 - A DeepSeek API key
 
-This repository does not contain the game, the STS2 MCP C# mod, or a Python MCP server. The game-side mod is an external sensor/actuator dependency. There is no MCP launch command in this package: launch the game with the STS2 MCP mod enabled, then verify its REST endpoint.
+This package does not contain the game. The parent repository contains the
+current `STS2MCP/` Gateway and optional v2-only MCP adapter; Re connects
+directly to the Gateway REST contract and does not launch MCP itself.
 
 ## Fresh Clone Setup
 
@@ -192,17 +194,16 @@ npm run check
 
 ```bash
 curl -sS http://localhost:15526/
-curl -sS 'http://localhost:15526/api/v1/singleplayer?format=json'
 curl -sS http://localhost:15526/api/v2/capabilities
+curl -sS http://localhost:15526/api/v2/state
 ```
 
 If the adapter uses another address, set `STS2_API_URL` in `.env.local`.
 
-The first command should return an adapter health response. The second is a
-legacy read-only diagnostic and should return a JSON object with a `state_type`.
-A current Bridge v2 mod should also return capabilities from the third command.
-Re uses only v2; a missing, malformed, or exact-build-incompatible endpoint
-fails closed.
+The first command should return a Gateway health response. The second and
+third should return Bridge v2 capabilities and current state. Re uses only v2;
+a missing, malformed, or exact-build-incompatible endpoint fails closed.
+Every `/api/v1` endpoint is retired and returns `410 Gone`.
 
 ## Configuration
 

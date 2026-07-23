@@ -1,6 +1,10 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "scope": "ordinary_single_player_and_explicit_legacy_boundaries",
+  "gate_1_status": "closed_bounded_v2_baseline",
+  "legacy_mutation_authority": "retired",
+  "legacy_get_compatibility": "retired",
+  "default_mcp_action_transport": "bridge_v2_only",
   "legacy_dispatch_actions": [
     { "legacy_action": "play_card", "journey": "combat", "disposition": "v2_same_semantics", "v2_operations": ["play_card"] },
     { "legacy_action": "use_potion", "journey": "combat", "disposition": "v2_same_semantics", "v2_operations": ["use_potion"] },
@@ -21,8 +25,8 @@
     { "legacy_action": "select_bundle", "journey": "card_bundle", "disposition": "v2_purpose_split", "v2_operations": ["preview_card_bundle"] },
     { "legacy_action": "confirm_bundle_selection", "journey": "card_bundle", "disposition": "v2_purpose_split", "v2_operations": ["confirm_card_bundle"] },
     { "legacy_action": "cancel_bundle_selection", "journey": "card_bundle", "disposition": "v2_purpose_split", "v2_operations": ["cancel_card_bundle_preview"] },
-    { "legacy_action": "combat_select_card", "journey": "combat_child_selection", "disposition": "v2_purpose_split", "v2_operations": ["select_combat_hand_card", "deselect_combat_hand_card", "select_discard_card_for_draw_top", "select_discard_card_for_hand"] },
-    { "legacy_action": "combat_confirm_selection", "journey": "combat_child_selection", "disposition": "v2_purpose_split", "v2_operations": ["confirm_combat_hand_selection"] },
+    { "legacy_action": "combat_select_card", "journey": "combat_child_selection", "disposition": "v2_purpose_split", "v2_operations": ["select_combat_hand_card", "deselect_combat_hand_card", "toggle_combat_pile_card"] },
+    { "legacy_action": "combat_confirm_selection", "journey": "combat_child_selection", "disposition": "v2_purpose_split", "v2_operations": ["confirm_combat_hand_selection", "confirm_combat_pile_selection"] },
     { "legacy_action": "select_relic", "journey": "treasure", "disposition": "v2_purpose_split", "v2_operations": ["choose_treasure_relic"] },
     { "legacy_action": "skip_relic_selection", "journey": "treasure", "disposition": "v2_purpose_split", "v2_operations": ["skip_treasure_relic"] },
     { "legacy_action": "claim_treasure_relic", "journey": "treasure", "disposition": "v2_purpose_split", "v2_operations": ["open_treasure_chest", "choose_treasure_relic"] },

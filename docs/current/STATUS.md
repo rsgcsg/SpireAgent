@@ -4,135 +4,65 @@ This is the canonical short current-state document for the rebuilt project.
 
 ## Mainline
 
-- **Agent:** `Re-SpireAgent/` is the active Agent implementation.
-- **Connector:** `STS2MCP/` is the active Live Semantic Gateway, REST
-  connector, and optional MCP adapter.
-- **Legacy:** the original root runtime and P8--P15 roadmap are retired and
-  archived. They are not active workstreams.
+- **Agent:** `Re-SpireAgent/`.
+- **Connector:** `STS2MCP/` Semantic Gateway, REST contract, and optional
+  v2-only MCP adapter.
+- **Legacy:** the original root runtime and P8--P15 route are archived.
 
 ## Current Gate
 
-**Gate 0 is closed; Gate 1 connector reliability and operation-level migration
-is active.** C# and Re share `2.0-preview.60`. Re is v2-only; Gateway v1
-mutations are disabled by default while v1 reads remain explicit compatibility
-diagnostics. Historical Gate 0 evidence remains scoped to its exact artifact.
-The current preview has its own bounded mutation evidence and does not inherit
-qualification from an older SHA/MVID.
+**Gate 1 is closed as a bounded ordinary-single-player v2 mutation baseline.
+Gate 2 player-visible information closure is next.**
 
-The [cross-component program plan](PROGRAM_PLAN.md) preserves Gate 1 as the
-only current delivery priority. Internal development/evaluation (`D`) and the
-official frozen RE-P1 Agent baseline (`A`) now have explicit ownership, but
-neither changes current runtime authority. Future Companion, learning,
-Headless, and post-training work remains gated.
+Current source contract is `2.0-preview.61`; Re normalized schema is `26`.
+Re and the default MCP adapter use only Bridge v2 opaque actions. Gateway v1
+state reconstruction and mutation are fully retired; every `/api/v1` request
+returns `410 Gone`. Unsupported variants still fail closed.
+
+Gate 1 closure does not mean complete-game coverage, all canaries qualified, or
+all player-visible facts exposed. Crystal Sphere, standalone manual potion
+discard, non-standard menu/profile flows, multiplayer, and unbound selector
+semantics remain unsupported or outside the bounded gate.
+
+## Evidence Boundary
+
+The last loaded artifact remains Preview.60:
+
+```text
+SHA     49e403b7fb953121256e13f96edbe1eb435a03ce8eac9ddfb17dff473b81d996
+MVID    1219fb20-6db0-4b97-a754-57695e2585f8
+runtime ec2901d029a241e08831fdece0691a2d
+game    v0.109.0|c12f634d|-1639417500
+```
+
+Run `run-20260723150256-d2thtq` then safely stopped at an exact Neow's
+Fury optional discard-to-hand selector because Preview.60 lacked its source
+binding. Preview.61 implements that native `min=0`, dynamic-max,
+manual-confirm transaction and replaces Re's source-card union with a closed
+structural combat-pile transaction contract.
+
+Preview.61 passes C# contract tests, Re typecheck/tests/build, Python syntax,
+and Release build. It is not installed or loaded because the game process was
+running during closeout. It has no Organic Neow's Fury evidence.
 
 ## Immediate Next Step
 
-`2.0-preview.60` is installed and cold-start loaded as SHA
-`49e403b7...d996`, MVID `1219fb20-6db0-4b97-a754-57695e2585f8`, runtime
-`ec2901d029a241e08831fdece0691a2d`, under the exact bridge-only Modset. Re's
-read-only inspect negotiated that identity and decoded an actionable main-menu
-state. This proves deployment and strict consumer compatibility, not the new
-selector lifecycles.
-Runs `run-20260723105904-z3sy3r` and
-`run-20260723105825-69ohhl` exposed the missing exact Seance source contract;
-`run-20260723110000-1z5jqy` exposed Forbidden Grimoire's distinct post-combat
-`CardRemovalReward` child. Preview.58 now gives Seance its exact
-draw-pile-to-same-index-`Soul` contract and gives `CardRemovalReward` the
-independent `reward_deck_removal_selection` Surface.
+Close the game, install Preview.61, cold-start, verify exact loaded identity,
+then run one bounded Neow's Fury select/deselect/confirm lifecycle. After that,
+begin Gate 2 with non-authorizing transaction-correlation shadow and
+player-visible information closure. Do not restore v1 or infer
+authority for an unknown selector.
 
-A bounded current-build Re canary completed reward claim, exact-card selection,
-preview, confirmation, semantic command completion, coherent successor reward
-state, and a `run_deck` post-state with the exact selected card absent. This is
-current-build canary evidence, not broad deck-removal qualification. The same
-run set also proves Cleanse completed its exact draw-to-exhaust child under the
-prior loaded preview.57 identity. Seance is compiled, tested, installed, loaded,
-and explicitly canary-scoped but still lacks a current-artifact Organic
-lifecycle; Precise Scissors also remains Organic-pending.
-
-Run `run-20260723113740-hafl26` then exposed exact Dredge as another source,
-not a generic selector. Preview.59 keeps the same combat-pile Surface but gives
-Dredge a bounded one-to-three toggle operation, separate intermediate-selection
-completion, and exact batch-to-hand completion. A current-build Re canary
-selected, deselected, then selected three cards; the exact references moved
-from discard to hand and the child returned to `combat_turn`. Dredge remains
-source-scoped canary-only. See the
-[Dredge closeout](../../STS2MCP/docs/bridge-v2/GATE1_DREDGE_CLOSEOUT_2026-07-23.md)
+See the
+[Gate 1 closeout and selector audit](../../STS2MCP/docs/bridge-v2/GATE1_CLOSEOUT_AND_SELECTOR_TRANSACTION_AUDIT_2026-07-24.md)
 and the
-[Seance and reward-removal closeout](../../STS2MCP/docs/bridge-v2/GATE1_SEANCE_AND_REWARD_REMOVAL_CLOSEOUT_2026-07-23.md).
-
-Two later real runs stopped on the same fail-closed
-`generated_card_choice.binding_unavailable` diagnostic. Source and predecessor
-action audit identified exact Quasar in
-`run-20260723133555-rma1g2`; the other stop in
-`run-20260723132513-103o5y` was Knowledge Demon's forced curse choice, not
-player card Charge. Source `2.0-preview.60` now gives Quasar a skippable
-unchanged-cost combat-hand contract and Knowledge Demon an independent,
-non-skippable immediate-effect contract. It also adds exact Charge as a
-two-card draw-pile-to-same-index `MinionDiveBomb` transformation under the
-existing pile-selection mechanics. All three are source-scoped canaries only:
-the artifact is loaded, but bounded Organic lifecycles are still required. See
-the
-[Quasar, Knowledge Demon, and Charge closeout](../../STS2MCP/docs/bridge-v2/GATE1_QUASAR_KNOWLEDGE_DEMON_CHARGE_CLOSEOUT_2026-07-24.md).
-
-Run bounded Quasar and Knowledge Demon canaries and an exact Charge lifecycle
-if naturally available. Then run the still-missing
-Seance and Precise Scissors lifecycles. Every unbound selector source remains
-fail closed.
-
-The same run set exposed a Re bounded-run hygiene defect: an unchanged,
-non-actionable `event_option` state could consume the whole tick budget while
-neither invoking the model nor executing an action. Re now stops after eight
-identical coherent non-actionable observations and records a
-`repeated_non_actionable_state` guard. This does not classify the underlying
-event as supported and does not retry or alter Gateway authority.
-
-Then continue the resumed exact-identity Gate 1 journey from its current event/map
-path until the next real unsupported or fail-closed semantic variant. The first gap,
-Wood Carvings Bird/Torus deterministic starter replacement, is now a
-source-bound `preview.56` canary with a complete Bird select/cancel/reselect/
-confirm/run-deck Organic lifecycle. It remains canary-only. The current journey
-also closed a Re settlement defect where a transient unknown successor after
-Embark was misclassified as settled, plus a cold-load timeout where
-`continue_run` incorrectly used the ordinary settlement budget. The final
-artifact is loaded, but its prior Wood Carvings Organic evidence is not
-transferred across SHA/MVID. Use the
-[operation inventory](../../STS2MCP/docs/bridge-v2/GATE1_OPERATION_AND_JOURNEY_INVENTORY.md)
-to distinguish v2 purpose splits from real fail-closed gaps. Do not infer
-qualification from implementation or widen scoped permissions without current
-exact-build evidence.
-
-Fresh Re runs also repaired an impossible Headbutt/Graveblast completion
-invariant, inconsistent shop Inspection advertisement, and raw power
-localization templates. Final-artifact Organic runs completed Headbutt draw-top
-three times and Graveblast hand selection twice with exact-card completion
-witnesses. The contract remains canary-only. See the
-[defect closeout](../../STS2MCP/docs/bridge-v2/GATE1_REAL_RUN_DEFECT_CLOSEOUT_2026-07-22.md).
-
-A read-only cross-component visibility audit found no new action-authority
-defect and changed no runtime status. It found that Re currently sends the
-complete normalized evidence state to the model, eagerly reads all advertised
-Inspections, and duplicates some Inspection/action representations. A read-only
-Prompt audit plus deterministic `shadowStrategyProjection` v1 now measure that
-structure from recorded artifacts: the latest local five-run sample reduced
-median serialized Prompt bytes from `37,274` to `21,182`. This is not paired
-provider evidence and has not changed the live Prompt, lazy Inspection policy,
-or model detail-request behavior. Four first provider-shadow pairs were all
-valid JSON but had only two action agreements, including strategic reward/card
-selection disagreements. Repeat baselines then showed stable full-vs-shadow
-reward divergence and added card-reward shadow variation, so the generic v1
-projection is rejected as a cross-Surface candidate. The next investigation,
-if justified, is a single low-risk scope with protected semantic review; it is
-not more blind provider sampling. See the
-[visibility audit](audits/VISIBILITY_AND_OBSERVATION_ARCHITECTURE_AUDIT_2026-07-22.md).
-
-Re also now anchors `.env.local` loading and the default `AGENT_DATA_DIR` to
-`Re-SpireAgent/`, eliminating caller-working-directory-dependent evidence roots.
-Existing root-level local artifacts are not migrated or reclassified automatically.
+[operation inventory](../../STS2MCP/docs/bridge-v2/OPERATION_RETIREMENT_INVENTORY.json).
 
 ## Explicit Non-Claims
 
-- Bridge v2 is not yet complete-game coverage or full v1 retirement.
-- Historical previews do not qualify the current checkout or another game/Mod
-  environment.
-- The Companion, consumer Workshop product, BYOK secret store, Agent SDK,
-  plugin platform, and Headless host are designs only, not implementations.
+- Preview.61 is not installed, loaded, canary-qualified, or organically
+  exercised yet.
+- Gate 1 closure is not complete-game or full-visible-information closure.
+- Historical v1 source and records are archive evidence, not a runtime fallback.
+- Companion, Workshop product, public Agent SDK, plugin platform, and Headless
+  host remain future work.

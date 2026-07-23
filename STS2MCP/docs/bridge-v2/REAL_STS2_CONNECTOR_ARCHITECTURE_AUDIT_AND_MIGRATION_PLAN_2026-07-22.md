@@ -2,12 +2,11 @@
 
 Status: canonical architecture audit and migration decision, 2026-07-22.
 
-> **Post-audit update, 2026-07-22:** its source-mismatch findings were repaired
-> in `2.0-preview.55`: C# and Re now share explicit operation scopes and the
-> Gateway artifact digest. Gate 0 subsequently closed with a cold-loaded
-> artifact and two bounded Re command/successor lifecycles; Gateway v1 mutation
-> is now disabled by default and Re is v2-only. The baseline facts below are historical audit
-> evidence, not current status.
+> **Current redirect, 2026-07-24:** Gate 1 later closed as a bounded v2
+> mutation baseline on source `2.0-preview.61`. Re/default MCP are v2-only and
+> the complete Gateway `/api/v1` namespace is retired; its implementation is
+> archived. Preview.60 remains the last loaded artifact. The baseline facts
+> below are historical audit evidence, not current status.
 
 Productization addendum: this connector audit remains canonical for live-game
 binding and migration, but the later [productization architecture audit](../../../docs/current/audits/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md)
@@ -505,8 +504,11 @@ the repository can keep them coherent.
 ### Return to v1-style generic index actions
 
 Rejected for mutations. It is simple but reintroduces known stale identity,
-early acknowledgment, and retry ambiguity. Broad v1 reads may remain useful
-while their visible-source and hidden-information boundaries are audited.
+early acknowledgment, and retry ambiguity. This dated audit originally left
+open the possibility of broad v1 reads; the Gate 1 dependency audit later
+disproved that boundary because nominal state reads could click native
+controls. The complete v1 namespace is now retired and must not return as a
+diagnostic fallback.
 
 ### Universal UI tree or click API
 

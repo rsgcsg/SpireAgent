@@ -1,8 +1,8 @@
-# STS2 MCP v1 - Legacy Full API Reference
+# STS2 MCP v1 - Retired Full API Reference
 
-> **Legacy compatibility only.** These index-based tools are not the Bridge v2
-> authority contract. New `Re-SpireAgent` integration should use
-> [`docs/bridge-v2/PROTOCOL.md`](bridge-v2/PROTOCOL.md) and must not infer v2
+> **Historical only.** These endpoints are retired and return `410 Gone`.
+> Current integration uses
+> [`Bridge v2`](../../STS2MCP/docs/bridge-v2/PROTOCOL.md) and must not infer v2
 > support from this file.
 
 HTTP API served by the STS2_MCP mod on `localhost:15526`. No authentication. Local use only.

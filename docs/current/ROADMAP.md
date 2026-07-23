@@ -16,13 +16,25 @@ a bounded read/action/completion journey.
 
 ## Gate 1: Connector Reliability And Coverage
 
+Status: **closed as a bounded ordinary-single-player v2 mutation baseline on
+2026-07-24.**
+
 Expand v2 only through independently closable journeys. For each journey,
 verify source/UI visibility, input owner, advertised opaque actions,
 execute-time validation, semantic completion, capability scope, exact identity,
-and bounded Organic evidence. Keep v1 only where it remains explicitly
-legacy-owned; measure retirement per operation rather than per screen label.
+and bounded Organic evidence. Preserve historical v1 operation mappings as
+audit evidence, but do not retain a runtime v1 fallback.
+
+The closeout retires the full v1 HTTP surface from Gateway and v1 consumption
+from Re/default MCP. It preserves explicit fail-closed and out-of-scope rows rather
+than pretending Crystal Sphere, standalone potion discard, profile mutation,
+or multiplayer were migrated. See the
+[Gate 1 closeout](../../STS2MCP/docs/bridge-v2/GATE1_CLOSEOUT_AND_SELECTOR_TRANSACTION_AUDIT_2026-07-24.md).
 
 ## Gate 2: Player-Visible Information Closure
+
+Status: **next gate; Preview.61 loaded identity and bounded Neow's Fury
+evidence are the first current-build verification tasks.**
 
 Close decision-relevant visible-information gaps using shared state, context,
 surface, preview, and read-only inspection. Do not expose hidden RNG, draw
@@ -39,8 +51,8 @@ failed that evidence gate on reward scopes and is rejected for runtime use.
 ## Gate 3: Secure Local Connector Alpha
 
 Introduce Gateway-authenticated sessions, a Gateway-enforced single-controller
-lease, runtime epoch/restart semantics, diagnostic bundles, and an explicit v1
-release policy. This is a prerequisite for any consumer-facing live agent.
+lease, runtime epoch/restart semantics, and diagnostic bundles. V1 is already
+retired. These controls are prerequisites for any consumer-facing live agent.
 
 ## Gate 4: Companion And Official Agent
 

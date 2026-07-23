@@ -1,3 +1,4 @@
+// Historical v1 multiplayer mutation dispatcher, retired from the active Gateway build.
 using System.Collections.Generic;
 using System.Text.Json;
 using Godot;

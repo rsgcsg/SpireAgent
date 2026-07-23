@@ -2,8 +2,14 @@
 
 In this project, "SpireAgent" means `Re-SpireAgent` by default.
 
-The rebuilt client now implements this boundary. It does not replace its v1
-normalizer with raw Bridge v2 JSON; it uses a parallel adapter:
+Current source contract is `2.0-preview.61`; Re normalized schema is `26`.
+Gate 1 is closed as a bounded v2 mutation baseline. Preview.60 remains the last
+loaded artifact, so Preview.61 source/build results and its Neow's Fury branch
+are not current Organic evidence. Re and the default MCP adapter are v2-only;
+the complete Gateway v1 namespace is retired.
+
+The rebuilt client implements this boundary through a strict adapter rather
+than consuming raw Bridge JSON in planning code:
 
 ```text
 Bridge v2 REST response (current Re path)
@@ -70,8 +76,8 @@ evidence, and validates combat player/potion identities against it. The narrow
 pre-run `character_select` Surface instead requires `shared_state=null`.
 Shared state creates no actions. Event-option hover semantics remain typed as
 text or card previews; unknown variants fail closed. Unsupported legacy-owned
-states remain fail closed in Re; separate Gateway v1 diagnostics do not grant
-Agent authority.
+states remain fail closed in Re; historical v1 records do not grant Agent
+authority.
 
 The shop integration preserves affordability separately from authority and
 accepts omitted nullable product fields without weakening stocked-product or

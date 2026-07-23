@@ -10,6 +10,10 @@
 > loaded artifact. Current loaded identity and Gate status are owned by
 > [Bridge v2 Current Status](CURRENT_STATUS.md).
 
+Current source is Preview.61. Preview.60 remains the last installed/loaded
+artifact; no Preview.61 row below is Organic evidence until the new DLL is
+cold-loaded and exercised.
+
 Historical Gate 0 execution evidence recorded game version/commit plus the
 release-declared hash `-840572606`, Gateway SHA
 `89f94eb99996c2ff4636c1e2ab1119d3dd6eb20a64e59c0270821e2eb2f0e079`,
@@ -76,12 +80,8 @@ The `1833084275` environment inherits no permission from the current loaded
 | `deck_transform_selection` | canary; selection/confirm/upgrade-view exercised | exact Whispering Hollow source, selected instances, upgrade presentation, random-uncommitted preview, exact-instance/deck-count witness | other callers, explicit preview button, cancel paths, multi-select, Mods, and future builds remain unqualified |
 | `wood_carvings_replacement_selection` | canary; Bird full lifecycle exercised on preview.56 | exact `WoodCarvings.Bird` source task, formatted known `PECK` semantics, select -> preview -> cancel -> reselect -> confirm, exact-original absent, PECK 0 -> 1, deck 12 -> 12, event Proceed -> map | Torus Organic lifecycle, repeated Bird evidence, Mods, and future builds remain unqualified; all other generic deck selectors fail closed |
 | `deck_enchant_selection` | Surface-level current-build canary; only Self-Help Book select/automatic preview/cancel/reselect/confirm was exercised | exact target enchantment ID/amount, exact selected instances, overlay stage, semantic exact-card enchantment witness, independent run-deck post-state; current Provider does not runtime-bind the Self-Help Book source named by manifest/evidence | other callers remain unqualified but are not source-suppressed on the Surface-permitted exact build; explicit preview button, cancelable close, multi-select, parent-transaction side effects, Mods, and future builds remain evidence/architecture debt |
-| `generated_card_choice` | source-scoped canary; Lead Paperweight, Colorless Potion, and Attack Potion selections exercised; Splash, Quasar, and Knowledge Demon are implemented but not Preview.60 Organic-exercised | exact `RelicCmd.Obtain`, native potion/Splash/Quasar play tasks, and Knowledge Demon `ChooseCurse` binding; separate run-deck, free combat-hand, unchanged-cost combat-hand, and immediate-effect witnesses | Preview.60 must be loaded and each new branch exercised; skip/full-hand variants remain pending; Hefty Tablet, other generators, derived Mod types, and unknown sources fail closed |
-| exact Headbutt/Graveblast `combat_pile_card_selection` | source-scoped canary; final-artifact Organic runs completed Headbutt draw-top three times and Graveblast hand selection twice after the impossible aggregate-count witness was removed | exact source task, visible discard candidates, source-discriminated draw-top versus hand/full-hand-discard exact-card witness; played source-card destination is correctly outside the selected-card transaction | repeated diversity remains; this is not qualification |
-| exact Cleanse `combat_pile_card_selection` | source-scoped Organic canary on prior Preview.57 identity; not current-build qualified | run `run-20260723105825-69ohhl` completed `select_draw_card_for_exhaust` with exact source/screen/card-move witness | evidence does not transfer to Preview.60; repeated current-build diversity remains |
-| exact Seance `combat_pile_card_selection` | source-scoped loaded canary; no current-artifact Organic action yet | exact `Seance.OnPlay -> FromCombatPile(Draw, 1) -> TransformTo<Soul>`; exact original absence and same-index new-Soul witness; strict Re branch | run one bounded current-build lifecycle |
-| exact Dredge `combat_pile_card_selection` | Preview.59 source-scoped current-build canary; not qualified | real-game Re canary exercised `0 -> 1 -> 0 -> 1 -> 2 -> auto-commit 3`; exact selected references moved discard to hand and counts changed `5 -> 2` | dynamic hand-capacity counts 1/2 and repeated natural diversity remain; direct no-selector completion must not be misread as a missing Surface |
-| exact Charge `combat_pile_card_selection` | Preview.60 source-scoped implementation, contract tests, and loaded canary; no Organic action yet | exact `Charge.OnPlay`, exact-two visible selected set, same-index `MinionDiveBomb` replacements, and upgraded-source replacement witness | run bounded intermediate/final Organic lifecycle; no recorded failure is currently attributable to Charge |
+| `generated_card_choice` | source-scoped canary; Lead Paperweight, Colorless Potion, and Attack Potion selections exercised; Splash, Quasar, and Knowledge Demon are implemented but not Preview.60 Organic-exercised | exact `RelicCmd.Obtain`, native potion/Splash/Quasar play tasks, and Knowledge Demon `ChooseCurse` binding; separate run-deck, free combat-hand, unchanged-cost combat-hand, and immediate-effect witnesses | each unexercised branch still needs bounded evidence; skip/full-hand variants remain pending; Hefty Tablet, other generators, derived Mod types, and unknown sources fail closed |
+| structural `combat_pile_card_selection` with exact source/task bindings | source-scoped canaries; not a universal selector and not Surface-wide qualification | historical Organic evidence covers Headbutt draw-top, Graveblast hand movement, Cleanse draw-to-exhaust on Preview.57, and Dredge selected-set/auto-commit on Preview.59; source/tests cover Seance same-index Soul replacement, Charge exact-two Minion Dive Bomb replacement, and Preview.61 Neow's Fury optional manual-confirm discard-to-hand | Preview.61 must be installed/loaded and Neow exercised; Seance/Charge remain Organic-pending; dynamic Dredge counts and repeated diversity remain; unknown callers fail closed |
 | `event_dialogue` | canary | repeated v0.109 revealed-prefix advances with exact index witness | non-Neow/other ancient dialogue diversity remains evidence debt |
 | `event_option` | canary | typed text/card hover semantics, Neow Talisman effect, ordinary event replacement options, async `Nab the Map -> Proceed`, and Proceed to map | lethal-option and more linked-child diversity remain evidence debt |
 | `run_deck` Inspection | qualified read-only | exact removal, upgrade, enchant, bundle post-states | no arbitrary query or action authority |
@@ -97,7 +97,7 @@ The `1833084275` environment inherits no permission from the current loaded
 
 | Contract | Historical evidence | Why disabled now |
 |---|---|---|
-| non-Headbutt/non-Graveblast/non-Cleanse/non-Seance/non-Dredge/non-Charge `combat_pile_card_selection` origins | mixed historical and fresh loaded-identity child appearances | all other purposes remain source-unresolved and fail closed |
+| combat-pile origins without an exact Headbutt/Graveblast/Cleanse/Seance/Dredge/Charge/Neow's Fury source binding | mixed historical and fresh loaded-identity child appearances | all other purposes remain source-unresolved and fail closed |
 
 ## Unsupported Or Legacy-Owned
 
@@ -105,7 +105,7 @@ The `1833084275` environment inherits no permission from the current loaded
 |---|---|
 | main-menu unsupported choices / non-standard single-player modes | root and standard-entry contracts are v2 canaries; Abandon, Daily, Custom, and other unsupported choices remain visible facts without action authority |
 | first-run character tutorial and non-standard run setup | explicit unsupported boundary; ordinary single-player character select is a canary |
-| generic or purpose-unknown card selectors | v1 or fail closed; source purpose must be proven before v2 authority |
+| generic or purpose-unknown card selectors | fail closed; source purpose must be proven before v2 authority, and retired v1 is not a fallback |
 | other transform callers, duplicate, and unlisted maintenance | Whispering Hollow random transform is a bounded v2 canary; every other origin remains fail closed |
 | linked/special reward sets | Orrery-style linked reward continuation is implemented and fixture-tested in preview.47; unrelated linked/special reward transactions remain fail closed |
 | Pael's Tooth five-card maintenance transaction | current source/runtime identifies a purpose-specific selector, but no v2 semantic contract exists; fail closed rather than inherit merchant/upgrade authority |

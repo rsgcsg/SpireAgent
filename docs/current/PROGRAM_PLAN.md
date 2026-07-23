@@ -114,20 +114,22 @@ The following are governance constraints, not a separate feature program:
 
 ### Current Window
 
-1. Continue Gate 1 exact-identity journeys and close real operation-level
-   unsupported or fail-closed gaps.
-2. Maintain a structured visible-information and v1-retirement inventory while
-   those journeys expose real gaps.
-3. Advance D only through concrete evidence needs: offline checks, provenance,
+1. Install and cold-load Preview.61, verify exact identity, and run the bounded
+   Neow's Fury transaction canary without changing permission tiers.
+2. Begin Gate 2 visible-information closure and a non-authorizing
+   transaction-correlation shadow from concrete selector evidence.
+3. Maintain the closed Gate 1 operation/v1-retirement inventory and keep
+   unsupported variants explicitly fail closed.
+4. Advance D only through concrete evidence needs: offline checks, provenance,
    replay truthfulness, scenario fixtures, diagnostics, and falsifiable
    read-only experiments.
-4. Keep A at the frozen RE-P1 baseline while correcting runtime defects exposed
+5. Keep A at the frozen RE-P1 baseline while correcting runtime defects exposed
    by C journeys; do not add persistent learning.
-5. Design P-lane authentication, controller lease, and restart-epoch contracts
+6. Design P-lane authentication, controller lease, and restart-epoch contracts
    without changing current permissions.
-6. Keep H and T disabled beyond admission/data-governance documentation.
+7. Keep H and T disabled beyond admission/data-governance documentation.
 
-### After Representative Gate 1 Reliability
+### Gate 1 Exit Basis And Gate 2 Entry
 
 Entry evidence:
 
@@ -136,7 +138,7 @@ Entry evidence:
 - no silent v1 fallback;
 - known unsupported operations fail closed and are inventoried.
 
-Then:
+Gate 1 closed on this bounded basis on 2026-07-24. Therefore:
 
 1. Advance Gate 2 visibility closure and fact-availability semantics from
    concrete ambiguities.
@@ -214,4 +216,3 @@ The original reasoning is recorded in the
 [future program and consumer architecture audit](audits/FUTURE_PROGRAM_AND_CONSUMER_ARCHITECTURE_AUDIT_2026-07-23.md).
 Its C/R/P/X lane decision is superseded by the
 [program-plan second review](audits/PROGRAM_PLAN_SECOND_REVIEW_2026-07-23.md).
-
