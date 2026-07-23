@@ -40,10 +40,10 @@ and `Seance` selects draw-pile cards to transform.
 
 The working tree now adds only the exact `Cleanse` branch: its native source,
 visible one-card draw-pile selector, and exact draw-to-exhaust completion are
-source-audited and Gateway-tested. The new Release candidate is **not
-installed or loaded**, and has no Organic evidence or tier change. `Dredge`,
-`Seance`, and every other combat-pile origin remain fail closed. After a normal
-game shutdown, install/cold-start the candidate and run one bounded natural
+source-audited and Gateway-tested. Release SHA `886216...cc1a` is installed
+but **not loaded** and has no Organic evidence or tier change. `Dredge`,
+`Seance`, and every other combat-pile origin remain fail closed. Cold-start the
+game, verify the loaded identity, then run one bounded natural
 `Cleanse -> select -> exact exhaust post-state` canary before considering any
 new branch or permission change.
 

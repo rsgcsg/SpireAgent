@@ -84,8 +84,9 @@ completion evidence and unknown callers remain invalid.
 
 The current Gateway working tree also contains an exact `Cleanse` candidate
 for the same Surface: its advertised branch is one visible draw-pile card to
-exhaust, with a selected-instance draw-to-exhaust witness. It is not installed,
-loaded, or Organic-tested, so Re must not describe it as current coverage.
+exhaust, with a selected-instance draw-to-exhaust witness. Its Release is
+installed but not loaded or Organic-tested, so Re must not describe it as
+current coverage.
 `Dredge`, `Seance`, and all other `NCombatPileCardSelectScreen` origins remain
 invalid rather than being decoded as generic card selection.
 

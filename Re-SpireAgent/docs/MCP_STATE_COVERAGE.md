@@ -40,7 +40,7 @@ artifacts.
 | `deck_enchant_selection` | `event + deck_enchant_selection`, exact target enchantment, selected instances, and selecting/preview stages | Self-Help Book action canary; semantic exact-card post-state confirmed, other origins fail closed |
 | `generated_card_choice` | source-discriminated `event` run-deck or `combat` hand choice with exact purpose/source/destination/cost/overflow semantics | Lead Paperweight, Colorless/Attack/Skill/Power Potion, and Splash have C# source bindings; final-MVID source diversity remains pending. Discovery has no current binding and every other source fails closed. |
 | exact Headbutt/Graveblast `combat_pile_card_selection` | exact discard candidate plus source-discriminated draw-top or hand/full-hand-discard purpose | action canary; both final completion branches need a natural repeat |
-| exact Cleanse `combat_pile_card_selection` | exact one-card draw-pile-to-exhaust purpose | C# candidate only; it is not installed, loaded, or Organic-tested |
+| exact Cleanse `combat_pile_card_selection` | exact one-card draw-pile-to-exhaust purpose | C# candidate Release installed; not loaded or Organic-tested |
 | `game_over` | `run_ended + game_over` | current-MVID loss intro -> summary -> return lifecycle confirmed; win/timeline diversity pending |
 | `run_deck` Inspection | typed player run-deck evidence | current-build read-only canary; no authority |
 | `combat_piles` Inspection | unordered draw/discard/exhaust card evidence | current-build read-only canary; no draw order or authority |

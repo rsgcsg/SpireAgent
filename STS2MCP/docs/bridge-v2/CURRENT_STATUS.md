@@ -71,8 +71,8 @@ an exact-one draw-to-exhaust child, Dredge is a bounded discard-to-hand child,
 and Seance is a draw-to-transform child. The current working tree adds only
 the source-audited Cleanse contract, with a baseline draw pile, visible
 single-pick controls, and an exact selected-reference move to the exhaust
-pile. It is compiled and unit-tested but not installed/loaded and therefore
-has no Organic canary or new permission tier. Dredge, Seance, and every other
+pile. Release SHA `886216...cc1a` is compiled, unit-tested, and installed, but
+not loaded; it therefore has no Organic canary or new permission tier. Dredge, Seance, and every other
 unbound origin remain fail closed.
 
 The next exact-identity map journey found the first real fail-closed gap at
@@ -132,7 +132,7 @@ a current v2 permission claim.
 
 ## Next High-Value Work
 
-Install the current Release candidate only after the game exits, cold-start,
+Cold-start the game, verify the current Release candidate's loaded identity,
 and run one bounded natural Cleanse canary before treating its source branch as
 current runtime coverage. Then continue the exact-identity journey until the
 next real unsupported semantic variant. The next known fail-closed candidates

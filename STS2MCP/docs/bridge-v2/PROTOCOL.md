@@ -323,7 +323,8 @@ wire values are `source_kind=cleanse`, `purpose=exhaust_one_draw_card`,
 `pile_type=draw`, and `destination_pile=exhaust`. Completion requires the
 source task to finish, the child to close, and that exact card to leave the
 baseline draw pile and appear in the exhaust pile. This candidate is not
-installed, loaded, or Organic-qualified. `Dredge` (bounded discard-to-hand)
+loaded or Organic-qualified; the Release is installed pending cold start.
+`Dredge` (bounded discard-to-hand)
 and `Seance` (draw-to-transform) remain separate, unimplemented contracts;
 the shared screen and mechanics do not grant them authority.
 
