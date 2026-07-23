@@ -185,7 +185,8 @@ const ACTION_KINDS = {
     "select_discard_card_for_hand",
     "select_draw_card_for_exhaust",
     "select_draw_card_for_soul_transform",
-    "toggle_discard_card_for_dredge"
+    "toggle_discard_card_for_dredge",
+    "toggle_draw_card_for_charge"
   ]),
   combat_hand_card_selection: new Set([
     "select_combat_hand_card",
@@ -201,7 +202,10 @@ const ACTION_KINDS = {
     "select_generated_run_card",
     "skip_generated_run_card_choice",
     "select_generated_combat_card",
-    "skip_generated_combat_card_choice"
+    "skip_generated_combat_card_choice",
+    "choose_quasar_card",
+    "skip_quasar_choice",
+    "choose_knowledge_demon_curse"
   ]),
   card_bundle_selection: new Set([
     "preview_card_bundle",
@@ -1709,6 +1713,17 @@ function validateCombatPileCardSelectionState(
         "Dredge requires an exact dynamic 1..3 selection count, automatic final commit, and no cancel"
       );
     }
+  } else if (surface.source_kind === "charge") {
+    if (surface.min_select !== 2
+        || surface.max_select !== 2
+        || surface.require_manual_confirmation
+        || surface.cancelable) {
+      diagnostics.invalid(
+        "bridge_v2.surface.charge_selection_contract",
+        surface,
+        "CHARGE!! requires exact-two automatic selection and no cancel"
+      );
+    }
   } else if (surface.min_select !== 1
              || surface.max_select !== 1
              || surface.require_manual_confirmation
@@ -1885,16 +1900,24 @@ function validateGeneratedCardChoiceState(
   if (cardIds.size !== surface.cards.length) {
     diagnostics.invalid("bridge_v2.surface.cards", surface.cards, "generated card entity ids are not unique");
   }
-  if (!surface.can_skip) {
-    diagnostics.invalid("bridge_v2.surface.can_skip", surface.can_skip, "qualified generated-card sources must expose their exact skip control");
+  if (surface.source_kind !== "knowledge_demon_curse" && !surface.can_skip) {
+    diagnostics.invalid("bridge_v2.surface.can_skip", surface.can_skip, "skippable generated-card source omitted its exact skip control");
   }
   validateActions("generated_card_choice", stateId, actions, missing, advertisedOperations, readiness, diagnostics);
   const selectKind = surface.source_kind === "lead_paperweight"
     ? "select_generated_run_card"
-    : "select_generated_combat_card";
+    : surface.source_kind === "quasar"
+      ? "choose_quasar_card"
+      : surface.source_kind === "knowledge_demon_curse"
+        ? "choose_knowledge_demon_curse"
+        : "select_generated_combat_card";
   const skipKind = surface.source_kind === "lead_paperweight"
     ? "skip_generated_run_card_choice"
-    : "skip_generated_combat_card_choice";
+    : surface.source_kind === "quasar"
+      ? "skip_quasar_choice"
+      : surface.source_kind === "knowledge_demon_curse"
+        ? undefined
+        : "skip_generated_combat_card_choice";
   for (const action of actions) {
     if (surface.is_peeking) {
       diagnostics.invalid("bridge_v2.surface.is_peeking", surface.is_peeking, "generated-card selection cannot publish choice actions while combat peek mode owns input");
@@ -1916,9 +1939,17 @@ function validateGeneratedCardChoiceState(
       } else if (surface.source_kind === "lead_paperweight"
         && action.label !== `Add ${boundCard.name ?? boundCard.definition_id} to the run deck`) {
         diagnostics.invalid("bridge_v2.legal_actions.label", action.label, "generated-card selection label disagrees with its bound visible card");
+      } else if (surface.source_kind === "quasar"
+        && action.label !== `Choose ${boundCard.name ?? boundCard.definition_id}; add it to the combat hand at its shown cost`) {
+        diagnostics.invalid("bridge_v2.legal_actions.label", action.label, "Quasar selection label disagrees with its unchanged-cost destination");
+      } else if (surface.source_kind === "knowledge_demon_curse"
+        && action.label !== `Accept ${boundCard.name ?? boundCard.definition_id} from Knowledge Demon`) {
+        diagnostics.invalid("bridge_v2.legal_actions.label", action.label, "Knowledge Demon selection label disagrees with its immediate-effect contract");
       } else if (surface.source_kind !== "lead_paperweight"
+        && surface.source_kind !== "quasar"
+        && surface.source_kind !== "knowledge_demon_curse"
         && action.label !== `Choose ${boundCard.name ?? boundCard.definition_id}; add it to the combat hand for free this turn`) {
-        diagnostics.invalid("bridge_v2.legal_actions.label", action.label, "generated combat-potion selection label disagrees with its exact destination and cost policy");
+        diagnostics.invalid("bridge_v2.legal_actions.label", action.label, "generated combat selection label disagrees with its exact destination and cost policy");
       }
     }
   }
@@ -3188,6 +3219,17 @@ function projectCombatPileCardSelectionSurface(
         destinationPosition: surface.destination_position,
         overflowDestination: surface.overflow_destination ?? null
       };
+    case "charge":
+      return {
+        ...base,
+        purpose: surface.purpose,
+        sourceKind: surface.source_kind,
+        sourceCardDefinitionId: surface.source_card_definition_id,
+        pileType: surface.pile_type,
+        destinationPile: surface.destination_pile,
+        destinationPosition: surface.destination_position,
+        overflowDestination: surface.overflow_destination ?? null
+      };
   }
 }
 
@@ -3222,6 +3264,13 @@ function combatPileSelectionContract(sourceKind: BridgeV2CombatPileCardSelection
         label: (cardName, selected = false) => selected
           ? `Deselect ${cardName} from Dredge`
           : `Select ${cardName} for Dredge`
+      };
+    case "charge":
+      return {
+        operation: "toggle_draw_card_for_charge",
+        label: (cardName, selected = false) => selected
+          ? `Deselect ${cardName} from CHARGE!!`
+          : `Select ${cardName} for CHARGE!!`
       };
   }
 }
@@ -3298,7 +3347,16 @@ function projectGeneratedCardChoiceSurface(
         destination: surface.destination,
         selectedCardCostPolicy: surface.selected_card_cost_policy
       }
-    : {
+    : surface.source_kind === "knowledge_demon_curse"
+      ? {
+          ...base,
+          purpose: surface.purpose,
+          sourceKind: surface.source_kind,
+          destination: surface.destination,
+          selectedCardCostPolicy: surface.selected_card_cost_policy,
+          canSkip: false as const
+        }
+      : {
         ...base,
         purpose: surface.purpose,
         sourceKind: surface.source_kind,

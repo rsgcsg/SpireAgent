@@ -170,8 +170,8 @@ internal static class BridgeContractManifest
             new[] { "hand", "energy", "combatants", "intents", "potions", "end_turn_control" }),
         Entry(
             "combat_pile_card_selection",
-            new[] { "select_discard_card_for_draw_top", "select_discard_card_for_hand", "select_draw_card_for_exhaust", "select_draw_card_for_soul_transform", "toggle_discard_card_for_dredge" },
-            "sts2-v0.109.0:Headbutt/Graveblast/Cleanse/Seance/Dredge.OnPlay+CardSelectCmd.FromCombatPile(exact-pile,source-specific-bounds)+NCombatPileCardSelectScreen+purpose-specific-intermediate-or-commit-witness",
+            new[] { "select_discard_card_for_draw_top", "select_discard_card_for_hand", "select_draw_card_for_exhaust", "select_draw_card_for_soul_transform", "toggle_discard_card_for_dredge", "toggle_draw_card_for_charge" },
+            "sts2-v0.109.0:Headbutt/Graveblast/Cleanse/Seance/Dredge/Charge.OnPlay+CardSelectCmd.FromCombatPile(exact-pile,source-specific-bounds)+NCombatPileCardSelectScreen+purpose-specific-intermediate-or-commit-witness",
             "source_discriminated_combat_pile_selection",
             new[] { "source_card", "purpose", "visible_pile_cards", "selection", "source_and_destination_piles", "destination_position", "overflow_destination", "controls" }),
         Entry(
@@ -188,8 +188,8 @@ internal static class BridgeContractManifest
             new[] { "visible_card_choices", "selection", "selection_bounds" }),
         Entry(
             "generated_card_choice",
-            new[] { "select_generated_run_card", "skip_generated_run_card_choice", "select_generated_combat_card", "skip_generated_combat_card_choice" },
-            "sts2-v0.109.0:source-bound LeadPaperweight/native-generated-combat-card-potion/Splash+NChooseACardSelectionScreen+purpose-specific exact post-state witnesses",
+            new[] { "select_generated_run_card", "skip_generated_run_card_choice", "select_generated_combat_card", "skip_generated_combat_card_choice", "choose_quasar_card", "skip_quasar_choice", "choose_knowledge_demon_curse" },
+            "sts2-v0.109.0:source-bound LeadPaperweight/native-generated-combat-card-potion/Splash/Quasar/KnowledgeDemon.ChooseCurse+NChooseACardSelectionScreen+purpose-specific exact post-state witnesses",
             "source_discriminated_generated_card_choice",
             new[] { "visible_card_choices", "choice_purpose", "source_kind", "destination", "selected_card_cost_policy", "overflow_destination", "skip_control" }),
         Entry(

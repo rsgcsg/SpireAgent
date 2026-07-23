@@ -20,7 +20,7 @@ namespace STS2_MCP.BridgeV2.Game;
 
 /// <summary>
 /// Exact-build adapter for source-discriminated selections from a combat pile.
-/// Headbutt, Graveblast, Cleanse, Seance, and Dredge share bounded card-grid
+/// Headbutt, Graveblast, Cleanse, Seance, Dredge, and Charge share bounded card-grid
 /// mechanics, but retain independent source piles, selection cardinality,
 /// business semantics, and post-state witnesses. Every other caller of the
 /// same game screen remains fail closed.
@@ -270,19 +270,24 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
         }
 
         IReadOnlyList<CardModel> previousSelection = ReadSelectedCards(expectedScreen);
-        bool dredgeCompletes = source is CombatPileSelectionSourceBinding.DredgeBinding
-                               && !expectedSelected
-                               && previousSelection.Count + 1 >= bindingMax(source);
-        IReadOnlyList<CardModel> finalDredgeSelection = dredgeCompletes
+        bool multiSelectCompletes = IsMultiSelectSource(source)
+                                    && !expectedSelected
+                                    && previousSelection.Count + 1 >= BindingMax(source);
+        IReadOnlyList<CardModel> finalMultiSelection = multiSelectCompletes
             ? previousSelection.Append(expectedCard).ToArray()
             : Array.Empty<CardModel>();
 
         grid.EmitSignal(NCardGrid.SignalName.HolderPressed, holder);
-        string completionEvidence = source is CombatPileSelectionSourceBinding.DredgeBinding
-            ? dredgeCompletes
+        string completionEvidence = source switch
+        {
+            CombatPileSelectionSourceBinding.DredgeBinding => multiSelectCompletes
                 ? "dredge_source_completed_screen_closed_and_all_exact_selected_cards_moved_from_discard_to_hand"
-                : "dredge_intermediate_selection_exactly_changed_without_pile_commit"
-            : semantics.CompletionEvidence;
+                : "dredge_intermediate_selection_exactly_changed_without_pile_commit",
+            CombatPileSelectionSourceBinding.ChargeBinding => multiSelectCompletes
+                ? "charge_source_completed_screen_closed_and_both_exact_draw_cards_replaced_by_minion_dive_bombs"
+                : "charge_intermediate_selection_exactly_changed_without_transform_commit",
+            _ => semantics.CompletionEvidence
+        };
         return BridgeActionStartResult.Started(
             () => source.Player.PlayerCombatState is { } combat
                   && source switch
@@ -324,7 +329,7 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
                               expectedCard,
                               card => card is Soul),
                       CombatPileSelectionSourceBinding.DredgeBinding dredge =>
-                          dredgeCompletes
+                          multiSelectCompletes
                               ? DredgeCombatPileWitness.Completed(
                                   !CombatPileSelectionSourceBinding.IsActive(dredge.Token),
                                   !IsCurrent(expectedScreen),
@@ -332,8 +337,8 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
                                   dredge.BaselineHand,
                                   combat.DiscardPile.Cards,
                                   combat.Hand.Cards,
-                                  finalDredgeSelection,
-                                  bindingMax(dredge))
+                                  finalMultiSelection,
+                                  BindingMax(dredge))
                               : DredgeCombatPileWitness.SelectionChanged(
                                   CombatPileSelectionSourceBinding.IsActive(dredge.Token),
                                   IsCurrent(expectedScreen),
@@ -345,15 +350,30 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
                                   ReadSelectedCards(expectedScreen),
                                   expectedCard,
                                   expectedSelected),
+                      CombatPileSelectionSourceBinding.ChargeBinding charge =>
+                          multiSelectCompletes
+                              ? ChargeCombatPileWitness.Completed(
+                                  !CombatPileSelectionSourceBinding.IsActive(charge.Token),
+                                  !IsCurrent(expectedScreen),
+                                  charge.BaselineDraw,
+                                  combat.DrawPile.Cards,
+                                  finalMultiSelection,
+                                  card => card is MinionDiveBomb
+                                          && (!charge.Charge.IsUpgraded || card.IsUpgraded))
+                              : ChargeCombatPileWitness.SelectionChanged(
+                                  CombatPileSelectionSourceBinding.IsActive(charge.Token),
+                                  IsCurrent(expectedScreen),
+                                  charge.BaselineDraw,
+                                  combat.DrawPile.Cards,
+                                  previousSelection,
+                                  ReadSelectedCards(expectedScreen),
+                                  expectedCard,
+                                  expectedSelected),
                       _ => false
                   },
             completionEvidence,
             allowIntermediateStateChanges: true);
 
-        static int bindingMax(CombatPileSelectionSourceBinding.SourceBinding binding) =>
-            binding is CombatPileSelectionSourceBinding.DredgeBinding dredge
-                ? Math.Min(3, CardPile.MaxCardsInHand - dredge.BaselineHand.Count)
-                : 1;
     }
 
     private static bool TryDescribeSource(
@@ -434,6 +454,22 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
                     ? $"Deselect {cardName} from Dredge"
                     : $"Select {cardName} for Dredge",
                 "dredge_selection_changed_or_source_completed_with_exact_batch_move"),
+            CombatPileSelectionSourceBinding.ChargeBinding => new SourceSemantics(
+                "transform_two_draw_cards_into_minion_dive_bombs",
+                "charge",
+                "Charge",
+                "draw",
+                "draw",
+                "same_index",
+                null,
+                "contract_complete_for_charge_exact_two_draw_card_transform",
+                "Charge.OnPlay+NCardGrid.HolderPressed+CardCmd.TransformTo<MinionDiveBomb>+intermediate-selection-or-exact-two-replacement-witness",
+                "charge_toggle_draw_for_minion_dive_bomb_transform",
+                "toggle_draw_card_for_charge",
+                (cardName, selected) => selected
+                    ? $"Deselect {cardName} from CHARGE!!"
+                    : $"Select {cardName} for CHARGE!!",
+                "charge_selection_changed_or_source_completed_with_exact_two_minion_dive_bomb_replacements"),
             _ => null
         };
         return semantics != null;
@@ -497,9 +533,28 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
                    && preferences.MinSelect == expected
                    && preferences.MaxSelect == expected;
         }
+        if (source is CombatPileSelectionSourceBinding.ChargeBinding)
+        {
+            return preferences.MinSelect == 2
+                   && preferences.MaxSelect == 2;
+        }
 
         return preferences.MinSelect == 1 && preferences.MaxSelect == 1;
     }
+
+    private static bool IsMultiSelectSource(
+        CombatPileSelectionSourceBinding.SourceBinding source) =>
+        source is CombatPileSelectionSourceBinding.DredgeBinding
+            or CombatPileSelectionSourceBinding.ChargeBinding;
+
+    private static int BindingMax(CombatPileSelectionSourceBinding.SourceBinding binding) =>
+        binding switch
+        {
+            CombatPileSelectionSourceBinding.DredgeBinding dredge =>
+                Math.Min(3, CardPile.MaxCardsInHand - dredge.BaselineHand.Count),
+            CombatPileSelectionSourceBinding.ChargeBinding => 2,
+            _ => 1
+        };
 
     private static bool IsHolderClickable(NCardHolder holder) =>
         ClickableField?.GetValue(holder) is true;

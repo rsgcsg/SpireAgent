@@ -10,8 +10,10 @@ state-bound protocol intended for the rebuilt `Re-SpireAgent` client.
 
 Bridge v2 is an incremental preview, not a replacement for all v1 surfaces.
 
-The C# Bridge and Re now share `2.0-preview.59`, with strict explicit
-operation scopes and a path-free loaded-assembly digest. Gate 0 is closed on an
+The C# Bridge and Re source now share `2.0-preview.60`, with strict explicit
+operation scopes and a path-free loaded-assembly digest. Preview.60 is the
+verified loaded artifact; its new selector branches remain Organic-pending.
+Gate 0 is closed on an
 installed, Steam-loaded artifact using two bounded Re action/completion/
 successor journeys. Gate 1 remains scoped and operation-driven; this is not
 complete-game qualification.
@@ -31,7 +33,7 @@ complete-game qualification.
   untested and has no v2 action or Inspection authority. Check
   [Bridge v2 current status](docs/bridge-v2/CURRENT_STATUS.md) before treating
   a local install as qualified.
-- Source `2.0-preview.59` keeps centralized overlay/room/menu ownership, typed
+- Source `2.0-preview.60` keeps centralized overlay/room/menu ownership, typed
   diagnostics, purpose-specific selection and event contracts, staged
   completion semantics, and a top-level read-only shared run/player HUD.
   Current-build capabilities distinguish scoped-qualified actions, action

@@ -1851,6 +1851,49 @@ public sealed class BridgeContractTests
     }
 
     [Fact]
+    public void ChargeWitnessSeparatesSelectionFromExactTwoReplacementCommit()
+    {
+        object first = new();
+        object second = new();
+        object third = new();
+        object firstReplacement = new();
+        object secondReplacement = new();
+        object[] baseline = { first, second, third };
+
+        Assert.True(ChargeCombatPileWitness.SelectionChanged(
+            sourceActive: true,
+            surfaceOpen: true,
+            baseline,
+            baseline,
+            Array.Empty<object>(),
+            new[] { first },
+            first,
+            wasSelected: false));
+        Assert.True(ChargeCombatPileWitness.Completed(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            baseline,
+            new[] { firstReplacement, secondReplacement, third },
+            new[] { first, second },
+            card => ReferenceEquals(card, firstReplacement)
+                    || ReferenceEquals(card, secondReplacement)));
+        Assert.False(ChargeCombatPileWitness.Completed(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            baseline,
+            new[] { firstReplacement, second, third },
+            new[] { first, second },
+            card => ReferenceEquals(card, firstReplacement)));
+    }
+
+    [Fact]
+    public void ExactCardSpecificSelectionBindingsResolveCurrentGameMethods()
+    {
+        Assert.Equal("OnPlay", ChargeCombatPileSelectionSourcePatch.ResolveTargetMethod().Name);
+        Assert.Equal("ChooseCurse", GeneratedCardChoiceKnowledgeDemonPatch.ResolveTargetMethod().Name);
+    }
+
+    [Fact]
     public void CombatHandSelectionKeepsInstanceSelectionAndReplacementSemanticsExplicit()
     {
         IBridgeSurface surface = new CombatHandCardSelectionSurface(
@@ -1982,6 +2025,26 @@ public sealed class BridgeContractTests
             baselineDiscard,
             selectedCard,
             hasFreeThisTurnCostModifier: true));
+        Assert.True(GeneratedCombatCardChoiceWitness.Selected(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            baselineHand,
+            baselineDiscard,
+            new[] { handCard, selectedCard },
+            baselineDiscard,
+            selectedCard,
+            hasFreeThisTurnCostModifier: false,
+            requiresFreeThisTurn: false));
+        Assert.False(GeneratedCombatCardChoiceWitness.Selected(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            baselineHand,
+            baselineDiscard,
+            new[] { handCard, selectedCard },
+            baselineDiscard,
+            selectedCard,
+            hasFreeThisTurnCostModifier: true,
+            requiresFreeThisTurn: false));
         Assert.True(GeneratedCombatCardChoiceWitness.Selected(
             sourceCompleted: true,
             surfaceClosed: true,

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { isJsonObject, type JsonObject } from "../../shared/json.js";
 
-export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.59" as const;
+export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.60" as const;
 export const BRIDGE_V2_INSPECTION_KINDS = ["run_deck", "combat_piles", "shop_catalog"] as const;
 const inspectionKindSchema = z.enum(BRIDGE_V2_INSPECTION_KINDS);
 
@@ -731,12 +731,27 @@ const dredgeCombatPileCardSelectionSurfaceSchema = combatPileCardSelectionSurfac
   cancelable: z.literal(false)
 }).passthrough();
 
+const chargeCombatPileCardSelectionSurfaceSchema = combatPileCardSelectionSurfaceBaseSchema.extend({
+  purpose: z.literal("transform_two_draw_cards_into_minion_dive_bombs"),
+  source_kind: z.literal("charge"),
+  source_card_definition_id: z.literal("CHARGE"),
+  pile_type: z.literal("draw"),
+  destination_pile: z.literal("draw"),
+  destination_position: z.literal("same_index"),
+  overflow_destination: z.null().optional(),
+  min_select: z.literal(2),
+  max_select: z.literal(2),
+  require_manual_confirmation: z.literal(false),
+  cancelable: z.literal(false)
+}).passthrough();
+
 const combatPileCardSelectionSurfaceSchema = z.discriminatedUnion("source_kind", [
   headbuttCombatPileCardSelectionSurfaceSchema,
   graveblastCombatPileCardSelectionSurfaceSchema,
   cleanseCombatPileCardSelectionSurfaceSchema,
   seanceCombatPileCardSelectionSurfaceSchema,
-  dredgeCombatPileCardSelectionSurfaceSchema
+  dredgeCombatPileCardSelectionSurfaceSchema,
+  chargeCombatPileCardSelectionSurfaceSchema
 ]);
 
 const combatHandCardSelectionSurfaceSchema = z.object({
@@ -788,20 +803,31 @@ const generatedCombatSourceKindSchema = z.enum([
   "attack_potion",
   "skill_potion",
   "power_potion",
-  "splash"
+  "splash",
+  "quasar"
 ]);
 
 const generatedCombatCardChoiceSurfaceSchema = generatedCardChoiceBaseSchema.extend({
   purpose: z.literal("choose_one_generated_combat_card"),
   source_kind: generatedCombatSourceKindSchema,
   destination: z.literal("combat_hand"),
-  selected_card_cost_policy: z.literal("free_this_turn"),
+  selected_card_cost_policy: z.enum(["free_this_turn", "unchanged"]),
   overflow_destination: z.literal("combat_discard_if_hand_full")
+}).passthrough();
+
+const generatedImmediateEffectCardChoiceSurfaceSchema = generatedCardChoiceBaseSchema.extend({
+  purpose: z.literal("choose_one_immediate_enemy_effect"),
+  source_kind: z.literal("knowledge_demon_curse"),
+  destination: z.literal("immediate_player_effect"),
+  selected_card_cost_policy: z.literal("not_applicable"),
+  overflow_destination: z.null().optional(),
+  can_skip: z.literal(false)
 }).passthrough();
 
 const generatedCardChoiceSurfaceSchema = z.discriminatedUnion("source_kind", [
   generatedRunDeckCardChoiceSurfaceSchema,
-  generatedCombatCardChoiceSurfaceSchema
+  generatedCombatCardChoiceSurfaceSchema,
+  generatedImmediateEffectCardChoiceSurfaceSchema
 ]);
 
 const visibleCardBundleSchema = z.object({
@@ -1478,7 +1504,7 @@ export function decodeBridgeV2State(value: unknown): DecodedBridgePayload<Bridge
       throw new BridgeV2DecodeError("Bridge v2 Lead Paperweight generated_card_choice requires the exact NEOW event context");
     }
     if (surface.source_kind !== "lead_paperweight" && context.kind !== "combat") {
-      throw new BridgeV2DecodeError("Bridge v2 generated combat-potion card choice requires combat context");
+      throw new BridgeV2DecodeError("Bridge v2 generated combat card choice requires combat context");
     }
   } else if (decoded.data.surface.kind === "card_bundle_selection") {
     // Bundle choice is a reusable UI protocol. Its semantic origin currently

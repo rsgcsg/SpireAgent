@@ -1,9 +1,12 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.59`
+Protocol preview: `2.0-preview.60`
 
-Preview.59 retains Preview.58 identity, Seance, and `CardRemovalReward`
-semantics and adds exact Dredge to `combat_pile_card_selection`. Dredge is
+Preview.60 retains Preview.59 identity and Dredge semantics. It adds exact
+Quasar and Knowledge Demon branches to `generated_card_choice`, plus exact
+Charge to `combat_pile_card_selection`. Quasar, Knowledge Demon, and Charge
+reuse only bounded interaction mechanics; their source, purpose, cardinality,
+skip policy, commit, and semantic completion remain independent. Dredge is
 discriminated by `source_kind=dredge`,
 `purpose=move_bounded_discard_cards_to_hand`, operation
 `toggle_discard_card_for_dredge`, and source-specific intermediate/final
@@ -67,10 +70,12 @@ contract against every Steam build. For exact runtime identity
   `wood_carvings_replacement_selection`, Surface-level
   `deck_enchant_selection`, exact `relic_deck_removal_selection`,
   exact `reward_deck_removal_selection`,
-  `combat_pile_card_selection` for exact Headbutt/Graveblast/Cleanse/Seance,
+  `combat_pile_card_selection` for exact
+  Headbutt/Graveblast/Cleanse/Seance/Dredge/Charge,
   and source-scoped
   `generated_card_choice` for exact Lead Paperweight acquisition and native
-  Colorless/Attack/Skill/Power Potion plus native Splash combat choices;
+  Colorless/Attack/Skill/Power Potion, native Splash, native Quasar, and
+  Knowledge Demon curse choices;
 - qualified read-only inspection: `run_deck`;
 - read-only inspection canaries: `combat_piles` and `shop_catalog`.
 
@@ -371,7 +376,7 @@ adaptation rule: shared selection mechanics may remain common, but source
 evidence must attach to the narrowest method whose task actually encloses the
 player-choice lifecycle. An Organic action later completed that exact Cleanse
 contract under its prior loaded Preview.57 identity; the evidence does not
-transfer to Preview.59 qualification.
+transfer to Preview.60 qualification.
 
 Seance uses `source_kind=seance`,
 `purpose=transform_one_draw_card_into_soul`, `pile_type=draw`,
@@ -395,6 +400,31 @@ without opening a selector because the candidate set is already bounded, no
 child Surface is required. A Preview.59 current-build Re canary exercised
 select, deselect, and exact-three automatic commit. All unknown origins remain
 unsupported.
+
+Preview.60 adds exact Charge under the same bounded pile-selection mechanics.
+Its wire branch is `source_kind=charge`,
+`purpose=transform_two_draw_cards_into_minion_dive_bombs`,
+`pile_type=draw`, `min_select=max_select=2`,
+`destination_pile=draw`, and `destination_position=same_index`. The operation
+`toggle_draw_card_for_charge` completes an intermediate command only when the
+exact selected set changes without pile mutation. Final completion requires
+source task and child closure, both exact originals absent, unchanged draw-pile
+count, and new exact `MinionDiveBomb` references at both original indices.
+Upgraded Charge additionally requires upgraded replacements. This witness does
+not authorize any other pile transformation.
+
+Preview.60 also adds two exact generated-card branches. Quasar uses
+`source_kind=quasar`, `destination=combat_hand`,
+`selected_card_cost_policy=unchanged`, and allows
+`select_generated_combat_card` or `skip_generated_combat_card_choice`.
+Selection requires an exact offered reference in hand or full-hand discard
+without a local free-cost modifier. Knowledge Demon uses
+`source_kind=knowledge_demon_curse`,
+`purpose=choose_one_immediate_combat_effect`,
+`destination=immediate_effect`, and cannot skip. Its
+`select_generated_combat_effect` completion requires the exact corresponding
+Power amount to increase after source and child closure. These sources share a
+grid, not a business contract.
 
 Preview.54 extends the generated-combat branch only to exact sealed native
 `Splash`. The source is tracked around `CardModel.OnPlayWrapper`; the offered

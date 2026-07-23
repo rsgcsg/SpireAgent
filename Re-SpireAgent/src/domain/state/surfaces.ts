@@ -216,6 +216,15 @@ export type CombatPileCardSelectionSurface = CombatPileCardSelectionSurfaceBase 
       destinationPosition: "bottom";
       overflowDestination: null;
     }
+  | {
+      purpose: "transform_two_draw_cards_into_minion_dive_bombs";
+      sourceKind: "charge";
+      sourceCardDefinitionId: "CHARGE";
+      pileType: "draw";
+      destinationPile: "draw";
+      destinationPosition: "same_index";
+      overflowDestination: null;
+    }
 );
 
 export interface CombatHandCardSelectionSurface {
@@ -276,15 +285,26 @@ export interface GeneratedRunDeckCardChoiceSurface extends GeneratedCardChoiceSu
 /** Source-bound native generated-card potion; full hands redirect to discard. */
 export interface GeneratedCombatCardChoiceSurface extends GeneratedCardChoiceSurfaceBase {
   purpose: "choose_one_generated_combat_card";
-  sourceKind: "colorless_potion" | "attack_potion" | "skill_potion" | "power_potion" | "splash";
+  sourceKind: "colorless_potion" | "attack_potion" | "skill_potion" | "power_potion" | "splash" | "quasar";
   destination: "combat_hand";
-  selectedCardCostPolicy: "free_this_turn";
+  selectedCardCostPolicy: "free_this_turn" | "unchanged";
   overflowDestination: "combat_discard_if_hand_full";
+}
+
+/** Forced enemy choice; the selected temporary card applies an immediate effect. */
+export interface ImmediateCombatEffectCardChoiceSurface extends GeneratedCardChoiceSurfaceBase {
+  purpose: "choose_one_immediate_enemy_effect";
+  sourceKind: "knowledge_demon_curse";
+  destination: "immediate_player_effect";
+  selectedCardCostPolicy: "not_applicable";
+  overflowDestination?: undefined;
+  canSkip: false;
 }
 
 export type GeneratedCardChoiceSurface =
   | GeneratedRunDeckCardChoiceSurface
-  | GeneratedCombatCardChoiceSurface;
+  | GeneratedCombatCardChoiceSurface
+  | ImmediateCombatEffectCardChoiceSurface;
 
 /** Two-stage selection of one atomic visible package of cards. */
 export interface CardBundleSelectionSurface {

@@ -248,6 +248,16 @@ internal sealed class GeneratedCardChoiceSurfaceProvider : IBridgeSurfaceProvide
                     () => SplashSelectionCompleted(splash, expectedScreen, expectedCard),
                     "splash_choice_closed_and_exact_free_card_added_to_combat_hand_or_full_hand_discard",
                     allowIntermediateStateChanges: true),
+            GeneratedCardChoiceSourceBinding.QuasarBinding quasar =>
+                BridgeActionStartResult.Started(
+                    () => QuasarSelectionCompleted(quasar, expectedScreen, expectedCard),
+                    "quasar_choice_closed_and_exact_generated_card_added_to_combat_hand_or_full_hand_discard_with_unchanged_cost",
+                    allowIntermediateStateChanges: true),
+            GeneratedCardChoiceSourceBinding.KnowledgeDemonCurseBinding curse =>
+                BridgeActionStartResult.Started(
+                    () => KnowledgeDemonCurseCompleted(curse, expectedScreen, expectedCard),
+                    "knowledge_demon_choice_closed_and_exact_selected_debuff_applied",
+                    allowIntermediateStateChanges: true),
             _ => BridgeActionStartResult.Rejected("source_not_supported", "Generated-card source is not supported.")
         };
     }
@@ -294,6 +304,11 @@ internal sealed class GeneratedCardChoiceSurfaceProvider : IBridgeSurfaceProvide
                     () => SplashSkipCompleted(splash, expectedScreen, offeredCards),
                     "splash_choice_skipped_and_combat_hand_discard_unchanged",
                     allowIntermediateStateChanges: true),
+            GeneratedCardChoiceSourceBinding.QuasarBinding quasar =>
+                BridgeActionStartResult.Started(
+                    () => QuasarSkipCompleted(quasar, expectedScreen, offeredCards),
+                    "quasar_choice_skipped_and_combat_hand_discard_unchanged",
+                    allowIntermediateStateChanges: true),
             _ => BridgeActionStartResult.Rejected("source_not_supported", "Generated-card source is not supported.")
         };
     }
@@ -319,6 +334,15 @@ internal sealed class GeneratedCardChoiceSurfaceProvider : IBridgeSurfaceProvide
             && splash.SourceCard.GetType() == typeof(Splash)
             && ReferenceEquals(splash.SourceCard.Owner, splash.Player)
             && splash.Player.PlayerCombatState != null,
+        GeneratedCardChoiceSourceBinding.QuasarBinding quasar =>
+            context is CombatBridgeContext
+            && quasar.SourceCard.GetType() == typeof(Quasar)
+            && ReferenceEquals(quasar.SourceCard.Owner, quasar.Player)
+            && quasar.Player.PlayerCombatState != null,
+        GeneratedCardChoiceSourceBinding.KnowledgeDemonCurseBinding curse =>
+            context is CombatBridgeContext
+            && curse.SourceMonster.GetType() == typeof(MegaCrit.Sts2.Core.Models.Monsters.KnowledgeDemon)
+            && curse.Player.PlayerCombatState != null,
         _ => false
     };
 
@@ -326,28 +350,44 @@ internal sealed class GeneratedCardChoiceSurfaceProvider : IBridgeSurfaceProvide
         GeneratedCardChoiceSourceBinding.ActiveBinding source,
         Binding binding)
     {
-        if (!binding.CanSkip || binding.Cards.Any(card => !ReferenceEquals(card.Owner, source.Player)))
+        if (binding.Cards.Any(card => !ReferenceEquals(card.Owner, source.Player)))
             return false;
 
         return source switch
         {
             GeneratedCardChoiceSourceBinding.LeadPaperweightBinding lead =>
-                binding.Cards.Count == 2
+                binding.CanSkip
+                && binding.Cards.Count == 2
                 && binding.Cards.All(card =>
                     card.Pile == null && !ContainsReference(lead.BaselineDeck, card)),
             GeneratedCardChoiceSourceBinding.GeneratedCombatPotionBinding potion =>
-                binding.Cards.Count == 3
+                binding.CanSkip
+                && binding.Cards.Count == 3
                 && binding.Cards.All(card =>
                     card.Pile == null
                     && !ContainsReference(potion.BaselineHand, card)
                     && !ContainsReference(potion.BaselineDiscard, card)),
             GeneratedCardChoiceSourceBinding.SplashBinding splash =>
-                binding.Cards.Count == 3
+                binding.CanSkip
+                && binding.Cards.Count == 3
                 && binding.Cards.All(card =>
                     card.Pile == null
                     && card.Type == CardType.Attack
                     && !ContainsReference(splash.BaselineHand, card)
                     && !ContainsReference(splash.BaselineDiscard, card)),
+            GeneratedCardChoiceSourceBinding.QuasarBinding quasar =>
+                binding.CanSkip
+                && binding.Cards.Count == 3
+                && binding.Cards.All(card =>
+                    card.Pile == null
+                    && !ContainsReference(quasar.BaselineHand, card)
+                    && !ContainsReference(quasar.BaselineDiscard, card)),
+            GeneratedCardChoiceSourceBinding.KnowledgeDemonCurseBinding =>
+                !binding.CanSkip
+                && binding.Cards.Count == 2
+                && binding.Cards.All(card =>
+                    card.Pile == null
+                    && card is MegaCrit.Sts2.Core.Models.Monsters.KnowledgeDemon.IChoosable),
             _ => false
         };
     }
@@ -409,6 +449,42 @@ internal sealed class GeneratedCardChoiceSurfaceProvider : IBridgeSurfaceProvide
                 "CardPileCmd.Add hand-full redirect to combat discard"
             },
             "This exact branch is limited to native sealed Splash; other combat card generators remain disabled."),
+        GeneratedCardChoiceSourceBinding.QuasarBinding => new GeneratedChoiceSemantics(
+            "choose_one_generated_combat_card",
+            "combat_hand",
+            "unchanged",
+            "combat_discard_if_hand_full",
+            "choose_quasar_card",
+            "skip_quasar_choice",
+            cardName => $"Choose {cardName}; add it to the combat hand at its shown cost",
+            "Quasar.OnPlay+NChooseACardSelectionScreen.SelectHolder+exact-combat-pile-and-unchanged-cost-witness",
+            "Quasar.OnPlay+NChooseACardSelectionScreen.OnSkipButtonReleased+unchanged-combat-piles-witness",
+            "contract_complete_for_quasar_generated_combat_card_choice",
+            new[]
+            {
+                "CardModel.OnPlayWrapper(Quasar) exact active source binding",
+                "Quasar.OnPlay -> CardPileCmd.AddGeneratedCardToCombat(Hand) exact outcome",
+                "Quasar does not apply SetToFreeThisTurn",
+                "CardPileCmd.Add hand-full redirect to combat discard"
+            },
+            "This exact branch is limited to native sealed Quasar; other combat card generators remain disabled."),
+        GeneratedCardChoiceSourceBinding.KnowledgeDemonCurseBinding => new GeneratedChoiceSemantics(
+            "choose_one_immediate_enemy_effect",
+            "immediate_player_effect",
+            "not_applicable",
+            null,
+            "choose_knowledge_demon_curse",
+            "unsupported_skip",
+            cardName => $"Accept {cardName} from Knowledge Demon",
+            "KnowledgeDemon.ChooseCurse+NChooseACardSelectionScreen.SelectHolder+exact-power-delta-witness",
+            "KnowledgeDemon.ChooseCurse has no skip contract",
+            "contract_complete_for_knowledge_demon_forced_curse_choice",
+            new[]
+            {
+                "KnowledgeDemon.ChooseCurse exact active source binding",
+                "KnowledgeDemon.IChoosable.OnChosen -> exact player Power delta"
+            },
+            "This exact branch is limited to Knowledge Demon's forced Curse of Knowledge choice."),
         _ => throw new InvalidOperationException("Unsupported generated-card source binding.")
     };
 
@@ -480,6 +556,55 @@ internal sealed class GeneratedCardChoiceSurfaceProvider : IBridgeSurfaceProvide
             combat.Hand.Cards,
             combat.DiscardPile.Cards,
             offeredCards);
+    }
+
+    private static bool QuasarSelectionCompleted(
+        GeneratedCardChoiceSourceBinding.QuasarBinding source,
+        NChooseACardSelectionScreen screen,
+        CardModel selectedCard)
+    {
+        if (source.Player.PlayerCombatState is not { } combat)
+            return false;
+        return GeneratedCombatCardChoiceWitness.Selected(
+            !GeneratedCardChoiceSourceBinding.IsActive(source.Token),
+            !IsCurrent(screen),
+            source.BaselineHand,
+            source.BaselineDiscard,
+            combat.Hand.Cards,
+            combat.DiscardPile.Cards,
+            selectedCard,
+            selectedCard.EnergyCost.HasLocalModifiers,
+            requiresFreeThisTurn: false);
+    }
+
+    private static bool QuasarSkipCompleted(
+        GeneratedCardChoiceSourceBinding.QuasarBinding source,
+        NChooseACardSelectionScreen screen,
+        IReadOnlyCollection<CardModel> offeredCards)
+    {
+        if (source.Player.PlayerCombatState is not { } combat)
+            return false;
+        return GeneratedCombatCardChoiceWitness.Skipped(
+            !GeneratedCardChoiceSourceBinding.IsActive(source.Token),
+            !IsCurrent(screen),
+            source.BaselineHand,
+            source.BaselineDiscard,
+            combat.Hand.Cards,
+            combat.DiscardPile.Cards,
+            offeredCards);
+    }
+
+    private static bool KnowledgeDemonCurseCompleted(
+        GeneratedCardChoiceSourceBinding.KnowledgeDemonCurseBinding source,
+        NChooseACardSelectionScreen screen,
+        CardModel selectedCard)
+    {
+        int baseline = GeneratedCardChoiceSourceBinding.BaselineChosenPowerAmount(source, selectedCard);
+        int current = GeneratedCardChoiceSourceBinding.CurrentChosenPowerAmount(source, selectedCard);
+        return baseline >= 0
+               && current > baseline
+               && !GeneratedCardChoiceSourceBinding.IsActive(source.Token)
+               && !IsCurrent(screen);
     }
 
     private static bool TryCurrentActionable(

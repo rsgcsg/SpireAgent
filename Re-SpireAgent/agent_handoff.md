@@ -5,7 +5,18 @@
 > `../STS2MCP/docs/bridge-v2/CURRENT_STATUS.md`. Older identity and mode claims
 > below are preserved as dated evidence and must not override those documents.
 
-Status update 2026-07-23 (latest): loaded `2.0-preview.59` is SHA
+Status update 2026-07-24 (latest): source contract is `2.0-preview.60`.
+Two Preview.59 real-run stops shared
+`generated_card_choice.binding_unavailable`: one was exact Quasar, while the
+other was Knowledge Demon's forced curse choice, not Charge. Preview.60 adds
+independent Quasar and Knowledge Demon semantics and exact Charge two-card
+same-index transformation. C#/Re tests pass. Preview.60 is cold-start loaded as
+SHA `49e403b7...d996`, MVID `1219fb20-6db0-4b97-a754-57695e2585f8`, runtime
+`ec2901d029a241e08831fdece0691a2d`; strict Re read inspection passes, but the
+three new lifecycles are not Organic-exercised. See canonical status and the
+focused closeout.
+
+Earlier status update 2026-07-23: loaded `2.0-preview.59` is SHA
 `afbcc870...17423`, MVID `49d2408c-7a43-4669-b37d-6c8f33308c48`, runtime
 `844706b0442e443db974f156103d7a00`. Exact Dredge now has a bounded
 one-to-three source branch on `combat_pile_card_selection`. A current-build Re

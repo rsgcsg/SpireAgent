@@ -10,7 +10,7 @@ import type { JsonObject } from "../src/shared/json.js";
 import { fixture } from "./helpers.js";
 
 const CAPABILITIES = {
-  protocol_version: "2.0-preview.59",
+  protocol_version: "2.0-preview.60",
   bridge: {
     id: "sts2_mcp_bridge_v2",
     name: "STS2 Agent Bridge",
@@ -86,10 +86,10 @@ const CAPABILITIES = {
     { kind: "event_option", support: "implemented_exact_game_version", operations: ["choose_event_option", "proceed_event"], evidence: "test-contract" },
     { kind: "rest_site", support: "implemented_exact_game_version", operations: ["choose_rest_option", "proceed_rest_site"], evidence: "test-contract" },
     { kind: "combat_turn", support: "implemented_exact_game_version", operations: ["play_card", "use_potion", "end_turn"], evidence: "test-contract" },
-    { kind: "combat_pile_card_selection", support: "implemented_exact_game_version", operations: ["select_discard_card_for_draw_top", "select_discard_card_for_hand", "select_draw_card_for_exhaust", "select_draw_card_for_soul_transform", "toggle_discard_card_for_dredge"], evidence: "test-contract" },
+    { kind: "combat_pile_card_selection", support: "implemented_exact_game_version", operations: ["select_discard_card_for_draw_top", "select_discard_card_for_hand", "select_draw_card_for_exhaust", "select_draw_card_for_soul_transform", "toggle_discard_card_for_dredge", "toggle_draw_card_for_charge"], evidence: "test-contract" },
     { kind: "combat_hand_card_selection", support: "implemented_exact_game_version", operations: ["select_combat_hand_card", "deselect_combat_hand_card", "confirm_combat_hand_selection", "close_combat_hand_peek"], evidence: "test-contract" },
     { kind: "event_card_acquisition", support: "implemented_exact_game_version", operations: ["select_event_card_acquisition", "deselect_event_card_acquisition"], evidence: "test-contract" },
-    { kind: "generated_card_choice", support: "implemented_exact_game_version", operations: ["select_generated_run_card", "skip_generated_run_card_choice", "select_generated_combat_card", "skip_generated_combat_card_choice"], evidence: "test-contract" },
+    { kind: "generated_card_choice", support: "implemented_exact_game_version", operations: ["select_generated_run_card", "skip_generated_run_card_choice", "select_generated_combat_card", "skip_generated_combat_card_choice", "choose_quasar_card", "skip_quasar_choice", "choose_knowledge_demon_curse"], evidence: "test-contract" },
     { kind: "card_bundle_selection", support: "implemented_exact_game_version", operations: ["preview_card_bundle", "confirm_card_bundle", "cancel_card_bundle_preview"], evidence: "test-contract" },
     { kind: "card_reward_selection", support: "implemented_exact_game_version", operations: ["select_card_reward", "choose_card_reward_alternative"], evidence: "test-contract" },
     { kind: "reward_claim", support: "implemented_exact_game_version", operations: ["claim_reward", "discard_potion_for_reward", "proceed_rewards"], evidence: "test-contract" },
@@ -177,7 +177,7 @@ const RUN_VISIBILITY = {
 };
 
 const DECK_ENCHANT_STATE = {
-  protocol_version: "2.0-preview.59",
+  protocol_version: "2.0-preview.60",
   state_id: "state-test-1",
   state_sequence: 1,
   observed_at: "2026-07-16T00:00:00Z",
@@ -253,7 +253,7 @@ const DECK_ENCHANT_STATE = {
     status: "resolved_manifest_contract",
     instance_id: "contract-instance-deck-enchant-1",
     surface_kind: "deck_enchant_selection",
-    semantic_contract_id: "bridge.surface.deck_enchant_selection.2.0-preview.59",
+    semantic_contract_id: "bridge.surface.deck_enchant_selection.2.0-preview.60",
     declared_binding: "fixture-declared-binding",
     operations: [{ operation: "toggle_card", evidence_status: "surface_level_only", published: true }],
     current_authority_tier: "canary",
@@ -2023,7 +2023,7 @@ function visibleInspectionCard(overrides: Record<string, unknown> = {}) {
 
 function runDeckInspection(stateId: string, cards = [visibleInspectionCard()]) {
   return {
-    protocol_version: "2.0-preview.59",
+    protocol_version: "2.0-preview.60",
     inspection_id: `inspection-run-deck-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -2046,7 +2046,7 @@ function runDeckInspection(stateId: string, cards = [visibleInspectionCard()]) {
 
 function combatPilesInspection(stateId: string) {
   return {
-    protocol_version: "2.0-preview.59",
+    protocol_version: "2.0-preview.60",
     inspection_id: `inspection-combat-piles-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -2091,7 +2091,7 @@ function shopCatalogInspection(stateId: string) {
     blocked_reason: offer.stocked ? "not_visible" : offer.blocked_reason
   });
   return {
-    protocol_version: "2.0-preview.59",
+    protocol_version: "2.0-preview.60",
     inspection_id: `inspection-shop-catalog-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -2133,7 +2133,7 @@ function coherentObservationBundle(
   }));
   const resolvedInspections = inspections ?? defaultInspections;
   return {
-    protocol_version: "2.0-preview.59",
+    protocol_version: "2.0-preview.60",
     observation_id: `observation-${state.state_id}`,
     coherent: true,
     state,
@@ -4476,6 +4476,70 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
           action: expect.objectContaining({ bridgeActionKind: "toggle_discard_card_for_dredge" })
         })
       ]);
+
+    const chargeState = structuredClone(COMBAT_PILE_CARD_SELECTION_STATE) as any;
+    chargeState.state_id = "state-charge-pile-select-1";
+    chargeState.surface = {
+      ...chargeState.surface,
+      prompt: "Choose 2 cards to Transform.",
+      purpose: "transform_two_draw_cards_into_minion_dive_bombs",
+      source_kind: "charge",
+      source_card_entity_id: "combat-card-charge",
+      source_card_definition_id: "CHARGE",
+      pile_type: "draw",
+      destination_pile: "draw",
+      destination_position: "same_index",
+      overflow_destination: null,
+      min_select: 2,
+      max_select: 2,
+      selected_count: 1,
+      selected_card_entity_ids: ["discard-card-1"],
+      require_manual_confirmation: false,
+      cancelable: false,
+      cards: chargeState.surface.cards.map((card: any, index: number) => ({
+        ...card,
+        is_selected: index === 0
+      }))
+    };
+    chargeState.legal_actions = [{
+      ...chargeState.legal_actions[0],
+      action_id: "action-charge-select-card-2",
+      state_id: chargeState.state_id,
+      kind: "toggle_draw_card_for_charge",
+      label: "Select Ball Lightning for CHARGE!!",
+      evidence_code: "Charge.OnPlay+NCardGrid.HolderPressed+CardCmd.TransformTo<MinionDiveBomb>+exact-two-replacement-witness",
+      entity_bindings: [{ role: "card", entity_id: "discard-card-2" }]
+    }];
+    chargeState.completeness.player_visible_semantics =
+      "contract_complete_for_charge_exact_two_draw_card_transform";
+
+    const chargeEnvelope = normalizeCurrentState(
+      wrapBridgeV2State({ state: chargeState, capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    );
+    expect(chargeEnvelope.currentState).toMatchObject({
+      stability: "actionable",
+      actionAuthority: "bridge_advertised",
+      context: { kind: "combat" },
+      surface: {
+        kind: "combat_pile_card_selection",
+        purpose: "transform_two_draw_cards_into_minion_dive_bombs",
+        sourceKind: "charge",
+        sourceCardDefinitionId: "CHARGE",
+        pileType: "draw",
+        destinationPile: "draw",
+        destinationPosition: "same_index",
+        minimumSelections: 2,
+        maximumSelections: 2,
+        selectedCount: 1
+      }
+    });
+    expect(buildAllowedActions(chargeEnvelope.currentState, chargeEnvelope.stateHash)).toEqual([
+      expect.objectContaining({
+        id: "action-charge-select-card-2",
+        action: expect.objectContaining({ bridgeActionKind: "toggle_draw_card_for_charge" })
+      })
+    ]);
   });
 
   it("rejects a combat-pile selection without combat context or consistent selected-card evidence", () => {
@@ -4657,6 +4721,98 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
         expect.objectContaining({ action: expect.objectContaining({ bridgeActionKind: "skip_generated_combat_card_choice" }) })
       ]);
     }
+  });
+
+  it("keeps Quasar unchanged-cost choice and Knowledge Demon forced effect distinct", () => {
+    const quasar = structuredClone(GENERATED_CARD_CHOICE_STATE) as any;
+    quasar.state_id = "state-quasar-choice-1";
+    quasar.context = structuredClone(COMBAT_TURN_STATE.context);
+    quasar.surface = {
+      ...quasar.surface,
+      source_kind: "quasar",
+      purpose: "choose_one_generated_combat_card",
+      destination: "combat_hand",
+      selected_card_cost_policy: "unchanged",
+      overflow_destination: "combat_discard_if_hand_full"
+    };
+    quasar.legal_actions = [{
+      ...quasar.legal_actions[0],
+      action_id: "action-quasar-card-1",
+      state_id: quasar.state_id,
+      kind: "choose_quasar_card",
+      label: "Choose Primal Force; add it to the combat hand at its shown cost"
+    }, {
+      ...quasar.legal_actions[1],
+      action_id: "action-quasar-skip",
+      state_id: quasar.state_id,
+      kind: "skip_quasar_choice"
+    }];
+
+    const quasarEnvelope = normalizeCurrentState(
+      wrapBridgeV2State({ state: quasar, capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    );
+    expect(quasarEnvelope.currentState).toMatchObject({
+      stability: "actionable",
+      surface: {
+        sourceKind: "quasar",
+        selectedCardCostPolicy: "unchanged",
+        canSkip: true
+      }
+    });
+
+    const curse = structuredClone(quasar) as any;
+    curse.state_id = "state-knowledge-demon-choice-1";
+    curse.surface = {
+      ...curse.surface,
+      source_kind: "knowledge_demon_curse",
+      purpose: "choose_one_immediate_enemy_effect",
+      destination: "immediate_player_effect",
+      selected_card_cost_policy: "not_applicable",
+      overflow_destination: null,
+      can_skip: false
+    };
+    curse.legal_actions = [{
+      ...curse.legal_actions[0],
+      action_id: "action-knowledge-demon-curse-1",
+      state_id: curse.state_id,
+      kind: "choose_knowledge_demon_curse",
+      label: "Accept Disintegration from Knowledge Demon"
+    }];
+    curse.surface.cards = [{
+      ...curse.surface.cards[0],
+      name: "Disintegration",
+      definition_id: "DISINTEGRATION"
+    }, {
+      ...curse.surface.cards[1],
+      name: "Mind Rot",
+      definition_id: "MIND_ROT"
+    }];
+    curse.legal_actions[0].entity_bindings = [{
+      role: "card",
+      entity_id: curse.surface.cards[0].entity_id
+    }];
+
+    const curseEnvelope = normalizeCurrentState(
+      wrapBridgeV2State({ state: curse, capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    );
+    expect(curseEnvelope.currentState).toMatchObject({
+      stability: "actionable",
+      surface: {
+        sourceKind: "knowledge_demon_curse",
+        purpose: "choose_one_immediate_enemy_effect",
+        destination: "immediate_player_effect",
+        selectedCardCostPolicy: "not_applicable",
+        canSkip: false
+      }
+    });
+    expect(buildAllowedActions(curseEnvelope.currentState, curseEnvelope.stateHash)).toEqual([
+      expect.objectContaining({
+        id: "action-knowledge-demon-curse-1",
+        action: expect.objectContaining({ bridgeActionKind: "choose_knowledge_demon_curse" })
+      })
+    ]);
   });
 
   it("decodes an unqualified generated-card caller as observable fail-closed state", () => {

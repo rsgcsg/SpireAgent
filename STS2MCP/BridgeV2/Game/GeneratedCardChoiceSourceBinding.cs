@@ -10,7 +10,9 @@ using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Cards;
+using MegaCrit.Sts2.Core.Models.Monsters;
 using MegaCrit.Sts2.Core.Models.Potions;
+using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.Models.Relics;
 
 namespace STS2_MCP.BridgeV2.Game;
@@ -27,6 +29,8 @@ internal static class GeneratedCardChoiceSourceBinding
     private const string SkillPotionSourceKind = "skill_potion";
     private const string PowerPotionSourceKind = "power_potion";
     private const string SplashSourceKind = "splash";
+    private const string QuasarSourceKind = "quasar";
+    private const string KnowledgeDemonCurseSourceKind = "knowledge_demon_curse";
     private static readonly object Gate = new();
     private static readonly Dictionary<Guid, ActiveBinding> Active = new();
 
@@ -67,6 +71,21 @@ internal static class GeneratedCardChoiceSourceBinding
         IReadOnlyList<CardModel> BaselineHand,
         IReadOnlyList<CardModel> BaselineDiscard)
         : ActiveBinding(Token, SplashSourceKind, Player);
+
+    internal sealed record QuasarBinding(
+        Guid Token,
+        Player Player,
+        Quasar SourceCard,
+        IReadOnlyList<CardModel> BaselineHand,
+        IReadOnlyList<CardModel> BaselineDiscard)
+        : ActiveBinding(Token, QuasarSourceKind, Player);
+
+    internal sealed record KnowledgeDemonCurseBinding(
+        Guid Token,
+        Player Player,
+        KnowledgeDemon SourceMonster,
+        IReadOnlyDictionary<Type, int> BaselinePowerAmounts)
+        : ActiveBinding(Token, KnowledgeDemonCurseSourceKind, Player);
 
     internal readonly record struct Scope(Guid Token)
     {
@@ -112,20 +131,57 @@ internal static class GeneratedCardChoiceSourceBinding
 
     internal static Scope BeginCard(CardModel card)
     {
-        if (card.GetType() != typeof(Splash)
-            || card is not Splash splash
-            || card.Owner is not Player player
+        if (card.Owner is not Player player
             || player.PlayerCombatState is not { } combat)
         {
             return default;
         }
 
-        var binding = new SplashBinding(
+        Guid token = Guid.NewGuid();
+        ActiveBinding? binding = card switch
+        {
+            Splash splash when card.GetType() == typeof(Splash) => new SplashBinding(
+                token,
+                player,
+                splash,
+                combat.Hand.Cards.ToArray(),
+                combat.DiscardPile.Cards.ToArray()),
+            Quasar quasar when card.GetType() == typeof(Quasar) => new QuasarBinding(
+                token,
+                player,
+                quasar,
+                combat.Hand.Cards.ToArray(),
+                combat.DiscardPile.Cards.ToArray()),
+            _ => null
+        };
+        if (binding == null)
+            return default;
+
+        lock (Gate)
+            Active.Add(binding.Token, binding);
+        return new Scope(binding.Token);
+    }
+
+    internal static Scope BeginKnowledgeDemonCurse(KnowledgeDemon source, Creature target)
+    {
+        if (target.Player is not Player player
+            || player.PlayerCombatState == null
+            || !ReferenceEquals(source.CombatState, target.CombatState))
+        {
+            return default;
+        }
+
+        var binding = new KnowledgeDemonCurseBinding(
             Guid.NewGuid(),
             player,
-            splash,
-            combat.Hand.Cards.ToArray(),
-            combat.DiscardPile.Cards.ToArray());
+            source,
+            new Dictionary<Type, int>
+            {
+                [typeof(DisintegrationPower)] = PowerAmount<DisintegrationPower>(player),
+                [typeof(MindRotPower)] = PowerAmount<MindRotPower>(player),
+                [typeof(SlothPower)] = PowerAmount<SlothPower>(player),
+                [typeof(WasteAwayPower)] = PowerAmount<WasteAwayPower>(player)
+            });
         lock (Gate)
             Active.Add(binding.Token, binding);
         return new Scope(binding.Token);
@@ -196,6 +252,37 @@ internal static class GeneratedCardChoiceSourceBinding
         lock (Gate)
             return Active.ContainsKey(token);
     }
+
+    internal static int CurrentChosenPowerAmount(
+        KnowledgeDemonCurseBinding binding,
+        CardModel chosenCard) => chosenCard switch
+    {
+        Disintegration => PowerAmount<DisintegrationPower>(binding.Player),
+        MindRot => PowerAmount<MindRotPower>(binding.Player),
+        Sloth => PowerAmount<SlothPower>(binding.Player),
+        WasteAway => PowerAmount<WasteAwayPower>(binding.Player),
+        _ => -1
+    };
+
+    internal static int BaselineChosenPowerAmount(
+        KnowledgeDemonCurseBinding binding,
+        CardModel chosenCard)
+    {
+        Type? powerType = chosenCard switch
+        {
+            Disintegration => typeof(DisintegrationPower),
+            MindRot => typeof(MindRotPower),
+            Sloth => typeof(SlothPower),
+            WasteAway => typeof(WasteAwayPower),
+            _ => null
+        };
+        return powerType != null && binding.BaselinePowerAmounts.TryGetValue(powerType, out int amount)
+            ? amount
+            : -1;
+    }
+
+    private static int PowerAmount<T>(Player player) where T : PowerModel =>
+        player.Creature.Powers.OfType<T>().Sum(power => power.Amount);
 }
 
 [HarmonyPatch(
@@ -274,6 +361,39 @@ internal static class GeneratedCardChoiceCardPlayPatch
     }
 }
 
+/// <summary>
+/// Knowledge Demon's forced choice uses the same generated-card screen but
+/// commits an immediate debuff instead of adding a card to a pile.
+/// </summary>
+[HarmonyPatch]
+internal static class GeneratedCardChoiceKnowledgeDemonPatch
+{
+    internal static System.Reflection.MethodBase ResolveTargetMethod() =>
+        AccessTools.DeclaredMethod(
+            typeof(KnowledgeDemon),
+            "ChooseCurse",
+            new[] { typeof(Creature) })
+        ?? throw new MissingMethodException(typeof(KnowledgeDemon).FullName, "ChooseCurse");
+
+    private static System.Reflection.MethodBase TargetMethod() => ResolveTargetMethod();
+
+    private static void Prefix(
+        KnowledgeDemon __instance,
+        Creature target,
+        out GeneratedCardChoiceSourceBinding.Scope __state)
+    {
+        __state = GeneratedCardChoiceSourceBinding.BeginKnowledgeDemonCurse(__instance, target);
+    }
+
+    private static void Postfix(
+        ref Task __result,
+        GeneratedCardChoiceSourceBinding.Scope __state)
+    {
+        if (__state.IsTracked)
+            __result = GeneratedCardChoiceSourceBinding.Complete(__result, __state);
+    }
+}
+
 internal static class GeneratedRunCardAcquisitionWitness
 {
     internal static bool Selected<T>(
@@ -313,14 +433,15 @@ internal static class GeneratedCombatCardChoiceWitness
         IReadOnlyCollection<T> currentHand,
         IReadOnlyCollection<T> currentDiscard,
         T selectedCard,
-        bool hasFreeThisTurnCostModifier) where T : class =>
+        bool hasFreeThisTurnCostModifier,
+        bool requiresFreeThisTurn = true) where T : class =>
         sourceCompleted
         && surfaceClosed
         && !ContainsReference(baselineHand, selectedCard)
         && !ContainsReference(baselineDiscard, selectedCard)
         && (ContainsReference(currentHand, selectedCard) || ContainsReference(currentDiscard, selectedCard))
         && currentHand.Count + currentDiscard.Count == baselineHand.Count + baselineDiscard.Count + 1
-        && hasFreeThisTurnCostModifier;
+        && hasFreeThisTurnCostModifier == requiresFreeThisTurn;
 
     internal static bool Skipped<T>(
         bool sourceCompleted,

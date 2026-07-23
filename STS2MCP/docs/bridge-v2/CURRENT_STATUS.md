@@ -7,7 +7,8 @@ and do not grant current authority.
 
 ## Current Source-Truth Status
 
-The C# Bridge and Re-SpireAgent now share `2.0-preview.59`. Preview.59 retains
+The C# Bridge and Re-SpireAgent now share source contract `2.0-preview.60`.
+Preview.60 retains
 the Preview.57 source-truth repair discovered during cold-start verification:
 the previous
 identity gate used `release_info.json.main_assembly_hash=-840572606`, while
@@ -21,7 +22,11 @@ loaded assembly. Re decodes the same contract. Preview.58 additionally binds
 exact Seance and `CardRemovalReward` child transactions without granting
 generic card-selection authority. Preview.59 adds exact Dredge as a
 source-scoped bounded multi-selection branch with separate intermediate and
-exact-batch completion; it does not grant a generic selector. Preview.56 remains the
+exact-batch completion. Preview.60 adds three exact branches without granting a
+generic selector: Quasar is a skippable generated combat-hand choice whose
+selected cost remains unchanged; Knowledge Demon is a forced immediate-effect
+choice; Charge selects exactly two draw-pile cards and transforms each into an
+exact same-index `MinionDiveBomb`. Preview.56 remains the
 coordinated Wood Carvings deterministic replacement contract; it does not revive the
 rejected Discovery experiment, and unknown generated-card sources remain
 rejected.
@@ -39,11 +44,13 @@ promote a tier.
 
 That historical lifecycle captured version/commit and the release-declared
 hash, not the actual loaded game assembly hash. Preview.59 records the actual
-value. The current loaded artifact is SHA `afbcc870...17423`, MVID
-`49d2408c-7a43-4669-b37d-6c8f33308c48`, runtime
-`844706b0442e443db974f156103d7a00`, under the exact Bridge-only Modset. It has
-a bounded Re mutation journey for Dredge selection. This does not transfer
-Gate 0 qualification or widen any operation scope.
+value. Preview.60 is installed and cold-start loaded as SHA
+`49e403b7...d996`, MVID `1219fb20-6db0-4b97-a754-57695e2585f8`, runtime
+`ec2901d029a241e08831fdece0691a2d`, under exact Bridge-only Modset fingerprint
+`24b4d54a...1380c`. Re negotiated that identity and strictly decoded an
+actionable main-menu observation. This proves deployment and consumer
+compatibility only. The prior Preview.59 Dredge journey does not transfer Gate
+0 qualification or qualify any Preview.60 selector branch.
 
 ## Required Repair Order
 
@@ -103,6 +110,24 @@ deselect, two intermediate selections, and final exact-three batch movement
 from discard to hand. Dredge remains canary-only. See the
 [Dredge closeout](GATE1_DREDGE_CLOSEOUT_2026-07-23.md). Every other unbound
 origin remains fail closed.
+
+Runs `run-20260723132513-103o5y` and
+`run-20260723133555-rma1g2` later stopped on
+`bridge.surface.generated_card_choice.binding_unavailable`. The second run's
+immediate predecessor action was exact Quasar. The first stop followed the
+Knowledge Demon enemy turn and exact source audit identifies
+`CurseOfKnowledgeMove -> ChooseCurse`; it was not Charge. Preview.60 reuses
+only proven card-choice mechanics while keeping their semantic contracts
+separate: Quasar is skippable and preserves ordinary selected-card cost,
+whereas Knowledge Demon is forced and commits the chosen card's immediate
+Power effect. The same source audit found exact Charge independently:
+`Charge.OnPlay` selects two draw-pile cards and replaces both with
+`MinionDiveBomb` at their original indices. Charge therefore reuses pile-grid
+mechanics but has its own cardinality, purpose, commit, and exact replacement
+witness. See
+[the focused closeout](GATE1_QUASAR_KNOWLEDGE_DEMON_CHARGE_CLOSEOUT_2026-07-24.md).
+These branches are implemented, tested, installed, and loaded canaries, but
+none has Preview.60 Organic action evidence yet.
 
 The same evidence set distinguished two non-merchant deck-removal sources.
 Precise Scissors remains the independent `relic_deck_removal_selection` canary
@@ -172,10 +197,12 @@ a current v2 permission claim.
 
 ## Next High-Value Work
 
-Run bounded natural Seance and Precise Scissors completion canaries on the
-Preview.58 contract. Continue the exact-identity journey only after those
-results are recorded. The next known fail-closed candidates remain
-Crystal Sphere and manual potion discard outside reward handling. Track the
+Run bounded Quasar and Knowledge Demon lifecycles and exact Charge when
+naturally available under the recorded Preview.60 identity. Also retain the
+pending Seance and Precise Scissors
+completion canaries. Continue the exact-identity journey only after those
+results are recorded. Other known fail-closed candidates remain Crystal Sphere
+and manual potion discard outside reward handling. Track the
 recurring combat stale-state pre-dispatch rejections as a throughput
 observation, but do not weaken state-bound validation or retry rejected
 actions. Close only bounded contracts and do not convert canary support into

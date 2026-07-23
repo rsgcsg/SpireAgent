@@ -32,7 +32,7 @@ describe("prompt contract", () => {
   it("versions combat-pile guidance independently and keeps source semantics data-driven", () => {
     const guide = SURFACE_GUIDES.combat_pile_card_selection;
 
-    expect(guide.version).toBe(4);
+    expect(guide.version).toBe(5);
     expect(guide.text).toContain("source-bound");
     expect(guide.text).toContain("Do not infer one source card's business outcome from another");
     expect(guide.text).not.toContain("current Headbutt contract");

@@ -1,7 +1,7 @@
 # Re-SpireAgent RE-P1
 
 > Compatibility status, 2026-07-22: Re and C# now share
-> `2.0-preview.59`, including explicit operation scopes, actual loaded-game
+> source contract `2.0-preview.60`, including explicit operation scopes, actual loaded-game
 > assembly identity, and the Gateway
 > assembly digest. Connector Gate 0 is closed on the exact loaded artifact; see
 > the [Gate 0 closeout](../STS2MCP/docs/bridge-v2/CONNECTOR_G0_CLOSEOUT_2026-07-22.md).
@@ -22,7 +22,7 @@ waits for the Bridge command lifecycle, and records the complete evidence.
 
 RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, shadow/live modes, policy promotion, or the old project's phase machinery. Its job is to make one decision path correct and auditable.
 
-Re's current strict client contract is Bridge `2.0-preview.59` on exact game
+Re's current strict client contract is Bridge `2.0-preview.60` on exact game
 identity `v0.109.0|c12f634d|-1639417500`. The separate
 `release_declared_main_assembly_hash=-840572606` is diagnostic provenance, not
 permission authority. Re requires capabilities and every
@@ -109,6 +109,13 @@ cancel, and the `toggle_discard_card_for_dredge` operation. A current-build Re
 canary proved select, deselect, intermediate selected-set preservation, and
 automatic exact-three discard-to-hand completion. This does not authorize a
 generic multi-selector or any other source.
+
+Preview.60 adds exact Quasar and Knowledge Demon without treating their shared
+card grid as shared business semantics: Quasar is skippable and preserves
+ordinary selected-card cost, while Knowledge Demon is forced and commits an
+immediate Power effect. It also adds exact Charge as an exact-two draw-pile
+same-index transformation branch. These are tested, installed, and loaded
+source-scoped canaries; their Organic action verification is still pending.
 
 Exact no-input combat setup and post-combat resolution intervals normalize as
 `combat_transition(setup|resolution) + no_action + settling +

@@ -45,8 +45,9 @@ yet.
 
 ## Current Architectural Constraint
 
-The Gateway and Re now share one mechanically checked `2.0-preview.59`
-connector contract, and Gate 0 has exact loaded-runtime lifecycle evidence. The
+The Gateway and Re now share one mechanically checked `2.0-preview.60`
+source contract. Gate 0 has exact loaded-runtime lifecycle evidence on its
+recorded artifact; newer source does not inherit that evidence. The
 current operational boundary is Gate 1: close operation-level reliability,
 visible-information, and v1-retirement gaps under exact identities without
 turning implementation, fixtures, or an older artifact into permission or

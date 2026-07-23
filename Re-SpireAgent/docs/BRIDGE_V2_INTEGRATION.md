@@ -1,7 +1,7 @@
 # Bridge v2 Integration
 
 > Current source-truth status, 2026-07-22: Re and C# share the
-> `2.0-preview.59` consumer contract. Gate 0 has exact loaded-runtime lifecycle
+> `2.0-preview.60` source consumer contract. Gate 0 has exact loaded-runtime lifecycle
 > evidence and Gate 1 operation-level reliability/migration is active. This is
 > not complete-game qualification. See the
 > [real connector audit](../../STS2MCP/docs/bridge-v2/REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md).
@@ -24,7 +24,7 @@ consumption.
 
 ## Current Scope
 
-Re-SpireAgent implements the strict `2.0-preview.59` consumer contract. When a
+Re-SpireAgent implements the strict `2.0-preview.60` consumer contract. When a
 matching Bridge exists, authority is read from capabilities rather than
 inferred from implementation or historical evidence.
 

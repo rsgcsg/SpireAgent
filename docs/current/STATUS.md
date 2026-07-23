@@ -13,7 +13,7 @@ This is the canonical short current-state document for the rebuilt project.
 ## Current Gate
 
 **Gate 0 is closed; Gate 1 connector reliability and operation-level migration
-is active.** C# and Re share `2.0-preview.59`. Re is v2-only; Gateway v1
+is active.** C# and Re share `2.0-preview.60`. Re is v2-only; Gateway v1
 mutations are disabled by default while v1 reads remain explicit compatibility
 diagnostics. Historical Gate 0 evidence remains scoped to its exact artifact.
 The current preview has its own bounded mutation evidence and does not inherit
@@ -27,9 +27,12 @@ Headless, and post-training work remains gated.
 
 ## Immediate Next Step
 
-`2.0-preview.59` is built and was cold-start loaded as SHA
-`afbcc870...17423`, MVID `49d2408c-7a43-4669-b37d-6c8f33308c48`, runtime
-`844706b0442e443db974f156103d7a00`, under the exact bridge-only Modset.
+`2.0-preview.60` is installed and cold-start loaded as SHA
+`49e403b7...d996`, MVID `1219fb20-6db0-4b97-a754-57695e2585f8`, runtime
+`ec2901d029a241e08831fdece0691a2d`, under the exact bridge-only Modset. Re's
+read-only inspect negotiated that identity and decoded an actionable main-menu
+state. This proves deployment and strict consumer compatibility, not the new
+selector lifecycles.
 Runs `run-20260723105904-z3sy3r` and
 `run-20260723105825-69ohhl` exposed the missing exact Seance source contract;
 `run-20260723110000-1z5jqy` exposed Forbidden Grimoire's distinct post-combat
@@ -57,9 +60,24 @@ source-scoped canary-only. See the
 and the
 [Seance and reward-removal closeout](../../STS2MCP/docs/bridge-v2/GATE1_SEANCE_AND_REWARD_REMOVAL_CLOSEOUT_2026-07-23.md).
 
-Run the still-missing Seance and Precise Scissors bounded natural lifecycles
-next, then continue until the next real unsupported source. Every other
-unbound selector source remains fail closed.
+Two later real runs stopped on the same fail-closed
+`generated_card_choice.binding_unavailable` diagnostic. Source and predecessor
+action audit identified exact Quasar in
+`run-20260723133555-rma1g2`; the other stop in
+`run-20260723132513-103o5y` was Knowledge Demon's forced curse choice, not
+player card Charge. Source `2.0-preview.60` now gives Quasar a skippable
+unchanged-cost combat-hand contract and Knowledge Demon an independent,
+non-skippable immediate-effect contract. It also adds exact Charge as a
+two-card draw-pile-to-same-index `MinionDiveBomb` transformation under the
+existing pile-selection mechanics. All three are source-scoped canaries only:
+the artifact is loaded, but bounded Organic lifecycles are still required. See
+the
+[Quasar, Knowledge Demon, and Charge closeout](../../STS2MCP/docs/bridge-v2/GATE1_QUASAR_KNOWLEDGE_DEMON_CHARGE_CLOSEOUT_2026-07-24.md).
+
+Run bounded Quasar and Knowledge Demon canaries and an exact Charge lifecycle
+if naturally available. Then run the still-missing
+Seance and Precise Scissors lifecycles. Every unbound selector source remains
+fail closed.
 
 The same run set exposed a Re bounded-run hygiene defect: an unchanged,
 non-actionable `event_option` state could consume the whole tick budget while

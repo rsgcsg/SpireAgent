@@ -68,6 +68,13 @@ internal static class CombatPileSelectionSourceBinding
         IReadOnlyList<CardModel> BaselineHand)
         : SourceBinding(Token, Player, Dredge, BaselineDiscard);
 
+    internal sealed record ChargeBinding(
+        Guid Token,
+        Player Player,
+        Charge Charge,
+        IReadOnlyList<CardModel> BaselineDraw)
+        : SourceBinding(Token, Player, Charge, BaselineDraw);
+
     internal readonly record struct Scope(Guid Token)
     {
         public bool IsTracked => Token != Guid.Empty;
@@ -157,6 +164,24 @@ internal static class CombatPileSelectionSourceBinding
             dredge,
             combat.DiscardPile.Cards.ToArray(),
             combat.Hand.Cards.ToArray());
+        lock (Gate)
+            Active.Add(binding.Token, binding);
+        return new Scope(binding.Token);
+    }
+
+    internal static Scope BeginCharge(Charge charge)
+    {
+        if (charge.Owner is not Player player
+            || player.PlayerCombatState is not { } combat)
+        {
+            return default;
+        }
+
+        var binding = new ChargeBinding(
+            Guid.NewGuid(),
+            player,
+            charge,
+            combat.DrawPile.Cards.ToArray());
         lock (Gate)
             Active.Add(binding.Token, binding);
         return new Scope(binding.Token);
@@ -311,6 +336,39 @@ internal static class DredgeCombatPileSelectionSourcePatch
         out CombatPileSelectionSourceBinding.Scope __state)
     {
         __state = CombatPileSelectionSourceBinding.BeginDredge(__instance);
+    }
+
+    private static void Postfix(
+        ref Task __result,
+        CombatPileSelectionSourceBinding.Scope __state)
+    {
+        if (__state.IsTracked)
+            __result = CombatPileSelectionSourceBinding.Complete(__result, __state);
+    }
+}
+
+/// <summary>
+/// CHARGE!! selects exactly two draw-pile cards and transforms each exact
+/// instance into Minion Dive Bomb. It shares pile-grid mechanics with Seance,
+/// but not Seance's cardinality or replacement type.
+/// </summary>
+[HarmonyPatch]
+internal static class ChargeCombatPileSelectionSourcePatch
+{
+    internal static MethodBase ResolveTargetMethod() =>
+        AccessTools.DeclaredMethod(
+            typeof(Charge),
+            "OnPlay",
+            new[] { typeof(PlayerChoiceContext), typeof(CardPlay) })
+        ?? throw new MissingMethodException(typeof(Charge).FullName, "OnPlay");
+
+    private static MethodBase TargetMethod() => ResolveTargetMethod();
+
+    private static void Prefix(
+        Charge __instance,
+        out CombatPileSelectionSourceBinding.Scope __state)
+    {
+        __state = CombatPileSelectionSourceBinding.BeginCharge(__instance);
     }
 
     private static void Postfix(
@@ -505,6 +563,83 @@ internal static class DredgeCombatPileWitness
         IReadOnlyCollection<T> actual) where T : class =>
         expected.Count == actual.Count
         && expected.All(card => ContainsReference(actual, card));
+
+    private static bool ContainsReference<T>(IEnumerable<T> cards, T expected) where T : class =>
+        cards.Any(card => ReferenceEquals(card, expected));
+}
+
+internal static class ChargeCombatPileWitness
+{
+    internal static bool SelectionChanged<T>(
+        bool sourceActive,
+        bool surfaceOpen,
+        IReadOnlyCollection<T> baselineDraw,
+        IReadOnlyCollection<T> currentDraw,
+        IReadOnlyCollection<T> previousSelection,
+        IReadOnlyCollection<T> currentSelection,
+        T toggledCard,
+        bool wasSelected) where T : class
+    {
+        if (!sourceActive
+            || !surfaceOpen
+            || !SameReferences(baselineDraw, currentDraw))
+        {
+            return false;
+        }
+
+        var expected = previousSelection
+            .Where(card => !ReferenceEquals(card, toggledCard))
+            .ToList();
+        if (!wasSelected)
+            expected.Add(toggledCard);
+        return SameReferences(expected, currentSelection);
+    }
+
+    internal static bool Completed<T>(
+        bool sourceCompleted,
+        bool surfaceClosed,
+        IReadOnlyList<T> baselineDraw,
+        IReadOnlyList<T> currentDraw,
+        IReadOnlyCollection<T> selectedCards,
+        Func<T, bool> isExpectedReplacement) where T : class
+    {
+        if (!sourceCompleted
+            || !surfaceClosed
+            || selectedCards.Count != 2
+            || currentDraw.Count != baselineDraw.Count
+            || selectedCards.Any(card => ContainsReference(currentDraw, card)))
+        {
+            return false;
+        }
+
+        foreach (T selected in selectedCards)
+        {
+            int index = IndexOfReference(baselineDraw, selected);
+            if (index < 0
+                || !isExpectedReplacement(currentDraw[index])
+                || ContainsReference(baselineDraw, currentDraw[index]))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static int IndexOfReference<T>(IReadOnlyList<T> cards, T expected) where T : class
+    {
+        for (int index = 0; index < cards.Count; index++)
+        {
+            if (ReferenceEquals(cards[index], expected))
+                return index;
+        }
+        return -1;
+    }
+
+    private static bool SameReferences<T>(
+        IReadOnlyCollection<T> expected,
+        IReadOnlyCollection<T> actual) where T : class =>
+        expected.Count == actual.Count
+        && expected.All(item => ContainsReference(actual, item));
 
     private static bool ContainsReference<T>(IEnumerable<T> cards, T expected) where T : class =>
         cards.Any(card => ReferenceEquals(card, expected));
