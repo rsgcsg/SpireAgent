@@ -17,10 +17,12 @@ not inherit authority from the archived root SpireAgent runtime.
    current evidence/eval capabilities, honest non-claims, and staged D-lane
    delivery.
 6. [Product](PRODUCT.md): product boundary and deferred product work.
-7. [Operations](OPERATIONS.md): safe local development and validation map.
-8. [Repository inventory](REPOSITORY_INVENTORY.md): current/legacy ownership
+7. [Local setup](LOCAL_SETUP.md): fresh clone, exact-game build, safe install,
+   loaded-identity verification, Re configuration, and cross-device rules.
+8. [Operations](OPERATIONS.md): safe local development and validation map.
+9. [Repository inventory](REPOSITORY_INVENTORY.md): current/legacy ownership
    classification and v1-retirement holdouts.
-9. [Repository consolidation ADR](decisions/ADR-0001-current-mainline-and-legacy-archive.md):
+10. [Repository consolidation ADR](decisions/ADR-0001-current-mainline-and-legacy-archive.md):
    durable authority and archive decision.
 
 Current cross-component audits:

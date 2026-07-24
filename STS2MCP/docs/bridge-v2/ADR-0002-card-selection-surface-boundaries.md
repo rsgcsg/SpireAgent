@@ -1,6 +1,7 @@
 # ADR-0002: Preserve Card-Selection Surface Boundaries
 
-Status: accepted and retained through `2.0-preview.13`
+Status: accepted safety boundary; transaction-shape portion refined by
+`2.0-preview.61`
 Date: 2026-07-17
 
 ## Context
@@ -57,11 +58,16 @@ and completion lifecycle, not UI class names or payload convenience.
 - New selector variants require explicit fixtures and organic qualification.
 - Some serialization code remains repetitive until multiple contracts prove a
   stable internal abstraction; this is preferred to premature wire coupling.
-- The old v1 `card_selection` remains compatibility-only and must not be cited
-  as proof that the corresponding v2 Surface is qualified.
+- Preview.61 permits a closed structural contract within one proven mechanism
+  family, but source ownership, native continuation, permission, and semantic
+  completion remain Gateway obligations.
+- The old v1 `card_selection` is archived and must not be cited as proof that
+  the corresponding v2 Surface is qualified.
 
 ## Rejected Alternative
 
-A universal `card_selection` Surface was rejected. It would erase persistent
-versus temporary card identity, pile/hand/run-deck ownership, opening guards,
-selection constraints, preview semantics, and completion evidence.
+A universal client-authorized `card_selection` Surface was rejected. It would
+erase persistent versus temporary card identity, pile/hand/run-deck ownership,
+opening guards, selection constraints, preview semantics, and completion
+evidence. This does not prohibit shared native mechanism adapters or closed
+structural transaction descriptions that preserve those distinctions.

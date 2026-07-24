@@ -2,8 +2,9 @@
 
 > Current-status redirect, 2026-07-24: Gate 1 is closed as a bounded v2
 > mutation baseline on source `2.0-preview.61`; Re/default MCP are v2-only and
-> the full Gateway v1 namespace is retired. Preview.60 remains the last loaded
-> artifact and Gate 2 is next. The baseline table and dated post-audit notes
+> the full Gateway v1 namespace is retired. Preview.61 is installed and
+> cold-loaded; its bounded Neow's Fury Organic lifecycle remains the runtime
+> seal before permission expansion. The baseline table and dated post-audit notes
 > below preserve what was known when this audit was written; they are not
 > current runtime truth. See `../STATUS.md` and the Connector evidence.
 

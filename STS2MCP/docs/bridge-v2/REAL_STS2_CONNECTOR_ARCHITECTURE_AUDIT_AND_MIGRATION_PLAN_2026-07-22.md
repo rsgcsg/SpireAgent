@@ -5,8 +5,9 @@ Status: canonical architecture audit and migration decision, 2026-07-22.
 > **Current redirect, 2026-07-24:** Gate 1 later closed as a bounded v2
 > mutation baseline on source `2.0-preview.61`. Re/default MCP are v2-only and
 > the complete Gateway `/api/v1` namespace is retired; its implementation is
-> archived. Preview.60 remains the last loaded artifact. The baseline facts
-> below are historical audit evidence, not current status.
+> archived. Preview.61 is installed/cold-loaded and strictly decoded by Re;
+> its bounded Neow's Fury Organic lifecycle remains pending. The baseline
+> facts below are historical audit evidence, not current status.
 
 Productization addendum: this connector audit remains canonical for live-game
 binding and migration, but the later [productization architecture audit](../../../docs/current/audits/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md)

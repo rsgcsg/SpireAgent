@@ -16,8 +16,10 @@ a bounded read/action/completion journey.
 
 ## Gate 1: Connector Reliability And Coverage
 
-Status: **closed as a bounded ordinary-single-player v2 mutation baseline on
-2026-07-24.**
+Status: **repository/source closeout complete as a bounded
+ordinary-single-player v2 mutation baseline on 2026-07-24; runtime seal pending
+bounded Preview.61 Neow's Fury Organic evidence. Preview.61 install/load and v1
+retirement verification are complete.**
 
 Expand v2 only through independently closable journeys. For each journey,
 verify source/UI visibility, input owner, advertised opaque actions,
@@ -33,8 +35,8 @@ or multiplayer were migrated. See the
 
 ## Gate 2: Player-Visible Information Closure
 
-Status: **next gate; Preview.61 loaded identity and bounded Neow's Fury
-evidence are the first current-build verification tasks.**
+Status: **next design/evidence gate; no runtime permission expansion before the
+Gate 1 Preview.61 runtime seal.**
 
 Close decision-relevant visible-information gaps using shared state, context,
 surface, preview, and read-only inspection. Do not expose hidden RNG, draw

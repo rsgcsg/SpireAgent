@@ -1,5 +1,9 @@
 # Current Operations Map
 
+Use [Local Setup](LOCAL_SETUP.md) for the authoritative fresh-clone,
+cross-device build/install, loaded-identity, and troubleshooting sequence. This
+file is only the concise command map.
+
 ## Re-SpireAgent
 
 ```bash
@@ -49,5 +53,6 @@ git diff --check
 `npm run check` delegates only to the active Re project. Gateway checks remain
 environment-dependent and should be recorded separately.
 
-The repository currently defines no GitHub Actions workflow. Local success
-must not be reported as an automatic commit or pull-request check.
+The public CI workflow checks Re and active documentation on Linux. Gateway
+tests and Release builds still require proprietary local game assemblies and
+remain explicit local checks; CI success is not Gateway qualification.

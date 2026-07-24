@@ -2,8 +2,9 @@
 
 > Current source-truth status, 2026-07-24: Re and C# share the
 > `2.0-preview.61` source consumer contract; Re normalized schema is `26`.
-> Gate 1 is closed as a bounded v2 mutation baseline. Preview.60 remains the
-> last loaded artifact, so Preview.61 has no inherited Organic qualification.
+> Gate 1 source/repository closeout is complete as a bounded v2 mutation
+> baseline. Preview.61 is installed, cold-loaded, and strictly decoded by Re;
+> its Neow's Fury branch still has no Organic qualification.
 
 ## Connector Boundary
 
@@ -43,7 +44,8 @@ no other loaded gameplay Mod.
 
 Re's production Connector is v2-only. The former `auto` and explicit `v1`
 runtime modes are rejected; historical v1 raw-state records remain readable
-but no Re mutation transport can reach `/api/v1/*`.
+but no Re transport can reach `/api/v1/*`. A `legacy_v1_state` field injected
+into a Bridge v2 wrapper is invalid and cannot contribute facts or authority.
 
 Bridge command `completed` is the semantic settlement authority. Re verifies
 the echoed request/state/action identity, preserves `failed` and `timed_out`

@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - develop
+
+permissions:
+  contents: read
+
+jobs:
+  re-spire-agent:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: Re-SpireAgent/package-lock.json
+      - run: npm ci
+        working-directory: Re-SpireAgent
+      - run: npm run check
+        working-directory: Re-SpireAgent
+
+  repository-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: npm run check:docs
+      - run: python -m py_compile STS2MCP/mcp/server.py
+
+  # Gateway C# tests/builds require the user's exact local STS2 assemblies.
+  # They intentionally remain local evidence and are not replaced by fixtures.

@@ -15,9 +15,10 @@ complete-game coverage.
 The C# Bridge and Re source share `2.0-preview.61`; Re normalized schema is
 `26`. Preview.61 structurally describes combat-pile mutation and commit
 semantics and adds exact Neow's Fury optional manual-confirm selection.
-Preview.60 remains the last installed and verified loaded artifact. Gate 1 is
-closed as a bounded ordinary-single-player v2 mutation baseline; Preview.61
-still requires install/load identity and an Organic Neow lifecycle.
+Preview.61 is built, installed, cold-loaded, and strictly decoded by Re on the
+exact local game/Modset identity. Gate 1 source/repository closeout is complete
+as a bounded ordinary-single-player v2 mutation baseline; the remaining
+runtime-seal item is an Organic Neow lifecycle.
 
 > Product security warning: the current HTTP listener is a developer preview.
 > It binds to loopback and filters browser Origin, but it has no client
@@ -119,8 +120,8 @@ The build references them from the local game installation.
 macOS:
 
 ```bash
-git clone <your-fork-url> STS2MCP
-cd STS2MCP
+git clone https://github.com/rsgcsg/SpireAgent.git
+cd SpireAgent/STS2MCP
 
 export DOTNET_ROOT="/opt/homebrew/opt/dotnet@9/libexec"
 export PATH="$DOTNET_ROOT:$PATH"
@@ -140,9 +141,10 @@ dotnet test STS2_MCP.sln -p:STS2GameDir="$env:STS2_GAME_DIR"
 .\build.ps1 -GameDir "$env:STS2_GAME_DIR"
 ```
 
-The solution currently contains 110 pure contract/runtime/security tests covering stable
-state identity, entity identity, stale-state rejection, idempotent request IDs,
-completion observation, timeout-as-unknown, and JSON action shape.
+The solution currently contains 122 pure contract/runtime/security tests
+covering stable state identity, entity identity, stale-state rejection,
+idempotent request IDs, completion observation, timeout-as-unknown, retired-v1
+routing, and JSON action shape.
 
 ## Install The Mod
 
@@ -178,6 +180,16 @@ curl -s http://localhost:15526/
 curl -s http://localhost:15526/api/v2/capabilities | python3 -m json.tool
 curl -s http://localhost:15526/api/v2/state | python3 -m json.tool
 ```
+
+Compare `bridge.assembly_file_sha256` in capabilities with the SHA-256 of the
+DLL you copied. Also record `bridge.module_version_id`,
+`bridge.runtime_instance_id`, exact game identity, and Modset. A matching disk
+file without matching loaded identity is not deployment proof. A loaded build
+still is not Organic action qualification.
+
+For the complete fresh-clone, cross-device, install, restart, and
+troubleshooting sequence, use the repository
+[Local Setup guide](../docs/current/LOCAL_SETUP.md).
 
 For one coherent state plus typed read-only inspections:
 

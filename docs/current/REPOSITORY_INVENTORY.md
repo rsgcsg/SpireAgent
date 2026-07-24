@@ -16,7 +16,8 @@ preserve the detailed migration provenance.
 | `STS2MCP/tests/` | Current Bridge contract/runtime test suite. |
 | `STS2MCP/docs/bridge-v2/` remaining files | Current protocol, coverage, permission, migration, and ownership documents. |
 | `docs/current/` | Repository-level current status, architecture, roadmap, operations, and product truth. |
-| `README.md`, `AGENTS.md`, `CONTRIBUTING.md`, `.gitignore`, `package.json`, `tools/` | Current workspace entrypoints and checks. |
+| `README.md`, `AGENTS.md`, `CONTRIBUTING.md`, `SECURITY.md`, `.gitignore`, `package.json`, `tools/` | Current workspace entrypoints, security boundary, and checks. |
+| `.github/workflows/ci.yml` | Public Re/document/inventory/Python checks; exact-game C# validation remains local. |
 | `LICENSE` | Repository license. |
 
 ## ACTIVE_MOVE_OR_RENAME

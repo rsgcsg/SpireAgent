@@ -3,10 +3,10 @@
 In this project, "SpireAgent" means `Re-SpireAgent` by default.
 
 Current source contract is `2.0-preview.61`; Re normalized schema is `26`.
-Gate 1 is closed as a bounded v2 mutation baseline. Preview.60 remains the last
-loaded artifact, so Preview.61 source/build results and its Neow's Fury branch
-are not current Organic evidence. Re and the default MCP adapter are v2-only;
-the complete Gateway v1 namespace is retired.
+Gate 1 source/repository closeout is complete as a bounded v2 mutation
+baseline. Preview.61 is installed, cold-loaded, and strictly decoded by Re, but
+its Neow's Fury branch still lacks Organic evidence. Re and the default MCP
+adapter are v2-only; the complete Gateway v1 namespace is retired.
 
 The rebuilt client implements this boundary through a strict adapter rather
 than consuming raw Bridge JSON in planning code:

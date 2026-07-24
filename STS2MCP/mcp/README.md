@@ -17,8 +17,8 @@ rules.
 | `submit_agent_action_v2(request_id, expected_state_id, action_id)` | submit one advertised opaque action |
 | `get_agent_command_v2(request_id)` | poll completion, rejection, or unknown outcome |
 
-The adapter deliberately exposes no v1 index mutation tools. Unsupported state
-is a fail-closed result, not permission to synthesize a legacy action. A
+The adapter deliberately exposes no v1 tools or routes. Unsupported state is a
+fail-closed result, not permission to synthesize legacy facts or actions. A
 timed-out command has unknown outcome and must not be retried.
 
 ## Run

@@ -119,11 +119,10 @@ import {
   bridgeV2InspectionsFromWrapper,
   bridgeV2ObservationFromWrapper,
   bridgeV2StateFromWrapper,
-  legacyStateFromBridgeV2Wrapper,
   type Sts2McpRawState
 } from "../integrations/sts2mcp/rawState.js";
 import { stateHash } from "../runtime/stateHash.js";
-import type { JsonObject } from "../shared/json.js";
+import { isJsonObject, type JsonObject } from "../shared/json.js";
 import { DiagnosticsBuilder } from "./diagnostics.js";
 import { projectBridgeV2Card } from "./bridgeV2CardProjection.js";
 import { projectBridgeV2Inspections } from "./bridgeV2InspectionProjection.js";
@@ -240,14 +239,20 @@ const ACTION_KINDS = {
 export function normalizeBridgeV2CurrentState(
   rawState: Sts2McpRawState,
   source: AdapterDescriptor,
-  capturedAt: string,
-  legacyEnvelope?: StateEnvelope
+  capturedAt: string
 ): StateEnvelope {
   const diagnostics = new DiagnosticsBuilder();
   const bridgeStateRaw = bridgeV2StateFromWrapper(rawState);
   const capabilitiesRaw = bridgeV2CapabilitiesFromWrapper(rawState);
   if (!bridgeStateRaw) diagnostics.missing("bridge_v2_state");
   if (!capabilitiesRaw) diagnostics.missing("bridge_v2_capabilities");
+  if (isJsonObject(rawState.legacy_v1_state)) {
+    diagnostics.invalid(
+      "legacy_v1_state",
+      rawState.legacy_v1_state,
+      "legacy v1 sidecars are retired and cannot contribute facts to Bridge v2 observations"
+    );
+  }
 
   let state;
   let capabilities;
@@ -262,17 +267,14 @@ export function normalizeBridgeV2CurrentState(
     diagnostics.invalid("bridge_v2_capabilities", capabilitiesRaw, safeMessage(error));
   }
 
-  const inherited = legacyEnvelope?.diagnostics.status !== "invalid" ? legacyEnvelope?.currentState : undefined;
   const sharedProjection = state?.shared_state ? projectSharedVisibleState(state.shared_state) : undefined;
-  const mayInheritLegacy = state?.surface.kind === "unsupported"
-    && state.authority_handoff.status !== "bridge_owned";
   let context: SemanticContext = {
     kind: "unknown",
     reason: "Bridge v2 context could not be decoded",
     observedTopLevelKeys: Object.keys(rawState).sort()
   };
-  let run = sharedProjection?.run ?? (mayInheritLegacy ? inherited?.run : undefined);
-  let player = sharedProjection?.player ?? (mayInheritLegacy ? inherited?.player : undefined);
+  let run = sharedProjection?.run;
+  let player = sharedProjection?.player;
   if (state && isBridgeV2EventContext(state.context)) {
     context = projectEventContext(state.context);
   } else if (state && isBridgeV2CombatContext(state.context)) {
@@ -342,14 +344,6 @@ export function normalizeBridgeV2CurrentState(
   const bridgeObservation = state && observationRaw
     ? projectCoherentObservation(observationRaw, state.state_id, Object.keys(inspectionRaw), diagnostics)
     : undefined;
-
-  if (mayInheritLegacy && (inherited?.run || inherited?.player)) {
-    diagnostics.infer(
-      "run/non_action_shared_state",
-      ["legacy_v1_state"],
-      "legacy fallback state only; a Bridge-owned semantic surface may not inherit shared facts from v1"
-    );
-  }
 
   const base = {
     normalizedSchemaVersion: NORMALIZED_STATE_SCHEMA_VERSION,
@@ -691,7 +685,6 @@ export function normalizeBridgeV2CurrentState(
     surface
   };
 
-  const legacyRaw = legacyStateFromBridgeV2Wrapper(rawState);
   return {
     envelopeSchemaVersion: 2,
     capturedAt,
@@ -700,11 +693,13 @@ export function normalizeBridgeV2CurrentState(
     currentState,
     diagnostics: builtDiagnostics,
     // observed_at is excluded. The Bridge state id already includes the
-    // top-level shared_state; legacy data participates only on unsupported
-    // states where the v1 fallback still owns observation.
+    // top-level shared_state. Retired v1 sidecars never contribute facts or
+    // action authority, but their presence remains identity-visible for audit.
     stateHash: stateHash({
       bridgeStateId: state?.state_id ?? null,
-      legacyState: legacyRaw ?? null,
+      retiredLegacySidecar: isJsonObject(rawState.legacy_v1_state)
+        ? rawState.legacy_v1_state
+        : null,
       inspections: bridgeV2InspectionIdentity(inspectionRaw)
     }),
     normalizedStateHash: stateHash(currentState)

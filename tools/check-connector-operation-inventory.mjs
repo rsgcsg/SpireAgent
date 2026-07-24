@@ -32,6 +32,13 @@ if (inventory.schema_version !== 2) fail("unsupported inventory schema_version")
 if (inventory.gate_1_status !== "closed_bounded_v2_baseline") {
   fail("gate_1_status must name the bounded Gate 1 closeout");
 }
+if (inventory.gate_1_runtime_seal !== "pending_preview61_neows_fury_organic_lifecycle") {
+  fail("Gate 1 runtime seal must remain pending until Neow's Fury is organically exercised");
+}
+if (inventory.current_source_protocol !== "2.0-preview.61"
+    || inventory.last_loaded_protocol !== "2.0-preview.61") {
+  fail("source and loaded protocol evidence boundary drifted");
+}
 if (inventory.legacy_mutation_authority !== "retired") {
   fail("legacy_mutation_authority must remain retired");
 }

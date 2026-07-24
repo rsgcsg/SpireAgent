@@ -6,15 +6,17 @@
 > below are preserved as dated evidence and must not override those documents.
 
 Status update 2026-07-24 (latest): source contract is `2.0-preview.61`; Re
-normalized schema is `26`. Gate 1 is closed as a bounded v2 mutation baseline.
+normalized schema is `26`. Gate 1 source/repository closeout is complete as a
+bounded v2 mutation baseline.
 Run `run-20260723150256-d2thtq` exposed exact Neow's Fury optional
 discard-to-hand selection. Preview.61 adds its manual-confirm source/witness and
 migrates Re from source-card literals to structural combat-pile transaction
 semantics. The entire Gateway v1 namespace is retired, its implementation is
-archived, and the default MCP adapter is v2-only. Preview.61 is built but not
-installed because the game remained
-open; no Organic Neow evidence exists. See canonical status and the Gate 1
-closeout audit.
+archived, and the default MCP adapter is v2-only. Preview.61 is built,
+installed, cold-loaded, and strictly decoded by Re as SHA `9b6f6216...6a99`,
+MVID `efd31a31-9c2a-4b68-ae22-1cabc1b382f1`, runtime
+`7e6ffb41d8154625bd42ea34190194ef`. Loaded v1 routes return `410`; no Organic
+Neow evidence exists. See canonical status and the Gate 1 closeout audit.
 
 Earlier status update 2026-07-24: source contract was `2.0-preview.60`.
 Two Preview.59 real-run stops shared

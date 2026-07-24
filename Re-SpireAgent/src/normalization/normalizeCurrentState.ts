@@ -15,8 +15,7 @@ import {
   bridgeV2CapabilitiesSidecarFromRaw,
   bridgeV2InspectionIdentity,
   bridgeV2InspectionsFromWrapper,
-  isBridgeV2WrappedState,
-  legacyStateFromBridgeV2Wrapper
+  isBridgeV2WrappedState
 } from "../integrations/sts2mcp/rawState.js";
 import { decodeBridgeV2Capabilities } from "../integrations/sts2mcp/bridgeV2Protocol.js";
 import { stateHash } from "../runtime/stateHash.js";
@@ -49,10 +48,10 @@ const COMBAT_STATE_TOKENS = ["monster", "boss", "elite", "combat", "battle"] as 
 
 export function normalizeCurrentState(rawInput: unknown, source: AdapterDescriptor, capturedAt = new Date().toISOString()): StateEnvelope {
   if (isBridgeV2WrappedState(rawInput)) {
-    const legacyRaw = legacyStateFromBridgeV2Wrapper(rawInput);
-    const legacyEnvelope = legacyRaw ? normalizeLegacyCurrentState(legacyRaw, source, capturedAt) : undefined;
-    return normalizeBridgeV2CurrentState(rawInput, source, capturedAt, legacyEnvelope);
+    return normalizeBridgeV2CurrentState(rawInput, source, capturedAt);
   }
+  // Direct legacy records remain replay-readable as historical evidence. They
+  // are never accepted as a sidecar to a current Bridge v2 observation.
   return normalizeLegacyCurrentState(rawInput, source, capturedAt);
 }
 

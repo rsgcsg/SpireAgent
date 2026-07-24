@@ -5,9 +5,10 @@ Status: canonical architecture boundary for the current real-game connection.
 Current source compatibility status: C# and Re share `2.0-preview.61`, including
 operation scopes, a Gateway artifact digest, separate actual-loaded versus
 release-declared game assembly hashes, and structural combat-pile transaction
-semantics. Preview.61 is built but not installed or loaded. Preview.60 remains
-the last verified loaded artifact; that proves its negotiation and identity
-reporting, not Preview.61 behavior or complete Surface qualification.
+semantics. Preview.61 is built, installed, cold-loaded, and strictly decoded by
+Re on the exact local identity. That proves deployment, negotiation, and
+identity reporting, not its Neow's Fury lifecycle or complete Surface
+qualification.
 
 Consumer distribution, local trust, Companion, BYOK, SDK, and release gates are
 defined in the [productization architecture audit](../../../docs/current/audits/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md).

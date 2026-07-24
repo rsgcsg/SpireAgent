@@ -46,12 +46,14 @@ yet.
 ## Current Architectural Constraint
 
 The Gateway and Re share the mechanically checked `2.0-preview.61` source
-contract. Gate 1 is closed as a bounded v2 mutation baseline: Re and the
-default MCP adapter are v2-only, and the entire Gateway v1 HTTP surface is
-retired.
-V1 GET is diagnostic compatibility, not action authority. Preview.61 is built
-but not yet installed or loaded, so it inherits no runtime qualification from
-Preview.60.
+contract. Gate 1 repository/source closeout establishes a bounded v2 mutation
+baseline: Re and the default MCP adapter are v2-only, and the current-source
+Gateway v1 HTTP surface is retired.
+Historical v1 JSONL remains replay-readable as stored evidence, but no v1
+sidecar may contribute live facts or action authority. Preview.61 is now
+installed, cold-loaded, and strictly decoded by Re on the exact local identity.
+That deployment evidence does not inherit or create Organic transaction
+qualification; the bounded Neow's Fury lifecycle remains the runtime-seal item.
 
 Combat-pile choice is the first production structural transaction contract.
 Re reads closed mutation and commit semantics rather than a union of source

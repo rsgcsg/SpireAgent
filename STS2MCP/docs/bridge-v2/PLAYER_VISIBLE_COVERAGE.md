@@ -10,9 +10,9 @@
 > loaded artifact. Current loaded identity and Gate status are owned by
 > [Bridge v2 Current Status](CURRENT_STATUS.md).
 
-Current source is Preview.61. Preview.60 remains the last installed/loaded
-artifact; no Preview.61 row below is Organic evidence until the new DLL is
-cold-loaded and exercised.
+Current source and loaded artifact are Preview.61. Cold-load and strict Re
+decode are verified, but no Preview.61 row below gains Organic qualification
+without its own bounded current-identity lifecycle.
 
 Historical Gate 0 execution evidence recorded game version/commit plus the
 release-declared hash `-840572606`, Gateway SHA

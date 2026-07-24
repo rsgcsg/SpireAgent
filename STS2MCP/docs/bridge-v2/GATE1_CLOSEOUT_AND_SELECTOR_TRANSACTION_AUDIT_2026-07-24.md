@@ -7,7 +7,7 @@ Repository baseline: `develop@cc19c8262d7f75787fbf68c14b0916e9ddcf2d17`.
 
 ## Executive Verdict
 
-Gate 1 can close under one bounded definition:
+Gate 1 repository/source work can close under one bounded definition:
 
 > The ordinary single-player Agent path has a v2-only mutation baseline, the
 > default MCP adapter is v2-only, the Gateway v1 HTTP surface is retired, and
@@ -18,6 +18,13 @@ selector support, or qualification of every canary. Crystal Sphere, manual
 potion discard outside the bounded reward flow, non-standard menu/profile
 flows, multiplayer, and unbound selector semantics remain unsupported or out
 of scope.
+
+The running game still loaded Preview.60 when the initial report was
+finalized. The later deployment addendum below records the closed-game
+Preview.61 install, exact cold-loaded identity, strict Re decode, and loaded-v1
+retirement check. The bounded Neow's Fury Organic lifecycle remains the only
+runtime-seal item; repository or deployment closure does not manufacture that
+evidence.
 
 The latest real stop was a valid fail-closed result, but it exposed a real
 adaptability gap:
@@ -49,9 +56,9 @@ content coupling, not zero-core-code adaptation.
 | E2 | code/build/contract verification | C# contract tests, Re typecheck/tests/build, Release build, MCP tool inventory |
 | E1 | architecture inference or external comparison | migration conclusions and public-project comparison |
 
-Preview.61 has E2 evidence. It has not been installed or cold-loaded because
-the game process was still running during closeout. It has no E4 Neow's Fury
-lifecycle and must not inherit Preview.60's MVID or runtime identity.
+Preview.61 has E2 evidence plus exact install/load/consumer evidence recorded
+in the deployment addendum. It has no E4 Neow's Fury lifecycle and does not
+inherit Preview.60's transaction qualification.
 
 ## Failure Reconstruction
 
@@ -215,21 +222,22 @@ The final source tree passed:
 
 | Check | Result |
 |---|---|
-| Re typecheck/tests/build | pass; 13 files and 169 tests |
+| Re typecheck/tests/build | pass; 13 files and 170 tests |
 | C# Release tests | pass; 122 tests |
 | exact-game Release build | pass; zero warnings/errors |
-| built Gateway SHA | `0b58699410e2619e144d69250d9880cb11a2620ba125f14c90017faaf1082f42` |
+| built/installed/loaded Gateway SHA | `9b6f62161f8c6c286a73cb157430b441014c5148ff702ea96894e6f702386a99` |
 | Python syntax and lock | pass |
 | default MCP tool inventory | exactly 8 Bridge v2 tools |
 | operation-retirement inventory | pass; 27 historical actions accounted for |
 | active Markdown links | pass; archive excluded as non-canonical |
 
-A read-only live capability query still returned Preview.60 SHA
-`49e403b7fb953121256e13f96edbe1eb435a03ce8eac9ddfb17dff473b81d996`,
-MVID `1219fb20-6db0-4b97-a754-57695e2585f8`, and runtime
-`ec2901d029a241e08831fdece0691a2d`. The game process was not terminated and
-the installed DLL was not overwritten. Therefore the built Preview.61 SHA is
-not installation, loading, canary, or Organic evidence.
+A later closed-game install and Steam cold start loaded Preview.61 SHA
+`9b6f62161f8c6c286a73cb157430b441014c5148ff702ea96894e6f702386a99`,
+MVID `efd31a31-9c2a-4b68-ae22-1cabc1b382f1`, and runtime
+`7e6ffb41d8154625bd42ea34190194ef` under the exact Bridge-only Modset. Re
+strictly negotiated and decoded that identity, and live `/api/v1` root/child
+checks returned `410 Gone`. This closes deployment and runtime v1-retirement
+evidence; it does not provide the still-missing Organic Neow's Fury lifecycle.
 
 ## Gate 1 Exit Matrix
 
@@ -238,17 +246,19 @@ not installation, loading, canary, or Organic evidence.
 | exact state-bound v2 action path | pass |
 | Re mutation path v2-only | pass |
 | default MCP mutation path v2-only | pass |
-| Gateway v1 namespace absent from active runtime | pass |
+| Gateway v1 namespace absent from active source/build | pass |
+| Gateway v1 namespace absent from currently loaded runtime | pass; Preview.61 returns `410 Gone` for v1 root and child paths |
 | unknown/unbound variants fail closed | pass |
 | ordinary single-player operation inventory | pass, with explicit unsupported/out-of-scope rows |
 | latest Neow source contract implemented | pass at E2 |
-| Preview.61 installed/loaded identity | not yet obtained |
+| Preview.61 installed/loaded identity | pass; exact SHA/MVID/runtime/Modset recorded |
 | Neow select/deselect/zero-confirm/batch Organic lifecycle | not yet obtained |
 | complete-game and full visibility closure | not a Gate 1 claim |
 
-Gate 1 closure is therefore an engineering/governance closure, not a statement
-that every canary is qualified. The missing Preview.61 load and Neow Organic
-journey are Gate 2/current-build evidence work, not permission to restore v1.
+Gate 1 repository closure is therefore an engineering/governance closure, not
+a statement that every canary is qualified. The missing Neow Organic journey
+is the remaining Gate 1 runtime seal; Gate 2 may design read-only work but must
+not expand runtime permission before that seal.
 
 ## Remaining Architecture Debt
 
@@ -264,20 +274,19 @@ journey are Gate 2/current-build evidence work, not permission to restore v1.
 4. **Witness code has repeated reference-set primitives.** Extract only after
    a typed, non-executable witness vocabulary is proven across several
    families; do not create an Effect DSL.
-5. **Preview.61 lacks loaded/Organic evidence.** Compilation and fixtures cannot
-   qualify it.
+5. **Preview.61 lacks Neow Organic evidence.** Installation, loading,
+   compilation, and fixtures cannot qualify that transaction.
 
 ## Next Engineering Order
 
-1. Close the game, install Preview.61, cold-start, and record loaded SHA, MVID,
-   runtime ID, game identity, and Modset.
-2. Reproduce a bounded Neow's Fury lifecycle:
+1. Reproduce a bounded Neow's Fury lifecycle under the recorded Preview.61
+   identity:
    select, deselect, confirm zero if naturally available, and confirm a nonzero
    batch. Verify exact discard/hand post-state through Bridge/Re evidence.
-3. Begin Gate 2 with a non-authorizing transaction-correlation shadow:
+2. Begin Gate 2 with a non-authorizing transaction-correlation shadow:
    native owner/task, mechanism, exact operands, phase, closed mutation
    fingerprint, and witness obligations. Unknown sources remain actionless.
-4. Run holdout analysis against a new source. Success means no Re/wire change
+3. Run holdout analysis against a new source. Success means no Re/wire change
    and no new action operation; it does not mean automatic permission.
 
 ## Rollback

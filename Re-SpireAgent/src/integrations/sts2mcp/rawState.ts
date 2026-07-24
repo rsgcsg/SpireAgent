@@ -13,7 +13,6 @@ export const BRIDGE_V2_WRAPPER_PROTOCOL = "bridge_v2_selected" as const;
 export function wrapBridgeV2State(input: {
   state: JsonObject;
   capabilities: JsonObject;
-  legacyState?: JsonObject;
   inspections?: Partial<Record<BridgeV2InspectionKind, JsonObject>>;
   observation?: JsonObject;
 }): Sts2McpRawState {
@@ -22,8 +21,7 @@ export function wrapBridgeV2State(input: {
     bridge_v2_state: input.state,
     bridge_v2_capabilities: input.capabilities,
     ...(input.observation ? { bridge_v2_observation: input.observation } : {}),
-    ...(input.inspections ? { bridge_v2_inspections: input.inspections } : {}),
-    ...(input.legacyState ? { legacy_v1_state: input.legacyState } : {})
+    ...(input.inspections ? { bridge_v2_inspections: input.inspections } : {})
   };
 }
 
@@ -76,11 +74,5 @@ export function bridgeV2StateFromWrapper(value: Sts2McpRawState): JsonObject | u
 export function bridgeV2CapabilitiesFromWrapper(value: Sts2McpRawState): JsonObject | undefined {
   return isBridgeV2WrappedState(value) && isJsonObject(value.bridge_v2_capabilities)
     ? value.bridge_v2_capabilities
-    : undefined;
-}
-
-export function legacyStateFromBridgeV2Wrapper(value: Sts2McpRawState): JsonObject | undefined {
-  return isBridgeV2WrappedState(value) && isJsonObject(value.legacy_v1_state)
-    ? value.legacy_v1_state
     : undefined;
 }

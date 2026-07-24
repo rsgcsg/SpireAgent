@@ -19,9 +19,10 @@ Dependencies point inward toward the domain. Raw MCP types do not cross into dec
 `NormalizedCurrentState` represents shared run/player facts, one semantic
 `context`, one active interaction `surface`, and explicit `actionAuthority`.
 A combat hand-selection overlay therefore normalizes as
-`context.kind="combat"` plus `surface.kind="card_selection"`; authority says
-whether executable actions are reconstructed locally, Bridge-advertised, or
-absent. No one discriminator represents the whole state.
+`context.kind="combat"` plus
+`surface.kind="combat_hand_card_selection"`; authority says whether executable
+actions are Bridge-advertised or absent. No one discriminator represents the
+whole state.
 
 Context/surface compatibility is checked by the normalizer. A known combat context with an unverified overlay becomes `combat + unsupported`, retaining audit facts but exposing no actions. A newly observed event ID using the existing indexed-option protocol remains `event + option_choice`; identity is data, not a new protocol.
 
@@ -61,9 +62,10 @@ surface-specific.
 ## Action Authority
 
 The action builder is deterministic but not strategic. It dispatches on the
-active surface and first enforces state-level authority. Legacy v1 states may
-reconstruct choices. Qualified Bridge deck-enchant/event/combat/card-reward states import
-only current state-bound opaque actions. These authority sources never merge.
+active surface and first enforces state-level authority. Current execution
+imports only state-bound opaque Bridge v2 actions. Direct historical v1 records
+remain replay-readable as stored evidence, but a Bridge wrapper containing a
+`legacy_v1_state` sidecar is invalid and receives no action authority.
 
 DeepSeek sees summaries and returns one ID; the executable payload remains in process memory. A second state read must match both the prompt's pre-state hash and the selected action's source hash. That guard hashes the complete adapter snapshot, while a separate normalized-state hash remains available for semantic audit; unmodeled raw drift therefore stops execution rather than slipping past the normalizer.
 
@@ -75,7 +77,18 @@ There is one provider path. It uses JSON mode and an explicit thinking policy, s
 
 ## Settlement
 
-For v1, successful POST is only partial evidence. The watcher polls for a changed state hash and requires two identical, non-transitional observations before settlement. For v2, the adapter first verifies the submitted command identity and polls the bridge's action-specific lifecycle. Only `completed/confirmed` reaches the next-checkpoint watcher. `rejected/not_applied` is an execution rejection; `failed/unknown`, `timed_out/unknown`, transport uncertainty, or inconsistent command identity is recorded as unsettled/unknown and stops without retry. Settlement budgets follow semantic action lifecycles: opaque and legacy end-turn actions share the longer end-turn window, map navigation uses a separate room-transition window, and ordinary actions retain the default window. Longer windows never convert `loading`, `settling`, or `transitioning` into settled success; two identical complete snapshots are still required. If a confirmed Bridge action reaches a different valid state but that next decision checkpoint is still transitional or not stable twice when the timeout expires, Re records `executed_checkpoint_pending` and starts the next tick with a fresh read. It does not retry the action. v1 acknowledgement, unchanged state, read failure, or unknown Bridge outcome remain terminal. If the game advances while a coherent state plus read-only inspection sidecars are being captured, the adapter returns a typed transient observation error rather than mixed evidence. Settlement polling may retry that observation within its existing timeout. A pre-decision occurrence aborts and records that tick without building a prompt or executing, but does not terminate a bounded run; its next tick must acquire a fresh coherent snapshot. Pre-execution occurrences remain terminal and fail closed.
+The adapter verifies submitted command identity and polls the Bridge
+action-specific lifecycle. Only `completed/confirmed` reaches the
+next-checkpoint watcher. `rejected/not_applied` is an execution rejection;
+`failed/unknown`, `timed_out/unknown`, transport uncertainty, or inconsistent
+command identity stops without retry. Settlement budgets follow semantic
+action lifecycles: end turn and room transitions receive bounded longer
+windows, while ordinary actions retain the default window. Longer windows
+never convert `loading`, `settling`, or `transitioning` into success. If a
+confirmed action reaches a different valid state whose next decision
+checkpoint remains transitional, Re records `executed_checkpoint_pending` and
+continues with a fresh read; it never resubmits the action. Coherent
+state-plus-Inspection capture fails transiently rather than mixing identities.
 
 When one coherent observation remains non-actionable with the same Bridge state
 identity, Context, Surface, and stability for eight consecutive ticks, the
@@ -100,14 +113,12 @@ therefore cannot ask the model to continue or start another run. The lower-level
 `agent:tick` command intentionally retains the ability to exercise a supported
 menu action when a developer explicitly requests that protocol test.
 
-## Explicit Inference
+## Retired Legacy Inference
 
-The legacy v1 shop fallback has one exception to raw-only capability discovery.
-Verified legacy behavior shows that `proceed` leaves a shop even when
-`shop.can_proceed` is false, so that fallback records an explicit inference.
-Bridge v2 preview.14 no longer uses it: `shop_room` advertises an exact opaque
-Proceed action, while `shop_inventory` owns purchases and close. A v2-owned
-shop never imports the v1 inference or its actions.
+Historical v1 shop records contained a local `proceed` inference. It is not a
+current capability or fallback. Bridge v2 `shop_room` advertises an exact
+opaque Proceed action, while `shop_inventory` owns purchases and close; no
+legacy shop fact or action is merged into a current observation.
 
 ## Public API
 
@@ -115,7 +126,7 @@ shop never imports the v1 inference or its actions.
 
 ## Schema Compatibility
 
-New decisions currently use normalized-state schema version 25, Prompt schema
+New decisions currently use normalized-state schema version 26, Prompt schema
 version 3, and decision-record version 2. The normalized schema has continued
 to evolve as current-build Surface and visible-state contracts were added;
 Prompt v3 retains explicit action authority in the context/surface split.

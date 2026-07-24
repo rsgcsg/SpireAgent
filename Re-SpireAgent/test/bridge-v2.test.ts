@@ -2306,14 +2306,12 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     ).currentState).toMatchObject({ stability: "invalid", actionAuthority: "none" });
   });
 
-  it("uses shared_state as the sole persistent run/player authority on Bridge-owned states", async () => {
-    const legacyState = await fixture("event") as JsonObject;
+  it("uses shared_state as the sole persistent run/player authority on Bridge-owned states", () => {
     const state = structuredClone(SHOP_ROOM_STATE);
     (state.context as Record<string, unknown>).gold = 9999;
     const envelope = normalizeCurrentState(wrapBridgeV2State({
       state,
-      capabilities: structuredClone(CAPABILITIES),
-      legacyState
+      capabilities: structuredClone(CAPABILITIES)
     }), TEST_SOURCE);
 
     expect(envelope.currentState).toMatchObject({
@@ -2341,6 +2339,25 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     });
     expect(envelope.diagnostics.inferredFields).not.toEqual(expect.arrayContaining([
       expect.objectContaining({ path: "run/non_action_shared_state" })
+    ]));
+  });
+
+  it("rejects a retired legacy sidecar instead of mixing it into Bridge v2", async () => {
+    const wrapped = wrapBridgeV2State({
+      state: structuredClone(SHOP_ROOM_STATE),
+      capabilities: structuredClone(CAPABILITIES)
+    }) as JsonObject;
+    wrapped.legacy_v1_state = await fixture("event") as JsonObject;
+
+    const envelope = normalizeCurrentState(wrapped, TEST_SOURCE);
+
+    expect(envelope.currentState).toMatchObject({
+      stability: "invalid",
+      actionAuthority: "none",
+      surface: { kind: "unsupported" }
+    });
+    expect(envelope.diagnostics.invalidFields).toEqual(expect.arrayContaining([
+      expect.objectContaining({ path: "legacy_v1_state" })
     ]));
   });
 
@@ -4106,12 +4123,10 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     expect(buildAllowedActions(invalid.currentState, invalid.stateHash)).toEqual([]);
   });
 
-  it("preserves enchant semantics and imports only advertised opaque actions", async () => {
-    const legacyState = await fixture("event") as JsonObject;
+  it("preserves enchant semantics and imports only advertised opaque actions", () => {
     const wrapped = wrapBridgeV2State({
       state: structuredClone(DECK_ENCHANT_STATE),
-      capabilities: structuredClone(CAPABILITIES),
-      legacyState
+      capabilities: structuredClone(CAPABILITIES)
     });
     const envelope = normalizeCurrentState(wrapped, TEST_SOURCE);
 

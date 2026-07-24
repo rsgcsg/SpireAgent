@@ -39,8 +39,8 @@ The bridge does not own:
 - Unknown surfaces and failed version bindings return no legal actions.
 - Private reflection must be exact-game-version scoped, documented, cached when
   appropriate, and fail closed.
-- Preserve v1 until a surface has equivalent v2 evidence and the rebuilt
-  SpireAgent has migrated.
+- The complete v1 HTTP namespace is retired. Preserve its archive as migration
+  evidence, but never restore it as a state, diagnostic, or mutation fallback.
 - Do not leak draw order, RNG state, undisclosed event results, future rewards,
   enemy future moves, or other non-player-visible information.
 
@@ -55,8 +55,9 @@ The bridge does not own:
 - `tests/`: pure protocol/runtime tests. Fixtures prove code behavior, not game
   compatibility.
 
-Do not add new v2 behavior to the giant v1 state/action switch. Add a narrow
-surface provider with a coverage row and game-fact evidence instead.
+The old v1 state/action switch is archived outside the active project. Add new
+v2 behavior through a bounded semantic contract with a coverage row and
+game-fact evidence; never copy archived dispatch logic back into the build.
 
 ## Required Change Evidence
 

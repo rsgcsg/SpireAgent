@@ -1,9 +1,10 @@
 # Re-SpireAgent RE-P1
 
 > Compatibility status, 2026-07-24: Re and C# share source contract
-> `2.0-preview.61`; Re normalized schema is `26`. Gate 1 is closed as a
-> bounded v2 mutation baseline. Preview.60 is the last loaded artifact;
-> Preview.61 still needs cold-load identity and Organic Neow's Fury evidence.
+> `2.0-preview.61`; Re normalized schema is `26`. Gate 1 source/repository
+> closeout is complete as a bounded v2 mutation baseline. Preview.61 is
+> installed, cold-loaded, and strictly decoded by Re; Organic Neow's Fury
+> evidence remains pending.
 
 > Product-boundary warning: direct Re-to-Gateway REST and `.env.local` provider
 > keys are developer workflows, not the target consumer architecture. The
@@ -141,7 +142,7 @@ Bridge REST state
 - Unknown action IDs, invalid JSON, invalid schema, truncation, timeout, state drift, MCP rejection, and uncertain settlement are not executed or retried as actions.
 - Action-capable `tick` and `run` commands take an exclusive local runtime lock. This prevents two RE-P1 processes from driving one MCP session; it cannot prevent a human or a different program from acting in the game.
 - A bounded-run progress guard compares semantic state/action transitions rather than regenerated Bridge transport IDs. The second identical semantic transition stops as `repeated_semantic_transition`; business facts and entity bindings are never stripped from progress identity.
-- Raw MCP data is visible only to the adapter, normalizer, recorder, and diagnostic tooling. Planning code imports only the normalized state API.
+- Raw Gateway data is visible only to the adapter, normalizer, recorder, and diagnostic tooling. Planning code imports only the normalized state API.
 - Unknown semantic contexts or unverified interaction surfaces become structured `unknown`/`unsupported` state components and stop safely.
 - A Bridge v2-owned surface imports only state-bound opaque actions advertised by the bridge. Top-level shared state is read-only; v1 fallback cannot add or execute actions there.
 - `failed`, `timed_out`, transport-uncertain, or identity-mismatched v2 command results stop as unknown outcomes and are never automatically retried.
@@ -154,7 +155,7 @@ Bridge REST state
 - Node.js 20 or newer
 - npm 10 or newer
 - Slay the Spire 2
-- An external STS2 MCP mod exposing the REST API on `http://localhost:15526` by default
+- The STS2 Agent Bridge Mod exposing REST on `http://localhost:15526` by default
 - A DeepSeek API key
 
 This package does not contain the game. The parent repository contains the
@@ -166,7 +167,7 @@ directly to the Gateway REST contract and does not launch MCP itself.
 From a fresh clone of the parent repository:
 
 ```bash
-git clone <your-repository-url> SpireAgent
+git clone https://github.com/rsgcsg/SpireAgent.git
 cd SpireAgent/Re-SpireAgent
 npm ci
 cp .env.example .env.local
@@ -179,7 +180,9 @@ Edit `.env.local` locally and set:
 DEEPSEEK_API_KEY=your-local-key
 ```
 
-Do not commit `.env.local`. The runtime loads it at process startup without printing the key.
+Do not commit `.env.local`. The runtime loads it at process startup without
+printing the key. For the full Gateway build/install and cross-device sequence,
+use the parent [Local Setup guide](../docs/current/LOCAL_SETUP.md).
 
 Run all offline verification:
 
@@ -187,7 +190,7 @@ Run all offline verification:
 npm run check
 ```
 
-## Start And Verify MCP
+## Start And Verify Gateway
 
 1. Start Slay the Spire 2 with the external STS2 MCP mod loaded.
 2. Verify the service:
@@ -228,6 +231,7 @@ All values are optional except the API key for real model decisions.
 | `AGENT_SETTLEMENT_POLL_MS` | `150` | Post-action poll interval |
 | `AGENT_SETTLEMENT_TIMEOUT_MS` | `3000` | Normal settlement timeout |
 | `AGENT_END_TURN_SETTLEMENT_TIMEOUT_MS` | `8000` | End-turn settlement timeout |
+| `AGENT_ROOM_TRANSITION_SETTLEMENT_TIMEOUT_MS` | `8000` | Map, continue-run, and run-entry settlement timeout |
 
 DeepSeek's current API documentation lists `deepseek-v4-flash` and `deepseek-v4-pro`, makes thinking enabled by default, and requires both `response_format: {"type":"json_object"}` and an explicit JSON instruction. RE-P1 therefore explicitly selects a thinking mode and still validates the returned object locally. See the official [Chat Completions API](https://api-docs.deepseek.com/api/create-chat-completion) and [JSON Output guide](https://api-docs.deepseek.com/guides/json_mode).
 
@@ -377,11 +381,10 @@ RE-P1 has fixture-backed support for:
 - `menu`
 - `game_over`
 
-Bridge v2 source `preview.56` uses exact-game, exact-Modset, exact Bridge
+Bridge v2 source `preview.61` uses exact-game, exact-Modset, exact Bridge
 SHA/MVID/runtime, and per-operation capabilities. The current exact v0.109
-profile has 74 explicit operation scopes, three read-only Inspection
-canaries, and no qualified scope. Every unlisted operation, origin, owner, and
-Inspection is disabled even if another build or MVID has historical evidence.
+profile publishes explicit qualified/canary operation scopes and three
+read-only Inspection kinds; empty or unlisted scopes never mean wildcard.
 Qualification is per exact evidence scope, never broad Surface or game
 coverage. See
 [BRIDGE_V2_INTEGRATION.md](docs/BRIDGE_V2_INTEGRATION.md).

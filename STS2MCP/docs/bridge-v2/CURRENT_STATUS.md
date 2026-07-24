@@ -8,8 +8,8 @@ and do not grant current authority.
 ## Current Source-Truth Status
 
 The C# Gateway and Re-SpireAgent source now share contract
-`2.0-preview.61`; Re normalized schema is `26`. Gate 1 is closed as a bounded
-ordinary-single-player v2 mutation baseline:
+`2.0-preview.61`; Re normalized schema is `26`. Gate 1 repository/source
+closeout establishes a bounded ordinary-single-player v2 mutation baseline:
 
 - Re and the default Python MCP adapter submit only advertised Bridge v2
   actions;
@@ -20,25 +20,28 @@ ordinary-single-player v2 mutation baseline:
   explicit fail-closed or out-of-scope rows.
 
 Run `run-20260723150256-d2thtq` stopped safely on exact Neow's Fury because the
-last loaded Preview.60 artifact had no unique source binding for its optional
+then-loaded Preview.60 artifact had no unique source binding for its optional
 discard-to-hand selector. Preview.61 adds that exact native task, a structural
 combat-pile transaction contract, generic state-bound toggle/confirm
 operations, and an exact post-state witness. Source identity remains Gateway
 provenance and authority input rather than a Re type union.
 
-Preview.61 passes source/unit/type/build checks. The final local Release build
-SHA is
-`0b58699410e2619e144d69250d9880cb11a2620ba125f14c90017faaf1082f42`;
-this is build evidence only. It is not installed or loaded because the game
-remained open during this closeout, and it has no Organic Neow's Fury
-evidence. The last loaded identity remains Preview.60:
+Preview.61 passes source/unit/type/build checks and is now installed and
+cold-loaded. Re strictly decodes its capabilities and current main-menu state;
+read-only endpoint checks confirm the retired `/api/v1` root and child paths
+return `410 Gone`. The exact loaded identity is:
 
 ```text
-SHA     49e403b7fb953121256e13f96edbe1eb435a03ce8eac9ddfb17dff473b81d996
-MVID    1219fb20-6db0-4b97-a754-57695e2585f8
-runtime ec2901d029a241e08831fdece0691a2d
+SHA     9b6f62161f8c6c286a73cb157430b441014c5148ff702ea96894e6f702386a99
+MVID    efd31a31-9c2a-4b68-ae22-1cabc1b382f1
+runtime 7e6ffb41d8154625bd42ea34190194ef
 game    v0.109.0|c12f634d|-1639417500
+Modset  exact_bridge_only
 ```
+
+The Gate 1 runtime seal is still pending only the bounded Organic Neow's Fury
+select/deselect/confirm lifecycle. Installation, loading, strict consumer
+decoding, and retired-v1 route checks are not transaction qualification.
 
 ## Dated Evidence Chronology
 
@@ -68,8 +71,8 @@ compatibility only. The prior Preview.59 Dredge journey does not transfer Gate
 
 ## Required Repair Order
 
-1. Close the game, install Preview.61, cold-start, record exact loaded identity,
-   and run one bounded Neow's Fury select/deselect/confirm lifecycle.
+1. Run one bounded Neow's Fury select/deselect/confirm lifecycle under the
+   loaded Preview.61 identity.
 2. Begin Gate 2 with non-authorizing transaction correlation and concrete
    player-visible-information closure; preserve current permission tiers.
 3. Maintain the machine-checked closed Gate 1/v1 retirement inventory.

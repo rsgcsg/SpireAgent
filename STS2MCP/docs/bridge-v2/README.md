@@ -1,11 +1,11 @@
 # Bridge v2 Documentation
 
 Bridge v2 is the active semantic Gateway protocol. C# and Re source now share
-`2.0-preview.61`; Re normalized schema is `26`. Gate 1 is closed as a bounded
-v2 mutation baseline and the complete v1 HTTP namespace is retired. Preview.60 remains the last
-installed/cold-loaded artifact; Preview.61 still requires loaded identity and
-bounded Neow's Fury Organic evidence. Start with current status, not historical
-preview closeouts.
+`2.0-preview.61`; Re normalized schema is `26`. Gate 1 source/repository
+closeout is complete as a bounded v2 mutation baseline and the complete v1 HTTP
+namespace is retired. Preview.61 is installed/cold-loaded and strictly decoded
+by Re; bounded Neow's Fury Organic evidence remains pending. Start with current
+status, not historical preview closeouts.
 
 ## Current Documents
 
