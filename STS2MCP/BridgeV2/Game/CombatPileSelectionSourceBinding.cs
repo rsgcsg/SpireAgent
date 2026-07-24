@@ -9,7 +9,6 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
-using MegaCrit.Sts2.Core.Models.Cards;
 
 namespace STS2_MCP.BridgeV2.Game;
 
@@ -29,197 +28,100 @@ internal static class CombatPileSelectionSourceBinding
         CardModel SourceCard,
         IReadOnlyList<CardModel> BaselineSourcePile);
 
-    internal sealed record HeadbuttBinding(
+    internal sealed record RegistryBinding(
         Guid Token,
         Player Player,
-        Headbutt Headbutt,
-        IReadOnlyList<CardModel> BaselineDiscard,
-        IReadOnlyList<CardModel> BaselineDraw)
-        : SourceBinding(Token, Player, Headbutt, BaselineDiscard);
-
-    internal sealed record GraveblastBinding(
-        Guid Token,
-        Player Player,
-        Graveblast Graveblast,
-        IReadOnlyList<CardModel> BaselineDiscard,
-        IReadOnlyList<CardModel> BaselineHand)
-        : SourceBinding(Token, Player, Graveblast, BaselineDiscard);
-
-    internal sealed record CleanseBinding(
-        Guid Token,
-        Player Player,
-        Cleanse Cleanse,
-        IReadOnlyList<CardModel> BaselineDraw,
-        IReadOnlyList<CardModel> BaselineExhaust)
-        : SourceBinding(Token, Player, Cleanse, BaselineDraw);
-
-    internal sealed record SeanceBinding(
-        Guid Token,
-        Player Player,
-        Seance Seance,
-        IReadOnlyList<CardModel> BaselineDraw)
-        : SourceBinding(Token, Player, Seance, BaselineDraw);
-
-    internal sealed record DredgeBinding(
-        Guid Token,
-        Player Player,
-        Dredge Dredge,
-        IReadOnlyList<CardModel> BaselineDiscard,
-        IReadOnlyList<CardModel> BaselineHand)
-        : SourceBinding(Token, Player, Dredge, BaselineDiscard);
-
-    internal sealed record ChargeBinding(
-        Guid Token,
-        Player Player,
-        Charge Charge,
-        IReadOnlyList<CardModel> BaselineDraw)
-        : SourceBinding(Token, Player, Charge, BaselineDraw);
-
-    internal sealed record NeowsFuryBinding(
-        Guid Token,
-        Player Player,
-        NeowsFury NeowsFury,
-        IReadOnlyList<CardModel> BaselineDiscard,
-        IReadOnlyList<CardModel> BaselineHand,
-        int MaxSelect)
-        : SourceBinding(Token, Player, NeowsFury, BaselineDiscard);
+        CardModel SourceCard,
+        IReadOnlyList<CardModel> BaselineSourcePile,
+        IReadOnlyList<CardModel> BaselineDestinationPile,
+        int MinSelect,
+        int MaxSelect,
+        CombatPileSourceContract Contract)
+        : SourceBinding(Token, Player, SourceCard, BaselineSourcePile);
 
     internal readonly record struct Scope(Guid Token)
     {
         public bool IsTracked => Token != Guid.Empty;
     }
 
-    internal static Scope Begin(CardModel card)
+    internal static Scope Begin(CardModel card) =>
+        BeginRegistered(card, "card_on_play_wrapper");
+
+    internal static Scope BeginDeclaredOnPlay(CardModel card) =>
+        BeginRegistered(card, "declared_on_play");
+
+    private static Scope BeginRegistered(CardModel card, string hookMode)
     {
         if (card.Owner is not Player player
-            || player.PlayerCombatState is not { } combat)
+            || player.PlayerCombatState is not { } combat
+            || !CombatPileSourceContractRegistry.TryFind(
+                card.GetType(),
+                hookMode,
+                out CombatPileSourceContract? contract))
         {
             return default;
         }
 
-        Guid token = Guid.NewGuid();
-        SourceBinding? binding = card switch
+        CardPile? sourcePile = ResolvePile(combat, contract!.SourcePile);
+        CardPile? destinationPile = ResolvePile(combat, contract.DestinationPile);
+        if (sourcePile == null
+            || destinationPile == null
+            || !TryResolveBounds(card, combat, contract, out int minSelect, out int maxSelect)
+            || maxSelect <= 0)
         {
-            Headbutt headbutt => new HeadbuttBinding(
-                token,
-                player,
-                headbutt,
-                combat.DiscardPile.Cards.ToArray(),
-                combat.DrawPile.Cards.ToArray()),
-            Graveblast graveblast => new GraveblastBinding(
-                token,
-                player,
-                graveblast,
-                combat.DiscardPile.Cards.ToArray(),
-                combat.Hand.Cards.ToArray()),
-            _ => null
-        };
-        if (binding == null)
             return default;
+        }
 
+        var binding = new RegistryBinding(
+            Guid.NewGuid(),
+            player,
+            card,
+            sourcePile.Cards.ToArray(),
+            destinationPile.Cards.ToArray(),
+            minSelect,
+            maxSelect,
+            contract);
         lock (Gate)
             Active.Add(binding.Token, binding);
         return new Scope(binding.Token);
     }
 
-    internal static Scope BeginCleanse(Cleanse cleanse)
+    private static CardPile? ResolvePile(PlayerCombatState combat, string pile) => pile switch
     {
-        if (cleanse.Owner is not Player player
-            || player.PlayerCombatState is not { } combat)
-        {
-            return default;
-        }
+        "draw" => combat.DrawPile,
+        "discard" => combat.DiscardPile,
+        "hand" => combat.Hand,
+        "exhaust" => combat.ExhaustPile,
+        _ => null
+    };
 
-        var binding = new CleanseBinding(
-            Guid.NewGuid(),
-            player,
-            cleanse,
-            combat.DrawPile.Cards.ToArray(),
-            combat.ExhaustPile.Cards.ToArray());
-        lock (Gate)
-            Active.Add(binding.Token, binding);
-        return new Scope(binding.Token);
-    }
-
-    internal static Scope BeginSeance(Seance seance)
+    private static bool TryResolveBounds(
+        CardModel card,
+        PlayerCombatState combat,
+        CombatPileSourceContract contract,
+        out int minSelect,
+        out int maxSelect)
     {
-        if (seance.Owner is not Player player
-            || player.PlayerCombatState is not { } combat)
+        int handSpace = Math.Max(0, CardPile.MaxCardsInHand - combat.Hand.Cards.Count);
+        switch (contract.SelectionBounds)
         {
-            return default;
+            case "fixed_exact":
+                minSelect = contract.SelectionCount;
+                maxSelect = contract.SelectionCount;
+                return minSelect > 0;
+            case "fixed_exact_capped_by_hand_space":
+                minSelect = Math.Min(contract.SelectionCount, handSpace);
+                maxSelect = minSelect;
+                return minSelect > 0;
+            case "dynamic_cards_optional_capped_by_hand_space":
+                minSelect = 0;
+                maxSelect = Math.Min(card.DynamicVars.Cards.IntValue, handSpace);
+                return maxSelect > 0;
+            default:
+                minSelect = 0;
+                maxSelect = 0;
+                return false;
         }
-
-        var binding = new SeanceBinding(
-            Guid.NewGuid(),
-            player,
-            seance,
-            combat.DrawPile.Cards.ToArray());
-        lock (Gate)
-            Active.Add(binding.Token, binding);
-        return new Scope(binding.Token);
-    }
-
-    internal static Scope BeginDredge(Dredge dredge)
-    {
-        if (dredge.Owner is not Player player
-            || player.PlayerCombatState is not { } combat)
-        {
-            return default;
-        }
-
-        var binding = new DredgeBinding(
-            Guid.NewGuid(),
-            player,
-            dredge,
-            combat.DiscardPile.Cards.ToArray(),
-            combat.Hand.Cards.ToArray());
-        lock (Gate)
-            Active.Add(binding.Token, binding);
-        return new Scope(binding.Token);
-    }
-
-    internal static Scope BeginCharge(Charge charge)
-    {
-        if (charge.Owner is not Player player
-            || player.PlayerCombatState is not { } combat)
-        {
-            return default;
-        }
-
-        var binding = new ChargeBinding(
-            Guid.NewGuid(),
-            player,
-            charge,
-            combat.DrawPile.Cards.ToArray());
-        lock (Gate)
-            Active.Add(binding.Token, binding);
-        return new Scope(binding.Token);
-    }
-
-    internal static Scope BeginNeowsFury(NeowsFury neowsFury)
-    {
-        if (neowsFury.Owner is not Player player
-            || player.PlayerCombatState is not { } combat)
-        {
-            return default;
-        }
-
-        int maxSelect = Math.Min(
-            neowsFury.DynamicVars.Cards.IntValue,
-            CardPile.MaxCardsInHand - combat.Hand.Cards.Count);
-        if (maxSelect <= 0)
-            return default;
-
-        var binding = new NeowsFuryBinding(
-            Guid.NewGuid(),
-            player,
-            neowsFury,
-            combat.DiscardPile.Cards.ToArray(),
-            combat.Hand.Cards.ToArray(),
-            maxSelect);
-        lock (Gate)
-            Active.Add(binding.Token, binding);
-        return new Scope(binding.Token);
     }
 
     internal static async Task Complete(Task task, Scope scope)
@@ -283,159 +185,19 @@ internal static class CombatPileSelectionCardPlayPatch
     }
 }
 
-/// <summary>
-/// Cleanse owns its pile choice inside the card-specific OnPlay task. Binding
-/// that exact task keeps source evidence local to the business effect and
-/// avoids depending on the broader wrapper lifecycle used by older sources.
-/// </summary>
 [HarmonyPatch]
-internal static class CleanseCombatPileSelectionSourcePatch
+internal static class DeclaredOnPlayCombatPileSelectionSourcePatch
 {
-    internal static MethodBase ResolveTargetMethod() =>
-        AccessTools.DeclaredMethod(
-            typeof(Cleanse),
-            "OnPlay",
-            new[] { typeof(PlayerChoiceContext), typeof(CardPlay) })
-        ?? throw new MissingMethodException(typeof(Cleanse).FullName, "OnPlay");
+    internal static IReadOnlyList<MethodBase> ResolveTargetMethods() =>
+        CombatPileSourceContractRegistry.ResolveDeclaredOnPlayTargets();
 
-    private static MethodBase TargetMethod() => ResolveTargetMethod();
+    private static IEnumerable<MethodBase> TargetMethods() => ResolveTargetMethods();
 
     private static void Prefix(
-        Cleanse __instance,
+        CardModel __instance,
         out CombatPileSelectionSourceBinding.Scope __state)
     {
-        __state = CombatPileSelectionSourceBinding.BeginCleanse(__instance);
-    }
-
-    private static void Postfix(
-        ref Task __result,
-        CombatPileSelectionSourceBinding.Scope __state)
-    {
-        if (__state.IsTracked)
-            __result = CombatPileSelectionSourceBinding.Complete(__result, __state);
-    }
-}
-
-/// <summary>
-/// Seance uses the same combat-pile screen as Cleanse but replaces the chosen
-/// draw-pile card with a new Soul instance. Keep its exact OnPlay task as the
-/// source binding so shared selector mechanics do not erase business purpose.
-/// </summary>
-[HarmonyPatch]
-internal static class SeanceCombatPileSelectionSourcePatch
-{
-    internal static MethodBase ResolveTargetMethod() =>
-        AccessTools.DeclaredMethod(
-            typeof(Seance),
-            "OnPlay",
-            new[] { typeof(PlayerChoiceContext), typeof(CardPlay) })
-        ?? throw new MissingMethodException(typeof(Seance).FullName, "OnPlay");
-
-    private static MethodBase TargetMethod() => ResolveTargetMethod();
-
-    private static void Prefix(
-        Seance __instance,
-        out CombatPileSelectionSourceBinding.Scope __state)
-    {
-        __state = CombatPileSelectionSourceBinding.BeginSeance(__instance);
-    }
-
-    private static void Postfix(
-        ref Task __result,
-        CombatPileSelectionSourceBinding.Scope __state)
-    {
-        if (__state.IsTracked)
-            __result = CombatPileSelectionSourceBinding.Complete(__result, __state);
-    }
-}
-
-/// <summary>
-/// Dredge has a bounded multi-pick transaction whose exact count depends on
-/// current hand capacity. Bind the card-specific task so intermediate selected
-/// states remain attributable without granting generic pile-grid authority.
-/// </summary>
-[HarmonyPatch]
-internal static class DredgeCombatPileSelectionSourcePatch
-{
-    internal static MethodBase ResolveTargetMethod() =>
-        AccessTools.DeclaredMethod(
-            typeof(Dredge),
-            "OnPlay",
-            new[] { typeof(PlayerChoiceContext), typeof(CardPlay) })
-        ?? throw new MissingMethodException(typeof(Dredge).FullName, "OnPlay");
-
-    private static MethodBase TargetMethod() => ResolveTargetMethod();
-
-    private static void Prefix(
-        Dredge __instance,
-        out CombatPileSelectionSourceBinding.Scope __state)
-    {
-        __state = CombatPileSelectionSourceBinding.BeginDredge(__instance);
-    }
-
-    private static void Postfix(
-        ref Task __result,
-        CombatPileSelectionSourceBinding.Scope __state)
-    {
-        if (__state.IsTracked)
-            __result = CombatPileSelectionSourceBinding.Complete(__result, __state);
-    }
-}
-
-/// <summary>
-/// CHARGE!! selects exactly two draw-pile cards and transforms each exact
-/// instance into Minion Dive Bomb. It shares pile-grid mechanics with Seance,
-/// but not Seance's cardinality or replacement type.
-/// </summary>
-[HarmonyPatch]
-internal static class ChargeCombatPileSelectionSourcePatch
-{
-    internal static MethodBase ResolveTargetMethod() =>
-        AccessTools.DeclaredMethod(
-            typeof(Charge),
-            "OnPlay",
-            new[] { typeof(PlayerChoiceContext), typeof(CardPlay) })
-        ?? throw new MissingMethodException(typeof(Charge).FullName, "OnPlay");
-
-    private static MethodBase TargetMethod() => ResolveTargetMethod();
-
-    private static void Prefix(
-        Charge __instance,
-        out CombatPileSelectionSourceBinding.Scope __state)
-    {
-        __state = CombatPileSelectionSourceBinding.BeginCharge(__instance);
-    }
-
-    private static void Postfix(
-        ref Task __result,
-        CombatPileSelectionSourceBinding.Scope __state)
-    {
-        if (__state.IsTracked)
-            __result = CombatPileSelectionSourceBinding.Complete(__result, __state);
-    }
-}
-
-/// <summary>
-/// Neow's Fury is an optional, manually confirmed discard-to-hand transaction.
-/// Keep its source task distinct from exact-count auto-commit selectors.
-/// </summary>
-[HarmonyPatch]
-internal static class NeowsFuryCombatPileSelectionSourcePatch
-{
-    internal static MethodBase ResolveTargetMethod() =>
-        AccessTools.DeclaredMethod(
-            typeof(NeowsFury),
-            "OnPlay",
-            new[] { typeof(PlayerChoiceContext), typeof(CardPlay) })
-        ?? throw new MissingMethodException(typeof(NeowsFury).FullName, "OnPlay");
-
-    private static MethodBase TargetMethod() => ResolveTargetMethod();
-
-    private static void Prefix(
-        NeowsFury __instance,
-        out CombatPileSelectionSourceBinding.Scope __state)
-    {
-        __state = CombatPileSelectionSourceBinding.BeginNeowsFury(__instance);
+        __state = CombatPileSelectionSourceBinding.BeginDeclaredOnPlay(__instance);
     }
 
     private static void Postfix(

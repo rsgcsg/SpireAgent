@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { isJsonObject, type JsonObject } from "../../shared/json.js";
 
-export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.61" as const;
+export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.62" as const;
 export const BRIDGE_V2_INSPECTION_KINDS = ["run_deck", "combat_piles", "shop_catalog"] as const;
 const inspectionKindSchema = z.enum(BRIDGE_V2_INSPECTION_KINDS);
 
@@ -25,7 +25,10 @@ const compatibilitySchema = z.object({
   observation_only_surface_kinds: z.array(z.string().min(1)),
   observation_candidate_build_fingerprints: z.array(z.string().min(1)),
   detail: z.string(),
-  action_permission_scopes: z.array(actionPermissionScopeSchema)
+  action_permission_scopes: z.array(actionPermissionScopeSchema),
+  compatibility_policy_id: z.string().min(1),
+  compatibility_policy_digest: z.string().regex(/^[a-f0-9]{64}$/iu),
+  adaptation_level: z.enum(["reviewed_exact_environment", "diagnostic_only"])
 }).passthrough();
 
 const loadedModAssemblySchema = z.object({

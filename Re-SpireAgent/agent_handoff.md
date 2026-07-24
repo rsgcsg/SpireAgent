@@ -5,8 +5,20 @@
 > `../STS2MCP/docs/bridge-v2/CURRENT_STATUS.md`. Older identity and mode claims
 > below are preserved as dated evidence and must not override those documents.
 
-Status update 2026-07-24 (latest): source contract is `2.0-preview.61`; Re
-normalized schema is `26`. Gate 1 source/repository closeout is complete as a
+Status update 2026-07-24 (latest): source contract is `2.0-preview.62`; Re
+normalized schema is `26`. Gate 1 is closed as a bounded ordinary-single-player
+v2 connector baseline. Run `run-20260724045013-mgcq3a` completed the exact
+Neow's Fury play/select/confirm lifecycle under Preview.61. Preview.62 adds
+reviewed source/environment registries, strict policy provenance and a
+non-authorizing compatibility audit. New source entries are canary candidates,
+not inherited Organic qualification. It is built/installed/cold-loaded as SHA
+`d66f5986...5a892`, MVID `b7bf3824-80bf-4281-9267-262595ce0f49`, runtime
+`6cf5f022...24f6b`; strict Re inspection and loaded-v1 `410` probes pass. See
+the canonical status and
+`GATE1_ADAPTATION_AND_COMPATIBILITY_CLOSEOUT_2026-07-24.md`.
+
+Earlier status update 2026-07-24: source contract was `2.0-preview.61`; Re
+normalized schema was `26`. Gate 1 source/repository closeout was complete as a
 bounded v2 mutation baseline.
 Run `run-20260723150256-d2thtq` exposed exact Neow's Fury optional
 discard-to-hand selection. Preview.61 adds its manual-confirm source/witness and
@@ -16,7 +28,8 @@ archived, and the default MCP adapter is v2-only. Preview.61 is built,
 installed, cold-loaded, and strictly decoded by Re as SHA `9b6f6216...6a99`,
 MVID `efd31a31-9c2a-4b68-ae22-1cabc1b382f1`, runtime
 `7e6ffb41d8154625bd42ea34190194ef`. Loaded v1 routes return `410`; no Organic
-Neow evidence exists. See canonical status and the Gate 1 closeout audit.
+At that time no Neow evidence existed. See canonical status and the Gate 1
+closeout audit.
 
 Earlier status update 2026-07-24: source contract was `2.0-preview.60`.
 Two Preview.59 real-run stops shared

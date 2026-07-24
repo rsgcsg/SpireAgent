@@ -12,7 +12,9 @@
     "check:agent": "npm --prefix Re-SpireAgent run check",
     "test:agent": "npm --prefix Re-SpireAgent test",
     "build:agent": "npm --prefix Re-SpireAgent run build",
-    "check:docs": "node tools/check-active-markdown-links.mjs && npm run check:connector-inventory",
-    "check:connector-inventory": "node tools/check-connector-operation-inventory.mjs"
+    "check:docs": "node tools/check-active-markdown-links.mjs && npm run check:connector-inventory && npm run check:connector-adaptation",
+    "check:connector-inventory": "node tools/check-connector-operation-inventory.mjs",
+    "check:connector-adaptation": "node tools/check-connector-adaptation-contracts.mjs",
+    "audit:connector-compatibility": "node tools/run-connector-compatibility-audit.mjs"
   }
 }

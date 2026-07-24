@@ -2,13 +2,14 @@
 
 Status: canonical architecture boundary for the current real-game connection.
 
-Current source compatibility status: C# and Re share `2.0-preview.61`, including
+Current source compatibility status: C# and Re share `2.0-preview.62`, including
 operation scopes, a Gateway artifact digest, separate actual-loaded versus
-release-declared game assembly hashes, and structural combat-pile transaction
-semantics. Preview.61 is built, installed, cold-loaded, and strictly decoded by
-Re on the exact local identity. That proves deployment, negotiation, and
-identity reporting, not its Neow's Fury lifecycle or complete Surface
-qualification.
+release-declared game assembly hashes, reviewed exact-environment policy
+provenance, and structural combat-pile transaction semantics. Preview.61
+supplied the exact Neow's Fury lifecycle that closed bounded Gate 1. Preview.62
+source/build/audit evidence does not inherit that Organic qualification; its
+installed and loaded identity is recorded separately in
+[Current Status](CURRENT_STATUS.md).
 
 Consumer distribution, local trust, Companion, BYOK, SDK, and release gates are
 defined in the [productization architecture audit](../../../docs/current/audits/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md).
@@ -153,7 +154,7 @@ Directly implemented at the current repository revision:
   Command polling;
 - an optional Python MCP adapter over the REST routes.
 
-These are source implementation statements. C# and Re agree on Preview.61, but
+These are source implementation statements. C# and Re agree on Preview.62, but
 source agreement is not a loaded-runtime or Organic qualification claim.
 
 Not implemented in the current product path:

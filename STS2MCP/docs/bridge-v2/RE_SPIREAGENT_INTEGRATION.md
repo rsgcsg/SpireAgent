@@ -2,11 +2,12 @@
 
 In this project, "SpireAgent" means `Re-SpireAgent` by default.
 
-Current source contract is `2.0-preview.61`; Re normalized schema is `26`.
-Gate 1 source/repository closeout is complete as a bounded v2 mutation
-baseline. Preview.61 is installed, cold-loaded, and strictly decoded by Re, but
-its Neow's Fury branch still lacks Organic evidence. Re and the default MCP
-adapter are v2-only; the complete Gateway v1 namespace is retired.
+Current source contract is `2.0-preview.62`; Re normalized schema is `26`.
+Gate 1 is closed as a bounded ordinary-single-player v2 connector baseline.
+Preview.61 supplied the exact Neow's Fury Organic lifecycle; Preview.62 adds
+reviewed compatibility/source registries and policy provenance without
+inheriting that runtime qualification. Re and the default MCP adapter are
+v2-only; the complete Gateway v1 namespace is retired.
 
 The rebuilt client implements this boundary through a strict adapter rather
 than consuming raw Bridge JSON in planning code:

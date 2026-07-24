@@ -12,13 +12,16 @@ Bridge v2 is the only mutation contract for the current Agent and default MCP
 adapter. It remains an incremental semantic/visibility preview, not
 complete-game coverage.
 
-The C# Bridge and Re source share `2.0-preview.61`; Re normalized schema is
-`26`. Preview.61 structurally describes combat-pile mutation and commit
-semantics and adds exact Neow's Fury optional manual-confirm selection.
-Preview.61 is built, installed, cold-loaded, and strictly decoded by Re on the
-exact local game/Modset identity. Gate 1 source/repository closeout is complete
-as a bounded ordinary-single-player v2 mutation baseline; the remaining
-runtime-seal item is an Organic Neow lifecycle.
+The C# Bridge and Re source share `2.0-preview.62`; Re normalized schema is
+`26`. Gate 1 is closed as a bounded ordinary-single-player v2 connector
+baseline. Preview.62 replaces repeated combat-pile source branches with a
+reviewed embedded registry, moves exact-environment scopes into a reviewed
+embedded policy, and adds a non-authorizing exact-assembly audit. The final
+Neow's Fury runtime seal remains attributed to Preview.61; new Preview.62
+registry entries are not automatically Organic-qualified. Preview.62 is built,
+installed and cold-loaded on the local exact Bridge-only environment; the
+exact SHA/MVID/runtime/policy evidence is recorded in
+[current status](docs/bridge-v2/CURRENT_STATUS.md).
 
 > Product security warning: the current HTTP listener is a developer preview.
 > It binds to loopback and filters browser Origin, but it has no client
@@ -35,7 +38,7 @@ runtime-seal item is an Organic Neow lifecycle.
   untested and has no v2 action or Inspection authority. Check
   [Bridge v2 current status](docs/bridge-v2/CURRENT_STATUS.md) before treating
   a local install as qualified.
-- Source `2.0-preview.61` keeps centralized overlay/room/menu ownership, typed
+- Source `2.0-preview.62` keeps centralized overlay/room/menu ownership, typed
   diagnostics, purpose-specific selection and event contracts, staged
   completion semantics, and a top-level read-only shared run/player HUD.
   Current-build capabilities distinguish scoped-qualified actions, action
@@ -67,10 +70,13 @@ runtime-seal item is an Organic Neow lifecycle.
   exact Lead Paperweight and sealed native Colorless/Attack/Skill/Power Potion sources of
   `generated_card_choice` are current-build canaries with separate destination,
   cost, operation, and completion semantics; all other callers of the shared
-  selection UI remain fail closed. Exact combat-pile branches now include
-  Headbutt, Graveblast, Cleanse, Seance, Dredge, Charge, and Neow's Fury under
-  one closed structural mutation/commit contract while retaining exact source
-  and completion semantics. Dredge has a current-build
+  selection UI remain fail closed. Exact combat-pile registry branches now
+  include Headbutt, Graveblast, Cleanse, Seance, Dredge, Charge, Neow's Fury,
+  Cosmic Indifference, Hologram, Secret Technique, Secret Weapon, Seeker Strike,
+  and Wish under one closed structural mutation/commit contract while
+  retaining exact source and completion semantics. Tutor remains fail closed
+  because its selected player is target-bound rather than
+  source-owner-bound. Dredge has a current-build
   select/deselect/exact-three batch canary but remains canary-only. Preview.46 also
   exposes typed read-only card hover previews with stable owner-scoped identity.
   Preview.47 adds a state-bound visibility/Inspection catalog, coherent
@@ -131,6 +137,9 @@ dotnet test STS2_MCP.sln -p:STS2GameDir="$STS2_GAME_DIR"
 python3 -m py_compile mcp/server.py
 dotnet build STS2_MCP.csproj -c Release -o out/STS2_MCP \
   -p:STS2GameDir="$STS2_GAME_DIR"
+cd ..
+npm run check:connector-adaptation
+npm run audit:connector-compatibility
 ```
 
 Windows PowerShell:
@@ -139,12 +148,26 @@ Windows PowerShell:
 $env:STS2_GAME_DIR = "D:\SteamLibrary\steamapps\common\Slay the Spire 2"
 dotnet test STS2_MCP.sln -p:STS2GameDir="$env:STS2_GAME_DIR"
 .\build.ps1 -GameDir "$env:STS2_GAME_DIR"
+Set-Location ..
+npm run check:connector-adaptation
+npm run audit:connector-compatibility
 ```
 
 The solution currently contains 122 pure contract/runtime/security tests
 covering stable state identity, entity identity, stale-state rejection,
 idempotent request IDs, completion observation, timeout-as-unknown, retired-v1
 routing, and JSON action shape.
+
+The compatibility audit writes an ignored report to
+`STS2MCP/out/compatibility-audit/latest.json`. It identifies the exact game
+assembly, verifies registered selector/commit structure, and lists unregistered
+callers. Its authorization and qualification effects are always `none`.
+
+Content is data-only only when it reuses an already reviewed source owner,
+native selector, closed mutation/commit contract and witness topology. A new UI
+owner, target-player binding, commit primitive, hidden-information policy or
+completion topology requires code and independent evidence. See the
+[Gate 1 adaptation closeout](docs/bridge-v2/GATE1_ADAPTATION_AND_COMPATIBILITY_CLOSEOUT_2026-07-24.md).
 
 ## Install The Mod
 

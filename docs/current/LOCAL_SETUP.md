@@ -68,6 +68,8 @@ uv lock --check --directory STS2MCP/mcp
 dotnet build STS2MCP/STS2_MCP.csproj -c Release \
   -o STS2MCP/out/STS2_MCP \
   -p:STS2GameDir="$STS2_GAME_DIR"
+npm run check:connector-adaptation
+npm run audit:connector-compatibility
 ```
 
 Windows PowerShell:
@@ -80,10 +82,17 @@ dotnet build STS2MCP/STS2_MCP.csproj -c Release `
   -p:STS2GameDir="$env:STS2_GAME_DIR"
 python -m py_compile STS2MCP/mcp/server.py
 uv lock --check --directory STS2MCP/mcp
+npm run check:connector-adaptation
+npm run audit:connector-compatibility
 ```
 
 If Steam is installed elsewhere, change `STS2_GAME_DIR`; do not edit the
 project file to encode one machine's path.
+
+The compatibility audit writes an ignored local report to
+`STS2MCP/out/compatibility-audit/latest.json`. It hashes the exact game
+assembly, verifies reviewed combat-pile selector/commit structure, and lists
+unregistered callers. It never grants permission or qualification.
 
 ## 4. Install With The Game Closed
 
@@ -138,6 +147,9 @@ A complete local deployment check requires:
 - a fresh `bridge.module_version_id` and `bridge.runtime_instance_id` are
   recorded;
 - game version/commit/hash and loaded Modset are explicit;
+- `compatibility_policy_id`, its 64-character
+  `compatibility_policy_digest`, and `adaptation_level` agree across
+  capabilities and state;
 - compatibility is not inferred from version text alone;
 - Re negotiates `bridge_v2` and strictly decodes the same identity.
 

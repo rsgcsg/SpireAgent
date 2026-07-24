@@ -769,6 +769,12 @@ function validateEnvelopeIdentity(
   }
   if (state.game.compatibility.state_observation_allowed !== capabilities.game.compatibility.state_observation_allowed
       || state.game.compatibility.inspection_allowed !== capabilities.game.compatibility.inspection_allowed
+      || state.game.compatibility.compatibility_policy_id
+        !== capabilities.game.compatibility.compatibility_policy_id
+      || state.game.compatibility.compatibility_policy_digest
+        !== capabilities.game.compatibility.compatibility_policy_digest
+      || state.game.compatibility.adaptation_level
+        !== capabilities.game.compatibility.adaptation_level
       || !sameStrings(
         state.game.compatibility.action_execution_surface_kinds,
         capabilities.game.compatibility.action_execution_surface_kinds

@@ -1,8 +1,8 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.61`
+Protocol preview: `2.0-preview.62`
 
-Preview.61 keeps exact source/task binding and purpose-specific semantic
+Preview.62 keeps exact source/task binding and purpose-specific semantic
 completion in the Gateway while making the combat-pile wire contract
 structural. `combat_pile_card_selection` now reports `mutation_kind`,
 `commit_mode`, optional `replacement_card_definition_id`, source/destination
@@ -11,6 +11,17 @@ piles, bounds, and exact selected instances. Its only operations are
 `confirm_combat_pile_selection`. `source_kind` remains provenance and an
 internal authorization input; a client must not use a source literal to infer
 legality or completion.
+
+Preview.62 adds required compatibility provenance:
+`compatibility_policy_id`, `compatibility_policy_digest`, and
+`adaptation_level`. Capabilities, state, bundles, and Inspection envelopes must
+agree on them. They identify the reviewed embedded exact-environment policy;
+they never replace explicit operation scopes or current legality.
+
+The reviewed combat-pile registry is an internal source/transaction contract,
+not client-executable data. One generic task-local binding consumes it and
+dispatches only the closed witness topology. Exact-assembly discovery and
+registry verification have no authorization or qualification effect.
 
 Preview.61 also adds exact Neow's Fury. Its native transaction is an optional
 `min_select=0`, dynamic-max discard-to-hand selection with manual confirmation.
@@ -83,7 +94,9 @@ contract against every Steam build. For exact runtime identity
   `deck_enchant_selection`, exact `relic_deck_removal_selection`,
   exact `reward_deck_removal_selection`,
   `combat_pile_card_selection` for exact
-  Headbutt/Graveblast/Cleanse/Seance/Dredge/Charge/Neow's Fury,
+  Headbutt/Graveblast/Cleanse/Seance/Dredge/Charge/Neow's Fury/
+  Cosmic Indifference/Hologram/Secret Technique/Secret Weapon/Seeker Strike/
+  Wish registry sources,
   and source-scoped
   `generated_card_choice` for exact Lead Paperweight acquisition and native
   Colorless/Attack/Skill/Power Potion, native Splash, native Quasar, and
@@ -94,6 +107,11 @@ contract against every Steam build. For exact runtime identity
 Every unlisted Surface and Inspection remains disabled. Historical v0.108
 evidence does not grant current-build authority, and canary evidence does not
 silently become qualification.
+
+Tutor is explicitly not registered: its selected pile is bound to
+`cardPlay.Target.Player`, while the current closed registry binds the source
+owner. A matching native selector and commit primitive are insufficient to
+authorize a different participant-ownership contract.
 
 `relic_deck_removal_selection` is a separately scoped canary contract for the
 exact native `Precise Scissors` acquisition task. It is not an alias for the

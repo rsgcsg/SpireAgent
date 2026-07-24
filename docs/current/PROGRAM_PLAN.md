@@ -114,20 +114,18 @@ The following are governance constraints, not a separate feature program:
 
 ### Current Window
 
-1. Install and cold-load Preview.61, verify exact identity, and run the bounded
-   Neow's Fury transaction canary without changing permission tiers.
-2. Begin Gate 2 visible-information closure and a non-authorizing
+1. Continue Gate 2 visible-information closure and a non-authorizing
    transaction-correlation shadow from concrete selector evidence.
-3. Maintain the closed Gate 1 operation/v1-retirement inventory and keep
+2. Maintain the closed Gate 1 operation/v1-retirement inventory and keep
    unsupported variants explicitly fail closed.
-4. Advance D only through concrete evidence needs: offline checks, provenance,
+3. Advance D only through concrete evidence needs: offline checks, provenance,
    replay truthfulness, scenario fixtures, diagnostics, and falsifiable
    read-only experiments.
-5. Keep A at the frozen RE-P1 baseline while correcting runtime defects exposed
+4. Keep A at the frozen RE-P1 baseline while correcting runtime defects exposed
    by C journeys; do not add persistent learning.
-6. Design P-lane authentication, controller lease, and restart-epoch contracts
+5. Design P-lane authentication, controller lease, and restart-epoch contracts
    without changing current permissions.
-7. Keep H and T disabled beyond admission/data-governance documentation.
+6. Keep H and T disabled beyond admission/data-governance documentation.
 
 ### Gate 1 Exit Basis And Gate 2 Entry
 

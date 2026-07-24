@@ -1,10 +1,10 @@
 # Bridge v2 Integration
 
 > Current source-truth status, 2026-07-24: Re and C# share the
-> `2.0-preview.61` source consumer contract; Re normalized schema is `26`.
-> Gate 1 source/repository closeout is complete as a bounded v2 mutation
-> baseline. Preview.61 is installed, cold-loaded, and strictly decoded by Re;
-> its Neow's Fury branch still has no Organic qualification.
+> `2.0-preview.62` source consumer contract; Re normalized schema is `26`.
+> Gate 1 is closed as a bounded ordinary-single-player v2 connector baseline.
+> Preview.61 supplied the final Neow's Fury runtime seal; Preview.62 adds
+> policy provenance and registry adaptation without inheriting qualification.
 
 ## Connector Boundary
 
@@ -24,7 +24,7 @@ consumption.
 
 ## Current Scope
 
-Re-SpireAgent implements the strict `2.0-preview.61` consumer contract. When a
+Re-SpireAgent implements the strict `2.0-preview.62` consumer contract. When a
 matching Bridge exists, authority is read from capabilities rather than
 inferred from implementation or historical evidence.
 
@@ -41,6 +41,10 @@ capabilities, bundles, and Inspections must agree on game identity, Modset
 fingerprint, Bridge assembly SHA-256, MVID, and runtime instance. Exact Modset
 permission additionally requires the negotiated loaded `STS2_MCP` module and
 no other loaded gameplay Mod.
+
+Preview.62 also requires state and capabilities to agree on the reviewed
+exact-environment policy ID, its digest and adaptation level. These fields are
+provenance, not a client-side permission engine.
 
 Re's production Connector is v2-only. The former `auto` and explicit `v1`
 runtime modes are rejected; historical v1 raw-state records remain readable

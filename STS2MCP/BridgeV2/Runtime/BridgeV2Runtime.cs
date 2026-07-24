@@ -32,6 +32,22 @@ internal static class BridgeV2Runtime
         GameBuildIdentity game = BridgeGameIdentity.Read();
         CompatibilityAssessment compatibility = BridgeContractManifest.WithExplicitActionScopes(
             game.Compatibility);
+        if (CombatPileSourceContractRegistry.LoadError is { } registryError)
+        {
+            compatibility = compatibility with
+            {
+                ActionExecutionSurfaceKinds = compatibility.ActionExecutionSurfaceKinds
+                    .Where(kind => kind != "combat_pile_card_selection")
+                    .ToArray(),
+                ActionCanarySurfaceKinds = compatibility.ActionCanarySurfaceKinds
+                    .Where(kind => kind != "combat_pile_card_selection")
+                    .ToArray(),
+                ActionPermissionScopes = compatibility.ActionPermissionScopes
+                    .Where(scope => scope.SurfaceKind != "combat_pile_card_selection")
+                    .ToArray(),
+                Detail = $"{compatibility.Detail} Combat-pile source registry failed closed: {registryError}"
+            };
+        }
         if (BridgeAssemblyIdentity.LoadedAssemblySha256 == null)
         {
             compatibility = compatibility with
@@ -65,6 +81,46 @@ internal static class BridgeV2Runtime
             warnings.Add(game.Compatibility.Detail);
 
         IReadOnlyList<SurfaceCapability> surfaces = BridgeContractManifest.Capabilities(game.Compatibility);
+        var diagnostics = new List<BridgeDiagnostic>
+        {
+            BridgeDiagnostics.Create(
+                "bridge.protocol.incremental_preview",
+                "info",
+                "compatibility",
+                "none",
+                "unknown"),
+            BridgeDiagnostics.Create(
+                game.Compatibility.InspectionAllowed
+                    ? "bridge.inspection.read_only_enabled"
+                    : "bridge.inspection.disabled_for_current_build",
+                "info",
+                "visibility",
+                "none",
+                "unknown",
+                game.Compatibility.InspectionAllowed
+                    ? "Advertised inspection kinds are state-bound reads with no command authority."
+                    : "Inspection bindings are disabled for the current game build.")
+        };
+        if (CombatPileSourceContractRegistry.LoadError is { } registryError)
+        {
+            diagnostics.Add(BridgeDiagnostics.Create(
+                "bridge.compatibility.combat_pile_registry_invalid",
+                "error",
+                "compatibility",
+                "action_scope_suppressed",
+                "requires_reviewed_build",
+                registryError));
+        }
+        if (BridgeExactEnvironmentPolicy.LoadError is { } policyError)
+        {
+            diagnostics.Add(BridgeDiagnostics.Create(
+                "bridge.compatibility.environment_policy_invalid",
+                "error",
+                "compatibility",
+                "all_authority_suppressed",
+                "requires_reviewed_build",
+                policyError));
+        }
 
         return new BridgeCapabilitiesResponse(
             BridgeV2Contract.ProtocolVersion,
@@ -106,26 +162,7 @@ internal static class BridgeV2Runtime
                 VisibilityClasses: new[] { "on_screen", "normal_inspection", "count_only" },
                 OrderingSemantics: new[] { "unordered_multiset", "player_sorted", "fixed_ui_slots" },
                 ImplementedKinds: AllowedInspectionKinds(game.Compatibility)),
-            new[]
-            {
-                BridgeDiagnostics.Create(
-                    "bridge.protocol.incremental_preview",
-                    "info",
-                    "compatibility",
-                    "none",
-                    "unknown"),
-                BridgeDiagnostics.Create(
-                    game.Compatibility.InspectionAllowed
-                        ? "bridge.inspection.read_only_enabled"
-                        : "bridge.inspection.disabled_for_current_build",
-                    "info",
-                    "visibility",
-                    "none",
-                    "unknown",
-                    game.Compatibility.InspectionAllowed
-                        ? "Advertised inspection kinds are state-bound reads with no command authority."
-                        : "Inspection bindings are disabled for the current game build.")
-            },
+            diagnostics,
             warnings);
     }
 

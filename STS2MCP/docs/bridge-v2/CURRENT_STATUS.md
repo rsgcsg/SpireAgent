@@ -8,8 +8,8 @@ and do not grant current authority.
 ## Current Source-Truth Status
 
 The C# Gateway and Re-SpireAgent source now share contract
-`2.0-preview.61`; Re normalized schema is `26`. Gate 1 repository/source
-closeout establishes a bounded ordinary-single-player v2 mutation baseline:
+`2.0-preview.62`; Re normalized schema is `26`. Gate 1 is closed as a bounded
+ordinary-single-player v2 connector baseline:
 
 - Re and the default Python MCP adapter submit only advertised Bridge v2
   actions;
@@ -19,17 +19,9 @@ closeout establishes a bounded ordinary-single-player v2 mutation baseline:
   menu/profile flows, multiplayer, and unknown selector origins remain
   explicit fail-closed or out-of-scope rows.
 
-Run `run-20260723150256-d2thtq` stopped safely on exact Neow's Fury because the
-then-loaded Preview.60 artifact had no unique source binding for its optional
-discard-to-hand selector. Preview.61 adds that exact native task, a structural
-combat-pile transaction contract, generic state-bound toggle/confirm
-operations, and an exact post-state witness. Source identity remains Gateway
-provenance and authority input rather than a Re type union.
-
-Preview.61 passes source/unit/type/build checks and is now installed and
-cold-loaded. Re strictly decodes its capabilities and current main-menu state;
-read-only endpoint checks confirm the retired `/api/v1` root and child paths
-return `410 Gone`. The exact loaded identity is:
+Run `run-20260724045013-mgcq3a` completed the exact Neow's Fury play,
+selection and manual-confirm lifecycle under Preview.61. The exact loaded
+identity was:
 
 ```text
 SHA     9b6f62161f8c6c286a73cb157430b441014c5148ff702ea96894e6f702386a99
@@ -39,14 +31,55 @@ game    v0.109.0|c12f634d|-1639417500
 Modset  exact_bridge_only
 ```
 
-The Gate 1 runtime seal is still pending only the bounded Organic Neow's Fury
-select/deselect/confirm lifecycle. Installation, loading, strict consumer
-decoding, and retired-v1 route checks are not transaction qualification.
+The final command completed only after source-task closure, child closure and
+exact selected-card movement from discard to hand. This closes the prior Gate 1
+runtime seal.
+
+Preview.62 adds reviewed embedded combat-pile source and exact-environment
+policies, policy ID/digest provenance, and a non-authorizing exact-assembly
+audit. Source-specific C# bindings for the proven combat-pile family are
+retired. Six newly discovered owner-bound sources are registry canary
+candidates; Tutor remains fail closed because it selects from
+`cardPlay.Target.Player`. Preview.62 source/tests/audit do not inherit
+Preview.61 Organic qualification.
+
+Preview.62 is now built, installed and Steam cold-loaded as:
+
+```text
+SHA      d66f5986f8216104fec76412c4b46b4c863076d0c8c7c5870a66fdb9f0c5a892
+MVID     b7bf3824-80bf-4281-9267-262595ce0f49
+runtime  6cf5f02288ed40448634656414524f6b
+game     v0.109.0|c12f634d|-1639417500
+Modset   exact_bridge_only
+fingerprint 39d43817a8419e7065ce101aa42bced25e30b914fe0341588ab748822aa0662e
+policy   bridge_v2_exact_environment_policy_2026_07_24
+digest   1a3f5107e833bb5d561a36bbc2756340392225380088430229d7ef2dcf659f8f
+```
+
+Built, installed and loaded SHA matched. Re strict inspection decoded the same
+protocol, Bridge/game/Modset identity and policy provenance. The loaded v1 root
+and child probes returned `410`. This is installation/load/consumer evidence,
+not Organic qualification for the six newly registered sources.
+
+The same exact runtime completed an operator-directed bounded menu round trip:
+
+```text
+state_4d51f98937_1 main_menu
+  -> preview62-final-open_singleplayer-1784881719652334000 completed
+state_4d51f98937_2 singleplayer_menu
+  -> preview62-final-back-1784881745227362000 completed
+state_4d51f98937_3 main_menu
+```
+
+Both actions were advertised, opaque and submitted once. A local polling
+script error after the first submission was recovered by polling the same
+request ID, never by resubmission. This rechecks the existing menu canary only;
+it does not qualify new registry entries.
 
 ## Dated Evidence Chronology
 
 The chronology below records prior artifacts and repairs. It does not transfer
-Organic qualification or permission to Preview.61.
+Organic qualification or permission to Preview.62.
 
 Gate 0 is now closed on the exact loaded artifact recorded in
 [the Gate 0 closeout](CONNECTOR_G0_CLOSEOUT_2026-07-22.md). Re completed
@@ -71,11 +104,12 @@ compatibility only. The prior Preview.59 Dredge journey does not transfer Gate
 
 ## Required Repair Order
 
-1. Run one bounded Neow's Fury select/deselect/confirm lifecycle under the
-   loaded Preview.61 identity.
-2. Begin Gate 2 with non-authorizing transaction correlation and concrete
+1. Begin Gate 2 with non-authorizing transaction correlation and concrete
    player-visible-information closure; preserve current permission tiers.
-3. Maintain the machine-checked closed Gate 1/v1 retirement inventory.
+2. Maintain the machine-checked closed Gate 1/v1 retirement inventory and run
+   the non-authorizing exact-assembly compatibility audit on each exact build.
+3. Collect Preview.62 source canaries only when naturally reachable and keep
+   Tutor/unknown origins fail closed.
 
 The current inventory and first Gate 1 runtime repair are recorded in
 [Gate 1 Operation And Journey Inventory](GATE1_OPERATION_AND_JOURNEY_INVENTORY.md).
@@ -214,11 +248,9 @@ a current v2 permission claim.
 
 ## Next High-Value Work
 
-Install and cold-load Preview.61 only after the game exits. Verify its exact
-SHA/MVID/runtime/game/Modset identity, then run the bounded Neow's Fury
-select/deselect/confirm lifecycle. Quasar, Knowledge Demon, Charge, Seance, and
-Precise Scissors remain evidence debt rather than Gate 1 blockers. Gate 2 may
-then advance through a non-authorizing transaction-correlation shadow and
-visible-information closure. Do not weaken state binding, retry unknown
-outcomes, restore v1, or convert source/build evidence into canary or
-qualification claims.
+Gate 2 may advance through non-authorizing transaction-correlation experiments
+and visible-information closure. Newly registered combat-pile sources, Quasar,
+Knowledge Demon, Charge, Seance, and Precise Scissors remain evidence debt
+rather than Gate 1 blockers. Do not weaken state binding, retry unknown
+outcomes, restore v1, or convert discovery/source/build evidence into
+qualification.

@@ -20,12 +20,13 @@ code. The Gateway must remain the sole authority for game observation,
 advertised actions, validation, and completion. MCP is optional ecosystem glue,
 not the core connector.
 
-Gate 1 source/repository closeout and Preview.61 local deployment are complete
-only as a bounded ordinary-single-player v2 mutation baseline; its Neow's Fury
-Organic runtime seal remains pending. Consumer rollout remains blocked by Gate
-2 visible-information closure plus missing Gateway authentication, controller
-lease, restart epoch, and recovery evidence. Do not represent the direct local
-REST path as a consumer-safe installation.
+Gate 1 is closed only as a bounded ordinary-single-player v2 connector
+baseline. Preview.61 supplied its final Neow's Fury Organic runtime seal;
+Preview.62 adds reviewed compatibility/source registries and non-authorizing
+audit support without inheriting qualification. Consumer rollout remains
+blocked by Gate 2 visible-information closure plus missing Gateway
+authentication, controller lease, restart epoch, and recovery evidence. Do not
+represent the direct local REST path as a consumer-safe installation.
 
 For the full evidence boundary, alternatives considered, security analysis,
 and conditional product gates, read the

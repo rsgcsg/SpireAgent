@@ -6,16 +6,17 @@ runtime authority.
 
 ## Mandatory Precondition: Source Truth Repair
 
-Status: Gate 1 source contract and bounded v2 mutation baseline closed on
-2026-07-24. Preview.61 install/load identity, strict Re decode, and loaded-v1
-retirement checks are complete; its bounded Neow's Fury Organic lifecycle
-remains the runtime seal before permission expansion.
+Status: Gate 1 closed as a bounded ordinary-single-player v2 connector
+baseline on 2026-07-24. Preview.61 supplied the exact Neow's Fury Organic
+runtime seal, strict Re decode, and loaded-v1 retirement evidence.
 
-C# and Re source now share `2.0-preview.61`, with explicit operation scopes, actual
-loaded-game assembly identity, and a
-Gateway assembly digest. Independent green suites still do not prove a loaded
-game connector. The following deployment conditions are now met and remain
-required for every later artifact:
+C# and Re source now share `2.0-preview.62`. Preview.62 moves exact-environment
+authorization and reviewed combat-pile source contracts into validated
+embedded policy, and adds a non-authorizing exact-assembly audit. Those changes
+reduce content-literal code edits but do not self-authorize discovered
+mechanics, Mods, or new builds. Independent green suites still do not prove a
+loaded game connector. The following deployment conditions remain required for
+every artifact:
 
 - keep C#, Re, examples, installed artifact, and capability declarations on the
   same revision;
@@ -132,11 +133,10 @@ This phase cannot grant action authority.
 
 ## Phase 2: Transaction Correlation And DecisionFrame Shadow
 
-Status: next non-authorizing architecture slice after bounded Neow's Fury
-verification on the loaded Preview.61 identity. The 2026-07-20 design remains
-evidence input, not an implementation authorization. Do not begin with a
-protocol or authority migration, and do not introduce broad Transaction IR
-merely to preserve the old phase order.
+Status: eligible Gate 2 design work after bounded Gate 1 closure. The
+2026-07-20 design remains evidence input, not an implementation authorization.
+Do not begin with a protocol or authority migration, and do not introduce
+broad Transaction IR merely to preserve the old phase order.
 
 First add a minimal, non-authorizing transaction-correlation record beside the
 existing command ledger. Seed it only from already-audited native Task scopes

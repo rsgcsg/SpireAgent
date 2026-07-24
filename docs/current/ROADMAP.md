@@ -16,10 +16,10 @@ a bounded read/action/completion journey.
 
 ## Gate 1: Connector Reliability And Coverage
 
-Status: **repository/source closeout complete as a bounded
-ordinary-single-player v2 mutation baseline on 2026-07-24; runtime seal pending
-bounded Preview.61 Neow's Fury Organic evidence. Preview.61 install/load and v1
-retirement verification are complete.**
+Status: **closed as a bounded ordinary-single-player v2 connector baseline on
+2026-07-24. Preview.61 supplied the final Neow's Fury runtime seal; Preview.62
+adds reviewed data-driven source/build adaptation and non-authorizing exact
+assembly audit without inheriting Organic qualification.**
 
 Expand v2 only through independently closable journeys. For each journey,
 verify source/UI visibility, input owner, advertised opaque actions,
@@ -32,11 +32,14 @@ from Re/default MCP. It preserves explicit fail-closed and out-of-scope rows rat
 than pretending Crystal Sphere, standalone potion discard, profile mutation,
 or multiplayer were migrated. See the
 [Gate 1 closeout](../../STS2MCP/docs/bridge-v2/GATE1_CLOSEOUT_AND_SELECTOR_TRANSACTION_AUDIT_2026-07-24.md).
+The
+[adaptation closeout](../../STS2MCP/docs/bridge-v2/GATE1_ADAPTATION_AND_COMPATIBILITY_CLOSEOUT_2026-07-24.md)
+defines zero-core-code boundaries, automated verification and the negative
+Tutor holdout.
 
 ## Gate 2: Player-Visible Information Closure
 
-Status: **next design/evidence gate; no runtime permission expansion before the
-Gate 1 Preview.61 runtime seal.**
+Status: **active next design/evidence gate; Gate 1 is closed.**
 
 Close decision-relevant visible-information gaps using shared state, context,
 surface, preview, and read-only inspection. Do not expose hidden RNG, draw

@@ -10,7 +10,7 @@ import type { JsonObject } from "../src/shared/json.js";
 import { fixture } from "./helpers.js";
 
 const CAPABILITIES = {
-  protocol_version: "2.0-preview.61",
+  protocol_version: "2.0-preview.62",
   bridge: {
     id: "sts2_mcp_bridge_v2",
     name: "STS2 Agent Bridge",
@@ -44,7 +44,10 @@ const CAPABILITIES = {
         surface_kind: string;
         operation: string;
         tier: "qualified" | "canary";
-      }>
+      }>,
+      compatibility_policy_id: "fixture_exact_environment_policy",
+      compatibility_policy_digest: "b".repeat(64),
+      adaptation_level: "reviewed_exact_environment"
     },
     modset: {
       status: "exact_bridge_only",
@@ -177,7 +180,7 @@ const RUN_VISIBILITY = {
 };
 
 const DECK_ENCHANT_STATE = {
-  protocol_version: "2.0-preview.61",
+  protocol_version: "2.0-preview.62",
   state_id: "state-test-1",
   state_sequence: 1,
   observed_at: "2026-07-16T00:00:00Z",
@@ -253,7 +256,7 @@ const DECK_ENCHANT_STATE = {
     status: "resolved_manifest_contract",
     instance_id: "contract-instance-deck-enchant-1",
     surface_kind: "deck_enchant_selection",
-    semantic_contract_id: "bridge.surface.deck_enchant_selection.2.0-preview.61",
+    semantic_contract_id: "bridge.surface.deck_enchant_selection.2.0-preview.62",
     declared_binding: "fixture-declared-binding",
     operations: [{ operation: "toggle_card", evidence_status: "surface_level_only", published: true }],
     current_authority_tier: "canary",
@@ -2026,7 +2029,7 @@ function visibleInspectionCard(overrides: Record<string, unknown> = {}) {
 
 function runDeckInspection(stateId: string, cards = [visibleInspectionCard()]) {
   return {
-    protocol_version: "2.0-preview.61",
+    protocol_version: "2.0-preview.62",
     inspection_id: `inspection-run-deck-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -2049,7 +2052,7 @@ function runDeckInspection(stateId: string, cards = [visibleInspectionCard()]) {
 
 function combatPilesInspection(stateId: string) {
   return {
-    protocol_version: "2.0-preview.61",
+    protocol_version: "2.0-preview.62",
     inspection_id: `inspection-combat-piles-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -2094,7 +2097,7 @@ function shopCatalogInspection(stateId: string) {
     blocked_reason: offer.stocked ? "not_visible" : offer.blocked_reason
   });
   return {
-    protocol_version: "2.0-preview.61",
+    protocol_version: "2.0-preview.62",
     inspection_id: `inspection-shop-catalog-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -2136,7 +2139,7 @@ function coherentObservationBundle(
   }));
   const resolvedInspections = inspections ?? defaultInspections;
   return {
-    protocol_version: "2.0-preview.61",
+    protocol_version: "2.0-preview.62",
     observation_id: `observation-${state.state_id}`,
     coherent: true,
     state,
@@ -2981,7 +2984,10 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
         observation_only_surface_kinds: ["deck_removal_selection"],
         observation_candidate_build_fingerprints: ["v0.109.0|c12f634d|-840572606"],
         detail: "static bindings only",
-        action_permission_scopes: []
+        action_permission_scopes: [],
+        compatibility_policy_id: "fixture_exact_environment_policy",
+        compatibility_policy_digest: "b".repeat(64),
+        adaptation_level: "diagnostic_only"
       }
     };
     candidateCapabilities.surfaces = candidateCapabilities.surfaces.map((surface) => ({
@@ -3080,7 +3086,10 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
         observation_only_surface_kinds: [],
         observation_candidate_build_fingerprints: [],
         detail: "merchant removal qualified scope only",
-        action_permission_scopes: actionPermissionScopes
+        action_permission_scopes: actionPermissionScopes,
+        compatibility_policy_id: "fixture_exact_environment_policy",
+        compatibility_policy_digest: "b".repeat(64),
+        adaptation_level: "reviewed_exact_environment"
       }
     };
     canaryCapabilities.surfaces = canaryCapabilities.surfaces.map((surface) => ({
@@ -3257,7 +3266,10 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
         observation_only_surface_kinds: [],
         observation_candidate_build_fingerprints: [],
         detail: "current-build event option, acquisition, and map canaries only",
-        action_permission_scopes: actionPermissionScopes
+        action_permission_scopes: actionPermissionScopes,
+        compatibility_policy_id: "fixture_exact_environment_policy",
+        compatibility_policy_digest: "b".repeat(64),
+        adaptation_level: "reviewed_exact_environment"
       }
     };
     canaryOnlyCapabilities.surfaces = canaryOnlyCapabilities.surfaces.map((surface) => ({
@@ -5396,7 +5408,10 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
         observation_only_surface_kinds: [],
         observation_candidate_build_fingerprints: [],
         detail: "scoped exact qualification",
-        action_permission_scopes: actionPermissionScopes
+        action_permission_scopes: actionPermissionScopes,
+        compatibility_policy_id: "fixture_exact_environment_policy",
+        compatibility_policy_digest: "b".repeat(64),
+        adaptation_level: "reviewed_exact_environment"
       }
     };
     capabilities.surfaces = capabilities.surfaces.map((surface) => ({
@@ -5698,7 +5713,10 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       observation_only_surface_kinds: [],
       observation_candidate_build_fingerprints: [],
       detail: "build mismatch",
-      action_permission_scopes: []
+      action_permission_scopes: [],
+      compatibility_policy_id: "fixture_exact_environment_policy",
+      compatibility_policy_digest: "b".repeat(64),
+      adaptation_level: "diagnostic_only"
     };
     incompatibleCapabilities.inspections = {
       ...incompatibleCapabilities.inspections,
@@ -5759,7 +5777,10 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
         observation_only_surface_kinds: ["deck_removal_selection"],
         observation_candidate_build_fingerprints: ["v0.109.0|c12f634d|-840572606"],
         detail: "static bindings only",
-        action_permission_scopes: []
+        action_permission_scopes: [],
+        compatibility_policy_id: "fixture_exact_environment_policy",
+        compatibility_policy_digest: "b".repeat(64),
+        adaptation_level: "diagnostic_only"
       }
     };
     candidateCapabilities.surfaces = candidateCapabilities.surfaces.map((surface) => ({
@@ -5855,7 +5876,10 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
         observation_only_surface_kinds: [],
         observation_candidate_build_fingerprints: [],
         detail: "qualified merchant removal and run deck only",
-        action_permission_scopes: actionPermissionScopes
+        action_permission_scopes: actionPermissionScopes,
+        compatibility_policy_id: "fixture_exact_environment_policy",
+        compatibility_policy_digest: "b".repeat(64),
+        adaptation_level: "reviewed_exact_environment"
       }
     };
     capabilities.surfaces = capabilities.surfaces.map((surface) => ({
@@ -5928,7 +5952,10 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
         observation_only_surface_kinds: ["deck_removal_selection"],
         observation_candidate_build_fingerprints: ["v0.109.0|c12f634d|-840572606"],
         detail: "static bindings only",
-        action_permission_scopes: []
+        action_permission_scopes: [],
+        compatibility_policy_id: "fixture_exact_environment_policy",
+        compatibility_policy_digest: "b".repeat(64),
+        adaptation_level: "diagnostic_only"
       }
     };
     candidateCapabilities.surfaces = candidateCapabilities.surfaces.map((surface) => ({

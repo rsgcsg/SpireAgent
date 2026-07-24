@@ -7,7 +7,6 @@ using MegaCrit.Sts2.Core.CardSelection;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
-using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Nodes.Cards;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
@@ -284,120 +283,37 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
         }
 
         IReadOnlyList<CardModel> previousSelection = ReadSelectedCards(expectedScreen);
-        bool multiSelectCompletes = semantics.CommitMode == "automatic_at_max"
-                                    && IsMultiSelectSource(source)
-                                    && !expectedSelected
-                                    && previousSelection.Count + 1 >= BindingMax(source);
-        IReadOnlyList<CardModel> finalMultiSelection = multiSelectCompletes
+        bool automaticCommitStarts = semantics.CommitMode == "automatic_at_max"
+                                     && !expectedSelected
+                                     && previousSelection.Count + 1 >= BindingMax(source);
+        IReadOnlyList<CardModel> committedSelection = automaticCommitStarts
             ? previousSelection.Append(expectedCard).ToArray()
             : Array.Empty<CardModel>();
 
         grid.EmitSignal(NCardGrid.SignalName.HolderPressed, holder);
         string completionEvidence = source switch
         {
-            CombatPileSelectionSourceBinding.DredgeBinding => multiSelectCompletes
-                ? "dredge_source_completed_screen_closed_and_all_exact_selected_cards_moved_from_discard_to_hand"
-                : "dredge_intermediate_selection_exactly_changed_without_pile_commit",
-            CombatPileSelectionSourceBinding.ChargeBinding => multiSelectCompletes
-                ? "charge_source_completed_screen_closed_and_both_exact_draw_cards_replaced_by_minion_dive_bombs"
-                : "charge_intermediate_selection_exactly_changed_without_transform_commit",
-            CombatPileSelectionSourceBinding.NeowsFuryBinding =>
-                "neows_fury_intermediate_selection_exactly_changed_without_pile_commit",
+            CombatPileSelectionSourceBinding.RegistryBinding registered =>
+                automaticCommitStarts
+                    ? registered.Contract.CompletionEvidence
+                    : $"{registered.Contract.SourceKind}_intermediate_selection_exactly_changed_without_commit",
             _ => semantics.CompletionEvidence
         };
         return BridgeActionStartResult.Started(
             () => source.Player.PlayerCombatState is { } combat
                   && source switch
                   {
-                      CombatPileSelectionSourceBinding.HeadbuttBinding headbutt =>
-                          HeadbuttCombatPileWitness.Selected(
-                              !CombatPileSelectionSourceBinding.IsActive(headbutt.Token),
-                              !IsCurrent(expectedScreen),
-                              headbutt.BaselineDiscard,
-                              headbutt.BaselineDraw,
-                              combat.DiscardPile.Cards,
-                              combat.DrawPile.Cards,
-                              expectedCard),
-                      CombatPileSelectionSourceBinding.GraveblastBinding graveblast =>
-                          GraveblastCombatPileWitness.Selected(
-                              !CombatPileSelectionSourceBinding.IsActive(graveblast.Token),
-                              !IsCurrent(expectedScreen),
-                              graveblast.BaselineDiscard,
-                              graveblast.BaselineHand,
-                              combat.DiscardPile.Cards,
-                              combat.Hand.Cards,
-                              expectedCard,
-                              CardPile.MaxCardsInHand),
-                      CombatPileSelectionSourceBinding.CleanseBinding cleanse =>
-                          CleanseCombatPileWitness.Selected(
-                              !CombatPileSelectionSourceBinding.IsActive(cleanse.Token),
-                              !IsCurrent(expectedScreen),
-                              cleanse.BaselineDraw,
-                              cleanse.BaselineExhaust,
-                              combat.DrawPile.Cards,
-                              combat.ExhaustPile.Cards,
-                              expectedCard),
-                      CombatPileSelectionSourceBinding.SeanceBinding seance =>
-                          SeanceCombatPileWitness.Selected(
-                              !CombatPileSelectionSourceBinding.IsActive(seance.Token),
-                              !IsCurrent(expectedScreen),
-                              seance.BaselineDraw,
-                              combat.DrawPile.Cards,
-                              expectedCard,
-                              card => card is Soul),
-                      CombatPileSelectionSourceBinding.DredgeBinding dredge =>
-                          multiSelectCompletes
-                              ? DredgeCombatPileWitness.Completed(
-                                  !CombatPileSelectionSourceBinding.IsActive(dredge.Token),
-                                  !IsCurrent(expectedScreen),
-                                  dredge.BaselineDiscard,
-                                  dredge.BaselineHand,
-                                  combat.DiscardPile.Cards,
-                                  combat.Hand.Cards,
-                                  finalMultiSelection,
-                                  BindingMax(dredge))
-                              : DredgeCombatPileWitness.SelectionChanged(
-                                  CombatPileSelectionSourceBinding.IsActive(dredge.Token),
-                                  IsCurrent(expectedScreen),
-                                  dredge.BaselineDiscard,
-                                  dredge.BaselineHand,
-                                  combat.DiscardPile.Cards,
-                                  combat.Hand.Cards,
-                                  previousSelection,
-                                  ReadSelectedCards(expectedScreen),
-                                  expectedCard,
-                                  expectedSelected),
-                      CombatPileSelectionSourceBinding.ChargeBinding charge =>
-                          multiSelectCompletes
-                              ? ChargeCombatPileWitness.Completed(
-                                  !CombatPileSelectionSourceBinding.IsActive(charge.Token),
-                                  !IsCurrent(expectedScreen),
-                                  charge.BaselineDraw,
-                                  combat.DrawPile.Cards,
-                                  finalMultiSelection,
-                                  card => card is MinionDiveBomb
-                                          && (!charge.Charge.IsUpgraded || card.IsUpgraded))
-                              : ChargeCombatPileWitness.SelectionChanged(
-                                  CombatPileSelectionSourceBinding.IsActive(charge.Token),
-                                  IsCurrent(expectedScreen),
-                                  charge.BaselineDraw,
-                                  combat.DrawPile.Cards,
-                                  previousSelection,
-                                  ReadSelectedCards(expectedScreen),
-                                  expectedCard,
-                                  expectedSelected),
-                      CombatPileSelectionSourceBinding.NeowsFuryBinding neowsFury =>
-                          NeowsFuryCombatPileWitness.SelectionChanged(
-                              CombatPileSelectionSourceBinding.IsActive(neowsFury.Token),
-                              IsCurrent(expectedScreen),
-                              neowsFury.BaselineDiscard,
-                              neowsFury.BaselineHand,
-                              combat.DiscardPile.Cards,
-                              combat.Hand.Cards,
+                      CombatPileSelectionSourceBinding.RegistryBinding registered =>
+                          RegistrySelectionResult(
+                              expectedScreen,
+                              registered,
+                              combat,
                               previousSelection,
                               ReadSelectedCards(expectedScreen),
+                              committedSelection,
                               expectedCard,
-                              expectedSelected),
+                              expectedSelected,
+                              automaticCommitStarts),
                       _ => false
                   },
             completionEvidence,
@@ -436,16 +352,16 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
         expectedConfirm.ForceClick();
         return BridgeActionStartResult.Started(
             () => source.Player.PlayerCombatState is { } combat
-                  && source is CombatPileSelectionSourceBinding.NeowsFuryBinding neowsFury
-                  && NeowsFuryCombatPileWitness.Completed(
-                      !CombatPileSelectionSourceBinding.IsActive(neowsFury.Token),
-                      !IsCurrent(expectedScreen),
-                      neowsFury.BaselineDiscard,
-                      neowsFury.BaselineHand,
-                      combat.DiscardPile.Cards,
-                      combat.Hand.Cards,
-                      selectedCards,
-                      neowsFury.MaxSelect),
+                  && source switch
+                  {
+                      CombatPileSelectionSourceBinding.RegistryBinding registered =>
+                          RegistryManualCommitCompleted(
+                              expectedScreen,
+                              registered,
+                              combat,
+                              selectedCards),
+                      _ => false
+                  },
             semantics.CompletionEvidence,
             allowIntermediateStateChanges: true);
     }
@@ -454,123 +370,28 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
         CombatPileSelectionSourceBinding.SourceBinding source,
         out SourceSemantics? semantics)
     {
-        semantics = source switch
-        {
-            CombatPileSelectionSourceBinding.HeadbuttBinding => new SourceSemantics(
-                "move_one_discard_card_to_draw_top",
-                "move_selected_cards",
-                "automatic_at_max",
-                "headbutt",
-                "Headbutt",
-                "discard",
-                "draw",
-                "top",
-                null,
-                null,
-                "contract_complete_for_headbutt_discard_to_draw_top_selection",
-                "Headbutt.OnPlay+NCardGrid.HolderPressed+CardPileCmd.Add(Draw,Top)+exact-card-witness",
-                (cardName, _) => $"Put {cardName} on top of the Draw Pile",
-                "headbutt_source_completed_screen_closed_and_exact_card_moved_from_discard_to_draw_top"),
-            CombatPileSelectionSourceBinding.GraveblastBinding => new SourceSemantics(
-                "move_one_discard_card_to_hand",
-                "move_selected_cards",
-                "automatic_at_max",
-                "graveblast",
-                "Graveblast",
-                "discard",
-                "hand",
-                "bottom",
-                "discard_if_hand_full",
-                null,
-                "contract_complete_for_graveblast_discard_to_hand_selection",
-                "Graveblast.OnPlay+NCardGrid.HolderPressed+CardPileCmd.Add(Hand)+exact-card-witness",
-                (cardName, _) => $"Put {cardName} back in your Hand",
-                "graveblast_source_completed_screen_closed_and_exact_card_moved_from_discard_to_hand_or_full_hand_discard"),
-            CombatPileSelectionSourceBinding.CleanseBinding => new SourceSemantics(
-                "exhaust_one_draw_card",
-                "move_selected_cards",
-                "automatic_at_max",
-                "cleanse",
-                "Cleanse",
-                "draw",
-                "exhaust",
-                "bottom",
-                null,
-                null,
-                "contract_complete_for_cleanse_draw_to_exhaust_selection",
-                "Cleanse.OnPlay+NCardGrid.HolderPressed+CardCmd.Exhaust+exact-card-witness",
-                (cardName, _) => $"Exhaust {cardName}",
-                "cleanse_source_completed_screen_closed_and_exact_card_moved_from_draw_to_exhaust"),
-            CombatPileSelectionSourceBinding.SeanceBinding => new SourceSemantics(
-                "transform_one_draw_card_into_soul",
-                "replace_selected_cards_same_index",
-                "automatic_at_max",
-                "seance",
-                "Seance",
-                "draw",
-                "draw",
-                "same_index",
-                null,
-                "SOUL",
-                "contract_complete_for_seance_draw_card_to_soul_selection",
-                "Seance.OnPlay+NCardGrid.HolderPressed+CardCmd.TransformTo<Soul>+exact-replacement-witness",
-                (cardName, _) => $"Transform {cardName} into Soul",
-                "seance_source_completed_screen_closed_and_exact_draw_card_replaced_by_new_soul_at_same_index"),
-            CombatPileSelectionSourceBinding.DredgeBinding => new SourceSemantics(
-                "move_bounded_discard_cards_to_hand",
-                "move_selected_cards",
-                "automatic_at_max",
-                "dredge",
-                "Dredge",
-                "discard",
-                "hand",
-                "bottom",
-                null,
-                null,
-                "contract_complete_for_dredge_bounded_discard_to_hand_selection",
-                "Dredge.OnPlay+NCardGrid.HolderPressed+CardPileCmd.Add(Hand)+intermediate-selection-or-exact-batch-witness",
-                (cardName, selected) => selected
-                    ? $"Deselect {cardName} from Dredge"
-                    : $"Select {cardName} for Dredge",
-                "dredge_selection_changed_or_source_completed_with_exact_batch_move"),
-            CombatPileSelectionSourceBinding.ChargeBinding => new SourceSemantics(
-                "transform_two_draw_cards_into_minion_dive_bombs",
-                "replace_selected_cards_same_index",
-                "automatic_at_max",
-                "charge",
-                "Charge",
-                "draw",
-                "draw",
-                "same_index",
-                null,
-                "MINION_DIVE_BOMB",
-                "contract_complete_for_charge_exact_two_draw_card_transform",
-                "Charge.OnPlay+NCardGrid.HolderPressed+CardCmd.TransformTo<MinionDiveBomb>+intermediate-selection-or-exact-two-replacement-witness",
-                (cardName, selected) => selected
-                    ? $"Deselect {cardName} from CHARGE!!"
-                    : $"Select {cardName} for CHARGE!!",
-                "charge_selection_changed_or_source_completed_with_exact_two_minion_dive_bomb_replacements"),
-            CombatPileSelectionSourceBinding.NeowsFuryBinding => new SourceSemantics(
-                "move_optional_discard_cards_to_hand",
-                "move_selected_cards",
-                "manual_confirm",
-                "neows_fury",
-                "NeowsFury",
-                "discard",
-                "hand",
-                "bottom",
-                null,
-                null,
-                "contract_complete_for_neows_fury_optional_discard_to_hand_selection",
-                "NeowsFury.OnPlay+NCardGrid.HolderPressed+NConfirmButton+CardPileCmd.Add(Hand)+exact-batch-witness",
-                (cardName, selected) => selected
-                    ? $"Deselect {cardName} from Neow's Fury"
-                    : $"Select {cardName} for Neow's Fury",
-                "neows_fury_source_completed_screen_closed_and_exact_selected_cards_moved_from_discard_to_hand"),
-            _ => null
-        };
+        semantics = source is CombatPileSelectionSourceBinding.RegistryBinding registered
+            ? FromContract(registered.Contract)
+            : null;
         return semantics != null;
     }
+
+    private static SourceSemantics FromContract(CombatPileSourceContract contract) =>
+        new(
+            contract.Purpose,
+            contract.MutationKind,
+            contract.CommitMode,
+            contract.SourceKind,
+            contract.SourceDisplayName,
+            contract.SourcePile,
+            contract.DestinationPile,
+            contract.DestinationPosition,
+            contract.OverflowDestination,
+            contract.ReplacementCardDefinitionId,
+            contract.Completeness,
+            contract.CommitEvidence,
+            contract.Label,
+            contract.CompletionEvidence);
 
     private static bool TryReadBinding(
         NCombatPileCardSelectScreen screen,
@@ -624,41 +445,173 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
         if (preferences.RequireManualConfirmation != (semantics.CommitMode == "manual_confirm"))
             return false;
 
-        if (source is CombatPileSelectionSourceBinding.DredgeBinding dredge)
+        if (source is CombatPileSelectionSourceBinding.RegistryBinding registered)
         {
-            int expected = Math.Min(3, CardPile.MaxCardsInHand - dredge.BaselineHand.Count);
-            return expected > 0
-                   && preferences.MinSelect == expected
-                   && preferences.MaxSelect == expected;
+            return preferences.MinSelect == registered.MinSelect
+                   && preferences.MaxSelect == registered.MaxSelect;
         }
-        if (source is CombatPileSelectionSourceBinding.ChargeBinding)
-        {
-            return preferences.MinSelect == 2
-                   && preferences.MaxSelect == 2;
-        }
-        if (source is CombatPileSelectionSourceBinding.NeowsFuryBinding neowsFury)
-        {
-            return preferences.MinSelect == 0
-                   && preferences.MaxSelect == neowsFury.MaxSelect;
-        }
-
-        return preferences.MinSelect == 1 && preferences.MaxSelect == 1;
+        return false;
     }
-
-    private static bool IsMultiSelectSource(
-        CombatPileSelectionSourceBinding.SourceBinding source) =>
-        source is CombatPileSelectionSourceBinding.DredgeBinding
-            or CombatPileSelectionSourceBinding.ChargeBinding;
 
     private static int BindingMax(CombatPileSelectionSourceBinding.SourceBinding binding) =>
         binding switch
         {
-            CombatPileSelectionSourceBinding.DredgeBinding dredge =>
-                Math.Min(3, CardPile.MaxCardsInHand - dredge.BaselineHand.Count),
-            CombatPileSelectionSourceBinding.ChargeBinding => 2,
-            CombatPileSelectionSourceBinding.NeowsFuryBinding neowsFury => neowsFury.MaxSelect,
-            _ => 1
+            CombatPileSelectionSourceBinding.RegistryBinding registered =>
+                registered.MaxSelect,
+            _ => 0
         };
+
+    private static bool RegistrySelectionResult(
+        NCombatPileCardSelectScreen expectedScreen,
+        CombatPileSelectionSourceBinding.RegistryBinding binding,
+        PlayerCombatState combat,
+        IReadOnlyCollection<CardModel> previousSelection,
+        IReadOnlyCollection<CardModel> currentSelection,
+        IReadOnlyCollection<CardModel> committedSelection,
+        CardModel toggledCard,
+        bool wasSelected,
+        bool automaticCommitStarted)
+    {
+        IReadOnlyList<CardModel>? currentSource =
+            ResolveCurrentPile(combat, binding.Contract.SourcePile);
+        IReadOnlyList<CardModel>? currentDestination =
+            ResolveCurrentPile(combat, binding.Contract.DestinationPile);
+        if (currentSource == null || currentDestination == null)
+            return false;
+
+        if (!automaticCommitStarted)
+        {
+            return DredgeCombatPileWitness.SelectionChanged(
+                CombatPileSelectionSourceBinding.IsActive(binding.Token),
+                IsCurrent(expectedScreen),
+                binding.BaselineSourcePile,
+                binding.BaselineDestinationPile,
+                currentSource,
+                currentDestination,
+                previousSelection,
+                currentSelection,
+                toggledCard,
+                wasSelected);
+        }
+
+        bool sourceCompleted = !CombatPileSelectionSourceBinding.IsActive(binding.Token);
+        bool surfaceClosed = !IsCurrent(expectedScreen);
+        return binding.Contract.WitnessKind switch
+        {
+            "move_one_to_top" =>
+                HeadbuttCombatPileWitness.Selected(
+                    sourceCompleted,
+                    surfaceClosed,
+                    binding.BaselineSourcePile,
+                    binding.BaselineDestinationPile,
+                    currentSource,
+                    currentDestination,
+                    toggledCard),
+            "move_one_to_hand_or_source_if_full" =>
+                GraveblastCombatPileWitness.Selected(
+                    sourceCompleted,
+                    surfaceClosed,
+                    binding.BaselineSourcePile,
+                    binding.BaselineDestinationPile,
+                    currentSource,
+                    currentDestination,
+                    toggledCard,
+                    CardPile.MaxCardsInHand),
+            "move_one_between_piles" =>
+                CleanseCombatPileWitness.Selected(
+                    sourceCompleted,
+                    surfaceClosed,
+                    binding.BaselineSourcePile,
+                    binding.BaselineDestinationPile,
+                    currentSource,
+                    currentDestination,
+                    toggledCard),
+            "replace_one_same_index" =>
+                SeanceCombatPileWitness.Selected(
+                    sourceCompleted,
+                    surfaceClosed,
+                    binding.BaselineSourcePile,
+                    currentSource,
+                    toggledCard,
+                    replacement => IsExpectedReplacement(binding, replacement)),
+            "move_exact_batch_between_piles" =>
+                DredgeCombatPileWitness.Completed(
+                    sourceCompleted,
+                    surfaceClosed,
+                    binding.BaselineSourcePile,
+                    binding.BaselineDestinationPile,
+                    currentSource,
+                    currentDestination,
+                    committedSelection,
+                    binding.MaxSelect),
+            "replace_exact_batch_same_index" =>
+                ChargeCombatPileWitness.Completed(
+                    sourceCompleted,
+                    surfaceClosed,
+                    binding.BaselineSourcePile,
+                    currentSource,
+                    committedSelection,
+                    replacement => IsExpectedReplacement(binding, replacement)),
+            _ => false
+        };
+    }
+
+    private static bool RegistryManualCommitCompleted(
+        NCombatPileCardSelectScreen expectedScreen,
+        CombatPileSelectionSourceBinding.RegistryBinding binding,
+        PlayerCombatState combat,
+        IReadOnlyCollection<CardModel> selectedCards)
+    {
+        IReadOnlyList<CardModel>? currentSource =
+            ResolveCurrentPile(combat, binding.Contract.SourcePile);
+        IReadOnlyList<CardModel>? currentDestination =
+            ResolveCurrentPile(combat, binding.Contract.DestinationPile);
+        if (currentSource == null
+            || currentDestination == null
+            || binding.Contract.WitnessKind != "move_optional_batch_between_piles")
+        {
+            return false;
+        }
+
+        return NeowsFuryCombatPileWitness.Completed(
+            !CombatPileSelectionSourceBinding.IsActive(binding.Token),
+            !IsCurrent(expectedScreen),
+            binding.BaselineSourcePile,
+            binding.BaselineDestinationPile,
+            currentSource,
+            currentDestination,
+            selectedCards,
+            binding.MaxSelect);
+    }
+
+    private static IReadOnlyList<CardModel>? ResolveCurrentPile(
+        PlayerCombatState combat,
+        string pile) => pile switch
+    {
+        "draw" => combat.DrawPile.Cards,
+        "discard" => combat.DiscardPile.Cards,
+        "hand" => combat.Hand.Cards,
+        "exhaust" => combat.ExhaustPile.Cards,
+        _ => null
+    };
+
+    private static bool IsExpectedReplacement(
+        CombatPileSelectionSourceBinding.RegistryBinding binding,
+        CardModel card)
+    {
+        if (!string.Equals(
+                card.Id.Entry,
+                binding.Contract.ReplacementCardDefinitionId,
+                StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        return binding.Contract.ReplacementUpgradePolicy !=
+                   "source_upgrade_implies_replacement_upgrade"
+               || !binding.SourceCard.IsUpgraded
+               || card.IsUpgraded;
+    }
 
     private static bool IsHolderClickable(NCardHolder holder) =>
         ClickableField?.GetValue(holder) is true;

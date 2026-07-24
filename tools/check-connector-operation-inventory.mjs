@@ -20,6 +20,11 @@ const gatewayHostPath = path.join(root, "STS2MCP/McpMod.cs");
 const legacyRoutePolicyPath = path.join(root, "STS2MCP/LegacyV1RoutePolicy.cs");
 const mcpServerPath = path.join(root, "STS2MCP/mcp/server.py");
 const manifestPath = path.join(root, "STS2MCP/BridgeV2/Runtime/BridgeContractManifest.cs");
+const bridgeContractsPath = path.join(root, "STS2MCP/BridgeV2/Protocol/BridgeContracts.cs");
+const reProtocolPath = path.join(
+  root,
+  "Re-SpireAgent/src/integrations/sts2mcp/bridgeV2Protocol.ts"
+);
 
 const inventory = JSON.parse(await readFile(inventoryPath, "utf8"));
 const legacySource = await readFile(legacySourcePath, "utf8");
@@ -27,17 +32,33 @@ const gatewayHostSource = await readFile(gatewayHostPath, "utf8");
 const legacyRoutePolicySource = await readFile(legacyRoutePolicyPath, "utf8");
 const mcpServerSource = await readFile(mcpServerPath, "utf8");
 const manifestSource = await readFile(manifestPath, "utf8");
+const bridgeContractsSource = await readFile(bridgeContractsPath, "utf8");
+const reProtocolSource = await readFile(reProtocolPath, "utf8");
 
 if (inventory.schema_version !== 2) fail("unsupported inventory schema_version");
 if (inventory.gate_1_status !== "closed_bounded_v2_baseline") {
   fail("gate_1_status must name the bounded Gate 1 closeout");
 }
-if (inventory.gate_1_runtime_seal !== "pending_preview61_neows_fury_organic_lifecycle") {
-  fail("Gate 1 runtime seal must remain pending until Neow's Fury is organically exercised");
+if (inventory.gate_1_runtime_seal
+    !== "closed_preview61_neows_fury_organic_lifecycle_run_20260724045013_mgcq3a") {
+  fail("Gate 1 runtime seal must retain the exact closed Preview.61 Organic evidence scope");
 }
-if (inventory.current_source_protocol !== "2.0-preview.61"
-    || inventory.last_loaded_protocol !== "2.0-preview.61") {
-  fail("source and loaded protocol evidence boundary drifted");
+const csharpProtocol = bridgeContractsSource.match(
+  /ProtocolVersion\s*=\s*"([^"]+)"/u
+)?.[1];
+const reProtocol = reProtocolSource.match(
+  /SUPPORTED_BRIDGE_V2_PROTOCOL\s*=\s*"([^"]+)"/u
+)?.[1];
+if (!csharpProtocol || !reProtocol || csharpProtocol !== reProtocol) {
+  fail("C# and Re source protocol constants drifted");
+}
+if (inventory.current_source_protocol !== csharpProtocol) {
+  fail("inventory current_source_protocol drifted from source");
+}
+const sourcePreview = previewNumber(inventory.current_source_protocol);
+const loadedPreview = previewNumber(inventory.last_loaded_protocol);
+if (sourcePreview === null || loadedPreview === null || loadedPreview > sourcePreview) {
+  fail("last_loaded_protocol must be an explicit deployed preview not newer than source");
 }
 if (inventory.legacy_mutation_authority !== "retired") {
   fail("legacy_mutation_authority must remain retired");
@@ -117,6 +138,11 @@ function assertSameSet(expected, actual, label) {
   if (missing.length > 0 || extra.length > 0) {
     fail(`${label} drifted; missing=[${missing.join(", ")}], extra=[${extra.join(", ")}]`);
   }
+}
+
+function previewNumber(protocol) {
+  const match = /^2\.0-preview\.(\d+)$/u.exec(protocol ?? "");
+  return match ? Number.parseInt(match[1], 10) : null;
 }
 
 function fail(message) {

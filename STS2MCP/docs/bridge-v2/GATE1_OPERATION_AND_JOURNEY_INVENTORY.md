@@ -40,7 +40,7 @@ they do not silently fall back.
 | root menu -> standard run setup | `main_menu`, `singleplayer_menu`, `character_select` | exact Re canaries reached a real run; final-artifact recheck repeated `main_menu -> singleplayer_menu -> main_menu` with command completion and one-poll successors | first-run tutorial and abandon confirmation remain unsupported; current operations are canary, not broadly qualified |
 | run start -> Neow -> map | `event_option`, then `map_navigation` | 2026-07-22 exact Re journey selected Winged Boots, proceeded, and reached an actionable map | more event origins remain evidence debt |
 | map -> ordinary combat | `choose_map_node` -> `combat_turn` | 2026-07-22 exact Re journey settled after 9 polls / about 1.9 seconds | long-run diversity and unusual room transitions remain; current source suppresses UI-travelable coordinates already present in `RunState.VisitedMapCoords`, but that repair needs a newly loaded ordinary-map canary |
-| ordinary combat | `combat_turn` plus bounded child selectors | current combat-turn contract is qualified for the exact build; historical runs exercised Headbutt, Graveblast, Cleanse, and Dredge selectors and exposed Quasar, Knowledge Demon, Charge, Seance, and Neow's Fury source gaps | Loaded Preview.61 structurally represents exact Headbutt, Graveblast, Cleanse, Seance, Dredge, Charge, and Neow's Fury while Gateway source/task bindings and witnesses remain purpose-specific; Neow Organic lifecycle is pending, and every unknown selector stays fail closed |
+| ordinary combat | `combat_turn` plus bounded child selectors | current combat-turn contract is qualified for the exact build; Preview.61 run `run-20260724045013-mgcq3a` completed the Neow's Fury play/select/confirm lifecycle; prior runs exercised Headbutt, Graveblast, Cleanse and Dredge | Preview.62 registry/source audit covers thirteen exact owner-bound sources without new provider branches; six new entries remain Organic-pending. Tutor's target-player ownership and every other unregistered selector stay fail closed |
 | reward -> card reward -> map | `reward_claim`, `card_reward_selection`, `map_navigation` | 2026-07-22 exact Re canary claimed gold, potion, opened a card reward, selected Headbutt, and proceeded to an actionable map | linked/special rewards and more reward origins remain |
 | shop including removal | `shop_room`, `shop_inventory`, `deck_removal_selection` | source-audited and historical canaries; removal is qualified | repeat exact current-identity purchase/removal journey |
 | rest including Smith | `rest_site`, `deck_upgrade_selection` | exact-build qualified contracts | source diversity for nonstandard rest options |
@@ -90,9 +90,10 @@ canary/qualified tier.
 
 ## Post-Closeout Priority
 
-1. Install/cold-load Preview.61 and verify the exact Neow's Fury lifecycle.
-2. Begin Gate 2 non-authorizing transaction-correlation and visible-information
+1. Begin Gate 2 non-authorizing transaction-correlation and visible-information
    work without changing current permission tiers.
+2. Run the non-authorizing exact-assembly audit on each exact build and review
+   every unregistered caller before registry changes.
 3. Renew selector/shop/rest/run-end evidence only when a concrete Gate 2
    question or runtime regression needs it.
 4. Audit standalone visible potion discard only if it blocks an ordinary run.

@@ -1,5 +1,13 @@
 # Gate 1 Closeout And Selector Transaction Architecture Audit
 
+> **Superseded current-status note, 2026-07-24:** Later exact Preview.61 run
+> `run-20260724045013-mgcq3a` completed the Neow's Fury play/select/confirm
+> lifecycle and closed the bounded Gate 1 runtime seal. Preview.62 then moved
+> reviewed exact-environment and source contracts into fail-closed embedded
+> policy. Preserve the body below as the evidence-time audit; use
+> [Gate 1 adaptation closeout](GATE1_ADAPTATION_AND_COMPATIBILITY_CLOSEOUT_2026-07-24.md)
+> and [Current Status](CURRENT_STATUS.md) for current truth.
+
 Status: Gate 1 engineering closeout; current source/build evidence only where
 explicitly stated. This report does not grant Organic Qualification.
 

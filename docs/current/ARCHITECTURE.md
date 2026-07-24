@@ -42,18 +42,21 @@ yet.
   than a raw object dump.
 - Version, module, Modset, source binding, ownership, visibility, permission,
   or outcome uncertainty fails closed.
+- Embedded adaptation data is validated before scope publication. Invalid
+  source registries suppress their affected Surface only; invalid environment
+  policy suppresses all authority and both cases emit typed diagnostics.
 
 ## Current Architectural Constraint
 
-The Gateway and Re share the mechanically checked `2.0-preview.61` source
-contract. Gate 1 repository/source closeout establishes a bounded v2 mutation
-baseline: Re and the default MCP adapter are v2-only, and the current-source
-Gateway v1 HTTP surface is retired.
+The Gateway and Re share the mechanically checked `2.0-preview.62` source
+contract. Gate 1 establishes a bounded v2 connector baseline: Re and the
+default MCP adapter are v2-only, and the current-source Gateway v1 HTTP surface
+is retired.
 Historical v1 JSONL remains replay-readable as stored evidence, but no v1
-sidecar may contribute live facts or action authority. Preview.61 is now
-installed, cold-loaded, and strictly decoded by Re on the exact local identity.
-That deployment evidence does not inherit or create Organic transaction
-qualification; the bounded Neow's Fury lifecycle remains the runtime-seal item.
+sidecar may contribute live facts or action authority. The final Preview.61
+Neow's Fury lifecycle supplied the Gate 1 runtime seal. Preview.62 source,
+tests, audit and exact cold-loaded deployment remain separate evidence; none
+inherits Preview.61 Organic qualification.
 
 Combat-pile choice is the first production structural transaction contract.
 Re reads closed mutation and commit semantics rather than a union of source
@@ -61,6 +64,20 @@ card names. The Gateway still proves the exact native source task, publishes
 only opaque actions, resumes the game-owned continuation, and checks a semantic
 post-state witness. This reduces consumer coupling without creating a universal
 effect API or automatic authority for unknown sources.
+
+Preview.62 makes the proven repetition explicit:
+
+- a reviewed embedded source registry maps exact native source tasks onto a
+  closed interaction/witness topology;
+- one generic binding and provider path consumes that registry;
+- a reviewed embedded exact-environment policy owns build-level Surface and
+  Inspection tiers;
+- a non-authorizing exact-assembly audit discovers callers and verifies
+  selector/commit structure.
+
+Discovery, verification, authorization and qualification remain separate.
+Registry or policy presence cannot bypass exact runtime identity, operation
+scope, current legality, execute-time revalidation or runtime evidence.
 
 ## Observation And Strategy Projection Boundary
 

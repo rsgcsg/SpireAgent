@@ -17,14 +17,16 @@ third-party clients.
 
 ## Current Truth
 
-The active connector source shares `2.0-preview.61` between C# and
-Re-SpireAgent; Re normalized schema is `26`. The repository-level Gate 1
-closeout establishes a bounded ordinary-single-player v2 mutation baseline:
-Re and the default MCP adapter are v2-only, and the entire Gateway `/api/v1`
-namespace is retired. Preview.61 is built, installed, cold-loaded, and strictly
-decoded by Re on the exact local game/Modset identity. The remaining Gate 1
-runtime-seal item is a bounded Organic Neow's Fury lifecycle; cold-load evidence
-alone does not qualify that transaction.
+The active connector source shares `2.0-preview.62` between C# and
+Re-SpireAgent; Re normalized schema is `26`. Gate 1 is closed as a bounded
+ordinary-single-player v2 connector baseline: Re and the default MCP adapter
+are v2-only, the entire Gateway `/api/v1` namespace is retired, and the final
+Neow's Fury lifecycle was completed under the recorded Preview.61 exact
+identity. Preview.62 adds reviewed source/build registries and a
+non-authorizing exact-assembly audit; new registry entries do not inherit
+Organic qualification. The local Release is installed and cold-loaded with a
+matching built/installed/loaded SHA; exact identity remains recorded in
+[current status](docs/current/STATUS.md).
 
 Bridge v2's safety kernel remains the current direction: one active input
 owner, opaque state-bound actions, execute-time validation, semantic completion,
@@ -54,6 +56,10 @@ npm run check
 
 # Current documentation links only; archive material is intentionally excluded
 npm run check:docs
+
+# Non-authorizing exact-assembly compatibility report
+export STS2_GAME_DIR="/path/to/Slay the Spire 2"
+npm run audit:connector-compatibility
 ```
 
 Gateway checks need an installed copy of Slay the Spire 2 and `STS2_GAME_DIR`.

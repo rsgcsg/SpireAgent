@@ -80,6 +80,9 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
             assembly_module_version_ids: mod.assemblies.map((assembly) => assembly.module_version_id)
           })),
           compatibility_status: bridge.game.compatibility.status,
+          compatibility_policy_id: bridge.game.compatibility.compatibility_policy_id,
+          compatibility_policy_digest: bridge.game.compatibility.compatibility_policy_digest,
+          compatibility_adaptation_level: bridge.game.compatibility.adaptation_level,
           action_execution_allowed: bridge.game.compatibility.action_execution_allowed,
           state_observation_allowed: bridge.game.compatibility.state_observation_allowed,
           inspection_allowed: bridge.game.compatibility.inspection_allowed,

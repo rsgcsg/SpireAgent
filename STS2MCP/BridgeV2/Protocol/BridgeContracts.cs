@@ -7,7 +7,7 @@ namespace STS2_MCP.BridgeV2.Protocol;
 
 public static class BridgeV2Contract
 {
-    public const string ProtocolVersion = "2.0-preview.61";
+    public const string ProtocolVersion = "2.0-preview.62";
     public const string ObservationPolicyId = "player_visible_ui_v1";
 }
 
@@ -46,6 +46,14 @@ public sealed record CompatibilityAssessment(
     // Exact operation scopes are the sole action-authority source for strict clients.
     public IReadOnlyList<ActionPermissionScope> ActionPermissionScopes { get; init; } =
         Array.Empty<ActionPermissionScope>();
+
+    // The reviewed embedded policy is auditable data, not self-authorizing
+    // discovery. Unknown or invalid policy data leaves the Gateway fail closed.
+    public string CompatibilityPolicyId { get; init; } = "unavailable";
+
+    public string CompatibilityPolicyDigest { get; init; } = "unavailable";
+
+    public string AdaptationLevel { get; init; } = "diagnostic_only";
 }
 
 public sealed record GameBuildIdentity(

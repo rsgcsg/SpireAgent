@@ -1,10 +1,12 @@
 # Re-SpireAgent RE-P1
 
 > Compatibility status, 2026-07-24: Re and C# share source contract
-> `2.0-preview.61`; Re normalized schema is `26`. Gate 1 source/repository
-> closeout is complete as a bounded v2 mutation baseline. Preview.61 is
-> installed, cold-loaded, and strictly decoded by Re; Organic Neow's Fury
-> evidence remains pending.
+> `2.0-preview.62`; Re normalized schema is `26`. Gate 1 is closed as a
+> bounded ordinary-single-player v2 connector baseline. Preview.61 supplied
+> the final Neow's Fury Organic runtime seal; Preview.62 source/audit evidence
+> does not automatically qualify its new registry entries. Preview.62 is
+> installed/cold-loaded locally and strict Re inspection passes on its exact
+> recorded identity.
 
 > Product-boundary warning: direct Re-to-Gateway REST and `.env.local` provider
 > keys are developer workflows, not the target consumer architecture. The
@@ -22,7 +24,7 @@ waits for the Bridge command lifecycle, and records the complete evidence.
 
 RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, shadow/live modes, policy promotion, or the old project's phase machinery. Its job is to make one decision path correct and auditable.
 
-Re's current strict client contract is Bridge `2.0-preview.61` on exact game
+Re's current strict client contract is Bridge `2.0-preview.62` on exact game
 identity `v0.109.0|c12f634d|-1639417500`. The separate
 `release_declared_main_assembly_hash=-840572606` is diagnostic provenance, not
 permission authority. Re requires capabilities and every
@@ -110,6 +112,12 @@ authority still comes only from the Gateway's opaque advertised actions.
 Preview.61 also adds exact Neow's Fury optional discard-to-hand selection with
 manual confirm and zero-selection support. This does not authorize a universal
 selector or client-supplied effect payload.
+
+Preview.62 requires an exact `compatibility_policy_id`, policy digest and
+adaptation level to agree between capabilities and state. Re records those
+fields for diagnosis but does not use them to invent authority. Six additional
+combat-pile sources reuse the closed Gateway contract without new Re branches;
+Tutor remains rejected because its participant binding is different.
 
 Preview.60 adds exact Quasar and Knowledge Demon without treating their shared
 card grid as shared business semantics: Quasar is skippable and preserves

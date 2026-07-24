@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "policy_id": "bridge_v2_exact_environment_policy_2026_07_24",
+  "authorization_mode": "reviewed_embedded_policy_only",
+  "environments": [
+    {
+      "version": "0.108.0",
+      "commit": "58694f64",
+      "main_assembly_hash": -2044609792,
+      "status": "supported_exact",
+      "action_execution_allowed": true,
+      "state_observation_allowed": true,
+      "inspection_allowed": true,
+      "qualified_surface_kinds": [],
+      "canary_surface_kinds": [],
+      "qualified_inspection_kinds": [],
+      "canary_inspection_kinds": [],
+      "observation_only_surface_kinds": [],
+      "detail": "Recognized historical exact identity with no current Bridge v2 Surface or Inspection scope. Exact identity is necessary but an empty explicit scope remains empty."
+    },
+    {
+      "version": "0.109.0",
+      "commit": "c12f634d",
+      "main_assembly_hash": -1639417500,
+      "status": "qualified_scoped",
+      "action_execution_allowed": true,
+      "state_observation_allowed": true,
+      "inspection_allowed": true,
+      "qualified_surface_kinds": [
+        "deck_removal_selection",
+        "deck_upgrade_selection",
+        "combat_turn",
+        "combat_hand_card_selection",
+        "rest_site"
+      ],
+      "canary_surface_kinds": [
+        "event_card_acquisition",
+        "reward_claim",
+        "card_reward_selection",
+        "map_navigation",
+        "shop_inventory",
+        "shop_room",
+        "treasure_room",
+        "game_over",
+        "card_bundle_selection",
+        "character_select",
+        "main_menu",
+        "singleplayer_menu",
+        "event_dialogue",
+        "event_option",
+        "deck_transform_selection",
+        "wood_carvings_replacement_selection",
+        "deck_enchant_selection",
+        "generated_card_choice",
+        "combat_pile_card_selection",
+        "relic_deck_removal_selection",
+        "reward_deck_removal_selection"
+      ],
+      "qualified_inspection_kinds": [
+        "run_deck"
+      ],
+      "canary_inspection_kinds": [
+        "combat_piles",
+        "shop_catalog"
+      ],
+      "observation_only_surface_kinds": [],
+      "detail": "Exact v0.109.0 scoped policy. Only the listed qualified/canary Surface and Inspection families may be projected into operation scopes; source binding, current legality, execute-time identity, and semantic completion still apply."
+    },
+    {
+      "version": "0.109.0",
+      "commit": "c12f634d",
+      "main_assembly_hash": 1833084275,
+      "status": "qualified_scoped",
+      "action_execution_allowed": true,
+      "state_observation_allowed": true,
+      "inspection_allowed": false,
+      "qualified_surface_kinds": [],
+      "canary_surface_kinds": [
+        "event_option",
+        "event_card_acquisition",
+        "map_navigation"
+      ],
+      "qualified_inspection_kinds": [],
+      "canary_inspection_kinds": [],
+      "observation_only_surface_kinds": [],
+      "detail": "Exact alternate v0.109.0 canary policy. Only event_option, event_card_acquisition, and map_navigation canaries are enabled; all other actions and every Inspection remain disabled."
+    }
+  ]
+}

@@ -439,6 +439,11 @@ public sealed class BridgeContractTests
         Assert.False(compatibility.InspectionAllowed);
         Assert.Empty(compatibility.ActionExecutionSurfaceKinds);
         Assert.Empty(compatibility.ActionCanarySurfaceKinds);
+        Assert.Equal(
+            "bridge_v2_exact_environment_policy_2026_07_24",
+            compatibility.CompatibilityPolicyId);
+        Assert.Matches("^[a-f0-9]{64}$", compatibility.CompatibilityPolicyDigest);
+        Assert.Equal("diagnostic_only", compatibility.AdaptationLevel);
     }
 
     [Fact]
@@ -468,6 +473,12 @@ public sealed class BridgeContractTests
         Assert.True(BridgeSurfacePermission.IsActionPermitted(compatibility, "combat_pile_card_selection"));
         Assert.DoesNotContain("combat_pile_card_selection", compatibility.ActionExecutionSurfaceKinds);
         Assert.Contains("combat_pile_card_selection", compatibility.ActionCanarySurfaceKinds);
+        Assert.Null(BridgeExactEnvironmentPolicy.LoadError);
+        Assert.Equal(
+            "bridge_v2_exact_environment_policy_2026_07_24",
+            compatibility.CompatibilityPolicyId);
+        Assert.Matches("^[a-f0-9]{64}$", compatibility.CompatibilityPolicyDigest);
+        Assert.Equal("reviewed_exact_environment", compatibility.AdaptationLevel);
     }
 
     [Fact]
@@ -1994,10 +2005,39 @@ public sealed class BridgeContractTests
     }
 
     [Fact]
-    public void ExactCardSpecificSelectionBindingsResolveCurrentGameMethods()
+    public void ReviewedCombatPileRegistryResolvesAllDeclaredOnPlayBindings()
     {
-        Assert.Equal("OnPlay", ChargeCombatPileSelectionSourcePatch.ResolveTargetMethod().Name);
-        Assert.Equal("OnPlay", NeowsFuryCombatPileSelectionSourcePatch.ResolveTargetMethod().Name);
+        Assert.Null(CombatPileSourceContractRegistry.LoadError);
+        Assert.Equal(13, CombatPileSourceContractRegistry.Contracts.Count);
+        Assert.Equal(
+            new[]
+            {
+                "charge",
+                "cleanse",
+                "cosmic_indifference",
+                "dredge",
+                "hologram",
+                "neows_fury",
+                "seance",
+                "secret_technique",
+                "secret_weapon",
+                "seeker_strike",
+                "wish"
+            },
+            CombatPileSourceContractRegistry.Contracts
+                .Where(contract => contract.HookMode == "declared_on_play")
+                .Select(contract => contract.SourceKind)
+                .OrderBy(value => value, StringComparer.Ordinal)
+                .ToArray());
+        Assert.Equal(
+            11,
+            DeclaredOnPlayCombatPileSelectionSourcePatch.ResolveTargetMethods().Count);
+        Assert.DoesNotContain(
+            CombatPileSourceContractRegistry.Contracts,
+            contract => contract.SourceKind == "tutor");
+        Assert.All(
+            DeclaredOnPlayCombatPileSelectionSourcePatch.ResolveTargetMethods(),
+            method => Assert.Equal("OnPlay", method.Name));
         Assert.Equal("ChooseCurse", GeneratedCardChoiceKnowledgeDemonPatch.ResolveTargetMethod().Name);
     }
 

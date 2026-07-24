@@ -1,10 +1,10 @@
 # Real Productization Architecture Audit And Roadmap
 
 > Current-status redirect, 2026-07-24: Gate 1 is closed as a bounded v2
-> mutation baseline on source `2.0-preview.61`; Re/default MCP are v2-only and
-> the full Gateway v1 namespace is retired. Preview.61 is installed and
-> cold-loaded; its bounded Neow's Fury Organic lifecycle remains the runtime
-> seal before permission expansion. The baseline table and dated post-audit notes
+> connector baseline; Re/default MCP are v2-only and the full Gateway v1
+> namespace is retired. Preview.61 supplied the exact Neow's Fury Organic
+> runtime seal. Preview.62 adds reviewed adaptation policy and audit support
+> without inheriting qualification. The baseline table and dated post-audit notes
 > below preserve what was known when this audit was written; they are not
 > current runtime truth. See `../STATUS.md` and the Connector evidence.
 

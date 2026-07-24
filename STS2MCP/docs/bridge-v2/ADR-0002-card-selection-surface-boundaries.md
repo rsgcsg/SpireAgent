@@ -1,5 +1,10 @@
 # ADR-0002: Preserve Card-Selection Surface Boundaries
 
+> Implementation note, 2026-07-24: Preview.62 preserves this semantic boundary
+> while moving reviewed combat-pile source contracts into a validated embedded
+> registry. Registry discovery is non-authorizing; unknown sources and Tutor's
+> distinct target-player ownership still fail closed.
+
 Status: accepted safety boundary; transaction-shape portion refined by
 `2.0-preview.61`
 Date: 2026-07-17

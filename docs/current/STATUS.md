@@ -11,13 +11,11 @@ This is the canonical short current-state document for the rebuilt project.
 
 ## Current Gate
 
-**Gate 1 repository/source closeout is complete as a bounded
-ordinary-single-player v2 mutation baseline. Its runtime seal is pending the
-bounded Preview.61 Neow's Fury Organic lifecycle. Preview.61 install, cold-load,
-v1 retirement, and strict Re negotiation are verified; Gate 2 must not expand
-runtime permission before the remaining lifecycle seal.**
+**Gate 1 is closed as a bounded ordinary-single-player v2 connector
+baseline. Gate 2 player-visible-information closure may begin without expanding
+unknown mutation authority.**
 
-Current source contract is `2.0-preview.61`; Re normalized schema is `26`.
+Current source contract is `2.0-preview.62`; Re normalized schema is `26`.
 Re and the default MCP adapter use only Bridge v2 opaque actions. Gateway v1
 state reconstruction and mutation are fully retired; every `/api/v1` request
 returns `410 Gone`. Unsupported variants still fail closed.
@@ -29,7 +27,8 @@ semantics remain unsupported or outside the bounded gate.
 
 ## Evidence Boundary
 
-The currently loaded Preview.61 identity is:
+The Gate 1 Organic runtime seal remains attributed to the loaded Preview.61
+identity:
 
 ```text
 SHA     9b6f62161f8c6c286a73cb157430b441014c5148ff702ea96894e6f702386a99
@@ -39,34 +38,58 @@ game    v0.109.0|c12f634d|-1639417500
 Modset  exact_bridge_only
 ```
 
-Run `run-20260723150256-d2thtq` then safely stopped at an exact Neow's
-Fury optional discard-to-hand selector because Preview.60 lacked its source
-binding. Preview.61 implements that native `min=0`, dynamic-max,
-manual-confirm transaction and replaces Re's source-card union with a closed
-structural combat-pile transaction contract.
+Run `run-20260724045013-mgcq3a` completed exact Neow's Fury play, selection and
+manual confirmation with source-task closure and exact discard-to-hand
+post-state evidence. This closes the prior runtime-seal blocker.
 
-Preview.61 passes C# contract tests, Re typecheck/tests/build, Python syntax,
-and Release build. The final DLL SHA matches the installed and loaded artifact;
-Re strictly decodes its capabilities and main-menu state. Read-only endpoint
-verification confirms `/api/v1` and `/api/v1/singleplayer` return `410 Gone`.
-It still has no Organic Neow's Fury evidence.
+Preview.62 moves exact environment scopes to an embedded reviewed policy,
+replaces source-specific combat-pile C# branches with a closed registry, and
+adds a non-authorizing exact-assembly compatibility audit. Six newly discovered
+sources are registry canary candidates; Tutor remains a deliberate negative
+holdout because its selected player comes from the card target. Preview.62
+source/tests/audit may not inherit Preview.61 Organic qualification.
+
+Preview.62 has also been built, installed and Steam cold-loaded on the exact
+local environment:
+
+```text
+SHA      d66f5986f8216104fec76412c4b46b4c863076d0c8c7c5870a66fdb9f0c5a892
+MVID     b7bf3824-80bf-4281-9267-262595ce0f49
+runtime  6cf5f02288ed40448634656414524f6b
+game     v0.109.0|c12f634d|-1639417500
+Modset   exact_bridge_only
+fingerprint 39d43817a8419e7065ce101aa42bced25e30b914fe0341588ab748822aa0662e
+policy   bridge_v2_exact_environment_policy_2026_07_24
+digest   1a3f5107e833bb5d561a36bbc2756340392225380088430229d7ef2dcf659f8f
+```
+
+Built, installed and loaded SHA matched; Re strictly decoded the stable
+main-menu state; both sampled v1 routes returned `410`. This is deployment and
+consumer evidence, not Organic qualification for Preview.62 gameplay sources.
+On the same exact runtime, an operator-directed bounded canary completed
+`main_menu -> singleplayer_menu -> main_menu` through two advertised opaque
+actions and coherent successor states. Each action was submitted once; a local
+polling-script error resumed the existing request rather than resubmitting it.
+This rechecks only the established menu canary.
 
 ## Immediate Next Step
 
-Run one bounded Neow's Fury select/deselect/confirm lifecycle under the loaded
-Preview.61 identity. After that, begin Gate 2 with non-authorizing
-transaction-correlation shadow and player-visible information closure. Do not
-restore v1 or infer authority for an unknown selector.
+Proceed to Gate 2 player-visible-information closure and bounded,
+non-authorizing transaction-correlation work. Collect new source canaries only
+when naturally reachable; do not restore v1 or infer authority from discovery
+alone.
 
 See the
 [Gate 1 closeout and selector audit](../../STS2MCP/docs/bridge-v2/GATE1_CLOSEOUT_AND_SELECTOR_TRANSACTION_AUDIT_2026-07-24.md)
+and the
+[Gate 1 adaptation closeout](../../STS2MCP/docs/bridge-v2/GATE1_ADAPTATION_AND_COMPATIBILITY_CLOSEOUT_2026-07-24.md)
 and the
 [operation inventory](../../STS2MCP/docs/bridge-v2/OPERATION_RETIREMENT_INVENTORY.json).
 
 ## Explicit Non-Claims
 
-- Preview.61 is installed and loaded, but Neow's Fury is not yet organically
-  exercised or qualified on this identity.
+- Preview.62 is not organically qualified merely because source, tests and
+  static exact-assembly audit pass.
 - Gate 1 closure is not complete-game or full-visible-information closure.
 - Historical v1 source and records are archive evidence, not a runtime fallback.
 - Companion, Workshop product, public Agent SDK, plugin platform, and Headless

@@ -8,7 +8,7 @@ matrix. This document records the Re-SpireAgent consumption boundary.
 
 ## Bridge v2 Current Client Contract
 
-Re strictly decodes `2.0-preview.61`. It accepts Bridge actions only when:
+Re strictly decodes `2.0-preview.62`. It accepts Bridge actions only when:
 
 - game, Modset, Bridge assembly SHA-256, MVID, and runtime identities match
   exact scoped capabilities and state;
@@ -41,7 +41,7 @@ artifacts.
 | `wood_carvings_replacement_selection` | `event + wood_carvings_replacement_selection`, exact Bird/Torus branch and known deterministic replacement | Bird select/cancel/reselect/confirm and exact run-deck post-state exercised on preview.56; Torus and repeat diversity pending |
 | `deck_enchant_selection` | `event + deck_enchant_selection`, exact target enchantment, selected instances, and selecting/preview stages | Self-Help Book action canary; semantic exact-card post-state confirmed, other origins fail closed |
 | `generated_card_choice` | source-discriminated run-deck, free combat-hand, unchanged-cost combat-hand, or immediate-effect choice | Preview.60 added strict Quasar and forced Knowledge Demon branches; current Preview.61 is loaded but those branches still need independently scoped Organic evidence. Discovery and every unbound source fail closed. |
-| structural `combat_pile_card_selection` | closed movement or same-index replacement, automatic or manual-confirm commit, exact source provenance, selected instances, and bounds | Loaded Preview.61 source/tests cover Headbutt, Graveblast, Cleanse, Seance, Dredge, Charge, and Neow's Fury; the Neow lifecycle remains pending |
+| structural `combat_pile_card_selection` | closed movement or same-index replacement, automatic or manual-confirm commit, exact source provenance, selected instances, and bounds | Preview.61 organically sealed Neow's Fury. Preview.62 reviewed registry/source audit covers Headbutt, Graveblast, Cleanse, Seance, Dredge, Charge, Neow's Fury, Cosmic Indifference, Hologram, Secret Technique, Secret Weapon, Seeker Strike, and Wish without new Re branches; new entries remain Organic-pending. Tutor is a deliberate target-owner negative holdout. |
 | `game_over` | `run_ended + game_over` | current-MVID loss intro -> summary -> return lifecycle confirmed; win/timeline diversity pending |
 | `run_deck` Inspection | typed player run-deck evidence | current-build read-only canary; no authority |
 | `combat_piles` Inspection | unordered draw/discard/exhaust card evidence | current-build read-only canary; no draw order or authority |

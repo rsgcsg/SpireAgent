@@ -10,9 +10,11 @@
 > loaded artifact. Current loaded identity and Gate status are owned by
 > [Bridge v2 Current Status](CURRENT_STATUS.md).
 
-Current source and loaded artifact are Preview.61. Cold-load and strict Re
-decode are verified, but no Preview.61 row below gains Organic qualification
-without its own bounded current-identity lifecycle.
+Current source contract is Preview.62. Preview.61 supplied the bounded Neow's
+Fury Organic lifecycle that sealed Gate 1. Preview.62 adds reviewed
+source/compatibility registries and a non-authorizing exact-assembly audit; it
+does not inherit any Preview.61 Organic qualification. Current loaded identity
+is owned by [Bridge v2 Current Status](CURRENT_STATUS.md), not this matrix.
 
 Historical Gate 0 execution evidence recorded game version/commit plus the
 release-declared hash `-840572606`, Gateway SHA
@@ -81,7 +83,7 @@ The `1833084275` environment inherits no permission from the current loaded
 | `wood_carvings_replacement_selection` | canary; Bird full lifecycle exercised on preview.56 | exact `WoodCarvings.Bird` source task, formatted known `PECK` semantics, select -> preview -> cancel -> reselect -> confirm, exact-original absent, PECK 0 -> 1, deck 12 -> 12, event Proceed -> map | Torus Organic lifecycle, repeated Bird evidence, Mods, and future builds remain unqualified; all other generic deck selectors fail closed |
 | `deck_enchant_selection` | Surface-level current-build canary; only Self-Help Book select/automatic preview/cancel/reselect/confirm was exercised | exact target enchantment ID/amount, exact selected instances, overlay stage, semantic exact-card enchantment witness, independent run-deck post-state; current Provider does not runtime-bind the Self-Help Book source named by manifest/evidence | other callers remain unqualified but are not source-suppressed on the Surface-permitted exact build; explicit preview button, cancelable close, multi-select, parent-transaction side effects, Mods, and future builds remain evidence/architecture debt |
 | `generated_card_choice` | source-scoped canary; Lead Paperweight, Colorless Potion, and Attack Potion selections exercised; Splash, Quasar, and Knowledge Demon are implemented but not Preview.60 Organic-exercised | exact `RelicCmd.Obtain`, native potion/Splash/Quasar play tasks, and Knowledge Demon `ChooseCurse` binding; separate run-deck, free combat-hand, unchanged-cost combat-hand, and immediate-effect witnesses | each unexercised branch still needs bounded evidence; skip/full-hand variants remain pending; Hefty Tablet, other generators, derived Mod types, and unknown sources fail closed |
-| structural `combat_pile_card_selection` with exact source/task bindings | source-scoped canaries; not a universal selector and not Surface-wide qualification | historical Organic evidence covers Headbutt draw-top, Graveblast hand movement, Cleanse draw-to-exhaust on Preview.57, and Dredge selected-set/auto-commit on Preview.59; source/tests cover Seance same-index Soul replacement, Charge exact-two Minion Dive Bomb replacement, and Preview.61 Neow's Fury optional manual-confirm discard-to-hand | Preview.61 must be installed/loaded and Neow exercised; Seance/Charge remain Organic-pending; dynamic Dredge counts and repeated diversity remain; unknown callers fail closed |
+| structural `combat_pile_card_selection` with exact source/task bindings | source-scoped canaries; not a universal selector and not Surface-wide qualification | historical Organic evidence covers Headbutt draw-top, Graveblast hand movement, Cleanse draw-to-exhaust on Preview.57, Dredge selected-set/auto-commit on Preview.59, and Preview.61 Neow's Fury select/confirm/discard-to-hand; Preview.62 reviewed source audit covers the same seven sources plus Cosmic Indifference, Hologram, Secret Technique, Secret Weapon, Seeker Strike, and Wish without source-specific Provider branches | Preview.62 and its six data-only additions remain Organic-pending; Seance/Charge also remain Organic-pending; dynamic Dredge counts and repeated diversity remain; Tutor requires a separate target-player ownership contract and every unregistered caller fails closed |
 | `event_dialogue` | canary | repeated v0.109 revealed-prefix advances with exact index witness | non-Neow/other ancient dialogue diversity remains evidence debt |
 | `event_option` | canary | typed text/card hover semantics, Neow Talisman effect, ordinary event replacement options, async `Nab the Map -> Proceed`, and Proceed to map | lethal-option and more linked-child diversity remain evidence debt |
 | `run_deck` Inspection | qualified read-only | exact removal, upgrade, enchant, bundle post-states | no arbitrary query or action authority |
@@ -97,7 +99,7 @@ The `1833084275` environment inherits no permission from the current loaded
 
 | Contract | Historical evidence | Why disabled now |
 |---|---|---|
-| combat-pile origins without an exact Headbutt/Graveblast/Cleanse/Seance/Dredge/Charge/Neow's Fury source binding | mixed historical and fresh loaded-identity child appearances | all other purposes remain source-unresolved and fail closed |
+| combat-pile origins not present in the reviewed embedded source registry | exact-assembly audit reports Tutor as the current negative holdout | Tutor uses target-player rather than source-owner semantics and requires an independently proven participant-binding contract; every other unregistered purpose remains source-unresolved and fails closed |
 
 ## Unsupported Or Legacy-Owned
 

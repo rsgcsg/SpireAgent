@@ -39,6 +39,9 @@ Current cross-component audits:
 - [Gate 1 closeout and selector transaction audit](../../STS2MCP/docs/bridge-v2/GATE1_CLOSEOUT_AND_SELECTOR_TRANSACTION_AUDIT_2026-07-24.md):
   exact Neow's Fury failure attribution, structural selector migration, v1
   mutation retirement, evidence limits, and Gate 2 entry order.
+- [Gate 1 adaptation and compatibility closeout](../../STS2MCP/docs/bridge-v2/GATE1_ADAPTATION_AND_COMPATIBILITY_CLOSEOUT_2026-07-24.md):
+  final runtime seal, reviewed source/environment registries, non-authorizing
+  exact-assembly audit, zero-core-code boundary and remaining Mod risks.
 
 Component-owned truth:
 
