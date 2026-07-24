@@ -43,15 +43,27 @@ candidates; Tutor remains fail closed because it selects from
 `cardPlay.Target.Player`. Preview.62 source/tests/audit do not inherit
 Preview.61 Organic qualification.
 
-Preview.62 is now built, installed and Steam cold-loaded as:
+Post-closeout adaptation hardening keeps the Preview.62 wire contract and all
+permission tiers unchanged. Runtime and repository checks now consume one
+embedded seven-topology combat-pile catalog; source-named Witness classes have
+been replaced by mechanism-named transaction Witnesses. The exact-assembly
+audit emits layered fingerprints and conservative candidate classifications,
+then a versioned exact SHA/MVID scenario grades all thirteen reviewed sources
+and the Tutor target-player negative holdout. Six offline negative fixtures
+prove the grader rejects authorization effects, identity drift, unexpected
+callers and a ceiling above `diagnostic_only`. This is D2/static evidence, not
+loaded deployment or Organic qualification.
+
+The current post-D2 Preview.62 artifact is built, installed and Steam
+cold-loaded as:
 
 ```text
-SHA      d66f5986f8216104fec76412c4b46b4c863076d0c8c7c5870a66fdb9f0c5a892
-MVID     b7bf3824-80bf-4281-9267-262595ce0f49
-runtime  6cf5f02288ed40448634656414524f6b
+SHA      f22c152aa9a58e429fea4ecc25dcc83ef7666e481c1acecc754545f428a8d8ab
+MVID     546ef308-f4ff-45f4-8a07-8d0fff70c304
+runtime  2b82c83dcf27427f816857fcdbcdc1e7
 game     v0.109.0|c12f634d|-1639417500
 Modset   exact_bridge_only
-fingerprint 39d43817a8419e7065ce101aa42bced25e30b914fe0341588ab748822aa0662e
+fingerprint eab9ee21fd1d9180b16585c9a528d7f2b831bb7199b08fdf98bf97cf3a49bb57
 policy   bridge_v2_exact_environment_policy_2026_07_24
 digest   1a3f5107e833bb5d561a36bbc2756340392225380088430229d7ef2dcf659f8f
 ```
@@ -59,9 +71,14 @@ digest   1a3f5107e833bb5d561a36bbc2756340392225380088430229d7ef2dcf659f8f
 Built, installed and loaded SHA matched. Re strict inspection decoded the same
 protocol, Bridge/game/Modset identity and policy provenance. The loaded v1 root
 and child probes returned `410`. This is installation/load/consumer evidence,
-not Organic qualification for the six newly registered sources.
+not an action Canary or Organic qualification for the six newly registered
+sources.
 
-The same exact runtime completed an operator-directed bounded menu round trip:
+The predecessor Preview.62 artifact
+`d66f5986f8216104fec76412c4b46b4c863076d0c8c7c5870a66fdb9f0c5a892`,
+MVID `b7bf3824-80bf-4281-9267-262595ce0f49`, runtime
+`6cf5f02288ed40448634656414524f6b`, completed an operator-directed bounded
+menu round trip:
 
 ```text
 state_4d51f98937_1 main_menu
@@ -74,7 +91,8 @@ state_4d51f98937_3 main_menu
 Both actions were advertised, opaque and submitted once. A local polling
 script error after the first submission was recovered by polling the same
 request ID, never by resubmission. This rechecks the existing menu canary only;
-it does not qualify new registry entries.
+it does not qualify new registry entries or transfer to the current post-D2
+artifact.
 
 ## Dated Evidence Chronology
 
@@ -104,8 +122,9 @@ compatibility only. The prior Preview.59 Dredge journey does not transfer Gate
 
 ## Required Repair Order
 
-1. Begin Gate 2 with non-authorizing transaction correlation and concrete
-   player-visible-information closure; preserve current permission tiers.
+1. Keep new Gate 2 feature coverage paused until a read-only action-relevant
+   runtime patch inventory and one recorded-evidence assertion path close the
+   current adaptation-hardening window.
 2. Maintain the machine-checked closed Gate 1/v1 retirement inventory and run
    the non-authorizing exact-assembly compatibility audit on each exact build.
 3. Collect Preview.62 source canaries only when naturally reachable and keep

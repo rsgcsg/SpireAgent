@@ -127,6 +127,8 @@ internal static class CombatPileSourceContractRegistry
 
     private static string? Validate(IReadOnlyList<CombatPileSourceContract> contracts)
     {
+        if (CombatPileContractCatalog.LoadError != null)
+            return CombatPileContractCatalog.LoadError;
         if (contracts.Count == 0)
             return "Combat-pile source registry has no contracts.";
         if (contracts.Any(contract =>
@@ -149,42 +151,11 @@ internal static class CombatPileSourceContractRegistry
             return "Combat-pile source registry contains duplicate source kinds.";
         }
 
-        string[] hookModes = { "card_on_play_wrapper", "declared_on_play" };
-        string[] piles = { "draw", "discard", "hand", "exhaust" };
-        string[] commitModes = { "automatic_at_max", "manual_confirm" };
-        string[] bounds =
-        {
-            "fixed_exact",
-            "fixed_exact_capped_by_hand_space",
-            "dynamic_cards_optional_capped_by_hand_space"
-        };
-        string[] witnesses =
-        {
-            "move_one_to_top",
-            "move_one_to_hand_or_source_if_full",
-            "move_one_between_piles",
-            "replace_one_same_index",
-            "move_exact_batch_between_piles",
-            "replace_exact_batch_same_index",
-            "move_optional_batch_between_piles"
-        };
         foreach (CombatPileSourceContract contract in contracts)
         {
-            if (!hookModes.Contains(contract.HookMode, StringComparer.Ordinal)
-                || !piles.Contains(contract.SourcePile, StringComparer.Ordinal)
-                || !piles.Contains(contract.DestinationPile, StringComparer.Ordinal)
-                || !commitModes.Contains(contract.CommitMode, StringComparer.Ordinal)
-                || !bounds.Contains(contract.SelectionBounds, StringComparer.Ordinal)
-                || !witnesses.Contains(contract.WitnessKind, StringComparer.Ordinal)
-                || contract.SelectionCount < 0)
-            {
-                return $"Combat-pile source contract {contract.SourceKind} uses an unknown closed vocabulary value.";
-            }
-            if (contract.MutationKind == "replace_selected_cards_same_index"
-                && string.IsNullOrWhiteSpace(contract.ReplacementCardDefinitionId))
-            {
-                return $"Combat-pile source contract {contract.SourceKind} lacks its exact replacement identity.";
-            }
+            string? topologyError = CombatPileContractCatalog.Validate(contract);
+            if (topologyError != null)
+                return topologyError;
             if (AccessType(contract.SourceType) == null)
                 return $"Combat-pile source contract {contract.SourceKind} cannot resolve {contract.SourceType}.";
             if (contract.HookMode == "declared_on_play"
@@ -192,70 +163,8 @@ internal static class CombatPileSourceContractRegistry
             {
                 return $"Combat-pile source contract {contract.SourceKind} cannot resolve its exact declared OnPlay task.";
             }
-            string? topologyError = ValidateTopology(contract);
-            if (topologyError != null)
-                return topologyError;
         }
         return null;
-    }
-
-    private static string? ValidateTopology(CombatPileSourceContract contract)
-    {
-        bool IsMove() => contract.MutationKind == "move_selected_cards";
-        bool IsReplace() =>
-            contract.MutationKind == "replace_selected_cards_same_index"
-            && contract.SourcePile == contract.DestinationPile
-            && contract.DestinationPosition == "same_index"
-            && !string.IsNullOrWhiteSpace(contract.ReplacementCardDefinitionId);
-        bool IsFixed(int count) =>
-            contract.SelectionBounds == "fixed_exact"
-            && contract.SelectionCount == count;
-
-        bool valid = contract.WitnessKind switch
-        {
-            "move_one_to_top" =>
-                IsMove()
-                && IsFixed(1)
-                && contract.DestinationPosition == "top"
-                && contract.CommitMode == "automatic_at_max",
-            "move_one_to_hand_or_source_if_full" =>
-                IsMove()
-                && IsFixed(1)
-                && contract.DestinationPile == "hand"
-                && contract.DestinationPosition == "bottom"
-                && !string.IsNullOrWhiteSpace(contract.OverflowDestination)
-                && contract.CommitMode == "automatic_at_max",
-            "move_one_between_piles" =>
-                IsMove()
-                && IsFixed(1)
-                && contract.SourcePile != contract.DestinationPile
-                && contract.CommitMode == "automatic_at_max",
-            "replace_one_same_index" =>
-                IsReplace()
-                && IsFixed(1)
-                && contract.CommitMode == "automatic_at_max",
-            "move_exact_batch_between_piles" =>
-                IsMove()
-                && contract.SelectionBounds == "fixed_exact_capped_by_hand_space"
-                && contract.SelectionCount > 0
-                && contract.SourcePile != contract.DestinationPile
-                && contract.CommitMode == "automatic_at_max",
-            "replace_exact_batch_same_index" =>
-                IsReplace()
-                && contract.SelectionBounds == "fixed_exact"
-                && contract.SelectionCount > 1
-                && contract.CommitMode == "automatic_at_max",
-            "move_optional_batch_between_piles" =>
-                IsMove()
-                && contract.SelectionBounds == "dynamic_cards_optional_capped_by_hand_space"
-                && contract.SelectionCount == 0
-                && contract.SourcePile != contract.DestinationPile
-                && contract.CommitMode == "manual_confirm",
-            _ => false
-        };
-        return valid
-            ? null
-            : $"Combat-pile source contract {contract.SourceKind} has an inconsistent witness/mutation topology.";
     }
 
     private sealed record RegistryDocument(

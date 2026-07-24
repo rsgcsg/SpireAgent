@@ -12,8 +12,8 @@ This is the canonical short current-state document for the rebuilt project.
 ## Current Gate
 
 **Gate 1 is closed as a bounded ordinary-single-player v2 connector
-baseline. Gate 2 player-visible-information closure may begin without expanding
-unknown mutation authority.**
+baseline. Gate 2 remains the next functional coverage gate, but new Gate 2
+feature expansion is temporarily paused for Connector adaptation hardening.**
 
 Current source contract is `2.0-preview.62`; Re normalized schema is `26`.
 Re and the default MCP adapter use only Bridge v2 opaque actions. Gateway v1
@@ -49,40 +49,53 @@ sources are registry canary candidates; Tutor remains a deliberate negative
 holdout because its selected player comes from the card target. Preview.62
 source/tests/audit may not inherit Preview.61 Organic qualification.
 
-Preview.62 has also been built, installed and Steam cold-loaded on the exact
-local environment:
+The current source also has one non-authorizing D2 compatibility slice: a
+shared seven-topology contract catalog, mechanism-named transaction Witnesses,
+layered exact-assembly fingerprints, conservative candidate classification,
+the Tutor target-player negative holdout, an exact-assembly scenario manifest
+and a deterministic grader with six negative fixtures. None can write the
+registry or policy, grant canary permission, or declare qualification.
+
+The current post-D2 Preview.62 artifact has been built, installed and Steam
+cold-loaded on the exact local environment:
 
 ```text
-SHA      d66f5986f8216104fec76412c4b46b4c863076d0c8c7c5870a66fdb9f0c5a892
-MVID     b7bf3824-80bf-4281-9267-262595ce0f49
-runtime  6cf5f02288ed40448634656414524f6b
+SHA      f22c152aa9a58e429fea4ecc25dcc83ef7666e481c1acecc754545f428a8d8ab
+MVID     546ef308-f4ff-45f4-8a07-8d0fff70c304
+runtime  2b82c83dcf27427f816857fcdbcdc1e7
 game     v0.109.0|c12f634d|-1639417500
 Modset   exact_bridge_only
-fingerprint 39d43817a8419e7065ce101aa42bced25e30b914fe0341588ab748822aa0662e
+fingerprint eab9ee21fd1d9180b16585c9a528d7f2b831bb7199b08fdf98bf97cf3a49bb57
 policy   bridge_v2_exact_environment_policy_2026_07_24
 digest   1a3f5107e833bb5d561a36bbc2756340392225380088430229d7ef2dcf659f8f
 ```
 
 Built, installed and loaded SHA matched; Re strictly decoded the stable
 main-menu state; both sampled v1 routes returned `410`. This is deployment and
-consumer evidence, not Organic qualification for Preview.62 gameplay sources.
-On the same exact runtime, an operator-directed bounded canary completed
+consumer evidence, not an action Canary or Organic qualification for
+Preview.62 gameplay sources.
+
+The predecessor Preview.62 artifact
+`d66f5986...a892` completed an operator-directed bounded canary:
 `main_menu -> singleplayer_menu -> main_menu` through two advertised opaque
 actions and coherent successor states. Each action was submitted once; a local
 polling-script error resumed the existing request rather than resubmitting it.
-This rechecks only the established menu canary.
+That canary remains attributed to its predecessor SHA/MVID/runtime and does not
+transfer to the current post-D2 artifact.
 
 ## Immediate Next Step
 
-Proceed to Gate 2 player-visible-information closure and bounded,
-non-authorizing transaction-correlation work. Collect new source canaries only
-when naturally reachable; do not restore v1 or infer authority from discovery
-alone.
+Complete adaptation hardening with a read-only action-relevant runtime patch
+inventory and one recorded-evidence assertion path, then resume Gate 2
+player-visible-information closure. Do not expand mutation scopes, restore v1,
+or infer authority from a fingerprint, scenario fixture or grader result.
 
 See the
 [Gate 1 closeout and selector audit](../../STS2MCP/docs/bridge-v2/GATE1_CLOSEOUT_AND_SELECTOR_TRANSACTION_AUDIT_2026-07-24.md)
 and the
 [Gate 1 adaptation closeout](../../STS2MCP/docs/bridge-v2/GATE1_ADAPTATION_AND_COMPATIBILITY_CLOSEOUT_2026-07-24.md)
+and the
+[automatic-adaptation audit](audits/CONNECTOR_AUTOMATIC_ADAPTATION_AND_D_WORKFLOW_AUDIT_2026-07-24.md)
 and the
 [operation inventory](../../STS2MCP/docs/bridge-v2/OPERATION_RETIREMENT_INVENTORY.json).
 

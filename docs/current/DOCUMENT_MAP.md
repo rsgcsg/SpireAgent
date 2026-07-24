@@ -36,6 +36,10 @@ Current cross-component audits:
 - [Program-plan second review](audits/PROGRAM_PLAN_SECOND_REVIEW_2026-07-23.md):
   evidence-backed correction that makes internal D and official Agent A
   distinct workstreams without claiming a public platform or SDK.
+- [Connector automatic-adaptation and D-workflow audit](audits/CONNECTOR_AUTOMATIC_ADAPTATION_AND_D_WORKFLOW_AUDIT_2026-07-24.md):
+  critical review of zero-core-code adaptation, the runtime safety kernel,
+  operation fingerprints, conservative candidate classification and the first
+  non-authorizing D2 scenario/grader slice.
 - [Gate 1 closeout and selector transaction audit](../../STS2MCP/docs/bridge-v2/GATE1_CLOSEOUT_AND_SELECTOR_TRANSACTION_AUDIT_2026-07-24.md):
   exact Neow's Fury failure attribution, structural selector migration, v1
   mutation retirement, evidence limits, and Gate 2 entry order.

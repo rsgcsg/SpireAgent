@@ -1713,7 +1713,7 @@ public sealed class BridgeContractTests
         object wrongTop = new();
         object playedHeadbutt = new();
 
-        Assert.True(HeadbuttCombatPileWitness.Selected(
+        Assert.True(MoveOneToTopWitness.Selected(
             sourceCompleted: true,
             surfaceClosed: true,
             new[] { selected, otherDiscard },
@@ -1721,7 +1721,7 @@ public sealed class BridgeContractTests
             new[] { otherDiscard, playedHeadbutt },
             new[] { selected, oldDraw },
             selected));
-        Assert.False(HeadbuttCombatPileWitness.Selected(
+        Assert.False(MoveOneToTopWitness.Selected(
             sourceCompleted: true,
             surfaceClosed: true,
             new[] { selected, otherDiscard },
@@ -1729,7 +1729,7 @@ public sealed class BridgeContractTests
             new[] { otherDiscard },
             new[] { wrongTop, selected, oldDraw },
             selected));
-        Assert.False(HeadbuttCombatPileWitness.Selected(
+        Assert.False(MoveOneToTopWitness.Selected(
             sourceCompleted: false,
             surfaceClosed: true,
             new[] { selected, otherDiscard },
@@ -1747,7 +1747,7 @@ public sealed class BridgeContractTests
         object handCard = new();
         object playedGraveblast = new();
 
-        Assert.True(GraveblastCombatPileWitness.Selected(
+        Assert.True(MoveOneToDestinationOrFallbackWitness.Selected(
             sourceCompleted: true,
             surfaceClosed: true,
             new[] { selected, otherDiscard },
@@ -1756,7 +1756,7 @@ public sealed class BridgeContractTests
             new[] { handCard, selected },
             selected,
             maxHandSize: 10));
-        Assert.True(GraveblastCombatPileWitness.Selected(
+        Assert.True(MoveOneToDestinationOrFallbackWitness.Selected(
             sourceCompleted: true,
             surfaceClosed: true,
             new[] { selected, otherDiscard },
@@ -1765,7 +1765,7 @@ public sealed class BridgeContractTests
             Enumerable.Range(0, 10).Select(_ => new object()).ToArray(),
             selected,
             maxHandSize: 10));
-        Assert.False(GraveblastCombatPileWitness.Selected(
+        Assert.False(MoveOneToDestinationOrFallbackWitness.Selected(
             sourceCompleted: false,
             surfaceClosed: true,
             new[] { selected, otherDiscard },
@@ -1783,7 +1783,7 @@ public sealed class BridgeContractTests
         object otherDraw = new();
         object oldExhaust = new();
 
-        Assert.True(CleanseCombatPileWitness.Selected(
+        Assert.True(MoveOneBetweenPilesWitness.Selected(
             sourceCompleted: true,
             surfaceClosed: true,
             new[] { selected, otherDraw },
@@ -1791,7 +1791,7 @@ public sealed class BridgeContractTests
             new[] { otherDraw },
             new[] { oldExhaust, selected },
             selected));
-        Assert.False(CleanseCombatPileWitness.Selected(
+        Assert.False(MoveOneBetweenPilesWitness.Selected(
             sourceCompleted: true,
             surfaceClosed: true,
             new[] { selected, otherDraw },
@@ -1799,7 +1799,7 @@ public sealed class BridgeContractTests
             new[] { otherDraw },
             new[] { oldExhaust },
             selected));
-        Assert.False(CleanseCombatPileWitness.Selected(
+        Assert.False(MoveOneBetweenPilesWitness.Selected(
             sourceCompleted: false,
             surfaceClosed: true,
             new[] { selected, otherDraw },
@@ -1819,28 +1819,28 @@ public sealed class BridgeContractTests
         object wrongReplacement = new();
         object[] baseline = { before, selected, after };
 
-        Assert.True(SeanceCombatPileWitness.Selected(
+        Assert.True(ReplaceOneAtSameIndexWitness.Selected(
             sourceCompleted: true,
             surfaceClosed: true,
             baseline,
             new[] { before, soul, after },
             selected,
             candidate => ReferenceEquals(candidate, soul)));
-        Assert.False(SeanceCombatPileWitness.Selected(
+        Assert.False(ReplaceOneAtSameIndexWitness.Selected(
             sourceCompleted: true,
             surfaceClosed: true,
             baseline,
             new[] { before, wrongReplacement, after },
             selected,
             candidate => ReferenceEquals(candidate, soul)));
-        Assert.False(SeanceCombatPileWitness.Selected(
+        Assert.False(ReplaceOneAtSameIndexWitness.Selected(
             sourceCompleted: true,
             surfaceClosed: true,
             baseline,
             new[] { soul, before, after },
             selected,
             candidate => ReferenceEquals(candidate, soul)));
-        Assert.False(SeanceCombatPileWitness.Selected(
+        Assert.False(ReplaceOneAtSameIndexWitness.Selected(
             sourceCompleted: false,
             surfaceClosed: true,
             baseline,
@@ -1857,7 +1857,7 @@ public sealed class BridgeContractTests
         object third = new();
         object hand = new();
 
-        Assert.True(DredgeCombatPileWitness.SelectionChanged(
+        Assert.True(CombatPileSelectionWitness.SelectionChanged(
             sourceActive: true,
             surfaceOpen: true,
             new[] { first, second, third },
@@ -1868,7 +1868,7 @@ public sealed class BridgeContractTests
             new[] { first },
             first,
             wasSelected: false));
-        Assert.True(DredgeCombatPileWitness.SelectionChanged(
+        Assert.True(CombatPileSelectionWitness.SelectionChanged(
             sourceActive: true,
             surfaceOpen: true,
             new[] { first, second, third },
@@ -1879,7 +1879,7 @@ public sealed class BridgeContractTests
             Array.Empty<object>(),
             first,
             wasSelected: true));
-        Assert.False(DredgeCombatPileWitness.SelectionChanged(
+        Assert.False(CombatPileSelectionWitness.SelectionChanged(
             sourceActive: true,
             surfaceOpen: true,
             new[] { first, second, third },
@@ -1891,7 +1891,7 @@ public sealed class BridgeContractTests
             first,
             wasSelected: false));
 
-        Assert.True(DredgeCombatPileWitness.Completed(
+        Assert.True(MoveExactBatchWitness.Completed(
             sourceCompleted: true,
             surfaceClosed: true,
             new[] { first, second, third },
@@ -1900,7 +1900,7 @@ public sealed class BridgeContractTests
             new[] { hand, first, second },
             new[] { first, second },
             expectedSelectionCount: 2));
-        Assert.False(DredgeCombatPileWitness.Completed(
+        Assert.False(MoveExactBatchWitness.Completed(
             sourceCompleted: true,
             surfaceClosed: true,
             new[] { first, second, third },
@@ -1921,7 +1921,7 @@ public sealed class BridgeContractTests
         object secondReplacement = new();
         object[] baseline = { first, second, third };
 
-        Assert.True(ChargeCombatPileWitness.SelectionChanged(
+        Assert.True(ReplaceExactBatchAtSameIndexesWitness.SelectionChanged(
             sourceActive: true,
             surfaceOpen: true,
             baseline,
@@ -1930,20 +1930,22 @@ public sealed class BridgeContractTests
             new[] { first },
             first,
             wasSelected: false));
-        Assert.True(ChargeCombatPileWitness.Completed(
+        Assert.True(ReplaceExactBatchAtSameIndexesWitness.Completed(
             sourceCompleted: true,
             surfaceClosed: true,
             baseline,
             new[] { firstReplacement, secondReplacement, third },
             new[] { first, second },
+            expectedSelectionCount: 2,
             card => ReferenceEquals(card, firstReplacement)
                     || ReferenceEquals(card, secondReplacement)));
-        Assert.False(ChargeCombatPileWitness.Completed(
+        Assert.False(ReplaceExactBatchAtSameIndexesWitness.Completed(
             sourceCompleted: true,
             surfaceClosed: true,
             baseline,
             new[] { firstReplacement, second, third },
             new[] { first, second },
+            expectedSelectionCount: 2,
             card => ReferenceEquals(card, firstReplacement)));
     }
 
@@ -1955,7 +1957,7 @@ public sealed class BridgeContractTests
         object third = new();
         object hand = new();
 
-        Assert.True(NeowsFuryCombatPileWitness.SelectionChanged(
+        Assert.True(MoveOptionalBatchWitness.SelectionChanged(
             sourceActive: true,
             surfaceOpen: true,
             new[] { first, second, third },
@@ -1966,7 +1968,7 @@ public sealed class BridgeContractTests
             new[] { first },
             first,
             wasSelected: false));
-        Assert.True(NeowsFuryCombatPileWitness.Completed(
+        Assert.True(MoveOptionalBatchWitness.Completed(
             sourceCompleted: true,
             surfaceClosed: true,
             new[] { first, second, third },
@@ -1975,7 +1977,7 @@ public sealed class BridgeContractTests
             new[] { hand, first, second },
             new[] { first, second },
             maxSelect: 2));
-        Assert.True(NeowsFuryCombatPileWitness.Completed(
+        Assert.True(MoveOptionalBatchWitness.Completed(
             sourceCompleted: true,
             surfaceClosed: true,
             new[] { first, second, third },
@@ -1984,7 +1986,7 @@ public sealed class BridgeContractTests
             new[] { hand },
             Array.Empty<object>(),
             maxSelect: 2));
-        Assert.False(NeowsFuryCombatPileWitness.Completed(
+        Assert.False(MoveOptionalBatchWitness.Completed(
             sourceCompleted: true,
             surfaceClosed: true,
             new[] { first, second, third },
@@ -1993,7 +1995,7 @@ public sealed class BridgeContractTests
             new[] { hand, first },
             new[] { first, second },
             maxSelect: 2));
-        Assert.False(NeowsFuryCombatPileWitness.Completed(
+        Assert.False(MoveOptionalBatchWitness.Completed(
             sourceCompleted: false,
             surfaceClosed: true,
             new[] { first, second, third },
@@ -2007,8 +2009,14 @@ public sealed class BridgeContractTests
     [Fact]
     public void ReviewedCombatPileRegistryResolvesAllDeclaredOnPlayBindings()
     {
+        Assert.Null(CombatPileContractCatalog.LoadError);
+        Assert.Equal("combat_pile_closed_contract_catalog_v1", CombatPileContractCatalog.CatalogId);
+        Assert.Equal(7, CombatPileContractCatalog.WitnessTopologies.Count);
         Assert.Null(CombatPileSourceContractRegistry.LoadError);
         Assert.Equal(13, CombatPileSourceContractRegistry.Contracts.Count);
+        Assert.All(
+            CombatPileSourceContractRegistry.Contracts,
+            contract => Assert.Null(CombatPileContractCatalog.Validate(contract)));
         Assert.Equal(
             new[]
             {

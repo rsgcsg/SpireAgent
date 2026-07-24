@@ -90,9 +90,13 @@ If Steam is installed elsewhere, change `STS2_GAME_DIR`; do not edit the
 project file to encode one machine's path.
 
 The compatibility audit writes an ignored local report to
-`STS2MCP/out/compatibility-audit/latest.json`. It hashes the exact game
-assembly, verifies reviewed combat-pile selector/commit structure, and lists
-unregistered callers. It never grants permission or qualification.
+`STS2MCP/out/compatibility-audit/latest.json` and a deterministic grade to
+`latest-grade.json`. It hashes the exact game assembly, emits layered
+structural fingerprints, verifies reviewed combat-pile selector/commit
+structure, classifies unregistered callers conservatively, and checks the
+exact SHA/MVID scenario plus Tutor negative holdout. It never grants permission
+or qualification. Run `npm run check:connector-compatibility-fixtures` for the
+offline negative grader suite.
 
 ## 4. Install With The Game Closed
 

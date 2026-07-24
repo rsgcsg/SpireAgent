@@ -66,6 +66,17 @@ release             v0.109.0 c12f634d
 The audit is source/build evidence only. It cannot replace loaded identity,
 runtime patch closure, a canary or Organic qualification.
 
+## Post-Closeout D2 Hardening
+
+The later
+[automatic-adaptation audit](../../../docs/current/audits/CONNECTOR_AUTOMATIC_ADAPTATION_AND_D_WORKFLOW_AUDIT_2026-07-24.md)
+does not reopen Gate 1 or change Preview.62 permission. It removes duplicated
+topology definitions through one embedded closed contract catalog, replaces
+source-named Witness implementations with mechanism-named templates, and adds
+layered static fingerprints, conservative candidate classification, an exact
+SHA/MVID scenario and negative grader fixtures. Every output remains
+non-authorizing; Tutor remains the code-required target-player holdout.
+
 ## Preview.62 Deployment Seal
 
 After the source and audit checks passed, the game was closed, the Release DLL
@@ -98,6 +109,23 @@ An operator-directed current-runtime canary then completed
 poll script stopped after the first submission, the same request was polled to
 completion rather than retried. This is a final-artifact action-path recheck,
 not a new Surface qualification.
+
+The later post-D2 hardening artifact kept the same Preview.62 wire and
+permission contract and was separately built, installed and cold-loaded as:
+
+```text
+SHA       f22c152aa9a58e429fea4ecc25dcc83ef7666e481c1acecc754545f428a8d8ab
+MVID      546ef308-f4ff-45f4-8a07-8d0fff70c304
+runtime   2b82c83dcf27427f816857fcdbcdc1e7
+game      v0.109.0|c12f634d|-1639417500
+Modset    exact_bridge_only
+fingerprint eab9ee21fd1d9180b16585c9a528d7f2b831bb7199b08fdf98bf97cf3a49bb57
+```
+
+Re strict inspection and two stable capabilities reads proved the new artifact
+was loaded; both sampled v1 routes still returned `410`. No mutation Canary was
+run on this later artifact, so the predecessor menu canary and Preview.61
+Organic evidence do not transfer.
 
 ## Problem That Was Real
 

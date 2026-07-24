@@ -37,6 +37,11 @@ without becoming either authority.
 - Read-only Prompt size/duplication audit.
 - Bounded non-executing full/shadow provider comparison and within-variant
   repeat baseline.
+- Public offline GitHub Actions for Re, active documentation/Connector
+  contracts, the compatibility grader fixtures, and Python syntax.
+- One exact-game static compatibility scenario for the closed combat-pile
+  family, with layered fingerprints, a Tutor negative holdout and a
+  deterministic non-authorizing grader.
 
 ### Partial Or Misleading If Overclaimed
 
@@ -48,16 +53,16 @@ without becoming either authority.
   eval suite or proof of strategic quality.
 - Evidence provenance is recorded, but no central eligibility engine turns it
   into qualification.
-- Local check commands exist, but the repository currently has no GitHub
-  Actions workflow. A commit therefore has no automatic repository-wide check
-  result unless an external system supplies one.
 - Gateway tests and Release builds depend on local proprietary game
   assemblies. Passing Re-only checks cannot stand in for them.
+- The combat-pile scenario is static exact-assembly evidence. It does not
+  position the game, execute a native transaction, inspect runtime Harmony
+  patches, or qualify an operation.
 
 ### Missing
 
-- A versioned `ScenarioCase` manifest with environment, input evidence, expected
-  invariants, and applicability.
+- A general versioned `ScenarioCase` corpus beyond the first exact static
+  combat-pile manifest.
 - A replay assertion runner that separates record readability, contract
   conformance, Agent output evaluation, and execution evidence.
 - Grader definitions with versions, limitations, counterexamples, and held-out
@@ -74,14 +79,15 @@ without becoming either authority.
 
 ### D0: Inventory And Honest Naming
 
-**Status:** complete as documentation only.
+**Status:** complete.
 
 Existing commands are classified as inspect, canary, record reader, audit, or
 comparison. None is called a qualification engine or general eval platform.
 
 ### D1: Offline Check Baseline
 
-**Entry:** current repository.
+**Status:** complete for public checks that do not require proprietary game
+assemblies.
 
 **Deliverables:**
 
@@ -96,7 +102,8 @@ loaded-game or Organic qualification.
 
 ### D2: Scenario And Evidence Contract
 
-**Entry:** D1 and stable current record reading.
+**Status:** in progress. The exact combat-pile static scenario, deterministic
+grader and six negative fixtures are the first bounded slice.
 
 **Deliverables:**
 
@@ -135,11 +142,10 @@ platform product.
 
 ## Near-Term Priority
 
-D must not displace the current Gate 2 connector work. Its next small
-implementation slice should be D1 offline CI because it makes existing checks
-visible and repeatable without changing runtime behavior. The next data-model
-slice should be D2 only after the team chooses concrete representative
-fixtures from the closed Gate 1 evidence and new Gate 2 ambiguities.
+New Gate 2 feature coverage is temporarily paused for a bounded adaptation
+hardening window. D2 should next add a read-only action-relevant runtime patch
+inventory and one recorded-evidence assertion path for an existing
+combat-pile lifecycle. This must not become an automatic permission engine.
 
 No D artifact grants live permission, canary status, qualification, stable
 learning, or product readiness.

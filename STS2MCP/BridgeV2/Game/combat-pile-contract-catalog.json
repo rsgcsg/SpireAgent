@@ -1,0 +1,124 @@
+{
+  "schema_version": 1,
+  "catalog_id": "combat_pile_closed_contract_catalog_v1",
+  "authorization_effect": "none",
+  "qualification_effect": "none",
+  "closed_vocabularies": {
+    "hook_modes": [
+      "card_on_play_wrapper",
+      "declared_on_play"
+    ],
+    "piles": [
+      "draw",
+      "discard",
+      "hand",
+      "exhaust"
+    ],
+    "mutation_kinds": [
+      "move_selected_cards",
+      "replace_selected_cards_same_index"
+    ],
+    "commit_modes": [
+      "automatic_at_max",
+      "manual_confirm"
+    ],
+    "selection_bounds": [
+      "fixed_exact",
+      "fixed_exact_capped_by_hand_space",
+      "dynamic_cards_optional_capped_by_hand_space"
+    ]
+  },
+  "witness_topologies": [
+    {
+      "witness_kind": "move_one_to_top",
+      "mutation_kind": "move_selected_cards",
+      "commit_mode": "automatic_at_max",
+      "selection_bounds": "fixed_exact",
+      "selection_count_rule": "equals_one",
+      "source_destination_relation": "different",
+      "required_destination_pile": null,
+      "required_destination_position": "top",
+      "overflow_policy": "forbidden",
+      "replacement_policy": "forbidden",
+      "expected_commit_primitive": "MegaCrit.Sts2.Core.Commands.CardPileCmd::Add"
+    },
+    {
+      "witness_kind": "move_one_to_hand_or_source_if_full",
+      "mutation_kind": "move_selected_cards",
+      "commit_mode": "automatic_at_max",
+      "selection_bounds": "fixed_exact",
+      "selection_count_rule": "equals_one",
+      "source_destination_relation": "different",
+      "required_destination_pile": "hand",
+      "required_destination_position": "bottom",
+      "overflow_policy": "required",
+      "replacement_policy": "forbidden",
+      "expected_commit_primitive": "MegaCrit.Sts2.Core.Commands.CardPileCmd::Add"
+    },
+    {
+      "witness_kind": "move_one_between_piles",
+      "mutation_kind": "move_selected_cards",
+      "commit_mode": "automatic_at_max",
+      "selection_bounds": "fixed_exact",
+      "selection_count_rule": "equals_one",
+      "source_destination_relation": "different",
+      "required_destination_pile": null,
+      "required_destination_position": "bottom",
+      "overflow_policy": "forbidden",
+      "replacement_policy": "forbidden",
+      "expected_commit_primitive": "MegaCrit.Sts2.Core.Commands.CardCmd::Exhaust"
+    },
+    {
+      "witness_kind": "replace_one_same_index",
+      "mutation_kind": "replace_selected_cards_same_index",
+      "commit_mode": "automatic_at_max",
+      "selection_bounds": "fixed_exact",
+      "selection_count_rule": "equals_one",
+      "source_destination_relation": "same",
+      "required_destination_pile": null,
+      "required_destination_position": "same_index",
+      "overflow_policy": "forbidden",
+      "replacement_policy": "required",
+      "expected_commit_primitive": "MegaCrit.Sts2.Core.Commands.CardCmd::TransformTo"
+    },
+    {
+      "witness_kind": "move_exact_batch_between_piles",
+      "mutation_kind": "move_selected_cards",
+      "commit_mode": "automatic_at_max",
+      "selection_bounds": "fixed_exact_capped_by_hand_space",
+      "selection_count_rule": "positive",
+      "source_destination_relation": "different",
+      "required_destination_pile": "hand",
+      "required_destination_position": "bottom",
+      "overflow_policy": "forbidden",
+      "replacement_policy": "forbidden",
+      "expected_commit_primitive": "MegaCrit.Sts2.Core.Commands.CardPileCmd::Add"
+    },
+    {
+      "witness_kind": "replace_exact_batch_same_index",
+      "mutation_kind": "replace_selected_cards_same_index",
+      "commit_mode": "automatic_at_max",
+      "selection_bounds": "fixed_exact",
+      "selection_count_rule": "greater_than_one",
+      "source_destination_relation": "same",
+      "required_destination_pile": null,
+      "required_destination_position": "same_index",
+      "overflow_policy": "forbidden",
+      "replacement_policy": "required",
+      "expected_commit_primitive": "MegaCrit.Sts2.Core.Commands.CardCmd::TransformTo"
+    },
+    {
+      "witness_kind": "move_optional_batch_between_piles",
+      "mutation_kind": "move_selected_cards",
+      "commit_mode": "manual_confirm",
+      "selection_bounds": "dynamic_cards_optional_capped_by_hand_space",
+      "selection_count_rule": "equals_zero",
+      "source_destination_relation": "different",
+      "required_destination_pile": "hand",
+      "required_destination_position": "bottom",
+      "overflow_policy": "forbidden",
+      "replacement_policy": "forbidden",
+      "expected_commit_primitive": "MegaCrit.Sts2.Core.Commands.CardPileCmd::Add"
+    }
+  ]
+}

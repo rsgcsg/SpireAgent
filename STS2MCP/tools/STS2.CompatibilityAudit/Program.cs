@@ -10,17 +10,20 @@ const string SinkMethod = "FromCombatPile";
 Dictionary<string, string> arguments = ParseArguments(args);
 if (!arguments.TryGetValue("--game-assembly", out string? gameAssembly)
     || !arguments.TryGetValue("--registry", out string? registryPath)
+    || !arguments.TryGetValue("--catalog", out string? catalogPath)
     || !arguments.TryGetValue("--environment-policy", out string? policyPath))
 {
     Console.Error.WriteLine(
         "Usage: dotnet run --project STS2.CompatibilityAudit -- " +
         "--game-assembly <sts2.dll> --registry <combat-pile-source-contracts.json> " +
+        "--catalog <combat-pile-contract-catalog.json> " +
         "--environment-policy <exact-environment-policy.json> [--output <report.json>]");
     return 64;
 }
 
 if (!File.Exists(gameAssembly)
     || !File.Exists(registryPath)
+    || !File.Exists(catalogPath)
     || !File.Exists(policyPath))
 {
     Console.Error.WriteLine("One or more required input files do not exist.");
@@ -34,7 +37,14 @@ JsonSerializerOptions jsonOptions = new()
     WriteIndented = true
 };
 CombatPileRegistry registry = ReadJson<CombatPileRegistry>(registryPath, jsonOptions);
+ContractCatalog catalog = ReadJson<ContractCatalog>(catalogPath, jsonOptions);
 EnvironmentPolicy policy = ReadJson<EnvironmentPolicy>(policyPath, jsonOptions);
+if (catalog.AuthorizationEffect != "none"
+    || catalog.QualificationEffect != "none"
+    || catalog.WitnessTopologies.Count == 0)
+{
+    throw new InvalidDataException("Contract catalog must be non-authorizing and non-empty.");
+}
 using var resolver = new DefaultAssemblyResolver();
 resolver.AddSearchDirectory(Path.GetDirectoryName(gameAssembly)!);
 using AssemblyDefinition assembly = AssemblyDefinition.ReadAssembly(
@@ -60,9 +70,32 @@ foreach (CombatPileContract contract in registry.Contracts)
         ? null
         : ResolveAsyncBody(sourceMethod);
     bool callsSink = analyzedMethod != null && CallsSink(analyzedMethod);
-    string expectedCommitPrimitive = ExpectedCommitPrimitive(contract.WitnessKind);
+    WitnessTopology? topology = catalog.WitnessTopologies.SingleOrDefault(candidate =>
+        candidate.WitnessKind == contract.WitnessKind);
+    string expectedCommitPrimitive = topology?.ExpectedCommitPrimitive ?? "unresolved";
     bool callsCommitPrimitive = analyzedMethod != null
+                                && topology != null
                                 && CallsMethod(analyzedMethod, expectedCommitPrimitive);
+    IReadOnlyList<string> observedCommitPrimitives = analyzedMethod == null
+        ? Array.Empty<string>()
+        : ObservedCommitPrimitives(analyzedMethod, catalog);
+    IReadOnlyList<string> ownerBindingSignals = analyzedMethod == null
+        ? Array.Empty<string>()
+        : OwnerBindingSignals(analyzedMethod);
+    string? implementationFingerprint =
+        analyzedMethod == null ? null : FingerprintMethod(analyzedMethod);
+    string declaredSemanticFingerprint = DeclaredSemanticFingerprint(contract, topology);
+    string staticStructureFingerprint = StaticStructureFingerprint(
+        callsSink,
+        observedCommitPrimitives,
+        ownerBindingSignals);
+    string? operationFingerprint = implementationFingerprint == null
+        ? null
+        : HashText(
+            $"{declaredSemanticFingerprint}\n" +
+            $"{staticStructureFingerprint}\n" +
+            $"{implementationFingerprint}");
+    bool staticMatch = callsSink && callsCommitPrimitive && topology != null;
     registeredReports.Add(new SourceMethodReport(
         contract.SourceKind,
         contract.SourceType,
@@ -72,7 +105,21 @@ foreach (CombatPileContract contract in registry.Contracts)
         callsSink,
         expectedCommitPrimitive,
         callsCommitPrimitive,
-        analyzedMethod == null ? null : FingerprintMethod(analyzedMethod)));
+        observedCommitPrimitives,
+        ownerBindingSignals,
+        declaredSemanticFingerprint,
+        staticStructureFingerprint,
+        implementationFingerprint,
+        operationFingerprint,
+        staticMatch ? "registered_static_match" : "registered_static_mismatch",
+        staticMatch ? "no_change_existing_reviewed_policy" : "quarantine_existing_contract",
+        new[]
+        {
+            "runtime_owner_and_ui_lifecycle",
+            "runtime_patch_closure",
+            "semantic_completion",
+            "organic_operation_evidence"
+        }));
 }
 
 List<DiscoveredCaller> discovered = new();
@@ -84,12 +131,65 @@ foreach (TypeDefinition type in AllTypes(assembly.MainModule))
         MethodDefinition analyzed = ResolveAsyncBody(sourceMethod);
         if (!CallsSink(analyzed))
             continue;
+        IReadOnlyList<string> observedCommitPrimitives =
+            ObservedCommitPrimitives(analyzed, catalog);
+        IReadOnlyList<string> ownerBindingSignals = OwnerBindingSignals(analyzed);
+        bool targetPlayerReferenced = ownerBindingSignals.Contains(
+            "references_cardplay_target",
+            StringComparer.Ordinal);
+        bool sourceOwnerReferenced = ownerBindingSignals.Contains(
+            "references_source_card_owner",
+            StringComparer.Ordinal);
+        string classification = targetPlayerReferenced && !sourceOwnerReferenced
+            ? "code_required_new_owner_binding"
+            : observedCommitPrimitives.Count == 1
+                ? "review_required_unresolved_operands"
+                : "code_required_unknown_commit_topology";
+        IReadOnlyList<string> commitOnlyCandidateFamilies = catalog.WitnessTopologies
+            .Where(topology => observedCommitPrimitives.Contains(
+                topology.ExpectedCommitPrimitive,
+                StringComparer.Ordinal))
+            .Select(topology => topology.WitnessKind)
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(value => value, StringComparer.Ordinal)
+            .ToArray();
+        string implementationFingerprint = FingerprintMethod(analyzed);
+        string staticStructureFingerprint = StaticStructureFingerprint(
+            callsSink: true,
+            observedCommitPrimitives,
+            ownerBindingSignals);
         discovered.Add(new DiscoveredCaller(
             type.FullName,
             sourceMethod.FullName,
             analyzed.FullName,
             registeredTypes.Contains(type.FullName),
-            FingerprintMethod(analyzed)));
+            observedCommitPrimitives,
+            ownerBindingSignals,
+            commitOnlyCandidateFamilies,
+            staticStructureFingerprint,
+            implementationFingerprint,
+            HashText($"{staticStructureFingerprint}\n{implementationFingerprint}"),
+            classification,
+            "diagnostic_only",
+            targetPlayerReferenced && !sourceOwnerReferenced
+                ? new[]
+                {
+                    "new_owner_contract",
+                    "target_player_visibility_and_authority",
+                    "selector_operand_flow",
+                    "semantic_completion",
+                    "runtime_patch_closure",
+                    "organic_operation_evidence"
+                }
+                : new[]
+                {
+                    "source_owner_flow",
+                    "selector_operand_flow",
+                    "selection_bounds",
+                    "semantic_completion",
+                    "runtime_patch_closure",
+                    "organic_operation_evidence"
+                }));
     }
 }
 
@@ -102,6 +202,7 @@ EnvironmentEntry[] releaseCandidates = release == null
         .ToArray();
 string assemblySha = HashFile(gameAssembly);
 string registrySha = HashFile(registryPath);
+string catalogSha = HashFile(catalogPath);
 string policySha = HashFile(policyPath);
 string status = registeredReports.All(report =>
         report.CallsExpectedSink && report.CallsExpectedCommitPrimitive)
@@ -111,7 +212,7 @@ string status = registeredReports.All(report =>
     : "failed_registered_binding";
 
 var report = new CompatibilityAuditReport(
-    SchemaVersion: 1,
+    SchemaVersion: 2,
     GeneratedAt: DateTimeOffset.UtcNow,
     Status: status,
     AuthorizationEffect: "none",
@@ -125,21 +226,28 @@ var report = new CompatibilityAuditReport(
         registry.RegistryId,
         registry.AuthorizationMode,
         registrySha),
+    Catalog: new InputIdentity(
+        catalog.CatalogId,
+        catalog.AuthorizationEffect,
+        catalogSha),
     Policy: new InputIdentity(
         policy.PolicyId,
         policy.AuthorizationMode,
         policySha),
-    ReleasePolicyCandidates: releaseCandidates,
+    DiagnosticVersionCommitPolicyEntries: releaseCandidates,
     RegisteredSources: registeredReports,
     UnregisteredCallers: discovered.Where(caller => !caller.Registered).ToArray(),
     Limitations: new[]
     {
         "static_il_call_discovery_is_non_authorizing",
+        "operation_fingerprints_are_structural_evidence_not_semantic_equivalence_proofs",
+        "candidate_classification_never_writes_registry_or_policy",
         "runtime_harmony_patch_closure_is_not_proven",
         "native_owner_and_ui_lifecycle_are_not_proven",
         "semantic_completion_is_not_proven",
         "exact_source_destination_operands_are_reviewed_but_not_fully_proven_by_static_il",
         "runtime_main_assembly_hash_is_not_computed_offline",
+        "release_policy_entries_are_version_commit_diagnostics_not_exact_runtime_matches",
         "modset_identity_requires_loaded_runtime_evidence"
     });
 string output = JsonSerializer.Serialize(report, jsonOptions);
@@ -207,18 +315,6 @@ static bool CallsSink(MethodDefinition method) =>
         && called.DeclaringType.FullName == SinkType
         && called.Name == SinkMethod);
 
-static string ExpectedCommitPrimitive(string witnessKind) => witnessKind switch
-{
-    "move_one_to_top" => "MegaCrit.Sts2.Core.Commands.CardPileCmd::Add",
-    "move_one_to_hand_or_source_if_full" => "MegaCrit.Sts2.Core.Commands.CardPileCmd::Add",
-    "move_one_between_piles" => "MegaCrit.Sts2.Core.Commands.CardCmd::Exhaust",
-    "replace_one_same_index" => "MegaCrit.Sts2.Core.Commands.CardCmd::TransformTo",
-    "move_exact_batch_between_piles" => "MegaCrit.Sts2.Core.Commands.CardPileCmd::Add",
-    "replace_exact_batch_same_index" => "MegaCrit.Sts2.Core.Commands.CardCmd::TransformTo",
-    "move_optional_batch_between_piles" => "MegaCrit.Sts2.Core.Commands.CardPileCmd::Add",
-    _ => throw new InvalidDataException($"Unsupported witness kind {witnessKind}.")
-};
-
 static bool CallsMethod(MethodDefinition method, string expected)
 {
     int separator = expected.LastIndexOf("::", StringComparison.Ordinal);
@@ -230,6 +326,73 @@ static bool CallsMethod(MethodDefinition method, string expected)
         && called.DeclaringType.FullName == declaringType
         && called.Name == methodName);
 }
+
+static IReadOnlyList<string> ObservedCommitPrimitives(
+    MethodDefinition method,
+    ContractCatalog catalog) =>
+    catalog.WitnessTopologies
+        .Select(topology => topology.ExpectedCommitPrimitive)
+        .Distinct(StringComparer.Ordinal)
+        .Where(expected => CallsMethod(method, expected))
+        .OrderBy(value => value, StringComparer.Ordinal)
+        .ToArray();
+
+static IReadOnlyList<string> OwnerBindingSignals(MethodDefinition method)
+{
+    var signals = new HashSet<string>(StringComparer.Ordinal);
+    foreach (Instruction instruction in method.Body.Instructions)
+    {
+        string member = instruction.Operand switch
+        {
+            MethodReference value => $"{value.DeclaringType.FullName}::{value.Name}",
+            FieldReference value => $"{value.DeclaringType.FullName}::{value.Name}",
+            _ => string.Empty
+        };
+        if (member.Contains("CardPlay::get_Target", StringComparison.Ordinal)
+            || member.Contains("CardPlay::Target", StringComparison.Ordinal))
+        {
+            signals.Add("references_cardplay_target");
+        }
+        if (member.Contains("CardModel::get_Owner", StringComparison.Ordinal)
+            || member.Contains("CardModel::Owner", StringComparison.Ordinal))
+        {
+            signals.Add("references_source_card_owner");
+        }
+    }
+    if (signals.Count == 0)
+        signals.Add("no_known_owner_reference");
+    return signals.OrderBy(value => value, StringComparer.Ordinal).ToArray();
+}
+
+static string DeclaredSemanticFingerprint(
+    CombatPileContract contract,
+    WitnessTopology? topology) =>
+    HashText(string.Join(
+        "\n",
+        contract.HookMode,
+        contract.Purpose,
+        contract.MutationKind,
+        contract.CommitMode,
+        contract.SourcePile,
+        contract.DestinationPile,
+        contract.DestinationPosition,
+        contract.OverflowDestination ?? string.Empty,
+        contract.ReplacementCardDefinitionId ?? string.Empty,
+        contract.ReplacementUpgradePolicy ?? string.Empty,
+        contract.SelectionBounds,
+        contract.SelectionCount.ToString(System.Globalization.CultureInfo.InvariantCulture),
+        contract.WitnessKind,
+        topology?.ExpectedCommitPrimitive ?? "unresolved"));
+
+static string StaticStructureFingerprint(
+    bool callsSink,
+    IReadOnlyList<string> observedCommitPrimitives,
+    IReadOnlyList<string> ownerBindingSignals) =>
+    HashText(string.Join(
+        "\n",
+        callsSink ? $"{SinkType}::{SinkMethod}" : "sink_missing",
+        string.Join("|", observedCommitPrimitives),
+        string.Join("|", ownerBindingSignals)));
 
 static string FingerprintMethod(MethodDefinition method)
 {
@@ -258,6 +421,9 @@ static string FingerprintMethod(MethodDefinition method)
 static string HashFile(string path) =>
     Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant();
 
+static string HashText(string value) =>
+    Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value))).ToLowerInvariant();
+
 static ReleaseIdentity? TryReadReleaseIdentity(
     string assemblyPath,
     JsonSerializerOptions options)
@@ -284,7 +450,29 @@ internal sealed record CombatPileContract(
     string SourceType,
     string HookMode,
     string SourceKind,
+    string Purpose,
+    string MutationKind,
+    string CommitMode,
+    string SourcePile,
+    string DestinationPile,
+    string DestinationPosition,
+    string? OverflowDestination,
+    string? ReplacementCardDefinitionId,
+    string? ReplacementUpgradePolicy,
+    string SelectionBounds,
+    int SelectionCount,
     string WitnessKind);
+
+internal sealed record ContractCatalog(
+    int SchemaVersion,
+    string CatalogId,
+    string AuthorizationEffect,
+    string QualificationEffect,
+    IReadOnlyList<WitnessTopology> WitnessTopologies);
+
+internal sealed record WitnessTopology(
+    string WitnessKind,
+    string ExpectedCommitPrimitive);
 
 internal sealed record EnvironmentPolicy(
     int SchemaVersion,
@@ -326,14 +514,30 @@ internal sealed record SourceMethodReport(
     bool CallsExpectedSink,
     string ExpectedCommitPrimitive,
     bool CallsExpectedCommitPrimitive,
-    string? MethodFingerprint);
+    IReadOnlyList<string> ObservedCommitPrimitives,
+    IReadOnlyList<string> OwnerBindingSignals,
+    string DeclaredSemanticFingerprint,
+    string StaticStructureFingerprint,
+    string? ImplementationFingerprint,
+    string? OperationFingerprint,
+    string CandidateClassification,
+    string PermissionRecommendation,
+    IReadOnlyList<string> MissingProofs);
 
 internal sealed record DiscoveredCaller(
     string SourceType,
     string SourceMethod,
     string AnalyzedMethod,
     bool Registered,
-    string MethodFingerprint);
+    IReadOnlyList<string> ObservedCommitPrimitives,
+    IReadOnlyList<string> OwnerBindingSignals,
+    IReadOnlyList<string> CommitOnlyCandidateWitnessFamilies,
+    string StaticStructureFingerprint,
+    string ImplementationFingerprint,
+    string OperationFingerprint,
+    string CandidateClassification,
+    string RecommendedCeiling,
+    IReadOnlyList<string> RequiredProofs);
 
 internal sealed record CompatibilityAuditReport(
     int SchemaVersion,
@@ -344,8 +548,9 @@ internal sealed record CompatibilityAuditReport(
     AssemblyIdentity GameAssembly,
     ReleaseIdentity? Release,
     InputIdentity Registry,
+    InputIdentity Catalog,
     InputIdentity Policy,
-    IReadOnlyList<EnvironmentEntry> ReleasePolicyCandidates,
+    IReadOnlyList<EnvironmentEntry> DiagnosticVersionCommitPolicyEntries,
     IReadOnlyList<SourceMethodReport> RegisteredSources,
     IReadOnlyList<DiscoveredCaller> UnregisteredCallers,
     IReadOnlyList<string> Limitations);

@@ -15,6 +15,7 @@
     "check:docs": "node tools/check-active-markdown-links.mjs && npm run check:connector-inventory && npm run check:connector-adaptation",
     "check:connector-inventory": "node tools/check-connector-operation-inventory.mjs",
     "check:connector-adaptation": "node tools/check-connector-adaptation-contracts.mjs",
+    "check:connector-compatibility-fixtures": "node tools/test-connector-compatibility-grader.mjs",
     "audit:connector-compatibility": "node tools/run-connector-compatibility-audit.mjs"
   }
 }

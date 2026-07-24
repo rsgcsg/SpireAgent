@@ -39,7 +39,8 @@ Tutor holdout.
 
 ## Gate 2: Player-Visible Information Closure
 
-Status: **active next design/evidence gate; Gate 1 is closed.**
+Status: **next functional gate; feature expansion is temporarily paused while
+the first non-authorizing adaptation/D2 hardening slice is closed.**
 
 Close decision-relevant visible-information gaps using shared state, context,
 surface, preview, and read-only inspection. Do not expose hidden RNG, draw
@@ -52,6 +53,11 @@ Gateway protocol, action authority, compact-Prompt rollout, or evidence of
 strategy quality. It must pass paired provider shadow and semantic review
 before any Prompt-path change is considered. The first generic v1 projection
 failed that evidence gate on reward scopes and is rejected for runtime use.
+
+The pause does not reopen Gate 1 or add a new permission gate. It prevents new
+Surface work from outrunning the compatibility evidence path. Resume Gate 2
+after a read-only action-relevant runtime patch inventory and one
+recorded-evidence assertion path are available; neither may grant authority.
 
 ## Gate 3: Secure Local Connector Alpha
 

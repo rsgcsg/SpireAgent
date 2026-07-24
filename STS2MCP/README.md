@@ -139,6 +139,7 @@ dotnet build STS2_MCP.csproj -c Release -o out/STS2_MCP \
   -p:STS2GameDir="$STS2_GAME_DIR"
 cd ..
 npm run check:connector-adaptation
+npm run check:connector-compatibility-fixtures
 npm run audit:connector-compatibility
 ```
 
@@ -158,16 +159,23 @@ covering stable state identity, entity identity, stale-state rejection,
 idempotent request IDs, completion observation, timeout-as-unknown, retired-v1
 routing, and JSON action shape.
 
-The compatibility audit writes an ignored report to
-`STS2MCP/out/compatibility-audit/latest.json`. It identifies the exact game
-assembly, verifies registered selector/commit structure, and lists unregistered
-callers. Its authorization and qualification effects are always `none`.
+The compatibility audit writes ignored `latest.json` and `latest-grade.json`
+reports under `STS2MCP/out/compatibility-audit/`. It identifies the exact game
+assembly, emits declared/static/implementation operation fingerprints, verifies
+registered selector/commit structure, classifies unregistered callers, and
+grades the exact SHA/MVID scenario plus Tutor negative holdout. Its
+authorization, promotion and qualification effects are always `none`.
+Fingerprints are change detectors, not semantic-equivalence proofs.
 
 Content is data-only only when it reuses an already reviewed source owner,
 native selector, closed mutation/commit contract and witness topology. A new UI
 owner, target-player binding, commit primitive, hidden-information policy or
 completion topology requires code and independent evidence. See the
 [Gate 1 adaptation closeout](docs/bridge-v2/GATE1_ADAPTATION_AND_COMPATIBILITY_CLOSEOUT_2026-07-24.md).
+The seven closed combat-pile topologies are defined once in the embedded
+contract catalog and consumed by runtime validation, repository checks and the
+audit; no generated candidate writes that production catalog or source
+registry.
 
 ## Install The Mod
 

@@ -23,6 +23,9 @@
       Include="BridgeV2/Game/combat-pile-source-contracts.json"
       LogicalName="STS2_MCP.BridgeV2.Game.combat-pile-source-contracts.json" />
     <EmbeddedResource
+      Include="BridgeV2/Game/combat-pile-contract-catalog.json"
+      LogicalName="STS2_MCP.BridgeV2.Game.combat-pile-contract-catalog.json" />
+    <EmbeddedResource
       Include="BridgeV2/Game/exact-environment-policy.json"
       LogicalName="STS2_MCP.BridgeV2.Game.exact-environment-policy.json" />
   </ItemGroup>

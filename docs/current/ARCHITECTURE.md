@@ -46,6 +46,27 @@ yet.
   source registries suppress their affected Surface only; invalid environment
   policy suppresses all authority and both cases emit typed diagnostics.
 
+## Rule-Aware Adaptation Boundary
+
+The Gateway may model a finite native interaction contract: owner references,
+visible candidates, selector, bounds, native Commit and semantic post-state
+Witness. This is required for safe adaptation and does not make the Gateway a
+replacement game engine. It must never calculate or apply native card effects,
+Power, Relic, RNG or arbitrary Mod behavior itself.
+
+The closed combat-pile contract catalog is the current single machine source
+for seven proven transaction topologies. Runtime validation, offline checks
+and compatibility audit consume it; source identity and reviewed permission
+remain separate. D-lane fingerprints, classifications, scenarios and graders
+have no action authority. Static structure, fixture success and a matching
+catalog entry cannot bypass exact runtime identity, execute-time validation,
+native Commit or Organic evidence.
+
+Build and Modset permission remains intentionally conservative. Operation-level
+compatibility cannot replace the exact-environment gate until runtime
+action-relevant patch closure and an evidence-backed policy path exist. See the
+[automatic-adaptation audit](audits/CONNECTOR_AUTOMATIC_ADAPTATION_AND_D_WORKFLOW_AUDIT_2026-07-24.md).
+
 ## Current Architectural Constraint
 
 The Gateway and Re share the mechanically checked `2.0-preview.62` source

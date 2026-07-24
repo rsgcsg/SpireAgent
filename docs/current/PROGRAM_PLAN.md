@@ -53,7 +53,9 @@ This is not a public platform, marketplace, Agent SDK, or second game-rule
 engine. Its current implementation is partial: inspect, canary, records,
 replay-printing, Prompt audit/comparison, tests, and inventory checks exist,
 but there is no versioned scenario corpus, unified eval runner, grader
-registry, public CI workflow, or qualification engine. See
+registry, general eval runner, or qualification engine. Public offline CI now
+exists, and one exact combat-pile static scenario plus deterministic grader is
+the first narrow D2 slice; it is not a general corpus. See
 [Development and evaluation](DEVELOPMENT_AND_EVALUATION.md).
 
 ### A: Official External Agent Runtime
@@ -114,13 +116,14 @@ The following are governance constraints, not a separate feature program:
 
 ### Current Window
 
-1. Continue Gate 2 visible-information closure and a non-authorizing
-   transaction-correlation shadow from concrete selector evidence.
+1. Temporarily pause new Gate 2 feature coverage while closing adaptation
+   hardening: shared closed contract data, read-only action-relevant patch
+   inventory and recorded-evidence assertions.
 2. Maintain the closed Gate 1 operation/v1-retirement inventory and keep
    unsupported variants explicitly fail closed.
-3. Advance D only through concrete evidence needs: offline checks, provenance,
-   replay truthfulness, scenario fixtures, diagnostics, and falsifiable
-   read-only experiments.
+3. Advance D only through concrete evidence needs. The first exact static
+   scenario/grader is implemented; next add runtime patch provenance and
+   recorded-evidence assertions without permission effects.
 4. Keep A at the frozen RE-P1 baseline while correcting runtime defects exposed
    by C journeys; do not add persistent learning.
 5. Design P-lane authentication, controller lease, and restart-epoch contracts

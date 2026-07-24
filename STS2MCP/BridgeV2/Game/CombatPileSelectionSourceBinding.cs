@@ -209,7 +209,7 @@ internal static class DeclaredOnPlayCombatPileSelectionSourcePatch
     }
 }
 
-internal static class HeadbuttCombatPileWitness
+internal static class MoveOneToTopWitness
 {
     // The played source card reaches its own post-play pile after this baseline,
     // so aggregate pile counts are not an invariant of the selected-card move.
@@ -233,7 +233,7 @@ internal static class HeadbuttCombatPileWitness
         cards.Any(card => ReferenceEquals(card, expected));
 }
 
-internal static class GraveblastCombatPileWitness
+internal static class MoveOneToDestinationOrFallbackWitness
 {
     // As above, completion proves the exact selected-card destination rather
     // than imposing a false aggregate count invariant on the source card.
@@ -264,7 +264,7 @@ internal static class GraveblastCombatPileWitness
         cards.Any(card => ReferenceEquals(card, expected));
 }
 
-internal static class CleanseCombatPileWitness
+internal static class MoveOneBetweenPilesWitness
 {
     // Cleanse's source card may settle into a different post-play pile. The
     // witness therefore proves only the selected draw-pile card's exact move.
@@ -287,7 +287,7 @@ internal static class CleanseCombatPileWitness
         cards.Any(card => ReferenceEquals(card, expected));
 }
 
-internal static class SeanceCombatPileWitness
+internal static class ReplaceOneAtSameIndexWitness
 {
     internal static bool Selected<T>(
         bool sourceCompleted,
@@ -326,7 +326,7 @@ internal static class SeanceCombatPileWitness
         cards.Any(card => ReferenceEquals(card, expected));
 }
 
-internal static class DredgeCombatPileWitness
+internal static class CombatPileSelectionWitness
 {
     internal static bool SelectionChanged<T>(
         bool sourceActive,
@@ -357,6 +357,18 @@ internal static class DredgeCombatPileWitness
         return SameReferences(expected, currentSelection);
     }
 
+    private static bool SameReferences<T>(
+        IReadOnlyCollection<T> expected,
+        IReadOnlyCollection<T> actual) where T : class =>
+        expected.Count == actual.Count
+        && expected.All(card => ContainsReference(actual, card));
+
+    private static bool ContainsReference<T>(IEnumerable<T> cards, T expected) where T : class =>
+        cards.Any(card => ReferenceEquals(card, expected));
+}
+
+internal static class MoveExactBatchWitness
+{
     internal static bool Completed<T>(
         bool sourceCompleted,
         bool surfaceClosed,
@@ -387,17 +399,11 @@ internal static class DredgeCombatPileWitness
                    .All(card => ContainsReference(currentDiscard, card));
     }
 
-    private static bool SameReferences<T>(
-        IReadOnlyCollection<T> expected,
-        IReadOnlyCollection<T> actual) where T : class =>
-        expected.Count == actual.Count
-        && expected.All(card => ContainsReference(actual, card));
-
     private static bool ContainsReference<T>(IEnumerable<T> cards, T expected) where T : class =>
         cards.Any(card => ReferenceEquals(card, expected));
 }
 
-internal static class NeowsFuryCombatPileWitness
+internal static class MoveOptionalBatchWitness
 {
     internal static bool SelectionChanged<T>(
         bool sourceActive,
@@ -410,7 +416,7 @@ internal static class NeowsFuryCombatPileWitness
         IReadOnlyCollection<T> currentSelection,
         T toggledCard,
         bool wasSelected) where T : class =>
-        DredgeCombatPileWitness.SelectionChanged(
+        CombatPileSelectionWitness.SelectionChanged(
             sourceActive,
             surfaceOpen,
             baselineDiscard,
@@ -454,7 +460,7 @@ internal static class NeowsFuryCombatPileWitness
         cards.Any(card => ReferenceEquals(card, expected));
 }
 
-internal static class ChargeCombatPileWitness
+internal static class ReplaceExactBatchAtSameIndexesWitness
 {
     internal static bool SelectionChanged<T>(
         bool sourceActive,
@@ -487,11 +493,12 @@ internal static class ChargeCombatPileWitness
         IReadOnlyList<T> baselineDraw,
         IReadOnlyList<T> currentDraw,
         IReadOnlyCollection<T> selectedCards,
+        int expectedSelectionCount,
         Func<T, bool> isExpectedReplacement) where T : class
     {
         if (!sourceCompleted
             || !surfaceClosed
-            || selectedCards.Count != 2
+            || selectedCards.Count != expectedSelectionCount
             || currentDraw.Count != baselineDraw.Count
             || selectedCards.Any(card => ContainsReference(currentDraw, card)))
         {

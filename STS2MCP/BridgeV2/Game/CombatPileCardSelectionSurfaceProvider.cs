@@ -481,7 +481,7 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
 
         if (!automaticCommitStarted)
         {
-            return DredgeCombatPileWitness.SelectionChanged(
+            return CombatPileSelectionWitness.SelectionChanged(
                 CombatPileSelectionSourceBinding.IsActive(binding.Token),
                 IsCurrent(expectedScreen),
                 binding.BaselineSourcePile,
@@ -499,7 +499,7 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
         return binding.Contract.WitnessKind switch
         {
             "move_one_to_top" =>
-                HeadbuttCombatPileWitness.Selected(
+                MoveOneToTopWitness.Selected(
                     sourceCompleted,
                     surfaceClosed,
                     binding.BaselineSourcePile,
@@ -508,7 +508,7 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
                     currentDestination,
                     toggledCard),
             "move_one_to_hand_or_source_if_full" =>
-                GraveblastCombatPileWitness.Selected(
+                MoveOneToDestinationOrFallbackWitness.Selected(
                     sourceCompleted,
                     surfaceClosed,
                     binding.BaselineSourcePile,
@@ -518,7 +518,7 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
                     toggledCard,
                     CardPile.MaxCardsInHand),
             "move_one_between_piles" =>
-                CleanseCombatPileWitness.Selected(
+                MoveOneBetweenPilesWitness.Selected(
                     sourceCompleted,
                     surfaceClosed,
                     binding.BaselineSourcePile,
@@ -527,7 +527,7 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
                     currentDestination,
                     toggledCard),
             "replace_one_same_index" =>
-                SeanceCombatPileWitness.Selected(
+                ReplaceOneAtSameIndexWitness.Selected(
                     sourceCompleted,
                     surfaceClosed,
                     binding.BaselineSourcePile,
@@ -535,7 +535,7 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
                     toggledCard,
                     replacement => IsExpectedReplacement(binding, replacement)),
             "move_exact_batch_between_piles" =>
-                DredgeCombatPileWitness.Completed(
+                MoveExactBatchWitness.Completed(
                     sourceCompleted,
                     surfaceClosed,
                     binding.BaselineSourcePile,
@@ -545,12 +545,13 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
                     committedSelection,
                     binding.MaxSelect),
             "replace_exact_batch_same_index" =>
-                ChargeCombatPileWitness.Completed(
+                ReplaceExactBatchAtSameIndexesWitness.Completed(
                     sourceCompleted,
                     surfaceClosed,
                     binding.BaselineSourcePile,
                     currentSource,
                     committedSelection,
+                    binding.MaxSelect,
                     replacement => IsExpectedReplacement(binding, replacement)),
             _ => false
         };
@@ -573,7 +574,7 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
             return false;
         }
 
-        return NeowsFuryCombatPileWitness.Completed(
+        return MoveOptionalBatchWitness.Completed(
             !CombatPileSelectionSourceBinding.IsActive(binding.Token),
             !IsCurrent(expectedScreen),
             binding.BaselineSourcePile,

@@ -24,6 +24,7 @@ if (!existsSync(gameAssembly)) {
 const outputDirectory = path.join(root, "STS2MCP/out/compatibility-audit");
 await mkdir(outputDirectory, { recursive: true });
 const outputPath = path.join(outputDirectory, "latest.json");
+const gradePath = path.join(outputDirectory, "latest-grade.json");
 const result = spawnSync(
   "dotnet",
   [
@@ -35,6 +36,8 @@ const result = spawnSync(
     gameAssembly,
     "--registry",
     "STS2MCP/BridgeV2/Game/combat-pile-source-contracts.json",
+    "--catalog",
+    "STS2MCP/BridgeV2/Game/combat-pile-contract-catalog.json",
     "--environment-policy",
     "STS2MCP/BridgeV2/Game/exact-environment-policy.json",
     "--output",
@@ -59,4 +62,35 @@ if (result.status !== 0) {
   process.exit(result.status ?? 1);
 }
 
+const grade = spawnSync(
+  process.execPath,
+  [
+    "tools/grade-connector-compatibility-report.mjs",
+    "--report",
+    outputPath,
+    "--scenario",
+    "STS2MCP/compatibility/scenarios/combat-pile-static-audit.v1.json",
+    "--output",
+    gradePath
+  ],
+  {
+    cwd: root,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"]
+  }
+);
+if (grade.stdout) {
+  process.stdout.write(grade.stdout);
+}
+if (grade.stderr) {
+  process.stderr.write(grade.stderr);
+}
+if (grade.error) {
+  throw grade.error;
+}
+if (grade.status !== 0) {
+  process.exit(grade.status ?? 1);
+}
+
 console.error(`Non-authorizing compatibility report: ${outputPath}`);
+console.error(`Non-authorizing compatibility grade: ${gradePath}`);

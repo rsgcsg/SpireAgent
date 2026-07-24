@@ -35,6 +35,7 @@ jobs:
         with:
           python-version: "3.11"
       - run: npm run check:docs
+      - run: npm run check:connector-compatibility-fixtures
       - run: python -m py_compile STS2MCP/mcp/server.py
 
   # Gateway C# tests/builds require the user's exact local STS2 assemblies.
