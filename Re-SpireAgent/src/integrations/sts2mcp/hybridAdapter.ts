@@ -83,6 +83,34 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
           compatibility_policy_id: bridge.game.compatibility.compatibility_policy_id,
           compatibility_policy_digest: bridge.game.compatibility.compatibility_policy_digest,
           compatibility_adaptation_level: bridge.game.compatibility.adaptation_level,
+          permission_status: bridge.permission_system.status,
+          permission_mode: bridge.permission_system.mode,
+          permission_runtime_epoch: bridge.permission_system.runtime_epoch,
+          permission_policy_id: bridge.permission_system.policy_id,
+          permission_policy_digest: bridge.permission_system.policy_digest,
+          dynamic_session_promotion_enabled:
+            bridge.permission_system.dynamic_session_promotion_enabled,
+          runtime_patch_status: bridge.permission_system.patch_inventory.status,
+          runtime_patch_digest: bridge.permission_system.patch_inventory.digest,
+          runtime_patch_owners: bridge.permission_system.patch_inventory.patch_owners,
+          runtime_patch_unknown_owners:
+            bridge.permission_system.patch_inventory.unknown_owners,
+          permission_grants_at_negotiation: bridge.permission_system.grants.map((grant) => ({
+            grant_id: grant.grant_id,
+            grant_version: grant.grant_version,
+            current: grant.current,
+            status: grant.status,
+            surface_kind: grant.surface_kind,
+            operation: grant.operation,
+            tier: grant.tier,
+            runtime_epoch: grant.runtime_epoch,
+            environment_digest: grant.environment_digest,
+            patch_digest: grant.patch_digest,
+            operation_fingerprint: grant.operation_fingerprint,
+            evidence_bundle_digest: grant.evidence_bundle_digest,
+            supersedes_grant_id: grant.supersedes_grant_id ?? null,
+            revocation_reason: grant.revocation_reason ?? null
+          })),
           action_execution_allowed: bridge.game.compatibility.action_execution_allowed,
           state_observation_allowed: bridge.game.compatibility.state_observation_allowed,
           inspection_allowed: bridge.game.compatibility.inspection_allowed,
@@ -95,7 +123,13 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
           action_permission_scopes: bridge.game.compatibility.action_permission_scopes.map((scope) => ({
             surface_kind: scope.surface_kind,
             operation: scope.operation,
-            tier: scope.tier
+            tier: scope.tier,
+            grant_id: scope.grant_id,
+            grant_version: scope.grant_version,
+            runtime_epoch: scope.runtime_epoch,
+            environment_digest: scope.environment_digest,
+            patch_digest: scope.patch_digest,
+            operation_fingerprint: scope.operation_fingerprint
           })),
           observation_only_surface_kinds: bridge.game.compatibility.observation_only_surface_kinds,
           supported_surfaces: bridge.surfaces

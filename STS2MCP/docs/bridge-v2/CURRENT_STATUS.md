@@ -8,7 +8,7 @@ and do not grant current authority.
 ## Current Source-Truth Status
 
 The C# Gateway and Re-SpireAgent source now share contract
-`2.0-preview.62`; Re normalized schema is `26`. Gate 1 is closed as a bounded
+`2.0-preview.63`; Re normalized schema is `26`. Gate 1 is closed as a bounded
 ordinary-single-player v2 connector baseline:
 
 - Re and the default Python MCP adapter submit only advertised Bridge v2
@@ -35,7 +35,7 @@ The final command completed only after source-task closure, child closure and
 exact selected-card movement from discard to hand. This closes the prior Gate 1
 runtime seal.
 
-Preview.62 adds reviewed embedded combat-pile source and exact-environment
+Preview.62 added reviewed embedded combat-pile source and exact-environment
 policies, policy ID/digest provenance, and a non-authorizing exact-assembly
 audit. Source-specific C# bindings for the proven combat-pile family are
 retired. Six newly discovered owner-bound sources are registry canary
@@ -43,7 +43,7 @@ candidates; Tutor remains fail closed because it selects from
 `cardPlay.Target.Player`. Preview.62 source/tests/audit do not inherit
 Preview.61 Organic qualification.
 
-Post-closeout adaptation hardening keeps the Preview.62 wire contract and all
+The Preview.62 post-closeout adaptation slice kept its wire contract and all
 permission tiers unchanged. Runtime and repository checks now consume one
 embedded seven-topology combat-pile catalog; source-named Witness classes have
 been replaced by mechanism-named transaction Witnesses. The exact-assembly
@@ -54,25 +54,42 @@ prove the grader rejects authorization effects, identity drift, unexpected
 callers and a ceiling above `diagnostic_only`. This is D2/static evidence, not
 loaded deployment or Organic qualification.
 
-The current post-D2 Preview.62 artifact is built, installed and Steam
-cold-loaded as:
+Preview.63 adds a typed Gateway Permission Manager, a conservative loaded
+Harmony Patch inventory, versioned operation-scoped session grants, exact
+publication/execution grant binding, semantic-completion promotion, and
+failure quarantine. The reviewed exact-environment policy remains an absolute
+ceiling. D candidate data remains non-authorizing.
+
+The current Preview.63 artifact is built, installed and Steam cold-loaded as:
 
 ```text
-SHA      f22c152aa9a58e429fea4ecc25dcc83ef7666e481c1acecc754545f428a8d8ab
-MVID     546ef308-f4ff-45f4-8a07-8d0fff70c304
-runtime  2b82c83dcf27427f816857fcdbcdc1e7
+SHA      d05b0580917c5b60acc908ec2575d2d0f8e59778da8c2379cebc0d5e72c90aa0
+MVID     4836b3df-fffc-498a-b9c9-ac666adb5a5b
+runtime  8aec74c19fed4a09984dc56a7e0c36ac
 game     v0.109.0|c12f634d|-1639417500
-Modset   exact_bridge_only
-fingerprint eab9ee21fd1d9180b16585c9a528d7f2b831bb7199b08fdf98bf97cf3a49bb57
-policy   bridge_v2_exact_environment_policy_2026_07_24
-digest   1a3f5107e833bb5d561a36bbc2756340392225380088430229d7ef2dcf659f8f
+Modset   2fd2cd789eb082ebfb91a3cd41c6a13869f359bc1d326fb752953c0bf9789d6f
+exact policy bridge_v2_exact_environment_policy_2026_07_24
+exact digest 1a3f5107e833bb5d561a36bbc2756340392225380088430229d7ef2dcf659f8f
+gray policy  bridge_v2_gray_permission_candidates_2026_07_25
+gray digest  618cca62e60d69ad0dc6ab10bab93cb2dc004b54a602e3d2142b21ca34d161fd
+Patch status clean_known_owners
+Patch digest ee979e2b877b772adaa28409f474037a832b9ccaf22037afde23a527bb13c587
 ```
 
-Built, installed and loaded SHA matched. Re strict inspection decoded the same
-protocol, Bridge/game/Modset identity and policy provenance. The loaded v1 root
-and child probes returned `410`. This is installation/load/consumer evidence,
-not an action Canary or Organic qualification for the six newly registered
-sources.
+Built, installed and loaded SHA matched. Re strict inspection decoded the
+protocol, Bridge/game/Modset/Patch identity, policy provenance and session
+grant ledger. An operator-directed Re production-path canary executed
+advertised `main_menu/continue_run` once, observed the Gateway semantic
+saved-run activation witness, and settled after eight polls / 1569 ms at
+`reward_flow/reward_claim`. The Gateway replaced its version-1
+`session_canary` grant with a version-2 `session_auto_approved` grant under the
+same runtime epoch.
+
+This is a real bounded gray canary. It is not persistent qualification,
+cross-runtime inheritance, broad automatic permission, proof that
+`open_singleplayer` completed, or permission for any non-navigation operation.
+The detailed state machine, exact binding and rollback boundary are in the
+[D3 permission closeout](D3_PERMISSION_GRAY_ROLLOUT_CLOSEOUT_2026-07-25.md).
 
 The predecessor Preview.62 artifact
 `d66f5986f8216104fec76412c4b46b4c863076d0c8c7c5870a66fdb9f0c5a892`,
@@ -97,7 +114,7 @@ artifact.
 ## Dated Evidence Chronology
 
 The chronology below records prior artifacts and repairs. It does not transfer
-Organic qualification or permission to Preview.62.
+Organic qualification or permission to Preview.63.
 
 Gate 0 is now closed on the exact loaded artifact recorded in
 [the Gate 0 closeout](CONNECTOR_G0_CLOSEOUT_2026-07-22.md). Re completed
@@ -122,13 +139,14 @@ compatibility only. The prior Preview.59 Dredge journey does not transfer Gate
 
 ## Required Repair Order
 
-1. Keep new Gate 2 feature coverage paused until a read-only action-relevant
-   runtime patch inventory and one recorded-evidence assertion path close the
-   current adaptation-hardening window.
+1. The first D3 permission window is closed: runtime Patch inventory,
+   two-epoch session-canary repeat and a read-only exact-identity transition
+   assertion are complete. Do not broaden gray candidates as part of the next
+   Gate 2 or Gate 3 slice.
 2. Maintain the machine-checked closed Gate 1/v1 retirement inventory and run
    the non-authorizing exact-assembly compatibility audit on each exact build.
-3. Collect Preview.62 source canaries only when naturally reachable and keep
-   Tutor/unknown origins fail closed.
+3. Do not add a non-navigation gray candidate until independent evidence and
+   candidate-policy review exist. Keep Tutor/unknown origins fail closed.
 
 The current inventory and first Gate 1 runtime repair are recorded in
 [Gate 1 Operation And Journey Inventory](GATE1_OPERATION_AND_JOURNEY_INVENTORY.md).

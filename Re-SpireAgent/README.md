@@ -1,12 +1,13 @@
 # Re-SpireAgent RE-P1
 
-> Compatibility status, 2026-07-24: Re and C# share source contract
-> `2.0-preview.62`; Re normalized schema is `26`. Gate 1 is closed as a
+> Compatibility status, 2026-07-25: Re and C# share source contract
+> `2.0-preview.63`; Re normalized schema is `26`. Gate 1 is closed as a
 > bounded ordinary-single-player v2 connector baseline. Preview.61 supplied
 > the final Neow's Fury Organic runtime seal; Preview.62 source/audit evidence
-> does not automatically qualify its new registry entries. Preview.62 is
-> installed/cold-loaded locally and strict Re inspection passes on its exact
-> recorded identity.
+> does not automatically qualify its new registry entries. Preview.63 is
+> installed/cold-loaded locally; strict Re inspection and one real
+> `continue_run` session canary/auto-approval pass on its exact recorded
+> identity. That grant is volatile, not persistent qualification.
 
 > Product-boundary warning: direct Re-to-Gateway REST and `.env.local` provider
 > keys are developer workflows, not the target consumer architecture. The
@@ -24,7 +25,7 @@ waits for the Bridge command lifecycle, and records the complete evidence.
 
 RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, shadow/live modes, policy promotion, or the old project's phase machinery. Its job is to make one decision path correct and auditable.
 
-Re's current strict client contract is Bridge `2.0-preview.62` on exact game
+Re's current strict client contract is Bridge `2.0-preview.63` on exact game
 identity `v0.109.0|c12f634d|-1639417500`. The separate
 `release_declared_main_assembly_hash=-840572606` is diagnostic provenance, not
 permission authority. Re requires capabilities and every
@@ -38,6 +39,12 @@ manifest; empty permission lists never mean wildcard. It rejects legal actions
 outside the matching capability operation inventory.
 Historical qualification on another game hash or Bridge MVID remains
 historical evidence only. See [MCP state coverage](docs/MCP_STATE_COVERAGE.md).
+
+Preview.63 strictly decodes the Gateway permission system, conservative Patch
+inventory and versioned session grant ledger. Re requires each dynamic scope
+to reference the unique current active exact-environment grant, but it never
+issues, promotes, quarantines or persists a grant. D evidence and historical
+grant records remain non-authorizing.
 
 Preview.55 makes strict v2 the sole connector path. Re rejects legacy `v1` and
 the former `auto` mode; it cannot probe or fall back to v1. Bridge-confirmed

@@ -12,6 +12,7 @@ using Godot;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Modding;
 using MegaCrit.Sts2.Core.Multiplayer.Game;
+using STS2_MCP.BridgeV2.Runtime;
 
 namespace STS2_MCP;
 
@@ -34,13 +35,16 @@ public static partial class McpMod
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
     };
 
-    private static int LoadPort()
+    private sealed record RuntimeConfig(int Port, BridgePermissionMode PermissionMode);
+
+    private static RuntimeConfig LoadRuntimeConfig()
     {
         try
         {
             string? modDir = Path.GetDirectoryName(
                 System.Reflection.Assembly.GetExecutingAssembly().Location);
-            if (modDir == null) return DefaultPort;
+            if (modDir == null)
+                return new RuntimeConfig(DefaultPort, BridgePermissionMode.BalancedGray);
 
             string configPath = Path.Combine(modDir, ConfigFileName);
             if (!File.Exists(configPath))
@@ -49,7 +53,8 @@ public static partial class McpMod
                 {
                     var defaultConfig = new Dictionary<string, object>
                     {
-                        ["port"] = DefaultPort
+                        ["port"] = DefaultPort,
+                        ["permission_mode"] = "balanced_gray"
                     };
                     string json = JsonSerializer.Serialize(defaultConfig, _jsonOptions);
                     File.WriteAllText(configPath, json);
@@ -59,25 +64,45 @@ public static partial class McpMod
                 {
                     GD.Print($"[STS2 MCP] No config found at {configPath}; using default port {DefaultPort}");
                 }
-                return DefaultPort;
+                return new RuntimeConfig(DefaultPort, BridgePermissionMode.BalancedGray);
             }
 
             string content = File.ReadAllText(configPath);
             using var doc = JsonDocument.Parse(content);
+            int configuredPort = DefaultPort;
             if (doc.RootElement.TryGetProperty("port", out var portElem)
                 && portElem.TryGetInt32(out int port)
                 && port is > 0 and <= 65535)
             {
-                return port;
+                configuredPort = port;
+            }
+            else
+            {
+                GD.PrintErr(
+                    $"[STS2 MCP] Invalid or missing 'port' in {configPath}, using default {DefaultPort}");
             }
 
-            GD.PrintErr($"[STS2 MCP] Invalid or missing 'port' in {configPath}, using default {DefaultPort}");
-            return DefaultPort;
+            string? permissionMode = doc.RootElement.TryGetProperty(
+                "permission_mode",
+                out JsonElement modeElement)
+                ? modeElement.GetString()
+                : null;
+            if (permissionMode is not null
+                && permissionMode is not ("strict" or "balanced_gray" or "developer_gray"))
+            {
+                GD.PrintErr(
+                    $"[STS2 MCP] Invalid permission_mode '{permissionMode}' in {configPath}; failing closed to strict");
+                permissionMode = "strict";
+            }
+            return new RuntimeConfig(
+                configuredPort,
+                BridgePermissionManager.ParseMode(permissionMode));
         }
         catch (Exception ex)
         {
-            GD.PrintErr($"[STS2 MCP] Failed to load config: {ex.Message}, using default port {DefaultPort}");
-            return DefaultPort;
+            GD.PrintErr(
+                $"[STS2 MCP] Failed to load config: {ex.Message}; using default port and strict permission mode");
+            return new RuntimeConfig(DefaultPort, BridgePermissionMode.Strict);
         }
     }
 
@@ -92,7 +117,9 @@ public static partial class McpMod
             var tree = (SceneTree)Engine.GetMainLoop();
             tree.Connect(SceneTree.SignalName.ProcessFrame, Callable.From(ProcessMainThreadQueue));
 
-            int port = LoadPort();
+            RuntimeConfig config = LoadRuntimeConfig();
+            BridgeV2Runtime.ConfigurePermissionMode(config.PermissionMode);
+            int port = config.Port;
 
             _listener = new HttpListener();
             _listener.Prefixes.Add($"http://localhost:{port}/");
@@ -107,6 +134,8 @@ public static partial class McpMod
             _serverThread.Start();
 
             GD.Print($"[STS2 MCP] v{Version} server started on http://localhost:{port}/");
+            GD.Print(
+                $"[STS2 MCP] Permission mode: {BridgePermissionManager.ModeName(config.PermissionMode)}");
             GD.Print("[STS2 MCP] Legacy v1 HTTP namespace: retired");
         }
         catch (Exception ex)

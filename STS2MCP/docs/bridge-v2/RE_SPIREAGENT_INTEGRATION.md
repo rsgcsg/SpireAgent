@@ -2,7 +2,7 @@
 
 In this project, "SpireAgent" means `Re-SpireAgent` by default.
 
-Current source contract is `2.0-preview.62`; Re normalized schema is `26`.
+Current source contract is `2.0-preview.63`; Re normalized schema is `26`.
 Gate 1 is closed as a bounded ordinary-single-player v2 connector baseline.
 Preview.61 supplied the exact Neow's Fury Organic lifecycle; Preview.62 adds
 reviewed compatibility/source registries and policy provenance without
@@ -39,6 +39,8 @@ Required client behavior:
 
 - reject unknown protocol major versions;
 - reject incompatible game/bridge identity for execution;
+- validate the permission runtime epoch, Patch inventory and each current
+  dynamic grant without becoming a permission decision point;
 - stop on unsupported/degraded state; Re has no v1 fallback policy;
 - never infer an index, target, or MCP operation from an action label;
 - retain raw request/response and parsed evidence separately;
@@ -48,6 +50,17 @@ Required client behavior:
 - treat both `failed` and `timed_out` as unknown outcomes;
 - never auto-retry unknown outcomes;
 - permit only one action-capable Re process through its runtime lock.
+
+Preview.63 keeps the permission decision and enforcement in the Gateway. Re
+requires state and capabilities to agree on the stable
+`surface + operation + tier` authorization set, while independently validating
+each response's exact grant binding. This allows a negotiated capability's
+session-canary grant to be superseded after semantic completion without
+accepting a different operation or tier. Every dynamic scope must reference
+the unique current active grant for the same Surface/operation, runtime epoch,
+exact environment, Patch digest and operation fingerprint. Historical
+superseded/revoked grant records remain read-only audit evidence and never
+create an allowed action.
 
 Source `2.0-preview.47` additionally requires strict decoding of the bounded
 visibility declaration, state-bound Inspection catalog, coherent observation

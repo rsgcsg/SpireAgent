@@ -1,7 +1,7 @@
 # Bridge v2 Integration
 
-> Current source-truth status, 2026-07-24: Re and C# share the
-> `2.0-preview.62` source consumer contract; Re normalized schema is `26`.
+> Current source-truth status, 2026-07-25: Re and C# share the
+> `2.0-preview.63` source consumer contract; Re normalized schema is `26`.
 > Gate 1 is closed as a bounded ordinary-single-player v2 connector baseline.
 > Preview.61 supplied the final Neow's Fury runtime seal; Preview.62 adds
 > policy provenance and registry adaptation without inheriting qualification.
@@ -24,7 +24,7 @@ consumption.
 
 ## Current Scope
 
-Re-SpireAgent implements the strict `2.0-preview.62` consumer contract. When a
+Re-SpireAgent implements the strict `2.0-preview.63` consumer contract. When a
 matching Bridge exists, authority is read from capabilities rather than
 inferred from implementation or historical evidence.
 
@@ -33,8 +33,9 @@ For every exact identity, Re accepts only the Gateway's explicit
 source binding, Surface, and Inspection is disabled. Qualification from another
 game build or Bridge MVID does not transfer.
 
-Re compares state and capability permission scopes exactly, rejects duplicate
-or unadvertised scopes, and imports a legal action only when its
+Re compares the stable state/capability authorization set
+(`surface_kind + operation + tier`), rejects duplicate or unadvertised scopes,
+and imports a legal action only when its
 `surface_kind + operation` pair is explicitly advertised. Empty qualified,
 canary, or Inspection lists never imply wildcard authority. State,
 capabilities, bundles, and Inspections must agree on game identity, Modset
@@ -46,6 +47,15 @@ Preview.62 also requires state and capabilities to agree on the reviewed
 exact-environment policy ID, its digest and adaptation level. These fields are
 provenance, not a client-side permission engine.
 
+Preview.63 additionally requires the Gateway permission runtime epoch, runtime
+Patch inventory and complete operation-scope grant bindings. A dynamic scope
+must reference the unique current active grant for the same operation and exact
+environment. Re preserves superseded/revoked grant versions for audit, imports
+no action from them, and cannot promote, quarantine or persist permission.
+Capabilities are negotiated once, so grant IDs may legitimately advance after
+a semantic completion; each response is independently exact-validated while
+the stable authorization set must remain coherent.
+
 Re's production Connector is v2-only. The former `auto` and explicit `v1`
 runtime modes are rejected; historical v1 raw-state records remain readable
 but no Re transport can reach `/api/v1/*`. A `legacy_v1_state` field injected
@@ -55,6 +65,13 @@ Bridge command `completed` is the semantic settlement authority. Re verifies
 the echoed request/state/action identity, preserves `failed` and `timed_out`
 as unknown outcomes, and captures a coherent successor checkpoint after a
 confirmed command. A checkpoint read failure cannot cause action retry.
+
+The first exact Preview.63 production-path canary submitted advertised
+`main_menu/continue_run` once and settled at `reward_flow/reward_claim`. The
+Gateway promoted that operation from `session_canary` to
+`session_auto_approved` for the current runtime epoch. This proves the
+consumer contract and one low-risk session loop, not persistent qualification
+or broader permission.
 
 Preview.47 adds one coherent state-plus-Inspection observation bundle, a typed
 visibility/Inspection catalog, and non-authorizing contract-instance shadow

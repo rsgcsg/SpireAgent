@@ -9,8 +9,26 @@ import { normalizeCurrentState } from "../src/normalization/normalizeCurrentStat
 import type { JsonObject } from "../src/shared/json.js";
 import { fixture } from "./helpers.js";
 
+function permissionScope(
+  surfaceKind: string,
+  operation: string,
+  tier: "qualified" | "canary"
+) {
+  return {
+    surface_kind: surfaceKind,
+    operation,
+    tier,
+    grant_id: `fixture-grant-${surfaceKind}-${operation}`,
+    grant_version: 1,
+    runtime_epoch: "not_session_bound",
+    environment_digest: "fixture-environment",
+    patch_digest: "fixture-patch",
+    operation_fingerprint: `fixture-operation-${surfaceKind}-${operation}`
+  };
+}
+
 const CAPABILITIES = {
-  protocol_version: "2.0-preview.62",
+  protocol_version: "2.0-preview.63",
   bridge: {
     id: "sts2_mcp_bridge_v2",
     name: "STS2 Agent Bridge",
@@ -40,11 +58,7 @@ const CAPABILITIES = {
       observation_only_surface_kinds: [] as string[],
       observation_candidate_build_fingerprints: [] as string[],
       detail: "exact",
-      action_permission_scopes: [] as Array<{
-        surface_kind: string;
-        operation: string;
-        tier: "qualified" | "canary";
-      }>,
+      action_permission_scopes: [] as ReturnType<typeof permissionScope>[],
       compatibility_policy_id: "fixture_exact_environment_policy",
       compatibility_policy_digest: "b".repeat(64),
       adaptation_level: "reviewed_exact_environment"
@@ -115,6 +129,26 @@ const CAPABILITIES = {
     ordering_semantics: ["unordered_multiset", "player_sorted", "fixed_ui_slots"],
     implemented_kinds: ["run_deck", "combat_piles", "shop_catalog"]
   },
+  permission_system: {
+    schema_version: 1,
+    status: "active_session_scoped",
+    mode: "balanced_gray",
+    runtime_epoch: "fixture-runtime-1",
+    policy_id: "fixture-gray-permission-policy",
+    policy_digest: "c".repeat(64),
+    dynamic_session_promotion_enabled: true,
+    patch_inventory: {
+      status: "clean_known_owners",
+      digest: "fixture-patch",
+      scope: "loaded_harmony_patch_metadata_global_conservative",
+      patched_method_count: 1,
+      patch_owners: ["com.sts2mcp"],
+      unknown_owners: [],
+      limitations: ["fixture inventory"]
+    },
+    grants: [],
+    limitations: ["fixture permission system"]
+  },
   diagnostics: [{
     code: "bridge.inspection.read_only_enabled",
     severity: "info",
@@ -180,7 +214,7 @@ const RUN_VISIBILITY = {
 };
 
 const DECK_ENCHANT_STATE = {
-  protocol_version: "2.0-preview.62",
+  protocol_version: "2.0-preview.63",
   state_id: "state-test-1",
   state_sequence: 1,
   observed_at: "2026-07-16T00:00:00Z",
@@ -256,7 +290,7 @@ const DECK_ENCHANT_STATE = {
     status: "resolved_manifest_contract",
     instance_id: "contract-instance-deck-enchant-1",
     surface_kind: "deck_enchant_selection",
-    semantic_contract_id: "bridge.surface.deck_enchant_selection.2.0-preview.62",
+    semantic_contract_id: "bridge.surface.deck_enchant_selection.2.0-preview.63",
     declared_binding: "fixture-declared-binding",
     operations: [{ operation: "toggle_card", evidence_status: "surface_level_only", published: true }],
     current_authority_tier: "canary",
@@ -264,6 +298,7 @@ const DECK_ENCHANT_STATE = {
     authorizing: false,
     limitations: ["shadow_inventory_only", "authority_remains_surface_kind_scoped"]
   },
+  permission_system: CAPABILITIES.permission_system,
   diagnostics: [],
   warnings: []
 };
@@ -2029,7 +2064,7 @@ function visibleInspectionCard(overrides: Record<string, unknown> = {}) {
 
 function runDeckInspection(stateId: string, cards = [visibleInspectionCard()]) {
   return {
-    protocol_version: "2.0-preview.62",
+    protocol_version: "2.0-preview.63",
     inspection_id: `inspection-run-deck-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -2052,7 +2087,7 @@ function runDeckInspection(stateId: string, cards = [visibleInspectionCard()]) {
 
 function combatPilesInspection(stateId: string) {
   return {
-    protocol_version: "2.0-preview.62",
+    protocol_version: "2.0-preview.63",
     inspection_id: `inspection-combat-piles-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -2097,7 +2132,7 @@ function shopCatalogInspection(stateId: string) {
     blocked_reason: offer.stocked ? "not_visible" : offer.blocked_reason
   });
   return {
-    protocol_version: "2.0-preview.62",
+    protocol_version: "2.0-preview.63",
     inspection_id: `inspection-shop-catalog-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -2139,7 +2174,7 @@ function coherentObservationBundle(
   }));
   const resolvedInspections = inspections ?? defaultInspections;
   return {
-    protocol_version: "2.0-preview.62",
+    protocol_version: "2.0-preview.63",
     observation_id: `observation-${state.state_id}`,
     coherent: true,
     state,
@@ -2415,18 +2450,18 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     state.legal_actions[0]!.state_id = state.state_id;
     state.completeness.player_visible_semantics = "contract_complete_for_precise_scissors_deck_removal_selection";
     state.game.compatibility.action_canary_surface_kinds.push("relic_deck_removal_selection");
-    state.game.compatibility.action_permission_scopes.push({
-      surface_kind: "relic_deck_removal_selection",
-      operation: "toggle_deck_removal_card",
-      tier: "canary"
-    });
+    state.game.compatibility.action_permission_scopes.push(permissionScope(
+      "relic_deck_removal_selection",
+      "toggle_deck_removal_card",
+      "canary"
+    ));
     const capabilities = structuredClone(CAPABILITIES);
     capabilities.game.compatibility.action_canary_surface_kinds.push("relic_deck_removal_selection");
-    capabilities.game.compatibility.action_permission_scopes.push({
-      surface_kind: "relic_deck_removal_selection",
-      operation: "toggle_deck_removal_card",
-      tier: "canary"
-    });
+    capabilities.game.compatibility.action_permission_scopes.push(permissionScope(
+      "relic_deck_removal_selection",
+      "toggle_deck_removal_card",
+      "canary"
+    ));
     capabilities.surfaces.push({
       kind: "relic_deck_removal_selection",
       support: "implemented_exact_game_version",
@@ -2471,18 +2506,18 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     state.legal_actions[0]!.state_id = state.state_id;
     state.completeness.player_visible_semantics = "contract_complete_for_card_removal_reward_selection";
     state.game.compatibility.action_canary_surface_kinds.push("reward_deck_removal_selection");
-    state.game.compatibility.action_permission_scopes.push({
-      surface_kind: "reward_deck_removal_selection",
-      operation: "toggle_deck_removal_card",
-      tier: "canary"
-    });
+    state.game.compatibility.action_permission_scopes.push(permissionScope(
+      "reward_deck_removal_selection",
+      "toggle_deck_removal_card",
+      "canary"
+    ));
     const capabilities = structuredClone(CAPABILITIES);
     capabilities.game.compatibility.action_canary_surface_kinds.push("reward_deck_removal_selection");
-    capabilities.game.compatibility.action_permission_scopes.push({
-      surface_kind: "reward_deck_removal_selection",
-      operation: "toggle_deck_removal_card",
-      tier: "canary"
-    });
+    capabilities.game.compatibility.action_permission_scopes.push(permissionScope(
+      "reward_deck_removal_selection",
+      "toggle_deck_removal_card",
+      "canary"
+    ));
     capabilities.surfaces.push({
       kind: "reward_deck_removal_selection",
       support: "implemented_exact_game_version",
@@ -3060,7 +3095,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
           : null;
       return tier === null
         ? []
-        : surface.operations.map((operation) => ({ surface_kind: surface.kind, operation, tier }));
+        : surface.operations.map((operation) => permissionScope(surface.kind, operation, tier));
     });
     canaryCapabilities.game = {
       version: "v0.109.0",
@@ -3234,11 +3269,8 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     const canaryKinds = ["event_option", "event_card_acquisition", "map_navigation"];
     const actionPermissionScopes = canaryOnlyCapabilities.surfaces.flatMap((surface) =>
       canaryKinds.includes(surface.kind)
-        ? surface.operations.map((operation) => ({
-          surface_kind: surface.kind,
-          operation,
-          tier: "canary" as const
-        }))
+        ? surface.operations.map((operation) =>
+          permissionScope(surface.kind, operation, "canary"))
         : []
     );
     canaryOnlyCapabilities.game = {
@@ -5382,7 +5414,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
           : null;
       return tier === null
         ? []
-        : surface.operations.map((operation) => ({ surface_kind: surface.kind, operation, tier }));
+        : surface.operations.map((operation) => permissionScope(surface.kind, operation, tier));
     });
     capabilities.game = {
       version: "v0.109.0",
@@ -5850,7 +5882,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
           : null;
       return tier === null
         ? []
-        : surface.operations.map((operation) => ({ surface_kind: surface.kind, operation, tier }));
+        : surface.operations.map((operation) => permissionScope(surface.kind, operation, tier));
     });
     capabilities.game = {
       version: "v0.109.0",
@@ -6119,6 +6151,99 @@ function commandAdapter(
     throw new Error(`Unexpected request ${url}`);
   }, async () => {});
 }
+
+describe("Bridge v2 session permission governance", () => {
+  it("accepts an exact runtime-bound session canary grant", () => {
+    const capabilities = structuredClone(CAPABILITIES);
+    (capabilities.permission_system.grants as unknown as Array<Record<string, unknown>>).push({
+      schema_version: 1,
+      grant_id: "grant-fixture-session-canary",
+      grant_version: 1,
+      current: true,
+      status: "active",
+      mode: "balanced_gray",
+      surface_kind: "main_menu",
+      operation: "open_singleplayer",
+      tier: "session_canary",
+      risk_class: "reversible_navigation",
+      runtime_epoch: capabilities.bridge.runtime_instance_id,
+      environment_digest: "fixture-environment",
+      gateway_assembly_sha256: capabilities.bridge.assembly_file_sha256,
+      gateway_module_version_id: capabilities.bridge.module_version_id,
+      modset_fingerprint: capabilities.game.modset.fingerprint,
+      patch_digest: capabilities.permission_system.patch_inventory.digest,
+      operation_fingerprint: "fixture-operation-main-menu-open-singleplayer",
+      evidence_bundle_digest: capabilities.permission_system.policy_digest,
+      issued_at: "2026-07-25T00:00:00Z",
+      expires_at: "2026-07-25T04:00:00Z",
+      supersedes_grant_id: null,
+      revocation_reason: null,
+      evidence_ids: ["fixture"]
+    });
+
+    expect(decodeBridgeV2Capabilities(capabilities).data.permission_system.grants)
+      .toHaveLength(1);
+  });
+
+  it("rejects a grant from another runtime epoch", () => {
+    const capabilities = structuredClone(CAPABILITIES);
+    capabilities.permission_system.runtime_epoch = "other-runtime";
+
+    expect(() => decodeBridgeV2Capabilities(capabilities))
+      .toThrow("runtime epoch must match");
+  });
+
+  it("rejects dynamic promotion when Patch identity is not clean", () => {
+    const capabilities = structuredClone(CAPABILITIES);
+    capabilities.permission_system.patch_inventory.status = "unknown_patch_owner";
+    capabilities.permission_system.patch_inventory.unknown_owners =
+      ["unknown.mod"] as unknown as never[];
+
+    expect(() => decodeBridgeV2Capabilities(capabilities))
+      .toThrow("requires a clean runtime Patch inventory");
+  });
+
+  it("rejects a nominally clean Patch inventory without the Gateway owner", () => {
+    const capabilities = structuredClone(CAPABILITIES);
+    capabilities.permission_system.patch_inventory.patched_method_count = 0;
+    capabilities.permission_system.patch_inventory.patch_owners = [];
+
+    expect(() => decodeBridgeV2Capabilities(capabilities))
+      .toThrow("must contain the Gateway owner");
+  });
+
+  it("retains a superseded issuance record across exact-identity change", () => {
+    const capabilities = structuredClone(CAPABILITIES);
+    (capabilities.permission_system.grants as unknown as Array<Record<string, unknown>>).push({
+      schema_version: 1,
+      grant_id: "grant-fixture-revoked-old-patch",
+      grant_version: 1,
+      current: false,
+      status: "active",
+      mode: "balanced_gray",
+      surface_kind: "main_menu",
+      operation: "continue_run",
+      tier: "session_canary",
+      risk_class: "reversible_navigation",
+      runtime_epoch: capabilities.bridge.runtime_instance_id,
+      environment_digest: "fixture-old-environment",
+      gateway_assembly_sha256: capabilities.bridge.assembly_file_sha256,
+      gateway_module_version_id: capabilities.bridge.module_version_id,
+      modset_fingerprint: "fixture-old-modset",
+      patch_digest: "fixture-old-patch",
+      operation_fingerprint: "fixture-operation-main-menu-continue-run",
+      evidence_bundle_digest: capabilities.permission_system.policy_digest,
+      issued_at: "2026-07-25T00:00:00Z",
+      expires_at: "2026-07-25T04:00:00Z",
+      supersedes_grant_id: null,
+      revocation_reason: null,
+      evidence_ids: ["fixture"]
+    });
+
+    expect(decodeBridgeV2Capabilities(capabilities).data.permission_system.grants)
+      .toHaveLength(1);
+  });
+});
 
 async function firstBridgeAction(adapter: Sts2McpHybridAdapter) {
   const raw = await adapter.readCurrentState();

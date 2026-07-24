@@ -14,6 +14,10 @@ const policyPath = path.join(
   root,
   "STS2MCP/BridgeV2/Game/exact-environment-policy.json"
 );
+const grayCandidatePath = path.join(
+  root,
+  "STS2MCP/BridgeV2/Runtime/gray-permission-candidates.json"
+);
 const manifestPath = path.join(
   root,
   "STS2MCP/BridgeV2/Runtime/BridgeContractManifest.cs"
@@ -30,21 +34,38 @@ const bindingPath = path.join(
   root,
   "STS2MCP/BridgeV2/Game/CombatPileSelectionSourceBinding.cs"
 );
+const permissionManagerPath = path.join(
+  root,
+  "STS2MCP/BridgeV2/Runtime/BridgePermissionManager.cs"
+);
 
-const [registryText, catalogText, policyText, manifest, identity, provider, binding] =
+const [
+  registryText,
+  catalogText,
+  policyText,
+  grayCandidateText,
+  manifest,
+  identity,
+  provider,
+  binding,
+  permissionManager
+] =
   await Promise.all([
     readFile(registryPath, "utf8"),
     readFile(catalogPath, "utf8"),
     readFile(policyPath, "utf8"),
+    readFile(grayCandidatePath, "utf8"),
     readFile(manifestPath, "utf8"),
     readFile(identityPath, "utf8"),
     readFile(providerPath, "utf8"),
-    readFile(bindingPath, "utf8")
+    readFile(bindingPath, "utf8"),
+    readFile(permissionManagerPath, "utf8")
   ]);
 
 const registry = JSON.parse(registryText);
 const catalog = JSON.parse(catalogText);
 const policy = JSON.parse(policyText);
+const grayCandidates = JSON.parse(grayCandidateText);
 assert(registry.schema_version === 1, "unsupported combat-pile registry schema");
 assert(
   registry.authorization_mode === "reviewed_embedded_policy_only",
@@ -60,6 +81,12 @@ assert(policy.schema_version === 1, "unsupported exact-environment policy schema
 assert(
   policy.authorization_mode === "reviewed_embedded_policy_only",
   "exact-environment policy must be reviewed and embedded"
+);
+assert(grayCandidates.schema_version === 1, "unsupported gray candidate schema");
+assert(
+  grayCandidates.authorization_effect === "none"
+    && grayCandidates.recommendation_effect === "gateway_session_candidate_only",
+  "D candidate data may recommend a Gateway session candidate but must not authorize"
 );
 
 const sourceKinds = new Set();
@@ -117,6 +144,64 @@ for (const environment of policy.environments) {
   }
 }
 
+const grayCandidateKeys = new Set();
+for (const candidate of grayCandidates.candidates) {
+  const key = `${candidate.surface_kind}|${candidate.operation}`;
+  assert(!grayCandidateKeys.has(key), `duplicate gray candidate ${key}`);
+  grayCandidateKeys.add(key);
+  assert(
+    candidate.required_static_tier === "canary",
+    `${key} must remain below the reviewed exact-environment canary ceiling`
+  );
+  assert(
+    candidate.risk_class === "reversible_navigation",
+    `${key} is not in the first low-risk reversible gray class`
+  );
+  assert(
+    candidate.minimum_successes === 1,
+    `${key} requests a success threshold the session manager does not implement`
+  );
+  assert(
+    typeof candidate.witness_id === "string" && candidate.witness_id.length > 0,
+    `${key} lacks an action-specific semantic witness`
+  );
+  assert(
+    Number.isInteger(candidate.session_ttl_seconds)
+      && candidate.session_ttl_seconds >= 60
+      && candidate.session_ttl_seconds <= 86_400,
+    `${key} has an unsafe session TTL`
+  );
+  assert(
+    candidate.eligible_modes.length > 0
+      && candidate.eligible_modes.every((mode) =>
+        ["balanced_gray", "developer_gray"].includes(mode)),
+    `${key} has an unsupported gray mode`
+  );
+  assert(
+    policy.environments.some((environment) =>
+      environment.canary_surface_kinds.includes(candidate.surface_kind)),
+    `${key} is not under any reviewed exact-environment canary ceiling`
+  );
+  assert(
+    manifest.includes(`"${candidate.surface_kind}"`)
+      && manifest.includes(`"${candidate.operation}"`),
+    `${key} is absent from the semantic contract manifest`
+  );
+}
+for (const requiredBoundary of [
+  "CandidateEligible(",
+  "AuthorizeExecution(",
+  "ObserveCommand(",
+  "Quarantine(",
+  "session_auto_approved",
+  "BridgeGrayPermissionCandidateCatalog.LoadError"
+]) {
+  assert(
+    permissionManager.includes(requiredBoundary),
+    `Permission Manager is missing required boundary ${requiredBoundary}`
+  );
+}
+
 assert(
   identity.includes("BridgeExactEnvironmentPolicy.Assess"),
   "BridgeGameIdentity must delegate exact-build assessment to reviewed policy data"
@@ -161,6 +246,10 @@ console.log(
     contract_catalog: catalog.catalog_id,
     witness_topology_count: witnessTopologies.size,
     exact_environment_count: policy.environments.length,
+    gray_candidate_policy: grayCandidates.policy_id,
+    gray_candidate_count: grayCandidateKeys.size,
+    gray_candidate_authorization_effect: grayCandidates.authorization_effect,
+    gray_candidate_recommendation_effect: grayCandidates.recommendation_effect,
     combat_pile_source_count: registry.contracts.length,
     source_kinds: [...sourceKinds].sort()
   })

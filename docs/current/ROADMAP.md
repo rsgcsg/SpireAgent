@@ -39,8 +39,9 @@ Tutor holdout.
 
 ## Gate 2: Player-Visible Information Closure
 
-Status: **next functional gate; feature expansion is temporarily paused while
-the first non-authorizing adaptation/D2 hardening slice is closed.**
+Status: **next functional gate. The first D3 operation-scoped
+permission/gray-rollout slice is closed; this change does not itself resume
+feature expansion.**
 
 Close decision-relevant visible-information gaps using shared state, context,
 surface, preview, and read-only inspection. Do not expose hidden RNG, draw
@@ -54,10 +55,15 @@ strategy quality. It must pass paired provider shadow and semantic review
 before any Prompt-path change is considered. The first generic v1 projection
 failed that evidence gate on reward scopes and is rejected for runtime use.
 
-The pause does not reopen Gate 1 or add a new permission gate. It prevents new
-Surface work from outrunning the compatibility evidence path. Resume Gate 2
-after a read-only action-relevant runtime patch inventory and one
-recorded-evidence assertion path are available; neither may grant authority.
+The pause does not reopen Gate 1. Preview.63 now has a conservative runtime
+Patch inventory and one Gateway-owned, runtime-epoch-bound permission canary.
+The low-risk session grant has repeated on a second epoch, and a read-only
+recorded-evidence assertion has verified the exact
+`session_canary -> session_auto_approved` transition. D evidence remains
+non-authorizing; only the Gateway can issue, enforce, promote or quarantine a
+grant below the reviewed exact-environment ceiling. A later Gate 2 slice must
+remain independently scoped and must not broaden gray candidates as a side
+effect.
 
 ## Gate 3: Secure Local Connector Alpha
 

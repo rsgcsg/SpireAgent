@@ -12,13 +12,15 @@ Bridge v2 is the only mutation contract for the current Agent and default MCP
 adapter. It remains an incremental semantic/visibility preview, not
 complete-game coverage.
 
-The C# Bridge and Re source share `2.0-preview.62`; Re normalized schema is
+The C# Bridge and Re source share `2.0-preview.63`; Re normalized schema is
 `26`. Gate 1 is closed as a bounded ordinary-single-player v2 connector
-baseline. Preview.62 replaces repeated combat-pile source branches with a
+baseline. Preview.62 replaced repeated combat-pile source branches with a
 reviewed embedded registry, moves exact-environment scopes into a reviewed
-embedded policy, and adds a non-authorizing exact-assembly audit. The final
+embedded policy, and added a non-authorizing exact-assembly audit. Preview.63
+adds Gateway-owned operation-scoped session grants, conservative runtime Patch
+evidence, semantic-completion promotion and failure quarantine. The final
 Neow's Fury runtime seal remains attributed to Preview.61; new Preview.62
-registry entries are not automatically Organic-qualified. Preview.62 is built,
+registry entries are not automatically Organic-qualified. Preview.63 is built,
 installed and cold-loaded on the local exact Bridge-only environment; the
 exact SHA/MVID/runtime/policy evidence is recorded in
 [current status](docs/bridge-v2/CURRENT_STATUS.md).
@@ -38,12 +40,12 @@ exact SHA/MVID/runtime/policy evidence is recorded in
   untested and has no v2 action or Inspection authority. Check
   [Bridge v2 current status](docs/bridge-v2/CURRENT_STATUS.md) before treating
   a local install as qualified.
-- Source `2.0-preview.62` keeps centralized overlay/room/menu ownership, typed
+- Source `2.0-preview.63` keeps centralized overlay/room/menu ownership, typed
   diagnostics, purpose-specific selection and event contracts, staged
   completion semantics, and a top-level read-only shared run/player HUD.
-  Current-build capabilities distinguish scoped-qualified actions, action
-  canaries, and read-only Inspection instead of treating implementation as
-  permission.
+  Current-build capabilities distinguish scoped-qualified actions,
+  operation-scoped session grants, action canaries, and read-only Inspection
+  instead of treating implementation or D evidence as permission.
 - Qualified combat Context includes exact player-visible companion state from
   native `PlayerCombatState.Pets`. Companion HP is exposed only when the native
   health bar is visible; this adds no companion action authority.
@@ -154,7 +156,7 @@ npm run check:connector-adaptation
 npm run audit:connector-compatibility
 ```
 
-The solution currently contains 122 pure contract/runtime/security tests
+The solution currently contains 135 pure contract/runtime/security tests
 covering stable state identity, entity identity, stale-state rejection,
 idempotent request IDs, completion observation, timeout-as-unknown, retired-v1
 routing, and JSON action shape.
@@ -192,16 +194,24 @@ cp out/STS2_MCP/STS2_MCP.dll "$MODS_DIR/STS2_MCP.dll"
 cp mod_manifest.json "$MODS_DIR/STS2_MCP.json"
 ```
 
-The generated `STS2_MCP.conf` contains only transport configuration:
+The generated `STS2_MCP.conf` contains transport and local permission-mode
+configuration:
 
 ```json
 {
-  "port": 15526
+  "port": 15526,
+  "permission_mode": "balanced_gray"
 }
 ```
 
-V1 mutation cannot be enabled. Use only state-bound actions advertised by the
-current Bridge v2 state.
+Supported modes are `strict`, `balanced_gray`, and `developer_gray`.
+`developer_gray` does not bypass the embedded exact-environment ceiling,
+execute-time validation, native commit, semantic completion, Patch gating or
+quarantine. `strict` disables all canary/session authority. Restart the game
+after changing the mode. An invalid mode or unreadable config fails closed to
+`strict`; a missing config creates the local developer default
+`balanced_gray`. V1 mutation cannot be enabled; use only state-bound actions
+advertised by the current Bridge v2 state.
 
 Windows/Linux use the game's corresponding `mods/` directory. Launch the game,
 enable the mod, then verify:
@@ -310,11 +320,27 @@ Exact-build mismatch,
 context/surface mismatch, command-response identity mismatch, failed command,
 and timeout all fail closed.
 
-Current permissions come only from exact-build capability lists. Planning code
+Current permissions come only from Gateway capability scopes. Preview.63
+requires Re to verify scope grant identity against the Gateway permission
+ledger; Re never computes, promotes or quarantines a permission. Planning code
 never reads arbitrary Bridge JSON. Source `preview.30` projects top-level
 shared run/player HUD facts and the scoped run-deck Inspection into typed player
 facts without creating actions or entering the command ledger. Historical
 v0.108 surfaces remain implementation history, not v0.109 authority.
+
+The repository can verify, but never create, a recorded session transition:
+
+```bash
+npm run check:connector-permission-fixtures
+npm run audit:connector-permission-transition -- \
+  --before <pre-canary-capabilities.json> \
+  --after <post-canary-state.json> \
+  --surface main_menu \
+  --operation continue_run
+```
+
+The assertion performs no submission and has no authorization or qualification
+effect.
 
 ## Security And Observation Scope
 

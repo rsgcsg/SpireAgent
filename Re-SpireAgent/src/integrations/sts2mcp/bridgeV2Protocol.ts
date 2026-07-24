@@ -1,14 +1,74 @@
 import { z } from "zod";
 import { isJsonObject, type JsonObject } from "../../shared/json.js";
 
-export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.62" as const;
+export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.63" as const;
 export const BRIDGE_V2_INSPECTION_KINDS = ["run_deck", "combat_piles", "shop_catalog"] as const;
 const inspectionKindSchema = z.enum(BRIDGE_V2_INSPECTION_KINDS);
 
 const actionPermissionScopeSchema = z.object({
   surface_kind: z.string().min(1),
   operation: z.string().min(1),
-  tier: z.enum(["qualified", "canary"])
+  tier: z.enum(["qualified", "canary"]),
+  grant_id: z.string().min(1),
+  grant_version: z.number().int().positive(),
+  runtime_epoch: z.string().min(1),
+  environment_digest: z.string().min(1),
+  patch_digest: z.string().min(1),
+  operation_fingerprint: z.string().min(1)
+}).passthrough();
+
+const runtimePatchInventorySchema = z.object({
+  status: z.enum([
+    "clean_known_owners",
+    "gateway_patch_owner_missing",
+    "unknown_patch_owner",
+    "unavailable"
+  ]),
+  digest: z.string().min(1),
+  scope: z.literal("loaded_harmony_patch_metadata_global_conservative"),
+  patched_method_count: z.number().int().nonnegative(),
+  patch_owners: z.array(z.string().min(1)),
+  unknown_owners: z.array(z.string().min(1)),
+  limitations: z.array(z.string().min(1))
+}).passthrough();
+
+const permissionGrantSchema = z.object({
+  schema_version: z.literal(1),
+  grant_id: z.string().min(1),
+  grant_version: z.number().int().positive(),
+  current: z.boolean(),
+  status: z.enum(["active", "quarantined", "expired"]),
+  mode: z.enum(["strict", "balanced_gray", "developer_gray"]),
+  surface_kind: z.string().min(1),
+  operation: z.string().min(1),
+  tier: z.enum(["session_canary", "session_auto_approved", "none"]),
+  risk_class: z.string().min(1),
+  runtime_epoch: z.string().min(1),
+  environment_digest: z.string().min(1),
+  gateway_assembly_sha256: z.string().regex(/^[a-f0-9]{64}$/iu),
+  gateway_module_version_id: z.string().min(1),
+  modset_fingerprint: z.string().min(1),
+  patch_digest: z.string().min(1),
+  operation_fingerprint: z.string().min(1),
+  evidence_bundle_digest: z.string().min(1),
+  issued_at: z.string().min(1),
+  expires_at: z.string().min(1),
+  supersedes_grant_id: z.string().min(1).nullable().optional(),
+  revocation_reason: z.string().min(1).nullable().optional(),
+  evidence_ids: z.array(z.string().min(1))
+}).passthrough();
+
+const permissionSystemSchema = z.object({
+  schema_version: z.literal(1),
+  status: z.enum(["active_session_scoped", "candidate_policy_invalid_fail_closed"]),
+  mode: z.enum(["strict", "balanced_gray", "developer_gray"]),
+  runtime_epoch: z.string().min(1),
+  policy_id: z.string().min(1),
+  policy_digest: z.string().min(1),
+  dynamic_session_promotion_enabled: z.boolean(),
+  patch_inventory: runtimePatchInventorySchema,
+  grants: z.array(permissionGrantSchema),
+  limitations: z.array(z.string().min(1))
 }).passthrough();
 
 const compatibilitySchema = z.object({
@@ -1043,6 +1103,7 @@ const stateBaseSchema = z.object({
   visibility: visibilityStateSchema,
   inspection_catalog: z.array(inspectionCatalogEntrySchema),
   contract_instance_shadow: contractInstanceShadowSchema,
+  permission_system: permissionSystemSchema,
   diagnostics: z.array(diagnosticSchema),
   warnings: z.array(z.string())
 }).passthrough();
@@ -1077,6 +1138,7 @@ const capabilitiesSchema = z.object({
     outcome_timeout_ms: z.number().int().positive()
   }).passthrough(),
   inspections: inspectionContractSchema,
+  permission_system: permissionSystemSchema,
   diagnostics: z.array(diagnosticSchema),
   warnings: z.array(z.string())
 }).passthrough();
@@ -1250,6 +1312,11 @@ export class BridgeV2DecodeError extends Error {
 export function decodeBridgeV2Capabilities(value: unknown): DecodedBridgePayload<BridgeV2Capabilities> {
   const decoded = decode(value, capabilitiesSchema, "Bridge v2 capabilities");
   validateModsetPermissionBoundary(decoded.data.game, decoded.data.bridge);
+  validatePermissionSystem(
+    decoded.data.permission_system,
+    decoded.data.bridge,
+    decoded.data.game
+  );
   const surfaceKinds = decoded.data.surfaces.map((surface) => surface.kind);
   if (new Set(surfaceKinds).size !== surfaceKinds.length) {
     throw new BridgeV2DecodeError("Bridge v2 capabilities contain duplicate surface kinds");
@@ -1316,6 +1383,11 @@ function validateModsetPermissionBoundary(
 export function decodeBridgeV2State(value: unknown): DecodedBridgePayload<BridgeV2State> {
   const decoded = decode(value, stateBaseSchema, "Bridge v2 state");
   validateModsetPermissionBoundary(decoded.data.game, decoded.data.bridge);
+  validatePermissionSystem(
+    decoded.data.permission_system,
+    decoded.data.bridge,
+    decoded.data.game
+  );
   if (decoded.data.surface_kind !== decoded.data.surface.kind) {
     throw new BridgeV2DecodeError(
       `Bridge v2 state surface_kind ${decoded.data.surface_kind} does not match surface.kind ${decoded.data.surface.kind}`
@@ -1511,6 +1583,82 @@ export function decodeBridgeV2State(value: unknown): DecodedBridgePayload<Bridge
       surface
     }
   };
+}
+
+function validatePermissionSystem(
+  permission: z.infer<typeof permissionSystemSchema>,
+  bridge: z.infer<typeof bridgeIdentitySchema>,
+  game: z.infer<typeof gameSchema>
+): void {
+  if (permission.runtime_epoch !== bridge.runtime_instance_id) {
+    throw new BridgeV2DecodeError(
+      "Permission runtime epoch must match the loaded Gateway runtime instance"
+    );
+  }
+  if (permission.patch_inventory.status !== "clean_known_owners"
+      && permission.dynamic_session_promotion_enabled) {
+    throw new BridgeV2DecodeError(
+      "Dynamic session promotion requires a clean runtime Patch inventory"
+    );
+  }
+  if (permission.patch_inventory.status === "clean_known_owners"
+      && (permission.patch_inventory.patched_method_count === 0
+        || !permission.patch_inventory.patch_owners.includes("com.sts2mcp")
+        || permission.patch_inventory.unknown_owners.length > 0)) {
+    throw new BridgeV2DecodeError(
+      "A clean runtime Patch inventory must contain the Gateway owner and no unknown owners"
+    );
+  }
+  for (const grant of permission.grants) {
+    if (grant.runtime_epoch !== permission.runtime_epoch) {
+      throw new BridgeV2DecodeError(
+        `Permission grant ${grant.grant_id} does not match the current runtime epoch`
+      );
+    }
+    if (grant.current
+        && (grant.gateway_assembly_sha256.toLowerCase() !== bridge.assembly_file_sha256.toLowerCase()
+          || grant.gateway_module_version_id.toLowerCase() !== bridge.module_version_id.toLowerCase()
+          || grant.modset_fingerprint !== game.modset.fingerprint
+          || grant.patch_digest !== permission.patch_inventory.digest)) {
+      throw new BridgeV2DecodeError(
+        `Current permission grant ${grant.grant_id} does not match the current exact runtime identity`
+      );
+    }
+    if (grant.status !== "active" && grant.tier !== "none") {
+      throw new BridgeV2DecodeError(
+        `Inactive permission grant ${grant.grant_id} must not retain an authority tier`
+      );
+    }
+  }
+  const currentGrants = permission.grants.filter((grant) => grant.current);
+  const currentGrantKeys = new Set<string>();
+  for (const grant of currentGrants) {
+    const key = `${grant.surface_kind}\u0000${grant.operation}`;
+    if (currentGrantKeys.has(key)) {
+      throw new BridgeV2DecodeError(
+        `Permission operation ${grant.surface_kind}/${grant.operation} has multiple current grant versions`
+      );
+    }
+    currentGrantKeys.add(key);
+  }
+  for (const scope of game.compatibility.action_permission_scopes) {
+    if (scope.runtime_epoch === "not_session_bound") continue;
+    const grant = currentGrants.find((candidate) =>
+      candidate.grant_id === scope.grant_id
+      && candidate.grant_version === scope.grant_version
+      && candidate.surface_kind === scope.surface_kind
+      && candidate.operation === scope.operation
+      && candidate.status === "active");
+    if (!grant
+        || scope.runtime_epoch !== permission.runtime_epoch
+        || scope.patch_digest !== permission.patch_inventory.digest
+        || scope.environment_digest !== grant.environment_digest
+        || scope.operation_fingerprint !== grant.operation_fingerprint) {
+      throw new BridgeV2DecodeError(
+        `Dynamic permission scope ${scope.surface_kind}/${scope.operation} lacks an exact current grant`
+      );
+    }
+  }
 }
 
 function collectEntityIds(value: unknown, result = new Set<string>()): Set<string> {

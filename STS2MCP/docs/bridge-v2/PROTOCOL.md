@@ -1,8 +1,25 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.62`
+Protocol preview: `2.0-preview.63`
 
-Preview.62 keeps exact source/task binding and purpose-specific semantic
+Preview.63 adds required `permission_system` state to capabilities and every
+state envelope. It reports Gateway mode, runtime epoch, candidate policy,
+conservative runtime Patch inventory and a bounded versioned grant ledger.
+Each action permission scope now binds grant ID/version, environment digest,
+Patch digest and operation fingerprint. Dynamic scopes additionally bind the
+current runtime epoch. The exact grant is captured at publication and must
+still match when execution starts.
+
+The reviewed exact-environment policy remains an absolute permission ceiling.
+A gray candidate has no authorization effect by itself. Only the Gateway
+Permission Manager may issue a runtime-epoch-bound `session_canary`, and only a
+Gateway-confirmed semantic completion may supersede it with
+`session_auto_approved`. A validated failure, timeout, unknown outcome,
+identity/Patch drift or mode change quarantines the affected operation for that
+session. Restart is rollback; no dynamic grant becomes persistent
+qualification.
+
+Preview.62 kept exact source/task binding and purpose-specific semantic
 completion in the Gateway while making the combat-pile wire contract
 structural. `combat_pile_card_selection` now reports `mutation_kind`,
 `commit_mode`, optional `replacement_card_definition_id`, source/destination
@@ -179,16 +196,18 @@ This is a permission gate, not a claim that disabled Mods or future native-UI
 Mods are semantically compatible. Such environments require independent source
 binding, visibility, legality, commit, completion, and canary evidence.
 
-For the current local identity `v0.109.0|c12f634d|-1639417500`, preview.55
+For the current local identity `v0.109.0|c12f634d|-1639417500`, the Gateway
 advertises an explicit `surface_kind + operation + tier` inventory. A scoped
 build is executable only when the current state operation appears in that
-inventory; empty lists never become wildcard authority. Re requires identical
-operation scopes in state and capabilities.
+inventory; empty lists never become wildcard authority. Preview.63 scope
+identity additionally includes the grant ID/version, environment, Patch and
+operation fingerprint. Re requires identical scopes in state and capabilities
+and validates every dynamic scope against the unique current active grant.
 
-Canary authority remains operation-scoped permission, not Organic
-Qualification. Per-operation and per-origin qualification must still
-be recorded separately. Future permission refinement may narrow this scope but
-must not infer or expand authority from implementation alone.
+Canary and session-auto-approved authority remain operation-scoped permission,
+not Organic Qualification. Per-operation and per-origin qualification must
+still be recorded separately. Session state may narrow current authority but
+must not infer or expand the embedded ceiling from implementation alone.
 
 For `map_navigation`, preview.35 uses the same exact-node predicate while
 publishing and immediately before execution. Besides run-state travelability,
@@ -231,6 +250,8 @@ prove that STS2 gameplay is independent of scene/UI lifecycle.
 Every state response contains:
 
 - protocol, bridge, exact game identity, and exact loaded Modset identity;
+- exact operation permission scopes and the Gateway-owned session permission
+  system, including runtime Patch evidence and grant history;
 - observation policy;
 - stable semantic `state_id` and monotonic process-session sequence;
 - explicit top-level `shared_state` (`null` when no single-player run exists);
@@ -262,8 +283,51 @@ command ledger.
 `contract_instance_shadow` is migration telemetry only. It may be unresolved
 and omit nullable contract/binding fields during transitions. It always reports
 `authorizing=false`; neither manifest presence nor operation evidence can add
-or suppress legal actions. Current execution permission remains the exact
-environment plus explicit qualified/canary Surface-kind lists.
+or suppress legal actions. Current execution permission is the explicit
+operation scope produced by the exact-environment ceiling plus the Gateway
+Permission Manager.
+
+## Permission System
+
+`permission_system` is required on capabilities and state. Its
+`runtime_epoch` must equal `bridge.runtime_instance_id`.
+
+Modes:
+
+- `strict`: embedded `qualified` operations only;
+- `balanced_gray`: embedded non-candidate canaries remain available and
+  reviewed gray candidates may enter the session loop;
+- `developer_gray`: the same safety kernel and reviewed ceiling, with no
+  additional candidates in Preview.63.
+
+The current gray policy contains only reversible
+`main_menu/open_singleplayer` and `main_menu/continue_run`. It cannot authorize
+an operation absent from the embedded canary ceiling.
+
+Every grant records:
+
+- versioned ID, `current`, status, tier, issue/expiry and supersession;
+- Surface, operation, risk and mode;
+- runtime epoch, environment, Gateway SHA/MVID, Modset and Patch digest;
+- operation fingerprint and candidate evidence digest/IDs;
+- revocation reason where applicable.
+
+Only the unique current active grant can back a dynamic action scope. Historical
+issuance records remain visible for audit and may retain the exact identity
+under which they were issued. A superseded record may therefore show its
+issuance tier with `current=false`; it grants no current authority.
+
+The Patch inventory is based on loaded Harmony metadata and is intentionally
+conservative. Dynamic promotion requires `clean_known_owners`, at least one
+loaded Gateway-owned patch and no unknown owner. An empty inventory, missing
+Gateway owner, unknown owner or unavailable metadata suppresses it. This
+inventory cannot prove the absence of native/non-Harmony hooks or semantic
+drift and never replaces native legality, exact binding or semantic
+completion.
+
+D scenarios, fingerprints, graders and candidate records have no authority.
+They may supply evidence IDs and a recommendation. The Gateway remains the
+sole policy decision and enforcement owner.
 
 ## Coherent Observation Bundle
 

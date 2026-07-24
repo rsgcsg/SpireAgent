@@ -45,6 +45,10 @@ yet.
 - Embedded adaptation data is validated before scope publication. Invalid
   source registries suppress their affected Surface only; invalid environment
   policy suppresses all authority and both cases emit typed diagnostics.
+- The reviewed exact-environment policy is the absolute permission ceiling.
+  A Gateway-owned Permission Manager may create only runtime-epoch-bound,
+  operation-scoped grants beneath that ceiling. The same exact grant is
+  required at publication and execution; semantic failure quarantines it.
 
 ## Rule-Aware Adaptation Boundary
 
@@ -62,14 +66,36 @@ have no action authority. Static structure, fixture success and a matching
 catalog entry cannot bypass exact runtime identity, execute-time validation,
 native Commit or Organic evidence.
 
-Build and Modset permission remains intentionally conservative. Operation-level
-compatibility cannot replace the exact-environment gate until runtime
-action-relevant patch closure and an evidence-backed policy path exist. See the
+Build and Modset permission remains intentionally conservative. Preview.63
+adds a conservative Harmony Patch inventory and one evidence-backed
+session-grant path, but neither replaces the exact-environment ceiling nor
+proves semantic compatibility. See the
 [automatic-adaptation audit](audits/CONNECTOR_AUTOMATIC_ADAPTATION_AND_D_WORKFLOW_AUDIT_2026-07-24.md).
+
+## Permission Decision And Enforcement
+
+```text
+D evidence/recommendation (non-authorizing)
+  -> Gateway Permission Manager (policy decision)
+  -> Gateway action publication/execution (policy enforcement)
+  -> native STS2 commit and semantic witness
+```
+
+`strict`, `balanced_gray`, and `developer_gray` are Gateway modes. All retain
+exact game/Gateway/Modset identity, the embedded ceiling, opaque state-bound
+actions, execute-time revalidation, native commit, semantic completion and
+unknown-no-retry. Developer mode is not an unrestricted bypass.
+
+Current dynamic grants bind runtime epoch, exact environment, Gateway SHA/MVID,
+Modset, Patch digest, operation fingerprint, evidence policy, expiry and
+supersession. They are volatile: restart is a complete rollback. Only a unique
+current active grant authorizes an operation; historical grant versions remain
+audit evidence. See the
+[D3 permission closeout](../../STS2MCP/docs/bridge-v2/D3_PERMISSION_GRAY_ROLLOUT_CLOSEOUT_2026-07-25.md).
 
 ## Current Architectural Constraint
 
-The Gateway and Re share the mechanically checked `2.0-preview.62` source
+The Gateway and Re share the mechanically checked `2.0-preview.63` source
 contract. Gate 1 establishes a bounded v2 connector baseline: Re and the
 default MCP adapter are v2-only, and the current-source Gateway v1 HTTP surface
 is retired.
@@ -86,7 +112,7 @@ only opaque actions, resumes the game-owned continuation, and checks a semantic
 post-state witness. This reduces consumer coupling without creating a universal
 effect API or automatic authority for unknown sources.
 
-Preview.62 makes the proven repetition explicit:
+Preview.62 made the proven source/transaction repetition explicit:
 
 - a reviewed embedded source registry maps exact native source tasks onto a
   closed interaction/witness topology;
@@ -99,6 +125,11 @@ Preview.62 makes the proven repetition explicit:
 Discovery, verification, authorization and qualification remain separate.
 Registry or policy presence cannot bypass exact runtime identity, operation
 scope, current legality, execute-time revalidation or runtime evidence.
+
+Preview.63 adds a typed session-grant state machine without changing that
+boundary. D candidate data still has no authorization effect; the Gateway is
+the only decision and enforcement owner, and no session result writes the
+embedded qualification policy.
 
 ## Observation And Strategy Projection Boundary
 

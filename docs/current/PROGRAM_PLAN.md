@@ -116,14 +116,16 @@ The following are governance constraints, not a separate feature program:
 
 ### Current Window
 
-1. Temporarily pause new Gate 2 feature coverage while closing adaptation
-   hardening: shared closed contract data, read-only action-relevant patch
-   inventory and recorded-evidence assertions.
+1. Keep this change limited to closing the first D3 permission slice. The
+   runtime Patch inventory, repeated real session canary and read-only
+   recorded-evidence transition assertion are complete. Gate 2 remains the next
+   independently scoped functional gate.
 2. Maintain the closed Gate 1 operation/v1-retirement inventory and keep
    unsupported variants explicitly fail closed.
 3. Advance D only through concrete evidence needs. The first exact static
-   scenario/grader is implemented; next add runtime patch provenance and
-   recorded-evidence assertions without permission effects.
+   scenario/grader, runtime Patch provenance and session-grant transition
+   assertion are implemented. D recommendations remain non-authorizing even
+   when the Gateway independently uses them as session-candidate inputs.
 4. Keep A at the frozen RE-P1 baseline while correcting runtime defects exposed
    by C journeys; do not add persistent learning.
 5. Design P-lane authentication, controller lease, and restart-epoch contracts

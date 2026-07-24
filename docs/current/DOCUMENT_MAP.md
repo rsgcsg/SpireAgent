@@ -46,6 +46,9 @@ Current cross-component audits:
 - [Gate 1 adaptation and compatibility closeout](../../STS2MCP/docs/bridge-v2/GATE1_ADAPTATION_AND_COMPATIBILITY_CLOSEOUT_2026-07-24.md):
   final runtime seal, reviewed source/environment registries, non-authorizing
   exact-assembly audit, zero-core-code boundary and remaining Mod risks.
+- [D3 permission and gray rollout closeout](../../STS2MCP/docs/bridge-v2/D3_PERMISSION_GRAY_ROLLOUT_CLOSEOUT_2026-07-25.md):
+  Preview.63 operation-scoped session grants, exact identity/Patch binding,
+  first real canary/auto-approval, rollback and explicit non-claims.
 
 Component-owned truth:
 

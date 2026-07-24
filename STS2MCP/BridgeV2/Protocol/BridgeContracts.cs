@@ -7,7 +7,7 @@ namespace STS2_MCP.BridgeV2.Protocol;
 
 public static class BridgeV2Contract
 {
-    public const string ProtocolVersion = "2.0-preview.62";
+    public const string ProtocolVersion = "2.0-preview.63";
     public const string ObservationPolicyId = "player_visible_ui_v1";
 }
 
@@ -26,7 +26,90 @@ public sealed record BridgeServerIdentity(
 public sealed record ActionPermissionScope(
     string SurfaceKind,
     string Operation,
-    string Tier);
+    string Tier)
+{
+    public string GrantId { get; init; } = "static_policy";
+
+    public int GrantVersion { get; init; } = 1;
+
+    public string RuntimeEpoch { get; init; } = "not_session_bound";
+
+    public string EnvironmentDigest { get; init; } = "not_recorded";
+
+    public string PatchDigest { get; init; } = "not_recorded";
+
+    public string OperationFingerprint { get; init; } = "not_recorded";
+}
+
+public sealed record BridgeRuntimePatchInventoryInfo(
+    string Status,
+    string Digest,
+    string Scope,
+    int PatchedMethodCount,
+    IReadOnlyList<string> PatchOwners,
+    IReadOnlyList<string> UnknownOwners,
+    IReadOnlyList<string> Limitations)
+{
+    public static BridgeRuntimePatchInventoryInfo Unavailable(string detail) => new(
+        "unavailable",
+        "unavailable",
+        "loaded_harmony_patch_metadata_global_conservative",
+        0,
+        Array.Empty<string>(),
+        Array.Empty<string>(),
+        new[] { detail });
+}
+
+public sealed record BridgePermissionGrantRecord(
+    int SchemaVersion,
+    string GrantId,
+    int GrantVersion,
+    bool Current,
+    string Status,
+    string Mode,
+    string SurfaceKind,
+    string Operation,
+    string Tier,
+    string RiskClass,
+    string RuntimeEpoch,
+    string EnvironmentDigest,
+    string GatewayAssemblySha256,
+    string GatewayModuleVersionId,
+    string ModsetFingerprint,
+    string PatchDigest,
+    string OperationFingerprint,
+    string EvidenceBundleDigest,
+    DateTimeOffset IssuedAt,
+    DateTimeOffset ExpiresAt,
+    string? SupersedesGrantId,
+    string? RevocationReason,
+    IReadOnlyList<string> EvidenceIds);
+
+public sealed record BridgePermissionSystemInfo(
+    int SchemaVersion,
+    string Status,
+    string Mode,
+    string RuntimeEpoch,
+    string PolicyId,
+    string PolicyDigest,
+    bool DynamicSessionPromotionEnabled,
+    BridgeRuntimePatchInventoryInfo PatchInventory,
+    IReadOnlyList<BridgePermissionGrantRecord> Grants,
+    IReadOnlyList<string> Limitations)
+{
+    public static BridgePermissionSystemInfo Unavailable { get; } = new(
+        1,
+        "unavailable_fail_closed",
+        "strict",
+        "unavailable",
+        "unavailable",
+        "unavailable",
+        DynamicSessionPromotionEnabled: false,
+        BridgeRuntimePatchInventoryInfo.Unavailable(
+            "Permission-system status was not attached to this response."),
+        Array.Empty<BridgePermissionGrantRecord>(),
+        new[] { "No dynamic permission state is available." });
+}
 
 public sealed record CompatibilityAssessment(
     string Status,
@@ -187,7 +270,11 @@ public sealed record BridgeCapabilitiesResponse(
     CommandContractCapability Commands,
     InspectionContractCapability Inspections,
     IReadOnlyList<BridgeDiagnostic> Diagnostics,
-    IReadOnlyList<string> Warnings);
+    IReadOnlyList<string> Warnings)
+{
+    public BridgePermissionSystemInfo PermissionSystem { get; init; } =
+        BridgePermissionSystemInfo.Unavailable;
+}
 
 public sealed record InspectionCompleteness(
     string PlayerVisibleSemantics,
@@ -1059,6 +1146,9 @@ public sealed record BridgeStateEnvelope(
     IReadOnlyList<BridgeDiagnostic> Diagnostics,
     IReadOnlyList<string> Warnings)
 {
+    public BridgePermissionSystemInfo PermissionSystem { get; init; } =
+        BridgePermissionSystemInfo.Unavailable;
+
     // Retain the preview.1 wire field while making surface.kind the sole source.
     public string SurfaceKind => Surface.Kind;
 }

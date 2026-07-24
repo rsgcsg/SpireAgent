@@ -15,7 +15,7 @@ authority.
 | replay readers and assertions | native commit or semantic completion |
 | experiment definitions and repeatability | Agent strategy or Prompt policy |
 | graders and regression reports | product control leases or secrets |
-| developer inspect/diagnostic workflows | automatic canary or qualification grants |
+| developer inspect/diagnostic workflows | final canary, session grant or qualification decisions |
 
 The Gateway produces authoritative observations, actions, and command outcomes.
 The A lane produces model decisions. D records, compares, and evaluates them
@@ -42,6 +42,9 @@ without becoming either authority.
 - One exact-game static compatibility scenario for the closed combat-pile
   family, with layered fingerprints, a Tutor negative holdout and a
   deterministic non-authorizing grader.
+- A conservative Gateway runtime Harmony Patch inventory and a versioned
+  non-authorizing gray-candidate policy consumed by the Gateway Permission
+  Manager. D still does not issue the resulting session grant.
 
 ### Partial Or Misleading If Overclaimed
 
@@ -119,6 +122,10 @@ changing expected behavior.
 
 ### D3: Evaluation And Regression
 
+**Status:** in progress. The Connector has closed one operation-scoped
+session-canary and auto-approval pilot, but general evaluation/regression and
+permission qualification are not complete.
+
 **Entry:** D2 plus representative Gate 1/2 scenarios.
 
 **Deliverables:**
@@ -128,9 +135,16 @@ changing expected behavior.
 - deterministic contract graders and explicitly limited model/human graders;
 - baseline, candidate, counterexample, and held-out reports;
 - cost, latency, validity, action-distribution, and semantic regression views.
+- versioned evidence bundles and permission recommendations whose
+  `authorization_effect` remains `none`;
+- a Gateway-owned, exact-environment-ceiling-bound session grant canary with
+  promotion, expiry, supersession and quarantine telemetry.
 
 **Exit:** an Agent or Prompt change can be compared against a frozen baseline
-without treating action agreement as strategic truth.
+without treating action agreement as strategic truth, and at least one
+low-risk operation can complete the evidence-recommendation -> Gateway
+session-canary -> semantic outcome -> promote/quarantine loop without D
+publishing or granting an action.
 
 ### D4: Developer Surface Or SDK Decision
 
@@ -142,10 +156,29 @@ platform product.
 
 ## Near-Term Priority
 
-New Gate 2 feature coverage is temporarily paused for a bounded adaptation
-hardening window. D2 should next add a read-only action-relevant runtime patch
-inventory and one recorded-evidence assertion path for an existing
-combat-pile lifecycle. This must not become an automatic permission engine.
+The bounded first D3 permission closeout is complete: the read-only runtime
+Patch inventory, repeated real `main_menu/continue_run` session canary and
+read-only recorded-evidence transition assertion are present. This does not
+complete general D3 evaluation/regression or authorize another candidate.
+Before any non-navigation candidate is considered, D must supply independent
+scope-specific evidence and counterexamples, followed by Gateway policy review.
 
 No D artifact grants live permission, canary status, qualification, stable
-learning, or product readiness.
+learning, or product readiness. A D artifact may recommend a candidate, but
+the Gateway Permission Manager remains the sole decision point and the Gateway
+execution path remains the sole enforcement point.
+
+The assertion tooling is deliberately non-executing:
+
+```bash
+npm run check:connector-permission-fixtures
+npm run audit:connector-permission-transition -- \
+  --before <pre-canary-capabilities.json> \
+  --after <post-canary-state.json> \
+  --surface <surface-kind> \
+  --operation <operation>
+```
+
+It verifies exact environment identity, current grant/scope binding,
+immediate version succession and supersession. Its output explicitly has
+`authorization_effect=none` and `qualification_effect=none`.

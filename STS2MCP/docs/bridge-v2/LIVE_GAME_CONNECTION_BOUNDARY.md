@@ -2,7 +2,7 @@
 
 Status: canonical architecture boundary for the current real-game connection.
 
-Current source compatibility status: C# and Re share `2.0-preview.62`, including
+Current source compatibility status: C# and Re share `2.0-preview.63`, including
 operation scopes, a Gateway artifact digest, separate actual-loaded versus
 release-declared game assembly hashes, reviewed exact-environment policy
 provenance, and structural combat-pile transaction semantics. Preview.61

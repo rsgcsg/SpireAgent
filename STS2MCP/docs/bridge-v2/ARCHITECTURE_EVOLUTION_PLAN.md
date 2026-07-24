@@ -10,9 +10,11 @@ Status: Gate 1 closed as a bounded ordinary-single-player v2 connector
 baseline on 2026-07-24. Preview.61 supplied the exact Neow's Fury Organic
 runtime seal, strict Re decode, and loaded-v1 retirement evidence.
 
-C# and Re source now share `2.0-preview.62`. Preview.62 moves exact-environment
+C# and Re source now share `2.0-preview.63`. Preview.62 moved exact-environment
 authorization and reviewed combat-pile source contracts into validated
-embedded policy, and adds a non-authorizing exact-assembly audit. Those changes
+embedded policy, and added a non-authorizing exact-assembly audit. Preview.63
+adds an operation-scoped Gateway session-grant state machine under that
+embedded ceiling. Those changes
 reduce content-literal code edits but do not self-authorize discovered
 mechanics, Mods, or new builds. Independent green suites still do not prove a
 loaded game connector. The following deployment conditions remain required for
@@ -101,17 +103,18 @@ fails action/Inspection scopes closed unless only the negotiated Bridge module
 is loaded. This supplies the environment portion of the future manifest; it
 does not qualify any additional Mod or operation.
 
-Preview.47 records the current legacy authority basis and published operations
-on each state. This makes the Surface-kind permission debt visible, but the
-shadow remains `authorizing=false`: manifest declarations and operation
-evidence still cannot grant or suppress an action.
+Preview.47 recorded the legacy authority basis and published operations on each
+state. Preview.63 replaces the current execution projection with exact
+operation scopes and versioned grant bindings. The contract-instance shadow
+remains `authorizing=false`: manifest declarations and operation evidence
+still cannot grant or suppress an action by themselves.
 
-As the first permission-governance pilot, represent the currently documented
-`treasure_room` operation split: choose/proceed have Organic canary evidence
-while open/skip are source-audited only. The implemented pilot records that
-split without changing Surface-level authority. A later permission change may
-only preserve or narrow current canary authority; it must not promote any
-operation or origin.
+The first real permission-governance pilot is intentionally narrower than
+treasure: reversible `main_menu/continue_run` entered `session_canary`, executed
+through Re, satisfied the Gateway semantic witness, and became
+`session_auto_approved` for one runtime epoch. `open_singleplayer` remains an
+unexercised session canary. The embedded canary scope is still the absolute
+ceiling, and the dynamic grant cannot become persistent qualification.
 
 ## Phase 1.5: Player-Visible Closure And Coherent Read
 
@@ -264,8 +267,10 @@ legitimately require code. New card/relic/potion/enchantment IDs and new bounded
 compositions of existing primitives must not.
 
 Layered fingerprints may reduce work after a pure data update, but final action
-permission remains exact-environment and explicit. No fingerprint, registry,
-Mod contract, or old evidence may inherit authority automatically.
+permission remains exact-environment, explicit and Gateway-enforced. A
+reviewed D recommendation may enter the Preview.63 session-candidate path, but
+no fingerprint, registry, Mod contract, or old evidence can authorize itself
+or inherit persistent authority.
 
 MCP remains one transport adapter over this protocol-neutral gateway. Re may
 continue to use REST directly. A compact MCP adapter should derive its fixed
@@ -316,8 +321,8 @@ fallback has been retired without ambiguity.
 - no universal selector, menu, purchase, or Effect DSL;
 - no Bridge execution of Transaction IR primitives or replay of game effects;
 - no low-level click language in the wire protocol;
-- no automatic permission from source reflection, class-name matching, or
-  implementation presence;
+- no automatic permission from source reflection, class-name matching,
+  implementation presence, static grader success, or D recommendation alone;
 - no self-authorizing registry or Mod-declared contract;
 - no source literal whitelist as a substitute for complete transaction binding;
 - no expansion of current local hash `1833084275` authority by this plan;

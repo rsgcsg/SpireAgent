@@ -5,7 +5,19 @@
 > `../STS2MCP/docs/bridge-v2/CURRENT_STATUS.md`. Older identity and mode claims
 > below are preserved as dated evidence and must not override those documents.
 
-Status update 2026-07-24 (latest): source contract is `2.0-preview.62`; Re
+Status update 2026-07-25 (latest): source contract is `2.0-preview.63`; Re
+normalized schema is `26`. The current loaded Gateway is SHA
+`d05b0580...c90aa0`, MVID `4836b3df-fffc-498a-b9c9-ac666adb5a5b`, runtime
+`8aec74c19fed4a09984dc56a7e0c36ac`. Re strictly consumes the Gateway-owned
+runtime Patch inventory and versioned operation-scoped session grant ledger.
+An exact production-path `main_menu/continue_run` canary promoted from
+`session_canary` to `session_auto_approved` and settled at
+`reward_flow/reward_claim`. This is volatile current-epoch evidence, not
+persistent qualification; Re has no permission decision or promotion path.
+See the canonical status and
+`../STS2MCP/docs/bridge-v2/D3_PERMISSION_GRAY_ROLLOUT_CLOSEOUT_2026-07-25.md`.
+
+Status update 2026-07-24: source contract was `2.0-preview.62`; Re
 normalized schema is `26`. Gate 1 is closed as a bounded ordinary-single-player
 v2 connector baseline. Run `run-20260724045013-mgcq3a` completed the exact
 Neow's Fury play/select/confirm lifecycle under Preview.61. Preview.62 adds

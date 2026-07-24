@@ -25,7 +25,13 @@ internal static class BridgeV2Runtime
     private static readonly BridgeStateIdentityTracker StateIdentity = new();
     private static readonly BridgeCommandLedger CommandLedger = new(CommandOutcomeTimeoutMs);
     private static readonly Dictionary<string, RegisteredBridgeAction> Actions = new(StringComparer.Ordinal);
+    private static readonly Dictionary<string, BridgeActionPermissionBinding> CommandPermissionBindings =
+        new(StringComparer.Ordinal);
     private static readonly string RuntimeInstanceId = Guid.NewGuid().ToString("N");
+    private static readonly BridgePermissionManager PermissionManager = new(RuntimeInstanceId);
+
+    internal static void ConfigurePermissionMode(BridgePermissionMode mode) =>
+        PermissionManager.ConfigureMode(mode);
 
     internal static GameBuildIdentity ReadCurrentGameIdentity()
     {
@@ -64,6 +70,12 @@ internal static class BridgeV2Runtime
             };
         }
 
+        game = game with { Compatibility = compatibility };
+        BridgeRuntimePatchInventoryInfo patchInventory = BridgeRuntimePatchInventory.Read();
+        compatibility = PermissionManager.Apply(
+            game,
+            BridgeIdentity(),
+            patchInventory);
         return game with { Compatibility = compatibility };
     }
 
@@ -163,7 +175,10 @@ internal static class BridgeV2Runtime
                 OrderingSemantics: new[] { "unordered_multiset", "player_sorted", "fixed_ui_slots" },
                 ImplementedKinds: AllowedInspectionKinds(game.Compatibility)),
             diagnostics,
-            warnings);
+            warnings)
+        {
+            PermissionSystem = PermissionManager.Snapshot()
+        };
     }
 
     public static BridgeStateEnvelope Observe()
@@ -186,12 +201,14 @@ internal static class BridgeV2Runtime
             ShopSurfaceFacts.TryGetCurrent(out _, out _, out _));
         BridgeContractInstanceShadow contractInstanceShadow =
             BridgeContractInstanceShadowBuilder.Build(draft);
+        BridgePermissionSystemInfo permissionSystem = PermissionManager.Snapshot();
         compositeSignature = BridgeHash.Object(new
         {
             compositeSignature,
             visibility.Visibility,
             visibility.InspectionCatalog,
-            contractInstanceShadow
+            contractInstanceShadow,
+            permissionSystem
         });
 
         lock (Gate)
@@ -202,6 +219,13 @@ internal static class BridgeV2Runtime
             var descriptors = new List<LegalAction>(draft.Actions.Count);
             foreach (BridgeActionDraft action in draft.Actions)
             {
+                ActionPermissionScope? permissionScope =
+                    draft.Game.Compatibility.ActionPermissionScopes.SingleOrDefault(scope =>
+                        string.Equals(scope.SurfaceKind, draft.Surface.Kind, StringComparison.Ordinal)
+                        && string.Equals(scope.Operation, action.Kind, StringComparison.Ordinal));
+                if (permissionScope == null)
+                    continue;
+
                 string actionId = "action_" + BridgeHash.Text($"{stateId}|{action.Key}")[..20];
                 var descriptor = new LegalAction(
                     actionId,
@@ -212,7 +236,32 @@ internal static class BridgeV2Runtime
                     "game_ui",
                     action.EvidenceCode,
                     action.EntityBindings ?? Array.Empty<ActionEntityBinding>());
-                Actions[actionId] = new RegisteredBridgeAction(descriptor, action.Start);
+                var permissionBinding = new BridgeActionPermissionBinding(
+                    permissionScope.SurfaceKind,
+                    permissionScope.Operation,
+                    permissionScope.Tier,
+                    permissionScope.GrantId,
+                    permissionScope.GrantVersion,
+                    permissionScope.RuntimeEpoch,
+                    permissionScope.EnvironmentDigest,
+                    permissionScope.PatchDigest,
+                    permissionScope.OperationFingerprint);
+                Actions[actionId] = new RegisteredBridgeAction(
+                    descriptor,
+                    () =>
+                    {
+                        GameBuildIdentity executionGame = ReadCurrentGameIdentity();
+                        if (!PermissionManager.AuthorizeExecution(
+                                permissionBinding,
+                                executionGame.Compatibility))
+                        {
+                            return BridgeActionStartResult.Rejected(
+                                "permission_grant_changed",
+                                "The operation-scoped grant changed before execution; obtain a fresh state.");
+                        }
+                        return action.Start();
+                    },
+                    permissionBinding);
                 descriptors.Add(descriptor);
             }
 
@@ -235,7 +284,10 @@ internal static class BridgeV2Runtime
                 visibility.InspectionCatalog,
                 contractInstanceShadow,
                 BridgeDiagnostics.ForObservation(draft),
-                draft.Warnings);
+                draft.Warnings)
+            {
+                PermissionSystem = permissionSystem
+            };
         }
     }
 
@@ -279,13 +331,33 @@ internal static class BridgeV2Runtime
         lock (Gate)
             Actions.TryGetValue(request.ActionId ?? string.Empty, out action);
 
-        return CommandLedger.Submit(request, current.StateId, action);
+        BridgeCommandResponse response = CommandLedger.Submit(
+            request,
+            current.StateId,
+            action);
+        if (action?.PermissionBinding is { } permissionBinding
+            && !string.IsNullOrWhiteSpace(request.RequestId))
+        {
+            lock (Gate)
+                CommandPermissionBindings[request.RequestId] = permissionBinding;
+        }
+        PermissionManager.ObserveCommand(
+            request.RequestId ?? string.Empty,
+            action?.PermissionBinding,
+            response);
+        return response;
     }
 
     public static BridgeCommandResponse? Poll(string requestId)
     {
         BridgeStateEnvelope current = Observe();
-        return CommandLedger.Poll(requestId, current.StateId);
+        BridgeCommandResponse? response = CommandLedger.Poll(requestId, current.StateId);
+        BridgeActionPermissionBinding? permissionBinding = null;
+        lock (Gate)
+            CommandPermissionBindings.TryGetValue(requestId, out permissionBinding);
+        if (response != null)
+            PermissionManager.ObserveCommand(requestId, permissionBinding, response);
+        return response;
     }
 
     public static BridgeInspectionReadResult Inspect(string kind, string expectedStateId)
