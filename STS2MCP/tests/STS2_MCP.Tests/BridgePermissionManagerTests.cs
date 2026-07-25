@@ -292,6 +292,48 @@ public sealed class BridgePermissionManagerTests
             Assert.IsType<BridgeGrayPermissionCandidate>(
                 BridgeGrayPermissionCandidateCatalog.Find("main_menu", "continue_run"));
         Assert.Equal("organic_canary_exercised", continueRun.MinimumEvidenceStatus);
+        BridgeGrayPermissionCandidate openShop =
+            Assert.IsType<BridgeGrayPermissionCandidate>(
+                BridgeGrayPermissionCandidateCatalog.Find(
+                    "shop_room",
+                    "open_shop_inventory"));
+        Assert.Equal("source_audited", openShop.MinimumEvidenceStatus);
+        Assert.Equal("shop_inventory_opened", openShop.WitnessId);
+    }
+
+    [Fact]
+    public void NonMenuNavigationCandidateUsesTheSameSessionStateMachine()
+    {
+        var manager = new BridgePermissionManager("runtime-a");
+        CompatibilityAssessment first = manager.Apply(
+            GameWithScopes(Scope("shop_room", "open_shop_inventory", "canary")),
+            Bridge("runtime-a"),
+            CleanPatchInventory());
+        BridgeActionPermissionBinding binding = Binding(Assert.Single(
+            first.ActionPermissionScopes));
+
+        manager.ObserveCommand(
+            "request-shop",
+            binding,
+            Command(
+                "request-shop",
+                "completed",
+                "confirmed",
+                "completed",
+                null,
+                "shop_inventory_opened"));
+        CompatibilityAssessment promoted = manager.Apply(
+            GameWithScopes(Scope("shop_room", "open_shop_inventory", "canary")),
+            Bridge("runtime-a"),
+            CleanPatchInventory());
+
+        ActionPermissionScope scope = Assert.Single(
+            promoted.ActionPermissionScopes);
+        Assert.Equal("shop_room", scope.SurfaceKind);
+        Assert.Equal(2, scope.GrantVersion);
+        Assert.Equal(
+            "session_auto_approved",
+            manager.Snapshot().Grants[^1].Tier);
     }
 
     [Fact]

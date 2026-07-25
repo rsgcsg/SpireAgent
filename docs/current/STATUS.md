@@ -12,11 +12,13 @@ This is the canonical short current-state document for the rebuilt project.
 ## Current Gate
 
 **Gate 1 is closed as a bounded ordinary-single-player v2 connector baseline.
-The first D3 operation-scoped permission loop is closed. Gate 3 Local Control
-Coordination Alpha is source-complete and mechanically tested in Preview.64,
-but its exact cold-load and bounded runtime canary are still pending.**
+The first D3 operation-scoped permission loop is closed. Preview.65 extends it
+with a disabled-by-default persistent operation qualification kernel and
+cross-environment impact tooling. Gate 3 Local Control Coordination Alpha and
+Preview.65 remain source/fixture/Release-build complete but are not installed
+or loaded.**
 
-Current source contract is `2.0-preview.64`; Re normalized schema is `26`.
+Current source contract is `2.0-preview.65`; Re normalized schema is `26`.
 Re and the default MCP adapter use only Bridge v2 opaque actions. Gateway v1
 state reconstruction and mutation are fully retired; every `/api/v1` request
 returns `410 Gone`. Unsupported variants still fail closed.
@@ -73,6 +75,20 @@ Ledger, while D3 operation permission and game legality remain unchanged.
 Gateway tests (142), Re tests (175), Re typecheck/build, Python syntax and the
 Gateway Release build pass.
 
+Preview.65 separates persistent qualification from volatile session grants.
+It adds component-level operation identities, bounded `session_canary`
+candidate packages, two-runtime `qualified` packages, exact startup
+applicability, operation-scoped session quarantine, append-only
+install/supersede/revoke/rollback, and non-authorizing
+capture/diff/collect/assemble/dry-run tools. The first non-menu gray candidate
+is only `shop_room/open_shop_inventory`; it does not authorize purchases or
+other shop operations. Gateway tests (`153`), Re tests (`179`), Re typecheck
+and qualification fixtures pass. Preview.65
+Release builds with zero warnings as SHA
+`11b6b014965a9269bd572bd04c3cd8a7575541e8bc6439cf054dc7b1b264164e`,
+MVID `4e870cd2-3e35-4db5-8a1b-7c7a41ca631f`. This is
+code/fixture/build evidence only.
+
 The current Preview.63 artifact has been built, installed and Steam cold-loaded
 on the exact local environment:
 
@@ -117,11 +133,14 @@ therefore does not claim loaded or Organic Preview.64 behavior.
 
 ## Immediate Next Step
 
-Close the game, install Preview.64, cold-start through Steam, verify
-built/installed/loaded SHA and MVID, then run one bounded two-client conflict
-check and one Re advertised-action completion journey. After that Gate 3 Alpha
-may be marked runtime-closed and Gate 2 visibility work may resume. Do not
-broaden D3 candidates or action coverage as part of this canary.
+After the currently running game exits, install the built Preview.65 Release
+and cold-start through Steam. Verify installed/loaded SHA and MVID,
+protocol 65 qualification status with an empty store, one bounded two-client
+conflict, and one existing exact-policy Re action. Only after that may an
+operator install a short-lived `shop_room/open_shop_inventory`
+`session_canary` candidate package for a separate bounded canary. Do not
+install a `qualified` package until two distinct Preview.65 runtime epochs and
+negative evidence have been collected.
 
 See the
 [Gate 1 closeout and selector audit](../../STS2MCP/docs/bridge-v2/GATE1_CLOSEOUT_AND_SELECTOR_TRANSACTION_AUDIT_2026-07-24.md)
@@ -134,15 +153,18 @@ and the
 and the
 [Gate 3 coordination closeout](../../STS2MCP/docs/bridge-v2/GATE3_LOCAL_CONTROL_COORDINATION_CLOSEOUT_2026-07-25.md)
 and the
+[Preview 65 qualification closeout](../../STS2MCP/docs/bridge-v2/PREVIEW_65_PERSISTENT_QUALIFICATION_AND_ADAPTATION_CLOSEOUT_2026-07-25.md)
+and the
 [operation inventory](../../STS2MCP/docs/bridge-v2/OPERATION_RETIREMENT_INVENTORY.json).
 
 ## Explicit Non-Claims
 
-- Preview.63 session auto-approval is volatile and operation-scoped; it is not
-  persistent qualification, cross-runtime inheritance, or D-owned authority.
+- Preview.63 session auto-approval remains volatile and operation-scoped.
+  Preview.65 can persist only an operator-installed exact package that passes
+  Gateway validation; D and Re still own no authority.
 - Preview.64 coordination identity is descriptive and local; it is not client
   authentication or protection from a malicious local process.
-- Preview.64 is not yet installed, loaded or Organic-qualified.
+- Preview.65 is not yet installed, loaded or Organic-qualified.
 - Gate 1 closure is not complete-game or full-visible-information closure.
 - Historical v1 source and records are archive evidence, not a runtime fallback.
 - Companion, Workshop product, public Agent SDK, plugin platform, and Headless

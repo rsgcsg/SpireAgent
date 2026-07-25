@@ -2,7 +2,7 @@
 
 In this project, "SpireAgent" means `Re-SpireAgent` by default.
 
-Current source contract is `2.0-preview.64`; Re normalized schema is `26`.
+Current source contract is `2.0-preview.65`; Re normalized schema is `26`.
 Gate 1 is closed as a bounded ordinary-single-player v2 connector baseline.
 Preview.61 supplied the exact Neow's Fury Organic lifecycle; Preview.62 adds
 reviewed compatibility/source registries and policy provenance without
@@ -61,6 +61,13 @@ ID and generation to each command, and releases it best-effort on shutdown.
 Gateway restart or lease replacement makes cached credentials stale. This is
 not authentication and Re does not decide whether another client may take
 control.
+
+Preview.65 keeps qualification authority in the Gateway. Re strictly decodes
+the operation identity catalog and exact qualification projection, then
+requires each persistent scope to link to one applicable `qualified` package.
+It does not install, approve, revoke, roll back, or persist packages. A
+`session_canary` package only makes the exact operation eligible for the
+Gateway's existing volatile canary state machine.
 
 Preview.63 keeps the permission decision and enforcement in the Gateway. Re
 requires state and capabilities to agree on the stable

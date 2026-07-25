@@ -228,7 +228,17 @@ internal static class BridgeContractManifest
             new[] { "inventory", "prices", "sold_state", "gold", "potion_capacity", "removal_service" }),
         Entry(
             "shop_room",
-            new[] { "open_shop_inventory", "proceed_shop" },
+            new[]
+            {
+                Operation(
+                    "open_shop_inventory",
+                    BridgeOperationEvidenceStatus.SourceAudited,
+                    "BridgeV2/Game/ShopSurfaceProviders.cs#ShopRoomSurfaceProvider.StartOpenInventory",
+                    "tests/STS2_MCP.Tests/BridgeContractTests.cs"),
+                Operation(
+                    "proceed_shop",
+                    BridgeOperationEvidenceStatus.SurfaceLevelOnly)
+            },
             "sts2-v0.109.0:NMerchantRoom+NMerchantButton+NProceedButton+exact-navigation-witnesses",
             "merchant_room_navigation",
             new[] { "merchant_control", "proceed_control" }),

@@ -2,14 +2,14 @@
 
 Status: canonical architecture boundary for the current real-game connection.
 
-Current source compatibility status: C# and Re share `2.0-preview.64`, including
+Current source compatibility status: C# and Re share `2.0-preview.65`, including
 operation scopes, a Gateway artifact digest, separate actual-loaded versus
 release-declared game assembly hashes, reviewed exact-environment policy
-provenance, structural combat-pile transaction semantics, and minimal local
-mutation coordination. Preview.61
+provenance, structural combat-pile transaction semantics, minimal local
+mutation coordination, and exact operation qualification projection. Preview.61
 supplied the exact Neow's Fury lifecycle that closed bounded Gate 1. Preview.62
 source/build/audit evidence does not inherit that Organic qualification.
-Preview.64 is source-built but not yet installed or loaded; the current
+Preview.65 is source/fixture complete but not yet installed or loaded; the current
 Preview.63 loaded identity is recorded separately in
 [Current Status](CURRENT_STATUS.md).
 
@@ -54,6 +54,7 @@ STS2 live runtime
        - Command lifecycle and semantic completion
        - read-only Inspections and environment evidence
        - one runtime-bound external mutation-controller lease
+       - exact operation qualification and local quarantine
   -> REST adapter
   -> Re game connector
   -> normalized strategic state and advertised actions

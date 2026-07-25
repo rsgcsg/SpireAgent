@@ -1,11 +1,12 @@
 # Bridge v2 Integration
 
 > Current source-truth status, 2026-07-25: Re and C# share the
-> `2.0-preview.64` source consumer contract; Re normalized schema is `26`.
+> `2.0-preview.65` source consumer contract; Re normalized schema is `26`.
 > Gate 1 is closed as a bounded ordinary-single-player v2 connector baseline.
 > Preview.61 supplied the final Neow's Fury runtime seal; Preview.62 adds
 > policy provenance and registry adaptation without inheriting qualification.
-> Preview.64's local-control contract is source-tested/built but not yet loaded.
+> Preview.65's persistent qualification contract is source/fixture tested but
+> not yet installed or loaded.
 
 ## Connector Boundary
 
@@ -25,7 +26,7 @@ consumption.
 
 ## Current Scope
 
-Re-SpireAgent implements the strict `2.0-preview.64` consumer contract. When a
+Re-SpireAgent implements the strict `2.0-preview.65` consumer contract. When a
 matching Bridge exists, authority is read from capabilities rather than
 inferred from implementation or historical evidence.
 
@@ -81,6 +82,13 @@ Gateway promoted that operation from `session_canary` to
 `session_auto_approved` for the current runtime epoch. This proves the
 consumer contract and one low-risk session loop, not persistent qualification
 or broader permission.
+
+Preview.65 adds strict, read-only consumption of the Gateway qualification
+projection. A short-lived `session_canary` package may only seed the existing
+runtime-epoch canary flow. A persistent operation scope is accepted only when
+one current `qualified` package matches the exact environment, operation
+fingerprint, completion boundary and witness. Re cannot install, promote,
+revoke, roll back, or repair either package tier.
 
 Preview.47 adds one coherent state-plus-Inspection observation bundle, a typed
 visibility/Inspection catalog, and non-authorizing contract-instance shadow

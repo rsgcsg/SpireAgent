@@ -1,14 +1,15 @@
 # Re-SpireAgent RE-P1
 
 > Compatibility status, 2026-07-25: Re and C# share source contract
-> `2.0-preview.64`; Re normalized schema is `26`. Gate 1 is closed as a
+> `2.0-preview.65`; Re normalized schema is `26`. Gate 1 is closed as a
 > bounded ordinary-single-player v2 connector baseline. Preview.61 supplied
 > the final Neow's Fury Organic runtime seal; Preview.62 source/audit evidence
 > does not automatically qualify its new registry entries. Preview.63 is
 > installed/cold-loaded locally; strict Re inspection and one real
 > `continue_run` session canary/auto-approval pass on its exact recorded
-> identity. Preview.64 source adds minimal local mutation coordination and
-> passes source tests/build, but is not installed or loaded yet.
+> identity. Preview.64 added minimal local mutation coordination. Preview.65
+> source adds strict decoding for operation identity and persistent
+> qualification state; it is not installed or loaded yet.
 
 > Product-boundary warning: direct Re-to-Gateway REST and `.env.local` provider
 > keys are developer workflows, not the target consumer architecture. The
@@ -28,7 +29,7 @@ waits for the Bridge command lifecycle, and records the complete evidence.
 
 RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, shadow/live modes, policy promotion, or the old project's phase machinery. Its job is to make one decision path correct and auditable.
 
-Re's current strict client contract is Bridge `2.0-preview.64` on exact game
+Re's current strict client contract is Bridge `2.0-preview.65` on exact game
 identity `v0.109.0|c12f634d|-1639417500`. The separate
 `release_declared_main_assembly_hash=-840572606` is diagnostic provenance, not
 permission authority. Re requires capabilities and every
@@ -57,6 +58,14 @@ commands, verifies returned command attribution, and releases best-effort on
 shutdown. This coordinates Re with the optional MCP adapter; it is not
 authentication and does not replace the existing local Re process lock,
 operation permission, state binding or semantic completion.
+
+Preview.65 adds strict, non-authoring consumption of Gateway qualification
+state. Re accepts a persistent operation scope only when one unique
+`qualified` package is currently applicable to the exact game, Gateway,
+Modset, Patch, operation fingerprint, completion boundary, and witness. A
+short-lived `session_canary` package can only seed the Gateway's existing
+runtime-epoch gray state machine; it is not persistent mutation authority.
+Re cannot install, revoke, roll back, promote, or repair qualification data.
 
 Preview.55 makes strict v2 the sole connector path. Re rejects legacy `v1` and
 the former `auto` mode; it cannot probe or fall back to v1. Bridge-confirmed

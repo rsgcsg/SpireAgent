@@ -12,7 +12,7 @@ Bridge v2 is the only mutation contract for the current Agent and default MCP
 adapter. It remains an incremental semantic/visibility preview, not
 complete-game coverage.
 
-The C# Bridge and Re source share `2.0-preview.64`; Re normalized schema is
+The C# Bridge and Re source share `2.0-preview.65`; Re normalized schema is
 `26`. Gate 1 is closed as a bounded ordinary-single-player v2 connector
 baseline. Preview.62 replaced repeated combat-pile source branches with a
 reviewed embedded registry, moves exact-environment scopes into a reviewed
@@ -20,11 +20,15 @@ embedded policy, and added a non-authorizing exact-assembly audit. Preview.63
 adds Gateway-owned operation-scoped session grants, conservative runtime Patch
 evidence, semantic-completion promotion and failure quarantine. Preview.64
 adds descriptive client registration, one mutation-controller lease,
-generation fencing and command attribution. The final
+generation fencing and command attribution. Preview.65 adds an embedded
+operation-identity catalog, exact-environment persistent qualification ledger,
+short-lived candidate packages, qualified packages, local quarantine, and
+non-authorizing qualification tooling. The final
 Neow's Fury runtime seal remains attributed to Preview.61; new Preview.62
 registry entries are not automatically Organic-qualified. Preview.63 remains
-the locally loaded exact Bridge-only environment; Preview.64 source, tests and
-Release build are complete but its cold-load is pending. Exact evidence is recorded in
+the locally loaded exact Bridge-only environment; Preview.65 source, fixture
+checks and Release build are complete but installation and cold-load remain
+pending. Exact evidence is recorded in
 [current status](docs/bridge-v2/CURRENT_STATUS.md).
 
 > Product security warning: the current HTTP listener is a developer preview.
@@ -42,12 +46,13 @@ Release build are complete but its cold-load is pending. Exact evidence is recor
   untested and has no v2 action or Inspection authority. Check
   [Bridge v2 current status](docs/bridge-v2/CURRENT_STATUS.md) before treating
   a local install as qualified.
-- Source `2.0-preview.64` keeps centralized overlay/room/menu ownership, typed
+- Source `2.0-preview.65` keeps centralized overlay/room/menu ownership, typed
   diagnostics, purpose-specific selection and event contracts, staged
   completion semantics, and a top-level read-only shared run/player HUD.
-  Current-build capabilities distinguish scoped-qualified actions,
-  operation-scoped session grants, action canaries, and read-only Inspection
-  instead of treating implementation or D evidence as permission.
+  Current-build capabilities distinguish reviewed exact-policy actions,
+  operation-scoped session grants, exact applicable persistent qualifications,
+  action canaries, and read-only Inspection instead of treating implementation,
+  static similarity, or D evidence as permission.
 - Qualified combat Context includes exact player-visible companion state from
   native `PlayerCombatState.Pets`. Companion HP is exposed only when the native
   health bar is visible; this adds no companion action authority.
@@ -207,7 +212,8 @@ configuration:
 ```json
 {
   "port": 15526,
-  "permission_mode": "balanced_gray"
+  "permission_mode": "balanced_gray",
+  "qualification_store": "STS2_MCP.qualifications.json"
 }
 ```
 
@@ -219,6 +225,16 @@ after changing the mode. An invalid mode or unreadable config fails closed to
 `strict`; a missing config creates the local developer default
 `balanced_gray`. V1 mutation cannot be enabled; use only state-bound actions
 advertised by the current Bridge v2 state.
+
+`qualification_store` is a local append-only operation qualification ledger.
+It is loaded once at startup and is never served as a mutation endpoint.
+Missing means no persistent qualification; malformed means fail closed. Keep
+the file outside Git. Use the repository-local
+`npm run qualification:ledger -- ...` commands documented in the
+[Preview 65 closeout](docs/bridge-v2/PREVIEW_65_PERSISTENT_QUALIFICATION_AND_ADAPTATION_CLOSEOUT_2026-07-25.md)
+to inspect, compare, assemble, install, revoke or roll back packages.
+Set `qualification_store` to JSON `null` or the string `"disabled"` and restart
+to disable ledger loading without deleting the local evidence file.
 
 Windows/Linux use the game's corresponding `mods/` directory. Launch the game,
 enable the mod, then verify:

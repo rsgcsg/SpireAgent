@@ -76,6 +76,10 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
           modset_status: bridge.game.modset.status,
           modset_fingerprint: bridge.game.modset.fingerprint,
           modset_exact_permission_eligible: bridge.game.modset.exact_permission_eligible,
+          modset_qualification_candidate_eligible:
+            bridge.game.modset.qualification_candidate_eligible,
+          modset_persistent_qualification_eligible:
+            bridge.game.modset.persistent_qualification_eligible,
           loaded_mods: bridge.game.modset.mods.map((mod) => ({
             id: mod.id,
             version: mod.version ?? null,
@@ -117,6 +121,44 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
             supersedes_grant_id: grant.supersedes_grant_id ?? null,
             revocation_reason: grant.revocation_reason ?? null
           })),
+          qualification_status: bridge.qualification_system.status,
+          qualification_store_id: bridge.qualification_system.store_id,
+          qualification_store_digest: bridge.qualification_system.store_digest,
+          qualification_current_environment_digest:
+            bridge.qualification_system.current_environment_digest,
+          qualification_operation_catalog_id:
+            bridge.qualification_system.operation_catalog_id,
+          qualification_operation_catalog_digest:
+            bridge.qualification_system.operation_catalog_digest,
+          qualification_operation_contracts:
+            bridge.qualification_system.operation_contracts.map((contract) => ({
+              surface_kind: contract.surface_kind,
+              operation: contract.operation,
+              contract_digest: contract.contract_digest,
+              completion_boundary: contract.completion_boundary,
+              witness_id: contract.witness_id,
+              risk_class: contract.risk_class
+            })),
+          persistent_authority_enabled:
+            bridge.qualification_system.persistent_authority_enabled,
+          session_canary_candidate_enabled:
+            bridge.qualification_system.session_canary_candidate_enabled,
+          applicable_qualifications_at_negotiation:
+            bridge.qualification_system.qualifications
+              .filter((qualification) =>
+                qualification.applicable_to_current_environment)
+              .map((qualification) => ({
+                qualification_id: qualification.qualification_id,
+                version: qualification.version,
+                surface_kind: qualification.surface_kind,
+                operation: qualification.operation,
+                environment_digest: qualification.environment_digest,
+                patch_digest: qualification.patch_digest,
+                operation_fingerprint: qualification.operation_fingerprint,
+                completion_boundary: qualification.completion_boundary,
+                witness_id: qualification.witness_id,
+                evidence_bundle_digest: qualification.evidence_bundle_digest
+              })),
           control_coordination_status: bridge.control_coordination.status,
           control_coordination_runtime_epoch: bridge.control_coordination.runtime_epoch,
           control_registration_required_for_mutation:

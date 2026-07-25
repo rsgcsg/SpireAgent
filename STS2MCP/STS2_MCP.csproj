@@ -31,6 +31,9 @@
     <EmbeddedResource
       Include="BridgeV2/Runtime/gray-permission-candidates.json"
       LogicalName="STS2_MCP.BridgeV2.Runtime.gray-permission-candidates.json" />
+    <EmbeddedResource
+      Include="BridgeV2/Runtime/operation-qualification-contracts.json"
+      LogicalName="STS2_MCP.BridgeV2.Runtime.operation-qualification-contracts.json" />
   </ItemGroup>
 
   <ItemGroup>

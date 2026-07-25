@@ -22,6 +22,8 @@ public static partial class McpMod
     public const string Version = "0.5.0-dev";
     public const int DefaultPort = 15526;
     private const string ConfigFileName = "STS2_MCP.conf";
+    private const string QualificationStoreFileName =
+        "STS2_MCP.qualifications.json";
 
     private static HttpListener? _listener;
     private static Thread? _serverThread;
@@ -35,7 +37,10 @@ public static partial class McpMod
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
     };
 
-    private sealed record RuntimeConfig(int Port, BridgePermissionMode PermissionMode);
+    private sealed record RuntimeConfig(
+        int Port,
+        BridgePermissionMode PermissionMode,
+        string? QualificationStorePath);
 
     private static RuntimeConfig LoadRuntimeConfig()
     {
@@ -44,7 +49,10 @@ public static partial class McpMod
             string? modDir = Path.GetDirectoryName(
                 System.Reflection.Assembly.GetExecutingAssembly().Location);
             if (modDir == null)
-                return new RuntimeConfig(DefaultPort, BridgePermissionMode.BalancedGray);
+                return new RuntimeConfig(
+                    DefaultPort,
+                    BridgePermissionMode.BalancedGray,
+                    null);
 
             string configPath = Path.Combine(modDir, ConfigFileName);
             if (!File.Exists(configPath))
@@ -54,7 +62,8 @@ public static partial class McpMod
                     var defaultConfig = new Dictionary<string, object>
                     {
                         ["port"] = DefaultPort,
-                        ["permission_mode"] = "balanced_gray"
+                        ["permission_mode"] = "balanced_gray",
+                        ["qualification_store"] = QualificationStoreFileName
                     };
                     string json = JsonSerializer.Serialize(defaultConfig, _jsonOptions);
                     File.WriteAllText(configPath, json);
@@ -64,7 +73,10 @@ public static partial class McpMod
                 {
                     GD.Print($"[STS2 MCP] No config found at {configPath}; using default port {DefaultPort}");
                 }
-                return new RuntimeConfig(DefaultPort, BridgePermissionMode.BalancedGray);
+                return new RuntimeConfig(
+                    DefaultPort,
+                    BridgePermissionMode.BalancedGray,
+                    Path.Combine(modDir, QualificationStoreFileName));
             }
 
             string content = File.ReadAllText(configPath);
@@ -94,15 +106,44 @@ public static partial class McpMod
                     $"[STS2 MCP] Invalid permission_mode '{permissionMode}' in {configPath}; failing closed to strict");
                 permissionMode = "strict";
             }
+            string? qualificationStore = QualificationStoreFileName;
+            if (doc.RootElement.TryGetProperty(
+                    "qualification_store",
+                    out JsonElement qualificationElement))
+            {
+                qualificationStore = qualificationElement.ValueKind switch
+                {
+                    JsonValueKind.Null => null,
+                    JsonValueKind.String
+                        when string.Equals(
+                            qualificationElement.GetString(),
+                            "disabled",
+                            StringComparison.OrdinalIgnoreCase) => null,
+                    JsonValueKind.String
+                        when !string.IsNullOrWhiteSpace(
+                            qualificationElement.GetString()) =>
+                        qualificationElement.GetString(),
+                    _ => QualificationStoreFileName
+                };
+            }
+            string? qualificationStorePath = qualificationStore == null
+                ? null
+                : Path.IsPathRooted(qualificationStore)
+                    ? qualificationStore
+                    : Path.Combine(modDir, qualificationStore);
             return new RuntimeConfig(
                 configuredPort,
-                BridgePermissionManager.ParseMode(permissionMode));
+                BridgePermissionManager.ParseMode(permissionMode),
+                qualificationStorePath);
         }
         catch (Exception ex)
         {
             GD.PrintErr(
                 $"[STS2 MCP] Failed to load config: {ex.Message}; using default port and strict permission mode");
-            return new RuntimeConfig(DefaultPort, BridgePermissionMode.Strict);
+            return new RuntimeConfig(
+                DefaultPort,
+                BridgePermissionMode.Strict,
+                null);
         }
     }
 
@@ -119,6 +160,8 @@ public static partial class McpMod
 
             RuntimeConfig config = LoadRuntimeConfig();
             BridgeV2Runtime.ConfigurePermissionMode(config.PermissionMode);
+            BridgeV2Runtime.ConfigureQualificationStore(
+                config.QualificationStorePath);
             int port = config.Port;
 
             _listener = new HttpListener();

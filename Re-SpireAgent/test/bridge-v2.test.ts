@@ -28,7 +28,7 @@ function permissionScope(
 }
 
 const CAPABILITIES = {
-  protocol_version: "2.0-preview.64",
+  protocol_version: "2.0-preview.65",
   bridge: {
     id: "sts2_mcp_bridge_v2",
     name: "STS2 Agent Bridge",
@@ -68,6 +68,8 @@ const CAPABILITIES = {
       fingerprint: "fixture-modset-1",
       fingerprint_scope: "manager_state+ordered_manifest_identity+load_state+source+workshop_id+loaded_assembly_name_version_mvid",
       exact_permission_eligible: true,
+      qualification_candidate_eligible: false,
+      persistent_qualification_eligible: false,
       mods: [{
         id: "STS2_MCP",
         version: "0.5.0-dev",
@@ -149,6 +151,20 @@ const CAPABILITIES = {
     grants: [],
     limitations: ["fixture permission system"]
   },
+  qualification_system: {
+    schema_version: 1,
+    status: "empty",
+    store_id: "fixture-qualification-store",
+    store_digest: "d".repeat(64),
+    current_environment_digest: "fixture-environment",
+    operation_catalog_id: "fixture-operation-catalog",
+    operation_catalog_digest: "e".repeat(64),
+    persistent_authority_enabled: false,
+    session_canary_candidate_enabled: false,
+    operation_contracts: [],
+    qualifications: [],
+    limitations: ["fixture qualification system"]
+  },
   control_coordination: {
     status: "local_coordination_active",
     registration_required_for_mutation: true,
@@ -224,7 +240,7 @@ const RUN_VISIBILITY = {
 };
 
 const DECK_ENCHANT_STATE = {
-  protocol_version: "2.0-preview.64",
+  protocol_version: "2.0-preview.65",
   state_id: "state-test-1",
   state_sequence: 1,
   observed_at: "2026-07-16T00:00:00Z",
@@ -300,7 +316,7 @@ const DECK_ENCHANT_STATE = {
     status: "resolved_manifest_contract",
     instance_id: "contract-instance-deck-enchant-1",
     surface_kind: "deck_enchant_selection",
-    semantic_contract_id: "bridge.surface.deck_enchant_selection.2.0-preview.64",
+    semantic_contract_id: "bridge.surface.deck_enchant_selection.2.0-preview.65",
     declared_binding: "fixture-declared-binding",
     operations: [{ operation: "toggle_card", evidence_status: "surface_level_only", published: true }],
     current_authority_tier: "canary",
@@ -309,6 +325,7 @@ const DECK_ENCHANT_STATE = {
     limitations: ["shadow_inventory_only", "authority_remains_surface_kind_scoped"]
   },
   permission_system: CAPABILITIES.permission_system,
+  qualification_system: CAPABILITIES.qualification_system,
   diagnostics: [],
   warnings: []
 };
@@ -2074,7 +2091,7 @@ function visibleInspectionCard(overrides: Record<string, unknown> = {}) {
 
 function runDeckInspection(stateId: string, cards = [visibleInspectionCard()]) {
   return {
-    protocol_version: "2.0-preview.64",
+    protocol_version: "2.0-preview.65",
     inspection_id: `inspection-run-deck-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -2097,7 +2114,7 @@ function runDeckInspection(stateId: string, cards = [visibleInspectionCard()]) {
 
 function combatPilesInspection(stateId: string) {
   return {
-    protocol_version: "2.0-preview.64",
+    protocol_version: "2.0-preview.65",
     inspection_id: `inspection-combat-piles-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -2142,7 +2159,7 @@ function shopCatalogInspection(stateId: string) {
     blocked_reason: offer.stocked ? "not_visible" : offer.blocked_reason
   });
   return {
-    protocol_version: "2.0-preview.64",
+    protocol_version: "2.0-preview.65",
     inspection_id: `inspection-shop-catalog-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -2184,7 +2201,7 @@ function coherentObservationBundle(
   }));
   const resolvedInspections = inspections ?? defaultInspections;
   return {
-    protocol_version: "2.0-preview.64",
+    protocol_version: "2.0-preview.65",
     observation_id: `observation-${state.state_id}`,
     coherent: true,
     state,
@@ -6214,7 +6231,7 @@ function handleTestControlRequest(
     const body = JSON.parse(String(init?.body)) as { client_instance_id: string };
     control.clientInstanceId = body.client_instance_id;
     return json({
-      protocol_version: "2.0-preview.64",
+      protocol_version: "2.0-preview.65",
       runtime_instance_id: "fixture-runtime-1",
       client: {
         client_session_id: control.clientSessionId,
@@ -6230,7 +6247,7 @@ function handleTestControlRequest(
   }
   if (url.endsWith("/api/v2/controller/acquire")) {
     return json({
-      protocol_version: "2.0-preview.64",
+      protocol_version: "2.0-preview.65",
       runtime_instance_id: "fixture-runtime-1",
       status: "controller_acquired",
       detail: "fixture acquired",
@@ -6247,7 +6264,7 @@ function handleTestControlRequest(
   }
   if (url.endsWith("/api/v2/controller/release")) {
     return json({
-      protocol_version: "2.0-preview.64",
+      protocol_version: "2.0-preview.65",
       runtime_instance_id: "fixture-runtime-1",
       status: "controller_released",
       detail: "fixture released",
@@ -6348,6 +6365,174 @@ describe("Bridge v2 session permission governance", () => {
 
     expect(decodeBridgeV2Capabilities(capabilities).data.permission_system.grants)
       .toHaveLength(1);
+  });
+});
+
+describe("Bridge v2 persistent qualification governance", () => {
+  function persistentCapabilities() {
+    const capabilities = structuredClone(CAPABILITIES);
+    const contractDigest = "1".repeat(64);
+    const environmentDigest = "2".repeat(64);
+    const patchDigest = capabilities.permission_system.patch_inventory.digest;
+    capabilities.game.modset.exact_permission_eligible = false;
+    capabilities.game.modset.persistent_qualification_eligible = true;
+    capabilities.game.modset.status = "additional_mods_loaded";
+    capabilities.game.compatibility.adaptation_level =
+      "installed_persistent_qualification";
+    capabilities.game.compatibility.action_execution_allowed = true;
+    capabilities.game.compatibility.state_observation_allowed = true;
+    capabilities.game.compatibility.action_execution_surface_kinds =
+      ["shop_room"];
+    capabilities.game.compatibility.action_permission_scopes = [{
+      surface_kind: "shop_room",
+      operation: "open_shop_inventory",
+      tier: "qualified",
+      grant_id: "qualification_qualification-shop-open",
+      grant_version: 1,
+      runtime_epoch: "not_session_bound",
+      environment_digest: environmentDigest,
+      patch_digest: patchDigest,
+      operation_fingerprint: contractDigest
+    }];
+    capabilities.qualification_system = {
+      schema_version: 1,
+      status: "active",
+      store_id: "fixture-store",
+      store_digest: "3".repeat(64),
+      current_environment_digest: environmentDigest,
+      operation_catalog_id: "fixture-catalog",
+      operation_catalog_digest: "4".repeat(64),
+      persistent_authority_enabled: true,
+      session_canary_candidate_enabled: false,
+      operation_contracts: [{
+        surface_kind: "shop_room",
+        operation: "open_shop_inventory",
+        interaction_digest: "5".repeat(64),
+        owner_digest: "6".repeat(64),
+        source_digest: "7".repeat(64),
+        operand_digest: "8".repeat(64),
+        commit_digest: "9".repeat(64),
+        completion_digest: "a".repeat(64),
+        witness_digest: "b".repeat(64),
+        contract_digest: contractDigest,
+        completion_boundary: "continuation_handoff_observed",
+        witness_id: "shop_inventory_opened",
+        risk_class: "reversible_navigation"
+      }] as unknown as never[],
+      qualifications: [{
+        qualification_id: "qualification-shop-open",
+        version: 1,
+        status: "active",
+        authority_tier: "qualified",
+        surface_kind: "shop_room",
+        operation: "open_shop_inventory",
+        risk_class: "reversible_navigation",
+        environment_digest: environmentDigest,
+        modset_fingerprint: capabilities.game.modset.fingerprint,
+        patch_digest: patchDigest,
+        operation_fingerprint: contractDigest,
+        completion_boundary: "continuation_handoff_observed",
+        witness_id: "shop_inventory_opened",
+        evidence_bundle_digest: "c".repeat(64),
+        applicable_to_current_environment: true,
+        applicability: "exact_match",
+        issued_at: "2026-07-25T00:00:00Z",
+        expires_at: "2026-08-25T00:00:00Z",
+        supersedes_qualification_id: null,
+        status_reason: null,
+        evidence_ids: ["organic-runtime-a", "organic-runtime-b"]
+      }] as unknown as never[],
+      limitations: ["fixture"]
+    };
+    return capabilities;
+  }
+
+  it("accepts an exact operation scope backed by an applicable package", () => {
+    const capabilities = persistentCapabilities();
+
+    const decoded = decodeBridgeV2Capabilities(capabilities).data;
+
+    expect(decoded.game.modset.persistent_qualification_eligible).toBe(true);
+    expect(decoded.qualification_system.persistent_authority_enabled).toBe(true);
+    expect(decoded.game.compatibility.action_permission_scopes[0]?.grant_id)
+      .toBe("qualification_qualification-shop-open");
+  });
+
+  it("accepts a candidate package only through a Gateway runtime canary grant", () => {
+    const capabilities = persistentCapabilities();
+    const scope = capabilities.game.compatibility.action_permission_scopes[0]!;
+    const qualification =
+      capabilities.qualification_system.qualifications[0] as unknown as
+        Record<string, unknown>;
+    const grantId = "grant-fixture-shop-open-canary";
+
+    capabilities.game.modset.persistent_qualification_eligible = false;
+    capabilities.game.modset.qualification_candidate_eligible = true;
+    capabilities.game.compatibility.adaptation_level =
+      "installed_qualification_candidate";
+    capabilities.game.compatibility.action_execution_surface_kinds = [];
+    capabilities.game.compatibility.action_canary_surface_kinds = ["shop_room"];
+    scope.tier = "canary";
+    scope.grant_id = grantId;
+    scope.runtime_epoch = capabilities.bridge.runtime_instance_id;
+    qualification.authority_tier = "session_canary";
+    capabilities.qualification_system.persistent_authority_enabled = false;
+    capabilities.qualification_system.session_canary_candidate_enabled = true;
+    (capabilities.permission_system.grants as unknown as
+      Array<Record<string, unknown>>).push({
+      schema_version: 1,
+      grant_id: grantId,
+      grant_version: scope.grant_version,
+      current: true,
+      status: "active",
+      mode: "balanced_gray",
+      surface_kind: scope.surface_kind,
+      operation: scope.operation,
+      tier: "session_canary",
+      risk_class: "reversible_navigation",
+      runtime_epoch: scope.runtime_epoch,
+      environment_digest: scope.environment_digest,
+      gateway_assembly_sha256: capabilities.bridge.assembly_file_sha256,
+      gateway_module_version_id: capabilities.bridge.module_version_id,
+      modset_fingerprint: capabilities.game.modset.fingerprint,
+      patch_digest: scope.patch_digest,
+      operation_fingerprint: scope.operation_fingerprint,
+      evidence_bundle_digest: "d".repeat(64),
+      issued_at: "2026-07-25T00:00:00Z",
+      expires_at: "2026-07-25T04:00:00Z",
+      supersedes_grant_id: null,
+      revocation_reason: null,
+      evidence_ids: ["candidate-package-fixture"]
+    });
+
+    const decoded = decodeBridgeV2Capabilities(capabilities).data;
+
+    expect(decoded.game.modset.qualification_candidate_eligible).toBe(true);
+    expect(decoded.qualification_system.persistent_authority_enabled).toBe(false);
+    expect(decoded.permission_system.grants[0]?.tier).toBe("session_canary");
+    expect(decoded.game.compatibility.action_permission_scopes[0]?.grant_id)
+      .toBe(grantId);
+  });
+
+  it("rejects a persistent scope without an exact applicable package", () => {
+    const capabilities = persistentCapabilities();
+    const qualification = capabilities.qualification_system.qualifications[0] as unknown as Record<string, unknown>;
+    qualification.applicable_to_current_environment = false;
+    qualification.applicability =
+      "inactive_or_exact_identity_mismatch";
+    capabilities.qualification_system.persistent_authority_enabled = false;
+
+    expect(() => decodeBridgeV2Capabilities(capabilities))
+      .toThrow("requires an applicable Gateway qualification");
+  });
+
+  it("rejects component contract drift behind an otherwise matching package", () => {
+    const capabilities = persistentCapabilities();
+    capabilities.game.compatibility.action_permission_scopes[0]!
+      .operation_fingerprint = "f".repeat(64);
+
+    expect(() => decodeBridgeV2Capabilities(capabilities))
+      .toThrow("lacks an exact applicable qualification");
   });
 });
 

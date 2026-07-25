@@ -8,7 +8,7 @@ and do not grant current authority.
 ## Current Source-Truth Status
 
 The C# Gateway and Re-SpireAgent source now share contract
-`2.0-preview.64`; Re normalized schema is `26`. Gate 1 is closed as a bounded
+`2.0-preview.65`; Re normalized schema is `26`. Gate 1 is closed as a bounded
 ordinary-single-player v2 connector baseline:
 
 - Re and the default Python MCP adapter submit only advertised Bridge v2
@@ -66,6 +66,29 @@ generation fencing and immutable command attribution. Reads remain open. The
 coordination layer reuses `bridge.runtime_instance_id`, does not authenticate
 local processes, does not change operation permissions, and does not cancel or
 retry a command after admission.
+
+Preview.65 separates persistent qualification from volatile session grants.
+It adds component-level operation identities, short-lived
+`session_canary` candidate packages, two-runtime `qualified` packages, exact
+startup applicability, operation-scoped session quarantine, append-only
+install/supersede/revoke/rollback, and non-authorizing
+capture/diff/collect/assemble/dry-run tools. A candidate package can bootstrap
+only a reviewed low-risk operation; it never becomes qualified by itself.
+
+The first non-menu gray candidate is only
+`shop_room/open_shop_inventory`. It cannot authorize purchases, removal,
+leaving the shop, or another shop operation. Gateway tests (`153`), Re tests
+(`179`), Re typecheck and qualification fixtures pass. Preview.65 Release
+builds with zero warnings as:
+
+```text
+SHA  11b6b014965a9269bd572bd04c3cd8a7575541e8bc6439cf054dc7b1b264164e
+MVID 4e870cd2-3e35-4db5-8a1b-7c7a41ca631f
+```
+
+Preview.65 has no installed, loaded, canary, Organic, persistent,
+cross-version or cross-Mod evidence yet. See the
+[Preview 65 closeout](PREVIEW_65_PERSISTENT_QUALIFICATION_AND_ADAPTATION_CLOSEOUT_2026-07-25.md).
 
 Gateway tests (`142`), Re tests (`175`), Re typecheck/build, Python MCP syntax
 checking and the exact-game Release build pass for Preview.64 source. The
@@ -163,10 +186,12 @@ compatibility only. The prior Preview.59 Dredge journey does not transfer Gate
    the non-authorizing exact-assembly compatibility audit on each exact build.
 3. Do not add a non-navigation gray candidate until independent evidence and
    candidate-policy review exist. Keep Tutor/unknown origins fail closed.
-4. Close the game, install Preview.64, cold-start through Steam, verify exact
+4. Close the game, install the built Preview.65 Release, cold-start through Steam,
+   verify exact
    loaded SHA/MVID/runtime identity, then exercise one Re advertised-action
-   command and one competing-client rejection. This is coordination canary
-   evidence, not Surface qualification.
+   command and one competing-client rejection. Then separately exercise the
+   bounded shop-open candidate before collecting a second runtime epoch. None
+   of these steps alone is persistent qualification.
 
 The current inventory and first Gate 1 runtime repair are recorded in
 [Gate 1 Operation And Journey Inventory](GATE1_OPERATION_AND_JOURNEY_INVENTORY.md).

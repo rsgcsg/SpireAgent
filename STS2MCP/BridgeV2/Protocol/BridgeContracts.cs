@@ -7,7 +7,7 @@ namespace STS2_MCP.BridgeV2.Protocol;
 
 public static class BridgeV2Contract
 {
-    public const string ProtocolVersion = "2.0-preview.64";
+    public const string ProtocolVersion = "2.0-preview.65";
     public const string ObservationPolicyId = "player_visible_ui_v1";
 }
 
@@ -111,6 +111,73 @@ public sealed record BridgePermissionSystemInfo(
         new[] { "No dynamic permission state is available." });
 }
 
+public sealed record BridgePersistentQualificationInfo(
+    string QualificationId,
+    int Version,
+    string Status,
+    string AuthorityTier,
+    string SurfaceKind,
+    string Operation,
+    string RiskClass,
+    string EnvironmentDigest,
+    string ModsetFingerprint,
+    string PatchDigest,
+    string OperationFingerprint,
+    string CompletionBoundary,
+    string WitnessId,
+    string EvidenceBundleDigest,
+    bool ApplicableToCurrentEnvironment,
+    string Applicability,
+    DateTimeOffset IssuedAt,
+    DateTimeOffset ExpiresAt,
+    string? SupersedesQualificationId,
+    string? StatusReason,
+    IReadOnlyList<string> EvidenceIds);
+
+public sealed record BridgeOperationQualificationIdentityInfo(
+    string SurfaceKind,
+    string Operation,
+    string InteractionDigest,
+    string OwnerDigest,
+    string SourceDigest,
+    string OperandDigest,
+    string CommitDigest,
+    string CompletionDigest,
+    string WitnessDigest,
+    string ContractDigest,
+    string CompletionBoundary,
+    string WitnessId,
+    string RiskClass);
+
+public sealed record BridgeQualificationSystemInfo(
+    int SchemaVersion,
+    string Status,
+    string StoreId,
+    string StoreDigest,
+    string CurrentEnvironmentDigest,
+    string OperationCatalogId,
+    string OperationCatalogDigest,
+    bool PersistentAuthorityEnabled,
+    bool SessionCanaryCandidateEnabled,
+    IReadOnlyList<BridgeOperationQualificationIdentityInfo> OperationContracts,
+    IReadOnlyList<BridgePersistentQualificationInfo> Qualifications,
+    IReadOnlyList<string> Limitations)
+{
+    public static BridgeQualificationSystemInfo Unavailable { get; } = new(
+        1,
+        "unavailable_fail_closed",
+        "unavailable",
+        "unavailable",
+        "unavailable",
+        "unavailable",
+        "unavailable",
+        PersistentAuthorityEnabled: false,
+        SessionCanaryCandidateEnabled: false,
+        Array.Empty<BridgeOperationQualificationIdentityInfo>(),
+        Array.Empty<BridgePersistentQualificationInfo>(),
+        new[] { "No persistent qualification store was configured." });
+}
+
 public sealed record CompatibilityAssessment(
     string Status,
     IReadOnlyList<string> TestedGameVersions,
@@ -172,7 +239,12 @@ public sealed record ModsetIdentity(
     string FingerprintScope,
     bool ExactPermissionEligible,
     IReadOnlyList<LoadedModIdentity> Mods,
-    string Detail);
+    string Detail)
+{
+    public bool QualificationCandidateEligible { get; init; }
+
+    public bool PersistentQualificationEligible { get; init; }
+}
 
 public sealed record ObservationPolicyInfo(
     string Id,
@@ -284,6 +356,9 @@ public sealed record BridgeCapabilitiesResponse(
 {
     public BridgePermissionSystemInfo PermissionSystem { get; init; } =
         BridgePermissionSystemInfo.Unavailable;
+
+    public BridgeQualificationSystemInfo QualificationSystem { get; init; } =
+        BridgeQualificationSystemInfo.Unavailable;
 
     public ControlCoordinationContractCapability ControlCoordination { get; init; } =
         new(
@@ -1169,6 +1244,9 @@ public sealed record BridgeStateEnvelope(
 {
     public BridgePermissionSystemInfo PermissionSystem { get; init; } =
         BridgePermissionSystemInfo.Unavailable;
+
+    public BridgeQualificationSystemInfo QualificationSystem { get; init; } =
+        BridgeQualificationSystemInfo.Unavailable;
 
     // Retain the preview.1 wire field while making surface.kind the sole source.
     public string SurfaceKind => Surface.Kind;

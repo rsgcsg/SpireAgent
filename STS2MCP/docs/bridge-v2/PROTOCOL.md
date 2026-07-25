@@ -1,6 +1,31 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.64`
+Protocol preview: `2.0-preview.65`
+
+Preview.65 adds required `qualification_system` state to capabilities and
+every state envelope. It reports:
+
+- the current exact environment digest;
+- a component-level operation contract catalog;
+- local qualification-store identity and status;
+- active, expired, superseded, revoked, rolled-back and session-quarantined
+  packages;
+- whether an exact `session_canary` candidate or persistent `qualified`
+  operation is currently applicable.
+
+`game.modset` now separately reports
+`qualification_candidate_eligible` and
+`persistent_qualification_eligible`. Neither is inferred from Mod presence.
+The Gateway sets them only after an installed package matches the exact
+game/Gateway/Modset/Patch/environment and operation contract.
+
+A `session_canary` package is short-lived, low-risk bootstrap input to the
+existing Gateway-owned D3 state machine. A `qualified` package requires two
+distinct runtime epochs of confirmed Organic evidence. Packages are local,
+append-only and loaded only at startup; there is no REST or MCP endpoint that
+installs or activates one. Execution still requires the exact advertised scope
+and execute-time validation. Validated failure or Witness mismatch immediately
+quarantines the operation for the runtime.
 
 Preview.64 adds minimal local mutation coordination. Read-only observation and
 Inspection remain open. A mutation client registers descriptive process

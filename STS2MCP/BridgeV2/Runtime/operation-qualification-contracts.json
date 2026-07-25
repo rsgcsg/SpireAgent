@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "catalog_id": "bridge_v2_operation_qualification_contracts_v1",
+  "authority_effect": "qualification_identity_only",
+  "contracts": [
+    {
+      "surface_kind": "main_menu",
+      "operation": "open_singleplayer",
+      "interaction_kind": "root_menu_navigation",
+      "owner_binding": "exact_main_menu_instance",
+      "source_binding": "main_menu_singleplayer_button",
+      "operand_contract": "advertised_visible_enabled_choice",
+      "commit_contract": "native_menu_button_force_click",
+      "completion_boundary": "continuation_handoff_observed",
+      "witness_id": "singleplayer_or_character_select_owner_became_active",
+      "risk_class": "reversible_navigation"
+    },
+    {
+      "surface_kind": "main_menu",
+      "operation": "continue_run",
+      "interaction_kind": "root_menu_navigation",
+      "owner_binding": "exact_main_menu_instance",
+      "source_binding": "main_menu_continue_button",
+      "operand_contract": "advertised_visible_enabled_saved_run_choice",
+      "commit_contract": "native_continue_run_task",
+      "completion_boundary": "continuation_handoff_observed",
+      "witness_id": "saved_singleplayer_run_became_active",
+      "risk_class": "reversible_navigation"
+    },
+    {
+      "surface_kind": "shop_room",
+      "operation": "open_shop_inventory",
+      "interaction_kind": "merchant_room_navigation",
+      "owner_binding": "exact_current_merchant_room",
+      "source_binding": "merchant_room_inventory_button",
+      "operand_contract": "advertised_visible_enabled_merchant_control",
+      "commit_contract": "native_merchant_button_force_click",
+      "completion_boundary": "continuation_handoff_observed",
+      "witness_id": "shop_inventory_opened",
+      "risk_class": "reversible_navigation"
+    },
+    {
+      "surface_kind": "map_navigation",
+      "operation": "choose_map_node",
+      "interaction_kind": "map_node_navigation",
+      "owner_binding": "exact_current_map_screen",
+      "source_binding": "exact_visible_travelable_map_node",
+      "operand_contract": "exact_coordinate_enabled_travelable_ftue_visible",
+      "commit_contract": "native_map_point_selected_locally",
+      "completion_boundary": "immediate_postcondition_observed",
+      "witness_id": "map_closed_or_current_map_coordinate_reached",
+      "risk_class": "progression"
+    },
+    {
+      "surface_kind": "deck_enchant_selection",
+      "operation": "confirm_selection",
+      "interaction_kind": "deck_enchantment_preview_commit",
+      "owner_binding": "exact_current_enchant_selector",
+      "source_binding": "exact_enchantment_and_selected_card_instances",
+      "operand_contract": "selected_cards_still_enchantable_and_confirm_enabled",
+      "commit_contract": "native_enchant_preview_confirm",
+      "completion_boundary": "immediate_postcondition_observed",
+      "witness_id": "enchantment_screen_closed_and_exact_cards_enchanted",
+      "risk_class": "persistent_run_mutation"
+    }
+  ]
+}

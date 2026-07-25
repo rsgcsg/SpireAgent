@@ -41,6 +41,24 @@
         "tests/STS2_MCP.Tests/BridgeContractTests.cs",
         "../archive/bridge-v2-previews/2026-07/PREVIEW_37_MENU_NAVIGATION_CLOSEOUT_2026-07-18.md#source-audit"
       ]
+    },
+    {
+      "surface_kind": "shop_room",
+      "operation": "open_shop_inventory",
+      "risk_class": "reversible_navigation",
+      "eligible_modes": [
+        "balanced_gray",
+        "developer_gray"
+      ],
+      "required_static_tier": "canary",
+      "minimum_evidence_status": "source_audited",
+      "minimum_successes": 1,
+      "session_ttl_seconds": 14400,
+      "witness_id": "shop_inventory_opened",
+      "evidence_ids": [
+        "BridgeV2/Game/ShopSurfaceProviders.cs#ShopRoomSurfaceProvider.StartOpenInventory",
+        "tests/STS2_MCP.Tests/BridgeContractTests.cs"
+      ]
     }
   ]
 }

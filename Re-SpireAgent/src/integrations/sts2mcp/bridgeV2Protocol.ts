@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { isJsonObject, type JsonObject } from "../../shared/json.js";
 
-export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.64" as const;
+export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.65" as const;
 export const BRIDGE_V2_INSPECTION_KINDS = ["run_deck", "combat_piles", "shop_catalog"] as const;
 const inspectionKindSchema = z.enum(BRIDGE_V2_INSPECTION_KINDS);
 
@@ -71,6 +71,90 @@ const permissionSystemSchema = z.object({
   limitations: z.array(z.string().min(1))
 }).passthrough();
 
+const persistentQualificationSchema = z.object({
+  qualification_id: z.string().min(1),
+  version: z.number().int().positive(),
+  status: z.enum([
+    "active",
+    "superseded",
+    "revoked",
+    "rolled_back",
+    "expired",
+    "session_quarantined"
+  ]),
+  authority_tier: z.enum(["session_canary", "qualified"]),
+  surface_kind: z.string().min(1),
+  operation: z.string().min(1),
+  risk_class: z.string().min(1),
+  environment_digest: z.string().min(1),
+  modset_fingerprint: z.string().min(1),
+  patch_digest: z.string().min(1),
+  operation_fingerprint: z.string().min(1),
+  completion_boundary: z.enum([
+    "native_commit_observed",
+    "immediate_postcondition_observed",
+    "continuation_handoff_observed",
+    "transaction_settled"
+  ]),
+  witness_id: z.string().min(1),
+  evidence_bundle_digest: z.string().regex(/^[a-f0-9]{64}$/iu),
+  applicable_to_current_environment: z.boolean(),
+  applicability: z.enum([
+    "exact_match",
+    "session_quarantined",
+    "inactive_or_exact_identity_mismatch"
+  ]),
+  issued_at: z.string().min(1),
+  expires_at: z.string().min(1),
+  supersedes_qualification_id: z.string().min(1).nullable().optional(),
+  status_reason: z.string().min(1).nullable().optional(),
+  evidence_ids: z.array(z.string().min(1))
+}).passthrough();
+
+const operationQualificationIdentitySchema = z.object({
+  surface_kind: z.string().min(1),
+  operation: z.string().min(1),
+  interaction_digest: z.string().regex(/^[a-f0-9]{64}$/iu),
+  owner_digest: z.string().regex(/^[a-f0-9]{64}$/iu),
+  source_digest: z.string().regex(/^[a-f0-9]{64}$/iu),
+  operand_digest: z.string().regex(/^[a-f0-9]{64}$/iu),
+  commit_digest: z.string().regex(/^[a-f0-9]{64}$/iu),
+  completion_digest: z.string().regex(/^[a-f0-9]{64}$/iu),
+  witness_digest: z.string().regex(/^[a-f0-9]{64}$/iu),
+  contract_digest: z.string().regex(/^[a-f0-9]{64}$/iu),
+  completion_boundary: z.enum([
+    "native_commit_observed",
+    "immediate_postcondition_observed",
+    "continuation_handoff_observed",
+    "transaction_settled"
+  ]),
+  witness_id: z.string().min(1),
+  risk_class: z.string().min(1)
+}).passthrough();
+
+const qualificationSystemSchema = z.object({
+  schema_version: z.literal(1),
+  status: z.enum([
+    "not_configured",
+    "empty",
+    "loaded_no_active",
+    "active",
+    "invalid_fail_closed",
+    "operation_catalog_invalid_fail_closed",
+    "unavailable_fail_closed"
+  ]),
+  store_id: z.string().min(1),
+  store_digest: z.string().min(1),
+  current_environment_digest: z.string().min(1),
+  operation_catalog_id: z.string().min(1),
+  operation_catalog_digest: z.string().min(1),
+  persistent_authority_enabled: z.boolean(),
+  session_canary_candidate_enabled: z.boolean(),
+  operation_contracts: z.array(operationQualificationIdentitySchema),
+  qualifications: z.array(persistentQualificationSchema),
+  limitations: z.array(z.string().min(1))
+}).passthrough();
+
 const controlCoordinationSchema = z.object({
   status: z.literal("local_coordination_active"),
   registration_required_for_mutation: z.literal(true),
@@ -99,7 +183,12 @@ const compatibilitySchema = z.object({
   action_permission_scopes: z.array(actionPermissionScopeSchema),
   compatibility_policy_id: z.string().min(1),
   compatibility_policy_digest: z.string().regex(/^[a-f0-9]{64}$/iu),
-  adaptation_level: z.enum(["reviewed_exact_environment", "diagnostic_only"])
+  adaptation_level: z.enum([
+    "reviewed_exact_environment",
+    "installed_qualification_candidate",
+    "installed_persistent_qualification",
+    "diagnostic_only"
+  ])
 }).passthrough();
 
 const loadedModAssemblySchema = z.object({
@@ -124,6 +213,8 @@ const modsetSchema = z.object({
   fingerprint: z.string().min(1),
   fingerprint_scope: z.string().min(1),
   exact_permission_eligible: z.boolean(),
+  qualification_candidate_eligible: z.boolean(),
+  persistent_qualification_eligible: z.boolean(),
   mods: z.array(loadedModSchema),
   detail: z.string().min(1)
 }).passthrough();
@@ -1115,6 +1206,7 @@ const stateBaseSchema = z.object({
   inspection_catalog: z.array(inspectionCatalogEntrySchema),
   contract_instance_shadow: contractInstanceShadowSchema,
   permission_system: permissionSystemSchema,
+  qualification_system: qualificationSystemSchema,
   diagnostics: z.array(diagnosticSchema),
   warnings: z.array(z.string())
 }).passthrough();
@@ -1150,6 +1242,7 @@ const capabilitiesSchema = z.object({
   }).passthrough(),
   inspections: inspectionContractSchema,
   permission_system: permissionSystemSchema,
+  qualification_system: qualificationSystemSchema,
   control_coordination: controlCoordinationSchema,
   diagnostics: z.array(diagnosticSchema),
   warnings: z.array(z.string())
@@ -1371,10 +1464,12 @@ export function sameBridgeModsetIdentity(
   left: BridgeV2Capabilities["game"],
   right: BridgeV2Capabilities["game"]
 ): boolean {
-  return left.modset.exact_permission_eligible
-    && right.modset.exact_permission_eligible
-    && left.modset.status === "exact_bridge_only"
-    && right.modset.status === "exact_bridge_only"
+  return (left.modset.exact_permission_eligible
+      || left.modset.qualification_candidate_eligible
+      || left.modset.persistent_qualification_eligible)
+    && (right.modset.exact_permission_eligible
+      || right.modset.qualification_candidate_eligible
+      || right.modset.persistent_qualification_eligible)
     && left.modset.fingerprint_scope === right.modset.fingerprint_scope
     && left.modset.fingerprint === right.modset.fingerprint;
 }
@@ -1388,7 +1483,15 @@ export class BridgeV2DecodeError extends Error {
 
 export function decodeBridgeV2Capabilities(value: unknown): DecodedBridgePayload<BridgeV2Capabilities> {
   const decoded = decode(value, capabilitiesSchema, "Bridge v2 capabilities");
-  validateModsetPermissionBoundary(decoded.data.game, decoded.data.bridge);
+  validateModsetPermissionBoundary(
+    decoded.data.game,
+    decoded.data.bridge,
+    decoded.data.qualification_system
+  );
+  validateQualificationSystem(
+    decoded.data.qualification_system,
+    decoded.data.game
+  );
   validatePermissionSystem(
     decoded.data.permission_system,
     decoded.data.bridge,
@@ -1430,10 +1533,13 @@ export function decodeBridgeV2Capabilities(value: unknown): DecodedBridgePayload
 
 function validateModsetPermissionBoundary(
   game: BridgeV2Capabilities["game"],
-  bridgeIdentity: BridgeV2Capabilities["bridge"]
+  bridgeIdentity: BridgeV2Capabilities["bridge"],
+  qualification?: z.infer<typeof qualificationSystemSchema>
 ): void {
   const { modset, compatibility } = game;
-  if (!modset.exact_permission_eligible) {
+  if (!modset.exact_permission_eligible
+      && !modset.qualification_candidate_eligible
+      && !modset.persistent_qualification_eligible) {
     if (compatibility.action_execution_allowed
         || compatibility.inspection_allowed
         || compatibility.action_execution_surface_kinds.length > 0
@@ -1447,24 +1553,135 @@ function validateModsetPermissionBoundary(
     return;
   }
 
-  if (modset.status !== "exact_bridge_only") {
+  if (modset.exact_permission_eligible && modset.status !== "exact_bridge_only") {
     throw new BridgeV2DecodeError("Exact-permission Modset must use exact_bridge_only status");
   }
   const loaded = modset.mods.filter((mod) => mod.load_state === "Loaded");
   const bridge = loaded.find((mod) => mod.id === "STS2_MCP");
-  if (loaded.length !== 1
-      || !bridge
+  if (!bridge
       || !bridge.assemblies.some((assembly) =>
         assembly.module_version_id.toLowerCase() === bridgeIdentity.module_version_id.toLowerCase())) {
     throw new BridgeV2DecodeError(
+      modset.exact_permission_eligible
+        ? "Exact-permission Modset must contain only the negotiated STS2_MCP module"
+        : "Persistent-qualified Modset must contain the negotiated STS2_MCP module"
+    );
+  }
+  if (modset.exact_permission_eligible && loaded.length !== 1) {
+    throw new BridgeV2DecodeError(
       "Exact-permission Modset must contain only the negotiated STS2_MCP module"
     );
+  }
+  if (modset.persistent_qualification_eligible
+      && qualification !== undefined
+      && (compatibility.adaptation_level !== "installed_persistent_qualification"
+        || !qualification?.persistent_authority_enabled)) {
+    throw new BridgeV2DecodeError(
+      "Persistent-qualified Modset requires an applicable Gateway qualification"
+    );
+  }
+  if (modset.qualification_candidate_eligible
+      && qualification !== undefined
+      && (compatibility.adaptation_level !== "installed_qualification_candidate"
+        || !qualification.session_canary_candidate_enabled)) {
+    throw new BridgeV2DecodeError(
+      "Qualification-candidate Modset requires an applicable bounded candidate package"
+    );
+  }
+}
+
+function validateQualificationSystem(
+  qualification: z.infer<typeof qualificationSystemSchema>,
+  game: z.infer<typeof gameSchema>
+): void {
+  const contractKeys = new Set<string>();
+  for (const contract of qualification.operation_contracts) {
+    const key = `${contract.surface_kind}\u0000${contract.operation}`;
+    if (contractKeys.has(key)) {
+      throw new BridgeV2DecodeError(
+        `Qualification operation contract ${contract.surface_kind}/${contract.operation} is duplicated`
+      );
+    }
+    contractKeys.add(key);
+  }
+
+  const qualificationIds = new Set<string>();
+  const applicable = qualification.qualifications.filter((candidate) =>
+    candidate.applicable_to_current_environment);
+  const applicableQualified = applicable.filter((candidate) =>
+    candidate.authority_tier === "qualified");
+  const applicableCandidates = applicable.filter((candidate) =>
+    candidate.authority_tier === "session_canary");
+  for (const candidate of qualification.qualifications) {
+    if (qualificationIds.has(candidate.qualification_id)) {
+      throw new BridgeV2DecodeError(
+        `Persistent qualification ${candidate.qualification_id} is duplicated`
+      );
+    }
+    qualificationIds.add(candidate.qualification_id);
+    if (candidate.applicable_to_current_environment
+        && (candidate.status !== "active"
+          || candidate.applicability !== "exact_match"
+          || candidate.environment_digest !== qualification.current_environment_digest
+          || candidate.modset_fingerprint !== game.modset.fingerprint)) {
+      throw new BridgeV2DecodeError(
+        `Persistent qualification ${candidate.qualification_id} is not an exact current active package`
+      );
+    }
+  }
+
+  if (qualification.persistent_authority_enabled
+      !== (applicableQualified.length > 0)) {
+    throw new BridgeV2DecodeError(
+      "Persistent qualification authority flag must match exact applicable packages"
+    );
+  }
+  if (qualification.session_canary_candidate_enabled
+      !== (applicableCandidates.length > 0)) {
+    throw new BridgeV2DecodeError(
+      "Session canary candidate flag must match exact applicable candidate packages"
+    );
+  }
+  if ((qualification.status === "invalid_fail_closed"
+      || qualification.status === "operation_catalog_invalid_fail_closed")
+      && (qualification.persistent_authority_enabled
+        || qualification.session_canary_candidate_enabled)) {
+    throw new BridgeV2DecodeError(
+      "Invalid persistent qualification store must fail closed"
+    );
+  }
+
+  for (const scope of game.compatibility.action_permission_scopes) {
+    if (!scope.grant_id.startsWith("qualification_")) continue;
+    const qualificationId = scope.grant_id.slice("qualification_".length);
+    const candidate = applicableQualified.find((entry) =>
+      entry.qualification_id === qualificationId
+      && entry.version === scope.grant_version
+      && entry.surface_kind === scope.surface_kind
+      && entry.operation === scope.operation);
+    if (!candidate
+        || scope.runtime_epoch !== "not_session_bound"
+        || scope.environment_digest !== candidate.environment_digest
+        || scope.patch_digest !== candidate.patch_digest
+        || scope.operation_fingerprint !== candidate.operation_fingerprint) {
+      throw new BridgeV2DecodeError(
+        `Persistent permission scope ${scope.surface_kind}/${scope.operation} lacks an exact applicable qualification`
+      );
+    }
   }
 }
 
 export function decodeBridgeV2State(value: unknown): DecodedBridgePayload<BridgeV2State> {
   const decoded = decode(value, stateBaseSchema, "Bridge v2 state");
-  validateModsetPermissionBoundary(decoded.data.game, decoded.data.bridge);
+  validateModsetPermissionBoundary(
+    decoded.data.game,
+    decoded.data.bridge,
+    decoded.data.qualification_system
+  );
+  validateQualificationSystem(
+    decoded.data.qualification_system,
+    decoded.data.game
+  );
   validatePermissionSystem(
     decoded.data.permission_system,
     decoded.data.bridge,

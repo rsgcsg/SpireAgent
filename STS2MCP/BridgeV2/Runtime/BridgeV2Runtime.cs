@@ -30,9 +30,14 @@ internal static class BridgeV2Runtime
     private static readonly string RuntimeInstanceId = Guid.NewGuid().ToString("N");
     private static readonly BridgePermissionManager PermissionManager = new(RuntimeInstanceId);
     private static readonly BridgeClientCoordinator ClientCoordinator = new(RuntimeInstanceId);
+    private static BridgePersistentQualificationStore QualificationStore =
+        BridgePersistentQualificationStore.Disabled();
 
     internal static void ConfigurePermissionMode(BridgePermissionMode mode) =>
         PermissionManager.ConfigureMode(mode);
+
+    internal static void ConfigureQualificationStore(string? path) =>
+        QualificationStore = BridgePersistentQualificationStore.Load(path);
 
     internal static GameBuildIdentity ReadCurrentGameIdentity()
     {
@@ -73,6 +78,10 @@ internal static class BridgeV2Runtime
 
         game = game with { Compatibility = compatibility };
         BridgeRuntimePatchInventoryInfo patchInventory = BridgeRuntimePatchInventory.Read();
+        game = QualificationStore.Apply(
+            game,
+            BridgeIdentity(),
+            patchInventory);
         compatibility = PermissionManager.Apply(
             game,
             BridgeIdentity(),
@@ -179,6 +188,7 @@ internal static class BridgeV2Runtime
             warnings)
         {
             PermissionSystem = PermissionManager.Snapshot(),
+            QualificationSystem = QualificationStore.Snapshot(),
             ControlCoordination = ClientCoordinator.Capability()
         };
     }
@@ -223,13 +233,16 @@ internal static class BridgeV2Runtime
         BridgeContractInstanceShadow contractInstanceShadow =
             BridgeContractInstanceShadowBuilder.Build(draft);
         BridgePermissionSystemInfo permissionSystem = PermissionManager.Snapshot();
+        BridgeQualificationSystemInfo qualificationSystem =
+            QualificationStore.Snapshot();
         compositeSignature = BridgeHash.Object(new
         {
             compositeSignature,
             visibility.Visibility,
             visibility.InspectionCatalog,
             contractInstanceShadow,
-            permissionSystem
+            permissionSystem,
+            qualificationSystem
         });
 
         lock (Gate)
@@ -307,7 +320,8 @@ internal static class BridgeV2Runtime
                 BridgeDiagnostics.ForObservation(draft),
                 draft.Warnings)
             {
-                PermissionSystem = permissionSystem
+                PermissionSystem = permissionSystem,
+                QualificationSystem = qualificationSystem
             };
         }
     }
@@ -370,6 +384,10 @@ internal static class BridgeV2Runtime
                 request.RequestId ?? string.Empty,
                 action?.PermissionBinding,
                 response);
+            QualificationStore.ObserveCommand(
+                request.RequestId ?? string.Empty,
+                action?.PermissionBinding,
+                response);
         }
         return response;
     }
@@ -382,7 +400,10 @@ internal static class BridgeV2Runtime
         lock (Gate)
             CommandPermissionBindings.TryGetValue(requestId, out permissionBinding);
         if (response != null)
+        {
             PermissionManager.ObserveCommand(requestId, permissionBinding, response);
+            QualificationStore.ObserveCommand(requestId, permissionBinding, response);
+        }
         return response;
     }
 

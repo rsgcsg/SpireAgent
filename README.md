@@ -18,16 +18,18 @@ third-party clients.
 
 ## Current Truth
 
-The active connector source shares `2.0-preview.64` between C# and
+The active connector source shares `2.0-preview.65` between C# and
 Re-SpireAgent; Re normalized schema is `26`. Gate 1 is closed as a bounded
 ordinary-single-player v2 connector baseline: Re and the default MCP adapter
 are v2-only, the entire Gateway `/api/v1` namespace is retired, and the final
 Neow's Fury lifecycle was completed under the recorded Preview.61 exact
 identity. Preview.63 supplied the first D3 session permission loop. Preview.64
 adds minimal runtime-bound client registration, one mutation-controller lease,
-generation fencing and command attribution. Its source/tests/Release build are
-complete, but the local running game still loads Preview.63; exact source and
-loaded identities remain separated in [current status](docs/current/STATUS.md).
+generation fencing and command attribution. Preview.65 adds a disabled-by-
+default persistent operation qualification kernel, component impact diff,
+bounded candidate-package bootstrap and append-only lifecycle tooling. The
+local running game still loads Preview.63; exact source and loaded identities
+remain separated in [current status](docs/current/STATUS.md).
 
 Bridge v2's safety kernel remains the current direction: one active input
 owner, opaque state-bound actions, execute-time validation, semantic completion,

@@ -39,9 +39,9 @@ Tutor holdout.
 
 ## Gate 2: Player-Visible Information Closure
 
-Status: **next functional gate. The first D3 operation-scoped
-permission/gray-rollout slice is closed; this change does not itself resume
-feature expansion.**
+Status: **paused while Preview.65 persistent operation qualification is
+source-complete but not yet loaded or runtime-validated. The first D3
+operation-scoped permission loop remains closed.**
 
 Close decision-relevant visible-information gaps using shared state, context,
 surface, preview, and read-only inspection. Do not expose hidden RNG, draw
@@ -55,15 +55,16 @@ strategy quality. It must pass paired provider shadow and semantic review
 before any Prompt-path change is considered. The first generic v1 projection
 failed that evidence gate on reward scopes and is rejected for runtime use.
 
-The pause does not reopen Gate 1. Preview.63 now has a conservative runtime
-Patch inventory and one Gateway-owned, runtime-epoch-bound permission canary.
+The pause does not reopen Gate 1. Preview.65 has a conservative runtime Patch
+inventory, Gateway-owned session permission, and a disabled-by-default
+persistent qualification kernel.
 The low-risk session grant has repeated on a second epoch, and a read-only
 recorded-evidence assertion has verified the exact
-`session_canary -> session_auto_approved` transition. D evidence remains
-non-authorizing; only the Gateway can issue, enforce, promote or quarantine a
-grant below the reviewed exact-environment ceiling. A later Gate 2 slice must
-remain independently scoped and must not broaden gray candidates as a side
-effect.
+`session_canary -> session_auto_approved` transition. It also implements
+candidate and qualified packages, exact impact diff, evidence collection and
+append-only lifecycle tooling. D evidence remains non-authorizing; only the
+Gateway can issue, enforce, promote or quarantine runtime authority. Resume
+Gate 2 only after Preview.65 cold-load and bounded qualification canaries.
 
 ## Gate 3: Local Control Coordination Alpha
 

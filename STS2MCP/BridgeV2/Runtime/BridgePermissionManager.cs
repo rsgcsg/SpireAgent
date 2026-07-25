@@ -116,6 +116,18 @@ internal sealed class BridgePermissionManager
 
                 if (string.Equals(staticScope.Tier, "qualified", StringComparison.Ordinal))
                 {
+                    if (staticScope.GrantId.StartsWith(
+                            "qualification_",
+                            StringComparison.Ordinal))
+                    {
+                        if (staticScope.EnvironmentDigest == environmentDigest
+                            && staticScope.PatchDigest == patchInventory.Digest
+                            && staticScope.OperationFingerprint == operationFingerprint)
+                        {
+                            scopes.Add(staticScope);
+                        }
+                        continue;
+                    }
                     scopes.Add(StaticScope(
                         staticScope,
                         "qualified",
@@ -504,7 +516,13 @@ internal sealed class BridgePermissionManager
                 staticScope.Tier,
                 StringComparison.Ordinal)
             && game.Compatibility.ActionExecutionAllowed
-            && game.Modset is { ExactPermissionEligible: true }
+            && game.Modset is
+            {
+                ExactPermissionEligible: true
+            } or
+            {
+                QualificationCandidateEligible: true
+            }
             && !string.IsNullOrWhiteSpace(bridge.AssemblyFileSha256)
             && !string.IsNullOrWhiteSpace(bridge.ModuleVersionId)
             && patchInventory.Status == "clean_known_owners"
@@ -532,7 +550,7 @@ internal sealed class BridgePermissionManager
         };
     }
 
-    private static string EnvironmentDigest(
+    internal static string EnvironmentDigest(
         GameBuildIdentity game,
         BridgeServerIdentity bridge,
         BridgeRuntimePatchInventoryInfo patchInventory) =>
@@ -550,6 +568,11 @@ internal sealed class BridgePermissionManager
 
     internal static string OperationFingerprint(string surfaceKind, string operation)
     {
+        BridgeOperationQualificationIdentity? qualification =
+            BridgeOperationQualificationCatalog.Describe(surfaceKind, operation);
+        if (qualification != null)
+            return qualification.ContractDigest;
+
         BridgeContractManifestEntry? entry = BridgeContractManifest.Find(surfaceKind);
         BridgeOperationManifest? declared = entry?.Operations.SingleOrDefault(value =>
             string.Equals(value.Operation, operation, StringComparison.Ordinal));

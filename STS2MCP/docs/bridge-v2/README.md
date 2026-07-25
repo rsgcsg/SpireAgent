@@ -1,14 +1,16 @@
 # Bridge v2 Documentation
 
 Bridge v2 is the active semantic Gateway protocol. C# and Re source now share
-`2.0-preview.64`; Re normalized schema is `26`. Gate 1 is closed as a bounded
+`2.0-preview.65`; Re normalized schema is `26`. Gate 1 is closed as a bounded
 ordinary-single-player v2 connector baseline and the complete v1 HTTP namespace
 is retired. Preview.61 supplied the final Neow's Fury runtime seal. Preview.62
 adds reviewed registry/policy adaptation and non-authorizing exact-assembly
 audit; Preview.63 adds the Gateway-owned session permission/gray rollout loop.
-Preview.64 adds local mutation-controller coordination without pretending to
-provide authentication. It is source-built but not yet cold-loaded. Start with
-current status, not historical preview closeouts.
+Preview.64 added local mutation-controller coordination without pretending to
+provide authentication. Preview.65 adds disabled-by-default persistent
+operation qualification and impact-diff tooling. It is source/fixture complete
+but not installed or loaded. Start with current status, not historical preview
+closeouts.
 
 ## Current Documents
 
@@ -23,6 +25,7 @@ current status, not historical preview closeouts.
 - [Gate 1 adaptation and compatibility closeout](GATE1_ADAPTATION_AND_COMPATIBILITY_CLOSEOUT_2026-07-24.md)
 - [D3 permission and gray rollout closeout](D3_PERMISSION_GRAY_ROLLOUT_CLOSEOUT_2026-07-25.md)
 - [Gate 3 local control coordination closeout](GATE3_LOCAL_CONTROL_COORDINATION_CLOSEOUT_2026-07-25.md)
+- [Preview 65 persistent qualification and adaptation closeout](PREVIEW_65_PERSISTENT_QUALIFICATION_AND_ADAPTATION_CLOSEOUT_2026-07-25.md)
 - [Real connector architecture audit and migration plan](REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md)
 - [Protocol](PROTOCOL.md)
 - [Observation policy](OBSERVATION_POLICY.md)
