@@ -1,0 +1,22 @@
+node_modules/
+.DS_Store
+*.log
+dist/
+coverage/
+
+# Runtime outputs and local artifacts
+data/runs/
+memory/current-run.json
+memory/experience.json
+memory/long-term.json
+memory/strategy-params.json
+memory/decision-log.jsonl
+memory/collected/
+memory/snapshots/
+
+# Local secrets
+.env
+.env.local
+.env.local.*
+.envrc.local
+!.env.example

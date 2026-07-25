@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
-using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -13,6 +12,7 @@ using Godot;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Modding;
 using MegaCrit.Sts2.Core.Multiplayer.Game;
+using STS2_MCP.BridgeV2.Runtime;
 
 namespace STS2_MCP;
 
@@ -35,20 +35,27 @@ public static partial class McpMod
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
     };
 
-    private static int LoadPort()
+    private sealed record RuntimeConfig(int Port, BridgePermissionMode PermissionMode);
+
+    private static RuntimeConfig LoadRuntimeConfig()
     {
         try
         {
             string? modDir = Path.GetDirectoryName(
                 System.Reflection.Assembly.GetExecutingAssembly().Location);
-            if (modDir == null) return DefaultPort;
+            if (modDir == null)
+                return new RuntimeConfig(DefaultPort, BridgePermissionMode.BalancedGray);
 
             string configPath = Path.Combine(modDir, ConfigFileName);
             if (!File.Exists(configPath))
             {
                 try
                 {
-                    var defaultConfig = new Dictionary<string, object> { ["port"] = DefaultPort };
+                    var defaultConfig = new Dictionary<string, object>
+                    {
+                        ["port"] = DefaultPort,
+                        ["permission_mode"] = "balanced_gray"
+                    };
                     string json = JsonSerializer.Serialize(defaultConfig, _jsonOptions);
                     File.WriteAllText(configPath, json);
                     GD.Print($"[STS2 MCP] Created default config at {configPath}");
@@ -57,25 +64,45 @@ public static partial class McpMod
                 {
                     GD.Print($"[STS2 MCP] No config found at {configPath}; using default port {DefaultPort}");
                 }
-                return DefaultPort;
+                return new RuntimeConfig(DefaultPort, BridgePermissionMode.BalancedGray);
             }
 
             string content = File.ReadAllText(configPath);
             using var doc = JsonDocument.Parse(content);
+            int configuredPort = DefaultPort;
             if (doc.RootElement.TryGetProperty("port", out var portElem)
                 && portElem.TryGetInt32(out int port)
                 && port is > 0 and <= 65535)
             {
-                return port;
+                configuredPort = port;
+            }
+            else
+            {
+                GD.PrintErr(
+                    $"[STS2 MCP] Invalid or missing 'port' in {configPath}, using default {DefaultPort}");
             }
 
-            GD.PrintErr($"[STS2 MCP] Invalid or missing 'port' in {configPath}, using default {DefaultPort}");
-            return DefaultPort;
+            string? permissionMode = doc.RootElement.TryGetProperty(
+                "permission_mode",
+                out JsonElement modeElement)
+                ? modeElement.GetString()
+                : null;
+            if (permissionMode is not null
+                && permissionMode is not ("strict" or "balanced_gray" or "developer_gray"))
+            {
+                GD.PrintErr(
+                    $"[STS2 MCP] Invalid permission_mode '{permissionMode}' in {configPath}; failing closed to strict");
+                permissionMode = "strict";
+            }
+            return new RuntimeConfig(
+                configuredPort,
+                BridgePermissionManager.ParseMode(permissionMode));
         }
         catch (Exception ex)
         {
-            GD.PrintErr($"[STS2 MCP] Failed to load config: {ex.Message}, using default port {DefaultPort}");
-            return DefaultPort;
+            GD.PrintErr(
+                $"[STS2 MCP] Failed to load config: {ex.Message}; using default port and strict permission mode");
+            return new RuntimeConfig(DefaultPort, BridgePermissionMode.Strict);
         }
     }
 
@@ -90,7 +117,9 @@ public static partial class McpMod
             var tree = (SceneTree)Engine.GetMainLoop();
             tree.Connect(SceneTree.SignalName.ProcessFrame, Callable.From(ProcessMainThreadQueue));
 
-            int port = LoadPort();
+            RuntimeConfig config = LoadRuntimeConfig();
+            BridgeV2Runtime.ConfigurePermissionMode(config.PermissionMode);
+            int port = config.Port;
 
             _listener = new HttpListener();
             _listener.Prefixes.Add($"http://localhost:{port}/");
@@ -105,6 +134,9 @@ public static partial class McpMod
             _serverThread.Start();
 
             GD.Print($"[STS2 MCP] v{Version} server started on http://localhost:{port}/");
+            GD.Print(
+                $"[STS2 MCP] Permission mode: {BridgePermissionManager.ModeName(config.PermissionMode)}");
+            GD.Print("[STS2 MCP] Legacy v1 HTTP namespace: retired");
         }
         catch (Exception ex)
         {
@@ -203,6 +235,15 @@ public static partial class McpMod
 
             string path = request.Url?.AbsolutePath ?? "/";
 
+            if (LegacyV1RoutePolicy.IsRetiredPath(path))
+            {
+                SendError(
+                    response,
+                    410,
+                    "Legacy v1 is retired. Use the Bridge v2 contract.");
+                return;
+            }
+
             if (path == "/")
             {
                 SendJson(response, new { message = $"Hello from STS2 MCP v{Version}", status = "ok" });
@@ -231,6 +272,13 @@ public static partial class McpMod
                 else
                     SendError(response, 405, "Method not allowed");
             }
+            else if (path == "/api/v2/observation-bundles")
+            {
+                if (request.HttpMethod == "POST")
+                    HandlePostBridgeV2ObservationBundle(request, response);
+                else
+                    SendError(response, 405, "Method not allowed");
+            }
             else if (path == "/api/v2/commands")
             {
                 if (request.HttpMethod == "POST")
@@ -242,71 +290,6 @@ public static partial class McpMod
             {
                 if (request.HttpMethod == "GET")
                     HandleGetBridgeV2Command(path["/api/v2/commands/".Length..], response);
-                else
-                    SendError(response, 405, "Method not allowed");
-            }
-            else if (path == "/api/v1/singleplayer")
-            {
-                // Hard-block singleplayer endpoint during multiplayer runs
-                // to prevent calling the non-sync-safe end_turn path
-                if (IsMultiplayerRun())
-                {
-                    SendError(response, 409,
-                        "Multiplayer run is active. Use /api/v1/multiplayer instead.");
-                    return;
-                }
-
-                if (request.HttpMethod == "GET")
-                    HandleGetState(request, response);
-                else if (request.HttpMethod == "POST")
-                    HandlePostAction(request, response);
-                else
-                    SendError(response, 405, "Method not allowed");
-            }
-            else if (path == "/api/v1/multiplayer")
-            {
-                // Guard: reject multiplayer endpoint during singleplayer runs
-                if (!IsMultiplayerRun())
-                {
-                    SendError(response, 409,
-                        "Not in a multiplayer run. Use /api/v1/singleplayer instead.");
-                    return;
-                }
-
-                if (request.HttpMethod == "GET")
-                    HandleGetMultiplayerState(request, response);
-                else if (request.HttpMethod == "POST")
-                    HandlePostMultiplayerAction(request, response);
-                else
-                    SendError(response, 405, "Method not allowed");
-            }
-            else if (path == "/api/v1/profiles")
-            {
-                if (request.HttpMethod == "GET")
-                    HandleGetProfiles(response);
-                else if (request.HttpMethod == "POST")
-                    HandlePostProfiles(request, response);
-                else
-                    SendError(response, 405, "Method not allowed");
-            }
-            else if (path == "/api/v1/profile")
-            {
-                if (request.HttpMethod == "GET")
-                    HandleGetProfile(response);
-                else
-                    SendError(response, 405, "Method not allowed");
-            }
-            else if (path == "/api/v1/compendium")
-            {
-                if (request.HttpMethod == "GET")
-                    HandleGetCompendium(response);
-                else
-                    SendError(response, 405, "Method not allowed");
-            }
-            else if (path == "/api/v1/wiki")
-            {
-                if (request.HttpMethod == "GET")
-                    HandleGetWiki(request, response);
                 else
                     SendError(response, 405, "Method not allowed");
             }
@@ -338,195 +321,4 @@ public static partial class McpMod
         catch { return false; }
     }
 
-    private static void HandleGetMultiplayerState(HttpListenerRequest request, HttpListenerResponse response)
-    {
-        string format = request.QueryString["format"] ?? "json";
-
-        try
-        {
-            var stateTask = RunOnMainThread(() => BuildMultiplayerGameState());
-            var state = stateTask.GetAwaiter().GetResult();
-
-            if (format == "markdown")
-            {
-                string md = FormatAsMarkdown(state);
-                SendText(response, md, "text/markdown");
-            }
-            else
-            {
-                SendJson(response, state);
-            }
-        }
-        catch (Exception ex)
-        {
-            GD.PrintErr($"[STS2 MCP] HandleGetMultiplayerState: {ex}");
-            try
-            {
-                response.StatusCode = 500;
-                SendJson(response, new Dictionary<string, object?>
-                {
-                    ["error"] = $"Failed to read multiplayer game state: {ex.Message}",
-                    ["exception_type"] = ex.GetType().FullName,
-                    ["stack_trace"] = ex.StackTrace
-                });
-            }
-            catch { /* response may be unusable */ }
-        }
-    }
-
-    private static void HandlePostMultiplayerAction(HttpListenerRequest request, HttpListenerResponse response)
-    {
-        string body;
-        using (var reader = new StreamReader(request.InputStream, request.ContentEncoding))
-            body = reader.ReadToEnd();
-
-        Dictionary<string, JsonElement>? parsed;
-        try
-        {
-            parsed = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(body);
-        }
-        catch
-        {
-            SendError(response, 400, "Invalid JSON");
-            return;
-        }
-
-        if (parsed == null || !parsed.TryGetValue("action", out var actionElem))
-        {
-            SendError(response, 400, "Missing 'action' field");
-            return;
-        }
-
-        string action = actionElem.GetString() ?? "";
-
-        // Menu actions (FTUE/popup dismissal, game-over, character select, etc.) are
-        // scene-tree-driven and equally valid in MP. Route them to the shared handler
-        // so MP clients can dismiss blocking FTUE prompts without going through the
-        // run-mode-specific dispatcher.
-        if (action == "menu_select")
-        {
-            try
-            {
-                var option = parsed.TryGetValue("option", out var optElem) ? optElem.GetString() ?? "" : "";
-                var seed = parsed.TryGetValue("seed", out var seedElem) ? seedElem.GetString() : null;
-                var resultTask = RunOnMainThread(() => ExecuteMenuSelect(option, seed));
-                var result = resultTask.GetAwaiter().GetResult();
-                SendJson(response, result);
-            }
-            catch (Exception ex)
-            {
-                SendError(response, 500, $"Menu action failed: {ex.Message}");
-            }
-            return;
-        }
-
-        try
-        {
-            var resultTask = RunOnMainThread(() => ExecuteMultiplayerAction(action, parsed));
-            var result = resultTask.GetAwaiter().GetResult();
-            SendJson(response, result);
-        }
-        catch (Exception ex)
-        {
-            SendError(response, 500, $"Multiplayer action failed: {ex.Message}");
-        }
-    }
-
-    private static void HandleGetState(HttpListenerRequest request, HttpListenerResponse response)
-    {
-        string format = request.QueryString["format"] ?? "json";
-
-        try
-        {
-            var stateTask = RunOnMainThread(() => BuildGameState());
-            var state = stateTask.GetAwaiter().GetResult();
-
-            if (format == "markdown")
-            {
-                try
-                {
-                    SendText(response, FormatAsMarkdown(state), "text/markdown");
-                }
-                catch (Exception ex)
-                {
-                    GD.PrintErr($"[STS2 MCP] FormatAsMarkdown failed, returning JSON: {ex}");
-                    SendJson(response, state);
-                }
-            }
-            else
-            {
-                SendJson(response, state);
-            }
-        }
-        catch (Exception ex)
-        {
-            GD.PrintErr($"[STS2 MCP] HandleGetState: {ex}");
-            try
-            {
-                response.StatusCode = 500;
-                SendJson(response, new Dictionary<string, object?>
-                {
-                    ["error"] = $"Failed to read game state: {ex.Message}",
-                    ["exception_type"] = ex.GetType().FullName,
-                    ["stack_trace"] = ex.StackTrace
-                });
-            }
-            catch { /* response may be unusable */ }
-        }
-    }
-
-    private static void HandlePostAction(HttpListenerRequest request, HttpListenerResponse response)
-    {
-        string body;
-        using (var reader = new StreamReader(request.InputStream, request.ContentEncoding))
-            body = reader.ReadToEnd();
-
-        Dictionary<string, JsonElement>? parsed;
-        try
-        {
-            parsed = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(body);
-        }
-        catch
-        {
-            SendError(response, 400, "Invalid JSON");
-            return;
-        }
-
-        if (parsed == null || !parsed.TryGetValue("action", out var actionElem))
-        {
-            SendError(response, 400, "Missing 'action' field");
-            return;
-        }
-
-        string action = actionElem.GetString() ?? "";
-
-        // Handle menu actions separately (no run required)
-        if (action == "menu_select")
-        {
-            try
-            {
-                var option = parsed.TryGetValue("option", out var optElem) ? optElem.GetString() ?? "" : "";
-                var seed = parsed.TryGetValue("seed", out var seedElem) ? seedElem.GetString() : null;
-                var resultTask = RunOnMainThread(() => ExecuteMenuSelect(option, seed));
-                var result = resultTask.GetAwaiter().GetResult();
-                SendJson(response, result);
-            }
-            catch (Exception ex)
-            {
-                SendError(response, 500, $"Menu action failed: {ex.Message}");
-            }
-            return;
-        }
-
-        try
-        {
-            var resultTask = RunOnMainThread(() => ExecuteAction(action, parsed));
-            var result = resultTask.GetAwaiter().GetResult();
-            SendJson(response, result);
-        }
-        catch (Exception ex)
-        {
-            SendError(response, 500, $"Action failed: {ex.Message}");
-        }
-    }
 }

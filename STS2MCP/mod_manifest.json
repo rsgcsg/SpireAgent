@@ -1,8 +1,8 @@
 {
   "id": "STS2_MCP",
-  "name": "STS2 MCP",
+  "name": "STS2 Agent Bridge",
   "author": "kunology",
-  "description": "Version-scoped agent bridge for Slay the Spire 2",
+  "description": "Version-scoped Semantic Gateway for Slay the Spire 2 agents",
   "version": "0.5.0-dev",
   "has_pck": false,
   "has_dll": true,

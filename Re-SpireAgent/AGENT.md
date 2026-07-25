@@ -72,6 +72,12 @@ Unknown states remain unsupported until these steps are complete.
 - logging headers, API keys, `.env.local`, or secret-bearing errors
 - committing `data/runs/`, local provider outputs, or `.env.local`
 
+`loadEnvironment()` and the default `AGENT_DATA_DIR` are anchored to the
+`Re-SpireAgent/` project directory, not the caller's working directory. Keep
+that invariant when adding CLI tools: `npm --prefix Re-SpireAgent ...` must use
+the same local configuration and evidence root as a command launched inside
+`Re-SpireAgent/`.
+
 ## Maintenance Rules
 
 - Keep types close to their owner; do not create a giant shared `types.ts`.

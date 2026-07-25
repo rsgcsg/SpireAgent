@@ -35,7 +35,9 @@ Update:
 - `PLAYER_VISIBLE_COVERAGE.md` for surface/field support;
 - `PROTOCOL.md` for wire or lifecycle changes;
 - `OBSERVATION_POLICY.md` for visibility changes;
-- `UPSTREAM_AUDIT.md` when new game facts invalidate an earlier assumption.
+- `REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md`
+  when new game facts invalidate an earlier assumption; consult the preview
+  archive only for the exact historical evidence it records.
 
 Do not commit game assemblies, local mod config, runtime logs/snapshots, local MCP
 permissions, `.env.local`, or secrets.

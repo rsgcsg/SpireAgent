@@ -7,7 +7,7 @@ namespace STS2_MCP.BridgeV2.Protocol;
 
 public static class BridgeV2Contract
 {
-    public const string ProtocolVersion = "2.0-preview.31";
+    public const string ProtocolVersion = "2.0-preview.63";
     public const string ObservationPolicyId = "player_visible_ui_v1";
 }
 
@@ -17,7 +17,99 @@ public sealed record BridgeServerIdentity(
     string Version,
     string UpstreamCommit,
     string ModuleVersionId,
-    string RuntimeInstanceId);
+    string RuntimeInstanceId)
+{
+    // The file digest identifies the loaded Gateway artifact without exposing its path.
+    public string AssemblyFileSha256 { get; init; } = string.Empty;
+}
+
+public sealed record ActionPermissionScope(
+    string SurfaceKind,
+    string Operation,
+    string Tier)
+{
+    public string GrantId { get; init; } = "static_policy";
+
+    public int GrantVersion { get; init; } = 1;
+
+    public string RuntimeEpoch { get; init; } = "not_session_bound";
+
+    public string EnvironmentDigest { get; init; } = "not_recorded";
+
+    public string PatchDigest { get; init; } = "not_recorded";
+
+    public string OperationFingerprint { get; init; } = "not_recorded";
+}
+
+public sealed record BridgeRuntimePatchInventoryInfo(
+    string Status,
+    string Digest,
+    string Scope,
+    int PatchedMethodCount,
+    IReadOnlyList<string> PatchOwners,
+    IReadOnlyList<string> UnknownOwners,
+    IReadOnlyList<string> Limitations)
+{
+    public static BridgeRuntimePatchInventoryInfo Unavailable(string detail) => new(
+        "unavailable",
+        "unavailable",
+        "loaded_harmony_patch_metadata_global_conservative",
+        0,
+        Array.Empty<string>(),
+        Array.Empty<string>(),
+        new[] { detail });
+}
+
+public sealed record BridgePermissionGrantRecord(
+    int SchemaVersion,
+    string GrantId,
+    int GrantVersion,
+    bool Current,
+    string Status,
+    string Mode,
+    string SurfaceKind,
+    string Operation,
+    string Tier,
+    string RiskClass,
+    string RuntimeEpoch,
+    string EnvironmentDigest,
+    string GatewayAssemblySha256,
+    string GatewayModuleVersionId,
+    string ModsetFingerprint,
+    string PatchDigest,
+    string OperationFingerprint,
+    string EvidenceBundleDigest,
+    DateTimeOffset IssuedAt,
+    DateTimeOffset ExpiresAt,
+    string? SupersedesGrantId,
+    string? RevocationReason,
+    IReadOnlyList<string> EvidenceIds);
+
+public sealed record BridgePermissionSystemInfo(
+    int SchemaVersion,
+    string Status,
+    string Mode,
+    string RuntimeEpoch,
+    string PolicyId,
+    string PolicyDigest,
+    bool DynamicSessionPromotionEnabled,
+    BridgeRuntimePatchInventoryInfo PatchInventory,
+    IReadOnlyList<BridgePermissionGrantRecord> Grants,
+    IReadOnlyList<string> Limitations)
+{
+    public static BridgePermissionSystemInfo Unavailable { get; } = new(
+        1,
+        "unavailable_fail_closed",
+        "strict",
+        "unavailable",
+        "unavailable",
+        "unavailable",
+        DynamicSessionPromotionEnabled: false,
+        BridgeRuntimePatchInventoryInfo.Unavailable(
+            "Permission-system status was not attached to this response."),
+        Array.Empty<BridgePermissionGrantRecord>(),
+        new[] { "No dynamic permission state is available." });
+}
 
 public sealed record CompatibilityAssessment(
     string Status,
@@ -32,14 +124,55 @@ public sealed record CompatibilityAssessment(
     IReadOnlyList<string> InspectionCanaryKinds,
     IReadOnlyList<string> ObservationOnlySurfaceKinds,
     IReadOnlyList<string> ObservationCandidateBuildFingerprints,
-    string Detail);
+    string Detail)
+{
+    // Exact operation scopes are the sole action-authority source for strict clients.
+    public IReadOnlyList<ActionPermissionScope> ActionPermissionScopes { get; init; } =
+        Array.Empty<ActionPermissionScope>();
+
+    // The reviewed embedded policy is auditable data, not self-authorizing
+    // discovery. Unknown or invalid policy data leaves the Gateway fail closed.
+    public string CompatibilityPolicyId { get; init; } = "unavailable";
+
+    public string CompatibilityPolicyDigest { get; init; } = "unavailable";
+
+    public string AdaptationLevel { get; init; } = "diagnostic_only";
+}
 
 public sealed record GameBuildIdentity(
     string? Version,
     string? Commit,
     string? Branch,
     int? MainAssemblyHash,
-    CompatibilityAssessment Compatibility);
+    CompatibilityAssessment Compatibility,
+    ModsetIdentity? Modset = null)
+{
+    // release_info.json is useful provenance, but only the runtime-computed
+    // main assembly hash participates in exact permission decisions.
+    public int? ReleaseDeclaredMainAssemblyHash { get; init; }
+}
+
+public sealed record LoadedModAssemblyIdentity(
+    string Name,
+    string? Version,
+    string ModuleVersionId);
+
+public sealed record LoadedModIdentity(
+    string Id,
+    string? Version,
+    string Source,
+    string LoadState,
+    bool AffectsGameplay,
+    string? WorkshopId,
+    IReadOnlyList<LoadedModAssemblyIdentity> Assemblies);
+
+public sealed record ModsetIdentity(
+    string Status,
+    string Fingerprint,
+    string FingerprintScope,
+    bool ExactPermissionEligible,
+    IReadOnlyList<LoadedModIdentity> Mods,
+    string Detail);
 
 public sealed record ObservationPolicyInfo(
     string Id,
@@ -68,6 +201,45 @@ public sealed record InspectionContractCapability(
     IReadOnlyList<string> VisibilityClasses,
     IReadOnlyList<string> OrderingSemantics,
     IReadOnlyList<string> ImplementedKinds);
+
+public sealed record BridgeInspectionCatalogEntry(
+    string Kind,
+    string Scope,
+    string Availability,
+    string VisibilityBasis,
+    bool StateBound,
+    bool CreatesActionAuthority,
+    string OrderingSemantics,
+    string EstimatedCost,
+    IReadOnlyList<string> RecommendedFor,
+    IReadOnlyList<string> HiddenByPolicy);
+
+public sealed record BridgeVisibilityState(
+    string ProfileId,
+    string CoreStatus,
+    string PlayerVisibleClosureStatus,
+    IReadOnlyList<string> AvailableInspections,
+    IReadOnlyList<string> LinkedDetailKinds,
+    IReadOnlyList<string> HiddenByPolicy,
+    IReadOnlyList<string> Missing,
+    string UnknownCriticalFieldBehavior);
+
+public sealed record BridgeContractOperationShadow(
+    string Operation,
+    string EvidenceStatus,
+    bool Published);
+
+public sealed record BridgeContractInstanceShadow(
+    string Status,
+    string InstanceId,
+    string SurfaceKind,
+    string? SemanticContractId,
+    string? DeclaredBinding,
+    IReadOnlyList<BridgeContractOperationShadow> Operations,
+    string CurrentAuthorityTier,
+    string CurrentAuthorityBasis,
+    bool Authorizing,
+    IReadOnlyList<string> Limitations);
 
 public sealed record SharedStateContractCapability(
     string Status,
@@ -98,7 +270,11 @@ public sealed record BridgeCapabilitiesResponse(
     CommandContractCapability Commands,
     InspectionContractCapability Inspections,
     IReadOnlyList<BridgeDiagnostic> Diagnostics,
-    IReadOnlyList<string> Warnings);
+    IReadOnlyList<string> Warnings)
+{
+    public BridgePermissionSystemInfo PermissionSystem { get; init; } =
+        BridgePermissionSystemInfo.Unavailable;
+}
 
 public sealed record InspectionCompleteness(
     string PlayerVisibleSemantics,
@@ -141,6 +317,19 @@ public sealed record CombatPilesInspectionContent(
     string Kind,
     IReadOnlyList<CombatPileInspectionZone> Zones) : IBridgeInspectionContent;
 
+/// <summary>
+/// Read-only projection of the current merchant catalog. The entries describe
+/// facts a player can inspect by opening the merchant UI; they do not publish
+/// purchase authority when the inventory is closed.
+/// </summary>
+public sealed record ShopCatalogInspectionContent(
+    string Kind,
+    string AccessState,
+    IReadOnlyList<VisibleShopCardOffer> Cards,
+    IReadOnlyList<VisibleShopRelicOffer> Relics,
+    IReadOnlyList<VisibleShopPotionOffer> Potions,
+    VisibleShopCardRemovalOffer? CardRemoval) : IBridgeInspectionContent;
+
 public sealed record BridgeInspectionResponse(
     string ProtocolVersion,
     string InspectionId,
@@ -155,6 +344,22 @@ public sealed record BridgeInspectionResponse(
     BridgeServerIdentity Bridge,
     GameBuildIdentity Game,
     ObservationPolicyInfo ObservationPolicy,
+    IReadOnlyList<BridgeDiagnostic> Diagnostics);
+
+public sealed record BridgeObservationBundleInspectionRequest(string? Kind);
+
+public sealed record BridgeObservationBundleRequest(
+    string? ExpectedStateId,
+    IReadOnlyList<BridgeObservationBundleInspectionRequest>? Inspections);
+
+public sealed record BridgeObservationBundleResponse(
+    string ProtocolVersion,
+    string ObservationId,
+    bool Coherent,
+    BridgeStateEnvelope State,
+    IReadOnlyDictionary<string, BridgeInspectionResponse> Inspections,
+    BridgeServerIdentity Bridge,
+    GameBuildIdentity Game,
     IReadOnlyList<BridgeDiagnostic> Diagnostics);
 
 public sealed record StateCompleteness(
@@ -240,9 +445,21 @@ public sealed record VisibleCombatPlayer(
     int DiscardPileCount,
     int ExhaustPileCount,
     IReadOnlyList<VisibleStatus> Statuses,
+    IReadOnlyList<VisibleCombatCompanion> Companions,
     IReadOnlyList<VisibleCombatPotionState> PotionStates,
     IReadOnlyList<VisibleOrb> Orbs,
     int? OrbSlots);
+
+public sealed record VisibleCombatCompanion(
+    string EntityId,
+    string DefinitionId,
+    string? Name,
+    bool IsAlive,
+    bool HealthBarVisible,
+    decimal? Hp,
+    decimal? MaxHp,
+    decimal Block,
+    IReadOnlyList<VisibleStatus> Statuses);
 
 public sealed record VisibleCombatPotionState(
     string EntityId,
@@ -266,7 +483,8 @@ public sealed record VisibleRelic(
     string? Name,
     string? Description,
     decimal? Counter,
-    IReadOnlyList<VisibleKeyword> Keywords);
+    IReadOnlyList<VisibleKeyword> Keywords,
+    IReadOnlyList<VisibleCard> CardPreviews);
 
 public sealed record VisibleKeyword(
     string Name,
@@ -281,7 +499,8 @@ public sealed record VisibleRunModifier(
     string DefinitionId,
     string? Name,
     string? Description,
-    IReadOnlyList<VisibleKeyword> Keywords);
+    IReadOnlyList<VisibleKeyword> Keywords,
+    IReadOnlyList<VisibleCard> CardPreviews);
 
 public sealed record VisibleRunHud(
     int Act,
@@ -328,7 +547,8 @@ public sealed record VisibleTreasureRelic(
     string? Name,
     string? Description,
     string Rarity,
-    IReadOnlyList<VisibleKeyword> Keywords);
+    IReadOnlyList<VisibleKeyword> Keywords,
+    IReadOnlyList<VisibleCard> CardPreviews);
 
 public sealed record VisibleOrb(
     string EntityId,
@@ -423,7 +643,8 @@ public sealed record VisibleOwnedPotion(
     string? Name,
     string? Description,
     int Slot,
-    IReadOnlyList<VisibleKeyword> Keywords);
+    IReadOnlyList<VisibleKeyword> Keywords,
+    IReadOnlyList<VisibleCard> CardPreviews);
 
 public sealed record ShopBridgeContext(
     string Kind) : IBridgeContext;
@@ -447,6 +668,11 @@ public sealed record MapBridgeContext(
     VisibleMapCoordinate? CurrentPosition,
     IReadOnlyList<VisibleMapCoordinate> Visited,
     IReadOnlyList<VisibleMapNode> Nodes) : IBridgeContext;
+
+public sealed record CombatTransitionBridgeContext(
+    string Kind,
+    string Phase,
+    string Transition) : IBridgeContext;
 
 public sealed record UnknownBridgeContext(
     string Kind,
@@ -654,6 +880,39 @@ public sealed record CharacterSelectSurface(
     bool CanEmbark,
     bool CanGoBack) : IBridgeSurface;
 
+public sealed record VisibleMenuOption(
+    string EntityId,
+    string SemanticId,
+    string Label,
+    string? Description,
+    bool Enabled,
+    string BridgeSupport,
+    string? BlockedReason);
+
+public sealed record VisibleContinueRunSummary(
+    string CharacterId,
+    string? CharacterName,
+    string ActId,
+    string? ActName,
+    int Floor,
+    int Hp,
+    int MaxHp,
+    int Gold,
+    int Ascension);
+
+public sealed record MainMenuSurface(
+    string Kind,
+    string Stage,
+    string ScreenEntityId,
+    IReadOnlyList<VisibleMenuOption> Options,
+    VisibleContinueRunSummary? ContinueRun) : IBridgeSurface;
+
+public sealed record SingleplayerMenuSurface(
+    string Kind,
+    string Stage,
+    string ScreenEntityId,
+    IReadOnlyList<VisibleMenuOption> Options) : IBridgeSurface;
+
 /// <summary>
 /// Exact merchant card-removal child surface. This intentionally does not
 /// generalize other deck selectors whose effects and preview semantics differ.
@@ -687,6 +946,46 @@ public sealed record DeckUpgradeSelectionSurface(
     IReadOnlyList<VisibleCard> Cards,
     IReadOnlyList<VisibleCard> PreviewCards) : IBridgeSurface;
 
+/// <summary>
+/// Purpose-specific random deck transformation. PreviewKind describes the
+/// visible presentation, not a future outcome; ReplacementKnown must remain
+/// false for random transforms until after commit.
+/// </summary>
+public sealed record DeckTransformSelectionSurface(
+    string Kind,
+    string Stage,
+    string ScreenEntityId,
+    string Prompt,
+    int MinSelect,
+    int MaxSelect,
+    int SelectedCount,
+    IReadOnlyList<string> SelectedCardEntityIds,
+    bool Cancelable,
+    bool UpgradeToggleVisible,
+    bool ShowingUpgradePreviews,
+    string PreviewKind,
+    bool ReplacementKnown,
+    IReadOnlyList<VisibleCard> Cards) : IBridgeSurface;
+
+/// <summary>
+/// Native Wood Carvings Bird/Torus selector. The replacement is deterministic
+/// and player-visible before commit, unlike a random transform.
+/// </summary>
+public sealed record WoodCarvingsReplacementSelectionSurface(
+    string Kind,
+    string Stage,
+    string ScreenEntityId,
+    string Prompt,
+    string Branch,
+    string ReplacementDefinitionId,
+    string? ReplacementName,
+    string? ReplacementDescription,
+    int MinSelect,
+    int MaxSelect,
+    int SelectedCount,
+    IReadOnlyList<string> SelectedCardEntityIds,
+    IReadOnlyList<VisibleCard> Cards) : IBridgeSurface;
+
 public sealed record CombatTurnSurface(
     string Kind,
     string RoomEntityId,
@@ -696,7 +995,17 @@ public sealed record CombatPileCardSelectionSurface(
     string Kind,
     string ScreenEntityId,
     string Prompt,
+    string Purpose,
+    string MutationKind,
+    string CommitMode,
+    string SourceKind,
+    string SourceCardEntityId,
+    string SourceCardDefinitionId,
     string PileType,
+    string DestinationPile,
+    string DestinationPosition,
+    string? OverflowDestination,
+    string? ReplacementCardDefinitionId,
     int MinSelect,
     int MaxSelect,
     int SelectedCount,
@@ -762,6 +1071,11 @@ public sealed record GeneratedCardChoiceSurface(
     string Kind,
     string ScreenEntityId,
     string? Prompt,
+    string Purpose,
+    string SourceKind,
+    string Destination,
+    string SelectedCardCostPolicy,
+    string? OverflowDestination,
     bool CanSkip,
     bool IsPeeking,
     IReadOnlyList<VisibleCard> Cards) : IBridgeSurface;
@@ -806,6 +1120,11 @@ public sealed record UnsupportedSurface(
     string SourceType,
     string Reason) : IBridgeSurface;
 
+public sealed record NoActionSurface(
+    string Kind,
+    string Reason,
+    string? Message) : IBridgeSurface;
+
 public sealed record BridgeStateEnvelope(
     string ProtocolVersion,
     string StateId,
@@ -821,9 +1140,15 @@ public sealed record BridgeStateEnvelope(
     BridgeServerIdentity Bridge,
     GameBuildIdentity Game,
     ObservationPolicyInfo ObservationPolicy,
+    BridgeVisibilityState Visibility,
+    IReadOnlyList<BridgeInspectionCatalogEntry> InspectionCatalog,
+    BridgeContractInstanceShadow ContractInstanceShadow,
     IReadOnlyList<BridgeDiagnostic> Diagnostics,
     IReadOnlyList<string> Warnings)
 {
+    public BridgePermissionSystemInfo PermissionSystem { get; init; } =
+        BridgePermissionSystemInfo.Unavailable;
+
     // Retain the preview.1 wire field while making surface.kind the sole source.
     public string SurfaceKind => Surface.Kind;
 }

@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { buildAllowedActions } from "../src/domain/actions/buildAllowedActions.js";
 import type { ExecutableGameAction } from "../src/domain/actions/action.js";
-import type { GameAdapter } from "../src/game-io/adapter.js";
+import type { StateEnvelope } from "../src/domain/state/index.js";
+import { NORMALIZED_STATE_SCHEMA_VERSION } from "../src/domain/state/common.js";
+import type { GameAdapter, GameExecutionResult } from "../src/game-io/adapter.js";
 import { TransientObservationError } from "../src/game-io/observationError.js";
 import type { Sts2McpRawState } from "../src/integrations/sts2mcp/rawState.js";
-import type { McpExecutionResult } from "../src/integrations/sts2mcp/restAdapter.js";
 import type { LlmDecisionProvider, LlmDecisionSession } from "../src/llm/types.js";
 import { normalizeCurrentState } from "../src/normalization/normalizeCurrentState.js";
 import type { DecisionRecord, DecisionRecorder, PreparedEvidence } from "../src/recording/types.js";
@@ -135,6 +136,89 @@ describe("TickOrchestrator", () => {
     expect(result).toMatchObject({ status: "settled", polls: 2 });
   });
 
+  it("captures one stable checkpoint without re-proving an adapter-confirmed command", async () => {
+    const preRaw = await fixture("combat") as Sts2McpRawState;
+    const adapter = new FakeAdapter([preRaw]);
+    const watcher = new SettlementWatcher(adapter, (raw) => normalizeCurrentState(raw, TEST_ADAPTER), {
+      pollMs: 1,
+      defaultTimeoutMs: 20,
+      endTurnTimeoutMs: 20,
+      roomTransitionTimeoutMs: 20
+    }, async () => {});
+
+    const result = await watcher.waitForNextState(
+      normalizeCurrentState(preRaw, TEST_ADAPTER),
+      {
+        kind: "bridge_v2_action",
+        actionId: "action-confirmed",
+        expectedStateId: "state-before",
+        bridgeActionKind: "play_card"
+      },
+      "adapter_confirmed"
+    );
+
+    expect(result).toMatchObject({ status: "settled", polls: 1 });
+  });
+
+  it("does not accept an action-preceding Bridge token after the command confirmed a newer state", async () => {
+    const adapter = new FakeAdapter([{ token: "state-old" }, { token: "state-new" }]);
+    const watcher = new SettlementWatcher(adapter, (raw) => {
+      const token = typeof raw === "object" && raw && "token" in raw ? String(raw.token) : "missing";
+      return bridgeEnvelope(token);
+    }, {
+      pollMs: 1,
+      defaultTimeoutMs: 20,
+      endTurnTimeoutMs: 20,
+      roomTransitionTimeoutMs: 20
+    }, async () => {});
+
+    const result = await watcher.waitForNextState(
+      bridgeEnvelope("state-old"),
+      {
+        kind: "bridge_v2_action",
+        actionId: "action-confirmed",
+        expectedStateId: "state-old",
+        bridgeActionKind: "play_card"
+      },
+      "adapter_confirmed",
+      "state-new"
+    );
+
+    expect(result).toMatchObject({ status: "settled", polls: 2 });
+    expect(result.after?.currentState.surface).toMatchObject({ bridgeStateId: "state-new" });
+  });
+
+  it("does not accept an unsupported unknown checkpoint after an adapter-confirmed transition", async () => {
+    const transient = bridgeEnvelope("state-transient", "unknown");
+    const final = bridgeEnvelope("state-final");
+    const adapter = new FakeAdapter([{ token: "state-transient" }, { token: "state-final" }]);
+    const watcher = new SettlementWatcher(adapter, (raw) => {
+      const token = typeof raw === "object" && raw && "token" in raw ? String(raw.token) : "missing";
+      return token === "state-transient" ? transient : final;
+    }, {
+      pollMs: 1,
+      defaultTimeoutMs: 20,
+      endTurnTimeoutMs: 20,
+      roomTransitionTimeoutMs: 20
+    }, async () => {});
+
+    const result = await watcher.waitForNextState(
+      bridgeEnvelope("state-before"),
+      {
+        kind: "bridge_v2_action",
+        actionId: "action-embark",
+        expectedStateId: "state-before",
+        bridgeActionKind: "embark_standard_run"
+      },
+      "adapter_confirmed",
+      "state-transient"
+    );
+
+    expect(result).toMatchObject({ status: "settled", polls: 2 });
+    expect(result.after?.currentState.stability).toBe("actionable");
+    expect(result.after?.currentState.surface).toMatchObject({ bridgeStateId: "state-final" });
+  });
+
   it("uses a dedicated room-transition budget for map navigation", async () => {
     const preRaw = await fixture("map") as Sts2McpRawState;
     const loadingRaw = structuredClone(preRaw);
@@ -156,6 +240,60 @@ describe("TickOrchestrator", () => {
 
     expect(result).toMatchObject({ status: "settled", polls: 3 });
   });
+
+  it("uses the room-transition budget for an opaque Bridge v2 map action", async () => {
+    const preRaw = await fixture("map") as Sts2McpRawState;
+    const postRaw = await fixture("combat") as Sts2McpRawState;
+    const adapter = new FakeAdapter([postRaw, postRaw]);
+    const watcher = new SettlementWatcher(adapter, (raw) => normalizeCurrentState(raw, TEST_ADAPTER), {
+      pollMs: 1,
+      defaultTimeoutMs: -1,
+      endTurnTimeoutMs: -1,
+      roomTransitionTimeoutMs: 20
+    }, async () => {});
+
+    const result = await watcher.waitForNextState(
+      normalizeCurrentState(preRaw, TEST_ADAPTER),
+      {
+        kind: "bridge_v2_action",
+        actionId: "action-map-node",
+        expectedStateId: "state-before",
+        bridgeActionKind: "choose_map_node"
+      }
+    );
+
+    expect(result).toMatchObject({ status: "settled", polls: 2 });
+  });
+
+  it.each(["continue_run", "embark_standard_run"] as const)(
+    "uses the long-transition budget for the opaque Bridge v2 %s action",
+    async (bridgeActionKind) => {
+      const adapter = new FakeAdapter([{ token: "state-after" }]);
+      const watcher = new SettlementWatcher(adapter, (raw) => {
+        const token = typeof raw === "object" && raw && "token" in raw ? String(raw.token) : "missing";
+        return bridgeEnvelope(token);
+      }, {
+        pollMs: 1,
+        defaultTimeoutMs: -1,
+        endTurnTimeoutMs: -1,
+        roomTransitionTimeoutMs: 20
+      }, async () => {});
+
+      const result = await watcher.waitForNextState(
+        bridgeEnvelope("state-before"),
+        {
+          kind: "bridge_v2_action",
+          actionId: `action-${bridgeActionKind}`,
+          expectedStateId: "state-before",
+          bridgeActionKind
+        },
+        "adapter_confirmed",
+        "state-after"
+      );
+
+      expect(result).toMatchObject({ status: "settled", polls: 1 });
+    }
+  );
 
   it("stops after an exact state-action-state transition repeats", async () => {
     const pre = await fixture("combat") as Sts2McpRawState;
@@ -210,6 +348,94 @@ describe("TickOrchestrator", () => {
     });
   });
 
+  it("keeps polling on the next tick after a confirmed Bridge action reaches a changed transitional state", async () => {
+    const pre = await fixture("combat") as Sts2McpRawState;
+    const transitional = await fixture("post-combat-settling") as Sts2McpRawState;
+    const adapter = new FakeAdapter([pre, pre, transitional], {
+      accepted: true,
+      outcome: "accepted",
+      settlementAuthority: "adapter_confirmed",
+      confirmedStateToken: "state-after",
+      response: { status: "completed", outcome: "confirmed" }
+    });
+    const recorder = new MemoryRecorder();
+    const normalize = (raw: unknown) => normalizeCurrentState(raw, adapter.describe());
+    const settlement = new SettlementWatcher(adapter, normalize, {
+      pollMs: 1,
+      defaultTimeoutMs: 20,
+      endTurnTimeoutMs: 20,
+      roomTransitionTimeoutMs: 20
+    }, async () => {});
+    const bridgeAction = {
+      id: "bridge:end-turn",
+      kind: "end_turn",
+      label: "End turn",
+      action: {
+        kind: "bridge_v2_action" as const,
+        actionId: "action-end-turn",
+        expectedStateId: "state-before",
+        bridgeActionKind: "end_turn"
+      },
+      sourceStateHash: normalizeCurrentState(pre, adapter.describe()).stateHash
+    };
+    const orchestrator = new TickOrchestrator({
+      adapter,
+      normalize,
+      buildAllowedActions: () => [bridgeAction],
+      llm: fixedProvider(bridgeAction.id),
+      settlement,
+      recorder
+    });
+
+    const result = await orchestrator.runTick(1);
+
+    expect(result).toMatchObject({
+      outcome: "executed_checkpoint_pending",
+      shouldStopRun: false
+    });
+    expect(recorder.records[0]).toMatchObject({
+      outcome: "executed_checkpoint_pending",
+      execution: { attempted: true, adapterResult: { status: "completed", outcome: "confirmed" } },
+      settlement: { status: "timeout" }
+    });
+    expect(recorder.records[0]?.postState?.normalizedState.stability).toBe("transitioning");
+    expect(recorder.records[0]?.runtimeGuard).toBeUndefined();
+  });
+
+  it("does not turn an adapter-confirmed command into an unknown outcome when checkpoint reading fails", async () => {
+    const pre = await fixture("combat") as Sts2McpRawState;
+    const adapter = new FakeAdapter([pre, pre, new Error("fixture post-command read failure")], {
+      accepted: true,
+      outcome: "accepted",
+      settlementAuthority: "adapter_confirmed",
+      confirmedStateToken: "state-after",
+      response: { status: "completed", outcome: "confirmed" }
+    });
+    const recorder = new MemoryRecorder();
+
+    const result = await makeOrchestrator(adapter, fixedProvider("combat:end-turn"), recorder).runTick(1);
+
+    expect(result).toMatchObject({
+      outcome: "executed_checkpoint_pending",
+      shouldStopRun: false
+    });
+    expect(recorder.records[0]).toMatchObject({
+      execution: { adapterResult: { status: "completed", outcome: "confirmed" } },
+      settlement: { status: "read_error", error: "fixture post-command read failure" }
+    });
+  });
+
+  it("does not treat a legacy acknowledgement as confirmed when the next checkpoint is pending", async () => {
+    const pre = await fixture("combat") as Sts2McpRawState;
+    const transitional = await fixture("post-combat-settling") as Sts2McpRawState;
+    const adapter = new FakeAdapter([pre, pre, transitional]);
+    const recorder = new MemoryRecorder();
+    const result = await makeOrchestrator(adapter, fixedProvider("combat:end-turn"), recorder).runTick(1);
+
+    expect(result.outcome).toBe("executed_unsettled");
+    expect(result.shouldStopRun).toBe(true);
+  });
+
   it("never executes a provider-selected id outside the whitelist", async () => {
     const pre = await fixture("combat") as Sts2McpRawState;
     const adapter = new FakeAdapter([pre]);
@@ -235,6 +461,37 @@ describe("TickOrchestrator", () => {
     expect(adapter.executed).toEqual([]);
   });
 
+  it("stops a bounded run after a repeated coherent non-actionable state without calling the provider", async () => {
+    const raw = await fixture("event") as Sts2McpRawState;
+    const settling = structuredClone(raw);
+    if (typeof settling.event === "object" && settling.event && !Array.isArray(settling.event)) {
+      settling.event.options = [];
+    }
+    const adapter = new FakeAdapter(Array.from({ length: 8 }, () => settling));
+    const recorder = new MemoryRecorder();
+    let calls = 0;
+    const orchestrator = makeOrchestrator(adapter, fixedProvider("anything", () => { calls += 1; }), recorder);
+
+    let result;
+    for (let tick = 1; tick <= 8; tick += 1) {
+      result = await orchestrator.runTick(tick);
+    }
+
+    expect(result).toMatchObject({
+      outcome: "not_executed_non_actionable_state",
+      shouldStopRun: true,
+      stopReason: "repeated_non_actionable_state"
+    });
+    expect(calls).toBe(0);
+    expect(adapter.executed).toEqual([]);
+    expect(recorder.records[7]?.runtimeGuard).toMatchObject({
+      code: "repeated_non_actionable_state",
+      occurrence: 8,
+      contextKind: "event",
+      surfaceKind: "option_choice"
+    });
+  });
+
   it("does not treat an adapter-declared unknown command outcome as success", async () => {
     const pre = await fixture("combat") as Sts2McpRawState;
     const adapter = new FakeAdapter([pre, pre], {
@@ -253,9 +510,10 @@ describe("TickOrchestrator", () => {
     expect(recorder.records[0]?.error).toContain("will not be retried");
   });
 
-  it("stops a run before game-over actions can restart or leave the completed run", async () => {
+  it("allows the current run to complete its game-over return lifecycle", async () => {
     const raw = await fixture("game-over") as Sts2McpRawState;
-    const adapter = new FakeAdapter([raw]);
+    const menu = await fixture("menu") as Sts2McpRawState;
+    const adapter = new FakeAdapter([raw, raw, menu, menu]);
     const recorder = new MemoryRecorder();
     let calls = 0;
     const provider = fixedProvider("game-over:main_menu", () => { calls += 1; });
@@ -263,25 +521,44 @@ describe("TickOrchestrator", () => {
     const result = await makeOrchestrator(adapter, provider, recorder).runTick(1, { stopAtRunBoundary: true });
 
     expect(result).toMatchObject({
-      outcome: "not_executed_non_actionable_state",
+      outcome: "executed_and_settled",
       contextKind: "run_ended",
       surfaceKind: "menu_choice",
       actionAuthority: "local_reconstruction",
-      shouldStopRun: true
+      shouldStopRun: false
+    });
+    expect(calls).toBe(1);
+    expect(adapter.executed).toEqual([{ kind: "menu_select", option: "main_menu" }]);
+  });
+
+  it("stops at the top-level menu before the model can start or continue another run", async () => {
+    const raw = await fixture("menu") as Sts2McpRawState;
+    const adapter = new FakeAdapter([raw]);
+    const recorder = new MemoryRecorder();
+    let calls = 0;
+    const provider = fixedProvider("menu:0", () => { calls += 1; });
+
+    const result = await makeOrchestrator(adapter, provider, recorder).runTick(1, { stopAtRunBoundary: true });
+
+    expect(result).toMatchObject({
+      outcome: "not_executed_non_actionable_state",
+      contextKind: "menu",
+      shouldStopRun: true,
+      stopReason: "run_boundary"
     });
     expect(calls).toBe(0);
     expect(adapter.executed).toEqual([]);
-    expect(recorder.records[0]?.error).toContain("run boundary");
+    expect(recorder.records[0]?.error).toContain("run-start boundary");
   });
 });
 
-class FakeAdapter implements GameAdapter<Sts2McpRawState, ExecutableGameAction, McpExecutionResult> {
+class FakeAdapter implements GameAdapter<Sts2McpRawState, ExecutableGameAction, GameExecutionResult> {
   readonly executed: ExecutableGameAction[] = [];
   private readIndex = 0;
 
   constructor(
     private readonly states: Array<Sts2McpRawState | Error>,
-    private readonly executionResult: McpExecutionResult = { accepted: true, response: { status: "ok" } }
+    private readonly executionResult: GameExecutionResult = { accepted: true, response: { status: "ok" } }
   ) {}
 
   describe() {
@@ -296,7 +573,7 @@ class FakeAdapter implements GameAdapter<Sts2McpRawState, ExecutableGameAction, 
     return structuredClone(state);
   }
 
-  async execute(action: ExecutableGameAction): Promise<McpExecutionResult> {
+  async execute(action: ExecutableGameAction): Promise<GameExecutionResult> {
     this.executed.push(action);
     return this.executionResult;
   }
@@ -368,9 +645,49 @@ function makeOrchestrator(adapter: FakeAdapter, provider: LlmDecisionProvider, r
   const normalize = (raw: unknown) => normalizeCurrentState(raw, adapter.describe());
   const settlement = new SettlementWatcher(adapter, normalize, {
     pollMs: 1,
-    defaultTimeoutMs: 20,
-    endTurnTimeoutMs: 20,
-    roomTransitionTimeoutMs: 20
+    // The injected no-op sleep makes these fixture polls deterministic; the
+    // wider wall-clock guard prevents parallel test load from expiring the
+    // loop before the asserted observation sequence is consumed.
+    defaultTimeoutMs: 250,
+    endTurnTimeoutMs: 250,
+    roomTransitionTimeoutMs: 250
   }, async () => {});
   return new TickOrchestrator({ adapter, normalize, buildAllowedActions, llm: provider, settlement, recorder });
+}
+
+function bridgeEnvelope(
+  bridgeStateId: string,
+  stability: StateEnvelope["currentState"]["stability"] = "actionable"
+): StateEnvelope {
+  return {
+    envelopeSchemaVersion: 2,
+    capturedAt: "2026-07-21T00:00:00.000Z",
+    source: TEST_ADAPTER,
+    rawState: { token: bridgeStateId },
+    currentState: {
+      normalizedSchemaVersion: NORMALIZED_STATE_SCHEMA_VERSION,
+      sourceStateType: "bridge_v2:combat:combat_turn",
+      stability,
+      actionAuthority: stability === "actionable" ? "bridge_advertised" : "none",
+      context: {
+        kind: "combat",
+        encounterType: "normal",
+        turnOwner: "player",
+        isPlayPhase: true,
+        enemies: []
+      },
+      surface: { kind: "combat_turn", bridgeStateId }
+    },
+    diagnostics: {
+      status: "ok",
+      missingRequiredFields: [],
+      invalidFields: [],
+      inferredFields: [],
+      defaultedFields: [],
+      unknownFields: [],
+      warnings: []
+    },
+    stateHash: bridgeStateId,
+    normalizedStateHash: bridgeStateId
+  };
 }

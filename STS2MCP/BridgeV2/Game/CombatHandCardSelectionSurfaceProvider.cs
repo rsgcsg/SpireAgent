@@ -431,36 +431,16 @@ internal sealed class CombatHandCardSelectionSurfaceProvider : IBridgeSurfacePro
         IBridgeContext context,
         string reason,
         IReadOnlyList<string> missing)
-    {
-        var unavailable = new UnsupportedSurface(SurfaceKind, nameof(NPlayerHand), reason);
-        var completeness = new StateCompleteness(
-            "degraded",
-            "empty_fail_closed",
-            new[] { "NPlayerHand exact-version selection binding" },
-            missing);
-        string signature = BridgeHash.Object(new { game.Version, unavailable, missing });
-        return new BridgeObservationDraft(
-            signature,
-            "degraded",
-            context,
-            unavailable,
-            completeness,
+        => BridgeFailClosedObservation.BindingUnavailable(
             game,
-            new[] { "combat_hand_card_selection_binding_unavailable" },
-            Array.Empty<BridgeActionDraft>())
-        {
-            Diagnostics = new[]
-            {
-                BridgeDiagnostics.Create(
-                    "bridge.surface.combat_hand_card_selection.binding_unavailable",
-                    "error",
-                    "surface",
-                    "actions_suppressed",
-                    "update_bridge",
-                    reason)
-            }
-        };
-    }
+            context,
+            nameof(NPlayerHand),
+            reason,
+            new[] { "NPlayerHand exact-version selection binding" },
+            missing,
+            "combat_hand_card_selection_binding_unavailable",
+            "bridge.surface.combat_hand_card_selection.binding_unavailable",
+            "Combat hand-selection source or completion semantics are not exact.");
 
     private sealed record Binding(
         CardSelectorPrefs Preferences,

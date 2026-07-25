@@ -2,11 +2,14 @@ import {
   decodeBridgeV2Capabilities,
   decodeBridgeV2Command,
   decodeBridgeV2Inspection,
+  decodeBridgeV2ObservationBundle,
   decodeBridgeV2State,
   type DecodedBridgePayload,
   type BridgeV2Capabilities,
   type BridgeV2Command,
   type BridgeV2Inspection,
+  type BridgeV2InspectionKind,
+  type BridgeV2ObservationBundle,
   type BridgeV2State
 } from "./bridgeV2Protocol.js";
 
@@ -41,7 +44,7 @@ export class BridgeV2RestClient {
   }
 
   async inspect(
-    kind: "run_deck" | "combat_piles",
+    kind: BridgeV2InspectionKind,
     expectedStateId: string
   ): Promise<DecodedBridgePayload<BridgeV2Inspection>> {
     const encodedKind = encodeURIComponent(kind);
@@ -52,6 +55,24 @@ export class BridgeV2RestClient {
     );
     if (!response.response.ok) throw httpError(`Bridge v2 ${kind} inspection`, response.response, response.value);
     return decodeBridgeV2Inspection(response.value);
+  }
+
+  async observationBundle(
+    expectedStateId: string,
+    kinds: BridgeV2InspectionKind[]
+  ): Promise<DecodedBridgePayload<BridgeV2ObservationBundle>> {
+    const response = await this.request(`${this.baseUrl}/api/v2/observation-bundles`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        expected_state_id: expectedStateId,
+        inspections: kinds.map((kind) => ({ kind }))
+      })
+    });
+    if (!response.response.ok) {
+      throw httpError("Bridge v2 coherent observation bundle", response.response, response.value);
+    }
+    return decodeBridgeV2ObservationBundle(response.value);
   }
 
   async submit(input: {

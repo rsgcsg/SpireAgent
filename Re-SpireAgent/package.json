@@ -15,9 +15,13 @@
     "build": "tsc -p tsconfig.json",
     "check": "npm run typecheck && npm run test && npm run build",
     "agent:inspect": "tsx src/app/main.ts inspect",
+    "agent:connector-canary": "tsx src/app/main.ts connector-canary",
     "agent:tick": "tsx src/app/main.ts tick",
     "agent:run": "tsx src/app/main.ts run",
-    "agent:replay": "tsx src/app/main.ts replay"
+    "agent:replay": "tsx src/app/main.ts replay",
+    "agent:prompt-audit": "tsx src/app/main.ts prompt-audit",
+    "agent:prompt-shadow-compare": "tsx src/app/main.ts prompt-shadow-compare",
+    "agent:prompt-repeat-baseline": "tsx src/app/main.ts prompt-repeat-baseline"
   },
   "dependencies": {
     "dotenv": "^16.6.1",

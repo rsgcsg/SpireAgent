@@ -1,30 +1,41 @@
 # Bridge v2 Documentation
 
+Bridge v2 is the active semantic Gateway protocol. C# and Re source now share
+`2.0-preview.63`; Re normalized schema is `26`. Gate 1 is closed as a bounded
+ordinary-single-player v2 connector baseline and the complete v1 HTTP namespace
+is retired. Preview.61 supplied the final Neow's Fury runtime seal. Preview.62
+adds reviewed registry/policy adaptation and non-authorizing exact-assembly
+audit; Preview.63 adds the Gateway-owned session permission/gray rollout loop.
+Its first real `continue_run` auto-approval is volatile and not persistent
+qualification. Start with current status, not historical preview closeouts.
+
+## Current Documents
+
 - [Current status](CURRENT_STATUS.md)
-- [Audited baseline](BASELINE.md)
-- [Upstream and design audit](UPSTREAM_AUDIT.md)
-- [Bridge v2 and Re-SpireAgent architecture audit](ARCHITECTURE_AUDIT_2026-07-16.md)
-- [Composition, inspection, and diagnostics audit](COMPOSITION_INSPECTION_DIAGNOSTICS_AUDIT_2026-07-16.md)
-- [Run-deck and combat-pile inspection audit](RUN_DECK_PILE_INSPECTION_AUDIT_2026-07-16.md)
-- [Preview.13 closeout audit](PREVIEW_13_CLOSEOUT_AUDIT_2026-07-17.md)
-- [Organic long-run audit](ORGANIC_LONG_RUN_AUDIT_2026-07-17.md)
+- [Source-truth repair closeout](SOURCE_TRUTH_REPAIR_CLOSEOUT_2026-07-22.md)
+- [Connector Gate 0 closeout](CONNECTOR_G0_CLOSEOUT_2026-07-22.md)
+- [Gate 1 real-run defect closeout](GATE1_REAL_RUN_DEFECT_CLOSEOUT_2026-07-22.md)
+- [Gate 1 Seance and reward-removal closeout](GATE1_SEANCE_AND_REWARD_REMOVAL_CLOSEOUT_2026-07-23.md)
+- [Gate 1 Dredge closeout](GATE1_DREDGE_CLOSEOUT_2026-07-23.md)
+- [Gate 1 Quasar, Knowledge Demon, and Charge closeout](GATE1_QUASAR_KNOWLEDGE_DEMON_CHARGE_CLOSEOUT_2026-07-24.md)
+- [Gate 1 closeout and selector transaction audit](GATE1_CLOSEOUT_AND_SELECTOR_TRANSACTION_AUDIT_2026-07-24.md)
+- [Gate 1 adaptation and compatibility closeout](GATE1_ADAPTATION_AND_COMPATIBILITY_CLOSEOUT_2026-07-24.md)
+- [D3 permission and gray rollout closeout](D3_PERMISSION_GRAY_ROLLOUT_CLOSEOUT_2026-07-25.md)
+- [Real connector architecture audit and migration plan](REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md)
+- [Protocol](PROTOCOL.md)
+- [Observation policy](OBSERVATION_POLICY.md)
+- [Player-visible coverage matrix](PLAYER_VISIBLE_COVERAGE.md)
+- [Live STS2 connection boundary](LIVE_GAME_CONNECTION_BOUNDARY.md)
+- [Architecture evolution plan](ARCHITECTURE_EVOLUTION_PLAN.md)
+- [Re-SpireAgent integration boundary](RE_SPIREAGENT_INTEGRATION.md)
 - [ADR-0001: visible action entity bindings](ADR-0001-visible-action-entity-bindings.md)
 - [ADR-0002: card-selection surface boundaries](ADR-0002-card-selection-surface-boundaries.md)
 - [ADR-0003: semantic surfaces, shared mechanics, and semantic completion](ADR-0003-semantic-surfaces-shared-mechanics-and-completion.md)
-- [2026-07-17 architecture reassessment](ARCHITECTURE_REASSESSMENT_2026-07-17.md)
-- [Preview.23 upgrade and treasure closeout](PREVIEW_23_UPGRADE_TREASURE_CLOSEOUT_2026-07-17.md)
-- [Preview.24 shared visible state closeout](PREVIEW_24_SHARED_VISIBLE_STATE_CLOSEOUT_2026-07-17.md)
-- [Preview.24 combat hand-selection qualification](PREVIEW_24_COMBAT_HAND_SELECTION_QUALIFICATION_2026-07-17.md)
-- [Preview.25 event card-acquisition canary](PREVIEW_25_EVENT_CARD_ACQUISITION_CANARY_2026-07-18.md)
-- [Preview.25 rest-site requalification](PREVIEW_25_REST_REQUALIFICATION_2026-07-18.md)
-- [Preview.28 game-over, bundle, and contract alignment](PREVIEW_28_GAME_OVER_BUNDLE_AND_CONTRACT_ALIGNMENT_2026-07-18.md)
-- [Preview.29-.30 menu, dialogue, and event-option qualification](PREVIEW_29_30_MENU_DIALOGUE_AND_EVENT_OPTION_QUALIFICATION_2026-07-18.md)
-- [Bridge v2 v1-retirement and completeness audit](BRIDGE_V2_V1_RETIREMENT_AND_COMPLETENESS_AUDIT_2026-07-18.md)
-- [Protocol and errors](PROTOCOL.md)
-- [Observation policy](OBSERVATION_POLICY.md)
-- [Player-visible coverage](PLAYER_VISIBLE_COVERAGE.md)
-- [Deck enchant runtime smoke](SMOKE_2026-07-16.md)
-- [Re-SpireAgent integration boundary](RE_SPIREAGENT_INTEGRATION.md)
+- [ADR-0004: contract-instance authority and player-visible closure](ADR-0004-contract-instance-authority-and-player-visible-closure.md)
 
-The status and coverage files are the operational sources of truth. The audit
-records why the current architecture differs from the original task document.
+## Historical Evidence
+
+Preview closeouts, dated audits, source-binding notes, and long-run records are
+preserved in the [Bridge preview archive](../../../archive/bridge-v2-previews/).
+They may document exact historical evidence scope but never establish current
+compatibility, authority, or qualification.

@@ -5,6 +5,7 @@ using System.Reflection;
 using Godot;
 using MegaCrit.Sts2.Core.CardSelection;
 using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Cards;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
@@ -17,15 +18,14 @@ using STS2_MCP.BridgeV2.Runtime;
 namespace STS2_MCP.BridgeV2.Game;
 
 /// <summary>
-/// Exact-build adapter for selections from a combat pile. This deliberately
-/// does not generalize every NCardGridSelectionScreen subclass: pile source,
-/// auto-completion, and manual-confirmation semantics are specific here.
+/// Exact-build adapter for source-qualified bounded selections from a combat
+/// pile. The wire contract describes stable mechanics and transaction effects;
+/// source identity remains provenance and an internal authorization input.
+/// Every unqualified caller of the same native selector remains fail closed.
 /// </summary>
 internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfaceProvider
 {
     private const string SurfaceKind = "combat_pile_card_selection";
-    private const string ReflectionEvidence =
-        "sts2-v0.108.0:cached_reflection:NCombatPileCardSelectScreen";
     private const BindingFlags Flags = BindingFlags.Instance | BindingFlags.NonPublic;
 
     private static readonly FieldInfo? ClickableField =
@@ -42,16 +42,30 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
     {
         if (snapshot.TopOverlay is not NCombatPileCardSelectScreen screen)
             return null;
-        return Build(screen, entities, game);
+
+        IBridgeContext context = BridgeContextBuilder.Build(entities);
+        if (!CombatPileSelectionSourceBinding.TryGetUnique(
+                out CombatPileSelectionSourceBinding.SourceBinding? source))
+        {
+            return BindingUnavailable(
+                game,
+                context,
+                "The combat-pile selector has no unique qualified source binding.",
+                new[] { "combat_pile_selection_source", "legal_actions" });
+        }
+
+        return Build(screen, source!, context, entities, game);
     }
 
     private static BridgeObservationDraft Build(
         NCombatPileCardSelectScreen screen,
+        CombatPileSelectionSourceBinding.SourceBinding source,
+        IBridgeContext context,
         BridgeEntityRegistry entities,
         GameBuildIdentity game)
     {
-        IBridgeContext context = BridgeContextBuilder.Build(entities);
-        if (context is not CombatBridgeContext)
+        if (context is not CombatBridgeContext
+            || source.Player.PlayerCombatState is not { } combat)
         {
             return BindingUnavailable(
                 game,
@@ -60,7 +74,9 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
                 new[] { "combat_context", "legal_actions" });
         }
 
-        if (!TryReadBinding(screen, out Binding? binding, out string? bindingError)
+        string? bindingError = null;
+        if (!TryDescribeSource(source, out SourceSemantics? sourceSemantics)
+            || !TryReadBinding(screen, out Binding? binding, out bindingError)
             || ClickableField == null)
         {
             return BindingUnavailable(
@@ -71,13 +87,20 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
         }
 
         Binding exactBinding = binding!;
-        if (!exactBinding.Pile.IsCombatPile)
+        SourceSemantics semantics = sourceSemantics!;
+        if (!IsExpectedSourcePile(exactBinding.Pile, combat, semantics.SourcePile)
+            || !exactBinding.Pile.IsCombatPile
+            || source.BaselineSourcePile.Count != exactBinding.Pile.Cards.Count
+            || source.BaselineSourcePile.Any(card =>
+                !exactBinding.Pile.Cards.Any(current => ReferenceEquals(current, card)))
+            || !MatchesSelectionContract(source, semantics, exactBinding.Preferences)
+            || exactBinding.Preferences.Cancelable)
         {
             return BindingUnavailable(
                 game,
                 context,
-                $"NCombatPileCardSelectScreen referenced non-combat pile {exactBinding.Pile.Type}.",
-                new[] { "source_pile", "legal_actions" });
+                $"The visible selector does not match exact {semantics.SourceKind} {semantics.SourcePile} selection semantics.",
+                new[] { "source_pile", "selection_constraints", "source_semantics", "legal_actions" });
         }
 
         string? prompt = ReadNodeText(screen, "%BottomLabel");
@@ -127,7 +150,17 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
             SurfaceKind,
             entities.GetId(screen, "screen"),
             prompt,
+            semantics.Purpose,
+            semantics.MutationKind,
+            semantics.CommitMode,
+            semantics.SourceKind,
+            entities.GetId(source.SourceCard, "card"),
+            source.SourceCard.Id.Entry,
             exactBinding.Pile.Type.ToString().ToLowerInvariant(),
+            semantics.DestinationPile,
+            semantics.DestinationPosition,
+            semantics.OverflowDestination,
+            semantics.ReplacementCardDefinitionId,
             exactBinding.Preferences.MinSelect,
             exactBinding.Preferences.MaxSelect,
             selectedCards.Count,
@@ -138,24 +171,16 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
 
         List<BridgeActionDraft> actions = BuildActions(
             screen,
+            source,
+            semantics,
             exactBinding,
             holders,
             selectedCards,
             cardIds);
-        bool cancelBindingMissing = exactBinding.Preferences.Cancelable
-                                    && !HasVisibleEnabledClose(screen);
-        if (cancelBindingMissing)
-        {
-            return BindingUnavailable(
-                game,
-                context,
-                "The selection is cancelable but its visible close control is not bound.",
-                new[] { "cancel_action", "legal_actions" });
-        }
 
         string readiness = actions.Count > 0 ? "ready" : "settling";
         var completeness = new StateCompleteness(
-            "contract_complete_for_combat_pile_card_selection",
+            semantics.Completeness,
             actions.Count > 0
                 ? "derived_from_exact_visible_grid_and_current_controls"
                 : "temporarily_empty_while_selection_completes_or_settles",
@@ -164,8 +189,10 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
                 "NCombatPileCardSelectScreen visible overlay",
                 "NCardGrid visible holders",
                 "NCardHolder._isClickable exact-version binding",
-                "NCombatPileCardSelectScreen.%BottomLabel",
-                ReflectionEvidence
+                $"{semantics.SourceType}.OnPlay exact source task",
+                $"CardSelectCmd.FromCombatPile({semantics.SourcePile}, source-specific-bounds)",
+                semantics.CommitEvidence,
+                "NCombatPileCardSelectScreen.%BottomLabel"
             },
             Array.Empty<string>());
         string signature = BridgeHash.Object(new
@@ -191,6 +218,8 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
 
     private static List<BridgeActionDraft> BuildActions(
         NCombatPileCardSelectScreen screen,
+        CombatPileSelectionSourceBinding.SourceBinding source,
+        SourceSemantics semantics,
         Binding binding,
         IReadOnlyList<NGridCardHolder> holders,
         HashSet<CardModel> selectedCards,
@@ -207,50 +236,34 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
             string cardId = cardIds[card];
             string cardName = McpMod.SafeGetText(() => card.Title) ?? card.Id.Entry;
             actions.Add(new BridgeActionDraft(
-                $"toggle_combat_pile_card:{cardId}:{selected}",
+                $"combat_pile_toggle:{cardId}",
                 "toggle_combat_pile_card",
                 "selection",
-                selected ? $"Deselect {cardName}" : $"Select {cardName}",
-                "NCardGrid.HolderPressed+NCombatPileCardSelectScreen.OnCardClicked",
-                () => StartToggleCard(screen, card, selected),
+                semantics.ActionLabel(cardName, selected),
+                semantics.CommitEvidence,
+                () => StartSelection(screen, source, semantics, card, selected),
                 new[] { new ActionEntityBinding("card", cardId) }));
         }
 
-        if (binding.Preferences.RequireManualConfirmation)
+        if (semantics.CommitMode == "manual_confirm"
+            && FindVisibleEnabledConfirm(screen) is { } confirm)
         {
-            NConfirmButton? confirm = screen.GetNodeOrNull<NConfirmButton>("%Confirm");
-            if (confirm is { IsEnabled: true } && McpMod.IsNodeVisible(confirm))
-            {
-                actions.Add(new BridgeActionDraft(
-                    "confirm_combat_pile_selection",
-                    "confirm_combat_pile_selection",
-                    "commit",
-                    "Confirm selected cards",
-                    "NCombatPileCardSelectScreen.%Confirm",
-                    () => StartConfirm(screen)));
-            }
-        }
-
-        if (binding.Preferences.Cancelable)
-        {
-            NBackButton? close = FindVisibleEnabledClose(screen);
-            if (close != null)
-            {
-                actions.Add(new BridgeActionDraft(
-                    "cancel_combat_pile_selection",
-                    "cancel_combat_pile_selection",
-                    "navigation",
-                    "Cancel card selection",
-                    "NCombatPileCardSelectScreen.%Close",
-                    () => StartCancel(screen)));
-            }
+            actions.Add(new BridgeActionDraft(
+                "combat_pile_confirm",
+                "confirm_combat_pile_selection",
+                "commit",
+                "Confirm selected cards",
+                semantics.CommitEvidence,
+                () => StartConfirm(screen, source, semantics, confirm)));
         }
 
         return actions;
     }
 
-    private static BridgeActionStartResult StartToggleCard(
+    private static BridgeActionStartResult StartSelection(
         NCombatPileCardSelectScreen expectedScreen,
+        CombatPileSelectionSourceBinding.SourceBinding source,
+        SourceSemantics semantics,
         CardModel expectedCard,
         bool expectedSelected)
     {
@@ -269,40 +282,116 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
                 "The advertised combat-pile card or its selected state changed before execution.");
         }
 
+        IReadOnlyList<CardModel> previousSelection = ReadSelectedCards(expectedScreen);
+        bool automaticCommitStarts = semantics.CommitMode == "automatic_at_max"
+                                     && !expectedSelected
+                                     && previousSelection.Count + 1 >= BindingMax(source);
+        IReadOnlyList<CardModel> committedSelection = automaticCommitStarts
+            ? previousSelection.Append(expectedCard).ToArray()
+            : Array.Empty<CardModel>();
+
         grid.EmitSignal(NCardGrid.SignalName.HolderPressed, holder);
+        string completionEvidence = source switch
+        {
+            CombatPileSelectionSourceBinding.RegistryBinding registered =>
+                automaticCommitStarts
+                    ? registered.Contract.CompletionEvidence
+                    : $"{registered.Contract.SourceKind}_intermediate_selection_exactly_changed_without_commit",
+            _ => semantics.CompletionEvidence
+        };
         return BridgeActionStartResult.Started(
-            () => !IsCurrent(expectedScreen)
-                  || IsSelected(expectedScreen, expectedCard) != expectedSelected,
-            "selected_membership_changed_or_auto_completed");
+            () => source.Player.PlayerCombatState is { } combat
+                  && source switch
+                  {
+                      CombatPileSelectionSourceBinding.RegistryBinding registered =>
+                          RegistrySelectionResult(
+                              expectedScreen,
+                              registered,
+                              combat,
+                              previousSelection,
+                              ReadSelectedCards(expectedScreen),
+                              committedSelection,
+                              expectedCard,
+                              expectedSelected,
+                              automaticCommitStarts),
+                      _ => false
+                  },
+            completionEvidence,
+            allowIntermediateStateChanges: true);
+
     }
 
-    private static BridgeActionStartResult StartConfirm(NCombatPileCardSelectScreen expectedScreen)
+    private static BridgeActionStartResult StartConfirm(
+        NCombatPileCardSelectScreen expectedScreen,
+        CombatPileSelectionSourceBinding.SourceBinding source,
+        SourceSemantics semantics,
+        NConfirmButton expectedConfirm)
     {
-        if (!IsCurrent(expectedScreen))
-            return BridgeActionStartResult.Rejected("screen_changed", "Combat-pile selection is no longer current.");
-        NConfirmButton? confirm = expectedScreen.GetNodeOrNull<NConfirmButton>("%Confirm");
-        if (confirm is not { IsEnabled: true } || !McpMod.IsNodeVisible(confirm))
-            return BridgeActionStartResult.Rejected("confirm_not_available", "The selection confirm control is no longer enabled.");
+        if (!IsCurrent(expectedScreen)
+            || semantics.CommitMode != "manual_confirm"
+            || FindVisibleEnabledConfirm(expectedScreen) is not { } currentConfirm
+            || !ReferenceEquals(currentConfirm, expectedConfirm))
+        {
+            return BridgeActionStartResult.Rejected(
+                "confirm_not_available",
+                "The advertised combat-pile confirmation is no longer current.");
+        }
 
-        confirm.ForceClick();
+        IReadOnlyList<CardModel> selectedCards = ReadSelectedCards(expectedScreen);
+        if (!TryReadBinding(expectedScreen, out Binding? binding, out _)
+            || binding == null
+            || selectedCards.Count < binding.Preferences.MinSelect
+            || selectedCards.Count > binding.Preferences.MaxSelect
+            || binding.Preferences.MaxSelect != BindingMax(source))
+        {
+            return BridgeActionStartResult.Rejected(
+                "selection_changed",
+                "The combat-pile selection bounds or selected count changed before confirmation.");
+        }
+
+        expectedConfirm.ForceClick();
         return BridgeActionStartResult.Started(
-            () => !IsCurrent(expectedScreen),
-            "combat_pile_selection_confirmed_and_closed");
+            () => source.Player.PlayerCombatState is { } combat
+                  && source switch
+                  {
+                      CombatPileSelectionSourceBinding.RegistryBinding registered =>
+                          RegistryManualCommitCompleted(
+                              expectedScreen,
+                              registered,
+                              combat,
+                              selectedCards),
+                      _ => false
+                  },
+            semantics.CompletionEvidence,
+            allowIntermediateStateChanges: true);
     }
 
-    private static BridgeActionStartResult StartCancel(NCombatPileCardSelectScreen expectedScreen)
+    private static bool TryDescribeSource(
+        CombatPileSelectionSourceBinding.SourceBinding source,
+        out SourceSemantics? semantics)
     {
-        if (!IsCurrent(expectedScreen))
-            return BridgeActionStartResult.Rejected("screen_changed", "Combat-pile selection is no longer current.");
-        NBackButton? close = FindVisibleEnabledClose(expectedScreen);
-        if (close == null)
-            return BridgeActionStartResult.Rejected("cancel_not_available", "The selection close control is no longer enabled.");
-
-        close.ForceClick();
-        return BridgeActionStartResult.Started(
-            () => !IsCurrent(expectedScreen),
-            "combat_pile_selection_cancelled_and_closed");
+        semantics = source is CombatPileSelectionSourceBinding.RegistryBinding registered
+            ? FromContract(registered.Contract)
+            : null;
+        return semantics != null;
     }
+
+    private static SourceSemantics FromContract(CombatPileSourceContract contract) =>
+        new(
+            contract.Purpose,
+            contract.MutationKind,
+            contract.CommitMode,
+            contract.SourceKind,
+            contract.SourceDisplayName,
+            contract.SourcePile,
+            contract.DestinationPile,
+            contract.DestinationPosition,
+            contract.OverflowDestination,
+            contract.ReplacementCardDefinitionId,
+            contract.Completeness,
+            contract.CommitEvidence,
+            contract.Label,
+            contract.CompletionEvidence);
 
     private static bool TryReadBinding(
         NCombatPileCardSelectScreen screen,
@@ -343,11 +432,212 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
         ReadField(screen, "_selectedCards") is IEnumerable<CardModel> cards
         && cards.Any(selected => ReferenceEquals(selected, card));
 
+    private static IReadOnlyList<CardModel> ReadSelectedCards(NCombatPileCardSelectScreen screen) =>
+        ReadField(screen, "_selectedCards") is IEnumerable<CardModel> cards
+            ? cards.ToArray()
+            : Array.Empty<CardModel>();
+
+    private static bool MatchesSelectionContract(
+        CombatPileSelectionSourceBinding.SourceBinding source,
+        SourceSemantics semantics,
+        CardSelectorPrefs preferences)
+    {
+        if (preferences.RequireManualConfirmation != (semantics.CommitMode == "manual_confirm"))
+            return false;
+
+        if (source is CombatPileSelectionSourceBinding.RegistryBinding registered)
+        {
+            return preferences.MinSelect == registered.MinSelect
+                   && preferences.MaxSelect == registered.MaxSelect;
+        }
+        return false;
+    }
+
+    private static int BindingMax(CombatPileSelectionSourceBinding.SourceBinding binding) =>
+        binding switch
+        {
+            CombatPileSelectionSourceBinding.RegistryBinding registered =>
+                registered.MaxSelect,
+            _ => 0
+        };
+
+    private static bool RegistrySelectionResult(
+        NCombatPileCardSelectScreen expectedScreen,
+        CombatPileSelectionSourceBinding.RegistryBinding binding,
+        PlayerCombatState combat,
+        IReadOnlyCollection<CardModel> previousSelection,
+        IReadOnlyCollection<CardModel> currentSelection,
+        IReadOnlyCollection<CardModel> committedSelection,
+        CardModel toggledCard,
+        bool wasSelected,
+        bool automaticCommitStarted)
+    {
+        IReadOnlyList<CardModel>? currentSource =
+            ResolveCurrentPile(combat, binding.Contract.SourcePile);
+        IReadOnlyList<CardModel>? currentDestination =
+            ResolveCurrentPile(combat, binding.Contract.DestinationPile);
+        if (currentSource == null || currentDestination == null)
+            return false;
+
+        if (!automaticCommitStarted)
+        {
+            return CombatPileSelectionWitness.SelectionChanged(
+                CombatPileSelectionSourceBinding.IsActive(binding.Token),
+                IsCurrent(expectedScreen),
+                binding.BaselineSourcePile,
+                binding.BaselineDestinationPile,
+                currentSource,
+                currentDestination,
+                previousSelection,
+                currentSelection,
+                toggledCard,
+                wasSelected);
+        }
+
+        bool sourceCompleted = !CombatPileSelectionSourceBinding.IsActive(binding.Token);
+        bool surfaceClosed = !IsCurrent(expectedScreen);
+        return binding.Contract.WitnessKind switch
+        {
+            "move_one_to_top" =>
+                MoveOneToTopWitness.Selected(
+                    sourceCompleted,
+                    surfaceClosed,
+                    binding.BaselineSourcePile,
+                    binding.BaselineDestinationPile,
+                    currentSource,
+                    currentDestination,
+                    toggledCard),
+            "move_one_to_hand_or_source_if_full" =>
+                MoveOneToDestinationOrFallbackWitness.Selected(
+                    sourceCompleted,
+                    surfaceClosed,
+                    binding.BaselineSourcePile,
+                    binding.BaselineDestinationPile,
+                    currentSource,
+                    currentDestination,
+                    toggledCard,
+                    CardPile.MaxCardsInHand),
+            "move_one_between_piles" =>
+                MoveOneBetweenPilesWitness.Selected(
+                    sourceCompleted,
+                    surfaceClosed,
+                    binding.BaselineSourcePile,
+                    binding.BaselineDestinationPile,
+                    currentSource,
+                    currentDestination,
+                    toggledCard),
+            "replace_one_same_index" =>
+                ReplaceOneAtSameIndexWitness.Selected(
+                    sourceCompleted,
+                    surfaceClosed,
+                    binding.BaselineSourcePile,
+                    currentSource,
+                    toggledCard,
+                    replacement => IsExpectedReplacement(binding, replacement)),
+            "move_exact_batch_between_piles" =>
+                MoveExactBatchWitness.Completed(
+                    sourceCompleted,
+                    surfaceClosed,
+                    binding.BaselineSourcePile,
+                    binding.BaselineDestinationPile,
+                    currentSource,
+                    currentDestination,
+                    committedSelection,
+                    binding.MaxSelect),
+            "replace_exact_batch_same_index" =>
+                ReplaceExactBatchAtSameIndexesWitness.Completed(
+                    sourceCompleted,
+                    surfaceClosed,
+                    binding.BaselineSourcePile,
+                    currentSource,
+                    committedSelection,
+                    binding.MaxSelect,
+                    replacement => IsExpectedReplacement(binding, replacement)),
+            _ => false
+        };
+    }
+
+    private static bool RegistryManualCommitCompleted(
+        NCombatPileCardSelectScreen expectedScreen,
+        CombatPileSelectionSourceBinding.RegistryBinding binding,
+        PlayerCombatState combat,
+        IReadOnlyCollection<CardModel> selectedCards)
+    {
+        IReadOnlyList<CardModel>? currentSource =
+            ResolveCurrentPile(combat, binding.Contract.SourcePile);
+        IReadOnlyList<CardModel>? currentDestination =
+            ResolveCurrentPile(combat, binding.Contract.DestinationPile);
+        if (currentSource == null
+            || currentDestination == null
+            || binding.Contract.WitnessKind != "move_optional_batch_between_piles")
+        {
+            return false;
+        }
+
+        return MoveOptionalBatchWitness.Completed(
+            !CombatPileSelectionSourceBinding.IsActive(binding.Token),
+            !IsCurrent(expectedScreen),
+            binding.BaselineSourcePile,
+            binding.BaselineDestinationPile,
+            currentSource,
+            currentDestination,
+            selectedCards,
+            binding.MaxSelect);
+    }
+
+    private static IReadOnlyList<CardModel>? ResolveCurrentPile(
+        PlayerCombatState combat,
+        string pile) => pile switch
+    {
+        "draw" => combat.DrawPile.Cards,
+        "discard" => combat.DiscardPile.Cards,
+        "hand" => combat.Hand.Cards,
+        "exhaust" => combat.ExhaustPile.Cards,
+        _ => null
+    };
+
+    private static bool IsExpectedReplacement(
+        CombatPileSelectionSourceBinding.RegistryBinding binding,
+        CardModel card)
+    {
+        if (!string.Equals(
+                card.Id.Entry,
+                binding.Contract.ReplacementCardDefinitionId,
+                StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        return binding.Contract.ReplacementUpgradePolicy !=
+                   "source_upgrade_implies_replacement_upgrade"
+               || !binding.SourceCard.IsUpgraded
+               || card.IsUpgraded;
+    }
+
     private static bool IsHolderClickable(NCardHolder holder) =>
         ClickableField?.GetValue(holder) is true;
 
+    private static bool IsExpectedSourcePile(
+        CardPile pile,
+        PlayerCombatState combat,
+        string sourcePile) =>
+        sourcePile switch
+        {
+            "discard" => ReferenceEquals(pile, combat.DiscardPile) && pile.Type == PileType.Discard,
+            "draw" => ReferenceEquals(pile, combat.DrawPile) && pile.Type == PileType.Draw,
+            _ => false
+        };
+
     private static bool HasVisibleEnabledClose(NCombatPileCardSelectScreen screen) =>
         FindVisibleEnabledClose(screen) != null;
+
+    private static NConfirmButton? FindVisibleEnabledConfirm(NCombatPileCardSelectScreen screen)
+    {
+        NConfirmButton? confirm = screen.GetNodeOrNull<NConfirmButton>("%Confirm");
+        return confirm is { IsEnabled: true } && McpMod.IsNodeVisible(confirm)
+            ? confirm
+            : null;
+    }
 
     private static NBackButton? FindVisibleEnabledClose(NCombatPileCardSelectScreen screen)
     {
@@ -382,39 +672,35 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
         IBridgeContext context,
         string reason,
         IReadOnlyList<string> missing)
-    {
-        var unavailable = new UnsupportedSurface(SurfaceKind, nameof(NCombatPileCardSelectScreen), reason);
-        var completeness = new StateCompleteness(
-            "degraded",
-            "empty_fail_closed",
-            new[] { "NCombatPileCardSelectScreen exact-version binding" },
-            missing);
-        string signature = BridgeHash.Object(new { game.Version, unavailable, missing });
-        return new BridgeObservationDraft(
-            signature,
-            "degraded",
-            context,
-            unavailable,
-            completeness,
+        => BridgeFailClosedObservation.BindingUnavailable(
             game,
-            new[] { "combat_pile_card_selection_binding_unavailable" },
-            Array.Empty<BridgeActionDraft>())
-        {
-            Diagnostics = new[]
-            {
-                BridgeDiagnostics.Create(
-                    "bridge.surface.combat_pile_card_selection.binding_unavailable",
-                    "error",
-                    "surface",
-                    "actions_suppressed",
-                    "update_bridge",
-                    reason)
-            }
-        };
-    }
+            context,
+            nameof(NCombatPileCardSelectScreen),
+            reason,
+            new[] { "NCombatPileCardSelectScreen exact-version binding" },
+            missing,
+            "combat_pile_card_selection_binding_unavailable",
+            "bridge.surface.combat_pile_card_selection.binding_unavailable",
+            "Combat pile-selection source or completion semantics are not exact.");
 
     private sealed record Binding(
         CardSelectorPrefs Preferences,
         IReadOnlyList<CardModel> SelectedCards,
         CardPile Pile);
+
+    private sealed record SourceSemantics(
+        string Purpose,
+        string MutationKind,
+        string CommitMode,
+        string SourceKind,
+        string SourceType,
+        string SourcePile,
+        string DestinationPile,
+        string DestinationPosition,
+        string? OverflowDestination,
+        string? ReplacementCardDefinitionId,
+        string Completeness,
+        string CommitEvidence,
+        Func<string, bool, string> ActionLabel,
+        string CompletionEvidence);
 }

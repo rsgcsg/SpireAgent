@@ -8,6 +8,301 @@ namespace STS2_MCP.Tests;
 public sealed class BridgeContractTests
 {
     [Fact]
+    public void NonAuthorizingContractManifestMatchesProviderRegistry()
+    {
+        string[] manifestKinds = BridgeContractManifest.Entries
+            .Select(entry => entry.Kind)
+            .OrderBy(kind => kind, StringComparer.Ordinal)
+            .ToArray();
+        string[] providerKinds = BridgeSnapshotBuilder.DeclaredProviderKinds
+            .OrderBy(kind => kind, StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(26, manifestKinds.Length);
+        Assert.Equal(manifestKinds.Length, manifestKinds.Distinct(StringComparer.Ordinal).Count());
+        Assert.Equal(providerKinds, manifestKinds);
+        Assert.All(BridgeContractManifest.Entries, entry =>
+        {
+            Assert.Equal(BridgeV2Contract.ProtocolVersion, entry.ProtocolRevision);
+            Assert.False(string.IsNullOrWhiteSpace(entry.Mechanism));
+            Assert.False(string.IsNullOrWhiteSpace(entry.SourceBindingId));
+            Assert.False(string.IsNullOrWhiteSpace(entry.ReSupport));
+            Assert.NotEmpty(entry.VisibleFactGroups);
+            Assert.NotEmpty(entry.Operations);
+            Assert.NotEmpty(entry.TestReferences);
+            Assert.NotEmpty(entry.DocumentationReferences);
+        });
+    }
+
+    [Fact]
+    public void ContractManifestNeverOverridesExplicitPermissionScopes()
+    {
+        var compatibility = new CompatibilityAssessment(
+            "qualified_scoped",
+            new[] { "0.109.0" },
+            new[] { "v0.109.0|commit|1" },
+            ActionExecutionAllowed: true,
+            StateObservationAllowed: true,
+            InspectionAllowed: false,
+            ActionExecutionSurfaceKinds: Array.Empty<string>(),
+            ActionCanarySurfaceKinds: new[] { "event_option" },
+            InspectionAllowedKinds: Array.Empty<string>(),
+            InspectionCanaryKinds: Array.Empty<string>(),
+            ObservationOnlySurfaceKinds: Array.Empty<string>(),
+            ObservationCandidateBuildFingerprints: Array.Empty<string>(),
+            Detail: "explicit event-only scope");
+
+        IReadOnlyDictionary<string, SurfaceCapability> capabilities = BridgeContractManifest
+            .Capabilities(compatibility)
+            .ToDictionary(capability => capability.Kind, StringComparer.Ordinal);
+
+        Assert.Equal("candidate_action_canary", capabilities["event_option"].Support);
+        Assert.Empty(capabilities["event_option"].Operations);
+        Assert.Equal("not_qualified_for_current_build", capabilities["combat_turn"].Support);
+        Assert.Equal("not_qualified_for_current_build", capabilities["treasure_room"].Support);
+    }
+
+    [Fact]
+    public void ExplicitActionScopesAreTheExactManifestProjectionForTheCurrentBuild()
+    {
+        CompatibilityAssessment compatibility = BridgeContractManifest.WithExplicitActionScopes(
+            BridgeGameIdentity.Assess("v0.109.0", "c12f634d", -1639417500));
+        IReadOnlyDictionary<string, SurfaceCapability> capabilities = BridgeContractManifest
+            .Capabilities(compatibility)
+            .ToDictionary(capability => capability.Kind, StringComparer.Ordinal);
+
+        Assert.NotEmpty(compatibility.ActionPermissionScopes);
+        Assert.Equal(
+            compatibility.ActionPermissionScopes.Count,
+            compatibility.ActionPermissionScopes
+                .Select(scope => (scope.SurfaceKind, scope.Operation))
+                .Distinct()
+                .Count());
+        Assert.All(compatibility.ActionPermissionScopes, scope =>
+        {
+            Assert.Contains(scope.Tier, new[] { "qualified", "canary" });
+            Assert.True(BridgeSurfacePermission.IsActionPermitted(
+                compatibility,
+                scope.SurfaceKind,
+                scope.Operation));
+        });
+
+        foreach (SurfaceCapability capability in capabilities.Values)
+        {
+            string[] expected = compatibility.ActionPermissionScopes
+                .Where(scope => scope.SurfaceKind == capability.Kind)
+                .Select(scope => scope.Operation)
+                .OrderBy(operation => operation, StringComparer.Ordinal)
+                .ToArray();
+            Assert.Equal(expected, capability.Operations.OrderBy(operation => operation, StringComparer.Ordinal));
+        }
+        Assert.Contains(
+            compatibility.ActionPermissionScopes,
+            scope => scope.SurfaceKind == "deck_enchant_selection" && scope.Tier == "canary");
+    }
+
+    [Fact]
+    public void GatewayArtifactDigestIsAPathFreeSha256()
+    {
+        string path = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(path, "bridge-contract-fixture");
+            string? digest = BridgeAssemblyIdentity.HashFile(path);
+            Assert.Matches("^[0-9a-f]{64}$", digest ?? string.Empty);
+            Assert.DoesNotContain(path, digest ?? string.Empty, StringComparison.Ordinal);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void GameIdentitySeparatesRuntimeAndReleaseDeclaredAssemblyHashes()
+    {
+        var identity = new GameBuildIdentity(
+            "v0.109.0",
+            "c12f634d",
+            "v0.109.0",
+            -1639417500,
+            BridgeGameIdentity.Assess("v0.109.0", "c12f634d", -1639417500))
+        {
+            ReleaseDeclaredMainAssemblyHash = -840572606
+        };
+        string json = JsonSerializer.Serialize(identity, new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+        });
+
+        Assert.Contains("\"main_assembly_hash\":-1639417500", json);
+        Assert.Contains("\"release_declared_main_assembly_hash\":-840572606", json);
+    }
+
+    [Fact]
+    public void DeckEnchantManifestRequiresSemanticPostStateWithoutGrantingQualifiedAuthority()
+    {
+        BridgeContractManifestEntry enchant = Assert.Single(
+            BridgeContractManifest.Entries,
+            entry => entry.Kind == "deck_enchant_selection");
+        CompatibilityAssessment compatibility = BridgeGameIdentity.Assess(
+            "v0.109.0",
+            "c12f634d",
+            -1639417500);
+
+        Assert.Contains("exact-card-enchantment-post-state-witness", enchant.SourceBindingId);
+        Assert.Contains("deck_enchant_selection", compatibility.ActionCanarySurfaceKinds);
+        Assert.DoesNotContain("deck_enchant_selection", compatibility.ActionExecutionSurfaceKinds);
+        Assert.Equal(
+            "candidate_action_canary",
+            BridgeSurfacePermission.SupportLevel(compatibility, "deck_enchant_selection"));
+    }
+
+    [Fact]
+    public void WoodCarvingsReplacementIsCanaryOnlyAndRequiresExactSemanticWitness()
+    {
+        BridgeContractManifestEntry replacement = Assert.Single(
+            BridgeContractManifest.Entries,
+            entry => entry.Kind == "wood_carvings_replacement_selection");
+        CompatibilityAssessment compatibility = BridgeGameIdentity.Assess(
+            "v0.109.0",
+            "c12f634d",
+            -1639417500);
+
+        Assert.Contains("exact-source-task-binding", replacement.SourceBindingId);
+        Assert.Contains("deterministic-replacement-witness", replacement.SourceBindingId);
+        Assert.Contains(replacement.Operations, operation => operation.Operation == "confirm_wood_carvings_replacement");
+        Assert.Contains("wood_carvings_replacement_selection", compatibility.ActionCanarySurfaceKinds);
+        Assert.DoesNotContain("wood_carvings_replacement_selection", compatibility.ActionExecutionSurfaceKinds);
+    }
+
+    [Fact]
+    public void DeterministicReplacementWitnessRejectsClosureWithoutExactDeckDelta()
+    {
+        object original = new();
+        object unchanged = new();
+        object replacement = new();
+        object other = new();
+        object[] baseline = { original, unchanged };
+
+        Assert.True(DeterministicDeckReplacementWitness.IsSatisfied(
+            sourceCompleted: true,
+            selectorClosed: true,
+            baseline,
+            new[] { unchanged, replacement },
+            original,
+            card => ReferenceEquals(card, replacement)));
+        Assert.False(DeterministicDeckReplacementWitness.IsSatisfied(
+            sourceCompleted: false,
+            selectorClosed: true,
+            baseline,
+            new[] { unchanged, replacement },
+            original,
+            card => ReferenceEquals(card, replacement)));
+        Assert.False(DeterministicDeckReplacementWitness.IsSatisfied(
+            sourceCompleted: true,
+            selectorClosed: true,
+            baseline,
+            new[] { unchanged, other },
+            original,
+            card => ReferenceEquals(card, replacement)));
+        Assert.False(DeterministicDeckReplacementWitness.IsSatisfied(
+            sourceCompleted: true,
+            selectorClosed: true,
+            baseline,
+            new[] { original, replacement },
+            original,
+            card => ReferenceEquals(card, replacement)));
+    }
+
+    [Fact]
+    public void EventOptionsAllowOnlyExplicitAsyncIntermediateStatesBeforeTheirSemanticWitness()
+    {
+        BridgeActionStartResult result = EventOptionSurfaceProvider.StartAsyncEventTransition(
+            () => false,
+            "event_option_replaced_or_required_subsurface_opened");
+
+        Assert.True(result.Accepted);
+        Assert.True(result.AllowIntermediateStateChanges);
+        Assert.NotNull(result.CompletionProbe);
+        Assert.Equal(
+            "event_option_replaced_or_required_subsurface_opened",
+            result.CompletionEvidence);
+    }
+
+    [Fact]
+    public void TreasureOperationEvidenceIsNarrowerThanSurfaceCanaryAuthority()
+    {
+        BridgeContractManifestEntry treasure = Assert.Single(
+            BridgeContractManifest.Entries,
+            entry => entry.Kind == "treasure_room");
+        IReadOnlyDictionary<string, BridgeOperationManifest> operations = treasure.Operations
+            .ToDictionary(operation => operation.Operation, StringComparer.Ordinal);
+
+        Assert.Equal(BridgeOperationEvidenceStatus.SourceAudited, operations["open_treasure_chest"].EvidenceStatus);
+        Assert.Equal(BridgeOperationEvidenceStatus.OrganicCanaryExercised, operations["choose_treasure_relic"].EvidenceStatus);
+        Assert.Equal(BridgeOperationEvidenceStatus.SourceAudited, operations["skip_treasure_relic"].EvidenceStatus);
+        Assert.Equal(BridgeOperationEvidenceStatus.OrganicCanaryExercised, operations["proceed_treasure_room"].EvidenceStatus);
+        Assert.DoesNotContain(treasure.Operations, operation =>
+            operation.EvidenceStatus == BridgeOperationEvidenceStatus.OrganicQualified);
+    }
+
+    [Fact]
+    public void MenuOperationEvidenceDoesNotOverclaimUnexercisedNavigation()
+    {
+        BridgeContractManifestEntry root = Assert.Single(
+            BridgeContractManifest.Entries,
+            entry => entry.Kind == "main_menu");
+        BridgeContractManifestEntry submenu = Assert.Single(
+            BridgeContractManifest.Entries,
+            entry => entry.Kind == "singleplayer_menu");
+        IReadOnlyDictionary<string, BridgeOperationManifest> operations = root.Operations
+            .ToDictionary(operation => operation.Operation, StringComparer.Ordinal);
+
+        Assert.Equal(BridgeOperationEvidenceStatus.OrganicCanaryExercised, operations["continue_run"].EvidenceStatus);
+        Assert.Equal(BridgeOperationEvidenceStatus.SourceAudited, operations["open_singleplayer"].EvidenceStatus);
+        Assert.All(submenu.Operations, operation =>
+            Assert.Equal(BridgeOperationEvidenceStatus.SurfaceLevelOnly, operation.EvidenceStatus));
+    }
+
+    [Fact]
+    public void InspectionInventoryIsReadOnlyAndNonAuthorizing()
+    {
+        Assert.Equal(
+            new[]
+            {
+                BridgeInspectionBuilder.RunDeckKind,
+                BridgeInspectionBuilder.CombatPilesKind,
+                BridgeInspectionBuilder.ShopCatalogKind
+            },
+            BridgeContractManifest.ImplementedInspectionKinds);
+        Assert.All(BridgeContractManifest.InspectionEntries, entry =>
+        {
+            Assert.Equal(BridgeV2Contract.ProtocolVersion, entry.ProtocolRevision);
+            Assert.False(string.IsNullOrWhiteSpace(entry.SourceBindingId));
+            Assert.False(string.IsNullOrWhiteSpace(entry.ReSupport));
+            Assert.NotEmpty(entry.VisibleFactGroups);
+            Assert.NotEmpty(entry.TestReferences);
+            Assert.NotEmpty(entry.DocumentationReferences);
+        });
+
+        CompatibilityAssessment alternateBuild = BridgeGameIdentity.Assess(
+            "v0.109.0",
+            "c12f634d",
+            1833084275);
+
+        Assert.False(alternateBuild.InspectionAllowed);
+        Assert.Empty(BridgeSurfacePermission.PermittedInspectionKinds(
+            alternateBuild,
+            BridgeContractManifest.ImplementedInspectionKinds));
+        Assert.Equal(
+            "disabled_for_current_build",
+            BridgeSurfacePermission.InspectionSupportLevel(
+                alternateBuild,
+                BridgeContractManifest.ImplementedInspectionKinds));
+    }
+
+    [Fact]
     public void EmptyCompatibilityScopeNeverMeansAllSurfaces()
     {
         var compatibility = new CompatibilityAssessment(
@@ -26,6 +321,15 @@ public sealed class BridgeContractTests
             Detail: "historical exact identity with no current explicit surface permission");
 
         Assert.False(BridgeSurfacePermission.IsActionPermitted(compatibility, "combat_turn"));
+        Assert.False(BridgeSurfacePermission.IsInspectionPermitted(compatibility, "run_deck"));
+        Assert.Empty(BridgeSurfacePermission.PermittedInspectionKinds(
+            compatibility,
+            new[] { "run_deck", "combat_piles" }));
+        Assert.Equal(
+            "disabled_for_current_build",
+            BridgeSurfacePermission.InspectionSupportLevel(
+                compatibility,
+                new[] { "run_deck", "combat_piles" }));
         Assert.Equal(
             "not_qualified_for_current_build",
             BridgeSurfacePermission.SupportLevel(compatibility, "combat_turn"));
@@ -34,7 +338,7 @@ public sealed class BridgeContractTests
     [Fact]
     public void ExplicitQualifiedAndCanaryScopesRemainDistinct()
     {
-        var compatibility = new CompatibilityAssessment(
+        var compatibility = BridgeContractManifest.WithExplicitActionScopes(new CompatibilityAssessment(
             "qualified_scoped",
             new[] { "0.109.0" },
             new[] { "v0.109.0|commit|1" },
@@ -43,18 +347,261 @@ public sealed class BridgeContractTests
             InspectionAllowed: true,
             ActionExecutionSurfaceKinds: new[] { "combat_turn" },
             ActionCanarySurfaceKinds: new[] { "event_option" },
-            InspectionAllowedKinds: Array.Empty<string>(),
-            InspectionCanaryKinds: Array.Empty<string>(),
+            InspectionAllowedKinds: new[] { "run_deck" },
+            InspectionCanaryKinds: new[] { "combat_piles" },
             ObservationOnlySurfaceKinds: Array.Empty<string>(),
             ObservationCandidateBuildFingerprints: Array.Empty<string>(),
-            Detail: "explicit scopes");
+            Detail: "explicit scopes"));
 
         Assert.True(BridgeSurfacePermission.IsActionPermitted(compatibility, "combat_turn"));
         Assert.True(BridgeSurfacePermission.IsActionPermitted(compatibility, "event_option"));
         Assert.False(BridgeSurfacePermission.IsActionPermitted(compatibility, "shop_room"));
+        Assert.True(BridgeSurfacePermission.IsInspectionPermitted(compatibility, "run_deck"));
+        Assert.True(BridgeSurfacePermission.IsInspectionPermitted(compatibility, "combat_piles"));
+        Assert.False(BridgeSurfacePermission.IsInspectionPermitted(compatibility, "future_inspection"));
+        Assert.Equal(
+            new[] { "run_deck", "combat_piles" },
+            BridgeSurfacePermission.PermittedInspectionKinds(
+                compatibility,
+                new[] { "run_deck", "combat_piles", "future_inspection" }));
+        Assert.Equal(
+            "mixed_scoped_read_only",
+            BridgeSurfacePermission.InspectionSupportLevel(
+                compatibility,
+                new[] { "run_deck", "combat_piles" }));
         Assert.Equal("qualified_exact_build", BridgeSurfacePermission.SupportLevel(compatibility, "combat_turn"));
         Assert.Equal("candidate_action_canary", BridgeSurfacePermission.SupportLevel(compatibility, "event_option"));
         Assert.Equal("not_qualified_for_current_build", BridgeSurfacePermission.SupportLevel(compatibility, "shop_room"));
+    }
+
+    [Fact]
+    public void CanaryOnlyScopePermitsOnlyExplicitSurfaceAndNoInspection()
+    {
+        var compatibility = BridgeContractManifest.WithExplicitActionScopes(new CompatibilityAssessment(
+            "qualified_scoped",
+            new[] { "0.109.0" },
+            new[] { "v0.109.0|commit|1" },
+            ActionExecutionAllowed: true,
+            StateObservationAllowed: true,
+            InspectionAllowed: false,
+            ActionExecutionSurfaceKinds: Array.Empty<string>(),
+            ActionCanarySurfaceKinds: new[] { "event_option" },
+            InspectionAllowedKinds: Array.Empty<string>(),
+            InspectionCanaryKinds: Array.Empty<string>(),
+            ObservationOnlySurfaceKinds: Array.Empty<string>(),
+            ObservationCandidateBuildFingerprints: Array.Empty<string>(),
+            Detail: "current-build event option canary only"));
+
+        Assert.True(BridgeSurfacePermission.IsActionPermitted(compatibility, "event_option"));
+        Assert.False(BridgeSurfacePermission.IsActionPermitted(compatibility, "combat_turn"));
+        Assert.False(BridgeSurfacePermission.IsInspectionPermitted(compatibility, "run_deck"));
+        Assert.Equal("candidate_action_canary", BridgeSurfacePermission.SupportLevel(compatibility, "event_option"));
+        Assert.Equal("not_qualified_for_current_build", BridgeSurfacePermission.SupportLevel(compatibility, "combat_turn"));
+        Assert.Equal(
+            "disabled_for_current_build",
+            BridgeSurfacePermission.InspectionSupportLevel(compatibility, new[] { "run_deck", "combat_piles" }));
+    }
+
+    [Fact]
+    public void CurrentGameIdentityGrantsOnlyExplicitAuditedCanaries()
+    {
+        CompatibilityAssessment compatibility = BridgeGameIdentity.Assess(
+            "v0.109.0",
+            "c12f634d",
+            1833084275);
+
+        Assert.Equal("qualified_scoped", compatibility.Status);
+        Assert.True(compatibility.ActionExecutionAllowed);
+        Assert.True(compatibility.StateObservationAllowed);
+        Assert.False(compatibility.InspectionAllowed);
+        Assert.Empty(compatibility.ActionExecutionSurfaceKinds);
+        Assert.Equal(
+            new[] { "event_option", "event_card_acquisition", "map_navigation" },
+            compatibility.ActionCanarySurfaceKinds);
+        Assert.Empty(compatibility.InspectionAllowedKinds);
+        Assert.Empty(compatibility.InspectionCanaryKinds);
+        Assert.Contains(
+            "v0.109.0|c12f634d|1833084275",
+            compatibility.TestedBuildFingerprints);
+    }
+
+    [Fact]
+    public void ReleaseDeclaredHashCannotAuthorizeADifferentLoadedAssembly()
+    {
+        CompatibilityAssessment compatibility = BridgeGameIdentity.Assess(
+            "v0.109.0",
+            "c12f634d",
+            -840572606);
+
+        Assert.Equal("untested", compatibility.Status);
+        Assert.False(compatibility.ActionExecutionAllowed);
+        Assert.False(compatibility.StateObservationAllowed);
+        Assert.False(compatibility.InspectionAllowed);
+        Assert.Empty(compatibility.ActionExecutionSurfaceKinds);
+        Assert.Empty(compatibility.ActionCanarySurfaceKinds);
+        Assert.Equal(
+            "bridge_v2_exact_environment_policy_2026_07_24",
+            compatibility.CompatibilityPolicyId);
+        Assert.Matches("^[a-f0-9]{64}$", compatibility.CompatibilityPolicyDigest);
+        Assert.Equal("diagnostic_only", compatibility.AdaptationLevel);
+    }
+
+    [Fact]
+    public void SourceQualifiedIdentityKeepsCombatPileInspectionReadOnlyAndHeadbuttActionCanaryScoped()
+    {
+        CompatibilityAssessment compatibility = BridgeContractManifest.WithExplicitActionScopes(
+            BridgeGameIdentity.Assess(
+                "v0.109.0",
+                "c12f634d",
+                -1639417500));
+
+        Assert.Equal("qualified_scoped", compatibility.Status);
+        Assert.True(compatibility.InspectionAllowed);
+        Assert.Equal(new[] { "run_deck" }, compatibility.InspectionAllowedKinds);
+        Assert.Equal(new[] { "combat_piles", "shop_catalog" }, compatibility.InspectionCanaryKinds);
+        Assert.Equal(
+            new[] { "run_deck", "combat_piles", "shop_catalog" },
+            BridgeSurfacePermission.PermittedInspectionKinds(
+                compatibility,
+                BridgeContractManifest.ImplementedInspectionKinds));
+        Assert.Equal(
+            "mixed_scoped_read_only",
+            BridgeSurfacePermission.InspectionSupportLevel(
+                compatibility,
+                BridgeContractManifest.ImplementedInspectionKinds));
+        Assert.True(BridgeSurfacePermission.IsInspectionPermitted(compatibility, "combat_piles"));
+        Assert.True(BridgeSurfacePermission.IsActionPermitted(compatibility, "combat_pile_card_selection"));
+        Assert.DoesNotContain("combat_pile_card_selection", compatibility.ActionExecutionSurfaceKinds);
+        Assert.Contains("combat_pile_card_selection", compatibility.ActionCanarySurfaceKinds);
+        Assert.Null(BridgeExactEnvironmentPolicy.LoadError);
+        Assert.Equal(
+            "bridge_v2_exact_environment_policy_2026_07_24",
+            compatibility.CompatibilityPolicyId);
+        Assert.Matches("^[a-f0-9]{64}$", compatibility.CompatibilityPolicyDigest);
+        Assert.Equal("reviewed_exact_environment", compatibility.AdaptationLevel);
+    }
+
+    [Fact]
+    public void ExactBridgeOnlyModsetPreservesExplicitGamePermissions()
+    {
+        LoadedModIdentity bridge = ModIdentity(
+            BridgeModsetIdentity.BridgeModId,
+            "0.5.0-dev",
+            "Loaded",
+            "bridge-mvid");
+        ModsetIdentity modset = BridgeModsetIdentity.Evaluate(
+            "Initialized",
+            new[] { bridge },
+            "bridge-mvid",
+            "0.5.0-dev");
+        CompatibilityAssessment gameCompatibility = BridgeGameIdentity.Assess(
+            "v0.109.0",
+            "c12f634d",
+            1833084275);
+
+        CompatibilityAssessment result = BridgeGameIdentity.ApplyModset(gameCompatibility, modset);
+
+        Assert.True(modset.ExactPermissionEligible);
+        Assert.Equal("exact_bridge_only", modset.Status);
+        Assert.Same(gameCompatibility, result);
+    }
+
+    [Fact]
+    public void AdditionalLoadedModFailsClosedWithoutHidingItsIdentity()
+    {
+        LoadedModIdentity bridge = ModIdentity(
+            BridgeModsetIdentity.BridgeModId,
+            "0.5.0-dev",
+            "Loaded",
+            "bridge-mvid");
+        LoadedModIdentity gameplayMod = ModIdentity(
+            "EXTRA_GAMEPLAY_MOD",
+            "1.0.0",
+            "Loaded",
+            "extra-mvid",
+            affectsGameplay: true);
+
+        ModsetIdentity modset = BridgeModsetIdentity.Evaluate(
+            "Initialized",
+            new[] { bridge, gameplayMod },
+            "bridge-mvid",
+            "0.5.0-dev");
+        CompatibilityAssessment result = BridgeGameIdentity.ApplyModset(
+            BridgeGameIdentity.Assess("v0.109.0", "c12f634d", 1833084275),
+            modset);
+
+        Assert.False(modset.ExactPermissionEligible);
+        Assert.Equal("additional_loaded_mods", modset.Status);
+        Assert.Equal(2, modset.Mods.Count);
+        Assert.Equal("unqualified_modset", result.Status);
+        Assert.True(result.StateObservationAllowed);
+        Assert.False(result.ActionExecutionAllowed);
+        Assert.False(result.InspectionAllowed);
+        Assert.Empty(result.ActionExecutionSurfaceKinds);
+        Assert.Empty(result.ActionCanarySurfaceKinds);
+        Assert.Empty(result.InspectionAllowedKinds);
+        Assert.Empty(result.InspectionCanaryKinds);
+    }
+
+    [Fact]
+    public void FailedOrRuntimeAddedModStateFailsClosed()
+    {
+        LoadedModIdentity bridge = ModIdentity(
+            BridgeModsetIdentity.BridgeModId,
+            "0.5.0-dev",
+            "Loaded",
+            "bridge-mvid");
+
+        foreach (string unsafeState in new[] { "Failed", "AddedAtRuntime" })
+        {
+            ModsetIdentity modset = BridgeModsetIdentity.Evaluate(
+                "Initialized",
+                new[]
+                {
+                    bridge,
+                    ModIdentity("UNSAFE_MOD", "1.0.0", unsafeState, "unsafe-mvid")
+                },
+                "bridge-mvid",
+                "0.5.0-dev");
+
+            Assert.False(modset.ExactPermissionEligible);
+            Assert.Equal("hazardous_mod_state_detected", modset.Status);
+        }
+    }
+
+    [Fact]
+    public void DisabledExtraModIsRecordedButDoesNotInventRuntimeEffects()
+    {
+        ModsetIdentity modset = BridgeModsetIdentity.Evaluate(
+            "Initialized",
+            new[]
+            {
+                ModIdentity(BridgeModsetIdentity.BridgeModId, "0.5.0-dev", "Loaded", "bridge-mvid"),
+                ModIdentity("DISABLED_MOD", "1.0.0", "Disabled", "disabled-mvid", affectsGameplay: true)
+            },
+            "bridge-mvid",
+            "0.5.0-dev");
+
+        Assert.True(modset.ExactPermissionEligible);
+        Assert.Equal("exact_bridge_only", modset.Status);
+        Assert.Equal(2, modset.Mods.Count);
+    }
+
+    [Fact]
+    public void DuplicateLoadedBridgeIdentityFailsClosedInsteadOfThrowing()
+    {
+        ModsetIdentity modset = BridgeModsetIdentity.Evaluate(
+            "Initialized",
+            new[]
+            {
+                ModIdentity(BridgeModsetIdentity.BridgeModId, "0.5.0-dev", "Loaded", "bridge-mvid"),
+                ModIdentity(BridgeModsetIdentity.BridgeModId, "0.5.0-dev", "Loaded", "bridge-mvid")
+            },
+            "bridge-mvid",
+            "0.5.0-dev");
+
+        Assert.False(modset.ExactPermissionEligible);
+        Assert.Equal("additional_loaded_mods", modset.Status);
     }
 
     [Fact]
@@ -73,6 +620,23 @@ public sealed class BridgeContractTests
         Assert.Contains("\"action_id\"", json);
         Assert.DoesNotContain("index", json, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("target", json, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static LoadedModIdentity ModIdentity(
+        string id,
+        string version,
+        string loadState,
+        string moduleVersionId,
+        bool affectsGameplay = false)
+    {
+        return new LoadedModIdentity(
+            id,
+            version,
+            "ModsDirectory",
+            loadState,
+            affectsGameplay,
+            null,
+            new[] { new LoadedModAssemblyIdentity(id, version, moduleVersionId) });
     }
 
     [Fact]
@@ -165,6 +729,27 @@ public sealed class BridgeContractTests
                 ObservationCandidateBuildFingerprints: Array.Empty<string>(),
                 Detail: "unknown")),
             new ObservationPolicyInfo("policy", "visible", false, "omit"),
+            new BridgeVisibilityState(
+                "unknown.unsupported.v1",
+                "partial",
+                "partial_catalog",
+                Array.Empty<string>(),
+                Array.Empty<string>(),
+                Array.Empty<string>(),
+                new[] { "not_implemented" },
+                "fail_closed"),
+            Array.Empty<BridgeInspectionCatalogEntry>(),
+            new BridgeContractInstanceShadow(
+                "unresolved",
+                "contract-instance-test",
+                "unsupported",
+                null,
+                null,
+                Array.Empty<BridgeContractOperationShadow>(),
+                "disabled",
+                "exact_environment_surface_kind_gate",
+                Authorizing: false,
+                new[] { "shadow_inventory_only" }),
             Array.Empty<BridgeDiagnostic>(),
             Array.Empty<string>());
 
@@ -177,6 +762,212 @@ public sealed class BridgeContractTests
         Assert.Contains("\"surface\":{\"kind\":\"unsupported\"", json);
         Assert.Contains("\"source_type\":\"test\"", json);
         Assert.Contains("\"reason\":\"not implemented\"", json);
+    }
+
+    [Fact]
+    public void VisibilityCatalogIsReadOnlyStateScopedAndDoesNotGrantAuthority()
+    {
+        var compatibility = new CompatibilityAssessment(
+            "qualified_scoped",
+            new[] { "0.109.0" },
+            new[] { "build" },
+            ActionExecutionAllowed: true,
+            StateObservationAllowed: true,
+            InspectionAllowed: true,
+            ActionExecutionSurfaceKinds: Array.Empty<string>(),
+            ActionCanarySurfaceKinds: Array.Empty<string>(),
+            InspectionAllowedKinds: new[] { "run_deck" },
+            InspectionCanaryKinds: new[] { "combat_piles" },
+            ObservationOnlySurfaceKinds: Array.Empty<string>(),
+            ObservationCandidateBuildFingerprints: Array.Empty<string>(),
+            Detail: "test");
+        var draft = new BridgeObservationDraft(
+            "sig",
+            "ready",
+            new UnknownBridgeContext("combat", "test", "test"),
+            new NoActionSurface("no_action", "settling", "test"),
+            new StateCompleteness("complete", "empty", Array.Empty<string>(), Array.Empty<string>()),
+            new GameBuildIdentity("v0.109.0", "commit", "branch", 1, compatibility),
+            Array.Empty<string>(),
+            Array.Empty<BridgeActionDraft>());
+
+        BridgeVisibilityProjection projection = BridgeVisibilityCatalog.Build(
+            draft,
+            activeRunSharedStateAvailable: true,
+            shopCatalogSourceAvailable: false);
+
+        Assert.Equal(new[] { "run_deck", "combat_piles" }, projection.Visibility.AvailableInspections);
+        Assert.Equal("partial_catalog", projection.Visibility.PlayerVisibleClosureStatus);
+        Assert.All(projection.InspectionCatalog, entry =>
+        {
+            Assert.True(entry.StateBound);
+            Assert.False(entry.CreatesActionAuthority);
+        });
+        Assert.Equal("qualified", projection.InspectionCatalog.Single(entry => entry.Kind == "run_deck").Availability);
+        Assert.Equal("canary", projection.InspectionCatalog.Single(entry => entry.Kind == "combat_piles").Availability);
+        Assert.Contains("draw_pile_true_order", projection.Visibility.HiddenByPolicy);
+        Assert.Empty(projection.Visibility.LinkedDetailKinds);
+        Assert.Contains("linked_entity_detail_catalog_not_implemented", projection.Visibility.Missing);
+    }
+
+    [Fact]
+    public void ShopVisibilityCatalogAdvertisesReadOnlyCatalogWithoutCreatingAuthority()
+    {
+        var compatibility = new CompatibilityAssessment(
+            "qualified_scoped",
+            new[] { "0.109.0" },
+            new[] { "build" },
+            ActionExecutionAllowed: true,
+            StateObservationAllowed: true,
+            InspectionAllowed: true,
+            ActionExecutionSurfaceKinds: Array.Empty<string>(),
+            ActionCanarySurfaceKinds: new[] { "shop_room" },
+            InspectionAllowedKinds: new[] { "run_deck" },
+            InspectionCanaryKinds: new[] { "shop_catalog" },
+            ObservationOnlySurfaceKinds: Array.Empty<string>(),
+            ObservationCandidateBuildFingerprints: Array.Empty<string>(),
+            Detail: "test");
+        var draft = new BridgeObservationDraft(
+            "sig",
+            "ready",
+            new ShopBridgeContext("shop"),
+            new ShopRoomSurface("shop_room", "room-a", CanOpenInventory: true, CanProceed: true),
+            new StateCompleteness("complete", "derived", Array.Empty<string>(), Array.Empty<string>()),
+            new GameBuildIdentity("v0.109.0", "commit", "branch", 1, compatibility),
+            Array.Empty<string>(),
+            Array.Empty<BridgeActionDraft>());
+
+        BridgeVisibilityProjection projection = BridgeVisibilityCatalog.Build(
+            draft,
+            activeRunSharedStateAvailable: true,
+            shopCatalogSourceAvailable: true);
+
+        Assert.Equal(new[] { "run_deck", "shop_catalog" }, projection.Visibility.AvailableInspections);
+        BridgeInspectionCatalogEntry catalog = projection.InspectionCatalog.Single(entry => entry.Kind == "shop_catalog");
+        Assert.Equal("current_shop", catalog.Scope);
+        Assert.Equal("canary", catalog.Availability);
+        Assert.Equal("fixed_ui_slots", catalog.OrderingSemantics);
+        Assert.False(catalog.CreatesActionAuthority);
+    }
+
+    [Fact]
+    public void ShopVisibilityCatalogDoesNotAdvertiseWithoutExactMerchantBinding()
+    {
+        var compatibility = new CompatibilityAssessment(
+            "qualified_scoped",
+            new[] { "0.109.0" },
+            new[] { "build" },
+            ActionExecutionAllowed: true,
+            StateObservationAllowed: true,
+            InspectionAllowed: true,
+            ActionExecutionSurfaceKinds: Array.Empty<string>(),
+            ActionCanarySurfaceKinds: new[] { "shop_room" },
+            InspectionAllowedKinds: new[] { "run_deck" },
+            InspectionCanaryKinds: new[] { "shop_catalog" },
+            ObservationOnlySurfaceKinds: Array.Empty<string>(),
+            ObservationCandidateBuildFingerprints: Array.Empty<string>(),
+            Detail: "test");
+        var draft = new BridgeObservationDraft(
+            "sig",
+            "ready",
+            new ShopBridgeContext("shop"),
+            new ShopRoomSurface("shop_room", "room-a", CanOpenInventory: true, CanProceed: true),
+            new StateCompleteness("complete", "derived", Array.Empty<string>(), Array.Empty<string>()),
+            new GameBuildIdentity("v0.109.0", "commit", "branch", 1, compatibility),
+            Array.Empty<string>(),
+            Array.Empty<BridgeActionDraft>());
+
+        BridgeVisibilityProjection projection = BridgeVisibilityCatalog.Build(
+            draft,
+            activeRunSharedStateAvailable: true,
+            shopCatalogSourceAvailable: false);
+
+        Assert.Equal(new[] { "run_deck" }, projection.Visibility.AvailableInspections);
+        Assert.DoesNotContain(projection.InspectionCatalog, entry => entry.Kind == "shop_catalog");
+    }
+
+    [Fact]
+    public void ContractInstanceShadowReportsButNeverGrantsAuthority()
+    {
+        var compatibility = BridgeContractManifest.WithExplicitActionScopes(new CompatibilityAssessment(
+            "qualified_scoped",
+            new[] { "0.109.0" },
+            new[] { "build" },
+            ActionExecutionAllowed: true,
+            StateObservationAllowed: true,
+            InspectionAllowed: false,
+            ActionExecutionSurfaceKinds: new[] { "rest_site" },
+            ActionCanarySurfaceKinds: Array.Empty<string>(),
+            InspectionAllowedKinds: Array.Empty<string>(),
+            InspectionCanaryKinds: Array.Empty<string>(),
+            ObservationOnlySurfaceKinds: Array.Empty<string>(),
+            ObservationCandidateBuildFingerprints: Array.Empty<string>(),
+            Detail: "test"));
+        var draft = new BridgeObservationDraft(
+            "rest-sig",
+            "ready",
+            new UnknownBridgeContext("rest", "test", "test"),
+            new RestSiteSurface("rest_site", "rest-screen", Array.Empty<VisibleRestOption>(), CanProceed: true),
+            new StateCompleteness("complete", "derived", Array.Empty<string>(), Array.Empty<string>()),
+            new GameBuildIdentity("v0.109.0", "commit", "branch", 1, compatibility),
+            Array.Empty<string>(),
+            new[]
+            {
+                new BridgeActionDraft(
+                    "proceed",
+                    "proceed_rest_site",
+                    "navigation",
+                    "Proceed",
+                    "test",
+                    () => BridgeActionStartResult.Started())
+            });
+
+        BridgeContractInstanceShadow shadow = BridgeContractInstanceShadowBuilder.Build(draft);
+
+        Assert.Equal("resolved_manifest_contract", shadow.Status);
+        Assert.Equal("qualified", shadow.CurrentAuthorityTier);
+        Assert.Equal("exact_environment_surface_operation_gate", shadow.CurrentAuthorityBasis);
+        Assert.False(shadow.Authorizing);
+        Assert.Contains(shadow.Operations, operation =>
+            operation.Operation == "proceed_rest_site" && operation.Published);
+        Assert.Contains("authority_remains_explicit_operation_scoped", shadow.Limitations);
+    }
+
+    [Fact]
+    public void BindingFailureFactoryAlwaysRemovesActionAuthority()
+    {
+        var game = new GameBuildIdentity(null, null, null, null, new CompatibilityAssessment(
+            "qualified_scoped",
+            Array.Empty<string>(),
+            Array.Empty<string>(),
+            ActionExecutionAllowed: true,
+            StateObservationAllowed: true,
+            InspectionAllowed: false,
+            ActionExecutionSurfaceKinds: new[] { "combat_turn" },
+            ActionCanarySurfaceKinds: Array.Empty<string>(),
+            InspectionAllowedKinds: Array.Empty<string>(),
+            InspectionCanaryKinds: Array.Empty<string>(),
+            ObservationOnlySurfaceKinds: Array.Empty<string>(),
+            ObservationCandidateBuildFingerprints: Array.Empty<string>(),
+            Detail: "test"));
+        BridgeObservationDraft draft = BridgeFailClosedObservation.BindingUnavailable(
+            game,
+            new UnknownBridgeContext("unknown", "test", "test"),
+            "TestScreen",
+            "binding missing",
+            new[] { "exact binding" },
+            new[] { "legal_actions" },
+            "test_warning",
+            "bridge.surface.test.binding_unavailable",
+            "Test semantics are not exact.");
+
+        UnsupportedSurface surface = Assert.IsType<UnsupportedSurface>(draft.Surface);
+        Assert.Equal("unsupported", surface.Kind);
+        Assert.Equal("degraded", draft.Readiness);
+        Assert.Empty(draft.Actions);
+        Assert.Equal("none_fail_closed", draft.AuthorityHandoff.Status);
+        Assert.Null(draft.AuthorityHandoff.SurfaceKind);
+        Assert.Equal("actions_suppressed", Assert.Single(draft.Diagnostics).Effect);
     }
 
     [Fact]
@@ -215,6 +1006,41 @@ public sealed class BridgeContractTests
     }
 
     [Fact]
+    public void DeckTransformContractDoesNotPresentRandomPreviewAsKnownOutcome()
+    {
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+        };
+        var selected = new VisibleCard(
+            "deck-card-a", "STRIKE", "Strike", "Attack", "1", null,
+            "Deal 6 damage.", "Basic", false, true, null);
+        var surface = new DeckTransformSelectionSurface(
+            "deck_transform_selection",
+            "preview",
+            "screen-a",
+            "Choose a card to Transform.",
+            1,
+            1,
+            1,
+            new[] { selected.EntityId },
+            false,
+            false,
+            false,
+            "random_uncommitted_cycle",
+            false,
+            new[] { selected });
+
+        string json = JsonSerializer.Serialize(surface, options);
+
+        Assert.Contains("\"kind\":\"deck_transform_selection\"", json);
+        Assert.Contains("\"preview_kind\":\"random_uncommitted_cycle\"", json);
+        Assert.Contains("\"replacement_known\":false", json);
+        Assert.DoesNotContain("replacement_card", json, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("rng", json, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void TreasureContractKeepsLifecycleStageAndVisibleRelicSemanticsExplicit()
     {
         var options = new JsonSerializerOptions
@@ -227,7 +1053,8 @@ public sealed class BridgeContractTests
             "Bag of Marbles",
             "Apply 1 Vulnerable to all enemies at combat start.",
             "Common",
-            new[] { new VisibleKeyword("Vulnerable", "Receives more attack damage.") });
+            new[] { new VisibleKeyword("Vulnerable", "Receives more attack damage.") },
+            Array.Empty<VisibleCard>());
         var surface = new TreasureRoomSurface(
             "treasure_room",
             "relic_choice",
@@ -359,6 +1186,30 @@ public sealed class BridgeContractTests
     }
 
     [Fact]
+    public void ShopCatalogInspectionContentIsReadOnlyAndKeepsUiSlotOrderExplicit()
+    {
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+        };
+        var content = new ShopCatalogInspectionContent(
+            "shop_catalog",
+            "inventory_closed_open_to_inspect",
+            Array.Empty<VisibleShopCardOffer>(),
+            Array.Empty<VisibleShopRelicOffer>(),
+            Array.Empty<VisibleShopPotionOffer>(),
+            null);
+
+        string json = JsonSerializer.Serialize<IBridgeInspectionContent>(content, options);
+
+        Assert.Contains("\"kind\":\"shop_catalog\"", json);
+        Assert.Contains("\"access_state\":\"inventory_closed_open_to_inspect\"", json);
+        Assert.DoesNotContain("action_id", json, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("request_id", json, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void BridgeIdentityDistinguishesLoadedModuleFromRuntimeInstance()
     {
         var identity = new BridgeServerIdentity(
@@ -406,6 +1257,49 @@ public sealed class BridgeContractTests
         Assert.False(ActiveSurfaceResolver.IsActiveLayer(BridgeSurfaceLayer.Overlay, false, false));
         Assert.True(ActiveSurfaceResolver.IsActiveLayer(BridgeSurfaceLayer.Menu, false, false, true));
         Assert.False(ActiveSurfaceResolver.IsActiveLayer(BridgeSurfaceLayer.Room, false, false, true));
+        Assert.True(ActiveSurfaceResolver.ShouldSuppressProviders(true));
+        Assert.False(ActiveSurfaceResolver.ShouldSuppressProviders(false));
+    }
+
+    [Fact]
+    public void MenuContractsKeepUnsupportedVisibleChoicesOutOfActionSemantics()
+    {
+        var main = new MainMenuSurface(
+            "main_menu",
+            "choosing",
+            "menu-root-a",
+            new[]
+            {
+                new VisibleMenuOption("choice-single", "singleplayer", "Single Player", null, true, "actionable", null),
+                new VisibleMenuOption("choice-settings", "settings", "Settings", null, true, "visible_unsupported", "Not implemented."),
+                new VisibleMenuOption("choice-quit", "quit", "Quit", null, true, "visible_unsupported", "Not an Agent action.")
+            },
+            null);
+        var submenu = new SingleplayerMenuSurface(
+            "singleplayer_menu",
+            "choosing",
+            "menu-single-a",
+            new[]
+            {
+                new VisibleMenuOption("choice-standard", "standard", "Standard", "Play a standard run.", true, "actionable", null),
+                new VisibleMenuOption("choice-daily", "daily", "Daily", "Daily Climb.", true, "visible_unsupported", "Outside this contract."),
+                new VisibleMenuOption("choice-back", "back", "Back", null, true, "actionable", null)
+            });
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+        };
+
+        string rootJson = JsonSerializer.Serialize(main, options);
+        string submenuJson = JsonSerializer.Serialize(submenu, options);
+
+        Assert.Contains("\"kind\":\"main_menu\"", rootJson);
+        Assert.Contains("\"semantic_id\":\"settings\"", rootJson);
+        Assert.Contains("\"bridge_support\":\"visible_unsupported\"", rootJson);
+        Assert.DoesNotContain("settings_action", rootJson, StringComparison.Ordinal);
+        Assert.Contains("\"kind\":\"singleplayer_menu\"", submenuJson);
+        Assert.Contains("\"semantic_id\":\"daily\"", submenuJson);
     }
 
     [Fact]
@@ -464,6 +1358,41 @@ public sealed class BridgeContractTests
         Assert.False(MapNavigationSurfaceProvider.CanAdvertiseRouteActions(true, true, false, false, false));
         Assert.False(MapNavigationSurfaceProvider.CanAdvertiseRouteActions(true, false, false, false, true));
         Assert.False(MapNavigationSurfaceProvider.CanAdvertiseRouteActions(true, true, false, true, true));
+    }
+
+    [Fact]
+    public void MapNavigationMatchesControllerScreenReachability()
+    {
+        Assert.True(MapNavigationSurfaceProvider.CanAdvertiseMapChoice(
+            stateTravelable: true,
+            enabled: true,
+            ftueSatisfied: true,
+            usingController: false,
+            nodeOnScreen: false));
+        Assert.True(MapNavigationSurfaceProvider.CanAdvertiseMapChoice(true, true, true, true, true));
+        Assert.False(MapNavigationSurfaceProvider.CanAdvertiseMapChoice(true, true, true, true, false));
+        Assert.False(MapNavigationSurfaceProvider.CanAdvertiseMapChoice(false, true, true, false, true));
+        Assert.False(MapNavigationSurfaceProvider.CanAdvertiseMapChoice(true, false, true, false, true));
+        Assert.False(MapNavigationSurfaceProvider.CanAdvertiseMapChoice(true, true, false, false, true));
+    }
+
+    [Fact]
+    public void MapNavigationRejectsUiChoicesAlreadyVisitedByTheRun()
+    {
+        Assert.False(MapNavigationSurfaceProvider.CanAdvertiseMapChoice(
+            stateTravelable: true,
+            enabled: true,
+            ftueSatisfied: true,
+            usingController: false,
+            nodeOnScreen: true,
+            targetAlreadyVisited: true));
+        Assert.True(MapNavigationSurfaceProvider.CanAdvertiseMapChoice(
+            stateTravelable: true,
+            enabled: true,
+            ftueSatisfied: true,
+            usingController: false,
+            nodeOnScreen: true,
+            targetAlreadyVisited: false));
     }
 
     [Fact]
@@ -551,14 +1480,31 @@ public sealed class BridgeContractTests
             new VisibleCombatPlayer(
                 "player-a", 0, 2, 3, null,
                 Array.Empty<VisibleCard>(), 3, 6, 0,
-                Array.Empty<VisibleStatus>(), Array.Empty<VisibleCombatPotionState>(),
+                Array.Empty<VisibleStatus>(),
+                new[]
+                {
+                    new VisibleCombatCompanion(
+                        "companion-a", "OSTY", "Osty", true, true, 4, 6, 0,
+                        Array.Empty<VisibleStatus>())
+                },
+                Array.Empty<VisibleCombatPotionState>(),
                 Array.Empty<VisibleOrb>(), 3),
             Array.Empty<VisibleEnemy>());
         IBridgeSurface surface = new CombatPileCardSelectionSurface(
             "combat_pile_card_selection",
             "screen-a",
-            "Choose a card to put back in your Hand.",
+            "Choose a card to put on top of your Draw Pile.",
+            "move_one_discard_card_to_draw_top",
+            "move_selected_cards",
+            "automatic_at_max",
+            "headbutt",
+            "source-card-a",
+            "HEADBUTT",
             "discard",
+            "draw",
+            "top",
+            null,
+            null,
             1,
             1,
             0,
@@ -580,9 +1526,527 @@ public sealed class BridgeContractTests
 
         Assert.Contains("\"kind\":\"combat\"", json);
         Assert.Contains("\"kind\":\"combat_pile_card_selection\"", json);
+        Assert.Contains("\"definition_id\":\"OSTY\"", json);
+        Assert.Contains("\"health_bar_visible\":true", json);
+        Assert.Contains("\"purpose\":\"move_one_discard_card_to_draw_top\"", json);
+        Assert.Contains("\"source_kind\":\"headbutt\"", json);
+        Assert.Contains("\"source_card_definition_id\":\"HEADBUTT\"", json);
         Assert.Contains("\"pile_type\":\"discard\"", json);
+        Assert.Contains("\"destination_pile\":\"draw\"", json);
+        Assert.Contains("\"destination_position\":\"top\"", json);
         Assert.Contains("\"require_manual_confirmation\":false", json);
         Assert.Contains("\"entity_id\":\"card-a\"", json);
+
+        IBridgeSurface graveblastSurface = new CombatPileCardSelectionSurface(
+            "combat_pile_card_selection",
+            "screen-b",
+            "Choose a card to put back in your Hand.",
+            "move_one_discard_card_to_hand",
+            "move_selected_cards",
+            "automatic_at_max",
+            "graveblast",
+            "source-card-b",
+            "GRAVEBLAST",
+            "discard",
+            "hand",
+            "bottom",
+            "discard_if_hand_full",
+            null,
+            1,
+            1,
+            0,
+            Array.Empty<string>(),
+            RequireManualConfirmation: false,
+            Cancelable: false,
+            Array.Empty<VisibleCard>());
+        string graveblastJson = JsonSerializer.Serialize(
+            new { context, surface = graveblastSurface },
+            options);
+
+        Assert.Contains("\"purpose\":\"move_one_discard_card_to_hand\"", graveblastJson);
+        Assert.Contains("\"source_kind\":\"graveblast\"", graveblastJson);
+        Assert.Contains("\"source_card_definition_id\":\"GRAVEBLAST\"", graveblastJson);
+        Assert.Contains("\"destination_pile\":\"hand\"", graveblastJson);
+        Assert.Contains("\"destination_position\":\"bottom\"", graveblastJson);
+        Assert.Contains("\"overflow_destination\":\"discard_if_hand_full\"", graveblastJson);
+
+        IBridgeSurface cleanseSurface = new CombatPileCardSelectionSurface(
+            "combat_pile_card_selection",
+            "screen-c",
+            "Choose a card to Exhaust.",
+            "exhaust_one_draw_card",
+            "move_selected_cards",
+            "automatic_at_max",
+            "cleanse",
+            "source-card-c",
+            "CLEANSE",
+            "draw",
+            "exhaust",
+            "bottom",
+            null,
+            null,
+            1,
+            1,
+            0,
+            Array.Empty<string>(),
+            RequireManualConfirmation: false,
+            Cancelable: false,
+            Array.Empty<VisibleCard>());
+        string cleanseJson = JsonSerializer.Serialize(
+            new { context, surface = cleanseSurface },
+            options);
+
+        Assert.Contains("\"purpose\":\"exhaust_one_draw_card\"", cleanseJson);
+        Assert.Contains("\"source_kind\":\"cleanse\"", cleanseJson);
+        Assert.Contains("\"source_card_definition_id\":\"CLEANSE\"", cleanseJson);
+        Assert.Contains("\"pile_type\":\"draw\"", cleanseJson);
+        Assert.Contains("\"destination_pile\":\"exhaust\"", cleanseJson);
+
+        IBridgeSurface seanceSurface = new CombatPileCardSelectionSurface(
+            "combat_pile_card_selection",
+            "screen-d",
+            "Choose a card to Transform into Soul.",
+            "transform_one_draw_card_into_soul",
+            "replace_selected_cards_same_index",
+            "automatic_at_max",
+            "seance",
+            "source-card-d",
+            "SEANCE",
+            "draw",
+            "draw",
+            "same_index",
+            null,
+            "SOUL",
+            1,
+            1,
+            0,
+            Array.Empty<string>(),
+            RequireManualConfirmation: false,
+            Cancelable: false,
+            Array.Empty<VisibleCard>());
+        string seanceJson = JsonSerializer.Serialize(
+            new { context, surface = seanceSurface },
+            options);
+
+        Assert.Contains("\"purpose\":\"transform_one_draw_card_into_soul\"", seanceJson);
+        Assert.Contains("\"source_kind\":\"seance\"", seanceJson);
+        Assert.Contains("\"source_card_definition_id\":\"SEANCE\"", seanceJson);
+        Assert.Contains("\"pile_type\":\"draw\"", seanceJson);
+        Assert.Contains("\"destination_pile\":\"draw\"", seanceJson);
+        Assert.Contains("\"destination_position\":\"same_index\"", seanceJson);
+
+        IBridgeSurface dredgeSurface = new CombatPileCardSelectionSurface(
+            "combat_pile_card_selection",
+            "screen-e",
+            "Choose 2 cards to put into your Hand.",
+            "move_bounded_discard_cards_to_hand",
+            "move_selected_cards",
+            "automatic_at_max",
+            "dredge",
+            "source-card-e",
+            "DREDGE",
+            "discard",
+            "hand",
+            "bottom",
+            null,
+            null,
+            2,
+            2,
+            1,
+            new[] { "card-selected" },
+            RequireManualConfirmation: false,
+            Cancelable: false,
+            Array.Empty<VisibleCard>());
+        string dredgeJson = JsonSerializer.Serialize(
+            new { context, surface = dredgeSurface },
+            options);
+
+        Assert.Contains("\"purpose\":\"move_bounded_discard_cards_to_hand\"", dredgeJson);
+        Assert.Contains("\"source_kind\":\"dredge\"", dredgeJson);
+        Assert.Contains("\"source_card_definition_id\":\"DREDGE\"", dredgeJson);
+        Assert.Contains("\"min_select\":2", dredgeJson);
+        Assert.Contains("\"max_select\":2", dredgeJson);
+        Assert.Contains("\"selected_count\":1", dredgeJson);
+
+        IBridgeSurface neowsFurySurface = new CombatPileCardSelectionSurface(
+            "combat_pile_card_selection",
+            "screen-f",
+            "Choose up to 2 cards to put into your Hand.",
+            "move_optional_discard_cards_to_hand",
+            "move_selected_cards",
+            "manual_confirm",
+            "neows_fury",
+            "source-card-f",
+            "NEOWS_FURY",
+            "discard",
+            "hand",
+            "bottom",
+            null,
+            null,
+            0,
+            2,
+            1,
+            new[] { "card-selected" },
+            RequireManualConfirmation: true,
+            Cancelable: false,
+            Array.Empty<VisibleCard>());
+        string neowsFuryJson = JsonSerializer.Serialize(
+            new { context, surface = neowsFurySurface },
+            options);
+
+        Assert.Contains("\"purpose\":\"move_optional_discard_cards_to_hand\"", neowsFuryJson);
+        Assert.Contains("\"mutation_kind\":\"move_selected_cards\"", neowsFuryJson);
+        Assert.Contains("\"commit_mode\":\"manual_confirm\"", neowsFuryJson);
+        Assert.Contains("\"source_kind\":\"neows_fury\"", neowsFuryJson);
+        Assert.Contains("\"source_card_definition_id\":\"NEOWS_FURY\"", neowsFuryJson);
+        Assert.Contains("\"min_select\":0", neowsFuryJson);
+        Assert.Contains("\"max_select\":2", neowsFuryJson);
+        Assert.Contains("\"require_manual_confirmation\":true", neowsFuryJson);
+    }
+
+    [Fact]
+    public void HeadbuttWitnessRequiresExactDiscardToDrawTopMove()
+    {
+        object selected = new();
+        object otherDiscard = new();
+        object oldDraw = new();
+        object wrongTop = new();
+        object playedHeadbutt = new();
+
+        Assert.True(MoveOneToTopWitness.Selected(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            new[] { selected, otherDiscard },
+            new[] { oldDraw },
+            new[] { otherDiscard, playedHeadbutt },
+            new[] { selected, oldDraw },
+            selected));
+        Assert.False(MoveOneToTopWitness.Selected(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            new[] { selected, otherDiscard },
+            new[] { oldDraw },
+            new[] { otherDiscard },
+            new[] { wrongTop, selected, oldDraw },
+            selected));
+        Assert.False(MoveOneToTopWitness.Selected(
+            sourceCompleted: false,
+            surfaceClosed: true,
+            new[] { selected, otherDiscard },
+            new[] { oldDraw },
+            new[] { otherDiscard },
+            new[] { selected, oldDraw },
+            selected));
+    }
+
+    [Fact]
+    public void GraveblastWitnessRequiresExactDiscardToHandMoveOrNativeFullHandRedirect()
+    {
+        object selected = new();
+        object otherDiscard = new();
+        object handCard = new();
+        object playedGraveblast = new();
+
+        Assert.True(MoveOneToDestinationOrFallbackWitness.Selected(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            new[] { selected, otherDiscard },
+            new[] { handCard },
+            new[] { otherDiscard, playedGraveblast },
+            new[] { handCard, selected },
+            selected,
+            maxHandSize: 10));
+        Assert.True(MoveOneToDestinationOrFallbackWitness.Selected(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            new[] { selected, otherDiscard },
+            Enumerable.Range(0, 10).Select(_ => new object()).ToArray(),
+            new[] { selected, otherDiscard },
+            Enumerable.Range(0, 10).Select(_ => new object()).ToArray(),
+            selected,
+            maxHandSize: 10));
+        Assert.False(MoveOneToDestinationOrFallbackWitness.Selected(
+            sourceCompleted: false,
+            surfaceClosed: true,
+            new[] { selected, otherDiscard },
+            new[] { handCard },
+            new[] { otherDiscard },
+            new[] { handCard, selected },
+            selected,
+            maxHandSize: 10));
+    }
+
+    [Fact]
+    public void CleanseWitnessRequiresExactDrawToExhaustMove()
+    {
+        object selected = new();
+        object otherDraw = new();
+        object oldExhaust = new();
+
+        Assert.True(MoveOneBetweenPilesWitness.Selected(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            new[] { selected, otherDraw },
+            new[] { oldExhaust },
+            new[] { otherDraw },
+            new[] { oldExhaust, selected },
+            selected));
+        Assert.False(MoveOneBetweenPilesWitness.Selected(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            new[] { selected, otherDraw },
+            new[] { oldExhaust },
+            new[] { otherDraw },
+            new[] { oldExhaust },
+            selected));
+        Assert.False(MoveOneBetweenPilesWitness.Selected(
+            sourceCompleted: false,
+            surfaceClosed: true,
+            new[] { selected, otherDraw },
+            new[] { oldExhaust },
+            new[] { otherDraw },
+            new[] { oldExhaust, selected },
+            selected));
+    }
+
+    [Fact]
+    public void SeanceWitnessRequiresNewSoulAtSelectedDrawIndex()
+    {
+        object before = new();
+        object selected = new();
+        object after = new();
+        object soul = new();
+        object wrongReplacement = new();
+        object[] baseline = { before, selected, after };
+
+        Assert.True(ReplaceOneAtSameIndexWitness.Selected(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            baseline,
+            new[] { before, soul, after },
+            selected,
+            candidate => ReferenceEquals(candidate, soul)));
+        Assert.False(ReplaceOneAtSameIndexWitness.Selected(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            baseline,
+            new[] { before, wrongReplacement, after },
+            selected,
+            candidate => ReferenceEquals(candidate, soul)));
+        Assert.False(ReplaceOneAtSameIndexWitness.Selected(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            baseline,
+            new[] { soul, before, after },
+            selected,
+            candidate => ReferenceEquals(candidate, soul)));
+        Assert.False(ReplaceOneAtSameIndexWitness.Selected(
+            sourceCompleted: false,
+            surfaceClosed: true,
+            baseline,
+            new[] { before, soul, after },
+            selected,
+            candidate => ReferenceEquals(candidate, soul)));
+    }
+
+    [Fact]
+    public void DredgeWitnessSeparatesIntermediateSelectionFromExactBatchCommit()
+    {
+        object first = new();
+        object second = new();
+        object third = new();
+        object hand = new();
+
+        Assert.True(CombatPileSelectionWitness.SelectionChanged(
+            sourceActive: true,
+            surfaceOpen: true,
+            new[] { first, second, third },
+            new[] { hand },
+            new[] { first, second, third },
+            new[] { hand },
+            Array.Empty<object>(),
+            new[] { first },
+            first,
+            wasSelected: false));
+        Assert.True(CombatPileSelectionWitness.SelectionChanged(
+            sourceActive: true,
+            surfaceOpen: true,
+            new[] { first, second, third },
+            new[] { hand },
+            new[] { first, second, third },
+            new[] { hand },
+            new[] { first },
+            Array.Empty<object>(),
+            first,
+            wasSelected: true));
+        Assert.False(CombatPileSelectionWitness.SelectionChanged(
+            sourceActive: true,
+            surfaceOpen: true,
+            new[] { first, second, third },
+            new[] { hand },
+            new[] { second, third },
+            new[] { hand, first },
+            Array.Empty<object>(),
+            new[] { first },
+            first,
+            wasSelected: false));
+
+        Assert.True(MoveExactBatchWitness.Completed(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            new[] { first, second, third },
+            new[] { hand },
+            new[] { third },
+            new[] { hand, first, second },
+            new[] { first, second },
+            expectedSelectionCount: 2));
+        Assert.False(MoveExactBatchWitness.Completed(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            new[] { first, second, third },
+            new[] { hand },
+            new[] { second, third },
+            new[] { hand, first },
+            new[] { first, second },
+            expectedSelectionCount: 2));
+    }
+
+    [Fact]
+    public void ChargeWitnessSeparatesSelectionFromExactTwoReplacementCommit()
+    {
+        object first = new();
+        object second = new();
+        object third = new();
+        object firstReplacement = new();
+        object secondReplacement = new();
+        object[] baseline = { first, second, third };
+
+        Assert.True(ReplaceExactBatchAtSameIndexesWitness.SelectionChanged(
+            sourceActive: true,
+            surfaceOpen: true,
+            baseline,
+            baseline,
+            Array.Empty<object>(),
+            new[] { first },
+            first,
+            wasSelected: false));
+        Assert.True(ReplaceExactBatchAtSameIndexesWitness.Completed(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            baseline,
+            new[] { firstReplacement, secondReplacement, third },
+            new[] { first, second },
+            expectedSelectionCount: 2,
+            card => ReferenceEquals(card, firstReplacement)
+                    || ReferenceEquals(card, secondReplacement)));
+        Assert.False(ReplaceExactBatchAtSameIndexesWitness.Completed(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            baseline,
+            new[] { firstReplacement, second, third },
+            new[] { first, second },
+            expectedSelectionCount: 2,
+            card => ReferenceEquals(card, firstReplacement)));
+    }
+
+    [Fact]
+    public void NeowsFuryWitnessSeparatesOptionalSelectionFromConfirmedBatchMove()
+    {
+        object first = new();
+        object second = new();
+        object third = new();
+        object hand = new();
+
+        Assert.True(MoveOptionalBatchWitness.SelectionChanged(
+            sourceActive: true,
+            surfaceOpen: true,
+            new[] { first, second, third },
+            new[] { hand },
+            new[] { first, second, third },
+            new[] { hand },
+            Array.Empty<object>(),
+            new[] { first },
+            first,
+            wasSelected: false));
+        Assert.True(MoveOptionalBatchWitness.Completed(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            new[] { first, second, third },
+            new[] { hand },
+            new[] { third },
+            new[] { hand, first, second },
+            new[] { first, second },
+            maxSelect: 2));
+        Assert.True(MoveOptionalBatchWitness.Completed(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            new[] { first, second, third },
+            new[] { hand },
+            new[] { first, second, third },
+            new[] { hand },
+            Array.Empty<object>(),
+            maxSelect: 2));
+        Assert.False(MoveOptionalBatchWitness.Completed(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            new[] { first, second, third },
+            new[] { hand },
+            new[] { second, third },
+            new[] { hand, first },
+            new[] { first, second },
+            maxSelect: 2));
+        Assert.False(MoveOptionalBatchWitness.Completed(
+            sourceCompleted: false,
+            surfaceClosed: true,
+            new[] { first, second, third },
+            new[] { hand },
+            new[] { third },
+            new[] { hand, first, second },
+            new[] { first, second },
+            maxSelect: 2));
+    }
+
+    [Fact]
+    public void ReviewedCombatPileRegistryResolvesAllDeclaredOnPlayBindings()
+    {
+        Assert.Null(CombatPileContractCatalog.LoadError);
+        Assert.Equal("combat_pile_closed_contract_catalog_v1", CombatPileContractCatalog.CatalogId);
+        Assert.Equal(7, CombatPileContractCatalog.WitnessTopologies.Count);
+        Assert.Null(CombatPileSourceContractRegistry.LoadError);
+        Assert.Equal(13, CombatPileSourceContractRegistry.Contracts.Count);
+        Assert.All(
+            CombatPileSourceContractRegistry.Contracts,
+            contract => Assert.Null(CombatPileContractCatalog.Validate(contract)));
+        Assert.Equal(
+            new[]
+            {
+                "charge",
+                "cleanse",
+                "cosmic_indifference",
+                "dredge",
+                "hologram",
+                "neows_fury",
+                "seance",
+                "secret_technique",
+                "secret_weapon",
+                "seeker_strike",
+                "wish"
+            },
+            CombatPileSourceContractRegistry.Contracts
+                .Where(contract => contract.HookMode == "declared_on_play")
+                .Select(contract => contract.SourceKind)
+                .OrderBy(value => value, StringComparer.Ordinal)
+                .ToArray());
+        Assert.Equal(
+            11,
+            DeclaredOnPlayCombatPileSelectionSourcePatch.ResolveTargetMethods().Count);
+        Assert.DoesNotContain(
+            CombatPileSourceContractRegistry.Contracts,
+            contract => contract.SourceKind == "tutor");
+        Assert.All(
+            DeclaredOnPlayCombatPileSelectionSourcePatch.ResolveTargetMethods(),
+            method => Assert.Equal("OnPlay", method.Name));
+        Assert.Equal("ChooseCurse", GeneratedCardChoiceKnowledgeDemonPatch.ResolveTargetMethod().Name);
     }
 
     [Fact]
@@ -651,12 +2115,17 @@ public sealed class BridgeContractTests
     }
 
     [Fact]
-    public void GeneratedCardChoiceContractKeepsTemporaryOptionsAndSkipExplicit()
+    public void GeneratedCardChoiceContractKeepsSourcePurposeDestinationAndSkipExplicit()
     {
         IBridgeSurface surface = new GeneratedCardChoiceSurface(
             "generated_card_choice",
             "screen-generated",
             "Choose a Card",
+            "acquire_one_generated_card",
+            "lead_paperweight",
+            "run_deck",
+            "unchanged",
+            null,
             CanSkip: true,
             IsPeeking: false,
             Cards: new[]
@@ -674,9 +2143,132 @@ public sealed class BridgeContractTests
 
         Assert.Contains("\"kind\":\"generated_card_choice\"", json);
         Assert.Contains("\"prompt\":\"Choose a Card\"", json);
+        Assert.Contains("\"purpose\":\"acquire_one_generated_card\"", json);
+        Assert.Contains("\"source_kind\":\"lead_paperweight\"", json);
+        Assert.Contains("\"destination\":\"run_deck\"", json);
+        Assert.Contains("\"selected_card_cost_policy\":\"unchanged\"", json);
         Assert.Contains("\"can_skip\":true", json);
         Assert.Contains("\"is_peeking\":false", json);
         Assert.Contains("\"entity_id\":\"generated-card\"", json);
+    }
+
+    [Fact]
+    public void GeneratedCombatPotionSourceCatalogIsExactAndPurposeBounded()
+    {
+        Assert.Equal(
+            new[] { "colorless_potion", "attack_potion", "skill_potion", "power_potion" },
+            GeneratedCardChoiceSourceBinding.SupportedCombatPotionSourceKinds);
+        Assert.Equal(
+            GeneratedCardChoiceSourceBinding.SupportedCombatPotionSourceKinds.Count,
+            GeneratedCardChoiceSourceBinding.SupportedCombatPotionSourceKinds.Distinct(StringComparer.Ordinal).Count());
+    }
+
+    [Fact]
+    public void GeneratedCombatCardWitnessRequiresExactPileDeltaAndFreeCostPolicy()
+    {
+        var handCard = new object();
+        var discardCard = new object();
+        var selectedCard = new object();
+        object[] baselineHand = { handCard };
+        object[] baselineDiscard = { discardCard };
+
+        Assert.True(GeneratedCombatCardChoiceWitness.Selected(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            baselineHand,
+            baselineDiscard,
+            new[] { handCard, selectedCard },
+            baselineDiscard,
+            selectedCard,
+            hasFreeThisTurnCostModifier: true));
+        Assert.True(GeneratedCombatCardChoiceWitness.Selected(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            baselineHand,
+            baselineDiscard,
+            new[] { handCard, selectedCard },
+            baselineDiscard,
+            selectedCard,
+            hasFreeThisTurnCostModifier: false,
+            requiresFreeThisTurn: false));
+        Assert.False(GeneratedCombatCardChoiceWitness.Selected(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            baselineHand,
+            baselineDiscard,
+            new[] { handCard, selectedCard },
+            baselineDiscard,
+            selectedCard,
+            hasFreeThisTurnCostModifier: true,
+            requiresFreeThisTurn: false));
+        Assert.True(GeneratedCombatCardChoiceWitness.Selected(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            baselineHand,
+            baselineDiscard,
+            baselineHand,
+            new[] { discardCard, selectedCard },
+            selectedCard,
+            hasFreeThisTurnCostModifier: true));
+        Assert.False(GeneratedCombatCardChoiceWitness.Selected(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            baselineHand,
+            baselineDiscard,
+            new[] { handCard, selectedCard },
+            baselineDiscard,
+            selectedCard,
+            hasFreeThisTurnCostModifier: false));
+        Assert.True(GeneratedCombatCardChoiceWitness.Skipped(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            baselineHand,
+            baselineDiscard,
+            baselineHand,
+            baselineDiscard,
+            new[] { selectedCard }));
+    }
+
+    [Fact]
+    public void GeneratedRunCardWitnessRequiresExactSemanticPostState()
+    {
+        var baselineCard = new object();
+        var selectedCard = new object();
+        var unselectedCard = new object();
+        object[] baseline = { baselineCard };
+        object[] selectedDeck = { baselineCard, selectedCard };
+
+        Assert.True(GeneratedRunCardAcquisitionWitness.Selected(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            baseline,
+            selectedDeck,
+            selectedCard));
+        Assert.False(GeneratedRunCardAcquisitionWitness.Selected(
+            sourceCompleted: false,
+            surfaceClosed: true,
+            baseline,
+            selectedDeck,
+            selectedCard));
+        Assert.False(GeneratedRunCardAcquisitionWitness.Selected(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            baseline,
+            new[] { baselineCard, unselectedCard },
+            selectedCard));
+
+        Assert.True(GeneratedRunCardAcquisitionWitness.Skipped(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            baseline,
+            new[] { baselineCard },
+            new[] { selectedCard, unselectedCard }));
+        Assert.False(GeneratedRunCardAcquisitionWitness.Skipped(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            baseline,
+            selectedDeck,
+            new[] { selectedCard, unselectedCard }));
     }
 
     [Fact]
@@ -874,7 +2466,8 @@ public sealed class BridgeContractTests
                         "LETHAL_ENEMIES",
                         "Lethal Enemies",
                         "Enemies are more dangerous.",
-                        Array.Empty<VisibleKeyword>())
+                        Array.Empty<VisibleKeyword>(),
+                        Array.Empty<VisibleCard>())
                 }),
             new VisiblePlayerHud(
                 "player-a",
@@ -887,13 +2480,13 @@ public sealed class BridgeContractTests
                 {
                     new VisibleRelic(
                         "relic-a", "BAG_OF_MARBLES", "Bag of Marbles", "Apply Vulnerable.",
-                        null, Array.Empty<VisibleKeyword>())
+                        null, Array.Empty<VisibleKeyword>(), Array.Empty<VisibleCard>())
                 },
                 new[]
                 {
                     new VisibleOwnedPotion(
                         "potion-a", "POWER_POTION", "Power Potion", "Choose a Power.", 0,
-                        Array.Empty<VisibleKeyword>())
+                        Array.Empty<VisibleKeyword>(), Array.Empty<VisibleCard>())
                 },
                 3),
             new SharedStateCompleteness(
@@ -933,46 +2526,77 @@ public sealed class BridgeContractTests
     public void ShopPurchaseCompletionRequiresAsyncSuccessAndEverySemanticWitness()
     {
         Assert.True(ShopPurchaseCompletionWitness.IsComplete(
+            taskCompleted: true,
             taskCompletedSuccessfully: true,
             purchaseSucceeded: true,
             goldBeforePurchase: 150,
             currentGold: 100,
             expectedPrice: 50,
             productAcquired: true,
-            entryAdvanced: true));
+            entryAdvanced: true,
+            linkedRewardContinuationVisible: false));
+
+        Assert.True(ShopPurchaseCompletionWitness.IsComplete(
+            taskCompleted: false,
+            taskCompletedSuccessfully: false,
+            purchaseSucceeded: false,
+            goldBeforePurchase: 150,
+            currentGold: 100,
+            expectedPrice: 50,
+            productAcquired: true,
+            entryAdvanced: true,
+            linkedRewardContinuationVisible: true));
 
         Assert.False(ShopPurchaseCompletionWitness.IsComplete(
+            taskCompleted: false,
             taskCompletedSuccessfully: false,
             purchaseSucceeded: false,
             goldBeforePurchase: 150,
             currentGold: 150,
             expectedPrice: 50,
             productAcquired: false,
-            entryAdvanced: false));
+            entryAdvanced: false,
+            linkedRewardContinuationVisible: false));
         Assert.False(ShopPurchaseCompletionWitness.IsComplete(
+            taskCompleted: true,
+            taskCompletedSuccessfully: false,
+            purchaseSucceeded: false,
+            goldBeforePurchase: 150,
+            currentGold: 100,
+            expectedPrice: 50,
+            productAcquired: true,
+            entryAdvanced: true,
+            linkedRewardContinuationVisible: true));
+        Assert.False(ShopPurchaseCompletionWitness.IsComplete(
+            taskCompleted: true,
             taskCompletedSuccessfully: true,
             purchaseSucceeded: true,
             goldBeforePurchase: 150,
             currentGold: 100,
             expectedPrice: 50,
             productAcquired: false,
-            entryAdvanced: true));
+            entryAdvanced: true,
+            linkedRewardContinuationVisible: false));
         Assert.False(ShopPurchaseCompletionWitness.IsComplete(
+            taskCompleted: true,
             taskCompletedSuccessfully: true,
             purchaseSucceeded: true,
             goldBeforePurchase: 150,
             currentGold: 100,
             expectedPrice: 50,
             productAcquired: true,
-            entryAdvanced: false));
+            entryAdvanced: false,
+            linkedRewardContinuationVisible: false));
         Assert.False(ShopPurchaseCompletionWitness.IsComplete(
+            taskCompleted: true,
             taskCompletedSuccessfully: true,
             purchaseSucceeded: true,
             goldBeforePurchase: 150,
             currentGold: 101,
             expectedPrice: 50,
             productAcquired: true,
-            entryAdvanced: true));
+            entryAdvanced: true,
+            linkedRewardContinuationVisible: false));
     }
 
     [Fact]
@@ -1045,6 +2669,70 @@ public sealed class BridgeContractTests
         Assert.Contains("\"will_kill_player\":true", json);
         Assert.Contains("\"tooltips\":[{\"kind\":\"text\",\"name\":\"Guilty\"", json);
         Assert.DoesNotContain("surface_kind", json);
+    }
+
+    [Fact]
+    public void CombatTransitionNoActionContractIsTypedAndNonAuthorizing()
+    {
+        var options = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+        };
+        IBridgeContext context = new CombatTransitionBridgeContext(
+            "combat_transition", "resolution", "awaiting_room_resolution");
+        IBridgeSurface surface = new NoActionSurface(
+            "no_action", "settling", "Combat has ended; rewards are resolving.");
+
+        string json = JsonSerializer.Serialize(new { context, surface }, options);
+
+        Assert.Contains("\"context\":{\"kind\":\"combat_transition\"", json);
+        Assert.Contains("\"phase\":\"resolution\"", json);
+        Assert.Contains("\"transition\":\"awaiting_room_resolution\"", json);
+        Assert.Contains("\"surface\":{\"kind\":\"no_action\"", json);
+        Assert.Contains("\"reason\":\"settling\"", json);
+        Assert.DoesNotContain("action_id", json);
+    }
+
+    [Fact]
+    public void TooltipCardIdentityIsStableWithinItsVisibleOwnerScope()
+    {
+        string first = BridgeVisibleEntityFacts.BuildTooltipCardEntityId("relic-owner", "GREED", 0);
+        string repeated = BridgeVisibleEntityFacts.BuildTooltipCardEntityId("relic-owner", "GREED", 0);
+        string otherOwner = BridgeVisibleEntityFacts.BuildTooltipCardEntityId("other-relic", "GREED", 0);
+        string otherSlot = BridgeVisibleEntityFacts.BuildTooltipCardEntityId("relic-owner", "GREED", 1);
+
+        Assert.Equal(first, repeated);
+        Assert.StartsWith("tooltip_card_", first, StringComparison.Ordinal);
+        Assert.NotEqual(first, otherOwner);
+        Assert.NotEqual(first, otherSlot);
+    }
+
+    [Theory]
+    [InlineData(true, true, false, false, false, false, false, 1)]
+    [InlineData(true, true, true, false, true, false, true, 1)]
+    [InlineData(true, true, false, false, true, false, true, 2)]
+    [InlineData(true, true, false, false, true, false, false, 0)]
+    [InlineData(true, true, true, true, true, false, true, 0)]
+    [InlineData(true, true, true, false, true, true, true, 0)]
+    [InlineData(false, true, true, false, true, false, true, 0)]
+    public void CombatNoInputClassificationKeepsSetupResolutionAndAuthoritySeparate(
+        bool runInProgress,
+        bool currentRoomIsCombat,
+        bool combatIsStarting,
+        bool combatInProgress,
+        bool combatStatePresent,
+        bool hasBlockingSurface,
+        bool liveCombatRoomPresent,
+        int expected)
+    {
+        Assert.Equal((CombatNoInputPhase)expected, BridgeSnapshotBuilder.ClassifyCombatNoInputTransition(
+            runInProgress,
+            currentRoomIsCombat,
+            combatIsStarting,
+            combatInProgress,
+            combatStatePresent,
+            hasBlockingSurface,
+            liveCombatRoomPresent));
     }
 
 }

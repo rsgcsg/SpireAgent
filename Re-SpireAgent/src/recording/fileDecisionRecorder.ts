@@ -70,7 +70,7 @@ export class FileDecisionRecorder implements DecisionRecorder {
   }
 
   private relativeRef(path: string): string {
-    return relative(this.runDir, path);
+    return relative(this.runDir, path).replaceAll("\\", "/");
   }
 }
 

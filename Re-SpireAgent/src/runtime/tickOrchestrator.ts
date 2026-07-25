@@ -8,6 +8,8 @@ import type { LlmDecisionProvider } from "../llm/types.js";
 import { buildDecisionPrompt } from "../prompting/promptBuilder.js";
 import type { DecisionOutcome, DecisionRecord, DecisionRecorder, RecordedState } from "../recording/types.js";
 import type { JsonValue } from "../shared/json.js";
+import { ProgressCycleGuard } from "./progressCycleGuard.js";
+import { executeAdvertisedAction } from "./advertisedActionExecutor.js";
 import type { SettlementWatcher } from "./settlementWatcher.js";
 
 export interface TickOrchestratorDependencies {
@@ -27,11 +29,15 @@ export interface TickResult {
   actionAuthority?: StateEnvelope["currentState"]["actionAuthority"];
   selectedActionId?: string;
   shouldStopRun: boolean;
-  stopReason?: "repeated_exact_transition";
+  stopReason?: "run_boundary" | "repeated_exact_transition" | "repeated_semantic_transition" | "repeated_non_actionable_state";
 }
 
 export class TickOrchestrator {
+  private static readonly maxRepeatedNonActionableState = 8;
   private readonly executedTransitionOccurrences = new Map<string, number>();
+  private readonly progressCycleGuard = new ProgressCycleGuard();
+  private lastNonActionableStateKey?: string;
+  private nonActionableStateOccurrences = 0;
 
   constructor(private readonly dependencies: TickOrchestratorDependencies) {}
 
@@ -42,6 +48,7 @@ export class TickOrchestrator {
     try {
       pre = this.dependencies.normalize(await this.dependencies.adapter.readCurrentState());
     } catch (error) {
+      this.resetNonActionableStateGuard();
       const record = baseRecord(this.dependencies.recorder.runId, decisionId, tick, startedAt, "observation_failed");
       record.error = safeError(error);
       await this.dependencies.recorder.append(record);
@@ -66,6 +73,8 @@ export class TickOrchestrator {
       });
     }
     if (pre.currentState.stability !== "actionable") {
+      const occurrence = this.observeNonActionableState(pre);
+      const stalled = occurrence >= TickOrchestrator.maxRepeatedNonActionableState;
       return this.recordWithoutDecision({
         decisionId,
         tick,
@@ -73,10 +82,25 @@ export class TickOrchestrator {
         pre,
         allowedActions,
         outcome: "not_executed_non_actionable_state",
-        shouldStopRun: false
+        ...(stalled
+          ? {
+              error: `Same non-actionable ${pre.currentState.context.kind}/${pre.currentState.surface.kind} state persisted for ${occurrence} coherent observations; stopped without selecting or executing an action.`,
+              shouldStopRun: true,
+              stopReason: "repeated_non_actionable_state" as const,
+              runtimeGuard: {
+                code: "repeated_non_actionable_state" as const,
+                occurrence,
+                stateHash: pre.stateHash,
+                ...(bridgeStateToken(pre) ? { stateToken: bridgeStateToken(pre) } : {}),
+                contextKind: pre.currentState.context.kind,
+                surfaceKind: pre.currentState.surface.kind
+              }
+            }
+          : { shouldStopRun: false })
       });
     }
-    if (options.stopAtRunBoundary && isRunBoundary(pre.currentState.context.kind)) {
+    this.resetNonActionableStateGuard();
+    if (options.stopAtRunBoundary && isAutomaticRunStartBoundary(pre.currentState.context.kind)) {
       return this.recordWithoutDecision({
         decisionId,
         tick,
@@ -84,8 +108,9 @@ export class TickOrchestrator {
         pre,
         allowedActions,
         outcome: "not_executed_non_actionable_state",
-        error: `Stopped at ${pre.currentState.context.kind} run boundary; agent:run never starts or restarts a run automatically`,
-        shouldStopRun: true
+        error: `Stopped at ${pre.currentState.context.kind} run-start boundary; agent:run never starts or continues another run automatically`,
+        shouldStopRun: true,
+        stopReason: "run_boundary"
       });
     }
     if (allowedActions.length === 0) {
@@ -155,27 +180,15 @@ export class TickOrchestrator {
       return result(decisionId, record.outcome, pre.currentState, undefined, true);
     }
 
-    let latest: StateEnvelope;
-    try {
-      latest = this.dependencies.normalize(await this.dependencies.adapter.readCurrentState());
-    } catch (error) {
-      const record = decisionRecordWithLlm({
-        runId: this.dependencies.recorder.runId,
-        decisionId,
-        tick,
-        startedAt,
-        outcome: "not_executed_stale_state",
-        preState: prepared.preState,
-        allowedActions,
-        prompt: prepared.prompt,
-        session,
-        error: `Could not re-read state before execution: ${safeError(error)}`
-      });
-      await this.dependencies.recorder.append(record);
-      return result(decisionId, record.outcome, pre.currentState, validation.selectedAction.id, true);
-    }
+    const execution = await executeAdvertisedAction({
+      pre,
+      selectedAction: validation.selectedAction,
+      adapter: this.dependencies.adapter,
+      normalize: this.dependencies.normalize,
+      settlement: this.dependencies.settlement
+    });
 
-    if (latest.stateHash !== pre.stateHash || validation.selectedAction.sourceStateHash !== latest.stateHash) {
+    if (execution.stage === "preflight_failed") {
       const record = decisionRecordWithLlm({
         runId: this.dependencies.recorder.runId,
         decisionId,
@@ -186,20 +199,17 @@ export class TickOrchestrator {
         allowedActions,
         prompt: prepared.prompt,
         session,
-        postState: recordedState(latest),
+        ...(execution.latest ? { postState: recordedState(execution.latest) } : {}),
         selectedActionId: validation.selectedAction.id,
         selectedAction: validation.selectedAction.action,
         stateHashMatched: false,
-        error: "State changed after prompt construction and before execution"
+        error: execution.error
       });
-      await this.dependencies.recorder.append(record, { postRawState: latest.rawState });
-      return result(decisionId, record.outcome, pre.currentState, validation.selectedAction.id, false);
+      await this.dependencies.recorder.append(record, execution.latest ? { postRawState: execution.latest.rawState } : undefined);
+      return result(decisionId, record.outcome, pre.currentState, validation.selectedAction.id, !execution.latest);
     }
 
-    let adapterResult: GameExecutionResult;
-    try {
-      adapterResult = await this.dependencies.adapter.execute(validation.selectedAction.action);
-    } catch (error) {
+    if (execution.stage === "execution_failed") {
       const record = decisionRecordWithLlm({
         runId: this.dependencies.recorder.runId,
         decisionId,
@@ -213,23 +223,19 @@ export class TickOrchestrator {
         selectedActionId: validation.selectedAction.id,
         selectedAction: validation.selectedAction.action,
         stateHashMatched: true,
-        error: safeError(error)
+        error: execution.error
       });
       await this.dependencies.recorder.append(record);
       return result(decisionId, record.outcome, pre.currentState, validation.selectedAction.id, true);
     }
 
-    if (!adapterResult.accepted) {
-      const outcome: DecisionOutcome = adapterResult.outcome === "unknown" ? "executed_unsettled" : "execution_failed";
-      const error = adapterResult.outcome === "unknown"
-        ? "Adapter command outcome is unknown; the action will not be retried automatically"
-        : "Adapter rejected the selected action";
+    if (execution.stage === "adapter_terminal") {
       const record = decisionRecordWithLlm({
         runId: this.dependencies.recorder.runId,
         decisionId,
         tick,
         startedAt,
-        outcome,
+        outcome: execution.outcome,
         preState: prepared.preState,
         allowedActions,
         prompt: prepared.prompt,
@@ -237,15 +243,14 @@ export class TickOrchestrator {
         selectedActionId: validation.selectedAction.id,
         selectedAction: validation.selectedAction.action,
         stateHashMatched: true,
-        adapterResult: adapterResult.response,
-        error
+        adapterResult: execution.adapterResult.response,
+        error: execution.error
       });
       await this.dependencies.recorder.append(record);
       return result(decisionId, record.outcome, pre.currentState, validation.selectedAction.id, true);
     }
 
-    const settlement = await this.dependencies.settlement.waitForNextState(pre, validation.selectedAction.action);
-    const outcome = settlement.status === "settled" ? "executed_and_settled" : "executed_unsettled";
+    const { settlement, adapterResult, outcome } = execution;
     const transitionKey = outcome === "executed_and_settled" && settlement.after
       ? `${pre.stateHash}|${validation.selectedAction.id}|${settlement.after.stateHash}`
       : undefined;
@@ -254,6 +259,9 @@ export class TickOrchestrator {
       : 0;
     if (transitionKey) this.executedTransitionOccurrences.set(transitionKey, transitionOccurrence);
     const repeatedExactTransition = transitionOccurrence >= 2 && settlement.after;
+    const repeatedSemanticTransition = outcome === "executed_and_settled" && settlement.after
+      ? this.progressCycleGuard.observe(pre.currentState, validation.selectedAction, settlement.after.currentState)
+      : undefined;
     const record = decisionRecordWithLlm({
       runId: this.dependencies.recorder.runId,
       decisionId,
@@ -291,6 +299,16 @@ export class TickOrchestrator {
         postStateHash: settlement.after.stateHash,
         selectedActionId: validation.selectedAction.id
       };
+    } else if (repeatedSemanticTransition) {
+      record.runtimeGuard = {
+        code: "repeated_semantic_transition",
+        occurrence: repeatedSemanticTransition.occurrence,
+        preProgressHash: repeatedSemanticTransition.preProgressHash,
+        postProgressHash: repeatedSemanticTransition.postProgressHash,
+        actionProgressHash: repeatedSemanticTransition.actionProgressHash,
+        selectedActionId: validation.selectedAction.id,
+        selectedActionKind: repeatedSemanticTransition.selectedActionKind
+      };
     }
     await this.dependencies.recorder.append(record, settlement.after ? { postRawState: settlement.after.rawState } : undefined);
     return result(
@@ -298,8 +316,12 @@ export class TickOrchestrator {
       record.outcome,
       pre.currentState,
       validation.selectedAction.id,
-      outcome !== "executed_and_settled" || Boolean(repeatedExactTransition),
-      repeatedExactTransition ? "repeated_exact_transition" : undefined
+      outcome === "executed_unsettled" || Boolean(repeatedExactTransition) || Boolean(repeatedSemanticTransition),
+      repeatedExactTransition
+        ? "repeated_exact_transition"
+        : repeatedSemanticTransition
+          ? "repeated_semantic_transition"
+          : undefined
     );
   }
 
@@ -312,6 +334,8 @@ export class TickOrchestrator {
     outcome: DecisionOutcome;
     error?: string;
     shouldStopRun: boolean;
+    stopReason?: TickResult["stopReason"];
+    runtimeGuard?: DecisionRecord["runtimeGuard"];
   }): Promise<TickResult> {
     const prepared = await this.dependencies.recorder.prepare({
       decisionId: input.decisionId,
@@ -325,9 +349,37 @@ export class TickOrchestrator {
     record.preState = prepared.preState;
     record.allowedActions = input.allowedActions;
     if (input.error) record.error = input.error;
+    if (input.runtimeGuard) record.runtimeGuard = input.runtimeGuard;
     await this.dependencies.recorder.append(record);
-    return result(input.decisionId, input.outcome, input.pre.currentState, undefined, input.shouldStopRun);
+    return result(
+      input.decisionId,
+      input.outcome,
+      input.pre.currentState,
+      undefined,
+      input.shouldStopRun,
+      input.stopReason
+    );
   }
+
+  private observeNonActionableState(pre: StateEnvelope): number {
+    const stateToken = bridgeStateToken(pre) ?? pre.stateHash;
+    const key = `${stateToken}|${pre.currentState.context.kind}|${pre.currentState.surface.kind}|${pre.currentState.stability}`;
+    this.nonActionableStateOccurrences = this.lastNonActionableStateKey === key
+      ? this.nonActionableStateOccurrences + 1
+      : 1;
+    this.lastNonActionableStateKey = key;
+    return this.nonActionableStateOccurrences;
+  }
+
+  private resetNonActionableStateGuard(): void {
+    this.lastNonActionableStateKey = undefined;
+    this.nonActionableStateOccurrences = 0;
+  }
+}
+
+function bridgeStateToken(envelope: StateEnvelope): string | undefined {
+  const surface = envelope.currentState.surface as { bridgeStateId?: unknown };
+  return typeof surface.bridgeStateId === "string" ? surface.bridgeStateId : undefined;
 }
 
 function baseRecord(runId: string, decisionId: string, tick: number, startedAt: string, outcome: DecisionOutcome): DecisionRecord {
@@ -376,7 +428,7 @@ function decisionRecordWithLlm(input: {
         : { valid: true, outcome: "valid" }
     },
     execution: {
-      attempted: ["execution_failed", "executed_and_settled", "executed_unsettled"].includes(input.outcome),
+      attempted: ["execution_failed", "executed_and_settled", "executed_checkpoint_pending", "executed_unsettled"].includes(input.outcome),
       ...(input.selectedActionId ? { selectedActionId: input.selectedActionId } : {}),
       ...(input.selectedAction ? { action: input.selectedAction } : {}),
       ...(input.stateHashMatched !== undefined ? { stateHashMatchedBeforeExecution: input.stateHashMatched } : {}),
@@ -399,8 +451,10 @@ function recordedState(envelope: StateEnvelope): RecordedState {
   };
 }
 
-function isRunBoundary(kind: StateEnvelope["currentState"]["context"]["kind"]): boolean {
-  return kind === "run_ended" || kind === "menu";
+function isAutomaticRunStartBoundary(kind: StateEnvelope["currentState"]["context"]["kind"]): boolean {
+  // Finishing the current run's game-over UI is part of that run. The hard
+  // boundary is the top-level menu, before any continue/new-run action.
+  return kind === "menu";
 }
 
 function result(

@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { buildAllowedActions } from "../src/domain/actions/buildAllowedActions.js";
-import { serializeSts2McpAction } from "../src/integrations/sts2mcp/actionSerializer.js";
 import { normalizeCurrentState } from "../src/normalization/normalizeCurrentState.js";
 import { fixture, TEST_ADAPTER } from "./helpers.js";
 
@@ -73,24 +72,5 @@ describe("buildAllowedActions", () => {
   it("generates no actions for unknown states", async () => {
     const envelope = normalizeCurrentState(await fixture("unknown"), TEST_ADAPTER);
     expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toEqual([]);
-  });
-});
-
-describe("serializeSts2McpAction", () => {
-  it("uses the verified MCP field names", () => {
-    expect(serializeSts2McpAction({ kind: "play_card", cardIndex: 2, targetId: "NIBBIT_0" })).toEqual({
-      action: "play_card",
-      card_index: 2,
-      target: "NIBBIT_0"
-    });
-    expect(serializeSts2McpAction({ kind: "claim_reward", index: 3 })).toEqual({
-      action: "claim_reward",
-      reward_index: 3,
-      index: 3
-    });
-    expect(serializeSts2McpAction({ kind: "combat_select_card", index: 1 })).toEqual({
-      action: "combat_select_card",
-      card_index: 1
-    });
   });
 });

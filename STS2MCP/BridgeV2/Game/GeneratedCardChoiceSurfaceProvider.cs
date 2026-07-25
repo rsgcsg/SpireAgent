@@ -5,6 +5,9 @@ using System.Reflection;
 using Godot;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Cards;
+using MegaCrit.Sts2.Core.Models.Potions;
+using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
@@ -16,10 +19,9 @@ using STS2_MCP.BridgeV2.Runtime;
 namespace STS2_MCP.BridgeV2.Game;
 
 /// <summary>
-/// Exact-build adapter for the one-of-N card choice shown by in-combat
-/// generators such as Skill Potion. This is not a card reward, hand selector,
-/// or pile selector: its cards are temporary generated options and choosing
-/// one completes the overlay immediately.
+/// Shared one-of-N choice mechanics with a deliberately narrow semantic
+/// contract. Each authorized source keeps its own business semantics and
+/// outcome witness even though the exact game UI mechanics are shared.
 /// </summary>
 internal sealed class GeneratedCardChoiceSurfaceProvider : IBridgeSurfaceProvider
 {
@@ -49,30 +51,34 @@ internal sealed class GeneratedCardChoiceSurfaceProvider : IBridgeSurfaceProvide
     {
         if (snapshot.TopOverlay is not NChooseACardSelectionScreen screen)
             return null;
-        return Build(screen, entities, game);
-    }
 
-    private static BridgeObservationDraft Build(
-        NChooseACardSelectionScreen screen,
-        BridgeEntityRegistry entities,
-        GameBuildIdentity game)
-    {
         IBridgeContext context = BridgeContextBuilder.Build(entities);
-        if (context is not CombatBridgeContext)
+        if (!GeneratedCardChoiceSourceBinding.TryGetUnique(out GeneratedCardChoiceSourceBinding.ActiveBinding? source)
+            || !SourceMatchesContext(source!, context))
         {
             return BindingUnavailable(
                 game,
                 context,
-                "The generated-card choice is visible without a qualified combat context.",
-                new[] { "combat_context", "legal_actions" });
+                "The generated-card choice has no unique source binding with matching semantic context.",
+                new[] { "generated_choice_source", "legal_actions" });
         }
 
+        return Build(screen, source!, context, entities, game);
+    }
+
+    private static BridgeObservationDraft Build(
+        NChooseACardSelectionScreen screen,
+        GeneratedCardChoiceSourceBinding.ActiveBinding source,
+        IBridgeContext context,
+        BridgeEntityRegistry entities,
+        GameBuildIdentity game)
+    {
         if (!TryReadBinding(screen, out Binding? binding, out string? error))
         {
             return BindingUnavailable(
                 game,
                 context,
-                error ?? "The exact generated-card choice binding is unavailable.",
+                error ?? "The exact generated-card choice mechanics are unavailable.",
                 new[] { "generated_cards", "skip_semantics", "opening_guard", "legal_actions" });
         }
 
@@ -99,6 +105,7 @@ internal sealed class GeneratedCardChoiceSurfaceProvider : IBridgeSurfaceProvide
         bool holdersMatchCards = holders.Length == exact.Cards.Count
                                  && exact.Cards.All(card => holders.Count(holder =>
                                      ReferenceEquals(holder.CardModel, card)) == 1);
+        bool sourceMatchesCards = SourceMatchesCards(source, exact);
         VisibleCard[] cards = holders.Select(holder => BridgeContextBuilder.BuildCard(
             holder.CardModel,
             entities.GetId(holder.CardModel, "card")))
@@ -108,88 +115,83 @@ internal sealed class GeneratedCardChoiceSurfaceProvider : IBridgeSurfaceProvide
                             && Time.GetTicksMsec() >= exact.OpenedTicks + SelectionGuardMs;
         bool isPeeking = peek.IsPeeking;
 
+        GeneratedChoiceSemantics semantics = SemanticsFor(source);
         var surface = new GeneratedCardChoiceSurface(
             SurfaceKind,
             entities.GetId(screen, "screen"),
             prompt,
+            semantics.Purpose,
+            source.SourceKind,
+            semantics.Destination,
+            semantics.SelectedCardCostPolicy,
+            semantics.OverflowDestination,
             exact.CanSkip,
             isPeeking,
             cards);
         var actions = new List<BridgeActionDraft>();
-        if (holdersMatchCards && !exact.ScreenComplete && guardElapsed && !string.IsNullOrWhiteSpace(prompt))
+        if (holdersMatchCards
+            && sourceMatchesCards
+            && !exact.ScreenComplete
+            && !isPeeking
+            && guardElapsed
+            && !string.IsNullOrWhiteSpace(prompt))
         {
-            if (isPeeking)
+            foreach (NGridCardHolder holder in holders.Where(IsHolderClickable))
             {
-                if (peek.IsEnabled && McpMod.IsNodeVisible(peek))
-                {
-                    actions.Add(new BridgeActionDraft(
-                        "close_generated_card_choice_peek",
-                        "close_generated_card_choice_peek",
-                        "navigation",
-                        "Return to generated card choices",
-                        "NPeekButton.OnRelease+SetPeeking(false)",
-                        () => StartClosePeek(screen, peek)));
-                }
+                CardModel card = holder.CardModel;
+                string cardId = entities.GetId(card, "card");
+                string cardName = McpMod.SafeGetText(() => card.Title) ?? card.Id.Entry;
+                actions.Add(new BridgeActionDraft(
+                    $"{semantics.SelectActionKind}:{cardId}",
+                    semantics.SelectActionKind,
+                    "selection",
+                    semantics.SelectLabel(cardName),
+                    semantics.SelectEvidenceCode,
+                    () => StartSelect(screen, source, card),
+                    new[] { new ActionEntityBinding("card", cardId) }));
             }
-            else
-            {
-                foreach (NGridCardHolder holder in holders.Where(IsHolderClickable))
-                {
-                    CardModel card = holder.CardModel;
-                    string cardId = entities.GetId(card, "card");
-                    string cardName = McpMod.SafeGetText(() => card.Title) ?? card.Id.Entry;
-                    actions.Add(new BridgeActionDraft(
-                        $"select_generated_card:{cardId}",
-                        "select_generated_card",
-                        "selection",
-                        $"Choose {cardName}",
-                        "NChooseACardSelectionScreen.SelectHolder via NCardHolder.Pressed",
-                        () => StartSelect(screen, card),
-                        new[] { new ActionEntityBinding("card", cardId) }));
-                }
 
-                if (exact.CanSkip && skip.IsEnabled && McpMod.IsNodeVisible(skip))
+            if (skip.IsEnabled && McpMod.IsNodeVisible(skip))
+            {
+                string? skipLabel = ReadNodeText(skip, "Label");
+                if (!string.IsNullOrWhiteSpace(skipLabel))
                 {
-                    string? skipLabel = ReadNodeText(skip, "Label");
-                    if (!string.IsNullOrWhiteSpace(skipLabel))
-                    {
-                        actions.Add(new BridgeActionDraft(
-                            "skip_generated_card_choice",
-                            "skip_generated_card_choice",
-                            "alternative",
-                            skipLabel,
-                            "NChooseACardSelectionScreen.OnSkipButtonReleased via NChoiceSelectionSkipButton",
-                            () => StartSkip(screen, skip)));
-                    }
+                    actions.Add(new BridgeActionDraft(
+                        semantics.SkipActionKind,
+                        semantics.SkipActionKind,
+                        "alternative",
+                        skipLabel,
+                        semantics.SkipEvidenceCode,
+                        () => StartSkip(screen, source, skip)));
                 }
             }
         }
 
         bool controlsReady = holdersMatchCards
-                             && !string.IsNullOrWhiteSpace(prompt)
-                             && (!isPeeking || (peek.IsEnabled && McpMod.IsNodeVisible(peek)));
+                             && sourceMatchesCards
+                             && !isPeeking
+                             && !string.IsNullOrWhiteSpace(prompt);
         string readiness = actions.Count > 0 ? "ready" : controlsReady ? "settling" : "degraded";
         string[] missing = controlsReady
             ? Array.Empty<string>()
-            : new[] { "surface.visible_generated_cards_or_controls" };
+            : new[] { "surface.visible_generated_cards_controls_or_source" };
         var completeness = new StateCompleteness(
-            controlsReady ? "contract_complete_for_generated_combat_card_choice" : "partial",
+            controlsReady ? semantics.CompletenessContract : "partial",
             actions.Count > 0
-                ? "derived_from_exact_visible_choice_controls_and_opening_guard"
+                ? "derived_from_exact_source_visible_choice_controls_and_opening_guard"
                 : "temporarily_empty_while_choice_opens_completes_or_settles",
-            new[]
+            semantics.Sources.Concat(new[]
             {
-                "NChooseACardSelectionScreen visible overlay",
                 "NChooseACardSelectionScreen._cards/_canSkip/_openedTicks/_screenComplete exact-version bindings",
                 "NChooseACardSelectionScreen.CardRow visible holders",
                 "NChooseACardSelectionScreen.Banner player-visible prompt",
-                "NChoiceSelectionSkipButton visible enabled state",
-                "NPeekButton visible state"
-            },
+                "NChoiceSelectionSkipButton visible enabled state"
+            }).ToArray(),
             missing);
         string signature = BridgeHash.Object(new
         {
             game.Version,
+            source.SourceKind,
             surface,
             actionKeys = actions.Select(action => action.Key).OrderBy(key => key, StringComparer.Ordinal).ToArray()
         });
@@ -201,18 +203,16 @@ internal sealed class GeneratedCardChoiceSurfaceProvider : IBridgeSurfaceProvide
             surface,
             completeness,
             game,
-            new[]
-            {
-                "This exact slice is limited to generated in-combat card choices; reward, hand, pile, bundle, and deck selectors retain separate contracts."
-            },
+            new[] { semantics.ScopeWarning },
             actions);
     }
 
     private static BridgeActionStartResult StartSelect(
         NChooseACardSelectionScreen expectedScreen,
+        GeneratedCardChoiceSourceBinding.ActiveBinding expectedSource,
         CardModel expectedCard)
     {
-        if (!TryCurrentActionable(expectedScreen, out Binding? binding, out string? error))
+        if (!TryCurrentActionable(expectedScreen, expectedSource, out Binding? binding, out string? error))
             return BridgeActionStartResult.Rejected("choice_changed", error ?? "Generated-card choice is no longer current.");
         if (!binding!.Cards.Any(card => ReferenceEquals(card, expectedCard)))
             return BridgeActionStartResult.Rejected("card_changed", "The advertised generated card is no longer in this choice.");
@@ -226,16 +226,48 @@ internal sealed class GeneratedCardChoiceSurfaceProvider : IBridgeSurfaceProvide
             return BridgeActionStartResult.Rejected("card_not_actionable", "The advertised generated card is no longer clickable.");
 
         holder.EmitSignal(NCardHolder.SignalName.Pressed, holder);
-        return BridgeActionStartResult.Started(
-            () => !IsCurrent(expectedScreen),
-            "generated_card_selected_and_choice_closed");
+        return expectedSource switch
+        {
+            GeneratedCardChoiceSourceBinding.LeadPaperweightBinding lead =>
+                BridgeActionStartResult.Started(
+                    () => GeneratedRunCardAcquisitionWitness.Selected(
+                        !GeneratedCardChoiceSourceBinding.IsActive(lead.Token),
+                        !IsCurrent(expectedScreen),
+                        lead.BaselineDeck,
+                        lead.Player.Deck.Cards,
+                        expectedCard),
+                    "lead_paperweight_choice_closed_and_exact_generated_card_added_to_run_deck",
+                    allowIntermediateStateChanges: true),
+            GeneratedCardChoiceSourceBinding.GeneratedCombatPotionBinding potion =>
+                BridgeActionStartResult.Started(
+                    () => CombatPotionSelectionCompleted(potion, expectedScreen, expectedCard),
+                    $"{potion.SourceKind}_choice_closed_and_exact_free_card_added_to_combat_hand_or_full_hand_discard",
+                    allowIntermediateStateChanges: true),
+            GeneratedCardChoiceSourceBinding.SplashBinding splash =>
+                BridgeActionStartResult.Started(
+                    () => SplashSelectionCompleted(splash, expectedScreen, expectedCard),
+                    "splash_choice_closed_and_exact_free_card_added_to_combat_hand_or_full_hand_discard",
+                    allowIntermediateStateChanges: true),
+            GeneratedCardChoiceSourceBinding.QuasarBinding quasar =>
+                BridgeActionStartResult.Started(
+                    () => QuasarSelectionCompleted(quasar, expectedScreen, expectedCard),
+                    "quasar_choice_closed_and_exact_generated_card_added_to_combat_hand_or_full_hand_discard_with_unchanged_cost",
+                    allowIntermediateStateChanges: true),
+            GeneratedCardChoiceSourceBinding.KnowledgeDemonCurseBinding curse =>
+                BridgeActionStartResult.Started(
+                    () => KnowledgeDemonCurseCompleted(curse, expectedScreen, expectedCard),
+                    "knowledge_demon_choice_closed_and_exact_selected_debuff_applied",
+                    allowIntermediateStateChanges: true),
+            _ => BridgeActionStartResult.Rejected("source_not_supported", "Generated-card source is not supported.")
+        };
     }
 
     private static BridgeActionStartResult StartSkip(
         NChooseACardSelectionScreen expectedScreen,
+        GeneratedCardChoiceSourceBinding.ActiveBinding expectedSource,
         NChoiceSelectionSkipButton expectedSkip)
     {
-        if (!TryCurrentActionable(expectedScreen, out Binding? binding, out string? error)
+        if (!TryCurrentActionable(expectedScreen, expectedSource, out Binding? binding, out string? error)
             || binding?.CanSkip != true)
         {
             return BridgeActionStartResult.Rejected("skip_changed", error ?? "Generated-card skip is no longer available.");
@@ -248,32 +280,336 @@ internal sealed class GeneratedCardChoiceSurfaceProvider : IBridgeSurfaceProvide
             return BridgeActionStartResult.Rejected("skip_not_actionable", "The generated-card skip control is no longer enabled.");
         }
 
+        IReadOnlyList<CardModel> offeredCards = binding.Cards.ToArray();
         expectedSkip.ForceClick();
-        return BridgeActionStartResult.Started(
-            () => !IsCurrent(expectedScreen),
-            "generated_card_choice_skipped_and_closed");
+        return expectedSource switch
+        {
+            GeneratedCardChoiceSourceBinding.LeadPaperweightBinding lead =>
+                BridgeActionStartResult.Started(
+                    () => GeneratedRunCardAcquisitionWitness.Skipped(
+                        !GeneratedCardChoiceSourceBinding.IsActive(lead.Token),
+                        !IsCurrent(expectedScreen),
+                        lead.BaselineDeck,
+                        lead.Player.Deck.Cards,
+                        offeredCards),
+                    "lead_paperweight_choice_skipped_and_run_deck_unchanged",
+                    allowIntermediateStateChanges: true),
+            GeneratedCardChoiceSourceBinding.GeneratedCombatPotionBinding potion =>
+                BridgeActionStartResult.Started(
+                    () => CombatPotionSkipCompleted(potion, expectedScreen, offeredCards),
+                    $"{potion.SourceKind}_choice_skipped_and_combat_hand_discard_unchanged",
+                    allowIntermediateStateChanges: true),
+            GeneratedCardChoiceSourceBinding.SplashBinding splash =>
+                BridgeActionStartResult.Started(
+                    () => SplashSkipCompleted(splash, expectedScreen, offeredCards),
+                    "splash_choice_skipped_and_combat_hand_discard_unchanged",
+                    allowIntermediateStateChanges: true),
+            GeneratedCardChoiceSourceBinding.QuasarBinding quasar =>
+                BridgeActionStartResult.Started(
+                    () => QuasarSkipCompleted(quasar, expectedScreen, offeredCards),
+                    "quasar_choice_skipped_and_combat_hand_discard_unchanged",
+                    allowIntermediateStateChanges: true),
+            _ => BridgeActionStartResult.Rejected("source_not_supported", "Generated-card source is not supported.")
+        };
     }
 
-    private static BridgeActionStartResult StartClosePeek(
-        NChooseACardSelectionScreen expectedScreen,
-        NPeekButton expectedPeek)
+    private static bool SourceMatchesContext(
+        GeneratedCardChoiceSourceBinding.ActiveBinding source,
+        IBridgeContext context) => source switch
     {
-        if (!IsCurrent(expectedScreen)
-            || !expectedPeek.IsPeeking
-            || !expectedPeek.IsEnabled
-            || !McpMod.IsNodeVisible(expectedPeek))
-        {
-            return BridgeActionStartResult.Rejected("peek_changed", "Generated-card peek is no longer current.");
-        }
+        GeneratedCardChoiceSourceBinding.LeadPaperweightBinding lead =>
+            context is EventBridgeContext eventContext
+            && string.Equals(eventContext.EventId, "NEOW", StringComparison.Ordinal)
+            && lead.SourceRelic is LeadPaperweight
+            && lead.Player.Relics.Any(relic => ReferenceEquals(relic, lead.SourceRelic)),
+        GeneratedCardChoiceSourceBinding.GeneratedCombatPotionBinding potion =>
+            context is CombatBridgeContext
+            && string.Equals(
+                GeneratedCardChoiceSourceBinding.CombatPotionSourceKind(potion.SourcePotion.GetType()),
+                potion.SourceKind,
+                StringComparison.Ordinal)
+            && potion.Player.PlayerCombatState != null,
+        GeneratedCardChoiceSourceBinding.SplashBinding splash =>
+            context is CombatBridgeContext
+            && splash.SourceCard.GetType() == typeof(Splash)
+            && ReferenceEquals(splash.SourceCard.Owner, splash.Player)
+            && splash.Player.PlayerCombatState != null,
+        GeneratedCardChoiceSourceBinding.QuasarBinding quasar =>
+            context is CombatBridgeContext
+            && quasar.SourceCard.GetType() == typeof(Quasar)
+            && ReferenceEquals(quasar.SourceCard.Owner, quasar.Player)
+            && quasar.Player.PlayerCombatState != null,
+        GeneratedCardChoiceSourceBinding.KnowledgeDemonCurseBinding curse =>
+            context is CombatBridgeContext
+            && curse.SourceMonster.GetType() == typeof(MegaCrit.Sts2.Core.Models.Monsters.KnowledgeDemon)
+            && curse.Player.PlayerCombatState != null,
+        _ => false
+    };
 
-        expectedPeek.ForceClick();
-        return BridgeActionStartResult.Started(
-            () => !IsCurrent(expectedScreen) || !expectedPeek.IsPeeking,
-            "generated_card_choice_peek_closed");
+    private static bool SourceMatchesCards(
+        GeneratedCardChoiceSourceBinding.ActiveBinding source,
+        Binding binding)
+    {
+        if (binding.Cards.Any(card => !ReferenceEquals(card.Owner, source.Player)))
+            return false;
+
+        return source switch
+        {
+            GeneratedCardChoiceSourceBinding.LeadPaperweightBinding lead =>
+                binding.CanSkip
+                && binding.Cards.Count == 2
+                && binding.Cards.All(card =>
+                    card.Pile == null && !ContainsReference(lead.BaselineDeck, card)),
+            GeneratedCardChoiceSourceBinding.GeneratedCombatPotionBinding potion =>
+                binding.CanSkip
+                && binding.Cards.Count == 3
+                && binding.Cards.All(card =>
+                    card.Pile == null
+                    && !ContainsReference(potion.BaselineHand, card)
+                    && !ContainsReference(potion.BaselineDiscard, card)),
+            GeneratedCardChoiceSourceBinding.SplashBinding splash =>
+                binding.CanSkip
+                && binding.Cards.Count == 3
+                && binding.Cards.All(card =>
+                    card.Pile == null
+                    && card.Type == CardType.Attack
+                    && !ContainsReference(splash.BaselineHand, card)
+                    && !ContainsReference(splash.BaselineDiscard, card)),
+            GeneratedCardChoiceSourceBinding.QuasarBinding quasar =>
+                binding.CanSkip
+                && binding.Cards.Count == 3
+                && binding.Cards.All(card =>
+                    card.Pile == null
+                    && !ContainsReference(quasar.BaselineHand, card)
+                    && !ContainsReference(quasar.BaselineDiscard, card)),
+            GeneratedCardChoiceSourceBinding.KnowledgeDemonCurseBinding =>
+                !binding.CanSkip
+                && binding.Cards.Count == 2
+                && binding.Cards.All(card =>
+                    card.Pile == null
+                    && card is MegaCrit.Sts2.Core.Models.Monsters.KnowledgeDemon.IChoosable),
+            _ => false
+        };
+    }
+
+    private static GeneratedChoiceSemantics SemanticsFor(
+        GeneratedCardChoiceSourceBinding.ActiveBinding source) => source switch
+    {
+        GeneratedCardChoiceSourceBinding.LeadPaperweightBinding => new GeneratedChoiceSemantics(
+            "acquire_one_generated_card",
+            "run_deck",
+            "unchanged",
+            null,
+            "select_generated_run_card",
+            "skip_generated_run_card_choice",
+            cardName => $"Add {cardName} to the run deck",
+            "LeadPaperweight.AfterObtained+NChooseACardSelectionScreen.SelectHolder+exact-run-deck-witness",
+            "LeadPaperweight.AfterObtained+NChooseACardSelectionScreen.OnSkipButtonReleased+unchanged-run-deck-witness",
+            "contract_complete_for_lead_paperweight_generated_run_card_acquisition",
+            new[]
+            {
+                "RelicCmd.Obtain(LeadPaperweight) exact active source binding",
+                "LeadPaperweight.AfterObtained -> CardPileCmd.Add(Deck) exact outcome"
+            },
+            "This exact branch is limited to Lead Paperweight generated run-deck acquisition."),
+        GeneratedCardChoiceSourceBinding.GeneratedCombatPotionBinding potion => new GeneratedChoiceSemantics(
+            "choose_one_generated_combat_card",
+            "combat_hand",
+            "free_this_turn",
+            "combat_discard_if_hand_full",
+            "select_generated_combat_card",
+            "skip_generated_combat_card_choice",
+            cardName => $"Choose {cardName}; add it to the combat hand for free this turn",
+            $"{potion.SourcePotion.GetType().Name}.OnUse+NChooseACardSelectionScreen.SelectHolder+exact-combat-pile-and-free-cost-witness",
+            $"{potion.SourcePotion.GetType().Name}.OnUse+NChooseACardSelectionScreen.OnSkipButtonReleased+unchanged-combat-piles-witness",
+            $"contract_complete_for_{potion.SourceKind}_generated_combat_card_choice",
+            new[]
+            {
+                $"PotionModel.OnUseWrapper({potion.SourcePotion.GetType().Name}) exact active source binding",
+                $"{potion.SourcePotion.GetType().Name}.OnUse -> SetToFreeThisTurn -> CardPileCmd.AddGeneratedCardToCombat(Hand) exact outcome",
+                "CardPileCmd.Add hand-full redirect to combat discard"
+            },
+            $"This exact branch is limited to native {potion.SourcePotion.GetType().Name}; other combat generators remain disabled."),
+        GeneratedCardChoiceSourceBinding.SplashBinding => new GeneratedChoiceSemantics(
+            "choose_one_generated_combat_card",
+            "combat_hand",
+            "free_this_turn",
+            "combat_discard_if_hand_full",
+            "select_generated_combat_card",
+            "skip_generated_combat_card_choice",
+            cardName => $"Choose {cardName}; add it to the combat hand for free this turn",
+            "Splash.OnPlay+NChooseACardSelectionScreen.SelectHolder+exact-combat-pile-and-free-cost-witness",
+            "Splash.OnPlay+NChooseACardSelectionScreen.OnSkipButtonReleased+unchanged-combat-piles-witness",
+            "contract_complete_for_splash_generated_combat_card_choice",
+            new[]
+            {
+                "CardModel.OnPlayWrapper(Splash) exact active source binding",
+                "Splash.OnPlay -> SetToFreeThisTurn -> CardPileCmd.AddGeneratedCardToCombat(Hand) exact outcome",
+                "Splash generation restricted to three visible Attacks from another character pool",
+                "CardPileCmd.Add hand-full redirect to combat discard"
+            },
+            "This exact branch is limited to native sealed Splash; other combat card generators remain disabled."),
+        GeneratedCardChoiceSourceBinding.QuasarBinding => new GeneratedChoiceSemantics(
+            "choose_one_generated_combat_card",
+            "combat_hand",
+            "unchanged",
+            "combat_discard_if_hand_full",
+            "choose_quasar_card",
+            "skip_quasar_choice",
+            cardName => $"Choose {cardName}; add it to the combat hand at its shown cost",
+            "Quasar.OnPlay+NChooseACardSelectionScreen.SelectHolder+exact-combat-pile-and-unchanged-cost-witness",
+            "Quasar.OnPlay+NChooseACardSelectionScreen.OnSkipButtonReleased+unchanged-combat-piles-witness",
+            "contract_complete_for_quasar_generated_combat_card_choice",
+            new[]
+            {
+                "CardModel.OnPlayWrapper(Quasar) exact active source binding",
+                "Quasar.OnPlay -> CardPileCmd.AddGeneratedCardToCombat(Hand) exact outcome",
+                "Quasar does not apply SetToFreeThisTurn",
+                "CardPileCmd.Add hand-full redirect to combat discard"
+            },
+            "This exact branch is limited to native sealed Quasar; other combat card generators remain disabled."),
+        GeneratedCardChoiceSourceBinding.KnowledgeDemonCurseBinding => new GeneratedChoiceSemantics(
+            "choose_one_immediate_enemy_effect",
+            "immediate_player_effect",
+            "not_applicable",
+            null,
+            "choose_knowledge_demon_curse",
+            "unsupported_skip",
+            cardName => $"Accept {cardName} from Knowledge Demon",
+            "KnowledgeDemon.ChooseCurse+NChooseACardSelectionScreen.SelectHolder+exact-power-delta-witness",
+            "KnowledgeDemon.ChooseCurse has no skip contract",
+            "contract_complete_for_knowledge_demon_forced_curse_choice",
+            new[]
+            {
+                "KnowledgeDemon.ChooseCurse exact active source binding",
+                "KnowledgeDemon.IChoosable.OnChosen -> exact player Power delta"
+            },
+            "This exact branch is limited to Knowledge Demon's forced Curse of Knowledge choice."),
+        _ => throw new InvalidOperationException("Unsupported generated-card source binding.")
+    };
+
+    private static bool CombatPotionSelectionCompleted(
+        GeneratedCardChoiceSourceBinding.GeneratedCombatPotionBinding source,
+        NChooseACardSelectionScreen screen,
+        CardModel selectedCard)
+    {
+        if (source.Player.PlayerCombatState is not { } combat)
+            return false;
+        return GeneratedCombatCardChoiceWitness.Selected(
+            !GeneratedCardChoiceSourceBinding.IsActive(source.Token),
+            !IsCurrent(screen),
+            source.BaselineHand,
+            source.BaselineDiscard,
+            combat.Hand.Cards,
+            combat.DiscardPile.Cards,
+            selectedCard,
+            selectedCard.EnergyCost.HasLocalModifiers);
+    }
+
+    private static bool CombatPotionSkipCompleted(
+        GeneratedCardChoiceSourceBinding.GeneratedCombatPotionBinding source,
+        NChooseACardSelectionScreen screen,
+        IReadOnlyCollection<CardModel> offeredCards)
+    {
+        if (source.Player.PlayerCombatState is not { } combat)
+            return false;
+        return GeneratedCombatCardChoiceWitness.Skipped(
+            !GeneratedCardChoiceSourceBinding.IsActive(source.Token),
+            !IsCurrent(screen),
+            source.BaselineHand,
+            source.BaselineDiscard,
+            combat.Hand.Cards,
+            combat.DiscardPile.Cards,
+            offeredCards);
+    }
+
+    private static bool SplashSelectionCompleted(
+        GeneratedCardChoiceSourceBinding.SplashBinding source,
+        NChooseACardSelectionScreen screen,
+        CardModel selectedCard)
+    {
+        if (source.Player.PlayerCombatState is not { } combat)
+            return false;
+        return GeneratedCombatCardChoiceWitness.Selected(
+            !GeneratedCardChoiceSourceBinding.IsActive(source.Token),
+            !IsCurrent(screen),
+            source.BaselineHand,
+            source.BaselineDiscard,
+            combat.Hand.Cards,
+            combat.DiscardPile.Cards,
+            selectedCard,
+            selectedCard.EnergyCost.HasLocalModifiers);
+    }
+
+    private static bool SplashSkipCompleted(
+        GeneratedCardChoiceSourceBinding.SplashBinding source,
+        NChooseACardSelectionScreen screen,
+        IReadOnlyCollection<CardModel> offeredCards)
+    {
+        if (source.Player.PlayerCombatState is not { } combat)
+            return false;
+        return GeneratedCombatCardChoiceWitness.Skipped(
+            !GeneratedCardChoiceSourceBinding.IsActive(source.Token),
+            !IsCurrent(screen),
+            source.BaselineHand,
+            source.BaselineDiscard,
+            combat.Hand.Cards,
+            combat.DiscardPile.Cards,
+            offeredCards);
+    }
+
+    private static bool QuasarSelectionCompleted(
+        GeneratedCardChoiceSourceBinding.QuasarBinding source,
+        NChooseACardSelectionScreen screen,
+        CardModel selectedCard)
+    {
+        if (source.Player.PlayerCombatState is not { } combat)
+            return false;
+        return GeneratedCombatCardChoiceWitness.Selected(
+            !GeneratedCardChoiceSourceBinding.IsActive(source.Token),
+            !IsCurrent(screen),
+            source.BaselineHand,
+            source.BaselineDiscard,
+            combat.Hand.Cards,
+            combat.DiscardPile.Cards,
+            selectedCard,
+            selectedCard.EnergyCost.HasLocalModifiers,
+            requiresFreeThisTurn: false);
+    }
+
+    private static bool QuasarSkipCompleted(
+        GeneratedCardChoiceSourceBinding.QuasarBinding source,
+        NChooseACardSelectionScreen screen,
+        IReadOnlyCollection<CardModel> offeredCards)
+    {
+        if (source.Player.PlayerCombatState is not { } combat)
+            return false;
+        return GeneratedCombatCardChoiceWitness.Skipped(
+            !GeneratedCardChoiceSourceBinding.IsActive(source.Token),
+            !IsCurrent(screen),
+            source.BaselineHand,
+            source.BaselineDiscard,
+            combat.Hand.Cards,
+            combat.DiscardPile.Cards,
+            offeredCards);
+    }
+
+    private static bool KnowledgeDemonCurseCompleted(
+        GeneratedCardChoiceSourceBinding.KnowledgeDemonCurseBinding source,
+        NChooseACardSelectionScreen screen,
+        CardModel selectedCard)
+    {
+        int baseline = GeneratedCardChoiceSourceBinding.BaselineChosenPowerAmount(source, selectedCard);
+        int current = GeneratedCardChoiceSourceBinding.CurrentChosenPowerAmount(source, selectedCard);
+        return baseline >= 0
+               && current > baseline
+               && !GeneratedCardChoiceSourceBinding.IsActive(source.Token)
+               && !IsCurrent(screen);
     }
 
     private static bool TryCurrentActionable(
         NChooseACardSelectionScreen screen,
+        GeneratedCardChoiceSourceBinding.ActiveBinding expectedSource,
         out Binding? binding,
         out string? error)
     {
@@ -285,6 +621,12 @@ internal sealed class GeneratedCardChoiceSurfaceProvider : IBridgeSurfaceProvide
         }
         if (!TryReadBinding(screen, out binding, out error))
             return false;
+        if (!GeneratedCardChoiceSourceBinding.TryGetUnique(out GeneratedCardChoiceSourceBinding.ActiveBinding? currentSource)
+            || !ReferenceEquals(currentSource, expectedSource))
+        {
+            error = "Generated-card source binding changed or became ambiguous.";
+            return false;
+        }
         if (binding!.ScreenComplete)
         {
             error = "Generated-card choice has already completed.";
@@ -329,6 +671,9 @@ internal sealed class GeneratedCardChoiceSurfaceProvider : IBridgeSurfaceProvide
     private static bool IsHolderClickable(NCardHolder holder) =>
         ClickableField?.GetValue(holder) is true;
 
+    private static bool ContainsReference(IEnumerable<CardModel> cards, CardModel expected) =>
+        cards.Any(card => ReferenceEquals(card, expected));
+
     private static string? ReadText(Node node)
     {
         try
@@ -356,40 +701,34 @@ internal sealed class GeneratedCardChoiceSurfaceProvider : IBridgeSurfaceProvide
         IBridgeContext context,
         string reason,
         IReadOnlyList<string> missing)
-    {
-        var unavailable = new UnsupportedSurface(SurfaceKind, nameof(NChooseACardSelectionScreen), reason);
-        var completeness = new StateCompleteness(
-            "degraded",
-            "empty_fail_closed",
-            new[] { "NChooseACardSelectionScreen exact-version binding" },
-            missing);
-        string signature = BridgeHash.Object(new { game.Version, unavailable, missing });
-        return new BridgeObservationDraft(
-            signature,
-            "degraded",
-            context,
-            unavailable,
-            completeness,
+        => BridgeFailClosedObservation.BindingUnavailable(
             game,
-            new[] { "generated_card_choice_binding_unavailable" },
-            Array.Empty<BridgeActionDraft>())
-        {
-            Diagnostics = new[]
-            {
-                BridgeDiagnostics.Create(
-                    "bridge.surface.generated_card_choice.binding_unavailable",
-                    "error",
-                    "surface",
-                    "actions_suppressed",
-                    "update_bridge",
-                    reason)
-            }
-        };
-    }
+            context,
+            nameof(NChooseACardSelectionScreen),
+            reason,
+            new[] { "NChooseACardSelectionScreen exact-version mechanics" },
+            missing,
+            "generated_card_choice_binding_unavailable",
+            "bridge.surface.generated_card_choice.binding_unavailable",
+            "Generated-card source or completion semantics are not exact.");
 
     private sealed record Binding(
         IReadOnlyList<CardModel> Cards,
         bool CanSkip,
         ulong OpenedTicks,
         bool ScreenComplete);
+
+    private sealed record GeneratedChoiceSemantics(
+        string Purpose,
+        string Destination,
+        string SelectedCardCostPolicy,
+        string? OverflowDestination,
+        string SelectActionKind,
+        string SkipActionKind,
+        Func<string, string> SelectLabel,
+        string SelectEvidenceCode,
+        string SkipEvidenceCode,
+        string CompletenessContract,
+        IReadOnlyList<string> Sources,
+        string ScopeWarning);
 }

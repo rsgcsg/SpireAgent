@@ -11,6 +11,11 @@ internal sealed record BridgeInspectionReadResult(
     string? ErrorCode,
     string? Detail);
 
+internal sealed record BridgeObservationBundleReadResult(
+    BridgeObservationBundleResponse? Bundle,
+    string? ErrorCode,
+    string? Detail);
+
 internal static class BridgeV2Runtime
 {
     public const int CommandOutcomeTimeoutMs = 10_000;
@@ -20,11 +25,63 @@ internal static class BridgeV2Runtime
     private static readonly BridgeStateIdentityTracker StateIdentity = new();
     private static readonly BridgeCommandLedger CommandLedger = new(CommandOutcomeTimeoutMs);
     private static readonly Dictionary<string, RegisteredBridgeAction> Actions = new(StringComparer.Ordinal);
+    private static readonly Dictionary<string, BridgeActionPermissionBinding> CommandPermissionBindings =
+        new(StringComparer.Ordinal);
     private static readonly string RuntimeInstanceId = Guid.NewGuid().ToString("N");
+    private static readonly BridgePermissionManager PermissionManager = new(RuntimeInstanceId);
+
+    internal static void ConfigurePermissionMode(BridgePermissionMode mode) =>
+        PermissionManager.ConfigureMode(mode);
+
+    internal static GameBuildIdentity ReadCurrentGameIdentity()
+    {
+        GameBuildIdentity game = BridgeGameIdentity.Read();
+        CompatibilityAssessment compatibility = BridgeContractManifest.WithExplicitActionScopes(
+            game.Compatibility);
+        if (CombatPileSourceContractRegistry.LoadError is { } registryError)
+        {
+            compatibility = compatibility with
+            {
+                ActionExecutionSurfaceKinds = compatibility.ActionExecutionSurfaceKinds
+                    .Where(kind => kind != "combat_pile_card_selection")
+                    .ToArray(),
+                ActionCanarySurfaceKinds = compatibility.ActionCanarySurfaceKinds
+                    .Where(kind => kind != "combat_pile_card_selection")
+                    .ToArray(),
+                ActionPermissionScopes = compatibility.ActionPermissionScopes
+                    .Where(scope => scope.SurfaceKind != "combat_pile_card_selection")
+                    .ToArray(),
+                Detail = $"{compatibility.Detail} Combat-pile source registry failed closed: {registryError}"
+            };
+        }
+        if (BridgeAssemblyIdentity.LoadedAssemblySha256 == null)
+        {
+            compatibility = compatibility with
+            {
+                Status = "bridge_artifact_identity_unavailable",
+                ActionExecutionAllowed = false,
+                InspectionAllowed = false,
+                ActionExecutionSurfaceKinds = Array.Empty<string>(),
+                ActionCanarySurfaceKinds = Array.Empty<string>(),
+                InspectionAllowedKinds = Array.Empty<string>(),
+                InspectionCanaryKinds = Array.Empty<string>(),
+                ActionPermissionScopes = Array.Empty<ActionPermissionScope>(),
+                Detail = $"{compatibility.Detail} The loaded Gateway assembly digest is unavailable; action and Inspection authority fail closed."
+            };
+        }
+
+        game = game with { Compatibility = compatibility };
+        BridgeRuntimePatchInventoryInfo patchInventory = BridgeRuntimePatchInventory.Read();
+        compatibility = PermissionManager.Apply(
+            game,
+            BridgeIdentity(),
+            patchInventory);
+        return game with { Compatibility = compatibility };
+    }
 
     public static BridgeCapabilitiesResponse GetCapabilities()
     {
-        GameBuildIdentity game = BridgeGameIdentity.Read();
+        GameBuildIdentity game = ReadCurrentGameIdentity();
         var warnings = new List<string>
         {
             "Bridge v2 is an incremental preview. Unlisted surfaces fail closed with no legal actions.",
@@ -35,134 +92,47 @@ internal static class BridgeV2Runtime
         if (!game.Compatibility.ActionExecutionAllowed || !game.Compatibility.InspectionAllowed)
             warnings.Add(game.Compatibility.Detail);
 
-        SurfaceCapability[] declaredSurfaces =
+        IReadOnlyList<SurfaceCapability> surfaces = BridgeContractManifest.Capabilities(game.Compatibility);
+        var diagnostics = new List<BridgeDiagnostic>
         {
-            new SurfaceCapability(
-                "deck_enchant_selection",
-                "implemented_exact_game_version",
-                new[] { "toggle_card", "preview_selection", "confirm_selection", "cancel_preview", "close_selection" },
-                "sts2-v0.108.0:NDeckEnchantSelectScreen+DeckEnchantScreenHandler"),
-            new SurfaceCapability(
-                "deck_removal_selection",
-                "implemented_exact_game_version",
-                new[]
-                {
-                    "toggle_deck_removal_card", "preview_deck_removal", "confirm_deck_removal",
-                    "cancel_deck_removal_preview", "cancel_deck_removal_selection"
-                },
-                "sts2-v0.109.0:MerchantCardRemovalEntry+CardSelectCmd.FromDeckForRemoval+NDeckCardSelectScreen+semantic-post-state-witness"),
-            new SurfaceCapability(
-                "deck_upgrade_selection",
-                "implemented_exact_game_version",
-                new[]
-                {
-                    "toggle_deck_upgrade_card", "confirm_deck_upgrade",
-                    "cancel_deck_upgrade_preview", "cancel_deck_upgrade_selection"
-                },
-                "sts2-v0.109.0:CardSelectCmd.FromDeckForUpgrade+NDeckUpgradeSelectScreen+semantic-post-state-canary"),
-            new SurfaceCapability(
-                "event_dialogue",
-                "implemented_exact_game_version",
-                new[] { "advance_event_dialogue" },
-                "sts2-v0.109.0:NAncientEventLayout+revealed-prefix-only+exact-dialogue-index-witness"),
-            new SurfaceCapability(
-                "rest_site",
-                "implemented_exact_game_version",
-                new[] { "choose_rest_option", "proceed_rest_site" },
-                "sts2-v0.109.0:RestSiteRoom.Options+NRestSiteButton+HealRestSiteOption exact HP witness+Smith exact upgrade-child witness+NProceedButton+NMapScreen"),
-            new SurfaceCapability(
-                "event_option",
-                "implemented_exact_game_version",
-                new[] { "choose_event_option", "proceed_event" },
-                "sts2-v0.109.0:NEventRoom+NEventOptionButton+EventOption+visible-hover-tips+semantic-transition-witness"),
-            new SurfaceCapability(
-                "combat_turn",
-                "implemented_exact_game_version",
-                new[] { "play_card", "use_potion", "end_turn" },
-                "sts2-v0.109.0:CombatManager+PlayerCombatState+CardModel+NPlayerHand+organic-action-lifecycles"),
-            new SurfaceCapability(
-                "combat_pile_card_selection",
-                "implemented_exact_game_version",
-                new[] { "toggle_combat_pile_card", "confirm_combat_pile_selection", "cancel_combat_pile_selection" },
-                "sts2-v0.108.0:NCombatPileCardSelectScreen+CardSelectorPrefs+CardPile+NCardGrid"),
-            new SurfaceCapability(
-                "combat_hand_card_selection",
-                "implemented_exact_game_version",
-                new[] { "select_combat_hand_card", "deselect_combat_hand_card", "confirm_combat_hand_selection", "close_combat_hand_peek" },
-                "sts2-v0.109.0:NPlayerHand._prefs+_selectedCards+ActiveHolders+NSelectedHandCardContainer+NUpgradePreview+NConfirmButton exact-source revalidation"),
-            new SurfaceCapability(
-                "event_card_acquisition",
-                "implemented_exact_game_version",
-                new[] { "select_event_card_acquisition", "deselect_event_card_acquisition" },
-                "sts2-v0.109.0:BrainLeech+RoomFullOfCheese+EventModel.SelectCardsToAddToDeckFromGrid+NSimpleCardSelectScreen+semantic-run-deck-witness"),
-            new SurfaceCapability(
-                "generated_card_choice",
-                "implemented_exact_game_version",
-                new[] { "select_generated_card", "skip_generated_card_choice", "close_generated_card_choice_peek" },
-                "sts2-v0.108.0:NChooseACardSelectionScreen+NGridCardHolder+NChoiceSelectionSkipButton+NPeekButton"),
-            new SurfaceCapability(
-                "card_bundle_selection",
-                "implemented_exact_game_version",
-                new[] { "preview_card_bundle", "confirm_card_bundle", "cancel_card_bundle_preview" },
-                "sts2-v0.109.0:ScrollBoxes.AfterObtained+NChooseABundleSelectionScreen+exact-deck-post-state-canary"),
-            new SurfaceCapability(
-                "card_reward_selection",
-                "implemented_exact_game_version",
-                new[] { "select_card_reward", "choose_card_reward_alternative" },
-                "sts2-v0.109.0:NCardRewardSelectionScreen+NGridCardHolder+NCardRewardAlternativeButton+exact-source-canary"),
-            new SurfaceCapability(
-                "reward_claim",
-                "implemented_exact_game_version",
-                new[] { "claim_reward", "discard_potion_for_reward", "proceed_rewards" },
-                "sts2-v0.109.0:NRewardsScreen+NRewardButton+PotionReward+DiscardPotionGameAction+NProceedButton+exact-source-canary"),
-            new SurfaceCapability(
-                "map_navigation",
-                "implemented_exact_game_version",
-                new[] { "choose_map_node" },
-                "sts2-v0.109.0:NMapScreen+NMapPoint+RunState.Map+OnMapPointSelectedLocally+exact-source-canary"),
-            new SurfaceCapability(
-                "shop_inventory",
-                "implemented_exact_game_version",
-                new[]
-                {
-                    "purchase_shop_card", "purchase_shop_relic", "purchase_shop_potion",
-                    "open_shop_card_removal", "close_shop_inventory"
-                },
-                "sts2-v0.109.0:MerchantInventory+typed MerchantEntry+NMerchantSlot+NMerchantInventory+semantic-category-witnesses"),
-            new SurfaceCapability(
-                "shop_room",
-                "implemented_exact_game_version",
-                new[] { "open_shop_inventory", "proceed_shop" },
-                "sts2-v0.109.0:NMerchantRoom+NMerchantButton+NProceedButton+exact-navigation-witnesses"),
-            new SurfaceCapability(
-                "treasure_room",
-                "implemented_exact_game_version",
-                new[]
-                {
-                    "open_treasure_chest", "choose_treasure_relic",
-                    "skip_treasure_relic", "proceed_treasure_room"
-                },
-                "sts2-v0.109.0:TreasureRoom+NTreasureRoom+NTreasureRoomRelicCollection+semantic-post-state-canary"),
-            new SurfaceCapability(
-                "game_over",
-                "implemented_exact_game_version",
-                new[] { "advance_game_over_summary", "return_game_over" },
-                "sts2-v0.109.0:NGameOverScreen+exact-current-controls+summary-and-main-menu-witnesses"),
-            new SurfaceCapability(
-                "character_select",
-                "implemented_exact_game_version",
-                new[]
-                {
-                    "select_character", "decrease_ascension", "increase_ascension",
-                    "embark_standard_run", "back_from_character_select"
-                },
-                "sts2-v0.109.0:NCharacterSelectScreen+singleplayer-StartRunLobby+visible-controls+active-run-witness")
+            BridgeDiagnostics.Create(
+                "bridge.protocol.incremental_preview",
+                "info",
+                "compatibility",
+                "none",
+                "unknown"),
+            BridgeDiagnostics.Create(
+                game.Compatibility.InspectionAllowed
+                    ? "bridge.inspection.read_only_enabled"
+                    : "bridge.inspection.disabled_for_current_build",
+                "info",
+                "visibility",
+                "none",
+                "unknown",
+                game.Compatibility.InspectionAllowed
+                    ? "Advertised inspection kinds are state-bound reads with no command authority."
+                    : "Inspection bindings are disabled for the current game build.")
         };
-        IReadOnlyList<SurfaceCapability> surfaces = declaredSurfaces.Select(surface => new SurfaceCapability(
-            surface.Kind,
-            BridgeSurfacePermission.SupportLevel(game.Compatibility, surface.Kind),
-            surface.Operations,
-            surface.Evidence)).ToArray();
+        if (CombatPileSourceContractRegistry.LoadError is { } registryError)
+        {
+            diagnostics.Add(BridgeDiagnostics.Create(
+                "bridge.compatibility.combat_pile_registry_invalid",
+                "error",
+                "compatibility",
+                "action_scope_suppressed",
+                "requires_reviewed_build",
+                registryError));
+        }
+        if (BridgeExactEnvironmentPolicy.LoadError is { } policyError)
+        {
+            diagnostics.Add(BridgeDiagnostics.Create(
+                "bridge.compatibility.environment_policy_invalid",
+                "error",
+                "compatibility",
+                "all_authority_suppressed",
+                "requires_reviewed_build",
+                policyError));
+        }
 
         return new BridgeCapabilitiesResponse(
             BridgeV2Contract.ProtocolVersion,
@@ -195,50 +165,26 @@ internal static class BridgeV2Runtime
                 },
                 OutcomeTimeoutMs: CommandOutcomeTimeoutMs),
             new InspectionContractCapability(
-                Status: !game.Compatibility.InspectionAllowed
-                    ? "disabled_for_current_build"
-                    : game.Compatibility.InspectionAllowedKinds.Count == 0
-                      && game.Compatibility.InspectionCanaryKinds.Count == 0
-                        ? "implemented_read_only"
-                        : game.Compatibility.Status == "qualified_scoped"
-                          && game.Compatibility.InspectionCanaryKinds.Count == 0
-                            ? "qualified_read_only_scoped"
-                            : game.Compatibility.Status == "qualified_scoped"
-                              && game.Compatibility.InspectionAllowedKinds.Count > 0
-                                ? "mixed_scoped_read_only"
-                                : "candidate_read_only_canary",
+                Status: BridgeSurfacePermission.InspectionSupportLevel(
+                    game.Compatibility,
+                    BridgeContractManifest.ImplementedInspectionKinds),
                 StateBound: true,
                 ArbitraryQueriesAllowed: false,
                 EntersCommandLedger: false,
                 VisibilityClasses: new[] { "on_screen", "normal_inspection", "count_only" },
-                OrderingSemantics: new[] { "unordered_multiset", "player_sorted" },
+                OrderingSemantics: new[] { "unordered_multiset", "player_sorted", "fixed_ui_slots" },
                 ImplementedKinds: AllowedInspectionKinds(game.Compatibility)),
-            new[]
-            {
-                BridgeDiagnostics.Create(
-                    "bridge.protocol.incremental_preview",
-                    "info",
-                    "compatibility",
-                    "none",
-                    "unknown"),
-                BridgeDiagnostics.Create(
-                    game.Compatibility.InspectionAllowed
-                        ? "bridge.inspection.read_only_enabled"
-                        : "bridge.inspection.disabled_for_current_build",
-                    "info",
-                    "visibility",
-                    "none",
-                    "unknown",
-                    game.Compatibility.InspectionAllowed
-                        ? "Advertised inspection kinds are state-bound reads with no command authority."
-                        : "Inspection bindings are disabled for the current game build.")
-            },
-            warnings);
+            diagnostics,
+            warnings)
+        {
+            PermissionSystem = PermissionManager.Snapshot()
+        };
     }
 
     public static BridgeStateEnvelope Observe()
     {
-        BridgeObservationDraft draft = BridgeSnapshotBuilder.Build(EntityRegistry);
+        GameBuildIdentity game = ReadCurrentGameIdentity();
+        BridgeObservationDraft draft = BridgeSnapshotBuilder.Build(EntityRegistry, game);
         BridgeSharedVisibleStateBuildResult shared = draft.Game.Compatibility.StateObservationAllowed
             ? BridgeSharedVisibleStateBuilder.Build(EntityRegistry)
             : new BridgeSharedVisibleStateBuildResult(false, null, null);
@@ -249,6 +195,21 @@ internal static class BridgeV2Runtime
             draft.Signature,
             shared.State
         });
+        BridgeVisibilityProjection visibility = BridgeVisibilityCatalog.Build(
+            draft,
+            shared.State != null,
+            ShopSurfaceFacts.TryGetCurrent(out _, out _, out _));
+        BridgeContractInstanceShadow contractInstanceShadow =
+            BridgeContractInstanceShadowBuilder.Build(draft);
+        BridgePermissionSystemInfo permissionSystem = PermissionManager.Snapshot();
+        compositeSignature = BridgeHash.Object(new
+        {
+            compositeSignature,
+            visibility.Visibility,
+            visibility.InspectionCatalog,
+            contractInstanceShadow,
+            permissionSystem
+        });
 
         lock (Gate)
         {
@@ -258,6 +219,13 @@ internal static class BridgeV2Runtime
             var descriptors = new List<LegalAction>(draft.Actions.Count);
             foreach (BridgeActionDraft action in draft.Actions)
             {
+                ActionPermissionScope? permissionScope =
+                    draft.Game.Compatibility.ActionPermissionScopes.SingleOrDefault(scope =>
+                        string.Equals(scope.SurfaceKind, draft.Surface.Kind, StringComparison.Ordinal)
+                        && string.Equals(scope.Operation, action.Kind, StringComparison.Ordinal));
+                if (permissionScope == null)
+                    continue;
+
                 string actionId = "action_" + BridgeHash.Text($"{stateId}|{action.Key}")[..20];
                 var descriptor = new LegalAction(
                     actionId,
@@ -268,7 +236,32 @@ internal static class BridgeV2Runtime
                     "game_ui",
                     action.EvidenceCode,
                     action.EntityBindings ?? Array.Empty<ActionEntityBinding>());
-                Actions[actionId] = new RegisteredBridgeAction(descriptor, action.Start);
+                var permissionBinding = new BridgeActionPermissionBinding(
+                    permissionScope.SurfaceKind,
+                    permissionScope.Operation,
+                    permissionScope.Tier,
+                    permissionScope.GrantId,
+                    permissionScope.GrantVersion,
+                    permissionScope.RuntimeEpoch,
+                    permissionScope.EnvironmentDigest,
+                    permissionScope.PatchDigest,
+                    permissionScope.OperationFingerprint);
+                Actions[actionId] = new RegisteredBridgeAction(
+                    descriptor,
+                    () =>
+                    {
+                        GameBuildIdentity executionGame = ReadCurrentGameIdentity();
+                        if (!PermissionManager.AuthorizeExecution(
+                                permissionBinding,
+                                executionGame.Compatibility))
+                        {
+                            return BridgeActionStartResult.Rejected(
+                                "permission_grant_changed",
+                                "The operation-scoped grant changed before execution; obtain a fresh state.");
+                        }
+                        return action.Start();
+                    },
+                    permissionBinding);
                 descriptors.Add(descriptor);
             }
 
@@ -287,8 +280,14 @@ internal static class BridgeV2Runtime
                 BridgeIdentity(),
                 draft.Game,
                 ObservationPolicy(),
+                visibility.Visibility,
+                visibility.InspectionCatalog,
+                contractInstanceShadow,
                 BridgeDiagnostics.ForObservation(draft),
-                draft.Warnings);
+                draft.Warnings)
+            {
+                PermissionSystem = permissionSystem
+            };
         }
     }
 
@@ -332,13 +331,33 @@ internal static class BridgeV2Runtime
         lock (Gate)
             Actions.TryGetValue(request.ActionId ?? string.Empty, out action);
 
-        return CommandLedger.Submit(request, current.StateId, action);
+        BridgeCommandResponse response = CommandLedger.Submit(
+            request,
+            current.StateId,
+            action);
+        if (action?.PermissionBinding is { } permissionBinding
+            && !string.IsNullOrWhiteSpace(request.RequestId))
+        {
+            lock (Gate)
+                CommandPermissionBindings[request.RequestId] = permissionBinding;
+        }
+        PermissionManager.ObserveCommand(
+            request.RequestId ?? string.Empty,
+            action?.PermissionBinding,
+            response);
+        return response;
     }
 
     public static BridgeCommandResponse? Poll(string requestId)
     {
         BridgeStateEnvelope current = Observe();
-        return CommandLedger.Poll(requestId, current.StateId);
+        BridgeCommandResponse? response = CommandLedger.Poll(requestId, current.StateId);
+        BridgeActionPermissionBinding? permissionBinding = null;
+        lock (Gate)
+            CommandPermissionBindings.TryGetValue(requestId, out permissionBinding);
+        if (response != null)
+            PermissionManager.ObserveCommand(requestId, permissionBinding, response);
+        return response;
     }
 
     public static BridgeInspectionReadResult Inspect(string kind, string expectedStateId)
@@ -351,12 +370,67 @@ internal static class BridgeV2Runtime
                 "stale_state",
                 "The expected state is no longer current; obtain a fresh state before inspecting.");
         }
-        if (!IsInspectionAllowed(current.Game.Compatibility, kind))
+        return BuildInspection(current, kind, expectedStateId);
+    }
+
+    public static BridgeObservationBundleReadResult ObserveBundle(BridgeObservationBundleRequest request)
+    {
+        BridgeStateEnvelope current = Observe();
+        if (!string.Equals(current.StateId, request.ExpectedStateId, StringComparison.Ordinal))
+        {
+            return new BridgeObservationBundleReadResult(
+                null,
+                "stale_state",
+                "The expected state is no longer current; obtain a fresh state before requesting a coherent observation.");
+        }
+
+        var inspections = new Dictionary<string, BridgeInspectionResponse>(StringComparer.Ordinal);
+        foreach (BridgeObservationBundleInspectionRequest inspectionRequest in request.Inspections ?? Array.Empty<BridgeObservationBundleInspectionRequest>())
+        {
+            string kind = inspectionRequest.Kind ?? string.Empty;
+            BridgeInspectionReadResult result = BuildInspection(current, kind, current.StateId);
+            if (result.Inspection == null)
+            {
+                return new BridgeObservationBundleReadResult(
+                    null,
+                    result.ErrorCode,
+                    result.Detail);
+            }
+            inspections[kind] = result.Inspection;
+        }
+
+        string observationId = "observation_" + BridgeHash.Object(new
+        {
+            current.StateId,
+            inspectionIds = inspections.Values.Select(value => value.InspectionId).OrderBy(value => value, StringComparer.Ordinal).ToArray(),
+            current.Bridge.RuntimeInstanceId
+        })[..20];
+        return new BridgeObservationBundleReadResult(
+            new BridgeObservationBundleResponse(
+                BridgeV2Contract.ProtocolVersion,
+                observationId,
+                Coherent: true,
+                current,
+                inspections,
+                BridgeIdentity(),
+                current.Game,
+                Array.Empty<BridgeDiagnostic>()),
+            null,
+            null);
+    }
+
+    private static BridgeInspectionReadResult BuildInspection(
+        BridgeStateEnvelope current,
+        string kind,
+        string expectedStateId)
+    {
+        if (!IsInspectionAllowed(current.Game.Compatibility, kind)
+            || !current.InspectionCatalog.Any(entry => string.Equals(entry.Kind, kind, StringComparison.Ordinal)))
         {
             return new BridgeInspectionReadResult(
                 null,
-                "inspection_not_qualified_for_current_build",
-                "This inspection kind is not qualified for the current game build.");
+                "inspection_not_available",
+                "This inspection kind is not currently available under the state-bound visibility catalog.");
         }
 
         BridgeInspectionBuildResult built = BridgeInspectionBuilder.Build(kind, current, EntityRegistry);
@@ -395,30 +469,18 @@ internal static class BridgeV2Runtime
         McpMod.Version,
         "20eadebde358a37cca41f8b38728099e6d0d19db",
         typeof(McpMod).Assembly.ManifestModule.ModuleVersionId.ToString("D"),
-        RuntimeInstanceId);
+        RuntimeInstanceId)
+    {
+        AssemblyFileSha256 = BridgeAssemblyIdentity.LoadedAssemblySha256 ?? string.Empty
+    };
 
     private static IReadOnlyList<string> AllowedInspectionKinds(CompatibilityAssessment compatibility)
-    {
-        string[] declared =
-        {
-            BridgeInspectionBuilder.RunDeckKind,
-            BridgeInspectionBuilder.CombatPilesKind
-        };
-        if (!compatibility.InspectionAllowed) return Array.Empty<string>();
-        return compatibility.InspectionAllowedKinds.Count == 0
-               && compatibility.InspectionCanaryKinds.Count == 0
-            ? declared
-            : declared.Where(kind =>
-                compatibility.InspectionAllowedKinds.Contains(kind)
-                || compatibility.InspectionCanaryKinds.Contains(kind)).ToArray();
-    }
+        => BridgeSurfacePermission.PermittedInspectionKinds(
+            compatibility,
+            BridgeContractManifest.ImplementedInspectionKinds);
 
     private static bool IsInspectionAllowed(CompatibilityAssessment compatibility, string kind) =>
-        compatibility.InspectionAllowed
-        && (compatibility.InspectionAllowedKinds.Count == 0
-            && compatibility.InspectionCanaryKinds.Count == 0
-            || compatibility.InspectionAllowedKinds.Contains(kind, StringComparer.Ordinal)
-            || compatibility.InspectionCanaryKinds.Contains(kind, StringComparer.Ordinal));
+        BridgeSurfacePermission.IsInspectionPermitted(compatibility, kind);
 
     private static ObservationPolicyInfo ObservationPolicy() => new(
         BridgeV2Contract.ObservationPolicyId,

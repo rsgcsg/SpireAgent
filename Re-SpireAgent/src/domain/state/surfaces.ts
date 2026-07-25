@@ -24,7 +24,7 @@ export type SemanticContext =
   | CrystalSphereContext
   | MenuContext
   | RunEndedContext
-  | PostCombatContext
+  | CombatTransitionContext
   | UnknownContext;
 
 export interface CombatContext {
@@ -90,7 +90,10 @@ export interface RunEndedContext {
   floorReached?: number;
   ascension?: number;
 }
-export interface PostCombatContext { kind: "post_combat"; }
+export interface CombatTransitionContext {
+  kind: "combat_transition";
+  phase: "setup" | "resolution";
+}
 
 export interface UnknownContext {
   kind: "unknown";
@@ -109,7 +112,11 @@ export type InteractionSurface =
   | CardSelectionSurface
   | DeckEnchantSelectionSurface
   | DeckRemovalSelectionSurface
+  | RelicDeckRemovalSelectionSurface
+  | RewardDeckRemovalSelectionSurface
   | DeckUpgradeSelectionSurface
+  | DeckTransformSelectionSurface
+  | WoodCarvingsReplacementSelectionSurface
   | CardRewardSelectionSurface
   | BridgeRewardClaimSurface
   | CardRewardSurface
@@ -123,6 +130,8 @@ export type InteractionSurface =
   | TreasureRoomSurface
   | GameOverSurface
   | CharacterSelectSurface
+  | MainMenuSurface
+  | SingleplayerMenuSurface
   | OptionChoiceSurface
   | ShopInteractionSurface
   | TreasureClaimSurface
@@ -152,7 +161,17 @@ export interface CombatPileCardSelectionSurface {
   bridgeStateId: string;
   screenEntityId: string;
   prompt: string;
-  pileType: "draw" | "discard" | "exhaust" | "hand" | "play";
+  purpose: string;
+  mutationKind: "move_selected_cards" | "replace_selected_cards_same_index";
+  commitMode: "automatic_at_max" | "manual_confirm";
+  sourceKind: string;
+  sourceCardEntityId: string;
+  sourceCardDefinitionId: string;
+  pileType: "discard" | "draw";
+  destinationPile: "discard" | "draw" | "hand" | "exhaust";
+  destinationPosition: "top" | "bottom" | "same_index";
+  overflowDestination: "discard_if_hand_full" | null;
+  replacementCardDefinitionId: string | null;
   minimumSelections: number;
   maximumSelections: number;
   selectedCount: number;
@@ -198,8 +217,7 @@ export interface EventCardAcquisitionSurface {
   completeness: BridgeSurfaceCompleteness;
 }
 
-/** One-of-N temporary generated card choice, distinct from rewards, hand, and pile selectors. */
-export interface GeneratedCardChoiceSurface {
+interface GeneratedCardChoiceSurfaceBase {
   kind: "generated_card_choice";
   bridgeStateId: string;
   screenEntityId: string;
@@ -210,6 +228,39 @@ export interface GeneratedCardChoiceSurface {
   legalActions: BridgeLegalActionSnapshot[];
   completeness: BridgeSurfaceCompleteness;
 }
+
+/** Source-bound run-deck acquisition; it does not authorize combat generators. */
+export interface GeneratedRunDeckCardChoiceSurface extends GeneratedCardChoiceSurfaceBase {
+  purpose: "acquire_one_generated_card";
+  sourceKind: "lead_paperweight";
+  destination: "run_deck";
+  selectedCardCostPolicy: "unchanged";
+  overflowDestination?: undefined;
+}
+
+/** Source-bound native generated-card potion; full hands redirect to discard. */
+export interface GeneratedCombatCardChoiceSurface extends GeneratedCardChoiceSurfaceBase {
+  purpose: "choose_one_generated_combat_card";
+  sourceKind: "colorless_potion" | "attack_potion" | "skill_potion" | "power_potion" | "splash" | "quasar";
+  destination: "combat_hand";
+  selectedCardCostPolicy: "free_this_turn" | "unchanged";
+  overflowDestination: "combat_discard_if_hand_full";
+}
+
+/** Forced enemy choice; the selected temporary card applies an immediate effect. */
+export interface ImmediateCombatEffectCardChoiceSurface extends GeneratedCardChoiceSurfaceBase {
+  purpose: "choose_one_immediate_enemy_effect";
+  sourceKind: "knowledge_demon_curse";
+  destination: "immediate_player_effect";
+  selectedCardCostPolicy: "not_applicable";
+  overflowDestination?: undefined;
+  canSkip: false;
+}
+
+export type GeneratedCardChoiceSurface =
+  | GeneratedRunDeckCardChoiceSurface
+  | GeneratedCombatCardChoiceSurface
+  | ImmediateCombatEffectCardChoiceSurface;
 
 /** Two-stage selection of one atomic visible package of cards. */
 export interface CardBundleSelectionSurface {
@@ -291,6 +342,40 @@ export interface DeckRemovalSelectionSurface {
   completeness: BridgeSurfaceCompleteness;
 }
 
+/** Exact Precise Scissors acquisition child; merchant service semantics do not apply. */
+export interface RelicDeckRemovalSelectionSurface {
+  kind: "relic_deck_removal_selection";
+  stage: "selecting" | "preview";
+  bridgeStateId: string;
+  screenEntityId: string;
+  prompt: string;
+  minimumSelections: number;
+  maximumSelections: number;
+  selectedCount: number;
+  selectedCardEntityIds: string[];
+  cancelable: boolean;
+  cards: CardSnapshot[];
+  legalActions: BridgeLegalActionSnapshot[];
+  completeness: BridgeSurfaceCompleteness;
+}
+
+/** Exact CardRemovalReward child; producer and merchant service semantics do not apply. */
+export interface RewardDeckRemovalSelectionSurface {
+  kind: "reward_deck_removal_selection";
+  stage: "selecting" | "preview";
+  bridgeStateId: string;
+  screenEntityId: string;
+  prompt: string;
+  minimumSelections: number;
+  maximumSelections: number;
+  selectedCount: number;
+  selectedCardEntityIds: string[];
+  cancelable: boolean;
+  cards: CardSnapshot[];
+  legalActions: BridgeLegalActionSnapshot[];
+  completeness: BridgeSurfaceCompleteness;
+}
+
 /** Purpose-specific deck upgrade selector with exact visible upgraded previews. */
 export interface DeckUpgradeSelectionSurface {
   kind: "deck_upgrade_selection";
@@ -305,6 +390,47 @@ export interface DeckUpgradeSelectionSurface {
   cancelable: boolean;
   cards: CardSnapshot[];
   previewCards: CardSnapshot[];
+  legalActions: BridgeLegalActionSnapshot[];
+  completeness: BridgeSurfaceCompleteness;
+}
+
+/** Random transform child with hidden committed replacement and explicit preview semantics. */
+export interface DeckTransformSelectionSurface {
+  kind: "deck_transform_selection";
+  stage: "selecting" | "preview";
+  bridgeStateId: string;
+  screenEntityId: string;
+  prompt: string;
+  minimumSelections: number;
+  maximumSelections: number;
+  selectedCount: number;
+  selectedCardEntityIds: string[];
+  cancelable: boolean;
+  upgradeToggleVisible: boolean;
+  showingUpgradePreviews: boolean;
+  previewKind: "none" | "random_uncommitted_cycle";
+  replacementKnown: false;
+  cards: CardSnapshot[];
+  legalActions: BridgeLegalActionSnapshot[];
+  completeness: BridgeSurfaceCompleteness;
+}
+
+/** Wood Carvings deterministic starter replacement; never a random transform. */
+export interface WoodCarvingsReplacementSelectionSurface {
+  kind: "wood_carvings_replacement_selection";
+  stage: "selecting" | "preview";
+  bridgeStateId: string;
+  screenEntityId: string;
+  prompt: string;
+  branch: "bird" | "torus";
+  replacementDefinitionId: string;
+  replacementName?: string;
+  replacementDescription?: string;
+  minimumSelections: 1;
+  maximumSelections: 1;
+  selectedCount: number;
+  selectedCardEntityIds: string[];
+  cards: CardSnapshot[];
   legalActions: BridgeLegalActionSnapshot[];
   completeness: BridgeSurfaceCompleteness;
 }
@@ -479,6 +605,7 @@ export interface TreasureRoomSurface {
     description?: string;
     rarity: string;
     keywords: Array<{ name: string; description?: string }>;
+    cardPreviews: CardSnapshot[];
   }>;
   canSkip: boolean;
   canProceed: boolean;
@@ -531,6 +658,49 @@ export interface CharacterSelectSurface {
   canIncreaseAscension: boolean;
   canEmbark: boolean;
   canGoBack: boolean;
+  legalActions: BridgeLegalActionSnapshot[];
+  completeness: BridgeSurfaceCompleteness;
+}
+
+export interface VisibleMenuChoice {
+  entityId: string;
+  semanticId: string;
+  label: string;
+  description?: string;
+  enabled: boolean;
+  bridgeSupport: "actionable" | "visible_unsupported";
+  blockedReason?: string;
+}
+
+/** Exact root menu facts and bounded standard single-player entry actions. */
+export interface MainMenuSurface {
+  kind: "main_menu";
+  stage: "choosing" | "blocked";
+  bridgeStateId: string;
+  screenEntityId: string;
+  choices: VisibleMenuChoice[];
+  continueRun?: {
+    characterId: string;
+    characterName?: string;
+    actId: string;
+    actName?: string;
+    floor: number;
+    hp: number;
+    maxHp: number;
+    gold: number;
+    ascension: number;
+  };
+  legalActions: BridgeLegalActionSnapshot[];
+  completeness: BridgeSurfaceCompleteness;
+}
+
+/** Standard-run submenu; Daily and Custom remain visible unsupported facts. */
+export interface SingleplayerMenuSurface {
+  kind: "singleplayer_menu";
+  stage: "choosing" | "blocked";
+  bridgeStateId: string;
+  screenEntityId: string;
+  choices: VisibleMenuChoice[];
   legalActions: BridgeLegalActionSnapshot[];
   completeness: BridgeSurfaceCompleteness;
 }

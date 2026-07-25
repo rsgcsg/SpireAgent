@@ -17,6 +17,7 @@ export type DecisionOutcome =
   | "not_executed_stale_state"
   | "execution_failed"
   | "executed_and_settled"
+  | "executed_checkpoint_pending"
   | "executed_unsettled";
 
 export interface RecordedState {
@@ -78,13 +79,31 @@ export interface DecisionRecord {
       message: string;
     };
   };
-  runtimeGuard?: {
-    code: "repeated_exact_transition";
-    occurrence: number;
-    preStateHash: string;
-    postStateHash: string;
-    selectedActionId: string;
-  };
+  runtimeGuard?:
+    | {
+        code: "repeated_exact_transition";
+        occurrence: number;
+        preStateHash: string;
+        postStateHash: string;
+        selectedActionId: string;
+      }
+    | {
+        code: "repeated_semantic_transition";
+        occurrence: number;
+        preProgressHash: string;
+        postProgressHash: string;
+        actionProgressHash: string;
+        selectedActionId: string;
+        selectedActionKind: string;
+      }
+    | {
+        code: "repeated_non_actionable_state";
+        occurrence: number;
+        stateHash: string;
+        stateToken?: string;
+        contextKind: string;
+        surfaceKind: string;
+      };
   postState?: RecordedState;
   outcome: DecisionOutcome;
   error?: string;
@@ -108,8 +127,13 @@ export interface RunMetadata {
     thinkingMode: "enabled" | "disabled";
     maxOutputTokens: number;
   };
+  evidence: {
+    provenance: "unrecorded" | "ordinary_gameplay" | "operator_positioned" | "console_assisted" | "fixture";
+    declaredBy: "runtime_configuration";
+    qualificationUse: "coverage_only_unless_independently_reviewed";
+  };
   schemas: {
-    normalizedState: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20;
+    normalizedState: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26;
     prompt: 1 | 2 | 3;
     decisionRecord: 1 | 2;
   };

@@ -2,11 +2,18 @@
 
 In this project, "SpireAgent" means `Re-SpireAgent` by default.
 
-The rebuilt client now implements this boundary. It does not replace its v1
-normalizer with raw Bridge v2 JSON; it uses a parallel adapter:
+Current source contract is `2.0-preview.63`; Re normalized schema is `26`.
+Gate 1 is closed as a bounded ordinary-single-player v2 connector baseline.
+Preview.61 supplied the exact Neow's Fury Organic lifecycle; Preview.62 adds
+reviewed compatibility/source registries and policy provenance without
+inheriting that runtime qualification. Re and the default MCP adapter are
+v2-only; the complete Gateway v1 namespace is retired.
+
+The rebuilt client implements this boundary through a strict adapter rather
+than consuming raw Bridge JSON in planning code:
 
 ```text
-HTTP/MCP v2 response
+Bridge v2 REST response (current Re path)
   -> strict protocol decoder
   -> raw evidence record
   -> typed context + supported-surface projection
@@ -18,12 +25,23 @@ HTTP/MCP v2 response
   -> before/after decision record
 ```
 
+The Python MCP server is an optional adapter for MCP clients and is not in
+Re-SpireAgent's strict-v2 path. The canonical ownership split is in
+[LIVE_GAME_CONNECTION_BOUNDARY.md](LIVE_GAME_CONNECTION_BOUNDARY.md).
+
+Re's game-connection responsibilities are limited to negotiation, strict
+decoding, coherent structural projection, advertised-action import,
+submission/polling, and exact identity/evidence recording. Re must not grow
+strict-v2 game legality, native Commit logic, transaction inference, Witness
+reconstruction, permission, or live-versus-Headless content branches.
+
 Required client behavior:
 
 - reject unknown protocol major versions;
 - reject incompatible game/bridge identity for execution;
-- stop on unsupported/degraded state unless an explicitly separate v1 fallback
-  policy owns authority;
+- validate the permission runtime epoch, Patch inventory and each current
+  dynamic grant without becoming a permission decision point;
+- stop on unsupported/degraded state; Re has no v1 fallback policy;
 - never infer an index, target, or MCP operation from an action label;
 - retain raw request/response and parsed evidence separately;
 - treat `started` as pending and `timed_out` as unknown;
@@ -31,7 +49,25 @@ Required client behavior:
   identity;
 - treat both `failed` and `timed_out` as unknown outcomes;
 - never auto-retry unknown outcomes;
-- permit only one executor during v1/v2 dual-read tests.
+- permit only one action-capable Re process through its runtime lock.
+
+Preview.63 keeps the permission decision and enforcement in the Gateway. Re
+requires state and capabilities to agree on the stable
+`surface + operation + tier` authorization set, while independently validating
+each response's exact grant binding. This allows a negotiated capability's
+session-canary grant to be superseded after semantic completion without
+accepting a different operation or tier. Every dynamic scope must reference
+the unique current active grant for the same Surface/operation, runtime epoch,
+exact environment, Patch digest and operation fingerprint. Historical
+superseded/revoked grant records remain read-only audit evidence and never
+create an allowed action.
+
+Source `2.0-preview.47` additionally requires strict decoding of the bounded
+visibility declaration, state-bound Inspection catalog, coherent observation
+bundle, and non-authorizing contract-instance shadow. Re may use the bundle to
+avoid mixed-checkpoint sidecars, but Inspection remains outside the command
+ledger. The shadow must never add, suppress, or reinterpret an action. Nullable
+contract/binding IDs may be absent for unresolved transition states.
 
 Source `2.0-preview.31` retains strict purpose-specific projections for
 event/rest deck upgrade, event card acquisition, card bundle, game-over,
@@ -43,9 +79,8 @@ character select, event dialogue, and event option are action canaries. All othe
 contracts remain non-executable on this build unless capabilities explicitly
 list them.
 
-In `auto` mode, a v2-owned Surface imports only Bridge actions and top-level
-`shared_state` supplies persistent run/player HUD facts. Re does not issue a v1
-state read for a Bridge-owned semantic state. Exact identity, shared-state,
+Re imports only Bridge actions, and top-level `shared_state` supplies persistent
+run/player HUD facts. Re does not issue v1 state reads. Exact identity, shared-state,
 context/surface, capability, or authority incompatibility fails closed. Runtime
 and prompt identity expose `shared_state + context.kind + surface.kind +
 actionAuthority`.
@@ -54,8 +89,9 @@ Re requires `shared_state` on every in-run semantic Bridge state, records its
 evidence, and validates combat player/potion identities against it. The narrow
 pre-run `character_select` Surface instead requires `shared_state=null`.
 Shared state creates no actions. Event-option hover semantics remain typed as
-text or card previews; unknown variants fail closed. Unsupported legacy-owned states may still use v1 for their complete
-Context/Surface contract, but that fallback cannot merge into Bridge authority.
+text or card previews; unknown variants fail closed. Unsupported legacy-owned
+states remain fail closed in Re; historical v1 records do not grant Agent
+authority.
 
 The shop integration preserves affordability separately from authority and
 accepts omitted nullable product fields without weakening stocked-product or

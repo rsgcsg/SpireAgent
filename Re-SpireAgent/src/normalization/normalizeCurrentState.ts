@@ -15,8 +15,7 @@ import {
   bridgeV2CapabilitiesSidecarFromRaw,
   bridgeV2InspectionIdentity,
   bridgeV2InspectionsFromWrapper,
-  isBridgeV2WrappedState,
-  legacyStateFromBridgeV2Wrapper
+  isBridgeV2WrappedState
 } from "../integrations/sts2mcp/rawState.js";
 import { decodeBridgeV2Capabilities } from "../integrations/sts2mcp/bridgeV2Protocol.js";
 import { stateHash } from "../runtime/stateHash.js";
@@ -43,16 +42,16 @@ const KNOWN_TOP_LEVEL_KEYS = new Set([
   "rest_site", "restSite", "event", "shop", "treasure", "card_select", "cardSelect", "hand_select",
   "handSelect", "bundle_select", "bundleSelect", "crystal_sphere", "crystalSphere", "game_over", "gameOver",
   "menu_screen", "menuScreen", "message", "options", "characters",
-  "bridge_v2_capabilities", "bridge_v2_inspections", "bridge_v2_authority_evidence"
+  "bridge_v2_capabilities", "bridge_v2_inspections", "bridge_v2_authority_evidence", "bridge_v2_observation"
 ]);
 const COMBAT_STATE_TOKENS = ["monster", "boss", "elite", "combat", "battle"] as const;
 
 export function normalizeCurrentState(rawInput: unknown, source: AdapterDescriptor, capturedAt = new Date().toISOString()): StateEnvelope {
   if (isBridgeV2WrappedState(rawInput)) {
-    const legacyRaw = legacyStateFromBridgeV2Wrapper(rawInput);
-    const legacyEnvelope = legacyRaw ? normalizeLegacyCurrentState(legacyRaw, source, capturedAt) : undefined;
-    return normalizeBridgeV2CurrentState(rawInput, source, capturedAt, legacyEnvelope);
+    return normalizeBridgeV2CurrentState(rawInput, source, capturedAt);
   }
+  // Direct legacy records remain replay-readable as historical evidence. They
+  // are never accepted as a sidecar to a current Bridge v2 observation.
   return normalizeLegacyCurrentState(rawInput, source, capturedAt);
 }
 
@@ -93,7 +92,8 @@ function normalizeLegacyCurrentState(rawInput: unknown, source: AdapterDescripto
     ...(projectedInspections.runDeck ? { runDeck: projectedInspections.runDeck } : {}),
     ...(projectedInspections.drawPile ? { drawPile: projectedInspections.drawPile } : {}),
     ...(projectedInspections.discardPile ? { discardPile: projectedInspections.discardPile } : {}),
-    ...(projectedInspections.exhaustPile ? { exhaustPile: projectedInspections.exhaustPile } : {})
+    ...(projectedInspections.exhaustPile ? { exhaustPile: projectedInspections.exhaustPile } : {}),
+    ...(projectedInspections.shopCatalog ? { shopCatalog: projectedInspections.shopCatalog } : {})
   };
   if (Object.keys(bridgeInspectionFacts).length > 0) {
     base = { ...base, bridgeInspectionFacts };
@@ -180,7 +180,9 @@ function normalizeContext(raw: JsonObject, sourceStateType: string, diagnostics:
   const lower = sourceStateType.toLowerCase();
   const battle = objectField(raw, "battle");
   const message = optionalString(raw.message);
-  if (isObservedPostCombatTransition(lower, message, battle)) return { kind: "post_combat" };
+  if (isObservedPostCombatTransition(lower, message, battle)) {
+    return { kind: "combat_transition", phase: "resolution" };
+  }
   if (battle || COMBAT_STATE_TOKENS.some((token) => lower.includes(token))) return normalizeCombatContext(raw, battle, lower, diagnostics);
   if (objectField(raw, "card_reward") || objectField(raw, "cardReward") || lower.includes("card_reward")) return { kind: "card_reward" };
   if (objectField(raw, "rewards") || lower.includes("reward")) return { kind: "rewards" };
@@ -255,8 +257,8 @@ function normalizeSurface(raw: JsonObject, context: SemanticContext, diagnostics
     diagnostics.warn("bundle_select has no verified interaction protocol and is intentionally unsupported");
     return unsupportedSurface(raw, "unknown_surface", "bundle_select is not yet verified by an observed raw-state fixture");
   }
-  if (context.kind === "post_combat" || /loading|transition|settling|starting/u.test(lower)) {
-    return { kind: "no_action", reason: context.kind === "post_combat" ? "transitioning" : lower.includes("loading") ? "loading" : "transitioning", ...(optionalString(raw.message) ? { message: optionalString(raw.message) } : {}), observedTopLevelKeys: Object.keys(raw).sort() };
+  if (context.kind === "combat_transition" || /loading|transition|settling|starting/u.test(lower)) {
+    return { kind: "no_action", reason: context.kind === "combat_transition" ? "transitioning" : lower.includes("loading") ? "loading" : "transitioning", ...(optionalString(raw.message) ? { message: optionalString(raw.message) } : {}), observedTopLevelKeys: Object.keys(raw).sort() };
   }
   switch (context.kind) {
     case "combat":
@@ -374,7 +376,11 @@ function determineStability(surface: InteractionSurface, diagnosticsStatus: "ok"
   if (surface.kind === "card_selection") return surface.options.length > 0 || surface.canConfirm || surface.canCancel ? "actionable" : "loading";
   if (surface.kind === "deck_enchant_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "deck_removal_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
+  if (surface.kind === "relic_deck_removal_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
+  if (surface.kind === "reward_deck_removal_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "deck_upgrade_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
+  if (surface.kind === "deck_transform_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
+  if (surface.kind === "wood_carvings_replacement_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "combat_pile_card_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "combat_hand_card_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "event_card_acquisition") return surface.legalActions.length > 0 ? "actionable" : "loading";
@@ -394,6 +400,7 @@ function determineStability(surface: InteractionSurface, diagnosticsStatus: "ok"
   if (surface.kind === "treasure_room") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "game_over") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "character_select") return surface.legalActions.length > 0 ? "actionable" : "loading";
+  if (surface.kind === "main_menu" || surface.kind === "singleplayer_menu") return surface.legalActions.length > 0 ? "actionable" : "non_actionable";
   if (surface.kind === "option_choice") return surface.options.some((option) => option.enabled) || surface.canProceed ? "actionable" : "loading";
   if (surface.kind === "shop_interaction") return "actionable";
   if (surface.kind === "treasure_claim") return surface.relics.length > 0 || surface.canProceed ? "actionable" : "loading";
@@ -409,14 +416,14 @@ function isCompatible(context: SemanticContext, surface: InteractionSurface): bo
     rewards: ["reward_claim", "card_selection", "no_action", "unsupported"],
     map: ["map_navigation", "no_action", "unsupported"],
     rest: ["rest_site", "option_choice", "card_selection", "deck_upgrade_selection", "no_action", "unsupported"],
-    event: ["event_dialogue", "event_option", "event_card_acquisition", "option_choice", "card_selection", "deck_upgrade_selection", "card_bundle_selection", "no_action", "unsupported"],
+    event: ["event_dialogue", "event_option", "event_card_acquisition", "option_choice", "card_selection", "deck_upgrade_selection", "deck_transform_selection", "wood_carvings_replacement_selection", "card_bundle_selection", "no_action", "unsupported"],
     shop: ["shop_inventory", "shop_room", "shop_interaction", "no_action", "unsupported"],
     treasure: ["treasure_room", "treasure_claim", "no_action", "unsupported"],
     crystal_sphere: ["grid_interaction", "no_action", "unsupported"],
-    menu: ["character_select", "menu_choice", "no_action", "unsupported"],
+    menu: ["main_menu", "singleplayer_menu", "character_select", "menu_choice", "no_action", "unsupported"],
     run_ended: ["game_over", "menu_choice", "no_action", "unsupported"],
-    post_combat: ["no_action", "unsupported"],
-    unknown: ["card_selection", "card_bundle_selection", "no_action", "unsupported"]
+    combat_transition: ["no_action", "unsupported"],
+    unknown: ["card_selection", "card_bundle_selection", "relic_deck_removal_selection", "reward_deck_removal_selection", "no_action", "unsupported"]
   };
   if (!allowed[context.kind].includes(surface.kind)) return false;
   if (surface.kind === "option_choice") return surface.protocol === context.kind;

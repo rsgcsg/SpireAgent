@@ -89,6 +89,8 @@ export function parsePlayer(raw: JsonObject | undefined, diagnostics: Diagnostic
     drawPile: parseCards(raw.draw_pile ?? raw.drawPile, "player.draw_pile", diagnostics, false),
     discardPile: parseCards(raw.discard_pile ?? raw.discardPile, "player.discard_pile", diagnostics, false),
     exhaustPile: parseCards(raw.exhaust_pile ?? raw.exhaustPile, "player.exhaust_pile", diagnostics, false),
+    // Legacy v1 never had an exact, player-visible companion contract.
+    companions: [],
     orbs: parseOrbs(raw.orbs),
     ...(optionalNumber(raw.orb_slots ?? raw.orbSlots) !== undefined
       ? { orbSlots: optionalNumber(raw.orb_slots ?? raw.orbSlots) }

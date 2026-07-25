@@ -18,7 +18,7 @@ namespace STS2_MCP.BridgeV2.Game;
 
 internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
 {
-    private const string ReflectionEvidence = "sts2-v0.108.0:cached_reflection:NDeckEnchantSelectScreen";
+    private const string ReflectionEvidence = "sts2-v0.109.0:c12f634d:-840572606:NDeckEnchantSelectScreen+SelfHelpBook.ReadEntireBook";
 
     public string Kind => "deck_enchant_selection";
 
@@ -227,7 +227,11 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
                     "commit",
                     "Confirm and apply the displayed enchantment",
                     "NDeckEnchantSelectScreen.preview_confirm",
-                    () => StartPreviewConfirm(screen)));
+                    () => StartPreviewConfirm(
+                        screen,
+                        binding.SelectedCards.ToArray(),
+                        binding.Enchantment.Id.Entry,
+                        binding.EnchantmentAmount)));
             }
 
             NBackButton? cancel = preview?.GetNodeOrNull<NBackButton>("Cancel");
@@ -286,10 +290,38 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
             "enchantment_preview_became_visible");
     }
 
-    private static BridgeActionStartResult StartPreviewConfirm(NDeckEnchantSelectScreen expectedScreen)
+    private static BridgeActionStartResult StartPreviewConfirm(
+        NDeckEnchantSelectScreen expectedScreen,
+        IReadOnlyList<CardModel> expectedCards,
+        string expectedEnchantmentId,
+        int expectedEnchantmentAmount)
     {
-        if (!IsCurrentScreen(expectedScreen))
-            return BridgeActionStartResult.Rejected("screen_changed", "Enchant selection is no longer the current screen.");
+        if (!IsCurrentScreen(expectedScreen) || !IsPreviewVisible(expectedScreen))
+            return BridgeActionStartResult.Rejected("screen_stage_changed", "Enchant selection is no longer in preview stage.");
+
+        if (!TryReadBinding(expectedScreen, out Binding? currentBinding, out string? bindingError))
+            return BridgeActionStartResult.Rejected(
+                "enchantment_binding_changed",
+                bindingError ?? "Enchant selection binding is unavailable at commit time.");
+
+        Binding exactBinding = currentBinding!;
+        IReadOnlyList<CardModel> currentCards = exactBinding.SelectedCards;
+        if (!string.Equals(exactBinding.Enchantment.Id.Entry, expectedEnchantmentId, StringComparison.Ordinal)
+            || exactBinding.EnchantmentAmount != expectedEnchantmentAmount
+            || currentCards.Count != expectedCards.Count
+            || currentCards.Count < exactBinding.Preferences.MinSelect
+            || currentCards.Count > exactBinding.Preferences.MaxSelect
+            || expectedCards.Any(expected => !currentCards.Any(current => ReferenceEquals(current, expected))))
+        {
+            return BridgeActionStartResult.Rejected(
+                "enchantment_commit_state_changed",
+                "The exact selected cards or target enchantment changed before confirmation.");
+        }
+
+        if (expectedCards.Any(card => !exactBinding.Enchantment.CanEnchant(card)))
+            return BridgeActionStartResult.Rejected(
+                "card_not_enchantable",
+                "At least one selected card is no longer eligible for the target enchantment.");
 
         NConfirmButton? confirm = GetVisiblePreview(expectedScreen)?.GetNodeOrNull<NConfirmButton>("Confirm");
         if (confirm is not { IsEnabled: true } || !McpMod.IsNodeVisible(confirm))
@@ -297,8 +329,30 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
 
         confirm.ForceClick();
         return BridgeActionStartResult.Started(
-            () => !IsCurrentScreen(expectedScreen),
-            "enchantment_screen_closed_after_preview_confirm");
+            () => !IsCurrentScreen(expectedScreen)
+                  && expectedCards.All(card => HasExpectedEnchantment(
+                      card,
+                      expectedEnchantmentId,
+                      expectedEnchantmentAmount)),
+            "enchantment_screen_closed_and_exact_cards_enchanted");
+    }
+
+    private static bool HasExpectedEnchantment(
+        CardModel card,
+        string expectedEnchantmentId,
+        int expectedEnchantmentAmount)
+    {
+        try
+        {
+            EnchantmentModel? applied = card.Enchantment;
+            return applied != null
+                   && string.Equals(applied.Id.Entry, expectedEnchantmentId, StringComparison.Ordinal)
+                   && applied.Amount == expectedEnchantmentAmount;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     private static BridgeActionStartResult StartPreviewCancel(NDeckEnchantSelectScreen expectedScreen)

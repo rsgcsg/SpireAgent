@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using Godot;
 using MegaCrit.Sts2.Core.Map;
+using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.Saves;
@@ -80,8 +81,15 @@ internal sealed class MapNavigationSurfaceProvider : IBridgeSurfaceProvider
             screen.IsTraveling,
             inputDisabled,
             drawingMode == DrawingMode.None);
+        if (routeInputReady && pointNodes.Any(node =>
+                IsExactUiTravelChoice(screen, node)
+                && runState.VisitedMapCoords.Contains(node.Point.coord)))
+        {
+            return ContradictoryRouteState(game, context);
+        }
+
         NMapPoint[] travelable = routeInputReady
-            ? pointNodes.Where(IsExactUiTravelChoice).ToArray()
+            ? pointNodes.Where(node => IsExactMapTravelChoice(screen, runState, node)).ToArray()
             : Array.Empty<NMapPoint>();
         VisibleMapChoice[] options = travelable.Select(node => new VisibleMapChoice(
             entities.GetId(node, "map_node"),
@@ -143,12 +151,48 @@ internal sealed class MapNavigationSurfaceProvider : IBridgeSurfaceProvider
         bool drawingModeNone) =>
         isOpen && travelEnabled && !traveling && !inputDisabled && drawingModeNone;
 
-    private static bool IsExactUiTravelChoice(NMapPoint node) =>
-        node.Point != null
-        && node.State == MapPointState.Travelable
-        && node.IsEnabled
-        && (node.Point.coord.row != 0
-            || SaveManager.Instance.SeenFtue("map_select_ftue"));
+    internal static bool CanAdvertiseMapChoice(
+        bool stateTravelable,
+        bool enabled,
+        bool ftueSatisfied,
+        bool usingController,
+        bool nodeOnScreen,
+        bool targetAlreadyVisited = false) =>
+        stateTravelable
+        && enabled
+        && ftueSatisfied
+        && (!usingController || nodeOnScreen)
+        && !targetAlreadyVisited;
+
+    private static bool IsExactUiTravelChoice(NMapScreen screen, NMapPoint node)
+    {
+        NControllerManager? controller = NControllerManager.Instance;
+        return node.Point != null
+               && controller != null
+               && CanAdvertiseMapChoice(
+                   node.State == MapPointState.Travelable,
+                   node.IsEnabled,
+                   node.Point.coord.row != 0 || SaveManager.Instance.SeenFtue("map_select_ftue"),
+                   controller.IsUsingController,
+                   screen.IsNodeOnScreen(node));
+    }
+
+    private static bool IsExactMapTravelChoice(NMapScreen screen, RunState runState, NMapPoint node)
+    {
+        NControllerManager? controller = NControllerManager.Instance;
+        return node.Point != null
+               && controller != null
+               && CanAdvertiseMapChoice(
+                   node.State == MapPointState.Travelable,
+                   node.IsEnabled,
+                   node.Point.coord.row != 0 || SaveManager.Instance.SeenFtue("map_select_ftue"),
+                   controller.IsUsingController,
+                   screen.IsNodeOnScreen(node),
+                   targetAlreadyVisited: !IsExactRunStateDestination(runState, node.Point.coord));
+    }
+
+    private static bool IsExactRunStateDestination(RunState runState, MapCoord coord) =>
+        !runState.VisitedMapCoords.Contains(coord);
 
     private static VisibleMapNode BuildNode(NMapPoint node, BridgeEntityRegistry entities) =>
         new(
@@ -210,7 +254,7 @@ internal sealed class MapNavigationSurfaceProvider : IBridgeSurfaceProvider
             || !McpMod.FindAll<NMapPoint>(expectedScreen).Any(node => ReferenceEquals(node, expectedNode))
             || expectedNode.Point == null
             || !expectedNode.Point.coord.Equals(expectedCoord)
-            || !IsExactUiTravelChoice(expectedNode))
+            || !IsExactMapTravelChoice(expectedScreen, expectedRunState, expectedNode))
         {
             return BridgeActionStartResult.Rejected(
                 "map_choice_changed",
@@ -228,6 +272,46 @@ internal sealed class MapNavigationSurfaceProvider : IBridgeSurfaceProvider
     }
 
     private static string PointType(MapPoint point) => point.PointType.ToString().ToLowerInvariant();
+
+    private static BridgeObservationDraft ContradictoryRouteState(
+        GameBuildIdentity game,
+        MapBridgeContext context)
+    {
+        const string reason = "The map UI marks a coordinate travelable even though the active run records it as visited.";
+        var surface = new UnsupportedSurface("unsupported", SurfaceKind, reason);
+        var completeness = new StateCompleteness(
+            "partial",
+            "empty_fail_closed_due_to_ui_run_state_contradiction",
+            new[]
+            {
+                "NMapScreen.IsOpen+IsTravelEnabled+IsTraveling",
+                "NMapPoint.State+IsEnabled",
+                "RunState.VisitedMapCoords"
+            },
+            new[] { "legal_actions" });
+        string signature = BridgeHash.Object(new { game.Version, context, reason });
+        return new BridgeObservationDraft(
+            signature,
+            "degraded",
+            context,
+            surface,
+            completeness,
+            game,
+            new[] { "map_navigation_ui_run_state_contradiction" },
+            Array.Empty<BridgeActionDraft>())
+        {
+            Diagnostics = new[]
+            {
+                BridgeDiagnostics.Create(
+                    "bridge.surface.map_navigation.ui_run_state_contradiction",
+                    "error",
+                    "surface",
+                    "actions_suppressed",
+                    "refresh_or_update_bridge",
+                    reason)
+            }
+        };
+    }
 
     private static BridgeObservationDraft BindingUnavailable(GameBuildIdentity game, string reason)
     {

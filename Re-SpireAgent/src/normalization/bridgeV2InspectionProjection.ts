@@ -1,13 +1,16 @@
 import type {
   BridgeDiagnosticSnapshot,
   BridgeInspectionEvidenceSnapshot,
+  BridgeShopCatalogSnapshot,
   CardSnapshot
 } from "../domain/state/index.js";
 import {
   decodeBridgeV2Capabilities,
   decodeBridgeV2Inspection,
+  sameBridgeModsetIdentity,
   type BridgeV2Capabilities,
-  type BridgeV2Inspection
+  type BridgeV2Inspection,
+  type BridgeV2InspectionKind
 } from "../integrations/sts2mcp/bridgeV2Protocol.js";
 import type { JsonObject } from "../shared/json.js";
 import { projectBridgeV2Card } from "./bridgeV2CardProjection.js";
@@ -18,13 +21,14 @@ export interface ProjectedBridgeInspections {
   drawPile?: CardSnapshot[];
   discardPile?: CardSnapshot[];
   exhaustPile?: CardSnapshot[];
+  shopCatalog?: BridgeShopCatalogSnapshot;
   evidence: BridgeInspectionEvidenceSnapshot[];
   diagnostics: BridgeDiagnosticSnapshot[];
 }
 
 export function projectBridgeV2Inspections(
   capabilitiesRaw: JsonObject | undefined,
-  inspectionRaw: Partial<Record<"run_deck" | "combat_piles", JsonObject>>,
+  inspectionRaw: Partial<Record<BridgeV2InspectionKind, JsonObject>>,
   currentStateId: string | undefined,
   diagnostics: DiagnosticsBuilder
 ): ProjectedBridgeInspections {
@@ -44,7 +48,7 @@ export function projectBridgeV2Inspections(
   }
 
   let sharedStateId = currentStateId;
-  for (const kind of ["run_deck", "combat_piles"] as const) {
+  for (const kind of ["run_deck", "combat_piles", "shop_catalog"] as const) {
     const raw = inspectionRaw[kind];
     if (!raw) continue;
     let inspection: BridgeV2Inspection;
@@ -108,29 +112,91 @@ export function projectBridgeV2Inspections(
       continue;
     }
 
-    const zones = new Map(inspection.content.zones.map((zone) => [zone.zone, zone]));
-    if (zones.size !== 3 || !zones.has("draw") || !zones.has("discard") || !zones.has("exhaust")) {
-      diagnostics.invalid(
-        "bridge_v2_inspections.combat_piles.zones",
-        inspection.content.zones,
-        "combat_piles must contain exactly draw, discard, and exhaust"
-      );
+    if (inspection.content.kind === "combat_piles") {
+      const zones = new Map(inspection.content.zones.map((zone) => [zone.zone, zone]));
+      if (zones.size !== 3 || !zones.has("draw") || !zones.has("discard") || !zones.has("exhaust")) {
+        diagnostics.invalid(
+          "bridge_v2_inspections.combat_piles.zones",
+          inspection.content.zones,
+          "combat_piles must contain exactly draw, discard, and exhaust"
+        );
+        continue;
+      }
+      for (const [zoneName, zone] of zones) {
+        if (zone.card_count !== zone.cards.length) {
+          diagnostics.invalid(
+            `bridge_v2_inspections.combat_piles.${zoneName}.card_count`,
+            zone.card_count,
+            "card_count does not match cards length"
+          );
+        }
+      }
+      result.drawPile = zones.get("draw")!.cards.map(projectBridgeV2Card);
+      result.discardPile = zones.get("discard")!.cards.map(projectBridgeV2Card);
+      result.exhaustPile = zones.get("exhaust")!.cards.map(projectBridgeV2Card);
       continue;
     }
-    for (const [zoneName, zone] of zones) {
-      if (zone.card_count !== zone.cards.length) {
-        diagnostics.invalid(
-          `bridge_v2_inspections.combat_piles.${zoneName}.card_count`,
-          zone.card_count,
-          "card_count does not match cards length"
-        );
-      }
-    }
-    result.drawPile = zones.get("draw")!.cards.map(projectBridgeV2Card);
-    result.discardPile = zones.get("discard")!.cards.map(projectBridgeV2Card);
-    result.exhaustPile = zones.get("exhaust")!.cards.map(projectBridgeV2Card);
+
+    result.shopCatalog = projectShopCatalog(inspection.content);
   }
   return result;
+}
+
+function projectShopCatalog(
+  content: Extract<BridgeV2Inspection["content"], { kind: "shop_catalog" }>
+): BridgeShopCatalogSnapshot {
+  type Offer = typeof content.cards[number]
+    | typeof content.relics[number]
+    | typeof content.potions[number]
+    | NonNullable<typeof content.card_removal>;
+  const base = (offer: Offer) => ({
+    entityId: offer.entity_id,
+    slotEntityId: offer.slot_entity_id,
+    inventoryIndex: offer.inventory_index,
+    price: offer.price,
+    stocked: offer.stocked,
+    visible: offer.visible,
+    affordable: offer.affordable,
+    canPurchase: offer.can_purchase,
+    ...(offer.blocked_reason ? { blockedReason: offer.blocked_reason } : {})
+  });
+  return {
+    accessState: content.access_state,
+    cards: content.cards.map((offer) => ({
+      ...base(offer),
+      onSale: offer.on_sale,
+      ...(offer.card ? { card: projectBridgeV2Card(offer.card) } : {})
+    })),
+    relics: content.relics.map((offer) => ({
+      ...base(offer),
+      ...(offer.relic ? {
+        relic: {
+          id: offer.relic.definition_id,
+          ...(offer.relic.name ? { name: offer.relic.name } : {}),
+          ...(offer.relic.description ? { description: offer.relic.description } : {}),
+          ...(offer.relic.counter !== undefined ? { counter: offer.relic.counter } : {}),
+          keywords: offer.relic.keywords.map((keyword) => ({
+            name: keyword.name,
+            ...(keyword.description ? { description: keyword.description } : {})
+          })),
+          cardPreviews: offer.relic.card_previews.map(projectBridgeV2Card)
+        }
+      } : {})
+    })),
+    potions: content.potions.map((offer) => ({
+      ...base(offer),
+      ...(offer.definition_id ? { id: offer.definition_id } : {}),
+      ...(offer.name ? { name: offer.name } : {}),
+      ...(offer.description ? { description: offer.description } : {}),
+      ...(offer.rarity ? { rarity: offer.rarity } : {})
+    })),
+    ...(content.card_removal ? {
+      cardRemoval: {
+        ...base(content.card_removal),
+        nextPriceIncrease: content.card_removal.next_price_increase
+      }
+    } : {})
+  };
 }
 
 function validateIdentity(
@@ -157,12 +223,18 @@ function validateIdentity(
       "inspection and capabilities bridge identities differ"
     );
   }
-  const allowedKinds = inspection.game.compatibility.inspection_allowed_kinds;
+  const allowedKinds = [
+    ...inspection.game.compatibility.inspection_allowed_kinds,
+    ...inspection.game.compatibility.inspection_canary_kinds
+  ];
   const inspectionKindAllowed = inspection.game.compatibility.inspection_allowed
-    && (allowedKinds.length === 0 || allowedKinds.includes(inspection.kind));
+    && allowedKinds.includes(inspection.kind);
   if (inspection.game.version !== capabilities.game.version
       || inspection.game.commit !== capabilities.game.commit
       || inspection.game.main_assembly_hash !== capabilities.game.main_assembly_hash
+      || inspection.game.release_declared_main_assembly_hash
+        !== capabilities.game.release_declared_main_assembly_hash
+      || !sameBridgeModsetIdentity(inspection.game, capabilities.game)
       || !inspectionKindAllowed) {
     diagnostics.invalid(
       `bridge_v2_inspections.${inspection.kind}.game`,

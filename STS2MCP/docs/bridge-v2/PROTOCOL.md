@@ -1,12 +1,103 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.31`
+Protocol preview: `2.0-preview.63`
+
+Preview.63 adds required `permission_system` state to capabilities and every
+state envelope. It reports Gateway mode, runtime epoch, candidate policy,
+conservative runtime Patch inventory and a bounded versioned grant ledger.
+Each action permission scope now binds grant ID/version, environment digest,
+Patch digest and operation fingerprint. Dynamic scopes additionally bind the
+current runtime epoch. The exact grant is captured at publication and must
+still match when execution starts.
+
+The reviewed exact-environment policy remains an absolute permission ceiling.
+A gray candidate has no authorization effect by itself. Only the Gateway
+Permission Manager may issue a runtime-epoch-bound `session_canary`, and only a
+Gateway-confirmed semantic completion may supersede it with
+`session_auto_approved`. A validated failure, timeout, unknown outcome,
+identity/Patch drift or mode change quarantines the affected operation for that
+session. Restart is rollback; no dynamic grant becomes persistent
+qualification.
+
+Preview.62 kept exact source/task binding and purpose-specific semantic
+completion in the Gateway while making the combat-pile wire contract
+structural. `combat_pile_card_selection` now reports `mutation_kind`,
+`commit_mode`, optional `replacement_card_definition_id`, source/destination
+piles, bounds, and exact selected instances. Its only operations are
+`toggle_combat_pile_card` and, when the native enabled control exists,
+`confirm_combat_pile_selection`. `source_kind` remains provenance and an
+internal authorization input; a client must not use a source literal to infer
+legality or completion.
+
+Preview.62 adds required compatibility provenance:
+`compatibility_policy_id`, `compatibility_policy_digest`, and
+`adaptation_level`. Capabilities, state, bundles, and Inspection envelopes must
+agree on them. They identify the reviewed embedded exact-environment policy;
+they never replace explicit operation scopes or current legality.
+
+The reviewed combat-pile registry is an internal source/transaction contract,
+not client-executable data. One generic task-local binding consumes it and
+dispatches only the closed witness topology. Exact-assembly discovery and
+registry verification have no authorization or qualification effect.
+
+Preview.61 also adds exact Neow's Fury. Its native transaction is an optional
+`min_select=0`, dynamic-max discard-to-hand selection with manual confirmation.
+The completion witness requires the source task to finish, the child to close,
+unselected baseline discard cards to remain, baseline hand cards to remain,
+and every selected exact reference to move from discard to hand. It does not
+authorize another caller of the same native screen.
+
+Preview.60 retained Preview.59 identity and Dredge semantics and added exact
+Quasar and Knowledge Demon branches to `generated_card_choice`, plus exact
+Charge to `combat_pile_card_selection`. Quasar, Knowledge Demon, and Charge
+reuse only bounded interaction mechanics; their source, purpose, cardinality,
+skip policy, commit, and semantic completion remain independent. Exact
+`CardRemovalReward` remains on the independent
+`reward_deck_removal_selection` Surface.
+
+Preview.57 repairs exact game identity. `game.main_assembly_hash` is now the
+hash computed from the main assembly actually loaded by the current process,
+using the game's own `AssemblyHasher`. The separately named
+`game.release_declared_main_assembly_hash` preserves the value read from
+`release_info.json` for diagnosis only. A release declaration never grants
+permission when it disagrees with the loaded assembly. Capabilities, state,
+observation bundles, and Inspections must agree on both fields, while
+compatibility gates use only the actual runtime hash.
+The current `-1639417500` permission is specific to the audited macOS arm64
+assembly. A matching version/commit on x86_64, Windows, Linux, or a changed
+game binary must supply and qualify its own runtime hash; release metadata
+cannot bridge that gap.
+
+Preview.56 adds the source-bound `wood_carvings_replacement_selection`
+contract. It distinguishes native Wood Carvings Bird/Torus by the exact
+async event task rather than localized prompt text, exposes the deterministic
+replacement already visible to the player, and completes only after the
+source task ends, the selector closes, the exact original instance leaves the
+deck, the expected replacement count increases, and deck count is preserved.
+It is a current-identity action canary, not qualification or a universal deck
+selector.
+
+Preview.55 repairs the C#/Re source contract: `bridge.assembly_file_sha256`
+identifies the loaded Gateway artifact without disclosing a local path, and
+`game.compatibility.action_permission_scopes` is the exact, fail-closed
+projection of the current build's manifest operations. A Surface capability
+lists only operations present in that scope. `legacy_fallback_allowed` is not a
+strict-v2 authority handoff; source-resolved but unscoped surfaces publish no
+actions with `none_fail_closed`. This does not add a source binding for
+Discovery or grant it generated-card authority.
+
+`bridge.upstream_commit` is the immutable imported upstream baseline, currently
+`20eadebde358a37cca41f8b38728099e6d0d19db`; it is not the current SpireAgent
+Git revision. Runtime evidence must use the loaded module MVID, runtime ID,
+Release/installed SHA, exact game identity, and Modset fingerprint. A future
+protocol may add a separately named repository source revision, but the legacy
+field must not be treated as current-build authority.
 
 ## Build Compatibility
 
 This protocol describes bounded v2 contracts, not permission to execute every
-contract against every Steam build. For exact identity
-`v0.109.0|c12f634d|-840572606`, capabilities separately advertise:
+contract against every Steam build. For exact runtime identity
+`v0.109.0|c12f634d|-1639417500`, capabilities separately advertise:
 
 - qualified actions: `deck_removal_selection`, `deck_upgrade_selection`,
   `combat_turn`, `combat_hand_card_selection`, and ordinary single-player
@@ -14,12 +105,114 @@ contract against every Steam build. For exact identity
 - action canaries: `event_card_acquisition`, `reward_claim`,
   `card_reward_selection`, `map_navigation`, `shop_inventory`, `shop_room`,
   `treasure_room`, `game_over`, `card_bundle_selection`, `character_select`,
-  `event_dialogue`, and `event_option`;
-- qualified read-only inspection: `run_deck`.
+  `main_menu`, `singleplayer_menu`, `event_dialogue`, `event_option`, and
+  source-bound `deck_transform_selection`, source-bound
+  `wood_carvings_replacement_selection`, Surface-level
+  `deck_enchant_selection`, exact `relic_deck_removal_selection`,
+  exact `reward_deck_removal_selection`,
+  `combat_pile_card_selection` for exact
+  Headbutt/Graveblast/Cleanse/Seance/Dredge/Charge/Neow's Fury/
+  Cosmic Indifference/Hologram/Secret Technique/Secret Weapon/Seeker Strike/
+  Wish registry sources,
+  and source-scoped
+  `generated_card_choice` for exact Lead Paperweight acquisition and native
+  Colorless/Attack/Skill/Power Potion, native Splash, native Quasar, and
+  Knowledge Demon curse choices;
+- qualified read-only inspection: `run_deck`;
+- read-only inspection canaries: `combat_piles` and `shop_catalog`.
 
 Every unlisted Surface and Inspection remains disabled. Historical v0.108
 evidence does not grant current-build authority, and canary evidence does not
 silently become qualification.
+
+Tutor is explicitly not registered: its selected pile is bound to
+`cardPlay.Target.Player`, while the current closed registry binds the source
+owner. A matching native selector and commit primitive are insufficient to
+authorize a different participant-ownership contract.
+
+`relic_deck_removal_selection` is a separately scoped canary contract for the
+exact native `Precise Scissors` acquisition task. It is not an alias for the
+qualified merchant `deck_removal_selection`: it has no shop Context, price,
+service-use counter, or merchant completion witness. Both reuse bounded
+selection mechanics internally, while source binding and semantic completion
+remain purpose-specific.
+
+`reward_deck_removal_selection` is independently source-bound to the exact
+active `CardRemovalReward.OnSelect` task. It is not inferred from Forbidden
+Grimoire history and does not inherit merchant or relic authority. Confirmation
+requires the selected exact card to leave the deck, deck count to decrease by
+one, the reward source task to complete, and the selector to close. Cancellation
+requires source completion, selector closure, and an unchanged exact-reference
+deck.
+
+`deck_enchant_selection.confirm_selection` is not complete merely because the
+overlay closes. The current event command applies the enchantment after the
+selection task resolves. Preview.49 therefore binds commit to the exact
+selected card instances plus enchantment ID/amount, revalidates those facts at
+dispatch, and requires both overlay closure and exact card-model post-state.
+
+The permission and Provider boundary is broader than the preview.49 evidence:
+the exact-build gate permits `deck_enchant_selection` by Surface kind, and the
+Provider matches `NDeckEnchantSelectScreen` without proving a Self-Help Book
+source token. Self-Help Book is the recorded canary journey and manifest source
+text, not a runtime-enforced origin whitelist. Other exact-build origins must
+not be described as qualified, but they are not currently suppressed by source
+binding once this Surface is permitted. This is a known governance gap and no
+permission is expanded by documenting it.
+
+Event option commands may cross a bounded asynchronous intermediate state
+before their existing semantic witness becomes true. Preview.50 opts only
+`choose_event_option` and `proceed_event` into ledger intermediate-state
+waiting. They still require replacement options, a required child Surface,
+combat entry, map opening, or room departure before the command completes;
+otherwise the command times out as unknown. The ledger default continues to
+fail an unexplained state change for every action that did not explicitly opt
+in.
+
+Combat `player.companions` is immediate read-only Context, not an executable
+Surface. It is sourced from the local player's exact `PlayerCombatState.Pets`
+collection used by native `NCombatRoom` pet rendering. Each entry carries
+stable entity identity, exact definition, visible name, alive state, block,
+and visible statuses. `hp` and `max_hp` are present only when the companion's
+native `MonsterModel.IsHealthBarVisible` is true; contradictory visibility and
+HP shapes fail strict Re validation. This contract does not create companion
+commands, infer hidden pet state, or expose future Summon results.
+
+Exact environment identity is the combination of exact game identity and the
+loaded Modset identity. `game.modset` records:
+
+- deterministic `fingerprint` and its declared `fingerprint_scope`;
+- ModManager status and whether exact permission is eligible;
+- every known Mod's manifest ID/version, source, load state, gameplay flag,
+  Workshop ID as an exact decimal string, and loaded assembly name/version/MVID;
+- a safe status/detail without local filesystem paths.
+
+The current permission profile requires `exact_bridge_only`: ModManager is
+initialized, the only loaded Mod is the negotiated exact `STS2_MCP` module,
+and its manifest version and loaded MVID agree with the Bridge identity.
+Additional loaded Mods, failed or runtime-added Mods, unavailable identity, or
+state/capability fingerprint mismatch fail closed for actions and Inspection.
+This is a permission gate, not a claim that disabled Mods or future native-UI
+Mods are semantically compatible. Such environments require independent source
+binding, visibility, legality, commit, completion, and canary evidence.
+
+For the current local identity `v0.109.0|c12f634d|-1639417500`, the Gateway
+advertises an explicit `surface_kind + operation + tier` inventory. A scoped
+build is executable only when the current state operation appears in that
+inventory; empty lists never become wildcard authority. Preview.63 scope
+identity additionally includes the grant ID/version, environment, Patch and
+operation fingerprint. Re requires identical scopes in state and capabilities
+and validates every dynamic scope against the unique current active grant.
+
+Canary and session-auto-approved authority remain operation-scoped permission,
+not Organic Qualification. Per-operation and per-origin qualification must
+still be recorded separately. Session state may narrow current authority but
+must not infer or expand the embedded ceiling from implementation alone.
+
+For `map_navigation`, preview.35 uses the same exact-node predicate while
+publishing and immediately before execution. Besides run-state travelability,
+node enabled state, and FTUE gating, controller input requires the destination
+node to be on screen, matching the current `NMapPoint.OnRelease` path.
 
 ## Endpoints
 
@@ -27,6 +220,7 @@ silently become qualification.
 GET  /api/v2/capabilities
 GET  /api/v2/state
 GET  /api/v2/inspections/{kind}?expected_state_id={state_id}
+POST /api/v2/observation-bundles
 POST /api/v2/commands
 GET  /api/v2/commands/{request_id}
 ```
@@ -34,11 +228,30 @@ GET  /api/v2/commands/{request_id}
 All game-object reads and mutations run on the Godot main thread. HTTP and MCP
 layers own transport only.
 
+The Bridge v2 contract is protocol-neutral domain behavior. The REST routes
+above are the current Re-SpireAgent integration. The Python MCP server is an
+optional adapter over the same routes; listing or calling an MCP tool does not
+grant action legality, exact-build permission, qualification, or strategy
+authority. Transport adapters may expose only fixed, capability-advertised
+operations and Inspection kinds. They must not reconstruct legal actions,
+invent source semantics, or provide arbitrary scene-tree/reflection queries.
+
+Canonical component names, ownership, and the deferred Headless boundary are
+defined in [LIVE_GAME_CONNECTION_BOUNDARY.md](LIVE_GAME_CONNECTION_BOUNDARY.md).
+This protocol document specifies current wire behavior; it does not make REST,
+MCP, or Re an owner of gateway semantics.
+
+Protocol choice and rendering mode are independent. Starting the real Godot
+runtime without a display does not create a new action contract and does not
+prove that STS2 gameplay is independent of scene/UI lifecycle.
+
 ## State
 
 Every state response contains:
 
-- protocol, bridge, and exact game identity;
+- protocol, bridge, exact game identity, and exact loaded Modset identity;
+- exact operation permission scopes and the Gateway-owned session permission
+  system, including runtime Patch evidence and grant history;
 - observation policy;
 - stable semantic `state_id` and monotonic process-session sequence;
 - explicit top-level `shared_state` (`null` when no single-player run exists);
@@ -46,10 +259,94 @@ Every state response contains:
 - typed surface data;
 - state-scoped opaque legal actions;
 - completeness sources and missing fields;
+- a bounded `visibility` declaration and current typed
+  `inspection_catalog`;
+- a non-authorizing `contract_instance_shadow` describing the current gap
+  between declared semantic operations and legacy Surface-kind permission;
 - typed diagnostics and legacy compatibility warnings.
 
 Timestamps and logging fields do not change `state_id`. Shared visible state,
 semantic context, surface data, or the legal action set does.
+
+`visibility` distinguishes default core completeness, declared linked-detail
+families, currently available read-only Inspection kinds, explicit missing
+facts, and hidden-by-policy facts. `player_visible_closure_status` describes
+the declared default-plus-inspection closure; it is not a claim that one state
+payload contains every player-visible fact. Unknown execution-critical fields
+remain fail-closed.
+
+`inspection_catalog` is state-bound and deterministic. Every entry records its
+visibility basis, availability tier, ordering semantics, cost hint, recommended
+uses, and hidden policy. It grants no action authority and does not enter the
+command ledger.
+
+`contract_instance_shadow` is migration telemetry only. It may be unresolved
+and omit nullable contract/binding fields during transitions. It always reports
+`authorizing=false`; neither manifest presence nor operation evidence can add
+or suppress legal actions. Current execution permission is the explicit
+operation scope produced by the exact-environment ceiling plus the Gateway
+Permission Manager.
+
+## Permission System
+
+`permission_system` is required on capabilities and state. Its
+`runtime_epoch` must equal `bridge.runtime_instance_id`.
+
+Modes:
+
+- `strict`: embedded `qualified` operations only;
+- `balanced_gray`: embedded non-candidate canaries remain available and
+  reviewed gray candidates may enter the session loop;
+- `developer_gray`: the same safety kernel and reviewed ceiling, with no
+  additional candidates in Preview.63.
+
+The current gray policy contains only reversible
+`main_menu/open_singleplayer` and `main_menu/continue_run`. It cannot authorize
+an operation absent from the embedded canary ceiling.
+
+Every grant records:
+
+- versioned ID, `current`, status, tier, issue/expiry and supersession;
+- Surface, operation, risk and mode;
+- runtime epoch, environment, Gateway SHA/MVID, Modset and Patch digest;
+- operation fingerprint and candidate evidence digest/IDs;
+- revocation reason where applicable.
+
+Only the unique current active grant can back a dynamic action scope. Historical
+issuance records remain visible for audit and may retain the exact identity
+under which they were issued. A superseded record may therefore show its
+issuance tier with `current=false`; it grants no current authority.
+
+The Patch inventory is based on loaded Harmony metadata and is intentionally
+conservative. Dynamic promotion requires `clean_known_owners`, at least one
+loaded Gateway-owned patch and no unknown owner. An empty inventory, missing
+Gateway owner, unknown owner or unavailable metadata suppresses it. This
+inventory cannot prove the absence of native/non-Harmony hooks or semantic
+drift and never replaces native legality, exact binding or semantic
+completion.
+
+D scenarios, fingerprints, graders and candidate records have no authority.
+They may supply evidence IDs and a recommendation. The Gateway remains the
+sole policy decision and enforcement owner.
+
+## Coherent Observation Bundle
+
+```json
+{
+  "expected_state_id": "state_opaque",
+  "inspections": [
+    { "kind": "run_deck" },
+    { "kind": "combat_piles" }
+  ]
+}
+```
+
+`POST /api/v2/observation-bundles` returns one state and the requested fixed,
+typed Inspections under the same exact state, Bridge MVID/runtime, game, and
+Modset identity. Requests are limited to the current catalog, at most eight
+distinct fixed kinds, and 8 KiB. Any stale state, permission mismatch, unknown
+kind, or observation drift rejects the complete bundle. The response is
+read-only, creates no command, and cannot be supplied as an execution payload.
 
 `context.kind` is not a complete state discriminator. Clients must display and
 reason over at least:
@@ -65,14 +362,198 @@ Bridge wire actions always use `authority="game_ui"`; the higher-level client
 records the effective state authority separately.
 
 `shared_state` is a separate top-level read-only concern. Active-run Surfaces
-require it. The purpose-specific `character_select` menu Surface requires it to
-be `null`, because no run exists yet. Preview.28+ serializes
+require it. The purpose-specific `main_menu`, `singleplayer_menu`, and
+`character_select` Surfaces require it to be `null`, because no run exists yet.
+Preview.28+ serializes
 the active single-player run's act/floor/ascension, visible bosses/modifiers,
 and local player identity/HP/gold/relic/potion facts. It must not be copied into
 every Context, treated as an Inspection, or allowed to create actions. It is
 included in `state_id`; an active-run projection failure suppresses actions.
-Unknown hover-tip kinds fail closed instead of being silently omitted. Deck
-contents still require the fixed `run_deck` Inspection.
+Preview.46 represents bounded entity hover semantics as separate `keywords`
+and typed read-only `card_previews`. Relics, run modifiers, owned potions,
+shop relics, and treasure relics use this contract. Interactive cards keep
+runtime-instance identity; recreated tooltip cards use stable owner-scoped
+preview identity so presentation allocation cannot churn `state_id`. Preview
+identity grants no action authority. Unknown hover-tip kinds fail closed
+instead of being silently omitted. Deck contents still require the fixed
+`run_deck` Inspection.
+
+Preview.37 models root and single-player submenu navigation as distinct
+semantic Surfaces. They share a typed visible-choice component, not a universal
+menu action protocol. An option may be `actionable` or `visible_unsupported`;
+only the former may correspond to an opaque legal action. A live modal owns
+input above both menus and suppresses all menu actions.
+
+Preview.38 models the exact Whispering Hollow random-transform child as
+`event + deck_transform_selection`. It is not a universal card selector or a
+generic transform API. During preview it reports
+`preview_kind=random_uncommitted_cycle` and `replacement_known=false`; cycling
+cards are player-visible presentation and never disclose the committed random
+replacement or RNG. Confirmation requires screen closure, absence of every
+selected exact original instance, and preserved run-deck count.
+
+That child witness proves the bounded transform operation, not every remaining
+effect in the parent event transaction. Parent event-option completion may
+occur when a required child opens. The current wire has no transaction-wide
+obligation list assigning later parent effects to a command; this limitation is
+tracked by the 2026-07-20 architecture audit and must not be inferred away from
+the local child witness.
+
+Preview.42 models only `LeadPaperweight.AfterObtained` as
+`event + generated_card_choice`. The Surface must declare
+`purpose=acquire_one_generated_card`, `source_kind=lead_paperweight`, and
+`destination=run_deck`. Legal operations are `select_generated_run_card` and
+`skip_generated_run_card_choice`. An exact active source binding is mandatory;
+the shared `NChooseACardSelectionScreen`, prompt text, card-grid shape, or relic
+ownership alone never supplies purpose or authority. Selection completion
+requires source-task completion, Surface closure, exact selected-card presence,
+and run-deck count `+1`. Skip requires source-task completion, Surface closure,
+unchanged deck count, and absence of all offered exact card references.
+
+Preview.43 standardizes provider binding failure without adding a semantic
+Surface: a provider that cannot prove its exact source returns
+`unsupported + none_fail_closed + legal_actions=[]` with typed diagnostics.
+It may retain safe Context for diagnosis, but it may not retain a business
+Surface kind or `bridge_owned` authority. This helper is a wire-safety
+mechanism and never grants permission.
+
+Preview.44 adds exact `ColorlessPotion.OnUse` as a second, discriminated
+`combat + generated_card_choice` branch. It must declare
+`purpose=choose_one_generated_combat_card`,
+`source_kind=colorless_potion`, `destination=combat_hand`,
+`selected_card_cost_policy=free_this_turn`, and
+`overflow_destination=combat_discard_if_hand_full`. Its legal operations are
+`select_generated_combat_card` and
+`skip_generated_combat_card_choice`. Selection completion requires the source
+task to finish, child closure, an exact offered reference newly present in
+hand or discard, combined hand/discard count `+1`, and the temporary free-cost
+modifier. Skip requires source completion, child closure, unchanged hand and
+discard counts, and absence of all offered references. Lead Paperweight and
+Colorless Potion share only bounded one-of-N mechanics; source, Context,
+destination, cost policy, operations, and witnesses remain distinct.
+
+Preview.52 extends that combat branch only to native sealed `AttackPotion`,
+`SkillPotion`, and `PowerPotion`, whose exact v0.109 `OnUse` implementations
+have the same visible choice, free-this-turn mutation, hand destination,
+full-hand discard overflow, and source-task lifecycle as `ColorlessPotion`.
+The wire preserves exact `source_kind` values `colorless_potion`,
+`attack_potion`, `skill_potion`, and `power_potion`; exact type equality is
+required, so unknown potions, derived
+Mod types, card/relic generators, and other callers cannot inherit authority.
+Shared mechanics and witness topology do not erase the source identity or
+create a universal generated-card selector.
+
+Preview.53 extends `combat_pile_card_selection` only to exact sealed
+`Graveblast`. Its wire branch is discriminated from Headbutt by
+`source_kind=graveblast`, `purpose=move_one_discard_card_to_hand`,
+`destination_pile=hand`, `destination_position=bottom`, and
+`overflow_destination=discard_if_hand_full`. Completion requires source-task
+completion, child closure, exact-reference movement from discard to hand when
+capacity existed, or exact-reference retention in discard only when the
+baseline hand was full. Combined hand/discard cardinality must remain stable.
+The shared selector mechanics do not grant any other combat-pile caller
+authority.
+
+The current contract includes exact sealed `Cleanse` and Seance branches.
+`Cleanse.OnPlay` opens `CardSelectCmd.FromCombatPile` for exactly one
+draw-pile card, then calls `CardCmd.Exhaust` for the selected reference. Its
+wire values are `source_kind=cleanse`, `purpose=exhaust_one_draw_card`,
+`pile_type=draw`, and `destination_pile=exhaust`. Completion requires the
+source task to finish, the child to close, and that exact card to leave the
+baseline draw pile and appear in the exhaust pile. This candidate is not
+Organic-qualified. Current Release loading and a read-only Re decode confirmed
+the explicit source discriminator, but two Organic plays then showed that the
+broad `CardModel.OnPlayWrapper` scope did not remain uniquely bound while the
+child was active. The corrected implementation binds the exact protected
+`Cleanse.OnPlay(PlayerChoiceContext, CardPlay)` task. This establishes an
+adaptation rule: shared selection mechanics may remain common, but source
+evidence must attach to the narrowest method whose task actually encloses the
+player-choice lifecycle. An Organic action later completed that exact Cleanse
+contract under its prior loaded Preview.57 identity; the evidence does not
+transfer to Preview.60 qualification.
+
+Seance uses `source_kind=seance`,
+`purpose=transform_one_draw_card_into_soul`, `pile_type=draw`,
+`destination_pile=draw`, and `destination_position=same_index`. Publication and
+execution require the same active `Seance.OnPlay` task. Success requires source
+completion, selector closure, selected-original absence, pile-count
+preservation, and a new exact `Soul` reference at the original draw-pile
+index. This branch is loaded and canary-scoped but not Organic-tested.
+
+Dredge uses `source_kind=dredge`,
+`purpose=move_bounded_discard_cards_to_hand`, `pile_type=discard`,
+`mutation_kind=move_selected_cards`,
+`commit_mode=automatic_at_max`, `destination_pile=hand`, and
+`destination_position=bottom`. Its equal
+`min_select=max_select` is dynamically one to three from native hand capacity;
+it has no manual confirmation and no cancel. When more candidates exist than
+the required count, `toggle_combat_pile_card` changes the visible selected set.
+An intermediate command completes only when that exact set
+changes while source/screen and both piles remain stable. The final toggle
+completes only when the source task finishes, the selector closes, and the
+exact selected batch moves discard to hand. When the native command can resolve
+without opening a selector because the candidate set is already bounded, no
+child Surface is required. A Preview.59 current-build Re canary exercised
+select, deselect, and exact-three automatic commit. All unknown origins remain
+unsupported.
+
+Preview.60 added exact Charge under the same bounded pile-selection mechanics.
+In Preview.61 its structural branch is `source_kind=charge`,
+`purpose=transform_two_draw_cards_into_minion_dive_bombs`,
+`mutation_kind=replace_selected_cards_same_index`,
+`commit_mode=automatic_at_max`, `pile_type=draw`,
+`min_select=max_select=2`,
+`destination_pile=draw`, and `destination_position=same_index`. The operation
+`toggle_combat_pile_card` completes an intermediate command only when the
+exact selected set changes without pile mutation. Final completion requires
+source task and child closure, both exact originals absent, unchanged draw-pile
+count, and new exact `MinionDiveBomb` references at both original indices.
+Upgraded Charge additionally requires upgraded replacements. This witness does
+not authorize any other pile transformation.
+
+Preview.61 adds exact Neow's Fury as a distinct manually committed branch:
+`source_kind=neows_fury`,
+`purpose=move_optional_discard_cards_to_hand`,
+`mutation_kind=move_selected_cards`, `commit_mode=manual_confirm`,
+`pile_type=discard`, `destination_pile=hand`, `min_select=0`, and a dynamic
+maximum bounded by the native card value and free hand slots. Toggle commands
+prove only a selected-set change with stable piles. The Gateway advertises
+`confirm_combat_pile_selection` only when the current native confirm control is
+visible and enabled. Confirmation may commit an empty set; completion uses the
+exact source task and post-state movement witness described above.
+
+Preview.60 also added two exact generated-card branches. Quasar uses
+`source_kind=quasar`, `destination=combat_hand`,
+`selected_card_cost_policy=unchanged`, and allows
+`select_generated_combat_card` or `skip_generated_combat_card_choice`.
+Selection requires an exact offered reference in hand or full-hand discard
+without a local free-cost modifier. Knowledge Demon uses
+`source_kind=knowledge_demon_curse`,
+`purpose=choose_one_immediate_combat_effect`,
+`destination=immediate_effect`, and cannot skip. Its
+`select_generated_combat_effect` completion requires the exact corresponding
+Power amount to increase after source and child closure. These sources share a
+grid, not a business contract.
+
+Preview.54 extends the generated-combat branch only to exact sealed native
+`Splash`. The source is tracked around `CardModel.OnPlayWrapper`; the offered
+set must contain exactly three transient Attack cards owned by the local
+player, with the same explicit free-this-turn hand/discard outcome used by the
+native source. Wire `source_kind=splash` remains distinct from potion sources.
+Unknown cards, derived types, relic generators, and other shared-screen callers
+remain fail closed.
+
+Preview.40 models two source-bounded, non-authorizing combat lifecycle phases
+under one `combat_transition` Context. `phase=setup` requires the exact current
+room to be `CombatRoom`, no blocking Surface, combat not in progress, and
+either `CombatManager.IsStarting` or no combat state yet. It uses
+`transition=awaiting_combat_start`. `phase=resolution` requires retained combat
+state plus a live `NCombatRoom` after combat ended and uses
+`transition=awaiting_room_resolution`. Both compose only with `no_action`,
+readiness `settling`, zero actions, and `none_fail_closed`. They are absent
+from capabilities and permission manifests because they describe lack of
+input ownership, not executable Surfaces. Absence of a visible overlay in any
+other room remains insufficient evidence and fails closed.
 
 Similar card grids do not imply a shared Surface. Selection limits, selected
 cards, preview controls, and opaque-card bindings may be shared structural
@@ -149,6 +630,8 @@ Additional preview.2 completion evidence:
 | Surface/action | Completion evidence |
 |---|---|
 | event choose | source-backed replacement option set, required child Surface, combat, or room transition; `WasChosen` alone is insufficient |
+| shop relic purchase with linked rewards | exact relic gained, exact gold delta, offer advanced, and exact visible linked reward child; a completed failed parent task is never accepted |
+| reward Proceed | the purpose-specific reward witness may pass through known intermediate state changes; an unknown outcome is never retried |
 | event proceed | map opens or the event room leaves |
 | combat play card | card leaves hand, required subsurface opens, or combat ends |
 | combat potion | potion leaves its exact slot or combat ends |
@@ -210,6 +693,7 @@ Current selection and reward completion evidence:
 | shop card-removal launch | exact merchant removal child opens or the exact service becomes used |
 | shop Proceed | map opens or the merchant room exits |
 | deck upgrade confirm | exact selected deck instance is upgraded and the selector closes |
+| deck transform confirm | exact selected original instances are absent, run-deck count is preserved, and the selector closes; the random replacement is not disclosed before commit |
 | event card acquisition select/deselect | exact selected membership changes, or final auto-commit closes the child, increases run-deck count by the committed selection count, and places every selected exact instance in the run deck |
 | treasure relic choose | exact relic ownership increases and the relic selection closes |
 | treasure skip | relic ownership is unchanged and the room advances |
@@ -268,18 +752,25 @@ audit but do not infer safety from warning presence or absence.
 
 ## Inspection Contract
 
-Historical exact builds advertise exactly two `implemented_read_only` inspection
-kinds:
+The Bridge declares three possible read-only Inspection kinds, but a build may
+advertise only the kinds that are explicitly permitted for that exact build:
 
 - `run_deck`: current local player's run deck, including per-instance upgrade
   and enchantment semantics;
 - `combat_piles`: draw, discard, and exhaust contents while a qualified combat
-  context exists.
+  context exists;
+- `shop_catalog`: the current merchant's typed fixed-slot card, relic, potion,
+  and removal-service catalog while the player is in that shop Context. It
+  reports whether the inventory is open or closed, but never publishes
+  purchase or navigation actions.
 
-Both return `visibility_class=normal_inspection` and
-`ordering_semantics=unordered_multiset`. Serialization order is deterministic
-but has no game meaning. In particular, real draw order is never returned and
-is declared as `draw_pile_order_hidden_by_policy`.
+All return `visibility_class=normal_inspection`. `run_deck` and
+`combat_piles` use `ordering_semantics=unordered_multiset`; serialization order
+is deterministic but has no game meaning. In particular, real draw order is
+never returned and is declared as `draw_pile_order_hidden_by_policy`.
+`shop_catalog` uses `ordering_semantics=fixed_ui_slots`, preserving the exact
+visible merchant slot identities without creating a generic ordered-selector
+contract.
 
 Inspection requests require the exact current `state_id`, exact supported game
 identity, and a fixed advertised kind. They do not return actions, mutate the
@@ -294,16 +785,19 @@ or inspection `stale_state` rejects the entire composite observation; clients
 must not mix facts from adjacent game states. A bounded client may retry that
 read as transient evidence, but never reuse an action from the rejected read.
 
-For the current v0.109 identity, capabilities advertise only the explicitly
-scoped `run_deck` `qualified_read_only_scoped`; `combat_piles` is not advertised
-or accepted. Inspection scope is independent of action scope and is never
-inferred from historical capabilities.
+For the source-qualified v0.109 identity, capabilities advertise `run_deck` as
+qualified and `combat_piles` plus `shop_catalog` as separate read-only
+canaries, producing `mixed_scoped_read_only`. A different exact build may
+advertise no Inspection kinds and must then report
+`disabled_for_current_build`. Inspection scope is independent of action scope
+and is never inferred from historical capabilities.
 
-An empty qualified/canary Surface list is always an empty permission scope. It
-never means wildcard or all-declared-Surface authority. Historical exact build
-identity may permit an explicit legacy handoff, but no v2 Provider can publish
-an action unless its kind appears in the build's explicit qualified or canary
-list.
+An empty qualified/canary Surface or Inspection list is always an empty
+permission scope. It never means wildcard, all-declared-Surface authority, or
+all declared fixed Inspections. Historical exact build identity may permit an
+explicit legacy handoff, but no v2 Provider can publish an action and no fixed
+Inspection can answer unless its kind appears in the build's explicit qualified
+or canary list.
 
 ## Error Codes
 

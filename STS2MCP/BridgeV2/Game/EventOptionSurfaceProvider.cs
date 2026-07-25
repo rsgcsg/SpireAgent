@@ -66,7 +66,7 @@ internal sealed class EventOptionSurfaceProvider : IBridgeSurfaceProvider
                 ReadWillKillPlayer(button, option),
                 option.Relic == null ? null : McpMod.SafeGetText(() => option.Relic.Title),
                 option.Relic == null ? null : McpMod.SafeGetText(() => option.Relic.DynamicDescription),
-                BuildTooltips(option.HoverTips, entities)));
+                BuildTooltips(option.HoverTips, entityId)));
 
             if (!option.IsLocked && button.IsEnabled)
             {
@@ -164,13 +164,13 @@ internal sealed class EventOptionSurfaceProvider : IBridgeSurfaceProvider
         expectedButton.ForceClick();
         if (expectedOption.IsProceed)
         {
-            return BridgeActionStartResult.Started(
+            return StartAsyncEventTransition(
                 () => !ReferenceEquals(NEventRoom.Instance, expectedRoom)
                       || NMapScreen.Instance?.IsOpen == true,
                 "event_proceed_opened_map_or_left_room");
         }
 
-        return BridgeActionStartResult.Started(
+        return StartAsyncEventTransition(
             () => !ReferenceEquals(NEventRoom.Instance, expectedRoom)
                   || CombatManager.Instance.IsInProgress
                   || (NOverlayStack.Instance?.Peek() is { } currentOverlay
@@ -178,6 +178,14 @@ internal sealed class EventOptionSurfaceProvider : IBridgeSurfaceProvider
                   || HasReplacementOptions(expectedRoom, currentButtons),
             "event_option_replaced_or_required_subsurface_opened");
     }
+
+    internal static BridgeActionStartResult StartAsyncEventTransition(
+        Func<bool> completionProbe,
+        string completionEvidence) =>
+        BridgeActionStartResult.Started(
+            completionProbe,
+            completionEvidence,
+            allowIntermediateStateChanges: true);
 
     private static bool HasReplacementOptions(
         NEventRoom expectedRoom,
@@ -209,9 +217,10 @@ internal sealed class EventOptionSurfaceProvider : IBridgeSurfaceProvider
 
     private static IReadOnlyList<VisibleEventOptionTooltip> BuildTooltips(
         IEnumerable<IHoverTip> tips,
-        BridgeEntityRegistry entities)
+        string ownerEntityId)
     {
         var result = new List<VisibleEventOptionTooltip>();
+        int cardOrdinal = 0;
         foreach (IHoverTip tip in IHoverTip.RemoveDupes(tips))
         {
             switch (tip)
@@ -230,7 +239,10 @@ internal sealed class EventOptionSurfaceProvider : IBridgeSurfaceProvider
                         null,
                         BridgeContextBuilder.BuildCard(
                             card.Card,
-                            entities.GetId(card.Card, "tooltip_card"),
+                            BridgeVisibleEntityFacts.BuildTooltipCardEntityId(
+                                ownerEntityId,
+                                card.Card.Id.Entry,
+                                cardOrdinal++),
                             displayPile: PileType.Deck)));
                     break;
                 default:

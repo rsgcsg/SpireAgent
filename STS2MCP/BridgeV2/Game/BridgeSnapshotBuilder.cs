@@ -1,40 +1,72 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Nodes.Rooms;
+using MegaCrit.Sts2.Core.Rooms;
+using MegaCrit.Sts2.Core.Runs;
 using STS2_MCP.BridgeV2.Protocol;
 using STS2_MCP.BridgeV2.Runtime;
 
 namespace STS2_MCP.BridgeV2.Game;
 
+internal enum CombatNoInputPhase
+{
+    None,
+    Setup,
+    Resolution
+}
+
 internal static class BridgeSnapshotBuilder
 {
-    private static readonly IBridgeSurfaceProvider[] Providers =
+    private sealed record ProviderRegistration(string Kind, Func<IBridgeSurfaceProvider> Create);
+
+    private static readonly ProviderRegistration[] ProviderRegistrations =
     {
-        new DeckEnchantSurfaceProvider(),
-        new DeckRemovalSelectionSurfaceProvider(),
-        new DeckUpgradeSelectionSurfaceProvider(),
-        new CombatPileCardSelectionSurfaceProvider(),
-        new CombatHandCardSelectionSurfaceProvider(),
-        new EventCardAcquisitionSurfaceProvider(),
-        new GeneratedCardChoiceSurfaceProvider(),
-        new CardBundleSelectionSurfaceProvider(),
-        new CardRewardSurfaceProvider(),
-        new RewardClaimSurfaceProvider(),
-        new MapNavigationSurfaceProvider(),
-        new CombatTurnSurfaceProvider(),
-        new ShopInventorySurfaceProvider(),
-        new ShopRoomSurfaceProvider(),
-        new TreasureRoomSurfaceProvider(),
-        new GameOverSurfaceProvider(),
-        new CharacterSelectSurfaceProvider(),
-        new RestSiteSurfaceProvider(),
-        new EventDialogueSurfaceProvider(),
-        new EventOptionSurfaceProvider()
+        new("deck_enchant_selection", static () => new DeckEnchantSurfaceProvider()),
+        new("deck_removal_selection", static () => new DeckRemovalSelectionSurfaceProvider()),
+        new("relic_deck_removal_selection", static () => new PreciseScissorsRemovalSurfaceProvider()),
+        new("reward_deck_removal_selection", static () => new RewardCardRemovalSurfaceProvider()),
+        new("deck_upgrade_selection", static () => new DeckUpgradeSelectionSurfaceProvider()),
+        new("deck_transform_selection", static () => new DeckTransformSelectionSurfaceProvider()),
+        new("wood_carvings_replacement_selection", static () => new WoodCarvingsReplacementSurfaceProvider()),
+        new("combat_pile_card_selection", static () => new CombatPileCardSelectionSurfaceProvider()),
+        new("combat_hand_card_selection", static () => new CombatHandCardSelectionSurfaceProvider()),
+        new("event_card_acquisition", static () => new EventCardAcquisitionSurfaceProvider()),
+        new("generated_card_choice", static () => new GeneratedCardChoiceSurfaceProvider()),
+        new("card_bundle_selection", static () => new CardBundleSelectionSurfaceProvider()),
+        new("card_reward_selection", static () => new CardRewardSurfaceProvider()),
+        new("reward_claim", static () => new RewardClaimSurfaceProvider()),
+        new("map_navigation", static () => new MapNavigationSurfaceProvider()),
+        new("combat_turn", static () => new CombatTurnSurfaceProvider()),
+        new("shop_inventory", static () => new ShopInventorySurfaceProvider()),
+        new("shop_room", static () => new ShopRoomSurfaceProvider()),
+        new("treasure_room", static () => new TreasureRoomSurfaceProvider()),
+        new("game_over", static () => new GameOverSurfaceProvider()),
+        new("character_select", static () => new CharacterSelectSurfaceProvider()),
+        new("main_menu", static () => new MainMenuSurfaceProvider()),
+        new("singleplayer_menu", static () => new SingleplayerMenuSurfaceProvider()),
+        new("rest_site", static () => new RestSiteSurfaceProvider()),
+        new("event_dialogue", static () => new EventDialogueSurfaceProvider()),
+        new("event_option", static () => new EventOptionSurfaceProvider())
     };
+
+    internal static IReadOnlyList<string> DeclaredProviderKinds =>
+        ProviderRegistrations.Select(provider => provider.Kind).ToArray();
+
+    private static IReadOnlyList<IBridgeSurfaceProvider> CreateProviders() =>
+        ProviderRegistrations.Select(registration => registration.Create()).ToArray();
 
     public static BridgeObservationDraft Build(BridgeEntityRegistry entities)
     {
-        GameBuildIdentity game = BridgeGameIdentity.Read();
+        return Build(entities, BridgeV2Runtime.ReadCurrentGameIdentity());
+    }
+
+    public static BridgeObservationDraft Build(
+        BridgeEntityRegistry entities,
+        GameBuildIdentity game)
+    {
+        IReadOnlyList<IBridgeSurfaceProvider> providers = CreateProviders();
         ActiveSurfaceSnapshot snapshot;
         try
         {
@@ -90,9 +122,9 @@ internal static class BridgeSnapshotBuilder
         }
 
         IReadOnlyList<IBridgeSurfaceProvider> eligibleProviders = game.Compatibility.ActionExecutionAllowed
-            ? Providers.Where(provider =>
+            ? providers.Where(provider =>
                 BridgeSurfacePermission.IsActionPermitted(game.Compatibility, provider.Kind)).ToArray()
-            : Providers.Where(provider => game.Compatibility.ObservationOnlySurfaceKinds.Contains(provider.Kind, StringComparer.Ordinal)).ToArray();
+            : providers.Where(provider => game.Compatibility.ObservationOnlySurfaceKinds.Contains(provider.Kind, StringComparer.Ordinal)).ToArray();
         ActiveSurfaceResolution resolution = ActiveSurfaceResolver.Resolve(
             snapshot,
             eligibleProviders,
@@ -118,7 +150,7 @@ internal static class BridgeSnapshotBuilder
 
         if (resolution.Draft != null)
             return game.Compatibility.ActionExecutionAllowed
-                ? resolution.Draft
+                ? SuppressActionsOutsideCurrentOperationScope(resolution.Draft)
                 : SuppressActionsForCandidateObservation(resolution.Draft);
         if (resolution.MatchedKinds.Count > 1)
         {
@@ -136,9 +168,12 @@ internal static class BridgeSnapshotBuilder
                     "restart"));
         }
 
+        if (TryBuildCombatNoInputTransition(snapshot, entities, game) is { } transition)
+            return transition;
+
         if (game.Compatibility.Status == "qualified_scoped")
         {
-            IReadOnlyList<IBridgeSurfaceProvider> unqualifiedProviders = Providers
+            IReadOnlyList<IBridgeSurfaceProvider> unqualifiedProviders = providers
                 .Where(provider =>
                     !game.Compatibility.ActionExecutionSurfaceKinds.Contains(provider.Kind, StringComparer.Ordinal)
                     && !game.Compatibility.ActionCanarySurfaceKinds.Contains(provider.Kind, StringComparer.Ordinal))
@@ -153,11 +188,11 @@ internal static class BridgeSnapshotBuilder
                 return Unsupported(
                     game,
                     snapshot.SourceType,
-                    "Bridge v2 could not establish a unique unqualified semantic surface owner; legacy fallback is forbidden.",
-                    new[] { "legacy_fallback_owner_ambiguous" },
+                    "Bridge v2 could not establish a unique unqualified semantic surface owner.",
+                    new[] { "unqualified_surface_owner_ambiguous" },
                     BridgeContextBuilder.Build(entities),
                     BridgeDiagnostics.Create(
-                        "bridge.authority.legacy_fallback_ambiguous",
+                        "bridge.authority.unqualified_surface_ambiguous",
                         "error",
                         "authority",
                         "actions_suppressed",
@@ -173,15 +208,15 @@ internal static class BridgeSnapshotBuilder
                     new[] { $"surface_not_qualified_for_current_build:{legacySurfaceKind}" },
                     BridgeContextBuilder.Build(entities),
                     BridgeDiagnostics.Create(
-                        "bridge.authority.legacy_fallback_allowed",
+                        "bridge.authority.unqualified_surface",
                         "info",
                         "authority",
                         "surface_unsupported",
-                        "legacy_adapter"),
+                        "change_surface"),
                     new AuthorityHandoff(
-                        "legacy_fallback_allowed",
-                        legacySurfaceKind,
-                        "Exactly one known semantic surface matched outside the current build's Bridge v2 qualification scope."));
+                        "none_fail_closed",
+                        null,
+                        "Exactly one source-resolved semantic surface matched outside the current Bridge v2 operation scope."));
             }
         }
 
@@ -197,12 +232,110 @@ internal static class BridgeSnapshotBuilder
                 "surface",
                 "surface_unsupported",
                 "change_surface"),
-            game.Compatibility.Status == "supported_exact"
-                ? new AuthorityHandoff(
-                    "legacy_fallback_allowed",
-                    null,
-                    "This fully tested legacy build preserves the previous explicit unsupported-surface fallback contract.")
-                : null);
+            new AuthorityHandoff(
+                "none_fail_closed",
+                null,
+                "No Bridge v2 semantic surface owns the current input state."));
+    }
+
+    private static BridgeObservationDraft? TryBuildCombatNoInputTransition(
+        ActiveSurfaceSnapshot snapshot,
+        BridgeEntityRegistry entities,
+        GameBuildIdentity game)
+    {
+        RunState? runState = RunManager.Instance.DebugOnlyGetState();
+        CombatState? combatState = CombatManager.Instance.DebugOnlyGetState();
+        NCombatRoom? room = NCombatRoom.Instance;
+        CombatNoInputPhase phase = ClassifyCombatNoInputTransition(
+            RunManager.Instance.IsInProgress,
+            runState?.CurrentRoom is CombatRoom,
+            CombatManager.Instance.IsStarting,
+            CombatManager.Instance.IsInProgress,
+            combatState != null,
+            snapshot.HasBlockingSurface,
+            room != null && McpMod.IsLiveNode(room));
+        if (phase == CombatNoInputPhase.None)
+            return null;
+
+        bool isSetup = phase == CombatNoInputPhase.Setup;
+        var context = new CombatTransitionBridgeContext(
+            "combat_transition",
+            isSetup ? "setup" : "resolution",
+            isSetup ? "awaiting_combat_start" : "awaiting_room_resolution");
+        var surface = new NoActionSurface(
+            "no_action",
+            "settling",
+            isSetup
+                ? "The combat room is initializing; no player input owner exists yet."
+                : "Combat has ended; the game is resolving room rewards or the next player-visible surface.");
+        var completeness = new StateCompleteness(
+            "complete_for_bounded_no_input_transition",
+            "none_no_input_owner",
+            new[]
+            {
+                "RunState.CurrentRoom",
+                "CombatManager.IsStarting",
+                "CombatManager.IsInProgress",
+                "CombatManager.DebugOnlyGetState",
+                "NCombatRoom",
+                "ActiveSurfaceResolver"
+            },
+            Array.Empty<string>());
+        string signature = BridgeHash.Object(new
+        {
+            game.Version,
+            game.Commit,
+            context,
+            surface,
+            runState!.CurrentActIndex,
+            runState.TotalFloor
+        });
+
+        return new BridgeObservationDraft(
+            signature,
+            "settling",
+            context,
+            surface,
+            completeness,
+            game,
+            Array.Empty<string>(),
+            Array.Empty<BridgeActionDraft>())
+        {
+            AuthorityHandoff = new AuthorityHandoff(
+                "none_fail_closed",
+                null,
+                "The exact combat transition has no player input owner; Bridge v2 will only observe and poll."),
+            Diagnostics = new[]
+            {
+                BridgeDiagnostics.Create(
+                    "bridge.lifecycle.no_input_transition",
+                    "info",
+                    "runtime",
+                    "none",
+                    "settle",
+                    isSetup
+                        ? "CombatRoom:combat_setup_before_input_surface"
+                        : "CombatRoom:combat_ended_before_reward_surface")
+            }
+        };
+    }
+
+    internal static CombatNoInputPhase ClassifyCombatNoInputTransition(
+        bool runInProgress,
+        bool currentRoomIsCombat,
+        bool combatIsStarting,
+        bool combatInProgress,
+        bool combatStatePresent,
+        bool hasBlockingSurface,
+        bool liveCombatRoomPresent)
+    {
+        if (!runInProgress || !currentRoomIsCombat || combatInProgress || hasBlockingSurface)
+            return CombatNoInputPhase.None;
+        if (combatIsStarting || !combatStatePresent)
+            return CombatNoInputPhase.Setup;
+        return liveCombatRoomPresent
+            ? CombatNoInputPhase.Resolution
+            : CombatNoInputPhase.None;
     }
 
     private static BridgeObservationDraft Unsupported(
@@ -280,6 +413,45 @@ internal static class BridgeSnapshotBuilder
             Warnings = warnings,
             Actions = Array.Empty<BridgeActionDraft>(),
             Diagnostics = diagnostics
+        };
+    }
+
+    private static BridgeObservationDraft SuppressActionsOutsideCurrentOperationScope(
+        BridgeObservationDraft draft)
+    {
+        IReadOnlyList<BridgeActionDraft> permitted = draft.Actions
+            .Where(action => BridgeSurfacePermission.IsActionPermitted(
+                draft.Game.Compatibility,
+                draft.Surface.Kind,
+                action.Kind))
+            .ToArray();
+        if (permitted.Count == draft.Actions.Count)
+            return draft;
+
+        var completeness = draft.Completeness with
+        {
+            LegalActions = "suppressed_by_explicit_operation_scope"
+        };
+        return draft with
+        {
+            Readiness = "unsupported",
+            Completeness = completeness,
+            Actions = Array.Empty<BridgeActionDraft>(),
+            Warnings = draft.Warnings
+                .Append("operation_scope_mismatch: source-resolved actions were not fully authorized for this exact environment.")
+                .ToArray(),
+            AuthorityHandoff = new AuthorityHandoff(
+                "none_fail_closed",
+                null,
+                "Bridge v2 operation scopes did not authorize every published action for the active Surface."),
+            Diagnostics = draft.Diagnostics
+                .Append(BridgeDiagnostics.Create(
+                    "bridge.authority.operation_scope_mismatch",
+                    "error",
+                    "authority",
+                    "actions_suppressed",
+                    "update_bridge"))
+                .ToArray()
         };
     }
 }

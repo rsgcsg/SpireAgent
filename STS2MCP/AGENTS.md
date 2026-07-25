@@ -1,14 +1,16 @@
 # STS2 Agent Bridge Engineering Guide
 
-Read `docs/bridge-v2/CURRENT_STATUS.md`, `docs/bridge-v2/UPSTREAM_AUDIT.md`,
-`docs/bridge-v2/PROTOCOL.md`, and `docs/bridge-v2/OBSERVATION_POLICY.md` before
-changing Bridge v2.
+Read `docs/bridge-v2/CURRENT_STATUS.md`,
+`docs/bridge-v2/REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md`,
+`docs/bridge-v2/PROTOCOL.md`, `docs/bridge-v2/OBSERVATION_POLICY.md`, and
+`docs/bridge-v2/LIVE_GAME_CONNECTION_BOUNDARY.md` before changing Bridge v2.
 
 ## Purpose
 
-This repository is the sensor/actuator adapter for Slay the Spire 2. It is not
-the strategic brain. In this workspace, "SpireAgent" means the rebuilt client
-under `../Re-SpireAgent/` unless a legacy system is named explicitly.
+This repository contains the current game-side Live Semantic Gateway for Slay
+the Spire 2 plus REST and optional MCP adapters. It is not the strategic brain.
+In this workspace, "SpireAgent" means the rebuilt client under
+`../Re-SpireAgent/` unless a legacy system is named explicitly.
 
 The bridge owns:
 
@@ -37,8 +39,8 @@ The bridge does not own:
 - Unknown surfaces and failed version bindings return no legal actions.
 - Private reflection must be exact-game-version scoped, documented, cached when
   appropriate, and fail closed.
-- Preserve v1 until a surface has equivalent v2 evidence and the rebuilt
-  SpireAgent has migrated.
+- The complete v1 HTTP namespace is retired. Preserve its archive as migration
+  evidence, but never restore it as a state, diagnostic, or mutation fallback.
 - Do not leak draw order, RNG state, undisclosed event results, future rewards,
   enemy future moves, or other non-player-visible information.
 
@@ -53,8 +55,9 @@ The bridge does not own:
 - `tests/`: pure protocol/runtime tests. Fixtures prove code behavior, not game
   compatibility.
 
-Do not add new v2 behavior to the giant v1 state/action switch. Add a narrow
-surface provider with a coverage row and game-fact evidence instead.
+The old v1 state/action switch is archived outside the active project. Add new
+v2 behavior through a bounded semantic contract with a coverage row and
+game-fact evidence; never copy archived dispatch logic back into the build.
 
 ## Required Change Evidence
 

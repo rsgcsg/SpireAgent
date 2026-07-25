@@ -1,11 +1,14 @@
+import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import { config as loadDotEnv } from "dotenv";
+
+/** Stable for both `tsx src/...` and compiled `dist/...` entrypoints. */
+export const RE_PROJECT_ROOT = resolve(fileURLToPath(new URL("../..", import.meta.url)));
 
 export interface RuntimeConfig {
   mcp: {
     baseUrl: string;
     timeoutMs: number;
-    protocolMode: "auto" | "v1" | "v2";
     commandPollMs: number;
     commandTimeoutMs: number;
   };
@@ -19,6 +22,7 @@ export interface RuntimeConfig {
   };
   runtime: {
     dataDir: string;
+    evidenceProvenance: "unrecorded" | "ordinary_gameplay" | "operator_positioned" | "console_assisted" | "fixture";
     maxTicks: number;
     tickDelayMs: number;
     settlementPollMs: number;
@@ -28,26 +32,30 @@ export interface RuntimeConfig {
   };
 }
 
-export function loadEnvironment(cwd = process.cwd()): void {
-  loadDotEnv({ path: resolve(cwd, ".env.local"), override: false, quiet: true });
-  loadDotEnv({ path: resolve(cwd, ".env"), override: false, quiet: true });
+export function loadEnvironment(projectRoot = RE_PROJECT_ROOT): void {
+  loadDotEnv({ path: resolve(projectRoot, ".env.local"), override: false, quiet: true });
+  loadDotEnv({ path: resolve(projectRoot, ".env"), override: false, quiet: true });
 }
 
-export function readRuntimeConfig(env: NodeJS.ProcessEnv = process.env): RuntimeConfig {
+export function readRuntimeConfig(env: NodeJS.ProcessEnv = process.env, projectRoot = RE_PROJECT_ROOT): RuntimeConfig {
   const thinkingMode = env.DEEPSEEK_THINKING_MODE ?? "disabled";
   if (thinkingMode !== "enabled" && thinkingMode !== "disabled") {
     throw new Error("DEEPSEEK_THINKING_MODE must be enabled or disabled");
   }
-  const protocolMode = env.STS2_MCP_PROTOCOL ?? "auto";
-  if (protocolMode !== "auto" && protocolMode !== "v1" && protocolMode !== "v2") {
-    throw new Error("STS2_MCP_PROTOCOL must be auto, v1, or v2");
+  if (env.STS2_MCP_PROTOCOL !== undefined && env.STS2_MCP_PROTOCOL !== "v2") {
+    throw new Error("Re-SpireAgent is v2-only; STS2_MCP_PROTOCOL may only be v2");
+  }
+  const evidenceProvenance = env.AGENT_EVIDENCE_PROVENANCE ?? "unrecorded";
+  if (!isEvidenceProvenance(evidenceProvenance)) {
+    throw new Error(
+      "AGENT_EVIDENCE_PROVENANCE must be unrecorded, ordinary_gameplay, operator_positioned, console_assisted, or fixture"
+    );
   }
 
   return {
     mcp: {
       baseUrl: stripTrailingSlash(env.STS2_API_URL ?? "http://localhost:15526"),
       timeoutMs: positiveInteger(env.STS2_MCP_TIMEOUT_MS, 5_000, "STS2_MCP_TIMEOUT_MS"),
-      protocolMode,
       commandPollMs: positiveInteger(env.STS2_MCP_V2_COMMAND_POLL_MS, 75, "STS2_MCP_V2_COMMAND_POLL_MS"),
       commandTimeoutMs: positiveInteger(env.STS2_MCP_V2_COMMAND_TIMEOUT_MS, 12_000, "STS2_MCP_V2_COMMAND_TIMEOUT_MS")
     },
@@ -60,7 +68,8 @@ export function readRuntimeConfig(env: NodeJS.ProcessEnv = process.env): Runtime
       thinkingMode
     },
     runtime: {
-      dataDir: resolve(env.AGENT_DATA_DIR ?? "data/runs"),
+      dataDir: resolve(projectRoot, env.AGENT_DATA_DIR ?? "data/runs"),
+      evidenceProvenance,
       maxTicks: positiveInteger(env.AGENT_MAX_TICKS, 100, "AGENT_MAX_TICKS"),
       tickDelayMs: nonNegativeInteger(env.AGENT_TICK_DELAY_MS, 250, "AGENT_TICK_DELAY_MS"),
       settlementPollMs: positiveInteger(env.AGENT_SETTLEMENT_POLL_MS, 150, "AGENT_SETTLEMENT_POLL_MS"),
@@ -77,6 +86,10 @@ export function readRuntimeConfig(env: NodeJS.ProcessEnv = process.env): Runtime
       )
     }
   };
+}
+
+function isEvidenceProvenance(value: string): value is RuntimeConfig["runtime"]["evidenceProvenance"] {
+  return ["unrecorded", "ordinary_gameplay", "operator_positioned", "console_assisted", "fixture"].includes(value);
 }
 
 function stripTrailingSlash(value: string): string {

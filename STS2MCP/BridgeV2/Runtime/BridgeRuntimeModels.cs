@@ -52,4 +52,5 @@ internal sealed record BridgeObservationDraft(
 
 internal sealed record RegisteredBridgeAction(
     LegalAction Descriptor,
-    Func<BridgeActionStartResult> Start);
+    Func<BridgeActionStartResult> Start,
+    BridgeActionPermissionBinding? PermissionBinding = null);

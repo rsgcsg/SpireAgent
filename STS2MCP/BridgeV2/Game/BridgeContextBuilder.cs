@@ -9,6 +9,7 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Merchant;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.Potions;
+using MegaCrit.Sts2.Core.HoverTips;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Events;
 using MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine;
@@ -186,12 +187,18 @@ internal static class BridgeContextBuilder
                 continue;
             try
             {
+                HoverTip hoverTip = power.HoverTips
+                    .OfType<HoverTip>()
+                    .FirstOrDefault(tip => tip.Id == power.Id.ToString());
+                string? description = string.IsNullOrWhiteSpace(hoverTip.Description)
+                    ? McpMod.StripRichTextTags(power.DumbHoverTip.Description)
+                    : McpMod.StripRichTextTags(hoverTip.Description);
                 result.Add(new VisibleStatus(
                     power.Id.Entry,
                     McpMod.SafeGetText(() => power.Title),
                     power.DisplayAmount,
                     power.Type.ToString(),
-                    McpMod.SafeGetText(() => power.SmartDescription)));
+                    description));
             }
             catch
             {
@@ -268,9 +275,32 @@ internal static class BridgeContextBuilder
             combat.DiscardPile.Cards.Count,
             combat.ExhaustPile.Cards.Count,
             BuildStatuses(player.Creature),
+            BuildCompanions(combat, entities),
             BuildPotionStates(player, entities, playPhase),
             orbs,
             combat.OrbQueue?.Capacity);
+    }
+
+    private static IReadOnlyList<VisibleCombatCompanion> BuildCompanions(
+        PlayerCombatState combat,
+        BridgeEntityRegistry entities)
+    {
+        return combat.Pets.Select(companion =>
+        {
+            MonsterModel model = companion.Monster
+                ?? throw new InvalidOperationException("A player combat pet has no monster model.");
+            bool healthBarVisible = model.IsHealthBarVisible;
+            return new VisibleCombatCompanion(
+                entities.GetId(companion, "companion"),
+                model.Id.Entry,
+                McpMod.SafeGetText(() => model.Title),
+                companion.IsAlive,
+                healthBarVisible,
+                healthBarVisible ? companion.CurrentHp : null,
+                healthBarVisible ? companion.MaxHp : null,
+                companion.IsAlive ? companion.Block : 0m,
+                companion.IsAlive ? BuildStatuses(companion) : Array.Empty<VisibleStatus>());
+        }).ToArray();
     }
 
     private static VisibleEnemy BuildEnemy(Creature creature, BridgeEntityRegistry entities)

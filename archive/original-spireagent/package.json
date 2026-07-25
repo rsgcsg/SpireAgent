@@ -1,0 +1,33 @@
+{
+  "name": "sts2-ai-agent-portable",
+  "version": "0.1.0",
+  "description": "LLM-first Slay the Spire 2 AI agent with local scaffold, memory, collector, and MCP/REST integration.",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "agent:tick": "tsx src/agent/index.ts tick",
+    "agent:run": "tsx src/agent/index.ts run",
+    "agent:run:bridge": "STS2_LLM_COMMAND=\"node scripts/llm-bridge-decider.mjs\" STS2_LLM_TIMEOUT_MS=120000 STS2_LLM_BRIDGE_TIMEOUT_MS=120000 tsx src/agent/index.ts run",
+    "agent:run:deepseek-combat-live": "STS2_P8_LIVE_ADDITIVE=1 STS2_P8_LIVE_DECISION_CLASSES=combat:llm_required STS2_LLM_COMMAND=\"tsx src/agent/deepseekLiveCommand.ts\" STS2_LLM_TIMEOUT_MS=45000 tsx src/agent/index.ts run",
+    "agent:run:deepseek-broad-live": "STS2_P8_LIVE_ADDITIVE=1 STS2_P8_LIVE_DECISION_CLASSES=combat:llm_required,card_reward:llm_required,map:llm_required,rest:llm_required,shop:llm_required,event:llm_required,card_select:local_recommended_llm_arbitrate STS2_LLM_COMMAND=\"tsx src/agent/deepseekLiveCommand.ts\" STS2_LLM_TIMEOUT_MS=45000 tsx src/agent/index.ts run",
+    "agent:review": "tsx src/agent/index.ts review",
+    "agent:smoke": "tsx src/agent/smoke.ts",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm run agent:smoke",
+    "collect:state": "tsx src/agent/collector.ts state",
+    "collect:watch": "tsx src/agent/collector.ts watch",
+    "data:replay": "tsx src/replay/cli.ts",
+    "data:eval": "tsx src/eval/cli.ts",
+    "learning:proposals": "tsx src/learning/cli.ts",
+    "sync:sts2-data": "node scripts/sync-sts2-data.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.0",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3"
+  }
+}

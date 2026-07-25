@@ -1,35 +1,201 @@
 # Bridge v2 Integration
 
+> Current source-truth status, 2026-07-25: Re and C# share the
+> `2.0-preview.63` source consumer contract; Re normalized schema is `26`.
+> Gate 1 is closed as a bounded ordinary-single-player v2 connector baseline.
+> Preview.61 supplied the final Neow's Fury runtime seal; Preview.62 adds
+> policy provenance and registry adaptation without inheriting qualification.
+
+## Connector Boundary
+
+Re-SpireAgent's current strict-v2 connection is direct REST through
+`BridgeV2RestClient`. The game-side Bridge is the protocol-neutral Live
+Semantic Gateway; the Python MCP server is optional and is not in this runtime
+path. The canonical cross-project ownership rules are in
+[the Live STS2 Connection Boundary](../../STS2MCP/docs/bridge-v2/LIVE_GAME_CONNECTION_BOUNDARY.md).
+
+Re owns connector negotiation, strict schema decoding, coherent structural
+projection, advertised-action import, submission/polling, and exact
+environment/evidence recording. It does not own or reconstruct strict-v2 game
+legality, runtime permission, native Commit, transaction completion, semantic
+Witnesses, or host-specific live/Headless rules. A Re change in this area must
+remain directly tied to connector, protocol adaptation, or structured state
+consumption.
+
 ## Current Scope
 
-Re-SpireAgent supports the strict `2.0-preview.31` source contract. Current
-v0.109 authority is read from capabilities rather than inferred from historical
-implementation:
+Re-SpireAgent implements the strict `2.0-preview.63` consumer contract. When a
+matching Bridge exists, authority is read from capabilities rather than
+inferred from implementation or historical evidence.
 
-- scoped-qualified actions: `deck_removal_selection`,
-  `deck_upgrade_selection`, `combat_turn`, `combat_hand_card_selection`, and
-  ordinary single-player `rest_site`;
-- current-build action canaries: `event_card_acquisition`, `reward_claim`,
-  `card_reward_selection`, `map_navigation`, `shop_inventory`, `shop_room`,
-  `treasure_room`, `game_over`, `card_bundle_selection`, `character_select`,
-  `event_dialogue`, and `event_option`;
-- scoped-qualified read-only Inspection: `run_deck`;
-- every unlisted Surface and Inspection: disabled for this build.
+For every exact identity, Re accepts only the Gateway's explicit
+`surface_kind + operation + tier` scope projection. Every unlisted operation,
+source binding, Surface, and Inspection is disabled. Qualification from another
+game build or Bridge MVID does not transfer.
 
-Current-build organic evidence includes merchant removal with exact post-state,
+Re compares the stable state/capability authorization set
+(`surface_kind + operation + tier`), rejects duplicate or unadvertised scopes,
+and imports a legal action only when its
+`surface_kind + operation` pair is explicitly advertised. Empty qualified,
+canary, or Inspection lists never imply wildcard authority. State,
+capabilities, bundles, and Inspections must agree on game identity, Modset
+fingerprint, Bridge assembly SHA-256, MVID, and runtime instance. Exact Modset
+permission additionally requires the negotiated loaded `STS2_MCP` module and
+no other loaded gameplay Mod.
+
+Preview.62 also requires state and capabilities to agree on the reviewed
+exact-environment policy ID, its digest and adaptation level. These fields are
+provenance, not a client-side permission engine.
+
+Preview.63 additionally requires the Gateway permission runtime epoch, runtime
+Patch inventory and complete operation-scope grant bindings. A dynamic scope
+must reference the unique current active grant for the same operation and exact
+environment. Re preserves superseded/revoked grant versions for audit, imports
+no action from them, and cannot promote, quarantine or persist permission.
+Capabilities are negotiated once, so grant IDs may legitimately advance after
+a semantic completion; each response is independently exact-validated while
+the stable authorization set must remain coherent.
+
+Re's production Connector is v2-only. The former `auto` and explicit `v1`
+runtime modes are rejected; historical v1 raw-state records remain readable
+but no Re transport can reach `/api/v1/*`. A `legacy_v1_state` field injected
+into a Bridge v2 wrapper is invalid and cannot contribute facts or authority.
+
+Bridge command `completed` is the semantic settlement authority. Re verifies
+the echoed request/state/action identity, preserves `failed` and `timed_out`
+as unknown outcomes, and captures a coherent successor checkpoint after a
+confirmed command. A checkpoint read failure cannot cause action retry.
+
+The first exact Preview.63 production-path canary submitted advertised
+`main_menu/continue_run` once and settled at `reward_flow/reward_claim`. The
+Gateway promoted that operation from `session_canary` to
+`session_auto_approved` for the current runtime epoch. This proves the
+consumer contract and one low-risk session loop, not persistent qualification
+or broader permission.
+
+Preview.47 adds one coherent state-plus-Inspection observation bundle, a typed
+visibility/Inspection catalog, and non-authorizing contract-instance shadow
+telemetry. Re validates and preserves those fields but never uses the shadow as
+permission. Unresolved shadow contracts may omit nullable IDs during
+transitions. Evidence provenance is stored in run metadata and does not change
+execution or qualification.
+
+Preview.48 adds `shop_catalog` as a state-bound read-only canary in the current
+shop Context. Re projects exact fixed UI slots, prices, stock, affordability,
+potion-capacity blocks, and removal-service state into player facts. It does
+not import purchase or navigation actions from the Inspection; those remain
+owned by the one active shop Surface.
+
+Preview.51 extends only the qualified combat Context with exact player-visible
+`companions`. Re requires unique companion identities, enforces native health
+bar visibility against HP presence, and projects the facts into normalized
+schema 22. It does not derive actions, targets, or hidden pet state.
+
+Preview.52 keeps the same generated-combat-card destination and completion
+contract while preserving the exact native source as
+`colorless_potion|attack_potion|skill_potion|power_potion`. Re schema 23 accepts
+only those values under combat Context. Attack Potion is organically exercised;
+Skill/Power remain source-audited canaries, and other callers remain invalid.
+
+Preview.53 adds exact native Graveblast as a second source-discriminated branch
+of `combat_pile_card_selection`. It shares the exact-one visible discard-pile
+selection mechanics with Headbutt, but not the business outcome: Graveblast
+moves the selected reference to hand, with the native full-hand discard redirect,
+while Headbutt moves it to draw-pile top. Both branches retain independent
+completion evidence and unknown callers remain invalid.
+
+Re now decodes one structural `combat_pile_card_selection` contract rather than
+one TypeScript branch per source card. It validates closed movement or
+same-index replacement semantics, automatic-at-max versus manual-confirm
+commit, exact selected instances, and bounds. Gateway source provenance remains
+visible but does not create client-side authority. Unknown structurally valid
+provenance can be decoded only when the exact Gateway has already published
+scoped opaque actions; unknown Gateway source binding still produces no
+actions. See the
+[Gate 1 selector audit](../../STS2MCP/docs/bridge-v2/GATE1_CLOSEOUT_AND_SELECTOR_TRANSACTION_AUDIT_2026-07-24.md).
+
+The current working tree additionally decodes the exact post-acquisition
+`Precise Scissors` deck-removal task as
+`unknown + relic_deck_removal_selection`, not as a shop removal or a generic
+card selector. Its only candidate authority is Gateway-advertised, exact
+`PreciseScissors.AfterObtained` binding plus the distinct canary scope. Re does
+not infer it from reward history and does not attach shop price/service facts.
+The source branch is compiled and fixture-tested only until a newly installed
+DLL completes an Organic select/preview/confirm/deck-post-state journey.
+
+Preview.58 separately decodes exact `CardRemovalReward` as
+`unknown + reward_deck_removal_selection`, never as merchant or relic removal.
+Re imports only the advertised opaque select/preview/confirm/cancel actions and
+does not infer the producer from prior combat. A current-build bounded canary
+completed the full selection lifecycle and an independent `run_deck` post-state
+with the selected exact card absent. This is canary evidence, not qualification.
+
+Preview.54 adds exact native Splash to `generated_card_choice` and normalized
+schema 25. It reuses only the generated-combat-card selection mechanics and the
+free-this-turn hand/discard completion witness. The source remains explicitly
+`splash`; no other card generator or Mod subtype inherits its authority.
+
+Discovery is deliberately absent from preview.55: no current C# source binding
+proves its native source, legality, destination, Commit, or completion. Re
+rejects it as unknown instead of widening the generated-card registry.
+
+Source-target organic evidence includes merchant removal with exact post-state,
 independent event/rest upgrade journeys, ordinary combat actions, a Touch of
 Insanity hand-select/confirm journey, ordinary rest Heal/Smith/Proceed, a Brain
 Leech exact-card acquisition, coherent reward/card-reward/map/shop journeys,
 treasure relic choose plus Proceed, an exact Scroll Boxes bundle commit,
 ordinary character selection/run start, revealed Neow dialogue, and a typed
 Neow option/Talisman/Proceed journey.
-Preview.28 game-over code is source/test/build verified after a preview.27
-organic contract defect; its fresh complete lifecycle, treasure open/skip,
-linked rewards, special map modes, and unlisted variants remain unqualified.
+The current MVID has a fresh loss intro -> summary -> return game-over
+lifecycle. Win/timeline diversity, treasure open/skip, linked rewards, special
+map modes, and unlisted variants remain unqualified.
+
+Preview.38 adds only the exact Whispering Hollow random-transform child. Re
+requires `random_uncommitted_cycle`, rejects any claimed pre-commit replacement,
+and preserves the same selected entity bindings through confirm. Selection,
+confirm, and upgrade-view presentation have current-build Organic-canary
+evidence; other transform origins and cancel variants remain unqualified.
+
+Preview.42 adds only the exact Lead Paperweight generated run-deck child. Re
+requires `purpose=acquire_one_generated_card`,
+`sourceKind=lead_paperweight`, `destination=run_deck`, exact visible card
+bindings, and matching operation kinds. The Organic selection record proves
+the same exact chosen card entered the run deck. Similar combat, relic, effect,
+or Mod callers cannot inherit this authority.
+
+Preview.43 ensures a provider whose exact source binding fails emits only
+`unsupported + none_fail_closed` with zero actions. Preview.44 adds the exact
+Colorless Potion combat child as a separate discriminated branch. Preview.52
+adds only the exact native Attack/Skill/Power siblings. Re requires
+`purpose=choose_one_generated_combat_card`, an exact supported potion `sourceKind`,
+`destination=combat_hand`, `selectedCardCostPolicy=free_this_turn`, and the
+full-hand discard overflow declaration, plus source-specific operation kinds.
+Organic Colorless and Attack selection evidence proves the exact chosen entity
+reached the successor hand at cost zero. Skill/Power, Skip, full-hand overflow,
+and every other generated-choice source remain without Organic qualification.
+
+Preview.46 requires typed `card_previews` on bounded hover-bearing entities.
+Re projects them into read-only card facts and never converts them into allowed
+actions. Stable preview IDs prevent recreated UI-only card models from causing
+false state changes; interactive cards still require exact runtime identity.
+
+Current-local evidence is narrower. Brain Leech option/acquisition was
+canary-exercised on earlier preview MVIDs. Final preview.35 MVID
+`547842a2-27d4-4c5d-8188-ca1d525d7e98` independently exercised exact
+`(5,4) -> (5,5)` map travel after adding the controller-only screen
+reachability gate. The successor combat remains unsupported with no authority.
+This evidence does not qualify those Surfaces or transfer between MVIDs.
 
 Historical v0.108 evidence for enchantment, combat child selectors, generated
 choices, and combat-pile Inspection remains protocol history only.
 It does not silently grant v0.109 execution authority.
+
+Preview.40 strictly decodes exact combat setup and resolution no-input
+transitions only when they are `settling`, have `none_fail_closed` authority,
+carry active-run shared state, publish no actions, and report no missing
+completeness field. They normalize to
+`combat_transition(setup|resolution) + no_action` and cannot inherit v1
+authority. No other context may compose with `no_action`.
 
 ## State Identity
 
@@ -43,17 +209,19 @@ shared_state + context.kind + surface.kind + actionAuthority
 - shared state: persistent visible single-player run/player HUD facts;
 - context: semantic game situation (`event`, `combat`, `reward_flow`, etc.);
 - surface: currently blocking interaction protocol;
-- authority: `bridge_advertised`, `local_reconstruction`, or `none`.
+- authority: current runtime states are `bridge_advertised` or `none`;
+  `local_reconstruction` remains only in historical v1 record decoding.
 
 For in-run Bridge-owned states, top-level v2 `shared_state` is the sole persistent
 run/player authority. It is read-only, included in state identity, and cannot
 add actions. Re rejects an in-run semantic Bridge state without it, mismatched combat
-player identity, or incomplete combat potion coverage. Unsupported
-legacy-owned states may still use v1 for their complete Context/Surface
-projection, but no v1 sidecar merges into a Bridge-owned state.
+player identity, or incomplete combat potion coverage. Unsupported legacy-owned
+states remain fail closed in the current Re runtime. Historical v1 records can
+still be decoded, but no v1 sidecar or mutation path participates in a live
+decision.
 
-The pre-run `character_select` Surface is the only current exception and must
-carry `shared_state=null`. Event options preserve visible lethal warnings and
+The pre-run `main_menu`, `singleplayer_menu`, and `character_select` Surfaces
+must carry `shared_state=null`. Event options preserve visible lethal warnings and
 typed `text`/`card` hover tips; unknown tooltip variants fail closed.
 
 ## Action Entity Bindings
@@ -126,32 +294,49 @@ degrades or grants authority.
 
 ## Inspection Boundary
 
-Historical exact builds expose exactly two fixed read-only kinds:
+The current source contract exposes exactly three fixed read-only kinds:
 
 - `run_deck` for per-instance deck/upgrade/enchantment semantics;
 - `combat_piles` for unordered draw/discard/exhaust contents;
-- `status=implemented_read_only`;
-- exact-state bound;
-- no arbitrary queries;
-- no command-ledger entry;
-- no hidden visibility;
-- no draw-order semantics.
+- `shop_catalog` for fixed visible merchant slots and service state in the
+  current shop Context.
 
-Re reads state, captures applicable inspections, and re-reads state before
-accepting the combined snapshot. It validates kind/content, exact identity,
-counts, zones, visibility policy, and state binding. Inspection evidence enters
-the stale-state hash and normalized player facts, but never creates actions.
-Volatile `observed_at` is excluded from stale identity; inspection content and
-IDs are not. `inspection_not_available` is the only safely absent condition.
-If the state advances during composite state-plus-inspection capture, whether
-detected by an inspection `stale_state` response or the final state re-read,
-the adapter rejects the partial snapshot with a typed transient observation error.
-The settlement watcher may retry only this error within its existing timeout;
-decision and execution authorization reads remain fail-closed.
+All three use `status=implemented_read_only`, are exact-state bound, support no
+arbitrary queries, create no command-ledger entry or action authority, and
+exclude hidden information. `run_deck` and `combat_piles` are unordered
+multisets; `shop_catalog` alone preserves fixed visible UI slots.
 
-The current v0.109 scope exposes only `run_deck` as
-`qualified_read_only_scoped`. It has supported merchant-removal and deck-upgrade
-post-state evidence. `combat_piles` remains disabled on this build.
+Re first reads the state-bound Inspection catalog and then requests one
+coherent Bridge observation bundle containing that state plus every advertised
+Inspection. It validates kind/content, exact identity, counts, zones,
+visibility policy, and state binding. Inspection evidence enters the stale-state
+hash and normalized player facts, but never creates actions. Volatile
+`observed_at` is excluded from stale identity; Inspection content and IDs are
+not. A bundle `stale_state` is typed as transient whole-read drift. For
+`inspection_scope_mismatch`, Re performs one non-authorizing fresh state read:
+only a changed `state_id` proves lifecycle drift and permits observation retry;
+the same mismatch against an unchanged state remains a hard contract error.
+No partial bundle is accepted, and decision/execution authorization remains
+fail closed.
+
+The eager-all Inspection read and the direct full-state Prompt serialization
+are current consumer behavior, not Gateway permission requirements. The full
+observation remains the replay/validation evidence source; any future strategy
+projection or selective Inspection policy must be downstream, state-bound,
+shadow-validated, and non-authorizing. The current limitations and falsifiable
+experiments are recorded in the
+[visibility and observation audit](../../docs/current/audits/VISIBILITY_AND_OBSERVATION_ARCHITECTURE_AUDIT_2026-07-22.md).
+
+The current v0.109 scope exposes `run_deck`, `combat_piles`, and
+`shop_catalog` as separate read-only canaries. Historical combat
+snapshots matched context counts before and after an opaque end-turn lifecycle;
+preview.48 shop reads matched the open/closed inventory and supported a direct
+leave decision without reopening it. No Inspection grants action authority,
+combat pile serialization remains explicitly unordered, and the shop catalog
+preserves fixed UI slot semantics rather than pretending to be a universal
+selector. Preview.52 follow-up run `run-20260719234320-ze6fp0` crossed closed
+shop inspection, inventory actions, map, event acquisition, and combat with
+15/15 settled Bridge-owned decisions after the bounded scope-drift fix.
 
 ## Card Reward Contract
 
@@ -217,21 +402,17 @@ line; game-created future line nodes are deliberately excluded. Rest owns only
 exact option controls and Proceed. On v0.109, ordinary single-player Heal uses
 an exact HP witness, Smith must open the exact upgrade child, and unknown
 enabled options suppress the Surface. Smith's deck selector remains a separate
-qualified Surface. Map projects visible topology and exact current choices;
+purpose-specific Surface. Map projects visible topology and exact current choices;
 asynchronous completion requires map closure or the exact selected current
-coordinate, not an arbitrary state change.
+coordinate, not an arbitrary state change. Smith's child and map navigation
+are current-build canaries. Publication and execution share the
+same travelable/enabled/FTUE predicate; controller mode additionally requires
+the exact node to be on screen, matching `NMapPoint.OnRelease`.
 
-## Modes
+## Connector Mode
 
-| `STS2_MCP_PROTOCOL` | Behavior |
-|---|---|
-| `auto` | Negotiate v2. Use v2 as sole executor for a qualified surface; use v1 only when a coherent exact v2 response explicitly says unsupported. |
-| `v1` | Use only v1 and `local_reconstruction` authority. |
-| `v2` | Require v2. Unsupported, degraded, mismatched, or unknown contracts stop safely. |
-
-The adapter remembers authority from its latest successful read. Executing a
-legacy action after a v2-owned read, or a v2 action after a legacy read, is
-rejected locally.
+Re uses Bridge v2 only. Unsupported, degraded, mismatched, or unknown contracts
+stop safely. Historical v1 records are outside the Agent runtime.
 
 ## Data Flow
 
@@ -286,8 +467,12 @@ composition, and an exact combat potion post-state on the final installed MVID.
 Preview.25 then verified a Brain Leech exact-card auto-commit and same-instance
 run-deck post-state. Preview.29-.30 verified a purpose-specific character-select
 run start, revealed-prefix dialogue, and typed event-option text/card tooltips
-through an exact Talisman/deck post-state and Proceed. Continue to the next
-coherent blocking legacy boundary; root menu/single-player setup and fresh
-game-over remain high-value. This integration
+through an exact Talisman/deck post-state and Proceed. Preview.37 adds bounded
+root and standard single-player menu contracts; Continue has final-MVID
+Organic evidence, while the hidden Single Player branch still needs its own
+lifecycle. Preview.41 fresh evidence now completes loss intro -> summary ->
+return. Re finishes that current-run lifecycle but stops at the resulting
+top-level menu with `stopReason=run_boundary`, before any continue/new-run
+decision. Win/timeline and result diversity remain evidence debt. This integration
 does not add memory, learning, scoring, hidden-information access, arbitrary MCP
 calls, generic action payloads, or broad v2 coverage.

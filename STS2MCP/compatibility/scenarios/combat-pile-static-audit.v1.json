@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "scenario_id": "combat_pile_static_audit_v1_exact_v0_109_0",
+  "scenario_kind": "exact_game_static_compatibility",
+  "evidence_role": "exact_game_static_audit",
+  "authorization_effect": "none",
+  "qualification_effect": "none",
+  "applicability": {
+    "registry_id": "combat_pile_source_contracts_v1",
+    "catalog_id": "combat_pile_closed_contract_catalog_v1",
+    "game_version": "0.109.0",
+    "game_commit": "c12f634d",
+    "game_assembly_sha256": "06c78d946ca70658e85abb28f6dc2ee0a023a4467faf0708ff542180fe5f4c82",
+    "game_assembly_mvid": "ceb123d1-63f0-4b8e-937c-5c49cec4c651"
+  },
+  "assertions": {
+    "report_schema_version": 2,
+    "registered_source_count": 13,
+    "required_registered_classification": "registered_static_match",
+    "required_registered_permission_recommendation": "no_change_existing_reviewed_policy",
+    "allowed_unregistered_classifications": [
+      "code_required_new_owner_binding",
+      "review_required_unresolved_operands",
+      "code_required_unknown_commit_topology"
+    ],
+    "allow_additional_unregistered_callers": false,
+    "known_holdouts": [
+      {
+        "source_type": "MegaCrit.Sts2.Core.Models.Cards.Tutor",
+        "candidate_classification": "code_required_new_owner_binding",
+        "required_owner_binding_signal": "references_cardplay_target",
+        "recommended_ceiling": "diagnostic_only",
+        "reason": "Tutor selects from cardPlay.Target.Player rather than the source-card owner."
+      }
+    ],
+    "required_limitations": [
+      "static_il_call_discovery_is_non_authorizing",
+      "operation_fingerprints_are_structural_evidence_not_semantic_equivalence_proofs",
+      "candidate_classification_never_writes_registry_or_policy",
+      "runtime_harmony_patch_closure_is_not_proven",
+      "semantic_completion_is_not_proven"
+    ]
+  }
+}

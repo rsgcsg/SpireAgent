@@ -7,6 +7,8 @@ using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect;
 using MegaCrit.Sts2.Core.Nodes.Screens.MainMenu;
+using MegaCrit.Sts2.Core.Nodes.CommonUi;
+using MegaCrit.Sts2.Core.Nodes.Screens.ScreenContext;
 using MegaCrit.Sts2.Core.Runs;
 using STS2_MCP.BridgeV2.Protocol;
 using STS2_MCP.BridgeV2.Runtime;
@@ -24,9 +26,11 @@ internal sealed record ActiveSurfaceSnapshot(
     IOverlayScreen? TopOverlay,
     bool MapIsOpen,
     NSubmenu? MenuSubmenu,
+    NMainMenu? MenuRoot,
+    IScreenContext? OpenModal,
     string SourceType)
 {
-    public bool HasBlockingSurface => TopOverlay != null || MapIsOpen || MenuSubmenu != null;
+    public bool HasBlockingSurface => TopOverlay != null || MapIsOpen || MenuSubmenu != null || MenuRoot != null || OpenModal != null;
 }
 
 internal sealed record ActiveSurfaceResolution(
@@ -49,8 +53,20 @@ internal static class ActiveSurfaceResolver
         // publishing stale actions over the new room state.
         IOverlayScreen? overlay = !mapIsOpen && IsVisibleActiveOverlay(candidate) ? candidate : null;
         NSubmenu? menuSubmenu = null;
+        NMainMenu? menuRoot = null;
+        IScreenContext? openModal = NModalContainer.Instance?.OpenModal;
+        if (openModal is CanvasItem modalCanvas
+            && (!McpMod.IsLiveNode(modalCanvas) || !McpMod.IsNodeVisible(modalCanvas)))
+        {
+            openModal = null;
+        }
         if (overlay == null && !mapIsOpen && !RunManager.Instance.IsInProgress)
         {
+            menuRoot = NGame.Instance?.MainMenu is { } rootMenu
+                       && McpMod.IsLiveNode(rootMenu)
+                       && McpMod.IsNodeVisible(rootMenu)
+                ? rootMenu
+                : null;
             NSubmenu? stackTop = NGame.Instance?.MainMenu?.SubmenuStack?.Peek();
             NCharacterSelectScreen? mountedCharacterSelect = NGame.Instance?.GetTree()?.Root is { } root
                 ? McpMod.FindFirst<NCharacterSelectScreen>(root)
@@ -70,9 +86,13 @@ internal static class ActiveSurfaceResolver
         }
         string sourceType = overlay?.GetType().Name
             ?? (mapIsOpen ? "map_open" : RunManager.Instance.IsInProgress ? "run_without_visible_overlay" : "menu_or_no_run");
-        if (menuSubmenu != null)
+        if (openModal != null)
+            sourceType = openModal.GetType().Name;
+        else if (menuSubmenu != null)
             sourceType = menuSubmenu.GetType().Name;
-        return new ActiveSurfaceSnapshot(overlay, mapIsOpen, menuSubmenu, sourceType);
+        else if (menuRoot != null)
+            sourceType = menuRoot.GetType().Name;
+        return new ActiveSurfaceSnapshot(overlay, mapIsOpen, menuSubmenu, menuRoot, openModal, sourceType);
     }
 
     internal static bool IsVisibleActiveOverlay(IOverlayScreen? overlay) =>
@@ -86,9 +106,12 @@ internal static class ActiveSurfaceResolver
         BridgeEntityRegistry entities,
         GameBuildIdentity game)
     {
+        if (ShouldSuppressProviders(snapshot.OpenModal != null))
+            return new ActiveSurfaceResolution(null, Array.Empty<string>(), null, null);
+
         var matches = new List<(string Kind, BridgeObservationDraft Draft)>();
         foreach (IBridgeSurfaceProvider provider in providers.Where(provider =>
-                     IsActiveLayer(provider.Layer, snapshot.TopOverlay != null, snapshot.MapIsOpen, snapshot.MenuSubmenu != null)))
+                     IsActiveLayer(provider.Layer, snapshot.TopOverlay != null, snapshot.MapIsOpen, snapshot.MenuSubmenu != null || snapshot.MenuRoot != null)))
         {
             try
             {
@@ -126,4 +149,6 @@ internal static class ActiveSurfaceResolver
         bool mapIsOpen,
         bool hasMenuSubmenu = false) =>
         providerLayer == SelectLayer(hasVisibleOverlay, mapIsOpen, hasMenuSubmenu);
+
+    internal static bool ShouldSuppressProviders(bool hasHigherPriorityModal) => hasHigherPriorityModal;
 }

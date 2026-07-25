@@ -17,17 +17,11 @@ export async function createRuntime(config: RuntimeConfig): Promise<{
   orchestrator: TickOrchestrator;
   release(): Promise<void>;
 }> {
-  const lock = await acquireRuntimeLock(config.runtime.dataDir);
+  const connector = await createConnectorRuntime(config);
   try {
-    const adapter = new Sts2McpHybridAdapter(config.mcp.baseUrl, config.mcp.timeoutMs, {
-      mode: config.mcp.protocolMode,
-      commandPollMs: config.mcp.commandPollMs,
-      commandTimeoutMs: config.mcp.commandTimeoutMs
-    });
-    await adapter.initialize();
     const llm = new DeepSeekDecisionProvider(config.deepseek);
     const runId = createRunId();
-    const adapterDescription = adapter.describe();
+    const adapterDescription = connector.adapter.describe();
     const metadata: RunMetadata = {
       metadataSchemaVersion: 1,
       runId,
@@ -41,10 +35,44 @@ export async function createRuntime(config: RuntimeConfig): Promise<{
         ...(adapterDescription.negotiated ? { negotiated: adapterDescription.negotiated } : {})
       },
       provider: llm.describe(),
+      evidence: {
+        provenance: config.runtime.evidenceProvenance,
+        declaredBy: "runtime_configuration",
+        qualificationUse: "coverage_only_unless_independently_reviewed"
+      },
       schemas: { normalizedState: NORMALIZED_STATE_SCHEMA_VERSION, prompt: 3, decisionRecord: 2 }
     };
     const recorder = new FileDecisionRecorder(config.runtime.dataDir, metadata);
     await recorder.initialize();
+    const orchestrator = new TickOrchestrator({
+      adapter: connector.adapter,
+      normalize: connector.normalize,
+      buildAllowedActions,
+      llm,
+      settlement: connector.settlement,
+      recorder
+    });
+    return { adapter: connector.adapter, llm, recorder, orchestrator, release: connector.release };
+  } catch (error) {
+    await connector.release();
+    throw error;
+  }
+}
+
+export async function createConnectorRuntime(config: RuntimeConfig): Promise<{
+  adapter: Sts2McpHybridAdapter;
+  normalize: (raw: unknown) => ReturnType<typeof normalizeCurrentState>;
+  settlement: SettlementWatcher;
+  release(): Promise<void>;
+}> {
+  const lock = await acquireRuntimeLock(config.runtime.dataDir);
+  try {
+    const adapter = new Sts2McpHybridAdapter(config.mcp.baseUrl, config.mcp.timeoutMs, {
+      commandPollMs: config.mcp.commandPollMs,
+      commandTimeoutMs: config.mcp.commandTimeoutMs
+    });
+    await adapter.initialize();
+    const adapterDescription = adapter.describe();
     const normalize = (raw: unknown) => normalizeCurrentState(raw, adapterDescription);
     const settlement = new SettlementWatcher(adapter, normalize, {
       pollMs: config.runtime.settlementPollMs,
@@ -52,15 +80,7 @@ export async function createRuntime(config: RuntimeConfig): Promise<{
       endTurnTimeoutMs: config.runtime.endTurnSettlementTimeoutMs,
       roomTransitionTimeoutMs: config.runtime.roomTransitionSettlementTimeoutMs
     });
-    const orchestrator = new TickOrchestrator({
-      adapter,
-      normalize,
-      buildAllowedActions,
-      llm,
-      settlement,
-      recorder
-    });
-    return { adapter, llm, recorder, orchestrator, release: () => lock.release() };
+    return { adapter, normalize, settlement, release: () => lock.release() };
   } catch (error) {
     await lock.release();
     throw error;
