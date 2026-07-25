@@ -29,6 +29,7 @@ internal static class BridgeV2Runtime
         new(StringComparer.Ordinal);
     private static readonly string RuntimeInstanceId = Guid.NewGuid().ToString("N");
     private static readonly BridgePermissionManager PermissionManager = new(RuntimeInstanceId);
+    private static readonly BridgeClientCoordinator ClientCoordinator = new(RuntimeInstanceId);
 
     internal static void ConfigurePermissionMode(BridgePermissionMode mode) =>
         PermissionManager.ConfigureMode(mode);
@@ -177,9 +178,29 @@ internal static class BridgeV2Runtime
             diagnostics,
             warnings)
         {
-            PermissionSystem = PermissionManager.Snapshot()
+            PermissionSystem = PermissionManager.Snapshot(),
+            ControlCoordination = ClientCoordinator.Capability()
         };
     }
+
+    public static BridgeClientRegistrationResponse RegisterClient(
+        BridgeClientRegistrationRequest request) =>
+        ClientCoordinator.Register(request);
+
+    public static BridgeControlSnapshot GetControlSnapshot() =>
+        ClientCoordinator.Snapshot();
+
+    public static BridgeControllerLeaseResponse AcquireController(
+        BridgeControllerLeaseRequest request) =>
+        ClientCoordinator.Acquire(request);
+
+    public static BridgeControllerLeaseResponse RenewController(
+        BridgeControllerLeaseRequest request) =>
+        ClientCoordinator.Renew(request);
+
+    public static BridgeControllerLeaseResponse ReleaseController(
+        BridgeControllerLeaseRequest request) =>
+        ClientCoordinator.Release(request);
 
     public static BridgeStateEnvelope Observe()
     {
@@ -334,17 +355,22 @@ internal static class BridgeV2Runtime
         BridgeCommandResponse response = CommandLedger.Submit(
             request,
             current.StateId,
-            action);
+            action,
+            () => ClientCoordinator.Authorize(request));
         if (action?.PermissionBinding is { } permissionBinding
+            && response.Attribution != null
             && !string.IsNullOrWhiteSpace(request.RequestId))
         {
             lock (Gate)
                 CommandPermissionBindings[request.RequestId] = permissionBinding;
         }
-        PermissionManager.ObserveCommand(
-            request.RequestId ?? string.Empty,
-            action?.PermissionBinding,
-            response);
+        if (response.Attribution != null)
+        {
+            PermissionManager.ObserveCommand(
+                request.RequestId ?? string.Empty,
+                action?.PermissionBinding,
+                response);
+        }
         return response;
     }
 

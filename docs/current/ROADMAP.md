@@ -65,11 +65,21 @@ grant below the reviewed exact-environment ceiling. A later Gate 2 slice must
 remain independently scoped and must not broaden gray candidates as a side
 effect.
 
-## Gate 3: Secure Local Connector Alpha
+## Gate 3: Local Control Coordination Alpha
 
-Introduce Gateway-authenticated sessions, a Gateway-enforced single-controller
-lease, runtime epoch/restart semantics, and diagnostic bundles. V1 is already
-retired. These controls are prerequisites for any consumer-facing live agent.
+Status: **Preview.64 source implementation, tests and Release build complete;
+exact cold-load and bounded runtime canary pending.**
+
+Coordinate local writers without pretending to solve product authentication:
+descriptive client registration, one Gateway-enforced mutation-controller
+lease, generation fencing, runtime restart invalidation and command
+attribution. Read-only access remains open. Existing opaque actions, D3
+operation permission, execute-time validation, native commit, semantic
+completion and unknown-no-retry remain separate and unchanged.
+
+Passwords, OAuth, certificates, RBAC, secret brokerage and malicious-local-
+process isolation are not Gate 3. They require a concrete product threat model.
+See the [Gate 3 closeout](../../STS2MCP/docs/bridge-v2/GATE3_LOCAL_CONTROL_COORDINATION_CLOSEOUT_2026-07-25.md).
 
 ## Gate 4: Companion And Official Agent
 

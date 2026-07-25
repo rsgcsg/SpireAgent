@@ -21,7 +21,8 @@ internal sealed class BridgeCommandLedger
     public BridgeCommandResponse Submit(
         BridgeCommandRequest request,
         string currentStateId,
-        RegisteredBridgeAction? action)
+        RegisteredBridgeAction? action,
+        Func<BridgeCommandAdmission>? admission = null)
     {
         string requestId = request.RequestId ?? string.Empty;
         string expectedStateId = request.ExpectedStateId ?? string.Empty;
@@ -46,7 +47,23 @@ internal sealed class BridgeCommandLedger
                     "The bridge session command ledger is full. Restart the game bridge before submitting more actions.");
             }
 
-            var command = new MutableCommand(requestId, expectedStateId, actionId, _clock());
+            BridgeCommandAdmission? admitted = admission?.Invoke();
+            if (admitted is { Accepted: false })
+            {
+                return RejectedResponse(
+                    requestId,
+                    expectedStateId,
+                    actionId,
+                    admitted.ErrorCode ?? "command_admission_rejected",
+                    admitted.Detail ?? "The command was rejected before entering the command ledger.");
+            }
+
+            var command = new MutableCommand(
+                requestId,
+                expectedStateId,
+                actionId,
+                _clock(),
+                admitted?.Attribution);
             _commands[requestId] = command;
 
             if (!string.Equals(expectedStateId, currentStateId, StringComparison.Ordinal))
@@ -191,11 +208,17 @@ internal sealed class BridgeCommandLedger
     {
         private readonly List<BridgeCommandEvent> _events = new();
 
-        public MutableCommand(string requestId, string expectedStateId, string actionId, DateTimeOffset now)
+        public MutableCommand(
+            string requestId,
+            string expectedStateId,
+            string actionId,
+            DateTimeOffset now,
+            BridgeCommandAttribution? attribution)
         {
             RequestId = requestId;
             ExpectedStateId = expectedStateId;
             ActionId = actionId;
+            Attribution = attribution;
             Status = "received";
             Outcome = "pending";
             _events.Add(new BridgeCommandEvent("received", now, "request_recorded", null, null));
@@ -204,6 +227,7 @@ internal sealed class BridgeCommandLedger
         public string RequestId { get; }
         public string ExpectedStateId { get; }
         public string ActionId { get; }
+        public BridgeCommandAttribution? Attribution { get; }
         public string Status { get; private set; }
         public string Outcome { get; private set; }
         public string? ObservedStateId { get; private set; }
@@ -275,6 +299,9 @@ internal sealed class BridgeCommandLedger
             Status,
             Outcome,
             ObservedStateId,
-            _events.ToArray());
+            _events.ToArray())
+        {
+            Attribution = this.Attribution
+        };
     }
 }

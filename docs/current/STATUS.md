@@ -11,12 +11,12 @@ This is the canonical short current-state document for the rebuilt project.
 
 ## Current Gate
 
-**Gate 1 is closed as a bounded ordinary-single-player v2 connector
-baseline. The first D3 operation-scoped permission/gray-rollout loop is also
-closed at session-canary scope. Gate 2 remains the next functional coverage
-gate; this change does not resume feature expansion or broaden permissions.**
+**Gate 1 is closed as a bounded ordinary-single-player v2 connector baseline.
+The first D3 operation-scoped permission loop is closed. Gate 3 Local Control
+Coordination Alpha is source-complete and mechanically tested in Preview.64,
+but its exact cold-load and bounded runtime canary are still pending.**
 
-Current source contract is `2.0-preview.63`; Re normalized schema is `26`.
+Current source contract is `2.0-preview.64`; Re normalized schema is `26`.
 Re and the default MCP adapter use only Bridge v2 opaque actions. Gateway v1
 state reconstruction and mutation are fully retired; every `/api/v1` request
 returns `410 Gone`. Unsupported variants still fail closed.
@@ -65,6 +65,14 @@ Gateway-confirmed semantic completion can replace one with
 `session_auto_approved`. Validated failure, timeout, unknown outcome, identity
 drift or unknown Patch ownership quarantines the operation for the session.
 
+Preview.64 adds descriptive client registration, one runtime-bound mutation
+controller lease, generation fencing and command attribution. It reuses
+`bridge.runtime_instance_id`; it does not add authentication, RBAC, secrets or
+a second permission system. Coordination admission precedes the command
+Ledger, while D3 operation permission and game legality remain unchanged.
+Gateway tests (142), Re tests (175), Re typecheck/build, Python syntax and the
+Gateway Release build pass.
+
 The current Preview.63 artifact has been built, installed and Steam cold-loaded
 on the exact local environment:
 
@@ -100,15 +108,20 @@ polling-script error resumed the existing request rather than resubmitting it.
 That canary remains attributed to its predecessor SHA/MVID/runtime and does not
 transfer to the current post-D2 artifact.
 
+Preview.64 Release is built as SHA
+`84d812ac7fba2a7e0169a7afb800b8d69e967580a941a43c037e38a3c3cec494`
+but was not installed over the running game. A live read confirmed both the
+installed file and process still use Preview.63 at the SHA/MVID/runtime above
+and expose no `control_coordination` capability. Source/build evidence
+therefore does not claim loaded or Organic Preview.64 behavior.
+
 ## Immediate Next Step
 
-The recorded-evidence assertion path and two-epoch low-risk repeat are
-complete. Preserve the current two-candidate ceiling and do not manufacture a
-live failure merely to exercise quarantine. The next separately scoped change
-may resume Gate 2 visibility work or begin Gate 3 authentication/controller
-lease work; neither may infer authority from a fingerprint, fixture, grader or
-D recommendation. No non-navigation gray candidate should be added without
-independent evidence and candidate-policy review.
+Close the game, install Preview.64, cold-start through Steam, verify
+built/installed/loaded SHA and MVID, then run one bounded two-client conflict
+check and one Re advertised-action completion journey. After that Gate 3 Alpha
+may be marked runtime-closed and Gate 2 visibility work may resume. Do not
+broaden D3 candidates or action coverage as part of this canary.
 
 See the
 [Gate 1 closeout and selector audit](../../STS2MCP/docs/bridge-v2/GATE1_CLOSEOUT_AND_SELECTOR_TRANSACTION_AUDIT_2026-07-24.md)
@@ -119,12 +132,17 @@ and the
 and the
 [D3 permission closeout](../../STS2MCP/docs/bridge-v2/D3_PERMISSION_GRAY_ROLLOUT_CLOSEOUT_2026-07-25.md)
 and the
+[Gate 3 coordination closeout](../../STS2MCP/docs/bridge-v2/GATE3_LOCAL_CONTROL_COORDINATION_CLOSEOUT_2026-07-25.md)
+and the
 [operation inventory](../../STS2MCP/docs/bridge-v2/OPERATION_RETIREMENT_INVENTORY.json).
 
 ## Explicit Non-Claims
 
 - Preview.63 session auto-approval is volatile and operation-scoped; it is not
   persistent qualification, cross-runtime inheritance, or D-owned authority.
+- Preview.64 coordination identity is descriptive and local; it is not client
+  authentication or protection from a malicious local process.
+- Preview.64 is not yet installed, loaded or Organic-qualified.
 - Gate 1 closure is not complete-game or full-visible-information closure.
 - Historical v1 source and records are archive evidence, not a runtime fallback.
 - Companion, Workshop product, public Agent SDK, plugin platform, and Headless

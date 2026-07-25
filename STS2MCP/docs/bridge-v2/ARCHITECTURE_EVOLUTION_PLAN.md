@@ -10,11 +10,12 @@ Status: Gate 1 closed as a bounded ordinary-single-player v2 connector
 baseline on 2026-07-24. Preview.61 supplied the exact Neow's Fury Organic
 runtime seal, strict Re decode, and loaded-v1 retirement evidence.
 
-C# and Re source now share `2.0-preview.63`. Preview.62 moved exact-environment
+C# and Re source now share `2.0-preview.64`. Preview.62 moved exact-environment
 authorization and reviewed combat-pile source contracts into validated
 embedded policy, and added a non-authorizing exact-assembly audit. Preview.63
 adds an operation-scoped Gateway session-grant state machine under that
-embedded ceiling. Those changes
+embedded ceiling. Preview.64 adds minimal local mutation coordination without
+authentication or a second permission engine. Those changes
 reduce content-literal code edits but do not self-authorize discovered
 mechanics, Mods, or new builds. Independent green suites still do not prove a
 loaded game connector. The following deployment conditions remain required for
@@ -39,9 +40,11 @@ authorization to change runtime behavior in this document.
 Source truth repair alone is insufficient for a public local-control product.
 Before a release profile can accept mutations, it must also provide:
 
-- authenticated local client sessions and a user-private runtime descriptor;
-- read-only observers plus one Gateway-enforced mutation-controller lease;
-- a runtime epoch binding state, actions, and Commands across restart;
+- authenticated local client identity and a user-private runtime descriptor
+  only if the product threat model requires them;
+- the already implemented read-open, single-controller coordination contract
+  must be product-qualified rather than replaced by a second policy engine;
+- explicit user-facing restart and unresolved-command diagnostics;
 - explicit unknown-after-restart behavior with no automatic resubmission;
 - permanent retirement of the complete v1 HTTP namespace, already implemented,
   plus a

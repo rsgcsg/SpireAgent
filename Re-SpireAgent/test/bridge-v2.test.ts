@@ -28,7 +28,7 @@ function permissionScope(
 }
 
 const CAPABILITIES = {
-  protocol_version: "2.0-preview.63",
+  protocol_version: "2.0-preview.64",
   bridge: {
     id: "sts2_mcp_bridge_v2",
     name: "STS2 Agent Bridge",
@@ -149,6 +149,16 @@ const CAPABILITIES = {
     grants: [],
     limitations: ["fixture permission system"]
   },
+  control_coordination: {
+    status: "local_coordination_active",
+    registration_required_for_mutation: true,
+    single_controller: true,
+    reads_require_registration: false,
+    lease_ttl_ms: 30000,
+    recommended_renewal_ms: 10000,
+    runtime_epoch: "fixture-runtime-1",
+    limitations: ["fixture local coordination"]
+  },
   diagnostics: [{
     code: "bridge.inspection.read_only_enabled",
     severity: "info",
@@ -214,7 +224,7 @@ const RUN_VISIBILITY = {
 };
 
 const DECK_ENCHANT_STATE = {
-  protocol_version: "2.0-preview.63",
+  protocol_version: "2.0-preview.64",
   state_id: "state-test-1",
   state_sequence: 1,
   observed_at: "2026-07-16T00:00:00Z",
@@ -290,7 +300,7 @@ const DECK_ENCHANT_STATE = {
     status: "resolved_manifest_contract",
     instance_id: "contract-instance-deck-enchant-1",
     surface_kind: "deck_enchant_selection",
-    semantic_contract_id: "bridge.surface.deck_enchant_selection.2.0-preview.63",
+    semantic_contract_id: "bridge.surface.deck_enchant_selection.2.0-preview.64",
     declared_binding: "fixture-declared-binding",
     operations: [{ operation: "toggle_card", evidence_status: "surface_level_only", published: true }],
     current_authority_tier: "canary",
@@ -2064,7 +2074,7 @@ function visibleInspectionCard(overrides: Record<string, unknown> = {}) {
 
 function runDeckInspection(stateId: string, cards = [visibleInspectionCard()]) {
   return {
-    protocol_version: "2.0-preview.63",
+    protocol_version: "2.0-preview.64",
     inspection_id: `inspection-run-deck-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -2087,7 +2097,7 @@ function runDeckInspection(stateId: string, cards = [visibleInspectionCard()]) {
 
 function combatPilesInspection(stateId: string) {
   return {
-    protocol_version: "2.0-preview.63",
+    protocol_version: "2.0-preview.64",
     inspection_id: `inspection-combat-piles-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -2132,7 +2142,7 @@ function shopCatalogInspection(stateId: string) {
     blocked_reason: offer.stocked ? "not_visible" : offer.blocked_reason
   });
   return {
-    protocol_version: "2.0-preview.63",
+    protocol_version: "2.0-preview.64",
     inspection_id: `inspection-shop-catalog-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -2174,7 +2184,7 @@ function coherentObservationBundle(
   }));
   const resolvedInspections = inspections ?? defaultInspections;
   return {
-    protocol_version: "2.0-preview.63",
+    protocol_version: "2.0-preview.64",
     observation_id: `observation-${state.state_id}`,
     coherent: true,
     state,
@@ -5286,6 +5296,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
 
   it("auto mode uses v2 as the single executor for a qualified surface", async () => {
     const requests: Array<{ url: string; init?: RequestInit; body?: any }> = [];
+    const control = testControlState();
     let pollCount = 0;
     const fetchImpl: typeof fetch = async (input, init) => {
       const url = String(input);
@@ -5295,12 +5306,14 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       if (url.endsWith("/api/v2/observation-bundles")) return json(coherentObservationBundle(DECK_ENCHANT_STATE));
       if (url.includes("/api/v2/inspections/run_deck?")) return json(runDeckInspection(DECK_ENCHANT_STATE.state_id));
       if (url.endsWith("/api/v1/singleplayer?format=json")) return json(await fixture("event"));
+      const controlResponse = handleTestControlRequest(url, init, control);
+      if (controlResponse) return controlResponse;
       if (url.endsWith("/api/v2/commands") && init?.method === "POST") {
-        return json(command(requests.at(-1)?.body.request_id, "started"), 202);
+        return json(command(requests.at(-1)?.body.request_id, "started", control), 202);
       }
       if (url.includes("/api/v2/commands/")) {
         pollCount += 1;
-        return json(command(url.split("/").at(-1), "completed"));
+        return json(command(url.split("/").at(-1), "completed", control));
       }
       throw new Error(`Unexpected request ${url}`);
     };
@@ -5329,12 +5342,19 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       response: { status: "completed" }
     });
     expect(pollCount).toBe(1);
+    expect(requests.filter((request) => request.url.endsWith("/api/v2/clients/register"))).toHaveLength(1);
+    expect(requests.filter((request) => request.url.endsWith("/api/v2/controller/acquire"))).toHaveLength(1);
     expect(requests.filter((request) => request.url.endsWith("/api/v1/singleplayer") && request.init?.method === "POST")).toHaveLength(0);
     expect(requests.filter((request) => request.url.endsWith("/api/v1/singleplayer?format=json"))).toHaveLength(0);
     expect(requests.find((request) => request.url.endsWith("/api/v2/commands"))?.body).toMatchObject({
       expected_state_id: "state-test-1",
-      action_id: "action-test-1"
+      action_id: "action-test-1",
+      client_session_id: control.clientSessionId,
+      controller_lease_id: control.controllerLeaseId,
+      controller_generation: control.controllerGeneration
     });
+    await adapter.close();
+    expect(requests.filter((request) => request.url.endsWith("/api/v2/controller/release"))).toHaveLength(1);
   });
 
   it("auto mode keeps an unsupported v2 surface fail closed without v1 fallback", async () => {
@@ -6090,15 +6110,15 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
   });
 
   it("treats failed commands and mismatched command identities as unknown without retry", async () => {
-    const failedAdapter = commandAdapter((requestId) => command(requestId, "failed"));
+    const failedAdapter = commandAdapter((requestId, control) => command(requestId, "failed", control));
     const failedAction = await firstBridgeAction(failedAdapter);
     const failed = await failedAdapter.execute(failedAction);
     expect(failed).toMatchObject({ accepted: false, outcome: "unknown", response: { status: "failed" } });
 
     let submissions = 0;
-    const mismatchedAdapter = commandAdapter((_requestId) => {
+    const mismatchedAdapter = commandAdapter((_requestId, control) => {
       submissions += 1;
-      return command("wrong-request-id", "completed");
+      return command("wrong-request-id", "completed", control);
     }, true);
     const mismatchedAction = await firstBridgeAction(mismatchedAdapter);
     const mismatched = await mismatchedAdapter.execute(mismatchedAction);
@@ -6113,7 +6133,8 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
 
 function command(
   requestId: string | undefined,
-  status: "started" | "completed" | "failed" | "timed_out"
+  status: "started" | "completed" | "failed" | "timed_out",
+  control: TestControlState
 ) {
   const outcome = status === "completed" ? "confirmed" : status === "failed" || status === "timed_out" ? "unknown" : "pending";
   return {
@@ -6123,14 +6144,25 @@ function command(
     status,
     outcome,
     observed_state_id: "state-test-1",
+    attribution: {
+      runtime_instance_id: "fixture-runtime-1",
+      client_session_id: control.clientSessionId,
+      client_instance_id: control.clientInstanceId,
+      product_id: "re-spireagent",
+      product_name: "Re-SpireAgent",
+      product_version: "0.1.0",
+      controller_lease_id: control.controllerLeaseId,
+      controller_generation: control.controllerGeneration
+    },
     events: [{ status, at: "2026-07-16T00:00:00Z", evidence: status === "completed" ? "test_completion" : null, error_code: null, detail: null }]
   };
 }
 
 function commandAdapter(
-  terminal: (requestId: string) => ReturnType<typeof command>,
+  terminal: (requestId: string, control: TestControlState) => ReturnType<typeof command>,
   terminalOnSubmit = false
 ): Sts2McpHybridAdapter {
+  const control = testControlState();
   return new Sts2McpHybridAdapter("http://adapter.test", 1_000, {
     commandPollMs: 1,
     commandTimeoutMs: 100
@@ -6141,15 +6173,89 @@ function commandAdapter(
     if (url.endsWith("/api/v2/observation-bundles")) return json(coherentObservationBundle(DECK_ENCHANT_STATE));
     if (url.includes("/api/v2/inspections/run_deck?")) return json(runDeckInspection(DECK_ENCHANT_STATE.state_id));
     if (url.endsWith("/api/v1/singleplayer?format=json")) return json(await fixture("event"));
+    const controlResponse = handleTestControlRequest(url, init, control);
+    if (controlResponse) return controlResponse;
     if (url.endsWith("/api/v2/commands") && init?.method === "POST") {
       const requestId = JSON.parse(String(init.body)).request_id as string;
-      return json(terminalOnSubmit ? terminal(requestId) : command(requestId, "started"), terminalOnSubmit ? 200 : 202);
+      return json(
+        terminalOnSubmit ? terminal(requestId, control) : command(requestId, "started", control),
+        terminalOnSubmit ? 200 : 202
+      );
     }
     if (url.includes("/api/v2/commands/")) {
-      return json(terminal(decodeURIComponent(url.split("/").at(-1) ?? "")));
+      return json(terminal(decodeURIComponent(url.split("/").at(-1) ?? ""), control));
     }
     throw new Error(`Unexpected request ${url}`);
   }, async () => {});
+}
+
+interface TestControlState {
+  clientInstanceId: string;
+  readonly clientSessionId: string;
+  readonly controllerLeaseId: string;
+  readonly controllerGeneration: number;
+}
+
+function testControlState(): TestControlState {
+  return {
+    clientInstanceId: "not_registered",
+    clientSessionId: "client-fixture-1",
+    controllerLeaseId: "lease-fixture-1",
+    controllerGeneration: 1
+  };
+}
+
+function handleTestControlRequest(
+  url: string,
+  init: RequestInit | undefined,
+  control: TestControlState
+): Response | undefined {
+  if (url.endsWith("/api/v2/clients/register")) {
+    const body = JSON.parse(String(init?.body)) as { client_instance_id: string };
+    control.clientInstanceId = body.client_instance_id;
+    return json({
+      protocol_version: "2.0-preview.64",
+      runtime_instance_id: "fixture-runtime-1",
+      client: {
+        client_session_id: control.clientSessionId,
+        client_instance_id: control.clientInstanceId,
+        product_id: "re-spireagent",
+        product_name: "Re-SpireAgent",
+        product_version: "0.1.0",
+        registered_at: "2026-07-25T00:00:00Z",
+        last_seen_at: "2026-07-25T00:00:00Z"
+      },
+      controller: null
+    });
+  }
+  if (url.endsWith("/api/v2/controller/acquire")) {
+    return json({
+      protocol_version: "2.0-preview.64",
+      runtime_instance_id: "fixture-runtime-1",
+      status: "controller_acquired",
+      detail: "fixture acquired",
+      client: null,
+      controller: {
+        status: "active",
+        controller_lease_id: control.controllerLeaseId,
+        controller_generation: control.controllerGeneration,
+        client_session_id: control.clientSessionId,
+        acquired_at: "2026-07-25T00:00:00Z",
+        expires_at: new Date(Date.now() + 30_000).toISOString()
+      }
+    });
+  }
+  if (url.endsWith("/api/v2/controller/release")) {
+    return json({
+      protocol_version: "2.0-preview.64",
+      runtime_instance_id: "fixture-runtime-1",
+      status: "controller_released",
+      detail: "fixture released",
+      client: null,
+      controller: null
+    });
+  }
+  return undefined;
 }
 
 describe("Bridge v2 session permission governance", () => {

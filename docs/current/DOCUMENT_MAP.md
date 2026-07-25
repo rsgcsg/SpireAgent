@@ -49,6 +49,9 @@ Current cross-component audits:
 - [D3 permission and gray rollout closeout](../../STS2MCP/docs/bridge-v2/D3_PERMISSION_GRAY_ROLLOUT_CLOSEOUT_2026-07-25.md):
   Preview.63 operation-scoped session grants, exact identity/Patch binding,
   first real canary/auto-approval, rollback and explicit non-claims.
+- [Gate 3 local control coordination closeout](../../STS2MCP/docs/bridge-v2/GATE3_LOCAL_CONTROL_COORDINATION_CLOSEOUT_2026-07-25.md):
+  Preview.64's deliberately minimal client registration, single-writer lease,
+  command attribution, overlap audit and pending cold-load evidence.
 
 Component-owned truth:
 

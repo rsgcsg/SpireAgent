@@ -5,6 +5,10 @@ import { TransientObservationError } from "../../game-io/observationError.js";
 import type { JsonObject } from "../../shared/json.js";
 import { BridgeV2HttpError, BridgeV2RestClient } from "./bridgeV2Client.js";
 import {
+  BridgeV2ControlSession,
+  type BridgeV2ControllerCredentials
+} from "./bridgeV2ControlSession.js";
+import {
   type BridgeV2Capabilities,
   type BridgeV2Command,
   type BridgeV2InspectionKind,
@@ -20,6 +24,7 @@ export interface HybridAdapterOptions {
 
 export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, ExecutableGameAction, GameExecutionResult> {
   private readonly bridge: BridgeV2RestClient;
+  private readonly control: BridgeV2ControlSession;
   private capabilitiesPayload?: { data: BridgeV2Capabilities; raw: JsonObject };
   private lastReadAuthority: "none" | "bridge" = "none";
 
@@ -31,6 +36,7 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
     private readonly sleep: (ms: number) => Promise<void> = defaultSleep
   ) {
     this.bridge = new BridgeV2RestClient(baseUrl, timeoutMs, fetchImpl);
+    this.control = new BridgeV2ControlSession(this.bridge);
   }
 
   async initialize(): Promise<void> {
@@ -111,6 +117,15 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
             supersedes_grant_id: grant.supersedes_grant_id ?? null,
             revocation_reason: grant.revocation_reason ?? null
           })),
+          control_coordination_status: bridge.control_coordination.status,
+          control_coordination_runtime_epoch: bridge.control_coordination.runtime_epoch,
+          control_registration_required_for_mutation:
+            bridge.control_coordination.registration_required_for_mutation,
+          control_single_controller: bridge.control_coordination.single_controller,
+          control_lease_ttl_ms: bridge.control_coordination.lease_ttl_ms,
+          control_recommended_renewal_ms:
+            bridge.control_coordination.recommended_renewal_ms,
+          control_session: this.control.snapshot(),
           action_execution_allowed: bridge.game.compatibility.action_execution_allowed,
           state_observation_allowed: bridge.game.compatibility.state_observation_allowed,
           inspection_allowed: bridge.game.compatibility.inspection_allowed,
@@ -183,18 +198,33 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
     }
 
     const requestId = `re-p1-${randomUUID()}`;
+    let controller: BridgeV2ControllerCredentials;
+    try {
+      await this.control.register(capabilities);
+      controller = await this.control.credentials();
+    } catch (error) {
+      return rejectedResult("controller_coordination_unavailable", safeMessage(error));
+    }
     let current;
     try {
       current = await this.bridge.submit({
         requestId,
         expectedStateId: action.expectedStateId,
-        actionId: action.actionId
+        actionId: action.actionId,
+        clientSessionId: controller.clientSessionId,
+        controllerLeaseId: controller.controllerLeaseId,
+        controllerGeneration: controller.controllerGeneration
       });
     } catch (error) {
       return unknownResult(requestId, action, "command_submit_transport_unknown", safeMessage(error));
     }
 
-    const submittedContractError = commandContractError(current.data, requestId, action);
+    const submittedContractError = commandContractError(
+      current.data,
+      requestId,
+      action,
+      controller
+    );
     if (submittedContractError) {
       return unknownResult(requestId, action, "command_response_contract_mismatch", submittedContractError, current.raw);
     }
@@ -210,7 +240,12 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
       } catch (error) {
         return unknownResult(requestId, action, "command_poll_transport_unknown", safeMessage(error), current.raw);
       }
-      const polledContractError = commandContractError(current.data, requestId, action);
+      const polledContractError = commandContractError(
+        current.data,
+        requestId,
+        action,
+        controller
+      );
       if (polledContractError) {
         return unknownResult(requestId, action, "command_response_contract_mismatch", polledContractError, current.raw);
       }
@@ -229,6 +264,10 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
       return { accepted: false, outcome: "unknown", response: current.raw };
     }
     return { accepted: false, outcome: "rejected", response: current.raw };
+  }
+
+  async close(): Promise<void> {
+    await this.control.close();
   }
 
   private async readObservationBundle(
@@ -305,12 +344,20 @@ function isPending(status: BridgeV2Command["status"]): boolean {
 function commandContractError(
   command: BridgeV2Command,
   requestId: string,
-  action: Extract<ExecutableGameAction, { kind: "bridge_v2_action" }>
+  action: Extract<ExecutableGameAction, { kind: "bridge_v2_action" }>,
+  controller: BridgeV2ControllerCredentials
 ): string | undefined {
   if (command.request_id !== requestId
       || command.expected_state_id !== action.expectedStateId
       || command.action_id !== action.actionId) {
     return "Bridge command response identity does not match the submitted request.";
+  }
+  if (!command.attribution
+      || command.attribution.client_session_id !== controller.clientSessionId
+      || command.attribution.client_instance_id !== controller.clientInstanceId
+      || command.attribution.controller_lease_id !== controller.controllerLeaseId
+      || command.attribution.controller_generation !== controller.controllerGeneration) {
+    return "Bridge command attribution does not match the submitting controller session.";
   }
 
   const expectedOutcome = command.status === "completed"

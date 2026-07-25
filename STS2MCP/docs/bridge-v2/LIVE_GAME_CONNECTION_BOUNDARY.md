@@ -2,13 +2,15 @@
 
 Status: canonical architecture boundary for the current real-game connection.
 
-Current source compatibility status: C# and Re share `2.0-preview.63`, including
+Current source compatibility status: C# and Re share `2.0-preview.64`, including
 operation scopes, a Gateway artifact digest, separate actual-loaded versus
 release-declared game assembly hashes, reviewed exact-environment policy
-provenance, and structural combat-pile transaction semantics. Preview.61
+provenance, structural combat-pile transaction semantics, and minimal local
+mutation coordination. Preview.61
 supplied the exact Neow's Fury lifecycle that closed bounded Gate 1. Preview.62
-source/build/audit evidence does not inherit that Organic qualification; its
-installed and loaded identity is recorded separately in
+source/build/audit evidence does not inherit that Organic qualification.
+Preview.64 is source-built but not yet installed or loaded; the current
+Preview.63 loaded identity is recorded separately in
 [Current Status](CURRENT_STATUS.md).
 
 Consumer distribution, local trust, Companion, BYOK, SDK, and release gates are
@@ -51,6 +53,7 @@ STS2 live runtime
        - execute-time revalidation
        - Command lifecycle and semantic completion
        - read-only Inspections and environment evidence
+       - one runtime-bound external mutation-controller lease
   -> REST adapter
   -> Re game connector
   -> normalized strategic state and advertised actions
@@ -67,9 +70,11 @@ Re-SpireAgent does not use the Python MCP server in its strict Bridge v2 path.
 MCP tool discovery proves only adapter availability. It does not grant game
 legality, exact-build permission, qualification, or strategic authority.
 
-The current loopback REST path is unauthenticated and has no Gateway-enforced
-controller lease. Localhost binding and Origin filtering are defense layers,
-not client identity. This is a developer connector path, not a completed
+The current loopback REST path is unauthenticated. Preview.64 adds one
+Gateway-enforced runtime-bound mutation-controller lease, generation fencing
+and command attribution. Localhost binding, Origin filtering, descriptive
+client registration and lease IDs are coordination layers, not authenticated
+client identity. This remains a developer connector path, not a completed
 consumer security boundary.
 
 ## Target Product Deployment Boundary
@@ -132,10 +137,11 @@ The live connection retains:
 
 The current Command Ledger is in-memory. Its honest guarantee is at-most-once
 handling within one gateway runtime, not durable exactly-once execution across
-restart. The target contract must carry a runtime epoch, report an unresolved
-post-restart request as unknown, and never replay it automatically. A short
-external mutation-controller lease is also required before multiple clients
-can be treated as safe; state binding alone does not serialize two controllers.
+restart. The existing `runtime_instance_id` is the coordination epoch:
+registrations and leases disappear on restart, and an unresolved pre-restart
+request remains unknown and is never replayed automatically. Preview.64's short
+external mutation-controller lease serializes new external submissions;
+state binding remains independently necessary for game-state freshness.
 
 These are protocol-independent domain properties. REST and MCP must preserve
 them rather than reimplement them.
@@ -152,16 +158,17 @@ Directly implemented at the current repository revision:
 - provider-specific semantic completion;
 - strict Re REST decoding, normalization, advertised-action import, and
   Command polling;
+- descriptive mutation-client registration, one runtime-bound controller
+  lease, generation fencing and command attribution;
 - an optional Python MCP adapter over the REST routes.
 
-These are source implementation statements. C# and Re agree on Preview.62, but
+These are source implementation statements. C# and Re agree on Preview.64, but
 source agreement is not a loaded-runtime or Organic qualification claim.
 
 Not implemented in the current product path:
 
 - Gateway client authentication or a user-private runtime descriptor;
-- read-only observer sessions and a Gateway-enforced mutation-controller lease;
-- a runtime epoch that scopes state, actions, and Commands across restart;
+- authenticated client identity or a user-private runtime descriptor;
 - a packaged Companion, consumer secret store/model broker, installer, updater,
   recovery UI, Agent SDK, plugin sandbox, or Headless host;
 - a consumer release profile with authentication and controller-session
@@ -201,9 +208,11 @@ code.
 ## Transport Conformance
 
 REST is the primary Re transport because it is the current implemented path,
-not because HTTP is part of the domain model. The first product repair should
-authenticate loopback REST and bind it to an explicit runtime epoch and
-controller lease; a cross-platform IPC rewrite should wait for measured need.
+not because HTTP is part of the domain model. A future product may authenticate
+loopback REST and distribute a user-private runtime descriptor if a concrete
+threat model requires it; Preview.64 coordination must not be misrepresented
+as that security boundary. A cross-platform IPC rewrite should wait for
+measured need.
 The eventual product MCP adapter belongs behind Companion policy, defaults to
 stdio where practical, receives no Gateway credential, and must remain thin:
 

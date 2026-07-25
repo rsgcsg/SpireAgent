@@ -2,6 +2,13 @@
 
 Date: 2026-07-25
 
+> Gate 3 follow-up: the one-controller requirement is now implemented by
+> Preview.64 as minimal local coordination. Authentication was explicitly
+> removed from Gate 3 and remains only a conditional product concern. See
+> [the Gate 3 closeout](GATE3_LOCAL_CONTROL_COORDINATION_CLOSEOUT_2026-07-25.md).
+> This note supersedes only the old next-step wording; the Preview.63 D3
+> evidence below is unchanged.
+
 ## Verdict
 
 Bridge `2.0-preview.63` closes the first **disabled-by-policy-ceiling,

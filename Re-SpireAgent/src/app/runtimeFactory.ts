@@ -80,7 +80,15 @@ export async function createConnectorRuntime(config: RuntimeConfig): Promise<{
       endTurnTimeoutMs: config.runtime.endTurnSettlementTimeoutMs,
       roomTransitionTimeoutMs: config.runtime.roomTransitionSettlementTimeoutMs
     });
-    return { adapter, normalize, settlement, release: () => lock.release() };
+    return {
+      adapter,
+      normalize,
+      settlement,
+      release: async () => {
+        await adapter.close();
+        await lock.release();
+      }
+    };
   } catch (error) {
     await lock.release();
     throw error;

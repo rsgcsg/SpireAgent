@@ -1,19 +1,22 @@
 # Re-SpireAgent RE-P1
 
 > Compatibility status, 2026-07-25: Re and C# share source contract
-> `2.0-preview.63`; Re normalized schema is `26`. Gate 1 is closed as a
+> `2.0-preview.64`; Re normalized schema is `26`. Gate 1 is closed as a
 > bounded ordinary-single-player v2 connector baseline. Preview.61 supplied
 > the final Neow's Fury Organic runtime seal; Preview.62 source/audit evidence
 > does not automatically qualify its new registry entries. Preview.63 is
 > installed/cold-loaded locally; strict Re inspection and one real
 > `continue_run` session canary/auto-approval pass on its exact recorded
-> identity. That grant is volatile, not persistent qualification.
+> identity. Preview.64 source adds minimal local mutation coordination and
+> passes source tests/build, but is not installed or loaded yet.
 
 > Product-boundary warning: direct Re-to-Gateway REST and `.env.local` provider
 > keys are developer workflows, not the target consumer architecture. The
-> planned product places Gateway authentication/lease use, OS-backed secrets,
+> planned product places optional authenticated discovery, OS-backed secrets,
 > model brokering, Agent supervision, diagnostics, and recovery in a trusted
-> external Companion. None of that is implemented by this README. See the
+> external Companion. The Gateway itself still enforces the current mutation
+> lease; a Companion must not become the only coordination authority. None of
+> the broader product boundary is implemented by this README. See the
 > [productization architecture audit](../docs/current/audits/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md).
 
 Re-SpireAgent is a small, independent Slay the Spire 2 agent runtime. It reads
@@ -25,7 +28,7 @@ waits for the Bridge command lifecycle, and records the complete evidence.
 
 RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, shadow/live modes, policy promotion, or the old project's phase machinery. Its job is to make one decision path correct and auditable.
 
-Re's current strict client contract is Bridge `2.0-preview.63` on exact game
+Re's current strict client contract is Bridge `2.0-preview.64` on exact game
 identity `v0.109.0|c12f634d|-1639417500`. The separate
 `release_declared_main_assembly_hash=-840572606` is diagnostic provenance, not
 permission authority. Re requires capabilities and every
@@ -45,6 +48,15 @@ inventory and versioned session grant ledger. Re requires each dynamic scope
 to reference the unique current active exact-environment grant, but it never
 issues, promotes, quarantines or persists a grant. D evidence and historical
 grant records remain non-authorizing.
+
+Preview.64 adds a separate local-control concern. Read-only Re initialization
+does not take control. Immediately before its first mutation, Re registers
+descriptive process metadata, acquires the Gateway's one runtime-bound
+controller lease, renews it while active, attaches the lease generation to
+commands, verifies returned command attribution, and releases best-effort on
+shutdown. This coordinates Re with the optional MCP adapter; it is not
+authentication and does not replace the existing local Re process lock,
+operation permission, state binding or semantic completion.
 
 Preview.55 makes strict v2 the sole connector path. Re rejects legacy `v1` and
 the former `auto` mode; it cannot probe or fall back to v1. Bridge-confirmed
@@ -155,7 +167,10 @@ Bridge REST state
 - DeepSeek returns only `selectedActionId`, `reasonBrief`, and optional `confidence`.
 - The executable MCP payload never comes from the model.
 - Unknown action IDs, invalid JSON, invalid schema, truncation, timeout, state drift, MCP rejection, and uncertain settlement are not executed or retried as actions.
-- Action-capable `tick` and `run` commands take an exclusive local runtime lock. This prevents two RE-P1 processes from driving one MCP session; it cannot prevent a human or a different program from acting in the game.
+- Action-capable `tick` and `run` commands take an exclusive local runtime lock,
+  while the Gateway lease coordinates Re with other local mutation clients.
+  Neither mechanism blocks direct human input or defends against a malicious
+  local process.
 - A bounded-run progress guard compares semantic state/action transitions rather than regenerated Bridge transport IDs. The second identical semantic transition stops as `repeated_semantic_transition`; business facts and entity bindings are never stripped from progress identity.
 - Raw Gateway data is visible only to the adapter, normalizer, recorder, and diagnostic tooling. Planning code imports only the normalized state API.
 - Unknown semantic contexts or unverified interaction surfaces become structured `unknown`/`unsupported` state components and stop safely.

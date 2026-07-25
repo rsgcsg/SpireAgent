@@ -75,10 +75,11 @@ truth, execution legality, semantic completion, or evidence qualification.
 
 **Status:** architecture and threat-model work only; implementation is gated.
 
-Owns the future Companion, authentication, controller lease, runtime epoch,
-secret brokerage, recovery, diagnostics, Workshop/Companion distribution, and
-player-facing lifecycle. Security contract design may proceed before all
-Connector coverage is complete, but consumer rollout cannot.
+Owns the future Companion, product authentication where justified, secret
+brokerage, recovery, diagnostics, Workshop/Companion distribution, and
+player-facing lifecycle. Gateway-owned local controller coordination and
+runtime epoch are Connector responsibilities; the Companion may manage their
+lifecycle but cannot be their sole enforcement point.
 
 ### X: Research Incubators
 
@@ -128,8 +129,8 @@ The following are governance constraints, not a separate feature program:
    when the Gateway independently uses them as session-candidate inputs.
 4. Keep A at the frozen RE-P1 baseline while correcting runtime defects exposed
    by C journeys; do not add persistent learning.
-5. Design P-lane authentication, controller lease, and restart-epoch contracts
-   without changing current permissions.
+5. Qualify the Connector-owned local controller lease and restart semantics;
+   design P-lane authentication only against a concrete product threat model.
 6. Keep H and T disabled beyond admission/data-governance documentation.
 
 ### Gate 1 Exit Basis And Gate 2 Entry
@@ -148,19 +149,21 @@ Gate 1 closed on this bounded basis on 2026-07-24. Therefore:
 2. Move D from ad hoc tools to a versioned scenario/evidence contract,
    cross-language conformance, replay assertions, graders, and repeatable
    experiment reports.
-3. Implement the smallest secure local Connector alpha: authentication,
-   observer/controller roles, one-controller lease, runtime epoch, and typed
-   recovery.
+3. Implement and qualify the smallest local coordination alpha: open read-only
+   observers, one mutation-controller lease, runtime epoch and command
+   attribution. Do not turn it into an account-security framework.
 4. Establish an A-lane frozen Agent baseline over held-out scenarios before
    changing context, memory, or orchestration.
 5. Reassess whether a general Agent Runtime Contract has a second real
    consumer. Do not create a public SDK from speculation alone.
 
-### After Secure Connector And Evaluation Baselines
+### After Coordinated Connector And Evaluation Baselines
 
 Entry evidence:
 
-- secure local control and restart recovery are tested;
+- one-writer local coordination and restart invalidation are tested;
+- authenticated discovery remains optional until a product threat model proves
+  it necessary;
 - visibility gaps are bounded and reported honestly;
 - comparable baseline/shadow experiments and held-out scenarios exist;
 - Re can replay exact evidence and explain model input provenance.

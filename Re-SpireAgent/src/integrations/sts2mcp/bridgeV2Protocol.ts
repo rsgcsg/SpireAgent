@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { isJsonObject, type JsonObject } from "../../shared/json.js";
 
-export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.63" as const;
+export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.64" as const;
 export const BRIDGE_V2_INSPECTION_KINDS = ["run_deck", "combat_piles", "shop_catalog"] as const;
 const inspectionKindSchema = z.enum(BRIDGE_V2_INSPECTION_KINDS);
 
@@ -68,6 +68,17 @@ const permissionSystemSchema = z.object({
   dynamic_session_promotion_enabled: z.boolean(),
   patch_inventory: runtimePatchInventorySchema,
   grants: z.array(permissionGrantSchema),
+  limitations: z.array(z.string().min(1))
+}).passthrough();
+
+const controlCoordinationSchema = z.object({
+  status: z.literal("local_coordination_active"),
+  registration_required_for_mutation: z.literal(true),
+  single_controller: z.literal(true),
+  reads_require_registration: z.literal(false),
+  lease_ttl_ms: z.number().int().positive(),
+  recommended_renewal_ms: z.number().int().positive(),
+  runtime_epoch: z.string().min(1),
   limitations: z.array(z.string().min(1))
 }).passthrough();
 
@@ -1139,6 +1150,7 @@ const capabilitiesSchema = z.object({
   }).passthrough(),
   inspections: inspectionContractSchema,
   permission_system: permissionSystemSchema,
+  control_coordination: controlCoordinationSchema,
   diagnostics: z.array(diagnosticSchema),
   warnings: z.array(z.string())
 }).passthrough();
@@ -1151,6 +1163,17 @@ const commandEventSchema = z.object({
   detail: z.string().nullable().optional()
 }).passthrough();
 
+const commandAttributionSchema = z.object({
+  runtime_instance_id: z.string().min(1),
+  client_session_id: z.string().min(1),
+  client_instance_id: z.string().min(1),
+  product_id: z.string().min(1),
+  product_name: z.string().min(1),
+  product_version: z.string().min(1),
+  controller_lease_id: z.string().min(1),
+  controller_generation: z.number().int().positive()
+}).passthrough();
+
 const commandSchema = z.object({
   request_id: z.string().min(1),
   expected_state_id: z.string().min(1),
@@ -1158,7 +1181,58 @@ const commandSchema = z.object({
   status: z.enum(["received", "validated", "started", "completed", "rejected", "failed", "timed_out"]),
   outcome: z.enum(["pending", "confirmed", "not_applied", "unknown"]),
   observed_state_id: z.string().nullable().optional(),
-  events: z.array(commandEventSchema)
+  events: z.array(commandEventSchema),
+  attribution: commandAttributionSchema.nullable().optional()
+}).passthrough();
+
+const clientRecordSchema = z.object({
+  client_session_id: z.string().min(1),
+  client_instance_id: z.string().min(1),
+  product_id: z.string().min(1),
+  product_name: z.string().min(1),
+  product_version: z.string().min(1),
+  registered_at: z.string().min(1),
+  last_seen_at: z.string().min(1)
+}).passthrough();
+
+const controllerLeaseSchema = z.object({
+  status: z.literal("active"),
+  controller_lease_id: z.string().min(1),
+  controller_generation: z.number().int().positive(),
+  client_session_id: z.string().min(1),
+  acquired_at: z.string().min(1),
+  expires_at: z.string().min(1)
+}).passthrough();
+
+const clientRegistrationSchema = z.object({
+  protocol_version: z.literal(SUPPORTED_BRIDGE_V2_PROTOCOL),
+  runtime_instance_id: z.string().min(1),
+  client: clientRecordSchema,
+  controller: controllerLeaseSchema.nullable()
+}).passthrough();
+
+const controllerLeaseResponseSchema = z.object({
+  protocol_version: z.literal(SUPPORTED_BRIDGE_V2_PROTOCOL),
+  runtime_instance_id: z.string().min(1),
+  status: z.enum([
+    "controller_acquired",
+    "controller_already_held",
+    "controller_renewed",
+    "controller_released",
+    "controller_lease_held",
+    "controller_lease_stale",
+    "client_session_not_found"
+  ]),
+  detail: z.string().min(1),
+  client: clientRecordSchema.nullable().optional(),
+  controller: controllerLeaseSchema.nullable().optional()
+}).passthrough();
+
+const controlSnapshotSchema = z.object({
+  protocol_version: z.literal(SUPPORTED_BRIDGE_V2_PROTOCOL),
+  runtime_instance_id: z.string().min(1),
+  clients: z.array(clientRecordSchema),
+  controller: controllerLeaseSchema.nullable()
 }).passthrough();
 
 const observationBundleSchema = z.object({
@@ -1220,6 +1294,9 @@ export type BridgeV2ContractInstanceShadow = z.infer<typeof contractInstanceShad
 export type BridgeV2UnsupportedSurface = z.infer<typeof unsupportedSurfaceSchema>;
 export type BridgeV2NoActionSurface = z.infer<typeof noActionSurfaceSchema>;
 export type BridgeV2Command = z.infer<typeof commandSchema>;
+export type BridgeV2ClientRegistration = z.infer<typeof clientRegistrationSchema>;
+export type BridgeV2ControllerLeaseResponse = z.infer<typeof controllerLeaseResponseSchema>;
+export type BridgeV2ControlSnapshot = z.infer<typeof controlSnapshotSchema>;
 
 export type BridgeV2Context =
   | BridgeV2EventContext
@@ -1317,6 +1394,11 @@ export function decodeBridgeV2Capabilities(value: unknown): DecodedBridgePayload
     decoded.data.bridge,
     decoded.data.game
   );
+  if (decoded.data.control_coordination.runtime_epoch !== decoded.data.bridge.runtime_instance_id) {
+    throw new BridgeV2DecodeError(
+      "Control coordination runtime epoch must match the negotiated Gateway runtime instance"
+    );
+  }
   const surfaceKinds = decoded.data.surfaces.map((surface) => surface.kind);
   if (new Set(surfaceKinds).size !== surfaceKinds.length) {
     throw new BridgeV2DecodeError("Bridge v2 capabilities contain duplicate surface kinds");
@@ -1678,6 +1760,24 @@ function collectEntityIds(value: unknown, result = new Set<string>()): Set<strin
 
 export function decodeBridgeV2Command(value: unknown): DecodedBridgePayload<BridgeV2Command> {
   return decode(value, commandSchema, "Bridge v2 command");
+}
+
+export function decodeBridgeV2ClientRegistration(
+  value: unknown
+): DecodedBridgePayload<BridgeV2ClientRegistration> {
+  return decode(value, clientRegistrationSchema, "Bridge v2 client registration");
+}
+
+export function decodeBridgeV2ControllerLeaseResponse(
+  value: unknown
+): DecodedBridgePayload<BridgeV2ControllerLeaseResponse> {
+  return decode(value, controllerLeaseResponseSchema, "Bridge v2 controller lease response");
+}
+
+export function decodeBridgeV2ControlSnapshot(
+  value: unknown
+): DecodedBridgePayload<BridgeV2ControlSnapshot> {
+  return decode(value, controlSnapshotSchema, "Bridge v2 control snapshot");
 }
 
 export function decodeBridgeV2Inspection(value: unknown): DecodedBridgePayload<BridgeV2Inspection> {

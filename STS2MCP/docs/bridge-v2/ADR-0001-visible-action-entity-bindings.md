@@ -34,7 +34,9 @@ They do not attempt to generalize action arguments or UI geometry.
 
 ## Safety Boundary
 
-- command submission remains `request_id + expected_state_id + action_id`;
+- the executable game operand remains only `action_id`; Preview.64 additionally
+  requires controller-session coordination fields that identify the writer but
+  cannot select or alter the game action;
 - bindings are not accepted from clients and never drive execution;
 - mutable game objects, indices, nodes, and call paths stay in the registry;
 - Re fails closed if a binding points outside visible Context/Surface evidence;

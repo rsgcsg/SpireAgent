@@ -20,11 +20,11 @@ yet.
 
 | Owner | Responsibilities | Must not own |
 |---|---|---|
-| `STS2MCP` Gateway | exact game identity, player-visible facts, active input ownership, opaque actions, execute-time validation, main-thread commit, semantic completion, command lifecycle | strategy, provider keys, long-term memory, arbitrary client game calls |
+| `STS2MCP` Gateway | exact game identity, player-visible facts, active input ownership, local mutation-controller coordination, opaque actions, execute-time validation, main-thread commit, semantic completion, command lifecycle | strategy, provider keys, long-term memory, arbitrary client game calls |
 | REST contract | transport of Gateway-owned observation, capabilities, action submission, and outcome state | independent legality or completion rules |
 | Optional MCP adapter | ergonomic read/action adaptation over the Gateway contract | a second game-rule engine or a bypass around Gateway permission |
 | `Re-SpireAgent` | strict decoding, normalized current state, prompt construction, model invocation, allowed-action selection, run recording, local settlement observation | strict-v2 legality reconstruction, native semantic completion, arbitrary mutation |
-| Future Companion | controller/session authority, secret storage, provider brokerage, diagnostics, recovery, optional external Agent boundary | direct game-object access or independent action execution |
+| Future Companion | client lifecycle UX, secret storage, provider brokerage, diagnostics, recovery, optional external Agent boundary | sole mutation-lease enforcement, direct game-object access, or independent action execution |
 
 ## Connector Safety Kernel
 
@@ -42,6 +42,10 @@ yet.
   than a raw object dump.
 - Version, module, Modset, source binding, ownership, visibility, permission,
   or outcome uncertainty fails closed.
+- Local mutation coordination is deliberately smaller than authentication:
+  read-only clients remain open, one runtime-bound controller generation may
+  submit writes, and descriptive client identity is audit metadata rather than
+  a security credential.
 - Embedded adaptation data is validated before scope publication. Invalid
   source registries suppress their affected Surface only; invalid environment
   policy suppresses all authority and both cases emit typed diagnostics.
@@ -95,7 +99,7 @@ audit evidence. See the
 
 ## Current Architectural Constraint
 
-The Gateway and Re share the mechanically checked `2.0-preview.63` source
+The Gateway and Re share the mechanically checked `2.0-preview.64` source
 contract. Gate 1 establishes a bounded v2 connector baseline: Re and the
 default MCP adapter are v2-only, and the current-source Gateway v1 HTTP surface
 is retired.
@@ -130,6 +134,12 @@ Preview.63 adds a typed session-grant state machine without changing that
 boundary. D candidate data still has no authorization effect; the Gateway is
 the only decision and enforcement owner, and no session result writes the
 embedded qualification policy.
+
+Preview.64 adds a separate local-control admission boundary. It reuses the
+Gateway runtime instance as restart epoch, requires one controller lease for
+new mutation commands, and records client/lease attribution. Lease loss never
+cancels or retries a command already in the Ledger. This is coordination for
+correctness and diagnostics, not account security.
 
 ## Observation And Strategy Projection Boundary
 

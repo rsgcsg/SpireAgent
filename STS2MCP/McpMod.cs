@@ -279,6 +279,41 @@ public static partial class McpMod
                 else
                     SendError(response, 405, "Method not allowed");
             }
+            else if (path == "/api/v2/clients/register")
+            {
+                if (request.HttpMethod == "POST")
+                    HandlePostBridgeV2ClientRegistration(request, response);
+                else
+                    SendError(response, 405, "Method not allowed");
+            }
+            else if (path == "/api/v2/clients")
+            {
+                if (request.HttpMethod == "GET")
+                    HandleGetBridgeV2Clients(response);
+                else
+                    SendError(response, 405, "Method not allowed");
+            }
+            else if (path == "/api/v2/controller")
+            {
+                if (request.HttpMethod == "GET")
+                    HandleGetBridgeV2Controller(response);
+                else
+                    SendError(response, 405, "Method not allowed");
+            }
+            else if (path.StartsWith("/api/v2/controller/", StringComparison.Ordinal))
+            {
+                string operation = path["/api/v2/controller/".Length..];
+                if (request.HttpMethod == "POST"
+                    && operation is "acquire" or "renew" or "release")
+                    HandlePostBridgeV2Controller(
+                        operation,
+                        request,
+                        response);
+                else if (request.HttpMethod == "POST")
+                    SendError(response, 404, "Unknown controller operation");
+                else
+                    SendError(response, 405, "Method not allowed");
+            }
             else if (path == "/api/v2/commands")
             {
                 if (request.HttpMethod == "POST")

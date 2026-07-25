@@ -7,7 +7,7 @@ namespace STS2_MCP.BridgeV2.Protocol;
 
 public static class BridgeV2Contract
 {
-    public const string ProtocolVersion = "2.0-preview.63";
+    public const string ProtocolVersion = "2.0-preview.64";
     public const string ObservationPolicyId = "player_visible_ui_v1";
 }
 
@@ -193,6 +193,16 @@ public sealed record CommandContractCapability(
     IReadOnlyList<string> LifecycleStates,
     int OutcomeTimeoutMs);
 
+public sealed record ControlCoordinationContractCapability(
+    string Status,
+    bool RegistrationRequiredForMutation,
+    bool SingleController,
+    bool ReadsRequireRegistration,
+    int LeaseTtlMs,
+    int RecommendedRenewalMs,
+    string RuntimeEpoch,
+    IReadOnlyList<string> Limitations);
+
 public sealed record InspectionContractCapability(
     string Status,
     bool StateBound,
@@ -274,6 +284,17 @@ public sealed record BridgeCapabilitiesResponse(
 {
     public BridgePermissionSystemInfo PermissionSystem { get; init; } =
         BridgePermissionSystemInfo.Unavailable;
+
+    public ControlCoordinationContractCapability ControlCoordination { get; init; } =
+        new(
+            "unavailable_fail_closed",
+            RegistrationRequiredForMutation: true,
+            SingleController: true,
+            ReadsRequireRegistration: false,
+            LeaseTtlMs: 0,
+            RecommendedRenewalMs: 0,
+            RuntimeEpoch: "unavailable",
+            new[] { "Control-coordination status was not attached to this response." });
 }
 
 public sealed record InspectionCompleteness(
@@ -1156,7 +1177,72 @@ public sealed record BridgeStateEnvelope(
 public sealed record BridgeCommandRequest(
     string? RequestId,
     string? ExpectedStateId,
-    string? ActionId);
+    string? ActionId)
+{
+    public string? ClientSessionId { get; init; }
+
+    public string? ControllerLeaseId { get; init; }
+
+    public long? ControllerGeneration { get; init; }
+}
+
+public sealed record BridgeClientRegistrationRequest(
+    string? ClientInstanceId,
+    string? ProductId,
+    string? ProductName,
+    string? ProductVersion);
+
+public sealed record BridgeClientRecord(
+    string ClientSessionId,
+    string ClientInstanceId,
+    string ProductId,
+    string ProductName,
+    string ProductVersion,
+    DateTimeOffset RegisteredAt,
+    DateTimeOffset LastSeenAt);
+
+public sealed record BridgeControllerLeaseRequest(
+    string? ClientSessionId,
+    string? ControllerLeaseId,
+    long? ControllerGeneration);
+
+public sealed record BridgeControllerLeaseInfo(
+    string Status,
+    string ControllerLeaseId,
+    long ControllerGeneration,
+    string ClientSessionId,
+    DateTimeOffset AcquiredAt,
+    DateTimeOffset ExpiresAt);
+
+public sealed record BridgeControlSnapshot(
+    string ProtocolVersion,
+    string RuntimeInstanceId,
+    IReadOnlyList<BridgeClientRecord> Clients,
+    BridgeControllerLeaseInfo? Controller);
+
+public sealed record BridgeClientRegistrationResponse(
+    string ProtocolVersion,
+    string RuntimeInstanceId,
+    BridgeClientRecord Client,
+    BridgeControllerLeaseInfo? Controller);
+
+public sealed record BridgeControllerLeaseResponse(
+    string ProtocolVersion,
+    string RuntimeInstanceId,
+    string Status,
+    string Detail,
+    BridgeClientRecord? Client,
+    BridgeControllerLeaseInfo? Controller);
+
+public sealed record BridgeCommandAttribution(
+    string RuntimeInstanceId,
+    string ClientSessionId,
+    string ClientInstanceId,
+    string ProductId,
+    string ProductName,
+    string ProductVersion,
+    string ControllerLeaseId,
+    long ControllerGeneration);
 
 public sealed record BridgeCommandEvent(
     string Status,
@@ -1172,4 +1258,7 @@ public sealed record BridgeCommandResponse(
     string Status,
     string Outcome,
     string? ObservedStateId,
-    IReadOnlyList<BridgeCommandEvent> Events);
+    IReadOnlyList<BridgeCommandEvent> Events)
+{
+    public BridgeCommandAttribution? Attribution { get; init; }
+}

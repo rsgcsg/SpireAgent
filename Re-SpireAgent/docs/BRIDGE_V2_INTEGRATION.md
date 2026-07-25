@@ -1,10 +1,11 @@
 # Bridge v2 Integration
 
 > Current source-truth status, 2026-07-25: Re and C# share the
-> `2.0-preview.63` source consumer contract; Re normalized schema is `26`.
+> `2.0-preview.64` source consumer contract; Re normalized schema is `26`.
 > Gate 1 is closed as a bounded ordinary-single-player v2 connector baseline.
 > Preview.61 supplied the final Neow's Fury runtime seal; Preview.62 adds
 > policy provenance and registry adaptation without inheriting qualification.
+> Preview.64's local-control contract is source-tested/built but not yet loaded.
 
 ## Connector Boundary
 
@@ -24,7 +25,7 @@ consumption.
 
 ## Current Scope
 
-Re-SpireAgent implements the strict `2.0-preview.63` consumer contract. When a
+Re-SpireAgent implements the strict `2.0-preview.64` consumer contract. When a
 matching Bridge exists, authority is read from capabilities rather than
 inferred from implementation or historical evidence.
 
@@ -55,6 +56,14 @@ no action from them, and cannot promote, quarantine or persist permission.
 Capabilities are negotiated once, so grant IDs may legitimately advance after
 a semantic completion; each response is independently exact-validated while
 the stable authorization set must remain coherent.
+
+Preview.64 separates controller coordination from game permission. Re may read
+without registration. Before a mutation it lazily registers, acquires or
+renews the current runtime lease, submits the lease generation, and requires
+the command's immutable attribution to match. Lease expiry blocks later
+submissions but does not change an already admitted command outcome. Gateway
+restart invalidates the registration and lease. Client metadata is descriptive
+and must not be treated as authenticated identity.
 
 Re's production Connector is v2-only. The former `auto` and explicit `v1`
 runtime modes are rejected; historical v1 raw-state records remain readable
@@ -424,8 +433,9 @@ stop safely. Historical v1 records are outside the Agent runtime.
   -> NormalizedCurrentState with explicit authority
   -> imported opaque legal actions
   -> DeepSeek selects one allowedActionId
-  -> request_id + expected_state_id + action_id
-  -> command identity/lifecycle verification
+  -> current controller lease
+  -> request_id + expected_state_id + action_id + lease generation
+  -> command identity/attribution/lifecycle verification
   -> append-only decision evidence
 ```
 

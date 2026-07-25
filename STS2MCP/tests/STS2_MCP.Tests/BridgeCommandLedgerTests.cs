@@ -193,6 +193,90 @@ public sealed class BridgeCommandLedgerTests
         Assert.Equal("request_id_conflict", conflict.Events[^1].ErrorCode);
     }
 
+    [Fact]
+    public void AdmissionRunsOnlyForNewRequestAndDoesNotInterruptStartedCommand()
+    {
+        int admissionChecks = 0;
+        var attribution = new BridgeCommandAttribution(
+            "runtime-a",
+            "client-a",
+            "instance-a",
+            "test-agent",
+            "Test Agent",
+            "1.0.0",
+            "lease-a",
+            1);
+        var ledger = new BridgeCommandLedger(10_000);
+        RegisteredBridgeAction action = Action(
+            "state-a",
+            "action-a",
+            () => BridgeActionStartResult.Started());
+        var request = new BridgeCommandRequest("request-a", "state-a", "action-a");
+
+        BridgeCommandResponse started = ledger.Submit(
+            request,
+            "state-a",
+            action,
+            () =>
+            {
+                admissionChecks++;
+                return BridgeCommandAdmission.Allow(attribution);
+            });
+        BridgeCommandResponse duplicateAfterLeaseLoss = ledger.Submit(
+            request,
+            "state-a",
+            action,
+            () =>
+            {
+                admissionChecks++;
+                return BridgeCommandAdmission.Reject("controller_lease_stale", "expired");
+            });
+        BridgeCommandResponse? completed = ledger.Poll("request-a", "state-b");
+
+        Assert.Equal(1, admissionChecks);
+        Assert.Equal("started", started.Status);
+        Assert.Equal("started", duplicateAfterLeaseLoss.Status);
+        Assert.Equal("client-a", duplicateAfterLeaseLoss.Attribution?.ClientSessionId);
+        Assert.Equal("completed", completed?.Status);
+    }
+
+    [Fact]
+    public void RejectedAdmissionDoesNotEnterLedgerOrStartAction()
+    {
+        int starts = 0;
+        var ledger = new BridgeCommandLedger(10_000);
+        RegisteredBridgeAction action = Action("state-a", "action-a", () =>
+        {
+            starts++;
+            return BridgeActionStartResult.Started();
+        });
+        var request = new BridgeCommandRequest("request-a", "state-a", "action-a");
+
+        BridgeCommandResponse rejected = ledger.Submit(
+            request,
+            "state-a",
+            action,
+            () => BridgeCommandAdmission.Reject("controller_lease_stale", "expired"));
+        BridgeCommandResponse admitted = ledger.Submit(
+            request,
+            "state-a",
+            action,
+            () => BridgeCommandAdmission.Allow(new BridgeCommandAttribution(
+                "runtime-a",
+                "client-a",
+                "instance-a",
+                "test-agent",
+                "Test Agent",
+                "1.0.0",
+                "lease-a",
+                1)));
+
+        Assert.Equal("rejected", rejected.Status);
+        Assert.Null(rejected.Attribution);
+        Assert.Equal("started", admitted.Status);
+        Assert.Equal(1, starts);
+    }
+
     private static RegisteredBridgeAction Action(
         string stateId,
         string actionId,

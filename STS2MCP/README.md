@@ -12,24 +12,26 @@ Bridge v2 is the only mutation contract for the current Agent and default MCP
 adapter. It remains an incremental semantic/visibility preview, not
 complete-game coverage.
 
-The C# Bridge and Re source share `2.0-preview.63`; Re normalized schema is
+The C# Bridge and Re source share `2.0-preview.64`; Re normalized schema is
 `26`. Gate 1 is closed as a bounded ordinary-single-player v2 connector
 baseline. Preview.62 replaced repeated combat-pile source branches with a
 reviewed embedded registry, moves exact-environment scopes into a reviewed
 embedded policy, and added a non-authorizing exact-assembly audit. Preview.63
 adds Gateway-owned operation-scoped session grants, conservative runtime Patch
-evidence, semantic-completion promotion and failure quarantine. The final
+evidence, semantic-completion promotion and failure quarantine. Preview.64
+adds descriptive client registration, one mutation-controller lease,
+generation fencing and command attribution. The final
 Neow's Fury runtime seal remains attributed to Preview.61; new Preview.62
-registry entries are not automatically Organic-qualified. Preview.63 is built,
-installed and cold-loaded on the local exact Bridge-only environment; the
-exact SHA/MVID/runtime/policy evidence is recorded in
+registry entries are not automatically Organic-qualified. Preview.63 remains
+the locally loaded exact Bridge-only environment; Preview.64 source, tests and
+Release build are complete but its cold-load is pending. Exact evidence is recorded in
 [current status](docs/bridge-v2/CURRENT_STATUS.md).
 
 > Product security warning: the current HTTP listener is a developer preview.
-> It binds to loopback and filters browser Origin, but it has no client
-> authentication, Gateway-enforced controller lease, or restart epoch. The v1
-> namespace is retired, but
-> localhost is still not an authorization
+> It binds to loopback and filters browser Origin. Preview.64 coordinates one
+> local mutation controller per runtime, but client metadata is not
+> authentication and does not contain a malicious local process. The v1
+> namespace is retired, but localhost is still not a product-security
 > boundary. Do not represent this as a consumer-safe Workshop product; see the
 > [productization architecture audit](../docs/current/audits/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md).
 
@@ -40,7 +42,7 @@ exact SHA/MVID/runtime/policy evidence is recorded in
   untested and has no v2 action or Inspection authority. Check
   [Bridge v2 current status](docs/bridge-v2/CURRENT_STATUS.md) before treating
   a local install as qualified.
-- Source `2.0-preview.63` keeps centralized overlay/room/menu ownership, typed
+- Source `2.0-preview.64` keeps centralized overlay/room/menu ownership, typed
   diagnostics, purpose-specific selection and event contracts, staged
   completion semantics, and a top-level read-only shared run/player HUD.
   Current-build capabilities distinguish scoped-qualified actions,
@@ -113,6 +115,11 @@ player-visible game facts
 The bridge is an adapter, not a strategy engine. The LLM chooses among legal
 actions; it cannot generate arbitrary Godot paths or MCP calls.
 
+Mutation clients must register and hold the current runtime controller lease.
+Re-SpireAgent and the optional Python MCP adapter do this automatically.
+Read-only capabilities, state, Inspection and command polling do not require a
+lease. See the [Gate 3 closeout](docs/bridge-v2/GATE3_LOCAL_CONTROL_COORDINATION_CLOSEOUT_2026-07-25.md).
+
 ## Requirements
 
 - Slay the Spire 2 installed through Steam.
@@ -156,7 +163,7 @@ npm run check:connector-adaptation
 npm run audit:connector-compatibility
 ```
 
-The solution currently contains 135 pure contract/runtime/security tests
+The solution currently contains 142 pure contract/runtime/coordination tests
 covering stable state identity, entity identity, stale-state rejection,
 idempotent request IDs, completion observation, timeout-as-unknown, retired-v1
 routing, and JSON action shape.
@@ -292,6 +299,12 @@ GET  /api/v2/capabilities
 GET  /api/v2/state
 GET  /api/v2/inspections/{kind}?expected_state_id={state_id}
 POST /api/v2/observation-bundles
+POST /api/v2/clients/register
+GET  /api/v2/clients
+GET  /api/v2/controller
+POST /api/v2/controller/acquire
+POST /api/v2/controller/renew
+POST /api/v2/controller/release
 POST /api/v2/commands
 GET  /api/v2/commands/{request_id}
 ```
@@ -302,9 +315,15 @@ Submit only identifiers returned by the exact state:
 {
   "request_id": "client-generated-idempotency-key",
   "expected_state_id": "state_...",
-  "action_id": "action_..."
+  "action_id": "action_...",
+  "client_session_id": "client_...",
+  "controller_lease_id": "lease_...",
+  "controller_generation": 1
 }
 ```
+
+Re-SpireAgent and the Python MCP adapter manage the registration and lease
+sequence automatically. A direct REST writer must do so explicitly.
 
 `started` means the UI interaction began. Poll until `completed`, `rejected`,
 `failed`, or `timed_out`. A timed-out command has `outcome: "unknown"` and must

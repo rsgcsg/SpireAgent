@@ -2,7 +2,7 @@
 
 In this project, "SpireAgent" means `Re-SpireAgent` by default.
 
-Current source contract is `2.0-preview.63`; Re normalized schema is `26`.
+Current source contract is `2.0-preview.64`; Re normalized schema is `26`.
 Gate 1 is closed as a bounded ordinary-single-player v2 connector baseline.
 Preview.61 supplied the exact Neow's Fury Organic lifecycle; Preview.62 adds
 reviewed compatibility/source registries and policy provenance without
@@ -20,7 +20,8 @@ Bridge v2 REST response (current Re path)
   -> Re-SpireAgent NormalizedCurrentState with action authority
   -> AllowedAction from legal_actions
   -> DeepSeek selects allowedActionId
-  -> submit expected_state_id + action_id
+  -> lazy client registration + controller lease
+  -> submit expected_state_id + action_id + controller generation
   -> poll command settlement
   -> before/after decision record
 ```
@@ -46,10 +47,20 @@ Required client behavior:
 - retain raw request/response and parsed evidence separately;
 - treat `started` as pending and `timed_out` as unknown;
 - verify every command response repeats the submitted request, state, and action
-  identity;
+  identity and admitted controller attribution;
 - treat both `failed` and `timed_out` as unknown outcomes;
 - never auto-retry unknown outcomes;
 - permit only one action-capable Re process through its runtime lock.
+
+Preview.64 keeps Re's local runtime lock as process-local hygiene while adding
+Gateway-wide coordination across Re, MCP and other local mutation clients.
+Read-only observation does not register or acquire control. Immediately before
+the first mutation, Re registers descriptive process metadata, acquires the
+one runtime-bound controller lease, renews it while active, attaches its lease
+ID and generation to each command, and releases it best-effort on shutdown.
+Gateway restart or lease replacement makes cached credentials stale. This is
+not authentication and Re does not decide whether another client may take
+control.
 
 Preview.63 keeps the permission decision and enforcement in the Gateway. Re
 requires state and capabilities to agree on the stable

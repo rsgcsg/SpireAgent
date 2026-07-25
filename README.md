@@ -11,22 +11,23 @@ historical. They are preserved under [`archive/original-spireagent/`](archive/or
 and do not define the current architecture, permission model, or roadmap.
 
 This is a public development repository, not yet a consumer-ready Workshop
-release. The local HTTP Gateway has no client authentication or controller
-lease; keep it on loopback and read [Security](SECURITY.md) before running
+release. The local HTTP Gateway now has lightweight single-controller
+coordination, but no client authentication or malicious-local-process
+isolation; keep it on loopback and read [Security](SECURITY.md) before running
 third-party clients.
 
 ## Current Truth
 
-The active connector source shares `2.0-preview.62` between C# and
+The active connector source shares `2.0-preview.64` between C# and
 Re-SpireAgent; Re normalized schema is `26`. Gate 1 is closed as a bounded
 ordinary-single-player v2 connector baseline: Re and the default MCP adapter
 are v2-only, the entire Gateway `/api/v1` namespace is retired, and the final
 Neow's Fury lifecycle was completed under the recorded Preview.61 exact
-identity. Preview.62 adds reviewed source/build registries and a
-non-authorizing exact-assembly audit; new registry entries do not inherit
-Organic qualification. The local Release is installed and cold-loaded with a
-matching built/installed/loaded SHA; exact identity remains recorded in
-[current status](docs/current/STATUS.md).
+identity. Preview.63 supplied the first D3 session permission loop. Preview.64
+adds minimal runtime-bound client registration, one mutation-controller lease,
+generation fencing and command attribution. Its source/tests/Release build are
+complete, but the local running game still loads Preview.63; exact source and
+loaded identities remain separated in [current status](docs/current/STATUS.md).
 
 Bridge v2's safety kernel remains the current direction: one active input
 owner, opaque state-bound actions, execute-time validation, semantic completion,

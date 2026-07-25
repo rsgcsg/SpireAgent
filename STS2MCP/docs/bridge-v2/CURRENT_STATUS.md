@@ -8,7 +8,7 @@ and do not grant current authority.
 ## Current Source-Truth Status
 
 The C# Gateway and Re-SpireAgent source now share contract
-`2.0-preview.63`; Re normalized schema is `26`. Gate 1 is closed as a bounded
+`2.0-preview.64`; Re normalized schema is `26`. Gate 1 is closed as a bounded
 ordinary-single-player v2 connector baseline:
 
 - Re and the default Python MCP adapter submit only advertised Bridge v2
@@ -60,7 +60,23 @@ publication/execution grant binding, semantic-completion promotion, and
 failure quarantine. The reviewed exact-environment policy remains an absolute
 ceiling. D candidate data remains non-authorizing.
 
-The current Preview.63 artifact is built, installed and Steam cold-loaded as:
+Preview.64 adds the Gate 3 Local Control Coordination Alpha source contract:
+descriptive client registration, one runtime-bound mutation-controller lease,
+generation fencing and immutable command attribution. Reads remain open. The
+coordination layer reuses `bridge.runtime_instance_id`, does not authenticate
+local processes, does not change operation permissions, and does not cancel or
+retry a command after admission.
+
+Gateway tests (`142`), Re tests (`175`), Re typecheck/build, Python MCP syntax
+checking and the exact-game Release build pass for Preview.64 source. The
+Release SHA is
+`84d812ac7fba2a7e0169a7afb800b8d69e967580a941a43c037e38a3c3cec494`.
+The artifact is not installed or loaded because the game still has Preview.63
+loaded. Therefore Preview.64 currently has no loaded MVID/runtime or Organic
+coordination evidence. See the
+[Gate 3 closeout](GATE3_LOCAL_CONTROL_COORDINATION_CLOSEOUT_2026-07-25.md).
+
+The currently loaded artifact remains Preview.63:
 
 ```text
 SHA      d05b0580917c5b60acc908ec2575d2d0f8e59778da8c2379cebc0d5e72c90aa0
@@ -142,11 +158,15 @@ compatibility only. The prior Preview.59 Dredge journey does not transfer Gate
 1. The first D3 permission window is closed: runtime Patch inventory,
    two-epoch session-canary repeat and a read-only exact-identity transition
    assertion are complete. Do not broaden gray candidates as part of the next
-   Gate 2 or Gate 3 slice.
+   Gate 2 slice.
 2. Maintain the machine-checked closed Gate 1/v1 retirement inventory and run
    the non-authorizing exact-assembly compatibility audit on each exact build.
 3. Do not add a non-navigation gray candidate until independent evidence and
    candidate-policy review exist. Keep Tutor/unknown origins fail closed.
+4. Close the game, install Preview.64, cold-start through Steam, verify exact
+   loaded SHA/MVID/runtime identity, then exercise one Re advertised-action
+   command and one competing-client rejection. This is coordination canary
+   evidence, not Surface qualification.
 
 The current inventory and first Gate 1 runtime repair are recorded in
 [Gate 1 Operation And Journey Inventory](GATE1_OPERATION_AND_JOURNEY_INVENTORY.md).
@@ -273,8 +293,9 @@ The detailed audit and migration sequence is
 - REST is Re's current transport. The Python MCP server is optional and must
   not become a second legality/completion engine.
 - The current HTTP listener is a developer preview, not a consumer-safe
-  authorization boundary: it lacks Gateway authentication, controller lease,
-  and restart epoch semantics.
+  authentication boundary. Preview.64 coordinates one local mutation client
+  with a runtime-bound lease and restart invalidation, but client metadata and
+  lease IDs are not secrets and do not isolate a malicious local process.
 
 ## Evidence Vocabulary
 
@@ -285,9 +306,10 @@ a current v2 permission claim.
 
 ## Next High-Value Work
 
-Gate 2 may advance through non-authorizing transaction-correlation experiments
-and visible-information closure. Newly registered combat-pile sources, Quasar,
-Knowledge Demon, Charge, Seance, and Precise Scissors remain evidence debt
-rather than Gate 1 blockers. Do not weaken state binding, retry unknown
-outcomes, restore v1, or convert discovery/source/build evidence into
-qualification.
+Install and cold-load Preview.64 before any further runtime claim. After the
+bounded coordination canary, Gate 2 may advance through non-authorizing
+transaction-correlation experiments and visible-information closure. Newly
+registered combat-pile sources, Quasar, Knowledge Demon, Charge, Seance, and
+Precise Scissors remain evidence debt rather than Gate 1 blockers. Do not
+weaken state binding, retry unknown outcomes, restore v1, or convert
+discovery/source/build evidence into qualification.

@@ -1,6 +1,22 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.63`
+Protocol preview: `2.0-preview.64`
+
+Preview.64 adds minimal local mutation coordination. Read-only observation and
+Inspection remain open. A mutation client registers descriptive process
+metadata, acquires the one runtime-bound controller lease, and submits the
+current lease ID and monotonically increasing generation with each command.
+The Gateway records immutable command attribution and rejects stale or
+non-holder submissions before they enter the command ledger. Gateway restart
+invalidates all registrations and leases because the coordination epoch is the
+existing `bridge.runtime_instance_id`.
+
+This is correctness and debugging coordination, not authentication. Client
+metadata and lease IDs are not secrets, do not defend against a malicious local
+process, and do not replace exact-environment permission, opaque actions,
+execute-time validation, semantic completion, or unknown-no-retry. Lease
+expiry blocks new submissions but never cancels or retries an already admitted
+command.
 
 Preview.63 adds required `permission_system` state to capabilities and every
 state envelope. It reports Gateway mode, runtime epoch, candidate policy,
@@ -221,6 +237,12 @@ GET  /api/v2/capabilities
 GET  /api/v2/state
 GET  /api/v2/inspections/{kind}?expected_state_id={state_id}
 POST /api/v2/observation-bundles
+POST /api/v2/clients/register
+GET  /api/v2/clients
+GET  /api/v2/controller
+POST /api/v2/controller/acquire
+POST /api/v2/controller/renew
+POST /api/v2/controller/release
 POST /api/v2/commands
 GET  /api/v2/commands/{request_id}
 ```
@@ -328,6 +350,31 @@ completion.
 D scenarios, fingerprints, graders and candidate records have no authority.
 They may supply evidence IDs and a recommendation. The Gateway remains the
 sole policy decision and enforcement owner.
+
+## Local Control Coordination
+
+Capabilities expose a required `control_coordination` contract. Its
+`runtime_epoch` must equal `bridge.runtime_instance_id`. The current contract
+has:
+
+- descriptive client registration for mutation clients;
+- no registration requirement for reads or Inspection;
+- exactly one active mutation-controller lease;
+- a 30-second lease TTL and 10-second recommended renewal interval;
+- generation fencing so an expired or released lease cannot regain authority;
+- immutable command attribution to the admitted client, lease and generation.
+
+Registration does not authenticate a process. `product_id`, product name and
+version exist only for diagnosis and command audit. The direct local Gateway
+does not implement accounts, passwords, OAuth, certificates, RBAC or a
+malicious-process boundary.
+
+The coordination check runs only for a new request ID and before the command
+enters the ledger. Re-reading an existing command by request ID remains open
+and cannot create another mutation. An admitted command owns its lifecycle
+until semantic completion, rejection, failure or timeout even if the lease
+later expires. A new holder may submit only after the previous lease expires
+or is released; it cannot cancel or retry the prior command.
 
 ## Coherent Observation Bundle
 
@@ -596,15 +643,22 @@ handles, node paths, indices, and call paths remain inside the registry.
 {
   "request_id": "client-generated-idempotency-key",
   "expected_state_id": "state_opaque",
-  "action_id": "action_opaque"
+  "action_id": "action_opaque",
+  "client_session_id": "client_opaque",
+  "controller_lease_id": "lease_opaque",
+  "controller_generation": 1
 }
 ```
 
-The bridge rebuilds current state, checks exact state identity, resolves the
-registered action, and revalidates its game objects before starting it.
+The bridge first resolves an existing request ID for idempotent polling. A new
+request must hold the current runtime controller lease. The bridge then
+rebuilds current state, checks exact state identity, resolves the registered
+action, and revalidates its game objects before starting it.
 
 Request IDs are idempotent only for an identical payload. Reusing one with a
-different action is rejected.
+different action is rejected. Coordination rejection does not enter the
+command ledger and does not count as an operation failure in the D3 permission
+state machine.
 
 ## Lifecycle
 
@@ -734,10 +788,12 @@ source-qualified event card-acquisition canary without generalizing other
 `NSimpleCardSelectScreen` purposes.
 
 Clients must verify that every command response repeats the submitted
-`request_id`, `expected_state_id`, and `action_id`. They must also enforce the
-status/outcome pairs: pending lifecycle states use `pending`, `completed` uses
-`confirmed`, `rejected` uses `not_applied`, and `failed`/`timed_out` use
-`unknown`. A mismatch is an unknown client outcome, not success.
+`request_id`, `expected_state_id`, and `action_id`, and that command
+attribution matches the submitting client session, lease ID and generation.
+They must also enforce the status/outcome pairs: pending lifecycle states use
+`pending`, `completed` uses `confirmed`, `rejected` uses `not_applied`, and
+`failed`/`timed_out` use `unknown`. A mismatch is an unknown client outcome,
+not success.
 
 ## Diagnostics
 
@@ -805,6 +861,11 @@ or canary list.
 |---|---|
 | `invalid_json` | malformed request body |
 | `invalid_command_contract` | required opaque IDs absent/invalid |
+| `invalid_client_contract` | required descriptive client registration fields absent/invalid |
+| `invalid_controller_contract` | required controller session, lease, or generation absent/invalid |
+| `client_session_not_found` | client was not registered in the current Gateway runtime |
+| `controller_lease_held` | another local mutation client currently holds control |
+| `controller_lease_stale` | lease ID/generation is expired, released, replaced, or from another runtime |
 | `request_id_conflict` | idempotency key reused for another payload |
 | `command_capacity_exhausted` | bounded session ledger is full; restart required |
 | `stale_state` | expected state no longer current |

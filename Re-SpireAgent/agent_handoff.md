@@ -5,7 +5,17 @@
 > `../STS2MCP/docs/bridge-v2/CURRENT_STATUS.md`. Older identity and mode claims
 > below are preserved as dated evidence and must not override those documents.
 
-Status update 2026-07-25 (latest): source contract is `2.0-preview.63`; Re
+Status update 2026-07-25 (latest): source contract is `2.0-preview.64`; Re
+normalized schema is `26`. Preview.64 adds descriptive client registration,
+one runtime-bound mutation-controller lease, generation fencing and command
+attribution. Gateway/Re tests and builds pass. The game still has Preview.63
+loaded, so Preview.64 installation, cold-load identity and bounded
+coordination canary remain pending. This layer is coordination, not
+authentication, operation permission or persistent authority. See the
+canonical status and
+`../STS2MCP/docs/bridge-v2/GATE3_LOCAL_CONTROL_COORDINATION_CLOSEOUT_2026-07-25.md`.
+
+Earlier status update 2026-07-25: source contract was `2.0-preview.63`; Re
 normalized schema is `26`. The current loaded Gateway is SHA
 `d05b0580...c90aa0`, MVID `4836b3df-fffc-498a-b9c9-ac666adb5a5b`, runtime
 `8aec74c19fed4a09984dc56a7e0c36ac`. Re strictly consumes the Gateway-owned

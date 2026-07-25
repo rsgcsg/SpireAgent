@@ -612,12 +612,20 @@ public sealed class BridgeContractTests
             PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
         };
         string json = JsonSerializer.Serialize(
-            new BridgeCommandRequest("request-a", "state-a", "action-a"),
+            new BridgeCommandRequest("request-a", "state-a", "action-a")
+            {
+                ClientSessionId = "client-a",
+                ControllerLeaseId = "lease-a",
+                ControllerGeneration = 7
+            },
             options);
 
         Assert.Contains("\"request_id\"", json);
         Assert.Contains("\"expected_state_id\"", json);
         Assert.Contains("\"action_id\"", json);
+        Assert.Contains("\"client_session_id\"", json);
+        Assert.Contains("\"controller_lease_id\"", json);
+        Assert.Contains("\"controller_generation\":7", json);
         Assert.DoesNotContain("index", json, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("target", json, StringComparison.OrdinalIgnoreCase);
     }
