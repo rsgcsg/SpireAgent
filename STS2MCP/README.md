@@ -12,7 +12,7 @@ Bridge v2 is the only mutation contract for the current Agent and default MCP
 adapter. It remains an incremental semantic/visibility preview, not
 complete-game coverage.
 
-The C# Bridge and Re source share `2.0-preview.65`; Re normalized schema is
+The C# Bridge and Re source share `2.0-preview.66`; Re normalized schema is
 `26`. Gate 1 is closed as a bounded ordinary-single-player v2 connector
 baseline. Preview.62 replaced repeated combat-pile source branches with a
 reviewed embedded registry, moves exact-environment scopes into a reviewed
@@ -23,13 +23,19 @@ adds descriptive client registration, one mutation-controller lease,
 generation fencing and command attribution. Preview.65 adds an embedded
 operation-identity catalog, exact-environment persistent qualification ledger,
 short-lived candidate packages, qualified packages, local quarantine, and
-non-authorizing qualification tooling. The final Neow's Fury runtime seal
-remains attributed to Preview.61; new Preview.62 registry entries are not
-automatically Organic-qualified. Preview.65 is built and cold-loaded against
-the local `v0.109.1` installation. A real requalification cycle has qualified
-only `main_menu/open_singleplayer` and `main_menu/continue_run`; the rest of
-the build does not inherit those permissions. Exact evidence is recorded in
-[current status](docs/bridge-v2/CURRENT_STATUS.md).
+non-authorizing qualification tooling. Preview.66 adds non-authorizing
+Environment Profiles, a risk-based migration policy, exact evidence
+aggregation, automatic package orchestration, multi-environment package slots,
+and atomic store reload. The final Neow's Fury runtime seal remains attributed
+to Preview.61; new registry entries are never automatically Organic-qualified.
+Preview.66 is built and cold-loaded against the local `v0.109.1` installation.
+The final binary has persistent qualification only for
+`main_menu/continue_run`. Its current 87-operation catalog combines five
+explicit high-precision contracts with 82 manifest-derived conservative
+identity/test-confirm fallbacks; the other 86 operations are session canaries
+only. Fallback metadata does not assert semantic equivalence or bypass current
+native legality, Commit, completion, or operation-local quarantine. Exact
+evidence is recorded in [current status](docs/bridge-v2/CURRENT_STATUS.md).
 
 > Product security warning: the current HTTP listener is a developer preview.
 > It binds to loopback and filters browser Origin. Preview.64 coordinates one
@@ -42,14 +48,15 @@ the build does not inherit those permissions. Exact evidence is recorded in
 - Historical Gate 1 binding: Slay the Spire 2
   `v0.109.0|c12f634d|-1639417500`. Its authority does not transfer.
 - Current loaded game identity:
-  `v0.109.1|c8c577f6|-820620422`. Two exact main-menu operations have current
-  persistent qualification; map is candidate-only and other operations require
-  independent source/binding and runtime review.
+  `v0.109.1|c8c577f6|-820620422`. One exact main-menu operation has current
+  persistent qualification; 86 exact operations are candidate-backed session
+  canaries and require independent runtime evidence before persistent
+  qualification.
 - A matching version/commit with a different main-assembly hash remains
   untested and has no v2 action or Inspection authority. Check
   [Bridge v2 current status](docs/bridge-v2/CURRENT_STATUS.md) before treating
   a local install as qualified.
-- Source `2.0-preview.65` keeps centralized overlay/room/menu ownership, typed
+- Source `2.0-preview.66` keeps centralized overlay/room/menu ownership, typed
   diagnostics, purpose-specific selection and event contracts, staged
   completion semantics, and a top-level read-only shared run/player HUD.
   Current-build capabilities distinguish reviewed exact-policy actions,
@@ -157,7 +164,12 @@ dotnet build STS2_MCP.csproj -c Release -o out/STS2_MCP \
 cd ..
 npm run check:connector-adaptation
 npm run check:connector-compatibility-fixtures
+npm run check:connector-permission-fixtures
+npm run check:connector-qualification
+npm run check:connector-profiles
+npm run check:connector-migration
 npm run audit:connector-compatibility
+npm run audit:connector-operation-bindings
 ```
 
 Windows PowerShell:
@@ -168,10 +180,16 @@ dotnet test STS2_MCP.sln -p:STS2GameDir="$env:STS2_GAME_DIR"
 .\build.ps1 -GameDir "$env:STS2_GAME_DIR"
 Set-Location ..
 npm run check:connector-adaptation
+npm run check:connector-compatibility-fixtures
+npm run check:connector-permission-fixtures
+npm run check:connector-qualification
+npm run check:connector-profiles
+npm run check:connector-migration
 npm run audit:connector-compatibility
+npm run audit:connector-operation-bindings
 ```
 
-The solution currently contains 153 pure contract/runtime/coordination tests
+The solution currently contains 162 pure contract/runtime/coordination tests
 covering stable state identity, entity identity, stale-state rejection,
 idempotent request IDs, completion observation, timeout-as-unknown, retired-v1
 routing, and JSON action shape.
@@ -215,27 +233,31 @@ configuration:
 ```json
 {
   "port": 15526,
-  "permission_mode": "balanced_gray",
+  "permission_mode": "migration_exploration",
   "qualification_store": "STS2_MCP.qualifications.json"
 }
 ```
 
-Supported modes are `strict`, `balanced_gray`, and `developer_gray`.
-`developer_gray` does not bypass the embedded exact-environment ceiling,
-execute-time validation, native commit, semantic completion, Patch gating or
-quarantine. `strict` disables all canary/session authority. Restart the game
+Supported modes are `strict`, `balanced_gray`, `developer_gray`, and
+`migration_exploration`. Higher modes admit additional reviewed risk classes,
+but none bypass exact package applicability, the reviewed operation catalog,
+execute-time validation, native commit, semantic completion, Patch gating, or
+quarantine. `strict` disables all candidate/session authority. Restart the game
 after changing the mode. An invalid mode or unreadable config fails closed to
 `strict`; a missing config creates the local developer default
 `balanced_gray`. V1 mutation cannot be enabled; use only state-bound actions
 advertised by the current Bridge v2 state.
 
 `qualification_store` is a local append-only operation qualification ledger.
-It is loaded once at startup and is never served as a mutation endpoint.
-Missing means no persistent qualification; malformed means fail closed. Keep
-the file outside Git. Use the repository-local
-`npm run qualification:ledger -- ...` commands documented in the
-[Preview 65 closeout](docs/bridge-v2/PREVIEW_65_PERSISTENT_QUALIFICATION_AND_ADAPTATION_CLOSEOUT_2026-07-25.md)
-to inspect, compare, assemble, install, revoke or roll back packages.
+It is loaded at startup and atomically reloaded when the file changes; each
+complete snapshot is revalidated before new scopes are published. It is never
+served as a mutation endpoint. Missing means no persistent qualification;
+malformed means fail closed. Keep it outside Git. Use
+`npm run qualification:ledger -- ...` to inspect, compare, assemble, install,
+revoke, or roll back packages. Use `npm run migration:profiles -- ...` for the
+non-authorizing Profile index and `npm run migration:cycle -- ...` for an exact
+candidate/evidence/qualification cycle. See the
+[Preview.66 closeout](docs/bridge-v2/PREVIEW_66_MULTI_ENVIRONMENT_MIGRATION_CLOSEOUT_2026-07-26.md).
 Set `qualification_store` to JSON `null` or the string `"disabled"` and restart
 to disable ledger loading without deleting the local evidence file.
 

@@ -10,18 +10,24 @@ Status: Gate 1 closed as a bounded ordinary-single-player v2 connector
 baseline on 2026-07-24. Preview.61 supplied the exact Neow's Fury Organic
 runtime seal, strict Re decode, and loaded-v1 retirement evidence.
 
-C# and Re source now share `2.0-preview.65`. Preview.62 moved exact-environment
+C# and Re source now share `2.0-preview.66`. Preview.62 moved exact-environment
 authorization and reviewed combat-pile source contracts into validated
 embedded policy, and added a non-authorizing exact-assembly audit. Preview.63
 adds an operation-scoped Gateway session-grant state machine under that
 embedded ceiling. Preview.64 adds minimal local mutation coordination without
 authentication or a second permission engine. Preview.65 adds an exact,
 operation-scoped persistent qualification input and non-authorizing impact
-tooling; it does not infer qualification from static similarity. Those changes
-reduce content-literal code edits but do not self-authorize discovered
-mechanics, Mods, or new builds. Independent green suites still do not prove a
-loaded game connector. The following deployment conditions remain required for
-every artifact:
+tooling; it does not infer qualification from static similarity. Preview.66
+adds non-authorizing Environment Profiles, risk-class migration planning,
+multi-environment ledger slots, evidence orchestration, and atomic store
+reload. It also replaces per-operation candidate enumeration with five
+explicit high-precision qualification contracts plus conservative identities
+derived from the current operation manifest. The fallback path is
+identity/test-confirm only and available solely in migration mode; it does not
+self-authorize discovered mechanics, Mods, or new builds. These changes reduce
+content-literal code edits, but independent green suites still do not prove a
+loaded game connector. The following deployment conditions remain required
+for every artifact:
 
 - keep C#, Re, examples, installed artifact, and capability declarations on the
   same revision;
@@ -122,7 +128,12 @@ unexercised session canary. The embedded canary scope was the Preview.63
 ceiling. Preview.65 can additionally admit one exact `qualified` package or
 seed a low-risk `session_canary` package, but only after full exact
 applicability checks. The dynamic session grant still cannot write or promote
-persistent qualification.
+persistent qualification. Preview.66 generalizes candidate admission from a
+literal operation list to reviewed risk classes, but still requires an exact
+installed candidate package and a current explicit or manifest-derived
+operation identity. The final binary qualified only
+`main_menu/continue_run`; four other explicit contracts and 82 conservative
+manifest-derived fallback identities remain session canaries.
 
 ## Phase 1.5: Player-Visible Closure And Coherent Read
 

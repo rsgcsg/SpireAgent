@@ -5,123 +5,140 @@ Historical preview reports do not grant current authority.
 
 ## Source Truth
 
-- Gateway/Re protocol: `2.0-preview.65`.
-- Re normalized schema: `26`.
-- Gateway v1 namespace: retired, `410 Gone`.
-- Current game: `v0.109.1|c8c577f6|-820620422`.
-- Current game assembly SHA:
-  `2cb39e2eee651743829abcc0df4dd9cd7e65f46287c7ca264481115c9602382f`.
-- Current game assembly MVID:
-  `208f08b8-d5f5-47f8-9e96-d3a4299ee709`.
-- Installed and loaded Gateway SHA:
-  `4c6c1309c4ac3c0e97eccb084312769595485e21f499b9a1d07040a8e744419e`.
-- Installed and loaded Gateway MVID:
-  `60d4c2ce-44ad-46b4-99f7-0479e75b5741`.
+```text
+Gateway/Re protocol  2.0-preview.66
+Re schema            26
+game                 v0.109.1|c8c577f6|-820620422
+game assembly SHA    2cb39e2eee651743829abcc0df4dd9cd7e65f46287c7ca264481115c9602382f
+game assembly MVID   208f08b8-d5f5-47f8-9e96-d3a4299ee709
+Gateway SHA          b0b31f769f25d5a1e5231e92af76f7f09e07ab38f5c43f1ae753eba0b61d7a8a
+Gateway MVID         a7008eea-b3cd-4cb8-b75c-6dee64e9cd5c
+runtime epoch        cebc39821b7e4d16aa1d9d2d9e680df8
+Environment Profile env-8eee4ee3f08d1181b7405305
+environment digest   2654bef1049808f852f6d946a283941a14db6893678a134543510afeb8d45aa0
+Modset               2747e126fbb2f770b5cf2e6b971713a3b0b80d017b606598ca75fc758764a688
+Patch                ee979e2b877b772adaa28409f474037a832b9ccaf22037afde23a527bb13c587
+operation catalog    8878447144e4fe4d8c01b2940335feb504367a81ac76e4b4fd22e2f4d6b85f0c
+mode                 migration_exploration
+```
+
+The final Release DLL is built, installed, and cold-loaded with the exact
+Gateway SHA/MVID above. Gateway v1 is retired and every `/api/v1` route returns
+`410 Gone`.
 
 Gate 1 is closed only as the bounded ordinary-single-player v2 connector
 baseline documented by the operation inventory. Unsupported variants remain
 explicit fail-closed rows.
 
-## v0.109.1 Requalification
+## Preview.66 Migration State
 
-The update from reviewed `v0.109.0` no longer leaves the whole environment
-diagnostic-only. Preview.65 performed a narrow operation-by-operation
-requalification:
-
-| Operation | Binding audit | Runtime evidence | Current authority |
-|---|---|---|---|
-| `main_menu/open_singleplayer` | match | 2 ordinary runs, 2 epochs | persistent `qualified` |
-| `main_menu/continue_run` | match | 2 ordinary runs, 2 epochs | persistent `qualified` |
-| `map_navigation/choose_map_node` | match | no legal route action in available save | candidate only |
-| `shop_room/open_shop_inventory` | match | not run on v0.109.1 | none from this cycle |
-| `deck_enchant_selection/confirm_selection` | match | not run on v0.109.1 | none from this cycle |
-
-The exact binding audit is non-authorizing. It verifies reviewed private
-bindings and emits operation digests, then requires targeted runtime
-requalification. Unknown operations or owner/Commit/completion changes remain
-`code_required`.
-
-Real Re decision evidence:
+Preview.66 uses one append-only qualification ledger for multiple exact
+environments. The active slot key is:
 
 ```text
-open_singleplayer
-  run-20260726075353-pqoc6a
-  run-20260726075427-8d8wb7
-  witness singleplayer_or_character_select_owner_became_active
-
-continue_run
-  run-20260726082338-ooz634
-  run-20260726082439-kjmwoi
-  witness saved_singleplayer_run_became_active
+environment_digest + surface_kind + operation
 ```
 
-Both qualified packages are active in the local append-only store and survive
-cold restart with `runtime_epoch=not_session_bound`. The Gateway rechecks exact
-game/Gateway/Modset/Patch/environment/operation identity at startup.
+The Environment Profile is a local derived planning index, not permission.
+Candidate eligibility is risk-class based, but a current operation identity
+and exact installed candidate package remain mandatory. The Gateway atomically
+hot-reloads ledger changes and revalidates the complete snapshot before
+publishing scopes.
 
-Final cold-load identity:
+Current exact operation state:
+
+| Contract class | Count | Current authority | Final-binary Organic evidence |
+|---|---:|---|---|
+| explicit high-precision | 5 | 1 persistent `qualified`, 4 `session_canary` | `continue_run`: 2 ordinary runs in 2 runtime epochs |
+| manifest-derived fallback | 82 | 82 `session_canary` | none promoted |
+
+The fallback contracts are conservative identity/test-confirm records. They
+do not assert semantic equivalence: each canary still depends on the current
+Provider publishing the action, current native legality, execute-time
+revalidation, native Commit, and a non-empty Gateway completion witness. Empty
+or failed completion quarantines only that operation. Operations absent from
+the current manifest remain governed by exact embedded policy or fail closed.
+No operation-name wildcard exists.
+
+Final qualified evidence:
 
 ```text
-runtime     56f748fdf9c041e7a10815152dd5a14c
-Modset      803245f3df16e1d07f88c9c922f068d34b582edd6c3f09d2e98a11e36337ae49
-Patch       ee979e2b877b772adaa28409f474037a832b9ccaf22037afde23a527bb13c587
-environment 218ff0b309dd3e1e110bb401d8fc40ca86b53ac7adea331ec68c3d71c7e9feb4
-store       13fbc389b3ed9f0eb1ba4bfdc5b8615bd059ffda5fc7ac2596d1b53a42244826
-mode        balanced_gray
+run-20260726132908-2e4rz6
+run-20260726133036-d3tr3a
+operation main_menu/continue_run
+witness   saved_singleplayer_run_became_active
+package   migration-env-8eee4ee3f08d1181b7405305-5d300df4b5e7f6d7-qualified-ms1u62n0
 ```
 
-The map candidate package remains visible in qualification audit state, but
-balanced mode issued no map grant and advertised no map canary Surface.
+Both runs used Re's current opaque `continue_run` action with
+`bridge_advertised` authority and settled through the Gateway command
+lifecycle. The qualified package survived a later cold restart and was
+revalidated with `runtime_epoch=not_session_bound`.
 
-## Architecture Correction
+## Permission Boundary
 
-A Surface may legitimately contain operations at different permission tiers.
-For example, `main_menu/open_singleplayer` can be persistent-qualified while
-`main_menu/continue_run` is still a session canary. Surface support is only a
-coarse highest-tier projection; each operation scope and advertised action is
-authoritative. Re now accepts this mixed state while still requiring every
-action to match exactly one current operation grant or package.
+`migration_exploration` is not unrestricted. It may seed reviewed exact
+operation contracts across reversible navigation, progression, and persistent
+run mutation risk classes, but only through installed exact candidate
+packages. Publication and execution still require:
 
-This does not allow a package for one operation to authorize a sibling on the
-same Surface.
+- exact game, Gateway, Modset, Patch, environment, operation, completion, and
+  witness identity;
+- one current input owner and one exact operation scope;
+- current native legality and operands;
+- opaque state binding and execute-time revalidation;
+- native STS2 Commit and Gateway semantic completion;
+- unknown-no-retry and operation-local quarantine.
+
+Profiles, binding audits, static fingerprints, D recommendations, fixtures,
+and one successful canary do not grant persistent authority.
 
 ## Lifecycle And Failure Evidence
 
-The qualification lifecycle was exercised on isolated store copies for:
+Automated tests cover:
 
-- wrong Modset, Patch and Gateway MVID rejection;
-- expired package rejection;
-- corrupt JSON store fail-closed;
-- revoke and rollback;
-- live supersede and cold-restart recovery.
+- package coexistence for the same operation in multiple environments;
+- wrong environment, Modset, Patch and Gateway MVID rejection;
+- old-protocol package readability without applicability;
+- expired and corrupt package handling;
+- revoke, supersede and rollback;
+- hot reload and cold-restart recovery;
+- semantic Witness mismatch, timeout, unknown outcome, Patch drift, and
+  first-failure quarantine.
 
-Gateway tests also cover semantic Witness mismatch, timeout/unknown outcome,
-first-failure quarantine, Patch drift and invalid ledger sequences. An unknown
-outcome is never retried.
+The final Preview.66 artifact completed one real evidence-to-package migration
+and one later cold-restart recovery. The final projection contains 87
+applicable packages and scopes: one qualified and 86 candidate-backed session
+canaries. All 86 current grants survive projection instead of being clipped by
+the historical-grant window. Another 105 packages remain audit-visible but
+inapplicable. No cross-game-version or cross-Mod Organic migration was
+completed with this final binary.
 
-The available saved run contained a pre-existing non-ordinary Neow state. A
-map overlay could be opened, but native travel was disabled and no next node
-was legal. The Gateway correctly published no map action. This is not map
-canary or Organic evidence.
+Immediately after `continue_run`, Re may sample a transient loading instant
+where shared-state projection is unavailable. It records an unsupported
+successor checkpoint but does not retry the already settled command. This is
+remaining observation-timing debt, not a failed Gateway completion.
 
 ## Explicit Non-Claims
 
-- Two menu qualifications do not qualify all of `v0.109.1`.
+- One qualified operation does not qualify its Surface siblings.
+- 86 session canaries are not persistent qualifications.
+- 82 manifest-derived fallback identities are not semantic qualification.
 - Static binding similarity is not runtime qualification.
-- Candidate, session canary, Organic evidence and persistent qualification are
-  separate states.
-- Current evidence does not establish cross-Mod or generic future-version
-  compatibility.
-- Gate 1 closure is not complete-game or full-visible-information closure.
+- Controlled Gateway identity drift is Profile-isolation evidence, not
+  cross-version or cross-Mod Organic evidence.
+- Gate 1 closure is not complete-game or complete-visible-information closure.
 
 See the
-[full v0.109.1 closeout](PREVIEW_65_V01091_REQUALIFICATION_CLOSEOUT_2026-07-26.md),
-[Preview.65 architecture closeout](PREVIEW_65_PERSISTENT_QUALIFICATION_AND_ADAPTATION_CLOSEOUT_2026-07-25.md),
+[Preview.66 closeout](PREVIEW_66_MULTI_ENVIRONMENT_MIGRATION_CLOSEOUT_2026-07-26.md),
+[Preview.65 v0.109.1 closeout](PREVIEW_65_V01091_REQUALIFICATION_CLOSEOUT_2026-07-26.md),
 and [operation inventory](OPERATION_RETIREMENT_INVENTORY.json).
 
 ## Next Step
 
-Obtain a fresh ordinary saved run with a legal map choice and apply the same
-bounded candidate, Witness, second-epoch and persistent-package process to
-`map_navigation/choose_map_node`. Do not broaden wildcard, Surface-wide, or
-build-wide authority.
+Exercise one of the 86 current exact candidate operations under ordinary
+gameplay, preferably a different Commit/completion mode, and let the migration
+orchestrator either qualify or quarantine it. Reduce the approximately 580 KB
+capabilities projection through summary/pagination or on-demand diagnostics
+before productization, without weakening strict current-scope validation. Do
+not widen wildcard, Surface-wide, or build-wide authority.

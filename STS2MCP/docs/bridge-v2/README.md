@@ -1,17 +1,22 @@
 # Bridge v2 Documentation
 
 Bridge v2 is the active semantic Gateway protocol. C# and Re source now share
-`2.0-preview.65`; Re normalized schema is `26`. Gate 1 is closed as a bounded
+`2.0-preview.66`; Re normalized schema is `26`. Gate 1 is closed as a bounded
 ordinary-single-player v2 connector baseline and the complete v1 HTTP namespace
 is retired. Preview.61 supplied the final Neow's Fury runtime seal. Preview.62
 adds reviewed registry/policy adaptation and non-authorizing exact-assembly
 audit; Preview.63 adds the Gateway-owned session permission/gray rollout loop.
 Preview.64 added local mutation-controller coordination without pretending to
 provide authentication. Preview.65 adds disabled-by-default persistent
-operation qualification and impact-diff tooling. The local update to
-`v0.109.1` has now qualified two exact main-menu operations through real
-two-epoch evidence and restart revalidation; it did not qualify the whole
-build. Start with current status, not historical preview closeouts.
+operation qualification and impact-diff tooling. Preview.66 adds
+multi-environment Profiles, risk-based migration candidates, evidence
+aggregation, automatic package orchestration, and atomic store reload. The
+final local binary has qualified only `main_menu/continue_run` through real
+two-epoch evidence and cold-restart revalidation. Its 87-operation projection
+contains five explicit high-precision contracts plus 82 conservative
+manifest-derived identity/test-confirm fallbacks; the other 86 operations are
+session canaries, not qualifications. Start with current status, not historical
+preview closeouts.
 
 ## Current Documents
 
@@ -28,6 +33,7 @@ build. Start with current status, not historical preview closeouts.
 - [Gate 3 local control coordination closeout](GATE3_LOCAL_CONTROL_COORDINATION_CLOSEOUT_2026-07-25.md)
 - [Preview 65 persistent qualification and adaptation closeout](PREVIEW_65_PERSISTENT_QUALIFICATION_AND_ADAPTATION_CLOSEOUT_2026-07-25.md)
 - [Preview 65 v0.109.1 requalification closeout](PREVIEW_65_V01091_REQUALIFICATION_CLOSEOUT_2026-07-26.md)
+- [Preview 66 multi-environment migration closeout](PREVIEW_66_MULTI_ENVIRONMENT_MIGRATION_CLOSEOUT_2026-07-26.md)
 - [Real connector architecture audit and migration plan](REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md)
 - [Protocol](PROTOCOL.md)
 - [Observation policy](OBSERVATION_POLICY.md)

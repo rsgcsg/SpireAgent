@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text.Json;
 using STS2_MCP.BridgeV2.Protocol;
 using STS2_MCP.BridgeV2.Runtime;
@@ -14,6 +15,17 @@ public sealed class BridgePersistentQualificationStoreTests
     {
         Assert.Null(BridgeOperationQualificationCatalog.LoadError);
         Assert.Matches("^[a-f0-9]{64}$", BridgeOperationQualificationCatalog.CatalogDigest);
+        int manifestOperationCount = BridgeContractManifest.Entries.Sum(
+            entry => entry.Operations.Count);
+        IReadOnlyList<BridgeOperationQualificationIdentityInfo> catalog =
+            BridgeOperationQualificationCatalog.Snapshot();
+        Assert.Equal(manifestOperationCount, catalog.Count);
+        Assert.Equal(
+            catalog.Count,
+            catalog
+                .Select(identity => (identity.SurfaceKind, identity.Operation))
+                .Distinct()
+                .Count());
 
         BridgeOperationQualificationIdentity menu = Assert.IsType<
             BridgeOperationQualificationIdentity>(
@@ -25,12 +37,27 @@ public sealed class BridgePersistentQualificationStoreTests
                 BridgeOperationQualificationCatalog.Describe(
                     "map_navigation",
                     "choose_map_node"));
+        BridgeOperationQualificationIdentity fallback = Assert.IsType<
+            BridgeOperationQualificationIdentity>(
+                BridgeOperationQualificationCatalog.Describe(
+                    "event_option",
+                    "choose_event_option"));
 
         Assert.Equal("continuation_handoff_observed", menu.CompletionBoundary);
+        Assert.Equal(
+            "saved_singleplayer_run_became_active",
+            menu.WitnessId);
         Assert.Equal("immediate_postcondition_observed", map.CompletionBoundary);
+        Assert.Equal(
+            BridgeOperationQualificationCatalog.GatewayCompletionBoundary,
+            fallback.CompletionBoundary);
+        Assert.Equal(
+            BridgeOperationQualificationCatalog.RuntimeReportedWitness,
+            fallback.WitnessId);
+        Assert.Equal("persistent_run_mutation", fallback.RiskClass);
         Assert.NotEqual(menu.ContractDigest, map.ContractDigest);
         Assert.All(
-            BridgeOperationQualificationCatalog.Snapshot(),
+            catalog,
             identity => Assert.Matches("^[a-f0-9]{64}$", identity.ContractDigest));
     }
 
@@ -81,6 +108,104 @@ public sealed class BridgePersistentQualificationStoreTests
         Assert.True(reloaded.Snapshot().PersistentAuthorityEnabled);
         Assert.True(Assert.Single(
             reloaded.Snapshot().Qualifications).ApplicableToCurrentEnvironment);
+    }
+
+    [Fact]
+    public void ManifestFallbackQualificationRetainsActualGatewayWitnesses()
+    {
+        using var file = new TemporaryLedger();
+        BridgePersistentQualificationPackage package = Package(
+            "qualification-event-option",
+            "event_option",
+            "choose_event_option") with
+        {
+            RuntimeEvidence = new[]
+            {
+                Evidence(
+                    "runtime-a",
+                    "request-a",
+                    "event_option_committed_and_owner_advanced"),
+                Evidence(
+                    "runtime-b",
+                    "request-b",
+                    "event_option_committed_and_rewards_opened")
+            }
+        };
+        file.Write(Install(1, package));
+
+        BridgePersistentQualificationStore store =
+            BridgePersistentQualificationStore.Load(file.Path, () => Now);
+        GameBuildIdentity applied = store.Apply(Game(), Bridge(), Patch());
+
+        Assert.Equal(
+            "qualification_qualification-event-option",
+            Assert.Single(applied.Compatibility.ActionPermissionScopes).GrantId);
+        Assert.True(store.Snapshot().PersistentAuthorityEnabled);
+    }
+
+    [Fact]
+    public void SameOperationCanRemainActiveInMultipleExactEnvironments()
+    {
+        using var file = new TemporaryLedger();
+        BridgePersistentQualificationPackage current = Package(
+            "qualification-current-environment",
+            "main_menu",
+            "continue_run");
+        BridgePersistentQualificationPackage other = current with
+        {
+            QualificationId = "qualification-other-environment",
+            GameVersion = "v0.110.0",
+            GameCommit = "other-commit",
+            GameMainAssemblyHash = 42,
+            ModsetFingerprint = "other-modset",
+            PatchDigest = "other-patch",
+            EnvironmentDigest = "other-environment"
+        };
+        file.Write(
+            Install(1, current),
+            Install(2, other));
+
+        BridgePersistentQualificationStore store =
+            BridgePersistentQualificationStore.Load(file.Path, () => Now);
+        GameBuildIdentity applied = store.Apply(Game(), Bridge(), Patch());
+        BridgeQualificationSystemInfo snapshot = store.Snapshot();
+
+        Assert.Equal(
+            "qualification_qualification-current-environment",
+            Assert.Single(
+                applied.Compatibility.ActionPermissionScopes).GrantId);
+        Assert.Equal(2, snapshot.Qualifications.Count);
+        Assert.All(
+            snapshot.Qualifications,
+            qualification => Assert.Equal("active", qualification.Status));
+        Assert.Single(
+            snapshot.Qualifications,
+            qualification => qualification.ApplicableToCurrentEnvironment);
+    }
+
+    [Fact]
+    public void HistoricalProtocolPackageRemainsReadableButCannotAuthorize()
+    {
+        using var file = new TemporaryLedger();
+        BridgePersistentQualificationPackage historical = Package(
+            "qualification-preview65",
+            "main_menu",
+            "continue_run") with
+        {
+            GatewayProtocol = "2.0-preview.65"
+        };
+        file.Write(Install(1, historical));
+
+        BridgePersistentQualificationStore store =
+            BridgePersistentQualificationStore.Load(file.Path, () => Now);
+        GameBuildIdentity applied = store.Apply(Game(), Bridge(), Patch());
+        BridgePersistentQualificationInfo package = Assert.Single(
+            store.Snapshot().Qualifications);
+
+        Assert.Equal("active", store.Snapshot().Status);
+        Assert.Equal("active", package.Status);
+        Assert.False(package.ApplicableToCurrentEnvironment);
+        Assert.Empty(applied.Compatibility.ActionPermissionScopes);
     }
 
     [Fact]
@@ -325,6 +450,74 @@ public sealed class BridgePersistentQualificationStoreTests
         Assert.Equal("session_quarantined", qualification.Applicability);
         Assert.Equal("completion_timeout", qualification.StatusReason);
         Assert.False(store.Snapshot().PersistentAuthorityEnabled);
+    }
+
+    [Fact]
+    public void StoreReloadCannotClearSessionQuarantine()
+    {
+        using var file = new TemporaryLedger();
+        file.Write(Install(
+            1,
+            Package("qualification-a", "main_menu", "continue_run")));
+        var quarantine = new ConcurrentDictionary<string, string>(
+            StringComparer.Ordinal);
+        BridgePersistentQualificationStore first =
+            BridgePersistentQualificationStore.Load(
+                file.Path,
+                () => Now,
+                quarantine);
+        ActionPermissionScope scope = Assert.Single(first.Apply(
+            Game(),
+            Bridge(),
+            Patch()).Compatibility.ActionPermissionScopes);
+        var binding = new BridgeActionPermissionBinding(
+            scope.SurfaceKind,
+            scope.Operation,
+            scope.Tier,
+            scope.GrantId,
+            scope.GrantVersion,
+            scope.RuntimeEpoch,
+            scope.EnvironmentDigest,
+            scope.PatchDigest,
+            scope.OperationFingerprint);
+        first.ObserveCommand(
+            "request-timeout",
+            binding,
+            new BridgeCommandResponse(
+                "request-timeout",
+                "state-a",
+                "action-a",
+                "timed_out",
+                "unknown",
+                "state-b",
+                new[]
+                {
+                    new BridgeCommandEvent(
+                        "validated",
+                        Now,
+                        "state_and_action_revalidated",
+                        null,
+                        null),
+                    new BridgeCommandEvent(
+                        "timed_out",
+                        Now,
+                        null,
+                        "completion_timeout",
+                        null)
+                }));
+
+        BridgePersistentQualificationStore reloaded =
+            BridgePersistentQualificationStore.Load(
+                file.Path,
+                () => Now,
+                quarantine);
+        Assert.Empty(reloaded.Apply(
+            Game(),
+            Bridge(),
+            Patch()).Compatibility.ActionPermissionScopes);
+        Assert.Equal(
+            "session_quarantined",
+            Assert.Single(reloaded.Snapshot().Qualifications).Status);
     }
 
     [Fact]

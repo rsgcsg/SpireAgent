@@ -49,12 +49,20 @@ yet.
 - Embedded adaptation data is validated before scope publication. Invalid
   source registries suppress their affected Surface only; invalid environment
   policy suppresses all authority and both cases emit typed diagnostics.
-- The reviewed exact-environment policy is the embedded baseline. Preview.65
-  may additionally admit one exact operation through an operator-installed
-  qualification package. A short-lived candidate package creates only a
-  Gateway-owned session canary; a qualified package requires two runtime
-  epochs of Organic evidence. The same exact grant or package scope is required
-  at publication and execution; semantic failure quarantines that operation.
+- The reviewed exact-environment policy is the embedded baseline. Preview.66
+  may additionally admit exact operations through installed qualification
+  packages. Five high-precision contracts override 82 conservative identities
+  derived from the current 87-operation manifest. The fallback path is
+  identity/test-confirm only and is available solely in
+  `migration_exploration`; it does not infer semantic equivalence or bypass
+  native legality, Commit, completion, or quarantine. A short-lived candidate
+  package creates only a Gateway-owned session canary; a qualified package
+  requires two runtime epochs of exact Organic evidence. One global
+  append-only ledger supports multiple environments, with slots keyed by
+  environment + Surface + operation. Atomic store reload revalidates the
+  complete snapshot before any new scope is published. The same exact grant
+  or package scope is required at publication and execution; semantic failure
+  quarantines that operation.
 
 ## Rule-Aware Adaptation Boundary
 
@@ -72,9 +80,10 @@ have no action authority. Static structure, fixture success and a matching
 catalog entry cannot bypass exact runtime identity, execute-time validation,
 native Commit or Organic evidence.
 
-Build and Modset permission remains intentionally conservative. Preview.65
-adds exact package applicability and component-level impact comparison, but
-neither static similarity nor a package candidate proves semantic
+Build and Modset permission remains intentionally conservative. Preview.66
+adds non-authorizing Environment Profiles, exact package applicability,
+component-level impact comparison, and a risk-based migration policy. A
+Profile, static similarity, or package candidate never proves semantic
 compatibility. See the
 [automatic-adaptation audit](audits/CONNECTOR_AUTOMATIC_ADAPTATION_AND_D_WORKFLOW_AUDIT_2026-07-24.md).
 
@@ -87,33 +96,42 @@ D evidence/recommendation (non-authorizing)
   -> native STS2 commit and semantic witness
 ```
 
-`strict`, `balanced_gray`, and `developer_gray` are Gateway modes. All retain
-exact game/Gateway/Modset identity, explicit operation scope, opaque state-bound
-actions, execute-time revalidation, native commit, semantic completion and
-unknown-no-retry. Developer mode is not an unrestricted bypass.
+`strict`, `balanced_gray`, `developer_gray`, and `migration_exploration` are
+Gateway modes. All retain exact game/Gateway/Modset identity, explicit
+operation scope, opaque state-bound actions, execute-time revalidation, native
+commit, semantic completion and unknown-no-retry. Migration mode broadens
+risk-class eligibility for exact explicit or manifest-derived operation
+identities with installed candidate packages; it is not wildcard authority.
+Fallback identities require a non-empty witness emitted by the current
+Gateway and remain unqualified until full evidence and package promotion.
 
 Current dynamic grants bind runtime epoch, exact environment, Gateway SHA/MVID,
 Modset, Patch digest, operation fingerprint, evidence policy, expiry and
 supersession. They are volatile: restart is a complete rollback. Persistent
-packages are a separate append-only, operator-installed store and are
-revalidated at startup. D and Re cannot activate either path through the live
-API. Only a unique current operation scope authorizes an action; historical
-versions remain audit evidence. Sibling operations on one Surface may
+packages are a separate append-only local store and are revalidated at startup
+and on atomic file reload. The migration orchestrator may assemble and append
+packages outside the live API, but D and Re cannot activate either path through
+the Gateway API. Only a unique current operation scope authorizes an action;
+historical versions remain audit evidence. Sibling operations on one Surface may
 legitimately occupy different tiers, so Surface support is only a coarse
 highest-tier projection and never the permission decision itself. See the
-[D3 permission closeout](../../STS2MCP/docs/bridge-v2/D3_PERMISSION_GRAY_ROLLOUT_CLOSEOUT_2026-07-25.md).
+[D3 permission closeout](../../STS2MCP/docs/bridge-v2/D3_PERMISSION_GRAY_ROLLOUT_CLOSEOUT_2026-07-25.md)
+and the
+[Preview.66 migration closeout](../../STS2MCP/docs/bridge-v2/PREVIEW_66_MULTI_ENVIRONMENT_MIGRATION_CLOSEOUT_2026-07-26.md).
 
 ## Current Architectural Constraint
 
-The Gateway and Re share the mechanically checked `2.0-preview.65` source
+The Gateway and Re share the mechanically checked `2.0-preview.66` source
 contract. Gate 1 establishes a bounded v2 connector baseline: Re and the
 default MCP adapter are v2-only, and the current-source Gateway v1 HTTP surface
-is retired. The loaded Preview.65 artifact sees game
-`v0.109.1|c8c577f6|-820620422`. That environment did not inherit the reviewed
-`v0.109.0` policy. Instead, exact binding audit and current runtime evidence
-qualified only `main_menu/open_singleplayer` and
-`main_menu/continue_run`; all other operations still require their own exact
-policy, targeted requalification, or remain fail closed. Historical v1 JSONL
+is retired. The loaded Preview.66 artifact sees game
+`v0.109.1|c8c577f6|-820620422`. Its exact Profile did not inherit another
+Gateway build's packages. The final artifact automatically qualified only
+`main_menu/continue_run`; 86 current manifest operations remain exact session
+canaries. Five have explicit high-precision contracts and 82 use conservative
+fallback identities that do not assert semantic equivalence. Operations
+outside the manifest still require exact policy or remain fail closed.
+Historical v1 JSONL
 remains replay-readable as stored evidence, but no v1 sidecar may contribute
 live facts or action authority.
 

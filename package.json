@@ -18,9 +18,13 @@
     "check:connector-compatibility-fixtures": "node tools/test-connector-compatibility-grader.mjs",
     "check:connector-permission-fixtures": "node tools/test-connector-permission-transition-assertion.mjs",
     "check:connector-qualification": "node tools/test-connector-qualification-ledger.mjs",
+    "check:connector-profiles": "node tools/test-connector-environment-profiles.mjs",
+    "check:connector-migration": "node tools/test-connector-migration-orchestrator.mjs",
     "audit:connector-permission-transition": "node tools/assert-connector-permission-transition.mjs",
     "audit:connector-compatibility": "node tools/run-connector-compatibility-audit.mjs",
     "audit:connector-operation-bindings": "node tools/run-operation-binding-audit.mjs",
-    "qualification:ledger": "node tools/connector-qualification-ledger.mjs"
+    "qualification:ledger": "node tools/connector-qualification-ledger.mjs",
+    "migration:profiles": "node tools/connector-environment-profiles.mjs",
+    "migration:cycle": "node tools/connector-migration-orchestrator.mjs"
   }
 }

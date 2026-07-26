@@ -11,16 +11,21 @@ internal enum BridgePermissionMode
 {
     Strict,
     BalancedGray,
-    DeveloperGray
+    DeveloperGray,
+    MigrationExploration
 }
 
-internal sealed record BridgeGrayPermissionCandidate(
+internal sealed record BridgeMigrationRiskRule(
+    string RiskClass,
+    IReadOnlyList<string> EligibleModes,
+    int MinimumSuccesses,
+    int SessionTtlSeconds);
+
+internal sealed record BridgeMigrationPermissionCandidate(
     string SurfaceKind,
     string Operation,
     string RiskClass,
     IReadOnlyList<string> EligibleModes,
-    string RequiredStaticTier,
-    string MinimumEvidenceStatus,
     int MinimumSuccesses,
     int SessionTtlSeconds,
     string WitnessId,
@@ -71,6 +76,7 @@ internal sealed class BridgePermissionManager
             "strict" => BridgePermissionMode.Strict,
             "balanced_gray" => BridgePermissionMode.BalancedGray,
             "developer_gray" => BridgePermissionMode.DeveloperGray,
+            "migration_exploration" => BridgePermissionMode.MigrationExploration,
             _ => BridgePermissionMode.Strict
         };
     }
@@ -109,8 +115,8 @@ internal sealed class BridgePermissionManager
                 string operationFingerprint = OperationFingerprint(
                     staticScope.SurfaceKind,
                     staticScope.Operation);
-                BridgeGrayPermissionCandidate? candidate =
-                    BridgeGrayPermissionCandidateCatalog.Find(
+                BridgeMigrationPermissionCandidate? candidate =
+                    BridgeMigrationPermissionPolicy.Find(
                         staticScope.SurfaceKind,
                         staticScope.Operation);
 
@@ -273,8 +279,8 @@ internal sealed class BridgePermissionManager
             {
                 if (current.Tier == "session_canary")
                 {
-                    BridgeGrayPermissionCandidate? candidate =
-                        BridgeGrayPermissionCandidateCatalog.Find(
+                    BridgeMigrationPermissionCandidate? candidate =
+                        BridgeMigrationPermissionPolicy.Find(
                             current.SurfaceKind,
                             current.Operation);
                     string? observedWitness = response.Events
@@ -288,10 +294,9 @@ internal sealed class BridgePermissionManager
                             "candidate_policy_disappeared",
                             "quarantined");
                     }
-                    else if (!string.Equals(
-                                 observedWitness,
+                    else if (!BridgeOperationQualificationCatalog.WitnessMatches(
                                  candidate.WitnessId,
-                                 StringComparison.Ordinal))
+                                 observedWitness))
                     {
                         Quarantine(
                             key,
@@ -322,21 +327,31 @@ internal sealed class BridgePermissionManager
     {
         lock (_gate)
         {
-            bool candidatePolicyReady = BridgeGrayPermissionCandidateCatalog.LoadError == null;
+            bool candidatePolicyReady = BridgeMigrationPermissionPolicy.LoadError == null;
+            var currentGrantIds = _currentGrants.Values
+                .Select(record => record.GrantId)
+                .ToHashSet(StringComparer.Ordinal);
+            var recentHistoricalGrantIds = _grantLedger
+                .Where(record => !currentGrantIds.Contains(record.GrantId))
+                .TakeLast(64)
+                .Select(record => record.GrantId)
+                .ToHashSet(StringComparer.Ordinal);
             return new BridgePermissionSystemInfo(
                 1,
                 candidatePolicyReady ? "active_session_scoped" : "candidate_policy_invalid_fail_closed",
                 ModeName(_mode),
                 _runtimeEpoch,
-                BridgeGrayPermissionCandidateCatalog.PolicyId,
-                BridgeGrayPermissionCandidateCatalog.PolicyDigest,
+                BridgeMigrationPermissionPolicy.PolicyId,
+                BridgeMigrationPermissionPolicy.PolicyDigest,
                 DynamicSessionPromotionEnabled:
                     _mode != BridgePermissionMode.Strict
                     && candidatePolicyReady
                     && _lastPatchInventory.Status == "clean_known_owners",
                 _lastPatchInventory,
                 _grantLedger
-                    .TakeLast(64)
+                    .Where(record =>
+                        currentGrantIds.Contains(record.GrantId)
+                        || recentHistoricalGrantIds.Contains(record.GrantId))
                     .Select(record => record with
                     {
                         Current = _currentGrants.TryGetValue(
@@ -353,13 +368,13 @@ internal sealed class BridgePermissionManager
                     "The reviewed exact-environment policy is an absolute permission ceiling.",
                     "Session auto-approval is volatile and cannot create persistent qualification.",
                     "D evidence recommends eligibility; Gateway runtime checks remain authoritative.",
-                    "Developer gray never bypasses exact identity, native legality, semantic completion, or quarantine."
+                    "Gray and migration modes never bypass exact identity, native legality, semantic completion, or quarantine."
                 });
         }
     }
 
     private BridgePermissionGrantRecord EnsureSessionCanary(
-        BridgeGrayPermissionCandidate candidate,
+        BridgeMigrationPermissionCandidate candidate,
         GameBuildIdentity game,
         BridgeServerIdentity bridge,
         BridgeRuntimePatchInventoryInfo patchInventory,
@@ -451,7 +466,7 @@ internal sealed class BridgePermissionManager
     }
 
     private BridgePermissionGrantRecord AppendGrant(
-        BridgeGrayPermissionCandidate candidate,
+        BridgeMigrationPermissionCandidate candidate,
         GameBuildIdentity game,
         BridgeServerIdentity bridge,
         BridgeRuntimePatchInventoryInfo patchInventory,
@@ -489,7 +504,7 @@ internal sealed class BridgePermissionManager
             game.Modset?.Fingerprint ?? "unavailable",
             patchInventory.Digest,
             operationFingerprint,
-            BridgeGrayPermissionCandidateCatalog.PolicyDigest,
+            BridgeMigrationPermissionPolicy.PolicyDigest,
             issuedAt,
             expiresAt,
             supersedes,
@@ -501,7 +516,7 @@ internal sealed class BridgePermissionManager
     }
 
     private bool CandidateEligible(
-        BridgeGrayPermissionCandidate candidate,
+        BridgeMigrationPermissionCandidate candidate,
         ActionPermissionScope staticScope,
         GameBuildIdentity game,
         BridgeServerIdentity bridge,
@@ -509,12 +524,9 @@ internal sealed class BridgePermissionManager
         string operationFingerprint)
     {
         string mode = ModeName(_mode);
-        return BridgeGrayPermissionCandidateCatalog.LoadError == null
+        return BridgeMigrationPermissionPolicy.LoadError == null
             && candidate.EligibleModes.Contains(mode, StringComparer.Ordinal)
-            && string.Equals(
-                candidate.RequiredStaticTier,
-                staticScope.Tier,
-                StringComparison.Ordinal)
+            && string.Equals("canary", staticScope.Tier, StringComparison.Ordinal)
             && game.Compatibility.ActionExecutionAllowed
             && game.Modset is
             {
@@ -607,14 +619,16 @@ internal sealed class BridgePermissionManager
     {
         BridgePermissionMode.Strict => "strict",
         BridgePermissionMode.DeveloperGray => "developer_gray",
+        BridgePermissionMode.MigrationExploration => "migration_exploration",
         _ => "balanced_gray"
     };
+
 }
 
-internal static class BridgeGrayPermissionCandidateCatalog
+internal static class BridgeMigrationPermissionPolicy
 {
     private const string ResourceName =
-        "STS2_MCP.BridgeV2.Runtime.gray-permission-candidates.json";
+        "STS2_MCP.BridgeV2.Runtime.migration-permission-policy.json";
     private static readonly Lazy<LoadResult> Loaded = new(Load);
 
     public static string PolicyId => Loaded.Value.PolicyId;
@@ -623,19 +637,52 @@ internal static class BridgeGrayPermissionCandidateCatalog
 
     public static string? LoadError => Loaded.Value.Error;
 
-    public static BridgeGrayPermissionCandidate? Find(string surfaceKind, string operation) =>
-        Loaded.Value.Candidates.SingleOrDefault(candidate =>
-            string.Equals(candidate.SurfaceKind, surfaceKind, StringComparison.Ordinal)
-            && string.Equals(candidate.Operation, operation, StringComparison.Ordinal));
+    public static BridgeMigrationPermissionCandidate? Find(
+        string surfaceKind,
+        string operation)
+    {
+        BridgeOperationQualificationIdentity? identity =
+            BridgeOperationQualificationCatalog.Describe(surfaceKind, operation);
+        BridgeContractManifestEntry? entry = BridgeContractManifest.Find(surfaceKind);
+        BridgeOperationManifest? manifest = entry?.Operations.SingleOrDefault(value =>
+            string.Equals(value.Operation, operation, StringComparison.Ordinal));
+        BridgeMigrationRiskRule? rule = identity == null
+            ? null
+            : Loaded.Value.Rules.SingleOrDefault(value =>
+                string.Equals(
+                    value.RiskClass,
+                    identity.RiskClass,
+                    StringComparison.Ordinal));
+        if (identity == null || manifest == null || rule == null)
+            return null;
+
+        return new BridgeMigrationPermissionCandidate(
+            surfaceKind,
+            operation,
+            identity.RiskClass,
+            rule.EligibleModes,
+            rule.MinimumSuccesses,
+            rule.SessionTtlSeconds,
+            identity.WitnessId,
+            new[]
+            {
+                $"operation-contract:{BridgeOperationQualificationCatalog.CatalogId}:{identity.ContractDigest}",
+                $"migration-policy:{PolicyId}:{PolicyDigest}"
+            }.Concat(manifest.EvidenceIds).Distinct(StringComparer.Ordinal).ToArray());
+    }
+
+    public static bool SupportsRiskClass(string riskClass) =>
+        Loaded.Value.Rules.Any(rule =>
+            string.Equals(rule.RiskClass, riskClass, StringComparison.Ordinal));
 
     private static LoadResult Load()
     {
         try
         {
-            using Stream? stream = typeof(BridgeGrayPermissionCandidateCatalog)
+            using Stream? stream = typeof(BridgeMigrationPermissionPolicy)
                 .Assembly.GetManifestResourceStream(ResourceName);
             if (stream == null)
-                return LoadResult.Failed("Gray permission candidate resource is missing.");
+                return LoadResult.Failed("Migration permission policy resource is missing.");
             using var reader = new StreamReader(stream);
             string json = reader.ReadToEnd();
             var options = new JsonSerializerOptions
@@ -645,102 +692,84 @@ internal static class BridgeGrayPermissionCandidateCatalog
             };
             PolicyDocument? document = JsonSerializer.Deserialize<PolicyDocument>(json, options);
             if (document == null
-                || document.SchemaVersion != 1
+                || document.SchemaVersion != 2
                 || string.IsNullOrWhiteSpace(document.PolicyId)
                 || document.AuthorizationEffect != "none"
-                || document.RecommendationEffect != "gateway_session_candidate_only")
+                || document.RecommendationEffect
+                    != "gateway_session_candidate_by_reviewed_contract_and_risk")
             {
-                return LoadResult.Failed("Gray permission candidate metadata is unsupported.");
+                return LoadResult.Failed("Migration permission policy metadata is unsupported.");
             }
 
-            string? error = Validate(document.Candidates);
+            string? error = Validate(document.Rules);
             return error == null
                 ? new LoadResult(
                     document.PolicyId,
                     BridgeHash.Text(json),
-                    document.Candidates,
+                    document.Rules,
                     null)
                 : LoadResult.Failed(error, document.PolicyId, BridgeHash.Text(json));
         }
         catch (Exception ex) when (ex is IOException or JsonException)
         {
             return LoadResult.Failed(
-                $"Gray permission candidates failed closed with {ex.GetType().Name}.");
+                $"Migration permission policy failed closed with {ex.GetType().Name}.");
         }
     }
 
-    private static string? Validate(IReadOnlyList<BridgeGrayPermissionCandidate> candidates)
+    private static string? Validate(IReadOnlyList<BridgeMigrationRiskRule> rules)
     {
-        if (candidates.Count == 0)
-            return "Gray permission candidate policy is empty.";
-        if (candidates.GroupBy(
-                candidate => (candidate.SurfaceKind, candidate.Operation))
+        if (rules.Count == 0)
+            return "Migration permission policy is empty.";
+        if (rules.GroupBy(rule => rule.RiskClass, StringComparer.Ordinal)
             .Any(group => group.Count() != 1))
         {
-            return "Gray permission candidate policy contains duplicate operations.";
+            return "Migration permission policy contains duplicate risk classes.";
         }
 
-        foreach (BridgeGrayPermissionCandidate candidate in candidates)
+        foreach (BridgeMigrationRiskRule rule in rules)
         {
-            BridgeContractManifestEntry? entry = BridgeContractManifest.Find(candidate.SurfaceKind);
-            BridgeOperationManifest? operation = entry?.Operations.SingleOrDefault(value =>
-                string.Equals(value.Operation, candidate.Operation, StringComparison.Ordinal));
-            if (entry == null
-                || operation == null
-                || candidate.RiskClass is not ("reversible_navigation" or "progression")
-                || candidate.RiskClass == "progression"
-                   && candidate.EligibleModes.Any(mode => mode != "developer_gray")
-                || candidate.RequiredStaticTier != "canary"
-                || candidate.MinimumSuccesses != 1
-                || candidate.SessionTtlSeconds is < 60 or > 86_400
-                || string.IsNullOrWhiteSpace(candidate.WitnessId)
-                || candidate.EligibleModes.Count == 0
-                || candidate.EligibleModes.Any(mode =>
-                    mode is not ("balanced_gray" or "developer_gray"))
-                || candidate.EvidenceIds.Count == 0
-                || EvidenceRank(operation.EvidenceStatus)
-                    < EvidenceRank(candidate.MinimumEvidenceStatus))
+            if (rule.RiskClass is not (
+                    "reversible_navigation"
+                    or "progression"
+                    or "persistent_run_mutation")
+                || rule.MinimumSuccesses != 1
+                || rule.SessionTtlSeconds is < 60 or > 604_800
+                || rule.EligibleModes.Count == 0
+                || rule.EligibleModes.Any(mode => mode is not (
+                    "balanced_gray"
+                    or "developer_gray"
+                    or "migration_exploration"))
+                || rule.RiskClass == "progression"
+                   && rule.EligibleModes.Any(mode =>
+                       mode is not ("developer_gray" or "migration_exploration"))
+                || rule.RiskClass == "persistent_run_mutation"
+                   && rule.EligibleModes.Any(mode =>
+                       mode != "migration_exploration"))
             {
-                return $"Gray permission candidate {candidate.SurfaceKind}/{candidate.Operation} is invalid or unsupported.";
+                return $"Migration permission risk rule {rule.RiskClass} is invalid or unsupported.";
             }
         }
         return null;
     }
-
-    private static int EvidenceRank(BridgeOperationEvidenceStatus status) => status switch
-    {
-        BridgeOperationEvidenceStatus.OrganicQualified => 4,
-        BridgeOperationEvidenceStatus.OrganicCanaryExercised => 3,
-        BridgeOperationEvidenceStatus.SourceAudited => 2,
-        _ => 1
-    };
-
-    private static int EvidenceRank(string status) => status switch
-    {
-        "organic_qualified" => 4,
-        "organic_canary_exercised" => 3,
-        "source_audited" => 2,
-        "surface_level_only" => 1,
-        _ => int.MaxValue
-    };
 
     private sealed record PolicyDocument(
         int SchemaVersion,
         string PolicyId,
         string AuthorizationEffect,
         string RecommendationEffect,
-        IReadOnlyList<BridgeGrayPermissionCandidate> Candidates);
+        IReadOnlyList<BridgeMigrationRiskRule> Rules);
 
     private sealed record LoadResult(
         string PolicyId,
         string PolicyDigest,
-        IReadOnlyList<BridgeGrayPermissionCandidate> Candidates,
+        IReadOnlyList<BridgeMigrationRiskRule> Rules,
         string? Error)
     {
         public static LoadResult Failed(
             string error,
             string policyId = "unavailable",
             string policyDigest = "unavailable") =>
-            new(policyId, policyDigest, Array.Empty<BridgeGrayPermissionCandidate>(), error);
+            new(policyId, policyDigest, Array.Empty<BridgeMigrationRiskRule>(), error);
     }
 }

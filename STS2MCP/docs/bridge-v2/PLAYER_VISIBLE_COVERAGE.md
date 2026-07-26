@@ -10,11 +10,12 @@
 > loaded artifact. Current loaded identity and Gate status are owned by
 > [Bridge v2 Current Status](CURRENT_STATUS.md).
 
-Current source contract is Preview.62. Preview.61 supplied the bounded Neow's
-Fury Organic lifecycle that sealed Gate 1. Preview.62 adds reviewed
-source/compatibility registries and a non-authorizing exact-assembly audit; it
-does not inherit any Preview.61 Organic qualification. Current loaded identity
-is owned by [Bridge v2 Current Status](CURRENT_STATUS.md), not this matrix.
+Current source contract is Preview.66. Preview.61 supplied the bounded Neow's
+Fury Organic lifecycle that sealed Gate 1. Preview.62 added reviewed
+source/compatibility registries and a non-authorizing exact-assembly audit.
+Preview.66 adds multi-environment migration infrastructure but does not inherit
+historical operation coverage or qualification. Current loaded identity is
+owned by [Bridge v2 Current Status](CURRENT_STATUS.md), not this matrix.
 
 Historical Gate 0 execution evidence recorded game version/commit plus the
 release-declared hash `-840572606`, Gateway SHA

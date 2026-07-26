@@ -264,7 +264,7 @@ public sealed class BridgePermissionManagerTests
     }
 
     [Fact]
-    public void ReviewedNonCandidateCanaryRemainsStaticInBalancedMode()
+    public void MigrationOnlyFallbackCanaryIsSuppressedInBalancedMode()
     {
         var manager = new BridgePermissionManager("runtime-a");
         CompatibilityAssessment applied = manager.Apply(
@@ -272,44 +272,58 @@ public sealed class BridgePermissionManagerTests
             Bridge("runtime-a"),
             CleanPatchInventory());
 
-        ActionPermissionScope scope = Assert.Single(applied.ActionPermissionScopes);
-        Assert.Equal("canary", scope.Tier);
-        Assert.Equal("not_session_bound", scope.RuntimeEpoch);
-        Assert.StartsWith("grant_static_", scope.GrantId);
+        Assert.Empty(applied.ActionPermissionScopes);
         Assert.Empty(manager.Snapshot().Grants);
     }
 
     [Fact]
-    public void CandidateCatalogIsReviewedNonAuthorizingData()
+    public void MigrationPolicyDerivesCandidatesFromReviewedContractsAndRisk()
     {
-        Assert.Null(BridgeGrayPermissionCandidateCatalog.LoadError);
-        Assert.Matches("^[a-f0-9]{64}$", BridgeGrayPermissionCandidateCatalog.PolicyDigest);
-        BridgeGrayPermissionCandidate candidate = Assert.IsType<BridgeGrayPermissionCandidate>(
-            BridgeGrayPermissionCandidateCatalog.Find("main_menu", "open_singleplayer"));
+        Assert.Null(BridgeMigrationPermissionPolicy.LoadError);
+        Assert.Matches("^[a-f0-9]{64}$", BridgeMigrationPermissionPolicy.PolicyDigest);
+        BridgeMigrationPermissionCandidate candidate =
+            Assert.IsType<BridgeMigrationPermissionCandidate>(
+                BridgeMigrationPermissionPolicy.Find(
+                    "main_menu",
+                    "open_singleplayer"));
         Assert.Equal("reversible_navigation", candidate.RiskClass);
-        Assert.Equal("source_audited", candidate.MinimumEvidenceStatus);
-        BridgeGrayPermissionCandidate continueRun =
-            Assert.IsType<BridgeGrayPermissionCandidate>(
-                BridgeGrayPermissionCandidateCatalog.Find("main_menu", "continue_run"));
-        Assert.Equal("organic_canary_exercised", continueRun.MinimumEvidenceStatus);
-        BridgeGrayPermissionCandidate openShop =
-            Assert.IsType<BridgeGrayPermissionCandidate>(
-                BridgeGrayPermissionCandidateCatalog.Find(
+        Assert.Contains("migration_exploration", candidate.EligibleModes);
+        BridgeMigrationPermissionCandidate openShop =
+            Assert.IsType<BridgeMigrationPermissionCandidate>(
+                BridgeMigrationPermissionPolicy.Find(
                     "shop_room",
                     "open_shop_inventory"));
-        Assert.Equal("source_audited", openShop.MinimumEvidenceStatus);
         Assert.Equal("shop_inventory_opened", openShop.WitnessId);
-        BridgeGrayPermissionCandidate map =
-            Assert.IsType<BridgeGrayPermissionCandidate>(
-                BridgeGrayPermissionCandidateCatalog.Find(
+        BridgeMigrationPermissionCandidate map =
+            Assert.IsType<BridgeMigrationPermissionCandidate>(
+                BridgeMigrationPermissionPolicy.Find(
                     "map_navigation",
                     "choose_map_node"));
         Assert.Equal("progression", map.RiskClass);
-        Assert.Equal(new[] { "developer_gray" }, map.EligibleModes);
+        Assert.Equal(
+            new[] { "developer_gray", "migration_exploration" },
+            map.EligibleModes);
+        BridgeMigrationPermissionCandidate enchant =
+            Assert.IsType<BridgeMigrationPermissionCandidate>(
+                BridgeMigrationPermissionPolicy.Find(
+                    "deck_enchant_selection",
+                    "confirm_selection"));
+        Assert.Equal("persistent_run_mutation", enchant.RiskClass);
+        Assert.Equal(new[] { "migration_exploration" }, enchant.EligibleModes);
+        BridgeMigrationPermissionCandidate fallback =
+            Assert.IsType<BridgeMigrationPermissionCandidate>(
+                BridgeMigrationPermissionPolicy.Find(
+                    "event_option",
+                    "choose_event_option"));
+        Assert.Equal("persistent_run_mutation", fallback.RiskClass);
+        Assert.Equal(new[] { "migration_exploration" }, fallback.EligibleModes);
+        Assert.Equal(
+            BridgeOperationQualificationCatalog.RuntimeReportedWitness,
+            fallback.WitnessId);
     }
 
     [Fact]
-    public void ProgressionCandidateRequiresDeveloperGray()
+    public void ProgressionCandidateRequiresDeveloperOrMigrationMode()
     {
         GameBuildIdentity game = GameWithScopes(
             Scope("map_navigation", "choose_map_node", "canary"));
@@ -331,6 +345,134 @@ public sealed class BridgePermissionManagerTests
             developer.ActionPermissionScopes);
         Assert.Equal("runtime-developer", scope.RuntimeEpoch);
         Assert.Equal("canary", scope.Tier);
+    }
+
+    [Fact]
+    public void PersistentMutationCandidateRequiresMigrationExploration()
+    {
+        GameBuildIdentity game = GameWithScopes(
+            Scope(
+                "deck_enchant_selection",
+                "confirm_selection",
+                "canary"));
+        CompatibilityAssessment developer = new BridgePermissionManager(
+            "runtime-developer",
+            BridgePermissionMode.DeveloperGray).Apply(
+                game,
+                Bridge("runtime-developer"),
+                CleanPatchInventory());
+        CompatibilityAssessment migration = new BridgePermissionManager(
+            "runtime-migration",
+            BridgePermissionMode.MigrationExploration).Apply(
+                game,
+                Bridge("runtime-migration"),
+                CleanPatchInventory());
+
+        Assert.Empty(developer.ActionPermissionScopes);
+        ActionPermissionScope scope = Assert.Single(
+            migration.ActionPermissionScopes);
+        Assert.Equal("runtime-migration", scope.RuntimeEpoch);
+        Assert.Equal("canary", scope.Tier);
+    }
+
+    [Fact]
+    public void ManifestFallbackPromotesOnlyAfterGatewayReportsSemanticCompletion()
+    {
+        var manager = new BridgePermissionManager(
+            "runtime-migration",
+            BridgePermissionMode.MigrationExploration);
+        CompatibilityAssessment first = manager.Apply(
+            GameWithScopes(
+                Scope("event_option", "choose_event_option", "canary")),
+            Bridge("runtime-migration"),
+            CleanPatchInventory());
+        BridgeActionPermissionBinding binding = Binding(
+            Assert.Single(first.ActionPermissionScopes));
+
+        manager.ObserveCommand(
+            "request-event",
+            binding,
+            Command(
+                "request-event",
+                "completed",
+                "confirmed",
+                "completed",
+                null,
+                "event_option_committed_and_owner_advanced"));
+        CompatibilityAssessment promoted = manager.Apply(
+            GameWithScopes(
+                Scope("event_option", "choose_event_option", "canary")),
+            Bridge("runtime-migration"),
+            CleanPatchInventory());
+
+        Assert.Single(promoted.ActionPermissionScopes);
+        Assert.Equal(
+            "session_auto_approved",
+            manager.Snapshot().Grants[^1].Tier);
+    }
+
+    [Fact]
+    public void ManifestFallbackWithoutGatewayWitnessIsQuarantined()
+    {
+        var manager = new BridgePermissionManager(
+            "runtime-migration",
+            BridgePermissionMode.MigrationExploration);
+        CompatibilityAssessment first = manager.Apply(
+            GameWithScopes(
+                Scope("event_option", "choose_event_option", "canary")),
+            Bridge("runtime-migration"),
+            CleanPatchInventory());
+        BridgeActionPermissionBinding binding = Binding(
+            Assert.Single(first.ActionPermissionScopes));
+
+        manager.ObserveCommand(
+            "request-event",
+            binding,
+            Command(
+                "request-event",
+                "completed",
+                "confirmed",
+                "completed",
+                null));
+        CompatibilityAssessment after = manager.Apply(
+            GameWithScopes(
+                Scope("event_option", "choose_event_option", "canary")),
+            Bridge("runtime-migration"),
+            CleanPatchInventory());
+
+        Assert.Empty(after.ActionPermissionScopes);
+        BridgePermissionGrantRecord quarantined = manager.Snapshot().Grants[^1];
+        Assert.Equal("quarantined", quarantined.Status);
+        Assert.Equal(
+            "semantic_completion_witness_mismatch",
+            quarantined.RevocationReason);
+    }
+
+    [Fact]
+    public void SnapshotNeverDropsCurrentGrantsBeyondHistoryWindow()
+    {
+        ActionPermissionScope[] scopes =
+            BridgeOperationQualificationCatalog.Snapshot()
+                .Select(identity =>
+                    Scope(identity.SurfaceKind, identity.Operation, "canary"))
+                .ToArray();
+        var manager = new BridgePermissionManager(
+            "runtime-migration",
+            BridgePermissionMode.MigrationExploration);
+
+        CompatibilityAssessment applied = manager.Apply(
+            GameWithScopes(scopes),
+            Bridge("runtime-migration"),
+            CleanPatchInventory());
+        BridgePermissionSystemInfo snapshot = manager.Snapshot();
+
+        Assert.Equal(scopes.Length, applied.ActionPermissionScopes.Count);
+        Assert.Equal(scopes.Length, snapshot.Grants.Count);
+        Assert.All(snapshot.Grants, grant =>
+        {
+            Assert.True(grant.Current);
+            Assert.Equal("active", grant.Status);
+        });
     }
 
     [Fact]
@@ -377,6 +519,9 @@ public sealed class BridgePermissionManagerTests
         Assert.Equal(
             BridgePermissionMode.Strict,
             BridgePermissionManager.ParseMode("unexpected_mode"));
+        Assert.Equal(
+            BridgePermissionMode.MigrationExploration,
+            BridgePermissionManager.ParseMode("migration_exploration"));
     }
 
     private static ActionPermissionScope Scope(

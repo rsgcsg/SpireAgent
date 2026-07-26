@@ -106,12 +106,14 @@ Action-capable CLI commands also acquire an exclusive local lock, so two RE-P1 p
 
 ## Run Boundaries
 
-`agent:run` is a one-game command, not a menu automation loop. It may finish
+`agent:run` is a one-game command by default, not a menu automation loop. It may finish
 the current run's Bridge-owned game-over intro/summary/return lifecycle, but it
 stops and records a non-executed boundary at the next top-level `menu`; it
-therefore cannot ask the model to continue or start another run. The lower-level
-`agent:tick` command intentionally retains the ability to exercise a supported
-menu action when a developer explicitly requests that protocol test.
+therefore cannot ask the model to continue or start another run. An explicit
+`--allow-run-entry` invocation may cross that boundary only through
+`bridge_advertised` authority; it does not permit legacy reconstruction. The
+lower-level `agent:tick` command intentionally retains the ability to exercise a
+supported menu action when a developer explicitly requests that protocol test.
 
 ## Retired Legacy Inference
 

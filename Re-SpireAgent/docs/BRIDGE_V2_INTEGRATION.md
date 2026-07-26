@@ -1,12 +1,14 @@
 # Bridge v2 Integration
 
-> Current source-truth status, 2026-07-25: Re and C# share the
-> `2.0-preview.65` source consumer contract; Re normalized schema is `26`.
+> Current source-truth status, 2026-07-26: Re and C# share the
+> `2.0-preview.66` source consumer contract; Re normalized schema is `26`.
 > Gate 1 is closed as a bounded ordinary-single-player v2 connector baseline.
 > Preview.61 supplied the final Neow's Fury runtime seal; Preview.62 adds
 > policy provenance and registry adaptation without inheriting qualification.
-> Preview.65's persistent qualification contract is source/fixture tested but
-> not yet installed or loaded.
+> Preview.66 is installed and cold-loaded. Its final exact environment has one
+> persistent-qualified operation and 86 session canaries. Five contracts are
+> explicit high-precision rows; 82 are conservative manifest-derived
+> identity/test-confirm fallbacks. The build is not broadly qualified.
 
 ## Connector Boundary
 
@@ -26,7 +28,7 @@ consumption.
 
 ## Current Scope
 
-Re-SpireAgent implements the strict `2.0-preview.65` consumer contract. When a
+Re-SpireAgent implements the strict `2.0-preview.66` consumer contract. When a
 matching Bridge exists, authority is read from capabilities rather than
 inferred from implementation or historical evidence.
 
@@ -89,6 +91,20 @@ runtime-epoch canary flow. A persistent operation scope is accepted only when
 one current `qualified` package matches the exact environment, operation
 fingerprint, completion boundary and witness. Re cannot install, promote,
 revoke, roll back, or repair either package tier.
+
+Preview.66 permits multiple exact environments to retain packages for the same
+Surface/operation without collision. Re continues to consume only the
+Gateway's current exact projection; the local Environment Profile registry,
+migration plan, evidence collector, and append-only installer are external
+non-live tools and never become client-side authority. `--allow-run-entry` is
+an explicit experiment boundary: it permits a bounded run to choose a current
+Gateway-advertised top-level entry action but does not reconstruct menu
+legality or bypass the normal action and command lifecycle. Re accepts the
+fallback completion-boundary enum for strict decoding but does not interpret
+its witness: the Gateway remains responsible for publishing, executing, and
+settling the operation. Every current dynamic scope must still link to its
+current grant; current grants are not clipped by the bounded historical-grant
+projection.
 
 Preview.47 adds one coherent state-plus-Inspection observation bundle, a typed
 visibility/Inspection catalog, and non-authorizing contract-instance shadow

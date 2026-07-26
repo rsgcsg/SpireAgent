@@ -12,29 +12,25 @@ This is the canonical short current-state document for the rebuilt project.
 ## Current Gate
 
 Gate 1 remains closed as a bounded ordinary-single-player v2 connector
-baseline. Source contract is `2.0-preview.65`; Re normalized schema is `26`.
+baseline. Source contract is `2.0-preview.66`; Re normalized schema is `26`.
 Gateway v1 is retired and every `/api/v1` route returns `410 Gone`.
 
-The local game update from reviewed `v0.109.0` to `v0.109.1` has now completed
-one real, operation-scoped requalification cycle. The Gateway does not inherit
-old authority by version similarity. It admits only the exact operations whose
-current assembly bindings and real completion evidence were reviewed:
+Preview.66 has completed one exact automatic migration slice on the current
+Gateway build. The Gateway does not inherit authority by version, build, or
+Mod similarity:
 
-- `main_menu/open_singleplayer`: persistent `qualified`;
 - `main_menu/continue_run`: persistent `qualified`;
-- `map_navigation/choose_map_node`: candidate only, not qualified and not
-  exercised, because the available saved run did not expose a legal route
-  action;
-- `shop_room/open_shop_inventory` and
-  `deck_enchant_selection/confirm_selection`: bindings match the
-  reviewed contract, but still require targeted current-build runtime
-  evidence;
-- all other unqualified operations remain governed by their exact embedded
-  policy or fail closed.
+- 86 other current manifest operations: exact session canaries only;
+- five operations use explicit high-precision completion contracts; 82 use
+  conservative manifest-derived identity/test-confirm fallbacks.
 
-Preview.65 persistent qualification is therefore **real but narrow**. It is
-not broad `v0.109.1` compatibility, all-operation qualification, cross-Mod
-qualification, or proof that a future update can be handled without review.
+The Environment Profile is a non-authorizing local index. One global
+append-only ledger can hold packages for multiple exact environments because
+active slots are keyed by environment + Surface + operation. The
+qualification store is atomically hot-reloaded and every package is
+revalidated before publication. This is **real but narrow** automatic
+requalification, not broad build, all-operation, cross-version, or cross-Mod
+qualification.
 
 ## Exact Evidence Boundary
 
@@ -44,33 +40,41 @@ Current exact game and assembly:
 game      v0.109.1|c8c577f6|-820620422
 sts2 SHA  2cb39e2eee651743829abcc0df4dd9cd7e65f46287c7ca264481115c9602382f
 sts2 MVID 208f08b8-d5f5-47f8-9e96-d3a4299ee709
-Gateway   4c6c1309c4ac3c0e97eccb084312769595485e21f499b9a1d07040a8e744419e
-MVID      60d4c2ce-44ad-46b4-99f7-0479e75b5741
+Gateway   b0b31f769f25d5a1e5231e92af76f7f09e07ab38f5c43f1ae753eba0b61d7a8a
+MVID      a7008eea-b3cd-4cb8-b75c-6dee64e9cd5c
+runtime   cebc39821b7e4d16aa1d9d2d9e680df8
+profile   env-8eee4ee3f08d1181b7405305
+env       2654bef1049808f852f6d946a283941a14db6893678a134543510afeb8d45aa0
+Modset    2747e126fbb2f770b5cf2e6b971713a3b0b80d017b606598ca75fc758764a688
+Patch     ee979e2b877b772adaa28409f474037a832b9ccaf22037afde23a527bb13c587
+catalog   8878447144e4fe4d8c01b2940335feb504367a81ac76e4b4fd22e2f4d6b85f0c
+mode      migration_exploration
 ```
 
-The two qualified operations each have two confirmed ordinary-gameplay
-decisions in distinct runtime epochs. Their qualified packages were installed
-in the local append-only store, survived a cold restart, and were revalidated
-against the exact game, Gateway, Modset, Patch, environment and operation
-identity. Wrong Modset, Patch and MVID, expired packages, corrupt stores,
-revoke, supersede and rollback were also exercised without widening live
-authority.
+`continue_run` has two confirmed ordinary-gameplay decisions in distinct
+runtime epochs:
 
-The final local cold load uses `balanced_gray`. It restored the two persistent
-scopes, issued no dynamic map grant, and Re strict inspection reported
-diagnostics `ok`.
+```text
+run-20260726132908-2e4rz6
+run-20260726133036-d3tr3a
+```
 
-The run set and package identities are recorded in the
-[v0.109.1 requalification closeout](../../STS2MCP/docs/bridge-v2/PREVIEW_65_V01091_REQUALIFICATION_CLOSEOUT_2026-07-26.md).
+The orchestrator installed its qualified package, the Gateway hot-reloaded it,
+and a later cold restart revalidated it against the exact game, Gateway,
+Modset, Patch, environment and operation identity. Wrong environment,
+expiry, corruption, revoke, rollback, witness mismatch, timeout, unknown
+outcome, and quarantine are covered separately by fixtures. The exact runtime
+and evidence boundaries are recorded in the
+[Preview.66 closeout](../../STS2MCP/docs/bridge-v2/PREVIEW_66_MULTI_ENVIRONMENT_MIGRATION_CLOSEOUT_2026-07-26.md).
 
 ## Immediate Next Step
 
-Do not widen authority from these menu results. The next useful work is a
-fresh, semantically ordinary saved run that exposes a legal
-`map_navigation/choose_map_node` action, followed by the same candidate,
-completion, second-epoch and persistent-package sequence. If no legal route
-action is visible, keep the operation fail closed rather than manufacturing
-evidence.
+Do not widen wildcard or Surface authority. Exercise one of the 86 current
+exact candidate operations under ordinary gameplay, preferably one with a
+different Commit/completion mode, and let the same migration cycle qualify or
+quarantine it. Treat fallback contracts as test-confirm identities, not
+semantic equivalence. The roughly 580 KB strict capabilities projection also
+needs later summary/pagination or on-demand diagnostics before productization.
 
 Gate 1 closeout still does not mean complete-game coverage or complete
 player-visible information. Crystal Sphere, standalone manual potion discard,

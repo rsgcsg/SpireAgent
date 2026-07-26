@@ -41,7 +41,10 @@ export class TickOrchestrator {
 
   constructor(private readonly dependencies: TickOrchestratorDependencies) {}
 
-  async runTick(tick: number, options: { dryRun?: boolean; stopAtRunBoundary?: boolean } = {}): Promise<TickResult> {
+  async runTick(
+    tick: number,
+    options: { dryRun?: boolean; stopAtRunBoundary?: boolean; allowRunEntry?: boolean } = {}
+  ): Promise<TickResult> {
     const startedAt = new Date().toISOString();
     const decisionId = createDecisionId(tick);
     let pre: StateEnvelope;
@@ -100,18 +103,32 @@ export class TickOrchestrator {
       });
     }
     this.resetNonActionableStateGuard();
-    if (options.stopAtRunBoundary && isAutomaticRunStartBoundary(pre.currentState.context.kind)) {
-      return this.recordWithoutDecision({
-        decisionId,
-        tick,
-        startedAt,
-        pre,
-        allowedActions,
-        outcome: "not_executed_non_actionable_state",
-        error: `Stopped at ${pre.currentState.context.kind} run-start boundary; agent:run never starts or continues another run automatically`,
-        shouldStopRun: true,
-        stopReason: "run_boundary"
-      });
+    if (isAutomaticRunStartBoundary(pre.currentState.context.kind)) {
+      if (options.stopAtRunBoundary && !options.allowRunEntry) {
+        return this.recordWithoutDecision({
+          decisionId,
+          tick,
+          startedAt,
+          pre,
+          allowedActions,
+          outcome: "not_executed_non_actionable_state",
+          error: `Stopped at ${pre.currentState.context.kind} run-start boundary; pass --allow-run-entry to permit Gateway-advertised run entry`,
+          shouldStopRun: true,
+          stopReason: "run_boundary"
+        });
+      }
+      if (options.allowRunEntry && pre.currentState.actionAuthority !== "bridge_advertised") {
+        return this.recordWithoutDecision({
+          decisionId,
+          tick,
+          startedAt,
+          pre,
+          allowedActions,
+          outcome: "not_executed_invalid_state",
+          error: "Run entry requires bridge_advertised action authority; local reconstruction cannot cross the run boundary",
+          shouldStopRun: true
+        });
+      }
     }
     if (allowedActions.length === 0) {
       return this.recordWithoutDecision({

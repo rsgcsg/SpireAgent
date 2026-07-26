@@ -2,20 +2,22 @@
 
 Status: canonical architecture boundary for the current real-game connection.
 
-Current source compatibility status: C# and Re share `2.0-preview.65`, including
+Current source compatibility status: C# and Re share `2.0-preview.66`, including
 operation scopes, a Gateway artifact digest, separate actual-loaded versus
 release-declared game assembly hashes, reviewed exact-environment policy
 provenance, structural combat-pile transaction semantics, minimal local
 mutation coordination, and exact operation qualification projection. Preview.61
 supplied the exact Neow's Fury lifecycle that closed bounded Gate 1. Preview.62
 source/build/audit evidence does not inherit that Organic qualification.
-Preview.65 is built, installed, cold-loaded, and strictly decoded by Re. The
-local game has updated to `v0.109.1`. It inherited no older action scope;
-exact current-build review and two-epoch runtime evidence qualified only two
-main-menu operations. Other operations retain their own exact policy,
-targeted-requalification requirement, or fail-closed status. The loaded
-identity and precise evidence boundary are recorded in
-[Current Status](CURRENT_STATUS.md).
+Preview.66 is built, installed, cold-loaded, and strictly decoded by Re. Its
+final `v0.109.1` identity inherited no older action scope. One exact operation
+completed automatic two-epoch requalification. The other 86 current manifest
+operations remain session canaries: four use explicit high-precision contracts
+and 82 use conservative identity/test-confirm fallbacks. Fallback identity is
+not semantic equivalence or persistent qualification. Multi-environment
+Profiles are non-authorizing, and the append-only ledger hot-reloads only after
+exact revalidation. The loaded identity and precise evidence boundary are
+recorded in [Current Status](CURRENT_STATUS.md).
 
 Consumer distribution, local trust, Companion, BYOK, SDK, and release gates are
 defined in the [productization architecture audit](../../../docs/current/audits/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md).

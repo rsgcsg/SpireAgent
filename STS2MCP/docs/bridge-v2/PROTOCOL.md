@@ -1,9 +1,9 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.65`
+Protocol preview: `2.0-preview.66`
 
-Preview.65 adds required `qualification_system` state to capabilities and
-every state envelope. It reports:
+Preview.66 retains Preview.65's required `qualification_system` state and adds
+multi-environment ledger semantics plus migration orchestration. It reports:
 
 - the current exact environment digest;
 - a component-level operation contract catalog;
@@ -19,13 +19,15 @@ every state envelope. It reports:
 The Gateway sets them only after an installed package matches the exact
 game/Gateway/Modset/Patch/environment and operation contract.
 
-A `session_canary` package is short-lived, low-risk bootstrap input to the
-existing Gateway-owned D3 state machine. A `qualified` package requires two
-distinct runtime epochs of confirmed Organic evidence. Packages are local,
-append-only and loaded only at startup; there is no REST or MCP endpoint that
-installs or activates one. Execution still requires the exact advertised scope
-and execute-time validation. Validated failure or Witness mismatch immediately
-quarantines the operation for the runtime.
+A `session_canary` package is short-lived bootstrap input to the existing
+Gateway-owned D3 state machine. A `qualified` package requires two distinct
+runtime epochs of confirmed exact Organic evidence. Packages are local and
+append-only; there is no REST or MCP endpoint that installs or activates one.
+The Gateway loads them at startup and atomically reloads complete store
+snapshots when the local file changes. Every package is revalidated before any
+scope publication. Execution still requires the exact advertised scope and
+execute-time validation. Validated failure or Witness mismatch immediately
+quarantines the operation for the runtime and quarantine survives store reload.
 
 Qualification is operation-scoped, not Surface-wide. One Surface may contain
 a persistent-qualified operation and a session-canary sibling at the same
@@ -33,6 +35,21 @@ time. Surface tier lists are coarse highest-tier projections for negotiation;
 the authoritative contract is each exact `surface_kind + operation` scope and
 its current package or grant. A client must not reject a coherent mixed-tier
 Surface, and must not use one operation's tier to authorize a sibling.
+
+One ledger may contain the same operation for multiple exact environments.
+Current package slots are keyed by
+`environment_digest + surface_kind + operation`; a package from one
+environment cannot supersede or authorize the same operation in another.
+Historical packages with older protocol identity remain readable but
+inapplicable.
+
+Preview.66 also adds a non-authorizing Environment Profile index and a
+risk-based migration policy. Profiles exclude local paths and runtime epoch,
+and are planning/inspection data only. `migration_exploration` may create
+session candidates for exact explicit or manifest-derived operation identities
+across configured risk classes, but only when an exact candidate package is
+installed. Manifest-derived fallback identity is test-confirm metadata, not
+semantic equivalence. It is not operation wildcard or persistent authority.
 
 Preview.64 adds minimal local mutation coordination. Read-only observation and
 Inspection remain open. A mutation client registers descriptive process
@@ -350,13 +367,22 @@ Modes:
 
 - `strict`: embedded `qualified` operations only;
 - `balanced_gray`: embedded non-candidate canaries remain available and
-  reviewed gray candidates may enter the session loop;
-- `developer_gray`: the same safety kernel and reviewed ceiling, with no
-  additional candidates in Preview.63.
+  reviewed reversible-navigation candidates may enter the session loop;
+- `developer_gray`: additionally permits reviewed progression candidates;
+- `migration_exploration`: additionally permits reviewed persistent-run-
+  mutation candidates during an explicit migration cycle.
 
-The current gray policy contains only reversible
-`main_menu/open_singleplayer` and `main_menu/continue_run`. It cannot authorize
-an operation absent from the embedded canary ceiling.
+The migration policy is risk-class based rather than an operation-name list.
+The current qualification catalog contains five explicit high-precision
+contracts plus conservative fallback identities derived from the current
+Gateway contract manifest. Explicit rows require their exact completion
+boundary and witness. A fallback row uses
+`gateway_semantic_completion_observed` with the package sentinel
+`gateway_reported_operation_witness`; runtime success still requires a
+non-empty witness emitted by the Gateway for that operation. Fallback rows are
+eligible only in `migration_exploration` and do not assert semantic
+equivalence. The policy cannot authorize an operation absent from the current
+catalog or without an exact applicable candidate package.
 
 Every grant records:
 

@@ -605,6 +605,29 @@ describe("TickOrchestrator", () => {
     expect(adapter.executed).toEqual([]);
     expect(recorder.records[0]?.error).toContain("run-start boundary");
   });
+
+  it("does not let the explicit run-entry option cross the boundary through local reconstruction", async () => {
+    const raw = await fixture("menu") as Sts2McpRawState;
+    const adapter = new FakeAdapter([raw]);
+    const recorder = new MemoryRecorder();
+    let calls = 0;
+    const provider = fixedProvider("menu:0", () => { calls += 1; });
+
+    const result = await makeOrchestrator(adapter, provider, recorder).runTick(1, {
+      stopAtRunBoundary: true,
+      allowRunEntry: true
+    });
+
+    expect(result).toMatchObject({
+      outcome: "not_executed_invalid_state",
+      contextKind: "menu",
+      actionAuthority: "local_reconstruction",
+      shouldStopRun: true
+    });
+    expect(calls).toBe(0);
+    expect(adapter.executed).toEqual([]);
+    expect(recorder.records[0]?.error).toContain("bridge_advertised");
+  });
 });
 
 class FakeAdapter implements GameAdapter<Sts2McpRawState, ExecutableGameAction, GameExecutionResult> {

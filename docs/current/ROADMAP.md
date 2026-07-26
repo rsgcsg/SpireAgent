@@ -39,11 +39,12 @@ Tutor holdout.
 
 ## Gate 2: Player-Visible Information Closure
 
-Status: **active but still bounded. Preview.65 has completed its first real
-second-environment requalification cycle on
-`v0.109.1|c8c577f6|-820620422`: two exact main-menu operations are persistent
-qualified, while map remains candidate-only and other operations retain their
-existing exact policy or fail closed.**
+Status: **active but still bounded. Preview.66 has completed one real automatic
+migration cycle on the final loaded `v0.109.1` Gateway identity:
+`main_menu/continue_run` is persistent-qualified after two exact Organic
+runtime epochs and cold-restart recovery. The other 86 current operation
+identities are session canaries only: four explicit contracts and 82
+manifest-derived conservative fallbacks.**
 
 Close decision-relevant visible-information gaps using shared state, context,
 surface, preview, and read-only inspection. Do not expose hidden RNG, draw
@@ -57,17 +58,22 @@ strategy quality. It must pass paired provider shadow and semantic review
 before any Prompt-path change is considered. The first generic v1 projection
 failed that evidence gate on reward scopes and is rejected for runtime use.
 
-This does not reopen Gate 1 or authorize the whole build. Preview.65 has a
-conservative runtime Patch inventory, Gateway-owned session permission,
-candidate and qualified packages, exact impact diff, evidence collection and
-append-only lifecycle tooling. D evidence remains non-authorizing; only the
-Gateway can issue, enforce, promote or quarantine runtime authority. Continue
-Gate 2 only through independently qualified operation slices. Loaded identity,
-compilation and static binding similarity remain insufficient.
+This does not reopen Gate 1 or authorize the whole build. Preview.66 adds a
+non-authorizing multi-environment Profile index, risk-based migration policy,
+exact candidate planning, evidence aggregation, automatic package assembly,
+append-only lifecycle tooling, and atomic Gateway reload. Profiles and D
+evidence remain non-authorizing; only the Gateway can issue, enforce, promote
+or quarantine runtime authority. Manifest-derived fallback identity enables
+test-confirm migration but does not prove semantic equivalence. Continue Gate
+2 only through independently qualified operation slices. Loaded identity,
+compilation, static binding similarity, and one successful canary remain
+insufficient.
+See the
+[Preview.66 migration closeout](../../STS2MCP/docs/bridge-v2/PREVIEW_66_MULTI_ENVIRONMENT_MIGRATION_CLOSEOUT_2026-07-26.md).
 
 ## Gate 3: Local Control Coordination Alpha
 
-Status: **Preview.64 behavior is included in the loaded Preview.65 artifact.
+Status: **Preview.64 behavior is included in the loaded Preview.66 artifact.
 A bounded two-client check confirmed single-writer acquisition, competing
 client rejection, release, and no remaining active controller. No game action
 was authorized by this coordination test.**

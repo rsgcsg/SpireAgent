@@ -12,8 +12,14 @@ describe("CLI invocation parsing", () => {
     expect(parseCliInvocation(["run", "--max-ticks", "5", "--delay-ms", "25"])).toEqual({
       command: "run",
       dryRun: false,
+      allowRunEntry: false,
       maxTicks: 5,
       delayMs: 25
+    });
+    expect(parseCliInvocation(["run", "--allow-run-entry", "--dry-run"])).toEqual({
+      command: "run",
+      dryRun: true,
+      allowRunEntry: true
     });
     expect(parseCliInvocation(["connector-canary", "--action-id", "action_123"])).toEqual({
       command: "connector-canary",

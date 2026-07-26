@@ -45,6 +45,12 @@ function operationKey(value) {
   return `${value.surface_kind}\u0000${value.operation}`;
 }
 
+const RUNTIME_REPORTED_WITNESS = "gateway_reported_operation_witness";
+
+function qualificationSlotKey(value) {
+  return `${value.environment_digest}\u0000${operationKey(value)}`;
+}
+
 function advertisedOperationKeys(capabilities) {
   const keys = new Set();
   for (const surface of capabilities?.surfaces ?? []) {
@@ -90,7 +96,7 @@ function evidenceEnvironmentFromRun(run, surfaceKind, operation, witnessId) {
     : null;
 }
 
-function expectedEvidenceEnvironment(capabilities, contract) {
+export function expectedEvidenceEnvironment(capabilities, contract) {
   return {
     protocol_version: capabilities?.protocol_version,
     game_version: capabilities?.game?.version,
@@ -151,11 +157,15 @@ export function validateQualificationPackage(qualification, now = new Date()) {
   const runtimeEvidence = Array.isArray(qualification?.runtime_evidence)
     ? qualification.runtime_evidence
     : [];
+  const runtimeWitnessMatches = (entry) =>
+    qualification?.witness_id === RUNTIME_REPORTED_WITNESS
+      ? typeof entry?.witness_id === "string" && entry.witness_id.length > 0
+      : entry?.witness_id === qualification?.witness_id;
   const epochs = new Set(runtimeEvidence
     .filter((entry) =>
       entry?.outcome === "confirmed"
       && entry?.evidence_class === "organic"
-      && entry?.witness_id === qualification?.witness_id
+      && runtimeWitnessMatches(entry)
       && typeof entry?.request_id === "string"
       && entry.request_id.length > 0)
     .map((entry) => entry.runtime_epoch)
@@ -223,7 +233,7 @@ export function projectLedger(ledger, now = new Date()) {
         errors.push(`duplicate qualification_id ${qualification.qualification_id}`);
         continue;
       }
-      const key = operationKey(qualification);
+      const key = qualificationSlotKey(qualification);
       const previous = activeByOperation.get(key);
       if (previous && qualification.supersedes_qualification_id !== previous) {
         errors.push(`${qualification.qualification_id} does not supersede active ${previous}`);
@@ -247,7 +257,7 @@ export function projectLedger(ledger, now = new Date()) {
         errors.push(`rollback targets expired ${event.target_qualification_id}`);
         continue;
       }
-      const key = operationKey(target);
+      const key = qualificationSlotKey(target);
       if (event.type === "revoke") {
         if (activeByOperation.get(key) === target.qualification_id) {
           activeByOperation.delete(key);
@@ -416,7 +426,7 @@ async function appendEvent(storePath, event) {
   return after;
 }
 
-function exactPackageApplicability(qualification, capabilities) {
+export function exactPackageApplicability(qualification, capabilities) {
   const contract = capabilities?.qualification_system?.operation_contracts?.find(
     (entry) => entry.surface_kind === qualification.surface_kind
       && entry.operation === qualification.operation
@@ -483,7 +493,9 @@ export function buildQualificationPackage({
   }
   if (authorityTier === "session_canary") {
     const audit = evidenceBundle?.binding_audit;
-    if (audit?.status !== "reviewed_binding_match"
+    if (!["reviewed_binding_match", "runtime_publication_required"].includes(
+          audit?.status
+        )
         || !/^[a-f0-9]{64}$/iu.test(audit?.report_digest ?? "")
         || !/^[a-f0-9]{64}$/iu.test(audit?.operation_binding_digest ?? "")
         || !/^[a-f0-9]{64}$/iu.test(audit?.game_assembly_sha256 ?? "")
@@ -546,9 +558,13 @@ export function buildCandidateEvidence({
     (entry) => entry.surface_kind === surfaceKind && entry.operation === operation
   );
   if (!contract) {
-    throw new Error(`${surfaceKind}/${operation} has no reviewed operation contract`);
+    throw new Error(`${surfaceKind}/${operation} has no current operation identity`);
   }
-  if (audited?.status !== "reviewed_binding_match") {
+  const runtimePublicationFallback =
+    contract.witness_id === RUNTIME_REPORTED_WITNESS
+    && audited === undefined;
+  if (audited?.status !== "reviewed_binding_match"
+      && !runtimePublicationFallback) {
     throw new Error(`${surfaceKind}/${operation} lacks a matching binding audit`);
   }
   if (bindingAudit?.authorization_effect !== "none"
@@ -574,7 +590,9 @@ export function buildCandidateEvidence({
     witness_id: contract.witness_id,
     evidence_environment: expectedEvidenceEnvironment(capabilities, contract),
     binding_audit: {
-      status: audited.status,
+      status: runtimePublicationFallback
+        ? "runtime_publication_required"
+        : audited.status,
       report_digest: digest(bindingAudit),
       manifest_id: bindingAudit.manifest_id,
       manifest_digest: bindingAudit.manifest_digest,
@@ -584,10 +602,14 @@ export function buildCandidateEvidence({
         bindingAudit.release.main_assembly_hash,
       game_assembly_sha256: bindingAudit.game_assembly.sha256,
       game_assembly_mvid: bindingAudit.game_assembly.module_version_id,
-      operation_binding_digest: audited.binding_digest
+      operation_binding_digest: runtimePublicationFallback
+        ? contract.contract_digest
+        : audited.binding_digest
     },
     evidence_ids: [...new Set([
-      `binding-audit:${bindingAudit.manifest_id}:${audited.binding_digest}`,
+      runtimePublicationFallback
+        ? `runtime-contract:${contract.contract_digest}`
+        : `binding-audit:${bindingAudit.manifest_id}:${audited.binding_digest}`,
       ...additionalEvidenceIds
     ])],
     negative_evidence_ids: [...new Set(negativeEvidenceIds)],
@@ -602,7 +624,8 @@ export function collectQualificationEvidence({
   surfaceKind,
   operation,
   witnessId,
-  negativeEvidenceIds
+  negativeEvidenceIds,
+  expectedEnvironment = null
 }) {
   const runtimeEvidence = [];
   const evidenceIds = [];
@@ -627,22 +650,34 @@ export function collectQualificationEvidence({
       });
       continue;
     }
+    if (expectedEnvironment != null
+        && digest(evidenceEnvironment) !== digest(expectedEnvironment)) {
+      rejectedRuns.push({
+        run_id: run.metadata?.runId ?? "unknown",
+        reason: "mismatched_exact_qualification_environment"
+      });
+      continue;
+    }
     for (const decision of run.decisions) {
       const completion = decision?.execution?.adapterResult?.events
         ?.findLast?.((event) => event?.status === "completed");
+      const witnessMatches = witnessId === RUNTIME_REPORTED_WITNESS
+        ? typeof completion?.evidence === "string"
+          && completion.evidence.length > 0
+        : completion?.evidence === witnessId;
       if (decision?.outcome !== "executed_and_settled"
           || decision?.preState?.normalizedState?.surface?.kind !== surfaceKind
           || decision?.execution?.action?.bridgeActionKind !== operation
           || decision?.execution?.adapterResult?.status !== "completed"
           || decision?.execution?.adapterResult?.outcome !== "confirmed"
-          || completion?.evidence !== witnessId) {
+          || !witnessMatches) {
         continue;
       }
       runtimeEvidence.push({
         runtime_epoch: runtimeEpoch,
         request_id: decision.execution.adapterResult.request_id,
         outcome: "confirmed",
-        witness_id: witnessId,
+        witness_id: completion.evidence,
         evidence_class: "organic"
       });
       evidenceEnvironments.set(digest(evidenceEnvironment), evidenceEnvironment);
@@ -672,13 +707,40 @@ export function collectQualificationEvidence({
   };
 }
 
-async function readRunDirectory(path) {
+export async function readRunDirectory(path) {
   const metadata = await readJson(`${path.replace(/\/$/u, "")}/metadata.json`);
   const lines = (await readFile(
     `${path.replace(/\/$/u, "")}/decisions.jsonl`,
     "utf8"
   )).split(/\r?\n/u).filter(Boolean);
   return { metadata, decisions: lines.map((line) => JSON.parse(line)) };
+}
+
+export async function installQualificationPackage({
+  storePath,
+  qualification,
+  reason = "automatic_migration_orchestrator"
+}) {
+  const errors = validateQualificationPackage(qualification);
+  if (errors.length > 0) throw new Error(errors.join("; "));
+  let ledger;
+  try {
+    ledger = await readJson(storePath);
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+    ledger = {
+      schema_version: 1,
+      store_id: "local_connector_qualification_store",
+      events: []
+    };
+    await writeJsonAtomic(storePath, ledger);
+  }
+  return appendEvent(storePath, {
+    type: "install",
+    qualification,
+    target_qualification_id: null,
+    reason
+  });
 }
 
 async function main(argv) {
@@ -789,12 +851,32 @@ async function main(argv) {
   }
   if (command === "collect") {
     const runPaths = options.runs.split(",").filter(Boolean);
+    let expectedEnvironment = null;
+    if (options.capabilities) {
+      const capabilities = await readJson(options.capabilities);
+      const contract =
+        capabilities?.qualification_system?.operation_contracts?.find(
+          (entry) =>
+            entry.surface_kind === options.surface
+            && entry.operation === options.operation
+        );
+      if (!contract) {
+        throw new Error(
+          `${options.surface}/${options.operation} has no current operation contract`
+        );
+      }
+      expectedEnvironment = expectedEvidenceEnvironment(
+        capabilities,
+        contract
+      );
+    }
     const bundle = collectQualificationEvidence({
       runs: await Promise.all(runPaths.map(readRunDirectory)),
       surfaceKind: options.surface,
       operation: options.operation,
       witnessId: options.witness,
-      negativeEvidenceIds: options.negative.split(",").filter(Boolean)
+      negativeEvidenceIds: options.negative.split(",").filter(Boolean),
+      expectedEnvironment
     });
     await writeJsonAtomic(options.out, bundle);
     console.log(JSON.stringify({

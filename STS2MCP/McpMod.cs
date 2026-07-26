@@ -100,7 +100,11 @@ public static partial class McpMod
                 ? modeElement.GetString()
                 : null;
             if (permissionMode is not null
-                && permissionMode is not ("strict" or "balanced_gray" or "developer_gray"))
+                && permissionMode is not (
+                    "strict"
+                    or "balanced_gray"
+                    or "developer_gray"
+                    or "migration_exploration"))
             {
                 GD.PrintErr(
                     $"[STS2 MCP] Invalid permission_mode '{permissionMode}' in {configPath}; failing closed to strict");

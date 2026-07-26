@@ -29,8 +29,8 @@
       Include="BridgeV2/Game/exact-environment-policy.json"
       LogicalName="STS2_MCP.BridgeV2.Game.exact-environment-policy.json" />
     <EmbeddedResource
-      Include="BridgeV2/Runtime/gray-permission-candidates.json"
-      LogicalName="STS2_MCP.BridgeV2.Runtime.gray-permission-candidates.json" />
+      Include="BridgeV2/Runtime/migration-permission-policy.json"
+      LogicalName="STS2_MCP.BridgeV2.Runtime.migration-permission-policy.json" />
     <EmbeddedResource
       Include="BridgeV2/Runtime/operation-qualification-contracts.json"
       LogicalName="STS2_MCP.BridgeV2.Runtime.operation-qualification-contracts.json" />

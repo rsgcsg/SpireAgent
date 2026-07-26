@@ -60,6 +60,11 @@ Current cross-component audits:
   exact second-environment binding audit, two real persistent operation
   qualifications, restart recovery, lifecycle failures, and remaining
   fail-closed boundaries.
+- [Preview 66 multi-environment migration closeout](../../STS2MCP/docs/bridge-v2/PREVIEW_66_MULTI_ENVIRONMENT_MIGRATION_CLOSEOUT_2026-07-26.md):
+  non-authorizing Environment Profiles, risk-based candidate policy,
+  multi-environment qualification slots, atomic hot reload, automatic
+  evidence-to-package orchestration, final exact runtime identity, and the
+  first final-binary persistent migration slice.
 
 Component-owned truth:
 

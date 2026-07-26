@@ -36,6 +36,10 @@ internal sealed record BridgeOperationQualificationIdentity(
 
 internal static class BridgeOperationQualificationCatalog
 {
+    internal const string RuntimeReportedWitness =
+        "gateway_reported_operation_witness";
+    internal const string GatewayCompletionBoundary =
+        "gateway_semantic_completion_observed";
     private const string ResourceName =
         "STS2_MCP.BridgeV2.Runtime.operation-qualification-contracts.json";
     private static readonly Lazy<LoadResult> Loaded = new(Load);
@@ -95,6 +99,19 @@ internal static class BridgeOperationQualificationCatalog
             contract.RiskClass);
     }
 
+    public static bool WitnessMatches(
+        string expectedWitness,
+        string? observedWitness) =>
+        string.Equals(
+            expectedWitness,
+            RuntimeReportedWitness,
+            StringComparison.Ordinal)
+            ? !string.IsNullOrWhiteSpace(observedWitness)
+            : string.Equals(
+                observedWitness,
+                expectedWitness,
+                StringComparison.Ordinal);
+
     public static IReadOnlyList<BridgeOperationQualificationIdentityInfo> Snapshot() =>
         Loaded.Value.Contracts
             .Select(contract => Describe(contract.SurfaceKind, contract.Operation))
@@ -136,20 +153,27 @@ internal static class BridgeOperationQualificationCatalog
                 json,
                 options);
             if (document == null
-                || document.SchemaVersion != 1
+                || document.SchemaVersion != 2
                 || string.IsNullOrWhiteSpace(document.CatalogId)
-                || document.AuthorityEffect != "qualification_identity_only")
+                || document.AuthorityEffect
+                    != "explicit_overrides_plus_manifest_fallback_identity_only")
             {
                 return LoadResult.Failed(
                     "Operation qualification catalog metadata is unsupported.");
             }
 
-            string? error = Validate(document.Contracts);
+            IReadOnlyList<BridgeOperationQualificationContract> contracts =
+                MergeManifestFallbacks(document.Contracts);
+            string? error = Validate(contracts);
             return error == null
                 ? new LoadResult(
                     document.CatalogId,
-                    BridgeHash.Text(json),
-                    document.Contracts,
+                    BridgeHash.Object(new
+                    {
+                        document.CatalogId,
+                        contracts
+                    }),
+                    contracts,
                     null)
                 : LoadResult.Failed(error, document.CatalogId, BridgeHash.Text(json));
         }
@@ -185,7 +209,8 @@ internal static class BridgeOperationQualificationCatalog
                     "native_commit_observed"
                     or "immediate_postcondition_observed"
                     or "continuation_handoff_observed"
-                    or "transaction_settled")
+                    or "transaction_settled"
+                    or GatewayCompletionBoundary)
                 || string.IsNullOrWhiteSpace(contract.InteractionKind)
                 || string.IsNullOrWhiteSpace(contract.OwnerBinding)
                 || string.IsNullOrWhiteSpace(contract.SourceBinding)
@@ -198,6 +223,40 @@ internal static class BridgeOperationQualificationCatalog
             }
         }
         return null;
+    }
+
+    private static IReadOnlyList<BridgeOperationQualificationContract>
+        MergeManifestFallbacks(
+            IReadOnlyList<BridgeOperationQualificationContract> overrides)
+    {
+        var contracts = overrides.ToDictionary(
+            value => (value.SurfaceKind, value.Operation));
+        foreach (BridgeContractManifestEntry entry in BridgeContractManifest.Entries)
+        {
+            foreach (BridgeOperationManifest operation in entry.Operations)
+            {
+                var key = (entry.Kind, operation.Operation);
+                if (contracts.ContainsKey(key))
+                    continue;
+
+                contracts[key] = new BridgeOperationQualificationContract(
+                    entry.Kind,
+                    operation.Operation,
+                    entry.Mechanism,
+                    $"gateway_resolved_active_surface:{entry.Kind}",
+                    entry.SourceBindingId,
+                    "gateway_advertised_opaque_state_bound_operands",
+                    $"gateway_provider_native_commit:{entry.Mechanism}",
+                    GatewayCompletionBoundary,
+                    RuntimeReportedWitness,
+                    "persistent_run_mutation");
+            }
+        }
+
+        return contracts.Values
+            .OrderBy(value => value.SurfaceKind, StringComparer.Ordinal)
+            .ThenBy(value => value.Operation, StringComparer.Ordinal)
+            .ToArray();
     }
 
     private sealed record CatalogDocument(

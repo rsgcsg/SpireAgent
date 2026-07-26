@@ -14,9 +14,9 @@ const policyPath = path.join(
   root,
   "STS2MCP/BridgeV2/Game/exact-environment-policy.json"
 );
-const grayCandidatePath = path.join(
+const migrationPolicyPath = path.join(
   root,
-  "STS2MCP/BridgeV2/Runtime/gray-permission-candidates.json"
+  "STS2MCP/BridgeV2/Runtime/migration-permission-policy.json"
 );
 const manifestPath = path.join(
   root,
@@ -43,7 +43,7 @@ const [
   registryText,
   catalogText,
   policyText,
-  grayCandidateText,
+  migrationPolicyText,
   manifest,
   identity,
   provider,
@@ -54,7 +54,7 @@ const [
     readFile(registryPath, "utf8"),
     readFile(catalogPath, "utf8"),
     readFile(policyPath, "utf8"),
-    readFile(grayCandidatePath, "utf8"),
+    readFile(migrationPolicyPath, "utf8"),
     readFile(manifestPath, "utf8"),
     readFile(identityPath, "utf8"),
     readFile(providerPath, "utf8"),
@@ -65,7 +65,7 @@ const [
 const registry = JSON.parse(registryText);
 const catalog = JSON.parse(catalogText);
 const policy = JSON.parse(policyText);
-const grayCandidates = JSON.parse(grayCandidateText);
+const migrationPolicy = JSON.parse(migrationPolicyText);
 assert(registry.schema_version === 1, "unsupported combat-pile registry schema");
 assert(
   registry.authorization_mode === "reviewed_embedded_policy_only",
@@ -82,11 +82,12 @@ assert(
   policy.authorization_mode === "reviewed_embedded_policy_only",
   "exact-environment policy must be reviewed and embedded"
 );
-assert(grayCandidates.schema_version === 1, "unsupported gray candidate schema");
+assert(migrationPolicy.schema_version === 2, "unsupported migration policy schema");
 assert(
-  grayCandidates.authorization_effect === "none"
-    && grayCandidates.recommendation_effect === "gateway_session_candidate_only",
-  "D candidate data may recommend a Gateway session candidate but must not authorize"
+  migrationPolicy.authorization_effect === "none"
+    && migrationPolicy.recommendation_effect
+      === "gateway_session_candidate_by_reviewed_contract_and_risk",
+  "migration policy may classify risk but must not authorize"
 );
 
 const sourceKinds = new Set();
@@ -144,55 +145,69 @@ for (const environment of policy.environments) {
   }
 }
 
-const grayCandidateKeys = new Set();
-for (const candidate of grayCandidates.candidates) {
-  const key = `${candidate.surface_kind}|${candidate.operation}`;
-  assert(!grayCandidateKeys.has(key), `duplicate gray candidate ${key}`);
-  grayCandidateKeys.add(key);
+const migrationRiskClasses = new Set();
+for (const rule of migrationPolicy.rules) {
+  const key = rule.risk_class;
+  assert(!migrationRiskClasses.has(key), `duplicate migration risk rule ${key}`);
+  migrationRiskClasses.add(key);
   assert(
-    candidate.required_static_tier === "canary",
-    `${key} must remain below the reviewed exact-environment canary ceiling`
+    [
+      "reversible_navigation",
+      "progression",
+      "persistent_run_mutation"
+    ].includes(rule.risk_class),
+    `${key} has an unsupported migration risk class`
   );
   assert(
-    ["reversible_navigation", "progression"].includes(candidate.risk_class),
-    `${key} has an unsupported gray risk class`
-  );
-  assert(
-    candidate.minimum_successes === 1,
+    rule.minimum_successes === 1,
     `${key} requests a success threshold the session manager does not implement`
   );
   assert(
-    typeof candidate.witness_id === "string" && candidate.witness_id.length > 0,
-    `${key} lacks an action-specific semantic witness`
-  );
-  assert(
-    Number.isInteger(candidate.session_ttl_seconds)
-      && candidate.session_ttl_seconds >= 60
-      && candidate.session_ttl_seconds <= 86_400,
+    Number.isInteger(rule.session_ttl_seconds)
+      && rule.session_ttl_seconds >= 60
+      && rule.session_ttl_seconds <= 604_800,
     `${key} has an unsafe session TTL`
   );
   assert(
-    candidate.eligible_modes.length > 0
-      && candidate.eligible_modes.every((mode) =>
-        ["balanced_gray", "developer_gray"].includes(mode)),
-    `${key} has an unsupported gray mode`
+    rule.eligible_modes.length > 0
+      && rule.eligible_modes.every((mode) =>
+        [
+          "balanced_gray",
+          "developer_gray",
+          "migration_exploration"
+        ].includes(mode)),
+    `${key} has an unsupported migration mode`
   );
-  if (candidate.risk_class === "progression") {
+  if (rule.risk_class === "progression") {
     assert(
-      candidate.eligible_modes.length === 1
-        && candidate.eligible_modes[0] === "developer_gray",
-      `${key} progression candidate must remain developer_gray-only`
+      rule.eligible_modes.every((mode) =>
+        ["developer_gray", "migration_exploration"].includes(mode)),
+      `${key} progression candidate must remain outside balanced_gray`
     );
   }
+  if (rule.risk_class === "persistent_run_mutation") {
+    assert(
+      rule.eligible_modes.length === 1
+        && rule.eligible_modes[0] === "migration_exploration",
+      `${key} persistent mutation requires migration_exploration`
+    );
+  }
+}
+for (const contract of JSON.parse(await readFile(
+  path.join(
+    root,
+    "STS2MCP/BridgeV2/Runtime/operation-qualification-contracts.json"
+  ),
+  "utf8"
+)).contracts) {
   assert(
-    policy.environments.some((environment) =>
-      environment.canary_surface_kinds.includes(candidate.surface_kind)),
-    `${key} is not under any reviewed exact-environment canary ceiling`
+    migrationRiskClasses.has(contract.risk_class),
+    `${contract.surface_kind}/${contract.operation} lacks a migration risk rule`
   );
   assert(
-    manifest.includes(`"${candidate.surface_kind}"`)
-      && manifest.includes(`"${candidate.operation}"`),
-    `${key} is absent from the semantic contract manifest`
+    manifest.includes(`"${contract.surface_kind}"`)
+      && manifest.includes(`"${contract.operation}"`),
+    `${contract.surface_kind}/${contract.operation} is absent from the semantic contract manifest`
   );
 }
 for (const requiredBoundary of [
@@ -201,7 +216,7 @@ for (const requiredBoundary of [
   "ObserveCommand(",
   "Quarantine(",
   "session_auto_approved",
-  "BridgeGrayPermissionCandidateCatalog.LoadError"
+  "BridgeMigrationPermissionPolicy.LoadError"
 ]) {
   assert(
     permissionManager.includes(requiredBoundary),
@@ -253,10 +268,12 @@ console.log(
     contract_catalog: catalog.catalog_id,
     witness_topology_count: witnessTopologies.size,
     exact_environment_count: policy.environments.length,
-    gray_candidate_policy: grayCandidates.policy_id,
-    gray_candidate_count: grayCandidateKeys.size,
-    gray_candidate_authorization_effect: grayCandidates.authorization_effect,
-    gray_candidate_recommendation_effect: grayCandidates.recommendation_effect,
+    migration_permission_policy: migrationPolicy.policy_id,
+    migration_risk_rule_count: migrationRiskClasses.size,
+    migration_policy_authorization_effect:
+      migrationPolicy.authorization_effect,
+    migration_policy_recommendation_effect:
+      migrationPolicy.recommendation_effect,
     combat_pile_source_count: registry.contracts.length,
     source_kinds: [...sourceKinds].sort()
   })

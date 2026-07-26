@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using STS2_MCP.BridgeV2.Game;
 using STS2_MCP.BridgeV2.Protocol;
@@ -30,17 +32,30 @@ internal static class BridgeV2Runtime
     private static readonly string RuntimeInstanceId = Guid.NewGuid().ToString("N");
     private static readonly BridgePermissionManager PermissionManager = new(RuntimeInstanceId);
     private static readonly BridgeClientCoordinator ClientCoordinator = new(RuntimeInstanceId);
+    private static readonly ConcurrentDictionary<string, string>
+        QualificationSessionQuarantine = new(StringComparer.Ordinal);
     private static BridgePersistentQualificationStore QualificationStore =
-        BridgePersistentQualificationStore.Disabled();
+        BridgePersistentQualificationStore.Disabled(
+            sessionQuarantineReasons: QualificationSessionQuarantine);
+    private static string? QualificationStorePath;
+    private static string QualificationStoreFileIdentity = "not_configured";
 
     internal static void ConfigurePermissionMode(BridgePermissionMode mode) =>
         PermissionManager.ConfigureMode(mode);
 
-    internal static void ConfigureQualificationStore(string? path) =>
-        QualificationStore = BridgePersistentQualificationStore.Load(path);
+    internal static void ConfigureQualificationStore(string? path)
+    {
+        lock (Gate)
+        {
+            QualificationStorePath = path;
+            QualificationStoreFileIdentity = "force_initial_load";
+            RefreshQualificationStore();
+        }
+    }
 
     internal static GameBuildIdentity ReadCurrentGameIdentity()
     {
+        RefreshQualificationStore();
         GameBuildIdentity game = BridgeGameIdentity.Read();
         CompatibilityAssessment compatibility = BridgeContractManifest.WithExplicitActionScopes(
             game.Compatibility);
@@ -87,6 +102,39 @@ internal static class BridgeV2Runtime
             BridgeIdentity(),
             patchInventory);
         return game with { Compatibility = compatibility };
+    }
+
+    private static void RefreshQualificationStore()
+    {
+        lock (Gate)
+        {
+            string fileIdentity = QualificationStorePath == null
+                ? "not_configured"
+                : File.Exists(QualificationStorePath)
+                    ? FileIdentity(QualificationStorePath)
+                    : "configured_missing";
+            if (fileIdentity == QualificationStoreFileIdentity)
+                return;
+
+            QualificationStore = BridgePersistentQualificationStore.Load(
+                QualificationStorePath,
+                sessionQuarantineReasons: QualificationSessionQuarantine);
+            QualificationStoreFileIdentity = fileIdentity;
+        }
+    }
+
+    private static string FileIdentity(string path)
+    {
+        try
+        {
+            var info = new FileInfo(path);
+            return $"{info.Length}:{info.LastWriteTimeUtc.Ticks}";
+        }
+        catch (Exception ex) when (
+            ex is IOException or UnauthorizedAccessException)
+        {
+            return $"unreadable:{ex.GetType().Name}";
+        }
     }
 
     public static BridgeCapabilitiesResponse GetCapabilities()

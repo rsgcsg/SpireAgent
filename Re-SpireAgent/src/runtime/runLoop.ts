@@ -6,6 +6,8 @@ export interface RunLoopOptions {
   dryRun?: boolean;
   /** Finish game-over cleanup, then stop before any top-level menu action. */
   stopAtRunBoundary?: boolean;
+  /** Permit only Gateway-advertised actions to cross the top-level run boundary. */
+  allowRunEntry?: boolean;
   onTick?: (result: TickResult) => void;
 }
 
@@ -14,7 +16,8 @@ export async function runLoop(orchestrator: TickOrchestrator, options: RunLoopOp
   for (let tick = 1; tick <= options.maxTicks; tick += 1) {
     const result = await orchestrator.runTick(tick, {
       ...(options.dryRun === undefined ? {} : { dryRun: options.dryRun }),
-      ...(options.stopAtRunBoundary === undefined ? {} : { stopAtRunBoundary: options.stopAtRunBoundary })
+      ...(options.stopAtRunBoundary === undefined ? {} : { stopAtRunBoundary: options.stopAtRunBoundary }),
+      ...(options.allowRunEntry === undefined ? {} : { allowRunEntry: options.allowRunEntry })
     });
     results.push(result);
     options.onTick?.(result);

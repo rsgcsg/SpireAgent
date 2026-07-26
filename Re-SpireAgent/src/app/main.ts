@@ -101,6 +101,7 @@ async function main(): Promise<void> {
         delayMs,
         dryRun: invocation.dryRun,
         stopAtRunBoundary: true,
+        allowRunEntry: invocation.allowRunEntry,
         onTick: (result) => printTick(runtime.recorder.runId, result)
       });
       const failures = results.filter((result) =>
@@ -149,7 +150,7 @@ function printTick(runId: string, result: {
 }
 
 function printHelp(): void {
-  process.stdout.write(`RE-P1 commands:\n  npm run agent:inspect\n  npm run agent:connector-canary -- --action-id <advertised-id>\n  npm run agent:tick -- --dry-run\n  npm run agent:tick\n  npm run agent:run -- --max-ticks 20 --delay-ms 250\n  npm run agent:replay -- --run-id <id> [--decision-id <id>]\n  npm run agent:prompt-audit [--run-id <id> | --limit-runs <positive-count>]\n  npm run agent:prompt-shadow-compare -- --run-id <id> --decision-id <id>\n  npm run agent:prompt-repeat-baseline -- --run-id <id> --decision-id <id> --samples <2-5> [--variant full|shadow]\n`);
+  process.stdout.write(`RE-P1 commands:\n  npm run agent:inspect\n  npm run agent:connector-canary -- --action-id <advertised-id>\n  npm run agent:tick -- --dry-run\n  npm run agent:tick\n  npm run agent:run -- --max-ticks 20 --delay-ms 250 [--allow-run-entry]\n  npm run agent:replay -- --run-id <id> [--decision-id <id>]\n  npm run agent:prompt-audit [--run-id <id> | --limit-runs <positive-count>]\n  npm run agent:prompt-shadow-compare -- --run-id <id> --decision-id <id>\n  npm run agent:prompt-repeat-baseline -- --run-id <id> --decision-id <id> --samples <2-5> [--variant full|shadow]\n`);
 }
 
 main().catch((error) => {

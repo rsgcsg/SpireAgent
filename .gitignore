@@ -33,6 +33,7 @@
 /STS2MCP/.env
 /STS2MCP/.env.local
 /STS2MCP/.mcp.json
+/STS2MCP/.local/
 /STS2MCP/STS2_MCP.qualifications.json
 /STS2MCP/*.qualification-package.json
 /STS2MCP/*.qualification-evidence.json

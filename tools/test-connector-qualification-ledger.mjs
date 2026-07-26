@@ -34,6 +34,15 @@ const contract = {
   witness_id: "shop_inventory_opened",
   risk_class: "reversible_navigation"
 };
+const fallbackContract = {
+  ...contract,
+  surface_kind: "event_option",
+  operation: "choose_event_option",
+  contract_digest: "9".repeat(64),
+  completion_boundary: "gateway_semantic_completion_observed",
+  witness_id: "gateway_reported_operation_witness",
+  risk_class: "persistent_run_mutation"
+};
 const qualification = {
   qualification_id: "qualification-a",
   version: 1,
@@ -44,7 +53,7 @@ const qualification = {
   game_version: "v0.109.0",
   game_commit: "commit",
   game_main_assembly_hash: 1,
-  gateway_protocol: "2.0-preview.65",
+  gateway_protocol: "2.0-preview.66",
   gateway_assembly_sha256: "a".repeat(64),
   gateway_module_version_id: "mvid",
   modset_fingerprint: "modset",
@@ -100,7 +109,7 @@ const evidenceBundle = collectQualificationEvidence({
         adapter: {
           negotiated: {
             bridge_runtime_instance_id: "runtime-a",
-            bridge_protocol_version: "2.0-preview.65",
+            bridge_protocol_version: "2.0-preview.66",
             bridge_assembly_file_sha256: "a".repeat(64),
             bridge_module_version_id: "mvid",
             game_version: "v0.109.0",
@@ -135,7 +144,7 @@ const evidenceBundle = collectQualificationEvidence({
         adapter: {
           negotiated: {
             bridge_runtime_instance_id: "runtime-b",
-            bridge_protocol_version: "2.0-preview.65",
+            bridge_protocol_version: "2.0-preview.66",
             bridge_assembly_file_sha256: "a".repeat(64),
             bridge_module_version_id: "mvid",
             game_version: "v0.109.0",
@@ -187,6 +196,30 @@ const ledger = {
   }]
 };
 assert.deepEqual(projectLedger(ledger, now).active, ["qualification-a"]);
+const otherEnvironment = {
+  ...qualification,
+  qualification_id: "qualification-other-environment",
+  game_version: "v0.110.0",
+  game_commit: "other-commit",
+  game_main_assembly_hash: 2,
+  modset_fingerprint: "other-modset",
+  patch_digest: "other-patch",
+  environment_digest: "other-environment"
+};
+const multiEnvironment = structuredClone(ledger);
+multiEnvironment.events.push({
+  sequence: 2,
+  event_id: "event-other-environment",
+  type: "install",
+  at: "2026-07-25T00:01:00Z",
+  qualification: otherEnvironment,
+  target_qualification_id: null,
+  reason: "fixture"
+});
+assert.deepEqual(
+  projectLedger(multiEnvironment, now).active.sort(),
+  ["qualification-a", "qualification-other-environment"]
+);
 const revoked = structuredClone(ledger);
 revoked.events.push({
   sequence: 2,
@@ -200,7 +233,7 @@ revoked.events.push({
 assert.deepEqual(projectLedger(revoked, now).active, []);
 
 const inventory = {
-  protocol_version: "2.0-preview.65",
+  protocol_version: "2.0-preview.66",
   bridge: { assembly_file_sha256: "a".repeat(64), module_version_id: "mvid" },
   game: {
     version: "v0.109.0",
@@ -248,6 +281,105 @@ const candidateEvidence = buildCandidateEvidence({
   operation: contract.operation,
   negativeEvidenceIds: ["stale-action-negative"]
 });
+const fallbackInventory = {
+  ...inventory,
+  surfaces: [{
+    kind: fallbackContract.surface_kind,
+    operations: [fallbackContract.operation]
+  }],
+  qualification_system: {
+    ...inventory.qualification_system,
+    operation_contracts: [fallbackContract]
+  }
+};
+const fallbackCandidateEvidence = buildCandidateEvidence({
+  capabilities: fallbackInventory,
+  bindingAudit,
+  surfaceKind: fallbackContract.surface_kind,
+  operation: fallbackContract.operation,
+  negativeEvidenceIds: ["stale-action-negative"]
+});
+assert.equal(
+  fallbackCandidateEvidence.binding_audit.status,
+  "runtime_publication_required"
+);
+assert.equal(
+  fallbackCandidateEvidence.binding_audit.operation_binding_digest,
+  fallbackContract.contract_digest
+);
+assert.deepEqual(
+  buildQualificationPackage({
+    capabilities: fallbackInventory,
+    evidenceBundle: fallbackCandidateEvidence,
+    surfaceKind: fallbackContract.surface_kind,
+    operation: fallbackContract.operation,
+    qualificationId: "fallback-candidate-package",
+    authorityTier: "session_canary",
+    issuedAt: now,
+    expiresAt: new Date("2026-07-28T00:00:00Z")
+  }).witness_id,
+  "gateway_reported_operation_witness"
+);
+function fallbackRun(runtimeEpoch, requestId, witness) {
+  return {
+    metadata: {
+      runId: `run-${runtimeEpoch}`,
+      evidence: { provenance: "ordinary_gameplay" },
+      adapter: {
+        negotiated: {
+          bridge_runtime_instance_id: runtimeEpoch,
+          bridge_protocol_version: "2.0-preview.66",
+          bridge_assembly_file_sha256: "a".repeat(64),
+          bridge_module_version_id: "mvid",
+          game_version: "v0.109.0",
+          game_commit: "commit",
+          main_assembly_hash: 1,
+          modset_fingerprint: "modset",
+          runtime_patch_digest: "patch",
+          qualification_current_environment_digest: "environment",
+          qualification_operation_contracts: [fallbackContract]
+        }
+      }
+    },
+    decisions: [{
+      decisionId: `decision-${runtimeEpoch}`,
+      outcome: "executed_and_settled",
+      preState: {
+        normalizedState: {
+          surface: { kind: fallbackContract.surface_kind }
+        }
+      },
+      execution: {
+        action: { bridgeActionKind: fallbackContract.operation },
+        adapterResult: {
+          request_id: requestId,
+          status: "completed",
+          outcome: "confirmed",
+          events: [{ status: "completed", evidence: witness }]
+        }
+      }
+    }]
+  };
+}
+const fallbackEvidence = collectQualificationEvidence({
+  runs: [
+    fallbackRun(
+      "runtime-fallback-a",
+      "request-fallback-a",
+      "event_option_committed_and_owner_advanced"
+    ),
+    fallbackRun("runtime-fallback-b", "request-fallback-b", null)
+  ],
+  surfaceKind: fallbackContract.surface_kind,
+  operation: fallbackContract.operation,
+  witnessId: fallbackContract.witness_id,
+  negativeEvidenceIds: ["stale-action-negative"]
+});
+assert.equal(fallbackEvidence.runtime_evidence.length, 1);
+assert.equal(
+  fallbackEvidence.runtime_evidence[0].witness_id,
+  "event_option_committed_and_owner_advanced"
+);
 const candidatePackage = buildQualificationPackage({
   capabilities: inventory,
   evidenceBundle: candidateEvidence,

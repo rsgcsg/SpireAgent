@@ -18,22 +18,29 @@ third-party clients.
 
 ## Current Truth
 
-The active connector source shares `2.0-preview.65` between C# and
+The active connector source shares `2.0-preview.66` between C# and
 Re-SpireAgent; Re normalized schema is `26`. Gate 1 is closed as a bounded
 ordinary-single-player v2 connector baseline: Re and the default MCP adapter
 are v2-only, the entire Gateway `/api/v1` namespace is retired, and the final
 Neow's Fury lifecycle was completed under the recorded Preview.61 exact
 identity. Preview.63 supplied the first D3 session permission loop. Preview.64
 adds minimal runtime-bound client registration, one mutation-controller lease,
-generation fencing and command attribution. Preview.65 adds a disabled-by-
-default persistent operation qualification kernel, component impact diff,
-bounded candidate-package bootstrap and append-only lifecycle tooling.
-Preview.65 is built against and cold-loaded on the current local
-`v0.109.1|c8c577f6|-820620422` installation, but that newly updated game
-identity has no reviewed exact-environment policy. The Gateway therefore
-exposes diagnostic identity only and suppresses normal observation,
-Inspection, and every action. Exact source, loaded, and qualification evidence
-remain separated in [current status](docs/current/STATUS.md).
+generation fencing and command attribution. Preview.65 added exact
+operation-scoped persistent qualification. Preview.66 adds a non-authorizing
+multi-environment Profile index, a risk-based migration policy, exact
+candidate planning, evidence aggregation, automatic qualified-package
+assembly, and atomic qualification-store reload.
+
+The final Preview.66 Release is installed and cold-loaded on
+`v0.109.1|c8c577f6|-820620422`. One exact operation,
+`main_menu/continue_run`, completed the candidate -> two-epoch Organic
+evidence -> persistent qualification -> cold-restart recovery cycle. The
+current manifest projects 87 exact operation identities: five explicit
+high-precision contracts and 82 conservative identity/test-confirm fallbacks.
+The other 86 operations are session canaries only. This is a real automatic
+migration slice, not build-wide, all-operation, or cross-Mod qualification.
+Exact source, loaded, candidate, Organic, and persistent evidence remain
+separated in [current status](docs/current/STATUS.md).
 
 Bridge v2's safety kernel remains the current direction: one active input
 owner, opaque state-bound actions, execute-time validation, semantic completion,

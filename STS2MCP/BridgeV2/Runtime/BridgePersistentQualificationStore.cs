@@ -64,8 +64,7 @@ internal sealed class BridgePersistentQualificationStore
     private readonly IReadOnlyDictionary<string, string> _statusById;
     private readonly IReadOnlyDictionary<string, string?> _reasonById;
     private HashSet<string> _currentApplicableIds = new(StringComparer.Ordinal);
-    private readonly ConcurrentDictionary<string, string> _sessionQuarantineReasons =
-        new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, string> _sessionQuarantineReasons;
     private readonly HashSet<string> _terminalRequests = new(StringComparer.Ordinal);
     private string _currentEnvironmentDigest = "not_observed";
 
@@ -78,7 +77,8 @@ internal sealed class BridgePersistentQualificationStore
         IReadOnlyDictionary<string, BridgePersistentQualificationPackage> packages,
         IReadOnlyDictionary<string, string> activeByOperation,
         IReadOnlyDictionary<string, string> statusById,
-        IReadOnlyDictionary<string, string?> reasonById)
+        IReadOnlyDictionary<string, string?> reasonById,
+        ConcurrentDictionary<string, string>? sessionQuarantineReasons = null)
     {
         _clock = clock;
         _status = status;
@@ -89,10 +89,13 @@ internal sealed class BridgePersistentQualificationStore
         _activeByOperation = activeByOperation;
         _statusById = statusById;
         _reasonById = reasonById;
+        _sessionQuarantineReasons = sessionQuarantineReasons
+            ?? new ConcurrentDictionary<string, string>(StringComparer.Ordinal);
     }
 
     public static BridgePersistentQualificationStore Disabled(
-        Func<DateTimeOffset>? clock = null) =>
+        Func<DateTimeOffset>? clock = null,
+        ConcurrentDictionary<string, string>? sessionQuarantineReasons = null) =>
         new(
             clock ?? (() => DateTimeOffset.UtcNow),
             "not_configured",
@@ -102,15 +105,17 @@ internal sealed class BridgePersistentQualificationStore
             new Dictionary<string, BridgePersistentQualificationPackage>(),
             new Dictionary<string, string>(),
             new Dictionary<string, string>(),
-            new Dictionary<string, string?>());
+            new Dictionary<string, string?>(),
+            sessionQuarantineReasons);
 
     public static BridgePersistentQualificationStore Load(
         string? path,
-        Func<DateTimeOffset>? clock = null)
+        Func<DateTimeOffset>? clock = null,
+        ConcurrentDictionary<string, string>? sessionQuarantineReasons = null)
     {
         Func<DateTimeOffset> effectiveClock = clock ?? (() => DateTimeOffset.UtcNow);
         if (string.IsNullOrWhiteSpace(path))
-            return Disabled(effectiveClock);
+            return Disabled(effectiveClock, sessionQuarantineReasons);
         if (!File.Exists(path))
         {
             return new BridgePersistentQualificationStore(
@@ -122,7 +127,8 @@ internal sealed class BridgePersistentQualificationStore
                 new Dictionary<string, BridgePersistentQualificationPackage>(),
                 new Dictionary<string, string>(),
                 new Dictionary<string, string>(),
-                new Dictionary<string, string?>());
+                new Dictionary<string, string?>(),
+                sessionQuarantineReasons);
         }
 
         try
@@ -142,7 +148,11 @@ internal sealed class BridgePersistentQualificationStore
                 ? "Qualification ledger metadata is unsupported."
                 : null;
             if (metadataError != null)
-                return Failed(effectiveClock, metadataError, BridgeHash.Text(json));
+                return Failed(
+                    effectiveClock,
+                    metadataError,
+                    BridgeHash.Text(json),
+                    sessionQuarantineReasons: sessionQuarantineReasons);
 
             ProcessResult processed = Process(document!.Events, effectiveClock());
             if (processed.Error != null)
@@ -151,7 +161,8 @@ internal sealed class BridgePersistentQualificationStore
                     effectiveClock,
                     processed.Error,
                     BridgeHash.Text(json),
-                    document.StoreId);
+                    document.StoreId,
+                    sessionQuarantineReasons);
             }
             return new BridgePersistentQualificationStore(
                 effectiveClock,
@@ -162,7 +173,8 @@ internal sealed class BridgePersistentQualificationStore
                 processed.Packages,
                 processed.ActiveByOperation,
                 processed.StatusById,
-                processed.ReasonById);
+                processed.ReasonById,
+                sessionQuarantineReasons);
         }
         catch (Exception ex) when (
             ex is IOException or UnauthorizedAccessException or JsonException)
@@ -170,7 +182,8 @@ internal sealed class BridgePersistentQualificationStore
             return Failed(
                 effectiveClock,
                 $"Qualification ledger failed closed with {ex.GetType().Name}.",
-                "unavailable");
+                "unavailable",
+                sessionQuarantineReasons: sessionQuarantineReasons);
         }
     }
 
@@ -312,7 +325,10 @@ internal sealed class BridgePersistentQualificationStore
                     qualificationId,
                     out BridgePersistentQualificationPackage? package)
                 || _activeByOperation.GetValueOrDefault(
-                    Key(package.SurfaceKind, package.Operation))
+                    Key(
+                        package.EnvironmentDigest,
+                        package.SurfaceKind,
+                        package.Operation))
                     != qualificationId)
             {
                 return;
@@ -411,7 +427,7 @@ internal sealed class BridgePersistentQualificationStore
             {
                 BridgeOperationQualificationCatalog.LoadError
                     ?? _loadError
-                    ?? "Persistent qualifications are loaded once at Gateway startup.",
+                    ?? "Qualification ledger changes are atomically reloaded and every package is revalidated before scope publication.",
                 "A package is exact-operation authority, not evidence inheritance to another environment.",
                 "D and Re may produce evidence but cannot write or activate this store through the live API.",
                 "Unknown, expired, revoked, drifted or corrupt packages fail closed per operation."
@@ -506,7 +522,10 @@ internal sealed class BridgePersistentQualificationStore
                         return ProcessResult.Failed(error);
                     if (!packages.TryAdd(package!.QualificationId, package))
                         return ProcessResult.Failed("Qualification ID is duplicated.");
-                    string key = Key(package.SurfaceKind, package.Operation);
+                    string key = Key(
+                        package.EnvironmentDigest,
+                        package.SurfaceKind,
+                        package.Operation);
                     if (activeByOperation.TryGetValue(key, out string? previous))
                     {
                         if (package.SupersedesQualificationId != previous)
@@ -537,7 +556,10 @@ internal sealed class BridgePersistentQualificationStore
                         return ProcessResult.Failed(
                             "Revoke event targets an unknown qualification.");
                     }
-                    string key = Key(package.SurfaceKind, package.Operation);
+                    string key = Key(
+                        package.EnvironmentDigest,
+                        package.SurfaceKind,
+                        package.Operation);
                     if (activeByOperation.GetValueOrDefault(key)
                         == package.QualificationId)
                     {
@@ -559,7 +581,10 @@ internal sealed class BridgePersistentQualificationStore
                         return ProcessResult.Failed(
                             "Rollback event targets an unknown or expired qualification.");
                     }
-                    string key = Key(target.SurfaceKind, target.Operation);
+                    string key = Key(
+                        target.EnvironmentDigest,
+                        target.SurfaceKind,
+                        target.Operation);
                     if (activeByOperation.TryGetValue(key, out string? current)
                         && current != target.QualificationId)
                     {
@@ -594,21 +619,21 @@ internal sealed class BridgePersistentQualificationStore
             BridgeOperationQualificationCatalog.Describe(
                 package.SurfaceKind,
                 package.Operation);
-        if (identity == null)
-            return $"Qualification {package.QualificationId} lacks reviewed operation contract metadata.";
+        bool currentProtocol = string.Equals(
+            package.GatewayProtocol,
+            BridgeV2Contract.ProtocolVersion,
+            StringComparison.Ordinal);
         if (string.IsNullOrWhiteSpace(package.QualificationId)
             || package.Version <= 0
             || package.AuthorityTier is not ("session_canary" or "qualified")
-            || package.GatewayProtocol != BridgeV2Contract.ProtocolVersion
+            || !package.GatewayProtocol.StartsWith(
+                "2.0-preview.",
+                StringComparison.Ordinal)
             || package.GatewayAssemblySha256.Length != 64
             || string.IsNullOrWhiteSpace(package.GatewayModuleVersionId)
             || string.IsNullOrWhiteSpace(package.ModsetFingerprint)
             || string.IsNullOrWhiteSpace(package.PatchDigest)
             || string.IsNullOrWhiteSpace(package.EnvironmentDigest)
-            || package.OperationFingerprint != identity.ContractDigest
-            || package.CompletionBoundary != identity.CompletionBoundary
-            || package.WitnessId != identity.WitnessId
-            || package.RiskClass != identity.RiskClass
             || package.EvidenceBundleDigest.Length != 64
             || package.EvidenceIds.Count == 0
             || package.NegativeEvidenceIds.Count == 0
@@ -618,19 +643,34 @@ internal sealed class BridgePersistentQualificationStore
         {
             return $"Qualification {package.QualificationId} is incomplete, drifted or expired.";
         }
+        if (currentProtocol
+            && (identity == null
+                || package.OperationFingerprint != identity.ContractDigest
+                || package.CompletionBoundary != identity.CompletionBoundary
+                || package.WitnessId != identity.WitnessId
+                || package.RiskClass != identity.RiskClass))
+        {
+            return $"Qualification {package.QualificationId} lacks current reviewed operation contract metadata.";
+        }
 
         if (package.AuthorityTier == "session_canary")
         {
-            BridgeGrayPermissionCandidate? candidate =
-                BridgeGrayPermissionCandidateCatalog.Find(
-                    package.SurfaceKind,
-                    package.Operation);
-            if (candidate == null
-                || candidate.RiskClass != package.RiskClass
-                || candidate.WitnessId != package.WitnessId
-                || package.ExpiresAt - package.IssuedAt > TimeSpan.FromDays(7))
+            if (package.ExpiresAt - package.IssuedAt > TimeSpan.FromDays(7))
             {
-                return $"Qualification candidate {package.QualificationId} is not an eligible bounded gray operation.";
+                return $"Qualification candidate {package.QualificationId} is not an eligible bounded migration operation.";
+            }
+            if (currentProtocol)
+            {
+                BridgeMigrationPermissionCandidate? candidate =
+                    BridgeMigrationPermissionPolicy.Find(
+                        package.SurfaceKind,
+                        package.Operation);
+                if (candidate == null
+                    || candidate.RiskClass != package.RiskClass
+                    || candidate.WitnessId != package.WitnessId)
+                {
+                    return $"Qualification candidate {package.QualificationId} is not an eligible current migration operation.";
+                }
             }
             return null;
         }
@@ -639,7 +679,9 @@ internal sealed class BridgePersistentQualificationStore
             .Where(evidence =>
                 evidence.Outcome == "confirmed"
                 && evidence.EvidenceClass == "organic"
-                && evidence.WitnessId == package.WitnessId
+                && BridgeOperationQualificationCatalog.WitnessMatches(
+                    package.WitnessId,
+                    evidence.WitnessId)
                 && !string.IsNullOrWhiteSpace(evidence.RequestId))
             .ToArray();
         if (confirmed.Select(evidence => evidence.RuntimeEpoch)
@@ -655,7 +697,8 @@ internal sealed class BridgePersistentQualificationStore
         Func<DateTimeOffset> clock,
         string error,
         string digest,
-        string storeId = "unavailable") =>
+        string storeId = "unavailable",
+        ConcurrentDictionary<string, string>? sessionQuarantineReasons = null) =>
         new(
             clock,
             "invalid_fail_closed",
@@ -665,10 +708,14 @@ internal sealed class BridgePersistentQualificationStore
             new Dictionary<string, BridgePersistentQualificationPackage>(),
             new Dictionary<string, string>(),
             new Dictionary<string, string>(),
-            new Dictionary<string, string?>());
+            new Dictionary<string, string?>(),
+            sessionQuarantineReasons);
 
-    private static string Key(string surfaceKind, string operation) =>
-        $"{surfaceKind}\n{operation}";
+    private static string Key(
+        string environmentDigest,
+        string surfaceKind,
+        string operation) =>
+        $"{environmentDigest}\n{surfaceKind}\n{operation}";
 
     private sealed record LedgerDocument(
         int SchemaVersion,

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { isJsonObject, type JsonObject } from "../../shared/json.js";
 
-export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.65" as const;
+export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.66" as const;
 export const BRIDGE_V2_INSPECTION_KINDS = ["run_deck", "combat_piles", "shop_catalog"] as const;
 const inspectionKindSchema = z.enum(BRIDGE_V2_INSPECTION_KINDS);
 
@@ -38,7 +38,12 @@ const permissionGrantSchema = z.object({
   grant_version: z.number().int().positive(),
   current: z.boolean(),
   status: z.enum(["active", "quarantined", "expired"]),
-  mode: z.enum(["strict", "balanced_gray", "developer_gray"]),
+  mode: z.enum([
+    "strict",
+    "balanced_gray",
+    "developer_gray",
+    "migration_exploration"
+  ]),
   surface_kind: z.string().min(1),
   operation: z.string().min(1),
   tier: z.enum(["session_canary", "session_auto_approved", "none"]),
@@ -61,7 +66,12 @@ const permissionGrantSchema = z.object({
 const permissionSystemSchema = z.object({
   schema_version: z.literal(1),
   status: z.enum(["active_session_scoped", "candidate_policy_invalid_fail_closed"]),
-  mode: z.enum(["strict", "balanced_gray", "developer_gray"]),
+  mode: z.enum([
+    "strict",
+    "balanced_gray",
+    "developer_gray",
+    "migration_exploration"
+  ]),
   runtime_epoch: z.string().min(1),
   policy_id: z.string().min(1),
   policy_digest: z.string().min(1),
@@ -94,6 +104,7 @@ const persistentQualificationSchema = z.object({
     "native_commit_observed",
     "immediate_postcondition_observed",
     "continuation_handoff_observed",
+    "gateway_semantic_completion_observed",
     "transaction_settled"
   ]),
   witness_id: z.string().min(1),
@@ -126,6 +137,7 @@ const operationQualificationIdentitySchema = z.object({
     "native_commit_observed",
     "immediate_postcondition_observed",
     "continuation_handoff_observed",
+    "gateway_semantic_completion_observed",
     "transaction_settled"
   ]),
   witness_id: z.string().min(1),
