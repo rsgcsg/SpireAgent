@@ -8,9 +8,10 @@ adds reviewed registry/policy adaptation and non-authorizing exact-assembly
 audit; Preview.63 adds the Gateway-owned session permission/gray rollout loop.
 Preview.64 added local mutation-controller coordination without pretending to
 provide authentication. Preview.65 adds disabled-by-default persistent
-operation qualification and impact-diff tooling. It is source/fixture complete
-but not installed or loaded. Start with current status, not historical preview
-closeouts.
+operation qualification and impact-diff tooling. It is built, installed and
+cold-loaded, but the local game updated to `v0.109.1` and therefore remains
+diagnostic-only until a new exact-environment review. Start with current status,
+not historical preview closeouts.
 
 ## Current Documents
 

@@ -51,11 +51,11 @@ Current cross-component audits:
   first real canary/auto-approval, rollback and explicit non-claims.
 - [Gate 3 local control coordination closeout](../../STS2MCP/docs/bridge-v2/GATE3_LOCAL_CONTROL_COORDINATION_CLOSEOUT_2026-07-25.md):
   Preview.64's deliberately minimal client registration, single-writer lease,
-  command attribution, overlap audit and pending cold-load evidence.
+  command attribution, overlap audit, and Preview.65 loaded two-client check.
 - [Preview 65 persistent qualification and adaptation closeout](../../STS2MCP/docs/bridge-v2/PREVIEW_65_PERSISTENT_QUALIFICATION_AND_ADAPTATION_CLOSEOUT_2026-07-25.md):
   exact operation identities, candidate-versus-qualified package tiers,
-  append-only lifecycle, impact tooling, fail-closed boundaries and pending
-  loaded-runtime evidence.
+  append-only lifecycle, impact tooling, loaded identity, and current
+  `v0.109.1` fail-closed evidence boundary.
 
 Component-owned truth:
 

@@ -78,28 +78,59 @@ only a reviewed low-risk operation; it never becomes qualified by itself.
 The first non-menu gray candidate is only
 `shop_room/open_shop_inventory`. It cannot authorize purchases, removal,
 leaving the shop, or another shop operation. Gateway tests (`153`), Re tests
-(`179`), Re typecheck and qualification fixtures pass. Preview.65 Release
-builds with zero warnings as:
+(`179`), Re typecheck/build, Python syntax, and qualification fixtures pass.
+Preview.65 rebuilt against the current local `v0.109.1` installation with zero
+warnings as:
 
 ```text
-SHA  11b6b014965a9269bd572bd04c3cd8a7575541e8bc6439cf054dc7b1b264164e
-MVID 4e870cd2-3e35-4db5-8a1b-7c7a41ca631f
+SHA  599a126d03e314ce6f8bd58ae47fb7af24e208ab02e008f8b593e33d5b842341
+MVID c0bfde51-1f4b-44af-a1b1-2a884cdc34ce
 ```
 
-Preview.65 has no installed, loaded, canary, Organic, persistent,
-cross-version or cross-Mod evidence yet. See the
+The earlier Preview.65 SHA `11b6b0149...164e`, MVID
+`4e870cd2-3e35-4db5-8a1b-7c7a41ca631f`, was built against the preceding game
+assembly and is not the current installed artifact.
+
+The current Preview.65 artifact is built, installed, Steam cold-loaded, and
+strictly decoded by Re:
+
+```text
+SHA      599a126d03e314ce6f8bd58ae47fb7af24e208ab02e008f8b593e33d5b842341
+MVID     c0bfde51-1f4b-44af-a1b1-2a884cdc34ce
+runtime  0b42511dd71f4c40883830de8ef3a89c
+game     v0.109.1|c8c577f6|-820620422
+Modset   57d2e880e45244fbd55422096ba3f218de84e79596d9097a08637a3cbbd54a88
+Patch    clean_known_owners
+Patch digest ee979e2b877b772adaa28409f474037a832b9ccaf22037afde23a527bb13c587
+```
+
+Built, installed, and loaded SHA/MVID match. The exact Bridge-only Modset is
+visible and the qualification store is empty:
+`persistent_authority_enabled=false`,
+`session_canary_candidate_enabled=false`, with zero applicable packages. The
+operation catalog loads successfully. The current game identity is
+`untested`, so the embedded policy correctly disables normal observation,
+Inspection, and every action. Re decodes the same identity as
+`unknown + unsupported + authority none`; sampled v1 routes remain `410 Gone`.
+
+A loaded two-client coordination check registered two descriptive clients,
+allowed A to acquire generation 2, rejected B with HTTP `409` and
+`controller_lease_held`, released A, and returned to no active controller.
+This is loaded coordination evidence only. It does not qualify a game action.
+
+A non-authorizing exact-assembly audit recorded `sts2.dll` SHA
+`2cb39e2eee651743829abcc0df4dd9cd7e65f46287c7ca264481115c9602382f`,
+MVID `208f08b8-d5f5-47f8-9e96-d3a4299ee709`. All 13 registered combat-pile
+sources remain static matches and Tutor remains the target-player
+`code_required` holdout. The existing `v0.109.0` scenario correctly failed on
+`game_identity` and `game_assembly_identity`. The audit has
+`authorization_effect=none` and `qualification_effect=none`.
+
+Preview.65 still has no current-game action canary, Organic, persistent,
+cross-version, or cross-Mod qualification evidence. See the
 [Preview 65 closeout](PREVIEW_65_PERSISTENT_QUALIFICATION_AND_ADAPTATION_CLOSEOUT_2026-07-25.md).
 
-Gateway tests (`142`), Re tests (`175`), Re typecheck/build, Python MCP syntax
-checking and the exact-game Release build pass for Preview.64 source. The
-Release SHA is
-`84d812ac7fba2a7e0169a7afb800b8d69e967580a941a43c037e38a3c3cec494`.
-The artifact is not installed or loaded because the game still has Preview.63
-loaded. Therefore Preview.64 currently has no loaded MVID/runtime or Organic
-coordination evidence. See the
-[Gate 3 closeout](GATE3_LOCAL_CONTROL_COORDINATION_CLOSEOUT_2026-07-25.md).
-
-The currently loaded artifact remains Preview.63:
+The historical Preview.63 exact-policy artifact was:
 
 ```text
 SHA      d05b0580917c5b60acc908ec2575d2d0f8e59778da8c2379cebc0d5e72c90aa0
@@ -115,7 +146,7 @@ Patch status clean_known_owners
 Patch digest ee979e2b877b772adaa28409f474037a832b9ccaf22037afde23a527bb13c587
 ```
 
-Built, installed and loaded SHA matched. Re strict inspection decoded the
+Its built, installed and loaded SHA matched. Re strict inspection decoded the
 protocol, Bridge/game/Modset/Patch identity, policy provenance and session
 grant ledger. An operator-directed Re production-path canary executed
 advertised `main_menu/continue_run` once, observed the Gateway semantic
@@ -129,6 +160,8 @@ cross-runtime inheritance, broad automatic permission, proof that
 `open_singleplayer` completed, or permission for any non-navigation operation.
 The detailed state machine, exact binding and rollback boundary are in the
 [D3 permission closeout](D3_PERMISSION_GRAY_ROLLOUT_CLOSEOUT_2026-07-25.md).
+It remains historical evidence bound to Preview.63 and `v0.109.0`; it does not
+authorize Preview.65 on `v0.109.1`.
 
 The predecessor Preview.62 artifact
 `d66f5986f8216104fec76412c4b46b4c863076d0c8c7c5870a66fdb9f0c5a892`,
@@ -186,12 +219,12 @@ compatibility only. The prior Preview.59 Dredge journey does not transfer Gate
    the non-authorizing exact-assembly compatibility audit on each exact build.
 3. Do not add a non-navigation gray candidate until independent evidence and
    candidate-policy review exist. Keep Tutor/unknown origins fail closed.
-4. Close the game, install the built Preview.65 Release, cold-start through Steam,
-   verify exact
-   loaded SHA/MVID/runtime identity, then exercise one Re advertised-action
-   command and one competing-client rejection. Then separately exercise the
-   bounded shop-open candidate before collecting a second runtime epoch. None
-   of these steps alone is persistent qualification.
+4. Preview.65 install, cold-load, Re strict decode, and the competing-client
+   rejection are complete. The newly updated `v0.109.1` game has no reviewed
+   exact-environment policy, so no advertised-action command or shop candidate
+   may run. Audit the exact new source/private bindings and UI lifecycles before
+   adding any observation or action scope. Compilation and a clean Modset do
+   not transfer `v0.109.0` permission.
 
 The current inventory and first Gate 1 runtime repair are recorded in
 [Gate 1 Operation And Journey Inventory](GATE1_OPERATION_AND_JOURNEY_INVENTORY.md).
@@ -331,10 +364,11 @@ a current v2 permission claim.
 
 ## Next High-Value Work
 
-Install and cold-load Preview.64 before any further runtime claim. After the
-bounded coordination canary, Gate 2 may advance through non-authorizing
-transaction-correlation experiments and visible-information closure. Newly
-registered combat-pile sources, Quasar, Knowledge Demon, Charge, Seance, and
-Precise Scissors remain evidence debt rather than Gate 1 blockers. Do not
-weaken state binding, retry unknown outcomes, restore v1, or convert
-discovery/source/build evidence into qualification.
+Audit `v0.109.1|c8c577f6|-820620422` before any further runtime permission
+claim. Compare exact source/private bindings and player-visible lifecycles,
+then create a reviewed exact-environment policy only for proven scopes.
+Gate 2 remains paused while this source-truth blocker is open. Newly registered
+combat-pile sources, Quasar, Knowledge Demon, Charge, Seance, and Precise
+Scissors remain evidence debt rather than Gate 1 blockers. Do not weaken state
+binding, retry unknown outcomes, restore v1, or convert
+discovery/source/build/loaded evidence into qualification.

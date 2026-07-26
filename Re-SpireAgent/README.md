@@ -9,7 +9,10 @@
 > `continue_run` session canary/auto-approval pass on its exact recorded
 > identity. Preview.64 added minimal local mutation coordination. Preview.65
 > source adds strict decoding for operation identity and persistent
-> qualification state; it is not installed or loaded yet.
+> qualification state. Preview.65 is now installed and cold-loaded on local
+> game `v0.109.1`, which is intentionally diagnostic-only because it has no
+> reviewed exact-environment policy. Re decodes that state as unsupported and
+> receives no actions.
 
 > Product-boundary warning: direct Re-to-Gateway REST and `.env.local` provider
 > keys are developer workflows, not the target consumer architecture. The
@@ -29,8 +32,10 @@ waits for the Bridge command lifecycle, and records the complete evidence.
 
 RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, shadow/live modes, policy promotion, or the old project's phase machinery. Its job is to make one decision path correct and auditable.
 
-Re's current strict client contract is Bridge `2.0-preview.65` on exact game
-identity `v0.109.0|c12f634d|-1639417500`. The separate
+Re's current strict client contract is Bridge `2.0-preview.65`. The recorded
+action-qualified game identity remains
+`v0.109.0|c12f634d|-1639417500`; the currently loaded
+`v0.109.1|c8c577f6|-820620422` identity is diagnostic-only. The separate
 `release_declared_main_assembly_hash=-840572606` is diagnostic provenance, not
 permission authority. Re requires capabilities and every
 state/bundle/Inspection to agree on protocol, game identity, exact Modset

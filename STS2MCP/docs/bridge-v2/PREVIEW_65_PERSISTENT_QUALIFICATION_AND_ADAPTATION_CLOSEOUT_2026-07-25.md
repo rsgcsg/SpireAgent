@@ -3,9 +3,10 @@
 ## Verdict
 
 Preview 65 is a source-complete, fixture-tested implementation of an
-operation-scoped qualification kernel. It is **not** installed, loaded,
-Organic-qualified, cross-version-qualified, or cross-Mod-qualified at the time
-of this closeout.
+operation-scoped qualification kernel. On 2026-07-26 it was rebuilt against
+the current local game, installed, Steam cold-loaded, and strictly decoded by
+Re. It is **not** action-canary-qualified, Organic-qualified,
+persistent-qualified, cross-version-qualified, or cross-Mod-qualified.
 
 The implementation closes the restart-loss problem without serializing D3
 session grants:
@@ -165,19 +166,60 @@ canary has been run.
 
 ## Validation
 
-At source closeout:
+At final local verification:
 
 - Gateway C# tests: `153` passed;
 - Re tests: `179` passed;
 - Re typecheck: passed;
+- Re production build: passed;
+- Python MCP syntax check: passed;
 - qualification ledger fixtures: passed;
-- exact-game Release build: passed with zero warnings;
+- current-install Release build: passed with zero warnings;
 - built SHA:
-  `11b6b014965a9269bd572bd04c3cd8a7575541e8bc6439cf054dc7b1b264164e`;
-- built MVID: `4e870cd2-3e35-4db5-8a1b-7c7a41ca631f`.
+  `599a126d03e314ce6f8bd58ae47fb7af24e208ab02e008f8b593e33d5b842341`;
+- built MVID: `c0bfde51-1f4b-44af-a1b1-2a884cdc34ce`.
 
-Installed identity, loaded identity and real canaries remain absent because the
-live game still loads Preview 63.
+The earlier SHA `11b6b0149...164e` / MVID
+`4e870cd2-3e35-4db5-8a1b-7c7a41ca631f` was built against the preceding game
+assembly. It was briefly installed and loaded only to discover that Steam had
+updated the game. The final Release was then rebuilt against the new exact
+installation and reinstalled.
+
+## Loaded Runtime Evidence
+
+```text
+protocol  2.0-preview.65
+SHA       599a126d03e314ce6f8bd58ae47fb7af24e208ab02e008f8b593e33d5b842341
+MVID      c0bfde51-1f4b-44af-a1b1-2a884cdc34ce
+runtime   0b42511dd71f4c40883830de8ef3a89c
+game      v0.109.1|c8c577f6|-820620422
+Modset    57d2e880e45244fbd55422096ba3f218de84e79596d9097a08637a3cbbd54a88
+Patch     clean_known_owners
+Patch     ee979e2b877b772adaa28409f474037a832b9ccaf22037afde23a527bb13c587
+```
+
+Release, installed, and loaded SHA/MVID match. The operation catalog loads, the
+local store is empty, and both authority flags are false. Re strictly decodes
+the qualification and coordination contracts.
+
+The game identity is newer than the reviewed embedded policy. Compatibility
+is therefore `untested`, adaptation is `diagnostic_only`, and normal
+observation, Inspection, and all actions are disabled. State projects
+`unknown + unsupported + authority none`; this is expected fail-closed
+behavior, not current-build qualification.
+
+A non-game two-client coordination check passed: A acquired the sole lease, B
+received HTTP `409 controller_lease_held`, A released it, and the final
+controller snapshot had no active controller. Sampled v1 routes returned
+`410 Gone`. No action canary or qualification package was installed.
+
+The non-authorizing exact-assembly audit sees `sts2.dll` SHA
+`2cb39e2eee651743829abcc0df4dd9cd7e65f46287c7ca264481115c9602382f`,
+MVID `208f08b8-d5f5-47f8-9e96-d3a4299ee709`. Its 13 registered combat-pile
+sources remain static matches and Tutor remains `code_required` because its
+owner is target-player-bound. The old exact `v0.109.0` scenario rejects this
+report on game and assembly identity, so the audit exits nonzero as designed.
+It has no authorization or qualification effect.
 
 ## Explicit Non-Claims
 

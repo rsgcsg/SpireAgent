@@ -39,9 +39,11 @@ Tutor holdout.
 
 ## Gate 2: Player-Visible Information Closure
 
-Status: **paused while Preview.65 persistent operation qualification is
-source-complete but not yet loaded or runtime-validated. The first D3
-operation-scoped permission loop remains closed.**
+Status: **paused while the newly updated local game
+`v0.109.1|c8c577f6|-820620422` remains diagnostic-only. Preview.65 persistent
+operation qualification is source/fixture/build complete and is now
+cold-loaded; the first D3 operation-scoped permission loop remains closed on
+its recorded older exact environment.**
 
 Close decision-relevant visible-information gaps using shared state, context,
 surface, preview, and read-only inspection. Do not expose hidden RNG, draw
@@ -64,12 +66,16 @@ recorded-evidence assertion has verified the exact
 candidate and qualified packages, exact impact diff, evidence collection and
 append-only lifecycle tooling. D evidence remains non-authorizing; only the
 Gateway can issue, enforce, promote or quarantine runtime authority. Resume
-Gate 2 only after Preview.65 cold-load and bounded qualification canaries.
+Gate 2 only after the new game identity receives an independent source/binding
+audit, reviewed exact-environment policy, and bounded qualification canary.
+Loaded identity and compilation alone are insufficient.
 
 ## Gate 3: Local Control Coordination Alpha
 
-Status: **Preview.64 source implementation, tests and Release build complete;
-exact cold-load and bounded runtime canary pending.**
+Status: **Preview.64 behavior is included in the loaded Preview.65 artifact.
+A bounded two-client check confirmed single-writer acquisition, competing
+client rejection, release, and no remaining active controller. No game action
+was authorized by this coordination test.**
 
 Coordinate local writers without pretending to solve product authentication:
 descriptive client registration, one Gateway-enforced mutation-controller

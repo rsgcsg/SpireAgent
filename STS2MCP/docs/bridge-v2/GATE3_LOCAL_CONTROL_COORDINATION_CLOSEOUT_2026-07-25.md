@@ -1,7 +1,9 @@
 # Gate 3 Local Control Coordination Alpha
 
-Status: **source implemented and mechanically closed; exact cold-load and
-Organic command canary pending because the game was running during build.**
+Status: **source implemented and mechanically closed; loaded two-client
+coordination conflict verified inside Preview.65. A game-command attribution
+canary is blocked because the newly updated `v0.109.1` identity is correctly
+diagnostic-only.**
 
 ## Decision
 
@@ -133,7 +135,7 @@ Covered cases include:
 
 ## Runtime Evidence Boundary
 
-At build time the local game process still loaded Preview.63:
+The original build-time boundary was Preview.63:
 
 ```text
 protocol 2.0-preview.63
@@ -147,20 +149,31 @@ The Preview.64 Release DLL was built as SHA
 but not installed over a running game. The installed and loaded Preview.63 DLL
 remain SHA
 `d05b0580917c5b60acc908ec2575d2d0f8e59778da8c2379cebc0d5e72c90aa0`.
-Therefore this document does not claim installed SHA/MVID, loaded identity,
-controller conflict canary or Organic action qualification for Preview.64.
+That standalone Preview.64 artifact was never installed. Its behavior is now
+loaded as part of Preview.65:
+
+```text
+protocol 2.0-preview.65
+SHA      599a126d03e314ce6f8bd58ae47fb7af24e208ab02e008f8b593e33d5b842341
+MVID     c0bfde51-1f4b-44af-a1b1-2a884cdc34ce
+runtime  0b42511dd71f4c40883830de8ef3a89c
+game     v0.109.1|c8c577f6|-820620422
+Modset   57d2e880e45244fbd55422096ba3f218de84e79596d9097a08637a3cbbd54a88
+```
+
+A bounded wire test registered two clients, let A acquire controller
+generation 2, rejected B with HTTP `409 controller_lease_held`, released A,
+and observed no active controller afterward. This proves loaded coordination,
+not action authority or Organic command completion. The new game identity has
+no reviewed exact policy, so a game-command attribution canary would require
+an unjustified permission expansion and was not run.
 
 ## Remaining Gate 3 Work
 
-After the game is closed:
-
-1. install the Preview.64 Release DLL and manifest;
-2. cold-start through Steam;
-3. verify built, installed and loaded SHA/MVID plus exact game/Modset;
-4. register two bounded test clients and prove the second cannot mutate;
-5. run one Re advertised-action journey and verify command attribution,
-   completion, successor state and release;
-6. update current status with exact runtime evidence.
+The remaining Gate 3 evidence is one Re advertised-action journey that verifies
+command attribution, completion, successor state, and release. It must wait
+for `v0.109.1` to receive a reviewed exact-environment policy; coordination
+must not be used as a reason to bypass the version gate.
 
 Product authentication, secret storage, plugin isolation and IPC transport are
 separate product decisions. They should be implemented only when an actual

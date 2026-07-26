@@ -23,12 +23,13 @@ adds descriptive client registration, one mutation-controller lease,
 generation fencing and command attribution. Preview.65 adds an embedded
 operation-identity catalog, exact-environment persistent qualification ledger,
 short-lived candidate packages, qualified packages, local quarantine, and
-non-authorizing qualification tooling. The final
-Neow's Fury runtime seal remains attributed to Preview.61; new Preview.62
-registry entries are not automatically Organic-qualified. Preview.63 remains
-the locally loaded exact Bridge-only environment; Preview.65 source, fixture
-checks and Release build are complete but installation and cold-load remain
-pending. Exact evidence is recorded in
+non-authorizing qualification tooling. The final Neow's Fury runtime seal
+remains attributed to Preview.61; new Preview.62 registry entries are not
+automatically Organic-qualified. Preview.65 is now built, installed, and
+cold-loaded against the local `v0.109.1` installation. That new game identity
+has no reviewed exact-environment policy, so it is diagnostic-only with no
+normal observation, Inspection, or action authority. Exact evidence is
+recorded in
 [current status](docs/bridge-v2/CURRENT_STATUS.md).
 
 > Product security warning: the current HTTP listener is a developer preview.
@@ -39,9 +40,12 @@ pending. Exact evidence is recorded in
 > boundary. Do not represent this as a consumer-safe Workshop product; see the
 > [productization architecture audit](../docs/current/audits/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md).
 
-- Current source-qualified exact game binding: Slay the Spire 2
+- Current action-qualified historical game binding: Slay the Spire 2
   `v0.109.0|c12f634d|-1639417500`. The separate release declaration
   `-840572606` is retained for diagnostics but cannot authorize actions.
+- Current loaded game identity:
+  `v0.109.1|c8c577f6|-820620422`. It is `untested` and diagnostic-only until an
+  independent source/binding and Organic review establishes new scopes.
 - A matching version/commit with a different main-assembly hash remains
   untested and has no v2 action or Inspection authority. Check
   [Bridge v2 current status](docs/bridge-v2/CURRENT_STATUS.md) before treating
@@ -168,7 +172,7 @@ npm run check:connector-adaptation
 npm run audit:connector-compatibility
 ```
 
-The solution currently contains 142 pure contract/runtime/coordination tests
+The solution currently contains 153 pure contract/runtime/coordination tests
 covering stable state identity, entity identity, stale-state rejection,
 idempotent request IDs, completion observation, timeout-as-unknown, retired-v1
 routing, and JSON action shape.

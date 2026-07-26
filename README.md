@@ -27,8 +27,12 @@ identity. Preview.63 supplied the first D3 session permission loop. Preview.64
 adds minimal runtime-bound client registration, one mutation-controller lease,
 generation fencing and command attribution. Preview.65 adds a disabled-by-
 default persistent operation qualification kernel, component impact diff,
-bounded candidate-package bootstrap and append-only lifecycle tooling. The
-local running game still loads Preview.63; exact source and loaded identities
+bounded candidate-package bootstrap and append-only lifecycle tooling.
+Preview.65 is built against and cold-loaded on the current local
+`v0.109.1|c8c577f6|-820620422` installation, but that newly updated game
+identity has no reviewed exact-environment policy. The Gateway therefore
+exposes diagnostic identity only and suppresses normal observation,
+Inspection, and every action. Exact source, loaded, and qualification evidence
 remain separated in [current status](docs/current/STATUS.md).
 
 Bridge v2's safety kernel remains the current direction: one active input

@@ -5,7 +5,19 @@
 > `../STS2MCP/docs/bridge-v2/CURRENT_STATUS.md`. Older identity and mode claims
 > below are preserved as dated evidence and must not override those documents.
 
-Status update 2026-07-25 (latest): source contract is `2.0-preview.65`; Re
+Status update 2026-07-26 (latest): source contract is `2.0-preview.65`; Re
+normalized schema is `26`. Preview.65 was rebuilt against, installed on, and
+Steam cold-loaded with game `v0.109.1|c8c577f6|-820620422` as SHA
+`599a126d...2341`, MVID `c0bfde51-1f4b-44af-a1b1-2a884cdc34ce`, runtime
+`0b42511d...a89c`, exact Bridge-only Modset `57d2e880...4a88`. Re strict
+inspection decodes the full identity, qualification, and coordination
+contracts. The qualification store is empty and both persistent/candidate
+authority flags are false. Because `v0.109.1` has no reviewed exact policy,
+normal observation, Inspection, and every action fail closed. A non-game
+two-client test confirmed acquire/conflict/release; v1 probes remain `410`.
+No current-game action canary or qualification was claimed.
+
+Earlier status update 2026-07-25: source contract is `2.0-preview.65`; Re
 normalized schema is `26`. Preview.65 adds strict decoding of the Gateway-owned
 operation identity catalog, persistent qualification projection, candidate
 canary status and exact applicable qualified package. Re remains a consumer:

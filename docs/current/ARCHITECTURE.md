@@ -106,7 +106,10 @@ remain audit evidence. See the
 The Gateway and Re share the mechanically checked `2.0-preview.65` source
 contract. Gate 1 establishes a bounded v2 connector baseline: Re and the
 default MCP adapter are v2-only, and the current-source Gateway v1 HTTP surface
-is retired.
+is retired. The loaded Preview.65 artifact currently sees game
+`v0.109.1|c8c577f6|-820620422`, which is outside the reviewed exact policy.
+That environment is diagnostic-only: loading, compiling, or matching a
+Bridge-only Modset does not authorize observation, Inspection, or actions.
 Historical v1 JSONL remains replay-readable as stored evidence, but no v1
 sidecar may contribute live facts or action authority. The final Preview.61
 Neow's Fury lifecycle supplied the Gate 1 runtime seal. Preview.62 source,
