@@ -8,10 +8,10 @@ adds reviewed registry/policy adaptation and non-authorizing exact-assembly
 audit; Preview.63 adds the Gateway-owned session permission/gray rollout loop.
 Preview.64 added local mutation-controller coordination without pretending to
 provide authentication. Preview.65 adds disabled-by-default persistent
-operation qualification and impact-diff tooling. It is built, installed and
-cold-loaded, but the local game updated to `v0.109.1` and therefore remains
-diagnostic-only until a new exact-environment review. Start with current status,
-not historical preview closeouts.
+operation qualification and impact-diff tooling. The local update to
+`v0.109.1` has now qualified two exact main-menu operations through real
+two-epoch evidence and restart revalidation; it did not qualify the whole
+build. Start with current status, not historical preview closeouts.
 
 ## Current Documents
 
@@ -27,6 +27,7 @@ not historical preview closeouts.
 - [D3 permission and gray rollout closeout](D3_PERMISSION_GRAY_ROLLOUT_CLOSEOUT_2026-07-25.md)
 - [Gate 3 local control coordination closeout](GATE3_LOCAL_CONTROL_COORDINATION_CLOSEOUT_2026-07-25.md)
 - [Preview 65 persistent qualification and adaptation closeout](PREVIEW_65_PERSISTENT_QUALIFICATION_AND_ADAPTATION_CLOSEOUT_2026-07-25.md)
+- [Preview 65 v0.109.1 requalification closeout](PREVIEW_65_V01091_REQUALIFICATION_CLOSEOUT_2026-07-26.md)
 - [Real connector architecture audit and migration plan](REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md)
 - [Protocol](PROTOCOL.md)
 - [Observation policy](OBSERVATION_POLICY.md)

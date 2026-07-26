@@ -154,8 +154,8 @@ for (const candidate of grayCandidates.candidates) {
     `${key} must remain below the reviewed exact-environment canary ceiling`
   );
   assert(
-    candidate.risk_class === "reversible_navigation",
-    `${key} is not in the first low-risk reversible gray class`
+    ["reversible_navigation", "progression"].includes(candidate.risk_class),
+    `${key} has an unsupported gray risk class`
   );
   assert(
     candidate.minimum_successes === 1,
@@ -177,6 +177,13 @@ for (const candidate of grayCandidates.candidates) {
         ["balanced_gray", "developer_gray"].includes(mode)),
     `${key} has an unsupported gray mode`
   );
+  if (candidate.risk_class === "progression") {
+    assert(
+      candidate.eligible_modes.length === 1
+        && candidate.eligible_modes[0] === "developer_gray",
+      `${key} progression candidate must remain developer_gray-only`
+    );
+  }
   assert(
     policy.environments.some((environment) =>
       environment.canary_surface_kinds.includes(candidate.surface_kind)),

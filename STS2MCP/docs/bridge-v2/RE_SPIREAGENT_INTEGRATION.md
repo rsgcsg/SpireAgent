@@ -69,6 +69,13 @@ It does not install, approve, revoke, roll back, or persist packages. A
 `session_canary` package only makes the exact operation eligible for the
 Gateway's existing volatile canary state machine.
 
+Re accepts mixed operation tiers on one Surface. For example,
+`main_menu/open_singleplayer` may be persistent-qualified while
+`main_menu/continue_run` is session-canary. The Surface support tier is only a
+coarse projection; Re validates every advertised action against the exact
+operation scope and unique current package or grant. No sibling authority is
+inferred.
+
 Preview.63 keeps the permission decision and enforcement in the Gateway. Re
 requires state and capabilities to agree on the stable
 `surface + operation + tier` authorization set, while independently validating

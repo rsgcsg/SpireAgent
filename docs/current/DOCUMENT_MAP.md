@@ -55,7 +55,11 @@ Current cross-component audits:
 - [Preview 65 persistent qualification and adaptation closeout](../../STS2MCP/docs/bridge-v2/PREVIEW_65_PERSISTENT_QUALIFICATION_AND_ADAPTATION_CLOSEOUT_2026-07-25.md):
   exact operation identities, candidate-versus-qualified package tiers,
   append-only lifecycle, impact tooling, loaded identity, and current
-  `v0.109.1` fail-closed evidence boundary.
+  qualification architecture.
+- [Preview 65 v0.109.1 requalification closeout](../../STS2MCP/docs/bridge-v2/PREVIEW_65_V01091_REQUALIFICATION_CLOSEOUT_2026-07-26.md):
+  exact second-environment binding audit, two real persistent operation
+  qualifications, restart recovery, lifecycle failures, and remaining
+  fail-closed boundaries.
 
 Component-owned truth:
 

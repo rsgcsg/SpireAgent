@@ -37,6 +37,10 @@ function digest(value) {
     .digest("hex");
 }
 
+function textDigest(value) {
+  return createHash("sha256").update(value).digest("hex");
+}
+
 function operationKey(value) {
   return `${value.surface_kind}\u0000${value.operation}`;
 }
@@ -470,12 +474,27 @@ export function buildQualificationPackage({
       || !capabilities?.game?.modset?.fingerprint) {
     throw new Error("Capabilities lack exact qualification identity");
   }
-  if (authorityTier === "qualified") {
-    const expected = expectedEvidenceEnvironment(capabilities, contract);
-    if (!evidenceBundle?.evidence_environment
-        || digest(evidenceBundle.evidence_environment) !== digest(expected)) {
+  const expected = expectedEvidenceEnvironment(capabilities, contract);
+  if (!evidenceBundle?.evidence_environment
+      || digest(evidenceBundle.evidence_environment) !== digest(expected)) {
+    throw new Error(
+      "Evidence does not match the exact capability environment and operation contract"
+    );
+  }
+  if (authorityTier === "session_canary") {
+    const audit = evidenceBundle?.binding_audit;
+    if (audit?.status !== "reviewed_binding_match"
+        || !/^[a-f0-9]{64}$/iu.test(audit?.report_digest ?? "")
+        || !/^[a-f0-9]{64}$/iu.test(audit?.operation_binding_digest ?? "")
+        || !/^[a-f0-9]{64}$/iu.test(audit?.game_assembly_sha256 ?? "")
+        || !/^[a-f0-9-]{36}$/iu.test(audit?.game_assembly_mvid ?? "")
+        || audit?.game_version !== capabilities.game.version
+        || audit?.game_commit?.toLowerCase()
+          !== capabilities.game.commit?.toLowerCase()
+        || audit?.release_declared_main_assembly_hash
+          !== capabilities.game.release_declared_main_assembly_hash) {
       throw new Error(
-        "Qualified evidence does not match the exact capability environment and operation contract"
+        "Session canary evidence requires an exact reviewed operation binding audit"
       );
     }
   }
@@ -510,6 +529,72 @@ export function buildQualificationPackage({
   const errors = validateQualificationPackage(result, issuedAt);
   if (errors.length > 0) throw new Error(errors.join("; "));
   return result;
+}
+
+export function buildCandidateEvidence({
+  capabilities,
+  bindingAudit,
+  surfaceKind,
+  operation,
+  negativeEvidenceIds,
+  additionalEvidenceIds = []
+}) {
+  const contract = capabilities?.qualification_system?.operation_contracts?.find(
+    (entry) => entry.surface_kind === surfaceKind && entry.operation === operation
+  );
+  const audited = bindingAudit?.operations?.find(
+    (entry) => entry.surface_kind === surfaceKind && entry.operation === operation
+  );
+  if (!contract) {
+    throw new Error(`${surfaceKind}/${operation} has no reviewed operation contract`);
+  }
+  if (audited?.status !== "reviewed_binding_match") {
+    throw new Error(`${surfaceKind}/${operation} lacks a matching binding audit`);
+  }
+  if (bindingAudit?.authorization_effect !== "none"
+      || bindingAudit?.qualification_effect !== "none"
+      || bindingAudit?.release?.version !== capabilities?.game?.version
+      || bindingAudit?.release?.commit?.toLowerCase()
+        !== capabilities?.game?.commit?.toLowerCase()
+      || bindingAudit?.release?.main_assembly_hash
+        !== capabilities?.game?.release_declared_main_assembly_hash
+      || !/^[a-f0-9]{64}$/iu.test(bindingAudit?.game_assembly?.sha256 ?? "")
+      || !/^[a-f0-9-]{36}$/iu.test(
+        bindingAudit?.game_assembly?.module_version_id ?? ""
+      )) {
+    throw new Error("Binding audit does not match the exact capability game release");
+  }
+  if (!Array.isArray(negativeEvidenceIds) || negativeEvidenceIds.length === 0) {
+    throw new Error("At least one negative evidence id is required");
+  }
+  return {
+    schema_version: 1,
+    surface_kind: surfaceKind,
+    operation,
+    witness_id: contract.witness_id,
+    evidence_environment: expectedEvidenceEnvironment(capabilities, contract),
+    binding_audit: {
+      status: audited.status,
+      report_digest: digest(bindingAudit),
+      manifest_id: bindingAudit.manifest_id,
+      manifest_digest: bindingAudit.manifest_digest,
+      game_version: bindingAudit.release.version,
+      game_commit: bindingAudit.release.commit,
+      release_declared_main_assembly_hash:
+        bindingAudit.release.main_assembly_hash,
+      game_assembly_sha256: bindingAudit.game_assembly.sha256,
+      game_assembly_mvid: bindingAudit.game_assembly.module_version_id,
+      operation_binding_digest: audited.binding_digest
+    },
+    evidence_ids: [...new Set([
+      `binding-audit:${bindingAudit.manifest_id}:${audited.binding_digest}`,
+      ...additionalEvidenceIds
+    ])],
+    negative_evidence_ids: [...new Set(negativeEvidenceIds)],
+    runtime_evidence: [],
+    runtime_epoch_count: 0,
+    authorization_effect: "none"
+  };
 }
 
 export function collectQualificationEvidence({
@@ -599,11 +684,12 @@ async function readRunDirectory(path) {
 async function main(argv) {
   const { command, options } = parseArgs(argv);
   if (command === "inspect") {
-    const ledger = await readJson(options.store);
+    const rawLedger = await readFile(options.store, "utf8");
+    const ledger = JSON.parse(rawLedger);
     const projection = projectLedger(ledger);
     console.log(JSON.stringify({
       store_id: ledger.store_id,
-      store_digest: digest(ledger),
+      store_digest: textDigest(rawLedger),
       ...projection
     }, null, 2));
     if (projection.errors.length > 0) process.exitCode = 2;
@@ -683,6 +769,24 @@ async function main(argv) {
     }, null, 2));
     return;
   }
+  if (command === "seed-candidate") {
+    const bundle = buildCandidateEvidence({
+      capabilities: await readJson(options.capabilities),
+      bindingAudit: await readJson(options["binding-audit"]),
+      surfaceKind: options.surface,
+      operation: options.operation,
+      negativeEvidenceIds: options.negative.split(",").filter(Boolean),
+      additionalEvidenceIds: (options.evidence ?? "").split(",").filter(Boolean)
+    });
+    await writeJsonAtomic(options.out, bundle);
+    console.log(JSON.stringify({
+      status: "candidate_evidence_seeded_not_authorized",
+      output: options.out,
+      binding_audit: bundle.binding_audit,
+      authorization_effect: "none"
+    }, null, 2));
+    return;
+  }
   if (command === "collect") {
     const runPaths = options.runs.split(",").filter(Boolean);
     const bundle = collectQualificationEvidence({
@@ -721,7 +825,7 @@ async function main(argv) {
   }
   throw new Error(
     "Usage: connector-qualification-ledger.mjs "
-      + "<inspect|dry-run|collect|assemble|install|revoke|rollback|diff|capture> [options]"
+      + "<inspect|dry-run|collect|seed-candidate|assemble|install|revoke|rollback|diff|capture> [options]"
   );
 }
 

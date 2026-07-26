@@ -27,6 +27,13 @@ installs or activates one. Execution still requires the exact advertised scope
 and execute-time validation. Validated failure or Witness mismatch immediately
 quarantines the operation for the runtime.
 
+Qualification is operation-scoped, not Surface-wide. One Surface may contain
+a persistent-qualified operation and a session-canary sibling at the same
+time. Surface tier lists are coarse highest-tier projections for negotiation;
+the authoritative contract is each exact `surface_kind + operation` scope and
+its current package or grant. A client must not reject a coherent mixed-tier
+Surface, and must not use one operation's tier to authorize a sibling.
+
 Preview.64 adds minimal local mutation coordination. Read-only observation and
 Inspection remain open. A mutation client registers descriptive process
 metadata, acquires the one runtime-bound controller lease, and submits the

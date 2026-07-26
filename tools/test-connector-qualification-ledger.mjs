@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import {
   mkdtempSync,
   readFileSync,
@@ -10,6 +11,7 @@ import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import {
   buildQualificationPackage,
+  buildCandidateEvidence,
   collectQualificationEvidence,
   compareQualificationInventories,
   projectLedger,
@@ -204,6 +206,7 @@ const inventory = {
     version: "v0.109.0",
     commit: "commit",
     main_assembly_hash: 1,
+    release_declared_main_assembly_hash: 42,
     modset: { fingerprint: "modset" }
   },
   permission_system: { patch_inventory: { digest: "patch" } },
@@ -216,6 +219,75 @@ const inventory = {
     operation_contracts: [contract]
   }
 };
+const bindingAudit = {
+  schema_version: 1,
+  authorization_effect: "none",
+  qualification_effect: "none",
+  manifest_id: "fixture-binding-audit",
+  manifest_digest: "c".repeat(64),
+  release: {
+    version: inventory.game.version,
+    commit: inventory.game.commit,
+    main_assembly_hash: inventory.game.release_declared_main_assembly_hash
+  },
+  game_assembly: {
+    sha256: "d".repeat(64),
+    module_version_id: "208f08b8-d5f5-47f8-9e96-d3a4299ee709"
+  },
+  operations: [{
+    surface_kind: contract.surface_kind,
+    operation: contract.operation,
+    status: "reviewed_binding_match",
+    binding_digest: "e".repeat(64)
+  }]
+};
+const candidateEvidence = buildCandidateEvidence({
+  capabilities: inventory,
+  bindingAudit,
+  surfaceKind: contract.surface_kind,
+  operation: contract.operation,
+  negativeEvidenceIds: ["stale-action-negative"]
+});
+const candidatePackage = buildQualificationPackage({
+  capabilities: inventory,
+  evidenceBundle: candidateEvidence,
+  surfaceKind: contract.surface_kind,
+  operation: contract.operation,
+  qualificationId: "candidate-package",
+  authorityTier: "session_canary",
+  issuedAt: now,
+  expiresAt: new Date("2026-07-28T00:00:00Z")
+});
+assert.equal(candidatePackage.authority_tier, "session_canary");
+assert.throws(() => buildCandidateEvidence({
+  capabilities: inventory,
+  bindingAudit: {
+    ...bindingAudit,
+    release: {
+      ...bindingAudit.release,
+      main_assembly_hash: 43
+    }
+  },
+  surfaceKind: contract.surface_kind,
+  operation: contract.operation,
+  negativeEvidenceIds: ["stale-action-negative"]
+}), /exact capability game release/u);
+assert.throws(() => buildQualificationPackage({
+  capabilities: inventory,
+  evidenceBundle: {
+    ...candidateEvidence,
+    binding_audit: {
+      ...candidateEvidence.binding_audit,
+      status: "binding_mismatch_code_required"
+    }
+  },
+  surfaceKind: contract.surface_kind,
+  operation: contract.operation,
+  qualificationId: "invalid-candidate",
+  authorityTier: "session_canary",
+  issuedAt: now,
+  expiresAt: new Date("2026-07-28T00:00:00Z")
+}), /reviewed operation binding audit/u);
 const assembled = buildQualificationPackage({
   capabilities: inventory,
   evidenceBundle,
@@ -296,7 +368,12 @@ try {
     runCli("install", "--store", storePath, "--package", packagePath).status,
     0
   );
-  assert.equal(runCli("inspect", "--store", storePath).status, 0);
+  const inspected = runCli("inspect", "--store", storePath);
+  assert.equal(inspected.status, 0);
+  assert.equal(
+    JSON.parse(inspected.stdout).store_digest,
+    createHash("sha256").update(readFileSync(storePath, "utf8")).digest("hex")
+  );
   assert.equal(
     runCli(
       "revoke",

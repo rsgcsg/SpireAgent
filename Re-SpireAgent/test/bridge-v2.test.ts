@@ -3,7 +3,14 @@ import { buildAllowedActions } from "../src/domain/actions/buildAllowedActions.j
 import type { AdapterDescriptor } from "../src/game-io/adapter.js";
 import { Sts2McpHybridAdapter } from "../src/integrations/sts2mcp/hybridAdapter.js";
 import { TransientObservationError } from "../src/game-io/observationError.js";
-import { decodeBridgeV2Capabilities, decodeBridgeV2Inspection, decodeBridgeV2ObservationBundle, decodeBridgeV2State } from "../src/integrations/sts2mcp/bridgeV2Protocol.js";
+import {
+  decodeBridgeV2Capabilities,
+  decodeBridgeV2ClientRegistration,
+  decodeBridgeV2ControlSnapshot,
+  decodeBridgeV2Inspection,
+  decodeBridgeV2ObservationBundle,
+  decodeBridgeV2State
+} from "../src/integrations/sts2mcp/bridgeV2Protocol.js";
 import { isBridgeV2WrappedState, wrapBridgeV2State } from "../src/integrations/sts2mcp/rawState.js";
 import { normalizeCurrentState } from "../src/normalization/normalizeCurrentState.js";
 import type { JsonObject } from "../src/shared/json.js";
@@ -3291,7 +3298,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     ).currentState.stability).toBe("actionable");
   });
 
-  it("accepts a current exact build with only explicit audited canaries", () => {
+  it("accepts an installed qualification candidate only through explicit audited canaries", () => {
     const canaryOnlyCapabilities = structuredClone(CAPABILITIES);
     const canaryKinds = ["event_option", "event_card_acquisition", "map_navigation"];
     const actionPermissionScopes = canaryOnlyCapabilities.surfaces.flatMap((surface) =>
@@ -3308,7 +3315,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       release_declared_main_assembly_hash: -840572606,
       modset: structuredClone(CAPABILITIES.game.modset),
       compatibility: {
-        status: "qualified_scoped",
+        status: "qualification_candidate_scoped",
         tested_game_versions: ["0.108.0", "0.109.0"],
         tested_build_fingerprints: [
           "v0.108.0|58694f64|-2044609792",
@@ -3328,7 +3335,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
         action_permission_scopes: actionPermissionScopes,
         compatibility_policy_id: "fixture_exact_environment_policy",
         compatibility_policy_digest: "b".repeat(64),
-        adaptation_level: "reviewed_exact_environment"
+        adaptation_level: "installed_qualification_candidate"
       }
     };
     canaryOnlyCapabilities.surfaces = canaryOnlyCapabilities.surfaces.map((surface) => ({
@@ -6379,6 +6386,8 @@ describe("Bridge v2 persistent qualification governance", () => {
     capabilities.game.modset.status = "additional_mods_loaded";
     capabilities.game.compatibility.adaptation_level =
       "installed_persistent_qualification";
+    capabilities.game.compatibility.status =
+      "persistent_qualification_scoped";
     capabilities.game.compatibility.action_execution_allowed = true;
     capabilities.game.compatibility.state_observation_allowed = true;
     capabilities.game.compatibility.action_execution_surface_kinds =
@@ -6470,6 +6479,8 @@ describe("Bridge v2 persistent qualification governance", () => {
     capabilities.game.modset.qualification_candidate_eligible = true;
     capabilities.game.compatibility.adaptation_level =
       "installed_qualification_candidate";
+    capabilities.game.compatibility.status =
+      "qualification_candidate_scoped";
     capabilities.game.compatibility.action_execution_surface_kinds = [];
     capabilities.game.compatibility.action_canary_surface_kinds = ["shop_room"];
     scope.tier = "canary";
@@ -6514,6 +6525,232 @@ describe("Bridge v2 persistent qualification governance", () => {
       .toBe(grantId);
   });
 
+  it("accepts persistent qualification and a separate runtime canary together", () => {
+    const capabilities = persistentCapabilities();
+    const environmentDigest =
+      capabilities.qualification_system.current_environment_digest;
+    const patchDigest = capabilities.permission_system.patch_inventory.digest;
+    const contractDigest = "f".repeat(64);
+    const grantId = "grant-fixture-map-canary";
+
+    capabilities.game.modset.qualification_candidate_eligible = true;
+    capabilities.game.compatibility.action_canary_surface_kinds = ["map_navigation"];
+    capabilities.game.compatibility.action_permission_scopes.push({
+      surface_kind: "map_navigation",
+      operation: "choose_map_node",
+      tier: "canary",
+      grant_id: grantId,
+      grant_version: 1,
+      runtime_epoch: capabilities.bridge.runtime_instance_id,
+      environment_digest: environmentDigest,
+      patch_digest: patchDigest,
+      operation_fingerprint: contractDigest
+    });
+    (capabilities.qualification_system.operation_contracts as unknown as
+      Array<Record<string, unknown>>).push({
+      surface_kind: "map_navigation",
+      operation: "choose_map_node",
+      interaction_digest: "1".repeat(64),
+      owner_digest: "2".repeat(64),
+      source_digest: "3".repeat(64),
+      operand_digest: "4".repeat(64),
+      commit_digest: "5".repeat(64),
+      completion_digest: "6".repeat(64),
+      witness_digest: "7".repeat(64),
+      contract_digest: contractDigest,
+      completion_boundary: "immediate_postcondition_observed",
+      witness_id: "map_closed_or_current_map_coordinate_reached",
+      risk_class: "progression"
+    });
+    (capabilities.qualification_system.qualifications as unknown as
+      Array<Record<string, unknown>>).push({
+      qualification_id: "qualification-map-canary",
+      version: 1,
+      status: "active",
+      authority_tier: "session_canary",
+      surface_kind: "map_navigation",
+      operation: "choose_map_node",
+      risk_class: "progression",
+      environment_digest: environmentDigest,
+      modset_fingerprint: capabilities.game.modset.fingerprint,
+      patch_digest: patchDigest,
+      operation_fingerprint: contractDigest,
+      completion_boundary: "immediate_postcondition_observed",
+      witness_id: "map_closed_or_current_map_coordinate_reached",
+      evidence_bundle_digest: "8".repeat(64),
+      applicable_to_current_environment: true,
+      applicability: "exact_match",
+      issued_at: "2026-07-25T00:00:00Z",
+      expires_at: "2026-08-25T00:00:00Z",
+      supersedes_qualification_id: null,
+      status_reason: null,
+      evidence_ids: ["binding-audit-map"]
+    });
+    capabilities.qualification_system.session_canary_candidate_enabled = true;
+    (capabilities.permission_system.grants as unknown as
+      Array<Record<string, unknown>>).push({
+      schema_version: 1,
+      grant_id: grantId,
+      grant_version: 1,
+      current: true,
+      status: "active",
+      mode: "developer_gray",
+      surface_kind: "map_navigation",
+      operation: "choose_map_node",
+      tier: "session_canary",
+      risk_class: "progression",
+      runtime_epoch: capabilities.bridge.runtime_instance_id,
+      environment_digest: environmentDigest,
+      gateway_assembly_sha256: capabilities.bridge.assembly_file_sha256,
+      gateway_module_version_id: capabilities.bridge.module_version_id,
+      modset_fingerprint: capabilities.game.modset.fingerprint,
+      patch_digest: patchDigest,
+      operation_fingerprint: contractDigest,
+      evidence_bundle_digest: "9".repeat(64),
+      issued_at: "2026-07-25T00:00:00Z",
+      expires_at: "2026-07-25T04:00:00Z",
+      supersedes_grant_id: null,
+      revocation_reason: null,
+      evidence_ids: ["qualification-map-canary"]
+    });
+
+    const decoded = decodeBridgeV2Capabilities(capabilities).data;
+
+    expect(decoded.game.compatibility.status).toBe(
+      "persistent_qualification_scoped"
+    );
+    expect(decoded.qualification_system.persistent_authority_enabled).toBe(true);
+    expect(decoded.qualification_system.session_canary_candidate_enabled).toBe(true);
+  });
+
+  it("normalizes mixed qualified and canary operations on one Surface", () => {
+    const capabilities = persistentCapabilities();
+    const state = structuredClone(MAIN_MENU_STATE);
+    const compatibility = capabilities.game.compatibility;
+    const environmentDigest =
+      capabilities.qualification_system.current_environment_digest;
+    const patchDigest = capabilities.permission_system.patch_inventory.digest;
+    const qualifiedContract =
+      capabilities.qualification_system.operation_contracts[0] as unknown as
+        Record<string, unknown>;
+    const qualifiedPackage =
+      capabilities.qualification_system.qualifications[0] as unknown as
+        Record<string, unknown>;
+    const qualifiedScope = compatibility.action_permission_scopes[0]!;
+    const qualifiedFingerprint = "d".repeat(64);
+    const canaryFingerprint = "e".repeat(64);
+    const canaryGrantId = "grant-fixture-main-menu-continue";
+
+    compatibility.action_execution_surface_kinds = ["main_menu"];
+    compatibility.action_canary_surface_kinds = ["main_menu"];
+    compatibility.inspection_allowed = false;
+    compatibility.inspection_allowed_kinds = [];
+    compatibility.inspection_canary_kinds = [];
+    capabilities.inspections = {
+      ...capabilities.inspections,
+      status: "disabled_for_current_build",
+      implemented_kinds: []
+    };
+    Object.assign(qualifiedScope, {
+      surface_kind: "main_menu",
+      operation: "open_singleplayer",
+      operation_fingerprint: qualifiedFingerprint
+    });
+    Object.assign(qualifiedContract, {
+      surface_kind: "main_menu",
+      operation: "open_singleplayer",
+      contract_digest: qualifiedFingerprint,
+      witness_id: "singleplayer_or_character_select_owner_became_active"
+    });
+    Object.assign(qualifiedPackage, {
+      surface_kind: "main_menu",
+      operation: "open_singleplayer",
+      operation_fingerprint: qualifiedFingerprint,
+      witness_id: "singleplayer_or_character_select_owner_became_active"
+    });
+    compatibility.action_permission_scopes.push({
+      surface_kind: "main_menu",
+      operation: "continue_run",
+      tier: "canary",
+      grant_id: canaryGrantId,
+      grant_version: 1,
+      runtime_epoch: capabilities.bridge.runtime_instance_id,
+      environment_digest: environmentDigest,
+      patch_digest: patchDigest,
+      operation_fingerprint: canaryFingerprint
+    });
+    (capabilities.qualification_system.operation_contracts as unknown as
+      Array<Record<string, unknown>>).push({
+      ...qualifiedContract,
+      operation: "continue_run",
+      contract_digest: canaryFingerprint,
+      witness_id: "saved_singleplayer_run_became_active"
+    });
+    (capabilities.qualification_system.qualifications as unknown as
+      Array<Record<string, unknown>>).push({
+      ...qualifiedPackage,
+      qualification_id: "qualification-main-menu-continue-canary",
+      authority_tier: "session_canary",
+      operation: "continue_run",
+      operation_fingerprint: canaryFingerprint,
+      witness_id: "saved_singleplayer_run_became_active",
+      evidence_bundle_digest: "f".repeat(64)
+    });
+    capabilities.qualification_system.session_canary_candidate_enabled = true;
+    (capabilities.permission_system.grants as unknown as
+      Array<Record<string, unknown>>).push({
+      schema_version: 1,
+      grant_id: canaryGrantId,
+      grant_version: 1,
+      current: true,
+      status: "active",
+      mode: "balanced_gray",
+      surface_kind: "main_menu",
+      operation: "continue_run",
+      tier: "session_canary",
+      risk_class: "reversible_navigation",
+      runtime_epoch: capabilities.bridge.runtime_instance_id,
+      environment_digest: environmentDigest,
+      gateway_assembly_sha256: capabilities.bridge.assembly_file_sha256,
+      gateway_module_version_id: capabilities.bridge.module_version_id,
+      modset_fingerprint: capabilities.game.modset.fingerprint,
+      patch_digest: patchDigest,
+      operation_fingerprint: canaryFingerprint,
+      evidence_bundle_digest: "a".repeat(64),
+      issued_at: "2026-07-25T00:00:00Z",
+      expires_at: "2026-07-25T04:00:00Z",
+      supersedes_grant_id: null,
+      revocation_reason: null,
+      evidence_ids: ["candidate-package-fixture"]
+    });
+    capabilities.surfaces = capabilities.surfaces.map((surface) => surface.kind === "main_menu"
+      ? {
+          ...surface,
+          support: "qualified_exact_build",
+          operations: ["continue_run", "open_singleplayer"]
+        }
+      : {
+          ...surface,
+          support: "not_qualified_for_current_build",
+          operations: []
+        });
+    state.bridge = structuredClone(capabilities.bridge);
+    state.game = structuredClone(capabilities.game);
+    state.permission_system = structuredClone(capabilities.permission_system);
+    state.qualification_system =
+      structuredClone(capabilities.qualification_system);
+
+    const envelope = normalizeCurrentState(
+      wrapBridgeV2State({ state, capabilities }),
+      TEST_SOURCE
+    );
+
+    expect(envelope.diagnostics.invalidFields).toEqual([]);
+    expect(envelope.currentState.stability).toBe("actionable");
+    expect(envelope.currentState.actionAuthority).toBe("bridge_advertised");
+    expect(envelope.currentState.surface.kind).toBe("main_menu");
+  });
+
   it("rejects a persistent scope without an exact applicable package", () => {
     const capabilities = persistentCapabilities();
     const qualification = capabilities.qualification_system.qualifications[0] as unknown as Record<string, unknown>;
@@ -6533,6 +6770,40 @@ describe("Bridge v2 persistent qualification governance", () => {
 
     expect(() => decodeBridgeV2Capabilities(capabilities))
       .toThrow("lacks an exact applicable qualification");
+  });
+});
+
+describe("Bridge v2 controller coordination decoding", () => {
+  const client = {
+    client_session_id: "client-fixture",
+    client_instance_id: "re-spireagent-fixture",
+    product_id: "re-spireagent",
+    product_name: "Re-SpireAgent",
+    product_version: "0.1.0",
+    registered_at: "2026-07-26T00:00:00Z",
+    last_seen_at: "2026-07-26T00:00:00Z"
+  };
+
+  it("accepts registration before a controller lease exists", () => {
+    const registration = decodeBridgeV2ClientRegistration({
+      protocol_version: "2.0-preview.65",
+      runtime_instance_id: "runtime-fixture",
+      client
+    }).data;
+
+    expect(registration.client.client_session_id).toBe("client-fixture");
+    expect(registration.controller).toBeUndefined();
+  });
+
+  it("accepts a control snapshot with no active controller", () => {
+    const snapshot = decodeBridgeV2ControlSnapshot({
+      protocol_version: "2.0-preview.65",
+      runtime_instance_id: "runtime-fixture",
+      clients: [client]
+    }).data;
+
+    expect(snapshot.clients).toHaveLength(1);
+    expect(snapshot.controller).toBeUndefined();
   });
 });
 

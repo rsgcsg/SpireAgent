@@ -69,7 +69,8 @@ export class SettlementWatcher {
         };
       }
       if (settlementAuthority === "adapter_confirmed"
-          && isSemanticCheckpoint(last)) {
+          && (isSemanticCheckpoint(last)
+            || isCoherentUnsupportedSuccessor(before, last))) {
         const beforeToken = bridgeStateToken(before);
         const observedToken = bridgeStateToken(last);
         if (confirmedStateToken
@@ -117,7 +118,23 @@ export class SettlementWatcher {
 
 function bridgeStateToken(envelope: StateEnvelope): string | undefined {
   const surface = envelope.currentState.surface as { bridgeStateId?: unknown };
-  return typeof surface.bridgeStateId === "string" ? surface.bridgeStateId : undefined;
+  if (typeof surface.bridgeStateId === "string") return surface.bridgeStateId;
+  const observation = envelope.currentState.bridgeObservation;
+  return typeof observation?.stateId === "string" ? observation.stateId : undefined;
+}
+
+function isCoherentUnsupportedSuccessor(
+  before: StateEnvelope,
+  after: StateEnvelope
+): boolean {
+  const beforeToken = bridgeStateToken(before);
+  const afterToken = bridgeStateToken(after);
+  return after.diagnostics.status !== "invalid"
+    && after.currentState.surface.kind === "unsupported"
+    && after.currentState.bridgeObservation?.coherent === true
+    && typeof beforeToken === "string"
+    && typeof afterToken === "string"
+    && afterToken !== beforeToken;
 }
 
 function isEndTurn(action: ExecutableGameAction): boolean {

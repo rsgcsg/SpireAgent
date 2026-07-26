@@ -212,7 +212,14 @@ internal static class BridgeContractManifest
             new[] { "visible_rewards", "claimability", "potion_capacity", "proceed_control" }),
         Entry(
             "map_navigation",
-            new[] { "choose_map_node" },
+            new[]
+            {
+                Operation(
+                    "choose_map_node",
+                    BridgeOperationEvidenceStatus.OrganicCanaryExercised,
+                    "../archive/bridge-v2-previews/2026-07/PREVIEW_35_MAP_CONTROLLER_GATE_CLOSEOUT_2026-07-18.md",
+                    "docs/bridge-v2/PLAYER_VISIBLE_COVERAGE.md")
+            },
             "sts2-v0.109.0:NMapScreen+NMapPoint+RunState.Map+OnMapPointSelectedLocally+exact-source-canary",
             "map_navigation",
             new[] { "visible_map_topology", "current_node", "reachable_nodes", "node_types" }),

@@ -97,8 +97,10 @@ Modset, Patch digest, operation fingerprint, evidence policy, expiry and
 supersession. They are volatile: restart is a complete rollback. Persistent
 packages are a separate append-only, operator-installed store and are
 revalidated at startup. D and Re cannot activate either path through the live
-API. Only a unique current scope authorizes an operation; historical versions
-remain audit evidence. See the
+API. Only a unique current operation scope authorizes an action; historical
+versions remain audit evidence. Sibling operations on one Surface may
+legitimately occupy different tiers, so Surface support is only a coarse
+highest-tier projection and never the permission decision itself. See the
 [D3 permission closeout](../../STS2MCP/docs/bridge-v2/D3_PERMISSION_GRAY_ROLLOUT_CLOSEOUT_2026-07-25.md).
 
 ## Current Architectural Constraint
@@ -106,15 +108,14 @@ remain audit evidence. See the
 The Gateway and Re share the mechanically checked `2.0-preview.65` source
 contract. Gate 1 establishes a bounded v2 connector baseline: Re and the
 default MCP adapter are v2-only, and the current-source Gateway v1 HTTP surface
-is retired. The loaded Preview.65 artifact currently sees game
-`v0.109.1|c8c577f6|-820620422`, which is outside the reviewed exact policy.
-That environment is diagnostic-only: loading, compiling, or matching a
-Bridge-only Modset does not authorize observation, Inspection, or actions.
-Historical v1 JSONL remains replay-readable as stored evidence, but no v1
-sidecar may contribute live facts or action authority. The final Preview.61
-Neow's Fury lifecycle supplied the Gate 1 runtime seal. Preview.62 source,
-tests, audit and exact cold-loaded deployment remain separate evidence; none
-inherits Preview.61 Organic qualification.
+is retired. The loaded Preview.65 artifact sees game
+`v0.109.1|c8c577f6|-820620422`. That environment did not inherit the reviewed
+`v0.109.0` policy. Instead, exact binding audit and current runtime evidence
+qualified only `main_menu/open_singleplayer` and
+`main_menu/continue_run`; all other operations still require their own exact
+policy, targeted requalification, or remain fail closed. Historical v1 JSONL
+remains replay-readable as stored evidence, but no v1 sidecar may contribute
+live facts or action authority.
 
 Combat-pile choice is the first production structural transaction contract.
 Re reads closed mutation and commit semantics rather than a union of source

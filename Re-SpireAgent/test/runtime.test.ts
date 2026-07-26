@@ -219,6 +219,61 @@ describe("TickOrchestrator", () => {
     expect(result.after?.currentState.surface).toMatchObject({ bridgeStateId: "state-final" });
   });
 
+  it("accepts a coherent state-bound unsupported successor after Gateway semantic completion", async () => {
+    const successor = bridgeEnvelope("state-after", "unknown");
+    successor.currentState = {
+      ...successor.currentState,
+      actionAuthority: "none",
+      context: {
+        kind: "unknown",
+        reason: "The successor Surface is not operation-qualified.",
+        observedTopLevelKeys: ["bridge_v2_state"]
+      },
+      surface: {
+        kind: "unsupported",
+        reason: "The successor Surface is outside this qualification package.",
+        classification: "missing_action_protocol",
+        observedTopLevelKeys: ["bridge_v2_state"]
+      },
+      bridgeObservation: {
+        observationId: "observation-after",
+        coherent: true,
+        stateId: "state-after",
+        inspectionKinds: []
+      }
+    };
+    const adapter = new FakeAdapter([{ token: "state-after" }]);
+    const watcher = new SettlementWatcher(adapter, () => successor, {
+      pollMs: 1,
+      defaultTimeoutMs: 20,
+      endTurnTimeoutMs: 20,
+      roomTransitionTimeoutMs: 20
+    }, async () => {});
+
+    const result = await watcher.waitForNextState(
+      bridgeEnvelope("state-before"),
+      {
+        kind: "bridge_v2_action",
+        actionId: "action-open-singleplayer",
+        expectedStateId: "state-before",
+        bridgeActionKind: "open_singleplayer"
+      },
+      "adapter_confirmed",
+      "state-after"
+    );
+
+    expect(result).toMatchObject({
+      status: "settled",
+      polls: 1,
+      after: {
+        currentState: {
+          stability: "unknown",
+          surface: { kind: "unsupported" }
+        }
+      }
+    });
+  });
+
   it("uses a dedicated room-transition budget for map navigation", async () => {
     const preRaw = await fixture("map") as Sts2McpRawState;
     const loadingRaw = structuredClone(preRaw);

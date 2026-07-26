@@ -25,11 +25,10 @@ operation-identity catalog, exact-environment persistent qualification ledger,
 short-lived candidate packages, qualified packages, local quarantine, and
 non-authorizing qualification tooling. The final Neow's Fury runtime seal
 remains attributed to Preview.61; new Preview.62 registry entries are not
-automatically Organic-qualified. Preview.65 is now built, installed, and
-cold-loaded against the local `v0.109.1` installation. That new game identity
-has no reviewed exact-environment policy, so it is diagnostic-only with no
-normal observation, Inspection, or action authority. Exact evidence is
-recorded in
+automatically Organic-qualified. Preview.65 is built and cold-loaded against
+the local `v0.109.1` installation. A real requalification cycle has qualified
+only `main_menu/open_singleplayer` and `main_menu/continue_run`; the rest of
+the build does not inherit those permissions. Exact evidence is recorded in
 [current status](docs/bridge-v2/CURRENT_STATUS.md).
 
 > Product security warning: the current HTTP listener is a developer preview.
@@ -40,12 +39,12 @@ recorded in
 > boundary. Do not represent this as a consumer-safe Workshop product; see the
 > [productization architecture audit](../docs/current/audits/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md).
 
-- Current action-qualified historical game binding: Slay the Spire 2
-  `v0.109.0|c12f634d|-1639417500`. The separate release declaration
-  `-840572606` is retained for diagnostics but cannot authorize actions.
+- Historical Gate 1 binding: Slay the Spire 2
+  `v0.109.0|c12f634d|-1639417500`. Its authority does not transfer.
 - Current loaded game identity:
-  `v0.109.1|c8c577f6|-820620422`. It is `untested` and diagnostic-only until an
-  independent source/binding and Organic review establishes new scopes.
+  `v0.109.1|c8c577f6|-820620422`. Two exact main-menu operations have current
+  persistent qualification; map is candidate-only and other operations require
+  independent source/binding and runtime review.
 - A matching version/commit with a different main-assembly hash remains
   untested and has no v2 action or Inspection authority. Check
   [Bridge v2 current status](docs/bridge-v2/CURRENT_STATUS.md) before treating

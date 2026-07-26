@@ -20,6 +20,7 @@
     "check:connector-qualification": "node tools/test-connector-qualification-ledger.mjs",
     "audit:connector-permission-transition": "node tools/assert-connector-permission-transition.mjs",
     "audit:connector-compatibility": "node tools/run-connector-compatibility-audit.mjs",
+    "audit:connector-operation-bindings": "node tools/run-operation-binding-audit.mjs",
     "qualification:ledger": "node tools/connector-qualification-ledger.mjs"
   }
 }

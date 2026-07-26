@@ -1301,7 +1301,9 @@ const clientRegistrationSchema = z.object({
   protocol_version: z.literal(SUPPORTED_BRIDGE_V2_PROTOCOL),
   runtime_instance_id: z.string().min(1),
   client: clientRecordSchema,
-  controller: controllerLeaseSchema.nullable()
+  // System.Text.Json omits this nullable field when no controller has been
+  // acquired yet. Registration and lease acquisition are separate operations.
+  controller: controllerLeaseSchema.nullable().optional()
 }).passthrough();
 
 const controllerLeaseResponseSchema = z.object({
@@ -1325,7 +1327,7 @@ const controlSnapshotSchema = z.object({
   protocol_version: z.literal(SUPPORTED_BRIDGE_V2_PROTOCOL),
   runtime_instance_id: z.string().min(1),
   clients: z.array(clientRecordSchema),
-  controller: controllerLeaseSchema.nullable()
+  controller: controllerLeaseSchema.nullable().optional()
 }).passthrough();
 
 const observationBundleSchema = z.object({
@@ -1582,7 +1584,11 @@ function validateModsetPermissionBoundary(
   }
   if (modset.qualification_candidate_eligible
       && qualification !== undefined
-      && (compatibility.adaptation_level !== "installed_qualification_candidate"
+      && ((
+        compatibility.adaptation_level !== "installed_qualification_candidate"
+        && !(modset.persistent_qualification_eligible
+          && compatibility.adaptation_level === "installed_persistent_qualification")
+      )
         || !qualification.session_canary_candidate_enabled)) {
     throw new BridgeV2DecodeError(
       "Qualification-candidate Modset requires an applicable bounded candidate package"

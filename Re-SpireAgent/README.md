@@ -9,10 +9,10 @@
 > `continue_run` session canary/auto-approval pass on its exact recorded
 > identity. Preview.64 added minimal local mutation coordination. Preview.65
 > source adds strict decoding for operation identity and persistent
-> qualification state. Preview.65 is now installed and cold-loaded on local
-> game `v0.109.1`, which is intentionally diagnostic-only because it has no
-> reviewed exact-environment policy. Re decodes that state as unsupported and
-> receives no actions.
+> qualification state. The local `v0.109.1` update has now qualified only
+> `main_menu/open_singleplayer` and `main_menu/continue_run` through exact
+> two-epoch runtime evidence and cold-restart revalidation. Other operations
+> do not inherit that authority.
 
 > Product-boundary warning: direct Re-to-Gateway REST and `.env.local` provider
 > keys are developer workflows, not the target consumer architecture. The
@@ -32,10 +32,10 @@ waits for the Bridge command lifecycle, and records the complete evidence.
 
 RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, shadow/live modes, policy promotion, or the old project's phase machinery. Its job is to make one decision path correct and auditable.
 
-Re's current strict client contract is Bridge `2.0-preview.65`. The recorded
-action-qualified game identity remains
-`v0.109.0|c12f634d|-1639417500`; the currently loaded
-`v0.109.1|c8c577f6|-820620422` identity is diagnostic-only. The separate
+Re's current strict client contract is Bridge `2.0-preview.65`. The current
+`v0.109.1|c8c577f6|-820620422` identity has narrow operation-scoped persistent
+qualification for two main-menu operations; it is not build-wide qualified.
+The separate
 `release_declared_main_assembly_hash=-840572606` is diagnostic provenance, not
 permission authority. Re requires capabilities and every
 state/bundle/Inspection to agree on protocol, game identity, exact Modset
@@ -71,6 +71,9 @@ Modset, Patch, operation fingerprint, completion boundary, and witness. A
 short-lived `session_canary` package can only seed the Gateway's existing
 runtime-epoch gray state machine; it is not persistent mutation authority.
 Re cannot install, revoke, roll back, promote, or repair qualification data.
+Sibling operations on a Surface may have different tiers. Re uses the Surface
+tier only as a coarse support projection and validates each legal action
+against its exact operation-level package or grant.
 
 Preview.55 makes strict v2 the sole connector path. Re rejects legacy `v1` and
 the former `auto` mode; it cannot probe or fall back to v1. Bridge-confirmed

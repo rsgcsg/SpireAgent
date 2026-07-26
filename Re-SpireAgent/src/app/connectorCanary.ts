@@ -40,6 +40,9 @@ export async function runConnectorCanary(config: RuntimeConfig, requestedActionI
       outcome: execution.outcome,
       stage: execution.stage,
       ...(execution.stage === "preflight_failed" && execution.latest ? { successor: stateSummary(execution.latest) } : {}),
+      ...(execution.stage === "adapter_terminal" ? {
+        adapterResult: execution.adapterResult.response
+      } : {}),
       ...(execution.stage === "settlement" ? {
         commandCompleted: execution.adapterResult.accepted,
         settlement: {

@@ -5,8 +5,10 @@
 Preview 65 is a source-complete, fixture-tested implementation of an
 operation-scoped qualification kernel. On 2026-07-26 it was rebuilt against
 the current local game, installed, Steam cold-loaded, and strictly decoded by
-Re. It is **not** action-canary-qualified, Organic-qualified,
-persistent-qualified, cross-version-qualified, or cross-Mod-qualified.
+Re. A subsequent real `v0.109.1` cycle qualified two exact main-menu
+operations. It remains **not** build-wide-qualified, cross-Mod-qualified, or
+proof of generic future-version adaptation. See the
+[v0.109.1 requalification closeout](PREVIEW_65_V01091_REQUALIFICATION_CLOSEOUT_2026-07-26.md).
 
 The implementation closes the restart-loss problem without serializing D3
 session grants:
@@ -164,6 +166,11 @@ or any other shop operation.
 Current evidence is source and fixture only. No Preview 65 real-game shop
 canary has been run.
 
+The later v0.109.1 cycle also added
+`map_navigation/choose_map_node` as a developer-gray progression candidate,
+but did not obtain a legal route action or qualify it. Neither candidate
+authorizes Surface siblings.
+
 ## Validation
 
 At final local verification:
@@ -198,15 +205,14 @@ Patch     clean_known_owners
 Patch     ee979e2b877b772adaa28409f474037a832b9ccaf22037afde23a527bb13c587
 ```
 
-Release, installed, and loaded SHA/MVID match. The operation catalog loads, the
-local store is empty, and both authority flags are false. Re strictly decodes
-the qualification and coordination contracts.
+At this initial cold load, Release, installed, and loaded SHA/MVID matched. The
+operation catalog loaded, the local store was empty, and both authority flags
+were false. Re strictly decoded the qualification and coordination contracts.
 
-The game identity is newer than the reviewed embedded policy. Compatibility
-is therefore `untested`, adaptation is `diagnostic_only`, and normal
-observation, Inspection, and all actions are disabled. State projects
-`unknown + unsupported + authority none`; this is expected fail-closed
-behavior, not current-build qualification.
+This records the initial cold-load baseline before requalification. The newer
+game identity started `untested`, with diagnostic-only adaptation and no
+action authority. It was later superseded by the narrow operation-scoped
+results in the v0.109.1 closeout; this paragraph is not current status.
 
 A non-game two-client coordination check passed: A acquired the sole lease, B
 received HTTP `409 controller_lease_held`, A released it, and the final
@@ -231,8 +237,8 @@ It has no authorization or qualification effect.
 - Additional Mods are not generally supported; only exact package operations
   may become candidates or qualified.
 - Runtime session quarantine is not a permanent ledger revoke.
-- Cross-version and cross-Mod behavior is implemented for controlled
-  requalification, but has no current real second-environment evidence.
+- The v0.109.1 cycle is real second-environment evidence for two operations,
+  not generic cross-version or any cross-Mod qualification.
 
 ## Rollback
 

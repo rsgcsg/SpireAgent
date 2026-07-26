@@ -299,6 +299,38 @@ public sealed class BridgePermissionManagerTests
                     "open_shop_inventory"));
         Assert.Equal("source_audited", openShop.MinimumEvidenceStatus);
         Assert.Equal("shop_inventory_opened", openShop.WitnessId);
+        BridgeGrayPermissionCandidate map =
+            Assert.IsType<BridgeGrayPermissionCandidate>(
+                BridgeGrayPermissionCandidateCatalog.Find(
+                    "map_navigation",
+                    "choose_map_node"));
+        Assert.Equal("progression", map.RiskClass);
+        Assert.Equal(new[] { "developer_gray" }, map.EligibleModes);
+    }
+
+    [Fact]
+    public void ProgressionCandidateRequiresDeveloperGray()
+    {
+        GameBuildIdentity game = GameWithScopes(
+            Scope("map_navigation", "choose_map_node", "canary"));
+        CompatibilityAssessment balanced = new BridgePermissionManager(
+            "runtime-balanced",
+            BridgePermissionMode.BalancedGray).Apply(
+                game,
+                Bridge("runtime-balanced"),
+                CleanPatchInventory());
+        CompatibilityAssessment developer = new BridgePermissionManager(
+            "runtime-developer",
+            BridgePermissionMode.DeveloperGray).Apply(
+                game,
+                Bridge("runtime-developer"),
+                CleanPatchInventory());
+
+        Assert.Empty(balanced.ActionPermissionScopes);
+        ActionPermissionScope scope = Assert.Single(
+            developer.ActionPermissionScopes);
+        Assert.Equal("runtime-developer", scope.RuntimeEpoch);
+        Assert.Equal("canary", scope.Tier);
     }
 
     [Fact]

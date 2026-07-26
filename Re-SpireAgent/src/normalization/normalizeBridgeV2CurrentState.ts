@@ -836,7 +836,9 @@ function validateEnvelopeIdentity(
   }
   const inspectionKinds = [...capabilities.inspections.implemented_kinds].sort();
   const candidateInspectionCanary = capabilities.game.compatibility.status === "action_and_inspection_canary_candidate";
-  const scopedInspection = capabilities.game.compatibility.status === "qualified_scoped";
+  const scopedInspection = isOperationScopedCompatibilityStatus(
+    capabilities.game.compatibility.status
+  );
   const expectedInspectionStatus = !capabilities.game.compatibility.inspection_allowed
     ? "disabled_for_current_build"
     : candidateInspectionCanary
@@ -2175,6 +2177,7 @@ function validateScopedQualifiedIdentity(
         operation: string;
         tier: "qualified" | "canary";
       }>;
+      adaptation_level: string;
       inspection_allowed_kinds: string[];
       inspection_canary_kinds: string[];
       observation_only_surface_kinds: string[];
@@ -2185,18 +2188,42 @@ function validateScopedQualifiedIdentity(
 ): void {
   const compatibility = game.compatibility;
   const fingerprint = gameFingerprint(game);
-  if (compatibility.status !== "qualified_scoped"
+  const reviewedPolicyIdentity = compatibility.status === "qualified_scoped"
+    && compatibility.adaptation_level === "reviewed_exact_environment"
+    && compatibility.tested_build_fingerprints.includes(fingerprint);
+  const installedCandidateIdentity =
+    compatibility.status === "qualification_candidate_scoped"
+    && compatibility.adaptation_level === "installed_qualification_candidate";
+  const installedPersistentIdentity =
+    compatibility.status === "persistent_qualification_scoped"
+    && compatibility.adaptation_level === "installed_persistent_qualification";
+  if (!isOperationScopedCompatibilityStatus(compatibility.status)
+      || !(reviewedPolicyIdentity || installedCandidateIdentity || installedPersistentIdentity)
       || !compatibility.action_execution_allowed
       || !compatibility.state_observation_allowed
       || compatibility.action_execution_surface_kinds.length + compatibility.action_canary_surface_kinds.length === 0
       || compatibility.action_permission_scopes.length === 0
       || compatibility.observation_only_surface_kinds.length !== 0
-      || compatibility.observation_candidate_build_fingerprints.length !== 0
-      || !compatibility.tested_build_fingerprints.includes(fingerprint)) {
+      || compatibility.observation_candidate_build_fingerprints.length !== 0) {
     diagnostics.invalid(`${path}.compatibility`, compatibility, "scoped qualification requires exact identity and a non-empty explicit action scope");
   }
-  if (compatibility.action_execution_surface_kinds.some((kind) => compatibility.action_canary_surface_kinds.includes(kind))) {
-    diagnostics.invalid(`${path}.compatibility.action_scope`, compatibility, "qualified and canary action scopes must be disjoint");
+  if (compatibility.status === "qualification_candidate_scoped"
+      && (compatibility.action_execution_surface_kinds.length !== 0
+        || compatibility.action_permission_scopes.some((scope) => scope.tier !== "canary"))) {
+    diagnostics.invalid(
+      `${path}.compatibility`,
+      compatibility,
+      "qualification candidate scope may publish only session-canary operations"
+    );
+  }
+  if (compatibility.status === "persistent_qualification_scoped"
+      && (compatibility.action_execution_surface_kinds.length === 0
+        || !compatibility.action_permission_scopes.some((scope) => scope.tier === "qualified"))) {
+    diagnostics.invalid(
+      `${path}.compatibility`,
+      compatibility,
+      "persistent qualification scope requires at least one qualified operation"
+    );
   }
   const qualified = new Set(compatibility.action_execution_surface_kinds);
   const canary = new Set(compatibility.action_canary_surface_kinds);
@@ -2267,8 +2294,8 @@ function isScopedQualifiedBuild(
 ): boolean {
   const stateCompatibility = state.game.compatibility;
   const capabilityCompatibility = capabilities.game.compatibility;
-  const scoped = stateCompatibility.status === "qualified_scoped"
-    && capabilityCompatibility.status === "qualified_scoped"
+  const scoped = isOperationScopedCompatibilityStatus(stateCompatibility.status)
+    && capabilityCompatibility.status === stateCompatibility.status
     && stateCompatibility.action_execution_allowed
     && capabilityCompatibility.action_execution_allowed
     && stateCompatibility.state_observation_allowed
@@ -2298,9 +2325,11 @@ function isScopedQualifiedBuild(
   const advertisedQualified = capabilities.surfaces
     .filter((surface) => surface.support === "qualified_exact_build")
     .map((surface) => surface.kind);
-  const advertisedCanary = capabilities.surfaces
+  const advertisedCanaryOnly = capabilities.surfaces
     .filter((surface) => surface.support === "candidate_action_canary")
     .map((surface) => surface.kind);
+  const expectedCanaryOnly = [...canaryKinds]
+    .filter((kind) => !qualifiedKinds.has(kind));
   const operationScopesBySurface = new Map<string, string[]>();
   for (const scope of capabilityCompatibility.action_permission_scopes) {
     const operations = operationScopesBySurface.get(scope.surface_kind) ?? [];
@@ -2313,9 +2342,15 @@ function isScopedQualifiedBuild(
   });
   return advertisedQualified.length === qualifiedKinds.size
     && advertisedQualified.every((kind) => qualifiedKinds.has(kind))
-    && advertisedCanary.length === canaryKinds.size
-    && advertisedCanary.every((kind) => canaryKinds.has(kind))
+    && advertisedCanaryOnly.length === expectedCanaryOnly.length
+    && advertisedCanaryOnly.every((kind) => expectedCanaryOnly.includes(kind))
     && advertisedOperationsMatch;
+}
+
+function isOperationScopedCompatibilityStatus(status: string): boolean {
+  return status === "qualified_scoped"
+    || status === "qualification_candidate_scoped"
+    || status === "persistent_qualification_scoped";
 }
 
 function isObservationOnlyCandidate(

@@ -39,11 +39,11 @@ Tutor holdout.
 
 ## Gate 2: Player-Visible Information Closure
 
-Status: **paused while the newly updated local game
-`v0.109.1|c8c577f6|-820620422` remains diagnostic-only. Preview.65 persistent
-operation qualification is source/fixture/build complete and is now
-cold-loaded; the first D3 operation-scoped permission loop remains closed on
-its recorded older exact environment.**
+Status: **active but still bounded. Preview.65 has completed its first real
+second-environment requalification cycle on
+`v0.109.1|c8c577f6|-820620422`: two exact main-menu operations are persistent
+qualified, while map remains candidate-only and other operations retain their
+existing exact policy or fail closed.**
 
 Close decision-relevant visible-information gaps using shared state, context,
 surface, preview, and read-only inspection. Do not expose hidden RNG, draw
@@ -57,18 +57,13 @@ strategy quality. It must pass paired provider shadow and semantic review
 before any Prompt-path change is considered. The first generic v1 projection
 failed that evidence gate on reward scopes and is rejected for runtime use.
 
-The pause does not reopen Gate 1. Preview.65 has a conservative runtime Patch
-inventory, Gateway-owned session permission, and a disabled-by-default
-persistent qualification kernel.
-The low-risk session grant has repeated on a second epoch, and a read-only
-recorded-evidence assertion has verified the exact
-`session_canary -> session_auto_approved` transition. It also implements
+This does not reopen Gate 1 or authorize the whole build. Preview.65 has a
+conservative runtime Patch inventory, Gateway-owned session permission,
 candidate and qualified packages, exact impact diff, evidence collection and
 append-only lifecycle tooling. D evidence remains non-authorizing; only the
-Gateway can issue, enforce, promote or quarantine runtime authority. Resume
-Gate 2 only after the new game identity receives an independent source/binding
-audit, reviewed exact-environment policy, and bounded qualification canary.
-Loaded identity and compilation alone are insufficient.
+Gateway can issue, enforce, promote or quarantine runtime authority. Continue
+Gate 2 only through independently qualified operation slices. Loaded identity,
+compilation and static binding similarity remain insufficient.
 
 ## Gate 3: Local Control Coordination Alpha
 

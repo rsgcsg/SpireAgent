@@ -687,7 +687,9 @@ internal static class BridgeGrayPermissionCandidateCatalog
                 string.Equals(value.Operation, candidate.Operation, StringComparison.Ordinal));
             if (entry == null
                 || operation == null
-                || candidate.RiskClass != "reversible_navigation"
+                || candidate.RiskClass is not ("reversible_navigation" or "progression")
+                || candidate.RiskClass == "progression"
+                   && candidate.EligibleModes.Any(mode => mode != "developer_gray")
                 || candidate.RequiredStaticTier != "canary"
                 || candidate.MinimumSuccesses != 1
                 || candidate.SessionTtlSeconds is < 60 or > 86_400

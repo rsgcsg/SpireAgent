@@ -10,8 +10,10 @@ mutation coordination, and exact operation qualification projection. Preview.61
 supplied the exact Neow's Fury lifecycle that closed bounded Gate 1. Preview.62
 source/build/audit evidence does not inherit that Organic qualification.
 Preview.65 is built, installed, cold-loaded, and strictly decoded by Re. The
-local game has updated to `v0.109.1`, which is diagnostic-only until a new
-exact-environment review; no older action scope is inherited. The loaded
+local game has updated to `v0.109.1`. It inherited no older action scope;
+exact current-build review and two-epoch runtime evidence qualified only two
+main-menu operations. Other operations retain their own exact policy,
+targeted-requalification requirement, or fail-closed status. The loaded
 identity and precise evidence boundary are recorded in
 [Current Status](CURRENT_STATUS.md).
 

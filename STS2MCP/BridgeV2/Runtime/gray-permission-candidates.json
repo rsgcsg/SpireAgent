@@ -59,6 +59,24 @@
         "BridgeV2/Game/ShopSurfaceProviders.cs#ShopRoomSurfaceProvider.StartOpenInventory",
         "tests/STS2_MCP.Tests/BridgeContractTests.cs"
       ]
+    },
+    {
+      "surface_kind": "map_navigation",
+      "operation": "choose_map_node",
+      "risk_class": "progression",
+      "eligible_modes": [
+        "developer_gray"
+      ],
+      "required_static_tier": "canary",
+      "minimum_evidence_status": "organic_canary_exercised",
+      "minimum_successes": 1,
+      "session_ttl_seconds": 3600,
+      "witness_id": "map_closed_or_current_map_coordinate_reached",
+      "evidence_ids": [
+        "BridgeV2/Game/MapNavigationSurfaceProvider.cs",
+        "tests/STS2_MCP.Tests/BridgeContractTests.cs",
+        "docs/bridge-v2/PLAYER_VISIBLE_COVERAGE.md#qualified-and-canary-coverage"
+      ]
     }
   ]
 }
