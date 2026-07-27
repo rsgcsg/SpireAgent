@@ -54,11 +54,17 @@ unknown-no-retry, independent read-only inspection, and exact-environment
 permission. It is not a claim of complete game coverage or a consumer-ready
 product.
 
+The repository has one accepted Connector destination: the
+[Semantic Gateway Two-Plane Architecture](docs/current/decisions/ADR-0002-semantic-gateway-two-plane-target-architecture.md).
+It preserves one Gateway authority, separates live decisions from compatibility
+evidence, and keeps future model projections on the Re consumer side.
+
 ## Start Here
 
 - [Current documentation map](docs/current/DOCUMENT_MAP.md)
 - [Current status](docs/current/STATUS.md)
 - [Current architecture](docs/current/ARCHITECTURE.md)
+- [Connector target architecture ADR](docs/current/decisions/ADR-0002-semantic-gateway-two-plane-target-architecture.md)
 - [Current functional roadmap](docs/current/ROADMAP.md)
 - [Current cross-component program plan](docs/current/PROGRAM_PLAN.md)
 - [Fresh-clone and local deployment guide](docs/current/LOCAL_SETUP.md)

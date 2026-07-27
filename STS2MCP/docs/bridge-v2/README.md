@@ -26,6 +26,7 @@ not cold-loaded; Preview.66 remains the latest loaded/Organic evidence. See
 ## Current Documents
 
 - [Current status](CURRENT_STATUS.md)
+- [Cross-component target architecture ADR](../../../docs/current/decisions/ADR-0002-semantic-gateway-two-plane-target-architecture.md)
 - [Source-truth repair closeout](SOURCE_TRUTH_REPAIR_CLOSEOUT_2026-07-22.md)
 - [Connector Gate 0 closeout](CONNECTOR_G0_CLOSEOUT_2026-07-22.md)
 - [Gate 1 real-run defect closeout](GATE1_REAL_RUN_DEFECT_CLOSEOUT_2026-07-22.md)

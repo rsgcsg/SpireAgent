@@ -12,6 +12,11 @@ the current mainline or claim an unimplemented platform.
 
 ## Program Outcome
 
+The Connector destination is fixed by
+[ADR-0002](decisions/ADR-0002-semantic-gateway-two-plane-target-architecture.md).
+Program lanes consume that architecture; they may not introduce a competing
+game-state, transaction, permission, or completion authority.
+
 The long-term system should let an external Agent consume trustworthy
 player-visible STS2 state, choose only Gateway-advertised actions, preserve
 complete evidence, and evolve its model-facing views, memory, evaluation, and
@@ -117,21 +122,20 @@ The following are governance constraints, not a separate feature program:
 
 ### Current Window
 
-1. Keep this change limited to closing the first D3 permission slice. The
-   runtime Patch inventory, repeated real session canary and read-only
-   recorded-evidence transition assertion are complete. Gate 2 remains the next
-   independently scoped functional gate.
-2. Maintain the closed Gate 1 operation/v1-retirement inventory and keep
-   unsupported variants explicitly fail closed.
-3. Advance D only through concrete evidence needs. The first exact static
-   scenario/grader, runtime Patch provenance and session-grant transition
-   assertion are implemented. D recommendations remain non-authorizing even
-   when the Gateway independently uses them as session-candidate inputs.
-4. Keep A at the frozen RE-P1 baseline while correcting runtime defects exposed
-   by C journeys; do not add persistent learning.
-5. Qualify the Connector-owned local controller lease and restart semantics;
-   design P-lane authentication only against a concrete product threat model.
-6. Keep H and T disabled beyond admission/data-governance documentation.
+1. Cold-load and bind the installed Preview.67 identity-shadow artifact; do
+   not migrate authority from fixture or disk identity alone.
+2. Continue C through the two-plane migration order: identity separation,
+   hot-summary/on-demand evidence, decision/transition continuity, then
+   representative adapter/oracle revision shadows.
+3. Maintain the closed Gate 1 v1-retirement inventory and keep unsupported
+   variants explicitly typed and fail closed.
+4. Advance D only for concrete C/A evidence needs. D may compare, grade and
+   recommend, but remains non-authorizing and outside model strategy input.
+5. Keep A's complete evidence record while evaluating only bounded, paired
+   DecisionProjection experiments; do not revive the failed generic compact
+   projection or add persistent learning.
+6. Keep P, H and T behind their existing admission gates. Do not build an
+   Artifact Router without a demonstrated ABI/load split.
 
 ### Gate 1 Exit Basis And Gate 2 Entry
 

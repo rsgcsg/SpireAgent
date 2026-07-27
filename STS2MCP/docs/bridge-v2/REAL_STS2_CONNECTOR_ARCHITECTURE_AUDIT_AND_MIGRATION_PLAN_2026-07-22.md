@@ -1,6 +1,15 @@
 # Real STS2 Connector Architecture Audit And Migration Plan
 
-Status: canonical architecture audit and migration decision, 2026-07-22.
+Status: retained architecture audit evidence, 2026-07-22; target architecture
+authority superseded by
+[ADR-0002](../../../docs/current/decisions/ADR-0002-semantic-gateway-two-plane-target-architecture.md)
+on 2026-07-27.
+
+> **Authority redirect, 2026-07-27:** This report remains useful for source-
+> truth failures, real connector risks, and historical migration evidence. It
+> no longer owns the final architecture or near-term phase order. Use ADR-0002,
+> repository [Architecture](../../../docs/current/ARCHITECTURE.md), and current
+> [Status](CURRENT_STATUS.md) for active decisions.
 
 > **Current redirect, 2026-07-24:** Gate 1 later closed as a bounded v2
 > connector baseline. Re/default MCP are v2-only and the complete Gateway

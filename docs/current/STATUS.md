@@ -11,6 +11,12 @@ This is the canonical short current-state document for the rebuilt project.
 
 ## Current Gate
 
+The repository now has one accepted target architecture: the
+[Semantic Gateway Two-Plane Architecture](decisions/ADR-0002-semantic-gateway-two-plane-target-architecture.md).
+This is an architecture decision, not a runtime completion claim. Preview.67
+is its first identity-boundary shadow experiment; current authority remains on
+the legacy composite path.
+
 Gate 1 remains closed as a bounded ordinary-single-player v2 connector
 baseline. Source contract is `2.0-preview.67`; Re normalized schema is `26`.
 Gateway v1 is retired and every `/api/v1` route returns `410 Gone`.

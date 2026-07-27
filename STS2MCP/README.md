@@ -6,6 +6,11 @@ gameplay. This repository starts from
 `20eadebde358a37cca41f8b38728099e6d0d19db`, but Bridge v2 is a new,
 state-bound protocol intended for the rebuilt `Re-SpireAgent` client.
 
+The accepted cross-component destination is
+[ADR-0002: Semantic Gateway Two-Plane Target Architecture](../docs/current/decisions/ADR-0002-semantic-gateway-two-plane-target-architecture.md).
+It does not create a second Gateway or authority: compatibility/evidence stays
+outside the live semantic decision path, and Re derives any model-facing view.
+
 ## Status
 
 Bridge v2 is the only mutation contract for the current Agent and default MCP

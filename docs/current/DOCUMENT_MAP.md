@@ -10,19 +10,22 @@ not inherit authority from the archived root SpireAgent runtime.
    step.
 2. [Architecture](ARCHITECTURE.md): component ownership and non-negotiable
    connector boundaries.
-3. [Roadmap](ROADMAP.md): current functional gates and retirement sequence.
-4. [Program plan](PROGRAM_PLAN.md): cross-component dependencies and future
+3. [Connector target architecture ADR](decisions/ADR-0002-semantic-gateway-two-plane-target-architecture.md):
+   the single accepted Workflow C destination, responsibility boundaries,
+   rejected alternatives, staged migration, and bounded completion definition.
+4. [Roadmap](ROADMAP.md): current functional gates and retirement sequence.
+5. [Program plan](PROGRAM_PLAN.md): cross-component dependencies and future
    admission gates without changing the current delivery priority.
-5. [Internal development and evaluation](DEVELOPMENT_AND_EVALUATION.md):
+6. [Internal development and evaluation](DEVELOPMENT_AND_EVALUATION.md):
    current evidence/eval capabilities, honest non-claims, and staged D-lane
    delivery.
-6. [Product](PRODUCT.md): product boundary and deferred product work.
-7. [Local setup](LOCAL_SETUP.md): fresh clone, exact-game build, safe install,
+7. [Product](PRODUCT.md): product boundary and deferred product work.
+8. [Local setup](LOCAL_SETUP.md): fresh clone, exact-game build, safe install,
    loaded-identity verification, Re configuration, and cross-device rules.
-8. [Operations](OPERATIONS.md): safe local development and validation map.
-9. [Repository inventory](REPOSITORY_INVENTORY.md): current/legacy ownership
+9. [Operations](OPERATIONS.md): safe local development and validation map.
+10. [Repository inventory](REPOSITORY_INVENTORY.md): current/legacy ownership
    classification and v1-retirement holdouts.
-10. [Repository consolidation ADR](decisions/ADR-0001-current-mainline-and-legacy-archive.md):
+11. [Repository consolidation ADR](decisions/ADR-0001-current-mainline-and-legacy-archive.md):
    durable authority and archive decision.
 
 Current cross-component audits:

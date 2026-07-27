@@ -5,6 +5,11 @@ Repository baseline: `develop` at `594173a7280706edd50f5c80bae1215c8fd724fc`
 Scope: `STS2MCP/`, `Re-SpireAgent/`, current Connector tools, canonical docs,
 local exact-environment evidence, and the five 2026-07-27 architecture inputs.
 
+Decision follow-up: this audit is the evidence basis for
+[ADR-0002](../decisions/ADR-0002-semantic-gateway-two-plane-target-architecture.md),
+which now owns the single accepted target architecture and migration
+constraints. This report remains an audit, not a second architecture authority.
+
 ## Executive Verdict
 
 The current Connector is neither a failed architecture nor a completed

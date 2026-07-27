@@ -1,5 +1,10 @@
 # Re-SpireAgent RE-P1
 
+Re is the strict Agent consumer in the repository's accepted
+[Semantic Gateway Two-Plane Target Architecture](../docs/current/decisions/ADR-0002-semantic-gateway-two-plane-target-architecture.md).
+It may derive an evidence-tested model view, but it never becomes a second
+game-state, legality, permission, Commit, or completion authority.
+
 > Compatibility status, 2026-07-27: Re and C# share source contract
 > `2.0-preview.67`; Re normalized schema is `26`. Gate 1 is closed as a
 > bounded ordinary-single-player v2 connector baseline. Preview.61 supplied

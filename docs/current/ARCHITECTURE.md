@@ -1,5 +1,14 @@
 # Current Architecture
 
+## Architecture Authority
+
+The single accepted destination is the
+[Semantic Gateway Two-Plane Target Architecture](decisions/ADR-0002-semantic-gateway-two-plane-target-architecture.md).
+This document describes both the current implementation and its constrained
+migration toward that target. Historical ALDG, universal contract/Transaction
+IR, qualification-centric, and environment-migration proposals are evidence
+inputs, not alternative active architectures.
+
 ## Product Boundary
 
 ```text
@@ -15,6 +24,45 @@ The current direct Re-to-Gateway path is a developer integration, not a
 consumer security boundary. The intended future product adds an external
 Companion between the Gateway and Agent/provider layers; it is not implemented
 yet.
+
+## Accepted Target Architecture
+
+```text
+Native STS2 runtime
+  -> STS2MCP Semantic Gateway
+       Live Semantic Decision Plane
+         complete coherent observation evidence
+         one active decision owner
+         bounded native transaction adapters
+         exact state-bound actions
+         execute-time revalidation + native commit
+         action-local outcome + command receipt
+       Compatibility & Evidence Control Plane
+         exact provenance and revision inventory
+         impact/evidence/trial/claim lifecycle
+         quarantine/revoke/rollback
+  -> versioned REST contract
+  -> Re-SpireAgent
+       strict complete evidence record
+       evidenced deterministic DecisionProjection
+       advertised action-id choice
+       transition-aware supervision and replay
+```
+
+This is one Connector with two responsibility planes, not two authorities.
+The Live plane is the only path to current facts and mutations. The Control
+plane may produce non-authorizing evidence and scoped claims, but the Gateway
+must validate them before publishing or executing any action. Re's future
+`DecisionProjection` is a consumer view, not a second game state. Environment
+Profiles and install/rollback tooling sit outside the Gateway as a non-
+authorizing operational boundary; an Artifact Router remains conditional on a
+demonstrated ABI or load split.
+
+Ordinary sequences compose from fresh observations and closed advertised
+actions. A cross-action `PendingObligation` is allowed only when exact native
+evidence proves that a parent transaction remains unresolved across decision
+boundaries. No universal workflow, selector, transaction, or Effect DSL is a
+target component.
 
 ## Ownership
 

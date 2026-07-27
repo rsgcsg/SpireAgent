@@ -7,6 +7,12 @@ The [program plan](PROGRAM_PLAN.md) places these gates in the wider
 research dependency graph; it does not create additional current permissions
 or delivery priorities.
 
+The single architecture destination is
+[ADR-0002](decisions/ADR-0002-semantic-gateway-two-plane-target-architecture.md):
+one Semantic Gateway with a Live Decision Plane and a Compatibility/Evidence
+Control Plane, plus a strict Re consumer. Functional gates below are migration
+and evidence milestones within that architecture, not competing designs.
+
 ## Gate 0: Source Truth Repair
 
 Align the C# Gateway and Re consumer contract; add cross-language conformance
@@ -37,7 +43,7 @@ The
 defines zero-core-code boundaries, automated verification and the negative
 Tutor holdout.
 
-## Gate 2: Player-Visible Information Closure
+## Gate 2: Decision-Plane And Player-Visible Information Closure
 
 Status: **active but still bounded. Preview.66 has completed one real automatic
 migration cycle on the final loaded `v0.109.1` Gateway identity:
@@ -65,9 +71,9 @@ append-only lifecycle tooling, and atomic Gateway reload. Profiles and D
 evidence remain non-authorizing; only the Gateway can issue, enforce, promote
 or quarantine runtime authority. Manifest-derived fallback identity enables
 test-confirm migration but does not prove semantic equivalence. Continue Gate
-2 only through independently qualified operation slices. Loaded identity,
-compilation, static binding similarity, and one successful canary remain
-insufficient.
+2 only through independently evidence-bounded decision families. Loaded
+identity, compilation, static binding similarity, and one successful canary
+remain insufficient.
 See the
 [Preview.66 migration closeout](../../STS2MCP/docs/bridge-v2/PREVIEW_66_MULTI_ENVIRONMENT_MIGRATION_CLOSEOUT_2026-07-26.md).
 
@@ -78,6 +84,24 @@ tests, Release build and disk install are complete; loaded and Organic evidence
 are pending. Only after paired state/control-drift evidence may an authority
 migration be designed. The next transport optimization is capabilities
 summary/on-demand detail, also dual-read first.
+
+After the Preview.67 canary, Gate 2 follows this evidence order:
+
+1. prove semantic-state/current-authority identity separation under real game,
+   operand, permission, and transition drift;
+2. separate hot current-scope summaries from on-demand control-plane evidence
+   without removing complete replay evidence;
+3. measure and repair decision coverage, actionable-with-no-action states,
+   settling transitions, stale precommit attribution, and unknown outcomes;
+4. shadow adapter/oracle/source/partition revisions for representative menu,
+   navigation, shop, and selector/combat families;
+5. evaluate bounded Re-side DecisionProjections on identical evidence; and
+6. replace generic promotion counts with family-specific, scoped compatibility
+   evidence.
+
+`PendingObligation` and an Artifact Router have no unconditional gate. They may
+enter the roadmap only when exact parent/child transaction evidence or a real
+ABI/load split satisfies ADR-0002's admission condition.
 
 ## Gate 3: Local Control Coordination Alpha
 
@@ -116,5 +140,7 @@ Headless is a separate host experiment. It may eventually share host-neutral
 contracts, but it inherits neither live action permission nor live evidence.
 See [Headless scope](headless/README.md).
 
-The detailed near-term repair order is owned by the
-[connector migration audit](../../STS2MCP/docs/bridge-v2/REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md).
+The current near-term order is owned by ADR-0002 and the
+[fact-first Connector audit](audits/WORKFLOW_C_FACT_FIRST_CONNECTOR_AUDIT_2026-07-27.md).
+The older connector migration audit remains evidence for defects and history,
+not current architecture authority.

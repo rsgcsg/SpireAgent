@@ -3,6 +3,11 @@
 This is the canonical current status for the Gateway/Re connector boundary.
 Historical preview reports do not grant current authority.
 
+The accepted destination is repository
+[ADR-0002](../../../docs/current/decisions/ADR-0002-semantic-gateway-two-plane-target-architecture.md).
+This file reports present implementation/evidence only; target components do
+not become current capability by appearing in that ADR.
+
 ## Source Truth
 
 ```text

@@ -4,6 +4,12 @@ This plan is subordinate to the current exact-build permission matrix. It is a
 sequence of verifiable reductions in duplication, not a proposal to broaden
 runtime authority.
 
+The cross-component target is fixed by
+[ADR-0002](../../../docs/current/decisions/ADR-0002-semantic-gateway-two-plane-target-architecture.md).
+That decision supersedes this plan's former broad Transaction IR and Gateway-
+owned DecisionFrame proposals. The Gateway keeps complete observation evidence
+and bounded purpose-specific adapters; Re derives any model-facing projection.
+
 ## Mandatory Precondition: Source Truth Repair
 
 Status: Gate 1 closed as a bounded ordinary-single-player v2 connector
@@ -159,87 +165,50 @@ Inspection is complete for its declared view; every other player-visible fact
 is linked, catalogued, or explicitly missing; hidden facts remain excluded.
 This phase cannot grant action authority.
 
-## Phase 2: Transaction Correlation And DecisionFrame Shadow
+## Phase 2: Semantic-State And Current-Authority Separation
 
-Status: eligible Gate 2 design work after bounded Gate 1 closure. The
-2026-07-20 design remains evidence input, not an implementation authorization.
-Do not begin with a protocol or authority migration, and do not introduce
-broad Transaction IR merely to preserve the old phase order.
+Status: Preview.67 shadow implementation complete; loaded and Organic evidence
+pending.
 
-First add a minimal, non-authorizing transaction-correlation record beside the
-existing command ledger. Seed it only from already-audited native Task scopes
-for generated-card and combat-pile choices. It should record source task token,
-owner, exact operands, current child decision, lifecycle phase, and outstanding
-Witness obligations. A separate production `TransactionLedger` class is one
-possible implementation, not a fundamental invariant; transaction ownership
-and obligation correlation are the required properties.
+Measure the non-authorizing semantic-state and authority-projection candidates
+under real game-state, operand, permission, qualification-history and
+transition changes. Keep the legacy composite `state_id` and action binding as
+the only authority until ADR-0005's promotion gate passes.
 
-Then extract a typed, permissionless mechanism snapshot containing visible
-candidates, exact references, selection membership, bounds, controls, and
-stage. Bind it to a `DecisionFrame` that also records:
+In parallel, dual-read a current-scope capabilities summary against on-demand
+full control-plane detail. Complete evidence remains available for replay and
+audit; historical control data must not become strategy input or future game-
+semantic identity.
 
-- the one current input owner;
-- a game-owned task, command, or continuation token;
-- exact operands and legality constraints;
-- transaction phase (`already_applied`, `awaiting_choice`, `commit_pending`, or
-  `settling`);
-- explicit hidden and unavailable facts;
-- a closed mutation domain and completion obligations.
+Exit condition: fresh evidence attributes every candidate identity change,
+irrelevant history does not invalidate actions, relevant owner/operand/grant
+changes do, strict C#/Re reads agree, and rollback is immediate.
 
-Source/provenance is not automatically the semantic contract. A source literal
-may be optional when a qualified extractor can attest a complete current game
-transaction, but a trustworthy task/transaction binding is never optional.
-Registry data, UI shape, prompt text, or a Mod's own declaration cannot attest
-itself or grant authority.
+## Phase 3: Bounded Adapter And Outcome-Oracle Revision Shadow
 
-Move repeated legality into a pure validation result consumed by publication
-and execute-time revalidation. Execution may add liveness and timing checks but
-must not reinterpret the business predicate. The first implementation is a
-non-authorizing shadow beside existing Providers and must reproduce or narrow
-actions, operands, hidden policy, and failure behavior.
+Status: proposed after Phase 2 evidence.
 
-Exit condition: two repeated families shadow-match existing command actions
-and full native Task lifecycles; negative fixtures reject incomplete,
-ambiguous, orphaned, or concurrently owned frames; and no permission or wire
-action authority changes.
+For representative menu, navigation, shop, and selector/combat families,
+record non-authorizing adapter revision, source/participant contract revision,
+outcome-oracle revision, and covered condition partition. These describe the
+current bounded implementation and evidence scope; they do not form a
+universal contract or grant authority.
 
-## Phase 3: Closed Transaction IR And Witness Obligation Plans
+Move only genuinely repeated, permissionless mechanics into shared helpers.
+Publication and execution must consume the same legality result; execution may
+add current identity and timing checks but cannot reinterpret the business
+predicate. Purpose-specific native Commit and outcome code remains valid where
+semantic differences are real.
 
-Status: proposed after Phase 2 shadow evidence.
-
-Introduce a closed, versioned Transaction IR only as a declaration of the
-game-owned transaction and its proof obligations. It is not an executable
-Effect DSL: Bridge must still invoke one qualified game-owned Commit adapter
-and must never replay damage, block, movement, rewards, hooks, or scripts from
-the IR.
-
-The IR may compose known, bounded primitives such as exact-card movement,
-enchantment application, transformation, currency delta, resource delta, and
-bounded child decisions. Each primitive must declare its Mutation Domain,
-operand types, hidden-information policy, and required witness rules. Unknown
-primitives, unbound operands, unbounded control flow, incomplete domains, and
-missing witnesses fail closed.
-
-Compile the declared obligations into a `WitnessPlan` using a finite set of
-observations: exact entity presence/absence, collection/cardinality delta,
-currency/resource delta, attribute change, control consumption, owner change,
-room change, and bounded child completion. A purpose-specific manual witness
-remains valid when hooks, asynchronous behavior, or a domain cannot be proved
-closed. Compilation must never weaken completion to page closure.
-
-In parallel, classify fields as identity-critical, legality-critical,
-completion-critical, strategy-critical, or decorative. Unknown action-critical
-facts suppress authority; an independently missing strategy field may degrade
-strategy projection without invalidating an otherwise proven transaction.
-
-Exit condition: every shadow transaction owns all completion obligations across
-parent/child Surface boundaries, and no declared side effect lacks a witness or
-an explicit fail-closed reason.
+Exit condition: representative shadows reproduce or narrow current actions,
+operands, hidden-information policy and action-local completion; negative
+fixtures reject wrong owner, source, participant, branch, outcome and Patch
+scope; no authority key changes.
 
 ## Phase 3.5: Non-Authorizing Source Audit Workbench
 
-Status: proposed after the Phase 2 record has frozen the minimum facts that a
-real transaction needs.
+Status: proposed after Phase 3 has frozen the minimum facts that a bounded
+adapter and action-local outcome oracle need.
 
 Build an offline, exact-assembly audit tool that can propose:
 
@@ -262,51 +231,34 @@ Exit condition: the tool reproduces reviewed facts for at least two holdout
 families, reports known omissions instead of silently closing the domain, and
 cannot change permissions, capability tiers, or command execution.
 
-## Phase 4: Strategy Semantics And Structural Protocol
+## Phase 4: Decision Coverage, Consumer Projection, And Runtime Continuity
 
-Status: proposed after repeated Phase 2/3 evidence.
+Status: active measurement; no compact runtime projection accepted.
 
-Keep application semantics separate from future strategic semantics. For
-example, applying enchantment `X` amount `N` to exact card `C` is an executable
-transaction; explaining how `X` later modifies damage, block, triggers, or
-card-play count is a read-only strategy projection. Unknown future behavior
-must not grant or revoke execution authority unless it also makes current
-legality, visibility, or completion incomplete.
+Keep complete Gateway evidence separate from model strategy input. Re may
+derive a deterministic, provenance-preserving `DecisionProjection` only for a
+bounded scope with same-evidence baseline/overlay comparisons and semantic
+counterexamples. The first generic projection failed on reward scopes and is
+not a reusable candidate.
 
-After the shadow model is stable:
+Measure and repair actionable-with-no-action states, unsupported decision
+families, settling/loading transitions, stale precommit attribution, timeouts,
+unknown outcomes and successor coherence. Re may supervise polling and request
+fresh observations, but cannot infer native completion or retry unknown
+mutations.
 
-- introduce a structural DecisionFrame/Transaction/Witness schema rather than
-  new Surface/source literals for each content item;
-- generate or golden-test structural C#/TypeScript fixtures and exhaustiveness;
-- keep primitive semantics, Commit adapters, authority, and hidden-information
-  checks hand-reviewed;
-- require a zero-core-code holdout gate for new content composed entirely from
-  existing mechanisms, primitives, adapters, and witness rules;
-- allow registry data, fixtures, and exact-build evidence to change without
-  handwritten Bridge/Re core changes;
-- add game, mechanism, adapter, transaction, and witness fingerprints only as
-  diagnostics and targeted requalification inputs.
+Ordinary sequences compose from fresh closed actions. Introduce a minimal
+`PendingObligation` only when exact native evidence proves a parent transaction
+remains open across decision boundaries. It records correlation and closure
+evidence only; no workflow engine or executable Transaction IR is permitted.
 
-New UI mechanics, new primitive semantics, or a new game-owned Commit path may
-legitimately require code. New card/relic/potion/enchantment IDs and new bounded
-compositions of existing primitives must not.
+MCP remains a thin transport adapter. Headless remains an independent research
+host and cannot grant or inherit Live authority.
 
-Layered fingerprints may reduce work after a pure data update, but final action
-permission remains exact-environment, explicit and Gateway-enforced. A
-reviewed D recommendation may enter the Preview.63 session-candidate path, but
-no fingerprint, registry, Mod contract, or old evidence can authorize itself
-or inherit persistent authority.
-
-MCP remains one transport adapter over this protocol-neutral gateway. Re may
-continue to use REST directly. A compact MCP adapter should derive its fixed
-Inspection requests from the advertised catalog and should not grow one
-content-specific tool per card, relic, potion, event, or transaction source.
-
-Protocol and renderer neutrality are current gateway properties, not a
-Headless deployment. Running the real Godot engine without a display may be
-evaluated only after owner, visibility, Commit, timing, and Witness behavior
-shadow-match the visible runtime. It does not change action authority and it is
-not a reason to reimplement STS2 rules.
+Exit condition: supported journeys continue through typed transitions without
+rule reconstruction; complete evidence and any model projection remain
+replay-comparable; operation-local completion and unknown-no-retry remain
+Gateway-owned.
 
 ## Deferred Headless Subproject Gate
 
@@ -318,22 +270,25 @@ It is a separate future subproject documented under
 runtime, shared-kernel package, permission profile, or adapter skeleton merely
 because the protocol is transport-neutral.
 
-The live path must first close its source-binding, transaction-correlation,
-shared-validation, Witness, adapter-catalog, and exact loaded-evidence gates.
+The live path must first close its identity separation, source/participant
+binding, shared-validation, adapter/oracle revision, outcome, and exact loaded-
+evidence gates.
 The full admission criteria, candidate host comparison, phases, acceptance,
 and rollback rules are in [the Headless target
 architecture](../../../docs/current/headless/TARGET_ARCHITECTURE.md). Passing that gate
 permits an isolated experiment only; it grants no Headless or live authority.
 
-## Phase 5: Organic Qualification After v1 Retirement
+## Phase 5: Scoped Compatibility Evidence After v1 Retirement
 
 Status: the complete v1 HTTP namespace was retired at the bounded Gate 1
-closeout; Organic qualification remains ongoing per contract and exact
-environment.
+closeout; scoped Organic compatibility evidence remains ongoing per bounded
+decision family and exact environment.
 
-For each contract, record source audit, fixture tests, strict Re tests,
-Release/build, install, loaded identity, observation, canary, semantic
-post-state, and Organic Qualification separately. Unsupported contracts remain
+For each bounded decision family, record source audit, fixture tests, strict Re
+tests, Release/build, install, loaded identity, observation, canary, semantic
+post-state, and Organic compatibility evidence separately. Existing package
+status may still use `qualification` during migration, but its durable meaning
+is a scoped, revocable CompatibilityClaim. Unsupported contracts remain
 explicitly fail closed; they never regain authority through a v1 fallback.
 Historical v1 operation mappings remain audit evidence only.
 
@@ -350,7 +305,8 @@ fallback has been retired without ambiguity.
   implementation presence, static grader success, or D recommendation alone;
 - no self-authorizing registry or Mod-declared contract;
 - no source literal whitelist as a substitute for complete transaction binding;
-- no expansion of current local hash `1833084275` authority by this plan;
+- no expansion of authority from a version, build hash, MVID, or Mod manifest
+  alone;
 - no use of old MVID Organic evidence for a new DLL.
 
 The active naming and ownership source is
