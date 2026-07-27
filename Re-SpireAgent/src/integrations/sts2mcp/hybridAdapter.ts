@@ -22,6 +22,8 @@ export interface HybridAdapterOptions {
   commandTimeoutMs: number;
   startupWaitMs?: number;
   startupPollMs?: number;
+  observationRetryAttempts?: number;
+  observationRetryDelayMs?: number;
 }
 
 export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, ExecutableGameAction, GameExecutionResult> {
@@ -228,15 +230,24 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
 
     const capabilities = this.capabilitiesPayload;
     if (!capabilities) throw new Error("Bridge v2 capabilities were not negotiated");
-    const state = await this.bridge.state();
-    const observation = await this.readObservationBundle(capabilities.data, state.data);
-    this.lastReadAuthority = "bridge";
-    return wrapBridgeV2State({
-      state: observation.rawState,
-      capabilities: capabilities.raw,
-      ...(Object.keys(observation.inspections).length > 0 ? { inspections: observation.inspections } : {}),
-      observation: observation.evidence
-    });
+    const maxAttempts = Math.max(1, this.options.observationRetryAttempts ?? 3);
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      try {
+        const state = await this.bridge.state();
+        const observation = await this.readObservationBundle(capabilities.data, state.data);
+        this.lastReadAuthority = "bridge";
+        return wrapBridgeV2State({
+          state: observation.rawState,
+          capabilities: capabilities.raw,
+          ...(Object.keys(observation.inspections).length > 0 ? { inspections: observation.inspections } : {}),
+          observation: observation.evidence
+        });
+      } catch (error) {
+        if (!(error instanceof TransientObservationError) || attempt >= maxAttempts) throw error;
+        await this.sleep(this.options.observationRetryDelayMs ?? 10);
+      }
+    }
+    throw new Error("Bridge v2 observation retry loop ended without a result");
   }
 
   async execute(action: ExecutableGameAction): Promise<GameExecutionResult> {

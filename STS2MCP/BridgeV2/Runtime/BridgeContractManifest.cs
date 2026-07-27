@@ -67,7 +67,7 @@ internal static class BridgeContractManifest
         Entry(
             "deck_enchant_selection",
             new[] { "toggle_card", "preview_selection", "confirm_selection", "cancel_preview", "close_selection" },
-            "sts2-v0.109.0:SelfHelpBook.ReadEntireBook+CardSelectCmd.FromDeckForEnchantment+NDeckEnchantSelectScreen+exact-card-enchantment-post-state-witness",
+            "sts2-v0.109.1:SelfHelpBook.SelectAndEnchant|Kifuda.AfterObtained+CardSelectCmd.FromDeckForEnchantment+NDeckEnchantSelectScreen+runtime-source-binding+exact-card-enchantment-post-state-witness",
             "purpose_specific_deck_selection",
             new[] { "visible_deck_cards", "selection", "preview", "controls" }),
         Entry(
@@ -230,7 +230,7 @@ internal static class BridgeContractManifest
                 "purchase_shop_card", "purchase_shop_relic", "purchase_shop_potion",
                 "open_shop_card_removal", "close_shop_inventory"
             },
-            "sts2-v0.109.0:MerchantInventory+typed MerchantEntry+NMerchantSlot+NMerchantInventory+semantic-category-witnesses",
+            "sts2-v0.109.1:MerchantInventory+typed MerchantEntry+NMerchantSlot+NMerchantInventory+semantic-category-witnesses+Kifuda-native-continuation-handoff",
             "merchant_inventory",
             new[] { "inventory", "prices", "sold_state", "gold", "potion_capacity", "removal_service" }),
         Entry(

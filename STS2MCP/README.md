@@ -10,6 +10,9 @@ The accepted cross-component destination is
 [ADR-0002: Semantic Gateway Two-Plane Target Architecture](../docs/current/decisions/ADR-0002-semantic-gateway-two-plane-target-architecture.md).
 It does not create a second Gateway or authority: compatibility/evidence stays
 outside the live semantic decision path, and Re derives any model-facing view.
+[ADR-0003](../docs/current/decisions/ADR-0003-operation-retirement-and-native-continuation-migration.md)
+defines the accepted shadow-first migration away from global operation
+identity and the narrow native continuation boundary.
 
 ## Status
 
@@ -17,8 +20,8 @@ Bridge v2 is the only mutation contract for the current Agent and default MCP
 adapter. It remains an incremental semantic/visibility preview, not
 complete-game coverage.
 
-The C# Bridge and Re source share `2.0-preview.67`; Re normalized schema is
-`26`. Gate 1 is closed as a bounded ordinary-single-player v2 connector
+The C# Bridge and Re source share `2.0-preview.68`; Re normalized schema is
+`27`. Gate 1 is closed as a bounded ordinary-single-player v2 connector
 baseline. Preview.62 replaced repeated combat-pile source branches with a
 reviewed embedded registry, moves exact-environment scopes into a reviewed
 embedded policy, and added a non-authorizing exact-assembly audit. Preview.63
@@ -33,17 +36,14 @@ Environment Profiles, a risk-based migration policy, exact evidence
 aggregation, automatic package orchestration, multi-environment package slots,
 and atomic store reload. The final Neow's Fury runtime seal remains attributed
 to Preview.61; new registry entries are never automatically Organic-qualified.
-Preview.67 adds a required, non-authorizing semantic-state/authority-projection
-identity shadow. It does not change current state/action identity, permission,
-execution, completion, or Re's Prompt. It is built, installed and cold-loaded
-as SHA `100ddf42...74d`, MVID
-`65bd744d-270b-4026-84c4-2ee397eee4e2`. A historical backup manifest inside
-the recursively scanned Mod tree caused the earlier duplicate `Loaded +
-Failed` state; the current Modset contains one successful `STS2_MCP`. The exact
-Preview.67 migration workflow installed 87 session-canary packages and Re
-completed a no-mutation dry run. Preview.67 has no real mutation, settled
-canary, Organic action evidence, Inspection authority or persistent
-qualification. Its 87-operation catalog combines five explicit high-precision
+Preview.68 retains the identity shadow and adds typed completion boundaries,
+exact Kifuda continuation handoff, source-bound deck-enchant contracts,
+coherent read-only observation retry, native hover-derived Orb text, and a
+non-authorizing runtime contract/source shadow. The last loaded Preview.67
+artifact settled 145 actions across three inspected real-runtime runs; their
+provenance is `unrecorded`, so they are defect/coverage evidence rather than
+Organic qualification. Preview.68 must be cold-loaded and requalified under
+its own SHA/MVID. The 87-operation catalog combines five explicit high-precision
 contracts with 82 manifest-derived conservative identity/test-confirm
 fallbacks. Fallback metadata does not assert semantic equivalence or bypass
 current native legality, Commit, completion, or operation-local quarantine.
@@ -59,16 +59,14 @@ Exact evidence is recorded in [current status](docs/bridge-v2/CURRENT_STATUS.md)
 
 - Historical Gate 1 binding: Slay the Spire 2
   `v0.109.0|c12f634d|-1639417500`. Its authority does not transfer.
-- Current loaded game identity:
-  `v0.109.1|c8c577f6|-820620422`. All 87 Preview.67 operation scopes are
-  candidate-backed session canaries and require independent runtime evidence
-  before persistent qualification. Preview.66's one persistent main-menu
-  package is historical and does not authorize Preview.67.
+- Current game identity:
+  `v0.109.1|c8c577f6|-820620422`. Preview.67 packages are bound to its loaded
+  Gateway identity and do not authorize Preview.68.
 - A matching version/commit with a different main-assembly hash remains
   untested and has no v2 action or Inspection authority. Check
   [Bridge v2 current status](docs/bridge-v2/CURRENT_STATUS.md) before treating
   a local install as qualified.
-- Source `2.0-preview.67` keeps centralized overlay/room/menu ownership, typed
+- Source `2.0-preview.68` keeps centralized overlay/room/menu ownership, typed
   diagnostics, purpose-specific selection and event contracts, staged
   completion semantics, and a top-level read-only shared run/player HUD.
   Current-build capabilities distinguish reviewed exact-policy actions,
@@ -172,11 +170,14 @@ npm run connector -- repair-installation
 npm run connector -- wait-for-gateway
 npm run connector -- verify-loaded-artifact --wait
 npm run connector -- collect-evidence
+npm run connector -- run-agent -- --max-ticks 100
 ```
 
 It delegates to the same component checks and qualification tools. It does not
-reconstruct game rules, grant authority, or turn disk installation into loaded
-or Organic evidence. `diagnose-installation` finds duplicate `STS2_MCP`
+reconstruct game rules or turn disk installation into loaded/Organic evidence.
+`run-agent` performs exact loaded-identity preflight and may append a local
+exact trial candidate; only Gateway revalidation can grant session authority.
+`diagnose-installation` finds duplicate `STS2_MCP`
 manifests in the native recursive Mod scan tree. With the game closed,
 `repair-installation` may move only manifests already contained by an explicit
 `backups` directory into ignored local quarantine; every other duplicate needs

@@ -1,15 +1,14 @@
 # Bridge v2 Integration
 
 > Current source-truth status, 2026-07-27: Re and C# share the
-> `2.0-preview.67` source consumer contract; Re normalized schema is `26`.
+> `2.0-preview.68` source consumer contract; Re normalized schema is `27`.
 > Gate 1 is closed as a bounded ordinary-single-player v2 connector baseline.
 > Preview.61 supplied the final Neow's Fury runtime seal; Preview.62 adds
 > policy provenance and registry adaptation without inheriting qualification.
-> Preview.67 is built and installed but not cold-loaded; Preview.66 remains the
-> latest loaded/Organic evidence. Its final exact environment has one
-> persistent-qualified operation and 86 session canaries. Five contracts are
-> explicit high-precision rows; 82 are conservative manifest-derived
-> identity/test-confirm fallbacks. The build is not broadly qualified.
+> Preview.68 requires cold-load evidence. The last loaded exact artifact is
+> Preview.67; its packages cannot authorize the new MVID. Five contracts are
+> explicit high-precision rows; 82 remain conservative manifest-derived
+> identity/test-confirm fallbacks rather than semantic qualification.
 
 ## Connector Boundary
 
@@ -29,7 +28,7 @@ consumption.
 
 ## Current Scope
 
-Re-SpireAgent implements the strict `2.0-preview.67` consumer contract. When a
+Re-SpireAgent implements the strict `2.0-preview.68` consumer contract. When a
 matching Bridge exists, authority is read from capabilities rather than
 inferred from implementation or historical evidence.
 
@@ -79,7 +78,7 @@ the echoed request/state/action identity, preserves `failed` and `timed_out`
 as unknown outcomes, and captures a coherent successor checkpoint after a
 confirmed command. A checkpoint read failure cannot cause action retry.
 
-Preview.67 requires `identity_shadow`. Re strictly verifies its non-authorizing
+Preview.68 requires `identity_shadow`. Re strictly verifies its non-authorizing
 status and candidate digest shapes and preserves it in raw evidence. It is not
 part of normalized strategy state, Prompt construction, action import,
 permission, or completion. The legacy composite `state_id` remains the only
@@ -98,6 +97,13 @@ runtime-epoch canary flow. A persistent operation scope is accepted only when
 one current `qualified` package matches the exact environment, operation
 fingerprint, completion boundary and witness. Re cannot install, promote,
 revoke, roll back, or repair either package tier.
+
+Preview.68 makes the public `npm run agent:run` an Operator Shell entry. The
+shell verifies exact source/built/installed/loaded identity and asks the
+Gateway to revalidate exact trial packages before invoking the internal direct
+loop. This removes hand-composed migration arguments without making Re or D an
+authority. After terminal game-over cleanup the bounded loop stops at the
+top-level menu even though initial run entry was allowed.
 
 Preview.66 permits multiple exact environments to retain packages for the same
 Surface/operation without collision. Re continues to consume only the

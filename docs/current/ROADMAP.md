@@ -10,8 +10,10 @@ or delivery priorities.
 The single architecture destination is
 [ADR-0002](decisions/ADR-0002-semantic-gateway-two-plane-target-architecture.md):
 one Semantic Gateway with a Live Decision Plane and a Compatibility/Evidence
-Control Plane, plus a strict Re consumer. Functional gates below are migration
-and evidence milestones within that architecture, not competing designs.
+Control Plane, plus a strict Re consumer. ADR-0003 refines the live kernel by
+retiring `operation` as the final compatibility identity through a shadow-first
+native-contract migration. Functional gates below are migration and evidence
+milestones within that architecture, not competing designs.
 
 ## Gate 0: Source Truth Repair
 
@@ -45,12 +47,10 @@ Tutor holdout.
 
 ## Gate 2: Decision-Plane And Player-Visible Information Closure
 
-Status: **active but still bounded. Preview.66 completed one real automatic
-migration cycle on its own historical `v0.109.1` Gateway identity:
-`main_menu/continue_run` was persistent-qualified after two exact Organic
-runtime epochs and cold-restart recovery. Preview.67 is now the loaded exact
-identity; all 87 current operation identities are session canaries only and
-have no Preview.67 Organic or persistent qualification.**
+Status: **active but bounded. Preview.67 completed 145 settled real-runtime
+actions across three inspected runs, but their provenance is `unrecorded` and
+does not qualify persistent authority. Preview.68 is the next source contract;
+it is not loaded until cold restart.**
 
 Close decision-relevant visible-information gaps using shared state, context,
 surface, preview, and read-only inspection. Do not expose hidden RNG, draw
@@ -77,40 +77,35 @@ remain insufficient.
 See the
 [Preview.66 migration closeout](../../STS2MCP/docs/bridge-v2/PREVIEW_66_MULTI_ENVIRONMENT_MIGRATION_CLOSEOUT_2026-07-26.md).
 
-Preview.67 begins a narrower reliability experiment: dual-write a
-non-authorizing semantic-state and current-authority identity candidate while
-retaining the legacy composite as the only state/action identity. C# and Re
-tests, Release build, disk install, cold-load identity, clean single-Mod
-diagnosis, exact migration dry-run/apply, strict Re inspection, and one Re
-dry-run are complete. The current exact environment has 87 session-canary
-operation scopes, but Preview.67 still has no mutation, settled canary,
-Organic action evidence, Inspection authority, or persistent qualification.
-Only after paired state/control-drift evidence may an identity authority
-migration be designed. The next transport optimization is capabilities
-summary/on-demand detail, also dual-read first.
+Preview.68 closes the measured coherent-read race, preserves correct stale
+precommit rejection, stops a bounded run after terminal cleanup, and models
+Kifuda's exact native continuation handoff. It also starts runtime source/
+contract shadow emission. Current operation permission remains authoritative;
+ADR-0003 forbids replacing it until dual-read parity exists.
 
-After the user runs the first Preview.67 Organic journey, Gate 2 follows this
-evidence order:
+Gate 2 now proceeds in this order:
 
-1. prove semantic-state/current-authority identity separation under real game,
-   operand, permission, and transition drift;
-2. separate hot current-scope summaries from on-demand control-plane evidence
-   without removing complete replay evidence;
-3. measure and repair decision coverage, actionable-with-no-action states,
-   settling transitions, stale precommit attribution, and unknown outcomes;
-4. shadow adapter/oracle/source/partition revisions for representative menu,
-   navigation, shop, and selector/combat families;
-5. evaluate bounded Re-side DecisionProjections on identical evidence; and
-6. replace generic promotion counts with family-specific, scoped compatibility
-   evidence.
+1. cold-load and run Preview.68 under a fresh exact trial; verify coherent
+   observation, one-game stop, and Kifuda/selector continuation when natural;
+2. expand non-authorizing adapter/outcome/source/partition shadow metadata
+   across representative menu, navigation, shop, combat, reward, and selector
+   families;
+3. separate game-semantic identity from current authority after ADR-0005 gates
+   pass, with rollback to composite identity;
+4. dual-read current-scope capability summaries before reducing hot governance
+   payloads;
+5. migrate claim/permission identity away from global operation only after
+   publication and execute-time parity are proven;
+6. evaluate bounded Re-side DecisionProjections on identical evidence; and
+7. replace generic promotion counts with family-specific scoped evidence.
 
-`PendingObligation` and an Artifact Router have no unconditional gate. They may
-enter the roadmap only when exact parent/child transaction evidence or a real
-ABI/load split satisfies ADR-0002's admission condition.
+Kifuda admits only an exact continuation handoff, not a universal
+`PendingObligation` graph. Artifact Router remains deferred until a real ABI or
+load split is demonstrated.
 
 ## Gate 3: Local Control Coordination Alpha
 
-Status: **Preview.64 behavior is included in the loaded Preview.67 artifact.
+Status: **Preview.64 behavior is included in the last loaded Preview.67 artifact.
 A bounded two-client check confirmed single-writer acquisition, competing
 client rejection, release, and no remaining active controller. No game action
 was authorized by this coordination test.**

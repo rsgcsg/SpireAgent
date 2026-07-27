@@ -6,7 +6,7 @@ It may derive an evidence-tested model view, but it never becomes a second
 game-state, legality, permission, Commit, or completion authority.
 
 > Compatibility status, 2026-07-27: Re and C# share source contract
-> `2.0-preview.67`; Re normalized schema is `26`. Gate 1 is closed as a
+> `2.0-preview.68`; Re normalized schema is `27`. Gate 1 is closed as a
 > bounded ordinary-single-player v2 connector baseline. Preview.61 supplied
 > the final Neow's Fury Organic runtime seal; Preview.62 source/audit evidence
 > does not automatically qualify its new registry entries. Preview.63 is
@@ -20,14 +20,11 @@ game-state, legality, permission, Commit, or completion authority.
 > Organic evidence and cold-restart revalidation. The Gateway projects five
 > explicit high-precision contracts plus 82 conservative manifest-derived
 > fallbacks; the other 86 operations are session canaries, not qualifications.
-> Preview.67 additionally requires a non-authorizing state identity shadow.
-> Re preserves it only in raw evidence; it is not normalized into the DeepSeek
-> Prompt and does not change action authority. Preview.67 is now cold-loaded as
-> SHA `100ddf42...74d`, MVID `65bd744d-270b-4026-84c4-2ee397eee4e2` with a
-> clean single-Gateway Modset. Its 87 current operation scopes are session
-> canaries only. A strict Re dry run passed, but Preview.67 still has no real
-> mutation, Organic action evidence, Inspection authority, or persistent
-> qualification.
+> Preview.68 retains the non-authorizing state identity shadow and adds a
+> non-authorizing runtime contract/source shadow plus typed receipt completion
+> boundaries. Three Preview.67 runs supplied real-runtime defect and coverage
+> evidence, but their provenance is `unrecorded` and not Organic qualification.
+> Preview.68 requires a fresh exact trial after cold load.
 
 > Product-boundary warning: direct Re-to-Gateway REST and `.env.local` provider
 > keys are developer workflows, not the target consumer architecture. The
@@ -47,8 +44,8 @@ waits for the Bridge command lifecycle, and records the complete evidence.
 
 RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, shadow/live modes, policy promotion, or the old project's phase machinery. Its job is to make one decision path correct and auditable.
 
-Re's current strict client contract is Bridge `2.0-preview.67`. The loaded
-`v0.109.1|c8c577f6|-820620422` Gateway identity has 87 exact session-canary
+Re's current strict client contract is Bridge `2.0-preview.68`. The last loaded
+Preview.67 `v0.109.1|c8c577f6|-820620422` Gateway identity had exact session-canary
 operation scopes and no persistent qualification. Re strictly decodes those
 current identities and grants, but does not interpret fallback witness
 semantics or promote any candidate. Preview.66's narrow persistent
@@ -101,7 +98,7 @@ explicit `--allow-run-entry` option may cross a top-level menu boundary only
 through a current `bridge_advertised` action; the default command remains
 one-game bounded and local reconstruction remains forbidden.
 
-Preview.67 strictly decodes the Gateway's required identity shadow. The shadow
+Preview.68 strictly decodes the Gateway's required identity shadow. The shadow
 is retained in the raw state record for migration measurement but deliberately
 excluded from `NormalizedCurrentState`, Prompt construction, allowed actions,
 and runtime permission. Current state/action IDs remain authoritative.
@@ -395,13 +392,20 @@ Run a bounded autonomous loop:
 npm run agent:run -- --max-ticks 20 --delay-ms 250
 ```
 
-The public npm `agent:run` entry permits one Gateway-advertised Continue or
-new-run action, then remains bounded to one game. It may finish that run's
+The public npm `agent:run` entry first invokes the external Operator Shell. It
+requires exact source/built/installed/loaded identity, resumes the current
+exact migration trial, and waits for Gateway revalidation before Re starts.
+The shell may write an exact candidate package but cannot grant live
+authority; the Gateway remains the decision and enforcement owner.
+
+The direct loop then permits one Gateway-advertised Continue or new-run action
+and remains bounded to one game. It may finish that run's
 Bridge-owned game-over intro, summary, and return lifecycle, then stops at the
 top-level `menu` before starting another run. The underlying TypeScript CLI
-still requires the explicit `--allow-run-entry` argument; the npm script owns
-that operator default. Neither path authorizes `local_reconstruction` menu
-actions or bypasses Gateway permission or state binding.
+is available only as the internal `agent:run:direct` script and requires the
+explicit `--allow-run-entry` argument. Neither path authorizes
+`local_reconstruction`, imports permission from another MVID, or bypasses
+Gateway state binding.
 
 The loop stops on invalid state, missing actions on an actionable screen, provider/decision failure, MCP rejection, or unsettled execution. Transitional/loading states are polled without calling DeepSeek.
 

@@ -238,16 +238,19 @@ enter only session canary authority until new Organic outcomes exist.
 
 ## Migration Order
 
-1. Cold-load and bind the Preview.67 identity shadow, then collect paired game-
-   state and control-history evidence without changing authority. Cold-load,
-   exact binding and a no-mutation dry run are complete; real action/drift
-   pairing remains pending.
+This order is refined by ADR-0003 for operation retirement and exact native
+continuations.
+
+1. Use the completed Preview.67 real-runtime journeys to classify semantic
+   state, control drift, observation races, and native parent/child evidence
+   without changing current authority.
 2. Separate semantic-state and current-authority identities only after ADR-0005
    promotion gates pass; retain immediate rollback to the composite identity.
 3. Dual-read capabilities summary/on-demand details and prove current-scope
    equality before reducing hot payloads.
 4. Add shadow adapter/oracle/source/partition revisions for representative
-   menu, navigation, shop, and selector/combat families.
+   menu, navigation, shop, and selector/combat families. Preview.68 begins
+   this with exact deck-enchant source contracts.
 5. Improve transition stability and Re supervision from measured unsupported,
    stale, settling, timeout, and unknown-outcome cases.
 6. Evaluate bounded Re-side DecisionProjections with same-evidence pairs and
@@ -256,8 +259,9 @@ enter only session canary authority until new Organic outcomes exist.
    promoted artifacts scoped CompatibilityClaims.
 8. Run real cross-version and bounded Mod experiments before changing
    authority keys or compatibility claims.
-9. Introduce PendingObligation or an Artifact Router only when their explicit
-   admission conditions are observed.
+9. Introduce only the minimal continuation record when an exact native parent
+   remains open across a child decision. Kifuda admits this narrow handoff; it
+   does not admit a generic workflow. Artifact Router remains evidence-gated.
 
 Each migration is shadow/dual-read first, independently rollbackable, and must
 keep current publication/execution parity, unknown-no-retry, and fail-closed

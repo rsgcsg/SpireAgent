@@ -1046,6 +1046,47 @@ public sealed class BridgeContractTests
     }
 
     [Fact]
+    public void RuntimeSourceBindingIsDistinctFromManifestDeclarationAndRemainsNonAuthorizing()
+    {
+        var compatibility = new CompatibilityAssessment(
+            "observation_only",
+            Array.Empty<string>(),
+            Array.Empty<string>(),
+            ActionExecutionAllowed: false,
+            StateObservationAllowed: true,
+            InspectionAllowed: false,
+            ActionExecutionSurfaceKinds: Array.Empty<string>(),
+            ActionCanarySurfaceKinds: Array.Empty<string>(),
+            InspectionAllowedKinds: Array.Empty<string>(),
+            InspectionCanaryKinds: Array.Empty<string>(),
+            ObservationOnlySurfaceKinds: new[] { "deck_enchant_selection" },
+            ObservationCandidateBuildFingerprints: Array.Empty<string>(),
+            Detail: "test");
+        var draft = new BridgeObservationDraft(
+            "enchant-sig",
+            "ready",
+            new UnknownBridgeContext("event", "test", "test"),
+            new UnsupportedSurface("deck_enchant_selection", "fixture", "fixture"),
+            new StateCompleteness("complete", "derived", Array.Empty<string>(), Array.Empty<string>()),
+            new GameBuildIdentity("v0.109.1", "commit", "branch", 1, compatibility),
+            Array.Empty<string>(),
+            Array.Empty<BridgeActionDraft>())
+        {
+            RuntimeSemanticContractId =
+                "bridge.contract.deck_enchant_selection.kifuda_relic_pickup.2.0-preview.68",
+            RuntimeSourceBindingId = "Kifuda.AfterObtained+Adroit:3"
+        };
+
+        BridgeContractInstanceShadow shadow = BridgeContractInstanceShadowBuilder.Build(draft);
+
+        Assert.Equal("resolved_runtime_contract", shadow.Status);
+        Assert.Equal(draft.RuntimeSemanticContractId, shadow.SemanticContractId);
+        Assert.Equal(draft.RuntimeSourceBindingId, shadow.DeclaredBinding);
+        Assert.False(shadow.Authorizing);
+        Assert.Contains("runtime_source_binding_is_non_authorizing", shadow.Limitations);
+    }
+
+    [Fact]
     public void BindingFailureFactoryAlwaysRemovesActionAuthority()
     {
         var game = new GameBuildIdentity(null, null, null, null, new CompatibilityAssessment(
@@ -2652,6 +2693,18 @@ public sealed class BridgeContractTests
             taskCompleted: false,
             taskCompletedSuccessfully: false,
             purchaseSucceeded: false,
+            goldBeforePurchase: 250,
+            currentGold: 63,
+            expectedPrice: 187,
+            productAcquired: true,
+            entryAdvanced: false,
+            linkedRewardContinuationVisible: false,
+            nativeContinuationVisible: true));
+
+        Assert.True(ShopPurchaseCompletionWitness.IsComplete(
+            taskCompleted: false,
+            taskCompletedSuccessfully: false,
+            purchaseSucceeded: false,
             goldBeforePurchase: 150,
             currentGold: 100,
             expectedPrice: 50,
@@ -2669,6 +2722,17 @@ public sealed class BridgeContractTests
             productAcquired: false,
             entryAdvanced: false,
             linkedRewardContinuationVisible: false));
+        Assert.False(ShopPurchaseCompletionWitness.IsComplete(
+            taskCompleted: false,
+            taskCompletedSuccessfully: false,
+            purchaseSucceeded: false,
+            goldBeforePurchase: 250,
+            currentGold: 63,
+            expectedPrice: 187,
+            productAcquired: true,
+            entryAdvanced: false,
+            linkedRewardContinuationVisible: false,
+            nativeContinuationVisible: false));
         Assert.False(ShopPurchaseCompletionWitness.IsComplete(
             taskCompleted: true,
             taskCompletedSuccessfully: false,

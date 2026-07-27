@@ -38,6 +38,7 @@ export class TickOrchestrator {
   private readonly progressCycleGuard = new ProgressCycleGuard();
   private lastNonActionableStateKey?: string;
   private nonActionableStateOccurrences = 0;
+  private runTerminalObserved = false;
 
   constructor(private readonly dependencies: TickOrchestratorDependencies) {}
 
@@ -62,6 +63,7 @@ export class TickOrchestrator {
       return result(decisionId, record.outcome, undefined, undefined, shouldStopRun);
     }
 
+    if (pre.currentState.context.kind === "run_ended") this.runTerminalObserved = true;
     const allowedActions = this.dependencies.buildAllowedActions(pre.currentState, pre.stateHash);
     if (pre.diagnostics.status === "invalid" || pre.currentState.stability === "invalid" || pre.currentState.surface.kind === "unsupported") {
       return this.recordWithoutDecision({
@@ -104,7 +106,8 @@ export class TickOrchestrator {
     }
     this.resetNonActionableStateGuard();
     if (isAutomaticRunStartBoundary(pre.currentState.context.kind)) {
-      if (options.stopAtRunBoundary && !options.allowRunEntry) {
+      if (options.stopAtRunBoundary && (this.runTerminalObserved || !options.allowRunEntry)) {
+        const completedRun = this.runTerminalObserved;
         return this.recordWithoutDecision({
           decisionId,
           tick,
@@ -112,7 +115,9 @@ export class TickOrchestrator {
           pre,
           allowedActions,
           outcome: "not_executed_non_actionable_state",
-          error: `Stopped at ${pre.currentState.context.kind} run-start boundary; pass --allow-run-entry to permit Gateway-advertised run entry`,
+          error: completedRun
+            ? "Stopped after the completed run returned to the top-level menu; a bounded agent:run never starts a second game"
+            : `Stopped at ${pre.currentState.context.kind} run-start boundary; pass --allow-run-entry to permit Gateway-advertised run entry`,
           shouldStopRun: true,
           stopReason: "run_boundary"
         });

@@ -18,8 +18,8 @@ third-party clients.
 
 ## Current Truth
 
-The active connector source shares `2.0-preview.67` between C# and
-Re-SpireAgent; Re normalized schema is `26`. Gate 1 is closed as a bounded
+The active connector source shares `2.0-preview.68` between C# and
+Re-SpireAgent; Re normalized schema is `27`. Gate 1 is closed as a bounded
 ordinary-single-player v2 connector baseline: Re and the default MCP adapter
 are v2-only, the entire Gateway `/api/v1` namespace is retired, and the final
 Neow's Fury lifecycle was completed under the recorded Preview.61 exact
@@ -29,22 +29,19 @@ generation fencing and command attribution. Preview.65 added exact
 operation-scoped persistent qualification. Preview.66 adds a non-authorizing
 multi-environment Profile index, a risk-based migration policy, exact
 candidate planning, evidence aggregation, automatic qualified-package
-assembly, and atomic qualification-store reload. Preview.67 adds a required,
-non-authorizing semantic-state/authority-projection identity shadow without
-changing current state/action binding, permission, execution, completion, or
-the model Prompt.
+assembly, and atomic qualification-store reload. Preview.68 preserves the
+non-authorizing identity shadow and adds coherent read-only observation retry,
+one-game terminal supervision, typed receipt completion boundaries, exact
+Kifuda continuation handoff, source-bound deck-enchant contracts, native
+hover-derived Orb text, and a non-authorizing runtime contract/source shadow.
 
-Preview.67 is built, installed, and cold-loaded on
-`v0.109.1|c8c577f6|-820620422` as SHA `100ddf42...74d`, MVID
-`65bd744d-270b-4026-84c4-2ee397eee4e2`. The loaded Modset now contains one
-successful `STS2_MCP`; a recursively scanned historical backup manifest was
-the proven cause of the earlier `Loaded + Failed` hazard and has been moved
-reversibly outside the native scan tree. The exact migration workflow installed
-87 current-environment `session_canary` packages, and Re completed a dry run
-without mutation. Preview.67 still has no real mutation, settled action canary,
-Organic action evidence, Inspection authority, or persistent qualification.
-Preview.66's persistent `main_menu/continue_run` package remains historical
-evidence in its own exact Gateway identity and grants no Preview.67 authority.
+The last loaded artifact remains Preview.67 on
+`v0.109.1|c8c577f6|-820620422`, SHA `100ddf42...74d`, MVID
+`65bd744d-270b-4026-84c4-2ee397eee4e2`, until Preview.68 is cold-started.
+Three inspected Preview.67 runs settled 145 actions and exposed the defects
+fixed by Preview.68. Their provenance is `unrecorded`, so they are real-runtime
+defect/coverage evidence rather than Organic qualification. Preview.67
+permission does not authorize the new Preview.68 MVID.
 Exact source, loaded, candidate, Organic, and persistent evidence remain
 separated in [current status](docs/current/STATUS.md).
 
@@ -58,6 +55,9 @@ The repository has one accepted Connector destination: the
 [Semantic Gateway Two-Plane Architecture](docs/current/decisions/ADR-0002-semantic-gateway-two-plane-target-architecture.md).
 It preserves one Gateway authority, separates live decisions from compatibility
 evidence, and keeps future model projections on the Re consumer side.
+[ADR-0003](docs/current/decisions/ADR-0003-operation-retirement-and-native-continuation-migration.md)
+defines the shadow-first retirement of global operation identity and the exact
+native continuation boundary.
 
 ## Start Here
 
@@ -65,6 +65,7 @@ evidence, and keeps future model projections on the Re consumer side.
 - [Current status](docs/current/STATUS.md)
 - [Current architecture](docs/current/ARCHITECTURE.md)
 - [Connector target architecture ADR](docs/current/decisions/ADR-0002-semantic-gateway-two-plane-target-architecture.md)
+- [Operation retirement and native continuation ADR](docs/current/decisions/ADR-0003-operation-retirement-and-native-continuation-migration.md)
 - [Current functional roadmap](docs/current/ROADMAP.md)
 - [Current cross-component program plan](docs/current/PROGRAM_PLAN.md)
 - [Fresh-clone and local deployment guide](docs/current/LOCAL_SETUP.md)
@@ -90,6 +91,16 @@ npm run audit:connector-compatibility
 # Thin, safe operator entrypoint (see `npm run connector -- help`)
 npm run connector -- inspect
 ```
+
+After a cold game start, the single bounded live entry is:
+
+```bash
+cd Re-SpireAgent
+npm run agent:run
+```
+
+It verifies exact loaded identity and resumes a Gateway-revalidated exact trial
+before invoking the model; permission never carries across MVIDs.
 
 Gateway checks need an installed copy of Slay the Spire 2 and `STS2_GAME_DIR`.
 Use the exact commands in [`STS2MCP/README.md`](STS2MCP/README.md); do not

@@ -368,6 +368,7 @@ internal sealed class ShopInventorySurfaceProvider : IBridgeSurfaceProvider
                 () => !ReferenceEquals(expectedEntry.CreationResult?.Card, expectedCard),
                 () => expectedInventory.Player.Deck.Cards.All(card => !ReferenceEquals(card, expectedCard)),
                 null,
+                null,
                 "shop_card_purchase_committed_with_exact_card_gold_and_entry_witness"),
             new[] { new ActionEntityBinding("shop_offer", offerId) });
 
@@ -398,6 +399,7 @@ internal sealed class ShopInventorySurfaceProvider : IBridgeSurfaceProvider
                 () => !ReferenceEquals(expectedEntry.Model, expectedRelic),
                 () => expectedInventory.Player.Relics.All(relic => !ReferenceEquals(relic, expectedRelic)),
                 null,
+                () => HasExactRelicAcquisitionContinuation(expectedRelic),
                 "shop_relic_purchase_committed_with_exact_relic_gold_and_entry_witness"),
             new[] { new ActionEntityBinding("shop_offer", offerId) });
 
@@ -428,6 +430,7 @@ internal sealed class ShopInventorySurfaceProvider : IBridgeSurfaceProvider
                 () => !ReferenceEquals(expectedEntry.Model, expectedPotion),
                 () => !ShopSurfaceFacts.ContainsPotionInstance(expectedInventory.Player, expectedPotion),
                 () => ShopSurfaceFacts.CanProcurePotion(expectedInventory.Player, expectedPotion),
+                null,
                 "shop_potion_purchase_committed_with_exact_slot_gold_and_entry_witness"),
             new[] { new ActionEntityBinding("shop_offer", offerId) });
 
@@ -442,6 +445,7 @@ internal sealed class ShopInventorySurfaceProvider : IBridgeSurfaceProvider
         Func<bool> entryAdvanced,
         Func<bool> productAbsentBeforePurchase,
         Func<bool>? extraValidator,
+        Func<bool>? nativeContinuationVisible,
         string completionEvidence)
     {
         if (!ShopSurfaceFacts.IsCurrentInventory(expectedMerchantRoom, expectedRoom, expectedInventory)
@@ -482,14 +486,25 @@ internal sealed class ShopInventorySurfaceProvider : IBridgeSurfaceProvider
                 expectedPrice,
                 productAcquired(),
                 entryAdvanced(),
-                HasVisibleLinkedRewardContinuation()),
+                HasVisibleLinkedRewardContinuation(),
+                nativeContinuationVisible?.Invoke() == true),
             completionEvidence,
-            allowIntermediateStateChanges: true);
+            allowIntermediateStateChanges: true,
+            completionEvidenceProvider: () => nativeContinuationVisible?.Invoke() == true
+                ? "shop_relic_purchase_committed_with_kifuda_enchantment_child_handoff"
+                : completionEvidence,
+            completionBoundaryProvider: () => nativeContinuationVisible?.Invoke() == true
+                ? "continuation_handoff_observed"
+                : BridgeOperationQualificationCatalog.GatewayCompletionBoundary);
     }
 
     private static bool HasVisibleLinkedRewardContinuation() =>
         NOverlayStack.Instance?.Peek() is NRewardsScreen rewards
         && ActiveSurfaceResolver.IsVisibleActiveOverlay(rewards);
+
+    private static bool HasExactRelicAcquisitionContinuation(RelicModel expectedRelic) =>
+        NOverlayStack.Instance?.Peek() is NDeckEnchantSelectScreen enchantScreen
+        && DeckEnchantSurfaceProvider.IsKifudaContinuation(enchantScreen, expectedRelic);
 
     private static BridgeActionStartResult StartCardRemoval(
         MerchantRoom expectedMerchantRoom,
@@ -798,11 +813,12 @@ internal static class ShopPurchaseCompletionWitness
         int expectedPrice,
         bool productAcquired,
         bool entryAdvanced,
-        bool linkedRewardContinuationVisible) =>
-        ((taskCompletedSuccessfully && purchaseSucceeded)
-         || (!taskCompleted && linkedRewardContinuationVisible))
+        bool linkedRewardContinuationVisible,
+        bool nativeContinuationVisible = false) =>
+        ((taskCompletedSuccessfully && purchaseSucceeded && entryAdvanced)
+         || (!taskCompleted && linkedRewardContinuationVisible && entryAdvanced)
+         || (!taskCompleted && nativeContinuationVisible))
         && expectedPrice >= 0
         && currentGold == goldBeforePurchase - expectedPrice
-        && productAcquired
-        && entryAdvanced;
+        && productAcquired;
 }

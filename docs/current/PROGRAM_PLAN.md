@@ -122,11 +122,12 @@ The following are governance constraints, not a separate feature program:
 
 ### Current Window
 
-1. Collect the first Preview.67 real action journey from the prepared exact
-   session-canary environment; preserve every stop or quarantine as evidence.
-2. Continue C through the two-plane migration order: identity separation,
-   hot-summary/on-demand evidence, decision/transition continuity, then
-   representative adapter/oracle revision shadows.
+1. Build, install, cold-load, and run Preview.68. Preserve its exact identity;
+   Preview.67's three real-runtime records are defect evidence, not inherited
+   authority or Organic qualification.
+2. Continue C through the ADR-0003 migration order: exact runtime source/
+   adapter/outcome shadows, continuation boundaries, identity separation, then
+   hot-summary/on-demand evidence.
 3. Maintain the closed Gate 1 v1-retirement inventory and keep unsupported
    variants explicitly typed and fail closed.
 4. Advance D only for concrete C/A evidence needs. D may compare, grade and
@@ -137,9 +138,10 @@ The following are governance constraints, not a separate feature program:
 6. Keep P, H and T behind their existing admission gates. Do not build an
    Artifact Router without a demonstrated ABI/load split.
 
-Preview.67 cold-load, duplicate-manifest repair, read-only evidence capture,
-exact trial installation, and Re dry-run are complete. They are operator and
-session-authority evidence, not Organic mutation or persistent qualification.
+Preview.67 cold-load, duplicate-manifest repair, and three real-runtime journeys
+are complete. Preview.68's one-command Operator Shell preflight is implemented
+but requires a cold load before it can establish a new exact trial. Neither
+state is generic cross-version or cross-Mod qualification.
 
 ### Gate 1 Exit Basis And Gate 2 Entry
 

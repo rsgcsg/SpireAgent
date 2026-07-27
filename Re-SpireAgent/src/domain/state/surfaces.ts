@@ -313,6 +313,11 @@ export interface DeckEnchantSelectionSurface {
   stage: "selecting" | "preview";
   bridgeStateId: string;
   screenEntityId: string;
+  source: {
+    kind: "self_help_book_event" | "kifuda_relic_pickup";
+    definitionId: string;
+    bindingEvidence: string;
+  };
   prompt?: string;
   minimumSelections: number;
   maximumSelections: number;

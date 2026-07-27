@@ -51,14 +51,18 @@ npm run connector -- diagnose-installation
 npm run connector -- install
 ```
 
-After a Steam cold start:
+After a Steam cold start, the ordinary Agent entry performs loaded-identity
+verification and exact trial resume itself:
 
 ```bash
-npm run connector -- wait-for-gateway
-npm run connector -- verify-loaded-artifact --wait
-npm run connector -- collect-evidence
-npm run connector -- run-agent -- --max-ticks 20 --delay-ms 250
+cd Re-SpireAgent
+npm run agent:run -- --max-ticks 20 --delay-ms 250
 ```
+
+The separate `wait-for-gateway`, `verify-loaded-artifact`, and
+`collect-evidence` commands remain read-only diagnostics. `agent:run` fails
+before DeepSeek if exact identity or Gateway-revalidated mutation readiness is
+missing.
 
 `inspect` compares C# and Re protocol source, Release and installed SHA/MVID,
 and any reachable loaded identity. `install` refuses to replace the DLL while
@@ -71,8 +75,10 @@ explicit `backups` directory; other duplicates require manual review.
 `collect-evidence` requires capabilities and state, then reads controller and
 clients as optional diagnostics into ignored local storage. A missing optional
 diagnostic is reported as a partial failure rather than erasing valid loaded
-identity/state evidence. None of these commands grant action authority or turn
-disk identity into Organic evidence.
+identity/state evidence. Read-only commands do not grant authority or turn
+disk identity into Organic evidence. `run-agent`/`agent:run` may append an exact
+trial candidate through the Operator Shell; only Gateway revalidation can turn
+it into session authority.
 
 Use `npm run connector -- help` for trial, qualification revoke/rollback, and
 Gateway-artifact restore delegation. `restore-known-environment` restores only
@@ -223,13 +229,12 @@ npm --prefix Re-SpireAgent run agent:tick -- --dry-run
 npm --prefix Re-SpireAgent run agent:run -- --max-ticks 20 --delay-ms 250
 ```
 
-Use the last command only when the current exact environment advertises the
-intended operations. Stop on unknown outcome; do not retry an uncertain
-command.
+The last command verifies and prepares the exact environment before invoking
+the Agent. Stop on unknown outcome; do not retry an uncertain command.
 
 The npm `agent:run` entry may choose one Gateway-advertised Continue or new-run
-action, then remains bounded to one game. The same final entry works from the
-component directory:
+action only after exact preflight, then remains bounded to one game. The same
+final entry works from the component directory:
 
 ```bash
 cd Re-SpireAgent

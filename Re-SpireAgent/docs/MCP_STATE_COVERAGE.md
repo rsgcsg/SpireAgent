@@ -8,7 +8,7 @@ matrix. This document records the Re-SpireAgent consumption boundary.
 
 ## Bridge v2 Current Client Contract
 
-Re strictly decodes `2.0-preview.67`. It accepts Bridge actions only when:
+Re strictly decodes `2.0-preview.68`. It accepts Bridge actions only when:
 
 - game, Modset, Bridge assembly SHA-256, MVID, and runtime identities match
   exact scoped capabilities and state;
@@ -24,9 +24,10 @@ Re strictly decodes `2.0-preview.67`. It accepts Bridge actions only when:
   current active exact-environment/runtime/Patch grant;
 - the current Surface is Bridge-advertised and every action is state-bound.
 
-The required Preview.67 identity shadow is raw non-authorizing evidence. It is
-not a strategy fact or permission input, and current action binding continues
-to use the authoritative legacy composite `state_id`.
+The required identity shadow and runtime contract/source shadow are raw
+non-authorizing evidence. They are not strategy facts or permission inputs,
+and current action binding continues to use the authoritative legacy composite
+`state_id`.
 
 The current exact identity determines the Gateway-emitted explicit operation
 scopes. The table describes supported projections and historical evidence

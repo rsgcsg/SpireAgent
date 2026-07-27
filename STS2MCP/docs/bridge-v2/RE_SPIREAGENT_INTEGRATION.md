@@ -2,13 +2,12 @@
 
 In this project, "SpireAgent" means `Re-SpireAgent` by default.
 
-Current source contract is `2.0-preview.67`; Re normalized schema is `26`.
-Preview.67's identity shadow is strictly decoded and kept in raw evidence only;
-it is not model input or action authority. Preview.67 is cold-loaded with exact
-built/installed/loaded SHA/MVID agreement and a clean single-Gateway Modset.
-Its 87 current operation scopes are session canaries only; strict Re inspection
-and one no-mutation dry run pass, while real mutation, Organic action evidence,
-Inspection authority and persistent qualification remain absent.
+Current source contract is `2.0-preview.68`; Re normalized schema is `27`.
+Identity and runtime-contract shadows are strictly decoded and remain
+non-authorizing. The last loaded Preview.67 artifact has three inspected
+real-runtime runs with 145 settled actions; their provenance is `unrecorded`,
+not Organic qualification. Preview.68 requires its own cold-load identity and
+exact Gateway-revalidated trial.
 Gate 1 is closed as a bounded ordinary-single-player v2 connector baseline.
 Preview.61 supplied the exact Neow's Fury Organic lifecycle; Preview.62 adds
 reviewed compatibility/source registries and policy provenance without
@@ -29,6 +28,7 @@ Bridge v2 REST response (current Re path)
   -> lazy client registration + controller lease
   -> submit expected_state_id + action_id + controller generation
   -> poll command settlement
+  -> preserve typed completion boundary and exact continuation handoff
   -> before/after decision record
 ```
 
@@ -56,6 +56,8 @@ Required client behavior:
   identity and admitted controller attribution;
 - treat both `failed` and `timed_out` as unknown outcomes;
 - never auto-retry unknown outcomes;
+- treat `continuation_handoff_observed` as a committed current action followed
+  by a fresh child observation, not as parent transaction settlement;
 - permit only one action-capable Re process through its runtime lock.
 
 Preview.64 keeps Re's local runtime lock as process-local hygiene while adding
@@ -92,6 +94,12 @@ Re accepts mixed operation tiers on one Surface. For example,
 coarse projection; Re validates every advertised action against the exact
 operation scope and unique current package or grant. No sibling authority is
 inferred.
+
+Preview.68 retries the whole read-only state/bundle sequence only for typed
+coherence drift. It retains pre-commit stale rejection. `npm run agent:run`
+enters through the external Operator Shell, which validates loaded identity and
+asks the Gateway to revalidate an exact trial before starting Re's direct
+bounded loop. Re still cannot install or grant authority itself.
 
 Preview.63 keeps the permission decision and enforcement in the Gateway. Re
 requires state and capabilities to agree on the stable

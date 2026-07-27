@@ -2700,6 +2700,11 @@ function projectDeckEnchantSurface(
     stage: surface.stage,
     bridgeStateId: stateId,
     screenEntityId: surface.screen_entity_id,
+    source: {
+      kind: surface.source.kind,
+      definitionId: surface.source.definition_id,
+      bindingEvidence: surface.source.binding_evidence
+    },
     ...(surface.prompt ? { prompt: surface.prompt } : {}),
     minimumSelections: surface.min_select,
     maximumSelections: surface.max_select,

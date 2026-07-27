@@ -31,7 +31,7 @@ const contract = {
 
 function capabilities(qualifications = []) {
   return {
-    protocol_version: "2.0-preview.67",
+    protocol_version: "2.0-preview.68",
     bridge: {
       assembly_file_sha256: "a".repeat(64),
       module_version_id: "11111111-1111-1111-1111-111111111111"
@@ -117,7 +117,7 @@ async function writeRun(
       evidence: { provenance: "ordinary_gameplay" },
       adapter: {
         negotiated: {
-          bridge_protocol_version: "2.0-preview.67",
+          bridge_protocol_version: "2.0-preview.68",
           game_version: "v0.109.1",
           game_commit: "c8c577f6",
           main_assembly_hash: -820620422,

@@ -70,6 +70,35 @@ public sealed class BridgeCommandLedgerTests
         Assert.Equal("completed", completed.Status);
         Assert.Equal("confirmed", completed.Outcome);
         Assert.Equal("state_changed_after_action_start", completed.Events[^1].Evidence);
+        Assert.Equal(
+            BridgeOperationQualificationCatalog.GatewayCompletionBoundary,
+            completed.CompletionBoundary);
+    }
+
+    [Fact]
+    public void ActionCanReportAnExactContinuationHandoffBoundary()
+    {
+        var ledger = new BridgeCommandLedger(10_000);
+        RegisteredBridgeAction action = Action(
+            "state-a",
+            "action-a",
+            () => BridgeActionStartResult.Started(
+                () => true,
+                "generic_completion",
+                allowIntermediateStateChanges: true,
+                completionEvidenceProvider: () => "exact_child_handoff",
+                completionBoundaryProvider: () => "continuation_handoff_observed"));
+
+        ledger.Submit(
+            new BridgeCommandRequest("request-a", "state-a", "action-a"),
+            "state-a",
+            action);
+        BridgeCommandResponse? completed = ledger.Poll("request-a", "state-child");
+
+        Assert.NotNull(completed);
+        Assert.Equal("completed", completed.Status);
+        Assert.Equal("exact_child_handoff", completed.Events[^1].Evidence);
+        Assert.Equal("continuation_handoff_observed", completed.CompletionBoundary);
     }
 
     [Fact]

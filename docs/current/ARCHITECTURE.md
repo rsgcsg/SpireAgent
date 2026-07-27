@@ -4,6 +4,8 @@
 
 The single accepted destination is the
 [Semantic Gateway Two-Plane Target Architecture](decisions/ADR-0002-semantic-gateway-two-plane-target-architecture.md).
+Its live-kernel identity migration is refined by
+[ADR-0003](decisions/ADR-0003-operation-retirement-and-native-continuation-migration.md).
 This document describes both the current implementation and its constrained
 migration toward that target. Historical ALDG, universal contract/Transaction
 IR, qualification-centric, and environment-migration proposals are evidence
@@ -176,34 +178,34 @@ and the
 
 ## Current Architectural Constraint
 
-The Gateway and Re share the mechanically checked `2.0-preview.67` source
+The Gateway and Re share the mechanically checked `2.0-preview.68` source
 contract. Gate 1 establishes a bounded v2 connector baseline: Re and the
-default MCP adapter are v2-only, and the current-source Gateway v1 HTTP surface
-is retired. Preview.67 is cold-loaded on game
-`v0.109.1|c8c577f6|-820620422` with a clean one-Mod exact identity. Its Profile
-did not inherit Preview.66 authority. The exact migration workflow installed
-87 session-canary operation packages which the Gateway hot-reloaded and
-revalidated. Preview.67 has no settled action or persistent qualification;
-Preview.66's one qualified `main_menu/continue_run` remains historical to its
-own SHA/MVID/Modset. Five manifest operations have explicit high-precision
-contracts and 82 use conservative fallback identities that do not assert
-semantic equivalence. Operations outside the manifest still require exact
-policy or remain fail closed.
-Historical v1 JSONL
-remains replay-readable as stored evidence, but no v1 sidecar may contribute
-live facts or action authority.
+default MCP adapter are v2-only, Gateway v1 is retired, and historical v1 data
+is replay-only. Preview.68 must still be cold-loaded before it has runtime
+authority or evidence.
 
-Preview.67 adds a non-authorizing identity shadow because the current
-authoritative `state_id` still hashes game-semantic observation together with
-visibility, permission-ledger and qualification-ledger snapshots. The shadow
-separates a semantic-state candidate from the current relevant authority
-projection for measurement only. Current `state_id`, action IDs, permission,
-execute-time validation and completion remain authoritative. Re decodes the
-shadow into raw evidence but excludes it from `NormalizedCurrentState` and the
-model Prompt. See
-[ADR-0005](../../STS2MCP/docs/bridge-v2/ADR-0005-semantic-state-and-authority-identity-separation.md).
+Preview.67 real-runtime records now disprove its earlier zero-action status:
+145 actions settled across three inspected runs. Those runs also exposed an
+eager coherent-read race, an overly broad post-game run-entry permission, and
+a Kifuda purchase whose native parent task crosses into a deck-enchant child.
+Their provenance is `unrecorded`, so they are defect/coverage evidence rather
+than Organic qualification.
 
-Combat-pile choice is the first production structural transaction contract.
+Current authority still uses operation-scoped packages and the composite
+`state_id`. Preview.68 adds only non-authorizing runtime contract/source
+shadow metadata and a typed receipt completion boundary. ADR-0003 accepts
+retirement of `operation` as the final permission/compatibility identity, but
+requires shadow/dual-read migration before current authority changes. The 82
+manifest fallback identities remain test-confirm hypotheses, not semantic
+equivalence.
+
+Kifuda is the first exact case satisfying ADR-0002's continuation admission
+rule. The shop action may complete at a typed continuation handoff only after
+gold/relic Commit and exact child ownership are proven; the child then composes
+from a fresh observation. This does not add a workflow engine or claim the
+parent transaction is settled.
+
+Combat-pile choice remains the first production structural transaction contract.
 Re reads closed mutation and commit semantics rather than a union of source
 card names. The Gateway still proves the exact native source task, publishes
 only opaque actions, resumes the game-owned continuation, and checks a semantic

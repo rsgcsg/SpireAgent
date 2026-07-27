@@ -29,9 +29,12 @@ internal static class BridgeContractInstanceShadowBuilder
                 "unregistered",
                 Published: true)).ToArray();
         string authorityTier = CurrentAuthorityTier(draft);
-        string? semanticContractId = manifest == null
-            ? null
-            : $"bridge.surface.{manifest.Kind}.{manifest.ProtocolRevision}";
+        string? semanticContractId = draft.RuntimeSemanticContractId
+            ?? (manifest == null
+                ? null
+                : $"bridge.surface.{manifest.Kind}.{manifest.ProtocolRevision}");
+        bool runtimeResolved = draft.RuntimeSemanticContractId != null
+                               && draft.RuntimeSourceBindingId != null;
         string instanceId = "contract_instance_" + BridgeHash.Object(new
         {
             draft.Signature,
@@ -45,22 +48,32 @@ internal static class BridgeContractInstanceShadowBuilder
         })[..20];
 
         return new BridgeContractInstanceShadow(
-            manifest == null ? "unresolved" : "resolved_manifest_contract",
+            runtimeResolved
+                ? "resolved_runtime_contract"
+                : manifest == null ? "unresolved" : "resolved_manifest_contract",
             instanceId,
             draft.Surface.Kind,
             semanticContractId,
-            manifest?.SourceBindingId,
+            draft.RuntimeSourceBindingId ?? manifest?.SourceBindingId,
             operations,
             authorityTier,
             "exact_environment_surface_operation_gate",
             Authorizing: false,
-            new[]
-            {
-                "shadow_inventory_only",
-                "manifest_binding_is_not_runtime_binding_proof",
-                "operation_evidence_does_not_grant_permission",
-                "authority_remains_explicit_operation_scoped"
-            });
+            runtimeResolved
+                ? new[]
+                {
+                    "shadow_inventory_only",
+                    "runtime_source_binding_is_non_authorizing",
+                    "operation_evidence_does_not_grant_permission",
+                    "authority_remains_explicit_operation_scoped"
+                }
+                : new[]
+                {
+                    "shadow_inventory_only",
+                    "manifest_binding_is_not_runtime_binding_proof",
+                    "operation_evidence_does_not_grant_permission",
+                    "authority_remains_explicit_operation_scoped"
+                });
     }
 
     private static string CurrentAuthorityTier(BridgeObservationDraft draft)

@@ -1,8 +1,24 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.67`
+Protocol preview: `2.0-preview.68`
 
-Preview.67 requires `state.identity_shadow`, a non-authorizing migration
+Preview.68 adds three explicit boundaries without expanding authority:
+
+- command responses may include `completion_boundary` to distinguish native
+  commit, immediate postcondition, exact continuation handoff, transaction
+  settlement, and the historical generic Gateway semantic completion;
+- `deck_enchant_selection.source` binds the exact current Self-Help Book or
+  Kifuda source contract; unknown sources fail closed;
+- contract-instance shadow resolution may be
+  `resolved_runtime_contract`, with exact runtime source/contract IDs. It
+  remains `authorizing=false` and cannot add or remove actions.
+
+A `continuation_handoff_observed` receipt proves only that the current action
+committed and transferred input to an exact native child. It does not claim
+that the parent transaction settled. The child must be freshly observed and
+publishes independently state-bound actions.
+
+Preview.67 introduced `state.identity_shadow`, a non-authorizing migration
 measurement containing:
 
 - `semantic_state_id_candidate`, derived from the current provider semantic

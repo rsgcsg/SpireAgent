@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { isJsonObject, type JsonObject } from "../../shared/json.js";
 
-export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.67" as const;
+export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.68" as const;
 export const BRIDGE_V2_INSPECTION_KINDS = ["run_deck", "combat_piles", "shop_catalog"] as const;
 const inspectionKindSchema = z.enum(BRIDGE_V2_INSPECTION_KINDS);
 
@@ -539,6 +539,11 @@ const deckEnchantSurfaceSchema = z.object({
   kind: z.literal("deck_enchant_selection"),
   stage: z.enum(["selecting", "preview"]),
   screen_entity_id: z.string().min(1),
+  source: z.object({
+    kind: z.enum(["self_help_book_event", "kifuda_relic_pickup"]),
+    definition_id: z.string().min(1),
+    binding_evidence: z.string().min(1)
+  }).passthrough(),
   prompt: z.string().nullable().optional(),
   min_select: z.number().int().nonnegative(),
   max_select: z.number().int().nonnegative(),
@@ -1162,7 +1167,7 @@ const contractOperationShadowSchema = z.object({
 }).passthrough();
 
 const contractInstanceShadowSchema = z.object({
-  status: z.enum(["resolved_manifest_contract", "unresolved"]),
+  status: z.enum(["resolved_manifest_contract", "resolved_runtime_contract", "unresolved"]),
   instance_id: z.string().min(1),
   surface_kind: z.string().min(1),
   // System.Text.Json omits nullable record fields in transitional/unresolved states.
@@ -1176,7 +1181,7 @@ const contractInstanceShadowSchema = z.object({
   authorizing: z.literal(false),
   limitations: z.array(z.string().min(1))
 }).passthrough().superRefine((shadow, context) => {
-  if (shadow.status !== "resolved_manifest_contract") return;
+  if (shadow.status === "unresolved") return;
   if (!shadow.semantic_contract_id) {
     context.addIssue({
       code: z.ZodIssueCode.custom,
@@ -1300,6 +1305,13 @@ const commandSchema = z.object({
   status: z.enum(["received", "validated", "started", "completed", "rejected", "failed", "timed_out"]),
   outcome: z.enum(["pending", "confirmed", "not_applied", "unknown"]),
   observed_state_id: z.string().nullable().optional(),
+  completion_boundary: z.enum([
+    "native_commit_observed",
+    "immediate_postcondition_observed",
+    "continuation_handoff_observed",
+    "transaction_settled",
+    "gateway_semantic_completion_observed"
+  ]).nullable().optional(),
   events: z.array(commandEventSchema),
   attribution: commandAttributionSchema.nullable().optional()
 }).passthrough();

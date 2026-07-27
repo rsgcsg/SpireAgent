@@ -9,7 +9,8 @@ import {
   decodeBridgeV2ControlSnapshot,
   decodeBridgeV2Inspection,
   decodeBridgeV2ObservationBundle,
-  decodeBridgeV2State
+  decodeBridgeV2State,
+  SUPPORTED_BRIDGE_V2_PROTOCOL
 } from "../src/integrations/sts2mcp/bridgeV2Protocol.js";
 import { isBridgeV2WrappedState, wrapBridgeV2State } from "../src/integrations/sts2mcp/rawState.js";
 import { normalizeCurrentState } from "../src/normalization/normalizeCurrentState.js";
@@ -35,7 +36,7 @@ function permissionScope(
 }
 
 const CAPABILITIES = {
-  protocol_version: "2.0-preview.67",
+  protocol_version: SUPPORTED_BRIDGE_V2_PROTOCOL,
   bridge: {
     id: "sts2_mcp_bridge_v2",
     name: "STS2 Agent Bridge",
@@ -247,7 +248,7 @@ const RUN_VISIBILITY = {
 };
 
 const DECK_ENCHANT_STATE = {
-  protocol_version: "2.0-preview.67",
+  protocol_version: SUPPORTED_BRIDGE_V2_PROTOCOL,
   state_id: "state-test-1",
   state_sequence: 1,
   observed_at: "2026-07-16T00:00:00Z",
@@ -266,6 +267,11 @@ const DECK_ENCHANT_STATE = {
     kind: "deck_enchant_selection",
     stage: "selecting",
     screen_entity_id: "screen-1",
+    source: {
+      kind: "self_help_book_event",
+      definition_id: "SELF_HELP_BOOK",
+      binding_evidence: "fixture exact source binding"
+    },
     prompt: "Choose a card to enchant",
     min_select: 1,
     max_select: 1,
@@ -320,11 +326,11 @@ const DECK_ENCHANT_STATE = {
   visibility: RUN_VISIBILITY,
   inspection_catalog: [RUN_DECK_CATALOG_ENTRY],
   contract_instance_shadow: {
-    status: "resolved_manifest_contract",
+    status: "resolved_runtime_contract",
     instance_id: "contract-instance-deck-enchant-1",
     surface_kind: "deck_enchant_selection",
-    semantic_contract_id: "bridge.surface.deck_enchant_selection.2.0-preview.67",
-    declared_binding: "fixture-declared-binding",
+    semantic_contract_id: "bridge.contract.deck_enchant_selection.self_help_book_event.2.0-preview.68",
+    declared_binding: "fixture exact source binding",
     operations: [{ operation: "toggle_card", evidence_status: "surface_level_only", published: true }],
     current_authority_tier: "canary",
     current_authority_basis: "exact_environment_surface_operation_gate",
@@ -2110,7 +2116,7 @@ function visibleInspectionCard(overrides: Record<string, unknown> = {}) {
 
 function runDeckInspection(stateId: string, cards = [visibleInspectionCard()]) {
   return {
-    protocol_version: "2.0-preview.67",
+    protocol_version: SUPPORTED_BRIDGE_V2_PROTOCOL,
     inspection_id: `inspection-run-deck-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -2133,7 +2139,7 @@ function runDeckInspection(stateId: string, cards = [visibleInspectionCard()]) {
 
 function combatPilesInspection(stateId: string) {
   return {
-    protocol_version: "2.0-preview.67",
+    protocol_version: SUPPORTED_BRIDGE_V2_PROTOCOL,
     inspection_id: `inspection-combat-piles-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -2178,7 +2184,7 @@ function shopCatalogInspection(stateId: string) {
     blocked_reason: offer.stocked ? "not_visible" : offer.blocked_reason
   });
   return {
-    protocol_version: "2.0-preview.67",
+    protocol_version: SUPPORTED_BRIDGE_V2_PROTOCOL,
     inspection_id: `inspection-shop-catalog-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -2220,7 +2226,7 @@ function coherentObservationBundle(
   }));
   const resolvedInspections = inspections ?? defaultInspections;
   return {
-    protocol_version: "2.0-preview.67",
+    protocol_version: SUPPORTED_BRIDGE_V2_PROTOCOL,
     observation_id: `observation-${state.state_id}`,
     coherent: true,
     state,
@@ -2883,7 +2889,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 26,
+      normalizedSchemaVersion: 27,
       stability: "actionable",
       actionAuthority: "bridge_advertised",
       context: {
@@ -2964,7 +2970,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 26,
+      normalizedSchemaVersion: 27,
       stability: "actionable",
       actionAuthority: "bridge_advertised",
       context: { kind: "menu", screen: "character_select" },
@@ -3503,7 +3509,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 26,
+      normalizedSchemaVersion: 27,
       actionAuthority: "bridge_advertised",
       context: { kind: "event", ancient: true, inDialogue: true },
       surface: {
@@ -3551,7 +3557,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 26,
+      normalizedSchemaVersion: 27,
       actionAuthority: "bridge_advertised",
       context: { kind: "rest" },
       surface: {
@@ -3629,7 +3635,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 26,
+      normalizedSchemaVersion: 27,
       stability: "actionable",
       actionAuthority: "bridge_advertised",
       context: {
@@ -3839,7 +3845,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 26,
+      normalizedSchemaVersion: 27,
       actionAuthority: "bridge_advertised",
       context: {
         kind: "map",
@@ -4243,6 +4249,11 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     expect(envelope.currentState.actionAuthority).toBe("bridge_advertised");
     expect(envelope.currentState.surface.kind).toBe("deck_enchant_selection");
     if (envelope.currentState.surface.kind !== "deck_enchant_selection") throw new Error("unexpected surface");
+    expect(envelope.currentState.surface.source).toEqual({
+      kind: "self_help_book_event",
+      definitionId: "SELF_HELP_BOOK",
+      bindingEvidence: "fixture exact source binding"
+    });
     expect(envelope.currentState.surface.enchantment).toMatchObject({ definitionId: "SLITHER", name: "Slither" });
     expect(envelope.currentState.surface.cards[0]).toMatchObject({ entityId: "card-1", id: "STRIKE", selected: false });
     expect(envelope.stateHash).not.toContain(DECK_ENCHANT_STATE.observed_at);
@@ -4347,7 +4358,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 26,
+      normalizedSchemaVersion: 27,
       actionAuthority: "bridge_advertised",
       context: { kind: "combat", encounterType: "elite" },
       surface: {
@@ -4405,7 +4416,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(graveblastEnvelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 26,
+      normalizedSchemaVersion: 27,
       actionAuthority: "bridge_advertised",
       context: { kind: "combat" },
       surface: {
@@ -4453,7 +4464,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(cleanseEnvelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 26,
+      normalizedSchemaVersion: 27,
       actionAuthority: "bridge_advertised",
       context: { kind: "combat" },
       surface: {
@@ -4504,7 +4515,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(seanceEnvelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 26,
+      normalizedSchemaVersion: 27,
       actionAuthority: "bridge_advertised",
       context: { kind: "combat" },
       surface: {
@@ -4580,7 +4591,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(dredgeEnvelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 26,
+      normalizedSchemaVersion: 27,
       actionAuthority: "bridge_advertised",
       context: { kind: "combat" },
       surface: {
@@ -4851,7 +4862,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 26,
+      normalizedSchemaVersion: 27,
       actionAuthority: "bridge_advertised",
       context: { kind: "combat" },
       surface: {
@@ -4909,7 +4920,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 26,
+      normalizedSchemaVersion: 27,
       actionAuthority: "bridge_advertised",
       context: { kind: "event", eventId: "NEOW" },
       surface: {
@@ -4976,7 +4987,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
         TEST_SOURCE
       );
       expect(envelope.currentState).toMatchObject({
-        normalizedSchemaVersion: 26,
+        normalizedSchemaVersion: 27,
         stability: "actionable",
         actionAuthority: "bridge_advertised",
         context: { kind: "combat" },
@@ -5147,7 +5158,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 26,
+      normalizedSchemaVersion: 27,
       actionAuthority: "bridge_advertised",
       context: { kind: "event", eventId: "BRAIN_LEECH" },
       surface: {
@@ -5196,7 +5207,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 26,
+      normalizedSchemaVersion: 27,
       actionAuthority: "bridge_advertised",
       context: { kind: "event", eventId: "NEOW" },
       surface: {
@@ -5435,7 +5446,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     expect(attempts).toBe(3);
     expect(delays).toEqual([5, 5]);
     expect(adapter.describe().negotiated).toMatchObject({
-      bridge_protocol_version: "2.0-preview.67"
+      bridge_protocol_version: SUPPORTED_BRIDGE_V2_PROTOCOL
     });
   });
 
@@ -5729,6 +5740,44 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     } satisfies Partial<TransientObservationError>);
   });
 
+  it("retries the whole read-only observation after transient bundle drift", async () => {
+    const stable = structuredClone(DECK_ENCHANT_STATE);
+    let stateReads = 0;
+    let bundleReads = 0;
+    const adapter = new Sts2McpHybridAdapter(
+      "http://adapter.test",
+      1_000,
+      {
+        commandPollMs: 1,
+        commandTimeoutMs: 100,
+        observationRetryAttempts: 3,
+        observationRetryDelayMs: 1
+      },
+      async (input) => {
+        const url = String(input);
+        if (url.endsWith("/api/v2/capabilities")) return json(CAPABILITIES);
+        if (url.endsWith("/api/v2/state")) {
+          stateReads += 1;
+          return json(stable);
+        }
+        if (url.endsWith("/api/v2/observation-bundles")) {
+          bundleReads += 1;
+          return bundleReads === 1
+            ? json({ error: { code: "stale_state", detail: "transition race" } }, 409)
+            : json(coherentObservationBundle(stable));
+        }
+        throw new Error(`Unexpected request ${url}`);
+      },
+      async () => {}
+    );
+
+    const raw = await adapter.readCurrentState();
+
+    expect(isBridgeV2WrappedState(raw)).toBe(true);
+    expect(stateReads).toBe(2);
+    expect(bundleReads).toBe(2);
+  });
+
   it("retries an inspection scope mismatch only when a fresh state proves lifecycle drift", async () => {
     const unsupported = {
       ...DECK_ENCHANT_STATE,
@@ -5751,7 +5800,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     const makeAdapter = (refreshedState: typeof unsupported) => new Sts2McpHybridAdapter(
       "http://adapter.test",
       1_000,
-      { commandPollMs: 1, commandTimeoutMs: 100 },
+      { commandPollMs: 1, commandTimeoutMs: 100, observationRetryAttempts: 1 },
       async (input) => {
         const url = String(input);
         if (url.endsWith("/api/v2/capabilities")) return json(CAPABILITIES);
@@ -6315,7 +6364,7 @@ function handleTestControlRequest(
     const body = JSON.parse(String(init?.body)) as { client_instance_id: string };
     control.clientInstanceId = body.client_instance_id;
     return json({
-      protocol_version: "2.0-preview.67",
+      protocol_version: SUPPORTED_BRIDGE_V2_PROTOCOL,
       runtime_instance_id: "fixture-runtime-1",
       client: {
         client_session_id: control.clientSessionId,
@@ -6331,7 +6380,7 @@ function handleTestControlRequest(
   }
   if (url.endsWith("/api/v2/controller/acquire")) {
     return json({
-      protocol_version: "2.0-preview.67",
+      protocol_version: SUPPORTED_BRIDGE_V2_PROTOCOL,
       runtime_instance_id: "fixture-runtime-1",
       status: "controller_acquired",
       detail: "fixture acquired",
@@ -6348,7 +6397,7 @@ function handleTestControlRequest(
   }
   if (url.endsWith("/api/v2/controller/release")) {
     return json({
-      protocol_version: "2.0-preview.67",
+      protocol_version: SUPPORTED_BRIDGE_V2_PROTOCOL,
       runtime_instance_id: "fixture-runtime-1",
       status: "controller_released",
       detail: "fixture released",
@@ -6887,7 +6936,7 @@ describe("Bridge v2 controller coordination decoding", () => {
 
   it("accepts registration before a controller lease exists", () => {
     const registration = decodeBridgeV2ClientRegistration({
-      protocol_version: "2.0-preview.67",
+      protocol_version: SUPPORTED_BRIDGE_V2_PROTOCOL,
       runtime_instance_id: "runtime-fixture",
       client
     }).data;
@@ -6898,7 +6947,7 @@ describe("Bridge v2 controller coordination decoding", () => {
 
   it("accepts a control snapshot with no active controller", () => {
     const snapshot = decodeBridgeV2ControlSnapshot({
-      protocol_version: "2.0-preview.67",
+      protocol_version: SUPPORTED_BRIDGE_V2_PROTOCOL,
       runtime_instance_id: "runtime-fixture",
       clients: [client]
     }).data;

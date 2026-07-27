@@ -150,6 +150,32 @@ export function inspectModInstallation(modsDir) {
   };
 }
 
+export function defaultMigrationCycleArgs(options = {}) {
+  const resolved = paths(options);
+  const endpoint = options.endpoint ?? DEFAULT_ENDPOINT;
+  return [
+    "--endpoint", endpoint,
+    "--registry", path.join(resolved.localRoot, "environment-profiles.json"),
+    "--workspace", path.join(resolved.localRoot, "migration"),
+    "--store", path.join(resolved.modsDir, "STS2_MCP.qualifications.json"),
+    "--binding-audit", path.join(WORKSPACE, "STS2MCP/out/operation-binding-audit/latest.json"),
+    "--policy", path.join(WORKSPACE, "STS2MCP/BridgeV2/Runtime/migration-permission-policy.json"),
+    "--negative-evidence", path.join(WORKSPACE, "STS2MCP/compatibility/migration-negative-evidence.v1.json"),
+    "--runs", path.join(WORKSPACE, "Re-SpireAgent/data/runs"),
+    "--apply", "true"
+  ];
+}
+
+export function agentRunPreflightErrors(status, { requireMutation = false } = {}) {
+  const errors = [...(status?.errors ?? [])];
+  if (status?.mod_installation?.exact_permission_blocker === true) {
+    errors.push("duplicate_gateway_manifests_detected");
+  }
+  if (status?.observation_ready !== true) errors.push("normal_observation_disabled");
+  if (requireMutation && status?.mutation_ready !== true) errors.push("mutation_disabled");
+  return [...new Set(errors)];
+}
+
 function sourceProtocol(file, pattern) {
   const match = readFileSync(file, "utf8").match(pattern);
   if (!match) throw new Error(`Could not read protocol from ${path.relative(WORKSPACE, file)}`);
@@ -586,6 +612,53 @@ function delegate(script, command, passthrough) {
   run("node", [path.join(WORKSPACE, script), command, ...passthrough]);
 }
 
+async function prepareAgentRun(options) {
+  const endpoint = options.endpoint ?? DEFAULT_ENDPOINT;
+  const waited = await waitForGateway({
+    endpoint,
+    timeoutMs: options.waitMs,
+    pollMs: options.pollMs
+  });
+  if (!waited.ready) {
+    throw new Error(`Gateway did not become ready within ${waited.waited_ms}ms: ${waited.error}`);
+  }
+
+  const before = await inspect({ ...options, endpoint }, true);
+  const beforeErrors = agentRunPreflightErrors(before);
+  if (beforeErrors.length > 0) {
+    throw new Error(`Agent preflight rejected loaded environment: ${beforeErrors.join(", ")}`);
+  }
+
+  delegate(
+    "tools/connector-migration-orchestrator.mjs",
+    "cycle",
+    defaultMigrationCycleArgs({ ...options, endpoint })
+  );
+
+  const after = await inspect({ ...options, endpoint }, true);
+  const afterErrors = agentRunPreflightErrors(after, { requireMutation: true });
+  if (afterErrors.length > 0) {
+    throw new Error(
+      `Agent preflight did not establish an exact runnable environment: ${afterErrors.join(", ")}`
+    );
+  }
+  return {
+    status: "exact_environment_ready_for_bounded_agent_run",
+    protocol_version: after.loaded_protocol,
+    loaded_sha256: after.loaded_sha256,
+    loaded_mvid: after.loaded_mvid,
+    runtime_instance_id: after.runtime_instance_id,
+    compatibility_status: after.compatibility_status,
+    permission_mode: after.permission_mode,
+    qualification_status: after.qualification_status,
+    non_claims: [
+      "preflight is not Organic qualification",
+      "unsupported surfaces remain fail closed",
+      "the bounded run never retries an unknown mutation outcome"
+    ]
+  };
+}
+
 function usage() {
   return `Usage: npm run connector -- <command> [options]\n\n`
     + `Commands:\n`
@@ -598,7 +671,7 @@ function usage() {
     + `  repair-installation                Relocate known backup manifests with game closed\n`
     + `  wait-for-gateway                   Bounded read-only capabilities readiness wait\n`
     + `  verify-loaded-artifact [--wait]   Require source/built/installed/loaded identity agreement\n`
-    + `  run-agent -- <agent args>         Run Re agent:run\n`
+    + `  run-agent -- <agent args>         Exact-identity preflight, trial resume, then bounded Re run\n`
     + `  collect-evidence [--out FILE]     Capture read-only capabilities/state/controller/clients\n`
     + `  start-or-resume-trial -- <args>   Delegate to the migration cycle\n`
     + `  revoke -- <ledger args>           Revoke a persistent qualification\n`
@@ -660,7 +733,13 @@ export async function main(argv = process.argv.slice(2)) {
     return;
   }
   if (command === "run-agent") {
-    run("npm", ["--prefix", "Re-SpireAgent", "run", "agent:run", "--", ...options.passthrough]);
+    console.log(JSON.stringify(await prepareAgentRun(options), null, 2));
+    run("npm", ["--prefix", "Re-SpireAgent", "run", "agent:run:direct", "--", ...options.passthrough], {
+      env: {
+        ...process.env,
+        STS2_API_URL: options.endpoint ?? process.env.STS2_API_URL ?? DEFAULT_ENDPOINT
+      }
+    });
     return;
   }
   if (command === "start-or-resume-trial") {

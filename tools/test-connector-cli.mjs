@@ -3,6 +3,8 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import {
+  agentRunPreflightErrors,
+  defaultMigrationCycleArgs,
   evaluateEnvironmentReadiness,
   evaluateLoadedArtifact,
   inspectModInstallation,
@@ -20,15 +22,44 @@ assert.equal(
 );
 assert.equal(resolveModsDir("C:\\game", "win32"), path.join("C:\\game", "mods"));
 
+const migrationArgs = defaultMigrationCycleArgs({
+  gameDir: "/fixture-game",
+  endpoint: "http://127.0.0.1:19999"
+});
+assert.deepEqual(migrationArgs.slice(0, 2), ["--endpoint", "http://127.0.0.1:19999"]);
+assert.equal(migrationArgs.at(-1), "true");
+assert.ok(migrationArgs.includes(path.join(
+  resolveModsDir("/fixture-game"),
+  "STS2_MCP.qualifications.json"
+)));
+
+assert.deepEqual(agentRunPreflightErrors({
+  errors: [],
+  observation_ready: true,
+  mutation_ready: false,
+  mod_installation: { exact_permission_blocker: false }
+}), []);
+assert.deepEqual(agentRunPreflightErrors({
+  errors: ["installed_loaded_mvid_mismatch"],
+  observation_ready: false,
+  mutation_ready: false,
+  mod_installation: { exact_permission_blocker: true }
+}, { requireMutation: true }), [
+  "installed_loaded_mvid_mismatch",
+  "duplicate_gateway_manifests_detected",
+  "normal_observation_disabled",
+  "mutation_disabled"
+]);
+
 const clean = evaluateLoadedArtifact({
-  csharpProtocol: "2.0-preview.67",
-  reProtocol: "2.0-preview.67",
+  csharpProtocol: "2.0-preview.68",
+  reProtocol: "2.0-preview.68",
   builtSha: "a".repeat(64),
   installedSha: "a".repeat(64),
   builtMvid: "mvid",
   installedMvid: "mvid",
   capabilities: {
-    protocol_version: "2.0-preview.67",
+    protocol_version: "2.0-preview.68",
     bridge: {
       assembly_file_sha256: "a".repeat(64),
       module_version_id: "mvid",
@@ -41,7 +72,7 @@ assert.equal(clean.ok, true);
 assert.equal(clean.artifact_identity_ok, true);
 
 const mismatch = evaluateLoadedArtifact({
-  csharpProtocol: "2.0-preview.67",
+  csharpProtocol: "2.0-preview.68",
   reProtocol: "2.0-preview.66",
   builtSha: "a".repeat(64),
   installedSha: "b".repeat(64),

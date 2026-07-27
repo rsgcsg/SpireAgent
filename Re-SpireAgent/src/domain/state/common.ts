@@ -1,6 +1,6 @@
 import type { CardSnapshot, PlayerSnapshot, RelicSnapshot } from "./entities.js";
 
-export const NORMALIZED_STATE_SCHEMA_VERSION = 26 as const;
+export const NORMALIZED_STATE_SCHEMA_VERSION = 27 as const;
 
 export type StateStability =
   | "actionable"
@@ -124,7 +124,7 @@ export interface BridgeObservationSnapshot {
 }
 
 export interface BridgeContractInstanceShadowSnapshot {
-  status: "resolved_manifest_contract" | "unresolved";
+  status: "resolved_manifest_contract" | "resolved_runtime_contract" | "unresolved";
   instanceId: string;
   surfaceKind: string;
   semanticContractId?: string;

@@ -7,7 +7,7 @@ namespace STS2_MCP.BridgeV2.Protocol;
 
 public static class BridgeV2Contract
 {
-    public const string ProtocolVersion = "2.0-preview.67";
+    public const string ProtocolVersion = "2.0-preview.68";
     public const string ObservationPolicyId = "player_visible_ui_v1";
 }
 
@@ -796,10 +796,16 @@ public sealed class BridgeSurfaceJsonConverter : JsonConverter<IBridgeSurface>
         JsonSerializer.Serialize(writer, value, value.GetType(), options);
 }
 
+public sealed record DeckEnchantSource(
+    string Kind,
+    string DefinitionId,
+    string BindingEvidence);
+
 public sealed record DeckEnchantSelectionSurface(
     string Kind,
     string Stage,
     string ScreenEntityId,
+    DeckEnchantSource Source,
     string? Prompt,
     int MinSelect,
     int MaxSelect,
@@ -1352,4 +1358,6 @@ public sealed record BridgeCommandResponse(
     IReadOnlyList<BridgeCommandEvent> Events)
 {
     public BridgeCommandAttribution? Attribution { get; init; }
+
+    public string? CompletionBoundary { get; init; }
 }

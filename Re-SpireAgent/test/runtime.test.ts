@@ -586,6 +586,39 @@ describe("TickOrchestrator", () => {
     expect(adapter.executed).toEqual([{ kind: "menu_select", option: "main_menu" }]);
   });
 
+  it("stops after game-over cleanup even when initial run entry was allowed", async () => {
+    const raw = await fixture("game-over") as Sts2McpRawState;
+    const menu = await fixture("menu") as Sts2McpRawState;
+    const adapter = new FakeAdapter([raw, raw, menu, menu]);
+    const recorder = new MemoryRecorder();
+    let calls = 0;
+    const orchestrator = makeOrchestrator(
+      adapter,
+      fixedProvider("game-over:main_menu", () => { calls += 1; }),
+      recorder
+    );
+
+    const cleanup = await orchestrator.runTick(1, {
+      stopAtRunBoundary: true,
+      allowRunEntry: true
+    });
+    const boundary = await orchestrator.runTick(2, {
+      stopAtRunBoundary: true,
+      allowRunEntry: true
+    });
+
+    expect(cleanup.outcome).toBe("executed_and_settled");
+    expect(boundary).toMatchObject({
+      outcome: "not_executed_non_actionable_state",
+      contextKind: "menu",
+      shouldStopRun: true,
+      stopReason: "run_boundary"
+    });
+    expect(calls).toBe(1);
+    expect(adapter.executed).toEqual([{ kind: "menu_select", option: "main_menu" }]);
+    expect(recorder.records[1]?.error).toContain("never starts a second game");
+  });
+
   it("stops at the top-level menu before the model can start or continue another run", async () => {
     const raw = await fixture("menu") as Sts2McpRawState;
     const adapter = new FakeAdapter([raw]);

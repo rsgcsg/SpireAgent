@@ -1,7 +1,7 @@
 # Bridge v2 Documentation
 
 Bridge v2 is the active semantic Gateway protocol. C# and Re source now share
-`2.0-preview.67`; Re normalized schema is `26`. Gate 1 is closed as a bounded
+`2.0-preview.68`; Re normalized schema is `27`. Gate 1 is closed as a bounded
 ordinary-single-player v2 connector baseline and the complete v1 HTTP namespace
 is retired. Preview.61 supplied the final Neow's Fury runtime seal. Preview.62
 adds reviewed registry/policy adaptation and non-authorizing exact-assembly
@@ -18,15 +18,17 @@ manifest-derived identity/test-confirm fallbacks; the other 86 operations are
 session canaries, not qualifications. Start with current status, not historical
 preview closeouts.
 
-Preview.67 adds a required non-authorizing identity shadow while retaining the
-current state/action/permission path. The Release is built and installed but
-not cold-loaded; Preview.66 remains the latest loaded/Organic evidence. See
-[ADR-0005](ADR-0005-semantic-state-and-authority-identity-separation.md).
+Preview.68 retains the required non-authorizing identity shadow, adds a
+runtime contract/source shadow and typed completion boundaries, and fixes
+measured Preview.67 long-run failures. Preview.68 is not loaded until a cold
+restart. See [ADR-0005](ADR-0005-semantic-state-and-authority-identity-separation.md)
+and repository [ADR-0003](../../../docs/current/decisions/ADR-0003-operation-retirement-and-native-continuation-migration.md).
 
 ## Current Documents
 
 - [Current status](CURRENT_STATUS.md)
 - [Cross-component target architecture ADR](../../../docs/current/decisions/ADR-0002-semantic-gateway-two-plane-target-architecture.md)
+- [Operation retirement/native continuation ADR](../../../docs/current/decisions/ADR-0003-operation-retirement-and-native-continuation-migration.md)
 - [Source-truth repair closeout](SOURCE_TRUTH_REPAIR_CLOSEOUT_2026-07-22.md)
 - [Connector Gate 0 closeout](CONNECTOR_G0_CLOSEOUT_2026-07-22.md)
 - [Gate 1 real-run defect closeout](GATE1_REAL_RUN_DEFECT_CLOSEOUT_2026-07-22.md)

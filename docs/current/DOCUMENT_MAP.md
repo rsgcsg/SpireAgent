@@ -13,6 +13,9 @@ not inherit authority from the archived root SpireAgent runtime.
 3. [Connector target architecture ADR](decisions/ADR-0002-semantic-gateway-two-plane-target-architecture.md):
    the single accepted Workflow C destination, responsibility boundaries,
    rejected alternatives, staged migration, and bounded completion definition.
+   [ADR-0003](decisions/ADR-0003-operation-retirement-and-native-continuation-migration.md)
+   defines the accepted operation-retirement and native-continuation
+   refinement without changing current authority prematurely.
 4. [Roadmap](ROADMAP.md): current functional gates and retirement sequence.
 5. [Program plan](PROGRAM_PLAN.md): cross-component dependencies and future
    admission gates without changing the current delivery priority.
@@ -30,6 +33,10 @@ not inherit authority from the archived root SpireAgent runtime.
 
 Current cross-component audits:
 
+- [Preview.68 long-run reliability and native-contract migration audit](audits/PREVIEW_68_LONG_RUN_RELIABILITY_AND_NATIVE_CONTRACT_MIGRATION_2026-07-27.md):
+  exact three-run failure attribution, Kifuda source/continuation evidence,
+  coherent-read and one-game-boundary repairs, and the current architecture
+  migration/non-claim boundary.
 - [Workflow C fact-first Connector audit](audits/WORKFLOW_C_FACT_FIRST_CONNECTOR_AUDIT_2026-07-27.md):
   first-principles architecture verdict, measured run/Prompt evidence,
   retained and rejected abstractions, Preview.67 identity-shadow slice, thin
