@@ -80,6 +80,13 @@ disk identity into Organic evidence. `run-agent`/`agent:run` may append an exact
 trial candidate through the Operator Shell; only Gateway revalidation can turn
 it into session authority.
 
+For an exact newly loaded environment, the Operator Shell first checks artifact
+identity and requires an `exact_bridge_only` Modset. It deliberately does not
+require normal observation before the migration cycle; normal observation and
+mutation readiness are mandatory after the Gateway reloads and revalidates the
+new candidate packages. This ordering permits safe bootstrap without granting
+Re or the migration tool action authority.
+
 Use `npm run connector -- help` for trial, qualification revoke/rollback, and
 Gateway-artifact restore delegation. `restore-known-environment` restores only
 a backed-up Gateway artifact; it does not restore a Steam game build, Modset,

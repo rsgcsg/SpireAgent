@@ -118,12 +118,24 @@ The completed non-Live verification is:
 - rollback is available at
   `STS2MCP/.local/deployments/2026-07-27T13-34-39-345Z`.
 
-The game remained closed after installation. Preview.68 loaded identity,
-session canary, Organic journey, and qualification are therefore still absent.
+After cold start, loaded SHA/MVID matched the built and installed artifact.
+The first two `agent:run` attempts safely stopped before DeepSeek because the
+Operator Shell required normal observation before starting the migration cycle
+that could establish it. This was a bootstrap-order defect, not a Gateway
+identity, Modset, Patch, provider, or game-state failure.
+
+The fixed identity phase requires exact artifact agreement and the
+`exact_bridge_only` Modset without requiring normal observation. The migration
+cycle then created profile `env-8fb83dbe8bb6ddd3772d6b64`, installed 87 exact
+session-canary candidates, and installed zero persistent qualifications. After
+Gateway revalidation, `observation_ready=true`, `mutation_ready=true`, and Re
+read the current `event/event_option` state with three advertised actions and
+no normalization diagnostics. No model or game mutation was used for this
+verification. Inspection remains disabled for this candidate environment.
 
 ## Remaining Live Boundary
 
-The only remaining live step is a cold restart followed by:
+The only remaining live step is:
 
 ```bash
 cd /Users/fire/Desktop/SpireAgent/Re-SpireAgent

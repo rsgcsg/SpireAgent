@@ -37,16 +37,26 @@ assert.deepEqual(agentRunPreflightErrors({
   errors: [],
   observation_ready: true,
   mutation_ready: false,
+  modset_status: "exact_bridge_only",
   mod_installation: { exact_permission_blocker: false }
 }), []);
+assert.deepEqual(agentRunPreflightErrors({
+  errors: [],
+  observation_ready: false,
+  mutation_ready: false,
+  modset_status: "exact_bridge_only",
+  mod_installation: { exact_permission_blocker: false }
+}, { requireObservation: false }), []);
 assert.deepEqual(agentRunPreflightErrors({
   errors: ["installed_loaded_mvid_mismatch"],
   observation_ready: false,
   mutation_ready: false,
+  modset_status: "hazardous_mod_state_detected",
   mod_installation: { exact_permission_blocker: true }
 }, { requireMutation: true }), [
   "installed_loaded_mvid_mismatch",
   "duplicate_gateway_manifests_detected",
+  "exact_bridge_only_modset_required",
   "normal_observation_disabled",
   "mutation_disabled"
 ]);

@@ -166,12 +166,20 @@ export function defaultMigrationCycleArgs(options = {}) {
   ];
 }
 
-export function agentRunPreflightErrors(status, { requireMutation = false } = {}) {
+export function agentRunPreflightErrors(
+  status,
+  { requireObservation = true, requireMutation = false } = {}
+) {
   const errors = [...(status?.errors ?? [])];
   if (status?.mod_installation?.exact_permission_blocker === true) {
     errors.push("duplicate_gateway_manifests_detected");
   }
-  if (status?.observation_ready !== true) errors.push("normal_observation_disabled");
+  if (status?.modset_status !== "exact_bridge_only") {
+    errors.push("exact_bridge_only_modset_required");
+  }
+  if (requireObservation && status?.observation_ready !== true) {
+    errors.push("normal_observation_disabled");
+  }
   if (requireMutation && status?.mutation_ready !== true) errors.push("mutation_disabled");
   return [...new Set(errors)];
 }
@@ -624,7 +632,9 @@ async function prepareAgentRun(options) {
   }
 
   const before = await inspect({ ...options, endpoint }, true);
-  const beforeErrors = agentRunPreflightErrors(before);
+  const beforeErrors = agentRunPreflightErrors(before, {
+    requireObservation: false
+  });
   if (beforeErrors.length > 0) {
     throw new Error(`Agent preflight rejected loaded environment: ${beforeErrors.join(", ")}`);
   }

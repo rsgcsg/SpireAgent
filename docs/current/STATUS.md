@@ -16,7 +16,7 @@ not complete game or visible-information coverage. Gateway v1 is retired.
 Gate 2 is active through reliability, observation closure, and shadow-first
 native-contract migration.
 
-## Current Source, Installed Artifact, And Last Loaded Evidence
+## Current Source And Loaded Environment
 
 Current source contract is `2.0-preview.68`; Re normalized schema is `27`.
 Preview.68 adds coherent read-only observation retry, a correct one-game
@@ -24,32 +24,30 @@ terminal boundary, exact Kifuda continuation handoff, source-bound deck-enchant
 contracts, typed receipt completion boundaries, native hover-derived Orb text,
 and a non-authorizing runtime contract/source shadow.
 
-Preview.68 is built and installed while the game is closed:
+Preview.68 is built, installed, and loaded:
 
 ```text
 built SHA     d33791395a33d6937a03e9853e865f35b631104f943ecf3abcf4027c32c2418f
 installed SHA d33791395a33d6937a03e9853e865f35b631104f943ecf3abcf4027c32c2418f
 built MVID    6c2e1933-462c-43ae-ad6f-edb60b1bf19c
 installed MVID 6c2e1933-462c-43ae-ad6f-edb60b1bf19c
+loaded SHA      d33791395a33d6937a03e9853e865f35b631104f943ecf3abcf4027c32c2418f
+loaded MVID     6c2e1933-462c-43ae-ad6f-edb60b1bf19c
+runtime         6b1e1cdf97bd44429b44e37a9b15895d
+profile         env-8fb83dbe8bb6ddd3772d6b64
+environment     ec4b40c3b801ee4a902e156f7601c619bfc75dd91b8d2fce24355bde78bc755a
+Modset          dba2e4b15b47b4b0c5e337bec848cfd7cced575bcf6e73ae0993bab0f1c99eff
+Patch           ee979e2b877b772adaa28409f474037a832b9ccaf22037afde23a527bb13c587
 rollback      STS2MCP/.local/deployments/2026-07-27T13-34-39-345Z
 ```
 
-The last loaded artifact remains historical Preview.67 until the game is cold
-restarted:
-
-```text
-game      v0.109.1|c8c577f6|-820620422
-sts2 SHA  2cb39e2eee651743829abcc0df4dd9cd7e65f46287c7ca264481115c9602382f
-sts2 MVID 208f08b8-d5f5-47f8-9e96-d3a4299ee709
-Gateway   100ddf42c2114b30602a41c8908f63e154fc8f41a10ed37d4e2a1bded84fc74d
-MVID      65bd744d-270b-4026-84c4-2ee397eee4e2
-runtime   13f8d3d62d1644ec91a405a59dc4cd64
-profile   env-788f4e8ca807b9e99e30757d
-env       0cc2f76995afbffece47fb793d8797030acf64f908f4887d2fe91120df401164
-Modset    c3dc252c1ba3f60542707b4aa8f2469c1b44f1552dca77eea626d585ad0fd070
-Patch     ee979e2b877b772adaa28409f474037a832b9ccaf22037afde23a527bb13c587
-mode      migration_exploration
-```
+The first two Preview.68 `agent:run` attempts correctly made no model call or
+mutation, but exposed an Operator Shell ordering bug: it required normal
+observation before running the migration cycle that establishes observation.
+The pre-migration gate now checks artifact identity and an exact bridge-only
+Modset; observation and mutation are required only after Gateway revalidation.
+The exact cycle installed 87 session-canary candidates and no persistent
+qualification. A real action canary and Organic journey remain outstanding.
 
 Three real-runtime Preview.67 runs supplied defect and coverage evidence:
 
@@ -81,15 +79,16 @@ non-authorizing shadow facts. Unknown source contracts fail closed.
 
 ## Immediate Next Step
 
-Cold-start STS2, wait for the Gateway to become ready, then run only:
+With STS2 at its current event option, run only:
 
 ```bash
 cd /Users/fire/Desktop/SpireAgent/Re-SpireAgent
 npm run agent:run
 ```
 
-Do not call Preview.68 loaded or qualified until that command reports the new
-loaded SHA/MVID and a real journey. Remaining explicit unsupported scope
-includes Crystal Sphere, standalone manual potion discard, unbound source
-variants, non-standard profiles/menu paths, multiplayer, and incomplete
-player-visible detail families.
+Do not call Preview.68 qualified until a real journey exercises its exact
+candidate actions. Remaining explicit unsupported scope includes Crystal
+Sphere, standalone manual potion discard, unbound source variants,
+non-standard profiles/menu paths, multiplayer, and incomplete player-visible
+detail families. Read-only Inspection remains disabled for this candidate
+environment and is separate from normal state observation.

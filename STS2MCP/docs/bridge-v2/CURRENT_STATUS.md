@@ -11,21 +11,23 @@ Re normalized schema 27
 game                 v0.109.1|c8c577f6|-820620422
 game assembly SHA    2cb39e2eee651743829abcc0df4dd9cd7e65f46287c7ca264481115c9602382f
 game assembly MVID   208f08b8-d5f5-47f8-9e96-d3a4299ee709
-last loaded protocol 2.0-preview.67
-last loaded SHA      100ddf42c2114b30602a41c8908f63e154fc8f41a10ed37d4e2a1bded84fc74d
-last loaded MVID     65bd744d-270b-4026-84c4-2ee397eee4e2
-last runtime epoch   13f8d3d62d1644ec91a405a59dc4cd64
-last Modset          exact_bridge_only
+loaded protocol      2.0-preview.68
+loaded SHA           d33791395a33d6937a03e9853e865f35b631104f943ecf3abcf4027c32c2418f
+loaded MVID          6c2e1933-462c-43ae-ad6f-edb60b1bf19c
+runtime epoch        6b1e1cdf97bd44429b44e37a9b15895d
+profile              env-8fb83dbe8bb6ddd3772d6b64
+environment digest   ec4b40c3b801ee4a902e156f7601c619bfc75dd91b8d2fce24355bde78bc755a
+Modset fingerprint   dba2e4b15b47b4b0c5e337bec848cfd7cced575bcf6e73ae0993bab0f1c99eff
 permission mode      migration_exploration
 built Preview.68 SHA d33791395a33d6937a03e9853e865f35b631104f943ecf3abcf4027c32c2418f
 installed SHA        d33791395a33d6937a03e9853e865f35b631104f943ecf3abcf4027c32c2418f
 built/installed MVID 6c2e1933-462c-43ae-ad6f-edb60b1bf19c
 ```
 
-Preview.68 passed Release build and closed-game installation. The rollback
-snapshot is `STS2MCP/.local/deployments/2026-07-27T13-34-39-345Z`. A cold
-restart must still establish exact loaded identity; Preview.67 packages do not
-carry forward across the new MVID.
+Preview.68 passed Release build, closed-game installation, cold-load identity,
+and read-only Re decoding. The rollback snapshot is
+`STS2MCP/.local/deployments/2026-07-27T13-34-39-345Z`. Preview.67 packages did
+not carry forward across the new MVID.
 
 ## Preview.67 Real-Run Evidence
 
@@ -63,6 +65,9 @@ qualification. See the repository
   migration closes.
 - `npm run agent:run` invokes the external Operator Shell for exact identity
   and trial preparation before the direct bounded Re loop.
+- The Operator Shell identity phase does not require normal observation;
+  observation and mutation are required after the exact migration cycle. This
+  avoids a bootstrap deadlock without weakening the Gateway gate.
 
 ## Architecture And Permission
 
@@ -77,14 +82,15 @@ remains terminal.
 
 ## Non-Claims And Next Step
 
-- Preview.68 has no loaded, canary, or Organic evidence yet.
+- Preview.68 is loaded and has 87 exact installed session-canary candidates,
+  but no Preview.68 action canary, Organic journey, or persistent qualification.
 - A handoff receipt is not transaction settlement.
 - Kifuda source/tests are not an Organic Kifuda canary.
 - The 82 fallback operation identities are inventory/test-confirm hypotheses,
   not semantic compatibility.
 - Gate 1 closure is not complete-game or complete-visible-information closure.
 
-Cold-start STS2 and run:
+From the current event option, run:
 
 ```bash
 cd /Users/fire/Desktop/SpireAgent/Re-SpireAgent
