@@ -45,12 +45,12 @@ Tutor holdout.
 
 ## Gate 2: Decision-Plane And Player-Visible Information Closure
 
-Status: **active but still bounded. Preview.66 has completed one real automatic
-migration cycle on the final loaded `v0.109.1` Gateway identity:
-`main_menu/continue_run` is persistent-qualified after two exact Organic
-runtime epochs and cold-restart recovery. The other 86 current operation
-identities are session canaries only: four explicit contracts and 82
-manifest-derived conservative fallbacks.**
+Status: **active but still bounded. Preview.66 completed one real automatic
+migration cycle on its own historical `v0.109.1` Gateway identity:
+`main_menu/continue_run` was persistent-qualified after two exact Organic
+runtime epochs and cold-restart recovery. Preview.67 is now the loaded exact
+identity; all 87 current operation identities are session canaries only and
+have no Preview.67 Organic or persistent qualification.**
 
 Close decision-relevant visible-information gaps using shared state, context,
 surface, preview, and read-only inspection. Do not expose hidden RNG, draw
@@ -77,15 +77,20 @@ remain insufficient.
 See the
 [Preview.66 migration closeout](../../STS2MCP/docs/bridge-v2/PREVIEW_66_MULTI_ENVIRONMENT_MIGRATION_CLOSEOUT_2026-07-26.md).
 
-Preview.67 source begins a narrower reliability experiment: dual-write a
+Preview.67 begins a narrower reliability experiment: dual-write a
 non-authorizing semantic-state and current-authority identity candidate while
 retaining the legacy composite as the only state/action identity. C# and Re
-tests, Release build and disk install are complete; loaded and Organic evidence
-are pending. Only after paired state/control-drift evidence may an authority
+tests, Release build, disk install, cold-load identity, clean single-Mod
+diagnosis, exact migration dry-run/apply, strict Re inspection, and one Re
+dry-run are complete. The current exact environment has 87 session-canary
+operation scopes, but Preview.67 still has no mutation, settled canary,
+Organic action evidence, Inspection authority, or persistent qualification.
+Only after paired state/control-drift evidence may an identity authority
 migration be designed. The next transport optimization is capabilities
 summary/on-demand detail, also dual-read first.
 
-After the Preview.67 canary, Gate 2 follows this evidence order:
+After the user runs the first Preview.67 Organic journey, Gate 2 follows this
+evidence order:
 
 1. prove semantic-state/current-authority identity separation under real game,
    operand, permission, and transition drift;
@@ -105,7 +110,7 @@ ABI/load split satisfies ADR-0002's admission condition.
 
 ## Gate 3: Local Control Coordination Alpha
 
-Status: **Preview.64 behavior is included in the loaded Preview.66 artifact.
+Status: **Preview.64 behavior is included in the loaded Preview.67 artifact.
 A bounded two-client check confirmed single-writer acquisition, competing
 client rejection, release, and no remaining active controller. No game action
 was authorized by this coordination test.**

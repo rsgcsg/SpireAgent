@@ -58,6 +58,13 @@ Profiles and install/rollback tooling sit outside the Gateway as a non-
 authorizing operational boundary; an Artifact Router remains conditional on a
 demonstrated ABI or load split.
 
+That operational boundary is now a required thin Operator Shell. It reports
+disk identity, loaded identity, environment/observation/Inspection/mutation
+readiness separately; performs bounded read-only startup waiting; diagnoses
+duplicate scanned manifests; collects partial read-only evidence; and keeps
+install repair rollbackable. It does not publish actions, acquire the mutation
+lease, or bypass Gateway package revalidation.
+
 Ordinary sequences compose from fresh observations and closed advertised
 actions. A cross-action `PendingObligation` is allowed only when exact native
 evidence proves that a parent transaction remains unresolved across decision
@@ -172,13 +179,16 @@ and the
 The Gateway and Re share the mechanically checked `2.0-preview.67` source
 contract. Gate 1 establishes a bounded v2 connector baseline: Re and the
 default MCP adapter are v2-only, and the current-source Gateway v1 HTTP surface
-is retired. The loaded Preview.66 artifact sees game
-`v0.109.1|c8c577f6|-820620422`. Its exact Profile did not inherit another
-Gateway build's packages. The final artifact automatically qualified only
-`main_menu/continue_run`; 86 current manifest operations remain exact session
-canaries. Five have explicit high-precision contracts and 82 use conservative
-fallback identities that do not assert semantic equivalence. Operations
-outside the manifest still require exact policy or remain fail closed.
+is retired. Preview.67 is cold-loaded on game
+`v0.109.1|c8c577f6|-820620422` with a clean one-Mod exact identity. Its Profile
+did not inherit Preview.66 authority. The exact migration workflow installed
+87 session-canary operation packages which the Gateway hot-reloaded and
+revalidated. Preview.67 has no settled action or persistent qualification;
+Preview.66's one qualified `main_menu/continue_run` remains historical to its
+own SHA/MVID/Modset. Five manifest operations have explicit high-precision
+contracts and 82 use conservative fallback identities that do not assert
+semantic equivalence. Operations outside the manifest still require exact
+policy or remain fail closed.
 Historical v1 JSONL
 remains replay-readable as stored evidence, but no v1 sidecar may contribute
 live facts or action authority.

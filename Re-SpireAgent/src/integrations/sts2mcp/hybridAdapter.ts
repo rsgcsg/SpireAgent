@@ -20,6 +20,8 @@ import { wrapBridgeV2State, type Sts2McpRawState } from "./rawState.js";
 export interface HybridAdapterOptions {
   commandPollMs: number;
   commandTimeoutMs: number;
+  startupWaitMs?: number;
+  startupPollMs?: number;
 }
 
 export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, ExecutableGameAction, GameExecutionResult> {
@@ -41,7 +43,19 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
 
   async initialize(): Promise<void> {
     if (this.capabilitiesPayload) return;
-    this.capabilitiesPayload = await this.bridge.capabilities();
+    let remainingWaitMs = this.options.startupWaitMs ?? 0;
+    const pollMs = this.options.startupPollMs ?? 500;
+    while (true) {
+      try {
+        this.capabilitiesPayload = await this.bridge.capabilities();
+        return;
+      } catch (error) {
+        if (!isTransientGatewayStartupError(error) || remainingWaitMs <= 0) throw error;
+        const delayMs = Math.min(pollMs, remainingWaitMs);
+        await this.sleep(delayMs);
+        remainingWaitMs -= delayMs;
+      }
+    }
   }
 
   describe(): AdapterDescriptor {
@@ -361,6 +375,11 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
     };
   }
 
+}
+
+function isTransientGatewayStartupError(error: unknown): boolean {
+  return error instanceof BridgeV2HttpError
+    && (error.statusCode === undefined || error.statusCode >= 500);
 }
 
 function observationEvidence(bundle: BridgeV2ObservationBundle): JsonObject {

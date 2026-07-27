@@ -34,17 +34,17 @@ non-authorizing semantic-state/authority-projection identity shadow without
 changing current state/action binding, permission, execution, completion, or
 the model Prompt.
 
-Preview.67 SHA `7da8946c...b768`, MVID
-`12b55aef-499f-4ea8-8414-d3a360baa2ac` is built and installed locally but is
-not yet cold-loaded. The last loaded and Organic-evidenced artifact remains
-Preview.66 on
-`v0.109.1|c8c577f6|-820620422`. One exact operation,
-`main_menu/continue_run`, completed the candidate -> two-epoch Organic
-evidence -> persistent qualification -> cold-restart recovery cycle. The
-current manifest projects 87 exact operation identities: five explicit
-high-precision contracts and 82 conservative identity/test-confirm fallbacks.
-The other 86 operations are session canaries only. This is a real automatic
-migration slice, not build-wide, all-operation, or cross-Mod qualification.
+Preview.67 is built, installed, and cold-loaded on
+`v0.109.1|c8c577f6|-820620422` as SHA `100ddf42...74d`, MVID
+`65bd744d-270b-4026-84c4-2ee397eee4e2`. The loaded Modset now contains one
+successful `STS2_MCP`; a recursively scanned historical backup manifest was
+the proven cause of the earlier `Loaded + Failed` hazard and has been moved
+reversibly outside the native scan tree. The exact migration workflow installed
+87 current-environment `session_canary` packages, and Re completed a dry run
+without mutation. Preview.67 still has no real mutation, settled action canary,
+Organic action evidence, Inspection authority, or persistent qualification.
+Preview.66's persistent `main_menu/continue_run` package remains historical
+evidence in its own exact Gateway identity and grants no Preview.67 authority.
 Exact source, loaded, candidate, Organic, and persistent evidence remain
 separated in [current status](docs/current/STATUS.md).
 

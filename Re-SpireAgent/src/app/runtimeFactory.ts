@@ -68,6 +68,8 @@ export async function createConnectorRuntime(config: RuntimeConfig): Promise<{
   const lock = await acquireRuntimeLock(config.runtime.dataDir);
   try {
     const adapter = new Sts2McpHybridAdapter(config.mcp.baseUrl, config.mcp.timeoutMs, {
+      startupWaitMs: config.mcp.startupWaitMs,
+      startupPollMs: config.mcp.startupPollMs,
       commandPollMs: config.mcp.commandPollMs,
       commandTimeoutMs: config.mcp.commandTimeoutMs
     });

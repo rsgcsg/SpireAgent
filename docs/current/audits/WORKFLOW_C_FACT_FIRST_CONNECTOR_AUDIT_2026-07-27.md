@@ -9,6 +9,10 @@ Decision follow-up: this audit is the evidence basis for
 [ADR-0002](../decisions/ADR-0002-semantic-gateway-two-plane-target-architecture.md),
 which now owns the single accepted target architecture and migration
 constraints. This report remains an audit, not a second architecture authority.
+Its pre-cold-load Preview.67 statements are historical snapshot facts; current
+loaded identity and readiness are owned by
+[current status](../STATUS.md) and the
+[Preview.67 operator closeout](PREVIEW_67_OPERATOR_READINESS_CLOSEOUT_2026-07-27.md).
 
 ## Executive Verdict
 

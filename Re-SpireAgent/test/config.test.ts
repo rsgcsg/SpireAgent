@@ -19,6 +19,16 @@ describe("runtime evidence provenance", () => {
     expect(() => readRuntimeConfig({ STS2_MCP_PROTOCOL: "v1" })).toThrow("v2-only");
   });
 
+  it("uses a bounded read-only Gateway startup wait", () => {
+    expect(readRuntimeConfig({}).mcp).toMatchObject({
+      startupWaitMs: 60_000,
+      startupPollMs: 500
+    });
+    expect(readRuntimeConfig({ STS2_MCP_STARTUP_WAIT_MS: "0" }).mcp.startupWaitMs).toBe(0);
+    expect(() => readRuntimeConfig({ STS2_MCP_STARTUP_POLL_MS: "0" }))
+      .toThrow("STS2_MCP_STARTUP_POLL_MS");
+  });
+
   it("anchors default local evidence under the Re project, not the caller working directory", () => {
     expect(readRuntimeConfig({}).runtime.dataDir).toBe(`${RE_PROJECT_ROOT}/data/runs`);
     expect(readRuntimeConfig({ AGENT_DATA_DIR: "../external-evidence" }, "/tmp/re-spire-test").runtime.dataDir)

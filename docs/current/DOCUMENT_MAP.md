@@ -34,6 +34,10 @@ Current cross-component audits:
   first-principles architecture verdict, measured run/Prompt evidence,
   retained and rejected abstractions, Preview.67 identity-shadow slice, thin
   operator CLI, bounded completion definition, and falsifiable next tests.
+- [Preview.67 operator-readiness closeout](audits/PREVIEW_67_OPERATOR_READINESS_CLOSEOUT_2026-07-27.md):
+  real Loaded/Failed Mod root cause, architecture re-review, CLI/readiness
+  repairs, exact loaded identity, session-canary preparation, and remaining
+  Organic boundary.
 - [Visibility and observation architecture audit](audits/VISIBILITY_AND_OBSERVATION_ARCHITECTURE_AUDIT_2026-07-22.md):
   current Gateway/Re fact flow, Prompt projection debt, evidence limits, and
   falsifiable next experiments. It is an audit, not an accepted protocol change.
@@ -76,8 +80,9 @@ Current cross-component audits:
   accepted shadow-only split, negative boundaries, and authority-migration
   evidence gate.
 - [Preview 67 identity-shadow Live handoff](../../STS2MCP/docs/bridge-v2/PREVIEW_67_IDENTITY_SHADOW_LIVE_HANDOFF_2026-07-27.md):
-  exact built/installed identity, shortest cold-load canary, acceptance
-  boundary, explicit non-claims, and machine-local rollback command.
+  historical pre-cold-load checklist and prepared identity. Its deployment
+  facts are superseded by the operator-readiness closeout above; its explicit
+  non-claims remain useful evidence.
 
 Component-owned truth:
 

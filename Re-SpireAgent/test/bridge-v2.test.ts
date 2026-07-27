@@ -5412,6 +5412,52 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     expect(requests.filter((request) => request.url.endsWith("/api/v2/controller/release"))).toHaveLength(1);
   });
 
+  it("retries only transient capabilities startup failures before creating a runtime", async () => {
+    let attempts = 0;
+    const delays: number[] = [];
+    const adapter = new Sts2McpHybridAdapter("http://adapter.test", 1_000, {
+      startupWaitMs: 10,
+      startupPollMs: 5,
+      commandPollMs: 1,
+      commandTimeoutMs: 100
+    }, async (input) => {
+      const url = String(input);
+      expect(url.endsWith("/api/v2/capabilities")).toBe(true);
+      attempts += 1;
+      if (attempts < 3) throw new TypeError("Gateway socket is not listening yet");
+      return json(CAPABILITIES);
+    }, async (ms) => {
+      delays.push(ms);
+    });
+
+    await adapter.initialize();
+
+    expect(attempts).toBe(3);
+    expect(delays).toEqual([5, 5]);
+    expect(adapter.describe().negotiated).toMatchObject({
+      bridge_protocol_version: "2.0-preview.67"
+    });
+  });
+
+  it("does not retry a non-transient capabilities contract rejection", async () => {
+    let attempts = 0;
+    const adapter = new Sts2McpHybridAdapter("http://adapter.test", 1_000, {
+      startupWaitMs: 10,
+      startupPollMs: 1,
+      commandPollMs: 1,
+      commandTimeoutMs: 100
+    }, async () => {
+      attempts += 1;
+      return new Response('{"error":{"code":"not_found"}}', {
+        status: 404,
+        headers: { "content-type": "application/json" }
+      });
+    }, async () => {});
+
+    await expect(adapter.initialize()).rejects.toMatchObject({ statusCode: 404 });
+    expect(attempts).toBe(1);
+  });
+
   it("auto mode keeps an unsupported v2 surface fail closed without v1 fallback", async () => {
     const calls: string[] = [];
     const unsupported = {

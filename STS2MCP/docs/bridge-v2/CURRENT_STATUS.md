@@ -16,24 +16,25 @@ Re schema            26
 game                 v0.109.1|c8c577f6|-820620422
 game assembly SHA    2cb39e2eee651743829abcc0df4dd9cd7e65f46287c7ca264481115c9602382f
 game assembly MVID   208f08b8-d5f5-47f8-9e96-d3a4299ee709
-last loaded protocol 2.0-preview.66
-loaded Gateway SHA  b0b31f769f25d5a1e5231e92af76f7f09e07ab38f5c43f1ae753eba0b61d7a8a
-loaded Gateway MVID a7008eea-b3cd-4cb8-b75c-6dee64e9cd5c
-runtime epoch        cebc39821b7e4d16aa1d9d2d9e680df8
-Environment Profile env-8eee4ee3f08d1181b7405305
-environment digest   2654bef1049808f852f6d946a283941a14db6893678a134543510afeb8d45aa0
-Modset               2747e126fbb2f770b5cf2e6b971713a3b0b80d017b606598ca75fc758764a688
+last loaded protocol 2.0-preview.67
+loaded Gateway SHA  100ddf42c2114b30602a41c8908f63e154fc8f41a10ed37d4e2a1bded84fc74d
+loaded Gateway MVID 65bd744d-270b-4026-84c4-2ee397eee4e2
+runtime epoch        13f8d3d62d1644ec91a405a59dc4cd64
+Environment Profile env-788f4e8ca807b9e99e30757d
+environment digest   0cc2f76995afbffece47fb793d8797030acf64f908f4887d2fe91120df401164
+Modset               c3dc252c1ba3f60542707b4aa8f2469c1b44f1552dca77eea626d585ad0fd070
 Patch                ee979e2b877b772adaa28409f474037a832b9ccaf22037afde23a527bb13c587
 operation catalog    8878447144e4fe4d8c01b2940335feb504367a81ac76e4b4fd22e2f4d6b85f0c
 mode                 migration_exploration
 ```
 
-Preview.67 is built and installed on disk with SHA
-`7da8946c9374c7030d5162e8cb1930e1fc0186edc1c1088f3b2fc371c7a9b768`
-and MVID `12b55aef-499f-4ea8-8414-d3a360baa2ac`, but the game has not been
-cold-started. Therefore the loaded/runtime/Organic facts above remain
-Preview.66 evidence. Gateway v1 is retired and every `/api/v1` route returns
-`410 Gone` in the last loaded artifact.
+Preview.67 is built, installed, and cold-loaded with exact SHA/MVID agreement.
+Gateway v1 is retired and every `/api/v1` route returns `410 Gone` in the
+loaded artifact. A duplicate Preview.66 backup manifest inside `mods/backups`
+was the proven cause of the earlier simultaneous `STS2_MCP Loaded` and
+`STS2_MCP Failed` records. It was reversibly moved outside the native scan
+tree; the current loaded Modset is one successful `STS2_MCP` and
+`exact_bridge_only`.
 
 ## Preview.67 Source State
 
@@ -41,14 +42,18 @@ Preview.67 adds a required `identity_shadow` with non-authorizing semantic-
 state and authority-projection candidate hashes. Current state/action identity,
 permissions, execution, completion and Re Prompt are unchanged. Contract tests
 cover relevant versus irrelevant permission-scope changes, and Re rejects a
-missing or authorizing shadow. This is implementation evidence only until a
-fresh cold-load and bounded action journey are recorded.
+missing or authorizing shadow. Cold-load and strict Re decode are now proven.
+The exact migration workflow installed 87 session-canary packages and the
+Gateway hot-reloaded and revalidated all 87. Re completed one no-mutation
+dry-run (`run-20260727101452-4yy236`). Preview.67 still has no real mutation,
+settled action canary, Organic action evidence, Inspection authority, or
+persistent qualification.
 
 Gate 1 is closed only as the bounded ordinary-single-player v2 connector
 baseline documented by the operation inventory. Unsupported variants remain
 explicit fail-closed rows.
 
-## Preview.66 Migration State
+## Historical Preview.66 Migration Evidence
 
 Preview.66 uses one append-only qualification ledger for multiple exact
 environments. The active slot key is:
@@ -63,9 +68,9 @@ and exact installed candidate package remain mandatory. The Gateway atomically
 hot-reloads ledger changes and revalidates the complete snapshot before
 publishing scopes.
 
-Current exact operation state:
+Preview.66 exact operation state in its recorded environment:
 
-| Contract class | Count | Current authority | Final-binary Organic evidence |
+| Contract class | Count | Preview.66 authority | Preview.66 Organic evidence |
 |---|---:|---|---|
 | explicit high-precision | 5 | 1 persistent `qualified`, 4 `session_canary` | `continue_run`: 2 ordinary runs in 2 runtime epochs |
 | manifest-derived fallback | 82 | 82 `session_canary` | none promoted |
@@ -130,7 +135,8 @@ applicable packages and scopes: one qualified and 86 candidate-backed session
 canaries. All 86 current grants survive projection instead of being clipped by
 the historical-grant window. Another 105 packages remain audit-visible but
 inapplicable. No cross-game-version or cross-Mod Organic migration was
-completed with this final binary.
+completed with this final binary. Those Preview.66 authority records are
+inapplicable to the current Preview.67 environment.
 
 Immediately after `continue_run`, Re may sample a transient loading instant
 where shared-state projection is unavailable. It records an unsupported
@@ -139,8 +145,9 @@ remaining observation-timing debt, not a failed Gateway completion.
 
 ## Explicit Non-Claims
 
-- One qualified operation does not qualify its Surface siblings.
-- 86 session canaries are not persistent qualifications.
+- Preview.66's one qualified operation does not authorize Preview.67 or qualify
+  its Surface siblings.
+- Preview.67's 87 session canaries are not persistent qualifications.
 - 82 manifest-derived fallback identities are not semantic qualification.
 - Static binding similarity is not runtime qualification.
 - Controlled Gateway identity drift is Profile-isolation evidence, not
@@ -154,12 +161,13 @@ and [operation inventory](OPERATION_RETIREMENT_INVENTORY.json).
 
 ## Next Step
 
-Cold-start Preview.67, run `npm run connector -- verify-loaded-artifact`, then
-capture one read-only evidence snapshot and one bounded ordinary action from a
-different Commit/completion mode. Inspect identity-shadow stability without
-switching authority. After that, prototype capabilities summary/on-demand
-detail through dual-read comparison. Do not widen wildcard, Surface-wide, or
-build-wide authority.
+All non-Live preparation is complete. From `Re-SpireAgent/`, run
+`npm run agent:run`. It may choose only a current Gateway-advertised run-entry
+action and remains one-game bounded. Return the run id and terminal decision;
+this is the first possible Preview.67 action-canary/Organic evidence, not a
+predeclared qualification. Do not retry unknown outcomes or widen wildcard,
+Surface-wide, or build-wide authority.
 
-The exact prepared commands, acceptance boundary and local rollback point are
-in the [Preview.67 Live handoff](PREVIEW_67_IDENTITY_SHADOW_LIVE_HANDOFF_2026-07-27.md).
+The exact identity, repaired installation state, startup-readiness behavior,
+rollback and evidence boundary are in the
+[Preview.67 operator readiness closeout](../../../docs/current/audits/PREVIEW_67_OPERATOR_READINESS_CLOSEOUT_2026-07-27.md).

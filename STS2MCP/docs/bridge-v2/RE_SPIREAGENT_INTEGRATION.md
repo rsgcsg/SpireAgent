@@ -4,9 +4,11 @@ In this project, "SpireAgent" means `Re-SpireAgent` by default.
 
 Current source contract is `2.0-preview.67`; Re normalized schema is `26`.
 Preview.67's identity shadow is strictly decoded and kept in raw evidence only;
-it is not model input or action authority. The installed Preview.67 artifact
-still requires a cold-load check, so Preview.66 remains the latest live
-evidence.
+it is not model input or action authority. Preview.67 is cold-loaded with exact
+built/installed/loaded SHA/MVID agreement and a clean single-Gateway Modset.
+Its 87 current operation scopes are session canaries only; strict Re inspection
+and one no-mutation dry run pass, while real mutation, Organic action evidence,
+Inspection authority and persistent qualification remain absent.
 Gate 1 is closed as a bounded ordinary-single-player v2 connector baseline.
 Preview.61 supplied the exact Neow's Fury Organic lifecycle; Preview.62 adds
 reviewed compatibility/source registries and policy provenance without

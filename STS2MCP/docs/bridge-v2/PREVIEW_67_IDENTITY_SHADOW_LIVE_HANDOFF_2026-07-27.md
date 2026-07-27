@@ -1,7 +1,14 @@
 # Preview.67 Identity Shadow Live Handoff
 
-Status: source/test/build/install complete; cold-load and Live mutation pending  
+Status: **historical pre-cold-load handoff; cold-load preparation superseded**
 Date: 2026-07-27
+
+The checklist below records the original prepared baseline and must not be read
+as current identity. Cold-load, duplicate-manifest repair, exact session-canary
+installation, strict Re inspection and a no-mutation dry run are now complete.
+Preview.67 real mutation and Organic evidence remain pending. See the
+[current operator readiness closeout](../../../docs/current/audits/PREVIEW_67_OPERATOR_READINESS_CLOSEOUT_2026-07-27.md)
+and [canonical status](../../../docs/current/STATUS.md).
 
 ## Prepared Baseline
 

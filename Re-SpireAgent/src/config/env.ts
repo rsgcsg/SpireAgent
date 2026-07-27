@@ -9,6 +9,8 @@ export interface RuntimeConfig {
   mcp: {
     baseUrl: string;
     timeoutMs: number;
+    startupWaitMs: number;
+    startupPollMs: number;
     commandPollMs: number;
     commandTimeoutMs: number;
   };
@@ -56,6 +58,16 @@ export function readRuntimeConfig(env: NodeJS.ProcessEnv = process.env, projectR
     mcp: {
       baseUrl: stripTrailingSlash(env.STS2_API_URL ?? "http://localhost:15526"),
       timeoutMs: positiveInteger(env.STS2_MCP_TIMEOUT_MS, 5_000, "STS2_MCP_TIMEOUT_MS"),
+      startupWaitMs: nonNegativeInteger(
+        env.STS2_MCP_STARTUP_WAIT_MS,
+        60_000,
+        "STS2_MCP_STARTUP_WAIT_MS"
+      ),
+      startupPollMs: positiveInteger(
+        env.STS2_MCP_STARTUP_POLL_MS,
+        500,
+        "STS2_MCP_STARTUP_POLL_MS"
+      ),
       commandPollMs: positiveInteger(env.STS2_MCP_V2_COMMAND_POLL_MS, 75, "STS2_MCP_V2_COMMAND_POLL_MS"),
       commandTimeoutMs: positiveInteger(env.STS2_MCP_V2_COMMAND_TIMEOUT_MS, 12_000, "STS2_MCP_V2_COMMAND_TIMEOUT_MS")
     },

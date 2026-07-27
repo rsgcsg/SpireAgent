@@ -122,8 +122,8 @@ The following are governance constraints, not a separate feature program:
 
 ### Current Window
 
-1. Cold-load and bind the installed Preview.67 identity-shadow artifact; do
-   not migrate authority from fixture or disk identity alone.
+1. Collect the first Preview.67 real action journey from the prepared exact
+   session-canary environment; preserve every stop or quarantine as evidence.
 2. Continue C through the two-plane migration order: identity separation,
    hot-summary/on-demand evidence, decision/transition continuity, then
    representative adapter/oracle revision shadows.
@@ -136,6 +136,10 @@ The following are governance constraints, not a separate feature program:
    projection or add persistent learning.
 6. Keep P, H and T behind their existing admission gates. Do not build an
    Artifact Router without a demonstrated ABI/load split.
+
+Preview.67 cold-load, duplicate-manifest repair, read-only evidence capture,
+exact trial installation, and Re dry-run are complete. They are operator and
+session-authority evidence, not Organic mutation or persistent qualification.
 
 ### Gate 1 Exit Basis And Gate 2 Entry
 

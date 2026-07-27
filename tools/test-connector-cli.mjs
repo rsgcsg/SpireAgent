@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import {
+  evaluateEnvironmentReadiness,
   evaluateLoadedArtifact,
+  inspectModInstallation,
   resolveGameDir,
   resolveModsDir
 } from "./connector.mjs";
@@ -34,6 +38,7 @@ const clean = evaluateLoadedArtifact({
   }
 });
 assert.equal(clean.ok, true);
+assert.equal(clean.artifact_identity_ok, true);
 
 const mismatch = evaluateLoadedArtifact({
   csharpProtocol: "2.0-preview.67",
@@ -59,5 +64,49 @@ assert.deepEqual(mismatch.errors, [
   "installed_loaded_mvid_mismatch",
   "source_loaded_protocol_mismatch"
 ]);
+
+const hazardous = evaluateEnvironmentReadiness({
+  game: {
+    compatibility: {
+      status: "untested",
+      adaptation_level: "diagnostic_only",
+      state_observation_allowed: false,
+      inspection_allowed: false,
+      action_execution_allowed: false
+    },
+    modset: { status: "hazardous_mod_state_detected" }
+  }
+});
+assert.equal(hazardous.environment_ready, false);
+assert.deepEqual(hazardous.blockers, [
+  "hazardous_mod_state_detected",
+  "normal_observation_disabled",
+  "inspection_disabled",
+  "mutation_disabled"
+]);
+
+const fixtureMods = mkdtempSync(path.join(os.tmpdir(), "spireagent-connector-cli-"));
+try {
+  writeFileSync(path.join(fixtureMods, "STS2_MCP.json"), JSON.stringify({
+    id: "STS2_MCP",
+    version: "fixture"
+  }));
+  const backupDir = path.join(fixtureMods, "backups", "old");
+  mkdirSync(backupDir, { recursive: true });
+  writeFileSync(path.join(backupDir, "STS2_MCP.json"), JSON.stringify({
+    id: "STS2_MCP",
+    version: "old"
+  }));
+  writeFileSync(path.join(backupDir, "not-a-manifest.json"), "{}");
+  const installation = inspectModInstallation(fixtureMods);
+  assert.equal(installation.status, "duplicate_gateway_manifests_detected");
+  assert.equal(installation.exact_permission_blocker, true);
+  assert.deepEqual(
+    installation.duplicate_manifests.map((manifest) => manifest.relative_path),
+    [path.join("backups", "old", "STS2_MCP.json")]
+  );
+} finally {
+  rmSync(fixtureMods, { recursive: true, force: true });
+}
 
 console.log("connector CLI checks passed");

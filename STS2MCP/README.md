@@ -35,17 +35,19 @@ and atomic store reload. The final Neow's Fury runtime seal remains attributed
 to Preview.61; new registry entries are never automatically Organic-qualified.
 Preview.67 adds a required, non-authorizing semantic-state/authority-projection
 identity shadow. It does not change current state/action identity, permission,
-execution, completion, or Re's Prompt. Its SHA `7da8946c...b768` and MVID
-`12b55aef-499f-4ea8-8414-d3a360baa2ac` are built and installed but not yet
-cold-loaded. Preview.66 remains the last loaded evidence against the local
-`v0.109.1` installation.
-The final binary has persistent qualification only for
-`main_menu/continue_run`. Its current 87-operation catalog combines five
-explicit high-precision contracts with 82 manifest-derived conservative
-identity/test-confirm fallbacks; the other 86 operations are session canaries
-only. Fallback metadata does not assert semantic equivalence or bypass current
-native legality, Commit, completion, or operation-local quarantine. Exact
-evidence is recorded in [current status](docs/bridge-v2/CURRENT_STATUS.md).
+execution, completion, or Re's Prompt. It is built, installed and cold-loaded
+as SHA `100ddf42...74d`, MVID
+`65bd744d-270b-4026-84c4-2ee397eee4e2`. A historical backup manifest inside
+the recursively scanned Mod tree caused the earlier duplicate `Loaded +
+Failed` state; the current Modset contains one successful `STS2_MCP`. The exact
+Preview.67 migration workflow installed 87 session-canary packages and Re
+completed a no-mutation dry run. Preview.67 has no real mutation, settled
+canary, Organic action evidence, Inspection authority or persistent
+qualification. Its 87-operation catalog combines five explicit high-precision
+contracts with 82 manifest-derived conservative identity/test-confirm
+fallbacks. Fallback metadata does not assert semantic equivalence or bypass
+current native legality, Commit, completion, or operation-local quarantine.
+Exact evidence is recorded in [current status](docs/bridge-v2/CURRENT_STATUS.md).
 
 > Product security warning: the current HTTP listener is a developer preview.
 > It binds to loopback and filters browser Origin. Preview.64 coordinates one
@@ -58,10 +60,10 @@ evidence is recorded in [current status](docs/bridge-v2/CURRENT_STATUS.md).
 - Historical Gate 1 binding: Slay the Spire 2
   `v0.109.0|c12f634d|-1639417500`. Its authority does not transfer.
 - Current loaded game identity:
-  `v0.109.1|c8c577f6|-820620422`. One exact main-menu operation has current
-  persistent qualification; 86 exact operations are candidate-backed session
-  canaries and require independent runtime evidence before persistent
-  qualification.
+  `v0.109.1|c8c577f6|-820620422`. All 87 Preview.67 operation scopes are
+  candidate-backed session canaries and require independent runtime evidence
+  before persistent qualification. Preview.66's one persistent main-menu
+  package is historical and does not authorize Preview.67.
 - A matching version/commit with a different main-assembly hash remains
   untested and has no v2 action or Inspection authority. Check
   [Bridge v2 current status](docs/bridge-v2/CURRENT_STATUS.md) before treating
@@ -165,13 +167,22 @@ npm run connector -- test
 npm run connector -- audit
 npm run connector -- build
 npm run connector -- install
-npm run connector -- verify-loaded-artifact
+npm run connector -- diagnose-installation
+npm run connector -- repair-installation
+npm run connector -- wait-for-gateway
+npm run connector -- verify-loaded-artifact --wait
+npm run connector -- collect-evidence
 ```
 
 It delegates to the same component checks and qualification tools. It does not
 reconstruct game rules, grant authority, or turn disk installation into loaded
-or Organic evidence. The lower-level commands remain documented below for
-diagnosis and CI.
+or Organic evidence. `diagnose-installation` finds duplicate `STS2_MCP`
+manifests in the native recursive Mod scan tree. With the game closed,
+`repair-installation` may move only manifests already contained by an explicit
+`backups` directory into ignored local quarantine; every other duplicate needs
+manual review. `wait-for-gateway` and Re startup retry only the read-only
+capabilities handshake. They never retry a mutation. The lower-level commands
+remain documented below for diagnosis and CI.
 
 macOS:
 

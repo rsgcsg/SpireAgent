@@ -167,11 +167,38 @@ artifact backup, and rollback are external operational tooling around the
 Gateway. Profiles are non-authorizing indexes. They do not form a third
 Gateway plane and do not enter the Agent Prompt.
 
+The lightweight Operator Shell is a required operational boundary, not an
+optional collection of ad hoc scripts. It must distinguish disk artifact
+identity, loaded artifact identity, environment readiness, observation,
+Inspection, and mutation readiness; wait only on read-only Gateway startup;
+diagnose duplicate scanned manifests; collect partial read-only evidence; and
+make install/rollback paths explicit. It may prepare or install an exact
+operation-scoped trial package, but the Gateway must revalidate that package
+before publishing any action. It never acquires the controller lease or
+submits a game mutation as part of readiness or evidence collection.
+
 A pre-launch Artifact Router is conditional, not part of the required core.
 It may be implemented only after a real game-version/ABI experiment proves
 that one Gateway artifact cannot safely load across supported environments.
 Until then, the thin `npm run connector -- ...` workflow is the accepted
 operator boundary.
+
+## Preview.67 Architecture Review
+
+The 2026-07-27 Preview.67 failure does not justify replacing this target.
+Source/build/install/load identity agreed, but a duplicate backup manifest was
+recursively discovered by the native Mod loader, producing simultaneous
+`Loaded` and `Failed` records. The Gateway correctly entered diagnostic-only
+mode. Separately, the Operator CLI used a nonexistent read-only route and Re
+did not wait for Gateway startup. These are environment-lifecycle and operator
+contract failures; they do not require a second permission system, workflow
+engine, or broader transaction abstraction.
+
+Decision: **retain and strengthen the two-plane architecture**. The corrective
+design is a smaller Operator Shell with explicit readiness axes and reversible
+installation repair, while exact operation authority remains Gateway-owned.
+Preview.66 evidence remains historical to its exact identity; Preview.67 may
+enter only session canary authority until new Organic outcomes exist.
 
 ## Current Implementation Mapping
 
@@ -211,8 +238,10 @@ operator boundary.
 
 ## Migration Order
 
-1. Cold-load and bound the Preview.67 identity shadow; collect paired game-
-   state and control-history evidence without changing authority.
+1. Cold-load and bind the Preview.67 identity shadow, then collect paired game-
+   state and control-history evidence without changing authority. Cold-load,
+   exact binding and a no-mutation dry run are complete; real action/drift
+   pairing remains pending.
 2. Separate semantic-state and current-authority identities only after ADR-0005
    promotion gates pass; retain immediate rollback to the composite identity.
 3. Dual-read capabilities summary/on-demand details and prove current-scope

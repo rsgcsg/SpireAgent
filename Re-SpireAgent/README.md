@@ -22,8 +22,12 @@ game-state, legality, permission, Commit, or completion authority.
 > fallbacks; the other 86 operations are session canaries, not qualifications.
 > Preview.67 additionally requires a non-authorizing state identity shadow.
 > Re preserves it only in raw evidence; it is not normalized into the DeepSeek
-> Prompt and does not change action authority. The Preview.67 DLL is installed
-> but not yet cold-loaded, so Preview.66 remains the latest Organic evidence.
+> Prompt and does not change action authority. Preview.67 is now cold-loaded as
+> SHA `100ddf42...74d`, MVID `65bd744d-270b-4026-84c4-2ee397eee4e2` with a
+> clean single-Gateway Modset. Its 87 current operation scopes are session
+> canaries only. A strict Re dry run passed, but Preview.67 still has no real
+> mutation, Organic action evidence, Inspection authority, or persistent
+> qualification.
 
 > Product-boundary warning: direct Re-to-Gateway REST and `.env.local` provider
 > keys are developer workflows, not the target consumer architecture. The
@@ -43,12 +47,13 @@ waits for the Bridge command lifecycle, and records the complete evidence.
 
 RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, shadow/live modes, policy promotion, or the old project's phase machinery. Its job is to make one decision path correct and auditable.
 
-Re's current strict client contract is Bridge `2.0-preview.67`. The last loaded
-`v0.109.1|c8c577f6|-820620422` final Gateway identity has narrow
-operation-scoped persistent qualification for `main_menu/continue_run`; it is
-not build-wide qualified. Re strictly decodes 87 current operation identities
-and 86 current session grants, but does not interpret fallback witness
-semantics or promote any candidate.
+Re's current strict client contract is Bridge `2.0-preview.67`. The loaded
+`v0.109.1|c8c577f6|-820620422` Gateway identity has 87 exact session-canary
+operation scopes and no persistent qualification. Re strictly decodes those
+current identities and grants, but does not interpret fallback witness
+semantics or promote any candidate. Preview.66's narrow persistent
+`main_menu/continue_run` qualification belongs only to its historical exact
+Gateway identity.
 The separate
 `release_declared_main_assembly_hash=-1041364841` is diagnostic provenance, not
 permission authority. Re requires capabilities and every
@@ -269,9 +274,9 @@ npm run check
 2. Verify the service:
 
 ```bash
-curl -sS http://localhost:15526/
-curl -sS http://localhost:15526/api/v2/capabilities
-curl -sS http://localhost:15526/api/v2/state
+npm run connector -- wait-for-gateway
+npm run connector -- verify-loaded-artifact --wait
+npm run agent:inspect
 ```
 
 If the adapter uses another address, set `STS2_API_URL` in `.env.local`.
@@ -289,6 +294,8 @@ All values are optional except the API key for real model decisions.
 |---|---:|---|
 | `STS2_API_URL` | `http://localhost:15526` | MCP REST base URL |
 | `STS2_MCP_TIMEOUT_MS` | `5000` | State/action request timeout |
+| `STS2_MCP_STARTUP_WAIT_MS` | `60000` | Bounded wait for the read-only capabilities endpoint during Steam startup; never retries a submitted mutation |
+| `STS2_MCP_STARTUP_POLL_MS` | `500` | Capabilities startup poll interval |
 | `STS2_MCP_V2_COMMAND_POLL_MS` | `75` | v2 command lifecycle poll interval |
 | `STS2_MCP_V2_COMMAND_TIMEOUT_MS` | `12000` | client guard for a submitted v2 command; timeout is unknown, never retryable |
 | `DEEPSEEK_API_KEY` | none | Secret, loaded from environment only |
@@ -388,13 +395,13 @@ Run a bounded autonomous loop:
 npm run agent:run -- --max-ticks 20 --delay-ms 250
 ```
 
-`agent:run` is deliberately bounded to one game. It may finish that run's
+The public npm `agent:run` entry permits one Gateway-advertised Continue or
+new-run action, then remains bounded to one game. It may finish that run's
 Bridge-owned game-over intro, summary, and return lifecycle, then stops at the
-top-level `menu` before asking the model to continue or start another run.
-Pass `--allow-run-entry` only when deliberately allowing the bounded loop to
-choose a Gateway-advertised Continue or new-run action. This option never
-authorizes `local_reconstruction` menu actions and does not bypass Gateway
-permission or state binding.
+top-level `menu` before starting another run. The underlying TypeScript CLI
+still requires the explicit `--allow-run-entry` argument; the npm script owns
+that operator default. Neither path authorizes `local_reconstruction` menu
+actions or bypasses Gateway permission or state binding.
 
 The loop stops on invalid state, missing actions on an actionable screen, provider/decision failure, MCP rejection, or unsettled execution. Transitional/loading states are polled without calling DeepSeek.
 

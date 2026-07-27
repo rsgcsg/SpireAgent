@@ -47,23 +47,32 @@ npm run connector -- inspect
 npm run connector -- test
 npm run connector -- audit
 npm run connector -- build
+npm run connector -- diagnose-installation
 npm run connector -- install
 ```
 
 After a Steam cold start:
 
 ```bash
-npm run connector -- verify-loaded-artifact
+npm run connector -- wait-for-gateway
+npm run connector -- verify-loaded-artifact --wait
 npm run connector -- collect-evidence
 npm run connector -- run-agent -- --max-ticks 20 --delay-ms 250
 ```
 
 `inspect` compares C# and Re protocol source, Release and installed SHA/MVID,
 and any reachable loaded identity. `install` refuses to replace the DLL while
-the game is running and stores the previous Gateway artifact under the ignored
-`STS2MCP/.local/deployments/` directory. `collect-evidence` performs read-only
-capabilities/state/control reads into ignored local storage. None of these
-commands grant action authority or turn disk identity into Organic evidence.
+the game is running or duplicate Gateway manifests remain, and stores the
+previous Gateway artifact under the ignored `STS2MCP/.local/deployments/`
+directory. Because the native Mod loader scans recursively, do not keep a
+backup manifest anywhere under the live `mods` tree. With the game closed,
+`repair-installation` can reversibly relocate only duplicates already under an
+explicit `backups` directory; other duplicates require manual review.
+`collect-evidence` requires capabilities and state, then reads controller and
+clients as optional diagnostics into ignored local storage. A missing optional
+diagnostic is reported as a partial failure rather than erasing valid loaded
+identity/state evidence. None of these commands grant action authority or turn
+disk identity into Organic evidence.
 
 Use `npm run connector -- help` for trial, qualification revoke/rollback, and
 Gateway-artifact restore delegation. `restore-known-environment` restores only
@@ -218,6 +227,15 @@ Use the last command only when the current exact environment advertises the
 intended operations. Stop on unknown outcome; do not retry an uncertain
 command.
 
+The npm `agent:run` entry may choose one Gateway-advertised Continue or new-run
+action, then remains bounded to one game. The same final entry works from the
+component directory:
+
+```bash
+cd Re-SpireAgent
+npm run agent:run
+```
+
 The optional Python MCP adapter is for MCP-capable external clients:
 
 ```bash
@@ -248,6 +266,8 @@ locally.
 | Symptom | Safe response |
 |---|---|
 | REST endpoint unavailable | Confirm the game is running, the Mod is enabled, and port `15526` is not changed or occupied. |
+| Both `STS2_MCP Loaded` and `STS2_MCP Failed` appear | Run `npm run connector -- diagnose-installation`; recursively scanned backup manifests are independent Mod candidates. Close the game before `repair-installation`. |
+| Steam starts before the Gateway listens | Use `wait-for-gateway` or Re's bounded startup wait. This retries only capabilities discovery, never mutation. |
 | Loaded SHA differs from built/installed SHA | Close the game fully, recopy the DLL, and cold-start; do not claim deployment. |
 | Runtime identity changes during Steam startup | Wait for a stable menu, read capabilities again, then run Re inspection. Early HTTP availability is not a stable-runtime witness. |
 | Protocol or strict decode mismatch | Pull one coherent revision and rebuild both components; never enable fallback. |
