@@ -758,6 +758,30 @@ public sealed class BridgeContractTests
                 "exact_environment_surface_kind_gate",
                 Authorizing: false,
                 new[] { "shadow_inventory_only" }),
+            BridgeObservationIdentityShadowBuilder.Build(
+                new BridgeObservationDraft(
+                    "test-signature",
+                    "unsupported",
+                    new UnknownBridgeContext("unknown", "test", "not implemented"),
+                    surface,
+                    new StateCompleteness("not_implemented", "empty_fail_closed", Array.Empty<string>(), Array.Empty<string>()),
+                    new GameBuildIdentity(null, null, null, null, new CompatibilityAssessment(
+                        "unknown",
+                        Array.Empty<string>(),
+                        Array.Empty<string>(),
+                        ActionExecutionAllowed: false,
+                        StateObservationAllowed: false,
+                        InspectionAllowed: false,
+                        ActionExecutionSurfaceKinds: Array.Empty<string>(),
+                        ActionCanarySurfaceKinds: Array.Empty<string>(),
+                        InspectionAllowedKinds: Array.Empty<string>(),
+                        InspectionCanaryKinds: Array.Empty<string>(),
+                        ObservationOnlySurfaceKinds: Array.Empty<string>(),
+                        ObservationCandidateBuildFingerprints: Array.Empty<string>(),
+                        Detail: "unknown")),
+                    Array.Empty<string>(),
+                    Array.Empty<BridgeActionDraft>()),
+                null),
             Array.Empty<BridgeDiagnostic>(),
             Array.Empty<string>());
 
@@ -770,6 +794,86 @@ public sealed class BridgeContractTests
         Assert.Contains("\"surface\":{\"kind\":\"unsupported\"", json);
         Assert.Contains("\"source_type\":\"test\"", json);
         Assert.Contains("\"reason\":\"not implemented\"", json);
+        Assert.Contains("\"identity_shadow\"", json);
+        Assert.Contains("\"authorizing\":false", json);
+    }
+
+    [Fact]
+    public void IdentityShadowSeparatesSemanticStateFromRelevantCurrentAuthority()
+    {
+        ActionPermissionScope relevant = Scope("grant-current", 1, "play_card");
+        BridgeObservationIdentityShadow baseline = BuildIdentityShadow(new[] { relevant });
+        BridgeObservationIdentityShadow changedRelevant = BuildIdentityShadow(new[]
+        {
+            Scope("grant-current-v2", 2, "play_card")
+        });
+        BridgeObservationIdentityShadow irrelevantHistory = BuildIdentityShadow(new[]
+        {
+            relevant,
+            Scope("grant-old-unrelated", 99, "choose_map_node", "map_navigation")
+        });
+
+        Assert.Equal(baseline.SemanticStateIdCandidate, changedRelevant.SemanticStateIdCandidate);
+        Assert.NotEqual(baseline.AuthorityProjectionIdCandidate, changedRelevant.AuthorityProjectionIdCandidate);
+        Assert.Equal(baseline.SemanticStateIdCandidate, irrelevantHistory.SemanticStateIdCandidate);
+        Assert.Equal(baseline.AuthorityProjectionIdCandidate, irrelevantHistory.AuthorityProjectionIdCandidate);
+        Assert.False(baseline.Authorizing);
+        Assert.True(baseline.ActionBindingUsesCurrentStateId);
+
+        static ActionPermissionScope Scope(
+            string grantId,
+            int version,
+            string operation,
+            string surface = "combat_turn") => new(surface, operation, "canary")
+            {
+                GrantId = grantId,
+                GrantVersion = version,
+                RuntimeEpoch = "runtime-1",
+                EnvironmentDigest = "environment-1",
+                PatchDigest = "patch-1",
+                OperationFingerprint = $"fingerprint-{operation}"
+            };
+
+        static BridgeObservationIdentityShadow BuildIdentityShadow(
+            IReadOnlyList<ActionPermissionScope> scopes)
+        {
+            var compatibility = new CompatibilityAssessment(
+                "qualified_scoped",
+                new[] { "0.109.1" },
+                new[] { "build" },
+                ActionExecutionAllowed: true,
+                StateObservationAllowed: true,
+                InspectionAllowed: true,
+                ActionExecutionSurfaceKinds: new[] { "combat_turn" },
+                ActionCanarySurfaceKinds: Array.Empty<string>(),
+                InspectionAllowedKinds: Array.Empty<string>(),
+                InspectionCanaryKinds: Array.Empty<string>(),
+                ObservationOnlySurfaceKinds: Array.Empty<string>(),
+                ObservationCandidateBuildFingerprints: Array.Empty<string>(),
+                Detail: "test")
+            {
+                ActionPermissionScopes = scopes
+            };
+            var draft = new BridgeObservationDraft(
+                "stable-semantic-signature",
+                "ready",
+                new UnknownBridgeContext("combat", "test", "test"),
+                new NoActionSurface("combat_turn", "test", "test"),
+                new StateCompleteness("complete", "same_validator", Array.Empty<string>(), Array.Empty<string>()),
+                new GameBuildIdentity("v0.109.1", "commit", "branch", 1, compatibility),
+                Array.Empty<string>(),
+                new[]
+                {
+                    new BridgeActionDraft(
+                        "play-card:card-1:enemy-1",
+                        "play_card",
+                        "combat",
+                        "Play card",
+                        "test",
+                        () => BridgeActionStartResult.Started())
+                });
+            return BridgeObservationIdentityShadowBuilder.Build(draft, null);
+        }
     }
 
     [Fact]

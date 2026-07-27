@@ -5,13 +5,16 @@
 > `../STS2MCP/docs/bridge-v2/CURRENT_STATUS.md`. Older identity and mode claims
 > below are preserved as dated evidence and must not override those documents.
 
-Status update 2026-07-26 (latest): source contract is `2.0-preview.66`; Re
-normalized schema is `26`. The final Release is installed and Steam
-cold-loaded as SHA
+Status update 2026-07-27 (latest): source contract is `2.0-preview.67`; Re
+normalized schema is `26`. Preview.67 is built and installed as SHA
+`7da8946c9374c7030d5162e8cb1930e1fc0186edc1c1088f3b2fc371c7a9b768`,
+MVID `12b55aef-499f-4ea8-8414-d3a360baa2ac`, but has not been cold-loaded.
+The last loaded and Organic artifact remains Preview.66 with SHA
 `b0b31f769f25d5a1e5231e92af76f7f09e07ab38f5c43f1ae753eba0b61d7a8a`,
 MVID `a7008eea-b3cd-4cb8-b75c-6dee64e9cd5c`, runtime
 `cebc39821b7e4d16aa1d9d2d9e680df8`, profile
-`env-8eee4ee3f08d1181b7405305`. `main_menu/continue_run` completed the exact
+`env-8eee4ee3f08d1181b7405305`. Under Preview.66,
+`main_menu/continue_run` completed the exact
 candidate -> two Organic runtime epochs -> persistent package -> hot reload ->
 cold-restart recovery cycle in runs `run-20260726132908-2e4rz6` and
 `run-20260726133036-d3tr3a`. Five explicit contracts plus 82 conservative
@@ -20,6 +23,8 @@ are session canaries only. Re gained explicit `--allow-run-entry` for this
 bounded migration workflow; default `agent:run` remains one-game bounded. See
 the canonical current status and
 `../STS2MCP/docs/bridge-v2/PREVIEW_66_MULTI_ENVIRONMENT_MIGRATION_CLOSEOUT_2026-07-26.md`.
+The prepared Preview.67 cold-load procedure is recorded in
+`../STS2MCP/docs/bridge-v2/PREVIEW_67_IDENTITY_SHADOW_LIVE_HANDOFF_2026-07-27.md`.
 
 Earlier status update 2026-07-26: source contract was `2.0-preview.65`; Re
 normalized schema is `26`. Preview.65 was rebuilt against, installed on, and

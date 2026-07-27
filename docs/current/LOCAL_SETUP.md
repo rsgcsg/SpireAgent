@@ -38,6 +38,39 @@ Install:
 The repository does not contain game assemblies. Gateway builds reference the
 exact local Steam installation.
 
+## Preferred Connector Workflow
+
+From the repository root, use the thin Connector CLI for normal local work:
+
+```bash
+npm run connector -- inspect
+npm run connector -- test
+npm run connector -- audit
+npm run connector -- build
+npm run connector -- install
+```
+
+After a Steam cold start:
+
+```bash
+npm run connector -- verify-loaded-artifact
+npm run connector -- collect-evidence
+npm run connector -- run-agent -- --max-ticks 20 --delay-ms 250
+```
+
+`inspect` compares C# and Re protocol source, Release and installed SHA/MVID,
+and any reachable loaded identity. `install` refuses to replace the DLL while
+the game is running and stores the previous Gateway artifact under the ignored
+`STS2MCP/.local/deployments/` directory. `collect-evidence` performs read-only
+capabilities/state/control reads into ignored local storage. None of these
+commands grant action authority or turn disk identity into Organic evidence.
+
+Use `npm run connector -- help` for trial, qualification revoke/rollback, and
+Gateway-artifact restore delegation. `restore-known-environment` restores only
+a backed-up Gateway artifact; it does not restore a Steam game build, Modset,
+configuration, permission, or qualification. The lower-level commands below
+remain the diagnostic and CI source of truth.
+
 ## 2. Verify The Agent
 
 ```bash

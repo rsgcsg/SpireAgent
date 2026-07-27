@@ -27,6 +27,10 @@ not inherit authority from the archived root SpireAgent runtime.
 
 Current cross-component audits:
 
+- [Workflow C fact-first Connector audit](audits/WORKFLOW_C_FACT_FIRST_CONNECTOR_AUDIT_2026-07-27.md):
+  first-principles architecture verdict, measured run/Prompt evidence,
+  retained and rejected abstractions, Preview.67 identity-shadow slice, thin
+  operator CLI, bounded completion definition, and falsifiable next tests.
 - [Visibility and observation architecture audit](audits/VISIBILITY_AND_OBSERVATION_ARCHITECTURE_AUDIT_2026-07-22.md):
   current Gateway/Re fact flow, Prompt projection debt, evidence limits, and
   falsifiable next experiments. It is an audit, not an accepted protocol change.
@@ -65,6 +69,12 @@ Current cross-component audits:
   multi-environment qualification slots, atomic hot reload, automatic
   evidence-to-package orchestration, final exact runtime identity, and the
   first final-binary persistent migration slice.
+- [ADR-0005 semantic-state/authority identity separation](../../STS2MCP/docs/bridge-v2/ADR-0005-semantic-state-and-authority-identity-separation.md):
+  accepted shadow-only split, negative boundaries, and authority-migration
+  evidence gate.
+- [Preview 67 identity-shadow Live handoff](../../STS2MCP/docs/bridge-v2/PREVIEW_67_IDENTITY_SHADOW_LIVE_HANDOFF_2026-07-27.md):
+  exact built/installed identity, shortest cold-load canary, acceptance
+  boundary, explicit non-claims, and machine-local rollback command.
 
 Component-owned truth:
 

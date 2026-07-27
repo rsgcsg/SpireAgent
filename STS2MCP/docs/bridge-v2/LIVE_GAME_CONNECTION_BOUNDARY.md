@@ -2,7 +2,7 @@
 
 Status: canonical architecture boundary for the current real-game connection.
 
-Current source compatibility status: C# and Re share `2.0-preview.66`, including
+Current source compatibility status: C# and Re share `2.0-preview.67`, including
 operation scopes, a Gateway artifact digest, separate actual-loaded versus
 release-declared game assembly hashes, reviewed exact-environment policy
 provenance, structural combat-pile transaction semantics, minimal local
@@ -17,7 +17,9 @@ and 82 use conservative identity/test-confirm fallbacks. Fallback identity is
 not semantic equivalence or persistent qualification. Multi-environment
 Profiles are non-authorizing, and the append-only ledger hot-reloads only after
 exact revalidation. The loaded identity and precise evidence boundary are
-recorded in [Current Status](CURRENT_STATUS.md).
+recorded in [Current Status](CURRENT_STATUS.md). Preview.67 adds only a
+non-authorizing identity shadow; it is installed but not loaded and does not
+inherit Preview.66 Organic evidence.
 
 Consumer distribution, local trust, Companion, BYOK, SDK, and release gates are
 defined in the [productization architecture audit](../../../docs/current/audits/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md).

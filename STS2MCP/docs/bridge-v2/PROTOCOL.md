@@ -1,6 +1,24 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.66`
+Protocol preview: `2.0-preview.67`
+
+Preview.67 requires `state.identity_shadow`, a non-authorizing migration
+measurement containing:
+
+- `semantic_state_id_candidate`, derived from the current provider semantic
+  signature and shared player-visible state;
+- `authority_projection_id_candidate`, derived from the active Surface,
+  current opaque action keys/operations, matching current operation scopes,
+  authority handoff, and execution admission;
+- explicit declarations that current `state_id` remains the legacy
+  authoritative composite, action binding still uses it, and the shadow is
+  not authorizing.
+
+The existing `state_id`, action IDs, submit/poll contract, permission,
+execute-time validation, native Commit, semantic completion, and command
+ledger are unchanged. Re must decode and preserve this field as raw evidence,
+but it must not infer action authority or model strategy from it. See
+[ADR-0005](ADR-0005-semantic-state-and-authority-identity-separation.md).
 
 Preview.66 retains Preview.65's required `qualification_system` state and adds
 multi-environment ledger semantics plus migration orchestration. It reports:

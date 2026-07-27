@@ -121,7 +121,7 @@ and the
 
 ## Current Architectural Constraint
 
-The Gateway and Re share the mechanically checked `2.0-preview.66` source
+The Gateway and Re share the mechanically checked `2.0-preview.67` source
 contract. Gate 1 establishes a bounded v2 connector baseline: Re and the
 default MCP adapter are v2-only, and the current-source Gateway v1 HTTP surface
 is retired. The loaded Preview.66 artifact sees game
@@ -134,6 +134,16 @@ outside the manifest still require exact policy or remain fail closed.
 Historical v1 JSONL
 remains replay-readable as stored evidence, but no v1 sidecar may contribute
 live facts or action authority.
+
+Preview.67 adds a non-authorizing identity shadow because the current
+authoritative `state_id` still hashes game-semantic observation together with
+visibility, permission-ledger and qualification-ledger snapshots. The shadow
+separates a semantic-state candidate from the current relevant authority
+projection for measurement only. Current `state_id`, action IDs, permission,
+execute-time validation and completion remain authoritative. Re decodes the
+shadow into raw evidence but excludes it from `NormalizedCurrentState` and the
+model Prompt. See
+[ADR-0005](../../STS2MCP/docs/bridge-v2/ADR-0005-semantic-state-and-authority-identity-separation.md).
 
 Combat-pile choice is the first production structural transaction contract.
 Re reads closed mutation and commit semantics rather than a union of source

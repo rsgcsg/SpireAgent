@@ -12,7 +12,7 @@ Bridge v2 is the only mutation contract for the current Agent and default MCP
 adapter. It remains an incremental semantic/visibility preview, not
 complete-game coverage.
 
-The C# Bridge and Re source share `2.0-preview.66`; Re normalized schema is
+The C# Bridge and Re source share `2.0-preview.67`; Re normalized schema is
 `26`. Gate 1 is closed as a bounded ordinary-single-player v2 connector
 baseline. Preview.62 replaced repeated combat-pile source branches with a
 reviewed embedded registry, moves exact-environment scopes into a reviewed
@@ -28,7 +28,12 @@ Environment Profiles, a risk-based migration policy, exact evidence
 aggregation, automatic package orchestration, multi-environment package slots,
 and atomic store reload. The final Neow's Fury runtime seal remains attributed
 to Preview.61; new registry entries are never automatically Organic-qualified.
-Preview.66 is built and cold-loaded against the local `v0.109.1` installation.
+Preview.67 adds a required, non-authorizing semantic-state/authority-projection
+identity shadow. It does not change current state/action identity, permission,
+execution, completion, or Re's Prompt. Its SHA `7da8946c...b768` and MVID
+`12b55aef-499f-4ea8-8414-d3a360baa2ac` are built and installed but not yet
+cold-loaded. Preview.66 remains the last loaded evidence against the local
+`v0.109.1` installation.
 The final binary has persistent qualification only for
 `main_menu/continue_run`. Its current 87-operation catalog combines five
 explicit high-precision contracts with 82 manifest-derived conservative
@@ -56,7 +61,7 @@ evidence is recorded in [current status](docs/bridge-v2/CURRENT_STATUS.md).
   untested and has no v2 action or Inspection authority. Check
   [Bridge v2 current status](docs/bridge-v2/CURRENT_STATUS.md) before treating
   a local install as qualified.
-- Source `2.0-preview.66` keeps centralized overlay/room/menu ownership, typed
+- Source `2.0-preview.67` keeps centralized overlay/room/menu ownership, typed
   diagnostics, purpose-specific selection and event contracts, staged
   completion semantics, and a top-level read-only shared run/player HUD.
   Current-build capabilities distinguish reviewed exact-policy actions,
@@ -146,6 +151,22 @@ Do not copy `sts2.dll`, `GodotSharp.dll`, or `0Harmony.dll` into this repository
 The build references them from the local game installation.
 
 ## Build And Test
+
+The preferred cross-component developer entrypoint is the root thin CLI:
+
+```bash
+npm run connector -- inspect
+npm run connector -- test
+npm run connector -- audit
+npm run connector -- build
+npm run connector -- install
+npm run connector -- verify-loaded-artifact
+```
+
+It delegates to the same component checks and qualification tools. It does not
+reconstruct game rules, grant authority, or turn disk installation into loaded
+or Organic evidence. The lower-level commands remain documented below for
+diagnosis and CI.
 
 macOS:
 

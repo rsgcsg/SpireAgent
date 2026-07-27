@@ -1,7 +1,7 @@
 # Re-SpireAgent RE-P1
 
-> Compatibility status, 2026-07-26: Re and C# share source contract
-> `2.0-preview.66`; Re normalized schema is `26`. Gate 1 is closed as a
+> Compatibility status, 2026-07-27: Re and C# share source contract
+> `2.0-preview.67`; Re normalized schema is `26`. Gate 1 is closed as a
 > bounded ordinary-single-player v2 connector baseline. Preview.61 supplied
 > the final Neow's Fury Organic runtime seal; Preview.62 source/audit evidence
 > does not automatically qualify its new registry entries. Preview.63 is
@@ -15,6 +15,10 @@
 > Organic evidence and cold-restart revalidation. The Gateway projects five
 > explicit high-precision contracts plus 82 conservative manifest-derived
 > fallbacks; the other 86 operations are session canaries, not qualifications.
+> Preview.67 additionally requires a non-authorizing state identity shadow.
+> Re preserves it only in raw evidence; it is not normalized into the DeepSeek
+> Prompt and does not change action authority. The Preview.67 DLL is installed
+> but not yet cold-loaded, so Preview.66 remains the latest Organic evidence.
 
 > Product-boundary warning: direct Re-to-Gateway REST and `.env.local` provider
 > keys are developer workflows, not the target consumer architecture. The
@@ -34,7 +38,7 @@ waits for the Bridge command lifecycle, and records the complete evidence.
 
 RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, shadow/live modes, policy promotion, or the old project's phase machinery. Its job is to make one decision path correct and auditable.
 
-Re's current strict client contract is Bridge `2.0-preview.66`. The current
+Re's current strict client contract is Bridge `2.0-preview.67`. The last loaded
 `v0.109.1|c8c577f6|-820620422` final Gateway identity has narrow
 operation-scoped persistent qualification for `main_menu/continue_run`; it is
 not build-wide qualified. Re strictly decodes 87 current operation identities
@@ -86,6 +90,11 @@ or authorize from the local Profile registry or migration workspace. Its
 explicit `--allow-run-entry` option may cross a top-level menu boundary only
 through a current `bridge_advertised` action; the default command remains
 one-game bounded and local reconstruction remains forbidden.
+
+Preview.67 strictly decodes the Gateway's required identity shadow. The shadow
+is retained in the raw state record for migration measurement but deliberately
+excluded from `NormalizedCurrentState`, Prompt construction, allowed actions,
+and runtime permission. Current state/action IDs remain authoritative.
 
 Preview.55 makes strict v2 the sole connector path. Re rejects legacy `v1` and
 the former `auto` mode; it cannot probe or fall back to v1. Bridge-confirmed

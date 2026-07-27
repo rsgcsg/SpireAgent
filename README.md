@@ -18,7 +18,7 @@ third-party clients.
 
 ## Current Truth
 
-The active connector source shares `2.0-preview.66` between C# and
+The active connector source shares `2.0-preview.67` between C# and
 Re-SpireAgent; Re normalized schema is `26`. Gate 1 is closed as a bounded
 ordinary-single-player v2 connector baseline: Re and the default MCP adapter
 are v2-only, the entire Gateway `/api/v1` namespace is retired, and the final
@@ -29,9 +29,15 @@ generation fencing and command attribution. Preview.65 added exact
 operation-scoped persistent qualification. Preview.66 adds a non-authorizing
 multi-environment Profile index, a risk-based migration policy, exact
 candidate planning, evidence aggregation, automatic qualified-package
-assembly, and atomic qualification-store reload.
+assembly, and atomic qualification-store reload. Preview.67 adds a required,
+non-authorizing semantic-state/authority-projection identity shadow without
+changing current state/action binding, permission, execution, completion, or
+the model Prompt.
 
-The final Preview.66 Release is installed and cold-loaded on
+Preview.67 SHA `7da8946c...b768`, MVID
+`12b55aef-499f-4ea8-8414-d3a360baa2ac` is built and installed locally but is
+not yet cold-loaded. The last loaded and Organic-evidenced artifact remains
+Preview.66 on
 `v0.109.1|c8c577f6|-820620422`. One exact operation,
 `main_menu/continue_run`, completed the candidate -> two-epoch Organic
 evidence -> persistent qualification -> cold-restart recovery cycle. The
@@ -74,6 +80,9 @@ npm run check:docs
 # Non-authorizing exact-assembly compatibility report
 export STS2_GAME_DIR="/path/to/Slay the Spire 2"
 npm run audit:connector-compatibility
+
+# Thin, safe operator entrypoint (see `npm run connector -- help`)
+npm run connector -- inspect
 ```
 
 Gateway checks need an installed copy of Slay the Spire 2 and `STS2_GAME_DIR`.

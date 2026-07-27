@@ -280,6 +280,8 @@ internal static class BridgeV2Runtime
             ShopSurfaceFacts.TryGetCurrent(out _, out _, out _));
         BridgeContractInstanceShadow contractInstanceShadow =
             BridgeContractInstanceShadowBuilder.Build(draft);
+        BridgeObservationIdentityShadow identityShadow =
+            BridgeObservationIdentityShadowBuilder.Build(draft, shared.State);
         BridgePermissionSystemInfo permissionSystem = PermissionManager.Snapshot();
         BridgeQualificationSystemInfo qualificationSystem =
             QualificationStore.Snapshot();
@@ -365,6 +367,7 @@ internal static class BridgeV2Runtime
                 visibility.Visibility,
                 visibility.InspectionCatalog,
                 contractInstanceShadow,
+                identityShadow,
                 BridgeDiagnostics.ForObservation(draft),
                 draft.Warnings)
             {

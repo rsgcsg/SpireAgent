@@ -11,7 +11,7 @@ import {
 
 function capabilities(overrides = {}) {
   const value = {
-    protocol_version: "2.0-preview.66",
+    protocol_version: "2.0-preview.67",
     bridge: {
       assembly_file_sha256: "a".repeat(64),
       module_version_id: "11111111-1111-1111-1111-111111111111"

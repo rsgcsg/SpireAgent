@@ -1,11 +1,12 @@
 # Bridge v2 Integration
 
-> Current source-truth status, 2026-07-26: Re and C# share the
-> `2.0-preview.66` source consumer contract; Re normalized schema is `26`.
+> Current source-truth status, 2026-07-27: Re and C# share the
+> `2.0-preview.67` source consumer contract; Re normalized schema is `26`.
 > Gate 1 is closed as a bounded ordinary-single-player v2 connector baseline.
 > Preview.61 supplied the final Neow's Fury runtime seal; Preview.62 adds
 > policy provenance and registry adaptation without inheriting qualification.
-> Preview.66 is installed and cold-loaded. Its final exact environment has one
+> Preview.67 is built and installed but not cold-loaded; Preview.66 remains the
+> latest loaded/Organic evidence. Its final exact environment has one
 > persistent-qualified operation and 86 session canaries. Five contracts are
 > explicit high-precision rows; 82 are conservative manifest-derived
 > identity/test-confirm fallbacks. The build is not broadly qualified.
@@ -28,7 +29,7 @@ consumption.
 
 ## Current Scope
 
-Re-SpireAgent implements the strict `2.0-preview.66` consumer contract. When a
+Re-SpireAgent implements the strict `2.0-preview.67` consumer contract. When a
 matching Bridge exists, authority is read from capabilities rather than
 inferred from implementation or historical evidence.
 
@@ -77,6 +78,12 @@ Bridge command `completed` is the semantic settlement authority. Re verifies
 the echoed request/state/action identity, preserves `failed` and `timed_out`
 as unknown outcomes, and captures a coherent successor checkpoint after a
 confirmed command. A checkpoint read failure cannot cause action retry.
+
+Preview.67 requires `identity_shadow`. Re strictly verifies its non-authorizing
+status and candidate digest shapes and preserves it in raw evidence. It is not
+part of normalized strategy state, Prompt construction, action import,
+permission, or completion. The legacy composite `state_id` remains the only
+state/action binding until a separately reviewed Organic migration.
 
 The first exact Preview.63 production-path canary submitted advertised
 `main_menu/continue_run` once and settled at `reward_flow/reward_claim`. The

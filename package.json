@@ -25,6 +25,8 @@
     "audit:connector-operation-bindings": "node tools/run-operation-binding-audit.mjs",
     "qualification:ledger": "node tools/connector-qualification-ledger.mjs",
     "migration:profiles": "node tools/connector-environment-profiles.mjs",
-    "migration:cycle": "node tools/connector-migration-orchestrator.mjs"
+    "migration:cycle": "node tools/connector-migration-orchestrator.mjs",
+    "connector": "node tools/connector.mjs",
+    "check:connector-cli": "node tools/test-connector-cli.mjs"
   }
 }

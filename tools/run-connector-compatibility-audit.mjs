@@ -69,7 +69,7 @@ const grade = spawnSync(
     "--report",
     outputPath,
     "--scenario",
-    "STS2MCP/compatibility/scenarios/combat-pile-static-audit.v1.json",
+    "STS2MCP/compatibility/scenarios/combat-pile-static-audit.v0.109.1.json",
     "--output",
     gradePath
   ],

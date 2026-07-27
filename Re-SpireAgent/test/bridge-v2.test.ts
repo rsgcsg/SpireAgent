@@ -35,7 +35,7 @@ function permissionScope(
 }
 
 const CAPABILITIES = {
-  protocol_version: "2.0-preview.66",
+  protocol_version: "2.0-preview.67",
   bridge: {
     id: "sts2_mcp_bridge_v2",
     name: "STS2 Agent Bridge",
@@ -247,7 +247,7 @@ const RUN_VISIBILITY = {
 };
 
 const DECK_ENCHANT_STATE = {
-  protocol_version: "2.0-preview.66",
+  protocol_version: "2.0-preview.67",
   state_id: "state-test-1",
   state_sequence: 1,
   observed_at: "2026-07-16T00:00:00Z",
@@ -323,13 +323,25 @@ const DECK_ENCHANT_STATE = {
     status: "resolved_manifest_contract",
     instance_id: "contract-instance-deck-enchant-1",
     surface_kind: "deck_enchant_selection",
-    semantic_contract_id: "bridge.surface.deck_enchant_selection.2.0-preview.66",
+    semantic_contract_id: "bridge.surface.deck_enchant_selection.2.0-preview.67",
     declared_binding: "fixture-declared-binding",
     operations: [{ operation: "toggle_card", evidence_status: "surface_level_only", published: true }],
     current_authority_tier: "canary",
     current_authority_basis: "exact_environment_surface_operation_gate",
     authorizing: false,
     limitations: ["shadow_inventory_only", "authority_remains_surface_kind_scoped"]
+  },
+  identity_shadow: {
+    schema_version: 1,
+    status: "candidate_non_authorizing",
+    semantic_state_id_candidate: `semantic_state_candidate_${"a".repeat(64)}`,
+    authority_projection_id_candidate: `authority_projection_candidate_${"b".repeat(64)}`,
+    current_state_id_role: "legacy_authoritative_composite",
+    action_binding_uses_current_state_id: true,
+    authorizing: false,
+    semantic_inputs: ["surface_provider_signature", "shared_player_visible_state"],
+    authority_inputs: ["current_opaque_action_keys_and_operations"],
+    limitations: ["shadow_only_not_used_for_state_or_action_identity"]
   },
   permission_system: CAPABILITIES.permission_system,
   qualification_system: CAPABILITIES.qualification_system,
@@ -2098,7 +2110,7 @@ function visibleInspectionCard(overrides: Record<string, unknown> = {}) {
 
 function runDeckInspection(stateId: string, cards = [visibleInspectionCard()]) {
   return {
-    protocol_version: "2.0-preview.66",
+    protocol_version: "2.0-preview.67",
     inspection_id: `inspection-run-deck-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -2121,7 +2133,7 @@ function runDeckInspection(stateId: string, cards = [visibleInspectionCard()]) {
 
 function combatPilesInspection(stateId: string) {
   return {
-    protocol_version: "2.0-preview.66",
+    protocol_version: "2.0-preview.67",
     inspection_id: `inspection-combat-piles-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -2166,7 +2178,7 @@ function shopCatalogInspection(stateId: string) {
     blocked_reason: offer.stocked ? "not_visible" : offer.blocked_reason
   });
   return {
-    protocol_version: "2.0-preview.66",
+    protocol_version: "2.0-preview.67",
     inspection_id: `inspection-shop-catalog-${stateId}`,
     expected_state_id: stateId,
     observed_state_id: stateId,
@@ -2208,7 +2220,7 @@ function coherentObservationBundle(
   }));
   const resolvedInspections = inspections ?? defaultInspections;
   return {
-    protocol_version: "2.0-preview.66",
+    protocol_version: "2.0-preview.67",
     observation_id: `observation-${state.state_id}`,
     coherent: true,
     state,
@@ -2313,6 +2325,25 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     expect(() => decodeBridgeV2State(mismatchedCombatPlayer)).toThrow(
       "does not match shared_state player entity_id"
     );
+  });
+
+  it("decodes the non-authorizing identity shadow without making it a decision contract", () => {
+    const decoded = decodeBridgeV2State(DECK_ENCHANT_STATE);
+    expect(decoded.data.identity_shadow).toMatchObject({
+      status: "candidate_non_authorizing",
+      current_state_id_role: "legacy_authoritative_composite",
+      action_binding_uses_current_state_id: true,
+      authorizing: false
+    });
+    expect(decoded.raw.identity_shadow).toEqual(DECK_ENCHANT_STATE.identity_shadow);
+
+    const authorizing = structuredClone(DECK_ENCHANT_STATE) as any;
+    authorizing.identity_shadow.authorizing = true;
+    expect(() => decodeBridgeV2State(authorizing)).toThrow("Bridge v2 state");
+
+    const missing = structuredClone(DECK_ENCHANT_STATE) as any;
+    delete missing.identity_shadow;
+    expect(() => decodeBridgeV2State(missing)).toThrow("Bridge v2 state");
   });
 
   it("projects exact combat no-input transitions without action or legacy authority", () => {
@@ -6238,7 +6269,7 @@ function handleTestControlRequest(
     const body = JSON.parse(String(init?.body)) as { client_instance_id: string };
     control.clientInstanceId = body.client_instance_id;
     return json({
-      protocol_version: "2.0-preview.66",
+      protocol_version: "2.0-preview.67",
       runtime_instance_id: "fixture-runtime-1",
       client: {
         client_session_id: control.clientSessionId,
@@ -6254,7 +6285,7 @@ function handleTestControlRequest(
   }
   if (url.endsWith("/api/v2/controller/acquire")) {
     return json({
-      protocol_version: "2.0-preview.66",
+      protocol_version: "2.0-preview.67",
       runtime_instance_id: "fixture-runtime-1",
       status: "controller_acquired",
       detail: "fixture acquired",
@@ -6271,7 +6302,7 @@ function handleTestControlRequest(
   }
   if (url.endsWith("/api/v2/controller/release")) {
     return json({
-      protocol_version: "2.0-preview.66",
+      protocol_version: "2.0-preview.67",
       runtime_instance_id: "fixture-runtime-1",
       status: "controller_released",
       detail: "fixture released",
@@ -6810,7 +6841,7 @@ describe("Bridge v2 controller coordination decoding", () => {
 
   it("accepts registration before a controller lease exists", () => {
     const registration = decodeBridgeV2ClientRegistration({
-      protocol_version: "2.0-preview.66",
+      protocol_version: "2.0-preview.67",
       runtime_instance_id: "runtime-fixture",
       client
     }).data;
@@ -6821,7 +6852,7 @@ describe("Bridge v2 controller coordination decoding", () => {
 
   it("accepts a control snapshot with no active controller", () => {
     const snapshot = decodeBridgeV2ControlSnapshot({
-      protocol_version: "2.0-preview.66",
+      protocol_version: "2.0-preview.67",
       runtime_instance_id: "runtime-fixture",
       clients: [client]
     }).data;

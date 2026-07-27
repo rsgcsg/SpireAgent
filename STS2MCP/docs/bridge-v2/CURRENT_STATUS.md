@@ -6,13 +6,14 @@ Historical preview reports do not grant current authority.
 ## Source Truth
 
 ```text
-Gateway/Re protocol  2.0-preview.66
+Gateway/Re source    2.0-preview.67
 Re schema            26
 game                 v0.109.1|c8c577f6|-820620422
 game assembly SHA    2cb39e2eee651743829abcc0df4dd9cd7e65f46287c7ca264481115c9602382f
 game assembly MVID   208f08b8-d5f5-47f8-9e96-d3a4299ee709
-Gateway SHA          b0b31f769f25d5a1e5231e92af76f7f09e07ab38f5c43f1ae753eba0b61d7a8a
-Gateway MVID         a7008eea-b3cd-4cb8-b75c-6dee64e9cd5c
+last loaded protocol 2.0-preview.66
+loaded Gateway SHA  b0b31f769f25d5a1e5231e92af76f7f09e07ab38f5c43f1ae753eba0b61d7a8a
+loaded Gateway MVID a7008eea-b3cd-4cb8-b75c-6dee64e9cd5c
 runtime epoch        cebc39821b7e4d16aa1d9d2d9e680df8
 Environment Profile env-8eee4ee3f08d1181b7405305
 environment digest   2654bef1049808f852f6d946a283941a14db6893678a134543510afeb8d45aa0
@@ -22,9 +23,21 @@ operation catalog    8878447144e4fe4d8c01b2940335feb504367a81ac76e4b4fd22e2f4d6b
 mode                 migration_exploration
 ```
 
-The final Release DLL is built, installed, and cold-loaded with the exact
-Gateway SHA/MVID above. Gateway v1 is retired and every `/api/v1` route returns
-`410 Gone`.
+Preview.67 is built and installed on disk with SHA
+`7da8946c9374c7030d5162e8cb1930e1fc0186edc1c1088f3b2fc371c7a9b768`
+and MVID `12b55aef-499f-4ea8-8414-d3a360baa2ac`, but the game has not been
+cold-started. Therefore the loaded/runtime/Organic facts above remain
+Preview.66 evidence. Gateway v1 is retired and every `/api/v1` route returns
+`410 Gone` in the last loaded artifact.
+
+## Preview.67 Source State
+
+Preview.67 adds a required `identity_shadow` with non-authorizing semantic-
+state and authority-projection candidate hashes. Current state/action identity,
+permissions, execution, completion and Re Prompt are unchanged. Contract tests
+cover relevant versus irrelevant permission-scope changes, and Re rejects a
+missing or authorizing shadow. This is implementation evidence only until a
+fresh cold-load and bounded action journey are recorded.
 
 Gate 1 is closed only as the bounded ordinary-single-player v2 connector
 baseline documented by the operation inventory. Unsupported variants remain
@@ -136,9 +149,12 @@ and [operation inventory](OPERATION_RETIREMENT_INVENTORY.json).
 
 ## Next Step
 
-Exercise one of the 86 current exact candidate operations under ordinary
-gameplay, preferably a different Commit/completion mode, and let the migration
-orchestrator either qualify or quarantine it. Reduce the approximately 580 KB
-capabilities projection through summary/pagination or on-demand diagnostics
-before productization, without weakening strict current-scope validation. Do
-not widen wildcard, Surface-wide, or build-wide authority.
+Cold-start Preview.67, run `npm run connector -- verify-loaded-artifact`, then
+capture one read-only evidence snapshot and one bounded ordinary action from a
+different Commit/completion mode. Inspect identity-shadow stability without
+switching authority. After that, prototype capabilities summary/on-demand
+detail through dual-read comparison. Do not widen wildcard, Surface-wide, or
+build-wide authority.
+
+The exact prepared commands, acceptance boundary and local rollback point are
+in the [Preview.67 Live handoff](PREVIEW_67_IDENTITY_SHADOW_LIVE_HANDOFF_2026-07-27.md).

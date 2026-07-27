@@ -53,7 +53,7 @@ const qualification = {
   game_version: "v0.109.0",
   game_commit: "commit",
   game_main_assembly_hash: 1,
-  gateway_protocol: "2.0-preview.66",
+  gateway_protocol: "2.0-preview.67",
   gateway_assembly_sha256: "a".repeat(64),
   gateway_module_version_id: "mvid",
   modset_fingerprint: "modset",
@@ -109,7 +109,7 @@ const evidenceBundle = collectQualificationEvidence({
         adapter: {
           negotiated: {
             bridge_runtime_instance_id: "runtime-a",
-            bridge_protocol_version: "2.0-preview.66",
+            bridge_protocol_version: "2.0-preview.67",
             bridge_assembly_file_sha256: "a".repeat(64),
             bridge_module_version_id: "mvid",
             game_version: "v0.109.0",
@@ -144,7 +144,7 @@ const evidenceBundle = collectQualificationEvidence({
         adapter: {
           negotiated: {
             bridge_runtime_instance_id: "runtime-b",
-            bridge_protocol_version: "2.0-preview.66",
+            bridge_protocol_version: "2.0-preview.67",
             bridge_assembly_file_sha256: "a".repeat(64),
             bridge_module_version_id: "mvid",
             game_version: "v0.109.0",
@@ -233,7 +233,7 @@ revoked.events.push({
 assert.deepEqual(projectLedger(revoked, now).active, []);
 
 const inventory = {
-  protocol_version: "2.0-preview.66",
+  protocol_version: "2.0-preview.67",
   bridge: { assembly_file_sha256: "a".repeat(64), module_version_id: "mvid" },
   game: {
     version: "v0.109.0",
@@ -328,7 +328,7 @@ function fallbackRun(runtimeEpoch, requestId, witness) {
       adapter: {
         negotiated: {
           bridge_runtime_instance_id: runtimeEpoch,
-          bridge_protocol_version: "2.0-preview.66",
+          bridge_protocol_version: "2.0-preview.67",
           bridge_assembly_file_sha256: "a".repeat(64),
           bridge_module_version_id: "mvid",
           game_version: "v0.109.0",

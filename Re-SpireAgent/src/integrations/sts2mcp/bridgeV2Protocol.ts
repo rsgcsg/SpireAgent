@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { isJsonObject, type JsonObject } from "../../shared/json.js";
 
-export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.66" as const;
+export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.67" as const;
 export const BRIDGE_V2_INSPECTION_KINDS = ["run_deck", "combat_piles", "shop_catalog"] as const;
 const inspectionKindSchema = z.enum(BRIDGE_V2_INSPECTION_KINDS);
 
@@ -1193,6 +1193,19 @@ const contractInstanceShadowSchema = z.object({
   }
 });
 
+const observationIdentityShadowSchema = z.object({
+  schema_version: z.literal(1),
+  status: z.literal("candidate_non_authorizing"),
+  semantic_state_id_candidate: z.string().regex(/^semantic_state_candidate_[a-f0-9]{64}$/u),
+  authority_projection_id_candidate: z.string().regex(/^authority_projection_candidate_[a-f0-9]{64}$/u),
+  current_state_id_role: z.literal("legacy_authoritative_composite"),
+  action_binding_uses_current_state_id: z.literal(true),
+  authorizing: z.literal(false),
+  semantic_inputs: z.array(z.string().min(1)).min(1),
+  authority_inputs: z.array(z.string().min(1)).min(1),
+  limitations: z.array(z.string().min(1)).min(1)
+}).passthrough();
+
 const stateBaseSchema = z.object({
   protocol_version: z.literal(SUPPORTED_BRIDGE_V2_PROTOCOL),
   state_id: z.string().min(1),
@@ -1217,6 +1230,7 @@ const stateBaseSchema = z.object({
   visibility: visibilityStateSchema,
   inspection_catalog: z.array(inspectionCatalogEntrySchema),
   contract_instance_shadow: contractInstanceShadowSchema,
+  identity_shadow: observationIdentityShadowSchema,
   permission_system: permissionSystemSchema,
   qualification_system: qualificationSystemSchema,
   diagnostics: z.array(diagnosticSchema),

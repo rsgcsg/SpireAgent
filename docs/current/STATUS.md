@@ -12,8 +12,17 @@ This is the canonical short current-state document for the rebuilt project.
 ## Current Gate
 
 Gate 1 remains closed as a bounded ordinary-single-player v2 connector
-baseline. Source contract is `2.0-preview.66`; Re normalized schema is `26`.
+baseline. Source contract is `2.0-preview.67`; Re normalized schema is `26`.
 Gateway v1 is retired and every `/api/v1` route returns `410 Gone`.
+
+Preview.67 source introduces a required, non-authorizing identity shadow that
+separates a game-semantic candidate from a current-authority candidate. The
+legacy composite `state_id`, action binding, permission, execution, completion,
+and Re model input are unchanged. Source, Gateway contract tests, strict Re
+decode, Release build, and disk installation are complete. Built and installed
+SHA is `7da8946c9374c7030d5162e8cb1930e1fc0186edc1c1088f3b2fc371c7a9b768`;
+MVID is `12b55aef-499f-4ea8-8414-d3a360baa2ac`. The game has not been cold-
+started, so Preview.67 has no loaded or Organic evidence.
 
 Preview.66 has completed one exact automatic migration slice on the current
 Gateway build. The Gateway does not inherit authority by version, build, or
@@ -34,7 +43,7 @@ qualification.
 
 ## Exact Evidence Boundary
 
-Current exact game and assembly:
+Last loaded exact game and assembly evidence (Preview.66):
 
 ```text
 game      v0.109.1|c8c577f6|-820620422
@@ -69,12 +78,13 @@ and evidence boundaries are recorded in the
 
 ## Immediate Next Step
 
-Do not widen wildcard or Surface authority. Exercise one of the 86 current
-exact candidate operations under ordinary gameplay, preferably one with a
-different Commit/completion mode, and let the same migration cycle qualify or
-quarantine it. Treat fallback contracts as test-confirm identities, not
-semantic equivalence. The roughly 580 KB strict capabilities projection also
-needs later summary/pagination or on-demand diagnostics before productization.
+Do not widen wildcard or Surface authority. Cold-start the installed
+Preview.67 artifact, verify loaded SHA/MVID and strict Re decode, then run one
+bounded ordinary action from a different Commit/completion mode. Capture the
+new identity shadow before and after action/permission changes. This may
+validate the shadow experiment; it must not switch authority. The roughly
+580 KB capabilities projection still needs a summary/on-demand dual-read
+experiment before productization.
 
 Gate 1 closeout still does not mean complete-game coverage or complete
 player-visible information. Crystal Sphere, standalone manual potion discard,

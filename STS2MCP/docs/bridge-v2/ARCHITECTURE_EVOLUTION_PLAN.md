@@ -10,7 +10,7 @@ Status: Gate 1 closed as a bounded ordinary-single-player v2 connector
 baseline on 2026-07-24. Preview.61 supplied the exact Neow's Fury Organic
 runtime seal, strict Re decode, and loaded-v1 retirement evidence.
 
-C# and Re source now share `2.0-preview.66`. Preview.62 moved exact-environment
+C# and Re source now share `2.0-preview.67`. Preview.62 moved exact-environment
 authorization and reviewed combat-pile source contracts into validated
 embedded policy, and added a non-authorizing exact-assembly audit. Preview.63
 adds an operation-scoped Gateway session-grant state machine under that
@@ -34,6 +34,12 @@ for every artifact:
 - build, install, load, and record exact SHA/MVID/runtime/game/Modset identity;
 - exercise read-only negotiation and one existing low-risk canary without
   expanding permission.
+
+Preview.67 starts the next source-only reliability slice: it dual-writes
+non-authorizing semantic-state and current-authority identity candidates while
+retaining the legacy composite as the sole state/action identity. It has
+contract/build/install evidence but no loaded or Organic evidence yet. See
+[ADR-0005](ADR-0005-semantic-state-and-authority-identity-separation.md).
 
 See the [2026-07-22 real connector audit and migration plan](REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md).
 The phases below describe retained architecture work, but Phase 2 and later are

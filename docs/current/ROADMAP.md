@@ -71,6 +71,14 @@ insufficient.
 See the
 [Preview.66 migration closeout](../../STS2MCP/docs/bridge-v2/PREVIEW_66_MULTI_ENVIRONMENT_MIGRATION_CLOSEOUT_2026-07-26.md).
 
+Preview.67 source begins a narrower reliability experiment: dual-write a
+non-authorizing semantic-state and current-authority identity candidate while
+retaining the legacy composite as the only state/action identity. C# and Re
+tests, Release build and disk install are complete; loaded and Organic evidence
+are pending. Only after paired state/control-drift evidence may an authority
+migration be designed. The next transport optimization is capabilities
+summary/on-demand detail, also dual-read first.
+
 ## Gate 3: Local Control Coordination Alpha
 
 Status: **Preview.64 behavior is included in the loaded Preview.66 artifact.
