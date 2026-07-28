@@ -177,14 +177,14 @@ and the
 
 ## Current Architectural Constraint
 
-The Gateway and Re share the mechanically checked `2.0-preview.70` source
+The Gateway and Re share the mechanically checked `2.0-preview.71` source
 contract. Gate 1 establishes a bounded v2 connector baseline: Re and the
 default MCP adapter are v2-only, Gateway v1 is retired, and historical v1 data
 is replay-only. Preview.69 has substantial real-runtime coverage on exact final
-loaded SHA `914974b5...` / MVID `1e457e86...`. Preview.70 is built and
-installed as SHA `28c32f40...` / MVID `6f169dfe...`, but must be cold-loaded
-before it has runtime authority or evidence. Authority never transfers between
-those MVIDs.
+loaded SHA `914974b5...` / MVID `1e457e86...`. Preview.70 later loaded as SHA
+`28c32f40...` / MVID `6f169dfe...` and completed a bounded game-to-menu run.
+Preview.71 is built/installed as SHA `fd0f7c56...` / MVID `0acccd3d...` but has
+not been loaded. Authority never transfers between those MVIDs.
 
 Two final-MVID Preview.69 runs completed saved/fresh run-to-menu boundaries;
 the latter settled 106 actions without stale or runtime failure. Their
@@ -206,14 +206,22 @@ Current grants still use `surface_kind + operation` and the composite
 `state_id`. Preview.69 removes bulk installed candidates from the target
 startup path but does not make operation the final compatibility identity.
 ADR-0003 still requires shadow/dual-read migration to native source/adapter/
-outcome/partition claims. The 82 manifest fallback identities remain rollback
-inventory and test-confirm hypotheses, not semantic equivalence.
+outcome/partition claims. The current 81 manifest fallback identities remain
+rollback inventory and test-confirm hypotheses, not semantic equivalence.
 
-Preview.70 makes that distinction machine-readable: five explicit component
-contracts expose non-authorizing digests and completion boundaries while every
-fallback remains a digest-free manifest hypothesis. Recorded-run identity
+Preview.70 made that distinction machine-readable. Preview.71 adds one
+evidence-backed treasure-open contract, so six explicit component contracts
+expose non-authorizing digests and completion boundaries while 81 fallbacks
+remain digest-free manifest hypotheses. Recorded-run identity
 auditing found no composite-only stale candidate in the current two-run slice,
 so action binding remains on the conservative composite identity.
+
+The Silver Crucible empty-chest defect also confirms the intended Oracle
+boundary: operation completion must recognize every native outcome branch that
+reaches a proven current UI stage. It must not assume that a reward exists or
+encode a relic-specific exception. `TreasureLifecycleFacts` now supplies the
+stage and open-result predicates used by observation and the action-local
+Oracle; STS2 still owns reward generation and all side effects.
 
 Kifuda is the first exact case satisfying ADR-0002's continuation admission
 rule. The shop action may complete at a typed continuation handoff only after

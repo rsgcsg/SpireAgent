@@ -36,6 +36,11 @@ not inherit authority from the archived root SpireAgent runtime.
 
 Current cross-component audits:
 
+- [Preview.71 empty-treasure Outcome closeout](audits/PREVIEW_71_EMPTY_TREASURE_OUTCOME_CLOSEOUT_2026-07-28.md):
+  exact Preview.70 failure evidence, Silver Crucible/native treasure source
+  proof, shared lifecycle/Oracle repair, sixth explicit non-authorizing
+  contract candidate, Preview.71 install identity, rollback, and Live
+  non-claims.
 - [Preview.70 identity and contract-shadow closeout](audits/PREVIEW_70_IDENTITY_AND_CONTRACT_SHADOW_CLOSEOUT_2026-07-28.md):
   recorded-run identity attribution, clean full-run evidence, explicit
   component-candidate versus manifest-hypothesis separation, installed

@@ -1105,6 +1105,20 @@ public sealed class BridgeContractTests
     }
 
     [Fact]
+    public void TreasureOpenContractIsAnExplicitNonAuthorizingCandidate()
+    {
+        BridgeOperationQualificationIdentity identity = Assert.IsType<BridgeOperationQualificationIdentity>(
+            BridgeOperationQualificationCatalog.Describe("treasure_room", "open_treasure_chest"));
+
+        Assert.True(BridgeOperationQualificationCatalog.IsExplicitContract(
+            "treasure_room",
+            "open_treasure_chest"));
+        Assert.Equal("immediate_postcondition_observed", identity.CompletionBoundary);
+        Assert.Equal("treasure_chest_opened_and_result_stage_reached", identity.WitnessId);
+        Assert.Equal("persistent_run_mutation", identity.RiskClass);
+    }
+
+    [Fact]
     public void AuthorityProjectionWithholdsOnlyUnadmittedSiblingActions()
     {
         var scope = new ActionPermissionScope(
@@ -1198,7 +1212,7 @@ public sealed class BridgeContractTests
             Array.Empty<BridgeActionDraft>())
         {
             RuntimeSemanticContractId =
-                "bridge.contract.deck_enchant_selection.kifuda_relic_pickup.2.0-preview.70",
+                "bridge.contract.deck_enchant_selection.kifuda_relic_pickup.2.0-preview.71",
             RuntimeSourceBindingId = "Kifuda.AfterObtained+Adroit:3"
         };
 
@@ -1350,6 +1364,50 @@ public sealed class BridgeContractTests
         Assert.Contains("\"keywords\":[{\"name\":\"Vulnerable\"", json);
         Assert.DoesNotContain("index", json, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("future", json, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Theory]
+    [InlineData(true, true, 1, false, true)]
+    [InlineData(true, false, 0, true, true)]
+    [InlineData(false, false, 0, true, false)]
+    [InlineData(true, true, 0, false, false)]
+    [InlineData(true, false, 0, false, false)]
+    public void TreasureOpenCompletionAcceptsRelicChoiceOrSettledEmptyChest(
+        bool chestOpened,
+        bool collectionOpen,
+        int relicCount,
+        bool normalProceedReady,
+        bool expected)
+    {
+        Assert.Equal(
+            expected,
+            TreasureLifecycleFacts.OpenChestResultReached(
+                chestOpened,
+                collectionOpen,
+                relicCount,
+                normalProceedReady));
+    }
+
+    [Theory]
+    [InlineData(false, false, 0, true, "closed")]
+    [InlineData(false, false, 0, false, "opening")]
+    [InlineData(true, true, 0, false, "opening")]
+    [InlineData(true, true, 1, false, "relic_choice")]
+    [InlineData(true, false, 0, false, "completed")]
+    public void TreasureLifecycleStageUsesTheSameFactsAsCompletion(
+        bool chestOpened,
+        bool collectionOpen,
+        int relicCount,
+        bool chestActionable,
+        string expected)
+    {
+        Assert.Equal(
+            expected,
+            TreasureLifecycleFacts.Stage(
+                chestOpened,
+                collectionOpen,
+                relicCount,
+                chestActionable));
     }
 
     [Fact]

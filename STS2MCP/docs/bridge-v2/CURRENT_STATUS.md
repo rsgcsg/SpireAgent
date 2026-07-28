@@ -6,25 +6,26 @@ retain only their recorded environment evidence.
 ## Source And Artifact Truth
 
 ```text
-Gateway/Re source     2.0-preview.70
+Gateway/Re source     2.0-preview.71
 Re normalized schema 28
 game                  v0.109.1|c8c577f6|-820620422
 game assembly SHA     2cb39e2eee651743829abcc0df4dd9cd7e65f46287c7ca264481115c9602382f
 game assembly MVID    208f08b8-d5f5-47f8-9e96-d3a4299ee709
-built SHA             28c32f40e22abf1779499d6d28ac4e6dbcea1e0b3d090aa8941ba02d5afbbc55
-installed SHA         28c32f40e22abf1779499d6d28ac4e6dbcea1e0b3d090aa8941ba02d5afbbc55
+built SHA             fd0f7c56cbafd7fcf84386b0ee69944ca2f8170f8982dce9640d2e4f5cf679e6
+installed SHA         fd0f7c56cbafd7fcf84386b0ee69944ca2f8170f8982dce9640d2e4f5cf679e6
 loaded SHA            not loaded (game closed)
-built MVID            6f169dfe-3938-4256-ac85-af0e9b3e2ff1
-installed MVID        6f169dfe-3938-4256-ac85-af0e9b3e2ff1
+built MVID            0acccd3d-8d08-4f95-ae64-75fc758a95f5
+installed MVID        0acccd3d-8d08-4f95-ae64-75fc758a95f5
 loaded MVID           not loaded (game closed)
-runtime epoch         none for Preview.70
-rollback              STS2MCP/.local/deployments/2026-07-28T05-38-41-553Z
+runtime epoch         none for Preview.71
+rollback              STS2MCP/.local/deployments/2026-07-28T08-46-30-998Z
 ```
 
 The installation has one canonical `STS2_MCP` manifest and no duplicate
 Gateway manifest. Source, built, and installed protocol/SHA/MVID match. The
-last loaded artifact was Preview.69; its runtime identity and grants do not
-transfer. Build/install identity is not loaded, Organic, or persistent
+last loaded artifact was Preview.70, SHA `28c32f40...`, MVID `6f169dfe...`,
+runtime `a31b1c...`; its runtime identity and grants do not transfer.
+Build/install identity is not loaded, Organic, or persistent
 qualification evidence.
 
 ## Current Boundary
@@ -101,6 +102,24 @@ state/action binding. It separately marks only five explicit component
 contracts as non-authorizing digest candidates; 82 fallback rows remain
 manifest hypotheses.
 
+Three later runs share the exact loaded Preview.70 identity:
+
+- `run-20260728062709-srruj8` stopped before mutation on repeated provider
+  `fetch failed`;
+- `run-20260728062739-cytun5` settled 69 actions, then timed out after native
+  `open_treasure_chest` had consumed a Silver Crucible empty chest and reached
+  normal Proceed. The old Oracle incorrectly required a non-null relic result;
+- `run-20260728063258-5z9wpz` resumed at that completed treasure room, settled
+  121 actions, safely rejected two semantic-changing stale selections, and
+  completed the game-to-menu boundary at decision 124 without unsupported or
+  observation failure.
+
+Preview.71 shares treasure lifecycle classification between projection and
+the action-local Oracle. Open completion now accepts either a non-empty
+relic-choice handoff or a settled empty chest with normal Proceed. Treasure
+open becomes the sixth explicit non-authorizing contract candidate; 81 rows
+remain manifest hypotheses. Preview.71 has no loaded evidence yet.
+
 ## Remaining Boundaries
 
 Known unsupported or evidence-limited scope includes Tutor's unreviewed owner
@@ -111,8 +130,10 @@ MVID evidence do not convert these into support.
 
 ## Next Engineering Step
 
-Remain in Gate 2. Cold-load Preview.70, verify exact loaded identity, and run a
-bounded ordinary journey without inheriting Preview.69 grants. Then continue
+Remain in Gate 2. Cold-load Preview.71, verify exact loaded identity, and run a
+bounded ordinary journey without inheriting Preview.70 grants. A naturally
+reached Silver Crucible empty first chest is the highest-value targeted canary;
+do not manufacture it or retry an unknown mutation. Then continue
 player-visible Inspection/detail closure and ADR-0003 native-contract shadow
 migration. No evidence here
 authorizes persistent promotion, generic cross-version/Mod compatibility, or

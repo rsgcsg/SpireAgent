@@ -2,12 +2,13 @@
 
 In this project, "SpireAgent" means `Re-SpireAgent` by default.
 
-Current source contract is `2.0-preview.70`; Re normalized schema is `28`.
+Current source contract is `2.0-preview.71`; Re normalized schema is `28`.
 Identity and runtime-contract shadows are strictly decoded and remain
 non-authorizing. Preview.69 runs on one verified loaded identity provide
 real-runtime coverage whose provenance is `unrecorded`, not Organic
-qualification. Preview.70 is built and installed but requires its own
-cold-load identity and Gateway-owned encounter trial.
+qualification. Preview.70 later loaded, completed a bounded run, and exposed an
+empty-treasure completion defect. Preview.71 is built/installed but requires
+its own cold-load identity and Gateway-owned encounter trial.
 Gate 1 is closed as a bounded ordinary-single-player v2 connector baseline.
 Preview.61 supplied the exact Neow's Fury Organic lifecycle; Preview.62 adds
 reviewed compatibility/source registries and policy provenance without
@@ -42,7 +43,7 @@ submission/polling, and exact identity/evidence recording. Re must not grow
 strict-v2 game legality, native Commit logic, transaction inference, Witness
 reconstruction, permission, or live-versus-Headless content branches.
 
-Preview.70 preserves explicit component-contract candidates only in raw
+Preview.71 preserves explicit component-contract candidates only in raw
 evidence. Re does not copy their digests, completion boundary, or risk class
 into `NormalizedCurrentState` or the strategy Prompt. Manifest hypotheses are
 not upgraded by client-side inference.
@@ -87,8 +88,8 @@ multiple environments. Re sees only the Gateway's current exact operation
 projection; it does not consume the local Profile registry or migration plan
 as authority. Its explicit `--allow-run-entry` experiment flag may choose only
 a current `bridge_advertised` top-level entry action. Default runs remain
-one-game bounded. The current projection contains five explicit
-high-precision operation contracts plus 82 conservative manifest-derived
+one-game bounded. The current projection contains six explicit
+high-precision operation contracts plus 81 conservative manifest-derived
 fallback identities. Re decodes the fallback boundary but never interprets
 the witness or promotes a package; the Gateway remains the only completion and
 permission authority.

@@ -185,7 +185,7 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
             actions)
         {
             RuntimeSemanticContractId =
-                $"bridge.contract.deck_enchant_selection.{source!.Kind}.2.0-preview.70",
+                $"bridge.contract.deck_enchant_selection.{source!.Kind}.2.0-preview.71",
             RuntimeSourceBindingId = source.BindingEvidence
         };
     }

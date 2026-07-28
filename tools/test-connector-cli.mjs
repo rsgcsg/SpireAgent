@@ -66,14 +66,14 @@ assert.deepEqual(agentRunPreflightErrors({
 ]);
 
 const clean = evaluateLoadedArtifact({
-  csharpProtocol: "2.0-preview.70",
-  reProtocol: "2.0-preview.70",
+  csharpProtocol: "2.0-preview.71",
+  reProtocol: "2.0-preview.71",
   builtSha: "a".repeat(64),
   installedSha: "a".repeat(64),
   builtMvid: "mvid",
   installedMvid: "mvid",
   capabilities: {
-    protocol_version: "2.0-preview.70",
+    protocol_version: "2.0-preview.71",
     bridge: {
       assembly_file_sha256: "a".repeat(64),
       module_version_id: "mvid",

@@ -1,14 +1,15 @@
 # Bridge v2 Integration
 
 > Current source-truth status, 2026-07-28: Re and C# share the
-> `2.0-preview.70` source consumer contract; Re normalized schema is `28`.
+> `2.0-preview.71` source consumer contract; Re normalized schema is `28`.
 > Gate 1 is closed as a bounded ordinary-single-player v2 connector baseline.
 > Preview.61 supplied the final Neow's Fury runtime seal; Preview.62 adds
 > policy provenance and registry adaptation without inheriting qualification.
 > Preview.69 has exact runtime coverage including one clean 107-decision
-> game-to-menu journey. Preview.70 is built and installed but requires a cold
-> load, and old runtime grants cannot authorize it. Five contracts are
-> explicit high-precision rows; 82 remain conservative manifest-derived
+> game-to-menu journey. Preview.70 later completed a 124-decision boundary and
+> exposed the Silver Crucible empty-chest Oracle defect. Preview.71 is built
+> and installed but requires a cold load, and old runtime grants cannot
+> authorize it. Six contracts are explicit high-precision rows; 81 remain conservative manifest-derived
 > identity/test-confirm fallbacks rather than semantic qualification.
 
 ## Connector Boundary
@@ -29,7 +30,7 @@ consumption.
 
 ## Current Scope
 
-Re-SpireAgent implements the strict `2.0-preview.70` consumer contract. When a
+Re-SpireAgent implements the strict `2.0-preview.71` consumer contract. When a
 matching Bridge exists, authority is read from capabilities rather than
 inferred from implementation or historical evidence.
 
@@ -89,7 +90,7 @@ part of normalized strategy state, Prompt construction, action import,
 permission, or completion. The legacy composite `state_id` remains the only
 state/action binding until a separately reviewed Organic migration.
 
-Preview.70 also strictly decodes explicit component-contract candidates in the
+Preview.71 also strictly decodes explicit component-contract candidates in the
 raw contract shadow. Missing candidate digests are invalid. Manifest hypotheses
 carry no component digest. Neither form enters normalized strategy state,
 Prompt construction, action import, permission, or completion.
@@ -524,8 +525,10 @@ second completed a fresh 107-decision character-select-to-menu journey with
 New Re runs write immutable `run-summary.json`; decision-limit exhaustion is
 incomplete and exits non-zero. A transient provider transport failure receives
 at most one pre-mutation retry. These changes do not alter Gateway completion or
-unknown-no-retry. Preview.70 is built and installed as SHA `28c32f40...` / MVID
-`6f169dfe...`; the game is closed, so it still requires cold-load evidence.
+unknown-no-retry. Preview.70 later loaded as SHA `28c32f40...` / MVID
+`6f169dfe...` and supplied three more runs. Preview.71 is built and installed
+as SHA `fd0f7c56...` / MVID `0acccd3d...`; the game is closed, so it still
+requires cold-load evidence.
 
 Current v0.109 evidence includes merchant removal, event/rest upgrade, ordinary
 rest, ordinary combat, Brain Leech event card acquisition,

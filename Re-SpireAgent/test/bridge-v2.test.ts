@@ -334,7 +334,7 @@ const DECK_ENCHANT_STATE = {
     status: "resolved_runtime_contract",
     instance_id: "contract-instance-deck-enchant-1",
     surface_kind: "deck_enchant_selection",
-    semantic_contract_id: "bridge.contract.deck_enchant_selection.self_help_book_event.2.0-preview.70",
+    semantic_contract_id: "bridge.contract.deck_enchant_selection.self_help_book_event.2.0-preview.71",
     declared_binding: "fixture exact source binding",
     operations: [{
       operation: "toggle_card",

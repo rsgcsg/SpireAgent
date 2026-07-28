@@ -1,6 +1,22 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.70`
+Protocol preview: `2.0-preview.71`
+
+Preview.71 repairs one action-local Outcome Oracle without expanding
+authority. `treasure_room/open_treasure_chest` now completes when the exact
+current native lifecycle proves either:
+
+- the chest is opened and a non-empty relic-choice continuation is active; or
+- the chest is opened, the collection has settled closed, and normal Proceed
+  is visible and enabled.
+
+The second branch is required by native effects such as Silver Crucible, whose
+first treasure chest is intentionally empty. Projection and completion reuse
+`TreasureLifecycleFacts`; no relic ID, reward-generation rule, or fallback
+execution is reconstructed in Re. The operation is the sixth explicit
+non-authorizing component-contract candidate; 81 catalog fallbacks remain
+digest-free manifest hypotheses. Preview.71 has build/install evidence only
+until cold-loaded.
 
 Preview.70 adds two non-authorizing migration measurements without changing
 action publication, execution, permission, completion, or state binding:
@@ -446,8 +462,8 @@ Modes:
   mutation candidates during an explicit migration cycle.
 
 The migration policy is risk-class based rather than an operation-name list.
-The current qualification catalog contains five explicit high-precision
-contracts plus conservative fallback identities derived from the current
+The current qualification catalog contains six explicit high-precision
+contracts plus 81 conservative fallback identities derived from the current
 Gateway contract manifest. Explicit rows require their exact completion
 boundary and witness. A fallback row uses
 `gateway_semantic_completion_observed` with the package sentinel

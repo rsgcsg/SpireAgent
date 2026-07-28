@@ -18,7 +18,7 @@ third-party clients.
 
 ## Current Truth
 
-The active connector source shares `2.0-preview.70` between C# and
+The active connector source shares `2.0-preview.71` between C# and
 Re-SpireAgent; Re normalized schema is `28`. Gate 1 is closed as a bounded
 ordinary-single-player v2 connector baseline: Re and the default MCP adapter
 are v2-only, the entire Gateway `/api/v1` namespace is retired, and the final
@@ -49,10 +49,14 @@ All records have `unrecorded` provenance, so they are exact-runtime repair and
 coverage evidence rather than Organic or persistent qualification. Session
 permission remains operation-scoped and runtime-bound.
 An additional final-MVID run completed a clean 107-decision
-character-select-to-menu journey with 106 settled actions. Preview.70 is built
-and installed but not loaded; it adds non-authorizing stale attribution and
-explicit-contract versus manifest-hypothesis evidence without inheriting any
-Preview.69 grant.
+character-select-to-menu journey with 106 settled actions. Preview.70 then
+cold-loaded on its own exact SHA/MVID and completed a 124-decision bounded run
+with 121 settled actions. A separate run exposed one real completion defect:
+Silver Crucible made the first treasure chest empty, the native game reached
+normal Proceed, but the old `open_treasure_chest` Oracle timed out because it
+required a non-null relic result. Preview.71 fixes that source-proven outcome,
+makes treasure-open the sixth explicit non-authorizing contract candidate, and
+is built/installed but not loaded.
 Exact source, loaded, candidate, Organic, and persistent evidence remain
 separated in [current status](docs/current/STATUS.md).
 

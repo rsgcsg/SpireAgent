@@ -110,6 +110,13 @@ completion boundaries, while 82 manifest-derived rows are labeled hypotheses
 and expose no contract digest. This does not satisfy runtime-source coverage,
 publication/execute parity, or the claim-key migration gate.
 
+Preview.71 applies the migration rule to one evidence-backed failure rather
+than expanding the abstraction speculatively. `treasure_room/open_treasure_chest`
+becomes the sixth explicit candidate, and one shared lifecycle classifier now
+drives both treasure projection and its action-local completion predicate. The
+remaining 81 rows stay manifest hypotheses. This is still non-authorizing and
+does not permit operation-key retirement.
+
 ## Rejected Alternatives
 
 - **Immediate global operation deletion:** unsafe because current Gateway

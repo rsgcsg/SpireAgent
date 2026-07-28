@@ -54,9 +54,10 @@ Status: **active but bounded. Preview.69 completed four runs on a prior exact
 MVID, then two runs on the final MVID: a 127-decision saved-run-to-menu journey
 with 114 settled actions and 11 safe stale refusals, followed by a clean
 107-decision character-select-to-menu journey with 106 settled actions and no
-stale or runtime failure. Provenance remains unrecorded. Preview.70 is built
-and installed but not loaded; no Organic or persistent qualification is
-claimed.**
+stale or runtime failure. Preview.70 then completed another exact bounded run
+and exposed an empty-treasure Oracle gap. Provenance remains unrecorded.
+Preview.71 repairs that gap and is built/installed but not loaded; no Organic
+or persistent qualification is claimed.**
 
 Close decision-relevant visible-information gaps using shared state, context,
 surface, preview, and read-only inspection. Do not expose hidden RNG, draw
@@ -91,14 +92,15 @@ termination, treats decision-limit exhaustion as incomplete, performs one
 pre-mutation transient provider retry, and permits missing shared HUD only in a
 typed actionless run-mount transition. Current operation permission remains
 authoritative; ADR-0003 forbids replacing it until dual-read parity exists.
-Preview.70's read-only audit found no composite-only stale candidate in either
-final-MVID run. It also separates five explicit component-contract candidates
-from 82 digest-free manifest hypotheses without changing authority.
+Preview.70's read-only audit found no composite-only stale candidate in the
+measured runs. Preview.71 separates six explicit component-contract candidates
+from 81 digest-free manifest hypotheses without changing authority and reuses
+one treasure lifecycle classifier for projection and completion.
 
 Gate 2 now proceeds in this order:
 
-1. cold-load Preview.70 and verify exact loaded identity plus one bounded
-   ordinary journey without inheriting Preview.69 authority;
+1. cold-load Preview.71 and verify exact loaded identity plus one bounded
+   ordinary journey without inheriting Preview.70 authority;
 2. expand non-authorizing adapter/outcome/source/partition shadow metadata
    across representative menu, navigation, shop, combat, reward, and selector
    families;

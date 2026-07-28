@@ -3,7 +3,7 @@
   "scope": "ordinary_single_player_and_explicit_legacy_boundaries",
   "gate_1_status": "closed_bounded_v2_baseline",
   "gate_1_runtime_seal": "closed_preview61_neows_fury_organic_lifecycle_run_20260724045013_mgcq3a",
-  "current_source_protocol": "2.0-preview.70",
+  "current_source_protocol": "2.0-preview.71",
   "last_loaded_protocol": "2.0-preview.68",
   "legacy_mutation_authority": "retired",
   "legacy_get_compatibility": "retired",

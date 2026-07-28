@@ -62,6 +62,18 @@
       "completion_boundary": "immediate_postcondition_observed",
       "witness_id": "enchantment_screen_closed_and_exact_cards_enchanted",
       "risk_class": "persistent_run_mutation"
+    },
+    {
+      "surface_kind": "treasure_room",
+      "operation": "open_treasure_chest",
+      "interaction_kind": "treasure_chest_reveal",
+      "owner_binding": "exact_current_treasure_room_and_screen",
+      "source_binding": "exact_visible_enabled_treasure_chest",
+      "operand_contract": "exact_current_room_and_chest_control",
+      "commit_contract": "native_treasure_chest_force_click_and_open_task",
+      "completion_boundary": "immediate_postcondition_observed",
+      "witness_id": "treasure_chest_opened_and_result_stage_reached",
+      "risk_class": "persistent_run_mutation"
     }
   ]
 }

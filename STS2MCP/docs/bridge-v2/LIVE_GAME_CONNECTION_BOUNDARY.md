@@ -2,7 +2,7 @@
 
 Status: canonical architecture boundary for the current real-game connection.
 
-Current source compatibility status: C# and Re share `2.0-preview.70`, including
+Current source compatibility status: C# and Re share `2.0-preview.71`, including
 operation scopes, a Gateway artifact digest, separate actual-loaded versus
 release-declared game assembly hashes, reviewed exact-environment policy
 provenance, structural combat-pile transaction semantics, minimal local
@@ -12,8 +12,8 @@ source/build/audit evidence does not inherit that Organic qualification.
 Preview.66 is built, installed, cold-loaded, and strictly decoded by Re. Its
 final `v0.109.1` identity inherited no older action scope. One exact operation
 completed automatic two-epoch requalification. The other 86 current manifest
-operations remain session canaries: four use explicit high-precision contracts
-and 82 use conservative identity/test-confirm fallbacks. Fallback identity is
+operations remain session canaries: five use explicit high-precision contracts
+and 81 use conservative identity/test-confirm fallbacks. Fallback identity is
 not semantic equivalence or persistent qualification. Multi-environment
 Profiles are non-authorizing, and the append-only ledger hot-reloads only after
 exact revalidation. The loaded identity and precise evidence boundary are
@@ -25,10 +25,11 @@ saved-run mount and bounded game-over-to-menu journey under a fresh runtime
 epoch; its unrecorded evidence and runtime grants are not Organic or persistent
 qualification and do not transfer across restart.
 
-Preview.70 is built and installed but not loaded. It adds only
-non-authorizing migration evidence: recorded stale attribution and an explicit
-component-candidate versus manifest-hypothesis distinction. It does not inherit
-Preview.69 runtime authority or broaden any operation.
+Preview.70 later loaded and completed a 124-decision bounded run. It also
+exposed the native Silver Crucible empty-chest outcome that the old treasure
+Oracle failed to settle. Preview.71 reuses one lifecycle classifier for
+treasure projection/completion and is built/installed but not loaded. It does
+not inherit Preview.70 runtime authority or broaden any operation.
 
 Consumer distribution, local trust, Companion, BYOK, SDK, and release gates are
 defined in the [productization architecture audit](../../../docs/current/audits/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md).

@@ -122,8 +122,8 @@ The following are governance constraints, not a separate feature program:
 
 ### Current Window
 
-1. Cold-load the installed Preview.70 SHA/MVID and run one bounded ordinary
-   journey without inheriting Preview.69 grants. Preview.70 currently has
+1. Cold-load the installed Preview.71 SHA/MVID and run one bounded ordinary
+   journey without inheriting Preview.70 grants. Preview.71 currently has
    build/install evidence only.
 2. Preserve the final Preview.69 exact-runtime evidence boundary: the
    127-decision saved-run journey and clean 107-decision fresh journey prove
@@ -134,8 +134,9 @@ The following are governance constraints, not a separate feature program:
    conservative.
 3. Continue C through the ADR-0003 migration order: explicit source/adapter/
    outcome contract candidates, continuation boundaries, identity separation,
-   then hot-summary/on-demand evidence. Keep manifest fallbacks as
-   non-authorizing test-confirm hypotheses.
+   then hot-summary/on-demand evidence. Preview.71 uses the Silver Crucible
+   empty-chest failure to migrate treasure-open into an explicit candidate;
+   keep remaining manifest fallbacks as non-authorizing test-confirm hypotheses.
 4. Maintain the closed Gate 1 v1-retirement inventory and keep unsupported
    variants explicitly typed and fail closed.
 5. Advance D only for concrete C/A evidence needs. D may compare, grade and
@@ -150,8 +151,9 @@ Preview.69's prior loaded MVID completed broad real-runtime session trials. The
 final built/installed/loaded MVID then completed a saved-run-to-menu lifecycle
 and a clean fresh character-select-to-menu lifecycle under one runtime epoch.
 Neither identity is generic cross-version or cross-Mod qualification, and no
-session trial was promoted to a persistent claim. Preview.70 is installed but
-has not yet been loaded or exercised.
+session trial was promoted to a persistent claim. Preview.70 later completed a
+124-decision boundary on its exact runtime and exposed one empty-chest Outcome
+Oracle defect. Preview.71 is installed but has not yet been loaded or exercised.
 
 ### Gate 1 Exit Basis And Gate 2 Entry
 

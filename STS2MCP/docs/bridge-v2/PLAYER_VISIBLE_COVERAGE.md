@@ -10,14 +10,15 @@
 > loaded artifact. Current loaded identity and Gate status are owned by
 > [Bridge v2 Current Status](CURRENT_STATUS.md).
 
-Current source contract is Preview.70. It is built and installed but not yet
-loaded; Preview.69 remains the latest exact-runtime evidence scope. Preview.61 supplied the bounded Neow's
+Current source contract is Preview.71. It is built and installed but not yet
+loaded; Preview.70 is the latest exact-runtime evidence scope. Preview.61 supplied the bounded Neow's
 Fury Organic lifecycle that sealed Gate 1. Preview.62 added reviewed
 source/compatibility registries and a non-authorizing exact-assembly audit;
 Preview.66 added multi-environment migration infrastructure; Preview.69
 separates diagnostic observation, encounter trials, and persistent claims;
-Preview.70 separates five explicit non-authorizing contract candidates from
-manifest hypotheses. None inherits historical operation coverage or
+Preview.70 separates explicit non-authorizing contract candidates from
+manifest hypotheses; Preview.71 adds treasure-open as the sixth explicit
+candidate after the empty-chest failure. None inherits historical operation coverage or
 qualification. Current installed and loaded identities are owned by
 [Bridge v2 Current Status](CURRENT_STATUS.md),
 not this matrix.
@@ -88,7 +89,7 @@ The `1833084275` environment inherits no permission from the current loaded
 | `map_navigation` | canary | repeated exact-node travel; fresh Gate 1 map-to-combat and reward-to-map journey | drawings, special modes, and multiplayer unsupported |
 | `shop_room` | canary | open/close/Proceed current-build journeys | more lifecycle diversity required |
 | `shop_inventory` | canary | card/relic/potion purchases and removal launch with category-specific witnesses; Preview.69 long-run coverage crossed ordinary shop inventory repeatedly; Kifuda may prove purchase Commit plus an exact source-bound child handoff | Preview.68 Kifuda handoff has source/tests but no Organic canary; Preview.69 records are unrecorded coverage; other purchase categories still need repeated Organic coverage |
-| `treasure_room` | canary | exact relic choose and Proceed; repeated pre-dispatch refusal preserves the native 2.5-second relic-clickable/Skip-disabled action-set boundary | open/skip/empty-chest/multiplayer variants remain unqualified |
+| `treasure_room` | canary | exact relic choose and Proceed; repeated pre-dispatch refusal preserves the native 2.5-second relic-clickable/Skip-disabled action-set boundary; Preview.70 Silver Crucible runtime proved the native empty-chest branch reaches completed + normal Proceed | Preview.71 empty-chest completion repair has no loaded canary; open/skip diversity and multiplayer remain unqualified |
 | `card_bundle_selection` | canary | preview and exact three-card Scroll Boxes deck commit on preview.27 | other origins absent; preview.28 behavior unchanged but needs routine regression |
 | `game_over` | canary; fresh lifecycle exercised | preview.41 run `run-20260718162449-yvvf7o` completed intro -> summary -> return; Preview.69 old-MVID `run-...21602` and final-MVID `run-...41630` both completed loss lifecycles and correct top-level one-game stops | Preview.69 provenance is unrecorded; win/timeline destination and additional result variants remain evidence debt |
 | `character_select` | canary | select character, Ascension down/up, and Embark into a real Silent A10 run | first-run tutorial confirmation remains unsupported; root/menu contracts are tracked separately |
@@ -107,7 +108,7 @@ The `1833084275` environment inherits no permission from the current loaded
 | top-level `shared_state` | qualified read-only composition | active-run HUD composition across map/combat/reward; preview.46 Cursed Pearl organically exposed Greed `card_previews` plus Eternal/Unplayable hover text with stable state identity | bounded strategic HUD, not all visible UI information; unknown hover-tip kinds still fail closed |
 | `visibility` + `inspection_catalog` | non-authorizing read-only declaration | preview.48 shop state declares `run_deck` and `shop_catalog`; combat declares `combat_piles`; linked detail families and hidden policy remain explicit | catalog covers only three fixed Inspection kinds and does not prove whole-game closure |
 | coherent observation bundle | non-authorizing read-only transport | preview.48 returned shop state, `run_deck`, and `shop_catalog` under one exact identity; Gate 1 repaired a same-state shop catalog/builder mismatch by sharing exact merchant availability, while genuine state-changing reads remain transient `stale_state` and never authorize retry | same-state mismatches remain hard errors; needs more inspection-diversity evidence; no command authority |
-| `contract_instance_shadow` | diagnostic only, always `authorizing=false` | Preview.70 reports five explicit component-contract candidates with typed digests/boundaries and keeps 82 fallback rows as digest-free manifest hypotheses | neither form is runtime semantic binding or permission; exact-environment operation authority remains separate, and Preview.70 has no loaded-runtime evidence yet |
+| `contract_instance_shadow` | diagnostic only, always `authorizing=false` | Preview.71 reports six explicit component-contract candidates with typed digests/boundaries and keeps 81 fallback rows as digest-free manifest hypotheses | neither form is runtime semantic binding or permission; exact-environment operation authority remains separate, and Preview.71 has no loaded-runtime evidence yet |
 | `combat_transition + no_action` lifecycle observation | non-authorizing, not a permission row | Current-MVID Organic setup and resolution observations around repeated `combat_turn -> reward_claim -> map -> combat_turn` journeys on preview.40 | exact `CombatRoom` setup/resolution only; other no-overlay gaps remain unsupported |
 | `run_transition + no_action` lifecycle observation | non-authorizing, not a permission row | Preview.69 final-MVID saved-run resume crossed the prior failing mount boundary; shared HUD may be deferred only for exact `run_without_visible_overlay` with missing run state/current room, typed actionless diagnostic, and sole `shared_visible_state` omission | no other active-run HUD omission inherits this exception; the transient state was crossed rather than guaranteed to be sampled in the Re record |
 

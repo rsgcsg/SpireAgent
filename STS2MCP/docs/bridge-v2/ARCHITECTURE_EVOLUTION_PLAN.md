@@ -18,7 +18,7 @@ Status: Gate 1 closed as a bounded ordinary-single-player v2 connector
 baseline on 2026-07-24. Preview.61 supplied the exact Neow's Fury Organic
 runtime seal, strict Re decode, and loaded-v1 retirement evidence.
 
-C# and Re source now share `2.0-preview.70`. Preview.62 moved exact-environment
+C# and Re source now share `2.0-preview.71`. Preview.62 moved exact-environment
 authorization and reviewed combat-pile source contracts into validated
 embedded policy, and added a non-authorizing exact-assembly audit. Preview.63
 adds an operation-scoped Gateway session-grant state machine under that
@@ -28,7 +28,7 @@ operation-scoped persistent qualification input and non-authorizing impact
 tooling; it does not infer qualification from static similarity. Preview.66
 adds non-authorizing Environment Profiles, risk-class migration planning,
 multi-environment ledger slots, evidence orchestration, and atomic store
-reload. It also replaces per-operation candidate enumeration with five
+reload. It also replaces per-operation candidate enumeration with explicit
 explicit high-precision qualification contracts plus conservative identities
 derived from the current operation manifest. The fallback path is
 identity/test-confirm only and available solely in migration mode; it does not
@@ -50,9 +50,12 @@ loaded and real-runtime defect evidence, but the three runs are `unrecorded`
 and not Organic qualification. Preview.68 adds the first exact runtime
 source/contract shadow and typed native-continuation boundary under repository
 ADR-0003. See [ADR-0005](ADR-0005-semantic-state-and-authority-identity-separation.md).
-Preview.70 adds reproducible stale attribution and makes the five explicit
-component contracts machine-distinct from 82 manifest hypotheses. This is a
-dual-read preparation step, not permission or identity migration.
+Preview.70 adds reproducible stale attribution and makes explicit component
+contracts machine-distinct from manifest hypotheses. Preview.71 applies that
+migration to the runtime-proven treasure-open family: one shared lifecycle
+classifier drives projection and completion, six explicit candidates are
+machine-readable, and 81 fallbacks remain hypotheses. This is a dual-read
+preparation step, not permission or identity migration.
 
 See the [2026-07-22 real connector audit and migration plan](REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md).
 The phases below describe retained architecture work, but Phase 2 and later are
