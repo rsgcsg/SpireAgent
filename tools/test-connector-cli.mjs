@@ -9,7 +9,8 @@ import {
   evaluateLoadedArtifact,
   inspectModInstallation,
   resolveGameDir,
-  resolveModsDir
+  resolveModsDir,
+  selectAgentAuthorityPath
 } from "./connector.mjs";
 
 assert.equal(
@@ -56,20 +57,20 @@ assert.deepEqual(agentRunPreflightErrors({
 }, { requireMutation: true }), [
   "installed_loaded_mvid_mismatch",
   "duplicate_gateway_manifests_detected",
-  "exact_bridge_only_modset_required",
+  "bounded_modset_permission_required",
   "normal_observation_disabled",
-  "mutation_disabled"
+  "mutation_and_provisional_trial_disabled"
 ]);
 
 const clean = evaluateLoadedArtifact({
-  csharpProtocol: "2.0-preview.68",
-  reProtocol: "2.0-preview.68",
+  csharpProtocol: "2.0-preview.69",
+  reProtocol: "2.0-preview.69",
   builtSha: "a".repeat(64),
   installedSha: "a".repeat(64),
   builtMvid: "mvid",
   installedMvid: "mvid",
   capabilities: {
-    protocol_version: "2.0-preview.68",
+    protocol_version: "2.0-preview.69",
     bridge: {
       assembly_file_sha256: "a".repeat(64),
       module_version_id: "mvid",
@@ -80,6 +81,43 @@ const clean = evaluateLoadedArtifact({
 });
 assert.equal(clean.ok, true);
 assert.equal(clean.artifact_identity_ok, true);
+
+const provisional = evaluateEnvironmentReadiness({
+  permission_system: { mode: "migration_exploration" },
+  game: {
+    compatibility: {
+      status: "unreviewed_diagnostic_candidate",
+      adaptation_level: "diagnostic_candidate",
+      state_observation_allowed: true,
+      inspection_allowed: false,
+      action_execution_allowed: false
+    },
+    modset: {
+      status: "additional_mods_loaded",
+      exact_permission_eligible: false,
+      qualification_candidate_eligible: true,
+      persistent_qualification_eligible: false
+    }
+  }
+});
+assert.equal(provisional.provisional_trial_ready, true);
+assert.deepEqual(agentRunPreflightErrors({
+  ...provisional,
+  errors: [],
+  mod_installation: { exact_permission_blocker: false }
+}, { requireMutation: true }), []);
+assert.equal(
+  selectAgentAuthorityPath(provisional),
+  "encounter_provisional_ready_on_first_actionable_surface"
+);
+assert.equal(
+  selectAgentAuthorityPath({ observation_ready: true, mutation_ready: true }),
+  "encounter_provisional_or_existing_authority"
+);
+assert.equal(
+  selectAgentAuthorityPath({ observation_ready: false, mutation_ready: false }),
+  "legacy_migration_required"
+);
 
 const mismatch = evaluateLoadedArtifact({
   csharpProtocol: "2.0-preview.68",

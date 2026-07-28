@@ -64,7 +64,9 @@ export class TickOrchestrator {
     }
 
     if (pre.currentState.context.kind === "run_ended") this.runTerminalObserved = true;
-    const allowedActions = this.dependencies.buildAllowedActions(pre.currentState, pre.stateHash);
+    const builtAllowedActions = this.dependencies.buildAllowedActions(pre.currentState, pre.stateHash);
+    const cycleFilter = this.progressCycleGuard.filterActions(pre.currentState, builtAllowedActions);
+    const allowedActions = cycleFilter.actions;
     if (pre.diagnostics.status === "invalid" || pre.currentState.stability === "invalid" || pre.currentState.surface.kind === "unsupported") {
       return this.recordWithoutDecision({
         decisionId,
@@ -329,7 +331,9 @@ export class TickOrchestrator {
         postProgressHash: repeatedSemanticTransition.postProgressHash,
         actionProgressHash: repeatedSemanticTransition.actionProgressHash,
         selectedActionId: validation.selectedAction.id,
-        selectedActionKind: repeatedSemanticTransition.selectedActionKind
+        selectedActionKind: repeatedSemanticTransition.selectedActionKind,
+        recoveryPlanned: repeatedSemanticTransition.recoveryPlanned,
+        suppressedReturnActionHashes: repeatedSemanticTransition.suppressedReturnActionHashes
       };
     }
     await this.dependencies.recorder.append(record, settlement.after ? { postRawState: settlement.after.rawState } : undefined);
@@ -338,10 +342,12 @@ export class TickOrchestrator {
       record.outcome,
       pre.currentState,
       validation.selectedAction.id,
-      outcome === "executed_unsettled" || Boolean(repeatedExactTransition) || Boolean(repeatedSemanticTransition),
+      outcome === "executed_unsettled"
+        || Boolean(repeatedExactTransition)
+        || Boolean(repeatedSemanticTransition && !repeatedSemanticTransition.recoveryPlanned),
       repeatedExactTransition
         ? "repeated_exact_transition"
-        : repeatedSemanticTransition
+        : repeatedSemanticTransition && !repeatedSemanticTransition.recoveryPlanned
           ? "repeated_semantic_transition"
           : undefined
     );

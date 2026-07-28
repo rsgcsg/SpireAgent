@@ -53,7 +53,7 @@ public sealed class BridgePermissionManagerTests
         Assert.NotEqual(binding.GrantId, currentScope.GrantId);
         Assert.Equal(2, currentScope.GrantVersion);
         BridgePermissionGrantRecord current = manager.Snapshot().Grants[^1];
-        Assert.Equal("session_auto_approved", current.Tier);
+        Assert.Equal("session_trial_confirmed", current.Tier);
         Assert.Equal("active", current.Status);
         Assert.Equal(binding.GrantId, current.SupersedesGrantId);
     }
@@ -407,7 +407,7 @@ public sealed class BridgePermissionManagerTests
 
         Assert.Single(promoted.ActionPermissionScopes);
         Assert.Equal(
-            "session_auto_approved",
+            "session_trial_confirmed",
             manager.Snapshot().Grants[^1].Tier);
     }
 
@@ -506,7 +506,7 @@ public sealed class BridgePermissionManagerTests
         Assert.Equal("shop_room", scope.SurfaceKind);
         Assert.Equal(2, scope.GrantVersion);
         Assert.Equal(
-            "session_auto_approved",
+            "session_trial_confirmed",
             manager.Snapshot().Grants[^1].Tier);
     }
 
@@ -522,6 +522,96 @@ public sealed class BridgePermissionManagerTests
         Assert.Equal(
             BridgePermissionMode.MigrationExploration,
             BridgePermissionManager.ParseMode("migration_exploration"));
+    }
+
+    [Fact]
+    public void EncounterSourceResolvedActionGetsOnlyRuntimeScopedTrialAuthority()
+    {
+        var manager = new BridgePermissionManager(
+            "runtime-migration",
+            BridgePermissionMode.MigrationExploration);
+        BridgeServerIdentity bridge = Bridge("runtime-migration");
+        GameBuildIdentity diagnostic = DiagnosticGame();
+        CompatibilityAssessment initial = manager.Apply(
+            diagnostic,
+            bridge,
+            CleanPatchInventory());
+        var draft = EncounterDraft(
+            diagnostic with { Compatibility = initial },
+            "open_shop_inventory");
+
+        BridgeObservationDraft admitted = manager.AdmitEncounter(draft, bridge);
+
+        ActionPermissionScope scope = Assert.Single(
+            admitted.Game.Compatibility.ActionPermissionScopes);
+        Assert.Equal("canary", scope.Tier);
+        Assert.Equal("runtime-migration", scope.RuntimeEpoch);
+        Assert.Equal("encounter_source_resolved", scope.AdmissionBasis);
+        Assert.Equal(
+            "encounter_provisional_trial",
+            admitted.Game.Compatibility.AdaptationLevel);
+        BridgePermissionGrantRecord grant = Assert.Single(manager.Snapshot().Grants);
+        Assert.Equal("session_canary", grant.Tier);
+        Assert.Equal("encounter_source_resolved", grant.AdmissionBasis);
+        Assert.Contains(
+            "admission:encounter_source_resolved",
+            grant.EvidenceIds);
+        Assert.Contains(
+            admitted.Warnings,
+            warning => warning.StartsWith(
+                "encounter_provisional_trial:",
+                StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void EncounterAdmissionRemainsDisabledOutsideMigrationExploration()
+    {
+        var manager = new BridgePermissionManager(
+            "runtime-strict",
+            BridgePermissionMode.Strict);
+        BridgeServerIdentity bridge = Bridge("runtime-strict");
+        GameBuildIdentity diagnostic = DiagnosticGame();
+        CompatibilityAssessment initial = manager.Apply(
+            diagnostic,
+            bridge,
+            CleanPatchInventory());
+
+        BridgeObservationDraft admitted = manager.AdmitEncounter(
+            EncounterDraft(
+                diagnostic with { Compatibility = initial },
+                "open_shop_inventory"),
+            bridge);
+
+        Assert.Empty(admitted.Game.Compatibility.ActionPermissionScopes);
+        Assert.Empty(manager.Snapshot().Grants);
+    }
+
+    [Fact]
+    public void UnknownEncounterOperationStaysDiagnosticWithoutTrialWarning()
+    {
+        var manager = new BridgePermissionManager(
+            "runtime-migration",
+            BridgePermissionMode.MigrationExploration);
+        BridgeServerIdentity bridge = Bridge("runtime-migration");
+        GameBuildIdentity diagnostic = DiagnosticGame();
+        CompatibilityAssessment initial = manager.Apply(
+            diagnostic,
+            bridge,
+            CleanPatchInventory());
+
+        BridgeObservationDraft admitted = manager.AdmitEncounter(
+            EncounterDraft(
+                diagnostic with { Compatibility = initial },
+                "unknown_operation"),
+            bridge);
+
+        Assert.Empty(admitted.Game.Compatibility.ActionPermissionScopes);
+        Assert.Empty(manager.Snapshot().Grants);
+        Assert.DoesNotContain(
+            admitted.Warnings,
+            warning => warning.StartsWith(
+                "encounter_provisional_trial:",
+                StringComparison.Ordinal));
     }
 
     private static ActionPermissionScope Scope(
@@ -577,6 +667,48 @@ public sealed class BridgePermissionManagerTests
             modset);
     }
 
+    private static GameBuildIdentity DiagnosticGame()
+    {
+        GameBuildIdentity game = GameWithScopes();
+        return game with
+        {
+            Compatibility = game.Compatibility with
+            {
+                Status = "unreviewed_diagnostic_candidate",
+                ActionExecutionAllowed = false,
+                ActionExecutionSurfaceKinds = Array.Empty<string>(),
+                ActionCanarySurfaceKinds = Array.Empty<string>(),
+                ActionPermissionScopes = Array.Empty<ActionPermissionScope>(),
+                AdaptationLevel = "diagnostic_candidate"
+            }
+        };
+    }
+
+    private static BridgeObservationDraft EncounterDraft(
+        GameBuildIdentity game,
+        string operation) => new(
+        "fixture-signature",
+        "ready",
+        new ShopBridgeContext("shop"),
+        new ShopRoomSurface("shop_room", "shop-room", true, true),
+        new StateCompleteness(
+            "complete",
+            "source_resolved",
+            new[] { "fixture" },
+            Array.Empty<string>()),
+        game,
+        Array.Empty<string>(),
+        new[]
+        {
+            new BridgeActionDraft(
+                "fixture-action",
+                operation,
+                "navigation",
+                "Open shop",
+                "fixture-source-resolved",
+                () => BridgeActionStartResult.Rejected("fixture", "not executed"))
+        });
+
     private static BridgeServerIdentity Bridge(string runtimeEpoch) => new(
         "sts2_mcp_bridge_v2",
         "fixture",
@@ -608,7 +740,8 @@ public sealed class BridgePermissionManagerTests
         scope.RuntimeEpoch,
         scope.EnvironmentDigest,
         scope.PatchDigest,
-        scope.OperationFingerprint);
+        scope.OperationFingerprint,
+        scope.AdmissionBasis);
 
     private static BridgeCommandResponse Command(
         string requestId,

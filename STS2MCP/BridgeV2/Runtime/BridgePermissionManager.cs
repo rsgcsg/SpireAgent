@@ -40,7 +40,8 @@ internal sealed record BridgeActionPermissionBinding(
     string RuntimeEpoch,
     string EnvironmentDigest,
     string PatchDigest,
-    string OperationFingerprint);
+    string OperationFingerprint,
+    string AdmissionBasis = "reviewed_or_persisted_scope");
 
 internal sealed class BridgePermissionManager
 {
@@ -196,9 +197,12 @@ internal sealed class BridgePermissionManager
                     RuntimeEpoch = grant.RuntimeEpoch,
                     EnvironmentDigest = grant.EnvironmentDigest,
                     PatchDigest = grant.PatchDigest,
-                    OperationFingerprint = grant.OperationFingerprint
+                    OperationFingerprint = grant.OperationFingerprint,
+                    AdmissionBasis = grant.AdmissionBasis
                 });
             }
+
+            AppendActiveEncounterScopes(scopes, environmentDigest, patchInventory.Digest);
 
             string[] qualifiedSurfaces = scopes
                 .Where(scope => scope.Tier == "qualified")
@@ -217,13 +221,112 @@ internal sealed class BridgePermissionManager
                 + $"patch_status={patchInventory.Status} patch_digest={patchInventory.Digest}.";
             return game.Compatibility with
             {
+                Status = scopes.Count > 0 && !game.Compatibility.ActionExecutionAllowed
+                    ? "provisional_trial_scoped"
+                    : game.Compatibility.Status,
+                ActionExecutionAllowed = scopes.Count > 0,
                 ActionPermissionScopes = scopes
                     .OrderBy(scope => scope.SurfaceKind, StringComparer.Ordinal)
                     .ThenBy(scope => scope.Operation, StringComparer.Ordinal)
                     .ToArray(),
                 ActionExecutionSurfaceKinds = qualifiedSurfaces,
                 ActionCanarySurfaceKinds = canarySurfaces,
+                AdaptationLevel = scopes.Any(scope =>
+                        scope.AdmissionBasis == "encounter_source_resolved")
+                    ? "encounter_provisional_trial"
+                    : game.Compatibility.AdaptationLevel,
                 Detail = detail
+            };
+        }
+    }
+
+    public BridgeObservationDraft AdmitEncounter(
+        BridgeObservationDraft draft,
+        BridgeServerIdentity bridge)
+    {
+        lock (_gate)
+        {
+            if (_mode != BridgePermissionMode.MigrationExploration
+                || !draft.Game.Compatibility.StateObservationAllowed
+                || draft.Actions.Count == 0
+                || draft.Surface.Kind is "unsupported" or "no_action"
+                || !EncounterEnvironmentEligible(draft.Game, bridge))
+            {
+                return draft;
+            }
+
+            string environmentDigest = EnvironmentDigest(
+                draft.Game,
+                bridge,
+                _lastPatchInventory);
+            foreach (BridgeActionDraft action in draft.Actions)
+            {
+                string key = Key(draft.Surface.Kind, action.Kind);
+                if (_blockedKeys.Contains(key)
+                    || HasApplicableScope(
+                        draft.Game.Compatibility,
+                        draft.Surface.Kind,
+                        action.Kind)
+                    || _currentGrants.TryGetValue(key, out BridgePermissionGrantRecord? existing)
+                       && existing.Status == "active"
+                       && existing.ExpiresAt > _clock()
+                       && existing.EnvironmentDigest == environmentDigest
+                       && existing.PatchDigest == _lastPatchInventory.Digest)
+                {
+                    continue;
+                }
+
+                BridgeMigrationPermissionCandidate? candidate =
+                    BridgeMigrationPermissionPolicy.Find(draft.Surface.Kind, action.Kind);
+                if (candidate == null
+                    || !candidate.EligibleModes.Contains(
+                        ModeName(_mode),
+                        StringComparer.Ordinal))
+                {
+                    continue;
+                }
+
+                string operationFingerprint = OperationFingerprint(
+                    draft.Surface.Kind,
+                    action.Kind);
+                if (operationFingerprint == "unavailable")
+                    continue;
+
+                BridgeMigrationPermissionCandidate encountered = candidate with
+                {
+                    EvidenceIds = candidate.EvidenceIds
+                        .Append("admission:encounter_source_resolved")
+                        .Append($"surface-signature:{draft.Signature}")
+                        .Distinct(StringComparer.Ordinal)
+                        .ToArray()
+                };
+                EnsureSessionCanary(
+                    encountered,
+                    draft.Game,
+                    bridge,
+                    _lastPatchInventory,
+                    environmentDigest,
+                    operationFingerprint,
+                    "encounter_source_resolved");
+            }
+
+            CompatibilityAssessment compatibility = Apply(
+                draft.Game,
+                bridge,
+                _lastPatchInventory);
+            bool encounterTrialActive = compatibility.ActionPermissionScopes.Any(scope =>
+                string.Equals(
+                    scope.AdmissionBasis,
+                    "encounter_source_resolved",
+                    StringComparison.Ordinal));
+            return draft with
+            {
+                Game = draft.Game with { Compatibility = compatibility },
+                Warnings = encounterTrialActive
+                    ? draft.Warnings
+                        .Append("encounter_provisional_trial: current source-resolved actions may execute session-only; no persistent compatibility claim was inherited or created.")
+                        .ToArray()
+                    : draft.Warnings
             };
         }
     }
@@ -247,6 +350,10 @@ internal sealed class BridgePermissionManager
                 && string.Equals(
                     scope.OperationFingerprint,
                     expected.OperationFingerprint,
+                    StringComparison.Ordinal)
+                && string.Equals(
+                    scope.AdmissionBasis,
+                    expected.AdmissionBasis,
                     StringComparison.Ordinal);
         }
     }
@@ -365,13 +472,77 @@ internal sealed class BridgePermissionManager
                     .ToArray(),
                 new[]
                 {
-                    "The reviewed exact-environment policy is an absolute permission ceiling.",
-                    "Session auto-approval is volatile and cannot create persistent qualification.",
+                    "Persistent qualification never transfers to a different exact environment.",
+                    "Encounter provisional trials are volatile and cannot create persistent qualification.",
                     "D evidence recommends eligibility; Gateway runtime checks remain authoritative.",
-                    "Gray and migration modes never bypass exact identity, native legality, semantic completion, or quarantine."
+                    "Migration exploration never bypasses exact identity, unique ownership, native legality, semantic completion, or quarantine."
                 });
         }
     }
+
+    private void AppendActiveEncounterScopes(
+        ICollection<ActionPermissionScope> scopes,
+        string environmentDigest,
+        string patchDigest)
+    {
+        var existing = scopes
+            .Select(scope => Key(scope.SurfaceKind, scope.Operation))
+            .ToHashSet(StringComparer.Ordinal);
+        foreach (BridgePermissionGrantRecord grant in _currentGrants.Values)
+        {
+            string key = Key(grant.SurfaceKind, grant.Operation);
+            if (existing.Contains(key)
+                || grant.Status != "active"
+                || grant.ExpiresAt <= _clock()
+                || grant.EnvironmentDigest != environmentDigest
+                || grant.PatchDigest != patchDigest
+                || grant.Tier is not ("session_canary" or "session_trial_confirmed"))
+            {
+                continue;
+            }
+
+            scopes.Add(new ActionPermissionScope(
+                grant.SurfaceKind,
+                grant.Operation,
+                "canary")
+            {
+                GrantId = grant.GrantId,
+                GrantVersion = grant.GrantVersion,
+                RuntimeEpoch = grant.RuntimeEpoch,
+                EnvironmentDigest = grant.EnvironmentDigest,
+                PatchDigest = grant.PatchDigest,
+                OperationFingerprint = grant.OperationFingerprint,
+                AdmissionBasis = grant.AdmissionBasis
+            });
+            existing.Add(key);
+        }
+    }
+
+    private bool EncounterEnvironmentEligible(
+        GameBuildIdentity game,
+        BridgeServerIdentity bridge) =>
+        BridgeMigrationPermissionPolicy.LoadError == null
+        && !string.IsNullOrWhiteSpace(game.Version)
+        && !string.IsNullOrWhiteSpace(game.Commit)
+        && game.MainAssemblyHash.HasValue
+        && game.Modset is
+        {
+            ExactPermissionEligible: true
+        } or
+        {
+            QualificationCandidateEligible: true
+        }
+        && !string.IsNullOrWhiteSpace(bridge.AssemblyFileSha256)
+        && !string.IsNullOrWhiteSpace(bridge.ModuleVersionId)
+        && _lastPatchInventory.Status == "clean_known_owners";
+
+    private static bool HasApplicableScope(
+        CompatibilityAssessment compatibility,
+        string surfaceKind,
+        string operation) =>
+        compatibility.ActionPermissionScopes.Any(scope =>
+            string.Equals(scope.SurfaceKind, surfaceKind, StringComparison.Ordinal)
+            && string.Equals(scope.Operation, operation, StringComparison.Ordinal));
 
     private BridgePermissionGrantRecord EnsureSessionCanary(
         BridgeMigrationPermissionCandidate candidate,
@@ -379,7 +550,8 @@ internal sealed class BridgePermissionManager
         BridgeServerIdentity bridge,
         BridgeRuntimePatchInventoryInfo patchInventory,
         string environmentDigest,
-        string operationFingerprint)
+        string operationFingerprint,
+        string admissionBasis = "installed_candidate_package")
     {
         string key = Key(candidate.SurfaceKind, candidate.Operation);
         if (_currentGrants.TryGetValue(key, out BridgePermissionGrantRecord? current))
@@ -399,7 +571,8 @@ internal sealed class BridgePermissionManager
             issuedAt: now,
             expiresAt: now.AddSeconds(candidate.SessionTtlSeconds),
             supersedes: null,
-            revocationReason: null);
+            revocationReason: null,
+            admissionBasis: admissionBasis);
     }
 
     private void Promote(BridgePermissionGrantRecord current)
@@ -416,7 +589,7 @@ internal sealed class BridgePermissionManager
                 now),
             GrantVersion = current.GrantVersion + 1,
             Status = "active",
-            Tier = "session_auto_approved",
+            Tier = "session_trial_confirmed",
             IssuedAt = now,
             ExpiresAt = current.ExpiresAt,
             SupersedesGrantId = current.GrantId,
@@ -478,7 +651,8 @@ internal sealed class BridgePermissionManager
         DateTimeOffset issuedAt,
         DateTimeOffset expiresAt,
         string? supersedes,
-        string? revocationReason)
+        string? revocationReason,
+        string admissionBasis)
     {
         var grant = new BridgePermissionGrantRecord(
             1,
@@ -509,7 +683,10 @@ internal sealed class BridgePermissionManager
             expiresAt,
             supersedes,
             revocationReason,
-            candidate.EvidenceIds);
+            candidate.EvidenceIds)
+        {
+            AdmissionBasis = admissionBasis
+        };
         _currentGrants[Key(candidate.SurfaceKind, candidate.Operation)] = grant;
         _grantLedger.Add(grant);
         return grant;

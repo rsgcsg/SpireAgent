@@ -8,7 +8,7 @@ matrix. This document records the Re-SpireAgent consumption boundary.
 
 ## Bridge v2 Current Client Contract
 
-Re strictly decodes `2.0-preview.68`. It accepts Bridge actions only when:
+Re strictly decodes `2.0-preview.69`. It accepts Bridge actions only when:
 
 - game, Modset, Bridge assembly SHA-256, MVID, and runtime identities match
   exact scoped capabilities and state;
@@ -22,6 +22,8 @@ Re strictly decodes `2.0-preview.68`. It accepts Bridge actions only when:
   completion boundary and witness;
 - every dynamic scope references the Gateway permission ledger's unique
   current active exact-environment/runtime/Patch grant;
+- each dynamic scope and grant agree on whether admission came from an
+  installed package or the current source-resolved encounter;
 - the current Surface is Bridge-advertised and every action is state-bound.
 
 The required identity shadow and runtime contract/source shadow are raw

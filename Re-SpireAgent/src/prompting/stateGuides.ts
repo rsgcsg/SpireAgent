@@ -23,6 +23,7 @@ export const CONTEXT_GUIDES: Record<SemanticContextKind, StateGuide> = {
   menu: guide("context-menu", "Semantic context is a top-level menu."),
   run_ended: guide("context-run-ended", "The run has ended. Bounded runs stop before choosing a restart action."),
   combat_transition: guide("context-combat-transition", "Combat is starting or resolving. The phase is explicit, no player input owner exists, and the agent must only poll."),
+  run_transition: guide("context-run-transition", "A standard run has committed and its first player-visible state is still mounting. No input owner exists; only poll."),
   unknown: guide("context-unknown", "The semantic origin is unknown. Only a separately supported surface may be actionable; never infer missing game facts.")
 };
 

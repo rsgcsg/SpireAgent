@@ -1,12 +1,12 @@
 # Bridge v2 Integration
 
-> Current source-truth status, 2026-07-27: Re and C# share the
-> `2.0-preview.68` source consumer contract; Re normalized schema is `27`.
+> Current source-truth status, 2026-07-28: Re and C# share the
+> `2.0-preview.69` source consumer contract; Re normalized schema is `28`.
 > Gate 1 is closed as a bounded ordinary-single-player v2 connector baseline.
 > Preview.61 supplied the final Neow's Fury runtime seal; Preview.62 adds
 > policy provenance and registry adaptation without inheriting qualification.
-> Preview.68 requires cold-load evidence. The last loaded exact artifact is
-> Preview.67; its packages cannot authorize the new MVID. Five contracts are
+> Preview.69 requires cold-load evidence. The last verified loaded artifact is
+> Preview.68; its grants cannot authorize the new MVID. Five contracts are
 > explicit high-precision rows; 82 remain conservative manifest-derived
 > identity/test-confirm fallbacks rather than semantic qualification.
 
@@ -28,7 +28,7 @@ consumption.
 
 ## Current Scope
 
-Re-SpireAgent implements the strict `2.0-preview.68` consumer contract. When a
+Re-SpireAgent implements the strict `2.0-preview.69` consumer contract. When a
 matching Bridge exists, authority is read from capabilities rather than
 inferred from implementation or historical evidence.
 
@@ -43,9 +43,9 @@ and imports a legal action only when its
 `surface_kind + operation` pair is explicitly advertised. Empty qualified,
 canary, or Inspection lists never imply wildcard authority. State,
 capabilities, bundles, and Inspections must agree on game identity, Modset
-fingerprint, Bridge assembly SHA-256, MVID, and runtime instance. Exact Modset
-permission additionally requires the negotiated loaded `STS2_MCP` module and
-no other loaded gameplay Mod.
+fingerprint, Bridge assembly SHA-256, MVID, and runtime instance. Encounter
+trial admission additionally requires the negotiated loaded `STS2_MCP` module
+and an exact or explicitly candidate Modset classification.
 
 Preview.62 also requires state and capabilities to agree on the reviewed
 exact-environment policy ID, its digest and adaptation level. These fields are
@@ -56,6 +56,9 @@ Patch inventory and complete operation-scope grant bindings. A dynamic scope
 must reference the unique current active grant for the same operation and exact
 environment. Re preserves superseded/revoked grant versions for audit, imports
 no action from them, and cannot promote, quarantine or persist permission.
+Preview.69 also verifies each dynamic scope's `admission_basis`. An
+`encounter_source_resolved` scope is valid only when the current Gateway grant
+is migration-scoped, runtime-bound, and carries explicit encounter evidence.
 Capabilities are negotiated once, so grant IDs may legitimately advance after
 a semantic completion; each response is independently exact-validated while
 the stable authorization set must remain coherent.
@@ -87,9 +90,10 @@ state/action binding until a separately reviewed Organic migration.
 The first exact Preview.63 production-path canary submitted advertised
 `main_menu/continue_run` once and settled at `reward_flow/reward_claim`. The
 Gateway promoted that operation from `session_canary` to
-`session_auto_approved` for the current runtime epoch. This proves the
-consumer contract and one low-risk session loop, not persistent qualification
-or broader permission.
+the historical `session_auto_approved` tier for that runtime epoch. Preview.69
+renames future equivalent results to `session_trial_confirmed`. Either proves
+the consumer contract and one low-risk session loop, not persistent
+qualification or broader permission.
 
 Preview.65 adds strict, read-only consumption of the Gateway qualification
 projection. A short-lived `session_canary` package may only seed the existing
@@ -98,11 +102,11 @@ one current `qualified` package matches the exact environment, operation
 fingerprint, completion boundary and witness. Re cannot install, promote,
 revoke, roll back, or repair either package tier.
 
-Preview.68 makes the public `npm run agent:run` an Operator Shell entry. The
-shell verifies exact source/built/installed/loaded identity and asks the
-Gateway to revalidate exact trial packages before invoking the internal direct
-loop. This removes hand-composed migration arguments without making Re or D an
-authority. After terminal game-over cleanup the bounded loop stops at the
+Preview.69 makes the public `npm run agent:run` probe the current state before
+using the legacy package migration fallback. A diagnostic no-input transition
+may start Re; the Gateway admits only a later current source-resolved action.
+This removes bulk preinstallation from the target path without making Re or D
+an authority. After terminal game-over cleanup the bounded loop stops at the
 top-level menu even though initial run entry was allowed.
 
 Preview.66 permits multiple exact environments to retain packages for the same
@@ -241,7 +245,9 @@ transitions only when they are `settling`, have `none_fail_closed` authority,
 carry active-run shared state, publish no actions, and report no missing
 completeness field. They normalize to
 `combat_transition(setup|resolution) + no_action` and cannot inherit v1
-authority. No other context may compose with `no_action`.
+authority. Preview.69 also admits the exact post-embark
+`run_transition(setup/awaiting_run_state) + no_action` mounting gap. No other
+context may compose with `no_action`.
 
 ## State Identity
 

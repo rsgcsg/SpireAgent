@@ -16,6 +16,9 @@ not inherit authority from the archived root SpireAgent runtime.
    [ADR-0003](decisions/ADR-0003-operation-retirement-and-native-continuation-migration.md)
    defines the accepted operation-retirement and native-continuation
    refinement without changing current authority prematurely.
+   [ADR-0004](decisions/ADR-0004-risk-calibrated-encounter-trial-and-scoped-claims.md)
+   separates diagnostic observation, volatile encounter trial admission, and
+   persistent scoped claims.
 4. [Roadmap](ROADMAP.md): current functional gates and retirement sequence.
 5. [Program plan](PROGRAM_PLAN.md): cross-component dependencies and future
    admission gates without changing the current delivery priority.
@@ -33,6 +36,9 @@ not inherit authority from the archived root SpireAgent runtime.
 
 Current cross-component audits:
 
+- [Preview.69 risk-calibrated trial and reliability migration](audits/PREVIEW_69_RISK_CALIBRATED_TRIAL_AND_RELIABILITY_MIGRATION_2026-07-28.md):
+  latest-run root causes, encounter-only provisional authority, session claim
+  semantics, direct runtime fixes, test boundary, and live non-claims.
 - [Preview.68 long-run reliability and native-contract migration audit](audits/PREVIEW_68_LONG_RUN_RELIABILITY_AND_NATIVE_CONTRACT_MIGRATION_2026-07-27.md):
   exact three-run failure attribution, Kifuda source/continuation evidence,
   coherent-read and one-game-boundary repairs, and the current architecture

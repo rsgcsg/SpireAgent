@@ -20,7 +20,11 @@ import { fixture } from "./helpers.js";
 function permissionScope(
   surfaceKind: string,
   operation: string,
-  tier: "qualified" | "canary"
+  tier: "qualified" | "canary",
+  admissionBasis:
+    | "reviewed_or_persisted_scope"
+    | "installed_candidate_package"
+    | "encounter_source_resolved" = "reviewed_or_persisted_scope"
 ) {
   return {
     surface_kind: surfaceKind,
@@ -31,7 +35,8 @@ function permissionScope(
     runtime_epoch: "not_session_bound",
     environment_digest: "fixture-environment",
     patch_digest: "fixture-patch",
-    operation_fingerprint: `fixture-operation-${surfaceKind}-${operation}`
+    operation_fingerprint: `fixture-operation-${surfaceKind}-${operation}`,
+    admission_basis: admissionBasis
   };
 }
 
@@ -329,7 +334,7 @@ const DECK_ENCHANT_STATE = {
     status: "resolved_runtime_contract",
     instance_id: "contract-instance-deck-enchant-1",
     surface_kind: "deck_enchant_selection",
-    semantic_contract_id: "bridge.contract.deck_enchant_selection.self_help_book_event.2.0-preview.68",
+    semantic_contract_id: "bridge.contract.deck_enchant_selection.self_help_book_event.2.0-preview.69",
     declared_binding: "fixture exact source binding",
     operations: [{ operation: "toggle_card", evidence_status: "surface_level_only", published: true }],
     current_authority_tier: "canary",
@@ -2388,6 +2393,24 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       kind: "combat_transition",
       phase: "setup"
     });
+
+    const runStart = structuredClone(COMBAT_RESOLUTION_NO_ACTION_STATE) as any;
+    runStart.context = {
+      kind: "run_transition",
+      phase: "setup",
+      transition: "awaiting_run_state"
+    };
+    runStart.surface.message = "The standard run is mounting its first visible state.";
+    const runStartEnvelope = normalizeCurrentState(
+      wrapBridgeV2State({ state: runStart, capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    );
+    expect(runStartEnvelope.currentState).toMatchObject({
+      context: { kind: "run_transition", phase: "setup" },
+      surface: { kind: "no_action", reason: "settling" },
+      stability: "settling",
+      actionAuthority: "none"
+    });
   });
 
   it("rejects authority, action, completeness, or context contradictions in no-input transitions", () => {
@@ -2405,7 +2428,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
 
     const wrongContext = structuredClone(COMBAT_RESOLUTION_NO_ACTION_STATE) as any;
     wrongContext.context = structuredClone(DECK_ENCHANT_STATE.context);
-    expect(() => decodeBridgeV2State(wrongContext)).toThrow("requires combat_transition context");
+    expect(() => decodeBridgeV2State(wrongContext)).toThrow("requires a typed lifecycle-transition context");
 
     const incomplete = structuredClone(COMBAT_RESOLUTION_NO_ACTION_STATE) as any;
     incomplete.completeness.missing = ["transition_owner"];
@@ -2889,7 +2912,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 27,
+      normalizedSchemaVersion: 28,
       stability: "actionable",
       actionAuthority: "bridge_advertised",
       context: {
@@ -2970,7 +2993,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 27,
+      normalizedSchemaVersion: 28,
       stability: "actionable",
       actionAuthority: "bridge_advertised",
       context: { kind: "menu", screen: "character_select" },
@@ -3509,7 +3532,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 27,
+      normalizedSchemaVersion: 28,
       actionAuthority: "bridge_advertised",
       context: { kind: "event", ancient: true, inDialogue: true },
       surface: {
@@ -3557,7 +3580,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 27,
+      normalizedSchemaVersion: 28,
       actionAuthority: "bridge_advertised",
       context: { kind: "rest" },
       surface: {
@@ -3635,7 +3658,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 27,
+      normalizedSchemaVersion: 28,
       stability: "actionable",
       actionAuthority: "bridge_advertised",
       context: {
@@ -3845,7 +3868,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 27,
+      normalizedSchemaVersion: 28,
       actionAuthority: "bridge_advertised",
       context: {
         kind: "map",
@@ -4358,7 +4381,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 27,
+      normalizedSchemaVersion: 28,
       actionAuthority: "bridge_advertised",
       context: { kind: "combat", encounterType: "elite" },
       surface: {
@@ -4416,7 +4439,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(graveblastEnvelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 27,
+      normalizedSchemaVersion: 28,
       actionAuthority: "bridge_advertised",
       context: { kind: "combat" },
       surface: {
@@ -4464,7 +4487,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(cleanseEnvelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 27,
+      normalizedSchemaVersion: 28,
       actionAuthority: "bridge_advertised",
       context: { kind: "combat" },
       surface: {
@@ -4515,7 +4538,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(seanceEnvelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 27,
+      normalizedSchemaVersion: 28,
       actionAuthority: "bridge_advertised",
       context: { kind: "combat" },
       surface: {
@@ -4591,7 +4614,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(dredgeEnvelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 27,
+      normalizedSchemaVersion: 28,
       actionAuthority: "bridge_advertised",
       context: { kind: "combat" },
       surface: {
@@ -4862,7 +4885,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 27,
+      normalizedSchemaVersion: 28,
       actionAuthority: "bridge_advertised",
       context: { kind: "combat" },
       surface: {
@@ -4920,7 +4943,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 27,
+      normalizedSchemaVersion: 28,
       actionAuthority: "bridge_advertised",
       context: { kind: "event", eventId: "NEOW" },
       surface: {
@@ -4987,7 +5010,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
         TEST_SOURCE
       );
       expect(envelope.currentState).toMatchObject({
-        normalizedSchemaVersion: 27,
+        normalizedSchemaVersion: 28,
         stability: "actionable",
         actionAuthority: "bridge_advertised",
         context: { kind: "combat" },
@@ -5158,7 +5181,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 27,
+      normalizedSchemaVersion: 28,
       actionAuthority: "bridge_advertised",
       context: { kind: "event", eventId: "BRAIN_LEECH" },
       surface: {
@@ -5207,7 +5230,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 27,
+      normalizedSchemaVersion: 28,
       actionAuthority: "bridge_advertised",
       context: { kind: "event", eventId: "NEOW" },
       surface: {
@@ -6409,6 +6432,90 @@ function handleTestControlRequest(
 }
 
 describe("Bridge v2 session permission governance", () => {
+  it("accepts encounter provisional authority only as an exact runtime-scoped trial", () => {
+    const capabilities = structuredClone(CAPABILITIES);
+    const grantId = "grant-fixture-encounter-shop-open";
+    const scope = permissionScope("shop_room", "open_shop_inventory", "canary");
+    Object.assign(scope, {
+      grant_id: grantId,
+      runtime_epoch: capabilities.bridge.runtime_instance_id,
+      admission_basis: "encounter_source_resolved"
+    });
+    capabilities.game.compatibility.status = "provisional_trial_scoped";
+    capabilities.game.compatibility.adaptation_level = "encounter_provisional_trial";
+    capabilities.game.compatibility.action_canary_surface_kinds = ["shop_room"];
+    capabilities.game.compatibility.action_permission_scopes = [scope];
+    capabilities.permission_system.mode = "migration_exploration";
+    (capabilities.permission_system.grants as unknown as Array<Record<string, unknown>>).push({
+      schema_version: 1,
+      grant_id: grantId,
+      grant_version: 1,
+      current: true,
+      status: "active",
+      mode: "migration_exploration",
+      surface_kind: "shop_room",
+      operation: "open_shop_inventory",
+      tier: "session_canary",
+      risk_class: "reversible_navigation",
+      runtime_epoch: capabilities.bridge.runtime_instance_id,
+      environment_digest: scope.environment_digest,
+      gateway_assembly_sha256: capabilities.bridge.assembly_file_sha256,
+      gateway_module_version_id: capabilities.bridge.module_version_id,
+      modset_fingerprint: capabilities.game.modset.fingerprint,
+      patch_digest: scope.patch_digest,
+      operation_fingerprint: scope.operation_fingerprint,
+      evidence_bundle_digest: capabilities.permission_system.policy_digest,
+      issued_at: "2026-07-28T00:00:00Z",
+      expires_at: "2026-07-28T04:00:00Z",
+      supersedes_grant_id: null,
+      revocation_reason: null,
+      evidence_ids: [
+        "admission:encounter_source_resolved",
+        "surface-signature:fixture"
+      ],
+      admission_basis: "encounter_source_resolved"
+    });
+
+    const decoded = decodeBridgeV2Capabilities(capabilities).data;
+
+    expect(decoded.game.compatibility.adaptation_level)
+      .toBe("encounter_provisional_trial");
+    expect(decoded.permission_system.grants[0]?.tier).toBe("session_canary");
+  });
+
+  it("rejects encounter authority without explicit encounter admission evidence", () => {
+    const capabilities = structuredClone(CAPABILITIES);
+    (capabilities.permission_system.grants as unknown as Array<Record<string, unknown>>).push({
+      schema_version: 1,
+      grant_id: "grant-fixture-invalid-encounter",
+      grant_version: 1,
+      current: true,
+      status: "active",
+      mode: "migration_exploration",
+      surface_kind: "shop_room",
+      operation: "open_shop_inventory",
+      tier: "session_canary",
+      risk_class: "reversible_navigation",
+      runtime_epoch: capabilities.bridge.runtime_instance_id,
+      environment_digest: "fixture-environment",
+      gateway_assembly_sha256: capabilities.bridge.assembly_file_sha256,
+      gateway_module_version_id: capabilities.bridge.module_version_id,
+      modset_fingerprint: capabilities.game.modset.fingerprint,
+      patch_digest: capabilities.permission_system.patch_inventory.digest,
+      operation_fingerprint: "fixture-operation-shop-room-open",
+      evidence_bundle_digest: capabilities.permission_system.policy_digest,
+      issued_at: "2026-07-28T00:00:00Z",
+      expires_at: "2026-07-28T04:00:00Z",
+      supersedes_grant_id: null,
+      revocation_reason: null,
+      evidence_ids: ["fixture-without-admission"],
+      admission_basis: "encounter_source_resolved"
+    });
+
+    expect(() => decodeBridgeV2Capabilities(capabilities))
+      .toThrow("lacks migration-scoped admission evidence");
+  });
+
   it("accepts an exact runtime-bound session canary grant", () => {
     const capabilities = structuredClone(CAPABILITIES);
     (capabilities.permission_system.grants as unknown as Array<Record<string, unknown>>).push({
@@ -6434,7 +6541,8 @@ describe("Bridge v2 session permission governance", () => {
       expires_at: "2026-07-25T04:00:00Z",
       supersedes_grant_id: null,
       revocation_reason: null,
-      evidence_ids: ["fixture"]
+      evidence_ids: ["fixture"],
+      admission_basis: "installed_candidate_package"
     });
 
     expect(decodeBridgeV2Capabilities(capabilities).data.permission_system.grants)
@@ -6493,7 +6601,8 @@ describe("Bridge v2 session permission governance", () => {
       expires_at: "2026-07-25T04:00:00Z",
       supersedes_grant_id: null,
       revocation_reason: null,
-      evidence_ids: ["fixture"]
+      evidence_ids: ["fixture"],
+      admission_basis: "installed_candidate_package"
     });
 
     expect(decodeBridgeV2Capabilities(capabilities).data.permission_system.grants)
@@ -6527,7 +6636,8 @@ describe("Bridge v2 persistent qualification governance", () => {
       runtime_epoch: "not_session_bound",
       environment_digest: environmentDigest,
       patch_digest: patchDigest,
-      operation_fingerprint: contractDigest
+      operation_fingerprint: contractDigest,
+      admission_basis: "reviewed_or_persisted_scope"
     }];
     capabilities.qualification_system = {
       schema_version: 1,
@@ -6636,6 +6746,7 @@ describe("Bridge v2 persistent qualification governance", () => {
     scope.tier = "canary";
     scope.grant_id = grantId;
     scope.runtime_epoch = capabilities.bridge.runtime_instance_id;
+    scope.admission_basis = "installed_candidate_package";
     qualification.authority_tier = "session_canary";
     capabilities.qualification_system.persistent_authority_enabled = false;
     capabilities.qualification_system.session_canary_candidate_enabled = true;
@@ -6663,7 +6774,8 @@ describe("Bridge v2 persistent qualification governance", () => {
       expires_at: "2026-07-25T04:00:00Z",
       supersedes_grant_id: null,
       revocation_reason: null,
-      evidence_ids: ["candidate-package-fixture"]
+      evidence_ids: ["candidate-package-fixture"],
+      admission_basis: "installed_candidate_package"
     });
 
     const decoded = decodeBridgeV2Capabilities(capabilities).data;
@@ -6694,7 +6806,8 @@ describe("Bridge v2 persistent qualification governance", () => {
       runtime_epoch: capabilities.bridge.runtime_instance_id,
       environment_digest: environmentDigest,
       patch_digest: patchDigest,
-      operation_fingerprint: contractDigest
+      operation_fingerprint: contractDigest,
+      admission_basis: "installed_candidate_package"
     });
     (capabilities.qualification_system.operation_contracts as unknown as
       Array<Record<string, unknown>>).push({
@@ -6761,7 +6874,8 @@ describe("Bridge v2 persistent qualification governance", () => {
       expires_at: "2026-07-25T04:00:00Z",
       supersedes_grant_id: null,
       revocation_reason: null,
-      evidence_ids: ["qualification-map-canary"]
+      evidence_ids: ["qualification-map-canary"],
+      admission_basis: "installed_candidate_package"
     });
 
     const decoded = decodeBridgeV2Capabilities(capabilities).data;
@@ -6827,7 +6941,8 @@ describe("Bridge v2 persistent qualification governance", () => {
       runtime_epoch: capabilities.bridge.runtime_instance_id,
       environment_digest: environmentDigest,
       patch_digest: patchDigest,
-      operation_fingerprint: canaryFingerprint
+      operation_fingerprint: canaryFingerprint,
+      admission_basis: "installed_candidate_package"
     });
     (capabilities.qualification_system.operation_contracts as unknown as
       Array<Record<string, unknown>>).push({
@@ -6871,7 +6986,8 @@ describe("Bridge v2 persistent qualification governance", () => {
       expires_at: "2026-07-25T04:00:00Z",
       supersedes_grant_id: null,
       revocation_reason: null,
-      evidence_ids: ["candidate-package-fixture"]
+      evidence_ids: ["candidate-package-fixture"],
+      admission_basis: "installed_candidate_package"
     });
     capabilities.surfaces = capabilities.surfaces.map((surface) => surface.kind === "main_menu"
       ? {

@@ -100,6 +100,20 @@ export function evaluateEnvironmentReadiness(capabilities) {
   const observationReady = compatibility?.state_observation_allowed === true;
   const inspectionReady = compatibility?.inspection_allowed === true;
   const mutationReady = compatibility?.action_execution_allowed === true;
+  const exactPermissionEligible = modset?.exact_permission_eligible === true
+    || modsetStatus === "exact_bridge_only";
+  const qualificationCandidateEligible =
+    modset?.qualification_candidate_eligible === true;
+  const persistentQualificationEligible =
+    modset?.persistent_qualification_eligible === true;
+  const permissionMode = capabilities?.permission_system?.mode ?? null;
+  const boundedModsetEligible = exactPermissionEligible
+    || qualificationCandidateEligible
+    || persistentQualificationEligible;
+  const provisionalTrialReady = observationReady
+    && boundedModsetEligible
+    && compatibility?.adaptation_level === "diagnostic_candidate"
+    && permissionMode === "migration_exploration";
   const blockers = [];
   if (!capabilities) blockers.push("gateway_unreachable");
   if (hazardousModset) blockers.push("hazardous_mod_state_detected");
@@ -111,7 +125,12 @@ export function evaluateEnvironmentReadiness(capabilities) {
     observation_ready: observationReady,
     inspection_ready: inspectionReady,
     mutation_ready: mutationReady,
+    provisional_trial_ready: provisionalTrialReady,
     modset_status: modsetStatus,
+    exact_permission_eligible: exactPermissionEligible,
+    qualification_candidate_eligible: qualificationCandidateEligible,
+    persistent_qualification_eligible: persistentQualificationEligible,
+    permission_mode: permissionMode,
     compatibility_status: compatibility?.status ?? null,
     adaptation_level: compatibility?.adaptation_level ?? null,
     blockers
@@ -174,14 +193,32 @@ export function agentRunPreflightErrors(
   if (status?.mod_installation?.exact_permission_blocker === true) {
     errors.push("duplicate_gateway_manifests_detected");
   }
-  if (status?.modset_status !== "exact_bridge_only") {
-    errors.push("exact_bridge_only_modset_required");
+  if (status?.exact_permission_eligible !== true
+      && status?.qualification_candidate_eligible !== true
+      && status?.persistent_qualification_eligible !== true
+      && status?.modset_status !== "exact_bridge_only") {
+    errors.push("bounded_modset_permission_required");
   }
   if (requireObservation && status?.observation_ready !== true) {
     errors.push("normal_observation_disabled");
   }
-  if (requireMutation && status?.mutation_ready !== true) errors.push("mutation_disabled");
+  if (requireMutation
+      && status?.mutation_ready !== true
+      && status?.provisional_trial_ready !== true) {
+    errors.push("mutation_and_provisional_trial_disabled");
+  }
   return [...new Set(errors)];
+}
+
+export function selectAgentAuthorityPath(status) {
+  if (status?.observation_ready !== true) return "legacy_migration_required";
+  if (status?.mutation_ready === true) {
+    return "encounter_provisional_or_existing_authority";
+  }
+  if (status?.provisional_trial_ready === true) {
+    return "encounter_provisional_ready_on_first_actionable_surface";
+  }
+  return "legacy_migration_required";
 }
 
 function sourceProtocol(file, pattern) {
@@ -639,13 +676,24 @@ async function prepareAgentRun(options) {
     throw new Error(`Agent preflight rejected loaded environment: ${beforeErrors.join(", ")}`);
   }
 
-  delegate(
-    "tools/connector-migration-orchestrator.mjs",
-    "cycle",
-    defaultMigrationCycleArgs({ ...options, endpoint })
-  );
+  let authorityPath = selectAgentAuthorityPath(before);
+  let after = before;
+  if (before.observation_ready) {
+    await readJson(endpoint, "/api/v2/state", true);
+    after = await inspect({ ...options, endpoint }, true);
+    authorityPath = selectAgentAuthorityPath(after);
+  }
 
-  const after = await inspect({ ...options, endpoint }, true);
+  if (authorityPath === "legacy_migration_required") {
+    delegate(
+      "tools/connector-migration-orchestrator.mjs",
+      "cycle",
+      defaultMigrationCycleArgs({ ...options, endpoint })
+    );
+    after = await inspect({ ...options, endpoint }, true);
+    authorityPath = "legacy_installed_candidate_fallback";
+  }
+
   const afterErrors = agentRunPreflightErrors(after, { requireMutation: true });
   if (afterErrors.length > 0) {
     throw new Error(
@@ -661,6 +709,7 @@ async function prepareAgentRun(options) {
     compatibility_status: after.compatibility_status,
     permission_mode: after.permission_mode,
     qualification_status: after.qualification_status,
+    authority_path: authorityPath,
     non_claims: [
       "preflight is not Organic qualification",
       "unsupported surfaces remain fail closed",

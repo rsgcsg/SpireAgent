@@ -283,26 +283,17 @@ internal static class BridgeContextBuilder
 
     private static string? BuildOrbDescription(OrbModel orb)
     {
-        try
+        return McpMod.SafeGetText(() =>
         {
-            // OrbModel.SmartDescription intentionally has no variables. The
-            // native hover path injects the current Passive/Evoke values before
-            // formatting, so it is the player-visible source of truth.
-            HoverTip hover = orb.HoverTips
-                .OfType<HoverTip>()
-                .FirstOrDefault(tip => tip.Id == orb.Id.ToString());
-            if (string.IsNullOrWhiteSpace(hover.Description))
-                hover = orb.HoverTips.OfType<HoverTip>().LastOrDefault();
-            if (!string.IsNullOrWhiteSpace(hover.Description))
-                return McpMod.StripRichTextTags(hover.Description).Replace("\n", " ");
-        }
-        catch
-        {
-            // The exact values remain separately visible below. A transient
-            // hover failure must not collapse the entire combat observation.
-        }
-
-        return McpMod.SafeGetText(() => orb.Description)?.Replace("\n", " ");
+            // This mirrors OrbModel.HoverTips. Reading Description or
+            // SmartDescription without these variables emits a localization
+            // error and can make a coherent combat observation noisy or fail.
+            var description = orb.SmartDescription;
+            description.Add("energyPrefix", orb.Owner.Character.CardPool.Title);
+            description.Add("Passive", orb.PassiveVal);
+            description.Add("Evoke", orb.EvokeVal);
+            return description;
+        })?.Replace("\n", " ");
     }
 
     private static IReadOnlyList<VisibleCombatCompanion> BuildCompanions(

@@ -6,6 +6,8 @@ The single accepted destination is the
 [Semantic Gateway Two-Plane Target Architecture](decisions/ADR-0002-semantic-gateway-two-plane-target-architecture.md).
 Its live-kernel identity migration is refined by
 [ADR-0003](decisions/ADR-0003-operation-retirement-and-native-continuation-migration.md).
+Its risk-calibrated trial/claim boundary is refined by
+[ADR-0004](decisions/ADR-0004-risk-calibrated-encounter-trial-and-scoped-claims.md).
 This document describes both the current implementation and its constrained
 migration toward that target. Historical ALDG, universal contract/Transaction
 IR, qualification-centric, and environment-migration proposals are evidence
@@ -106,20 +108,14 @@ target component.
 - Embedded adaptation data is validated before scope publication. Invalid
   source registries suppress their affected Surface only; invalid environment
   policy suppresses all authority and both cases emit typed diagnostics.
-- The reviewed exact-environment policy is the embedded baseline. Preview.66
-  may additionally admit exact operations through installed qualification
-  packages. Five high-precision contracts override 82 conservative identities
-  derived from the current 87-operation manifest. The fallback path is
-  identity/test-confirm only and is available solely in
-  `migration_exploration`; it does not infer semantic equivalence or bypass
-  native legality, Commit, completion, or quarantine. A short-lived candidate
-  package creates only a Gateway-owned session canary; a qualified package
-  requires two runtime epochs of exact Organic evidence. One global
-  append-only ledger supports multiple environments, with slots keyed by
-  environment + Surface + operation. Atomic store reload revalidates the
-  complete snapshot before any new scope is published. The same exact grant
-  or package scope is required at publication and execution; semantic failure
-  quarantines that operation.
+- Diagnostic observation, volatile trial admission, and persistent
+  compatibility claims are separate decisions. In `migration_exploration`, a
+  complete exact identity may admit only the current uniquely source-resolved
+  native action as a runtime-bound trial without preinstalling broad candidate
+  packages. This path still requires clean Patch identity, current legality,
+  native Commit, semantic completion and immediate local quarantine on
+  failure. It cannot write persistent qualification. Persistent packages keep
+  their exact-environment evidence, version, revoke and rollback gates.
 
 ## Rule-Aware Adaptation Boundary
 
@@ -137,8 +133,8 @@ have no action authority. Static structure, fixture success and a matching
 catalog entry cannot bypass exact runtime identity, execute-time validation,
 native Commit or Organic evidence.
 
-Build and Modset permission remains intentionally conservative. Preview.66
-adds non-authorizing Environment Profiles, exact package applicability,
+Build and Modset claims remain intentionally conservative. Preview.66 adds
+non-authorizing Environment Profiles, exact package applicability,
 component-level impact comparison, and a risk-based migration policy. A
 Profile, static similarity, or package candidate never proves semantic
 compatibility. See the
@@ -156,15 +152,18 @@ D evidence/recommendation (non-authorizing)
 `strict`, `balanced_gray`, `developer_gray`, and `migration_exploration` are
 Gateway modes. All retain exact game/Gateway/Modset identity, explicit
 operation scope, opaque state-bound actions, execute-time revalidation, native
-commit, semantic completion and unknown-no-retry. Migration mode broadens
-risk-class eligibility for exact explicit or manifest-derived operation
-identities with installed candidate packages; it is not wildcard authority.
+commit, semantic completion and unknown-no-retry. Migration mode admits either
+an installed exact candidate or the current source-resolved encounter under a
+bounded risk rule; it is not wildcard authority.
 Fallback identities require a non-empty witness emitted by the current
 Gateway and remain unqualified until full evidence and package promotion.
 
 Current dynamic grants bind runtime epoch, exact environment, Gateway SHA/MVID,
 Modset, Patch digest, operation fingerprint, evidence policy, expiry and
-supersession. They are volatile: restart is a complete rollback. Persistent
+supersession. `encounter_source_resolved` grants are created only for actions
+on the current resolved Surface; confirmed completion yields
+`session_trial_confirmed`, not durable approval. They are volatile: restart is
+a complete rollback. Persistent
 packages are a separate append-only local store and are revalidated at startup
 and on atomic file reload. The migration orchestrator may assemble and append
 packages outside the live API, but D and Re cannot activate either path through
@@ -178,26 +177,25 @@ and the
 
 ## Current Architectural Constraint
 
-The Gateway and Re share the mechanically checked `2.0-preview.68` source
+The Gateway and Re share the mechanically checked `2.0-preview.69` source
 contract. Gate 1 establishes a bounded v2 connector baseline: Re and the
 default MCP adapter are v2-only, Gateway v1 is retired, and historical v1 data
-is replay-only. Preview.68 must still be cold-loaded before it has runtime
-authority or evidence.
+is replay-only. Preview.69 must still be cold-loaded before it has runtime
+authority or evidence; the last verified loaded artifact remains Preview.68.
 
-Preview.67 real-runtime records now disprove its earlier zero-action status:
+Preview.68 real-runtime records establish the current defect evidence:
 145 actions settled across three inspected runs. Those runs also exposed an
 eager coherent-read race, an overly broad post-game run-entry permission, and
 a Kifuda purchase whose native parent task crosses into a deck-enchant child.
 Their provenance is `unrecorded`, so they are defect/coverage evidence rather
 than Organic qualification.
 
-Current authority still uses operation-scoped packages and the composite
-`state_id`. Preview.68 adds only non-authorizing runtime contract/source
-shadow metadata and a typed receipt completion boundary. ADR-0003 accepts
-retirement of `operation` as the final permission/compatibility identity, but
-requires shadow/dual-read migration before current authority changes. The 82
-manifest fallback identities remain test-confirm hypotheses, not semantic
-equivalence.
+Current grants still use `surface_kind + operation` and the composite
+`state_id`. Preview.69 removes bulk installed candidates from the target
+startup path but does not make operation the final compatibility identity.
+ADR-0003 still requires shadow/dual-read migration to native source/adapter/
+outcome/partition claims. The 82 manifest fallback identities remain rollback
+inventory and test-confirm hypotheses, not semantic equivalence.
 
 Kifuda is the first exact case satisfying ADR-0002's continuation admission
 rule. The shop action may complete at a typed continuation handoff only after

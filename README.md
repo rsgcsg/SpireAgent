@@ -18,8 +18,8 @@ third-party clients.
 
 ## Current Truth
 
-The active connector source shares `2.0-preview.68` between C# and
-Re-SpireAgent; Re normalized schema is `27`. Gate 1 is closed as a bounded
+The active connector source shares `2.0-preview.69` between C# and
+Re-SpireAgent; Re normalized schema is `28`. Gate 1 is closed as a bounded
 ordinary-single-player v2 connector baseline: Re and the default MCP adapter
 are v2-only, the entire Gateway `/api/v1` namespace is retired, and the final
 Neow's Fury lifecycle was completed under the recorded Preview.61 exact
@@ -34,12 +34,14 @@ non-authorizing identity shadow and adds coherent read-only observation retry,
 one-game terminal supervision, typed receipt completion boundaries, exact
 Kifuda continuation handoff, source-bound deck-enchant contracts, native
 hover-derived Orb text, and a non-authorizing runtime contract/source shadow.
+Preview.69 adds exact run-start settling, bounded semantic-cycle recovery, and
+ADR-0004 encounter-scoped provisional trials without making one success a
+persistent compatibility claim.
 
-The last loaded artifact remains Preview.67 on
-`v0.109.1|c8c577f6|-820620422`, SHA `100ddf42...74d`, MVID
-`65bd744d-270b-4026-84c4-2ee397eee4e2`, until Preview.68 is cold-started.
-Three inspected Preview.67 runs settled 145 actions and exposed the defects
-fixed by Preview.68. Their provenance is `unrecorded`, so they are real-runtime
+The last verified loaded artifact remains Preview.68 on
+`v0.109.1|c8c577f6|-820620422` until Preview.69 is cold-started. Recent
+Preview.68 runs exposed the defects fixed by Preview.69. Their provenance is
+`unrecorded`, so they are real-runtime
 defect/coverage evidence rather than Organic qualification. Preview.67
 permission does not authorize the new Preview.68 MVID.
 Exact source, loaded, candidate, Organic, and persistent evidence remain

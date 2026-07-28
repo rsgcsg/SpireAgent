@@ -14,6 +14,9 @@ Control Plane, plus a strict Re consumer. ADR-0003 refines the live kernel by
 retiring `operation` as the final compatibility identity through a shadow-first
 native-contract migration. Functional gates below are migration and evidence
 milestones within that architecture, not competing designs.
+ADR-0004 separates diagnostic observation, encounter-scoped session trials,
+and persistent compatibility claims; it does not weaken native legality or
+completion.
 
 ## Gate 0: Source Truth Repair
 
@@ -47,10 +50,10 @@ Tutor holdout.
 
 ## Gate 2: Decision-Plane And Player-Visible Information Closure
 
-Status: **active but bounded. Preview.67 completed 145 settled real-runtime
-actions across three inspected runs, but their provenance is `unrecorded` and
-does not qualify persistent authority. Preview.68 is the next source contract;
-it is not loaded until cold restart.**
+Status: **active but bounded. Preview.68 completed further real-runtime long
+runs and exposed run-start, semantic-cycle, and Orb-formatting defects.
+Preview.69 fixes those defects and implements ADR-0004, but is not loaded or
+Organic-qualified until cold restart.**
 
 Close decision-relevant visible-information gaps using shared state, context,
 surface, preview, and read-only inspection. Do not expose hidden RNG, draw
@@ -85,13 +88,14 @@ ADR-0003 forbids replacing it until dual-read parity exists.
 
 Gate 2 now proceeds in this order:
 
-1. cold-load and run Preview.68 under a fresh exact trial; verify coherent
-   observation, one-game stop, and Kifuda/selector continuation when natural;
+1. cold-load and run Preview.69 under a fresh encounter-scoped trial; verify
+   run-start settling, one-game stop, shop forward progress, and quarantine;
 2. expand non-authorizing adapter/outcome/source/partition shadow metadata
    across representative menu, navigation, shop, combat, reward, and selector
    families;
-3. separate game-semantic identity from current authority after ADR-0005 gates
-   pass, with rollback to composite identity;
+3. separate game-semantic identity from current authority after the
+   [ADR-0005](../../STS2MCP/docs/bridge-v2/ADR-0005-semantic-state-and-authority-identity-separation.md)
+   dual-read gates pass, with rollback to composite identity;
 4. dual-read current-scope capability summaries before reducing hot governance
    payloads;
 5. migrate claim/permission identity away from global operation only after
@@ -105,8 +109,8 @@ load split is demonstrated.
 
 ## Gate 3: Local Control Coordination Alpha
 
-Status: **Preview.64 behavior is included in the last loaded Preview.67 artifact.
-A bounded two-client check confirmed single-writer acquisition, competing
+Status: **Preview.64 behavior remains in the current source line. A bounded
+two-client check on Preview.67 confirmed single-writer acquisition, competing
 client rejection, release, and no remaining active controller. No game action
 was authorized by this coordination test.**
 

@@ -5,26 +5,14 @@ Re is the strict Agent consumer in the repository's accepted
 It may derive an evidence-tested model view, but it never becomes a second
 game-state, legality, permission, Commit, or completion authority.
 
-> Compatibility status, 2026-07-27: Re and C# share source contract
-> `2.0-preview.68`; Re normalized schema is `27`. Gate 1 is closed as a
-> bounded ordinary-single-player v2 connector baseline. Preview.61 supplied
-> the final Neow's Fury Organic runtime seal; Preview.62 source/audit evidence
-> does not automatically qualify its new registry entries. Preview.63 is
-> installed/cold-loaded locally; strict Re inspection and one real
-> `continue_run` session canary/auto-approval pass on its exact recorded
-> identity. Preview.64 added minimal local mutation coordination. Preview.65
-> added strict operation qualification state. Preview.66 adds
-> multi-environment package coexistence and an explicit `--allow-run-entry`
-> migration-run boundary. The final local Preview.66 binary has persistent
-> qualification only for `main_menu/continue_run` after exact two-epoch
-> Organic evidence and cold-restart revalidation. The Gateway projects five
-> explicit high-precision contracts plus 82 conservative manifest-derived
-> fallbacks; the other 86 operations are session canaries, not qualifications.
-> Preview.68 retains the non-authorizing state identity shadow and adds a
-> non-authorizing runtime contract/source shadow plus typed receipt completion
-> boundaries. Three Preview.67 runs supplied real-runtime defect and coverage
-> evidence, but their provenance is `unrecorded` and not Organic qualification.
-> Preview.68 requires a fresh exact trial after cold load.
+> Compatibility status, 2026-07-28: Re and C# share source contract
+> `2.0-preview.69`; Re normalized schema is `28`. Gate 1 is closed as a
+> bounded ordinary-single-player v2 baseline, not full game coverage.
+> Preview.69 adds typed run-start settling, bounded semantic-cycle recovery,
+> and strict consumption of encounter-scoped provisional grants. Diagnostic
+> observation, runtime trial admission, and persistent qualification are now
+> separate. Preview.69 still requires a cold load and real journey; the last
+> verified loaded artifact is Preview.68.
 
 > Product-boundary warning: direct Re-to-Gateway REST and `.env.local` provider
 > keys are developer workflows, not the target consumer architecture. The
@@ -44,8 +32,8 @@ waits for the Bridge command lifecycle, and records the complete evidence.
 
 RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, shadow/live modes, policy promotion, or the old project's phase machinery. Its job is to make one decision path correct and auditable.
 
-Re's current strict client contract is Bridge `2.0-preview.68`. The last loaded
-Preview.67 `v0.109.1|c8c577f6|-820620422` Gateway identity had exact session-canary
+Re's current strict client contract is Bridge `2.0-preview.69`. The last loaded
+Preview.68 `v0.109.1|c8c577f6|-820620422` Gateway identity had exact session-canary
 operation scopes and no persistent qualification. Re strictly decodes those
 current identities and grants, but does not interpret fallback witness
 semantics or promote any candidate. Preview.66's narrow persistent
@@ -70,6 +58,12 @@ inventory and versioned session grant ledger. Re requires each dynamic scope
 to reference the unique current active exact-environment grant, but it never
 issues, promotes, quarantines or persists a grant. D evidence and historical
 grant records remain non-authorizing.
+
+Preview.69 requires `admission_basis` on each current dynamic scope. A current
+`encounter_source_resolved` canary is accepted only when the Gateway publishes
+an exact runtime-bound migration grant with matching environment, Patch,
+operation fingerprint and explicit admission evidence. Confirmed completion
+may produce `session_trial_confirmed`; neither tier is a persistent claim.
 
 Preview.64 adds a separate local-control concern. Read-only Re initialization
 does not take control. Immediately before its first mutation, Re registers
@@ -393,10 +387,11 @@ npm run agent:run -- --max-ticks 20 --delay-ms 250
 ```
 
 The public npm `agent:run` entry first invokes the external Operator Shell. It
-requires exact source/built/installed/loaded identity, resumes the current
-exact migration trial, and waits for Gateway revalidation before Re starts.
-The shell may write an exact candidate package but cannot grant live
-authority; the Gateway remains the decision and enforcement owner.
+requires exact source/built/installed/loaded identity and probes the current
+state. The Gateway may admit only current source-resolved actions as volatile
+trials. The legacy bulk candidate-package cycle is a fallback, not the target
+startup path. The shell cannot grant live authority; the Gateway remains the
+decision and enforcement owner.
 
 The direct loop then permits one Gateway-advertised Continue or new-run action
 and remains bounded to one game. It may finish that run's

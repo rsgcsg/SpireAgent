@@ -7,7 +7,7 @@ namespace STS2_MCP.BridgeV2.Protocol;
 
 public static class BridgeV2Contract
 {
-    public const string ProtocolVersion = "2.0-preview.68";
+    public const string ProtocolVersion = "2.0-preview.69";
     public const string ObservationPolicyId = "player_visible_ui_v1";
 }
 
@@ -39,6 +39,8 @@ public sealed record ActionPermissionScope(
     public string PatchDigest { get; init; } = "not_recorded";
 
     public string OperationFingerprint { get; init; } = "not_recorded";
+
+    public string AdmissionBasis { get; init; } = "reviewed_or_persisted_scope";
 }
 
 public sealed record BridgeRuntimePatchInventoryInfo(
@@ -83,7 +85,10 @@ public sealed record BridgePermissionGrantRecord(
     DateTimeOffset ExpiresAt,
     string? SupersedesGrantId,
     string? RevocationReason,
-    IReadOnlyList<string> EvidenceIds);
+    IReadOnlyList<string> EvidenceIds)
+{
+    public string AdmissionBasis { get; init; } = "installed_candidate_package";
+}
 
 public sealed record BridgePermissionSystemInfo(
     int SchemaVersion,
@@ -766,6 +771,11 @@ public sealed record MapBridgeContext(
     IReadOnlyList<VisibleMapNode> Nodes) : IBridgeContext;
 
 public sealed record CombatTransitionBridgeContext(
+    string Kind,
+    string Phase,
+    string Transition) : IBridgeContext;
+
+public sealed record RunTransitionBridgeContext(
     string Kind,
     string Phase,
     string Transition) : IBridgeContext;

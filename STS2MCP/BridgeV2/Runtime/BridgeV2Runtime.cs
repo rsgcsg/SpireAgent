@@ -264,6 +264,8 @@ internal static class BridgeV2Runtime
     {
         GameBuildIdentity game = ReadCurrentGameIdentity();
         BridgeObservationDraft draft = BridgeSnapshotBuilder.Build(EntityRegistry, game);
+        draft = PermissionManager.AdmitEncounter(draft, BridgeIdentity());
+        draft = BridgeSnapshotBuilder.ApplyCurrentAuthority(draft);
         BridgeSharedVisibleStateBuildResult shared = draft.Game.Compatibility.StateObservationAllowed
             ? BridgeSharedVisibleStateBuilder.Build(EntityRegistry)
             : new BridgeSharedVisibleStateBuildResult(false, null, null);
@@ -329,7 +331,8 @@ internal static class BridgeV2Runtime
                     permissionScope.RuntimeEpoch,
                     permissionScope.EnvironmentDigest,
                     permissionScope.PatchDigest,
-                    permissionScope.OperationFingerprint);
+                    permissionScope.OperationFingerprint,
+                    permissionScope.AdmissionBasis);
                 Actions[actionId] = new RegisteredBridgeAction(
                     descriptor,
                     () =>

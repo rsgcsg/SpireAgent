@@ -122,9 +122,10 @@ The following are governance constraints, not a separate feature program:
 
 ### Current Window
 
-1. Build, install, cold-load, and run Preview.68. Preserve its exact identity;
-   Preview.67's three real-runtime records are defect evidence, not inherited
-   authority or Organic qualification.
+1. Build, install, cold-load, and run Preview.69. Preserve its exact identity;
+   Preview.68 records are defect/coverage evidence, not inherited authority or
+   Organic qualification. Use ADR-0004 encounter trials rather than bulk
+   preinstallation as the target startup path.
 2. Continue C through the ADR-0003 migration order: exact runtime source/
    adapter/outcome shadows, continuation boundaries, identity separation, then
    hot-summary/on-demand evidence.
@@ -138,10 +139,10 @@ The following are governance constraints, not a separate feature program:
 6. Keep P, H and T behind their existing admission gates. Do not build an
    Artifact Router without a demonstrated ABI/load split.
 
-Preview.67 cold-load, duplicate-manifest repair, and three real-runtime journeys
-are complete. Preview.68's one-command Operator Shell preflight is implemented
-but requires a cold load before it can establish a new exact trial. Neither
-state is generic cross-version or cross-Mod qualification.
+Preview.68 cold-load and real-runtime journeys are complete. Preview.69's
+one-command Operator Shell preflight is implemented but requires a cold load
+before its encounter-scoped trial path has runtime evidence. Neither state is
+generic cross-version or cross-Mod qualification.
 
 ### Gate 1 Exit Basis And Gate 2 Entry
 

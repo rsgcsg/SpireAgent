@@ -77,6 +77,7 @@ import {
   isBridgeV2MapContext,
   isBridgeV2MapNavigationSurface,
   isBridgeV2CombatTransitionContext,
+  isBridgeV2RunTransitionContext,
   isBridgeV2NoActionSurface,
   isBridgeV2UnsupportedSurface,
   type BridgeV2CombatContext,
@@ -302,6 +303,8 @@ export function normalizeBridgeV2CurrentState(
     context = projectMapContext(state.context);
   } else if (state && isBridgeV2CombatTransitionContext(state.context)) {
     context = { kind: "combat_transition", phase: state.context.phase };
+  } else if (state && isBridgeV2RunTransitionContext(state.context)) {
+    context = { kind: "run_transition", phase: "setup" };
   }
 
   const inspectionRaw = bridgeV2InspectionsFromWrapper(rawState);
@@ -512,14 +515,15 @@ export function normalizeBridgeV2CurrentState(
           "candidate-build action authority is restricted to the exact merchant-removal surface; only explicitly scoped v2 inspection is permitted and no legacy sidecar may merge"
         );
       }
-    } else if (isBridgeV2NoActionSurface(state.surface) && isBridgeV2CombatTransitionContext(state.context)) {
+    } else if (isBridgeV2NoActionSurface(state.surface)
+        && (isBridgeV2CombatTransitionContext(state.context) || isBridgeV2RunTransitionContext(state.context))) {
       if (state.readiness !== "settling"
           || state.legal_actions.length !== 0
           || state.completeness.missing.length !== 0) {
         diagnostics.invalid(
           "bridge_v2.no_action",
           state,
-          "combat-transition no_action must be settling, complete, and publish no actions"
+          "lifecycle-transition no_action must be settling, complete, and publish no actions"
         );
       }
       surface = {

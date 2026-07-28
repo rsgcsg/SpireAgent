@@ -212,10 +212,12 @@ for (const contract of JSON.parse(await readFile(
 }
 for (const requiredBoundary of [
   "CandidateEligible(",
+  "AdmitEncounter(",
   "AuthorizeExecution(",
   "ObserveCommand(",
   "Quarantine(",
-  "session_auto_approved",
+  "session_trial_confirmed",
+  "encounter_source_resolved",
   "BridgeMigrationPermissionPolicy.LoadError"
 ]) {
   assert(

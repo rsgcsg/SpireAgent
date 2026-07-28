@@ -9,6 +9,8 @@ The cross-component target is fixed by
 That decision supersedes this plan's former broad Transaction IR and Gateway-
 owned DecisionFrame proposals. The Gateway keeps complete observation evidence
 and bounded purpose-specific adapters; Re derives any model-facing projection.
+[ADR-0004](../../../docs/current/decisions/ADR-0004-risk-calibrated-encounter-trial-and-scoped-claims.md)
+separates volatile encounter admission from persistent compatibility claims.
 
 ## Mandatory Precondition: Source Truth Repair
 
@@ -16,7 +18,7 @@ Status: Gate 1 closed as a bounded ordinary-single-player v2 connector
 baseline on 2026-07-24. Preview.61 supplied the exact Neow's Fury Organic
 runtime seal, strict Re decode, and loaded-v1 retirement evidence.
 
-C# and Re source now share `2.0-preview.68`. Preview.62 moved exact-environment
+C# and Re source now share `2.0-preview.69`. Preview.62 moved exact-environment
 authorization and reviewed combat-pile source contracts into validated
 embedded policy, and added a non-authorizing exact-assembly audit. Preview.63
 adds an operation-scoped Gateway session-grant state machine under that

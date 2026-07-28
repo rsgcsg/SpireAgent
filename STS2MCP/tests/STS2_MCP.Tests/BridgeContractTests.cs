@@ -433,9 +433,9 @@ public sealed class BridgeContractTests
             "c12f634d",
             -840572606);
 
-        Assert.Equal("untested", compatibility.Status);
+        Assert.Equal("unreviewed_diagnostic_candidate", compatibility.Status);
         Assert.False(compatibility.ActionExecutionAllowed);
-        Assert.False(compatibility.StateObservationAllowed);
+        Assert.True(compatibility.StateObservationAllowed);
         Assert.False(compatibility.InspectionAllowed);
         Assert.Empty(compatibility.ActionExecutionSurfaceKinds);
         Assert.Empty(compatibility.ActionCanarySurfaceKinds);
@@ -443,7 +443,7 @@ public sealed class BridgeContractTests
             "bridge_v2_exact_environment_policy_2026_07_24",
             compatibility.CompatibilityPolicyId);
         Assert.Matches("^[a-f0-9]{64}$", compatibility.CompatibilityPolicyDigest);
-        Assert.Equal("diagnostic_only", compatibility.AdaptationLevel);
+        Assert.Equal("diagnostic_candidate", compatibility.AdaptationLevel);
     }
 
     [Fact]
@@ -1046,6 +1046,72 @@ public sealed class BridgeContractTests
     }
 
     [Fact]
+    public void AuthorityProjectionWithholdsOnlyUnadmittedSiblingActions()
+    {
+        var scope = new ActionPermissionScope(
+            "shop_room",
+            "proceed_shop",
+            "canary");
+        var compatibility = new CompatibilityAssessment(
+            "provisional_trial_scoped",
+            new[] { "0.109.1" },
+            new[] { "fixture-build" },
+            ActionExecutionAllowed: true,
+            StateObservationAllowed: true,
+            InspectionAllowed: false,
+            ActionExecutionSurfaceKinds: Array.Empty<string>(),
+            ActionCanarySurfaceKinds: new[] { "shop_room" },
+            InspectionAllowedKinds: Array.Empty<string>(),
+            InspectionCanaryKinds: Array.Empty<string>(),
+            ObservationOnlySurfaceKinds: Array.Empty<string>(),
+            ObservationCandidateBuildFingerprints: Array.Empty<string>(),
+            Detail: "test")
+        {
+            ActionPermissionScopes = new[] { scope }
+        };
+        var draft = new BridgeObservationDraft(
+            "shop-sig",
+            "ready",
+            new ShopBridgeContext("shop"),
+            new ShopRoomSurface("shop_room", "room-a", true, true),
+            new StateCompleteness(
+                "complete",
+                "source_complete",
+                Array.Empty<string>(),
+                Array.Empty<string>()),
+            new GameBuildIdentity("v0.109.1", "commit", "branch", 1, compatibility),
+            Array.Empty<string>(),
+            new[]
+            {
+                new BridgeActionDraft(
+                    "open",
+                    "open_shop_inventory",
+                    "navigation",
+                    "Open",
+                    "fixture",
+                    () => BridgeActionStartResult.Started()),
+                new BridgeActionDraft(
+                    "proceed",
+                    "proceed_shop",
+                    "navigation",
+                    "Proceed",
+                    "fixture",
+                    () => BridgeActionStartResult.Started())
+            });
+
+        BridgeObservationDraft projected = BridgeSnapshotBuilder.ApplyCurrentAuthority(draft);
+
+        BridgeActionDraft action = Assert.Single(projected.Actions);
+        Assert.Equal("proceed_shop", action.Kind);
+        Assert.Equal(
+            "source_complete_with_unadmitted_actions_withheld",
+            projected.Completeness.LegalActions);
+        Assert.Contains(
+            projected.Diagnostics,
+            diagnostic => diagnostic.Code == "bridge.authority.partial_action_admission");
+    }
+
+    [Fact]
     public void RuntimeSourceBindingIsDistinctFromManifestDeclarationAndRemainsNonAuthorizing()
     {
         var compatibility = new CompatibilityAssessment(
@@ -1073,7 +1139,7 @@ public sealed class BridgeContractTests
             Array.Empty<BridgeActionDraft>())
         {
             RuntimeSemanticContractId =
-                "bridge.contract.deck_enchant_selection.kifuda_relic_pickup.2.0-preview.68",
+                "bridge.contract.deck_enchant_selection.kifuda_relic_pickup.2.0-preview.69",
             RuntimeSourceBindingId = "Kifuda.AfterObtained+Adroit:3"
         };
 
@@ -2909,6 +2975,26 @@ public sealed class BridgeContractTests
             combatStatePresent,
             hasBlockingSurface,
             liveCombatRoomPresent));
+    }
+
+    [Theory]
+    [InlineData(true, false, false, "run_without_visible_overlay", true)]
+    [InlineData(true, true, false, "run_without_visible_overlay", false)]
+    [InlineData(true, false, true, "run_without_visible_overlay", false)]
+    [InlineData(false, false, false, "menu_or_no_run", false)]
+    [InlineData(true, false, false, "unknown_room", false)]
+    public void RunStartTransitionRequiresExactNativeLifecycleFacts(
+        bool runInProgress,
+        bool runStatePresent,
+        bool hasBlockingSurface,
+        string sourceType,
+        bool expected)
+    {
+        Assert.Equal(expected, BridgeSnapshotBuilder.ClassifyRunStartNoInputTransition(
+            runInProgress,
+            runStatePresent,
+            hasBlockingSurface,
+            sourceType));
     }
 
 }

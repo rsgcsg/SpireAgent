@@ -1,6 +1,25 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.68`
+Protocol preview: `2.0-preview.69`
+
+Preview.69 separates diagnostic observation, encounter trial admission, and
+persistent claims:
+
+- a complete but unreviewed game-build identity may remain observable as
+  `diagnostic_candidate` while actions and Inspection start disabled;
+- in `migration_exploration`, a uniquely source-resolved current action may
+  receive a runtime-bound `encounter_source_resolved` canary without a bulk
+  preinstalled candidate package;
+- `action_permission_scopes` and permission grants carry `admission_basis`;
+- confirmed trial completion yields `session_trial_confirmed`, never a
+  persistent qualification;
+- `run_transition + no_action + settling` represents the exact post-embark
+  mounting gap without inventing an input owner.
+
+The Gateway still requires exact loaded identity, bounded Modset eligibility,
+clean Patch inventory, current native legality, execute-time revalidation and
+semantic completion. Failure or drift quarantines the runtime-local scope.
+See [ADR-0004](../../../docs/current/decisions/ADR-0004-risk-calibrated-encounter-trial-and-scoped-claims.md).
 
 Preview.68 adds three explicit boundaries without expanding authority:
 
@@ -109,11 +128,12 @@ Patch digest and operation fingerprint. Dynamic scopes additionally bind the
 current runtime epoch. The exact grant is captured at publication and must
 still match when execution starts.
 
-The reviewed exact-environment policy remains an absolute permission ceiling.
-A gray candidate has no authorization effect by itself. Only the Gateway
-Permission Manager may issue a runtime-epoch-bound `session_canary`, and only a
-Gateway-confirmed semantic completion may supersede it with
-`session_auto_approved`. A validated failure, timeout, unknown outcome,
+The reviewed exact-environment policy remains the persistent-claim baseline,
+not an absolute ceiling on volatile evidence collection. A D candidate has no
+authorization effect by itself. Only the Gateway Permission Manager may issue
+a runtime-epoch-bound `session_canary` from an installed candidate or current
+source-resolved encounter, and only Gateway-confirmed semantic completion may
+supersede it with `session_trial_confirmed`. A validated failure, timeout, unknown outcome,
 identity/Patch drift or mode change quarantines the affected operation for that
 session. Restart is rollback; no dynamic grant becomes persistent
 qualification.
@@ -286,24 +306,23 @@ loaded Modset identity. `game.modset` records:
   Workshop ID as an exact decimal string, and loaded assembly name/version/MVID;
 - a safe status/detail without local filesystem paths.
 
-The current permission profile requires `exact_bridge_only`: ModManager is
-initialized, the only loaded Mod is the negotiated exact `STS2_MCP` module,
-and its manifest version and loaded MVID agree with the Bridge identity.
-Additional loaded Mods, failed or runtime-added Mods, unavailable identity, or
-state/capability fingerprint mismatch fail closed for actions and Inspection.
-This is a permission gate, not a claim that disabled Mods or future native-UI
-Mods are semantically compatible. Such environments require independent source
-binding, visibility, legality, commit, completion, and canary evidence.
+Encounter provisional admission currently requires `exact_bridge_only` or an
+explicitly classified qualification-candidate Modset. ModManager must be
+initialized and the loaded Bridge manifest/MVID must agree with the negotiated
+identity. Additional, failed, runtime-added, or unknown Mods do not become
+eligible from manifest presence alone. This is a trial gate, not a semantic
+compatibility claim; each non-exact Modset still requires bounded source,
+visibility, legality, Commit, completion, and canary evidence.
 
-For the current local identity `v0.109.0|c12f634d|-1639417500`, the Gateway
-advertises an explicit `surface_kind + operation + tier` inventory. A scoped
+For each loaded identity, the Gateway advertises an explicit
+`surface_kind + operation + tier` inventory. A scoped
 build is executable only when the current state operation appears in that
 inventory; empty lists never become wildcard authority. Preview.63 scope
 identity additionally includes the grant ID/version, environment, Patch and
 operation fingerprint. Re requires identical scopes in state and capabilities
 and validates every dynamic scope against the unique current active grant.
 
-Canary and session-auto-approved authority remain operation-scoped permission,
+Canary and session-trial-confirmed authority remain operation-scoped permission,
 not Organic Qualification. Per-operation and per-origin qualification must
 still be recorded separately. Session state may narrow current authority but
 must not infer or expand the embedded ceiling from implementation alone.
@@ -416,7 +435,9 @@ boundary and witness. A fallback row uses
 non-empty witness emitted by the Gateway for that operation. Fallback rows are
 eligible only in `migration_exploration` and do not assert semantic
 equivalence. The policy cannot authorize an operation absent from the current
-catalog or without an exact applicable candidate package.
+catalog. Preview.69 may use either an exact applicable candidate package or a
+current uniquely source-resolved encounter as the admission basis; the latter
+is volatile and cannot create a persistent claim.
 
 Every grant records:
 
@@ -424,6 +445,8 @@ Every grant records:
 - Surface, operation, risk and mode;
 - runtime epoch, environment, Gateway SHA/MVID, Modset and Patch digest;
 - operation fingerprint and candidate evidence digest/IDs;
+- admission basis (`installed_candidate_package` or
+  `encounter_source_resolved`);
 - revocation reason where applicable.
 
 Only the unique current active grant can back a dynamic action scope. Historical

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { isJsonObject, type JsonObject } from "../../shared/json.js";
 
-export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.68" as const;
+export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.69" as const;
 export const BRIDGE_V2_INSPECTION_KINDS = ["run_deck", "combat_piles", "shop_catalog"] as const;
 const inspectionKindSchema = z.enum(BRIDGE_V2_INSPECTION_KINDS);
 
@@ -14,7 +14,12 @@ const actionPermissionScopeSchema = z.object({
   runtime_epoch: z.string().min(1),
   environment_digest: z.string().min(1),
   patch_digest: z.string().min(1),
-  operation_fingerprint: z.string().min(1)
+  operation_fingerprint: z.string().min(1),
+  admission_basis: z.enum([
+    "reviewed_or_persisted_scope",
+    "installed_candidate_package",
+    "encounter_source_resolved"
+  ])
 }).passthrough();
 
 const runtimePatchInventorySchema = z.object({
@@ -46,7 +51,13 @@ const permissionGrantSchema = z.object({
   ]),
   surface_kind: z.string().min(1),
   operation: z.string().min(1),
-  tier: z.enum(["session_canary", "session_auto_approved", "none"]),
+  tier: z.enum([
+    "session_canary",
+    "session_trial_confirmed",
+    // Read compatibility for pre-preview.69 local evidence only.
+    "session_auto_approved",
+    "none"
+  ]),
   risk_class: z.string().min(1),
   runtime_epoch: z.string().min(1),
   environment_digest: z.string().min(1),
@@ -60,7 +71,11 @@ const permissionGrantSchema = z.object({
   expires_at: z.string().min(1),
   supersedes_grant_id: z.string().min(1).nullable().optional(),
   revocation_reason: z.string().min(1).nullable().optional(),
-  evidence_ids: z.array(z.string().min(1))
+  evidence_ids: z.array(z.string().min(1)),
+  admission_basis: z.enum([
+    "installed_candidate_package",
+    "encounter_source_resolved"
+  ])
 }).passthrough();
 
 const permissionSystemSchema = z.object({
@@ -199,6 +214,8 @@ const compatibilitySchema = z.object({
     "reviewed_exact_environment",
     "installed_qualification_candidate",
     "installed_persistent_qualification",
+    "diagnostic_candidate",
+    "encounter_provisional_trial",
     "diagnostic_only"
   ])
 }).passthrough();
@@ -526,6 +543,12 @@ const combatTransitionContextSchema = z.discriminatedUnion("phase", [
     transition: z.literal("awaiting_room_resolution")
   }).passthrough()
 ]);
+
+const runTransitionContextSchema = z.object({
+  kind: z.literal("run_transition"),
+  phase: z.literal("setup"),
+  transition: z.literal("awaiting_run_state")
+}).passthrough();
 
 const unknownContextSchema = z.object({
   kind: z.literal("unknown"),
@@ -1398,6 +1421,7 @@ export type BridgeV2MenuContext = z.infer<typeof menuContextSchema>;
 export type BridgeV2ShopContext = z.infer<typeof shopContextSchema>;
 export type BridgeV2MapContext = z.infer<typeof mapContextSchema>;
 export type BridgeV2CombatTransitionContext = z.infer<typeof combatTransitionContextSchema>;
+export type BridgeV2RunTransitionContext = z.infer<typeof runTransitionContextSchema>;
 export type BridgeV2UnknownContext = z.infer<typeof unknownContextSchema>;
 export type BridgeV2EventOptionSurface = z.infer<typeof eventOptionSurfaceSchema>;
 export type BridgeV2EventDialogueSurface = z.infer<typeof eventDialogueSurfaceSchema>;
@@ -1442,6 +1466,7 @@ export type BridgeV2Context =
   | BridgeV2ShopContext
   | BridgeV2MapContext
   | BridgeV2CombatTransitionContext
+  | BridgeV2RunTransitionContext
   | BridgeV2UnknownContext
   | (Record<string, unknown> & { kind: string });
 
@@ -1882,8 +1907,8 @@ export function decodeBridgeV2State(value: unknown): DecodedBridgePayload<Bridge
     }
   } else if (decoded.data.surface.kind === "no_action") {
     surface = parse(noActionSurfaceSchema, decoded.data.surface, "no_action surface");
-    if (context.kind !== "combat_transition") {
-      throw new BridgeV2DecodeError("Bridge v2 no_action surface requires combat_transition context");
+    if (context.kind !== "combat_transition" && context.kind !== "run_transition") {
+      throw new BridgeV2DecodeError("Bridge v2 no_action surface requires a typed lifecycle-transition context");
     }
     if (decoded.data.readiness !== "settling"
         || decoded.data.legal_actions.length !== 0
@@ -1952,6 +1977,7 @@ function validatePermissionSystem(
       "A clean runtime Patch inventory must contain the Gateway owner and no unknown owners"
     );
   }
+  const scopes = game.compatibility.action_permission_scopes;
   for (const grant of permission.grants) {
     if (grant.runtime_epoch !== permission.runtime_epoch) {
       throw new BridgeV2DecodeError(
@@ -1972,6 +1998,13 @@ function validatePermissionSystem(
         `Inactive permission grant ${grant.grant_id} must not retain an authority tier`
       );
     }
+    if (grant.admission_basis === "encounter_source_resolved"
+        && (grant.mode !== "migration_exploration"
+          || !grant.evidence_ids.includes("admission:encounter_source_resolved"))) {
+      throw new BridgeV2DecodeError(
+        `Encounter permission grant ${grant.grant_id} lacks migration-scoped admission evidence`
+      );
+    }
   }
   const currentGrants = permission.grants.filter((grant) => grant.current);
   const currentGrantKeys = new Set<string>();
@@ -1984,7 +2017,7 @@ function validatePermissionSystem(
     }
     currentGrantKeys.add(key);
   }
-  for (const scope of game.compatibility.action_permission_scopes) {
+  for (const scope of scopes) {
     if (scope.runtime_epoch === "not_session_bound") continue;
     const grant = currentGrants.find((candidate) =>
       candidate.grant_id === scope.grant_id
@@ -1996,11 +2029,20 @@ function validatePermissionSystem(
         || scope.runtime_epoch !== permission.runtime_epoch
         || scope.patch_digest !== permission.patch_inventory.digest
         || scope.environment_digest !== grant.environment_digest
-        || scope.operation_fingerprint !== grant.operation_fingerprint) {
+        || scope.operation_fingerprint !== grant.operation_fingerprint
+        || scope.admission_basis !== grant.admission_basis) {
       throw new BridgeV2DecodeError(
         `Dynamic permission scope ${scope.surface_kind}/${scope.operation} lacks an exact current grant`
       );
     }
+  }
+  const encounterScopes = scopes.filter((scope) =>
+    scope.admission_basis === "encounter_source_resolved");
+  if ((encounterScopes.length > 0)
+      !== (game.compatibility.adaptation_level === "encounter_provisional_trial")) {
+    throw new BridgeV2DecodeError(
+      "Encounter provisional adaptation must match source-resolved session scopes"
+    );
   }
 }
 
@@ -2215,6 +2257,14 @@ export function isBridgeV2CombatTransitionContext(
       || (context.phase === "resolution" && context.transition === "awaiting_room_resolution"));
 }
 
+export function isBridgeV2RunTransitionContext(
+  context: BridgeV2Context
+): context is BridgeV2RunTransitionContext {
+  return context.kind === "run_transition"
+    && context.phase === "setup"
+    && context.transition === "awaiting_run_state";
+}
+
 export function isBridgeV2EventOptionSurface(
   surface: BridgeV2Surface
 ): surface is BridgeV2EventOptionSurface {
@@ -2341,6 +2391,9 @@ function parseContext(value: z.infer<typeof contextBaseSchema>): BridgeV2Context
   if (value.kind === "map") return parse(mapContextSchema, value, "map context");
   if (value.kind === "combat_transition") {
     return parse(combatTransitionContextSchema, value, "combat_transition context");
+  }
+  if (value.kind === "run_transition") {
+    return parse(runTransitionContextSchema, value, "run_transition context");
   }
   if (value.kind === "unknown") return parse(unknownContextSchema, value, "unknown context");
   return value;

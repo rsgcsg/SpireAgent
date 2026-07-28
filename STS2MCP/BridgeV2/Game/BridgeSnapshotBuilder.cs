@@ -121,13 +121,9 @@ internal static class BridgeSnapshotBuilder
                     "unknown"));
         }
 
-        IReadOnlyList<IBridgeSurfaceProvider> eligibleProviders = game.Compatibility.ActionExecutionAllowed
-            ? providers.Where(provider =>
-                BridgeSurfacePermission.IsActionPermitted(game.Compatibility, provider.Kind)).ToArray()
-            : providers.Where(provider => game.Compatibility.ObservationOnlySurfaceKinds.Contains(provider.Kind, StringComparer.Ordinal)).ToArray();
         ActiveSurfaceResolution resolution = ActiveSurfaceResolver.Resolve(
             snapshot,
-            eligibleProviders,
+            providers,
             entities,
             game);
         if (resolution.Failure != null)
@@ -149,9 +145,7 @@ internal static class BridgeSnapshotBuilder
         }
 
         if (resolution.Draft != null)
-            return game.Compatibility.ActionExecutionAllowed
-                ? SuppressActionsOutsideCurrentOperationScope(resolution.Draft)
-                : SuppressActionsForCandidateObservation(resolution.Draft);
+            return resolution.Draft;
         if (resolution.MatchedKinds.Count > 1)
         {
             return Unsupported(
@@ -171,54 +165,8 @@ internal static class BridgeSnapshotBuilder
         if (TryBuildCombatNoInputTransition(snapshot, entities, game) is { } transition)
             return transition;
 
-        if (game.Compatibility.Status == "qualified_scoped")
-        {
-            IReadOnlyList<IBridgeSurfaceProvider> unqualifiedProviders = providers
-                .Where(provider =>
-                    !game.Compatibility.ActionExecutionSurfaceKinds.Contains(provider.Kind, StringComparer.Ordinal)
-                    && !game.Compatibility.ActionCanarySurfaceKinds.Contains(provider.Kind, StringComparer.Ordinal))
-                .ToArray();
-            ActiveSurfaceResolution legacyResolution = ActiveSurfaceResolver.Resolve(
-                snapshot,
-                unqualifiedProviders,
-                entities,
-                game);
-            if (legacyResolution.Failure != null || legacyResolution.MatchedKinds.Count > 1)
-            {
-                return Unsupported(
-                    game,
-                    snapshot.SourceType,
-                    "Bridge v2 could not establish a unique unqualified semantic surface owner.",
-                    new[] { "unqualified_surface_owner_ambiguous" },
-                    BridgeContextBuilder.Build(entities),
-                    BridgeDiagnostics.Create(
-                        "bridge.authority.unqualified_surface_ambiguous",
-                        "error",
-                        "authority",
-                        "actions_suppressed",
-                        "change_surface"));
-            }
-            if (legacyResolution.Draft != null)
-            {
-                string legacySurfaceKind = legacyResolution.MatchedKinds[0];
-                return Unsupported(
-                    game,
-                    snapshot.SourceType,
-                    $"The current {legacySurfaceKind} surface is source-resolved but not qualified for Bridge v2 on this exact build.",
-                    new[] { $"surface_not_qualified_for_current_build:{legacySurfaceKind}" },
-                    BridgeContextBuilder.Build(entities),
-                    BridgeDiagnostics.Create(
-                        "bridge.authority.unqualified_surface",
-                        "info",
-                        "authority",
-                        "surface_unsupported",
-                        "change_surface"),
-                    new AuthorityHandoff(
-                        "none_fail_closed",
-                        null,
-                        "Exactly one source-resolved semantic surface matched outside the current Bridge v2 operation scope."));
-            }
-        }
+        if (TryBuildRunStartNoInputTransition(snapshot, entities, game) is { } runTransition)
+            return runTransition;
 
         return Unsupported(
             game,
@@ -320,6 +268,83 @@ internal static class BridgeSnapshotBuilder
         };
     }
 
+    private static BridgeObservationDraft? TryBuildRunStartNoInputTransition(
+        ActiveSurfaceSnapshot snapshot,
+        BridgeEntityRegistry entities,
+        GameBuildIdentity game)
+    {
+        RunState? runState = RunManager.Instance.DebugOnlyGetState();
+        if (!ClassifyRunStartNoInputTransition(
+                RunManager.Instance.IsInProgress,
+                runState != null,
+                snapshot.HasBlockingSurface,
+                snapshot.SourceType))
+        {
+            return null;
+        }
+
+        var context = new RunTransitionBridgeContext(
+            "run_transition",
+            "setup",
+            "awaiting_run_state");
+        var surface = new NoActionSurface(
+            "no_action",
+            "settling",
+            "The standard run has started, but its first player-visible run state is still mounting.");
+        var completeness = new StateCompleteness(
+            "complete_for_bounded_run_start_transition",
+            "none_no_input_owner",
+            new[]
+            {
+                "RunManager.IsInProgress",
+                "RunManager.DebugOnlyGetState",
+                "ActiveSurfaceResolver"
+            },
+            Array.Empty<string>());
+        string signature = BridgeHash.Object(new
+        {
+            game.Version,
+            game.Commit,
+            context,
+            surface
+        });
+
+        return new BridgeObservationDraft(
+            signature,
+            "settling",
+            context,
+            surface,
+            completeness,
+            game,
+            Array.Empty<string>(),
+            Array.Empty<BridgeActionDraft>())
+        {
+            AuthorityHandoff = new AuthorityHandoff(
+                "none_fail_closed",
+                null,
+                "The native run-start transition has no current input owner; Bridge v2 observes without publishing actions."),
+            Diagnostics = new[]
+            {
+                BridgeDiagnostics.Create(
+                    "bridge.lifecycle.run_start_settling",
+                    "info",
+                    "runtime",
+                    "none",
+                    "settle")
+            }
+        };
+    }
+
+    internal static bool ClassifyRunStartNoInputTransition(
+        bool runInProgress,
+        bool runStatePresent,
+        bool hasBlockingSurface,
+        string sourceType) =>
+        runInProgress
+        && !runStatePresent
+        && !hasBlockingSurface
+        && string.Equals(sourceType, "run_without_visible_overlay", StringComparison.Ordinal);
+
     internal static CombatNoInputPhase ClassifyCombatNoInputTransition(
         bool runInProgress,
         bool currentRoomIsCombat,
@@ -377,6 +402,13 @@ internal static class BridgeSnapshotBuilder
         };
     }
 
+    internal static BridgeObservationDraft ApplyCurrentAuthority(BridgeObservationDraft draft) =>
+        draft.Actions.Count == 0
+            ? draft
+            : draft.Game.Compatibility.ActionExecutionAllowed
+            ? SuppressActionsOutsideCurrentOperationScope(draft)
+            : SuppressActionsForCandidateObservation(draft);
+
     private static BridgeObservationDraft SuppressActionsForCandidateObservation(BridgeObservationDraft draft)
     {
         var completeness = draft.Completeness with
@@ -427,6 +459,35 @@ internal static class BridgeSnapshotBuilder
             .ToArray();
         if (permitted.Count == draft.Actions.Count)
             return draft;
+
+        if (permitted.Count > 0)
+        {
+            return draft with
+            {
+                Signature = BridgeHash.Object(new
+                {
+                    draft.Signature,
+                    permitted = permitted.Select(action => action.Key)
+                        .OrderBy(value => value, StringComparer.Ordinal)
+                }),
+                Actions = permitted,
+                Completeness = draft.Completeness with
+                {
+                    LegalActions = "source_complete_with_unadmitted_actions_withheld"
+                },
+                Warnings = draft.Warnings
+                    .Append("partial_action_admission: unadmitted actions remain visible as Surface facts but are not executable.")
+                    .ToArray(),
+                Diagnostics = draft.Diagnostics
+                    .Append(BridgeDiagnostics.Create(
+                        "bridge.authority.partial_action_admission",
+                        "info",
+                        "authority",
+                        "none",
+                        "unknown"))
+                    .ToArray()
+            };
+        }
 
         var completeness = draft.Completeness with
         {

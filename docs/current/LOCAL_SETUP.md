@@ -76,16 +76,17 @@ explicit `backups` directory; other duplicates require manual review.
 clients as optional diagnostics into ignored local storage. A missing optional
 diagnostic is reported as a partial failure rather than erasing valid loaded
 identity/state evidence. Read-only commands do not grant authority or turn
-disk identity into Organic evidence. `run-agent`/`agent:run` may append an exact
-trial candidate through the Operator Shell; only Gateway revalidation can turn
-it into session authority.
+disk identity into Organic evidence. `run-agent`/`agent:run` first probes the
+current state; only the Gateway may admit a current source-resolved action as
+session authority.
 
 For an exact newly loaded environment, the Operator Shell first checks artifact
-identity and requires an `exact_bridge_only` Modset. It deliberately does not
-require normal observation before the migration cycle; normal observation and
-mutation readiness are mandatory after the Gateway reloads and revalidates the
-new candidate packages. This ordering permits safe bootstrap without granting
-Re or the migration tool action authority.
+identity and requires an exact or explicitly bounded candidate Modset. Normal
+diagnostic observation may start without mutation authority. On the first
+actionable Surface, the Gateway may create only current runtime-bound encounter
+trials in `migration_exploration`. The legacy bulk package cycle runs only when
+that path is unavailable. This ordering permits evidence collection without
+granting Re or the migration tool action authority.
 
 Use `npm run connector -- help` for trial, qualification revoke/rollback, and
 Gateway-artifact restore delegation. `restore-known-environment` restores only

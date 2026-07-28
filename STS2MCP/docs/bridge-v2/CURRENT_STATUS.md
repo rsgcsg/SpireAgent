@@ -3,99 +3,76 @@
 This is the canonical current Gateway/Re boundary. Historical preview reports
 retain only their recorded environment evidence.
 
-## Source Truth
+## Source And Artifact Truth
 
 ```text
-Gateway/Re source    2.0-preview.68
-Re normalized schema 27
-game                 v0.109.1|c8c577f6|-820620422
-game assembly SHA    2cb39e2eee651743829abcc0df4dd9cd7e65f46287c7ca264481115c9602382f
-game assembly MVID   208f08b8-d5f5-47f8-9e96-d3a4299ee709
-loaded protocol      2.0-preview.68
-loaded SHA           d33791395a33d6937a03e9853e865f35b631104f943ecf3abcf4027c32c2418f
-loaded MVID          6c2e1933-462c-43ae-ad6f-edb60b1bf19c
-runtime epoch        6b1e1cdf97bd44429b44e37a9b15895d
-profile              env-8fb83dbe8bb6ddd3772d6b64
-environment digest   ec4b40c3b801ee4a902e156f7601c619bfc75dd91b8d2fce24355bde78bc755a
-Modset fingerprint   dba2e4b15b47b4b0c5e337bec848cfd7cced575bcf6e73ae0993bab0f1c99eff
-permission mode      migration_exploration
-built Preview.68 SHA d33791395a33d6937a03e9853e865f35b631104f943ecf3abcf4027c32c2418f
-installed SHA        d33791395a33d6937a03e9853e865f35b631104f943ecf3abcf4027c32c2418f
-built/installed MVID 6c2e1933-462c-43ae-ad6f-edb60b1bf19c
+Gateway/Re source     2.0-preview.69
+Re normalized schema 28
+game                  v0.109.1|c8c577f6|-820620422
+game assembly SHA     2cb39e2eee651743829abcc0df4dd9cd7e65f46287c7ca264481115c9602382f
+game assembly MVID    208f08b8-d5f5-47f8-9e96-d3a4299ee709
+built SHA             7e7405c6c94dbecaaf0ba7a4cad5229c974e892bc4c527a2213c8cadd3cbb8a1
+installed SHA         7e7405c6c94dbecaaf0ba7a4cad5229c974e892bc4c527a2213c8cadd3cbb8a1
+built MVID            fc1a3e54-1691-4518-ba92-c492cdce6733
+installed MVID        fc1a3e54-1691-4518-ba92-c492cdce6733
+loaded protocol       not loaded; game closed
+loaded SHA/MVID       not loaded; last verified load was Preview.68
+rollback              STS2MCP/.local/deployments/2026-07-28T00-07-42-715Z
 ```
 
-Preview.68 passed Release build, closed-game installation, cold-load identity,
-and read-only Re decoding. The rollback snapshot is
-`STS2MCP/.local/deployments/2026-07-27T13-34-39-345Z`. Preview.67 packages did
-not carry forward across the new MVID.
+The installation has one canonical `STS2_MCP` manifest and no duplicate
+Gateway manifest. Build and installation do not establish loaded or Organic
+evidence.
 
-## Preview.67 Real-Run Evidence
+## Preview.69 Boundary
 
-The three inspected runtime runs contain 145 settled actions across combat,
-event, map, reward, rest, selector, shop, game-over, and menu flows. They also
-prove four distinct reliability facts:
+- Diagnostic observation, encounter provisional trial, and persistent
+  qualification are separate.
+- A complete unreviewed game identity may expose player-visible diagnostic
+  state while starting with no action or Inspection authority.
+- In `migration_exploration`, the Gateway may admit only current uniquely
+  source-resolved actions under exact runtime identity, bounded Modset status,
+  clean Patch inventory, current legality and a known adapter/outcome contract.
+- Dynamic scopes and grants record `admission_basis`. Confirmed completion
+  changes `session_canary` only to `session_trial_confirmed`; restart rolls it
+  back and no persistent package is written.
+- Failure, timeout, witness mismatch, identity/Patch/mode drift, or expiry
+  quarantines the affected runtime scope.
+- One active Surface is resolved once before authority projection. Unadmitted
+  sibling actions may be withheld without erasing admitted forward actions.
+- The exact post-embark gap is `run_transition + no_action + settling`.
+- Orb descriptions provide native SmartDescription variables.
+- The Operator Shell probes current state before using the legacy package
+  migration fallback.
 
-1. eager state plus Inspection-bundle capture can cross a natural state
-   transition and return `stale_state`;
-2. execute-time stale action rejection works and recovers on a fresh tick;
-3. `allow-run-entry` must not authorize a second game after terminal cleanup;
-4. Kifuda commits shop purchase before its native pickup task awaits a
-   source-specific deck-enchant child.
+The accepted target remains ADR-0002, refined by ADR-0003 and
+[ADR-0004](../../../docs/current/decisions/ADR-0004-risk-calibrated-encounter-trial-and-scoped-claims.md).
+`surface_kind + operation` is still the current grant lookup key, not the final
+compatibility identity.
 
-The runs are `unrecorded` provenance and therefore cannot satisfy persistent
-qualification. See the repository
-[Preview.68 audit](../../../docs/current/audits/PREVIEW_68_LONG_RUN_RELIABILITY_AND_NATIVE_CONTRACT_MIGRATION_2026-07-27.md).
+## Evidence And Non-Claims
 
-## Preview.68 Changes
+Preview.68 runtime records prove run-start, shop-cycle and Orb-formatting
+defects. They do not prove Preview.69. C# tests, Re tests, connector checks,
+Release build and installation are complete; cold-load identity, canary,
+Organic journey and persistent qualification are not.
 
-- Re retries the complete read-only coherent observation sequence only for a
-  typed transient state-change race; mutation is never retried.
-- A bounded run allows initial entry but stops after game-over cleanup returns
-  to the top-level menu.
-- CommandReceipt may report `continuation_handoff_observed` separately from a
-  settled parent transaction.
-- Kifuda handoff requires exact relic acquisition, exact Adroit selector
-  parameters, native child ownership, and current source binding.
-- Self-Help Book and Kifuda are separate deck-enchant source contracts;
-  unknown sources publish no actions.
-- Orb descriptions use native player-visible hover semantics rather than
-  formatting SmartDescription without required variables.
-- Runtime contract/source identity is emitted only as a non-authorizing
-  shadow. Current operation permission remains authoritative until dual-read
-  migration closes.
-- `npm run agent:run` invokes the external Operator Shell for exact identity
-  and trial preparation before the direct bounded Re loop.
-- The Operator Shell identity phase does not require normal observation;
-  observation and mutation are required after the exact migration cycle. This
-  avoids a bootstrap deadlock without weakening the Gateway gate.
+Known unsupported or evidence-limited scope includes Tutor's unreviewed owner
+binding, Crystal Sphere, standalone manual potion discard, unbound source
+variants, non-standard profiles/menu paths, multiplayer and incomplete
+player-visible detail families. Static audits and trial success do not convert
+these into support.
 
-## Architecture And Permission
+## Next Live Step
 
-The accepted target remains
-[ADR-0002](../../../docs/current/decisions/ADR-0002-semantic-gateway-two-plane-target-architecture.md),
-refined by
-[ADR-0003](../../../docs/current/decisions/ADR-0003-operation-retirement-and-native-continuation-migration.md).
-Profiles, binding audits, fingerprints, fixtures, and migration tools remain
-non-authorizing. The Gateway alone revalidates packages and publishes opaque
-state-bound actions. Native STS2 owns Commit and side effects; unknown outcome
-remains terminal.
-
-## Non-Claims And Next Step
-
-- Preview.68 is loaded and has 87 exact installed session-canary candidates,
-  but no Preview.68 action canary, Organic journey, or persistent qualification.
-- A handoff receipt is not transaction settlement.
-- Kifuda source/tests are not an Organic Kifuda canary.
-- The 82 fallback operation identities are inventory/test-confirm hypotheses,
-  not semantic compatibility.
-- Gate 1 closure is not complete-game or complete-visible-information closure.
-
-From the current event option, run:
+Cold-start STS2 and run:
 
 ```bash
 cd /Users/fire/Desktop/SpireAgent/Re-SpireAgent
 npm run agent:run
 ```
 
-The command must fail before DeepSeek if exact artifact identity, Modset,
-observation, or Gateway-revalidated mutation readiness is absent.
+The preflight must verify loaded Preview.69 SHA/MVID. The journey should record
+whether authority came from an existing scope, current encounter provisional
+trial, or legacy migration fallback, then preserve command completion and the
+successor state without retrying an unknown mutation.

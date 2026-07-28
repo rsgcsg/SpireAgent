@@ -25,6 +25,7 @@ export type SemanticContext =
   | MenuContext
   | RunEndedContext
   | CombatTransitionContext
+  | RunTransitionContext
   | UnknownContext;
 
 export interface CombatContext {
@@ -93,6 +94,11 @@ export interface RunEndedContext {
 export interface CombatTransitionContext {
   kind: "combat_transition";
   phase: "setup" | "resolution";
+}
+
+export interface RunTransitionContext {
+  kind: "run_transition";
+  phase: "setup";
 }
 
 export interface UnknownContext {
