@@ -29,6 +29,25 @@ consumer security boundary. The intended future product adds an external
 Companion between the Gateway and Agent/provider layers; it is not implemented
 yet.
 
+## Program Relationship
+
+`Re-SpireAgent` is the project's primary value runtime: it is the component
+that plays, is evaluated, and may later improve. The Gateway exists to make the
+Agent's observations and actions trustworthy; it is not the final product and
+must not absorb strategy. This value priority does not change authority:
+
+- STS2 and the Gateway remain the only game-fact, legality, execution and
+  completion authorities;
+- D independently evaluates Connector correctness and Agent capability but
+  never grants actions;
+- P manages future player lifecycle and recovery but never bypasses the
+  Gateway;
+- X research inherits no Live identity or permission.
+
+The program milestones and readiness tracks are defined in
+[Program Plan](PROGRAM_PLAN.md). Functional Gates in
+[Roadmap](ROADMAP.md) are technical checklists, not a competing product route.
+
 ## Accepted Target Architecture
 
 ```text
@@ -65,14 +84,26 @@ demonstrated ABI or load split.
 The target is explicitly Workflow A first. Engineering priority is current
 decision truth, inspectable player context, execution integrity, and action-
 local outcome reconciliation; compatibility/evidence supports those goals but
-does not replace them. `Context` is world/run background, `Surface` is the
-active interaction and purpose, internal source binding identifies the exact
-native caller, and the Outcome Witness proves that caller's owned result.
-Preview.72's Lead Paperweight/Hefty Tablet split is the reference example: one
-card-choice mechanic, distinct purpose and deck postconditions, no universal
-selector or room-name inference. An actionless settling Surface may be
-observable without mutation scope and projects `actionAuthority=none`; no
-client action exists until the Gateway publishes one.
+does not replace them. The target taxonomy keeps six concerns distinct:
+
+```text
+World/Run Context    current world and run background
+Decision Purpose     why the current decision exists
+Interaction Surface how the player currently interacts
+Native Binding       exact owner/source/participant/commit inside the Gateway
+Outcome              what the current action has actually established
+Inspection           bounded player-accessible read-only information
+```
+
+The current wire still combines some purpose with `context` or `surface`; the
+taxonomy is a migration target, not a claim that a new protocol already exists.
+Agent memory and external knowledge remain outside all six. Preview.72's Lead
+Paperweight/Hefty Tablet split is the reference example: one card-choice
+mechanic, distinct purpose/source and deck postconditions, no universal
+selector or room-name inference. Shared interaction never implies shared
+permission, Commit or Witness. An actionless settling Surface may be observable
+without mutation scope and projects `actionAuthority=none`; no client action
+exists until the Gateway publishes one.
 
 That operational boundary is now a required thin Operator Shell. It reports
 disk identity, loaded identity, environment/observation/Inspection/mutation
@@ -291,7 +322,10 @@ and is not a runtime candidate. This does not make today's
 `NormalizedCurrentState` a permanent public SDK or reject all future
 consumer-specific views. Retain complete evidence for validation/replay,
 investigate another projection only within an evidenced scope, and introduce
-fact-group availability only when real ambiguity justifies it. See the
+fact-group availability only when real ambiguity justifies it. The current
+Preview.72 full-run sample carried about 1.69 MB of user Prompt payload over
+145 calls; that makes duplication measurable but does not prove a compact view
+will preserve strategy. See the
 [visibility and observation audit](audits/VISIBILITY_AND_OBSERVATION_ARCHITECTURE_AUDIT_2026-07-22.md)
 and the
-[future program audit](audits/FUTURE_PROGRAM_AND_CONSUMER_ARCHITECTURE_AUDIT_2026-07-23.md).
+[A-primary program correction audit](audits/A_PRIMARY_WORKFLOW_AND_PROGRAM_CORRECTION_AUDIT_2026-07-28.md).

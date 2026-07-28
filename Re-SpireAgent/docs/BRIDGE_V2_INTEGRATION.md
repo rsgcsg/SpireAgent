@@ -10,8 +10,11 @@
 > exposed the Silver Crucible empty-chest Oracle defect. Preview.71 later
 > loaded and exposed exact Hefty Tablet source/result debt plus an actionless-
 > settling consumer bug. Preview.72 repairs both and is now exact-identity
-> loaded; old runtime grants cannot authorize it, and it has no current-artifact
-> action evidence. Six contracts are explicit high-precision rows; 81 remain conservative manifest-derived
+> loaded; old runtime grants cannot authorize it. Current-runtime run
+> `run-20260728132337-ce2195` completed a 146-decision one-game boundary with
+> 144 settled actions and one safe stale rejection. It is `unrecorded`, ran
+> with Inspection disabled, and did not exercise either repaired branch. Six
+> contracts are explicit high-precision rows; 81 remain conservative manifest-derived
 > identity/test-confirm fallbacks rather than semantic qualification.
 
 ## Connector Boundary
@@ -531,8 +534,10 @@ unknown-no-retry. Preview.70 later loaded as SHA `28c32f40...` / MVID
 `6f169dfe...` and supplied three more runs. Preview.71 later loaded as SHA
 `fd0f7c56...` / MVID `0acccd3d...` and supplied the current defect evidence.
 Preview.72 is now built/installed/loaded as SHA `afb0261f...` / MVID
-`3e9ad83a...` / runtime `14238a9e...`; this proves deployment and observation
-handshake, not mutation or repaired-branch completion.
+`3e9ad83a...` / runtime `14238a9e...`. Current-runtime run
+`run-20260728132337-ce2195` proves broad bounded mutation and one-game
+supervision on that identity, but not repaired-branch completion, Organic
+evidence, Inspection readiness or persistent qualification.
 
 Current v0.109 evidence includes merchant removal, event/rest upgrade, ordinary
 rest, ordinary combat, Brain Leech event card acquisition,

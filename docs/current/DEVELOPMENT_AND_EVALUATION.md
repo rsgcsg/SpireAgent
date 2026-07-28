@@ -6,6 +6,12 @@ evaluation have correctness criteria distinct from both the Gateway and the
 Agent. It is not a public platform, SDK, marketplace, or qualification
 authority.
 
+Under the current M1 milestone, D has two independent customers: it verifies C
+contract/runtime correctness and measures whether A candidates improve over a
+frozen baseline. It is not subordinate to either implementation and cannot
+accept A self-evaluation or C migration counts as capability evidence. See the
+[program correction audit](audits/A_PRIMARY_WORKFLOW_AND_PROGRAM_CORRECTION_AUDIT_2026-07-28.md).
+
 ## Ownership Boundary
 
 | D owns | D must not own |
@@ -77,6 +83,11 @@ without becoming either authority.
   assemblies.
 - Redacted evidence export and retention rules suitable for product support or
   external research.
+- One frozen A baseline manifest joining Re revision, Prompt/config/provider,
+  Connector protocol/schema and exact environment identity.
+- A minimum representative/held-out split and one joined report covering run
+  completion, stop reasons, validity, provider failures, latency/cost, Prompt
+  bytes and decision-family coverage.
 
 ## D-Lane Delivery Sequence
 
@@ -158,10 +169,14 @@ platform product.
 
 The bounded first D3 permission closeout is complete: the read-only runtime
 Patch inventory, repeated real `main_menu/continue_run` session canary and
-read-only recorded-evidence transition assertion are present. This does not
-complete general D3 evaluation/regression or authorize another candidate.
-Before any non-navigation candidate is considered, D must supply independent
-scope-specific evidence and counterexamples, followed by Gateway policy review.
+read-only recorded-evidence transition assertion are present. Permission
+automation is no longer D's default next project.
+
+The M1 priority is now to freeze one A baseline manifest, define a minimum
+representative/held-out split and produce a joined baseline report. Only then
+should D compare a scope-specific Prompt/view or Inspection-policy candidate
+with counterexamples. Gateway permission review remains necessary only if a
+later candidate requests live mutation influence.
 
 No D artifact grants live permission, canary status, qualification, stable
 learning, or product readiness. A D artifact may recommend a candidate, but

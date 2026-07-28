@@ -18,47 +18,24 @@ third-party clients.
 
 ## Current Truth
 
-The active connector source shares `2.0-preview.71` between C# and
-Re-SpireAgent; Re normalized schema is `28`. Gate 1 is closed as a bounded
-ordinary-single-player v2 connector baseline: Re and the default MCP adapter
-are v2-only, the entire Gateway `/api/v1` namespace is retired, and the final
-Neow's Fury lifecycle was completed under the recorded Preview.61 exact
-identity. Preview.63 supplied the first D3 session permission loop. Preview.64
-adds minimal runtime-bound client registration, one mutation-controller lease,
-generation fencing and command attribution. Preview.65 added exact
-operation-scoped persistent qualification. Preview.66 adds a non-authorizing
-multi-environment Profile index, a risk-based migration policy, exact
-candidate planning, evidence aggregation, automatic qualified-package
-assembly, and atomic qualification-store reload. Preview.68 preserves the
-non-authorizing identity shadow and adds coherent read-only observation retry,
-one-game terminal supervision, typed receipt completion boundaries, exact
-Kifuda continuation handoff, source-bound deck-enchant contracts, native
-hover-derived Orb text, and a non-authorizing runtime contract/source shadow.
-Preview.69 adds exact new/resumed-run mount settling, bounded semantic-cycle recovery, and
-ADR-0004 encounter-scoped provisional trials without making one success a
-persistent compatibility claim. The reliability closeout also adds a typed
-actionless shared-HUD deferral, one pre-mutation transient provider retry, and
-immutable run-termination evidence.
+The active Connector contract is `2.0-preview.72`; Re normalized schema is
+`29`. Gate 1/M0 is closed as a bounded ordinary-single-player v2 interface:
+Re and the optional MCP adapter are v2-only, Gateway `/api/v1` is retired, and
+the exact loaded Preview.72 completed a fresh 146-decision one-game journey
+with 144 settled actions, one safe pre-execution stale rejection and a clean
+run-boundary stop.
 
-Four real Preview.69 runs on one prior exact MVID settled 258 actions,
-preserved safe pre-execution stale rejection, and exercised both a game-over
-boundary and fresh menu entry. A final-MVID run then resumed a saved floor-9
-run, completed 114 actions, safely rejected 11 stale selections, traversed
-reward/map/treasure/combat/rest/game-over, and stopped at the one-game boundary.
-All records have `unrecorded` provenance, so they are exact-runtime repair and
-coverage evidence rather than Organic or persistent qualification. Session
-permission remains operation-scoped and runtime-bound.
-An additional final-MVID run completed a clean 107-decision
-character-select-to-menu journey with 106 settled actions. Preview.70 then
-cold-loaded on its own exact SHA/MVID and completed a 124-decision bounded run
-with 121 settled actions. A separate run exposed one real completion defect:
-Silver Crucible made the first treasure chest empty, the native game reached
-normal Proceed, but the old `open_treasure_chest` Oracle timed out because it
-required a non-null relic result. Preview.71 fixes that source-proven outcome,
-makes treasure-open the sixth explicit non-authorizing contract candidate, and
-is built/installed but not loaded.
-Exact source, loaded, candidate, Organic, and persistent evidence remain
-separated in [current status](docs/current/STATUS.md).
+That run has `unrecorded` provenance, current-build Inspection remained
+disabled, and the repaired Hefty/actionless-settling branches were not
+naturally exercised. It is exact-runtime coverage, not Organic evidence,
+persistent qualification, complete visible-information coverage or strategic
+quality proof. Exact source, loaded, candidate, Organic and persistent evidence
+remain separated in [current status](docs/current/STATUS.md).
+
+The current program milestone is **M1 Measurable External Agent Baseline**.
+`Re-SpireAgent` is the primary value runtime; C provides the authoritative game
+interface, D independently evaluates C and A, and P remains a minimum local
+control/product track. See the [program plan](docs/current/PROGRAM_PLAN.md).
 
 Bridge v2's safety kernel remains the current direction: one active input
 owner, opaque state-bound actions, execute-time validation, semantic completion,

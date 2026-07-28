@@ -98,7 +98,7 @@ Organic action, permission transfer, or qualification is claimed.
 Cold-start STS2 and run:
 
 ```bash
-cd /Users/fire/Desktop/SpireAgent/Re-SpireAgent
+cd Re-SpireAgent
 npm run agent:run
 ```
 

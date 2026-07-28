@@ -11,7 +11,7 @@ not inherit authority from the archived root SpireAgent runtime.
 2. [Architecture](ARCHITECTURE.md): component ownership and non-negotiable
    connector boundaries.
 3. [Connector target architecture ADR](decisions/ADR-0002-semantic-gateway-two-plane-target-architecture.md):
-   the single accepted Workflow C destination, responsibility boundaries,
+   the single accepted A-first Semantic Gateway destination, responsibility boundaries,
    rejected alternatives, staged migration, and bounded completion definition.
    [ADR-0003](decisions/ADR-0003-operation-retirement-and-native-continuation-migration.md)
    defines the accepted operation-retirement and native-continuation
@@ -19,9 +19,10 @@ not inherit authority from the archived root SpireAgent runtime.
    [ADR-0004](decisions/ADR-0004-risk-calibrated-encounter-trial-and-scoped-claims.md)
    separates diagnostic observation, volatile encounter trial admission, and
    persistent scoped claims.
-4. [Roadmap](ROADMAP.md): current functional gates and retirement sequence.
-5. [Program plan](PROGRAM_PLAN.md): cross-component dependencies and future
-   admission gates without changing the current delivery priority.
+4. [Program plan](PROGRAM_PLAN.md): M0--M4 user-outcome milestones and A/C/D/P/X
+   dependency order.
+5. [Roadmap](ROADMAP.md): technical readiness tracks, Gate history and milestone
+   mapping.
 6. [Internal development and evaluation](DEVELOPMENT_AND_EVALUATION.md):
    current evidence/eval capabilities, honest non-claims, and staged D-lane
    delivery.
@@ -36,6 +37,10 @@ not inherit authority from the archived root SpireAgent runtime.
 
 Current cross-component audits:
 
+- [A-primary workflow and program correction audit](audits/A_PRIMARY_WORKFLOW_AND_PROGRAM_CORRECTION_AUDIT_2026-07-28.md):
+  critical review of six A/Bridge planning proposals, the latest 146-decision
+  Preview.72 run, A-first versus C-first drift, M0--M4 milestone correction,
+  readiness-track mapping, falsifiable experiments and explicit non-claims.
 - [Preview.72 A-first generated-choice closeout](audits/PREVIEW_72_A_FIRST_GENERATED_CHOICE_ARCHITECTURE_CLOSEOUT_2026-07-28.md):
   four exact Preview.71 runs, Hefty Tablet source/result proof, actionless
   settling permission correction, attachment critique, A-first architecture

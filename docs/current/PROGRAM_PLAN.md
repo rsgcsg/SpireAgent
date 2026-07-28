@@ -1,250 +1,227 @@
 # Current Program Plan
 
-This document defines the cross-component dependency order for the rebuilt
-SpireAgent. It does not replace:
+This document owns the rebuilt project's user-outcome milestones and cross-track
+dependency order. It does not replace:
 
-- [Status](STATUS.md), which owns the current gate, blocker, and next action;
-- [Roadmap](ROADMAP.md), which owns Connector and product functional gates;
-- component-owned protocol, permission, coverage, and runtime evidence.
+- [Status](STATUS.md), which owns the current artifact, evidence and next action;
+- [Roadmap](ROADMAP.md), which owns technical readiness tracks;
+- component protocol, permission, coverage and runtime-evidence documents.
 
-Future capability is an architecture pressure test, not permission to divert
-the current mainline or claim an unimplemented platform.
+The detailed rationale is in the
+[A-primary workflow and program correction audit](audits/A_PRIMARY_WORKFLOW_AND_PROGRAM_CORRECTION_AUDIT_2026-07-28.md).
 
-## Program Outcome
+## Program Verdict
 
-The Connector destination is fixed by
-[ADR-0002](decisions/ADR-0002-semantic-gateway-two-plane-target-architecture.md).
-Program lanes consume that architecture; they may not introduce a competing
-game-state, transaction, permission, or completion authority.
+SpireAgent's primary value flow is the external Agent in `Re-SpireAgent/`.
+The Agent should make trustworthy decisions in real STS2, complete bounded
+runs, be independently evaluated, and demonstrate improvement. The Connector,
+evaluation infrastructure and product shell enable and constrain that value;
+they are not competing end products.
 
-The long-term system should let an external Agent consume trustworthy
-player-visible STS2 state, choose only Gateway-advertised actions, preserve
-complete evidence, and evolve its model-facing views, memory, evaluation, and
-learning methods without moving game truth or action authority out of the
-Gateway.
+This priority does not transfer authority. ADR-0002 remains the only accepted
+macro architecture: STS2 and the Gateway own game truth, legality, execution
+and completion; Re chooses only advertised action IDs; D evidence never grants
+authority; product tooling never bypasses the Gateway.
 
-Success is measured in this order:
+## Program Milestones
 
-1. Workflow A current-decision truth and bounded run continuity.
-2. Player-visible and inspectable information completeness and provenance.
-3. Execution integrity and action-local outcome reconciliation.
-4. Evidence integrity, replayability, and evaluation repeatability.
-5. Official Agent runtime correctness under a frozen baseline.
-6. Secure player control, recovery, and distribution.
-7. Demonstrated Agent improvement under guarded, reversible changes.
+| Milestone | Outcome | Status |
+|---|---|---|
+| M0 | Trustworthy Live Interface Baseline | bounded closed |
+| M1 | Measurable External Agent Baseline | **current** |
+| M2 | Demonstrated Agent Capability Improvement | gated by M1 |
+| M3 | Player-Controlled Agent Alpha | future product milestone |
+| M4 | Guarded Improvement And Sustainable Beta | future |
 
-## Program Lanes
+These milestones answer what user-visible result exists. The functional Gates
+in [Roadmap](ROADMAP.md) remain technical readiness checklists and historical
+evidence boundaries; they no longer form a second top-level product sequence.
 
-### C: Connector And Observation Platform
+## Readiness Tracks
 
-**Status:** active; current delivery priority.
+### A: External Agent Value Track
 
-Owns the Gateway, Connector Contract, exact environment identity,
-player-visible facts, action authority, execution validation, semantic
-completion, Inspection, operation coverage, and v1 retirement.
+**Status:** active; primary M1 value track.
 
-It must not absorb Prompt, memory, provider, learning, or external strategy
-concepts.
+Owns Re's evidence consumption, model-facing views, Prompt and provider
+configuration, action-ID choice, runtime supervision, run records and future
+capability candidates. The current RE-P1 path is the frozen live baseline, not
+the permanent limit of Agent architecture.
 
-### D: Internal Development And Evaluation Infrastructure
+A may run offline, replay, paired and shadow experiments during M1. It must not
+define game facts, reconstruct strict-v2 legality, execute native actions,
+declare completion, self-qualify a candidate or write stable learning.
 
-**Status:** active, internal, and subordinate to current Connector needs.
+### C: Trustworthy Game Interface Track
 
-Owns conformance checks, scenario and negative fixtures, evidence records,
-replay and inspection tooling, experiment definitions, graders, regression
-reporting, and developer diagnostics. These have independent data-quality and
-repeatability criteria; they are not incidental Agent features.
+**Status:** active; bounded Gate 1 baseline closed, Gate 2 work continues.
 
-This is not a public platform, marketplace, Agent SDK, or second game-rule
-engine. Its current implementation is partial: inspect, canary, records,
-replay-printing, Prompt audit/comparison, tests, and inventory checks exist,
-but there is no versioned scenario corpus, unified eval runner, grader
-registry, general eval runner, or qualification engine. Public offline CI now
-exists, and one exact combat-pile static scenario plus deterministic grader is
-the first narrow D2 slice; it is not a general corpus. See
-[Development and evaluation](DEVELOPMENT_AND_EVALUATION.md).
+Owns the Semantic Gateway, Connector Contract, exact environment identity,
+player-visible facts, current input owner, opaque action publication,
+execute-time validation, native Commit, action-local outcome, Inspection and
+v1 retirement.
 
-### A: Official External Agent Runtime
+C currently prioritizes defects that block the M1 baseline or an approved A/D
+experiment. Inventory, operation, contract, Profile and qualification counts
+are migration diagnostics, not program success metrics.
 
-**Status:** active as the frozen RE-P1 baseline; learning remains disabled.
+### D: Independent Development And Evaluation Track
 
-Owns Re-SpireAgent's normalized evidence consumption, consumer views, Prompt
-construction, provider invocation, action-ID choice, bounded runtime
-orchestration, and future memory or learning experiments.
+**Status:** active; required for M1 and independent of A self-evaluation.
 
-The Agent is already a distinct external runtime, so its ownership should not
-wait for a second consumer. What remains gated is freezing a general Agent
-Runtime Contract or public SDK. D evaluates A; A must not define its own game
-truth, execution legality, semantic completion, or evidence qualification.
+Owns conformance and negative fixtures, scenario/evidence contracts, replay
+assertions, representative and held-out splits, graders, experiment reports,
+counterexamples, cost/latency views and developer diagnostics. D evaluates both
+C correctness and A capability. It is not a public SDK, game-rule engine or
+Gateway permission authority.
 
-### P: Secure Product And Distribution
+### P: Player Operation And Product Track
 
-**Status:** architecture and threat-model work only; implementation is gated.
+**Status:** minimum local-control and operator baseline exists; product work is
+gated until M3.
 
-Owns the future Companion, product authentication where justified, secret
-brokerage, recovery, diagnostics, Workshop/Companion distribution, and
-player-facing lifecycle. Gateway-owned local controller coordination and
-runtime epoch are Connector responsibilities; the Companion may manage their
-lifecycle but cannot be their sole enforcement point.
+Owns future player setup, secrets, pause/takeover, recovery, diagnostics,
+Companion lifecycle, install/update/rollback and distribution. Gateway-owned
+controller lease and runtime epoch remain C correctness mechanisms. P does not
+create Agent capability or mutation authority.
 
-### X: Research Incubators
+### X: Optional Research Tracks
 
-**Status:** not active delivery lanes.
+**Status:** admission-gated, not current delivery.
 
-- **H, Headless:** starts only after its independent admission gate. Godot
-  headless execution does not prove STS2 semantic equivalence.
-- **T, post-training:** may define data eligibility and evaluation constraints
-  early, but dataset production and weight updates wait for trustworthy
-  observation, outcome, provenance, and held-out evaluation.
+Headless and post-training are optional. They require independent semantic,
+dataset and held-out evidence and inherit no Live permission.
 
-Headless and post-training are optional research directions, not required
-steps on the path to a usable live Agent.
+## M0: Trustworthy Live Interface Baseline
+
+**Status:** bounded closed.
+
+M0 includes source-truth repair, one current v2 contract, v1 mutation
+retirement, exact loaded identity, coherent observation, opaque state-bound
+actions, execute-time revalidation, native Commit, semantic outcome and a
+bounded ordinary-single-player one-game loop.
+
+M0 does not claim complete game/Mod coverage, complete visible information,
+persistent qualification, strategic quality or product readiness.
+
+## M1: Measurable External Agent Baseline
+
+**Status:** current.
+
+### Current Evidence
+
+Preview.72 has exact build/install/load identity and one current-runtime
+146-decision journey with 144 settled actions, one safe pre-execution stale
+rejection and one run-boundary stop. It had no unsupported, invalid,
+observation/provider failure, unsettled or unknown mutation outcome. Provenance
+is `unrecorded`; Inspection was disabled; Hefty/actionless-settling repair
+branches were not exercised. This is runtime coverage, not Organic or
+persistent qualification.
+
+### Delivery Order
+
+1. Freeze an A baseline identity: Re revision, Prompt/config/provider,
+   Connector protocol/schema and exact environment provenance.
+2. Define the minimum versioned representative/held-out D split and a single
+   baseline report joining Connector, Agent, provider, Prompt and outcome data.
+3. Report run completion, stop reason, invalid/stale/unknown outcomes, provider
+   failures, latency, cost, Prompt bytes and decision-family coverage.
+4. Let C close only concrete decision-truth, Inspection, owner, settling,
+   visible-fact or action-local outcome defects exposed by that baseline or an
+   approved candidate experiment.
+5. Keep P at the existing minimum controller/startup/recovery boundary.
+6. Evaluate one low-risk, scope-specific A candidate through
+   offline/replay -> paired -> counterexample -> held-out -> shadow. Preserve
+   the frozen live baseline until explicit evidence-based admission.
+
+The current Prompt is still full normalized evidence. The latest run's 145
+model calls carried about 1.69 MB of user payload, averaging about 11.7 KB and
+peaking at 23.6 KB. This justifies a measured projection experiment; it does
+not by itself justify changing the runtime Prompt.
+
+### Exit Criteria
+
+M1 exits only when:
+
+- the exact A baseline configuration and evidence provenance are reproducible;
+- representative and held-out scenarios are separated and versioned;
+- one report exposes correctness, run, provider, cost and Prompt metrics;
+- at least one A candidate is honestly accepted or rejected against baseline,
+  counterexamples and held-out evidence;
+- C blockers and unsupported scope are attributable rather than silently
+  reconstructed by Re;
+- no stable memory, learning or automatic self-promotion is enabled.
+
+## M2: Demonstrated Agent Capability Improvement
+
+M2 may compare scope-specific DecisionProjection, bounded Inspection policy,
+planning/critique, read-only retrieval, provider and budget candidates. A change
+counts as improvement only when held-out decision/run quality, risk calibration,
+cost and rollback evidence support it. Classifier prose, reason length, action
+agreement and module count are not strategic truth.
+
+Stable live behavior remains frozen while candidates pass offline, replay,
+paired, counterexample, held-out and bounded shadow review. Any live admission
+is explicit and rollbackable.
+
+## M3: Player-Controlled Agent Alpha
+
+M3 delivers an already evaluated A through the smallest justified Companion:
+secret brokerage, lifecycle, pause/takeover, recovery, diagnostics and private
+distribution. It does not move game truth, action authority or completion out
+of the Gateway and does not imply a public SDK or plugin marketplace.
+
+## M4: Guarded Improvement And Sustainable Beta
+
+Persistent memory or learning requires proposal, independent evaluation,
+counterexample, activation, provenance and rollback contracts. Workshop,
+third-party Agent SDK, plugins and ecosystem work require separate evidence,
+isolation and at least one second real consumer.
 
 ## Cross-Cutting Invariants
 
-The following are governance constraints, not a separate feature program:
+- Game truth, current observation, complete evidence, model projection, run
+  history, memory, external knowledge and action authority remain distinct.
+- The complete evidence record is retained even when a compact or tool-driven
+  model view is evaluated.
+- Inspection/detail requests are bounded, player-visible, read-only,
+  state-bound where necessary and non-authorizing.
+- Fixture, recorded runtime, canary, Organic and qualification evidence keep
+  distinct exact-environment provenance.
+- No model, memory, D artifact, SDK, Companion, MCP adapter or Headless host may
+  invent a game action or declare native completion.
+- Unknown mutation is never automatically retried.
 
-- Game truth, player-visible truth, current observation, normalized evidence,
-  consumer projection, run history, memory, external knowledge, and action
-  authority remain distinct.
-- The Connector Contract is the stable host boundary. Re's current
-  `NormalizedCurrentState` is versioned evidence owned by Re, not a promise
-  that its present shape is a permanent public SDK.
-- A compact or tool-driven model view never replaces the complete recorded
-  evidence needed for validation, replay, and debugging.
-- Inspection and future detail requests are bounded, read-only, state-bound,
-  auditable, and non-authorizing.
-- Fixture, shadow, canary, Organic, and qualification evidence retain distinct
-  meanings and exact environment provenance.
-- No memory, skill, policy, model output, SDK, Companion, MCP adapter, or
-  Headless host may create game actions or declare native completion.
+## Success Metrics
 
-## Dependency Order
+Top-level metrics are outcome-shaped:
 
-### Current Window
+- A: reproducible bounded-run completion, decision quality on representative
+  and held-out cases, invalid output, provider failure, latency/cost and
+  candidate regression/rollback.
+- C: current-decision coverage, visible-information completeness, action
+  publication precision, stale rejection/recovery, coherent successor,
+  unsupported/unknown classification and update recovery time.
+- D: scenario repeatability, held-out integrity, replay assertions, grader
+  versioning, counterexample coverage and report provenance.
+- P: setup, one-controller correctness, pause/takeover/recovery, secret
+  handling, install/update/rollback and player-visible diagnostics.
 
-1. Run one bounded ordinary journey on loaded Preview.72 without inheriting
-   Preview.71 grants. Preview.72 currently has source, contract-test,
-   build/install, and exact loaded-identity evidence only.
-2. Preserve the final Preview.69 exact-runtime evidence boundary: the
-   127-decision saved-run journey and clean 107-decision fresh journey prove
-   bounded one-game supervision on that exact runtime, but their unrecorded
-   provenance and session-only grants do not establish Organic or persistent
-   qualification. The read-only identity audit found semantic change in every
-   stale refusal and no composite-only candidate, so state binding remains
-   conservative.
-3. Continue C in ADR-0002's A-first order: close current decision/settling and
-   visible-fact defects, strengthen action-local outcome branches, then expand
-   explicit source/adapter/outcome candidates and identity shadowing. Preview.72
-   keeps one generated-choice interaction while separating Hefty Tablet's exact
-   source and Injury result; remaining manifest fallbacks stay non-authorizing.
-4. Maintain the closed Gate 1 v1-retirement inventory and keep unsupported
-   variants explicitly typed and fail closed.
-5. Advance D only for concrete C/A evidence needs. D may compare, grade and
-   recommend, but remains non-authorizing and outside model strategy input.
-6. Keep A's complete evidence record while evaluating only bounded, paired
-   DecisionProjection experiments; do not revive the failed generic compact
-   projection or add persistent learning.
-7. Keep P, H and T behind their existing admission gates. Do not build an
-   Artifact Router without a demonstrated ABI/load split.
-
-Preview.69's prior loaded MVID completed broad real-runtime session trials. The
-final built/installed/loaded MVID then completed a saved-run-to-menu lifecycle
-and a clean fresh character-select-to-menu lifecycle under one runtime epoch.
-Neither identity is generic cross-version or cross-Mod qualification, and no
-session trial was promoted to a persistent claim. Preview.70 later completed a
-124-decision boundary on its exact runtime and exposed one empty-chest Outcome
-Oracle defect. Preview.71 later loaded and produced two repeated Hefty source
-gaps, one actionless-settling Re validation defect, and one completed boundary.
-Preview.72 repairs those two defects and is built/installed/loaded, but has not
-executed an action or exercised either repaired branch yet.
-
-### Gate 1 Exit Basis And Gate 2 Entry
-
-Entry evidence:
-
-- multiple representative ordinary journeys under exact identities;
-- action publication, submission, settlement, and successor-state evidence;
-- no silent v1 fallback;
-- known unsupported operations fail closed and are inventoried.
-
-Gate 1 closed on this bounded basis on 2026-07-24. Therefore:
-
-1. Advance Gate 2 visibility closure and fact-availability semantics from
-   concrete ambiguities.
-2. Move D from ad hoc tools to a versioned scenario/evidence contract,
-   cross-language conformance, replay assertions, graders, and repeatable
-   experiment reports.
-3. Implement and qualify the smallest local coordination alpha: open read-only
-   observers, one mutation-controller lease, runtime epoch and command
-   attribution. Do not turn it into an account-security framework.
-4. Establish an A-lane frozen Agent baseline over held-out scenarios before
-   changing context, memory, or orchestration.
-5. Reassess whether a general Agent Runtime Contract has a second real
-   consumer. Do not create a public SDK from speculation alone.
-
-### After Coordinated Connector And Evaluation Baselines
-
-Entry evidence:
-
-- one-writer local coordination and restart invalidation are tested;
-- authenticated discovery remains optional until a product threat model proves
-  it necessary;
-- visibility gaps are bounded and reported honestly;
-- comparable baseline/shadow experiments and held-out scenarios exist;
-- Re can replay exact evidence and explain model input provenance.
-
-Then:
-
-1. Build the smallest Companion around the official Re runtime and model
-   broker.
-2. Use D to compare A against frozen held-out baselines, including
-   counterexamples and rollback evidence.
-3. Experiment with read-only retrieval or memory behind those baselines.
-4. Introduce typed, bounded information requests only if eager complete
-   evidence has a measured cost or coherence failure.
-5. Consider an out-of-process Agent SDK only after the official path is stable
-   and a second implementation validates the contract.
-
-### Learning, Headless, And Post-Training Admission
-
-- Guarded learning requires proposal, counterexample, evaluation, activation,
-  and rollback contracts before any persistent influence.
-- Headless requires independent host identity and differential semantic
-  evidence; it inherits no live permission.
-- Post-training requires eligible, decontaminated trajectories and held-out
-  evaluation. Product delivery does not depend on it.
-
-## Future-Consumer Compatibility Check
-
-For each current observation or Re change, ask:
-
-1. Is the authoritative game fact still owned by the Gateway?
-2. Is complete evidence retained independently from the current Prompt?
-3. Can a future consumer derive another view without changing action
-   authority?
-4. Are current observation, run history, memory, and external knowledge
-   provenance distinguishable?
-5. Is any extra detail typed, bounded, player-visible, state-bound, and
-   read-only?
-6. Does the change solve a current evidenced problem rather than a hypothetical
-   platform need?
-
-A negative answer triggers an architecture review. It does not automatically
-authorize a new framework.
+Operation count, qualification count, contract count, Prompt length, class
+count, one lucky win, one canary, build-only success or loaded-without-action
+are not top-level success metrics.
 
 ## Change Discipline
 
-When a lane status or dependency changes, update:
+When milestone or track status changes, update:
 
-- `STATUS.md` for current gate/blocker changes;
-- `ROADMAP.md` for functional gate changes;
-- this file for cross-lane dependency changes;
-- `DEVELOPMENT_AND_EVALUATION.md` for D capability or evidence changes;
-- the owning component protocol or architecture document;
-- evidence and coverage documents when runtime claims change.
+- `STATUS.md` for current facts and next action;
+- `ROADMAP.md` for technical readiness;
+- this file for user-outcome milestones and dependencies;
+- `DEVELOPMENT_AND_EVALUATION.md` for D capability/evidence changes;
+- the owning component protocol/coverage documents when runtime semantics
+  change;
+- evidence documents when current-runtime claims change.
 
-The original reasoning is recorded in the
-[future program and consumer architecture audit](audits/FUTURE_PROGRAM_AND_CONSUMER_ARCHITECTURE_AUDIT_2026-07-23.md).
-Its C/R/P/X lane decision is superseded by the
-[program-plan second review](audits/PROGRAM_PLAN_SECOND_REVIEW_2026-07-23.md).
+Future capability remains an architecture pressure test. It is not permission
+to build a framework before a current evidenced need exists.

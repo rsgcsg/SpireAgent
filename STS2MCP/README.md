@@ -48,7 +48,11 @@ trials. Preview.70 subsequently cold-loaded and completed an exact 124-decision
 bounded run, while another run proved an empty-treasure-chest completion gap.
 Preview.71 repaired that Oracle and later loaded. Preview.72 adds exact Hefty
 Tablet source/result semantics and correct actionless-settling consumption; it
-is built/installed/loaded but has no current-artifact action evidence. The 87-operation catalog now combines six explicit high-precision
+is built/installed/loaded, and current-runtime run
+`run-20260728132337-ce2195` completed a 146-decision one-game boundary with 144
+settled actions and one safe pre-execution stale rejection. The run is
+`unrecorded`, Inspection-disabled, and did not exercise either repaired branch;
+it is not Organic or persistent qualification. The 87-operation catalog now combines six explicit high-precision
 contracts with 81 manifest-derived conservative identity/test-confirm
 fallbacks. Fallback metadata does not assert semantic equivalence or bypass
 current native legality, Commit, completion, or operation-local quarantine.

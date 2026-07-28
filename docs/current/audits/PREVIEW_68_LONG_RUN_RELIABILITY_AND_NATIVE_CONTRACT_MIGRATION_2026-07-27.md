@@ -138,7 +138,7 @@ verification. Inspection remains disabled for this candidate environment.
 The only remaining live step is:
 
 ```bash
-cd /Users/fire/Desktop/SpireAgent/Re-SpireAgent
+cd Re-SpireAgent
 npm run agent:run
 ```
 

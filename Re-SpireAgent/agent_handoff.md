@@ -6,13 +6,13 @@
 > below are preserved as dated evidence and must not override those documents.
 
 Status update 2026-07-28 (current pointer only): source contract is
-`2.0-preview.72`; Re normalized schema is `29`. Preview.71 loaded as SHA
-`fd0f7c56...`, MVID `0acccd3d...`, runtime `19219d23...`. Four later runs
-proved one completed boundary and exposed repeated Hefty Tablet source/result
-debt plus one actionless-settling Re validation defect. Preview.72 repairs both
-and is built as SHA `afb0261f...`, MVID `3e9ad83a...`; install/cold-load and
-Live evidence remain pending. See canonical current status and the Preview.72
-A-first generated-choice closeout rather than this chronology.
+`2.0-preview.72`; Re normalized schema is `29`. Preview.72 is built, installed
+and loaded as SHA `afb0261f...`, MVID `3e9ad83a...`, runtime `14238a9e...`.
+Run `run-20260728132337-ce2195` completed a 146-decision one-game boundary with
+144 settled actions and one safe stale rejection. Its provenance is
+`unrecorded`; Inspection was disabled and the repaired Hefty/actionless-
+settling branches were not encountered. See canonical current status and the
+A-primary program audit rather than this chronology.
 
 Earlier status update 2026-07-27: source contract was `2.0-preview.67`; Re
 normalized schema is `26`. Preview.67 is built, installed and cold-loaded as

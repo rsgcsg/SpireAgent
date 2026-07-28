@@ -32,8 +32,11 @@ completed a 124-decision bounded run. A separate run exposed the Silver
 Crucible empty-chest Oracle defect. Preview.71 shared treasure lifecycle facts
 between projection and completion, then loaded and exposed exact Hefty Tablet
 and actionless-settling defects. Preview.72 repairs those two boundaries and is
-built/installed/loaded, but has no current-artifact action evidence. Prior
-runtime evidence and grants do not transfer.
+built/installed/loaded. Current-runtime run `run-20260728132337-ce2195`
+completed a 146-decision one-game boundary with 144 settled actions and one
+safe stale rejection. Its `unrecorded` provenance, disabled Inspection, and
+unexercised repaired branches keep it below Organic or persistent
+qualification. Prior runtime evidence and grants do not transfer.
 
 ## Current Documents
 

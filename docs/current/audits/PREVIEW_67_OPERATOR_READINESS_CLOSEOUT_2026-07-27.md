@@ -176,7 +176,7 @@ permission, or qualification.
 The only next action is the user-run ordinary journey:
 
 ```bash
-cd /Users/fire/Desktop/SpireAgent/Re-SpireAgent
+cd Re-SpireAgent
 npm run agent:run
 ```
 
@@ -185,4 +185,3 @@ witness mismatch, identity drift, unsupported stable state, missing action, or
 operation quarantine is a stop condition and must not be retried. A clean
 journey may supply Preview.67 session-canary/Organic evidence; it does not by
 itself qualify all 87 operations or promote any persistent package.
-

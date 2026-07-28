@@ -136,8 +136,16 @@ Preview.72 keeps the shared generated-card interaction Surface while adding an
 exact sealed Hefty Tablet source, explicit Injury tradeoff, and dedicated
 select/skip deck Witness. It also lets Re consume a scoped actionless settling
 Surface as observation with `actionAuthority=none` and no allowed action. Protocol/schema,
-fixtures, and Bridge/Re tests are updated. Preview.72 is loaded but has no
-current-artifact action or outcome evidence yet.
+fixtures, and Bridge/Re tests are updated.
+
+Current-runtime run `run-20260728132337-ce2195` then completed a fresh
+main-menu-to-game-over-to-main-menu boundary: 144 settled actions in
+146 decisions, one stale selection rejected before execution, and no
+unsupported, invalid, observation/provider failure, unsettled or unknown
+outcome. It crossed combat, event, map, reward, rest, shop, treasure, transform
+and menu flows. Provenance is `unrecorded`, Inspection was disabled, and neither
+Hefty nor actionless-settling repair was naturally exercised. This is exact-
+runtime coverage, not Organic or persistent qualification.
 
 ## Remaining Boundaries
 
@@ -145,15 +153,16 @@ Known unsupported or evidence-limited scope includes Tutor's unreviewed owner
 binding, Crystal Sphere, standalone manual potion discard, generated-card
 sources other than the exact registered native branches, non-standard
 profile/menu paths, multiplayer, and incomplete player-visible detail families.
-Hefty Tablet is implemented but remains current-artifact Live-evidence pending.
+Hefty Tablet is implemented but remains branch-specific Live-evidence pending.
 Static audits, fixtures, trial success, and old MVID evidence do not convert
 these into support.
 
 ## Next Engineering Step
 
-Remain in Gate 2. Run a bounded ordinary journey on the verified loaded
-Preview.72 without inheriting Preview.71 grants.
-Naturally reached Hefty select/skip and generated-combat settling transitions
-are the highest-value targeted canaries. Do not manufacture them or retry an
-unknown mutation. No evidence here authorizes persistent promotion, generic
-cross-version/Mod compatibility, or the explicit unsupported scopes above.
+Remain in the Gate 2 C readiness track while the repository enters M1
+Measurable External Agent Baseline. Freeze the exact A baseline, build the
+minimum representative/held-out D contract, and keep naturally reached Hefty
+select/skip or generated-combat settling transitions as targeted canaries. Do
+not manufacture them or retry an unknown mutation. No evidence here authorizes
+persistent promotion, generic cross-version/Mod compatibility, or the explicit
+unsupported scopes above.

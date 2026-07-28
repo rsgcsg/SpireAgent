@@ -109,7 +109,7 @@ Organic action, or qualification is claimed.
 Cold-start STS2, then run only:
 
 ```bash
-cd /Users/fire/Desktop/SpireAgent/Re-SpireAgent
+cd Re-SpireAgent
 npm run agent:run
 ```
 

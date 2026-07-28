@@ -1,174 +1,148 @@
 # Current Functional Roadmap
 
-This roadmap replaces the retired root P8--P15 sequence. Stages are functional
-gates, not claims that a document or fixture alone completed a product.
-The [program plan](PROGRAM_PLAN.md) places these gates in the wider
-`C/D/A/P/X` Connector, internal evaluation, official Agent, product, and
-research dependency graph; it does not create additional current permissions
-or delivery priorities.
+This roadmap owns technical readiness. The
+[program plan](PROGRAM_PLAN.md) owns the user-outcome sequence `M0`--`M4`.
+Technical Gates remain useful checklists and evidence boundaries, but they are
+not a second product roadmap and are not required to finish every imaginable
+game state before Agent work can proceed.
 
-The single architecture destination is
-[ADR-0002](decisions/ADR-0002-semantic-gateway-two-plane-target-architecture.md):
-one Semantic Gateway with a Live Decision Plane and a Compatibility/Evidence
-Control Plane, plus a strict Re consumer. ADR-0003 refines the live kernel by
-retiring `operation` as the final compatibility identity through a shadow-first
-native-contract migration. Functional gates below are migration and evidence
-milestones within that architecture, not competing designs.
-ADR-0004 separates diagnostic observation, encounter-scoped session trials,
-and persistent compatibility claims; it does not weaken native legality or
-completion.
+The single architecture destination remains
+[ADR-0002](decisions/ADR-0002-semantic-gateway-two-plane-target-architecture.md),
+refined by ADR-0003's native-contract migration and ADR-0004's separation of
+diagnostic observation, encounter-scoped trial and persistent claims.
+
+## Milestone Mapping
+
+| Technical readiness | Program relation | Status |
+|---|---|---|
+| Gate 0 source truth | M0 | closed |
+| Gate 1 reliable v2 ordinary journey | M0 | bounded closed |
+| Gate 2 decision/visibility/contract work | M1-C | active track |
+| Gate 3 local control coordination | M1-C/P | minimum baseline present |
+| Original Gate 4 official Agent | superseded | Re already exists |
+| Player-controlled Agent/Companion | M3 | future |
+| Distribution/ecosystem | M3/M4 | future |
+| Headless research | X | independently gated |
 
 ## Gate 0: Source Truth Repair
 
-Align the C# Gateway and Re consumer contract; add cross-language conformance
-fixtures; produce one repeatable Release artifact; install it; and establish a
-loaded runtime identity. Exit only when the current exact environment supports
-a bounded read/action/completion journey.
+**Status:** closed.
+
+C# Gateway and Re share one current protocol; cross-language fixtures exist;
+Release build/install/load identity is explicit. A build, fixture or historical
+MVID is never presented as current Live qualification.
 
 ## Gate 1: Connector Reliability And Coverage
 
-Status: **closed as a bounded ordinary-single-player v2 connector baseline on
-2026-07-24. Preview.61 supplied the final Neow's Fury runtime seal; Preview.62
-adds reviewed data-driven source/build adaptation and non-authorizing exact
-assembly audit without inheriting Organic qualification.**
+**Status:** bounded closed for vanilla ordinary single-player v2.
 
-Expand v2 only through independently closable journeys. For each journey,
-verify source/UI visibility, input owner, advertised opaque actions,
-execute-time validation, semantic completion, capability scope, exact identity,
-and bounded Organic evidence. Preserve historical v1 operation mappings as
-audit evidence, but do not retain a runtime v1 fallback.
+The ordinary loop uses only Gateway v2 facts and advertised opaque actions.
+Gateway v1 mutation is retired. Representative menu, run start, map, combat,
+reward, event, rest, shop, treasure, selector and game-over flows have exact
+runtime evidence across bounded runs. Known unsupported variants are typed and
+fail closed; this is not all-game, all-Mod or persistent-qualification coverage.
 
-The closeout retires the full v1 HTTP surface from Gateway and v1 consumption
-from Re/default MCP. It preserves explicit fail-closed and out-of-scope rows rather
-than pretending Crystal Sphere, standalone potion discard, profile mutation,
-or multiplayer were migrated. See the
-[Gate 1 closeout](../../STS2MCP/docs/bridge-v2/GATE1_CLOSEOUT_AND_SELECTOR_TRANSACTION_AUDIT_2026-07-24.md).
-The
-[adaptation closeout](../../STS2MCP/docs/bridge-v2/GATE1_ADAPTATION_AND_COMPATIBILITY_CLOSEOUT_2026-07-24.md)
-defines zero-core-code boundaries, automated verification and the negative
-Tutor holdout.
-
-## Gate 2: Decision-Plane And Player-Visible Information Closure
-
-Status: **active but bounded. Preview.69 completed four runs on a prior exact
-MVID, then two runs on the final MVID: a 127-decision saved-run-to-menu journey
-with 114 settled actions and 11 safe stale refusals, followed by a clean
-107-decision character-select-to-menu journey with 106 settled actions and no
-stale or runtime failure. Preview.70 then completed another exact bounded run
-and exposed an empty-treasure Oracle gap. Provenance remains unrecorded.
-Preview.71 repaired that gap and later loaded successfully. Four newer exact-
-runtime runs then exposed Hefty Tablet source/result debt and a Re actionless-
-settling validation bug; another run completed its boundary. Preview.72 repairs
-both and is built/installed/loaded, but has no current-artifact action evidence. No Organic or persistent
-qualification is claimed.**
-
-Close decision-relevant visible-information gaps using shared state, context,
-surface, preview, and read-only inspection. Do not expose hidden RNG, draw
-order, future rewards/events, or private game state. Refactor only after
-multiple source/runtime examples demonstrate genuine shared mechanics.
-
-Gate 2 follows ADR-0002's A-first order: current decision truth, inspectable
-context, execution integrity, outcome reconciliation, then compatibility and
-evidence support. Control-plane operation/package count is not a completion
-metric. Preview.72's Hefty branch is the reference abstraction: reuse one
-proven interaction Surface, but retain exact purpose, source binding and
-outcome Witness. An actionless settling owner is observable without being
-mutation-authorized.
-
-The current full-evidence Prompt remains the only runtime Prompt. Re's
-read-only `shadowStrategyProjection` is an offline measurement tool, not a
-Gateway protocol, action authority, compact-Prompt rollout, or evidence of
-strategy quality. It must pass paired provider shadow and semantic review
-before any Prompt-path change is considered. The first generic v1 projection
-failed that evidence gate on reward scopes and is rejected for runtime use.
-
-This does not reopen Gate 1 or authorize the whole build. Preview.66 adds a
-non-authorizing multi-environment Profile index, risk-based migration policy,
-exact candidate planning, evidence aggregation, automatic package assembly,
-append-only lifecycle tooling, and atomic Gateway reload. Profiles and D
-evidence remain non-authorizing; only the Gateway can issue, enforce, promote
-or quarantine runtime authority. Manifest-derived fallback identity enables
-test-confirm migration but does not prove semantic equivalence. Continue Gate
-2 only through independently evidence-bounded decision families. Loaded
-identity, compilation, static binding similarity, and one successful canary
-remain insufficient.
 See the
-[Preview.66 migration closeout](../../STS2MCP/docs/bridge-v2/PREVIEW_66_MULTI_ENVIRONMENT_MIGRATION_CLOSEOUT_2026-07-26.md).
+[Gate 1 closeout](../../STS2MCP/docs/bridge-v2/GATE1_CLOSEOUT_AND_SELECTOR_TRANSACTION_AUDIT_2026-07-24.md)
+and the
+[adaptation closeout](../../STS2MCP/docs/bridge-v2/GATE1_ADAPTATION_AND_COMPATIBILITY_CLOSEOUT_2026-07-24.md).
 
-Preview.68 closed the measured coherent-read race, preserved correct stale
-precommit rejection, stopped a bounded run after terminal cleanup, and modeled
-Kifuda's exact native continuation handoff. Preview.69 then proved broad
-session-scoped execution on its prior loaded MVID. It now records explicit run
-termination, treats decision-limit exhaustion as incomplete, performs one
-pre-mutation transient provider retry, and permits missing shared HUD only in a
-typed actionless run-mount transition. Current operation permission remains
-authoritative; ADR-0003 forbids replacing it until dual-read parity exists.
-Preview.70's read-only audit found no composite-only stale candidate in the
-measured runs. Preview.71 separates six explicit component-contract candidates
-from 81 digest-free manifest hypotheses without changing authority and reuses
-one treasure lifecycle classifier for projection and completion.
+## Gate 2: Decision And Visibility Readiness Track
 
-Gate 2 now proceeds in this order:
+**Status:** active inside M1, not a blocker on freezing/evaluating the current A
+baseline.
 
-1. run one bounded ordinary journey on the verified loaded Preview.72 without
-   inheriting Preview.71 authority;
-2. close naturally observed current-decision, settling, visible-fact, and
-   action-local outcome gaps before adding more control-plane machinery;
-3. expand non-authorizing adapter/outcome/source/partition shadow metadata
-   across representative menu, navigation, shop, combat, reward, and selector
-   families;
-4. separate game-semantic identity from current authority after the
-   [ADR-0005](../../STS2MCP/docs/bridge-v2/ADR-0005-semantic-state-and-authority-identity-separation.md)
-   dual-read gates pass, with rollback to composite identity;
-5. dual-read current-scope capability summaries before reducing hot governance
-   payloads;
-6. migrate claim/permission identity away from global operation only after
-   publication and execute-time parity are proven;
-7. evaluate bounded Re-side DecisionProjections on identical evidence; and
-8. replace generic promotion counts with family-specific scoped evidence.
+Gate 2 follows this priority:
 
-Kifuda admits only an exact continuation handoff, not a universal
-`PendingObligation` graph. Artifact Router remains deferred until a real ABI or
-load split is demonstrated.
+1. current decision truth and one active owner;
+2. decision-relevant visible facts and honest availability/missing semantics;
+3. bounded player-accessible Inspection/detail;
+4. publication/execution legality and action-local outcome correctness;
+5. non-authorizing native-contract and compatibility migration.
 
-## Gate 3: Local Control Coordination Alpha
+Preview.72 is built, installed and loaded at the exact identity in
+[Status](STATUS.md). Current-runtime run `run-20260728132337-ce2195` completed a
+146-decision one-game boundary with 144 settled actions, one safe pre-execution
+stale rejection, and no unsupported, invalid, observation/provider failure,
+unsettled or unknown outcome. It is `unrecorded` runtime evidence, not Organic
+or persistent qualification; current Inspection remains disabled and the
+Hefty/actionless-settling repair branches were not naturally exercised.
 
-Status: **Preview.64 behavior remains in the current source line. A bounded
-two-client check on Preview.67 confirmed single-writer acquisition, competing
-client rejection, release, and no remaining active controller. No game action
-was authorized by this coordination test.**
+### Current Gate 2 Work
 
-Coordinate local writers without pretending to solve product authentication:
-descriptive client registration, one Gateway-enforced mutation-controller
+- close only naturally observed A-facing decision, owner, settling, visible-
+  fact, Inspection and action-local outcome gaps;
+- retain complete evidence while A/D evaluate a scope-specific model view;
+- keep current operation permission authoritative until ADR-0003 dual-read
+  parity and rollback gates pass;
+- expand source/adapter/outcome identity only as non-authorizing shadow before
+  migration;
+- keep Profiles, D evidence and manifest hypotheses non-authorizing;
+- use family-specific evidence rather than operation/package counts.
+
+The current full-evidence Prompt remains the live baseline. The first generic
+compact projection failed cross-surface evidence and remains rejected. A new
+projection must be scope-specific, paired, counterexample-reviewed and held-out
+evaluated before runtime admission.
+
+### Explicit Remaining Scope
+
+Known gaps include Tutor's unreviewed owner binding, Crystal Sphere,
+standalone manual potion discard, unbound source variants, non-standard
+profile/menu paths, multiplayer, incomplete linked detail/tooltip families and
+Inspection availability for the current build. These do not invalidate the
+bounded M0 baseline; they remain fail-closed or visibly unsupported.
+
+## Gate 3: Local Control Coordination Readiness
+
+**Status:** minimum baseline present; no longer a separate top-level stage.
+
+The Gateway supports descriptive client registration, one mutation-controller
 lease, generation fencing, runtime restart invalidation and command
-attribution. Read-only access remains open. Existing opaque actions, D3
-operation permission, execute-time validation, native commit, semantic
-completion and unknown-no-retry remain separate and unchanged.
+attribution. A bounded two-client test verified competing writer rejection and
+release. Read-only access remains separate. This is correctness and diagnostic
+coordination, not authentication, RBAC or malicious-local-process isolation.
 
-Passwords, OAuth, certificates, RBAC, secret brokerage and malicious-local-
-process isolation are not Gate 3. They require a concrete product threat model.
-See the [Gate 3 closeout](../../STS2MCP/docs/bridge-v2/GATE3_LOCAL_CONTROL_COORDINATION_CLOSEOUT_2026-07-25.md).
+See the
+[Gate 3 closeout](../../STS2MCP/docs/bridge-v2/GATE3_LOCAL_CONTROL_COORDINATION_CLOSEOUT_2026-07-25.md).
 
-## Gate 4: Companion And Official Agent
+## M1-A/D: Measurable Agent Readiness
 
-Build the smallest external Companion necessary to broker control, secrets,
-provider access, recovery, and the official Re runtime. The Agent still sees
-only Connector Contract facts and advertised actions.
+This track now advances alongside Gate 2:
 
-## Gate 5: Distribution And Ecosystem Decisions
+1. freeze exact A baseline identity/configuration;
+2. establish representative and held-out D cases;
+3. produce one joined baseline report for correctness, run, provider, Prompt,
+   cost and outcome metrics;
+4. accept or reject one low-risk A candidate through paired evidence and
+   counterexamples.
 
-Package the Gateway Mod separately from the Companion, validate install/update/
-rollback journeys, then decide whether an Agent SDK, optional MCP integration,
-or third-party plugin execution is justified. A marketplace or in-process
-plugin platform is deferred until real isolation exists.
+It does not enable stable memory, learning or live policy mutation.
 
-## Gate H: Headless Host Research
+## M2: Agent Capability Readiness
 
-Headless is a separate host experiment. It may eventually share host-neutral
-contracts, but it inherits neither live action permission nor live evidence.
-See [Headless scope](headless/README.md).
+After M1, evaluate model-facing projection, bounded Inspection policy,
+planning/critique, read-only retrieval, provider and budget candidates. Changes
+must improve held-out outcomes with explicit cost, regression and rollback
+evidence. C continues to fix only facts/actions/outcomes that block these
+bounded evaluations.
 
-The current near-term order is owned by ADR-0002 and the
-[fact-first Connector audit](audits/WORKFLOW_C_FACT_FIRST_CONNECTOR_AUDIT_2026-07-27.md).
-The older connector migration audit remains evidence for defects and history,
-not current architecture authority.
+## M3: Player-Controlled Agent Alpha
+
+This replaces the misleading old name `Companion And Official Agent`; the
+official Re runtime already exists. M3 adds the smallest justified Companion
+for provider secrets, lifecycle, pause/takeover, recovery, diagnostics and
+private distribution. It cannot bypass Gateway authority.
+
+## M4: Distribution And Guarded Improvement
+
+Package Gateway and Companion separately, validate install/update/rollback,
+then decide whether Workshop, a public SDK, optional MCP ecosystem integration,
+plugins or persistent learning are justified. A public SDK requires a second
+real consumer; learning requires independent evaluation and rollback.
+
+## X: Headless And Post-Training Research
+
+Headless and post-training are optional independent tracks. They inherit no
+Live identity, permission or semantic equivalence and are not required for a
+usable live Agent. See [Headless scope](headless/README.md).

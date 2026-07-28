@@ -19,7 +19,10 @@ game-state, legality, permission, Commit, or completion authority.
 > completion timeout. Preview.71 fixed that Gateway-owned Oracle and later
 > runs exposed exact Hefty Tablet source/result debt plus an actionless-
 > settling consumer bug. Preview.72 fixes both and is built/installed/loaded;
-> no Preview.72 action evidence is claimed yet.
+> current-runtime run `run-20260728132337-ce2195` completed a 146-decision
+> one-game boundary with 144 settled actions and one safe stale rejection. Its
+> `unrecorded` provenance, disabled Inspection, and unexercised repaired
+> branches are not Organic or persistent qualification.
 
 > Product-boundary warning: direct Re-to-Gateway REST and `.env.local` provider
 > keys are developer workflows, not the target consumer architecture. The
