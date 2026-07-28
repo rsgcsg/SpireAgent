@@ -16,24 +16,27 @@ migration. This is not complete game, Mod, or persistent-qualification coverage.
 
 ## Source, Install, And Load
 
-Current source contract is `2.0-preview.69`; Re normalized schema is `28`.
-The final source build is installed and loaded in the current exact runtime:
+Current source contract is `2.0-preview.70`; Re normalized schema is `28`.
+The Preview.70 source build is installed but not loaded because the game is
+closed:
 
 ```text
-built SHA       914974b5177364665dacd26dc614d7f23faa61924d4f68fff3e49a8572fa4789
-installed SHA   914974b5177364665dacd26dc614d7f23faa61924d4f68fff3e49a8572fa4789
-loaded SHA      914974b5177364665dacd26dc614d7f23faa61924d4f68fff3e49a8572fa4789
-built MVID      1e457e86-8eba-4878-869b-f7545366fa1e
-installed MVID  1e457e86-8eba-4878-869b-f7545366fa1e
-loaded MVID     1e457e86-8eba-4878-869b-f7545366fa1e
-runtime epoch   7a312974c7114abcaa623b9e60e8f438
-rollback        STS2MCP/.local/deployments/2026-07-28T04-15-57-837Z
+built SHA       28c32f40e22abf1779499d6d28ac4e6dbcea1e0b3d090aa8941ba02d5afbbc55
+installed SHA   28c32f40e22abf1779499d6d28ac4e6dbcea1e0b3d090aa8941ba02d5afbbc55
+loaded SHA      not loaded (game closed)
+built MVID      6f169dfe-3938-4256-ac85-af0e9b3e2ff1
+installed MVID  6f169dfe-3938-4256-ac85-af0e9b3e2ff1
+loaded MVID     not loaded (game closed)
+runtime epoch   none for Preview.70
+rollback        STS2MCP/.local/deployments/2026-07-28T05-38-41-553Z
 Mod manifests   one canonical STS2_MCP manifest; no duplicate
 ```
 
-The Gateway reports game `v0.109.1|c8c577f6|-820620422`, exact bridge-only
-Modset, clean known Patch owners, and `migration_exploration`. Inspection and
-persistent qualification remain disabled for this identity.
+The last loaded Preview.69 runtime reported game
+`v0.109.1|c8c577f6|-820620422`, exact bridge-only Modset, clean known Patch
+owners, and `migration_exploration`. Those runtime facts and grants do not
+transfer to Preview.70. Inspection and persistent qualification remain
+unclaimed for the new artifact.
 
 ## Latest Live Evidence
 
@@ -72,6 +75,17 @@ coverage and repair evidence, not Organic or persistent qualification.
 Operation grants remained runtime-bound `session_canary` /
 `session_trial_confirmed`; `persistent_authority_enabled=false`.
 
+A second same-runtime run, `run-20260728044555-ltyx7d`, started at character
+select and completed a 107-decision game-to-menu boundary with 106 settled
+actions and zero stale, unsupported, invalid, observation/provider failure,
+unsettled, or unknown outcomes. Its provenance is also `unrecorded`.
+
+The Preview.70 read-only identity audit found that all 11 stale refusals in the
+earlier run changed the semantic candidate; two also changed authority, and
+none changed only the legacy composite. This does not support switching state
+binding. See the
+[Preview.70 closeout](audits/PREVIEW_70_IDENTITY_AND_CONTRACT_SHADOW_CLOSEOUT_2026-07-28.md).
+
 ## Reliability Closeout
 
 - The exact new/resumed-run mount `run_transition + no_action + settling` state
@@ -87,10 +101,10 @@ Operation grants remained runtime-bound `session_canary` /
 
 ## Immediate Next Step
 
-Continue Gate 2 from the exact current identity without widening permission:
-review the observed pre-execution stale rate and the single long enemy-turn
-settlement timeout, then prioritize player-visible Inspection/linked-detail
-closure and ADR-0003 native-contract migration. Remaining explicit unsupported
+Cold-start the installed Preview.70 artifact and run the ordinary bounded Agent
+journey. First verify loaded protocol/SHA/MVID; then use the run only as scoped
+coverage evidence. Continue player-visible Inspection/linked-detail closure and
+ADR-0003 native-contract migration without widening permission. Remaining explicit unsupported
 scope includes Tutor's
 unreviewed owner binding, Crystal Sphere, standalone manual potion discard,
 unbound source variants, non-standard profile/menu paths, multiplayer, and

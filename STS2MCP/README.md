@@ -20,7 +20,7 @@ Bridge v2 is the only mutation contract for the current Agent and default MCP
 adapter. It remains an incremental semantic/visibility preview, not
 complete-game coverage.
 
-The C# Bridge and Re source share `2.0-preview.69`; Re normalized schema is
+The C# Bridge and Re source share `2.0-preview.70`; Re normalized schema is
 `28`. Gate 1 is closed as a bounded ordinary-single-player v2 connector
 baseline. Preview.62 replaced repeated combat-pile source branches with a
 reviewed embedded registry, moves exact-environment scopes into a reviewed
@@ -40,11 +40,13 @@ Preview.68 retains the identity shadow and adds typed completion boundaries,
 exact Kifuda continuation handoff, source-bound deck-enchant contracts,
 coherent read-only observation retry, native hover-derived Orb text, and a
 non-authorizing runtime contract/source shadow. The last verified loaded
-Preview.68 artifact supplied later real-runtime runs; their
+Preview.69 artifact supplied later real-runtime runs; their
 provenance is `unrecorded`, so they are defect/coverage evidence rather than
 Organic qualification. Preview.69 adds exact run-start settling, bounded
 semantic-cycle recovery, native Orb formatting, and encounter-scoped runtime
-trials. It must be cold-loaded under its own SHA/MVID. The 87-operation catalog combines five explicit high-precision
+trials. Preview.70 is built and installed but not loaded; it adds read-only
+stale attribution and machine-readable explicit-contract candidates. The
+87-operation catalog combines five explicit high-precision
 contracts with 82 manifest-derived conservative identity/test-confirm
 fallbacks. Fallback metadata does not assert semantic equivalence or bypass
 current native legality, Commit, completion, or operation-local quarantine.
@@ -61,13 +63,13 @@ Exact evidence is recorded in [current status](docs/bridge-v2/CURRENT_STATUS.md)
 - Historical Gate 1 binding: Slay the Spire 2
   `v0.109.0|c12f634d|-1639417500`. Its authority does not transfer.
 - Current game identity:
-  `v0.109.1|c8c577f6|-820620422`. Preview.68 grants are bound to its loaded
-  Gateway identity and do not authorize Preview.69.
+  `v0.109.1|c8c577f6|-820620422`. Preview.69 grants are bound to its last loaded
+  Gateway identity and do not authorize Preview.70.
 - A matching version/commit with a different main-assembly hash remains
   untested and has no v2 action or Inspection authority. Check
   [Bridge v2 current status](docs/bridge-v2/CURRENT_STATUS.md) before treating
   a local install as qualified.
-- Source `2.0-preview.69` keeps centralized overlay/room/menu ownership, typed
+- Source `2.0-preview.70` keeps centralized overlay/room/menu ownership, typed
   diagnostics, purpose-specific selection and event contracts, staged
   completion semantics, and a top-level read-only shared run/player HUD.
   Current-build capabilities distinguish reviewed exact-policy actions,

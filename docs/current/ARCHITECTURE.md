@@ -177,19 +177,19 @@ and the
 
 ## Current Architectural Constraint
 
-The Gateway and Re share the mechanically checked `2.0-preview.69` source
+The Gateway and Re share the mechanically checked `2.0-preview.70` source
 contract. Gate 1 establishes a bounded v2 connector baseline: Re and the
 default MCP adapter are v2-only, Gateway v1 is retired, and historical v1 data
-is replay-only. Preview.69 has substantial real-runtime coverage on exact loaded
-SHA `8e7a...` / MVID `0e3d...`, but the final rebuilt and installed
-`4ac4...` / `ae84...` artifact must still be cold-loaded before it has runtime
-authority or evidence. Authority never transfers between those MVIDs.
+is replay-only. Preview.69 has substantial real-runtime coverage on exact final
+loaded SHA `914974b5...` / MVID `1e457e86...`. Preview.70 is built and
+installed as SHA `28c32f40...` / MVID `6f169dfe...`, but must be cold-loaded
+before it has runtime authority or evidence. Authority never transfers between
+those MVIDs.
 
-Four inspected Preview.69 runs settled 258 actions under one exact runtime,
-preserved six safe pre-execution stale rejections, completed one mid-run-to-menu
-boundary, and exposed one pre-mutation provider transport failure plus one
-ambiguous 100-tick limit. Their provenance is `unrecorded`, so they remain
-defect/coverage evidence rather than Organic qualification. New immutable run
+Two final-MVID Preview.69 runs completed saved/fresh run-to-menu boundaries;
+the latter settled 106 actions without stale or runtime failure. Their
+provenance is `unrecorded`, so they remain defect/coverage evidence rather than
+Organic qualification. New immutable run
 summaries distinguish run boundary, runtime guard/failure, and decision-limit
 termination; a decision limit is no longer reported as success.
 
@@ -208,6 +208,12 @@ startup path but does not make operation the final compatibility identity.
 ADR-0003 still requires shadow/dual-read migration to native source/adapter/
 outcome/partition claims. The 82 manifest fallback identities remain rollback
 inventory and test-confirm hypotheses, not semantic equivalence.
+
+Preview.70 makes that distinction machine-readable: five explicit component
+contracts expose non-authorizing digests and completion boundaries while every
+fallback remains a digest-free manifest hypothesis. Recorded-run identity
+auditing found no composite-only stale candidate in the current two-run slice,
+so action binding remains on the conservative composite identity.
 
 Kifuda is the first exact case satisfying ADR-0002's continuation admission
 rule. The shop action may complete at a typed continuation handoff only after

@@ -2,7 +2,7 @@
 
 Status: canonical architecture boundary for the current real-game connection.
 
-Current source compatibility status: C# and Re share `2.0-preview.69`, including
+Current source compatibility status: C# and Re share `2.0-preview.70`, including
 operation scopes, a Gateway artifact digest, separate actual-loaded versus
 release-declared game assembly hashes, reviewed exact-environment policy
 provenance, structural combat-pile transaction semantics, minimal local
@@ -24,6 +24,11 @@ broad session-trial coverage. The final built/installed/loaded MVID completed a
 saved-run mount and bounded game-over-to-menu journey under a fresh runtime
 epoch; its unrecorded evidence and runtime grants are not Organic or persistent
 qualification and do not transfer across restart.
+
+Preview.70 is built and installed but not loaded. It adds only
+non-authorizing migration evidence: recorded stale attribution and an explicit
+component-candidate versus manifest-hypothesis distinction. It does not inherit
+Preview.69 runtime authority or broaden any operation.
 
 Consumer distribution, local trust, Companion, BYOK, SDK, and release gates are
 defined in the [productization architecture audit](../../../docs/current/audits/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md).

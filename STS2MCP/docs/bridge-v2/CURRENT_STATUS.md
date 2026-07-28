@@ -6,25 +6,26 @@ retain only their recorded environment evidence.
 ## Source And Artifact Truth
 
 ```text
-Gateway/Re source     2.0-preview.69
+Gateway/Re source     2.0-preview.70
 Re normalized schema 28
 game                  v0.109.1|c8c577f6|-820620422
 game assembly SHA     2cb39e2eee651743829abcc0df4dd9cd7e65f46287c7ca264481115c9602382f
 game assembly MVID    208f08b8-d5f5-47f8-9e96-d3a4299ee709
-built SHA             914974b5177364665dacd26dc614d7f23faa61924d4f68fff3e49a8572fa4789
-installed SHA         914974b5177364665dacd26dc614d7f23faa61924d4f68fff3e49a8572fa4789
-loaded SHA            914974b5177364665dacd26dc614d7f23faa61924d4f68fff3e49a8572fa4789
-built MVID            1e457e86-8eba-4878-869b-f7545366fa1e
-installed MVID        1e457e86-8eba-4878-869b-f7545366fa1e
-loaded MVID           1e457e86-8eba-4878-869b-f7545366fa1e
-runtime epoch         7a312974c7114abcaa623b9e60e8f438
-rollback              STS2MCP/.local/deployments/2026-07-28T04-15-57-837Z
+built SHA             28c32f40e22abf1779499d6d28ac4e6dbcea1e0b3d090aa8941ba02d5afbbc55
+installed SHA         28c32f40e22abf1779499d6d28ac4e6dbcea1e0b3d090aa8941ba02d5afbbc55
+loaded SHA            not loaded (game closed)
+built MVID            6f169dfe-3938-4256-ac85-af0e9b3e2ff1
+installed MVID        6f169dfe-3938-4256-ac85-af0e9b3e2ff1
+loaded MVID           not loaded (game closed)
+runtime epoch         none for Preview.70
+rollback              STS2MCP/.local/deployments/2026-07-28T05-38-41-553Z
 ```
 
 The installation has one canonical `STS2_MCP` manifest and no duplicate
-Gateway manifest. Source, built, installed, loaded protocol/SHA/MVID and exact
-game identity match. Build/install/load identity is still not Organic or
-persistent qualification evidence.
+Gateway manifest. Source, built, and installed protocol/SHA/MVID match. The
+last loaded artifact was Preview.69; its runtime identity and grants do not
+transfer. Build/install identity is not loaded, Organic, or persistent
+qualification evidence.
 
 ## Current Boundary
 
@@ -88,6 +89,18 @@ coverage, not Organic or persistent qualification. Grants remained
 operation-scoped and runtime-bound; successful operations reached at most
 `session_trial_confirmed`, while `persistent_authority_enabled=false`.
 
+Same-runtime run `run-20260728044555-ltyx7d` then completed a fresh
+character-select-to-game-over-to-main-menu boundary: 106 settled actions in
+107 decisions, with zero stale, unsupported, invalid, observation/provider
+failure, unsettled, or unknown outcomes. It is also `unrecorded`.
+
+Preview.70's read-only run audit found no composite-only stale candidate in
+either current run. All 11 earlier stale refusals changed the semantic
+candidate; two also changed authority. Preview.70 therefore keeps composite
+state/action binding. It separately marks only five explicit component
+contracts as non-authorizing digest candidates; 82 fallback rows remain
+manifest hypotheses.
+
 ## Remaining Boundaries
 
 Known unsupported or evidence-limited scope includes Tutor's unreviewed owner
@@ -98,9 +111,9 @@ MVID evidence do not convert these into support.
 
 ## Next Engineering Step
 
-Remain in Gate 2. Review the measured stale-selection frequency and the one
-long enemy-turn successor timeout without weakening pre-execution rejection or
-Gateway completion truth. Then continue player-visible Inspection/detail
-closure and ADR-0003 native-contract shadow migration. No evidence here
+Remain in Gate 2. Cold-load Preview.70, verify exact loaded identity, and run a
+bounded ordinary journey without inheriting Preview.69 grants. Then continue
+player-visible Inspection/detail closure and ADR-0003 native-contract shadow
+migration. No evidence here
 authorizes persistent promotion, generic cross-version/Mod compatibility, or
 the explicit unsupported scopes above.

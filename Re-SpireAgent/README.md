@@ -6,15 +6,15 @@ It may derive an evidence-tested model view, but it never becomes a second
 game-state, legality, permission, Commit, or completion authority.
 
 > Compatibility status, 2026-07-28: Re and C# share source contract
-> `2.0-preview.69`; Re normalized schema is `28`. Gate 1 is closed as a
+> `2.0-preview.70`; Re normalized schema is `28`. Gate 1 is closed as a
 > bounded ordinary-single-player v2 baseline, not full game coverage.
 > Preview.69 adds typed new/resumed-run mount settling, bounded semantic-cycle recovery,
 > and strict consumption of encounter-scoped provisional grants. Diagnostic
 > observation, runtime trial admission, and persistent qualification are now
-> separate. Four Preview.69 runs provide prior-MVID runtime coverage. The final
-> built/installed/loaded MVID then completed a 127-decision saved-run-to-menu
-> journey with an immutable one-game summary. Its grants are still session-only
-> and its unrecorded provenance is not Organic or persistent qualification.
+> separate. Preview.69 final-MVID runs include a 127-decision saved-run-to-menu
+> journey and a clean 107-decision fresh game-to-menu journey. Their grants are
+> session-only and their unrecorded provenance is not Organic or persistent
+> qualification. Preview.70 is installed but not loaded.
 
 > Product-boundary warning: direct Re-to-Gateway REST and `.env.local` provider
 > keys are developer workflows, not the target consumer architecture. The
@@ -34,12 +34,12 @@ waits for the Bridge command lifecycle, and records the complete evidence.
 
 RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, shadow/live modes, policy promotion, or the old project's phase machinery. Its job is to make one decision path correct and auditable.
 
-Re's current strict client contract is Bridge `2.0-preview.69`. The latest
+Re's current strict client contract is Bridge `2.0-preview.70`. The latest
 verified loaded Preview.69 `v0.109.1|c8c577f6|-820620422` identity used exact
 session-scoped operation grants and no persistent qualification. Re strictly
 decodes current identities and grants, but does not interpret fallback witness
-semantics or promote any candidate. The final newly installed Preview.69 MVID
-has no loaded evidence yet. Preview.66's narrow persistent
+semantics or promote any candidate. Preview.70 SHA `28c32f40...` / MVID
+`6f169dfe...` is installed but has no loaded evidence yet. Preview.66's narrow persistent
 `main_menu/continue_run` qualification belongs only to its historical exact
 Gateway identity.
 The separate

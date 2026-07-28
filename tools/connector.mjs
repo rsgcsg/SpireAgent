@@ -369,6 +369,8 @@ function parseOptions(args) {
     else if (value === "--endpoint") options.endpoint = args[++index];
     else if (value === "--out") options.out = args[++index];
     else if (value === "--backup") options.backup = args[++index];
+    else if (value === "--run") options.run = args[++index];
+    else if (value === "--runs") options.runs = args[++index];
     else if (value === "--wait") options.wait = true;
     else if (value === "--wait-ms") options.waitMs = parseIntegerOption(value, args[++index], true);
     else if (value === "--poll-ms") options.pollMs = parseIntegerOption(value, args[++index], false);
@@ -449,6 +451,7 @@ function test(options) {
   run("npm", ["--prefix", "Re-SpireAgent", "run", "check"]);
   for (const script of [
     "check:connector-cli",
+    "check:connector-run-identity",
     "check:docs",
     "check:connector-compatibility-fixtures",
     "check:connector-permission-fixtures",
@@ -732,6 +735,7 @@ function usage() {
     + `  verify-loaded-artifact [--wait]   Require source/built/installed/loaded identity agreement\n`
     + `  run-agent -- <agent args>         Exact-identity preflight, trial resume, then bounded Re run\n`
     + `  collect-evidence [--out FILE]     Capture read-only capabilities/state/controller/clients\n`
+    + `  audit-run-identity [--run ID|DIR] Audit recorded stale refusals against identity shadows\n`
     + `  start-or-resume-trial -- <args>   Delegate to the migration cycle\n`
     + `  revoke -- <ledger args>           Revoke a persistent qualification\n`
     + `  rollback -- <ledger args>         Roll back a persistent qualification\n`
@@ -789,6 +793,13 @@ export async function main(argv = process.argv.slice(2)) {
   }
   if (command === "collect-evidence") {
     console.log(JSON.stringify(await collectEvidence(options), null, 2));
+    return;
+  }
+  if (command === "audit-run-identity") {
+    const args = [];
+    if (options.run) args.push("--run", options.run);
+    if (options.runs) args.push("--runs", options.runs);
+    run("node", [path.join(WORKSPACE, "tools/connector-run-identity-audit.mjs"), ...args]);
     return;
   }
   if (command === "run-agent") {

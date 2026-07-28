@@ -1,13 +1,13 @@
 # Bridge v2 Integration
 
 > Current source-truth status, 2026-07-28: Re and C# share the
-> `2.0-preview.69` source consumer contract; Re normalized schema is `28`.
+> `2.0-preview.70` source consumer contract; Re normalized schema is `28`.
 > Gate 1 is closed as a bounded ordinary-single-player v2 connector baseline.
 > Preview.61 supplied the final Neow's Fury runtime seal; Preview.62 adds
 > policy provenance and registry adaptation without inheriting qualification.
-> Four Preview.69 runs provide exact old-MVID runtime coverage. The final
-> rebuilt/installed Preview.69 MVID still requires a cold load, and old runtime
-> grants cannot authorize it. Five contracts are
+> Preview.69 has exact runtime coverage including one clean 107-decision
+> game-to-menu journey. Preview.70 is built and installed but requires a cold
+> load, and old runtime grants cannot authorize it. Five contracts are
 > explicit high-precision rows; 82 remain conservative manifest-derived
 > identity/test-confirm fallbacks rather than semantic qualification.
 
@@ -29,7 +29,7 @@ consumption.
 
 ## Current Scope
 
-Re-SpireAgent implements the strict `2.0-preview.69` consumer contract. When a
+Re-SpireAgent implements the strict `2.0-preview.70` consumer contract. When a
 matching Bridge exists, authority is read from capabilities rather than
 inferred from implementation or historical evidence.
 
@@ -88,6 +88,11 @@ status and candidate digest shapes and preserves it in raw evidence. It is not
 part of normalized strategy state, Prompt construction, action import,
 permission, or completion. The legacy composite `state_id` remains the only
 state/action binding until a separately reviewed Organic migration.
+
+Preview.70 also strictly decodes explicit component-contract candidates in the
+raw contract shadow. Missing candidate digests are invalid. Manifest hypotheses
+carry no component digest. Neither form enters normalized strategy state,
+Prompt construction, action import, permission, or completion.
 
 The first exact Preview.63 production-path canary submitted advertised
 `main_menu/continue_run` once and settled at `reward_flow/reward_claim`. The
@@ -508,20 +513,19 @@ neither can add actions to a Bridge-owned surface.
 
 ## Evidence And Next Step
 
-Four Preview.69 records under loaded SHA `8e7a...`, MVID `0e3d...`, runtime
-`740e...` settled 258 decisions across ordinary menu, event, map, combat,
-reward, rest, shop, treasure, selector, and game-over flows. Six stale
-selections were rejected before execution and later fresh ticks progressed. One
-mid-run record reached the game-over-to-menu boundary; one fresh-menu record
-stopped at the former 100-tick ceiling; one separate run stopped before mutation
-on provider `fetch failed`. Their provenance is `unrecorded`, so none is Organic
-or persistent qualification.
+Preview.69 has two final-MVID records under SHA `914974b5...`, MVID
+`1e457e86...`, runtime `7a312974...`. The first completed a 127-decision
+saved-run-to-menu boundary with 114 settled actions, 11 safe stale refusals and
+one confirmed command whose successor checkpoint exceeded Re's budget. The
+second completed a fresh 107-decision character-select-to-menu journey with
+106 settled actions and no stale or runtime failure. Their provenance is
+`unrecorded`, so neither is Organic or persistent qualification.
 
 New Re runs write immutable `run-summary.json`; decision-limit exhaustion is
 incomplete and exits non-zero. A transient provider transport failure receives
 at most one pre-mutation retry. These changes do not alter Gateway completion or
-unknown-no-retry. The final installed `4ac4...` / `ae84...` Gateway identity
-still requires cold-load evidence.
+unknown-no-retry. Preview.70 is built and installed as SHA `28c32f40...` / MVID
+`6f169dfe...`; the game is closed, so it still requires cold-load evidence.
 
 Current v0.109 evidence includes merchant removal, event/rest upgrade, ordinary
 rest, ordinary combat, Brain Leech event card acquisition,

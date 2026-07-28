@@ -53,6 +53,11 @@ internal static class BridgeOperationQualificationCatalog
     public static IReadOnlyList<BridgeOperationQualificationContract> Contracts =>
         Loaded.Value.Contracts;
 
+    public static bool IsExplicitContract(string surfaceKind, string operation) =>
+        Loaded.Value.ExplicitContracts.Any(value =>
+            string.Equals(value.SurfaceKind, surfaceKind, StringComparison.Ordinal)
+            && string.Equals(value.Operation, operation, StringComparison.Ordinal));
+
     public static BridgeOperationQualificationIdentity? Describe(
         string surfaceKind,
         string operation)
@@ -174,6 +179,7 @@ internal static class BridgeOperationQualificationCatalog
                         contracts
                     }),
                     contracts,
+                    document.Contracts,
                     null)
                 : LoadResult.Failed(error, document.CatalogId, BridgeHash.Text(json));
         }
@@ -269,6 +275,7 @@ internal static class BridgeOperationQualificationCatalog
         string CatalogId,
         string CatalogDigest,
         IReadOnlyList<BridgeOperationQualificationContract> Contracts,
+        IReadOnlyList<BridgeOperationQualificationContract> ExplicitContracts,
         string? Error)
     {
         public static LoadResult Failed(
@@ -279,6 +286,7 @@ internal static class BridgeOperationQualificationCatalog
                 catalogId,
                 catalogDigest,
                 Array.Empty<BridgeOperationQualificationContract>(),
+                Array.Empty<BridgeOperationQualificationContract>(),
                 error);
-    }
+}
 }

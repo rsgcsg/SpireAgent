@@ -19,15 +19,17 @@ internal static class BridgeContractInstanceShadowBuilder
             .Distinct(StringComparer.Ordinal)
             .ToArray();
         BridgeContractOperationShadow[] operations = manifest?.Operations
-            .Select(operation => new BridgeContractOperationShadow(
+            .Select(operation => BuildOperation(
+                draft.Surface.Kind,
                 operation.Operation,
                 EvidenceName(operation.EvidenceStatus),
                 published.Contains(operation.Operation, StringComparer.Ordinal)))
             .ToArray()
-            ?? published.Select(operation => new BridgeContractOperationShadow(
+            ?? published.Select(operation => BuildOperation(
+                draft.Surface.Kind,
                 operation,
                 "unregistered",
-                Published: true)).ToArray();
+                published: true)).ToArray();
         string authorityTier = CurrentAuthorityTier(draft);
         string? semanticContractId = draft.RuntimeSemanticContractId
             ?? (manifest == null
@@ -43,7 +45,9 @@ internal static class BridgeContractInstanceShadowBuilder
             {
                 operation.Operation,
                 operation.EvidenceStatus,
-                operation.Published
+                operation.Published,
+                operation.ContractResolution,
+                operation.ContractDigest
             })
         })[..20];
 
@@ -74,6 +78,57 @@ internal static class BridgeContractInstanceShadowBuilder
                     "operation_evidence_does_not_grant_permission",
                     "authority_remains_explicit_operation_scoped"
                 });
+    }
+
+    private static BridgeContractOperationShadow BuildOperation(
+        string surfaceKind,
+        string operation,
+        string evidenceStatus,
+        bool published)
+    {
+        BridgeOperationQualificationIdentity? identity =
+            BridgeOperationQualificationCatalog.Describe(surfaceKind, operation);
+        bool explicitContract = identity != null
+                                && BridgeOperationQualificationCatalog.IsExplicitContract(
+                                    surfaceKind,
+                                    operation);
+        if (!explicitContract)
+        {
+            return new BridgeContractOperationShadow(
+                operation,
+                evidenceStatus,
+                published,
+                evidenceStatus == "unregistered"
+                    ? "unregistered"
+                    : published
+                        ? "published_manifest_hypothesis"
+                        : "manifest_hypothesis",
+                null,
+                null,
+                null,
+                null,
+                null);
+        }
+
+        return new BridgeContractOperationShadow(
+            operation,
+            evidenceStatus,
+            published,
+            published
+                ? "published_explicit_candidate"
+                : "unpublished_explicit_candidate",
+            identity!.ContractDigest,
+            new BridgeContractComponentDigests(
+                identity.InteractionDigest,
+                identity.OwnerDigest,
+                identity.SourceDigest,
+                identity.OperandDigest,
+                identity.CommitDigest,
+                identity.CompletionDigest,
+                identity.WitnessDigest),
+            identity.CompletionBoundary,
+            identity.WitnessId,
+            identity.RiskClass);
     }
 
     private static string CurrentAuthorityTier(BridgeObservationDraft draft)

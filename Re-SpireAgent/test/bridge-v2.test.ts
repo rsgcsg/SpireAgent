@@ -334,9 +334,14 @@ const DECK_ENCHANT_STATE = {
     status: "resolved_runtime_contract",
     instance_id: "contract-instance-deck-enchant-1",
     surface_kind: "deck_enchant_selection",
-    semantic_contract_id: "bridge.contract.deck_enchant_selection.self_help_book_event.2.0-preview.69",
+    semantic_contract_id: "bridge.contract.deck_enchant_selection.self_help_book_event.2.0-preview.70",
     declared_binding: "fixture exact source binding",
-    operations: [{ operation: "toggle_card", evidence_status: "surface_level_only", published: true }],
+    operations: [{
+      operation: "toggle_card",
+      evidence_status: "surface_level_only",
+      published: true,
+      contract_resolution: "published_manifest_hypothesis"
+    }],
     current_authority_tier: "canary",
     current_authority_basis: "exact_environment_surface_operation_gate",
     authorizing: false,
@@ -2404,6 +2409,30 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     delete resolvedWithoutContractId.contract_instance_shadow.semantic_contract_id;
     expect(() => decodeBridgeV2State(resolvedWithoutContractId)).toThrow(
       "resolved contract shadow requires semantic_contract_id"
+    );
+    const explicitContract = structuredClone(DECK_ENCHANT_STATE) as any;
+    explicitContract.contract_instance_shadow.operations[0] = {
+      ...explicitContract.contract_instance_shadow.operations[0],
+      contract_resolution: "published_explicit_candidate",
+      contract_digest: "a".repeat(64),
+      component_digests: {
+        interaction: "b".repeat(64),
+        owner: "c".repeat(64),
+        source: "d".repeat(64),
+        operand: "e".repeat(64),
+        commit: "f".repeat(64),
+        completion: "1".repeat(64),
+        witness: "2".repeat(64)
+      },
+      completion_boundary: "immediate_postcondition_observed",
+      witness_id: "fixture_witness",
+      risk_class: "fixture"
+    };
+    expect(decodeBridgeV2State(explicitContract).data.contract_instance_shadow.operations[0])
+      .toMatchObject({ contract_resolution: "published_explicit_candidate" });
+    delete explicitContract.contract_instance_shadow.operations[0].contract_digest;
+    expect(() => decodeBridgeV2State(explicitContract)).toThrow(
+      "explicit contract candidate requires contract_digest"
     );
     expect(() => decodeBridgeV2State({ ...DECK_ENCHANT_STATE, surface_kind: "other" })).toThrow("does not match");
     expect(() => decodeBridgeV2State({ ...DECK_ENCHANT_STATE, shared_state: null })).toThrow(

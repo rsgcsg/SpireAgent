@@ -7,7 +7,7 @@ namespace STS2_MCP.BridgeV2.Protocol;
 
 public static class BridgeV2Contract
 {
-    public const string ProtocolVersion = "2.0-preview.69";
+    public const string ProtocolVersion = "2.0-preview.70";
     public const string ObservationPolicyId = "player_visible_ui_v1";
 }
 
@@ -314,7 +314,22 @@ public sealed record BridgeVisibilityState(
 public sealed record BridgeContractOperationShadow(
     string Operation,
     string EvidenceStatus,
-    bool Published);
+    bool Published,
+    string ContractResolution,
+    string? ContractDigest,
+    BridgeContractComponentDigests? ComponentDigests,
+    string? CompletionBoundary,
+    string? WitnessId,
+    string? RiskClass);
+
+public sealed record BridgeContractComponentDigests(
+    string Interaction,
+    string Owner,
+    string Source,
+    string Operand,
+    string Commit,
+    string Completion,
+    string Witness);
 
 public sealed record BridgeContractInstanceShadow(
     string Status,

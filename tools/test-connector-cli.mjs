@@ -12,6 +12,9 @@ import {
   resolveModsDir,
   selectAgentAuthorityPath
 } from "./connector.mjs";
+import { auditRunIdentity } from "./connector-run-identity-audit.mjs";
+
+assert.equal(typeof auditRunIdentity, "function");
 
 assert.equal(
   resolveGameDir({ STS2_GAME_DIR: "./fixture-game" }, "linux", "/home/test"),
@@ -63,14 +66,14 @@ assert.deepEqual(agentRunPreflightErrors({
 ]);
 
 const clean = evaluateLoadedArtifact({
-  csharpProtocol: "2.0-preview.69",
-  reProtocol: "2.0-preview.69",
+  csharpProtocol: "2.0-preview.70",
+  reProtocol: "2.0-preview.70",
   builtSha: "a".repeat(64),
   installedSha: "a".repeat(64),
   builtMvid: "mvid",
   installedMvid: "mvid",
   capabilities: {
-    protocol_version: "2.0-preview.69",
+    protocol_version: "2.0-preview.70",
     bridge: {
       assembly_file_sha256: "a".repeat(64),
       module_version_id: "mvid",

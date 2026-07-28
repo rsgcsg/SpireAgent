@@ -104,6 +104,12 @@ source contract. Unknown deck-enchant sources remain fail closed.
    currently supported families have an exact native-contract mapping or an
    explicit fail-closed row.
 
+Preview.70 completes a non-authorizing inventory distinction within steps 1
+and 2: five explicit contracts expose component digests and expected
+completion boundaries, while 82 manifest-derived rows are labeled hypotheses
+and expose no contract digest. This does not satisfy runtime-source coverage,
+publication/execute parity, or the claim-key migration gate.
+
 ## Rejected Alternatives
 
 - **Immediate global operation deletion:** unsafe because current Gateway
@@ -124,4 +130,3 @@ Unknown source, owner, identity, completion, or child binding still fails
 closed. Unknown mutation outcome remains non-retryable. If shadow metadata or
 handoff logic disagrees with native runtime evidence, suppress only the
 affected contract and return to the last exact operation-scoped behavior.
-

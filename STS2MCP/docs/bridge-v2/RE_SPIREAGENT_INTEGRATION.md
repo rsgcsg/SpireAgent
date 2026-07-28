@@ -2,11 +2,11 @@
 
 In this project, "SpireAgent" means `Re-SpireAgent` by default.
 
-Current source contract is `2.0-preview.69`; Re normalized schema is `28`.
+Current source contract is `2.0-preview.70`; Re normalized schema is `28`.
 Identity and runtime-contract shadows are strictly decoded and remain
-non-authorizing. Four runs on one verified loaded Preview.69 identity provide
+non-authorizing. Preview.69 runs on one verified loaded identity provide
 real-runtime coverage whose provenance is `unrecorded`, not Organic
-qualification. The final rebuilt and installed Preview.69 MVID requires its own
+qualification. Preview.70 is built and installed but requires its own
 cold-load identity and Gateway-owned encounter trial.
 Gate 1 is closed as a bounded ordinary-single-player v2 connector baseline.
 Preview.61 supplied the exact Neow's Fury Organic lifecycle; Preview.62 adds
@@ -41,6 +41,11 @@ decoding, coherent structural projection, advertised-action import,
 submission/polling, and exact identity/evidence recording. Re must not grow
 strict-v2 game legality, native Commit logic, transaction inference, Witness
 reconstruction, permission, or live-versus-Headless content branches.
+
+Preview.70 preserves explicit component-contract candidates only in raw
+evidence. Re does not copy their digests, completion boundary, or risk class
+into `NormalizedCurrentState` or the strategy Prompt. Manifest hypotheses are
+not upgraded by client-side inference.
 
 Required client behavior:
 

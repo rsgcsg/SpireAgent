@@ -36,6 +36,10 @@ not inherit authority from the archived root SpireAgent runtime.
 
 Current cross-component audits:
 
+- [Preview.70 identity and contract-shadow closeout](audits/PREVIEW_70_IDENTITY_AND_CONTRACT_SHADOW_CLOSEOUT_2026-07-28.md):
+  recorded-run identity attribution, clean full-run evidence, explicit
+  component-candidate versus manifest-hypothesis separation, installed
+  Preview.70 identity, rollback, and cold-load non-claims.
 - [Preview.69 live authority and run reliability closeout](audits/PREVIEW_69_LIVE_AUTHORITY_AND_RUN_RELIABILITY_CLOSEOUT_2026-07-28.md):
   prior-MVID audit, intermediate saved-run failure, final-MVID completed
   long-run evidence, operation-scoped permission truth, typed run-mount repair,

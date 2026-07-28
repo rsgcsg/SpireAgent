@@ -1042,7 +1042,66 @@ public sealed class BridgeContractTests
         Assert.False(shadow.Authorizing);
         Assert.Contains(shadow.Operations, operation =>
             operation.Operation == "proceed_rest_site" && operation.Published);
+        BridgeContractOperationShadow proceed = Assert.Single(
+            shadow.Operations,
+            operation => operation.Operation == "proceed_rest_site");
+        Assert.Equal("published_manifest_hypothesis", proceed.ContractResolution);
+        Assert.Null(proceed.ContractDigest);
         Assert.Contains("authority_remains_explicit_operation_scoped", shadow.Limitations);
+    }
+
+    [Fact]
+    public void ExplicitOperationContractIsAComponentDigestCandidateButNotAuthority()
+    {
+        var compatibility = BridgeContractManifest.WithExplicitActionScopes(new CompatibilityAssessment(
+            "qualified_scoped",
+            new[] { "0.109.1" },
+            new[] { "build" },
+            ActionExecutionAllowed: true,
+            StateObservationAllowed: true,
+            InspectionAllowed: false,
+            ActionExecutionSurfaceKinds: new[] { "main_menu" },
+            ActionCanarySurfaceKinds: Array.Empty<string>(),
+            InspectionAllowedKinds: Array.Empty<string>(),
+            InspectionCanaryKinds: Array.Empty<string>(),
+            ObservationOnlySurfaceKinds: Array.Empty<string>(),
+            ObservationCandidateBuildFingerprints: Array.Empty<string>(),
+            Detail: "test"));
+        var draft = new BridgeObservationDraft(
+            "menu-sig",
+            "ready",
+            new MenuBridgeContext("menu", "root_navigation"),
+            new MainMenuSurface(
+                "main_menu",
+                "choosing",
+                "root",
+                Array.Empty<VisibleMenuOption>(),
+                null),
+            new StateCompleteness("complete", "derived", Array.Empty<string>(), Array.Empty<string>()),
+            new GameBuildIdentity("v0.109.1", "commit", "branch", 1, compatibility),
+            Array.Empty<string>(),
+            new[]
+            {
+                new BridgeActionDraft(
+                    "open-singleplayer",
+                    "open_singleplayer",
+                    "navigation",
+                    "Open Single Player",
+                    "test",
+                    () => BridgeActionStartResult.Started())
+            });
+
+        BridgeContractInstanceShadow shadow = BridgeContractInstanceShadowBuilder.Build(draft);
+        BridgeContractOperationShadow operation = Assert.Single(
+            shadow.Operations,
+            value => value.Operation == "open_singleplayer");
+
+        Assert.Equal("published_explicit_candidate", operation.ContractResolution);
+        Assert.Matches("^[a-f0-9]{64}$", operation.ContractDigest ?? string.Empty);
+        Assert.NotNull(operation.ComponentDigests);
+        Assert.Equal("continuation_handoff_observed", operation.CompletionBoundary);
+        Assert.Equal("singleplayer_or_character_select_owner_became_active", operation.WitnessId);
+        Assert.False(shadow.Authorizing);
     }
 
     [Fact]
@@ -1139,7 +1198,7 @@ public sealed class BridgeContractTests
             Array.Empty<BridgeActionDraft>())
         {
             RuntimeSemanticContractId =
-                "bridge.contract.deck_enchant_selection.kifuda_relic_pickup.2.0-preview.69",
+                "bridge.contract.deck_enchant_selection.kifuda_relic_pickup.2.0-preview.70",
             RuntimeSourceBindingId = "Kifuda.AfterObtained+Adroit:3"
         };
 

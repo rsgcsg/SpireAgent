@@ -10,13 +10,16 @@
 > loaded artifact. Current loaded identity and Gate status are owned by
 > [Bridge v2 Current Status](CURRENT_STATUS.md).
 
-Current source contract is Preview.69. Preview.61 supplied the bounded Neow's
+Current source contract is Preview.70. It is built and installed but not yet
+loaded; Preview.69 remains the latest exact-runtime evidence scope. Preview.61 supplied the bounded Neow's
 Fury Organic lifecycle that sealed Gate 1. Preview.62 added reviewed
 source/compatibility registries and a non-authorizing exact-assembly audit;
 Preview.66 added multi-environment migration infrastructure; Preview.69
-separates diagnostic observation, encounter trials, and persistent claims.
-None inherits historical operation coverage or qualification. Current installed
-and loaded identities are owned by [Bridge v2 Current Status](CURRENT_STATUS.md),
+separates diagnostic observation, encounter trials, and persistent claims;
+Preview.70 separates five explicit non-authorizing contract candidates from
+manifest hypotheses. None inherits historical operation coverage or
+qualification. Current installed and loaded identities are owned by
+[Bridge v2 Current Status](CURRENT_STATUS.md),
 not this matrix.
 
 Historical Gate 0 execution evidence recorded game version/commit plus the
@@ -104,7 +107,7 @@ The `1833084275` environment inherits no permission from the current loaded
 | top-level `shared_state` | qualified read-only composition | active-run HUD composition across map/combat/reward; preview.46 Cursed Pearl organically exposed Greed `card_previews` plus Eternal/Unplayable hover text with stable state identity | bounded strategic HUD, not all visible UI information; unknown hover-tip kinds still fail closed |
 | `visibility` + `inspection_catalog` | non-authorizing read-only declaration | preview.48 shop state declares `run_deck` and `shop_catalog`; combat declares `combat_piles`; linked detail families and hidden policy remain explicit | catalog covers only three fixed Inspection kinds and does not prove whole-game closure |
 | coherent observation bundle | non-authorizing read-only transport | preview.48 returned shop state, `run_deck`, and `shop_catalog` under one exact identity; Gate 1 repaired a same-state shop catalog/builder mismatch by sharing exact merchant availability, while genuine state-changing reads remain transient `stale_state` and never authorize retry | same-state mismatches remain hard errors; needs more inspection-diversity evidence; no command authority |
-| `contract_instance_shadow` | diagnostic only, always `authorizing=false` | preview.47 reports manifest contract, published operations, legacy tier, and limitations on real menu/shop states | declaration is not runtime semantic binding; actual permission remains exact environment + Surface kind |
+| `contract_instance_shadow` | diagnostic only, always `authorizing=false` | Preview.70 reports five explicit component-contract candidates with typed digests/boundaries and keeps 82 fallback rows as digest-free manifest hypotheses | neither form is runtime semantic binding or permission; exact-environment operation authority remains separate, and Preview.70 has no loaded-runtime evidence yet |
 | `combat_transition + no_action` lifecycle observation | non-authorizing, not a permission row | Current-MVID Organic setup and resolution observations around repeated `combat_turn -> reward_claim -> map -> combat_turn` journeys on preview.40 | exact `CombatRoom` setup/resolution only; other no-overlay gaps remain unsupported |
 | `run_transition + no_action` lifecycle observation | non-authorizing, not a permission row | Preview.69 final-MVID saved-run resume crossed the prior failing mount boundary; shared HUD may be deferred only for exact `run_without_visible_overlay` with missing run state/current room, typed actionless diagnostic, and sole `shared_visible_state` omission | no other active-run HUD omission inherits this exception; the transient state was crossed rather than guaranteed to be sampled in the Re record |
 

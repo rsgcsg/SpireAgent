@@ -1,6 +1,23 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.69`
+Protocol preview: `2.0-preview.70`
+
+Preview.70 adds two non-authorizing migration measurements without changing
+action publication, execution, permission, completion, or state binding:
+
+- each contract-shadow operation now distinguishes a five-row explicit
+  component contract from a manifest-derived hypothesis;
+- explicit candidates carry separate interaction, owner, source, operand,
+  Commit, completion, and Witness digests plus the expected completion boundary;
+- manifest fallback rows carry no component digest and remain explicitly
+  `manifest_hypothesis` or `published_manifest_hypothesis`;
+- `npm run connector -- audit-run-identity` attributes recorded stale refusals
+  against the Preview.67 semantic/authority candidates without authorizing an
+  identity migration.
+
+These fields are raw evidence only. They do not make `operation` a native
+contract, do not promote any qualification, and do not enter Re's strategy
+projection. The legacy composite `state_id` remains authoritative.
 
 Preview.69 separates diagnostic observation, encounter trial admission, and
 persistent claims:

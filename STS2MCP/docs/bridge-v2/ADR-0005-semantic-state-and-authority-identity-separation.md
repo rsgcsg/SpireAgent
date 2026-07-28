@@ -96,3 +96,17 @@ recorded and fresh Organic slices that:
 
 Passing this gate would authorize a migration design, not automatically
 qualify any gameplay operation.
+
+## Preview.70 Measurement
+
+The read-only run audit compared both candidate identities around every stale
+refusal in `run-20260728041630-2z58bz`. All 11 changed the semantic candidate;
+two also changed authority; none changed only the legacy composite. A second
+same-runtime run contained no stale refusal. The selected kind and exact
+operands remained published in all 11 cases, but player-visible facts such as
+pile counts, hand contents, and Power amounts changed.
+
+This evidence rejects using identity migration as the current stale-rate fix.
+It does not prove the candidates are complete. Shadow measurement remains
+accepted; authoritative migration remains blocked by the original promotion
+gate.

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { isJsonObject, type JsonObject } from "../../shared/json.js";
 
-export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.69" as const;
+export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.70" as const;
 export const BRIDGE_V2_INSPECTION_KINDS = ["run_deck", "combat_piles", "shop_catalog"] as const;
 const inspectionKindSchema = z.enum(BRIDGE_V2_INSPECTION_KINDS);
 
@@ -1186,8 +1186,47 @@ const contractOperationShadowSchema = z.object({
     "organic_qualified",
     "unregistered"
   ]),
-  published: z.boolean()
-}).passthrough();
+  published: z.boolean(),
+  contract_resolution: z.enum([
+    "published_explicit_candidate",
+    "unpublished_explicit_candidate",
+    "published_manifest_hypothesis",
+    "manifest_hypothesis",
+    "unregistered"
+  ]),
+  contract_digest: z.string().regex(/^[a-f0-9]{64}$/u).nullable().optional(),
+  component_digests: z.object({
+    interaction: z.string().regex(/^[a-f0-9]{64}$/u),
+    owner: z.string().regex(/^[a-f0-9]{64}$/u),
+    source: z.string().regex(/^[a-f0-9]{64}$/u),
+    operand: z.string().regex(/^[a-f0-9]{64}$/u),
+    commit: z.string().regex(/^[a-f0-9]{64}$/u),
+    completion: z.string().regex(/^[a-f0-9]{64}$/u),
+    witness: z.string().regex(/^[a-f0-9]{64}$/u)
+  }).nullable().optional(),
+  completion_boundary: z.enum([
+    "native_commit_observed",
+    "immediate_postcondition_observed",
+    "continuation_handoff_observed",
+    "transaction_settled",
+    "gateway_semantic_completion_observed"
+  ]).nullable().optional(),
+  witness_id: z.string().min(1).nullable().optional(),
+  risk_class: z.string().min(1).nullable().optional()
+}).passthrough().superRefine((operation, context) => {
+  const explicit = operation.contract_resolution === "published_explicit_candidate"
+    || operation.contract_resolution === "unpublished_explicit_candidate";
+  if (!explicit) return;
+  for (const field of ["contract_digest", "component_digests", "completion_boundary", "witness_id", "risk_class"] as const) {
+    if (!operation[field]) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: [field],
+        message: `explicit contract candidate requires ${field}`
+      });
+    }
+  }
+});
 
 const contractInstanceShadowSchema = z.object({
   status: z.enum(["resolved_manifest_contract", "resolved_runtime_contract", "unresolved"]),

@@ -27,6 +27,7 @@
     "migration:profiles": "node tools/connector-environment-profiles.mjs",
     "migration:cycle": "node tools/connector-migration-orchestrator.mjs",
     "connector": "node tools/connector.mjs",
-    "check:connector-cli": "node tools/test-connector-cli.mjs"
+    "check:connector-cli": "node tools/test-connector-cli.mjs",
+    "check:connector-run-identity": "node tools/test-connector-run-identity-audit.mjs"
   }
 }

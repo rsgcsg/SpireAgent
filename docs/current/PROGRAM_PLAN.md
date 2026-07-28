@@ -122,30 +122,36 @@ The following are governance constraints, not a separate feature program:
 
 ### Current Window
 
-1. Preserve the final Preview.69 exact-runtime evidence boundary: the completed
-   127-decision saved-run journey proves the run-mount repair and bounded
-   one-game supervision, but its unrecorded provenance and session-only grants
-   do not establish Organic or persistent qualification. Investigate measured
-   stale-selection and long-settlement behavior without weakening the safety
-   kernel.
-2. Continue C through the ADR-0003 migration order: exact runtime source/
-   adapter/outcome shadows, continuation boundaries, identity separation, then
-   hot-summary/on-demand evidence.
-3. Maintain the closed Gate 1 v1-retirement inventory and keep unsupported
+1. Cold-load the installed Preview.70 SHA/MVID and run one bounded ordinary
+   journey without inheriting Preview.69 grants. Preview.70 currently has
+   build/install evidence only.
+2. Preserve the final Preview.69 exact-runtime evidence boundary: the
+   127-decision saved-run journey and clean 107-decision fresh journey prove
+   bounded one-game supervision on that exact runtime, but their unrecorded
+   provenance and session-only grants do not establish Organic or persistent
+   qualification. The read-only identity audit found semantic change in every
+   stale refusal and no composite-only candidate, so state binding remains
+   conservative.
+3. Continue C through the ADR-0003 migration order: explicit source/adapter/
+   outcome contract candidates, continuation boundaries, identity separation,
+   then hot-summary/on-demand evidence. Keep manifest fallbacks as
+   non-authorizing test-confirm hypotheses.
+4. Maintain the closed Gate 1 v1-retirement inventory and keep unsupported
    variants explicitly typed and fail closed.
-4. Advance D only for concrete C/A evidence needs. D may compare, grade and
+5. Advance D only for concrete C/A evidence needs. D may compare, grade and
    recommend, but remains non-authorizing and outside model strategy input.
-5. Keep A's complete evidence record while evaluating only bounded, paired
+6. Keep A's complete evidence record while evaluating only bounded, paired
    DecisionProjection experiments; do not revive the failed generic compact
    projection or add persistent learning.
-6. Keep P, H and T behind their existing admission gates. Do not build an
+7. Keep P, H and T behind their existing admission gates. Do not build an
    Artifact Router without a demonstrated ABI/load split.
 
 Preview.69's prior loaded MVID completed broad real-runtime session trials. The
 final built/installed/loaded MVID then completed a saved-run-to-menu lifecycle
-under a fresh runtime epoch. Neither identity is generic cross-version or
-cross-Mod qualification, and no session trial was promoted to a persistent
-claim.
+and a clean fresh character-select-to-menu lifecycle under one runtime epoch.
+Neither identity is generic cross-version or cross-Mod qualification, and no
+session trial was promoted to a persistent claim. Preview.70 is installed but
+has not yet been loaded or exercised.
 
 ### Gate 1 Exit Basis And Gate 2 Entry
 

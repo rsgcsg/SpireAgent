@@ -1,7 +1,7 @@
 # Bridge v2 Documentation
 
 Bridge v2 is the active semantic Gateway protocol. C# and Re source now share
-`2.0-preview.69`; Re normalized schema is `28`. Gate 1 is closed as a bounded
+`2.0-preview.70`; Re normalized schema is `28`. Gate 1 is closed as a bounded
 ordinary-single-player v2 connector baseline and the complete v1 HTTP namespace
 is retired. Preview.61 supplied the final Neow's Fury runtime seal. Preview.62
 adds reviewed registry/policy adaptation and non-authorizing exact-assembly
@@ -20,16 +20,22 @@ preview closeouts.
 
 Preview.69 adds risk-calibrated encounter trials, exact new/resumed-run mount settling,
 bounded semantic-cycle recovery, native Orb formatting, typed actionless shared-
-HUD deferral, and explicit Re run termination evidence. Four runs provide broad
-coverage for one old loaded Preview.69 MVID; the final installed MVID is not
-loaded until a cold restart, and evidence/authority do not transfer. See
+HUD deferral, and explicit Re run termination evidence. Two final-MVID runs
+include one clean character-select-to-menu journey. Their unrecorded evidence
+and runtime authority do not transfer to the installed Preview.70 artifact. See
 [ADR-0005](ADR-0005-semantic-state-and-authority-identity-separation.md),
 [ADR-0004 trial/claim boundary](../../../docs/current/decisions/ADR-0004-risk-calibrated-encounter-trial-and-scoped-claims.md),
 and repository [ADR-0003](../../../docs/current/decisions/ADR-0003-operation-retirement-and-native-continuation-migration.md).
 
+Preview.70 adds a read-only recorded-run identity audit and separates five
+explicit component-contract candidates from 82 manifest hypotheses in the
+non-authorizing contract shadow. The built/installed Preview.70 artifact still
+requires a cold load; Preview.69 runtime evidence and grants do not transfer.
+
 ## Current Documents
 
 - [Current status](CURRENT_STATUS.md)
+- [Preview.70 identity and contract-shadow closeout](../../../docs/current/audits/PREVIEW_70_IDENTITY_AND_CONTRACT_SHADOW_CLOSEOUT_2026-07-28.md)
 - [Cross-component target architecture ADR](../../../docs/current/decisions/ADR-0002-semantic-gateway-two-plane-target-architecture.md)
 - [Operation retirement/native continuation ADR](../../../docs/current/decisions/ADR-0003-operation-retirement-and-native-continuation-migration.md)
 - [Risk-calibrated encounter trial ADR](../../../docs/current/decisions/ADR-0004-risk-calibrated-encounter-trial-and-scoped-claims.md)
