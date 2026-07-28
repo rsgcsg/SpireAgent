@@ -4,8 +4,9 @@ import { NORMALIZED_STATE_SCHEMA_VERSION } from "../src/domain/state/index.js";
 import { DeepSeekDecisionProvider } from "../src/llm/deepseekProvider.js";
 import { parseDecisionText, validateDecisionForActions } from "../src/llm/decisionSchema.js";
 import { normalizeCurrentState } from "../src/normalization/normalizeCurrentState.js";
+import { GLOBAL_PROMPT_VERSION, GLOBAL_SYSTEM_PROMPT } from "../src/prompting/globalPrompt.js";
 import { buildDecisionPrompt } from "../src/prompting/promptBuilder.js";
-import { SURFACE_GUIDES } from "../src/prompting/stateGuides.js";
+import { CONTEXT_GUIDES, SURFACE_GUIDES } from "../src/prompting/stateGuides.js";
 import { fixture, TEST_ADAPTER } from "./helpers.js";
 
 describe("prompt contract", () => {
@@ -18,7 +19,8 @@ describe("prompt contract", () => {
     expect(prompt.systemPrompt).toContain("Return exactly one JSON object");
     expect(payload.promptSchemaVersion).toBe(3);
     expect(payload.currentStateSchemaVersion).toBe(NORMALIZED_STATE_SCHEMA_VERSION);
-    expect(prompt.stateGuideVersion).toBe(3);
+    expect(prompt.globalPromptVersion).toBe(2);
+    expect(prompt.stateGuideVersion).toBe(4);
     expect(payload.contextKind).toBe("combat");
     expect(payload.surfaceKind).toBe("combat_turn");
     expect(payload.actionAuthority).toBe("local_reconstruction");
@@ -29,10 +31,33 @@ describe("prompt contract", () => {
     expect(prompt.userPrompt).not.toContain("DEEPSEEK_API_KEY");
   });
 
+  it("versions Prompt v2 and states its bounded game-strategy invariants", () => {
+    expect(GLOBAL_PROMPT_VERSION).toBe(2);
+    expect(GLOBAL_SYSTEM_PROMPT).toContain("Act 3 boss");
+    expect(GLOBAL_SYSTEM_PROMPT).toContain("Reaching 0 HP normally ends the run");
+    expect(GLOBAL_SYSTEM_PROMPT).toContain("HP is also a resource");
+    expect(GLOBAL_SYSTEM_PROMPT).toContain("Skipping a card can be correct");
+    expect(GLOBAL_SYSTEM_PROMPT).toContain("Do not assume hidden RNG");
+    expect(GLOBAL_SYSTEM_PROMPT).toContain("Choose exactly one immediate action from allowedActions");
+    expect(GLOBAL_SYSTEM_PROMPT).toContain("one exact allowedActions id");
+    expect(GLOBAL_SYSTEM_PROMPT).toContain("Return exactly one JSON object");
+  });
+
+  it("keeps every context and surface guide present with reviewed versions", () => {
+    expect(Object.values(CONTEXT_GUIDES)).not.toHaveLength(0);
+    expect(Object.values(SURFACE_GUIDES)).not.toHaveLength(0);
+    expect(Object.values(CONTEXT_GUIDES).every((entry) => entry.version === 4)).toBe(true);
+    expect(Object.values(SURFACE_GUIDES).every((entry) => entry.version >= 4)).toBe(true);
+    expect(SURFACE_GUIDES.combat_pile_card_selection.version).toBe(7);
+    expect(SURFACE_GUIDES.generated_card_choice.version).toBe(5);
+    expect(SURFACE_GUIDES.no_action.text).toContain("Do not produce a decision");
+    expect(SURFACE_GUIDES.unsupported.text).toContain("Do not produce a decision");
+  });
+
   it("versions combat-pile guidance independently and keeps source semantics data-driven", () => {
     const guide = SURFACE_GUIDES.combat_pile_card_selection;
 
-    expect(guide.version).toBe(6);
+    expect(guide.version).toBe(7);
     expect(guide.text).toContain("source-bound");
     expect(guide.text).toContain("Do not infer one source card's business outcome from another");
     expect(guide.text).not.toContain("current Headbutt contract");
@@ -109,6 +134,11 @@ describe("DeepSeekDecisionProvider", () => {
     expect(requestRecord.max_tokens).toBe(320);
     const providerRecord = session.finalAttempt.rawProviderResponse as { usage?: Record<string, unknown> };
     expect(providerRecord.usage?.prompt_tokens).toBe(10);
+    const retryBody = requestBodies[1] as { messages?: Array<{ role?: string; content?: string }> };
+    const retrySystem = retryBody.messages?.find((message) => message.role === "system")?.content ?? "";
+    expect(retrySystem).toContain("FORMAT RETRY");
+    expect(retrySystem).toContain("Return one complete JSON object only");
+    expect(retrySystem).not.toContain("Act 3 boss");
   });
 
   it("classifies finish_reason length as truncation and does not accept partial JSON", async () => {
