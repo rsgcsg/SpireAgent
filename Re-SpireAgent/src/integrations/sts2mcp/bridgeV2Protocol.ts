@@ -1767,7 +1767,8 @@ export function decodeBridgeV2State(value: unknown): DecodedBridgePayload<Bridge
     || decoded.data.surface.kind === "singleplayer_menu";
   if (decoded.data.surface.kind !== "unsupported"
       && !preRunSurface
-      && decoded.data.shared_state === null) {
+      && decoded.data.shared_state === null
+      && !isBridgeV2DeferredRunMountSharedState(decoded.data)) {
     throw new BridgeV2DecodeError(
       "Bridge v2 semantic surface requires top-level shared_state for the active single-player run"
     );
@@ -1951,6 +1952,28 @@ export function decodeBridgeV2State(value: unknown): DecodedBridgePayload<Bridge
       surface
     }
   };
+}
+
+export function isBridgeV2DeferredRunMountSharedState(
+  state: z.infer<typeof stateBaseSchema>
+): boolean {
+  if (state.shared_state !== null
+      || state.readiness !== "settling"
+      || state.context.kind !== "run_transition"
+      || state.surface.kind !== "no_action"
+      || state.legal_actions.length !== 0
+      || state.authority_handoff.status !== "none_fail_closed"
+      || state.authority_handoff.surface_kind != null
+      || state.completeness.missing.length !== 1
+      || state.completeness.missing[0] !== "shared_visible_state") {
+    return false;
+  }
+  return state.diagnostics.some((diagnostic) =>
+    diagnostic.code === "bridge.shared_state.deferred_during_run_mount_transition"
+      && diagnostic.effect === "field_omitted"
+      && diagnostic.recoverability === "settle"
+      && diagnostic.required_for_action === false
+  );
 }
 
 function validatePermissionSystem(

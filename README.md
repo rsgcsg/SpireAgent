@@ -34,16 +34,20 @@ non-authorizing identity shadow and adds coherent read-only observation retry,
 one-game terminal supervision, typed receipt completion boundaries, exact
 Kifuda continuation handoff, source-bound deck-enchant contracts, native
 hover-derived Orb text, and a non-authorizing runtime contract/source shadow.
-Preview.69 adds exact run-start settling, bounded semantic-cycle recovery, and
+Preview.69 adds exact new/resumed-run mount settling, bounded semantic-cycle recovery, and
 ADR-0004 encounter-scoped provisional trials without making one success a
-persistent compatibility claim.
+persistent compatibility claim. The reliability closeout also adds a typed
+actionless shared-HUD deferral, one pre-mutation transient provider retry, and
+immutable run-termination evidence.
 
-The last verified loaded artifact remains Preview.68 on
-`v0.109.1|c8c577f6|-820620422` until Preview.69 is cold-started. Recent
-Preview.68 runs exposed the defects fixed by Preview.69. Their provenance is
-`unrecorded`, so they are real-runtime
-defect/coverage evidence rather than Organic qualification. Preview.67
-permission does not authorize the new Preview.68 MVID.
+Four real Preview.69 runs on one prior exact MVID settled 258 actions,
+preserved safe pre-execution stale rejection, and exercised both a game-over
+boundary and fresh menu entry. A final-MVID run then resumed a saved floor-9
+run, completed 114 actions, safely rejected 11 stale selections, traversed
+reward/map/treasure/combat/rest/game-over, and stopped at the one-game boundary.
+All records have `unrecorded` provenance, so they are exact-runtime repair and
+coverage evidence rather than Organic or persistent qualification. Session
+permission remains operation-scoped and runtime-bound.
 Exact source, loaded, candidate, Organic, and persistent evidence remain
 separated in [current status](docs/current/STATUS.md).
 

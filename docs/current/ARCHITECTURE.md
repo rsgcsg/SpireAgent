@@ -180,15 +180,27 @@ and the
 The Gateway and Re share the mechanically checked `2.0-preview.69` source
 contract. Gate 1 establishes a bounded v2 connector baseline: Re and the
 default MCP adapter are v2-only, Gateway v1 is retired, and historical v1 data
-is replay-only. Preview.69 must still be cold-loaded before it has runtime
-authority or evidence; the last verified loaded artifact remains Preview.68.
+is replay-only. Preview.69 has substantial real-runtime coverage on exact loaded
+SHA `8e7a...` / MVID `0e3d...`, but the final rebuilt and installed
+`4ac4...` / `ae84...` artifact must still be cold-loaded before it has runtime
+authority or evidence. Authority never transfers between those MVIDs.
 
-Preview.68 real-runtime records establish the current defect evidence:
-145 actions settled across three inspected runs. Those runs also exposed an
-eager coherent-read race, an overly broad post-game run-entry permission, and
-a Kifuda purchase whose native parent task crosses into a deck-enchant child.
-Their provenance is `unrecorded`, so they are defect/coverage evidence rather
-than Organic qualification.
+Four inspected Preview.69 runs settled 258 actions under one exact runtime,
+preserved six safe pre-execution stale rejections, completed one mid-run-to-menu
+boundary, and exposed one pre-mutation provider transport failure plus one
+ambiguous 100-tick limit. Their provenance is `unrecorded`, so they remain
+defect/coverage evidence rather than Organic qualification. New immutable run
+summaries distinguish run boundary, runtime guard/failure, and decision-limit
+termination; a decision limit is no longer reported as success.
+
+Active-run shared HUD remains required. The only exception is a typed omission
+during exact new/resumed-run mount
+`run_transition/setup/awaiting_run_state + no_action + settling`,
+where no action owner exists and the Gateway explicitly marks shared state as
+pending and non-required for action. This is a transient mount lifecycle contract,
+not a general nullable shared-state abstraction. Re refreshes dynamic
+capabilities with coherent observations because session grants may change after
+completion; startup negotiation is not an authority snapshot.
 
 Current grants still use `surface_kind + operation` and the composite
 `state_id`. Preview.69 removes bulk installed candidates from the target

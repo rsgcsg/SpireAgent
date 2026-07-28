@@ -31,8 +31,13 @@ export class DeepSeekDecisionProvider implements LlmDecisionProvider {
     const attempts: LlmDecisionAttempt[] = [];
     const primary = await this.requestOnce(request, "primary");
     attempts.push(primary);
+    let latest = primary;
 
-    if (["empty", "truncated", "invalid_json", "invalid_schema"].includes(primary.outcome)) {
+    if (isTransientProviderFailure(latest)) {
+      latest = await this.requestOnce(request, "transport_retry");
+      attempts.push(latest);
+    }
+    if (["empty", "truncated", "invalid_json", "invalid_schema"].includes(latest.outcome)) {
       attempts.push(await this.requestOnce(request, "format_retry"));
     }
 
@@ -40,11 +45,14 @@ export class DeepSeekDecisionProvider implements LlmDecisionProvider {
     return { provider: "deepseek", model: this.config.model, attempts, finalAttempt };
   }
 
-  private async requestOnce(request: LlmDecisionRequest, requestKind: "primary" | "format_retry"): Promise<LlmDecisionAttempt> {
+  private async requestOnce(
+    request: LlmDecisionRequest,
+    requestKind: "primary" | "transport_retry" | "format_retry"
+  ): Promise<LlmDecisionAttempt> {
     const systemPrompt =
-      requestKind === "primary"
-        ? request.systemPrompt
-        : `${request.systemPrompt}\n\nFORMAT RETRY: Return one complete JSON object only. Keep reasonBrief short.`;
+      requestKind === "format_retry"
+        ? `${request.systemPrompt}\n\nFORMAT RETRY: Return one complete JSON object only. Keep reasonBrief short.`
+        : request.systemPrompt;
     const body: JsonObject = {
       model: this.config.model,
       messages: [
@@ -157,6 +165,17 @@ export class DeepSeekDecisionProvider implements LlmDecisionProvider {
       clearTimeout(timeout);
     }
   }
+}
+
+function isTransientProviderFailure(attempt: LlmDecisionAttempt): boolean {
+  if (attempt.outcome === "timeout") return true;
+  if (attempt.outcome !== "provider_error") return false;
+  if (attempt.httpStatus === undefined) return true;
+  return attempt.httpStatus === 408
+    || attempt.httpStatus === 409
+    || attempt.httpStatus === 425
+    || attempt.httpStatus === 429
+    || attempt.httpStatus >= 500;
 }
 
 function parseProviderBody(text: string): JsonValue | string {

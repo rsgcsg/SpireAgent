@@ -1,5 +1,10 @@
 # Preview.69 Risk-Calibrated Trial And Reliability Migration
 
+> Historical engineering checkpoint: the pre-live non-claims in this report
+> were correct at its source commit. Later Preview.69 runtime evidence and the
+> final rebuilt/installed identity are recorded in the
+> [live authority and run reliability closeout](PREVIEW_69_LIVE_AUTHORITY_AND_RUN_RELIABILITY_CLOSEOUT_2026-07-28.md).
+
 ## Scope And Evidence Boundary
 
 This audit uses source at `develop` commit
@@ -76,9 +81,9 @@ Unchanged:
 - Unknown mutation outcome is terminal and is never retried.
 - A new build, MVID or Modset inherits no persistent permission.
 
-Not claimed:
+Not claimed by this pre-live migration audit:
 
-- Preview.69 is not loaded or Organic-qualified by compilation.
+- Compilation alone does not establish loaded or Organic qualification.
 - Encounter trial success is not persistent qualification.
 - Additional Modsets are not generally supported; candidate eligibility still
   requires an explicit current classification.
@@ -89,6 +94,10 @@ Not claimed:
 
 ## Verification Before Live
 
+This section records the pre-live gate at the time of the migration. Final
+load and runtime results are in the
+[live authority and run reliability closeout](PREVIEW_69_LIVE_AUTHORITY_AND_RUN_RELIABILITY_CLOSEOUT_2026-07-28.md).
+
 - C# tests must include diagnostic observation, encounter admission, strict
   rejection, witness quarantine and session-only promotion.
 - Re must reject mismatched admission evidence and accept exact dynamic scopes.
@@ -97,5 +106,5 @@ Not claimed:
 - Full Re check, C# test/Release build, connector checks and docs checks must
   pass before installation.
 - Installation must record a rollback directory and exact built/installed SHA
-  and MVID. Loaded identity and Organic behavior require a later cold restart.
-
+  and MVID. Loaded identity and runtime behavior require a later cold restart;
+  that restart has since been completed and does not create Organic status.

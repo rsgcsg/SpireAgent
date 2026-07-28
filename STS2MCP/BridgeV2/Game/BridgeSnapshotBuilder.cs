@@ -165,7 +165,7 @@ internal static class BridgeSnapshotBuilder
         if (TryBuildCombatNoInputTransition(snapshot, entities, game) is { } transition)
             return transition;
 
-        if (TryBuildRunStartNoInputTransition(snapshot, entities, game) is { } runTransition)
+        if (TryBuildRunMountNoInputTransition(snapshot, entities, game) is { } runTransition)
             return runTransition;
 
         return Unsupported(
@@ -268,17 +268,16 @@ internal static class BridgeSnapshotBuilder
         };
     }
 
-    private static BridgeObservationDraft? TryBuildRunStartNoInputTransition(
+    private static BridgeObservationDraft? TryBuildRunMountNoInputTransition(
         ActiveSurfaceSnapshot snapshot,
         BridgeEntityRegistry entities,
         GameBuildIdentity game)
     {
         RunState? runState = RunManager.Instance.DebugOnlyGetState();
-        if (!ClassifyRunStartNoInputTransition(
+        if (!ClassifyRunMountNoInputTransition(
                 RunManager.Instance.IsInProgress,
                 runState != null,
                 runState?.CurrentRoom != null,
-                runState?.TotalFloor,
                 snapshot.HasBlockingSurface,
                 snapshot.SourceType))
         {
@@ -292,9 +291,9 @@ internal static class BridgeSnapshotBuilder
         var surface = new NoActionSurface(
             "no_action",
             "settling",
-            "The standard run has started, but its first player-visible run state is still mounting.");
+            "The standard run is starting or resuming, but its player-visible run state is still mounting.");
         var completeness = new StateCompleteness(
-            "complete_for_bounded_run_start_transition",
+            "complete_for_bounded_run_mount_transition",
             "none_no_input_owner",
             new[]
             {
@@ -326,11 +325,11 @@ internal static class BridgeSnapshotBuilder
             AuthorityHandoff = new AuthorityHandoff(
                 "none_fail_closed",
                 null,
-                "The native run-start transition has no current input owner; Bridge v2 observes without publishing actions."),
+                "The native run-mount transition has no current input owner; Bridge v2 observes without publishing actions."),
             Diagnostics = new[]
             {
                 BridgeDiagnostics.Create(
-                    "bridge.lifecycle.run_start_settling",
+                    "bridge.lifecycle.run_mount_settling",
                     "info",
                     "runtime",
                     "none",
@@ -339,15 +338,14 @@ internal static class BridgeSnapshotBuilder
         };
     }
 
-    internal static bool ClassifyRunStartNoInputTransition(
+    internal static bool ClassifyRunMountNoInputTransition(
         bool runInProgress,
         bool runStatePresent,
         bool currentRoomPresent,
-        int? totalFloor,
         bool hasBlockingSurface,
         string sourceType) =>
         runInProgress
-        && (!runStatePresent || (!currentRoomPresent && totalFloor == 0))
+        && (!runStatePresent || !currentRoomPresent)
         && !hasBlockingSurface
         && string.Equals(sourceType, "run_without_visible_overlay", StringComparison.Ordinal);
 

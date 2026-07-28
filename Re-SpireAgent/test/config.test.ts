@@ -36,4 +36,9 @@ describe("runtime evidence provenance", () => {
     expect(readRuntimeConfig({ AGENT_DATA_DIR: "/var/tmp/re-spire-evidence" }).runtime.dataDir)
       .toBe("/var/tmp/re-spire-evidence");
   });
+
+  it("keeps a full-game-sized emergency decision ceiling without making it a success boundary", () => {
+    expect(readRuntimeConfig({}).runtime.maxTicks).toBe(1_000);
+    expect(readRuntimeConfig({ AGENT_MAX_TICKS: "12" }).runtime.maxTicks).toBe(12);
+  });
 });

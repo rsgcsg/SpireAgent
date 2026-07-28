@@ -19,7 +19,7 @@ That coupling made an unreviewed game build fully blind until an external tool
 installed candidate packages for most declared operations. Preview.68 therefore
 installed 87 session candidates before a run, even though only one current
 Surface could own input. Package count looked like compatibility while adding
-no current native evidence. A harmless run-start transition could also block
+no current native evidence. A harmless new/resumed-run mount transition could also block
 the Agent because no mutation scope existed before an actionable Surface had
 appeared.
 
@@ -80,6 +80,17 @@ it is not the target startup path.
   still requires migration to native source/adapter/outcome/partition claim
   identity; this ADR does not make operation packages the final architecture.
 
+## Runtime Verification Note
+
+Four Preview.69 runs on exact loaded SHA `8e7a...`, MVID `0e3d...`, runtime
+`740e...` exercised the decision in production: current source-resolved actions
+received session-scoped authority, successful completion advanced volatile
+grants, and no run created persistent qualification. The records settled 258
+actions and safely rejected six stale selections before execution. Their
+provenance is `unrecorded`, so this validates the runtime separation but does not
+promote a compatibility claim. A later rebuilt MVID must start a new runtime
+epoch and cannot inherit those grants.
+
 ## Rejected Alternatives
 
 - **Keep the reviewed environment as an absolute trial ceiling:** this makes
@@ -100,4 +111,3 @@ Set permission mode to `strict` or revert the Operator Shell to the installed-
 package path. All encounter grants are volatile, so restarting the Gateway is a
 complete rollback. Persistent qualification files are neither created nor
 modified by encounter admission.
-

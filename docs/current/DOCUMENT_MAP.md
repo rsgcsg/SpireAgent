@@ -36,6 +36,10 @@ not inherit authority from the archived root SpireAgent runtime.
 
 Current cross-component audits:
 
+- [Preview.69 live authority and run reliability closeout](audits/PREVIEW_69_LIVE_AUTHORITY_AND_RUN_RELIABILITY_CLOSEOUT_2026-07-28.md):
+  prior-MVID audit, intermediate saved-run failure, final-MVID completed
+  long-run evidence, operation-scoped permission truth, typed run-mount repair,
+  provider retry, immutable termination evidence, and live non-claims.
 - [Preview.69 risk-calibrated trial and reliability migration](audits/PREVIEW_69_RISK_CALIBRATED_TRIAL_AND_RELIABILITY_MIGRATION_2026-07-28.md):
   latest-run root causes, encounter-only provisional authority, session claim
   semantics, direct runtime fixes, test boundary, and live non-claims.

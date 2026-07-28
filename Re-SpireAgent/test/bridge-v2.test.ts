@@ -2489,6 +2489,41 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       stability: "settling",
       actionAuthority: "none"
     });
+
+    const deferredSharedState = structuredClone(runStart) as any;
+    deferredSharedState.shared_state = null;
+    deferredSharedState.visibility.available_inspections = [];
+    deferredSharedState.inspection_catalog = [];
+    deferredSharedState.completeness.player_visible_semantics =
+      "bounded_run_mount_transition_with_shared_state_pending";
+    deferredSharedState.completeness.missing = ["shared_visible_state"];
+    deferredSharedState.diagnostics.push({
+      code: "bridge.shared_state.deferred_during_run_mount_transition",
+      severity: "warning",
+      category: "visibility",
+      effect: "field_omitted",
+      recoverability: "settle",
+      path: "shared_state",
+      visibility_class: "on_screen",
+      required_for_action: false
+    });
+    expect(() => decodeBridgeV2State(deferredSharedState)).not.toThrow();
+    const deferredEnvelope = normalizeCurrentState(
+      wrapBridgeV2State({
+        state: deferredSharedState,
+        capabilities: structuredClone(CAPABILITIES)
+      }),
+      TEST_SOURCE
+    );
+    expect(deferredEnvelope.currentState).toMatchObject({
+      context: { kind: "run_transition", phase: "setup" },
+      surface: { kind: "no_action", reason: "settling" },
+      stability: "settling",
+      actionAuthority: "none"
+    });
+    expect(deferredEnvelope.currentState).not.toHaveProperty("run");
+    expect(deferredEnvelope.currentState).not.toHaveProperty("player");
+    expect(deferredEnvelope.diagnostics.status).toBe("ok");
   });
 
   it("rejects authority, action, completeness, or context contradictions in no-input transitions", () => {
@@ -2512,6 +2547,22 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     incomplete.completeness.missing = ["transition_owner"];
     expect(normalizeCurrentState(
       wrapBridgeV2State({ state: incomplete, capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    ).currentState).toMatchObject({ stability: "invalid", actionAuthority: "none" });
+
+    const untypedRunStartOmission = structuredClone(COMBAT_RESOLUTION_NO_ACTION_STATE) as any;
+    untypedRunStartOmission.context = {
+      kind: "run_transition",
+      phase: "setup",
+      transition: "awaiting_run_state"
+    };
+    untypedRunStartOmission.shared_state = null;
+    untypedRunStartOmission.completeness.missing = ["shared_visible_state"];
+    expect(normalizeCurrentState(
+      wrapBridgeV2State({
+        state: untypedRunStartOmission,
+        capabilities: structuredClone(CAPABILITIES)
+      }),
       TEST_SOURCE
     ).currentState).toMatchObject({ stability: "invalid", actionAuthority: "none" });
   });

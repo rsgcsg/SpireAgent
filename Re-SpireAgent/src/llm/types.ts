@@ -28,7 +28,7 @@ export interface LlmUsage {
 }
 
 export interface LlmDecisionAttempt {
-  requestKind: "primary" | "format_retry";
+  requestKind: "primary" | "transport_retry" | "format_retry";
   startedAt: string;
   completedAt: string;
   latencyMs: number;

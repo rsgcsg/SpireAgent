@@ -50,10 +50,12 @@ Tutor holdout.
 
 ## Gate 2: Decision-Plane And Player-Visible Information Closure
 
-Status: **active but bounded. Preview.68 completed further real-runtime long
-runs and exposed run-start, semantic-cycle, and Orb-formatting defects.
-Preview.69 fixes those defects and implements ADR-0004, but is not loaded or
-Organic-qualified until cold restart.**
+Status: **active but bounded. Preview.69 completed four runs on a prior exact
+MVID, then loaded the final MVID and completed a 127-decision saved-run-to-menu
+journey. The final run contains 114 settled actions, 11 safe pre-execution stale
+rejections, one Gateway-confirmed command with a Re checkpoint timeout, and a
+correct one-game boundary. Provenance remains unrecorded; no Organic or
+persistent qualification is claimed.**
 
 Close decision-relevant visible-information gaps using shared state, context,
 surface, preview, and read-only inspection. Do not expose hidden RNG, draw
@@ -80,16 +82,20 @@ remain insufficient.
 See the
 [Preview.66 migration closeout](../../STS2MCP/docs/bridge-v2/PREVIEW_66_MULTI_ENVIRONMENT_MIGRATION_CLOSEOUT_2026-07-26.md).
 
-Preview.68 closes the measured coherent-read race, preserves correct stale
-precommit rejection, stops a bounded run after terminal cleanup, and models
-Kifuda's exact native continuation handoff. It also starts runtime source/
-contract shadow emission. Current operation permission remains authoritative;
-ADR-0003 forbids replacing it until dual-read parity exists.
+Preview.68 closed the measured coherent-read race, preserved correct stale
+precommit rejection, stopped a bounded run after terminal cleanup, and modeled
+Kifuda's exact native continuation handoff. Preview.69 then proved broad
+session-scoped execution on its prior loaded MVID. It now records explicit run
+termination, treats decision-limit exhaustion as incomplete, performs one
+pre-mutation transient provider retry, and permits missing shared HUD only in a
+typed actionless run-mount transition. Current operation permission remains
+authoritative; ADR-0003 forbids replacing it until dual-read parity exists.
 
 Gate 2 now proceeds in this order:
 
-1. cold-load and run Preview.69 under a fresh encounter-scoped trial; verify
-   run-start settling, one-game stop, shop forward progress, and quarantine;
+1. review the measured stale-selection frequency and long enemy-turn
+   successor-settlement timeout without weakening state-bound rejection,
+   Gateway completion, or unknown-no-retry;
 2. expand non-authorizing adapter/outcome/source/partition shadow metadata
    across representative menu, navigation, shop, combat, reward, and selector
    families;

@@ -13,8 +13,11 @@ persistent claims:
 - `action_permission_scopes` and permission grants carry `admission_basis`;
 - confirmed trial completion yields `session_trial_confirmed`, never a
   persistent qualification;
-- `run_transition + no_action + settling` represents the exact post-embark
-  mounting gap without inventing an input owner.
+- `run_transition + no_action + settling` represents the exact new/resumed-run
+  mounting gap without inventing an input owner; only that exact actionless
+  state may defer `shared_state`, using typed diagnostic
+  `bridge.shared_state.deferred_during_run_mount_transition` and sole missing
+  field `shared_visible_state`.
 
 The Gateway still requires exact loaded identity, bounded Modset eligibility,
 clean Patch inventory, current native legality, execute-time revalidation and
@@ -524,8 +527,11 @@ Bridge wire actions always use `authority="game_ui"`; the higher-level client
 records the effective state authority separately.
 
 `shared_state` is a separate top-level read-only concern. Active-run Surfaces
-require it. The purpose-specific `main_menu`, `singleplayer_menu`, and
-`character_select` Surfaces require it to be `null`, because no run exists yet.
+require it. The only active-run omission is the exact typed, actionless
+run-mount transition above; it cannot publish actions and is expected to
+settle into a fresh complete observation. The purpose-specific `main_menu`,
+`singleplayer_menu`, and `character_select` Surfaces require it to be `null`,
+because no run exists yet.
 Preview.28+ serializes
 the active single-player run's act/floor/ascension, visible bosses/modifiers,
 and local player identity/HP/gold/relic/potion facts. It must not be copied into

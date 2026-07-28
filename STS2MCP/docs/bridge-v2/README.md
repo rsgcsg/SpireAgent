@@ -18,9 +18,12 @@ manifest-derived identity/test-confirm fallbacks; the other 86 operations are
 session canaries, not qualifications. Start with current status, not historical
 preview closeouts.
 
-Preview.69 adds risk-calibrated encounter trials, exact run-start settling,
-bounded semantic-cycle recovery, and native Orb formatting. It is not loaded
-until a cold restart. See [ADR-0005](ADR-0005-semantic-state-and-authority-identity-separation.md),
+Preview.69 adds risk-calibrated encounter trials, exact new/resumed-run mount settling,
+bounded semantic-cycle recovery, native Orb formatting, typed actionless shared-
+HUD deferral, and explicit Re run termination evidence. Four runs provide broad
+coverage for one old loaded Preview.69 MVID; the final installed MVID is not
+loaded until a cold restart, and evidence/authority do not transfer. See
+[ADR-0005](ADR-0005-semantic-state-and-authority-identity-separation.md),
 [ADR-0004 trial/claim boundary](../../../docs/current/decisions/ADR-0004-risk-calibrated-encounter-trial-and-scoped-claims.md),
 and repository [ADR-0003](../../../docs/current/decisions/ADR-0003-operation-retirement-and-native-continuation-migration.md).
 

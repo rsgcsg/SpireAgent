@@ -5,8 +5,8 @@ import { DeepSeekDecisionProvider } from "../llm/deepseekProvider.js";
 import { normalizeCurrentState } from "../normalization/normalizeCurrentState.js";
 import { auditPromptArtifacts } from "../prompting/promptAudit.js";
 import { compareRecordedPromptWithShadow, repeatRecordedPromptVariant } from "../prompting/promptShadowComparison.js";
-import { listRunIds, readRunMetadata, readRunRecords } from "../recording/fileDecisionRecorder.js";
-import { runLoop } from "../runtime/runLoop.js";
+import { listRunIds, readRunMetadata, readRunRecords, readRunSummary } from "../recording/fileDecisionRecorder.js";
+import { classifyRunTermination, runLoop } from "../runtime/runLoop.js";
 import { parseCliInvocation } from "./cliArgs.js";
 import { runConnectorCanary } from "./connectorCanary.js";
 import { createRuntime } from "./runtimeFactory.js";
@@ -106,11 +106,27 @@ async function main(): Promise<void> {
         allowRunEntry: invocation.allowRunEntry,
         onTick: (result) => printTick(runtime.recorder.runId, result)
       });
+      const termination = classifyRunTermination(results, maxTicks);
+      const terminal = results.at(-1)!;
+      await runtime.recorder.finalize({
+        endedAt: new Date().toISOString(),
+        decisionCount: results.length,
+        termination,
+        completedGame: termination === "completed_run_boundary",
+        terminalOutcome: terminal.outcome,
+        ...(terminal.stopReason ? { terminalStopReason: terminal.stopReason } : {}),
+        maxTicks
+      });
       const failures = results.filter((result) =>
         result.shouldStopRun
         && result.stopReason !== "run_boundary"
         && result.outcome !== "executed_and_settled");
-      process.exitCode = failures.length > 0 ? 1 : 0;
+      if (termination === "stopped_decision_limit") {
+        process.stderr.write(
+          `Agent stopped at AGENT_MAX_TICKS=${maxTicks} before a run boundary; the run is incomplete.\n`
+        );
+      }
+      process.exitCode = failures.length > 0 || termination === "stopped_decision_limit" ? 1 : 0;
       return;
     }
   } finally {
@@ -124,8 +140,9 @@ async function replay(dataDir: string, requestedRunId: string | undefined, decis
   if (!runId) throw new Error(`No runs found in ${dataDir}`);
   const metadata = await readRunMetadata(dataDir, runId);
   const records = await readRunRecords(dataDir, runId);
+  const summary = await readRunSummary(dataDir, runId);
   const selected = decisionId ? records.filter((record) => record.decisionId === decisionId) : records;
-  process.stdout.write(`${JSON.stringify({ metadata, decisionCount: selected.length, decisions: selected }, null, 2)}\n`);
+  process.stdout.write(`${JSON.stringify({ metadata, summary, decisionCount: selected.length, decisions: selected }, null, 2)}\n`);
 }
 
 function printTick(runId: string, result: {

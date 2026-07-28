@@ -8,11 +8,13 @@ game-state, legality, permission, Commit, or completion authority.
 > Compatibility status, 2026-07-28: Re and C# share source contract
 > `2.0-preview.69`; Re normalized schema is `28`. Gate 1 is closed as a
 > bounded ordinary-single-player v2 baseline, not full game coverage.
-> Preview.69 adds typed run-start settling, bounded semantic-cycle recovery,
+> Preview.69 adds typed new/resumed-run mount settling, bounded semantic-cycle recovery,
 > and strict consumption of encounter-scoped provisional grants. Diagnostic
 > observation, runtime trial admission, and persistent qualification are now
-> separate. Preview.69 still requires a cold load and real journey; the last
-> verified loaded artifact is Preview.68.
+> separate. Four Preview.69 runs provide prior-MVID runtime coverage. The final
+> built/installed/loaded MVID then completed a 127-decision saved-run-to-menu
+> journey with an immutable one-game summary. Its grants are still session-only
+> and its unrecorded provenance is not Organic or persistent qualification.
 
 > Product-boundary warning: direct Re-to-Gateway REST and `.env.local` provider
 > keys are developer workflows, not the target consumer architecture. The
@@ -32,11 +34,12 @@ waits for the Bridge command lifecycle, and records the complete evidence.
 
 RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, shadow/live modes, policy promotion, or the old project's phase machinery. Its job is to make one decision path correct and auditable.
 
-Re's current strict client contract is Bridge `2.0-preview.69`. The last loaded
-Preview.68 `v0.109.1|c8c577f6|-820620422` Gateway identity had exact session-canary
-operation scopes and no persistent qualification. Re strictly decodes those
-current identities and grants, but does not interpret fallback witness
-semantics or promote any candidate. Preview.66's narrow persistent
+Re's current strict client contract is Bridge `2.0-preview.69`. The latest
+verified loaded Preview.69 `v0.109.1|c8c577f6|-820620422` identity used exact
+session-scoped operation grants and no persistent qualification. Re strictly
+decodes current identities and grants, but does not interpret fallback witness
+semantics or promote any candidate. The final newly installed Preview.69 MVID
+has no loaded evidence yet. Preview.66's narrow persistent
 `main_menu/continue_run` qualification belongs only to its historical exact
 Gateway identity.
 The separate
@@ -297,7 +300,7 @@ All values are optional except the API key for real model decisions.
 | `DEEPSEEK_THINKING_MODE` | `disabled` | Explicit provider thinking mode |
 | `AGENT_DATA_DIR` | `data/runs` under `Re-SpireAgent/` | Local evidence directory; relative paths are project-root anchored |
 | `AGENT_EVIDENCE_PROVENANCE` | `unrecorded` | `ordinary_gameplay`, `operator_positioned`, `console_assisted`, `fixture`, or `unrecorded`; metadata only, never qualification authority |
-| `AGENT_MAX_TICKS` | `100` | Default run limit |
+| `AGENT_MAX_TICKS` | `1000` | Bounded emergency ceiling; normal runs stop at the one-game boundary or a runtime guard |
 | `AGENT_TICK_DELAY_MS` | `250` | Delay between decisions |
 | `AGENT_SETTLEMENT_POLL_MS` | `150` | Post-action poll interval |
 | `AGENT_SETTLEMENT_TIMEOUT_MS` | `3000` | Normal settlement timeout |
@@ -402,7 +405,12 @@ explicit `--allow-run-entry` argument. Neither path authorizes
 `local_reconstruction`, imports permission from another MVID, or bypasses
 Gateway state binding.
 
-The loop stops on invalid state, missing actions on an actionable screen, provider/decision failure, MCP rejection, or unsettled execution. Transitional/loading states are polled without calling DeepSeek.
+The loop stops on invalid state, missing actions on an actionable screen,
+provider/decision failure, MCP rejection, or unsettled execution.
+Transitional/loading states are polled without calling DeepSeek. One transient
+provider transport failure may be retried before mutation; Gateway command
+unknowns are never retried. Reaching `AGENT_MAX_TICKS` is an incomplete non-zero
+termination, not a completed run.
 
 Replay the latest local run or one decision:
 
@@ -428,6 +436,7 @@ Each run is local and append-only:
 ```text
 Re-SpireAgent/data/runs/<run-id>/
   metadata.json
+  run-summary.json
   decisions.jsonl
   snapshots/<decision-id>-pre.raw.json
   snapshots/<decision-id>-post.raw.json
@@ -436,6 +445,11 @@ Re-SpireAgent/data/runs/<run-id>/
 ```
 
 Prompt files preserve the full system prompt, context and surface guides, user payload, hashes, and byte counts. Response files preserve all provider attempts, redacted raw provider response, raw content, parsed decision, finish reason, usage, and safe error classification. `decisions.jsonl` links those artifacts to pre/post normalized state, full-raw stale-guard hashes, normalized projection hashes, allowed actions, validation, execution, and settlement.
+
+`run-summary.json` is written once when a new run loop terminates. It
+distinguishes a completed one-game boundary from a runtime guard/failure or
+decision-limit stop. Older run directories remain replay-readable without this
+file and are never backfilled with inferred results.
 
 `metadata.json` also records declared evidence provenance. Historical or
 default `unrecorded` runs remain useful coverage/debug evidence but cannot

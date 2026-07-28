@@ -10,12 +10,14 @@
 > loaded artifact. Current loaded identity and Gate status are owned by
 > [Bridge v2 Current Status](CURRENT_STATUS.md).
 
-Current source contract is Preview.66. Preview.61 supplied the bounded Neow's
+Current source contract is Preview.69. Preview.61 supplied the bounded Neow's
 Fury Organic lifecycle that sealed Gate 1. Preview.62 added reviewed
-source/compatibility registries and a non-authorizing exact-assembly audit.
-Preview.66 adds multi-environment migration infrastructure but does not inherit
-historical operation coverage or qualification. Current loaded identity is
-owned by [Bridge v2 Current Status](CURRENT_STATUS.md), not this matrix.
+source/compatibility registries and a non-authorizing exact-assembly audit;
+Preview.66 added multi-environment migration infrastructure; Preview.69
+separates diagnostic observation, encounter trials, and persistent claims.
+None inherits historical operation coverage or qualification. Current installed
+and loaded identities are owned by [Bridge v2 Current Status](CURRENT_STATUS.md),
+not this matrix.
 
 Historical Gate 0 execution evidence recorded game version/commit plus the
 release-declared hash `-840572606`, Gateway SHA
@@ -37,6 +39,15 @@ v1 mutation fallback was unavailable. See the
 [Gate 1 operation inventory](GATE1_OPERATION_AND_JOURNEY_INVENTORY.md). This is
 current coverage/canary evidence, not autonomous strategy evidence or automatic
 Organic Qualification.
+
+Four later Preview.69 runs on exact loaded SHA `8e7a...`, MVID `0e3d...`,
+runtime `740e...` settled 258 actions across menu, event, map, combat, reward,
+rest, shop, treasure, selector, and game-over flows. One record completed the
+remaining game-over-to-menu lifecycle; another entered a fresh game and reached
+100 ticks. Six stale selections were rejected before execution and one provider
+transport failure stopped before mutation. All four declare provenance
+`unrecorded`; this updates runtime coverage, not qualification tiers, and does
+not transfer to the final rebuilt/installed MVID.
 
 An alternate-device runtime observed on 2026-07-18 was
 `v0.109.0|c12f634d|1833084275`. It is a different exact build. Preview.35
@@ -73,13 +84,13 @@ The `1833084275` environment inherits no permission from the current loaded
 | `card_reward_selection` | canary | repeated ordinary choices; fresh Gate 1 exact Headbutt selection | alternatives and special origins need diversity |
 | `map_navigation` | canary | repeated exact-node travel; fresh Gate 1 map-to-combat and reward-to-map journey | drawings, special modes, and multiplayer unsupported |
 | `shop_room` | canary | open/close/Proceed current-build journeys | more lifecycle diversity required |
-| `shop_inventory` | canary | card/relic/potion purchases and removal launch with category-specific witnesses; Kifuda may prove purchase Commit plus an exact source-bound child handoff | Preview.68 Kifuda handoff has source/tests but no cold-loaded or Organic canary; other purchase categories still need repeated Organic coverage |
+| `shop_inventory` | canary | card/relic/potion purchases and removal launch with category-specific witnesses; Preview.69 long-run coverage crossed ordinary shop inventory repeatedly; Kifuda may prove purchase Commit plus an exact source-bound child handoff | Preview.68 Kifuda handoff has source/tests but no Organic canary; Preview.69 records are unrecorded coverage; other purchase categories still need repeated Organic coverage |
 | `treasure_room` | canary | exact relic choose and Proceed; repeated pre-dispatch refusal preserves the native 2.5-second relic-clickable/Skip-disabled action-set boundary | open/skip/empty-chest/multiplayer variants remain unqualified |
 | `card_bundle_selection` | canary | preview and exact three-card Scroll Boxes deck commit on preview.27 | other origins absent; preview.28 behavior unchanged but needs routine regression |
-| `game_over` | canary; fresh lifecycle exercised | preview.41 run `run-20260718162449-yvvf7o` completed intro -> summary -> return with both actions confirmed, then Re stopped at top-level menu | win/timeline destination and additional result variants remain evidence debt |
+| `game_over` | canary; fresh lifecycle exercised | preview.41 run `run-20260718162449-yvvf7o` completed intro -> summary -> return; Preview.69 old-MVID `run-...21602` and final-MVID `run-...41630` both completed loss lifecycles and correct top-level one-game stops | Preview.69 provenance is unrecorded; win/timeline destination and additional result variants remain evidence debt |
 | `character_select` | canary | select character, Ascension down/up, and Embark into a real Silent A10 run | first-run tutorial confirmation remains unsupported; root/menu contracts are tracked separately |
-| `main_menu` | canary; Continue exercised on intermediate and final preview.47 MVIDs | exact visible root choices, saved-run summary, unsupported-choice boundary, and Bridge-confirmed Continue into the saved-run shop; final-MVID command settled under operator-positioned provenance | Single Player branch hidden by saved-run state; profile/patch hover detail incomplete; final-MVID action is canary coverage, not qualification |
-| `singleplayer_menu` | canary, source/fixture only | exact Standard/Daily/Custom/Back bindings and submenu-stack witnesses | no current-MVID Organic action lifecycle yet |
+| `main_menu` | canary; Continue and fresh Single Player entry exercised on exact MVIDs | exact visible root choices, saved-run summary, unsupported-choice boundary, Preview.69 final-MVID Bridge-confirmed Continue plus correct return boundary, and prior-MVID fresh-menu entry | Preview.69 provenance is unrecorded; profile/patch hover detail incomplete; action evidence is canary coverage, not qualification |
+| `singleplayer_menu` | canary; ordinary Standard lifecycle has Preview.69 runtime coverage | exact Standard/Daily/Custom/Back bindings and submenu-stack witnesses; old-MVID `run-20260728033638-xrvcre` crossed Standard into character select and a real run | provenance is unrecorded; Daily/Custom/Back and final MVID remain without this lifecycle evidence |
 | `deck_transform_selection` | canary; selection/confirm/upgrade-view exercised | exact Whispering Hollow source, selected instances, upgrade presentation, random-uncommitted preview, exact-instance/deck-count witness | other callers, explicit preview button, cancel paths, multi-select, Mods, and future builds remain unqualified |
 | `wood_carvings_replacement_selection` | canary; Bird full lifecycle exercised on preview.56 | exact `WoodCarvings.Bird` source task, formatted known `PECK` semantics, select -> preview -> cancel -> reselect -> confirm, exact-original absent, PECK 0 -> 1, deck 12 -> 12, event Proceed -> map | Torus Organic lifecycle, repeated Bird evidence, Mods, and future builds remain unqualified; all other generic deck selectors fail closed |
 | `deck_enchant_selection` | exact-source candidate for Self-Help Book and Kifuda; only historical Self-Help Book lifecycle was exercised | exact target enchantment ID/amount, exact selected instances, overlay stage, semantic exact-card enchantment witness, independent run-deck post-state, and runtime source binding; unknown sources suppress actions | Preview.68 source/contracts are not loaded or Organic evidence; explicit preview button, cancellation variants, Kifuda multi-select/skip, parent settlement, Mods, and future builds remain evidence debt |
@@ -94,7 +105,8 @@ The `1833084275` environment inherits no permission from the current loaded
 | `visibility` + `inspection_catalog` | non-authorizing read-only declaration | preview.48 shop state declares `run_deck` and `shop_catalog`; combat declares `combat_piles`; linked detail families and hidden policy remain explicit | catalog covers only three fixed Inspection kinds and does not prove whole-game closure |
 | coherent observation bundle | non-authorizing read-only transport | preview.48 returned shop state, `run_deck`, and `shop_catalog` under one exact identity; Gate 1 repaired a same-state shop catalog/builder mismatch by sharing exact merchant availability, while genuine state-changing reads remain transient `stale_state` and never authorize retry | same-state mismatches remain hard errors; needs more inspection-diversity evidence; no command authority |
 | `contract_instance_shadow` | diagnostic only, always `authorizing=false` | preview.47 reports manifest contract, published operations, legacy tier, and limitations on real menu/shop states | declaration is not runtime semantic binding; actual permission remains exact environment + Surface kind |
-| `combat_transition + no_action` lifecycle observation | non-authorizing, not a permission row | Current-MVID Organic setup and resolution observations around repeated `combat_turn -> reward_claim -> map -> combat_turn` journeys on preview.40 | exact `CombatRoom` setup/resolution only; early-load and other no-overlay gaps remain unsupported |
+| `combat_transition + no_action` lifecycle observation | non-authorizing, not a permission row | Current-MVID Organic setup and resolution observations around repeated `combat_turn -> reward_claim -> map -> combat_turn` journeys on preview.40 | exact `CombatRoom` setup/resolution only; other no-overlay gaps remain unsupported |
+| `run_transition + no_action` lifecycle observation | non-authorizing, not a permission row | Preview.69 final-MVID saved-run resume crossed the prior failing mount boundary; shared HUD may be deferred only for exact `run_without_visible_overlay` with missing run state/current room, typed actionless diagnostic, and sole `shared_visible_state` omission | no other active-run HUD omission inherits this exception; the transient state was crossed rather than guaranteed to be sampled in the Re record |
 
 ## Implemented But Disabled On v0.109
 

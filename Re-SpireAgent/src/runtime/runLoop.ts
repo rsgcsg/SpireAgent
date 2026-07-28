@@ -1,3 +1,4 @@
+import type { RunSummary } from "../recording/types.js";
 import type { TickOrchestrator, TickResult } from "./tickOrchestrator.js";
 
 export interface RunLoopOptions {
@@ -25,6 +26,19 @@ export async function runLoop(orchestrator: TickOrchestrator, options: RunLoopOp
     if (tick < options.maxTicks && options.delayMs > 0) await sleep(options.delayMs);
   }
   return results;
+}
+
+export function classifyRunTermination(
+  results: readonly TickResult[],
+  maxTicks: number
+): RunSummary["termination"] {
+  const terminal = results.at(-1);
+  if (!terminal) return "stopped_runtime_failure";
+  if (terminal.stopReason === "run_boundary") return "completed_run_boundary";
+  if (terminal.shouldStopRun && terminal.stopReason) return "stopped_runtime_guard";
+  if (terminal.shouldStopRun) return "stopped_runtime_failure";
+  if (results.length >= maxTicks) return "stopped_decision_limit";
+  return "stopped_runtime_failure";
 }
 
 function sleep(ms: number): Promise<void> {

@@ -4,10 +4,10 @@ In this project, "SpireAgent" means `Re-SpireAgent` by default.
 
 Current source contract is `2.0-preview.69`; Re normalized schema is `28`.
 Identity and runtime-contract shadows are strictly decoded and remain
-non-authorizing. The last verified loaded Preview.68 artifact has inspected
-real-runtime runs whose provenance is `unrecorded`, not Organic qualification.
-Preview.69 requires its own cold-load identity and
-Gateway-owned encounter trial.
+non-authorizing. Four runs on one verified loaded Preview.69 identity provide
+real-runtime coverage whose provenance is `unrecorded`, not Organic
+qualification. The final rebuilt and installed Preview.69 MVID requires its own
+cold-load identity and Gateway-owned encounter trial.
 Gate 1 is closed as a bounded ordinary-single-player v2 connector baseline.
 Preview.61 supplied the exact Neow's Fury Organic lifecycle; Preview.62 adds
 reviewed compatibility/source registries and policy provenance without
@@ -112,6 +112,11 @@ exact environment, Patch digest and operation fingerprint. Historical
 superseded/revoked grant records remain read-only audit evidence and never
 create an allowed action.
 
+Static protocol support is negotiated at initialization. Dynamic capabilities
+are refreshed during coherent observation reads because exact session grants
+may advance or quarantine after a command; Re never treats the initial response
+as a frozen authority snapshot.
+
 Source `2.0-preview.47` additionally requires strict decoding of the bounded
 visibility declaration, state-bound Inspection catalog, coherent observation
 bundle, and non-authorizing contract-instance shadow. Re may use the bundle to
@@ -137,7 +142,11 @@ actionAuthority`.
 
 Re requires `shared_state` on every in-run semantic Bridge state, records its
 evidence, and validates combat player/potion identities against it. The narrow
-pre-run `character_select` Surface instead requires `shared_state=null`.
+exception is exact
+`run_transition/setup/awaiting_run_state + no_action + settling`, where the
+Gateway may emit a typed non-authorizing shared-state deferral. Every combat or
+action-owning omission remains invalid. The narrow pre-run `character_select`
+Surface instead requires `shared_state=null`.
 Shared state creates no actions. Event-option hover semantics remain typed as
 text or card previews; unknown variants fail closed. Unsupported legacy-owned
 states remain fail closed in Re; historical v1 records do not grant Agent

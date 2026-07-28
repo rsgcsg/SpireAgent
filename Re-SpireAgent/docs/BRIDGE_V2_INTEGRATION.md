@@ -5,8 +5,9 @@
 > Gate 1 is closed as a bounded ordinary-single-player v2 connector baseline.
 > Preview.61 supplied the final Neow's Fury runtime seal; Preview.62 adds
 > policy provenance and registry adaptation without inheriting qualification.
-> Preview.69 requires cold-load evidence. The last verified loaded artifact is
-> Preview.68; its grants cannot authorize the new MVID. Five contracts are
+> Four Preview.69 runs provide exact old-MVID runtime coverage. The final
+> rebuilt/installed Preview.69 MVID still requires a cold load, and old runtime
+> grants cannot authorize it. Five contracts are
 > explicit high-precision rows; 82 remain conservative manifest-derived
 > identity/test-confirm fallbacks rather than semantic qualification.
 
@@ -59,9 +60,10 @@ no action from them, and cannot promote, quarantine or persist permission.
 Preview.69 also verifies each dynamic scope's `admission_basis`. An
 `encounter_source_resolved` scope is valid only when the current Gateway grant
 is migration-scoped, runtime-bound, and carries explicit encounter evidence.
-Capabilities are negotiated once, so grant IDs may legitimately advance after
-a semantic completion; each response is independently exact-validated while
-the stable authorization set must remain coherent.
+Static protocol support is negotiated at initialization, but dynamic
+capabilities are refreshed with coherent observations. Grant IDs may
+legitimately advance after semantic completion; each response is independently
+exact-validated while the operation authorization set must remain coherent.
 
 Preview.64 separates controller coordination from game permission. Re may read
 without registration. Before a mutation it lazily registers, acquires or
@@ -245,9 +247,13 @@ transitions only when they are `settling`, have `none_fail_closed` authority,
 carry active-run shared state, publish no actions, and report no missing
 completeness field. They normalize to
 `combat_transition(setup|resolution) + no_action` and cannot inherit v1
-authority. Preview.69 also admits the exact post-embark
-`run_transition(setup/awaiting_run_state) + no_action` mounting gap. No other
-context may compose with `no_action`.
+authority. Preview.69 also admits the exact new/resumed-run
+`run_transition(setup/awaiting_run_state) + no_action` mounting gap. That exact
+actionless state may omit shared HUD only with the typed
+`bridge.shared_state.deferred_during_run_mount_transition` diagnostic and sole
+missing field `shared_visible_state`; Re does not generalize the exception to
+combat or any action-owning state. No other context may compose with
+`no_action`.
 
 ## State Identity
 
@@ -266,8 +272,9 @@ shared_state + context.kind + surface.kind + actionAuthority
 
 For in-run Bridge-owned states, top-level v2 `shared_state` is the sole persistent
 run/player authority. It is read-only, included in state identity, and cannot
-add actions. Re rejects an in-run semantic Bridge state without it, mismatched combat
-player identity, or incomplete combat potion coverage. Unsupported legacy-owned
+add actions. Re rejects an in-run semantic Bridge state without it except for
+the exact typed actionless run-mount deferral above; it also rejects mismatched
+combat player identity or incomplete combat potion coverage. Unsupported legacy-owned
 states remain fail closed in the current Re runtime. Historical v1 records can
 still be decoded, but no v1 sidecar or mutation path participates in a live
 decision.
@@ -501,6 +508,21 @@ neither can add actions to a Bridge-owned surface.
 
 ## Evidence And Next Step
 
+Four Preview.69 records under loaded SHA `8e7a...`, MVID `0e3d...`, runtime
+`740e...` settled 258 decisions across ordinary menu, event, map, combat,
+reward, rest, shop, treasure, selector, and game-over flows. Six stale
+selections were rejected before execution and later fresh ticks progressed. One
+mid-run record reached the game-over-to-menu boundary; one fresh-menu record
+stopped at the former 100-tick ceiling; one separate run stopped before mutation
+on provider `fetch failed`. Their provenance is `unrecorded`, so none is Organic
+or persistent qualification.
+
+New Re runs write immutable `run-summary.json`; decision-limit exhaustion is
+incomplete and exits non-zero. A transient provider transport failure receives
+at most one pre-mutation retry. These changes do not alter Gateway completion or
+unknown-no-retry. The final installed `4ac4...` / `ae84...` Gateway identity
+still requires cold-load evidence.
+
 Current v0.109 evidence includes merchant removal, event/rest upgrade, ordinary
 rest, ordinary combat, Brain Leech event card acquisition,
 reward/card-reward/map canaries, and treasure choose/Proceed. Historical
@@ -510,7 +532,7 @@ other previously qualified shapes. Historical evidence remains visible but does
 not grant current-build authority. Draw order remains intentionally hidden.
 
 Composite state-plus-inspection reads are coherence checked. Earlier long runs
-long runs recorded 23 transient drifts during fast game transitions; every one
+recorded 23 transient drifts during fast game transitions; every one
 produced no prompt and no execution, and the next tick obtained a fresh state.
 This is observable retry/ergonomics debt, not permission to accept mixed
 evidence.

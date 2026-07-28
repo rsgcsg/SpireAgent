@@ -79,6 +79,7 @@ import {
   isBridgeV2CombatTransitionContext,
   isBridgeV2RunTransitionContext,
   isBridgeV2NoActionSurface,
+  isBridgeV2DeferredRunMountSharedState,
   isBridgeV2UnsupportedSurface,
   type BridgeV2CombatContext,
   type BridgeV2CombatPileCardSelectionSurface,
@@ -440,7 +441,13 @@ export function normalizeBridgeV2CurrentState(
       diagnostics
     );
     validateAuthorityHandoff(state, capabilities, diagnostics);
-    validateSharedVisibleState(state.shared_state, state.surface.kind, diagnostics);
+    const deferredRunMountSharedState = isBridgeV2DeferredRunMountSharedState(state);
+    validateSharedVisibleState(
+      state.shared_state,
+      state.surface.kind,
+      deferredRunMountSharedState,
+      diagnostics
+    );
 
     if (!state.game.compatibility.action_execution_allowed || !capabilities.game.compatibility.action_execution_allowed) {
       if (observationOnlyCandidate) {
@@ -519,11 +526,11 @@ export function normalizeBridgeV2CurrentState(
         && (isBridgeV2CombatTransitionContext(state.context) || isBridgeV2RunTransitionContext(state.context))) {
       if (state.readiness !== "settling"
           || state.legal_actions.length !== 0
-          || state.completeness.missing.length !== 0) {
+          || (state.completeness.missing.length !== 0 && !deferredRunMountSharedState)) {
         diagnostics.invalid(
           "bridge_v2.no_action",
           state,
-          "lifecycle-transition no_action must be settling, complete, and publish no actions"
+          "lifecycle-transition no_action must be settling, publish no actions, and omit facts only under the typed run-mount shared-state deferral"
         );
       }
       surface = {
@@ -1141,13 +1148,15 @@ function validateRestSiteState(
 function validateSharedVisibleState(
   shared: BridgeV2SharedVisibleState | null,
   surfaceKind: string,
+  deferredRunMountSharedState: boolean,
   diagnostics: DiagnosticsBuilder
 ): void {
   if (!shared) {
     if (surfaceKind !== "unsupported"
         && surfaceKind !== "character_select"
         && surfaceKind !== "main_menu"
-        && surfaceKind !== "singleplayer_menu") {
+        && surfaceKind !== "singleplayer_menu"
+        && !deferredRunMountSharedState) {
       diagnostics.invalid("bridge_v2.shared_state", shared, "semantic Bridge-owned state requires shared visible run facts");
     }
     return;

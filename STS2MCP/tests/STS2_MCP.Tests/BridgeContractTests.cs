@@ -2978,29 +2978,104 @@ public sealed class BridgeContractTests
     }
 
     [Theory]
-    [InlineData(true, false, false, null, false, "run_without_visible_overlay", true)]
-    [InlineData(true, true, false, 0, false, "run_without_visible_overlay", true)]
-    [InlineData(true, true, true, 0, false, "run_without_visible_overlay", false)]
-    [InlineData(true, true, false, 1, false, "run_without_visible_overlay", false)]
-    [InlineData(true, false, false, null, true, "run_without_visible_overlay", false)]
-    [InlineData(false, false, false, null, false, "menu_or_no_run", false)]
-    [InlineData(true, false, false, null, false, "unknown_room", false)]
-    public void RunStartTransitionRequiresExactNativeLifecycleFacts(
+    [InlineData(true, false, false, false, "run_without_visible_overlay", true)]
+    [InlineData(true, true, false, false, "run_without_visible_overlay", true)]
+    [InlineData(true, true, true, false, "run_without_visible_overlay", false)]
+    [InlineData(true, false, false, true, "run_without_visible_overlay", false)]
+    [InlineData(false, false, false, false, "menu_or_no_run", false)]
+    [InlineData(true, false, false, false, "unknown_room", false)]
+    public void RunMountTransitionRequiresExactNativeLifecycleFacts(
         bool runInProgress,
         bool runStatePresent,
         bool currentRoomPresent,
-        int? totalFloor,
         bool hasBlockingSurface,
         string sourceType,
         bool expected)
     {
-        Assert.Equal(expected, BridgeSnapshotBuilder.ClassifyRunStartNoInputTransition(
+        Assert.Equal(expected, BridgeSnapshotBuilder.ClassifyRunMountNoInputTransition(
             runInProgress,
             runStatePresent,
             currentRoomPresent,
-            totalFloor,
             hasBlockingSurface,
             sourceType));
+    }
+
+    [Fact]
+    public void MissingSharedStateIsDeferredOnlyForExactNonAuthorizingRunMount()
+    {
+        var compatibility = new CompatibilityAssessment(
+            "provisional_trial_scoped",
+            new[] { "v0.109.1" },
+            new[] { "build" },
+            ActionExecutionAllowed: true,
+            StateObservationAllowed: true,
+            InspectionAllowed: false,
+            ActionExecutionSurfaceKinds: Array.Empty<string>(),
+            ActionCanarySurfaceKinds: Array.Empty<string>(),
+            InspectionAllowedKinds: Array.Empty<string>(),
+            InspectionCanaryKinds: Array.Empty<string>(),
+            ObservationOnlySurfaceKinds: Array.Empty<string>(),
+            ObservationCandidateBuildFingerprints: Array.Empty<string>(),
+            Detail: "test");
+        var game = new GameBuildIdentity("v0.109.1", "commit", "branch", 1, compatibility);
+        var transition = new BridgeObservationDraft(
+            "run-mount",
+            "settling",
+            new RunTransitionBridgeContext("run_transition", "setup", "awaiting_run_state"),
+            new NoActionSurface("no_action", "settling", "Run state is mounting."),
+            new StateCompleteness(
+                "complete_for_bounded_run_mount_transition",
+                "none_no_input_owner",
+                new[] { "RunManager.IsInProgress" },
+                Array.Empty<string>()),
+            game,
+            Array.Empty<string>(),
+            Array.Empty<BridgeActionDraft>())
+        {
+            AuthorityHandoff = new AuthorityHandoff(
+                "none_fail_closed",
+                null,
+                "No input owner exists during run start.")
+        };
+        BridgeDiagnostic failure = BridgeDiagnostics.Create(
+            "bridge.shared_state.shared_visible_state_build_failed",
+            "error",
+            "visibility",
+            "actions_suppressed",
+            "restart",
+            "InvalidOperationException");
+
+        BridgeObservationDraft deferred = BridgeV2Runtime.ApplyMissingSharedStatePolicy(
+            transition,
+            new BridgeSharedVisibleStateBuildResult(true, null, failure));
+
+        Assert.Equal("settling", deferred.Readiness);
+        Assert.IsType<RunTransitionBridgeContext>(deferred.Context);
+        Assert.IsType<NoActionSurface>(deferred.Surface);
+        Assert.Empty(deferred.Actions);
+        Assert.Equal("none_fail_closed", deferred.AuthorityHandoff.Status);
+        Assert.Contains("shared_visible_state", deferred.Completeness.Missing);
+        Assert.Contains(deferred.Diagnostics, diagnostic =>
+            diagnostic.Code == "bridge.shared_state.deferred_during_run_mount_transition"
+            && diagnostic.Effect == "field_omitted"
+            && diagnostic.Recoverability == "settle"
+            && diagnostic.RequiredForAction == false);
+
+        BridgeObservationDraft wrongTransition = transition with
+        {
+            Context = new CombatTransitionBridgeContext(
+                "combat_transition",
+                "setup",
+                "awaiting_combat_start")
+        };
+        BridgeObservationDraft rejected = BridgeV2Runtime.ApplyMissingSharedStatePolicy(
+            wrongTransition,
+            new BridgeSharedVisibleStateBuildResult(true, null, failure));
+
+        Assert.Equal("unsupported", rejected.Readiness);
+        UnsupportedSurface unsupported = Assert.IsType<UnsupportedSurface>(rejected.Surface);
+        Assert.Equal("shared_visible_state", unsupported.SourceType);
+        Assert.Empty(rejected.Actions);
     }
 
 }

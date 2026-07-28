@@ -128,4 +128,64 @@ describe("DeepSeekDecisionProvider", () => {
     expect(session.finalAttempt.outcome).toBe("truncated");
     expect(session.finalAttempt.parsedDecision).toBeUndefined();
   });
+
+  it("retries one transient provider transport failure before any game mutation", async () => {
+    let calls = 0;
+    const requestBodies: unknown[] = [];
+    const provider = new DeepSeekDecisionProvider({
+      apiKey: "test-secret",
+      baseUrl: "https://example.invalid/chat/completions",
+      model: "deepseek-v4-flash",
+      timeoutMs: 1_000,
+      maxOutputTokens: 32,
+      thinkingMode: "disabled"
+    }, async (_input, init) => {
+      calls += 1;
+      requestBodies.push(JSON.parse(String(init?.body)) as unknown);
+      if (calls === 1) throw new TypeError("fetch failed");
+      return new Response(JSON.stringify({
+        choices: [{
+          finish_reason: "stop",
+          message: { content: '{"selectedActionId":"x","reasonBrief":"Recovered."}' }
+        }]
+      }), { status: 200 });
+    });
+
+    const session = await provider.decide({
+      systemPrompt: "JSON",
+      userPrompt: "{}",
+      allowedActionIds: ["x"]
+    });
+
+    expect(session.attempts.map((attempt) => [attempt.requestKind, attempt.outcome])).toEqual([
+      ["primary", "provider_error"],
+      ["transport_retry", "valid_json"]
+    ]);
+    expect(requestBodies).toHaveLength(2);
+    expect(requestBodies[1]).toEqual(requestBodies[0]);
+  });
+
+  it("does not retry a non-transient provider rejection", async () => {
+    let calls = 0;
+    const provider = new DeepSeekDecisionProvider({
+      apiKey: "test-secret",
+      baseUrl: "https://example.invalid/chat/completions",
+      model: "deepseek-v4-flash",
+      timeoutMs: 1_000,
+      maxOutputTokens: 32,
+      thinkingMode: "disabled"
+    }, async () => {
+      calls += 1;
+      return new Response(JSON.stringify({ error: { message: "Unauthorized" } }), { status: 401 });
+    });
+
+    const session = await provider.decide({
+      systemPrompt: "JSON",
+      userPrompt: "{}",
+      allowedActionIds: ["x"]
+    });
+
+    expect(calls).toBe(1);
+    expect(session.finalAttempt).toMatchObject({ outcome: "provider_error", httpStatus: 401 });
+  });
 });

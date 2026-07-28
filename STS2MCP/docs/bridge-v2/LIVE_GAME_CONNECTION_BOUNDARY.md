@@ -18,9 +18,12 @@ not semantic equivalence or persistent qualification. Multi-environment
 Profiles are non-authorizing, and the append-only ledger hot-reloads only after
 exact revalidation. The loaded identity and precise evidence boundary are
 recorded in [Current Status](CURRENT_STATUS.md). Preview.69 adds exact
-run-start settling and Gateway-owned encounter provisional trials while
-retaining current operation authority. It requires a fresh cold-load trial and
-does not inherit Preview.68 permission.
+new/resumed-run mount settling and Gateway-owned encounter provisional trials
+while retaining current operation authority. One prior Preview.69 MVID has
+broad session-trial coverage. The final built/installed/loaded MVID completed a
+saved-run mount and bounded game-over-to-menu journey under a fresh runtime
+epoch; its unrecorded evidence and runtime grants are not Organic or persistent
+qualification and do not transfer across restart.
 
 Consumer distribution, local trust, Companion, BYOK, SDK, and release gates are
 defined in the [productization architecture audit](../../../docs/current/audits/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md).

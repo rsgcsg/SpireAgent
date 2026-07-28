@@ -141,6 +141,22 @@ export interface RunMetadata {
   };
 }
 
+export interface RunSummary {
+  summarySchemaVersion: 1;
+  runId: string;
+  endedAt: string;
+  decisionCount: number;
+  termination:
+    | "completed_run_boundary"
+    | "stopped_runtime_guard"
+    | "stopped_runtime_failure"
+    | "stopped_decision_limit";
+  completedGame: boolean;
+  terminalOutcome: DecisionOutcome;
+  terminalStopReason?: string;
+  maxTicks: number;
+}
+
 export interface PreparedEvidence {
   preState: RecordedState;
   prompt?: DecisionRecord["prompt"];

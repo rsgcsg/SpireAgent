@@ -2,84 +2,97 @@
 
 This is the canonical short current-state document for the rebuilt project.
 
-## Mainline And Architecture
+## Mainline And Gate
 
 - Agent: `Re-SpireAgent/`.
 - Connector: `STS2MCP/` Semantic Gateway, REST contract, and optional MCP
   adapter.
 - Legacy: original runtime and P8--P15 are archived; Gateway v1 is retired.
-- Target: ADR-0002 two-plane Semantic Gateway, refined by ADR-0003 native-
-  contract/operation retirement and ADR-0004 risk-calibrated encounter trials.
+- Architecture: ADR-0002, refined by ADR-0003 and ADR-0004.
 
 Gate 1 is closed only as a bounded vanilla ordinary-single-player v2 baseline.
-Gate 2 remains active for reliability, visibility closure and native-contract
-migration. This is not complete game or Mod coverage.
+Gate 2 remains active for reliability, visibility closure, and native-contract
+migration. This is not complete game, Mod, or persistent-qualification coverage.
 
-## Source And Installation
+## Source, Install, And Load
 
 Current source contract is `2.0-preview.69`; Re normalized schema is `28`.
-Preview.69 is built and installed, but the game is closed and the artifact is
-not yet loaded:
+The final source build is installed and loaded in the current exact runtime:
 
 ```text
-built SHA       7e7405c6c94dbecaaf0ba7a4cad5229c974e892bc4c527a2213c8cadd3cbb8a1
-installed SHA   7e7405c6c94dbecaaf0ba7a4cad5229c974e892bc4c527a2213c8cadd3cbb8a1
-built MVID      fc1a3e54-1691-4518-ba92-c492cdce6733
-installed MVID  fc1a3e54-1691-4518-ba92-c492cdce6733
-loaded SHA      not loaded
-loaded MVID     not loaded
-rollback        STS2MCP/.local/deployments/2026-07-28T00-07-42-715Z
+built SHA       914974b5177364665dacd26dc614d7f23faa61924d4f68fff3e49a8572fa4789
+installed SHA   914974b5177364665dacd26dc614d7f23faa61924d4f68fff3e49a8572fa4789
+loaded SHA      914974b5177364665dacd26dc614d7f23faa61924d4f68fff3e49a8572fa4789
+built MVID      1e457e86-8eba-4878-869b-f7545366fa1e
+installed MVID  1e457e86-8eba-4878-869b-f7545366fa1e
+loaded MVID     1e457e86-8eba-4878-869b-f7545366fa1e
+runtime epoch   7a312974c7114abcaa623b9e60e8f438
+rollback        STS2MCP/.local/deployments/2026-07-28T04-15-57-837Z
 Mod manifests   one canonical STS2_MCP manifest; no duplicate
 ```
 
-The last verified loaded artifact remains Preview.68
-(`d3379139...2418f`, MVID `6c2e1933-462c-43ae-ad6f-edb60b1bf19c`). Its runtime
-grants cannot authorize Preview.69.
+The Gateway reports game `v0.109.1|c8c577f6|-820620422`, exact bridge-only
+Modset, clean known Patch owners, and `migration_exploration`. Inspection and
+persistent qualification remain disabled for this identity.
 
-## Preview.69 Changes
+## Latest Live Evidence
 
-- Models the post-embark mounting gap as
-  `run_transition + no_action + settling`.
-- Repairs Orb SmartDescription inputs using native `energyPrefix`, `Passive`
-  and `Evoke` variables.
-- Lets Re recover from a proven reversible Surface cycle by withholding only
-  the return edge when another advertised forward action remains.
-- Resolves one active Surface once, then projects action authority; dead second
-  ownership resolution was removed.
-- Separates diagnostic observation, current encounter trial admission, and
-  persistent compatibility claims.
-- In `migration_exploration`, only current uniquely source-resolved actions may
-  receive volatile `encounter_source_resolved` grants. Success becomes
-  `session_trial_confirmed`; failure or drift quarantines the runtime scope.
-- `run-agent` probes current state first. Bulk candidate-package migration is a
-  legacy fallback, not the target startup path.
+Four earlier `unrecorded` Preview.69 runs were inspected under SHA
+`8e7a...` / MVID `0e3d...` / runtime `740e...`:
 
-## Evidence Boundary
+- `run-20260728020651-03352e`: 97/100 actions settled; three pre-execution
+  stale selections were safely rejected and fresh ticks continued.
+- `run-20260728021602-bz2rop`: 62/65 actions settled; two safe stale
+  rejections; completed the remaining game-over lifecycle and stopped at the
+  top-level menu before starting another run.
+- `run-20260728033215-6n8wsq`: stopped before mutation on provider
+  `fetch failed`.
+- `run-20260728033638-xrvcre`: entered from the main menu and settled 99/100
+  actions; one safe stale rejection; stopped only at the old 100-tick ceiling.
 
-Recent Preview.68 runs prove the defects, not Preview.69 behavior:
+This is real runtime coverage and defect evidence, not Organic qualification.
+Their authority does not transfer to the current MVID.
 
-- `run-20260727135445-hbzl7p`: 98 settled actions; stopped at decision cap.
-- `run-20260727140034-8p5zum`: correct game-over to main-menu boundary.
-- `run-20260727140238-g0sq13`: reproduced unsupported post-embark gap.
-- `run-20260727141159-oc7w6m` and `run-20260727141328-3r0qs2`:
-  reproduced the shop open/close semantic cycle.
+Current-MVID run `run-20260728041630-2z58bz` resumed the saved floor-9 run,
+crossed reward, card reward, map, treasure, combat, rest/Smith, game-over and
+menu flows, and stopped at the one-game boundary:
 
-Their provenance is `unrecorded`; they are real-runtime defect/coverage
-evidence, not Organic qualification. Compilation, fixtures and installation do
-not prove loaded or live behavior.
+```text
+decisions                    127
+executed_and_settled         114
+executed_checkpoint_pending    1  (Gateway-confirmed end_turn)
+not_executed_stale_state      11  (all rejected before execution)
+run_boundary                   1
+```
+
+Its immutable summary records `completed_run_boundary`; there was no
+unsupported, invalid-state, observation-failure, unsettled, or unknown
+mutation outcome. Provenance is still `unrecorded`, so this is exact-runtime
+coverage and repair evidence, not Organic or persistent qualification.
+Operation grants remained runtime-bound `session_canary` /
+`session_trial_confirmed`; `persistent_authority_enabled=false`.
+
+## Reliability Closeout
+
+- The exact new/resumed-run mount `run_transition + no_action + settling` state
+  may defer missing shared HUD only through a typed, actionless diagnostic contract. All
+  other active-run shared-state failures remain fail closed.
+- Re refreshes dynamic capabilities with each coherent observation; authority
+  is not assumed stable from startup negotiation.
+- A transient provider transport failure receives at most one retry before any
+  game mutation. Unknown mutation outcomes are still never retried.
+- New runs write immutable `run-summary.json`. Reaching `AGENT_MAX_TICKS` is an
+  incomplete non-zero termination, not success; the default emergency ceiling
+  is now 1000. Historical records are not backfilled.
 
 ## Immediate Next Step
 
-Cold-start STS2, stop at any normal single-player state, then run only:
-
-```bash
-cd /Users/fire/Desktop/SpireAgent/Re-SpireAgent
-npm run agent:run
-```
-
-The live check must confirm loaded Preview.69 SHA/MVID, diagnostic or current
-authority path, runtime-epoch grants, command completion and successor state.
-Remaining explicit unsupported scope includes Tutor's unreviewed owner binding,
-Crystal Sphere, standalone manual potion discard, unbound source variants,
-non-standard profiles/menu paths, multiplayer, and incomplete visible-detail
-families. Read-only Inspection remains independently scoped.
+Continue Gate 2 from the exact current identity without widening permission:
+review the observed pre-execution stale rate and the single long enemy-turn
+settlement timeout, then prioritize player-visible Inspection/linked-detail
+closure and ADR-0003 native-contract migration. Remaining explicit unsupported
+scope includes Tutor's
+unreviewed owner binding, Crystal Sphere, standalone manual potion discard,
+unbound source variants, non-standard profile/menu paths, multiplayer, and
+incomplete visible-detail families. Read-only Inspection remains independently
+scoped.

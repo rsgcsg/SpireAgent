@@ -269,8 +269,7 @@ internal static class BridgeV2Runtime
         BridgeSharedVisibleStateBuildResult shared = draft.Game.Compatibility.StateObservationAllowed
             ? BridgeSharedVisibleStateBuilder.Build(EntityRegistry)
             : new BridgeSharedVisibleStateBuildResult(false, null, null);
-        if (shared.RunActive && shared.State == null)
-            draft = FailClosedForMissingSharedState(draft, shared.Failure);
+        draft = ApplyMissingSharedStatePolicy(draft, shared);
         string compositeSignature = BridgeHash.Object(new
         {
             draft.Signature,
@@ -378,6 +377,72 @@ internal static class BridgeV2Runtime
                 QualificationSystem = qualificationSystem
             };
         }
+    }
+
+    internal static BridgeObservationDraft ApplyMissingSharedStatePolicy(
+        BridgeObservationDraft draft,
+        BridgeSharedVisibleStateBuildResult shared)
+    {
+        if (!shared.RunActive || shared.State != null)
+            return draft;
+        return CanDeferMissingSharedState(draft)
+            ? DeferMissingSharedState(draft, shared.Failure)
+            : FailClosedForMissingSharedState(draft, shared.Failure);
+    }
+
+    private static bool CanDeferMissingSharedState(BridgeObservationDraft draft) =>
+        string.Equals(draft.Readiness, "settling", StringComparison.Ordinal)
+        && draft.Context is RunTransitionBridgeContext
+        {
+            Kind: "run_transition",
+            Phase: "setup",
+            Transition: "awaiting_run_state"
+        }
+        && draft.Surface is NoActionSurface
+        {
+            Kind: "no_action",
+            Reason: "settling"
+        }
+        && draft.Actions.Count == 0
+        && string.Equals(draft.AuthorityHandoff.Status, "none_fail_closed", StringComparison.Ordinal)
+        && draft.AuthorityHandoff.SurfaceKind == null
+        && string.Equals(
+            draft.Completeness.LegalActions,
+            "none_no_input_owner",
+            StringComparison.Ordinal);
+
+    private static BridgeObservationDraft DeferMissingSharedState(
+        BridgeObservationDraft draft,
+        BridgeDiagnostic? failure)
+    {
+        var completeness = draft.Completeness with
+        {
+            PlayerVisibleSemantics = "bounded_run_mount_transition_with_shared_state_pending",
+            Missing = draft.Completeness.Missing
+                .Append("shared_visible_state")
+                .Distinct()
+                .ToArray()
+        };
+        var diagnostic = new BridgeDiagnostic(
+            "bridge.shared_state.deferred_during_run_mount_transition",
+            "warning",
+            "visibility",
+            "field_omitted",
+            "settle",
+            Path: "shared_state",
+            VisibilityClass: "on_screen",
+            RequiredForAction: false,
+            SafeDetail: failure?.SafeDetail);
+        return draft with
+        {
+            Signature = BridgeHash.Object(new
+            {
+                draft.Signature,
+                deferredRunMountSharedState = true
+            }),
+            Completeness = completeness,
+            Diagnostics = draft.Diagnostics.Append(diagnostic).ToArray()
+        };
     }
 
     private static BridgeObservationDraft FailClosedForMissingSharedState(

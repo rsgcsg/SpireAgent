@@ -122,10 +122,12 @@ The following are governance constraints, not a separate feature program:
 
 ### Current Window
 
-1. Build, install, cold-load, and run Preview.69. Preserve its exact identity;
-   Preview.68 records are defect/coverage evidence, not inherited authority or
-   Organic qualification. Use ADR-0004 encounter trials rather than bulk
-   preinstallation as the target startup path.
+1. Preserve the final Preview.69 exact-runtime evidence boundary: the completed
+   127-decision saved-run journey proves the run-mount repair and bounded
+   one-game supervision, but its unrecorded provenance and session-only grants
+   do not establish Organic or persistent qualification. Investigate measured
+   stale-selection and long-settlement behavior without weakening the safety
+   kernel.
 2. Continue C through the ADR-0003 migration order: exact runtime source/
    adapter/outcome shadows, continuation boundaries, identity separation, then
    hot-summary/on-demand evidence.
@@ -139,10 +141,11 @@ The following are governance constraints, not a separate feature program:
 6. Keep P, H and T behind their existing admission gates. Do not build an
    Artifact Router without a demonstrated ABI/load split.
 
-Preview.68 cold-load and real-runtime journeys are complete. Preview.69's
-one-command Operator Shell preflight is implemented but requires a cold load
-before its encounter-scoped trial path has runtime evidence. Neither state is
-generic cross-version or cross-Mod qualification.
+Preview.69's prior loaded MVID completed broad real-runtime session trials. The
+final built/installed/loaded MVID then completed a saved-run-to-menu lifecycle
+under a fresh runtime epoch. Neither identity is generic cross-version or
+cross-Mod qualification, and no session trial was promoted to a persistent
+claim.
 
 ### Gate 1 Exit Basis And Gate 2 Entry
 

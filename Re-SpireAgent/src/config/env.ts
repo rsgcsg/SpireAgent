@@ -82,7 +82,7 @@ export function readRuntimeConfig(env: NodeJS.ProcessEnv = process.env, projectR
     runtime: {
       dataDir: resolve(projectRoot, env.AGENT_DATA_DIR ?? "data/runs"),
       evidenceProvenance,
-      maxTicks: positiveInteger(env.AGENT_MAX_TICKS, 100, "AGENT_MAX_TICKS"),
+      maxTicks: positiveInteger(env.AGENT_MAX_TICKS, 1_000, "AGENT_MAX_TICKS"),
       tickDelayMs: nonNegativeInteger(env.AGENT_TICK_DELAY_MS, 250, "AGENT_TICK_DELAY_MS"),
       settlementPollMs: positiveInteger(env.AGENT_SETTLEMENT_POLL_MS, 150, "AGENT_SETTLEMENT_POLL_MS"),
       settlementTimeoutMs: positiveInteger(env.AGENT_SETTLEMENT_TIMEOUT_MS, 3_000, "AGENT_SETTLEMENT_TIMEOUT_MS"),
