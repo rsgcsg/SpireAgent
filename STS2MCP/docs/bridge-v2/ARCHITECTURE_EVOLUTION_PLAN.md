@@ -18,7 +18,7 @@ Status: Gate 1 closed as a bounded ordinary-single-player v2 connector
 baseline on 2026-07-24. Preview.61 supplied the exact Neow's Fury Organic
 runtime seal, strict Re decode, and loaded-v1 retirement evidence.
 
-C# and Re source now share `2.0-preview.71`. Preview.62 moved exact-environment
+C# and Re source now share `2.0-preview.72`. Preview.62 moved exact-environment
 authorization and reviewed combat-pile source contracts into validated
 embedded policy, and added a non-authorizing exact-assembly audit. Preview.63
 adds an operation-scoped Gateway session-grant state machine under that
@@ -56,6 +56,12 @@ migration to the runtime-proven treasure-open family: one shared lifecycle
 classifier drives projection and completion, six explicit candidates are
 machine-readable, and 81 fallbacks remain hypotheses. This is a dual-read
 preparation step, not permission or identity migration.
+
+Preview.72 makes the migration explicitly A-first. Exact Hefty Tablet and Lead
+Paperweight share bounded card-choice mechanics while retaining separate
+purposes and result witnesses. Re now distinguishes an actionless settling
+owner from mutation publication. These are local contract corrections, not a
+new fact framework, universal selector, or permission expansion.
 
 See the [2026-07-22 real connector audit and migration plan](REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md).
 The phases below describe retained architecture work, but Phase 2 and later are

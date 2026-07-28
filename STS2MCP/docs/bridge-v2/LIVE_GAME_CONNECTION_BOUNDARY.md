@@ -2,7 +2,7 @@
 
 Status: canonical architecture boundary for the current real-game connection.
 
-Current source compatibility status: C# and Re share `2.0-preview.71`, including
+Current source compatibility status: C# and Re share `2.0-preview.72`, including
 operation scopes, a Gateway artifact digest, separate actual-loaded versus
 release-declared game assembly hashes, reviewed exact-environment policy
 provenance, structural combat-pile transaction semantics, minimal local
@@ -28,8 +28,10 @@ qualification and do not transfer across restart.
 Preview.70 later loaded and completed a 124-decision bounded run. It also
 exposed the native Silver Crucible empty-chest outcome that the old treasure
 Oracle failed to settle. Preview.71 reuses one lifecycle classifier for
-treasure projection/completion and is built/installed but not loaded. It does
-not inherit Preview.70 runtime authority or broaden any operation.
+treasure projection/completion and later loaded. Preview.72 repairs the next
+Hefty/actionless-settling defects and is built/installed/loaded without action
+evidence. It does not inherit Preview.71 runtime authority or broaden any
+operation.
 
 Consumer distribution, local trust, Companion, BYOK, SDK, and release gates are
 defined in the [productization architecture audit](../../../docs/current/audits/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md).

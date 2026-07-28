@@ -31,6 +31,7 @@ internal static class GeneratedCardChoiceSourceBinding
     private const string SplashSourceKind = "splash";
     private const string QuasarSourceKind = "quasar";
     private const string KnowledgeDemonCurseSourceKind = "knowledge_demon_curse";
+    private const string HeftyTabletSourceKind = "hefty_tablet";
     private static readonly object Gate = new();
     private static readonly Dictionary<Guid, ActiveBinding> Active = new();
 
@@ -54,6 +55,13 @@ internal static class GeneratedCardChoiceSourceBinding
         RelicModel SourceRelic,
         IReadOnlyList<CardModel> BaselineDeck)
         : ActiveBinding(Token, "lead_paperweight", Player);
+
+    internal sealed record HeftyTabletBinding(
+        Guid Token,
+        Player Player,
+        HeftyTablet SourceRelic,
+        IReadOnlyList<CardModel> BaselineDeck)
+        : ActiveBinding(Token, HeftyTabletSourceKind, Player);
 
     internal sealed record GeneratedCombatPotionBinding(
         Guid Token,
@@ -94,17 +102,29 @@ internal static class GeneratedCardChoiceSourceBinding
 
     internal static Scope BeginRelic(RelicModel relic, Player player)
     {
-        if (relic is not LeadPaperweight)
+        Guid token = Guid.NewGuid();
+        ActiveBinding? binding = RunDeckRelicSourceKind(relic.GetType()) switch
+        {
+            "lead_paperweight" =>
+                new LeadPaperweightBinding(token, player, (LeadPaperweight)relic, player.Deck.Cards.ToArray()),
+            HeftyTabletSourceKind =>
+                new HeftyTabletBinding(token, player, (HeftyTablet)relic, player.Deck.Cards.ToArray()),
+            _ => null
+        };
+        if (binding == null)
             return default;
-
-        var binding = new LeadPaperweightBinding(
-            Guid.NewGuid(),
-            player,
-            relic,
-            player.Deck.Cards.ToArray());
         lock (Gate)
             Active.Add(binding.Token, binding);
         return new Scope(binding.Token);
+    }
+
+    internal static string? RunDeckRelicSourceKind(Type relicType)
+    {
+        if (relicType == typeof(LeadPaperweight))
+            return "lead_paperweight";
+        if (relicType == typeof(HeftyTablet))
+            return HeftyTabletSourceKind;
+        return null;
     }
 
     internal static Scope BeginPotion(PotionModel potion, Creature? target)
@@ -418,6 +438,52 @@ internal static class GeneratedRunCardAcquisitionWitness
         && surfaceClosed
         && currentDeck.Count == baselineDeck.Count
         && offeredCards.All(card => !ContainsReference(currentDeck, card));
+
+    private static bool ContainsReference<T>(IEnumerable<T> cards, T expected) where T : class =>
+        cards.Any(card => ReferenceEquals(card, expected));
+}
+
+internal static class HeftyTabletRunCardAcquisitionWitness
+{
+    internal static bool Selected<T>(
+        bool sourceCompleted,
+        bool surfaceClosed,
+        IReadOnlyCollection<T> baselineDeck,
+        IReadOnlyCollection<T> currentDeck,
+        T selectedCard,
+        IReadOnlyCollection<T> offeredCards,
+        Func<T, bool> isInjury) where T : class
+    {
+        T[] addedCards = currentDeck.Where(card => !ContainsReference(baselineDeck, card)).ToArray();
+        return sourceCompleted
+               && surfaceClosed
+               && baselineDeck.All(card => ContainsReference(currentDeck, card))
+               && !ContainsReference(baselineDeck, selectedCard)
+               && ContainsReference(currentDeck, selectedCard)
+               && currentDeck.Count == baselineDeck.Count + 2
+               && addedCards.Length == 2
+               && addedCards.Count(isInjury) == 1
+               && offeredCards.Where(card => !ReferenceEquals(card, selectedCard))
+                   .All(card => !ContainsReference(currentDeck, card));
+    }
+
+    internal static bool Skipped<T>(
+        bool sourceCompleted,
+        bool surfaceClosed,
+        IReadOnlyCollection<T> baselineDeck,
+        IReadOnlyCollection<T> currentDeck,
+        IReadOnlyCollection<T> offeredCards,
+        Func<T, bool> isInjury) where T : class
+    {
+        T[] addedCards = currentDeck.Where(card => !ContainsReference(baselineDeck, card)).ToArray();
+        return sourceCompleted
+               && surfaceClosed
+               && baselineDeck.All(card => ContainsReference(currentDeck, card))
+               && currentDeck.Count == baselineDeck.Count + 1
+               && addedCards.Length == 1
+               && isInjury(addedCards[0])
+               && offeredCards.All(card => !ContainsReference(currentDeck, card));
+    }
 
     private static bool ContainsReference<T>(IEnumerable<T> cards, T expected) where T : class =>
         cards.Any(card => ReferenceEquals(card, expected));

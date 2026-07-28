@@ -8,7 +8,8 @@ This is the canonical short current-state document for the rebuilt project.
 - Connector: `STS2MCP/` Semantic Gateway, REST contract, and optional MCP
   adapter.
 - Legacy: original runtime and P8--P15 are archived; Gateway v1 is retired.
-- Architecture: ADR-0002, refined by ADR-0003 and ADR-0004.
+- Architecture: ADR-0002's A-first Semantic Gateway two-plane target, refined
+  by ADR-0003 and ADR-0004.
 
 Gate 1 is closed only as a bounded vanilla ordinary-single-player v2 baseline.
 Gate 2 remains active for reliability, visibility closure, and native-contract
@@ -16,28 +17,31 @@ migration. This is not complete game, Mod, or persistent-qualification coverage.
 
 ## Source, Install, And Load
 
-Current source contract is `2.0-preview.71`; Re normalized schema is `28`.
-The Preview.71 source build is installed but not loaded because the game is
-closed:
+Current source contract is `2.0-preview.72`; Re normalized schema is `29`.
+Preview.72 is built, installed, and Steam cold-loaded:
 
 ```text
-built SHA       fd0f7c56cbafd7fcf84386b0ee69944ca2f8170f8982dce9640d2e4f5cf679e6
-installed SHA   fd0f7c56cbafd7fcf84386b0ee69944ca2f8170f8982dce9640d2e4f5cf679e6
-loaded SHA      not loaded (game closed)
-built MVID      0acccd3d-8d08-4f95-ae64-75fc758a95f5
-installed MVID  0acccd3d-8d08-4f95-ae64-75fc758a95f5
-loaded MVID     not loaded (game closed)
-runtime epoch   none for Preview.71
-rollback        STS2MCP/.local/deployments/2026-07-28T08-46-30-998Z
+game release    v0.109.1|c8c577f6
+release hash    -1041364841 (release-declared diagnostic only)
+actual hash     -820620422
+built SHA       afb0261fdf1ca8433bdcbc3de2e1270f00daf802da3aaf507492357da399a140
+installed SHA   afb0261fdf1ca8433bdcbc3de2e1270f00daf802da3aaf507492357da399a140
+loaded SHA      afb0261fdf1ca8433bdcbc3de2e1270f00daf802da3aaf507492357da399a140
+built MVID      3e9ad83a-37c9-40dc-bca0-877187c9bdae
+installed MVID  3e9ad83a-37c9-40dc-bca0-877187c9bdae
+loaded MVID     3e9ad83a-37c9-40dc-bca0-877187c9bdae
+runtime epoch   14238a9e9bf443c580a8dfe80bd571fd
+rollback        STS2MCP/.local/deployments/2026-07-28T13-05-29-650Z
 Mod manifests   one canonical STS2_MCP manifest; no duplicate
 ```
 
-The last loaded Preview.70 runtime reported game
-`v0.109.1|c8c577f6|-820620422`, SHA `28c32f40...`, MVID `6f169dfe...`, runtime
-`a31b1c...`, exact bridge-only Modset, clean known Patch owners, and
-`migration_exploration`. Those runtime facts and grants do not transfer to
-Preview.71. Inspection and persistent qualification remain
-unclaimed for the new artifact.
+Loaded Preview.72 reports exact bridge-only Modset, `migration_exploration`,
+normal observation enabled, provisional trial ready, and no pre-existing
+mutation or Inspection authority. Preview.71's volatile grants and runtime
+evidence do not transfer. No Preview.72 action, Hefty/settling canary, Organic
+evidence, or persistent qualification is claimed. The separate release-
+declared hash `-1041364841` is diagnostic provenance, not actual-loaded
+identity.
 
 ## Latest Live Evidence
 
@@ -107,6 +111,25 @@ manifest hypothesis to the sixth explicit **non-authorizing** contract
 candidate. See the
 [Preview.71 closeout](audits/PREVIEW_71_EMPTY_TREASURE_OUTCOME_CLOSEOUT_2026-07-28.md).
 
+Four later runs prove that Preview.71 was loaded and expose the next two exact
+boundaries:
+
+- `run-20260728085047-akattr` and `run-20260728090432-731pf1` stopped before
+  mutation on the same exact Hefty Tablet generated-card choice because that
+  relic source and its Injury side effect were not bound.
+- `run-20260728090507-p3jx5s` completed 111 prior decisions, then Re rejected
+  an actionless Skill Potion choice while Gateway truthfully reported
+  `settling + candidate_observation_only`. This was an observation-versus-
+  mutation-scope consumer bug, not missing Gateway permission.
+- `run-20260728091032-3oihpi` completed the current run boundary in ten
+  decisions without encountering either branch.
+
+All four are exact-runtime coverage/defect evidence with `unrecorded`
+provenance, not Organic or persistent qualification. Preview.72 adds exact
+Hefty source/result semantics and permits actionless settling observation
+without publishing an action or claiming action authority. See the
+[Preview.72 A-first closeout](audits/PREVIEW_72_A_FIRST_GENERATED_CHOICE_ARCHITECTURE_CLOSEOUT_2026-07-28.md).
+
 ## Reliability Closeout
 
 - The exact new/resumed-run mount `run_transition + no_action + settling` state
@@ -122,14 +145,12 @@ candidate. See the
 
 ## Immediate Next Step
 
-Cold-start the installed Preview.71 artifact and run the ordinary bounded Agent
-journey. First verify loaded protocol/SHA/MVID; then use the run only as scoped
-coverage evidence. The most valuable canary is another naturally reached
-Silver Crucible empty first chest; do not manufacture or retry an unknown
-mutation. Continue player-visible Inspection/linked-detail closure and ADR-0003
-native-contract migration without widening permission. Remaining explicit unsupported
-scope includes Tutor's
+Run the ordinary bounded Agent journey on the verified loaded Preview.72.
+Naturally encountered Hefty select/skip
+or generated-combat settling transitions are the highest-value canaries; do not
+manufacture them or retry an unknown mutation. Continue player-visible
+Inspection/detail closure and native-contract migration only after this current
+artifact is loaded. Remaining explicit unsupported scope includes Tutor's
 unreviewed owner binding, Crystal Sphere, standalone manual potion discard,
 unbound source variants, non-standard profile/menu paths, multiplayer, and
-incomplete visible-detail families. Read-only Inspection remains independently
-scoped.
+incomplete visible-detail families.

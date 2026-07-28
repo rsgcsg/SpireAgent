@@ -5,7 +5,16 @@
 > `../STS2MCP/docs/bridge-v2/CURRENT_STATUS.md`. Older identity and mode claims
 > below are preserved as dated evidence and must not override those documents.
 
-Status update 2026-07-27 (latest): source contract is `2.0-preview.67`; Re
+Status update 2026-07-28 (current pointer only): source contract is
+`2.0-preview.72`; Re normalized schema is `29`. Preview.71 loaded as SHA
+`fd0f7c56...`, MVID `0acccd3d...`, runtime `19219d23...`. Four later runs
+proved one completed boundary and exposed repeated Hefty Tablet source/result
+debt plus one actionless-settling Re validation defect. Preview.72 repairs both
+and is built as SHA `afb0261f...`, MVID `3e9ad83a...`; install/cold-load and
+Live evidence remain pending. See canonical current status and the Preview.72
+A-first generated-choice closeout rather than this chronology.
+
+Earlier status update 2026-07-27: source contract was `2.0-preview.67`; Re
 normalized schema is `26`. Preview.67 is built, installed and cold-loaded as
 SHA `100ddf42c2114b30602a41c8908f63e154fc8f41a10ed37d4e2a1bded84fc74d`,
 MVID `65bd744d-270b-4026-84c4-2ee397eee4e2`, runtime

@@ -36,6 +36,10 @@ not inherit authority from the archived root SpireAgent runtime.
 
 Current cross-component audits:
 
+- [Preview.72 A-first generated-choice closeout](audits/PREVIEW_72_A_FIRST_GENERATED_CHOICE_ARCHITECTURE_CLOSEOUT_2026-07-28.md):
+  four exact Preview.71 runs, Hefty Tablet source/result proof, actionless
+  settling permission correction, attachment critique, A-first architecture
+  amendment, Preview.72 evidence limits, and next Live canaries.
 - [Preview.71 empty-treasure Outcome closeout](audits/PREVIEW_71_EMPTY_TREASURE_OUTCOME_CLOSEOUT_2026-07-28.md):
   exact Preview.70 failure evidence, Silver Crucible/native treasure source
   proof, shared lifecycle/Oracle repair, sixth explicit non-authorizing

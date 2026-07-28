@@ -1,6 +1,6 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.71`
+Protocol preview: `2.0-preview.72`
 
 Preview.71 repairs one action-local Outcome Oracle without expanding
 authority. `treasure_room/open_treasure_chest` now completes when the exact
@@ -601,7 +601,7 @@ tracked by the 2026-07-20 architecture audit and must not be inferred away from
 the local child witness.
 
 Preview.42 models only `LeadPaperweight.AfterObtained` as
-`event + generated_card_choice`. The Surface must declare
+`generated_card_choice` over the current world Context. The Surface must declare
 `purpose=acquire_one_generated_card`, `source_kind=lead_paperweight`, and
 `destination=run_deck`. Legal operations are `select_generated_run_card` and
 `skip_generated_run_card_choice`. An exact active source binding is mandatory;
@@ -643,6 +643,25 @@ required, so unknown potions, derived
 Mod types, card/relic generators, and other callers cannot inherit authority.
 Shared mechanics and witness topology do not erase the source identity or
 create a universal generated-card selector.
+
+Preview.72 adds exact sealed `HeftyTablet.AfterObtained` to the same interaction
+Surface without pretending it has Lead Paperweight semantics. It declares
+`purpose=acquire_one_generated_rare_card_plus_injury`,
+`source_kind=hefty_tablet`, `destination=run_deck`, and
+`selected_card_cost_policy=unchanged`. Selection completion requires source
+task completion, Surface closure, the selected exact Rare card, one exact new
+`Injury`, deck count `+2`, and absence of unselected offers. Skip requires one
+exact new Injury, deck count `+1`, and absence of every offer. The exact active
+relic task supplies business origin independently of the underlying room
+Context; prompt text and UI shape remain insufficient.
+
+Preview.72 also makes action publication explicit in scoped environments. A
+semantic Surface may be `settling` with no legal actions and be advertised as
+`candidate_observation_only`. Re may observe and record it but must produce no
+allowed action and must project `actionAuthority=none`. Once legal actions are
+published, an exact qualified or canary operation scope is mandatory. `ready`
+with no actions, observation-only with actions, or incompatible Context/source
+contracts remain invalid.
 
 Preview.53 extends `combat_pile_card_selection` only to exact sealed
 `Graveblast`. Its wire branch is discriminated from Headbutt by

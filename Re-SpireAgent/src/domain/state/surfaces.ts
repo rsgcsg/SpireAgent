@@ -244,6 +244,15 @@ export interface GeneratedRunDeckCardChoiceSurface extends GeneratedCardChoiceSu
   overflowDestination?: undefined;
 }
 
+/** Hefty Tablet choice; selection and skip both add a separate Injury. */
+export interface HeftyTabletCardChoiceSurface extends GeneratedCardChoiceSurfaceBase {
+  purpose: "acquire_one_generated_rare_card_plus_injury";
+  sourceKind: "hefty_tablet";
+  destination: "run_deck";
+  selectedCardCostPolicy: "unchanged";
+  overflowDestination?: undefined;
+}
+
 /** Source-bound native generated-card potion; full hands redirect to discard. */
 export interface GeneratedCombatCardChoiceSurface extends GeneratedCardChoiceSurfaceBase {
   purpose: "choose_one_generated_combat_card";
@@ -265,6 +274,7 @@ export interface ImmediateCombatEffectCardChoiceSurface extends GeneratedCardCho
 
 export type GeneratedCardChoiceSurface =
   | GeneratedRunDeckCardChoiceSurface
+  | HeftyTabletCardChoiceSurface
   | GeneratedCombatCardChoiceSurface
   | ImmediateCombatEffectCardChoiceSurface;
 

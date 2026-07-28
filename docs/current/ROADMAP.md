@@ -56,13 +56,24 @@ with 114 settled actions and 11 safe stale refusals, followed by a clean
 107-decision character-select-to-menu journey with 106 settled actions and no
 stale or runtime failure. Preview.70 then completed another exact bounded run
 and exposed an empty-treasure Oracle gap. Provenance remains unrecorded.
-Preview.71 repairs that gap and is built/installed but not loaded; no Organic
-or persistent qualification is claimed.**
+Preview.71 repaired that gap and later loaded successfully. Four newer exact-
+runtime runs then exposed Hefty Tablet source/result debt and a Re actionless-
+settling validation bug; another run completed its boundary. Preview.72 repairs
+both and is built/installed/loaded, but has no current-artifact action evidence. No Organic or persistent
+qualification is claimed.**
 
 Close decision-relevant visible-information gaps using shared state, context,
 surface, preview, and read-only inspection. Do not expose hidden RNG, draw
 order, future rewards/events, or private game state. Refactor only after
 multiple source/runtime examples demonstrate genuine shared mechanics.
+
+Gate 2 follows ADR-0002's A-first order: current decision truth, inspectable
+context, execution integrity, outcome reconciliation, then compatibility and
+evidence support. Control-plane operation/package count is not a completion
+metric. Preview.72's Hefty branch is the reference abstraction: reuse one
+proven interaction Surface, but retain exact purpose, source binding and
+outcome Witness. An actionless settling owner is observable without being
+mutation-authorized.
 
 The current full-evidence Prompt remains the only runtime Prompt. Re's
 read-only `shadowStrategyProjection` is an offline measurement tool, not a
@@ -99,20 +110,22 @@ one treasure lifecycle classifier for projection and completion.
 
 Gate 2 now proceeds in this order:
 
-1. cold-load Preview.71 and verify exact loaded identity plus one bounded
-   ordinary journey without inheriting Preview.70 authority;
-2. expand non-authorizing adapter/outcome/source/partition shadow metadata
+1. run one bounded ordinary journey on the verified loaded Preview.72 without
+   inheriting Preview.71 authority;
+2. close naturally observed current-decision, settling, visible-fact, and
+   action-local outcome gaps before adding more control-plane machinery;
+3. expand non-authorizing adapter/outcome/source/partition shadow metadata
    across representative menu, navigation, shop, combat, reward, and selector
    families;
-3. separate game-semantic identity from current authority after the
+4. separate game-semantic identity from current authority after the
    [ADR-0005](../../STS2MCP/docs/bridge-v2/ADR-0005-semantic-state-and-authority-identity-separation.md)
    dual-read gates pass, with rollback to composite identity;
-4. dual-read current-scope capability summaries before reducing hot governance
+5. dual-read current-scope capability summaries before reducing hot governance
    payloads;
-5. migrate claim/permission identity away from global operation only after
+6. migrate claim/permission identity away from global operation only after
    publication and execute-time parity are proven;
-6. evaluate bounded Re-side DecisionProjections on identical evidence; and
-7. replace generic promotion counts with family-specific scoped evidence.
+7. evaluate bounded Re-side DecisionProjections on identical evidence; and
+8. replace generic promotion counts with family-specific scoped evidence.
 
 Kifuda admits only an exact continuation handoff, not a universal
 `PendingObligation` graph. Artifact Router remains deferred until a real ABI or

@@ -25,12 +25,13 @@ Gateway.
 
 Success is measured in this order:
 
-1. Connector reliability and honest operation coverage.
-2. Player-visible information completeness and provenance.
-3. Evidence integrity, replayability, and evaluation repeatability.
-4. Official Agent runtime correctness under a frozen baseline.
-5. Secure player control, recovery, and distribution.
-6. Demonstrated Agent improvement under guarded, reversible changes.
+1. Workflow A current-decision truth and bounded run continuity.
+2. Player-visible and inspectable information completeness and provenance.
+3. Execution integrity and action-local outcome reconciliation.
+4. Evidence integrity, replayability, and evaluation repeatability.
+5. Official Agent runtime correctness under a frozen baseline.
+6. Secure player control, recovery, and distribution.
+7. Demonstrated Agent improvement under guarded, reversible changes.
 
 ## Program Lanes
 
@@ -122,9 +123,9 @@ The following are governance constraints, not a separate feature program:
 
 ### Current Window
 
-1. Cold-load the installed Preview.71 SHA/MVID and run one bounded ordinary
-   journey without inheriting Preview.70 grants. Preview.71 currently has
-   build/install evidence only.
+1. Run one bounded ordinary journey on loaded Preview.72 without inheriting
+   Preview.71 grants. Preview.72 currently has source, contract-test,
+   build/install, and exact loaded-identity evidence only.
 2. Preserve the final Preview.69 exact-runtime evidence boundary: the
    127-decision saved-run journey and clean 107-decision fresh journey prove
    bounded one-game supervision on that exact runtime, but their unrecorded
@@ -132,11 +133,11 @@ The following are governance constraints, not a separate feature program:
    qualification. The read-only identity audit found semantic change in every
    stale refusal and no composite-only candidate, so state binding remains
    conservative.
-3. Continue C through the ADR-0003 migration order: explicit source/adapter/
-   outcome contract candidates, continuation boundaries, identity separation,
-   then hot-summary/on-demand evidence. Preview.71 uses the Silver Crucible
-   empty-chest failure to migrate treasure-open into an explicit candidate;
-   keep remaining manifest fallbacks as non-authorizing test-confirm hypotheses.
+3. Continue C in ADR-0002's A-first order: close current decision/settling and
+   visible-fact defects, strengthen action-local outcome branches, then expand
+   explicit source/adapter/outcome candidates and identity shadowing. Preview.72
+   keeps one generated-choice interaction while separating Hefty Tablet's exact
+   source and Injury result; remaining manifest fallbacks stay non-authorizing.
 4. Maintain the closed Gate 1 v1-retirement inventory and keep unsupported
    variants explicitly typed and fail closed.
 5. Advance D only for concrete C/A evidence needs. D may compare, grade and
@@ -153,7 +154,10 @@ and a clean fresh character-select-to-menu lifecycle under one runtime epoch.
 Neither identity is generic cross-version or cross-Mod qualification, and no
 session trial was promoted to a persistent claim. Preview.70 later completed a
 124-decision boundary on its exact runtime and exposed one empty-chest Outcome
-Oracle defect. Preview.71 is installed but has not yet been loaded or exercised.
+Oracle defect. Preview.71 later loaded and produced two repeated Hefty source
+gaps, one actionless-settling Re validation defect, and one completed boundary.
+Preview.72 repairs those two defects and is built/installed/loaded, but has not
+executed an action or exercised either repaired branch yet.
 
 ### Gate 1 Exit Basis And Gate 2 Entry
 

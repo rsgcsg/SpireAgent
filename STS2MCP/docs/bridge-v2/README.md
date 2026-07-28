@@ -1,7 +1,7 @@
 # Bridge v2 Documentation
 
 Bridge v2 is the active semantic Gateway protocol. C# and Re source now share
-`2.0-preview.71`; Re normalized schema is `28`. Gate 1 is closed as a bounded
+`2.0-preview.72`; Re normalized schema is `29`. Gate 1 is closed as a bounded
 ordinary-single-player v2 connector baseline and the complete v1 HTTP namespace
 is retired. Preview.61 supplied the final Neow's Fury runtime seal. Preview.62
 adds reviewed registry/policy adaptation and non-authorizing exact-assembly
@@ -29,14 +29,16 @@ and repository [ADR-0003](../../../docs/current/decisions/ADR-0003-operation-ret
 
 Preview.70 added a read-only recorded-run identity audit, then cold-loaded and
 completed a 124-decision bounded run. A separate run exposed the Silver
-Crucible empty-chest Oracle defect. Preview.71 shares treasure lifecycle facts
-between projection and completion, makes treasure-open the sixth explicit
-non-authorizing candidate, and is built/installed but not loaded. Preview.70
+Crucible empty-chest Oracle defect. Preview.71 shared treasure lifecycle facts
+between projection and completion, then loaded and exposed exact Hefty Tablet
+and actionless-settling defects. Preview.72 repairs those two boundaries and is
+built/installed/loaded, but has no current-artifact action evidence. Prior
 runtime evidence and grants do not transfer.
 
 ## Current Documents
 
 - [Current status](CURRENT_STATUS.md)
+- [Preview.72 A-first generated-choice closeout](../../../docs/current/audits/PREVIEW_72_A_FIRST_GENERATED_CHOICE_ARCHITECTURE_CLOSEOUT_2026-07-28.md)
 - [Preview.71 empty-treasure Outcome closeout](../../../docs/current/audits/PREVIEW_71_EMPTY_TREASURE_OUTCOME_CLOSEOUT_2026-07-28.md)
 - [Preview.70 identity and contract-shadow closeout](../../../docs/current/audits/PREVIEW_70_IDENTITY_AND_CONTRACT_SHADOW_CLOSEOUT_2026-07-28.md)
 - [Cross-component target architecture ADR](../../../docs/current/decisions/ADR-0002-semantic-gateway-two-plane-target-architecture.md)

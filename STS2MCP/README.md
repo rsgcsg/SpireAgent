@@ -20,8 +20,8 @@ Bridge v2 is the only mutation contract for the current Agent and default MCP
 adapter. It remains an incremental semantic/visibility preview, not
 complete-game coverage.
 
-The C# Bridge and Re source share `2.0-preview.71`; Re normalized schema is
-`28`. Gate 1 is closed as a bounded ordinary-single-player v2 connector
+The C# Bridge and Re source share `2.0-preview.72`; Re normalized schema is
+`29`. Gate 1 is closed as a bounded ordinary-single-player v2 connector
 baseline. Preview.62 replaced repeated combat-pile source branches with a
 reviewed embedded registry, moves exact-environment scopes into a reviewed
 embedded policy, and added a non-authorizing exact-assembly audit. Preview.63
@@ -46,8 +46,9 @@ Organic qualification. Preview.69 adds exact run-start settling, bounded
 semantic-cycle recovery, native Orb formatting, and encounter-scoped runtime
 trials. Preview.70 subsequently cold-loaded and completed an exact 124-decision
 bounded run, while another run proved an empty-treasure-chest completion gap.
-Preview.71 repairs that action-local Oracle and is built/installed but not
-loaded. The 87-operation catalog now combines six explicit high-precision
+Preview.71 repaired that Oracle and later loaded. Preview.72 adds exact Hefty
+Tablet source/result semantics and correct actionless-settling consumption; it
+is built/installed/loaded but has no current-artifact action evidence. The 87-operation catalog now combines six explicit high-precision
 contracts with 81 manifest-derived conservative identity/test-confirm
 fallbacks. Fallback metadata does not assert semantic equivalence or bypass
 current native legality, Commit, completion, or operation-local quarantine.
@@ -64,13 +65,13 @@ Exact evidence is recorded in [current status](docs/bridge-v2/CURRENT_STATUS.md)
 - Historical Gate 1 binding: Slay the Spire 2
   `v0.109.0|c12f634d|-1639417500`. Its authority does not transfer.
 - Current game identity:
-  `v0.109.1|c8c577f6|-820620422`. Preview.70 grants are bound to its last loaded
-  Gateway identity and do not authorize Preview.71.
+  `v0.109.1|c8c577f6|-820620422`. Preview.71 grants are bound to its last loaded
+  Gateway identity and do not authorize Preview.72.
 - A matching version/commit with a different main-assembly hash remains
   untested and has no v2 action or Inspection authority. Check
   [Bridge v2 current status](docs/bridge-v2/CURRENT_STATUS.md) before treating
   a local install as qualified.
-- Source `2.0-preview.71` keeps centralized overlay/room/menu ownership, typed
+- Source `2.0-preview.72` keeps centralized overlay/room/menu ownership, typed
   diagnostics, purpose-specific selection and event contracts, staged
   completion semantics, and a top-level read-only shared run/player HUD.
   Current-build capabilities distinguish reviewed exact-policy actions,
@@ -100,7 +101,7 @@ Exact evidence is recorded in [current status](docs/bridge-v2/CURRENT_STATUS.md)
   revealed ancient dialogue, ordinary single-player event options, and the
   exact Whispering Hollow random-transform child and Self-Help Book
   deck-enchantment child are action canaries. Only the
-  exact Lead Paperweight and sealed native Colorless/Attack/Skill/Power Potion sources of
+  exact Lead Paperweight, Hefty Tablet, and sealed native Colorless/Attack/Skill/Power Potion sources of
   `generated_card_choice` are current-build canaries with separate destination,
   cost, operation, and completion semantics; all other callers of the shared
   selection UI remain fail closed. Exact combat-pile registry branches now

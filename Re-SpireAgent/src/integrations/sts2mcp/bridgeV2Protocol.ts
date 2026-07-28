@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { isJsonObject, type JsonObject } from "../../shared/json.js";
 
-export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.71" as const;
+export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.72" as const;
 export const BRIDGE_V2_INSPECTION_KINDS = ["run_deck", "combat_piles", "shop_catalog"] as const;
 const inspectionKindSchema = z.enum(BRIDGE_V2_INSPECTION_KINDS);
 
@@ -939,6 +939,14 @@ const generatedRunDeckCardChoiceSurfaceSchema = generatedCardChoiceBaseSchema.ex
   overflow_destination: z.null().optional()
 }).passthrough();
 
+const heftyTabletCardChoiceSurfaceSchema = generatedCardChoiceBaseSchema.extend({
+  purpose: z.literal("acquire_one_generated_rare_card_plus_injury"),
+  source_kind: z.literal("hefty_tablet"),
+  destination: z.literal("run_deck"),
+  selected_card_cost_policy: z.literal("unchanged"),
+  overflow_destination: z.null().optional()
+}).passthrough();
+
 const generatedCombatSourceKindSchema = z.enum([
   "colorless_potion",
   "attack_potion",
@@ -967,6 +975,7 @@ const generatedImmediateEffectCardChoiceSurfaceSchema = generatedCardChoiceBaseS
 
 const generatedCardChoiceSurfaceSchema = z.discriminatedUnion("source_kind", [
   generatedRunDeckCardChoiceSurfaceSchema,
+  heftyTabletCardChoiceSurfaceSchema,
   generatedCombatCardChoiceSurfaceSchema,
   generatedImmediateEffectCardChoiceSurfaceSchema
 ]);
@@ -1918,11 +1927,9 @@ export function decodeBridgeV2State(value: unknown): DecodedBridgePayload<Bridge
     }
   } else if (decoded.data.surface.kind === "generated_card_choice") {
     surface = parse(generatedCardChoiceSurfaceSchema, decoded.data.surface, "generated_card_choice surface");
-    if (surface.source_kind === "lead_paperweight"
-      && (context.kind !== "event" || context.event_id !== "NEOW")) {
-      throw new BridgeV2DecodeError("Bridge v2 Lead Paperweight generated_card_choice requires the exact NEOW event context");
-    }
-    if (surface.source_kind !== "lead_paperweight" && context.kind !== "combat") {
+    if (surface.source_kind !== "lead_paperweight"
+      && surface.source_kind !== "hefty_tablet"
+      && context.kind !== "combat") {
       throw new BridgeV2DecodeError("Bridge v2 generated combat card choice requires combat context");
     }
   } else if (decoded.data.surface.kind === "card_bundle_selection") {

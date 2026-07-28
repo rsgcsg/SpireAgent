@@ -62,6 +62,18 @@ Profiles and install/rollback tooling sit outside the Gateway as a non-
 authorizing operational boundary; an Artifact Router remains conditional on a
 demonstrated ABI or load split.
 
+The target is explicitly Workflow A first. Engineering priority is current
+decision truth, inspectable player context, execution integrity, and action-
+local outcome reconciliation; compatibility/evidence supports those goals but
+does not replace them. `Context` is world/run background, `Surface` is the
+active interaction and purpose, internal source binding identifies the exact
+native caller, and the Outcome Witness proves that caller's owned result.
+Preview.72's Lead Paperweight/Hefty Tablet split is the reference example: one
+card-choice mechanic, distinct purpose and deck postconditions, no universal
+selector or room-name inference. An actionless settling Surface may be
+observable without mutation scope and projects `actionAuthority=none`; no
+client action exists until the Gateway publishes one.
+
 That operational boundary is now a required thin Operator Shell. It reports
 disk identity, loaded identity, environment/observation/Inspection/mutation
 readiness separately; performs bounded read-only startup waiting; diagnoses
@@ -177,14 +189,18 @@ and the
 
 ## Current Architectural Constraint
 
-The Gateway and Re share the mechanically checked `2.0-preview.71` source
+The Gateway and Re share the mechanically checked `2.0-preview.72` source
 contract. Gate 1 establishes a bounded v2 connector baseline: Re and the
 default MCP adapter are v2-only, Gateway v1 is retired, and historical v1 data
 is replay-only. Preview.69 has substantial real-runtime coverage on exact final
 loaded SHA `914974b5...` / MVID `1e457e86...`. Preview.70 later loaded as SHA
 `28c32f40...` / MVID `6f169dfe...` and completed a bounded game-to-menu run.
-Preview.71 is built/installed as SHA `fd0f7c56...` / MVID `0acccd3d...` but has
-not been loaded. Authority never transfers between those MVIDs.
+Preview.71 later loaded as SHA `fd0f7c56...` / MVID `0acccd3d...` / runtime
+`19219d23...`. Four runs exposed a repeated Hefty source gap, one Re actionless-
+settling contract error, and one completed boundary. Preview.72 repairs both
+defects and is built/installed/loaded as SHA `afb0261f...` / MVID
+`3e9ad83a...` / runtime `14238a9e...`. Loaded identity does not inherit
+Preview.71 authority and is not action qualification.
 
 Two final-MVID Preview.69 runs completed saved/fresh run-to-menu boundaries;
 the latter settled 106 actions without stale or runtime failure. Their

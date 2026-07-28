@@ -189,7 +189,7 @@ internal static class BridgeContractManifest
         Entry(
             "generated_card_choice",
             new[] { "select_generated_run_card", "skip_generated_run_card_choice", "select_generated_combat_card", "skip_generated_combat_card_choice", "choose_quasar_card", "skip_quasar_choice", "choose_knowledge_demon_curse" },
-            "sts2-v0.109.0:source-bound LeadPaperweight/native-generated-combat-card-potion/Splash/Quasar/KnowledgeDemon.ChooseCurse+NChooseACardSelectionScreen+purpose-specific exact post-state witnesses",
+            "sts2-v0.109.1:source-bound LeadPaperweight/HeftyTablet/native-generated-combat-card-potion/Splash/Quasar/KnowledgeDemon.ChooseCurse+NChooseACardSelectionScreen+purpose-specific exact post-state witnesses",
             "source_discriminated_generated_card_choice",
             new[] { "visible_card_choices", "choice_purpose", "source_kind", "destination", "selected_card_cost_policy", "overflow_destination", "skip_control" }),
         Entry(

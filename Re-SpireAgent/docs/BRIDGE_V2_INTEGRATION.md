@@ -1,15 +1,17 @@
 # Bridge v2 Integration
 
 > Current source-truth status, 2026-07-28: Re and C# share the
-> `2.0-preview.71` source consumer contract; Re normalized schema is `28`.
+> `2.0-preview.72` source consumer contract; Re normalized schema is `29`.
 > Gate 1 is closed as a bounded ordinary-single-player v2 connector baseline.
 > Preview.61 supplied the final Neow's Fury runtime seal; Preview.62 adds
 > policy provenance and registry adaptation without inheriting qualification.
 > Preview.69 has exact runtime coverage including one clean 107-decision
 > game-to-menu journey. Preview.70 later completed a 124-decision boundary and
-> exposed the Silver Crucible empty-chest Oracle defect. Preview.71 is built
-> and installed but requires a cold load, and old runtime grants cannot
-> authorize it. Six contracts are explicit high-precision rows; 81 remain conservative manifest-derived
+> exposed the Silver Crucible empty-chest Oracle defect. Preview.71 later
+> loaded and exposed exact Hefty Tablet source/result debt plus an actionless-
+> settling consumer bug. Preview.72 repairs both and is now exact-identity
+> loaded; old runtime grants cannot authorize it, and it has no current-artifact
+> action evidence. Six contracts are explicit high-precision rows; 81 remain conservative manifest-derived
 > identity/test-confirm fallbacks rather than semantic qualification.
 
 ## Connector Boundary
@@ -30,7 +32,7 @@ consumption.
 
 ## Current Scope
 
-Re-SpireAgent implements the strict `2.0-preview.71` consumer contract. When a
+Re-SpireAgent implements the strict `2.0-preview.72` consumer contract. When a
 matching Bridge exists, authority is read from capabilities rather than
 inferred from implementation or historical evidence.
 
@@ -526,9 +528,11 @@ New Re runs write immutable `run-summary.json`; decision-limit exhaustion is
 incomplete and exits non-zero. A transient provider transport failure receives
 at most one pre-mutation retry. These changes do not alter Gateway completion or
 unknown-no-retry. Preview.70 later loaded as SHA `28c32f40...` / MVID
-`6f169dfe...` and supplied three more runs. Preview.71 is built and installed
-as SHA `fd0f7c56...` / MVID `0acccd3d...`; the game is closed, so it still
-requires cold-load evidence.
+`6f169dfe...` and supplied three more runs. Preview.71 later loaded as SHA
+`fd0f7c56...` / MVID `0acccd3d...` and supplied the current defect evidence.
+Preview.72 is now built/installed/loaded as SHA `afb0261f...` / MVID
+`3e9ad83a...` / runtime `14238a9e...`; this proves deployment and observation
+handshake, not mutation or repaired-branch completion.
 
 Current v0.109 evidence includes merchant removal, event/rest upgrade, ordinary
 rest, ordinary combat, Brain Leech event card acquisition,

@@ -6,7 +6,7 @@ It may derive an evidence-tested model view, but it never becomes a second
 game-state, legality, permission, Commit, or completion authority.
 
 > Compatibility status, 2026-07-28: Re and C# share source contract
-> `2.0-preview.71`; Re normalized schema is `28`. Gate 1 is closed as a
+> `2.0-preview.72`; Re normalized schema is `29`. Gate 1 is closed as a
 > bounded ordinary-single-player v2 baseline, not full game coverage.
 > Preview.69 adds typed new/resumed-run mount settling, bounded semantic-cycle recovery,
 > and strict consumption of encounter-scoped provisional grants. Diagnostic
@@ -16,8 +16,10 @@ game-state, legality, permission, Commit, or completion authority.
 > session-only and their unrecorded provenance is not Organic or persistent
 > qualification. Preview.70 later completed a 124-decision game-to-menu run on
 > its exact loaded identity, while another run exposed an empty-treasure-chest
-> completion timeout. Preview.71 fixes that Gateway-owned Oracle and is
-> installed but not loaded.
+> completion timeout. Preview.71 fixed that Gateway-owned Oracle and later
+> runs exposed exact Hefty Tablet source/result debt plus an actionless-
+> settling consumer bug. Preview.72 fixes both and is built/installed/loaded;
+> no Preview.72 action evidence is claimed yet.
 
 > Product-boundary warning: direct Re-to-Gateway REST and `.env.local` provider
 > keys are developer workflows, not the target consumer architecture. The
@@ -37,14 +39,15 @@ waits for the Bridge command lifecycle, and records the complete evidence.
 
 RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, shadow/live modes, policy promotion, or the old project's phase machinery. Its job is to make one decision path correct and auditable.
 
-Re's current strict client contract is Bridge `2.0-preview.71`. The latest
-verified loaded Preview.70 `v0.109.1|c8c577f6|-820620422` identity used exact
+Re's current strict client contract is Bridge `2.0-preview.72`. The latest
+verified loaded Preview.71 `v0.109.1|c8c577f6|-820620422` identity used exact
 session-scoped operation grants and no persistent qualification. Re strictly
 decodes current identities and grants, but does not interpret fallback witness
-semantics or promote any candidate. Preview.70 SHA `28c32f40...` / MVID
-`6f169dfe...` completed exact-runtime bounded journeys but its grants do not
-transfer. Preview.71 SHA `fd0f7c56...` / MVID `0acccd3d...` is installed and
-has no loaded evidence yet. Preview.66's narrow persistent
+semantics or promote any candidate. Preview.71 SHA `fd0f7c56...` / MVID
+`0acccd3d...` completed exact-runtime bounded journeys but its grants do not
+transfer. Preview.72 SHA `afb0261f...` / MVID `3e9ad83a...` / runtime
+`14238a9e...` has exact loaded-identity evidence but no action evidence yet.
+Preview.66's narrow persistent
 `main_menu/continue_run` qualification belongs only to its historical exact
 Gateway identity.
 The separate

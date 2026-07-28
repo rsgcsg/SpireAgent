@@ -4,6 +4,11 @@
 
 Accepted as the single target architecture, 2026-07-27.
 
+Amended 2026-07-28 to make Workflow A decision continuity the explicit
+priority order and to separate world Context, interaction protocol, native
+source binding, and outcome truth. The amendment narrows the architecture; it
+does not introduce a competing target.
+
 This ADR chooses the destination and migration constraints. It does not claim
 that every target component is implemented, loaded, or qualified. Current
 runtime truth remains in [Status](../STATUS.md) and Bridge evidence remains in
@@ -57,6 +62,61 @@ tooling, not two independently authoritative services. The Native STS2 runtime
 remains the sole authority for game rules and side effects. The Gateway remains
 the sole authority for current visible facts, legal action publication,
 execution admission, native Commit invocation, and completion truth.
+
+## A-First Priority Amendment
+
+The Connector exists first to let Workflow A complete an ordinary supported
+run from coherent player-visible facts and exact advertised actions. Control-
+plane sophistication is useful only when it improves that loop. Work is
+therefore ordered by:
+
+1. **Current Decision Truth:** active owner, complete decision-relevant facts,
+   opaque legal actions, and typed settling/unsupported states.
+2. **Inspectable Context:** player-visible information available through
+   normal UI inspection without making every detail hot Prompt payload.
+3. **Execution Integrity:** exact operands, shared publication/execution
+   legality, native Commit, stale rejection, and unknown-no-retry.
+4. **Outcome Reconciliation:** action-local native result, immediate
+   postcondition, continuation handoff, and transaction settlement where those
+   distinctions are proven by real flows.
+5. **Compatibility And Evidence:** environment lifecycle, trials, claims, and
+   rollback in support of the first four priorities, never as a substitute for
+   them.
+
+The current evidence model and the future model-facing DecisionProjection are
+different products. Complete evidence remains available for replay and audit;
+the model receives a deterministic consumer view. Neither view creates action
+authority.
+
+### Orthogonal Semantic Axes
+
+`Context` is world/run background, not a proxy for the active UI, business
+purpose, source binding, or permission. The live contract keeps these axes
+separate:
+
+| Axis | Example | Owner |
+|---|---|---|
+| world Context | combat, event, reward, map | Gateway observation |
+| decision purpose | acquire a card; choose a temporary combat card | semantic Surface contract |
+| interaction protocol | one-of-N generated card choice | active Surface |
+| native execution binding | exact `HeftyTablet.AfterObtained` task | internal Adapter/source binding |
+| outcome boundary | selected Rare plus Injury added to deck | action-local Oracle/Witness |
+| inspectable durable resource | current run deck | read-only Inspection |
+| strategy/memory | prior examples or learned policy | Agent-side consumer, never Gateway truth |
+
+Preview.72 provides the concrete test. Lead Paperweight and Hefty Tablet use
+the same native card-choice screen and operation shape, but Hefty Tablet also
+adds an Injury. They share one interaction Surface while retaining distinct
+source bindings, purposes, labels, and outcome witnesses. Their exact relic
+task is sufficient to bind semantics regardless of the underlying room
+Context. Conversely, a combat potion remains combat-bound. This rejects both
+class-name-per-Surface proliferation and a universal selector/result DSL.
+
+An active Surface may be observable while its controls are settling and no
+mutation is published. In that state `candidate_observation_only` is truthful;
+it is not missing action permission. Mutation scope becomes mandatory only
+when legal actions are actually published. This distinction never allows Re
+to invent an action.
 
 ## Required Boundaries
 
@@ -241,27 +301,24 @@ enter only session canary authority until new Organic outcomes exist.
 This order is refined by ADR-0003 for operation retirement and exact native
 continuations.
 
-1. Use the completed Preview.67 real-runtime journeys to classify semantic
-   state, control drift, observation races, and native parent/child evidence
-   without changing current authority.
-2. Separate semantic-state and current-authority identities only after ADR-0005
-   promotion gates pass; retain immediate rollback to the composite identity.
-3. Dual-read capabilities summary/on-demand details and prove current-scope
-   equality before reducing hot payloads.
+1. Close first-failure boundaries from real Workflow A runs in decision truth,
+   settling, source binding, and action-local outcome semantics.
+2. Complete decision-relevant visible and on-demand inspectable facts without
+   putting control-plane governance into the model hot path.
+3. Improve transition supervision from measured stale, settling, timeout,
+   provider, and unknown-outcome cases while keeping unknown-no-retry.
 4. Add shadow adapter/oracle/source/partition revisions for representative
-   menu, navigation, shop, and selector/combat families. Preview.68 begins
-   this with exact deck-enchant source contracts.
-5. Improve transition stability and Re supervision from measured unsupported,
-   stale, settling, timeout, and unknown-outcome cases.
+   menu, navigation, shop, and selector/combat families; keep current authority
+   unchanged until equality evidence exists.
+5. Separate semantic-state and current-authority identities only after
+   ADR-0005 gates pass, retaining immediate composite-identity rollback.
 6. Evaluate bounded Re-side DecisionProjections with same-evidence pairs and
    counterexamples; never optimize reason length or token count as truth.
-7. Replace generic evidence thresholds with family-specific policies and call
-   promoted artifacts scoped CompatibilityClaims.
-8. Run real cross-version and bounded Mod experiments before changing
-   authority keys or compatibility claims.
-9. Introduce only the minimal continuation record when an exact native parent
-   remains open across a child decision. Kifuda admits this narrow handoff; it
-   does not admit a generic workflow. Artifact Router remains evidence-gated.
+7. Replace generic evidence thresholds with family-specific scoped claims,
+   then run real cross-version and bounded Mod experiments.
+8. Introduce only a minimal continuation record when an exact native parent
+   remains open across a child decision. Artifact Router remains evidence-
+   gated.
 
 Each migration is shadow/dual-read first, independently rollbackable, and must
 keep current publication/execution parity, unknown-no-retry, and fail-closed

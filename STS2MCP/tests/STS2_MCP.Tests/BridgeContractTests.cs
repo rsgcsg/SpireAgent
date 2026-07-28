@@ -1212,7 +1212,7 @@ public sealed class BridgeContractTests
             Array.Empty<BridgeActionDraft>())
         {
             RuntimeSemanticContractId =
-                "bridge.contract.deck_enchant_selection.kifuda_relic_pickup.2.0-preview.71",
+                "bridge.contract.deck_enchant_selection.kifuda_relic_pickup.2.0-preview.72",
             RuntimeSourceBindingId = "Kifuda.AfterObtained+Adroit:3"
         };
 
@@ -2500,6 +2500,25 @@ public sealed class BridgeContractTests
     }
 
     [Fact]
+    public void GeneratedRunDeckRelicSourceCatalogKeepsExactNativeTypes()
+    {
+        System.Reflection.Assembly game = AppDomain.CurrentDomain.GetAssemblies()
+            .FirstOrDefault(assembly => assembly.GetName().Name == "sts2")
+            ?? System.Reflection.Assembly.Load("sts2");
+        Type leadPaperweight = game.GetType("MegaCrit.Sts2.Core.Models.Relics.LeadPaperweight", throwOnError: true)!;
+        Type heftyTablet = game.GetType("MegaCrit.Sts2.Core.Models.Relics.HeftyTablet", throwOnError: true)!;
+        Type anchor = game.GetType("MegaCrit.Sts2.Core.Models.Relics.Anchor", throwOnError: true)!;
+
+        Assert.Equal(
+            "lead_paperweight",
+            GeneratedCardChoiceSourceBinding.RunDeckRelicSourceKind(leadPaperweight));
+        Assert.Equal(
+            "hefty_tablet",
+            GeneratedCardChoiceSourceBinding.RunDeckRelicSourceKind(heftyTablet));
+        Assert.Null(GeneratedCardChoiceSourceBinding.RunDeckRelicSourceKind(anchor));
+    }
+
+    [Fact]
     public void GeneratedCombatCardWitnessRequiresExactPileDeltaAndFreeCostPolicy()
     {
         var handCard = new object();
@@ -2605,6 +2624,58 @@ public sealed class BridgeContractTests
             baseline,
             selectedDeck,
             new[] { selectedCard, unselectedCard }));
+    }
+
+    [Fact]
+    public void HeftyTabletWitnessRequiresExactSelectedCardAndInjuryPostState()
+    {
+        var baselineCard = new object();
+        var selectedCard = new object();
+        var unselectedCard = new object();
+        var injury = new object();
+        object[] baseline = { baselineCard };
+        object[] offered = { selectedCard, unselectedCard };
+        bool IsInjury(object card) => ReferenceEquals(card, injury);
+
+        Assert.True(HeftyTabletRunCardAcquisitionWitness.Selected(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            baseline,
+            new[] { baselineCard, selectedCard, injury },
+            selectedCard,
+            offered,
+            IsInjury));
+        Assert.False(HeftyTabletRunCardAcquisitionWitness.Selected(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            baseline,
+            new[] { baselineCard, selectedCard },
+            selectedCard,
+            offered,
+            IsInjury));
+        Assert.False(HeftyTabletRunCardAcquisitionWitness.Selected(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            baseline,
+            new[] { baselineCard, selectedCard, unselectedCard },
+            selectedCard,
+            offered,
+            IsInjury));
+
+        Assert.True(HeftyTabletRunCardAcquisitionWitness.Skipped(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            baseline,
+            new[] { baselineCard, injury },
+            offered,
+            IsInjury));
+        Assert.False(HeftyTabletRunCardAcquisitionWitness.Skipped(
+            sourceCompleted: true,
+            surfaceClosed: true,
+            baseline,
+            new[] { baselineCard },
+            offered,
+            IsInjury));
     }
 
     [Fact]

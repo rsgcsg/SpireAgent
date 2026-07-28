@@ -515,7 +515,7 @@ export function normalizeBridgeV2CurrentState(
         );
         surface = projectDeckRemovalSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
         stability = state.readiness === "ready" ? "actionable" : "settling";
-        actionAuthority = "bridge_advertised";
+        actionAuthority = state.legal_actions.length > 0 ? "bridge_advertised" : "none";
         diagnostics.infer(
           "bridge_v2.action_canary",
           ["bridge_v2.game.compatibility", "bridge_v2.state"],
@@ -545,12 +545,19 @@ export function normalizeBridgeV2CurrentState(
       stability = "unknown";
     } else {
       const advertised = capabilities.surfaces.find((candidate) => candidate.kind === state.surface.kind);
+      const hasPublishedMutation = state.legal_actions.length > 0;
+      const actionlessSettlingObservation = operationScopedAuthority
+        && !hasPublishedMutation
+        && state.readiness === "settling"
+        && capabilities.game.compatibility.observation_only_surface_kinds.includes(state.surface.kind);
       const expectedSupport = operationScopedAuthority
         ? capabilities.game.compatibility.action_execution_surface_kinds.includes(state.surface.kind)
           ? "qualified_exact_build"
           : capabilities.game.compatibility.action_canary_surface_kinds.includes(state.surface.kind)
             ? "candidate_action_canary"
-            : "not_qualified_for_current_build"
+            : actionlessSettlingObservation
+              ? "candidate_observation_only"
+              : "not_qualified_for_current_build"
         : "implemented_exact_game_version";
       if (operationScopedAuthority && expectedSupport === "not_qualified_for_current_build") {
         diagnostics.invalid(
@@ -649,11 +656,8 @@ export function normalizeBridgeV2CurrentState(
         validateEventCardAcquisitionState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
         surface = projectEventCardAcquisitionSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
       } else if (isBridgeV2GeneratedCardChoiceSurface(state.surface)
-                 && ((state.surface.source_kind === "lead_paperweight"
-                      && isBridgeV2EventContext(state.context)
-                      && state.context.event_id === "NEOW")
-                     || (state.surface.source_kind !== "lead_paperweight"
-                         && isBridgeV2CombatContext(state.context)))) {
+                 && (isGeneratedRunDeckRelicChoice(state.surface)
+                     || isBridgeV2CombatContext(state.context))) {
         validateGeneratedCardChoiceState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
         surface = projectGeneratedCardChoiceSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
       } else if (isBridgeV2CardBundleSelectionSurface(state.surface)) {
@@ -678,7 +682,7 @@ export function normalizeBridgeV2CurrentState(
       }
 
       stability = state.readiness === "ready" ? "actionable" : "settling";
-      actionAuthority = "bridge_advertised";
+      actionAuthority = state.legal_actions.length > 0 ? "bridge_advertised" : "none";
     }
   }
 
@@ -1942,14 +1946,16 @@ function validateGeneratedCardChoiceState(
     diagnostics.invalid("bridge_v2.surface.can_skip", surface.can_skip, "skippable generated-card source omitted its exact skip control");
   }
   validateActions("generated_card_choice", stateId, actions, missing, advertisedOperations, readiness, diagnostics);
-  const selectKind = surface.source_kind === "lead_paperweight"
+  const isRunDeckRelicChoice = surface.source_kind === "lead_paperweight"
+    || surface.source_kind === "hefty_tablet";
+  const selectKind = isRunDeckRelicChoice
     ? "select_generated_run_card"
     : surface.source_kind === "quasar"
       ? "choose_quasar_card"
       : surface.source_kind === "knowledge_demon_curse"
         ? "choose_knowledge_demon_curse"
         : "select_generated_combat_card";
-  const skipKind = surface.source_kind === "lead_paperweight"
+  const skipKind = isRunDeckRelicChoice
     ? "skip_generated_run_card_choice"
     : surface.source_kind === "quasar"
       ? "skip_quasar_choice"
@@ -1977,6 +1983,9 @@ function validateGeneratedCardChoiceState(
       } else if (surface.source_kind === "lead_paperweight"
         && action.label !== `Add ${boundCard.name ?? boundCard.definition_id} to the run deck`) {
         diagnostics.invalid("bridge_v2.legal_actions.label", action.label, "generated-card selection label disagrees with its bound visible card");
+      } else if (surface.source_kind === "hefty_tablet"
+        && action.label !== `Add ${boundCard.name ?? boundCard.definition_id} and an Injury to the run deck`) {
+        diagnostics.invalid("bridge_v2.legal_actions.label", action.label, "Hefty Tablet selection label omitted its exact Injury side effect");
       } else if (surface.source_kind === "quasar"
         && action.label !== `Choose ${boundCard.name ?? boundCard.definition_id}; add it to the combat hand at its shown cost`) {
         diagnostics.invalid("bridge_v2.legal_actions.label", action.label, "Quasar selection label disagrees with its unchanged-cost destination");
@@ -1984,6 +1993,7 @@ function validateGeneratedCardChoiceState(
         && action.label !== `Accept ${boundCard.name ?? boundCard.definition_id} from Knowledge Demon`) {
         diagnostics.invalid("bridge_v2.legal_actions.label", action.label, "Knowledge Demon selection label disagrees with its immediate-effect contract");
       } else if (surface.source_kind !== "lead_paperweight"
+        && surface.source_kind !== "hefty_tablet"
         && surface.source_kind !== "quasar"
         && surface.source_kind !== "knowledge_demon_curse"
         && action.label !== `Choose ${boundCard.name ?? boundCard.definition_id}; add it to the combat hand for free this turn`) {
@@ -3367,31 +3377,47 @@ function projectGeneratedCardChoiceSurface(
     legalActions: projectActions(actions),
     completeness: projectCompleteness(completeness)
   };
-  return surface.source_kind === "lead_paperweight"
+  if (surface.source_kind === "lead_paperweight") {
+    return {
+      ...base,
+      purpose: surface.purpose,
+      sourceKind: surface.source_kind,
+      destination: surface.destination,
+      selectedCardCostPolicy: surface.selected_card_cost_policy
+    };
+  }
+  if (surface.source_kind === "hefty_tablet") {
+    return {
+      ...base,
+      purpose: surface.purpose,
+      sourceKind: surface.source_kind,
+      destination: surface.destination,
+      selectedCardCostPolicy: surface.selected_card_cost_policy
+    };
+  }
+  return surface.source_kind === "knowledge_demon_curse"
     ? {
         ...base,
         purpose: surface.purpose,
         sourceKind: surface.source_kind,
         destination: surface.destination,
-        selectedCardCostPolicy: surface.selected_card_cost_policy
-      }
-    : surface.source_kind === "knowledge_demon_curse"
-      ? {
-          ...base,
-          purpose: surface.purpose,
-          sourceKind: surface.source_kind,
-          destination: surface.destination,
-          selectedCardCostPolicy: surface.selected_card_cost_policy,
-          canSkip: false as const
-        }
-      : {
-        ...base,
-        purpose: surface.purpose,
-        sourceKind: surface.source_kind,
-        destination: surface.destination,
         selectedCardCostPolicy: surface.selected_card_cost_policy,
-        overflowDestination: surface.overflow_destination
-      };
+        canSkip: false as const
+      }
+    : {
+      ...base,
+      purpose: surface.purpose,
+      sourceKind: surface.source_kind,
+      destination: surface.destination,
+      selectedCardCostPolicy: surface.selected_card_cost_policy,
+      overflowDestination: surface.overflow_destination
+    };
+}
+
+function isGeneratedRunDeckRelicChoice(
+  surface: BridgeV2GeneratedCardChoiceSurface
+): surface is Extract<BridgeV2GeneratedCardChoiceSurface, { source_kind: "lead_paperweight" | "hefty_tablet" }> {
+  return surface.source_kind === "lead_paperweight" || surface.source_kind === "hefty_tablet";
 }
 
 function projectCardBundleSelectionSurface(
