@@ -33,6 +33,10 @@ describe("CLI invocation parsing", () => {
       command: "prompt-audit",
       limitRuns: 5
     });
+    expect(parseCliInvocation(["baseline-report", "--run-id", "run_123"])).toEqual({
+      command: "baseline-report",
+      runId: "run_123"
+    });
     expect(parseCliInvocation(["prompt-shadow-compare", "--run-id", "run_123", "--decision-id", "decision_456"])).toEqual({
       command: "prompt-shadow-compare",
       runId: "run_123",
@@ -53,6 +57,7 @@ describe("CLI invocation parsing", () => {
     expect(() => parseCliInvocation(["run", "--max-ticks", "0"])).toThrow("positive integer");
     expect(() => parseCliInvocation(["connector-canary"])).toThrow("requires --action-id");
     expect(() => parseCliInvocation(["prompt-audit", "--limit-runs", "0"])).toThrow("positive integer");
+    expect(() => parseCliInvocation(["baseline-report", "--limit-runs", "2"])).toThrow("Unknown option");
     expect(() => parseCliInvocation(["prompt-shadow-compare", "--run-id", "run_123"])).toThrow("requires --run-id and --decision-id");
     expect(() => parseCliInvocation(["prompt-repeat-baseline", "--run-id", "run_123", "--decision-id", "decision_456", "--samples", "1"])).toThrow("integer from 2 through 5");
     expect(() => parseCliInvocation(["prompt-repeat-baseline", "--run-id", "run_123", "--decision-id", "decision_456", "--samples", "3", "--variant", "both"])).toThrow("--variant must be full or shadow");

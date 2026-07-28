@@ -24,6 +24,9 @@ export interface RuntimeConfig {
   };
   runtime: {
     dataDir: string;
+    agentSourceRevision?: string;
+    agentSourceDigest?: string;
+    agentWorktreeStatus?: "clean" | "dirty";
     evidenceProvenance: "unrecorded" | "ordinary_gameplay" | "operator_positioned" | "console_assisted" | "fixture";
     maxTicks: number;
     tickDelayMs: number;
@@ -53,6 +56,14 @@ export function readRuntimeConfig(env: NodeJS.ProcessEnv = process.env, projectR
       "AGENT_EVIDENCE_PROVENANCE must be unrecorded, ordinary_gameplay, operator_positioned, console_assisted, or fixture"
     );
   }
+  const agentSourceRevision = optionalGitRevision(env.SPIREAGENT_RE_SOURCE_REVISION);
+  const agentSourceDigest = optionalSha256(env.SPIREAGENT_RE_SOURCE_DIGEST, "SPIREAGENT_RE_SOURCE_DIGEST");
+  const agentWorktreeStatus = optionalWorktreeStatus(env.SPIREAGENT_RE_WORKTREE_STATUS);
+  const sourceIdentityFieldCount = [agentSourceRevision, agentSourceDigest, agentWorktreeStatus]
+    .filter((value) => value !== undefined).length;
+  if (sourceIdentityFieldCount !== 0 && sourceIdentityFieldCount !== 3) {
+    throw new Error("Re source revision, digest, and worktree status must be recorded together");
+  }
 
   return {
     mcp: {
@@ -81,6 +92,9 @@ export function readRuntimeConfig(env: NodeJS.ProcessEnv = process.env, projectR
     },
     runtime: {
       dataDir: resolve(projectRoot, env.AGENT_DATA_DIR ?? "data/runs"),
+      ...(agentSourceRevision ? { agentSourceRevision } : {}),
+      ...(agentSourceDigest ? { agentSourceDigest } : {}),
+      ...(agentWorktreeStatus ? { agentWorktreeStatus } : {}),
       evidenceProvenance,
       maxTicks: positiveInteger(env.AGENT_MAX_TICKS, 1_000, "AGENT_MAX_TICKS"),
       tickDelayMs: nonNegativeInteger(env.AGENT_TICK_DELAY_MS, 250, "AGENT_TICK_DELAY_MS"),
@@ -98,6 +112,28 @@ export function readRuntimeConfig(env: NodeJS.ProcessEnv = process.env, projectR
       )
     }
   };
+}
+
+function optionalGitRevision(value: string | undefined): string | undefined {
+  if (value === undefined || value.length === 0) return undefined;
+  if (!/^[0-9a-f]{40}$/u.test(value)) {
+    throw new Error("SPIREAGENT_RE_SOURCE_REVISION must be a lowercase 40-character Git commit");
+  }
+  return value;
+}
+
+function optionalSha256(value: string | undefined, name: string): string | undefined {
+  if (value === undefined || value.length === 0) return undefined;
+  if (!/^[0-9a-f]{64}$/u.test(value)) throw new Error(`${name} must be a lowercase SHA-256 digest`);
+  return value;
+}
+
+function optionalWorktreeStatus(value: string | undefined): "clean" | "dirty" | undefined {
+  if (value === undefined || value.length === 0) return undefined;
+  if (value !== "clean" && value !== "dirty") {
+    throw new Error("SPIREAGENT_RE_WORKTREE_STATUS must be clean or dirty");
+  }
+  return value;
 }
 
 function isEvidenceProvenance(value: string): value is RuntimeConfig["runtime"]["evidenceProvenance"] {

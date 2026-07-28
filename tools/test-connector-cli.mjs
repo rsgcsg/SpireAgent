@@ -10,11 +10,16 @@ import {
   inspectModInstallation,
   resolveGameDir,
   resolveModsDir,
-  selectAgentAuthorityPath
+  selectAgentAuthorityPath,
+  workspaceSourceIdentity
 } from "./connector.mjs";
 import { auditRunIdentity } from "./connector-run-identity-audit.mjs";
 
 assert.equal(typeof auditRunIdentity, "function");
+const sourceIdentity = workspaceSourceIdentity();
+assert.match(sourceIdentity.revision, /^[0-9a-f]{40}$/u);
+assert.match(sourceIdentity.sourceDigest, /^[0-9a-f]{64}$/u);
+assert.ok(["clean", "dirty"].includes(sourceIdentity.worktreeStatus));
 
 assert.equal(
   resolveGameDir({ STS2_GAME_DIR: "./fixture-game" }, "linux", "/home/test"),

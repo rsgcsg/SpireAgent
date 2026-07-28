@@ -229,8 +229,8 @@ loaded SHA `914974b5...` / MVID `1e457e86...`. Preview.70 later loaded as SHA
 Preview.71 later loaded as SHA `fd0f7c56...` / MVID `0acccd3d...` / runtime
 `19219d23...`. Four runs exposed a repeated Hefty source gap, one Re actionless-
 settling contract error, and one completed boundary. Preview.72 repairs both
-defects and is built/installed/loaded as SHA `afb0261f...` / MVID
-`3e9ad83a...` / runtime `14238a9e...`. Loaded identity does not inherit
+defects. Its latest same-source rebuild is built/installed/loaded as SHA
+`debc229e...` / MVID `6d9d4adf...` / runtime `b2332a06...`. Loaded identity does not inherit
 Preview.71 authority and is not action qualification.
 
 Two final-MVID Preview.69 runs completed saved/fresh run-to-menu boundaries;

@@ -27,6 +27,16 @@ export async function createRuntime(config: RuntimeConfig): Promise<{
       runId,
       startedAt: new Date().toISOString(),
       agentVersion: "0.1.0",
+      ...(config.runtime.agentSourceRevision && config.runtime.agentSourceDigest && config.runtime.agentWorktreeStatus
+        ? {
+            agentSource: {
+              revision: config.runtime.agentSourceRevision,
+              sourceDigest: config.runtime.agentSourceDigest,
+              worktreeStatus: config.runtime.agentWorktreeStatus,
+              declaredBy: "runtime_environment" as const
+            }
+          }
+        : {}),
       adapter: {
         adapterId: adapterDescription.adapterId,
         ...(adapterDescription.adapterVersion ? { adapterVersion: adapterDescription.adapterVersion } : {}),

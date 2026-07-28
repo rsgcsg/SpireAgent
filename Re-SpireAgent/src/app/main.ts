@@ -3,6 +3,7 @@ import { buildAllowedActions } from "../domain/actions/buildAllowedActions.js";
 import { Sts2McpHybridAdapter } from "../integrations/sts2mcp/hybridAdapter.js";
 import { DeepSeekDecisionProvider } from "../llm/deepseekProvider.js";
 import { normalizeCurrentState } from "../normalization/normalizeCurrentState.js";
+import { createBaselineReport } from "../evaluation/baselineReport.js";
 import { auditPromptArtifacts } from "../prompting/promptAudit.js";
 import { compareRecordedPromptWithShadow, repeatRecordedPromptVariant } from "../prompting/promptShadowComparison.js";
 import { listRunIds, readRunMetadata, readRunRecords, readRunSummary } from "../recording/fileDecisionRecorder.js";
@@ -31,6 +32,12 @@ async function main(): Promise<void> {
       ...(invocation.runId ? { runId: invocation.runId } : {}),
       ...(invocation.limitRuns ? { limitRuns: invocation.limitRuns } : {})
     });
+    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+    return;
+  }
+
+  if (invocation.command === "baseline-report") {
+    const result = await createBaselineReport(config.runtime.dataDir, invocation.runId);
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
     return;
   }
@@ -171,7 +178,7 @@ function printTick(runId: string, result: {
 }
 
 function printHelp(): void {
-  process.stdout.write(`RE-P1 commands:\n  npm run agent:inspect\n  npm run agent:connector-canary -- --action-id <advertised-id>\n  npm run agent:tick -- --dry-run\n  npm run agent:tick\n  npm run agent:run -- --max-ticks 20 --delay-ms 250\n    (the npm script opts into one Gateway-advertised run entry; the loop remains one-game bounded)\n  npm run agent:replay -- --run-id <id> [--decision-id <id>]\n  npm run agent:prompt-audit [--run-id <id> | --limit-runs <positive-count>]\n  npm run agent:prompt-shadow-compare -- --run-id <id> --decision-id <id>\n  npm run agent:prompt-repeat-baseline -- --run-id <id> --decision-id <id> --samples <2-5> [--variant full|shadow]\n`);
+  process.stdout.write(`RE-P1 commands:\n  npm run agent:inspect\n  npm run agent:connector-canary -- --action-id <advertised-id>\n  npm run agent:tick -- --dry-run\n  npm run agent:tick\n  npm run agent:run -- --max-ticks 20 --delay-ms 250\n    (the npm script opts into one Gateway-advertised run entry; the loop remains one-game bounded)\n  npm run agent:replay -- --run-id <id> [--decision-id <id>]\n  npm run agent:baseline-report [--run-id <id>]\n  npm run agent:prompt-audit [--run-id <id> | --limit-runs <positive-count>]\n  npm run agent:prompt-shadow-compare -- --run-id <id> --decision-id <id>\n  npm run agent:prompt-repeat-baseline -- --run-id <id> --decision-id <id> --samples <2-5> [--variant full|shadow]\n`);
 }
 
 main().catch((error) => {

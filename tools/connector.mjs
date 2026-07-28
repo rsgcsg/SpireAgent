@@ -276,6 +276,45 @@ function run(command, args, options = {}) {
   return result.stdout ?? "";
 }
 
+export function workspaceSourceIdentity() {
+  const headResult = spawnSync("git", ["rev-parse", "--verify", "HEAD"], {
+    cwd: WORKSPACE,
+    encoding: "utf8",
+    stdio: "pipe"
+  });
+  const revision = headResult.status === 0 ? headResult.stdout.trim() : "";
+  if (!/^[0-9a-f]{40}$/u.test(revision)) return null;
+  const sourcePaths = [
+    "Re-SpireAgent/src",
+    "Re-SpireAgent/package.json",
+    "Re-SpireAgent/package-lock.json",
+    "tools/connector.mjs",
+    "package.json"
+  ];
+  const filesResult = spawnSync("git", ["ls-files", "--cached", "--others", "--exclude-standard", "--deduplicate", "--", ...sourcePaths], {
+    cwd: WORKSPACE,
+    encoding: "utf8",
+    stdio: "pipe"
+  });
+  if (filesResult.status !== 0) return null;
+  const files = filesResult.stdout.split("\n").filter(Boolean).sort();
+  const digest = createHash("sha256");
+  for (const file of files) {
+    digest.update(file).update("\0").update(readFileSync(path.join(WORKSPACE, file))).update("\0");
+  }
+  const statusResult = spawnSync("git", ["status", "--porcelain", "--", ...sourcePaths], {
+    cwd: WORKSPACE,
+    encoding: "utf8",
+    stdio: "pipe"
+  });
+  if (statusResult.status !== 0) return null;
+  return {
+    revision,
+    sourceDigest: digest.digest("hex"),
+    worktreeStatus: statusResult.stdout.trim().length === 0 ? "clean" : "dirty"
+  };
+}
+
 function artifactIdentity(file) {
   if (!existsSync(file)) return null;
   const output = run("dotnet", [
@@ -804,10 +843,18 @@ export async function main(argv = process.argv.slice(2)) {
   }
   if (command === "run-agent") {
     console.log(JSON.stringify(await prepareAgentRun(options), null, 2));
+    const sourceIdentity = workspaceSourceIdentity();
     run("npm", ["--prefix", "Re-SpireAgent", "run", "agent:run:direct", "--", ...options.passthrough], {
       env: {
         ...process.env,
-        STS2_API_URL: options.endpoint ?? process.env.STS2_API_URL ?? DEFAULT_ENDPOINT
+        STS2_API_URL: options.endpoint ?? process.env.STS2_API_URL ?? DEFAULT_ENDPOINT,
+        ...(sourceIdentity
+          ? {
+              SPIREAGENT_RE_SOURCE_REVISION: sourceIdentity.revision,
+              SPIREAGENT_RE_SOURCE_DIGEST: sourceIdentity.sourceDigest,
+              SPIREAGENT_RE_WORKTREE_STATUS: sourceIdentity.worktreeStatus
+            }
+          : {})
       }
     });
     return;

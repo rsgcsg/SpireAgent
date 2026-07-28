@@ -116,6 +116,13 @@ export interface RunMetadata {
   runId: string;
   startedAt: string;
   agentVersion: string;
+  /** Optional because records created before M1 baseline freezing remain readable. */
+  agentSource?: {
+    revision: string;
+    sourceDigest: string;
+    worktreeStatus: "clean" | "dirty";
+    declaredBy: "runtime_environment";
+  };
   adapter: {
     adapterId: string;
     adapterVersion?: string;

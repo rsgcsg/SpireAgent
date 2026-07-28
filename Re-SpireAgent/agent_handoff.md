@@ -5,7 +5,19 @@
 > `../STS2MCP/docs/bridge-v2/CURRENT_STATUS.md`. Older identity and mode claims
 > below are preserved as dated evidence and must not override those documents.
 
-Status update 2026-07-28 (current pointer only): source contract is
+Status update 2026-07-29 (current pointer only): source contract remains
+`2.0-preview.72`; Re normalized schema is `29`. A same-source Release rebuild
+is built/installed/cold-loaded as SHA `debc229e...deed`, MVID
+`6d9d4adf...3d8`, runtime `b2332a06...cba`; rollback is
+`../STS2MCP/.local/deployments/2026-07-28T14-31-37-745Z`. Run
+`run-20260728141035-uhrp19` completed 107 settled actions and the expected
+one-game boundary without stale/unsupported/provider/observation/unsettled
+outcomes. `agent:baseline-report` now joins redacted run metrics and exact
+environment identity; public future runs record Git revision plus a runtime-
+source digest. This historical run predates that field and is therefore
+identity-incomplete, not a frozen baseline.
+
+Earlier status update 2026-07-28 (current pointer only): source contract is
 `2.0-preview.72`; Re normalized schema is `29`. Preview.72 is built, installed
 and loaded as SHA `afb0261f...`, MVID `3e9ad83a...`, runtime `14238a9e...`.
 Run `run-20260728132337-ce2195` completed a 146-decision one-game boundary with

@@ -61,10 +61,11 @@ Gate 2 follows this priority:
 5. non-authorizing native-contract and compatibility migration.
 
 Preview.72 is built, installed and loaded at the exact identity in
-[Status](STATUS.md). Current-runtime run `run-20260728132337-ce2195` completed a
-146-decision one-game boundary with 144 settled actions, one safe pre-execution
-stale rejection, and no unsupported, invalid, observation/provider failure,
-unsettled or unknown outcome. It is `unrecorded` runtime evidence, not Organic
+[Status](STATUS.md). The immediately prior same-source Preview.72 run
+`run-20260728141035-uhrp19` completed a
+108-decision one-game boundary with 107 settled actions and no unsupported,
+invalid, stale, observation/provider failure, unsettled or unknown outcome. It
+is `unrecorded` prior-MVID runtime evidence, not Organic
 or persistent qualification; current Inspection remains disabled and the
 Hefty/actionless-settling repair branches were not naturally exercised.
 
@@ -110,10 +111,11 @@ See the
 
 This track now advances alongside Gate 2:
 
-1. freeze exact A baseline identity/configuration;
+1. capture and freeze exact A baseline identity/configuration, including Re
+   revision and runtime-source digest;
 2. establish representative and held-out D cases;
-3. produce one joined baseline report for correctness, run, provider, Prompt,
-   cost and outcome metrics;
+3. use the implemented read-only `agent:baseline-report` for correctness, run,
+   provider, Prompt, cost and outcome metrics;
 4. accept or reject one low-risk A candidate through paired evidence and
    counterexamples.
 

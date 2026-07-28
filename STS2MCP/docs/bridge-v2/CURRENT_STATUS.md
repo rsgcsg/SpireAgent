@@ -13,22 +13,23 @@ release-declared hash -1041364841 (diagnostic only)
 actual loaded hash    -820620422
 game assembly SHA     2cb39e2eee651743829abcc0df4dd9cd7e65f46287c7ca264481115c9602382f
 game assembly MVID    208f08b8-d5f5-47f8-9e96-d3a4299ee709
-built SHA             afb0261fdf1ca8433bdcbc3de2e1270f00daf802da3aaf507492357da399a140
-installed SHA         afb0261fdf1ca8433bdcbc3de2e1270f00daf802da3aaf507492357da399a140
-loaded SHA            afb0261fdf1ca8433bdcbc3de2e1270f00daf802da3aaf507492357da399a140
-built MVID            3e9ad83a-37c9-40dc-bca0-877187c9bdae
-installed MVID        3e9ad83a-37c9-40dc-bca0-877187c9bdae
-loaded MVID           3e9ad83a-37c9-40dc-bca0-877187c9bdae
-runtime epoch         14238a9e9bf443c580a8dfe80bd571fd
-rollback              STS2MCP/.local/deployments/2026-07-28T13-05-29-650Z
+built SHA             debc229e7affb514ba25e3f9485cfef8235c6213623ef490934d22072d2ddeed
+installed SHA         debc229e7affb514ba25e3f9485cfef8235c6213623ef490934d22072d2ddeed
+loaded SHA            debc229e7affb514ba25e3f9485cfef8235c6213623ef490934d22072d2ddeed
+built MVID            6d9d4adf-6c34-4401-950f-69980dc5d3d8
+installed MVID        6d9d4adf-6c34-4401-950f-69980dc5d3d8
+loaded MVID           6d9d4adf-6c34-4401-950f-69980dc5d3d8
+runtime epoch         b2332a06f756495a84936520b79cecba
+rollback              STS2MCP/.local/deployments/2026-07-28T14-31-37-745Z
 ```
 
 The installation has one canonical `STS2_MCP` manifest and no duplicate
 Gateway manifest. Preview.72 source, build, installed, and loaded artifact
-agree. The loaded environment is exact bridge-only `migration_exploration`:
-normal observation and provisional trial are ready; Inspection and pre-existing
-mutation authority are disabled. Preview.71's runtime identity and grants do
-not transfer. Loaded identity is not action, Organic, or persistent
+agree. A same-source Release rebuild produced a new binary identity and was
+cold-loaded on 2026-07-29. The loaded environment is exact bridge-only
+`migration_exploration`: normal observation and provisional trial are ready;
+Inspection and pre-existing mutation authority are disabled. Earlier runtime
+identity and grants do not transfer. Loaded identity is not action, Organic, or persistent
 qualification evidence.
 
 ## Current Boundary
@@ -146,6 +147,14 @@ outcome. It crossed combat, event, map, reward, rest, shop, treasure, transform
 and menu flows. Provenance is `unrecorded`, Inspection was disabled, and neither
 Hefty nor actionless-settling repair was naturally exercised. This is exact-
 runtime coverage, not Organic or persistent qualification.
+
+Same-identity run `run-20260728141035-uhrp19` completed another fresh
+game-to-menu boundary: 107 settled actions in 108 decisions, with no stale,
+unsupported, invalid, observation/provider failure, unsettled, or unknown
+outcome. It remains `unrecorded` coverage evidence. The new Re-side baseline
+report correctly finds its Gateway/game/Modset identity exact but its Re source
+identity incomplete because the run predates source-digest recording. No
+Gateway permission or qualification changed.
 
 ## Remaining Boundaries
 

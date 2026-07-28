@@ -37,6 +37,10 @@ not inherit authority from the archived root SpireAgent runtime.
 
 Current cross-component audits:
 
+- [M1 baseline identity and report closeout](audits/M1_BASELINE_IDENTITY_AND_REPORT_CLOSEOUT_2026-07-29.md):
+  latest 108-decision evidence, the missing Re source-identity root cause,
+  runtime-source digest design, read-only joined report, and explicit
+  qualification/strategy non-claims.
 - [A-primary workflow and program correction audit](audits/A_PRIMARY_WORKFLOW_AND_PROGRAM_CORRECTION_AUDIT_2026-07-28.md):
   critical review of six A/Bridge planning proposals, the latest 146-decision
   Preview.72 run, A-first versus C-first drift, M0--M4 milestone correction,

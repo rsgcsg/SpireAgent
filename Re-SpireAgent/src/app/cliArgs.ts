@@ -12,6 +12,7 @@ export type CliInvocation =
     }
   | { readonly command: "replay"; readonly runId?: string; readonly decisionId?: string }
   | { readonly command: "prompt-audit"; readonly runId?: string; readonly limitRuns?: number }
+  | { readonly command: "baseline-report"; readonly runId?: string }
   | { readonly command: "prompt-shadow-compare"; readonly runId: string; readonly decisionId: string }
   | { readonly command: "prompt-repeat-baseline"; readonly runId: string; readonly decisionId: string; readonly samples: number; readonly variant: "full" | "shadow" };
 
@@ -65,6 +66,13 @@ export function parseCliInvocation(args: readonly string[]): CliInvocation {
         ...(parsed.values.get("--limit-runs")
           ? { limitRuns: parsePositiveInteger("--limit-runs", parsed.values.get("--limit-runs")!) }
           : {})
+      };
+    }
+    case "baseline-report": {
+      const parsed = parseFlags(command, flags, new Set(["--run-id"]), new Set(["--run-id"]));
+      return {
+        command,
+        ...(parsed.values.get("--run-id") ? { runId: parsed.values.get("--run-id") } : {})
       };
     }
     case "prompt-shadow-compare": {

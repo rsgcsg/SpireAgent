@@ -27,39 +27,41 @@ Preview.72 is built, installed and Steam cold-loaded:
 game release    v0.109.1|c8c577f6
 release hash    -1041364841 (release-declared diagnostic only)
 actual hash     -820620422
-built SHA       afb0261fdf1ca8433bdcbc3de2e1270f00daf802da3aaf507492357da399a140
-installed SHA   afb0261fdf1ca8433bdcbc3de2e1270f00daf802da3aaf507492357da399a140
-loaded SHA      afb0261fdf1ca8433bdcbc3de2e1270f00daf802da3aaf507492357da399a140
-built MVID      3e9ad83a-37c9-40dc-bca0-877187c9bdae
-installed MVID  3e9ad83a-37c9-40dc-bca0-877187c9bdae
-loaded MVID     3e9ad83a-37c9-40dc-bca0-877187c9bdae
-runtime epoch   14238a9e9bf443c580a8dfe80bd571fd
-rollback        STS2MCP/.local/deployments/2026-07-28T13-05-29-650Z
+built SHA       debc229e7affb514ba25e3f9485cfef8235c6213623ef490934d22072d2ddeed
+installed SHA   debc229e7affb514ba25e3f9485cfef8235c6213623ef490934d22072d2ddeed
+loaded SHA      debc229e7affb514ba25e3f9485cfef8235c6213623ef490934d22072d2ddeed
+built MVID      6d9d4adf-6c34-4401-950f-69980dc5d3d8
+installed MVID  6d9d4adf-6c34-4401-950f-69980dc5d3d8
+loaded MVID     6d9d4adf-6c34-4401-950f-69980dc5d3d8
+runtime epoch   b2332a06f756495a84936520b79cecba
+rollback        STS2MCP/.local/deployments/2026-07-28T14-31-37-745Z
 Mod manifests   one canonical STS2_MCP manifest; no duplicate
 ```
 
 The separate release-declared hash is diagnostic provenance, not actual-loaded
-identity. The loaded environment is exact bridge-only, uses
-`migration_exploration`, and inherited no Preview.71 grant or persistent
-qualification.
+identity. The loaded environment is exact bridge-only and uses
+`migration_exploration`. The new runtime inherited no old session grant:
+observation and provisional trial are ready, while mutation starts disabled
+until the Gateway admits a current source-resolved action. No persistent
+qualification was created.
 
 ## Latest Live Evidence
 
-Current-runtime run `run-20260728132337-ce2195` completed a fresh bounded
-main-menu-to-game-over-to-main-menu journey:
+Immediately prior same-source Preview.72 runtime run
+`run-20260728141035-uhrp19` completed another fresh bounded
+main-menu-to-game-over-to-main-menu journey. Its action evidence belongs to
+MVID `3e9ad83a...`, not the newly loaded MVID:
 
 ```text
-decisions                         146
-executed_and_settled              144
-not_executed_stale_state            1  (rejected before execution)
+decisions                         108
+executed_and_settled              107
 run_boundary                        1
 unsupported / invalid               0
 observation / provider failure      0
 unsettled / unknown mutation        0
 ```
 
-It crossed combat, event, map, reward, rest, shop, treasure, transform, menu
-and game-over, including a shop card purchase and reward potion discard. The
+It crossed combat, event, map, reward, shop, selector, menu and game-over. The
 summary records `completed_run_boundary` and `completedGame=true`.
 
 Evidence limits:
@@ -73,10 +75,17 @@ Evidence limits:
   rate, cross-version/Mod compatibility or complete visible information;
 - runtime authority remained encounter/session scoped.
 
-The run made 145 model calls with about 1.69 MB total user Prompt payload,
-averaging about 11.7 KB and peaking at 23.6 KB. This is a measured reason to
+The run made 107 model calls with 1,206,746 user-Prompt bytes, averaging 11,278
+and peaking at 20,269 bytes; all 107 provider attempts produced valid JSON.
+This is a measured reason to
 evaluate evidence-preserving, scope-specific consumer views; it is not evidence
 to replace the full Prompt without paired evaluation.
+
+`agent:baseline-report` now joins local exact Connector/game/Modset identity,
+Re/provider/Prompt/outcome/settlement metrics without action or qualification
+effect. Existing runs, including this one, predate Re source-digest recording
+and are correctly reported as `identityStatus=incomplete`. New public
+`agent:run` records Git revision, runtime-source digest and clean/dirty status.
 
 Earlier Preview.69--71 runs, failures and repair evidence remain indexed in the
 [documentation map](DOCUMENT_MAP.md) and dated closeouts. Their evidence and
@@ -100,8 +109,9 @@ Inspection and incomplete linked detail/tooltip families.
 
 ## Immediate Next Step
 
-Freeze the M1 A baseline identity/configuration, define the minimum versioned
-representative/held-out D split, and generate one joined baseline report. The
+Capture one fresh run with the new exact Re source identity, freeze that M1 A
+baseline configuration, then define the minimum versioned representative/
+held-out D split. The
 first A candidate should be a low-risk scope-specific Prompt/view or Inspection
 policy experiment evaluated offline/replay, paired, counterexample and held-out
 before shadow admission. C continues only on naturally observed blockers; do

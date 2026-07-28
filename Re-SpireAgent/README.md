@@ -431,6 +431,21 @@ npm run agent:replay -- --run-id <run-id>
 npm run agent:replay -- --run-id <run-id> --decision-id <decision-id>
 ```
 
+Generate a content-redacted, non-authorizing M1 baseline report from one local
+run. The command does not open the Gateway or call DeepSeek:
+
+```bash
+npm run agent:baseline-report
+npm run agent:baseline-report -- --run-id <run-id>
+```
+
+The public `agent:run` Operator Shell records the current Git revision, a
+deterministic digest of runtime-relevant Re/Operator-Shell source files, and
+whether that source scope was clean or dirty. Historical records without this
+identity remain readable, but the report marks them `identityStatus=incomplete`
+instead of guessing. The report never grants permission or qualification and
+does not grade strategy.
+
 Development checks:
 
 ```bash
@@ -462,7 +477,8 @@ distinguishes a completed one-game boundary from a runtime guard/failure or
 decision-limit stop. Older run directories remain replay-readable without this
 file and are never backfilled with inferred results.
 
-`metadata.json` also records declared evidence provenance. Historical or
+`metadata.json` also records declared evidence provenance and, for new public
+Operator-Shell runs, exact Re source identity. Historical or
 default `unrecorded` runs remain useful coverage/debug evidence but cannot
 independently be described as Organic qualification. The label never changes
 Bridge permission or execution behavior.

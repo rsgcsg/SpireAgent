@@ -41,4 +41,18 @@ describe("runtime evidence provenance", () => {
     expect(readRuntimeConfig({}).runtime.maxTicks).toBe(1_000);
     expect(readRuntimeConfig({ AGENT_MAX_TICKS: "12" }).runtime.maxTicks).toBe(12);
   });
+
+  it("accepts only an exact Git revision for reproducible run identity", () => {
+    const revision = "a".repeat(40);
+    const sourceDigest = "b".repeat(64);
+    expect(readRuntimeConfig({
+      SPIREAGENT_RE_SOURCE_REVISION: revision,
+      SPIREAGENT_RE_SOURCE_DIGEST: sourceDigest,
+      SPIREAGENT_RE_WORKTREE_STATUS: "dirty"
+    }).runtime).toMatchObject({ agentSourceRevision: revision, agentSourceDigest: sourceDigest, agentWorktreeStatus: "dirty" });
+    expect(() => readRuntimeConfig({ SPIREAGENT_RE_SOURCE_REVISION: "develop" }))
+      .toThrow("SPIREAGENT_RE_SOURCE_REVISION");
+    expect(() => readRuntimeConfig({ SPIREAGENT_RE_SOURCE_REVISION: revision }))
+      .toThrow("must be recorded together");
+  });
 });

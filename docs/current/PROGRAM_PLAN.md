@@ -110,9 +110,10 @@ persistent qualification, strategic quality or product readiness.
 
 ### Current Evidence
 
-Preview.72 has exact build/install/load identity and one current-runtime
-146-decision journey with 144 settled actions, one safe pre-execution stale
-rejection and one run-boundary stop. It had no unsupported, invalid,
+Preview.72 has exact build/install/load identity. Its immediately prior binary
+completed a 108-decision journey with 107 settled actions and one run-boundary
+stop. It had
+no unsupported, invalid, stale,
 observation/provider failure, unsettled or unknown mutation outcome. Provenance
 is `unrecorded`; Inspection was disabled; Hefty/actionless-settling repair
 branches were not exercised. This is runtime coverage, not Organic or
@@ -120,10 +121,11 @@ persistent qualification.
 
 ### Delivery Order
 
-1. Freeze an A baseline identity: Re revision, Prompt/config/provider,
+1. Capture and freeze an A baseline identity: Re revision/source digest,
+   Prompt/config/provider,
    Connector protocol/schema and exact environment provenance.
-2. Define the minimum versioned representative/held-out D split and a single
-   baseline report joining Connector, Agent, provider, Prompt and outcome data.
+2. Use the implemented non-authorizing `agent:baseline-report`, then define the
+   minimum versioned representative/held-out D split.
 3. Report run completion, stop reason, invalid/stale/unknown outcomes, provider
    failures, latency, cost, Prompt bytes and decision-family coverage.
 4. Let C close only concrete decision-truth, Inspection, owner, settling,
@@ -134,9 +136,9 @@ persistent qualification.
    offline/replay -> paired -> counterexample -> held-out -> shadow. Preserve
    the frozen live baseline until explicit evidence-based admission.
 
-The current Prompt is still full normalized evidence. The latest run's 145
-model calls carried about 1.69 MB of user payload, averaging about 11.7 KB and
-peaking at 23.6 KB. This justifies a measured projection experiment; it does
+The current Prompt is still full normalized evidence. The latest run's 107
+model calls carried 1,206,746 user-Prompt bytes, averaging 11,278 and peaking
+at 20,269 bytes. This justifies a measured projection experiment; it does
 not by itself justify changing the runtime Prompt.
 
 ### Exit Criteria

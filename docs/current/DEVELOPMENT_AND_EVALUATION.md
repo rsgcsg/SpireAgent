@@ -41,6 +41,8 @@ without becoming either authority.
   settlement, and provenance records.
 - Record inspection through `agent:replay`.
 - Read-only Prompt size/duplication audit.
+- Read-only per-run M1 baseline report joining Re source, exact Connector/game/
+  Modset identity, provider, Prompt, outcome, settlement and coverage metrics.
 - Bounded non-executing full/shadow provider comparison and within-variant
   repeat baseline.
 - Public offline GitHub Actions for Re, active documentation/Connector
@@ -76,15 +78,13 @@ without becoming either authority.
   conformance, Agent output evaluation, and execution evidence.
 - Grader definitions with versions, limitations, counterexamples, and held-out
   splits.
-- One machine-readable report joining Connector, Agent, provider, Prompt, and
-  outcome provenance.
 - Differential regression across protocol/schema versions.
 - Automated offline CI for checks that do not require proprietary game
   assemblies.
 - Redacted evidence export and retention rules suitable for product support or
   external research.
-- One frozen A baseline manifest joining Re revision, Prompt/config/provider,
-  Connector protocol/schema and exact environment identity.
+- One frozen A baseline run with the new Re source revision/content digest;
+  historical runs predate that field and are explicitly identity-incomplete.
 - A minimum representative/held-out split and one joined report covering run
   completion, stop reasons, validity, provider failures, latency/cost, Prompt
   bytes and decision-family coverage.
@@ -172,8 +172,9 @@ Patch inventory, repeated real `main_menu/continue_run` session canary and
 read-only recorded-evidence transition assertion are present. Permission
 automation is no longer D's default next project.
 
-The M1 priority is now to freeze one A baseline manifest, define a minimum
-representative/held-out split and produce a joined baseline report. Only then
+The joined read-only report is implemented as `npm run agent:baseline-report`.
+The M1 priority is now to capture one fresh exact-source run, freeze its
+baseline manifest, and define a minimum representative/held-out split. Only then
 should D compare a scope-specific Prompt/view or Inspection-policy candidate
 with counterexamples. Gateway permission review remains necessary only if a
 later candidate requests live mutation influence.
@@ -182,6 +183,10 @@ No D artifact grants live permission, canary status, qualification, stable
 learning, or product readiness. A D artifact may recommend a candidate, but
 the Gateway Permission Manager remains the sole decision point and the Gateway
 execution path remains the sole enforcement point.
+
+The report is intentionally per-run rather than a new evaluation framework.
+It emits `identityStatus=incomplete` for old records missing source identity,
+and always emits `authorizationEffect=none` and `qualificationEffect=none`.
 
 The assertion tooling is deliberately non-executing:
 
