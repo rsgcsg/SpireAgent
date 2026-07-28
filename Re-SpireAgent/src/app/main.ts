@@ -136,6 +136,7 @@ function printTick(runId: string, result: {
   actionAuthority?: string;
   selectedActionId?: string;
   stopReason?: string;
+  error?: string;
 }): void {
   process.stdout.write(
     `${JSON.stringify({
@@ -146,7 +147,8 @@ function printTick(runId: string, result: {
       authority: result.actionAuthority,
       outcome: result.outcome,
       selectedActionId: result.selectedActionId,
-      stopReason: result.stopReason
+      stopReason: result.stopReason,
+      error: result.error
     })}\n`
   );
 }

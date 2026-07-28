@@ -28,6 +28,7 @@ export interface TickResult {
   surfaceKind?: StateEnvelope["currentState"]["surface"]["kind"];
   actionAuthority?: StateEnvelope["currentState"]["actionAuthority"];
   selectedActionId?: string;
+  error?: string;
   shouldStopRun: boolean;
   stopReason?: "run_boundary" | "repeated_exact_transition" | "repeated_semantic_transition" | "repeated_non_actionable_state";
 }
@@ -75,7 +76,7 @@ export class TickOrchestrator {
         pre,
         allowedActions,
         outcome: "not_executed_invalid_state",
-        error: pre.currentState.surface.kind === "unsupported" ? pre.currentState.surface.reason : "Normalization diagnostics are invalid",
+        error: invalidStateReason(pre),
         shouldStopRun: true
       });
     }
@@ -385,7 +386,8 @@ export class TickOrchestrator {
       input.pre.currentState,
       undefined,
       input.shouldStopRun,
-      input.stopReason
+      input.stopReason,
+      input.error
     );
   }
 
@@ -408,6 +410,15 @@ export class TickOrchestrator {
 function bridgeStateToken(envelope: StateEnvelope): string | undefined {
   const surface = envelope.currentState.surface as { bridgeStateId?: unknown };
   return typeof surface.bridgeStateId === "string" ? surface.bridgeStateId : undefined;
+}
+
+function invalidStateReason(envelope: StateEnvelope): string {
+  const surfaceReason = envelope.currentState.surface.kind === "unsupported"
+    ? envelope.currentState.surface.reason
+    : "Normalization diagnostics are invalid";
+  const firstInvalid = envelope.diagnostics.invalidFields[0];
+  if (!firstInvalid) return surfaceReason;
+  return `${surfaceReason}; ${firstInvalid.path}: ${firstInvalid.reason}`.slice(0, 500);
 }
 
 function baseRecord(runId: string, decisionId: string, tick: number, startedAt: string, outcome: DecisionOutcome): DecisionRecord {
@@ -491,7 +502,8 @@ function result(
   state: StateEnvelope["currentState"] | undefined,
   selectedActionId: string | undefined,
   shouldStopRun: boolean,
-  stopReason?: TickResult["stopReason"]
+  stopReason?: TickResult["stopReason"],
+  error?: string
 ): TickResult {
   return {
     decisionId,
@@ -503,6 +515,7 @@ function result(
     } : {}),
     ...(selectedActionId ? { selectedActionId } : {}),
     ...(stopReason ? { stopReason } : {}),
+    ...(error ? { error } : {}),
     shouldStopRun
   };
 }

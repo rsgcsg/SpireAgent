@@ -881,6 +881,84 @@ const MAIN_MENU_STATE = {
   }
 };
 
+function encounterProvisionalMainMenuFixture() {
+  const capabilities = structuredClone(CAPABILITIES);
+  const state = structuredClone(MAIN_MENU_STATE);
+  const scope = permissionScope(
+    "main_menu",
+    "open_singleplayer",
+    "canary",
+    "encounter_source_resolved"
+  );
+  Object.assign(scope, {
+    runtime_epoch: capabilities.bridge.runtime_instance_id,
+    environment_digest: capabilities.qualification_system.current_environment_digest,
+    patch_digest: capabilities.permission_system.patch_inventory.digest
+  });
+  const fingerprint = `${capabilities.game.version}|${capabilities.game.commit}|${capabilities.game.main_assembly_hash}`;
+  const observationOnlyKinds = capabilities.surfaces.map((surface) => surface.kind);
+  Object.assign(capabilities.game.compatibility, {
+    status: "provisional_trial_scoped",
+    adaptation_level: "encounter_provisional_trial",
+    action_execution_allowed: true,
+    state_observation_allowed: true,
+    inspection_allowed: false,
+    action_execution_surface_kinds: [],
+    action_canary_surface_kinds: ["main_menu"],
+    inspection_allowed_kinds: [],
+    inspection_canary_kinds: [],
+    observation_only_surface_kinds: observationOnlyKinds,
+    observation_candidate_build_fingerprints: [fingerprint],
+    action_permission_scopes: [scope]
+  });
+  capabilities.surfaces = capabilities.surfaces.map((surface) => ({
+    ...surface,
+    support: surface.kind === "main_menu"
+      ? "candidate_action_canary"
+      : "candidate_observation_only",
+    operations: surface.kind === "main_menu" ? ["open_singleplayer"] : []
+  }));
+  capabilities.inspections = {
+    ...capabilities.inspections,
+    status: "disabled_for_current_build",
+    implemented_kinds: []
+  };
+  Object.assign(capabilities.permission_system, {
+    mode: "migration_exploration",
+    runtime_epoch: capabilities.bridge.runtime_instance_id,
+    grants: [{
+      schema_version: 1,
+      grant_id: scope.grant_id,
+      grant_version: scope.grant_version,
+      current: true,
+      status: "active",
+      mode: "migration_exploration",
+      surface_kind: scope.surface_kind,
+      operation: scope.operation,
+      tier: "session_canary",
+      risk_class: "reversible_navigation",
+      runtime_epoch: scope.runtime_epoch,
+      environment_digest: scope.environment_digest,
+      gateway_assembly_sha256: capabilities.bridge.assembly_file_sha256,
+      gateway_module_version_id: capabilities.bridge.module_version_id,
+      modset_fingerprint: capabilities.game.modset.fingerprint,
+      patch_digest: scope.patch_digest,
+      operation_fingerprint: scope.operation_fingerprint,
+      evidence_bundle_digest: capabilities.permission_system.policy_digest,
+      issued_at: "2026-07-28T00:00:00Z",
+      expires_at: "2026-07-29T00:00:00Z",
+      supersedes_grant_id: null,
+      revocation_reason: null,
+      evidence_ids: ["admission:encounter_source_resolved", "surface-signature:fixture"],
+      admission_basis: "encounter_source_resolved"
+    }]
+  });
+  state.game = structuredClone(capabilities.game);
+  state.permission_system = structuredClone(capabilities.permission_system);
+  state.qualification_system = structuredClone(capabilities.qualification_system);
+  return { capabilities, state };
+}
+
 const SINGLEPLAYER_MENU_STATE = {
   ...MAIN_MENU_STATE,
   state_id: "state-singleplayer-menu-1",
@@ -3062,6 +3140,46 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       wrapBridgeV2State({ state: unsupportedAction, capabilities: structuredClone(CAPABILITIES) }),
       TEST_SOURCE
     ).currentState.stability).toBe("invalid");
+  });
+
+  it("accepts Gateway-issued encounter provisional operation authority", () => {
+    const { capabilities, state } = encounterProvisionalMainMenuFixture();
+    const envelope = normalizeCurrentState(
+      wrapBridgeV2State({ state, capabilities }),
+      TEST_SOURCE
+    );
+
+    expect(envelope.diagnostics.status).toBe("ok");
+    expect(envelope.currentState).toMatchObject({
+      stability: "actionable",
+      actionAuthority: "bridge_advertised",
+      context: { kind: "menu", screen: "main_menu" },
+      surface: { kind: "main_menu" }
+    });
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash).map((action) => action.kind))
+      .toEqual(["open_singleplayer"]);
+  });
+
+  it("rejects encounter provisional authority when state and capabilities scopes drift", () => {
+    const { capabilities, state } = encounterProvisionalMainMenuFixture();
+    state.game.compatibility.action_permission_scopes[0]!.patch_digest = "different-patch";
+    state.permission_system.patch_inventory.digest = "different-patch";
+    (state.permission_system.grants as Array<{ patch_digest: string }>)[0]!.patch_digest = "different-patch";
+
+    const envelope = normalizeCurrentState(
+      wrapBridgeV2State({ state, capabilities }),
+      TEST_SOURCE
+    );
+
+    expect(envelope.currentState).toMatchObject({
+      stability: "invalid",
+      actionAuthority: "none",
+      surface: { kind: "unsupported" }
+    });
+    expect(envelope.diagnostics.invalidFields.some((field) =>
+      field.path === "bridge_v2.game.compatibility"
+      && field.reason === "state and capabilities observation authority differ"))
+      .toBe(true);
   });
 
   it("projects Standard and Back without turning Daily into an executable menu action", () => {
@@ -5799,6 +5917,50 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     expect(isBridgeV2WrappedState(raw)).toBe(true);
     expect(stateReads).toBe(2);
     expect(bundleReads).toBe(2);
+  });
+
+  it("refreshes dynamic capabilities and retries a cross-time authority envelope", async () => {
+    const { capabilities: currentCapabilities, state } = encounterProvisionalMainMenuFixture();
+    let capabilityReads = 0;
+    let stateReads = 0;
+    const adapter = new Sts2McpHybridAdapter(
+      "http://adapter.test",
+      1_000,
+      {
+        commandPollMs: 1,
+        commandTimeoutMs: 100,
+        observationRetryAttempts: 3,
+        observationRetryDelayMs: 1
+      },
+      async (input) => {
+        const url = String(input);
+        if (url.endsWith("/api/v2/capabilities")) {
+          capabilityReads += 1;
+          return json(capabilityReads < 3 ? CAPABILITIES : currentCapabilities);
+        }
+        if (url.endsWith("/api/v2/state")) {
+          stateReads += 1;
+          return json(state);
+        }
+        if (url.endsWith("/api/v2/observation-bundles")) {
+          return json(coherentObservationBundle(state, {}));
+        }
+        throw new Error(`Unexpected request ${url}`);
+      },
+      async () => {}
+    );
+
+    const raw = await adapter.readCurrentState();
+    const envelope = normalizeCurrentState(raw, adapter.describe());
+
+    expect(capabilityReads).toBe(3);
+    expect(stateReads).toBe(2);
+    expect(envelope.diagnostics.status).toBe("ok");
+    expect(envelope.currentState).toMatchObject({
+      stability: "actionable",
+      actionAuthority: "bridge_advertised",
+      surface: { kind: "main_menu" }
+    });
   });
 
   it("retries an inspection scope mismatch only when a fresh state proves lifecycle drift", async () => {

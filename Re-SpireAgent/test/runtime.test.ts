@@ -512,6 +512,7 @@ describe("TickOrchestrator", () => {
     const provider = fixedProvider("anything", () => { calls += 1; });
     const result = await makeOrchestrator(adapter, provider, recorder).runTick(1);
     expect(result.outcome).toBe("not_executed_invalid_state");
+    expect(result.error).toBeTruthy();
     expect(calls).toBe(0);
     expect(adapter.executed).toEqual([]);
   });

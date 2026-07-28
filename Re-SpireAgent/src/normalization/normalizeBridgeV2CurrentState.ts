@@ -432,7 +432,7 @@ export function normalizeBridgeV2CurrentState(
     const candidateBuild = isCandidateBuild(state, capabilities);
     const observationOnlyCandidate = isObservationOnlyCandidate(state, capabilities);
     const actionCanaryCandidate = isActionCanaryCandidate(state, capabilities);
-    const scopedQualifiedBuild = isScopedQualifiedBuild(state, capabilities);
+    const operationScopedAuthority = isOperationScopedAuthority(state, capabilities);
     validateEnvelopeIdentity(state, capabilities, diagnostics);
     validateStructuredDiagnostics(
       [...capabilities.diagnostics, ...state.diagnostics],
@@ -538,14 +538,14 @@ export function normalizeBridgeV2CurrentState(
       stability = "unknown";
     } else {
       const advertised = capabilities.surfaces.find((candidate) => candidate.kind === state.surface.kind);
-      const expectedSupport = scopedQualifiedBuild
+      const expectedSupport = operationScopedAuthority
         ? capabilities.game.compatibility.action_execution_surface_kinds.includes(state.surface.kind)
           ? "qualified_exact_build"
           : capabilities.game.compatibility.action_canary_surface_kinds.includes(state.surface.kind)
             ? "candidate_action_canary"
             : "not_qualified_for_current_build"
         : "implemented_exact_game_version";
-      if (scopedQualifiedBuild && expectedSupport === "not_qualified_for_current_build") {
+      if (operationScopedAuthority && expectedSupport === "not_qualified_for_current_build") {
         diagnostics.invalid(
           "bridge_v2.game.compatibility.action_scope",
           state.surface.kind,
@@ -820,9 +820,9 @@ function validateEnvelopeIdentity(
   if (isCandidateBuild(state, capabilities)) {
     validateCandidateBuildIdentity("bridge_v2.state.game", state.game, diagnostics);
     validateCandidateBuildIdentity("bridge_v2.capabilities.game", capabilities.game, diagnostics);
-  } else if (isScopedQualifiedBuild(state, capabilities)) {
-    validateScopedQualifiedIdentity("bridge_v2.state.game", state.game, diagnostics);
-    validateScopedQualifiedIdentity("bridge_v2.capabilities.game", capabilities.game, diagnostics);
+  } else if (isOperationScopedAuthority(state, capabilities)) {
+    validateOperationScopedIdentity("bridge_v2.state.game", state.game, diagnostics);
+    validateOperationScopedIdentity("bridge_v2.capabilities.game", capabilities.game, diagnostics);
   } else {
     validateExactGameIdentity("bridge_v2.state.game", state.game, diagnostics);
     validateExactGameIdentity("bridge_v2.capabilities.game", capabilities.game, diagnostics);
@@ -2162,7 +2162,7 @@ function validateExactGameIdentity(
   }
 }
 
-function validateScopedQualifiedIdentity(
+function validateOperationScopedIdentity(
   path: string,
   game: {
     version?: string | null;
@@ -2180,6 +2180,7 @@ function validateScopedQualifiedIdentity(
         surface_kind: string;
         operation: string;
         tier: "qualified" | "canary";
+        admission_basis: "reviewed_or_persisted_scope" | "installed_candidate_package" | "encounter_source_resolved";
       }>;
       adaptation_level: string;
       inspection_allowed_kinds: string[];
@@ -2201,15 +2202,19 @@ function validateScopedQualifiedIdentity(
   const installedPersistentIdentity =
     compatibility.status === "persistent_qualification_scoped"
     && compatibility.adaptation_level === "installed_persistent_qualification";
+  const encounterProvisionalIdentity =
+    compatibility.status === "provisional_trial_scoped"
+    && compatibility.adaptation_level === "encounter_provisional_trial"
+    && compatibility.observation_candidate_build_fingerprints.includes(fingerprint);
   if (!isOperationScopedCompatibilityStatus(compatibility.status)
-      || !(reviewedPolicyIdentity || installedCandidateIdentity || installedPersistentIdentity)
+      || !(reviewedPolicyIdentity || installedCandidateIdentity || installedPersistentIdentity || encounterProvisionalIdentity)
       || !compatibility.action_execution_allowed
       || !compatibility.state_observation_allowed
       || compatibility.action_execution_surface_kinds.length + compatibility.action_canary_surface_kinds.length === 0
       || compatibility.action_permission_scopes.length === 0
-      || compatibility.observation_only_surface_kinds.length !== 0
-      || compatibility.observation_candidate_build_fingerprints.length !== 0) {
-    diagnostics.invalid(`${path}.compatibility`, compatibility, "scoped qualification requires exact identity and a non-empty explicit action scope");
+      || (!encounterProvisionalIdentity && compatibility.observation_only_surface_kinds.length !== 0)
+      || (!encounterProvisionalIdentity && compatibility.observation_candidate_build_fingerprints.length !== 0)) {
+    diagnostics.invalid(`${path}.compatibility`, compatibility, "operation-scoped authority requires exact identity and a non-empty explicit action scope");
   }
   if (compatibility.status === "qualification_candidate_scoped"
       && (compatibility.action_execution_surface_kinds.length !== 0
@@ -2227,6 +2232,16 @@ function validateScopedQualifiedIdentity(
       `${path}.compatibility`,
       compatibility,
       "persistent qualification scope requires at least one qualified operation"
+    );
+  }
+  if (compatibility.status === "provisional_trial_scoped"
+      && (compatibility.action_execution_surface_kinds.length !== 0
+        || compatibility.action_permission_scopes.some((scope) =>
+          scope.tier !== "canary" || scope.admission_basis !== "encounter_source_resolved"))) {
+    diagnostics.invalid(
+      `${path}.compatibility`,
+      compatibility,
+      "encounter provisional scope may publish only source-resolved session-canary operations"
     );
   }
   const qualified = new Set(compatibility.action_execution_surface_kinds);
@@ -2292,7 +2307,7 @@ function isCandidateBuild(
     && capabilityCompatibility.observation_candidate_build_fingerprints.includes(gameFingerprint(capabilities.game));
 }
 
-function isScopedQualifiedBuild(
+function isOperationScopedAuthority(
   state: NonNullable<ReturnType<typeof decodeBridgeV2State>["data"]>,
   capabilities: NonNullable<ReturnType<typeof decodeBridgeV2Capabilities>["data"]>
 ): boolean {
@@ -2354,7 +2369,8 @@ function isScopedQualifiedBuild(
 function isOperationScopedCompatibilityStatus(status: string): boolean {
   return status === "qualified_scoped"
     || status === "qualification_candidate_scoped"
-    || status === "persistent_qualification_scoped";
+    || status === "persistent_qualification_scoped"
+    || status === "provisional_trial_scoped";
 }
 
 function isObservationOnlyCandidate(
@@ -2444,12 +2460,45 @@ function sameStrings(left: readonly string[], right: readonly string[]): boolean
 }
 
 function sameActionPermissionScopes(
-  left: ReadonlyArray<{ surface_kind: string; operation: string; tier: string }>,
-  right: ReadonlyArray<{ surface_kind: string; operation: string; tier: string }>
+  left: ReadonlyArray<{
+    surface_kind: string;
+    operation: string;
+    tier: string;
+    grant_id: string;
+    grant_version: number;
+    runtime_epoch: string;
+    environment_digest: string;
+    patch_digest: string;
+    operation_fingerprint: string;
+    admission_basis: string;
+  }>,
+  right: ReadonlyArray<{
+    surface_kind: string;
+    operation: string;
+    tier: string;
+    grant_id: string;
+    grant_version: number;
+    runtime_epoch: string;
+    environment_digest: string;
+    patch_digest: string;
+    operation_fingerprint: string;
+    admission_basis: string;
+  }>
 ): boolean {
-  const keys = (scopes: ReadonlyArray<{ surface_kind: string; operation: string; tier: string }>) =>
+  const keys = (scopes: typeof left) =>
     scopes
-      .map((scope) => `${scope.surface_kind}\u0000${scope.operation}\u0000${scope.tier}`)
+      .map((scope) => [
+        scope.surface_kind,
+        scope.operation,
+        scope.tier,
+        scope.grant_id,
+        scope.grant_version,
+        scope.runtime_epoch,
+        scope.environment_digest,
+        scope.patch_digest,
+        scope.operation_fingerprint,
+        scope.admission_basis
+      ].join("\u0000"))
       .sort()
       .join("\u0001");
   return keys(left) === keys(right);

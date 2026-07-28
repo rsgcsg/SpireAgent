@@ -2978,14 +2978,18 @@ public sealed class BridgeContractTests
     }
 
     [Theory]
-    [InlineData(true, false, false, "run_without_visible_overlay", true)]
-    [InlineData(true, true, false, "run_without_visible_overlay", false)]
-    [InlineData(true, false, true, "run_without_visible_overlay", false)]
-    [InlineData(false, false, false, "menu_or_no_run", false)]
-    [InlineData(true, false, false, "unknown_room", false)]
+    [InlineData(true, false, false, null, false, "run_without_visible_overlay", true)]
+    [InlineData(true, true, false, 0, false, "run_without_visible_overlay", true)]
+    [InlineData(true, true, true, 0, false, "run_without_visible_overlay", false)]
+    [InlineData(true, true, false, 1, false, "run_without_visible_overlay", false)]
+    [InlineData(true, false, false, null, true, "run_without_visible_overlay", false)]
+    [InlineData(false, false, false, null, false, "menu_or_no_run", false)]
+    [InlineData(true, false, false, null, false, "unknown_room", false)]
     public void RunStartTransitionRequiresExactNativeLifecycleFacts(
         bool runInProgress,
         bool runStatePresent,
+        bool currentRoomPresent,
+        int? totalFloor,
         bool hasBlockingSurface,
         string sourceType,
         bool expected)
@@ -2993,6 +2997,8 @@ public sealed class BridgeContractTests
         Assert.Equal(expected, BridgeSnapshotBuilder.ClassifyRunStartNoInputTransition(
             runInProgress,
             runStatePresent,
+            currentRoomPresent,
+            totalFloor,
             hasBlockingSurface,
             sourceType));
     }

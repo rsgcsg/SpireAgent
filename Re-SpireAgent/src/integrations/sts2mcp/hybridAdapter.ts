@@ -202,7 +202,8 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
             runtime_epoch: scope.runtime_epoch,
             environment_digest: scope.environment_digest,
             patch_digest: scope.patch_digest,
-            operation_fingerprint: scope.operation_fingerprint
+            operation_fingerprint: scope.operation_fingerprint,
+            admission_basis: scope.admission_basis
           })),
           observation_only_surface_kinds: bridge.game.compatibility.observation_only_surface_kinds,
           supported_surfaces: bridge.surfaces
@@ -228,13 +229,19 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
     this.lastReadAuthority = "none";
     await this.initialize();
 
-    const capabilities = this.capabilitiesPayload;
-    if (!capabilities) throw new Error("Bridge v2 capabilities were not negotiated");
+    if (!this.capabilitiesPayload) throw new Error("Bridge v2 capabilities were not negotiated");
     const maxAttempts = Math.max(1, this.options.observationRetryAttempts ?? 3);
     for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
       try {
         const state = await this.bridge.state();
-        const observation = await this.readObservationBundle(capabilities.data, state.data);
+        const observation = await this.readObservationBundle(state.data);
+        const capabilities = await this.bridge.capabilities();
+        if (!sameDynamicAuthorityProjection(observation.state, capabilities.data)) {
+          throw stateChangedDuringCompositeRead(
+            "state and capabilities dynamic authority projections differ"
+          );
+        }
+        this.capabilitiesPayload = capabilities;
         this.lastReadAuthority = "bridge";
         return wrapBridgeV2State({
           state: observation.rawState,
@@ -338,7 +345,6 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
   }
 
   private async readObservationBundle(
-    capabilities: BridgeV2Capabilities,
     state: BridgeV2State
   ): Promise<{
     state: BridgeV2State;
@@ -348,7 +354,7 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
   }> {
     // Availability is state-bound. Capabilities describe the vocabulary, but
     // only the current catalog may authorize a read-only inspection request.
-    const requested = capabilities.game.compatibility.inspection_allowed
+    const requested = state.game.compatibility.inspection_allowed
       ? state.inspection_catalog.map((entry) => entry.kind)
       : [];
     let bundle;
@@ -386,6 +392,45 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
     };
   }
 
+}
+
+function sameDynamicAuthorityProjection(
+  state: BridgeV2State,
+  capabilities: BridgeV2Capabilities
+): boolean {
+  const stateCompatibility = state.game.compatibility;
+  const capabilityCompatibility = capabilities.game.compatibility;
+  const scopes = (value: typeof stateCompatibility.action_permission_scopes) => value
+    .map((scope) => [
+      scope.surface_kind,
+      scope.operation,
+      scope.tier,
+      scope.grant_id,
+      scope.grant_version,
+      scope.runtime_epoch,
+      scope.environment_digest,
+      scope.patch_digest,
+      scope.operation_fingerprint,
+      scope.admission_basis
+    ].join("\u0000"))
+    .sort()
+    .join("\u0001");
+  const strings = (value: readonly string[]) => [...value].sort().join("\u0000");
+  return stateCompatibility.status === capabilityCompatibility.status
+    && stateCompatibility.adaptation_level === capabilityCompatibility.adaptation_level
+    && stateCompatibility.action_execution_allowed === capabilityCompatibility.action_execution_allowed
+    && stateCompatibility.state_observation_allowed === capabilityCompatibility.state_observation_allowed
+    && stateCompatibility.inspection_allowed === capabilityCompatibility.inspection_allowed
+    && strings(stateCompatibility.action_execution_surface_kinds)
+      === strings(capabilityCompatibility.action_execution_surface_kinds)
+    && strings(stateCompatibility.action_canary_surface_kinds)
+      === strings(capabilityCompatibility.action_canary_surface_kinds)
+    && strings(stateCompatibility.inspection_allowed_kinds)
+      === strings(capabilityCompatibility.inspection_allowed_kinds)
+    && strings(stateCompatibility.inspection_canary_kinds)
+      === strings(capabilityCompatibility.inspection_canary_kinds)
+    && scopes(stateCompatibility.action_permission_scopes)
+      === scopes(capabilityCompatibility.action_permission_scopes);
 }
 
 function isTransientGatewayStartupError(error: unknown): boolean {

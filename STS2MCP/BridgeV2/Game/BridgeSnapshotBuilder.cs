@@ -277,6 +277,8 @@ internal static class BridgeSnapshotBuilder
         if (!ClassifyRunStartNoInputTransition(
                 RunManager.Instance.IsInProgress,
                 runState != null,
+                runState?.CurrentRoom != null,
+                runState?.TotalFloor,
                 snapshot.HasBlockingSurface,
                 snapshot.SourceType))
         {
@@ -298,6 +300,8 @@ internal static class BridgeSnapshotBuilder
             {
                 "RunManager.IsInProgress",
                 "RunManager.DebugOnlyGetState",
+                "RunState.CurrentRoom",
+                "RunState.TotalFloor",
                 "ActiveSurfaceResolver"
             },
             Array.Empty<string>());
@@ -338,10 +342,12 @@ internal static class BridgeSnapshotBuilder
     internal static bool ClassifyRunStartNoInputTransition(
         bool runInProgress,
         bool runStatePresent,
+        bool currentRoomPresent,
+        int? totalFloor,
         bool hasBlockingSurface,
         string sourceType) =>
         runInProgress
-        && !runStatePresent
+        && (!runStatePresent || (!currentRoomPresent && totalFloor == 0))
         && !hasBlockingSurface
         && string.Equals(sourceType, "run_without_visible_overlay", StringComparison.Ordinal);
 
