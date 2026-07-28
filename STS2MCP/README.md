@@ -20,7 +20,7 @@ Bridge v2 is the only mutation contract for the current Agent and default MCP
 adapter. It remains an incremental semantic/visibility preview, not
 complete-game coverage.
 
-The C# Bridge and Re source share `2.0-preview.72`; Re normalized schema is
+The C# Bridge and Re source share `2.0-preview.73`; Re normalized schema is
 `29`. Gate 1 is closed as a bounded ordinary-single-player v2 connector
 baseline. Preview.62 replaced repeated combat-pile source branches with a
 reviewed embedded registry, moves exact-environment scopes into a reviewed
@@ -48,7 +48,7 @@ trials. Preview.70 subsequently cold-loaded and completed an exact 124-decision
 bounded run, while another run proved an empty-treasure-chest completion gap.
 Preview.71 repaired that Oracle and later loaded. Preview.72 adds exact Hefty
 Tablet source/result semantics and correct actionless-settling consumption; it
-is built/installed/loaded, and current-runtime run
+was built/installed/loaded, and current-runtime run
 `run-20260728132337-ce2195` completed a 146-decision one-game boundary with 144
 settled actions and one safe pre-execution stale rejection. The run is
 `unrecorded`, Inspection-disabled, and did not exercise either repaired branch;
@@ -57,6 +57,14 @@ contracts with 81 manifest-derived conservative identity/test-confirm
 fallbacks. Fallback metadata does not assert semantic equivalence or bypass
 current native legality, Commit, completion, or operation-local quarantine.
 Exact evidence is recorded in [current status](docs/bridge-v2/CURRENT_STATUS.md).
+
+Preview.73 repairs two later Rest failures without widening authority. Rest
+completion now proves the native base-heal minimum plus option progression,
+allowing legitimate native relic side effects above that minimum. A semantic
+Surface whose operations are all withheld remains `bridge_owned + blocked`
+with zero actions instead of becoming an internally contradictory unsupported
+Surface. Preview.73 is source/test/build/install complete; current status owns
+its cold-load and Live truth.
 
 > Product security warning: the current HTTP listener is a developer preview.
 > It binds to loopback and filters browser Origin. Preview.64 coordinates one
@@ -69,13 +77,13 @@ Exact evidence is recorded in [current status](docs/bridge-v2/CURRENT_STATUS.md)
 - Historical Gate 1 binding: Slay the Spire 2
   `v0.109.0|c12f634d|-1639417500`. Its authority does not transfer.
 - Current game identity:
-  `v0.109.1|c8c577f6|-820620422`. Preview.71 grants are bound to its last loaded
-  Gateway identity and do not authorize Preview.72.
+  `v0.109.1|c8c577f6|-820620422`. Preview.72 grants are bound to its historical
+  loaded Gateway identity and do not authorize installed Preview.73.
 - A matching version/commit with a different main-assembly hash remains
   untested and has no v2 action or Inspection authority. Check
   [Bridge v2 current status](docs/bridge-v2/CURRENT_STATUS.md) before treating
   a local install as qualified.
-- Source `2.0-preview.72` keeps centralized overlay/room/menu ownership, typed
+- Source `2.0-preview.73` keeps centralized overlay/room/menu ownership, typed
   diagnostics, purpose-specific selection and event contracts, staged
   completion semantics, and a top-level read-only shared run/player HUD.
   Current-build capabilities distinguish reviewed exact-policy actions,

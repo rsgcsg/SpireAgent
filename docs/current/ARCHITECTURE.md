@@ -8,6 +8,8 @@ Its live-kernel identity migration is refined by
 [ADR-0003](decisions/ADR-0003-operation-retirement-and-native-continuation-migration.md).
 Its risk-calibrated trial/claim boundary is refined by
 [ADR-0004](decisions/ADR-0004-risk-calibrated-encounter-trial-and-scoped-claims.md).
+The bounded short-term completion line is defined by the
+[C-R1 completion contract](audits/WORKFLOW_C_R1_SHORT_TERM_COMPLETION_CONTRACT_2026-07-29.md).
 This document describes both the current implementation and its constrained
 migration toward that target. Historical ALDG, universal contract/Transaction
 IR, qualification-centric, and environment-migration proposals are evidence
@@ -220,7 +222,7 @@ and the
 
 ## Current Architectural Constraint
 
-The Gateway and Re share the mechanically checked `2.0-preview.72` source
+The Gateway and Re source share the mechanically checked `2.0-preview.73`
 contract. Gate 1 establishes a bounded v2 connector baseline: Re and the
 default MCP adapter are v2-only, Gateway v1 is retired, and historical v1 data
 is replay-only. Preview.69 has substantial real-runtime coverage on exact final
@@ -229,9 +231,15 @@ loaded SHA `914974b5...` / MVID `1e457e86...`. Preview.70 later loaded as SHA
 Preview.71 later loaded as SHA `fd0f7c56...` / MVID `0acccd3d...` / runtime
 `19219d23...`. Four runs exposed a repeated Hefty source gap, one Re actionless-
 settling contract error, and one completed boundary. Preview.72 repairs both
-defects. Its latest same-source rebuild is built/installed/loaded as SHA
-`debc229e...` / MVID `6d9d4adf...` / runtime `b2332a06...`. Loaded identity does not inherit
-Preview.71 authority and is not action qualification.
+defects. Its latest same-source rebuild is installed/loaded as SHA
+`debc229e...` / MVID `6d9d4adf...` / runtime `b2332a06...`. Preview.73 is
+currently built, installed and loaded as SHA `f6b2d268...` / MVID
+`f67e272a...` / runtime `37c04bb7...`. Its Rest repair is the
+reference boundary: an action-local Outcome
+proves a native minimum plus progression, not every co-occurring native side
+effect. A permission-blocked semantic Surface retains `bridge_owned` while
+publishing no mutation action; unsupported source ownership still uses
+`none_fail_closed`.
 
 Two final-MVID Preview.69 runs completed saved/fresh run-to-menu boundaries;
 the latter settled 106 actions without stale or runtime failure. Their

@@ -60,8 +60,16 @@ Gate 2 follows this priority:
 4. publication/execution legality and action-local outcome correctness;
 5. non-authorizing native-contract and compatibility migration.
 
-Preview.72 is built, installed and loaded at the exact identity in
-[Status](STATUS.md). The immediately prior same-source Preview.72 run
+This open-ended list is now bounded by the
+[C-R1 completion contract](audits/WORKFLOW_C_R1_SHORT_TERM_COMPLETION_CONTRACT_2026-07-29.md):
+Core closes ordinary vanilla single-player decision truth, core Inspection,
+typed support scope, version recovery and repeated journeys; authority/identity
+cutover remains conditional on parity evidence; compendium and external
+reference enrichment remain optional.
+
+Preview.73 is source/test/build/install/load complete at the identity in
+[Status](STATUS.md), and strict Re read-only inspection passed. No Preview.73
+mutation canary has executed. Earlier same-source Preview.72 run
 `run-20260728141035-uhrp19` completed a
 108-decision one-game boundary with 107 settled actions and no unsupported,
 invalid, stale, observation/provider failure, unsettled or unknown outcome. It
@@ -71,6 +79,9 @@ Hefty/actionless-settling repair branches were not naturally exercised.
 
 ### Current Gate 2 Work
 
+- complete C-R1.0 by exercising Preview.73's Rest minimum-Outcome and
+  blocked-owner canaries during ordinary play;
+- then enter C-R1.1 core Inspection and typed availability closure;
 - close only naturally observed A-facing decision, owner, settling, visible-
   fact, Inspection and action-local outcome gaps;
 - retain complete evidence while A/D evaluate a scope-specific model view;

@@ -573,10 +573,10 @@ export function normalizeBridgeV2CurrentState(
           `current surface is not advertised as ${expectedSupport}`
         );
       }
-      const blockedMenu = state.readiness === "blocked"
-        && (isBridgeV2MainMenuSurface(state.surface) || isBridgeV2SingleplayerMenuSurface(state.surface));
-      if (state.readiness !== "ready" && state.readiness !== "settling" && !blockedMenu) {
-        diagnostics.invalid("bridge_v2.readiness", state.readiness, "supported surface must be ready or settling");
+      const blockedSemanticSurface = state.readiness === "blocked"
+        && state.legal_actions.length === 0;
+      if (state.readiness !== "ready" && state.readiness !== "settling" && !blockedSemanticSurface) {
+        diagnostics.invalid("bridge_v2.readiness", state.readiness, "supported surface must be ready, settling, or explicitly blocked without actions");
       }
 
       const advertisedOperations = new Set(advertised?.operations ?? []);
@@ -681,7 +681,11 @@ export function normalizeBridgeV2CurrentState(
         }, "Re-SpireAgent does not support this Bridge v2 context/surface contract");
       }
 
-      stability = state.readiness === "ready" ? "actionable" : "settling";
+      stability = state.readiness === "ready"
+        ? "actionable"
+        : state.readiness === "blocked"
+          ? "non_actionable"
+          : "settling";
       actionAuthority = state.legal_actions.length > 0 ? "bridge_advertised" : "none";
     }
   }

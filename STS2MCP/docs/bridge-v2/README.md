@@ -1,7 +1,7 @@
 # Bridge v2 Documentation
 
 Bridge v2 is the active semantic Gateway protocol. C# and Re source now share
-`2.0-preview.72`; Re normalized schema is `29`. Gate 1 is closed as a bounded
+`2.0-preview.73`; Re normalized schema is `29`. Gate 1 is closed as a bounded
 ordinary-single-player v2 connector baseline and the complete v1 HTTP namespace
 is retired. Preview.61 supplied the final Neow's Fury runtime seal. Preview.62
 adds reviewed registry/policy adaptation and non-authorizing exact-assembly
@@ -31,16 +31,25 @@ Preview.70 added a read-only recorded-run identity audit, then cold-loaded and
 completed a 124-decision bounded run. A separate run exposed the Silver
 Crucible empty-chest Oracle defect. Preview.71 shared treasure lifecycle facts
 between projection and completion, then loaded and exposed exact Hefty Tablet
-and actionless-settling defects. Preview.72 repairs those two boundaries and is
-built/installed/loaded. Current-runtime run `run-20260728132337-ce2195`
+and actionless-settling defects. Preview.72 repairs those two boundaries and
+was built/installed/loaded. Current-runtime run `run-20260728132337-ce2195`
 completed a 146-decision one-game boundary with 144 settled actions and one
 safe stale rejection. Its `unrecorded` provenance, disabled Inspection, and
 unexercised repaired branches keep it below Organic or persistent
 qualification. Prior runtime evidence and grants do not transfer.
 
+Preview.73 repairs the later Rest minimum-Outcome and blocked semantic-owner
+defects. It is source/test/build/install/load complete; strict Re read-only
+inspection passed, but no Preview.73 mutation canary has executed. See the
+[Preview.73 report](../../../docs/current/audits/PREVIEW_73_REST_OUTCOME_AND_AUTHORITY_BOUNDARY_2026-07-29.md)
+and the bounded
+[C-R1 completion contract](../../../docs/current/audits/WORKFLOW_C_R1_SHORT_TERM_COMPLETION_CONTRACT_2026-07-29.md).
+
 ## Current Documents
 
 - [Current status](CURRENT_STATUS.md)
+- [C-R1 short-term completion contract](../../../docs/current/audits/WORKFLOW_C_R1_SHORT_TERM_COMPLETION_CONTRACT_2026-07-29.md)
+- [Preview.73 Rest Outcome and authority boundary](../../../docs/current/audits/PREVIEW_73_REST_OUTCOME_AND_AUTHORITY_BOUNDARY_2026-07-29.md)
 - [Preview.72 A-first generated-choice closeout](../../../docs/current/audits/PREVIEW_72_A_FIRST_GENERATED_CHOICE_ARCHITECTURE_CLOSEOUT_2026-07-28.md)
 - [Preview.71 empty-treasure Outcome closeout](../../../docs/current/audits/PREVIEW_71_EMPTY_TREASURE_OUTCOME_CLOSEOUT_2026-07-28.md)
 - [Preview.70 identity and contract-shadow closeout](../../../docs/current/audits/PREVIEW_70_IDENTITY_AND_CONTRACT_SHADOW_CLOSEOUT_2026-07-28.md)

@@ -2,14 +2,17 @@
 
 In this project, "SpireAgent" means `Re-SpireAgent` by default.
 
-Current source contract is `2.0-preview.72`; Re normalized schema is `29`.
+Current source contract is `2.0-preview.73`; Re normalized schema is `29`.
 Identity and runtime-contract shadows are strictly decoded and remain
 non-authorizing. Preview.69 runs on one verified loaded identity provide
 real-runtime coverage whose provenance is `unrecorded`, not Organic
 qualification. Preview.70 later loaded, completed a bounded run, and exposed an
 empty-treasure completion defect. Preview.71 later loaded and exposed the
-Hefty/actionless-settling defects. Preview.72 is built/installed/loaded but
-still requires its own Gateway-owned encounter trial and action evidence.
+Hefty/actionless-settling defects. Preview.72 was built/installed/loaded and
+later supplied the Rest failure evidence. Preview.73 repairs the Rest
+minimum-Outcome and blocked semantic-owner boundaries; it is tested, built and
+installed and cold-loaded. Strict Re read-only inspection passed; no Preview.73
+mutation canary has executed.
 Gate 1 is closed as a bounded ordinary-single-player v2 connector baseline.
 Preview.61 supplied the exact Neow's Fury Organic lifecycle; Preview.62 adds
 reviewed compatibility/source registries and policy provenance without

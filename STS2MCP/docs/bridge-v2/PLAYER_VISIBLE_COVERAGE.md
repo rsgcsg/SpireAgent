@@ -10,15 +10,18 @@
 > loaded artifact. Current loaded identity and Gate status are owned by
 > [Bridge v2 Current Status](CURRENT_STATUS.md).
 
-Current source contract is Preview.72. It is built, installed, and loaded;
-Preview.71 remains the latest action-evidence scope. Preview.61 supplied the bounded Neow's
+Current source contract is Preview.73. It is tested, built, installed and
+cold-loaded; strict Re read-only inspection passed. Preview.72 remains the
+latest action-evidence scope because no Preview.73 mutation has executed. Preview.61
+supplied the bounded Neow's
 Fury Organic lifecycle that sealed Gate 1. Preview.62 added reviewed
 source/compatibility registries and a non-authorizing exact-assembly audit;
 Preview.66 added multi-environment migration infrastructure; Preview.69
 separates diagnostic observation, encounter trials, and persistent claims;
 Preview.70 introduced the contract-shadow split; Preview.71 adds treasure-open
 as the sixth explicit candidate after the empty-chest failure; Preview.72 adds
-exact Hefty Tablet source/result handling and actionless settling consumption.
+exact Hefty Tablet source/result handling and actionless settling consumption;
+Preview.73 repairs Rest minimum-Outcome and blocked semantic-owner projection.
 None inherits historical operation coverage or
 qualification. Current installed and loaded identities are owned by
 [Bridge v2 Current Status](CURRENT_STATUS.md),
@@ -83,7 +86,7 @@ The `1833084275` environment inherits no permission from the current loaded
 | `deck_upgrade_selection` | qualified | event and rest exact-instance upgrade journeys | other origins and multi-select variants need evidence |
 | `combat_turn` | qualified | repeated card, target, potion, and end-turn journeys; preview.51 fresh Necrobinder run exposes exact alive Osty HP/block/status companion state and Re/DeepSeek consumes it | dead/hidden-health companion Organic lifecycle plus uncommon card/target/phase shapes remain evidence debt |
 | `combat_hand_card_selection` | qualified | Touch of Insanity exact-instance select/confirm/cost post-state | other hand-selection purposes need diversity |
-| `rest_site` | qualified | Heal exact HP, Smith exact child, Proceed to map | unknown enabled options and multiplayer fail closed |
+| `rest_site` | qualified historical scope; current Preview.73 Live canary pending | Heal native base minimum plus option progression, Smith exact child, Proceed to map; Preview.72 Stone Humidifier evidence disproved exact-final-HP completion | Preview.73 install/load and bounded Rest canary pending; unknown enabled options and multiplayer fail closed |
 | `event_card_acquisition` | canary | Brain Leech exact one-card deck commit | two-card and other event origins remain unqualified |
 | `reward_claim` | canary | ordinary claim, potion-capacity, child, and Proceed flows; fresh Gate 1 gold/potion/card/proceed journey on the exact loaded identity | linked/special rewards fail closed |
 | `card_reward_selection` | canary | repeated ordinary choices; fresh Gate 1 exact Headbutt selection | alternatives and special origins need diversity |

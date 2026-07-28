@@ -18,12 +18,14 @@ third-party clients.
 
 ## Current Truth
 
-The active Connector contract is `2.0-preview.72`; Re normalized schema is
-`29`. Gate 1/M0 is closed as a bounded ordinary-single-player v2 interface:
+The active source Connector contract is `2.0-preview.73`; Re normalized schema
+is `29`. Gate 1/M0 is closed as a bounded ordinary-single-player v2 interface:
 Re and the optional MCP adapter are v2-only, Gateway `/api/v1` is retired, and
-the exact loaded Preview.72 completed a fresh 146-decision one-game journey
-with 144 settled actions, one safe pre-execution stale rejection and a clean
-run-boundary stop.
+the exact loaded Preview.72 completed multiple bounded one-game journeys.
+Preview.73 repairs a Rest Outcome overclaim and separates current semantic
+ownership from mutation permission. It is built, installed and cold-loaded;
+no Preview.73 mutation canary has executed yet, so consult current status before
+assuming any Live or qualification claim.
 
 That run has `unrecorded` provenance, current-build Inspection remained
 disabled, and the repaired Hefty/actionless-settling branches were not
@@ -32,7 +34,8 @@ persistent qualification, complete visible-information coverage or strategic
 quality proof. Exact source, loaded, candidate, Organic and persistent evidence
 remain separated in [current status](docs/current/STATUS.md).
 
-The current program milestone is **M1 Measurable External Agent Baseline**.
+The current program milestone is **M1 Measurable External Agent Baseline**,
+with a bounded C-R1 connector-completion track running alongside A/D.
 `Re-SpireAgent` is the primary value runtime; C provides the authoritative game
 interface, D independently evaluates C and A, and P remains a minimum local
 control/product track. See the [program plan](docs/current/PROGRAM_PLAN.md).
@@ -60,6 +63,7 @@ native continuation boundary.
 - [Operation retirement and native continuation ADR](docs/current/decisions/ADR-0003-operation-retirement-and-native-continuation-migration.md)
 - [Current functional roadmap](docs/current/ROADMAP.md)
 - [Current cross-component program plan](docs/current/PROGRAM_PLAN.md)
+- [Workflow C-R1 short-term completion contract](docs/current/audits/WORKFLOW_C_R1_SHORT_TERM_COMPLETION_CONTRACT_2026-07-29.md)
 - [Fresh-clone and local deployment guide](docs/current/LOCAL_SETUP.md)
 - [Internal development and evaluation](docs/current/DEVELOPMENT_AND_EVALUATION.md)
 - [Product direction](docs/current/PRODUCT.md)

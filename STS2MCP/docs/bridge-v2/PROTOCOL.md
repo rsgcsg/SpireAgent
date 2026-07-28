@@ -1,6 +1,20 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.72`
+Protocol preview: `2.0-preview.73`
+
+Preview.73 corrects two boundaries exposed by final-MVID Preview.72 Rest runs:
+
+- Rest Heal completion proves the game-native base-heal minimum and exact
+  option progression; it does not predict final HP after relic or other native
+  side effects;
+- when exact operation permission withholds every action, the current semantic
+  Surface retains `authority_handoff=bridge_owned`, publishes zero actions and
+  uses `readiness=blocked`. Re projects this as `non_actionable` without model
+  invocation or fallback. Unsupported source/owner states still require
+  `none_fail_closed`.
+
+This changes readiness/authority semantics without changing JSON shape. The Re
+normalized schema remains `29`.
 
 Preview.71 repairs one action-local Outcome Oracle without expanding
 authority. `treasure_room/open_treasure_chest` now completes when the exact
@@ -910,7 +924,7 @@ Current selection and reward completion evidence:
 | event dialogue advance | exact current dialogue index advances or the event room closes |
 | card bundle preview/confirm/cancel | exact selected bundle enters preview; confirm closes the selector and every selected exact card instance appears in the run deck; cancel returns to choices |
 | map node choice | map closes or the exact current map coordinate reaches the selected node |
-| rest Heal | exact source-calculated HP post-state and rest-option progression |
+| rest Heal | game-native base-heal minimum reached plus rest-option progression; additional native side effects may raise final HP further |
 | rest Smith | exact `deck_upgrade_selection` child opens; arbitrary overlays do not complete |
 | rest Proceed | map opens or the rest room leaves |
 | shop open/close | inventory `IsOpen` becomes true/false respectively |

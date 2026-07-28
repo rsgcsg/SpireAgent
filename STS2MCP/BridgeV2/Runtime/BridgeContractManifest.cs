@@ -153,7 +153,7 @@ internal static class BridgeContractManifest
         Entry(
             "rest_site",
             new[] { "choose_rest_option", "proceed_rest_site" },
-            "sts2-v0.109.0:RestSiteRoom.Options+NRestSiteButton+HealRestSiteOption exact HP witness+Smith exact upgrade-child witness+NProceedButton+NMapScreen",
+            "sts2-v0.109.1:RestSiteRoom.Options+NRestSiteButton+HealRestSiteOption native base-heal minimum plus option-progression witness+Smith exact upgrade-child witness+NProceedButton+NMapScreen",
             "rest_site_semantic_options",
             new[] { "visible_rest_options", "availability", "effects", "proceed_control" }),
         Entry(

@@ -179,11 +179,11 @@ internal sealed class RestSiteSurfaceProvider : IBridgeSurfaceProvider
         }
 
         int beforeHp = expectedPlayer.Creature.CurrentHp;
-        int expectedHealHp = beforeHp;
+        int expectedMinimumHp = beforeHp;
         if (expectedOption is HealRestSiteOption)
         {
             decimal healAmount = HealRestSiteOption.GetHealAmount(expectedPlayer);
-            expectedHealHp = (int)Math.Min(
+            expectedMinimumHp = (int)Math.Min(
                 (decimal)expectedPlayer.Creature.MaxHp,
                 (decimal)beforeHp + healAmount);
         }
@@ -196,13 +196,13 @@ internal sealed class RestSiteSurfaceProvider : IBridgeSurfaceProvider
                 expectedUiRoom,
                 expectedPlayer,
                 expectedOption,
-                expectedHealHp),
+                expectedMinimumHp),
             SmithRestSiteOption => () => NOverlayStack.Instance?.Peek() is NDeckUpgradeSelectScreen,
             _ => () => false
         };
         string completionEvidence = expectedOption switch
         {
-            HealRestSiteOption => "rest_heal_exact_hp_and_option_progress_observed",
+            HealRestSiteOption => "rest_heal_minimum_hp_and_option_progress_observed",
             SmithRestSiteOption => "rest_smith_exact_upgrade_child_opened",
             _ => "rest_option_completion_not_implemented"
         };
@@ -217,12 +217,14 @@ internal sealed class RestSiteSurfaceProvider : IBridgeSurfaceProvider
         NRestSiteRoom expectedUiRoom,
         Player expectedPlayer,
         RestSiteOption expectedOption,
-        int expectedHealHp)
+        int expectedMinimumHp)
     {
         RunState? runState = RunManager.Instance.DebugOnlyGetState();
         if (!ReferenceEquals(runState?.CurrentRoom, expectedRestRoom)
             || !ReferenceEquals(LocalContext.GetMe(runState), expectedPlayer)
-            || expectedPlayer.Creature.CurrentHp != expectedHealHp)
+            || !HasReachedExpectedMinimumHp(
+                expectedPlayer.Creature.CurrentHp,
+                expectedMinimumHp))
         {
             return false;
         }
@@ -231,6 +233,10 @@ internal sealed class RestSiteSurfaceProvider : IBridgeSurfaceProvider
                || !expectedRestRoom.Options.Any(option => ReferenceEquals(option, expectedOption))
                || expectedUiRoom.ProceedButton.IsEnabled;
     }
+
+    internal static bool HasReachedExpectedMinimumHp(
+        int currentHp,
+        int expectedMinimumHp) => currentHp >= expectedMinimumHp;
 
     private static BridgeActionStartResult StartProceed(
         RestSiteRoom expectedRestRoom,

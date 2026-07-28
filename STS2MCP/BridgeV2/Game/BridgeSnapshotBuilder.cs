@@ -499,23 +499,19 @@ internal static class BridgeSnapshotBuilder
         };
         return draft with
         {
-            Readiness = "unsupported",
+            Readiness = "blocked",
             Completeness = completeness,
             Actions = Array.Empty<BridgeActionDraft>(),
             Warnings = draft.Warnings
-                .Append("operation_scope_mismatch: source-resolved actions were not fully authorized for this exact environment.")
+                .Append("operation_scope_blocked: the semantic Surface remains current, but no source-resolved action is authorized for this exact runtime scope.")
                 .ToArray(),
-            AuthorityHandoff = new AuthorityHandoff(
-                "none_fail_closed",
-                null,
-                "Bridge v2 operation scopes did not authorize every published action for the active Surface."),
             Diagnostics = draft.Diagnostics
                 .Append(BridgeDiagnostics.Create(
-                    "bridge.authority.operation_scope_mismatch",
-                    "error",
+                    "bridge.authority.operation_scope_blocked",
+                    "warning",
                     "authority",
                     "actions_suppressed",
-                    "update_bridge"))
+                    "restart"))
                 .ToArray()
         };
     }

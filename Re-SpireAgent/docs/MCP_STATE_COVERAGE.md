@@ -8,7 +8,7 @@ matrix. This document records the Re-SpireAgent consumption boundary.
 
 ## Bridge v2 Current Client Contract
 
-Re strictly decodes `2.0-preview.72`. It accepts Bridge actions only when:
+Re strictly decodes `2.0-preview.73`. It accepts Bridge actions only when:
 
 - game, Modset, Bridge assembly SHA-256, MVID, and runtime identities match
   exact scoped capabilities and state;
@@ -35,6 +35,16 @@ The current exact identity determines the Gateway-emitted explicit operation
 scopes. The table describes supported projections and historical evidence
 diversity; it does not transfer permission between game builds or Gateway
 artifacts.
+
+Re keeps three actionless boundaries distinct:
+
+- `blocked` means the semantic Surface and current input owner are known, but
+  the exact runtime scope authorizes none of its mutation operations. Re keeps
+  the visible Surface, projects `non_actionable`, and does not call the model.
+- `settling + no_action` means a source-bound native lifecycle is still
+  progressing and no input owner currently publishes a mutation.
+- `unsupported + none_fail_closed` means source, owner, or semantic binding is
+  not established. It must not be relabeled as a known blocked Surface.
 
 | Bridge contract | Re projection | Current v0.109 status |
 |---|---|---|

@@ -1185,6 +1185,81 @@ public sealed class BridgeContractTests
     }
 
     [Fact]
+    public void AuthorityProjectionKeepsSemanticOwnerWhenEveryMutationIsBlocked()
+    {
+        var compatibility = new CompatibilityAssessment(
+            "provisional_trial_scoped",
+            new[] { "0.109.1" },
+            new[] { "fixture-build" },
+            ActionExecutionAllowed: true,
+            StateObservationAllowed: true,
+            InspectionAllowed: false,
+            ActionExecutionSurfaceKinds: Array.Empty<string>(),
+            ActionCanarySurfaceKinds: new[] { "rest_site" },
+            InspectionAllowedKinds: Array.Empty<string>(),
+            InspectionCanaryKinds: Array.Empty<string>(),
+            ObservationOnlySurfaceKinds: new[] { "rest_site" },
+            ObservationCandidateBuildFingerprints: Array.Empty<string>(),
+            Detail: "test")
+        {
+            ActionPermissionScopes = Array.Empty<ActionPermissionScope>()
+        };
+        var draft = new BridgeObservationDraft(
+            "rest-sig",
+            "ready",
+            new UnknownBridgeContext("rest", "test", "test"),
+            new RestSiteSurface("rest_site", "rest-screen", Array.Empty<VisibleRestOption>(), CanProceed: true),
+            new StateCompleteness(
+                "complete",
+                "source_complete",
+                Array.Empty<string>(),
+                Array.Empty<string>()),
+            new GameBuildIdentity("v0.109.1", "commit", "branch", 1, compatibility),
+            Array.Empty<string>(),
+            new[]
+            {
+                new BridgeActionDraft(
+                    "proceed",
+                    "proceed_rest_site",
+                    "navigation",
+                    "Proceed",
+                    "fixture",
+                    () => BridgeActionStartResult.Started())
+            });
+
+        BridgeObservationDraft projected = BridgeSnapshotBuilder.ApplyCurrentAuthority(draft);
+
+        Assert.Equal("blocked", projected.Readiness);
+        Assert.Empty(projected.Actions);
+        Assert.Equal("rest_site", projected.Surface.Kind);
+        Assert.Equal("bridge_owned", projected.AuthorityHandoff.Status);
+        Assert.Equal("rest_site", projected.AuthorityHandoff.SurfaceKind);
+        Assert.Equal(
+            "suppressed_by_explicit_operation_scope",
+            projected.Completeness.LegalActions);
+        Assert.Contains(
+            projected.Diagnostics,
+            diagnostic => diagnostic.Code == "bridge.authority.operation_scope_blocked"
+                          && diagnostic.Effect == "actions_suppressed");
+    }
+
+    [Theory]
+    [InlineData(59, 59, true)]
+    [InlineData(64, 59, true)]
+    [InlineData(58, 59, false)]
+    public void RestHealOutcomeAcceptsNativeEffectsAboveTheBaseMinimum(
+        int currentHp,
+        int expectedMinimumHp,
+        bool expected)
+    {
+        Assert.Equal(
+            expected,
+            RestSiteSurfaceProvider.HasReachedExpectedMinimumHp(
+                currentHp,
+                expectedMinimumHp));
+    }
+
+    [Fact]
     public void RuntimeSourceBindingIsDistinctFromManifestDeclarationAndRemainsNonAuthorizing()
     {
         var compatibility = new CompatibilityAssessment(
@@ -1212,7 +1287,7 @@ public sealed class BridgeContractTests
             Array.Empty<BridgeActionDraft>())
         {
             RuntimeSemanticContractId =
-                "bridge.contract.deck_enchant_selection.kifuda_relic_pickup.2.0-preview.72",
+                "bridge.contract.deck_enchant_selection.kifuda_relic_pickup.2.0-preview.73",
             RuntimeSourceBindingId = "Kifuda.AfterObtained+Adroit:3"
         };
 

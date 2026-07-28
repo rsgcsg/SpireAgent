@@ -37,6 +37,12 @@ not inherit authority from the archived root SpireAgent runtime.
 
 Current cross-component audits:
 
+- [Workflow C-R1 short-term completion contract](audits/WORKFLOW_C_R1_SHORT_TERM_COMPLETION_CONTRACT_2026-07-29.md):
+  accepted bounded endpoint, attachment critique, single target architecture,
+  Core/conditional/optional split, evidence gates and implementation order.
+- [Preview.73 Rest Outcome and authority boundary](audits/PREVIEW_73_REST_OUTCOME_AND_AUTHORITY_BOUNDARY_2026-07-29.md):
+  exact three-run failure attribution, minimum Rest Outcome, semantic-owner
+  versus mutation-permission repair, tests, built identity and Live non-claims.
 - [M1 baseline identity and report closeout](audits/M1_BASELINE_IDENTITY_AND_REPORT_CLOSEOUT_2026-07-29.md):
   latest 108-decision evidence, the missing Re source-identity root cause,
   runtime-source digest design, read-only joined report, and explicit

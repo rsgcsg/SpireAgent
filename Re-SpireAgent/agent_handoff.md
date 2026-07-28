@@ -5,17 +5,15 @@
 > `../STS2MCP/docs/bridge-v2/CURRENT_STATUS.md`. Older identity and mode claims
 > below are preserved as dated evidence and must not override those documents.
 
-Status update 2026-07-29 (current pointer only): source contract remains
-`2.0-preview.72`; Re normalized schema is `29`. A same-source Release rebuild
-is built/installed/cold-loaded as SHA `debc229e...deed`, MVID
-`6d9d4adf...3d8`, runtime `b2332a06...cba`; rollback is
-`../STS2MCP/.local/deployments/2026-07-28T14-31-37-745Z`. Run
-`run-20260728141035-uhrp19` completed 107 settled actions and the expected
-one-game boundary without stale/unsupported/provider/observation/unsettled
-outcomes. `agent:baseline-report` now joins redacted run metrics and exact
-environment identity; public future runs record Git revision plus a runtime-
-source digest. This historical run predates that field and is therefore
-identity-incomplete, not a frozen baseline.
+Status update 2026-07-29 (current pointer only): source contract is
+`2.0-preview.73`; Re normalized schema is `29`. Preview.73 repairs the
+Preview.72 Stone Humidifier Rest Outcome overclaim and preserves a current
+semantic owner when mutation operations are blocked. Source tests and Release
+build pass; Preview.73 is built and installed as SHA `f6b2d268...151b18`, MVID
+`f67e272a...4c8a`, and cold-loaded as runtime `37c04bb7...`. Strict Re
+read-only inspection passed; no Preview.73 mutation canary, Organic evidence or
+persistent qualification is claimed. See canonical status and
+the C-R1/Preview.73 audits rather than this chronology.
 
 Earlier status update 2026-07-28 (current pointer only): source contract is
 `2.0-preview.72`; Re normalized schema is `29`. Preview.72 is built, installed

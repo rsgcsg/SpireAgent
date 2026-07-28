@@ -6,31 +6,31 @@ retain only their recorded environment evidence.
 ## Source And Artifact Truth
 
 ```text
-Gateway/Re source     2.0-preview.72
+Gateway/Re source     2.0-preview.73
 Re normalized schema 29
 game release          v0.109.1|c8c577f6
 release-declared hash -1041364841 (diagnostic only)
 actual loaded hash    -820620422
 game assembly SHA     2cb39e2eee651743829abcc0df4dd9cd7e65f46287c7ca264481115c9602382f
 game assembly MVID    208f08b8-d5f5-47f8-9e96-d3a4299ee709
-built SHA             debc229e7affb514ba25e3f9485cfef8235c6213623ef490934d22072d2ddeed
-installed SHA         debc229e7affb514ba25e3f9485cfef8235c6213623ef490934d22072d2ddeed
-loaded SHA            debc229e7affb514ba25e3f9485cfef8235c6213623ef490934d22072d2ddeed
-built MVID            6d9d4adf-6c34-4401-950f-69980dc5d3d8
-installed MVID        6d9d4adf-6c34-4401-950f-69980dc5d3d8
-loaded MVID           6d9d4adf-6c34-4401-950f-69980dc5d3d8
-runtime epoch         b2332a06f756495a84936520b79cecba
-rollback              STS2MCP/.local/deployments/2026-07-28T14-31-37-745Z
+built SHA             f6b2d2687add4719e7d04f6b3beb8b5b386f43208d7af1cc0b12e2d89a151b18
+installed SHA         f6b2d2687add4719e7d04f6b3beb8b5b386f43208d7af1cc0b12e2d89a151b18
+loaded SHA            f6b2d2687add4719e7d04f6b3beb8b5b386f43208d7af1cc0b12e2d89a151b18
+built MVID            f67e272a-ca3f-4eac-8d41-6e287b144c8a
+installed MVID        f67e272a-ca3f-4eac-8d41-6e287b144c8a
+loaded MVID           f67e272a-ca3f-4eac-8d41-6e287b144c8a
+runtime epoch         37c04bb71df3451eb23545b6925b3a37
+rollback              STS2MCP/.local/deployments/2026-07-28T15-34-25-593Z
 ```
 
 The installation has one canonical `STS2_MCP` manifest and no duplicate
-Gateway manifest. Preview.72 source, build, installed, and loaded artifact
-agree. A same-source Release rebuild produced a new binary identity and was
-cold-loaded on 2026-07-29. The loaded environment is exact bridge-only
-`migration_exploration`: normal observation and provisional trial are ready;
-Inspection and pre-existing mutation authority are disabled. Earlier runtime
-identity and grants do not transfer. Loaded identity is not action, Organic, or persistent
-qualification evidence.
+Gateway manifest. Preview.73 source, build, installation and loaded identity
+agree exactly. A strict Re read-only inspect decoded the main-menu observation.
+It did not execute a mutation; the Gateway admitted only the current
+`main_menu/open_singleplayer` operation as a runtime-bound `session_canary`.
+Inspection remains disabled and no persistent authority is applicable. Loaded
+identity and read success are not action, Organic, or persistent qualification
+evidence.
 
 ## Current Boundary
 
@@ -156,6 +156,25 @@ report correctly finds its Gateway/game/Modset identity exact but its Re source
 identity incomplete because the run predates source-digest recording. No
 Gateway permission or qualification changed.
 
+Three later exact final-MVID Preview.72 runs supplied the current repair
+evidence:
+
+- `run-20260728143604-oklaik` selected Rest and reached native HP `64/85`, but
+  the old action-local Oracle required exact HP `59/80`. Stone Humidifier's
+  legitimate native max/current-HP side effect caused a false timeout;
+- `run-20260728144125-xvgvhc` and `run-20260728144341-2c4ij1` observed a
+  coherent Rest Surface after the unknown outcome quarantined
+  `choose_rest_option`. The old authority projection retained the semantic
+  Surface but changed its owner to `none_fail_closed`, so strict Re rejected
+  the contradictory contract before mutation.
+
+Preview.73 now proves the Rest base-heal minimum plus option progression and
+retains `bridge_owned + blocked` for a current semantic Surface whose mutation
+operations are withheld. It publishes zero actions and Re projects it as
+`non_actionable`. Unsupported source ownership still fails closed. These runs
+are `unrecorded` defect/coverage evidence, not Organic or persistent
+qualification.
+
 ## Remaining Boundaries
 
 Known unsupported or evidence-limited scope includes Tutor's unreviewed owner
@@ -168,10 +187,9 @@ these into support.
 
 ## Next Engineering Step
 
-Remain in the Gate 2 C readiness track while the repository enters M1
-Measurable External Agent Baseline. Freeze the exact A baseline, build the
-minimum representative/held-out D contract, and keep naturally reached Hefty
-select/skip or generated-combat settling transitions as targeted canaries. Do
-not manufacture them or retry an unknown mutation. No evidence here authorizes
-persistent promotion, generic cross-version/Mod compatibility, or the explicit
-unsupported scopes above.
+Complete C-R1.0 by executing bounded Rest minimum-Outcome and
+permission-blocked-owner canaries during ordinary play. After those pass, begin
+C-R1.1 core Inspection and typed availability work while A/D M1 continues in
+parallel. Do not manufacture rare states or retry an unknown mutation. No
+evidence here authorizes persistent promotion, generic cross-version/Mod
+compatibility, or the explicit unsupported scopes above.

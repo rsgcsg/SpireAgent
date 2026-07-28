@@ -5,8 +5,8 @@ Re is the strict Agent consumer in the repository's accepted
 It may derive an evidence-tested model view, but it never becomes a second
 game-state, legality, permission, Commit, or completion authority.
 
-> Compatibility status, 2026-07-28: Re and C# share source contract
-> `2.0-preview.72`; Re normalized schema is `29`. Gate 1 is closed as a
+> Compatibility status, 2026-07-29: Re and C# share source contract
+> `2.0-preview.73`; Re normalized schema is `29`. Gate 1 is closed as a
 > bounded ordinary-single-player v2 baseline, not full game coverage.
 > Preview.69 adds typed new/resumed-run mount settling, bounded semantic-cycle recovery,
 > and strict consumption of encounter-scoped provisional grants. Diagnostic
@@ -18,11 +18,14 @@ game-state, legality, permission, Commit, or completion authority.
 > its exact loaded identity, while another run exposed an empty-treasure-chest
 > completion timeout. Preview.71 fixed that Gateway-owned Oracle and later
 > runs exposed exact Hefty Tablet source/result debt plus an actionless-
-> settling consumer bug. Preview.72 fixes both and is built/installed/loaded;
+> settling consumer bug. Preview.72 fixes both and was built/installed/loaded;
 > current-runtime run `run-20260728132337-ce2195` completed a 146-decision
 > one-game boundary with 144 settled actions and one safe stale rejection. Its
 > `unrecorded` provenance, disabled Inspection, and unexercised repaired
-> branches are not Organic or persistent qualification.
+> branches are not Organic or persistent qualification. Preview.73 repairs a
+> later Rest minimum-Outcome defect and preserves semantic ownership when every
+> mutation operation is blocked. It is source/test/build/install/load complete;
+> strict read-only inspection passed, but no Preview.73 mutation has executed.
 
 > Product-boundary warning: direct Re-to-Gateway REST and `.env.local` provider
 > keys are developer workflows, not the target consumer architecture. The
@@ -42,14 +45,13 @@ waits for the Bridge command lifecycle, and records the complete evidence.
 
 RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, shadow/live modes, policy promotion, or the old project's phase machinery. Its job is to make one decision path correct and auditable.
 
-Re's current strict client contract is Bridge `2.0-preview.72`. The latest
-verified loaded Preview.71 `v0.109.1|c8c577f6|-820620422` identity used exact
-session-scoped operation grants and no persistent qualification. Re strictly
-decodes current identities and grants, but does not interpret fallback witness
-semantics or promote any candidate. Preview.71 SHA `fd0f7c56...` / MVID
-`0acccd3d...` completed exact-runtime bounded journeys but its grants do not
-transfer. Preview.72 SHA `afb0261f...` / MVID `3e9ad83a...` / runtime
-`14238a9e...` has exact loaded-identity evidence but no action evidence yet.
+Re's current strict client contract is Bridge `2.0-preview.73`. Re strictly
+decodes current identities and grants, but does not interpret fallback Witness
+semantics or promote any candidate. The last verified runtime loaded Preview.72
+SHA `debc229e...` / MVID `6d9d4adf...` / runtime `b2332a06...`; its grants do
+not transfer to Preview.73 SHA `f6b2d268...` / MVID `f67e272a...` / runtime
+`37c04bb7...`. Source, built, installed and loaded identity agree; a strict
+read-only main-menu inspection passed without executing a mutation.
 Preview.66's narrow persistent
 `main_menu/continue_run` qualification belongs only to its historical exact
 Gateway identity.

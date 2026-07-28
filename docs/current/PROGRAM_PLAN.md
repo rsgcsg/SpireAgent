@@ -61,9 +61,13 @@ player-visible facts, current input owner, opaque action publication,
 execute-time validation, native Commit, action-local outcome, Inspection and
 v1 retirement.
 
-C currently prioritizes defects that block the M1 baseline or an approved A/D
-experiment. Inventory, operation, contract, Profile and qualification counts
-are migration diagnostics, not program success metrics.
+C currently executes the bounded
+[C-R1 completion contract](audits/WORKFLOW_C_R1_SHORT_TERM_COMPLETION_CONTRACT_2026-07-29.md)
+alongside A/D M1. C-R1 closes ordinary vanilla single-player decision truth,
+core Inspection, typed support scope, update recovery and repeated journey
+evidence, then returns C to maintenance. It is not a serial prerequisite for
+freezing or evaluating A. Inventory, operation, contract, Profile and
+qualification counts are migration diagnostics, not program success metrics.
 
 ### D: Independent Development And Evaluation Track
 
@@ -128,9 +132,9 @@ persistent qualification.
    minimum versioned representative/held-out D split.
 3. Report run completion, stop reason, invalid/stale/unknown outcomes, provider
    failures, latency, cost, Prompt bytes and decision-family coverage.
-4. Let C close only concrete decision-truth, Inspection, owner, settling,
-   visible-fact or action-local outcome defects exposed by that baseline or an
-   approved candidate experiment.
+4. Let C complete its bounded C-R1 Core slices while continuing to prioritize
+   concrete decision-truth, Inspection, owner, settling, visible-fact or
+   action-local Outcome defects exposed by A evidence.
 5. Keep P at the existing minimum controller/startup/recovery boundary.
 6. Evaluate one low-risk, scope-specific A candidate through
    offline/replay -> paired -> counterexample -> held-out -> shadow. Preserve

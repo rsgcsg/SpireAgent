@@ -334,7 +334,7 @@ const DECK_ENCHANT_STATE = {
     status: "resolved_runtime_contract",
     instance_id: "contract-instance-deck-enchant-1",
     surface_kind: "deck_enchant_selection",
-    semantic_contract_id: "bridge.contract.deck_enchant_selection.self_help_book_event.2.0-preview.72",
+    semantic_contract_id: "bridge.contract.deck_enchant_selection.self_help_book_event.2.0-preview.73",
     declared_binding: "fixture exact source binding",
     operations: [{
       operation: "toggle_card",
@@ -3805,6 +3805,45 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
     expect(envelope.currentState.stability).toBe("invalid");
     expect(envelope.currentState.actionAuthority).toBe("none");
+  });
+
+  it("keeps a permission-blocked rest surface observable without mutation authority", () => {
+    const state = {
+      ...structuredClone(REST_SITE_STATE),
+      readiness: "blocked",
+      legal_actions: [],
+      completeness: {
+        ...REST_SITE_STATE.completeness,
+        legal_actions: "suppressed_by_explicit_operation_scope"
+      },
+      diagnostics: [{
+        code: "bridge.authority.operation_scope_blocked",
+        severity: "warning",
+        category: "authority",
+        effect: "actions_suppressed",
+        recoverability: "restart"
+      }]
+    };
+
+    const envelope = normalizeCurrentState(
+      wrapBridgeV2State({ state, capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    );
+
+    expect(envelope.currentState).toMatchObject({
+      stability: "non_actionable",
+      actionAuthority: "none",
+      context: { kind: "rest" },
+      surface: {
+        kind: "rest_site",
+        options: [
+          { entityId: "rest-option-heal", enabled: true },
+          { entityId: "rest-option-smith", enabled: true }
+        ]
+      }
+    });
+    expect(envelope.diagnostics.status).not.toBe("invalid");
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toEqual([]);
   });
 
   it("accepts rest proceed bound to the visible surface screen and rejects an unknown screen", () => {

@@ -1,7 +1,7 @@
 # Bridge v2 Integration
 
-> Current source-truth status, 2026-07-28: Re and C# share the
-> `2.0-preview.72` source consumer contract; Re normalized schema is `29`.
+> Current source-truth status, 2026-07-29: Re and C# share the
+> `2.0-preview.73` source consumer contract; Re normalized schema is `29`.
 > Gate 1 is closed as a bounded ordinary-single-player v2 connector baseline.
 > Preview.61 supplied the final Neow's Fury runtime seal; Preview.62 adds
 > policy provenance and registry adaptation without inheriting qualification.
@@ -9,13 +9,17 @@
 > game-to-menu journey. Preview.70 later completed a 124-decision boundary and
 > exposed the Silver Crucible empty-chest Oracle defect. Preview.71 later
 > loaded and exposed exact Hefty Tablet source/result debt plus an actionless-
-> settling consumer bug. Preview.72 repairs both and is now exact-identity
+> settling consumer bug. Preview.72 repairs both and was exact-identity
 > loaded; old runtime grants cannot authorize it. Current-runtime run
 > `run-20260728132337-ce2195` completed a 146-decision one-game boundary with
 > 144 settled actions and one safe stale rejection. It is `unrecorded`, ran
 > with Inspection disabled, and did not exercise either repaired branch. Six
 > contracts are explicit high-precision rows; 81 remain conservative manifest-derived
 > identity/test-confirm fallbacks rather than semantic qualification.
+> Preview.73 then repairs a Rest minimum-Outcome overclaim and the incorrect
+> loss of semantic ownership after operation quarantine. It is tested, built,
+> installed and cold-loaded; strict read-only inspection passed without a
+> mutation canary.
 
 ## Connector Boundary
 
@@ -35,7 +39,7 @@ consumption.
 
 ## Current Scope
 
-Re-SpireAgent implements the strict `2.0-preview.72` consumer contract. When a
+Re-SpireAgent implements the strict `2.0-preview.73` consumer contract. When a
 matching Bridge exists, authority is read from capabilities rather than
 inferred from implementation or historical evidence.
 
@@ -266,6 +270,13 @@ missing field `shared_visible_state`; Re does not generalize the exception to
 combat or any action-owning state. No other context may compose with
 `no_action`.
 
+A semantic Surface with `readiness=blocked` is different from `no_action` and
+from `unsupported`. It remains the current `bridge_owned` input Surface, keeps
+its player-visible facts, publishes zero legal actions and normalizes to
+`non_actionable + actionAuthority=none`. Re does not invoke the model or infer
+permission from those facts. Unknown source/owner states still require
+`unsupported + none_fail_closed`.
+
 ## State Identity
 
 No single kind represents the full current state. Runtime output and prompts
@@ -470,7 +481,8 @@ serialization never grants common execution semantics.
 Ancient dialogue projects only the revealed prefix ending at the exact current
 line; game-created future line nodes are deliberately excluded. Rest owns only
 exact option controls and Proceed. On v0.109, ordinary single-player Heal uses
-an exact HP witness, Smith must open the exact upgrade child, and unknown
+the native base-heal minimum plus option progression, Smith must open the exact
+upgrade child, and unknown
 enabled options suppress the Surface. Smith's deck selector remains a separate
 purpose-specific Surface. Map projects visible topology and exact current choices;
 asynchronous completion requires map closure or the exact selected current
@@ -533,11 +545,15 @@ at most one pre-mutation retry. These changes do not alter Gateway completion or
 unknown-no-retry. Preview.70 later loaded as SHA `28c32f40...` / MVID
 `6f169dfe...` and supplied three more runs. Preview.71 later loaded as SHA
 `fd0f7c56...` / MVID `0acccd3d...` and supplied the current defect evidence.
-Preview.72 is now built/installed/loaded as SHA `afb0261f...` / MVID
-`3e9ad83a...` / runtime `14238a9e...`. Current-runtime run
+Preview.72 was later rebuilt/installed/loaded as SHA `debc229e...` / MVID
+`6d9d4adf...` / runtime `b2332a06...`. Current-runtime run
 `run-20260728132337-ce2195` proves broad bounded mutation and one-game
 supervision on that identity, but not repaired-branch completion, Organic
 evidence, Inspection readiness or persistent qualification.
+Preview.73 is built and installed as SHA `f6b2d268...` / MVID `f67e272a...`.
+It is cold-loaded as the same identity with runtime `37c04bb7...`; strict Re
+read-only inspection passed, but no Preview.73 mutation or repaired-branch
+canary has executed.
 
 Current v0.109 evidence includes merchant removal, event/rest upgrade, ordinary
 rest, ordinary combat, Brain Leech event card acquisition,
