@@ -1,6 +1,6 @@
 import type { CardSnapshot, PlayerSnapshot, RelicSnapshot } from "./entities.js";
 
-export const NORMALIZED_STATE_SCHEMA_VERSION = 30 as const;
+export const NORMALIZED_STATE_SCHEMA_VERSION = 31 as const;
 
 export type StateStability =
   | "actionable"

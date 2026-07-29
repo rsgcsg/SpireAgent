@@ -40,6 +40,10 @@ not inherit authority from the archived root SpireAgent runtime.
 
 Current cross-component audits:
 
+- [Preview.76 New Leaf and unsupported-authority closeout](audits/WORKFLOW_C_PREVIEW76_NEW_LEAF_AND_UNSUPPORTED_AUTHORITY_CLOSEOUT_2026-07-29.md):
+  latest three-run attribution, exact New Leaf versus Whispering source audit,
+  source-discriminated transform contract, centralized unsupported authority
+  invariant, tests/build evidence and exact-runtime non-claims.
 - [Preview.75 runtime and successor-stability closeout](audits/WORKFLOW_C_PREVIEW75_RUNTIME_AND_SUCCESSOR_STABILITY_CLOSEOUT_2026-07-29.md):
   two exact-runtime completed runs, Inspection evidence, ordinary relic plus
   Courier replacement evidence, formal stale attribution, Re successor

@@ -421,6 +421,11 @@ export interface DeckTransformSelectionSurface {
   stage: "selecting" | "preview";
   bridgeStateId: string;
   screenEntityId: string;
+  source: {
+    kind: "whispering_hollow_event" | "new_leaf_relic_pickup";
+    definitionId: string;
+    bindingEvidence: string;
+  };
   prompt: string;
   minimumSelections: number;
   maximumSelections: number;

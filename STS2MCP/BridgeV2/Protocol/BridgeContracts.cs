@@ -7,7 +7,7 @@ namespace STS2_MCP.BridgeV2.Protocol;
 
 public static class BridgeV2Contract
 {
-    public const string ProtocolVersion = "2.0-preview.75";
+    public const string ProtocolVersion = "2.0-preview.76";
     public const string ObservationPolicyId = "player_visible_ui_v1";
 }
 
@@ -1050,6 +1050,7 @@ public sealed record DeckTransformSelectionSurface(
     string Kind,
     string Stage,
     string ScreenEntityId,
+    DeckTransformSource Source,
     string Prompt,
     int MinSelect,
     int MaxSelect,
@@ -1061,6 +1062,11 @@ public sealed record DeckTransformSelectionSurface(
     string PreviewKind,
     bool ReplacementKnown,
     IReadOnlyList<VisibleCard> Cards) : IBridgeSurface;
+
+public sealed record DeckTransformSource(
+    string Kind,
+    string DefinitionId,
+    string BindingEvidence);
 
 /// <summary>
 /// Native Wood Carvings Bird/Torus selector. The replacement is deterministic

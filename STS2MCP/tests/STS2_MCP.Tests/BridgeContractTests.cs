@@ -1230,6 +1230,49 @@ public sealed class BridgeContractTests
     }
 
     [Fact]
+    public void AuthorityProjectionForcesEveryUnsupportedProviderDraftFailClosed()
+    {
+        var game = new GameBuildIdentity(null, null, null, null, new CompatibilityAssessment(
+            "qualified_scoped",
+            Array.Empty<string>(),
+            Array.Empty<string>(),
+            ActionExecutionAllowed: true,
+            StateObservationAllowed: true,
+            InspectionAllowed: false,
+            ActionExecutionSurfaceKinds: new[] { "deck_transform_selection" },
+            ActionCanarySurfaceKinds: Array.Empty<string>(),
+            InspectionAllowedKinds: Array.Empty<string>(),
+            InspectionCanaryKinds: Array.Empty<string>(),
+            ObservationOnlySurfaceKinds: Array.Empty<string>(),
+            ObservationCandidateBuildFingerprints: Array.Empty<string>(),
+            Detail: "test"));
+        var draft = new BridgeObservationDraft(
+            "unsupported-sig",
+            "degraded",
+            new UnknownBridgeContext("unknown", "fixture", "fixture"),
+            new UnsupportedSurface("unsupported", "FixtureScreen", "fixture gap"),
+            new StateCompleteness("degraded", "empty_fail_closed", Array.Empty<string>(), new[] { "source" }),
+            game,
+            Array.Empty<string>(),
+            new[]
+            {
+                new BridgeActionDraft(
+                    "should-never-publish",
+                    "confirm_deck_transform",
+                    "commit",
+                    "invalid fixture action",
+                    "fixture",
+                    () => BridgeActionStartResult.Started())
+            });
+
+        BridgeObservationDraft projected = BridgeSnapshotBuilder.ApplyCurrentAuthority(draft);
+
+        Assert.Empty(projected.Actions);
+        Assert.Equal("none_fail_closed", projected.AuthorityHandoff.Status);
+        Assert.Null(projected.AuthorityHandoff.SurfaceKind);
+    }
+
+    [Fact]
     public void DeckUpgradeContractKeepsVisiblePreviewSeparateFromCurrentDeckCard()
     {
         var options = new JsonSerializerOptions
@@ -1267,6 +1310,12 @@ public sealed class BridgeContractTests
     [Fact]
     public void DeckTransformContractDoesNotPresentRandomPreviewAsKnownOutcome()
     {
+        BridgeContractManifestEntry transform = Assert.Single(
+            BridgeContractManifest.Entries,
+            entry => entry.Kind == "deck_transform_selection");
+        Assert.Contains("WhisperingHollow.Hug", transform.SourceBindingId);
+        Assert.Contains("NewLeaf.AfterObtained+task-local-binding", transform.SourceBindingId);
+
         var options = new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
@@ -1278,6 +1327,10 @@ public sealed class BridgeContractTests
             "deck_transform_selection",
             "preview",
             "screen-a",
+            new DeckTransformSource(
+                "whispering_hollow_event",
+                "WHISPERING_HOLLOW",
+                "WhisperingHollow.Hug+CardSelectCmd.FromDeckForTransformation"),
             "Choose a card to Transform.",
             1,
             1,
@@ -1297,6 +1350,35 @@ public sealed class BridgeContractTests
         Assert.Contains("\"replacement_known\":false", json);
         Assert.DoesNotContain("replacement_card", json, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("rng", json, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void DeckTransformWitnessRequiresExactReplacementAndSettledSource()
+    {
+        var selected = new object();
+        var retained = new object();
+        var replacement = new object();
+        object[] baseline = { selected, retained };
+        object[] transformed = { replacement, retained };
+
+        Assert.True(DeckTransformCompletionWitness.IsSatisfied(
+            sourceSettled: true,
+            selectorClosed: true,
+            baseline,
+            transformed,
+            new[] { selected }));
+        Assert.False(DeckTransformCompletionWitness.IsSatisfied(
+            sourceSettled: false,
+            selectorClosed: true,
+            baseline,
+            transformed,
+            new[] { selected }));
+        Assert.False(DeckTransformCompletionWitness.IsSatisfied(
+            sourceSettled: true,
+            selectorClosed: true,
+            baseline,
+            new[] { selected, retained },
+            new[] { selected }));
     }
 
     [Fact]

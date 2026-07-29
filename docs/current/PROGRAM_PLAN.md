@@ -115,13 +115,12 @@ persistent qualification, strategic quality or product readiness.
 
 ### Current Evidence
 
-Preview.75 has exact build/install/load identity. Runs
-`run-20260729094605-ycbsur` and `run-20260729112408-jltj8f` completed 175- and
-282-decision boundaries with 429 settled actions and 25 safe pre-commit stale
-refusals. They had no unsupported, invalid, observation/provider failure,
-unsettled or unknown mutation outcome. They exercise state-bound Inspection
-and one exact ordinary relic purchase, but not Kifuda. Provenance is
-`unrecorded`; this is runtime coverage, not Organic or persistent qualification.
+Preview.76 is source/test/build complete with Re schema 31. Its loaded
+Preview.75 predecessor supplied two latest completed boundaries with 77/77 and
+92/92 attempted mutations settled. A third run exposed the exact New Leaf
+transform-caller gap now repaired in source. Kifuda remains absent. Provenance
+is `unrecorded`; this is runtime defect/coverage evidence, not Preview.76 load,
+Organic evidence or persistent qualification.
 
 ### Delivery Order
 

@@ -62,7 +62,7 @@ function shopState(
   gold: number
 ): NormalizedCurrentState {
   return {
-    normalizedSchemaVersion: 30,
+    normalizedSchemaVersion: 31,
     sourceStateType: `bridge_v2:shop:${kind}`,
     run: { characterId: "IRONCLAD", floor: 2 },
     player: {

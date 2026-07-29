@@ -10,11 +10,11 @@
 > loaded artifact. Current loaded identity and Gate status are owned by
 > [Bridge v2 Current Status](CURRENT_STATUS.md).
 
-Current source contract is Preview.75. It is tested, built, installed and
-cold-loaded. Two exact-runtime runs completed one-game boundaries and exercised
-state-bound `run_deck`, `combat_piles` and `shop_catalog` Inspection plus broad
-mutation. Their `unrecorded` provenance is coverage evidence, not Organic or
-persistent qualification. Preview.61
+Current source contract is Preview.76. It is tested and built; installed and
+loaded identities are owned by `CURRENT_STATUS.md`. Two exact Preview.75 runs
+completed one-game boundaries, while a third exposed the New Leaf caller gap
+repaired in Preview.76. Their `unrecorded` provenance is coverage evidence, not
+Preview.76 runtime evidence, Organic evidence or persistent qualification. Preview.61
 supplied the bounded Neow's
 Fury Organic lifecycle that sealed Gate 1. Preview.62 added reviewed
 source/compatibility registries and a non-authorizing exact-assembly audit;
@@ -103,7 +103,7 @@ The `1833084275` environment inherits no permission from the current loaded
 | `character_select` | canary | select character, Ascension down/up, and Embark into a real Silent A10 run | first-run tutorial confirmation remains unsupported; root/menu contracts are tracked separately |
 | `main_menu` | canary; Continue and fresh Single Player entry exercised on exact MVIDs | exact visible root choices, saved-run summary, unsupported-choice boundary, Preview.69 final-MVID Bridge-confirmed Continue plus correct return boundary, and prior-MVID fresh-menu entry | Preview.69 provenance is unrecorded; profile/patch hover detail incomplete; action evidence is canary coverage, not qualification |
 | `singleplayer_menu` | canary; ordinary Standard lifecycle has Preview.69 runtime coverage | exact Standard/Daily/Custom/Back bindings and submenu-stack witnesses; old-MVID `run-20260728033638-xrvcre` crossed Standard into character select and a real run | provenance is unrecorded; Daily/Custom/Back and final MVID remain without this lifecycle evidence |
-| `deck_transform_selection` | canary; selection/confirm/upgrade-view exercised | exact Whispering Hollow source, selected instances, upgrade presentation, random-uncommitted preview, exact-instance/deck-count witness | other callers, explicit preview button, cancel paths, multi-select, Mods, and future builds remain unqualified |
+| `deck_transform_selection` | source-discriminated canary; Whispering selection/confirm/upgrade-view exercised | shared native transform mechanics; exact Whispering event or task-local New Leaf source; exact selected instances; random-uncommitted preview; source settlement and exact-instance/deck-count witness | New Leaf Preview.76 mutation, explicit preview button, cancel paths, multi-select, other callers, Mods, and future builds remain unqualified |
 | `wood_carvings_replacement_selection` | canary; Bird full lifecycle exercised on preview.56 | exact `WoodCarvings.Bird` source task, formatted known `PECK` semantics, select -> preview -> cancel -> reselect -> confirm, exact-original absent, PECK 0 -> 1, deck 12 -> 12, event Proceed -> map | Torus Organic lifecycle, repeated Bird evidence, Mods, and future builds remain unqualified; all other generic deck selectors fail closed |
 | `deck_enchant_selection` | exact-source candidate for Self-Help Book and Kifuda; only historical Self-Help Book lifecycle was exercised | exact target enchantment ID/amount, exact selected instances, overlay stage, semantic exact-card enchantment witness, independent run-deck post-state, and runtime source binding; unknown sources suppress actions | Preview.68 source/contracts are not loaded or Organic evidence; explicit preview button, cancellation variants, Kifuda multi-select/skip, parent settlement, Mods, and future builds remain evidence debt |
 | `generated_card_choice` | source-scoped canary; Lead Paperweight, Colorless Potion, and Attack Potion selections exercised; Preview.71 observed Hefty Tablet twice only as a fail-closed gap; Hefty, Splash, Quasar, and Knowledge Demon implementations remain current-artifact action-evidence pending | exact `RelicCmd.Obtain` for sealed Lead Paperweight/Hefty Tablet, native potion/Splash/Quasar tasks, and Knowledge Demon `ChooseCurse`; separate plain run-deck, Rare-plus-Injury run-deck, free combat-hand, unchanged-cost combat-hand, and immediate-effect witnesses | Hefty select/skip and each other unexercised branch need bounded evidence; skip/full-hand variants remain pending; all unregistered generators, derived Mod types, and unknown sources fail closed |
@@ -133,7 +133,7 @@ The `1833084275` environment inherits no permission from the current loaded
 | main-menu unsupported choices / non-standard single-player modes | root and standard-entry contracts are v2 canaries; Abandon, Daily, Custom, and other unsupported choices remain visible facts without action authority |
 | first-run character tutorial and non-standard run setup | explicit unsupported boundary; ordinary single-player character select is a canary |
 | generic or purpose-unknown card selectors | fail closed; source purpose must be proven before v2 authority, and retired v1 is not a fallback |
-| other transform callers, duplicate, and unlisted maintenance | Whispering Hollow random transform is a bounded v2 canary; every other origin remains fail closed |
+| other transform callers, duplicate, and unlisted maintenance | Whispering Hollow is a bounded v2 canary; New Leaf is source/build supported but runtime-pending; every other origin remains fail closed |
 | linked/special reward sets | Orrery-style linked reward continuation is implemented and fixture-tested in preview.47; unrelated linked/special reward transactions remain fail closed |
 | Pael's Tooth five-card maintenance transaction | current source/runtime identifies a purpose-specific selector, but no v2 semantic contract exists; fail closed rather than inherit merchant/upgrade authority |
 | treasure open/skip variants | implemented canary operations without organic qualification |

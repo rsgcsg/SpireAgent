@@ -1,6 +1,31 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.75`
+Protocol preview: `2.0-preview.76`
+
+Preview.76 adds one required source discriminator to
+`deck_transform_selection`:
+
+```json
+{
+  "source": {
+    "kind": "whispering_hollow_event | new_leaf_relic_pickup",
+    "definition_id": "WHISPERING_HOLLOW | NEW_LEAF",
+    "binding_evidence": "exact Gateway binding"
+  }
+}
+```
+
+The wire does not infer caller purpose from `NDeckTransformSelectScreen`,
+prompt text, or relic ownership. Whispering Hollow requires the exact active
+event owner; New Leaf requires an exact task-local `AfterObtained` binding.
+Zero or multiple source contracts produce `unsupported + none_fail_closed`.
+Every unsupported Surface is also centrally forced to zero legal actions and
+`none_fail_closed`, regardless of a provider draft's default handoff.
+
+Re normalized schema is `31` and retains this source. Preview.76 changes no
+permission tier, persistent claim or native completion ownership.
+
+## Historical Preview Notes
 
 Preview.75 preserves Preview.74 wire shapes and adds two runtime semantics:
 
@@ -14,14 +39,12 @@ Preview.75 preserves Preview.74 wire shapes and adds two runtime semantics:
   `reason_brief_truncated_to_contract_limit`, retains the raw provider response
   and leaves every action-ID/unknown-outcome check unchanged.
 
-Re normalized schema remains `30`.
+Re normalized schema remained `30`.
 
 Re's post-command supervisor now requires two consecutive equal actionable
 state hashes before the next model decision. This is a client runtime behavior,
 not a wire change or an extension of Gateway command completion. Coherent
 unsupported and non-actionable successors remain typed and non-authorizing.
-
-## Historical Preview Notes
 
 Preview.74 performs the Clean Closure identity/wire cutover:
 

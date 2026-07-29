@@ -20,48 +20,42 @@ trial/claim lifecycle, repeated journeys and final freeze.
 ## Source, Install And Load
 
 ```text
-source contract      2.0-preview.75
-Re normalized schema 30
-source state         tests/build pass; new Gateway installed; cold-load pending
+source contract      2.0-preview.76
+Re normalized schema 31
+source state         tests/build/install pass; cold-load pending
 
-built/installed      2.0-preview.75
+built/installed      2.0-preview.76
 game release         v0.109.1|c8c577f6
 actual game hash     -820620422
-built/installed SHA  f9819b6b24ed71245cee711a2844c32fa2c1b666fce6b3f412f1bd71efc721ee
-built/installed MVID 34d6deb3-f4b7-43bf-89ad-a9e596380410
+built/installed SHA  56b24ea36a9ad95f15414cd7882ab2b6b32b9459aa47feb204d3290569de9003
+built/installed MVID 37f4ce07-1ca7-4942-aec9-868b7d7d4676
 last loaded contract 2.0-preview.75
-last loaded SHA      ddce17cf4121bf009a371cbfd102b1174732eafc1cf7fafd8e226f3ec12f6334
-last loaded MVID     23ac5aad-443b-47aa-9cb0-a55197d83cb4
-last observed runtime fc2ea037f66846d39e7eb826d6df7220
-rollback             STS2MCP/.local/deployments/2026-07-29T12-26-37-794Z
+last loaded SHA      f9819b6b24ed71245cee711a2844c32fa2c1b666fce6b3f412f1bd71efc721ee
+last loaded MVID     34d6deb3-f4b7-43bf-89ad-a9e596380410
+last observed runtime 7f72d0879cde4ad6b37ab097a6ed5c98
+rollback             STS2MCP/.local/deployments/2026-07-29T13-33-27-964Z
 ```
 
-The previous Preview.75 artifact was loaded and exercised. A same-source
-Release rebuild is now installed under a new whole-DLL identity and the game is
-closed. Prior runtime authority/evidence does not transfer to MVID
-`34d6deb3...`; no loaded or persistent qualification is claimed for it.
+The previous Preview.75 artifact was loaded and exercised. Preview.76 has a new
+whole-DLL identity; prior runtime authority/evidence does not transfer. Loaded
+Preview.76 and persistent qualification remain non-claims until cold start.
 
 ## Latest Runtime Evidence
 
-Two exact loaded Preview.75 runs used clean Re revision `364f454`, Prompt v4
-and guide v5:
+Three latest exact loaded Preview.75 runs used clean Re revision `7cd6deaa` and
+the fixed Prompt/guide baseline:
 
 ```text
-decisions                        175 + 282
-executed_and_settled             171 + 258
-termination                      two completed_run_boundary
-completedGame                    true / true
-safe stale refusals                2 + 23
-unsupported / invalid              0
-observation / provider failure     0
-unsettled / unknown mutation       0
+run ...123227    New Leaf child typed unsupported after confirmed parent option
+run ...123734    77/77 attempted mutations settled; completed_run_boundary
+run ...124247    92/92 attempted mutations settled; completed_run_boundary
 ```
 
-Provenance is `unrecorded`; this is strong bounded coverage, not Organic or
-persistent qualification. Inspection is now exact-runtime exercised:
-`run_deck`, `combat_piles`, and `shop_catalog` remained state-bound and
-non-authorizing. Run `run-...112408` also purchased Bronze Scales with exact
-gold/relic/entry evidence and Courier slot replacement. Kifuda did not occur.
+The New Leaf command itself completed and opened native
+`NDeckTransformSelectScreen`; the stop was a Gateway caller-binding gap, not a
+Prompt/provider/stale/unknown failure. Provenance is `unrecorded`; this remains
+bounded coverage, not Organic or persistent qualification. Kifuda did not
+occur and remains `not exercised`.
 
 The 23-run stale audit found no composite-only or missing-identity case. Most
 combat stales followed an action-local completion while visible hand/enemy
@@ -70,7 +64,20 @@ refused all mutations. Re now waits for a repeatable actionable successor
 before the next model call; post-change Live rate is not yet claimed. See the
 [Preview.75 runtime closeout](audits/WORKFLOW_C_PREVIEW75_RUNTIME_AND_SUCCESSOR_STABILITY_CLOSEOUT_2026-07-29.md).
 
-## Preview.75 Source Changes
+## Preview.76 Source Changes
+
+- random deck transform now has a shared native selector mechanic with exact,
+  discriminated `WhisperingHollow.Hug` and task-local `NewLeaf.AfterObtained`
+  source contracts;
+- wire source identity is required and Re schema 31 retains it;
+- New Leaf execution revalidates its exact task/relic/player/card instances and
+  confirms source settlement plus exact deck replacement;
+- every unsupported draft is centrally forced to zero actions and
+  `none_fail_closed`, even if a provider accidentally retained default
+  authority;
+- no permission level, durable claim, Prompt or Re completion semantics changed.
+
+Preview.75 remains the loaded evidence baseline:
 
 - Preview.74 formal `semantic_state_id` and `authority_projection_id` replace the old
   identity shadow;
@@ -108,7 +115,8 @@ Known typed unsupported/out-of-scope includes Crystal Sphere, standalone
 manual potion discard, Tutor's unreviewed owner, unknown generated sources,
 non-standard profile/menu paths and multiplayer.
 
-Next: cold-start the installed SHA/MVID, then run one exact-runtime post-change
-journey and compare stale rate without weakening state binding. Wait for
-natural Kifuda child/negative evidence before closing the first family pilot.
-Unknown mutation remains terminal and non-retryable.
+Next: cold-start the installed Preview.76 SHA/MVID and run one bounded journey.
+New Leaf and Kifuda are separate natural-evidence gates; neither may be
+manufactured or inferred from fixture coverage. Unknown mutation remains
+terminal and non-retryable. See the
+[Preview.76 closeout](audits/WORKFLOW_C_PREVIEW76_NEW_LEAF_AND_UNSUPPORTED_AUTHORITY_CLOSEOUT_2026-07-29.md).

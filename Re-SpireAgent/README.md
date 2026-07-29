@@ -6,7 +6,7 @@ It may derive an evidence-tested model view, but it never becomes a second
 game-state, legality, permission, Commit, or completion authority.
 
 > Compatibility status, 2026-07-29: Re and C# share source contract
-> `2.0-preview.75`; Re normalized schema is `30`. Gate 1 is closed as a
+> `2.0-preview.76`; Re normalized schema is `31`. Gate 1 is closed as a
 > bounded ordinary-single-player v2 baseline, not full game coverage.
 > Preview.69 adds typed new/resumed-run mount settling, bounded semantic-cycle recovery,
 > and strict consumption of encounter-scoped provisional grants. Diagnostic
@@ -48,15 +48,14 @@ visible native effects are still evolving.
 
 RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, shadow/live modes, policy promotion, or the old project's phase machinery. Its job is to make one decision path correct and auditable.
 
-Re's current strict client contract is Bridge `2.0-preview.75`. Re strictly
+Re's current strict client contract is Bridge `2.0-preview.76`. Re strictly
 decodes current identities and grants, but does not interpret fallback Witness
-semantics or promote any candidate. Preview.75 exact runs on SHA
-`ddce17cf...` / MVID `23ac5aad...` / runtime `fc2ea037...` completed 175- and
-282-decision one-game boundaries,
-exercised state-bound Inspection, and included one ordinary relic purchase.
-Their `unrecorded` provenance is coverage evidence, not Organic or persistent
-qualification. A same-source rebuild is installed as SHA `f9819b6b...` / MVID
-`34d6deb3...` and awaits cold-load; prior scope does not transfer.
+semantics or promote any candidate. Latest exact Preview.75 runs on SHA
+`f9819b6b...` / MVID `34d6deb3...` / runtime `7f72d087...` include two
+completed run boundaries and one New Leaf child fail-closed result. Preview.76
+repairs that exact caller binding and unsupported-authority invariant, but has
+no loaded or mutation evidence yet. Its `unrecorded` predecessors are coverage
+evidence, not Organic or persistent qualification.
 A historical strict read-only main-menu inspection passed without mutation.
 Preview.66's narrow persistent
 `main_menu/continue_run` qualification belongs only to its historical exact

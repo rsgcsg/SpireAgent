@@ -493,6 +493,11 @@ const DECK_TRANSFORM_STATE = {
     kind: "deck_transform_selection",
     stage: "selecting",
     screen_entity_id: "deck-transform-screen-1",
+    source: {
+      kind: "whispering_hollow_event",
+      definition_id: "WHISPERING_HOLLOW",
+      binding_evidence: "WhisperingHollow.Hug+CardSelectCmd.FromDeckForTransformation"
+    },
     prompt: "Choose a card to Transform.",
     min_select: 1,
     max_select: 1,
@@ -2826,6 +2831,10 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       surface: {
         kind: "deck_transform_selection",
         stage: "selecting",
+        source: {
+          kind: "whispering_hollow_event",
+          definitionId: "WHISPERING_HOLLOW"
+        },
         previewKind: "none",
         replacementKnown: false
       }
@@ -2876,7 +2885,27 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     expect(() => decodeBridgeV2State({
       ...DECK_TRANSFORM_STATE,
       context: { ...DECK_TRANSFORM_STATE.context, event_id: "OTHER_EVENT" }
-    })).toThrow("deck_transform_selection surface requires exact Whispering Hollow event context");
+    })).toThrow("Whispering Hollow transform source requires exact event context");
+
+    const newLeafState = {
+      ...structuredClone(DECK_TRANSFORM_STATE),
+      context: { ...DECK_TRANSFORM_STATE.context, event_id: "NEOW", name: "Neow" },
+      surface: {
+        ...structuredClone(DECK_TRANSFORM_STATE.surface),
+        source: {
+          kind: "new_leaf_relic_pickup",
+          definition_id: "NEW_LEAF",
+          binding_evidence: "NewLeaf.AfterObtained+task-local-source-binding"
+        }
+      }
+    };
+    expect(normalizeCurrentState(
+      wrapBridgeV2State({ state: newLeafState, capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    ).currentState.surface).toMatchObject({
+      kind: "deck_transform_selection",
+      source: { kind: "new_leaf_relic_pickup", definitionId: "NEW_LEAF" }
+    });
     const selectingWithCommit = {
       ...structuredClone(DECK_TRANSFORM_STATE),
       legal_actions: [{ ...DECK_TRANSFORM_STATE.legal_actions[0]!, kind: "confirm_deck_transform" }]
@@ -2997,7 +3026,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 30,
+      normalizedSchemaVersion: 31,
       stability: "actionable",
       actionAuthority: "bridge_advertised",
       context: {
@@ -3078,7 +3107,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 30,
+      normalizedSchemaVersion: 31,
       stability: "actionable",
       actionAuthority: "bridge_advertised",
       context: { kind: "menu", screen: "character_select" },
@@ -3663,7 +3692,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 30,
+      normalizedSchemaVersion: 31,
       actionAuthority: "bridge_advertised",
       context: { kind: "event", ancient: true, inDialogue: true },
       surface: {
@@ -3711,7 +3740,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 30,
+      normalizedSchemaVersion: 31,
       actionAuthority: "bridge_advertised",
       context: { kind: "rest" },
       surface: {
@@ -3828,7 +3857,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 30,
+      normalizedSchemaVersion: 31,
       stability: "actionable",
       actionAuthority: "bridge_advertised",
       context: {
@@ -4038,7 +4067,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 30,
+      normalizedSchemaVersion: 31,
       actionAuthority: "bridge_advertised",
       context: {
         kind: "map",
@@ -4551,7 +4580,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 30,
+      normalizedSchemaVersion: 31,
       actionAuthority: "bridge_advertised",
       context: { kind: "combat", encounterType: "elite" },
       surface: {
@@ -4609,7 +4638,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(graveblastEnvelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 30,
+      normalizedSchemaVersion: 31,
       actionAuthority: "bridge_advertised",
       context: { kind: "combat" },
       surface: {
@@ -4657,7 +4686,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(cleanseEnvelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 30,
+      normalizedSchemaVersion: 31,
       actionAuthority: "bridge_advertised",
       context: { kind: "combat" },
       surface: {
@@ -4708,7 +4737,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(seanceEnvelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 30,
+      normalizedSchemaVersion: 31,
       actionAuthority: "bridge_advertised",
       context: { kind: "combat" },
       surface: {
@@ -4784,7 +4813,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(dredgeEnvelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 30,
+      normalizedSchemaVersion: 31,
       actionAuthority: "bridge_advertised",
       context: { kind: "combat" },
       surface: {
@@ -5055,7 +5084,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 30,
+      normalizedSchemaVersion: 31,
       actionAuthority: "bridge_advertised",
       context: { kind: "combat" },
       surface: {
@@ -5113,7 +5142,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 30,
+      normalizedSchemaVersion: 31,
       actionAuthority: "bridge_advertised",
       context: { kind: "event", eventId: "NEOW" },
       surface: {
@@ -5284,7 +5313,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
         TEST_SOURCE
       );
       expect(envelope.currentState).toMatchObject({
-        normalizedSchemaVersion: 30,
+        normalizedSchemaVersion: 31,
         stability: "actionable",
         actionAuthority: "bridge_advertised",
         context: { kind: "combat" },
@@ -5455,7 +5484,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 30,
+      normalizedSchemaVersion: 31,
       actionAuthority: "bridge_advertised",
       context: { kind: "event", eventId: "BRAIN_LEECH" },
       surface: {
@@ -5504,7 +5533,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 30,
+      normalizedSchemaVersion: 31,
       actionAuthority: "bridge_advertised",
       context: { kind: "event", eventId: "NEOW" },
       surface: {

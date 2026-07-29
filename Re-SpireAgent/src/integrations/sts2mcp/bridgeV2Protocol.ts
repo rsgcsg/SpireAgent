@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { isJsonObject, type JsonObject } from "../../shared/json.js";
 
-export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.75" as const;
+export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.76" as const;
 export const BRIDGE_V2_INSPECTION_KINDS = ["run_deck", "combat_piles", "shop_catalog"] as const;
 const inspectionKindSchema = z.enum(BRIDGE_V2_INSPECTION_KINDS);
 
@@ -616,6 +616,11 @@ const deckTransformSurfaceSchema = z.object({
   kind: z.literal("deck_transform_selection"),
   stage: z.enum(["selecting", "preview"]),
   screen_entity_id: z.string().min(1),
+  source: z.object({
+    kind: z.enum(["whispering_hollow_event", "new_leaf_relic_pickup"]),
+    definition_id: z.string().min(1),
+    binding_evidence: z.string().min(1)
+  }),
   prompt: z.string().min(1),
   min_select: z.number().int().nonnegative(),
   max_select: z.number().int().nonnegative(),
@@ -1733,10 +1738,24 @@ export function decodeBridgeV2State(value: unknown): DecodedBridgePayload<Bridge
       throw new BridgeV2DecodeError("Bridge v2 deck_upgrade_selection surface requires event or rest context");
     }
   } else if (decoded.data.surface.kind === "deck_transform_selection") {
-    surface = parse(deckTransformSurfaceSchema, decoded.data.surface, "deck_transform_selection surface");
-    if (context.kind !== "event" || context.event_id !== "WHISPERING_HOLLOW") {
-      throw new BridgeV2DecodeError("Bridge v2 deck_transform_selection surface requires exact Whispering Hollow event context");
+    const transformSurface = parse(
+      deckTransformSurfaceSchema,
+      decoded.data.surface,
+      "deck_transform_selection surface"
+    );
+    if (transformSurface.source.kind === "whispering_hollow_event"
+        && (context.kind !== "event" || context.event_id !== "WHISPERING_HOLLOW")) {
+      throw new BridgeV2DecodeError("Bridge v2 Whispering Hollow transform source requires exact event context");
     }
+    if (transformSurface.source.kind === "whispering_hollow_event"
+        && transformSurface.source.definition_id !== "WHISPERING_HOLLOW") {
+      throw new BridgeV2DecodeError("Bridge v2 Whispering Hollow transform source has the wrong definition identity");
+    }
+    if (transformSurface.source.kind === "new_leaf_relic_pickup"
+        && transformSurface.source.definition_id !== "NEW_LEAF") {
+      throw new BridgeV2DecodeError("Bridge v2 New Leaf transform source has the wrong definition identity");
+    }
+    surface = transformSurface;
   } else if (decoded.data.surface.kind === "wood_carvings_replacement_selection") {
     surface = parse(woodCarvingsReplacementSurfaceSchema, decoded.data.surface, "wood_carvings_replacement_selection surface");
     if (context.kind !== "event" || context.event_id !== "WOOD_CARVINGS") {

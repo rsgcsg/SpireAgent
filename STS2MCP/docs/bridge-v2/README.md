@@ -1,7 +1,7 @@
 # Bridge v2 Documentation
 
 Bridge v2 is the active semantic Gateway protocol. C# and Re source now share
-`2.0-preview.75`; Re normalized schema is `30`. Gate 1 is closed as a bounded
+`2.0-preview.76`; Re normalized schema is `31`. Gate 1 is closed as a bounded
 ordinary-single-player v2 connector baseline and the complete v1 HTTP namespace
 is retired. Preview.61 supplied the final Neow's Fury runtime seal. Preview.62
 adds reviewed registry/policy adaptation and non-authorizing exact-assembly
@@ -48,12 +48,16 @@ relic plus Courier replacement positive. Re now also waits for a repeatable
 actionable successor after Gateway action-local completion, without changing
 the wire contract or Gateway authority. See the
 [runtime closeout](../../../docs/current/audits/WORKFLOW_C_PREVIEW75_RUNTIME_AND_SUCCESSOR_STABILITY_CLOSEOUT_2026-07-29.md).
-The final same-source Release rebuild is installed as SHA `f9819b6b...` / MVID
-`34d6deb3...` and awaits cold-load; no earlier session scope transfers.
+The rebuilt Preview.75 identity later loaded as SHA `f9819b6b...` / MVID
+`34d6deb3...` / runtime `7f72d087...`. Two latest runs completed bounded run
+boundaries; another exposed the New Leaf transform caller gap. Preview.76
+repairs that source binding and the unsupported-authority invariant, but awaits
+cold-load; no earlier session scope transfers.
 
 ## Current Documents
 
 - [Current status](CURRENT_STATUS.md)
+- [Preview.76 New Leaf and unsupported-authority closeout](../../../docs/current/audits/WORKFLOW_C_PREVIEW76_NEW_LEAF_AND_UNSUPPORTED_AUTHORITY_CLOSEOUT_2026-07-29.md)
 - [Preview.75 runtime and successor-stability closeout](../../../docs/current/audits/WORKFLOW_C_PREVIEW75_RUNTIME_AND_SUCCESSOR_STABILITY_CLOSEOUT_2026-07-29.md)
 - [Preview.74 runtime and Preview.75 pre-Live closeout](../../../docs/current/audits/WORKFLOW_C_PREVIEW74_RUNTIME_AND_PREVIEW75_PRELIVE_CLOSEOUT_2026-07-29.md)
 - [Clean Closure audit and execution contract](../../../docs/current/audits/WORKFLOW_C_CLEAN_CLOSURE_AUDIT_AND_EXECUTION_CONTRACT_2026-07-29.md)

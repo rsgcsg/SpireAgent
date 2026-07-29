@@ -127,7 +127,7 @@ internal static class BridgeContractManifest
                 Operation("toggle_deck_transform_upgrade_view", BridgeOperationEvidenceStatus.OrganicCanaryExercised,
                     "../archive/bridge-v2-previews/2026-07/PREVIEW_38_DECK_TRANSFORM_CLOSEOUT_2026-07-18.md#organic-canary")
             },
-            "sts2-v0.109.0:WhisperingHollow.Hug+CardSelectCmd.FromDeckForTransformation+NDeckTransformSelectScreen+exact-instance-post-state-witness",
+            "sts2-v0.109.1:source-discriminated(WhisperingHollow.Hug|NewLeaf.AfterObtained+task-local-binding)+CardSelectCmd.FromDeckForTransformation+NDeckTransformSelectScreen+exact-instance-post-state-witness",
             "purpose_specific_random_deck_transform",
             new[] { "visible_deck_cards", "selection", "random_uncommitted_preview", "upgrade_view", "controls" }),
         Entry(

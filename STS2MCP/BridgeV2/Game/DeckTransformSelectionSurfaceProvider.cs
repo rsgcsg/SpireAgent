@@ -8,11 +8,14 @@ using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Events;
+using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Nodes.Cards;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
+using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Runs;
 using STS2_MCP.BridgeV2.Protocol;
 using STS2_MCP.BridgeV2.Runtime;
@@ -20,10 +23,9 @@ using STS2_MCP.BridgeV2.Runtime;
 namespace STS2_MCP.BridgeV2.Game;
 
 /// <summary>
-/// Exact-source adapter for WhisperingHollow ->
-/// CardSelectCmd.FromDeckForTransformation. It shares only bounded selection
-/// facts with other selectors; random-preview semantics, commit validation,
-/// and the transform outcome witness remain purpose-specific.
+/// Source-discriminated adapter for native random deck transforms. It shares
+/// the exact selector mechanics across audited callers while source identity,
+/// execute-time validation, and completion remain explicit.
 /// </summary>
 internal sealed class DeckTransformSelectionSurfaceProvider : IBridgeSurfaceProvider
 {
@@ -47,16 +49,6 @@ internal sealed class DeckTransformSelectionSurfaceProvider : IBridgeSurfaceProv
             return null;
 
         IBridgeContext context = BridgeContextBuilder.Build(entities);
-        if (context is not EventBridgeContext eventContext
-            || !string.Equals(eventContext.EventId, AuditedEventId, StringComparison.Ordinal))
-        {
-            return BindingUnavailable(
-                game,
-                context,
-                "The random deck-transform selector has no audited semantic caller in this current context.",
-                new[] { "transform_origin", "legal_actions" });
-        }
-
         RunState? runState = RunManager.Instance.DebugOnlyGetState();
         if (runState == null
             || runState.Players.Count != 1
@@ -69,13 +61,23 @@ internal sealed class DeckTransformSelectionSurfaceProvider : IBridgeSurfaceProv
                 new[] { "transform_owner", "legal_actions" });
         }
 
-        return Build(screen, eventContext, player, entities, game);
+        if (!TryResolveSource(context, player, out TransformSourceContract? source, out string? sourceError))
+        {
+            return BindingUnavailable(
+                game,
+                context,
+                sourceError ?? "The random deck-transform selector has no unique audited semantic caller.",
+                new[] { "transform_origin", "legal_actions" });
+        }
+
+        return Build(screen, context, player, source!, entities, game);
     }
 
     private static BridgeObservationDraft Build(
         NDeckTransformSelectScreen screen,
-        EventBridgeContext context,
+        IBridgeContext context,
         Player player,
+        TransformSourceContract source,
         BridgeEntityRegistry entities,
         GameBuildIdentity game)
     {
@@ -175,6 +177,7 @@ internal sealed class DeckTransformSelectionSurfaceProvider : IBridgeSurfaceProv
             SurfaceKind,
             stage,
             entities.GetId(screen, "screen"),
+            source.Wire,
             prompt,
             prefs.MinSelect,
             prefs.MaxSelect,
@@ -189,6 +192,7 @@ internal sealed class DeckTransformSelectionSurfaceProvider : IBridgeSurfaceProv
         List<BridgeActionDraft> actions = BuildActions(
             screen,
             player,
+            source,
             stage,
             prefs,
             holders,
@@ -204,13 +208,13 @@ internal sealed class DeckTransformSelectionSurfaceProvider : IBridgeSurfaceProv
 
         string readiness = actions.Count > 0 ? "ready" : "settling";
         var completeness = new StateCompleteness(
-            "contract_complete_for_whispering_hollow_random_transform_selection",
+            $"contract_complete_for_{source.Wire.Kind}_random_transform_selection",
             actions.Count > 0
                 ? "derived_from_same_current_transform_controls_as_execution"
                 : "temporarily_empty_while_transform_ui_settles",
             new[]
             {
-                "WhisperingHollow.Hug -> CardSelectCmd.FromDeckForTransformation",
+                source.Wire.BindingEvidence,
                 "NDeckTransformSelectScreen exact controls and bounded selection fields",
                 "NCardGrid visible holders and current upgrade-preview mode",
                 "NTransformPreview random uncommitted cycle semantics",
@@ -241,6 +245,7 @@ internal sealed class DeckTransformSelectionSurfaceProvider : IBridgeSurfaceProv
     private static List<BridgeActionDraft> BuildActions(
         NDeckTransformSelectScreen screen,
         Player player,
+        TransformSourceContract source,
         string stage,
         CardSelectorPrefs prefs,
         IReadOnlyList<NGridCardHolder> holders,
@@ -269,8 +274,8 @@ internal sealed class DeckTransformSelectionSurfaceProvider : IBridgeSurfaceProv
                     "toggle_deck_transform_card",
                     "selection",
                     $"{(wasSelected ? "Deselect" : "Select")} {McpMod.SafeGetText(() => card.Title) ?? card.Id.Entry} for random transformation",
-                    "NCardGrid.HolderPressed+NDeckTransformSelectScreen.OnCardClicked",
-                    () => StartToggle(screen, holder, card, wasSelected),
+                    $"{source.Wire.BindingEvidence}|NCardGrid.HolderPressed+NDeckTransformSelectScreen.OnCardClicked",
+                    () => StartToggle(screen, holder, card, wasSelected, source),
                     new[] { new ActionEntityBinding("card", cardId) }));
             }
 
@@ -281,8 +286,8 @@ internal sealed class DeckTransformSelectionSurfaceProvider : IBridgeSurfaceProv
                     "preview_deck_transform",
                     "preview",
                     "Preview the selected random transformation",
-                    "NDeckTransformSelectScreen.ConfirmSelection",
-                    () => StartPreview(screen, previewButton)));
+                    $"{source.Wire.BindingEvidence}|NDeckTransformSelectScreen.ConfirmSelection",
+                    () => StartPreview(screen, previewButton, source)));
             }
             if (prefs.Cancelable && close.IsEnabled && McpMod.IsNodeVisible(close))
             {
@@ -291,8 +296,8 @@ internal sealed class DeckTransformSelectionSurfaceProvider : IBridgeSurfaceProv
                     "cancel_deck_transform_selection",
                     "navigation",
                     "Cancel random card transformation",
-                    "NDeckTransformSelectScreen.CloseSelection",
-                    () => StartClose(screen, close)));
+                    $"{source.Wire.BindingEvidence}|NDeckTransformSelectScreen.CloseSelection",
+                    () => StartClose(screen, close, source)));
             }
             if (upgradeToggleVisible && upgrades.IsEnabled)
             {
@@ -301,8 +306,8 @@ internal sealed class DeckTransformSelectionSurfaceProvider : IBridgeSurfaceProv
                     "toggle_deck_transform_upgrade_view",
                     "presentation",
                     grid.IsShowingUpgrades ? "Show current card versions" : "Show upgraded card previews",
-                    "NDeckTransformSelectScreen.ToggleShowUpgrades",
-                    () => StartUpgradeToggle(screen, upgrades, grid, grid.IsShowingUpgrades)));
+                    $"{source.Wire.BindingEvidence}|NDeckTransformSelectScreen.ToggleShowUpgrades",
+                    () => StartUpgradeToggle(screen, upgrades, grid, grid.IsShowingUpgrades, source)));
             }
         }
         else
@@ -314,8 +319,8 @@ internal sealed class DeckTransformSelectionSurfaceProvider : IBridgeSurfaceProv
                     "cancel_deck_transform_preview",
                     "navigation",
                     "Return to random transformation selection",
-                    "NDeckTransformSelectScreen.CancelSelection",
-                    () => StartPreviewCancel(screen, previewCancel)));
+                    $"{source.Wire.BindingEvidence}|NDeckTransformSelectScreen.CancelSelection",
+                    () => StartPreviewCancel(screen, previewCancel, source)));
             }
             if (previewConfirm.IsEnabled
                 && McpMod.IsNodeVisible(previewConfirm)
@@ -326,8 +331,8 @@ internal sealed class DeckTransformSelectionSurfaceProvider : IBridgeSurfaceProv
                     "confirm_deck_transform",
                     "commit",
                     "Confirm the random transformation",
-                    "NDeckTransformSelectScreen.CompleteSelection+WhisperingHollow.CardCmd.TransformToRandom",
-                    () => StartConfirm(screen, previewConfirm, selected, player),
+                    $"{source.Wire.BindingEvidence}|NDeckTransformSelectScreen.CompleteSelection+CardCmd.TransformToRandom",
+                    () => StartConfirm(screen, previewConfirm, selected, player, source),
                     selected.Select(card => new ActionEntityBinding("card", cardIds[card])).ToArray()));
             }
         }
@@ -339,9 +344,11 @@ internal sealed class DeckTransformSelectionSurfaceProvider : IBridgeSurfaceProv
         NDeckTransformSelectScreen expectedScreen,
         NGridCardHolder expectedHolder,
         CardModel expectedCard,
-        bool wasSelected)
+        bool wasSelected,
+        TransformSourceContract source)
     {
         if (!IsCurrent(expectedScreen)
+            || !source.IsCurrent()
             || IsPreviewVisible(expectedScreen)
             || !McpMod.FindAll<NGridCardHolder>(expectedScreen).Any(holder => ReferenceEquals(holder, expectedHolder))
             || !ReferenceEquals(expectedHolder.CardModel, expectedCard)
@@ -368,9 +375,11 @@ internal sealed class DeckTransformSelectionSurfaceProvider : IBridgeSurfaceProv
 
     private static BridgeActionStartResult StartPreview(
         NDeckTransformSelectScreen expectedScreen,
-        NConfirmButton expectedButton)
+        NConfirmButton expectedButton,
+        TransformSourceContract source)
     {
         if (!IsCurrent(expectedScreen)
+            || !source.IsCurrent()
             || IsPreviewVisible(expectedScreen)
             || !expectedButton.IsEnabled
             || !McpMod.IsNodeVisible(expectedButton))
@@ -385,9 +394,11 @@ internal sealed class DeckTransformSelectionSurfaceProvider : IBridgeSurfaceProv
 
     private static BridgeActionStartResult StartPreviewCancel(
         NDeckTransformSelectScreen expectedScreen,
-        NBackButton expectedButton)
+        NBackButton expectedButton,
+        TransformSourceContract source)
     {
         if (!IsCurrent(expectedScreen)
+            || !source.IsCurrent()
             || !IsPreviewVisible(expectedScreen)
             || !expectedButton.IsEnabled
             || !McpMod.IsNodeVisible(expectedButton))
@@ -406,10 +417,12 @@ internal sealed class DeckTransformSelectionSurfaceProvider : IBridgeSurfaceProv
         NDeckTransformSelectScreen expectedScreen,
         NConfirmButton expectedButton,
         IReadOnlyCollection<CardModel> selectedCards,
-        Player player)
+        Player player,
+        TransformSourceContract source)
     {
         IReadOnlyList<CardModel> currentSelection = BoundedCardSelectionFacts.ReadSelectedCards(expectedScreen);
         if (!IsCurrent(expectedScreen)
+            || !source.IsCurrent()
             || !IsPreviewVisible(expectedScreen)
             || !expectedButton.IsEnabled
             || !McpMod.IsNodeVisible(expectedButton)
@@ -425,21 +438,25 @@ internal sealed class DeckTransformSelectionSurfaceProvider : IBridgeSurfaceProv
                 "The selected cards are no longer an exact commit-ready random transform set.");
         }
 
-        int baselineDeckCount = player.Deck.Cards.Count;
         expectedButton.ForceClick();
         return BridgeActionStartResult.Started(
-            () => !IsCurrent(expectedScreen)
-                  && player.Deck.Cards.Count == baselineDeckCount
-                  && selectedCards.All(original => player.Deck.Cards.All(card => !ReferenceEquals(card, original))),
+            () => DeckTransformCompletionWitness.IsSatisfied(
+                source.IsSettled(),
+                !IsCurrent(expectedScreen),
+                source.BaselineDeck,
+                player.Deck.Cards,
+                selectedCards),
             "transform_screen_closed_original_instances_absent_and_deck_count_preserved",
             allowIntermediateStateChanges: true);
     }
 
     private static BridgeActionStartResult StartClose(
         NDeckTransformSelectScreen expectedScreen,
-        NBackButton expectedButton)
+        NBackButton expectedButton,
+        TransformSourceContract source)
     {
         if (!IsCurrent(expectedScreen)
+            || !source.IsCurrent()
             || IsPreviewVisible(expectedScreen)
             || !expectedButton.IsEnabled
             || !McpMod.IsNodeVisible(expectedButton))
@@ -448,7 +465,7 @@ internal sealed class DeckTransformSelectionSurfaceProvider : IBridgeSurfaceProv
         }
         expectedButton.ForceClick();
         return BridgeActionStartResult.Started(
-            () => !IsCurrent(expectedScreen),
+            () => !IsCurrent(expectedScreen) && source.IsSettled(),
             "transform_selection_cancelled_and_closed");
     }
 
@@ -456,9 +473,11 @@ internal sealed class DeckTransformSelectionSurfaceProvider : IBridgeSurfaceProv
         NDeckTransformSelectScreen expectedScreen,
         NTickbox expectedTickbox,
         NCardGrid expectedGrid,
-        bool wasShowingUpgrades)
+        bool wasShowingUpgrades,
+        TransformSourceContract source)
     {
         if (!IsCurrent(expectedScreen)
+            || !source.IsCurrent()
             || IsPreviewVisible(expectedScreen)
             || !expectedTickbox.IsEnabled
             || !McpMod.IsNodeVisible(expectedTickbox)
@@ -503,39 +522,83 @@ internal sealed class DeckTransformSelectionSurfaceProvider : IBridgeSurfaceProv
         }
     }
 
+    private static bool TryResolveSource(
+        IBridgeContext context,
+        Player player,
+        out TransformSourceContract? source,
+        out string? error)
+    {
+        var candidates = new List<TransformSourceContract>();
+        if (context is EventBridgeContext eventContext
+            && string.Equals(eventContext.EventId, AuditedEventId, StringComparison.Ordinal))
+        {
+            candidates.Add(new TransformSourceContract(
+                new DeckTransformSource(
+                    "whispering_hollow_event",
+                    AuditedEventId,
+                    "WhisperingHollow.Hug+CardSelectCmd.FromDeckForTransformation"),
+                player.Deck.Cards.ToArray(),
+                () => IsWhisperingHollowCurrent(player),
+                static () => true));
+        }
+
+        if (DeckTransformSourceBinding.TryGetUnique(out DeckTransformSourceBinding.NewLeafBinding? newLeaf)
+            && newLeaf != null
+            && ReferenceEquals(newLeaf.Player, player)
+            && player.Relics.Any(relic => ReferenceEquals(relic, newLeaf.SourceRelic)))
+        {
+            candidates.Add(new TransformSourceContract(
+                new DeckTransformSource(
+                    "new_leaf_relic_pickup",
+                    "NEW_LEAF",
+                    "NewLeaf.AfterObtained+CardSelectCmd.FromDeckForTransformation+task-local-source-binding"),
+                newLeaf.BaselineDeck,
+                () => DeckTransformSourceBinding.IsActive(newLeaf.Token)
+                      && ReferenceEquals(newLeaf.SourceRelic.Owner, player)
+                      && player.Relics.Any(relic => ReferenceEquals(relic, newLeaf.SourceRelic)),
+                () => !DeckTransformSourceBinding.IsActive(newLeaf.Token)));
+        }
+
+        source = candidates.Count == 1 ? candidates[0] : null;
+        error = candidates.Count switch
+        {
+            0 => "The random deck-transform selector has no audited semantic caller in this current context.",
+            _ => "Multiple random deck-transform source bindings are active; authority is ambiguous."
+        };
+        return source != null;
+    }
+
+    private static bool IsWhisperingHollowCurrent(Player player)
+    {
+        RunState? runState = RunManager.Instance.DebugOnlyGetState();
+        if (runState == null || !ReferenceEquals(LocalContext.GetMe(runState), player))
+            return false;
+        EventModel? current = (runState.CurrentRoom as EventRoom)?.LocalMutableEvent
+                              ?? (runState.CurrentRoom as EventRoom)?.CanonicalEvent;
+        return current is WhisperingHollow;
+    }
+
     private static BridgeObservationDraft BindingUnavailable(
         GameBuildIdentity game,
         IBridgeContext context,
         string reason,
         IReadOnlyList<string> missing)
     {
-        var unavailable = new UnsupportedSurface("unsupported", nameof(NDeckTransformSelectScreen), reason);
-        var completeness = new StateCompleteness(
-            "degraded",
-            "empty_fail_closed",
-            new[] { "NDeckTransformSelectScreen exact-source binding" },
-            missing);
-        string signature = BridgeHash.Object(new { game.Version, context, unavailable, missing });
-        return new BridgeObservationDraft(
-            signature,
-            "degraded",
-            context,
-            unavailable,
-            completeness,
+        return BridgeFailClosedObservation.BindingUnavailable(
             game,
-            new[] { "deck_transform_binding_unavailable" },
-            Array.Empty<BridgeActionDraft>())
-        {
-            Diagnostics = new[]
-            {
-                BridgeDiagnostics.Create(
-                    "bridge.surface.deck_transform.binding_unavailable",
-                    "error",
-                    "surface",
-                    "actions_suppressed",
-                    "update_bridge",
-                    reason)
-            }
-        };
+            context,
+            nameof(NDeckTransformSelectScreen),
+            reason,
+            new[] { "NDeckTransformSelectScreen exact-source binding" },
+            missing,
+            "deck_transform_binding_unavailable",
+            "bridge.surface.deck_transform.binding_unavailable",
+            "No exact random-transform source owns mutation authority.");
     }
+
+    private sealed record TransformSourceContract(
+        DeckTransformSource Wire,
+        IReadOnlyList<CardModel> BaselineDeck,
+        Func<bool> IsCurrent,
+        Func<bool> IsSettled);
 }

@@ -7,25 +7,24 @@ and architecture are in [Current Status](../../../docs/current/STATUS.md) and
 ## Exact Truth
 
 ```text
-Gateway/Re source      2.0-preview.75
-Re normalized schema  30
-source status          tested/built/installed; new MVID cold-load pending
+Gateway/Re source      2.0-preview.76
+Re normalized schema  31
+source status          tested/built/installed; cold-load pending
 
-built/installed        2.0-preview.75
+built/installed        2.0-preview.76
 game                   v0.109.1|c8c577f6|-820620422
-built/installed SHA    f9819b6b24ed71245cee711a2844c32fa2c1b666fce6b3f412f1bd71efc721ee
-built/installed MVID   34d6deb3-f4b7-43bf-89ad-a9e596380410
+built/installed SHA    56b24ea36a9ad95f15414cd7882ab2b6b32b9459aa47feb204d3290569de9003
+built/installed MVID   37f4ce07-1ca7-4942-aec9-868b7d7d4676
 last loaded contract   2.0-preview.75
-last loaded SHA        ddce17cf4121bf009a371cbfd102b1174732eafc1cf7fafd8e226f3ec12f6334
-last loaded MVID       23ac5aad-443b-47aa-9cb0-a55197d83cb4
-last runtime epoch     fc2ea037f66846d39e7eb826d6df7220
-rollback               STS2MCP/.local/deployments/2026-07-29T12-26-37-794Z
+last loaded SHA        f9819b6b24ed71245cee711a2844c32fa2c1b666fce6b3f412f1bd71efc721ee
+last loaded MVID       34d6deb3-f4b7-43bf-89ad-a9e596380410
+last runtime epoch     7f72d0879cde4ad6b37ab097a6ed5c98
+rollback               STS2MCP/.local/deployments/2026-07-29T13-33-27-964Z
 ```
 
 The prior Preview.75 DLL load and broad bounded mutation/Inspection coverage
-are verified. A same-source rebuild is installed with a new MVID; it is not
-loaded and inherits no runtime grant. No Organic journey or persistent
-qualification is claimed.
+are verified. Preview.76 has a new identity; it is not loaded and inherits no
+runtime grant. No Organic journey or persistent qualification is claimed.
 
 ## Current Contract
 
@@ -47,13 +46,24 @@ qualification is claimed.
 
 ## Latest Evidence
 
-Preview.75 runs `run-20260729094605-ycbsur` and
-`run-20260729112408-jltj8f` completed bounded runs with 429 settled mutations
-in 457 decisions and 25 safe stale refusals. They had no unsupported, unknown
-mutation, unsettled mutation, observation failure or provider failure. Exact
-Inspection captured `run_deck`, `combat_piles` and `shop_catalog`. All evidence
-is `unrecorded` coverage-only evidence; see the
-[runtime audit](../../../docs/current/audits/WORKFLOW_C_PREVIEW75_RUNTIME_AND_SUCCESSOR_STABILITY_CLOSEOUT_2026-07-29.md).
+Preview.75 runs `run-20260729123734-wtdpib` and
+`run-20260729124247-l1hwck` completed bounded run boundaries with 77/77 and
+92/92 attempted mutations settled. `run-20260729123227-o2htaa` instead proved
+that New Leaf opens the same native transform selector through a different
+caller: the parent event command completed, then the child failed closed. All
+evidence is `unrecorded` coverage-only evidence; see the
+[Preview.76 audit](../../../docs/current/audits/WORKFLOW_C_PREVIEW76_NEW_LEAF_AND_UNSUPPORTED_AUTHORITY_CLOSEOUT_2026-07-29.md).
+
+## Preview.76 Contract Delta
+
+- `deck_transform_selection.source` discriminates Whispering Hollow from a
+  task-local New Leaf acquisition source;
+- exact selector mechanics are shared, while owner/source/settlement remain
+  source-specific;
+- unsupported drafts are centrally normalized to zero actions and
+  `none_fail_closed`;
+- New Leaf runtime mutation, Kifuda and durable family qualification remain
+  pending exact-runtime evidence.
 
 ## Clean Closure Inventory
 

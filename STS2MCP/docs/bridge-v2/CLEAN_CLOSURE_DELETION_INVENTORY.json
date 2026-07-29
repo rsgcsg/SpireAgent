@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "source_protocol": "2.0-preview.75",
+  "source_protocol": "2.0-preview.76",
   "status": "migration_active_live_evidence_pending",
   "target": {
     "connector_shadow_count": 0,
@@ -26,7 +26,7 @@
     "family": "shop_relic_purchase_with_kifuda_child_handoff",
     "implementation": "implemented_and_fixture_tested",
     "authority_cutover": "contract_digest_for_explicit_contracts",
-    "live_evidence": "pending_exact_preview_75_relic_and_kifuda_runtime",
+    "live_evidence": "ordinary_relic_positive_kifuda_not_exercised_preview_76_pending_load",
     "rollback": "whole_artifact_restore"
   },
   "rules": [

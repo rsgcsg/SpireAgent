@@ -8,7 +8,7 @@ matrix. This document records the Re-SpireAgent consumption boundary.
 
 ## Bridge v2 Current Client Contract
 
-Re strictly decodes `2.0-preview.75`. It accepts Bridge actions only when:
+Re strictly decodes `2.0-preview.76`. It accepts Bridge actions only when:
 
 - game, Modset, Bridge assembly SHA-256, MVID, and runtime identities match
   exact scoped capabilities and state;
@@ -60,7 +60,7 @@ Re keeps three actionless boundaries distinct:
 | event acquisition, reward, card reward, map, shop, treasure, card bundle | purpose-specific typed Context + Surface | current-build action canaries |
 | `character_select` | `menu + character_select` with no active-run shared state | current-build action canary |
 | `event_dialogue` / `event_option` | revealed prefix or typed visible options/tooltips | current-build action canaries |
-| `deck_transform_selection` | `event + deck_transform_selection`, exact selected instances and random-uncommitted preview | Whispering Hollow action canary; other origins fail closed |
+| `deck_transform_selection` | source-qualified context plus exact selected instances and random-uncommitted preview | Whispering Hollow has historical action-canary evidence; New Leaf is source/build supported but exact-runtime mutation pending; all other origins fail closed |
 | `wood_carvings_replacement_selection` | `event + wood_carvings_replacement_selection`, exact Bird/Torus branch and known deterministic replacement | Bird select/cancel/reselect/confirm and exact run-deck post-state exercised on preview.56; Torus and repeat diversity pending |
 | `deck_enchant_selection` | `event + deck_enchant_selection`, exact target enchantment, selected instances, and selecting/preview stages | Self-Help Book action canary; semantic exact-card post-state confirmed, other origins fail closed |
 | `generated_card_choice` | source-discriminated run-deck, free combat-hand, unchanged-cost combat-hand, or immediate-effect choice | Preview.60 added strict Quasar and forced Knowledge Demon branches; current Preview.61 is loaded but those branches still need independently scoped Organic evidence. Discovery and every unbound source fail closed. |

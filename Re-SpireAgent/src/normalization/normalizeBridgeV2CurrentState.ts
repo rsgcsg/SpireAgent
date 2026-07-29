@@ -579,9 +579,7 @@ export function normalizeBridgeV2CurrentState(
           && (isBridgeV2EventContext(state.context) || isBridgeV2RestContext(state.context))) {
         validateDeckUpgradeState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
         surface = projectDeckUpgradeSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
-      } else if (isBridgeV2DeckTransformSurface(state.surface)
-          && isBridgeV2EventContext(state.context)
-          && state.context.event_id === "WHISPERING_HOLLOW") {
+      } else if (isBridgeV2DeckTransformSurface(state.surface)) {
         validateDeckTransformState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
         surface = projectDeckTransformSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
       } else if (isBridgeV2WoodCarvingsReplacementSurface(state.surface)
@@ -2888,6 +2886,11 @@ function projectDeckTransformSurface(
     stage: surface.stage,
     bridgeStateId: stateId,
     screenEntityId: surface.screen_entity_id,
+    source: {
+      kind: surface.source.kind,
+      definitionId: surface.source.definition_id,
+      bindingEvidence: surface.source.binding_evidence
+    },
     prompt: surface.prompt,
     minimumSelections: surface.min_select,
     maximumSelections: surface.max_select,

@@ -161,8 +161,25 @@ Gateway completion without reinterpreting native Outcome. This refines, rather
 than changes, the single-authority decision. See the
 [Preview.75 runtime closeout](../audits/WORKFLOW_C_PREVIEW75_RUNTIME_AND_SUCCESSOR_STABILITY_CLOSEOUT_2026-07-29.md).
 
-A final same-source rebuild is installed as SHA `f9819b6b...c721ee`, MVID
-`34d6deb3...380410` and awaits cold-load. The current whole-DLL rollback is
-`STS2MCP/.local/deployments/2026-07-29T12-26-37-794Z`. A rollback restores a
-complete prior DLL; it does not selectively re-enable the deleted shadow wire
-contract or transfer runtime authority.
+Preview.76 is installed as SHA `56b24ea...de9003`, MVID
+`37f4ce07...d7d4676` and awaits cold-load. The current whole-DLL rollback is
+`STS2MCP/.local/deployments/2026-07-29T13-33-27-964Z`. A rollback restores a
+complete prior DLL; it does not selectively re-enable deleted structure or
+transfer runtime authority.
+
+### Preview.76 evidence amendment
+
+The rebuilt Preview.75 identity was subsequently loaded as SHA
+`f9819b6b...c721ee`, MVID `34d6deb3...380410`, runtime `7f72d087...`. Two
+latest bounded runs completed with 77/77 and 92/92 attempted mutations settled.
+A third run selected Neow's New Leaf, whose parent event command completed and
+opened `NDeckTransformSelectScreen`, but the child failed closed because the
+transform provider encoded Whispering Hollow as its only caller.
+
+This validates rather than replaces the vertical-family rule: share native
+mechanics only while preserving explicit owner/source/operands/Commit and
+Outcome. Preview.76 adds a typed task-local New Leaf source beside the existing
+Whispering event source and centrally forces every unsupported draft to zero
+actions plus `none_fail_closed`. It adds no authority plane or durable claim.
+New Leaf mutation and Kifuda remain pending exact-runtime evidence; see the
+[Preview.76 closeout](../audits/WORKFLOW_C_PREVIEW76_NEW_LEAF_AND_UNSUPPORTED_AUTHORITY_CLOSEOUT_2026-07-29.md).

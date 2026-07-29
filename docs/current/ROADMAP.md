@@ -69,20 +69,20 @@ identity, family native-contract migration, deletion of old production paths,
 version/claim recovery and repeated journeys are required. Compendium and
 external reference enrichment remain optional.
 
-Preview.75 and Re schema 30 were loaded on exact SHA `ddce17cf...`, MVID
-`23ac5aad...`, runtime `fc2ea037...`. Runs `run-...094605` and `run-...112408`
-completed 175- and 282-decision one-game boundaries with 429 settled mutations,
-25 safe stale refusals, no unsupported/unknown mutation, and state-bound
-`run_deck`, `combat_piles` and `shop_catalog` capture. Provenance is
-`unrecorded`, so this is coverage rather than qualification. The second run
-proves ordinary relic purchase plus Courier slot replacement, but not Kifuda.
-A same-source rebuild is installed as SHA `f9819b6b...` / MVID `34d6deb3...`
-and awaits cold-load; no prior scope transfers.
+Preview.76 and Re schema 31 are source/test/build complete. Its predecessor
+Preview.75 loaded on SHA `f9819b6b...`, MVID `34d6deb3...`, runtime
+`7f72d087...`. Runs `run-...123734` and `run-...124247` completed bounded
+one-game boundaries with every attempted mutation settled. Run `run-...123227`
+proved a different New Leaf caller of the native transform selector and failed
+closed after its parent option completed. Preview.76 adds exact caller
+discrimination; its runtime behavior is not yet claimed. Kifuda remains absent.
 
 ### Current Gate 2 Work
 
-- cold-load the installed whole-DLL identity and compare post-change
-  successor-stability stale rate on one exact-runtime run;
+- cold-load the installed Preview.76 whole-DLL identity and run one bounded
+  exact-runtime journey;
+- accept natural New Leaf evidence if it appears, but do not manufacture that
+  encounter or infer runtime support from source/fixtures;
 - obtain natural Kifuda child/negative evidence for the first vertical pilot
   without manufacturing the encounter;
 - close core Inspection and typed availability;

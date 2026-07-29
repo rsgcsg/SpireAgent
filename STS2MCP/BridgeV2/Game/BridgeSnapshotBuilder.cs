@@ -407,7 +407,16 @@ internal static class BridgeSnapshotBuilder
     }
 
     internal static BridgeObservationDraft ApplyCurrentAuthority(BridgeObservationDraft draft) =>
-        draft.Actions.Count == 0
+        draft.Surface is UnsupportedSurface
+            ? draft with
+            {
+                Actions = Array.Empty<BridgeActionDraft>(),
+                AuthorityHandoff = new AuthorityHandoff(
+                    "none_fail_closed",
+                    null,
+                    "An unsupported surface cannot own Bridge v2 mutation authority.")
+            }
+        : draft.Actions.Count == 0
             ? draft
             : draft.Game.Compatibility.ActionExecutionAllowed
             ? SuppressActionsOutsideCurrentOperationScope(draft)

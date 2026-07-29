@@ -18,20 +18,20 @@ third-party clients.
 
 ## Current Truth
 
-The active source Connector contract is `2.0-preview.75`; Re normalized schema
-is `30`. Gate 1/M0 is closed as a bounded ordinary-single-player v2 interface:
+The active source Connector contract is `2.0-preview.76`; Re normalized schema
+is `31`. Gate 1/M0 is closed as a bounded ordinary-single-player v2 interface:
 Re and the optional MCP adapter are v2-only, Gateway `/api/v1` is retired, and
 the exact loaded Preview.74 completed a 202-decision bounded one-game journey.
-Preview.75 keeps the Clean Closure identity/native-contract migration, adds a
-volatile state-bound Inspection canary and repairs non-authoritative rationale
-overflow. It is built and installed but not yet cold-loaded.
+Preview.76 preserves the Clean Closure identity/native-contract migration,
+adds exact New Leaf versus Whispering Hollow transform-source discrimination,
+and centrally forces every unsupported draft to non-authorizing state. It is
+built and installed but not yet cold-loaded.
 
-The Preview.74 runs have `unrecorded` provenance, current-build Inspection remained
-disabled, and the repaired Hefty/actionless-settling branches were not
-naturally exercised. It is exact-runtime coverage, not Organic evidence,
-persistent qualification, complete visible-information coverage or strategic
-quality proof. Exact source, loaded, candidate, Organic and persistent evidence
-remain separated in [current status](docs/current/STATUS.md).
+Latest Preview.75 runs have `unrecorded` provenance. Two completed bounded run
+boundaries; a third exposed the New Leaf child source gap now repaired in
+Preview.76. This is exact-runtime coverage, not Preview.76 load evidence,
+Organic evidence, persistent qualification, complete visible-information
+coverage or strategic-quality proof. See [current status](docs/current/STATUS.md).
 
 The current program milestone is **M1 Measurable External Agent Baseline**,
 with a bounded C-R1 connector-completion track running alongside A/D.

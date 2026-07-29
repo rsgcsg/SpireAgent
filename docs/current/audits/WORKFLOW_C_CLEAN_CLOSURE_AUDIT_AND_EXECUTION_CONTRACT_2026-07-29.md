@@ -1,7 +1,7 @@
 # 工作流 C Clean Closure 架构审计与执行合同
 
 **审计基线：** `develop` `146618b4431042da317d34a855c7380a02d55af9`  
-**状态：** execution contract accepted; Preview.75 loaded and bounded runtime exercised; Kifuda/family deletion pending
+**状态：** execution contract accepted; Preview.76 built/installed, cold-load pending; Kifuda/family deletion pending
 **权威决定：** [ADR-0005](../decisions/ADR-0005-workflow-c-clean-closure.md)
 
 ## 1. 执行结论
@@ -47,10 +47,13 @@ repeatable actionable successor without changing Gateway Outcome or retrying
 stale actions. See the
 [Preview.75 runtime closeout](WORKFLOW_C_PREVIEW75_RUNTIME_AND_SUCCESSOR_STABILITY_CLOSEOUT_2026-07-29.md).
 
-The final same-source Release rebuild is installed as SHA `f9819b6b...c721ee`,
-MVID `34d6deb3...380410`. The game is closed, so this new whole-DLL identity
-inherits no loaded evidence or session authority. Rollback is
-`STS2MCP/.local/deployments/2026-07-29T12-26-37-794Z`.
+That rebuild later loaded and supplied two more completed boundaries. A third
+run exposed New Leaf as a second exact caller of the native transform selector.
+Preview.76 repairs that source binding and the unsupported-authority invariant.
+It is installed as SHA `56b24ea...de9003`, MVID `37f4ce07...d7d4676`; the game
+is closed, so it inherits no loaded evidence or session authority. Rollback is
+`STS2MCP/.local/deployments/2026-07-29T13-33-27-964Z`. See the
+[Preview.76 closeout](WORKFLOW_C_PREVIEW76_NEW_LEAF_AND_UNSUPPORTED_AUTHORITY_CLOSEOUT_2026-07-29.md).
 
 ## 2. 事实与证据边界
 
@@ -181,7 +184,8 @@ discard、Tutor 未审计 owner、非标准 profile/menu、multiplayer、未知 
 - 删除 `identity_shadow`、`contract_instance_shadow`；
 - 从 state envelope 删除完整 permission/qualification history；
 - control state 仍在 capabilities/operator responses；
-- Re schema 30 严格解码新合同，Prompt 不再接收这些治理历史。
+- Re schema 31 严格解码当前合同；Preview.76 额外保留 typed transform
+  source，Prompt 仍不接收权限和资格治理历史。
 
 ### 6.2 BoundAction 与首个 pilot
 

@@ -1,18 +1,15 @@
 # Bridge v2 Integration
 
 > Current source-truth status, 2026-07-29: Re and C# share the
-> `2.0-preview.75` source consumer contract; Re normalized schema is `30`.
+> `2.0-preview.76` source consumer contract; Re normalized schema is `31`.
 > Gate 1 is closed as a bounded ordinary-single-player v2 connector baseline.
-> Preview.75 exact runs on SHA `ddce17cf...6334` / MVID
-> `23ac5aad...3cb4` / runtime `fc2ea037...`,
-> `run-20260729094605-ycbsur` and `run-20260729112408-jltj8f`, completed
-> one-game boundaries with 429 settled decisions and 25 safe stale refusals;
-> they had no unsupported, observation/provider failure, unsettled or unknown
-> mutation. They exercised state-bound Inspection and one ordinary relic
-> purchase, but not Kifuda. Provenance is `unrecorded`; neither creates Organic
-> qualification or a durable claim.
-> A same-source rebuild is installed as SHA `f9819b6b...` / MVID
-> `34d6deb3...` and awaits cold-load; prior session scope does not transfer.
+> Preview.75 exact runs on SHA `f9819b6b...` / MVID `34d6deb3...` /
+> runtime `7f72d087...` include two completed run boundaries and one exact
+> New Leaf child fail-closed result. Preview.76 repairs that source binding and
+> centrally normalizes unsupported authority. Kifuda remains not exercised.
+> Provenance is `unrecorded`; it creates neither Preview.76 runtime evidence,
+> Organic qualification nor a durable claim. Prior session scope does not
+> transfer to the new artifact.
 
 ## Connector Boundary
 
@@ -32,7 +29,7 @@ consumption.
 
 ## Current Scope
 
-Re-SpireAgent implements the strict `2.0-preview.75` consumer contract. When a
+Re-SpireAgent implements the strict `2.0-preview.76` consumer contract. When a
 matching Bridge exists, authority is read from capabilities rather than
 inferred from implementation or historical evidence.
 
@@ -208,11 +205,13 @@ The current MVID has a fresh loss intro -> summary -> return game-over
 lifecycle. Win/timeline diversity, treasure open/skip, linked rewards, special
 map modes, and unlisted variants remain unqualified.
 
-Preview.38 adds only the exact Whispering Hollow random-transform child. Re
-requires `random_uncommitted_cycle`, rejects any claimed pre-commit replacement,
-and preserves the same selected entity bindings through confirm. Selection,
-confirm, and upgrade-view presentation have current-build Organic-canary
-evidence; other transform origins and cancel variants remain unqualified.
+Preview.38 added the exact Whispering Hollow random-transform child. Preview.76
+keeps the shared native selector mechanics but requires a typed source:
+`whispering_hollow_event` or task-local `new_leaf_relic_pickup`. Re requires
+`random_uncommitted_cycle`, rejects any claimed pre-commit replacement, and
+preserves the same selected entity bindings through confirm. Whispering Hollow
+has historical action-canary evidence; New Leaf is source/build supported but
+exact-runtime mutation remains pending. Every other origin fails closed.
 
 Preview.42 adds only the exact Lead Paperweight generated run-deck child. Re
 requires `purpose=acquire_one_generated_card`,

@@ -232,13 +232,12 @@ and the
 
 ## Current Architectural Constraint
 
-The Gateway and Re source share the mechanically checked `2.0-preview.75`
-contract and normalized schema 30. Two runs on loaded SHA `ddce17cf...` / MVID
-`23ac5aad...` / runtime `fc2ea037...` completed one-game boundaries and
-exercised state-bound Inspection; this is `unrecorded` coverage, not Organic or
-persistent qualification. A same-source rebuild is installed as SHA
-`f9819b6b...` / MVID `34d6deb3...` and awaits cold-load; prior authority does
-not transfer. Gate 1
+The Gateway and Re source share the mechanically checked `2.0-preview.76`
+contract and normalized schema 31. Latest loaded Preview.75 evidence includes
+two completed one-game boundaries on SHA `f9819b6b...` / MVID `34d6deb3...` /
+runtime `7f72d087...`; a third run exposed a New Leaf transform caller gap.
+Preview.76 repairs that gap but awaits cold-load, so prior authority does not
+transfer. Gate 1
 establishes a bounded v2 connector baseline: Re and the
 default MCP adapter are v2-only, Gateway v1 is retired, and historical v1 data
 is replay-only. Preview.69 has substantial real-runtime coverage on exact final
@@ -287,6 +286,16 @@ after the same clean runtime has a source-resolved mutation session scope.
 Inspection remains non-authorizing and non-persistent. Re also treats an
 overlong rationale as bounded audit-data normalization rather than discarding
 an otherwise valid advertised action.
+
+Preview.76 confirms a required family boundary: shared native UI mechanics do
+not imply shared business-source authority. `NDeckTransformSelectScreen` is
+used by both Whispering Hollow and New Leaf. One provider shares exact selector
+reading and commit mechanics, while typed source contracts separately prove
+the active event owner or task-local relic acquisition, exact operands and
+settlement. Unknown or concurrent callers fail closed. This is the preferred
+`shared mechanism + explicit source contract` pattern, not a universal
+selector. A central projection invariant also strips every unsupported draft
+of actions and forces `none_fail_closed`.
 
 The Silver Crucible empty-chest defect also confirms the intended Oracle
 boundary: operation completion must recognize every native outcome branch that
