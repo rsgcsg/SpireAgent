@@ -12,6 +12,11 @@ Its mandatory clean-closure sequencing, identity cutover and vertical family
 migration are defined by
 [ADR-0005](decisions/ADR-0005-workflow-c-clean-closure.md) and the
 [Clean Closure audit](audits/WORKFLOW_C_CLEAN_CLOSURE_AUDIT_AND_EXECUTION_CONTRACT_2026-07-29.md).
+[ADR-0006](decisions/ADR-0006-explicit-native-contract-and-durable-authority-convergence.md)
+is the current contract/authority convergence decision: it retains the macro
+architecture while replacing mixed explicit/fallback durable admission. The
+[2026-07-30 reaudit](audits/WORKFLOW_C_ARCHITECTURE_CLEANLINESS_REAUDIT_AND_CLOSURE_TARGET_2026-07-30.md)
+owns the current closure target where older audits differ.
 This document describes both the current implementation and its constrained
 migration toward that target. Historical ALDG, universal contract/Transaction
 IR, qualification-centric, and environment-migration proposals are evidence
@@ -66,7 +71,7 @@ Native STS2 runtime
          action-local outcome + command receipt
        Compatibility & Evidence Control Plane
          exact provenance and revision inventory
-         impact/evidence/trial/claim lifecycle
+         typed explicit-contract evidence/trial/claim lifecycle
          quarantine/revoke/rollback
   -> versioned REST contract
   -> Re-SpireAgent
@@ -169,7 +174,9 @@ show visible hand and enemy facts continuing to evolve after card Commit.
   native action as a runtime-bound trial without preinstalling broad candidate
   packages. This path still requires clean Patch identity, current legality,
   native Commit, semantic completion and immediate local quarantine on
-  failure. It cannot write persistent qualification. Persistent packages keep
+  failure. It cannot write persistent qualification. Only an
+  `explicit_native_contract` may enter the package lifecycle; a
+  `manifest_migration_fallback` remains volatile. Persistent packages keep
   their exact-environment evidence, version, revoke and rollback gates.
 
 ## Rule-Aware Adaptation Boundary
@@ -206,23 +213,24 @@ D evidence/recommendation (non-authorizing)
 
 `strict`, `balanced_gray`, `developer_gray`, and `migration_exploration` are
 Gateway modes. All retain exact game/Gateway/Modset identity, explicit
-operation scope, opaque state-bound actions, execute-time revalidation, native
-commit, semantic completion and unknown-no-retry. Migration mode admits either
-an installed exact candidate or the current source-resolved encounter under a
-bounded risk rule; it is not wildcard authority.
+scope, opaque state-bound actions, execute-time revalidation, native commit,
+semantic completion and unknown-no-retry. Migration mode admits either an
+installed exact explicit-contract candidate or the current source-resolved
+encounter under a bounded risk rule; it is not wildcard authority.
 Fallback identities require a non-empty witness emitted by the current
-Gateway and remain unqualified until full evidence and package promotion.
+Gateway and may confirm/quarantine only their runtime-local trial. They cannot
+be assembled, installed, reloaded or promoted as durable packages.
 
 Current dynamic grants bind runtime epoch, exact environment, Gateway SHA/MVID,
 Modset, Patch digest, operation fingerprint, evidence policy, expiry and
 supersession. `encounter_source_resolved` grants are created only for actions
 on the current resolved Surface; confirmed completion yields
 `session_trial_confirmed`, not durable approval. They are volatile: restart is
-a complete rollback. Persistent
-packages are a separate append-only local store and are revalidated at startup
-and on atomic file reload. The migration orchestrator may assemble and append
-packages outside the live API, but D and Re cannot activate either path through
-the Gateway API. Only a unique current operation scope authorizes an action;
+a complete rollback. Persistent packages are a separate append-only local store
+and are revalidated at startup and on atomic file reload. The migration
+orchestrator may assemble and append explicit-contract packages outside the
+live API, but D and Re cannot activate either path through the Gateway API.
+Only a unique current scope authorizes an action;
 historical versions remain audit evidence. Sibling operations on one Surface may
 legitimately occupy different tiers, so Surface support is only a coarse
 highest-tier projection and never the permission decision itself. See the
@@ -232,36 +240,15 @@ and the
 
 ## Current Architectural Constraint
 
-The Gateway and Re source share the mechanically checked `2.0-preview.76`
-contract and normalized schema 31. Latest loaded Preview.75 evidence includes
-two completed one-game boundaries on SHA `f9819b6b...` / MVID `34d6deb3...` /
-runtime `7f72d087...`; a third run exposed a New Leaf transform caller gap.
-Preview.76 repairs that gap but awaits cold-load, so prior authority does not
-transfer. Gate 1
-establishes a bounded v2 connector baseline: Re and the
-default MCP adapter are v2-only, Gateway v1 is retired, and historical v1 data
-is replay-only. Preview.69 has substantial real-runtime coverage on exact final
-loaded SHA `914974b5...` / MVID `1e457e86...`. Preview.70 later loaded as SHA
-`28c32f40...` / MVID `6f169dfe...` and completed a bounded game-to-menu run.
-Preview.71 later loaded as SHA `fd0f7c56...` / MVID `0acccd3d...` / runtime
-`19219d23...`. Four runs exposed a repeated Hefty source gap, one Re actionless-
-settling contract error, and one completed boundary. Preview.72 repairs both
-defects. Its latest same-source rebuild is installed/loaded as SHA
-`debc229e...` / MVID `6d9d4adf...` / runtime `b2332a06...`. Preview.73 was
-last loaded as SHA `f6b2d268...` / MVID
-`f67e272a...` / runtime `37c04bb7...`. Its Rest repair is the
-reference boundary: an action-local Outcome
-proves a native minimum plus progression, not every co-occurring native side
-effect. A permission-blocked semantic Surface retains `bridge_owned` while
-publishing no mutation action; unsupported source ownership still uses
-`none_fail_closed`.
-
-Two final-MVID Preview.69 runs completed saved/fresh run-to-menu boundaries;
-the latter settled 106 actions without stale or runtime failure. Their
-provenance is `unrecorded`, so they remain defect/coverage evidence rather than
-Organic qualification. New immutable run
-summaries distinguish run boundary, runtime guard/failure, and decision-limit
-termination; a decision limit is no longer reported as success.
+The Gateway and Re source share the mechanically checked `2.0-preview.77`
+contract and normalized schema 31. Preview.76 loaded as SHA `56b24ea3...` /
+MVID `37f4ce07...` / runtime `8ccf81d0...` and completed the 172-decision
+`run-20260729140216-qi8r24` boundary with 170 settled mutations and one safe
+pre-execution stale refusal. Preview.77 has a new source identity and inherits
+none of that runtime authority. Gate 1 remains a bounded v2 baseline: Re and
+the default MCP adapter are v2-only, Gateway v1 is retired, and historical v1
+data is replay-only. The run's provenance is `unrecorded`, so it is
+defect/coverage evidence rather than Organic qualification.
 
 Active-run shared HUD remains required. The only exception is a typed omission
 during exact new/resumed-run mount
@@ -276,9 +263,16 @@ Preview.74 made semantic and authority identities formal wire fields and
 removes the old shadows and control histories from state. Composite `state_id`
 still binds both for stale-action safety. One production publication path binds
 every action to contract/source/operands/state. Seven explicit contracts use
-contract-digest admission; 80 manifest fallback families temporarily retain
-operation admission and must receive a family disposition before Clean Closure.
-Operation remains metadata for migrated families, not their execution key.
+contract-digest admission; 80 typed manifest fallback identities temporarily
+retain runtime-only operation admission and must receive a family disposition
+before Clean Closure. Operation remains metadata for migrated families, not
+their execution or durable-claim key.
+
+Preview.77 closes durable fallback admission in both the Gateway and operator
+ledger. Four Surfaces remain mixed-generation: shop room, shop inventory,
+treasure and deck enchant. Each must migrate vertically or become typed
+unsupported/`code_required`; this debt does not justify a universal selector,
+transaction layer or second rule engine.
 
 Preview.75 does not add another authority plane. It allows the existing
 state-bound Inspection plane to operate as a volatile read-only canary only

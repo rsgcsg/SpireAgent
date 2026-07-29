@@ -12,6 +12,10 @@ open-ended shadow/dual-read sequence below: experiments are bounded and deleted
 on acceptance or rejection, formal identity has cut over directly, and family
 migration is now mandatory for Clean Closure.
 
+ADR-0006 (2026-07-30) supersedes this ADR's remaining mixed-identity admission:
+`operation` may remain a temporary session fallback/telemetry key, but a
+manifest-derived identity cannot become an installable or durable claim.
+
 ## Problem
 
 The current `surface_kind + operation` key is simultaneously used for Prompt

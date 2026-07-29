@@ -14,10 +14,11 @@ mutations and 25 safe stale refusals. They exercised state-bound Inspection and
 one ordinary relic purchase; Kifuda did not occur. This is `unrecorded`
 coverage evidence, not qualification. Re now requires a repeatable actionable
 successor after Gateway action-local completion without remapping or retrying a
-stale choice. A same-source rebuild is installed as SHA `f9819b6b...`, MVID
-`34d6deb3...` and awaits cold-load. Post-change Live comparison remains
-pending. Rollback is
-`../STS2MCP/.local/deployments/2026-07-29T12-26-37-794Z`.
+stale choice. A same-source rebuild was installed as SHA `f9819b6b...`, MVID
+`34d6deb3...` and was later superseded by loaded Preview.76 evidence. Current
+Preview.77 source/build/install are verified; cold-load identity and
+post-change Live comparison remain pending. The current rollback pointer is
+owned by the canonical status documents rather than this chronology.
 
 Earlier status update 2026-07-29: source contract is
 `2.0-preview.73`; Re normalized schema is `29`. Preview.73 repairs the

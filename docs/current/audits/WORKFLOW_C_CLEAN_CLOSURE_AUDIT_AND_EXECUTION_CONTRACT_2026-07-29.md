@@ -1,7 +1,8 @@
 # 工作流 C Clean Closure 架构审计与执行合同
 
 **审计基线：** `develop` `146618b4431042da317d34a855c7380a02d55af9`  
-**状态：** execution contract accepted; Preview.76 built/installed, cold-load pending; Kifuda/family deletion pending
+**状态：** superseded as current closure target by the 2026-07-30 architecture
+cleanliness reaudit and ADR-0006; retained as historical execution evidence
 **权威决定：** [ADR-0005](../decisions/ADR-0005-workflow-c-clean-closure.md)
 
 ## 1. 执行结论

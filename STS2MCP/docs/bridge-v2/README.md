@@ -1,7 +1,7 @@
 # Bridge v2 Documentation
 
 Bridge v2 is the active semantic Gateway protocol. C# and Re source now share
-`2.0-preview.76`; Re normalized schema is `31`. Gate 1 is closed as a bounded
+`2.0-preview.77`; Re normalized schema is `31`. Gate 1 is closed as a bounded
 ordinary-single-player v2 connector baseline and the complete v1 HTTP namespace
 is retired. Preview.61 supplied the final Neow's Fury runtime seal. Preview.62
 adds reviewed registry/policy adaptation and non-authorizing exact-assembly
@@ -13,9 +13,10 @@ multi-environment Profiles, risk-based migration candidates, evidence
 aggregation, automatic package orchestration, and atomic store reload. The
 final local binary has qualified only `main_menu/continue_run` through real
 two-epoch evidence and cold-restart revalidation. Its 87-operation projection
-contains six explicit high-precision contracts plus 81 conservative
-manifest-derived identity/test-confirm fallbacks; the other 86 operations are
-session canaries, not qualifications. Start with current status, not historical
+contains historical explicit contracts plus conservative manifest-derived
+fallbacks. Current Preview.77 has seven explicit contracts and 80 typed
+session fallbacks; fallback packages are invalid rather than candidate or
+durable qualification. Start with current status, not historical
 preview closeouts.
 
 Preview.69 adds risk-calibrated encounter trials, exact new/resumed-run mount settling,
@@ -51,12 +52,16 @@ the wire contract or Gateway authority. See the
 The rebuilt Preview.75 identity later loaded as SHA `f9819b6b...` / MVID
 `34d6deb3...` / runtime `7f72d087...`. Two latest runs completed bounded run
 boundaries; another exposed the New Leaf transform caller gap. Preview.76
-repairs that source binding and the unsupported-authority invariant, but awaits
-cold-load; no earlier session scope transfers.
+repairs that source binding and the unsupported-authority invariant. It later
+loaded and completed `run-20260729140216-qi8r24`; New Leaf and Kifuda were not
+exercised. Preview.77 closes durable fallback admission and inherits no earlier
+session scope.
 
 ## Current Documents
 
 - [Current status](CURRENT_STATUS.md)
+- [Architecture cleanliness reaudit](../../../docs/current/audits/WORKFLOW_C_ARCHITECTURE_CLEANLINESS_REAUDIT_AND_CLOSURE_TARGET_2026-07-30.md)
+- [Explicit contract and durable authority ADR](../../../docs/current/decisions/ADR-0006-explicit-native-contract-and-durable-authority-convergence.md)
 - [Preview.76 New Leaf and unsupported-authority closeout](../../../docs/current/audits/WORKFLOW_C_PREVIEW76_NEW_LEAF_AND_UNSUPPORTED_AUTHORITY_CLOSEOUT_2026-07-29.md)
 - [Preview.75 runtime and successor-stability closeout](../../../docs/current/audits/WORKFLOW_C_PREVIEW75_RUNTIME_AND_SUCCESSOR_STABILITY_CLOSEOUT_2026-07-29.md)
 - [Preview.74 runtime and Preview.75 pre-Live closeout](../../../docs/current/audits/WORKFLOW_C_PREVIEW74_RUNTIME_AND_PREVIEW75_PRELIVE_CLOSEOUT_2026-07-29.md)

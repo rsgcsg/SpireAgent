@@ -5,6 +5,8 @@ import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import pathModule from "node:path";
 import { pathToFileURL } from "node:url";
 
+const EXPLICIT_NATIVE_CONTRACT = "explicit_native_contract";
+
 function parseArgs(argv) {
   const [command, ...rest] = argv;
   const options = {};
@@ -106,8 +108,8 @@ function exactActiveQualifications(capabilities) {
 }
 
 function profileStatus(capabilities) {
-  const contracts =
-    capabilities?.qualification_system?.operation_contracts ?? [];
+  const contracts = (capabilities?.qualification_system?.operation_contracts ?? [])
+    .filter((contract) => contract.contract_kind === EXPLICIT_NATIVE_CONTRACT);
   const qualifiedKeys = new Set(
     exactActiveQualifications(capabilities)
       .filter((entry) => entry.authority_tier === "qualified")
@@ -163,8 +165,8 @@ export function syncEnvironmentProfile(
   if (errors.length > 0) throw new Error(errors.join("; "));
   const identity = buildEnvironmentProfileIdentity(capabilities);
   const profileId = environmentProfileId(identity);
-  const contracts =
-    capabilities?.qualification_system?.operation_contracts ?? [];
+  const contracts = (capabilities?.qualification_system?.operation_contracts ?? [])
+    .filter((contract) => contract.contract_kind === EXPLICIT_NATIVE_CONTRACT);
   const applicable = exactActiveQualifications(capabilities);
   const profile = {
     profile_id: profileId,
@@ -249,6 +251,15 @@ export function buildMigrationPlan({
   const operations = (
     capabilities?.qualification_system?.operation_contracts ?? []
   ).map((contract) => {
+    if (contract.contract_kind !== EXPLICIT_NATIVE_CONTRACT) {
+      return {
+        surface_kind: contract.surface_kind,
+        operation: contract.operation,
+        risk_class: contract.risk_class,
+        route: "code_required",
+        reason: "migration_fallback_is_not_durable_authority"
+      };
+    }
     const current = active.find(
       (entry) =>
         entry.surface_kind === contract.surface_kind
@@ -287,16 +298,13 @@ export function buildMigrationPlan({
       contract,
       capabilities
     );
-    if (auditStatus === "reviewed_binding_match"
-        || auditStatus === "runtime_publication_required") {
+    if (auditStatus === "reviewed_binding_match") {
       return {
         surface_kind: contract.surface_kind,
         operation: contract.operation,
         risk_class: contract.risk_class,
         route: "test_confirm",
-        reason: auditStatus === "reviewed_binding_match"
-          ? "exact_binding_match_requires_live_commit_and_witness"
-          : "manifest_fallback_requires_live_publication_commit_and_witness"
+        reason: "exact_binding_match_requires_live_commit_and_witness"
       };
     }
     return {

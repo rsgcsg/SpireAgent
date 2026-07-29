@@ -4,6 +4,10 @@
 
 Accepted as the single target architecture, 2026-07-27.
 
+ADR-0006 (2026-07-30) is the current authority/contract convergence decision.
+It retains this macro architecture while forbidding manifest-derived fallback
+identities from becoming durable qualifications.
+
 Amended 2026-07-28 to make Workflow A decision continuity the explicit
 priority order and to separate world Context, interaction protocol, native
 source binding, and outcome truth. The amendment narrows the architecture; it

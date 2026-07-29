@@ -22,6 +22,7 @@ internal sealed record BridgeOperationQualificationContract(
 internal sealed record BridgeOperationQualificationIdentity(
     string SurfaceKind,
     string Operation,
+    string ContractKind,
     string InteractionDigest,
     string OwnerDigest,
     string SourceDigest,
@@ -36,6 +37,10 @@ internal sealed record BridgeOperationQualificationIdentity(
 
 internal static class BridgeOperationQualificationCatalog
 {
+    internal const string ExplicitNativeContract =
+        "explicit_native_contract";
+    internal const string ManifestMigrationFallback =
+        "manifest_migration_fallback";
     internal const string RuntimeReportedWitness =
         "gateway_reported_operation_witness";
     internal const string GatewayCompletionBoundary =
@@ -69,6 +74,9 @@ internal static class BridgeOperationQualificationCatalog
         if (contract == null)
             return null;
 
+        string contractKind = IsExplicitContract(surfaceKind, operation)
+            ? ExplicitNativeContract
+            : ManifestMigrationFallback;
         string interaction = BridgeHash.Text(contract.InteractionKind);
         string owner = BridgeHash.Text(contract.OwnerBinding);
         string source = BridgeHash.Text(contract.SourceBinding);
@@ -79,6 +87,7 @@ internal static class BridgeOperationQualificationCatalog
         return new BridgeOperationQualificationIdentity(
             contract.SurfaceKind,
             contract.Operation,
+            contractKind,
             interaction,
             owner,
             source,
@@ -90,6 +99,7 @@ internal static class BridgeOperationQualificationCatalog
             {
                 contract.SurfaceKind,
                 contract.Operation,
+                contractKind,
                 interaction,
                 owner,
                 source,
@@ -124,6 +134,7 @@ internal static class BridgeOperationQualificationCatalog
             .Select(identity => new BridgeOperationQualificationIdentityInfo(
                 identity!.SurfaceKind,
                 identity.Operation,
+                identity.ContractKind,
                 identity.InteractionDigest,
                 identity.OwnerDigest,
                 identity.SourceDigest,
@@ -158,10 +169,10 @@ internal static class BridgeOperationQualificationCatalog
                 json,
                 options);
             if (document == null
-                || document.SchemaVersion != 2
+                || document.SchemaVersion != 3
                 || string.IsNullOrWhiteSpace(document.CatalogId)
                 || document.AuthorityEffect
-                    != "explicit_overrides_plus_manifest_fallback_identity_only")
+                    != "explicit_native_contracts_plus_typed_session_fallbacks")
             {
                 return LoadResult.Failed(
                     "Operation qualification catalog metadata is unsupported.");

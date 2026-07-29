@@ -7,6 +7,10 @@ Accepted on 2026-07-28. This refines the control plane of
 preserving the native-contract migration in
 [ADR-0003](ADR-0003-operation-retirement-and-native-continuation-migration.md).
 
+ADR-0006 (2026-07-30) retains this diagnostic/session/durable separation and
+closes one ambiguity: only an explicit native contract may enter the package
+or durable-claim lifecycle. Manifest fallbacks remain volatile session trials.
+
 ## Problem
 
 The Preview.63-68 permission path coupled three different questions:

@@ -5,8 +5,8 @@ Re is the strict Agent consumer in the repository's accepted
 It may derive an evidence-tested model view, but it never becomes a second
 game-state, legality, permission, Commit, or completion authority.
 
-> Compatibility status, 2026-07-29: Re and C# share source contract
-> `2.0-preview.76`; Re normalized schema is `31`. Gate 1 is closed as a
+> Compatibility status, 2026-07-30: Re and C# share source contract
+> `2.0-preview.77`; Re normalized schema is `31`. Gate 1 is closed as a
 > bounded ordinary-single-player v2 baseline, not full game coverage.
 > Preview.69 adds typed new/resumed-run mount settling, bounded semantic-cycle recovery,
 > and strict consumption of encounter-scoped provisional grants. Diagnostic
@@ -48,14 +48,14 @@ visible native effects are still evolving.
 
 RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, shadow/live modes, policy promotion, or the old project's phase machinery. Its job is to make one decision path correct and auditable.
 
-Re's current strict client contract is Bridge `2.0-preview.76`. Re strictly
-decodes current identities and grants, but does not interpret fallback Witness
-semantics or promote any candidate. Latest exact Preview.75 runs on SHA
-`f9819b6b...` / MVID `34d6deb3...` / runtime `7f72d087...` include two
-completed run boundaries and one New Leaf child fail-closed result. Preview.76
-repairs that exact caller binding and unsupported-authority invariant, but has
-no loaded or mutation evidence yet. Its `unrecorded` predecessors are coverage
-evidence, not Organic or persistent qualification.
+Re's current strict client contract is Bridge `2.0-preview.77`. Re strictly
+decodes typed contract identities and grants, but does not interpret fallback
+Witness semantics or promote any candidate. Latest exact Preview.76 run
+`run-20260729140216-qi8r24` completed a 172-decision boundary with 170 settled
+mutations and one safe stale refusal on SHA `56b24ea3...` / MVID
+`37f4ce07...` / runtime `8ccf81d0...`. It did not exercise New Leaf, Kifuda or
+ordinary relic purchase. Its `unrecorded` provenance is coverage evidence, not
+Preview.77 evidence, Organic evidence or persistent qualification.
 A historical strict read-only main-menu inspection passed without mutation.
 Preview.66's narrow persistent
 `main_menu/continue_run` qualification belongs only to its historical exact
@@ -71,6 +71,10 @@ Inspection authority.
 Re imports only explicit operation scopes emitted by the Gateway's exact-build
 manifest; empty permission lists never mean wildcard. It rejects legal actions
 outside the matching capability operation inventory.
+Re records `contract_kind` for exact evidence provenance. A durable
+qualification must be `explicit_native_contract`; a
+`manifest_migration_fallback` can appear only through a Gateway-owned volatile
+session scope and never through a durable package.
 Historical qualification on another game hash or Bridge MVID remains
 historical evidence only. See [MCP state coverage](docs/MCP_STATE_COVERAGE.md).
 

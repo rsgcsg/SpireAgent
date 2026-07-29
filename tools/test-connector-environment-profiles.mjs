@@ -37,21 +37,25 @@ function capabilities(overrides = {}) {
         {
           surface_kind: "main_menu",
           operation: "open_singleplayer",
+          contract_kind: "explicit_native_contract",
           risk_class: "reversible_navigation"
         },
         {
           surface_kind: "map_navigation",
           operation: "choose_map_node",
+          contract_kind: "explicit_native_contract",
           risk_class: "progression"
         },
         {
           surface_kind: "deck_enchant_selection",
           operation: "confirm_selection",
+          contract_kind: "explicit_native_contract",
           risk_class: "persistent_run_mutation"
         },
         {
           surface_kind: "event_option",
           operation: "choose_event_option",
+          contract_kind: "manifest_migration_fallback",
           risk_class: "persistent_run_mutation",
           witness_id: "gateway_reported_operation_witness"
         }
@@ -177,13 +181,14 @@ const policy = {
   });
   assert.equal(plan.summary.direct_confirm_exact_profile, 1);
   assert.equal(plan.summary.collect_migration_evidence, 1);
-  assert.equal(plan.summary.test_confirm, 2);
+  assert.equal(plan.summary.test_confirm, 1);
+  assert.equal(plan.summary.code_required, 1);
   assert.equal(
     plan.routes.find(
       (entry) => entry.surface_kind === "event_option"
         && entry.operation === "choose_event_option"
     )?.reason,
-    "manifest_fallback_requires_live_publication_commit_and_witness"
+    "migration_fallback_is_not_durable_authority"
   );
   assert.equal(plan.authorization_effect, "none");
 }

@@ -1018,7 +1018,9 @@ public sealed class BridgeContractTests
             OperationFingerprint = binding.ContractDigest
         };
 
-        Assert.True(binding.ExplicitContract);
+        Assert.Equal(
+            BridgeOperationQualificationCatalog.ExplicitNativeContract,
+            binding.ContractKind);
         Assert.True(binding.Matches(scope));
         Assert.Equal("native_commit_observed", binding.CompletionBoundary);
         Assert.Equal(

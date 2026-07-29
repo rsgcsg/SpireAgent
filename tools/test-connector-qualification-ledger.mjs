@@ -22,6 +22,7 @@ const now = new Date("2026-07-25T00:00:00Z");
 const contract = {
   surface_kind: "shop_room",
   operation: "open_shop_inventory",
+  contract_kind: "explicit_native_contract",
   interaction_digest: "1".repeat(64),
   owner_digest: "2".repeat(64),
   source_digest: "3".repeat(64),
@@ -38,6 +39,7 @@ const fallbackContract = {
   ...contract,
   surface_kind: "event_option",
   operation: "choose_event_option",
+  contract_kind: "manifest_migration_fallback",
   contract_digest: "9".repeat(64),
   completion_boundary: "gateway_semantic_completion_observed",
   witness_id: "gateway_reported_operation_witness",
@@ -49,6 +51,7 @@ const qualification = {
   authority_tier: "qualified",
   surface_kind: contract.surface_kind,
   operation: contract.operation,
+  contract_kind: contract.contract_kind,
   risk_class: contract.risk_class,
   game_version: "v0.109.0",
   game_commit: "commit",
@@ -307,8 +310,8 @@ assert.equal(
   fallbackCandidateEvidence.binding_audit.operation_binding_digest,
   fallbackContract.contract_digest
 );
-assert.deepEqual(
-  buildQualificationPackage({
+assert.throws(
+  () => buildQualificationPackage({
     capabilities: fallbackInventory,
     evidenceBundle: fallbackCandidateEvidence,
     surfaceKind: fallbackContract.surface_kind,
@@ -317,8 +320,8 @@ assert.deepEqual(
     authorityTier: "session_canary",
     issuedAt: now,
     expiresAt: new Date("2026-07-28T00:00:00Z")
-  }).witness_id,
-  "gateway_reported_operation_witness"
+  }),
+  /migration fallback/u
 );
 function fallbackRun(runtimeEpoch, requestId, witness) {
   return {

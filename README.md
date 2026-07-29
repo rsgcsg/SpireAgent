@@ -18,20 +18,19 @@ third-party clients.
 
 ## Current Truth
 
-The active source Connector contract is `2.0-preview.76`; Re normalized schema
+The active source Connector contract is `2.0-preview.77`; Re normalized schema
 is `31`. Gate 1/M0 is closed as a bounded ordinary-single-player v2 interface:
 Re and the optional MCP adapter are v2-only, Gateway `/api/v1` is retired, and
 the exact loaded Preview.74 completed a 202-decision bounded one-game journey.
-Preview.76 preserves the Clean Closure identity/native-contract migration,
-adds exact New Leaf versus Whispering Hollow transform-source discrimination,
-and centrally forces every unsupported draft to non-authorizing state. It is
-built and installed but not yet cold-loaded.
+Preview.77 preserves Preview.76's New Leaf source repair and adds a typed
+contract boundary: manifest migration fallbacks may support volatile session
+trials but cannot become durable qualification packages.
 
-Latest Preview.75 runs have `unrecorded` provenance. Two completed bounded run
-boundaries; a third exposed the New Leaf child source gap now repaired in
-Preview.76. This is exact-runtime coverage, not Preview.76 load evidence,
-Organic evidence, persistent qualification, complete visible-information
-coverage or strategic-quality proof. See [current status](docs/current/STATUS.md).
+The latest exact Preview.76 run completed a 172-decision boundary with 170
+settled mutations and one safe stale refusal. It has `unrecorded` provenance
+and did not exercise New Leaf, Kifuda or ordinary relic purchase, so it is
+bounded coverage rather than Preview.77 evidence, Organic evidence, persistent
+qualification or strategic-quality proof. See [current status](docs/current/STATUS.md).
 
 The current program milestone is **M1 Measurable External Agent Baseline**,
 with a bounded C-R1 connector-completion track running alongside A/D.
@@ -50,8 +49,9 @@ The repository has one accepted Connector destination: the
 It preserves one Gateway authority, separates live decisions from compatibility
 evidence, and keeps future model projections on the Re consumer side.
 [ADR-0003](docs/current/decisions/ADR-0003-operation-retirement-and-native-continuation-migration.md)
-defines the shadow-first retirement of global operation identity and the exact
-native continuation boundary.
+defines operation retirement and the native continuation boundary;
+[ADR-0006](docs/current/decisions/ADR-0006-explicit-native-contract-and-durable-authority-convergence.md)
+owns the current explicit-contract/durable-authority convergence.
 
 ## Start Here
 
@@ -60,6 +60,7 @@ native continuation boundary.
 - [Current architecture](docs/current/ARCHITECTURE.md)
 - [Connector target architecture ADR](docs/current/decisions/ADR-0002-semantic-gateway-two-plane-target-architecture.md)
 - [Operation retirement and native continuation ADR](docs/current/decisions/ADR-0003-operation-retirement-and-native-continuation-migration.md)
+- [Explicit contract and durable authority ADR](docs/current/decisions/ADR-0006-explicit-native-contract-and-durable-authority-convergence.md)
 - [Current functional roadmap](docs/current/ROADMAP.md)
 - [Current cross-component program plan](docs/current/PROGRAM_PLAN.md)
 - [Workflow C-R1 short-term completion contract](docs/current/audits/WORKFLOW_C_R1_SHORT_TERM_COMPLETION_CONTRACT_2026-07-29.md)

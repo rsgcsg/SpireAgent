@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { isJsonObject, type JsonObject } from "../../shared/json.js";
 
-export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.76" as const;
+export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.77" as const;
 export const BRIDGE_V2_INSPECTION_KINDS = ["run_deck", "combat_piles", "shop_catalog"] as const;
 const inspectionKindSchema = z.enum(BRIDGE_V2_INSPECTION_KINDS);
 
@@ -110,6 +110,7 @@ const persistentQualificationSchema = z.object({
   authority_tier: z.enum(["session_canary", "qualified"]),
   surface_kind: z.string().min(1),
   operation: z.string().min(1),
+  contract_kind: z.literal("explicit_native_contract"),
   risk_class: z.string().min(1),
   environment_digest: z.string().min(1),
   modset_fingerprint: z.string().min(1),
@@ -140,6 +141,10 @@ const persistentQualificationSchema = z.object({
 const operationQualificationIdentitySchema = z.object({
   surface_kind: z.string().min(1),
   operation: z.string().min(1),
+  contract_kind: z.enum([
+    "explicit_native_contract",
+    "manifest_migration_fallback"
+  ]),
   interaction_digest: z.string().regex(/^[a-f0-9]{64}$/iu),
   owner_digest: z.string().regex(/^[a-f0-9]{64}$/iu),
   source_digest: z.string().regex(/^[a-f0-9]{64}$/iu),
@@ -160,7 +165,7 @@ const operationQualificationIdentitySchema = z.object({
 }).passthrough();
 
 const qualificationSystemSchema = z.object({
-  schema_version: z.literal(1),
+  schema_version: z.literal(2),
   status: z.enum([
     "not_configured",
     "empty",
@@ -1618,6 +1623,7 @@ function validateQualificationSystem(
   game: z.infer<typeof gameSchema>
 ): void {
   const contractKeys = new Set<string>();
+  const contractsByKey = new Map<string, z.infer<typeof operationQualificationIdentitySchema>>();
   for (const contract of qualification.operation_contracts) {
     const key = `${contract.surface_kind}\u0000${contract.operation}`;
     if (contractKeys.has(key)) {
@@ -1626,6 +1632,7 @@ function validateQualificationSystem(
       );
     }
     contractKeys.add(key);
+    contractsByKey.set(key, contract);
   }
 
   const qualificationIds = new Set<string>();
@@ -1650,6 +1657,21 @@ function validateQualificationSystem(
       throw new BridgeV2DecodeError(
         `Persistent qualification ${candidate.qualification_id} is not an exact current active package`
       );
+    }
+    if (candidate.applicable_to_current_environment) {
+      const contract = contractsByKey.get(
+        `${candidate.surface_kind}\u0000${candidate.operation}`
+      );
+      if (!contract
+          || contract.contract_kind !== "explicit_native_contract"
+          || candidate.operation_fingerprint !== contract.contract_digest
+          || candidate.completion_boundary !== contract.completion_boundary
+          || candidate.witness_id !== contract.witness_id
+          || candidate.risk_class !== contract.risk_class) {
+        throw new BridgeV2DecodeError(
+          `Persistent qualification ${candidate.qualification_id} lacks a matching explicit native contract`
+        );
+      }
     }
   }
 

@@ -3,6 +3,11 @@
 **Status:** Accepted  
 **Date:** 2026-07-29
 
+> **2026-07-30 refinement:** ADR-0006 and the architecture cleanliness reaudit
+> retain this vertical migration/deletion sequence but supersede mixed
+> explicit/fallback durable admission. Only explicit native contracts may
+> become packages or persistent claims.
+
 ## Context
 
 ADR-0002 remains the accepted two-plane Semantic Gateway architecture. ADR-0003
@@ -161,8 +166,10 @@ Gateway completion without reinterpreting native Outcome. This refines, rather
 than changes, the single-authority decision. See the
 [Preview.75 runtime closeout](../audits/WORKFLOW_C_PREVIEW75_RUNTIME_AND_SUCCESSOR_STABILITY_CLOSEOUT_2026-07-29.md).
 
-Preview.76 is installed as SHA `56b24ea...de9003`, MVID
-`37f4ce07...d7d4676` and awaits cold-load. The current whole-DLL rollback is
+At the time of this ADR, Preview.76 was installed as SHA
+`56b24ea...de9003`, MVID `37f4ce07...d7d4676` and awaited cold-load. It later
+loaded and completed `run-20260729140216-qi8r24`; New Leaf and Kifuda were not
+exercised. The then-current whole-DLL rollback was
 `STS2MCP/.local/deployments/2026-07-29T13-33-27-964Z`. A rollback restores a
 complete prior DLL; it does not selectively re-enable deleted structure or
 transfer runtime authority.

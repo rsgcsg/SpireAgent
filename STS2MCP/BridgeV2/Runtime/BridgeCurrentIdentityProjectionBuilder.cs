@@ -58,7 +58,8 @@ internal static class BridgeCurrentIdentityProjectionBuilder
             .ToArray();
         string[] explicitContractDigests = draft.Actions
             .Select(action => BridgeBoundActionContract.Build(draft.Surface.Kind, action))
-            .Where(contract => contract?.ExplicitContract == true)
+            .Where(contract => contract?.ContractKind
+                == BridgeOperationQualificationCatalog.ExplicitNativeContract)
             .Select(contract => contract!.ContractDigest)
             .Distinct(StringComparer.Ordinal)
             .ToArray();

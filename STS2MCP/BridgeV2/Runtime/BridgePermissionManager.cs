@@ -356,7 +356,8 @@ internal sealed class BridgePermissionManager
         {
             ActionPermissionScope? scope = current.ActionPermissionScopes.SingleOrDefault(value =>
                 string.Equals(value.SurfaceKind, expected.SurfaceKind, StringComparison.Ordinal)
-                && (contract?.ExplicitContract == true
+                && (contract?.ContractKind
+                        == BridgeOperationQualificationCatalog.ExplicitNativeContract
                     ? string.Equals(
                         value.OperationFingerprint,
                         contract.ContractDigest,

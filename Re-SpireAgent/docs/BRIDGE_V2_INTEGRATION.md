@@ -1,15 +1,14 @@
 # Bridge v2 Integration
 
-> Current source-truth status, 2026-07-29: Re and C# share the
-> `2.0-preview.76` source consumer contract; Re normalized schema is `31`.
+> Current source-truth status, 2026-07-30: Re and C# share the
+> `2.0-preview.77` source consumer contract; Re normalized schema is `31`.
 > Gate 1 is closed as a bounded ordinary-single-player v2 connector baseline.
-> Preview.75 exact runs on SHA `f9819b6b...` / MVID `34d6deb3...` /
-> runtime `7f72d087...` include two completed run boundaries and one exact
-> New Leaf child fail-closed result. Preview.76 repairs that source binding and
-> centrally normalizes unsupported authority. Kifuda remains not exercised.
-> Provenance is `unrecorded`; it creates neither Preview.76 runtime evidence,
-> Organic qualification nor a durable claim. Prior session scope does not
-> transfer to the new artifact.
+> Exact Preview.76 run `run-20260729140216-qi8r24` completed a 172-decision
+> boundary with 170 settled mutations and one safe stale refusal. It did not
+> exercise New Leaf, Kifuda or ordinary relic purchase. Preview.77 types
+> explicit contracts versus session-only migration fallbacks and rejects
+> fallback durable packages. Provenance is `unrecorded`; prior session scope
+> does not transfer to the new artifact.
 
 ## Connector Boundary
 
@@ -29,7 +28,7 @@ consumption.
 
 ## Current Scope
 
-Re-SpireAgent implements the strict `2.0-preview.76` consumer contract. When a
+Re-SpireAgent implements the strict `2.0-preview.77` consumer contract. When a
 matching Bridge exists, authority is read from capabilities rather than
 inferred from implementation or historical evidence.
 
@@ -37,6 +36,11 @@ For every exact identity, Re accepts only the Gateway's explicit
 `surface_kind + operation + tier` scope projection. Every unlisted operation,
 source binding, Surface, and Inspection is disabled. Qualification from another
 game build or Bridge MVID does not transfer.
+
+Qualification schema `2` separates `explicit_native_contract` from
+`manifest_migration_fallback`. Re requires the explicit kind on every durable
+qualification and records both kinds in negotiated evidence. It never turns
+kind, manifest presence or historical evidence into client-side authority.
 
 Re compares the stable state/capability authorization set
 (`surface_kind + operation + tier`), rejects duplicate or unadvertised scopes,

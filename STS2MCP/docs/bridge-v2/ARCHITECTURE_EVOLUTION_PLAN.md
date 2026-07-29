@@ -18,7 +18,7 @@ Status: Gate 1 closed as a bounded ordinary-single-player v2 connector
 baseline on 2026-07-24. Preview.61 supplied the exact Neow's Fury Organic
 runtime seal, strict Re decode, and loaded-v1 retirement evidence.
 
-C# and Re source now share `2.0-preview.76`. ADR-0005 replaces this document's
+C# and Re source now share `2.0-preview.77`. ADR-0005 replaces this document's
 open-ended dual-read sequencing with bounded family migration and mandatory
 deletion. Preview.62 moved exact-environment
 authorization and reviewed combat-pile source contracts into validated
@@ -32,9 +32,9 @@ adds non-authorizing Environment Profiles, risk-class migration planning,
 multi-environment ledger slots, evidence orchestration, and atomic store
 reload. It also replaces per-operation candidate enumeration with explicit
 explicit high-precision qualification contracts plus conservative identities
-derived from the current operation manifest. The fallback path is
-identity/test-confirm only and available solely in migration mode; it does not
-self-authorize discovered mechanics, Mods, or new builds. These changes reduce
+derived from the current operation manifest. ADR-0006 now makes the fallback
+path runtime-session-only and forbids candidate/durable package assembly; it
+does not self-authorize discovered mechanics, Mods, or new builds. These changes reduce
 content-literal code edits, but independent green suites still do not prove a
 loaded game connector. The following deployment conditions remain required
 for every artifact:

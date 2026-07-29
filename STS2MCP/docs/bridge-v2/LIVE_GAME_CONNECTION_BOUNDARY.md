@@ -2,7 +2,7 @@
 
 Status: canonical architecture boundary for the current real-game connection.
 
-Current source compatibility status: C# and Re share `2.0-preview.76`, including
+Current source compatibility status: C# and Re share `2.0-preview.77`, including
 operation scopes, a Gateway artifact digest, separate actual-loaded versus
 release-declared game assembly hashes, reviewed exact-environment policy
 provenance, structural combat-pile transaction semantics, minimal local
@@ -12,9 +12,11 @@ source/build/audit evidence does not inherit that Organic qualification.
 Preview.66 is built, installed, cold-loaded, and strictly decoded by Re. Its
 final `v0.109.1` identity inherited no older action scope. One exact operation
 completed automatic two-epoch requalification. The other 86 current manifest
-operations remain session canaries: five use explicit high-precision contracts
-and 81 use conservative identity/test-confirm fallbacks. Fallback identity is
-not semantic equivalence or persistent qualification. Multi-environment
+operations remain historical session canaries: five use explicit
+high-precision contracts and 81 use conservative identity/test-confirm
+fallbacks. Fallback identity is not semantic equivalence or persistent
+qualification. Preview.77 enforces that boundary in Gateway and operator
+package validation: fallback identity remains volatile session trial only. Multi-environment
 Profiles are non-authorizing, and the append-only ledger hot-reloads only after
 exact revalidation. The loaded identity and precise evidence boundary are
 recorded in [Current Status](CURRENT_STATUS.md). Preview.69 adds exact

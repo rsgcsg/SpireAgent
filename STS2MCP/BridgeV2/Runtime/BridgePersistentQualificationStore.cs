@@ -21,6 +21,7 @@ internal sealed record BridgePersistentQualificationPackage(
     string AuthorityTier,
     string SurfaceKind,
     string Operation,
+    string ContractKind,
     string RiskClass,
     string GameVersion,
     string GameCommit,
@@ -370,7 +371,7 @@ internal sealed class BridgePersistentQualificationStore
         bool catalogReady =
             BridgeOperationQualificationCatalog.LoadError == null;
         return new BridgeQualificationSystemInfo(
-            1,
+            2,
             !catalogReady
                 ? "operation_catalog_invalid_fail_closed"
                 : _loadError == null
@@ -399,6 +400,7 @@ internal sealed class BridgePersistentQualificationStore
                 package.AuthorityTier,
                 package.SurfaceKind,
                 package.Operation,
+                package.ContractKind,
                 package.RiskClass,
                 package.EnvironmentDigest,
                 package.ModsetFingerprint,
@@ -482,6 +484,10 @@ internal sealed class BridgePersistentQualificationStore
                 bridge,
                 patchInventory)
             && identity != null
+            && identity.ContractKind
+                == BridgeOperationQualificationCatalog.ExplicitNativeContract
+            && package.ContractKind
+                == BridgeOperationQualificationCatalog.ExplicitNativeContract
             && package.OperationFingerprint == identity.ContractDigest
             && package.CompletionBoundary == identity.CompletionBoundary
             && package.WitnessId == identity.WitnessId;
@@ -622,6 +628,11 @@ internal sealed class BridgePersistentQualificationStore
             package.GatewayProtocol,
             BridgeV2Contract.ProtocolVersion,
             StringComparison.Ordinal);
+        if (package.ContractKind
+            != BridgeOperationQualificationCatalog.ExplicitNativeContract)
+        {
+            return "Manifest migration fallbacks cannot become durable qualifications.";
+        }
         if (string.IsNullOrWhiteSpace(package.QualificationId)
             || package.Version <= 0
             || package.AuthorityTier is not ("session_canary" or "qualified")
@@ -644,6 +655,8 @@ internal sealed class BridgePersistentQualificationStore
         }
         if (currentProtocol
             && (identity == null
+                || identity.ContractKind
+                    != BridgeOperationQualificationCatalog.ExplicitNativeContract
                 || package.OperationFingerprint != identity.ContractDigest
                 || package.CompletionBoundary != identity.CompletionBoundary
                 || package.WitnessId != identity.WitnessId

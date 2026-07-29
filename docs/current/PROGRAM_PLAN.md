@@ -22,6 +22,9 @@ This priority does not transfer authority. ADR-0002 remains the only accepted
 macro architecture: STS2 and the Gateway own game truth, legality, execution
 and completion; Re chooses only advertised action IDs; D evidence never grants
 authority; product tooling never bypasses the Gateway.
+[ADR-0006](decisions/ADR-0006-explicit-native-contract-and-durable-authority-convergence.md)
+is the current C authority refinement: only explicit native contracts may
+enter durable qualification, while manifest fallbacks remain volatile trials.
 
 ## Program Milestones
 
@@ -115,12 +118,12 @@ persistent qualification, strategic quality or product readiness.
 
 ### Current Evidence
 
-Preview.76 is source/test/build complete with Re schema 31. Its loaded
-Preview.75 predecessor supplied two latest completed boundaries with 77/77 and
-92/92 attempted mutations settled. A third run exposed the exact New Leaf
-transform-caller gap now repaired in source. Kifuda remains absent. Provenance
-is `unrecorded`; this is runtime defect/coverage evidence, not Preview.76 load,
-Organic evidence or persistent qualification.
+Preview.77 is the current source contract with Re schema 31. Its loaded
+Preview.76 predecessor supplied a 172-decision completed boundary with 170
+settled mutations and one safe stale refusal. New Leaf, Kifuda and ordinary
+relic purchase were not exercised in that run. Provenance is `unrecorded`;
+this is runtime defect/coverage evidence, not Preview.77 load, Organic evidence
+or persistent qualification.
 
 ### Delivery Order
 

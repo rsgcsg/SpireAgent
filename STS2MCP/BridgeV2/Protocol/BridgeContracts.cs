@@ -7,7 +7,7 @@ namespace STS2_MCP.BridgeV2.Protocol;
 
 public static class BridgeV2Contract
 {
-    public const string ProtocolVersion = "2.0-preview.76";
+    public const string ProtocolVersion = "2.0-preview.77";
     public const string ObservationPolicyId = "player_visible_ui_v1";
 }
 
@@ -123,6 +123,7 @@ public sealed record BridgePersistentQualificationInfo(
     string AuthorityTier,
     string SurfaceKind,
     string Operation,
+    string ContractKind,
     string RiskClass,
     string EnvironmentDigest,
     string ModsetFingerprint,
@@ -142,6 +143,7 @@ public sealed record BridgePersistentQualificationInfo(
 public sealed record BridgeOperationQualificationIdentityInfo(
     string SurfaceKind,
     string Operation,
+    string ContractKind,
     string InteractionDigest,
     string OwnerDigest,
     string SourceDigest,
@@ -169,7 +171,7 @@ public sealed record BridgeQualificationSystemInfo(
     IReadOnlyList<string> Limitations)
 {
     public static BridgeQualificationSystemInfo Unavailable { get; } = new(
-        1,
+        2,
         "unavailable_fail_closed",
         "unavailable",
         "unavailable",

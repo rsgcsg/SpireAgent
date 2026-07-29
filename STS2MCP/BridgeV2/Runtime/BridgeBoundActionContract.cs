@@ -18,7 +18,7 @@ internal sealed record BridgeBoundActionContract(
     string BoundActionDigest,
     string CompletionBoundary,
     string WitnessId,
-    bool ExplicitContract)
+    string ContractKind)
 {
     public static BridgeBoundActionContract? Build(
         string surfaceKind,
@@ -53,9 +53,7 @@ internal sealed record BridgeBoundActionContract(
             boundActionDigest,
             identity.CompletionBoundary,
             identity.WitnessId,
-            BridgeOperationQualificationCatalog.IsExplicitContract(
-                surfaceKind,
-                action.Kind));
+            identity.ContractKind);
     }
 
     public bool Matches(ActionPermissionScope scope)
@@ -64,7 +62,7 @@ internal sealed record BridgeBoundActionContract(
             BridgeOperationQualificationCatalog.Describe(SurfaceKind, Operation);
         return current != null
             && string.Equals(scope.SurfaceKind, SurfaceKind, StringComparison.Ordinal)
-            && (!ExplicitContract
+            && (ContractKind == BridgeOperationQualificationCatalog.ManifestMigrationFallback
                 ? string.Equals(scope.Operation, Operation, StringComparison.Ordinal)
                 : true)
             && string.Equals(scope.OperationFingerprint, ContractDigest, StringComparison.Ordinal)

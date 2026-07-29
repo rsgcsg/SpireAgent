@@ -22,6 +22,9 @@ not inherit authority from the archived root SpireAgent runtime.
    [ADR-0005](decisions/ADR-0005-workflow-c-clean-closure.md) makes C Clean
    Closure the current priority and mandates vertical native-contract migration
    with deletion of permanent scaffolding.
+   [ADR-0006](decisions/ADR-0006-explicit-native-contract-and-durable-authority-convergence.md)
+   is the current contract/authority convergence decision and forbids durable
+   qualification of manifest migration fallbacks.
 4. [Program plan](PROGRAM_PLAN.md): M0--M4 user-outcome milestones and A/C/D/P/X
    dependency order.
 5. [Roadmap](ROADMAP.md): technical readiness tracks, Gate history and milestone
@@ -40,6 +43,10 @@ not inherit authority from the archived root SpireAgent runtime.
 
 Current cross-component audits:
 
+- [Workflow C architecture cleanliness reaudit and closure target](audits/WORKFLOW_C_ARCHITECTURE_CLEANLINESS_REAUDIT_AND_CLOSURE_TARGET_2026-07-30.md):
+  current HEAD/run reconstruction, verdict B, operation/native-contract
+  decision, mixed-generation inventory, supersession boundary and executable
+  closure sequence.
 - [Preview.76 New Leaf and unsupported-authority closeout](audits/WORKFLOW_C_PREVIEW76_NEW_LEAF_AND_UNSUPPORTED_AUTHORITY_CLOSEOUT_2026-07-29.md):
   latest three-run attribution, exact New Leaf versus Whispering source audit,
   source-discriminated transform contract, centralized unsupported authority

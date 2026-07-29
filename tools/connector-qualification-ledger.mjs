@@ -46,6 +46,7 @@ function operationKey(value) {
 }
 
 const RUNTIME_REPORTED_WITNESS = "gateway_reported_operation_witness";
+const EXPLICIT_NATIVE_CONTRACT = "explicit_native_contract";
 
 function qualificationSlotKey(value) {
   return `${value.environment_digest}\u0000${operationKey(value)}`;
@@ -81,6 +82,7 @@ function evidenceEnvironmentFromRun(run, surfaceKind, operation, witnessId) {
     environment_digest: negotiated?.qualification_current_environment_digest,
     surface_kind: surfaceKind,
     operation,
+    contract_kind: contract?.contract_kind,
     operation_fingerprint: contract?.contract_digest,
     completion_boundary: contract?.completion_boundary,
     witness_id: contract?.witness_id,
@@ -110,6 +112,7 @@ export function expectedEvidenceEnvironment(capabilities, contract) {
       capabilities?.qualification_system?.current_environment_digest,
     surface_kind: contract?.surface_kind,
     operation: contract?.operation,
+    contract_kind: contract?.contract_kind,
     operation_fingerprint: contract?.contract_digest,
     completion_boundary: contract?.completion_boundary,
     witness_id: contract?.witness_id,
@@ -120,7 +123,8 @@ export function expectedEvidenceEnvironment(capabilities, contract) {
 export function validateQualificationPackage(qualification, now = new Date()) {
   const errors = [];
   const requiredStrings = [
-    "qualification_id", "authority_tier", "surface_kind", "operation", "risk_class",
+    "qualification_id", "authority_tier", "surface_kind", "operation",
+    "contract_kind", "risk_class",
     "game_version", "game_commit", "gateway_protocol",
     "gateway_assembly_sha256", "gateway_module_version_id",
     "modset_fingerprint", "patch_digest", "environment_digest",
@@ -137,6 +141,9 @@ export function validateQualificationPackage(qualification, now = new Date()) {
   }
   if (!["session_canary", "qualified"].includes(qualification?.authority_tier)) {
     errors.push("authority_tier must be session_canary or qualified");
+  }
+  if (qualification?.contract_kind !== EXPLICIT_NATIVE_CONTRACT) {
+    errors.push("durable qualification requires an explicit native contract");
   }
   if (!Number.isInteger(qualification?.game_main_assembly_hash)) {
     errors.push("game_main_assembly_hash must be an integer");
@@ -292,7 +299,7 @@ function compareOperation(left, right) {
     };
   }
   const fields = [
-    "interaction_digest", "owner_digest", "source_digest", "operand_digest",
+    "contract_kind", "interaction_digest", "owner_digest", "source_digest", "operand_digest",
     "commit_digest", "completion_digest", "witness_digest",
     "completion_boundary", "witness_id", "risk_class"
   ];
@@ -301,7 +308,7 @@ function compareOperation(left, right) {
     return { classification: "unchanged", changed_components: [] };
   }
   const codeBoundary = new Set([
-    "owner_digest", "commit_digest", "completion_digest",
+    "contract_kind", "owner_digest", "commit_digest", "completion_digest",
     "witness_digest", "completion_boundary", "witness_id"
   ]);
   return {
@@ -452,6 +459,9 @@ export function exactPackageApplicability(qualification, capabilities) {
         === capabilities?.qualification_system?.current_environment_digest,
     operation_contract:
       qualification.operation_fingerprint === contract?.contract_digest,
+    contract_kind:
+      qualification.contract_kind === EXPLICIT_NATIVE_CONTRACT
+      && contract?.contract_kind === EXPLICIT_NATIVE_CONTRACT,
     completion_boundary:
       qualification.completion_boundary === contract?.completion_boundary,
     witness: qualification.witness_id === contract?.witness_id
@@ -477,6 +487,11 @@ export function buildQualificationPackage({
   if (!contract) {
     throw new Error(
       `${surfaceKind}/${operation} has no reviewed operation qualification contract; code_required`
+    );
+  }
+  if (contract.contract_kind !== EXPLICIT_NATIVE_CONTRACT) {
+    throw new Error(
+      `${surfaceKind}/${operation} is a migration fallback, not an explicit native contract; code_required`
     );
   }
   if (!capabilities?.qualification_system?.current_environment_digest
@@ -516,6 +531,7 @@ export function buildQualificationPackage({
     authority_tier: authorityTier,
     surface_kind: surfaceKind,
     operation,
+    contract_kind: contract.contract_kind,
     risk_class: contract.risk_class,
     game_version: capabilities.game.version,
     game_commit: capabilities.game.commit,

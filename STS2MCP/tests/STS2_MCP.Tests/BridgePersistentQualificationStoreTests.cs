@@ -45,15 +45,24 @@ public sealed class BridgePersistentQualificationStoreTests
 
         Assert.Equal("continuation_handoff_observed", menu.CompletionBoundary);
         Assert.Equal(
+            BridgeOperationQualificationCatalog.ExplicitNativeContract,
+            menu.ContractKind);
+        Assert.Equal(
             "saved_singleplayer_run_became_active",
             menu.WitnessId);
         Assert.Equal("immediate_postcondition_observed", map.CompletionBoundary);
+        Assert.Equal(
+            BridgeOperationQualificationCatalog.ExplicitNativeContract,
+            map.ContractKind);
         Assert.Equal(
             BridgeOperationQualificationCatalog.GatewayCompletionBoundary,
             fallback.CompletionBoundary);
         Assert.Equal(
             BridgeOperationQualificationCatalog.RuntimeReportedWitness,
             fallback.WitnessId);
+        Assert.Equal(
+            BridgeOperationQualificationCatalog.ManifestMigrationFallback,
+            fallback.ContractKind);
         Assert.Equal("persistent_run_mutation", fallback.RiskClass);
         Assert.NotEqual(menu.ContractDigest, map.ContractDigest);
         Assert.All(
@@ -111,7 +120,7 @@ public sealed class BridgePersistentQualificationStoreTests
     }
 
     [Fact]
-    public void ManifestFallbackQualificationRetainsActualGatewayWitnesses()
+    public void ManifestFallbackQualificationIsRejectedBeforeItCanGrantDurableAuthority()
     {
         using var file = new TemporaryLedger();
         BridgePersistentQualificationPackage package = Package(
@@ -137,10 +146,9 @@ public sealed class BridgePersistentQualificationStoreTests
             BridgePersistentQualificationStore.Load(file.Path, () => Now);
         GameBuildIdentity applied = store.Apply(Game(), Bridge(), Patch());
 
-        Assert.Equal(
-            "qualification_qualification-event-option",
-            Assert.Single(applied.Compatibility.ActionPermissionScopes).GrantId);
-        Assert.True(store.Snapshot().PersistentAuthorityEnabled);
+        Assert.Empty(applied.Compatibility.ActionPermissionScopes);
+        Assert.Equal("invalid_fail_closed", store.Snapshot().Status);
+        Assert.False(store.Snapshot().PersistentAuthorityEnabled);
     }
 
     [Fact]
@@ -453,7 +461,7 @@ public sealed class BridgePersistentQualificationStoreTests
     }
 
     [Fact]
-    public void ManifestFallbackQualificationAcceptsConcreteGatewayWitness()
+    public void ManifestFallbackQualificationCannotBeActivatedByConcreteGatewayWitness()
     {
         using var file = new TemporaryLedger();
         file.Write(Install(
@@ -461,46 +469,12 @@ public sealed class BridgePersistentQualificationStoreTests
             Package("qualification-a", "combat_turn", "play_card")));
         BridgePersistentQualificationStore store =
             BridgePersistentQualificationStore.Load(file.Path, () => Now);
-        ActionPermissionScope scope = Assert.Single(store.Apply(
+        Assert.Empty(store.Apply(
             Game(),
             Bridge(),
             Patch()).Compatibility.ActionPermissionScopes);
-        var binding = new BridgeActionPermissionBinding(
-            scope.SurfaceKind,
-            scope.Operation,
-            scope.Tier,
-            scope.GrantId,
-            scope.GrantVersion,
-            scope.RuntimeEpoch,
-            scope.EnvironmentDigest,
-            scope.PatchDigest,
-            scope.OperationFingerprint);
-
-        store.ObserveCommand(
-            "request-completed",
-            binding,
-            new BridgeCommandResponse(
-                "request-completed",
-                "state-a",
-                "action-a",
-                "completed",
-                "confirmed",
-                "state-b",
-                new[]
-                {
-                    new BridgeCommandEvent(
-                        "completed",
-                        Now,
-                        "combat_card_play_committed",
-                        null,
-                        null)
-                }));
-
-        Assert.Single(store.Apply(
-            Game(),
-            Bridge(),
-            Patch()).Compatibility.ActionPermissionScopes);
-        Assert.Equal("active", Assert.Single(store.Snapshot().Qualifications).Status);
+        Assert.Equal("invalid_fail_closed", store.Snapshot().Status);
+        Assert.False(store.Snapshot().PersistentAuthorityEnabled);
     }
 
     [Fact]
@@ -636,6 +610,7 @@ public sealed class BridgePersistentQualificationStoreTests
             "qualified",
             surfaceKind,
             operation,
+            identity.ContractKind,
             identity.RiskClass,
             game.Version!,
             game.Commit!,

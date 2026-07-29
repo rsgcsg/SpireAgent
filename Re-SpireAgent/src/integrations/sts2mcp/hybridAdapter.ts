@@ -150,6 +150,7 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
             bridge.qualification_system.operation_contracts.map((contract) => ({
               surface_kind: contract.surface_kind,
               operation: contract.operation,
+              contract_kind: contract.contract_kind,
               contract_digest: contract.contract_digest,
               completion_boundary: contract.completion_boundary,
               witness_id: contract.witness_id,
@@ -168,6 +169,7 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
                 version: qualification.version,
                 surface_kind: qualification.surface_kind,
                 operation: qualification.operation,
+                contract_kind: qualification.contract_kind,
                 environment_digest: qualification.environment_digest,
                 patch_digest: qualification.patch_digest,
                 operation_fingerprint: qualification.operation_fingerprint,

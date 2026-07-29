@@ -11,8 +11,9 @@ The accepted cross-component destination is
 It does not create a second Gateway or authority: compatibility/evidence stays
 outside the live semantic decision path, and Re derives any model-facing view.
 [ADR-0003](../docs/current/decisions/ADR-0003-operation-retirement-and-native-continuation-migration.md)
-defines the accepted shadow-first migration away from global operation
-identity and the narrow native continuation boundary.
+defines operation retirement and the narrow native continuation boundary.
+[ADR-0006](../docs/current/decisions/ADR-0006-explicit-native-contract-and-durable-authority-convergence.md)
+owns the current explicit-contract/durable-authority convergence.
 
 ## Status
 
@@ -20,7 +21,19 @@ Bridge v2 is the only mutation contract for the current Agent and default MCP
 adapter. It remains an incremental semantic/visibility preview, not
 complete-game coverage.
 
-The C# Bridge and Re source share `2.0-preview.73`; Re normalized schema is
+Current source is `2.0-preview.77`; Re normalized schema is `31`. The latest
+loaded artifact remains Preview.76 SHA `56b24ea3...`, MVID `37f4ce07...`,
+runtime `8ccf81d0...`; it completed exact run
+`run-20260729140216-qi8r24`. Preview.77 types reviewed
+`explicit_native_contract` separately from runtime-only
+`manifest_migration_fallback` and rejects fallback durable packages in both
+Gateway and operator tooling. See [current status](docs/bridge-v2/CURRENT_STATUS.md)
+for exact build/install/load claims.
+
+The following preview progression is historical context, not current source or
+permission truth.
+
+Preview.73 C# and Re source shared `2.0-preview.73`; Re normalized schema was
 `29`. Gate 1 is closed as a bounded ordinary-single-player v2 connector
 baseline. Preview.62 replaced repeated combat-pile source branches with a
 reviewed embedded registry, moves exact-environment scopes into a reviewed
@@ -83,7 +96,7 @@ its cold-load and Live truth.
   untested and has no v2 action or Inspection authority. Check
   [Bridge v2 current status](docs/bridge-v2/CURRENT_STATUS.md) before treating
   a local install as qualified.
-- Source `2.0-preview.73` keeps centralized overlay/room/menu ownership, typed
+- Historical Preview.73 kept centralized overlay/room/menu ownership, typed
   diagnostics, purpose-specific selection and event contracts, staged
   completion semantics, and a top-level read-only shared run/player HUD.
   Current-build capabilities distinguish reviewed exact-policy actions,

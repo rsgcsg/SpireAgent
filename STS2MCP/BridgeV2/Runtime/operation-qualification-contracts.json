@@ -1,7 +1,7 @@
 {
-  "schema_version": 2,
-  "catalog_id": "bridge_v2_operation_qualification_contracts_v2",
-  "authority_effect": "explicit_overrides_plus_manifest_fallback_identity_only",
+  "schema_version": 3,
+  "catalog_id": "bridge_v2_native_action_contracts_v3",
+  "authority_effect": "explicit_native_contracts_plus_typed_session_fallbacks",
   "contracts": [
     {
       "surface_kind": "main_menu",

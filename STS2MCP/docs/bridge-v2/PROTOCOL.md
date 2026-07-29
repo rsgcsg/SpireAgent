@@ -1,6 +1,28 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.76`
+Protocol preview: `2.0-preview.77`
+
+Preview.77 types the qualification contract boundary:
+
+```json
+{
+  "contract_kind": "explicit_native_contract | manifest_migration_fallback"
+}
+```
+
+`qualification_system.schema_version` is `2`. Every operation contract carries
+the kind, while every durable qualification must carry
+`explicit_native_contract`. Missing, legacy or fallback package kinds fail
+closed in the Gateway and operator tooling. Contract kind participates in the
+contract digest and evidence environment. It grants no authority by itself.
+
+Manifest fallbacks remain runtime-local encounter-trial identities and cannot
+be assembled, reloaded, superseded or rolled back as durable authority. This
+is a permission/identity correction, not a new action, Surface, Completion or
+Re strategy rule. See repository
+[ADR-0006](../../../docs/current/decisions/ADR-0006-explicit-native-contract-and-durable-authority-convergence.md).
+
+## Preview.76
 
 Preview.76 adds one required source discriminator to
 `deck_transform_selection`:

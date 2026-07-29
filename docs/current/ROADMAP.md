@@ -12,6 +12,9 @@ refined by ADR-0003's native-contract migration and ADR-0004's separation of
 diagnostic observation, encounter-scoped trial and persistent claims. ADR-0005
 makes Workflow C Clean Closure the current priority and requires vertical
 family migration with deletion rather than permanent shadow/dual-read.
+[ADR-0006](decisions/ADR-0006-explicit-native-contract-and-durable-authority-convergence.md)
+closes durable fallback admission while retaining runtime-local encounter
+trials.
 
 ## Milestone Mapping
 
@@ -69,18 +72,17 @@ identity, family native-contract migration, deletion of old production paths,
 version/claim recovery and repeated journeys are required. Compendium and
 external reference enrichment remain optional.
 
-Preview.76 and Re schema 31 are source/test/build complete. Its predecessor
-Preview.75 loaded on SHA `f9819b6b...`, MVID `34d6deb3...`, runtime
-`7f72d087...`. Runs `run-...123734` and `run-...124247` completed bounded
-one-game boundaries with every attempted mutation settled. Run `run-...123227`
-proved a different New Leaf caller of the native transform selector and failed
-closed after its parent option completed. Preview.76 adds exact caller
-discrimination; its runtime behavior is not yet claimed. Kifuda remains absent.
+Preview.77 and Re schema 31 are the current source contract. Preview.76 loaded
+on SHA `56b24ea3...`, MVID `37f4ce07...`, runtime `8ccf81d0...`; exact run
+`run-...140216` completed a 172-decision boundary with 170 settled mutations
+and one safe stale refusal. It did not exercise New Leaf, Kifuda or ordinary
+relic purchase. Preview.77 types explicit versus fallback contracts and makes
+fallback durable claims impossible; its loaded behavior is not yet claimed.
 
 ### Current Gate 2 Work
 
-- cold-load the installed Preview.76 whole-DLL identity and run one bounded
-  exact-runtime journey;
+- cold-load the already built and installed Preview.77 whole-DLL identity,
+  then run one bounded exact-runtime journey;
 - accept natural New Leaf evidence if it appears, but do not manufacture that
   encounter or infer runtime support from source/fixtures;
 - obtain natural Kifuda child/negative evidence for the first vertical pilot
@@ -91,6 +93,8 @@ discrimination; its runtime behavior is not yet claimed. Kifuda remains absent.
 - retain complete evidence while A/D evaluate a scope-specific model view;
 - migrate one real family at a time to explicit contract-digest admission and
   delete its operation-authority/fallback path after evidence;
+- keep manifest fallback evidence non-authorizing outside volatile session
+  trial; operator tooling must report `code_required` instead of packaging it;
 - do not add permanent shadow, fallback or parallel authority paths;
 - keep Profiles, D evidence and manifest hypotheses non-authorizing;
 - use family-specific evidence rather than operation/package counts.

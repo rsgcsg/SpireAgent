@@ -14,8 +14,9 @@ import {
 } from "./connector-qualification-ledger.mjs";
 
 const contract = {
-  surface_kind: "event_option",
-  operation: "choose_event_option",
+  surface_kind: "main_menu",
+  operation: "open_singleplayer",
+  contract_kind: "explicit_native_contract",
   interaction_digest: "1".repeat(64),
   owner_digest: "2".repeat(64),
   source_digest: "3".repeat(64),
@@ -24,9 +25,9 @@ const contract = {
   completion_digest: "6".repeat(64),
   witness_digest: "7".repeat(64),
   contract_digest: "8".repeat(64),
-  completion_boundary: "gateway_semantic_completion_observed",
-  witness_id: "gateway_reported_operation_witness",
-  risk_class: "persistent_run_mutation"
+  completion_boundary: "continuation_handoff_observed",
+  witness_id: "singleplayer_or_character_select_owner_became_active",
+  risk_class: "reversible_navigation"
 };
 
 function capabilities(qualifications = []) {
@@ -74,7 +75,12 @@ const bindingAudit = {
     sha256: "1".repeat(64),
     module_version_id: "22222222-2222-2222-2222-222222222222"
   },
-  operations: []
+  operations: [{
+    surface_kind: contract.surface_kind,
+    operation: contract.operation,
+    status: "reviewed_binding_match",
+    binding_digest: "3".repeat(64)
+  }]
 };
 
 const migrationPolicy = {
@@ -83,7 +89,7 @@ const migrationPolicy = {
   authorization_effect: "none",
   rules: [
     {
-      risk_class: "persistent_run_mutation",
+      risk_class: "reversible_navigation",
       eligible_modes: ["migration_exploration"]
     }
   ]
@@ -132,6 +138,7 @@ async function writeRun(
             {
               surface_kind: contract.surface_kind,
               operation: contract.operation,
+              contract_kind: contract.contract_kind,
               contract_digest: contract.contract_digest,
               completion_boundary: contract.completion_boundary,
               witness_id: contract.witness_id,
@@ -161,7 +168,7 @@ async function writeRun(
           events: [
             {
               status: "completed",
-              evidence: "event_option_committed_and_owner_advanced"
+              evidence: contract.witness_id
             }
           ]
         }

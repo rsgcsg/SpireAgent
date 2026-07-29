@@ -2,7 +2,10 @@
 
 In this project, "SpireAgent" means `Re-SpireAgent` by default.
 
-Current source contract is `2.0-preview.76`; Re normalized schema is `31`.
+Current source contract is `2.0-preview.77`; Re normalized schema is `31`.
+Re records explicit versus migration-fallback contract kind for provenance and
+requires explicit kind on durable qualifications. It does not derive authority
+from either kind.
 Formal semantic/authority identities are strictly decoded; state shadows and
 control histories no longer enter normalized state. Preview.69 runs on one verified loaded identity provide
 real-runtime coverage whose provenance is `unrecorded`, not Organic

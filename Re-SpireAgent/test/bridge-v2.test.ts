@@ -165,7 +165,7 @@ const CAPABILITIES = {
     limitations: ["fixture permission system"]
   },
   qualification_system: {
-    schema_version: 1,
+    schema_version: 2,
     status: "empty",
     store_id: "fixture-qualification-store",
     store_digest: "d".repeat(64),
@@ -6991,7 +6991,7 @@ describe("Bridge v2 persistent qualification governance", () => {
       admission_basis: "reviewed_or_persisted_scope"
     }];
     capabilities.qualification_system = {
-      schema_version: 1,
+      schema_version: 2,
       status: "active",
       store_id: "fixture-store",
       store_digest: "3".repeat(64),
@@ -7003,6 +7003,7 @@ describe("Bridge v2 persistent qualification governance", () => {
       operation_contracts: [{
         surface_kind: "shop_room",
         operation: "open_shop_inventory",
+        contract_kind: "explicit_native_contract",
         interaction_digest: "5".repeat(64),
         owner_digest: "6".repeat(64),
         source_digest: "7".repeat(64),
@@ -7022,6 +7023,7 @@ describe("Bridge v2 persistent qualification governance", () => {
         authority_tier: "qualified",
         surface_kind: "shop_room",
         operation: "open_shop_inventory",
+        contract_kind: "explicit_native_contract",
         risk_class: "reversible_navigation",
         environment_digest: environmentDigest,
         modset_fingerprint: capabilities.game.modset.fingerprint,
@@ -7054,7 +7056,7 @@ describe("Bridge v2 persistent qualification governance", () => {
       .toBe("qualification_qualification-shop-open");
   });
 
-  it("accepts a manifest fallback contract without interpreting its witness", () => {
+  it("rejects a durable qualification whose contract is reclassified as migration fallback", () => {
     const capabilities = persistentCapabilities();
     const contract =
       capabilities.qualification_system.operation_contracts[0] as unknown as
@@ -7062,20 +7064,14 @@ describe("Bridge v2 persistent qualification governance", () => {
     const qualification =
       capabilities.qualification_system.qualifications[0] as unknown as
         Record<string, unknown>;
+    contract.contract_kind = "manifest_migration_fallback";
     contract.completion_boundary = "gateway_semantic_completion_observed";
     contract.witness_id = "gateway_reported_operation_witness";
     qualification.completion_boundary =
       "gateway_semantic_completion_observed";
     qualification.witness_id = "gateway_reported_operation_witness";
 
-    const decoded = decodeBridgeV2Capabilities(capabilities).data;
-
-    expect(
-      decoded.qualification_system.operation_contracts[0]?.completion_boundary
-    ).toBe("gateway_semantic_completion_observed");
-    expect(
-      decoded.qualification_system.operation_contracts[0]?.witness_id
-    ).toBe("gateway_reported_operation_witness");
+    expect(() => decodeBridgeV2Capabilities(capabilities)).toThrow();
   });
 
   it("accepts a candidate package only through a Gateway runtime canary grant", () => {
@@ -7164,6 +7160,7 @@ describe("Bridge v2 persistent qualification governance", () => {
       Array<Record<string, unknown>>).push({
       surface_kind: "map_navigation",
       operation: "choose_map_node",
+      contract_kind: "explicit_native_contract",
       interaction_digest: "1".repeat(64),
       owner_digest: "2".repeat(64),
       source_digest: "3".repeat(64),
@@ -7184,6 +7181,7 @@ describe("Bridge v2 persistent qualification governance", () => {
       authority_tier: "session_canary",
       surface_kind: "map_navigation",
       operation: "choose_map_node",
+      contract_kind: "explicit_native_contract",
       risk_class: "progression",
       environment_digest: environmentDigest,
       modset_fingerprint: capabilities.game.modset.fingerprint,

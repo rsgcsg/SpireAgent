@@ -10,11 +10,12 @@
 > loaded artifact. Current loaded identity and Gate status are owned by
 > [Bridge v2 Current Status](CURRENT_STATUS.md).
 
-Current source contract is Preview.76. It is tested and built; installed and
-loaded identities are owned by `CURRENT_STATUS.md`. Two exact Preview.75 runs
-completed one-game boundaries, while a third exposed the New Leaf caller gap
-repaired in Preview.76. Their `unrecorded` provenance is coverage evidence, not
-Preview.76 runtime evidence, Organic evidence or persistent qualification. Preview.61
+Current source contract is Preview.77; installed and loaded identities are
+owned by `CURRENT_STATUS.md`. Exact Preview.76 run
+`run-20260729140216-qi8r24` completed a broad bounded journey but did not
+exercise New Leaf, Kifuda or ordinary relic purchase. Its `unrecorded`
+provenance is coverage evidence, not Preview.77 runtime evidence, Organic
+evidence or persistent qualification. Preview.61
 supplied the bounded Neow's
 Fury Organic lifecycle that sealed Gate 1. Preview.62 added reviewed
 source/compatibility registries and a non-authorizing exact-assembly audit;
