@@ -1,6 +1,22 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.74`
+Protocol preview: `2.0-preview.75`
+
+Preview.75 preserves Preview.74 wire shapes and adds two runtime semantics:
+
+- in `migration_exploration`, a diagnostic exact environment may advertise
+  volatile read-only Inspection canaries only after the same runtime has a
+  source-resolved action session scope and clean identity/Patch/Modset;
+- this Inspection scope is state-bound, non-authorizing, outside the command
+  ledger and never creates a persistent compatibility claim;
+- Re accepts a valid strict JSON action when only `reasonBrief` exceeds its
+  240-character storage contract, records
+  `reason_brief_truncated_to_contract_limit`, retains the raw provider response
+  and leaves every action-ID/unknown-outcome check unchanged.
+
+Re normalized schema remains `30`.
+
+## Historical Preview Notes
 
 Preview.74 performs the Clean Closure identity/wire cutover:
 
@@ -20,8 +36,6 @@ See repository [ADR-0005](../../../docs/current/decisions/ADR-0005-workflow-c-cl
 `npm run connector -- audit-run-identity` reads the formal identities for
 Preview.74+ recordings and retains explicit historical-only compatibility with
 the non-authorizing Preview.67-73 identity shadow. It never grants authority.
-
-## Historical Preview Notes
 
 Preview.73 corrects two boundaries exposed by final-MVID Preview.72 Rest runs:
 

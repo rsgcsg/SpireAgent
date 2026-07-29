@@ -1,7 +1,7 @@
 # 工作流 C Clean Closure 架构审计与执行合同
 
 **审计基线：** `develop` `146618b4431042da317d34a855c7380a02d55af9`  
-**状态：** Preview.74 source/test/build/install complete; cold-load and Live evidence pending  
+**状态：** execution contract accepted; Preview.75 source/test/build/install complete; cold-load pending
 **权威决定：** [ADR-0005](../decisions/ADR-0005-workflow-c-clean-closure.md)
 
 ## 1. 执行结论
@@ -14,6 +14,22 @@
 唯一执行路线是 **support envelope 封闭 + 纵向 family strangler**。每个 family
 同时完成玩家可见事实、owner、exact action、native Commit、Outcome、权限和旧路径
 删除。成功和失败的实验都必须有结束状态；临时 shadow 不得进入最终 wire。
+
+### 2026-07-29 evidence update
+
+Preview.74 later loaded with exact SHA `42eb22b6...aaea7e`, MVID
+`13d4dd05...9cf5b` and runtime `5ed719fd...`. Six audited runs confirmed that
+the fixed Prompt/guide baseline can complete a 202-decision run boundary and
+that four exact-action stale refusals are safe freshness guards, not Connector
+failure. They also exposed a Re-only failure mode: a valid advertised action
+was discarded solely because non-authoritative `reasonBrief` exceeded 240
+characters. Preview.75 fixes that bounded audit-data handling and permits
+read-only Inspection as a volatile canary only after exact source-resolved
+session admission. Preview.75 is installed as SHA `ddce17cf...6334`, MVID
+`23ac5aad...3cb4`, but has not been loaded. Ordinary relic/Kifuda evidence is
+still absent, so this update does not close the first family pilot or authorize
+old-path deletion. See the dedicated
+[runtime/pre-Live closeout](WORKFLOW_C_PREVIEW74_RUNTIME_AND_PREVIEW75_PRELIVE_CLOSEOUT_2026-07-29.md).
 
 ## 2. 事实与证据边界
 

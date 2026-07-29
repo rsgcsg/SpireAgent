@@ -7,7 +7,8 @@ Each tick creates one append-only `DecisionRecord`, including non-execution outc
 - `preState`: raw ref, normalized state, diagnostics, full-raw stale-guard hash, and normalized projection hash
 - `allowedActions`: IDs plus local executable payloads used for audit
 - `prompt`: prompt ref, versions, hashes, byte counts
-- `llm`: provider/model, all attempts, raw content, parsed decision, validation
+- `llm`: provider/model, all attempts, raw content, parsed decision, optional
+  typed normalizations, validation
 - `execution`: selected ID, local payload, stale-state result, adapter response/error
 - `settlement`: next-decision-checkpoint status, polls, elapsed time, error, plus optional transient-observation count and last safe error code/message when a coherent Bridge state changed during read-only sidecar capture
 - `runtimeGuard`: optional exact-transition cycle evidence; a second identical pre-state/action/post-state transition stops the bounded run without rewriting the successful action outcome
@@ -21,6 +22,13 @@ An `observation_failed` record caused by the typed
 bounded run may continue to a new tick after that exact safe race; generic
 transport/decoding observation failures and all pre-execution read failures
 remain terminal.
+
+A valid JSON response whose only contract excess is `reasonBrief` longer than
+240 characters remains executable after deterministic truncation. The attempt
+records `normalizations=["reason_brief_truncated_to_contract_limit"]`, while
+the original provider payload and raw response text remain available for
+audit. This exception never repairs JSON, unknown/extra fields, confidence,
+`selectedActionId`, action legality, stale state, execution or completion.
 
 `metadata.json` records adapter endpoint/capabilities, negotiated protocol/build/surface facts when available, provider model/thinking/output cap, agent version, schema versions, and declared evidence provenance; it never records the API key. Provenance is one of `ordinary_gameplay`, `operator_positioned`, `console_assisted`, `fixture`, or `unrecorded`. It is coverage metadata, not authority or qualification. Historical metadata without the field remains readable as `unrecorded`. Current normalized records contain separate semantic `context`, active interaction `surface`, `actionAuthority`, preserved Bridge diagnostics, a visibility/Inspection catalog, optional state-bound coherent observation evidence, player-visible surface evidence, and strict Bridge action entity bindings. Schema 30 adds formal semantic/current-authority identities and removes contract/identity shadows plus control histories from normalized state. Explicit visible root identities such as `screen_entity_id` participate in binding integrity just like item-level `entity_id` values.
 

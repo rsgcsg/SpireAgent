@@ -6,7 +6,7 @@ It may derive an evidence-tested model view, but it never becomes a second
 game-state, legality, permission, Commit, or completion authority.
 
 > Compatibility status, 2026-07-29: Re and C# share source contract
-> `2.0-preview.74`; Re normalized schema is `30`. Gate 1 is closed as a
+> `2.0-preview.75`; Re normalized schema is `30`. Gate 1 is closed as a
 > bounded ordinary-single-player v2 baseline, not full game coverage.
 > Preview.69 adds typed new/resumed-run mount settling, bounded semantic-cycle recovery,
 > and strict consumption of encounter-scoped provisional grants. Diagnostic
@@ -45,12 +45,12 @@ waits for the Bridge command lifecycle, and records the complete evidence.
 
 RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, shadow/live modes, policy promotion, or the old project's phase machinery. Its job is to make one decision path correct and auditable.
 
-Re's current strict client contract is Bridge `2.0-preview.74`. Re strictly
+Re's current strict client contract is Bridge `2.0-preview.75`. Re strictly
 decodes current identities and grants, but does not interpret fallback Witness
-semantics or promote any candidate. Preview.74 is built and installed as SHA
-`42eb22b6...` / MVID `13d4dd05...`; it has not been cold-loaded. The last
-verified runtime loaded Preview.73 SHA `f6b2d268...` / MVID `f67e272a...` /
-runtime `2123fefa...`; its grants and evidence do not transfer to Preview.74.
+semantics or promote any candidate. Preview.75 is built and installed as SHA
+`ddce17cf...` / MVID `23ac5aad...`; it has not been cold-loaded. The last
+verified runtime loaded Preview.74 SHA `42eb22b6...` / MVID `13d4dd05...` /
+runtime `5ed719fd...`; its grants and evidence do not transfer to Preview.75.
 A historical strict read-only main-menu inspection passed without mutation.
 Preview.66's narrow persistent
 `main_menu/continue_run` qualification belongs only to its historical exact
@@ -108,11 +108,18 @@ explicit `--allow-run-entry` option may cross a top-level menu boundary only
 through a current `bridge_advertised` action; the default command remains
 one-game bounded and local reconstruction remains forbidden.
 
-Preview.74 strictly decodes formal `semantic_state_id` and
+Preview.74 introduced formal `semantic_state_id` and
 `authority_projection_id`. Composite `state_id` binds both for stale-action
 protection. Historical identity shadows remain readable only in recorded-run
 audit tooling; they are absent from current state, `NormalizedCurrentState`,
 Prompt construction, allowed actions, and runtime permission.
+
+Preview.75 keeps the fixed Prompt/guide baseline. If DeepSeek returns valid
+strict JSON and an advertised action ID but only `reasonBrief` exceeds 240
+characters, Re stores the bounded reason plus a typed normalization while
+retaining the raw response. It also consumes the Gateway's volatile,
+state-bound read-only Inspection canary; neither behavior changes mutation
+authority or creates a durable claim.
 
 Preview.55 makes strict v2 the sole connector path. Re rejects legacy `v1` and
 the former `auto` mode; it cannot probe or fall back to v1. Bridge-confirmed

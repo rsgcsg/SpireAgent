@@ -7,23 +7,23 @@ and architecture are in [Current Status](../../../docs/current/STATUS.md) and
 ## Exact Truth
 
 ```text
-Gateway/Re source      2.0-preview.74
+Gateway/Re source      2.0-preview.75
 Re normalized schema  30
 source status          tested/built/installed; cold-load pending
 
-built/installed        2.0-preview.74
+built/installed        2.0-preview.75
 game                   v0.109.1|c8c577f6|-820620422
-built/installed SHA    42eb22b6cc0ee95679d4347bba2f319c1d02b06ae8bbfdebc9c48c6c85aaea7e
-built/installed MVID   13d4dd05-61c3-470c-ba03-5af14dd9cf5b
-last loaded contract   2.0-preview.73
-last loaded SHA        f6b2d2687add4719e7d04f6b3beb8b5b386f43208d7af1cc0b12e2d89a151b18
-last loaded MVID       f67e272a-ca3f-4eac-8d41-6e287b144c8a
-last runtime epoch     2123fefaf9434f34a86ae8533e3322a5
-rollback               STS2MCP/.local/deployments/2026-07-29T07-08-28-094Z
+built/installed SHA    ddce17cf4121bf009a371cbfd102b1174732eafc1cf7fafd8e226f3ec12f6334
+built/installed MVID   23ac5aad-443b-47aa-9cb0-a55197d83cb4
+last loaded contract   2.0-preview.74
+last loaded SHA        42eb22b6cc0ee95679d4347bba2f319c1d02b06ae8bbfdebc9c48c6c85aaea7e
+last loaded MVID       13d4dd05-61c3-470c-ba03-5af14dd9cf5b
+last runtime epoch     5ed719fd1c6c43b0bff62866c96f4142
+rollback               STS2MCP/.local/deployments/2026-07-29T09-13-35-338Z
 ```
 
-Preview.74 build and installation are verified. No Preview.74 load, mutation
-canary, Organic journey or qualification is claimed yet.
+Preview.75 build and installation are verified. No Preview.75 load,
+Inspection/mutation canary, Organic journey or qualification is claimed yet.
 
 ## Current Contract
 
@@ -42,13 +42,14 @@ canary, Organic journey or qualification is claimed yet.
 
 ## Latest Evidence
 
-Preview.73 run `run-20260729061142-32o3xz` completed a saved-run boundary with
-94 settled mutations in 95 decisions and no Connector failure. It is
-`unrecorded` coverage evidence and did not exercise Inspection or shop
-relic/Kifuda. The preceding `run-20260729060301-mlwq4k` settled 143 mutations
-and safely rejected three stale decisions before its terminal decision hit an
-LLM output-contract failure. An earlier run without a summary remains
-incomplete.
+Preview.74 run `run-20260729081310-529z79` completed a bounded run with 197
+settled mutations in 202 decisions and four safe stale refusals. Adjacent runs
+add 260 settled mutations and prove Self-Help Book enchantment, but not Kifuda
+or shop relic purchase. Four runs stopped only because valid JSON contained a
+`reasonBrief` longer than 240 characters. There was no latest-run unsupported,
+unknown mutation, unsettled mutation, observation failure or Gateway failure.
+All evidence is `unrecorded` coverage-only evidence; see the
+[runtime audit](../../../docs/current/audits/WORKFLOW_C_PREVIEW74_RUNTIME_AND_PREVIEW75_PRELIVE_CLOSEOUT_2026-07-29.md).
 
 ## Clean Closure Inventory
 
@@ -75,14 +76,25 @@ gold/relic/entry-or-Kifuda-child evidence. Kifuda's enchant selector becomes the
 next fresh Surface, whose action bindings include exact Kifuda source evidence.
 No universal transaction or PendingObligation was added.
 
-The pilot is implemented and fixture-tested only. Exact Preview.74 ordinary
+The pilot is implemented and fixture-tested only. Exact current-build ordinary
 relic, Kifuda, wrong-source, stale-offer and child-owner evidence remains
 required before Live qualification or old-family closeout.
+
+## Preview.75 Reliability Boundary
+
+- Re auditably bounds only an overlong non-authoritative `reasonBrief`; raw
+  provider output remains recorded and all action-ID/schema checks remain.
+- `migration_exploration` may expose `run_deck`, `combat_piles` and
+  `shop_catalog` as volatile read-only canaries only after the same runtime has
+  a source-resolved action scope and clean exact identity/Patch/Modset.
+- Inspection remains state-bound, outside the command ledger and incapable of
+  creating mutation authority or persistent qualification.
 
 ## Remaining Boundary
 
 Current unsupported or evidence-limited scope includes Crystal Sphere,
 standalone manual potion discard, Tutor ownership, unknown generated sources,
 non-standard profile/menu paths, multiplayer and incomplete Inspection/detail
-families. Next runtime action is cold-load identity verification followed by
-bounded pilot and Inspection journeys.
+families. Next runtime action is Preview.75 cold-load identity verification,
+then one Inspection-enabled bounded journey. Relic/Kifuda remains a separate
+natural-evidence pilot.

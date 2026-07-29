@@ -38,6 +38,7 @@ export interface LlmDecisionAttempt {
   rawProviderResponse?: JsonValue | string;
   rawResponseText?: string;
   parsedDecision?: LlmDecision;
+  normalizations?: Array<"reason_brief_truncated_to_contract_limit">;
   error?: string;
   httpStatus?: number;
   finishReason?: string;

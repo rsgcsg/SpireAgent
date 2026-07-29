@@ -536,6 +536,8 @@ public sealed class BridgePermissionManagerTests
             diagnostic,
             bridge,
             CleanPatchInventory());
+        Assert.False(initial.InspectionAllowed);
+        Assert.Empty(initial.InspectionCanaryKinds);
         var draft = EncounterDraft(
             diagnostic with { Compatibility = initial },
             "open_shop_inventory");
@@ -550,6 +552,11 @@ public sealed class BridgePermissionManagerTests
         Assert.Equal(
             "encounter_provisional_trial",
             admitted.Game.Compatibility.AdaptationLevel);
+        Assert.True(admitted.Game.Compatibility.InspectionAllowed);
+        Assert.Empty(admitted.Game.Compatibility.InspectionAllowedKinds);
+        Assert.Equal(
+            BridgeContractManifest.ImplementedInspectionKinds.OrderBy(value => value),
+            admitted.Game.Compatibility.InspectionCanaryKinds);
         BridgePermissionGrantRecord grant = Assert.Single(manager.Snapshot().Grants);
         Assert.Equal("session_canary", grant.Tier);
         Assert.Equal("encounter_source_resolved", grant.AdmissionBasis);
@@ -583,7 +590,42 @@ public sealed class BridgePermissionManagerTests
             bridge);
 
         Assert.Empty(admitted.Game.Compatibility.ActionPermissionScopes);
+        Assert.False(admitted.Game.Compatibility.InspectionAllowed);
+        Assert.Empty(admitted.Game.Compatibility.InspectionCanaryKinds);
         Assert.Empty(manager.Snapshot().Grants);
+    }
+
+    [Fact]
+    public void ReadOnlyInspectionTrialFailsClosedForUnknownPatchOwner()
+    {
+        var manager = new BridgePermissionManager(
+            "runtime-migration",
+            BridgePermissionMode.MigrationExploration);
+        BridgeServerIdentity bridge = Bridge("runtime-migration");
+        GameBuildIdentity diagnostic = DiagnosticGame();
+        BridgeRuntimePatchInventoryInfo unknownPatch = BridgeRuntimePatchInventory.Classify(
+            new[]
+            {
+                new BridgeRuntimePatchDescriptor(
+                    "Game.Method()",
+                    "prefix",
+                    "unknown.mod",
+                    "Unknown.Patch()")
+            });
+        CompatibilityAssessment initial = manager.Apply(
+            diagnostic,
+            bridge,
+            unknownPatch);
+
+        BridgeObservationDraft admitted = manager.AdmitEncounter(
+            EncounterDraft(
+                diagnostic with { Compatibility = initial },
+                "open_shop_inventory"),
+            bridge);
+
+        Assert.Empty(admitted.Game.Compatibility.ActionPermissionScopes);
+        Assert.False(admitted.Game.Compatibility.InspectionAllowed);
+        Assert.Empty(admitted.Game.Compatibility.InspectionCanaryKinds);
     }
 
     [Fact]

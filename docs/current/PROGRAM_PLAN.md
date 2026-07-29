@@ -115,14 +115,13 @@ persistent qualification, strategic quality or product readiness.
 
 ### Current Evidence
 
-Preview.72 has exact build/install/load identity. Its immediately prior binary
-completed a 108-decision journey with 107 settled actions and one run-boundary
-stop. It had
-no unsupported, invalid, stale,
+Preview.74 has exact build/install/load identity. Run
+`run-20260729081310-529z79` completed a 202-decision boundary with 197 settled
+actions and four safe stale refusals. It had no unsupported, invalid,
 observation/provider failure, unsettled or unknown mutation outcome. Provenance
-is `unrecorded`; Inspection was disabled; Hefty/actionless-settling repair
-branches were not exercised. This is runtime coverage, not Organic or
-persistent qualification.
+is `unrecorded`; Inspection and shop relic/Kifuda were not exercised. This is
+runtime coverage, not Organic or persistent qualification. Preview.75 is
+built/installed but not loaded.
 
 ### Delivery Order
 

@@ -224,10 +224,10 @@ and the
 
 ## Current Architectural Constraint
 
-The Gateway and Re source share the mechanically checked `2.0-preview.74`
-contract and normalized schema 30. Preview.74 is built and installed as SHA
-`42eb22b6...` / MVID `13d4dd05...`, but loaded evidence remains scoped to
-Preview.73 until cold-load verification. Gate 1 establishes a bounded v2 connector baseline: Re and the
+The Gateway and Re source share the mechanically checked `2.0-preview.75`
+contract and normalized schema 30. Preview.75 is built and installed as SHA
+`ddce17cf...` / MVID `23ac5aad...`, but loaded evidence remains scoped to
+Preview.74 until cold-load verification. Gate 1 establishes a bounded v2 connector baseline: Re and the
 default MCP adapter are v2-only, Gateway v1 is retired, and historical v1 data
 is replay-only. Preview.69 has substantial real-runtime coverage on exact final
 loaded SHA `914974b5...` / MVID `1e457e86...`. Preview.70 later loaded as SHA
@@ -261,13 +261,20 @@ not a general nullable shared-state abstraction. Re refreshes dynamic
 capabilities with coherent observations because session grants may change after
 completion; startup negotiation is not an authority snapshot.
 
-Preview.74 makes semantic and authority identities formal wire fields and
+Preview.74 made semantic and authority identities formal wire fields and
 removes the old shadows and control histories from state. Composite `state_id`
 still binds both for stale-action safety. One production publication path binds
 every action to contract/source/operands/state. Seven explicit contracts use
 contract-digest admission; 80 manifest fallback families temporarily retain
 operation admission and must receive a family disposition before Clean Closure.
 Operation remains metadata for migrated families, not their execution key.
+
+Preview.75 does not add another authority plane. It allows the existing
+state-bound Inspection plane to operate as a volatile read-only canary only
+after the same clean runtime has a source-resolved mutation session scope.
+Inspection remains non-authorizing and non-persistent. Re also treats an
+overlong rationale as bounded audit-data normalization rather than discarding
+an otherwise valid advertised action.
 
 The Silver Crucible empty-chest defect also confirms the intended Oracle
 boundary: operation completion must recognize every native outcome branch that

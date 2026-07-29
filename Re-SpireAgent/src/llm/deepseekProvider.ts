@@ -133,6 +133,7 @@ export class DeepSeekDecisionProvider implements LlmDecisionProvider {
         outcome: "valid_json",
         rawResponseText: extracted.content,
         parsedDecision: parsed.decision,
+        ...(parsed.normalizations ? { normalizations: parsed.normalizations } : {}),
         ...(extracted.finishReason ? { finishReason: extracted.finishReason } : {}),
         ...(usage ? { usage } : {})
       };

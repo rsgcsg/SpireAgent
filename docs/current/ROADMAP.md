@@ -69,17 +69,18 @@ identity, family native-contract migration, deletion of old production paths,
 version/claim recovery and repeated journeys are required. Compendium and
 external reference enrichment remain optional.
 
-Preview.74 source and Re schema 30 are implemented/tested but not yet
-built/installed/loaded. Exact Preview.73 run `run-20260729061142-32o3xz`
-completed a 95-decision saved-run boundary with 94 settled actions and no
-Connector failure. It is `unrecorded`, did not use Inspection or shop
-relic/Kifuda, and cannot qualify Preview.74.
+Preview.75 source and Re schema 30 are implemented, tested, built and installed
+but not loaded. Exact Preview.74 run `run-20260729081310-529z79` completed a
+202-decision bounded run with 197 settled actions and four safe stale refusals.
+It is `unrecorded`, did not use Inspection or shop relic/Kifuda, and cannot
+qualify Preview.75. Adjacent runs prove Self-Help Book, not Kifuda.
 
 ### Current Gate 2 Work
 
-- build/install/cold-load Preview.74 and verify exact identity;
-- obtain ordinary relic/Kifuda and Inspection-enabled evidence for the first
-  vertical pilot;
+- cold-load Preview.75 and verify exact identity;
+- obtain one Inspection-enabled ordinary journey;
+- obtain ordinary relic/Kifuda evidence for the first vertical pilot without
+  manufacturing the encounter;
 - close core Inspection and typed availability;
 - close only naturally observed A-facing decision, owner, settling, visible-
   fact, Inspection and action-local outcome gaps;

@@ -77,6 +77,22 @@ describe("strict LLM decision schema", () => {
     });
   });
 
+  it("preserves the selected action while auditably bounding an overlong reason", () => {
+    expect(parseDecisionText(JSON.stringify({
+      selectedActionId: "combat:end-turn",
+      reasonBrief: "x".repeat(241),
+      confidence: 0.7
+    }))).toEqual({
+      valid: true,
+      decision: {
+        selectedActionId: "combat:end-turn",
+        reasonBrief: "x".repeat(240),
+        confidence: 0.7
+      },
+      normalizations: ["reason_brief_truncated_to_contract_limit"]
+    });
+  });
+
   it("rejects code fences, unknown fields, and out-of-range confidence", () => {
     expect(parseDecisionText('```json\n{"selectedActionId":"x","reasonBrief":"y"}\n```')).toMatchObject({ valid: false, outcome: "invalid_json" });
     expect(parseDecisionText('{"selectedActionId":"x","reasonBrief":"y","extra":true}')).toMatchObject({ valid: false, outcome: "invalid_schema" });

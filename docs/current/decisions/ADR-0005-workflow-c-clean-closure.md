@@ -95,9 +95,10 @@ child handoff.
 - The enchant actions bind their exact Self-Help Book or Kifuda source evidence
   into the bound-action digest.
 
-Preview.74 implements and fixture-tests this pilot. It is not Live-qualified
-until ordinary relic and Kifuda positive/negative journeys execute on the exact
-installed/loaded Preview.74 identity.
+Preview.74 implemented and fixture-tested this pilot, but its exact-runtime
+runs exercised only shop card purchase and Self-Help Book enchantment. The
+ordinary relic and Kifuda positive/negative journeys remain required on the
+current installed/loaded identity before family closeout.
 
 ## New-Environment Trial Semantics
 
@@ -151,8 +152,8 @@ fabricated into contracts to make a counter reach zero.
 
 ## Rollback
 
-Preview.74 is installed but not loaded. The last loaded Preview.73 whole-DLL
-rollback is `STS2MCP/.local/deployments/2026-07-29T07-08-28-094Z`; the latest
-installer backup contains the intermediate Preview.74 build. A rollback
+Preview.75 is installed but not loaded. The last loaded Preview.74 whole-DLL
+rollback is `STS2MCP/.local/deployments/2026-07-29T09-13-35-338Z`. A rollback
 restores a complete prior DLL; it does not selectively re-enable the deleted
-shadow wire contract.
+shadow wire contract. Preview.75's read-only Inspection canary does not alter
+the ADR's single mutation-authority architecture.

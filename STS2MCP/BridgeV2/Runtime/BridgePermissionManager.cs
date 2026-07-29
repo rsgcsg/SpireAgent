@@ -216,9 +216,22 @@ internal sealed class BridgePermissionManager
                 .Distinct(StringComparer.Ordinal)
                 .OrderBy(value => value, StringComparer.Ordinal)
                 .ToArray();
+            bool readOnlyInspectionTrial = scopes.Any(scope =>
+                    scope.AdmissionBasis == "encounter_source_resolved")
+                && ReadOnlyInspectionTrialEligible(game, bridge, patchInventory);
+            string[] inspectionCanaryKinds = readOnlyInspectionTrial
+                ? game.Compatibility.InspectionCanaryKinds
+                    .Concat(BridgeContractManifest.ImplementedInspectionKinds)
+                    .Distinct(StringComparer.Ordinal)
+                    .OrderBy(value => value, StringComparer.Ordinal)
+                    .ToArray()
+                : game.Compatibility.InspectionCanaryKinds.ToArray();
             string detail =
                 $"{game.Compatibility.Detail} Permission mode={ModeName(_mode)} runtime_epoch={_runtimeEpoch} "
-                + $"patch_status={patchInventory.Status} patch_digest={patchInventory.Digest}.";
+                + $"patch_status={patchInventory.Status} patch_digest={patchInventory.Digest}."
+                + (readOnlyInspectionTrial
+                    ? " State-bound read-only Inspection is enabled as a volatile session canary; it grants no mutation authority or persistent claim."
+                    : string.Empty);
             return game.Compatibility with
             {
                 Status = scopes.Count > 0 && !game.Compatibility.ActionExecutionAllowed
@@ -231,6 +244,9 @@ internal sealed class BridgePermissionManager
                     .ToArray(),
                 ActionExecutionSurfaceKinds = qualifiedSurfaces,
                 ActionCanarySurfaceKinds = canarySurfaces,
+                InspectionAllowed = game.Compatibility.InspectionAllowed
+                    || inspectionCanaryKinds.Length > 0,
+                InspectionCanaryKinds = inspectionCanaryKinds,
                 AdaptationLevel = scopes.Any(scope =>
                         scope.AdmissionBasis == "encounter_source_resolved")
                     ? "encounter_provisional_trial"
@@ -745,6 +761,17 @@ internal sealed class BridgePermissionManager
             OperationFingerprint = operationFingerprint
         };
     }
+
+    private bool ReadOnlyInspectionTrialEligible(
+        GameBuildIdentity game,
+        BridgeServerIdentity bridge,
+        BridgeRuntimePatchInventoryInfo patchInventory) =>
+        _mode == BridgePermissionMode.MigrationExploration
+        && game.Compatibility.Status == "unreviewed_diagnostic_candidate"
+        && game.Compatibility.StateObservationAllowed
+        && !game.Compatibility.InspectionAllowed
+        && patchInventory.Status == "clean_known_owners"
+        && EncounterEnvironmentEligible(game, bridge);
 
     internal static string EnvironmentDigest(
         GameBuildIdentity game,

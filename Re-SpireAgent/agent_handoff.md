@@ -6,11 +6,20 @@
 > below are preserved as dated evidence and must not override those documents.
 
 Status update 2026-07-29 (current pointer only): source contract is
-`2.0-preview.74`; Re normalized schema is `30`. Source tests and Release build
-pass. Preview.74 is installed as SHA `42eb22b6...aaea7e`, MVID
-`13d4dd05...9cf5b`; the game is closed, so load, mutation canary, Organic
-evidence and qualification are not claimed. Rollback is
-`../STS2MCP/.local/deployments/2026-07-29T07-08-28-094Z`.
+`2.0-preview.75`; Re normalized schema is `30`. Source tests and Release build
+pass. Preview.75 is installed as SHA `ddce17cf...6334`, MVID
+`23ac5aad...3cb4`; the game is closed, so load, mutation canary, Inspection
+canary, Organic evidence and qualification are not claimed. The last verified
+runtime loaded Preview.74 as SHA `42eb22b6...aaea7e`, MVID
+`13d4dd05...9cf5b`, runtime `5ed719fd...`. Its latest completed run is
+`run-20260729081310-529z79`: 197 settled decisions, four safe stale refusals,
+one non-actionable run boundary, and no unsupported, observation/provider
+failure, unsettled or unknown mutation. This is `unrecorded` coverage evidence,
+not qualification. Preview.75 bounds an overlong non-authoritative
+`reasonBrief` without discarding a valid action and enables volatile read-only
+Inspection only after exact source-resolved session admission. It does not add
+mutation authority or a durable claim. Rollback is
+`../STS2MCP/.local/deployments/2026-07-29T09-13-35-338Z`.
 
 Earlier status update 2026-07-29: source contract is
 `2.0-preview.73`; Re normalized schema is `29`. Preview.73 repairs the

@@ -2339,6 +2339,10 @@ function isOperationScopedAuthority(
     && sameStrings(
       stateCompatibility.inspection_allowed_kinds,
       capabilityCompatibility.inspection_allowed_kinds
+    )
+    && sameStrings(
+      stateCompatibility.inspection_canary_kinds,
+      capabilityCompatibility.inspection_canary_kinds
     );
   if (!scoped) return false;
 

@@ -40,6 +40,10 @@ not inherit authority from the archived root SpireAgent runtime.
 
 Current cross-component audits:
 
+- [Preview.74 runtime and Preview.75 pre-Live closeout](audits/WORKFLOW_C_PREVIEW74_RUNTIME_AND_PREVIEW75_PRELIVE_CLOSEOUT_2026-07-29.md):
+  exact six-run attribution, Prompt/source provenance, stale analysis,
+  Self-Help Book versus Kifuda evidence boundary, Preview.75 rationale and
+  read-only Inspection repairs, installed identity and Live non-claims.
 - [Workflow C Clean Closure audit and execution contract](audits/WORKFLOW_C_CLEAN_CLOSURE_AUDIT_AND_EXECUTION_CONTRACT_2026-07-29.md):
   accepted target, attachment critique, latest-run evidence, support envelope,
   identity/wire cutover, first shop/Kifuda pilot, deletion metrics, evidence

@@ -3479,6 +3479,14 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       }),
       TEST_SOURCE
     ).currentState.stability).toBe("actionable");
+
+    expect(normalizeCurrentState(
+      wrapBridgeV2State({
+        state: combatCanaryState,
+        capabilities: mixedInspectionCapabilities
+      }),
+      TEST_SOURCE
+    ).currentState.stability).toBe("invalid");
   });
 
   it("accepts an installed qualification candidate only through explicit audited canaries", () => {
