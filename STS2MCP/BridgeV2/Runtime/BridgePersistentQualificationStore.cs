@@ -339,10 +339,9 @@ internal sealed class BridgePersistentQualificationStore
                 string? observedWitness = response.Events
                     .LastOrDefault(value => value.Status == "completed")
                     ?.Evidence;
-                if (!string.Equals(
-                        observedWitness,
+                if (!BridgeOperationQualificationCatalog.WitnessMatches(
                         package.WitnessId,
-                        StringComparison.Ordinal))
+                        observedWitness))
                 {
                     _sessionQuarantineReasons[qualificationId] =
                         "semantic_completion_witness_mismatch";

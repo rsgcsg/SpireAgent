@@ -64,6 +64,18 @@
       "risk_class": "persistent_run_mutation"
     },
     {
+      "surface_kind": "shop_inventory",
+      "operation": "purchase_shop_relic",
+      "interaction_kind": "merchant_inventory_relic_purchase",
+      "owner_binding": "exact_current_merchant_inventory_and_relic_entry",
+      "source_binding": "MerchantRelicEntry.OnTryPurchaseWrapper",
+      "operand_contract": "exact_advertised_offer_relic_instance_price_gold_and_slot",
+      "commit_contract": "native_merchant_relic_purchase_task",
+      "completion_boundary": "native_commit_observed",
+      "witness_id": "shop_relic_purchase_committed_with_exact_relic_gold_and_entry_witness",
+      "risk_class": "persistent_run_mutation"
+    },
+    {
       "surface_kind": "treasure_room",
       "operation": "open_treasure_chest",
       "interaction_kind": "treasure_chest_reveal",

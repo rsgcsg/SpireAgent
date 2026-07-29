@@ -21,7 +21,6 @@ describe("shadow strategy projection", () => {
       },
       bridgeDiagnostics: [{ code: "audit-only" }],
       bridgeInspectionCatalog: [{ kind: "run_deck" }],
-      bridgeContractInstanceShadow: { authorizing: false },
       surface: { kind: "shop_inventory", legalActions: [{ id: "surface-action" }] }
     };
     const original = JSON.stringify(currentState);

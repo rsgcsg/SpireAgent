@@ -9,7 +9,9 @@ game state before Agent work can proceed.
 The single architecture destination remains
 [ADR-0002](decisions/ADR-0002-semantic-gateway-two-plane-target-architecture.md),
 refined by ADR-0003's native-contract migration and ADR-0004's separation of
-diagnostic observation, encounter-scoped trial and persistent claims.
+diagnostic observation, encounter-scoped trial and persistent claims. ADR-0005
+makes Workflow C Clean Closure the current priority and requires vertical
+family migration with deletion rather than permanent shadow/dual-read.
 
 ## Milestone Mapping
 
@@ -60,35 +62,31 @@ Gate 2 follows this priority:
 4. publication/execution legality and action-local outcome correctness;
 5. non-authorizing native-contract and compatibility migration.
 
-This open-ended list is now bounded by the
-[C-R1 completion contract](audits/WORKFLOW_C_R1_SHORT_TERM_COMPLETION_CONTRACT_2026-07-29.md):
-Core closes ordinary vanilla single-player decision truth, core Inspection,
-typed support scope, version recovery and repeated journeys; authority/identity
-cutover remains conditional on parity evidence; compendium and external
-reference enrichment remain optional.
+This track is now bounded by the
+[Clean Closure contract](audits/WORKFLOW_C_CLEAN_CLOSURE_AUDIT_AND_EXECUTION_CONTRACT_2026-07-29.md):
+ordinary vanilla decision truth, core Inspection, typed support scope, formal
+identity, family native-contract migration, deletion of old production paths,
+version/claim recovery and repeated journeys are required. Compendium and
+external reference enrichment remain optional.
 
-Preview.73 is source/test/build/install/load complete at the identity in
-[Status](STATUS.md), and strict Re read-only inspection passed. No Preview.73
-mutation canary has executed. Earlier same-source Preview.72 run
-`run-20260728141035-uhrp19` completed a
-108-decision one-game boundary with 107 settled actions and no unsupported,
-invalid, stale, observation/provider failure, unsettled or unknown outcome. It
-is `unrecorded` prior-MVID runtime evidence, not Organic
-or persistent qualification; current Inspection remains disabled and the
-Hefty/actionless-settling repair branches were not naturally exercised.
+Preview.74 source and Re schema 30 are implemented/tested but not yet
+built/installed/loaded. Exact Preview.73 run `run-20260729061142-32o3xz`
+completed a 95-decision saved-run boundary with 94 settled actions and no
+Connector failure. It is `unrecorded`, did not use Inspection or shop
+relic/Kifuda, and cannot qualify Preview.74.
 
 ### Current Gate 2 Work
 
-- complete C-R1.0 by exercising Preview.73's Rest minimum-Outcome and
-  blocked-owner canaries during ordinary play;
-- then enter C-R1.1 core Inspection and typed availability closure;
+- build/install/cold-load Preview.74 and verify exact identity;
+- obtain ordinary relic/Kifuda and Inspection-enabled evidence for the first
+  vertical pilot;
+- close core Inspection and typed availability;
 - close only naturally observed A-facing decision, owner, settling, visible-
   fact, Inspection and action-local outcome gaps;
 - retain complete evidence while A/D evaluate a scope-specific model view;
-- keep current operation permission authoritative until ADR-0003 dual-read
-  parity and rollback gates pass;
-- expand source/adapter/outcome identity only as non-authorizing shadow before
-  migration;
+- migrate one real family at a time to explicit contract-digest admission and
+  delete its operation-authority/fallback path after evidence;
+- do not add permanent shadow, fallback or parallel authority paths;
 - keep Profiles, D evidence and manifest hypotheses non-authorizing;
 - use family-specific evidence rather than operation/package counts.
 

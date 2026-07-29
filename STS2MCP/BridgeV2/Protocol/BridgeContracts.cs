@@ -7,7 +7,7 @@ namespace STS2_MCP.BridgeV2.Protocol;
 
 public static class BridgeV2Contract
 {
-    public const string ProtocolVersion = "2.0-preview.73";
+    public const string ProtocolVersion = "2.0-preview.74";
     public const string ObservationPolicyId = "player_visible_ui_v1";
 }
 
@@ -310,38 +310,6 @@ public sealed record BridgeVisibilityState(
     IReadOnlyList<string> HiddenByPolicy,
     IReadOnlyList<string> Missing,
     string UnknownCriticalFieldBehavior);
-
-public sealed record BridgeContractOperationShadow(
-    string Operation,
-    string EvidenceStatus,
-    bool Published,
-    string ContractResolution,
-    string? ContractDigest,
-    BridgeContractComponentDigests? ComponentDigests,
-    string? CompletionBoundary,
-    string? WitnessId,
-    string? RiskClass);
-
-public sealed record BridgeContractComponentDigests(
-    string Interaction,
-    string Owner,
-    string Source,
-    string Operand,
-    string Commit,
-    string Completion,
-    string Witness);
-
-public sealed record BridgeContractInstanceShadow(
-    string Status,
-    string InstanceId,
-    string SurfaceKind,
-    string? SemanticContractId,
-    string? DeclaredBinding,
-    IReadOnlyList<BridgeContractOperationShadow> Operations,
-    string CurrentAuthorityTier,
-    string CurrentAuthorityBasis,
-    bool Authorizing,
-    IReadOnlyList<string> Limitations);
 
 public sealed record SharedStateContractCapability(
     string Status,
@@ -1252,21 +1220,11 @@ public sealed record NoActionSurface(
     string Reason,
     string? Message) : IBridgeSurface;
 
-public sealed record BridgeObservationIdentityShadow(
-    int SchemaVersion,
-    string Status,
-    string SemanticStateIdCandidate,
-    string AuthorityProjectionIdCandidate,
-    string CurrentStateIdRole,
-    bool ActionBindingUsesCurrentStateId,
-    bool Authorizing,
-    IReadOnlyList<string> SemanticInputs,
-    IReadOnlyList<string> AuthorityInputs,
-    IReadOnlyList<string> Limitations);
-
 public sealed record BridgeStateEnvelope(
     string ProtocolVersion,
     string StateId,
+    string SemanticStateId,
+    string AuthorityProjectionId,
     long StateSequence,
     DateTimeOffset ObservedAt,
     string Readiness,
@@ -1281,17 +1239,9 @@ public sealed record BridgeStateEnvelope(
     ObservationPolicyInfo ObservationPolicy,
     BridgeVisibilityState Visibility,
     IReadOnlyList<BridgeInspectionCatalogEntry> InspectionCatalog,
-    BridgeContractInstanceShadow ContractInstanceShadow,
-    BridgeObservationIdentityShadow IdentityShadow,
     IReadOnlyList<BridgeDiagnostic> Diagnostics,
     IReadOnlyList<string> Warnings)
 {
-    public BridgePermissionSystemInfo PermissionSystem { get; init; } =
-        BridgePermissionSystemInfo.Unavailable;
-
-    public BridgeQualificationSystemInfo QualificationSystem { get; init; } =
-        BridgeQualificationSystemInfo.Unavailable;
-
     // Retain the preview.1 wire field while making surface.kind the sole source.
     public string SurfaceKind => Surface.Kind;
 }

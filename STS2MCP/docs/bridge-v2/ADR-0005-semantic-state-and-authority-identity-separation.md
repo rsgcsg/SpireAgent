@@ -1,7 +1,12 @@
 # ADR-0005: Semantic State And Authority Identity Separation
 
-Status: accepted for shadow measurement only
+Status: superseded by repository ADR-0005 on 2026-07-29
 Date: 2026-07-27
+
+> Historical decision record. Preview.74 completed the direct formal identity
+> cutover, deleted `identity_shadow`, and removed control histories from state.
+> Current authority is
+> [repository ADR-0005](../../../docs/current/decisions/ADR-0005-workflow-c-clean-closure.md).
 
 ## Context
 

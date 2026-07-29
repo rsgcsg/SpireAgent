@@ -19,6 +19,9 @@ not inherit authority from the archived root SpireAgent runtime.
    [ADR-0004](decisions/ADR-0004-risk-calibrated-encounter-trial-and-scoped-claims.md)
    separates diagnostic observation, volatile encounter trial admission, and
    persistent scoped claims.
+   [ADR-0005](decisions/ADR-0005-workflow-c-clean-closure.md) makes C Clean
+   Closure the current priority and mandates vertical native-contract migration
+   with deletion of permanent scaffolding.
 4. [Program plan](PROGRAM_PLAN.md): M0--M4 user-outcome milestones and A/C/D/P/X
    dependency order.
 5. [Roadmap](ROADMAP.md): technical readiness tracks, Gate history and milestone
@@ -37,9 +40,13 @@ not inherit authority from the archived root SpireAgent runtime.
 
 Current cross-component audits:
 
+- [Workflow C Clean Closure audit and execution contract](audits/WORKFLOW_C_CLEAN_CLOSURE_AUDIT_AND_EXECUTION_CONTRACT_2026-07-29.md):
+  accepted target, attachment critique, latest-run evidence, support envelope,
+  identity/wire cutover, first shop/Kifuda pilot, deletion metrics, evidence
+  gates and final non-claims.
 - [Workflow C-R1 short-term completion contract](audits/WORKFLOW_C_R1_SHORT_TERM_COMPLETION_CONTRACT_2026-07-29.md):
-  accepted bounded endpoint, attachment critique, single target architecture,
-  Core/conditional/optional split, evidence gates and implementation order.
+  superseded bounded proposal retained as decision history; ADR-0005 replaces
+  its conditional permanent-migration boundary.
 - [Preview.73 Rest Outcome and authority boundary](audits/PREVIEW_73_REST_OUTCOME_AND_AUTHORITY_BOUNDARY_2026-07-29.md):
   exact three-run failure attribution, minimum Rest Outcome, semantic-owner
   versus mutation-permission repair, tests, built identity and Live non-claims.

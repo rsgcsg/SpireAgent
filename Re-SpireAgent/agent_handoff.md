@@ -6,6 +6,13 @@
 > below are preserved as dated evidence and must not override those documents.
 
 Status update 2026-07-29 (current pointer only): source contract is
+`2.0-preview.74`; Re normalized schema is `30`. Source tests and Release build
+pass. Preview.74 is installed as SHA `42eb22b6...aaea7e`, MVID
+`13d4dd05...9cf5b`; the game is closed, so load, mutation canary, Organic
+evidence and qualification are not claimed. Rollback is
+`../STS2MCP/.local/deployments/2026-07-29T07-08-28-094Z`.
+
+Earlier status update 2026-07-29: source contract is
 `2.0-preview.73`; Re normalized schema is `29`. Preview.73 repairs the
 Preview.72 Stone Humidifier Rest Outcome overclaim and preserves a current
 semantic owner when mutation operations are blocked. Source tests and Release

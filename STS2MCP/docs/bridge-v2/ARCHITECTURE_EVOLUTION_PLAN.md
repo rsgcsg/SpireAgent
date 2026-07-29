@@ -18,7 +18,9 @@ Status: Gate 1 closed as a bounded ordinary-single-player v2 connector
 baseline on 2026-07-24. Preview.61 supplied the exact Neow's Fury Organic
 runtime seal, strict Re decode, and loaded-v1 retirement evidence.
 
-C# and Re source now share `2.0-preview.73`. Preview.62 moved exact-environment
+C# and Re source now share `2.0-preview.74`. ADR-0005 replaces this document's
+open-ended dual-read sequencing with bounded family migration and mandatory
+deletion. Preview.62 moved exact-environment
 authorization and reviewed combat-pile source contracts into validated
 embedded policy, and added a non-authorizing exact-assembly audit. Preview.63
 adds an operation-scoped Gateway session-grant state machine under that

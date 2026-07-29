@@ -454,8 +454,9 @@ async function inspect(options, requireLoaded = false) {
     compatibility_status: capabilities?.game?.compatibility?.status ?? null,
     permission_mode: capabilities?.permission_system?.mode ?? null,
     qualification_status: capabilities?.qualification_system?.status ?? null,
-    identity_shadow_status: null,
-    note: "Identity shadow is state-scoped and is inspected through collect-evidence or /api/v2/state."
+    semantic_state_id: null,
+    authority_projection_id: null,
+    note: "Formal state identities are state-scoped and are inspected through collect-evidence or /api/v2/state."
   };
 }
 
@@ -675,7 +676,8 @@ async function collectEvidence(options) {
     protocol_version: capabilities.protocol_version,
     loaded_sha256: capabilities.bridge?.assembly_file_sha256,
     state_id: state.state_id,
-    identity_shadow_status: state.identity_shadow?.status ?? "missing",
+    semantic_state_id: state.semantic_state_id ?? null,
+    authority_projection_id: state.authority_projection_id ?? null,
     partial_failures: partialFailures
   };
 }
@@ -774,7 +776,7 @@ function usage() {
     + `  verify-loaded-artifact [--wait]   Require source/built/installed/loaded identity agreement\n`
     + `  run-agent -- <agent args>         Exact-identity preflight, trial resume, then bounded Re run\n`
     + `  collect-evidence [--out FILE]     Capture read-only capabilities/state/controller/clients\n`
-    + `  audit-run-identity [--run ID|DIR] Audit recorded stale refusals against identity shadows\n`
+    + `  audit-run-identity [--run ID|DIR] Audit stale refusals using formal IDs or historical shadows\n`
     + `  start-or-resume-trial -- <args>   Delegate to the migration cycle\n`
     + `  revoke -- <ledger args>           Revoke a persistent qualification\n`
     + `  rollback -- <ledger args>         Roll back a persistent qualification\n`

@@ -6,7 +6,7 @@ It may derive an evidence-tested model view, but it never becomes a second
 game-state, legality, permission, Commit, or completion authority.
 
 > Compatibility status, 2026-07-29: Re and C# share source contract
-> `2.0-preview.73`; Re normalized schema is `29`. Gate 1 is closed as a
+> `2.0-preview.74`; Re normalized schema is `30`. Gate 1 is closed as a
 > bounded ordinary-single-player v2 baseline, not full game coverage.
 > Preview.69 adds typed new/resumed-run mount settling, bounded semantic-cycle recovery,
 > and strict consumption of encounter-scoped provisional grants. Diagnostic
@@ -45,13 +45,13 @@ waits for the Bridge command lifecycle, and records the complete evidence.
 
 RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, shadow/live modes, policy promotion, or the old project's phase machinery. Its job is to make one decision path correct and auditable.
 
-Re's current strict client contract is Bridge `2.0-preview.73`. Re strictly
+Re's current strict client contract is Bridge `2.0-preview.74`. Re strictly
 decodes current identities and grants, but does not interpret fallback Witness
-semantics or promote any candidate. The last verified runtime loaded Preview.72
-SHA `debc229e...` / MVID `6d9d4adf...` / runtime `b2332a06...`; its grants do
-not transfer to Preview.73 SHA `f6b2d268...` / MVID `f67e272a...` / runtime
-`37c04bb7...`. Source, built, installed and loaded identity agree; a strict
-read-only main-menu inspection passed without executing a mutation.
+semantics or promote any candidate. Preview.74 is built and installed as SHA
+`42eb22b6...` / MVID `13d4dd05...`; it has not been cold-loaded. The last
+verified runtime loaded Preview.73 SHA `f6b2d268...` / MVID `f67e272a...` /
+runtime `2123fefa...`; its grants and evidence do not transfer to Preview.74.
+A historical strict read-only main-menu inspection passed without mutation.
 Preview.66's narrow persistent
 `main_menu/continue_run` qualification belongs only to its historical exact
 Gateway identity.
@@ -108,10 +108,11 @@ explicit `--allow-run-entry` option may cross a top-level menu boundary only
 through a current `bridge_advertised` action; the default command remains
 one-game bounded and local reconstruction remains forbidden.
 
-Preview.68 strictly decodes the Gateway's required identity shadow. The shadow
-is retained in the raw state record for migration measurement but deliberately
-excluded from `NormalizedCurrentState`, Prompt construction, allowed actions,
-and runtime permission. Current state/action IDs remain authoritative.
+Preview.74 strictly decodes formal `semantic_state_id` and
+`authority_projection_id`. Composite `state_id` binds both for stale-action
+protection. Historical identity shadows remain readable only in recorded-run
+audit tooling; they are absent from current state, `NormalizedCurrentState`,
+Prompt construction, allowed actions, and runtime permission.
 
 Preview.55 makes strict v2 the sole connector path. Re rejects legacy `v1` and
 the former `auto` mode; it cannot probe or fall back to v1. Bridge-confirmed

@@ -400,26 +400,6 @@ export function normalizeBridgeV2CurrentState(
         recommendedFor: [...entry.recommended_for],
         hiddenByPolicy: [...entry.hidden_by_policy]
       })),
-      bridgeContractInstanceShadow: {
-        status: state.contract_instance_shadow.status,
-        instanceId: state.contract_instance_shadow.instance_id,
-        surfaceKind: state.contract_instance_shadow.surface_kind,
-        ...(state.contract_instance_shadow.semantic_contract_id
-          ? { semanticContractId: state.contract_instance_shadow.semantic_contract_id }
-          : {}),
-        ...(state.contract_instance_shadow.declared_binding
-          ? { declaredBinding: state.contract_instance_shadow.declared_binding }
-          : {}),
-        operations: state.contract_instance_shadow.operations.map((operation) => ({
-          operation: operation.operation,
-          evidenceStatus: operation.evidence_status,
-          published: operation.published
-        })),
-        currentAuthorityTier: state.contract_instance_shadow.current_authority_tier,
-        currentAuthorityBasis: state.contract_instance_shadow.current_authority_basis,
-        authorizing: state.contract_instance_shadow.authorizing,
-        limitations: [...state.contract_instance_shadow.limitations]
-      },
       ...(bridgeObservation ? { bridgeObservation } : {}),
       bridgeInspections: projectedInspections.evidence,
       ...(Object.keys(bridgeInspectionFacts).length > 0 ? { bridgeInspectionFacts } : {})

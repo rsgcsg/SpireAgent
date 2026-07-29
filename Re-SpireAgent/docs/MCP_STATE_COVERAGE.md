@@ -8,7 +8,7 @@ matrix. This document records the Re-SpireAgent consumption boundary.
 
 ## Bridge v2 Current Client Contract
 
-Re strictly decodes `2.0-preview.73`. It accepts Bridge actions only when:
+Re strictly decodes `2.0-preview.74`. It accepts Bridge actions only when:
 
 - game, Modset, Bridge assembly SHA-256, MVID, and runtime identities match
   exact scoped capabilities and state;
@@ -26,10 +26,11 @@ Re strictly decodes `2.0-preview.73`. It accepts Bridge actions only when:
   installed package or the current source-resolved encounter;
 - the current Surface is Bridge-advertised and every action is state-bound.
 
-The required identity shadow and runtime contract/source shadow are raw
-non-authorizing evidence. They are not strategy facts or permission inputs,
-and current action binding continues to use the authoritative legacy composite
-`state_id`.
+Formal `semantic_state_id` and `authority_projection_id` are required raw
+state identities. Composite `state_id` binds both for stale-action protection.
+Contract/identity shadows and permission/qualification histories are absent
+from current state and strategy input; historical shadows remain readable only
+by the recorded-run audit tool.
 
 The current exact identity determines the Gateway-emitted explicit operation
 scopes. The table describes supported projections and historical evidence
@@ -71,7 +72,7 @@ Re keeps three actionless boundaries distinct:
 | top-level `shared_state` | persistent run/player facts, text keywords, and typed read-only card previews | read-only and state-bound; preview facts grant no actions |
 | `visibility` / `inspection_catalog` | bounded default-plus-inspection closure and available typed reads | read-only declarations; partial catalog; no action authority |
 | coherent observation bundle | one state plus requested catalogued Inspections under one state/environment identity | strict decoder and real shop + run-deck read exercised; stale reads and scope mismatches with a freshly changed state retry as whole-read drift, while same-state mismatches fail hard |
-| `contract_instance_shadow` | manifest contract, operations, legacy authority tier, and limitations | diagnostic only; always non-authorizing and not used to build allowed actions |
+| `semantic_state_id` / `authority_projection_id` | formal semantic facts identity and current relevant authority identity | required; composite `state_id` binds both; no permission history or shadow enters strategy state |
 
 Map `current_position` is nullable and may be omitted by the Bridge serializer
 while the map first opens or transitions from rewards. Re treats that shape as

@@ -4,14 +4,21 @@ import os from "node:os";
 import path from "node:path";
 import { auditRunIdentity } from "./connector-run-identity-audit.mjs";
 
-function identityState({ stateId, semantic, authority, actions }) {
+function identityState({ stateId, semantic, authority, actions, historical = false }) {
   return {
     bridge_v2_state: {
       state_id: stateId,
-      identity_shadow: {
-        semantic_state_id_candidate: semantic,
-        authority_projection_id_candidate: authority
-      },
+      ...(historical
+        ? {
+            identity_shadow: {
+              semantic_state_id_candidate: semantic,
+              authority_projection_id_candidate: authority
+            }
+          }
+        : {
+            semantic_state_id: semantic,
+            authority_projection_id: authority
+          }),
       legal_actions: actions
     }
   };
@@ -101,22 +108,48 @@ try {
     actions: [action("different-action", "card-3")]
   })));
 
+  const historicalRecord = record({
+    decisionId: "decision-3",
+    preRef: "snapshots/historical-pre.json",
+    postRef: "snapshots/historical-post.json",
+    entityId: "card-4"
+  });
+  writeFileSync(path.join(snapshots, "historical-pre.json"), JSON.stringify(identityState({
+    stateId: "state-5",
+    semantic: "semantic-d",
+    authority: "authority-d",
+    actions: [action("old-action", "card-4")],
+    historical: true
+  })));
+  writeFileSync(path.join(snapshots, "historical-post.json"), JSON.stringify(identityState({
+    stateId: "state-6",
+    semantic: "semantic-d",
+    authority: "authority-e",
+    actions: [action("new-action", "card-4")],
+    historical: true
+  })));
+
   writeFileSync(
     path.join(run, "decisions.jsonl"),
-    `${JSON.stringify(semanticRecord)}\n${JSON.stringify(compositeRecord)}\n`
+    `${JSON.stringify(semanticRecord)}\n${JSON.stringify(compositeRecord)}\n${JSON.stringify(historicalRecord)}\n`
   );
 
   const result = auditRunIdentity({ run: "run-fixture", runsDirectory: root });
   assert.equal(result.authorization_effect, "none");
-  assert.equal(result.summary.stale_refusal_count, 2);
+  assert.equal(result.analysis_kind, "recorded_run_state_identity_audit");
+  assert.equal(result.summary.stale_refusal_count, 3);
   assert.equal(result.summary.semantic_changed, 1);
-  assert.equal(result.summary.neither_candidate_changed, 1);
-  assert.equal(result.summary.composite_only_stale_candidates, 1);
-  assert.equal(result.summary.selected_bound_action_still_published, 1);
+  assert.equal(result.summary.authority_changed, 1);
+  assert.equal(result.summary.neither_identity_changed, 1);
+  assert.equal(result.summary.composite_only_stale_findings, 1);
+  assert.equal(result.summary.formal_state_identity_findings, 2);
+  assert.equal(result.summary.historical_identity_shadow_findings, 1);
+  assert.equal(result.summary.selected_bound_action_still_published, 2);
   assert.equal(result.summary.selected_bound_action_not_published, 1);
-  assert.equal(result.summary.migration_signal, "composite_only_stale_candidate_observed");
+  assert.equal(result.summary.migration_signal, "composite_only_stale_observed");
   assert.equal(result.findings[0].selected_bound_action_continuity, "same_kind_and_operands_published");
   assert.equal(result.findings[1].selected_bound_action_continuity, "not_published_with_same_kind_and_operands");
+  assert.equal(result.findings[2].identity_evidence_source, "historical_identity_shadow");
 } finally {
   rmSync(root, { recursive: true, force: true });
 }

@@ -333,14 +333,21 @@ internal sealed class BridgePermissionManager
 
     public bool AuthorizeExecution(
         BridgeActionPermissionBinding expected,
-        CompatibilityAssessment current)
+        CompatibilityAssessment current,
+        BridgeBoundActionContract? contract = null)
     {
         lock (_gate)
         {
             ActionPermissionScope? scope = current.ActionPermissionScopes.SingleOrDefault(value =>
                 string.Equals(value.SurfaceKind, expected.SurfaceKind, StringComparison.Ordinal)
-                && string.Equals(value.Operation, expected.Operation, StringComparison.Ordinal));
+                && (contract?.ExplicitContract == true
+                    ? string.Equals(
+                        value.OperationFingerprint,
+                        contract.ContractDigest,
+                        StringComparison.Ordinal)
+                    : string.Equals(value.Operation, expected.Operation, StringComparison.Ordinal)));
             return scope != null
+                && (contract == null || contract.Matches(scope))
                 && string.Equals(scope.Tier, expected.Tier, StringComparison.Ordinal)
                 && string.Equals(scope.GrantId, expected.GrantId, StringComparison.Ordinal)
                 && scope.GrantVersion == expected.GrantVersion

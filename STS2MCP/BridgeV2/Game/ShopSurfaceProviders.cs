@@ -490,12 +490,7 @@ internal sealed class ShopInventorySurfaceProvider : IBridgeSurfaceProvider
                 nativeContinuationVisible?.Invoke() == true),
             completionEvidence,
             allowIntermediateStateChanges: true,
-            completionEvidenceProvider: () => nativeContinuationVisible?.Invoke() == true
-                ? "shop_relic_purchase_committed_with_kifuda_enchantment_child_handoff"
-                : completionEvidence,
-            completionBoundaryProvider: () => nativeContinuationVisible?.Invoke() == true
-                ? "continuation_handoff_observed"
-                : BridgeOperationQualificationCatalog.GatewayCompletionBoundary);
+            completionBoundary: "native_commit_observed");
     }
 
     private static bool HasVisibleLinkedRewardContinuation() =>

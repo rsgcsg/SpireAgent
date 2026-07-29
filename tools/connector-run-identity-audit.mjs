@@ -64,12 +64,29 @@ function bridgeState(snapshot) {
 }
 
 function identityPair(state) {
+  const formalSemantic = state?.semantic_state_id;
+  const formalAuthority = state?.authority_projection_id;
+  if (typeof formalSemantic === "string" && typeof formalAuthority === "string") {
+    return {
+      semantic: formalSemantic,
+      authority: formalAuthority,
+      evidenceSource: "formal_state_identity"
+    };
+  }
+
   const shadow = state?.identity_shadow;
   if (!shadow) return null;
   const semantic = shadow.semantic_state_id_candidate;
   const authority = shadow.authority_projection_id_candidate;
   if (typeof semantic !== "string" || typeof authority !== "string") return null;
-  return { semantic, authority };
+  return { semantic, authority, evidenceSource: "historical_identity_shadow" };
+}
+
+function identityEvidenceSource(preIdentity, postIdentity) {
+  if (!preIdentity || !postIdentity) return "missing_identity";
+  return preIdentity.evidenceSource === postIdentity.evidenceSource
+    ? preIdentity.evidenceSource
+    : "mixed_identity_generation";
 }
 
 function normalizedBindings(action) {
@@ -107,13 +124,13 @@ function actionContinuity(record, postState) {
 }
 
 function identityChange(preIdentity, postIdentity) {
-  if (!preIdentity || !postIdentity) return "missing_candidate_identity";
+  if (!preIdentity || !postIdentity) return "missing_identity";
   const semantic = preIdentity.semantic !== postIdentity.semantic;
   const authority = preIdentity.authority !== postIdentity.authority;
   if (semantic && authority) return "semantic_and_authority_changed";
   if (semantic) return "semantic_changed";
   if (authority) return "authority_changed";
-  return "neither_candidate_changed";
+  return "neither_identity_changed";
 }
 
 function exactIdentity(metadata) {
@@ -145,7 +162,9 @@ export function auditRunIdentity({ run, runsDirectory = DEFAULT_RUNS_DIRECTORY }
     const post = readSnapshot(runDirectory, record.postState?.rawStateRef);
     const preState = bridgeState(pre.value);
     const postState = bridgeState(post.value);
-    const change = identityChange(identityPair(preState), identityPair(postState));
+    const preIdentity = identityPair(preState);
+    const postIdentity = identityPair(postState);
+    const change = identityChange(preIdentity, postIdentity);
     return {
       decision_id: record.decisionId ?? null,
       tick: record.tick ?? null,
@@ -153,7 +172,8 @@ export function auditRunIdentity({ run, runsDirectory = DEFAULT_RUNS_DIRECTORY }
       surface_kind: record.preState?.normalizedState?.surface?.kind ?? null,
       selected_action_kind: selectedAction(record)?.kind ?? null,
       current_state_id_changed: preState?.state_id !== postState?.state_id,
-      candidate_identity_change: change,
+      identity_change: change,
+      identity_evidence_source: identityEvidenceSource(preIdentity, postIdentity),
       selected_bound_action_continuity: actionContinuity(record, postState),
       pre_state_id: preState?.state_id ?? null,
       post_state_id: postState?.state_id ?? null,
@@ -161,12 +181,14 @@ export function auditRunIdentity({ run, runsDirectory = DEFAULT_RUNS_DIRECTORY }
     };
   });
 
-  const count = (value) => findings.filter((finding) => finding.candidate_identity_change === value).length;
-  const compositeOnly = count("neither_candidate_changed");
-  const missing = count("missing_candidate_identity");
+  const count = (value) => findings.filter((finding) => finding.identity_change === value).length;
+  const sourceCount = (value) => findings.filter((finding) =>
+    finding.identity_evidence_source === value).length;
+  const compositeOnly = count("neither_identity_changed");
+  const missing = count("missing_identity");
   return {
-    schema_version: 1,
-    analysis_kind: "recorded_run_identity_shadow_audit",
+    schema_version: 2,
+    analysis_kind: "recorded_run_state_identity_audit",
     authorization_effect: "none",
     run: {
       run_id: metadata?.runId ?? path.basename(runDirectory),
@@ -181,22 +203,26 @@ export function auditRunIdentity({ run, runsDirectory = DEFAULT_RUNS_DIRECTORY }
       semantic_and_authority_changed: count("semantic_and_authority_changed"),
       semantic_changed: count("semantic_changed"),
       authority_changed: count("authority_changed"),
-      neither_candidate_changed: compositeOnly,
-      missing_candidate_identity: missing,
+      neither_identity_changed: compositeOnly,
+      missing_identity: missing,
+      formal_state_identity_findings: sourceCount("formal_state_identity"),
+      historical_identity_shadow_findings: sourceCount("historical_identity_shadow"),
+      mixed_identity_generation_findings: sourceCount("mixed_identity_generation"),
       selected_bound_action_still_published: findings.filter((finding) =>
         finding.selected_bound_action_continuity === "same_kind_and_operands_published").length,
       selected_bound_action_not_published: findings.filter((finding) =>
         finding.selected_bound_action_continuity === "not_published_with_same_kind_and_operands").length,
-      composite_only_stale_candidates: compositeOnly,
+      composite_only_stale_findings: compositeOnly,
       migration_signal: missing > 0
         ? "incomplete_identity_evidence"
         : compositeOnly > 0
-          ? "composite_only_stale_candidate_observed"
-          : "no_composite_only_stale_candidate_observed"
+          ? "composite_only_stale_observed"
+          : "no_composite_only_stale_observed"
     },
     findings,
     limitations: [
-      "candidate changes identify hash-domain drift, not whether the underlying game change was strategically material",
+      "identity changes identify hash-domain drift, not whether the underlying game change was strategically material",
+      "Preview.74 and later use formal state identities; older recorded runs are read through the non-authorizing historical shadow only",
       "bound-action continuity compares only action kind and exact entity operands",
       "recorded evidence does not authorize identity migration or gameplay permission",
       "unrecorded or operator-positioned provenance is not Organic qualification"

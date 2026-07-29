@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { isJsonObject, type JsonObject } from "../../shared/json.js";
 
-export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.73" as const;
+export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.74" as const;
 export const BRIDGE_V2_INSPECTION_KINDS = ["run_deck", "combat_piles", "shop_catalog"] as const;
 const inspectionKindSchema = z.enum(BRIDGE_V2_INSPECTION_KINDS);
 
@@ -1186,105 +1186,11 @@ const visibilityStateSchema = z.object({
   unknown_critical_field_behavior: z.literal("fail_closed")
 }).passthrough();
 
-const contractOperationShadowSchema = z.object({
-  operation: z.string().min(1),
-  evidence_status: z.enum([
-    "surface_level_only",
-    "source_audited",
-    "organic_canary_exercised",
-    "organic_qualified",
-    "unregistered"
-  ]),
-  published: z.boolean(),
-  contract_resolution: z.enum([
-    "published_explicit_candidate",
-    "unpublished_explicit_candidate",
-    "published_manifest_hypothesis",
-    "manifest_hypothesis",
-    "unregistered"
-  ]),
-  contract_digest: z.string().regex(/^[a-f0-9]{64}$/u).nullable().optional(),
-  component_digests: z.object({
-    interaction: z.string().regex(/^[a-f0-9]{64}$/u),
-    owner: z.string().regex(/^[a-f0-9]{64}$/u),
-    source: z.string().regex(/^[a-f0-9]{64}$/u),
-    operand: z.string().regex(/^[a-f0-9]{64}$/u),
-    commit: z.string().regex(/^[a-f0-9]{64}$/u),
-    completion: z.string().regex(/^[a-f0-9]{64}$/u),
-    witness: z.string().regex(/^[a-f0-9]{64}$/u)
-  }).nullable().optional(),
-  completion_boundary: z.enum([
-    "native_commit_observed",
-    "immediate_postcondition_observed",
-    "continuation_handoff_observed",
-    "transaction_settled",
-    "gateway_semantic_completion_observed"
-  ]).nullable().optional(),
-  witness_id: z.string().min(1).nullable().optional(),
-  risk_class: z.string().min(1).nullable().optional()
-}).passthrough().superRefine((operation, context) => {
-  const explicit = operation.contract_resolution === "published_explicit_candidate"
-    || operation.contract_resolution === "unpublished_explicit_candidate";
-  if (!explicit) return;
-  for (const field of ["contract_digest", "component_digests", "completion_boundary", "witness_id", "risk_class"] as const) {
-    if (!operation[field]) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: [field],
-        message: `explicit contract candidate requires ${field}`
-      });
-    }
-  }
-});
-
-const contractInstanceShadowSchema = z.object({
-  status: z.enum(["resolved_manifest_contract", "resolved_runtime_contract", "unresolved"]),
-  instance_id: z.string().min(1),
-  surface_kind: z.string().min(1),
-  // System.Text.Json omits nullable record fields in transitional/unresolved states.
-  // This inventory is non-authorizing, so absence must remain readable rather than
-  // turning an already confirmed command into a settlement read failure.
-  semantic_contract_id: z.string().min(1).nullable().optional(),
-  declared_binding: z.string().min(1).nullable().optional(),
-  operations: z.array(contractOperationShadowSchema),
-  current_authority_tier: z.enum(["qualified", "canary", "observation_only", "disabled"]),
-  current_authority_basis: z.literal("exact_environment_surface_operation_gate"),
-  authorizing: z.literal(false),
-  limitations: z.array(z.string().min(1))
-}).passthrough().superRefine((shadow, context) => {
-  if (shadow.status === "unresolved") return;
-  if (!shadow.semantic_contract_id) {
-    context.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ["semantic_contract_id"],
-      message: "resolved contract shadow requires semantic_contract_id"
-    });
-  }
-  if (!shadow.declared_binding) {
-    context.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ["declared_binding"],
-      message: "resolved contract shadow requires declared_binding"
-    });
-  }
-});
-
-const observationIdentityShadowSchema = z.object({
-  schema_version: z.literal(1),
-  status: z.literal("candidate_non_authorizing"),
-  semantic_state_id_candidate: z.string().regex(/^semantic_state_candidate_[a-f0-9]{64}$/u),
-  authority_projection_id_candidate: z.string().regex(/^authority_projection_candidate_[a-f0-9]{64}$/u),
-  current_state_id_role: z.literal("legacy_authoritative_composite"),
-  action_binding_uses_current_state_id: z.literal(true),
-  authorizing: z.literal(false),
-  semantic_inputs: z.array(z.string().min(1)).min(1),
-  authority_inputs: z.array(z.string().min(1)).min(1),
-  limitations: z.array(z.string().min(1)).min(1)
-}).passthrough();
-
 const stateBaseSchema = z.object({
   protocol_version: z.literal(SUPPORTED_BRIDGE_V2_PROTOCOL),
   state_id: z.string().min(1),
+  semantic_state_id: z.string().regex(/^semantic_state_[a-f0-9]{64}$/u),
+  authority_projection_id: z.string().regex(/^authority_projection_[a-f0-9]{64}$/u),
   state_sequence: z.number().int().nonnegative(),
   observed_at: z.string(),
   readiness: z.string().min(1),
@@ -1305,10 +1211,6 @@ const stateBaseSchema = z.object({
   }).passthrough(),
   visibility: visibilityStateSchema,
   inspection_catalog: z.array(inspectionCatalogEntrySchema),
-  contract_instance_shadow: contractInstanceShadowSchema,
-  identity_shadow: observationIdentityShadowSchema,
-  permission_system: permissionSystemSchema,
-  qualification_system: qualificationSystemSchema,
   diagnostics: z.array(diagnosticSchema),
   warnings: z.array(z.string())
 }).passthrough();
@@ -1495,7 +1397,6 @@ export type BridgeV2InspectionKind = z.infer<typeof inspectionKindSchema>;
 export type BridgeV2Inspection = z.infer<typeof inspectionSchema>;
 export type BridgeV2InspectionCatalogEntry = z.infer<typeof inspectionCatalogEntrySchema>;
 export type BridgeV2VisibilityState = z.infer<typeof visibilityStateSchema>;
-export type BridgeV2ContractInstanceShadow = z.infer<typeof contractInstanceShadowSchema>;
 export type BridgeV2UnsupportedSurface = z.infer<typeof unsupportedSurfaceSchema>;
 export type BridgeV2NoActionSurface = z.infer<typeof noActionSurfaceSchema>;
 export type BridgeV2Command = z.infer<typeof commandSchema>;
@@ -1790,20 +1691,6 @@ function validateQualificationSystem(
 
 export function decodeBridgeV2State(value: unknown): DecodedBridgePayload<BridgeV2State> {
   const decoded = decode(value, stateBaseSchema, "Bridge v2 state");
-  validateModsetPermissionBoundary(
-    decoded.data.game,
-    decoded.data.bridge,
-    decoded.data.qualification_system
-  );
-  validateQualificationSystem(
-    decoded.data.qualification_system,
-    decoded.data.game
-  );
-  validatePermissionSystem(
-    decoded.data.permission_system,
-    decoded.data.bridge,
-    decoded.data.game
-  );
   if (decoded.data.surface_kind !== decoded.data.surface.kind) {
     throw new BridgeV2DecodeError(
       `Bridge v2 state surface_kind ${decoded.data.surface_kind} does not match surface.kind ${decoded.data.surface.kind}`

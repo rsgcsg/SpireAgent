@@ -2,9 +2,9 @@
 
 In this project, "SpireAgent" means `Re-SpireAgent` by default.
 
-Current source contract is `2.0-preview.73`; Re normalized schema is `29`.
-Identity and runtime-contract shadows are strictly decoded and remain
-non-authorizing. Preview.69 runs on one verified loaded identity provide
+Current source contract is `2.0-preview.74`; Re normalized schema is `30`.
+Formal semantic/authority identities are strictly decoded; state shadows and
+control histories no longer enter normalized state. Preview.69 runs on one verified loaded identity provide
 real-runtime coverage whose provenance is `unrecorded`, not Organic
 qualification. Preview.70 later loaded, completed a bounded run, and exposed an
 empty-treasure completion defect. Preview.71 later loaded and exposed the

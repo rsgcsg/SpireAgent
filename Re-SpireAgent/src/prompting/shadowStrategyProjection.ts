@@ -75,8 +75,7 @@ function removeGovernanceEvidence(state: JsonObject, omitted: string[]): void {
     "bridgeInspections",
     "bridgeVisibility",
     "bridgeInspectionCatalog",
-    "bridgeObservation",
-    "bridgeContractInstanceShadow"
+    "bridgeObservation"
   ]) {
     if (field in state) {
       delete state[field];

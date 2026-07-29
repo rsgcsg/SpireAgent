@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using STS2_MCP.BridgeV2.Protocol;
+using STS2_MCP.BridgeV2.Runtime;
 
 namespace STS2_MCP.BridgeV2.Game;
 
@@ -15,11 +16,34 @@ internal static class BridgeSurfacePermission
     public static bool IsActionPermitted(
         CompatibilityAssessment compatibility,
         string surfaceKind,
-        string operation) =>
-        compatibility.ActionExecutionAllowed
-        && compatibility.ActionPermissionScopes.Any(scope =>
+        string operation) => FindActionScope(
+            compatibility,
+            surfaceKind,
+            operation) != null;
+
+    public static ActionPermissionScope? FindActionScope(
+        CompatibilityAssessment compatibility,
+        string surfaceKind,
+        string operation)
+    {
+        if (!compatibility.ActionExecutionAllowed)
+            return null;
+
+        BridgeOperationQualificationIdentity? identity =
+            BridgeOperationQualificationCatalog.Describe(surfaceKind, operation);
+        bool explicitContract = BridgeOperationQualificationCatalog.IsExplicitContract(
+            surfaceKind,
+            operation);
+        return compatibility.ActionPermissionScopes.SingleOrDefault(scope =>
             string.Equals(scope.SurfaceKind, surfaceKind, StringComparison.Ordinal)
-            && string.Equals(scope.Operation, operation, StringComparison.Ordinal));
+            && (explicitContract
+                ? identity != null
+                  && string.Equals(
+                      scope.OperationFingerprint,
+                      identity.ContractDigest,
+                      StringComparison.Ordinal)
+                : string.Equals(scope.Operation, operation, StringComparison.Ordinal)));
+    }
 
     public static bool IsInspectionPermitted(CompatibilityAssessment compatibility, string inspectionKind) =>
         compatibility.InspectionAllowed

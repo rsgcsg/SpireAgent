@@ -255,6 +255,8 @@ const RUN_VISIBILITY = {
 const DECK_ENCHANT_STATE = {
   protocol_version: SUPPORTED_BRIDGE_V2_PROTOCOL,
   state_id: "state-test-1",
+  semantic_state_id: `semantic_state_${"a".repeat(64)}`,
+  authority_projection_id: `authority_projection_${"b".repeat(64)}`,
   state_sequence: 1,
   observed_at: "2026-07-16T00:00:00Z",
   readiness: "ready",
@@ -330,37 +332,6 @@ const DECK_ENCHANT_STATE = {
   observation_policy: CAPABILITIES.observation_policy,
   visibility: RUN_VISIBILITY,
   inspection_catalog: [RUN_DECK_CATALOG_ENTRY],
-  contract_instance_shadow: {
-    status: "resolved_runtime_contract",
-    instance_id: "contract-instance-deck-enchant-1",
-    surface_kind: "deck_enchant_selection",
-    semantic_contract_id: "bridge.contract.deck_enchant_selection.self_help_book_event.2.0-preview.73",
-    declared_binding: "fixture exact source binding",
-    operations: [{
-      operation: "toggle_card",
-      evidence_status: "surface_level_only",
-      published: true,
-      contract_resolution: "published_manifest_hypothesis"
-    }],
-    current_authority_tier: "canary",
-    current_authority_basis: "exact_environment_surface_operation_gate",
-    authorizing: false,
-    limitations: ["shadow_inventory_only", "authority_remains_surface_kind_scoped"]
-  },
-  identity_shadow: {
-    schema_version: 1,
-    status: "candidate_non_authorizing",
-    semantic_state_id_candidate: `semantic_state_candidate_${"a".repeat(64)}`,
-    authority_projection_id_candidate: `authority_projection_candidate_${"b".repeat(64)}`,
-    current_state_id_role: "legacy_authoritative_composite",
-    action_binding_uses_current_state_id: true,
-    authorizing: false,
-    semantic_inputs: ["surface_provider_signature", "shared_player_visible_state"],
-    authority_inputs: ["current_opaque_action_keys_and_operations"],
-    limitations: ["shadow_only_not_used_for_state_or_action_identity"]
-  },
-  permission_system: CAPABILITIES.permission_system,
-  qualification_system: CAPABILITIES.qualification_system,
   diagnostics: [],
   warnings: []
 };
@@ -380,16 +351,6 @@ const COMBAT_RESOLUTION_NO_ACTION_STATE = {
     kind: "no_action",
     reason: "settling",
     message: "Combat has ended; the game is resolving room rewards or the next player-visible surface."
-  },
-  contract_instance_shadow: {
-    status: "unresolved",
-    instance_id: "contract-instance-transition-1",
-    surface_kind: "no_action",
-    operations: [],
-    current_authority_tier: "disabled",
-    current_authority_basis: "exact_environment_surface_operation_gate",
-    authorizing: false,
-    limitations: ["shadow_inventory_only", "authority_remains_surface_kind_scoped"]
   },
   authority_handoff: {
     status: "none_fail_closed",
@@ -959,8 +920,6 @@ function encounterProvisionalMainMenuFixture() {
     }]
   });
   state.game = structuredClone(capabilities.game);
-  state.permission_system = structuredClone(capabilities.permission_system);
-  state.qualification_system = structuredClone(capabilities.qualification_system);
   return { capabilities, state };
 }
 
@@ -2405,35 +2364,6 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
 
   it("strictly decodes the qualified surface and rejects discriminator mismatch", () => {
     expect(decodeBridgeV2State(DECK_ENCHANT_STATE).data.surface.kind).toBe("deck_enchant_selection");
-    const resolvedWithoutContractId = structuredClone(DECK_ENCHANT_STATE) as any;
-    delete resolvedWithoutContractId.contract_instance_shadow.semantic_contract_id;
-    expect(() => decodeBridgeV2State(resolvedWithoutContractId)).toThrow(
-      "resolved contract shadow requires semantic_contract_id"
-    );
-    const explicitContract = structuredClone(DECK_ENCHANT_STATE) as any;
-    explicitContract.contract_instance_shadow.operations[0] = {
-      ...explicitContract.contract_instance_shadow.operations[0],
-      contract_resolution: "published_explicit_candidate",
-      contract_digest: "a".repeat(64),
-      component_digests: {
-        interaction: "b".repeat(64),
-        owner: "c".repeat(64),
-        source: "d".repeat(64),
-        operand: "e".repeat(64),
-        commit: "f".repeat(64),
-        completion: "1".repeat(64),
-        witness: "2".repeat(64)
-      },
-      completion_boundary: "immediate_postcondition_observed",
-      witness_id: "fixture_witness",
-      risk_class: "fixture"
-    };
-    expect(decodeBridgeV2State(explicitContract).data.contract_instance_shadow.operations[0])
-      .toMatchObject({ contract_resolution: "published_explicit_candidate" });
-    delete explicitContract.contract_instance_shadow.operations[0].contract_digest;
-    expect(() => decodeBridgeV2State(explicitContract)).toThrow(
-      "explicit contract candidate requires contract_digest"
-    );
     expect(() => decodeBridgeV2State({ ...DECK_ENCHANT_STATE, surface_kind: "other" })).toThrow("does not match");
     expect(() => decodeBridgeV2State({ ...DECK_ENCHANT_STATE, shared_state: null })).toThrow(
       "requires top-level shared_state"
@@ -2445,23 +2375,20 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
   });
 
-  it("decodes the non-authorizing identity shadow without making it a decision contract", () => {
+  it("requires separate semantic and current-authority identities", () => {
     const decoded = decodeBridgeV2State(DECK_ENCHANT_STATE);
-    expect(decoded.data.identity_shadow).toMatchObject({
-      status: "candidate_non_authorizing",
-      current_state_id_role: "legacy_authoritative_composite",
-      action_binding_uses_current_state_id: true,
-      authorizing: false
+    expect(decoded.data).toMatchObject({
+      semantic_state_id: DECK_ENCHANT_STATE.semantic_state_id,
+      authority_projection_id: DECK_ENCHANT_STATE.authority_projection_id
     });
-    expect(decoded.raw.identity_shadow).toEqual(DECK_ENCHANT_STATE.identity_shadow);
-
-    const authorizing = structuredClone(DECK_ENCHANT_STATE) as any;
-    authorizing.identity_shadow.authorizing = true;
-    expect(() => decodeBridgeV2State(authorizing)).toThrow("Bridge v2 state");
 
     const missing = structuredClone(DECK_ENCHANT_STATE) as any;
-    delete missing.identity_shadow;
+    delete missing.semantic_state_id;
     expect(() => decodeBridgeV2State(missing)).toThrow("Bridge v2 state");
+
+    const invalidAuthority = structuredClone(DECK_ENCHANT_STATE) as any;
+    invalidAuthority.authority_projection_id = "legacy-composite";
+    expect(() => decodeBridgeV2State(invalidAuthority)).toThrow("Bridge v2 state");
   });
 
   it("projects exact combat no-input transitions without action or legacy authority", () => {
@@ -3070,7 +2997,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 29,
+      normalizedSchemaVersion: 30,
       stability: "actionable",
       actionAuthority: "bridge_advertised",
       context: {
@@ -3151,7 +3078,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 29,
+      normalizedSchemaVersion: 30,
       stability: "actionable",
       actionAuthority: "bridge_advertised",
       context: { kind: "menu", screen: "character_select" },
@@ -3243,8 +3170,6 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
   it("rejects encounter provisional authority when state and capabilities scopes drift", () => {
     const { capabilities, state } = encounterProvisionalMainMenuFixture();
     state.game.compatibility.action_permission_scopes[0]!.patch_digest = "different-patch";
-    state.permission_system.patch_inventory.digest = "different-patch";
-    (state.permission_system.grants as Array<{ patch_digest: string }>)[0]!.patch_digest = "different-patch";
 
     const envelope = normalizeCurrentState(
       wrapBridgeV2State({ state, capabilities }),
@@ -3730,7 +3655,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 29,
+      normalizedSchemaVersion: 30,
       actionAuthority: "bridge_advertised",
       context: { kind: "event", ancient: true, inDialogue: true },
       surface: {
@@ -3778,7 +3703,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 29,
+      normalizedSchemaVersion: 30,
       actionAuthority: "bridge_advertised",
       context: { kind: "rest" },
       surface: {
@@ -3895,7 +3820,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 29,
+      normalizedSchemaVersion: 30,
       stability: "actionable",
       actionAuthority: "bridge_advertised",
       context: {
@@ -4105,7 +4030,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 29,
+      normalizedSchemaVersion: 30,
       actionAuthority: "bridge_advertised",
       context: {
         kind: "map",
@@ -4618,7 +4543,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 29,
+      normalizedSchemaVersion: 30,
       actionAuthority: "bridge_advertised",
       context: { kind: "combat", encounterType: "elite" },
       surface: {
@@ -4676,7 +4601,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(graveblastEnvelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 29,
+      normalizedSchemaVersion: 30,
       actionAuthority: "bridge_advertised",
       context: { kind: "combat" },
       surface: {
@@ -4724,7 +4649,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(cleanseEnvelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 29,
+      normalizedSchemaVersion: 30,
       actionAuthority: "bridge_advertised",
       context: { kind: "combat" },
       surface: {
@@ -4775,7 +4700,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(seanceEnvelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 29,
+      normalizedSchemaVersion: 30,
       actionAuthority: "bridge_advertised",
       context: { kind: "combat" },
       surface: {
@@ -4851,7 +4776,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
       TEST_SOURCE
     );
     expect(dredgeEnvelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 29,
+      normalizedSchemaVersion: 30,
       actionAuthority: "bridge_advertised",
       context: { kind: "combat" },
       surface: {
@@ -5122,7 +5047,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 29,
+      normalizedSchemaVersion: 30,
       actionAuthority: "bridge_advertised",
       context: { kind: "combat" },
       surface: {
@@ -5180,7 +5105,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 29,
+      normalizedSchemaVersion: 30,
       actionAuthority: "bridge_advertised",
       context: { kind: "event", eventId: "NEOW" },
       surface: {
@@ -5272,8 +5197,6 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     state.legal_actions = [];
     state.completeness.legal_actions = "temporarily_empty_while_choice_opens_completes_or_settles";
     state.game = structuredClone(scopedState.game);
-    state.permission_system = structuredClone(scopedState.permission_system);
-    state.qualification_system = structuredClone(scopedState.qualification_system);
     state.visibility.available_inspections = [];
     state.visibility.linked_detail_kinds = [];
     state.inspection_catalog = [];
@@ -5353,7 +5276,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
         TEST_SOURCE
       );
       expect(envelope.currentState).toMatchObject({
-        normalizedSchemaVersion: 29,
+        normalizedSchemaVersion: 30,
         stability: "actionable",
         actionAuthority: "bridge_advertised",
         context: { kind: "combat" },
@@ -5524,7 +5447,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 29,
+      normalizedSchemaVersion: 30,
       actionAuthority: "bridge_advertised",
       context: { kind: "event", eventId: "BRAIN_LEECH" },
       surface: {
@@ -5573,7 +5496,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
 
     expect(envelope.currentState).toMatchObject({
-      normalizedSchemaVersion: 29,
+      normalizedSchemaVersion: 30,
       actionAuthority: "bridge_advertised",
       context: { kind: "event", eventId: "NEOW" },
       surface: {
@@ -7393,9 +7316,6 @@ describe("Bridge v2 persistent qualification governance", () => {
         });
     state.bridge = structuredClone(capabilities.bridge);
     state.game = structuredClone(capabilities.game);
-    state.permission_system = structuredClone(capabilities.permission_system);
-    state.qualification_system =
-      structuredClone(capabilities.qualification_system);
 
     const envelope = normalizeCurrentState(
       wrapBridgeV2State({ state, capabilities }),

@@ -1,7 +1,12 @@
 # ADR-0004: Contract-Instance Authority And Player-Visible Closure
 
-Status: accepted incrementally
+Status: partially superseded by repository ADR-0005 on 2026-07-29
 Date: 2026-07-19
+
+> Historical contract-instance proposal. Its Context/Surface/Inspection and
+> native continuation findings remain useful, but Preview.74 deletes the live
+> `contract_instance_shadow`; current migration authority is
+> [repository ADR-0005](../../../docs/current/decisions/ADR-0005-workflow-c-clean-closure.md).
 
 ## Context
 
@@ -155,4 +160,3 @@ The first useful pilot should be a repeated mechanism with multiple proven
 semantic transactions, but no pilot may be selected merely because it is easy
 to make pass. Pael's Tooth is currently an observation-only contract candidate;
 it is evidence against generic deck-selection authority, not evidence for it.
-

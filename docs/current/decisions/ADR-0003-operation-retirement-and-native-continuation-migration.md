@@ -7,6 +7,11 @@ Accepted on 2026-07-27 as a refinement of
 ADR-0002 remains the single macro architecture. This decision defines the
 clean live-kernel migration and does not grant new runtime authority.
 
+Repository ADR-0005 (2026-07-29) retains this destination but supersedes the
+open-ended shadow/dual-read sequence below: experiments are bounded and deleted
+on acceptance or rejection, formal identity has cut over directly, and family
+migration is now mandatory for Clean Closure.
+
 ## Problem
 
 The current `surface_kind + operation` key is simultaneously used for Prompt

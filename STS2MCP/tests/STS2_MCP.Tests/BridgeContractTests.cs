@@ -712,6 +712,8 @@ public sealed class BridgeContractTests
         var envelope = new BridgeStateEnvelope(
             BridgeV2Contract.ProtocolVersion,
             "state-a",
+            "semantic_state_" + new string('a', 64),
+            "authority_projection_" + new string('b', 64),
             1,
             DateTimeOffset.UnixEpoch,
             "unsupported",
@@ -747,41 +749,6 @@ public sealed class BridgeContractTests
                 new[] { "not_implemented" },
                 "fail_closed"),
             Array.Empty<BridgeInspectionCatalogEntry>(),
-            new BridgeContractInstanceShadow(
-                "unresolved",
-                "contract-instance-test",
-                "unsupported",
-                null,
-                null,
-                Array.Empty<BridgeContractOperationShadow>(),
-                "disabled",
-                "exact_environment_surface_kind_gate",
-                Authorizing: false,
-                new[] { "shadow_inventory_only" }),
-            BridgeObservationIdentityShadowBuilder.Build(
-                new BridgeObservationDraft(
-                    "test-signature",
-                    "unsupported",
-                    new UnknownBridgeContext("unknown", "test", "not implemented"),
-                    surface,
-                    new StateCompleteness("not_implemented", "empty_fail_closed", Array.Empty<string>(), Array.Empty<string>()),
-                    new GameBuildIdentity(null, null, null, null, new CompatibilityAssessment(
-                        "unknown",
-                        Array.Empty<string>(),
-                        Array.Empty<string>(),
-                        ActionExecutionAllowed: false,
-                        StateObservationAllowed: false,
-                        InspectionAllowed: false,
-                        ActionExecutionSurfaceKinds: Array.Empty<string>(),
-                        ActionCanarySurfaceKinds: Array.Empty<string>(),
-                        InspectionAllowedKinds: Array.Empty<string>(),
-                        InspectionCanaryKinds: Array.Empty<string>(),
-                        ObservationOnlySurfaceKinds: Array.Empty<string>(),
-                        ObservationCandidateBuildFingerprints: Array.Empty<string>(),
-                        Detail: "unknown")),
-                    Array.Empty<string>(),
-                    Array.Empty<BridgeActionDraft>()),
-                null),
             Array.Empty<BridgeDiagnostic>(),
             Array.Empty<string>());
 
@@ -794,31 +761,39 @@ public sealed class BridgeContractTests
         Assert.Contains("\"surface\":{\"kind\":\"unsupported\"", json);
         Assert.Contains("\"source_type\":\"test\"", json);
         Assert.Contains("\"reason\":\"not implemented\"", json);
-        Assert.Contains("\"identity_shadow\"", json);
-        Assert.Contains("\"authorizing\":false", json);
+        Assert.Contains("\"semantic_state_id\":\"semantic_state_", json);
+        Assert.Contains("\"authority_projection_id\":\"authority_projection_", json);
+        Assert.DoesNotContain("\"permission_system\"", json);
+        Assert.DoesNotContain("\"qualification_system\"", json);
+        Assert.DoesNotContain("shadow", json, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
-    public void IdentityShadowSeparatesSemanticStateFromRelevantCurrentAuthority()
+    public void CurrentIdentitySeparatesSemanticStateFromRelevantCurrentAuthority()
     {
         ActionPermissionScope relevant = Scope("grant-current", 1, "play_card");
-        BridgeObservationIdentityShadow baseline = BuildIdentityShadow(new[] { relevant });
-        BridgeObservationIdentityShadow changedRelevant = BuildIdentityShadow(new[]
+        BridgeCurrentIdentityProjection baseline = BuildIdentity(new[] { relevant });
+        BridgeCurrentIdentityProjection changedRelevant = BuildIdentity(new[]
         {
             Scope("grant-current-v2", 2, "play_card")
         });
-        BridgeObservationIdentityShadow irrelevantHistory = BuildIdentityShadow(new[]
+        BridgeCurrentIdentityProjection irrelevantHistory = BuildIdentity(new[]
         {
             relevant,
             Scope("grant-old-unrelated", 99, "choose_map_node", "map_navigation")
         });
+        BridgeCurrentIdentityProjection changedSemantic = BuildIdentity(
+            new[] { relevant },
+            missing: "visible_detail_missing");
 
-        Assert.Equal(baseline.SemanticStateIdCandidate, changedRelevant.SemanticStateIdCandidate);
-        Assert.NotEqual(baseline.AuthorityProjectionIdCandidate, changedRelevant.AuthorityProjectionIdCandidate);
-        Assert.Equal(baseline.SemanticStateIdCandidate, irrelevantHistory.SemanticStateIdCandidate);
-        Assert.Equal(baseline.AuthorityProjectionIdCandidate, irrelevantHistory.AuthorityProjectionIdCandidate);
-        Assert.False(baseline.Authorizing);
-        Assert.True(baseline.ActionBindingUsesCurrentStateId);
+        Assert.Equal(baseline.SemanticStateId, changedRelevant.SemanticStateId);
+        Assert.NotEqual(baseline.AuthorityProjectionId, changedRelevant.AuthorityProjectionId);
+        Assert.Equal(baseline.SemanticStateId, irrelevantHistory.SemanticStateId);
+        Assert.Equal(baseline.AuthorityProjectionId, irrelevantHistory.AuthorityProjectionId);
+        Assert.NotEqual(baseline.StateSignature, changedRelevant.StateSignature);
+        Assert.Equal(baseline.StateSignature, irrelevantHistory.StateSignature);
+        Assert.NotEqual(baseline.SemanticStateId, changedSemantic.SemanticStateId);
+        Assert.NotEqual(baseline.StateSignature, changedSemantic.StateSignature);
 
         static ActionPermissionScope Scope(
             string grantId,
@@ -834,8 +809,9 @@ public sealed class BridgeContractTests
                 OperationFingerprint = $"fingerprint-{operation}"
             };
 
-        static BridgeObservationIdentityShadow BuildIdentityShadow(
-            IReadOnlyList<ActionPermissionScope> scopes)
+        static BridgeCurrentIdentityProjection BuildIdentity(
+            IReadOnlyList<ActionPermissionScope> scopes,
+            string? missing = null)
         {
             var compatibility = new CompatibilityAssessment(
                 "qualified_scoped",
@@ -859,7 +835,11 @@ public sealed class BridgeContractTests
                 "ready",
                 new UnknownBridgeContext("combat", "test", "test"),
                 new NoActionSurface("combat_turn", "test", "test"),
-                new StateCompleteness("complete", "same_validator", Array.Empty<string>(), Array.Empty<string>()),
+                new StateCompleteness(
+                    missing == null ? "complete" : "partial",
+                    "same_validator",
+                    Array.Empty<string>(),
+                    missing == null ? Array.Empty<string>() : new[] { missing }),
                 new GameBuildIdentity("v0.109.1", "commit", "branch", 1, compatibility),
                 Array.Empty<string>(),
                 new[]
@@ -872,7 +852,11 @@ public sealed class BridgeContractTests
                         "test",
                         () => BridgeActionStartResult.Started())
                 });
-            return BridgeObservationIdentityShadowBuilder.Build(draft, null);
+            BridgeVisibilityProjection visibility = BridgeVisibilityCatalog.Build(
+                draft,
+                activeRunSharedStateAvailable: false,
+                shopCatalogSourceAvailable: false);
+            return BridgeCurrentIdentityProjectionBuilder.Build(draft, null, visibility);
         }
     }
 
@@ -999,109 +983,58 @@ public sealed class BridgeContractTests
     }
 
     [Fact]
-    public void ContractInstanceShadowReportsButNeverGrantsAuthority()
+    public void ExplicitOperationContractHasStableComponentIdentity()
     {
-        var compatibility = BridgeContractManifest.WithExplicitActionScopes(new CompatibilityAssessment(
-            "qualified_scoped",
-            new[] { "0.109.0" },
-            new[] { "build" },
-            ActionExecutionAllowed: true,
-            StateObservationAllowed: true,
-            InspectionAllowed: false,
-            ActionExecutionSurfaceKinds: new[] { "rest_site" },
-            ActionCanarySurfaceKinds: Array.Empty<string>(),
-            InspectionAllowedKinds: Array.Empty<string>(),
-            InspectionCanaryKinds: Array.Empty<string>(),
-            ObservationOnlySurfaceKinds: Array.Empty<string>(),
-            ObservationCandidateBuildFingerprints: Array.Empty<string>(),
-            Detail: "test"));
-        var draft = new BridgeObservationDraft(
-            "rest-sig",
-            "ready",
-            new UnknownBridgeContext("rest", "test", "test"),
-            new RestSiteSurface("rest_site", "rest-screen", Array.Empty<VisibleRestOption>(), CanProceed: true),
-            new StateCompleteness("complete", "derived", Array.Empty<string>(), Array.Empty<string>()),
-            new GameBuildIdentity("v0.109.0", "commit", "branch", 1, compatibility),
-            Array.Empty<string>(),
-            new[]
-            {
-                new BridgeActionDraft(
-                    "proceed",
-                    "proceed_rest_site",
-                    "navigation",
-                    "Proceed",
-                    "test",
-                    () => BridgeActionStartResult.Started())
-            });
+        BridgeOperationQualificationIdentity operation = Assert.IsType<BridgeOperationQualificationIdentity>(
+            BridgeOperationQualificationCatalog.Describe("main_menu", "open_singleplayer"));
 
-        BridgeContractInstanceShadow shadow = BridgeContractInstanceShadowBuilder.Build(draft);
-
-        Assert.Equal("resolved_manifest_contract", shadow.Status);
-        Assert.Equal("qualified", shadow.CurrentAuthorityTier);
-        Assert.Equal("exact_environment_surface_operation_gate", shadow.CurrentAuthorityBasis);
-        Assert.False(shadow.Authorizing);
-        Assert.Contains(shadow.Operations, operation =>
-            operation.Operation == "proceed_rest_site" && operation.Published);
-        BridgeContractOperationShadow proceed = Assert.Single(
-            shadow.Operations,
-            operation => operation.Operation == "proceed_rest_site");
-        Assert.Equal("published_manifest_hypothesis", proceed.ContractResolution);
-        Assert.Null(proceed.ContractDigest);
-        Assert.Contains("authority_remains_explicit_operation_scoped", shadow.Limitations);
+        Assert.True(BridgeOperationQualificationCatalog.IsExplicitContract(
+            "main_menu",
+            "open_singleplayer"));
+        Assert.Matches("^[a-f0-9]{64}$", operation.ContractDigest);
+        Assert.Matches("^[a-f0-9]{64}$", operation.CommitDigest);
+        Assert.Equal("continuation_handoff_observed", operation.CompletionBoundary);
+        Assert.Equal("singleplayer_or_character_select_owner_became_active", operation.WitnessId);
     }
 
     [Fact]
-    public void ExplicitOperationContractIsAComponentDigestCandidateButNotAuthority()
+    public void ShopRelicPurchaseBindsExactActionToExplicitNativeContract()
     {
-        var compatibility = BridgeContractManifest.WithExplicitActionScopes(new CompatibilityAssessment(
-            "qualified_scoped",
-            new[] { "0.109.1" },
-            new[] { "build" },
-            ActionExecutionAllowed: true,
-            StateObservationAllowed: true,
-            InspectionAllowed: false,
-            ActionExecutionSurfaceKinds: new[] { "main_menu" },
-            ActionCanarySurfaceKinds: Array.Empty<string>(),
-            InspectionAllowedKinds: Array.Empty<string>(),
-            InspectionCanaryKinds: Array.Empty<string>(),
-            ObservationOnlySurfaceKinds: Array.Empty<string>(),
-            ObservationCandidateBuildFingerprints: Array.Empty<string>(),
-            Detail: "test"));
-        var draft = new BridgeObservationDraft(
-            "menu-sig",
-            "ready",
-            new MenuBridgeContext("menu", "root_navigation"),
-            new MainMenuSurface(
-                "main_menu",
-                "choosing",
-                "root",
-                Array.Empty<VisibleMenuOption>(),
-                null),
-            new StateCompleteness("complete", "derived", Array.Empty<string>(), Array.Empty<string>()),
-            new GameBuildIdentity("v0.109.1", "commit", "branch", 1, compatibility),
-            Array.Empty<string>(),
-            new[]
-            {
-                new BridgeActionDraft(
-                    "open-singleplayer",
-                    "open_singleplayer",
-                    "navigation",
-                    "Open Single Player",
-                    "test",
-                    () => BridgeActionStartResult.Started())
-            });
+        var action = new BridgeActionDraft(
+            "purchase_shop_relic:offer-1",
+            "purchase_shop_relic",
+            "purchase",
+            "Purchase relic",
+            "MerchantRelicEntry.OnTryPurchaseWrapper+exact-relic-gold-entry-witness",
+            () => BridgeActionStartResult.Started(),
+            new[] { new ActionEntityBinding("shop_offer", "offer-1") });
+        BridgeBoundActionContract binding = Assert.IsType<BridgeBoundActionContract>(
+            BridgeBoundActionContract.Build("shop_inventory", action));
+        var scope = new ActionPermissionScope(
+            "shop_inventory",
+            "purchase_shop_relic",
+            "canary")
+        {
+            OperationFingerprint = binding.ContractDigest
+        };
 
-        BridgeContractInstanceShadow shadow = BridgeContractInstanceShadowBuilder.Build(draft);
-        BridgeContractOperationShadow operation = Assert.Single(
-            shadow.Operations,
-            value => value.Operation == "open_singleplayer");
+        Assert.True(binding.ExplicitContract);
+        Assert.True(binding.Matches(scope));
+        Assert.Equal("native_commit_observed", binding.CompletionBoundary);
+        Assert.Equal(
+            "shop_relic_purchase_committed_with_exact_relic_gold_and_entry_witness",
+            binding.WitnessId);
+        Assert.Matches("^[a-f0-9]{64}$", binding.BoundActionDigest);
+        Assert.True(binding.Matches(scope with { Operation = "metadata-only-name" }));
 
-        Assert.Equal("published_explicit_candidate", operation.ContractResolution);
-        Assert.Matches("^[a-f0-9]{64}$", operation.ContractDigest ?? string.Empty);
-        Assert.NotNull(operation.ComponentDigests);
-        Assert.Equal("continuation_handoff_observed", operation.CompletionBoundary);
-        Assert.Equal("singleplayer_or_character_select_owner_became_active", operation.WitnessId);
-        Assert.False(shadow.Authorizing);
+        BridgeBoundActionContract changedSource = Assert.IsType<BridgeBoundActionContract>(
+            BridgeBoundActionContract.Build(
+                "shop_inventory",
+                action with { EvidenceCode = "different-native-source" }));
+        Assert.Equal(binding.ContractDigest, changedSource.ContractDigest);
+        Assert.NotEqual(binding.SourceEvidenceDigest, changedSource.SourceEvidenceDigest);
+        Assert.NotEqual(binding.BoundActionDigest, changedSource.BoundActionDigest);
+        Assert.False(binding.Matches(scope with { OperationFingerprint = "stale-contract" }));
     }
 
     [Fact]
@@ -1257,47 +1190,6 @@ public sealed class BridgeContractTests
             RestSiteSurfaceProvider.HasReachedExpectedMinimumHp(
                 currentHp,
                 expectedMinimumHp));
-    }
-
-    [Fact]
-    public void RuntimeSourceBindingIsDistinctFromManifestDeclarationAndRemainsNonAuthorizing()
-    {
-        var compatibility = new CompatibilityAssessment(
-            "observation_only",
-            Array.Empty<string>(),
-            Array.Empty<string>(),
-            ActionExecutionAllowed: false,
-            StateObservationAllowed: true,
-            InspectionAllowed: false,
-            ActionExecutionSurfaceKinds: Array.Empty<string>(),
-            ActionCanarySurfaceKinds: Array.Empty<string>(),
-            InspectionAllowedKinds: Array.Empty<string>(),
-            InspectionCanaryKinds: Array.Empty<string>(),
-            ObservationOnlySurfaceKinds: new[] { "deck_enchant_selection" },
-            ObservationCandidateBuildFingerprints: Array.Empty<string>(),
-            Detail: "test");
-        var draft = new BridgeObservationDraft(
-            "enchant-sig",
-            "ready",
-            new UnknownBridgeContext("event", "test", "test"),
-            new UnsupportedSurface("deck_enchant_selection", "fixture", "fixture"),
-            new StateCompleteness("complete", "derived", Array.Empty<string>(), Array.Empty<string>()),
-            new GameBuildIdentity("v0.109.1", "commit", "branch", 1, compatibility),
-            Array.Empty<string>(),
-            Array.Empty<BridgeActionDraft>())
-        {
-            RuntimeSemanticContractId =
-                "bridge.contract.deck_enchant_selection.kifuda_relic_pickup.2.0-preview.73",
-            RuntimeSourceBindingId = "Kifuda.AfterObtained+Adroit:3"
-        };
-
-        BridgeContractInstanceShadow shadow = BridgeContractInstanceShadowBuilder.Build(draft);
-
-        Assert.Equal("resolved_runtime_contract", shadow.Status);
-        Assert.Equal(draft.RuntimeSemanticContractId, shadow.SemanticContractId);
-        Assert.Equal(draft.RuntimeSourceBindingId, shadow.DeclaredBinding);
-        Assert.False(shadow.Authorizing);
-        Assert.Contains("runtime_source_binding_is_non_authorizing", shadow.Limitations);
     }
 
     [Fact]

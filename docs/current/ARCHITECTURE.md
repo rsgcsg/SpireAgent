@@ -8,8 +8,10 @@ Its live-kernel identity migration is refined by
 [ADR-0003](decisions/ADR-0003-operation-retirement-and-native-continuation-migration.md).
 Its risk-calibrated trial/claim boundary is refined by
 [ADR-0004](decisions/ADR-0004-risk-calibrated-encounter-trial-and-scoped-claims.md).
-The bounded short-term completion line is defined by the
-[C-R1 completion contract](audits/WORKFLOW_C_R1_SHORT_TERM_COMPLETION_CONTRACT_2026-07-29.md).
+Its mandatory clean-closure sequencing, identity cutover and vertical family
+migration are defined by
+[ADR-0005](decisions/ADR-0005-workflow-c-clean-closure.md) and the
+[Clean Closure audit](audits/WORKFLOW_C_CLEAN_CLOSURE_AUDIT_AND_EXECUTION_CONTRACT_2026-07-29.md).
 This document describes both the current implementation and its constrained
 migration toward that target. Historical ALDG, universal contract/Transaction
 IR, qualification-centric, and environment-migration proposals are evidence
@@ -222,8 +224,10 @@ and the
 
 ## Current Architectural Constraint
 
-The Gateway and Re source share the mechanically checked `2.0-preview.73`
-contract. Gate 1 establishes a bounded v2 connector baseline: Re and the
+The Gateway and Re source share the mechanically checked `2.0-preview.74`
+contract and normalized schema 30. Preview.74 is built and installed as SHA
+`42eb22b6...` / MVID `13d4dd05...`, but loaded evidence remains scoped to
+Preview.73 until cold-load verification. Gate 1 establishes a bounded v2 connector baseline: Re and the
 default MCP adapter are v2-only, Gateway v1 is retired, and historical v1 data
 is replay-only. Preview.69 has substantial real-runtime coverage on exact final
 loaded SHA `914974b5...` / MVID `1e457e86...`. Preview.70 later loaded as SHA
@@ -232,8 +236,8 @@ Preview.71 later loaded as SHA `fd0f7c56...` / MVID `0acccd3d...` / runtime
 `19219d23...`. Four runs exposed a repeated Hefty source gap, one Re actionless-
 settling contract error, and one completed boundary. Preview.72 repairs both
 defects. Its latest same-source rebuild is installed/loaded as SHA
-`debc229e...` / MVID `6d9d4adf...` / runtime `b2332a06...`. Preview.73 is
-currently built, installed and loaded as SHA `f6b2d268...` / MVID
+`debc229e...` / MVID `6d9d4adf...` / runtime `b2332a06...`. Preview.73 was
+last loaded as SHA `f6b2d268...` / MVID
 `f67e272a...` / runtime `37c04bb7...`. Its Rest repair is the
 reference boundary: an action-local Outcome
 proves a native minimum plus progression, not every co-occurring native side
@@ -257,19 +261,13 @@ not a general nullable shared-state abstraction. Re refreshes dynamic
 capabilities with coherent observations because session grants may change after
 completion; startup negotiation is not an authority snapshot.
 
-Current grants still use `surface_kind + operation` and the composite
-`state_id`. Preview.69 removes bulk installed candidates from the target
-startup path but does not make operation the final compatibility identity.
-ADR-0003 still requires shadow/dual-read migration to native source/adapter/
-outcome/partition claims. The current 81 manifest fallback identities remain
-rollback inventory and test-confirm hypotheses, not semantic equivalence.
-
-Preview.70 made that distinction machine-readable. Preview.71 adds one
-evidence-backed treasure-open contract, so six explicit component contracts
-expose non-authorizing digests and completion boundaries while 81 fallbacks
-remain digest-free manifest hypotheses. Recorded-run identity
-auditing found no composite-only stale candidate in the current two-run slice,
-so action binding remains on the conservative composite identity.
+Preview.74 makes semantic and authority identities formal wire fields and
+removes the old shadows and control histories from state. Composite `state_id`
+still binds both for stale-action safety. One production publication path binds
+every action to contract/source/operands/state. Seven explicit contracts use
+contract-digest admission; 80 manifest fallback families temporarily retain
+operation admission and must receive a family disposition before Clean Closure.
+Operation remains metadata for migrated families, not their execution key.
 
 The Silver Crucible empty-chest defect also confirms the intended Oracle
 boundary: operation completion must recognize every native outcome branch that
@@ -278,11 +276,11 @@ encode a relic-specific exception. `TreasureLifecycleFacts` now supplies the
 stage and open-result predicates used by observation and the action-local
 Oracle; STS2 still owns reward generation and all side effects.
 
-Kifuda is the first exact case satisfying ADR-0002's continuation admission
-rule. The shop action may complete at a typed continuation handoff only after
-gold/relic Commit and exact child ownership are proven; the child then composes
-from a fresh observation. This does not add a workflow engine or claim the
-parent transaction is settled.
+Kifuda is the first Clean Closure pilot. The shop action completes at its native
+purchase Commit after exact gold/relic and entry-or-child-owner evidence; the
+enchantment child then composes from a fresh observation with source-bound
+actions. This does not add a workflow engine or claim the child decision was
+completed by the purchase command.
 
 Combat-pile choice remains the first production structural transaction contract.
 Re reads closed mutation and commit semantics rather than a union of source

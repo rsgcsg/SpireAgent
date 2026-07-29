@@ -72,13 +72,10 @@ internal sealed record BridgeObservationDraft(
 
     public IReadOnlyList<BridgeDiagnostic> Diagnostics { get; init; } =
         Array.Empty<BridgeDiagnostic>();
-
-    public string? RuntimeSemanticContractId { get; init; }
-
-    public string? RuntimeSourceBindingId { get; init; }
 }
 
 internal sealed record RegisteredBridgeAction(
     LegalAction Descriptor,
     Func<BridgeActionStartResult> Start,
-    BridgeActionPermissionBinding? PermissionBinding = null);
+    BridgeActionPermissionBinding? PermissionBinding = null,
+    BridgeBoundActionContract? ContractBinding = null);

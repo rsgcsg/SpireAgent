@@ -130,7 +130,7 @@ legacy shop fact or action is merged into a current observation.
 
 ## Schema Compatibility
 
-New decisions currently use normalized-state schema version 29, Prompt schema
+New decisions currently use normalized-state schema version 30, Prompt schema
 version 3, and decision-record version 2. The normalized schema has continued
 to evolve as current-build Surface and visible-state contracts were added;
 Prompt v3 retains explicit action authority in the context/surface split.

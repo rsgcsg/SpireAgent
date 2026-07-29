@@ -54,20 +54,21 @@ declare completion, self-qualify a candidate or write stable learning.
 
 ### C: Trustworthy Game Interface Track
 
-**Status:** active; bounded Gate 1 baseline closed, Gate 2 work continues.
+**Status:** current closure priority; bounded Gate 1 baseline closed.
 
 Owns the Semantic Gateway, Connector Contract, exact environment identity,
 player-visible facts, current input owner, opaque action publication,
 execute-time validation, native Commit, action-local outcome, Inspection and
 v1 retirement.
 
-C currently executes the bounded
-[C-R1 completion contract](audits/WORKFLOW_C_R1_SHORT_TERM_COMPLETION_CONTRACT_2026-07-29.md)
-alongside A/D M1. C-R1 closes ordinary vanilla single-player decision truth,
-core Inspection, typed support scope, update recovery and repeated journey
-evidence, then returns C to maintenance. It is not a serial prerequisite for
-freezing or evaluating A. Inventory, operation, contract, Profile and
-qualification counts are migration diagnostics, not program success metrics.
+C currently executes the
+[Clean Closure contract](audits/WORKFLOW_C_CLEAN_CLOSURE_AUDIT_AND_EXECUTION_CONTRACT_2026-07-29.md)
+before additional A/D/P feature expansion. It closes ordinary vanilla decision
+truth and Inspection, removes permanent migration scaffolding, migrates
+supported families to exact native contracts, validates update/claim recovery,
+and then returns C to maintenance. A baseline records remain valid evidence,
+but new A capability work does not outrank an unclosed Connector authority or
+fact boundary.
 
 ### D: Independent Development And Evaluation Track
 
@@ -132,9 +133,9 @@ persistent qualification.
    minimum versioned representative/held-out D split.
 3. Report run completion, stop reason, invalid/stale/unknown outcomes, provider
    failures, latency, cost, Prompt bytes and decision-family coverage.
-4. Let C complete its bounded C-R1 Core slices while continuing to prioritize
-   concrete decision-truth, Inspection, owner, settling, visible-fact or
-   action-local Outcome defects exposed by A evidence.
+4. Resume A candidate evaluation after C Clean Closure has one production
+   authority path, no permanent shadow/dual-read, a closed ordinary support
+   envelope, core Inspection, family dispositions and repeated exact journeys.
 5. Keep P at the existing minimum controller/startup/recovery boundary.
 6. Evaluate one low-risk, scope-specific A candidate through
    offline/replay -> paired -> counterexample -> held-out -> shadow. Preserve

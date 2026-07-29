@@ -1,7 +1,7 @@
 # Bridge v2 Integration
 
 > Current source-truth status, 2026-07-29: Re and C# share the
-> `2.0-preview.73` source consumer contract; Re normalized schema is `29`.
+> `2.0-preview.74` source consumer contract; Re normalized schema is `30`.
 > Gate 1 is closed as a bounded ordinary-single-player v2 connector baseline.
 > Preview.61 supplied the final Neow's Fury runtime seal; Preview.62 adds
 > policy provenance and registry adaptation without inheriting qualification.
@@ -39,7 +39,7 @@ consumption.
 
 ## Current Scope
 
-Re-SpireAgent implements the strict `2.0-preview.73` consumer contract. When a
+Re-SpireAgent implements the strict `2.0-preview.74` consumer contract. When a
 matching Bridge exists, authority is read from capabilities rather than
 inferred from implementation or historical evidence.
 
@@ -93,16 +93,11 @@ the echoed request/state/action identity, preserves `failed` and `timed_out`
 as unknown outcomes, and captures a coherent successor checkpoint after a
 confirmed command. A checkpoint read failure cannot cause action retry.
 
-Preview.68 requires `identity_shadow`. Re strictly verifies its non-authorizing
-status and candidate digest shapes and preserves it in raw evidence. It is not
-part of normalized strategy state, Prompt construction, action import,
-permission, or completion. The legacy composite `state_id` remains the only
-state/action binding until a separately reviewed Organic migration.
-
-Preview.71 also strictly decodes explicit component-contract candidates in the
-raw contract shadow. Missing candidate digests are invalid. Manifest hypotheses
-carry no component digest. Neither form enters normalized strategy state,
-Prompt construction, action import, permission, or completion.
+Preview.74 requires formal `semantic_state_id` and `authority_projection_id`.
+Re strictly decodes them but still submits the composite state-bound action ID.
+Contract/identity shadows and permission/qualification histories are absent
+from normalized state and Prompt; control-plane data remains in capabilities.
+Re does not interpret native contract digests or reconstruct completion.
 
 The first exact Preview.63 production-path canary submitted advertised
 `main_menu/continue_run` once and settled at `reward_flow/reward_claim`. The
@@ -550,10 +545,10 @@ Preview.72 was later rebuilt/installed/loaded as SHA `debc229e...` / MVID
 `run-20260728132337-ce2195` proves broad bounded mutation and one-game
 supervision on that identity, but not repaired-branch completion, Organic
 evidence, Inspection readiness or persistent qualification.
-Preview.73 is built and installed as SHA `f6b2d268...` / MVID `f67e272a...`.
-It is cold-loaded as the same identity with runtime `37c04bb7...`; strict Re
-read-only inspection passed, but no Preview.73 mutation or repaired-branch
-canary has executed.
+Preview.74 is built and installed as SHA `42eb22b6...` / MVID `13d4dd05...`.
+It has not been cold-loaded, so no Preview.74 read, mutation, repaired-branch
+canary, Organic evidence or qualification is claimed. The last loaded evidence
+belongs to Preview.73 SHA `f6b2d268...` / MVID `f67e272a...`.
 
 Current v0.109 evidence includes merchant removal, event/rest upgrade, ordinary
 rest, ordinary combat, Brain Leech event card acquisition,

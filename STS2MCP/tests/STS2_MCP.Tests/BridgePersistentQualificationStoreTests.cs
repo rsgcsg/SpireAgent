@@ -453,6 +453,57 @@ public sealed class BridgePersistentQualificationStoreTests
     }
 
     [Fact]
+    public void ManifestFallbackQualificationAcceptsConcreteGatewayWitness()
+    {
+        using var file = new TemporaryLedger();
+        file.Write(Install(
+            1,
+            Package("qualification-a", "combat_turn", "play_card")));
+        BridgePersistentQualificationStore store =
+            BridgePersistentQualificationStore.Load(file.Path, () => Now);
+        ActionPermissionScope scope = Assert.Single(store.Apply(
+            Game(),
+            Bridge(),
+            Patch()).Compatibility.ActionPermissionScopes);
+        var binding = new BridgeActionPermissionBinding(
+            scope.SurfaceKind,
+            scope.Operation,
+            scope.Tier,
+            scope.GrantId,
+            scope.GrantVersion,
+            scope.RuntimeEpoch,
+            scope.EnvironmentDigest,
+            scope.PatchDigest,
+            scope.OperationFingerprint);
+
+        store.ObserveCommand(
+            "request-completed",
+            binding,
+            new BridgeCommandResponse(
+                "request-completed",
+                "state-a",
+                "action-a",
+                "completed",
+                "confirmed",
+                "state-b",
+                new[]
+                {
+                    new BridgeCommandEvent(
+                        "completed",
+                        Now,
+                        "combat_card_play_committed",
+                        null,
+                        null)
+                }));
+
+        Assert.Single(store.Apply(
+            Game(),
+            Bridge(),
+            Patch()).Compatibility.ActionPermissionScopes);
+        Assert.Equal("active", Assert.Single(store.Snapshot().Qualifications).Status);
+    }
+
+    [Fact]
     public void StoreReloadCannotClearSessionQuarantine()
     {
         using var file = new TemporaryLedger();

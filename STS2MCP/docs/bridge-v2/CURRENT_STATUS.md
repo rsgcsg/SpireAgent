@@ -1,195 +1,88 @@
 # Bridge v2 Current Status
 
-This is the canonical current Gateway/Re boundary. Historical preview reports
-retain only their recorded environment evidence.
+This is the canonical component-level Gateway/Re boundary. Repository priority
+and architecture are in [Current Status](../../../docs/current/STATUS.md) and
+[ADR-0005](../../../docs/current/decisions/ADR-0005-workflow-c-clean-closure.md).
 
-## Source And Artifact Truth
+## Exact Truth
 
 ```text
-Gateway/Re source     2.0-preview.73
-Re normalized schema 29
-game release          v0.109.1|c8c577f6
-release-declared hash -1041364841 (diagnostic only)
-actual loaded hash    -820620422
-game assembly SHA     2cb39e2eee651743829abcc0df4dd9cd7e65f46287c7ca264481115c9602382f
-game assembly MVID    208f08b8-d5f5-47f8-9e96-d3a4299ee709
-built SHA             f6b2d2687add4719e7d04f6b3beb8b5b386f43208d7af1cc0b12e2d89a151b18
-installed SHA         f6b2d2687add4719e7d04f6b3beb8b5b386f43208d7af1cc0b12e2d89a151b18
-loaded SHA            f6b2d2687add4719e7d04f6b3beb8b5b386f43208d7af1cc0b12e2d89a151b18
-built MVID            f67e272a-ca3f-4eac-8d41-6e287b144c8a
-installed MVID        f67e272a-ca3f-4eac-8d41-6e287b144c8a
-loaded MVID           f67e272a-ca3f-4eac-8d41-6e287b144c8a
-runtime epoch         37c04bb71df3451eb23545b6925b3a37
-rollback              STS2MCP/.local/deployments/2026-07-28T15-34-25-593Z
+Gateway/Re source      2.0-preview.74
+Re normalized schema  30
+source status          tested/built/installed; cold-load pending
+
+built/installed        2.0-preview.74
+game                   v0.109.1|c8c577f6|-820620422
+built/installed SHA    42eb22b6cc0ee95679d4347bba2f319c1d02b06ae8bbfdebc9c48c6c85aaea7e
+built/installed MVID   13d4dd05-61c3-470c-ba03-5af14dd9cf5b
+last loaded contract   2.0-preview.73
+last loaded SHA        f6b2d2687add4719e7d04f6b3beb8b5b386f43208d7af1cc0b12e2d89a151b18
+last loaded MVID       f67e272a-ca3f-4eac-8d41-6e287b144c8a
+last runtime epoch     2123fefaf9434f34a86ae8533e3322a5
+rollback               STS2MCP/.local/deployments/2026-07-29T07-08-28-094Z
 ```
 
-The installation has one canonical `STS2_MCP` manifest and no duplicate
-Gateway manifest. Preview.73 source, build, installation and loaded identity
-agree exactly. A strict Re read-only inspect decoded the main-menu observation.
-It did not execute a mutation; the Gateway admitted only the current
-`main_menu/open_singleplayer` operation as a runtime-bound `session_canary`.
-Inspection remains disabled and no persistent authority is applicable. Loaded
-identity and read success are not action, Organic, or persistent qualification
-evidence.
+Preview.74 build and installation are verified. No Preview.74 load, mutation
+canary, Organic journey or qualification is claimed yet.
 
-## Current Boundary
+## Current Contract
 
-- Diagnostic observation, encounter provisional trial, and persistent
-  qualification are separate.
-- A complete unreviewed game identity may expose player-visible diagnostic
-  state while starting with no action or Inspection authority.
-- In `migration_exploration`, only current uniquely source-resolved actions may
-  receive exact-runtime `encounter_source_resolved` grants. Confirmed completion
-  yields only `session_trial_confirmed`; restart rolls it back.
-- Failure, timeout, witness mismatch, identity/Patch/mode drift, or expiry
-  quarantines the affected runtime scope.
-- One active Surface is resolved once before authority projection. An
-  unadmitted sibling cannot erase an admitted forward action.
-- The new/resumed-run mount lifecycle is
-  `run_transition/setup/awaiting_run_state + no_action + settling`. Missing
-  shared HUD is deferred only for this exact actionless state and carries the
-  typed diagnostic
-  `bridge.shared_state.deferred_during_run_mount_transition`. Every other
-  active-run shared-state failure remains unsupported and fail closed.
-- Re refreshes dynamic capabilities during coherent state reads. Startup
-  negotiation is not a frozen grant snapshot.
-- Provider transport retry is Re-side and pre-mutation only; Gateway unknown
-  outcomes remain terminal and are never retried.
+- `state.semantic_state_id` identifies semantic observation facts.
+- `state.authority_projection_id` identifies current relevant authority.
+- composite `state_id` binds both for stale-action protection.
+- state no longer carries contract/identity shadows or full permission and
+  qualification histories; those remain control-plane capabilities.
+- every advertised action is internally bound to a catalog contract, source
+  evidence, exact operands and state.
+- explicit contracts admit publication/execution by contract digest. Remaining
+  fallback rows temporarily retain operation-gated admission and are tracked as
+  deletion debt.
+- Re chooses only advertised action IDs and retains generic command polling and
+  successor supervision. It does not reconstruct native legality or Outcome.
 
-The target remains ADR-0002, refined by ADR-0003 and
-[ADR-0004](../../../docs/current/decisions/ADR-0004-risk-calibrated-encounter-trial-and-scoped-claims.md).
-`surface_kind + operation` is still the current grant lookup key, not the final
-compatibility identity.
+## Latest Evidence
 
-## Runtime Evidence And Permission Truth
+Preview.73 run `run-20260729061142-32o3xz` completed a saved-run boundary with
+94 settled mutations in 95 decisions and no Connector failure. It is
+`unrecorded` coverage evidence and did not exercise Inspection or shop
+relic/Kifuda. The preceding `run-20260729060301-mlwq4k` settled 143 mutations
+and safely rejected three stale decisions before its terminal decision hit an
+LLM output-contract failure. An earlier run without a summary remains
+incomplete.
 
-Runs `run-20260728020651-03352e`, `run-20260728021602-bz2rop`,
-`run-20260728033215-6n8wsq`, and `run-20260728033638-xrvcre` belong only to the
-older loaded `8e7a.../0e3d.../740e...` identity. They provide:
+## Clean Closure Inventory
 
-- 258 `executed_and_settled` decisions across ordinary menu, event, map,
-  combat, reward, rest, shop, treasure, selector, and game-over flows;
-- six safe pre-execution stale-state rejections with later fresh progress;
-- one bounded game-over-to-main-menu stop without entering a second game;
-- one provider `fetch failed` stop before mutation; and
-- one fresh-menu run that reached 100 ticks and stopped at the old decision
-  ceiling rather than a game boundary.
+```text
+connector contract/identity shadows       0
+production action publication paths       1
+explicit native contracts                 7
+explicit contract-digest admissions       7
+fallback operation-gated contracts       80
+control-history semantic identity inputs  0
+Re native-completion reconstruction       0
+```
 
-All four metadata records declare provenance `unrecorded`. They are current-
-build runtime coverage/defect evidence, not Organic qualification. Their
-runtime authority does not transfer to another MVID. Historical runs have no
-`run-summary.json` and are not backfilled.
+The source-of-truth machine inventory is
+[`CLEAN_CLOSURE_DELETION_INVENTORY.json`](CLEAN_CLOSURE_DELETION_INVENTORY.json).
+Unknown rows may become typed unsupported or `code_required`; they must not be
+fabricated into explicit contracts.
 
-Current exact-identity run `run-20260728041630-2z58bz` provided live evidence
-for the final run-mount repair. It resumed a saved floor-9 run, completed 114
-actions, rejected 11 stale selections before execution, recorded one
-Gateway-confirmed `end_turn` whose Re successor-settlement budget expired,
-completed the loss/game-over/menu lifecycle, and stopped before a second game.
-Its immutable summary is `completed_run_boundary` after 127 decisions. No
-unsupported Surface, invalid state, observation failure, executed-unsettled or
-unknown mutation occurred.
+## First Pilot
 
-This run is also `unrecorded`: it proves exact-runtime repair and broad
-coverage, not Organic or persistent qualification. Grants remained
-operation-scoped and runtime-bound; successful operations reached at most
-`session_trial_confirmed`, while `persistent_authority_enabled=false`.
+`shop_inventory/purchase_shop_relic` now has an explicit contract and exact
+BoundAction. Its command completes at native purchase commit after exact
+gold/relic/entry-or-Kifuda-child evidence. Kifuda's enchant selector becomes the
+next fresh Surface, whose action bindings include exact Kifuda source evidence.
+No universal transaction or PendingObligation was added.
 
-Same-runtime run `run-20260728044555-ltyx7d` then completed a fresh
-character-select-to-game-over-to-main-menu boundary: 106 settled actions in
-107 decisions, with zero stale, unsupported, invalid, observation/provider
-failure, unsettled, or unknown outcomes. It is also `unrecorded`.
+The pilot is implemented and fixture-tested only. Exact Preview.74 ordinary
+relic, Kifuda, wrong-source, stale-offer and child-owner evidence remains
+required before Live qualification or old-family closeout.
 
-Preview.70's read-only run audit found no composite-only stale candidate in
-either current run. All 11 earlier stale refusals changed the semantic
-candidate; two also changed authority. Preview.70 therefore keeps composite
-state/action binding. It separately marks only five explicit component
-contracts as non-authorizing digest candidates; 82 fallback rows remain
-manifest hypotheses.
+## Remaining Boundary
 
-Three later runs share the exact loaded Preview.70 identity:
-
-- `run-20260728062709-srruj8` stopped before mutation on repeated provider
-  `fetch failed`;
-- `run-20260728062739-cytun5` settled 69 actions, then timed out after native
-  `open_treasure_chest` had consumed a Silver Crucible empty chest and reached
-  normal Proceed. The old Oracle incorrectly required a non-null relic result;
-- `run-20260728063258-5z9wpz` resumed at that completed treasure room, settled
-  121 actions, safely rejected two semantic-changing stale selections, and
-  completed the game-to-menu boundary at decision 124 without unsupported or
-  observation failure.
-
-Preview.71 shares treasure lifecycle classification between projection and
-the action-local Oracle. Open completion now accepts either a non-empty
-relic-choice handoff or a settled empty chest with normal Proceed. Treasure
-open becomes the sixth explicit non-authorizing contract candidate; 81 rows
-remain manifest hypotheses.
-
-Four later exact Preview.71 runs close the earlier not-loaded claim:
-
-- `run-20260728085047-akattr` and `run-20260728090432-731pf1` repeated the
-  exact Hefty Tablet source-binding failure before mutation;
-- `run-20260728090507-p3jx5s` crossed 111 decisions and then exposed Re's
-  incorrect mutation-scope requirement for an actionless Skill Potion
-  `settling` Surface; and
-- `run-20260728091032-3oihpi` completed the run boundary.
-
-Preview.72 keeps the shared generated-card interaction Surface while adding an
-exact sealed Hefty Tablet source, explicit Injury tradeoff, and dedicated
-select/skip deck Witness. It also lets Re consume a scoped actionless settling
-Surface as observation with `actionAuthority=none` and no allowed action. Protocol/schema,
-fixtures, and Bridge/Re tests are updated.
-
-Current-runtime run `run-20260728132337-ce2195` then completed a fresh
-main-menu-to-game-over-to-main-menu boundary: 144 settled actions in
-146 decisions, one stale selection rejected before execution, and no
-unsupported, invalid, observation/provider failure, unsettled or unknown
-outcome. It crossed combat, event, map, reward, rest, shop, treasure, transform
-and menu flows. Provenance is `unrecorded`, Inspection was disabled, and neither
-Hefty nor actionless-settling repair was naturally exercised. This is exact-
-runtime coverage, not Organic or persistent qualification.
-
-Same-identity run `run-20260728141035-uhrp19` completed another fresh
-game-to-menu boundary: 107 settled actions in 108 decisions, with no stale,
-unsupported, invalid, observation/provider failure, unsettled, or unknown
-outcome. It remains `unrecorded` coverage evidence. The new Re-side baseline
-report correctly finds its Gateway/game/Modset identity exact but its Re source
-identity incomplete because the run predates source-digest recording. No
-Gateway permission or qualification changed.
-
-Three later exact final-MVID Preview.72 runs supplied the current repair
-evidence:
-
-- `run-20260728143604-oklaik` selected Rest and reached native HP `64/85`, but
-  the old action-local Oracle required exact HP `59/80`. Stone Humidifier's
-  legitimate native max/current-HP side effect caused a false timeout;
-- `run-20260728144125-xvgvhc` and `run-20260728144341-2c4ij1` observed a
-  coherent Rest Surface after the unknown outcome quarantined
-  `choose_rest_option`. The old authority projection retained the semantic
-  Surface but changed its owner to `none_fail_closed`, so strict Re rejected
-  the contradictory contract before mutation.
-
-Preview.73 now proves the Rest base-heal minimum plus option progression and
-retains `bridge_owned + blocked` for a current semantic Surface whose mutation
-operations are withheld. It publishes zero actions and Re projects it as
-`non_actionable`. Unsupported source ownership still fails closed. These runs
-are `unrecorded` defect/coverage evidence, not Organic or persistent
-qualification.
-
-## Remaining Boundaries
-
-Known unsupported or evidence-limited scope includes Tutor's unreviewed owner
-binding, Crystal Sphere, standalone manual potion discard, generated-card
-sources other than the exact registered native branches, non-standard
-profile/menu paths, multiplayer, and incomplete player-visible detail families.
-Hefty Tablet is implemented but remains branch-specific Live-evidence pending.
-Static audits, fixtures, trial success, and old MVID evidence do not convert
-these into support.
-
-## Next Engineering Step
-
-Complete C-R1.0 by executing bounded Rest minimum-Outcome and
-permission-blocked-owner canaries during ordinary play. After those pass, begin
-C-R1.1 core Inspection and typed availability work while A/D M1 continues in
-parallel. Do not manufacture rare states or retry an unknown mutation. No
-evidence here authorizes persistent promotion, generic cross-version/Mod
-compatibility, or the explicit unsupported scopes above.
+Current unsupported or evidence-limited scope includes Crystal Sphere,
+standalone manual potion discard, Tutor ownership, unknown generated sources,
+non-standard profile/menu paths, multiplayer and incomplete Inspection/detail
+families. Next runtime action is cold-load identity verification followed by
+bounded pilot and Inspection journeys.

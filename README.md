@@ -18,14 +18,13 @@ third-party clients.
 
 ## Current Truth
 
-The active source Connector contract is `2.0-preview.73`; Re normalized schema
-is `29`. Gate 1/M0 is closed as a bounded ordinary-single-player v2 interface:
+The active source Connector contract is `2.0-preview.74`; Re normalized schema
+is `30`. Gate 1/M0 is closed as a bounded ordinary-single-player v2 interface:
 Re and the optional MCP adapter are v2-only, Gateway `/api/v1` is retired, and
 the exact loaded Preview.72 completed multiple bounded one-game journeys.
-Preview.73 repairs a Rest Outcome overclaim and separates current semantic
-ownership from mutation permission. It is built, installed and cold-loaded;
-no Preview.73 mutation canary has executed yet, so consult current status before
-assuming any Live or qualification claim.
+Preview.74 starts the Clean Closure identity/native-contract migration and is
+source/tested only. The installed/loaded local artifact remains Preview.73, so
+consult current status before assuming any Preview.74 Live claim.
 
 That run has `unrecorded` provenance, current-build Inspection remained
 disabled, and the repaired Hefty/actionless-settling branches were not

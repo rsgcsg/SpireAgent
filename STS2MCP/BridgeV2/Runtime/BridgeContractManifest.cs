@@ -363,7 +363,13 @@ internal static class BridgeContractManifest
                     : compatibility.ActionCanarySurfaceKinds.Contains(entry.Kind, StringComparer.Ordinal)
                         ? "canary"
                         : string.Empty;
-                return new ActionPermissionScope(entry.Kind, operation.Operation, tier);
+                return new ActionPermissionScope(entry.Kind, operation.Operation, tier)
+                {
+                    OperationFingerprint =
+                        BridgePermissionManager.OperationFingerprint(
+                            entry.Kind,
+                            operation.Operation)
+                };
             }))
             .Where(scope => scope.Tier.Length > 0)
             .OrderBy(scope => scope.SurfaceKind, StringComparer.Ordinal)

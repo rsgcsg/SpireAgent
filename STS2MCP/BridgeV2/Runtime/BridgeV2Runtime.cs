@@ -270,48 +270,35 @@ internal static class BridgeV2Runtime
             ? BridgeSharedVisibleStateBuilder.Build(EntityRegistry)
             : new BridgeSharedVisibleStateBuildResult(false, null, null);
         draft = ApplyMissingSharedStatePolicy(draft, shared);
-        string compositeSignature = BridgeHash.Object(new
-        {
-            draft.Signature,
-            shared.State
-        });
         BridgeVisibilityProjection visibility = BridgeVisibilityCatalog.Build(
             draft,
             shared.State != null,
             ShopSurfaceFacts.TryGetCurrent(out _, out _, out _));
-        BridgeContractInstanceShadow contractInstanceShadow =
-            BridgeContractInstanceShadowBuilder.Build(draft);
-        BridgeObservationIdentityShadow identityShadow =
-            BridgeObservationIdentityShadowBuilder.Build(draft, shared.State);
-        BridgePermissionSystemInfo permissionSystem = PermissionManager.Snapshot();
-        BridgeQualificationSystemInfo qualificationSystem =
-            QualificationStore.Snapshot();
-        compositeSignature = BridgeHash.Object(new
-        {
-            compositeSignature,
-            visibility.Visibility,
-            visibility.InspectionCatalog,
-            contractInstanceShadow,
-            permissionSystem,
-            qualificationSystem
-        });
+        BridgeCurrentIdentityProjection identity =
+            BridgeCurrentIdentityProjectionBuilder.Build(draft, shared.State, visibility);
 
         lock (Gate)
         {
-            (string stateId, long stateSequence) = StateIdentity.Observe(compositeSignature);
+            (string stateId, long stateSequence) = StateIdentity.Observe(identity.StateSignature);
 
             Actions.Clear();
             var descriptors = new List<LegalAction>(draft.Actions.Count);
             foreach (BridgeActionDraft action in draft.Actions)
             {
                 ActionPermissionScope? permissionScope =
-                    draft.Game.Compatibility.ActionPermissionScopes.SingleOrDefault(scope =>
-                        string.Equals(scope.SurfaceKind, draft.Surface.Kind, StringComparison.Ordinal)
-                        && string.Equals(scope.Operation, action.Kind, StringComparison.Ordinal));
-                if (permissionScope == null)
+                    BridgeSurfacePermission.FindActionScope(
+                        draft.Game.Compatibility,
+                        draft.Surface.Kind,
+                        action.Kind);
+                BridgeBoundActionContract? contractBinding =
+                    BridgeBoundActionContract.Build(draft.Surface.Kind, action);
+                if (permissionScope == null
+                    || contractBinding == null
+                    || !contractBinding.Matches(permissionScope))
                     continue;
 
-                string actionId = "action_" + BridgeHash.Text($"{stateId}|{action.Key}")[..20];
+                string actionId = "action_" + BridgeHash.Text(
+                    $"{stateId}|{action.Key}|{contractBinding.BoundActionDigest}")[..20];
                 var descriptor = new LegalAction(
                     actionId,
                     stateId,
@@ -339,21 +326,37 @@ internal static class BridgeV2Runtime
                         GameBuildIdentity executionGame = ReadCurrentGameIdentity();
                         if (!PermissionManager.AuthorizeExecution(
                                 permissionBinding,
-                                executionGame.Compatibility))
+                                executionGame.Compatibility,
+                                contractBinding))
                         {
                             return BridgeActionStartResult.Rejected(
                                 "permission_grant_changed",
                                 "The operation-scoped grant changed before execution; obtain a fresh state.");
                         }
+                        ActionPermissionScope? executionScope =
+                            BridgeSurfacePermission.FindActionScope(
+                                executionGame.Compatibility,
+                                contractBinding.SurfaceKind,
+                                contractBinding.Operation);
+                        if (executionScope == null
+                            || !contractBinding.Matches(executionScope))
+                        {
+                            return BridgeActionStartResult.Rejected(
+                                "native_contract_changed",
+                                "The action-local native contract changed before execution; obtain a fresh state.");
+                        }
                         return action.Start();
                     },
-                    permissionBinding);
+                    permissionBinding,
+                    contractBinding);
                 descriptors.Add(descriptor);
             }
 
             return new BridgeStateEnvelope(
                 BridgeV2Contract.ProtocolVersion,
                 stateId,
+                identity.SemanticStateId,
+                identity.AuthorityProjectionId,
                 stateSequence,
                 DateTimeOffset.UtcNow,
                 draft.Readiness,
@@ -368,14 +371,8 @@ internal static class BridgeV2Runtime
                 ObservationPolicy(),
                 visibility.Visibility,
                 visibility.InspectionCatalog,
-                contractInstanceShadow,
-                identityShadow,
                 BridgeDiagnostics.ForObservation(draft),
-                draft.Warnings)
-            {
-                PermissionSystem = permissionSystem,
-                QualificationSystem = qualificationSystem
-            };
+                draft.Warnings);
         }
     }
 

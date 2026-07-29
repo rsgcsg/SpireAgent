@@ -1,6 +1,27 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.73`
+Protocol preview: `2.0-preview.74`
+
+Preview.74 performs the Clean Closure identity/wire cutover:
+
+- state requires `semantic_state_id` and `authority_projection_id`;
+- composite `state_id` binds both for stale-action protection;
+- `contract_instance_shadow`, `identity_shadow`, `permission_system`, and
+  `qualification_system` are removed from state;
+- permission/qualification remain required control-plane capability data;
+- advertised actions are internally bound to catalog contract, source
+  evidence, exact operands and current state;
+- explicit contracts use contract-digest publication/execution admission;
+  un-migrated fallback families retain the temporary operation gate;
+- Re normalized schema is `30`.
+
+See repository [ADR-0005](../../../docs/current/decisions/ADR-0005-workflow-c-clean-closure.md).
+
+`npm run connector -- audit-run-identity` reads the formal identities for
+Preview.74+ recordings and retains explicit historical-only compatibility with
+the non-authorizing Preview.67-73 identity shadow. It never grants authority.
+
+## Historical Preview Notes
 
 Preview.73 corrects two boundaries exposed by final-MVID Preview.72 Rest runs:
 
@@ -41,7 +62,7 @@ action publication, execution, permission, completion, or state binding:
   Commit, completion, and Witness digests plus the expected completion boundary;
 - manifest fallback rows carry no component digest and remain explicitly
   `manifest_hypothesis` or `published_manifest_hypothesis`;
-- `npm run connector -- audit-run-identity` attributes recorded stale refusals
+- the then-current run-identity audit attributed recorded stale refusals
   against the Preview.67 semantic/authority candidates without authorizing an
   identity migration.
 
@@ -424,10 +445,9 @@ prove that STS2 gameplay is independent of scene/UI lifecycle.
 Every state response contains:
 
 - protocol, bridge, exact game identity, and exact loaded Modset identity;
-- exact operation permission scopes and the Gateway-owned session permission
-  system, including runtime Patch evidence and grant history;
 - observation policy;
-- stable semantic `state_id` and monotonic process-session sequence;
+- composite `state_id`, formal `semantic_state_id`, formal
+  `authority_projection_id`, and monotonic process-session sequence;
 - explicit top-level `shared_state` (`null` when no single-player run exists);
 - readiness, typed semantic `context`, and surface kind;
 - typed surface data;
@@ -435,8 +455,6 @@ Every state response contains:
 - completeness sources and missing fields;
 - a bounded `visibility` declaration and current typed
   `inspection_catalog`;
-- a non-authorizing `contract_instance_shadow` describing the current gap
-  between declared semantic operations and legacy Surface-kind permission;
 - typed diagnostics and legacy compatibility warnings.
 
 Timestamps and logging fields do not change `state_id`. Shared visible state,
@@ -454,16 +472,13 @@ visibility basis, availability tier, ordering semantics, cost hint, recommended
 uses, and hidden policy. It grants no action authority and does not enter the
 command ledger.
 
-`contract_instance_shadow` is migration telemetry only. It may be unresolved
-and omit nullable contract/binding fields during transitions. It always reports
-`authorizing=false`; neither manifest presence nor operation evidence can add
-or suppress legal actions. Current execution permission is the explicit
-operation scope produced by the exact-environment ceiling plus the Gateway
-Permission Manager.
+Permission and qualification history are not semantic state. They are read
+through capabilities/operator control responses and do not enter Prompt or
+`semantic_state_id`.
 
 ## Permission System
 
-`permission_system` is required on capabilities and state. Its
+`permission_system` is required on capabilities. Its
 `runtime_epoch` must equal `bridge.runtime_instance_id`.
 
 Modes:

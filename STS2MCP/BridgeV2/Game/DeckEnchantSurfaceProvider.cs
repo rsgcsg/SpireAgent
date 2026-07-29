@@ -140,6 +140,7 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
         List<BridgeActionDraft> actions = BuildActions(
             screen,
             exactBinding,
+            source!,
             stage,
             holders,
             selectedCards,
@@ -182,17 +183,13 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
             {
                 "Private-field bindings are exact-version scoped and fail closed outside the tested game identity."
             },
-            actions)
-        {
-            RuntimeSemanticContractId =
-                $"bridge.contract.deck_enchant_selection.{source!.Kind}.2.0-preview.73",
-            RuntimeSourceBindingId = source.BindingEvidence
-        };
+            actions);
     }
 
     private static List<BridgeActionDraft> BuildActions(
         NDeckEnchantSelectScreen screen,
         Binding binding,
+        DeckEnchantSource source,
         string stage,
         IReadOnlyList<NGridCardHolder> holders,
         HashSet<CardModel> selectedCards,
@@ -218,7 +215,7 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
                     "toggle_card",
                     "selection",
                     selected ? $"Deselect {cardName}" : $"Select {cardName}",
-                    "NCardGrid.HolderPressed",
+                    $"{source.BindingEvidence}|NCardGrid.HolderPressed",
                     () => StartToggleCard(screen, card, binding.Enchantment),
                     new[] { new ActionEntityBinding("card", cardId) }));
             }
@@ -232,7 +229,7 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
                     "preview_selection",
                     "selection",
                     "Preview selected cards with the enchantment",
-                    "NDeckEnchantSelectScreen.main_confirm",
+                    $"{source.BindingEvidence}|NDeckEnchantSelectScreen.main_confirm",
                     () => StartMainPreview(screen)));
             }
 
@@ -244,7 +241,7 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
                     "close_selection",
                     "navigation",
                     "Close enchant selection without choosing cards",
-                    "NDeckEnchantSelectScreen.close",
+                    $"{source.BindingEvidence}|NDeckEnchantSelectScreen.close",
                     () => StartClose(screen)));
             }
         }
@@ -259,7 +256,7 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
                     "confirm_selection",
                     "commit",
                     "Confirm and apply the displayed enchantment",
-                    "NDeckEnchantSelectScreen.preview_confirm",
+                    $"{source.BindingEvidence}|NDeckEnchantSelectScreen.preview_confirm",
                     () => StartPreviewConfirm(
                         screen,
                         binding.SelectedCards.ToArray(),
@@ -275,7 +272,7 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
                     "cancel_preview",
                     "navigation",
                     "Cancel preview and return to card selection",
-                    "NDeckEnchantSelectScreen.preview_cancel",
+                    $"{source.BindingEvidence}|NDeckEnchantSelectScreen.preview_cancel",
                     () => StartPreviewCancel(screen)));
             }
         }
