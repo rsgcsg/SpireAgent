@@ -12,6 +12,10 @@
 > 结论仍保留；`C/R/P/X` lane 决定已由
 > [`PROGRAM_PLAN_SECOND_REVIEW_2026-07-23.md`](PROGRAM_PLAN_SECOND_REVIEW_2026-07-23.md)
 > 修订为 `C/D/A/P/X`。
+>
+> **Gate 3 follow-up, 2026-07-25:** 当前实现采用最小本地单写者协调，不把
+> authentication 当作游戏 Mod 的基础 Gate。本文较早的 secure-local-control
+> 措辞仅保留为有条件产品风险讨论，当前口径以 `../ROADMAP.md` 为准。
 
 ## 1. 结论先行
 

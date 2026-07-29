@@ -5,13 +5,17 @@ import type { LlmDecision, LlmDecisionAttempt } from "./types.js";
 export const LlmDecisionSchema = z
   .object({
     selectedActionId: z.string().trim().min(1).max(240),
-    reasonBrief: z.string().trim().min(1).max(240),
+    reasonBrief: z.string().trim().min(1).max(4_000),
     confidence: z.number().min(0).max(1).optional()
   })
   .strict();
 
 export type DecisionParseResult =
-  | { valid: true; decision: LlmDecision }
+  | {
+      valid: true;
+      decision: LlmDecision;
+      normalizations?: Array<"reason_brief_truncated_to_contract_limit">;
+    }
   | { valid: false; outcome: "empty" | "invalid_json" | "invalid_schema"; error: string };
 
 export function parseDecisionText(text: string): DecisionParseResult {
@@ -34,7 +38,17 @@ export function parseDecisionText(text: string): DecisionParseResult {
       error: result.error.issues.map((issue) => `${issue.path.join(".") || "$"}: ${issue.message}`).join("; ").slice(0, 500)
     };
   }
-  return { valid: true, decision: result.data };
+  if (result.data.reasonBrief.length <= 240) {
+    return { valid: true, decision: result.data };
+  }
+  return {
+    valid: true,
+    decision: {
+      ...result.data,
+      reasonBrief: result.data.reasonBrief.slice(0, 240)
+    },
+    normalizations: ["reason_brief_truncated_to_contract_limit"]
+  };
 }
 
 export type DecisionValidation =

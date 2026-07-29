@@ -28,6 +28,7 @@ export interface TickResult {
   surfaceKind?: StateEnvelope["currentState"]["surface"]["kind"];
   actionAuthority?: StateEnvelope["currentState"]["actionAuthority"];
   selectedActionId?: string;
+  error?: string;
   shouldStopRun: boolean;
   stopReason?: "run_boundary" | "repeated_exact_transition" | "repeated_semantic_transition" | "repeated_non_actionable_state";
 }
@@ -38,10 +39,14 @@ export class TickOrchestrator {
   private readonly progressCycleGuard = new ProgressCycleGuard();
   private lastNonActionableStateKey?: string;
   private nonActionableStateOccurrences = 0;
+  private runTerminalObserved = false;
 
   constructor(private readonly dependencies: TickOrchestratorDependencies) {}
 
-  async runTick(tick: number, options: { dryRun?: boolean; stopAtRunBoundary?: boolean } = {}): Promise<TickResult> {
+  async runTick(
+    tick: number,
+    options: { dryRun?: boolean; stopAtRunBoundary?: boolean; allowRunEntry?: boolean } = {}
+  ): Promise<TickResult> {
     const startedAt = new Date().toISOString();
     const decisionId = createDecisionId(tick);
     let pre: StateEnvelope;
@@ -59,7 +64,10 @@ export class TickOrchestrator {
       return result(decisionId, record.outcome, undefined, undefined, shouldStopRun);
     }
 
-    const allowedActions = this.dependencies.buildAllowedActions(pre.currentState, pre.stateHash);
+    if (pre.currentState.context.kind === "run_ended") this.runTerminalObserved = true;
+    const builtAllowedActions = this.dependencies.buildAllowedActions(pre.currentState, pre.stateHash);
+    const cycleFilter = this.progressCycleGuard.filterActions(pre.currentState, builtAllowedActions);
+    const allowedActions = cycleFilter.actions;
     if (pre.diagnostics.status === "invalid" || pre.currentState.stability === "invalid" || pre.currentState.surface.kind === "unsupported") {
       return this.recordWithoutDecision({
         decisionId,
@@ -68,7 +76,7 @@ export class TickOrchestrator {
         pre,
         allowedActions,
         outcome: "not_executed_invalid_state",
-        error: pre.currentState.surface.kind === "unsupported" ? pre.currentState.surface.reason : "Normalization diagnostics are invalid",
+        error: invalidStateReason(pre),
         shouldStopRun: true
       });
     }
@@ -100,18 +108,35 @@ export class TickOrchestrator {
       });
     }
     this.resetNonActionableStateGuard();
-    if (options.stopAtRunBoundary && isAutomaticRunStartBoundary(pre.currentState.context.kind)) {
-      return this.recordWithoutDecision({
-        decisionId,
-        tick,
-        startedAt,
-        pre,
-        allowedActions,
-        outcome: "not_executed_non_actionable_state",
-        error: `Stopped at ${pre.currentState.context.kind} run-start boundary; agent:run never starts or continues another run automatically`,
-        shouldStopRun: true,
-        stopReason: "run_boundary"
-      });
+    if (isAutomaticRunStartBoundary(pre.currentState.context.kind)) {
+      if (options.stopAtRunBoundary && (this.runTerminalObserved || !options.allowRunEntry)) {
+        const completedRun = this.runTerminalObserved;
+        return this.recordWithoutDecision({
+          decisionId,
+          tick,
+          startedAt,
+          pre,
+          allowedActions,
+          outcome: "not_executed_non_actionable_state",
+          error: completedRun
+            ? "Stopped after the completed run returned to the top-level menu; a bounded agent:run never starts a second game"
+            : `Stopped at ${pre.currentState.context.kind} run-start boundary; pass --allow-run-entry to permit Gateway-advertised run entry`,
+          shouldStopRun: true,
+          stopReason: "run_boundary"
+        });
+      }
+      if (options.allowRunEntry && pre.currentState.actionAuthority !== "bridge_advertised") {
+        return this.recordWithoutDecision({
+          decisionId,
+          tick,
+          startedAt,
+          pre,
+          allowedActions,
+          outcome: "not_executed_invalid_state",
+          error: "Run entry requires bridge_advertised action authority; local reconstruction cannot cross the run boundary",
+          shouldStopRun: true
+        });
+      }
     }
     if (allowedActions.length === 0) {
       return this.recordWithoutDecision({
@@ -307,7 +332,9 @@ export class TickOrchestrator {
         postProgressHash: repeatedSemanticTransition.postProgressHash,
         actionProgressHash: repeatedSemanticTransition.actionProgressHash,
         selectedActionId: validation.selectedAction.id,
-        selectedActionKind: repeatedSemanticTransition.selectedActionKind
+        selectedActionKind: repeatedSemanticTransition.selectedActionKind,
+        recoveryPlanned: repeatedSemanticTransition.recoveryPlanned,
+        suppressedReturnActionHashes: repeatedSemanticTransition.suppressedReturnActionHashes
       };
     }
     await this.dependencies.recorder.append(record, settlement.after ? { postRawState: settlement.after.rawState } : undefined);
@@ -316,10 +343,12 @@ export class TickOrchestrator {
       record.outcome,
       pre.currentState,
       validation.selectedAction.id,
-      outcome === "executed_unsettled" || Boolean(repeatedExactTransition) || Boolean(repeatedSemanticTransition),
+      outcome === "executed_unsettled"
+        || Boolean(repeatedExactTransition)
+        || Boolean(repeatedSemanticTransition && !repeatedSemanticTransition.recoveryPlanned),
       repeatedExactTransition
         ? "repeated_exact_transition"
-        : repeatedSemanticTransition
+        : repeatedSemanticTransition && !repeatedSemanticTransition.recoveryPlanned
           ? "repeated_semantic_transition"
           : undefined
     );
@@ -357,7 +386,8 @@ export class TickOrchestrator {
       input.pre.currentState,
       undefined,
       input.shouldStopRun,
-      input.stopReason
+      input.stopReason,
+      input.error
     );
   }
 
@@ -380,6 +410,15 @@ export class TickOrchestrator {
 function bridgeStateToken(envelope: StateEnvelope): string | undefined {
   const surface = envelope.currentState.surface as { bridgeStateId?: unknown };
   return typeof surface.bridgeStateId === "string" ? surface.bridgeStateId : undefined;
+}
+
+function invalidStateReason(envelope: StateEnvelope): string {
+  const surfaceReason = envelope.currentState.surface.kind === "unsupported"
+    ? envelope.currentState.surface.reason
+    : "Normalization diagnostics are invalid";
+  const firstInvalid = envelope.diagnostics.invalidFields[0];
+  if (!firstInvalid) return surfaceReason;
+  return `${surfaceReason}; ${firstInvalid.path}: ${firstInvalid.reason}`.slice(0, 500);
 }
 
 function baseRecord(runId: string, decisionId: string, tick: number, startedAt: string, outcome: DecisionOutcome): DecisionRecord {
@@ -463,7 +502,8 @@ function result(
   state: StateEnvelope["currentState"] | undefined,
   selectedActionId: string | undefined,
   shouldStopRun: boolean,
-  stopReason?: TickResult["stopReason"]
+  stopReason?: TickResult["stopReason"],
+  error?: string
 ): TickResult {
   return {
     decisionId,
@@ -475,6 +515,7 @@ function result(
     } : {}),
     ...(selectedActionId ? { selectedActionId } : {}),
     ...(stopReason ? { stopReason } : {}),
+    ...(error ? { error } : {}),
     shouldStopRun
   };
 }

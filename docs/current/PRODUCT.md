@@ -23,10 +23,12 @@ not the core connector.
 Gate 1 is closed only as a bounded ordinary-single-player v2 connector
 baseline. Preview.61 supplied its final Neow's Fury Organic runtime seal;
 Preview.62 adds reviewed compatibility/source registries and non-authorizing
-audit support without inheriting qualification. Consumer rollout remains
-blocked by Gate 2 visible-information closure plus missing Gateway
-authentication, controller lease, restart epoch, and recovery evidence. Do not
-represent the direct local REST path as a consumer-safe installation.
+audit support without inheriting qualification. Preview.64 implements
+lightweight Gateway-owned controller coordination and restart invalidation,
+but not malicious-local-process isolation. Consumer rollout remains blocked by
+Gate 2 visible-information closure, product-grade install/recovery evidence and
+an explicit threat model for any authentication requirement. Do not represent
+the direct local REST path as a consumer-safe installation.
 
 For the full evidence boundary, alternatives considered, security analysis,
 and conditional product gates, read the

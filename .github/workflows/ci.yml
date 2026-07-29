@@ -37,6 +37,7 @@ jobs:
       - run: npm run check:docs
       - run: npm run check:connector-compatibility-fixtures
       - run: npm run check:connector-permission-fixtures
+      - run: npm run check:connector-qualification
       - run: python -m py_compile STS2MCP/mcp/server.py
 
   # Gateway C# tests/builds require the user's exact local STS2 assemblies.

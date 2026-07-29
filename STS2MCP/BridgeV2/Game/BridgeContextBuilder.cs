@@ -260,7 +260,7 @@ internal static class BridgeContextBuilder
             entities.GetId(orb, "orb"),
             orb.Id.Entry,
             McpMod.SafeGetText(() => orb.Title),
-            McpMod.SafeGetText(() => orb.SmartDescription),
+            BuildOrbDescription(orb),
             orb.PassiveVal,
             orb.EvokeVal)).ToArray() ?? Array.Empty<VisibleOrb>();
 
@@ -279,6 +279,21 @@ internal static class BridgeContextBuilder
             BuildPotionStates(player, entities, playPhase),
             orbs,
             combat.OrbQueue?.Capacity);
+    }
+
+    private static string? BuildOrbDescription(OrbModel orb)
+    {
+        return McpMod.SafeGetText(() =>
+        {
+            // This mirrors OrbModel.HoverTips. Reading Description or
+            // SmartDescription without these variables emits a localization
+            // error and can make a coherent combat observation noisy or fail.
+            var description = orb.SmartDescription;
+            description.Add("energyPrefix", orb.Owner.Character.CardPool.Title);
+            description.Add("Passive", orb.PassiveVal);
+            description.Add("Evoke", orb.EvokeVal);
+            return description;
+        })?.Replace("\n", " ");
     }
 
     private static IReadOnlyList<VisibleCombatCompanion> BuildCompanions(

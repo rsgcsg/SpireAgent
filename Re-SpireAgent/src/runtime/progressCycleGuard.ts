@@ -18,6 +18,13 @@ export interface RepeatedSemanticTransition {
   postProgressHash: string;
   actionProgressHash: string;
   selectedActionKind: string;
+  recoveryPlanned: boolean;
+  suppressedReturnActionHashes: string[];
+}
+
+export interface CycleActionFilterResult {
+  actions: AllowedAction[];
+  excludedActionHashes: string[];
 }
 
 /**
@@ -26,6 +33,28 @@ export interface RepeatedSemanticTransition {
  */
 export class ProgressCycleGuard {
   private readonly occurrences = new Map<string, number>();
+  private readonly transitions = new Map<string, Array<{ actionHash: string; postHash: string }>>();
+  private readonly suppressedActions = new Map<string, Set<string>>();
+
+  filterActions(
+    state: NormalizedCurrentState,
+    actions: AllowedAction[]
+  ): CycleActionFilterResult {
+    const blocked = this.suppressedActions.get(semanticProgressHash(state));
+    if (!blocked?.size) return { actions, excludedActionHashes: [] };
+
+    const filtered = actions.filter((action) => !blocked.has(semanticActionHash(action)));
+    // A cycle warning must never invent a dead end. If every currently legal
+    // action was part of the observed loop, keep them and let the existing
+    // terminal guard stop on the next repeated transition.
+    if (filtered.length === 0) return { actions, excludedActionHashes: [] };
+    return {
+      actions: filtered,
+      excludedActionHashes: actions
+        .map(semanticActionHash)
+        .filter((hash) => blocked.has(hash))
+    };
+  }
 
   observe(
     pre: NormalizedCurrentState,
@@ -38,13 +67,33 @@ export class ProgressCycleGuard {
     const key = `${preProgressHash}|${actionProgressHash}|${postProgressHash}`;
     const occurrence = (this.occurrences.get(key) ?? 0) + 1;
     this.occurrences.set(key, occurrence);
+
+    const reverseActionHashes = occurrence >= 2
+      ? (this.transitions.get(postProgressHash) ?? [])
+          .filter((transition) => transition.postHash === preProgressHash)
+          .map((transition) => transition.actionHash)
+      : [];
+    const existingTransitions = this.transitions.get(preProgressHash) ?? [];
+    if (!existingTransitions.some((transition) =>
+      transition.actionHash === actionProgressHash && transition.postHash === postProgressHash)) {
+      existingTransitions.push({ actionHash: actionProgressHash, postHash: postProgressHash });
+      this.transitions.set(preProgressHash, existingTransitions);
+    }
+
     if (occurrence < 2) return undefined;
+    if (reverseActionHashes.length > 0) {
+      const blocked = this.suppressedActions.get(postProgressHash) ?? new Set<string>();
+      for (const hash of reverseActionHashes) blocked.add(hash);
+      this.suppressedActions.set(postProgressHash, blocked);
+    }
     return {
       occurrence,
       preProgressHash,
       postProgressHash,
       actionProgressHash,
-      selectedActionKind: action.kind
+      selectedActionKind: action.kind,
+      recoveryPlanned: reverseActionHashes.length > 0,
+      suppressedReturnActionHashes: [...new Set(reverseActionHashes)]
     };
   }
 }

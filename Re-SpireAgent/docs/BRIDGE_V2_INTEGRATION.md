@@ -1,10 +1,14 @@
 # Bridge v2 Integration
 
-> Current source-truth status, 2026-07-25: Re and C# share the
-> `2.0-preview.63` source consumer contract; Re normalized schema is `26`.
+> Current source-truth status, 2026-07-30: Re and C# share the
+> `2.0-preview.77` source consumer contract; Re normalized schema is `31`.
 > Gate 1 is closed as a bounded ordinary-single-player v2 connector baseline.
-> Preview.61 supplied the final Neow's Fury runtime seal; Preview.62 adds
-> policy provenance and registry adaptation without inheriting qualification.
+> Exact Preview.76 run `run-20260729140216-qi8r24` completed a 172-decision
+> boundary with 170 settled mutations and one safe stale refusal. It did not
+> exercise New Leaf, Kifuda or ordinary relic purchase. Preview.77 types
+> explicit contracts versus session-only migration fallbacks and rejects
+> fallback durable packages. Provenance is `unrecorded`; prior session scope
+> does not transfer to the new artifact.
 
 ## Connector Boundary
 
@@ -24,7 +28,7 @@ consumption.
 
 ## Current Scope
 
-Re-SpireAgent implements the strict `2.0-preview.63` consumer contract. When a
+Re-SpireAgent implements the strict `2.0-preview.77` consumer contract. When a
 matching Bridge exists, authority is read from capabilities rather than
 inferred from implementation or historical evidence.
 
@@ -33,15 +37,20 @@ For every exact identity, Re accepts only the Gateway's explicit
 source binding, Surface, and Inspection is disabled. Qualification from another
 game build or Bridge MVID does not transfer.
 
+Qualification schema `2` separates `explicit_native_contract` from
+`manifest_migration_fallback`. Re requires the explicit kind on every durable
+qualification and records both kinds in negotiated evidence. It never turns
+kind, manifest presence or historical evidence into client-side authority.
+
 Re compares the stable state/capability authorization set
 (`surface_kind + operation + tier`), rejects duplicate or unadvertised scopes,
 and imports a legal action only when its
 `surface_kind + operation` pair is explicitly advertised. Empty qualified,
 canary, or Inspection lists never imply wildcard authority. State,
 capabilities, bundles, and Inspections must agree on game identity, Modset
-fingerprint, Bridge assembly SHA-256, MVID, and runtime instance. Exact Modset
-permission additionally requires the negotiated loaded `STS2_MCP` module and
-no other loaded gameplay Mod.
+fingerprint, Bridge assembly SHA-256, MVID, and runtime instance. Encounter
+trial admission additionally requires the negotiated loaded `STS2_MCP` module
+and an exact or explicitly candidate Modset classification.
 
 Preview.62 also requires state and capabilities to agree on the reviewed
 exact-environment policy ID, its digest and adaptation level. These fields are
@@ -52,9 +61,21 @@ Patch inventory and complete operation-scope grant bindings. A dynamic scope
 must reference the unique current active grant for the same operation and exact
 environment. Re preserves superseded/revoked grant versions for audit, imports
 no action from them, and cannot promote, quarantine or persist permission.
-Capabilities are negotiated once, so grant IDs may legitimately advance after
-a semantic completion; each response is independently exact-validated while
-the stable authorization set must remain coherent.
+Preview.69 also verifies each dynamic scope's `admission_basis`. An
+`encounter_source_resolved` scope is valid only when the current Gateway grant
+is migration-scoped, runtime-bound, and carries explicit encounter evidence.
+Static protocol support is negotiated at initialization, but dynamic
+capabilities are refreshed with coherent observations. Grant IDs may
+legitimately advance after semantic completion; each response is independently
+exact-validated while the operation authorization set must remain coherent.
+
+Preview.64 separates controller coordination from game permission. Re may read
+without registration. Before a mutation it lazily registers, acquires or
+renews the current runtime lease, submits the lease generation, and requires
+the command's immutable attribution to match. Lease expiry blocks later
+submissions but does not change an already admitted command outcome. Gateway
+restart invalidates the registration and lease. Client metadata is descriptive
+and must not be treated as authenticated identity.
 
 Re's production Connector is v2-only. The former `auto` and explicit `v1`
 runtime modes are rejected; historical v1 raw-state records remain readable
@@ -64,14 +85,52 @@ into a Bridge v2 wrapper is invalid and cannot contribute facts or authority.
 Bridge command `completed` is the semantic settlement authority. Re verifies
 the echoed request/state/action identity, preserves `failed` and `timed_out`
 as unknown outcomes, and captures a coherent successor checkpoint after a
-confirmed command. A checkpoint read failure cannot cause action retry.
+confirmed command. An actionable successor must repeat with the same full
+state hash before Re spends another model call; changing visible or authority
+facts continue to be observed. This does not reinterpret the Gateway Witness.
+A checkpoint read failure cannot cause action retry.
+
+Preview.74 requires formal `semantic_state_id` and `authority_projection_id`.
+Re strictly decodes them but still submits the composite state-bound action ID.
+Contract/identity shadows and permission/qualification histories are absent
+from normalized state and Prompt; control-plane data remains in capabilities.
+Re does not interpret native contract digests or reconstruct completion.
 
 The first exact Preview.63 production-path canary submitted advertised
 `main_menu/continue_run` once and settled at `reward_flow/reward_claim`. The
 Gateway promoted that operation from `session_canary` to
-`session_auto_approved` for the current runtime epoch. This proves the
-consumer contract and one low-risk session loop, not persistent qualification
-or broader permission.
+the historical `session_auto_approved` tier for that runtime epoch. Preview.69
+renames future equivalent results to `session_trial_confirmed`. Either proves
+the consumer contract and one low-risk session loop, not persistent
+qualification or broader permission.
+
+Preview.65 adds strict, read-only consumption of the Gateway qualification
+projection. A short-lived `session_canary` package may only seed the existing
+runtime-epoch canary flow. A persistent operation scope is accepted only when
+one current `qualified` package matches the exact environment, operation
+fingerprint, completion boundary and witness. Re cannot install, promote,
+revoke, roll back, or repair either package tier.
+
+Preview.69 makes the public `npm run agent:run` probe the current state before
+using the legacy package migration fallback. A diagnostic no-input transition
+may start Re; the Gateway admits only a later current source-resolved action.
+This removes bulk preinstallation from the target path without making Re or D
+an authority. After terminal game-over cleanup the bounded loop stops at the
+top-level menu even though initial run entry was allowed.
+
+Preview.66 permits multiple exact environments to retain packages for the same
+Surface/operation without collision. Re continues to consume only the
+Gateway's current exact projection; the local Environment Profile registry,
+migration plan, evidence collector, and append-only installer are external
+non-live tools and never become client-side authority. `--allow-run-entry` is
+an explicit experiment boundary: it permits a bounded run to choose a current
+Gateway-advertised top-level entry action but does not reconstruct menu
+legality or bypass the normal action and command lifecycle. Re accepts the
+fallback completion-boundary enum for strict decoding but does not interpret
+its witness: the Gateway remains responsible for publishing, executing, and
+settling the operation. Every current dynamic scope must still link to its
+current grant; current grants are not clipped by the bounded historical-grant
+projection.
 
 Preview.47 adds one coherent state-plus-Inspection observation bundle, a typed
 visibility/Inspection catalog, and non-authorizing contract-instance shadow
@@ -150,11 +209,13 @@ The current MVID has a fresh loss intro -> summary -> return game-over
 lifecycle. Win/timeline diversity, treasure open/skip, linked rewards, special
 map modes, and unlisted variants remain unqualified.
 
-Preview.38 adds only the exact Whispering Hollow random-transform child. Re
-requires `random_uncommitted_cycle`, rejects any claimed pre-commit replacement,
-and preserves the same selected entity bindings through confirm. Selection,
-confirm, and upgrade-view presentation have current-build Organic-canary
-evidence; other transform origins and cancel variants remain unqualified.
+Preview.38 added the exact Whispering Hollow random-transform child. Preview.76
+keeps the shared native selector mechanics but requires a typed source:
+`whispering_hollow_event` or task-local `new_leaf_relic_pickup`. Re requires
+`random_uncommitted_cycle`, rejects any claimed pre-commit replacement, and
+preserves the same selected entity bindings through confirm. Whispering Hollow
+has historical action-canary evidence; New Leaf is source/build supported but
+exact-runtime mutation remains pending. Every other origin fails closed.
 
 Preview.42 adds only the exact Lead Paperweight generated run-deck child. Re
 requires `purpose=acquire_one_generated_card`,
@@ -195,7 +256,20 @@ transitions only when they are `settling`, have `none_fail_closed` authority,
 carry active-run shared state, publish no actions, and report no missing
 completeness field. They normalize to
 `combat_transition(setup|resolution) + no_action` and cannot inherit v1
-authority. No other context may compose with `no_action`.
+authority. Preview.69 also admits the exact new/resumed-run
+`run_transition(setup/awaiting_run_state) + no_action` mounting gap. That exact
+actionless state may omit shared HUD only with the typed
+`bridge.shared_state.deferred_during_run_mount_transition` diagnostic and sole
+missing field `shared_visible_state`; Re does not generalize the exception to
+combat or any action-owning state. No other context may compose with
+`no_action`.
+
+A semantic Surface with `readiness=blocked` is different from `no_action` and
+from `unsupported`. It remains the current `bridge_owned` input Surface, keeps
+its player-visible facts, publishes zero legal actions and normalizes to
+`non_actionable + actionAuthority=none`. Re does not invoke the model or infer
+permission from those facts. Unknown source/owner states still require
+`unsupported + none_fail_closed`.
 
 ## State Identity
 
@@ -214,8 +288,9 @@ shared_state + context.kind + surface.kind + actionAuthority
 
 For in-run Bridge-owned states, top-level v2 `shared_state` is the sole persistent
 run/player authority. It is read-only, included in state identity, and cannot
-add actions. Re rejects an in-run semantic Bridge state without it, mismatched combat
-player identity, or incomplete combat potion coverage. Unsupported legacy-owned
+add actions. Re rejects an in-run semantic Bridge state without it except for
+the exact typed actionless run-mount deferral above; it also rejects mismatched
+combat player identity or incomplete combat potion coverage. Unsupported legacy-owned
 states remain fail closed in the current Re runtime. Historical v1 records can
 still be decoded, but no v1 sidecar or mutation path participates in a live
 decision.
@@ -400,7 +475,8 @@ serialization never grants common execution semantics.
 Ancient dialogue projects only the revealed prefix ending at the exact current
 line; game-created future line nodes are deliberately excluded. Rest owns only
 exact option controls and Proceed. On v0.109, ordinary single-player Heal uses
-an exact HP witness, Smith must open the exact upgrade child, and unknown
+the native base-heal minimum plus option progression, Smith must open the exact
+upgrade child, and unknown
 enabled options suppress the Surface. Smith's deck selector remains a separate
 purpose-specific Surface. Map projects visible topology and exact current choices;
 asynchronous completion requires map closure or the exact selected current
@@ -424,8 +500,9 @@ stop safely. Historical v1 records are outside the Agent runtime.
   -> NormalizedCurrentState with explicit authority
   -> imported opaque legal actions
   -> DeepSeek selects one allowedActionId
-  -> request_id + expected_state_id + action_id
-  -> command identity/lifecycle verification
+  -> current controller lease
+  -> request_id + expected_state_id + action_id + lease generation
+  -> command identity/attribution/lifecycle verification
   -> append-only decision evidence
 ```
 
@@ -448,6 +525,31 @@ neither can add actions to a Bridge-owned surface.
 
 ## Evidence And Next Step
 
+Preview.69 has two final-MVID records under SHA `914974b5...`, MVID
+`1e457e86...`, runtime `7a312974...`. The first completed a 127-decision
+saved-run-to-menu boundary with 114 settled actions, 11 safe stale refusals and
+one confirmed command whose successor checkpoint exceeded Re's budget. The
+second completed a fresh 107-decision character-select-to-menu journey with
+106 settled actions and no stale or runtime failure. Their provenance is
+`unrecorded`, so neither is Organic or persistent qualification.
+
+New Re runs write immutable `run-summary.json`; decision-limit exhaustion is
+incomplete and exits non-zero. A transient provider transport failure receives
+at most one pre-mutation retry. These changes do not alter Gateway completion or
+unknown-no-retry. Preview.70 later loaded as SHA `28c32f40...` / MVID
+`6f169dfe...` and supplied three more runs. Preview.71 later loaded as SHA
+`fd0f7c56...` / MVID `0acccd3d...` and supplied the current defect evidence.
+Preview.72 was later rebuilt/installed/loaded as SHA `debc229e...` / MVID
+`6d9d4adf...` / runtime `b2332a06...`. Current-runtime run
+`run-20260728132337-ce2195` proves broad bounded mutation and one-game
+supervision on that identity, but not repaired-branch completion, Organic
+evidence, Inspection readiness or persistent qualification.
+Preview.75 loaded as SHA `ddce17cf...` / MVID `23ac5aad...` / runtime
+`fc2ea037...`; two exact runs completed 175- and 282-decision boundaries with
+429 settled mutations and 25 safe stale refusals. State-bound Inspection and
+ordinary relic purchase are exercised; Kifuda and post-change stale-rate
+comparison remain open.
+
 Current v0.109 evidence includes merchant removal, event/rest upgrade, ordinary
 rest, ordinary combat, Brain Leech event card acquisition,
 reward/card-reward/map canaries, and treasure choose/Proceed. Historical
@@ -457,7 +559,7 @@ other previously qualified shapes. Historical evidence remains visible but does
 not grant current-build authority. Draw order remains intentionally hidden.
 
 Composite state-plus-inspection reads are coherence checked. Earlier long runs
-long runs recorded 23 transient drifts during fast game transitions; every one
+recorded 23 transient drifts during fast game transitions; every one
 produced no prompt and no execution, and the next tick obtained a fresh state.
 This is observable retry/ergonomics debt, not permission to accept mixed
 evidence.

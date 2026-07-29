@@ -8,7 +8,7 @@ matrix. This document records the Re-SpireAgent consumption boundary.
 
 ## Bridge v2 Current Client Contract
 
-Re strictly decodes `2.0-preview.63`. It accepts Bridge actions only when:
+Re strictly decodes `2.0-preview.77`. It accepts Bridge actions only when:
 
 - game, Modset, Bridge assembly SHA-256, MVID, and runtime identities match
   exact scoped capabilities and state;
@@ -17,14 +17,36 @@ Re strictly decodes `2.0-preview.63`. It accepts Bridge actions only when:
   are mutually consistent;
 - one explicit capability scope authorizes that exact Surface operation for
   this build;
+- every persistent `qualification_*` scope links to exactly one current,
+  exact-applicable `qualified` package with
+  `contract_kind=explicit_native_contract`, the same operation fingerprint,
+  completion boundary and witness;
 - every dynamic scope references the Gateway permission ledger's unique
   current active exact-environment/runtime/Patch grant;
+- each dynamic scope and grant agree on whether admission came from an
+  installed package or the current source-resolved encounter;
 - the current Surface is Bridge-advertised and every action is state-bound.
+
+Formal `semantic_state_id` and `authority_projection_id` are required raw
+state identities. Composite `state_id` binds both for stale-action protection.
+Contract/identity shadows and permission/qualification histories are absent
+from current state and strategy input; historical shadows remain readable only
+by the recorded-run audit tool.
 
 The current exact identity determines the Gateway-emitted explicit operation
 scopes. The table describes supported projections and historical evidence
 diversity; it does not transfer permission between game builds or Gateway
 artifacts.
+
+Re keeps three actionless boundaries distinct:
+
+- `blocked` means the semantic Surface and current input owner are known, but
+  the exact runtime scope authorizes none of its mutation operations. Re keeps
+  the visible Surface, projects `non_actionable`, and does not call the model.
+- `settling + no_action` means a source-bound native lifecycle is still
+  progressing and no input owner currently publishes a mutation.
+- `unsupported + none_fail_closed` means source, owner, or semantic binding is
+  not established. It must not be relabeled as a known blocked Surface.
 
 | Bridge contract | Re projection | Current v0.109 status |
 |---|---|---|
@@ -39,7 +61,7 @@ artifacts.
 | event acquisition, reward, card reward, map, shop, treasure, card bundle | purpose-specific typed Context + Surface | current-build action canaries |
 | `character_select` | `menu + character_select` with no active-run shared state | current-build action canary |
 | `event_dialogue` / `event_option` | revealed prefix or typed visible options/tooltips | current-build action canaries |
-| `deck_transform_selection` | `event + deck_transform_selection`, exact selected instances and random-uncommitted preview | Whispering Hollow action canary; other origins fail closed |
+| `deck_transform_selection` | source-qualified context plus exact selected instances and random-uncommitted preview | Whispering Hollow has historical action-canary evidence; New Leaf is source/build supported but exact-runtime mutation pending; all other origins fail closed |
 | `wood_carvings_replacement_selection` | `event + wood_carvings_replacement_selection`, exact Bird/Torus branch and known deterministic replacement | Bird select/cancel/reselect/confirm and exact run-deck post-state exercised on preview.56; Torus and repeat diversity pending |
 | `deck_enchant_selection` | `event + deck_enchant_selection`, exact target enchantment, selected instances, and selecting/preview stages | Self-Help Book action canary; semantic exact-card post-state confirmed, other origins fail closed |
 | `generated_card_choice` | source-discriminated run-deck, free combat-hand, unchanged-cost combat-hand, or immediate-effect choice | Preview.60 added strict Quasar and forced Knowledge Demon branches; current Preview.61 is loaded but those branches still need independently scoped Organic evidence. Discovery and every unbound source fail closed. |
@@ -51,7 +73,7 @@ artifacts.
 | top-level `shared_state` | persistent run/player facts, text keywords, and typed read-only card previews | read-only and state-bound; preview facts grant no actions |
 | `visibility` / `inspection_catalog` | bounded default-plus-inspection closure and available typed reads | read-only declarations; partial catalog; no action authority |
 | coherent observation bundle | one state plus requested catalogued Inspections under one state/environment identity | strict decoder and real shop + run-deck read exercised; stale reads and scope mismatches with a freshly changed state retry as whole-read drift, while same-state mismatches fail hard |
-| `contract_instance_shadow` | manifest contract, operations, legacy authority tier, and limitations | diagnostic only; always non-authorizing and not used to build allowed actions |
+| `semantic_state_id` / `authority_projection_id` | formal semantic facts identity and current relevant authority identity | required; composite `state_id` binds both; no permission history or shadow enters strategy state |
 
 Map `current_position` is nullable and may be omitted by the Bridge serializer
 while the map first opens or transitions from rewards. Re treats that shape as

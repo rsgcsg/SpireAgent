@@ -21,7 +21,8 @@ internal sealed class BridgeCommandLedger
     public BridgeCommandResponse Submit(
         BridgeCommandRequest request,
         string currentStateId,
-        RegisteredBridgeAction? action)
+        RegisteredBridgeAction? action,
+        Func<BridgeCommandAdmission>? admission = null)
     {
         string requestId = request.RequestId ?? string.Empty;
         string expectedStateId = request.ExpectedStateId ?? string.Empty;
@@ -46,7 +47,23 @@ internal sealed class BridgeCommandLedger
                     "The bridge session command ledger is full. Restart the game bridge before submitting more actions.");
             }
 
-            var command = new MutableCommand(requestId, expectedStateId, actionId, _clock());
+            BridgeCommandAdmission? admitted = admission?.Invoke();
+            if (admitted is { Accepted: false })
+            {
+                return RejectedResponse(
+                    requestId,
+                    expectedStateId,
+                    actionId,
+                    admitted.ErrorCode ?? "command_admission_rejected",
+                    admitted.Detail ?? "The command was rejected before entering the command ledger.");
+            }
+
+            var command = new MutableCommand(
+                requestId,
+                expectedStateId,
+                actionId,
+                _clock(),
+                admitted?.Attribution);
             _commands[requestId] = command;
 
             if (!string.Equals(expectedStateId, currentStateId, StringComparison.Ordinal))
@@ -80,7 +97,10 @@ internal sealed class BridgeCommandLedger
                         _clock(),
                         start.CompletionProbe,
                         start.CompletionEvidence,
-                        start.AllowIntermediateStateChanges);
+                        start.AllowIntermediateStateChanges,
+                        start.CompletionBoundary,
+                        start.CompletionEvidenceProvider,
+                        start.CompletionBoundaryProvider);
                 else
                     command.Reject(
                         start.ErrorCode ?? "action_rejected",
@@ -116,14 +136,22 @@ internal sealed class BridgeCommandLedger
                     if (command.CompletionProbe?.Invoke() == true)
                     {
                         command.Complete(
-                            command.CompletionEvidence ?? "action_specific_completion_probe",
+                            command.CompletionEvidenceProvider?.Invoke()
+                                ?? command.CompletionEvidence
+                                ?? "action_specific_completion_probe",
+                            command.CompletionBoundaryProvider?.Invoke()
+                                ?? command.CompletionBoundary,
                             currentStateId,
                             now);
                     }
                     else if (command.CompletionProbe == null
                              && !string.Equals(command.ExpectedStateId, currentStateId, StringComparison.Ordinal))
                     {
-                        command.Complete("state_changed_after_action_start", currentStateId, now);
+                        command.Complete(
+                            "state_changed_after_action_start",
+                            command.CompletionBoundary,
+                            currentStateId,
+                            now);
                     }
                     else if (command.CompletionProbe != null
                              && !command.AllowIntermediateStateChanges
@@ -191,11 +219,17 @@ internal sealed class BridgeCommandLedger
     {
         private readonly List<BridgeCommandEvent> _events = new();
 
-        public MutableCommand(string requestId, string expectedStateId, string actionId, DateTimeOffset now)
+        public MutableCommand(
+            string requestId,
+            string expectedStateId,
+            string actionId,
+            DateTimeOffset now,
+            BridgeCommandAttribution? attribution)
         {
             RequestId = requestId;
             ExpectedStateId = expectedStateId;
             ActionId = actionId;
+            Attribution = attribution;
             Status = "received";
             Outcome = "pending";
             _events.Add(new BridgeCommandEvent("received", now, "request_recorded", null, null));
@@ -204,6 +238,7 @@ internal sealed class BridgeCommandLedger
         public string RequestId { get; }
         public string ExpectedStateId { get; }
         public string ActionId { get; }
+        public BridgeCommandAttribution? Attribution { get; }
         public string Status { get; private set; }
         public string Outcome { get; private set; }
         public string? ObservedStateId { get; private set; }
@@ -211,6 +246,10 @@ internal sealed class BridgeCommandLedger
         public Func<bool>? CompletionProbe { get; private set; }
         public string? CompletionEvidence { get; private set; }
         public bool AllowIntermediateStateChanges { get; private set; }
+        public string CompletionBoundary { get; private set; } =
+            BridgeOperationQualificationCatalog.GatewayCompletionBoundary;
+        public Func<string?>? CompletionEvidenceProvider { get; private set; }
+        public Func<string?>? CompletionBoundaryProvider { get; private set; }
 
         public void Validate(string observedStateId, DateTimeOffset now)
         {
@@ -224,7 +263,10 @@ internal sealed class BridgeCommandLedger
             DateTimeOffset now,
             Func<bool>? completionProbe,
             string? completionEvidence,
-            bool allowIntermediateStateChanges)
+            bool allowIntermediateStateChanges,
+            string completionBoundary,
+            Func<string?>? completionEvidenceProvider,
+            Func<string?>? completionBoundaryProvider)
         {
             Status = "started";
             Outcome = "pending";
@@ -233,14 +275,22 @@ internal sealed class BridgeCommandLedger
             CompletionProbe = completionProbe;
             CompletionEvidence = completionEvidence;
             AllowIntermediateStateChanges = allowIntermediateStateChanges;
+            CompletionBoundary = completionBoundary;
+            CompletionEvidenceProvider = completionEvidenceProvider;
+            CompletionBoundaryProvider = completionBoundaryProvider;
             _events.Add(new BridgeCommandEvent("started", now, "ui_interaction_started", null, null));
         }
 
-        public void Complete(string evidence, string observedStateId, DateTimeOffset now)
+        public void Complete(
+            string evidence,
+            string completionBoundary,
+            string observedStateId,
+            DateTimeOffset now)
         {
             Status = "completed";
             Outcome = "confirmed";
             ObservedStateId = observedStateId;
+            CompletionBoundary = completionBoundary;
             _events.Add(new BridgeCommandEvent("completed", now, evidence, null, null));
         }
 
@@ -275,6 +325,12 @@ internal sealed class BridgeCommandLedger
             Status,
             Outcome,
             ObservedStateId,
-            _events.ToArray());
+            _events.ToArray())
+        {
+            Attribution = this.Attribution,
+            CompletionBoundary = Status is "started" or "completed"
+                ? this.CompletionBoundary
+                : null
+        };
     }
 }

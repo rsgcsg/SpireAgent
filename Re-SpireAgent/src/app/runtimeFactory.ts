@@ -27,6 +27,16 @@ export async function createRuntime(config: RuntimeConfig): Promise<{
       runId,
       startedAt: new Date().toISOString(),
       agentVersion: "0.1.0",
+      ...(config.runtime.agentSourceRevision && config.runtime.agentSourceDigest && config.runtime.agentWorktreeStatus
+        ? {
+            agentSource: {
+              revision: config.runtime.agentSourceRevision,
+              sourceDigest: config.runtime.agentSourceDigest,
+              worktreeStatus: config.runtime.agentWorktreeStatus,
+              declaredBy: "runtime_environment" as const
+            }
+          }
+        : {}),
       adapter: {
         adapterId: adapterDescription.adapterId,
         ...(adapterDescription.adapterVersion ? { adapterVersion: adapterDescription.adapterVersion } : {}),
@@ -68,6 +78,8 @@ export async function createConnectorRuntime(config: RuntimeConfig): Promise<{
   const lock = await acquireRuntimeLock(config.runtime.dataDir);
   try {
     const adapter = new Sts2McpHybridAdapter(config.mcp.baseUrl, config.mcp.timeoutMs, {
+      startupWaitMs: config.mcp.startupWaitMs,
+      startupPollMs: config.mcp.startupPollMs,
       commandPollMs: config.mcp.commandPollMs,
       commandTimeoutMs: config.mcp.commandTimeoutMs
     });
@@ -80,7 +92,15 @@ export async function createConnectorRuntime(config: RuntimeConfig): Promise<{
       endTurnTimeoutMs: config.runtime.endTurnSettlementTimeoutMs,
       roomTransitionTimeoutMs: config.runtime.roomTransitionSettlementTimeoutMs
     });
-    return { adapter, normalize, settlement, release: () => lock.release() };
+    return {
+      adapter,
+      normalize,
+      settlement,
+      release: async () => {
+        await adapter.close();
+        await lock.release();
+      }
+    };
   } catch (error) {
     await lock.release();
     throw error;

@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "source_protocol": "2.0-preview.77",
+  "status": "migration_active_live_evidence_pending",
+  "target": {
+    "connector_shadow_count": 0,
+    "permanent_dual_read_path_count": 0,
+    "production_action_publication_path_count": 1,
+    "production_authority_resolver_count": 1,
+    "operation_authority_usage_count": 0,
+    "fallback_authority_contract_count": 0,
+    "persistent_fallback_claim_admission_count": 0,
+    "supported_mixed_explicit_fallback_surface_count": 0,
+    "bulk_candidate_startup_path_count": 0,
+    "re_native_completion_reconstruction_count": 0,
+    "control_history_semantic_identity_input_count": 0
+  },
+  "current": {
+    "connector_shadow_count": 0,
+    "permanent_dual_read_path_count": 0,
+    "production_action_publication_path_count": 1,
+    "production_authority_resolver_count": 1,
+    "operation_authority_usage_count": 3,
+    "explicit_native_contract_count": 7,
+    "explicit_contract_digest_admission_count": 7,
+    "fallback_authority_contract_count": 80,
+    "persistent_fallback_claim_admission_count": 0,
+    "supported_mixed_explicit_fallback_surface_count": 4,
+    "bulk_candidate_startup_path_count": 0,
+    "re_native_completion_reconstruction_count": 0,
+    "control_history_semantic_identity_input_count": 0
+  },
+  "first_pilot": {
+    "family": "shop_relic_purchase_with_kifuda_child_handoff",
+    "implementation": "implemented_and_fixture_tested",
+    "authority_cutover": "contract_digest_for_explicit_contracts",
+    "live_evidence": "ordinary_relic_positive_preview_75; preview_76_not_exercised; kifuda_not_exercised",
+    "rollback": "whole_artifact_restore"
+  },
+  "rules": [
+    "Unknown rows may become typed unsupported or code_required; never fabricate an explicit contract to reduce a count.",
+    "Manifest migration fallbacks may be volatile session trials but cannot be assembled, loaded, reloaded, superseded, or rolled back as durable claims.",
+    "Every temporary comparison path must be removed on acceptance or rejection.",
+    "This inventory describes source structure and cannot claim build, install, load, canary, Organic, or qualification evidence."
+  ]
+}

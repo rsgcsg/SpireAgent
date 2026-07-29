@@ -93,11 +93,11 @@ internal sealed class TreasureRoomSurfaceProvider : IBridgeSurfaceProvider
                                 && holder.MouseFilter != Control.MouseFilterEnum.Ignore;
 
         step = "surface_projection";
-        string stage = !chestOpened
-            ? chest.IsEnabled && McpMod.IsNodeVisible(chest) ? "closed" : "opening"
-            : collectionOpen
-                ? currentRelics.Length > 0 ? "relic_choice" : "opening"
-                : "completed";
+        string stage = TreasureLifecycleFacts.Stage(
+            chestOpened,
+            collectionOpen,
+            currentRelics.Length,
+            chest.IsEnabled && McpMod.IsNodeVisible(chest));
         VisibleTreasureRelic[] visibleRelics = holderVisible
             ? new[] { BuildRelic(currentRelics[0], entities) }
             : Array.Empty<VisibleTreasureRelic>();
@@ -122,7 +122,7 @@ internal sealed class TreasureRoomSurfaceProvider : IBridgeSurfaceProvider
                 "open_treasure_chest",
                 "reveal",
                 "Open the treasure chest",
-                "NTreasureRoom.OnChestButtonReleased+OpenChest+InitializeRelics",
+                "NTreasureRoom.OnChestButtonReleased+OpenChest+native-result-stage",
                 () => StartOpen(room, uiRoom, chest),
                 new[] { new ActionEntityBinding("treasure_room", roomId) }));
         }
@@ -253,12 +253,32 @@ internal sealed class TreasureRoomSurfaceProvider : IBridgeSurfaceProvider
 
         expectedChest.ForceClick();
         return BridgeActionStartResult.Started(
-            () => IsCurrent(expectedRoom, expectedUi)
-                  && TryReadBool(ChestOpenedField, expectedUi, out bool isOpened)
-                  && isOpened
-                  && RunManager.Instance.TreasureRoomRelicSynchronizer.CurrentRelics != null,
-            "treasure_chest_opened_and_relic_result_initialized",
+            () => OpenChestResultReached(expectedRoom, expectedUi),
+            "treasure_chest_opened_and_result_stage_reached",
             allowIntermediateStateChanges: true);
+    }
+
+    private static bool OpenChestResultReached(
+        TreasureRoom expectedRoom,
+        NTreasureRoom expectedUi)
+    {
+        if (!IsCurrent(expectedRoom, expectedUi)
+            || !TryReadBool(ChestOpenedField, expectedUi, out bool chestOpened)
+            || !TryReadBool(CollectionOpenField, expectedUi, out bool collectionOpen))
+        {
+            return false;
+        }
+
+        int relicCount = RunManager.Instance.TreasureRoomRelicSynchronizer.CurrentRelics?.Count ?? 0;
+        NProceedButton proceed = expectedUi.ProceedButton;
+        bool normalProceedReady = !proceed.IsSkip
+                                  && proceed.IsEnabled
+                                  && McpMod.IsNodeVisible(proceed);
+        return TreasureLifecycleFacts.OpenChestResultReached(
+            chestOpened,
+            collectionOpen,
+            relicCount,
+            normalProceedReady);
     }
 
     private static BridgeActionStartResult StartChoose(
@@ -430,4 +450,27 @@ internal static class TreasureVisibilityFacts
 {
     public static bool CanReadSingleplayerRelic(bool collectionOpen, int currentRelicCount) =>
         collectionOpen && currentRelicCount == 1;
+}
+
+internal static class TreasureLifecycleFacts
+{
+    public static string Stage(
+        bool chestOpened,
+        bool collectionOpen,
+        int currentRelicCount,
+        bool chestActionable) =>
+        !chestOpened
+            ? chestActionable ? "closed" : "opening"
+            : collectionOpen
+                ? currentRelicCount > 0 ? "relic_choice" : "opening"
+                : "completed";
+
+    public static bool OpenChestResultReached(
+        bool chestOpened,
+        bool collectionOpen,
+        int currentRelicCount,
+        bool normalProceedReady) =>
+        chestOpened
+        && (collectionOpen && currentRelicCount > 0
+            || !collectionOpen && normalProceedReady);
 }

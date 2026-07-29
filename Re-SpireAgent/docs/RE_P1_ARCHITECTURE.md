@@ -10,7 +10,9 @@ RE-P1 has one responsibility: make one LLM decision against the current MCP stat
 2. Domain plane: semantic-context and interaction-surface discriminated unions plus executable action types.
 3. Decision plane: deterministic allowed actions, fixed prompts, strict DeepSeek decision.
 4. Runtime plane: stale-state validation, execution, settlement, bounded orchestration.
-5. Evidence plane: immutable prompt/response/snapshot files and append-only decisions.
+5. Evidence plane: immutable prompt/response/snapshot files, append-only
+   decisions, exact runtime-source identity, and non-authorizing baseline
+   reports.
 
 Dependencies point inward toward the domain. Raw MCP types do not cross into decision logic.
 
@@ -106,12 +108,14 @@ Action-capable CLI commands also acquire an exclusive local lock, so two RE-P1 p
 
 ## Run Boundaries
 
-`agent:run` is a one-game command, not a menu automation loop. It may finish
+`agent:run` is a one-game command by default, not a menu automation loop. It may finish
 the current run's Bridge-owned game-over intro/summary/return lifecycle, but it
 stops and records a non-executed boundary at the next top-level `menu`; it
-therefore cannot ask the model to continue or start another run. The lower-level
-`agent:tick` command intentionally retains the ability to exercise a supported
-menu action when a developer explicitly requests that protocol test.
+therefore cannot ask the model to continue or start another run. An explicit
+`--allow-run-entry` invocation may cross that boundary only through
+`bridge_advertised` authority; it does not permit legacy reconstruction. The
+lower-level `agent:tick` command intentionally retains the ability to exercise a
+supported menu action when a developer explicitly requests that protocol test.
 
 ## Retired Legacy Inference
 
@@ -126,9 +130,15 @@ legacy shop fact or action is merged into a current observation.
 
 ## Schema Compatibility
 
-New decisions currently use normalized-state schema version 26, Prompt schema
+New decisions currently use normalized-state schema version 30, Prompt schema
 version 3, and decision-record version 2. The normalized schema has continued
 to evolve as current-build Surface and visible-state contracts were added;
 Prompt v3 retains explicit action authority in the context/surface split.
 Older JSONL remains append-only historical evidence and replay-readable as
 stored JSON, but it is not silently reinterpreted as the current projection.
+
+The public Operator Shell records both Git revision and a digest of the
+runtime-relevant source tree. Revision alone is insufficient when a developer
+runs a dirty worktree. `agent:baseline-report` joins that identity with exact
+Gateway/game/Modset/provider/Prompt/outcome metrics without reading Prompt
+content into its output or creating any action, permission, or qualification.

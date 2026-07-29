@@ -13,6 +13,7 @@ public static partial class McpMod
 {
     private const int MaxBridgeV2CommandBodyBytes = 16 * 1024;
     private const int MaxBridgeV2ObservationBundleBodyBytes = 8 * 1024;
+    private const int MaxBridgeV2ControlBodyBytes = 4 * 1024;
 
     private static void HandleGetBridgeV2Capabilities(HttpListenerResponse response)
     {
@@ -187,13 +188,16 @@ public static partial class McpMod
         if (command == null
             || !IsSafeBridgeIdentifier(command.RequestId, 128)
             || !IsSafeBridgeIdentifier(command.ExpectedStateId, 128)
-            || !IsSafeBridgeIdentifier(command.ActionId, 128))
+            || !IsSafeBridgeIdentifier(command.ActionId, 128)
+            || !IsSafeBridgeIdentifier(command.ClientSessionId, 128)
+            || !IsSafeBridgeIdentifier(command.ControllerLeaseId, 128)
+            || command.ControllerGeneration is null or <= 0)
         {
             SendBridgeV2Error(
                 response,
                 400,
                 "invalid_command_contract",
-                "request_id, expected_state_id, and action_id are required opaque identifiers.");
+                "request_id, expected_state_id, action_id, client_session_id, controller_lease_id, and a positive controller_generation are required.");
             return;
         }
 
@@ -213,6 +217,150 @@ public static partial class McpMod
         catch (Exception ex)
         {
             SendBridgeV2InternalError(response, "command_submission_failed", ex);
+        }
+    }
+
+    private static void HandlePostBridgeV2ClientRegistration(
+        HttpListenerRequest request,
+        HttpListenerResponse response)
+    {
+        BridgeClientRegistrationRequest? registration = ReadBridgeV2JsonBody<BridgeClientRegistrationRequest>(
+            request,
+            response,
+            MaxBridgeV2ControlBodyBytes);
+        if (registration == null)
+            return;
+
+        if (!IsSafeBridgeIdentifier(registration.ClientInstanceId, 128)
+            || !IsSafeBridgeIdentifier(registration.ProductId, 64)
+            || !IsSafeBridgeLabel(registration.ProductName, 128)
+            || !IsSafeBridgeIdentifier(registration.ProductVersion, 64))
+        {
+            SendBridgeV2Error(
+                response,
+                400,
+                "invalid_client_registration",
+                "client_instance_id, product_id, product_name, and product_version are required bounded local attribution fields.");
+            return;
+        }
+
+        try
+        {
+            BridgeClientRegistrationResponse result = BridgeV2Runtime.RegisterClient(registration);
+            SendJson(response, result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            SendBridgeV2Error(response, 409, "client_registration_conflict", ex.Message);
+        }
+        catch (Exception ex)
+        {
+            SendBridgeV2InternalError(response, "client_registration_failed", ex);
+        }
+    }
+
+    private static void HandleGetBridgeV2Clients(HttpListenerResponse response)
+    {
+        try
+        {
+            SendJson(response, BridgeV2Runtime.GetControlSnapshot());
+        }
+        catch (Exception ex)
+        {
+            SendBridgeV2InternalError(response, "client_registry_read_failed", ex);
+        }
+    }
+
+    private static void HandleGetBridgeV2Controller(HttpListenerResponse response)
+    {
+        try
+        {
+            SendJson(response, BridgeV2Runtime.GetControlSnapshot());
+        }
+        catch (Exception ex)
+        {
+            SendBridgeV2InternalError(response, "controller_status_read_failed", ex);
+        }
+    }
+
+    private static void HandlePostBridgeV2Controller(
+        string operation,
+        HttpListenerRequest request,
+        HttpListenerResponse response)
+    {
+        BridgeControllerLeaseRequest? leaseRequest = ReadBridgeV2JsonBody<BridgeControllerLeaseRequest>(
+            request,
+            response,
+            MaxBridgeV2ControlBodyBytes);
+        if (leaseRequest == null)
+            return;
+
+        bool acquire = string.Equals(operation, "acquire", StringComparison.Ordinal);
+        if (!IsSafeBridgeIdentifier(leaseRequest.ClientSessionId, 128)
+            || (!acquire && !IsSafeBridgeIdentifier(leaseRequest.ControllerLeaseId, 128))
+            || (!acquire && leaseRequest.ControllerGeneration is null or <= 0))
+        {
+            SendBridgeV2Error(
+                response,
+                400,
+                "invalid_controller_contract",
+                acquire
+                    ? "client_session_id is required to acquire mutation control."
+                    : "client_session_id, controller_lease_id, and a positive controller_generation are required.");
+            return;
+        }
+
+        try
+        {
+            BridgeControllerLeaseResponse result = operation switch
+            {
+                "acquire" => BridgeV2Runtime.AcquireController(leaseRequest),
+                "renew" => BridgeV2Runtime.RenewController(leaseRequest),
+                "release" => BridgeV2Runtime.ReleaseController(leaseRequest),
+                _ => throw new InvalidOperationException("Unknown controller operation.")
+            };
+            response.StatusCode = result.Status switch
+            {
+                "controller_acquired" or "controller_already_held" or "controller_renewed"
+                    or "controller_released" => 200,
+                "controller_lease_held" or "controller_lease_stale" => 409,
+                "client_session_not_found" => 404,
+                _ => 409
+            };
+            SendJson(response, result);
+        }
+        catch (Exception ex)
+        {
+            SendBridgeV2InternalError(response, "controller_operation_failed", ex);
+        }
+    }
+
+    private static T? ReadBridgeV2JsonBody<T>(
+        HttpListenerRequest request,
+        HttpListenerResponse response,
+        int maxBytes)
+    {
+        if (request.ContentLength64 > maxBytes)
+        {
+            SendBridgeV2Error(response, 413, "request_too_large", $"Request exceeds {maxBytes} bytes.");
+            return default;
+        }
+
+        string body;
+        using (var reader = new StreamReader(request.InputStream, request.ContentEncoding))
+            body = reader.ReadToEnd();
+
+        try
+        {
+            T? result = JsonSerializer.Deserialize<T>(body, _jsonOptions);
+            if (result == null)
+                SendBridgeV2Error(response, 400, "invalid_json", "Request body must be a JSON object.");
+            return result;
+        }
+        catch (JsonException)
+        {
+            SendBridgeV2Error(response, 400, "invalid_json", "Request body must be valid JSON.");
+            return default;
         }
     }
 
@@ -265,6 +413,13 @@ public static partial class McpMod
                 return false;
         }
         return true;
+    }
+
+    private static bool IsSafeBridgeLabel(string? value, int maxLength)
+    {
+        if (string.IsNullOrWhiteSpace(value) || value.Length > maxLength)
+            return false;
+        return value.All(character => !char.IsControl(character));
     }
 
     private static void SendBridgeV2InternalError(

@@ -225,6 +225,7 @@ internal sealed class GeneratedCardChoiceSurfaceProvider : IBridgeSurfaceProvide
         if (holder == null)
             return BridgeActionStartResult.Rejected("card_not_actionable", "The advertised generated card is no longer clickable.");
 
+        IReadOnlyList<CardModel> offeredCards = binding.Cards.ToArray();
         holder.EmitSignal(NCardHolder.SignalName.Pressed, holder);
         return expectedSource switch
         {
@@ -237,6 +238,18 @@ internal sealed class GeneratedCardChoiceSurfaceProvider : IBridgeSurfaceProvide
                         lead.Player.Deck.Cards,
                         expectedCard),
                     "lead_paperweight_choice_closed_and_exact_generated_card_added_to_run_deck",
+                    allowIntermediateStateChanges: true),
+            GeneratedCardChoiceSourceBinding.HeftyTabletBinding tablet =>
+                BridgeActionStartResult.Started(
+                    () => HeftyTabletRunCardAcquisitionWitness.Selected(
+                        !GeneratedCardChoiceSourceBinding.IsActive(tablet.Token),
+                        !IsCurrent(expectedScreen),
+                        tablet.BaselineDeck,
+                        tablet.Player.Deck.Cards,
+                        expectedCard,
+                        offeredCards,
+                        card => card.GetType() == typeof(Injury)),
+                    "hefty_tablet_choice_closed_and_exact_rare_card_plus_injury_added_to_run_deck",
                     allowIntermediateStateChanges: true),
             GeneratedCardChoiceSourceBinding.GeneratedCombatPotionBinding potion =>
                 BridgeActionStartResult.Started(
@@ -294,6 +307,17 @@ internal sealed class GeneratedCardChoiceSurfaceProvider : IBridgeSurfaceProvide
                         offeredCards),
                     "lead_paperweight_choice_skipped_and_run_deck_unchanged",
                     allowIntermediateStateChanges: true),
+            GeneratedCardChoiceSourceBinding.HeftyTabletBinding tablet =>
+                BridgeActionStartResult.Started(
+                    () => HeftyTabletRunCardAcquisitionWitness.Skipped(
+                        !GeneratedCardChoiceSourceBinding.IsActive(tablet.Token),
+                        !IsCurrent(expectedScreen),
+                        tablet.BaselineDeck,
+                        tablet.Player.Deck.Cards,
+                        offeredCards,
+                        card => card.GetType() == typeof(Injury)),
+                    "hefty_tablet_choice_skipped_and_exact_injury_added_to_run_deck",
+                    allowIntermediateStateChanges: true),
             GeneratedCardChoiceSourceBinding.GeneratedCombatPotionBinding potion =>
                 BridgeActionStartResult.Started(
                     () => CombatPotionSkipCompleted(potion, expectedScreen, offeredCards),
@@ -318,10 +342,11 @@ internal sealed class GeneratedCardChoiceSurfaceProvider : IBridgeSurfaceProvide
         IBridgeContext context) => source switch
     {
         GeneratedCardChoiceSourceBinding.LeadPaperweightBinding lead =>
-            context is EventBridgeContext eventContext
-            && string.Equals(eventContext.EventId, "NEOW", StringComparison.Ordinal)
-            && lead.SourceRelic is LeadPaperweight
+            lead.SourceRelic.GetType() == typeof(LeadPaperweight)
             && lead.Player.Relics.Any(relic => ReferenceEquals(relic, lead.SourceRelic)),
+        GeneratedCardChoiceSourceBinding.HeftyTabletBinding tablet =>
+            tablet.SourceRelic.GetType() == typeof(HeftyTablet)
+            && tablet.Player.Relics.Any(relic => ReferenceEquals(relic, tablet.SourceRelic)),
         GeneratedCardChoiceSourceBinding.GeneratedCombatPotionBinding potion =>
             context is CombatBridgeContext
             && string.Equals(
@@ -360,6 +385,13 @@ internal sealed class GeneratedCardChoiceSurfaceProvider : IBridgeSurfaceProvide
                 && binding.Cards.Count == 2
                 && binding.Cards.All(card =>
                     card.Pile == null && !ContainsReference(lead.BaselineDeck, card)),
+            GeneratedCardChoiceSourceBinding.HeftyTabletBinding tablet =>
+                binding.CanSkip
+                && binding.Cards.Count == 3
+                && binding.Cards.All(card =>
+                    card.Pile == null
+                    && card.Rarity == CardRarity.Rare
+                    && !ContainsReference(tablet.BaselineDeck, card)),
             GeneratedCardChoiceSourceBinding.GeneratedCombatPotionBinding potion =>
                 binding.CanSkip
                 && binding.Cards.Count == 3
@@ -412,6 +444,23 @@ internal sealed class GeneratedCardChoiceSurfaceProvider : IBridgeSurfaceProvide
                 "LeadPaperweight.AfterObtained -> CardPileCmd.Add(Deck) exact outcome"
             },
             "This exact branch is limited to Lead Paperweight generated run-deck acquisition."),
+        GeneratedCardChoiceSourceBinding.HeftyTabletBinding => new GeneratedChoiceSemantics(
+            "acquire_one_generated_rare_card_plus_injury",
+            "run_deck",
+            "unchanged",
+            null,
+            "select_generated_run_card",
+            "skip_generated_run_card_choice",
+            cardName => $"Add {cardName} and an Injury to the run deck",
+            "HeftyTablet.AfterObtained+NChooseACardSelectionScreen.SelectHolder+exact-selected-card-and-Injury-deck-witness",
+            "HeftyTablet.AfterObtained+NChooseACardSelectionScreen.OnSkipButtonReleased+exact-Injury-deck-witness",
+            "contract_complete_for_hefty_tablet_generated_rare_card_plus_injury_acquisition",
+            new[]
+            {
+                "RelicCmd.Obtain(HeftyTablet) exact active source binding",
+                "HeftyTablet.AfterObtained -> selected Rare card plus exact new Injury -> CardPileCmd.Add(Deck)"
+            },
+            "This exact branch is limited to native sealed Hefty Tablet; its Injury side effect is part of the decision contract."),
         GeneratedCardChoiceSourceBinding.GeneratedCombatPotionBinding potion => new GeneratedChoiceSemantics(
             "choose_one_generated_combat_card",
             "combat_hand",

@@ -36,6 +36,23 @@ the capability inventory and missing scenario/eval infrastructure.
 
 ## STS2 Gateway
 
+Preferred root entrypoints:
+
+```bash
+npm run connector -- inspect
+npm run connector -- test
+npm run connector -- audit
+npm run connector -- build
+npm run connector -- install
+npm run connector -- verify-loaded-artifact
+npm run connector -- collect-evidence
+```
+
+The CLI is a thin process/file-hash orchestrator over the existing Gateway,
+Re, D and qualification tools. It owns no game semantics, permission,
+completion or compatibility claims. Use `npm run connector -- help` for the
+full command map.
+
 Set `STS2_GAME_DIR` to the exact local Steam installation, then use the
 platform-specific commands in `STS2MCP/README.md` to run C# tests, Python MCP
 syntax checks, and a Release build. Close the game before replacing an

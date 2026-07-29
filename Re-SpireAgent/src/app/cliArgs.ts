@@ -3,9 +3,16 @@ export type CliInvocation =
   | { readonly command: "inspect" }
   | { readonly command: "connector-canary"; readonly actionId: string }
   | { readonly command: "tick"; readonly dryRun: boolean }
-  | { readonly command: "run"; readonly dryRun: boolean; readonly maxTicks?: number; readonly delayMs?: number }
+  | {
+      readonly command: "run";
+      readonly dryRun: boolean;
+      readonly allowRunEntry: boolean;
+      readonly maxTicks?: number;
+      readonly delayMs?: number;
+    }
   | { readonly command: "replay"; readonly runId?: string; readonly decisionId?: string }
   | { readonly command: "prompt-audit"; readonly runId?: string; readonly limitRuns?: number }
+  | { readonly command: "baseline-report"; readonly runId?: string }
   | { readonly command: "prompt-shadow-compare"; readonly runId: string; readonly decisionId: string }
   | { readonly command: "prompt-repeat-baseline"; readonly runId: string; readonly decisionId: string; readonly samples: number; readonly variant: "full" | "shadow" };
 
@@ -29,10 +36,16 @@ export function parseCliInvocation(args: readonly string[]): CliInvocation {
     case "tick":
       return { command, dryRun: parseBooleanFlagSet(command, flags, new Set(["--dry-run"])).has("--dry-run") };
     case "run": {
-      const parsed = parseFlags(command, flags, new Set(["--dry-run", "--max-ticks", "--delay-ms"]), new Set(["--max-ticks", "--delay-ms"]));
+      const parsed = parseFlags(
+        command,
+        flags,
+        new Set(["--dry-run", "--allow-run-entry", "--max-ticks", "--delay-ms"]),
+        new Set(["--max-ticks", "--delay-ms"])
+      );
       return {
         command,
         dryRun: parsed.booleans.has("--dry-run"),
+        allowRunEntry: parsed.booleans.has("--allow-run-entry"),
         ...(parsed.values.get("--max-ticks") ? { maxTicks: parsePositiveInteger("--max-ticks", parsed.values.get("--max-ticks")!) } : {}),
         ...(parsed.values.get("--delay-ms") ? { delayMs: parsePositiveInteger("--delay-ms", parsed.values.get("--delay-ms")!) } : {})
       };
@@ -53,6 +66,13 @@ export function parseCliInvocation(args: readonly string[]): CliInvocation {
         ...(parsed.values.get("--limit-runs")
           ? { limitRuns: parsePositiveInteger("--limit-runs", parsed.values.get("--limit-runs")!) }
           : {})
+      };
+    }
+    case "baseline-report": {
+      const parsed = parseFlags(command, flags, new Set(["--run-id"]), new Set(["--run-id"]));
+      return {
+        command,
+        ...(parsed.values.get("--run-id") ? { runId: parsed.values.get("--run-id") } : {})
       };
     }
     case "prompt-shadow-compare": {

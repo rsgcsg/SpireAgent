@@ -2,7 +2,20 @@
 
 In this project, "SpireAgent" means `Re-SpireAgent` by default.
 
-Current source contract is `2.0-preview.63`; Re normalized schema is `26`.
+Current source contract is `2.0-preview.77`; Re normalized schema is `31`.
+Re records explicit versus migration-fallback contract kind for provenance and
+requires explicit kind on durable qualifications. It does not derive authority
+from either kind.
+Formal semantic/authority identities are strictly decoded; state shadows and
+control histories no longer enter normalized state. Preview.69 runs on one verified loaded identity provide
+real-runtime coverage whose provenance is `unrecorded`, not Organic
+qualification. Preview.70 later loaded, completed a bounded run, and exposed an
+empty-treasure completion defect. Preview.71 later loaded and exposed the
+Hefty/actionless-settling defects. Preview.72 was built/installed/loaded and
+later supplied the Rest failure evidence. Preview.73 repairs the Rest
+minimum-Outcome and blocked semantic-owner boundaries; it is tested, built and
+installed and cold-loaded. Strict Re read-only inspection passed; no Preview.73
+mutation canary has executed.
 Gate 1 is closed as a bounded ordinary-single-player v2 connector baseline.
 Preview.61 supplied the exact Neow's Fury Organic lifecycle; Preview.62 adds
 reviewed compatibility/source registries and policy provenance without
@@ -20,8 +33,10 @@ Bridge v2 REST response (current Re path)
   -> Re-SpireAgent NormalizedCurrentState with action authority
   -> AllowedAction from legal_actions
   -> DeepSeek selects allowedActionId
-  -> submit expected_state_id + action_id
+  -> lazy client registration + controller lease
+  -> submit expected_state_id + action_id + controller generation
   -> poll command settlement
+  -> preserve typed completion boundary and exact continuation handoff
   -> before/after decision record
 ```
 
@@ -35,6 +50,11 @@ submission/polling, and exact identity/evidence recording. Re must not grow
 strict-v2 game legality, native Commit logic, transaction inference, Witness
 reconstruction, permission, or live-versus-Headless content branches.
 
+Preview.71 preserves explicit component-contract candidates only in raw
+evidence. Re does not copy their digests, completion boundary, or risk class
+into `NormalizedCurrentState` or the strategy Prompt. Manifest hypotheses are
+not upgraded by client-side inference.
+
 Required client behavior:
 
 - reject unknown protocol major versions;
@@ -46,10 +66,53 @@ Required client behavior:
 - retain raw request/response and parsed evidence separately;
 - treat `started` as pending and `timed_out` as unknown;
 - verify every command response repeats the submitted request, state, and action
-  identity;
+  identity and admitted controller attribution;
 - treat both `failed` and `timed_out` as unknown outcomes;
 - never auto-retry unknown outcomes;
+- treat `continuation_handoff_observed` as a committed current action followed
+  by a fresh child observation, not as parent transaction settlement;
 - permit only one action-capable Re process through its runtime lock.
+
+Preview.64 keeps Re's local runtime lock as process-local hygiene while adding
+Gateway-wide coordination across Re, MCP and other local mutation clients.
+Read-only observation does not register or acquire control. Immediately before
+the first mutation, Re registers descriptive process metadata, acquires the
+one runtime-bound controller lease, renews it while active, attaches its lease
+ID and generation to each command, and releases it best-effort on shutdown.
+Gateway restart or lease replacement makes cached credentials stale. This is
+not authentication and Re does not decide whether another client may take
+control.
+
+Preview.65 keeps qualification authority in the Gateway. Re strictly decodes
+the operation identity catalog and exact qualification projection, then
+requires each persistent scope to link to one applicable `qualified` package.
+It does not install, approve, revoke, roll back, or persist packages. A
+`session_canary` package only makes the exact operation eligible for the
+Gateway's existing volatile canary state machine.
+
+Preview.66 permits exact packages for the same operation to coexist across
+multiple environments. Re sees only the Gateway's current exact operation
+projection; it does not consume the local Profile registry or migration plan
+as authority. Its explicit `--allow-run-entry` experiment flag may choose only
+a current `bridge_advertised` top-level entry action. Default runs remain
+one-game bounded. The current projection contains six explicit
+high-precision operation contracts plus 81 conservative manifest-derived
+fallback identities. Re decodes the fallback boundary but never interprets
+the witness or promotes a package; the Gateway remains the only completion and
+permission authority.
+
+Re accepts mixed operation tiers on one Surface. For example,
+`main_menu/open_singleplayer` may be persistent-qualified while
+`main_menu/continue_run` is session-canary. The Surface support tier is only a
+coarse projection; Re validates every advertised action against the exact
+operation scope and unique current package or grant. No sibling authority is
+inferred.
+
+Preview.68 retries the whole read-only state/bundle sequence only for typed
+coherence drift. It retains pre-commit stale rejection. `npm run agent:run`
+enters through the external Operator Shell, which validates loaded identity and
+asks the Gateway to revalidate an exact trial before starting Re's direct
+bounded loop. Re still cannot install or grant authority itself.
 
 Preview.63 keeps the permission decision and enforcement in the Gateway. Re
 requires state and capabilities to agree on the stable
@@ -61,6 +124,11 @@ the unique current active grant for the same Surface/operation, runtime epoch,
 exact environment, Patch digest and operation fingerprint. Historical
 superseded/revoked grant records remain read-only audit evidence and never
 create an allowed action.
+
+Static protocol support is negotiated at initialization. Dynamic capabilities
+are refreshed during coherent observation reads because exact session grants
+may advance or quarantine after a command; Re never treats the initial response
+as a frozen authority snapshot.
 
 Source `2.0-preview.47` additionally requires strict decoding of the bounded
 visibility declaration, state-bound Inspection catalog, coherent observation
@@ -87,7 +155,11 @@ actionAuthority`.
 
 Re requires `shared_state` on every in-run semantic Bridge state, records its
 evidence, and validates combat player/potion identities against it. The narrow
-pre-run `character_select` Surface instead requires `shared_state=null`.
+exception is exact
+`run_transition/setup/awaiting_run_state + no_action + settling`, where the
+Gateway may emit a typed non-authorizing shared-state deferral. Every combat or
+action-owning omission remains invalid. The narrow pre-run `character_select`
+Surface instead requires `shared_state=null`.
 Shared state creates no actions. Event-option hover semantics remain typed as
 text or card previews; unknown variants fail closed. Unsupported legacy-owned
 states remain fail closed in Re; historical v1 records do not grant Agent

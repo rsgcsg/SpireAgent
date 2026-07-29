@@ -95,6 +95,8 @@ export interface DecisionRecord {
         actionProgressHash: string;
         selectedActionId: string;
         selectedActionKind: string;
+        recoveryPlanned?: boolean;
+        suppressedReturnActionHashes?: string[];
       }
     | {
         code: "repeated_non_actionable_state";
@@ -114,6 +116,13 @@ export interface RunMetadata {
   runId: string;
   startedAt: string;
   agentVersion: string;
+  /** Optional because records created before M1 baseline freezing remain readable. */
+  agentSource?: {
+    revision: string;
+    sourceDigest: string;
+    worktreeStatus: "clean" | "dirty";
+    declaredBy: "runtime_environment";
+  };
   adapter: {
     adapterId: string;
     adapterVersion?: string;
@@ -133,10 +142,26 @@ export interface RunMetadata {
     qualificationUse: "coverage_only_unless_independently_reviewed";
   };
   schemas: {
-    normalizedState: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26;
+    normalizedState: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 30 | 31;
     prompt: 1 | 2 | 3;
     decisionRecord: 1 | 2;
   };
+}
+
+export interface RunSummary {
+  summarySchemaVersion: 1;
+  runId: string;
+  endedAt: string;
+  decisionCount: number;
+  termination:
+    | "completed_run_boundary"
+    | "stopped_runtime_guard"
+    | "stopped_runtime_failure"
+    | "stopped_decision_limit";
+  completedGame: boolean;
+  terminalOutcome: DecisionOutcome;
+  terminalStopReason?: string;
+  maxTicks: number;
 }
 
 export interface PreparedEvidence {

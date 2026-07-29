@@ -1,0 +1,192 @@
+# ADR-0005: Workflow C Clean Closure And Vertical Native-Contract Migration
+
+**Status:** Accepted  
+**Date:** 2026-07-29
+
+> **2026-07-30 refinement:** ADR-0006 and the architecture cleanliness reaudit
+> retain this vertical migration/deletion sequence but supersede mixed
+> explicit/fallback durable admission. Only explicit native contracts may
+> become packages or persistent claims.
+
+## Context
+
+ADR-0002 remains the accepted two-plane Semantic Gateway architecture. ADR-0003
+correctly rejects operation names as the final compatibility identity, but its
+shadow/dual-read-first wording allowed a permanent half-migrated state. The
+current repository had reached that state: two non-authorizing shadow DTOs were
+on the live state wire, permission and qualification histories influenced the
+composite state identity, and most operation contracts were synthesized from a
+manifest rather than proved from native source and runtime outcomes.
+
+At the same time, exact Preview.73 run `run-20260729061142-32o3xz` completed a
+95-decision saved-run boundary with 94 settled mutations and no unsupported,
+stale, invalid, observation, provider, unsettled, or unknown outcome. This is
+strong bounded coverage evidence, but its provenance is `unrecorded`, it did
+not exercise Inspection or the shop relic/Kifuda family, and it is not
+qualification evidence.
+
+The Connector therefore needs a clean closure rather than either a big-bang
+rewrite or indefinite migration scaffolding.
+
+## Decision
+
+Workflow C Clean Closure is the current repository priority before additional
+feature tracks. The accepted destination remains one Semantic Gateway with:
+
+```text
+Native STS2
+  -> coherent player-visible observation
+  -> one active semantic owner
+  -> exact bound action
+  -> execute-time native revalidation and commit
+  -> action-local outcome receipt
+  -> fresh successor observation
+
+Compatibility/evidence control plane
+  -> exact environment identity
+  -> session trial
+  -> evidence and quarantine
+  -> persistent scoped claim
+  -> revoke/supersede/rollback
+```
+
+The migration method is a vertical family strangler:
+
+1. audit one real family from source, UI, owner, operands, Commit and Outcome;
+2. define the smallest explicit native contract justified by that evidence;
+3. bind each advertised action to that contract plus exact source evidence and
+   operand identity;
+4. use contract digest, not the operation label, for publication and execution
+   admission for that migrated family;
+5. retain generic Re command polling and successor supervision;
+6. obtain negative and exact-runtime evidence;
+7. remove the family's operation-authority dependency, synthesized fallback,
+   duplicate Provider/Outcome path and temporary instrumentation;
+8. repeat by family.
+
+`operation` remains useful as a wire/log/Prompt label and as temporary ledger
+metadata. It is not the final authority key for a migrated explicit contract.
+
+## Current-State Identity
+
+The live state contract has two explicit identities:
+
+- `semantic_state_id`: current semantic observation facts;
+- `authority_projection_id`: current executable/read-only authority relevant
+  to that observation.
+
+`state_id` binds both for stale-action safety. Append-only grant history,
+qualification history, contract shadows and identity shadows are not semantic
+state. They remain available through capabilities/operator control responses,
+not the model-facing state envelope.
+
+This is a direct cutover, not a permanent dual-read. Tests prove unrelated
+historical scopes do not change either identity, while a current relevant grant
+changes only the authority projection and composite `state_id`.
+
+## First Pilot
+
+The first pilot is `shop_inventory/purchase_shop_relic`, including the Kifuda
+child handoff.
+
+- The purchase command completes when native purchase success, exact gold
+  delta, exact relic acquisition, and entry advancement or the exact Kifuda
+  child owner are proved.
+- The receipt remains
+  `shop_relic_purchase_committed_with_exact_relic_gold_and_entry_witness` with
+  boundary `native_commit_observed`.
+- Kifuda enchantment is a new `deck_enchant_selection` observation. It is not
+  hidden inside a universal transaction or treated as an unresolved purchase.
+- The enchant actions bind their exact Self-Help Book or Kifuda source evidence
+  into the bound-action digest.
+
+Preview.74 implemented and fixture-tested this pilot, but its exact-runtime
+runs exercised only shop card purchase and Self-Help Book enchantment. The
+ordinary relic and Kifuda positive/negative journeys remain required on the
+current installed/loaded identity before family closeout.
+
+## New-Environment Trial Semantics
+
+“If it can run, let it run first” means:
+
+- source-safe diagnostic observation may remain available in a new complete
+  environment;
+- no prior environment grant transfers;
+- a mutation is published only when owner, source, operands, native contract,
+  current environment/Patch/Modset and a runtime-scoped trial all match;
+- one success may confirm only the current session scope;
+- persistent qualification still requires its own evidence and installable
+  claim lifecycle;
+- drift, timeout, unknown outcome or witness mismatch quarantines the minimum
+  exact scope.
+
+It never means speculative mutation, wildcard permission, static-similarity
+authorization, or retry after an unknown outcome.
+
+## Closure Metrics
+
+Final Clean Closure requires:
+
+```text
+connector contract/identity shadow count = 0
+permanent dual-read paths = 0
+production action-authority source count = 1
+fallback authority contracts in supported envelope = 0
+bulk candidate startup paths = 0
+Re native-completion reconstruction = 0
+control-history inputs in semantic state identity = 0
+```
+
+Operation-authority retirement is measured by family. Unknown and out-of-scope
+rows may remain explicit `unsupported` or `code_required`; they must not be
+fabricated into contracts to make a counter reach zero.
+
+## Consequences
+
+- C-first Clean Closure temporarily supersedes the program-plan wording that C
+  closure proceeds only opportunistically alongside A/D M1.
+- ADR-0002 and ADR-0004 remain accepted.
+- ADR-0003 remains directionally accepted but its permanent shadow/dual-read
+  interpretation is replaced by bounded experiments with mandatory deletion.
+- Re transition supervision remains; Re native legality/completion inference
+  remains forbidden.
+- No new permission mode, fallback authority path, universal selector,
+  transaction DSL, workflow engine or second game state is introduced.
+- A family cannot be declared migrated from compilation, fixtures, an old MVID,
+  or one canary alone.
+
+## Rollback
+
+Preview.75 was subsequently loaded as SHA `ddce17cf...6334`, MVID
+`23ac5aad...3cb4`, runtime `fc2ea037...`. Two bounded runs completed one-game
+boundaries and exercised state-bound Inspection; one also exercised ordinary
+shop relic purchase and Courier replacement. Kifuda remains absent. A later Re
+supervision correction requires a repeatable actionable successor after
+Gateway completion without reinterpreting native Outcome. This refines, rather
+than changes, the single-authority decision. See the
+[Preview.75 runtime closeout](../audits/WORKFLOW_C_PREVIEW75_RUNTIME_AND_SUCCESSOR_STABILITY_CLOSEOUT_2026-07-29.md).
+
+At the time of this ADR, Preview.76 was installed as SHA
+`56b24ea...de9003`, MVID `37f4ce07...d7d4676` and awaited cold-load. It later
+loaded and completed `run-20260729140216-qi8r24`; New Leaf and Kifuda were not
+exercised. The then-current whole-DLL rollback was
+`STS2MCP/.local/deployments/2026-07-29T13-33-27-964Z`. A rollback restores a
+complete prior DLL; it does not selectively re-enable deleted structure or
+transfer runtime authority.
+
+### Preview.76 evidence amendment
+
+The rebuilt Preview.75 identity was subsequently loaded as SHA
+`f9819b6b...c721ee`, MVID `34d6deb3...380410`, runtime `7f72d087...`. Two
+latest bounded runs completed with 77/77 and 92/92 attempted mutations settled.
+A third run selected Neow's New Leaf, whose parent event command completed and
+opened `NDeckTransformSelectScreen`, but the child failed closed because the
+transform provider encoded Whispering Hollow as its only caller.
+
+This validates rather than replaces the vertical-family rule: share native
+mechanics only while preserving explicit owner/source/operands/Commit and
+Outcome. Preview.76 adds a typed task-local New Leaf source beside the existing
+Whispering event source and centrally forces every unsupported draft to zero
+actions plus `none_fail_closed`. It adds no authority plane or durable claim.
+New Leaf mutation and Kifuda remain pending exact-runtime evidence; see the
+[Preview.76 closeout](../audits/WORKFLOW_C_PREVIEW76_NEW_LEAF_AND_UNSUPPORTED_AUTHORITY_CLOSEOUT_2026-07-29.md).

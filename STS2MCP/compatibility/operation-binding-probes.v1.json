@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "manifest_id": "bridge_v2_operation_binding_probes_v1",
+  "authorization_effect": "none",
+  "qualification_effect": "none",
+  "baseline": {
+    "game_version": "0.109.0",
+    "game_commit": "c12f634d",
+    "basis": "reviewed_gateway_bindings_and_v0.109.0_source_audits"
+  },
+  "operations": [
+    {
+      "surface_kind": "main_menu",
+      "operation": "open_singleplayer",
+      "probes": [
+        {
+          "type": "MegaCrit.Sts2.Core.Nodes.Screens.MainMenu.NMainMenu",
+          "member_kind": "field",
+          "member": "_readRunSaveResult"
+        },
+        {
+          "type": "MegaCrit.Sts2.Core.Nodes.Screens.MainMenu.NSubmenuStack",
+          "member_kind": "method",
+          "member": "Peek",
+          "parameter_count": 0
+        },
+        {
+          "type": "MegaCrit.Sts2.Core.Runs.RunManager",
+          "member_kind": "property",
+          "member": "IsInProgress"
+        }
+      ]
+    },
+    {
+      "surface_kind": "main_menu",
+      "operation": "continue_run",
+      "probes": [
+        {
+          "type": "MegaCrit.Sts2.Core.Nodes.Screens.MainMenu.NMainMenu",
+          "member_kind": "field",
+          "member": "_readRunSaveResult"
+        },
+        {
+          "type": "MegaCrit.Sts2.Core.Runs.RunManager",
+          "member_kind": "property",
+          "member": "IsInProgress"
+        }
+      ]
+    },
+    {
+      "surface_kind": "shop_room",
+      "operation": "open_shop_inventory",
+      "probes": [
+        {
+          "type": "MegaCrit.Sts2.Core.Nodes.Rooms.NMerchantRoom",
+          "member_kind": "property",
+          "member": "MerchantButton"
+        },
+        {
+          "type": "MegaCrit.Sts2.Core.Nodes.Rooms.NMerchantRoom",
+          "member_kind": "property",
+          "member": "Inventory"
+        },
+        {
+          "type": "MegaCrit.Sts2.Core.Rooms.MerchantRoom",
+          "member_kind": "method",
+          "member": "GetLocalInventory",
+          "parameter_count": 0
+        }
+      ]
+    },
+    {
+      "surface_kind": "map_navigation",
+      "operation": "choose_map_node",
+      "probes": [
+        {
+          "type": "MegaCrit.Sts2.Core.Nodes.Screens.Map.NMapScreen",
+          "member_kind": "field",
+          "member": "_isInputDisabled"
+        },
+        {
+          "type": "MegaCrit.Sts2.Core.Nodes.Screens.Map.NMapScreen",
+          "member_kind": "method",
+          "member": "OnMapPointSelectedLocally",
+          "parameter_count": 1
+        },
+        {
+          "type": "MegaCrit.Sts2.Core.Nodes.Screens.Map.NMapScreen",
+          "member_kind": "property",
+          "member": "IsTravelEnabled"
+        },
+        {
+          "type": "MegaCrit.Sts2.Core.Nodes.Screens.Map.NMapPoint",
+          "member_kind": "property",
+          "member": "Point"
+        },
+        {
+          "type": "MegaCrit.Sts2.Core.Runs.RunState",
+          "member_kind": "property",
+          "member": "CurrentMapCoord"
+        }
+      ]
+    },
+    {
+      "surface_kind": "deck_enchant_selection",
+      "operation": "confirm_selection",
+      "probes": [
+        {
+          "type": "MegaCrit.Sts2.Core.Nodes.Screens.CardSelection.NDeckEnchantSelectScreen",
+          "member_kind": "field",
+          "member": "_enchantment"
+        },
+        {
+          "type": "MegaCrit.Sts2.Core.Nodes.Screens.CardSelection.NDeckEnchantSelectScreen",
+          "member_kind": "field",
+          "member": "_enchantmentAmount"
+        },
+        {
+          "type": "MegaCrit.Sts2.Core.Models.EnchantmentModel",
+          "member_kind": "method",
+          "member": "CanEnchant",
+          "parameter_count": 1
+        }
+      ]
+    }
+  ]
+}

@@ -53,7 +53,7 @@ public sealed class BridgePermissionManagerTests
         Assert.NotEqual(binding.GrantId, currentScope.GrantId);
         Assert.Equal(2, currentScope.GrantVersion);
         BridgePermissionGrantRecord current = manager.Snapshot().Grants[^1];
-        Assert.Equal("session_auto_approved", current.Tier);
+        Assert.Equal("session_trial_confirmed", current.Tier);
         Assert.Equal("active", current.Status);
         Assert.Equal(binding.GrantId, current.SupersedesGrantId);
     }
@@ -264,7 +264,7 @@ public sealed class BridgePermissionManagerTests
     }
 
     [Fact]
-    public void ReviewedNonCandidateCanaryRemainsStaticInBalancedMode()
+    public void MigrationOnlyFallbackCanaryIsSuppressedInBalancedMode()
     {
         var manager = new BridgePermissionManager("runtime-a");
         CompatibilityAssessment applied = manager.Apply(
@@ -272,26 +272,242 @@ public sealed class BridgePermissionManagerTests
             Bridge("runtime-a"),
             CleanPatchInventory());
 
-        ActionPermissionScope scope = Assert.Single(applied.ActionPermissionScopes);
-        Assert.Equal("canary", scope.Tier);
-        Assert.Equal("not_session_bound", scope.RuntimeEpoch);
-        Assert.StartsWith("grant_static_", scope.GrantId);
+        Assert.Empty(applied.ActionPermissionScopes);
         Assert.Empty(manager.Snapshot().Grants);
     }
 
     [Fact]
-    public void CandidateCatalogIsReviewedNonAuthorizingData()
+    public void MigrationPolicyDerivesCandidatesFromReviewedContractsAndRisk()
     {
-        Assert.Null(BridgeGrayPermissionCandidateCatalog.LoadError);
-        Assert.Matches("^[a-f0-9]{64}$", BridgeGrayPermissionCandidateCatalog.PolicyDigest);
-        BridgeGrayPermissionCandidate candidate = Assert.IsType<BridgeGrayPermissionCandidate>(
-            BridgeGrayPermissionCandidateCatalog.Find("main_menu", "open_singleplayer"));
+        Assert.Null(BridgeMigrationPermissionPolicy.LoadError);
+        Assert.Matches("^[a-f0-9]{64}$", BridgeMigrationPermissionPolicy.PolicyDigest);
+        BridgeMigrationPermissionCandidate candidate =
+            Assert.IsType<BridgeMigrationPermissionCandidate>(
+                BridgeMigrationPermissionPolicy.Find(
+                    "main_menu",
+                    "open_singleplayer"));
         Assert.Equal("reversible_navigation", candidate.RiskClass);
-        Assert.Equal("source_audited", candidate.MinimumEvidenceStatus);
-        BridgeGrayPermissionCandidate continueRun =
-            Assert.IsType<BridgeGrayPermissionCandidate>(
-                BridgeGrayPermissionCandidateCatalog.Find("main_menu", "continue_run"));
-        Assert.Equal("organic_canary_exercised", continueRun.MinimumEvidenceStatus);
+        Assert.Contains("migration_exploration", candidate.EligibleModes);
+        BridgeMigrationPermissionCandidate openShop =
+            Assert.IsType<BridgeMigrationPermissionCandidate>(
+                BridgeMigrationPermissionPolicy.Find(
+                    "shop_room",
+                    "open_shop_inventory"));
+        Assert.Equal("shop_inventory_opened", openShop.WitnessId);
+        BridgeMigrationPermissionCandidate map =
+            Assert.IsType<BridgeMigrationPermissionCandidate>(
+                BridgeMigrationPermissionPolicy.Find(
+                    "map_navigation",
+                    "choose_map_node"));
+        Assert.Equal("progression", map.RiskClass);
+        Assert.Equal(
+            new[] { "developer_gray", "migration_exploration" },
+            map.EligibleModes);
+        BridgeMigrationPermissionCandidate enchant =
+            Assert.IsType<BridgeMigrationPermissionCandidate>(
+                BridgeMigrationPermissionPolicy.Find(
+                    "deck_enchant_selection",
+                    "confirm_selection"));
+        Assert.Equal("persistent_run_mutation", enchant.RiskClass);
+        Assert.Equal(new[] { "migration_exploration" }, enchant.EligibleModes);
+        BridgeMigrationPermissionCandidate fallback =
+            Assert.IsType<BridgeMigrationPermissionCandidate>(
+                BridgeMigrationPermissionPolicy.Find(
+                    "event_option",
+                    "choose_event_option"));
+        Assert.Equal("persistent_run_mutation", fallback.RiskClass);
+        Assert.Equal(new[] { "migration_exploration" }, fallback.EligibleModes);
+        Assert.Equal(
+            BridgeOperationQualificationCatalog.RuntimeReportedWitness,
+            fallback.WitnessId);
+    }
+
+    [Fact]
+    public void ProgressionCandidateRequiresDeveloperOrMigrationMode()
+    {
+        GameBuildIdentity game = GameWithScopes(
+            Scope("map_navigation", "choose_map_node", "canary"));
+        CompatibilityAssessment balanced = new BridgePermissionManager(
+            "runtime-balanced",
+            BridgePermissionMode.BalancedGray).Apply(
+                game,
+                Bridge("runtime-balanced"),
+                CleanPatchInventory());
+        CompatibilityAssessment developer = new BridgePermissionManager(
+            "runtime-developer",
+            BridgePermissionMode.DeveloperGray).Apply(
+                game,
+                Bridge("runtime-developer"),
+                CleanPatchInventory());
+
+        Assert.Empty(balanced.ActionPermissionScopes);
+        ActionPermissionScope scope = Assert.Single(
+            developer.ActionPermissionScopes);
+        Assert.Equal("runtime-developer", scope.RuntimeEpoch);
+        Assert.Equal("canary", scope.Tier);
+    }
+
+    [Fact]
+    public void PersistentMutationCandidateRequiresMigrationExploration()
+    {
+        GameBuildIdentity game = GameWithScopes(
+            Scope(
+                "deck_enchant_selection",
+                "confirm_selection",
+                "canary"));
+        CompatibilityAssessment developer = new BridgePermissionManager(
+            "runtime-developer",
+            BridgePermissionMode.DeveloperGray).Apply(
+                game,
+                Bridge("runtime-developer"),
+                CleanPatchInventory());
+        CompatibilityAssessment migration = new BridgePermissionManager(
+            "runtime-migration",
+            BridgePermissionMode.MigrationExploration).Apply(
+                game,
+                Bridge("runtime-migration"),
+                CleanPatchInventory());
+
+        Assert.Empty(developer.ActionPermissionScopes);
+        ActionPermissionScope scope = Assert.Single(
+            migration.ActionPermissionScopes);
+        Assert.Equal("runtime-migration", scope.RuntimeEpoch);
+        Assert.Equal("canary", scope.Tier);
+    }
+
+    [Fact]
+    public void ManifestFallbackPromotesOnlyAfterGatewayReportsSemanticCompletion()
+    {
+        var manager = new BridgePermissionManager(
+            "runtime-migration",
+            BridgePermissionMode.MigrationExploration);
+        CompatibilityAssessment first = manager.Apply(
+            GameWithScopes(
+                Scope("event_option", "choose_event_option", "canary")),
+            Bridge("runtime-migration"),
+            CleanPatchInventory());
+        BridgeActionPermissionBinding binding = Binding(
+            Assert.Single(first.ActionPermissionScopes));
+
+        manager.ObserveCommand(
+            "request-event",
+            binding,
+            Command(
+                "request-event",
+                "completed",
+                "confirmed",
+                "completed",
+                null,
+                "event_option_committed_and_owner_advanced"));
+        CompatibilityAssessment promoted = manager.Apply(
+            GameWithScopes(
+                Scope("event_option", "choose_event_option", "canary")),
+            Bridge("runtime-migration"),
+            CleanPatchInventory());
+
+        Assert.Single(promoted.ActionPermissionScopes);
+        Assert.Equal(
+            "session_trial_confirmed",
+            manager.Snapshot().Grants[^1].Tier);
+    }
+
+    [Fact]
+    public void ManifestFallbackWithoutGatewayWitnessIsQuarantined()
+    {
+        var manager = new BridgePermissionManager(
+            "runtime-migration",
+            BridgePermissionMode.MigrationExploration);
+        CompatibilityAssessment first = manager.Apply(
+            GameWithScopes(
+                Scope("event_option", "choose_event_option", "canary")),
+            Bridge("runtime-migration"),
+            CleanPatchInventory());
+        BridgeActionPermissionBinding binding = Binding(
+            Assert.Single(first.ActionPermissionScopes));
+
+        manager.ObserveCommand(
+            "request-event",
+            binding,
+            Command(
+                "request-event",
+                "completed",
+                "confirmed",
+                "completed",
+                null));
+        CompatibilityAssessment after = manager.Apply(
+            GameWithScopes(
+                Scope("event_option", "choose_event_option", "canary")),
+            Bridge("runtime-migration"),
+            CleanPatchInventory());
+
+        Assert.Empty(after.ActionPermissionScopes);
+        BridgePermissionGrantRecord quarantined = manager.Snapshot().Grants[^1];
+        Assert.Equal("quarantined", quarantined.Status);
+        Assert.Equal(
+            "semantic_completion_witness_mismatch",
+            quarantined.RevocationReason);
+    }
+
+    [Fact]
+    public void SnapshotNeverDropsCurrentGrantsBeyondHistoryWindow()
+    {
+        ActionPermissionScope[] scopes =
+            BridgeOperationQualificationCatalog.Snapshot()
+                .Select(identity =>
+                    Scope(identity.SurfaceKind, identity.Operation, "canary"))
+                .ToArray();
+        var manager = new BridgePermissionManager(
+            "runtime-migration",
+            BridgePermissionMode.MigrationExploration);
+
+        CompatibilityAssessment applied = manager.Apply(
+            GameWithScopes(scopes),
+            Bridge("runtime-migration"),
+            CleanPatchInventory());
+        BridgePermissionSystemInfo snapshot = manager.Snapshot();
+
+        Assert.Equal(scopes.Length, applied.ActionPermissionScopes.Count);
+        Assert.Equal(scopes.Length, snapshot.Grants.Count);
+        Assert.All(snapshot.Grants, grant =>
+        {
+            Assert.True(grant.Current);
+            Assert.Equal("active", grant.Status);
+        });
+    }
+
+    [Fact]
+    public void NonMenuNavigationCandidateUsesTheSameSessionStateMachine()
+    {
+        var manager = new BridgePermissionManager("runtime-a");
+        CompatibilityAssessment first = manager.Apply(
+            GameWithScopes(Scope("shop_room", "open_shop_inventory", "canary")),
+            Bridge("runtime-a"),
+            CleanPatchInventory());
+        BridgeActionPermissionBinding binding = Binding(Assert.Single(
+            first.ActionPermissionScopes));
+
+        manager.ObserveCommand(
+            "request-shop",
+            binding,
+            Command(
+                "request-shop",
+                "completed",
+                "confirmed",
+                "completed",
+                null,
+                "shop_inventory_opened"));
+        CompatibilityAssessment promoted = manager.Apply(
+            GameWithScopes(Scope("shop_room", "open_shop_inventory", "canary")),
+            Bridge("runtime-a"),
+            CleanPatchInventory());
+
+        ActionPermissionScope scope = Assert.Single(
+            promoted.ActionPermissionScopes);
+        Assert.Equal("shop_room", scope.SurfaceKind);
+        Assert.Equal(2, scope.GrantVersion);
+        Assert.Equal(
+            "session_trial_confirmed",
+            manager.Snapshot().Grants[^1].Tier);
     }
 
     [Fact]
@@ -303,6 +519,141 @@ public sealed class BridgePermissionManagerTests
         Assert.Equal(
             BridgePermissionMode.Strict,
             BridgePermissionManager.ParseMode("unexpected_mode"));
+        Assert.Equal(
+            BridgePermissionMode.MigrationExploration,
+            BridgePermissionManager.ParseMode("migration_exploration"));
+    }
+
+    [Fact]
+    public void EncounterSourceResolvedActionGetsOnlyRuntimeScopedTrialAuthority()
+    {
+        var manager = new BridgePermissionManager(
+            "runtime-migration",
+            BridgePermissionMode.MigrationExploration);
+        BridgeServerIdentity bridge = Bridge("runtime-migration");
+        GameBuildIdentity diagnostic = DiagnosticGame();
+        CompatibilityAssessment initial = manager.Apply(
+            diagnostic,
+            bridge,
+            CleanPatchInventory());
+        Assert.False(initial.InspectionAllowed);
+        Assert.Empty(initial.InspectionCanaryKinds);
+        var draft = EncounterDraft(
+            diagnostic with { Compatibility = initial },
+            "open_shop_inventory");
+
+        BridgeObservationDraft admitted = manager.AdmitEncounter(draft, bridge);
+
+        ActionPermissionScope scope = Assert.Single(
+            admitted.Game.Compatibility.ActionPermissionScopes);
+        Assert.Equal("canary", scope.Tier);
+        Assert.Equal("runtime-migration", scope.RuntimeEpoch);
+        Assert.Equal("encounter_source_resolved", scope.AdmissionBasis);
+        Assert.Equal(
+            "encounter_provisional_trial",
+            admitted.Game.Compatibility.AdaptationLevel);
+        Assert.True(admitted.Game.Compatibility.InspectionAllowed);
+        Assert.Empty(admitted.Game.Compatibility.InspectionAllowedKinds);
+        Assert.Equal(
+            BridgeContractManifest.ImplementedInspectionKinds.OrderBy(value => value),
+            admitted.Game.Compatibility.InspectionCanaryKinds);
+        BridgePermissionGrantRecord grant = Assert.Single(manager.Snapshot().Grants);
+        Assert.Equal("session_canary", grant.Tier);
+        Assert.Equal("encounter_source_resolved", grant.AdmissionBasis);
+        Assert.Contains(
+            "admission:encounter_source_resolved",
+            grant.EvidenceIds);
+        Assert.Contains(
+            admitted.Warnings,
+            warning => warning.StartsWith(
+                "encounter_provisional_trial:",
+                StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void EncounterAdmissionRemainsDisabledOutsideMigrationExploration()
+    {
+        var manager = new BridgePermissionManager(
+            "runtime-strict",
+            BridgePermissionMode.Strict);
+        BridgeServerIdentity bridge = Bridge("runtime-strict");
+        GameBuildIdentity diagnostic = DiagnosticGame();
+        CompatibilityAssessment initial = manager.Apply(
+            diagnostic,
+            bridge,
+            CleanPatchInventory());
+
+        BridgeObservationDraft admitted = manager.AdmitEncounter(
+            EncounterDraft(
+                diagnostic with { Compatibility = initial },
+                "open_shop_inventory"),
+            bridge);
+
+        Assert.Empty(admitted.Game.Compatibility.ActionPermissionScopes);
+        Assert.False(admitted.Game.Compatibility.InspectionAllowed);
+        Assert.Empty(admitted.Game.Compatibility.InspectionCanaryKinds);
+        Assert.Empty(manager.Snapshot().Grants);
+    }
+
+    [Fact]
+    public void ReadOnlyInspectionTrialFailsClosedForUnknownPatchOwner()
+    {
+        var manager = new BridgePermissionManager(
+            "runtime-migration",
+            BridgePermissionMode.MigrationExploration);
+        BridgeServerIdentity bridge = Bridge("runtime-migration");
+        GameBuildIdentity diagnostic = DiagnosticGame();
+        BridgeRuntimePatchInventoryInfo unknownPatch = BridgeRuntimePatchInventory.Classify(
+            new[]
+            {
+                new BridgeRuntimePatchDescriptor(
+                    "Game.Method()",
+                    "prefix",
+                    "unknown.mod",
+                    "Unknown.Patch()")
+            });
+        CompatibilityAssessment initial = manager.Apply(
+            diagnostic,
+            bridge,
+            unknownPatch);
+
+        BridgeObservationDraft admitted = manager.AdmitEncounter(
+            EncounterDraft(
+                diagnostic with { Compatibility = initial },
+                "open_shop_inventory"),
+            bridge);
+
+        Assert.Empty(admitted.Game.Compatibility.ActionPermissionScopes);
+        Assert.False(admitted.Game.Compatibility.InspectionAllowed);
+        Assert.Empty(admitted.Game.Compatibility.InspectionCanaryKinds);
+    }
+
+    [Fact]
+    public void UnknownEncounterOperationStaysDiagnosticWithoutTrialWarning()
+    {
+        var manager = new BridgePermissionManager(
+            "runtime-migration",
+            BridgePermissionMode.MigrationExploration);
+        BridgeServerIdentity bridge = Bridge("runtime-migration");
+        GameBuildIdentity diagnostic = DiagnosticGame();
+        CompatibilityAssessment initial = manager.Apply(
+            diagnostic,
+            bridge,
+            CleanPatchInventory());
+
+        BridgeObservationDraft admitted = manager.AdmitEncounter(
+            EncounterDraft(
+                diagnostic with { Compatibility = initial },
+                "unknown_operation"),
+            bridge);
+
+        Assert.Empty(admitted.Game.Compatibility.ActionPermissionScopes);
+        Assert.Empty(manager.Snapshot().Grants);
+        Assert.DoesNotContain(
+            admitted.Warnings,
+            warning => warning.StartsWith(
+                "encounter_provisional_trial:",
+                StringComparison.Ordinal));
     }
 
     private static ActionPermissionScope Scope(
@@ -358,6 +709,48 @@ public sealed class BridgePermissionManagerTests
             modset);
     }
 
+    private static GameBuildIdentity DiagnosticGame()
+    {
+        GameBuildIdentity game = GameWithScopes();
+        return game with
+        {
+            Compatibility = game.Compatibility with
+            {
+                Status = "unreviewed_diagnostic_candidate",
+                ActionExecutionAllowed = false,
+                ActionExecutionSurfaceKinds = Array.Empty<string>(),
+                ActionCanarySurfaceKinds = Array.Empty<string>(),
+                ActionPermissionScopes = Array.Empty<ActionPermissionScope>(),
+                AdaptationLevel = "diagnostic_candidate"
+            }
+        };
+    }
+
+    private static BridgeObservationDraft EncounterDraft(
+        GameBuildIdentity game,
+        string operation) => new(
+        "fixture-signature",
+        "ready",
+        new ShopBridgeContext("shop"),
+        new ShopRoomSurface("shop_room", "shop-room", true, true),
+        new StateCompleteness(
+            "complete",
+            "source_resolved",
+            new[] { "fixture" },
+            Array.Empty<string>()),
+        game,
+        Array.Empty<string>(),
+        new[]
+        {
+            new BridgeActionDraft(
+                "fixture-action",
+                operation,
+                "navigation",
+                "Open shop",
+                "fixture-source-resolved",
+                () => BridgeActionStartResult.Rejected("fixture", "not executed"))
+        });
+
     private static BridgeServerIdentity Bridge(string runtimeEpoch) => new(
         "sts2_mcp_bridge_v2",
         "fixture",
@@ -389,7 +782,8 @@ public sealed class BridgePermissionManagerTests
         scope.RuntimeEpoch,
         scope.EnvironmentDigest,
         scope.PatchDigest,
-        scope.OperationFingerprint);
+        scope.OperationFingerprint,
+        scope.AdmissionBasis);
 
     private static BridgeCommandResponse Command(
         string requestId,

@@ -1,19 +1,39 @@
 # Re-SpireAgent RE-P1
 
-> Compatibility status, 2026-07-25: Re and C# share source contract
-> `2.0-preview.63`; Re normalized schema is `26`. Gate 1 is closed as a
-> bounded ordinary-single-player v2 connector baseline. Preview.61 supplied
-> the final Neow's Fury Organic runtime seal; Preview.62 source/audit evidence
-> does not automatically qualify its new registry entries. Preview.63 is
-> installed/cold-loaded locally; strict Re inspection and one real
-> `continue_run` session canary/auto-approval pass on its exact recorded
-> identity. That grant is volatile, not persistent qualification.
+Re is the strict Agent consumer in the repository's accepted
+[Semantic Gateway Two-Plane Target Architecture](../docs/current/decisions/ADR-0002-semantic-gateway-two-plane-target-architecture.md).
+It may derive an evidence-tested model view, but it never becomes a second
+game-state, legality, permission, Commit, or completion authority.
+
+> Compatibility status, 2026-07-30: Re and C# share source contract
+> `2.0-preview.77`; Re normalized schema is `31`. Gate 1 is closed as a
+> bounded ordinary-single-player v2 baseline, not full game coverage.
+> Preview.69 adds typed new/resumed-run mount settling, bounded semantic-cycle recovery,
+> and strict consumption of encounter-scoped provisional grants. Diagnostic
+> observation, runtime trial admission, and persistent qualification are now
+> separate. Preview.69 final-MVID runs include a 127-decision saved-run-to-menu
+> journey and a clean 107-decision fresh game-to-menu journey. Their grants are
+> session-only and their unrecorded provenance is not Organic or persistent
+> qualification. Preview.70 later completed a 124-decision game-to-menu run on
+> its exact loaded identity, while another run exposed an empty-treasure-chest
+> completion timeout. Preview.71 fixed that Gateway-owned Oracle and later
+> runs exposed exact Hefty Tablet source/result debt plus an actionless-
+> settling consumer bug. Preview.72 fixes both and was built/installed/loaded;
+> current-runtime run `run-20260728132337-ce2195` completed a 146-decision
+> one-game boundary with 144 settled actions and one safe stale rejection. Its
+> `unrecorded` provenance, disabled Inspection, and unexercised repaired
+> branches are not Organic or persistent qualification. Preview.73 repairs a
+> later Rest minimum-Outcome defect and preserves semantic ownership when every
+> mutation operation is blocked. It is source/test/build/install/load complete;
+> strict read-only inspection passed, but no Preview.73 mutation has executed.
 
 > Product-boundary warning: direct Re-to-Gateway REST and `.env.local` provider
 > keys are developer workflows, not the target consumer architecture. The
-> planned product places Gateway authentication/lease use, OS-backed secrets,
+> planned product places optional authenticated discovery, OS-backed secrets,
 > model brokering, Agent supervision, diagnostics, and recovery in a trusted
-> external Companion. None of that is implemented by this README. See the
+> external Companion. The Gateway itself still enforces the current mutation
+> lease; a Companion must not become the only coordination authority. None of
+> the broader product boundary is implemented by this README. See the
 > [productization architecture audit](../docs/current/audits/REAL_PRODUCTIZATION_ARCHITECTURE_AUDIT_AND_ROADMAP_2026-07-22.md).
 
 Re-SpireAgent is a small, independent Slay the Spire 2 agent runtime. It reads
@@ -21,13 +41,27 @@ strict Bridge v2 state from the Live Semantic Gateway REST adapter, normalizes
 untrusted JSON into a strongly typed current-state contract with separate
 semantic context and interaction Surface, asks DeepSeek to select one allowed
 action ID, validates the selection, executes it only if the state is unchanged,
-waits for the Bridge command lifecycle, and records the complete evidence.
+waits for the Bridge command lifecycle and a repeatable actionable successor,
+and records the complete evidence. Gateway completion remains the only native
+Outcome authority; the extra successor observation avoids model calls while
+visible native effects are still evolving.
 
 RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, shadow/live modes, policy promotion, or the old project's phase machinery. Its job is to make one decision path correct and auditable.
 
-Re's current strict client contract is Bridge `2.0-preview.63` on exact game
-identity `v0.109.0|c12f634d|-1639417500`. The separate
-`release_declared_main_assembly_hash=-840572606` is diagnostic provenance, not
+Re's current strict client contract is Bridge `2.0-preview.77`. Re strictly
+decodes typed contract identities and grants, but does not interpret fallback
+Witness semantics or promote any candidate. Latest exact Preview.76 run
+`run-20260729140216-qi8r24` completed a 172-decision boundary with 170 settled
+mutations and one safe stale refusal on SHA `56b24ea3...` / MVID
+`37f4ce07...` / runtime `8ccf81d0...`. It did not exercise New Leaf, Kifuda or
+ordinary relic purchase. Its `unrecorded` provenance is coverage evidence, not
+Preview.77 evidence, Organic evidence or persistent qualification.
+A historical strict read-only main-menu inspection passed without mutation.
+Preview.66's narrow persistent
+`main_menu/continue_run` qualification belongs only to its historical exact
+Gateway identity.
+The separate
+`release_declared_main_assembly_hash=-1041364841` is diagnostic provenance, not
 permission authority. Re requires capabilities and every
 state/bundle/Inspection to agree on protocol, game identity, exact Modset
 fingerprint, Bridge assembly SHA-256, module MVID, and runtime instance. An
@@ -37,6 +71,10 @@ Inspection authority.
 Re imports only explicit operation scopes emitted by the Gateway's exact-build
 manifest; empty permission lists never mean wildcard. It rejects legal actions
 outside the matching capability operation inventory.
+Re records `contract_kind` for exact evidence provenance. A durable
+qualification must be `explicit_native_contract`; a
+`manifest_migration_fallback` can appear only through a Gateway-owned volatile
+session scope and never through a durable package.
 Historical qualification on another game hash or Bridge MVID remains
 historical evidence only. See [MCP state coverage](docs/MCP_STATE_COVERAGE.md).
 
@@ -45,6 +83,52 @@ inventory and versioned session grant ledger. Re requires each dynamic scope
 to reference the unique current active exact-environment grant, but it never
 issues, promotes, quarantines or persists a grant. D evidence and historical
 grant records remain non-authorizing.
+
+Preview.69 requires `admission_basis` on each current dynamic scope. A current
+`encounter_source_resolved` canary is accepted only when the Gateway publishes
+an exact runtime-bound migration grant with matching environment, Patch,
+operation fingerprint and explicit admission evidence. Confirmed completion
+may produce `session_trial_confirmed`; neither tier is a persistent claim.
+
+Preview.64 adds a separate local-control concern. Read-only Re initialization
+does not take control. Immediately before its first mutation, Re registers
+descriptive process metadata, acquires the Gateway's one runtime-bound
+controller lease, renews it while active, attaches the lease generation to
+commands, verifies returned command attribution, and releases best-effort on
+shutdown. This coordinates Re with the optional MCP adapter; it is not
+authentication and does not replace the existing local Re process lock,
+operation permission, state binding or semantic completion.
+
+Preview.65 adds strict, non-authoring consumption of Gateway qualification
+state. Re accepts a persistent operation scope only when one unique
+`qualified` package is currently applicable to the exact game, Gateway,
+Modset, Patch, operation fingerprint, completion boundary, and witness. A
+short-lived `session_canary` package can only seed the Gateway's existing
+runtime-epoch gray state machine; it is not persistent mutation authority.
+Re cannot install, revoke, roll back, promote, or repair qualification data.
+Sibling operations on a Surface may have different tiers. Re uses the Surface
+tier only as a coarse support projection and validates each legal action
+against its exact operation-level package or grant.
+
+Preview.66 preserves that consumer boundary while allowing exact packages for
+the same operation to coexist across multiple environments. Re does not read
+or authorize from the local Profile registry or migration workspace. Its
+explicit `--allow-run-entry` option may cross a top-level menu boundary only
+through a current `bridge_advertised` action; the default command remains
+one-game bounded and local reconstruction remains forbidden.
+
+Preview.74 introduced formal `semantic_state_id` and
+`authority_projection_id`. Composite `state_id` binds both for stale-action
+protection. Historical identity shadows remain readable only in recorded-run
+audit tooling; they are absent from current state, `NormalizedCurrentState`,
+Prompt construction, allowed actions, and runtime permission.
+
+Preview.75 keeps the fixed Prompt/guide baseline. If DeepSeek returns valid
+strict JSON and an advertised action ID but only `reasonBrief` exceeds 240
+characters, Re stores the bounded reason plus a typed normalization while
+retaining the raw response. It also consumes the Gateway's volatile,
+state-bound read-only Inspection canary; neither behavior changes mutation
+authority or creates a durable claim.
 
 Preview.55 makes strict v2 the sole connector path. Re rejects legacy `v1` and
 the former `auto` mode; it cannot probe or fall back to v1. Bridge-confirmed
@@ -155,7 +239,10 @@ Bridge REST state
 - DeepSeek returns only `selectedActionId`, `reasonBrief`, and optional `confidence`.
 - The executable MCP payload never comes from the model.
 - Unknown action IDs, invalid JSON, invalid schema, truncation, timeout, state drift, MCP rejection, and uncertain settlement are not executed or retried as actions.
-- Action-capable `tick` and `run` commands take an exclusive local runtime lock. This prevents two RE-P1 processes from driving one MCP session; it cannot prevent a human or a different program from acting in the game.
+- Action-capable `tick` and `run` commands take an exclusive local runtime lock,
+  while the Gateway lease coordinates Re with other local mutation clients.
+  Neither mechanism blocks direct human input or defends against a malicious
+  local process.
 - A bounded-run progress guard compares semantic state/action transitions rather than regenerated Bridge transport IDs. The second identical semantic transition stops as `repeated_semantic_transition`; business facts and entity bindings are never stripped from progress identity.
 - Raw Gateway data is visible only to the adapter, normalizer, recorder, and diagnostic tooling. Planning code imports only the normalized state API.
 - Unknown semantic contexts or unverified interaction surfaces become structured `unknown`/`unsupported` state components and stop safely.
@@ -211,9 +298,9 @@ npm run check
 2. Verify the service:
 
 ```bash
-curl -sS http://localhost:15526/
-curl -sS http://localhost:15526/api/v2/capabilities
-curl -sS http://localhost:15526/api/v2/state
+npm run connector -- wait-for-gateway
+npm run connector -- verify-loaded-artifact --wait
+npm run agent:inspect
 ```
 
 If the adapter uses another address, set `STS2_API_URL` in `.env.local`.
@@ -231,6 +318,8 @@ All values are optional except the API key for real model decisions.
 |---|---:|---|
 | `STS2_API_URL` | `http://localhost:15526` | MCP REST base URL |
 | `STS2_MCP_TIMEOUT_MS` | `5000` | State/action request timeout |
+| `STS2_MCP_STARTUP_WAIT_MS` | `60000` | Bounded wait for the read-only capabilities endpoint during Steam startup; never retries a submitted mutation |
+| `STS2_MCP_STARTUP_POLL_MS` | `500` | Capabilities startup poll interval |
 | `STS2_MCP_V2_COMMAND_POLL_MS` | `75` | v2 command lifecycle poll interval |
 | `STS2_MCP_V2_COMMAND_TIMEOUT_MS` | `12000` | client guard for a submitted v2 command; timeout is unknown, never retryable |
 | `DEEPSEEK_API_KEY` | none | Secret, loaded from environment only |
@@ -241,7 +330,7 @@ All values are optional except the API key for real model decisions.
 | `DEEPSEEK_THINKING_MODE` | `disabled` | Explicit provider thinking mode |
 | `AGENT_DATA_DIR` | `data/runs` under `Re-SpireAgent/` | Local evidence directory; relative paths are project-root anchored |
 | `AGENT_EVIDENCE_PROVENANCE` | `unrecorded` | `ordinary_gameplay`, `operator_positioned`, `console_assisted`, `fixture`, or `unrecorded`; metadata only, never qualification authority |
-| `AGENT_MAX_TICKS` | `100` | Default run limit |
+| `AGENT_MAX_TICKS` | `1000` | Bounded emergency ceiling; normal runs stop at the one-game boundary or a runtime guard |
 | `AGENT_TICK_DELAY_MS` | `250` | Delay between decisions |
 | `AGENT_SETTLEMENT_POLL_MS` | `150` | Post-action poll interval |
 | `AGENT_SETTLEMENT_TIMEOUT_MS` | `3000` | Normal settlement timeout |
@@ -330,13 +419,28 @@ Run a bounded autonomous loop:
 npm run agent:run -- --max-ticks 20 --delay-ms 250
 ```
 
-`agent:run` is deliberately bounded to one game. It may finish that run's
-Bridge-owned game-over intro, summary, and return lifecycle, then stops at the
-top-level `menu` before asking the model to continue or start another run. Use
-the explicit single-tick command only when deliberately testing a supported
-menu flow.
+The public npm `agent:run` entry first invokes the external Operator Shell. It
+requires exact source/built/installed/loaded identity and probes the current
+state. The Gateway may admit only current source-resolved actions as volatile
+trials. The legacy bulk candidate-package cycle is a fallback, not the target
+startup path. The shell cannot grant live authority; the Gateway remains the
+decision and enforcement owner.
 
-The loop stops on invalid state, missing actions on an actionable screen, provider/decision failure, MCP rejection, or unsettled execution. Transitional/loading states are polled without calling DeepSeek.
+The direct loop then permits one Gateway-advertised Continue or new-run action
+and remains bounded to one game. It may finish that run's
+Bridge-owned game-over intro, summary, and return lifecycle, then stops at the
+top-level `menu` before starting another run. The underlying TypeScript CLI
+is available only as the internal `agent:run:direct` script and requires the
+explicit `--allow-run-entry` argument. Neither path authorizes
+`local_reconstruction`, imports permission from another MVID, or bypasses
+Gateway state binding.
+
+The loop stops on invalid state, missing actions on an actionable screen,
+provider/decision failure, MCP rejection, or unsettled execution.
+Transitional/loading states are polled without calling DeepSeek. One transient
+provider transport failure may be retried before mutation; Gateway command
+unknowns are never retried. Reaching `AGENT_MAX_TICKS` is an incomplete non-zero
+termination, not a completed run.
 
 Replay the latest local run or one decision:
 
@@ -345,6 +449,21 @@ npm run agent:replay
 npm run agent:replay -- --run-id <run-id>
 npm run agent:replay -- --run-id <run-id> --decision-id <decision-id>
 ```
+
+Generate a content-redacted, non-authorizing M1 baseline report from one local
+run. The command does not open the Gateway or call DeepSeek:
+
+```bash
+npm run agent:baseline-report
+npm run agent:baseline-report -- --run-id <run-id>
+```
+
+The public `agent:run` Operator Shell records the current Git revision, a
+deterministic digest of runtime-relevant Re/Operator-Shell source files, and
+whether that source scope was clean or dirty. Historical records without this
+identity remain readable, but the report marks them `identityStatus=incomplete`
+instead of guessing. The report never grants permission or qualification and
+does not grade strategy.
 
 Development checks:
 
@@ -362,6 +481,7 @@ Each run is local and append-only:
 ```text
 Re-SpireAgent/data/runs/<run-id>/
   metadata.json
+  run-summary.json
   decisions.jsonl
   snapshots/<decision-id>-pre.raw.json
   snapshots/<decision-id>-post.raw.json
@@ -371,7 +491,13 @@ Re-SpireAgent/data/runs/<run-id>/
 
 Prompt files preserve the full system prompt, context and surface guides, user payload, hashes, and byte counts. Response files preserve all provider attempts, redacted raw provider response, raw content, parsed decision, finish reason, usage, and safe error classification. `decisions.jsonl` links those artifacts to pre/post normalized state, full-raw stale-guard hashes, normalized projection hashes, allowed actions, validation, execution, and settlement.
 
-`metadata.json` also records declared evidence provenance. Historical or
+`run-summary.json` is written once when a new run loop terminates. It
+distinguishes a completed one-game boundary from a runtime guard/failure or
+decision-limit stop. Older run directories remain replay-readable without this
+file and are never backfilled with inferred results.
+
+`metadata.json` also records declared evidence provenance and, for new public
+Operator-Shell runs, exact Re source identity. Historical or
 default `unrecorded` runs remain useful coverage/debug evidence but cannot
 independently be described as Organic qualification. The label never changes
 Bridge permission or execution behavior.

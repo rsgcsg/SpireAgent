@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "evidence_set_id": "bridge_v2_migration_negative_evidence_v1",
+  "authorization_effect": "none",
+  "evidence_ids": [
+    "gateway-test:unknown_patch_owner_suppresses_dynamic_candidate",
+    "gateway-test:semantic_completion_witness_mismatch_quarantines_operation",
+    "gateway-test:exact_package_identity_mismatch_is_inapplicable",
+    "re-test:unknown_outcome_is_not_retried"
+  ],
+  "limitations": [
+    "These are reviewed negative-path test references, not Organic success evidence.",
+    "They may support a bounded session candidate but cannot satisfy persistent qualification."
+  ]
+}

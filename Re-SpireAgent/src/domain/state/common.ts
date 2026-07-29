@@ -1,6 +1,6 @@
 import type { CardSnapshot, PlayerSnapshot, RelicSnapshot } from "./entities.js";
 
-export const NORMALIZED_STATE_SCHEMA_VERSION = 26 as const;
+export const NORMALIZED_STATE_SCHEMA_VERSION = 31 as const;
 
 export type StateStability =
   | "actionable"
@@ -123,23 +123,6 @@ export interface BridgeObservationSnapshot {
   inspectionKinds: BridgeInspectionKind[];
 }
 
-export interface BridgeContractInstanceShadowSnapshot {
-  status: "resolved_manifest_contract" | "unresolved";
-  instanceId: string;
-  surfaceKind: string;
-  semanticContractId?: string;
-  declaredBinding?: string;
-  operations: Array<{
-    operation: string;
-    evidenceStatus: "surface_level_only" | "source_audited" | "organic_canary_exercised" | "organic_qualified" | "unregistered";
-    published: boolean;
-  }>;
-  currentAuthorityTier: "qualified" | "canary" | "observation_only" | "disabled";
-  currentAuthorityBasis: "exact_environment_surface_operation_gate";
-  authorizing: false;
-  limitations: string[];
-}
-
 export interface RunSnapshot {
   runId?: string;
   characterId?: string;
@@ -182,5 +165,4 @@ export interface NormalizedStateBase {
   bridgeVisibility?: BridgeVisibilitySnapshot;
   bridgeInspectionCatalog?: BridgeInspectionCatalogEntrySnapshot[];
   bridgeObservation?: BridgeObservationSnapshot;
-  bridgeContractInstanceShadow?: BridgeContractInstanceShadowSnapshot;
 }

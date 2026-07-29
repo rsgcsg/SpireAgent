@@ -4,8 +4,10 @@
 
 SpireAgent is a development project. The current STS2 Agent Bridge listens on
 loopback and validates game actions, but it does not yet authenticate clients,
-issue a controller lease, isolate provider credentials, or provide a
-consumer-grade installer. Do not expose port `15526` beyond the local machine.
+isolate provider credentials, or provide a consumer-grade installer. Preview.64
+coordinates one runtime-bound mutation controller, but registration metadata
+and lease IDs are not authentication and do not isolate a malicious local
+process. Do not expose port `15526` beyond the local machine.
 
 The Gateway is the only authority for player-visible facts, advertised opaque
 actions, execute-time validation, and semantic completion. Re-SpireAgent,

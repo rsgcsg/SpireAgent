@@ -25,6 +25,7 @@ export type SemanticContext =
   | MenuContext
   | RunEndedContext
   | CombatTransitionContext
+  | RunTransitionContext
   | UnknownContext;
 
 export interface CombatContext {
@@ -93,6 +94,11 @@ export interface RunEndedContext {
 export interface CombatTransitionContext {
   kind: "combat_transition";
   phase: "setup" | "resolution";
+}
+
+export interface RunTransitionContext {
+  kind: "run_transition";
+  phase: "setup";
 }
 
 export interface UnknownContext {
@@ -238,6 +244,15 @@ export interface GeneratedRunDeckCardChoiceSurface extends GeneratedCardChoiceSu
   overflowDestination?: undefined;
 }
 
+/** Hefty Tablet choice; selection and skip both add a separate Injury. */
+export interface HeftyTabletCardChoiceSurface extends GeneratedCardChoiceSurfaceBase {
+  purpose: "acquire_one_generated_rare_card_plus_injury";
+  sourceKind: "hefty_tablet";
+  destination: "run_deck";
+  selectedCardCostPolicy: "unchanged";
+  overflowDestination?: undefined;
+}
+
 /** Source-bound native generated-card potion; full hands redirect to discard. */
 export interface GeneratedCombatCardChoiceSurface extends GeneratedCardChoiceSurfaceBase {
   purpose: "choose_one_generated_combat_card";
@@ -259,6 +274,7 @@ export interface ImmediateCombatEffectCardChoiceSurface extends GeneratedCardCho
 
 export type GeneratedCardChoiceSurface =
   | GeneratedRunDeckCardChoiceSurface
+  | HeftyTabletCardChoiceSurface
   | GeneratedCombatCardChoiceSurface
   | ImmediateCombatEffectCardChoiceSurface;
 
@@ -313,6 +329,11 @@ export interface DeckEnchantSelectionSurface {
   stage: "selecting" | "preview";
   bridgeStateId: string;
   screenEntityId: string;
+  source: {
+    kind: "self_help_book_event" | "kifuda_relic_pickup";
+    definitionId: string;
+    bindingEvidence: string;
+  };
   prompt?: string;
   minimumSelections: number;
   maximumSelections: number;
@@ -400,6 +421,11 @@ export interface DeckTransformSelectionSurface {
   stage: "selecting" | "preview";
   bridgeStateId: string;
   screenEntityId: string;
+  source: {
+    kind: "whispering_hollow_event" | "new_leaf_relic_pickup";
+    definitionId: string;
+    bindingEvidence: string;
+  };
   prompt: string;
   minimumSelections: number;
   maximumSelections: number;

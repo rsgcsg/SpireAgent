@@ -9,6 +9,8 @@ export interface RuntimeConfig {
   mcp: {
     baseUrl: string;
     timeoutMs: number;
+    startupWaitMs: number;
+    startupPollMs: number;
     commandPollMs: number;
     commandTimeoutMs: number;
   };
@@ -22,6 +24,9 @@ export interface RuntimeConfig {
   };
   runtime: {
     dataDir: string;
+    agentSourceRevision?: string;
+    agentSourceDigest?: string;
+    agentWorktreeStatus?: "clean" | "dirty";
     evidenceProvenance: "unrecorded" | "ordinary_gameplay" | "operator_positioned" | "console_assisted" | "fixture";
     maxTicks: number;
     tickDelayMs: number;
@@ -51,11 +56,29 @@ export function readRuntimeConfig(env: NodeJS.ProcessEnv = process.env, projectR
       "AGENT_EVIDENCE_PROVENANCE must be unrecorded, ordinary_gameplay, operator_positioned, console_assisted, or fixture"
     );
   }
+  const agentSourceRevision = optionalGitRevision(env.SPIREAGENT_RE_SOURCE_REVISION);
+  const agentSourceDigest = optionalSha256(env.SPIREAGENT_RE_SOURCE_DIGEST, "SPIREAGENT_RE_SOURCE_DIGEST");
+  const agentWorktreeStatus = optionalWorktreeStatus(env.SPIREAGENT_RE_WORKTREE_STATUS);
+  const sourceIdentityFieldCount = [agentSourceRevision, agentSourceDigest, agentWorktreeStatus]
+    .filter((value) => value !== undefined).length;
+  if (sourceIdentityFieldCount !== 0 && sourceIdentityFieldCount !== 3) {
+    throw new Error("Re source revision, digest, and worktree status must be recorded together");
+  }
 
   return {
     mcp: {
       baseUrl: stripTrailingSlash(env.STS2_API_URL ?? "http://localhost:15526"),
       timeoutMs: positiveInteger(env.STS2_MCP_TIMEOUT_MS, 5_000, "STS2_MCP_TIMEOUT_MS"),
+      startupWaitMs: nonNegativeInteger(
+        env.STS2_MCP_STARTUP_WAIT_MS,
+        60_000,
+        "STS2_MCP_STARTUP_WAIT_MS"
+      ),
+      startupPollMs: positiveInteger(
+        env.STS2_MCP_STARTUP_POLL_MS,
+        500,
+        "STS2_MCP_STARTUP_POLL_MS"
+      ),
       commandPollMs: positiveInteger(env.STS2_MCP_V2_COMMAND_POLL_MS, 75, "STS2_MCP_V2_COMMAND_POLL_MS"),
       commandTimeoutMs: positiveInteger(env.STS2_MCP_V2_COMMAND_TIMEOUT_MS, 12_000, "STS2_MCP_V2_COMMAND_TIMEOUT_MS")
     },
@@ -69,8 +92,11 @@ export function readRuntimeConfig(env: NodeJS.ProcessEnv = process.env, projectR
     },
     runtime: {
       dataDir: resolve(projectRoot, env.AGENT_DATA_DIR ?? "data/runs"),
+      ...(agentSourceRevision ? { agentSourceRevision } : {}),
+      ...(agentSourceDigest ? { agentSourceDigest } : {}),
+      ...(agentWorktreeStatus ? { agentWorktreeStatus } : {}),
       evidenceProvenance,
-      maxTicks: positiveInteger(env.AGENT_MAX_TICKS, 100, "AGENT_MAX_TICKS"),
+      maxTicks: positiveInteger(env.AGENT_MAX_TICKS, 1_000, "AGENT_MAX_TICKS"),
       tickDelayMs: nonNegativeInteger(env.AGENT_TICK_DELAY_MS, 250, "AGENT_TICK_DELAY_MS"),
       settlementPollMs: positiveInteger(env.AGENT_SETTLEMENT_POLL_MS, 150, "AGENT_SETTLEMENT_POLL_MS"),
       settlementTimeoutMs: positiveInteger(env.AGENT_SETTLEMENT_TIMEOUT_MS, 3_000, "AGENT_SETTLEMENT_TIMEOUT_MS"),
@@ -86,6 +112,28 @@ export function readRuntimeConfig(env: NodeJS.ProcessEnv = process.env, projectR
       )
     }
   };
+}
+
+function optionalGitRevision(value: string | undefined): string | undefined {
+  if (value === undefined || value.length === 0) return undefined;
+  if (!/^[0-9a-f]{40}$/u.test(value)) {
+    throw new Error("SPIREAGENT_RE_SOURCE_REVISION must be a lowercase 40-character Git commit");
+  }
+  return value;
+}
+
+function optionalSha256(value: string | undefined, name: string): string | undefined {
+  if (value === undefined || value.length === 0) return undefined;
+  if (!/^[0-9a-f]{64}$/u.test(value)) throw new Error(`${name} must be a lowercase SHA-256 digest`);
+  return value;
+}
+
+function optionalWorktreeStatus(value: string | undefined): "clean" | "dirty" | undefined {
+  if (value === undefined || value.length === 0) return undefined;
+  if (value !== "clean" && value !== "dirty") {
+    throw new Error("SPIREAGENT_RE_WORKTREE_STATUS must be clean or dirty");
+  }
+  return value;
 }
 
 function isEvidenceProvenance(value: string): value is RuntimeConfig["runtime"]["evidenceProvenance"] {

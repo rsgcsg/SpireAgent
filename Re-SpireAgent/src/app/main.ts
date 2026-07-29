@@ -3,10 +3,11 @@ import { buildAllowedActions } from "../domain/actions/buildAllowedActions.js";
 import { Sts2McpHybridAdapter } from "../integrations/sts2mcp/hybridAdapter.js";
 import { DeepSeekDecisionProvider } from "../llm/deepseekProvider.js";
 import { normalizeCurrentState } from "../normalization/normalizeCurrentState.js";
+import { createBaselineReport } from "../evaluation/baselineReport.js";
 import { auditPromptArtifacts } from "../prompting/promptAudit.js";
 import { compareRecordedPromptWithShadow, repeatRecordedPromptVariant } from "../prompting/promptShadowComparison.js";
-import { listRunIds, readRunMetadata, readRunRecords } from "../recording/fileDecisionRecorder.js";
-import { runLoop } from "../runtime/runLoop.js";
+import { listRunIds, readRunMetadata, readRunRecords, readRunSummary } from "../recording/fileDecisionRecorder.js";
+import { classifyRunTermination, runLoop } from "../runtime/runLoop.js";
 import { parseCliInvocation } from "./cliArgs.js";
 import { runConnectorCanary } from "./connectorCanary.js";
 import { createRuntime } from "./runtimeFactory.js";
@@ -31,6 +32,12 @@ async function main(): Promise<void> {
       ...(invocation.runId ? { runId: invocation.runId } : {}),
       ...(invocation.limitRuns ? { limitRuns: invocation.limitRuns } : {})
     });
+    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+    return;
+  }
+
+  if (invocation.command === "baseline-report") {
+    const result = await createBaselineReport(config.runtime.dataDir, invocation.runId);
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
     return;
   }
@@ -61,6 +68,8 @@ async function main(): Promise<void> {
 
   if (invocation.command === "inspect") {
     const adapter = new Sts2McpHybridAdapter(config.mcp.baseUrl, config.mcp.timeoutMs, {
+      startupWaitMs: config.mcp.startupWaitMs,
+      startupPollMs: config.mcp.startupPollMs,
       commandPollMs: config.mcp.commandPollMs,
       commandTimeoutMs: config.mcp.commandTimeoutMs
     });
@@ -101,13 +110,30 @@ async function main(): Promise<void> {
         delayMs,
         dryRun: invocation.dryRun,
         stopAtRunBoundary: true,
+        allowRunEntry: invocation.allowRunEntry,
         onTick: (result) => printTick(runtime.recorder.runId, result)
+      });
+      const termination = classifyRunTermination(results, maxTicks);
+      const terminal = results.at(-1)!;
+      await runtime.recorder.finalize({
+        endedAt: new Date().toISOString(),
+        decisionCount: results.length,
+        termination,
+        completedGame: termination === "completed_run_boundary",
+        terminalOutcome: terminal.outcome,
+        ...(terminal.stopReason ? { terminalStopReason: terminal.stopReason } : {}),
+        maxTicks
       });
       const failures = results.filter((result) =>
         result.shouldStopRun
         && result.stopReason !== "run_boundary"
         && result.outcome !== "executed_and_settled");
-      process.exitCode = failures.length > 0 ? 1 : 0;
+      if (termination === "stopped_decision_limit") {
+        process.stderr.write(
+          `Agent stopped at AGENT_MAX_TICKS=${maxTicks} before a run boundary; the run is incomplete.\n`
+        );
+      }
+      process.exitCode = failures.length > 0 || termination === "stopped_decision_limit" ? 1 : 0;
       return;
     }
   } finally {
@@ -121,8 +147,9 @@ async function replay(dataDir: string, requestedRunId: string | undefined, decis
   if (!runId) throw new Error(`No runs found in ${dataDir}`);
   const metadata = await readRunMetadata(dataDir, runId);
   const records = await readRunRecords(dataDir, runId);
+  const summary = await readRunSummary(dataDir, runId);
   const selected = decisionId ? records.filter((record) => record.decisionId === decisionId) : records;
-  process.stdout.write(`${JSON.stringify({ metadata, decisionCount: selected.length, decisions: selected }, null, 2)}\n`);
+  process.stdout.write(`${JSON.stringify({ metadata, summary, decisionCount: selected.length, decisions: selected }, null, 2)}\n`);
 }
 
 function printTick(runId: string, result: {
@@ -133,6 +160,7 @@ function printTick(runId: string, result: {
   actionAuthority?: string;
   selectedActionId?: string;
   stopReason?: string;
+  error?: string;
 }): void {
   process.stdout.write(
     `${JSON.stringify({
@@ -143,13 +171,14 @@ function printTick(runId: string, result: {
       authority: result.actionAuthority,
       outcome: result.outcome,
       selectedActionId: result.selectedActionId,
-      stopReason: result.stopReason
+      stopReason: result.stopReason,
+      error: result.error
     })}\n`
   );
 }
 
 function printHelp(): void {
-  process.stdout.write(`RE-P1 commands:\n  npm run agent:inspect\n  npm run agent:connector-canary -- --action-id <advertised-id>\n  npm run agent:tick -- --dry-run\n  npm run agent:tick\n  npm run agent:run -- --max-ticks 20 --delay-ms 250\n  npm run agent:replay -- --run-id <id> [--decision-id <id>]\n  npm run agent:prompt-audit [--run-id <id> | --limit-runs <positive-count>]\n  npm run agent:prompt-shadow-compare -- --run-id <id> --decision-id <id>\n  npm run agent:prompt-repeat-baseline -- --run-id <id> --decision-id <id> --samples <2-5> [--variant full|shadow]\n`);
+  process.stdout.write(`RE-P1 commands:\n  npm run agent:inspect\n  npm run agent:connector-canary -- --action-id <advertised-id>\n  npm run agent:tick -- --dry-run\n  npm run agent:tick\n  npm run agent:run -- --max-ticks 20 --delay-ms 250\n    (the npm script opts into one Gateway-advertised run entry; the loop remains one-game bounded)\n  npm run agent:replay -- --run-id <id> [--decision-id <id>]\n  npm run agent:baseline-report [--run-id <id>]\n  npm run agent:prompt-audit [--run-id <id> | --limit-runs <positive-count>]\n  npm run agent:prompt-shadow-compare -- --run-id <id> --decision-id <id>\n  npm run agent:prompt-repeat-baseline -- --run-id <id> --decision-id <id> --samples <2-5> [--variant full|shadow]\n`);
 }
 
 main().catch((error) => {

@@ -5,6 +5,10 @@ import { TransientObservationError } from "../../game-io/observationError.js";
 import type { JsonObject } from "../../shared/json.js";
 import { BridgeV2HttpError, BridgeV2RestClient } from "./bridgeV2Client.js";
 import {
+  BridgeV2ControlSession,
+  type BridgeV2ControllerCredentials
+} from "./bridgeV2ControlSession.js";
+import {
   type BridgeV2Capabilities,
   type BridgeV2Command,
   type BridgeV2InspectionKind,
@@ -16,10 +20,15 @@ import { wrapBridgeV2State, type Sts2McpRawState } from "./rawState.js";
 export interface HybridAdapterOptions {
   commandPollMs: number;
   commandTimeoutMs: number;
+  startupWaitMs?: number;
+  startupPollMs?: number;
+  observationRetryAttempts?: number;
+  observationRetryDelayMs?: number;
 }
 
 export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, ExecutableGameAction, GameExecutionResult> {
   private readonly bridge: BridgeV2RestClient;
+  private readonly control: BridgeV2ControlSession;
   private capabilitiesPayload?: { data: BridgeV2Capabilities; raw: JsonObject };
   private lastReadAuthority: "none" | "bridge" = "none";
 
@@ -31,11 +40,24 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
     private readonly sleep: (ms: number) => Promise<void> = defaultSleep
   ) {
     this.bridge = new BridgeV2RestClient(baseUrl, timeoutMs, fetchImpl);
+    this.control = new BridgeV2ControlSession(this.bridge);
   }
 
   async initialize(): Promise<void> {
     if (this.capabilitiesPayload) return;
-    this.capabilitiesPayload = await this.bridge.capabilities();
+    let remainingWaitMs = this.options.startupWaitMs ?? 0;
+    const pollMs = this.options.startupPollMs ?? 500;
+    while (true) {
+      try {
+        this.capabilitiesPayload = await this.bridge.capabilities();
+        return;
+      } catch (error) {
+        if (!isTransientGatewayStartupError(error) || remainingWaitMs <= 0) throw error;
+        const delayMs = Math.min(pollMs, remainingWaitMs);
+        await this.sleep(delayMs);
+        remainingWaitMs -= delayMs;
+      }
+    }
   }
 
   describe(): AdapterDescriptor {
@@ -70,6 +92,10 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
           modset_status: bridge.game.modset.status,
           modset_fingerprint: bridge.game.modset.fingerprint,
           modset_exact_permission_eligible: bridge.game.modset.exact_permission_eligible,
+          modset_qualification_candidate_eligible:
+            bridge.game.modset.qualification_candidate_eligible,
+          modset_persistent_qualification_eligible:
+            bridge.game.modset.persistent_qualification_eligible,
           loaded_mods: bridge.game.modset.mods.map((mod) => ({
             id: mod.id,
             version: mod.version ?? null,
@@ -111,6 +137,55 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
             supersedes_grant_id: grant.supersedes_grant_id ?? null,
             revocation_reason: grant.revocation_reason ?? null
           })),
+          qualification_status: bridge.qualification_system.status,
+          qualification_store_id: bridge.qualification_system.store_id,
+          qualification_store_digest: bridge.qualification_system.store_digest,
+          qualification_current_environment_digest:
+            bridge.qualification_system.current_environment_digest,
+          qualification_operation_catalog_id:
+            bridge.qualification_system.operation_catalog_id,
+          qualification_operation_catalog_digest:
+            bridge.qualification_system.operation_catalog_digest,
+          qualification_operation_contracts:
+            bridge.qualification_system.operation_contracts.map((contract) => ({
+              surface_kind: contract.surface_kind,
+              operation: contract.operation,
+              contract_kind: contract.contract_kind,
+              contract_digest: contract.contract_digest,
+              completion_boundary: contract.completion_boundary,
+              witness_id: contract.witness_id,
+              risk_class: contract.risk_class
+            })),
+          persistent_authority_enabled:
+            bridge.qualification_system.persistent_authority_enabled,
+          session_canary_candidate_enabled:
+            bridge.qualification_system.session_canary_candidate_enabled,
+          applicable_qualifications_at_negotiation:
+            bridge.qualification_system.qualifications
+              .filter((qualification) =>
+                qualification.applicable_to_current_environment)
+              .map((qualification) => ({
+                qualification_id: qualification.qualification_id,
+                version: qualification.version,
+                surface_kind: qualification.surface_kind,
+                operation: qualification.operation,
+                contract_kind: qualification.contract_kind,
+                environment_digest: qualification.environment_digest,
+                patch_digest: qualification.patch_digest,
+                operation_fingerprint: qualification.operation_fingerprint,
+                completion_boundary: qualification.completion_boundary,
+                witness_id: qualification.witness_id,
+                evidence_bundle_digest: qualification.evidence_bundle_digest
+              })),
+          control_coordination_status: bridge.control_coordination.status,
+          control_coordination_runtime_epoch: bridge.control_coordination.runtime_epoch,
+          control_registration_required_for_mutation:
+            bridge.control_coordination.registration_required_for_mutation,
+          control_single_controller: bridge.control_coordination.single_controller,
+          control_lease_ttl_ms: bridge.control_coordination.lease_ttl_ms,
+          control_recommended_renewal_ms:
+            bridge.control_coordination.recommended_renewal_ms,
+          control_session: this.control.snapshot(),
           action_execution_allowed: bridge.game.compatibility.action_execution_allowed,
           state_observation_allowed: bridge.game.compatibility.state_observation_allowed,
           inspection_allowed: bridge.game.compatibility.inspection_allowed,
@@ -129,7 +204,8 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
             runtime_epoch: scope.runtime_epoch,
             environment_digest: scope.environment_digest,
             patch_digest: scope.patch_digest,
-            operation_fingerprint: scope.operation_fingerprint
+            operation_fingerprint: scope.operation_fingerprint,
+            admission_basis: scope.admission_basis
           })),
           observation_only_surface_kinds: bridge.game.compatibility.observation_only_surface_kinds,
           supported_surfaces: bridge.surfaces
@@ -155,17 +231,32 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
     this.lastReadAuthority = "none";
     await this.initialize();
 
-    const capabilities = this.capabilitiesPayload;
-    if (!capabilities) throw new Error("Bridge v2 capabilities were not negotiated");
-    const state = await this.bridge.state();
-    const observation = await this.readObservationBundle(capabilities.data, state.data);
-    this.lastReadAuthority = "bridge";
-    return wrapBridgeV2State({
-      state: observation.rawState,
-      capabilities: capabilities.raw,
-      ...(Object.keys(observation.inspections).length > 0 ? { inspections: observation.inspections } : {}),
-      observation: observation.evidence
-    });
+    if (!this.capabilitiesPayload) throw new Error("Bridge v2 capabilities were not negotiated");
+    const maxAttempts = Math.max(1, this.options.observationRetryAttempts ?? 3);
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      try {
+        const state = await this.bridge.state();
+        const observation = await this.readObservationBundle(state.data);
+        const capabilities = await this.bridge.capabilities();
+        if (!sameDynamicAuthorityProjection(observation.state, capabilities.data)) {
+          throw stateChangedDuringCompositeRead(
+            "state and capabilities dynamic authority projections differ"
+          );
+        }
+        this.capabilitiesPayload = capabilities;
+        this.lastReadAuthority = "bridge";
+        return wrapBridgeV2State({
+          state: observation.rawState,
+          capabilities: capabilities.raw,
+          ...(Object.keys(observation.inspections).length > 0 ? { inspections: observation.inspections } : {}),
+          observation: observation.evidence
+        });
+      } catch (error) {
+        if (!(error instanceof TransientObservationError) || attempt >= maxAttempts) throw error;
+        await this.sleep(this.options.observationRetryDelayMs ?? 10);
+      }
+    }
+    throw new Error("Bridge v2 observation retry loop ended without a result");
   }
 
   async execute(action: ExecutableGameAction): Promise<GameExecutionResult> {
@@ -183,18 +274,33 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
     }
 
     const requestId = `re-p1-${randomUUID()}`;
+    let controller: BridgeV2ControllerCredentials;
+    try {
+      await this.control.register(capabilities);
+      controller = await this.control.credentials();
+    } catch (error) {
+      return rejectedResult("controller_coordination_unavailable", safeMessage(error));
+    }
     let current;
     try {
       current = await this.bridge.submit({
         requestId,
         expectedStateId: action.expectedStateId,
-        actionId: action.actionId
+        actionId: action.actionId,
+        clientSessionId: controller.clientSessionId,
+        controllerLeaseId: controller.controllerLeaseId,
+        controllerGeneration: controller.controllerGeneration
       });
     } catch (error) {
       return unknownResult(requestId, action, "command_submit_transport_unknown", safeMessage(error));
     }
 
-    const submittedContractError = commandContractError(current.data, requestId, action);
+    const submittedContractError = commandContractError(
+      current.data,
+      requestId,
+      action,
+      controller
+    );
     if (submittedContractError) {
       return unknownResult(requestId, action, "command_response_contract_mismatch", submittedContractError, current.raw);
     }
@@ -210,7 +316,12 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
       } catch (error) {
         return unknownResult(requestId, action, "command_poll_transport_unknown", safeMessage(error), current.raw);
       }
-      const polledContractError = commandContractError(current.data, requestId, action);
+      const polledContractError = commandContractError(
+        current.data,
+        requestId,
+        action,
+        controller
+      );
       if (polledContractError) {
         return unknownResult(requestId, action, "command_response_contract_mismatch", polledContractError, current.raw);
       }
@@ -231,8 +342,11 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
     return { accepted: false, outcome: "rejected", response: current.raw };
   }
 
+  async close(): Promise<void> {
+    await this.control.close();
+  }
+
   private async readObservationBundle(
-    capabilities: BridgeV2Capabilities,
     state: BridgeV2State
   ): Promise<{
     state: BridgeV2State;
@@ -242,7 +356,7 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
   }> {
     // Availability is state-bound. Capabilities describe the vocabulary, but
     // only the current catalog may authorize a read-only inspection request.
-    const requested = capabilities.game.compatibility.inspection_allowed
+    const requested = state.game.compatibility.inspection_allowed
       ? state.inspection_catalog.map((entry) => entry.kind)
       : [];
     let bundle;
@@ -282,6 +396,50 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
 
 }
 
+function sameDynamicAuthorityProjection(
+  state: BridgeV2State,
+  capabilities: BridgeV2Capabilities
+): boolean {
+  const stateCompatibility = state.game.compatibility;
+  const capabilityCompatibility = capabilities.game.compatibility;
+  const scopes = (value: typeof stateCompatibility.action_permission_scopes) => value
+    .map((scope) => [
+      scope.surface_kind,
+      scope.operation,
+      scope.tier,
+      scope.grant_id,
+      scope.grant_version,
+      scope.runtime_epoch,
+      scope.environment_digest,
+      scope.patch_digest,
+      scope.operation_fingerprint,
+      scope.admission_basis
+    ].join("\u0000"))
+    .sort()
+    .join("\u0001");
+  const strings = (value: readonly string[]) => [...value].sort().join("\u0000");
+  return stateCompatibility.status === capabilityCompatibility.status
+    && stateCompatibility.adaptation_level === capabilityCompatibility.adaptation_level
+    && stateCompatibility.action_execution_allowed === capabilityCompatibility.action_execution_allowed
+    && stateCompatibility.state_observation_allowed === capabilityCompatibility.state_observation_allowed
+    && stateCompatibility.inspection_allowed === capabilityCompatibility.inspection_allowed
+    && strings(stateCompatibility.action_execution_surface_kinds)
+      === strings(capabilityCompatibility.action_execution_surface_kinds)
+    && strings(stateCompatibility.action_canary_surface_kinds)
+      === strings(capabilityCompatibility.action_canary_surface_kinds)
+    && strings(stateCompatibility.inspection_allowed_kinds)
+      === strings(capabilityCompatibility.inspection_allowed_kinds)
+    && strings(stateCompatibility.inspection_canary_kinds)
+      === strings(capabilityCompatibility.inspection_canary_kinds)
+    && scopes(stateCompatibility.action_permission_scopes)
+      === scopes(capabilityCompatibility.action_permission_scopes);
+}
+
+function isTransientGatewayStartupError(error: unknown): boolean {
+  return error instanceof BridgeV2HttpError
+    && (error.statusCode === undefined || error.statusCode >= 500);
+}
+
 function observationEvidence(bundle: BridgeV2ObservationBundle): JsonObject {
   return {
     observation_id: bundle.observation_id,
@@ -305,12 +463,20 @@ function isPending(status: BridgeV2Command["status"]): boolean {
 function commandContractError(
   command: BridgeV2Command,
   requestId: string,
-  action: Extract<ExecutableGameAction, { kind: "bridge_v2_action" }>
+  action: Extract<ExecutableGameAction, { kind: "bridge_v2_action" }>,
+  controller: BridgeV2ControllerCredentials
 ): string | undefined {
   if (command.request_id !== requestId
       || command.expected_state_id !== action.expectedStateId
       || command.action_id !== action.actionId) {
     return "Bridge command response identity does not match the submitted request.";
+  }
+  if (!command.attribution
+      || command.attribution.client_session_id !== controller.clientSessionId
+      || command.attribution.client_instance_id !== controller.clientInstanceId
+      || command.attribution.controller_lease_id !== controller.controllerLeaseId
+      || command.attribution.controller_generation !== controller.controllerGeneration) {
+    return "Bridge command attribution does not match the submitting controller session.";
   }
 
   const expectedOutcome = command.status === "completed"

@@ -56,6 +56,17 @@ internal static class BridgeExactEnvironmentPolicy
             && environment.MainAssemblyHash == mainAssemblyHash);
         if (exact == null)
         {
+            if (!string.IsNullOrWhiteSpace(version)
+                && !string.IsNullOrWhiteSpace(commit)
+                && mainAssemblyHash.HasValue)
+            {
+                return DiagnosticCandidate(
+                    version,
+                    commit,
+                    mainAssemblyHash.Value,
+                    testedVersions,
+                    testedFingerprints);
+            }
             return Disabled(
                 version == null ? "unknown" : "untested",
                 testedVersions,
@@ -83,6 +94,38 @@ internal static class BridgeExactEnvironmentPolicy
             CompatibilityPolicyId = loaded.PolicyId,
             CompatibilityPolicyDigest = loaded.PolicyDigest,
             AdaptationLevel = "reviewed_exact_environment"
+        };
+    }
+
+    private static CompatibilityAssessment DiagnosticCandidate(
+        string version,
+        string commit,
+        int mainAssemblyHash,
+        IReadOnlyList<string> testedVersions,
+        IReadOnlyList<string> testedFingerprints)
+    {
+        string fingerprint = Fingerprint(version, commit, mainAssemblyHash);
+        return new CompatibilityAssessment(
+            "unreviewed_diagnostic_candidate",
+            testedVersions,
+            testedFingerprints,
+            ActionExecutionAllowed: false,
+            StateObservationAllowed: true,
+            InspectionAllowed: false,
+            ActionExecutionSurfaceKinds: Array.Empty<string>(),
+            ActionCanarySurfaceKinds: Array.Empty<string>(),
+            InspectionAllowedKinds: Array.Empty<string>(),
+            InspectionCanaryKinds: Array.Empty<string>(),
+            ObservationOnlySurfaceKinds: BridgeContractManifest.Entries
+                .Select(entry => entry.Kind)
+                .OrderBy(kind => kind, StringComparer.Ordinal)
+                .ToArray(),
+            ObservationCandidateBuildFingerprints: new[] { fingerprint },
+            Detail: $"Game build {fingerprint} is not persistently qualified. Diagnostic semantic observation is enabled; only a Gateway-issued encounter provisional trial may publish mutation actions.")
+        {
+            CompatibilityPolicyId = Loaded.Value.PolicyId,
+            CompatibilityPolicyDigest = Loaded.Value.PolicyDigest,
+            AdaptationLevel = "diagnostic_candidate"
         };
     }
 

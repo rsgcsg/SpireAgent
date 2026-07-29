@@ -5,7 +5,91 @@
 > `../STS2MCP/docs/bridge-v2/CURRENT_STATUS.md`. Older identity and mode claims
 > below are preserved as dated evidence and must not override those documents.
 
-Status update 2026-07-25 (latest): source contract is `2.0-preview.63`; Re
+Status update 2026-07-29 (current pointer only): source contract is
+`2.0-preview.75`; Re normalized schema is `30`. Preview.75 exact runs on SHA
+`ddce17cf...6334`, MVID `23ac5aad...3cb4`, runtime `fc2ea037...` include
+`run-20260729094605-ycbsur` and
+`run-20260729112408-jltj8f` completed one-game boundaries with 429 settled
+mutations and 25 safe stale refusals. They exercised state-bound Inspection and
+one ordinary relic purchase; Kifuda did not occur. This is `unrecorded`
+coverage evidence, not qualification. Re now requires a repeatable actionable
+successor after Gateway action-local completion without remapping or retrying a
+stale choice. A same-source rebuild was installed as SHA `f9819b6b...`, MVID
+`34d6deb3...` and was later superseded by loaded Preview.76 evidence. Current
+Preview.77 source/build/install are verified; cold-load identity and
+post-change Live comparison remain pending. The current rollback pointer is
+owned by the canonical status documents rather than this chronology.
+
+Earlier status update 2026-07-29: source contract is
+`2.0-preview.73`; Re normalized schema is `29`. Preview.73 repairs the
+Preview.72 Stone Humidifier Rest Outcome overclaim and preserves a current
+semantic owner when mutation operations are blocked. Source tests and Release
+build pass; Preview.73 is built and installed as SHA `f6b2d268...151b18`, MVID
+`f67e272a...4c8a`, and cold-loaded as runtime `37c04bb7...`. Strict Re
+read-only inspection passed; no Preview.73 mutation canary, Organic evidence or
+persistent qualification is claimed. See canonical status and
+the C-R1/Preview.73 audits rather than this chronology.
+
+Earlier status update 2026-07-28 (current pointer only): source contract is
+`2.0-preview.72`; Re normalized schema is `29`. Preview.72 is built, installed
+and loaded as SHA `afb0261f...`, MVID `3e9ad83a...`, runtime `14238a9e...`.
+Run `run-20260728132337-ce2195` completed a 146-decision one-game boundary with
+144 settled actions and one safe stale rejection. Its provenance is
+`unrecorded`; Inspection was disabled and the repaired Hefty/actionless-
+settling branches were not encountered. See canonical current status and the
+A-primary program audit rather than this chronology.
+
+Earlier status update 2026-07-27: source contract was `2.0-preview.67`; Re
+normalized schema is `26`. Preview.67 is built, installed and cold-loaded as
+SHA `100ddf42c2114b30602a41c8908f63e154fc8f41a10ed37d4e2a1bded84fc74d`,
+MVID `65bd744d-270b-4026-84c4-2ee397eee4e2`, runtime
+`13f8d3d62d1644ec91a405a59dc4cd64`, profile
+`env-788f4e8ca807b9e99e30757d`. The exact migration workflow installed 87
+session-canary packages and Re dry run `run-20260727101452-4yy236` passed
+without mutation. Preview.67 has no real mutation, Organic action evidence,
+Inspection authority, or persistent qualification. Under historical Preview.66,
+`main_menu/continue_run` completed the exact
+candidate -> two Organic runtime epochs -> persistent package -> hot reload ->
+cold-restart recovery cycle in runs `run-20260726132908-2e4rz6` and
+`run-20260726133036-d3tr3a`. Five explicit contracts plus 82 conservative
+manifest-derived fallback identities are projected; the other 86 operations
+are session canaries only. The npm `agent:run` entry now supplies the explicit
+run-entry boundary while remaining one-game bounded. See
+the canonical current status and
+`../STS2MCP/docs/bridge-v2/PREVIEW_66_MULTI_ENVIRONMENT_MIGRATION_CLOSEOUT_2026-07-26.md`.
+The completed operator readiness closeout is recorded in
+`../docs/current/audits/PREVIEW_67_OPERATOR_READINESS_CLOSEOUT_2026-07-27.md`.
+
+Earlier status update 2026-07-26: source contract was `2.0-preview.65`; Re
+normalized schema is `26`. Preview.65 was rebuilt against, installed on, and
+Steam cold-loaded with game `v0.109.1|c8c577f6|-820620422` as SHA
+`599a126d...2341`, MVID `c0bfde51-1f4b-44af-a1b1-2a884cdc34ce`, runtime
+`0b42511d...a89c`, exact Bridge-only Modset `57d2e880...4a88`. Re strict
+inspection decodes the full identity, qualification, and coordination
+contracts. The qualification store is empty and both persistent/candidate
+authority flags are false. Because `v0.109.1` has no reviewed exact policy,
+normal observation, Inspection, and every action fail closed. A non-game
+two-client test confirmed acquire/conflict/release; v1 probes remain `410`.
+No current-game action canary or qualification was claimed.
+
+Earlier status update 2026-07-25: source contract is `2.0-preview.65`; Re
+normalized schema is `26`. Preview.65 adds strict decoding of the Gateway-owned
+operation identity catalog, persistent qualification projection, candidate
+canary status and exact applicable qualified package. Re remains a consumer:
+it cannot install, promote, revoke, roll back or repair qualification. Gateway
+and Re source tests pass, but the game still has Preview.63 loaded, so
+Preview.65 Release build, installation, cold-load identity and bounded canary
+remain pending. See the canonical status and
+`../STS2MCP/docs/bridge-v2/PREVIEW_65_PERSISTENT_QUALIFICATION_AND_ADAPTATION_CLOSEOUT_2026-07-25.md`.
+
+Earlier status update 2026-07-25: source contract was `2.0-preview.64`; Re
+normalized schema was `26`. Preview.64 added descriptive client registration,
+one runtime-bound mutation-controller lease, generation fencing and command
+attribution. This layer is coordination, not authentication, operation
+permission or persistent authority. See
+`../STS2MCP/docs/bridge-v2/GATE3_LOCAL_CONTROL_COORDINATION_CLOSEOUT_2026-07-25.md`.
+
+Earlier status update 2026-07-25: source contract was `2.0-preview.63`; Re
 normalized schema is `26`. The current loaded Gateway is SHA
 `d05b0580...c90aa0`, MVID `4836b3df-fffc-498a-b9c9-ac666adb5a5b`, runtime
 `8aec74c19fed4a09984dc56a7e0c36ac`. Re strictly consumes the Gateway-owned

@@ -1,6 +1,259 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.63`
+Protocol preview: `2.0-preview.77`
+
+Preview.77 types the qualification contract boundary:
+
+```json
+{
+  "contract_kind": "explicit_native_contract | manifest_migration_fallback"
+}
+```
+
+`qualification_system.schema_version` is `2`. Every operation contract carries
+the kind, while every durable qualification must carry
+`explicit_native_contract`. Missing, legacy or fallback package kinds fail
+closed in the Gateway and operator tooling. Contract kind participates in the
+contract digest and evidence environment. It grants no authority by itself.
+
+Manifest fallbacks remain runtime-local encounter-trial identities and cannot
+be assembled, reloaded, superseded or rolled back as durable authority. This
+is a permission/identity correction, not a new action, Surface, Completion or
+Re strategy rule. See repository
+[ADR-0006](../../../docs/current/decisions/ADR-0006-explicit-native-contract-and-durable-authority-convergence.md).
+
+## Preview.76
+
+Preview.76 adds one required source discriminator to
+`deck_transform_selection`:
+
+```json
+{
+  "source": {
+    "kind": "whispering_hollow_event | new_leaf_relic_pickup",
+    "definition_id": "WHISPERING_HOLLOW | NEW_LEAF",
+    "binding_evidence": "exact Gateway binding"
+  }
+}
+```
+
+The wire does not infer caller purpose from `NDeckTransformSelectScreen`,
+prompt text, or relic ownership. Whispering Hollow requires the exact active
+event owner; New Leaf requires an exact task-local `AfterObtained` binding.
+Zero or multiple source contracts produce `unsupported + none_fail_closed`.
+Every unsupported Surface is also centrally forced to zero legal actions and
+`none_fail_closed`, regardless of a provider draft's default handoff.
+
+Re normalized schema is `31` and retains this source. Preview.76 changes no
+permission tier, persistent claim or native completion ownership.
+
+## Historical Preview Notes
+
+Preview.75 preserves Preview.74 wire shapes and adds two runtime semantics:
+
+- in `migration_exploration`, a diagnostic exact environment may advertise
+  volatile read-only Inspection canaries only after the same runtime has a
+  source-resolved action session scope and clean identity/Patch/Modset;
+- this Inspection scope is state-bound, non-authorizing, outside the command
+  ledger and never creates a persistent compatibility claim;
+- Re accepts a valid strict JSON action when only `reasonBrief` exceeds its
+  240-character storage contract, records
+  `reason_brief_truncated_to_contract_limit`, retains the raw provider response
+  and leaves every action-ID/unknown-outcome check unchanged.
+
+Re normalized schema remained `30`.
+
+Re's post-command supervisor now requires two consecutive equal actionable
+state hashes before the next model decision. This is a client runtime behavior,
+not a wire change or an extension of Gateway command completion. Coherent
+unsupported and non-actionable successors remain typed and non-authorizing.
+
+Preview.74 performs the Clean Closure identity/wire cutover:
+
+- state requires `semantic_state_id` and `authority_projection_id`;
+- composite `state_id` binds both for stale-action protection;
+- `contract_instance_shadow`, `identity_shadow`, `permission_system`, and
+  `qualification_system` are removed from state;
+- permission/qualification remain required control-plane capability data;
+- advertised actions are internally bound to catalog contract, source
+  evidence, exact operands and current state;
+- explicit contracts use contract-digest publication/execution admission;
+  un-migrated fallback families retain the temporary operation gate;
+- Re normalized schema is `30`.
+
+See repository [ADR-0005](../../../docs/current/decisions/ADR-0005-workflow-c-clean-closure.md).
+
+`npm run connector -- audit-run-identity` reads the formal identities for
+Preview.74+ recordings and retains explicit historical-only compatibility with
+the non-authorizing Preview.67-73 identity shadow. It never grants authority.
+
+Preview.73 corrects two boundaries exposed by final-MVID Preview.72 Rest runs:
+
+- Rest Heal completion proves the game-native base-heal minimum and exact
+  option progression; it does not predict final HP after relic or other native
+  side effects;
+- when exact operation permission withholds every action, the current semantic
+  Surface retains `authority_handoff=bridge_owned`, publishes zero actions and
+  uses `readiness=blocked`. Re projects this as `non_actionable` without model
+  invocation or fallback. Unsupported source/owner states still require
+  `none_fail_closed`.
+
+This changes readiness/authority semantics without changing JSON shape. The Re
+normalized schema remains `29`.
+
+Preview.71 repairs one action-local Outcome Oracle without expanding
+authority. `treasure_room/open_treasure_chest` now completes when the exact
+current native lifecycle proves either:
+
+- the chest is opened and a non-empty relic-choice continuation is active; or
+- the chest is opened, the collection has settled closed, and normal Proceed
+  is visible and enabled.
+
+The second branch is required by native effects such as Silver Crucible, whose
+first treasure chest is intentionally empty. Projection and completion reuse
+`TreasureLifecycleFacts`; no relic ID, reward-generation rule, or fallback
+execution is reconstructed in Re. The operation is the sixth explicit
+non-authorizing component-contract candidate; 81 catalog fallbacks remain
+digest-free manifest hypotheses. Preview.71 has build/install evidence only
+until cold-loaded.
+
+Preview.70 adds two non-authorizing migration measurements without changing
+action publication, execution, permission, completion, or state binding:
+
+- each contract-shadow operation now distinguishes a five-row explicit
+  component contract from a manifest-derived hypothesis;
+- explicit candidates carry separate interaction, owner, source, operand,
+  Commit, completion, and Witness digests plus the expected completion boundary;
+- manifest fallback rows carry no component digest and remain explicitly
+  `manifest_hypothesis` or `published_manifest_hypothesis`;
+- the then-current run-identity audit attributed recorded stale refusals
+  against the Preview.67 semantic/authority candidates without authorizing an
+  identity migration.
+
+These fields are raw evidence only. They do not make `operation` a native
+contract, do not promote any qualification, and do not enter Re's strategy
+projection. The legacy composite `state_id` remains authoritative.
+
+Preview.69 separates diagnostic observation, encounter trial admission, and
+persistent claims:
+
+- a complete but unreviewed game-build identity may remain observable as
+  `diagnostic_candidate` while actions and Inspection start disabled;
+- in `migration_exploration`, a uniquely source-resolved current action may
+  receive a runtime-bound `encounter_source_resolved` canary without a bulk
+  preinstalled candidate package;
+- `action_permission_scopes` and permission grants carry `admission_basis`;
+- confirmed trial completion yields `session_trial_confirmed`, never a
+  persistent qualification;
+- `run_transition + no_action + settling` represents the exact new/resumed-run
+  mounting gap without inventing an input owner; only that exact actionless
+  state may defer `shared_state`, using typed diagnostic
+  `bridge.shared_state.deferred_during_run_mount_transition` and sole missing
+  field `shared_visible_state`.
+
+The Gateway still requires exact loaded identity, bounded Modset eligibility,
+clean Patch inventory, current native legality, execute-time revalidation and
+semantic completion. Failure or drift quarantines the runtime-local scope.
+See [ADR-0004](../../../docs/current/decisions/ADR-0004-risk-calibrated-encounter-trial-and-scoped-claims.md).
+
+Preview.68 adds three explicit boundaries without expanding authority:
+
+- command responses may include `completion_boundary` to distinguish native
+  commit, immediate postcondition, exact continuation handoff, transaction
+  settlement, and the historical generic Gateway semantic completion;
+- `deck_enchant_selection.source` binds the exact current Self-Help Book or
+  Kifuda source contract; unknown sources fail closed;
+- contract-instance shadow resolution may be
+  `resolved_runtime_contract`, with exact runtime source/contract IDs. It
+  remains `authorizing=false` and cannot add or remove actions.
+
+A `continuation_handoff_observed` receipt proves only that the current action
+committed and transferred input to an exact native child. It does not claim
+that the parent transaction settled. The child must be freshly observed and
+publishes independently state-bound actions.
+
+Preview.67 introduced `state.identity_shadow`, a non-authorizing migration
+measurement containing:
+
+- `semantic_state_id_candidate`, derived from the current provider semantic
+  signature and shared player-visible state;
+- `authority_projection_id_candidate`, derived from the active Surface,
+  current opaque action keys/operations, matching current operation scopes,
+  authority handoff, and execution admission;
+- explicit declarations that current `state_id` remains the legacy
+  authoritative composite, action binding still uses it, and the shadow is
+  not authorizing.
+
+The existing `state_id`, action IDs, submit/poll contract, permission,
+execute-time validation, native Commit, semantic completion, and command
+ledger are unchanged. Re must decode and preserve this field as raw evidence,
+but it must not infer action authority or model strategy from it. See
+[ADR-0005](ADR-0005-semantic-state-and-authority-identity-separation.md).
+
+Preview.66 retains Preview.65's required `qualification_system` state and adds
+multi-environment ledger semantics plus migration orchestration. It reports:
+
+- the current exact environment digest;
+- a component-level operation contract catalog;
+- local qualification-store identity and status;
+- active, expired, superseded, revoked, rolled-back and session-quarantined
+  packages;
+- whether an exact `session_canary` candidate or persistent `qualified`
+  operation is currently applicable.
+
+`game.modset` now separately reports
+`qualification_candidate_eligible` and
+`persistent_qualification_eligible`. Neither is inferred from Mod presence.
+The Gateway sets them only after an installed package matches the exact
+game/Gateway/Modset/Patch/environment and operation contract.
+
+A `session_canary` package is short-lived bootstrap input to the existing
+Gateway-owned D3 state machine. A `qualified` package requires two distinct
+runtime epochs of confirmed exact Organic evidence. Packages are local and
+append-only; there is no REST or MCP endpoint that installs or activates one.
+The Gateway loads them at startup and atomically reloads complete store
+snapshots when the local file changes. Every package is revalidated before any
+scope publication. Execution still requires the exact advertised scope and
+execute-time validation. Validated failure or Witness mismatch immediately
+quarantines the operation for the runtime and quarantine survives store reload.
+
+Qualification is operation-scoped, not Surface-wide. One Surface may contain
+a persistent-qualified operation and a session-canary sibling at the same
+time. Surface tier lists are coarse highest-tier projections for negotiation;
+the authoritative contract is each exact `surface_kind + operation` scope and
+its current package or grant. A client must not reject a coherent mixed-tier
+Surface, and must not use one operation's tier to authorize a sibling.
+
+One ledger may contain the same operation for multiple exact environments.
+Current package slots are keyed by
+`environment_digest + surface_kind + operation`; a package from one
+environment cannot supersede or authorize the same operation in another.
+Historical packages with older protocol identity remain readable but
+inapplicable.
+
+Preview.66 also adds a non-authorizing Environment Profile index and a
+risk-based migration policy. Profiles exclude local paths and runtime epoch,
+and are planning/inspection data only. `migration_exploration` may create
+session candidates for exact explicit or manifest-derived operation identities
+across configured risk classes, but only when an exact candidate package is
+installed. Manifest-derived fallback identity is test-confirm metadata, not
+semantic equivalence. It is not operation wildcard or persistent authority.
+
+Preview.64 adds minimal local mutation coordination. Read-only observation and
+Inspection remain open. A mutation client registers descriptive process
+metadata, acquires the one runtime-bound controller lease, and submits the
+current lease ID and monotonically increasing generation with each command.
+The Gateway records immutable command attribution and rejects stale or
+non-holder submissions before they enter the command ledger. Gateway restart
+invalidates all registrations and leases because the coordination epoch is the
+existing `bridge.runtime_instance_id`.
+
+This is correctness and debugging coordination, not authentication. Client
+metadata and lease IDs are not secrets, do not defend against a malicious local
+process, and do not replace exact-environment permission, opaque actions,
+execute-time validation, semantic completion, or unknown-no-retry. Lease
+expiry blocks new submissions but never cancels or retries an already admitted
+command.
 
 Preview.63 adds required `permission_system` state to capabilities and every
 state envelope. It reports Gateway mode, runtime epoch, candidate policy,
@@ -10,11 +263,12 @@ Patch digest and operation fingerprint. Dynamic scopes additionally bind the
 current runtime epoch. The exact grant is captured at publication and must
 still match when execution starts.
 
-The reviewed exact-environment policy remains an absolute permission ceiling.
-A gray candidate has no authorization effect by itself. Only the Gateway
-Permission Manager may issue a runtime-epoch-bound `session_canary`, and only a
-Gateway-confirmed semantic completion may supersede it with
-`session_auto_approved`. A validated failure, timeout, unknown outcome,
+The reviewed exact-environment policy remains the persistent-claim baseline,
+not an absolute ceiling on volatile evidence collection. A D candidate has no
+authorization effect by itself. Only the Gateway Permission Manager may issue
+a runtime-epoch-bound `session_canary` from an installed candidate or current
+source-resolved encounter, and only Gateway-confirmed semantic completion may
+supersede it with `session_trial_confirmed`. A validated failure, timeout, unknown outcome,
 identity/Patch drift or mode change quarantines the affected operation for that
 session. Restart is rollback; no dynamic grant becomes persistent
 qualification.
@@ -187,24 +441,23 @@ loaded Modset identity. `game.modset` records:
   Workshop ID as an exact decimal string, and loaded assembly name/version/MVID;
 - a safe status/detail without local filesystem paths.
 
-The current permission profile requires `exact_bridge_only`: ModManager is
-initialized, the only loaded Mod is the negotiated exact `STS2_MCP` module,
-and its manifest version and loaded MVID agree with the Bridge identity.
-Additional loaded Mods, failed or runtime-added Mods, unavailable identity, or
-state/capability fingerprint mismatch fail closed for actions and Inspection.
-This is a permission gate, not a claim that disabled Mods or future native-UI
-Mods are semantically compatible. Such environments require independent source
-binding, visibility, legality, commit, completion, and canary evidence.
+Encounter provisional admission currently requires `exact_bridge_only` or an
+explicitly classified qualification-candidate Modset. ModManager must be
+initialized and the loaded Bridge manifest/MVID must agree with the negotiated
+identity. Additional, failed, runtime-added, or unknown Mods do not become
+eligible from manifest presence alone. This is a trial gate, not a semantic
+compatibility claim; each non-exact Modset still requires bounded source,
+visibility, legality, Commit, completion, and canary evidence.
 
-For the current local identity `v0.109.0|c12f634d|-1639417500`, the Gateway
-advertises an explicit `surface_kind + operation + tier` inventory. A scoped
+For each loaded identity, the Gateway advertises an explicit
+`surface_kind + operation + tier` inventory. A scoped
 build is executable only when the current state operation appears in that
 inventory; empty lists never become wildcard authority. Preview.63 scope
 identity additionally includes the grant ID/version, environment, Patch and
 operation fingerprint. Re requires identical scopes in state and capabilities
 and validates every dynamic scope against the unique current active grant.
 
-Canary and session-auto-approved authority remain operation-scoped permission,
+Canary and session-trial-confirmed authority remain operation-scoped permission,
 not Organic Qualification. Per-operation and per-origin qualification must
 still be recorded separately. Session state may narrow current authority but
 must not infer or expand the embedded ceiling from implementation alone.
@@ -221,6 +474,12 @@ GET  /api/v2/capabilities
 GET  /api/v2/state
 GET  /api/v2/inspections/{kind}?expected_state_id={state_id}
 POST /api/v2/observation-bundles
+POST /api/v2/clients/register
+GET  /api/v2/clients
+GET  /api/v2/controller
+POST /api/v2/controller/acquire
+POST /api/v2/controller/renew
+POST /api/v2/controller/release
 POST /api/v2/commands
 GET  /api/v2/commands/{request_id}
 ```
@@ -250,10 +509,9 @@ prove that STS2 gameplay is independent of scene/UI lifecycle.
 Every state response contains:
 
 - protocol, bridge, exact game identity, and exact loaded Modset identity;
-- exact operation permission scopes and the Gateway-owned session permission
-  system, including runtime Patch evidence and grant history;
 - observation policy;
-- stable semantic `state_id` and monotonic process-session sequence;
+- composite `state_id`, formal `semantic_state_id`, formal
+  `authority_projection_id`, and monotonic process-session sequence;
 - explicit top-level `shared_state` (`null` when no single-player run exists);
 - readiness, typed semantic `context`, and surface kind;
 - typed surface data;
@@ -261,8 +519,6 @@ Every state response contains:
 - completeness sources and missing fields;
 - a bounded `visibility` declaration and current typed
   `inspection_catalog`;
-- a non-authorizing `contract_instance_shadow` describing the current gap
-  between declared semantic operations and legacy Surface-kind permission;
 - typed diagnostics and legacy compatibility warnings.
 
 Timestamps and logging fields do not change `state_id`. Shared visible state,
@@ -280,29 +536,37 @@ visibility basis, availability tier, ordering semantics, cost hint, recommended
 uses, and hidden policy. It grants no action authority and does not enter the
 command ledger.
 
-`contract_instance_shadow` is migration telemetry only. It may be unresolved
-and omit nullable contract/binding fields during transitions. It always reports
-`authorizing=false`; neither manifest presence nor operation evidence can add
-or suppress legal actions. Current execution permission is the explicit
-operation scope produced by the exact-environment ceiling plus the Gateway
-Permission Manager.
+Permission and qualification history are not semantic state. They are read
+through capabilities/operator control responses and do not enter Prompt or
+`semantic_state_id`.
 
 ## Permission System
 
-`permission_system` is required on capabilities and state. Its
+`permission_system` is required on capabilities. Its
 `runtime_epoch` must equal `bridge.runtime_instance_id`.
 
 Modes:
 
 - `strict`: embedded `qualified` operations only;
 - `balanced_gray`: embedded non-candidate canaries remain available and
-  reviewed gray candidates may enter the session loop;
-- `developer_gray`: the same safety kernel and reviewed ceiling, with no
-  additional candidates in Preview.63.
+  reviewed reversible-navigation candidates may enter the session loop;
+- `developer_gray`: additionally permits reviewed progression candidates;
+- `migration_exploration`: additionally permits reviewed persistent-run-
+  mutation candidates during an explicit migration cycle.
 
-The current gray policy contains only reversible
-`main_menu/open_singleplayer` and `main_menu/continue_run`. It cannot authorize
-an operation absent from the embedded canary ceiling.
+The migration policy is risk-class based rather than an operation-name list.
+The current qualification catalog contains six explicit high-precision
+contracts plus 81 conservative fallback identities derived from the current
+Gateway contract manifest. Explicit rows require their exact completion
+boundary and witness. A fallback row uses
+`gateway_semantic_completion_observed` with the package sentinel
+`gateway_reported_operation_witness`; runtime success still requires a
+non-empty witness emitted by the Gateway for that operation. Fallback rows are
+eligible only in `migration_exploration` and do not assert semantic
+equivalence. The policy cannot authorize an operation absent from the current
+catalog. Preview.69 may use either an exact applicable candidate package or a
+current uniquely source-resolved encounter as the admission basis; the latter
+is volatile and cannot create a persistent claim.
 
 Every grant records:
 
@@ -310,6 +574,8 @@ Every grant records:
 - Surface, operation, risk and mode;
 - runtime epoch, environment, Gateway SHA/MVID, Modset and Patch digest;
 - operation fingerprint and candidate evidence digest/IDs;
+- admission basis (`installed_candidate_package` or
+  `encounter_source_resolved`);
 - revocation reason where applicable.
 
 Only the unique current active grant can back a dynamic action scope. Historical
@@ -328,6 +594,31 @@ completion.
 D scenarios, fingerprints, graders and candidate records have no authority.
 They may supply evidence IDs and a recommendation. The Gateway remains the
 sole policy decision and enforcement owner.
+
+## Local Control Coordination
+
+Capabilities expose a required `control_coordination` contract. Its
+`runtime_epoch` must equal `bridge.runtime_instance_id`. The current contract
+has:
+
+- descriptive client registration for mutation clients;
+- no registration requirement for reads or Inspection;
+- exactly one active mutation-controller lease;
+- a 30-second lease TTL and 10-second recommended renewal interval;
+- generation fencing so an expired or released lease cannot regain authority;
+- immutable command attribution to the admitted client, lease and generation.
+
+Registration does not authenticate a process. `product_id`, product name and
+version exist only for diagnosis and command audit. The direct local Gateway
+does not implement accounts, passwords, OAuth, certificates, RBAC or a
+malicious-process boundary.
+
+The coordination check runs only for a new request ID and before the command
+enters the ledger. Re-reading an existing command by request ID remains open
+and cannot create another mutation. An admitted command owns its lifecycle
+until semantic completion, rejection, failure or timeout even if the lease
+later expires. A new holder may submit only after the previous lease expires
+or is released; it cannot cancel or retry the prior command.
 
 ## Coherent Observation Bundle
 
@@ -362,8 +653,11 @@ Bridge wire actions always use `authority="game_ui"`; the higher-level client
 records the effective state authority separately.
 
 `shared_state` is a separate top-level read-only concern. Active-run Surfaces
-require it. The purpose-specific `main_menu`, `singleplayer_menu`, and
-`character_select` Surfaces require it to be `null`, because no run exists yet.
+require it. The only active-run omission is the exact typed, actionless
+run-mount transition above; it cannot publish actions and is expected to
+settle into a fresh complete observation. The purpose-specific `main_menu`,
+`singleplayer_menu`, and `character_select` Surfaces require it to be `null`,
+because no run exists yet.
 Preview.28+ serializes
 the active single-player run's act/floor/ascension, visible bosses/modifiers,
 and local player identity/HP/gold/relic/potion facts. It must not be copied into
@@ -400,7 +694,7 @@ tracked by the 2026-07-20 architecture audit and must not be inferred away from
 the local child witness.
 
 Preview.42 models only `LeadPaperweight.AfterObtained` as
-`event + generated_card_choice`. The Surface must declare
+`generated_card_choice` over the current world Context. The Surface must declare
 `purpose=acquire_one_generated_card`, `source_kind=lead_paperweight`, and
 `destination=run_deck`. Legal operations are `select_generated_run_card` and
 `skip_generated_run_card_choice`. An exact active source binding is mandatory;
@@ -442,6 +736,25 @@ required, so unknown potions, derived
 Mod types, card/relic generators, and other callers cannot inherit authority.
 Shared mechanics and witness topology do not erase the source identity or
 create a universal generated-card selector.
+
+Preview.72 adds exact sealed `HeftyTablet.AfterObtained` to the same interaction
+Surface without pretending it has Lead Paperweight semantics. It declares
+`purpose=acquire_one_generated_rare_card_plus_injury`,
+`source_kind=hefty_tablet`, `destination=run_deck`, and
+`selected_card_cost_policy=unchanged`. Selection completion requires source
+task completion, Surface closure, the selected exact Rare card, one exact new
+`Injury`, deck count `+2`, and absence of unselected offers. Skip requires one
+exact new Injury, deck count `+1`, and absence of every offer. The exact active
+relic task supplies business origin independently of the underlying room
+Context; prompt text and UI shape remain insufficient.
+
+Preview.72 also makes action publication explicit in scoped environments. A
+semantic Surface may be `settling` with no legal actions and be advertised as
+`candidate_observation_only`. Re may observe and record it but must produce no
+allowed action and must project `actionAuthority=none`. Once legal actions are
+published, an exact qualified or canary operation scope is mandatory. `ready`
+with no actions, observation-only with actions, or incompatible Context/source
+contracts remain invalid.
 
 Preview.53 extends `combat_pile_card_selection` only to exact sealed
 `Graveblast`. Its wire branch is discriminated from Headbutt by
@@ -596,15 +909,22 @@ handles, node paths, indices, and call paths remain inside the registry.
 {
   "request_id": "client-generated-idempotency-key",
   "expected_state_id": "state_opaque",
-  "action_id": "action_opaque"
+  "action_id": "action_opaque",
+  "client_session_id": "client_opaque",
+  "controller_lease_id": "lease_opaque",
+  "controller_generation": 1
 }
 ```
 
-The bridge rebuilds current state, checks exact state identity, resolves the
-registered action, and revalidates its game objects before starting it.
+The bridge first resolves an existing request ID for idempotent polling. A new
+request must hold the current runtime controller lease. The bridge then
+rebuilds current state, checks exact state identity, resolves the registered
+action, and revalidates its game objects before starting it.
 
 Request IDs are idempotent only for an identical payload. Reusing one with a
-different action is rejected.
+different action is rejected. Coordination rejection does not enter the
+command ledger and does not count as an operation failure in the D3 permission
+state machine.
 
 ## Lifecycle
 
@@ -683,7 +1003,7 @@ Current selection and reward completion evidence:
 | event dialogue advance | exact current dialogue index advances or the event room closes |
 | card bundle preview/confirm/cancel | exact selected bundle enters preview; confirm closes the selector and every selected exact card instance appears in the run deck; cancel returns to choices |
 | map node choice | map closes or the exact current map coordinate reaches the selected node |
-| rest Heal | exact source-calculated HP post-state and rest-option progression |
+| rest Heal | game-native base-heal minimum reached plus rest-option progression; additional native side effects may raise final HP further |
 | rest Smith | exact `deck_upgrade_selection` child opens; arbitrary overlays do not complete |
 | rest Proceed | map opens or the rest room leaves |
 | shop open/close | inventory `IsOpen` becomes true/false respectively |
@@ -734,10 +1054,12 @@ source-qualified event card-acquisition canary without generalizing other
 `NSimpleCardSelectScreen` purposes.
 
 Clients must verify that every command response repeats the submitted
-`request_id`, `expected_state_id`, and `action_id`. They must also enforce the
-status/outcome pairs: pending lifecycle states use `pending`, `completed` uses
-`confirmed`, `rejected` uses `not_applied`, and `failed`/`timed_out` use
-`unknown`. A mismatch is an unknown client outcome, not success.
+`request_id`, `expected_state_id`, and `action_id`, and that command
+attribution matches the submitting client session, lease ID and generation.
+They must also enforce the status/outcome pairs: pending lifecycle states use
+`pending`, `completed` uses `confirmed`, `rejected` uses `not_applied`, and
+`failed`/`timed_out` use `unknown`. A mismatch is an unknown client outcome,
+not success.
 
 ## Diagnostics
 
@@ -805,6 +1127,11 @@ or canary list.
 |---|---|
 | `invalid_json` | malformed request body |
 | `invalid_command_contract` | required opaque IDs absent/invalid |
+| `invalid_client_contract` | required descriptive client registration fields absent/invalid |
+| `invalid_controller_contract` | required controller session, lease, or generation absent/invalid |
+| `client_session_not_found` | client was not registered in the current Gateway runtime |
+| `controller_lease_held` | another local mutation client currently holds control |
+| `controller_lease_stale` | lease ID/generation is expired, released, replaced, or from another runtime |
 | `request_id_conflict` | idempotency key reused for another payload |
 | `command_capacity_exhausted` | bounded session ledger is full; restart required |
 | `stale_state` | expected state no longer current |

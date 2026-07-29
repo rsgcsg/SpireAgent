@@ -4,6 +4,11 @@
 
 RE-P1 is a minimal LLM-controlled Slay the Spire 2 runtime. It exists to prove a safe and replayable decision loop before memory, learning, strategy scaffolds, or policy governance are reintroduced.
 
+The cross-component destination is
+[`ADR-0002`](../docs/current/decisions/ADR-0002-semantic-gateway-two-plane-target-architecture.md).
+Re owns a consumer projection and runtime supervision within that architecture;
+it never owns Gateway facts, action authority, native Commit, or completion.
+
 ## Non-Negotiable Architecture
 
 ```text
@@ -25,7 +30,7 @@ untrusted MCP JSON
 - On a Bridge v2-owned surface, the allowed IDs and executable opaque actions
   come only from the exact current bridge state. Never merge them with v1
   reconstructed actions.
-- `NormalizedCurrentState` is the only current-state contract available to planning, prompting, and action generation. Its `context` records semantic game meaning; its `surface` records the active interaction protocol; its `actionAuthority` records who may construct executable actions. Always inspect all three. Do not replace this with one `kind` or combination-specific top-level types.
+- `NormalizedCurrentState` is the only current-state contract available to planning, prompting, and action generation. Its `context` records semantic game meaning; its `surface` records the active interaction protocol; its `actionAuthority` records who may construct executable actions. An actionless settling Surface has `none`, even when the Gateway remains the sole potential publisher after settlement. Always inspect all three. Do not replace this with one `kind` or combination-specific top-level types.
 - Missing and unknown facts stay missing or unknown. Critical missing fields make the state invalid.
 - Failures are evidence. They are not hidden by local strategic fallback or JSON repair.
 

@@ -1,12 +1,18 @@
 import {
   decodeBridgeV2Capabilities,
+  decodeBridgeV2ClientRegistration,
   decodeBridgeV2Command,
+  decodeBridgeV2ControllerLeaseResponse,
+  decodeBridgeV2ControlSnapshot,
   decodeBridgeV2Inspection,
   decodeBridgeV2ObservationBundle,
   decodeBridgeV2State,
   type DecodedBridgePayload,
   type BridgeV2Capabilities,
+  type BridgeV2ClientRegistration,
   type BridgeV2Command,
+  type BridgeV2ControllerLeaseResponse,
+  type BridgeV2ControlSnapshot,
   type BridgeV2Inspection,
   type BridgeV2InspectionKind,
   type BridgeV2ObservationBundle,
@@ -75,10 +81,73 @@ export class BridgeV2RestClient {
     return decodeBridgeV2ObservationBundle(response.value);
   }
 
+  async registerClient(input: {
+    clientInstanceId: string;
+    productId: string;
+    productName: string;
+    productVersion: string;
+  }): Promise<DecodedBridgePayload<BridgeV2ClientRegistration>> {
+    const response = await this.request(`${this.baseUrl}/api/v2/clients/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        client_instance_id: input.clientInstanceId,
+        product_id: input.productId,
+        product_name: input.productName,
+        product_version: input.productVersion
+      })
+    });
+    if (!response.response.ok) {
+      throw httpError("Bridge v2 client registration", response.response, response.value);
+    }
+    return decodeBridgeV2ClientRegistration(response.value);
+  }
+
+  async controlSnapshot(): Promise<DecodedBridgePayload<BridgeV2ControlSnapshot>> {
+    const response = await this.request(`${this.baseUrl}/api/v2/controller`, { method: "GET" });
+    if (!response.response.ok) {
+      throw httpError("Bridge v2 controller status", response.response, response.value);
+    }
+    return decodeBridgeV2ControlSnapshot(response.value);
+  }
+
+  async acquireController(
+    clientSessionId: string
+  ): Promise<DecodedBridgePayload<BridgeV2ControllerLeaseResponse>> {
+    return this.controllerOperation("acquire", { client_session_id: clientSessionId });
+  }
+
+  async renewController(input: {
+    clientSessionId: string;
+    controllerLeaseId: string;
+    controllerGeneration: number;
+  }): Promise<DecodedBridgePayload<BridgeV2ControllerLeaseResponse>> {
+    return this.controllerOperation("renew", {
+      client_session_id: input.clientSessionId,
+      controller_lease_id: input.controllerLeaseId,
+      controller_generation: input.controllerGeneration
+    });
+  }
+
+  async releaseController(input: {
+    clientSessionId: string;
+    controllerLeaseId: string;
+    controllerGeneration: number;
+  }): Promise<DecodedBridgePayload<BridgeV2ControllerLeaseResponse>> {
+    return this.controllerOperation("release", {
+      client_session_id: input.clientSessionId,
+      controller_lease_id: input.controllerLeaseId,
+      controller_generation: input.controllerGeneration
+    });
+  }
+
   async submit(input: {
     requestId: string;
     expectedStateId: string;
     actionId: string;
+    clientSessionId: string;
+    controllerLeaseId: string;
+    controllerGeneration: number;
   }): Promise<DecodedBridgePayload<BridgeV2Command>> {
     const response = await this.request(`${this.baseUrl}/api/v2/commands`, {
       method: "POST",
@@ -86,10 +155,33 @@ export class BridgeV2RestClient {
       body: JSON.stringify({
         request_id: input.requestId,
         expected_state_id: input.expectedStateId,
-        action_id: input.actionId
+        action_id: input.actionId,
+        client_session_id: input.clientSessionId,
+        controller_lease_id: input.controllerLeaseId,
+        controller_generation: input.controllerGeneration
       })
     });
     return decodeBridgeV2Command(response.value);
+  }
+
+  private async controllerOperation(
+    operation: "acquire" | "renew" | "release",
+    body: Record<string, unknown>
+  ): Promise<DecodedBridgePayload<BridgeV2ControllerLeaseResponse>> {
+    const response = await this.request(`${this.baseUrl}/api/v2/controller/${operation}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    const decoded = decodeBridgeV2ControllerLeaseResponse(response.value);
+    if (!response.response.ok) {
+      throw new BridgeV2HttpError(
+        `Bridge v2 controller ${operation} rejected: ${decoded.data.status} - ${decoded.data.detail}`,
+        response.response.status,
+        decoded.data.status
+      );
+    }
+    return decoded;
   }
 
   async poll(requestId: string): Promise<DecodedBridgePayload<BridgeV2Command>> {

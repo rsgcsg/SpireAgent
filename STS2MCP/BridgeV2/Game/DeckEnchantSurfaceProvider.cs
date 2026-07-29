@@ -4,13 +4,19 @@ using System.Linq;
 using System.Reflection;
 using Godot;
 using MegaCrit.Sts2.Core.CardSelection;
+using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Enchantments;
+using MegaCrit.Sts2.Core.Models.Events;
+using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Nodes.Cards;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
+using MegaCrit.Sts2.Core.Rooms;
+using MegaCrit.Sts2.Core.Runs;
 using STS2_MCP.BridgeV2.Protocol;
 using STS2_MCP.BridgeV2.Runtime;
 
@@ -18,7 +24,7 @@ namespace STS2_MCP.BridgeV2.Game;
 
 internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
 {
-    private const string ReflectionEvidence = "sts2-v0.109.0:c12f634d:-840572606:NDeckEnchantSelectScreen+SelfHelpBook.ReadEntireBook";
+    private const string ReflectionEvidence = "sts2-v0.109.1:NDeckEnchantSelectScreen+SelfHelpBook.SelectAndEnchant+Kifuda.AfterObtained";
 
     public string Kind => "deck_enchant_selection";
 
@@ -69,6 +75,27 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
         }
 
         Binding exactBinding = binding!;
+        if (!TryResolveSource(exactBinding, out DeckEnchantSource? source, out string? sourceError))
+        {
+            var unsupported = new UnsupportedSurface(
+                "deck_enchant_selection",
+                nameof(NDeckEnchantSelectScreen),
+                sourceError ?? "Deck enchant source contract is not recognized.");
+            return new BridgeObservationDraft(
+                BridgeHash.Object(new { game.Version, unsupported }),
+                "degraded",
+                BridgeContextBuilder.Build(entities),
+                unsupported,
+                new StateCompleteness(
+                    "degraded",
+                    "empty_fail_closed",
+                    new[] { "public_scene_tree", ReflectionEvidence },
+                    new[] { "source_contract", "legal_actions" }),
+                game,
+                new[] { "deck_enchant_source_unresolved", sourceError ?? "unknown_source" },
+                Array.Empty<BridgeActionDraft>());
+        }
+
         string stage = IsPreviewVisible(screen) ? "preview" : "selecting";
         string screenEntityId = entities.GetId(screen, "screen");
         HashSet<CardModel> selectedCards = exactBinding.SelectedCards.ToHashSet();
@@ -100,6 +127,7 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
             "deck_enchant_selection",
             stage,
             screenEntityId,
+            source!,
             ReadNodeText(screen, "%BottomLabel"),
             exactBinding.Preferences.MinSelect,
             exactBinding.Preferences.MaxSelect,
@@ -112,6 +140,7 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
         List<BridgeActionDraft> actions = BuildActions(
             screen,
             exactBinding,
+            source!,
             stage,
             holders,
             selectedCards,
@@ -160,6 +189,7 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
     private static List<BridgeActionDraft> BuildActions(
         NDeckEnchantSelectScreen screen,
         Binding binding,
+        DeckEnchantSource source,
         string stage,
         IReadOnlyList<NGridCardHolder> holders,
         HashSet<CardModel> selectedCards,
@@ -185,7 +215,7 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
                     "toggle_card",
                     "selection",
                     selected ? $"Deselect {cardName}" : $"Select {cardName}",
-                    "NCardGrid.HolderPressed",
+                    $"{source.BindingEvidence}|NCardGrid.HolderPressed",
                     () => StartToggleCard(screen, card, binding.Enchantment),
                     new[] { new ActionEntityBinding("card", cardId) }));
             }
@@ -199,7 +229,7 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
                     "preview_selection",
                     "selection",
                     "Preview selected cards with the enchantment",
-                    "NDeckEnchantSelectScreen.main_confirm",
+                    $"{source.BindingEvidence}|NDeckEnchantSelectScreen.main_confirm",
                     () => StartMainPreview(screen)));
             }
 
@@ -211,7 +241,7 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
                     "close_selection",
                     "navigation",
                     "Close enchant selection without choosing cards",
-                    "NDeckEnchantSelectScreen.close",
+                    $"{source.BindingEvidence}|NDeckEnchantSelectScreen.close",
                     () => StartClose(screen)));
             }
         }
@@ -226,7 +256,7 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
                     "confirm_selection",
                     "commit",
                     "Confirm and apply the displayed enchantment",
-                    "NDeckEnchantSelectScreen.preview_confirm",
+                    $"{source.BindingEvidence}|NDeckEnchantSelectScreen.preview_confirm",
                     () => StartPreviewConfirm(
                         screen,
                         binding.SelectedCards.ToArray(),
@@ -242,7 +272,7 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
                     "cancel_preview",
                     "navigation",
                     "Cancel preview and return to card selection",
-                    "NDeckEnchantSelectScreen.preview_cancel",
+                    $"{source.BindingEvidence}|NDeckEnchantSelectScreen.preview_cancel",
                     () => StartPreviewCancel(screen)));
             }
         }
@@ -418,6 +448,68 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
         return binding != null;
     }
 
+    internal static bool IsKifudaContinuation(
+        NDeckEnchantSelectScreen screen,
+        RelicModel expectedRelic)
+    {
+        if (expectedRelic is not Kifuda
+            || !IsCurrentScreen(screen)
+            || !TryReadBinding(screen, out Binding? binding, out _)
+            || !TryResolveSource(binding!, out DeckEnchantSource? source, out _))
+        {
+            return false;
+        }
+
+        return source!.Kind == "kifuda_relic_pickup"
+               && ReferenceEquals(expectedRelic.Owner.Relics
+                   .FirstOrDefault(relic => ReferenceEquals(relic, expectedRelic)), expectedRelic);
+    }
+
+    private static bool TryResolveSource(
+        Binding binding,
+        out DeckEnchantSource? source,
+        out string? error)
+    {
+        source = null;
+        error = null;
+        RunState? runState = RunManager.Instance.DebugOnlyGetState();
+
+        if (runState?.CurrentRoom is MerchantRoom
+            && binding.Enchantment is Adroit
+            && binding.EnchantmentAmount == 3
+            && binding.Preferences.MinSelect == 0
+            && binding.Preferences.MaxSelect == 3
+            && binding.Preferences.RequireManualConfirmation
+            && !binding.Preferences.Cancelable
+            && LocalContext.GetMe(runState)?.Relics.Any(relic => relic is Kifuda) == true)
+        {
+            source = new DeckEnchantSource(
+                "kifuda_relic_pickup",
+                "KIFUDA",
+                "Kifuda.AfterObtained+Adroit:3+min0:max3+manual+noncancelable+owned-relic");
+            return true;
+        }
+
+        EventModel? eventModel = (runState?.CurrentRoom as EventRoom)?.LocalMutableEvent
+                                 ?? (runState?.CurrentRoom as EventRoom)?.CanonicalEvent;
+        if (eventModel is SelfHelpBook
+            && binding.EnchantmentAmount == 2
+            && binding.Preferences.MinSelect == 1
+            && binding.Preferences.MaxSelect == 1
+            && !binding.Preferences.Cancelable
+            && binding.Enchantment is Sharp or Nimble or MegaCrit.Sts2.Core.Models.Enchantments.Swift)
+        {
+            source = new DeckEnchantSource(
+                "self_help_book_event",
+                "SELF_HELP_BOOK",
+                "SelfHelpBook.SelectAndEnchant+supported-enchantment:2+single+noncancelable");
+            return true;
+        }
+
+        error = "The active enchant screen does not match a source-audited vanilla Self-Help Book or Kifuda contract.";
+        return false;
+    }
+
     private static object? ReadField(object source, string fieldName)
     {
         const BindingFlags Flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
@@ -503,7 +595,7 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
         return multi != null && McpMod.IsNodeVisible(multi) ? multi : null;
     }
 
-    private sealed record Binding(
+    internal sealed record Binding(
         CardSelectorPrefs Preferences,
         IReadOnlyList<CardModel> SelectedCards,
         EnchantmentModel Enchantment,

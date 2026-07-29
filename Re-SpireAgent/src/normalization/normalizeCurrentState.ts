@@ -257,8 +257,8 @@ function normalizeSurface(raw: JsonObject, context: SemanticContext, diagnostics
     diagnostics.warn("bundle_select has no verified interaction protocol and is intentionally unsupported");
     return unsupportedSurface(raw, "unknown_surface", "bundle_select is not yet verified by an observed raw-state fixture");
   }
-  if (context.kind === "combat_transition" || /loading|transition|settling|starting/u.test(lower)) {
-    return { kind: "no_action", reason: context.kind === "combat_transition" ? "transitioning" : lower.includes("loading") ? "loading" : "transitioning", ...(optionalString(raw.message) ? { message: optionalString(raw.message) } : {}), observedTopLevelKeys: Object.keys(raw).sort() };
+  if (context.kind === "combat_transition" || context.kind === "run_transition" || /loading|transition|settling|starting/u.test(lower)) {
+    return { kind: "no_action", reason: context.kind === "combat_transition" || context.kind === "run_transition" ? "transitioning" : lower.includes("loading") ? "loading" : "transitioning", ...(optionalString(raw.message) ? { message: optionalString(raw.message) } : {}), observedTopLevelKeys: Object.keys(raw).sort() };
   }
   switch (context.kind) {
     case "combat":
@@ -423,6 +423,7 @@ function isCompatible(context: SemanticContext, surface: InteractionSurface): bo
     menu: ["main_menu", "singleplayer_menu", "character_select", "menu_choice", "no_action", "unsupported"],
     run_ended: ["game_over", "menu_choice", "no_action", "unsupported"],
     combat_transition: ["no_action", "unsupported"],
+    run_transition: ["no_action", "unsupported"],
     unknown: ["card_selection", "card_bundle_selection", "relic_deck_removal_selection", "reward_deck_removal_selection", "no_action", "unsupported"]
   };
   if (!allowed[context.kind].includes(surface.kind)) return false;

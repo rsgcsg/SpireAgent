@@ -7,7 +7,7 @@ namespace STS2_MCP.BridgeV2.Protocol;
 
 public static class BridgeV2Contract
 {
-    public const string ProtocolVersion = "2.0-preview.63";
+    public const string ProtocolVersion = "2.0-preview.77";
     public const string ObservationPolicyId = "player_visible_ui_v1";
 }
 
@@ -39,6 +39,8 @@ public sealed record ActionPermissionScope(
     public string PatchDigest { get; init; } = "not_recorded";
 
     public string OperationFingerprint { get; init; } = "not_recorded";
+
+    public string AdmissionBasis { get; init; } = "reviewed_or_persisted_scope";
 }
 
 public sealed record BridgeRuntimePatchInventoryInfo(
@@ -83,7 +85,10 @@ public sealed record BridgePermissionGrantRecord(
     DateTimeOffset ExpiresAt,
     string? SupersedesGrantId,
     string? RevocationReason,
-    IReadOnlyList<string> EvidenceIds);
+    IReadOnlyList<string> EvidenceIds)
+{
+    public string AdmissionBasis { get; init; } = "installed_candidate_package";
+}
 
 public sealed record BridgePermissionSystemInfo(
     int SchemaVersion,
@@ -109,6 +114,75 @@ public sealed record BridgePermissionSystemInfo(
             "Permission-system status was not attached to this response."),
         Array.Empty<BridgePermissionGrantRecord>(),
         new[] { "No dynamic permission state is available." });
+}
+
+public sealed record BridgePersistentQualificationInfo(
+    string QualificationId,
+    int Version,
+    string Status,
+    string AuthorityTier,
+    string SurfaceKind,
+    string Operation,
+    string ContractKind,
+    string RiskClass,
+    string EnvironmentDigest,
+    string ModsetFingerprint,
+    string PatchDigest,
+    string OperationFingerprint,
+    string CompletionBoundary,
+    string WitnessId,
+    string EvidenceBundleDigest,
+    bool ApplicableToCurrentEnvironment,
+    string Applicability,
+    DateTimeOffset IssuedAt,
+    DateTimeOffset ExpiresAt,
+    string? SupersedesQualificationId,
+    string? StatusReason,
+    IReadOnlyList<string> EvidenceIds);
+
+public sealed record BridgeOperationQualificationIdentityInfo(
+    string SurfaceKind,
+    string Operation,
+    string ContractKind,
+    string InteractionDigest,
+    string OwnerDigest,
+    string SourceDigest,
+    string OperandDigest,
+    string CommitDigest,
+    string CompletionDigest,
+    string WitnessDigest,
+    string ContractDigest,
+    string CompletionBoundary,
+    string WitnessId,
+    string RiskClass);
+
+public sealed record BridgeQualificationSystemInfo(
+    int SchemaVersion,
+    string Status,
+    string StoreId,
+    string StoreDigest,
+    string CurrentEnvironmentDigest,
+    string OperationCatalogId,
+    string OperationCatalogDigest,
+    bool PersistentAuthorityEnabled,
+    bool SessionCanaryCandidateEnabled,
+    IReadOnlyList<BridgeOperationQualificationIdentityInfo> OperationContracts,
+    IReadOnlyList<BridgePersistentQualificationInfo> Qualifications,
+    IReadOnlyList<string> Limitations)
+{
+    public static BridgeQualificationSystemInfo Unavailable { get; } = new(
+        2,
+        "unavailable_fail_closed",
+        "unavailable",
+        "unavailable",
+        "unavailable",
+        "unavailable",
+        "unavailable",
+        PersistentAuthorityEnabled: false,
+        SessionCanaryCandidateEnabled: false,
+        Array.Empty<BridgeOperationQualificationIdentityInfo>(),
+        Array.Empty<BridgePersistentQualificationInfo>(),
+        new[] { "No persistent qualification store was configured." });
 }
 
 public sealed record CompatibilityAssessment(
@@ -172,7 +246,12 @@ public sealed record ModsetIdentity(
     string FingerprintScope,
     bool ExactPermissionEligible,
     IReadOnlyList<LoadedModIdentity> Mods,
-    string Detail);
+    string Detail)
+{
+    public bool QualificationCandidateEligible { get; init; }
+
+    public bool PersistentQualificationEligible { get; init; }
+}
 
 public sealed record ObservationPolicyInfo(
     string Id,
@@ -192,6 +271,16 @@ public sealed record CommandContractCapability(
     bool IdempotentRequestIds,
     IReadOnlyList<string> LifecycleStates,
     int OutcomeTimeoutMs);
+
+public sealed record ControlCoordinationContractCapability(
+    string Status,
+    bool RegistrationRequiredForMutation,
+    bool SingleController,
+    bool ReadsRequireRegistration,
+    int LeaseTtlMs,
+    int RecommendedRenewalMs,
+    string RuntimeEpoch,
+    IReadOnlyList<string> Limitations);
 
 public sealed record InspectionContractCapability(
     string Status,
@@ -223,23 +312,6 @@ public sealed record BridgeVisibilityState(
     IReadOnlyList<string> HiddenByPolicy,
     IReadOnlyList<string> Missing,
     string UnknownCriticalFieldBehavior);
-
-public sealed record BridgeContractOperationShadow(
-    string Operation,
-    string EvidenceStatus,
-    bool Published);
-
-public sealed record BridgeContractInstanceShadow(
-    string Status,
-    string InstanceId,
-    string SurfaceKind,
-    string? SemanticContractId,
-    string? DeclaredBinding,
-    IReadOnlyList<BridgeContractOperationShadow> Operations,
-    string CurrentAuthorityTier,
-    string CurrentAuthorityBasis,
-    bool Authorizing,
-    IReadOnlyList<string> Limitations);
 
 public sealed record SharedStateContractCapability(
     string Status,
@@ -274,6 +346,20 @@ public sealed record BridgeCapabilitiesResponse(
 {
     public BridgePermissionSystemInfo PermissionSystem { get; init; } =
         BridgePermissionSystemInfo.Unavailable;
+
+    public BridgeQualificationSystemInfo QualificationSystem { get; init; } =
+        BridgeQualificationSystemInfo.Unavailable;
+
+    public ControlCoordinationContractCapability ControlCoordination { get; init; } =
+        new(
+            "unavailable_fail_closed",
+            RegistrationRequiredForMutation: true,
+            SingleController: true,
+            ReadsRequireRegistration: false,
+            LeaseTtlMs: 0,
+            RecommendedRenewalMs: 0,
+            RuntimeEpoch: "unavailable",
+            new[] { "Control-coordination status was not attached to this response." });
 }
 
 public sealed record InspectionCompleteness(
@@ -674,6 +760,11 @@ public sealed record CombatTransitionBridgeContext(
     string Phase,
     string Transition) : IBridgeContext;
 
+public sealed record RunTransitionBridgeContext(
+    string Kind,
+    string Phase,
+    string Transition) : IBridgeContext;
+
 public sealed record UnknownBridgeContext(
     string Kind,
     string SourceType,
@@ -700,10 +791,16 @@ public sealed class BridgeSurfaceJsonConverter : JsonConverter<IBridgeSurface>
         JsonSerializer.Serialize(writer, value, value.GetType(), options);
 }
 
+public sealed record DeckEnchantSource(
+    string Kind,
+    string DefinitionId,
+    string BindingEvidence);
+
 public sealed record DeckEnchantSelectionSurface(
     string Kind,
     string Stage,
     string ScreenEntityId,
+    DeckEnchantSource Source,
     string? Prompt,
     int MinSelect,
     int MaxSelect,
@@ -955,6 +1052,7 @@ public sealed record DeckTransformSelectionSurface(
     string Kind,
     string Stage,
     string ScreenEntityId,
+    DeckTransformSource Source,
     string Prompt,
     int MinSelect,
     int MaxSelect,
@@ -966,6 +1064,11 @@ public sealed record DeckTransformSelectionSurface(
     string PreviewKind,
     bool ReplacementKnown,
     IReadOnlyList<VisibleCard> Cards) : IBridgeSurface;
+
+public sealed record DeckTransformSource(
+    string Kind,
+    string DefinitionId,
+    string BindingEvidence);
 
 /// <summary>
 /// Native Wood Carvings Bird/Torus selector. The replacement is deterministic
@@ -1128,6 +1231,8 @@ public sealed record NoActionSurface(
 public sealed record BridgeStateEnvelope(
     string ProtocolVersion,
     string StateId,
+    string SemanticStateId,
+    string AuthorityProjectionId,
     long StateSequence,
     DateTimeOffset ObservedAt,
     string Readiness,
@@ -1142,13 +1247,9 @@ public sealed record BridgeStateEnvelope(
     ObservationPolicyInfo ObservationPolicy,
     BridgeVisibilityState Visibility,
     IReadOnlyList<BridgeInspectionCatalogEntry> InspectionCatalog,
-    BridgeContractInstanceShadow ContractInstanceShadow,
     IReadOnlyList<BridgeDiagnostic> Diagnostics,
     IReadOnlyList<string> Warnings)
 {
-    public BridgePermissionSystemInfo PermissionSystem { get; init; } =
-        BridgePermissionSystemInfo.Unavailable;
-
     // Retain the preview.1 wire field while making surface.kind the sole source.
     public string SurfaceKind => Surface.Kind;
 }
@@ -1156,7 +1257,72 @@ public sealed record BridgeStateEnvelope(
 public sealed record BridgeCommandRequest(
     string? RequestId,
     string? ExpectedStateId,
-    string? ActionId);
+    string? ActionId)
+{
+    public string? ClientSessionId { get; init; }
+
+    public string? ControllerLeaseId { get; init; }
+
+    public long? ControllerGeneration { get; init; }
+}
+
+public sealed record BridgeClientRegistrationRequest(
+    string? ClientInstanceId,
+    string? ProductId,
+    string? ProductName,
+    string? ProductVersion);
+
+public sealed record BridgeClientRecord(
+    string ClientSessionId,
+    string ClientInstanceId,
+    string ProductId,
+    string ProductName,
+    string ProductVersion,
+    DateTimeOffset RegisteredAt,
+    DateTimeOffset LastSeenAt);
+
+public sealed record BridgeControllerLeaseRequest(
+    string? ClientSessionId,
+    string? ControllerLeaseId,
+    long? ControllerGeneration);
+
+public sealed record BridgeControllerLeaseInfo(
+    string Status,
+    string ControllerLeaseId,
+    long ControllerGeneration,
+    string ClientSessionId,
+    DateTimeOffset AcquiredAt,
+    DateTimeOffset ExpiresAt);
+
+public sealed record BridgeControlSnapshot(
+    string ProtocolVersion,
+    string RuntimeInstanceId,
+    IReadOnlyList<BridgeClientRecord> Clients,
+    BridgeControllerLeaseInfo? Controller);
+
+public sealed record BridgeClientRegistrationResponse(
+    string ProtocolVersion,
+    string RuntimeInstanceId,
+    BridgeClientRecord Client,
+    BridgeControllerLeaseInfo? Controller);
+
+public sealed record BridgeControllerLeaseResponse(
+    string ProtocolVersion,
+    string RuntimeInstanceId,
+    string Status,
+    string Detail,
+    BridgeClientRecord? Client,
+    BridgeControllerLeaseInfo? Controller);
+
+public sealed record BridgeCommandAttribution(
+    string RuntimeInstanceId,
+    string ClientSessionId,
+    string ClientInstanceId,
+    string ProductId,
+    string ProductName,
+    string ProductVersion,
+    string ControllerLeaseId,
+    long ControllerGeneration);
 
 public sealed record BridgeCommandEvent(
     string Status,
@@ -1172,4 +1338,9 @@ public sealed record BridgeCommandResponse(
     string Status,
     string Outcome,
     string? ObservedStateId,
-    IReadOnlyList<BridgeCommandEvent> Events);
+    IReadOnlyList<BridgeCommandEvent> Events)
+{
+    public BridgeCommandAttribution? Attribution { get; init; }
+
+    public string? CompletionBoundary { get; init; }
+}

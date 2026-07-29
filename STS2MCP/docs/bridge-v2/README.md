@@ -1,17 +1,79 @@
 # Bridge v2 Documentation
 
 Bridge v2 is the active semantic Gateway protocol. C# and Re source now share
-`2.0-preview.63`; Re normalized schema is `26`. Gate 1 is closed as a bounded
+`2.0-preview.77`; Re normalized schema is `31`. Gate 1 is closed as a bounded
 ordinary-single-player v2 connector baseline and the complete v1 HTTP namespace
 is retired. Preview.61 supplied the final Neow's Fury runtime seal. Preview.62
 adds reviewed registry/policy adaptation and non-authorizing exact-assembly
 audit; Preview.63 adds the Gateway-owned session permission/gray rollout loop.
-Its first real `continue_run` auto-approval is volatile and not persistent
-qualification. Start with current status, not historical preview closeouts.
+Preview.64 added local mutation-controller coordination without pretending to
+provide authentication. Preview.65 adds disabled-by-default persistent
+operation qualification and impact-diff tooling. Preview.66 adds
+multi-environment Profiles, risk-based migration candidates, evidence
+aggregation, automatic package orchestration, and atomic store reload. The
+final local binary has qualified only `main_menu/continue_run` through real
+two-epoch evidence and cold-restart revalidation. Its 87-operation projection
+contains historical explicit contracts plus conservative manifest-derived
+fallbacks. Current Preview.77 has seven explicit contracts and 80 typed
+session fallbacks; fallback packages are invalid rather than candidate or
+durable qualification. Start with current status, not historical
+preview closeouts.
+
+Preview.69 adds risk-calibrated encounter trials, exact new/resumed-run mount settling,
+bounded semantic-cycle recovery, native Orb formatting, typed actionless shared-
+HUD deferral, and explicit Re run termination evidence. Two final-MVID runs
+include one clean character-select-to-menu journey. Their unrecorded evidence
+and runtime authority do not transfer across later exact artifacts. See
+[ADR-0005](ADR-0005-semantic-state-and-authority-identity-separation.md),
+[ADR-0004 trial/claim boundary](../../../docs/current/decisions/ADR-0004-risk-calibrated-encounter-trial-and-scoped-claims.md),
+and repository [ADR-0003](../../../docs/current/decisions/ADR-0003-operation-retirement-and-native-continuation-migration.md).
+
+Preview.70 added a read-only recorded-run identity audit, then cold-loaded and
+completed a 124-decision bounded run. A separate run exposed the Silver
+Crucible empty-chest Oracle defect. Preview.71 shared treasure lifecycle facts
+between projection and completion, then loaded and exposed exact Hefty Tablet
+and actionless-settling defects. Preview.72 repairs those two boundaries and
+was built/installed/loaded. Current-runtime run `run-20260728132337-ce2195`
+completed a 146-decision one-game boundary with 144 settled actions and one
+safe stale rejection. Its `unrecorded` provenance, disabled Inspection, and
+unexercised repaired branches keep it below Organic or persistent
+qualification. Prior runtime evidence and grants do not transfer.
+
+Preview.74 supplied a 202-decision completed-run boundary and formalized
+semantic/authority identity, removed state shadows/control history, added exact
+BoundAction admission, and started the shop relic/Kifuda vertical pilot.
+Preview.75 was subsequently loaded as SHA `ddce17cf...` / MVID
+`23ac5aad...` / runtime `fc2ea037...`. Two exact-runtime runs completed
+one-game boundaries, exercised state-bound Inspection and supplied an ordinary
+relic plus Courier replacement positive. Re now also waits for a repeatable
+actionable successor after Gateway action-local completion, without changing
+the wire contract or Gateway authority. See the
+[runtime closeout](../../../docs/current/audits/WORKFLOW_C_PREVIEW75_RUNTIME_AND_SUCCESSOR_STABILITY_CLOSEOUT_2026-07-29.md).
+The rebuilt Preview.75 identity later loaded as SHA `f9819b6b...` / MVID
+`34d6deb3...` / runtime `7f72d087...`. Two latest runs completed bounded run
+boundaries; another exposed the New Leaf transform caller gap. Preview.76
+repairs that source binding and the unsupported-authority invariant. It later
+loaded and completed `run-20260729140216-qi8r24`; New Leaf and Kifuda were not
+exercised. Preview.77 closes durable fallback admission and inherits no earlier
+session scope.
 
 ## Current Documents
 
 - [Current status](CURRENT_STATUS.md)
+- [Architecture cleanliness reaudit](../../../docs/current/audits/WORKFLOW_C_ARCHITECTURE_CLEANLINESS_REAUDIT_AND_CLOSURE_TARGET_2026-07-30.md)
+- [Explicit contract and durable authority ADR](../../../docs/current/decisions/ADR-0006-explicit-native-contract-and-durable-authority-convergence.md)
+- [Preview.76 New Leaf and unsupported-authority closeout](../../../docs/current/audits/WORKFLOW_C_PREVIEW76_NEW_LEAF_AND_UNSUPPORTED_AUTHORITY_CLOSEOUT_2026-07-29.md)
+- [Preview.75 runtime and successor-stability closeout](../../../docs/current/audits/WORKFLOW_C_PREVIEW75_RUNTIME_AND_SUCCESSOR_STABILITY_CLOSEOUT_2026-07-29.md)
+- [Preview.74 runtime and Preview.75 pre-Live closeout](../../../docs/current/audits/WORKFLOW_C_PREVIEW74_RUNTIME_AND_PREVIEW75_PRELIVE_CLOSEOUT_2026-07-29.md)
+- [Clean Closure audit and execution contract](../../../docs/current/audits/WORKFLOW_C_CLEAN_CLOSURE_AUDIT_AND_EXECUTION_CONTRACT_2026-07-29.md)
+- [Clean Closure architecture ADR](../../../docs/current/decisions/ADR-0005-workflow-c-clean-closure.md)
+- [Preview.73 Rest Outcome and authority boundary](../../../docs/current/audits/PREVIEW_73_REST_OUTCOME_AND_AUTHORITY_BOUNDARY_2026-07-29.md)
+- [Preview.72 A-first generated-choice closeout](../../../docs/current/audits/PREVIEW_72_A_FIRST_GENERATED_CHOICE_ARCHITECTURE_CLOSEOUT_2026-07-28.md)
+- [Preview.71 empty-treasure Outcome closeout](../../../docs/current/audits/PREVIEW_71_EMPTY_TREASURE_OUTCOME_CLOSEOUT_2026-07-28.md)
+- [Preview.70 identity and contract-shadow closeout](../../../docs/current/audits/PREVIEW_70_IDENTITY_AND_CONTRACT_SHADOW_CLOSEOUT_2026-07-28.md)
+- [Cross-component target architecture ADR](../../../docs/current/decisions/ADR-0002-semantic-gateway-two-plane-target-architecture.md)
+- [Operation retirement/native continuation ADR](../../../docs/current/decisions/ADR-0003-operation-retirement-and-native-continuation-migration.md)
+- [Risk-calibrated encounter trial ADR](../../../docs/current/decisions/ADR-0004-risk-calibrated-encounter-trial-and-scoped-claims.md)
 - [Source-truth repair closeout](SOURCE_TRUTH_REPAIR_CLOSEOUT_2026-07-22.md)
 - [Connector Gate 0 closeout](CONNECTOR_G0_CLOSEOUT_2026-07-22.md)
 - [Gate 1 real-run defect closeout](GATE1_REAL_RUN_DEFECT_CLOSEOUT_2026-07-22.md)
@@ -21,6 +83,11 @@ qualification. Start with current status, not historical preview closeouts.
 - [Gate 1 closeout and selector transaction audit](GATE1_CLOSEOUT_AND_SELECTOR_TRANSACTION_AUDIT_2026-07-24.md)
 - [Gate 1 adaptation and compatibility closeout](GATE1_ADAPTATION_AND_COMPATIBILITY_CLOSEOUT_2026-07-24.md)
 - [D3 permission and gray rollout closeout](D3_PERMISSION_GRAY_ROLLOUT_CLOSEOUT_2026-07-25.md)
+- [Gate 3 local control coordination closeout](GATE3_LOCAL_CONTROL_COORDINATION_CLOSEOUT_2026-07-25.md)
+- [Preview 65 persistent qualification and adaptation closeout](PREVIEW_65_PERSISTENT_QUALIFICATION_AND_ADAPTATION_CLOSEOUT_2026-07-25.md)
+- [Preview 65 v0.109.1 requalification closeout](PREVIEW_65_V01091_REQUALIFICATION_CLOSEOUT_2026-07-26.md)
+- [Preview 66 multi-environment migration closeout](PREVIEW_66_MULTI_ENVIRONMENT_MIGRATION_CLOSEOUT_2026-07-26.md)
+- [Preview 67 identity-shadow Live handoff](PREVIEW_67_IDENTITY_SHADOW_LIVE_HANDOFF_2026-07-27.md)
 - [Real connector architecture audit and migration plan](REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md)
 - [Protocol](PROTOCOL.md)
 - [Observation policy](OBSERVATION_POLICY.md)
@@ -32,6 +99,7 @@ qualification. Start with current status, not historical preview closeouts.
 - [ADR-0002: card-selection surface boundaries](ADR-0002-card-selection-surface-boundaries.md)
 - [ADR-0003: semantic surfaces, shared mechanics, and semantic completion](ADR-0003-semantic-surfaces-shared-mechanics-and-completion.md)
 - [ADR-0004: contract-instance authority and player-visible closure](ADR-0004-contract-instance-authority-and-player-visible-closure.md)
+- [ADR-0005: semantic-state and authority-identity separation](ADR-0005-semantic-state-and-authority-identity-separation.md)
 
 ## Historical Evidence
 

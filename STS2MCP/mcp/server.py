@@ -6,6 +6,10 @@ retired v1 HTTP API.
 """
 
 import argparse
+import asyncio
+from datetime import datetime
+import time
+import uuid
 
 import httpx
 from mcp.server.fastmcp import FastMCP
@@ -15,6 +19,8 @@ mcp = FastMCP("sts2")
 _base_url: str = "http://localhost:15526"
 _trust_env: bool = True
 _http: httpx.AsyncClient | None = None
+_control_lock: asyncio.Lock | None = None
+_control: dict | None = None
 
 
 def _v2_url(path: str) -> str:
@@ -50,6 +56,90 @@ async def _v2_protocol_request(
     # Rejected, stale, unavailable, and unknown outcomes are protocol results,
     # not transport failures. Preserve their structured response bodies.
     return response.text
+
+
+def _get_control_lock() -> asyncio.Lock:
+    global _control_lock
+    if _control_lock is None:
+        _control_lock = asyncio.Lock()
+    return _control_lock
+
+
+def _expiry_monotonic(expires_at: str) -> float:
+    expires = datetime.fromisoformat(expires_at.replace("Z", "+00:00")).timestamp()
+    return time.monotonic() + max(0.0, expires - time.time())
+
+
+async def _control_request(path: str, body: dict) -> dict:
+    response = await _get_client().post(_v2_url(path), json=body)
+    try:
+        payload = response.json()
+    except ValueError as error:
+        raise RuntimeError(f"Gateway control endpoint returned invalid JSON: {error}") from error
+    if not response.is_success:
+        status = payload.get("status") if isinstance(payload, dict) else None
+        detail = payload.get("detail") if isinstance(payload, dict) else None
+        raise RuntimeError(
+            f"Gateway control request {path} rejected: {status or response.status_code} {detail or ''}".strip()
+        )
+    if not isinstance(payload, dict):
+        raise RuntimeError("Gateway control response must be a JSON object")
+    return payload
+
+
+async def _ensure_controller() -> dict:
+    global _control
+    async with _get_control_lock():
+        if _control is None:
+            client_instance_id = f"mcp-adapter-{uuid.uuid4()}"
+            registration = await _control_request(
+                "clients/register",
+                {
+                    "client_instance_id": client_instance_id,
+                    "product_id": "sts2mcp-python-adapter",
+                    "product_name": "STS2MCP Python Adapter",
+                    "product_version": "0.5.0-dev",
+                },
+            )
+            _control = {
+                "client_instance_id": client_instance_id,
+                "client_session_id": registration["client"]["client_session_id"],
+                "runtime_instance_id": registration["runtime_instance_id"],
+            }
+
+        lease = _control.get("lease")
+        if lease is not None and lease["expires_monotonic"] - time.monotonic() > 10:
+            return _control
+
+        if lease is not None:
+            try:
+                renewed = await _control_request(
+                    "controller/renew",
+                    {
+                        "client_session_id": _control["client_session_id"],
+                        "controller_lease_id": lease["controller_lease_id"],
+                        "controller_generation": lease["controller_generation"],
+                    },
+                )
+                controller = renewed["controller"]
+                _control["lease"] = {
+                    **controller,
+                    "expires_monotonic": _expiry_monotonic(controller["expires_at"]),
+                }
+                return _control
+            except RuntimeError:
+                _control.pop("lease", None)
+
+        acquired = await _control_request(
+            "controller/acquire",
+            {"client_session_id": _control["client_session_id"]},
+        )
+        controller = acquired["controller"]
+        _control["lease"] = {
+            **controller,
+            "expires_monotonic": _expiry_monotonic(controller["expires_at"]),
+        }
+        return _control
 
 
 async def _v2_inspection_request(
@@ -173,6 +263,8 @@ async def submit_agent_action_v2(
     A started response is not completion.
     """
     try:
+        control = await _ensure_controller()
+        lease = control["lease"]
         return await _v2_protocol_request(
             "POST",
             "commands",
@@ -180,6 +272,9 @@ async def submit_agent_action_v2(
                 "request_id": request_id,
                 "expected_state_id": expected_state_id,
                 "action_id": action_id,
+                "client_session_id": control["client_session_id"],
+                "controller_lease_id": lease["controller_lease_id"],
+                "controller_generation": lease["controller_generation"],
             },
         )
     except Exception as error:

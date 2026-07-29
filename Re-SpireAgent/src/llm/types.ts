@@ -28,7 +28,7 @@ export interface LlmUsage {
 }
 
 export interface LlmDecisionAttempt {
-  requestKind: "primary" | "format_retry";
+  requestKind: "primary" | "transport_retry" | "format_retry";
   startedAt: string;
   completedAt: string;
   latencyMs: number;
@@ -38,6 +38,7 @@ export interface LlmDecisionAttempt {
   rawProviderResponse?: JsonValue | string;
   rawResponseText?: string;
   parsedDecision?: LlmDecision;
+  normalizations?: Array<"reason_brief_truncated_to_contract_limit">;
   error?: string;
   httpStatus?: number;
   finishReason?: string;

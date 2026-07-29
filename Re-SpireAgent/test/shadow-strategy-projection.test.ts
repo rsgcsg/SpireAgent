@@ -5,7 +5,7 @@ import type { JsonObject } from "../src/shared/json.js";
 describe("shadow strategy projection", () => {
   it("removes governance and repeated facts without mutating complete evidence", () => {
     const currentState: JsonObject = {
-      normalizedSchemaVersion: 26,
+      normalizedSchemaVersion: 29,
       actionAuthority: "bridge_advertised",
       player: { runDeck: [{ id: "STRIKE" }], drawPile: [] },
       bridgeInspectionFacts: {
@@ -21,7 +21,6 @@ describe("shadow strategy projection", () => {
       },
       bridgeDiagnostics: [{ code: "audit-only" }],
       bridgeInspectionCatalog: [{ kind: "run_deck" }],
-      bridgeContractInstanceShadow: { authorizing: false },
       surface: { kind: "shop_inventory", legalActions: [{ id: "surface-action" }] }
     };
     const original = JSON.stringify(currentState);

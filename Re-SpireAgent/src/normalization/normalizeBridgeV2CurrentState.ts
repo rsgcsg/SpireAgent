@@ -77,7 +77,9 @@ import {
   isBridgeV2MapContext,
   isBridgeV2MapNavigationSurface,
   isBridgeV2CombatTransitionContext,
+  isBridgeV2RunTransitionContext,
   isBridgeV2NoActionSurface,
+  isBridgeV2DeferredRunMountSharedState,
   isBridgeV2UnsupportedSurface,
   type BridgeV2CombatContext,
   type BridgeV2CombatPileCardSelectionSurface,
@@ -302,6 +304,8 @@ export function normalizeBridgeV2CurrentState(
     context = projectMapContext(state.context);
   } else if (state && isBridgeV2CombatTransitionContext(state.context)) {
     context = { kind: "combat_transition", phase: state.context.phase };
+  } else if (state && isBridgeV2RunTransitionContext(state.context)) {
+    context = { kind: "run_transition", phase: "setup" };
   }
 
   const inspectionRaw = bridgeV2InspectionsFromWrapper(rawState);
@@ -396,26 +400,6 @@ export function normalizeBridgeV2CurrentState(
         recommendedFor: [...entry.recommended_for],
         hiddenByPolicy: [...entry.hidden_by_policy]
       })),
-      bridgeContractInstanceShadow: {
-        status: state.contract_instance_shadow.status,
-        instanceId: state.contract_instance_shadow.instance_id,
-        surfaceKind: state.contract_instance_shadow.surface_kind,
-        ...(state.contract_instance_shadow.semantic_contract_id
-          ? { semanticContractId: state.contract_instance_shadow.semantic_contract_id }
-          : {}),
-        ...(state.contract_instance_shadow.declared_binding
-          ? { declaredBinding: state.contract_instance_shadow.declared_binding }
-          : {}),
-        operations: state.contract_instance_shadow.operations.map((operation) => ({
-          operation: operation.operation,
-          evidenceStatus: operation.evidence_status,
-          published: operation.published
-        })),
-        currentAuthorityTier: state.contract_instance_shadow.current_authority_tier,
-        currentAuthorityBasis: state.contract_instance_shadow.current_authority_basis,
-        authorizing: state.contract_instance_shadow.authorizing,
-        limitations: [...state.contract_instance_shadow.limitations]
-      },
       ...(bridgeObservation ? { bridgeObservation } : {}),
       bridgeInspections: projectedInspections.evidence,
       ...(Object.keys(bridgeInspectionFacts).length > 0 ? { bridgeInspectionFacts } : {})
@@ -429,7 +413,7 @@ export function normalizeBridgeV2CurrentState(
     const candidateBuild = isCandidateBuild(state, capabilities);
     const observationOnlyCandidate = isObservationOnlyCandidate(state, capabilities);
     const actionCanaryCandidate = isActionCanaryCandidate(state, capabilities);
-    const scopedQualifiedBuild = isScopedQualifiedBuild(state, capabilities);
+    const operationScopedAuthority = isOperationScopedAuthority(state, capabilities);
     validateEnvelopeIdentity(state, capabilities, diagnostics);
     validateStructuredDiagnostics(
       [...capabilities.diagnostics, ...state.diagnostics],
@@ -437,7 +421,13 @@ export function normalizeBridgeV2CurrentState(
       diagnostics
     );
     validateAuthorityHandoff(state, capabilities, diagnostics);
-    validateSharedVisibleState(state.shared_state, state.surface.kind, diagnostics);
+    const deferredRunMountSharedState = isBridgeV2DeferredRunMountSharedState(state);
+    validateSharedVisibleState(
+      state.shared_state,
+      state.surface.kind,
+      deferredRunMountSharedState,
+      diagnostics
+    );
 
     if (!state.game.compatibility.action_execution_allowed || !capabilities.game.compatibility.action_execution_allowed) {
       if (observationOnlyCandidate) {
@@ -505,21 +495,22 @@ export function normalizeBridgeV2CurrentState(
         );
         surface = projectDeckRemovalSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
         stability = state.readiness === "ready" ? "actionable" : "settling";
-        actionAuthority = "bridge_advertised";
+        actionAuthority = state.legal_actions.length > 0 ? "bridge_advertised" : "none";
         diagnostics.infer(
           "bridge_v2.action_canary",
           ["bridge_v2.game.compatibility", "bridge_v2.state"],
           "candidate-build action authority is restricted to the exact merchant-removal surface; only explicitly scoped v2 inspection is permitted and no legacy sidecar may merge"
         );
       }
-    } else if (isBridgeV2NoActionSurface(state.surface) && isBridgeV2CombatTransitionContext(state.context)) {
+    } else if (isBridgeV2NoActionSurface(state.surface)
+        && (isBridgeV2CombatTransitionContext(state.context) || isBridgeV2RunTransitionContext(state.context))) {
       if (state.readiness !== "settling"
           || state.legal_actions.length !== 0
-          || state.completeness.missing.length !== 0) {
+          || (state.completeness.missing.length !== 0 && !deferredRunMountSharedState)) {
         diagnostics.invalid(
           "bridge_v2.no_action",
           state,
-          "combat-transition no_action must be settling, complete, and publish no actions"
+          "lifecycle-transition no_action must be settling, publish no actions, and omit facts only under the typed run-mount shared-state deferral"
         );
       }
       surface = {
@@ -534,14 +525,21 @@ export function normalizeBridgeV2CurrentState(
       stability = "unknown";
     } else {
       const advertised = capabilities.surfaces.find((candidate) => candidate.kind === state.surface.kind);
-      const expectedSupport = scopedQualifiedBuild
+      const hasPublishedMutation = state.legal_actions.length > 0;
+      const actionlessSettlingObservation = operationScopedAuthority
+        && !hasPublishedMutation
+        && state.readiness === "settling"
+        && capabilities.game.compatibility.observation_only_surface_kinds.includes(state.surface.kind);
+      const expectedSupport = operationScopedAuthority
         ? capabilities.game.compatibility.action_execution_surface_kinds.includes(state.surface.kind)
           ? "qualified_exact_build"
           : capabilities.game.compatibility.action_canary_surface_kinds.includes(state.surface.kind)
             ? "candidate_action_canary"
-            : "not_qualified_for_current_build"
+            : actionlessSettlingObservation
+              ? "candidate_observation_only"
+              : "not_qualified_for_current_build"
         : "implemented_exact_game_version";
-      if (scopedQualifiedBuild && expectedSupport === "not_qualified_for_current_build") {
+      if (operationScopedAuthority && expectedSupport === "not_qualified_for_current_build") {
         diagnostics.invalid(
           "bridge_v2.game.compatibility.action_scope",
           state.surface.kind,
@@ -555,10 +553,10 @@ export function normalizeBridgeV2CurrentState(
           `current surface is not advertised as ${expectedSupport}`
         );
       }
-      const blockedMenu = state.readiness === "blocked"
-        && (isBridgeV2MainMenuSurface(state.surface) || isBridgeV2SingleplayerMenuSurface(state.surface));
-      if (state.readiness !== "ready" && state.readiness !== "settling" && !blockedMenu) {
-        diagnostics.invalid("bridge_v2.readiness", state.readiness, "supported surface must be ready or settling");
+      const blockedSemanticSurface = state.readiness === "blocked"
+        && state.legal_actions.length === 0;
+      if (state.readiness !== "ready" && state.readiness !== "settling" && !blockedSemanticSurface) {
+        diagnostics.invalid("bridge_v2.readiness", state.readiness, "supported surface must be ready, settling, or explicitly blocked without actions");
       }
 
       const advertisedOperations = new Set(advertised?.operations ?? []);
@@ -581,9 +579,7 @@ export function normalizeBridgeV2CurrentState(
           && (isBridgeV2EventContext(state.context) || isBridgeV2RestContext(state.context))) {
         validateDeckUpgradeState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
         surface = projectDeckUpgradeSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
-      } else if (isBridgeV2DeckTransformSurface(state.surface)
-          && isBridgeV2EventContext(state.context)
-          && state.context.event_id === "WHISPERING_HOLLOW") {
+      } else if (isBridgeV2DeckTransformSurface(state.surface)) {
         validateDeckTransformState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
         surface = projectDeckTransformSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
       } else if (isBridgeV2WoodCarvingsReplacementSurface(state.surface)
@@ -638,11 +634,8 @@ export function normalizeBridgeV2CurrentState(
         validateEventCardAcquisitionState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
         surface = projectEventCardAcquisitionSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
       } else if (isBridgeV2GeneratedCardChoiceSurface(state.surface)
-                 && ((state.surface.source_kind === "lead_paperweight"
-                      && isBridgeV2EventContext(state.context)
-                      && state.context.event_id === "NEOW")
-                     || (state.surface.source_kind !== "lead_paperweight"
-                         && isBridgeV2CombatContext(state.context)))) {
+                 && (isGeneratedRunDeckRelicChoice(state.surface)
+                     || isBridgeV2CombatContext(state.context))) {
         validateGeneratedCardChoiceState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
         surface = projectGeneratedCardChoiceSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
       } else if (isBridgeV2CardBundleSelectionSurface(state.surface)) {
@@ -666,8 +659,12 @@ export function normalizeBridgeV2CurrentState(
         }, "Re-SpireAgent does not support this Bridge v2 context/surface contract");
       }
 
-      stability = state.readiness === "ready" ? "actionable" : "settling";
-      actionAuthority = "bridge_advertised";
+      stability = state.readiness === "ready"
+        ? "actionable"
+        : state.readiness === "blocked"
+          ? "non_actionable"
+          : "settling";
+      actionAuthority = state.legal_actions.length > 0 ? "bridge_advertised" : "none";
     }
   }
 
@@ -816,9 +813,9 @@ function validateEnvelopeIdentity(
   if (isCandidateBuild(state, capabilities)) {
     validateCandidateBuildIdentity("bridge_v2.state.game", state.game, diagnostics);
     validateCandidateBuildIdentity("bridge_v2.capabilities.game", capabilities.game, diagnostics);
-  } else if (isScopedQualifiedBuild(state, capabilities)) {
-    validateScopedQualifiedIdentity("bridge_v2.state.game", state.game, diagnostics);
-    validateScopedQualifiedIdentity("bridge_v2.capabilities.game", capabilities.game, diagnostics);
+  } else if (isOperationScopedAuthority(state, capabilities)) {
+    validateOperationScopedIdentity("bridge_v2.state.game", state.game, diagnostics);
+    validateOperationScopedIdentity("bridge_v2.capabilities.game", capabilities.game, diagnostics);
   } else {
     validateExactGameIdentity("bridge_v2.state.game", state.game, diagnostics);
     validateExactGameIdentity("bridge_v2.capabilities.game", capabilities.game, diagnostics);
@@ -836,7 +833,9 @@ function validateEnvelopeIdentity(
   }
   const inspectionKinds = [...capabilities.inspections.implemented_kinds].sort();
   const candidateInspectionCanary = capabilities.game.compatibility.status === "action_and_inspection_canary_candidate";
-  const scopedInspection = capabilities.game.compatibility.status === "qualified_scoped";
+  const scopedInspection = isOperationScopedCompatibilityStatus(
+    capabilities.game.compatibility.status
+  );
   const expectedInspectionStatus = !capabilities.game.compatibility.inspection_allowed
     ? "disabled_for_current_build"
     : candidateInspectionCanary
@@ -1135,13 +1134,15 @@ function validateRestSiteState(
 function validateSharedVisibleState(
   shared: BridgeV2SharedVisibleState | null,
   surfaceKind: string,
+  deferredRunMountSharedState: boolean,
   diagnostics: DiagnosticsBuilder
 ): void {
   if (!shared) {
     if (surfaceKind !== "unsupported"
         && surfaceKind !== "character_select"
         && surfaceKind !== "main_menu"
-        && surfaceKind !== "singleplayer_menu") {
+        && surfaceKind !== "singleplayer_menu"
+        && !deferredRunMountSharedState) {
       diagnostics.invalid("bridge_v2.shared_state", shared, "semantic Bridge-owned state requires shared visible run facts");
     }
     return;
@@ -1927,14 +1928,16 @@ function validateGeneratedCardChoiceState(
     diagnostics.invalid("bridge_v2.surface.can_skip", surface.can_skip, "skippable generated-card source omitted its exact skip control");
   }
   validateActions("generated_card_choice", stateId, actions, missing, advertisedOperations, readiness, diagnostics);
-  const selectKind = surface.source_kind === "lead_paperweight"
+  const isRunDeckRelicChoice = surface.source_kind === "lead_paperweight"
+    || surface.source_kind === "hefty_tablet";
+  const selectKind = isRunDeckRelicChoice
     ? "select_generated_run_card"
     : surface.source_kind === "quasar"
       ? "choose_quasar_card"
       : surface.source_kind === "knowledge_demon_curse"
         ? "choose_knowledge_demon_curse"
         : "select_generated_combat_card";
-  const skipKind = surface.source_kind === "lead_paperweight"
+  const skipKind = isRunDeckRelicChoice
     ? "skip_generated_run_card_choice"
     : surface.source_kind === "quasar"
       ? "skip_quasar_choice"
@@ -1962,6 +1965,9 @@ function validateGeneratedCardChoiceState(
       } else if (surface.source_kind === "lead_paperweight"
         && action.label !== `Add ${boundCard.name ?? boundCard.definition_id} to the run deck`) {
         diagnostics.invalid("bridge_v2.legal_actions.label", action.label, "generated-card selection label disagrees with its bound visible card");
+      } else if (surface.source_kind === "hefty_tablet"
+        && action.label !== `Add ${boundCard.name ?? boundCard.definition_id} and an Injury to the run deck`) {
+        diagnostics.invalid("bridge_v2.legal_actions.label", action.label, "Hefty Tablet selection label omitted its exact Injury side effect");
       } else if (surface.source_kind === "quasar"
         && action.label !== `Choose ${boundCard.name ?? boundCard.definition_id}; add it to the combat hand at its shown cost`) {
         diagnostics.invalid("bridge_v2.legal_actions.label", action.label, "Quasar selection label disagrees with its unchanged-cost destination");
@@ -1969,6 +1975,7 @@ function validateGeneratedCardChoiceState(
         && action.label !== `Accept ${boundCard.name ?? boundCard.definition_id} from Knowledge Demon`) {
         diagnostics.invalid("bridge_v2.legal_actions.label", action.label, "Knowledge Demon selection label disagrees with its immediate-effect contract");
       } else if (surface.source_kind !== "lead_paperweight"
+        && surface.source_kind !== "hefty_tablet"
         && surface.source_kind !== "quasar"
         && surface.source_kind !== "knowledge_demon_curse"
         && action.label !== `Choose ${boundCard.name ?? boundCard.definition_id}; add it to the combat hand for free this turn`) {
@@ -2156,7 +2163,7 @@ function validateExactGameIdentity(
   }
 }
 
-function validateScopedQualifiedIdentity(
+function validateOperationScopedIdentity(
   path: string,
   game: {
     version?: string | null;
@@ -2174,7 +2181,9 @@ function validateScopedQualifiedIdentity(
         surface_kind: string;
         operation: string;
         tier: "qualified" | "canary";
+        admission_basis: "reviewed_or_persisted_scope" | "installed_candidate_package" | "encounter_source_resolved";
       }>;
+      adaptation_level: string;
       inspection_allowed_kinds: string[];
       inspection_canary_kinds: string[];
       observation_only_surface_kinds: string[];
@@ -2185,18 +2194,56 @@ function validateScopedQualifiedIdentity(
 ): void {
   const compatibility = game.compatibility;
   const fingerprint = gameFingerprint(game);
-  if (compatibility.status !== "qualified_scoped"
+  const reviewedPolicyIdentity = compatibility.status === "qualified_scoped"
+    && compatibility.adaptation_level === "reviewed_exact_environment"
+    && compatibility.tested_build_fingerprints.includes(fingerprint);
+  const installedCandidateIdentity =
+    compatibility.status === "qualification_candidate_scoped"
+    && compatibility.adaptation_level === "installed_qualification_candidate";
+  const installedPersistentIdentity =
+    compatibility.status === "persistent_qualification_scoped"
+    && compatibility.adaptation_level === "installed_persistent_qualification";
+  const encounterProvisionalIdentity =
+    compatibility.status === "provisional_trial_scoped"
+    && compatibility.adaptation_level === "encounter_provisional_trial"
+    && compatibility.observation_candidate_build_fingerprints.includes(fingerprint);
+  if (!isOperationScopedCompatibilityStatus(compatibility.status)
+      || !(reviewedPolicyIdentity || installedCandidateIdentity || installedPersistentIdentity || encounterProvisionalIdentity)
       || !compatibility.action_execution_allowed
       || !compatibility.state_observation_allowed
       || compatibility.action_execution_surface_kinds.length + compatibility.action_canary_surface_kinds.length === 0
       || compatibility.action_permission_scopes.length === 0
-      || compatibility.observation_only_surface_kinds.length !== 0
-      || compatibility.observation_candidate_build_fingerprints.length !== 0
-      || !compatibility.tested_build_fingerprints.includes(fingerprint)) {
-    diagnostics.invalid(`${path}.compatibility`, compatibility, "scoped qualification requires exact identity and a non-empty explicit action scope");
+      || (!encounterProvisionalIdentity && compatibility.observation_only_surface_kinds.length !== 0)
+      || (!encounterProvisionalIdentity && compatibility.observation_candidate_build_fingerprints.length !== 0)) {
+    diagnostics.invalid(`${path}.compatibility`, compatibility, "operation-scoped authority requires exact identity and a non-empty explicit action scope");
   }
-  if (compatibility.action_execution_surface_kinds.some((kind) => compatibility.action_canary_surface_kinds.includes(kind))) {
-    diagnostics.invalid(`${path}.compatibility.action_scope`, compatibility, "qualified and canary action scopes must be disjoint");
+  if (compatibility.status === "qualification_candidate_scoped"
+      && (compatibility.action_execution_surface_kinds.length !== 0
+        || compatibility.action_permission_scopes.some((scope) => scope.tier !== "canary"))) {
+    diagnostics.invalid(
+      `${path}.compatibility`,
+      compatibility,
+      "qualification candidate scope may publish only session-canary operations"
+    );
+  }
+  if (compatibility.status === "persistent_qualification_scoped"
+      && (compatibility.action_execution_surface_kinds.length === 0
+        || !compatibility.action_permission_scopes.some((scope) => scope.tier === "qualified"))) {
+    diagnostics.invalid(
+      `${path}.compatibility`,
+      compatibility,
+      "persistent qualification scope requires at least one qualified operation"
+    );
+  }
+  if (compatibility.status === "provisional_trial_scoped"
+      && (compatibility.action_execution_surface_kinds.length !== 0
+        || compatibility.action_permission_scopes.some((scope) =>
+          scope.tier !== "canary" || scope.admission_basis !== "encounter_source_resolved"))) {
+    diagnostics.invalid(
+      `${path}.compatibility`,
+      compatibility,
+      "encounter provisional scope may publish only source-resolved session-canary operations"
+    );
   }
   const qualified = new Set(compatibility.action_execution_surface_kinds);
   const canary = new Set(compatibility.action_canary_surface_kinds);
@@ -2261,14 +2308,14 @@ function isCandidateBuild(
     && capabilityCompatibility.observation_candidate_build_fingerprints.includes(gameFingerprint(capabilities.game));
 }
 
-function isScopedQualifiedBuild(
+function isOperationScopedAuthority(
   state: NonNullable<ReturnType<typeof decodeBridgeV2State>["data"]>,
   capabilities: NonNullable<ReturnType<typeof decodeBridgeV2Capabilities>["data"]>
 ): boolean {
   const stateCompatibility = state.game.compatibility;
   const capabilityCompatibility = capabilities.game.compatibility;
-  const scoped = stateCompatibility.status === "qualified_scoped"
-    && capabilityCompatibility.status === "qualified_scoped"
+  const scoped = isOperationScopedCompatibilityStatus(stateCompatibility.status)
+    && capabilityCompatibility.status === stateCompatibility.status
     && stateCompatibility.action_execution_allowed
     && capabilityCompatibility.action_execution_allowed
     && stateCompatibility.state_observation_allowed
@@ -2290,6 +2337,10 @@ function isScopedQualifiedBuild(
     && sameStrings(
       stateCompatibility.inspection_allowed_kinds,
       capabilityCompatibility.inspection_allowed_kinds
+    )
+    && sameStrings(
+      stateCompatibility.inspection_canary_kinds,
+      capabilityCompatibility.inspection_canary_kinds
     );
   if (!scoped) return false;
 
@@ -2298,9 +2349,11 @@ function isScopedQualifiedBuild(
   const advertisedQualified = capabilities.surfaces
     .filter((surface) => surface.support === "qualified_exact_build")
     .map((surface) => surface.kind);
-  const advertisedCanary = capabilities.surfaces
+  const advertisedCanaryOnly = capabilities.surfaces
     .filter((surface) => surface.support === "candidate_action_canary")
     .map((surface) => surface.kind);
+  const expectedCanaryOnly = [...canaryKinds]
+    .filter((kind) => !qualifiedKinds.has(kind));
   const operationScopesBySurface = new Map<string, string[]>();
   for (const scope of capabilityCompatibility.action_permission_scopes) {
     const operations = operationScopesBySurface.get(scope.surface_kind) ?? [];
@@ -2313,9 +2366,16 @@ function isScopedQualifiedBuild(
   });
   return advertisedQualified.length === qualifiedKinds.size
     && advertisedQualified.every((kind) => qualifiedKinds.has(kind))
-    && advertisedCanary.length === canaryKinds.size
-    && advertisedCanary.every((kind) => canaryKinds.has(kind))
+    && advertisedCanaryOnly.length === expectedCanaryOnly.length
+    && advertisedCanaryOnly.every((kind) => expectedCanaryOnly.includes(kind))
     && advertisedOperationsMatch;
+}
+
+function isOperationScopedCompatibilityStatus(status: string): boolean {
+  return status === "qualified_scoped"
+    || status === "qualification_candidate_scoped"
+    || status === "persistent_qualification_scoped"
+    || status === "provisional_trial_scoped";
 }
 
 function isObservationOnlyCandidate(
@@ -2405,12 +2465,45 @@ function sameStrings(left: readonly string[], right: readonly string[]): boolean
 }
 
 function sameActionPermissionScopes(
-  left: ReadonlyArray<{ surface_kind: string; operation: string; tier: string }>,
-  right: ReadonlyArray<{ surface_kind: string; operation: string; tier: string }>
+  left: ReadonlyArray<{
+    surface_kind: string;
+    operation: string;
+    tier: string;
+    grant_id: string;
+    grant_version: number;
+    runtime_epoch: string;
+    environment_digest: string;
+    patch_digest: string;
+    operation_fingerprint: string;
+    admission_basis: string;
+  }>,
+  right: ReadonlyArray<{
+    surface_kind: string;
+    operation: string;
+    tier: string;
+    grant_id: string;
+    grant_version: number;
+    runtime_epoch: string;
+    environment_digest: string;
+    patch_digest: string;
+    operation_fingerprint: string;
+    admission_basis: string;
+  }>
 ): boolean {
-  const keys = (scopes: ReadonlyArray<{ surface_kind: string; operation: string; tier: string }>) =>
+  const keys = (scopes: typeof left) =>
     scopes
-      .map((scope) => `${scope.surface_kind}\u0000${scope.operation}\u0000${scope.tier}`)
+      .map((scope) => [
+        scope.surface_kind,
+        scope.operation,
+        scope.tier,
+        scope.grant_id,
+        scope.grant_version,
+        scope.runtime_epoch,
+        scope.environment_digest,
+        scope.patch_digest,
+        scope.operation_fingerprint,
+        scope.admission_basis
+      ].join("\u0000"))
       .sort()
       .join("\u0001");
   return keys(left) === keys(right);
@@ -2665,6 +2758,11 @@ function projectDeckEnchantSurface(
     stage: surface.stage,
     bridgeStateId: stateId,
     screenEntityId: surface.screen_entity_id,
+    source: {
+      kind: surface.source.kind,
+      definitionId: surface.source.definition_id,
+      bindingEvidence: surface.source.binding_evidence
+    },
     ...(surface.prompt ? { prompt: surface.prompt } : {}),
     minimumSelections: surface.min_select,
     maximumSelections: surface.max_select,
@@ -2788,6 +2886,11 @@ function projectDeckTransformSurface(
     stage: surface.stage,
     bridgeStateId: stateId,
     screenEntityId: surface.screen_entity_id,
+    source: {
+      kind: surface.source.kind,
+      definitionId: surface.source.definition_id,
+      bindingEvidence: surface.source.binding_evidence
+    },
     prompt: surface.prompt,
     minimumSelections: surface.min_select,
     maximumSelections: surface.max_select,
@@ -3265,31 +3368,47 @@ function projectGeneratedCardChoiceSurface(
     legalActions: projectActions(actions),
     completeness: projectCompleteness(completeness)
   };
-  return surface.source_kind === "lead_paperweight"
+  if (surface.source_kind === "lead_paperweight") {
+    return {
+      ...base,
+      purpose: surface.purpose,
+      sourceKind: surface.source_kind,
+      destination: surface.destination,
+      selectedCardCostPolicy: surface.selected_card_cost_policy
+    };
+  }
+  if (surface.source_kind === "hefty_tablet") {
+    return {
+      ...base,
+      purpose: surface.purpose,
+      sourceKind: surface.source_kind,
+      destination: surface.destination,
+      selectedCardCostPolicy: surface.selected_card_cost_policy
+    };
+  }
+  return surface.source_kind === "knowledge_demon_curse"
     ? {
         ...base,
         purpose: surface.purpose,
         sourceKind: surface.source_kind,
         destination: surface.destination,
-        selectedCardCostPolicy: surface.selected_card_cost_policy
-      }
-    : surface.source_kind === "knowledge_demon_curse"
-      ? {
-          ...base,
-          purpose: surface.purpose,
-          sourceKind: surface.source_kind,
-          destination: surface.destination,
-          selectedCardCostPolicy: surface.selected_card_cost_policy,
-          canSkip: false as const
-        }
-      : {
-        ...base,
-        purpose: surface.purpose,
-        sourceKind: surface.source_kind,
-        destination: surface.destination,
         selectedCardCostPolicy: surface.selected_card_cost_policy,
-        overflowDestination: surface.overflow_destination
-      };
+        canSkip: false as const
+      }
+    : {
+      ...base,
+      purpose: surface.purpose,
+      sourceKind: surface.source_kind,
+      destination: surface.destination,
+      selectedCardCostPolicy: surface.selected_card_cost_policy,
+      overflowDestination: surface.overflow_destination
+    };
+}
+
+function isGeneratedRunDeckRelicChoice(
+  surface: BridgeV2GeneratedCardChoiceSurface
+): surface is Extract<BridgeV2GeneratedCardChoiceSurface, { source_kind: "lead_paperweight" | "hefty_tablet" }> {
+  return surface.source_kind === "lead_paperweight" || surface.source_kind === "hefty_tablet";
 }
 
 function projectCardBundleSelectionSurface(

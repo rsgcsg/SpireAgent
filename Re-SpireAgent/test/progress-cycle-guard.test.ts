@@ -4,7 +4,7 @@ import type { NormalizedCurrentState } from "../src/domain/state/index.js";
 import { ProgressCycleGuard, semanticProgressHash } from "../src/runtime/progressCycleGuard.js";
 
 describe("ProgressCycleGuard", () => {
-  it("stops a repeated semantic transition despite fresh Bridge transport ids", () => {
+  it("detects a repeated semantic transition despite fresh Bridge transport ids", () => {
     const guard = new ProgressCycleGuard();
     const first = shopState("shop_room", "state-room-1", "action-open-1", 50);
     const firstPost = shopState("shop_inventory", "state-inventory-1", "action-close-1", 50);
@@ -15,8 +15,32 @@ describe("ProgressCycleGuard", () => {
     expect(guard.observe(first, openAction("action-open-1", "state-room-1"), firstPost)).toBeUndefined();
     expect(guard.observe(second, openAction("action-open-2", "state-room-2"), secondPost)).toMatchObject({
       occurrence: 2,
-      selectedActionKind: "open_shop_inventory"
+      selectedActionKind: "open_shop_inventory",
+      recoveryPlanned: false
     });
+  });
+
+  it("suppresses a proven return edge while preserving a progression alternative", () => {
+    const guard = new ProgressCycleGuard();
+    const room1 = shopState("shop_room", "state-room-1", "action-open-1", 50);
+    const inventory1 = shopState("shop_inventory", "state-inventory-1", "action-close-1", 50);
+    const room2 = shopState("shop_room", "state-room-2", "action-open-2", 50);
+    const inventory2 = shopState("shop_inventory", "state-inventory-2", "action-close-2", 50);
+    const room3 = shopState("shop_room", "state-room-3", "action-open-3", 50);
+
+    guard.observe(room1, openAction("action-open-1", "state-room-1"), inventory1);
+    guard.observe(inventory1, closeAction("action-close-1", "state-inventory-1"), room2);
+    guard.observe(room2, openAction("action-open-2", "state-room-2"), inventory2);
+    expect(guard.observe(inventory2, closeAction("action-close-2", "state-inventory-2"), room3)).toMatchObject({
+      recoveryPlanned: true
+    });
+
+    const filtered = guard.filterActions(room3, [
+      openAction("action-open-3", "state-room-3"),
+      proceedAction("action-proceed-3", "state-room-3")
+    ]);
+    expect(filtered.actions.map((action) => action.kind)).toEqual(["proceed_shop"]);
+    expect(filtered.excludedActionHashes).toHaveLength(1);
   });
 
   it("does not collapse real business progress into transport churn", () => {
@@ -38,7 +62,7 @@ function shopState(
   gold: number
 ): NormalizedCurrentState {
   return {
-    normalizedSchemaVersion: 26,
+    normalizedSchemaVersion: 31,
     sourceStateType: `bridge_v2:shop:${kind}`,
     run: { characterId: "IRONCLAD", floor: 2 },
     player: {
@@ -132,6 +156,14 @@ function openAction(actionId: string, stateId: string): AllowedAction {
 
 function purchaseAction(actionId: string, stateId: string): AllowedAction {
   return bridgeAction(actionId, stateId, "purchase_shop_card");
+}
+
+function closeAction(actionId: string, stateId: string): AllowedAction {
+  return bridgeAction(actionId, stateId, "close_shop_inventory");
+}
+
+function proceedAction(actionId: string, stateId: string): AllowedAction {
+  return bridgeAction(actionId, stateId, "proceed_shop");
 }
 
 function bridgeAction(actionId: string, stateId: string, kind: string): AllowedAction {

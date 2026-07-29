@@ -6,6 +6,12 @@ evaluation have correctness criteria distinct from both the Gateway and the
 Agent. It is not a public platform, SDK, marketplace, or qualification
 authority.
 
+Under the current M1 milestone, D has two independent customers: it verifies C
+contract/runtime correctness and measures whether A candidates improve over a
+frozen baseline. It is not subordinate to either implementation and cannot
+accept A self-evaluation or C migration counts as capability evidence. See the
+[program correction audit](audits/A_PRIMARY_WORKFLOW_AND_PROGRAM_CORRECTION_AUDIT_2026-07-28.md).
+
 ## Ownership Boundary
 
 | D owns | D must not own |
@@ -35,6 +41,8 @@ without becoming either authority.
   settlement, and provenance records.
 - Record inspection through `agent:replay`.
 - Read-only Prompt size/duplication audit.
+- Read-only per-run M1 baseline report joining Re source, exact Connector/game/
+  Modset identity, provider, Prompt, outcome, settlement and coverage metrics.
 - Bounded non-executing full/shadow provider comparison and within-variant
   repeat baseline.
 - Public offline GitHub Actions for Re, active documentation/Connector
@@ -70,13 +78,16 @@ without becoming either authority.
   conformance, Agent output evaluation, and execution evidence.
 - Grader definitions with versions, limitations, counterexamples, and held-out
   splits.
-- One machine-readable report joining Connector, Agent, provider, Prompt, and
-  outcome provenance.
 - Differential regression across protocol/schema versions.
 - Automated offline CI for checks that do not require proprietary game
   assemblies.
 - Redacted evidence export and retention rules suitable for product support or
   external research.
+- One frozen A baseline run with the new Re source revision/content digest;
+  historical runs predate that field and are explicitly identity-incomplete.
+- A minimum representative/held-out split and one joined report covering run
+  completion, stop reasons, validity, provider failures, latency/cost, Prompt
+  bytes and decision-family coverage.
 
 ## D-Lane Delivery Sequence
 
@@ -158,15 +169,24 @@ platform product.
 
 The bounded first D3 permission closeout is complete: the read-only runtime
 Patch inventory, repeated real `main_menu/continue_run` session canary and
-read-only recorded-evidence transition assertion are present. This does not
-complete general D3 evaluation/regression or authorize another candidate.
-Before any non-navigation candidate is considered, D must supply independent
-scope-specific evidence and counterexamples, followed by Gateway policy review.
+read-only recorded-evidence transition assertion are present. Permission
+automation is no longer D's default next project.
+
+The joined read-only report is implemented as `npm run agent:baseline-report`.
+The M1 priority is now to capture one fresh exact-source run, freeze its
+baseline manifest, and define a minimum representative/held-out split. Only then
+should D compare a scope-specific Prompt/view or Inspection-policy candidate
+with counterexamples. Gateway permission review remains necessary only if a
+later candidate requests live mutation influence.
 
 No D artifact grants live permission, canary status, qualification, stable
 learning, or product readiness. A D artifact may recommend a candidate, but
 the Gateway Permission Manager remains the sole decision point and the Gateway
 execution path remains the sole enforcement point.
+
+The report is intentionally per-run rather than a new evaluation framework.
+It emits `identityStatus=incomplete` for old records missing source identity,
+and always emits `authorizationEffect=none` and `qualificationEffect=none`.
 
 The assertion tooling is deliberately non-executing:
 

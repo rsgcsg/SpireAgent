@@ -2,130 +2,116 @@
 
 This is the canonical short current-state document for the rebuilt project.
 
-## Mainline
+## Program And Architecture
 
-- **Agent:** `Re-SpireAgent/`.
-- **Connector:** `STS2MCP/` Semantic Gateway, REST contract, and optional
-  v2-only MCP adapter.
-- **Legacy:** the original root runtime and P8--P15 route are archived.
+- Current priority: **Workflow C Clean Closure**, before further A/D/P feature
+  expansion.
+- Mainline: `Re-SpireAgent/` plus the `STS2MCP/` Semantic Gateway.
+- Canonical architecture: ADR-0002's Semantic Gateway two-plane boundary,
+  ADR-0005's vertical family migration, and
+  [ADR-0006](decisions/ADR-0006-explicit-native-contract-and-durable-authority-convergence.md)
+  as the current contract/authority convergence decision.
+- Gateway v1 mutation and the original root runtime remain retired.
 
-## Current Gate
+The 2026-07-30 architecture cleanliness reaudit chose verdict **B**: the macro
+architecture is correct, but the mixed explicit-contract/manifest-fallback
+admission core required replacement. `operation` remains telemetry and a
+temporary volatile trial key; it is not sufficient durable authority identity.
 
-**Gate 1 is closed as a bounded ordinary-single-player v2 connector
-baseline. The first D3 operation-scoped permission/gray-rollout loop is also
-closed at session-canary scope. Gate 2 remains the next functional coverage
-gate; this change does not resume feature expansion or broaden permissions.**
-
-Current source contract is `2.0-preview.63`; Re normalized schema is `26`.
-Re and the default MCP adapter use only Bridge v2 opaque actions. Gateway v1
-state reconstruction and mutation are fully retired; every `/api/v1` request
-returns `410 Gone`. Unsupported variants still fail closed.
-
-Gate 1 closure does not mean complete-game coverage, all canaries qualified, or
-all player-visible facts exposed. Crystal Sphere, standalone manual potion
-discard, non-standard menu/profile flows, multiplayer, and unbound selector
-semantics remain unsupported or outside the bounded gate.
-
-## Evidence Boundary
-
-The Gate 1 Organic runtime seal remains attributed to the loaded Preview.61
-identity:
+## Source, Install And Load
 
 ```text
-SHA     9b6f62161f8c6c286a73cb157430b441014c5148ff702ea96894e6f702386a99
-MVID    efd31a31-9c2a-4b68-ae22-1cabc1b382f1
-runtime 7e6ffb41d8154625bd42ea34190194ef
-game    v0.109.0|c12f634d|-1639417500
-Modset  exact_bridge_only
+source contract       2.0-preview.77
+Re normalized schema  31
+Prompt/guide baseline global 4 / state guide 5
+source state          full tests/audits/build/install verified
+
+built/installed       2.0-preview.77
+game release          v0.109.1|c8c577f6
+actual game hash      -820620422
+built/installed SHA   9d6737b1e34e15b59f4d2d2bad8a239f21d771b0eef25ffedccb8048417edf8d
+built/installed MVID  0a945d2d-0787-4f6d-a820-4947936aa6be
+last loaded contract  2.0-preview.76
+last loaded SHA       56b24ea36a9ad95f15414cd7882ab2b6b32b9459aa47feb204d3290569de9003
+last loaded MVID      37f4ce07-1ca7-4942-aec9-868b7d7d4676
+last runtime          8ccf81d0e53b467eb6bf46d86ddd86cc
+rollback              STS2MCP/.local/deployments/2026-07-29T14-45-17-887Z
 ```
 
-Run `run-20260724045013-mgcq3a` completed exact Neow's Fury play, selection and
-manual confirmation with source-task closure and exact discard-to-hand
-post-state evidence. This closes the prior runtime-seal blocker.
+Preview.77 changes the whole DLL and protocol identity. Preview.76 evidence and
+session authority do not transfer. Source, tests, build and install are
+verified; because the game is closed after installation, loaded Preview.77
+identity remains an explicit non-claim until a later cold start.
 
-Preview.62 moves exact environment scopes to an embedded reviewed policy,
-replaces source-specific combat-pile C# branches with a closed registry, and
-adds a non-authorizing exact-assembly compatibility audit. Six newly discovered
-sources are registry canary candidates; Tutor remains a deliberate negative
-holdout because its selected player comes from the card target. Preview.62
-source/tests/audit may not inherit Preview.61 Organic qualification.
+## Latest Runtime Evidence
 
-The current source also has one non-authorizing D2 compatibility slice: a
-shared seven-topology contract catalog, mechanism-named transaction Witnesses,
-layered exact-assembly fingerprints, conservative candidate classification,
-the Tutor target-player negative holdout, an exact-assembly scenario manifest
-and a deterministic grader with six negative fixtures. None can write the
-registry or policy, grant canary permission, or declare qualification.
-
-Preview.63 adds a Gateway-owned operation-scoped permission manager and
-conservative runtime Harmony Patch inventory. The reviewed exact-environment
-policy remains the absolute permission ceiling. Non-authorizing gray
-candidates may receive runtime-epoch-bound `session_canary` grants; only
-Gateway-confirmed semantic completion can replace one with
-`session_auto_approved`. Validated failure, timeout, unknown outcome, identity
-drift or unknown Patch ownership quarantines the operation for the session.
-
-The current Preview.63 artifact has been built, installed and Steam cold-loaded
-on the exact local environment:
+The latest exact Preview.76 run is
+`run-20260729140216-qi8r24` at source revision `6ad4fd92...`, loaded SHA/MVID
+shown above, Prompt/guide `4/5`, and `provenance=unrecorded`:
 
 ```text
-SHA      d05b0580917c5b60acc908ec2575d2d0f8e59778da8c2379cebc0d5e72c90aa0
-MVID     4836b3df-fffc-498a-b9c9-ac666adb5a5b
-runtime  8aec74c19fed4a09984dc56a7e0c36ac
-game     v0.109.0|c12f634d|-1639417500
-Modset   2fd2cd789eb082ebfb91a3cd41c6a13869f359bc1d326fb752953c0bf9789d6f
-exact policy bridge_v2_exact_environment_policy_2026_07_24
-gray policy  bridge_v2_gray_permission_candidates_2026_07_25
-Patch    clean_known_owners
-Patch digest ee979e2b877b772adaa28409f474037a832b9ccaf22037afde23a527bb13c587
+decisions                    172
+executed_and_settled         170
+safe pre-execution stale     1 (choose_treasure_relic; no Gateway call)
+normal completed boundary    1
+termination                  completed_run_boundary
 ```
 
-Built, installed and loaded SHA matched. A Re production-path canary executed
-advertised `main_menu/continue_run` once, observed semantic saved-run
-activation, and settled after eight polls / 1569 ms at
-`reward_flow/reward_claim`. The Gateway replaced
-the operation's version-1 `session_canary` grant with a version-2
-`session_auto_approved` grant in the same runtime epoch. This is a real
-session-scoped gray canary, not persistent qualification or broad automatic
-authority. A read-only assertion over the recorded pre/post observations
-confirmed exact identity, immediate grant-version succession, supersession,
-and exact action-scope binding. The assertion has
-`authorization_effect=none` and `qualification_effect=none`.
+It exercised menu, character select, map, combat, event, reward, rest,
+treasure, shop card/removal, deck removal/upgrade, game-over and read-only
+Inspection. It did **not** exercise Preview.76 New Leaf mutation, Kifuda, or
+ordinary shop relic purchase. Preview.75 contains an ordinary relic purchase
+and the New Leaf defect reproduction, but cannot qualify Preview.76/77. Kifuda
+remains `not exercised`.
 
-The predecessor Preview.62 artifact
-`d66f5986...a892` completed an operator-directed bounded canary:
-`main_menu -> singleplayer_menu -> main_menu` through two advertised opaque
-actions and coherent successor states. Each action was submitted once; a local
-polling-script error resumed the existing request rather than resubmitting it.
-That canary remains attributed to its predecessor SHA/MVID/runtime and does not
-transfer to the current post-D2 artifact.
+This is bounded coverage evidence, not Organic evidence, persistent
+qualification or durable claim.
 
-## Immediate Next Step
+## Preview.77 Contract Delta
 
-The recorded-evidence assertion path and two-epoch low-risk repeat are
-complete. Preserve the current two-candidate ceiling and do not manufacture a
-live failure merely to exercise quarantine. The next separately scoped change
-may resume Gate 2 visibility work or begin Gate 3 authentication/controller
-lease work; neither may infer authority from a fingerprint, fixture, grader or
-D recommendation. No non-navigation gray candidate should be added without
-independent evidence and candidate-policy review.
+- Every operation contract projection has `contract_kind`:
+  `explicit_native_contract` or `manifest_migration_fallback`.
+- Qualification-system schema is `2`; contract kind enters contract and
+  evidence identity.
+- Only explicit native contracts may be assembled, installed, loaded,
+  superseded or rolled back as durable qualification packages.
+- Gateway store and operator CLI independently reject legacy/missing/fallback
+  package kinds.
+- Manifest fallbacks remain runtime-epoch-bound encounter trials so ordinary
+  continuity is not replaced with blanket blindness during family migration.
+- Re records the kind for provenance and still derives no legality, Commit or
+  completion.
 
-See the
-[Gate 1 closeout and selector audit](../../STS2MCP/docs/bridge-v2/GATE1_CLOSEOUT_AND_SELECTOR_TRANSACTION_AUDIT_2026-07-24.md)
-and the
-[Gate 1 adaptation closeout](../../STS2MCP/docs/bridge-v2/GATE1_ADAPTATION_AND_COMPATIBILITY_CLOSEOUT_2026-07-24.md)
-and the
-[automatic-adaptation audit](audits/CONNECTOR_AUTOMATIC_ADAPTATION_AND_D_WORKFLOW_AUDIT_2026-07-24.md)
-and the
-[D3 permission closeout](../../STS2MCP/docs/bridge-v2/D3_PERMISSION_GRAY_ROLLOUT_CLOSEOUT_2026-07-25.md)
-and the
-[operation inventory](../../STS2MCP/docs/bridge-v2/OPERATION_RETIREMENT_INVENTORY.json).
+## Clean Closure Inventory
 
-## Explicit Non-Claims
+```text
+connector shadows                              0
+permanent dual-read paths                      0
+production action publication paths            1
+production authority resolvers                 1
+explicit native contracts                      7
+manifest session fallback identities          80
+operation-authority branches                   3
+persistent fallback claim admission paths       0
+mixed explicit/fallback supported Surfaces      4
+bulk candidate startup paths                    0
+Re native-completion reconstruction             0
+control-history semantic identity inputs        0
+```
 
-- Preview.63 session auto-approval is volatile and operation-scoped; it is not
-  persistent qualification, cross-runtime inheritance, or D-owned authority.
-- Gate 1 closure is not complete-game or full-visible-information closure.
-- Historical v1 source and records are archive evidence, not a runtime fallback.
-- Companion, Workshop product, public Agent SDK, plugin platform, and Headless
-  host remain future work.
+The source-of-truth machine inventory is
+[`CLEAN_CLOSURE_DELETION_INVENTORY.json`](../../STS2MCP/docs/bridge-v2/CLEAN_CLOSURE_DELETION_INVENTORY.json).
+The detailed evidence and decision are in the
+[2026-07-30 reaudit](audits/WORKFLOW_C_ARCHITECTURE_CLEANLINESS_REAUDIT_AND_CLOSURE_TARGET_2026-07-30.md).
+
+## Boundaries And Next Step
+
+Known typed unsupported/out-of-scope includes Crystal Sphere, standalone
+manual potion discard, Tutor's unreviewed owner, unknown generated sources,
+non-standard profile/menu paths and multiplayer. New Leaf and Kifuda are
+separate `pending exact-runtime evidence` gates; neither may be inferred from
+fixtures or another selector source.
+
+All currently available non-Live work is complete. Only after a complete game
+restart may loaded identity or a new bounded journey be claimed. Unknown
+mutation remains terminal and non-retryable.

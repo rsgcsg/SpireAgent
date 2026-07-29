@@ -67,7 +67,7 @@ internal static class BridgeContractManifest
         Entry(
             "deck_enchant_selection",
             new[] { "toggle_card", "preview_selection", "confirm_selection", "cancel_preview", "close_selection" },
-            "sts2-v0.109.0:SelfHelpBook.ReadEntireBook+CardSelectCmd.FromDeckForEnchantment+NDeckEnchantSelectScreen+exact-card-enchantment-post-state-witness",
+            "sts2-v0.109.1:SelfHelpBook.SelectAndEnchant|Kifuda.AfterObtained+CardSelectCmd.FromDeckForEnchantment+NDeckEnchantSelectScreen+runtime-source-binding+exact-card-enchantment-post-state-witness",
             "purpose_specific_deck_selection",
             new[] { "visible_deck_cards", "selection", "preview", "controls" }),
         Entry(
@@ -127,7 +127,7 @@ internal static class BridgeContractManifest
                 Operation("toggle_deck_transform_upgrade_view", BridgeOperationEvidenceStatus.OrganicCanaryExercised,
                     "../archive/bridge-v2-previews/2026-07/PREVIEW_38_DECK_TRANSFORM_CLOSEOUT_2026-07-18.md#organic-canary")
             },
-            "sts2-v0.109.0:WhisperingHollow.Hug+CardSelectCmd.FromDeckForTransformation+NDeckTransformSelectScreen+exact-instance-post-state-witness",
+            "sts2-v0.109.1:source-discriminated(WhisperingHollow.Hug|NewLeaf.AfterObtained+task-local-binding)+CardSelectCmd.FromDeckForTransformation+NDeckTransformSelectScreen+exact-instance-post-state-witness",
             "purpose_specific_random_deck_transform",
             new[] { "visible_deck_cards", "selection", "random_uncommitted_preview", "upgrade_view", "controls" }),
         Entry(
@@ -153,7 +153,7 @@ internal static class BridgeContractManifest
         Entry(
             "rest_site",
             new[] { "choose_rest_option", "proceed_rest_site" },
-            "sts2-v0.109.0:RestSiteRoom.Options+NRestSiteButton+HealRestSiteOption exact HP witness+Smith exact upgrade-child witness+NProceedButton+NMapScreen",
+            "sts2-v0.109.1:RestSiteRoom.Options+NRestSiteButton+HealRestSiteOption native base-heal minimum plus option-progression witness+Smith exact upgrade-child witness+NProceedButton+NMapScreen",
             "rest_site_semantic_options",
             new[] { "visible_rest_options", "availability", "effects", "proceed_control" }),
         Entry(
@@ -189,7 +189,7 @@ internal static class BridgeContractManifest
         Entry(
             "generated_card_choice",
             new[] { "select_generated_run_card", "skip_generated_run_card_choice", "select_generated_combat_card", "skip_generated_combat_card_choice", "choose_quasar_card", "skip_quasar_choice", "choose_knowledge_demon_curse" },
-            "sts2-v0.109.0:source-bound LeadPaperweight/native-generated-combat-card-potion/Splash/Quasar/KnowledgeDemon.ChooseCurse+NChooseACardSelectionScreen+purpose-specific exact post-state witnesses",
+            "sts2-v0.109.1:source-bound LeadPaperweight/HeftyTablet/native-generated-combat-card-potion/Splash/Quasar/KnowledgeDemon.ChooseCurse+NChooseACardSelectionScreen+purpose-specific exact post-state witnesses",
             "source_discriminated_generated_card_choice",
             new[] { "visible_card_choices", "choice_purpose", "source_kind", "destination", "selected_card_cost_policy", "overflow_destination", "skip_control" }),
         Entry(
@@ -212,7 +212,14 @@ internal static class BridgeContractManifest
             new[] { "visible_rewards", "claimability", "potion_capacity", "proceed_control" }),
         Entry(
             "map_navigation",
-            new[] { "choose_map_node" },
+            new[]
+            {
+                Operation(
+                    "choose_map_node",
+                    BridgeOperationEvidenceStatus.OrganicCanaryExercised,
+                    "../archive/bridge-v2-previews/2026-07/PREVIEW_35_MAP_CONTROLLER_GATE_CLOSEOUT_2026-07-18.md",
+                    "docs/bridge-v2/PLAYER_VISIBLE_COVERAGE.md")
+            },
             "sts2-v0.109.0:NMapScreen+NMapPoint+RunState.Map+OnMapPointSelectedLocally+exact-source-canary",
             "map_navigation",
             new[] { "visible_map_topology", "current_node", "reachable_nodes", "node_types" }),
@@ -223,12 +230,22 @@ internal static class BridgeContractManifest
                 "purchase_shop_card", "purchase_shop_relic", "purchase_shop_potion",
                 "open_shop_card_removal", "close_shop_inventory"
             },
-            "sts2-v0.109.0:MerchantInventory+typed MerchantEntry+NMerchantSlot+NMerchantInventory+semantic-category-witnesses",
+            "sts2-v0.109.1:MerchantInventory+typed MerchantEntry+NMerchantSlot+NMerchantInventory+semantic-category-witnesses+Kifuda-native-continuation-handoff",
             "merchant_inventory",
             new[] { "inventory", "prices", "sold_state", "gold", "potion_capacity", "removal_service" }),
         Entry(
             "shop_room",
-            new[] { "open_shop_inventory", "proceed_shop" },
+            new[]
+            {
+                Operation(
+                    "open_shop_inventory",
+                    BridgeOperationEvidenceStatus.SourceAudited,
+                    "BridgeV2/Game/ShopSurfaceProviders.cs#ShopRoomSurfaceProvider.StartOpenInventory",
+                    "tests/STS2_MCP.Tests/BridgeContractTests.cs"),
+                Operation(
+                    "proceed_shop",
+                    BridgeOperationEvidenceStatus.SurfaceLevelOnly)
+            },
             "sts2-v0.109.0:NMerchantRoom+NMerchantButton+NProceedButton+exact-navigation-witnesses",
             "merchant_room_navigation",
             new[] { "merchant_control", "proceed_control" }),
@@ -346,7 +363,13 @@ internal static class BridgeContractManifest
                     : compatibility.ActionCanarySurfaceKinds.Contains(entry.Kind, StringComparer.Ordinal)
                         ? "canary"
                         : string.Empty;
-                return new ActionPermissionScope(entry.Kind, operation.Operation, tier);
+                return new ActionPermissionScope(entry.Kind, operation.Operation, tier)
+                {
+                    OperationFingerprint =
+                        BridgePermissionManager.OperationFingerprint(
+                            entry.Kind,
+                            operation.Operation)
+                };
             }))
             .Where(scope => scope.Tier.Length > 0)
             .OrderBy(scope => scope.SurfaceKind, StringComparer.Ordinal)

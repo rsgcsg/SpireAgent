@@ -2,7 +2,7 @@ import { appendFile, mkdir, readFile, readdir, writeFile } from "node:fs/promise
 import { join, relative, resolve } from "node:path";
 import type { PromptBundle } from "../prompting/promptBuilder.js";
 import type { JsonValue } from "../shared/json.js";
-import type { DecisionRecord, DecisionRecorder, PreparedEvidence, RunMetadata } from "./types.js";
+import type { DecisionRecord, DecisionRecorder, PreparedEvidence, RunMetadata, RunSummary } from "./types.js";
 
 export class FileDecisionRecorder implements DecisionRecorder {
   readonly runId: string;
@@ -69,6 +69,19 @@ export class FileDecisionRecorder implements DecisionRecorder {
     await appendFile(join(this.runDir, "decisions.jsonl"), `${JSON.stringify(record)}\n`, "utf8");
   }
 
+  async finalize(summary: Omit<RunSummary, "summarySchemaVersion" | "runId">): Promise<void> {
+    const value: RunSummary = {
+      summarySchemaVersion: 1,
+      runId: this.runId,
+      ...summary
+    };
+    await writeFile(
+      join(this.runDir, "run-summary.json"),
+      `${JSON.stringify(value, null, 2)}\n`,
+      { flag: "wx" }
+    );
+  }
+
   private relativeRef(path: string): string {
     return relative(this.runDir, path).replaceAll("\\", "/");
   }
@@ -96,6 +109,16 @@ export async function readRunRecords(dataRoot: string, runId: string): Promise<D
 export async function readRunMetadata(dataRoot: string, runId: string): Promise<RunMetadata> {
   const path = join(resolve(dataRoot), safeSegment(runId), "metadata.json");
   return JSON.parse(await readFile(path, "utf8")) as RunMetadata;
+}
+
+export async function readRunSummary(dataRoot: string, runId: string): Promise<RunSummary | undefined> {
+  const path = join(resolve(dataRoot), safeSegment(runId), "run-summary.json");
+  try {
+    return JSON.parse(await readFile(path, "utf8")) as RunSummary;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined;
+    throw error;
+  }
 }
 
 function promptRecord(prompt: PromptBundle, promptRef: string): NonNullable<DecisionRecord["prompt"]> {

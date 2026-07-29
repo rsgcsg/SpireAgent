@@ -7,6 +7,12 @@
 > without inheriting qualification. The baseline table and dated post-audit notes
 > below preserve what was known when this audit was written; they are not
 > current runtime truth. See `../STATUS.md` and the Connector evidence.
+>
+> Gate 3 correction, 2026-07-25: Preview.64 implements local one-writer
+> coordination without authentication. References below to "Secure Connector
+> Alpha" remain a dated product-threat-model proposal, not the current Gate 3
+> name or an accepted requirement. Authentication is conditional on a concrete
+> distribution threat model.
 
 Status: canonical productization audit and conditional roadmap, 2026-07-22.
 

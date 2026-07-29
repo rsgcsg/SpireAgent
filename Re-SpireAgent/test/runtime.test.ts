@@ -136,9 +136,9 @@ describe("TickOrchestrator", () => {
     expect(result).toMatchObject({ status: "settled", polls: 2 });
   });
 
-  it("captures one stable checkpoint without re-proving an adapter-confirmed command", async () => {
+  it("requires a repeatable actionable checkpoint without re-proving an adapter-confirmed command", async () => {
     const preRaw = await fixture("combat") as Sts2McpRawState;
-    const adapter = new FakeAdapter([preRaw]);
+    const adapter = new FakeAdapter([preRaw, preRaw]);
     const watcher = new SettlementWatcher(adapter, (raw) => normalizeCurrentState(raw, TEST_ADAPTER), {
       pollMs: 1,
       defaultTimeoutMs: 20,
@@ -157,11 +157,46 @@ describe("TickOrchestrator", () => {
       "adapter_confirmed"
     );
 
-    expect(result).toMatchObject({ status: "settled", polls: 1 });
+    expect(result).toMatchObject({ status: "settled", polls: 2 });
+  });
+
+  it("waits through changing actionable successors after an adapter-confirmed command", async () => {
+    const adapter = new FakeAdapter([
+      { token: "state-intermediate" },
+      { token: "state-final" },
+      { token: "state-final" }
+    ]);
+    const watcher = new SettlementWatcher(adapter, (raw) => {
+      const token = typeof raw === "object" && raw && "token" in raw ? String(raw.token) : "missing";
+      return bridgeEnvelope(token);
+    }, {
+      pollMs: 1,
+      defaultTimeoutMs: 20,
+      endTurnTimeoutMs: 20,
+      roomTransitionTimeoutMs: 20
+    }, async () => {});
+
+    const result = await watcher.waitForNextState(
+      bridgeEnvelope("state-before"),
+      {
+        kind: "bridge_v2_action",
+        actionId: "action-confirmed",
+        expectedStateId: "state-before",
+        bridgeActionKind: "play_card"
+      },
+      "adapter_confirmed",
+      "state-intermediate"
+    );
+
+    expect(result).toMatchObject({
+      status: "settled",
+      polls: 3,
+      after: { currentState: { surface: { bridgeStateId: "state-final" } } }
+    });
   });
 
   it("does not accept an action-preceding Bridge token after the command confirmed a newer state", async () => {
-    const adapter = new FakeAdapter([{ token: "state-old" }, { token: "state-new" }]);
+    const adapter = new FakeAdapter([{ token: "state-old" }, { token: "state-new" }, { token: "state-new" }]);
     const watcher = new SettlementWatcher(adapter, (raw) => {
       const token = typeof raw === "object" && raw && "token" in raw ? String(raw.token) : "missing";
       return bridgeEnvelope(token);
@@ -184,7 +219,7 @@ describe("TickOrchestrator", () => {
       "state-new"
     );
 
-    expect(result).toMatchObject({ status: "settled", polls: 2 });
+    expect(result).toMatchObject({ status: "settled", polls: 3 });
     expect(result.after?.currentState.surface).toMatchObject({ bridgeStateId: "state-new" });
   });
 
@@ -214,9 +249,64 @@ describe("TickOrchestrator", () => {
       "state-transient"
     );
 
-    expect(result).toMatchObject({ status: "settled", polls: 2 });
+    expect(result).toMatchObject({ status: "settled", polls: 3 });
     expect(result.after?.currentState.stability).toBe("actionable");
     expect(result.after?.currentState.surface).toMatchObject({ bridgeStateId: "state-final" });
+  });
+
+  it("accepts a coherent state-bound unsupported successor after Gateway semantic completion", async () => {
+    const successor = bridgeEnvelope("state-after", "unknown");
+    successor.currentState = {
+      ...successor.currentState,
+      actionAuthority: "none",
+      context: {
+        kind: "unknown",
+        reason: "The successor Surface is not operation-qualified.",
+        observedTopLevelKeys: ["bridge_v2_state"]
+      },
+      surface: {
+        kind: "unsupported",
+        reason: "The successor Surface is outside this qualification package.",
+        classification: "missing_action_protocol",
+        observedTopLevelKeys: ["bridge_v2_state"]
+      },
+      bridgeObservation: {
+        observationId: "observation-after",
+        coherent: true,
+        stateId: "state-after",
+        inspectionKinds: []
+      }
+    };
+    const adapter = new FakeAdapter([{ token: "state-after" }]);
+    const watcher = new SettlementWatcher(adapter, () => successor, {
+      pollMs: 1,
+      defaultTimeoutMs: 20,
+      endTurnTimeoutMs: 20,
+      roomTransitionTimeoutMs: 20
+    }, async () => {});
+
+    const result = await watcher.waitForNextState(
+      bridgeEnvelope("state-before"),
+      {
+        kind: "bridge_v2_action",
+        actionId: "action-open-singleplayer",
+        expectedStateId: "state-before",
+        bridgeActionKind: "open_singleplayer"
+      },
+      "adapter_confirmed",
+      "state-after"
+    );
+
+    expect(result).toMatchObject({
+      status: "settled",
+      polls: 1,
+      after: {
+        currentState: {
+          stability: "unknown",
+          surface: { kind: "unsupported" }
+        }
+      }
+    });
   });
 
   it("uses a dedicated room-transition budget for map navigation", async () => {
@@ -268,7 +358,7 @@ describe("TickOrchestrator", () => {
   it.each(["continue_run", "embark_standard_run"] as const)(
     "uses the long-transition budget for the opaque Bridge v2 %s action",
     async (bridgeActionKind) => {
-      const adapter = new FakeAdapter([{ token: "state-after" }]);
+      const adapter = new FakeAdapter([{ token: "state-after" }, { token: "state-after" }]);
       const watcher = new SettlementWatcher(adapter, (raw) => {
         const token = typeof raw === "object" && raw && "token" in raw ? String(raw.token) : "missing";
         return bridgeEnvelope(token);
@@ -291,7 +381,7 @@ describe("TickOrchestrator", () => {
         "state-after"
       );
 
-      expect(result).toMatchObject({ status: "settled", polls: 1 });
+      expect(result).toMatchObject({ status: "settled", polls: 2 });
     }
   );
 
@@ -457,6 +547,7 @@ describe("TickOrchestrator", () => {
     const provider = fixedProvider("anything", () => { calls += 1; });
     const result = await makeOrchestrator(adapter, provider, recorder).runTick(1);
     expect(result.outcome).toBe("not_executed_invalid_state");
+    expect(result.error).toBeTruthy();
     expect(calls).toBe(0);
     expect(adapter.executed).toEqual([]);
   });
@@ -531,6 +622,39 @@ describe("TickOrchestrator", () => {
     expect(adapter.executed).toEqual([{ kind: "menu_select", option: "main_menu" }]);
   });
 
+  it("stops after game-over cleanup even when initial run entry was allowed", async () => {
+    const raw = await fixture("game-over") as Sts2McpRawState;
+    const menu = await fixture("menu") as Sts2McpRawState;
+    const adapter = new FakeAdapter([raw, raw, menu, menu]);
+    const recorder = new MemoryRecorder();
+    let calls = 0;
+    const orchestrator = makeOrchestrator(
+      adapter,
+      fixedProvider("game-over:main_menu", () => { calls += 1; }),
+      recorder
+    );
+
+    const cleanup = await orchestrator.runTick(1, {
+      stopAtRunBoundary: true,
+      allowRunEntry: true
+    });
+    const boundary = await orchestrator.runTick(2, {
+      stopAtRunBoundary: true,
+      allowRunEntry: true
+    });
+
+    expect(cleanup.outcome).toBe("executed_and_settled");
+    expect(boundary).toMatchObject({
+      outcome: "not_executed_non_actionable_state",
+      contextKind: "menu",
+      shouldStopRun: true,
+      stopReason: "run_boundary"
+    });
+    expect(calls).toBe(1);
+    expect(adapter.executed).toEqual([{ kind: "menu_select", option: "main_menu" }]);
+    expect(recorder.records[1]?.error).toContain("never starts a second game");
+  });
+
   it("stops at the top-level menu before the model can start or continue another run", async () => {
     const raw = await fixture("menu") as Sts2McpRawState;
     const adapter = new FakeAdapter([raw]);
@@ -549,6 +673,29 @@ describe("TickOrchestrator", () => {
     expect(calls).toBe(0);
     expect(adapter.executed).toEqual([]);
     expect(recorder.records[0]?.error).toContain("run-start boundary");
+  });
+
+  it("does not let the explicit run-entry option cross the boundary through local reconstruction", async () => {
+    const raw = await fixture("menu") as Sts2McpRawState;
+    const adapter = new FakeAdapter([raw]);
+    const recorder = new MemoryRecorder();
+    let calls = 0;
+    const provider = fixedProvider("menu:0", () => { calls += 1; });
+
+    const result = await makeOrchestrator(adapter, provider, recorder).runTick(1, {
+      stopAtRunBoundary: true,
+      allowRunEntry: true
+    });
+
+    expect(result).toMatchObject({
+      outcome: "not_executed_invalid_state",
+      contextKind: "menu",
+      actionAuthority: "local_reconstruction",
+      shouldStopRun: true
+    });
+    expect(calls).toBe(0);
+    expect(adapter.executed).toEqual([]);
+    expect(recorder.records[0]?.error).toContain("bridge_advertised");
   });
 });
 

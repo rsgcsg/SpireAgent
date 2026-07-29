@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { buildAllowedActions } from "../src/domain/actions/buildAllowedActions.js";
 import { normalizeCurrentState } from "../src/normalization/normalizeCurrentState.js";
 import { buildDecisionPrompt } from "../src/prompting/promptBuilder.js";
-import { FileDecisionRecorder, readRunMetadata, readRunRecords } from "../src/recording/fileDecisionRecorder.js";
+import { FileDecisionRecorder, readRunMetadata, readRunRecords, readRunSummary } from "../src/recording/fileDecisionRecorder.js";
 import type { DecisionRecord, RunMetadata } from "../src/recording/types.js";
 import { fixture, TEST_ADAPTER } from "./helpers.js";
 
@@ -101,6 +101,15 @@ describe("FileDecisionRecorder", () => {
       outcome: "executed_and_settled"
     };
     await recorder.append(record, { postRawState: raw });
+    await recorder.finalize({
+      endedAt: "2026-01-01T00:00:00.011Z",
+      decisionCount: 1,
+      termination: "completed_run_boundary",
+      completedGame: true,
+      terminalOutcome: "executed_and_settled",
+      terminalStopReason: "run_boundary",
+      maxTicks: 1000
+    });
 
     const runDir = join(dataRoot, recorder.runId);
     const savedPrompt = JSON.parse(await readFile(join(runDir, "prompts/decision-1.prompt.json"), "utf8"));
@@ -112,5 +121,19 @@ describe("FileDecisionRecorder", () => {
     expect(savedRecord.preState.rawStateRef).toBe("snapshots/decision-1-pre.raw.json");
     expect(savedRecord.postState.rawStateRef).toBe("snapshots/decision-1-post.raw.json");
     expect(savedRecord.llm.responseRef).toBe("responses/decision-1.response.json");
+    await expect(readRunSummary(dataRoot, recorder.runId)).resolves.toMatchObject({
+      runId: recorder.runId,
+      decisionCount: 1,
+      termination: "completed_run_boundary",
+      completedGame: true
+    });
+    await expect(recorder.finalize({
+      endedAt: "2026-01-01T00:00:00.012Z",
+      decisionCount: 1,
+      termination: "stopped_runtime_failure",
+      completedGame: false,
+      terminalOutcome: "observation_failed",
+      maxTicks: 1000
+    })).rejects.toMatchObject({ code: "EEXIST" });
   });
 });

@@ -10,16 +10,40 @@ internal sealed record BridgeActionStartResult(
     string? Detail,
     Func<bool>? CompletionProbe,
     string? CompletionEvidence,
-    bool AllowIntermediateStateChanges)
+    bool AllowIntermediateStateChanges,
+    string CompletionBoundary,
+    Func<string?>? CompletionEvidenceProvider,
+    Func<string?>? CompletionBoundaryProvider)
 {
     public static BridgeActionStartResult Started(
         Func<bool>? completionProbe = null,
         string? completionEvidence = null,
-        bool allowIntermediateStateChanges = false) =>
-        new(true, null, null, completionProbe, completionEvidence, allowIntermediateStateChanges);
+        bool allowIntermediateStateChanges = false,
+        string completionBoundary = BridgeOperationQualificationCatalog.GatewayCompletionBoundary,
+        Func<string?>? completionEvidenceProvider = null,
+        Func<string?>? completionBoundaryProvider = null) =>
+        new(
+            true,
+            null,
+            null,
+            completionProbe,
+            completionEvidence,
+            allowIntermediateStateChanges,
+            completionBoundary,
+            completionEvidenceProvider,
+            completionBoundaryProvider);
 
     public static BridgeActionStartResult Rejected(string code, string detail) =>
-        new(false, code, detail, null, null, false);
+        new(
+            false,
+            code,
+            detail,
+            null,
+            null,
+            false,
+            BridgeOperationQualificationCatalog.GatewayCompletionBoundary,
+            null,
+            null);
 }
 
 internal sealed record BridgeActionDraft(
@@ -53,4 +77,5 @@ internal sealed record BridgeObservationDraft(
 internal sealed record RegisteredBridgeAction(
     LegalAction Descriptor,
     Func<BridgeActionStartResult> Start,
-    BridgeActionPermissionBinding? PermissionBinding = null);
+    BridgeActionPermissionBinding? PermissionBinding = null,
+    BridgeBoundActionContract? ContractBinding = null);
