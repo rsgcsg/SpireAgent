@@ -41,16 +41,22 @@ strict Bridge v2 state from the Live Semantic Gateway REST adapter, normalizes
 untrusted JSON into a strongly typed current-state contract with separate
 semantic context and interaction Surface, asks DeepSeek to select one allowed
 action ID, validates the selection, executes it only if the state is unchanged,
-waits for the Bridge command lifecycle, and records the complete evidence.
+waits for the Bridge command lifecycle and a repeatable actionable successor,
+and records the complete evidence. Gateway completion remains the only native
+Outcome authority; the extra successor observation avoids model calls while
+visible native effects are still evolving.
 
 RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, shadow/live modes, policy promotion, or the old project's phase machinery. Its job is to make one decision path correct and auditable.
 
 Re's current strict client contract is Bridge `2.0-preview.75`. Re strictly
 decodes current identities and grants, but does not interpret fallback Witness
-semantics or promote any candidate. Preview.75 is built and installed as SHA
-`ddce17cf...` / MVID `23ac5aad...`; it has not been cold-loaded. The last
-verified runtime loaded Preview.74 SHA `42eb22b6...` / MVID `13d4dd05...` /
-runtime `5ed719fd...`; its grants and evidence do not transfer to Preview.75.
+semantics or promote any candidate. Preview.75 exact runs on SHA
+`ddce17cf...` / MVID `23ac5aad...` / runtime `fc2ea037...` completed 175- and
+282-decision one-game boundaries,
+exercised state-bound Inspection, and included one ordinary relic purchase.
+Their `unrecorded` provenance is coverage evidence, not Organic or persistent
+qualification. A same-source rebuild is installed as SHA `f9819b6b...` / MVID
+`34d6deb3...` and awaits cold-load; prior scope does not transfer.
 A historical strict read-only main-menu inspection passed without mutation.
 Preview.66's narrow persistent
 `main_menu/continue_run` qualification belongs only to its historical exact

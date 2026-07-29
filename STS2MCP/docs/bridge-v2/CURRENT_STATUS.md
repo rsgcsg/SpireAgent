@@ -9,21 +9,23 @@ and architecture are in [Current Status](../../../docs/current/STATUS.md) and
 ```text
 Gateway/Re source      2.0-preview.75
 Re normalized schema  30
-source status          tested/built/installed; cold-load pending
+source status          tested/built/installed; new MVID cold-load pending
 
 built/installed        2.0-preview.75
 game                   v0.109.1|c8c577f6|-820620422
-built/installed SHA    ddce17cf4121bf009a371cbfd102b1174732eafc1cf7fafd8e226f3ec12f6334
-built/installed MVID   23ac5aad-443b-47aa-9cb0-a55197d83cb4
-last loaded contract   2.0-preview.74
-last loaded SHA        42eb22b6cc0ee95679d4347bba2f319c1d02b06ae8bbfdebc9c48c6c85aaea7e
-last loaded MVID       13d4dd05-61c3-470c-ba03-5af14dd9cf5b
-last runtime epoch     5ed719fd1c6c43b0bff62866c96f4142
-rollback               STS2MCP/.local/deployments/2026-07-29T09-13-35-338Z
+built/installed SHA    f9819b6b24ed71245cee711a2844c32fa2c1b666fce6b3f412f1bd71efc721ee
+built/installed MVID   34d6deb3-f4b7-43bf-89ad-a9e596380410
+last loaded contract   2.0-preview.75
+last loaded SHA        ddce17cf4121bf009a371cbfd102b1174732eafc1cf7fafd8e226f3ec12f6334
+last loaded MVID       23ac5aad-443b-47aa-9cb0-a55197d83cb4
+last runtime epoch     fc2ea037f66846d39e7eb826d6df7220
+rollback               STS2MCP/.local/deployments/2026-07-29T12-26-37-794Z
 ```
 
-Preview.75 build and installation are verified. No Preview.75 load,
-Inspection/mutation canary, Organic journey or qualification is claimed yet.
+The prior Preview.75 DLL load and broad bounded mutation/Inspection coverage
+are verified. A same-source rebuild is installed with a new MVID; it is not
+loaded and inherits no runtime grant. No Organic journey or persistent
+qualification is claimed.
 
 ## Current Contract
 
@@ -39,17 +41,19 @@ Inspection/mutation canary, Organic journey or qualification is claimed yet.
   deletion debt.
 - Re chooses only advertised action IDs and retains generic command polling and
   successor supervision. It does not reconstruct native legality or Outcome.
+- Gateway command completion remains action-local. Re requires a repeatable
+  actionable successor before another model call; coherent unsupported and
+  non-actionable successors do not gain action authority.
 
 ## Latest Evidence
 
-Preview.74 run `run-20260729081310-529z79` completed a bounded run with 197
-settled mutations in 202 decisions and four safe stale refusals. Adjacent runs
-add 260 settled mutations and prove Self-Help Book enchantment, but not Kifuda
-or shop relic purchase. Four runs stopped only because valid JSON contained a
-`reasonBrief` longer than 240 characters. There was no latest-run unsupported,
-unknown mutation, unsettled mutation, observation failure or Gateway failure.
-All evidence is `unrecorded` coverage-only evidence; see the
-[runtime audit](../../../docs/current/audits/WORKFLOW_C_PREVIEW74_RUNTIME_AND_PREVIEW75_PRELIVE_CLOSEOUT_2026-07-29.md).
+Preview.75 runs `run-20260729094605-ycbsur` and
+`run-20260729112408-jltj8f` completed bounded runs with 429 settled mutations
+in 457 decisions and 25 safe stale refusals. They had no unsupported, unknown
+mutation, unsettled mutation, observation failure or provider failure. Exact
+Inspection captured `run_deck`, `combat_piles` and `shop_catalog`. All evidence
+is `unrecorded` coverage-only evidence; see the
+[runtime audit](../../../docs/current/audits/WORKFLOW_C_PREVIEW75_RUNTIME_AND_SUCCESSOR_STABILITY_CLOSEOUT_2026-07-29.md).
 
 ## Clean Closure Inventory
 
@@ -76,9 +80,10 @@ gold/relic/entry-or-Kifuda-child evidence. Kifuda's enchant selector becomes the
 next fresh Surface, whose action bindings include exact Kifuda source evidence.
 No universal transaction or PendingObligation was added.
 
-The pilot is implemented and fixture-tested only. Exact current-build ordinary
-relic, Kifuda, wrong-source, stale-offer and child-owner evidence remains
-required before Live qualification or old-family closeout.
+Exact current-build ordinary relic purchase is now exercised with Bronze
+Scales, gold `193 -> 56`, exact relic ownership and Courier replacement of the
+same slot with Tiny Mailbox. Kifuda, wrong-source, stale-offer and child-owner
+evidence remains required before qualification or old-family closeout.
 
 ## Preview.75 Reliability Boundary
 
@@ -95,6 +100,6 @@ required before Live qualification or old-family closeout.
 Current unsupported or evidence-limited scope includes Crystal Sphere,
 standalone manual potion discard, Tutor ownership, unknown generated sources,
 non-standard profile/menu paths, multiplayer and incomplete Inspection/detail
-families. Next runtime action is Preview.75 cold-load identity verification,
-then one Inspection-enabled bounded journey. Relic/Kifuda remains a separate
-natural-evidence pilot.
+families. Next runtime action is one post-Re-supervision bounded journey to
+measure actionable-successor stabilization. Kifuda remains a natural-evidence
+pilot gate.

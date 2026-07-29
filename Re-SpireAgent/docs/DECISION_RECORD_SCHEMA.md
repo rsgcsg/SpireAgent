@@ -10,7 +10,11 @@ Each tick creates one append-only `DecisionRecord`, including non-execution outc
 - `llm`: provider/model, all attempts, raw content, parsed decision, optional
   typed normalizations, validation
 - `execution`: selected ID, local payload, stale-state result, adapter response/error
-- `settlement`: next-decision-checkpoint status, polls, elapsed time, error, plus optional transient-observation count and last safe error code/message when a coherent Bridge state changed during read-only sidecar capture
+- `settlement`: next-decision-checkpoint status, polls, elapsed time, error,
+  plus optional transient-observation count and last safe error code/message;
+  after Gateway completion, an actionable checkpoint must repeat with the same
+  full state hash before another model call, while non-actionable or coherent
+  unsupported successors remain immediately typed and non-authorizing
 - `runtimeGuard`: optional exact-transition cycle evidence; a second identical pre-state/action/post-state transition stops the bounded run without rewriting the successful action outcome
 - `postState`: raw ref, normalized state, diagnostics, full-raw stale-guard hash, and normalized projection hash
 - `outcome`: the terminal classification for this tick

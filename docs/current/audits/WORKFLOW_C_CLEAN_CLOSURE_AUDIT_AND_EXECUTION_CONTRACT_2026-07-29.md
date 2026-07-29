@@ -1,7 +1,7 @@
 # 工作流 C Clean Closure 架构审计与执行合同
 
 **审计基线：** `develop` `146618b4431042da317d34a855c7380a02d55af9`  
-**状态：** execution contract accepted; Preview.75 source/test/build/install complete; cold-load pending
+**状态：** execution contract accepted; Preview.75 loaded and bounded runtime exercised; Kifuda/family deletion pending
 **权威决定：** [ADR-0005](../decisions/ADR-0005-workflow-c-clean-closure.md)
 
 ## 1. 执行结论
@@ -30,6 +30,27 @@ session admission. Preview.75 is installed as SHA `ddce17cf...6334`, MVID
 still absent, so this update does not close the first family pilot or authorize
 old-path deletion. See the dedicated
 [runtime/pre-Live closeout](WORKFLOW_C_PREVIEW74_RUNTIME_AND_PREVIEW75_PRELIVE_CLOSEOUT_2026-07-29.md).
+
+### 2026-07-29 Preview.75 runtime update
+
+Preview.75 subsequently loaded on exact SHA `ddce17cf...6334`, MVID
+`23ac5aad...3cb4`, runtime `fc2ea037...`. Runs `run-...094605` and
+`run-...112408` completed one-game boundaries with 429 settled mutations and
+25 safe stale refusals. They exercised `run_deck`, `combat_piles` and
+`shop_catalog`; the second run purchased Bronze Scales with exact gold/relic
+and Courier slot-replacement evidence. Kifuda did not occur.
+
+The stale records exposed a Re transition-supervision gap rather than a
+Gateway authority defect: the first actionable successor after action-local
+completion could continue changing during the model call. Re now requires a
+repeatable actionable successor without changing Gateway Outcome or retrying
+stale actions. See the
+[Preview.75 runtime closeout](WORKFLOW_C_PREVIEW75_RUNTIME_AND_SUCCESSOR_STABILITY_CLOSEOUT_2026-07-29.md).
+
+The final same-source Release rebuild is installed as SHA `f9819b6b...c721ee`,
+MVID `34d6deb3...380410`. The game is closed, so this new whole-DLL identity
+inherits no loaded evidence or session authority. Rollback is
+`STS2MCP/.local/deployments/2026-07-29T12-26-37-794Z`.
 
 ## 2. 事实与证据边界
 
@@ -248,12 +269,12 @@ recorded journey 才证明对应运行范围。不同等级不得互相冒充。
 
 ## 10. 当前 non-claims
 
-- Preview.74 尚未 cold-load；build/install 已精确核验；
-- ordinary relic/Kifuda pilot 尚无 Preview.74 Live mutation；
-- Inspection 未在当前 source contract 资格化；
+- Preview.75 已 cold-load，并有两条 exact-runtime completed boundaries；
+- ordinary relic 正例已取得，但 Kifuda child/negative evidence 仍缺；
+- Inspection 已有当前 runtime coverage，但未 Organic/persistent qualification；
 - 80 个 fallback 尚未完成 family disposition；
 - 没有 complete-game、cross-Mod、cross-version 或 persistent qualification 声明；
-- 最新完整 run 是 Preview.73 且 provenance `unrecorded`。
+- 最新完整 runs 是 Preview.75 且 provenance `unrecorded`。
 
 ## 11. 验证与部署结果
 

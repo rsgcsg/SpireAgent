@@ -16,6 +16,11 @@ Preview.75 preserves Preview.74 wire shapes and adds two runtime semantics:
 
 Re normalized schema remains `30`.
 
+Re's post-command supervisor now requires two consecutive equal actionable
+state hashes before the next model decision. This is a client runtime behavior,
+not a wire change or an extension of Gateway command completion. Coherent
+unsupported and non-actionable successors remain typed and non-authorizing.
+
 ## Historical Preview Notes
 
 Preview.74 performs the Clean Closure identity/wire cutover:

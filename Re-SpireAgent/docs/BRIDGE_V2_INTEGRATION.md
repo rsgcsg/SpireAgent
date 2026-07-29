@@ -3,16 +3,16 @@
 > Current source-truth status, 2026-07-29: Re and C# share the
 > `2.0-preview.75` source consumer contract; Re normalized schema is `30`.
 > Gate 1 is closed as a bounded ordinary-single-player v2 connector baseline.
-> Preview.75 is tested, built and installed as SHA `ddce17cf...6334` / MVID
-> `23ac5aad...3cb4`, but is not loaded. The last verified runtime is
-> Preview.74 SHA `42eb22b6...aaea7e` / MVID `13d4dd05...9cf5b` / runtime
-> `5ed719fd...`. Exact run `run-20260729081310-529z79` reached a completed
-> one-game boundary with 197 settled decisions and four safe stale refusals;
-> it had no unsupported, observation/provider failure, unsettled or unknown
-> mutation. Provenance is `unrecorded`, and neither Inspection nor the ordinary
-> relic/Kifuda pilot was exercised. Preview.75 adds only bounded rationale
-> normalization and an exact-session, volatile read-only Inspection canary;
-> neither creates mutation authority or a durable claim.
+> Preview.75 exact runs on SHA `ddce17cf...6334` / MVID
+> `23ac5aad...3cb4` / runtime `fc2ea037...`,
+> `run-20260729094605-ycbsur` and `run-20260729112408-jltj8f`, completed
+> one-game boundaries with 429 settled decisions and 25 safe stale refusals;
+> they had no unsupported, observation/provider failure, unsettled or unknown
+> mutation. They exercised state-bound Inspection and one ordinary relic
+> purchase, but not Kifuda. Provenance is `unrecorded`; neither creates Organic
+> qualification or a durable claim.
+> A same-source rebuild is installed as SHA `f9819b6b...` / MVID
+> `34d6deb3...` and awaits cold-load; prior session scope does not transfer.
 
 ## Connector Boundary
 
@@ -84,7 +84,10 @@ into a Bridge v2 wrapper is invalid and cannot contribute facts or authority.
 Bridge command `completed` is the semantic settlement authority. Re verifies
 the echoed request/state/action identity, preserves `failed` and `timed_out`
 as unknown outcomes, and captures a coherent successor checkpoint after a
-confirmed command. A checkpoint read failure cannot cause action retry.
+confirmed command. An actionable successor must repeat with the same full
+state hash before Re spends another model call; changing visible or authority
+facts continue to be observed. This does not reinterpret the Gateway Witness.
+A checkpoint read failure cannot cause action retry.
 
 Preview.74 requires formal `semantic_state_id` and `authority_projection_id`.
 Re strictly decodes them but still submits the composite state-bound action ID.
@@ -538,11 +541,11 @@ Preview.72 was later rebuilt/installed/loaded as SHA `debc229e...` / MVID
 `run-20260728132337-ce2195` proves broad bounded mutation and one-game
 supervision on that identity, but not repaired-branch completion, Organic
 evidence, Inspection readiness or persistent qualification.
-Preview.74 later loaded as SHA `42eb22b6...` / MVID `13d4dd05...` / runtime
-`5ed719fd...`; `run-20260729081310-529z79` completed a 202-decision boundary
-with 197 settled mutations and four safe stale refusals. Preview.75 is now
-built/installed as SHA `ddce17cf...` / MVID `23ac5aad...`, but has not been
-cold-loaded. Preview.74 evidence and grants do not transfer to Preview.75.
+Preview.75 loaded as SHA `ddce17cf...` / MVID `23ac5aad...` / runtime
+`fc2ea037...`; two exact runs completed 175- and 282-decision boundaries with
+429 settled mutations and 25 safe stale refusals. State-bound Inspection and
+ordinary relic purchase are exercised; Kifuda and post-change stale-rate
+comparison remain open.
 
 Current v0.109 evidence includes merchant removal, event/rest upgrade, ordinary
 rest, ordinary combat, Brain Leech event card acquisition,

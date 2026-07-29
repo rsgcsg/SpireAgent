@@ -152,8 +152,17 @@ fabricated into contracts to make a counter reach zero.
 
 ## Rollback
 
-Preview.75 is installed but not loaded. The last loaded Preview.74 whole-DLL
-rollback is `STS2MCP/.local/deployments/2026-07-29T09-13-35-338Z`. A rollback
-restores a complete prior DLL; it does not selectively re-enable the deleted
-shadow wire contract. Preview.75's read-only Inspection canary does not alter
-the ADR's single mutation-authority architecture.
+Preview.75 was subsequently loaded as SHA `ddce17cf...6334`, MVID
+`23ac5aad...3cb4`, runtime `fc2ea037...`. Two bounded runs completed one-game
+boundaries and exercised state-bound Inspection; one also exercised ordinary
+shop relic purchase and Courier replacement. Kifuda remains absent. A later Re
+supervision correction requires a repeatable actionable successor after
+Gateway completion without reinterpreting native Outcome. This refines, rather
+than changes, the single-authority decision. See the
+[Preview.75 runtime closeout](../audits/WORKFLOW_C_PREVIEW75_RUNTIME_AND_SUCCESSOR_STABILITY_CLOSEOUT_2026-07-29.md).
+
+A final same-source rebuild is installed as SHA `f9819b6b...c721ee`, MVID
+`34d6deb3...380410` and awaits cold-load. The current whole-DLL rollback is
+`STS2MCP/.local/deployments/2026-07-29T12-26-37-794Z`. A rollback restores a
+complete prior DLL; it does not selectively re-enable the deleted shadow wire
+contract or transfer runtime authority.

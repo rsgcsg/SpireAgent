@@ -10,9 +10,11 @@
 > loaded artifact. Current loaded identity and Gate status are owned by
 > [Bridge v2 Current Status](CURRENT_STATUS.md).
 
-Current source contract is Preview.73. It is tested, built, installed and
-cold-loaded; strict Re read-only inspection passed. Preview.72 remains the
-latest action-evidence scope because no Preview.73 mutation has executed. Preview.61
+Current source contract is Preview.75. It is tested, built, installed and
+cold-loaded. Two exact-runtime runs completed one-game boundaries and exercised
+state-bound `run_deck`, `combat_piles` and `shop_catalog` Inspection plus broad
+mutation. Their `unrecorded` provenance is coverage evidence, not Organic or
+persistent qualification. Preview.61
 supplied the bounded Neow's
 Fury Organic lifecycle that sealed Gate 1. Preview.62 added reviewed
 source/compatibility registries and a non-authorizing exact-assembly audit;
@@ -21,7 +23,9 @@ separates diagnostic observation, encounter trials, and persistent claims;
 Preview.70 introduced the contract-shadow split; Preview.71 adds treasure-open
 as the sixth explicit candidate after the empty-chest failure; Preview.72 adds
 exact Hefty Tablet source/result handling and actionless settling consumption;
-Preview.73 repairs Rest minimum-Outcome and blocked semantic-owner projection.
+Preview.73 repairs Rest minimum-Outcome and blocked semantic-owner projection;
+Preview.74 formalizes semantic/authority identity and starts vertical contract
+migration; Preview.75 enables bounded read-only Inspection canaries.
 None inherits historical operation coverage or
 qualification. Current installed and loaded identities are owned by
 [Bridge v2 Current Status](CURRENT_STATUS.md),

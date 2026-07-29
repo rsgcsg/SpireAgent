@@ -40,6 +40,10 @@ not inherit authority from the archived root SpireAgent runtime.
 
 Current cross-component audits:
 
+- [Preview.75 runtime and successor-stability closeout](audits/WORKFLOW_C_PREVIEW75_RUNTIME_AND_SUCCESSOR_STABILITY_CLOSEOUT_2026-07-29.md):
+  two exact-runtime completed runs, Inspection evidence, ordinary relic plus
+  Courier replacement evidence, formal stale attribution, Re successor
+  stabilization, Kifuda non-claim and post-change Live gate.
 - [Preview.74 runtime and Preview.75 pre-Live closeout](audits/WORKFLOW_C_PREVIEW74_RUNTIME_AND_PREVIEW75_PRELIVE_CLOSEOUT_2026-07-29.md):
   exact six-run attribution, Prompt/source provenance, stale analysis,
   Self-Help Book versus Kifuda evidence boundary, Preview.75 rationale and

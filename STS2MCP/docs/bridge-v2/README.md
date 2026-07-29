@@ -41,14 +41,20 @@ qualification. Prior runtime evidence and grants do not transfer.
 Preview.74 supplied a 202-decision completed-run boundary and formalized
 semantic/authority identity, removed state shadows/control history, added exact
 BoundAction admission, and started the shop relic/Kifuda vertical pilot.
-Preview.75 is built/installed but not loaded; it adds volatile read-only
-Inspection canaries for an already-admitted clean runtime and prevents a
-display-only rationale overflow from terminating Re. See the
-[Clean Closure contract](../../../docs/current/audits/WORKFLOW_C_CLEAN_CLOSURE_AUDIT_AND_EXECUTION_CONTRACT_2026-07-29.md).
+Preview.75 was subsequently loaded as SHA `ddce17cf...` / MVID
+`23ac5aad...` / runtime `fc2ea037...`. Two exact-runtime runs completed
+one-game boundaries, exercised state-bound Inspection and supplied an ordinary
+relic plus Courier replacement positive. Re now also waits for a repeatable
+actionable successor after Gateway action-local completion, without changing
+the wire contract or Gateway authority. See the
+[runtime closeout](../../../docs/current/audits/WORKFLOW_C_PREVIEW75_RUNTIME_AND_SUCCESSOR_STABILITY_CLOSEOUT_2026-07-29.md).
+The final same-source Release rebuild is installed as SHA `f9819b6b...` / MVID
+`34d6deb3...` and awaits cold-load; no earlier session scope transfers.
 
 ## Current Documents
 
 - [Current status](CURRENT_STATUS.md)
+- [Preview.75 runtime and successor-stability closeout](../../../docs/current/audits/WORKFLOW_C_PREVIEW75_RUNTIME_AND_SUCCESSOR_STABILITY_CLOSEOUT_2026-07-29.md)
 - [Preview.74 runtime and Preview.75 pre-Live closeout](../../../docs/current/audits/WORKFLOW_C_PREVIEW74_RUNTIME_AND_PREVIEW75_PRELIVE_CLOSEOUT_2026-07-29.md)
 - [Clean Closure audit and execution contract](../../../docs/current/audits/WORKFLOW_C_CLEAN_CLOSURE_AUDIT_AND_EXECUTION_CONTRACT_2026-07-29.md)
 - [Clean Closure architecture ADR](../../../docs/current/decisions/ADR-0005-workflow-c-clean-closure.md)

@@ -22,49 +22,53 @@ trial/claim lifecycle, repeated journeys and final freeze.
 ```text
 source contract      2.0-preview.75
 Re normalized schema 30
-source state         tests/build pass; installed; cold-load pending
+source state         tests/build pass; new Gateway installed; cold-load pending
 
 built/installed      2.0-preview.75
 game release         v0.109.1|c8c577f6
 actual game hash     -820620422
-built/installed SHA  ddce17cf4121bf009a371cbfd102b1174732eafc1cf7fafd8e226f3ec12f6334
-built/installed MVID 23ac5aad-443b-47aa-9cb0-a55197d83cb4
-last loaded contract 2.0-preview.74
-last loaded SHA      42eb22b6cc0ee95679d4347bba2f319c1d02b06ae8bbfdebc9c48c6c85aaea7e
-last loaded MVID     13d4dd05-61c3-470c-ba03-5af14dd9cf5b
-last observed runtime 5ed719fd1c6c43b0bff62866c96f4142
-rollback             STS2MCP/.local/deployments/2026-07-29T09-13-35-338Z
+built/installed SHA  f9819b6b24ed71245cee711a2844c32fa2c1b666fce6b3f412f1bd71efc721ee
+built/installed MVID 34d6deb3-f4b7-43bf-89ad-a9e596380410
+last loaded contract 2.0-preview.75
+last loaded SHA      ddce17cf4121bf009a371cbfd102b1174732eafc1cf7fafd8e226f3ec12f6334
+last loaded MVID     23ac5aad-443b-47aa-9cb0-a55197d83cb4
+last observed runtime fc2ea037f66846d39e7eb826d6df7220
+rollback             STS2MCP/.local/deployments/2026-07-29T12-26-37-794Z
 ```
 
-Preview.75 is built and installed but has not been cold-loaded. Preview.74
-evidence and session authority do not transfer to the new source contract.
+The previous Preview.75 artifact was loaded and exercised. A same-source
+Release rebuild is now installed under a new whole-DLL identity and the game is
+closed. Prior runtime authority/evidence does not transfer to MVID
+`34d6deb3...`; no loaded or persistent qualification is claimed for it.
 
 ## Latest Runtime Evidence
 
-`run-20260729081310-529z79` used exact loaded Preview.74, clean Re revision
-`a5faf3e`, Prompt v4 and guide v5:
+Two exact loaded Preview.75 runs used clean Re revision `364f454`, Prompt v4
+and guide v5:
 
 ```text
-decisions                        202
-executed_and_settled             197
-termination                       completed_run_boundary
-completedGame                     true
-safe stale refusals                4
+decisions                        175 + 282
+executed_and_settled             171 + 258
+termination                      two completed_run_boundary
+completedGame                    true / true
+safe stale refusals                2 + 23
 unsupported / invalid              0
 observation / provider failure     0
 unsettled / unknown mutation       0
 ```
 
-Provenance is `unrecorded`; Inspection was disabled and the run did not
-exercise ordinary shop relic/Kifuda. It is strong bounded coverage evidence,
-not Organic or persistent qualification. The four stale actions were correctly
-refused after formal identity drift; fresh observation continued the run.
+Provenance is `unrecorded`; this is strong bounded coverage, not Organic or
+persistent qualification. Inspection is now exact-runtime exercised:
+`run_deck`, `combat_piles`, and `shop_catalog` remained state-bound and
+non-authorizing. Run `run-...112408` also purchased Bronze Scales with exact
+gold/relic/entry evidence and Courier slot replacement. Kifuda did not occur.
 
-Five adjacent runs add 260 settled mutations, four additional safe stale
-refusals, two completed boundaries and four terminal `reasonBrief` overflows.
-`run-...075934` proves a Self-Help Book enchant lifecycle, not Kifuda, and its
-shop purchases were cards rather than relics. The detailed attribution is in
-[the Preview.74 runtime audit](audits/WORKFLOW_C_PREVIEW74_RUNTIME_AND_PREVIEW75_PRELIVE_CLOSEOUT_2026-07-29.md).
+The 23-run stale audit found no composite-only or missing-identity case. Most
+combat stales followed an action-local completion while visible hand/enemy
+facts continued evolving during the next model call. State binding correctly
+refused all mutations. Re now waits for a repeatable actionable successor
+before the next model call; post-change Live rate is not yet claimed. See the
+[Preview.75 runtime closeout](audits/WORKFLOW_C_PREVIEW75_RUNTIME_AND_SUCCESSOR_STABILITY_CLOSEOUT_2026-07-29.md).
 
 ## Preview.75 Source Changes
 
@@ -86,6 +90,9 @@ shop purchases were cards rather than relics. The detailed attribution is in
 - Re now preserves a valid advertised action when only the non-authoritative
   `reasonBrief` exceeds 240 characters; the raw response and typed
   normalization remain auditable.
+- Re separates Gateway action-local completion from next-decision readiness by
+  requiring a repeatable actionable successor; this does not reinterpret the
+  Gateway Witness or retry stale actions.
 - a diagnostic exact environment may expose volatile read-only Inspection
   canaries only after a source-resolved action session scope exists in the same
   clean runtime; this grants no mutation authority or durable claim.
@@ -101,7 +108,7 @@ Known typed unsupported/out-of-scope includes Crystal Sphere, standalone
 manual potion discard, Tutor's unreviewed owner, unknown generated sources,
 non-standard profile/menu paths and multiplayer.
 
-Next: cold-load Preview.75 and verify the loaded SHA/MVID, then run one bounded
-ordinary journey and confirm coherent `run_deck`/`combat_piles` Inspection
-capture. Ordinary relic/Kifuda positive/negative evidence remains a separate
-natural pilot gate; unknown mutation remains terminal and non-retryable.
+Next: cold-start the installed SHA/MVID, then run one exact-runtime post-change
+journey and compare stale rate without weakening state binding. Wait for
+natural Kifuda child/negative evidence before closing the first family pilot.
+Unknown mutation remains terminal and non-retryable.

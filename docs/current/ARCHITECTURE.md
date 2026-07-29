@@ -122,6 +122,14 @@ evidence proves that a parent transaction remains unresolved across decision
 boundaries. No universal workflow, selector, transaction, or Effect DSL is a
 target component.
 
+Gateway command completion and Re decision readiness are deliberately
+different facts. The Gateway alone proves action-local native Commit and
+Outcome. Re may wait for the resulting actionable state to repeat before
+spending another model call; it may not reinterpret the Witness, remap a stale
+choice, or extend action-local completion into broad transaction settlement.
+This transition supervision exists because exact Preview.75 combat records
+show visible hand and enemy facts continuing to evolve after card Commit.
+
 ## Ownership
 
 | Owner | Responsibilities | Must not own |
@@ -225,9 +233,13 @@ and the
 ## Current Architectural Constraint
 
 The Gateway and Re source share the mechanically checked `2.0-preview.75`
-contract and normalized schema 30. Preview.75 is built and installed as SHA
-`ddce17cf...` / MVID `23ac5aad...`, but loaded evidence remains scoped to
-Preview.74 until cold-load verification. Gate 1 establishes a bounded v2 connector baseline: Re and the
+contract and normalized schema 30. Two runs on loaded SHA `ddce17cf...` / MVID
+`23ac5aad...` / runtime `fc2ea037...` completed one-game boundaries and
+exercised state-bound Inspection; this is `unrecorded` coverage, not Organic or
+persistent qualification. A same-source rebuild is installed as SHA
+`f9819b6b...` / MVID `34d6deb3...` and awaits cold-load; prior authority does
+not transfer. Gate 1
+establishes a bounded v2 connector baseline: Re and the
 default MCP adapter are v2-only, Gateway v1 is retired, and historical v1 data
 is replay-only. Preview.69 has substantial real-runtime coverage on exact final
 loaded SHA `914974b5...` / MVID `1e457e86...`. Preview.70 later loaded as SHA

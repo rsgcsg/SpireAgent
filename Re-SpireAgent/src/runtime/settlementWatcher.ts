@@ -68,9 +68,8 @@ export class SettlementWatcher {
           ...transientTelemetry(transientObservationErrors, lastTransientObservationError)
         };
       }
-      if (settlementAuthority === "adapter_confirmed"
-          && (isSemanticCheckpoint(last)
-            || isCoherentUnsupportedSuccessor(before, last))) {
+      if (last.stateHash !== before.stateHash) lastChanged = last;
+      if (settlementAuthority === "adapter_confirmed") {
         const beforeToken = bridgeStateToken(before);
         const observedToken = bridgeStateToken(last);
         if (confirmedStateToken
@@ -79,16 +78,25 @@ export class SettlementWatcher {
             && confirmedStateToken !== beforeToken) {
           continue;
         }
-        return {
-          status: "settled",
-          polls,
-          elapsedMs: Date.now() - started,
-          after: last,
-          ...transientTelemetry(transientObservationErrors, lastTransientObservationError)
-        };
+        if (isCoherentUnsupportedSuccessor(before, last)
+            || last.currentState.stability === "non_actionable") {
+          return settled(last, polls, started, transientObservationErrors, lastTransientObservationError);
+        }
+        if (!isSemanticCheckpoint(last)) {
+          stableCandidate = undefined;
+          continue;
+        }
+        // Gateway completion proves the action-local native outcome. Re still
+        // waits for a repeatable actionable successor before spending another
+        // model call; this observes quiescence without reconstructing native
+        // legality or broadening the Gateway's completion claim.
+        if (stableCandidate?.stateHash === last.stateHash) {
+          return settled(last, polls, started, transientObservationErrors, lastTransientObservationError);
+        }
+        stableCandidate = last;
+        continue;
       }
       if (last.stateHash === before.stateHash) continue;
-      lastChanged = last;
       if (!isSemanticCheckpoint(last)) {
         stableCandidate = undefined;
         continue;
@@ -114,6 +122,22 @@ export class SettlementWatcher {
       ...transientTelemetry(transientObservationErrors, lastTransientObservationError)
     };
   }
+}
+
+function settled(
+  after: StateEnvelope,
+  polls: number,
+  started: number,
+  transientObservationErrors: number,
+  lastTransientObservationError: SettlementResult["lastTransientObservationError"]
+): SettlementResult {
+  return {
+    status: "settled",
+    polls,
+    elapsedMs: Date.now() - started,
+    after,
+    ...transientTelemetry(transientObservationErrors, lastTransientObservationError)
+  };
 }
 
 function bridgeStateToken(envelope: StateEnvelope): string | undefined {

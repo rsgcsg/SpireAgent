@@ -136,9 +136,9 @@ describe("TickOrchestrator", () => {
     expect(result).toMatchObject({ status: "settled", polls: 2 });
   });
 
-  it("captures one stable checkpoint without re-proving an adapter-confirmed command", async () => {
+  it("requires a repeatable actionable checkpoint without re-proving an adapter-confirmed command", async () => {
     const preRaw = await fixture("combat") as Sts2McpRawState;
-    const adapter = new FakeAdapter([preRaw]);
+    const adapter = new FakeAdapter([preRaw, preRaw]);
     const watcher = new SettlementWatcher(adapter, (raw) => normalizeCurrentState(raw, TEST_ADAPTER), {
       pollMs: 1,
       defaultTimeoutMs: 20,
@@ -157,11 +157,46 @@ describe("TickOrchestrator", () => {
       "adapter_confirmed"
     );
 
-    expect(result).toMatchObject({ status: "settled", polls: 1 });
+    expect(result).toMatchObject({ status: "settled", polls: 2 });
+  });
+
+  it("waits through changing actionable successors after an adapter-confirmed command", async () => {
+    const adapter = new FakeAdapter([
+      { token: "state-intermediate" },
+      { token: "state-final" },
+      { token: "state-final" }
+    ]);
+    const watcher = new SettlementWatcher(adapter, (raw) => {
+      const token = typeof raw === "object" && raw && "token" in raw ? String(raw.token) : "missing";
+      return bridgeEnvelope(token);
+    }, {
+      pollMs: 1,
+      defaultTimeoutMs: 20,
+      endTurnTimeoutMs: 20,
+      roomTransitionTimeoutMs: 20
+    }, async () => {});
+
+    const result = await watcher.waitForNextState(
+      bridgeEnvelope("state-before"),
+      {
+        kind: "bridge_v2_action",
+        actionId: "action-confirmed",
+        expectedStateId: "state-before",
+        bridgeActionKind: "play_card"
+      },
+      "adapter_confirmed",
+      "state-intermediate"
+    );
+
+    expect(result).toMatchObject({
+      status: "settled",
+      polls: 3,
+      after: { currentState: { surface: { bridgeStateId: "state-final" } } }
+    });
   });
 
   it("does not accept an action-preceding Bridge token after the command confirmed a newer state", async () => {
-    const adapter = new FakeAdapter([{ token: "state-old" }, { token: "state-new" }]);
+    const adapter = new FakeAdapter([{ token: "state-old" }, { token: "state-new" }, { token: "state-new" }]);
     const watcher = new SettlementWatcher(adapter, (raw) => {
       const token = typeof raw === "object" && raw && "token" in raw ? String(raw.token) : "missing";
       return bridgeEnvelope(token);
@@ -184,7 +219,7 @@ describe("TickOrchestrator", () => {
       "state-new"
     );
 
-    expect(result).toMatchObject({ status: "settled", polls: 2 });
+    expect(result).toMatchObject({ status: "settled", polls: 3 });
     expect(result.after?.currentState.surface).toMatchObject({ bridgeStateId: "state-new" });
   });
 
@@ -214,7 +249,7 @@ describe("TickOrchestrator", () => {
       "state-transient"
     );
 
-    expect(result).toMatchObject({ status: "settled", polls: 2 });
+    expect(result).toMatchObject({ status: "settled", polls: 3 });
     expect(result.after?.currentState.stability).toBe("actionable");
     expect(result.after?.currentState.surface).toMatchObject({ bridgeStateId: "state-final" });
   });
@@ -323,7 +358,7 @@ describe("TickOrchestrator", () => {
   it.each(["continue_run", "embark_standard_run"] as const)(
     "uses the long-transition budget for the opaque Bridge v2 %s action",
     async (bridgeActionKind) => {
-      const adapter = new FakeAdapter([{ token: "state-after" }]);
+      const adapter = new FakeAdapter([{ token: "state-after" }, { token: "state-after" }]);
       const watcher = new SettlementWatcher(adapter, (raw) => {
         const token = typeof raw === "object" && raw && "token" in raw ? String(raw.token) : "missing";
         return bridgeEnvelope(token);
@@ -346,7 +381,7 @@ describe("TickOrchestrator", () => {
         "state-after"
       );
 
-      expect(result).toMatchObject({ status: "settled", polls: 1 });
+      expect(result).toMatchObject({ status: "settled", polls: 2 });
     }
   );
 

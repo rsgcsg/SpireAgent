@@ -69,18 +69,22 @@ identity, family native-contract migration, deletion of old production paths,
 version/claim recovery and repeated journeys are required. Compendium and
 external reference enrichment remain optional.
 
-Preview.75 source and Re schema 30 are implemented, tested, built and installed
-but not loaded. Exact Preview.74 run `run-20260729081310-529z79` completed a
-202-decision bounded run with 197 settled actions and four safe stale refusals.
-It is `unrecorded`, did not use Inspection or shop relic/Kifuda, and cannot
-qualify Preview.75. Adjacent runs prove Self-Help Book, not Kifuda.
+Preview.75 and Re schema 30 were loaded on exact SHA `ddce17cf...`, MVID
+`23ac5aad...`, runtime `fc2ea037...`. Runs `run-...094605` and `run-...112408`
+completed 175- and 282-decision one-game boundaries with 429 settled mutations,
+25 safe stale refusals, no unsupported/unknown mutation, and state-bound
+`run_deck`, `combat_piles` and `shop_catalog` capture. Provenance is
+`unrecorded`, so this is coverage rather than qualification. The second run
+proves ordinary relic purchase plus Courier slot replacement, but not Kifuda.
+A same-source rebuild is installed as SHA `f9819b6b...` / MVID `34d6deb3...`
+and awaits cold-load; no prior scope transfers.
 
 ### Current Gate 2 Work
 
-- cold-load Preview.75 and verify exact identity;
-- obtain one Inspection-enabled ordinary journey;
-- obtain ordinary relic/Kifuda evidence for the first vertical pilot without
-  manufacturing the encounter;
+- cold-load the installed whole-DLL identity and compare post-change
+  successor-stability stale rate on one exact-runtime run;
+- obtain natural Kifuda child/negative evidence for the first vertical pilot
+  without manufacturing the encounter;
 - close core Inspection and typed availability;
 - close only naturally observed A-facing decision, owner, settling, visible-
   fact, Inspection and action-local outcome gaps;
