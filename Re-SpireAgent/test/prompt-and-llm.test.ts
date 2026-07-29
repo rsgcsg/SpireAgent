@@ -9,6 +9,11 @@ import { buildDecisionPrompt } from "../src/prompting/promptBuilder.js";
 import { CONTEXT_GUIDES, SURFACE_GUIDES } from "../src/prompting/stateGuides.js";
 import { fixture, TEST_ADAPTER } from "./helpers.js";
 
+// Maintenance note for future workers:
+// Prompt and guide versions are intentional evidence/baseline identifiers. When
+// globalPrompt.ts or stateGuides.ts changes, update these reviewed assertions in
+// the same commit and run `npm run check`. Prefer stable semantic invariants over
+// pinning incidental prose unless the exact wording is itself contractual.
 describe("prompt contract", () => {
   it("records the complete current state and non-executable action summaries", async () => {
     const envelope = normalizeCurrentState(await fixture("combat"), TEST_ADAPTER);
@@ -19,8 +24,8 @@ describe("prompt contract", () => {
     expect(prompt.systemPrompt).toContain("Return exactly one JSON object");
     expect(payload.promptSchemaVersion).toBe(3);
     expect(payload.currentStateSchemaVersion).toBe(NORMALIZED_STATE_SCHEMA_VERSION);
-    expect(prompt.globalPromptVersion).toBe(2);
-    expect(prompt.stateGuideVersion).toBe(4);
+    expect(prompt.globalPromptVersion).toBe(4);
+    expect(prompt.stateGuideVersion).toBe(5);
     expect(payload.contextKind).toBe("combat");
     expect(payload.surfaceKind).toBe("combat_turn");
     expect(payload.actionAuthority).toBe("local_reconstruction");
@@ -31,12 +36,11 @@ describe("prompt contract", () => {
     expect(prompt.userPrompt).not.toContain("DEEPSEEK_API_KEY");
   });
 
-  it("versions Prompt v2 and states its bounded game-strategy invariants", () => {
-    expect(GLOBAL_PROMPT_VERSION).toBe(2);
+  it("versions Prompt v4 and states its bounded game-strategy invariants", () => {
+    expect(GLOBAL_PROMPT_VERSION).toBe(4);
     expect(GLOBAL_SYSTEM_PROMPT).toContain("Act 3 boss");
-    expect(GLOBAL_SYSTEM_PROMPT).toContain("Reaching 0 HP normally ends the run");
-    expect(GLOBAL_SYSTEM_PROMPT).toContain("HP is also a resource");
-    expect(GLOBAL_SYSTEM_PROMPT).toContain("Skipping a card can be correct");
+    expect(GLOBAL_SYSTEM_PROMPT).toContain("Current visible facts");
+    expect(GLOBAL_SYSTEM_PROMPT).toContain("Ordinary damage consumes Block before reducing HP");
     expect(GLOBAL_SYSTEM_PROMPT).toContain("Do not assume hidden RNG");
     expect(GLOBAL_SYSTEM_PROMPT).toContain("Choose exactly one immediate action from allowedActions");
     expect(GLOBAL_SYSTEM_PROMPT).toContain("one exact allowedActions id");
@@ -46,10 +50,10 @@ describe("prompt contract", () => {
   it("keeps every context and surface guide present with reviewed versions", () => {
     expect(Object.values(CONTEXT_GUIDES)).not.toHaveLength(0);
     expect(Object.values(SURFACE_GUIDES)).not.toHaveLength(0);
-    expect(Object.values(CONTEXT_GUIDES).every((entry) => entry.version === 4)).toBe(true);
-    expect(Object.values(SURFACE_GUIDES).every((entry) => entry.version >= 4)).toBe(true);
-    expect(SURFACE_GUIDES.combat_pile_card_selection.version).toBe(7);
-    expect(SURFACE_GUIDES.generated_card_choice.version).toBe(5);
+    expect(Object.values(CONTEXT_GUIDES).every((entry) => entry.version === 5)).toBe(true);
+    expect(Object.values(SURFACE_GUIDES).every((entry) => entry.version >= 5)).toBe(true);
+    expect(SURFACE_GUIDES.combat_pile_card_selection.version).toBe(8);
+    expect(SURFACE_GUIDES.generated_card_choice.version).toBe(6);
     expect(SURFACE_GUIDES.no_action.text).toContain("Do not produce a decision");
     expect(SURFACE_GUIDES.unsupported.text).toContain("Do not produce a decision");
   });
@@ -57,9 +61,10 @@ describe("prompt contract", () => {
   it("versions combat-pile guidance independently and keeps source semantics data-driven", () => {
     const guide = SURFACE_GUIDES.combat_pile_card_selection;
 
-    expect(guide.version).toBe(7);
+    expect(guide.version).toBe(8);
     expect(guide.text).toContain("source-bound");
-    expect(guide.text).toContain("Do not infer one source card's business outcome from another");
+    expect(guide.text).toContain("Source names are provenance");
+    expect(guide.text).toContain("identical selector shapes do not imply identical business outcomes");
     expect(guide.text).not.toContain("current Headbutt contract");
   });
 });
