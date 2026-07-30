@@ -40,8 +40,8 @@ public sealed class BridgePersistentQualificationStoreTests
         BridgeOperationQualificationIdentity fallback = Assert.IsType<
             BridgeOperationQualificationIdentity>(
                 BridgeOperationQualificationCatalog.Describe(
-                    "event_option",
-                    "choose_event_option"));
+                    "reward_claim",
+                    "claim_reward"));
 
         Assert.Equal("continuation_handoff_observed", menu.CompletionBoundary);
         Assert.Equal(
@@ -124,20 +124,20 @@ public sealed class BridgePersistentQualificationStoreTests
     {
         using var file = new TemporaryLedger();
         BridgePersistentQualificationPackage package = Package(
-            "qualification-event-option",
-            "event_option",
-            "choose_event_option") with
+            "qualification-reward-claim",
+            "reward_claim",
+            "claim_reward") with
         {
             RuntimeEvidence = new[]
             {
                 Evidence(
                     "runtime-a",
                     "request-a",
-                    "event_option_committed_and_owner_advanced"),
+                    "reward_claimed_and_surface_updated"),
                 Evidence(
                     "runtime-b",
                     "request-b",
-                    "event_option_committed_and_rewards_opened")
+                    "reward_claimed_and_map_opened")
             }
         };
         file.Write(Install(1, package));
@@ -466,7 +466,7 @@ public sealed class BridgePersistentQualificationStoreTests
         using var file = new TemporaryLedger();
         file.Write(Install(
             1,
-            Package("qualification-a", "event_option", "choose_event_option")));
+            Package("qualification-a", "reward_claim", "claim_reward")));
         BridgePersistentQualificationStore store =
             BridgePersistentQualificationStore.Load(file.Path, () => Now);
         Assert.Empty(store.Apply(

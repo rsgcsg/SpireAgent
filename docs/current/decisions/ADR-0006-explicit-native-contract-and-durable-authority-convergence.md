@@ -137,3 +137,36 @@ This cutover leaves `22` explicit contracts, `65` volatile manifest fallbacks
 and zero supported Surface mixing. It does not claim Preview.79 Live evidence,
 Kifuda, New Leaf, CombatPile, shop-potion or treasure-skip qualification. See
 the [Preview.79 closeout](../audits/WORKFLOW_C_PREVIEW79_MIXED_SURFACE_CONVERGENCE_CLOSEOUT_2026-07-30.md).
+
+## Preview.80 Implementation Note
+
+Preview.80 applies the decision to five complete standard-run boundary
+Surfaces: single-player submenu, character select, event options, card rewards
+and game over. Their 13 operations now have distinct explicit owner, source,
+operand, native Commit, completion boundary and Witness revisions. Provider
+Witness constants are mechanically compared with the catalog.
+
+The cutover leaves `35` explicit contracts, `52` volatile fallbacks and zero
+supported mixed Surfaces. It deliberately excludes `reward_claim`, Rest and
+combat selectors. Reward subtype identity remains incomplete, while Rest and
+CombatPile operations span distinct source or condition partitions. The
+current `surface + operation` volatile key is insufficient for durable
+authority over those partitions. Preview.79 runtime coverage does not
+authorize Preview.80. See the
+[Preview.80 closeout](../audits/WORKFLOW_C_PREVIEW80_STANDARD_RUN_BOUNDARY_CONTRACT_WAVE_CLOSEOUT_2026-07-30.md).
+
+## Preview.81 Implementation Note
+
+Preview.81 applies the same decision to four complete source-closed Surfaces:
+merchant removal, `CardRemovalReward`, Scroll Boxes bundle selection and
+ancient event dialogue. Their 14 operations now have distinct explicit
+contracts, and Provider Witness constants are mechanically compared with the
+catalog.
+
+The cutover leaves `49` explicit contracts, `38` volatile fallbacks and zero
+supported mixed Surfaces. It deliberately does not transfer merchant removal
+evidence to Precise Scissors, selector mechanics to generic Deck Upgrade, or
+one source/condition result to Deck Transform/New Leaf or Wood Carvings.
+Those families remain fallback until their contract/evidence partition can be
+represented without sibling authorization. See the
+[Preview.81 closeout](../audits/WORKFLOW_C_PREVIEW81_SOURCE_CLOSED_SELECTOR_CONTRACT_WAVE_CLOSEOUT_2026-07-30.md).

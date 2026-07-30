@@ -61,6 +61,10 @@ internal static class BridgeContractManifest
 {
     private const string ContractTest = "tests/STS2_MCP.Tests/BridgeContractTests.cs";
     private const string CoverageDoc = "docs/bridge-v2/PLAYER_VISIBLE_COVERAGE.md";
+    private const string Preview80Closeout =
+        "../docs/current/audits/WORKFLOW_C_PREVIEW80_STANDARD_RUN_BOUNDARY_CONTRACT_WAVE_CLOSEOUT_2026-07-30.md";
+    private const string Preview81Closeout =
+        "../docs/current/audits/WORKFLOW_C_PREVIEW81_SOURCE_CLOSED_SELECTOR_CONTRACT_WAVE_CLOSEOUT_2026-07-30.md";
 
     public static readonly IReadOnlyList<BridgeContractManifestEntry> Entries = new[]
     {
@@ -74,8 +78,11 @@ internal static class BridgeContractManifest
             "deck_removal_selection",
             new[]
             {
-                "toggle_deck_removal_card", "preview_deck_removal", "confirm_deck_removal",
-                "cancel_deck_removal_preview", "cancel_deck_removal_selection"
+                Operation("toggle_deck_removal_card", BridgeOperationEvidenceStatus.SourceAudited, Preview81Closeout),
+                Operation("preview_deck_removal", BridgeOperationEvidenceStatus.SourceAudited, Preview81Closeout),
+                Operation("confirm_deck_removal", BridgeOperationEvidenceStatus.SourceAudited, Preview81Closeout),
+                Operation("cancel_deck_removal_preview", BridgeOperationEvidenceStatus.SourceAudited, Preview81Closeout),
+                Operation("cancel_deck_removal_selection", BridgeOperationEvidenceStatus.SourceAudited, Preview81Closeout)
             },
             "sts2-v0.109.0:MerchantCardRemovalEntry+CardSelectCmd.FromDeckForRemoval+NDeckCardSelectScreen+semantic-post-state-witness",
             "purpose_specific_deck_selection",
@@ -94,8 +101,11 @@ internal static class BridgeContractManifest
             "reward_deck_removal_selection",
             new[]
             {
-                "toggle_deck_removal_card", "preview_deck_removal", "confirm_deck_removal",
-                "cancel_deck_removal_preview", "cancel_deck_removal_selection"
+                Operation("toggle_deck_removal_card", BridgeOperationEvidenceStatus.SourceAudited, Preview81Closeout),
+                Operation("preview_deck_removal", BridgeOperationEvidenceStatus.SourceAudited, Preview81Closeout),
+                Operation("confirm_deck_removal", BridgeOperationEvidenceStatus.SourceAudited, Preview81Closeout),
+                Operation("cancel_deck_removal_preview", BridgeOperationEvidenceStatus.SourceAudited, Preview81Closeout),
+                Operation("cancel_deck_removal_selection", BridgeOperationEvidenceStatus.SourceAudited, Preview81Closeout)
             },
             "sts2-v0.109.0:CardRemovalReward.OnSelect+RewardSynchronizer.DoUnsyncedCardRemoval+CardSelectCmd.FromDeckForRemoval+CardPileCmd.RemoveFromDeck+task-local-source-binding+exact-card-post-state-witness",
             "purpose_specific_deck_selection",
@@ -146,7 +156,10 @@ internal static class BridgeContractManifest
             new[] { "visible_deck_cards", "selection", "event_branch", "known_replacement", "preview", "controls" }),
         Entry(
             "event_dialogue",
-            new[] { "advance_event_dialogue" },
+            new[]
+            {
+                Operation("advance_event_dialogue", BridgeOperationEvidenceStatus.SourceAudited, Preview81Closeout)
+            },
             "sts2-v0.109.0:NAncientEventLayout+revealed-prefix-only+exact-dialogue-index-witness",
             "event_dialogue_progression",
             new[] { "revealed_dialogue_prefix", "speaker", "advance_control" }),
@@ -158,7 +171,11 @@ internal static class BridgeContractManifest
             new[] { "visible_rest_options", "availability", "effects", "proceed_control" }),
         Entry(
             "event_option",
-            new[] { "choose_event_option", "proceed_event" },
+            new[]
+            {
+                Operation("choose_event_option", BridgeOperationEvidenceStatus.SourceAudited, Preview80Closeout),
+                Operation("proceed_event", BridgeOperationEvidenceStatus.SourceAudited, Preview80Closeout)
+            },
             "sts2-v0.109.0:NEventRoom+NEventOptionButton+EventOption+visible-hover-tips+semantic-transition-witness",
             "event_semantic_options",
             new[] { "visible_event_text", "options", "hover_tips", "proceed_control" }),
@@ -194,13 +211,25 @@ internal static class BridgeContractManifest
             new[] { "visible_card_choices", "choice_purpose", "source_kind", "destination", "selected_card_cost_policy", "overflow_destination", "skip_control" }),
         Entry(
             "card_bundle_selection",
-            new[] { "preview_card_bundle", "confirm_card_bundle", "cancel_card_bundle_preview" },
+            new[]
+            {
+                Operation("preview_card_bundle", BridgeOperationEvidenceStatus.SourceAudited, Preview81Closeout),
+                Operation("confirm_card_bundle", BridgeOperationEvidenceStatus.SourceAudited, Preview81Closeout),
+                Operation("cancel_card_bundle_preview", BridgeOperationEvidenceStatus.SourceAudited, Preview81Closeout)
+            },
             "sts2-v0.109.0:ScrollBoxes.AfterObtained+NChooseABundleSelectionScreen+exact-deck-post-state-canary",
             "source_bound_card_bundle",
             new[] { "visible_bundles", "bundle_cards", "selection", "preview", "controls" }),
         Entry(
             "card_reward_selection",
-            new[] { "select_card_reward", "choose_card_reward_alternative" },
+            new[]
+            {
+                Operation("select_card_reward", BridgeOperationEvidenceStatus.SourceAudited, Preview80Closeout),
+                Operation(
+                    "choose_card_reward_alternative",
+                    BridgeOperationEvidenceStatus.SourceAudited,
+                    Preview80Closeout)
+            },
             "sts2-v0.109.0:NCardRewardSelectionScreen+NGridCardHolder+NCardRewardAlternativeButton+exact-source-canary",
             "card_reward_selection",
             new[] { "visible_card_rewards", "alternatives", "skip_or_close_controls" }),
@@ -267,7 +296,14 @@ internal static class BridgeContractManifest
             new[] { "chest_state", "visible_relic_choices", "selection_controls", "proceed_control" }),
         Entry(
             "game_over",
-            new[] { "advance_game_over_summary", "return_game_over" },
+            new[]
+            {
+                Operation(
+                    "advance_game_over_summary",
+                    BridgeOperationEvidenceStatus.SourceAudited,
+                    Preview80Closeout),
+                Operation("return_game_over", BridgeOperationEvidenceStatus.SourceAudited, Preview80Closeout)
+            },
             "sts2-v0.109.0:NGameOverScreen+exact-current-controls+summary-and-main-menu-witnesses",
             "game_over_flow",
             new[] { "visible_summary_stage", "advance_control", "return_control" }),
@@ -275,8 +311,14 @@ internal static class BridgeContractManifest
             "character_select",
             new[]
             {
-                "select_character", "decrease_ascension", "increase_ascension",
-                "embark_standard_run", "back_from_character_select"
+                Operation("select_character", BridgeOperationEvidenceStatus.SourceAudited, Preview80Closeout),
+                Operation("decrease_ascension", BridgeOperationEvidenceStatus.SourceAudited, Preview80Closeout),
+                Operation("increase_ascension", BridgeOperationEvidenceStatus.SourceAudited, Preview80Closeout),
+                Operation("embark_standard_run", BridgeOperationEvidenceStatus.SourceAudited, Preview80Closeout),
+                Operation(
+                    "back_from_character_select",
+                    BridgeOperationEvidenceStatus.SourceAudited,
+                    Preview80Closeout)
             },
             "sts2-v0.109.0:NCharacterSelectScreen+singleplayer-StartRunLobby+visible-controls+active-run-witness",
             "standard_run_character_select",
@@ -295,7 +337,17 @@ internal static class BridgeContractManifest
             new[] { "visible_root_choices", "enabled_state", "continue_run_summary", "unsupported_choice_boundaries" }),
         Entry(
             "singleplayer_menu",
-            new[] { "open_standard_run_setup", "back_from_singleplayer_menu" },
+            new[]
+            {
+                Operation(
+                    "open_standard_run_setup",
+                    BridgeOperationEvidenceStatus.SourceAudited,
+                    Preview80Closeout),
+                Operation(
+                    "back_from_singleplayer_menu",
+                    BridgeOperationEvidenceStatus.SourceAudited,
+                    Preview80Closeout)
+            },
             "sts2-v0.109.0:NSingleplayerSubmenu+exact-controls+submenu-stack-witness",
             "standard_run_singleplayer_navigation",
             new[] { "visible_run_mode_choices", "enabled_state", "descriptions", "unsupported_mode_boundaries" })

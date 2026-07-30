@@ -268,7 +268,7 @@ public sealed class BridgePermissionManagerTests
     {
         var manager = new BridgePermissionManager("runtime-a");
         CompatibilityAssessment applied = manager.Apply(
-            GameWithScopes(Scope("event_option", "choose_event_option", "canary")),
+            GameWithScopes(Scope("reward_claim", "claim_reward", "canary")),
             Bridge("runtime-a"),
             CleanPatchInventory());
 
@@ -313,8 +313,8 @@ public sealed class BridgePermissionManagerTests
         BridgeMigrationPermissionCandidate fallback =
             Assert.IsType<BridgeMigrationPermissionCandidate>(
                 BridgeMigrationPermissionPolicy.Find(
-                    "event_option",
-                    "choose_event_option"));
+                    "reward_claim",
+                    "claim_reward"));
         Assert.Equal("persistent_run_mutation", fallback.RiskClass);
         Assert.Equal(new[] { "migration_exploration" }, fallback.EligibleModes);
         Assert.Equal(
@@ -383,25 +383,25 @@ public sealed class BridgePermissionManagerTests
             BridgePermissionMode.MigrationExploration);
         CompatibilityAssessment first = manager.Apply(
             GameWithScopes(
-                Scope("event_option", "choose_event_option", "canary")),
+                Scope("reward_claim", "claim_reward", "canary")),
             Bridge("runtime-migration"),
             CleanPatchInventory());
         BridgeActionPermissionBinding binding = Binding(
             Assert.Single(first.ActionPermissionScopes));
 
         manager.ObserveCommand(
-            "request-event",
+            "request-reward",
             binding,
             Command(
-                "request-event",
+                "request-reward",
                 "completed",
                 "confirmed",
                 "completed",
                 null,
-                "event_option_committed_and_owner_advanced"));
+                "reward_claimed_and_surface_updated"));
         CompatibilityAssessment promoted = manager.Apply(
             GameWithScopes(
-                Scope("event_option", "choose_event_option", "canary")),
+                Scope("reward_claim", "claim_reward", "canary")),
             Bridge("runtime-migration"),
             CleanPatchInventory());
 
@@ -419,24 +419,24 @@ public sealed class BridgePermissionManagerTests
             BridgePermissionMode.MigrationExploration);
         CompatibilityAssessment first = manager.Apply(
             GameWithScopes(
-                Scope("event_option", "choose_event_option", "canary")),
+                Scope("reward_claim", "claim_reward", "canary")),
             Bridge("runtime-migration"),
             CleanPatchInventory());
         BridgeActionPermissionBinding binding = Binding(
             Assert.Single(first.ActionPermissionScopes));
 
         manager.ObserveCommand(
-            "request-event",
+            "request-reward",
             binding,
             Command(
-                "request-event",
+                "request-reward",
                 "completed",
                 "confirmed",
                 "completed",
                 null));
         CompatibilityAssessment after = manager.Apply(
             GameWithScopes(
-                Scope("event_option", "choose_event_option", "canary")),
+                Scope("reward_claim", "claim_reward", "canary")),
             Bridge("runtime-migration"),
             CleanPatchInventory());
 

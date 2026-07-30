@@ -10,12 +10,11 @@
 > loaded artifact. Current loaded identity and Gate status are owned by
 > [Bridge v2 Current Status](CURRENT_STATUS.md).
 
-Current source contract is Preview.79; installed and loaded identities are
-owned by `CURRENT_STATUS.md`. Exact Preview.78 run
-`run-20260730010057-w2pqnh` completed a broad bounded journey but did not
-exercise New Leaf, Kifuda or CombatPile selection. Its `unrecorded`
-provenance is coverage evidence, not Preview.79 runtime evidence, Organic
-evidence or persistent qualification. Preview.61
+Current source contract is Preview.81; installed and loaded identities are
+owned by `CURRENT_STATUS.md`. Exact Preview.79 runs
+`run-20260730032119-vivqvr` and `run-20260730033205-b759ts` completed broad
+bounded journeys. Their `unrecorded` provenance is coverage evidence, not
+Preview.81 runtime evidence, Organic evidence or persistent qualification. Preview.61
 supplied the bounded Neow's
 Fury Organic lifecycle that sealed Gate 1. Preview.62 added reviewed
 source/compatibility registries and a non-authorizing exact-assembly audit;
@@ -27,7 +26,7 @@ exact Hefty Tablet source/result handling and actionless settling consumption;
 Preview.73 repairs Rest minimum-Outcome and blocked semantic-owner projection;
 Preview.74 formalizes semantic/authority identity and starts vertical contract
 migration; Preview.75 enables bounded read-only Inspection canaries;
-Preview.79 leaves 22 explicit contracts, 65 volatile fallbacks and zero
+Preview.81 leaves 49 explicit contracts, 38 volatile fallbacks and zero
 supported mixed explicit/fallback Surfaces.
 None inherits historical operation coverage or
 qualification. Current installed and loaded identities are owned by

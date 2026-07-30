@@ -270,6 +270,11 @@ internal sealed class MainMenuSurfaceProvider : IBridgeSurfaceProvider
 
 internal sealed class SingleplayerMenuSurfaceProvider : IBridgeSurfaceProvider
 {
+    internal const string OpenStandardCompletionWitness =
+        "standard_character_select_owner_became_active";
+    internal const string BackCompletionWitness =
+        "singleplayer_submenu_owner_changed";
+
     public string Kind => "singleplayer_menu";
 
     public BridgeSurfaceLayer Layer => BridgeSurfaceLayer.Menu;
@@ -372,7 +377,7 @@ internal sealed class SingleplayerMenuSurfaceProvider : IBridgeSurfaceProvider
         expectedButton.ForceClick();
         return BridgeActionStartResult.Started(
             () => NGame.Instance?.MainMenu?.SubmenuStack?.Peek() is NCharacterSelectScreen,
-            "standard_character_select_owner_became_active",
+            OpenStandardCompletionWitness,
             allowIntermediateStateChanges: true);
     }
 
@@ -383,7 +388,7 @@ internal sealed class SingleplayerMenuSurfaceProvider : IBridgeSurfaceProvider
         expectedButton.ForceClick();
         return BridgeActionStartResult.Started(
             () => !ReferenceEquals(NGame.Instance?.MainMenu?.SubmenuStack?.Peek(), expectedScreen),
-            "singleplayer_submenu_owner_changed",
+            BackCompletionWitness,
             allowIntermediateStateChanges: true);
     }
 

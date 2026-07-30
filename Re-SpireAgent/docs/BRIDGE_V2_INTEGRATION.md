@@ -1,14 +1,16 @@
 # Bridge v2 Integration
 
 > Current source-truth status, 2026-07-30: Re and C# share the
-> `2.0-preview.79` source consumer contract; Re normalized schema is `31`.
+> `2.0-preview.81` source consumer contract; Re normalized schema is `31`.
 > Gate 1 is closed as a bounded ordinary-single-player v2 connector baseline.
-> Exact Preview.78 run `run-20260730010057-w2pqnh` completed a 200-decision
-> boundary with 198 settled mutations and one safe stale refusal. It did not
-> exercise New Leaf, Kifuda or CombatPile. Preview.79 removes the remaining
-> supported mixed explicit/fallback Surfaces and rejects all inherited session
-> scope. Provenance is `unrecorded`; the new artifact is installed but not yet
-> cold-loaded.
+> Exact Preview.79 runs `run-20260730032119-vivqvr` and
+> `run-20260730033205-b759ts` completed 173- and 100-decision boundaries with
+> 268 settled mutations and two safe stale refusals. Preview.80 moved five
+> standard-run boundary Surfaces; Preview.81 additionally moves merchant and
+> reward removal, Scroll Boxes bundle and event dialogue to explicit contracts
+> and rejects
+> all inherited session scope. Provenance is `unrecorded`; Preview.81 is
+> installed but not yet cold-loaded.
 
 ## Connector Boundary
 
@@ -28,7 +30,7 @@ consumption.
 
 ## Current Scope
 
-Re-SpireAgent implements the strict `2.0-preview.79` consumer contract. When a
+Re-SpireAgent implements the strict `2.0-preview.81` consumer contract. When a
 matching Bridge exists, authority is read from capabilities rather than
 inferred from implementation or historical evidence.
 

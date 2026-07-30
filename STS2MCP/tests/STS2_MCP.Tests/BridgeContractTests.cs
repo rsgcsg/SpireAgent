@@ -248,7 +248,7 @@ public sealed class BridgeContractTests
     }
 
     [Fact]
-    public void MenuOperationEvidenceDoesNotOverclaimUnexercisedNavigation()
+    public void MenuOperationEvidenceDistinguishesSourceAuditFromRuntimeQualification()
     {
         BridgeContractManifestEntry root = Assert.Single(
             BridgeContractManifest.Entries,
@@ -262,7 +262,12 @@ public sealed class BridgeContractTests
         Assert.Equal(BridgeOperationEvidenceStatus.OrganicCanaryExercised, operations["continue_run"].EvidenceStatus);
         Assert.Equal(BridgeOperationEvidenceStatus.SourceAudited, operations["open_singleplayer"].EvidenceStatus);
         Assert.All(submenu.Operations, operation =>
-            Assert.Equal(BridgeOperationEvidenceStatus.SurfaceLevelOnly, operation.EvidenceStatus));
+        {
+            Assert.Equal(BridgeOperationEvidenceStatus.SourceAudited, operation.EvidenceStatus);
+            Assert.DoesNotContain(
+                operation.EvidenceIds,
+                evidence => evidence.Contains("organic", StringComparison.OrdinalIgnoreCase));
+        });
     }
 
     [Fact]
@@ -1009,9 +1014,9 @@ public sealed class BridgeContractTests
 
         Assert.Equal(87, manifestOperationCount);
         Assert.Equal(manifestOperationCount, catalog.Count);
-        Assert.Equal(22, catalog.Count(contract =>
+        Assert.Equal(49, catalog.Count(contract =>
             contract.ContractKind == BridgeOperationQualificationCatalog.ExplicitNativeContract));
-        Assert.Equal(65, catalog.Count(contract =>
+        Assert.Equal(38, catalog.Count(contract =>
             contract.ContractKind == BridgeOperationQualificationCatalog.ManifestMigrationFallback));
         Assert.Equal(catalog.Count, catalog
             .Select(contract => (contract.SurfaceKind, contract.Operation))
@@ -1239,6 +1244,173 @@ public sealed class BridgeContractTests
             confirm.ContractDigest,
             cancel.ContractDigest
         }.Distinct().Count());
+    }
+
+    [Fact]
+    public void StandardRunBoundaryFamiliesUseExplicitNativeContracts()
+    {
+        BridgeOperationQualificationIdentity[] contracts =
+        {
+            Contract("singleplayer_menu", "open_standard_run_setup"),
+            Contract("singleplayer_menu", "back_from_singleplayer_menu"),
+            Contract("character_select", "select_character"),
+            Contract("character_select", "decrease_ascension"),
+            Contract("character_select", "increase_ascension"),
+            Contract("character_select", "embark_standard_run"),
+            Contract("character_select", "back_from_character_select"),
+            Contract("event_option", "choose_event_option"),
+            Contract("event_option", "proceed_event"),
+            Contract("card_reward_selection", "select_card_reward"),
+            Contract("card_reward_selection", "choose_card_reward_alternative"),
+            Contract("game_over", "advance_game_over_summary"),
+            Contract("game_over", "return_game_over")
+        };
+
+        Assert.All(contracts, contract => Assert.Equal(
+            BridgeOperationQualificationCatalog.ExplicitNativeContract,
+            contract.ContractKind));
+        Assert.Equal(contracts.Length, contracts
+            .Select(contract => contract.ContractDigest)
+            .Distinct()
+            .Count());
+
+        Assert.Equal(
+            SingleplayerMenuSurfaceProvider.OpenStandardCompletionWitness,
+            contracts[0].WitnessId);
+        Assert.Equal(
+            SingleplayerMenuSurfaceProvider.BackCompletionWitness,
+            contracts[1].WitnessId);
+        Assert.Equal(
+            CharacterSelectSurfaceProvider.SelectCharacterCompletionWitness,
+            contracts[2].WitnessId);
+        Assert.Equal(
+            CharacterSelectSurfaceProvider.AscensionChangeCompletionWitness,
+            contracts[3].WitnessId);
+        Assert.Equal(
+            CharacterSelectSurfaceProvider.AscensionChangeCompletionWitness,
+            contracts[4].WitnessId);
+        Assert.Equal(
+            CharacterSelectSurfaceProvider.EmbarkCompletionWitness,
+            contracts[5].WitnessId);
+        Assert.Equal(
+            CharacterSelectSurfaceProvider.BackCompletionWitness,
+            contracts[6].WitnessId);
+        Assert.Equal(
+            EventOptionSurfaceProvider.ChooseCompletionWitness,
+            contracts[7].WitnessId);
+        Assert.Equal(
+            EventOptionSurfaceProvider.ProceedCompletionWitness,
+            contracts[8].WitnessId);
+        Assert.Equal(
+            CardRewardSurfaceProvider.SelectCardCompletionWitness,
+            contracts[9].WitnessId);
+        Assert.Equal(
+            CardRewardSurfaceProvider.AlternativeCompletionWitness,
+            contracts[10].WitnessId);
+        Assert.Equal(
+            GameOverSurfaceProvider.AdvanceCompletionWitness,
+            contracts[11].WitnessId);
+        Assert.Equal(
+            GameOverSurfaceProvider.ReturnCompletionWitness,
+            contracts[12].WitnessId);
+
+        Assert.Equal(
+            "immediate_postcondition_observed",
+            contracts[2].CompletionBoundary);
+        Assert.Equal(
+            "continuation_handoff_observed",
+            contracts[5].CompletionBoundary);
+        Assert.Equal(
+            "immediate_postcondition_observed",
+            contracts[11].CompletionBoundary);
+        Assert.Equal(
+            "continuation_handoff_observed",
+            contracts[12].CompletionBoundary);
+
+        static BridgeOperationQualificationIdentity Contract(
+            string surface,
+            string operation) =>
+            Assert.IsType<BridgeOperationQualificationIdentity>(
+                BridgeOperationQualificationCatalog.Describe(surface, operation));
+    }
+
+    [Fact]
+    public void SourceClosedRemovalBundleAndDialogueFamiliesUseExplicitContracts()
+    {
+        BridgeOperationQualificationIdentity[] merchant =
+        {
+            Contract("deck_removal_selection", "toggle_deck_removal_card"),
+            Contract("deck_removal_selection", "preview_deck_removal"),
+            Contract("deck_removal_selection", "confirm_deck_removal"),
+            Contract("deck_removal_selection", "cancel_deck_removal_preview"),
+            Contract("deck_removal_selection", "cancel_deck_removal_selection")
+        };
+        BridgeOperationQualificationIdentity[] reward =
+        {
+            Contract("reward_deck_removal_selection", "toggle_deck_removal_card"),
+            Contract("reward_deck_removal_selection", "preview_deck_removal"),
+            Contract("reward_deck_removal_selection", "confirm_deck_removal"),
+            Contract("reward_deck_removal_selection", "cancel_deck_removal_preview"),
+            Contract("reward_deck_removal_selection", "cancel_deck_removal_selection")
+        };
+        BridgeOperationQualificationIdentity[] bundle =
+        {
+            Contract("card_bundle_selection", "preview_card_bundle"),
+            Contract("card_bundle_selection", "confirm_card_bundle"),
+            Contract("card_bundle_selection", "cancel_card_bundle_preview")
+        };
+        BridgeOperationQualificationIdentity dialogue =
+            Contract("event_dialogue", "advance_event_dialogue");
+        BridgeOperationQualificationIdentity[] migrated =
+            merchant.Concat(reward).Concat(bundle).Append(dialogue).ToArray();
+
+        Assert.All(migrated, contract => Assert.Equal(
+            BridgeOperationQualificationCatalog.ExplicitNativeContract,
+            contract.ContractKind));
+        Assert.Equal(migrated.Length, migrated
+            .Select(contract => contract.ContractDigest)
+            .Distinct()
+            .Count());
+
+        Assert.Equal(DeckRemovalSelectionSurfaceProvider.ToggleCompletionWitness, merchant[0].WitnessId);
+        Assert.Equal(DeckRemovalSelectionSurfaceProvider.PreviewCompletionWitness, merchant[1].WitnessId);
+        Assert.Equal(DeckRemovalSelectionSurfaceProvider.MerchantConfirmCompletionWitness, merchant[2].WitnessId);
+        Assert.Equal(DeckRemovalSelectionSurfaceProvider.CancelPreviewCompletionWitness, merchant[3].WitnessId);
+        Assert.Equal(DeckRemovalSelectionSurfaceProvider.MerchantCancelSelectionCompletionWitness, merchant[4].WitnessId);
+        Assert.Equal(DeckRemovalSelectionSurfaceProvider.ToggleCompletionWitness, reward[0].WitnessId);
+        Assert.Equal(DeckRemovalSelectionSurfaceProvider.PreviewCompletionWitness, reward[1].WitnessId);
+        Assert.Equal(DeckRemovalSelectionSurfaceProvider.RewardConfirmCompletionWitness, reward[2].WitnessId);
+        Assert.Equal(DeckRemovalSelectionSurfaceProvider.CancelPreviewCompletionWitness, reward[3].WitnessId);
+        Assert.Equal(DeckRemovalSelectionSurfaceProvider.RewardCancelSelectionCompletionWitness, reward[4].WitnessId);
+        Assert.Equal(CardBundleSelectionSurfaceProvider.PreviewCompletionWitness, bundle[0].WitnessId);
+        Assert.Equal(CardBundleSelectionSurfaceProvider.ConfirmCompletionWitness, bundle[1].WitnessId);
+        Assert.Equal(CardBundleSelectionSurfaceProvider.CancelPreviewCompletionWitness, bundle[2].WitnessId);
+        Assert.Equal(EventDialogueSurfaceProvider.AdvanceCompletionWitness, dialogue.WitnessId);
+        Assert.Equal("transaction_settled", merchant[2].CompletionBoundary);
+        Assert.Equal("transaction_settled", reward[2].CompletionBoundary);
+        Assert.Equal("transaction_settled", reward[4].CompletionBoundary);
+        Assert.Equal("transaction_settled", bundle[1].CompletionBoundary);
+
+        Assert.Equal(
+            BridgeOperationQualificationCatalog.ManifestMigrationFallback,
+            Contract("relic_deck_removal_selection", "confirm_deck_removal").ContractKind);
+        Assert.Equal(
+            BridgeOperationQualificationCatalog.ManifestMigrationFallback,
+            Contract("deck_upgrade_selection", "confirm_deck_upgrade").ContractKind);
+        Assert.Equal(
+            BridgeOperationQualificationCatalog.ManifestMigrationFallback,
+            Contract("deck_transform_selection", "confirm_deck_transform").ContractKind);
+        Assert.Equal(
+            BridgeOperationQualificationCatalog.ManifestMigrationFallback,
+            Contract(
+                "wood_carvings_replacement_selection",
+                "confirm_wood_carvings_replacement").ContractKind);
+
+        static BridgeOperationQualificationIdentity Contract(
+            string surface,
+            string operation) =>
+            Assert.IsType<BridgeOperationQualificationIdentity>(
+                BridgeOperationQualificationCatalog.Describe(surface, operation));
     }
 
     [Fact]

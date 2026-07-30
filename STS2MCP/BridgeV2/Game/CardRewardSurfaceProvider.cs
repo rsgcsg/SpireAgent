@@ -16,6 +16,10 @@ namespace STS2_MCP.BridgeV2.Game;
 internal sealed class CardRewardSurfaceProvider : IBridgeSurfaceProvider
 {
     private const string SurfaceKind = "card_reward_selection";
+    internal const string SelectCardCompletionWitness =
+        "card_reward_selected_or_visible_options_replaced";
+    internal const string AlternativeCompletionWitness =
+        "card_reward_alternative_applied_or_visible_options_replaced";
     private const BindingFlags Flags = BindingFlags.Instance | BindingFlags.NonPublic;
     private static readonly FieldInfo? ClickableField =
         typeof(NCardHolder).GetField("_isClickable", Flags);
@@ -217,7 +221,7 @@ internal sealed class CardRewardSurfaceProvider : IBridgeSurfaceProvider
         return BridgeActionStartResult.Started(
             () => !IsCurrent(expectedScreen)
                   || OptionSetChanged(expectedScreen, previousHolders, previousButtons),
-            "card_reward_selected_or_visible_options_replaced");
+            SelectCardCompletionWitness);
     }
 
     private static BridgeActionStartResult StartAlternative(
@@ -244,7 +248,7 @@ internal sealed class CardRewardSurfaceProvider : IBridgeSurfaceProvider
         return BridgeActionStartResult.Started(
             () => !IsCurrent(expectedScreen)
                   || OptionSetChanged(expectedScreen, previousHolders, previousButtons),
-            "card_reward_alternative_applied_or_visible_options_replaced");
+            AlternativeCompletionWitness);
     }
 
     private static bool OptionSetChanged(

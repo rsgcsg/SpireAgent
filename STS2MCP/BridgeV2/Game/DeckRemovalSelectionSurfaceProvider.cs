@@ -29,6 +29,20 @@ namespace STS2_MCP.BridgeV2.Game;
 internal sealed class DeckRemovalSelectionSurfaceProvider : IBridgeSurfaceProvider
 {
     private const string SurfaceKind = "deck_removal_selection";
+    internal const string ToggleCompletionWitness =
+        "selected_membership_changed_preview_opened_or_selection_closed";
+    internal const string PreviewCompletionWitness =
+        "removal_preview_opened_or_selection_closed";
+    internal const string MerchantConfirmCompletionWitness =
+        "merchant_removal_selected_card_absent_gold_spent_count_incremented_and_service_used";
+    internal const string RewardConfirmCompletionWitness =
+        "reward_removal_selected_card_absent_after_exact_reward_task_completion";
+    internal const string CancelPreviewCompletionWitness =
+        "removal_preview_closed";
+    internal const string MerchantCancelSelectionCompletionWitness =
+        "deck_removal_selection_cancelled_and_closed";
+    internal const string RewardCancelSelectionCompletionWitness =
+        "reward_removal_cancelled_source_completed_and_deck_unchanged";
     private const string ReflectionEvidence =
         "sts2-v0.108.0:cached_reflection:NDeckCardSelectScreen._prefs+_selectedCards+preview_controls";
     private const BindingFlags Flags = BindingFlags.Instance | BindingFlags.NonPublic;
@@ -411,7 +425,7 @@ internal sealed class DeckRemovalSelectionSurfaceProvider : IBridgeSurfaceProvid
             () => !IsCurrent(expectedScreen)
                   || IsPreviewVisible(expectedScreen)
                   || IsSelected(expectedScreen, expectedCard) != expectedSelected,
-            "selected_membership_changed_preview_opened_or_selection_closed");
+            ToggleCompletionWitness);
     }
 
     private static BridgeActionStartResult StartPreview(NDeckCardSelectScreen expectedScreen)
@@ -425,7 +439,7 @@ internal sealed class DeckRemovalSelectionSurfaceProvider : IBridgeSurfaceProvid
         confirm.ForceClick();
         return BridgeActionStartResult.Started(
             () => !IsCurrent(expectedScreen) || IsPreviewVisible(expectedScreen),
-            "removal_preview_opened_or_selection_closed");
+            PreviewCompletionWitness);
     }
 
     private static BridgeActionStartResult StartMerchantPreviewConfirm(
@@ -476,7 +490,7 @@ internal sealed class DeckRemovalSelectionSurfaceProvider : IBridgeSurfaceProvid
                     DeckCount: transaction.Player.Deck.Cards.Count,
                     CardShopRemovalsUsed: transaction.Player.ExtraFields.CardShopRemovalsUsed,
                     ServiceUsed: transaction.Entry.Used)),
-            "merchant_removal_selected_card_absent_gold_spent_count_incremented_and_service_used",
+            MerchantConfirmCompletionWitness,
             allowIntermediateStateChanges: true);
     }
 
@@ -557,7 +571,7 @@ internal sealed class DeckRemovalSelectionSurfaceProvider : IBridgeSurfaceProvid
                 baselineDeck: binding.BaselineDeck,
                 currentDeck: binding.Player.Deck.Cards,
                 selectedCard: expectedCard),
-            "reward_removal_selected_card_absent_after_exact_reward_task_completion",
+            RewardConfirmCompletionWitness,
             allowIntermediateStateChanges: true);
     }
 
@@ -572,7 +586,7 @@ internal sealed class DeckRemovalSelectionSurfaceProvider : IBridgeSurfaceProvid
         cancel.ForceClick();
         return BridgeActionStartResult.Started(
             () => IsCurrent(expectedScreen) && !IsPreviewVisible(expectedScreen),
-            "removal_preview_closed");
+            CancelPreviewCompletionWitness);
     }
 
     private static BridgeActionStartResult StartClose(
@@ -592,13 +606,13 @@ internal sealed class DeckRemovalSelectionSurfaceProvider : IBridgeSurfaceProvid
                 () => !RewardCardRemovalSourceBinding.IsActive(reward.Token)
                       && !IsCurrent(expectedScreen)
                       && SameReferences(reward.BaselineDeck, reward.Player.Deck.Cards),
-                "reward_removal_cancelled_source_completed_and_deck_unchanged",
+                RewardCancelSelectionCompletionWitness,
                 allowIntermediateStateChanges: true);
         }
 
         return BridgeActionStartResult.Started(
             () => !IsCurrent(expectedScreen),
-            "deck_removal_selection_cancelled_and_closed");
+            MerchantCancelSelectionCompletionWitness);
     }
 
     private static bool SameReferences<T>(

@@ -240,12 +240,12 @@ and the
 
 ## Current Architectural Constraint
 
-The Gateway and Re source share the mechanically checked `2.0-preview.79`
-contract and normalized schema 31. Preview.78 loaded as SHA `2f3f6141...` /
-MVID `be29a156...` / runtime `e08c8bb0...` and completed the 200-decision
-`run-20260730010057-w2pqnh` boundary with 198 settled mutations, one safe
-pre-execution stale refusal and no unsupported or unknown outcome. Preview.79
-has a new source identity and inherits none of that runtime authority. Gate 1 remains a bounded v2 baseline: Re and
+The Gateway and Re source share the mechanically checked `2.0-preview.81`
+contract and normalized schema 31. Preview.79 loaded as SHA `1032e079...` /
+MVID `d9435656...` / runtime `5faa3faa...` and completed 173- and 100-decision
+boundaries with 268 settled mutations, two safe pre-execution stale refusals
+and no unsupported, unknown or unsettled outcome. Preview.81 has a new source
+identity and inherits none of that runtime authority. Gate 1 remains a bounded v2 baseline: Re and
 the default MCP adapter are v2-only, Gateway v1 is retired, and historical v1
 data is replay-only. The run's provenance is `unrecorded`, so it is
 defect/coverage evidence rather than Organic qualification.
@@ -262,8 +262,8 @@ completion; startup negotiation is not an authority snapshot.
 Preview.74 made semantic and authority identities formal wire fields and
 removes the old shadows and control histories from state. Composite `state_id`
 still binds both for stale-action safety. One production publication path binds
-every action to contract/source/operands/state. Twenty-two explicit contracts use
-contract-digest admission; 65 typed manifest fallback identities temporarily
+every action to contract/source/operands/state. Forty-nine explicit contracts use
+contract-digest admission; 38 typed manifest fallback identities temporarily
 retain runtime-only operation admission and must receive a family disposition
 before Clean Closure. Operation remains metadata for migrated families, not
 their execution or durable-claim key.
@@ -272,10 +272,20 @@ Preview.77 closes durable fallback admission in both the Gateway and operator
 ledger. Preview.78 migrates ordinary combat and ordinary shop
 navigation/card-purchase operations without adding an authority path.
 Preview.79 migrates the remaining shop-inventory, treasure and deck-enchant
-siblings; supported mixed explicit/fallback Surfaces are now zero. The 65
-unmigrated fallback identities still require vertical review or typed
+siblings; Preview.80 migrates five standard-run boundary Surfaces; Preview.81
+migrates source-closed merchant/reward removal, Scroll Boxes bundle and event
+dialogue Surfaces; supported mixed explicit/fallback Surfaces remain zero. The 38 unmigrated
+fallback identities still require vertical review or typed
 unsupported/`code_required`; that debt does not justify a universal selector,
 transaction layer or second rule engine.
+
+The remaining operation-scoped fallback key is not a valid final identity for
+source- or condition-partitioned families. CombatPile uses one operation label
+for Headbutt, Seance, Dredge and other sources with different Commit/Outcome
+semantics; Rest `choose_rest_option` spans Heal and Smith handoff. These
+families need an explicit source/condition partition before migration. Success
+for one source must not authorize a sibling merely because both share a
+Surface and operation label.
 
 Preview.75 does not add another authority plane. It allows the existing
 state-bound Inspection plane to operate as a volatile read-only canary only

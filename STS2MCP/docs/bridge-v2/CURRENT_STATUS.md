@@ -8,29 +8,29 @@ convergence is in
 ## Exact Truth
 
 ```text
-Gateway/Re source      2.0-preview.79
+Gateway/Re source      2.0-preview.81
 Re normalized schema  31
 Prompt/guide baseline  4 / 5
-source state           full tests/audits/build/install verified
+source state           full tests/checks/build/install verified; static audit reviewed
 
-built/installed        2.0-preview.79
+built/installed        2.0-preview.81
 game                   v0.109.1|c8c577f6|-820620422
-built/installed SHA    1032e079ea1344fb42d1dce4f4dc60bfd85b36c1d7db167877d9e475dddf9268
-built/installed MVID   d9435656-951f-42f7-8275-7adc67f05572
-last loaded contract   2.0-preview.78
-last loaded SHA        2f3f6141a8dbc2e286b6a496aa9ed16bb2bee2784fadb585914ef1b73702b948
-last loaded MVID       be29a156-4746-4e97-9334-c144e42b1462
-last runtime epoch     e08c8bb0d31d4adb8bb4b50454324bf1
-last loaded Modset     exact_bridge_only / 0e556089...34b1
+built/installed SHA    411f8cf5f113e4d39db9d95fb6a5b625aae97eaf00c4ab9c0f3cdf93413637b1
+built/installed MVID   c09e8569-19af-4a34-b98b-49339300304b
+last loaded contract   2.0-preview.79
+last loaded SHA        1032e079ea1344fb42d1dce4f4dc60bfd85b36c1d7db167877d9e475dddf9268
+last loaded MVID       d9435656-951f-42f7-8275-7adc67f05572
+last runtime epoch     5faa3faa07ca4331a0eedadc3d91e1c3
+last loaded Modset     exact_bridge_only / b1459e82...c785
 last Patch             clean_known_owners / ba7852fb...da70b
 last permission        migration_exploration / provisional_trial_scoped
 last qualification     empty / persistent authority false
-rollback               STS2MCP/.local/deployments/2026-07-30T02-18-23-483Z
+rollback               STS2MCP/.local/deployments/2026-07-30T06-55-52-576Z
 ```
 
-Preview.79 has a new protocol/DLL/contract identity and inherits no Preview.78
+Preview.81 has a new protocol/DLL/catalog identity and inherits no Preview.79
 session grant or evidence. Build and installation are verified. The game is
-closed; loaded Preview.79 remains a non-claim until a cold start.
+closed; loaded Preview.81 remains a non-claim until a cold start.
 
 ## Current Contract
 
@@ -49,19 +49,17 @@ closed; loaded Preview.79 remains a non-claim until a cold start.
 
 ## Latest Evidence
 
-Exact loaded Preview.78 run `run-20260730010057-w2pqnh` used source revision
-`f019ac8d...`, Prompt/guide `4/5`, the SHA/MVID/runtime above and
-`provenance=unrecorded`. It completed a 200-decision boundary with 198 settled
-mutations, one safe pre-execution treasure stale refusal and a normal completed
-boundary; no unsupported, unknown, unsettled, provider or observation failure
-occurred.
+Exact loaded Preview.79 runs `run-20260730032119-vivqvr` and
+`run-20260730033205-b759ts` used source revision `9402fedb...`, Prompt/guide
+`4/5`, the SHA/MVID/runtime above and `provenance=unrecorded`. They completed
+173- and 100-decision boundaries with 268 settled mutations, two safe
+pre-execution treasure stale refusals and no unsupported, unknown or unsettled
+outcome. `run-20260730031529-qlyj44` stopped before Gateway execution on
+DeepSeek `fetch failed`.
 
-It exercised broad ordinary menu/run/map/combat/event/reward/rest/shop,
-treasure and all three Inspection kinds. It did not exercise New Leaf, Kifuda,
-CombatPile selection, shop potion or treasure skip. The evidence supports the
-Preview.79 review but does not qualify the new artifact.
+The evidence supports this source audit but does not qualify Preview.81.
 
-## Preview.79 Delta
+## Preview.81 Delta
 
 - Protocol reports `contract_kind` on every operation contract and applicable
   qualification; qualification-system schema is `2`.
@@ -73,12 +71,15 @@ Preview.79 review but does not qualify the new artifact.
   instead of creating a package.
 - Existing volatile encounter fallback is retained; no permission mode,
   mutation owner or Re completion rule was added.
-- Preview.78's ordinary combat/shop contracts now have exact-runtime positive
-  coverage on their loaded artifact.
-- Nine shop, treasure and deck-enchant siblings now use explicit
-  owner/source/operand/Commit/Outcome revisions instead of fallback identity.
-- Supported mixed explicit/fallback Surfaces are zero. Unexercised operation
-  contracts remain session-trial candidates, not durable qualifications.
+- Thirteen operations across five complete standard-run boundary Surfaces now
+  use explicit owner/source/operand/Commit/Outcome revisions.
+- Fourteen operations across merchant/reward removal, Scroll Boxes bundle and
+  event dialogue now use source-closed explicit revisions.
+- Provider completion constants and catalog Witnesses are mechanically paired.
+- Reward claim, Rest and combat selectors remain fallback by deliberate
+  semantic partition decision, not by accidental omission.
+- Supported mixed explicit/fallback Surfaces remain zero. Unexercised
+  operations remain evidence-pending, not inferred qualifications.
 
 ## Clean Closure Inventory
 
@@ -87,8 +88,8 @@ connector shadows                              0
 permanent dual reads                           0
 production publication paths                   1
 production authority resolvers                 1
-explicit native contracts                     22
-manifest session fallback identities          65
+explicit native contracts                     49
+manifest session fallback identities          38
 operation-authority branches                   3
 persistent fallback claim admission paths       0
 mixed explicit/fallback supported Surfaces      0
@@ -110,4 +111,4 @@ New Leaf and Kifuda remain separate `pending exact-runtime evidence` gates.
 All available non-Live checks, Release build, backup and install are complete.
 The local qualification store is empty. Only a cold start can establish loaded
 identity; only exact-runtime mutation can establish new family evidence. See
-the [Preview.79 closeout](../../../docs/current/audits/WORKFLOW_C_PREVIEW79_MIXED_SURFACE_CONVERGENCE_CLOSEOUT_2026-07-30.md).
+the [Preview.81 closeout](../../../docs/current/audits/WORKFLOW_C_PREVIEW81_SOURCE_CLOSED_SELECTOR_CONTRACT_WAVE_CLOSEOUT_2026-07-30.md).

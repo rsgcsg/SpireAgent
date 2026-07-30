@@ -22,6 +22,11 @@ namespace STS2_MCP.BridgeV2.Game;
 internal sealed class CardBundleSelectionSurfaceProvider : IBridgeSurfaceProvider
 {
     private const string SurfaceKind = "card_bundle_selection";
+    internal const string PreviewCompletionWitness = "exact_bundle_preview_opened";
+    internal const string ConfirmCompletionWitness =
+        "bundle_selection_closed_and_exact_cards_added_to_run_deck";
+    internal const string CancelPreviewCompletionWitness =
+        "bundle_preview_closed_without_commit";
 
     public string Kind => SurfaceKind;
 
@@ -184,7 +189,7 @@ internal sealed class CardBundleSelectionSurfaceProvider : IBridgeSurfaceProvide
                   && expectedPreview.Visible
                   && ReferenceEquals(ResolvePreviewedBundle(
                       McpMod.FindAll<NCardBundle>(expectedScreen).ToArray(), expectedPreviewCards), expectedBundle),
-            "exact_bundle_preview_opened");
+            PreviewCompletionWitness);
     }
 
     private static BridgeActionStartResult StartConfirm(
@@ -210,7 +215,7 @@ internal sealed class CardBundleSelectionSurfaceProvider : IBridgeSurfaceProvide
         expectedConfirm.ForceClick();
         return BridgeActionStartResult.Started(
             () => !IsCurrent(expectedScreen) && BundleCommittedToDeck(expectedCards),
-            "bundle_selection_closed_and_exact_cards_added_to_run_deck",
+            ConfirmCompletionWitness,
             allowIntermediateStateChanges: true);
     }
 
@@ -248,7 +253,7 @@ internal sealed class CardBundleSelectionSurfaceProvider : IBridgeSurfaceProvide
         expectedCancel.ForceClick();
         return BridgeActionStartResult.Started(
             () => IsCurrent(expectedScreen) && !expectedPreview.Visible,
-            "bundle_preview_closed_without_commit");
+            CancelPreviewCompletionWitness);
     }
 
     private static NCardBundle? ResolvePreviewedBundle(

@@ -72,17 +72,18 @@ identity, family native-contract migration, deletion of old production paths,
 version/claim recovery and repeated journeys are required. Compendium and
 external reference enrichment remain optional.
 
-Preview.79 and Re schema 31 are the current source contract. Preview.78 loaded
-on SHA `2f3f6141...`, MVID `be29a156...`, runtime `e08c8bb0...`; exact run
-`run-...010057` completed a 200-decision boundary with 198 settled mutations,
-one safe stale refusal and no unsupported or unknown outcome. It did not
-exercise New Leaf, Kifuda or CombatPile. Preview.79 removes the final three
-mixed supported Surfaces; its built/installed identity is verified and loaded
-behavior is not yet claimed.
+Preview.81 and Re schema 31 are the current source contract. Preview.79 loaded
+on SHA `1032e079...`, MVID `d9435656...`, runtime `5faa3faa...`; exact runs
+`run-...032119` and `run-...033205` completed 173- and 100-decision boundaries
+with 268 settled mutations, two safe stale refusals and no unsupported,
+unknown or unsettled outcome. Preview.80 moved five standard-run boundary
+Surfaces; Preview.81 additionally moves merchant/reward removal, Scroll Boxes
+bundle and event dialogue to explicit contracts. Its built/installed identity
+is verified and loaded behavior is not yet claimed.
 
 ### Current Gate 2 Work
 
-- cold-load the already built and installed Preview.79 whole-DLL identity,
+- cold-load the already built and installed Preview.81 whole-DLL identity,
   then run one bounded exact-runtime journey;
 - accept natural New Leaf evidence if it appears, but do not manufacture that
   encounter or infer runtime support from source/fixtures;

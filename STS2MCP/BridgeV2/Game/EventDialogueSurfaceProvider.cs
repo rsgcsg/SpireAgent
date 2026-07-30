@@ -23,6 +23,8 @@ namespace STS2_MCP.BridgeV2.Game;
 internal sealed class EventDialogueSurfaceProvider : IBridgeSurfaceProvider
 {
     private const string SurfaceKind = "event_dialogue";
+    internal const string AdvanceCompletionWitness =
+        "exact_dialogue_index_advanced_or_event_room_closed";
 
     private static readonly FieldInfo? CurrentLineField =
         typeof(NAncientEventLayout).GetField(
@@ -164,7 +166,7 @@ internal sealed class EventDialogueSurfaceProvider : IBridgeSurfaceProvider
             () => !ReferenceEquals(NEventRoom.Instance, expectedRoom)
                   || !McpMod.IsLiveNode(expectedLayout)
                   || (CurrentLineField?.GetValue(expectedLayout) is int nextLine && nextLine > expectedLine),
-            "exact_dialogue_index_advanced_or_event_room_closed");
+            AdvanceCompletionWitness);
     }
 
     private static string? ReadLineText(NAncientDialogueLine line)

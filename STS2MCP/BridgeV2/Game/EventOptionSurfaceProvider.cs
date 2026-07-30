@@ -19,6 +19,11 @@ namespace STS2_MCP.BridgeV2.Game;
 
 internal sealed class EventOptionSurfaceProvider : IBridgeSurfaceProvider
 {
+    internal const string ChooseCompletionWitness =
+        "event_option_replaced_or_required_subsurface_opened";
+    internal const string ProceedCompletionWitness =
+        "event_proceed_opened_map_or_left_room";
+
     public string Kind => "event_option";
 
     public BridgeSurfaceLayer Layer => BridgeSurfaceLayer.Room;
@@ -167,7 +172,7 @@ internal sealed class EventOptionSurfaceProvider : IBridgeSurfaceProvider
             return StartAsyncEventTransition(
                 () => !ReferenceEquals(NEventRoom.Instance, expectedRoom)
                       || NMapScreen.Instance?.IsOpen == true,
-                "event_proceed_opened_map_or_left_room");
+                ProceedCompletionWitness);
         }
 
         return StartAsyncEventTransition(
@@ -176,7 +181,7 @@ internal sealed class EventOptionSurfaceProvider : IBridgeSurfaceProvider
                   || (NOverlayStack.Instance?.Peek() is { } currentOverlay
                       && !ReferenceEquals(currentOverlay, previousOverlay))
                   || HasReplacementOptions(expectedRoom, currentButtons),
-            "event_option_replaced_or_required_subsurface_opened");
+            ChooseCompletionWitness);
     }
 
     internal static BridgeActionStartResult StartAsyncEventTransition(

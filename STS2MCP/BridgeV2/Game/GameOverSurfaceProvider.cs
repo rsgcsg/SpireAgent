@@ -25,6 +25,10 @@ namespace STS2_MCP.BridgeV2.Game;
 internal sealed class GameOverSurfaceProvider : IBridgeSurfaceProvider
 {
     private const string SurfaceKind = "game_over";
+    internal const string AdvanceCompletionWitness =
+        "game_over_summary_animation_started";
+    internal const string ReturnCompletionWitness =
+        "game_over_closed_and_main_menu_loaded";
     private const BindingFlags Flags = BindingFlags.Instance | BindingFlags.NonPublic;
     private static readonly FieldInfo? ScoreField = typeof(NGameOverScreen).GetField("_score", Flags);
     private static readonly FieldInfo? AnimatingSummaryField =
@@ -205,7 +209,7 @@ internal sealed class GameOverSurfaceProvider : IBridgeSurfaceProvider
                   && AnimatingSummaryField?.GetValue(expectedScreen) is bool isAnimating
                   && isAnimating
                   && !expectedButton.IsEnabled,
-            "game_over_summary_animation_started",
+            AdvanceCompletionWitness,
             allowIntermediateStateChanges: true);
     }
 
@@ -228,7 +232,7 @@ internal sealed class GameOverSurfaceProvider : IBridgeSurfaceProvider
             () => NGame.Instance?.MainMenu != null
                   && !RunManager.Instance.IsInProgress
                   && (!McpMod.IsLiveNode(expectedScreen) || !McpMod.IsNodeVisible(expectedScreen)),
-            "game_over_closed_and_main_menu_loaded",
+            ReturnCompletionWitness,
             allowIntermediateStateChanges: true);
     }
 

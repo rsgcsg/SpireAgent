@@ -43,6 +43,13 @@ not inherit authority from the archived root SpireAgent runtime.
 
 Current cross-component audits:
 
+- [Preview.81 source-closed selector contract closeout](audits/WORKFLOW_C_PREVIEW81_SOURCE_CLOSED_SELECTOR_CONTRACT_WAVE_CLOSEOUT_2026-07-30.md):
+  14-operation merchant/reward removal, Scroll Boxes and dialogue cutover,
+  explicit exclusions, Preview.81 build/install identity and Live non-claims.
+- [Preview.80 standard-run boundary contract closeout](audits/WORKFLOW_C_PREVIEW80_STANDARD_RUN_BOUNDARY_CONTRACT_WAVE_CLOSEOUT_2026-07-30.md):
+  Preview.79 exact-run attribution, 13-operation explicit-contract cutover,
+  source/condition partition warning, Preview.80 build/install identity and
+  Live non-claims.
 - [Preview.79 mixed-Surface convergence closeout](audits/WORKFLOW_C_PREVIEW79_MIXED_SURFACE_CONVERGENCE_CLOSEOUT_2026-07-30.md):
   Preview.78 full-run attribution, nine-operation explicit-contract cutover,
   zero mixed supported Surfaces, Preview.79 build/install identity and Live gate.

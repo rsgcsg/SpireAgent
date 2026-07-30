@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "source_protocol": "2.0-preview.79",
+  "source_protocol": "2.0-preview.81",
   "status": "migration_active_live_evidence_pending",
   "target": {
     "connector_shadow_count": 0,
@@ -21,9 +21,9 @@
     "production_action_publication_path_count": 1,
     "production_authority_resolver_count": 1,
     "operation_authority_usage_count": 3,
-    "explicit_native_contract_count": 22,
-    "explicit_contract_digest_admission_count": 22,
-    "fallback_authority_contract_count": 65,
+    "explicit_native_contract_count": 49,
+    "explicit_contract_digest_admission_count": 49,
+    "fallback_authority_contract_count": 38,
     "persistent_fallback_claim_admission_count": 0,
     "supported_mixed_explicit_fallback_surface_count": 0,
     "bulk_candidate_startup_path_count": 0,
@@ -70,6 +70,51 @@
       "authority_cutover": "all_operations_on_the_three_previously_mixed_surfaces_use_explicit_contract_digest",
       "runtime_evidence": "preview_78_run_20260730010057_w2pqnh:shop_removal_handoff+treasure_choose+proceed_settled_and_treasure_stale_refused; preview_79_pending",
       "non_claims": "shop_potion_treasure_skip_kifuda_and_all_preview_79_mutations_pending_exact_runtime_evidence",
+      "rollback": "whole_artifact_restore"
+    },
+    {
+      "family": "standard_run_boundary_surfaces",
+      "operations": [
+        "open_standard_run_setup",
+        "back_from_singleplayer_menu",
+        "select_character",
+        "decrease_ascension",
+        "increase_ascension",
+        "embark_standard_run",
+        "back_from_character_select",
+        "choose_event_option",
+        "proceed_event",
+        "select_card_reward",
+        "choose_card_reward_alternative",
+        "advance_game_over_summary",
+        "return_game_over"
+      ],
+      "authority_cutover": "five_complete_surfaces_use_distinct_explicit_contract_digests",
+      "runtime_evidence": "preview_79_runs_vivqvr_and_b759ts_exercised_open_standard_select_embark_event_card_reward_and_game_over_actions; alternative_ascension_and_back_paths_not_exercised",
+      "non_claims": "preview_80_not_loaded; no_runtime_evidence_for_alternative_ascension_or_back_paths; unrecorded_provenance_is_not_organic_or_durable_qualification",
+      "rollback": "whole_artifact_restore"
+    },
+    {
+      "family": "source_closed_removal_bundle_and_dialogue_surfaces",
+      "operations": [
+        "deck_removal_selection/toggle_deck_removal_card",
+        "deck_removal_selection/preview_deck_removal",
+        "deck_removal_selection/confirm_deck_removal",
+        "deck_removal_selection/cancel_deck_removal_preview",
+        "deck_removal_selection/cancel_deck_removal_selection",
+        "reward_deck_removal_selection/toggle_deck_removal_card",
+        "reward_deck_removal_selection/preview_deck_removal",
+        "reward_deck_removal_selection/confirm_deck_removal",
+        "reward_deck_removal_selection/cancel_deck_removal_preview",
+        "reward_deck_removal_selection/cancel_deck_removal_selection",
+        "card_bundle_selection/preview_card_bundle",
+        "card_bundle_selection/confirm_card_bundle",
+        "card_bundle_selection/cancel_card_bundle_preview",
+        "event_dialogue/advance_event_dialogue"
+      ],
+      "authority_cutover": "four_complete_single_source_surfaces_use_distinct_explicit_contract_digests",
+      "runtime_evidence": "merchant removal and dialogue have predecessor exact-runtime coverage; reward removal and Scroll Boxes retain historical source/runtime evidence; preview_81_pending",
+      "non_claims": "preview_81_not_loaded; no evidence transfer to Precise Scissors, generic upgrade, Deck Transform/New Leaf, Wood Carvings or other selector sources",
       "rollback": "whole_artifact_restore"
     }
   ],

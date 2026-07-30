@@ -598,3 +598,72 @@ Preview.79 mutation evidence remain non-claims until cold restart.
 
 Detailed attribution, contracts, deployment identity and non-claims are in the
 [Preview.79 closeout](WORKFLOW_C_PREVIEW79_MIXED_SURFACE_CONVERGENCE_CLOSEOUT_2026-07-30.md).
+
+## 21. Preview.79 Runtime And Preview.80 Boundary-Family Amendment
+
+Preview.79 later cold-loaded with exact SHA `1032e079...9268`, MVID
+`d9435656...5572`, runtime `5faa3faa...e1c3`. Three exact-runtime runs were
+audited:
+
+- `run-20260730031529-qlyj44` stopped before submit on a DeepSeek transport
+  failure and is Re/provider evidence, not a Gateway mutation failure;
+- `run-20260730032119-vivqvr` completed 173 decisions with 170 settled
+  mutations, one actionless settling observation, one safe pre-submit stale
+  refusal and one normal completed boundary;
+- `run-20260730033205-b759ts` completed 100 decisions with 98 settled
+  mutations, one safe pre-submit stale refusal and one normal completed
+  boundary.
+
+The two completed journeys contained no unsupported Surface, unknown mutation,
+unsettled command, observation failure or provider failure. They exercised
+ordinary combat, three Headbutt CombatPile lifecycles, merchant removal and
+combat-hand selection. Their provenance is `unrecorded`; they are coverage and
+defect evidence, not Organic qualification or a durable claim.
+
+Preview.80 migrates 13 operations across `singleplayer_menu`,
+`character_select`, `event_option`, `card_reward_selection` and `game_over`.
+Each migrated operation now has an explicit contract revision whose witness is
+owned by the corresponding Provider. The machine inventory is `35 explicit /
+52 fallback`, with zero supported mixed explicit/fallback Surfaces.
+
+This wave deliberately does not migrate CombatPile, combat-hand, rest or
+reward claim. Those families reveal that the current operation-keyed session
+grant is too coarse for source- or condition-partitioned Commit and Outcome
+semantics. Headbutt runtime evidence, for example, cannot authorize Seance or
+Dredge merely because all three use `select_combat_pile_card`. This is bounded
+control-plane debt within the accepted Semantic Gateway architecture, not
+evidence for a universal selector or a second rules engine.
+
+The Preview.80 Release is built and installed as SHA
+`0677c629...c6a20`, MVID `23327e75...45b8c`. Loaded Preview.80 and all
+Preview.80 family runtime evidence remain non-claims until a full cold restart.
+Detailed contracts, exclusions, tests and deployment identity are in the
+[Preview.80 closeout](WORKFLOW_C_PREVIEW80_STANDARD_RUN_BOUNDARY_CONTRACT_WAVE_CLOSEOUT_2026-07-30.md).
+
+## 22. Preview.81 Source-Closed Selector Amendment
+
+A second fallback review rejected count-driven migration. Deck Upgrade still
+infers its origin only from event/rest context; Deck Transform/New Leaf, Wood
+Carvings, CombatPile and Rest still span source or condition partitions that
+the operation-scoped volatile key cannot isolate. Precise Scissors also lacks
+current exact-runtime action evidence and a proved cancelability contract.
+
+Four complete Surfaces do have a single bounded source contract:
+
+- merchant deck removal;
+- `CardRemovalReward` deck removal;
+- Scroll Boxes bundle selection;
+- ancient event dialogue advance.
+
+Preview.81 migrates their 14 operations to explicit contracts while preserving
+source-specific owner, operands, native Commit and Outcome. Shared selector
+mechanics grant no cross-Surface authority. Provider Witness constants and
+catalog contracts are mechanically paired, and negative assertions keep
+Precise Scissors, Deck Upgrade, Deck Transform and Wood Carvings on fallback.
+
+The machine inventory is now `49 explicit / 38 fallback`, with zero supported
+mixed explicit/fallback Surfaces and zero persistent fallback package
+admission. The Release is built and installed as SHA
+`411f8cf5...637b1`, MVID `c09e8569...0304b`; loaded Preview.81 is a non-claim
+until cold restart. See the
+[Preview.81 closeout](WORKFLOW_C_PREVIEW81_SOURCE_CLOSED_SELECTOR_CONTRACT_WAVE_CLOSEOUT_2026-07-30.md).

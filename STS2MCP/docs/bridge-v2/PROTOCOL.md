@@ -1,20 +1,24 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.79`
+Protocol preview: `2.0-preview.81`
 
-Preview.79 changes no JSON shape. It changes contract identity for nine
-existing shop, treasure and deck-enchant operations and tightens the reviewed
-source set of `deck_enchant_selection/confirm_selection`. Their action kinds
-and wire operands remain stable. The affected completion boundaries now
-explicitly report native commit, immediate postcondition, continuation handoff
-or transaction settlement instead of the migration fallback boundary.
-Contract digest changes intentionally prevent Preview.78 session or package
-authority from crossing the new DLL identity.
+Preview.81 changes no JSON shape or Re normalized schema. It moves every
+operation on merchant `deck_removal_selection`,
+`reward_deck_removal_selection`, Scroll Boxes `card_bundle_selection` and
+`event_dialogue` from manifest fallback identity to a distinct reviewed native
+contract. Action kinds and wire operands remain stable. Preview.80 previously
+migrated the five standard-run boundary Surfaces.
 
-The explicit catalog now contains 22 reviewed contracts and 65 volatile
-manifest fallbacks. No supported Surface mixes explicit and fallback authority.
-This is an authority-identity convergence, not qualification: unexercised shop
-potion, treasure skip and Kifuda branches remain session-only evidence gates.
+The explicit catalog contains 49 reviewed contracts and 38 volatile manifest
+fallbacks. No supported Surface mixes explicit and fallback authority. This is
+an authority-identity convergence, not qualification. Preview.81 does not
+transfer evidence to Precise Scissors, Deck Upgrade, Deck Transform/New Leaf,
+Wood Carvings or another visually similar selector source.
+
+Preview.79 exact-runtime runs establish predecessor coverage for the ordinary
+open/select/embark, event, card-reward, game-over and merchant removal paths.
+They cannot authorize Preview.81 because its DLL, catalog and contract digests
+changed.
 
 Preview.77 types the qualification contract boundary:
 

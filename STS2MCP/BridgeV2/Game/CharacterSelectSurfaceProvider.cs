@@ -24,6 +24,15 @@ namespace STS2_MCP.BridgeV2.Game;
 
 internal sealed class CharacterSelectSurfaceProvider : IBridgeSurfaceProvider
 {
+    internal const string SelectCharacterCompletionWitness =
+        "exact_character_button_selected";
+    internal const string AscensionChangeCompletionWitness =
+        "exact_ascension_level_changed";
+    internal const string EmbarkCompletionWitness =
+        "singleplayer_run_active_with_selected_character";
+    internal const string BackCompletionWitness =
+        "character_select_submenu_owner_changed";
+
     public string Kind => "character_select";
 
     public BridgeSurfaceLayer Layer => BridgeSurfaceLayer.Menu;
@@ -270,7 +279,7 @@ internal sealed class CharacterSelectSurfaceProvider : IBridgeSurfaceProvider
         return BridgeActionStartResult.Started(
             () => IsCurrentSingleplayerScreen(expectedScreen, expectedLobby)
                   && expectedButton.IsSelected,
-            "exact_character_button_selected");
+            SelectCharacterCompletionWitness);
     }
 
     private static BridgeActionStartResult StartAscensionChange(
@@ -297,7 +306,7 @@ internal sealed class CharacterSelectSurfaceProvider : IBridgeSurfaceProvider
         return BridgeActionStartResult.Started(
             () => IsCurrentSingleplayerScreen(expectedScreen, expectedLobby)
                   && expectedPanel.Ascension == before + delta,
-            "exact_ascension_level_changed");
+            AscensionChangeCompletionWitness);
     }
 
     private static BridgeActionStartResult StartEmbark(
@@ -328,7 +337,7 @@ internal sealed class CharacterSelectSurfaceProvider : IBridgeSurfaceProvider
                       LocalContext.GetMe(run)?.Character.Id.Entry,
                       selectedCharacterId,
                       StringComparison.Ordinal)),
-            "singleplayer_run_active_with_selected_character",
+            EmbarkCompletionWitness,
             allowIntermediateStateChanges: true);
     }
 
@@ -349,7 +358,7 @@ internal sealed class CharacterSelectSurfaceProvider : IBridgeSurfaceProvider
         expectedBack.ForceClick();
         return BridgeActionStartResult.Started(
             () => !IsCurrentSingleplayerScreen(expectedScreen, expectedLobby),
-            "character_select_submenu_owner_changed",
+            BackCompletionWitness,
             allowIntermediateStateChanges: true);
     }
 
