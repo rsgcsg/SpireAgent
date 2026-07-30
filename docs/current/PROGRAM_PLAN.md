@@ -118,13 +118,14 @@ persistent qualification, strategic quality or product readiness.
 
 ### Current Evidence
 
-Preview.78 is the current source contract with Re schema 31. Its loaded
-Preview.77 predecessor supplied a 94-decision completed boundary with 91
-settled mutations and two safe stale refusals. New Leaf, Kifuda and CombatPile
-were not exercised in that run. Provenance is `unrecorded`; this is runtime
-defect/coverage evidence, not Preview.78 load, Organic evidence or persistent
-qualification. Preview.78 moves six ordinary combat/shop operations to
-explicit contracts and is built/installed pending cold-load evidence.
+Preview.79 is the current source contract with Re schema 31. Its loaded
+Preview.78 predecessor supplied a 200-decision completed boundary with 198
+settled mutations, one safe stale refusal and no unsupported or unknown
+outcome. New Leaf, Kifuda and CombatPile were not exercised. Provenance is
+`unrecorded`; this is runtime defect/coverage evidence, not Preview.79 load,
+Organic evidence or persistent qualification. Preview.79 leaves zero supported
+mixed explicit/fallback Surfaces and is built/installed pending cold-load
+evidence.
 
 ### Delivery Order
 

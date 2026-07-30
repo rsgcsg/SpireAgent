@@ -25,6 +25,16 @@ namespace STS2_MCP.BridgeV2.Game;
 internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
 {
     private const string ReflectionEvidence = "sts2-v0.109.1:NDeckEnchantSelectScreen+SelfHelpBook.SelectAndEnchant+Kifuda.AfterObtained";
+    internal const string ToggleCompletionWitness =
+        "selected_card_membership_changed";
+    internal const string PreviewCompletionWitness =
+        "enchantment_preview_became_visible";
+    internal const string ConfirmCompletionWitness =
+        "enchantment_screen_closed_and_exact_cards_enchanted";
+    internal const string CancelPreviewCompletionWitness =
+        "preview_closed_and_selection_cleared";
+    internal const string CloseCompletionWitness =
+        "enchantment_screen_closed_without_selection";
 
     public string Kind => "deck_enchant_selection";
 
@@ -301,7 +311,7 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
         return BridgeActionStartResult.Started(
             () => IsCurrentScreen(expectedScreen)
                   && IsCardSelected(expectedScreen, expectedCard) != wasSelected,
-            "selected_card_membership_changed");
+            ToggleCompletionWitness);
     }
 
     private static BridgeActionStartResult StartMainPreview(NDeckEnchantSelectScreen expectedScreen)
@@ -317,7 +327,7 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
         confirm.ForceClick();
         return BridgeActionStartResult.Started(
             () => IsCurrentScreen(expectedScreen) && IsPreviewVisible(expectedScreen),
-            "enchantment_preview_became_visible");
+            PreviewCompletionWitness);
     }
 
     private static BridgeActionStartResult StartPreviewConfirm(
@@ -364,7 +374,7 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
                       card,
                       expectedEnchantmentId,
                       expectedEnchantmentAmount)),
-            "enchantment_screen_closed_and_exact_cards_enchanted");
+            ConfirmCompletionWitness);
     }
 
     private static bool HasExpectedEnchantment(
@@ -399,7 +409,7 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
             () => IsCurrentScreen(expectedScreen)
                   && !IsPreviewVisible(expectedScreen)
                   && ReadSelectedCards(expectedScreen).Count == 0,
-            "preview_closed_and_selection_cleared");
+            CancelPreviewCompletionWitness);
     }
 
     private static BridgeActionStartResult StartClose(NDeckEnchantSelectScreen expectedScreen)
@@ -414,7 +424,8 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
         close.ForceClick();
         return BridgeActionStartResult.Started(
             () => !IsCurrentScreen(expectedScreen),
-            "enchantment_screen_closed_without_selection");
+            CloseCompletionWitness,
+            completionBoundary: "continuation_handoff_observed");
     }
 
     private static bool TryReadBinding(

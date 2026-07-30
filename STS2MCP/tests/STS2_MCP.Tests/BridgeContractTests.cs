@@ -1000,6 +1000,26 @@ public sealed class BridgeContractTests
     }
 
     [Fact]
+    public void QualificationCatalogPartitionsEveryManifestOperationOnce()
+    {
+        IReadOnlyList<BridgeOperationQualificationIdentityInfo> catalog =
+            BridgeOperationQualificationCatalog.Snapshot();
+        int manifestOperationCount = BridgeContractManifest.Entries
+            .Sum(entry => entry.Operations.Count);
+
+        Assert.Equal(87, manifestOperationCount);
+        Assert.Equal(manifestOperationCount, catalog.Count);
+        Assert.Equal(22, catalog.Count(contract =>
+            contract.ContractKind == BridgeOperationQualificationCatalog.ExplicitNativeContract));
+        Assert.Equal(65, catalog.Count(contract =>
+            contract.ContractKind == BridgeOperationQualificationCatalog.ManifestMigrationFallback));
+        Assert.Equal(catalog.Count, catalog
+            .Select(contract => (contract.SurfaceKind, contract.Operation))
+            .Distinct()
+            .Count());
+    }
+
+    [Fact]
     public void OrdinaryCombatOperationsUseDistinctExplicitNativeContracts()
     {
         BridgeOperationQualificationIdentity play = Assert.IsType<
@@ -1104,7 +1124,7 @@ public sealed class BridgeContractTests
     }
 
     [Fact]
-    public void ShopRoomAndOrdinaryCardPurchaseUseExplicitNativeContracts()
+    public void ShopRoomAndInventoryLifecycleUseExplicitNativeContracts()
     {
         BridgeOperationQualificationIdentity open = Assert.IsType<
             BridgeOperationQualificationIdentity>(
@@ -1126,9 +1146,19 @@ public sealed class BridgeContractTests
                 BridgeOperationQualificationCatalog.Describe(
                     "shop_inventory",
                     "purchase_shop_card"));
+        BridgeOperationQualificationIdentity potion = Assert.IsType<
+            BridgeOperationQualificationIdentity>(
+                BridgeOperationQualificationCatalog.Describe(
+                    "shop_inventory",
+                    "purchase_shop_potion"));
+        BridgeOperationQualificationIdentity removal = Assert.IsType<
+            BridgeOperationQualificationIdentity>(
+                BridgeOperationQualificationCatalog.Describe(
+                    "shop_inventory",
+                    "open_shop_card_removal"));
 
         Assert.All(
-            new[] { open, proceed, close, card },
+            new[] { open, proceed, close, card, potion, removal },
             contract => Assert.Equal(
                 BridgeOperationQualificationCatalog.ExplicitNativeContract,
                 contract.ContractKind));
@@ -1136,23 +1166,79 @@ public sealed class BridgeContractTests
         Assert.Equal(ShopRoomSurfaceProvider.ProceedCompletionWitness, proceed.WitnessId);
         Assert.Equal(ShopInventorySurfaceProvider.CloseInventoryCompletionWitness, close.WitnessId);
         Assert.Equal(ShopInventorySurfaceProvider.CardPurchaseCompletionWitness, card.WitnessId);
+        Assert.Equal(ShopInventorySurfaceProvider.PotionPurchaseCompletionWitness, potion.WitnessId);
+        Assert.Equal(ShopInventorySurfaceProvider.CardRemovalHandoffCompletionWitness, removal.WitnessId);
         Assert.Equal("continuation_handoff_observed", proceed.CompletionBoundary);
         Assert.Equal("continuation_handoff_observed", close.CompletionBoundary);
+        Assert.Equal("continuation_handoff_observed", removal.CompletionBoundary);
         Assert.Equal("native_commit_observed", card.CompletionBoundary);
+        Assert.Equal("native_commit_observed", potion.CompletionBoundary);
     }
 
     [Fact]
-    public void TreasureOpenContractIsAnExplicitNonAuthorizingCandidate()
+    public void TreasureLifecycleUsesDistinctExplicitNativeContracts()
     {
-        BridgeOperationQualificationIdentity identity = Assert.IsType<BridgeOperationQualificationIdentity>(
+        BridgeOperationQualificationIdentity open = Assert.IsType<BridgeOperationQualificationIdentity>(
             BridgeOperationQualificationCatalog.Describe("treasure_room", "open_treasure_chest"));
+        BridgeOperationQualificationIdentity choose = Assert.IsType<BridgeOperationQualificationIdentity>(
+            BridgeOperationQualificationCatalog.Describe("treasure_room", "choose_treasure_relic"));
+        BridgeOperationQualificationIdentity skip = Assert.IsType<BridgeOperationQualificationIdentity>(
+            BridgeOperationQualificationCatalog.Describe("treasure_room", "skip_treasure_relic"));
+        BridgeOperationQualificationIdentity proceed = Assert.IsType<BridgeOperationQualificationIdentity>(
+            BridgeOperationQualificationCatalog.Describe("treasure_room", "proceed_treasure_room"));
 
-        Assert.True(BridgeOperationQualificationCatalog.IsExplicitContract(
-            "treasure_room",
-            "open_treasure_chest"));
-        Assert.Equal("immediate_postcondition_observed", identity.CompletionBoundary);
-        Assert.Equal("treasure_chest_opened_and_result_stage_reached", identity.WitnessId);
-        Assert.Equal("persistent_run_mutation", identity.RiskClass);
+        Assert.All(new[] { open, choose, skip, proceed }, contract => Assert.Equal(
+            BridgeOperationQualificationCatalog.ExplicitNativeContract,
+            contract.ContractKind));
+        Assert.Equal(TreasureRoomSurfaceProvider.OpenChestCompletionWitness, open.WitnessId);
+        Assert.Equal(TreasureRoomSurfaceProvider.ChooseRelicCompletionWitness, choose.WitnessId);
+        Assert.Equal(TreasureRoomSurfaceProvider.SkipRelicCompletionWitness, skip.WitnessId);
+        Assert.Equal(TreasureRoomSurfaceProvider.ProceedCompletionWitness, proceed.WitnessId);
+        Assert.Equal("immediate_postcondition_observed", open.CompletionBoundary);
+        Assert.Equal("immediate_postcondition_observed", choose.CompletionBoundary);
+        Assert.Equal("transaction_settled", skip.CompletionBoundary);
+        Assert.Equal("continuation_handoff_observed", proceed.CompletionBoundary);
+        Assert.Equal(4, new[]
+        {
+            open.ContractDigest,
+            choose.ContractDigest,
+            skip.ContractDigest,
+            proceed.ContractDigest
+        }.Distinct().Count());
+    }
+
+    [Fact]
+    public void DeckEnchantLifecycleUsesExplicitSourceBoundContracts()
+    {
+        BridgeOperationQualificationIdentity toggle = Assert.IsType<BridgeOperationQualificationIdentity>(
+            BridgeOperationQualificationCatalog.Describe("deck_enchant_selection", "toggle_card"));
+        BridgeOperationQualificationIdentity preview = Assert.IsType<BridgeOperationQualificationIdentity>(
+            BridgeOperationQualificationCatalog.Describe("deck_enchant_selection", "preview_selection"));
+        BridgeOperationQualificationIdentity close = Assert.IsType<BridgeOperationQualificationIdentity>(
+            BridgeOperationQualificationCatalog.Describe("deck_enchant_selection", "close_selection"));
+        BridgeOperationQualificationIdentity confirm = Assert.IsType<BridgeOperationQualificationIdentity>(
+            BridgeOperationQualificationCatalog.Describe("deck_enchant_selection", "confirm_selection"));
+        BridgeOperationQualificationIdentity cancel = Assert.IsType<BridgeOperationQualificationIdentity>(
+            BridgeOperationQualificationCatalog.Describe("deck_enchant_selection", "cancel_preview"));
+
+        Assert.All(new[] { toggle, preview, close, confirm, cancel }, contract => Assert.Equal(
+            BridgeOperationQualificationCatalog.ExplicitNativeContract,
+            contract.ContractKind));
+        Assert.Equal(DeckEnchantSurfaceProvider.ToggleCompletionWitness, toggle.WitnessId);
+        Assert.Equal(DeckEnchantSurfaceProvider.PreviewCompletionWitness, preview.WitnessId);
+        Assert.Equal(DeckEnchantSurfaceProvider.CloseCompletionWitness, close.WitnessId);
+        Assert.Equal(DeckEnchantSurfaceProvider.ConfirmCompletionWitness, confirm.WitnessId);
+        Assert.Equal(DeckEnchantSurfaceProvider.CancelPreviewCompletionWitness, cancel.WitnessId);
+        Assert.Equal("continuation_handoff_observed", close.CompletionBoundary);
+        Assert.Equal("immediate_postcondition_observed", confirm.CompletionBoundary);
+        Assert.Equal(5, new[]
+        {
+            toggle.ContractDigest,
+            preview.ContractDigest,
+            close.ContractDigest,
+            confirm.ContractDigest,
+            cancel.ContractDigest
+        }.Distinct().Count());
     }
 
     [Fact]

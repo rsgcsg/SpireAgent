@@ -6,14 +6,15 @@
 > below are preserved as dated evidence and must not override those documents.
 
 Status update 2026-07-30 (current pointer only): source contract is
-`2.0-preview.78`; Re normalized schema is `31`. Preview.78 moves three ordinary
-combat and three ordinary shop operations to explicit native contracts. C#/Re
-tests and Release build pass; it is installed as SHA `2f3f6141...b948`, MVID
-`be29a156...b1462`, but loaded identity and Live evidence remain non-claims
-until cold start. Latest loaded Preview.77 run
-`run-20260729145711-kh8d6k` completed a 94-decision boundary with 91 settled
-mutations and two safe stale refusals; its `unrecorded` provenance cannot
-qualify Preview.78. Canonical status owns exact identities and rollback.
+`2.0-preview.79`; Re normalized schema is `31`. Preview.79 moves the nine
+remaining shop, treasure and deck-enchant siblings to explicit contracts,
+leaving zero supported mixed Surfaces. C#/Re tests and Release build pass; it
+is installed as SHA `1032e079...9268`, MVID `d9435656...5572`, but loaded
+identity and Live evidence remain non-claims until cold start. Latest loaded
+Preview.78 run `run-20260730010057-w2pqnh` completed a 200-decision boundary
+with 198 settled mutations and one safe stale refusal; its `unrecorded`
+provenance cannot qualify Preview.79. Canonical status owns exact identities
+and rollback.
 
 Earlier status update 2026-07-29: source contract was
 `2.0-preview.75`; Re normalized schema was `30`. Preview.75 exact runs on SHA

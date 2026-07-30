@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "source_protocol": "2.0-preview.78",
+  "source_protocol": "2.0-preview.79",
   "status": "migration_active_live_evidence_pending",
   "target": {
     "connector_shadow_count": 0,
@@ -21,11 +21,11 @@
     "production_action_publication_path_count": 1,
     "production_authority_resolver_count": 1,
     "operation_authority_usage_count": 3,
-    "explicit_native_contract_count": 13,
-    "explicit_contract_digest_admission_count": 13,
-    "fallback_authority_contract_count": 74,
+    "explicit_native_contract_count": 22,
+    "explicit_contract_digest_admission_count": 22,
+    "fallback_authority_contract_count": 65,
     "persistent_fallback_claim_admission_count": 0,
-    "supported_mixed_explicit_fallback_surface_count": 3,
+    "supported_mixed_explicit_fallback_surface_count": 0,
     "bulk_candidate_startup_path_count": 0,
     "re_native_completion_reconstruction_count": 0,
     "control_history_semantic_identity_input_count": 0
@@ -42,7 +42,7 @@
       "family": "ordinary_combat_turn",
       "operations": ["play_card", "use_potion", "end_turn"],
       "authority_cutover": "all_family_operations_use_explicit_contract_digest",
-      "runtime_evidence": "preview_77_run_20260729145711_kh8d6k:37_play_card+1_use_potion+12_end_turn_all_settled",
+      "runtime_evidence": "preview_78_run_20260730010057_w2pqnh:79_play_card+1_use_potion+29_end_turn_all_settled",
       "non_claims": "no_combat_pile_or_delayed_effect_qualification",
       "rollback": "whole_artifact_restore"
     },
@@ -50,8 +50,26 @@
       "family": "ordinary_shop_room_and_card_purchase",
       "operations": ["open_shop_inventory", "proceed_shop", "close_shop_inventory", "purchase_shop_card"],
       "authority_cutover": "shop_room_fully_explicit_and_scoped_shop_inventory_actions_explicit",
-      "runtime_evidence": "preview_77_run_20260729145711_kh8d6k:all_four_operations_settled_including_two_card_purchases",
+      "runtime_evidence": "preview_78_run_20260730010057_w2pqnh:open+card_purchase+close+proceed_all_settled",
       "non_claims": "no_kifuda_relic_potion_or_removal_sibling_qualification",
+      "rollback": "whole_artifact_restore"
+    },
+    {
+      "family": "remaining_mixed_shop_treasure_and_deck_enchant_operations",
+      "operations": [
+        "purchase_shop_potion",
+        "open_shop_card_removal",
+        "choose_treasure_relic",
+        "skip_treasure_relic",
+        "proceed_treasure_room",
+        "toggle_card",
+        "preview_selection",
+        "close_selection",
+        "cancel_preview"
+      ],
+      "authority_cutover": "all_operations_on_the_three_previously_mixed_surfaces_use_explicit_contract_digest",
+      "runtime_evidence": "preview_78_run_20260730010057_w2pqnh:shop_removal_handoff+treasure_choose+proceed_settled_and_treasure_stale_refused; preview_79_pending",
+      "non_claims": "shop_potion_treasure_skip_kifuda_and_all_preview_79_mutations_pending_exact_runtime_evidence",
       "rollback": "whole_artifact_restore"
     }
   ],

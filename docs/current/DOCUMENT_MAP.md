@@ -43,6 +43,9 @@ not inherit authority from the archived root SpireAgent runtime.
 
 Current cross-component audits:
 
+- [Preview.79 mixed-Surface convergence closeout](audits/WORKFLOW_C_PREVIEW79_MIXED_SURFACE_CONVERGENCE_CLOSEOUT_2026-07-30.md):
+  Preview.78 full-run attribution, nine-operation explicit-contract cutover,
+  zero mixed supported Surfaces, Preview.79 build/install identity and Live gate.
 - [Preview.78 combat and shop explicit-contract wave closeout](audits/WORKFLOW_C_PREVIEW78_COMBAT_AND_SHOP_EXPLICIT_CONTRACT_WAVE_CLOSEOUT_2026-07-30.md):
   latest Preview.77 run attribution, six-operation contract migration,
   authority deletion metrics, Preview.78 tests/build/install identity and Live

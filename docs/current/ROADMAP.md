@@ -72,16 +72,17 @@ identity, family native-contract migration, deletion of old production paths,
 version/claim recovery and repeated journeys are required. Compendium and
 external reference enrichment remain optional.
 
-Preview.78 and Re schema 31 are the current source contract. Preview.77 loaded
-on SHA `9d6737b1...`, MVID `0a945d2d...`, runtime `8dbfab27...`; exact run
-`run-...145711` completed a 94-decision boundary with 91 settled mutations and
-two safe stale refusals. It did not exercise New Leaf, Kifuda or CombatPile.
-Preview.78 migrates six ordinary combat/shop operations to explicit contracts;
-its built/installed identity is verified and loaded behavior is not yet claimed.
+Preview.79 and Re schema 31 are the current source contract. Preview.78 loaded
+on SHA `2f3f6141...`, MVID `be29a156...`, runtime `e08c8bb0...`; exact run
+`run-...010057` completed a 200-decision boundary with 198 settled mutations,
+one safe stale refusal and no unsupported or unknown outcome. It did not
+exercise New Leaf, Kifuda or CombatPile. Preview.79 removes the final three
+mixed supported Surfaces; its built/installed identity is verified and loaded
+behavior is not yet claimed.
 
 ### Current Gate 2 Work
 
-- cold-load the already built and installed Preview.78 whole-DLL identity,
+- cold-load the already built and installed Preview.79 whole-DLL identity,
   then run one bounded exact-runtime journey;
 - accept natural New Leaf evidence if it appears, but do not manufacture that
   encounter or infer runtime support from source/fixtures;
@@ -91,8 +92,9 @@ its built/installed identity is verified and loaded behavior is not yet claimed.
 - close only naturally observed A-facing decision, owner, settling, visible-
   fact, Inspection and action-local outcome gaps;
 - retain complete evidence while A/D evaluate a scope-specific model view;
-- migrate one real family at a time to explicit contract-digest admission and
-  delete its operation-authority/fallback path after evidence;
+- migrate reviewed families to explicit contract-digest admission and delete
+  their fallback path; batching is allowed when every operation retains an
+  independently testable owner, source, Commit and Outcome;
 - keep manifest fallback evidence non-authorizing outside volatile session
   trial; operator tooling must report `code_required` instead of packaging it;
 - do not add permanent shadow, fallback or parallel authority paths;

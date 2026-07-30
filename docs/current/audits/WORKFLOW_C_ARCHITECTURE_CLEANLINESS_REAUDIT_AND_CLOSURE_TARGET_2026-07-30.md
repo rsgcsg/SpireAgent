@@ -575,3 +575,26 @@ family evidence remain non-claims until cold restart and exact mutation.
 
 Detailed contracts, tests, deployment identity and non-claims are in the
 [Preview.78 wave closeout](WORKFLOW_C_PREVIEW78_COMBAT_AND_SHOP_EXPLICIT_CONTRACT_WAVE_CLOSEOUT_2026-07-30.md).
+
+## 20. Preview.78 Runtime And Preview.79 Convergence Amendment
+
+Preview.78 later cold-loaded with exact SHA `2f3f6141...b948`, MVID
+`be29a156...b1462`, runtime `e08c8bb0...`. Exact run
+`run-20260730010057-w2pqnh` completed 200 decisions: 198 settled actions, one
+safe pre-submit treasure stale refusal, and one normal completed-run boundary.
+It contained no unsupported, unknown, unsettled, provider, parse or observation
+failure and exercised all three read-only Inspection kinds.
+
+That run supplied predecessor evidence for shop removal handoff and treasure
+choose/proceed. It did not exercise Kifuda, New Leaf, CombatPile, shop potion
+or treasure skip and has `unrecorded` provenance.
+
+Preview.79 then migrates the nine remaining operations on shop inventory,
+treasure and deck enchant. The machine inventory is `22 explicit / 65
+fallback`, with zero supported mixed explicit/fallback Surfaces. Full Gateway
+and Re suites pass; Release SHA is `1032e079...9268`, MVID
+`d9435656...5572`, and source/build/install agree. Loaded Preview.79 and all
+Preview.79 mutation evidence remain non-claims until cold restart.
+
+Detailed attribution, contracts, deployment identity and non-claims are in the
+[Preview.79 closeout](WORKFLOW_C_PREVIEW79_MIXED_SURFACE_CONVERGENCE_CLOSEOUT_2026-07-30.md).

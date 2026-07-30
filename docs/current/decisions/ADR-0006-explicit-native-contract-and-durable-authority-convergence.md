@@ -123,3 +123,17 @@ purchase and merchant removal have not yet received the same family review.
 Preview.78 does not add a publication path, authority resolver, durable
 fallback or universal transaction abstraction. Exact-runtime evidence remains
 required after its new DLL identity is loaded.
+
+## Preview.79 Implementation Note
+
+Preview.79 validates the same decision against the three remaining mixed
+supported Surfaces. Shop potion/removal handoff, the remaining treasure
+lifecycle, and reversible deck-enchant controls now use explicit catalog
+digests while retaining independent native Commit and Outcome contracts.
+`deck_enchant_selection/confirm_selection` also tightens its reviewed source
+set to the exact Self-Help Book and Kifuda bindings.
+
+This cutover leaves `22` explicit contracts, `65` volatile manifest fallbacks
+and zero supported Surface mixing. It does not claim Preview.79 Live evidence,
+Kifuda, New Leaf, CombatPile, shop-potion or treasure-skip qualification. See
+the [Preview.79 closeout](../audits/WORKFLOW_C_PREVIEW79_MIXED_SURFACE_CONVERGENCE_CLOSEOUT_2026-07-30.md).

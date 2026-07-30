@@ -18,20 +18,22 @@ third-party clients.
 
 ## Current Truth
 
-The active source Connector contract is `2.0-preview.78`; Re normalized schema
+The active source Connector contract is `2.0-preview.79`; Re normalized schema
 is `31`. Gate 1/M0 is closed as a bounded ordinary-single-player v2 interface:
 Re and the optional MCP adapter are v2-only, Gateway `/api/v1` is retired, and
 the exact loaded Preview.74 completed a 202-decision bounded one-game journey.
-Preview.77 added the typed durable-contract boundary; Preview.78 moves ordinary
-combat plus ordinary shop navigation/card purchase onto six reviewed explicit
-native contracts without adding another authority path.
+Preview.77 added the typed durable-contract boundary; Preview.78 moved ordinary
+combat plus ordinary shop navigation/card purchase onto reviewed explicit
+native contracts, and Preview.79 removes the final three supported mixed
+explicit/fallback Surfaces without adding another authority path.
 
-The latest exact Preview.77 run completed a 94-decision boundary with 91
-settled mutations and two safe stale refusals. It has `unrecorded` provenance
-and did not exercise New Leaf, Kifuda or CombatPile. Preview.78 is built and
-installed but not yet cold-loaded, so that run is bounded predecessor coverage,
-not Preview.78 evidence, Organic evidence, persistent qualification or
-strategic-quality proof. See [current status](docs/current/STATUS.md).
+The latest exact Preview.78 run completed a 200-decision boundary with 198
+settled mutations, one safe stale refusal, and no unsupported or unknown
+outcome. It has `unrecorded` provenance and did not exercise New Leaf, Kifuda
+or CombatPile. Preview.79 is built and installed but not yet cold-loaded, so
+that run is bounded predecessor coverage, not Preview.79 evidence, Organic
+evidence, persistent qualification or strategic-quality proof. See
+[current status](docs/current/STATUS.md).
 
 The current program milestone is **M1 Measurable External Agent Baseline**,
 with a bounded C-R1 connector-completion track running alongside A/D.

@@ -6,7 +6,7 @@ It may derive an evidence-tested model view, but it never becomes a second
 game-state, legality, permission, Commit, or completion authority.
 
 > Compatibility status, 2026-07-30: Re and C# share source contract
-> `2.0-preview.78`; Re normalized schema is `31`. Gate 1 is closed as a
+> `2.0-preview.79`; Re normalized schema is `31`. Gate 1 is closed as a
 > bounded ordinary-single-player v2 baseline, not full game coverage.
 > Preview.69 adds typed new/resumed-run mount settling, bounded semantic-cycle recovery,
 > and strict consumption of encounter-scoped provisional grants. Diagnostic
@@ -48,14 +48,14 @@ visible native effects are still evolving.
 
 RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, shadow/live modes, policy promotion, or the old project's phase machinery. Its job is to make one decision path correct and auditable.
 
-Re's current strict client contract is Bridge `2.0-preview.78`. Re strictly
+Re's current strict client contract is Bridge `2.0-preview.79`. Re strictly
 decodes typed contract identities and grants, but does not interpret fallback
-Witness semantics or promote any candidate. Latest exact Preview.77 run
-`run-20260729145711-kh8d6k` completed a 94-decision boundary with 91 settled
-mutations and two safe stale refusals on SHA `9d6737b1...` / MVID
-`0a945d2d...` / runtime `8dbfab27...`. It did not exercise New Leaf, Kifuda or
+Witness semantics or promote any candidate. Latest exact Preview.78 run
+`run-20260730010057-w2pqnh` completed a 200-decision boundary with 198 settled
+mutations and one safe stale refusal on SHA `2f3f6141...` / MVID
+`be29a156...` / runtime `e08c8bb0...`. It did not exercise New Leaf, Kifuda or
 CombatPile. Its `unrecorded` provenance is predecessor coverage evidence, not
-Preview.78 evidence, Organic evidence or persistent qualification. Preview.78
+Preview.79 evidence, Organic evidence or persistent qualification. Preview.79
 is built/installed and awaits cold-load evidence.
 A historical strict read-only main-menu inspection passed without mutation.
 Preview.66's narrow persistent

@@ -1,14 +1,20 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.78`
+Protocol preview: `2.0-preview.79`
 
-Preview.78 changes no JSON shape. It changes contract identity for six
-existing operations: ordinary combat `play_card`, `use_potion`, `end_turn`
-and ordinary shop `proceed_shop`, `close_shop_inventory`,
-`purchase_shop_card` now project reviewed `explicit_native_contract`
-revisions. Their action kinds and wire operands remain stable. Contract digest
-changes intentionally prevent Preview.77 session or package authority from
-crossing the new DLL identity.
+Preview.79 changes no JSON shape. It changes contract identity for nine
+existing shop, treasure and deck-enchant operations and tightens the reviewed
+source set of `deck_enchant_selection/confirm_selection`. Their action kinds
+and wire operands remain stable. The affected completion boundaries now
+explicitly report native commit, immediate postcondition, continuation handoff
+or transaction settlement instead of the migration fallback boundary.
+Contract digest changes intentionally prevent Preview.78 session or package
+authority from crossing the new DLL identity.
+
+The explicit catalog now contains 22 reviewed contracts and 65 volatile
+manifest fallbacks. No supported Surface mixes explicit and fallback authority.
+This is an authority-identity convergence, not qualification: unexercised shop
+potion, treasure skip and Kifuda branches remain session-only evidence gates.
 
 Preview.77 types the qualification contract boundary:
 
@@ -120,9 +126,8 @@ current native lifecycle proves either:
 The second branch is required by native effects such as Silver Crucible, whose
 first treasure chest is intentionally empty. Projection and completion reuse
 `TreasureLifecycleFacts`; no relic ID, reward-generation rule, or fallback
-execution is reconstructed in Re. The operation is the sixth explicit
-non-authorizing component-contract candidate; 81 catalog fallbacks remain
-digest-free manifest hypotheses. Preview.71 has build/install evidence only
+execution is reconstructed in Re. The operation was the sixth explicit
+non-authorizing component-contract candidate at Preview.71. Preview.71 has build/install evidence only
 until cold-loaded.
 
 Preview.70 adds two non-authorizing migration measurements without changing

@@ -28,6 +28,14 @@ namespace STS2_MCP.BridgeV2.Game;
 internal sealed class TreasureRoomSurfaceProvider : IBridgeSurfaceProvider
 {
     private const string SurfaceKind = "treasure_room";
+    internal const string OpenChestCompletionWitness =
+        "treasure_chest_opened_and_result_stage_reached";
+    internal const string ChooseRelicCompletionWitness =
+        "treasure_relic_owned_and_selection_closed";
+    internal const string SkipRelicCompletionWitness =
+        "treasure_relic_skipped_without_inventory_change_and_room_left";
+    internal const string ProceedCompletionWitness =
+        "treasure_room_left_or_map_opened";
     private const BindingFlags Flags = BindingFlags.Instance | BindingFlags.NonPublic;
     private static readonly FieldInfo? CollectionOpenField =
         typeof(NTreasureRoom).GetField("_isRelicCollectionOpen", Flags);
@@ -254,7 +262,7 @@ internal sealed class TreasureRoomSurfaceProvider : IBridgeSurfaceProvider
         expectedChest.ForceClick();
         return BridgeActionStartResult.Started(
             () => OpenChestResultReached(expectedRoom, expectedUi),
-            "treasure_chest_opened_and_result_stage_reached",
+            OpenChestCompletionWitness,
             allowIntermediateStateChanges: true);
     }
 
@@ -317,7 +325,7 @@ internal sealed class TreasureRoomSurfaceProvider : IBridgeSurfaceProvider
             () => CountRelic(expectedPlayer, expectedRelic.Id.Entry) > beforeCount
                   && (!IsCurrent(expectedRoom, expectedUi)
                       || TryReadBool(CollectionOpenField, expectedUi, out bool stillOpen) && !stillOpen),
-            "treasure_relic_owned_and_selection_closed",
+            ChooseRelicCompletionWitness,
             allowIntermediateStateChanges: true);
     }
 
@@ -348,8 +356,9 @@ internal sealed class TreasureRoomSurfaceProvider : IBridgeSurfaceProvider
             () => expectedPlayer.Relics.Count == beforeRelicCount
                   && (!ReferenceEquals(RunManager.Instance.DebugOnlyGetState()?.CurrentRoom, expectedRoom)
                       || NMapScreen.Instance?.IsOpen == true),
-            "treasure_relic_skipped_without_inventory_change_and_room_left",
-            allowIntermediateStateChanges: true);
+            SkipRelicCompletionWitness,
+            allowIntermediateStateChanges: true,
+            completionBoundary: "transaction_settled");
     }
 
     private static BridgeActionStartResult StartProceed(
@@ -372,8 +381,9 @@ internal sealed class TreasureRoomSurfaceProvider : IBridgeSurfaceProvider
         return BridgeActionStartResult.Started(
             () => !ReferenceEquals(RunManager.Instance.DebugOnlyGetState()?.CurrentRoom, expectedRoom)
                   || NMapScreen.Instance?.IsOpen == true,
-            "treasure_room_left_or_map_opened",
-            allowIntermediateStateChanges: true);
+            ProceedCompletionWitness,
+            allowIntermediateStateChanges: true,
+            completionBoundary: "continuation_handoff_observed");
     }
 
     private static bool IsCurrent(TreasureRoom expectedRoom, NTreasureRoom expectedUi) =>

@@ -1,7 +1,7 @@
 # Bridge v2 Documentation
 
 Bridge v2 is the active semantic Gateway protocol. C# and Re source now share
-`2.0-preview.78`; Re normalized schema is `31`. Gate 1 is closed as a bounded
+`2.0-preview.79`; Re normalized schema is `31`. Gate 1 is closed as a bounded
 ordinary-single-player v2 connector baseline and the complete v1 HTTP namespace
 is retired. Preview.61 supplied the final Neow's Fury runtime seal. Preview.62
 adds reviewed registry/policy adaptation and non-authorizing exact-assembly
@@ -14,8 +14,9 @@ aggregation, automatic package orchestration, and atomic store reload. The
 final local binary has qualified only `main_menu/continue_run` through real
 two-epoch evidence and cold-restart revalidation. Its 87-operation projection
 contains historical explicit contracts plus conservative manifest-derived
-fallbacks. Current Preview.78 has 13 explicit contracts and 74 typed
-session fallbacks; fallback packages are invalid rather than candidate or
+fallbacks. Current Preview.79 has 22 explicit contracts and 65 typed session
+fallbacks; no supported Surface mixes both kinds, and fallback packages are
+invalid rather than candidate or
 durable qualification. Start with current status, not historical
 preview closeouts.
 
@@ -56,12 +57,15 @@ repairs that source binding and the unsupported-authority invariant. It later
 loaded and completed `run-20260729140216-qi8r24`; New Leaf and Kifuda were not
 exercised. Preview.77 closes durable fallback admission and inherits no earlier
 session scope. Preview.78 moves ordinary combat and ordinary shop
-navigation/card purchase to six explicit contracts. It is built and installed,
-but not yet cold-loaded.
+navigation/card purchase to explicit contracts and later completed exact
+200-decision run `run-20260730010057-w2pqnh`. Preview.79 removes the final
+three supported mixed Surfaces. It is built and installed, but not yet
+cold-loaded.
 
 ## Current Documents
 
 - [Current status](CURRENT_STATUS.md)
+- [Preview.79 mixed-Surface convergence closeout](../../../docs/current/audits/WORKFLOW_C_PREVIEW79_MIXED_SURFACE_CONVERGENCE_CLOSEOUT_2026-07-30.md)
 - [Preview.78 combat and shop explicit-contract closeout](../../../docs/current/audits/WORKFLOW_C_PREVIEW78_COMBAT_AND_SHOP_EXPLICIT_CONTRACT_WAVE_CLOSEOUT_2026-07-30.md)
 - [Architecture cleanliness reaudit](../../../docs/current/audits/WORKFLOW_C_ARCHITECTURE_CLEANLINESS_REAUDIT_AND_CLOSURE_TARGET_2026-07-30.md)
 - [Explicit contract and durable authority ADR](../../../docs/current/decisions/ADR-0006-explicit-native-contract-and-durable-authority-convergence.md)

@@ -1,6 +1,6 @@
 {
   "schema_version": 3,
-  "catalog_id": "bridge_v2_native_action_contracts_v4",
+  "catalog_id": "bridge_v2_native_action_contracts_v5",
   "authority_effect": "explicit_native_contracts_plus_typed_session_fallbacks",
   "contracts": [
     {
@@ -76,6 +76,30 @@
       "risk_class": "persistent_run_mutation"
     },
     {
+      "surface_kind": "shop_inventory",
+      "operation": "purchase_shop_potion",
+      "interaction_kind": "merchant_inventory_potion_purchase",
+      "owner_binding": "exact_current_merchant_inventory_and_potion_entry",
+      "source_binding": "MerchantPotionEntry.OnTryPurchaseWrapper",
+      "operand_contract": "exact_advertised_offer_potion_instance_price_gold_slot_and_capacity",
+      "commit_contract": "native_merchant_potion_purchase_task",
+      "completion_boundary": "native_commit_observed",
+      "witness_id": "shop_potion_purchase_committed_with_exact_slot_gold_and_entry_witness",
+      "risk_class": "persistent_run_mutation"
+    },
+    {
+      "surface_kind": "shop_inventory",
+      "operation": "open_shop_card_removal",
+      "interaction_kind": "merchant_card_removal_handoff",
+      "owner_binding": "exact_current_merchant_inventory_and_card_removal_entry",
+      "source_binding": "MerchantCardRemovalEntry.OnTryPurchaseWrapper+CardSelectCmd.FromDeckForRemoval",
+      "operand_contract": "exact_advertised_unused_service_price_gold_and_slot",
+      "commit_contract": "native_merchant_card_removal_purchase_task",
+      "completion_boundary": "continuation_handoff_observed",
+      "witness_id": "shop_card_removal_selector_opened_or_removal_completed",
+      "risk_class": "persistent_run_mutation"
+    },
+    {
       "surface_kind": "map_navigation",
       "operation": "choose_map_node",
       "interaction_kind": "map_node_navigation",
@@ -125,15 +149,63 @@
     },
     {
       "surface_kind": "deck_enchant_selection",
+      "operation": "toggle_card",
+      "interaction_kind": "deck_enchantment_card_toggle",
+      "owner_binding": "exact_current_enchant_selector_in_selecting_stage",
+      "source_binding": "SelfHelpBook.SelectAndEnchant|Kifuda.AfterObtained+CardSelectCmd.FromDeckForEnchantment+exact_runtime_source_binding",
+      "operand_contract": "exact_advertised_card_instance_selection_bounds_and_enchantment_eligibility",
+      "commit_contract": "NCardGrid.HolderPressed",
+      "completion_boundary": "immediate_postcondition_observed",
+      "witness_id": "selected_card_membership_changed",
+      "risk_class": "reversible_navigation"
+    },
+    {
+      "surface_kind": "deck_enchant_selection",
+      "operation": "preview_selection",
+      "interaction_kind": "deck_enchantment_preview_open",
+      "owner_binding": "exact_current_enchant_selector_in_selecting_stage",
+      "source_binding": "SelfHelpBook.SelectAndEnchant|Kifuda.AfterObtained+CardSelectCmd.FromDeckForEnchantment+exact_runtime_source_binding",
+      "operand_contract": "exact_current_selected_instances_and_enabled_preview_control",
+      "commit_contract": "NDeckEnchantSelectScreen.main_confirm.ForceClick",
+      "completion_boundary": "immediate_postcondition_observed",
+      "witness_id": "enchantment_preview_became_visible",
+      "risk_class": "reversible_navigation"
+    },
+    {
+      "surface_kind": "deck_enchant_selection",
+      "operation": "close_selection",
+      "interaction_kind": "deck_enchantment_cancel_selection",
+      "owner_binding": "exact_current_cancelable_enchant_selector_in_selecting_stage",
+      "source_binding": "SelfHelpBook.SelectAndEnchant|Kifuda.AfterObtained+CardSelectCmd.FromDeckForEnchantment+exact_runtime_source_binding",
+      "operand_contract": "exact_current_selector_and_enabled_close_control",
+      "commit_contract": "NDeckEnchantSelectScreen.close.ForceClick",
+      "completion_boundary": "continuation_handoff_observed",
+      "witness_id": "enchantment_screen_closed_without_selection",
+      "risk_class": "reversible_navigation"
+    },
+    {
+      "surface_kind": "deck_enchant_selection",
       "operation": "confirm_selection",
       "interaction_kind": "deck_enchantment_preview_commit",
-      "owner_binding": "exact_current_enchant_selector",
-      "source_binding": "exact_enchantment_and_selected_card_instances",
+      "owner_binding": "exact_current_enchant_selector_in_preview_stage",
+      "source_binding": "SelfHelpBook.SelectAndEnchant|Kifuda.AfterObtained+CardSelectCmd.FromDeckForEnchantment+exact_runtime_source_binding",
       "operand_contract": "selected_cards_still_enchantable_and_confirm_enabled",
       "commit_contract": "native_enchant_preview_confirm",
       "completion_boundary": "immediate_postcondition_observed",
       "witness_id": "enchantment_screen_closed_and_exact_cards_enchanted",
       "risk_class": "persistent_run_mutation"
+    },
+    {
+      "surface_kind": "deck_enchant_selection",
+      "operation": "cancel_preview",
+      "interaction_kind": "deck_enchantment_preview_cancel",
+      "owner_binding": "exact_current_enchant_selector_in_preview_stage",
+      "source_binding": "SelfHelpBook.SelectAndEnchant|Kifuda.AfterObtained+CardSelectCmd.FromDeckForEnchantment+exact_runtime_source_binding",
+      "operand_contract": "exact_current_preview_and_enabled_cancel_control",
+      "commit_contract": "NDeckEnchantSelectScreen.preview_cancel.ForceClick",
+      "completion_boundary": "immediate_postcondition_observed",
+      "witness_id": "preview_closed_and_selection_cleared",
+      "risk_class": "reversible_navigation"
     },
     {
       "surface_kind": "shop_inventory",
@@ -158,6 +230,42 @@
       "completion_boundary": "immediate_postcondition_observed",
       "witness_id": "treasure_chest_opened_and_result_stage_reached",
       "risk_class": "persistent_run_mutation"
+    },
+    {
+      "surface_kind": "treasure_room",
+      "operation": "choose_treasure_relic",
+      "interaction_kind": "treasure_relic_claim",
+      "owner_binding": "exact_current_treasure_room_open_singleplayer_relic_collection",
+      "source_binding": "exact_single_visible_enabled_treasure_relic_holder",
+      "operand_contract": "exact_current_relic_instance_holder_and_player_inventory_baseline",
+      "commit_contract": "NTreasureRoomRelicHolder.ForceClick",
+      "completion_boundary": "immediate_postcondition_observed",
+      "witness_id": "treasure_relic_owned_and_selection_closed",
+      "risk_class": "persistent_run_mutation"
+    },
+    {
+      "surface_kind": "treasure_room",
+      "operation": "skip_treasure_relic",
+      "interaction_kind": "treasure_relic_skip",
+      "owner_binding": "exact_current_treasure_room_open_singleplayer_relic_collection",
+      "source_binding": "exact_visible_enabled_skip_proceed_control",
+      "operand_contract": "exact_current_room_collection_player_inventory_baseline_and_skip_control",
+      "commit_contract": "NTreasureRoom.ProceedButton.ForceClick",
+      "completion_boundary": "transaction_settled",
+      "witness_id": "treasure_relic_skipped_without_inventory_change_and_room_left",
+      "risk_class": "progression"
+    },
+    {
+      "surface_kind": "treasure_room",
+      "operation": "proceed_treasure_room",
+      "interaction_kind": "treasure_room_exit",
+      "owner_binding": "exact_current_treasure_room_with_result_collection_closed",
+      "source_binding": "exact_visible_enabled_non_skip_proceed_control",
+      "operand_contract": "exact_current_room_and_proceed_control",
+      "commit_contract": "NTreasureRoom.ProceedButton.ForceClick",
+      "completion_boundary": "continuation_handoff_observed",
+      "witness_id": "treasure_room_left_or_map_opened",
+      "risk_class": "progression"
     }
   ]
 }

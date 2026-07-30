@@ -34,6 +34,10 @@ internal sealed class ShopInventorySurfaceProvider : IBridgeSurfaceProvider
     private const string SurfaceKind = "shop_inventory";
     internal const string CardPurchaseCompletionWitness =
         "shop_card_purchase_committed_with_exact_card_gold_and_entry_witness";
+    internal const string PotionPurchaseCompletionWitness =
+        "shop_potion_purchase_committed_with_exact_slot_gold_and_entry_witness";
+    internal const string CardRemovalHandoffCompletionWitness =
+        "shop_card_removal_selector_opened_or_removal_completed";
     internal const string CloseInventoryCompletionWitness =
         "shop_inventory_closed";
 
@@ -435,7 +439,7 @@ internal sealed class ShopInventorySurfaceProvider : IBridgeSurfaceProvider
                 () => !ShopSurfaceFacts.ContainsPotionInstance(expectedInventory.Player, expectedPotion),
                 () => ShopSurfaceFacts.CanProcurePotion(expectedInventory.Player, expectedPotion),
                 null,
-                "shop_potion_purchase_committed_with_exact_slot_gold_and_entry_witness"),
+                PotionPurchaseCompletionWitness),
             new[] { new ActionEntityBinding("shop_offer", offerId) });
 
     private static BridgeActionStartResult StartPurchase(
@@ -532,8 +536,9 @@ internal sealed class ShopInventorySurfaceProvider : IBridgeSurfaceProvider
                           expectedMerchantRoom,
                           expectedRoom,
                           expectedInventory)),
-            "shop_card_removal_selector_opened_or_removal_completed",
-            allowIntermediateStateChanges: true);
+            CardRemovalHandoffCompletionWitness,
+            allowIntermediateStateChanges: true,
+            completionBoundary: "continuation_handoff_observed");
     }
 
     private static BridgeActionStartResult StartCloseInventory(

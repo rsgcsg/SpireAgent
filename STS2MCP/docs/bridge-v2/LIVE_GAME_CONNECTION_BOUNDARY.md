@@ -2,7 +2,7 @@
 
 Status: canonical architecture boundary for the current real-game connection.
 
-Current source compatibility status: C# and Re share `2.0-preview.78`, including
+Current source compatibility status: C# and Re share `2.0-preview.79`, including
 operation scopes, a Gateway artifact digest, separate actual-loaded versus
 release-declared game assembly hashes, reviewed exact-environment policy
 provenance, structural combat-pile transaction semantics, minimal local
@@ -17,8 +17,10 @@ high-precision contracts and 81 use conservative identity/test-confirm
 fallbacks. Fallback identity is not semantic equivalence or persistent
 qualification. Preview.77 enforces that boundary in Gateway and operator
 package validation: fallback identity remains volatile session trial only.
-Preview.78 migrates six ordinary combat/shop operations to reviewed explicit
-contracts while retaining one publication and authority path. Multi-environment
+Preview.78 migrates ordinary combat/shop operations to reviewed explicit
+contracts. Preview.79 removes the final supported mixed Surface authority,
+leaving 22 explicit contracts and 65 volatile fallbacks while retaining one
+publication and authority path. Multi-environment
 Profiles are non-authorizing, and the append-only ledger hot-reloads only after
 exact revalidation. The loaded identity and precise evidence boundary are
 recorded in [Current Status](CURRENT_STATUS.md). Preview.69 adds exact
