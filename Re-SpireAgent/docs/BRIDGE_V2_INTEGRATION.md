@@ -1,16 +1,16 @@
 # Bridge v2 Integration
 
 > Current source-truth status, 2026-07-30: Re and C# share the
-> `2.0-preview.81` source consumer contract; Re normalized schema is `31`.
+> `2.0-preview.82` source consumer contract; Re normalized schema is `31`.
 > Gate 1 is closed as a bounded ordinary-single-player v2 connector baseline.
 > Exact Preview.79 runs `run-20260730032119-vivqvr` and
 > `run-20260730033205-b759ts` completed 173- and 100-decision boundaries with
 > 268 settled mutations and two safe stale refusals. Preview.80 moved five
-> standard-run boundary Surfaces; Preview.81 additionally moves merchant and
-> reward removal, Scroll Boxes bundle and event dialogue to explicit contracts
-> and rejects
-> all inherited session scope. Provenance is `unrecorded`; Preview.81 is
-> installed but not yet cold-loaded.
+> standard-run boundary Surfaces; Preview.81 additionally moved merchant and
+> reward removal, Scroll Boxes bundle and event dialogue to explicit contracts.
+> Exact Preview.81 runs later completed broad journeys and reproduced a native
+> map-annotation owner gap plus fatal Re handling of non-mutating stale
+> receipts. Preview.82 repairs both and is installed but not yet cold-loaded.
 
 ## Connector Boundary
 
@@ -30,7 +30,7 @@ consumption.
 
 ## Current Scope
 
-Re-SpireAgent implements the strict `2.0-preview.81` consumer contract. When a
+Re-SpireAgent implements the strict `2.0-preview.82` consumer contract. When a
 matching Bridge exists, authority is read from capabilities rather than
 inferred from implementation or historical evidence.
 
@@ -516,9 +516,13 @@ than the fixed read-only contract, the surface is not advertised, context and su
 conflict, diagnostics contradict actions, readiness/completeness is incoherent,
 or command identity/status/outcome is inconsistent.
 
-`completed/confirmed` is accepted. `rejected/not_applied` is safely rejected.
-`failed/unknown`, `timed_out/unknown`, transport uncertainty after submit, and
-poll timeout are unknown and never automatically retried.
+`completed/confirmed` is accepted. Exact
+`rejected/not_applied/stale_state` is recorded as recoverable
+`not_executed_stale_state`; the advertised action is discarded and the next
+tick must read fresh state. Other `rejected/not_applied` results remain safe
+non-execution failures. `failed/unknown`, `timed_out/unknown`, transport
+uncertainty after submit, and poll timeout are unknown and never automatically
+retried.
 
 `completeness.playerVisibleSemantics` is scoped to the active bounded Surface.
 Top-level `shared_state.completeness` separately scopes persistent HUD facts.

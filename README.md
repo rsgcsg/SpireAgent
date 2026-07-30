@@ -18,23 +18,25 @@ third-party clients.
 
 ## Current Truth
 
-The active source Connector contract is `2.0-preview.81`; Re normalized schema
+The active source Connector contract is `2.0-preview.82`; Re normalized schema
 is `31`. Gate 1/M0 is closed as a bounded ordinary-single-player v2 interface:
 Re and the optional MCP adapter are v2-only, Gateway `/api/v1` is retired, and
 the exact loaded Preview.74 completed a 202-decision bounded one-game journey.
 Preview.77 added the typed durable-contract boundary; Preview.78 moved ordinary
 combat plus ordinary shop navigation/card purchase onto reviewed explicit
 native contracts; Preview.79 removed the final supported mixed Surfaces; and
-Preview.80 moved five complete standard-run boundary Surfaces, and Preview.81
+Preview.80 moved five complete standard-run boundary Surfaces, Preview.81
 moves merchant/reward removal, Scroll Boxes bundle and event dialogue to
-explicit owner/source/Commit/Outcome contracts without another authority path.
+explicit owner/source/Commit/Outcome contracts, and Preview.82 adds the exact
+native map-annotation exit plus recoverable handling of non-mutating Gateway
+stale rejections.
 
-Exact Preview.79 runs completed 173- and 100-decision game boundaries with
-268 total settled mutations, two safe pre-execution stale refusals, and no
-unsupported, unknown or unsettled outcome. A separate one-decision run stopped
-on a DeepSeek network `fetch failed`, not a Gateway defect. All three have
-`unrecorded` provenance. Preview.81 is built and installed but not yet
-cold-loaded, so the runs are bounded predecessor coverage, not Preview.81
+Exact loaded Preview.81 run `run-20260730074240-h09vpq` completed a
+188-decision game boundary with 185 settled actions, one safe stale refusal and
+the expected top-level stop. Later P81 runs reproduced a persistent native map
+drawing owner and two stale receipts that Re incorrectly made fatal. All have
+`unrecorded` provenance. Preview.82 is built and installed but not yet
+cold-loaded, so P81 runs are predecessor coverage and defect evidence, not P82
 evidence, Organic evidence, persistent qualification or strategy proof. See
 [current status](docs/current/STATUS.md).
 

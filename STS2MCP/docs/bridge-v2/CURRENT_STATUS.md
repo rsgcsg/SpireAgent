@@ -8,29 +8,29 @@ convergence is in
 ## Exact Truth
 
 ```text
-Gateway/Re source      2.0-preview.81
+Gateway/Re source      2.0-preview.82
 Re normalized schema  31
 Prompt/guide baseline  4 / 5
 source state           full tests/checks/build/install verified; static audit reviewed
 
-built/installed        2.0-preview.81
+built/installed        2.0-preview.82
 game                   v0.109.1|c8c577f6|-820620422
-built/installed SHA    411f8cf5f113e4d39db9d95fb6a5b625aae97eaf00c4ab9c0f3cdf93413637b1
-built/installed MVID   c09e8569-19af-4a34-b98b-49339300304b
-last loaded contract   2.0-preview.79
-last loaded SHA        1032e079ea1344fb42d1dce4f4dc60bfd85b36c1d7db167877d9e475dddf9268
-last loaded MVID       d9435656-951f-42f7-8275-7adc67f05572
-last runtime epoch     5faa3faa07ca4331a0eedadc3d91e1c3
+built/installed SHA    f5f4791091f0480432d2c30ce3bd8f946049380fde0ab02053692285c4ee3b4c
+built/installed MVID   1e12b8d5-ebcc-4bf1-a4bc-a9b768cdcc0f
+last loaded contract   2.0-preview.81
+last loaded SHA        411f8cf5f113e4d39db9d95fb6a5b625aae97eaf00c4ab9c0f3cdf93413637b1
+last loaded MVID       c09e8569-19af-4a34-b98b-49339300304b
+last runtime epoch     4955bd9ec2da426084ea7cff1cc0ae04
 last loaded Modset     exact_bridge_only / b1459e82...c785
 last Patch             clean_known_owners / ba7852fb...da70b
 last permission        migration_exploration / provisional_trial_scoped
 last qualification     empty / persistent authority false
-rollback               STS2MCP/.local/deployments/2026-07-30T06-55-52-576Z
+rollback               STS2MCP/.local/deployments/2026-07-30T08-38-44-247Z
 ```
 
-Preview.81 has a new protocol/DLL/catalog identity and inherits no Preview.79
+Preview.82 has a new protocol/DLL/catalog identity and inherits no Preview.81
 session grant or evidence. Build and installation are verified. The game is
-closed; loaded Preview.81 remains a non-claim until a cold start.
+closed; loaded Preview.82 remains a non-claim until a cold start.
 
 ## Current Contract
 
@@ -49,17 +49,30 @@ closed; loaded Preview.81 remains a non-claim until a cold start.
 
 ## Latest Evidence
 
-Exact loaded Preview.79 runs `run-20260730032119-vivqvr` and
-`run-20260730033205-b759ts` used source revision `9402fedb...`, Prompt/guide
-`4/5`, the SHA/MVID/runtime above and `provenance=unrecorded`. They completed
-173- and 100-decision boundaries with 268 settled mutations, two safe
-pre-execution treasure stale refusals and no unsupported, unknown or unsettled
-outcome. `run-20260730031529-qlyj44` stopped before Gateway execution on
-DeepSeek `fetch failed`.
+Exact loaded Preview.81 run `run-20260730074240-h09vpq` used source revision
+`83d80c2f...`, Prompt/guide `4/5`, the SHA/MVID/runtime above and
+`provenance=unrecorded`. It completed a 188-decision game boundary with 185
+settled actions and one safe stale refusal. Runs `...80025` and `...80059`
+reproduced persistent native map drawing ownership; runs `...80848` and
+`...80929` proved that Re made Gateway `rejected/not_applied/stale_state`
+receipts fatal. A provider length failure and a human termination are not
+Gateway mutation defects.
 
-The evidence supports this source audit but does not qualify Preview.81.
+The evidence supports the P82 repair scope but does not qualify Preview.82.
 
-## Preview.81 Delta
+## Preview.82 Delta
+
+- Exact native map drawing ownership is represented by
+  `map_navigation/exit_map_annotation`.
+- The action remains opaque and state-bound, uses native
+  `NMapDrawingInput.StopDrawing`, and completes on annotation-mode closure.
+- Re treats exact non-mutating stale rejection as recoverable fresh-observation
+  supervision; unknown outcomes remain terminal and non-retryable.
+- Operator process detection no longer mistakes its npm parent command for the
+  game.
+- The explicit catalog contains 50 contracts and 38 volatile fallbacks.
+
+Preview.81 retained the following contract/authority boundary:
 
 - Protocol reports `contract_kind` on every operation contract and applicable
   qualification; qualification-system schema is `2`.
@@ -88,7 +101,7 @@ connector shadows                              0
 permanent dual reads                           0
 production publication paths                   1
 production authority resolvers                 1
-explicit native contracts                     49
+explicit native contracts                     50
 manifest session fallback identities          38
 operation-authority branches                   3
 persistent fallback claim admission paths       0
@@ -111,4 +124,4 @@ New Leaf and Kifuda remain separate `pending exact-runtime evidence` gates.
 All available non-Live checks, Release build, backup and install are complete.
 The local qualification store is empty. Only a cold start can establish loaded
 identity; only exact-runtime mutation can establish new family evidence. See
-the [Preview.81 closeout](../../../docs/current/audits/WORKFLOW_C_PREVIEW81_SOURCE_CLOSED_SELECTOR_CONTRACT_WAVE_CLOSEOUT_2026-07-30.md).
+the [Preview.82 closeout](../../../docs/current/audits/WORKFLOW_C_PREVIEW82_RUNTIME_RECOVERY_CLOSEOUT_2026-07-30.md).

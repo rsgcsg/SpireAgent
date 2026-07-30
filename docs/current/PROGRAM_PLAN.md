@@ -118,12 +118,12 @@ persistent qualification, strategic quality or product readiness.
 
 ### Current Evidence
 
-Preview.81 is the current source contract with Re schema 31. Its loaded
-Preview.79 predecessor supplied 173- and 100-decision completed boundaries with
-268 settled mutations, two safe stale refusals and no unsupported, unknown or
-unsettled outcome. Provenance is `unrecorded`; this is runtime
-defect/coverage evidence, not Preview.81 load, Organic evidence or persistent
-qualification. Preview.81 leaves zero supported mixed Surfaces, 49 explicit
+Preview.82 is the current source contract with Re schema 31. Its loaded
+Preview.81 predecessor supplied a 188-decision completed boundary with 185
+settled actions and later reproduced the native map-annotation and stale
+supervision defects. Provenance is `unrecorded`; this is runtime
+defect/coverage evidence, not Preview.82 load, Organic evidence or persistent
+qualification. Preview.82 leaves zero supported mixed Surfaces, 50 explicit
 contracts and 38 typed fallbacks, and is built/installed pending cold-load.
 
 ### Delivery Order

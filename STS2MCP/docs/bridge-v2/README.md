@@ -1,7 +1,7 @@
 # Bridge v2 Documentation
 
 Bridge v2 is the active semantic Gateway protocol. C# and Re source now share
-`2.0-preview.81`; Re normalized schema is `31`. Gate 1 is closed as a bounded
+`2.0-preview.82`; Re normalized schema is `31`. Gate 1 is closed as a bounded
 ordinary-single-player v2 connector baseline and the complete v1 HTTP namespace
 is retired. Preview.61 supplied the final Neow's Fury runtime seal. Preview.62
 adds reviewed registry/policy adaptation and non-authorizing exact-assembly
@@ -11,10 +11,10 @@ provide authentication. Preview.65 adds disabled-by-default persistent
 operation qualification and impact-diff tooling. Preview.66 adds
 multi-environment Profiles, risk-based migration candidates, evidence
 aggregation, automatic package orchestration, and atomic store reload. The
-final local binary has qualified only `main_menu/continue_run` through real
+historical local binary qualified only `main_menu/continue_run` through real
 two-epoch evidence and cold-restart revalidation. Its 87-operation projection
 contains historical explicit contracts plus conservative manifest-derived
-fallbacks. Current Preview.81 has 49 explicit contracts and 38 typed session
+fallbacks. Current Preview.82 has 50 explicit contracts and 38 typed session
 fallbacks; no supported Surface mixes both kinds, and fallback packages are
 invalid rather than candidate or
 durable qualification. Start with current status, not historical
@@ -62,12 +62,14 @@ navigation/card purchase to explicit contracts and later completed exact
 three supported mixed Surfaces, then exact runs `run-20260730032119-vivqvr`
 and `run-20260730033205-b759ts` completed game boundaries. Preview.80 moved
 five standard-run boundary Surfaces; Preview.81 additionally moves two removal
-Surfaces, Scroll Boxes bundle and event dialogue to explicit contracts. It is
-built and installed, but not yet cold-loaded.
+Surfaces, Scroll Boxes bundle and event dialogue to explicit contracts.
+Preview.82 adds exact native map annotation exit and recoverable stale
+supervision. It is built and installed, but not yet cold-loaded.
 
 ## Current Documents
 
 - [Current status](CURRENT_STATUS.md)
+- [Preview.82 runtime recovery closeout](../../../docs/current/audits/WORKFLOW_C_PREVIEW82_RUNTIME_RECOVERY_CLOSEOUT_2026-07-30.md)
 - [Preview.81 source-closed selector contract closeout](../../../docs/current/audits/WORKFLOW_C_PREVIEW81_SOURCE_CLOSED_SELECTOR_CONTRACT_WAVE_CLOSEOUT_2026-07-30.md)
 - [Preview.80 standard-run boundary contract closeout](../../../docs/current/audits/WORKFLOW_C_PREVIEW80_STANDARD_RUN_BOUNDARY_CONTRACT_WAVE_CLOSEOUT_2026-07-30.md)
 - [Preview.79 mixed-Surface convergence closeout](../../../docs/current/audits/WORKFLOW_C_PREVIEW79_MIXED_SURFACE_CONVERGENCE_CLOSEOUT_2026-07-30.md)

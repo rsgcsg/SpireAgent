@@ -240,12 +240,13 @@ and the
 
 ## Current Architectural Constraint
 
-The Gateway and Re source share the mechanically checked `2.0-preview.81`
-contract and normalized schema 31. Preview.79 loaded as SHA `1032e079...` /
-MVID `d9435656...` / runtime `5faa3faa...` and completed 173- and 100-decision
-boundaries with 268 settled mutations, two safe pre-execution stale refusals
-and no unsupported, unknown or unsettled outcome. Preview.81 has a new source
-identity and inherits none of that runtime authority. Gate 1 remains a bounded v2 baseline: Re and
+The Gateway and Re source share the mechanically checked `2.0-preview.82`
+contract and normalized schema 31. Preview.81 loaded as SHA `411f8cf5...` /
+MVID `c09e8569...` / runtime `4955bd9e...` and completed a 188-decision game
+boundary with 185 settled actions and one safe stale refusal. Later P81 runs
+reproduced exact native map annotation ownership and non-mutating stale
+receipts that Re made fatal. Preview.82 has a new source identity and inherits
+none of that runtime authority. Gate 1 remains a bounded v2 baseline: Re and
 the default MCP adapter are v2-only, Gateway v1 is retired, and historical v1
 data is replay-only. The run's provenance is `unrecorded`, so it is
 defect/coverage evidence rather than Organic qualification.
@@ -262,7 +263,7 @@ completion; startup negotiation is not an authority snapshot.
 Preview.74 made semantic and authority identities formal wire fields and
 removes the old shadows and control histories from state. Composite `state_id`
 still binds both for stale-action safety. One production publication path binds
-every action to contract/source/operands/state. Forty-nine explicit contracts use
+every action to contract/source/operands/state. Fifty explicit contracts use
 contract-digest admission; 38 typed manifest fallback identities temporarily
 retain runtime-only operation admission and must receive a family disposition
 before Clean Closure. Operation remains metadata for migrated families, not
@@ -274,7 +275,9 @@ navigation/card-purchase operations without adding an authority path.
 Preview.79 migrates the remaining shop-inventory, treasure and deck-enchant
 siblings; Preview.80 migrates five standard-run boundary Surfaces; Preview.81
 migrates source-closed merchant/reward removal, Scroll Boxes bundle and event
-dialogue Surfaces; supported mixed explicit/fallback Surfaces remain zero. The 38 unmigrated
+dialogue Surfaces; Preview.82 adds the source-audited native map annotation
+exit and repairs Re stale-rejection supervision. Supported mixed
+explicit/fallback Surfaces remain zero. The 38 unmigrated
 fallback identities still require vertical review or typed
 unsupported/`code_required`; that debt does not justify a universal selector,
 transaction layer or second rule engine.

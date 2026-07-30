@@ -102,6 +102,28 @@
       ]
     },
     {
+      "surface_kind": "map_navigation",
+      "operation": "exit_map_annotation",
+      "probes": [
+        {
+          "type": "MegaCrit.Sts2.Core.Nodes.Screens.Map.NMapScreen",
+          "member_kind": "field",
+          "member": "_drawingInput"
+        },
+        {
+          "type": "MegaCrit.Sts2.Core.Nodes.Screens.Map.NMapDrawingInput",
+          "member_kind": "property",
+          "member": "DrawingMode"
+        },
+        {
+          "type": "MegaCrit.Sts2.Core.Nodes.Screens.Map.NMapDrawingInput",
+          "member_kind": "method",
+          "member": "StopDrawing",
+          "parameter_count": 0
+        }
+      ]
+    },
+    {
       "surface_kind": "deck_enchant_selection",
       "operation": "confirm_selection",
       "probes": [

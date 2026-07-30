@@ -43,6 +43,9 @@ not inherit authority from the archived root SpireAgent runtime.
 
 Current cross-component audits:
 
+- [Preview.82 runtime recovery closeout](audits/WORKFLOW_C_PREVIEW82_RUNTIME_RECOVERY_CLOSEOUT_2026-07-30.md):
+  exact Preview.81 run attribution, native map-annotation exit, recoverable
+  Gateway stale rejection, deployment identity and P82 Live non-claims.
 - [Preview.81 source-closed selector contract closeout](audits/WORKFLOW_C_PREVIEW81_SOURCE_CLOSED_SELECTOR_CONTRACT_WAVE_CLOSEOUT_2026-07-30.md):
   14-operation merchant/reward removal, Scroll Boxes and dialogue cutover,
   explicit exclusions, Preview.81 build/install identity and Live non-claims.

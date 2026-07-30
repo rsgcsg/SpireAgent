@@ -1,6 +1,6 @@
 {
   "schema_version": 3,
-  "catalog_id": "bridge_v2_native_action_contracts_v7",
+  "catalog_id": "bridge_v2_native_action_contracts_v9",
   "authority_effect": "explicit_native_contracts_plus_typed_session_fallbacks",
   "contracts": [
     {
@@ -110,6 +110,18 @@
       "completion_boundary": "immediate_postcondition_observed",
       "witness_id": "map_closed_or_current_map_coordinate_reached",
       "risk_class": "progression"
+    },
+    {
+      "surface_kind": "map_navigation",
+      "operation": "exit_map_annotation",
+      "interaction_kind": "map_annotation_navigation",
+      "owner_binding": "exact_current_map_screen_and_native_drawing_input",
+      "source_binding": "exact_active_NMapDrawingInput_with_matching_DrawingMode",
+      "operand_contract": "exact_advertised_native_drawing_input_instance_and_mode",
+      "commit_contract": "NMapDrawingInput.StopDrawing",
+      "completion_boundary": "immediate_postcondition_observed",
+      "witness_id": "map_annotation_mode_closed",
+      "risk_class": "reversible_navigation"
     },
     {
       "surface_kind": "combat_turn",

@@ -125,7 +125,7 @@ const CAPABILITIES = {
     { kind: "card_bundle_selection", support: "implemented_exact_game_version", operations: ["preview_card_bundle", "confirm_card_bundle", "cancel_card_bundle_preview"], evidence: "test-contract" },
     { kind: "card_reward_selection", support: "implemented_exact_game_version", operations: ["select_card_reward", "choose_card_reward_alternative"], evidence: "test-contract" },
     { kind: "reward_claim", support: "implemented_exact_game_version", operations: ["claim_reward", "discard_potion_for_reward", "proceed_rewards"], evidence: "test-contract" },
-    { kind: "map_navigation", support: "implemented_exact_game_version", operations: ["choose_map_node"], evidence: "test-contract" },
+    { kind: "map_navigation", support: "implemented_exact_game_version", operations: ["choose_map_node", "exit_map_annotation"], evidence: "test-contract" },
     { kind: "shop_inventory", support: "implemented_exact_game_version", operations: ["purchase_shop_card", "purchase_shop_relic", "purchase_shop_potion", "open_shop_card_removal", "close_shop_inventory"], evidence: "test-contract" },
     { kind: "shop_room", support: "implemented_exact_game_version", operations: ["open_shop_inventory", "proceed_shop"], evidence: "test-contract" },
     { kind: "treasure_room", support: "implemented_exact_game_version", operations: ["open_treasure_chest", "choose_treasure_relic", "skip_treasure_relic", "proceed_treasure_room"], evidence: "test-contract" },
@@ -4127,6 +4127,60 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toEqual([]);
   });
 
+  it("projects the exact opaque map annotation exit without reconstructing drawing legality", () => {
+    const state = structuredClone(MAP_NAVIGATION_STATE);
+    state.surface.drawing_mode = "drawing";
+    state.surface.next_options = [];
+    state.legal_actions = [{
+      action_id: "action-exit-map-annotation",
+      state_id: "state-map-1",
+      kind: "exit_map_annotation",
+      category: "navigation",
+      label: "Exit map annotation mode",
+      authority: "game_ui",
+      evidence_code: "NMapDrawingInput.StopDrawing",
+      entity_bindings: [{ role: "map_screen", entity_id: "map-screen-1" }]
+    }];
+    state.completeness.legal_actions = "derived_from_exact_active_map_annotation_input_stop_control";
+
+    const envelope = normalizeCurrentState(
+      wrapBridgeV2State({ state, capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    );
+
+    expect(envelope.currentState).toMatchObject({
+      stability: "actionable",
+      actionAuthority: "bridge_advertised",
+      surface: {
+        kind: "map_navigation",
+        drawingMode: "drawing",
+        nextOptions: []
+      }
+    });
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toEqual([
+      expect.objectContaining({
+        id: "action-exit-map-annotation",
+        entityBindings: [{ role: "map_screen", entityId: "map-screen-1" }],
+        action: expect.objectContaining({
+          kind: "bridge_v2_action",
+          bridgeActionKind: "exit_map_annotation"
+        })
+      })
+    ]);
+
+    const ambiguous = structuredClone(state);
+    ambiguous.legal_actions[0]!.entity_bindings.push({
+      role: "map_node",
+      entity_id: "map-node-left"
+    });
+    const ambiguousEnvelope = normalizeCurrentState(
+      wrapBridgeV2State({ state: ambiguous, capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    );
+    expect(ambiguousEnvelope.currentState.stability).toBe("invalid");
+    expect(ambiguousEnvelope.currentState.actionAuthority).toBe("none");
+  });
+
   it("fails closed when a map action is not a current visible travel choice", () => {
     const hiddenChoice = structuredClone(MAP_NAVIGATION_STATE);
     hiddenChoice.legal_actions[0]!.entity_bindings[0]!.entity_id = "map-node-right-next";
@@ -6653,14 +6707,38 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     });
     expect(submissions).toBe(1);
   });
+
+  it("preserves an exact Gateway stale-state rejection for recoverable supervision", async () => {
+    const adapter = commandAdapter((requestId, control) =>
+      command(requestId, "rejected", control, "stale_state"));
+    const action = await firstBridgeAction(adapter);
+
+    await expect(adapter.execute(action)).resolves.toMatchObject({
+      accepted: false,
+      outcome: "rejected",
+      rejectionCode: "stale_state",
+      response: {
+        status: "rejected",
+        outcome: "not_applied",
+        events: [expect.objectContaining({ error_code: "stale_state" })]
+      }
+    });
+  });
 });
 
 function command(
   requestId: string | undefined,
-  status: "started" | "completed" | "failed" | "timed_out",
-  control: TestControlState
+  status: "started" | "completed" | "failed" | "timed_out" | "rejected",
+  control: TestControlState,
+  errorCode?: string
 ) {
-  const outcome = status === "completed" ? "confirmed" : status === "failed" || status === "timed_out" ? "unknown" : "pending";
+  const outcome = status === "completed"
+    ? "confirmed"
+    : status === "failed" || status === "timed_out"
+      ? "unknown"
+      : status === "rejected"
+        ? "not_applied"
+        : "pending";
   return {
     request_id: requestId ?? "request-missing",
     expected_state_id: "state-test-1",
@@ -6678,7 +6756,13 @@ function command(
       controller_lease_id: control.controllerLeaseId,
       controller_generation: control.controllerGeneration
     },
-    events: [{ status, at: "2026-07-16T00:00:00Z", evidence: status === "completed" ? "test_completion" : null, error_code: null, detail: null }]
+    events: [{
+      status,
+      at: "2026-07-16T00:00:00Z",
+      evidence: status === "completed" ? "test_completion" : null,
+      error_code: errorCode ?? null,
+      detail: errorCode ? "fixture rejection" : null
+    }]
   };
 }
 

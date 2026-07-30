@@ -170,3 +170,20 @@ one source/condition result to Deck Transform/New Leaf or Wood Carvings.
 Those families remain fallback until their contract/evidence partition can be
 represented without sibling authorization. See the
 [Preview.81 closeout](../audits/WORKFLOW_C_PREVIEW81_SOURCE_CLOSED_SELECTOR_CONTRACT_WAVE_CLOSEOUT_2026-07-30.md).
+
+## Preview.82 Implementation Note
+
+Preview.82 validates the architecture against a native input mode that is not a
+route choice. `map_navigation/exit_map_annotation` is an explicit contract
+with its own exact source binding, native `StopDrawing` Commit and
+annotation-closure Outcome. It reuses map observation mechanics but does not
+reuse the route operand or completion contract.
+
+This leaves `50` explicit contracts, `38` volatile fallbacks and one
+publication/authority path. The private drawing input remains inside the
+Gateway's state-bound action and execution revalidation; Re imports only the
+opaque action and visible map-screen binding. The related Re stale-rejection
+repair also preserves the ADR boundary: an exact non-mutating stale receipt
+causes fresh observation, while unknown mutation remains terminal. P81 defect
+evidence does not authorize P82. See the
+[Preview.82 closeout](../audits/WORKFLOW_C_PREVIEW82_RUNTIME_RECOVERY_CLOSEOUT_2026-07-30.md).

@@ -6,16 +6,14 @@
 > below are preserved as dated evidence and must not override those documents.
 
 Status update 2026-07-30 (current pointer only): source contract is
-`2.0-preview.81`; Re normalized schema is `31`. Preview.80 moved 13 standard
-run boundary operations; Preview.81 additionally moves 14 merchant/reward
-removal, Scroll Boxes and dialogue operations, leaving `49 explicit / 38
-fallback` and zero supported mixed Surfaces. Exact Preview.79 runs
-`run-20260730032119-vivqvr` and
-`run-20260730033205-b759ts` completed game boundaries with 268 settled
-mutations; their `unrecorded` provenance cannot qualify Preview.81. Preview.81
-is installed as SHA `411f8cf5...637b1`, MVID `c09e8569...0304b`; loaded
-identity remains a non-claim until cold start. Canonical status owns exact
-identities and rollback.
+`2.0-preview.82`; Re normalized schema is `31`. Preview.82 leaves `50 explicit
+/ 38 fallback` and zero supported mixed Surfaces. Exact loaded Preview.81 run
+`run-20260730074240-h09vpq` completed a 188-decision boundary; later P81 runs
+reproduced native map annotation ownership and stale receipts that Re
+incorrectly made fatal. Their `unrecorded` provenance cannot qualify
+Preview.82. Preview.82 is installed as SHA `f5f47910...3b4c`, MVID
+`1e12b8d5...cc0f`; loaded identity remains a non-claim until cold start.
+Canonical status owns exact identities and rollback.
 
 Earlier status update 2026-07-29: source contract was
 `2.0-preview.75`; Re normalized schema was `30`. Preview.75 exact runs on SHA

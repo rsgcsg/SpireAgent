@@ -254,11 +254,21 @@ function sourceProtocols() {
   };
 }
 
+export function processListHasGame(processList) {
+  return processList.split("\n").some((line) => {
+    const command = line.replace(/^\s*\d+\s+/u, "").trim();
+    return command === "Slay the Spire 2"
+      || command === "SlayTheSpire2"
+      || command.endsWith("/Contents/MacOS/Slay the Spire 2")
+      || command.endsWith("/SlayTheSpire2");
+  });
+}
+
 function gameProcessRunning() {
   if (process.platform === "win32") return false;
   const result = spawnSync("ps", ["-Ao", "pid=,comm="], { encoding: "utf8" });
   if (result.status !== 0) return false;
-  return result.stdout.split("\n").some((line) => /Slay ?the ?Spire ?2|SlayTheSpire2/iu.test(line));
+  return processListHasGame(result.stdout);
 }
 
 function run(command, args, options = {}) {

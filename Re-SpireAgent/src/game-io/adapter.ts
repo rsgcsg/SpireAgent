@@ -5,6 +5,7 @@ export type RawGameState = JsonObject;
 export interface GameExecutionResult {
   accepted: boolean;
   outcome?: "accepted" | "rejected" | "unknown";
+  rejectionCode?: string;
   settlementAuthority?: "adapter_confirmed" | "client_observation_required";
   confirmedStateToken?: string;
   response: JsonValue;

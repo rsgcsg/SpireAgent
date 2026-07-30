@@ -1,24 +1,25 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.81`
+Protocol preview: `2.0-preview.82`
 
-Preview.81 changes no JSON shape or Re normalized schema. It moves every
-operation on merchant `deck_removal_selection`,
-`reward_deck_removal_selection`, Scroll Boxes `card_bundle_selection` and
-`event_dialogue` from manifest fallback identity to a distinct reviewed native
-contract. Action kinds and wire operands remain stable. Preview.80 previously
-migrated the five standard-run boundary Surfaces.
+Preview.82 changes no JSON shape or Re normalized schema. It adds
+`map_navigation/exit_map_annotation` as an explicit native action contract.
+The action is published only for an exact active native
+`NMapDrawingInput`, binds the visible map screen, commits through
+`NMapDrawingInput.StopDrawing`, and witnesses annotation mode closing.
+`choose_map_node` remains a separate route condition partition.
 
-The explicit catalog contains 49 reviewed contracts and 38 volatile manifest
-fallbacks. No supported Surface mixes explicit and fallback authority. This is
-an authority-identity convergence, not qualification. Preview.81 does not
-transfer evidence to Precise Scissors, Deck Upgrade, Deck Transform/New Leaf,
-Wood Carvings or another visually similar selector source.
+The explicit catalog contains 50 reviewed contracts and 38 volatile manifest
+fallbacks. No supported Surface mixes explicit and fallback authority.
+Preview.82 also clarifies client supervision: an exact
+`rejected/not_applied/stale_state` command means no native mutation occurred,
+so Re records `not_executed_stale_state` and obtains a fresh observation. It
+does not resubmit the old action. Unknown, timed-out and transport-uncertain
+outcomes remain terminal and non-retryable.
 
-Preview.79 exact-runtime runs establish predecessor coverage for the ordinary
-open/select/embark, event, card-reward, game-over and merchant removal paths.
-They cannot authorize Preview.81 because its DLL, catalog and contract digests
-changed.
+Exact Preview.81 runs establish predecessor coverage and reproduce both P82
+defects. They cannot authorize Preview.82 because its DLL, catalog and
+contract digests changed.
 
 Preview.77 types the qualification contract boundary:
 
@@ -1020,6 +1021,7 @@ Current selection and reward completion evidence:
 | event dialogue advance | exact current dialogue index advances or the event room closes |
 | card bundle preview/confirm/cancel | exact selected bundle enters preview; confirm closes the selector and every selected exact card instance appears in the run deck; cancel returns to choices |
 | map node choice | map closes or the exact current map coordinate reaches the selected node |
+| map annotation exit | exact annotation mode becomes `none`, or the exact map owner leaves |
 | rest Heal | game-native base-heal minimum reached plus rest-option progression; additional native side effects may raise final HP further |
 | rest Smith | exact `deck_upgrade_selection` child opens; arbitrary overlays do not complete |
 | rest Proceed | map opens or the rest room leaves |

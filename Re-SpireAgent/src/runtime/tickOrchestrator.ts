@@ -254,6 +254,27 @@ export class TickOrchestrator {
       return result(decisionId, record.outcome, pre.currentState, validation.selectedAction.id, true);
     }
 
+    if (execution.stage === "adapter_stale") {
+      const record = decisionRecordWithLlm({
+        runId: this.dependencies.recorder.runId,
+        decisionId,
+        tick,
+        startedAt,
+        outcome: "not_executed_stale_state",
+        preState: prepared.preState,
+        allowedActions,
+        prompt: prepared.prompt,
+        session,
+        selectedActionId: validation.selectedAction.id,
+        selectedAction: validation.selectedAction.action,
+        stateHashMatched: false,
+        adapterResult: execution.adapterResult.response,
+        error: execution.error
+      });
+      await this.dependencies.recorder.append(record);
+      return result(decisionId, record.outcome, pre.currentState, validation.selectedAction.id, false);
+    }
+
     if (execution.stage === "adapter_terminal") {
       const record = decisionRecordWithLlm({
         runId: this.dependencies.recorder.runId,

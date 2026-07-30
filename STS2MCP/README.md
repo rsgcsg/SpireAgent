@@ -21,15 +21,15 @@ Bridge v2 is the only mutation contract for the current Agent and default MCP
 adapter. It remains an incremental semantic/visibility preview, not
 complete-game coverage.
 
-Current source is `2.0-preview.81`; Re normalized schema is `31`. Preview.81 is
-built and installed as SHA `411f8cf5...`, MVID `c09e8569...`; loaded identity
+Current source is `2.0-preview.82`; Re normalized schema is `31`. Preview.82 is
+built and installed as SHA `f5f47910...`, MVID `1e12b8d5...`; loaded identity
 remains a non-claim until cold start. The latest loaded predecessor was
-Preview.79 SHA `1032e079...`, MVID `d9435656...`, runtime `5faa3faa...`; it
-completed exact runs `run-20260730032119-vivqvr` and
-`run-20260730033205-b759ts`. Preview.77 types reviewed
+Preview.81 SHA `411f8cf5...`, MVID `c09e8569...`, runtime `4955bd9e...`; it
+completed exact run `run-20260730074240-h09vpq` and exposed the map annotation
+and Re stale-supervision defects repaired by Preview.82. Preview.77 types reviewed
 `explicit_native_contract` separately from runtime-only
 `manifest_migration_fallback` and rejects fallback durable packages in both
-Gateway and operator tooling. Preview.81 leaves 49 explicit contracts, 38
+Gateway and operator tooling. Preview.82 leaves 50 explicit contracts, 38
 volatile fallbacks and zero supported mixed explicit/fallback Surfaces. See
 [current status](docs/bridge-v2/CURRENT_STATUS.md) for exact
 build/install/load claims.

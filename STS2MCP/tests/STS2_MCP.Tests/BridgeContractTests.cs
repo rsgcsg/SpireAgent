@@ -1012,9 +1012,9 @@ public sealed class BridgeContractTests
         int manifestOperationCount = BridgeContractManifest.Entries
             .Sum(entry => entry.Operations.Count);
 
-        Assert.Equal(87, manifestOperationCount);
+        Assert.Equal(88, manifestOperationCount);
         Assert.Equal(manifestOperationCount, catalog.Count);
-        Assert.Equal(49, catalog.Count(contract =>
+        Assert.Equal(50, catalog.Count(contract =>
             contract.ContractKind == BridgeOperationQualificationCatalog.ExplicitNativeContract));
         Assert.Equal(38, catalog.Count(contract =>
             contract.ContractKind == BridgeOperationQualificationCatalog.ManifestMigrationFallback));
@@ -2110,6 +2110,21 @@ public sealed class BridgeContractTests
         Assert.False(MapNavigationSurfaceProvider.CanAdvertiseRouteActions(true, true, false, false, false));
         Assert.False(MapNavigationSurfaceProvider.CanAdvertiseRouteActions(true, false, false, false, true));
         Assert.False(MapNavigationSurfaceProvider.CanAdvertiseRouteActions(true, true, false, true, true));
+    }
+
+    [Fact]
+    public void MapAnnotationExitRequiresTheExactCurrentNativeInputOwner()
+    {
+        Assert.True(MapNavigationSurfaceProvider.CanAdvertiseAnnotationExit(
+            isOpen: true,
+            traveling: false,
+            inputDisabled: false,
+            annotationModeActive: true,
+            drawingInputAvailable: true));
+        Assert.False(MapNavigationSurfaceProvider.CanAdvertiseAnnotationExit(true, true, false, true, true));
+        Assert.False(MapNavigationSurfaceProvider.CanAdvertiseAnnotationExit(true, false, true, true, true));
+        Assert.False(MapNavigationSurfaceProvider.CanAdvertiseAnnotationExit(true, false, false, false, true));
+        Assert.False(MapNavigationSurfaceProvider.CanAdvertiseAnnotationExit(true, false, false, true, false));
     }
 
     [Fact]

@@ -211,7 +211,7 @@ const ACTION_KINDS = {
   ]),
   card_reward_selection: new Set(["select_card_reward", "choose_card_reward_alternative"]),
   reward_claim: new Set(["claim_reward", "discard_potion_for_reward", "proceed_rewards"]),
-  map_navigation: new Set(["choose_map_node"]),
+  map_navigation: new Set(["choose_map_node", "exit_map_annotation"]),
   shop_inventory: new Set([
     "purchase_shop_card",
     "purchase_shop_relic",
@@ -2132,15 +2132,32 @@ function validateMapNavigationState(
       diagnostics.invalid("bridge_v2.surface.next_options", option, "map choice does not match one visible travelable topology node");
     }
   }
-  if (readiness === "ready"
-      && (!surface.travel_enabled || surface.traveling || surface.drawing_mode !== "none")) {
-    diagnostics.invalid("bridge_v2.surface.readiness", surface, "ready map navigation requires route input ownership");
+  const routeActions = actions.filter((action) => action.kind === "choose_map_node");
+  const annotationExitActions = actions.filter((action) => action.kind === "exit_map_annotation");
+  if (readiness === "ready" && surface.drawing_mode === "none"
+      && (!surface.travel_enabled || surface.traveling || routeActions.length === 0 || annotationExitActions.length > 0)) {
+    diagnostics.invalid("bridge_v2.surface.readiness", surface, "ready route navigation requires only current route actions");
+  }
+  if (readiness === "ready" && surface.drawing_mode !== "none"
+      && (surface.traveling || routeActions.length > 0 || annotationExitActions.length !== 1)) {
+    diagnostics.invalid("bridge_v2.surface.readiness", surface, "ready map annotation mode requires one exact exit action");
   }
   validateActions("map_navigation", stateId, actions, missing, advertisedOperations, readiness, diagnostics);
   for (const action of actions) {
-    const bindings = action.entity_bindings.filter((binding) => binding.role === "map_node");
-    if (bindings.length !== 1 || !optionIds.has(bindings[0]!.entity_id)) {
-      diagnostics.invalid("bridge_v2.legal_actions.entity_bindings", action.entity_bindings, "map action must bind exactly one current map choice");
+    if (action.kind === "choose_map_node") {
+      const bindings = action.entity_bindings.filter((binding) => binding.role === "map_node");
+      if (action.entity_bindings.length !== 1
+          || bindings.length !== 1
+          || !optionIds.has(bindings[0]!.entity_id)) {
+        diagnostics.invalid("bridge_v2.legal_actions.entity_bindings", action.entity_bindings, "map route action must bind exactly one current map choice");
+      }
+      continue;
+    }
+    const bindings = action.entity_bindings.filter((binding) => binding.role === "map_screen");
+    if (action.entity_bindings.length !== 1
+        || bindings.length !== 1
+        || bindings[0]!.entity_id !== surface.screen_entity_id) {
+      diagnostics.invalid("bridge_v2.legal_actions.entity_bindings", action.entity_bindings, "map annotation exit must bind the current map screen");
     }
   }
 }

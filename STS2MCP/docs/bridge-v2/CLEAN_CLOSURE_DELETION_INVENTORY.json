@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "source_protocol": "2.0-preview.81",
+  "source_protocol": "2.0-preview.82",
   "status": "migration_active_live_evidence_pending",
   "target": {
     "connector_shadow_count": 0,
@@ -21,8 +21,8 @@
     "production_action_publication_path_count": 1,
     "production_authority_resolver_count": 1,
     "operation_authority_usage_count": 3,
-    "explicit_native_contract_count": 49,
-    "explicit_contract_digest_admission_count": 49,
+    "explicit_native_contract_count": 50,
+    "explicit_contract_digest_admission_count": 50,
     "fallback_authority_contract_count": 38,
     "persistent_fallback_claim_admission_count": 0,
     "supported_mixed_explicit_fallback_surface_count": 0,
@@ -90,8 +90,8 @@
         "return_game_over"
       ],
       "authority_cutover": "five_complete_surfaces_use_distinct_explicit_contract_digests",
-      "runtime_evidence": "preview_79_runs_vivqvr_and_b759ts_exercised_open_standard_select_embark_event_card_reward_and_game_over_actions; alternative_ascension_and_back_paths_not_exercised",
-      "non_claims": "preview_80_not_loaded; no_runtime_evidence_for_alternative_ascension_or_back_paths; unrecorded_provenance_is_not_organic_or_durable_qualification",
+      "runtime_evidence": "preview_81_run_20260730074240_h09vpq exercised open_standard_select_embark_event_card_reward_and_game_over actions under exact loaded identity",
+      "non_claims": "no_runtime_evidence_for_alternative_ascension_or_back_paths; unrecorded_provenance_is_not_organic_or_durable_qualification",
       "rollback": "whole_artifact_restore"
     },
     {
@@ -113,8 +113,18 @@
         "event_dialogue/advance_event_dialogue"
       ],
       "authority_cutover": "four_complete_single_source_surfaces_use_distinct_explicit_contract_digests",
-      "runtime_evidence": "merchant removal and dialogue have predecessor exact-runtime coverage; reward removal and Scroll Boxes retain historical source/runtime evidence; preview_81_pending",
-      "non_claims": "preview_81_not_loaded; no evidence transfer to Precise Scissors, generic upgrade, Deck Transform/New Leaf, Wood Carvings or other selector sources",
+      "runtime_evidence": "preview_81_runs_h09vpq_and_qzuchn exercised merchant removal and dialogue under exact loaded identity; reward removal and Scroll Boxes retain historical source/runtime evidence",
+      "non_claims": "no evidence transfer to Precise Scissors, generic upgrade, Deck Transform/New Leaf, Wood Carvings or other selector sources",
+      "rollback": "whole_artifact_restore"
+    },
+    {
+      "family": "map_annotation_recovery_and_gateway_stale_supervision",
+      "operations": [
+        "map_navigation/exit_map_annotation"
+      ],
+      "authority_cutover": "map annotation exit uses one source-audited explicit native contract; Gateway stale rejection remains non-mutating and Re observes fresh state",
+      "runtime_evidence": "preview_81_runs_oaxily_and_vf7ui2 reproduced persistent native map drawing ownership; runs_p8byv8_and_nbos1d reproduced Gateway rejected/not_applied/stale_state receipts",
+      "non_claims": "preview_82_not_loaded; exit_map_annotation mutation and successor witness pending exact-runtime evidence; no durable qualification",
       "rollback": "whole_artifact_restore"
     }
   ],

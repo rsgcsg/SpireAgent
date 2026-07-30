@@ -2,7 +2,7 @@
 
 Status: canonical architecture boundary for the current real-game connection.
 
-Current source compatibility status: C# and Re share `2.0-preview.81`, including
+Current source compatibility status: C# and Re share `2.0-preview.82`, including
 operation scopes, a Gateway artifact digest, separate actual-loaded versus
 release-declared game assembly hashes, reviewed exact-environment policy
 provenance, structural combat-pile transaction semantics, minimal local
@@ -21,8 +21,9 @@ Preview.78 migrates ordinary combat/shop operations to reviewed explicit
 contracts. Preview.79 removes the final supported mixed Surface authority,
 Preview.80 migrated five standard-run boundary Surfaces, and Preview.81
 migrates merchant/reward removal, Scroll Boxes bundle and event dialogue,
-leaving 49 explicit contracts and 38 volatile fallbacks while retaining one
-publication and authority path. Multi-environment
+while Preview.82 adds exact native map annotation exit and recoverable
+non-mutating stale supervision. It leaves 50 explicit contracts and 38
+volatile fallbacks while retaining one publication and authority path. Multi-environment
 Profiles are non-authorizing, and the append-only ledger hot-reloads only after
 exact revalidation. The loaded identity and precise evidence boundary are
 recorded in [Current Status](CURRENT_STATUS.md). Preview.69 adds exact

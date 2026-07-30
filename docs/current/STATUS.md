@@ -21,57 +21,74 @@ temporary volatile trial key; it is not sufficient durable authority identity.
 ## Source, Install And Load
 
 ```text
-source contract       2.0-preview.81
+source contract       2.0-preview.82
 Re normalized schema  31
 Prompt/guide baseline global 4 / state guide 5
 source state          full tests/checks/build/install verified; static audit reviewed
 
-built/installed       2.0-preview.81
+built/installed       2.0-preview.82
 game release          v0.109.1|c8c577f6
 actual game hash      -820620422
-built/installed SHA   411f8cf5f113e4d39db9d95fb6a5b625aae97eaf00c4ab9c0f3cdf93413637b1
-built/installed MVID  c09e8569-19af-4a34-b98b-49339300304b
-last loaded contract  2.0-preview.79
-last loaded SHA       1032e079ea1344fb42d1dce4f4dc60bfd85b36c1d7db167877d9e475dddf9268
-last loaded MVID      d9435656-951f-42f7-8275-7adc67f05572
-last runtime          5faa3faa07ca4331a0eedadc3d91e1c3
+built/installed SHA   f5f4791091f0480432d2c30ce3bd8f946049380fde0ab02053692285c4ee3b4c
+built/installed MVID  1e12b8d5-ebcc-4bf1-a4bc-a9b768cdcc0f
+last loaded contract  2.0-preview.81
+last loaded SHA       411f8cf5f113e4d39db9d95fb6a5b625aae97eaf00c4ab9c0f3cdf93413637b1
+last loaded MVID      c09e8569-19af-4a34-b98b-49339300304b
+last runtime          4955bd9ec2da426084ea7cff1cc0ae04
 last loaded Modset    exact_bridge_only / b1459e82...c785
 last Patch            clean_known_owners / ba7852fb...da70b
 last permission       migration_exploration / provisional_trial_scoped
 last qualification    empty / persistent authority false
-rollback              STS2MCP/.local/deployments/2026-07-30T06-55-52-576Z
+rollback              STS2MCP/.local/deployments/2026-07-30T08-38-44-247Z
 ```
 
-Preview.81 changes the whole DLL, protocol, catalog and affected contract
-digests. Preview.79 evidence and session authority do not transfer. Source,
-tests, build and install are verified; because the game is closed after
-installation, loaded Preview.81 identity remains an explicit non-claim until a
-cold start.
+Preview.82 changes the DLL, protocol and map contract catalog. Preview.81
+evidence and session authority do not transfer. Source, tests, build and
+install are verified; because the game is closed after installation, loaded
+Preview.82 identity remains an explicit non-claim until a cold start.
 
 ## Latest Runtime Evidence
 
-Three exact Preview.79 runs use source `9402fedb...`, Prompt/guide `4/5`,
-loaded SHA/MVID/runtime shown above, exact bridge-only Modset, clean known
+Eight exact Preview.81 runs use source `83d80c2f...`, Prompt/guide `4/5`,
+the loaded SHA/MVID/runtime shown above, exact bridge-only Modset, clean known
 Patch and `provenance=unrecorded`:
 
 ```text
-run-20260730031529-qlyj44     1 decision; DeepSeek fetch failed; no Gateway submit
-run-20260730032119-vivqvr   173 decisions; 170 settled; 1 settling; 1 safe stale; boundary
-run-20260730033205-b759ts   100 decisions;  98 settled;             1 safe stale; boundary
-unsupported / unknown / unsettled across both complete runs    0 / 0 / 0
+run-20260730074240-h09vpq   188 decisions; 185 settled; 1 safe stale; complete boundary
+run-20260730080025-oaxily     8 observations; persistent map drawing owner
+run-20260730080059-vf7ui2     8 observations; same map drawing boundary
+run-20260730080113-tsnmie    32 decisions; provider finish_reason=length
+run-20260730080335-w4fitw    49 decisions; 35 settled; complete boundary
+run-20260730080848-p8byv8    26 decisions; stale receipt misclassified fatal
+run-20260730080929-nbos1d     2 decisions; same stale misclassification
+run-20260730080950-qzuchn    48 records; human termination after settled action
 ```
 
-The two complete runs exercise broad menu, character-select, map, combat,
-event, reward, rest, shop, treasure, selectors and game-over behavior. One
-includes three Headbutt CombatPile lifecycles; the other includes merchant
-removal and combat-hand selection. Both stale treasure choices were refused
-before Gateway submit. The first run's provider network failure is Re/provider
-infrastructure, not Gateway observation or mutation failure.
+The 188-decision run exercises broad menu, character-select, map, combat,
+event, reward, rest, shop, treasure, selectors, Inspection and game-over
+behavior. The later runs prove two local defects: the map annotation input was
+a stable player-owned mode with no published exit, and exact
+`rejected/not_applied/stale_state` receipts were incorrectly terminal in Re.
+Kifuda and New Leaf did not occur.
 
-This is exact-runtime predecessor coverage, not Preview.81 evidence, Organic
-evidence, persistent qualification or durable claim.
+This is exact-runtime Preview.81 coverage and defect evidence, not Preview.82
+evidence, Organic evidence, persistent qualification or durable claim.
 
-## Preview.81 Contract Delta
+## Preview.82 Delta
+
+- `map_navigation` now publishes source-audited `exit_map_annotation` only
+  while the exact active `NMapDrawingInput` owns drawing/erasing input.
+- Execution revalidates screen, private input instance, mode and readiness,
+  calls native `StopDrawing()`, and witnesses annotation mode closure.
+- Re decodes the new opaque action without reconstructing drawing legality.
+- A Gateway `rejected/not_applied/stale_state` receipt is recorded as
+  recoverable `not_executed_stale_state`; Re never retries the old action and
+  observes fresh state next tick.
+- The Operator Shell now matches exact game executable paths instead of
+  misclassifying an npm command that merely contains the game directory.
+- Explicit contract count is 50; volatile manifest fallback count remains 38.
+
+Preview.81 retained the following durable-contract boundary:
 
 - Every operation contract projection has `contract_kind`:
   `explicit_native_contract` or `manifest_migration_fallback`.
@@ -109,7 +126,7 @@ connector shadows                              0
 permanent dual-read paths                      0
 production action publication paths            1
 production authority resolvers                 1
-explicit native contracts                     49
+explicit native contracts                     50
 manifest session fallback identities          38
 operation-authority branches                   3
 persistent fallback claim admission paths       0
@@ -132,8 +149,8 @@ non-standard profile/menu paths and multiplayer. New Leaf and Kifuda are
 separate `pending exact-runtime evidence` gates; neither may be inferred from
 fixtures or another selector source.
 
-The local qualification store is empty and no Preview.79 session state can
-authorize Preview.81. Only after a complete game restart may loaded identity
+The local qualification store is empty and no Preview.81 session state can
+authorize Preview.82. Only after a complete game restart may loaded identity
 or a new bounded journey be claimed. Unknown mutation remains terminal and
 non-retryable. Detailed evidence and non-claims are in the
-[Preview.81 closeout](audits/WORKFLOW_C_PREVIEW81_SOURCE_CLOSED_SELECTOR_CONTRACT_WAVE_CLOSEOUT_2026-07-30.md).
+[Preview.82 closeout](audits/WORKFLOW_C_PREVIEW82_RUNTIME_RECOVERY_CLOSEOUT_2026-07-30.md).

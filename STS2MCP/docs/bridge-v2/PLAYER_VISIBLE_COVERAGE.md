@@ -10,11 +10,12 @@
 > loaded artifact. Current loaded identity and Gate status are owned by
 > [Bridge v2 Current Status](CURRENT_STATUS.md).
 
-Current source contract is Preview.81; installed and loaded identities are
-owned by `CURRENT_STATUS.md`. Exact Preview.79 runs
-`run-20260730032119-vivqvr` and `run-20260730033205-b759ts` completed broad
-bounded journeys. Their `unrecorded` provenance is coverage evidence, not
-Preview.81 runtime evidence, Organic evidence or persistent qualification. Preview.61
+Current source contract is Preview.82; installed and loaded identities are
+owned by `CURRENT_STATUS.md`. Exact loaded Preview.81 run
+`run-20260730074240-h09vpq` completed a broad 188-decision bounded journey.
+Later P81 runs reproduced native map drawing ownership and stale-supervision
+defects. Their `unrecorded` provenance is coverage/defect evidence, not
+Preview.82 runtime evidence, Organic evidence or persistent qualification. Preview.61
 supplied the bounded Neow's
 Fury Organic lifecycle that sealed Gate 1. Preview.62 added reviewed
 source/compatibility registries and a non-authorizing exact-assembly audit;
@@ -26,7 +27,7 @@ exact Hefty Tablet source/result handling and actionless settling consumption;
 Preview.73 repairs Rest minimum-Outcome and blocked semantic-owner projection;
 Preview.74 formalizes semantic/authority identity and starts vertical contract
 migration; Preview.75 enables bounded read-only Inspection canaries;
-Preview.81 leaves 49 explicit contracts, 38 volatile fallbacks and zero
+Preview.82 leaves 50 explicit contracts, 38 volatile fallbacks and zero
 supported mixed explicit/fallback Surfaces.
 None inherits historical operation coverage or
 qualification. Current installed and loaded identities are owned by
@@ -96,7 +97,7 @@ The `1833084275` environment inherits no permission from the current loaded
 | `event_card_acquisition` | canary | Brain Leech exact one-card deck commit | two-card and other event origins remain unqualified |
 | `reward_claim` | canary | ordinary claim, potion-capacity, child, and Proceed flows; fresh Gate 1 gold/potion/card/proceed journey on the exact loaded identity | linked/special rewards fail closed |
 | `card_reward_selection` | canary | repeated ordinary choices; fresh Gate 1 exact Headbutt selection | alternatives and special origins need diversity |
-| `map_navigation` | canary | repeated exact-node travel; fresh Gate 1 map-to-combat and reward-to-map journey | drawings, special modes, and multiplayer unsupported |
+| `map_navigation` | canary for route choice; annotation exit source-audited and evidence-pending | repeated exact-node travel; Preview.81 runs `...80025` and `...80059` proved persistent exact native drawing ownership; Preview.82 binds native `StopDrawing` and mode-closure witness | Preview.82 annotation mutation/successor, controller mode, special modes, and multiplayer remain unqualified |
 | `shop_room` | canary | open/close/Proceed current-build journeys | more lifecycle diversity required |
 | `shop_inventory` | canary | card/relic/potion purchases and removal launch with category-specific witnesses; Preview.69 long-run coverage crossed ordinary shop inventory repeatedly; Kifuda may prove purchase Commit plus an exact source-bound child handoff | Preview.68 Kifuda handoff has source/tests but no Organic canary; Preview.69 records are unrecorded coverage; other purchase categories still need repeated Organic coverage |
 | `treasure_room` | canary | exact relic choose and Proceed; repeated pre-dispatch refusal preserves the native 2.5-second relic-clickable/Skip-disabled action-set boundary; Preview.70 Silver Crucible runtime proved the native empty-chest branch reaches completed + normal Proceed | Preview.71 empty-chest completion repair has no loaded canary; open/skip diversity and multiplayer remain unqualified |

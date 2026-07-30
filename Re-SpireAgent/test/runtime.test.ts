@@ -601,6 +601,40 @@ describe("TickOrchestrator", () => {
     expect(recorder.records[0]?.error).toContain("will not be retried");
   });
 
+  it("continues from a fresh observation when the Gateway rejects a stale state binding", async () => {
+    const pre = await fixture("combat") as Sts2McpRawState;
+    const adapter = new FakeAdapter([pre, pre], {
+      accepted: false,
+      outcome: "rejected",
+      rejectionCode: "stale_state",
+      response: {
+        status: "rejected",
+        outcome: "not_applied",
+        events: [{ status: "rejected", error_code: "stale_state" }]
+      }
+    });
+    const recorder = new MemoryRecorder();
+
+    const result = await makeOrchestrator(adapter, fixedProvider("combat:end-turn"), recorder).runTick(1);
+
+    expect(result).toMatchObject({
+      outcome: "not_executed_stale_state",
+      shouldStopRun: false
+    });
+    expect(adapter.executed).toEqual([{ kind: "end_turn" }]);
+    expect(recorder.records[0]).toMatchObject({
+      outcome: "not_executed_stale_state",
+      execution: {
+        attempted: false,
+        stateHashMatchedBeforeExecution: false,
+        adapterResult: {
+          status: "rejected",
+          outcome: "not_applied"
+        }
+      }
+    });
+  });
+
   it("allows the current run to complete its game-over return lifecycle", async () => {
     const raw = await fixture("game-over") as Sts2McpRawState;
     const menu = await fixture("menu") as Sts2McpRawState;

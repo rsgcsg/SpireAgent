@@ -23,6 +23,8 @@ internal sealed class MapNavigationSurfaceProvider : IBridgeSurfaceProvider
     private const BindingFlags Flags = BindingFlags.Instance | BindingFlags.NonPublic;
     private static readonly FieldInfo? InputDisabledField =
         typeof(NMapScreen).GetField("_isInputDisabled", Flags);
+    private static readonly FieldInfo? DrawingInputField =
+        typeof(NMapScreen).GetField("_drawingInput", Flags);
 
     public string Kind => SurfaceKind;
 
@@ -75,6 +77,19 @@ internal sealed class MapNavigationSurfaceProvider : IBridgeSurfaceProvider
             nodes);
 
         DrawingMode drawingMode = screen.Drawings.GetLocalDrawingMode();
+        NMapDrawingInput? drawingInput = null;
+        if (drawingMode != DrawingMode.None)
+        {
+            if (DrawingInputField?.GetValue(screen) is not NMapDrawingInput activeDrawingInput
+                || !McpMod.IsLiveNode(activeDrawingInput)
+                || activeDrawingInput.DrawingMode != drawingMode)
+            {
+                return BindingUnavailable(
+                    game,
+                    "The active map annotation mode has no exact matching native drawing-input binding.");
+            }
+            drawingInput = activeDrawingInput;
+        }
         bool routeInputReady = CanAdvertiseRouteActions(
             screen.IsOpen,
             screen.IsTravelEnabled,
@@ -97,6 +112,15 @@ internal sealed class MapNavigationSurfaceProvider : IBridgeSurfaceProvider
             node.Point.coord.row,
             PointType(node.Point))).ToArray();
         List<BridgeActionDraft> actions = travelable.Select(node => BuildAction(screen, runState, node, entities)).ToList();
+        if (drawingInput != null && CanAdvertiseAnnotationExit(
+                screen.IsOpen,
+                screen.IsTraveling,
+                inputDisabled,
+                drawingMode != DrawingMode.None,
+                drawingInputAvailable: true))
+        {
+            actions.Add(BuildAnnotationExitAction(screen, drawingInput, drawingMode, entities));
+        }
 
         var surface = new MapNavigationSurface(
             SurfaceKind,
@@ -108,11 +132,13 @@ internal sealed class MapNavigationSurfaceProvider : IBridgeSurfaceProvider
         string readiness = actions.Count > 0 ? "ready" : "settling";
         IReadOnlyList<string> warnings = drawingMode == DrawingMode.None
             ? Array.Empty<string>()
-            : new[] { "map_annotation_mode_suppresses_route_actions" };
+            : new[] { "map_annotation_mode_active_route_actions_suppressed" };
         var completeness = new StateCompleteness(
             "contract_complete_for_visible_singleplayer_map_navigation",
             actions.Count > 0
-                ? "derived_from_exact_current_travelable_map_point_controls"
+                ? drawingMode == DrawingMode.None
+                    ? "derived_from_exact_current_travelable_map_point_controls"
+                    : "derived_from_exact_active_map_annotation_input_stop_control"
                 : "temporarily_empty_while_map_input_is_not_route_ready",
             new[]
             {
@@ -150,6 +176,18 @@ internal sealed class MapNavigationSurfaceProvider : IBridgeSurfaceProvider
         bool inputDisabled,
         bool drawingModeNone) =>
         isOpen && travelEnabled && !traveling && !inputDisabled && drawingModeNone;
+
+    internal static bool CanAdvertiseAnnotationExit(
+        bool isOpen,
+        bool traveling,
+        bool inputDisabled,
+        bool annotationModeActive,
+        bool drawingInputAvailable) =>
+        isOpen
+        && !traveling
+        && !inputDisabled
+        && annotationModeActive
+        && drawingInputAvailable;
 
     internal static bool CanAdvertiseMapChoice(
         bool stateTravelable,
@@ -235,6 +273,54 @@ internal sealed class MapNavigationSurfaceProvider : IBridgeSurfaceProvider
             "NMapPoint.OnRelease+NMapScreen.OnMapPointSelectedLocally",
             () => StartTravel(screen, runState, node, coord),
             new[] { new ActionEntityBinding("map_node", nodeId) });
+    }
+
+    private static BridgeActionDraft BuildAnnotationExitAction(
+        NMapScreen screen,
+        NMapDrawingInput drawingInput,
+        DrawingMode drawingMode,
+        BridgeEntityRegistry entities)
+    {
+        string inputId = entities.GetId(drawingInput, "map_annotation_input");
+        string screenId = entities.GetId(screen, "screen");
+        return new BridgeActionDraft(
+            $"exit_map_annotation:{inputId}:{drawingMode}",
+            "exit_map_annotation",
+            "navigation",
+            "Exit map annotation mode",
+            "NMapDrawingInput.StopDrawing",
+            () => StopAnnotation(screen, drawingInput, drawingMode),
+            new[] { new ActionEntityBinding("map_screen", screenId) });
+    }
+
+    private static BridgeActionStartResult StopAnnotation(
+        NMapScreen expectedScreen,
+        NMapDrawingInput expectedInput,
+        DrawingMode expectedMode)
+    {
+        if (!ReferenceEquals(NMapScreen.Instance, expectedScreen)
+            || !expectedScreen.IsOpen
+            || expectedScreen.IsTraveling
+            || InputDisabledField?.GetValue(expectedScreen) is not bool inputDisabled
+            || inputDisabled
+            || DrawingInputField?.GetValue(expectedScreen) is not NMapDrawingInput currentInput
+            || !ReferenceEquals(currentInput, expectedInput)
+            || !McpMod.IsLiveNode(expectedInput)
+            || expectedInput.DrawingMode != expectedMode
+            || expectedMode == DrawingMode.None
+            || expectedScreen.Drawings.GetLocalDrawingMode() != expectedMode)
+        {
+            return BridgeActionStartResult.Rejected(
+                "map_annotation_input_changed",
+                "The advertised native map annotation input is no longer the exact current owner.");
+        }
+
+        expectedInput.StopDrawing();
+        return BridgeActionStartResult.Started(
+            () => !ReferenceEquals(NMapScreen.Instance, expectedScreen)
+                  || !expectedScreen.IsOpen
+                  || expectedScreen.Drawings.GetLocalDrawingMode() == DrawingMode.None,
+            "map_annotation_mode_closed");
     }
 
     private static BridgeActionStartResult StartTravel(

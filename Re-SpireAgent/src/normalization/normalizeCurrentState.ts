@@ -392,7 +392,10 @@ function determineStability(surface: InteractionSurface, diagnosticsStatus: "ok"
     if ("legalActions" in surface) return surface.legalActions.length > 0 ? "actionable" : "loading";
     return surface.items.length > 0 || surface.canProceed ? "actionable" : "loading";
   }
-  if (surface.kind === "map_navigation") return surface.nextOptions.length > 0 ? "actionable" : "loading";
+  if (surface.kind === "map_navigation") {
+    if (surface.legalActions) return surface.legalActions.length > 0 ? "actionable" : "loading";
+    return surface.nextOptions.length > 0 ? "actionable" : "loading";
+  }
   if (surface.kind === "event_dialogue") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "event_option") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "rest_site") return surface.legalActions.length > 0 ? "actionable" : "loading";

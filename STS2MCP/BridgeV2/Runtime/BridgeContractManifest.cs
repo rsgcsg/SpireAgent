@@ -65,6 +65,8 @@ internal static class BridgeContractManifest
         "../docs/current/audits/WORKFLOW_C_PREVIEW80_STANDARD_RUN_BOUNDARY_CONTRACT_WAVE_CLOSEOUT_2026-07-30.md";
     private const string Preview81Closeout =
         "../docs/current/audits/WORKFLOW_C_PREVIEW81_SOURCE_CLOSED_SELECTOR_CONTRACT_WAVE_CLOSEOUT_2026-07-30.md";
+    private const string Preview82Closeout =
+        "../docs/current/audits/WORKFLOW_C_PREVIEW82_RUNTIME_RECOVERY_CLOSEOUT_2026-07-30.md";
 
     public static readonly IReadOnlyList<BridgeContractManifestEntry> Entries = new[]
     {
@@ -247,11 +249,15 @@ internal static class BridgeContractManifest
                     "choose_map_node",
                     BridgeOperationEvidenceStatus.OrganicCanaryExercised,
                     "../archive/bridge-v2-previews/2026-07/PREVIEW_35_MAP_CONTROLLER_GATE_CLOSEOUT_2026-07-18.md",
-                    "docs/bridge-v2/PLAYER_VISIBLE_COVERAGE.md")
+                    "docs/bridge-v2/PLAYER_VISIBLE_COVERAGE.md"),
+                Operation(
+                    "exit_map_annotation",
+                    BridgeOperationEvidenceStatus.SourceAudited,
+                    Preview82Closeout)
             },
-            "sts2-v0.109.0:NMapScreen+NMapPoint+RunState.Map+OnMapPointSelectedLocally+exact-source-canary",
+            "sts2-v0.109.1:NMapScreen+NMapPoint+RunState.Map+OnMapPointSelectedLocally+NMapDrawingInput.StopDrawing+exact-source-canary",
             "map_navigation",
-            new[] { "visible_map_topology", "current_node", "reachable_nodes", "node_types" }),
+            new[] { "visible_map_topology", "current_node", "reachable_nodes", "node_types", "annotation_mode" }),
         Entry(
             "shop_inventory",
             new[]

@@ -17,6 +17,12 @@ export type AdvertisedActionExecution =
       readonly error: string;
     }
   | {
+      readonly stage: "adapter_stale";
+      readonly outcome: "not_executed_stale_state";
+      readonly adapterResult: GameExecutionResult;
+      readonly error: string;
+    }
+  | {
       readonly stage: "adapter_terminal";
       readonly outcome: "execution_failed" | "executed_unsettled";
       readonly adapterResult: GameExecutionResult;
@@ -74,6 +80,14 @@ export async function executeAdvertisedAction(input: {
   }
 
   if (!adapterResult.accepted) {
+    if (adapterResult.outcome === "rejected" && adapterResult.rejectionCode === "stale_state") {
+      return {
+        stage: "adapter_stale",
+        outcome: "not_executed_stale_state",
+        adapterResult,
+        error: "Gateway rejected the action because its state binding became stale"
+      };
+    }
     const unknown = adapterResult.outcome === "unknown";
     return {
       stage: "adapter_terminal",

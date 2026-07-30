@@ -6,7 +6,7 @@ It may derive an evidence-tested model view, but it never becomes a second
 game-state, legality, permission, Commit, or completion authority.
 
 > Compatibility status, 2026-07-30: Re and C# share source contract
-> `2.0-preview.81`; Re normalized schema is `31`. Gate 1 is closed as a
+> `2.0-preview.82`; Re normalized schema is `31`. Gate 1 is closed as a
 > bounded ordinary-single-player v2 baseline, not full game coverage.
 > Preview.69 adds typed new/resumed-run mount settling, bounded semantic-cycle recovery,
 > and strict consumption of encounter-scoped provisional grants. Diagnostic
@@ -48,15 +48,14 @@ visible native effects are still evolving.
 
 RE-P1 deliberately does not contain memory, learning, scoring, CandidateFuture, shadow/live modes, policy promotion, or the old project's phase machinery. Its job is to make one decision path correct and auditable.
 
-Re's current strict client contract is Bridge `2.0-preview.81`. Re strictly
+Re's current strict client contract is Bridge `2.0-preview.82`. Re strictly
 decodes typed contract identities and grants, but does not interpret fallback
-Witness semantics or promote any candidate. Exact Preview.79 runs
-`run-20260730032119-vivqvr` and `run-20260730033205-b759ts` completed 173- and
-100-decision boundaries with 268 settled mutations and two safe stale
-refusals on SHA `1032e079...` / MVID `d9435656...` / runtime `5faa3faa...`.
-Their `unrecorded` provenance is predecessor coverage evidence, not
-Preview.81 evidence, Organic evidence or persistent qualification. Preview.81
-is built/installed and awaits cold-load evidence.
+Witness semantics or promote any candidate. Exact loaded Preview.81 run
+`run-20260730074240-h09vpq` completed a 188-decision game boundary; later runs
+reproduced persistent map annotation ownership and stale receipts that Re
+incorrectly escalated. Their `unrecorded` provenance is predecessor coverage
+and defect evidence, not Preview.82 evidence, Organic evidence or persistent
+qualification. Preview.82 is built/installed and awaits cold-load evidence.
 A historical strict read-only main-menu inspection passed without mutation.
 Preview.66's narrow persistent
 `main_menu/continue_run` qualification belongs only to its historical exact

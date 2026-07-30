@@ -339,7 +339,13 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
     if (current.data.status === "failed" || current.data.status === "timed_out") {
       return { accepted: false, outcome: "unknown", response: current.raw };
     }
-    return { accepted: false, outcome: "rejected", response: current.raw };
+    const rejectionCode = terminalRejectionCode(current.data);
+    return {
+      accepted: false,
+      outcome: "rejected",
+      ...(rejectionCode ? { rejectionCode } : {}),
+      response: current.raw
+    };
   }
 
   async close(): Promise<void> {
@@ -492,7 +498,20 @@ function commandContractError(
 }
 
 function rejectedResult(code: string, detail: string): GameExecutionResult {
-  return { accepted: false, outcome: "rejected", response: { status: "rejected", error: { code, detail } } };
+  return {
+    accepted: false,
+    outcome: "rejected",
+    rejectionCode: code,
+    response: { status: "rejected", error: { code, detail } }
+  };
+}
+
+function terminalRejectionCode(command: BridgeV2Command): string | undefined {
+  for (let index = command.events.length - 1; index >= 0; index -= 1) {
+    const event = command.events[index];
+    if (event?.status === "rejected" && event.error_code) return event.error_code;
+  }
+  return undefined;
 }
 
 function unknownResult(
