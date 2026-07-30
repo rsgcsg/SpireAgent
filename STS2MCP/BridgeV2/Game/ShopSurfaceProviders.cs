@@ -32,6 +32,10 @@ namespace STS2_MCP.BridgeV2.Game;
 internal sealed class ShopInventorySurfaceProvider : IBridgeSurfaceProvider
 {
     private const string SurfaceKind = "shop_inventory";
+    internal const string CardPurchaseCompletionWitness =
+        "shop_card_purchase_committed_with_exact_card_gold_and_entry_witness";
+    internal const string CloseInventoryCompletionWitness =
+        "shop_inventory_closed";
 
     public string Kind => SurfaceKind;
 
@@ -369,7 +373,7 @@ internal sealed class ShopInventorySurfaceProvider : IBridgeSurfaceProvider
                 () => expectedInventory.Player.Deck.Cards.All(card => !ReferenceEquals(card, expectedCard)),
                 null,
                 null,
-                "shop_card_purchase_committed_with_exact_card_gold_and_entry_witness"),
+                CardPurchaseCompletionWitness),
             new[] { new ActionEntityBinding("shop_offer", offerId) });
 
     private static BridgeActionDraft RelicPurchaseAction(
@@ -550,7 +554,7 @@ internal sealed class ShopInventorySurfaceProvider : IBridgeSurfaceProvider
         expectedBackButton.ForceClick();
         return BridgeActionStartResult.Started(
             () => !expectedRoom.Inventory.IsOpen,
-            "shop_inventory_closed");
+            CloseInventoryCompletionWitness);
     }
 
     private static BridgeObservationDraft BindingUnavailable(GameBuildIdentity game, string reason)
@@ -594,6 +598,10 @@ internal sealed class ShopInventorySurfaceProvider : IBridgeSurfaceProvider
 internal sealed class ShopRoomSurfaceProvider : IBridgeSurfaceProvider
 {
     private const string SurfaceKind = "shop_room";
+    internal const string OpenInventoryCompletionWitness =
+        "shop_inventory_opened";
+    internal const string ProceedCompletionWitness =
+        "shop_room_left_or_map_opened";
 
     public string Kind => SurfaceKind;
 
@@ -690,7 +698,7 @@ internal sealed class ShopRoomSurfaceProvider : IBridgeSurfaceProvider
         expectedRoom.MerchantButton.ForceClick();
         return BridgeActionStartResult.Started(
             () => expectedRoom.Inventory.IsOpen,
-            "shop_inventory_opened");
+            OpenInventoryCompletionWitness);
     }
 
     private static BridgeActionStartResult StartProceed(
@@ -712,7 +720,7 @@ internal sealed class ShopRoomSurfaceProvider : IBridgeSurfaceProvider
         return BridgeActionStartResult.Started(
             () => !ReferenceEquals(RunManager.Instance.DebugOnlyGetState()?.CurrentRoom, expectedMerchantRoom)
                   || NMapScreen.Instance?.IsOpen == true,
-            "shop_room_left_or_map_opened",
+            ProceedCompletionWitness,
             allowIntermediateStateChanges: true);
     }
 }

@@ -806,7 +806,9 @@ public sealed class BridgeContractTests
                 RuntimeEpoch = "runtime-1",
                 EnvironmentDigest = "environment-1",
                 PatchDigest = "patch-1",
-                OperationFingerprint = $"fingerprint-{operation}"
+                OperationFingerprint = BridgePermissionManager.OperationFingerprint(
+                    surface,
+                    operation)
             };
 
         static BridgeCurrentIdentityProjection BuildIdentity(
@@ -998,6 +1000,68 @@ public sealed class BridgeContractTests
     }
 
     [Fact]
+    public void OrdinaryCombatOperationsUseDistinctExplicitNativeContracts()
+    {
+        BridgeOperationQualificationIdentity play = Assert.IsType<
+            BridgeOperationQualificationIdentity>(
+                BridgeOperationQualificationCatalog.Describe("combat_turn", "play_card"));
+        BridgeOperationQualificationIdentity potion = Assert.IsType<
+            BridgeOperationQualificationIdentity>(
+                BridgeOperationQualificationCatalog.Describe("combat_turn", "use_potion"));
+        BridgeOperationQualificationIdentity endTurn = Assert.IsType<
+            BridgeOperationQualificationIdentity>(
+                BridgeOperationQualificationCatalog.Describe("combat_turn", "end_turn"));
+
+        Assert.All(
+            new[] { play, potion, endTurn },
+            contract =>
+            {
+                Assert.Equal(
+                    BridgeOperationQualificationCatalog.ExplicitNativeContract,
+                    contract.ContractKind);
+                Assert.Equal("immediate_postcondition_observed", contract.CompletionBoundary);
+                Assert.Equal("persistent_run_mutation", contract.RiskClass);
+            });
+        Assert.Equal(CombatTurnSurfaceProvider.PlayCardCompletionWitness, play.WitnessId);
+        Assert.Equal(CombatTurnSurfaceProvider.UsePotionCompletionWitness, potion.WitnessId);
+        Assert.Equal(CombatTurnSurfaceProvider.EndTurnCompletionWitness, endTurn.WitnessId);
+        Assert.Equal(3, new[]
+        {
+            play.ContractDigest,
+            potion.ContractDigest,
+            endTurn.ContractDigest
+        }.Distinct().Count());
+
+        var playScope = new ActionPermissionScope(
+            "combat_turn",
+            "play_card",
+            "canary")
+        {
+            OperationFingerprint = play.ContractDigest
+        };
+        var playAction = new BridgeActionDraft(
+            "play_card:card-1:target:enemy-1",
+            "play_card",
+            "combat",
+            "Play card",
+            "CardModel.CanPlay+CombatState.HittableEnemies+CardModel.TryManualPlay",
+            () => BridgeActionStartResult.Started(),
+            new[]
+            {
+                new ActionEntityBinding("card", "card-1"),
+                new ActionEntityBinding("target", "enemy-1")
+            });
+        BridgeBoundActionContract boundPlay = Assert.IsType<BridgeBoundActionContract>(
+            BridgeBoundActionContract.Build("combat_turn", playAction));
+
+        Assert.True(boundPlay.Matches(playScope));
+        Assert.False(boundPlay.Matches(playScope with
+        {
+            OperationFingerprint = potion.ContractDigest
+        }));
+    }
+
+    [Fact]
     public void ShopRelicPurchaseBindsExactActionToExplicitNativeContract()
     {
         var action = new BridgeActionDraft(
@@ -1040,6 +1104,44 @@ public sealed class BridgeContractTests
     }
 
     [Fact]
+    public void ShopRoomAndOrdinaryCardPurchaseUseExplicitNativeContracts()
+    {
+        BridgeOperationQualificationIdentity open = Assert.IsType<
+            BridgeOperationQualificationIdentity>(
+                BridgeOperationQualificationCatalog.Describe(
+                    "shop_room",
+                    "open_shop_inventory"));
+        BridgeOperationQualificationIdentity proceed = Assert.IsType<
+            BridgeOperationQualificationIdentity>(
+                BridgeOperationQualificationCatalog.Describe(
+                    "shop_room",
+                    "proceed_shop"));
+        BridgeOperationQualificationIdentity close = Assert.IsType<
+            BridgeOperationQualificationIdentity>(
+                BridgeOperationQualificationCatalog.Describe(
+                    "shop_inventory",
+                    "close_shop_inventory"));
+        BridgeOperationQualificationIdentity card = Assert.IsType<
+            BridgeOperationQualificationIdentity>(
+                BridgeOperationQualificationCatalog.Describe(
+                    "shop_inventory",
+                    "purchase_shop_card"));
+
+        Assert.All(
+            new[] { open, proceed, close, card },
+            contract => Assert.Equal(
+                BridgeOperationQualificationCatalog.ExplicitNativeContract,
+                contract.ContractKind));
+        Assert.Equal(ShopRoomSurfaceProvider.OpenInventoryCompletionWitness, open.WitnessId);
+        Assert.Equal(ShopRoomSurfaceProvider.ProceedCompletionWitness, proceed.WitnessId);
+        Assert.Equal(ShopInventorySurfaceProvider.CloseInventoryCompletionWitness, close.WitnessId);
+        Assert.Equal(ShopInventorySurfaceProvider.CardPurchaseCompletionWitness, card.WitnessId);
+        Assert.Equal("continuation_handoff_observed", proceed.CompletionBoundary);
+        Assert.Equal("continuation_handoff_observed", close.CompletionBoundary);
+        Assert.Equal("native_commit_observed", card.CompletionBoundary);
+    }
+
+    [Fact]
     public void TreasureOpenContractIsAnExplicitNonAuthorizingCandidate()
     {
         BridgeOperationQualificationIdentity identity = Assert.IsType<BridgeOperationQualificationIdentity>(
@@ -1059,7 +1161,12 @@ public sealed class BridgeContractTests
         var scope = new ActionPermissionScope(
             "shop_room",
             "proceed_shop",
-            "canary");
+            "canary")
+        {
+            OperationFingerprint = BridgePermissionManager.OperationFingerprint(
+                "shop_room",
+                "proceed_shop")
+        };
         var compatibility = new CompatibilityAssessment(
             "provisional_trial_scoped",
             new[] { "0.109.1" },

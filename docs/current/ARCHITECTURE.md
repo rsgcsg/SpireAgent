@@ -240,11 +240,11 @@ and the
 
 ## Current Architectural Constraint
 
-The Gateway and Re source share the mechanically checked `2.0-preview.77`
-contract and normalized schema 31. Preview.76 loaded as SHA `56b24ea3...` /
-MVID `37f4ce07...` / runtime `8ccf81d0...` and completed the 172-decision
-`run-20260729140216-qi8r24` boundary with 170 settled mutations and one safe
-pre-execution stale refusal. Preview.77 has a new source identity and inherits
+The Gateway and Re source share the mechanically checked `2.0-preview.78`
+contract and normalized schema 31. Preview.77 loaded as SHA `9d6737b1...` /
+MVID `0a945d2d...` / runtime `8dbfab27...` and completed the 94-decision
+`run-20260729145711-kh8d6k` boundary with 91 settled mutations and two safe
+pre-execution stale refusals. Preview.78 has a new source identity and inherits
 none of that runtime authority. Gate 1 remains a bounded v2 baseline: Re and
 the default MCP adapter are v2-only, Gateway v1 is retired, and historical v1
 data is replay-only. The run's provenance is `unrecorded`, so it is
@@ -262,15 +262,17 @@ completion; startup negotiation is not an authority snapshot.
 Preview.74 made semantic and authority identities formal wire fields and
 removes the old shadows and control histories from state. Composite `state_id`
 still binds both for stale-action safety. One production publication path binds
-every action to contract/source/operands/state. Seven explicit contracts use
-contract-digest admission; 80 typed manifest fallback identities temporarily
+every action to contract/source/operands/state. Thirteen explicit contracts use
+contract-digest admission; 74 typed manifest fallback identities temporarily
 retain runtime-only operation admission and must receive a family disposition
 before Clean Closure. Operation remains metadata for migrated families, not
 their execution or durable-claim key.
 
 Preview.77 closes durable fallback admission in both the Gateway and operator
-ledger. Four Surfaces remain mixed-generation: shop room, shop inventory,
-treasure and deck enchant. Each must migrate vertically or become typed
+ledger. Preview.78 migrates ordinary combat and ordinary shop
+navigation/card-purchase operations without adding an authority path. Three
+Surfaces remain mixed-generation: shop inventory, treasure and deck enchant.
+Each must migrate vertically or become typed
 unsupported/`code_required`; this debt does not justify a universal selector,
 transaction layer or second rule engine.
 

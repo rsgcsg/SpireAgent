@@ -72,16 +72,16 @@ identity, family native-contract migration, deletion of old production paths,
 version/claim recovery and repeated journeys are required. Compendium and
 external reference enrichment remain optional.
 
-Preview.77 and Re schema 31 are the current source contract. Preview.76 loaded
-on SHA `56b24ea3...`, MVID `37f4ce07...`, runtime `8ccf81d0...`; exact run
-`run-...140216` completed a 172-decision boundary with 170 settled mutations
-and one safe stale refusal. It did not exercise New Leaf, Kifuda or ordinary
-relic purchase. Preview.77 types explicit versus fallback contracts and makes
-fallback durable claims impossible; its loaded behavior is not yet claimed.
+Preview.78 and Re schema 31 are the current source contract. Preview.77 loaded
+on SHA `9d6737b1...`, MVID `0a945d2d...`, runtime `8dbfab27...`; exact run
+`run-...145711` completed a 94-decision boundary with 91 settled mutations and
+two safe stale refusals. It did not exercise New Leaf, Kifuda or CombatPile.
+Preview.78 migrates six ordinary combat/shop operations to explicit contracts;
+its built/installed identity is verified and loaded behavior is not yet claimed.
 
 ### Current Gate 2 Work
 
-- cold-load the already built and installed Preview.77 whole-DLL identity,
+- cold-load the already built and installed Preview.78 whole-DLL identity,
   then run one bounded exact-runtime journey;
 - accept natural New Leaf evidence if it appears, but do not manufacture that
   encounter or infer runtime support from source/fixtures;

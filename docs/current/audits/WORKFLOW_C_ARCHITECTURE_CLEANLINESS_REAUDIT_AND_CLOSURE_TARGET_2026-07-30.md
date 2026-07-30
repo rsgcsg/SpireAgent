@@ -556,3 +556,22 @@ loaded                         non-claim; game closed after installation
 No Preview.77 mutation, Inspection, bounded journey, Organic evidence or
 qualification is claimed. The next executable boundary is a complete game
 restart followed by `cd Re-SpireAgent && npm run agent:run`.
+
+## 19. Preview.77 Runtime And Preview.78 Migration Amendment
+
+Exact loaded Preview.77 run `run-20260729145711-kh8d6k` completed a 94-decision
+boundary with 91 settled mutations, two safe pre-execution reward stale
+refusals and one normal completed-run stop. It contained no unsupported,
+unknown, unsettled, provider or parse failure. This confirms that the volatile
+fallback preserves predecessor continuity, but does not change the verdict
+that fallback identity is insufficient durable authority.
+
+Preview.78 applies the first batch migration to three ordinary combat and
+three ordinary shop operations. The machine inventory is now 13 explicit
+contracts, 74 fallbacks and three mixed Surfaces. Full C# and Re suites pass;
+the Release is built and installed as SHA `2f3f6141...b948`, MVID
+`be29a156-4746-4e97-9334-c144e42b1462`. Loaded Preview.78 and all new-runtime
+family evidence remain non-claims until cold restart and exact mutation.
+
+Detailed contracts, tests, deployment identity and non-claims are in the
+[Preview.78 wave closeout](WORKFLOW_C_PREVIEW78_COMBAT_AND_SHOP_EXPLICIT_CONTRACT_WAVE_CLOSEOUT_2026-07-30.md).

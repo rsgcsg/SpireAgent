@@ -1,6 +1,6 @@
 {
   "schema_version": 3,
-  "catalog_id": "bridge_v2_native_action_contracts_v3",
+  "catalog_id": "bridge_v2_native_action_contracts_v4",
   "authority_effect": "explicit_native_contracts_plus_typed_session_fallbacks",
   "contracts": [
     {
@@ -40,6 +40,42 @@
       "risk_class": "reversible_navigation"
     },
     {
+      "surface_kind": "shop_room",
+      "operation": "proceed_shop",
+      "interaction_kind": "merchant_room_exit",
+      "owner_binding": "exact_current_merchant_room_with_inventory_closed",
+      "source_binding": "visible_enabled_merchant_room_proceed_control",
+      "operand_contract": "exact_current_merchant_room_and_proceed_button",
+      "commit_contract": "NMerchantRoom.ProceedButton.ForceClick",
+      "completion_boundary": "continuation_handoff_observed",
+      "witness_id": "shop_room_left_or_map_opened",
+      "risk_class": "progression"
+    },
+    {
+      "surface_kind": "shop_inventory",
+      "operation": "close_shop_inventory",
+      "interaction_kind": "merchant_inventory_navigation",
+      "owner_binding": "exact_current_open_merchant_inventory",
+      "source_binding": "unique_visible_enabled_inventory_back_button",
+      "operand_contract": "exact_current_inventory_screen_and_back_control",
+      "commit_contract": "NBackButton.ForceClick",
+      "completion_boundary": "continuation_handoff_observed",
+      "witness_id": "shop_inventory_closed",
+      "risk_class": "reversible_navigation"
+    },
+    {
+      "surface_kind": "shop_inventory",
+      "operation": "purchase_shop_card",
+      "interaction_kind": "merchant_inventory_card_purchase",
+      "owner_binding": "exact_current_merchant_inventory_and_card_entry",
+      "source_binding": "MerchantCardEntry.OnTryPurchaseWrapper",
+      "operand_contract": "exact_advertised_offer_card_instance_price_gold_and_slot",
+      "commit_contract": "native_merchant_card_purchase_task",
+      "completion_boundary": "native_commit_observed",
+      "witness_id": "shop_card_purchase_committed_with_exact_card_gold_and_entry_witness",
+      "risk_class": "persistent_run_mutation"
+    },
+    {
       "surface_kind": "map_navigation",
       "operation": "choose_map_node",
       "interaction_kind": "map_node_navigation",
@@ -50,6 +86,42 @@
       "completion_boundary": "immediate_postcondition_observed",
       "witness_id": "map_closed_or_current_map_coordinate_reached",
       "risk_class": "progression"
+    },
+    {
+      "surface_kind": "combat_turn",
+      "operation": "play_card",
+      "interaction_kind": "combat_hand_card_play",
+      "owner_binding": "exact_current_local_player_combat_play_phase_and_hand",
+      "source_binding": "exact_advertised_hand_card_instance_and_optional_hittable_enemy_target",
+      "operand_contract": "card_still_in_hand_playable_and_exact_required_target_still_hittable",
+      "commit_contract": "CardModel.TryManualPlay",
+      "completion_boundary": "immediate_postcondition_observed",
+      "witness_id": "card_left_hand_or_required_subsurface_opened",
+      "risk_class": "persistent_run_mutation"
+    },
+    {
+      "surface_kind": "combat_turn",
+      "operation": "use_potion",
+      "interaction_kind": "combat_potion_use",
+      "owner_binding": "exact_current_local_player_combat_play_phase_and_potion_slots",
+      "source_binding": "exact_advertised_potion_instance_slot_and_optional_valid_target",
+      "operand_contract": "potion_still_in_exact_slot_usable_and_exact_required_target_still_valid",
+      "commit_contract": "PotionModel.EnqueueManualUse",
+      "completion_boundary": "immediate_postcondition_observed",
+      "witness_id": "potion_consumed_or_combat_ended",
+      "risk_class": "persistent_run_mutation"
+    },
+    {
+      "surface_kind": "combat_turn",
+      "operation": "end_turn",
+      "interaction_kind": "combat_end_player_turn",
+      "owner_binding": "exact_current_local_player_combat_play_phase_and_hand_mode",
+      "source_binding": "visible_enabled_end_turn_control",
+      "operand_contract": "same_player_turn_hand_not_playing_and_hand_mode_play",
+      "commit_contract": "PlayerCmd.EndTurn",
+      "completion_boundary": "immediate_postcondition_observed",
+      "witness_id": "player_play_phase_ended",
+      "risk_class": "persistent_run_mutation"
     },
     {
       "surface_kind": "deck_enchant_selection",

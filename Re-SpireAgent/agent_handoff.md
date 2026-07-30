@@ -5,8 +5,18 @@
 > `../STS2MCP/docs/bridge-v2/CURRENT_STATUS.md`. Older identity and mode claims
 > below are preserved as dated evidence and must not override those documents.
 
-Status update 2026-07-29 (current pointer only): source contract is
-`2.0-preview.75`; Re normalized schema is `30`. Preview.75 exact runs on SHA
+Status update 2026-07-30 (current pointer only): source contract is
+`2.0-preview.78`; Re normalized schema is `31`. Preview.78 moves three ordinary
+combat and three ordinary shop operations to explicit native contracts. C#/Re
+tests and Release build pass; it is installed as SHA `2f3f6141...b948`, MVID
+`be29a156...b1462`, but loaded identity and Live evidence remain non-claims
+until cold start. Latest loaded Preview.77 run
+`run-20260729145711-kh8d6k` completed a 94-decision boundary with 91 settled
+mutations and two safe stale refusals; its `unrecorded` provenance cannot
+qualify Preview.78. Canonical status owns exact identities and rollback.
+
+Earlier status update 2026-07-29: source contract was
+`2.0-preview.75`; Re normalized schema was `30`. Preview.75 exact runs on SHA
 `ddce17cf...6334`, MVID `23ac5aad...3cb4`, runtime `fc2ea037...` include
 `run-20260729094605-ycbsur` and
 `run-20260729112408-jltj8f` completed one-game boundaries with 429 settled
@@ -15,10 +25,10 @@ one ordinary relic purchase; Kifuda did not occur. This is `unrecorded`
 coverage evidence, not qualification. Re now requires a repeatable actionable
 successor after Gateway action-local completion without remapping or retrying a
 stale choice. A same-source rebuild was installed as SHA `f9819b6b...`, MVID
-`34d6deb3...` and was later superseded by loaded Preview.76 evidence. Current
-Preview.77 source/build/install are verified; cold-load identity and
-post-change Live comparison remain pending. The current rollback pointer is
-owned by the canonical status documents rather than this chronology.
+`34d6deb3...` and was later superseded by loaded Preview.76 evidence.
+Preview.77 was subsequently built, installed, loaded and run before Preview.78
+superseded its source/install identity. The current rollback pointer is owned
+by the canonical status documents rather than this chronology.
 
 Earlier status update 2026-07-29: source contract is
 `2.0-preview.73`; Re normalized schema is `29`. Preview.73 repairs the

@@ -21,6 +21,13 @@ namespace STS2_MCP.BridgeV2.Game;
 
 internal sealed class CombatTurnSurfaceProvider : IBridgeSurfaceProvider
 {
+    internal const string PlayCardCompletionWitness =
+        "card_left_hand_or_required_subsurface_opened";
+    internal const string UsePotionCompletionWitness =
+        "potion_consumed_or_combat_ended";
+    internal const string EndTurnCompletionWitness =
+        "player_play_phase_ended";
+
     public string Kind => "combat_turn";
 
     public BridgeSurfaceLayer Layer => BridgeSurfaceLayer.Room;
@@ -256,7 +263,7 @@ internal sealed class CombatTurnSurfaceProvider : IBridgeSurfaceProvider
                   || expectedPlayer.PlayerCombatState?.Hand.Cards.Contains(expectedCard) != true
                   || NPlayerHand.Instance?.IsInCardSelection == true
                   || NOverlayStack.Instance?.Peek() != null,
-            "card_left_hand_or_required_subsurface_opened");
+            PlayCardCompletionWitness);
     }
 
     private static BridgeActionStartResult StartUsePotion(
@@ -280,7 +287,7 @@ internal sealed class CombatTurnSurfaceProvider : IBridgeSurfaceProvider
         return BridgeActionStartResult.Started(
             () => !CombatManager.Instance.IsInProgress
                   || !ReferenceEquals(expectedPlayer.GetPotionAtSlotIndex(expectedSlot), expectedPotion),
-            "potion_consumed_or_combat_ended");
+            UsePotionCompletionWitness);
     }
 
     private static BridgeActionStartResult StartEndTurn(Player expectedPlayer)
@@ -294,7 +301,7 @@ internal sealed class CombatTurnSurfaceProvider : IBridgeSurfaceProvider
         PlayerCmd.EndTurn(expectedPlayer, canBackOut: false);
         return BridgeActionStartResult.Started(
             () => !CombatManager.Instance.IsInProgress || !IsActionablePlayerTurn(expectedPlayer),
-            "player_play_phase_ended");
+            EndTurnCompletionWitness);
     }
 
     private static bool CanUsePotion(Player player, PotionModel? potion) =>

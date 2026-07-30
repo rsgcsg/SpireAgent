@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "source_protocol": "2.0-preview.77",
+  "source_protocol": "2.0-preview.78",
   "status": "migration_active_live_evidence_pending",
   "target": {
     "connector_shadow_count": 0,
@@ -21,11 +21,11 @@
     "production_action_publication_path_count": 1,
     "production_authority_resolver_count": 1,
     "operation_authority_usage_count": 3,
-    "explicit_native_contract_count": 7,
-    "explicit_contract_digest_admission_count": 7,
-    "fallback_authority_contract_count": 80,
+    "explicit_native_contract_count": 13,
+    "explicit_contract_digest_admission_count": 13,
+    "fallback_authority_contract_count": 74,
     "persistent_fallback_claim_admission_count": 0,
-    "supported_mixed_explicit_fallback_surface_count": 4,
+    "supported_mixed_explicit_fallback_surface_count": 3,
     "bulk_candidate_startup_path_count": 0,
     "re_native_completion_reconstruction_count": 0,
     "control_history_semantic_identity_input_count": 0
@@ -37,6 +37,24 @@
     "live_evidence": "ordinary_relic_positive_preview_75; preview_76_not_exercised; kifuda_not_exercised",
     "rollback": "whole_artifact_restore"
   },
+  "latest_waves": [
+    {
+      "family": "ordinary_combat_turn",
+      "operations": ["play_card", "use_potion", "end_turn"],
+      "authority_cutover": "all_family_operations_use_explicit_contract_digest",
+      "runtime_evidence": "preview_77_run_20260729145711_kh8d6k:37_play_card+1_use_potion+12_end_turn_all_settled",
+      "non_claims": "no_combat_pile_or_delayed_effect_qualification",
+      "rollback": "whole_artifact_restore"
+    },
+    {
+      "family": "ordinary_shop_room_and_card_purchase",
+      "operations": ["open_shop_inventory", "proceed_shop", "close_shop_inventory", "purchase_shop_card"],
+      "authority_cutover": "shop_room_fully_explicit_and_scoped_shop_inventory_actions_explicit",
+      "runtime_evidence": "preview_77_run_20260729145711_kh8d6k:all_four_operations_settled_including_two_card_purchases",
+      "non_claims": "no_kifuda_relic_potion_or_removal_sibling_qualification",
+      "rollback": "whole_artifact_restore"
+    }
+  ],
   "rules": [
     "Unknown rows may become typed unsupported or code_required; never fabricate an explicit contract to reduce a count.",
     "Manifest migration fallbacks may be volatile session trials but cannot be assembled, loaded, reloaded, superseded, or rolled back as durable claims.",

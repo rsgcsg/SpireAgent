@@ -466,7 +466,7 @@ public sealed class BridgePersistentQualificationStoreTests
         using var file = new TemporaryLedger();
         file.Write(Install(
             1,
-            Package("qualification-a", "combat_turn", "play_card")));
+            Package("qualification-a", "event_option", "choose_event_option")));
         BridgePersistentQualificationStore store =
             BridgePersistentQualificationStore.Load(file.Path, () => Now);
         Assert.Empty(store.Apply(

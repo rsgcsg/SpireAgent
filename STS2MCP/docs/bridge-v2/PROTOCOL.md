@@ -1,6 +1,14 @@
 # Bridge v2 Protocol
 
-Protocol preview: `2.0-preview.77`
+Protocol preview: `2.0-preview.78`
+
+Preview.78 changes no JSON shape. It changes contract identity for six
+existing operations: ordinary combat `play_card`, `use_potion`, `end_turn`
+and ordinary shop `proceed_shop`, `close_shop_inventory`,
+`purchase_shop_card` now project reviewed `explicit_native_contract`
+revisions. Their action kinds and wire operands remain stable. Contract digest
+changes intentionally prevent Preview.77 session or package authority from
+crossing the new DLL identity.
 
 Preview.77 types the qualification contract boundary:
 

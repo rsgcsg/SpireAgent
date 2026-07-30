@@ -106,3 +106,20 @@ Required source checks prove:
 Rollback is whole-artifact restore. Rolling back may restore the previous
 Preview.76 behavior, but no Preview.77 runtime or qualification evidence may be
 attributed to that artifact.
+
+## Preview.78 Implementation Note
+
+The first post-decision batch confirms the intended migration shape rather
+than changing this ADR. Three ordinary combat operations and three ordinary
+shop operations moved from generated manifest fallback identity to explicit
+native-contract identity. Shared mechanics were retained only where source
+and runtime evidence repeat; card play, potion use, end turn, shop card
+purchase and navigation still have independent operands, native Commit and
+Outcome revisions.
+
+The catalog now has 13 explicit contracts and 74 volatile fallbacks. Shop room
+is no longer mixed-generation; shop inventory remains mixed because potion
+purchase and merchant removal have not yet received the same family review.
+Preview.78 does not add a publication path, authority resolver, durable
+fallback or universal transaction abstraction. Exact-runtime evidence remains
+required after its new DLL identity is loaded.

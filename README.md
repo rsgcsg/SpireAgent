@@ -18,19 +18,20 @@ third-party clients.
 
 ## Current Truth
 
-The active source Connector contract is `2.0-preview.77`; Re normalized schema
+The active source Connector contract is `2.0-preview.78`; Re normalized schema
 is `31`. Gate 1/M0 is closed as a bounded ordinary-single-player v2 interface:
 Re and the optional MCP adapter are v2-only, Gateway `/api/v1` is retired, and
 the exact loaded Preview.74 completed a 202-decision bounded one-game journey.
-Preview.77 preserves Preview.76's New Leaf source repair and adds a typed
-contract boundary: manifest migration fallbacks may support volatile session
-trials but cannot become durable qualification packages.
+Preview.77 added the typed durable-contract boundary; Preview.78 moves ordinary
+combat plus ordinary shop navigation/card purchase onto six reviewed explicit
+native contracts without adding another authority path.
 
-The latest exact Preview.76 run completed a 172-decision boundary with 170
-settled mutations and one safe stale refusal. It has `unrecorded` provenance
-and did not exercise New Leaf, Kifuda or ordinary relic purchase, so it is
-bounded coverage rather than Preview.77 evidence, Organic evidence, persistent
-qualification or strategic-quality proof. See [current status](docs/current/STATUS.md).
+The latest exact Preview.77 run completed a 94-decision boundary with 91
+settled mutations and two safe stale refusals. It has `unrecorded` provenance
+and did not exercise New Leaf, Kifuda or CombatPile. Preview.78 is built and
+installed but not yet cold-loaded, so that run is bounded predecessor coverage,
+not Preview.78 evidence, Organic evidence, persistent qualification or
+strategic-quality proof. See [current status](docs/current/STATUS.md).
 
 The current program milestone is **M1 Measurable External Agent Baseline**,
 with a bounded C-R1 connector-completion track running alongside A/D.
