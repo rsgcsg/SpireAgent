@@ -3,8 +3,8 @@
 Baseline date: 2026-07-31
 
 Branch baseline: `connectorV3` at
-`2c49b0f826781ea8008dd686990ca76e023db98d`, plus the current uncommitted
-Re map owner-and-choice contract repair.
+`117eb6fb01e4c6a4e2b93c1492b7d82f4d3ec438`, plus the current uncommitted
+Gateway Outcome/target repair and V3-native reward-claim cutover.
 
 ## Architecture
 
@@ -18,8 +18,8 @@ Current V3 source implements:
 - exact state token and entity identity;
 - one visible active interaction, including visible unsupported states;
 - parameterized commands and action-local receipts;
-- direct native combat, shop-room, map, rest-site, event-option, treasure-room
-  and deck-enchant resolvers;
+- direct native combat, shop-room, map, rest-site, event-option, treasure-room,
+  reward-claim and deck-enchant resolvers;
 - bounded non-combat native-binding migration adapters;
 - one controller, exact environment authority, idempotent command ledger,
   semantic Outcome and unknown-no-retry;
@@ -27,31 +27,42 @@ Current V3 source implements:
 
 ## Exact V3 Runtime Evidence
 
-The latest cold-loaded runtime uses SHA
+The latest exercised cold-loaded runtime used SHA
 `40d088745cd3e23844c06d81bbefd2b85ccb427104e7325d0719e3134607d84c`,
 MVID `9add88e7-19d6-4854-95e3-060544ce5663`, runtime
-`5af58fb23e544f488151057d6c2c53c9`, game `v0.110.0` commit `eecc8c4d`
+`2b379e0ef1574de6a482e16b31619981`, game `v0.110.0` commit `eecc8c4d`
 and exact-bridge-only Modset fingerprint
 `1b5f280d2206f1c12ca04f44b995b8f99224cff247b6495aaad30422099e3fc4`.
 
-`run-20260731080952-3q4fw8` used V3 observation, commands and receipts for
-menu, character select, event and reward actions. Its direct V3-native event
-option completed with a successor observation. The new map Source Binding
-also projected the exact current screen and three travelable choices without
-the former ABI exception.
+Eleven runs from `run-20260731081935-zv6pbq` through
+`run-20260731083523-r3am2e` recorded 264 decisions on source revision
+`117eb6f...`: 244 settled, three checkpoint-pending, six safely stale, two
+invalid model-selected IDs, one provider fetch failure, five typed
+unsupported/quarantined stops, one pre-Commit potion rejection and two
+unknown Outcomes. V3-native map, event and treasure commands all completed on
+this exact runtime. The map owner-and-choice repair is therefore exercised,
+not merely replayed.
 
-The run then stopped before map command submission because Re still validated
-the historical one-binding route shape while V3 correctly supplied both
-`map_screen` and `map_node`. The current Re repair requires exactly one current
-screen plus exactly one current visible choice and rejects missing, replaced,
-duplicated or extra bindings. Replaying the saved raw snapshot now yields an
-actionable map with all three exact actions. A post-repair map mutation remains
-pending exact-runtime evidence.
+The runs exposed three current Gateway defects now repaired in source:
+
+- a self-target potion candidate omitted its exact player-creature target,
+  causing publication/execution legality drift;
+- Headbutt waited for the whole source-card task after the exact selected card
+  had already reached draw-top and the selector had closed;
+- `end_turn` treated native cleanup before phase handoff as an unexpected
+  state transition.
+
+The first is fixed by exact target entity binding. The latter two retain
+action-specific probes but permit the native asynchronous boundary. Outer
+reward claim/discard/proceed candidate discovery and execution are now
+V3-native and no longer use `draft.Actions` or `LegacyBinding.Start()`.
+These changes are built and installed but are pending a new cold load.
 
 Exact attribution is recorded in
 [v0.110.0 Live evidence](../../STS2MCP/docs/connector-v3/LIVE_EVIDENCE_V0_110_0_2026-07-31.md).
-The event-option V3-native cutover now has exact Live evidence. Treasure-room
-V3-native execution and post-repair map mutation remain pending. The earlier
+Event-option, treasure-room and post-repair map V3-native execution now have
+exact Live evidence. The current combat Outcome repairs and reward-native
+cutover remain pending. The earlier
 [v0.109.1 evidence](../../STS2MCP/docs/connector-v3/LIVE_EVIDENCE_2026-07-31.md)
 remains historical exact-runtime evidence only.
 
@@ -83,15 +94,17 @@ evidence or durable V3 qualification.
 | State | Current result |
 |---|---|
 | source | V3 `3.0-preview.1` implemented on `connectorV3` worktree |
-| automated tests | Gateway 218 and Re 221 passed; docs, CLI, run identity, compatibility, permission, qualification, Profile and migration checks passed |
-| Release build | current Mod `0.6.0-dev`, SHA `40d088745cd3e23844c06d81bbefd2b85ccb427104e7325d0719e3134607d84c`, MVID `9add88e7-19d6-4854-95e3-060544ce5663` |
+| automated tests | Gateway 219 and Re 221 passed; Python MCP lock/compile, docs, CLI, run-identity, compatibility, permission, qualification, Profile and migration checks passed |
+| Release build | current Mod `0.6.0-dev`, SHA `d34c14ee676ed271525e526c007c92be14427b9d0373d6026391621a159cfe09`, MVID `a09f3ddb-ad39-44c0-915d-416be4ef6d80` |
 | installed | verified equal to current Release SHA/MVID after clean game shutdown |
-| loaded | verified equal to Release/installed SHA `40d088...`, MVID `9add88e7...`, runtime `5af58f...` |
-| V3 mutation canary | direct V3-native event plus menu, character-select and reward mutations obtained on the current loaded identity |
-| V3 bounded journey | latest nine-decision run stopped before map mutation on a Re contract-generation mismatch; raw snapshot replay passes after the current repair |
+| loaded | `non-claim`; game is closed and the newly installed artifact has not cold-loaded |
+| V3 mutation canary | prior exact artifact exercised direct combat, map, event and treasure; current artifact has no Live mutation |
+| V3 bounded journey | prior runtime reached 152 decisions and several shorter continuations; current repair remains pending exact-runtime evidence |
 | V3 durable claim | none |
 
 Current repaired-install rollback:
+`STS2MCP/.local/deployments/2026-07-31T08-50-29-091Z`.
+Previous current-runtime rollback:
 `STS2MCP/.local/deployments/2026-07-31T06-55-35-150Z`.
 Previous loaded-repair rollback:
 `STS2MCP/.local/deployments/2026-07-31T04-34-03-246Z`.
@@ -104,7 +117,7 @@ Final pre-V3 rollback:
 
 ## Immediate Next Step
 
-The repair is Re-only; the exact Gateway artifact is already loaded. Run:
+Cold-start STS2, then run:
 
 ```bash
 cd /Users/fire/Desktop/SpireAgent/Re-SpireAgent

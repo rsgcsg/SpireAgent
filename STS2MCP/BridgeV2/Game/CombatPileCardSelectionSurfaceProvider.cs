@@ -505,7 +505,6 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
         {
             "move_one_to_top" =>
                 MoveOneToTopWitness.Selected(
-                    sourceCompleted,
                     surfaceClosed,
                     binding.BaselineSourcePile,
                     binding.BaselineDestinationPile,

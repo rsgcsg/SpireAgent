@@ -262,6 +262,66 @@ public sealed class ConnectorV3ContractTests
     }
 
     [Fact]
+    public void RewardNativeDiscoveryUsesSurfaceFactsWithoutDraftActions()
+    {
+        var surface = new RewardClaimSurface(
+            "reward_claim",
+            "screen-reward",
+            new[]
+            {
+                new VisibleReward(
+                    "reward-gold",
+                    "gold",
+                    "25 Gold",
+                    "Gain 25 Gold.",
+                    true),
+                new VisibleReward(
+                    "reward-blocked",
+                    "potion",
+                    "Potion",
+                    "Potion slots are full.",
+                    false)
+            },
+            true,
+            new[]
+            {
+                new VisibleCombatPotion(
+                    "potion-old",
+                    "OLD_POTION",
+                    "Old Potion",
+                    "Discardable.",
+                    1,
+                    "AnyPlayer",
+                    false,
+                    false)
+            },
+            true,
+            false);
+
+        BridgeActionDraft[] commands =
+            ConnectorV3Runtime.DescribeRewardClaimCommands(surface).ToArray();
+
+        Assert.Contains(commands, command =>
+            command.Kind == "claim_reward"
+            && command.EntityBindings!.Any(binding =>
+                binding.Role == "reward"
+                && binding.EntityId == "reward-gold"));
+        Assert.DoesNotContain(commands, command =>
+            command.EntityBindings!.Any(binding =>
+                binding.EntityId == "reward-blocked"));
+        Assert.Contains(commands, command =>
+            command.Kind == "discard_potion_for_reward"
+            && command.EntityBindings!.Any(binding =>
+                binding.Role == "potion"
+                && binding.EntityId == "potion-old"));
+        Assert.Contains(commands, command =>
+            command.Kind == "proceed_rewards"
+            && command.EntityBindings!.Any(binding =>
+                binding.Role == "screen"
+                && binding.EntityId == "screen-reward"));
+    }
+
+    [Fact]
     public void ParameterizedBindingRequiresEveryExactOperandAndNoExtras()
     {
         var candidate = new ConnectorV3CommandCandidate(

@@ -53,13 +53,13 @@ legality or completion. MCP and REST are transports only.
 
 ## Current Migration Boundary
 
-Combat, shop-room, map, rest-site and deck-enchant controls have direct V3
-native resolvers. The latter three retain source-specific owner, operand,
-Commit and Outcome contracts while sharing only bounded mechanics. Remaining
-non-combat families temporarily call bounded Provider native bindings inside
-the Gateway. Re temporarily reads the same-runtime v2 capabilities as a
-non-authorizing semantic projection sidecar. Neither path may supply a V2
-action ID to V3 execution.
+Combat, shop-room, map, rest-site, event-option, treasure-room, reward-claim
+and deck-enchant controls have direct V3 native resolvers. Each retains
+source-specific owner, operand, Commit and Outcome contracts while sharing
+only bounded mechanics. Remaining non-combat families temporarily call
+bounded Provider native bindings inside the Gateway. Re temporarily reads the
+same-runtime v2 capabilities as a non-authorizing semantic projection
+sidecar. Neither path may supply a V2 action ID to V3 execution.
 
 The migration ends when V3 directly owns non-combat command bindings and
 player-visible detail contracts, after which the sidecar and v2 production

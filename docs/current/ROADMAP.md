@@ -14,7 +14,8 @@ Modset and Patch. Execute at least one direct combat command and one non-combat
 command. Unknown, stale and wrong-owner negatives remain fail-closed.
 
 Status: obtained for the first V3 artifact and repeated on exact STS2
-`v0.110.0`. The current map ABI, rest-child Outcome and Symbiote source repair
+`v0.110.0`. Map, event, treasure and source-specific enchantment have exact
+current-runtime evidence. The latest combat Outcome/target and reward-native
 wave requires a new cold-load canary.
 
 ## V3-2: Ordinary Journey
@@ -29,10 +30,11 @@ the repaired artifact or unexercised families.
 
 ## V3-3: Native Family Migration
 
-Replace the Provider adapter in audited waves. Combat, shop-room, map, rest
-and deck-enchant execution now use direct V3 resolvers. Menu, reward, shop
-inventory, generated choices, remaining selectors and treasure are next.
-Delete each replaced execution path; do not retain dual authority.
+Replace the Provider adapter in audited waves. Combat, shop-room, map, rest,
+event-option, treasure-room, reward-claim and deck-enchant execution now use
+direct V3 resolvers. Menu, card-reward, shop inventory, generated choices and
+remaining selectors are next. Delete each replaced execution path; do not
+retain dual authority.
 
 ## V3-4: Visibility And Detail
 

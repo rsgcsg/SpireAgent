@@ -291,18 +291,17 @@ internal static class DeclaredOnPlayCombatPileSelectionSourcePatch
 
 internal static class MoveOneToTopWitness
 {
-    // The played source card reaches its own post-play pile after this baseline,
-    // so aggregate pile counts are not an invariant of the selected-card move.
+    // This action-local boundary does not wait for the entire source-card task.
+    // The exact selected-card move plus selector closure proves the native commit;
+    // later source-card settlement belongs to successor readiness.
     internal static bool Selected<T>(
-        bool sourceCompleted,
         bool surfaceClosed,
         IReadOnlyCollection<T> baselineDiscard,
         IReadOnlyCollection<T> baselineDraw,
         IReadOnlyList<T> currentDiscard,
         IReadOnlyList<T> currentDraw,
         T selectedCard) where T : class =>
-        sourceCompleted
-        && surfaceClosed
+        surfaceClosed
         && ContainsReference(baselineDiscard, selectedCard)
         && !ContainsReference(baselineDraw, selectedCard)
         && !ContainsReference(currentDiscard, selectedCard)

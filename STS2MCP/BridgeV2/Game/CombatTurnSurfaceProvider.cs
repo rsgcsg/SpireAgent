@@ -221,7 +221,7 @@ internal sealed class CombatTurnSurfaceProvider : IBridgeSurfaceProvider
                     TargetType.AnyAlly => player.Creature.CombatState?.PlayerCreatures.FirstOrDefault(potion.IsValidTarget),
                     _ => null
                 };
-                if (!potion.IsValidTarget(target))
+                if (target == null || !potion.IsValidTarget(target))
                     continue;
                 actions.Add(new BridgeActionDraft(
                     $"use_potion:{potionId}",
@@ -230,7 +230,13 @@ internal sealed class CombatTurnSurfaceProvider : IBridgeSurfaceProvider
                     $"Use {potionName}",
                     "PotionModel.PassesCustomUsabilityCheck",
                     () => StartUsePotion(player, potion, capturedSlot, target),
-                    new[] { new ActionEntityBinding("potion", potionId) }));
+                    new[]
+                    {
+                        new ActionEntityBinding("potion", potionId),
+                        new ActionEntityBinding(
+                            "target",
+                            entities.GetId(target, "creature"))
+                    }));
             }
         }
     }
@@ -301,7 +307,8 @@ internal sealed class CombatTurnSurfaceProvider : IBridgeSurfaceProvider
         PlayerCmd.EndTurn(expectedPlayer, canBackOut: false);
         return BridgeActionStartResult.Started(
             () => !CombatManager.Instance.IsInProgress || !IsActionablePlayerTurn(expectedPlayer),
-            EndTurnCompletionWitness);
+            EndTurnCompletionWitness,
+            allowIntermediateStateChanges: true);
     }
 
     internal static bool CanUsePotion(Player player, PotionModel? potion) =>

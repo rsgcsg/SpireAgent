@@ -59,6 +59,16 @@ Treasure candidates bind the exact room and, for relic choice, the exact
 relic entity. Both families resolve current native controls at execution and
 do not execute through Bridge v2 action IDs or Provider action closures.
 
+Reward-claim candidates are derived from the typed rewards Surface rather than
+Provider action drafts. They bind the exact screen and reward or potion
+entity; proceed/discard controls also carry a semantic `control_id`. Execution
+resolves the current native button, player and potion slot again before native
+Commit.
+
+Combat potions always bind their exact native target, including self/player
+targets. A target that is implicit in the visual label is not implicit in the
+execution contract.
+
 ## Receipt
 
 Receipt states are:

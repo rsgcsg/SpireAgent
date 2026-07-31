@@ -257,6 +257,8 @@ internal static class ConnectorV3Runtime
             return BuildEventOptionBindings(draft, eventOptions);
         if (draft.Surface is TreasureRoomSurface treasureRoom)
             return BuildTreasureRoomBindings(draft, treasureRoom);
+        if (draft.Surface is RewardClaimSurface rewards)
+            return BuildRewardClaimBindings(draft, rewards);
 
         var allowed = new List<(
             BridgeActionDraft Action,
@@ -382,6 +384,65 @@ internal static class ConnectorV3Runtime
                 "Continue from the treasure room",
                 "NTreasureRoom.ProceedButton+room-exit-or-map-open",
                 new[] { room }));
+        }
+        return actions;
+    }
+
+    private static IReadOnlyList<ConnectorV3BoundCommand> BuildRewardClaimBindings(
+        BridgeObservationDraft draft,
+        RewardClaimSurface surface)
+        => DescribeRewardClaimCommands(surface)
+            .Select(action => BuildNativeBinding(draft, action))
+            .Where(binding => binding != null)
+            .Cast<ConnectorV3BoundCommand>()
+            .ToArray();
+
+    internal static IReadOnlyList<BridgeActionDraft> DescribeRewardClaimCommands(
+        RewardClaimSurface surface)
+    {
+        var actions = new List<BridgeActionDraft>();
+        ActionEntityBinding screen = new("screen", surface.ScreenEntityId);
+        foreach (VisibleReward reward in surface.Rewards.Where(value => value.Enabled))
+        {
+            actions.Add(NativeDescriptor(
+                $"reward:claim:{surface.ScreenEntityId}:{reward.EntityId}",
+                "claim_reward",
+                "claim",
+                $"Claim {reward.Label}",
+                "NRewardButton.Reward+NRewardButton.ForceClick+reward-set-post-state",
+                new[]
+                {
+                    screen,
+                    new ActionEntityBinding("reward", reward.EntityId)
+                }));
+        }
+
+        foreach (VisibleCombatPotion potion in surface.DiscardablePotions)
+        {
+            actions.Add(NativeDescriptor(
+                $"reward:discard-potion:{surface.ScreenEntityId}:{potion.EntityId}",
+                "discard_potion_for_reward",
+                "capacity",
+                $"Discard {potion.Name ?? potion.DefinitionId} from slot {potion.Slot + 1} to make room",
+                "DiscardPotionGameAction+exact-potion-slot-post-state",
+                new[]
+                {
+                    screen,
+                    new ActionEntityBinding("potion", potion.EntityId)
+                }));
+        }
+
+        if (surface.CanProceed)
+        {
+            actions.Add(NativeDescriptor(
+                $"reward:proceed:{surface.ScreenEntityId}",
+                "proceed_rewards",
+                "navigation",
+                surface.ProceedSkipsRemainingRewards
+                    ? "Skip remaining rewards and continue"
+                    : "Continue from rewards",
+                "NRewardsScreen.ProceedButton+visible-map-or-owner-handoff",
+                new[] { screen }));
         }
         return actions;
     }
@@ -624,6 +685,10 @@ internal static class ConnectorV3Runtime
                     snapshot,
                     request,
                     binding),
+                "reward_claim" => StartRewardClaimCommand(
+                    snapshot,
+                    request,
+                    binding),
                 "treasure_room" => StartTreasureRoomCommand(
                     snapshot,
                     request,
@@ -772,6 +837,68 @@ internal static class ConnectorV3Runtime
             screenId,
             optionId,
             expectedProceed);
+    }
+
+    private static BridgeActionStartResult StartRewardClaimCommand(
+        ConnectorV3Snapshot snapshot,
+        ConnectorV3CommandRequest request,
+        ConnectorV3BoundCommand binding)
+    {
+        if (snapshot.Draft.Surface is not RewardClaimSurface surface)
+        {
+            return BridgeActionStartResult.Rejected(
+                "owner_changed",
+                "The rewards-screen owner is no longer current.");
+        }
+        IReadOnlyDictionary<string, string> operands =
+            request.Operands ?? new Dictionary<string, string>();
+        if (!operands.TryGetValue("screen_id", out string? screenId)
+            || !string.Equals(
+                screenId,
+                surface.ScreenEntityId,
+                StringComparison.Ordinal))
+        {
+            return BridgeActionStartResult.Rejected(
+                "reward_owner_changed",
+                "The exact rewards screen is no longer current.");
+        }
+
+        return binding.Candidate.Operation switch
+        {
+            "claim_reward"
+                when operands.TryGetValue("choice_id", out string? rewardId) =>
+                RewardClaimSurfaceProvider.StartClaim(
+                    Entities,
+                    screenId,
+                    rewardId),
+            "discard_potion_for_reward"
+                when operands.TryGetValue("potion_id", out string? potionId)
+                     && operands.TryGetValue(
+                         "control_id",
+                         out string? discardControl)
+                     && string.Equals(
+                         discardControl,
+                         "discard_potion_for_reward",
+                         StringComparison.Ordinal) =>
+                RewardClaimSurfaceProvider.StartDiscardPotion(
+                    Entities,
+                    screenId,
+                    potionId),
+            "proceed_rewards"
+                when operands.TryGetValue(
+                         "control_id",
+                         out string? proceedControl)
+                     && string.Equals(
+                         proceedControl,
+                         "proceed_rewards",
+                         StringComparison.Ordinal) =>
+                RewardClaimSurfaceProvider.StartProceed(
+                    Entities,
+                    screenId),
+            _ => BridgeActionStartResult.Rejected(
+                "reward_command_unsupported",
+                "The requested command is not supported for this exact rewards state.")
+        };
     }
 
     private static BridgeActionStartResult StartTreasureRoomCommand(

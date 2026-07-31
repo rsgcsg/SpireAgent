@@ -221,6 +221,78 @@ internal sealed class RewardClaimSurfaceProvider : IBridgeSurfaceProvider
     private static bool ArePotionSlotsFull(Player player, int? occupiedCount = null) =>
         (occupiedCount ?? OccupiedPotions(player).Count) >= player.PotionSlots.Count;
 
+    internal static BridgeActionStartResult StartClaim(
+        BridgeEntityRegistry entities,
+        string expectedScreenId,
+        string expectedRewardId)
+    {
+        if (!entities.TryResolve(expectedScreenId, out NRewardsScreen? screen)
+            || screen == null
+            || !entities.TryResolve(expectedRewardId, out NRewardButton? button)
+            || button?.Reward == null
+            || RunManager.Instance.DebugOnlyGetState() is not { } runState
+            || LocalContext.GetMe(runState) is not { } player)
+        {
+            return BridgeActionStartResult.Rejected(
+                "reward_binding_changed",
+                "The exact rewards screen, reward, or local player is no longer available.");
+        }
+
+        NRewardButton[] buttons = McpMod.FindAll<NRewardButton>(screen)
+            .Where(candidate => McpMod.IsNodeVisible(candidate) && candidate.Reward != null)
+            .OrderBy(candidate => candidate.Position.Y)
+            .ThenBy(candidate => candidate.Position.X)
+            .ToArray();
+        return StartClaim(screen, player, button, button.Reward, buttons);
+    }
+
+    internal static BridgeActionStartResult StartProceed(
+        BridgeEntityRegistry entities,
+        string expectedScreenId)
+    {
+        if (!entities.TryResolve(expectedScreenId, out NRewardsScreen? screen)
+            || screen == null
+            || McpMod.FindFirst<NProceedButton>(screen) is not { } proceed)
+        {
+            return BridgeActionStartResult.Rejected(
+                "reward_proceed_binding_changed",
+                "The exact rewards screen or proceed control is no longer available.");
+        }
+
+        NRewardButton[] buttons = McpMod.FindAll<NRewardButton>(screen)
+            .Where(candidate => McpMod.IsNodeVisible(candidate) && candidate.Reward != null)
+            .OrderBy(candidate => candidate.Position.Y)
+            .ThenBy(candidate => candidate.Position.X)
+            .ToArray();
+        return StartProceed(screen, proceed, buttons);
+    }
+
+    internal static BridgeActionStartResult StartDiscardPotion(
+        BridgeEntityRegistry entities,
+        string expectedScreenId,
+        string expectedPotionId)
+    {
+        if (!entities.TryResolve(expectedScreenId, out NRewardsScreen? screen)
+            || screen == null
+            || !entities.TryResolve(expectedPotionId, out PotionModel? potion)
+            || potion?.Owner is not Player player)
+        {
+            return BridgeActionStartResult.Rejected(
+                "potion_capacity_binding_changed",
+                "The exact rewards screen, potion, or potion owner is no longer available.");
+        }
+
+        int slot = Enumerable.Range(0, player.PotionSlots.Count)
+            .FirstOrDefault(
+                index => ReferenceEquals(player.GetPotionAtSlotIndex(index), potion),
+                -1);
+        return slot < 0
+            ? BridgeActionStartResult.Rejected(
+                "potion_slot_changed",
+                "The exact potion is no longer in the player's belt.")
+            : StartDiscardPotion(screen, player, potion, slot);
+    }
+
     private static BridgeActionStartResult StartClaim(
         NRewardsScreen expectedScreen,
         Player expectedPlayer,

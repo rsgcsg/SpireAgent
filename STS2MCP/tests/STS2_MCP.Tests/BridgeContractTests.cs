@@ -2499,7 +2499,6 @@ public sealed class BridgeContractTests
         object playedHeadbutt = new();
 
         Assert.True(MoveOneToTopWitness.Selected(
-            sourceCompleted: true,
             surfaceClosed: true,
             new[] { selected, otherDiscard },
             new[] { oldDraw },
@@ -2507,7 +2506,6 @@ public sealed class BridgeContractTests
             new[] { selected, oldDraw },
             selected));
         Assert.False(MoveOneToTopWitness.Selected(
-            sourceCompleted: true,
             surfaceClosed: true,
             new[] { selected, otherDiscard },
             new[] { oldDraw },
@@ -2515,8 +2513,7 @@ public sealed class BridgeContractTests
             new[] { wrongTop, selected, oldDraw },
             selected));
         Assert.False(MoveOneToTopWitness.Selected(
-            sourceCompleted: false,
-            surfaceClosed: true,
+            surfaceClosed: false,
             new[] { selected, otherDiscard },
             new[] { oldDraw },
             new[] { otherDiscard },
