@@ -2134,7 +2134,7 @@ public sealed class BridgeContractTests
             stateTravelable: true,
             enabled: true,
             ftueSatisfied: true,
-            usingController: false,
+            usingDirectionalNavigation: false,
             nodeOnScreen: false));
         Assert.True(MapNavigationSurfaceProvider.CanAdvertiseMapChoice(true, true, true, true, true));
         Assert.False(MapNavigationSurfaceProvider.CanAdvertiseMapChoice(true, true, true, true, false));
@@ -2150,14 +2150,14 @@ public sealed class BridgeContractTests
             stateTravelable: true,
             enabled: true,
             ftueSatisfied: true,
-            usingController: false,
+            usingDirectionalNavigation: false,
             nodeOnScreen: true,
             targetAlreadyVisited: true));
         Assert.True(MapNavigationSurfaceProvider.CanAdvertiseMapChoice(
             stateTravelable: true,
             enabled: true,
             ftueSatisfied: true,
-            usingController: false,
+            usingDirectionalNavigation: false,
             nodeOnScreen: true,
             targetAlreadyVisited: false));
     }
@@ -3540,8 +3540,8 @@ public sealed class BridgeContractTests
             "event_option", "screen-a", new[]
             {
                 new VisibleEventOption(
-                    "option-a", 0, "Choose", "Visible result", false, false, false,
-                    true, null, null, new[]
+                    "option-a", 0, "Choose", "Visible result", true, false, false,
+                    false, true, null, null, new[]
                     {
                         new VisibleEventOptionTooltip("text", "Guilty", "Cannot be played.", null)
                     })

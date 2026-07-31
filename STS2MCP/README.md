@@ -28,10 +28,12 @@ Direct macOS checks:
 
 ```bash
 export STS2_GAME_DIR="$HOME/Library/Application Support/Steam/steamapps/common/Slay the Spire 2"
-dotnet test STS2MCP/STS2_MCP.sln -p:STS2GameDir="$STS2_GAME_DIR"
+dotnet test STS2MCP/STS2_MCP.sln -p:STS2GameDir="$STS2_GAME_DIR" \
+  -p:UseSharedCompilation=false
 python3 -m py_compile STS2MCP/mcp/server.py
 dotnet build STS2MCP/STS2_MCP.csproj -c Release \
-  -o STS2MCP/out/STS2_MCP -p:STS2GameDir="$STS2_GAME_DIR"
+  -o STS2MCP/out/STS2_MCP -p:STS2GameDir="$STS2_GAME_DIR" \
+  -p:UseSharedCompilation=false
 ```
 
 ## Install And Roll Back

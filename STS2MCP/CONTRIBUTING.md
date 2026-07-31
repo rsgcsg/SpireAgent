@@ -18,8 +18,8 @@ before changing protocol or game-bound behavior.
 
 ```bash
 GAME_DIR="<Slay the Spire 2 install directory>"
-dotnet test STS2_MCP.sln -p:STS2GameDir="$GAME_DIR"
-dotnet build STS2_MCP.csproj -c Release -p:STS2GameDir="$GAME_DIR"
+dotnet test STS2_MCP.sln -p:STS2GameDir="$GAME_DIR" -p:UseSharedCompilation=false
+dotnet build STS2_MCP.csproj -c Release -p:STS2GameDir="$GAME_DIR" -p:UseSharedCompilation=false
 uv run --directory mcp python -m py_compile server.py
 ```
 

@@ -253,6 +253,11 @@ internal static class ConnectorV3Runtime
     private static IReadOnlyList<ConnectorV3BoundCommand> BuildBindings(
         BridgeObservationDraft draft)
     {
+        if (draft.Surface is EventOptionSurface eventOptions)
+            return BuildEventOptionBindings(draft, eventOptions);
+        if (draft.Surface is TreasureRoomSurface treasureRoom)
+            return BuildTreasureRoomBindings(draft, treasureRoom);
+
         var allowed = new List<(
             BridgeActionDraft Action,
             ActionPermissionScope Scope,
@@ -285,6 +290,137 @@ internal static class ConnectorV3Runtime
                 PermissionBinding(item.Scope),
                 item.Contract))
             .ToArray();
+    }
+
+    private static IReadOnlyList<ConnectorV3BoundCommand> BuildEventOptionBindings(
+        BridgeObservationDraft draft,
+        EventOptionSurface surface)
+    {
+        var result = new List<ConnectorV3BoundCommand>();
+        foreach (BridgeActionDraft action in DescribeEventOptionCommands(surface))
+        {
+            if (BuildNativeBinding(draft, action) is { } binding)
+                result.Add(binding);
+        }
+        return result;
+    }
+
+    internal static IReadOnlyList<BridgeActionDraft> DescribeEventOptionCommands(
+        EventOptionSurface surface) =>
+        surface.Options
+            .Where(option => option.IsEnabled && !option.IsLocked)
+            .Select(option => NativeDescriptor(
+                $"event_option:{surface.ScreenEntityId}:{option.EntityId}",
+                option.IsProceed ? "proceed_event" : "choose_event_option",
+                option.IsProceed ? "navigation" : "selection",
+                option.Title
+                ?? option.Description
+                ?? (option.IsProceed ? "Proceed" : "Choose event option"),
+                "NEventRoom.OptionButtonClicked+NEventOptionButton",
+                new[]
+                {
+                    new ActionEntityBinding("screen", surface.ScreenEntityId),
+                    new ActionEntityBinding("option", option.EntityId)
+                }))
+            .ToArray();
+
+    private static IReadOnlyList<ConnectorV3BoundCommand> BuildTreasureRoomBindings(
+        BridgeObservationDraft draft,
+        TreasureRoomSurface surface)
+        => DescribeTreasureRoomCommands(surface)
+            .Select(action => BuildNativeBinding(draft, action))
+            .Where(binding => binding != null)
+            .Cast<ConnectorV3BoundCommand>()
+            .ToArray();
+
+    internal static IReadOnlyList<BridgeActionDraft> DescribeTreasureRoomCommands(
+        TreasureRoomSurface surface)
+    {
+        var actions = new List<BridgeActionDraft>();
+        ActionEntityBinding room = new("treasure_room", surface.RoomEntityId);
+        if (surface.Stage == "closed")
+        {
+            actions.Add(NativeDescriptor(
+                $"treasure:open:{surface.RoomEntityId}",
+                "open_treasure_chest",
+                "reveal",
+                "Open the treasure chest",
+                "NTreasureRoom.OnChestButtonReleased+OpenChest+native-result-stage",
+                new[] { room }));
+        }
+        if (surface.Stage == "relic_choice" && surface.Relics.Count == 1)
+        {
+            VisibleTreasureRelic relic = surface.Relics[0];
+            actions.Add(NativeDescriptor(
+                $"treasure:relic:{surface.RoomEntityId}:{relic.EntityId}",
+                "choose_treasure_relic",
+                "claim",
+                $"Take {relic.Name ?? relic.DefinitionId}",
+                "NTreasureRoomRelicCollection.PickRelic+RelicCmd.Obtain+player-relic-post-state",
+                new[]
+                {
+                    room,
+                    new ActionEntityBinding("relic", relic.EntityId)
+                }));
+        }
+        if (surface.CanSkip)
+        {
+            actions.Add(NativeDescriptor(
+                $"treasure:skip:{surface.RoomEntityId}",
+                "skip_treasure_relic",
+                "skip",
+                "Skip the visible treasure relic",
+                "NTreasureRoom.ProceedButton.IsSkip+SkipRelicLocally+room-exit-post-state",
+                new[] { room }));
+        }
+        if (surface.CanProceed)
+        {
+            actions.Add(NativeDescriptor(
+                $"treasure:proceed:{surface.RoomEntityId}",
+                "proceed_treasure_room",
+                "navigation",
+                "Continue from the treasure room",
+                "NTreasureRoom.ProceedButton+room-exit-or-map-open",
+                new[] { room }));
+        }
+        return actions;
+    }
+
+    private static BridgeActionDraft NativeDescriptor(
+        string key,
+        string operation,
+        string category,
+        string label,
+        string evidenceCode,
+        IReadOnlyList<ActionEntityBinding> entityBindings) =>
+        new(
+            key,
+            operation,
+            category,
+            label,
+            evidenceCode,
+            static () => BridgeActionStartResult.Rejected(
+                "v3_native_binding_required",
+                "Connector V3 native commands cannot execute through a draft action."),
+            entityBindings);
+
+    private static ConnectorV3BoundCommand? BuildNativeBinding(
+        BridgeObservationDraft draft,
+        BridgeActionDraft action)
+    {
+        ActionPermissionScope? scope = BridgeSurfacePermission.FindActionScope(
+            draft.Game.Compatibility,
+            draft.Surface.Kind,
+            action.Kind);
+        BridgeBoundActionContract? contract =
+            BridgeBoundActionContract.Build(draft.Surface.Kind, action);
+        if (scope == null || contract == null || !contract.Matches(scope))
+            return null;
+        return new ConnectorV3BoundCommand(
+            BuildCandidate(action, scope, "native_direct_resolver"),
+            null,
+            PermissionBinding(scope),
+            contract);
     }
 
     private static IReadOnlyList<ConnectorV3BoundCommand> BuildNativeBindings(
@@ -484,6 +620,14 @@ internal static class ConnectorV3Runtime
                 "shop_room" => StartShopRoomCommand(snapshot, request),
                 "map_navigation" => StartMapCommand(snapshot, request),
                 "rest_site" => StartRestCommand(snapshot, request),
+                "event_option" => StartEventOptionCommand(
+                    snapshot,
+                    request,
+                    binding),
+                "treasure_room" => StartTreasureRoomCommand(
+                    snapshot,
+                    request,
+                    binding),
                 "deck_enchant_selection" => StartDeckEnchantCommand(
                     snapshot,
                     request,
@@ -583,6 +727,97 @@ internal static class ConnectorV3Runtime
         return BridgeActionStartResult.Rejected(
             "rest_command_unsupported",
             "The requested rest-site command is not supported for this exact interaction.");
+    }
+
+    private static BridgeActionStartResult StartEventOptionCommand(
+        ConnectorV3Snapshot snapshot,
+        ConnectorV3CommandRequest request,
+        ConnectorV3BoundCommand binding)
+    {
+        if (snapshot.Draft.Surface is not EventOptionSurface surface)
+        {
+            return BridgeActionStartResult.Rejected(
+                "owner_changed",
+                "The event-option owner is no longer current.");
+        }
+        IReadOnlyDictionary<string, string> operands =
+            request.Operands ?? new Dictionary<string, string>();
+        if (!operands.TryGetValue("screen_id", out string? screenId)
+            || !string.Equals(
+                screenId,
+                surface.ScreenEntityId,
+                StringComparison.Ordinal)
+            || !operands.TryGetValue("choice_id", out string? optionId))
+        {
+            return BridgeActionStartResult.Rejected(
+                "event_option_changed",
+                "The exact event room and option binding are no longer current.");
+        }
+
+        bool expectedProceed = binding.Candidate.Operation == "proceed_event";
+        if (expectedProceed
+            && (!operands.TryGetValue("control_id", out string? controlId)
+                || !string.Equals(
+                    controlId,
+                    "proceed_event",
+                    StringComparison.Ordinal)))
+        {
+            return BridgeActionStartResult.Rejected(
+                "event_option_command_unsupported",
+                "The requested event continuation control is not exact.");
+        }
+
+        return EventOptionSurfaceProvider.StartOption(
+            Entities,
+            screenId,
+            optionId,
+            expectedProceed);
+    }
+
+    private static BridgeActionStartResult StartTreasureRoomCommand(
+        ConnectorV3Snapshot snapshot,
+        ConnectorV3CommandRequest request,
+        ConnectorV3BoundCommand binding)
+    {
+        if (snapshot.Draft.Surface is not TreasureRoomSurface surface)
+        {
+            return BridgeActionStartResult.Rejected(
+                "owner_changed",
+                "The treasure-room owner is no longer current.");
+        }
+        IReadOnlyDictionary<string, string> operands =
+            request.Operands ?? new Dictionary<string, string>();
+        if (!operands.TryGetValue(
+                "treasure_room_id",
+                out string? roomId)
+            || !string.Equals(
+                roomId,
+                surface.RoomEntityId,
+                StringComparison.Ordinal))
+        {
+            return BridgeActionStartResult.Rejected(
+                "treasure_owner_changed",
+                "The exact treasure-room owner is no longer current.");
+        }
+
+        return binding.Candidate.Operation switch
+        {
+            "open_treasure_chest" =>
+                TreasureRoomSurfaceProvider.StartOpen(Entities, roomId),
+            "choose_treasure_relic"
+                when operands.TryGetValue("choice_id", out string? relicId) =>
+                TreasureRoomSurfaceProvider.StartChoose(
+                    Entities,
+                    roomId,
+                    relicId),
+            "skip_treasure_relic" =>
+                TreasureRoomSurfaceProvider.StartSkip(Entities, roomId),
+            "proceed_treasure_room" =>
+                TreasureRoomSurfaceProvider.StartProceed(Entities, roomId),
+            _ => BridgeActionStartResult.Rejected(
+                "treasure_command_unsupported",
+                "The requested command is not supported for this exact treasure stage.")
+        };
     }
 
     private static BridgeActionStartResult StartDeckEnchantCommand(

@@ -118,12 +118,14 @@ macOS:
 
 ```bash
 export STS2_GAME_DIR="$HOME/Library/Application Support/Steam/steamapps/common/Slay the Spire 2"
-dotnet test STS2MCP/STS2_MCP.sln -p:STS2GameDir="$STS2_GAME_DIR"
+dotnet test STS2MCP/STS2_MCP.sln -p:STS2GameDir="$STS2_GAME_DIR" \
+  -p:UseSharedCompilation=false
 python3 -m py_compile STS2MCP/mcp/server.py
 uv lock --check --directory STS2MCP/mcp
 dotnet build STS2MCP/STS2_MCP.csproj -c Release \
   -o STS2MCP/out/STS2_MCP \
-  -p:STS2GameDir="$STS2_GAME_DIR"
+  -p:STS2GameDir="$STS2_GAME_DIR" \
+  -p:UseSharedCompilation=false
 npm run check:connector-adaptation
 npm run audit:connector-compatibility
 ```
@@ -132,10 +134,12 @@ Windows PowerShell:
 
 ```powershell
 $env:STS2_GAME_DIR = "D:\SteamLibrary\steamapps\common\Slay the Spire 2"
-dotnet test STS2MCP/STS2_MCP.sln -p:STS2GameDir="$env:STS2_GAME_DIR"
+dotnet test STS2MCP/STS2_MCP.sln -p:STS2GameDir="$env:STS2_GAME_DIR" `
+  -p:UseSharedCompilation=false
 dotnet build STS2MCP/STS2_MCP.csproj -c Release `
   -o STS2MCP/out/STS2_MCP `
-  -p:STS2GameDir="$env:STS2_GAME_DIR"
+  -p:STS2GameDir="$env:STS2_GAME_DIR" `
+  -p:UseSharedCompilation=false
 python -m py_compile STS2MCP/mcp/server.py
 uv lock --check --directory STS2MCP/mcp
 npm run check:connector-adaptation

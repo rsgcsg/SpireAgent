@@ -649,6 +649,7 @@ public sealed record VisibleEventOption(
     int Index,
     string? Title,
     string? Description,
+    bool IsEnabled,
     bool IsLocked,
     bool IsProceed,
     bool WasChosen,

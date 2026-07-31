@@ -1016,6 +1016,7 @@ const EVENT_OPTION_STATE = {
       index: 0,
       title: "Proceed",
       description: "Return to the map.",
+      is_enabled: true,
       is_locked: false,
       is_proceed: true,
       was_chosen: false,

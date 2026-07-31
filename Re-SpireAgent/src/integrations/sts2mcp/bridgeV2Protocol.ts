@@ -660,6 +660,7 @@ const visibleEventOptionSchema = z.object({
   index: z.number().int().nonnegative(),
   title: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
+  is_enabled: z.boolean(),
   is_locked: z.boolean(),
   is_proceed: z.boolean(),
   was_chosen: z.boolean(),

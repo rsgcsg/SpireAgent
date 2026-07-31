@@ -36,6 +36,13 @@ internal sealed class MapNavigationSurfaceProvider : IBridgeSurfaceProvider
                     method.GetParameters().Select(parameter => parameter.ParameterType).ToArray()))
             .OrderByDescending(method => method.GetParameters().Length)
             .FirstOrDefault();
+    private static readonly PropertyInfo? DirectionalNavigationProperty =
+        typeof(NControllerManager).GetProperty(
+            "IsUsingDirectionalNavigation",
+            PublicFlags)
+        ?? typeof(NControllerManager).GetProperty(
+            "IsUsingController",
+            PublicFlags);
 
     public string Kind => SurfaceKind;
 
@@ -93,6 +100,12 @@ internal sealed class MapNavigationSurfaceProvider : IBridgeSurfaceProvider
                 game,
                 "The exact map drawing-mode source binding is unavailable.");
         }
+        if (!TryGetDirectionalNavigation(out bool usingDirectionalNavigation))
+        {
+            return BindingUnavailable(
+                game,
+                "The exact map input-mode source binding is unavailable.");
+        }
         NMapDrawingInput? drawingInput = null;
         if (drawingMode != DrawingMode.None)
         {
@@ -113,14 +126,18 @@ internal sealed class MapNavigationSurfaceProvider : IBridgeSurfaceProvider
             inputDisabled,
             drawingMode == DrawingMode.None);
         if (routeInputReady && pointNodes.Any(node =>
-                IsExactUiTravelChoice(screen, node)
+                IsExactUiTravelChoice(screen, node, usingDirectionalNavigation)
                 && runState.VisitedMapCoords.Contains(node.Point.coord)))
         {
             return ContradictoryRouteState(game, context);
         }
 
         NMapPoint[] travelable = routeInputReady
-            ? pointNodes.Where(node => IsExactMapTravelChoice(screen, runState, node)).ToArray()
+            ? pointNodes.Where(node => IsExactMapTravelChoice(
+                screen,
+                runState,
+                node,
+                usingDirectionalNavigation)).ToArray()
             : Array.Empty<NMapPoint>();
         VisibleMapChoice[] options = travelable.Select(node => new VisibleMapChoice(
             entities.GetId(node, "map_node"),
@@ -161,6 +178,7 @@ internal sealed class MapNavigationSurfaceProvider : IBridgeSurfaceProvider
                 "NMapScreen.IsOpen+IsTravelEnabled+IsTraveling",
                 "NMapScreen._isInputDisabled exact-version binding",
                 "NMapDrawings.GetLocalDrawingMode",
+                "NControllerManager.IsUsingDirectionalNavigation source binding",
                 "NMapPoint.Point+State+IsEnabled+IsTravelable",
                 "RunState.CurrentMapCoord+VisitedMapCoords",
                 "MapPoint.PointType+Children"
@@ -209,13 +227,13 @@ internal sealed class MapNavigationSurfaceProvider : IBridgeSurfaceProvider
         bool stateTravelable,
         bool enabled,
         bool ftueSatisfied,
-        bool usingController,
+        bool usingDirectionalNavigation,
         bool nodeOnScreen,
         bool targetAlreadyVisited = false) =>
         stateTravelable
         && enabled
         && ftueSatisfied
-        && (!usingController || nodeOnScreen)
+        && (!usingDirectionalNavigation || nodeOnScreen)
         && !targetAlreadyVisited;
 
     internal static bool IsCompatibleLocalDrawingModeSignature(
@@ -226,29 +244,35 @@ internal sealed class MapNavigationSurfaceProvider : IBridgeSurfaceProvider
     internal static bool HasCompatibleLocalDrawingModeBinding =>
         LocalDrawingModeMethod != null;
 
-    private static bool IsExactUiTravelChoice(NMapScreen screen, NMapPoint node)
+    internal static string? ControllerInputModeBindingName =>
+        DirectionalNavigationProperty?.Name;
+
+    private static bool IsExactUiTravelChoice(
+        NMapScreen screen,
+        NMapPoint node,
+        bool usingDirectionalNavigation)
     {
-        NControllerManager? controller = NControllerManager.Instance;
         return node.Point != null
-               && controller != null
                && CanAdvertiseMapChoice(
                    node.State == MapPointState.Travelable,
                    node.IsEnabled,
                    node.Point.coord.row != 0 || SaveManager.Instance.SeenFtue("map_select_ftue"),
-                   controller.IsUsingController,
+                   usingDirectionalNavigation,
                    screen.IsNodeOnScreen(node));
     }
 
-    private static bool IsExactMapTravelChoice(NMapScreen screen, RunState runState, NMapPoint node)
+    private static bool IsExactMapTravelChoice(
+        NMapScreen screen,
+        RunState runState,
+        NMapPoint node,
+        bool usingDirectionalNavigation)
     {
-        NControllerManager? controller = NControllerManager.Instance;
         return node.Point != null
-               && controller != null
                && CanAdvertiseMapChoice(
                    node.State == MapPointState.Travelable,
                    node.IsEnabled,
                    node.Point.coord.row != 0 || SaveManager.Instance.SeenFtue("map_select_ftue"),
-                   controller.IsUsingController,
+                   usingDirectionalNavigation,
                    screen.IsNodeOnScreen(node),
                    targetAlreadyVisited: !IsExactRunStateDestination(runState, node.Point.coord));
     }
@@ -422,13 +446,18 @@ internal sealed class MapNavigationSurfaceProvider : IBridgeSurfaceProvider
             || !expectedScreen.IsTravelEnabled
             || !TryGetLocalDrawingMode(expectedScreen.Drawings, out DrawingMode drawingMode)
             || drawingMode != DrawingMode.None
+            || !TryGetDirectionalNavigation(out bool usingDirectionalNavigation)
             || InputDisabledField?.GetValue(expectedScreen) is not bool inputDisabled
             || inputDisabled
             || !ReferenceEquals(RunManager.Instance.DebugOnlyGetState(), expectedRunState)
             || !McpMod.FindAll<NMapPoint>(expectedScreen).Any(node => ReferenceEquals(node, expectedNode))
             || expectedNode.Point == null
             || !expectedNode.Point.coord.Equals(expectedCoord)
-            || !IsExactMapTravelChoice(expectedScreen, expectedRunState, expectedNode))
+            || !IsExactMapTravelChoice(
+                expectedScreen,
+                expectedRunState,
+                expectedNode,
+                usingDirectionalNavigation))
         {
             return BridgeActionStartResult.Rejected(
                 "map_choice_changed",
@@ -462,6 +491,33 @@ internal sealed class MapNavigationSurfaceProvider : IBridgeSurfaceProvider
             if (method.Invoke(drawings, arguments) is not DrawingMode observed)
                 return false;
             drawingMode = observed;
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    private static bool TryGetDirectionalNavigation(
+        out bool usingDirectionalNavigation)
+    {
+        usingDirectionalNavigation = false;
+        NControllerManager? controller = NControllerManager.Instance;
+        PropertyInfo? property = DirectionalNavigationProperty;
+        if (controller == null
+            || property == null
+            || property.PropertyType != typeof(bool)
+            || property.GetIndexParameters().Length != 0)
+        {
+            return false;
+        }
+
+        try
+        {
+            if (property.GetValue(controller) is not bool observed)
+                return false;
+            usingDirectionalNavigation = observed;
             return true;
         }
         catch (Exception)

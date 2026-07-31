@@ -65,6 +65,7 @@ internal sealed class EventOptionSurfaceProvider : IBridgeSurfaceProvider
                 position,
                 McpMod.SafeGetText(() => option.Title),
                 McpMod.SafeGetText(() => option.Description),
+                button.IsEnabled,
                 option.IsLocked,
                 option.IsProceed,
                 option.WasChosen,
@@ -82,7 +83,11 @@ internal sealed class EventOptionSurfaceProvider : IBridgeSurfaceProvider
                     BuildLabel(option),
                     "NEventRoom.OptionButtonClicked+NEventOptionButton",
                     () => StartOption(room, button, option, position),
-                    new[] { new ActionEntityBinding("option", entityId) }));
+                    new[]
+                    {
+                        new ActionEntityBinding("screen", entities.GetId(room, "screen")),
+                        new ActionEntityBinding("option", entityId)
+                    }));
             }
         }
 
@@ -191,6 +196,50 @@ internal sealed class EventOptionSurfaceProvider : IBridgeSurfaceProvider
             completionProbe,
             completionEvidence,
             allowIntermediateStateChanges: true);
+
+    internal static BridgeActionStartResult StartOption(
+        BridgeEntityRegistry entities,
+        string expectedScreenId,
+        string expectedOptionId,
+        bool expectedProceed)
+    {
+        NEventRoom? room = NEventRoom.Instance;
+        if (room == null
+            || !McpMod.IsLiveNode(room)
+            || !string.Equals(
+                entities.GetId(room, "screen"),
+                expectedScreenId,
+                StringComparison.Ordinal)
+            || !entities.TryResolve(expectedOptionId, out EventOption? option)
+            || option == null)
+        {
+            return BridgeActionStartResult.Rejected(
+                "event_option_changed",
+                "The exact event room or option entity is no longer current.");
+        }
+
+        NEventOptionButton[] buttons = room.Layout?.OptionButtons.ToArray()
+            ?? Array.Empty<NEventOptionButton>();
+        (NEventOptionButton Button, int Index)[] matches = buttons
+            .Select((button, index) => (Button: button, Index: index))
+            .Where(entry =>
+                ReferenceEquals(entry.Button.Option, option)
+                && McpMod.IsNodeVisible(entry.Button))
+            .ToArray();
+        if (matches.Length != 1
+            || option.IsProceed != expectedProceed)
+        {
+            return BridgeActionStartResult.Rejected(
+                "event_option_changed",
+                "The exact event option no longer has one matching visible native control.");
+        }
+
+        return StartOption(
+            room,
+            matches[0].Button,
+            option,
+            matches[0].Index);
+    }
 
     private static bool HasReplacementOptions(
         NEventRoom expectedRoom,

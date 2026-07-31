@@ -3,8 +3,8 @@
 Baseline date: 2026-07-31
 
 Branch baseline: `connectorV3` at
-`8c68d124e7e02ffd4a8cf0a243a674e34fa92858`, plus the current uncommitted
-repair wave.
+`5de97c311c9dfcaa3bb3ec08976c8d8740c83005`, plus the current uncommitted
+map source-binding and event/treasure V3-native migration wave.
 
 ## Architecture
 
@@ -18,7 +18,8 @@ Current V3 source implements:
 - exact state token and entity identity;
 - one visible active interaction, including visible unsupported states;
 - parameterized commands and action-local receipts;
-- direct native combat, shop-room, map, rest-site and deck-enchant resolvers;
+- direct native combat, shop-room, map, rest-site, event-option, treasure-room
+  and deck-enchant resolvers;
 - bounded non-combat native-binding migration adapters;
 - one controller, exact environment authority, idempotent command ledger,
   semantic Outcome and unknown-no-retry;
@@ -27,27 +28,31 @@ Current V3 source implements:
 ## Exact V3 Runtime Evidence
 
 The latest cold-loaded runtime used SHA
-`68eed0b4890a96741dcb3f234e936149bfcc32affc806eb0c17db1142cc69685`,
-MVID `54decad4-0ab8-4b4a-92c7-04aa2b5a35fb`, runtime
-`a009ff9f1bbf4a35bffe5a1c73ae4e95`, game `v0.110.0` commit `eecc8c4d`
-and the exact-bridge-only Modset.
+`24f44c2482efe36a86be3dd9d085542676c275f5acf7f9c40b47329616069c2b`,
+MVID `5feaf546-00c4-436c-8391-96a6087e8eb7`, runtime
+`fb0774a99eaf4289b6ce928bc9070f3b`, game `v0.110.0` commit `eecc8c4d`
+and exact-bridge-only Modset fingerprint
+`a7bcbef56a870aff6373de9c89b89a40887e087209f75ffa522e4531440925e2`.
 
-Twenty-one runs used V3 observation, parameterized commands and receipts for
-117 submitted commands. They exercised combat and ordinary non-combat
-families. The final `run-20260731040632-00yz1g` completed one game and stopped
-at the normal non-actionable main-menu boundary.
+Seventeen runs from `run-20260731053147-8zvzpz` through
+`run-20260731061038-hvey16` used V3 observation, parameterized commands and
+receipts. They recorded 116 decisions and 99 submitted commands; every
+submitted receipt completed. Exact-source runs exercised both Symbiote and
+Self-Help Book deck enchant select/confirm lifecycles successfully. Dream
+Catcher's rest child did not naturally appear and remains `not exercised`.
 
-The same runtime exposed three bounded defects: v0.110.0 changed the map
-`GetLocalDrawingMode` CLR signature; Dream Catcher opened a valid rest-site
-child after Heal that the old Outcome did not accept; and Symbiote opened an
-unregistered deck-enchant source which Re then projected with the wrong
-unsupported shape. The repair wave adds a bounded map ABI binding, exact
-rest-child handoff Outcome, exact Symbiote source contract, and direct V3 map,
-rest and deck-enchant resolvers.
+The same runtime proved that the first map repair was incomplete. The loaded
+IL no longer called the obsolete zero-argument drawing API, but still called
+the removed `NControllerManager.get_IsUsingController()` getter. Map
+observations therefore failed closed with `MissingMethodException`. The
+current source replaces that direct ABI dependency with a bounded map
+input-mode Source Binding and disables shared compiler metadata caching in
+the canonical build/test path.
 
 Exact attribution is recorded in
 [v0.110.0 Live evidence](../../STS2MCP/docs/connector-v3/LIVE_EVIDENCE_V0_110_0_2026-07-31.md).
-The new repair SHA/MVID has no loaded or mutation evidence yet. The earlier
+The event-option and treasure-room V3-native cutovers, and the second map
+repair, have source and automated evidence only until the next cold load. The earlier
 [v0.109.1 evidence](../../STS2MCP/docs/connector-v3/LIVE_EVIDENCE_2026-07-31.md)
 remains historical exact-runtime evidence only.
 
@@ -79,15 +84,17 @@ evidence or durable V3 qualification.
 | State | Current result |
 |---|---|
 | source | V3 `3.0-preview.1` implemented on `connectorV3` worktree |
-| automated tests | Gateway 216 and Re 220 passed; docs, CLI, run identity, compatibility, permission, qualification, Profile, migration, audit and MCP checks passed |
-| Release build | verified, Mod `0.6.0-dev`, SHA `24f44c2482efe36a86be3dd9d085542676c275f5acf7f9c40b47329616069c2b`, MVID `5feaf546-00c4-436c-8391-96a6087e8eb7` |
-| installed | verified equal to Release SHA/MVID after clean game shutdown |
-| loaded | non-claim; game is stopped and Gateway is unreachable until the next cold start |
-| V3 mutation canary | obtained for the preceding exact v0.110.0 SHA/MVID only |
-| V3 bounded journey | completed on preceding exact v0.110.0 SHA/MVID; repair artifact pending |
+| automated tests | Gateway 218 and Re 220 passed; docs, CLI, run identity, compatibility, permission, qualification, Profile and migration checks passed |
+| Release build | current Mod `0.6.0-dev`, SHA `40d088745cd3e23844c06d81bbefd2b85ccb427104e7325d0719e3134607d84c`, MVID `9add88e7-19d6-4854-95e3-060544ce5663` |
+| installed | verified equal to current Release SHA/MVID after clean game shutdown |
+| loaded | latest verified loaded identity remains SHA `24f44c...`, MVID `5feaf546...`, runtime `fb0774...`; current installed SHA `40d088...` is `loaded = non-claim` until a cold start |
+| V3 mutation canary | Symbiote and Self-Help Book deck enchant plus ordinary combat/event/reward/shop mutations obtained on the loaded identity |
+| V3 bounded journey | 17-run follow-up obtained; map remained a real blocker and no repaired full journey is claimed |
 | V3 durable claim | none |
 
 Current repaired-install rollback:
+`STS2MCP/.local/deployments/2026-07-31T06-55-35-150Z`.
+Previous loaded-repair rollback:
 `STS2MCP/.local/deployments/2026-07-31T04-34-03-246Z`.
 Previous v0.110.0 evidence artifact rollback:
 `STS2MCP/.local/deployments/2026-07-31T03-37-42-912Z`.

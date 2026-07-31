@@ -2965,7 +2965,7 @@ function projectEventOptionSurface(
       index: option.index,
       title: option.title ?? option.description ?? `Event option ${option.index}`,
       ...(option.description ? { description: option.description } : {}),
-      enabled: !option.is_locked,
+      enabled: option.is_enabled && !option.is_locked,
       proceed: option.is_proceed,
       chosen: option.was_chosen,
       willKillPlayer: option.will_kill_player,

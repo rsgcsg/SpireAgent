@@ -21,6 +21,10 @@ An observation contains:
 A visible unsupported interaction remains present with
 `execution_support=unsupported` and no candidates.
 
+Event options expose `is_enabled` separately from `is_locked`. V3 candidate
+discovery requires both the exact current native control to be enabled and the
+semantic option to be unlocked; option text or position never grants authority.
+
 ## Command
 
 ```json
@@ -49,6 +53,11 @@ when they also bind an owner entity. This distinguishes multiple visible
 controls on one owner, such as opening a merchant inventory versus leaving the
 same merchant room. `control_id` is not a V2 action ID and cannot name an
 unadvertised method or UI node.
+
+Event-option candidates bind the exact event screen and option entity.
+Treasure candidates bind the exact room and, for relic choice, the exact
+relic entity. Both families resolve current native controls at execution and
+do not execute through Bridge v2 action IDs or Provider action closures.
 
 ## Receipt
 

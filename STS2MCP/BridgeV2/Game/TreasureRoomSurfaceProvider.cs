@@ -145,7 +145,11 @@ internal sealed class TreasureRoomSurfaceProvider : IBridgeSurfaceProvider
                 $"Take {visibleRelics[0].Name ?? visibleRelics[0].DefinitionId}",
                 "NTreasureRoomRelicCollection.PickRelic+RelicCmd.Obtain+player-relic-post-state",
                 () => StartChoose(room, uiRoom, collection, holder!, relic, player),
-                new[] { new ActionEntityBinding("relic", relicId) }));
+                new[]
+                {
+                    new ActionEntityBinding("treasure_room", roomId),
+                    new ActionEntityBinding("relic", relicId)
+                }));
         }
         if (canSkip)
         {
@@ -217,6 +221,97 @@ internal sealed class TreasureRoomSurfaceProvider : IBridgeSurfaceProvider
                 game,
                 $"Treasure projection failed at {step}: {ex.GetType().Name}.");
         }
+    }
+
+    internal static BridgeActionStartResult StartOpen(
+        BridgeEntityRegistry entities,
+        string expectedRoomId)
+    {
+        RunState? runState = RunManager.Instance.DebugOnlyGetState();
+        if (runState?.CurrentRoom is not TreasureRoom room
+            || NRun.Instance?.TreasureRoom is not { } uiRoom
+            || !string.Equals(
+                entities.GetId(uiRoom, "treasure_room"),
+                expectedRoomId,
+                StringComparison.Ordinal)
+            || uiRoom.GetNodeOrNull<NButton>("%Chest") is not { } chest)
+        {
+            return BridgeActionStartResult.Rejected(
+                "treasure_chest_changed",
+                "The exact treasure room or chest control is no longer current.");
+        }
+        return StartOpen(room, uiRoom, chest);
+    }
+
+    internal static BridgeActionStartResult StartChoose(
+        BridgeEntityRegistry entities,
+        string expectedRoomId,
+        string expectedRelicId)
+    {
+        RunState? runState = RunManager.Instance.DebugOnlyGetState();
+        RelicModel[] currentRelics =
+            RunManager.Instance.TreasureRoomRelicSynchronizer.CurrentRelics?.ToArray()
+            ?? Array.Empty<RelicModel>();
+        if (runState?.CurrentRoom is not TreasureRoom room
+            || LocalContext.GetMe(runState) is not { } player
+            || NRun.Instance?.TreasureRoom is not { } uiRoom
+            || !string.Equals(
+                entities.GetId(uiRoom, "treasure_room"),
+                expectedRoomId,
+                StringComparison.Ordinal)
+            || !entities.TryResolve(expectedRelicId, out RelicModel? relic)
+            || relic == null
+            || currentRelics.Length != 1
+            || !ReferenceEquals(currentRelics[0], relic)
+            || uiRoom.GetNodeOrNull<NTreasureRoomRelicCollection>("%RelicCollection")
+                is not { } collection
+            || collection.SingleplayerRelicHolder is not { } holder)
+        {
+            return BridgeActionStartResult.Rejected(
+                "treasure_relic_changed",
+                "The exact treasure room or relic entity is no longer current.");
+        }
+        return StartChoose(room, uiRoom, collection, holder, relic, player);
+    }
+
+    internal static BridgeActionStartResult StartSkip(
+        BridgeEntityRegistry entities,
+        string expectedRoomId)
+    {
+        RunState? runState = RunManager.Instance.DebugOnlyGetState();
+        if (runState?.CurrentRoom is not TreasureRoom room
+            || LocalContext.GetMe(runState) is not { } player
+            || NRun.Instance?.TreasureRoom is not { } uiRoom
+            || !string.Equals(
+                entities.GetId(uiRoom, "treasure_room"),
+                expectedRoomId,
+                StringComparison.Ordinal)
+            || uiRoom.GetNodeOrNull<NTreasureRoomRelicCollection>("%RelicCollection")
+                is not { } collection)
+        {
+            return BridgeActionStartResult.Rejected(
+                "treasure_skip_changed",
+                "The exact treasure room or skip owner is no longer current.");
+        }
+        return StartSkip(room, uiRoom, collection, uiRoom.ProceedButton, player);
+    }
+
+    internal static BridgeActionStartResult StartProceed(
+        BridgeEntityRegistry entities,
+        string expectedRoomId)
+    {
+        if (RunManager.Instance.DebugOnlyGetState()?.CurrentRoom is not TreasureRoom room
+            || NRun.Instance?.TreasureRoom is not { } uiRoom
+            || !string.Equals(
+                entities.GetId(uiRoom, "treasure_room"),
+                expectedRoomId,
+                StringComparison.Ordinal))
+        {
+            return BridgeActionStartResult.Rejected(
+                "treasure_proceed_changed",
+                "The exact treasure room or proceed owner is no longer current.");
+        }
+        return StartProceed(room, uiRoom, uiRoom.ProceedButton);
     }
 
     private static VisibleTreasureRelic BuildRelic(

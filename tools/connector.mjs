@@ -489,7 +489,8 @@ function build(options) {
     "STS2MCP/STS2_MCP.csproj",
     "-c", "Release",
     "-o", "STS2MCP/out/STS2_MCP",
-    `-p:STS2GameDir=${resolved.gameDir}`
+    `-p:STS2GameDir=${resolved.gameDir}`,
+    "-p:UseSharedCompilation=false"
   ]);
   run("dotnet", [
     "build",
@@ -504,7 +505,8 @@ function test(options) {
   run("dotnet", [
     "test",
     "STS2MCP/STS2_MCP.sln",
-    `-p:STS2GameDir=${resolved.gameDir}`
+    `-p:STS2GameDir=${resolved.gameDir}`,
+    "-p:UseSharedCompilation=false"
   ]);
   run(process.platform === "win32" ? "python" : "python3", [
     "-m", "py_compile", "STS2MCP/mcp/server.py"

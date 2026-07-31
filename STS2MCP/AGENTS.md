@@ -79,9 +79,9 @@ On macOS:
 
 ```bash
 GAME_DIR="$HOME/Library/Application Support/Steam/steamapps/common/Slay the Spire 2"
-dotnet test STS2_MCP.sln -p:STS2GameDir="$GAME_DIR"
+dotnet test STS2_MCP.sln -p:STS2GameDir="$GAME_DIR" -p:UseSharedCompilation=false
 python3 -m py_compile mcp/server.py
-dotnet build STS2_MCP.csproj -c Release -p:STS2GameDir="$GAME_DIR"
+dotnet build STS2_MCP.csproj -c Release -p:STS2GameDir="$GAME_DIR" -p:UseSharedCompilation=false
 ```
 
 Never commit installed game assemblies, local config, `.env.local`, logs,

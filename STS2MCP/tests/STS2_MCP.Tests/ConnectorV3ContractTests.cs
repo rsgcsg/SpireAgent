@@ -1,5 +1,6 @@
 using STS2_MCP.BridgeV2.Protocol;
 using STS2_MCP.BridgeV2.Game;
+using STS2_MCP.BridgeV2.Runtime;
 using STS2_MCP.ConnectorV3.Protocol;
 using STS2_MCP.ConnectorV3.Runtime;
 using System.Text.Json;
@@ -73,6 +74,9 @@ public sealed class ConnectorV3ContractTests
         Assert.False(MapNavigationSurfaceProvider.IsCompatibleLocalDrawingModeSignature(
             new[] { typeof(bool), typeof(bool) }));
         Assert.True(MapNavigationSurfaceProvider.HasCompatibleLocalDrawingModeBinding);
+        Assert.Contains(
+            MapNavigationSurfaceProvider.ControllerInputModeBindingName,
+            new[] { "IsUsingDirectionalNavigation", "IsUsingController" });
     }
 
     [Fact]
@@ -165,6 +169,96 @@ public sealed class ConnectorV3ContractTests
 
         Assert.Equal("screen-enchant", operands["screen_id"]);
         Assert.Equal("card-target", operands["card_id"]);
+    }
+
+    [Fact]
+    public void EventNativeDiscoveryUsesVisibleControlFactsWithoutDraftActions()
+    {
+        var surface = new EventOptionSurface(
+            "event_option",
+            "screen-event",
+            new[]
+            {
+                new VisibleEventOption(
+                    "option-enabled",
+                    0,
+                    "Choose",
+                    null,
+                    true,
+                    false,
+                    false,
+                    false,
+                    false,
+                    null,
+                    null,
+                    Array.Empty<VisibleEventOptionTooltip>()),
+                new VisibleEventOption(
+                    "option-disabled",
+                    1,
+                    "Unavailable",
+                    null,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    null,
+                    null,
+                    Array.Empty<VisibleEventOptionTooltip>())
+            });
+
+        BridgeActionDraft command = Assert.Single(
+            ConnectorV3Runtime.DescribeEventOptionCommands(surface));
+
+        Assert.Equal("choose_event_option", command.Kind);
+        Assert.Contains(command.EntityBindings!, binding =>
+            binding.Role == "screen" && binding.EntityId == "screen-event");
+        Assert.Contains(command.EntityBindings!, binding =>
+            binding.Role == "option" && binding.EntityId == "option-enabled");
+    }
+
+    [Fact]
+    public void TreasureNativeDiscoveryKeepsStageSpecificContractsSeparate()
+    {
+        var closed = new TreasureRoomSurface(
+            "treasure_room",
+            "closed",
+            "treasure-room",
+            false,
+            Array.Empty<VisibleTreasureRelic>(),
+            false,
+            false);
+        var choice = new TreasureRoomSurface(
+            "treasure_room",
+            "relic_choice",
+            "treasure-room",
+            true,
+            new[]
+            {
+                new VisibleTreasureRelic(
+                    "relic-choice",
+                    "RELIC_A",
+                    "Relic A",
+                    "Visible relic",
+                    "Common",
+                    Array.Empty<VisibleKeyword>(),
+                    Array.Empty<VisibleCard>())
+            },
+            true,
+            false);
+
+        BridgeActionDraft open = Assert.Single(
+            ConnectorV3Runtime.DescribeTreasureRoomCommands(closed));
+        BridgeActionDraft[] choices =
+            ConnectorV3Runtime.DescribeTreasureRoomCommands(choice).ToArray();
+
+        Assert.Equal("open_treasure_chest", open.Kind);
+        Assert.Contains(choices, action => action.Kind == "choose_treasure_relic");
+        Assert.Contains(choices, action => action.Kind == "skip_treasure_relic");
+        Assert.All(choices, action => Assert.Contains(
+            action.EntityBindings!,
+            binding => binding.Role == "treasure_room"
+                       && binding.EntityId == "treasure-room"));
     }
 
     [Fact]
