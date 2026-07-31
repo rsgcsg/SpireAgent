@@ -2265,6 +2265,9 @@ public sealed class BridgeContractTests
             "move_selected_cards",
             "automatic_at_max",
             "headbutt",
+            "card",
+            "source-card-a",
+            "HEADBUTT",
             "source-card-a",
             "HEADBUTT",
             "discard",
@@ -2312,6 +2315,9 @@ public sealed class BridgeContractTests
             "move_selected_cards",
             "automatic_at_max",
             "graveblast",
+            "card",
+            "source-card-b",
+            "GRAVEBLAST",
             "source-card-b",
             "GRAVEBLAST",
             "discard",
@@ -2345,6 +2351,9 @@ public sealed class BridgeContractTests
             "move_selected_cards",
             "automatic_at_max",
             "cleanse",
+            "card",
+            "source-card-c",
+            "CLEANSE",
             "source-card-c",
             "CLEANSE",
             "draw",
@@ -2377,6 +2386,9 @@ public sealed class BridgeContractTests
             "replace_selected_cards_same_index",
             "automatic_at_max",
             "seance",
+            "card",
+            "source-card-d",
+            "SEANCE",
             "source-card-d",
             "SEANCE",
             "draw",
@@ -2410,6 +2422,9 @@ public sealed class BridgeContractTests
             "move_selected_cards",
             "automatic_at_max",
             "dredge",
+            "card",
+            "source-card-e",
+            "DREDGE",
             "source-card-e",
             "DREDGE",
             "discard",
@@ -2443,6 +2458,9 @@ public sealed class BridgeContractTests
             "move_selected_cards",
             "manual_confirm",
             "neows_fury",
+            "card",
+            "source-card-f",
+            "NEOWS_FURY",
             "source-card-f",
             "NEOWS_FURY",
             "discard",
@@ -2780,7 +2798,7 @@ public sealed class BridgeContractTests
         Assert.Equal("combat_pile_closed_contract_catalog_v1", CombatPileContractCatalog.CatalogId);
         Assert.Equal(7, CombatPileContractCatalog.WitnessTopologies.Count);
         Assert.Null(CombatPileSourceContractRegistry.LoadError);
-        Assert.Equal(13, CombatPileSourceContractRegistry.Contracts.Count);
+        Assert.Equal(14, CombatPileSourceContractRegistry.Contracts.Count);
         Assert.All(
             CombatPileSourceContractRegistry.Contracts,
             contract => Assert.Null(CombatPileContractCatalog.Validate(contract)));
@@ -2807,6 +2825,12 @@ public sealed class BridgeContractTests
         Assert.Equal(
             11,
             DeclaredOnPlayCombatPileSelectionSourcePatch.ResolveTargetMethods().Count);
+        CombatPileSourceContract stratagem = Assert.Single(
+            CombatPileSourceContractRegistry.Contracts,
+            contract => contract.SourceKind == "stratagem");
+        Assert.Equal("power_after_shuffle", stratagem.HookMode);
+        Assert.Equal("move_one_to_hand_or_source_if_full", stratagem.WitnessKind);
+        Assert.Equal(1, stratagem.SelectionCount);
         Assert.DoesNotContain(
             CombatPileSourceContractRegistry.Contracts,
             contract => contract.SourceKind == "tutor");

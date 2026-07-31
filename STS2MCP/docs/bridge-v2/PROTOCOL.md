@@ -1,5 +1,9 @@
 # Bridge v2 Protocol
 
+> Superseded as the current Agent protocol by
+> [Connector V3](../connector-v3/PROTOCOL.md). Retained for migration and
+> rollback.
+
 Protocol preview: `2.0-preview.82`
 
 Preview.82 changes no JSON shape or Re normalized schema. It adds

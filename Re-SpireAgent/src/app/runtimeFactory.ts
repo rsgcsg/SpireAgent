@@ -1,7 +1,7 @@
 import type { RuntimeConfig } from "../config/env.js";
 import { buildAllowedActions } from "../domain/actions/buildAllowedActions.js";
 import { NORMALIZED_STATE_SCHEMA_VERSION } from "../domain/state/index.js";
-import { Sts2McpHybridAdapter } from "../integrations/sts2mcp/hybridAdapter.js";
+import { Sts2ConnectorV3Adapter } from "../integrations/sts2mcp/connectorV3Adapter.js";
 import { DeepSeekDecisionProvider } from "../llm/deepseekProvider.js";
 import { normalizeCurrentState } from "../normalization/normalizeCurrentState.js";
 import { createRunId, FileDecisionRecorder } from "../recording/fileDecisionRecorder.js";
@@ -11,7 +11,7 @@ import { acquireRuntimeLock } from "../runtime/runtimeLock.js";
 import { TickOrchestrator } from "../runtime/tickOrchestrator.js";
 
 export async function createRuntime(config: RuntimeConfig): Promise<{
-  adapter: Sts2McpHybridAdapter;
+  adapter: Sts2ConnectorV3Adapter;
   llm: DeepSeekDecisionProvider;
   recorder: FileDecisionRecorder;
   orchestrator: TickOrchestrator;
@@ -70,14 +70,14 @@ export async function createRuntime(config: RuntimeConfig): Promise<{
 }
 
 export async function createConnectorRuntime(config: RuntimeConfig): Promise<{
-  adapter: Sts2McpHybridAdapter;
+  adapter: Sts2ConnectorV3Adapter;
   normalize: (raw: unknown) => ReturnType<typeof normalizeCurrentState>;
   settlement: SettlementWatcher;
   release(): Promise<void>;
 }> {
   const lock = await acquireRuntimeLock(config.runtime.dataDir);
   try {
-    const adapter = new Sts2McpHybridAdapter(config.mcp.baseUrl, config.mcp.timeoutMs, {
+    const adapter = new Sts2ConnectorV3Adapter(config.mcp.baseUrl, config.mcp.timeoutMs, {
       startupWaitMs: config.mcp.startupWaitMs,
       startupPollMs: config.mcp.startupPollMs,
       commandPollMs: config.mcp.commandPollMs,

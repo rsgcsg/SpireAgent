@@ -171,12 +171,15 @@ export interface CombatPileCardSelectionSurface {
   mutationKind: "move_selected_cards" | "replace_selected_cards_same_index";
   commitMode: "automatic_at_max" | "manual_confirm";
   sourceKind: string;
-  sourceCardEntityId: string;
-  sourceCardDefinitionId: string;
+  sourceEntityKind: "card" | "power";
+  sourceEntityId: string;
+  sourceDefinitionId: string;
+  sourceCardEntityId: string | null;
+  sourceCardDefinitionId: string | null;
   pileType: "discard" | "draw";
   destinationPile: "discard" | "draw" | "hand" | "exhaust";
   destinationPosition: "top" | "bottom" | "same_index";
-  overflowDestination: "discard_if_hand_full" | null;
+  overflowDestination: "discard_if_hand_full" | "draw_if_hand_full" | null;
   replacementCardDefinitionId: string | null;
   minimumSelections: number;
   maximumSelections: number;

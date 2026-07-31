@@ -163,7 +163,8 @@ function isCoherentUnsupportedSuccessor(
 
 function isEndTurn(action: ExecutableGameAction): boolean {
   return action.kind === "end_turn"
-    || (action.kind === "bridge_v2_action" && action.bridgeActionKind === "end_turn");
+    || (action.kind === "bridge_v2_action" && action.bridgeActionKind === "end_turn")
+    || (action.kind === "connector_v3_command" && action.operation === "end_turn");
 }
 
 function isLongTransition(action: ExecutableGameAction): boolean {
@@ -171,7 +172,11 @@ function isLongTransition(action: ExecutableGameAction): boolean {
     || (action.kind === "bridge_v2_action"
       && (action.bridgeActionKind === "choose_map_node"
         || action.bridgeActionKind === "continue_run"
-        || action.bridgeActionKind === "embark_standard_run"));
+        || action.bridgeActionKind === "embark_standard_run"))
+    || (action.kind === "connector_v3_command"
+      && (action.operation === "choose_map_node"
+        || action.operation === "continue_run"
+        || action.operation === "embark_standard_run"));
 }
 
 function isSemanticCheckpoint(envelope: StateEnvelope): boolean {

@@ -10,11 +10,13 @@ preserve the detailed migration provenance.
 | Path | Reason |
 |---|---|
 | `Re-SpireAgent/` | Rebuilt Agent runtime, tests, config example, decision records, and current Agent documentation. |
-| `STS2MCP/BridgeV2/` | Current game-side semantic Gateway and protocol implementation. |
+| `STS2MCP/ConnectorV3/` | Current external observation, command, receipt, and transport implementation. |
+| `STS2MCP/BridgeV2/` | Internal mature Provider, identity, controller, ledger, permission, and Outcome assets reused during V3 migration. Not the current Agent protocol. |
 | `STS2MCP/McpMod.cs`, `McpMod.Helpers.cs`, `McpMod.SettingsUI.cs` | Active Gateway host, shared read helpers, and local port configuration. No v1 state/action route remains. |
-| `STS2MCP/mcp/` | Optional current Bridge v2-only MCP adapter. |
+| `STS2MCP/mcp/` | Optional current Connector V3 MCP transport adapter. |
 | `STS2MCP/tests/` | Current Bridge contract/runtime test suite. |
-| `STS2MCP/docs/bridge-v2/` remaining files | Current protocol, coverage, permission, migration, and ownership documents. |
+| `STS2MCP/docs/connector-v3/` | Current Connector protocol, coverage, and migration boundary. |
+| `STS2MCP/docs/bridge-v2/` | Historical protocol, runtime evidence, and internal migration reference. |
 | `docs/current/` | Repository-level current status, architecture, roadmap, operations, and product truth. |
 | `README.md`, `AGENTS.md`, `CONTRIBUTING.md`, `SECURITY.md`, `.gitignore`, `package.json`, `tools/` | Current workspace entrypoints, security boundary, and checks. |
 | `.github/workflows/ci.yml` | Public Re/document/inventory/Python checks; exact-game C# validation remains local. |
@@ -27,7 +29,7 @@ preserve the detailed migration provenance.
 | `docs/product/REAL_PRODUCTIZATION_*` | `docs/current/audits/` | Product audit remains current but no longer sits under the retired root documentation system. |
 | `docs/headless/` | `docs/current/headless/` | Headless is a current future boundary, not a root P9 phase. |
 | root `README.md`, `AGENTS.md`, package entry | rewritten at root | Root now introduces the active monorepo rather than the retired runtime. |
-| Bridge current-status/index documents | concise current files in `STS2MCP/docs/bridge-v2/` | Historical preview chronology moved to the evidence archive. |
+| Connector current-status/index documents | `docs/current/` plus `STS2MCP/docs/connector-v3/` | Bridge v2 current-truth files moved to `archive/connector-v2-final/`; detailed evidence remains historical. |
 
 ## EXTRACT_FOR_CURRENT_USE
 
@@ -42,6 +44,7 @@ contract, tests, and rollback boundary. The archive is not a shared library.
 | `archive/original-spireagent/` | Retired root TypeScript runtime, P8--P15 plans, old data/schema, handoffs, and learning artifacts. | Historical implementation, prior evidence, and migration source only. |
 | `archive/bridge-v2-previews/2026-07/` | Dated preview closeouts, canaries, source audits, and early architecture records. | Exact environment-scoped lifecycle evidence only. |
 | `archive/legacy-connector-v1/` | Retired v1 state reconstruction, index actions, profile/wiki/compendium API, and raw API references. | Historical operation inventory and failure evidence only; excluded from the active build. |
+| `archive/connector-v2-final/` | Final pre-V3 current-truth and Re integration/handoff documents. | Rollback and migration evidence only; superseded by ADR-0007. |
 
 ## DELETE_GENERATED_OR_DUPLICATE
 

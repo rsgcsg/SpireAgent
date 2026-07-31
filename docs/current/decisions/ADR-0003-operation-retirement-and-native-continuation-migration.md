@@ -1,5 +1,9 @@
 # ADR-0003: Operation Retirement And Native Continuation Migration
 
+> Superseded as current Connector architecture by
+> [ADR-0007](ADR-0007-connector-v3-canonical-architecture.md). Retained as
+> Bridge v2 decision history.
+
 ## Status
 
 Accepted on 2026-07-27 as a refinement of

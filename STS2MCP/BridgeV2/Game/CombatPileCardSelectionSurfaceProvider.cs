@@ -154,8 +154,13 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
             semantics.MutationKind,
             semantics.CommitMode,
             semantics.SourceKind,
-            entities.GetId(source.SourceCard, "card"),
-            source.SourceCard.Id.Entry,
+            source.SourceEntityKind,
+            entities.GetId(source.SourceModel, source.SourceEntityKind),
+            source.SourceDefinitionId,
+            source.SourceCard == null
+                ? null
+                : entities.GetId(source.SourceCard, "card"),
+            source.SourceCard?.Id.Entry,
             exactBinding.Pile.Type.ToString().ToLowerInvariant(),
             semantics.DestinationPile,
             semantics.DestinationPosition,
@@ -189,7 +194,7 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
                 "NCombatPileCardSelectScreen visible overlay",
                 "NCardGrid visible holders",
                 "NCardHolder._isClickable exact-version binding",
-                $"{semantics.SourceType}.OnPlay exact source task",
+                $"{semantics.SourceType} exact source task",
                 $"CardSelectCmd.FromCombatPile({semantics.SourcePile}, source-specific-bounds)",
                 semantics.CommitEvidence,
                 "NCombatPileCardSelectScreen.%BottomLabel"
@@ -610,7 +615,7 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
 
         return binding.Contract.ReplacementUpgradePolicy !=
                    "source_upgrade_implies_replacement_upgrade"
-               || !binding.SourceCard.IsUpgraded
+               || binding.SourceCard is not { IsUpgraded: true }
                || card.IsUpgraded;
     }
 

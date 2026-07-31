@@ -290,5 +290,5 @@ locally.
 
 Current support and evidence always come from
 [Current Status](STATUS.md) and
-[Bridge v2 Current Status](../../STS2MCP/docs/bridge-v2/CURRENT_STATUS.md), not
+[Connector V3 Coverage](../../STS2MCP/docs/connector-v3/COVERAGE.md), not
 from an old preview closeout.

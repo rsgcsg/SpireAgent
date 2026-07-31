@@ -1,5 +1,11 @@
 export type ExecutableGameAction =
   | {
+      kind: "connector_v3_command";
+      choiceId: string;
+      expectedStateToken: string;
+      operation: string;
+    }
+  | {
       kind: "bridge_v2_action";
       actionId: string;
       expectedStateId: string;

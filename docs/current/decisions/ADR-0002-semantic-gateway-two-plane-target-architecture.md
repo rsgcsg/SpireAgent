@@ -1,5 +1,9 @@
 # ADR-0002: Semantic Gateway Two-Plane Target Architecture
 
+> Superseded as current Connector architecture by
+> [ADR-0007](ADR-0007-connector-v3-canonical-architecture.md). Retained as
+> Bridge v2 decision history.
+
 ## Status
 
 Accepted as the single target architecture, 2026-07-27.

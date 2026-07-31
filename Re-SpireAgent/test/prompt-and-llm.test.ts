@@ -152,7 +152,9 @@ describe("DeepSeekDecisionProvider", () => {
     expect(JSON.stringify(session)).not.toContain("test-secret-never-record");
     expect(JSON.stringify(session)).not.toContain("provider-secret");
     const requestRecord = session.finalAttempt.requestBodyRedacted as Record<string, unknown>;
-    expect(requestRecord.max_tokens).toBe(320);
+    expect(requestRecord.max_tokens).toBe(640);
+    expect(requestBodies[0]?.max_tokens).toBe(320);
+    expect(requestBodies[1]?.max_tokens).toBe(640);
     const providerRecord = session.finalAttempt.rawProviderResponse as { usage?: Record<string, unknown> };
     expect(providerRecord.usage?.prompt_tokens).toBe(10);
     const retryBody = requestBodies[1] as { messages?: Array<{ role?: string; content?: string }> };

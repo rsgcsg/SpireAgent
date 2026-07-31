@@ -1,5 +1,9 @@
 # ADR-0005: Workflow C Clean Closure And Vertical Native-Contract Migration
 
+> Superseded as current Connector migration plan by
+> [ADR-0007](ADR-0007-connector-v3-canonical-architecture.md). Retained as
+> Bridge v2 closure history.
+
 **Status:** Accepted  
 **Date:** 2026-07-29
 

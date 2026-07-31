@@ -13,10 +13,10 @@ describe("runtime evidence provenance", () => {
       .toThrow("AGENT_EVIDENCE_PROVENANCE");
   });
 
-  it("rejects every legacy connector protocol mode", () => {
-    expect(readRuntimeConfig({ STS2_MCP_PROTOCOL: "v2" }).mcp).not.toHaveProperty("protocolMode");
-    expect(() => readRuntimeConfig({ STS2_MCP_PROTOCOL: "auto" })).toThrow("v2-only");
-    expect(() => readRuntimeConfig({ STS2_MCP_PROTOCOL: "v1" })).toThrow("v2-only");
+  it("accepts only the Connector V3 protocol mode", () => {
+    expect(readRuntimeConfig({ STS2_MCP_PROTOCOL: "v3" }).mcp).not.toHaveProperty("protocolMode");
+    expect(() => readRuntimeConfig({ STS2_MCP_PROTOCOL: "auto" })).toThrow("Connector V3");
+    expect(() => readRuntimeConfig({ STS2_MCP_PROTOCOL: "v2" })).toThrow("Connector V3");
   });
 
   it("uses a bounded read-only Gateway startup wait", () => {

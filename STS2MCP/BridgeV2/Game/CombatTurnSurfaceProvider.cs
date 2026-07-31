@@ -235,7 +235,7 @@ internal sealed class CombatTurnSurfaceProvider : IBridgeSurfaceProvider
         }
     }
 
-    private static BridgeActionStartResult StartPlayCard(
+    internal static BridgeActionStartResult StartPlayCard(
         Player expectedPlayer,
         CardModel expectedCard,
         Creature? expectedTarget)
@@ -266,7 +266,7 @@ internal sealed class CombatTurnSurfaceProvider : IBridgeSurfaceProvider
             PlayCardCompletionWitness);
     }
 
-    private static BridgeActionStartResult StartUsePotion(
+    internal static BridgeActionStartResult StartUsePotion(
         Player expectedPlayer,
         PotionModel expectedPotion,
         int expectedSlot,
@@ -290,7 +290,7 @@ internal sealed class CombatTurnSurfaceProvider : IBridgeSurfaceProvider
             UsePotionCompletionWitness);
     }
 
-    private static BridgeActionStartResult StartEndTurn(Player expectedPlayer)
+    internal static BridgeActionStartResult StartEndTurn(Player expectedPlayer)
     {
         if (!IsActionablePlayerTurn(expectedPlayer))
             return BridgeActionStartResult.Rejected("combat_phase_changed", "Combat is no longer in the local player's play phase.");
@@ -304,7 +304,7 @@ internal sealed class CombatTurnSurfaceProvider : IBridgeSurfaceProvider
             EndTurnCompletionWitness);
     }
 
-    private static bool CanUsePotion(Player player, PotionModel? potion) =>
+    internal static bool CanUsePotion(Player player, PotionModel? potion) =>
         potion != null
         && IsActionablePlayerTurn(player)
         && potion.Usage != PotionUsage.Automatic
@@ -312,7 +312,7 @@ internal sealed class CombatTurnSurfaceProvider : IBridgeSurfaceProvider
         && !potion.Owner.Creature.IsDead
         && potion.PassesCustomUsabilityCheck;
 
-    private static bool IsActionablePlayerTurn(Player player) =>
+    internal static bool IsActionablePlayerTurn(Player player) =>
         CombatManager.Instance.IsInProgress
         && !CombatManager.Instance.PlayerActionsDisabled
         && player.PlayerCombatState?.Phase == PlayerTurnPhase.Play

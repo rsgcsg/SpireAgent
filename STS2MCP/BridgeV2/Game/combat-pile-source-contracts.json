@@ -4,6 +4,27 @@
   "authorization_mode": "reviewed_embedded_policy_only",
   "contracts": [
     {
+      "source_type": "MegaCrit.Sts2.Core.Models.Powers.StratagemPower",
+      "hook_mode": "power_after_shuffle",
+      "source_kind": "stratagem",
+      "source_display_name": "Stratagem",
+      "purpose": "move_one_draw_card_to_hand_after_shuffle",
+      "mutation_kind": "move_selected_cards",
+      "commit_mode": "automatic_at_max",
+      "source_pile": "draw",
+      "destination_pile": "hand",
+      "destination_position": "bottom",
+      "overflow_destination": "draw_if_hand_full",
+      "selection_bounds": "fixed_exact",
+      "selection_count": 1,
+      "witness_kind": "move_one_to_hand_or_source_if_full",
+      "completeness": "contract_complete_for_single_stack_stratagem_draw_to_hand_selection",
+      "commit_evidence": "StratagemPower.AfterShuffle+CardSelectCmd.FromCombatPile(Draw,Amount=1)+NCardGrid.HolderPressed+CardPileCmd.Add(Hand)+exact-card-witness",
+      "select_label": "Put {card} into your Hand with Stratagem",
+      "deselect_label": "Remove {card} from the Stratagem selection",
+      "completion_evidence": "single_stack_stratagem_source_completed_screen_closed_and_exact_draw_card_moved_to_hand_or_full_hand_draw"
+    },
+    {
       "source_type": "MegaCrit.Sts2.Core.Models.Cards.Headbutt",
       "hook_mode": "card_on_play_wrapper",
       "source_kind": "headbutt",

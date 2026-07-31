@@ -248,6 +248,49 @@ internal static class BridgeV2Runtime
     public static BridgeControlSnapshot GetControlSnapshot() =>
         ClientCoordinator.Snapshot();
 
+    internal static BridgeCommandAdmission AuthorizeController(
+        BridgeCommandRequest request) =>
+        ClientCoordinator.Authorize(request);
+
+    internal static BridgeServerIdentity ReadBridgeIdentity() =>
+        BridgeIdentity();
+
+    internal static ObservationPolicyInfo ReadObservationPolicy() =>
+        ObservationPolicy();
+
+    internal static BridgeObservationDraft AdmitEncounter(
+        BridgeObservationDraft draft) =>
+        PermissionManager.AdmitEncounter(draft, BridgeIdentity());
+
+    internal static bool AuthorizeBoundExecution(
+        BridgeActionPermissionBinding permissionBinding,
+        BridgeBoundActionContract contractBinding)
+    {
+        GameBuildIdentity executionGame = ReadCurrentGameIdentity();
+        if (!PermissionManager.AuthorizeExecution(
+                permissionBinding,
+                executionGame.Compatibility,
+                contractBinding))
+        {
+            return false;
+        }
+        ActionPermissionScope? executionScope =
+            BridgeSurfacePermission.FindActionScope(
+                executionGame.Compatibility,
+                contractBinding.SurfaceKind,
+                contractBinding.Operation);
+        return executionScope != null && contractBinding.Matches(executionScope);
+    }
+
+    internal static void ObserveBoundCommand(
+        string requestId,
+        BridgeActionPermissionBinding? permissionBinding,
+        BridgeCommandResponse response)
+    {
+        PermissionManager.ObserveCommand(requestId, permissionBinding, response);
+        QualificationStore.ObserveCommand(requestId, permissionBinding, response);
+    }
+
     public static BridgeControllerLeaseResponse AcquireController(
         BridgeControllerLeaseRequest request) =>
         ClientCoordinator.Acquire(request);

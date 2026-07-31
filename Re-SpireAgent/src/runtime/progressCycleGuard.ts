@@ -105,6 +105,8 @@ export function semanticProgressHash(state: NormalizedCurrentState): string {
 export function semanticActionHash(action: AllowedAction): string {
   const transport = action.action.kind === "bridge_v2_action"
     ? { kind: action.action.kind, bridgeActionKind: action.action.bridgeActionKind }
+    : action.action.kind === "connector_v3_command"
+      ? { kind: action.action.kind, operation: action.action.operation }
     : action.action;
   return stateHash({
     kind: action.kind,

@@ -887,12 +887,15 @@ const combatPileCardSelectionSurfaceBaseSchema = z.object({
   mutation_kind: z.enum(["move_selected_cards", "replace_selected_cards_same_index"]),
   commit_mode: z.enum(["automatic_at_max", "manual_confirm"]),
   source_kind: z.string().min(1),
-  source_card_entity_id: z.string().min(1),
-  source_card_definition_id: z.string().min(1),
+  source_entity_kind: z.enum(["card", "power"]).optional(),
+  source_entity_id: z.string().min(1).optional(),
+  source_definition_id: z.string().min(1).optional(),
+  source_card_entity_id: z.string().min(1).nullable().optional(),
+  source_card_definition_id: z.string().min(1).nullable().optional(),
   pile_type: z.enum(["discard", "draw"]),
   destination_pile: z.enum(["discard", "draw", "hand", "exhaust"]),
   destination_position: z.enum(["top", "bottom", "same_index"]),
-  overflow_destination: z.enum(["discard_if_hand_full"]).nullable().optional(),
+  overflow_destination: z.enum(["discard_if_hand_full", "draw_if_hand_full"]).nullable().optional(),
   replacement_card_definition_id: z.string().min(1).nullable().optional(),
   min_select: z.number().int().nonnegative(),
   max_select: z.number().int().nonnegative(),
@@ -901,7 +904,21 @@ const combatPileCardSelectionSurfaceBaseSchema = z.object({
   require_manual_confirmation: z.boolean(),
   cancelable: z.boolean(),
   cards: z.array(visibleCardSchema)
-}).passthrough();
+}).passthrough().superRefine((value, context) => {
+  const hasGenericSource =
+    value.source_entity_kind !== undefined &&
+    value.source_entity_id !== undefined &&
+    value.source_definition_id !== undefined;
+  const hasLegacyCardSource =
+    value.source_card_entity_id != null &&
+    value.source_card_definition_id != null;
+  if (!hasGenericSource && !hasLegacyCardSource) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "combat-pile selection requires an exact generic source or legacy card source"
+    });
+  }
+});
 
 const combatPileCardSelectionSurfaceSchema = combatPileCardSelectionSurfaceBaseSchema;
 

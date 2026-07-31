@@ -43,6 +43,21 @@ strictly read-only: treasure and fake-merchant builders could invoke native
 controls. The archive preserves the 27-action migration source and historical
 failure context, but none of its C# files is compiled by the active project.
 
+## Connector V2 Final Archive
+
+On 2026-07-31 branch `connectorV3` adopted
+[`ADR-0007`](../docs/current/decisions/ADR-0007-connector-v3-canonical-architecture.md)
+as the only current Connector target. The final pre-V3 repository status,
+architecture, program plan, roadmap, document map, root/component READMEs,
+Re integration contract, state coverage and chronological handoff moved to
+`connector-v2-final/`.
+
+These files preserve the exact Preview.82 rollback and predecessor evidence.
+They are not current protocol, authority or V3 runtime evidence. Detailed
+Bridge v2 source/evidence documents remain in `STS2MCP/docs/bridge-v2/` with
+explicit historical banners because V3 still reuses reviewed internal
+Providers, identity, ledger, permission and Outcome assets during migration.
+
 ## Notes
 
 - Per-file rename provenance is retained by Git's move history for this

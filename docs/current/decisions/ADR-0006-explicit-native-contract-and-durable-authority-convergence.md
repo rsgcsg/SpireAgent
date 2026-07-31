@@ -1,5 +1,9 @@
 # ADR-0006: Explicit Native Contract And Durable Authority Convergence
 
+> Superseded as current Connector architecture by
+> [ADR-0007](ADR-0007-connector-v3-canonical-architecture.md). Its prohibition
+> on durable fallback authority remains retained.
+
 **Status:** Accepted  
 **Date:** 2026-07-30
 

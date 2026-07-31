@@ -15,6 +15,8 @@ import {
   bridgeV2CapabilitiesSidecarFromRaw,
   bridgeV2InspectionIdentity,
   bridgeV2InspectionsFromWrapper,
+  connectorV3AsBridgeV2Wrapper,
+  isConnectorV3WrappedState,
   isBridgeV2WrappedState
 } from "../integrations/sts2mcp/rawState.js";
 import { decodeBridgeV2Capabilities } from "../integrations/sts2mcp/bridgeV2Protocol.js";
@@ -47,6 +49,26 @@ const KNOWN_TOP_LEVEL_KEYS = new Set([
 const COMBAT_STATE_TOKENS = ["monster", "boss", "elite", "combat", "battle"] as const;
 
 export function normalizeCurrentState(rawInput: unknown, source: AdapterDescriptor, capturedAt = new Date().toISOString()): StateEnvelope {
+  if (isConnectorV3WrappedState(rawInput)) {
+    const projected = normalizeBridgeV2CurrentState(
+      connectorV3AsBridgeV2Wrapper(rawInput),
+      source,
+      capturedAt
+    );
+    const currentState = {
+      ...projected.currentState,
+      sourceStateType: projected.currentState.sourceStateType.replace(
+        /^bridge_v2:/u,
+        "connector_v3:"
+      )
+    };
+    return {
+      ...projected,
+      rawState: rawInput,
+      currentState,
+      normalizedStateHash: stateHash(currentState)
+    };
+  }
   if (isBridgeV2WrappedState(rawInput)) {
     return normalizeBridgeV2CurrentState(rawInput, source, capturedAt);
   }

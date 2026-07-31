@@ -24,19 +24,19 @@ Before changing current behavior or documentation, read:
 4. the component guide: `Re-SpireAgent/AGENT.md` or `STS2MCP/AGENTS.md`
 5. the component's current protocol, coverage, and integration documents
 
-Use `docs/current/` for repository-level current truth. The current Bridge
-source-truth and compatibility blocker belongs in
-`STS2MCP/docs/bridge-v2/CURRENT_STATUS.md`.
+Use `docs/current/` for repository-level current truth. Connector V3 protocol
+and coverage belong in `STS2MCP/docs/connector-v3/`. Bridge v2 documents are
+migration and evidence history.
 
 ## Hard Boundaries
 
-- The Gateway is the authority for player-visible facts, legal action
-  publication, execution-time validation, and completion truth.
-- Re-SpireAgent chooses only from advertised actions. It must not reconstruct
-  strict-v2 legality, native commits, or completion witnesses.
-- Exactly one active Surface owns mutation actions at a time.
-- Actions are opaque, state-bound, revalidated before execution, and do not
-  retry unknown outcomes.
+- The Gateway is the authority for player-visible facts, the active
+  interaction, command admission, execution-time validation and completion.
+- Re-SpireAgent chooses only from V3 candidates and bounded operand domains. It
+  must not reconstruct legality, native Commit or completion.
+- Exactly one active interaction owns mutation commands at a time.
+- Commands bind exact state, interaction and entity identities, are revalidated
+  before execution, and do not retry unknown outcomes.
 - Inspection is state-bound, read-only, independently authorized, and never
   grants mutation authority.
 - Do not expose hidden RNG, draw order, future rewards/events, or other facts
@@ -53,8 +53,7 @@ source-truth and compatibility blocker belongs in
 - Current roadmap and gates: `docs/current/ROADMAP.md`.
 - Product, Companion, Workshop, BYOK, SDK, and Headless direction:
   `docs/current/PRODUCT.md` and its linked audit.
-- Bridge protocol, coverage, permission, and live evidence:
-  `STS2MCP/docs/bridge-v2/`.
+- Connector protocol and coverage: `STS2MCP/docs/connector-v3/`.
 - Re decision/runtime contract: `Re-SpireAgent/docs/`.
 - Historical source/runtime material: `archive/`; never make it the only
   source for a current claim.

@@ -1,6 +1,9 @@
 # Bridge v2 Documentation
 
-Bridge v2 is the active semantic Gateway protocol. C# and Re source now share
+> Historical migration and runtime-evidence documentation. Connector V3 is the
+> current contract: see [Connector V3](../connector-v3/README.md).
+
+Bridge v2 was the final pre-V3 semantic Gateway protocol. C# and Re source shared
 `2.0-preview.82`; Re normalized schema is `31`. Gate 1 is closed as a bounded
 ordinary-single-player v2 connector baseline and the complete v1 HTTP namespace
 is retired. Preview.61 supplied the final Neow's Fury runtime seal. Preview.62
@@ -17,8 +20,8 @@ contains historical explicit contracts plus conservative manifest-derived
 fallbacks. Current Preview.82 has 50 explicit contracts and 38 typed session
 fallbacks; no supported Surface mixes both kinds, and fallback packages are
 invalid rather than candidate or
-durable qualification. Start with current status, not historical
-preview closeouts.
+durable qualification. Use these files only for migration and historical
+evidence. Start with the repository V3 status, not a Bridge v2 preview closeout.
 
 Preview.69 adds risk-calibrated encounter trials, exact new/resumed-run mount settling,
 bounded semantic-cycle recovery, native Orb formatting, typed actionless shared-
@@ -66,7 +69,7 @@ Surfaces, Scroll Boxes bundle and event dialogue to explicit contracts.
 Preview.82 adds exact native map annotation exit and recoverable stale
 supervision. It is built and installed, but not yet cold-loaded.
 
-## Current Documents
+## Historical Documents
 
 - [Current status](CURRENT_STATUS.md)
 - [Preview.82 runtime recovery closeout](../../../docs/current/audits/WORKFLOW_C_PREVIEW82_RUNTIME_RECOVERY_CLOSEOUT_2026-07-30.md)

@@ -85,18 +85,26 @@ export function buildAllowedActions(state: NormalizedCurrentState, sourceStateHa
 function bridgeActions(state: NormalizedCurrentState, sourceStateHash: string): AllowedAction[] {
   const legalActions = "legalActions" in state.surface ? state.surface.legalActions : undefined;
   if (!legalActions) return [];
+  const connectorV3 = state.sourceStateType.startsWith("connector_v3:");
   return legalActions.map((action) => ({
     id: action.actionId,
     kind: action.kind,
     label: action.label,
     description: `Bridge-validated ${action.evidenceCode}`,
     ...(action.entityBindings.length > 0 ? { entityBindings: action.entityBindings } : {}),
-    action: {
-      kind: "bridge_v2_action",
-      actionId: action.actionId,
-      expectedStateId: action.stateId,
-      bridgeActionKind: action.kind
-    },
+    action: connectorV3
+      ? {
+          kind: "connector_v3_command",
+          choiceId: action.actionId,
+          expectedStateToken: action.stateId,
+          operation: action.kind
+        }
+      : {
+          kind: "bridge_v2_action",
+          actionId: action.actionId,
+          expectedStateId: action.stateId,
+          bridgeActionKind: action.kind
+        },
     sourceStateHash
   }));
 }

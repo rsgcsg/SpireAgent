@@ -244,12 +244,12 @@ function paths(options = {}) {
 function sourceProtocols() {
   return {
     csharp: sourceProtocol(
-      path.join(WORKSPACE, "STS2MCP/BridgeV2/Protocol/BridgeContracts.cs"),
+      path.join(WORKSPACE, "STS2MCP/ConnectorV3/Protocol/ConnectorV3Contracts.cs"),
       /ProtocolVersion\s*=\s*"([^"]+)"/u
     ),
     re: sourceProtocol(
-      path.join(WORKSPACE, "Re-SpireAgent/src/integrations/sts2mcp/bridgeV2Protocol.ts"),
-      /SUPPORTED_BRIDGE_V2_PROTOCOL\s*=\s*"([^"]+)"/u
+      path.join(WORKSPACE, "Re-SpireAgent/src/integrations/sts2mcp/connectorV3Protocol.ts"),
+      /SUPPORTED_CONNECTOR_V3_PROTOCOL\s*=\s*"([^"]+)"/u
     )
   };
 }
@@ -368,7 +368,7 @@ export async function waitForGateway({
   let lastError = "not_attempted";
   while (Date.now() - startedAt <= timeoutMs) {
     attempts += 1;
-    const result = await readJsonResult(endpoint, "/api/v2/capabilities");
+    const result = await readJsonResult(endpoint, "/api/v3/capabilities");
     if (result.ok) {
       return {
         ready: true,
@@ -440,7 +440,19 @@ async function inspect(options, requireLoaded = false) {
     throw new Error(`Gateway did not become ready within ${waited.waited_ms}ms: ${waited.error}`);
   }
   const capabilities = waited?.capabilities
-    ?? await readJson(endpoint, "/api/v2/capabilities", requireLoaded);
+    ?? await readJson(endpoint, "/api/v3/capabilities", requireLoaded);
+  const projectionSidecar = await readJson(
+    endpoint,
+    "/api/v2/capabilities",
+    requireLoaded
+  );
+  const readinessCapabilities = capabilities
+    ? {
+        ...capabilities,
+        permission_system: projectionSidecar?.permission_system,
+        qualification_system: projectionSidecar?.qualification_system
+      }
+    : null;
   const builtIdentity = artifactIdentity(resolved.builtDll);
   const installedIdentity = artifactIdentity(resolved.installedDll);
   const evaluation = evaluateLoadedArtifact({
@@ -454,7 +466,7 @@ async function inspect(options, requireLoaded = false) {
   });
   return {
     ...evaluation,
-    ...evaluateEnvironmentReadiness(capabilities),
+    ...evaluateEnvironmentReadiness(readinessCapabilities),
     game_dir: resolved.gameDir,
     mods_dir: resolved.modsDir,
     game_process_running: gameProcessRunning(),
@@ -462,11 +474,11 @@ async function inspect(options, requireLoaded = false) {
     gateway_wait: waited ? summarizeGatewayWait(waited) : null,
     mod_installation: inspectModInstallation(resolved.modsDir),
     compatibility_status: capabilities?.game?.compatibility?.status ?? null,
-    permission_mode: capabilities?.permission_system?.mode ?? null,
-    qualification_status: capabilities?.qualification_system?.status ?? null,
+    permission_mode: projectionSidecar?.permission_system?.mode ?? null,
+    qualification_status: projectionSidecar?.qualification_system?.status ?? null,
     semantic_state_id: null,
     authority_projection_id: null,
-    note: "Formal state identities are state-scoped and are inspected through collect-evidence or /api/v2/state."
+    note: "V3 state tokens are state-scoped and are inspected through collect-evidence or /api/v3/observation. V2 capabilities remain a temporary non-authorizing Re projection sidecar."
   };
 }
 
@@ -651,12 +663,12 @@ async function collectEvidence(options) {
     throw new Error(`Gateway did not become ready within ${waited.waited_ms}ms: ${waited.error}`);
   }
   const capabilities = waited.capabilities;
-  const state = await readJson(endpoint, "/api/v2/state", true);
-  const controller = await readJsonResult(endpoint, "/api/v2/controller");
-  const clients = await readJsonResult(endpoint, "/api/v2/clients");
+  const state = await readJson(endpoint, "/api/v3/observation", true);
+  const controller = await readJsonResult(endpoint, "/api/v3/controller");
+  const clients = await readJsonResult(endpoint, "/api/v3/clients");
   const partialFailures = [
-    ...(controller.ok ? [] : [{ route: "/api/v2/controller", error: controller.error }]),
-    ...(clients.ok ? [] : [{ route: "/api/v2/clients", error: clients.error }])
+    ...(controller.ok ? [] : [{ route: "/api/v3/controller", error: controller.error }]),
+    ...(clients.ok ? [] : [{ route: "/api/v3/clients", error: clients.error }])
   ];
   const resolved = paths(options);
   const output = path.resolve(options.out ?? path.join(
@@ -685,9 +697,8 @@ async function collectEvidence(options) {
     output,
     protocol_version: capabilities.protocol_version,
     loaded_sha256: capabilities.bridge?.assembly_file_sha256,
-    state_id: state.state_id,
-    semantic_state_id: state.semantic_state_id ?? null,
-    authority_projection_id: state.authority_projection_id ?? null,
+    state_token: state.state_token,
+    interaction_id: state.interaction?.id ?? null,
     partial_failures: partialFailures
   };
 }
@@ -733,7 +744,7 @@ async function prepareAgentRun(options) {
   let authorityPath = selectAgentAuthorityPath(before);
   let after = before;
   if (before.observation_ready) {
-    await readJson(endpoint, "/api/v2/state", true);
+    await readJson(endpoint, "/api/v3/observation", true);
     after = await inspect({ ...options, endpoint }, true);
     authorityPath = selectAgentAuthorityPath(after);
   }

@@ -19,7 +19,7 @@ namespace STS2_MCP;
 [ModInitializer("Initialize")]
 public static partial class McpMod
 {
-    public const string Version = "0.5.0-dev";
+    public const string Version = "0.6.0-dev";
     public const int DefaultPort = 15526;
     private const string ConfigFileName = "STS2_MCP.conf";
     private const string QualificationStoreFileName =
@@ -287,13 +287,78 @@ public static partial class McpMod
                 SendError(
                     response,
                     410,
-                    "Legacy v1 is retired. Use the Bridge v2 contract.");
+                    "Legacy v1 is retired. Use the Connector v3 contract.");
                 return;
             }
 
             if (path == "/")
             {
                 SendJson(response, new { message = $"Hello from STS2 MCP v{Version}", status = "ok" });
+            }
+            else if (path == "/api/v3/capabilities")
+            {
+                if (request.HttpMethod == "GET")
+                    HandleGetConnectorV3Capabilities(response);
+                else
+                    SendError(response, 405, "Method not allowed");
+            }
+            else if (path == "/api/v3/observation")
+            {
+                if (request.HttpMethod == "GET")
+                    HandleGetConnectorV3Observation(response);
+                else
+                    SendError(response, 405, "Method not allowed");
+            }
+            else if (path == "/api/v3/clients/register")
+            {
+                if (request.HttpMethod == "POST")
+                    HandlePostBridgeV2ClientRegistration(request, response);
+                else
+                    SendError(response, 405, "Method not allowed");
+            }
+            else if (path == "/api/v3/controller")
+            {
+                if (request.HttpMethod == "GET")
+                    HandleGetBridgeV2Controller(response);
+                else
+                    SendError(response, 405, "Method not allowed");
+            }
+            else if (path == "/api/v3/clients")
+            {
+                if (request.HttpMethod == "GET")
+                    HandleGetBridgeV2Clients(response);
+                else
+                    SendError(response, 405, "Method not allowed");
+            }
+            else if (path.StartsWith("/api/v3/controller/", StringComparison.Ordinal))
+            {
+                string operation = path["/api/v3/controller/".Length..];
+                if (request.HttpMethod == "POST"
+                    && operation is "acquire" or "renew" or "release")
+                    HandlePostBridgeV2Controller(
+                        operation,
+                        request,
+                        response);
+                else if (request.HttpMethod == "POST")
+                    SendError(response, 404, "Unknown controller operation");
+                else
+                    SendError(response, 405, "Method not allowed");
+            }
+            else if (path == "/api/v3/commands")
+            {
+                if (request.HttpMethod == "POST")
+                    HandlePostConnectorV3Command(request, response);
+                else
+                    SendError(response, 405, "Method not allowed");
+            }
+            else if (path.StartsWith("/api/v3/commands/", StringComparison.Ordinal))
+            {
+                if (request.HttpMethod == "GET")
+                    HandleGetConnectorV3Command(
+                        path["/api/v3/commands/".Length..],
+                        response);
+                else
+                    SendError(response, 405, "Method not allowed");
             }
             else if (path == "/api/v2/capabilities")
             {

@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
-import type { BridgeV2RestClient } from "./bridgeV2Client.js";
 import type {
   BridgeV2Capabilities,
   BridgeV2ClientRegistration,
-  BridgeV2ControllerLeaseResponse
+  BridgeV2ControllerLeaseResponse,
+  DecodedBridgePayload
 } from "./bridgeV2Protocol.js";
 import type { JsonObject } from "../../shared/json.js";
 
@@ -12,6 +12,28 @@ export interface BridgeV2ControllerCredentials {
   readonly clientInstanceId: string;
   readonly controllerLeaseId: string;
   readonly controllerGeneration: number;
+}
+
+export interface BridgeControlClient {
+  registerClient(input: {
+    clientInstanceId: string;
+    productId: string;
+    productName: string;
+    productVersion: string;
+  }): Promise<DecodedBridgePayload<BridgeV2ClientRegistration>>;
+  acquireController(
+    clientSessionId: string
+  ): Promise<DecodedBridgePayload<BridgeV2ControllerLeaseResponse>>;
+  renewController(input: {
+    clientSessionId: string;
+    controllerLeaseId: string;
+    controllerGeneration: number;
+  }): Promise<DecodedBridgePayload<BridgeV2ControllerLeaseResponse>>;
+  releaseController(input: {
+    clientSessionId: string;
+    controllerLeaseId: string;
+    controllerGeneration: number;
+  }): Promise<DecodedBridgePayload<BridgeV2ControllerLeaseResponse>>;
 }
 
 export class BridgeV2ControlSession {
@@ -23,7 +45,7 @@ export class BridgeV2ControlSession {
   private closed = false;
   private recommendedRenewalMs = 10_000;
 
-  constructor(private readonly bridge: BridgeV2RestClient) {}
+  constructor(private readonly bridge: BridgeControlClient) {}
 
   async register(capabilities: BridgeV2Capabilities): Promise<void> {
     if (this.registration) return;

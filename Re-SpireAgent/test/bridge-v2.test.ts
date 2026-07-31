@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { buildAllowedActions } from "../src/domain/actions/buildAllowedActions.js";
 import type { AdapterDescriptor } from "../src/game-io/adapter.js";
 import { Sts2McpHybridAdapter } from "../src/integrations/sts2mcp/hybridAdapter.js";
+import { projectConnectorV3ForRe } from "../src/integrations/sts2mcp/connectorV3Projection.js";
+import { decodeConnectorV3Observation } from "../src/integrations/sts2mcp/connectorV3Protocol.js";
 import { TransientObservationError } from "../src/game-io/observationError.js";
 import {
   decodeBridgeV2Capabilities,
@@ -7500,6 +7502,79 @@ describe("Bridge v2 controller coordination decoding", () => {
 
     expect(snapshot.clients).toHaveLength(1);
     expect(snapshot.controller).toBeUndefined();
+  });
+});
+
+describe("Connector V3 Re consumer projection", () => {
+  it("keeps mature semantic normalization while producing V3 executable choices", () => {
+    const observation = decodeConnectorV3Observation({
+      protocol_version: "3.0-preview.1",
+      schema: "sts2.connector.v3/observation-1",
+      profile: "semantic_accessibility.tools.v1",
+      state_token: COMBAT_TURN_STATE.state_id,
+      sequence: COMBAT_TURN_STATE.state_sequence,
+      observed_at: COMBAT_TURN_STATE.observed_at,
+      status: "actionable_complete",
+      shared_state: COMBAT_TURN_STATE.shared_state,
+      context: COMBAT_TURN_STATE.context,
+      surface: COMBAT_TURN_STATE.surface,
+      interaction: {
+        id: "interaction-combat-fixture",
+        kind: "combat_turn",
+        phase: "ready",
+        execution_support: "supported",
+        support_reason: null,
+        affordances: ["end_turn"],
+        command_candidates: [{
+          candidate_id: "candidate-end-turn",
+          command: "end_turn",
+          operation: "end_turn",
+          label: "End turn",
+          operands: {},
+          operand_domains: {},
+          entity_bindings: [],
+          binding_kind: "native_direct_resolver",
+          authority_state: "supported"
+        }]
+      },
+      completeness: COMBAT_TURN_STATE.completeness,
+      bridge: COMBAT_TURN_STATE.bridge,
+      game: COMBAT_TURN_STATE.game,
+      observation_policy: COMBAT_TURN_STATE.observation_policy,
+      visibility: COMBAT_TURN_STATE.visibility,
+      inspection_catalog: [],
+      diagnostics: COMBAT_TURN_STATE.diagnostics,
+      warnings: COMBAT_TURN_STATE.warnings,
+      coverage: {
+        visible_information: "complete_for_declared_contract",
+        interaction_discovery: "complete",
+        execution_support: "supported",
+        unmapped_visible_controls: [],
+        hidden_by_policy: ["hidden_rng"]
+      }
+    }).data;
+    const projected = projectConnectorV3ForRe(
+      observation,
+      observation as unknown as JsonObject,
+      CAPABILITIES as unknown as JsonObject
+    );
+    const envelope = normalizeCurrentState(projected.rawState, TEST_SOURCE);
+    const actions = buildAllowedActions(
+      envelope.currentState,
+      envelope.stateHash
+    );
+
+    expect(envelope.diagnostics.invalidFields).toEqual([]);
+    expect(envelope.currentState.sourceStateType).toBe(
+      "connector_v3:combat:combat_turn"
+    );
+    expect(actions).toHaveLength(1);
+    expect(actions[0]?.action).toEqual({
+      kind: "connector_v3_command",
+      choiceId: actions[0]?.id,
+      expectedStateToken: COMBAT_TURN_STATE.state_id,
+      operation: "end_turn"
+    });
   });
 });
 

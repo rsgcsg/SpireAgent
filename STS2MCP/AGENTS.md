@@ -1,10 +1,8 @@
-# STS2 Agent Bridge Engineering Guide
+# STS2 Connector V3 Engineering Guide
 
-Read `docs/bridge-v2/CURRENT_STATUS.md`,
-`../docs/current/decisions/ADR-0002-semantic-gateway-two-plane-target-architecture.md`,
-`docs/bridge-v2/REAL_STS2_CONNECTOR_ARCHITECTURE_AUDIT_AND_MIGRATION_PLAN_2026-07-22.md`,
-`docs/bridge-v2/PROTOCOL.md`, `docs/bridge-v2/OBSERVATION_POLICY.md`, and
-`docs/bridge-v2/LIVE_GAME_CONNECTION_BOUNDARY.md` before changing Bridge v2.
+Read `../docs/current/decisions/ADR-0007-connector-v3-canonical-architecture.md`,
+`../docs/current/CONNECTOR_V3_IMPLEMENTATION_PLAN.md`, and
+`docs/connector-v3/` before changing the current Connector.
 
 ## Purpose
 
@@ -17,7 +15,7 @@ The bridge owns:
 
 - game-version identity and compatibility checks;
 - player-visible observations with explicit completeness;
-- state-scoped opaque legal actions;
+- state/interaction-scoped parameterized commands with exact entity operands;
 - execution-time revalidation on the Godot main thread;
 - idempotent command lifecycle and honest outcome reporting.
 
@@ -30,14 +28,14 @@ The bridge does not own:
 
 ## Hard Boundaries
 
-- Never accept a v2 index, target, node path, method name, or arbitrary payload
-  from a client. Clients may submit only an advertised `action_id` with its
-  exact `state_id`.
-- Legal-action generation and execution must use the same validator.
+- Never accept an index, node path, method name, coordinate, arbitrary
+  reflection target or effect payload. V3 accepts only a current command and
+  exact operands advertised for its state and interaction.
+- Command publication and execution must share native legality.
 - Rebuild and compare state before execution. Stale means reject.
 - HTTP success or a UI click means `started`, not `completed`.
 - Timeout means `outcome=unknown`; do not auto-retry an unknown outcome.
-- Unknown surfaces and failed version bindings return no legal actions.
+- Unknown interactions stay observable but publish no commands.
 - Private reflection must be exact-game-version scoped, documented, cached when
   appropriate, and fail closed.
 - The complete v1 HTTP namespace is retired. Preserve its archive as migration
@@ -47,7 +45,10 @@ The bridge does not own:
 
 ## Module Boundaries
 
-- `BridgeV2/Protocol`: wire DTOs only.
+- `ConnectorV3/Protocol`: current wire DTOs only.
+- `ConnectorV3/Runtime`: V3 observation, binding and command runtime.
+- `ConnectorV3/Transport`: V3 HTTP routing.
+- `BridgeV2/`: internal migration assets and rollback, not current Agent API.
 - `BridgeV2/Runtime`: game-independent identity, action registry, and command
   lifecycle.
 - `BridgeV2/Game`: exact-version game facts and surface adapters.
@@ -56,21 +57,21 @@ The bridge does not own:
 - `tests/`: pure protocol/runtime tests. Fixtures prove code behavior, not game
   compatibility.
 
-The old v1 state/action switch is archived outside the active project. Add new
-v2 behavior through a bounded semantic contract with a coverage row and
-game-fact evidence; never copy archived dispatch logic back into the build.
+The old v1 state/action switch is archived. Do not implement V3 by looking up a
+V2 action ID. Share bounded native mechanics internally while preserving exact
+source, owner, operands, Commit and Outcome.
 
 ## Required Change Evidence
 
-For a new surface:
+For a new interaction or source:
 
 1. Verify the current game class/API using the installed build, decompilation,
    or a reproducible runtime trace.
 2. Document what the normal UI shows and what remains unavailable.
 3. Add state and action contract tests.
 4. Build against the exact supported game version.
-5. Run a real in-game smoke before marking the surface `ready`.
-6. Update `PLAYER_VISIBLE_COVERAGE.md` and `CURRENT_STATUS.md`.
+5. Run a real in-game smoke before marking it Live-exercised.
+6. Update `docs/connector-v3/COVERAGE.md` and repository `STATUS.md`.
 
 ## Validation
 

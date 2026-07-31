@@ -192,4 +192,4 @@ choose and Proceed have current-build organic completion evidence, while chest
 open and relic skip remain unqualified canary variants.
 
 See the rebuilt client's
-[Bridge v2 integration contract](../../../Re-SpireAgent/docs/BRIDGE_V2_INTEGRATION.md).
+[historical Bridge v2 integration contract](../../../archive/connector-v2-final/RE_SPIREAGENT_BRIDGE_V2_INTEGRATION.md).

@@ -1,5 +1,8 @@
 # Bridge v2 Current Status
 
+> Historical final pre-V3 baseline. Current status is
+> [repository STATUS](../../../docs/current/STATUS.md).
+
 This is the canonical component-level Gateway/Re boundary. Repository priority
 is in [Current Status](../../../docs/current/STATUS.md); current authority
 convergence is in

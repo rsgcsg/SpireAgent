@@ -17,7 +17,7 @@ export interface AdapterCapabilities {
   canListLegalActions: boolean;
   actionResults: "none" | "partial" | "complete";
   legalActionAuthority?: "local_reconstruction" | "bridge_advertised" | "mixed";
-  protocols?: Array<"sts2mcp_v1" | "bridge_v2">;
+  protocols?: Array<"sts2mcp_v1" | "bridge_v2" | "connector_v3">;
 }
 
 export interface AdapterDescriptor {

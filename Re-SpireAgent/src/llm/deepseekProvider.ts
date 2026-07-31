@@ -63,7 +63,9 @@ export class DeepSeekDecisionProvider implements LlmDecisionProvider {
       thinking: { type: this.config.thinkingMode },
       temperature: 0,
       top_p: 0.1,
-      max_tokens: this.config.maxOutputTokens,
+      max_tokens: requestKind === "format_retry"
+        ? Math.max(this.config.maxOutputTokens, 640)
+        : this.config.maxOutputTokens,
       stream: false
     };
     const requestBodyRedacted = redactJson(body);

@@ -47,8 +47,8 @@ export function readRuntimeConfig(env: NodeJS.ProcessEnv = process.env, projectR
   if (thinkingMode !== "enabled" && thinkingMode !== "disabled") {
     throw new Error("DEEPSEEK_THINKING_MODE must be enabled or disabled");
   }
-  if (env.STS2_MCP_PROTOCOL !== undefined && env.STS2_MCP_PROTOCOL !== "v2") {
-    throw new Error("Re-SpireAgent is v2-only; STS2_MCP_PROTOCOL may only be v2");
+  if (env.STS2_MCP_PROTOCOL !== undefined && env.STS2_MCP_PROTOCOL !== "v3") {
+    throw new Error("Re-SpireAgent uses Connector V3; STS2_MCP_PROTOCOL may only be v3");
   }
   const evidenceProvenance = env.AGENT_EVIDENCE_PROVENANCE ?? "unrecorded";
   if (!isEvidenceProvenance(evidenceProvenance)) {
@@ -79,8 +79,16 @@ export function readRuntimeConfig(env: NodeJS.ProcessEnv = process.env, projectR
         500,
         "STS2_MCP_STARTUP_POLL_MS"
       ),
-      commandPollMs: positiveInteger(env.STS2_MCP_V2_COMMAND_POLL_MS, 75, "STS2_MCP_V2_COMMAND_POLL_MS"),
-      commandTimeoutMs: positiveInteger(env.STS2_MCP_V2_COMMAND_TIMEOUT_MS, 12_000, "STS2_MCP_V2_COMMAND_TIMEOUT_MS")
+      commandPollMs: positiveInteger(
+        env.STS2_CONNECTOR_V3_COMMAND_POLL_MS,
+        75,
+        "STS2_CONNECTOR_V3_COMMAND_POLL_MS"
+      ),
+      commandTimeoutMs: positiveInteger(
+        env.STS2_CONNECTOR_V3_COMMAND_TIMEOUT_MS,
+        12_000,
+        "STS2_CONNECTOR_V3_COMMAND_TIMEOUT_MS"
+      )
     },
     deepseek: {
       apiKey: env.DEEPSEEK_API_KEY ?? env.STS2_DEEPSEEK_API_KEY ?? "",

@@ -45,7 +45,7 @@ excluded from the command ledger. Immediate context keeps compact pile counts
 while inspection supplies player-visible unordered contents. Hidden draw order
 and RNG are never normalized.
 
-Bridge v2 structured diagnostics preserve both severity and operational effect.
+Gateway structured diagnostics preserve both severity and operational effect.
 Severity alone cannot grant or remove action authority; explicit readiness,
 completeness, and action-suppression semantics remain authoritative. Re
 preserves unknown diagnostic codes for audit when their structure is valid and
@@ -65,7 +65,7 @@ surface-specific.
 
 The action builder is deterministic but not strategic. It dispatches on the
 active surface and first enforces state-level authority. Current execution
-imports only state-bound opaque Bridge v2 actions. Direct historical v1 records
+imports only state-bound Connector V3 candidates as local opaque choices. Direct historical v1 records
 remain replay-readable as stored evidence, but a Bridge wrapper containing a
 `legacy_v1_state` sidecar is invalid and receives no action authority.
 
@@ -120,8 +120,8 @@ supported menu action when a developer explicitly requests that protocol test.
 ## Retired Legacy Inference
 
 Historical v1 shop records contained a local `proceed` inference. It is not a
-current capability or fallback. Bridge v2 `shop_room` advertises an exact
-opaque Proceed action, while `shop_inventory` owns purchases and close; no
+current capability or fallback. Connector V3 publishes an exact shop
+interaction and bounded commands; no
 legacy shop fact or action is merged into a current observation.
 
 ## Public API

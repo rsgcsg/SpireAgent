@@ -1,13 +1,14 @@
-"""Thin MCP adapter for the STS2 Agent Bridge v2.
+"""Thin MCP adapter for the STS2 Semantic Connector v3.
 
-The adapter exposes only state-bound Bridge v2 reads and opaque commands. It
+The adapter exposes state-bound V3 observations and parameterized commands. It
 does not reconstruct game legality, synthesize index actions, or expose the
-retired v1 HTTP API.
+retired v1 or V2 action APIs.
 """
 
 import argparse
 import asyncio
 from datetime import datetime
+import json
 import time
 import uuid
 
@@ -23,8 +24,8 @@ _control_lock: asyncio.Lock | None = None
 _control: dict | None = None
 
 
-def _v2_url(path: str) -> str:
-    return f"{_base_url}/api/v2/{path.lstrip('/')}"
+def _v3_url(path: str) -> str:
+    return f"{_base_url}/api/v3/{path.lstrip('/')}"
 
 
 def _get_client() -> httpx.AsyncClient:
@@ -37,20 +38,20 @@ def _get_client() -> httpx.AsyncClient:
     return _http
 
 
-async def _v2_get(path: str) -> str:
-    response = await _get_client().get(_v2_url(path))
+async def _v3_get(path: str) -> str:
+    response = await _get_client().get(_v3_url(path))
     response.raise_for_status()
     return response.text
 
 
-async def _v2_protocol_request(
+async def _v3_protocol_request(
     method: str,
     path: str,
     body: dict | None = None,
 ) -> str:
     response = await _get_client().request(
         method,
-        _v2_url(path),
+        _v3_url(path),
         json=body,
     )
     # Rejected, stale, unavailable, and unknown outcomes are protocol results,
@@ -71,7 +72,7 @@ def _expiry_monotonic(expires_at: str) -> float:
 
 
 async def _control_request(path: str, body: dict) -> dict:
-    response = await _get_client().post(_v2_url(path), json=body)
+    response = await _get_client().post(_v3_url(path), json=body)
     try:
         payload = response.json()
     except ValueError as error:
@@ -142,31 +143,6 @@ async def _ensure_controller() -> dict:
         return _control
 
 
-async def _v2_inspection_request(
-    kind: str,
-    expected_state_id: str,
-) -> str:
-    response = await _get_client().get(
-        _v2_url(f"inspections/{kind}"),
-        params={"expected_state_id": expected_state_id},
-    )
-    return response.text
-
-
-async def _v2_observation_bundle_request(
-    expected_state_id: str,
-    inspection_kinds: list[str],
-) -> str:
-    response = await _get_client().post(
-        _v2_url("observation-bundles"),
-        json={
-            "expected_state_id": expected_state_id,
-            "inspections": [{"kind": kind} for kind in inspection_kinds],
-        },
-    )
-    return response.text
-
-
 def _handle_error(error: Exception) -> str:
     if isinstance(error, httpx.ConnectError):
         return (
@@ -179,102 +155,66 @@ def _handle_error(error: Exception) -> str:
 
 
 @mcp.tool()
-async def get_agent_bridge_capabilities_v2() -> str:
-    """Read exact Gateway/game/Modset identity and Bridge v2 capabilities."""
+async def get_sts2_connector_capabilities_v3() -> str:
+    """Read exact Gateway/game/Modset identity and Connector V3 capabilities."""
     try:
-        return await _v2_get("capabilities")
+        return await _v3_get("capabilities")
     except Exception as error:
         return _handle_error(error)
 
 
 @mcp.tool()
-async def get_agent_state_v2() -> str:
-    """Read player-visible state and opaque actions for the exact current state.
+async def get_sts2_observation_v3() -> str:
+    """Read player-visible state and the exact current parameterized interaction.
 
-    Unsupported or actionless state is a fail-closed result. Never synthesize
-    an action from an entity index or a legacy state shape.
+    A visible-but-unsupported interaction remains visible without command
+    authority. Never synthesize an operand or command not present here.
     """
     try:
-        return await _v2_get("state")
+        return await _v3_get("observation")
     except Exception as error:
         return _handle_error(error)
 
 
 @mcp.tool()
-async def inspect_run_deck_v2(expected_state_id: str) -> str:
-    """Read the visible run deck without creating action authority."""
-    try:
-        return await _v2_inspection_request("run_deck", expected_state_id)
-    except Exception as error:
-        return _handle_error(error)
-
-
-@mcp.tool()
-async def inspect_combat_piles_v2(expected_state_id: str) -> str:
-    """Read visible combat piles without draw order or action authority."""
-    try:
-        return await _v2_inspection_request("combat_piles", expected_state_id)
-    except Exception as error:
-        return _handle_error(error)
-
-
-@mcp.tool()
-async def inspect_shop_catalog_v2(expected_state_id: str) -> str:
-    """Read the visible current-shop catalog without purchase authority."""
-    try:
-        return await _v2_inspection_request("shop_catalog", expected_state_id)
-    except Exception as error:
-        return _handle_error(error)
-
-
-@mcp.tool()
-async def get_agent_observation_bundle_v2(
-    expected_state_id: str,
-    include_run_deck: bool = False,
-    include_combat_piles: bool = False,
-    include_shop_catalog: bool = False,
-) -> str:
-    """Read one coherent state plus selected state-bound Inspections."""
-    inspection_kinds = []
-    if include_run_deck:
-        inspection_kinds.append("run_deck")
-    if include_combat_piles:
-        inspection_kinds.append("combat_piles")
-    if include_shop_catalog:
-        inspection_kinds.append("shop_catalog")
-    try:
-        return await _v2_observation_bundle_request(
-            expected_state_id,
-            inspection_kinds,
-        )
-    except Exception as error:
-        return _handle_error(error)
-
-
-@mcp.tool()
-async def submit_agent_action_v2(
+async def submit_sts2_command_v3(
     request_id: str,
-    expected_state_id: str,
-    action_id: str,
+    expected_state_token: str,
+    interaction_id: str,
+    command: str,
+    operands_json: str = "{}",
 ) -> str:
-    """Submit one opaque action advertised by the exact current state.
+    """Submit one parameterized command from the exact current interaction.
 
-    Reuse request_id only when polling or resending the exact same request.
-    A started response is not completion.
+    operands_json must contain only the exact entity/control identities offered
+    by the observation. A pending receipt is not completion.
     """
     try:
+        operands = json.loads(operands_json)
+        if not isinstance(operands, dict) or any(
+            not isinstance(key, str) or not isinstance(value, str)
+            for key, value in operands.items()
+        ):
+            raise ValueError("operands_json must be an object of string values")
         control = await _ensure_controller()
         lease = control["lease"]
-        return await _v2_protocol_request(
+        return await _v3_protocol_request(
             "POST",
             "commands",
             {
                 "request_id": request_id,
-                "expected_state_id": expected_state_id,
-                "action_id": action_id,
+                "expected_state_token": expected_state_token,
+                "interaction_id": interaction_id,
+                "command": command,
+                "operands": operands,
                 "client_session_id": control["client_session_id"],
                 "controller_lease_id": lease["controller_lease_id"],
                 "controller_generation": lease["controller_generation"],
+                "consumer": {
+                    "profile": "mcp_tool_consumer_v1",
+                    "agent_id": "sts2mcp-python-adapter",
+                    "agent_version": "0.6.0-dev",
+                },
             },
         )
     except Exception as error:
@@ -282,19 +222,19 @@ async def submit_agent_action_v2(
 
 
 @mcp.tool()
-async def get_agent_command_v2(request_id: str) -> str:
+async def get_sts2_command_receipt_v3(request_id: str) -> str:
     """Poll a submitted command.
 
     A timed-out command has unknown outcome and must not be retried.
     """
     try:
-        return await _v2_protocol_request("GET", f"commands/{request_id}")
+        return await _v3_protocol_request("GET", f"commands/{request_id}")
     except Exception as error:
         return _handle_error(error)
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="STS2 Bridge v2 MCP adapter")
+    parser = argparse.ArgumentParser(description="STS2 Connector v3 MCP adapter")
     parser.add_argument(
         "--port",
         type=int,

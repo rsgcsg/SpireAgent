@@ -1,5 +1,9 @@
 # ADR-0004: Risk-Calibrated Encounter Trial And Scoped Claims
 
+> Superseded as current Connector architecture by
+> [ADR-0007](ADR-0007-connector-v3-canonical-architecture.md). Its exact
+> environment and trial/claim separation remains an internal V3 invariant.
+
 ## Status
 
 Accepted on 2026-07-28. This refines the control plane of

@@ -5,7 +5,7 @@
 RE-P1 is a minimal LLM-controlled Slay the Spire 2 runtime. It exists to prove a safe and replayable decision loop before memory, learning, strategy scaffolds, or policy governance are reintroduced.
 
 The cross-component destination is
-[`ADR-0002`](../docs/current/decisions/ADR-0002-semantic-gateway-two-plane-target-architecture.md).
+[`ADR-0007`](../docs/current/decisions/ADR-0007-connector-v3-canonical-architecture.md).
 Re owns a consumer projection and runtime supervision within that architecture;
 it never owns Gateway facts, action authority, native Commit, or completion.
 
@@ -27,9 +27,9 @@ untrusted MCP JSON
 
 - The LLM is the decision maker. Local code defines safe choices and validates execution; it does not score or secretly choose a strategic action.
 - The model chooses an ID, never an MCP payload.
-- On a Bridge v2-owned surface, the allowed IDs and executable opaque actions
-  come only from the exact current bridge state. Never merge them with v1
-  reconstructed actions.
+- On a Connector V3 interaction, local choice IDs and executable commands come
+  only from its exact current candidates and bounded operand domains. Never
+  import a V2 action ID or reconstruct an action.
 - `NormalizedCurrentState` is the only current-state contract available to planning, prompting, and action generation. Its `context` records semantic game meaning; its `surface` records the active interaction protocol; its `actionAuthority` records who may construct executable actions. An actionless settling Surface has `none`, even when the Gateway remains the sole potential publisher after settlement. Always inspect all three. Do not replace this with one `kind` or combination-specific top-level types.
 - Missing and unknown facts stay missing or unknown. Critical missing fields make the state invalid.
 - Failures are evidence. They are not hidden by local strategic fallback or JSON repair.
@@ -72,7 +72,7 @@ Unknown states remain unsupported until these steps are complete.
 - execution after invalid JSON, unknown action ID, stale state, or uncertain validation
 - parsing code fences, tail text, repaired JSON, or reasoning content as executable decisions
 - automatic repeat after settlement timeout
-- automatic retry after a Bridge v2 `failed`, `timed_out`, transport-unknown,
+- automatic retry after a Gateway `unknown`, `timed_out`, transport-unknown,
   or command-identity-mismatched outcome
 - logging headers, API keys, `.env.local`, or secret-bearing errors
 - committing `data/runs/`, local provider outputs, or `.env.local`

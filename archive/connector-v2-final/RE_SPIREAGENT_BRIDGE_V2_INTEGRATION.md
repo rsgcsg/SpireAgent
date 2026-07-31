@@ -1,4 +1,4 @@
-# Bridge v2 Integration
+# Historical Bridge v2 Integration
 
 > Current source-truth status, 2026-07-30: Re and C# share the
 > `2.0-preview.82` source consumer contract; Re normalized schema is `31`.

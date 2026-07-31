@@ -9,6 +9,7 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Powers;
 
 namespace STS2_MCP.BridgeV2.Game;
 
@@ -25,19 +26,32 @@ internal static class CombatPileSelectionSourceBinding
     internal abstract record SourceBinding(
         Guid Token,
         Player Player,
-        CardModel SourceCard,
+        AbstractModel SourceModel,
+        string SourceEntityKind,
+        string SourceDefinitionId,
+        CardModel? SourceCard,
         IReadOnlyList<CardModel> BaselineSourcePile);
 
     internal sealed record RegistryBinding(
         Guid Token,
         Player Player,
-        CardModel SourceCard,
+        AbstractModel SourceModel,
+        string SourceEntityKind,
+        string SourceDefinitionId,
+        CardModel? SourceCard,
         IReadOnlyList<CardModel> BaselineSourcePile,
         IReadOnlyList<CardModel> BaselineDestinationPile,
         int MinSelect,
         int MaxSelect,
         CombatPileSourceContract Contract)
-        : SourceBinding(Token, Player, SourceCard, BaselineSourcePile);
+        : SourceBinding(
+            Token,
+            Player,
+            SourceModel,
+            SourceEntityKind,
+            SourceDefinitionId,
+            SourceCard,
+            BaselineSourcePile);
 
     internal readonly record struct Scope(Guid Token)
     {
@@ -50,12 +64,50 @@ internal static class CombatPileSelectionSourceBinding
     internal static Scope BeginDeclaredOnPlay(CardModel card) =>
         BeginRegistered(card, "declared_on_play");
 
+    internal static Scope BeginAfterShuffle(StratagemPower power, Player player)
+    {
+        if (!ReferenceEquals(power.Owner.Player, player)
+            || power.Amount != 1)
+        {
+            return default;
+        }
+
+        return BeginRegistered(
+            power,
+            player,
+            "power",
+            power.Id.Entry,
+            sourceCard: null,
+            "power_after_shuffle");
+    }
+
     private static Scope BeginRegistered(CardModel card, string hookMode)
     {
-        if (card.Owner is not Player player
-            || player.PlayerCombatState is not { } combat
+        if (card.Owner is not Player player)
+        {
+            return default;
+        }
+
+        return BeginRegistered(
+            card,
+            player,
+            "card",
+            card.Id.Entry,
+            card,
+            hookMode);
+    }
+
+    private static Scope BeginRegistered(
+        AbstractModel sourceModel,
+        Player player,
+        string sourceEntityKind,
+        string sourceDefinitionId,
+        CardModel? sourceCard,
+        string hookMode)
+    {
+        if (player.PlayerCombatState is not { } combat
             || !CombatPileSourceContractRegistry.TryFind(
-                card.GetType(),
+                sourceModel.GetType(),
                 hookMode,
                 out CombatPileSourceContract? contract))
         {
@@ -66,7 +118,7 @@ internal static class CombatPileSelectionSourceBinding
         CardPile? destinationPile = ResolvePile(combat, contract.DestinationPile);
         if (sourcePile == null
             || destinationPile == null
-            || !TryResolveBounds(card, combat, contract, out int minSelect, out int maxSelect)
+            || !TryResolveBounds(sourceCard, combat, contract, out int minSelect, out int maxSelect)
             || maxSelect <= 0)
         {
             return default;
@@ -75,7 +127,10 @@ internal static class CombatPileSelectionSourceBinding
         var binding = new RegistryBinding(
             Guid.NewGuid(),
             player,
-            card,
+            sourceModel,
+            sourceEntityKind,
+            sourceDefinitionId,
+            sourceCard,
             sourcePile.Cards.ToArray(),
             destinationPile.Cards.ToArray(),
             minSelect,
@@ -96,7 +151,7 @@ internal static class CombatPileSelectionSourceBinding
     };
 
     private static bool TryResolveBounds(
-        CardModel card,
+        CardModel? card,
         PlayerCombatState combat,
         CombatPileSourceContract contract,
         out int minSelect,
@@ -115,7 +170,9 @@ internal static class CombatPileSelectionSourceBinding
                 return minSelect > 0;
             case "dynamic_cards_optional_capped_by_hand_space":
                 minSelect = 0;
-                maxSelect = Math.Min(card.DynamicVars.Cards.IntValue, handSpace);
+                maxSelect = card == null
+                    ? 0
+                    : Math.Min(card.DynamicVars.Cards.IntValue, handSpace);
                 return maxSelect > 0;
             default:
                 minSelect = 0;
@@ -153,6 +210,29 @@ internal static class CombatPileSelectionSourceBinding
     {
         lock (Gate)
             return Active.ContainsKey(token);
+    }
+}
+
+[HarmonyPatch(
+    typeof(StratagemPower),
+    nameof(StratagemPower.AfterShuffle),
+    new[] { typeof(PlayerChoiceContext), typeof(Player) })]
+internal static class StratagemCombatPileSelectionSourcePatch
+{
+    private static void Prefix(
+        StratagemPower __instance,
+        Player player,
+        out CombatPileSelectionSourceBinding.Scope __state)
+    {
+        __state = CombatPileSelectionSourceBinding.BeginAfterShuffle(__instance, player);
+    }
+
+    private static void Postfix(
+        ref Task __result,
+        CombatPileSelectionSourceBinding.Scope __state)
+    {
+        if (__state.IsTracked)
+            __result = CombatPileSelectionSourceBinding.Complete(__result, __state);
     }
 }
 

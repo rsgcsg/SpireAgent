@@ -777,7 +777,7 @@ Repository evidence:
 - [Live connection boundary](LIVE_GAME_CONNECTION_BOUNDARY.md)
 - [Architecture evolution plan](ARCHITECTURE_EVOLUTION_PLAN.md)
 - [Protocol](PROTOCOL.md)
-- [Re integration](../../../Re-SpireAgent/docs/BRIDGE_V2_INTEGRATION.md)
+- [Historical Re integration](../../../archive/connector-v2-final/RE_SPIREAGENT_BRIDGE_V2_INTEGRATION.md)
 
 Primary external evidence:
 

@@ -6,7 +6,8 @@
   "closed_vocabularies": {
     "hook_modes": [
       "card_on_play_wrapper",
-      "declared_on_play"
+      "declared_on_play",
+      "power_after_shuffle"
     ],
     "piles": [
       "draw",

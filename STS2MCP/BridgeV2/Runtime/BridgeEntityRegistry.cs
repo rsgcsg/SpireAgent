@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using System.Threading;
 
@@ -10,14 +11,34 @@ internal sealed class BridgeEntityRegistry
 
     private readonly string _sessionPrefix = Guid.NewGuid().ToString("N")[..8];
     private readonly ConditionalWeakTable<object, Identity> _identities = new();
+    private readonly ConcurrentDictionary<string, WeakReference<object>> _entities =
+        new(StringComparer.Ordinal);
     private long _nextIdentity;
 
     public string GetId(object entity, string kind)
     {
-        return _identities.GetValue(entity, _ =>
+        Identity identity = _identities.GetValue(entity, _ =>
         {
             long sequence = Interlocked.Increment(ref _nextIdentity);
             return new Identity($"{kind}_{_sessionPrefix}_{sequence:x}");
-        }).Value;
+        });
+        _entities[identity.Value] = new WeakReference<object>(entity);
+        return identity.Value;
+    }
+
+    public bool TryResolve<T>(string entityId, out T? entity) where T : class
+    {
+        entity = null;
+        if (!_entities.TryGetValue(entityId, out WeakReference<object>? reference)
+            || !reference.TryGetTarget(out object? target))
+        {
+            _entities.TryRemove(entityId, out _);
+            return false;
+        }
+        if (target is not T typed)
+            return false;
+
+        entity = typed;
+        return true;
     }
 }

@@ -1,4 +1,4 @@
-# RE-P1 Handoff
+# Historical RE-P1 Handoff
 
 > Historical/non-canonical chronological handoff. Current Connector status is
 > owned by `../docs/current/STATUS.md` and

@@ -1,6 +1,6 @@
 import { loadEnvironment, readRuntimeConfig } from "../config/env.js";
 import { buildAllowedActions } from "../domain/actions/buildAllowedActions.js";
-import { Sts2McpHybridAdapter } from "../integrations/sts2mcp/hybridAdapter.js";
+import { Sts2ConnectorV3Adapter } from "../integrations/sts2mcp/connectorV3Adapter.js";
 import { DeepSeekDecisionProvider } from "../llm/deepseekProvider.js";
 import { normalizeCurrentState } from "../normalization/normalizeCurrentState.js";
 import { createBaselineReport } from "../evaluation/baselineReport.js";
@@ -67,7 +67,7 @@ async function main(): Promise<void> {
   }
 
   if (invocation.command === "inspect") {
-    const adapter = new Sts2McpHybridAdapter(config.mcp.baseUrl, config.mcp.timeoutMs, {
+    const adapter = new Sts2ConnectorV3Adapter(config.mcp.baseUrl, config.mcp.timeoutMs, {
       startupWaitMs: config.mcp.startupWaitMs,
       startupPollMs: config.mcp.startupPollMs,
       commandPollMs: config.mcp.commandPollMs,
