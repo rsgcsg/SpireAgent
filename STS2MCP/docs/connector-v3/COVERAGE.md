@@ -14,14 +14,15 @@ Status values are deliberately distinct from Live evidence.
 | Treasure | stage-specific typed-surface V3-native discovery and direct resolver | C# stage/owner/entity tests | current-runtime V3-native mutations completed |
 | Deck enchant | source-specific direct native resolvers for Self-Help Book, Symbiote and Kifuda | C# source/operand and Re unsupported-projection tests | Symbiote and Self-Help Book select/confirm exercised; Kifuda not exercised |
 | Outer reward claim/discard/proceed | typed-surface V3-native discovery and direct resolver | C# owner/entity/discovery tests | prior adapter path exercised; V3-native cutover pending |
-| Menu/card reward/shop inventory | internal native-binding adapter | inherited Provider tests plus V3 projection tests | exercised with completed receipts |
-| Generated and other selection families | internal native-binding adapter | inherited family tests | combat-hand, card-reward and deck-removal selection exercised |
+| Card reward select/alternative | typed-surface V3-native discovery and direct resolver with exact selectable-card facts | C# owner/entity/eligibility tests plus inherited Provider tests | prior adapter path exercised; V3-native cutover pending |
+| Menu/shop inventory | internal native-binding adapter | inherited Provider tests plus V3 projection tests | exercised with completed receipts |
+| Generated and other selection families | internal native-binding adapter | inherited family tests | combat-hand and deck-removal selection exercised |
 | Single-stack Stratagem combat-pile source | exact Power source contract | source registry and protocol tests | pending |
 | Multi-stack Stratagem | typed unsupported | contract deliberately excludes it | not exercised |
 | Tutor combat-pile source | `code_required` for target-player owner binding | static audit; diagnostic only | not exercised |
 | V3 detail/Inspection | pending | none | none |
 | V3 MCP | implemented | locked Python 3.14 syntax check passed | transport not exercised in this journey |
-| Re default V3 run | implemented | 221 tests, typecheck and production build passed | current run exercised direct event and stopped before map mutation on a repaired Re contract mismatch |
+| Re default V3 run | implemented | 222 tests, typecheck and production build passed | v0.110.1 exact startup plus one settled main-menu command exercised; bounded journey pending |
 
 Exact attribution is recorded in the
 [first V3 evidence](LIVE_EVIDENCE_2026-07-31.md) and
@@ -53,3 +54,13 @@ required a single node binding. The saved raw observation passes after the Re
 repair. Subsequent runs completed repeated map, event and treasure V3-native
 mutations and exposed action-local combat Outcome defects recorded in the
 v0.110.0 evidence log.
+
+The current v0.110.1-targeted worktree artifact is built, installed and loaded as SHA
+`b3897459d122e7208ad7d6fa2e56816ec594146fa92c637eecfd691a4fd2a469`,
+MVID `591c6251-d2a3-4281-b723-9a048b0ac9d0`, runtime
+`98b52677796c4e6aa103c404a6952789`. Its static compatibility scenario and
+operation probes pass with `authorization_effect: none`.
+`run-20260731104027-lxj3h3` proves the Re startup path and one settled
+main-menu command only. No v0.110.0 Organic evidence is attributed to this
+artifact, and card-reward-native execution remains pending. See the
+[deployment handoff](V0_110_1_DEPLOYMENT_HANDOFF_2026-07-31.md).

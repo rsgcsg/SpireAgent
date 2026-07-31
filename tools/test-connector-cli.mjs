@@ -8,10 +8,13 @@ import {
   evaluateEnvironmentReadiness,
   evaluateLoadedArtifact,
   inspectModInstallation,
+  loadAgentGameDirFromLocalEnv,
   processListHasGame,
+  resolveExecutable,
   resolveGameDir,
   resolveModsDir,
   selectAgentAuthorityPath,
+  windowsTaskListHasGame,
   workspaceSourceIdentity
 } from "./connector.mjs";
 import { auditRunIdentity } from "./connector-run-identity-audit.mjs";
@@ -40,6 +43,31 @@ assert.equal(processListHasGame(`
 assert.equal(processListHasGame(`
   102 npm run connector -- install --game-dir /Users/fire/Library/Application Support/Steam/steamapps/common/Slay the Spire 2
 `), false);
+assert.equal(windowsTaskListHasGame(
+  '"SlayTheSpire2.exe","4242","Console","1","1,024 K"'
+), true);
+assert.equal(windowsTaskListHasGame(
+  "INFO: No tasks are running which match the specified criteria."
+), false);
+assert.equal(resolveExecutable("npm", "win32"), "npm.cmd");
+assert.equal(resolveExecutable("npm", "darwin"), "npm");
+assert.equal(resolveExecutable("dotnet", "win32"), "dotnet");
+
+const fixtureEnvDir = mkdtempSync(path.join(os.tmpdir(), "spireagent-connector-env-"));
+try {
+  const envFile = path.join(fixtureEnvDir, ".env.local");
+  writeFileSync(envFile, "DEEPSEEK_API_KEY=not-loaded\nSTS2_GAME_DIR=C:\\Games\\Slay the Spire 2\n");
+  const localEnv = {};
+  assert.equal(loadAgentGameDirFromLocalEnv(localEnv, envFile), true);
+  assert.equal(localEnv.STS2_GAME_DIR, "C:\\Games\\Slay the Spire 2");
+  assert.equal(localEnv.DEEPSEEK_API_KEY, undefined);
+
+  const explicitEnv = { STS2_GAME_DIR: "D:\\Explicit" };
+  assert.equal(loadAgentGameDirFromLocalEnv(explicitEnv, envFile), false);
+  assert.equal(explicitEnv.STS2_GAME_DIR, "D:\\Explicit");
+} finally {
+  rmSync(fixtureEnvDir, { recursive: true, force: true });
+}
 
 const migrationArgs = defaultMigrationCycleArgs({
   gameDir: "/fixture-game",
@@ -48,7 +76,7 @@ const migrationArgs = defaultMigrationCycleArgs({
 assert.deepEqual(migrationArgs.slice(0, 2), ["--endpoint", "http://127.0.0.1:19999"]);
 assert.equal(migrationArgs.at(-1), "true");
 assert.ok(migrationArgs.includes(path.join(
-  resolveModsDir("/fixture-game"),
+  resolveModsDir(path.resolve("/fixture-game")),
   "STS2_MCP.qualifications.json"
 )));
 

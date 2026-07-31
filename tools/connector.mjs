@@ -18,6 +18,26 @@ const WORKSPACE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..
 const DEFAULT_ENDPOINT = "http://127.0.0.1:15526";
 const DEFAULT_GATEWAY_WAIT_MS = 60_000;
 const DEFAULT_GATEWAY_POLL_MS = 500;
+const RE_LOCAL_ENV = path.join(WORKSPACE, "Re-SpireAgent", ".env.local");
+
+export function loadAgentGameDirFromLocalEnv(env = process.env, envFile = RE_LOCAL_ENV) {
+  if (env.STS2_GAME_DIR || !existsSync(envFile)) return false;
+  for (const rawLine of readFileSync(envFile, "utf8").replace(/^\uFEFF/u, "").split(/\r?\n/u)) {
+    const match = rawLine.match(/^\s*(?:export\s+)?STS2_GAME_DIR\s*=\s*(.*)$/u);
+    if (!match) continue;
+    let value = match[1].trim();
+    if ((value.startsWith('"') && value.endsWith('"'))
+        || (value.startsWith("'") && value.endsWith("'"))) {
+      value = value.slice(1, -1);
+    } else {
+      value = value.replace(/\s+#.*$/u, "").trim();
+    }
+    if (!value) return false;
+    env.STS2_GAME_DIR = value;
+    return true;
+  }
+  return false;
+}
 
 export function resolveGameDir(env = process.env, platform = process.platform, home = os.homedir()) {
   if (env.STS2_GAME_DIR) return path.resolve(env.STS2_GAME_DIR);
@@ -31,9 +51,10 @@ export function resolveGameDir(env = process.env, platform = process.platform, h
 }
 
 export function resolveModsDir(gameDir, platform = process.platform) {
+  if (platform === "win32") return path.win32.join(gameDir, "mods");
   return platform === "darwin"
-    ? path.join(gameDir, "SlayTheSpire2.app/Contents/MacOS/mods")
-    : path.join(gameDir, "mods");
+    ? path.posix.join(gameDir, "SlayTheSpire2.app/Contents/MacOS/mods")
+    : path.posix.join(gameDir, "mods");
 }
 
 export function sha256File(file) {
@@ -264,15 +285,35 @@ export function processListHasGame(processList) {
   });
 }
 
+export function windowsTaskListHasGame(taskList) {
+  return taskList.split("\n").some((line) =>
+    /^"?SlayTheSpire2\.exe"?(?:,|\s|$)/iu.test(line.trim())
+  );
+}
+
 function gameProcessRunning() {
-  if (process.platform === "win32") return false;
+  if (process.platform === "win32") {
+    const result = spawnSync(
+      "tasklist",
+      ["/FI", "IMAGENAME eq SlayTheSpire2.exe", "/FO", "CSV", "/NH"],
+      { encoding: "utf8" }
+    );
+    if (result.error) throw result.error;
+    if (result.status !== 0) {
+      throw new Error(`Could not determine STS2 process state (tasklist exited ${result.status}).`);
+    }
+    return windowsTaskListHasGame(result.stdout);
+  }
   const result = spawnSync("ps", ["-Ao", "pid=,comm="], { encoding: "utf8" });
-  if (result.status !== 0) return false;
+  if (result.error) throw result.error;
+  if (result.status !== 0) {
+    throw new Error(`Could not determine STS2 process state (ps exited ${result.status}).`);
+  }
   return processListHasGame(result.stdout);
 }
 
 function run(command, args, options = {}) {
-  const result = spawnSync(command, args, {
+  const result = spawnPortable(command, args, {
     cwd: options.cwd ?? WORKSPACE,
     env: options.env ?? process.env,
     encoding: "utf8",
@@ -284,6 +325,27 @@ function run(command, args, options = {}) {
     throw new Error(`${command} exited with ${result.status}${detail}`);
   }
   return result.stdout ?? "";
+}
+
+export function resolveExecutable(command, platform = process.platform) {
+  return platform === "win32" && (command === "npm" || command === "npx")
+    ? `${command}.cmd`
+    : command;
+}
+
+function spawnPortable(command, args, options) {
+  const npmExecPath = options.env?.npm_execpath ?? process.env.npm_execpath;
+  if (process.platform === "win32"
+      && command === "npm"
+      && typeof npmExecPath === "string"
+      && npmExecPath.length > 0) {
+    return spawnSync(process.execPath, [npmExecPath, ...args], options);
+  }
+  const executable = resolveExecutable(command);
+  return spawnSync(executable, args, {
+    ...options,
+    shell: process.platform === "win32" && executable.endsWith(".cmd")
+  });
 }
 
 export function workspaceSourceIdentity() {
@@ -533,7 +595,7 @@ function audit(options) {
     "audit:connector-compatibility",
     "audit:connector-operation-bindings"
   ]) {
-    const result = spawnSync("npm", ["run", script], {
+    const result = spawnPortable("npm", ["run", script], {
       cwd: WORKSPACE,
       env,
       stdio: "inherit"
@@ -867,6 +929,7 @@ export async function main(argv = process.argv.slice(2)) {
     return;
   }
   if (command === "run-agent") {
+    loadAgentGameDirFromLocalEnv();
     console.log(JSON.stringify(await prepareAgentRun(options), null, 2));
     const sourceIdentity = workspaceSourceIdentity();
     run("npm", ["--prefix", "Re-SpireAgent", "run", "agent:run:direct", "--", ...options.passthrough], {

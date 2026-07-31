@@ -112,6 +112,11 @@ Set `DEEPSEEK_API_KEY` only in `Re-SpireAgent/.env.local` or the process
 environment. Never copy a key into README files, shell history, run records, or
 Git. Each machine owns its own `.env.local`.
 
+On Windows, also set the exact `STS2_GAME_DIR` in `.env.local` (or in the
+calling shell). The `agent:run` wrapper reads only this non-secret path before
+its loaded-artifact preflight; Re loads the remaining provider configuration
+itself.
+
 ## 3. Build And Verify The Gateway
 
 macOS:

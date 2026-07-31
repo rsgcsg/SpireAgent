@@ -259,6 +259,8 @@ internal static class ConnectorV3Runtime
             return BuildTreasureRoomBindings(draft, treasureRoom);
         if (draft.Surface is RewardClaimSurface rewards)
             return BuildRewardClaimBindings(draft, rewards);
+        if (draft.Surface is CardRewardSelectionSurface cardRewards)
+            return BuildCardRewardBindings(draft, cardRewards);
 
         var allowed = new List<(
             BridgeActionDraft Action,
@@ -443,6 +445,54 @@ internal static class ConnectorV3Runtime
                     : "Continue from rewards",
                 "NRewardsScreen.ProceedButton+visible-map-or-owner-handoff",
                 new[] { screen }));
+        }
+        return actions;
+    }
+
+    private static IReadOnlyList<ConnectorV3BoundCommand> BuildCardRewardBindings(
+        BridgeObservationDraft draft,
+        CardRewardSelectionSurface surface)
+        => DescribeCardRewardCommands(surface)
+            .Select(action => BuildNativeBinding(draft, action))
+            .Where(binding => binding != null)
+            .Cast<ConnectorV3BoundCommand>()
+            .ToArray();
+
+    internal static IReadOnlyList<BridgeActionDraft> DescribeCardRewardCommands(
+        CardRewardSelectionSurface surface)
+    {
+        var actions = new List<BridgeActionDraft>();
+        ActionEntityBinding screen = new("screen", surface.ScreenEntityId);
+        var selectableCardIds = surface.SelectableCardEntityIds.ToHashSet(StringComparer.Ordinal);
+        foreach (VisibleCard card in surface.Cards.Where(value =>
+                     selectableCardIds.Contains(value.EntityId)))
+        {
+            actions.Add(NativeDescriptor(
+                $"card-reward:select:{surface.ScreenEntityId}:{card.EntityId}",
+                "select_card_reward",
+                "selection",
+                $"Take {card.Name ?? card.DefinitionId}",
+                "NGridCardHolder.CardModel+NCardHolder._isClickable+Pressed+option-set-post-state",
+                new[]
+                {
+                    screen,
+                    new ActionEntityBinding("card", card.EntityId)
+                }));
+        }
+        foreach (VisibleCardRewardAlternative alternative in surface.Alternatives.Where(
+                     value => value.Enabled))
+        {
+            actions.Add(NativeDescriptor(
+                $"card-reward:alternative:{surface.ScreenEntityId}:{alternative.EntityId}",
+                "choose_card_reward_alternative",
+                "alternative",
+                alternative.Label,
+                "NCardRewardAlternativeButton.visible_label+ForceClick+option-set-post-state",
+                new[]
+                {
+                    screen,
+                    new ActionEntityBinding("alternative", alternative.EntityId)
+                }));
         }
         return actions;
     }
@@ -689,6 +739,10 @@ internal static class ConnectorV3Runtime
                     snapshot,
                     request,
                     binding),
+                "card_reward_selection" => StartCardRewardCommand(
+                    snapshot,
+                    request,
+                    binding),
                 "treasure_room" => StartTreasureRoomCommand(
                     snapshot,
                     request,
@@ -899,6 +953,56 @@ internal static class ConnectorV3Runtime
                 "reward_command_unsupported",
                 "The requested command is not supported for this exact rewards state.")
         };
+    }
+
+    private static BridgeActionStartResult StartCardRewardCommand(
+        ConnectorV3Snapshot snapshot,
+        ConnectorV3CommandRequest request,
+        ConnectorV3BoundCommand binding)
+    {
+        if (snapshot.Draft.Surface is not CardRewardSelectionSurface surface)
+        {
+            return BridgeActionStartResult.Rejected(
+                "owner_changed",
+                "The card reward owner is no longer current.");
+        }
+        IReadOnlyDictionary<string, string> operands =
+            request.Operands ?? new Dictionary<string, string>();
+        if (!operands.TryGetValue("screen_id", out string? screenId)
+            || !string.Equals(screenId, surface.ScreenEntityId, StringComparison.Ordinal))
+        {
+            return BridgeActionStartResult.Rejected(
+                "card_reward_owner_changed",
+                "The exact card reward screen is no longer current.");
+        }
+
+        if (binding.Candidate.Operation == "select_card_reward"
+            && operands.TryGetValue("card_id", out string? cardId)
+            && surface.SelectableCardEntityIds.Contains(cardId, StringComparer.Ordinal))
+        {
+            return CardRewardSurfaceProvider.StartCardSelection(
+                Entities,
+                screenId,
+                cardId);
+        }
+        if (binding.Candidate.Operation == "choose_card_reward_alternative"
+            && operands.TryGetValue("choice_id", out string? alternativeId)
+            && surface.Alternatives.SingleOrDefault(alternative =>
+                alternative.Enabled
+                && string.Equals(
+                    alternative.EntityId,
+                    alternativeId,
+                    StringComparison.Ordinal)) is { } alternative)
+        {
+            return CardRewardSurfaceProvider.StartAlternative(
+                Entities,
+                screenId,
+                alternativeId,
+                alternative.Label);
+        }
+        return BridgeActionStartResult.Rejected(
+            "card_reward_command_unsupported",
+            "The requested command is not supported for this exact card reward state.");
     }
 
     private static BridgeActionStartResult StartTreasureRoomCommand(

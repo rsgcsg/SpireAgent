@@ -19,7 +19,8 @@ Implemented in source:
 - visible unsupported interactions;
 - direct combat resolvers for `play_card`, `use_potion` and `end_turn`;
 - direct native commands for combat, shop-room, map, rest, event-option,
-  treasure-room, reward-claim and source-bound deck-enchant interactions;
+  treasure-room, reward-claim, card-reward and source-bound deck-enchant
+  interactions;
 - bounded parameterized commands for remaining ordinary choices, purchases,
   selections and controls through an internal native-binding adapter;
 - one controller, idempotent ledger, stale rejection, exact environment
@@ -31,7 +32,8 @@ Implemented in source:
 
 Not yet claimed:
 
-- loaded identity or mutation evidence for the latest installed repair;
+- loaded identity or mutation evidence for the latest installed v0.110.1
+  artifact;
 - V3-native read-only detail/Inspection;
 - complete removal of the non-combat Provider adapter;
 - complete removal of the Re v2 projection sidecar;

@@ -16,6 +16,7 @@
 - [Connector V3 coverage](../../STS2MCP/docs/connector-v3/COVERAGE.md)
 - [Connector V3 first Live evidence, v0.109.1](../../STS2MCP/docs/connector-v3/LIVE_EVIDENCE_2026-07-31.md)
 - [Connector V3 Live evidence, v0.110.0](../../STS2MCP/docs/connector-v3/LIVE_EVIDENCE_V0_110_0_2026-07-31.md)
+- [Connector V3 v0.110.1 deployment handoff](../../STS2MCP/docs/connector-v3/V0_110_1_DEPLOYMENT_HANDOFF_2026-07-31.md)
 - [Re-SpireAgent](../../Re-SpireAgent/README.md)
 - [Re V3 integration](../../Re-SpireAgent/docs/CONNECTOR_V3_INTEGRATION.md)
 - [Re V3 state coverage](../../Re-SpireAgent/docs/MCP_STATE_COVERAGE.md)

@@ -1172,7 +1172,11 @@ public sealed record CardRewardSelectionSurface(
     string Kind,
     string ScreenEntityId,
     IReadOnlyList<VisibleCard> Cards,
-    IReadOnlyList<VisibleCardRewardAlternative> Alternatives) : IBridgeSurface;
+    IReadOnlyList<VisibleCardRewardAlternative> Alternatives) : IBridgeSurface
+{
+    public IReadOnlyList<string> SelectableCardEntityIds { get; init; } =
+        Array.Empty<string>();
+}
 
 public sealed record GeneratedCardChoiceSurface(
     string Kind,

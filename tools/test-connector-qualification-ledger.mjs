@@ -9,6 +9,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import {
   buildQualificationPackage,
   buildCandidateEvidence,
@@ -496,7 +497,7 @@ try {
   writeFileSync(packagePath, JSON.stringify(qualification));
   const runCli = (...args) => spawnSync(
     process.execPath,
-    [new URL("./connector-qualification-ledger.mjs", import.meta.url).pathname, ...args],
+    [fileURLToPath(new URL("./connector-qualification-ledger.mjs", import.meta.url)), ...args],
     { encoding: "utf8" }
   );
   assert.equal(

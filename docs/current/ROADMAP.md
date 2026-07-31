@@ -13,10 +13,12 @@ Cold-load the installed artifact. Verify protocol, SHA, MVID, runtime, game,
 Modset and Patch. Execute at least one direct combat command and one non-combat
 command. Unknown, stale and wrong-owner negatives remain fail-closed.
 
-Status: obtained for the first V3 artifact and repeated on exact STS2
-`v0.110.0`. Map, event, treasure and source-specific enchantment have exact
-current-runtime evidence. The latest combat Outcome/target and reward-native
-wave requires a new cold-load canary.
+Status: obtained for the first V3 artifact, repeated on exact STS2 `v0.110.0`,
+and cold-loaded on v0.110.1 as runtime
+`98b52677796c4e6aa103c404a6952789`. The current runtime has one settled
+main-menu command. Direct combat Outcome repairs, reward-native paths and the
+card-reward-native path still require operation-specific canaries; static
+compatibility alone remains non-authorizing.
 
 ## V3-2: Ordinary Journey
 
@@ -31,9 +33,9 @@ the repaired artifact or unexercised families.
 ## V3-3: Native Family Migration
 
 Replace the Provider adapter in audited waves. Combat, shop-room, map, rest,
-event-option, treasure-room, reward-claim and deck-enchant execution now use
-direct V3 resolvers. Menu, card-reward, shop inventory, generated choices and
-remaining selectors are next. Delete each replaced execution path; do not
+event-option, treasure-room, reward-claim, card-reward and deck-enchant
+execution now use direct V3 resolvers. Menu, shop inventory, generated choices
+and remaining selectors are next. Delete each replaced execution path; do not
 retain dual authority.
 
 ## V3-4: Visibility And Detail

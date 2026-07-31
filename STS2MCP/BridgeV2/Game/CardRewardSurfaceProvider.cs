@@ -51,18 +51,8 @@ internal sealed class CardRewardSurfaceProvider : IBridgeSurfaceProvider
                 "The exact card reward UI binding is unavailable.",
                 new[] { "card_row", "reward_alternatives", "card_selectability", "legal_actions" });
 
-        NGridCardHolder[] holders = cardRow.GetChildren()
-            .OfType<NGridCardHolder>()
-            .Where(holder => McpMod.IsNodeVisible(holder) && holder.CardModel != null)
-            .OrderBy(holder => holder.Position.X)
-            .ThenBy(holder => holder.Position.Y)
-            .ToArray();
-        NCardRewardAlternativeButton[] buttons = alternativesContainer.GetChildren()
-            .OfType<NCardRewardAlternativeButton>()
-            .Where(McpMod.IsNodeVisible)
-            .OrderBy(button => button.Position.X)
-            .ThenBy(button => button.Position.Y)
-            .ToArray();
+        NGridCardHolder[] holders = VisibleCardHolders(cardRow);
+        NCardRewardAlternativeButton[] buttons = VisibleAlternativeButtons(alternativesContainer);
         string?[] alternativeLabels = buttons.Select(ReadAlternativeLabel).ToArray();
         if (alternativeLabels.Any(string.IsNullOrWhiteSpace))
         {
@@ -112,7 +102,13 @@ internal sealed class CardRewardSurfaceProvider : IBridgeSurfaceProvider
                 "alternative",
                 label,
                 "NCardRewardAlternativeButton.visible_label+ForceClick",
-                () => StartAlternative(screen, alternativesContainer, button, holders, buttons),
+                () => StartAlternative(
+                    screen,
+                    alternativesContainer,
+                    button,
+                    label,
+                    holders,
+                    buttons),
                 new[] { new ActionEntityBinding("alternative", alternativeId) }));
         }
 
@@ -120,7 +116,13 @@ internal sealed class CardRewardSurfaceProvider : IBridgeSurfaceProvider
             SurfaceKind,
             entities.GetId(screen, "screen"),
             cards,
-            alternatives);
+            alternatives)
+        {
+            SelectableCardEntityIds = holders
+                .Where(IsHolderClickable)
+                .Select(holder => entities.GetId(holder.CardModel, "card"))
+                .ToArray()
+        };
         bool hasVisibleOptions = cards.Length > 0 || alternatives.Length > 0;
         string readiness = actions.Count > 0 ? "ready" : hasVisibleOptions ? "settling" : "degraded";
         var missing = hasVisibleOptions
@@ -224,10 +226,48 @@ internal sealed class CardRewardSurfaceProvider : IBridgeSurfaceProvider
             SelectCardCompletionWitness);
     }
 
+    internal static BridgeActionStartResult StartCardSelection(
+        BridgeEntityRegistry entities,
+        string expectedScreenId,
+        string expectedCardId)
+    {
+        if (!entities.TryResolve(expectedScreenId, out NCardRewardSelectionScreen? screen)
+            || screen == null
+            || !entities.TryResolve(expectedCardId, out CardModel? card)
+            || card == null
+            || screen.GetNodeOrNull<Control>("UI/CardRow") is not { } cardRow
+            || screen.GetNodeOrNull<Control>("UI/RewardAlternatives") is not { } alternatives)
+        {
+            return BridgeActionStartResult.Rejected(
+                "card_reward_binding_changed",
+                "The exact card reward screen, card, or visible containers are no longer available.");
+        }
+
+        NGridCardHolder[] holders = VisibleCardHolders(cardRow);
+        NGridCardHolder[] matches = holders
+            .Where(holder => ReferenceEquals(holder.CardModel, card))
+            .ToArray();
+        if (matches.Length != 1)
+        {
+            return BridgeActionStartResult.Rejected(
+                "card_reward_card_changed",
+                "The exact advertised card no longer has one visible holder.");
+        }
+
+        return StartCardSelection(
+            screen,
+            cardRow,
+            matches[0],
+            card,
+            holders,
+            VisibleAlternativeButtons(alternatives));
+    }
+
     private static BridgeActionStartResult StartAlternative(
         NCardRewardSelectionScreen expectedScreen,
         Control expectedContainer,
         NCardRewardAlternativeButton expectedButton,
+        string expectedLabel,
         IReadOnlyList<NGridCardHolder> previousHolders,
         IReadOnlyList<NCardRewardAlternativeButton> previousButtons)
     {
@@ -237,7 +277,8 @@ internal sealed class CardRewardSurfaceProvider : IBridgeSurfaceProvider
             || !currentContainer.GetChildren().OfType<NCardRewardAlternativeButton>()
                 .Any(button => ReferenceEquals(button, expectedButton))
             || !McpMod.IsNodeVisible(expectedButton)
-            || !expectedButton.IsEnabled)
+            || !expectedButton.IsEnabled
+            || !string.Equals(ReadAlternativeLabel(expectedButton), expectedLabel, StringComparison.Ordinal))
         {
             return BridgeActionStartResult.Rejected(
                 "card_reward_alternative_changed",
@@ -251,6 +292,43 @@ internal sealed class CardRewardSurfaceProvider : IBridgeSurfaceProvider
             AlternativeCompletionWitness);
     }
 
+    internal static BridgeActionStartResult StartAlternative(
+        BridgeEntityRegistry entities,
+        string expectedScreenId,
+        string expectedAlternativeId,
+        string expectedLabel)
+    {
+        if (!entities.TryResolve(expectedScreenId, out NCardRewardSelectionScreen? screen)
+            || screen == null
+            || !entities.TryResolve(
+                expectedAlternativeId,
+                out NCardRewardAlternativeButton? button)
+            || button == null
+            || screen.GetNodeOrNull<Control>("UI/CardRow") is not { } cardRow
+            || screen.GetNodeOrNull<Control>("UI/RewardAlternatives") is not { } alternatives)
+        {
+            return BridgeActionStartResult.Rejected(
+                "card_reward_alternative_binding_changed",
+                "The exact card reward screen, alternative, or visible containers are no longer available.");
+        }
+
+        NCardRewardAlternativeButton[] buttons = VisibleAlternativeButtons(alternatives);
+        if (buttons.Count(candidate => ReferenceEquals(candidate, button)) != 1)
+        {
+            return BridgeActionStartResult.Rejected(
+                "card_reward_alternative_changed",
+                "The exact advertised alternative no longer has one visible control.");
+        }
+
+        return StartAlternative(
+            screen,
+            alternatives,
+            button,
+            expectedLabel,
+            VisibleCardHolders(cardRow),
+            buttons);
+    }
+
     private static bool OptionSetChanged(
         NCardRewardSelectionScreen screen,
         IReadOnlyList<NGridCardHolder> holders,
@@ -260,15 +338,29 @@ internal sealed class CardRewardSurfaceProvider : IBridgeSurfaceProvider
         Control? alternatives = screen.GetNodeOrNull<Control>("UI/RewardAlternatives");
         if (cardRow == null || alternatives == null)
             return true;
-        NGridCardHolder[] currentHolders = cardRow.GetChildren().OfType<NGridCardHolder>().ToArray();
-        NCardRewardAlternativeButton[] currentButtons = alternatives.GetChildren()
-            .OfType<NCardRewardAlternativeButton>()
-            .ToArray();
+        NGridCardHolder[] currentHolders = VisibleCardHolders(cardRow);
+        NCardRewardAlternativeButton[] currentButtons = VisibleAlternativeButtons(alternatives);
         return currentHolders.Length != holders.Count
                || currentButtons.Length != buttons.Count
                || currentHolders.Where((holder, index) => !ReferenceEquals(holder, holders[index])).Any()
                || currentButtons.Where((button, index) => !ReferenceEquals(button, buttons[index])).Any();
     }
+
+    private static NGridCardHolder[] VisibleCardHolders(Control cardRow) =>
+        cardRow.GetChildren()
+            .OfType<NGridCardHolder>()
+            .Where(holder => McpMod.IsNodeVisible(holder) && holder.CardModel != null)
+            .OrderBy(holder => holder.Position.X)
+            .ThenBy(holder => holder.Position.Y)
+            .ToArray();
+
+    private static NCardRewardAlternativeButton[] VisibleAlternativeButtons(Control container) =>
+        container.GetChildren()
+            .OfType<NCardRewardAlternativeButton>()
+            .Where(McpMod.IsNodeVisible)
+            .OrderBy(button => button.Position.X)
+            .ThenBy(button => button.Position.Y)
+            .ToArray();
 
     private static bool IsHolderClickable(NCardHolder holder) =>
         ClickableField?.GetValue(holder) is true;

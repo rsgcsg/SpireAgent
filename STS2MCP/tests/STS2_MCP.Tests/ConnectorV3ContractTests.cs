@@ -322,6 +322,65 @@ public sealed class ConnectorV3ContractTests
     }
 
     [Fact]
+    public void CardRewardNativeDiscoveryUsesTypedEligibilityAndExactOwnerOperands()
+    {
+        static VisibleCard Card(string entityId, string definitionId, string name) =>
+            new(
+                entityId,
+                definitionId,
+                name,
+                "Attack",
+                "1",
+                null,
+                null,
+                "Common",
+                false,
+                false,
+                null);
+
+        var surface = new CardRewardSelectionSurface(
+            "card_reward_selection",
+            "screen-card-reward",
+            new[]
+            {
+                Card("card-selectable", "STRIKE", "Strike"),
+                Card("card-disabled", "DEFEND", "Defend")
+            },
+            new[]
+            {
+                new VisibleCardRewardAlternative("alternative-enabled", 0, "Reroll", true),
+                new VisibleCardRewardAlternative("alternative-disabled", 1, "Locked", false)
+            })
+        {
+            SelectableCardEntityIds = new[] { "card-selectable", "unknown-card" }
+        };
+
+        BridgeActionDraft[] commands =
+            ConnectorV3Runtime.DescribeCardRewardCommands(surface).ToArray();
+
+        Assert.Collection(
+            commands.OrderBy(command => command.Kind, StringComparer.Ordinal),
+            alternative =>
+            {
+                Assert.Equal("choose_card_reward_alternative", alternative.Kind);
+                Assert.Contains(alternative.EntityBindings!, binding =>
+                    binding.Role == "screen" && binding.EntityId == "screen-card-reward");
+                Assert.Contains(alternative.EntityBindings!, binding =>
+                    binding.Role == "alternative" && binding.EntityId == "alternative-enabled");
+            },
+            card =>
+            {
+                Assert.Equal("select_card_reward", card.Kind);
+                Assert.Contains(card.EntityBindings!, binding =>
+                    binding.Role == "screen" && binding.EntityId == "screen-card-reward");
+                Assert.Contains(card.EntityBindings!, binding =>
+                    binding.Role == "card" && binding.EntityId == "card-selectable");
+            });
+        Assert.DoesNotContain(commands, command => command.EntityBindings!.Any(binding =>
+            binding.EntityId is "card-disabled" or "alternative-disabled" or "unknown-card"));
+    }
+
+    [Fact]
     public void ParameterizedBindingRequiresEveryExactOperandAndNoExtras()
     {
         var candidate = new ConnectorV3CommandCandidate(
