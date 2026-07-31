@@ -208,4 +208,59 @@ describe("Connector V3 strict contract", () => {
     }));
     expect(bridgeState.legal_actions).toEqual([]);
   });
+
+  it("preserves exact card reward owner and entity operands without consumer reconstruction", () => {
+    const value = structuredClone(combatObservation()) as unknown as Record<string, unknown>;
+    value.context = { kind: "reward_flow", reward_kind: "card_reward" };
+    value.surface = {
+      kind: "card_reward_selection",
+      screen_entity_id: "screen-reward-1",
+      cards: [],
+      selectable_card_entity_ids: ["card-reward-1"],
+      alternatives: []
+    };
+    value.interaction = {
+      id: "interaction-card-reward",
+      kind: "card_reward_selection",
+      phase: "ready",
+      execution_support: "trial",
+      support_reason: null,
+      affordances: ["select_entity"],
+      command_candidates: [{
+        candidate_id: "candidate-card-reward",
+        command: "select_entity",
+        operation: "select_card_reward",
+        label: "Take Strike",
+        operands: {
+          screen_id: "screen-reward-1",
+          card_id: "card-reward-1"
+        },
+        operand_domains: {},
+        entity_bindings: [
+          { role: "screen", entity_id: "screen-reward-1" },
+          { role: "card", entity_id: "card-reward-1" }
+        ],
+        binding_kind: "native_direct_resolver",
+        authority_state: "trial"
+      }]
+    };
+    const observation = decodeConnectorV3Observation(value).data;
+
+    const projected = projectConnectorV3ForRe(
+      observation,
+      observation as unknown as JsonObject,
+      { protocol_version: "2.0-preview.82" }
+    );
+
+    expect([...projected.invocations.values()]).toEqual([
+      expect.objectContaining({
+        command: "select_entity",
+        operation: "select_card_reward",
+        operands: {
+          screen_id: "screen-reward-1",
+          card_id: "card-reward-1"
+        }
+      })
+    ]);
+  });
 });

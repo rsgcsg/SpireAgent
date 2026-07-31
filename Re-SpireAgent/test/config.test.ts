@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { resolve } from "node:path";
 import { RE_PROJECT_ROOT, readRuntimeConfig } from "../src/config/env.js";
 
 describe("runtime evidence provenance", () => {
@@ -30,11 +31,11 @@ describe("runtime evidence provenance", () => {
   });
 
   it("anchors default local evidence under the Re project, not the caller working directory", () => {
-    expect(readRuntimeConfig({}).runtime.dataDir).toBe(`${RE_PROJECT_ROOT}/data/runs`);
+    expect(readRuntimeConfig({}).runtime.dataDir).toBe(resolve(RE_PROJECT_ROOT, "data/runs"));
     expect(readRuntimeConfig({ AGENT_DATA_DIR: "../external-evidence" }, "/tmp/re-spire-test").runtime.dataDir)
-      .toBe("/tmp/external-evidence");
+      .toBe(resolve("/tmp/re-spire-test", "../external-evidence"));
     expect(readRuntimeConfig({ AGENT_DATA_DIR: "/var/tmp/re-spire-evidence" }).runtime.dataDir)
-      .toBe("/var/tmp/re-spire-evidence");
+      .toBe(resolve("/var/tmp/re-spire-evidence"));
   });
 
   it("keeps a full-game-sized emergency decision ceiling without making it a success boundary", () => {

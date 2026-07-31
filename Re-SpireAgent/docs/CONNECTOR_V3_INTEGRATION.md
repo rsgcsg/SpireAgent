@@ -23,11 +23,12 @@ Re never:
 ## Current Cutover
 
 Direct combat commands (`play_card`, `use_potion`, `end_turn`), shop-room,
-map, rest-site, event-option, treasure-room and deck-enchant controls resolve
+map, rest-site, event-option, treasure-room, outer reward, card-reward and
+deck-enchant controls resolve
 current native objects from V3 entity/control IDs and call native legality and
-Commit paths. Event and treasure candidate discovery is derived from typed
-visible control/stage facts rather than `draft.Actions`; their execution does
-not call Provider action closures. Source-bound families retain their own
+Commit paths. Event, treasure, outer reward and card-reward candidate discovery
+is derived from typed visible control/stage facts rather than `draft.Actions`;
+their execution does not call Provider action closures. Source-bound families retain their own
 legality and Outcome contracts. Remaining non-combat candidates temporarily
 reuse mature Provider-native bindings inside the Gateway. This is bounded
 migration debt, not a V2 REST fallback.

@@ -1033,6 +1033,7 @@ const cardRewardSelectionSurfaceSchema = z.object({
   kind: z.literal("card_reward_selection"),
   screen_entity_id: z.string().min(1),
   cards: z.array(visibleCardSchema),
+  selectable_card_entity_ids: z.array(z.string().min(1)).optional(),
   alternatives: z.array(visibleCardRewardAlternativeSchema)
 }).passthrough();
 
