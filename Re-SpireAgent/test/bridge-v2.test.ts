@@ -2125,7 +2125,10 @@ const MAP_NAVIGATION_STATE = {
       label: "Choose monster at (2,1)",
       authority: "game_ui",
       evidence_code: "NMapPoint.OnRelease+NMapScreen.OnMapPointSelectedLocally",
-      entity_bindings: [{ role: "map_node", entity_id: "map-node-left" }]
+      entity_bindings: [
+        { role: "map_screen", entity_id: "map-screen-1" },
+        { role: "map_node", entity_id: "map-node-left" }
+      ]
     },
     {
       action_id: "action-map-right",
@@ -2135,7 +2138,10 @@ const MAP_NAVIGATION_STATE = {
       label: "Choose monster at (5,1)",
       authority: "game_ui",
       evidence_code: "NMapPoint.OnRelease+NMapScreen.OnMapPointSelectedLocally",
-      entity_bindings: [{ role: "map_node", entity_id: "map-node-right" }]
+      entity_bindings: [
+        { role: "map_screen", entity_id: "map-screen-1" },
+        { role: "map_node", entity_id: "map-node-right" }
+      ]
     }
   ],
   completeness: {
@@ -4094,12 +4100,18 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toEqual([
       expect.objectContaining({
         id: "action-map-left",
-        entityBindings: [{ role: "map_node", entityId: "map-node-left" }],
+        entityBindings: [
+          { role: "map_screen", entityId: "map-screen-1" },
+          { role: "map_node", entityId: "map-node-left" }
+        ],
         action: expect.objectContaining({ kind: "bridge_v2_action", bridgeActionKind: "choose_map_node" })
       }),
       expect.objectContaining({
         id: "action-map-right",
-        entityBindings: [{ role: "map_node", entityId: "map-node-right" }]
+        entityBindings: [
+          { role: "map_screen", entityId: "map-screen-1" },
+          { role: "map_node", entityId: "map-node-right" }
+        ]
       })
     ]);
   });
@@ -4186,7 +4198,7 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
 
   it("fails closed when a map action is not a current visible travel choice", () => {
     const hiddenChoice = structuredClone(MAP_NAVIGATION_STATE);
-    hiddenChoice.legal_actions[0]!.entity_bindings[0]!.entity_id = "map-node-right-next";
+    hiddenChoice.legal_actions[0]!.entity_bindings[1]!.entity_id = "map-node-right-next";
     const hiddenEnvelope = normalizeCurrentState(
       wrapBridgeV2State({ state: hiddenChoice, capabilities: structuredClone(CAPABILITIES) }),
       TEST_SOURCE
@@ -4202,6 +4214,38 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     );
     expect(drawingEnvelope.currentState.stability).toBe("invalid");
     expect(drawingEnvelope.currentState.actionAuthority).toBe("none");
+  });
+
+  it("fails closed when a map route action lacks or changes its exact map owner", () => {
+    const missingOwner = structuredClone(MAP_NAVIGATION_STATE);
+    missingOwner.legal_actions[0]!.entity_bindings.shift();
+    const missingOwnerEnvelope = normalizeCurrentState(
+      wrapBridgeV2State({ state: missingOwner, capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    );
+    expect(missingOwnerEnvelope.currentState.stability).toBe("invalid");
+    expect(missingOwnerEnvelope.currentState.actionAuthority).toBe("none");
+
+    const wrongOwner = structuredClone(MAP_NAVIGATION_STATE);
+    wrongOwner.legal_actions[0]!.entity_bindings[0]!.entity_id = "map-screen-replacement";
+    const wrongOwnerEnvelope = normalizeCurrentState(
+      wrapBridgeV2State({ state: wrongOwner, capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    );
+    expect(wrongOwnerEnvelope.currentState.stability).toBe("invalid");
+    expect(wrongOwnerEnvelope.currentState.actionAuthority).toBe("none");
+
+    const extraBinding = structuredClone(MAP_NAVIGATION_STATE);
+    extraBinding.legal_actions[0]!.entity_bindings.push({
+      role: "map_node",
+      entity_id: "map-node-right"
+    });
+    const extraBindingEnvelope = normalizeCurrentState(
+      wrapBridgeV2State({ state: extraBinding, capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    );
+    expect(extraBindingEnvelope.currentState.stability).toBe("invalid");
+    expect(extraBindingEnvelope.currentState.actionAuthority).toBe("none");
   });
 
   it("requires action entity bindings to resolve inside visible context or surface evidence", () => {

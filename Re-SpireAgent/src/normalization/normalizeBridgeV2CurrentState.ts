@@ -2145,11 +2145,18 @@ function validateMapNavigationState(
   validateActions("map_navigation", stateId, actions, missing, advertisedOperations, readiness, diagnostics);
   for (const action of actions) {
     if (action.kind === "choose_map_node") {
-      const bindings = action.entity_bindings.filter((binding) => binding.role === "map_node");
-      if (action.entity_bindings.length !== 1
-          || bindings.length !== 1
-          || !optionIds.has(bindings[0]!.entity_id)) {
-        diagnostics.invalid("bridge_v2.legal_actions.entity_bindings", action.entity_bindings, "map route action must bind exactly one current map choice");
+      const screenBindings = action.entity_bindings.filter((binding) => binding.role === "map_screen");
+      const nodeBindings = action.entity_bindings.filter((binding) => binding.role === "map_node");
+      if (action.entity_bindings.length !== 2
+          || screenBindings.length !== 1
+          || screenBindings[0]!.entity_id !== surface.screen_entity_id
+          || nodeBindings.length !== 1
+          || !optionIds.has(nodeBindings[0]!.entity_id)) {
+        diagnostics.invalid(
+          "bridge_v2.legal_actions.entity_bindings",
+          action.entity_bindings,
+          "map route action must bind exactly the current map screen and one current map choice"
+        );
       }
       continue;
     }
