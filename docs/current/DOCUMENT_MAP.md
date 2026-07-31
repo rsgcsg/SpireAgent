@@ -14,6 +14,8 @@
 - [Connector V3 overview](../../STS2MCP/docs/connector-v3/README.md)
 - [Connector V3 protocol](../../STS2MCP/docs/connector-v3/PROTOCOL.md)
 - [Connector V3 coverage](../../STS2MCP/docs/connector-v3/COVERAGE.md)
+- [Connector V3 first Live evidence, v0.109.1](../../STS2MCP/docs/connector-v3/LIVE_EVIDENCE_2026-07-31.md)
+- [Connector V3 Live evidence, v0.110.0](../../STS2MCP/docs/connector-v3/LIVE_EVIDENCE_V0_110_0_2026-07-31.md)
 - [Re-SpireAgent](../../Re-SpireAgent/README.md)
 - [Re V3 integration](../../Re-SpireAgent/docs/CONNECTOR_V3_INTEGRATION.md)
 - [Re V3 state coverage](../../Re-SpireAgent/docs/MCP_STATE_COVERAGE.md)

@@ -183,8 +183,8 @@ Preview.68 adds three explicit boundaries without expanding authority:
 - command responses may include `completion_boundary` to distinguish native
   commit, immediate postcondition, exact continuation handoff, transaction
   settlement, and the historical generic Gateway semantic completion;
-- `deck_enchant_selection.source` binds the exact current Self-Help Book or
-  Kifuda source contract; unknown sources fail closed;
+- `deck_enchant_selection.source` binds the exact current Self-Help Book,
+  Symbiote or Kifuda source contract; unknown sources fail closed;
 - contract-instance shadow resolution may be
   `resolved_runtime_contract`, with exact runtime source/contract IDs. It
   remains `authorizing=false` and cannot add or remove actions.

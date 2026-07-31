@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "scenario_id": "combat_pile_static_audit_v1_exact_v0_109_1",
+  "scenario_id": "combat_pile_static_audit_v1_exact_v0_110_0",
   "scenario_kind": "exact_game_static_compatibility",
   "evidence_role": "exact_game_static_audit",
   "authorization_effect": "none",
@@ -8,10 +8,10 @@
   "applicability": {
     "registry_id": "combat_pile_source_contracts_v1",
     "catalog_id": "combat_pile_closed_contract_catalog_v1",
-    "game_version": "0.109.1",
-    "game_commit": "c8c577f6",
-    "game_assembly_sha256": "2cb39e2eee651743829abcc0df4dd9cd7e65f46287c7ca264481115c9602382f",
-    "game_assembly_mvid": "208f08b8-d5f5-47f8-9e96-d3a4299ee709"
+    "game_version": "0.110.0",
+    "game_commit": "eecc8c4d",
+    "game_assembly_sha256": "67df01f5c4496de8a416b2938633cf13f415045da4df3827d3401b158f3491a1",
+    "game_assembly_mvid": "c233d90e-cf70-4c32-ab65-e50cd9585983"
   },
   "assertions": {
     "report_schema_version": 2,

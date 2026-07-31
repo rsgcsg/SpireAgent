@@ -271,6 +271,12 @@ internal static class ConnectorV3Runtime
 
         if (draft.Surface.Kind == "combat_turn")
             return BuildCombatBindings(allowed);
+        if (draft.Surface.Kind is
+            "shop_room" or
+            "map_navigation" or
+            "rest_site" or
+            "deck_enchant_selection")
+            return BuildNativeBindings(allowed);
 
         return allowed
             .Select(item => new ConnectorV3BoundCommand(
@@ -280,6 +286,19 @@ internal static class ConnectorV3Runtime
                 item.Contract))
             .ToArray();
     }
+
+    private static IReadOnlyList<ConnectorV3BoundCommand> BuildNativeBindings(
+        IReadOnlyList<(
+            BridgeActionDraft Action,
+            ActionPermissionScope Scope,
+            BridgeBoundActionContract Contract)> allowed) =>
+        allowed
+            .Select(item => new ConnectorV3BoundCommand(
+                BuildCandidate(item.Action, item.Scope, "native_direct_resolver"),
+                null,
+                PermissionBinding(item.Scope),
+                item.Contract))
+            .ToArray();
 
     private static IReadOnlyList<ConnectorV3BoundCommand> BuildCombatBindings(
         IReadOnlyList<(
@@ -353,9 +372,10 @@ internal static class ConnectorV3Runtime
         string bindingKind)
     {
         string command = PublicCommand(action.Kind);
-        var operands = new Dictionary<string, string>(StringComparer.Ordinal);
-        foreach (ActionEntityBinding binding in action.EntityBindings ?? Array.Empty<ActionEntityBinding>())
-            operands[OperandName(binding.Role)] = binding.EntityId;
+        Dictionary<string, string> operands = BuildCommandOperands(
+            action.Kind,
+            command,
+            action.EntityBindings ?? Array.Empty<ActionEntityBinding>());
         if (operands.Count == 0 && command != "end_turn")
             operands["control_id"] = action.Kind;
         string candidateId = "candidate_" + BridgeHash.Object(new
@@ -374,6 +394,22 @@ internal static class ConnectorV3Runtime
             action.EntityBindings ?? Array.Empty<ActionEntityBinding>(),
             bindingKind,
             scope.Tier == "canary" ? "trial" : "supported");
+    }
+
+    internal static Dictionary<string, string> BuildCommandOperands(
+        string operation,
+        string command,
+        IReadOnlyList<ActionEntityBinding> entityBindings)
+    {
+        var operands = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (ActionEntityBinding binding in entityBindings)
+            operands[OperandName(binding.Role)] = binding.EntityId;
+
+        // Generic controls can coexist on the same owner entity. The semantic
+        // control identity distinguishes them without exposing a V2 action id.
+        if (command == "activate_control")
+            operands["control_id"] = operation;
+        return operands;
     }
 
     private static ConnectorV3BoundCommand? ResolveBinding(
@@ -441,11 +477,187 @@ internal static class ConnectorV3Runtime
         ConnectorV3BoundCommand binding)
     {
         if (binding.Candidate.BindingKind == "native_direct_resolver")
-            return StartCombatCommand(snapshot, request);
+        {
+            return snapshot.Draft.Surface.Kind switch
+            {
+                "combat_turn" => StartCombatCommand(snapshot, request),
+                "shop_room" => StartShopRoomCommand(snapshot, request),
+                "map_navigation" => StartMapCommand(snapshot, request),
+                "rest_site" => StartRestCommand(snapshot, request),
+                "deck_enchant_selection" => StartDeckEnchantCommand(
+                    snapshot,
+                    request,
+                    binding),
+                _ => BridgeActionStartResult.Rejected(
+                    "native_command_owner_unsupported",
+                    "The current owner has no Connector V3 native command resolver.")
+            };
+        }
         return binding.LegacyBinding?.Start()
                ?? BridgeActionStartResult.Rejected(
                    "command_binding_unavailable",
                    "The exact native command binding is no longer available.");
+    }
+
+    private static BridgeActionStartResult StartMapCommand(
+        ConnectorV3Snapshot snapshot,
+        ConnectorV3CommandRequest request)
+    {
+        if (snapshot.Draft.Surface is not MapNavigationSurface surface)
+        {
+            return BridgeActionStartResult.Rejected(
+                "owner_changed",
+                "The map-navigation owner is no longer current.");
+        }
+        IReadOnlyDictionary<string, string> operands =
+            request.Operands ?? new Dictionary<string, string>();
+        if (!operands.TryGetValue("map_screen_id", out string? screenId)
+            || !string.Equals(screenId, surface.ScreenEntityId, StringComparison.Ordinal))
+        {
+            return BridgeActionStartResult.Rejected(
+                "map_owner_changed",
+                "The exact map screen is no longer current.");
+        }
+
+        if (request.Command == "navigate"
+            && operands.TryGetValue("map_node_id", out string? nodeId))
+        {
+            return MapNavigationSurfaceProvider.StartTravel(
+                Entities,
+                screenId,
+                nodeId);
+        }
+        if (request.Command == "activate_control"
+            && operands.TryGetValue("control_id", out string? controlId)
+            && string.Equals(controlId, "exit_map_annotation", StringComparison.Ordinal)
+            && operands.TryGetValue(
+                "map_annotation_input_id",
+                out string? annotationInputId))
+        {
+            return MapNavigationSurfaceProvider.StopAnnotation(
+                Entities,
+                screenId,
+                annotationInputId);
+        }
+
+        return BridgeActionStartResult.Rejected(
+            "map_command_unsupported",
+            "The requested map command is not supported for this exact interaction.");
+    }
+
+    private static BridgeActionStartResult StartRestCommand(
+        ConnectorV3Snapshot snapshot,
+        ConnectorV3CommandRequest request)
+    {
+        if (snapshot.Draft.Surface is not RestSiteSurface surface)
+        {
+            return BridgeActionStartResult.Rejected(
+                "owner_changed",
+                "The rest-site owner is no longer current.");
+        }
+        IReadOnlyDictionary<string, string> operands =
+            request.Operands ?? new Dictionary<string, string>();
+        if (!operands.TryGetValue("screen_id", out string? screenId)
+            || !string.Equals(screenId, surface.ScreenEntityId, StringComparison.Ordinal))
+        {
+            return BridgeActionStartResult.Rejected(
+                "rest_owner_changed",
+                "The exact rest-site screen is no longer current.");
+        }
+
+        if (request.Command == "choose"
+            && operands.TryGetValue("rest_option_id", out string? optionId))
+        {
+            return RestSiteSurfaceProvider.StartOption(
+                Entities,
+                screenId,
+                optionId);
+        }
+        if (request.Command == "activate_control"
+            && operands.TryGetValue("control_id", out string? controlId)
+            && string.Equals(controlId, "proceed_rest_site", StringComparison.Ordinal))
+        {
+            return RestSiteSurfaceProvider.StartProceed(Entities, screenId);
+        }
+
+        return BridgeActionStartResult.Rejected(
+            "rest_command_unsupported",
+            "The requested rest-site command is not supported for this exact interaction.");
+    }
+
+    private static BridgeActionStartResult StartDeckEnchantCommand(
+        ConnectorV3Snapshot snapshot,
+        ConnectorV3CommandRequest request,
+        ConnectorV3BoundCommand binding)
+    {
+        if (snapshot.Draft.Surface is not DeckEnchantSelectionSurface surface)
+        {
+            return BridgeActionStartResult.Rejected(
+                "owner_changed",
+                "The deck-enchant owner is no longer current.");
+        }
+        IReadOnlyDictionary<string, string> operands =
+            request.Operands ?? new Dictionary<string, string>();
+        if (!operands.TryGetValue("screen_id", out string? screenId)
+            || !string.Equals(screenId, surface.ScreenEntityId, StringComparison.Ordinal))
+        {
+            return BridgeActionStartResult.Rejected(
+                "enchantment_owner_changed",
+                "The exact deck-enchant screen is no longer current.");
+        }
+
+        return binding.Candidate.Operation switch
+        {
+            "toggle_card" when operands.TryGetValue("card_id", out string? cardId) =>
+                DeckEnchantSurfaceProvider.StartToggleCard(
+                    Entities,
+                    screenId,
+                    cardId),
+            "preview_selection" =>
+                DeckEnchantSurfaceProvider.StartMainPreview(Entities, screenId),
+            "confirm_selection" =>
+                DeckEnchantSurfaceProvider.StartPreviewConfirm(Entities, screenId),
+            "cancel_preview" =>
+                DeckEnchantSurfaceProvider.StartPreviewCancel(Entities, screenId),
+            "close_selection" =>
+                DeckEnchantSurfaceProvider.StartClose(Entities, screenId),
+            _ => BridgeActionStartResult.Rejected(
+                "deck_enchant_command_unsupported",
+                "The requested command is not supported for this exact deck-enchant stage.")
+        };
+    }
+
+    private static BridgeActionStartResult StartShopRoomCommand(
+        ConnectorV3Snapshot snapshot,
+        ConnectorV3CommandRequest request)
+    {
+        if (snapshot.Draft.Surface is not ShopRoomSurface surface)
+        {
+            return BridgeActionStartResult.Rejected(
+                "owner_changed",
+                "The merchant-room owner is no longer current.");
+        }
+        IReadOnlyDictionary<string, string> operands =
+            request.Operands ?? new Dictionary<string, string>();
+        if (!operands.TryGetValue("room_id", out string? roomId)
+            || !string.Equals(roomId, surface.RoomEntityId, StringComparison.Ordinal)
+            || !operands.TryGetValue("control_id", out string? controlId))
+        {
+            return BridgeActionStartResult.Rejected(
+                "shop_room_binding_changed",
+                "The exact merchant room and control binding are no longer current.");
+        }
+
+        return controlId switch
+        {
+            "open_shop_inventory" =>
+                ShopRoomSurfaceProvider.StartOpenInventory(Entities, roomId),
+            "proceed_shop" =>
+                ShopRoomSurfaceProvider.StartProceed(Entities, roomId),
+            _ => BridgeActionStartResult.Rejected(
+                "shop_room_control_unsupported",
+                "The requested merchant-room control is not supported.")
+        };
     }
 
     private static BridgeActionStartResult StartCombatCommand(

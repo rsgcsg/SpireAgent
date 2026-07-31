@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { mkdir } from "node:fs/promises";
+import { mkdir, readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 
@@ -62,6 +62,35 @@ if (result.status !== 0) {
   process.exit(result.status ?? 1);
 }
 
+const report = JSON.parse(await readFile(outputPath, "utf8"));
+const scenarioDirectory = path.join(
+  root,
+  "STS2MCP/compatibility/scenarios"
+);
+const scenarioMatches = [];
+for (const fileName of await readdir(scenarioDirectory)) {
+  if (!fileName.startsWith("combat-pile-static-audit.")
+      || !fileName.endsWith(".json")) {
+    continue;
+  }
+  const scenarioPath = path.join(scenarioDirectory, fileName);
+  const scenario = JSON.parse(await readFile(scenarioPath, "utf8"));
+  const applicability = scenario.applicability ?? {};
+  if (applicability.game_version === report.release?.version?.replace(/^v/u, "")
+      && applicability.game_commit === report.release?.commit
+      && applicability.game_assembly_sha256 === report.game_assembly?.sha256
+      && applicability.game_assembly_mvid === report.game_assembly?.module_version_id) {
+    scenarioMatches.push(scenarioPath);
+  }
+}
+if (scenarioMatches.length !== 1) {
+  throw new Error(
+    `Expected exactly one exact compatibility scenario for ${report.release?.version ?? "unknown"} `
+    + `${report.release?.commit ?? "unknown"} ${report.game_assembly?.module_version_id ?? "unknown"}, `
+    + `found ${scenarioMatches.length}.`
+  );
+}
+
 const grade = spawnSync(
   process.execPath,
   [
@@ -69,7 +98,7 @@ const grade = spawnSync(
     "--report",
     outputPath,
     "--scenario",
-    "STS2MCP/compatibility/scenarios/combat-pile-static-audit.v0.109.1.json",
+    scenarioMatches[0],
     "--output",
     gradePath
   ],

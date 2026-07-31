@@ -57,6 +57,17 @@ export function projectConnectorV3ForRe(
     legalActions
   });
   const actionable = legalActions.length > 0;
+  const supportedSurface = observation.interaction.execution_support !== "unsupported";
+  const projectedSurface = supportedSurface
+    ? observation.surface
+    : {
+        kind: "unsupported",
+        source_type: observation.surface.kind,
+        reason: typeof observation.surface.reason === "string"
+          ? observation.surface.reason
+          : observation.interaction.support_reason
+            ?? "Connector v3 has no exact command binding for this visible interaction."
+      };
   const projection = {
     protocol_version: "2.0-preview.82",
     state_id: observation.state_token,
@@ -64,11 +75,11 @@ export function projectConnectorV3ForRe(
     authority_projection_id: `authority_projection_${authorityDigest}`,
     state_sequence: observation.sequence,
     observed_at: observation.observed_at,
-    readiness: observation.interaction.phase,
+    readiness: supportedSurface ? observation.interaction.phase : "unsupported",
     shared_state: observation.shared_state,
     context: observation.context,
-    surface_kind: observation.surface.kind,
-    surface: observation.surface,
+    surface_kind: projectedSurface.kind,
+    surface: projectedSurface,
     authority_handoff: {
       status: actionable ? "bridge_owned" : "none_fail_closed",
       surface_kind: actionable ? observation.surface.kind : null,

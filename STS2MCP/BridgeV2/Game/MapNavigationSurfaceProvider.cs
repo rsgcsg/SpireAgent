@@ -21,10 +21,21 @@ internal sealed class MapNavigationSurfaceProvider : IBridgeSurfaceProvider
 {
     private const string SurfaceKind = "map_navigation";
     private const BindingFlags Flags = BindingFlags.Instance | BindingFlags.NonPublic;
+    private const BindingFlags PublicFlags = BindingFlags.Instance | BindingFlags.Public;
     private static readonly FieldInfo? InputDisabledField =
         typeof(NMapScreen).GetField("_isInputDisabled", Flags);
     private static readonly FieldInfo? DrawingInputField =
         typeof(NMapScreen).GetField("_drawingInput", Flags);
+    private static readonly MethodInfo? LocalDrawingModeMethod =
+        typeof(NMapDrawings)
+            .GetMethods(PublicFlags)
+            .Where(method =>
+                method.Name == "GetLocalDrawingMode"
+                && method.ReturnType == typeof(DrawingMode)
+                && IsCompatibleLocalDrawingModeSignature(
+                    method.GetParameters().Select(parameter => parameter.ParameterType).ToArray()))
+            .OrderByDescending(method => method.GetParameters().Length)
+            .FirstOrDefault();
 
     public string Kind => SurfaceKind;
 
@@ -76,7 +87,12 @@ internal sealed class MapNavigationSurfaceProvider : IBridgeSurfaceProvider
             visited,
             nodes);
 
-        DrawingMode drawingMode = screen.Drawings.GetLocalDrawingMode();
+        if (!TryGetLocalDrawingMode(screen.Drawings, out DrawingMode drawingMode))
+        {
+            return BindingUnavailable(
+                game,
+                "The exact map drawing-mode source binding is unavailable.");
+        }
         NMapDrawingInput? drawingInput = null;
         if (drawingMode != DrawingMode.None)
         {
@@ -202,6 +218,14 @@ internal sealed class MapNavigationSurfaceProvider : IBridgeSurfaceProvider
         && (!usingController || nodeOnScreen)
         && !targetAlreadyVisited;
 
+    internal static bool IsCompatibleLocalDrawingModeSignature(
+        IReadOnlyList<Type> parameterTypes) =>
+        parameterTypes.Count == 0
+        || parameterTypes.Count == 1 && parameterTypes[0] == typeof(bool);
+
+    internal static bool HasCompatibleLocalDrawingModeBinding =>
+        LocalDrawingModeMethod != null;
+
     private static bool IsExactUiTravelChoice(NMapScreen screen, NMapPoint node)
     {
         NControllerManager? controller = NControllerManager.Instance;
@@ -272,7 +296,11 @@ internal sealed class MapNavigationSurfaceProvider : IBridgeSurfaceProvider
             $"Choose {pointType} at ({coord.col},{coord.row})",
             "NMapPoint.OnRelease+NMapScreen.OnMapPointSelectedLocally",
             () => StartTravel(screen, runState, node, coord),
-            new[] { new ActionEntityBinding("map_node", nodeId) });
+            new[]
+            {
+                new ActionEntityBinding("map_screen", entities.GetId(screen, "screen")),
+                new ActionEntityBinding("map_node", nodeId)
+            });
     }
 
     private static BridgeActionDraft BuildAnnotationExitAction(
@@ -290,7 +318,64 @@ internal sealed class MapNavigationSurfaceProvider : IBridgeSurfaceProvider
             "Exit map annotation mode",
             "NMapDrawingInput.StopDrawing",
             () => StopAnnotation(screen, drawingInput, drawingMode),
-            new[] { new ActionEntityBinding("map_screen", screenId) });
+            new[]
+            {
+                new ActionEntityBinding("map_screen", screenId),
+                new ActionEntityBinding("map_annotation_input", inputId)
+            });
+    }
+
+    internal static BridgeActionStartResult StartTravel(
+        BridgeEntityRegistry entities,
+        string expectedScreenId,
+        string expectedNodeId)
+    {
+        NMapScreen? screen = NMapScreen.Instance;
+        RunState? runState = RunManager.Instance.DebugOnlyGetState();
+        if (screen == null
+            || runState == null
+            || !McpMod.IsLiveNode(screen)
+            || !string.Equals(
+                entities.GetId(screen, "screen"),
+                expectedScreenId,
+                StringComparison.Ordinal)
+            || !entities.TryResolve(expectedNodeId, out NMapPoint? node)
+            || node == null
+            || !McpMod.FindAll<NMapPoint>(screen).Any(candidate => ReferenceEquals(candidate, node))
+            || node.Point == null)
+        {
+            return BridgeActionStartResult.Rejected(
+                "map_choice_changed",
+                "The exact map screen or destination entity is no longer current.");
+        }
+
+        return StartTravel(screen, runState, node, node.Point.coord);
+    }
+
+    internal static BridgeActionStartResult StopAnnotation(
+        BridgeEntityRegistry entities,
+        string expectedScreenId,
+        string expectedInputId)
+    {
+        NMapScreen? screen = NMapScreen.Instance;
+        if (screen == null
+            || !McpMod.IsLiveNode(screen)
+            || !string.Equals(
+                entities.GetId(screen, "screen"),
+                expectedScreenId,
+                StringComparison.Ordinal)
+            || !entities.TryResolve(expectedInputId, out NMapDrawingInput? input)
+            || input == null
+            || DrawingInputField?.GetValue(screen) is not NMapDrawingInput currentInput
+            || !ReferenceEquals(currentInput, input)
+            || !TryGetLocalDrawingMode(screen.Drawings, out DrawingMode drawingMode))
+        {
+            return BridgeActionStartResult.Rejected(
+                "map_annotation_input_changed",
+                "The exact map annotation owner is no longer current.");
+        }
+
+        return StopAnnotation(screen, input, drawingMode);
     }
 
     private static BridgeActionStartResult StopAnnotation(
@@ -308,7 +393,8 @@ internal sealed class MapNavigationSurfaceProvider : IBridgeSurfaceProvider
             || !McpMod.IsLiveNode(expectedInput)
             || expectedInput.DrawingMode != expectedMode
             || expectedMode == DrawingMode.None
-            || expectedScreen.Drawings.GetLocalDrawingMode() != expectedMode)
+            || !TryGetLocalDrawingMode(expectedScreen.Drawings, out DrawingMode currentMode)
+            || currentMode != expectedMode)
         {
             return BridgeActionStartResult.Rejected(
                 "map_annotation_input_changed",
@@ -319,7 +405,8 @@ internal sealed class MapNavigationSurfaceProvider : IBridgeSurfaceProvider
         return BridgeActionStartResult.Started(
             () => !ReferenceEquals(NMapScreen.Instance, expectedScreen)
                   || !expectedScreen.IsOpen
-                  || expectedScreen.Drawings.GetLocalDrawingMode() == DrawingMode.None,
+                  || TryGetLocalDrawingMode(expectedScreen.Drawings, out DrawingMode mode)
+                     && mode == DrawingMode.None,
             "map_annotation_mode_closed");
     }
 
@@ -333,7 +420,8 @@ internal sealed class MapNavigationSurfaceProvider : IBridgeSurfaceProvider
             || !expectedScreen.IsOpen
             || expectedScreen.IsTraveling
             || !expectedScreen.IsTravelEnabled
-            || expectedScreen.Drawings.GetLocalDrawingMode() != DrawingMode.None
+            || !TryGetLocalDrawingMode(expectedScreen.Drawings, out DrawingMode drawingMode)
+            || drawingMode != DrawingMode.None
             || InputDisabledField?.GetValue(expectedScreen) is not bool inputDisabled
             || inputDisabled
             || !ReferenceEquals(RunManager.Instance.DebugOnlyGetState(), expectedRunState)
@@ -355,6 +443,31 @@ internal sealed class MapNavigationSurfaceProvider : IBridgeSurfaceProvider
                      && current.Equals(expectedCoord),
             "map_closed_or_current_map_coordinate_reached",
             allowIntermediateStateChanges: true);
+    }
+
+    private static bool TryGetLocalDrawingMode(
+        NMapDrawings drawings,
+        out DrawingMode drawingMode)
+    {
+        drawingMode = DrawingMode.None;
+        MethodInfo? method = LocalDrawingModeMethod;
+        if (method == null)
+            return false;
+
+        try
+        {
+            object?[] arguments = method.GetParameters().Length == 0
+                ? Array.Empty<object?>()
+                : new object?[] { true };
+            if (method.Invoke(drawings, arguments) is not DrawingMode observed)
+                return false;
+            drawingMode = observed;
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
     }
 
     private static string PointType(MapPoint point) => point.PointType.ToString().ToLowerInvariant();

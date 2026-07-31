@@ -706,6 +706,29 @@ internal sealed class ShopRoomSurfaceProvider : IBridgeSurfaceProvider
             OpenInventoryCompletionWitness);
     }
 
+    internal static BridgeActionStartResult StartOpenInventory(
+        BridgeEntityRegistry entities,
+        string expectedRoomId)
+    {
+        if (!ShopSurfaceFacts.TryGetCurrent(
+                out MerchantRoom? merchantRoom,
+                out NMerchantRoom? room,
+                out MerchantInventory? inventory)
+            || merchantRoom == null
+            || room == null
+            || inventory == null
+            || !string.Equals(
+                entities.GetId(room, "room"),
+                expectedRoomId,
+                StringComparison.Ordinal))
+        {
+            return BridgeActionStartResult.Rejected(
+                "shop_room_binding_changed",
+                "The exact merchant room is no longer current.");
+        }
+        return StartOpenInventory(merchantRoom, room, inventory);
+    }
+
     private static BridgeActionStartResult StartProceed(
         MerchantRoom expectedMerchantRoom,
         NMerchantRoom expectedRoom)
@@ -727,6 +750,29 @@ internal sealed class ShopRoomSurfaceProvider : IBridgeSurfaceProvider
                   || NMapScreen.Instance?.IsOpen == true,
             ProceedCompletionWitness,
             allowIntermediateStateChanges: true);
+    }
+
+    internal static BridgeActionStartResult StartProceed(
+        BridgeEntityRegistry entities,
+        string expectedRoomId)
+    {
+        if (!ShopSurfaceFacts.TryGetCurrent(
+                out MerchantRoom? merchantRoom,
+                out NMerchantRoom? room,
+                out MerchantInventory? inventory)
+            || merchantRoom == null
+            || room == null
+            || inventory == null
+            || !string.Equals(
+                entities.GetId(room, "room"),
+                expectedRoomId,
+                StringComparison.Ordinal))
+        {
+            return BridgeActionStartResult.Rejected(
+                "shop_room_binding_changed",
+                "The exact merchant room is no longer current.");
+        }
+        return StartProceed(merchantRoom, room);
     }
 }
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using STS2_MCP.BridgeV2.Protocol;
 
 namespace STS2_MCP.ConnectorV3.Protocol;
@@ -61,7 +62,7 @@ public sealed record ConnectorV3ObservationResponse(
     long Sequence,
     DateTimeOffset ObservedAt,
     string Status,
-    SharedVisibleState? SharedState,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.Never)] SharedVisibleState? SharedState,
     IBridgeContext Context,
     IBridgeSurface Surface,
     ConnectorV3Interaction Interaction,

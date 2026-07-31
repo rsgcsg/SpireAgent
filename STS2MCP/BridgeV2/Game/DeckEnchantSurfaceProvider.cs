@@ -24,7 +24,8 @@ namespace STS2_MCP.BridgeV2.Game;
 
 internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
 {
-    private const string ReflectionEvidence = "sts2-v0.109.1:NDeckEnchantSelectScreen+SelfHelpBook.SelectAndEnchant+Kifuda.AfterObtained";
+    private const string ReflectionEvidence =
+        "sts2-v0.110.0:NDeckEnchantSelectScreen+SelfHelpBook.SelectAndEnchant+Symbiote.Approach+Kifuda.AfterObtained";
     internal const string ToggleCompletionWitness =
         "selected_card_membership_changed";
     internal const string PreviewCompletionWitness =
@@ -154,7 +155,8 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
             stage,
             holders,
             selectedCards,
-            cardIds);
+            cardIds,
+            screenEntityId);
 
         var missing = new List<string>();
         if (surface.Enchantment.Name == null)
@@ -203,7 +205,8 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
         string stage,
         IReadOnlyList<NGridCardHolder> holders,
         HashSet<CardModel> selectedCards,
-        IReadOnlyDictionary<CardModel, string> cardIds)
+        IReadOnlyDictionary<CardModel, string> cardIds,
+        string screenEntityId)
     {
         var actions = new List<BridgeActionDraft>();
 
@@ -227,7 +230,11 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
                     selected ? $"Deselect {cardName}" : $"Select {cardName}",
                     $"{source.BindingEvidence}|NCardGrid.HolderPressed",
                     () => StartToggleCard(screen, card, binding.Enchantment),
-                    new[] { new ActionEntityBinding("card", cardId) }));
+                    new[]
+                    {
+                        new ActionEntityBinding("screen", screenEntityId),
+                        new ActionEntityBinding("card", cardId)
+                    }));
             }
 
             NConfirmButton? mainConfirm = screen.GetNodeOrNull<NConfirmButton>("Confirm")
@@ -240,7 +247,8 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
                     "selection",
                     "Preview selected cards with the enchantment",
                     $"{source.BindingEvidence}|NDeckEnchantSelectScreen.main_confirm",
-                    () => StartMainPreview(screen)));
+                    () => StartMainPreview(screen),
+                    new[] { new ActionEntityBinding("screen", screenEntityId) }));
             }
 
             NBackButton? close = screen.GetNodeOrNull<NBackButton>("%Close");
@@ -252,7 +260,8 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
                     "navigation",
                     "Close enchant selection without choosing cards",
                     $"{source.BindingEvidence}|NDeckEnchantSelectScreen.close",
-                    () => StartClose(screen)));
+                    () => StartClose(screen),
+                    new[] { new ActionEntityBinding("screen", screenEntityId) }));
             }
         }
         else
@@ -271,7 +280,8 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
                         screen,
                         binding.SelectedCards.ToArray(),
                         binding.Enchantment.Id.Entry,
-                        binding.EnchantmentAmount)));
+                        binding.EnchantmentAmount),
+                    new[] { new ActionEntityBinding("screen", screenEntityId) }));
             }
 
             NBackButton? cancel = preview?.GetNodeOrNull<NBackButton>("Cancel");
@@ -283,7 +293,8 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
                     "navigation",
                     "Cancel preview and return to card selection",
                     $"{source.BindingEvidence}|NDeckEnchantSelectScreen.preview_cancel",
-                    () => StartPreviewCancel(screen)));
+                    () => StartPreviewCancel(screen),
+                    new[] { new ActionEntityBinding("screen", screenEntityId) }));
             }
         }
 
@@ -428,6 +439,99 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
             completionBoundary: "continuation_handoff_observed");
     }
 
+    internal static BridgeActionStartResult StartToggleCard(
+        BridgeEntityRegistry entities,
+        string expectedScreenId,
+        string expectedCardId)
+    {
+        if (!TryResolveCurrentScreen(entities, expectedScreenId, out NDeckEnchantSelectScreen? screen)
+            || !entities.TryResolve(expectedCardId, out CardModel? card)
+            || card == null)
+        {
+            return BridgeActionStartResult.Rejected(
+                "enchantment_binding_changed",
+                "The exact enchant screen or card is no longer current.");
+        }
+        if (!TryReadBinding(screen!, out Binding? binding, out string? error))
+        {
+            return BridgeActionStartResult.Rejected(
+                "enchantment_binding_changed",
+                error ?? "The exact enchant screen binding is no longer current.");
+        }
+
+        return StartToggleCard(screen!, card, binding!.Enchantment);
+    }
+
+    internal static BridgeActionStartResult StartMainPreview(
+        BridgeEntityRegistry entities,
+        string expectedScreenId) =>
+        TryResolveCurrentScreen(entities, expectedScreenId, out NDeckEnchantSelectScreen? screen)
+            ? StartMainPreview(screen!)
+            : BridgeActionStartResult.Rejected(
+                "screen_changed",
+                "The exact enchant screen is no longer current.");
+
+    internal static BridgeActionStartResult StartPreviewConfirm(
+        BridgeEntityRegistry entities,
+        string expectedScreenId)
+    {
+        if (!TryResolveCurrentScreen(entities, expectedScreenId, out NDeckEnchantSelectScreen? screen))
+        {
+            return BridgeActionStartResult.Rejected(
+                "enchantment_binding_changed",
+                "The exact enchant screen is no longer current.");
+        }
+        if (!TryReadBinding(screen!, out Binding? binding, out string? error))
+        {
+            return BridgeActionStartResult.Rejected(
+                "enchantment_binding_changed",
+                error ?? "The exact enchant screen binding is no longer current.");
+        }
+
+        return StartPreviewConfirm(
+            screen!,
+            binding!.SelectedCards.ToArray(),
+            binding.Enchantment.Id.Entry,
+            binding.EnchantmentAmount);
+    }
+
+    internal static BridgeActionStartResult StartPreviewCancel(
+        BridgeEntityRegistry entities,
+        string expectedScreenId) =>
+        TryResolveCurrentScreen(entities, expectedScreenId, out NDeckEnchantSelectScreen? screen)
+            ? StartPreviewCancel(screen!)
+            : BridgeActionStartResult.Rejected(
+                "screen_changed",
+                "The exact enchant screen is no longer current.");
+
+    internal static BridgeActionStartResult StartClose(
+        BridgeEntityRegistry entities,
+        string expectedScreenId) =>
+        TryResolveCurrentScreen(entities, expectedScreenId, out NDeckEnchantSelectScreen? screen)
+            ? StartClose(screen!)
+            : BridgeActionStartResult.Rejected(
+                "screen_changed",
+                "The exact enchant screen is no longer current.");
+
+    private static bool TryResolveCurrentScreen(
+        BridgeEntityRegistry entities,
+        string expectedScreenId,
+        out NDeckEnchantSelectScreen? screen)
+    {
+        if (!entities.TryResolve(expectedScreenId, out screen)
+            || screen == null
+            || !IsCurrentScreen(screen)
+            || !string.Equals(
+                entities.GetId(screen, "screen"),
+                expectedScreenId,
+                StringComparison.Ordinal))
+        {
+            screen = null;
+            return false;
+        }
+        return true;
+    }
+
     private static bool TryReadBinding(
         NDeckEnchantSelectScreen screen,
         out Binding? binding,
@@ -503,6 +607,22 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
 
         EventModel? eventModel = (runState?.CurrentRoom as EventRoom)?.LocalMutableEvent
                                  ?? (runState?.CurrentRoom as EventRoom)?.CanonicalEvent;
+        DeckEnchantSource? eventSource = ResolveEventSource(eventModel, binding);
+        if (eventSource != null)
+        {
+            source = eventSource;
+            return true;
+        }
+
+        error =
+            "The active enchant screen does not match a source-audited vanilla Self-Help Book, Symbiote, or Kifuda contract.";
+        return false;
+    }
+
+    internal static DeckEnchantSource? ResolveEventSource(
+        EventModel? eventModel,
+        Binding binding)
+    {
         if (eventModel is SelfHelpBook
             && binding.EnchantmentAmount == 2
             && binding.Preferences.MinSelect == 1
@@ -510,16 +630,45 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
             && !binding.Preferences.Cancelable
             && binding.Enchantment is Sharp or Nimble or MegaCrit.Sts2.Core.Models.Enchantments.Swift)
         {
-            source = new DeckEnchantSource(
+            return new DeckEnchantSource(
                 "self_help_book_event",
                 "SELF_HELP_BOOK",
                 "SelfHelpBook.SelectAndEnchant+supported-enchantment:2+single+noncancelable");
-            return true;
         }
 
-        error = "The active enchant screen does not match a source-audited vanilla Self-Help Book or Kifuda contract.";
-        return false;
+        if (IsSymbioteSourceContract(
+                eventModel is Symbiote,
+                binding.Enchantment is Corrupted,
+                binding.EnchantmentAmount,
+                binding.Preferences.MinSelect,
+                binding.Preferences.MaxSelect,
+                binding.Preferences.RequireManualConfirmation,
+                binding.Preferences.Cancelable))
+        {
+            return new DeckEnchantSource(
+                "symbiote_event",
+                "SYMBIOTE",
+                "Symbiote.Approach+Corrupted:1+single+noncancelable");
+        }
+
+        return null;
     }
+
+    internal static bool IsSymbioteSourceContract(
+        bool exactEventType,
+        bool exactEnchantmentType,
+        int enchantmentAmount,
+        int minSelect,
+        int maxSelect,
+        bool requireManualConfirmation,
+        bool cancelable) =>
+        exactEventType
+        && exactEnchantmentType
+        && enchantmentAmount == 1
+        && minSelect == 1
+        && maxSelect == 1
+        && !requireManualConfirmation
+        && !cancelable;
 
     private static object? ReadField(object source, string fieldName)
     {

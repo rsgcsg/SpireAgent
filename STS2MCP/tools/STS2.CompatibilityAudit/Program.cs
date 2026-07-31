@@ -64,8 +64,13 @@ foreach (CombatPileContract contract in registry.Contracts)
 {
     TypeDefinition? sourceType = AllTypes(assembly.MainModule)
         .SingleOrDefault(type => type.FullName == contract.SourceType);
+    string sourceMethodName = contract.HookMode switch
+    {
+        "power_after_shuffle" => "AfterShuffle",
+        _ => "OnPlay"
+    };
     MethodDefinition? sourceMethod = sourceType?.Methods
-        .SingleOrDefault(method => method.Name == "OnPlay");
+        .SingleOrDefault(method => method.Name == sourceMethodName);
     MethodDefinition? analyzedMethod = sourceMethod == null
         ? null
         : ResolveAsyncBody(sourceMethod);

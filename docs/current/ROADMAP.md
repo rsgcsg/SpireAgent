@@ -13,17 +13,26 @@ Cold-load the installed artifact. Verify protocol, SHA, MVID, runtime, game,
 Modset and Patch. Execute at least one direct combat command and one non-combat
 command. Unknown, stale and wrong-owner negatives remain fail-closed.
 
+Status: obtained for the first V3 artifact and repeated on exact STS2
+`v0.110.0`. The current map ABI, rest-child Outcome and Symbiote source repair
+wave requires a new cold-load canary.
+
 ## V3-2: Ordinary Journey
 
 Run one bounded ordinary vanilla game covering combat, map, reward, shop and a
 selection. Stop normally after the game returns to the main menu. Record which
 families used direct V3 bindings versus the internal migration adapter.
 
+Status: completed on `run-20260731040632-00yz1g` under exact v0.110.0 runtime
+identity. The run proves one-game V3 composition for exercised families, not
+the repaired artifact or unexercised families.
+
 ## V3-3: Native Family Migration
 
-Replace the Provider adapter in audited waves: menu/map, reward/shop,
-generated choices, selectors, rest and treasure. Delete each replaced action
-publication path; do not retain dual authority.
+Replace the Provider adapter in audited waves. Combat, shop-room, map, rest
+and deck-enchant execution now use direct V3 resolvers. Menu, reward, shop
+inventory, generated choices, remaining selectors and treasure are next.
+Delete each replaced execution path; do not retain dual authority.
 
 ## V3-4: Visibility And Detail
 

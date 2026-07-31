@@ -171,4 +171,41 @@ describe("Connector V3 strict contract", () => {
     const wrapper = projected.rawState as Record<string, unknown>;
     expect(wrapper.adapter_protocol).toBe("connector_v3_selected");
   });
+
+  it("projects a visible unsupported V3 family as typed unsupported instead of an invalid V2 surface", () => {
+    const value = structuredClone(combatObservation()) as unknown as Record<string, unknown>;
+    value.status = "observed";
+    value.context = { kind: "event", event_id: "SYMBIOTE" };
+    value.surface = {
+      kind: "deck_enchant_selection",
+      source_type: "NDeckEnchantSelectScreen",
+      reason: "The exact source contract is not recognized."
+    };
+    value.interaction = {
+      id: "interaction-enchant-unsupported",
+      kind: "deck_enchant_selection",
+      phase: "degraded",
+      execution_support: "unsupported",
+      support_reason: "No exact current command binding is authorized.",
+      affordances: [],
+      command_candidates: []
+    };
+    const observation = decodeConnectorV3Observation(value).data;
+    const projected = projectConnectorV3ForRe(
+      observation,
+      observation as unknown as JsonObject,
+      { protocol_version: "2.0-preview.82" }
+    );
+    const wrapper = projected.rawState as Record<string, unknown>;
+    const bridgeState = wrapper.bridge_v2_state as Record<string, unknown>;
+
+    expect(bridgeState.readiness).toBe("unsupported");
+    expect(bridgeState.surface_kind).toBe("unsupported");
+    expect(bridgeState.surface).toEqual(expect.objectContaining({
+      kind: "unsupported",
+      source_type: "deck_enchant_selection",
+      reason: "The exact source contract is not recognized."
+    }));
+    expect(bridgeState.legal_actions).toEqual([]);
+  });
 });

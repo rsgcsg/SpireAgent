@@ -44,6 +44,12 @@ state and interaction. Entity IDs resolve to the same native object instance;
 replacement objects do not inherit IDs. Native owner and legality are checked
 again immediately before STS2 Commit.
 
+Generic `activate_control` candidates include a semantic `control_id` even
+when they also bind an owner entity. This distinguishes multiple visible
+controls on one owner, such as opening a merchant inventory versus leaving the
+same merchant room. `control_id` is not a V2 action ID and cannot name an
+unadvertised method or UI node.
+
 ## Receipt
 
 Receipt states are:

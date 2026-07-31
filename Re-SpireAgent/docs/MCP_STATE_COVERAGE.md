@@ -23,13 +23,15 @@ operands.
 
 | Area | Re implementation | Automated evidence | Exact V3 runtime |
 |---|---|---|---|
-| strict observation and receipt decoding | implemented | tests | pending |
-| candidate and operand-domain projection | implemented | tests | pending |
-| stale local choice rejection | implemented | tests plus Gateway ledger tests | pending |
-| unknown-no-retry supervision | implemented | tests | pending |
-| combat commands | implemented | Gateway/Re tests | pending |
-| non-combat commands | migration adapter | inherited Provider and V3 tests | pending |
-| visible unsupported interaction | implemented | tests | pending |
+| strict observation and receipt decoding | implemented | tests | v0.110.0 journey completed after explicit-null repair |
+| candidate and operand-domain projection | implemented | tests | exercised |
+| stale local choice rejection | implemented | tests plus Gateway ledger tests | two safe pre-execution refusals observed |
+| unknown-no-retry supervision | implemented | tests | one rest Outcome became unknown and terminated without retry |
+| combat commands | direct V3 resolver | Gateway/Re tests | play, potion and end-turn receipts completed |
+| shop-room commands | direct V3 resolver | Gateway tests | exercised on v0.110.0 |
+| map/rest/deck-enchant commands | direct V3 resolvers in repaired source | Gateway and Re tests | old map/rest paths exposed defects; repaired artifact pending |
+| other non-combat commands | migration adapter | inherited Provider and V3 tests | event/reward/shop inventory/treasure/selection exercised |
+| visible unsupported interaction | implemented | tests | Crystal Sphere, unknown deck selector and pre-repair Symbiote exercised |
 | V3-native Inspection/detail | pending | none | pending |
 
 The temporary same-runtime v2 capabilities sidecar contributes mature

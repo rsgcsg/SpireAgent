@@ -568,7 +568,7 @@ const deckEnchantSurfaceSchema = z.object({
   stage: z.enum(["selecting", "preview"]),
   screen_entity_id: z.string().min(1),
   source: z.object({
-    kind: z.enum(["self_help_book_event", "kifuda_relic_pickup"]),
+    kind: z.enum(["self_help_book_event", "symbiote_event", "kifuda_relic_pickup"]),
     definition_id: z.string().min(1),
     binding_evidence: z.string().min(1)
   }).passthrough(),

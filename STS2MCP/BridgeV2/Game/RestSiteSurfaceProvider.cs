@@ -98,7 +98,11 @@ internal sealed class RestSiteSurfaceProvider : IBridgeSurfaceProvider
                 McpMod.SafeGetText(() => option.Title) ?? option.OptionId,
                 "RestSiteRoom.Options+NRestSiteButton.ForceClick",
                 () => StartOption(restRoom, room, localPlayer, option, button, index),
-                new[] { new ActionEntityBinding("rest_option", optionId) }));
+                new[]
+                {
+                    new ActionEntityBinding("screen", screenId),
+                    new ActionEntityBinding("rest_option", optionId)
+                }));
         }
 
         NProceedButton proceed = room.ProceedButton;
@@ -202,7 +206,7 @@ internal sealed class RestSiteSurfaceProvider : IBridgeSurfaceProvider
         };
         string completionEvidence = expectedOption switch
         {
-            HealRestSiteOption => "rest_heal_minimum_hp_and_option_progress_observed",
+            HealRestSiteOption => "rest_heal_minimum_hp_and_option_progress_or_reward_child_observed",
             SmithRestSiteOption => "rest_smith_exact_upgrade_child_opened",
             _ => "rest_option_completion_not_implemented"
         };
@@ -210,6 +214,45 @@ internal sealed class RestSiteSurfaceProvider : IBridgeSurfaceProvider
             completion,
             completionEvidence,
             allowIntermediateStateChanges: true);
+    }
+
+    internal static BridgeActionStartResult StartOption(
+        BridgeEntityRegistry entities,
+        string expectedScreenId,
+        string expectedOptionId)
+    {
+        RunState? runState = RunManager.Instance.DebugOnlyGetState();
+        if (runState?.CurrentRoom is not RestSiteRoom restRoom
+            || NRestSiteRoom.Instance is not { } uiRoom
+            || !McpMod.IsLiveNode(uiRoom)
+            || !string.Equals(
+                entities.GetId(uiRoom, "screen"),
+                expectedScreenId,
+                StringComparison.Ordinal)
+            || !entities.TryResolve(expectedOptionId, out RestSiteOption? option)
+            || option == null
+            || LocalContext.GetMe(runState) is not { } player)
+        {
+            return BridgeActionStartResult.Rejected(
+                "rest_option_changed",
+                "The exact rest-site screen or option is no longer current.");
+        }
+
+        RestSiteOption[] options = restRoom.Options.ToArray();
+        int index = Array.FindIndex(options, candidate => ReferenceEquals(candidate, option));
+        NRestSiteButton[] buttons = McpMod.FindAll<NRestSiteButton>(uiRoom)
+            .Where(button =>
+                McpMod.IsLiveNode(button)
+                && ReferenceEquals(button.Option, option))
+            .ToArray();
+        if (index < 0 || buttons.Length != 1)
+        {
+            return BridgeActionStartResult.Rejected(
+                "rest_option_changed",
+                "The exact rest-site option no longer has one current native control.");
+        }
+
+        return StartOption(restRoom, uiRoom, player, option, buttons[0], index);
     }
 
     private static bool IsHealCompleted(
@@ -229,14 +272,27 @@ internal sealed class RestSiteSurfaceProvider : IBridgeSurfaceProvider
             return false;
         }
 
-        return !ReferenceEquals(NRestSiteRoom.Instance, expectedUiRoom)
-               || !expectedRestRoom.Options.Any(option => ReferenceEquals(option, expectedOption))
-               || expectedUiRoom.ProceedButton.IsEnabled;
+        bool optionProgressed =
+            !ReferenceEquals(NRestSiteRoom.Instance, expectedUiRoom)
+            || !expectedRestRoom.Options.Any(option => ReferenceEquals(option, expectedOption))
+            || expectedUiRoom.ProceedButton.IsEnabled;
+        bool rewardChildOpened =
+            NOverlayStack.Instance?.Peek() is NCardRewardSelectionScreen;
+        return HasHealCompletionBoundary(
+            currentHpReached: true,
+            optionProgressed,
+            rewardChildOpened);
     }
 
     internal static bool HasReachedExpectedMinimumHp(
         int currentHp,
         int expectedMinimumHp) => currentHp >= expectedMinimumHp;
+
+    internal static bool HasHealCompletionBoundary(
+        bool currentHpReached,
+        bool optionProgressed,
+        bool rewardChildOpened) =>
+        currentHpReached && (optionProgressed || rewardChildOpened);
 
     private static BridgeActionStartResult StartProceed(
         RestSiteRoom expectedRestRoom,
@@ -261,6 +317,27 @@ internal sealed class RestSiteSurfaceProvider : IBridgeSurfaceProvider
                   || NMapScreen.Instance?.IsOpen == true,
             "rest_site_opened_map_or_left_room",
             allowIntermediateStateChanges: true);
+    }
+
+    internal static BridgeActionStartResult StartProceed(
+        BridgeEntityRegistry entities,
+        string expectedScreenId)
+    {
+        RunState? runState = RunManager.Instance.DebugOnlyGetState();
+        if (runState?.CurrentRoom is not RestSiteRoom restRoom
+            || NRestSiteRoom.Instance is not { } uiRoom
+            || !McpMod.IsLiveNode(uiRoom)
+            || !string.Equals(
+                entities.GetId(uiRoom, "screen"),
+                expectedScreenId,
+                StringComparison.Ordinal))
+        {
+            return BridgeActionStartResult.Rejected(
+                "rest_proceed_changed",
+                "The exact rest-site room is no longer current.");
+        }
+
+        return StartProceed(restRoom, uiRoom, uiRoom.ProceedButton);
     }
 
     private static BridgeObservationDraft BindingUnavailable(GameBuildIdentity game, string reason)

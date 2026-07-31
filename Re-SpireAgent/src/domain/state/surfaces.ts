@@ -333,7 +333,7 @@ export interface DeckEnchantSelectionSurface {
   bridgeStateId: string;
   screenEntityId: string;
   source: {
-    kind: "self_help_book_event" | "kifuda_relic_pickup";
+    kind: "self_help_book_event" | "symbiote_event" | "kifuda_relic_pickup";
     definitionId: string;
     bindingEvidence: string;
   };
