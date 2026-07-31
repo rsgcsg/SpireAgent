@@ -137,6 +137,10 @@ internal sealed class CombatHandCardSelectionSurfaceProvider : IBridgeSurfacePro
             .Select(card => cardIds[card])
             .OrderBy(id => id, StringComparer.Ordinal)
             .ToArray();
+        NConfirmButton? confirm = hand.GetNodeOrNull<NConfirmButton>("%SelectModeConfirmButton");
+        bool requireManualConfirmation = ResolveManualConfirmationRequirement(
+            exact.Preferences.RequireManualConfirmation,
+            confirm != null && McpMod.IsNodeVisible(confirm));
         var surface = new CombatHandCardSelectionSurface(
             SurfaceKind,
             entities.GetId(hand, "hand"),
@@ -146,7 +150,7 @@ internal sealed class CombatHandCardSelectionSurfaceProvider : IBridgeSurfacePro
             exact.Preferences.MaxSelect,
             exact.SelectedCards.Count,
             selectedIds,
-            exact.Preferences.RequireManualConfirmation,
+            requireManualConfirmation,
             hand.PeekButton.IsPeeking,
             cards);
 
@@ -191,6 +195,13 @@ internal sealed class CombatHandCardSelectionSurfaceProvider : IBridgeSurfacePro
             actions);
     }
 
+    internal static bool ResolveManualConfirmationRequirement(
+        bool preferenceRequiresManualConfirmation,
+        bool visibleConfirmControl)
+    {
+        return preferenceRequiresManualConfirmation || visibleConfirmControl;
+    }
+
     private static List<BridgeActionDraft> BuildActions(
         NPlayerHand hand,
         Binding binding,
@@ -222,9 +233,11 @@ internal sealed class CombatHandCardSelectionSurfaceProvider : IBridgeSurfacePro
                 $"select_combat_hand_card:{cardId}",
                 "select_combat_hand_card",
                 "selection",
-                binding.SelectedCards.Count > 0
-                    ? $"Replace current selection with {cardName}"
-                    : $"Select {cardName}",
+                SelectionLabel(
+                    cardName,
+                    binding.Mode,
+                    binding.SelectedCards.Count,
+                    binding.Preferences.MaxSelect),
                 "NPlayerHand.OnHolderPressed+SelectCardInSimpleMode/SelectCardInUpgradeMode",
                 () => StartSelect(hand, binding.Mode, card),
                 new[] { new ActionEntityBinding("card", cardId) }));
@@ -264,6 +277,20 @@ internal sealed class CombatHandCardSelectionSurfaceProvider : IBridgeSurfacePro
         }
 
         return actions;
+    }
+
+    internal static string SelectionLabel(
+        string cardName,
+        NPlayerHand.Mode mode,
+        int selectedCount,
+        int maxSelect)
+    {
+        bool replacesExistingSelection = mode == NPlayerHand.Mode.UpgradeSelect
+            ? selectedCount > 0
+            : selectedCount >= maxSelect;
+        return replacesExistingSelection
+            ? $"Replace current selection with {cardName}"
+            : $"Select {cardName}";
     }
 
     private static BridgeActionStartResult StartSelect(

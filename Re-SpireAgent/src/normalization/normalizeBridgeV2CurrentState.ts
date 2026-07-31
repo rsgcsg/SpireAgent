@@ -1837,6 +1837,7 @@ function validateCombatHandCardSelectionState(
     }
   }
   validateActions("combat_hand_card_selection", stateId, actions, missing, advertisedOperations, readiness, diagnostics);
+  let confirmActions = 0;
   for (const action of actions) {
     if (surface.is_peeking && action.kind !== "close_combat_hand_peek") {
       diagnostics.invalid("bridge_v2.legal_actions.kind", action.kind, "peek mode may advertise only its close action");
@@ -1847,6 +1848,26 @@ function validateCombatHandCardSelectionState(
     if (action.kind === "confirm_combat_hand_selection"
         && (surface.selected_count < surface.min_select || surface.selected_count > surface.max_select)) {
       diagnostics.invalid("bridge_v2.legal_actions.kind", action.kind, "confirm appeared outside the selection range");
+    }
+    if (action.kind === "confirm_combat_hand_selection") confirmActions += 1;
+  }
+  const selectionCountIsValid = surface.selected_count >= surface.min_select
+    && surface.selected_count <= surface.max_select;
+  if (confirmActions > 1) {
+    diagnostics.invalid(
+      "bridge_v2.legal_actions.confirm",
+      confirmActions,
+      "combat-hand selection exposed more than one confirmation action"
+    );
+  }
+  if (!surface.is_peeking && readiness === "ready" && selectionCountIsValid) {
+    const expectedConfirmActions = surface.require_manual_confirmation ? 1 : 0;
+    if (confirmActions !== expectedConfirmActions) {
+      diagnostics.invalid(
+        "bridge_v2.legal_actions.confirm",
+        confirmActions,
+        "combat-hand confirmation action disagrees with the effective visible confirmation requirement"
+      );
     }
   }
 }
@@ -2741,7 +2762,9 @@ function projectCombatPlayer(
       ...(orb.name ? { name: orb.name } : {}),
       ...(orb.description ? { description: orb.description } : {}),
       passiveValue: orb.passive_value,
-      evokeValue: orb.evoke_value
+      evokeValue: orb.evoke_value,
+      queueIndex: orb.queue_index,
+      isNextToEvoke: orb.is_next_to_evoke
     })),
     ...(player.orb_slots !== null && player.orb_slots !== undefined ? { orbSlots: player.orb_slots } : {})
   };

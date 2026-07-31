@@ -256,13 +256,15 @@ internal static class BridgeContextBuilder
         bool playPhase = combat.Phase == PlayerTurnPhase.Play
                          && CombatManager.Instance.IsPartOfPlayerTurn(player)
                          && !CombatManager.Instance.PlayerActionsDisabled;
-        VisibleOrb[] orbs = combat.OrbQueue?.Orbs.Select(orb => new VisibleOrb(
+        VisibleOrb[] orbs = combat.OrbQueue?.Orbs.Select((orb, index) => new VisibleOrb(
             entities.GetId(orb, "orb"),
             orb.Id.Entry,
             McpMod.SafeGetText(() => orb.Title),
             BuildOrbDescription(orb),
             orb.PassiveVal,
-            orb.EvokeVal)).ToArray() ?? Array.Empty<VisibleOrb>();
+            orb.EvokeVal,
+            index,
+            index == 0)).ToArray() ?? Array.Empty<VisibleOrb>();
 
         return new VisibleCombatPlayer(
             entities.GetId(player.Creature, "player"),

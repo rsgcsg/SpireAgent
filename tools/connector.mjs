@@ -206,6 +206,13 @@ export function defaultMigrationCycleArgs(options = {}) {
   ];
 }
 
+export function migrationCycleDelegateArgs(options = {}) {
+  return [
+    ...defaultMigrationCycleArgs(options),
+    ...(options.passthrough ?? [])
+  ];
+}
+
 export function agentRunPreflightErrors(
   status,
   { requireObservation = true, requireMutation = false } = {}
@@ -948,7 +955,11 @@ export async function main(argv = process.argv.slice(2)) {
     return;
   }
   if (command === "start-or-resume-trial") {
-    delegate("tools/connector-migration-orchestrator.mjs", "cycle", options.passthrough);
+    delegate(
+      "tools/connector-migration-orchestrator.mjs",
+      "cycle",
+      migrationCycleDelegateArgs(options)
+    );
     return;
   }
   if (command === "revoke" || command === "rollback") {

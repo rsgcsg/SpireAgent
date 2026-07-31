@@ -1,4 +1,5 @@
 using System.Text.Json;
+using MegaCrit.Sts2.Core.Nodes.Combat;
 using STS2_MCP.BridgeV2.Game;
 using STS2_MCP.BridgeV2.Protocol;
 using STS2_MCP.BridgeV2.Runtime;
@@ -1044,9 +1045,11 @@ public sealed class BridgeContractTests
                 Assert.Equal(
                     BridgeOperationQualificationCatalog.ExplicitNativeContract,
                     contract.ContractKind);
-                Assert.Equal("immediate_postcondition_observed", contract.CompletionBoundary);
                 Assert.Equal("persistent_run_mutation", contract.RiskClass);
             });
+        Assert.Equal("transaction_settled", play.CompletionBoundary);
+        Assert.Equal("transaction_settled", potion.CompletionBoundary);
+        Assert.Equal("immediate_postcondition_observed", endTurn.CompletionBoundary);
         Assert.Equal(CombatTurnSurfaceProvider.PlayCardCompletionWitness, play.WitnessId);
         Assert.Equal(CombatTurnSurfaceProvider.UsePotionCompletionWitness, potion.WitnessId);
         Assert.Equal(CombatTurnSurfaceProvider.EndTurnCompletionWitness, endTurn.WitnessId);
@@ -1113,7 +1116,7 @@ public sealed class BridgeContractTests
         Assert.True(binding.Matches(scope));
         Assert.Equal("native_commit_observed", binding.CompletionBoundary);
         Assert.Equal(
-            "shop_relic_purchase_committed_with_exact_relic_gold_and_entry_witness",
+            ShopInventorySurfaceProvider.RelicPurchaseCompletionWitness,
             binding.WitnessId);
         Assert.Matches("^[a-f0-9]{64}$", binding.BoundActionDigest);
         Assert.True(binding.Matches(scope with { Operation = "metadata-only-name" }));
@@ -2874,6 +2877,44 @@ public sealed class BridgeContractTests
         Assert.Contains("\"is_selected\":true", json);
     }
 
+    [Theory]
+    [InlineData(false, false, false)]
+    [InlineData(false, true, true)]
+    [InlineData(true, false, true)]
+    [InlineData(true, true, true)]
+    public void CombatHandSelectionUsesEffectiveVisibleConfirmationSemantics(
+        bool preferenceRequiresManualConfirmation,
+        bool visibleConfirmControl,
+        bool expected)
+    {
+        Assert.Equal(
+            expected,
+            CombatHandCardSelectionSurfaceProvider.ResolveManualConfirmationRequirement(
+                preferenceRequiresManualConfirmation,
+                visibleConfirmControl));
+    }
+
+    [Theory]
+    [InlineData(NPlayerHand.Mode.SimpleSelect, 0, 5, "Select Strike")]
+    [InlineData(NPlayerHand.Mode.SimpleSelect, 1, 5, "Select Strike")]
+    [InlineData(NPlayerHand.Mode.SimpleSelect, 5, 5, "Replace current selection with Strike")]
+    [InlineData(NPlayerHand.Mode.UpgradeSelect, 0, 1, "Select Strike")]
+    [InlineData(NPlayerHand.Mode.UpgradeSelect, 1, 1, "Replace current selection with Strike")]
+    public void CombatHandSelectionLabelsMatchNativeAddOrReplaceBehavior(
+        NPlayerHand.Mode mode,
+        int selectedCount,
+        int maxSelect,
+        string expected)
+    {
+        Assert.Equal(
+            expected,
+            CombatHandCardSelectionSurfaceProvider.SelectionLabel(
+                "Strike",
+                mode,
+                selectedCount,
+                maxSelect));
+    }
+
     [Fact]
     public void RewardClaimContractKeepsVisibleRewardsAndProceedSemanticsSeparate()
     {
@@ -3382,7 +3423,7 @@ public sealed class BridgeContractTests
     }
 
     [Fact]
-    public void ShopPurchaseCompletionRequiresAsyncSuccessAndEverySemanticWitness()
+    public void ShopPurchaseCompletionRequiresCommitOrExactNativeChildHandoff()
     {
         Assert.True(ShopPurchaseCompletionWitness.IsComplete(
             taskCompleted: true,
@@ -3406,6 +3447,17 @@ public sealed class BridgeContractTests
             entryAdvanced: false,
             linkedRewardContinuationVisible: false,
             nativeContinuationVisible: true));
+
+        Assert.True(ShopPurchaseCompletionWitness.IsComplete(
+            taskCompleted: false,
+            taskCompletedSuccessfully: false,
+            purchaseSucceeded: false,
+            goldBeforePurchase: 150,
+            currentGold: 100,
+            expectedPrice: 50,
+            productAcquired: true,
+            entryAdvanced: false,
+            linkedRewardContinuationVisible: true));
 
         Assert.True(ShopPurchaseCompletionWitness.IsComplete(
             taskCompleted: false,

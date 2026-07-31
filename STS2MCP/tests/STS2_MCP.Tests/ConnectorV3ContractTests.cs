@@ -10,6 +10,28 @@ namespace STS2_MCP.Tests;
 
 public sealed class ConnectorV3ContractTests
 {
+    [Theory]
+    [InlineData(false, false, false, false, true)]
+    [InlineData(true, false, false, true, true)]
+    [InlineData(true, true, true, false, true)]
+    [InlineData(true, true, false, false, false)]
+    [InlineData(true, false, true, false, false)]
+    public void CombatMutationCompletionWaitsForNativeQueueSettlement(
+        bool combatInProgress,
+        bool sourceMutationObserved,
+        bool actionQueueEmpty,
+        bool requiredSubsurfaceOpened,
+        bool expected)
+    {
+        Assert.Equal(
+            expected,
+            CombatTurnSurfaceProvider.HasQueuedMutationCompletionBoundary(
+                combatInProgress,
+                sourceMutationObserved,
+                actionQueueEmpty,
+                requiredSubsurfaceOpened));
+    }
+
     [Fact]
     public void ObservationAlwaysSerializesNullSharedState()
     {
@@ -378,6 +400,143 @@ public sealed class ConnectorV3ContractTests
             });
         Assert.DoesNotContain(commands, command => command.EntityBindings!.Any(binding =>
             binding.EntityId is "card-disabled" or "alternative-disabled" or "unknown-card"));
+
+        BridgeActionDraft enabledAlternative = Assert.Single(commands, command =>
+            command.Kind == "choose_card_reward_alternative");
+        Dictionary<string, string> alternativeOperands =
+            ConnectorV3Runtime.BuildCommandOperands(
+                enabledAlternative.Kind,
+                "choose",
+                enabledAlternative.EntityBindings!);
+        Assert.Equal("screen-card-reward", alternativeOperands["screen_id"]);
+        Assert.Equal("alternative-enabled", alternativeOperands["choice_id"]);
+        Assert.DoesNotContain("alternative_id", alternativeOperands.Keys);
+    }
+
+    [Fact]
+    public void ShopInventoryNativeDiscoveryUsesTypedOffersAndExactOwnerOperands()
+    {
+        static VisibleCard Card(string entityId, string definitionId, string name) =>
+            new(
+                entityId,
+                definitionId,
+                name,
+                "Attack",
+                "1",
+                null,
+                null,
+                "Common",
+                false,
+                false,
+                null);
+
+        var surface = new ShopInventorySurface(
+            "shop_inventory",
+            "shop-screen",
+            new[]
+            {
+                new VisibleShopCardOffer(
+                    "offer-card",
+                    "slot-card",
+                    0,
+                    45,
+                    true,
+                    true,
+                    true,
+                    true,
+                    null,
+                    false,
+                    Card("card-offer", "POMMEL_STRIKE", "Pommel Strike")),
+                new VisibleShopCardOffer(
+                    "offer-blocked",
+                    "slot-blocked",
+                    1,
+                    70,
+                    true,
+                    true,
+                    false,
+                    false,
+                    "insufficient_gold",
+                    false,
+                    Card("card-blocked", "SHRUG_IT_OFF", "Shrug It Off"))
+            },
+            new[]
+            {
+                new VisibleShopRelicOffer(
+                    "offer-relic",
+                    "slot-relic",
+                    2,
+                    100,
+                    true,
+                    true,
+                    true,
+                    true,
+                    null,
+                    new VisibleRelic(
+                        "relic-offer",
+                        "BAG_OF_PREPARATION",
+                        "Bag of Preparation",
+                        "Draw more cards.",
+                        null,
+                        Array.Empty<VisibleKeyword>(),
+                        Array.Empty<VisibleCard>()))
+            },
+            new[]
+            {
+                new VisibleShopPotionOffer(
+                    "offer-potion",
+                    "slot-potion",
+                    3,
+                    50,
+                    true,
+                    true,
+                    true,
+                    true,
+                    null,
+                    "BLOCK_POTION",
+                    "Block Potion",
+                    "Gain Block.",
+                    "Common")
+            },
+            new VisibleShopCardRemovalOffer(
+                "offer-removal",
+                "slot-removal",
+                4,
+                75,
+                25,
+                true,
+                true,
+                true,
+                true,
+                null),
+            true);
+
+        BridgeActionDraft[] commands =
+            ConnectorV3Runtime.DescribeShopInventoryCommands(surface).ToArray();
+
+        Assert.Equal(5, commands.Length);
+        Assert.DoesNotContain(commands, command => command.EntityBindings!.Any(binding =>
+            binding.EntityId == "offer-blocked"));
+        Assert.All(commands, command => Assert.Contains(
+            command.EntityBindings!,
+            binding => binding.Role == "screen"
+                       && binding.EntityId == "shop-screen"));
+        Assert.Contains(commands, command => command.Kind == "purchase_shop_card");
+        Assert.Contains(commands, command => command.Kind == "purchase_shop_relic");
+        Assert.Contains(commands, command => command.Kind == "purchase_shop_potion");
+        Assert.Contains(commands, command => command.Kind == "open_shop_card_removal");
+        Assert.Contains(commands, command => command.Kind == "close_shop_inventory");
+
+        BridgeActionDraft purchase = Assert.Single(commands, command =>
+            command.Kind == "purchase_shop_card");
+        Dictionary<string, string> operands =
+            ConnectorV3Runtime.BuildCommandOperands(
+                purchase.Kind,
+                "purchase",
+                purchase.EntityBindings!);
+        Assert.Equal("shop-screen", operands["screen_id"]);
+        Assert.Equal("offer-card", operands["shop_offer_id"]);
+        Assert.DoesNotContain("action_id", operands.Keys);
     }
 
     [Fact]

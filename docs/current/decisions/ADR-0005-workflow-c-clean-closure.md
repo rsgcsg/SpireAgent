@@ -94,10 +94,12 @@ The first pilot is `shop_inventory/purchase_shop_relic`, including the Kifuda
 child handoff.
 
 - The purchase command completes when native purchase success, exact gold
-  delta, exact relic acquisition, and entry advancement or the exact Kifuda
-  child owner are proved.
-- The receipt remains
-  `shop_relic_purchase_committed_with_exact_relic_gold_and_entry_witness` with
+  delta, exact relic acquisition and entry advancement are proved, or when an
+  exact native child owns input after the exact relic and gold witnesses. A
+  linked reward child can legitimately precede parent-task and entry
+  completion.
+- The current receipt witness is
+  `shop_relic_purchase_committed_or_linked_reward_handoff_observed` with
   boundary `native_commit_observed`.
 - Kifuda enchantment is a new `deck_enchant_selection` observation. It is not
   hidden inside a universal transaction or treated as an unresolved purchase.

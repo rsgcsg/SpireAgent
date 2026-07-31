@@ -22,9 +22,9 @@ namespace STS2_MCP.BridgeV2.Game;
 internal sealed class CombatTurnSurfaceProvider : IBridgeSurfaceProvider
 {
     internal const string PlayCardCompletionWitness =
-        "card_left_hand_or_required_subsurface_opened";
+        "card_transaction_settled_or_required_subsurface_opened";
     internal const string UsePotionCompletionWitness =
-        "potion_consumed_or_combat_ended";
+        "potion_transaction_settled_or_required_subsurface_opened";
     internal const string EndTurnCompletionWitness =
         "player_play_phase_ended";
 
@@ -265,11 +265,13 @@ internal sealed class CombatTurnSurfaceProvider : IBridgeSurfaceProvider
         if (!expectedCard.TryManualPlay(expectedTarget))
             return BridgeActionStartResult.Rejected("card_target_no_longer_valid", "The card no longer accepts the advertised target.");
         return BridgeActionStartResult.Started(
-            () => !CombatManager.Instance.IsInProgress
-                  || expectedPlayer.PlayerCombatState?.Hand.Cards.Contains(expectedCard) != true
-                  || NPlayerHand.Instance?.IsInCardSelection == true
-                  || NOverlayStack.Instance?.Peek() != null,
-            PlayCardCompletionWitness);
+            () => HasQueuedMutationCompletionBoundary(
+                CombatManager.Instance.IsInProgress,
+                expectedPlayer.PlayerCombatState?.Hand.Cards.Contains(expectedCard) != true,
+                RunManager.Instance.ActionQueueSet.IsEmpty,
+                HasRequiredSubsurface()),
+            PlayCardCompletionWitness,
+            allowIntermediateStateChanges: true);
     }
 
     internal static BridgeActionStartResult StartUsePotion(
@@ -291,9 +293,13 @@ internal sealed class CombatTurnSurfaceProvider : IBridgeSurfaceProvider
 
         expectedPotion.EnqueueManualUse(expectedTarget);
         return BridgeActionStartResult.Started(
-            () => !CombatManager.Instance.IsInProgress
-                  || !ReferenceEquals(expectedPlayer.GetPotionAtSlotIndex(expectedSlot), expectedPotion),
-            UsePotionCompletionWitness);
+            () => HasQueuedMutationCompletionBoundary(
+                CombatManager.Instance.IsInProgress,
+                !ReferenceEquals(expectedPlayer.GetPotionAtSlotIndex(expectedSlot), expectedPotion),
+                RunManager.Instance.ActionQueueSet.IsEmpty,
+                HasRequiredSubsurface()),
+            UsePotionCompletionWitness,
+            allowIntermediateStateChanges: true);
     }
 
     internal static BridgeActionStartResult StartEndTurn(Player expectedPlayer)
@@ -318,6 +324,19 @@ internal sealed class CombatTurnSurfaceProvider : IBridgeSurfaceProvider
         && !potion.IsQueued
         && !potion.Owner.Creature.IsDead
         && potion.PassesCustomUsabilityCheck;
+
+    internal static bool HasQueuedMutationCompletionBoundary(
+        bool combatInProgress,
+        bool sourceMutationObserved,
+        bool actionQueueEmpty,
+        bool requiredSubsurfaceOpened) =>
+        !combatInProgress
+        || requiredSubsurfaceOpened
+        || (sourceMutationObserved && actionQueueEmpty);
+
+    private static bool HasRequiredSubsurface() =>
+        NPlayerHand.Instance?.IsInCardSelection == true
+        || NOverlayStack.Instance?.Peek() != null;
 
     internal static bool IsActionablePlayerTurn(Player player) =>
         CombatManager.Instance.IsInProgress

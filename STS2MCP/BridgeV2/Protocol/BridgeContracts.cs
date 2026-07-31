@@ -7,7 +7,7 @@ namespace STS2_MCP.BridgeV2.Protocol;
 
 public static class BridgeV2Contract
 {
-    public const string ProtocolVersion = "2.0-preview.82";
+    public const string ProtocolVersion = "2.0-preview.86";
     public const string ObservationPolicyId = "player_visible_ui_v1";
 }
 
@@ -642,7 +642,9 @@ public sealed record VisibleOrb(
     string? Name,
     string? Description,
     decimal PassiveValue,
-    decimal EvokeValue);
+    decimal EvokeValue,
+    int QueueIndex,
+    bool IsNextToEvoke);
 
 public sealed record VisibleEventOption(
     string EntityId,

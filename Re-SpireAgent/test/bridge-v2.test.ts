@@ -1417,7 +1417,16 @@ const COMBAT_TURN_STATE = {
         statuses: []
       }],
       potion_states: [],
-      orbs: [],
+      orbs: [{
+        entity_id: "orb-lightning-1",
+        definition_id: "LIGHTNING_ORB",
+        name: "Lightning",
+        description: "Passive: deal 3 damage. Evoke: deal 8 damage.",
+        passive_value: 3,
+        evoke_value: 8,
+        queue_index: 0,
+        is_next_to_evoke: true
+      }],
       orb_slots: null
     },
     enemies: [{
@@ -4629,7 +4638,8 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
         character: "Ironclad",
         energy: 3,
         hand: [{ entityId: "combat-card-1", canPlay: true }],
-        companions: [{ entityId: "companion-osty-1", id: "OSTY", hp: 4, maxHp: 6, isAlive: true }]
+        companions: [{ entityId: "companion-osty-1", id: "OSTY", hp: 4, maxHp: 6, isAlive: true }],
+        orbs: [{ id: "LIGHTNING_ORB", queueIndex: 0, isNextToEvoke: true }]
       },
       surface: { kind: "combat_turn", roomEntityId: "combat-room-1", canEndTurn: true }
     });
@@ -5229,6 +5239,24 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
     peeking.surface.is_peeking = true;
     expect(normalizeCurrentState(
       wrapBridgeV2State({ state: peeking, capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    ).currentState.stability).toBe("invalid");
+  });
+
+  it("fails closed when combat-hand confirmation facts contradict advertised actions", () => {
+    const missingConfirm = structuredClone(COMBAT_HAND_CARD_SELECTION_STATE);
+    missingConfirm.legal_actions = missingConfirm.legal_actions.filter(
+      (action) => action.kind !== "confirm_combat_hand_selection"
+    );
+    expect(normalizeCurrentState(
+      wrapBridgeV2State({ state: missingConfirm, capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    ).currentState.stability).toBe("invalid");
+
+    const unexpectedConfirm = structuredClone(COMBAT_HAND_CARD_SELECTION_STATE);
+    unexpectedConfirm.surface.require_manual_confirmation = false;
+    expect(normalizeCurrentState(
+      wrapBridgeV2State({ state: unexpectedConfirm, capabilities: structuredClone(CAPABILITIES) }),
       TEST_SOURCE
     ).currentState.stability).toBe("invalid");
   });

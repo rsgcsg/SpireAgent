@@ -4,7 +4,23 @@
 > [Connector V3](../connector-v3/PROTOCOL.md). Retained for migration and
 > rollback.
 
-Protocol preview: `2.0-preview.82`
+Protocol preview: `2.0-preview.86`
+
+Preview.85 corrects combat-hand selection confirmation semantics exposed by an
+exact v0.110.1 Touch of Insanity journey. `CardSelectorPrefs` can report that
+manual confirmation is not intrinsically required while the current native UI
+still presents an explicit confirmation control and does not auto-complete the
+selection. The Surface now reports the effective player-visible requirement;
+Re rejects a ready state when that requirement contradicts the advertised
+confirmation action. No operation or authority scope is added.
+
+Preview.84 corrects the native merchant-relic completion boundary exposed by
+an exact v0.110.1 Orrery purchase. A linked reward owner may take over while
+the native purchase task and merchant entry remain pending. That handoff is
+complete only after the exact relic is owned, the exact gold delta is visible,
+and the native rewards screen is the current input owner. Ordinary purchases
+without a child still require successful native task completion and entry
+advancement. The original unknown receipt remains unknown and was not retried.
 
 Preview.82 changes no JSON shape or Re normalized schema. It adds
 `map_navigation/exit_map_annotation` as an explicit native action contract.

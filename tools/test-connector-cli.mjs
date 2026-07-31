@@ -9,6 +9,7 @@ import {
   evaluateLoadedArtifact,
   inspectModInstallation,
   loadAgentGameDirFromLocalEnv,
+  migrationCycleDelegateArgs,
   processListHasGame,
   resolveExecutable,
   resolveGameDir,
@@ -79,6 +80,13 @@ assert.ok(migrationArgs.includes(path.join(
   resolveModsDir(path.resolve("/fixture-game")),
   "STS2_MCP.qualifications.json"
 )));
+const delegatedMigrationArgs = migrationCycleDelegateArgs({
+  gameDir: "/fixture-game",
+  endpoint: "http://127.0.0.1:19999",
+  passthrough: ["--apply", "false"]
+});
+assert.ok(delegatedMigrationArgs.includes("--registry"));
+assert.deepEqual(delegatedMigrationArgs.slice(-2), ["--apply", "false"]);
 
 assert.deepEqual(agentRunPreflightErrors({
   errors: [],

@@ -2,7 +2,7 @@
 
 In this project, "SpireAgent" means `Re-SpireAgent` by default.
 
-Current source contract is `2.0-preview.82`; Re normalized schema is `31`.
+Current source contract is `2.0-preview.86`; Re normalized schema is `31`.
 Re records explicit versus migration-fallback contract kind for provenance and
 requires explicit kind on durable qualifications. It does not derive authority
 from either kind.
@@ -19,6 +19,10 @@ mutation canary has executed.
 Preview.82 additionally preserves exact Gateway
 `rejected/not_applied/stale_state` as recoverable non-execution and consumes
 the opaque map-annotation exit without reconstructing native drawing legality.
+Preview.83 adds explicit native orb queue semantics to the read-only combat
+projection and waits for the native STS2 action queue before settling card and
+potion commands. Re consumes the queue metadata but does not infer legality or
+completion from it.
 Gate 1 is closed as a bounded ordinary-single-player v2 connector baseline.
 Preview.61 supplied the exact Neow's Fury Organic lifecycle; Preview.62 adds
 reviewed compatibility/source registries and policy provenance without

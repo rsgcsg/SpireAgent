@@ -158,7 +158,7 @@ describe("Connector V3 strict contract", () => {
     const projected = projectConnectorV3ForRe(
       observation,
       observation as unknown as JsonObject,
-      { protocol_version: "2.0-preview.82" }
+      { protocol_version: "2.0-preview.86" }
     );
 
     expect(projected.invocations.size).toBe(2);
@@ -194,7 +194,7 @@ describe("Connector V3 strict contract", () => {
     const projected = projectConnectorV3ForRe(
       observation,
       observation as unknown as JsonObject,
-      { protocol_version: "2.0-preview.82" }
+      { protocol_version: "2.0-preview.86" }
     );
     const wrapper = projected.rawState as Record<string, unknown>;
     const bridgeState = wrapper.bridge_v2_state as Record<string, unknown>;
@@ -249,7 +249,7 @@ describe("Connector V3 strict contract", () => {
     const projected = projectConnectorV3ForRe(
       observation,
       observation as unknown as JsonObject,
-      { protocol_version: "2.0-preview.82" }
+      { protocol_version: "2.0-preview.86" }
     );
 
     expect([...projected.invocations.values()]).toEqual([

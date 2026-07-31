@@ -180,11 +180,19 @@ internal sealed class RewardClaimSurfaceProvider : IBridgeSurfaceProvider
         bool claimable)
     {
         Reward reward = button.Reward!;
-        string description = McpMod.SafeGetText(() => reward.Description) ?? reward.GetType().Name;
+        string label = McpMod.SafeGetText(() => reward.Description) ?? reward.GetType().Name;
+        string description = reward switch
+        {
+            RelicReward { Relic: { } relic } =>
+                McpMod.SafeGetText(() => relic.DynamicDescription) ?? label,
+            PotionReward { Potion: { } potion } =>
+                McpMod.SafeGetText(() => potion.DynamicDescription) ?? label,
+            _ => label
+        };
         return new VisibleReward(
             entities.GetId(button, "reward"),
             RewardKind(reward),
-            description,
+            label,
             description,
             button.IsEnabled && claimable);
     }

@@ -261,6 +261,8 @@ internal static class ConnectorV3Runtime
             return BuildRewardClaimBindings(draft, rewards);
         if (draft.Surface is CardRewardSelectionSurface cardRewards)
             return BuildCardRewardBindings(draft, cardRewards);
+        if (draft.Surface is ShopInventorySurface shopInventory)
+            return BuildShopInventoryBindings(draft, shopInventory);
 
         var allowed = new List<(
             BridgeActionDraft Action,
@@ -497,6 +499,92 @@ internal static class ConnectorV3Runtime
         return actions;
     }
 
+    private static IReadOnlyList<ConnectorV3BoundCommand> BuildShopInventoryBindings(
+        BridgeObservationDraft draft,
+        ShopInventorySurface surface)
+        => DescribeShopInventoryCommands(surface)
+            .Select(action => BuildNativeBinding(draft, action))
+            .Where(binding => binding != null)
+            .Cast<ConnectorV3BoundCommand>()
+            .ToArray();
+
+    internal static IReadOnlyList<BridgeActionDraft> DescribeShopInventoryCommands(
+        ShopInventorySurface surface)
+    {
+        var actions = new List<BridgeActionDraft>();
+        ActionEntityBinding screen = new("screen", surface.ScreenEntityId);
+        foreach (VisibleShopCardOffer offer in surface.Cards.Where(value =>
+                     value.CanPurchase && value.Card != null))
+        {
+            actions.Add(NativeDescriptor(
+                $"shop:card:{surface.ScreenEntityId}:{offer.EntityId}",
+                "purchase_shop_card",
+                "purchase",
+                $"Buy {offer.Card!.Name ?? offer.Card.DefinitionId} for {offer.Price} gold",
+                "MerchantCardEntry.OnTryPurchaseWrapper+exact-card-deck-gold-entry-witness",
+                new[]
+                {
+                    screen,
+                    new ActionEntityBinding("shop_offer", offer.EntityId)
+                }));
+        }
+        foreach (VisibleShopRelicOffer offer in surface.Relics.Where(value =>
+                     value.CanPurchase && value.Relic != null))
+        {
+            actions.Add(NativeDescriptor(
+                $"shop:relic:{surface.ScreenEntityId}:{offer.EntityId}",
+                "purchase_shop_relic",
+                "purchase",
+                $"Buy {offer.Relic!.Name ?? offer.Relic.DefinitionId} for {offer.Price} gold",
+                "MerchantRelicEntry.OnTryPurchaseWrapper+exact-relic-gold-entry-witness",
+                new[]
+                {
+                    screen,
+                    new ActionEntityBinding("shop_offer", offer.EntityId)
+                }));
+        }
+        foreach (VisibleShopPotionOffer offer in surface.Potions.Where(value =>
+                     value.CanPurchase && value.DefinitionId != null))
+        {
+            actions.Add(NativeDescriptor(
+                $"shop:potion:{surface.ScreenEntityId}:{offer.EntityId}",
+                "purchase_shop_potion",
+                "purchase",
+                $"Buy {offer.Name ?? offer.DefinitionId} for {offer.Price} gold",
+                "MerchantPotionEntry.OnTryPurchaseWrapper+exact-potion-slot-gold-entry-witness",
+                new[]
+                {
+                    screen,
+                    new ActionEntityBinding("shop_offer", offer.EntityId)
+                }));
+        }
+        if (surface.CardRemoval is { CanPurchase: true } removal)
+        {
+            actions.Add(NativeDescriptor(
+                $"shop:removal:{surface.ScreenEntityId}:{removal.EntityId}",
+                "open_shop_card_removal",
+                "selection",
+                $"Choose a card to remove for {removal.Price} gold",
+                "MerchantCardRemovalEntry.OnTryPurchaseWrapper+CardSelectCmd.FromDeckForRemoval",
+                new[]
+                {
+                    screen,
+                    new ActionEntityBinding("shop_card_removal", removal.EntityId)
+                }));
+        }
+        if (surface.CanClose)
+        {
+            actions.Add(NativeDescriptor(
+                $"shop:close:{surface.ScreenEntityId}",
+                "close_shop_inventory",
+                "navigation",
+                "Close shop inventory",
+                "NMerchantInventory.BackButton+NBackButton.ForceClick",
+                new[] { screen }));
+        }
+        return actions;
+    }
+
     private static BridgeActionDraft NativeDescriptor(
         string key,
         string operation,
@@ -729,6 +817,10 @@ internal static class ConnectorV3Runtime
             {
                 "combat_turn" => StartCombatCommand(snapshot, request),
                 "shop_room" => StartShopRoomCommand(snapshot, request),
+                "shop_inventory" => StartShopInventoryCommand(
+                    snapshot,
+                    request,
+                    binding),
                 "map_navigation" => StartMapCommand(snapshot, request),
                 "rest_site" => StartRestCommand(snapshot, request),
                 "event_option" => StartEventOptionCommand(
@@ -1126,6 +1218,116 @@ internal static class ConnectorV3Runtime
         };
     }
 
+    private static BridgeActionStartResult StartShopInventoryCommand(
+        ConnectorV3Snapshot snapshot,
+        ConnectorV3CommandRequest request,
+        ConnectorV3BoundCommand binding)
+    {
+        if (snapshot.Draft.Surface is not ShopInventorySurface surface)
+        {
+            return BridgeActionStartResult.Rejected(
+                "owner_changed",
+                "The merchant-inventory owner is no longer current.");
+        }
+        IReadOnlyDictionary<string, string> operands =
+            request.Operands ?? new Dictionary<string, string>();
+        if (!operands.TryGetValue("screen_id", out string? screenId)
+            || !string.Equals(screenId, surface.ScreenEntityId, StringComparison.Ordinal))
+        {
+            return BridgeActionStartResult.Rejected(
+                "shop_inventory_binding_changed",
+                "The exact merchant inventory is no longer current.");
+        }
+
+        if (binding.Candidate.Operation == "close_shop_inventory")
+        {
+            return operands.TryGetValue("control_id", out string? closeControl)
+                   && string.Equals(
+                       closeControl,
+                       "close_shop_inventory",
+                       StringComparison.Ordinal)
+                ? ShopInventorySurfaceProvider.StartCloseInventory(Entities, screenId)
+                : BridgeActionStartResult.Rejected(
+                    "shop_inventory_command_unsupported",
+                    "The requested merchant-inventory close control is not exact.");
+        }
+        if (binding.Candidate.Operation == "open_shop_card_removal")
+        {
+            if (!operands.TryGetValue(
+                    "shop_card_removal_id",
+                    out string? removalId)
+                || !operands.TryGetValue("control_id", out string? removalControl)
+                || !string.Equals(
+                    removalControl,
+                    "open_shop_card_removal",
+                    StringComparison.Ordinal)
+                || surface.CardRemoval is not { CanPurchase: true } removal
+                || !string.Equals(
+                    removal.EntityId,
+                    removalId,
+                    StringComparison.Ordinal))
+            {
+                return BridgeActionStartResult.Rejected(
+                    "shop_card_removal_changed",
+                    "The exact card-removal service is no longer current.");
+            }
+            return ShopInventorySurfaceProvider.StartCardRemoval(
+                Entities,
+                screenId,
+                removalId,
+                removal.Price);
+        }
+        if (!operands.TryGetValue("shop_offer_id", out string? offerId))
+        {
+            return BridgeActionStartResult.Rejected(
+                "shop_offer_changed",
+                "The exact merchant offer operand is missing.");
+        }
+
+        return binding.Candidate.Operation switch
+        {
+            "purchase_shop_card"
+                when surface.Cards.SingleOrDefault(offer =>
+                    offer.CanPurchase
+                    && string.Equals(
+                        offer.EntityId,
+                        offerId,
+                        StringComparison.Ordinal)) is { } card =>
+                ShopInventorySurfaceProvider.StartCardPurchase(
+                    Entities,
+                    screenId,
+                    offerId,
+                    card.Price),
+            "purchase_shop_relic"
+                when surface.Relics.SingleOrDefault(offer =>
+                    offer.CanPurchase
+                    && string.Equals(
+                        offer.EntityId,
+                        offerId,
+                        StringComparison.Ordinal)) is { } relic =>
+                ShopInventorySurfaceProvider.StartRelicPurchase(
+                    Entities,
+                    screenId,
+                    offerId,
+                    relic.Price),
+            "purchase_shop_potion"
+                when surface.Potions.SingleOrDefault(offer =>
+                    offer.CanPurchase
+                    && string.Equals(
+                        offer.EntityId,
+                        offerId,
+                        StringComparison.Ordinal)) is { } potion =>
+                ShopInventorySurfaceProvider.StartPotionPurchase(
+                    Entities,
+                    screenId,
+                    offerId,
+                    potion.Price),
+            _ => BridgeActionStartResult.Rejected(
+                "shop_inventory_command_unsupported",
+                "The requested command is not supported for this exact merchant inventory.")
+        };
+    }
+
     private static BridgeActionStartResult StartCombatCommand(
         ConnectorV3Snapshot snapshot,
         ConnectorV3CommandRequest request)
@@ -1246,7 +1448,7 @@ internal static class ConnectorV3Runtime
 
     private static string OperandName(string role) => role switch
     {
-        "option" or "reward" or "relic" or "bundle" => "choice_id",
+        "option" or "reward" or "relic" or "bundle" or "alternative" => "choice_id",
         "node" => "destination_id",
         "offer" or "service" => "offer_id",
         _ => role.EndsWith("_id", StringComparison.Ordinal) ? role : $"{role}_id"

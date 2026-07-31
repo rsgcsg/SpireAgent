@@ -4,7 +4,7 @@
 > current contract: see [Connector V3](../connector-v3/README.md).
 
 Bridge v2 was the final pre-V3 semantic Gateway protocol. C# and Re source shared
-`2.0-preview.82`; Re normalized schema is `31`. Gate 1 is closed as a bounded
+`2.0-preview.86`; Re normalized schema is `31`. Gate 1 is closed as a bounded
 ordinary-single-player v2 connector baseline and the complete v1 HTTP namespace
 is retired. Preview.61 supplied the final Neow's Fury runtime seal. Preview.62
 adds reviewed registry/policy adaptation and non-authorizing exact-assembly

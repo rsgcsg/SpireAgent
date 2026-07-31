@@ -67,6 +67,8 @@ export interface OrbSnapshot {
   description?: string;
   passiveValue?: number;
   evokeValue?: number;
+  queueIndex?: number;
+  isNextToEvoke?: boolean;
 }
 
 export interface CombatCompanionSnapshot {

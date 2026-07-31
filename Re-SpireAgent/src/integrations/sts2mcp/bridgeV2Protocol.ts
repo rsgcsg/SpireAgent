@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { isJsonObject, type JsonObject } from "../../shared/json.js";
 
-export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.82" as const;
+export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.86" as const;
 export const BRIDGE_V2_INSPECTION_KINDS = ["run_deck", "combat_piles", "shop_catalog"] as const;
 const inspectionKindSchema = z.enum(BRIDGE_V2_INSPECTION_KINDS);
 
@@ -373,7 +373,9 @@ const visibleOrbSchema = z.object({
   name: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
   passive_value: z.number(),
-  evoke_value: z.number()
+  evoke_value: z.number(),
+  queue_index: z.number().int().nonnegative(),
+  is_next_to_evoke: z.boolean()
 }).passthrough();
 
 const visibleCombatPlayerSchema = z.object({

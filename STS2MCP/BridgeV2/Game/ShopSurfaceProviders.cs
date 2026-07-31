@@ -36,6 +36,8 @@ internal sealed class ShopInventorySurfaceProvider : IBridgeSurfaceProvider
         "shop_card_purchase_committed_with_exact_card_gold_and_entry_witness";
     internal const string PotionPurchaseCompletionWitness =
         "shop_potion_purchase_committed_with_exact_slot_gold_and_entry_witness";
+    internal const string RelicPurchaseCompletionWitness =
+        "shop_relic_purchase_committed_or_linked_reward_handoff_observed";
     internal const string CardRemovalHandoffCompletionWitness =
         "shop_card_removal_selector_opened_or_removal_completed";
     internal const string CloseInventoryCompletionWitness =
@@ -167,7 +169,13 @@ internal sealed class ShopInventorySurfaceProvider : IBridgeSurfaceProvider
                 "selection",
                 $"Choose a card to remove for {removal.Price} gold",
                 "MerchantCardRemovalEntry.OnTryPurchaseWrapper+CardSelectCmd.FromDeckForRemoval",
-                () => StartCardRemoval(merchantRoom, room, inventory, removalEntry, slotByEntry[removalEntry]),
+                () => StartCardRemoval(
+                    merchantRoom,
+                    room,
+                    inventory,
+                    removalEntry,
+                    slotByEntry[removalEntry],
+                    removal.Price),
                 new[] { new ActionEntityBinding("shop_card_removal", removal.EntityId) }));
         }
 
@@ -408,7 +416,7 @@ internal sealed class ShopInventorySurfaceProvider : IBridgeSurfaceProvider
                 () => expectedInventory.Player.Relics.All(relic => !ReferenceEquals(relic, expectedRelic)),
                 null,
                 () => HasExactRelicAcquisitionContinuation(expectedRelic),
-                "shop_relic_purchase_committed_with_exact_relic_gold_and_entry_witness"),
+                RelicPurchaseCompletionWitness),
             new[] { new ActionEntityBinding("shop_offer", offerId) });
 
     private static BridgeActionDraft PotionPurchaseAction(
@@ -514,12 +522,14 @@ internal sealed class ShopInventorySurfaceProvider : IBridgeSurfaceProvider
         NMerchantRoom expectedRoom,
         MerchantInventory expectedInventory,
         MerchantCardRemovalEntry expectedEntry,
-        NMerchantSlot expectedSlot)
+        NMerchantSlot expectedSlot,
+        int expectedPrice)
     {
         if (!ShopSurfaceFacts.IsCurrentInventory(expectedMerchantRoom, expectedRoom, expectedInventory)
             || !ReferenceEquals(expectedSlot.Entry, expectedEntry)
             || !expectedEntry.IsStocked
             || !expectedEntry.EnoughGold
+            || expectedEntry.Cost != expectedPrice
             || !McpMod.IsNodeVisible(expectedSlot)
             || !expectedSlot.Hitbox.IsEnabled)
         {
@@ -540,6 +550,207 @@ internal sealed class ShopInventorySurfaceProvider : IBridgeSurfaceProvider
             allowIntermediateStateChanges: true,
             completionBoundary: "continuation_handoff_observed");
     }
+
+    internal static BridgeActionStartResult StartCardPurchase(
+        BridgeEntityRegistry entities,
+        string expectedScreenId,
+        string expectedOfferId,
+        int expectedPrice)
+    {
+        NativeOfferBinding<MerchantCardEntry>? binding =
+            ResolveNativeOffer<MerchantCardEntry>(
+                entities,
+                expectedScreenId,
+                expectedOfferId);
+        if (binding?.Entry.CreationResult?.Card is not { } card)
+        {
+            return NativeOfferRejected();
+        }
+        return StartPurchase(
+            binding.MerchantRoom,
+            binding.Room,
+            binding.Inventory,
+            binding.Entry,
+            binding.Slot,
+            expectedPrice,
+            () => binding.Inventory.Player.Deck.Cards.Any(value => ReferenceEquals(value, card)),
+            () => !ReferenceEquals(binding.Entry.CreationResult?.Card, card),
+            () => binding.Inventory.Player.Deck.Cards.All(value => !ReferenceEquals(value, card)),
+            null,
+            null,
+            CardPurchaseCompletionWitness);
+    }
+
+    internal static BridgeActionStartResult StartRelicPurchase(
+        BridgeEntityRegistry entities,
+        string expectedScreenId,
+        string expectedOfferId,
+        int expectedPrice)
+    {
+        NativeOfferBinding<MerchantRelicEntry>? binding =
+            ResolveNativeOffer<MerchantRelicEntry>(
+                entities,
+                expectedScreenId,
+                expectedOfferId);
+        if (binding?.Entry.Model is not { } relic)
+        {
+            return NativeOfferRejected();
+        }
+        return StartPurchase(
+            binding.MerchantRoom,
+            binding.Room,
+            binding.Inventory,
+            binding.Entry,
+            binding.Slot,
+            expectedPrice,
+            () => binding.Inventory.Player.Relics.Any(value => ReferenceEquals(value, relic)),
+            () => !ReferenceEquals(binding.Entry.Model, relic),
+            () => binding.Inventory.Player.Relics.All(value => !ReferenceEquals(value, relic)),
+            null,
+            () => HasExactRelicAcquisitionContinuation(relic),
+            RelicPurchaseCompletionWitness);
+    }
+
+    internal static BridgeActionStartResult StartPotionPurchase(
+        BridgeEntityRegistry entities,
+        string expectedScreenId,
+        string expectedOfferId,
+        int expectedPrice)
+    {
+        NativeOfferBinding<MerchantPotionEntry>? binding =
+            ResolveNativeOffer<MerchantPotionEntry>(
+                entities,
+                expectedScreenId,
+                expectedOfferId);
+        if (binding?.Entry.Model is not { } potion)
+        {
+            return NativeOfferRejected();
+        }
+        return StartPurchase(
+            binding.MerchantRoom,
+            binding.Room,
+            binding.Inventory,
+            binding.Entry,
+            binding.Slot,
+            expectedPrice,
+            () => ShopSurfaceFacts.ContainsPotionInstance(binding.Inventory.Player, potion),
+            () => !ReferenceEquals(binding.Entry.Model, potion),
+            () => !ShopSurfaceFacts.ContainsPotionInstance(binding.Inventory.Player, potion),
+            () => ShopSurfaceFacts.CanProcurePotion(binding.Inventory.Player, potion),
+            null,
+            PotionPurchaseCompletionWitness);
+    }
+
+    internal static BridgeActionStartResult StartCardRemoval(
+        BridgeEntityRegistry entities,
+        string expectedScreenId,
+        string expectedOfferId,
+        int expectedPrice)
+    {
+        NativeOfferBinding<MerchantCardRemovalEntry>? binding =
+            ResolveNativeOffer<MerchantCardRemovalEntry>(
+                entities,
+                expectedScreenId,
+                expectedOfferId);
+        if (binding == null)
+        {
+            return NativeOfferRejected();
+        }
+        return StartCardRemoval(
+            binding.MerchantRoom,
+            binding.Room,
+            binding.Inventory,
+            binding.Entry,
+            binding.Slot,
+            expectedPrice);
+    }
+
+    internal static BridgeActionStartResult StartCloseInventory(
+        BridgeEntityRegistry entities,
+        string expectedScreenId)
+    {
+        if (!ShopSurfaceFacts.TryGetCurrent(
+                out MerchantRoom? merchantRoom,
+                out NMerchantRoom? room,
+                out MerchantInventory? inventory)
+            || merchantRoom == null
+            || room == null
+            || inventory == null
+            || !entities.TryResolve(
+                expectedScreenId,
+                out NMerchantInventory? inventoryUi)
+            || inventoryUi == null
+            || !ReferenceEquals(inventoryUi, room.Inventory))
+        {
+            return BridgeActionStartResult.Rejected(
+                "shop_inventory_binding_changed",
+                "The exact merchant inventory is no longer current.");
+        }
+        NBackButton[] backButtons = McpMod.FindAll<NBackButton>(inventoryUi)
+            .Where(McpMod.IsLiveNode)
+            .ToArray();
+        return backButtons.Length == 1
+            ? StartCloseInventory(
+                merchantRoom,
+                room,
+                inventory,
+                backButtons[0])
+            : BridgeActionStartResult.Rejected(
+                "shop_inventory_binding_changed",
+                "The exact merchant inventory close control is unavailable.");
+    }
+
+    private sealed record NativeOfferBinding<TEntry>(
+        MerchantRoom MerchantRoom,
+        NMerchantRoom Room,
+        MerchantInventory Inventory,
+        TEntry Entry,
+        NMerchantSlot Slot)
+        where TEntry : MerchantEntry;
+
+    private static NativeOfferBinding<TEntry>? ResolveNativeOffer<TEntry>(
+        BridgeEntityRegistry entities,
+        string expectedScreenId,
+        string expectedOfferId)
+        where TEntry : MerchantEntry
+    {
+        if (!ShopSurfaceFacts.TryGetCurrent(
+                out MerchantRoom? merchantRoom,
+                out NMerchantRoom? room,
+                out MerchantInventory? inventory)
+            || merchantRoom == null
+            || room == null
+            || inventory == null
+            || !ShopSurfaceFacts.IsCurrentInventory(merchantRoom, room, inventory)
+            || !entities.TryResolve(
+                expectedScreenId,
+                out NMerchantInventory? inventoryUi)
+            || inventoryUi == null
+            || !ReferenceEquals(inventoryUi, room.Inventory)
+            || !entities.TryResolve(expectedOfferId, out TEntry? entry)
+            || entry == null
+            || !inventory.AllEntries.Any(value => ReferenceEquals(value, entry)))
+        {
+            return null;
+        }
+
+        NMerchantSlot[] matches = inventoryUi.GetAllSlots()
+            .Where(value => ReferenceEquals(value.Entry, entry))
+            .ToArray();
+        if (matches.Length != 1)
+            return null;
+        return new NativeOfferBinding<TEntry>(
+            merchantRoom,
+            room,
+            inventory,
+            entry,
+            matches[0]);
+    }
+
+    private static BridgeActionStartResult NativeOfferRejected() =>
+        BridgeActionStartResult.Rejected(
+            "shop_offer_changed",
+            "The exact merchant offer is no longer current and purchasable.");
 
     private static BridgeActionStartResult StartCloseInventory(
         MerchantRoom expectedMerchantRoom,
@@ -870,7 +1081,7 @@ internal static class ShopPurchaseCompletionWitness
         bool linkedRewardContinuationVisible,
         bool nativeContinuationVisible = false) =>
         ((taskCompletedSuccessfully && purchaseSucceeded && entryAdvanced)
-         || (!taskCompleted && linkedRewardContinuationVisible && entryAdvanced)
+         || (!taskCompleted && linkedRewardContinuationVisible)
          || (!taskCompleted && nativeContinuationVisible))
         && expectedPrice >= 0
         && currentGold == goldBeforePurchase - expectedPrice

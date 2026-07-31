@@ -1,6 +1,6 @@
 {
   "schema_version": 3,
-  "catalog_id": "bridge_v2_native_action_contracts_v9",
+  "catalog_id": "bridge_v2_native_action_contracts_v11",
   "authority_effect": "explicit_native_contracts_plus_typed_session_fallbacks",
   "contracts": [
     {
@@ -131,8 +131,8 @@
       "source_binding": "exact_advertised_hand_card_instance_and_optional_hittable_enemy_target",
       "operand_contract": "card_still_in_hand_playable_and_exact_required_target_still_hittable",
       "commit_contract": "CardModel.TryManualPlay",
-      "completion_boundary": "immediate_postcondition_observed",
-      "witness_id": "card_left_hand_or_required_subsurface_opened",
+      "completion_boundary": "transaction_settled",
+      "witness_id": "card_transaction_settled_or_required_subsurface_opened",
       "risk_class": "persistent_run_mutation"
     },
     {
@@ -143,8 +143,8 @@
       "source_binding": "exact_advertised_potion_instance_slot_and_optional_valid_target",
       "operand_contract": "potion_still_in_exact_slot_usable_and_exact_required_target_still_valid",
       "commit_contract": "PotionModel.EnqueueManualUse",
-      "completion_boundary": "immediate_postcondition_observed",
-      "witness_id": "potion_consumed_or_combat_ended",
+      "completion_boundary": "transaction_settled",
+      "witness_id": "potion_transaction_settled_or_required_subsurface_opened",
       "risk_class": "persistent_run_mutation"
     },
     {
@@ -228,7 +228,7 @@
       "operand_contract": "exact_advertised_offer_relic_instance_price_gold_and_slot",
       "commit_contract": "native_merchant_relic_purchase_task",
       "completion_boundary": "native_commit_observed",
-      "witness_id": "shop_relic_purchase_committed_with_exact_relic_gold_and_entry_witness",
+      "witness_id": "shop_relic_purchase_committed_or_linked_reward_handoff_observed",
       "risk_class": "persistent_run_mutation"
     },
     {

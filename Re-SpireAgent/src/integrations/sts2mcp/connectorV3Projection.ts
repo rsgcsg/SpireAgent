@@ -69,7 +69,7 @@ export function projectConnectorV3ForRe(
             ?? "Connector v3 has no exact command binding for this visible interaction."
       };
   const projection = {
-    protocol_version: "2.0-preview.82",
+    protocol_version: "2.0-preview.86",
     state_id: observation.state_token,
     semantic_state_id: `semantic_state_${semanticDigest}`,
     authority_projection_id: `authority_projection_${authorityDigest}`,

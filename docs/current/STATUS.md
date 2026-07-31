@@ -1,11 +1,11 @@
 # Current Status
 
-Baseline date: 2026-07-31
+Baseline date: 2026-08-01
 
 Branch baseline: `connectorV3` at
-`5640d2c1590aa3682a113dec3aae9ff082235cb8`, plus the current uncommitted
-Windows deployment/startup repair, v0.110.1 static compatibility fixture and
-V3-native card-reward cutover.
+`6fa7ee5d22c872748580babddbec03625db9f17f`, plus the current documented
+uncommitted V3 migration worktree. The worktree, not the commit alone, produced
+the current installed artifact.
 
 ## Architecture
 
@@ -19,8 +19,9 @@ Current V3 source implements:
 - exact state token and entity identity;
 - one visible active interaction, including visible unsupported states;
 - parameterized commands and action-local receipts;
-- direct native combat, shop-room, map, rest-site, event-option, treasure-room,
-  reward-claim, card-reward and deck-enchant resolvers;
+- direct native combat, shop-room, shop-inventory, map, rest-site,
+  event-option, treasure-room, reward-claim, card-reward and deck-enchant
+  resolvers;
 - bounded non-combat native-binding migration adapters;
 - one controller, exact environment authority, idempotent command ledger,
   semantic Outcome and unknown-no-retry;
@@ -28,12 +29,49 @@ Current V3 source implements:
 
 ## Exact V3 Runtime Evidence
 
-The current v0.110.1 artifact is cold-loaded as SHA
+The latest v0.110.1 artifact was cold-loaded as SHA
+`548f15e45dc6609cf4a25af61af2ef2b07365af625b23dbd4f58369001a5f703`,
+MVID `4700a63e-f587-49b7-a642-bfe10713cc42`, runtime
+`a611dc97e2f046e4bd6e604c3501d692`, game `v0.110.1` commit `db5d3552`,
+release assembly hash `-959015736`, with exact-bridge-only Modset fingerprint
+`4ee35e807a347e1123a703713bdc7c97b9821f391f4c9df057a9fd08b0484072`.
+The canonical `out` build, installed and loaded artifact identities agreed.
+The game has since been cleanly closed, so this is last-loaded evidence rather
+than a claim that a runtime is currently active.
+
+After shutdown, the shop-inventory path was cut over from
+`provider_native_binding_adapter` to typed-Surface V3-native discovery and
+direct execution. The resulting artifact is built and installed as SHA
+`28a6fba283bf26075ac8056e167f931f51322e5c36f85f93f85e617e10f8bf7f`,
+MVID `ceee2912-fd46-4f9d-9c80-bef0d81d03fc`. It has not been loaded. The
+preceding `.86` runtime evidence below is not attributed to this artifact.
+
+Codex directly exercised two bounded journeys through V3 without using
+Re-SpireAgent as the player. The saved Defect A0 run won floor 27 normal,
+floor 28 elite and floor 29 Ovicopter combats, exercised exact Hologram pile
+selection, potion use, rewards, card rewards and Tea Master event consequence,
+then died on floor 31 and completed the game-over return. A fresh Ironclad A0
+run exercised menu/run setup, Scroll Boxes bundle preview/commit, full visible
+map topology, combat, current-artifact reward/card reward, shop purchase and a
+generated zero-cost attack. It was intentionally stopped at floor 4 map with
+80 HP and 50 gold. No unknown Outcome was observed; the final journal and
+receipt were completed with retry forbidden.
+
+The apparent absence of future map paths was disproved: the complete visible
+graph is in `context.nodes`, while `surface.next_options` correctly limits the
+mutation domain. Two Defect-run failures to predict Sunder energy refunds were
+strategy errors caused by a compact local view omitting visible enemy block
+and `Hard to Kill`; the full Gateway payload contained both facts.
+
+Exact details and non-claims are in
+[v0.110.1 Codex direct-play evidence](../../STS2MCP/docs/connector-v3/LIVE_EVIDENCE_V0_110_1_CODEX_DIRECT_PLAY_2026-07-31.md).
+The current artifact still has no durable qualification. Its encounter-scoped
+session authority ended with the runtime.
+
+The earlier v0.110.1 startup artifact was cold-loaded as SHA
 `b3897459d122e7208ad7d6fa2e56816ec594146fa92c637eecfd691a4fd2a469`,
 MVID `591c6251-d2a3-4281-b723-9a048b0ac9d0`, runtime
-`98b52677796c4e6aa103c404a6952789`, game `v0.110.1` commit `db5d3552`,
-release assembly hash `-959015736`, with an exact-bridge-only Modset. Source,
-Release, installed and loaded artifact identities agree.
+`98b52677796c4e6aa103c404a6952789`.
 
 `run-20260731104027-lxj3h3` exercised the complete `agent:run` startup,
 DeepSeek decision and V3 submit/poll path. Decision
@@ -76,6 +114,11 @@ Those changes are present in the current branch HEAD. Card-reward
 select/alternative discovery and execution now also avoid `draft.Actions` and
 `LegacyBinding.Start()`; exact selectable-card facts and a consistently
 filtered option-set Witness were added in the current worktree.
+Shop inventory purchase, card-removal handoff and close discovery/execution
+now also avoid those legacy bindings. They bind the exact inventory screen,
+offer and native slot and revalidate the advertised price before STS2 Commit.
+This cutover is statically verified and installed, but awaits cold-load and
+Organic evidence.
 
 Steam updated the local game after the v0.110.0 journey to `v0.110.1`, commit
 `db5d3552`, release main assembly hash `-959015736`, `sts2.dll` SHA
@@ -88,9 +131,9 @@ menu canary above are the current runtime evidence.
 
 Exact attribution is recorded in
 [v0.110.0 Live evidence](../../STS2MCP/docs/connector-v3/LIVE_EVIDENCE_V0_110_0_2026-07-31.md).
-Event-option, treasure-room and post-repair map V3-native execution now have
-exact Live evidence. The current combat Outcome repairs and reward-native
-cutover remain pending. The earlier
+Event-option, treasure-room, map, combat Outcome and reward-native execution
+now have exact `.86` Live evidence. The later shop-inventory V3-native cutover
+does not. The earlier
 [v0.109.1 evidence](../../STS2MCP/docs/connector-v3/LIVE_EVIDENCE_2026-07-31.md)
 remains historical exact-runtime evidence only.
 
@@ -122,15 +165,19 @@ evidence or durable V3 qualification.
 | State | Current result |
 |---|---|
 | source | V3 `3.0-preview.1` implemented on `connectorV3` worktree |
-| automated tests | Gateway 220 and Re 222 passed; Python MCP lock/compile, docs, CLI, run-identity, exact v0.110.1 compatibility/binding audit, permission, qualification, Profile and migration checks passed |
-| Release build | current Mod `0.6.0-dev`, SHA `b3897459d122e7208ad7d6fa2e56816ec594146fa92c637eecfd691a4fd2a469`, MVID `591c6251-d2a3-4281-b723-9a048b0ac9d0` |
-| installed | verified equal to current Release SHA/MVID after clean game shutdown |
-| loaded | source/Release/installed/loaded SHA and MVID agree; runtime `98b52677796c4e6aa103c404a6952789`, exact game and exact-bridge-only Modset verified |
-| V3 mutation canary | current v0.110.1 runtime exercised one advertised `main_menu` command with `executed_and_settled`; direct combat and card reward remain pending |
-| V3 bounded journey | prior runtime reached 152 decisions and several shorter continuations; current repair remains pending exact-runtime evidence |
+| automated tests | Gateway 235 and Re 223 passed; Re typecheck/build, Python MCP lock/compile, docs, CLI, run-identity, exact v0.110.1 compatibility/binding audit, permission, qualification, Profile and migration checks passed |
+| Release build | current Mod `0.6.0-dev`, canonical `out` SHA `28a6fba283bf26075ac8056e167f931f51322e5c36f85f93f85e617e10f8bf7f`, MVID `ceee2912-fd46-4f9d-9c80-bef0d81d03fc` |
+| installed | verified equal to current canonical Release SHA/MVID; game remains stopped |
+| loaded | current installed artifact is not loaded; last loaded artifact was `.86`, runtime `a611dc97e2f046e4bd6e604c3501d692`, exact game and exact-bridge-only Modset verified |
+| V3 mutation canary | `.86` exercised combat, pile selection, map, event, rewards, card rewards, adapter-backed shop, generated card play, bundle selection, menu and game-over; current shop-native artifact remains pending |
+| V3 bounded journey | one saved Defect run continued floor 27--31 and ended in death; one fresh Ironclad run reached floor 4 and was intentionally stopped |
 | V3 durable claim | none |
 
 Current v0.110.1 install rollback:
+`STS2MCP/.local/deployments/2026-07-31T15-03-48-449Z`.
+Previous direct-play artifact rollback:
+`STS2MCP/.local/deployments/2026-07-31T14-03-53-749Z`.
+Previous current-artifact rollback:
 `STS2MCP/.local/deployments/2026-07-31T09-52-39-492Z`.
 Previous repaired-install rollback:
 `STS2MCP/.local/deployments/2026-07-31T08-50-29-091Z`.
@@ -147,14 +194,18 @@ Final pre-V3 rollback:
 
 ## Immediate Next Step
 
-With the current game and Gateway still running, continue the bounded run:
+The game and Gateway are intentionally stopped. The next Live window must
+cold-load the installed SHA/MVID, verify runtime and Modset identity, resume
+the saved Ironclad A0 run and exercise the shop-inventory native path when it
+is organically reachable. Preserve enemy block and statuses in any compact
+decision view:
 
 ```bash
 cd Re-SpireAgent
 npm run agent:run
 ```
 
-The local entry reads the exact Windows game directory from ignored
-`Re-SpireAgent/.env.local`, delegates to the real `connectorV3` checkout and
-verifies loaded SHA/MVID/runtime before mutation. Current v0.110.1 authority
-remains an exact-runtime session canary, not inherited qualification.
+For Re-driven operation, the local entry reads the exact Windows game
+directory from ignored `Re-SpireAgent/.env.local`, delegates to the real
+`connectorV3` checkout and verifies loaded SHA/MVID/runtime before mutation.
+The direct-play evidence above does not qualify Re's decision behavior.

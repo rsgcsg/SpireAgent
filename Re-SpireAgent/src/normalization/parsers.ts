@@ -321,6 +321,12 @@ function parseOrbs(value: JsonValue | undefined): OrbSnapshot[] {
       : {}),
     ...(optionalNumber(orb.evoke_val ?? orb.evokeValue) !== undefined
       ? { evokeValue: optionalNumber(orb.evoke_val ?? orb.evokeValue) }
+      : {}),
+    ...(optionalNumber(orb.queue_index ?? orb.queueIndex) !== undefined
+      ? { queueIndex: optionalNumber(orb.queue_index ?? orb.queueIndex) }
+      : {}),
+    ...(optionalBoolean(orb.is_next_to_evoke ?? orb.isNextToEvoke) !== undefined
+      ? { isNextToEvoke: optionalBoolean(orb.is_next_to_evoke ?? orb.isNextToEvoke) }
       : {})
   }));
 }
