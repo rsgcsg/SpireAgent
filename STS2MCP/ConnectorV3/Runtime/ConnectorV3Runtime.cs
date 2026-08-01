@@ -263,6 +263,14 @@ internal static class ConnectorV3Runtime
             return BuildCardRewardBindings(draft, cardRewards);
         if (draft.Surface is ShopInventorySurface shopInventory)
             return BuildShopInventoryBindings(draft, shopInventory);
+        if (draft.Surface is MainMenuSurface mainMenu)
+            return BuildMainMenuBindings(draft, mainMenu);
+        if (draft.Surface is SingleplayerMenuSurface singleplayerMenu)
+            return BuildSingleplayerMenuBindings(draft, singleplayerMenu);
+        if (draft.Surface is CharacterSelectSurface characterSelect)
+            return BuildCharacterSelectBindings(draft, characterSelect);
+        if (draft.Surface is GeneratedCardChoiceSurface generatedCardChoice)
+            return BuildGeneratedCardChoiceBindings(draft, generatedCardChoice);
 
         var allowed = new List<(
             BridgeActionDraft Action,
@@ -585,6 +593,174 @@ internal static class ConnectorV3Runtime
         return actions;
     }
 
+    private static IReadOnlyList<ConnectorV3BoundCommand> BuildMainMenuBindings(
+        BridgeObservationDraft draft,
+        MainMenuSurface surface)
+        => DescribeMainMenuCommands(surface)
+            .Select(action => BuildNativeBinding(draft, action))
+            .Where(binding => binding != null)
+            .Cast<ConnectorV3BoundCommand>()
+            .ToArray();
+
+    internal static IReadOnlyList<BridgeActionDraft> DescribeMainMenuCommands(
+        MainMenuSurface surface)
+    {
+        var actions = new List<BridgeActionDraft>();
+        ActionEntityBinding screen = new("menu_screen", surface.ScreenEntityId);
+        if (surface.ContinueRun != null && IsActionableMenuOption(surface.Options, "continue"))
+        {
+            actions.Add(NativeDescriptor(
+                $"continue_run:{surface.ScreenEntityId}",
+                "continue_run",
+                "navigation",
+                "Continue the saved run",
+                "NMainMenu.ContinueButton+active-run-witness",
+                new[] { screen }));
+        }
+        if (IsActionableMenuOption(surface.Options, "singleplayer"))
+        {
+            actions.Add(NativeDescriptor(
+                $"open_singleplayer:{surface.ScreenEntityId}",
+                "open_singleplayer",
+                "navigation",
+                "Open Single Player",
+                "NMainMenu.SingleplayerButton+submenu-owner-witness",
+                new[] { screen }));
+        }
+        return actions;
+    }
+
+    private static IReadOnlyList<ConnectorV3BoundCommand> BuildSingleplayerMenuBindings(
+        BridgeObservationDraft draft,
+        SingleplayerMenuSurface surface)
+        => DescribeSingleplayerMenuCommands(surface)
+            .Select(action => BuildNativeBinding(draft, action))
+            .Where(binding => binding != null)
+            .Cast<ConnectorV3BoundCommand>()
+            .ToArray();
+
+    internal static IReadOnlyList<BridgeActionDraft> DescribeSingleplayerMenuCommands(
+        SingleplayerMenuSurface surface)
+    {
+        var actions = new List<BridgeActionDraft>();
+        ActionEntityBinding screen = new("menu_screen", surface.ScreenEntityId);
+        if (IsActionableMenuOption(surface.Options, "standard"))
+        {
+            actions.Add(NativeDescriptor(
+                $"open_standard_run_setup:{surface.ScreenEntityId}",
+                "open_standard_run_setup",
+                "navigation",
+                "Open Standard run setup",
+                "NSingleplayerSubmenu.StandardButton+character-select-owner-witness",
+                new[] { screen }));
+        }
+        if (IsActionableMenuOption(surface.Options, "back"))
+        {
+            actions.Add(NativeDescriptor(
+                $"back_from_singleplayer_menu:{surface.ScreenEntityId}",
+                "back_from_singleplayer_menu",
+                "navigation",
+                "Back to main menu",
+                "NSingleplayerSubmenu.BackButton+root-owner-witness",
+                new[] { screen }));
+        }
+        return actions;
+    }
+
+    private static IReadOnlyList<ConnectorV3BoundCommand> BuildCharacterSelectBindings(
+        BridgeObservationDraft draft,
+        CharacterSelectSurface surface)
+        => DescribeCharacterSelectCommands(surface)
+            .Select(action => BuildNativeBinding(draft, action))
+            .Where(binding => binding != null)
+            .Cast<ConnectorV3BoundCommand>()
+            .ToArray();
+
+    internal static IReadOnlyList<BridgeActionDraft> DescribeCharacterSelectCommands(
+        CharacterSelectSurface surface)
+    {
+        var actions = new List<BridgeActionDraft>();
+        ActionEntityBinding screen = new("screen", surface.ScreenEntityId);
+        foreach (VisibleCharacterChoice character in surface.Characters.Where(value =>
+                     !value.IsLocked && !value.IsSelected))
+        {
+            actions.Add(NativeDescriptor(
+                $"select_character:{surface.ScreenEntityId}:{character.EntityId}",
+                "select_character",
+                "selection",
+                $"Select {character.Name}",
+                "NCharacterSelectButton.Select+exact-selected-button-witness",
+                new[]
+                {
+                    screen,
+                    new ActionEntityBinding("character_choice", character.EntityId)
+                }));
+        }
+        if (surface.CanDecreaseAscension)
+        {
+            actions.Add(NativeDescriptor(
+                $"decrease_ascension:{surface.ScreenEntityId}:{surface.Ascension}",
+                "decrease_ascension",
+                "configuration",
+                "Decrease Ascension",
+                "NAscensionPanel.LeftArrow+exact-level-witness",
+                new[] { screen }));
+        }
+        if (surface.CanIncreaseAscension)
+        {
+            actions.Add(NativeDescriptor(
+                $"increase_ascension:{surface.ScreenEntityId}:{surface.Ascension}",
+                "increase_ascension",
+                "configuration",
+                "Increase Ascension",
+                "NAscensionPanel.RightArrow+exact-level-witness",
+                new[] { screen }));
+        }
+        VisibleCharacterChoice? selected = surface.Characters.SingleOrDefault(value => value.IsSelected);
+        if (surface.CanEmbark && selected != null)
+        {
+            actions.Add(NativeDescriptor(
+                $"embark_standard_run:{surface.ScreenEntityId}:{selected.EntityId}:{surface.Ascension ?? 0}",
+                "embark_standard_run",
+                "commit",
+                "Embark",
+                "NCharacterSelectScreen.ConfirmButton+RunManager-active-run-witness",
+                new[]
+                {
+                    screen,
+                    new ActionEntityBinding("character_choice", selected.EntityId)
+                }));
+        }
+        if (surface.CanGoBack)
+        {
+            actions.Add(NativeDescriptor(
+                $"back_from_character_select:{surface.ScreenEntityId}",
+                "back_from_character_select",
+                "navigation",
+                "Back",
+                "NCharacterSelectScreen.BackButton+submenu-owner-change-witness",
+                new[] { screen }));
+        }
+        return actions;
+    }
+
+    private static bool IsActionableMenuOption(
+        IReadOnlyList<VisibleMenuOption> options,
+        string semanticId) =>
+        options.Any(option =>
+            string.Equals(option.SemanticId, semanticId, StringComparison.Ordinal)
+            && option.Enabled
+            && string.Equals(option.BridgeSupport, "actionable", StringComparison.Ordinal));
+
+    private static IReadOnlyList<ConnectorV3BoundCommand> BuildGeneratedCardChoiceBindings(
+        BridgeObservationDraft draft,
+        GeneratedCardChoiceSurface surface)
+        => GeneratedCardChoiceSurfaceProvider.DescribeNativeCommands(surface)
+            .Select(action => BuildNativeBinding(draft, action))
+            .Where(binding => binding != null)
+            .Cast<ConnectorV3BoundCommand>()
+            .ToArray();
+
     private static BridgeActionDraft NativeDescriptor(
         string key,
         string operation,
@@ -844,6 +1020,10 @@ internal static class ConnectorV3Runtime
                     snapshot,
                     request,
                     binding),
+                "main_menu" => StartMainMenuCommand(snapshot, request, binding),
+                "singleplayer_menu" => StartSingleplayerMenuCommand(snapshot, request, binding),
+                "character_select" => StartCharacterSelectCommand(snapshot, request, binding),
+                "generated_card_choice" => StartGeneratedCardChoiceCommand(snapshot, request, binding),
                 _ => BridgeActionStartResult.Rejected(
                     "native_command_owner_unsupported",
                     "The current owner has no Connector V3 native command resolver.")
@@ -853,6 +1033,123 @@ internal static class ConnectorV3Runtime
                ?? BridgeActionStartResult.Rejected(
                    "command_binding_unavailable",
                    "The exact native command binding is no longer available.");
+    }
+
+    private static BridgeActionStartResult StartMainMenuCommand(
+        ConnectorV3Snapshot snapshot,
+        ConnectorV3CommandRequest request,
+        ConnectorV3BoundCommand binding)
+    {
+        if (snapshot.Draft.Surface is not MainMenuSurface surface
+            || !HasExactOperand(request, "menu_screen_id", surface.ScreenEntityId))
+        {
+            return BridgeActionStartResult.Rejected(
+                "main_menu_owner_changed",
+                "The exact main-menu owner is no longer current.");
+        }
+        return binding.Candidate.Operation switch
+        {
+            "continue_run" => MainMenuSurfaceProvider.StartContinue(Entities, surface.ScreenEntityId),
+            "open_singleplayer" => MainMenuSurfaceProvider.StartOpenSingleplayer(Entities, surface.ScreenEntityId),
+            _ => BridgeActionStartResult.Rejected(
+                "main_menu_command_unsupported",
+                "The requested main-menu command is not supported for this exact interaction.")
+        };
+    }
+
+    private static BridgeActionStartResult StartSingleplayerMenuCommand(
+        ConnectorV3Snapshot snapshot,
+        ConnectorV3CommandRequest request,
+        ConnectorV3BoundCommand binding)
+    {
+        if (snapshot.Draft.Surface is not SingleplayerMenuSurface surface
+            || !HasExactOperand(request, "menu_screen_id", surface.ScreenEntityId))
+        {
+            return BridgeActionStartResult.Rejected(
+                "singleplayer_menu_owner_changed",
+                "The exact single-player submenu owner is no longer current.");
+        }
+        return binding.Candidate.Operation switch
+        {
+            "open_standard_run_setup" => SingleplayerMenuSurfaceProvider.StartStandard(Entities, surface.ScreenEntityId),
+            "back_from_singleplayer_menu" => SingleplayerMenuSurfaceProvider.StartBack(Entities, surface.ScreenEntityId),
+            _ => BridgeActionStartResult.Rejected(
+                "singleplayer_menu_command_unsupported",
+                "The requested single-player menu command is not supported for this exact interaction.")
+        };
+    }
+
+    private static BridgeActionStartResult StartCharacterSelectCommand(
+        ConnectorV3Snapshot snapshot,
+        ConnectorV3CommandRequest request,
+        ConnectorV3BoundCommand binding)
+    {
+        if (snapshot.Draft.Surface is not CharacterSelectSurface surface
+            || !HasExactOperand(request, "screen_id", surface.ScreenEntityId))
+        {
+            return BridgeActionStartResult.Rejected(
+                "character_select_owner_changed",
+                "The exact character-select owner is no longer current.");
+        }
+        IReadOnlyDictionary<string, string> operands =
+            request.Operands ?? new Dictionary<string, string>();
+        return binding.Candidate.Operation switch
+        {
+            "select_character" when operands.TryGetValue("character_choice_id", out string? choiceId) =>
+                CharacterSelectSurfaceProvider.StartSelect(Entities, surface.ScreenEntityId, choiceId),
+            "decrease_ascension" =>
+                CharacterSelectSurfaceProvider.StartAscensionChange(Entities, surface.ScreenEntityId, -1),
+            "increase_ascension" =>
+                CharacterSelectSurfaceProvider.StartAscensionChange(Entities, surface.ScreenEntityId, 1),
+            "embark_standard_run" when operands.TryGetValue("character_choice_id", out string? selectedId) =>
+                CharacterSelectSurfaceProvider.StartEmbark(Entities, surface.ScreenEntityId, selectedId),
+            "back_from_character_select" =>
+                CharacterSelectSurfaceProvider.StartBack(Entities, surface.ScreenEntityId),
+            _ => BridgeActionStartResult.Rejected(
+                "character_select_command_unsupported",
+                "The requested character-select command is not supported for this exact interaction.")
+        };
+    }
+
+    private static bool HasExactOperand(
+        ConnectorV3CommandRequest request,
+        string name,
+        string expected) =>
+        request.Operands != null
+        && request.Operands.TryGetValue(name, out string? actual)
+        && string.Equals(actual, expected, StringComparison.Ordinal);
+
+    private static BridgeActionStartResult StartGeneratedCardChoiceCommand(
+        ConnectorV3Snapshot snapshot,
+        ConnectorV3CommandRequest request,
+        ConnectorV3BoundCommand binding)
+    {
+        if (snapshot.Draft.Surface is not GeneratedCardChoiceSurface surface
+            || !HasExactOperand(request, "screen_id", surface.ScreenEntityId))
+        {
+            return BridgeActionStartResult.Rejected(
+                "generated_choice_owner_changed",
+                "The exact generated-card choice owner is no longer current.");
+        }
+        IReadOnlyDictionary<string, string> operands =
+            request.Operands ?? new Dictionary<string, string>();
+        if (binding.Candidate.Command == "select_entity"
+            && operands.TryGetValue("card_id", out string? cardId))
+        {
+            return GeneratedCardChoiceSurfaceProvider.StartSelect(
+                Entities,
+                surface.ScreenEntityId,
+                cardId);
+        }
+        if (binding.Candidate.Operation.StartsWith("skip_", StringComparison.Ordinal))
+        {
+            return GeneratedCardChoiceSurfaceProvider.StartSkip(
+                Entities,
+                surface.ScreenEntityId);
+        }
+        return BridgeActionStartResult.Rejected(
+            "generated_choice_command_unsupported",
+            "The requested generated-card command is not supported for this exact source.");
     }
 
     private static BridgeActionStartResult StartMapCommand(

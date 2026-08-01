@@ -4,6 +4,11 @@
 源码基线：`connectorV3@9a9546813566dd9e2e0460553de20a0cdc308cc2` 加本轮未提交修复  
 协议：`3.0-preview.1`
 
+> 后续状态：`run-20260801111449-8oze2o` 已完成 176 个命令和完整跑局边界；
+> menu direct consumer、menu/generated V3-native cutover 已进入当前源码。
+> 本文以下 51-action/menu-adapter 描述保留为当时审计基线，不是最新状态；
+> 当前事实见 `docs/current/STATUS.md`。
+
 ## 结论
 
 V3 已经不是 DTO 或 MCP 包装原型，而是可运行的纵向 Connector：真实 Re

@@ -16,6 +16,7 @@ import type { BridgeV2Capabilities } from "./bridgeV2Protocol.js";
 import { ConnectorV3HttpError, ConnectorV3RestClient } from "./connectorV3Client.js";
 import {
   projectConnectorV3ForRe,
+  usesDirectConnectorV3Consumer,
   type ConnectorV3CommandInvocation
 } from "./connectorV3Projection.js";
 import type {
@@ -60,18 +61,13 @@ export class Sts2ConnectorV3Adapter implements GameAdapter<
   }
 
   async initialize(): Promise<void> {
-    if (this.capabilities && this.bridgeCapabilities) return;
+    if (this.capabilities) return;
     let remainingWaitMs = this.options.startupWaitMs ?? 0;
     const pollMs = this.options.startupPollMs ?? 500;
     while (true) {
       try {
-        const [connector, bridge] = await Promise.all([
-          this.connector.capabilities(),
-          this.bridgeSidecar.capabilities()
-        ]);
-        assertSameGateway(connector.data, bridge.data);
+        const connector = await this.connector.capabilities();
         this.capabilities = connector.data;
-        this.bridgeCapabilities = bridge.data;
         return;
       } catch (error) {
         if (!isTransientGatewayStartupError(error) || remainingWaitMs <= 0) throw error;
@@ -144,20 +140,25 @@ export class Sts2ConnectorV3Adapter implements GameAdapter<
   async readCurrentState(): Promise<Sts2McpRawState> {
     this.lastReadAuthority = "none";
     await this.initialize();
-    const [observation, connectorCapabilities, bridgeCapabilities] = await Promise.all([
+    const [observation, connectorCapabilities] = await Promise.all([
       this.connector.observation(),
-      this.connector.capabilities(),
-      this.bridgeSidecar.capabilities()
+      this.connector.capabilities()
     ]);
-    assertSameGateway(connectorCapabilities.data, bridgeCapabilities.data);
     assertObservationIdentity(observation.data, connectorCapabilities.data);
+    const directConsumer = usesDirectConnectorV3Consumer(observation.data);
+    const bridgeCapabilities = directConsumer
+      ? undefined
+      : await this.bridgeSidecar.capabilities();
+    if (bridgeCapabilities) {
+      assertSameGateway(connectorCapabilities.data, bridgeCapabilities.data);
+    }
     const projected = projectConnectorV3ForRe(
       observation.data,
       observation.raw,
-      bridgeCapabilities.raw
+      bridgeCapabilities?.raw
     );
     this.capabilities = connectorCapabilities.data;
-    this.bridgeCapabilities = bridgeCapabilities.data;
+    if (bridgeCapabilities) this.bridgeCapabilities = bridgeCapabilities.data;
     this.invocations = new Map(projected.invocations);
     this.latestStateToken = observation.data.state_token;
     this.lastReadAuthority =
@@ -192,8 +193,7 @@ export class Sts2ConnectorV3Adapter implements GameAdapter<
     }
 
     await this.initialize();
-    if (!this.capabilities?.game.compatibility.action_execution_allowed
-        || !this.bridgeCapabilities) {
+    if (!this.capabilities?.game.compatibility.action_execution_allowed) {
       return rejectedResult(
         "connector_v3_execution_not_allowed",
         "The exact environment does not currently permit Connector V3 execution."
@@ -202,7 +202,10 @@ export class Sts2ConnectorV3Adapter implements GameAdapter<
 
     let controller: BridgeV2ControllerCredentials;
     try {
-      await this.control.register(this.bridgeCapabilities);
+      await this.control.register(
+        this.capabilities,
+        this.capabilities.control
+      );
       controller = await this.control.credentials();
     } catch (error) {
       return rejectedResult("controller_coordination_unavailable", safeMessage(error));

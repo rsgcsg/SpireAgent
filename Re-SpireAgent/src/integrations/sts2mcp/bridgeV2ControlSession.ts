@@ -1,6 +1,5 @@
 import { randomUUID } from "node:crypto";
 import type {
-  BridgeV2Capabilities,
   BridgeV2ClientRegistration,
   BridgeV2ControllerLeaseResponse,
   DecodedBridgePayload
@@ -47,7 +46,10 @@ export class BridgeV2ControlSession {
 
   constructor(private readonly bridge: BridgeControlClient) {}
 
-  async register(capabilities: BridgeV2Capabilities): Promise<void> {
+  async register(
+    gateway: { bridge: { runtime_instance_id: string } },
+    coordination: { recommended_renewal_ms: number }
+  ): Promise<void> {
     if (this.registration) return;
     const registration = await this.bridge.registerClient({
       clientInstanceId: this.clientInstanceId,
@@ -55,12 +57,12 @@ export class BridgeV2ControlSession {
       productName: "Re-SpireAgent",
       productVersion: "0.1.0"
     });
-    if (registration.data.runtime_instance_id !== capabilities.bridge.runtime_instance_id
+    if (registration.data.runtime_instance_id !== gateway.bridge.runtime_instance_id
         || registration.data.client.client_instance_id !== this.clientInstanceId) {
       throw new Error("Bridge client registration identity does not match negotiated capabilities");
     }
     this.registration = registration.data;
-    this.recommendedRenewalMs = capabilities.control_coordination.recommended_renewal_ms;
+    this.recommendedRenewalMs = coordination.recommended_renewal_ms;
   }
 
   async credentials(): Promise<BridgeV2ControllerCredentials> {

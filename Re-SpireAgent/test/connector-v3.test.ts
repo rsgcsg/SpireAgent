@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest";
+import { buildAllowedActions } from "../src/domain/actions/buildAllowedActions.js";
+import type { AdapterDescriptor } from "../src/game-io/adapter.js";
 import { projectConnectorV3ForRe } from "../src/integrations/sts2mcp/connectorV3Projection.js";
+import { Sts2ConnectorV3Adapter } from "../src/integrations/sts2mcp/connectorV3Adapter.js";
 import {
   decodeConnectorV3Observation,
   decodeConnectorV3Receipt,
   type ConnectorV3Observation
 } from "../src/integrations/sts2mcp/connectorV3Protocol.js";
 import type { JsonObject } from "../src/shared/json.js";
+import { normalizeCurrentState } from "../src/normalization/normalizeCurrentState.js";
 
 const BRIDGE = {
   id: "sts2_connector_v3",
@@ -36,6 +40,19 @@ const GAME = {
   modset: {
     status: "exact_bridge_only",
     fingerprint: "fixture-modset"
+  }
+};
+
+const SOURCE: AdapterDescriptor = {
+  adapterId: "sts2-connector-v3",
+  endpoint: "http://fixture.invalid",
+  capabilities: {
+    canReadState: true,
+    canExecuteActions: true,
+    canListLegalActions: true,
+    actionResults: "complete",
+    legalActionAuthority: "bridge_advertised",
+    protocols: ["connector_v3"]
   }
 };
 
@@ -114,6 +131,78 @@ function combatObservation(): ConnectorV3Observation {
       hidden_by_policy: ["hidden_rng"]
     }
   }).data;
+}
+
+function mainMenuObservation(): ConnectorV3Observation {
+  const value = structuredClone(combatObservation()) as unknown as Record<string, unknown>;
+  value.shared_state = null;
+  value.context = { kind: "menu", flow: "root_navigation" };
+  value.surface = {
+    kind: "main_menu",
+    stage: "choosing",
+    screen_entity_id: "menu-screen-fixture",
+    options: [
+      {
+        entity_id: "menu-option-singleplayer",
+        semantic_id: "singleplayer",
+        label: "Singleplayer",
+        enabled: true,
+        bridge_support: "actionable"
+      },
+      {
+        entity_id: "menu-option-settings",
+        semantic_id: "settings",
+        label: "Settings",
+        enabled: true,
+        bridge_support: "visible_unsupported",
+        blocked_reason: "outside the bounded run contract"
+      }
+    ]
+  };
+  value.interaction = {
+    id: "interaction-menu-fixture",
+    kind: "main_menu",
+    phase: "ready",
+    execution_support: "trial",
+    support_reason: null,
+    affordances: ["activate_control"],
+    command_candidates: [{
+      candidate_id: "candidate-open-singleplayer",
+      command: "activate_control",
+      operation: "open_singleplayer",
+      label: "Open Single Player",
+      operands: {
+        menu_screen_id: "menu-screen-fixture",
+        control_id: "open_singleplayer"
+      },
+      operand_domains: {},
+      entity_bindings: [{ role: "menu_screen", entity_id: "menu-screen-fixture" }],
+      binding_kind: "native_direct_resolver",
+      authority_state: "trial"
+    }]
+  };
+  return decodeConnectorV3Observation(value).data;
+}
+
+function connectorCapabilities() {
+  return {
+    protocol_version: "3.0-preview.1",
+    observation_schema: "sts2.connector.v3/observation-1",
+    command_schema: "sts2.connector.v3/command-1",
+    status: "experimental_cutover",
+    bridge: BRIDGE,
+    game: GAME,
+    commands: ["activate_control"],
+    control: { recommended_renewal_ms: 10_000 },
+    non_claims: []
+  };
+}
+
+function json(value: unknown, status = 200): Response {
+  return new Response(JSON.stringify(value), {
+    status,
+    headers: { "content-type": "application/json" }
+  });
 }
 
 describe("Connector V3 strict contract", () => {
@@ -262,5 +351,89 @@ describe("Connector V3 strict contract", () => {
         }
       })
     ]);
+  });
+
+  it("consumes menu facts and commands directly without a V2 state projection", () => {
+    const observation = mainMenuObservation();
+    const projected = projectConnectorV3ForRe(
+      observation,
+      observation as unknown as JsonObject,
+      { invalid_v2_sidecar: true }
+    );
+    const wrapper = projected.rawState as Record<string, unknown>;
+
+    expect(wrapper.bridge_v2_state).toBeUndefined();
+    expect(wrapper.bridge_v2_capabilities).toBeUndefined();
+
+    const envelope = normalizeCurrentState(projected.rawState, SOURCE);
+    expect(envelope.diagnostics.status).toBe("ok");
+    expect(envelope.currentState).toMatchObject({
+      sourceStateType: "connector_v3:menu:main_menu:direct",
+      stability: "actionable",
+      actionAuthority: "bridge_advertised",
+      context: { kind: "menu", screen: "main_menu" },
+      surface: {
+        kind: "main_menu",
+        screenEntityId: "menu-screen-fixture",
+        choices: [
+          { semanticId: "singleplayer", bridgeSupport: "actionable" },
+          { semanticId: "settings", bridgeSupport: "visible_unsupported" }
+        ]
+      }
+    });
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toEqual([
+      expect.objectContaining({
+        kind: "open_singleplayer",
+        action: expect.objectContaining({
+          kind: "connector_v3_command",
+          expectedStateToken: observation.state_token,
+          operation: "open_singleplayer"
+        })
+      })
+    ]);
+  });
+
+  it("reads a direct V3 menu without requesting the V2 capabilities sidecar", async () => {
+    const calls: string[] = [];
+    const adapter = new Sts2ConnectorV3Adapter(
+      "http://adapter.test",
+      1_000,
+      { commandPollMs: 1, commandTimeoutMs: 100 },
+      async (input) => {
+        const url = String(input);
+        calls.push(url);
+        if (url.endsWith("/api/v3/capabilities")) return json(connectorCapabilities());
+        if (url.endsWith("/api/v3/observation")) return json(mainMenuObservation());
+        throw new Error(`Unexpected request ${url}`);
+      },
+      async () => {}
+    );
+
+    const raw = await adapter.readCurrentState();
+    const envelope = normalizeCurrentState(raw, adapter.describe());
+
+    expect(calls.filter((url) => url.endsWith("/api/v3/capabilities"))).toHaveLength(2);
+    expect(calls.some((url) => url.endsWith("/api/v2/capabilities"))).toBe(false);
+    expect(envelope.currentState.sourceStateType)
+      .toBe("connector_v3:menu:main_menu:direct");
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toHaveLength(1);
+  });
+
+  it("fails a direct menu observation closed when its context flow is inconsistent", () => {
+    const observation = mainMenuObservation();
+    const raw = observation as unknown as JsonObject;
+    raw.context = { kind: "menu", flow: "standard_run_setup" };
+    const projected = projectConnectorV3ForRe(
+      observation,
+      raw,
+      { protocol_version: "2.0-preview.86" }
+    );
+
+    const envelope = normalizeCurrentState(projected.rawState, SOURCE);
+
+    expect(envelope.currentState.stability).toBe("invalid");
+    expect(envelope.currentState.actionAuthority).toBe("none");
+    expect(envelope.currentState.surface.kind).toBe("unsupported");
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toEqual([]);
   });
 });

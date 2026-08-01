@@ -276,7 +276,7 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
     const requestId = `re-p1-${randomUUID()}`;
     let controller: BridgeV2ControllerCredentials;
     try {
-      await this.control.register(capabilities);
+      await this.control.register(capabilities, capabilities.control_coordination);
       controller = await this.control.credentials();
     } catch (error) {
       return rejectedResult("controller_coordination_unavailable", safeMessage(error));

@@ -16,6 +16,13 @@ export interface ConnectorV3CommandInvocation {
   operation: string;
 }
 
+export interface ConnectorV3ConsumerCommand extends ConnectorV3CommandInvocation {
+  label: string;
+  bindingKind: ConnectorV3CommandCandidate["binding_kind"];
+  authorityState: ConnectorV3CommandCandidate["authority_state"];
+  entityBindings: Array<{ role: string; entityId: string }>;
+}
+
 export interface ConnectorV3ProjectionResult {
   rawState: Sts2McpRawState;
   invocations: ReadonlyMap<string, ConnectorV3CommandInvocation>;
@@ -24,26 +31,37 @@ export interface ConnectorV3ProjectionResult {
 export function projectConnectorV3ForRe(
   observation: ConnectorV3Observation,
   rawObservation: JsonObject,
-  rawCapabilities: JsonObject
+  rawCapabilities?: JsonObject
 ): ConnectorV3ProjectionResult {
-  const invocations = new Map<string, ConnectorV3CommandInvocation>();
-  const legalActions = observation.interaction.command_candidates.flatMap((candidate) =>
-    expandCandidate(observation, candidate).map((invocation) => {
-      invocations.set(invocation.choiceId, invocation);
-      const selectedEntityIds = new Set(Object.values(invocation.operands));
-      return {
-        action_id: invocation.choiceId,
-        state_id: observation.state_token,
-        kind: candidate.operation,
-        category: "connector_v3",
-        label: candidate.label,
-        authority: "game_ui",
-        evidence_code: candidate.binding_kind,
-        entity_bindings: candidate.entity_bindings.filter((binding) =>
-          selectedEntityIds.has(binding.entity_id))
-      };
-    })
+  const commands = expandConnectorV3Commands(observation);
+  const invocations = new Map<string, ConnectorV3CommandInvocation>(
+    commands.map((command) => [command.choiceId, command])
   );
+  if (usesDirectConnectorV3Consumer(observation)) {
+    return {
+      rawState: wrapConnectorV3State({ observation: rawObservation }),
+      invocations
+    };
+  }
+  if (!rawCapabilities) {
+    throw new Error(
+      `Connector V3 surface ${observation.surface.kind} still requires the temporary V2 consumer sidecar`
+    );
+  }
+
+  const legalActions = commands.map((command) => ({
+    action_id: command.choiceId,
+    state_id: observation.state_token,
+    kind: command.operation,
+    category: "connector_v3",
+    label: command.label,
+    authority: "game_ui",
+    evidence_code: command.bindingKind,
+    entity_bindings: command.entityBindings.map((binding) => ({
+      role: binding.role,
+      entity_id: binding.entityId
+    }))
+  }));
   const semanticDigest = digest({
     stateToken: observation.state_token,
     sharedState: observation.shared_state,
@@ -112,6 +130,33 @@ export function projectConnectorV3ForRe(
     }),
     invocations
   };
+}
+
+export function usesDirectConnectorV3Consumer(
+  observation: ConnectorV3Observation
+): boolean {
+  return observation.context.kind === "menu"
+    && ["main_menu", "singleplayer_menu", "character_select"]
+      .includes(observation.surface.kind);
+}
+
+export function expandConnectorV3Commands(
+  observation: ConnectorV3Observation
+): ConnectorV3ConsumerCommand[] {
+  return observation.interaction.command_candidates.flatMap((candidate) =>
+    expandCandidate(observation, candidate).map((invocation) => {
+      const selectedEntityIds = new Set(Object.values(invocation.operands));
+      return {
+        ...invocation,
+        label: candidate.label,
+        bindingKind: candidate.binding_kind,
+        authorityState: candidate.authority_state,
+        entityBindings: candidate.entity_bindings
+          .filter((binding) => selectedEntityIds.has(binding.entity_id))
+          .map((binding) => ({ role: binding.role, entityId: binding.entity_id }))
+      };
+    })
+  );
 }
 
 function expandCandidate(

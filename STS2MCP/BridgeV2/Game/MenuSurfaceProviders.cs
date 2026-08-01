@@ -179,6 +179,39 @@ internal sealed class MainMenuSurfaceProvider : IBridgeSurfaceProvider
             allowIntermediateStateChanges: true);
     }
 
+    internal static BridgeActionStartResult StartContinue(
+        BridgeEntityRegistry entities,
+        string screenEntityId)
+    {
+        if (!entities.TryResolve(screenEntityId, out NMainMenu? root) || root == null)
+        {
+            return BridgeActionStartResult.Rejected(
+                "main_menu_not_found",
+                "The exact main-menu owner is no longer available.");
+        }
+
+        try
+        {
+            NMainMenuTextButton button = root.GetNode<NMainMenuTextButton>(
+                "MainMenuTextButtons/ContinueButton");
+            ReadSaveResult<SerializableRun>? runResult =
+                ReadRunSaveResultField?.GetValue(root) as ReadSaveResult<SerializableRun>;
+            if (runResult is not { Success: true, SaveData: not null })
+            {
+                return BridgeActionStartResult.Rejected(
+                    "main_menu_continue_changed",
+                    "The exact saved-run binding is no longer current and valid.");
+            }
+            return StartContinue(root, button, runResult);
+        }
+        catch (Exception ex)
+        {
+            return BridgeActionStartResult.Rejected(
+                "main_menu_continue_binding_failed",
+                $"The exact Continue control could not be resolved: {ex.GetType().Name}.");
+        }
+    }
+
     private static BridgeActionStartResult StartOpenSingleplayer(
         NMainMenu expectedRoot,
         NMainMenuTextButton expectedButton)
@@ -195,6 +228,31 @@ internal sealed class MainMenuSurfaceProvider : IBridgeSurfaceProvider
             () => NGame.Instance?.MainMenu?.SubmenuStack?.Peek() is NSingleplayerSubmenu or NCharacterSelectScreen,
             "singleplayer_or_character_select_owner_became_active",
             allowIntermediateStateChanges: true);
+    }
+
+    internal static BridgeActionStartResult StartOpenSingleplayer(
+        BridgeEntityRegistry entities,
+        string screenEntityId)
+    {
+        if (!entities.TryResolve(screenEntityId, out NMainMenu? root) || root == null)
+        {
+            return BridgeActionStartResult.Rejected(
+                "main_menu_not_found",
+                "The exact main-menu owner is no longer available.");
+        }
+
+        try
+        {
+            NMainMenuTextButton button = root.GetNode<NMainMenuTextButton>(
+                "MainMenuTextButtons/SingleplayerButton");
+            return StartOpenSingleplayer(root, button);
+        }
+        catch (Exception ex)
+        {
+            return BridgeActionStartResult.Rejected(
+                "main_menu_singleplayer_binding_failed",
+                $"The exact Single Player control could not be resolved: {ex.GetType().Name}.");
+        }
     }
 
     private static bool IsCurrentRoot(NMainMenu expectedRoot) =>
@@ -381,6 +439,29 @@ internal sealed class SingleplayerMenuSurfaceProvider : IBridgeSurfaceProvider
             allowIntermediateStateChanges: true);
     }
 
+    internal static BridgeActionStartResult StartStandard(
+        BridgeEntityRegistry entities,
+        string screenEntityId)
+    {
+        if (!entities.TryResolve(screenEntityId, out NSingleplayerSubmenu? screen) || screen == null)
+        {
+            return BridgeActionStartResult.Rejected(
+                "singleplayer_menu_not_found",
+                "The exact single-player submenu owner is no longer available.");
+        }
+
+        try
+        {
+            return StartStandard(screen, screen.GetNode<NSubmenuButton>("StandardButton"));
+        }
+        catch (Exception ex)
+        {
+            return BridgeActionStartResult.Rejected(
+                "singleplayer_standard_binding_failed",
+                $"The exact Standard control could not be resolved: {ex.GetType().Name}.");
+        }
+    }
+
     private static BridgeActionStartResult StartBack(NSingleplayerSubmenu expectedScreen, NButton expectedButton)
     {
         if (!IsCurrent(expectedScreen) || !IsUsable(expectedButton))
@@ -390,6 +471,29 @@ internal sealed class SingleplayerMenuSurfaceProvider : IBridgeSurfaceProvider
             () => !ReferenceEquals(NGame.Instance?.MainMenu?.SubmenuStack?.Peek(), expectedScreen),
             BackCompletionWitness,
             allowIntermediateStateChanges: true);
+    }
+
+    internal static BridgeActionStartResult StartBack(
+        BridgeEntityRegistry entities,
+        string screenEntityId)
+    {
+        if (!entities.TryResolve(screenEntityId, out NSingleplayerSubmenu? screen) || screen == null)
+        {
+            return BridgeActionStartResult.Rejected(
+                "singleplayer_menu_not_found",
+                "The exact single-player submenu owner is no longer available.");
+        }
+
+        try
+        {
+            return StartBack(screen, screen.GetNode<NBackButton>("BackButton"));
+        }
+        catch (Exception ex)
+        {
+            return BridgeActionStartResult.Rejected(
+                "singleplayer_back_binding_failed",
+                $"The exact Back control could not be resolved: {ex.GetType().Name}.");
+        }
     }
 
     private static bool IsCurrent(NSingleplayerSubmenu expectedScreen) =>

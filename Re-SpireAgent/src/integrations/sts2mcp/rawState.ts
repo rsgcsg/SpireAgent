@@ -27,28 +27,34 @@ export function wrapBridgeV2State(input: {
 }
 
 export function wrapConnectorV3State(input: {
-  projection: JsonObject;
-  capabilities: JsonObject;
   observation: JsonObject;
+  projection?: JsonObject;
+  capabilities?: JsonObject;
 }): Sts2McpRawState {
   return {
     adapter_protocol: CONNECTOR_V3_WRAPPER_PROTOCOL,
     connector_v3_observation: input.observation,
-    bridge_v2_state: input.projection,
-    bridge_v2_capabilities: input.capabilities
+    ...(input.projection ? { bridge_v2_state: input.projection } : {}),
+    ...(input.capabilities ? { bridge_v2_capabilities: input.capabilities } : {})
   };
 }
 
 export function isConnectorV3WrappedState(value: unknown): value is Sts2McpRawState {
   return isJsonObject(value)
     && value.adapter_protocol === CONNECTOR_V3_WRAPPER_PROTOCOL
-    && isJsonObject(value.connector_v3_observation)
+    && isJsonObject(value.connector_v3_observation);
+}
+
+export function hasConnectorV3BridgeProjection(value: Sts2McpRawState): boolean {
+  return isConnectorV3WrappedState(value)
     && isJsonObject(value.bridge_v2_state)
     && isJsonObject(value.bridge_v2_capabilities);
 }
 
 export function connectorV3AsBridgeV2Wrapper(value: Sts2McpRawState): Sts2McpRawState {
-  if (!isConnectorV3WrappedState(value)) return value;
+  if (!isConnectorV3WrappedState(value)
+      || !isJsonObject(value.bridge_v2_state)
+      || !isJsonObject(value.bridge_v2_capabilities)) return value;
   return {
     adapter_protocol: BRIDGE_V2_WRAPPER_PROTOCOL,
     bridge_v2_state: value.bridge_v2_state!,

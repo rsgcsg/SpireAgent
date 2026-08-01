@@ -53,10 +53,11 @@ protocol, exact SHA/MVID/runtime, game, Modset and permission before starting.
 - Gateway `completed` is native Outcome authority; Re separately waits for a
   stable successor before the next model decision.
 
-During the first cutover, Re reads a same-runtime Bridge v2 capabilities
-sidecar only to populate the mature semantic/environment projection. It never
-imports v2 actions or executes a v2 action ID. This sidecar is explicit
-migration debt.
+Main, single-player and character-select menus now use a direct V3 consumer
+and do not request the Bridge v2 capabilities sidecar. Remaining Surfaces read
+that same-runtime sidecar only for the mature semantic/environment projection.
+Re never imports v2 actions or executes a v2 action ID. The remaining sidecar
+is explicit migration debt.
 
 ## Evidence
 
@@ -66,6 +67,6 @@ journey and durable qualification are separate evidence levels.
 
 ## Current Limits
 
-V3 read-only detail/Inspection is pending. Non-combat execution still uses
+V3 read-only detail/Inspection is pending. Remaining selectors still use
 bounded internal Provider native bindings until each family moves to the V3
 Native Command Catalog. Unknown interactions remain visible and fail closed.

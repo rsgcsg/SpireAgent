@@ -20,13 +20,16 @@ Implemented in source:
 - direct combat resolvers for `play_card`, `use_potion` and `end_turn`;
 - direct native commands for combat, shop-room, map, rest, event-option,
   shop-inventory, treasure-room, reward-claim, card-reward and source-bound
-  deck-enchant interactions;
+  deck-enchant interactions, plus current source cutovers for menu/run-setup
+  and source-discriminated generated-card choices;
 - bounded parameterized commands for remaining ordinary choices, purchases,
   selections and controls through an internal native-binding adapter;
 - one controller, idempotent ledger, stale rejection, exact environment
   authority, semantic Outcome and unknown-no-retry;
 - V3 REST, MCP tools and strict Re decoder/adapter;
 - Re defaults to V3 and never executes a v2 action ID;
+- Re consumes main/singleplayer/character menus directly and does not request
+  the v2 capabilities sidecar for those Surfaces;
 - exact Stratagem Power source binding for the single-stack combat-pile
   selection exposed by current Live evidence.
 
@@ -40,11 +43,11 @@ Not yet claimed:
 - multi-stack Stratagem Outcome;
 - full vanilla or Mod coverage.
 
-Current exact-runtime Re evidence includes 51 settled V3 actions and native
-shop card/potion purchases. A subsequent shop close exposed a missing
-`cancel_interaction.control_id`; the following run exposed V2 consumer
-validation incorrectly coupling visible facts to operation admission. Both
-are repaired and installed, but the repaired artifact is not loaded.
+Current exact-runtime Re evidence includes
+`run-20260801111449-8oze2o`: 176 settled V3 commands, two safe stale refusals
+and one normal completed-run boundary. Three shop close/proceed pairs prove
+the earlier `control_id` repair. The later direct-menu and V3-native
+menu/generated source changes require a new cold load.
 
 ## Migration Waves
 
@@ -63,8 +66,9 @@ back to the last known v2 commit. No durable V3 claim is inherited.
 
 ### Wave 2: Native Non-Combat Catalog
 
-Replace `provider_native_binding_adapter` family by family. Prioritize menu,
-map, reward, shop, generated choices, rest, treasure and bounded selectors.
+Replace `provider_native_binding_adapter` family by family. Menu, map, reward,
+shop, generated choices, rest and treasure are cut over in current source;
+prioritize the remaining bounded selectors.
 Delete each Provider action-publication dependency after its V3 resolver has
 tests and exact-runtime evidence.
 

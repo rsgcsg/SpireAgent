@@ -71,6 +71,17 @@ entity; proceed/discard controls also carry a semantic `control_id`. Execution
 resolves the current native button, player and potion slot again before native
 Commit.
 
+Main, single-player and character-select candidates are derived from typed
+visible menu facts. They bind the exact current screen and, where applicable,
+the exact character entity. Execution resolves the current native control and
+single-player lobby again; no Provider action closure or V2 action ID is kept.
+
+Generated-card choices share only bounded screen/card mechanics. Candidate
+discovery remains source-discriminated, and execution revalidates the exact
+active source, screen and card before using that source's native Commit and
+Outcome witness. A Skill Potion, Quasar and Knowledge Demon therefore do not
+share a generic result contract merely because they use the same selection UI.
+
 Combat potions always bind their exact native target, including self/player
 targets. A target that is implicit in the visual label is not implicit in the
 execution contract.

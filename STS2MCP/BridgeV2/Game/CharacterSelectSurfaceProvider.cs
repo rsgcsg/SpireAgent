@@ -282,6 +282,22 @@ internal sealed class CharacterSelectSurfaceProvider : IBridgeSurfaceProvider
             SelectCharacterCompletionWitness);
     }
 
+    internal static BridgeActionStartResult StartSelect(
+        BridgeEntityRegistry entities,
+        string screenEntityId,
+        string characterChoiceEntityId)
+    {
+        if (!TryResolveOwnerAndLobby(entities, screenEntityId, out NCharacterSelectScreen screen, out StartRunLobby lobby)
+            || !entities.TryResolve(characterChoiceEntityId, out NCharacterSelectButton? button)
+            || button == null)
+        {
+            return BridgeActionStartResult.Rejected(
+                "character_choice_not_found",
+                "The exact character-select owner or character choice is no longer available.");
+        }
+        return StartSelect(screen, lobby, button);
+    }
+
     private static BridgeActionStartResult StartAscensionChange(
         NCharacterSelectScreen expectedScreen,
         StartRunLobby expectedLobby,
@@ -307,6 +323,34 @@ internal sealed class CharacterSelectSurfaceProvider : IBridgeSurfaceProvider
             () => IsCurrentSingleplayerScreen(expectedScreen, expectedLobby)
                   && expectedPanel.Ascension == before + delta,
             AscensionChangeCompletionWitness);
+    }
+
+    internal static BridgeActionStartResult StartAscensionChange(
+        BridgeEntityRegistry entities,
+        string screenEntityId,
+        int delta)
+    {
+        if (!TryResolveOwnerAndLobby(entities, screenEntityId, out NCharacterSelectScreen screen, out StartRunLobby lobby))
+        {
+            return BridgeActionStartResult.Rejected(
+                "character_select_not_found",
+                "The exact character-select owner is no longer available.");
+        }
+
+        try
+        {
+            NAscensionPanel panel = screen.GetNode<NAscensionPanel>("%AscensionPanel");
+            NButton arrow = panel.GetNode<NButton>(delta < 0
+                ? "HBoxContainer/LeftArrowContainer/LeftArrow"
+                : "HBoxContainer/RightArrowContainer/RightArrow");
+            return StartAscensionChange(screen, lobby, panel, arrow, delta);
+        }
+        catch (Exception ex)
+        {
+            return BridgeActionStartResult.Rejected(
+                "ascension_control_binding_failed",
+                $"The exact Ascension control could not be resolved: {ex.GetType().Name}.");
+        }
     }
 
     private static BridgeActionStartResult StartEmbark(
@@ -341,6 +385,36 @@ internal sealed class CharacterSelectSurfaceProvider : IBridgeSurfaceProvider
             allowIntermediateStateChanges: true);
     }
 
+    internal static BridgeActionStartResult StartEmbark(
+        BridgeEntityRegistry entities,
+        string screenEntityId,
+        string characterChoiceEntityId)
+    {
+        if (!TryResolveOwnerAndLobby(entities, screenEntityId, out NCharacterSelectScreen screen, out StartRunLobby lobby)
+            || !entities.TryResolve(characterChoiceEntityId, out NCharacterSelectButton? selected)
+            || selected == null)
+        {
+            return BridgeActionStartResult.Rejected(
+                "character_embark_binding_changed",
+                "The exact character-select owner or selected character is no longer available.");
+        }
+
+        try
+        {
+            return StartEmbark(
+                screen,
+                lobby,
+                selected,
+                screen.GetNode<NConfirmButton>("ConfirmButton"));
+        }
+        catch (Exception ex)
+        {
+            return BridgeActionStartResult.Rejected(
+                "character_embark_control_binding_failed",
+                $"The exact Embark control could not be resolved: {ex.GetType().Name}.");
+        }
+    }
+
     private static BridgeActionStartResult StartBack(
         NCharacterSelectScreen expectedScreen,
         StartRunLobby expectedLobby,
@@ -360,6 +434,49 @@ internal sealed class CharacterSelectSurfaceProvider : IBridgeSurfaceProvider
             () => !IsCurrentSingleplayerScreen(expectedScreen, expectedLobby),
             BackCompletionWitness,
             allowIntermediateStateChanges: true);
+    }
+
+    internal static BridgeActionStartResult StartBack(
+        BridgeEntityRegistry entities,
+        string screenEntityId)
+    {
+        if (!TryResolveOwnerAndLobby(entities, screenEntityId, out NCharacterSelectScreen screen, out StartRunLobby lobby))
+        {
+            return BridgeActionStartResult.Rejected(
+                "character_select_not_found",
+                "The exact character-select owner is no longer available.");
+        }
+
+        try
+        {
+            return StartBack(screen, lobby, screen.GetNode<NBackButton>("BackButton"));
+        }
+        catch (Exception ex)
+        {
+            return BridgeActionStartResult.Rejected(
+                "character_select_back_binding_failed",
+                $"The exact Back control could not be resolved: {ex.GetType().Name}.");
+        }
+    }
+
+    private static bool TryResolveOwnerAndLobby(
+        BridgeEntityRegistry entities,
+        string screenEntityId,
+        out NCharacterSelectScreen screen,
+        out StartRunLobby lobby)
+    {
+        screen = null!;
+        lobby = null!;
+        if (!entities.TryResolve(screenEntityId, out NCharacterSelectScreen? resolvedScreen)
+            || resolvedScreen == null
+            || !TryGetSingleplayerLobby(resolvedScreen, out StartRunLobby? resolvedLobby)
+            || resolvedLobby == null)
+        {
+            return false;
+        }
+        screen = resolvedScreen;
+        lobby = resolvedLobby;
+        return true;
     }
 
     private static bool IsCurrentSingleplayerScreen(

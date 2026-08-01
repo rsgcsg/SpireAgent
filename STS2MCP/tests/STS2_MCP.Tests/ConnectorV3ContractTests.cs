@@ -91,6 +91,190 @@ public sealed class ConnectorV3ContractTests
     }
 
     [Fact]
+    public void MenuNativeDiscoveryUsesTypedSurfaceFactsAndExactOwners()
+    {
+        var main = new MainMenuSurface(
+            "main_menu",
+            "choosing",
+            "menu-root",
+            new[]
+            {
+                new VisibleMenuOption(
+                    "continue-button",
+                    "continue",
+                    "Continue",
+                    null,
+                    true,
+                    "actionable",
+                    null),
+                new VisibleMenuOption(
+                    "singleplayer-button",
+                    "singleplayer",
+                    "Single Player",
+                    null,
+                    true,
+                    "actionable",
+                    null),
+                new VisibleMenuOption(
+                    "settings-button",
+                    "settings",
+                    "Settings",
+                    null,
+                    true,
+                    "visible_unsupported",
+                    "Not in the bounded contract.")
+            },
+            new VisibleContinueRunSummary(
+                "IRONCLAD",
+                "Ironclad",
+                "ACT_1",
+                "Act 1",
+                3,
+                70,
+                80,
+                99,
+                0));
+        var singleplayer = new SingleplayerMenuSurface(
+            "singleplayer_menu",
+            "choosing",
+            "singleplayer-root",
+            new[]
+            {
+                new VisibleMenuOption(
+                    "standard-button",
+                    "standard",
+                    "Standard",
+                    null,
+                    true,
+                    "actionable",
+                    null),
+                new VisibleMenuOption(
+                    "back-button",
+                    "back",
+                    "Back",
+                    null,
+                    false,
+                    "visible_unsupported",
+                    "Disabled.")
+            });
+
+        BridgeActionDraft[] mainCommands =
+            ConnectorV3Runtime.DescribeMainMenuCommands(main).ToArray();
+        BridgeActionDraft singleplayerCommand = Assert.Single(
+            ConnectorV3Runtime.DescribeSingleplayerMenuCommands(singleplayer));
+
+        Assert.Equal(2, mainCommands.Length);
+        Assert.Contains(mainCommands, command => command.Kind == "continue_run");
+        Assert.Contains(mainCommands, command => command.Kind == "open_singleplayer");
+        Assert.All(mainCommands, command => Assert.Contains(
+            command.EntityBindings!,
+            binding => binding.Role == "menu_screen"
+                       && binding.EntityId == "menu-root"));
+        Assert.Equal("open_standard_run_setup", singleplayerCommand.Kind);
+        Assert.Contains(
+            singleplayerCommand.EntityBindings!,
+            binding => binding.Role == "menu_screen"
+                       && binding.EntityId == "singleplayer-root");
+    }
+
+    [Fact]
+    public void CharacterSelectNativeDiscoveryBindsOwnerAndExactCharacter()
+    {
+        var surface = new CharacterSelectSurface(
+            "character_select",
+            "choosing",
+            "character-screen",
+            new[]
+            {
+                new VisibleCharacterChoice(
+                    "choice-selected",
+                    0,
+                    "IRONCLAD",
+                    "Ironclad",
+                    false,
+                    true,
+                    false),
+                new VisibleCharacterChoice(
+                    "choice-available",
+                    1,
+                    "SILENT",
+                    "Silent",
+                    false,
+                    false,
+                    false),
+                new VisibleCharacterChoice(
+                    "choice-locked",
+                    2,
+                    "DEFECT",
+                    "Defect",
+                    true,
+                    false,
+                    false)
+            },
+            null,
+            3,
+            "Ascension 3",
+            "Harder enemies.",
+            true,
+            true,
+            true,
+            true);
+
+        BridgeActionDraft[] commands =
+            ConnectorV3Runtime.DescribeCharacterSelectCommands(surface).ToArray();
+
+        Assert.Equal(5, commands.Length);
+        Assert.All(commands, command => Assert.Contains(
+            command.EntityBindings!,
+            binding => binding.Role == "screen"
+                       && binding.EntityId == "character-screen"));
+        BridgeActionDraft select = Assert.Single(commands, command =>
+            command.Kind == "select_character");
+        Assert.Contains(select.EntityBindings!, binding =>
+            binding.Role == "character_choice"
+            && binding.EntityId == "choice-available");
+        Assert.DoesNotContain(commands, command => command.EntityBindings!.Any(binding =>
+            binding.EntityId == "choice-locked"));
+        BridgeActionDraft embark = Assert.Single(commands, command =>
+            command.Kind == "embark_standard_run");
+        Assert.Contains(embark.EntityBindings!, binding =>
+            binding.Role == "character_choice"
+            && binding.EntityId == "choice-selected");
+
+        Dictionary<string, string> operands = ConnectorV3Runtime.BuildCommandOperands(
+            select.Kind,
+            "select_entity",
+            select.EntityBindings!);
+        Assert.Equal("character-screen", operands["screen_id"]);
+        Assert.Equal("choice-available", operands["character_choice_id"]);
+        Assert.DoesNotContain("action_id", operands.Keys);
+    }
+
+    [Fact]
+    public void GeneratedChoiceNativeOperandsBindOwnerAndExactCard()
+    {
+        Dictionary<string, string> select = ConnectorV3Runtime.BuildCommandOperands(
+            "select_generated_combat_card",
+            "select_entity",
+            new[]
+            {
+                new ActionEntityBinding("screen", "generated-screen"),
+                new ActionEntityBinding("card", "generated-card")
+            });
+        Dictionary<string, string> skip = ConnectorV3Runtime.BuildCommandOperands(
+            "skip_generated_combat_card_choice",
+            "activate_control",
+            new[] { new ActionEntityBinding("screen", "generated-screen") });
+
+        Assert.Equal("generated-screen", select["screen_id"]);
+        Assert.Equal("generated-card", select["card_id"]);
+        Assert.Equal("generated-screen", skip["screen_id"]);
+        Assert.Equal("skip_generated_combat_card_choice", skip["control_id"]);
+        Assert.DoesNotContain("action_id", select.Keys);
+        Assert.DoesNotContain("action_id", skip.Keys);
+    }
+
+    [Fact]
     public void MapDrawingModeBindingAcceptsOnlyAuditedVersionShapes()
     {
         Assert.True(MapNavigationSurfaceProvider.IsCompatibleLocalDrawingModeSignature(

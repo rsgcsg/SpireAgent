@@ -13,12 +13,9 @@ Cold-load the installed artifact. Verify protocol, SHA, MVID, runtime, game,
 Modset and Patch. Execute at least one direct combat command and one non-combat
 command. Unknown, stale and wrong-owner negatives remain fail-closed.
 
-Status: obtained for the first V3 artifact, repeated on exact STS2 `v0.110.0`,
-and cold-loaded on v0.110.1 as runtime
-`98b52677796c4e6aa103c404a6952789`. The current runtime has one settled
-main-menu command. Direct combat Outcome repairs, reward-native paths and the
-card-reward-native path still require operation-specific canaries; static
-compatibility alone remains non-authorizing.
+Status: repeatedly obtained. The latest v0.110.1 runtime
+`89ac17eacac8468ea1e554d3daac6d4b` completed 176 commands across an ordinary
+run with no unknown Outcome. Evidence remains operation- and artifact-scoped.
 
 ## V3-2: Ordinary Journey
 
@@ -26,21 +23,21 @@ Run one bounded ordinary vanilla game covering combat, map, reward, shop and a
 selection. Stop normally after the game returns to the main menu. Record which
 families used direct V3 bindings versus the internal migration adapter.
 
-Status: completed on `run-20260731040632-00yz1g` under exact v0.110.0 runtime
-identity. The run proves one-game V3 composition for exercised families, not
-the repaired artifact or unexercised families.
+Status: repeated on `run-20260801111449-8oze2o` under exact v0.110.1 identity;
+the run completed the game-over return and stopped at the top-level menu.
 
 ## V3-3: Native Family Migration
 
 Replace the Provider adapter in audited waves. Combat, shop-room,
 shop-inventory, map, rest, event-option, treasure-room, reward-claim,
-card-reward and deck-enchant execution now use direct V3 resolvers. Menu,
-generated choices and remaining selectors are next. Delete each replaced
-execution path; do not retain dual authority.
+card-reward, deck-enchant, menu/run-setup and source-discriminated generated
+choices now use direct V3 resolvers in source. Remaining ordinary selectors
+are next. The menu/generated cutover requires a new cold-load canary.
 
 In parallel, replace the temporary V3-to-V2 Re semantic/action projection with
-a direct V3 consumer. The shop partial-authority failure proves that extending
-V2's fact-to-action parity rules is the wrong permanent adaptation mechanism.
+a direct V3 consumer. Main/singleplayer/character menu now consumes V3 facts
+and candidates directly and does not request `/api/v2/capabilities`; remaining
+families still use the explicit sidecar.
 
 ## V3-4: Visibility And Detail
 

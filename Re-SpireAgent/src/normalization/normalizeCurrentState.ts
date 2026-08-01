@@ -16,12 +16,17 @@ import {
   bridgeV2InspectionIdentity,
   bridgeV2InspectionsFromWrapper,
   connectorV3AsBridgeV2Wrapper,
+  hasConnectorV3BridgeProjection,
   isConnectorV3WrappedState,
   isBridgeV2WrappedState
 } from "../integrations/sts2mcp/rawState.js";
 import { decodeBridgeV2Capabilities } from "../integrations/sts2mcp/bridgeV2Protocol.js";
 import { stateHash } from "../runtime/stateHash.js";
 import { normalizeBridgeV2CurrentState } from "./normalizeBridgeV2CurrentState.js";
+import {
+  isDirectConnectorV3ConsumerState,
+  normalizeConnectorV3CurrentState
+} from "./normalizeConnectorV3CurrentState.js";
 import { DiagnosticsBuilder } from "./diagnostics.js";
 import { projectBridgeV2Inspections } from "./bridgeV2InspectionProjection.js";
 import {
@@ -50,6 +55,12 @@ const COMBAT_STATE_TOKENS = ["monster", "boss", "elite", "combat", "battle"] as 
 
 export function normalizeCurrentState(rawInput: unknown, source: AdapterDescriptor, capturedAt = new Date().toISOString()): StateEnvelope {
   if (isConnectorV3WrappedState(rawInput)) {
+    if (isDirectConnectorV3ConsumerState(rawInput)) {
+      return normalizeConnectorV3CurrentState(rawInput, source, capturedAt);
+    }
+    if (!hasConnectorV3BridgeProjection(rawInput)) {
+      return normalizeConnectorV3CurrentState(rawInput, source, capturedAt);
+    }
     const projected = normalizeBridgeV2CurrentState(
       connectorV3AsBridgeV2Wrapper(rawInput),
       source,

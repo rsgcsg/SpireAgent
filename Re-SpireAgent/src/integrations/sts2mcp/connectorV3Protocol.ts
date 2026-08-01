@@ -97,7 +97,9 @@ const capabilitiesSchema = z.object({
   bridge: bridgeIdentitySchema,
   game: gameIdentitySchema,
   commands: z.array(z.string().min(1)),
-  control: z.record(z.unknown()),
+  control: z.object({
+    recommended_renewal_ms: z.number().int().positive()
+  }).passthrough(),
   non_claims: z.array(z.string())
 }).strict();
 

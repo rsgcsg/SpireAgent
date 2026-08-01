@@ -22,6 +22,7 @@
 - [Connector V3 v0.110.1 Codex direct-play evidence](../../STS2MCP/docs/connector-v3/LIVE_EVIDENCE_V0_110_1_CODEX_DIRECT_PLAY_2026-07-31.md)
 - [Connector V3 shop-inventory V3-native cutover](../../STS2MCP/docs/connector-v3/SHOP_INVENTORY_V3_NATIVE_CUTOVER_2026-08-01.md)
 - [Connector V3 v0.110.1 Re shop evidence](../../STS2MCP/docs/connector-v3/LIVE_EVIDENCE_V0_110_1_RE_SHOP_2026-08-01.md)
+- [Connector V3 v0.110.1 complete Re journey evidence](../../STS2MCP/docs/connector-v3/LIVE_EVIDENCE_V0_110_1_COMPLETE_RE_JOURNEY_2026-08-01.md)
 - [Re-SpireAgent](../../Re-SpireAgent/README.md)
 - [Re V3 integration](../../Re-SpireAgent/docs/CONNECTOR_V3_INTEGRATION.md)
 - [Re V3 state coverage](../../Re-SpireAgent/docs/MCP_STATE_COVERAGE.md)

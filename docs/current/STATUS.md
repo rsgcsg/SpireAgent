@@ -3,9 +3,9 @@
 Baseline date: 2026-08-01
 
 Branch baseline: `connectorV3` at
-`9a9546813566dd9e2e0460553de20a0cdc308cc2`, plus the current shop-close and
-authority-filtered consumer-projection repair. Source, built, installed and
-loaded identities below are recorded separately.
+`a881243eb520a885acb273bf9774b0daa1087182`, plus the current direct-menu
+consumer and V3-native menu/generated-choice migration worktree. Source,
+built, installed and loaded identities below are recorded separately.
 
 ## Architecture
 
@@ -21,13 +21,32 @@ Current V3 source implements:
 - parameterized commands and action-local receipts;
 - direct native combat, shop-room, shop-inventory, map, rest-site,
   event-option, treasure-room, reward-claim, card-reward and deck-enchant
-  resolvers;
+  resolvers, plus the current source implementation of menu/run-setup and
+  source-discriminated generated-card choices;
 - bounded non-combat native-binding migration adapters;
 - one controller, exact environment authority, idempotent command ledger,
   semantic Outcome and unknown-no-retry;
 - V3 REST/MCP and strict Re default consumption.
 
 ## Exact V3 Runtime Evidence
+
+The latest exact run is
+`run-20260801111449-8oze2o` on clean Agent revision `a881243...`, loaded SHA
+`752cff7c7749868822804b8da724ef8385054bba7574b019a69a6fa6150c0b07`,
+MVID `0be26638-fbdf-4a98-8950-d3179ee768db`, runtime
+`89ac17eacac8468ea1e554d3daac6d4b`, game `v0.110.1` commit `db5d3552` and
+exact-bridge-only Modset fingerprint
+`101c67ca036f78a2522f653f5faae2e73d01578bb25de5dd3d29aabd18bc391d`.
+It recorded 176 settled V3 commands, two safe pre-execution stale refusals and
+one normal completed-run boundary across ordinary menu, combat and non-combat
+families. Three shop close/proceed pairs completed, closing the previous
+publication/execution parity defect. No unknown, unsupported, observation,
+provider or unsettled-command failure occurred. See
+[the complete Re journey evidence](../../STS2MCP/docs/connector-v3/LIVE_EVIDENCE_V0_110_1_COMPLETE_RE_JOURNEY_2026-08-01.md).
+
+This runtime predates the direct-menu consumer and V3-native menu/generated
+cutover in the current worktree. Those changes remain pending exact-runtime
+evidence and cannot inherit this run's authority.
 
 On 2026-08-01 the local Steam installation still reported game `v0.110.1`,
 commit `db5d3552`, but its exact `sts2.dll` identity differed from the earlier
@@ -39,29 +58,18 @@ than overwriting the earlier scenario. Compatibility grading again found 14
 registered matches and only the existing Tutor diagnostic holdout; this has
 no authorization or qualification effect.
 
-Current source and Re both use protocol `3.0-preview.1`. Gateway 235 tests,
-Re 224 tests/typecheck/build and all current Connector fixture, documentation,
-CLI and identity checks passed against the current game assemblies. The exact
-artifact exercised below was built and installed as SHA
-`3faf7cf2f402cafec0db40ea90a4212aef35c590c093caf6b114b69b7dba2d2b`,
-MVID `ebbea794-be0a-422d-a2ce-e2b981e664a5`, with rollback
-`STS2MCP/.local/deployments/2026-08-01T10-30-16-282Z`. A Steam cold start
-loaded the exact same SHA/MVID as runtime
-`0d517090cd3f4a10a2d844e423f01e5f` with exact-bridge-only Modset fingerprint
-`1bf26047b68166b98b967e691d4a8d2630ed09092010bd1f20939432ca1c435f`.
-The normal local Re path subsequently exercised this exact runtime in
-`run-20260801104256-1qtr0a` (metadata revision `7b356777...`, clean source
-digest `2cd602d1...`): 51 actions settled across menu, combat, rewards,
-map, event and shop, including V3-native shop card and potion purchases. The
-52nd advertised shop close was rejected before Commit because the
-`cancel_interaction` candidate omitted its semantic `control_id`.
-`run-20260801104619-bh39g3` (metadata revision `9a954681...`, the same source
-digest) then exposed a separate Re-only projection defect:
-the temporary V2 validator rejected complete shop facts when operation-scoped
-authority filtered out the close command. Both defects are repaired in the
-current worktree and covered by tests plus saved-snapshot re-normalization;
-the repaired Release is not yet loaded, so Live repair remains a non-claim.
-See [the exact Re shop evidence](../../STS2MCP/docs/connector-v3/LIVE_EVIDENCE_V0_110_1_RE_SHOP_2026-08-01.md).
+Current source and Re both use protocol `3.0-preview.1`. Gateway 238 tests, Re
+227 tests/typecheck/build, Python source syntax, documentation, CLI, profile,
+migration, identity, compatibility, permission, qualification and exact-game
+binding checks passed against the current game assemblies. The direct-menu
+consumer and V3-native menu/generated-choice source is built and installed as
+SHA `150f85a4777b259efb8c22f8dd482fedf881af9616998cc9c6d6a6fc59a2ed7d`,
+MVID `29c747be-329b-487f-ab58-1b0f3b7b98bc`, with rollback
+`STS2MCP/.local/deployments/2026-08-01T11-57-34-822Z`. The game was stopped
+before installation, so loaded identity and Live behavior for this replacement
+remain non-claims. Earlier shop publication and Re projection failures remain
+recorded in [the exact Re shop evidence](../../STS2MCP/docs/connector-v3/LIVE_EVIDENCE_V0_110_1_RE_SHOP_2026-08-01.md); the subsequent complete journey
+above closed those defects only for its exact predecessor artifact.
 
 The latest previously exercised v0.110.1 artifact was cold-loaded as SHA
 `548f15e45dc6609cf4a25af61af2ef2b07365af625b23dbd4f58369001a5f703`,
@@ -198,17 +206,19 @@ evidence or durable V3 qualification.
 
 | State | Current result |
 |---|---|
-| source | V3 `3.0-preview.1` on `connectorV3@9a954681...` plus the current shop close/projection repair |
-| automated tests | Gateway 235 and Re 224 passed; Re typecheck/build, saved-snapshot re-normalization, docs, compatibility/permission/qualification/profile/migration fixtures, CLI, run identity and Python MCP compile passed |
-| Release build | current repaired Mod `0.6.0-dev` SHA `752cff7c7749868822804b8da724ef8385054bba7574b019a69a6fa6150c0b07`, MVID `0be26638-fbdf-4a98-8950-d3179ee768db` |
-| installed | repaired build verified equal to canonical Release SHA/MVID |
-| loaded | repaired artifact loaded = non-claim; previous runtime evidence remains attributed only to SHA `3faf7c...0b07`, MVID `ebbea794...664a5`, runtime `0d517090cd3f4a10a2d844e423f01e5f` |
-| current authority | none while game is stopped; the prior runtime used exact-runtime encounter provisional trial and created no persistent qualification |
-| V3 mutation canary | current runtime exercised 51 settled Re actions including native shop card/potion purchase; repaired close remains pending exact-runtime evidence |
-| V3 bounded journey | one saved Defect run continued floor 27--31 and ended in death; one fresh Ironclad run reached floor 4 and was intentionally stopped |
+| source | V3 `3.0-preview.1` on `connectorV3@a881243...` plus current menu/generated/direct-consumer worktree changes |
+| automated tests | Gateway 238 and Re 227 passed; Re typecheck/build, direct-menu no-sidecar, Python source, docs, CLI, profile, migration, identity, compatibility, permission, qualification and binding checks passed |
+| Release build | current Mod `0.6.0-dev` SHA `150f85a4777b259efb8c22f8dd482fedf881af9616998cc9c6d6a6fc59a2ed7d`, MVID `29c747be-329b-487f-ab58-1b0f3b7b98bc` |
+| installed | SHA/MVID exactly equal to the current canonical Release build |
+| loaded | replacement artifact = non-claim; predecessor SHA `752cff...0b07`, MVID `0be26638...68db`, runtime `89ac17ea...6d4b` was loaded and exercised |
+| current authority | the exercised runtime used exact-runtime encounter provisional trial and created no persistent qualification |
+| V3 mutation canary | 176 completed/confirmed commands; three shop close/proceed pairs prove the repaired exact path |
+| V3 bounded journey | one ordinary Ironclad run reached its game-over return and stopped correctly at main menu |
 | V3 durable claim | none |
 
 Current v0.110.1 install rollback:
+`STS2MCP/.local/deployments/2026-08-01T11-57-34-822Z`.
+Previous complete-journey artifact rollback:
 `STS2MCP/.local/deployments/2026-08-01T11-08-02-342Z`.
 Previous exact-runtime artifact rollback:
 `STS2MCP/.local/deployments/2026-08-01T10-30-16-282Z`.
@@ -233,10 +243,10 @@ Final pre-V3 rollback:
 
 ## Immediate Next Step
 
-After the repaired Release is installed, the next Live window must cold-load
-that exact SHA/MVID, verify runtime and Modset identity, resume the saved run,
-and exercise shop inventory close/proceed. Preserve enemy block and statuses
-in any compact decision view:
+The replacement Release is installed. The next Live window must cold-load its
+exact SHA/MVID and exercise direct main/singleplayer/character
+menu commands plus a naturally occurring generated-card choice. Shop
+close/proceed is already exact-runtime closed for the predecessor artifact:
 
 ```bash
 cd Re-SpireAgent
