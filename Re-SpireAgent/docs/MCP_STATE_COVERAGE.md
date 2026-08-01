@@ -31,15 +31,17 @@ operands.
 | shop-room commands | direct V3 resolver | Gateway tests | exercised on v0.110.0 |
 | map/rest/deck-enchant commands | direct V3 resolvers | Gateway and Re tests | map/deck-enchant exercised; Dream Catcher handoff remains pending |
 | menu/run setup | direct V3 normalization and native resolver | direct normalization, descriptor and no-sidecar tests | direct consumer and resolver completed a 95-decision run |
-| event/map/game over consumer | direct V3 normalization in current source; game-over direct native resolver | strict decode, exact binding negatives and 29-snapshot replay | predecessor event/map native commands and game-over adapter exercised; replacement pending cold load |
+| event/map/game over consumer | direct V3 normalization and game-over direct native resolver | strict decode, exact binding negatives and recorded replay | exact runtime exercised all three direct consumers and both game-over controls |
+| reward/card-reward consumer | direct V3 normalization in current source | strict screen/entity/control negatives plus 86 sidecar-free recorded snapshot replays | Gateway commands exercised on predecessor consumer; replacement pending cold load |
 | generated card choice | source-discriminated native resolver in current source | source/owner/operand tests | predecessor Skill Potion adapter exercised; replacement pending cold load |
 | other non-combat selectors | migration adapter | inherited Provider and V3 tests | selected families exercised |
 | visible unsupported interaction | implemented | tests | Crystal Sphere, unknown deck selector and pre-repair Symbiote exercised |
 | typed V3 visible-state projection | shared persistent summary plus visibility and Inspection-catalog metadata for direct contexts | strict schema, projection and saved-snapshot replay | direct menu exercised; expanded contexts pending cold load |
 | V3-native Inspection content | pending | none | pending |
 
-Main/singleplayer/character menus, event options, map navigation and game over
-no longer request the v2 capabilities sidecar. For remaining Surfaces, the
+Main/singleplayer/character menus, event options, map navigation, game over,
+room rewards and card rewards no longer request the v2 capabilities sidecar.
+For remaining Surfaces, the
 temporary same-runtime sidecar contributes mature environment and semantic
 projection only. It contributes no legal action, operand, execution route or
 completion claim.

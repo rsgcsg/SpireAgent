@@ -124,8 +124,8 @@ At `3.0-preview.1`:
   game-over are now cut over in source, while remaining selectors use a bounded internal
   `provider_native_binding_adapter` that never submits or searches a v2 REST
   action ID;
-- Re directly consumes main/singleplayer/character menu, event, map and
-  game-over facts and candidates. Other Surfaces still use
+- Re directly consumes main/singleplayer/character menu, event, map,
+  game-over, room-reward and card-reward facts and candidates. Other Surfaces still use
   `/api/v2/capabilities` as a same-runtime,
   non-authorizing semantic/environment projection sidecar and temporarily
   expand V3 candidates into a V2-shaped normalization projection;

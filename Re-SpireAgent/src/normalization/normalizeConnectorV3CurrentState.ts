@@ -1,6 +1,8 @@
 import {
   NORMALIZED_STATE_SCHEMA_VERSION,
   type BridgeLegalActionSnapshot,
+  type BridgeRewardClaimSurface,
+  type CardRewardSelectionSurface,
   type CharacterSelectSurface,
   type EventOptionSurface,
   type GameOverSurface,
@@ -31,6 +33,13 @@ import {
   type GatewayMenuSurface
 } from "../integrations/sts2mcp/gatewayMenuProtocol.js";
 import {
+  gatewayCardRewardSelectionSurfaceSchema,
+  gatewayRewardClaimSurfaceSchema,
+  gatewayRewardFlowContextSchema,
+  type GatewayRewardFlowContext,
+  type GatewayRewardSurface
+} from "../integrations/sts2mcp/gatewayRewardProtocol.js";
+import {
   decodeConnectorV3Observation,
   type ConnectorV3Observation
 } from "../integrations/sts2mcp/connectorV3Protocol.js";
@@ -52,9 +61,9 @@ import {
   projectGatewayVisibleState
 } from "./gatewayVisibleStateProjection.js";
 
-type DirectSurface = GatewayMenuSurface | GatewayJourneySurface;
+type DirectSurface = GatewayMenuSurface | GatewayJourneySurface | GatewayRewardSurface;
 type DirectContext = GatewayMenuContext | GatewayEventContext | GatewayMapContext
-  | GatewayGameOverContext;
+  | GatewayGameOverContext | GatewayRewardFlowContext;
 
 export function isDirectConnectorV3ConsumerState(rawState: Sts2McpRawState): boolean {
   const observation = rawState.connector_v3_observation;
@@ -236,6 +245,8 @@ function parseContext(
       ? gatewayEventContextSchema
       : observation.context.kind === "map"
         ? gatewayMapContextSchema
+        : observation.context.kind === "reward_flow"
+          ? gatewayRewardFlowContextSchema
         : observation.context.kind === "game_over"
           ? gatewayGameOverContextSchema
           : undefined;
@@ -261,6 +272,10 @@ function parseSurface(
       ? gatewayEventOptionSurfaceSchema
       : observation.surface.kind === "map_navigation"
         ? gatewayMapNavigationSurfaceSchema
+        : observation.surface.kind === "reward_claim"
+          ? gatewayRewardClaimSurfaceSchema
+          : observation.surface.kind === "card_reward_selection"
+            ? gatewayCardRewardSelectionSurfaceSchema
         : observation.surface.kind === "game_over"
           ? gatewayGameOverSurfaceSchema
           : undefined;
@@ -297,6 +312,10 @@ function contextMatchesSurface(context: DirectContext, surface: DirectSurface): 
       : (surface.kind === "singleplayer_menu" || surface.kind === "character_select")
         && context.flow === "standard_run_setup";
   }
+  if (context.kind === "reward_flow") {
+    return (context.reward_kind === "room_rewards" && surface.kind === "reward_claim")
+      || (context.reward_kind === "card_reward" && surface.kind === "card_reward_selection");
+  }
   return (context.kind === "event" && surface.kind === "event_option")
     || (context.kind === "map" && surface.kind === "map_navigation")
     || (context.kind === "game_over" && surface.kind === "game_over");
@@ -309,9 +328,99 @@ function validateCommands(
   return commands.flatMap((command) => {
     if (surface.kind === "event_option") return validateEventCommand(surface, command);
     if (surface.kind === "map_navigation") return validateMapCommand(surface, command);
+    if (surface.kind === "reward_claim") return validateRewardCommand(surface, command);
+    if (surface.kind === "card_reward_selection") {
+      return validateCardRewardCommand(surface, command);
+    }
     if (surface.kind === "game_over") return validateGameOverCommand(surface, command);
     return validateMenuCommand(surface, command);
   });
+}
+
+function validateRewardCommand(
+  surface: Extract<GatewayRewardSurface, { kind: "reward_claim" }>,
+  command: ConnectorV3ConsumerCommand
+): string[] {
+  const base = [
+    command.operands.screen_id === surface.screen_entity_id
+      || "reward command must bind the current screen",
+    hasBinding(command, "screen", surface.screen_entity_id)
+      || "reward command is missing its exact screen binding"
+  ];
+  if (command.operation === "claim_reward") {
+    const reward = surface.rewards.find(
+      (value) => value.entity_id === command.operands.choice_id
+    );
+    return collectErrors([
+      ...base,
+      command.command === "choose" || "reward claim must use choose",
+      Boolean(reward?.enabled) || "reward claim must bind one current enabled reward",
+      Boolean(reward && hasBinding(command, "reward", reward.entity_id))
+        || "reward claim is missing its exact reward binding"
+    ]);
+  }
+  if (command.operation === "discard_potion_for_reward") {
+    const potion = surface.discardable_potions.find(
+      (value) => value.entity_id === command.operands.potion_id
+    );
+    return collectErrors([
+      ...base,
+      command.command === "activate_control" || "reward potion discard must activate a control",
+      command.operands.control_id === "discard_potion_for_reward"
+        || "reward potion discard control is not exact",
+      Boolean(potion) || "reward potion discard must bind one current discardable potion",
+      Boolean(potion && hasBinding(command, "potion", potion.entity_id))
+        || "reward potion discard is missing its exact potion binding"
+    ]);
+  }
+  if (command.operation === "proceed_rewards") {
+    return collectErrors([
+      ...base,
+      command.command === "activate_control" || "reward proceed must activate a control",
+      command.operands.control_id === "proceed_rewards"
+        || "reward proceed control is not exact",
+      surface.can_proceed || "reward proceed was published while the control is unavailable"
+    ]);
+  }
+  return [`unsupported direct reward operation ${command.operation}`];
+}
+
+function validateCardRewardCommand(
+  surface: Extract<GatewayRewardSurface, { kind: "card_reward_selection" }>,
+  command: ConnectorV3ConsumerCommand
+): string[] {
+  const base = [
+    command.operands.screen_id === surface.screen_entity_id
+      || "card reward command must bind the current screen",
+    hasBinding(command, "screen", surface.screen_entity_id)
+      || "card reward command is missing its exact screen binding"
+  ];
+  if (command.operation === "select_card_reward") {
+    const card = surface.cards.find((value) => value.entity_id === command.operands.card_id);
+    const selectable = card && (surface.selectable_card_entity_ids === undefined
+      || surface.selectable_card_entity_ids.includes(card.entity_id));
+    return collectErrors([
+      ...base,
+      command.command === "select_entity" || "card reward selection must use select_entity",
+      Boolean(selectable) || "card reward selection must bind one current selectable card",
+      Boolean(card && hasBinding(command, "card", card.entity_id))
+        || "card reward selection is missing its exact card binding"
+    ]);
+  }
+  if (command.operation === "choose_card_reward_alternative") {
+    const alternative = surface.alternatives.find(
+      (value) => value.entity_id === command.operands.choice_id
+    );
+    return collectErrors([
+      ...base,
+      command.command === "choose" || "card reward alternative must use choose",
+      Boolean(alternative?.enabled)
+        || "card reward alternative must bind one current enabled alternative",
+      Boolean(alternative && hasBinding(command, "alternative", alternative.entity_id))
+        || "card reward alternative is missing its exact alternative binding"
+    ]);
+  }
+  return [`unsupported direct card reward operation ${command.operation}`];
 }
 
 function validateEventCommand(
@@ -465,6 +574,9 @@ function projectContext(context: DirectContext, surface?: DirectSurface): Semant
     };
   }
   if (context.kind === "map") return projectMapContext(context);
+  if (context.kind === "reward_flow") {
+    return { kind: "reward_flow", rewardKind: context.reward_kind };
+  }
   return {
     kind: "run_ended",
     result: context.result,
@@ -522,10 +634,68 @@ function projectSurface(
   if (surface.kind === "map_navigation") {
     return projectMapSurface(surface, observation, legalActions);
   }
+  if (surface.kind === "reward_claim") {
+    return projectRewardSurface(surface, observation, legalActions);
+  }
+  if (surface.kind === "card_reward_selection") {
+    return projectCardRewardSurface(surface, observation, legalActions);
+  }
   if (surface.kind === "game_over") {
     return projectGameOverSurface(surface, observation, legalActions);
   }
   return projectMenuSurface(surface, observation, legalActions);
+}
+
+function projectRewardSurface(
+  surface: Extract<GatewayRewardSurface, { kind: "reward_claim" }>,
+  observation: ConnectorV3Observation,
+  legalActions: BridgeLegalActionSnapshot[]
+): BridgeRewardClaimSurface {
+  return {
+    kind: "reward_claim",
+    bridgeStateId: observation.state_token,
+    screenEntityId: surface.screen_entity_id,
+    rewards: surface.rewards.map((reward) => ({
+      entityId: reward.entity_id,
+      kind: reward.kind,
+      label: reward.label,
+      ...(reward.description ? { description: reward.description } : {}),
+      enabled: reward.enabled
+    })),
+    potionSlotsFull: surface.potion_slots_full,
+    discardablePotions: surface.discardable_potions.map((potion) => ({
+      entityId: potion.entity_id,
+      id: potion.definition_id,
+      ...(potion.name ? { name: potion.name } : {}),
+      ...(potion.description ? { description: potion.description } : {}),
+      slot: potion.slot
+    })),
+    canProceed: surface.can_proceed,
+    proceedSkipsRemainingRewards: surface.proceed_skips_remaining_rewards,
+    legalActions,
+    completeness: projectCompleteness(observation)
+  };
+}
+
+function projectCardRewardSurface(
+  surface: Extract<GatewayRewardSurface, { kind: "card_reward_selection" }>,
+  observation: ConnectorV3Observation,
+  legalActions: BridgeLegalActionSnapshot[]
+): CardRewardSelectionSurface {
+  return {
+    kind: "card_reward_selection",
+    bridgeStateId: observation.state_token,
+    screenEntityId: surface.screen_entity_id,
+    cards: surface.cards.map(projectGatewayVisibleCard),
+    alternatives: surface.alternatives.map((alternative) => ({
+      entityId: alternative.entity_id,
+      index: alternative.index,
+      label: alternative.label,
+      enabled: alternative.enabled
+    })),
+    legalActions,
+    completeness: projectCompleteness(observation)
+  };
 }
 
 function projectEventSurface(
@@ -746,6 +916,8 @@ function isDirectPair(contextKind: string, surfaceKind: string): boolean {
       && ["main_menu", "singleplayer_menu", "character_select"].includes(surfaceKind))
     || (contextKind === "event" && surfaceKind === "event_option")
     || (contextKind === "map" && surfaceKind === "map_navigation")
+    || (contextKind === "reward_flow"
+      && ["reward_claim", "card_reward_selection"].includes(surfaceKind))
     || (contextKind === "game_over" && surfaceKind === "game_over");
 }
 

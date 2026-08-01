@@ -375,6 +375,172 @@ function gameOverObservation(): ConnectorV3Observation {
   return decodeConnectorV3Observation(value).data;
 }
 
+function rewardClaimObservation(): ConnectorV3Observation {
+  const value = structuredClone(combatObservation()) as unknown as Record<string, unknown>;
+  value.shared_state = sharedState();
+  value.context = { kind: "reward_flow", reward_kind: "room_rewards" };
+  value.surface = {
+    kind: "reward_claim",
+    screen_entity_id: "reward-screen-fixture",
+    rewards: [{
+      entity_id: "reward-gold-fixture",
+      kind: "gold",
+      label: "Gain 25 Gold",
+      description: "25 Gold",
+      enabled: true
+    }],
+    potion_slots_full: true,
+    discardable_potions: [{
+      entity_id: "potion-fixture",
+      definition_id: "FIRE_POTION",
+      name: "Fire Potion",
+      description: "Deal damage.",
+      slot: 0,
+      target_type: "enemy",
+      can_use: true,
+      automatic: false
+    }],
+    can_proceed: true,
+    proceed_skips_remaining_rewards: true
+  };
+  value.interaction = {
+    id: "interaction-reward-fixture",
+    kind: "reward_claim",
+    phase: "ready",
+    execution_support: "trial",
+    support_reason: null,
+    affordances: ["choose", "activate_control"],
+    command_candidates: [
+      {
+        candidate_id: "candidate-claim-reward-fixture",
+        command: "choose",
+        operation: "claim_reward",
+        label: "Gain 25 Gold",
+        operands: {
+          screen_id: "reward-screen-fixture",
+          choice_id: "reward-gold-fixture"
+        },
+        operand_domains: {},
+        entity_bindings: [
+          { role: "screen", entity_id: "reward-screen-fixture" },
+          { role: "reward", entity_id: "reward-gold-fixture" }
+        ],
+        binding_kind: "native_direct_resolver",
+        authority_state: "trial"
+      },
+      {
+        candidate_id: "candidate-discard-potion-fixture",
+        command: "activate_control",
+        operation: "discard_potion_for_reward",
+        label: "Discard Fire Potion",
+        operands: {
+          screen_id: "reward-screen-fixture",
+          potion_id: "potion-fixture",
+          control_id: "discard_potion_for_reward"
+        },
+        operand_domains: {},
+        entity_bindings: [
+          { role: "screen", entity_id: "reward-screen-fixture" },
+          { role: "potion", entity_id: "potion-fixture" }
+        ],
+        binding_kind: "native_direct_resolver",
+        authority_state: "trial"
+      },
+      {
+        candidate_id: "candidate-proceed-rewards-fixture",
+        command: "activate_control",
+        operation: "proceed_rewards",
+        label: "Proceed",
+        operands: {
+          screen_id: "reward-screen-fixture",
+          control_id: "proceed_rewards"
+        },
+        operand_domains: {},
+        entity_bindings: [{ role: "screen", entity_id: "reward-screen-fixture" }],
+        binding_kind: "native_direct_resolver",
+        authority_state: "trial"
+      }
+    ]
+  };
+  return decodeConnectorV3Observation(value).data;
+}
+
+function cardRewardObservation(): ConnectorV3Observation {
+  const value = structuredClone(combatObservation()) as unknown as Record<string, unknown>;
+  value.shared_state = sharedState();
+  value.context = { kind: "reward_flow", reward_kind: "card_reward" };
+  value.surface = {
+    kind: "card_reward_selection",
+    screen_entity_id: "card-reward-screen-fixture",
+    cards: [{
+      entity_id: "card-reward-fixture",
+      definition_id: "STRIKE",
+      name: "Strike",
+      type: "attack",
+      cost: "1",
+      description: "Deal damage.",
+      rarity: "basic",
+      is_upgraded: false,
+      is_selected: false,
+      target_type: "enemy",
+      can_play: null,
+      unplayable_reason: null
+    }],
+    selectable_card_entity_ids: ["card-reward-fixture"],
+    alternatives: [{
+      entity_id: "card-reward-skip-fixture",
+      index: 0,
+      label: "Skip",
+      enabled: true
+    }]
+  };
+  value.interaction = {
+    id: "interaction-card-reward-fixture",
+    kind: "card_reward_selection",
+    phase: "ready",
+    execution_support: "trial",
+    support_reason: null,
+    affordances: ["select_entity", "choose"],
+    command_candidates: [
+      {
+        candidate_id: "candidate-card-reward-fixture",
+        command: "select_entity",
+        operation: "select_card_reward",
+        label: "Take Strike",
+        operands: {
+          screen_id: "card-reward-screen-fixture",
+          card_id: "card-reward-fixture"
+        },
+        operand_domains: {},
+        entity_bindings: [
+          { role: "screen", entity_id: "card-reward-screen-fixture" },
+          { role: "card", entity_id: "card-reward-fixture" }
+        ],
+        binding_kind: "native_direct_resolver",
+        authority_state: "trial"
+      },
+      {
+        candidate_id: "candidate-card-reward-skip-fixture",
+        command: "choose",
+        operation: "choose_card_reward_alternative",
+        label: "Skip",
+        operands: {
+          screen_id: "card-reward-screen-fixture",
+          choice_id: "card-reward-skip-fixture"
+        },
+        operand_domains: {},
+        entity_bindings: [
+          { role: "screen", entity_id: "card-reward-screen-fixture" },
+          { role: "alternative", entity_id: "card-reward-skip-fixture" }
+        ],
+        binding_kind: "native_direct_resolver",
+        authority_state: "trial"
+      }
+    ]
+  };
+  return decodeConnectorV3Observation(value).data;
+}
+
 function connectorCapabilities() {
   return {
     protocol_version: "3.0-preview.1",
@@ -490,58 +656,26 @@ describe("Connector V3 strict contract", () => {
   });
 
   it("preserves exact card reward owner and entity operands without consumer reconstruction", () => {
-    const value = structuredClone(combatObservation()) as unknown as Record<string, unknown>;
-    value.context = { kind: "reward_flow", reward_kind: "card_reward" };
-    value.surface = {
-      kind: "card_reward_selection",
-      screen_entity_id: "screen-reward-1",
-      cards: [],
-      selectable_card_entity_ids: ["card-reward-1"],
-      alternatives: []
-    };
-    value.interaction = {
-      id: "interaction-card-reward",
-      kind: "card_reward_selection",
-      phase: "ready",
-      execution_support: "trial",
-      support_reason: null,
-      affordances: ["select_entity"],
-      command_candidates: [{
-        candidate_id: "candidate-card-reward",
-        command: "select_entity",
-        operation: "select_card_reward",
-        label: "Take Strike",
-        operands: {
-          screen_id: "screen-reward-1",
-          card_id: "card-reward-1"
-        },
-        operand_domains: {},
-        entity_bindings: [
-          { role: "screen", entity_id: "screen-reward-1" },
-          { role: "card", entity_id: "card-reward-1" }
-        ],
-        binding_kind: "native_direct_resolver",
-        authority_state: "trial"
-      }]
-    };
-    const observation = decodeConnectorV3Observation(value).data;
+    const observation = cardRewardObservation();
 
     const projected = projectConnectorV3ForRe(
       observation,
-      observation as unknown as JsonObject,
-      { protocol_version: "2.0-preview.86" }
+      observation as unknown as JsonObject
     );
 
-    expect([...projected.invocations.values()]).toEqual([
+    expect([...projected.invocations.values()]).toContainEqual(
       expect.objectContaining({
         command: "select_entity",
         operation: "select_card_reward",
         operands: {
-          screen_id: "screen-reward-1",
-          card_id: "card-reward-1"
+          screen_id: "card-reward-screen-fixture",
+          card_id: "card-reward-fixture"
         }
       })
-    ]);
+    );
+    const wrapper = projected.rawState as Record<string, unknown>;
+    expect(wrapper.bridge_v2_state).toBeUndefined();
+    expect(wrapper.bridge_v2_capabilities).toBeUndefined();
   });
 
   it("consumes menu facts and commands directly without a V2 state projection", () => {
@@ -611,12 +745,14 @@ describe("Connector V3 strict contract", () => {
   });
 
   it.each([
-    ["event", eventObservation, "event", "event_option"],
-    ["map", mapObservation, "map", "map_navigation"],
-    ["game over", gameOverObservation, "run_ended", "game_over"]
+    ["event", eventObservation, "event", "event_option", 1],
+    ["map", mapObservation, "map", "map_navigation", 1],
+    ["game over", gameOverObservation, "run_ended", "game_over", 1],
+    ["room rewards", rewardClaimObservation, "reward_flow", "reward_claim", 3],
+    ["card reward", cardRewardObservation, "reward_flow", "card_reward_selection", 2]
   ] as const)(
     "consumes direct V3 %s facts, persistent summary, and commands without V2 sidecars",
-    (_label, buildObservation, contextKind, surfaceKind) => {
+    (_label, buildObservation, contextKind, surfaceKind, expectedActions) => {
       const observation = buildObservation();
       const projected = projectConnectorV3ForRe(
         observation,
@@ -642,7 +778,8 @@ describe("Connector V3 strict contract", () => {
       expect(envelope.currentState.bridgeVisibility).toMatchObject({
         unknownCriticalFieldBehavior: "fail_closed"
       });
-      expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toHaveLength(1);
+      expect(buildAllowedActions(envelope.currentState, envelope.stateHash))
+        .toHaveLength(expectedActions);
     }
   );
 
@@ -670,6 +807,31 @@ describe("Connector V3 strict contract", () => {
       .toBe("connector_v3:event:event_option:direct");
   });
 
+  it("does not request V2 capabilities for a direct V3 reward surface", async () => {
+    const calls: string[] = [];
+    const adapter = new Sts2ConnectorV3Adapter(
+      "http://adapter.test",
+      1_000,
+      { commandPollMs: 1, commandTimeoutMs: 100 },
+      async (input) => {
+        const url = String(input);
+        calls.push(url);
+        if (url.endsWith("/api/v3/capabilities")) return json(connectorCapabilities());
+        if (url.endsWith("/api/v3/observation")) return json(rewardClaimObservation());
+        throw new Error(`Unexpected request ${url}`);
+      },
+      async () => {}
+    );
+
+    const raw = await adapter.readCurrentState();
+    const envelope = normalizeCurrentState(raw, adapter.describe());
+
+    expect(calls.some((url) => url.endsWith("/api/v2/capabilities"))).toBe(false);
+    expect(envelope.currentState.sourceStateType)
+      .toBe("connector_v3:reward_flow:reward_claim:direct");
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toHaveLength(3);
+  });
+
   it("fails a direct V3 map closed when a candidate binds a non-visible node", () => {
     const observation = mapObservation();
     const candidate = observation.interaction.command_candidates[0]!;
@@ -688,6 +850,39 @@ describe("Connector V3 strict contract", () => {
     expect(envelope.currentState.stability).toBe("invalid");
     expect(envelope.currentState.actionAuthority).toBe("none");
     expect(envelope.currentState.surface.kind).toBe("unsupported");
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toEqual([]);
+  });
+
+  it("fails a direct V3 reward closed when a candidate binds a replacement entity", () => {
+    const observation = rewardClaimObservation();
+    const candidate = observation.interaction.command_candidates[0]!;
+    candidate.operands.choice_id = "reward-replacement";
+    candidate.entity_bindings[1] = { role: "reward", entity_id: "reward-replacement" };
+    const projected = projectConnectorV3ForRe(
+      observation,
+      observation as unknown as JsonObject
+    );
+
+    const envelope = normalizeCurrentState(projected.rawState, SOURCE);
+
+    expect(envelope.currentState.stability).toBe("invalid");
+    expect(envelope.currentState.actionAuthority).toBe("none");
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toEqual([]);
+  });
+
+  it("fails a direct V3 card reward closed when the advertised card is not selectable", () => {
+    const observation = cardRewardObservation();
+    const surface = observation.surface as Record<string, unknown>;
+    surface.selectable_card_entity_ids = [];
+    const projected = projectConnectorV3ForRe(
+      observation,
+      observation as unknown as JsonObject
+    );
+
+    const envelope = normalizeCurrentState(projected.rawState, SOURCE);
+
+    expect(envelope.currentState.stability).toBe("invalid");
+    expect(envelope.currentState.actionAuthority).toBe("none");
     expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toEqual([]);
   });
 

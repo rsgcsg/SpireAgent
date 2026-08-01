@@ -3,10 +3,9 @@
 Baseline date: 2026-08-01
 
 Branch baseline: `connectorV3` at
-`daed1d761e3c23b1297aa52b2e37909c09217298`, plus the current direct
-event/map/game-over consumer, game-over resolver and rendered-event-text
-worktree. Source, built, installed and loaded identities below are recorded
-separately.
+`5e731893bef9090ca6d7fadf295594286599018b`, plus the current direct
+room-reward/card-reward consumer worktree. Source, built, installed and loaded
+identities below are recorded separately.
 
 ## Architecture
 
@@ -31,25 +30,27 @@ Current V3 source implements:
 
 ## Exact V3 Runtime Evidence
 
-The latest exact run is `run-20260801120346-xy7y0d` on clean Agent revision
-`daed1d7...`, loaded SHA
-`150f85a4777b259efb8c22f8dd482fedf881af9616998cc9c6d6a6fc59a2ed7d`,
-MVID `29c747be-329b-487f-ab58-1b0f3b7b98bc`, runtime
-`45acb4ff11084865939a102e9bd256a0`, game `v0.110.1` commit `db5d3552` and
+The latest exact run is `run-20260801124814-414z9f` on clean Agent revision
+`5e73189...`, loaded SHA
+`f6274db5945fa9e7af905f44ac5f1dc97a0559614ce00529a06dbd7bf2ba276b`,
+MVID `3d7bf3f9-46ce-4e8c-8607-d8544e7a6254`, runtime
+`6aa46ac719444902a074be0ef59af7d9`, game `v0.110.1` commit `db5d3552` and
 exact-bridge-only Modset fingerprint
-`12710a39912710827ea3dc13091bb9dbaf058db90a9d4f00ad803934c3f30d00`.
-It reached the completed-run boundary after 95 decisions. All 93 submitted V3
-commands completed with confirmed receipts and successor observations; one
-pre-submit stale refusal was safely recovered. Direct menu consumption was
-exercised with no V2 capabilities sidecar. No unknown, unsupported,
-observation, provider or unsettled-command failure occurred. See
-[the direct-menu complete-run evidence](../../STS2MCP/docs/connector-v3/LIVE_EVIDENCE_V0_110_1_DIRECT_MENU_COMPLETE_RUN_2026-08-01.md).
+`c2f4661b8e4f2a40c733231807b8343f57bb1d10416fb842c2d44a6d060ec0da`.
+It reached the completed-run boundary after 516 decisions: 513 settled, one
+safe pre-submit stale refusal, one completed game-over command whose separate
+Re readiness wait remained transitional, and the final main-menu boundary.
+No unknown mutation occurred. Direct event, map and game-over consumption and
+both direct game-over controls were exercised. See
+[the 516-decision evidence](../../STS2MCP/docs/connector-v3/LIVE_EVIDENCE_V0_110_1_516_DECISION_DIRECT_JOURNEY_2026-08-01.md).
 
-That runtime still used the bounded Provider adapter for two combat-hand and
-two game-over actions. The current worktree makes game-over execution direct
-and extends the no-sidecar Re consumer to event, map and game-over. All 29
-matching saved snapshots replay successfully, but these changes remain pending
-exact-runtime evidence and cannot inherit the run's authority.
+Fifteen actions still used the bounded Provider adapter: combat-hand
+select/confirm, deck-upgrade toggle/confirm and one event-card acquisition.
+Generated choice, Kifuda, New Leaf and the exact Endless Conveyor rendered-text
+source did not occur. The current worktree extends no-sidecar Re consumption to
+room rewards and card rewards. All 86 matching pre-state snapshots replay
+successfully after deleting both V2 sidecar fields, but this change remains
+pending exact-runtime evidence and cannot inherit the run's authority.
 
 On 2026-08-01 the local Steam installation still reported game `v0.110.1`,
 commit `db5d3552`, but its exact `sts2.dll` identity differed from the earlier
@@ -62,18 +63,20 @@ registered matches and only the existing Tutor diagnostic holdout; this has
 no authorization or qualification effect.
 
 Current source and Re both use protocol `3.0-preview.1`. Gateway 239 tests, Re
-232 tests/typecheck/build, Python syntax, documentation, CLI, profile,
+237 tests/typecheck/build, Python syntax, documentation, CLI, profile,
 migration, identity, compatibility, permission, qualification and exact-game
 binding checks passed against the current game assemblies. The direct
 event/map/game-over consumer, game-over resolver and rendered-event-text repair
-are built and installed as SHA
+were built, installed and exercised as SHA
 `f6274db5945fa9e7af905f44ac5f1dc97a0559614ce00529a06dbd7bf2ba276b`,
-MVID `3d7bf3f9-46ce-4e8c-8607-d8544e7a6254`, with rollback
-`STS2MCP/.local/deployments/2026-08-01T12-43-54-367Z`. The game was completely
-stopped before installation, so loaded identity, authority and Live behavior
-for this replacement remain non-claims.
+MVID `3d7bf3f9-46ce-4e8c-8607-d8544e7a6254`. The later direct reward consumer
+is built and installed as SHA
+`954150c6d964a4f6a78a6483aa82c5cb5066fc5e2bdf762ce56efb22e2166ff5`,
+MVID `2e1b0a8f-05e8-4262-b7ff-5791564e9d56`, with rollback
+`STS2MCP/.local/deployments/2026-08-01T13-38-46-096Z`. The game is stopped;
+loaded identity and exact-runtime reward behavior are non-claims.
 
-The latest previously exercised v0.110.1 artifact was cold-loaded as SHA
+An earlier exercised v0.110.1 artifact was cold-loaded as SHA
 `548f15e45dc6609cf4a25af61af2ef2b07365af625b23dbd4f58369001a5f703`,
 MVID `4700a63e-f587-49b7-a642-bfe10713cc42`, runtime
 `a611dc97e2f046e4bd6e604c3501d692`, game `v0.110.1` commit `db5d3552`,
@@ -208,17 +211,19 @@ evidence or durable V3 qualification.
 
 | State | Current result |
 |---|---|
-| source | V3 `3.0-preview.1` on `connectorV3@daed1d7...` plus current direct event/map/game-over consumer and resolver worktree |
-| automated tests | Gateway 239 and Re 232 passed; Re typecheck/build, Python syntax, docs, CLI, profile, migration, identity, compatibility, permission, qualification and exact-game binding checks passed |
-| Release build | current Mod `0.6.0-dev` SHA `f6274db5945fa9e7af905f44ac5f1dc97a0559614ce00529a06dbd7bf2ba276b`, MVID `3d7bf3f9-46ce-4e8c-8607-d8544e7a6254` |
+| source | V3 `3.0-preview.1` on `connectorV3@5e73189...` plus current direct reward/card-reward consumer worktree |
+| automated tests | Gateway 239 and Re 237 passed; Re typecheck/build, Python syntax, docs, CLI, profile, migration, identity, compatibility, permission, qualification, exact-game binding audit and 86 sidecar-free recorded replays passed |
+| Release build | current Mod `0.6.0-dev` SHA `954150c6d964a4f6a78a6483aa82c5cb5066fc5e2bdf762ce56efb22e2166ff5`, MVID `2e1b0a8f-05e8-4262-b7ff-5791564e9d56` |
 | installed | SHA/MVID exactly equal to the current canonical Release build |
-| loaded | SHA `150f85...ed7d`, MVID `29c747be...98bc`, runtime `45acb4ff...56a0` was loaded and exercised; the next replacement remains a non-claim until cold load |
-| current authority | the exercised runtime used exact-runtime encounter provisional trial and created no persistent qualification |
-| V3 mutation canary | 93 completed/confirmed submitted commands; one pre-submit stale refusal recovered on fresh state |
-| V3 bounded journey | one ordinary Ironclad run reached its game-over return and stopped correctly at main menu after 95 decisions |
+| loaded | current install is not loaded; predecessor SHA `f6274db...276b`, MVID `3d7bf3f9...6254`, runtime `6aa46ac7...7d9` remains historical exact-runtime evidence only |
+| current authority | none while the game is stopped; the exercised predecessor runtime used exact-runtime provisional trial and created no persistent qualification |
+| V3 mutation canary | 513 settled decisions; one pre-submit stale refusal recovered on fresh state; no unknown mutation |
+| V3 bounded journey | one ordinary run reached its game-over return and stopped correctly at main menu after 516 decisions |
 | V3 durable claim | none |
 
 Current v0.110.1 install rollback:
+`STS2MCP/.local/deployments/2026-08-01T13-38-46-096Z`.
+Previous 516-decision artifact rollback:
 `STS2MCP/.local/deployments/2026-08-01T12-43-54-367Z`.
 Previous direct-menu artifact rollback:
 `STS2MCP/.local/deployments/2026-08-01T11-57-34-822Z`.

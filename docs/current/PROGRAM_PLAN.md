@@ -22,10 +22,10 @@ or stop at a precise visible unsupported boundary.
 
 1. Close defects found by exact-runtime V3 journeys and keep build/install/load
    attribution exact.
-2. Cold-load and validate the direct event/map/game-over consumer and direct
-   game-over resolver after the completed menu slice.
-3. Replace remaining selector Provider bindings after the generated/game-over
-   native cutover.
+2. Cold-load and validate the direct room-reward/card-reward consumer after
+   exact-runtime event/map/game-over closure.
+3. Move shop and the remaining selector families to direct V3 consumption,
+   while deleting each replaced sidecar or Provider dependency.
 4. Add bounded V3-native persistent summary, linked detail and Inspection;
    then remove the v2 capabilities sidecar.
 5. Simplify V3 authority projection without weakening exact-environment

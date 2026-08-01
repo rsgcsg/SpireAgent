@@ -53,11 +53,11 @@ protocol, exact SHA/MVID/runtime, game, Modset and permission before starting.
 - Gateway `completed` is native Outcome authority; Re separately waits for a
   stable successor before the next model decision.
 
-Main, single-player and character-select menus now use a direct V3 consumer
-and do not request the Bridge v2 capabilities sidecar. Remaining Surfaces read
-that same-runtime sidecar only for the mature semantic/environment projection.
-Re never imports v2 actions or executes a v2 action ID. The remaining sidecar
-is explicit migration debt.
+Menu, event, map, game-over, room-reward and card-reward Surfaces use a direct
+V3 consumer and do not request the Bridge v2 capabilities sidecar. Remaining
+Surfaces read that same-runtime sidecar only for the mature
+semantic/environment projection. Re never imports v2 actions or executes a v2
+action ID. The remaining sidecar is explicit migration debt.
 
 ## Evidence
 

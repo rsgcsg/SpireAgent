@@ -25,7 +25,7 @@ Status values are deliberately distinct from Live evidence.
 | Tutor combat-pile source | `code_required` for target-player owner binding | static audit; diagnostic only | not exercised |
 | V3 detail/Inspection | pending | none | none |
 | V3 MCP | implemented | locked Python 3.14 syntax check passed | transport not exercised in this journey |
-| Re default V3 run | direct V3 consumer for menu/event/map/game-over; temporary V2 semantic sidecar for remaining families | 232 tests, typecheck, production build and 29-snapshot direct replay passed | direct menu/no-sidecar completed a 95-decision run; expanded direct families pending cold load |
+| Re default V3 run | direct V3 consumer for menu/event/map/game-over/reward/card-reward; temporary V2 semantic sidecar for remaining families | 237 tests, typecheck and build passed; reward slices passed 86 sidecar-free recorded snapshot replays | direct event/map/game-over completed a 516-decision run; reward consumer replacement pending cold load |
 
 Exact attribution is recorded in the
 [first V3 evidence](LIVE_EVIDENCE_2026-07-31.md) and
@@ -104,3 +104,18 @@ The replacement source is built and installed as SHA
 MVID `3d7bf3f9-46ce-4e8c-8607-d8544e7a6254`, with rollback
 `STS2MCP/.local/deployments/2026-08-01T12-43-54-367Z`. The game is stopped;
 loaded identity, authority and exact-runtime behavior are non-claims.
+
+That replacement was subsequently cold-loaded as runtime
+`6aa46ac719444902a074be0ef59af7d9` and completed the
+[516-decision direct journey](LIVE_EVIDENCE_V0_110_1_516_DECISION_DIRECT_JOURNEY_2026-08-01.md).
+Direct event, map and game-over consumption and direct game-over execution are
+therefore exact-runtime exercised. The later direct reward/card-reward Re
+consumer has only tests and sidecar-free recorded replay; it cannot inherit
+the predecessor artifact's Live authority.
+
+The direct reward/card-reward consumer replacement is built and installed as
+SHA `954150c6d964a4f6a78a6483aa82c5cb5066fc5e2bdf762ce56efb22e2166ff5`,
+MVID `2e1b0a8f-05e8-4262-b7ff-5791564e9d56`, with rollback
+`STS2MCP/.local/deployments/2026-08-01T13-38-46-096Z`. Built and installed
+identities agree. The game is stopped, so loaded identity and Live reward
+consumer behavior remain non-claims.

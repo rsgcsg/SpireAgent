@@ -20,8 +20,8 @@ An observation contains:
 
 Shared visible facts, semantic context/surface, visibility metadata and the
 Inspection catalog are typed independently from Bridge v2. Re currently
-consumes menu, event, map and game-over observations directly from these V3
-facts. Inspection catalog entries advertise state-bound read availability only;
+consumes menu, event, map, game-over, room-reward and card-reward observations
+directly from these V3 facts. Inspection catalog entries advertise state-bound read availability only;
 they never authorize mutation, and V3-native Inspection content transport is
 still pending.
 

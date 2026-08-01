@@ -28,8 +28,8 @@ Implemented in source:
   authority, semantic Outcome and unknown-no-retry;
 - V3 REST, MCP tools and strict Re decoder/adapter;
 - Re defaults to V3 and never executes a v2 action ID;
-- Re consumes main/singleplayer/character menus directly and does not request
-  the v2 capabilities sidecar for those Surfaces;
+- Re consumes menu, event, map, game-over, room-reward and card-reward
+  Surfaces directly and does not request the v2 capabilities sidecar for them;
 - exact Stratagem Power source binding for the single-stack combat-pile
   selection exposed by current Live evidence.
 
@@ -44,10 +44,11 @@ Not yet claimed:
 - full vanilla or Mod coverage.
 
 Current exact-runtime Re evidence includes
-`run-20260801111449-8oze2o`: 176 settled V3 commands, two safe stale refusals
-and one normal completed-run boundary. Three shop close/proceed pairs prove
-the earlier `control_id` repair. The later direct-menu and V3-native
-menu/generated source changes require a new cold load.
+`run-20260801124814-414z9f`: 513 settled decisions, one safe pre-submit stale
+refusal, no unknown mutation and one normal completed-run boundary after 516
+decisions. Direct event/map/game-over consumption and both direct game-over
+controls were exercised. The later direct reward consumer requires a new cold
+load.
 
 ## Migration Waves
 

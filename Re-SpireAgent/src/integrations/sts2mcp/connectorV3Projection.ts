@@ -142,6 +142,8 @@ export function usesDirectConnectorV3Consumer(
     "menu:character_select",
     "event:event_option",
     "map:map_navigation",
+    "reward_flow:reward_claim",
+    "reward_flow:card_reward_selection",
     "game_over:game_over"
   ]).has(pair);
 }

@@ -14,6 +14,11 @@ import {
   gatewayMapNavigationSurfaceSchema as mapNavigationSurfaceSchema
 } from "./gatewayJourneyProtocol.js";
 import {
+  gatewayCardRewardSelectionSurfaceSchema as cardRewardSelectionSurfaceSchema,
+  gatewayRewardClaimSurfaceSchema as rewardClaimSurfaceSchema,
+  gatewayRewardFlowContextSchema as rewardFlowContextSchema
+} from "./gatewayRewardProtocol.js";
+import {
   sharedVisibleStateSchema,
   visibleCardSchema,
   visibleEnchantmentSchema,
@@ -401,11 +406,6 @@ const combatContextSchema = z.object({
   enemies: z.array(visibleEnemySchema)
 }).passthrough();
 
-const rewardFlowContextSchema = z.object({
-  kind: z.literal("reward_flow"),
-  reward_kind: z.enum(["card_reward", "room_rewards"])
-}).passthrough();
-
 const restContextSchema = z.object({
   kind: z.literal("rest")
 }).passthrough();
@@ -791,39 +791,6 @@ const cardBundleSelectionSurfaceSchema = z.object({
   prompt: z.string().min(1).nullable().optional(),
   selected_bundle_entity_id: z.string().min(1).nullable().optional(),
   bundles: z.array(visibleCardBundleSchema).min(1)
-}).passthrough();
-
-const visibleCardRewardAlternativeSchema = z.object({
-  entity_id: z.string().min(1),
-  index: z.number().int().nonnegative(),
-  label: z.string().min(1),
-  enabled: z.boolean()
-}).passthrough();
-
-const cardRewardSelectionSurfaceSchema = z.object({
-  kind: z.literal("card_reward_selection"),
-  screen_entity_id: z.string().min(1),
-  cards: z.array(visibleCardSchema),
-  selectable_card_entity_ids: z.array(z.string().min(1)).optional(),
-  alternatives: z.array(visibleCardRewardAlternativeSchema)
-}).passthrough();
-
-const visibleRewardSchema = z.object({
-  entity_id: z.string().min(1),
-  kind: z.enum(["gold", "potion", "relic", "card", "other_visible_reward"]),
-  label: z.string().min(1),
-  description: z.string().nullable().optional(),
-  enabled: z.boolean()
-}).passthrough();
-
-const rewardClaimSurfaceSchema = z.object({
-  kind: z.literal("reward_claim"),
-  screen_entity_id: z.string().min(1),
-  rewards: z.array(visibleRewardSchema),
-  potion_slots_full: z.boolean(),
-  discardable_potions: z.array(visiblePotionSchema),
-  can_proceed: z.boolean(),
-  proceed_skips_remaining_rewards: z.boolean()
 }).passthrough();
 
 const unsupportedSurfaceSchema = z.object({
