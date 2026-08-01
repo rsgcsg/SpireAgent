@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+export const gatewayMenuContextSchema = z.object({
+  kind: z.literal("menu"),
+  flow: z.enum(["root_navigation", "standard_run_setup"])
+}).passthrough();
+
 export const visibleCharacterChoiceSchema = z.object({
   entity_id: z.string().min(1),
   index: z.number().int().nonnegative(),
@@ -84,3 +89,4 @@ export const gatewayMenuSurfaceSchema = z.discriminatedUnion("kind", [
 ]);
 
 export type GatewayMenuSurface = z.infer<typeof gatewayMenuSurfaceSchema>;
+export type GatewayMenuContext = z.infer<typeof gatewayMenuContextSchema>;

@@ -89,6 +89,21 @@ const diagnosticSchema = z.object({
   recoverability: z.string().min(1)
 }).passthrough();
 
+const inspectionKindSchema = z.enum(["run_deck", "combat_piles", "shop_catalog"]);
+
+const inspectionCatalogEntrySchema = z.object({
+  kind: inspectionKindSchema,
+  scope: z.enum(["active_run", "current_combat", "current_shop"]),
+  availability: z.enum(["qualified", "canary"]),
+  visibility_basis: z.string().min(1),
+  state_bound: z.literal(true),
+  creates_action_authority: z.literal(false),
+  ordering_semantics: z.enum(["unordered_multiset", "fixed_ui_slots"]),
+  estimated_cost: z.enum(["low", "medium", "high"]),
+  recommended_for: z.array(z.string().min(1)),
+  hidden_by_policy: z.array(z.string().min(1))
+}).passthrough();
+
 const capabilitiesSchema = z.object({
   protocol_version: z.literal(SUPPORTED_CONNECTOR_V3_PROTOCOL),
   observation_schema: z.literal("sts2.connector.v3/observation-1"),
@@ -131,15 +146,15 @@ const observationSchema = z.object({
   }).passthrough(),
   visibility: z.object({
     profile_id: z.string().min(1),
-    core_status: z.string().min(1),
-    player_visible_closure_status: z.string().min(1),
-    available_inspections: z.array(z.string()),
+    core_status: z.enum(["complete", "partial"]),
+    player_visible_closure_status: z.enum(["complete", "partial_catalog", "partial"]),
+    available_inspections: z.array(inspectionKindSchema),
     linked_detail_kinds: z.array(z.string()),
     hidden_by_policy: z.array(z.string()),
     missing: z.array(z.string()),
-    unknown_critical_field_behavior: z.string().min(1)
+    unknown_critical_field_behavior: z.literal("fail_closed")
   }).passthrough(),
-  inspection_catalog: z.array(z.record(z.unknown())),
+  inspection_catalog: z.array(inspectionCatalogEntrySchema),
   diagnostics: z.array(diagnosticSchema),
   warnings: z.array(z.string()),
   coverage: z.object({

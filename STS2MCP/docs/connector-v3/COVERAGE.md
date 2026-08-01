@@ -15,16 +15,17 @@ Status values are deliberately distinct from Live evidence.
 | Deck enchant | source-specific direct native resolvers for Self-Help Book, Symbiote and Kifuda | C# source/operand and Re unsupported-projection tests | Symbiote and Self-Help Book select/confirm exercised; Kifuda not exercised |
 | Outer reward claim/discard/proceed | typed-surface V3-native discovery and direct resolver | C# owner/entity/discovery tests | current v0.110.1 `.86` claim/proceed path exercised repeatedly; potion discard not exercised on this artifact |
 | Card reward select/alternative | typed-surface V3-native discovery and direct resolver with exact selectable-card facts | C# owner/entity/eligibility tests plus inherited Provider tests | current v0.110.1 `.86` card selection exercised repeatedly; skip alternative not exercised in this session |
-| Menu/run setup | typed-Surface V3-native discovery and exact screen/control/character resolvers in current source | Gateway descriptor/operand tests plus direct Re normalization and no-sidecar adapter tests | predecessor artifact completed menu/run setup; new native resolver pending cold load |
+| Menu/run setup | typed-Surface V3-native discovery and exact screen/control/character resolvers | Gateway descriptor/operand tests plus direct Re normalization and no-sidecar adapter tests | direct menu consumer and native resolver completed a full run |
 | Shop inventory purchase/removal/close | typed-surface V3-native discovery and direct resolver with exact screen/offer/slot/price/control revalidation | Gateway tests, Re partial-authority regression and saved-snapshot re-normalization | latest runtime completed three exact close/proceed pairs plus purchases |
 | Generated card choice | source-discriminated V3-native discovery and direct resolver in current source; exact screen/card/source revalidation | generated-source tests plus exact owner/card operand test | predecessor Skill Potion adapter completed; new owner-bound native resolver pending cold load |
+| Game over | typed-Surface direct resolver in current source with exact screen/stage/control revalidation | Gateway descriptor test plus direct Re snapshot replay | predecessor Provider adapter completed; direct resolver pending cold load |
 | Other selection families | internal native-binding adapter | inherited family tests | current `.86` Hologram pile selection and Scroll Boxes bundle preview/commit exercised; migration remains pending |
 | Single-stack Stratagem combat-pile source | exact Power source contract | source registry and protocol tests | pending |
 | Multi-stack Stratagem | typed unsupported | contract deliberately excludes it | not exercised |
 | Tutor combat-pile source | `code_required` for target-player owner binding | static audit; diagnostic only | not exercised |
 | V3 detail/Inspection | pending | none | none |
 | V3 MCP | implemented | locked Python 3.14 syntax check passed | transport not exercised in this journey |
-| Re default V3 run | direct V3 consumer for menu; temporary V2 semantic sidecar for remaining families | 227 tests, typecheck and production build passed | predecessor runtime completed a 179-decision bounded run; direct menu/no-sidecar change pending cold load |
+| Re default V3 run | direct V3 consumer for menu/event/map/game-over; temporary V2 semantic sidecar for remaining families | 232 tests, typecheck, production build and 29-snapshot direct replay passed | direct menu/no-sidecar completed a 95-decision run; expanded direct families pending cold load |
 
 Exact attribution is recorded in the
 [first V3 evidence](LIVE_EVIDENCE_2026-07-31.md) and
@@ -86,7 +87,20 @@ That repair was subsequently cold-loaded and exercised in the
 [complete Re journey](LIVE_EVIDENCE_V0_110_1_COMPLETE_RE_JOURNEY_2026-08-01.md).
 Three shop close/proceed pairs completed and the ordinary run reached its
 game-over return. The later menu/generated/direct-consumer source changes do
-not inherit that runtime evidence. Those changes are now built and installed
-as SHA `150f85a4777b259efb8c22f8dd482fedf881af9616998cc9c6d6a6fc59a2ed7d`,
-MVID `29c747be-329b-487f-ab58-1b0f3b7b98bc`; loaded and exact-runtime behavior
-remain non-claims pending a cold start.
+not inherit that runtime evidence.
+
+The menu/generated artifact was subsequently cold-loaded as SHA
+`150f85a4777b259efb8c22f8dd482fedf881af9616998cc9c6d6a6fc59a2ed7d`,
+MVID `29c747be-329b-487f-ab58-1b0f3b7b98bc`, runtime
+`45acb4ff11084865939a102e9bd256a0`. The
+[direct-menu complete run](LIVE_EVIDENCE_V0_110_1_DIRECT_MENU_COMPLETE_RUN_2026-08-01.md)
+proved direct menu consumption, 93 completed submitted commands and the normal
+game-over return. Generated choice did not occur. The later direct
+event/map/game-over consumer and direct game-over resolver do not inherit that
+runtime evidence.
+
+The replacement source is built and installed as SHA
+`f6274db5945fa9e7af905f44ac5f1dc97a0559614ce00529a06dbd7bf2ba276b`,
+MVID `3d7bf3f9-46ce-4e8c-8607-d8544e7a6254`, with rollback
+`STS2MCP/.local/deployments/2026-08-01T12-43-54-367Z`. The game is stopped;
+loaded identity, authority and exact-runtime behavior are non-claims.

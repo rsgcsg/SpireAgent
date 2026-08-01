@@ -366,6 +366,16 @@ internal static class BridgeContextBuilder
         try
         {
             Node? node = owner?.GetNodeOrNull(path);
+            if (node == null && owner != null)
+            {
+                string nodeName = path.StartsWith("%", StringComparison.Ordinal)
+                    ? path[1..]
+                    : path;
+                // The concrete event layout can own this unique-name label
+                // below NEventRoom. Prefer already-rendered player-visible
+                // text over unbound localization model variables.
+                node = owner.FindChild(nodeName, recursive: true, owned: false);
+            }
             if (node == null)
                 return null;
             Variant text = node.Get("text");

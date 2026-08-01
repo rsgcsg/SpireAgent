@@ -61,14 +61,15 @@ human-equivalence evidence mode, not a default mutation requirement.
 ## Current Migration Boundary
 
 Combat, shop-room/inventory, map, rest-site, event-option, treasure-room,
-reward-claim, card-reward, deck-enchant, menu/run-setup and generated-card
-choice controls have direct V3 native resolvers in current source. Each retains
-source-specific owner, operand, Commit and Outcome contracts while sharing
-only bounded mechanics. Remaining selectors temporarily call bounded Provider
-native bindings inside the Gateway. Re consumes menu facts and commands
-directly without V2 semantic validation or capabilities; other families still
-read the same-runtime v2 capabilities as a non-authorizing semantic projection
-sidecar. Neither path may supply a V2 action ID to V3 execution.
+reward-claim, card-reward, deck-enchant, menu/run-setup, generated-card choice
+and game-over controls have direct V3 native resolvers in current source. Each
+retains source-specific owner, operand, Commit and Outcome contracts while
+sharing only bounded mechanics. Remaining selectors temporarily call bounded
+Provider native bindings inside the Gateway. Re consumes menu, event, map and
+game-over facts and commands directly without V2 semantic validation or
+capabilities; other families still read the same-runtime v2 capabilities as a
+non-authorizing semantic projection sidecar. Neither path may supply a V2
+action ID to V3 execution.
 
 The migration ends when V3 directly owns ordinary non-combat command bindings,
 Re consumes V3 facts/candidates without V2 semantic validation, and V3 owns

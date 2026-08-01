@@ -34,12 +34,13 @@ boundary while retaining separate source-specific legality and Outcome.
 Remaining selectors temporarily reuse mature Provider-native bindings inside
 the Gateway. This is bounded migration debt, not a V2 REST fallback.
 
-Menu/run-setup uses a direct V3 normalizer and does not request Bridge v2
-capabilities. Other families temporarily read same-runtime Bridge v2
-capabilities only as a non-executable semantic/environment projection sidecar.
-No v2 legal action or v2 command route enters the V3 execution path. The
-remaining sidecar is removed as direct V3 fact contracts reach equivalent
-decision-relevant coverage.
+Menu/run-setup, event, map and game-over use the direct V3 normalizer and do not
+request Bridge v2 capabilities. The menu slice is exact-runtime exercised;
+the expanded slices pass saved-snapshot replay and await the next cold load.
+Other families temporarily read same-runtime Bridge v2 capabilities only as a
+non-executable semantic/environment projection sidecar. No v2 legal action or
+v2 command route enters the V3 execution path. The remaining sidecar is removed
+as direct V3 fact contracts reach equivalent decision-relevant coverage.
 
 ## Receipt Rules
 

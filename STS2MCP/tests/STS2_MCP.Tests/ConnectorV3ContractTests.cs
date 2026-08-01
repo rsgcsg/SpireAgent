@@ -430,6 +430,51 @@ public sealed class ConnectorV3ContractTests
     }
 
     [Fact]
+    public void GameOverNativeDiscoveryKeepsStageAndOwnerExact()
+    {
+        var intro = new GameOverSurface(
+            "game_over",
+            "intro",
+            "game-over-screen",
+            null,
+            true,
+            false);
+        var summary = new GameOverSurface(
+            "game_over",
+            "summary",
+            "game-over-screen",
+            "main_menu",
+            false,
+            true);
+
+        BridgeActionDraft advance = Assert.Single(
+            ConnectorV3Runtime.DescribeGameOverCommands(intro));
+        BridgeActionDraft exit = Assert.Single(
+            ConnectorV3Runtime.DescribeGameOverCommands(summary));
+
+        Assert.Equal("advance_game_over_summary", advance.Kind);
+        Assert.Equal("return_game_over", exit.Kind);
+        Assert.Contains(advance.EntityBindings!, binding =>
+            binding.Role == "game_over_screen"
+            && binding.EntityId == "game-over-screen");
+        Assert.Contains(exit.EntityBindings!, binding =>
+            binding.Role == "game_over_screen"
+            && binding.EntityId == "game-over-screen");
+        Assert.Equal(
+            "advance_game_over_summary",
+            ConnectorV3Runtime.BuildCommandOperands(
+                advance.Kind,
+                "activate_control",
+                advance.EntityBindings!)["control_id"]);
+        Assert.Equal(
+            "return_game_over",
+            ConnectorV3Runtime.BuildCommandOperands(
+                exit.Kind,
+                "activate_control",
+                exit.EntityBindings!)["control_id"]);
+    }
+
+    [Fact]
     public void TreasureNativeDiscoveryKeepsStageSpecificContractsSeparate()
     {
         var closed = new TreasureRoomSurface(

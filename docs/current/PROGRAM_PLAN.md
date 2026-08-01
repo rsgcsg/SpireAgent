@@ -22,8 +22,9 @@ or stop at a precise visible unsupported boundary.
 
 1. Close defects found by exact-runtime V3 journeys and keep build/install/load
    attribution exact.
-2. Continue the direct V3 consumer after the completed menu slice.
-3. Replace remaining selector Provider bindings after the menu/generated
+2. Cold-load and validate the direct event/map/game-over consumer and direct
+   game-over resolver after the completed menu slice.
+3. Replace remaining selector Provider bindings after the generated/game-over
    native cutover.
 4. Add bounded V3-native persistent summary, linked detail and Inspection;
    then remove the v2 capabilities sidecar.

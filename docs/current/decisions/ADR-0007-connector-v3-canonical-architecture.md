@@ -120,12 +120,13 @@ Reuse is internal implementation reuse, not V2 protocol authority.
 At `3.0-preview.1`:
 
 - combat and multiple ordinary non-combat families use direct V3 native
-  resolvers; menu/run-setup and source-discriminated generated choices are now
-  cut over in source, while remaining selectors use a bounded internal
+  resolvers; menu/run-setup, source-discriminated generated choices and
+  game-over are now cut over in source, while remaining selectors use a bounded internal
   `provider_native_binding_adapter` that never submits or searches a v2 REST
   action ID;
-- Re directly consumes main/singleplayer/character menu facts and candidates.
-  Other Surfaces still use `/api/v2/capabilities` as a same-runtime,
+- Re directly consumes main/singleplayer/character menu, event, map and
+  game-over facts and candidates. Other Surfaces still use
+  `/api/v2/capabilities` as a same-runtime,
   non-authorizing semantic/environment projection sidecar and temporarily
   expand V3 candidates into a V2-shaped normalization projection;
 - V3 read-only detail/Inspection tools are not yet exposed;

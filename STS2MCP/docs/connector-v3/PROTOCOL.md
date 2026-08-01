@@ -18,6 +18,13 @@ An observation contains:
 - bounded parameterized command candidates;
 - completeness, visibility, diagnostics and hidden-by-policy declarations.
 
+Shared visible facts, semantic context/surface, visibility metadata and the
+Inspection catalog are typed independently from Bridge v2. Re currently
+consumes menu, event, map and game-over observations directly from these V3
+facts. Inspection catalog entries advertise state-bound read availability only;
+they never authorize mutation, and V3-native Inspection content transport is
+still pending.
+
 A visible unsupported interaction remains present with
 `execution_support=unsupported` and no candidates.
 
@@ -81,6 +88,10 @@ discovery remains source-discriminated, and execution revalidates the exact
 active source, screen and card before using that source's native Commit and
 Outcome witness. A Skill Potion, Quasar and Knowledge Demon therefore do not
 share a generic result contract merely because they use the same selection UI.
+
+Game-over controls bind the exact current screen, stage and semantic control.
+Execution resolves those facts again and invokes the native advance/return
+Commit without retaining a Provider action closure.
 
 Combat potions always bind their exact native target, including self/player
 targets. A target that is implicit in the visual label is not implicit in the

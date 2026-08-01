@@ -128,6 +128,7 @@ import { isJsonObject, type JsonObject } from "../shared/json.js";
 import { DiagnosticsBuilder } from "./diagnostics.js";
 import { projectBridgeV2Card } from "./bridgeV2CardProjection.js";
 import { projectBridgeV2Inspections } from "./bridgeV2InspectionProjection.js";
+import { projectGatewayVisibleState as projectSharedVisibleState } from "./gatewayVisibleStateProjection.js";
 
 const ACTION_KINDS = {
   deck_enchant_selection: new Set([
@@ -2643,70 +2644,6 @@ function projectMapContext(context: BridgeV2MapContext): SemanticContext {
       })),
       children: node.children.map((child) => ({ col: child.col, row: child.row }))
     }))
-  };
-}
-
-function projectSharedVisibleState(shared: BridgeV2SharedVisibleState): {
-  run: NonNullable<NormalizedCurrentState["run"]>;
-  player: PlayerSnapshot;
-} {
-  const keywords = (items: Array<{ name: string; description?: string | null }>) => items.map((item) => ({
-    name: item.name,
-    ...(item.description ? { description: item.description } : {})
-  }));
-  return {
-    run: {
-      characterId: shared.player.character_definition_id,
-      act: shared.run.act,
-      actId: shared.run.act_definition_id,
-      ...(shared.run.act_name ? { actName: shared.run.act_name } : {}),
-      floor: shared.run.floor,
-      ascension: shared.run.ascension,
-      bosses: shared.run.bosses.map((boss) => ({
-        id: boss.definition_id,
-        ...(boss.name ? { name: boss.name } : {}),
-        order: boss.order
-      })),
-      modifiers: shared.run.modifiers.map((modifier) => ({
-        id: modifier.definition_id,
-        ...(modifier.name ? { name: modifier.name } : {}),
-        ...(modifier.description ? { description: modifier.description } : {}),
-        keywords: keywords(modifier.keywords),
-        cardPreviews: modifier.card_previews.map(projectBridgeV2Card)
-      }))
-    },
-    player: {
-      character: shared.player.character_name ?? shared.player.character_definition_id,
-      hp: shared.player.hp,
-      maxHp: shared.player.max_hp,
-      gold: shared.player.gold,
-      hand: [],
-      drawPile: [],
-      discardPile: [],
-      exhaustPile: [],
-      companions: [],
-      orbs: [],
-      statuses: [],
-      relics: shared.player.relics.map((relic) => ({
-        entityId: relic.entity_id,
-        id: relic.definition_id,
-        ...(relic.name ? { name: relic.name } : {}),
-        ...(relic.description ? { description: relic.description } : {}),
-        ...(relic.counter !== undefined ? { counter: relic.counter } : {}),
-        keywords: keywords(relic.keywords),
-        cardPreviews: relic.card_previews.map(projectBridgeV2Card)
-      })),
-      potions: shared.player.potions.map((potion) => ({
-        entityId: potion.entity_id,
-        id: potion.definition_id,
-        ...(potion.name ? { name: potion.name } : {}),
-        ...(potion.description ? { description: potion.description } : {}),
-        slot: potion.slot,
-        keywords: keywords(potion.keywords),
-        cardPreviews: potion.card_previews.map(projectBridgeV2Card)
-      })),
-      maxPotionSlots: shared.player.max_potion_slots
-    }
   };
 }
 

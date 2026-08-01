@@ -184,6 +184,197 @@ function mainMenuObservation(): ConnectorV3Observation {
   return decodeConnectorV3Observation(value).data;
 }
 
+function sharedState() {
+  return {
+    scope: "active_single_player_run",
+    run: {
+      act: 1,
+      act_definition_id: "UNDERDOCKS",
+      act_name: "Underdocks",
+      floor: 2,
+      ascension: 0,
+      bosses: [{ definition_id: "BOSS", name: "Boss", order: 0 }],
+      modifiers: []
+    },
+    player: {
+      entity_id: "player-fixture",
+      character_definition_id: "IRONCLAD",
+      character_name: "The Ironclad",
+      hp: 72,
+      max_hp: 80,
+      gold: 99,
+      relics: [],
+      potions: [],
+      max_potion_slots: 3
+    },
+    completeness: {
+      player_visible_semantics: "complete_for_visible_hud",
+      sources: ["fixture_hud"],
+      missing: []
+    }
+  };
+}
+
+function eventObservation(): ConnectorV3Observation {
+  const value = structuredClone(combatObservation()) as unknown as Record<string, unknown>;
+  value.shared_state = sharedState();
+  value.context = {
+    kind: "event",
+    event_id: "FIXTURE_EVENT",
+    name: "Fixture Event",
+    ancient: false,
+    in_dialogue: false,
+    body: "Choose one visible option."
+  };
+  value.surface = {
+    kind: "event_option",
+    screen_entity_id: "event-screen-fixture",
+    options: [{
+      entity_id: "event-option-fixture",
+      index: 0,
+      title: "Take the visible reward",
+      description: "Gain 10 Gold.",
+      is_enabled: true,
+      is_locked: false,
+      is_proceed: false,
+      was_chosen: false,
+      will_kill_player: false,
+      tooltips: []
+    }]
+  };
+  value.interaction = {
+    id: "interaction-event-fixture",
+    kind: "event_option",
+    phase: "ready",
+    execution_support: "trial",
+    support_reason: null,
+    affordances: ["choose"],
+    command_candidates: [{
+      candidate_id: "candidate-event-fixture",
+      command: "choose",
+      operation: "choose_event_option",
+      label: "Take the visible reward",
+      operands: {
+        screen_id: "event-screen-fixture",
+        choice_id: "event-option-fixture"
+      },
+      operand_domains: {},
+      entity_bindings: [
+        { role: "screen", entity_id: "event-screen-fixture" },
+        { role: "option", entity_id: "event-option-fixture" }
+      ],
+      binding_kind: "native_direct_resolver",
+      authority_state: "trial"
+    }]
+  };
+  return decodeConnectorV3Observation(value).data;
+}
+
+function mapObservation(): ConnectorV3Observation {
+  const value = structuredClone(combatObservation()) as unknown as Record<string, unknown>;
+  value.shared_state = sharedState();
+  value.context = {
+    kind: "map",
+    act_index: 0,
+    current_position: { col: 3, row: 1, point_type: "monster" },
+    visited: [{ col: 3, row: 1, point_type: "monster" }],
+    nodes: [{
+      entity_id: "map-node-fixture",
+      col: 3,
+      row: 2,
+      point_type: "event",
+      state: "travelable",
+      children: [{ col: 2, row: 3, point_type: "rest" }]
+    }]
+  };
+  value.surface = {
+    kind: "map_navigation",
+    screen_entity_id: "map-screen-fixture",
+    travel_enabled: true,
+    traveling: false,
+    drawing_mode: "none",
+    next_options: [{
+      entity_id: "map-node-fixture",
+      col: 3,
+      row: 2,
+      point_type: "event"
+    }]
+  };
+  value.interaction = {
+    id: "interaction-map-fixture",
+    kind: "map_navigation",
+    phase: "ready",
+    execution_support: "trial",
+    support_reason: null,
+    affordances: ["navigate"],
+    command_candidates: [{
+      candidate_id: "candidate-map-fixture",
+      command: "navigate",
+      operation: "choose_map_node",
+      label: "Choose event at (3,2)",
+      operands: {
+        map_screen_id: "map-screen-fixture",
+        map_node_id: "map-node-fixture"
+      },
+      operand_domains: {},
+      entity_bindings: [
+        { role: "map_screen", entity_id: "map-screen-fixture" },
+        { role: "map_node", entity_id: "map-node-fixture" }
+      ],
+      binding_kind: "native_direct_resolver",
+      authority_state: "trial"
+    }]
+  };
+  return decodeConnectorV3Observation(value).data;
+}
+
+function gameOverObservation(): ConnectorV3Observation {
+  const value = structuredClone(combatObservation()) as unknown as Record<string, unknown>;
+  value.shared_state = sharedState();
+  value.context = {
+    kind: "game_over",
+    result: "loss",
+    game_mode: "standard",
+    score: 70,
+    floor_reached: 7,
+    ascension: 0
+  };
+  value.surface = {
+    kind: "game_over",
+    stage: "summary",
+    screen_entity_id: "game-over-screen-fixture",
+    return_destination: "main_menu",
+    can_advance_summary: false,
+    can_return: true
+  };
+  value.interaction = {
+    id: "interaction-game-over-fixture",
+    kind: "game_over",
+    phase: "ready",
+    execution_support: "trial",
+    support_reason: null,
+    affordances: ["activate_control"],
+    command_candidates: [{
+      candidate_id: "candidate-game-over-fixture",
+      command: "activate_control",
+      operation: "return_game_over",
+      label: "Return to the main menu",
+      operands: {
+        game_over_screen_id: "game-over-screen-fixture",
+        control_id: "return_game_over"
+      },
+      operand_domains: {},
+      entity_bindings: [{
+        role: "game_over_screen",
+        entity_id: "game-over-screen-fixture"
+      }],
+      binding_kind: "native_direct_resolver",
+      authority_state: "trial"
+    }]
+  };
+  return decodeConnectorV3Observation(value).data;
+}
+
 function connectorCapabilities() {
   return {
     protocol_version: "3.0-preview.1",
@@ -417,6 +608,87 @@ describe("Connector V3 strict contract", () => {
     expect(envelope.currentState.sourceStateType)
       .toBe("connector_v3:menu:main_menu:direct");
     expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toHaveLength(1);
+  });
+
+  it.each([
+    ["event", eventObservation, "event", "event_option"],
+    ["map", mapObservation, "map", "map_navigation"],
+    ["game over", gameOverObservation, "run_ended", "game_over"]
+  ] as const)(
+    "consumes direct V3 %s facts, persistent summary, and commands without V2 sidecars",
+    (_label, buildObservation, contextKind, surfaceKind) => {
+      const observation = buildObservation();
+      const projected = projectConnectorV3ForRe(
+        observation,
+        observation as unknown as JsonObject
+      );
+      const wrapper = projected.rawState as Record<string, unknown>;
+
+      expect(wrapper.bridge_v2_state).toBeUndefined();
+      expect(wrapper.bridge_v2_capabilities).toBeUndefined();
+      const envelope = normalizeCurrentState(projected.rawState, SOURCE);
+      expect(envelope.diagnostics.status).toBe("ok");
+      expect(envelope.currentState).toMatchObject({
+        sourceStateType:
+          `connector_v3:${observation.context.kind}:${observation.surface.kind}:direct`,
+        stability: "actionable",
+        actionAuthority: "bridge_advertised",
+        context: { kind: contextKind },
+        surface: { kind: surfaceKind },
+        run: { act: 1, floor: 2 },
+        player: { hp: 72, gold: 99 },
+        bridgeSharedStateEvidence: { scope: "active_single_player_run" }
+      });
+      expect(envelope.currentState.bridgeVisibility).toMatchObject({
+        unknownCriticalFieldBehavior: "fail_closed"
+      });
+      expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toHaveLength(1);
+    }
+  );
+
+  it("does not request V2 capabilities for a direct V3 event surface", async () => {
+    const calls: string[] = [];
+    const adapter = new Sts2ConnectorV3Adapter(
+      "http://adapter.test",
+      1_000,
+      { commandPollMs: 1, commandTimeoutMs: 100 },
+      async (input) => {
+        const url = String(input);
+        calls.push(url);
+        if (url.endsWith("/api/v3/capabilities")) return json(connectorCapabilities());
+        if (url.endsWith("/api/v3/observation")) return json(eventObservation());
+        throw new Error(`Unexpected request ${url}`);
+      },
+      async () => {}
+    );
+
+    const raw = await adapter.readCurrentState();
+    const envelope = normalizeCurrentState(raw, adapter.describe());
+
+    expect(calls.some((url) => url.endsWith("/api/v2/capabilities"))).toBe(false);
+    expect(envelope.currentState.sourceStateType)
+      .toBe("connector_v3:event:event_option:direct");
+  });
+
+  it("fails a direct V3 map closed when a candidate binds a non-visible node", () => {
+    const observation = mapObservation();
+    const candidate = observation.interaction.command_candidates[0]!;
+    candidate.operands.map_node_id = "map-node-replacement";
+    candidate.entity_bindings[1] = {
+      role: "map_node",
+      entity_id: "map-node-replacement"
+    };
+    const projected = projectConnectorV3ForRe(
+      observation,
+      observation as unknown as JsonObject
+    );
+
+    const envelope = normalizeCurrentState(projected.rawState, SOURCE);
+
+    expect(envelope.currentState.stability).toBe("invalid");
+    expect(envelope.currentState.actionAuthority).toBe("none");
+    expect(envelope.currentState.surface.kind).toBe("unsupported");
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toEqual([]);
   });
 
   it("fails a direct menu observation closed when its context flow is inconsistent", () => {

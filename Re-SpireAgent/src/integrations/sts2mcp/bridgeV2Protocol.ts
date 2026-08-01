@@ -5,6 +5,22 @@ import {
   mainMenuSurfaceSchema,
   singleplayerMenuSurfaceSchema
 } from "./gatewayMenuProtocol.js";
+import {
+  gatewayEventContextSchema as eventContextSchema,
+  gatewayEventOptionSurfaceSchema as eventOptionSurfaceSchema,
+  gatewayGameOverContextSchema as gameOverContextSchema,
+  gatewayGameOverSurfaceSchema as gameOverSurfaceSchema,
+  gatewayMapContextSchema as mapContextSchema,
+  gatewayMapNavigationSurfaceSchema as mapNavigationSurfaceSchema
+} from "./gatewayJourneyProtocol.js";
+import {
+  sharedVisibleStateSchema,
+  visibleCardSchema,
+  visibleEnchantmentSchema,
+  visibleKeywordSchema,
+  visibleOwnedPotionSchema,
+  visibleRelicSchema
+} from "./gatewayVisibleStateProtocol.js";
 
 export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.86" as const;
 export const BRIDGE_V2_INSPECTION_KINDS = ["run_deck", "combat_piles", "shop_catalog"] as const;
@@ -284,31 +300,6 @@ const authorityHandoffSchema = z.object({
   reason: z.string().min(1)
 }).passthrough();
 
-const visibleEnchantmentSchema = z.object({
-  definition_id: z.string().min(1),
-  name: z.string().nullable().optional(),
-  description: z.string().nullable().optional(),
-  amount: z.number().int(),
-  observation_source: z.string().optional()
-}).passthrough();
-
-const visibleCardSchema = z.object({
-  entity_id: z.string().min(1),
-  definition_id: z.string().min(1),
-  name: z.string().nullable().optional(),
-  type: z.string(),
-  cost: z.string(),
-  star_cost: z.string().nullable().optional(),
-  description: z.string().nullable().optional(),
-  rarity: z.string(),
-  is_upgraded: z.boolean(),
-  is_selected: z.boolean(),
-  existing_enchantment: visibleEnchantmentSchema.nullable().optional(),
-  target_type: z.string().nullable().optional(),
-  can_play: z.boolean().nullable().optional(),
-  unplayable_reason: z.string().nullable().optional()
-}).passthrough();
-
 const visibleStatusSchema = z.object({
   definition_id: z.string().min(1),
   name: z.string().nullable().optional(),
@@ -345,21 +336,6 @@ const visiblePotionSchema = z.object({
   target_type: z.string(),
   can_use: z.boolean(),
   automatic: z.boolean()
-}).passthrough();
-
-const visibleKeywordSchema = z.object({
-  name: z.string().min(1),
-  description: z.string().nullable().optional()
-}).passthrough();
-
-const visibleRelicSchema = z.object({
-  entity_id: z.string().min(1),
-  definition_id: z.string().min(1),
-  name: z.string().nullable().optional(),
-  description: z.string().nullable().optional(),
-  counter: z.number().nullable().optional(),
-  keywords: z.array(visibleKeywordSchema),
-  card_previews: z.array(visibleCardSchema)
 }).passthrough();
 
 const visibleTreasureRelicSchema = z.object({
@@ -415,15 +391,6 @@ const visibleCombatPlayerSchema = z.object({
   orb_slots: z.number().int().nonnegative().nullable().optional()
 }).passthrough();
 
-const eventContextSchema = z.object({
-  kind: z.literal("event"),
-  event_id: z.string().min(1),
-  name: z.string().nullable().optional(),
-  ancient: z.boolean(),
-  in_dialogue: z.boolean(),
-  body: z.string().nullable().optional()
-}).passthrough();
-
 const combatContextSchema = z.object({
   kind: z.literal("combat"),
   encounter_type: z.enum(["normal", "elite", "boss", "unknown"]),
@@ -447,101 +414,18 @@ const treasureContextSchema = z.object({
   kind: z.literal("treasure")
 }).passthrough();
 
-const gameOverContextSchema = z.object({
-  kind: z.literal("game_over"),
-  result: z.enum(["win", "loss"]),
-  game_mode: z.literal("standard"),
-  score: z.number().int().nonnegative().nullable().optional(),
-  floor_reached: z.number().int().nonnegative().nullable().optional(),
-  ascension: z.number().int().nonnegative().nullable().optional()
-}).passthrough();
-
 const menuContextSchema = z.object({
   kind: z.literal("menu"),
   flow: z.enum(["root_navigation", "standard_run_setup"])
-}).passthrough();
-
-const visibleOwnedPotionSchema = z.object({
-  entity_id: z.string().min(1),
-  definition_id: z.string().min(1),
-  name: z.string().nullable().optional(),
-  description: z.string().nullable().optional(),
-  slot: z.number().int().nonnegative(),
-  keywords: z.array(visibleKeywordSchema),
-  card_previews: z.array(visibleCardSchema)
 }).passthrough();
 
 const shopContextSchema = z.object({
   kind: z.literal("shop")
 }).passthrough();
 
-const sharedVisibleStateSchema = z.object({
-  scope: z.literal("active_single_player_run"),
-  run: z.object({
-    act: z.number().int().positive(),
-    act_definition_id: z.string().min(1),
-    act_name: z.string().nullable().optional(),
-    floor: z.number().int().nonnegative(),
-    ascension: z.number().int().nonnegative(),
-    bosses: z.array(z.object({
-      definition_id: z.string().min(1),
-      name: z.string().nullable().optional(),
-      order: z.number().int().nonnegative()
-    }).passthrough()),
-    modifiers: z.array(z.object({
-      definition_id: z.string().min(1),
-      name: z.string().nullable().optional(),
-      description: z.string().nullable().optional(),
-      keywords: z.array(visibleKeywordSchema),
-      card_previews: z.array(visibleCardSchema)
-    }).passthrough())
-  }).passthrough(),
-  player: z.object({
-    entity_id: z.string().min(1),
-    character_definition_id: z.string().min(1),
-    character_name: z.string().nullable().optional(),
-    hp: z.number(),
-    max_hp: z.number(),
-    gold: z.number().int().nonnegative(),
-    relics: z.array(visibleRelicSchema),
-    potions: z.array(visibleOwnedPotionSchema),
-    max_potion_slots: z.number().int().nonnegative()
-  }).passthrough(),
-  completeness: z.object({
-    player_visible_semantics: z.string().min(1),
-    sources: z.array(z.string().min(1)),
-    missing: z.array(z.string().min(1))
-  }).passthrough()
-}).passthrough();
-
 // Keep declaration generation bounded while preserving the full schema and
 // restoring its exact public type on BridgeV2State below.
 const stateSharedVisibleStateSchema: z.ZodTypeAny = sharedVisibleStateSchema;
-
-const visibleMapCoordinateSchema = z.object({
-  col: z.number().int(),
-  row: z.number().int(),
-  point_type: z.string().min(1).nullable().optional()
-}).passthrough();
-
-const visibleMapNodeSchema = z.object({
-  entity_id: z.string().min(1),
-  col: z.number().int(),
-  row: z.number().int(),
-  point_type: z.string().min(1),
-  state: z.enum(["none", "travelable", "traveled", "untravelable"]),
-  children: z.array(visibleMapCoordinateSchema)
-}).passthrough();
-
-const mapContextSchema = z.object({
-  kind: z.literal("map"),
-  act_index: z.number().int().nonnegative(),
-  // System.Text.Json omits nullable record fields. A newly opened or
-  // transitioning map legitimately has no current coordinate yet.
-  current_position: visibleMapCoordinateSchema.nullable().optional(),
-  visited: z.array(visibleMapCoordinateSchema),
-  nodes: z.array(visibleMapNodeSchema)
-}).passthrough();
 
 const combatTransitionContextSchema = z.discriminatedUnion("phase", [
   z.object({
@@ -662,40 +546,6 @@ const woodCarvingsReplacementSurfaceSchema = z.object({
   cards: z.array(visibleCardSchema)
 }).passthrough();
 
-const visibleEventOptionSchema = z.object({
-  entity_id: z.string().min(1),
-  index: z.number().int().nonnegative(),
-  title: z.string().nullable().optional(),
-  description: z.string().nullable().optional(),
-  is_enabled: z.boolean(),
-  is_locked: z.boolean(),
-  is_proceed: z.boolean(),
-  was_chosen: z.boolean(),
-  will_kill_player: z.boolean(),
-  relic_name: z.string().nullable().optional(),
-  relic_description: z.string().nullable().optional(),
-  tooltips: z.array(z.discriminatedUnion("kind", [
-    z.object({
-      kind: z.literal("text"),
-      name: z.string().nullable().optional(),
-      description: z.string().nullable().optional(),
-      card: z.null().optional()
-    }).passthrough(),
-    z.object({
-      kind: z.literal("card"),
-      name: z.null().optional(),
-      description: z.null().optional(),
-      card: visibleCardSchema
-    }).passthrough()
-  ]))
-}).passthrough();
-
-const eventOptionSurfaceSchema = z.object({
-  kind: z.literal("event_option"),
-  screen_entity_id: z.string().min(1),
-  options: z.array(visibleEventOptionSchema)
-}).passthrough();
-
 const visibleDialogueLineSchema = z.object({
   entity_id: z.string().min(1),
   index: z.number().int().nonnegative(),
@@ -793,15 +643,6 @@ const treasureRoomSurfaceSchema = z.object({
   relics: z.array(visibleTreasureRelicSchema).max(1),
   can_skip: z.boolean(),
   can_proceed: z.boolean()
-}).passthrough();
-
-const gameOverSurfaceSchema = z.object({
-  kind: z.literal("game_over"),
-  stage: z.enum(["intro_animating", "intro", "summary_animating", "summary"]),
-  screen_entity_id: z.string().min(1),
-  return_destination: z.enum(["main_menu", "timeline"]).nullable().optional(),
-  can_advance_summary: z.boolean(),
-  can_return: z.boolean()
 }).passthrough();
 
 const combatTurnSurfaceSchema = z.object({
@@ -983,22 +824,6 @@ const rewardClaimSurfaceSchema = z.object({
   discardable_potions: z.array(visiblePotionSchema),
   can_proceed: z.boolean(),
   proceed_skips_remaining_rewards: z.boolean()
-}).passthrough();
-
-const visibleMapChoiceSchema = z.object({
-  entity_id: z.string().min(1),
-  col: z.number().int(),
-  row: z.number().int(),
-  point_type: z.string().min(1)
-}).passthrough();
-
-const mapNavigationSurfaceSchema = z.object({
-  kind: z.literal("map_navigation"),
-  screen_entity_id: z.string().min(1),
-  travel_enabled: z.boolean(),
-  traveling: z.boolean(),
-  drawing_mode: z.enum(["none", "drawing", "erasing"]),
-  next_options: z.array(visibleMapChoiceSchema)
 }).passthrough();
 
 const unsupportedSurfaceSchema = z.object({

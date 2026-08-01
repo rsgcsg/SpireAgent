@@ -271,6 +271,8 @@ internal static class ConnectorV3Runtime
             return BuildCharacterSelectBindings(draft, characterSelect);
         if (draft.Surface is GeneratedCardChoiceSurface generatedCardChoice)
             return BuildGeneratedCardChoiceBindings(draft, generatedCardChoice);
+        if (draft.Surface is GameOverSurface gameOver)
+            return BuildGameOverBindings(draft, gameOver);
 
         var allowed = new List<(
             BridgeActionDraft Action,
@@ -337,6 +339,45 @@ internal static class ConnectorV3Runtime
                     new ActionEntityBinding("option", option.EntityId)
                 }))
             .ToArray();
+
+    private static IReadOnlyList<ConnectorV3BoundCommand> BuildGameOverBindings(
+        BridgeObservationDraft draft,
+        GameOverSurface surface)
+        => DescribeGameOverCommands(surface)
+            .Select(action => BuildNativeBinding(draft, action))
+            .Where(binding => binding != null)
+            .Cast<ConnectorV3BoundCommand>()
+            .ToArray();
+
+    internal static IReadOnlyList<BridgeActionDraft> DescribeGameOverCommands(
+        GameOverSurface surface)
+    {
+        var actions = new List<BridgeActionDraft>();
+        ActionEntityBinding screen = new("game_over_screen", surface.ScreenEntityId);
+        if (surface.CanAdvanceSummary && surface.Stage == "intro")
+        {
+            actions.Add(NativeDescriptor(
+                $"game_over:advance:{surface.ScreenEntityId}",
+                "advance_game_over_summary",
+                "navigation",
+                "Continue to the run summary",
+                "NGameOverScreen.%ContinueButton+_isAnimatingSummary",
+                new[] { screen }));
+        }
+        if (surface.CanReturn && surface.Stage == "summary")
+        {
+            actions.Add(NativeDescriptor(
+                $"game_over:return:{surface.ScreenEntityId}:{surface.ReturnDestination}",
+                "return_game_over",
+                "navigation",
+                surface.ReturnDestination == "timeline"
+                    ? "Continue to newly discovered Timeline content"
+                    : "Return to the main menu",
+                "NGameOverScreen.%MainMenuButton+NGame.MainMenu-loaded",
+                new[] { screen }));
+        }
+        return actions;
+    }
 
     private static IReadOnlyList<ConnectorV3BoundCommand> BuildTreasureRoomBindings(
         BridgeObservationDraft draft,
@@ -1024,6 +1065,7 @@ internal static class ConnectorV3Runtime
                 "singleplayer_menu" => StartSingleplayerMenuCommand(snapshot, request, binding),
                 "character_select" => StartCharacterSelectCommand(snapshot, request, binding),
                 "generated_card_choice" => StartGeneratedCardChoiceCommand(snapshot, request, binding),
+                "game_over" => StartGameOverCommand(snapshot, request, binding),
                 _ => BridgeActionStartResult.Rejected(
                     "native_command_owner_unsupported",
                     "The current owner has no Connector V3 native command resolver.")
@@ -1150,6 +1192,43 @@ internal static class ConnectorV3Runtime
         return BridgeActionStartResult.Rejected(
             "generated_choice_command_unsupported",
             "The requested generated-card command is not supported for this exact source.");
+    }
+
+    private static BridgeActionStartResult StartGameOverCommand(
+        ConnectorV3Snapshot snapshot,
+        ConnectorV3CommandRequest request,
+        ConnectorV3BoundCommand binding)
+    {
+        if (snapshot.Draft.Surface is not GameOverSurface surface
+            || !HasExactOperand(
+                request,
+                "game_over_screen_id",
+                surface.ScreenEntityId)
+            || !HasExactOperand(request, "control_id", binding.Candidate.Operation))
+        {
+            return BridgeActionStartResult.Rejected(
+                "game_over_owner_changed",
+                "The exact game-over owner or semantic control is no longer current.");
+        }
+        if (binding.Candidate.Operation == "advance_game_over_summary"
+            && surface.Stage == "intro"
+            && surface.CanAdvanceSummary)
+        {
+            return GameOverSurfaceProvider.StartAdvance(
+                Entities,
+                surface.ScreenEntityId);
+        }
+        if (binding.Candidate.Operation == "return_game_over"
+            && surface.Stage == "summary"
+            && surface.CanReturn)
+        {
+            return GameOverSurfaceProvider.StartReturn(
+                Entities,
+                surface.ScreenEntityId);
+        }
+        return BridgeActionStartResult.Rejected(
+            "game_over_command_unsupported",
+            "The requested game-over command does not match the current exact stage.");
     }
 
     private static BridgeActionStartResult StartMapCommand(

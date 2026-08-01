@@ -189,6 +189,44 @@ internal sealed class GameOverSurfaceProvider : IBridgeSurfaceProvider
         && AnimatingSummaryField?.GetValue(screen) is bool animatingSummary
         && !animatingSummary;
 
+    internal static BridgeActionStartResult StartAdvance(
+        BridgeEntityRegistry entities,
+        string expectedScreenId)
+    {
+        if (NOverlayStack.Instance?.Peek() is not NGameOverScreen screen
+            || !string.Equals(
+                entities.GetId(screen, "screen"),
+                expectedScreenId,
+                StringComparison.Ordinal)
+            || screen.GetNodeOrNull<NGameOverContinueButton>("%ContinueButton")
+                is not { } continueButton)
+        {
+            return BridgeActionStartResult.Rejected(
+                "game_over_intro_changed",
+                "The exact game-over intro screen or Continue control is no longer current.");
+        }
+        return StartAdvance(screen, continueButton);
+    }
+
+    internal static BridgeActionStartResult StartReturn(
+        BridgeEntityRegistry entities,
+        string expectedScreenId)
+    {
+        if (NOverlayStack.Instance?.Peek() is not NGameOverScreen screen
+            || !string.Equals(
+                entities.GetId(screen, "screen"),
+                expectedScreenId,
+                StringComparison.Ordinal)
+            || screen.GetNodeOrNull<NReturnToMainMenuButton>("%MainMenuButton")
+                is not { } returnButton)
+        {
+            return BridgeActionStartResult.Rejected(
+                "game_over_summary_changed",
+                "The exact game-over summary screen or return control is no longer current.");
+        }
+        return StartReturn(screen, returnButton);
+    }
+
     private static BridgeActionStartResult StartAdvance(
         NGameOverScreen expectedScreen,
         NGameOverContinueButton expectedButton)

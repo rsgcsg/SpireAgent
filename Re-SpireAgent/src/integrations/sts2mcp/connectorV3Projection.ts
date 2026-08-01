@@ -135,9 +135,15 @@ export function projectConnectorV3ForRe(
 export function usesDirectConnectorV3Consumer(
   observation: ConnectorV3Observation
 ): boolean {
-  return observation.context.kind === "menu"
-    && ["main_menu", "singleplayer_menu", "character_select"]
-      .includes(observation.surface.kind);
+  const pair = `${observation.context.kind}:${observation.surface.kind}`;
+  return new Set([
+    "menu:main_menu",
+    "menu:singleplayer_menu",
+    "menu:character_select",
+    "event:event_option",
+    "map:map_navigation",
+    "game_over:game_over"
+  ]).has(pair);
 }
 
 export function expandConnectorV3Commands(
