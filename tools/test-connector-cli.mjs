@@ -34,7 +34,10 @@ assert.equal(
   resolveModsDir("/game", "darwin"),
   "/game/SlayTheSpire2.app/Contents/MacOS/mods"
 );
-assert.equal(resolveModsDir("C:\\game", "win32"), path.join("C:\\game", "mods"));
+assert.equal(
+  resolveModsDir("C:\\game", "win32"),
+  path.win32.join("C:\\game", "mods")
+);
 assert.equal(processListHasGame(`
   100 /Users/fire/Library/Application Support/Steam/steamapps/common/Slay the Spire 2/SlayTheSpire2.app/Contents/MacOS/Slay the Spire 2
 `), true);
