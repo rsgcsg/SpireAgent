@@ -48,11 +48,17 @@ state and interaction. Entity IDs resolve to the same native object instance;
 replacement objects do not inherit IDs. Native owner and legality are checked
 again immediately before STS2 Commit.
 
-Generic `activate_control` candidates include a semantic `control_id` even
-when they also bind an owner entity. This distinguishes multiple visible
-controls on one owner, such as opening a merchant inventory versus leaving the
-same merchant room. `control_id` is not a V2 action ID and cannot name an
-unadvertised method or UI node.
+Generic `activate_control` and `cancel_interaction` candidates include a
+semantic `control_id` even when they also bind an owner entity. This
+distinguishes multiple visible controls on one owner, such as opening versus
+leaving a merchant room or closing the current inventory. `control_id` is not
+a V2 action ID and cannot name an unadvertised method or UI node.
+
+Visible Surface facts and command candidates are separate contracts. A
+Surface may expose a visible, natively available control while exact
+operation-scoped authority filters its command candidate. Consumers must
+validate every published candidate but must not infer that an absent candidate
+means the visible fact is false.
 
 Event-option candidates bind the exact event screen and option entity.
 Treasure candidates bind the exact room and, for relic choice, the exact

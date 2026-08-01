@@ -77,11 +77,17 @@ public sealed class ConnectorV3ContractTests
             "proceed_shop",
             "activate_control",
             owner);
+        Dictionary<string, string> close = ConnectorV3Runtime.BuildCommandOperands(
+            "close_shop_inventory",
+            "cancel_interaction",
+            new[] { new ActionEntityBinding("screen", "screen-a") });
 
         Assert.Equal("room-a", open["room_id"]);
         Assert.Equal("open_shop_inventory", open["control_id"]);
         Assert.Equal("proceed_shop", proceed["control_id"]);
         Assert.NotEqual(open["control_id"], proceed["control_id"]);
+        Assert.Equal("screen-a", close["screen_id"]);
+        Assert.Equal("close_shop_inventory", close["control_id"]);
     }
 
     [Fact]
@@ -537,6 +543,16 @@ public sealed class ConnectorV3ContractTests
         Assert.Equal("shop-screen", operands["screen_id"]);
         Assert.Equal("offer-card", operands["shop_offer_id"]);
         Assert.DoesNotContain("action_id", operands.Keys);
+
+        BridgeActionDraft close = Assert.Single(commands, command =>
+            command.Kind == "close_shop_inventory");
+        Dictionary<string, string> closeOperands =
+            ConnectorV3Runtime.BuildCommandOperands(
+                close.Kind,
+                "cancel_interaction",
+                close.EntityBindings!);
+        Assert.Equal("shop-screen", closeOperands["screen_id"]);
+        Assert.Equal("close_shop_inventory", closeOperands["control_id"]);
     }
 
     [Fact]

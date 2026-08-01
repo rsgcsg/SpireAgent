@@ -53,7 +53,8 @@ export function normalizeCurrentState(rawInput: unknown, source: AdapterDescript
     const projected = normalizeBridgeV2CurrentState(
       connectorV3AsBridgeV2Wrapper(rawInput),
       source,
-      capturedAt
+      capturedAt,
+      { actionCoverage: connectorV3ActionCoverage(rawInput) }
     );
     const currentState = {
       ...projected.currentState,
@@ -75,6 +76,20 @@ export function normalizeCurrentState(rawInput: unknown, source: AdapterDescript
   // Direct legacy records remain replay-readable as historical evidence. They
   // are never accepted as a sidecar to a current Bridge v2 observation.
   return normalizeLegacyCurrentState(rawInput, source, capturedAt);
+}
+
+function connectorV3ActionCoverage(
+  rawInput: Record<string, unknown>
+): "complete" | "authority_filtered" {
+  const observation = rawInput.connector_v3_observation;
+  if (!isJsonObject(observation) || !Array.isArray(observation.diagnostics)) {
+    return "complete";
+  }
+  return observation.diagnostics.some((diagnostic) =>
+    isJsonObject(diagnostic)
+      && diagnostic.code === "bridge.authority.partial_action_admission")
+    ? "authority_filtered"
+    : "complete";
 }
 
 function normalizeLegacyCurrentState(rawInput: unknown, source: AdapterDescriptor, capturedAt: string): StateEnvelope {

@@ -20,10 +20,12 @@ or stop at a precise visible unsupported boundary.
 
 ## Delivery Order
 
-1. Finish V3 source/test/build/install and exact loaded canary.
-2. Obtain a representative ordinary V3 journey.
-3. Replace non-combat Provider bindings family by family.
-4. Add V3-native visible detail/Inspection and remove Re's v2 sidecar.
+1. Close defects found by exact-runtime V3 journeys and keep build/install/load
+   attribution exact.
+2. Replace Re's V3-to-V2 semantic/action projection with a direct V3 consumer.
+3. Replace remaining non-combat Provider bindings family by family.
+4. Add bounded V3-native persistent summary, linked detail and Inspection;
+   then remove the v2 capabilities sidecar.
 5. Simplify V3 authority projection without weakening exact-environment
    validation.
 6. Retire v2 production mutation routes.
@@ -41,6 +43,11 @@ or stop at a precise visible unsupported boundary.
 - exact build/install/load identity and tested rollback;
 - no silent V2 mutation fallback;
 - honest coverage and evidence labels.
+
+The baseline is not complete while visible facts and operation-scoped
+authority can only be reconciled through V2 fact-to-action parity validators.
+The current clean-closure inventory still reports 38 V2 fallback authority
+contracts; this is migration debt, not V3 capability.
 
 ## Deferred
 

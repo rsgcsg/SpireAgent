@@ -62,6 +62,12 @@ Publishes player-visible facts independently of mutation support. Unknown
 critical facts are explicit. Hidden RNG, true draw order and future outcomes
 remain excluded.
 
+The canonical information projection separates persistent HUD summary, the
+complete current Surface, state-bound linked detail and state-bound read-only
+Inspection. The mainline profile may expose semantically inspectable facts
+without physically changing the UI owner. A strict real-page-opening profile
+is optional evidence tooling, not the default decision path.
+
 ### Interaction Engine
 
 Identifies exactly one current input owner and describes visible affordances.
@@ -113,17 +119,21 @@ Reuse is internal implementation reuse, not V2 protocol authority.
 
 At `3.0-preview.1`:
 
-- combat commands use V3 direct native resolvers;
-- non-combat commands use a bounded internal
-  `provider_native_binding_adapter`; this calls the current Provider's native
-  binding and never submits or searches a v2 REST action ID;
+- combat and multiple ordinary non-combat families use direct V3 native
+  resolvers; menu, generated choices and remaining selectors still use a
+  bounded internal `provider_native_binding_adapter` that never submits or
+  searches a v2 REST action ID;
 - Re uses `/api/v2/capabilities` as a same-runtime, non-authorizing semantic and
-  environment projection sidecar;
+  environment projection sidecar and temporarily expands V3 candidates into a
+  V2-shaped normalization projection;
 - V3 read-only detail/Inspection tools are not yet exposed;
 - v2 endpoints remain mounted for rollback and migration diagnostics, not as
   the default Re or MCP mutation path.
 
 These are deletion targets. They must not become permanent dual authority.
+In particular, V2 validators that require every visible affordance to have an
+authorized action cannot be the final V3 consumer contract: visibility and
+operation-scoped authority are intentionally orthogonal.
 
 ## Rejected Alternatives
 

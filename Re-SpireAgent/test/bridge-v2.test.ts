@@ -14,7 +14,7 @@ import {
   decodeBridgeV2State,
   SUPPORTED_BRIDGE_V2_PROTOCOL
 } from "../src/integrations/sts2mcp/bridgeV2Protocol.js";
-import { isBridgeV2WrappedState, wrapBridgeV2State } from "../src/integrations/sts2mcp/rawState.js";
+import { isBridgeV2WrappedState, wrapBridgeV2State, wrapConnectorV3State } from "../src/integrations/sts2mcp/rawState.js";
 import { normalizeCurrentState } from "../src/normalization/normalizeCurrentState.js";
 import type { JsonObject } from "../src/shared/json.js";
 import { fixture } from "./helpers.js";
@@ -3907,6 +3907,51 @@ describe("Bridge v2 Re-SpireAgent integration", () => {
         action: expect.objectContaining({ kind: "bridge_v2_action", bridgeActionKind: "close_shop_inventory" })
       })
     ]);
+  });
+
+  it("keeps V3 shop facts valid when authority filters a visible control", () => {
+    const state = structuredClone(SHOP_INVENTORY_STATE);
+    state.legal_actions = state.legal_actions.filter(
+      (action) => action.kind !== "close_shop_inventory"
+    );
+
+    const strictV2 = normalizeCurrentState(
+      wrapBridgeV2State({ state, capabilities: structuredClone(CAPABILITIES) }),
+      TEST_SOURCE
+    );
+    expect(strictV2.currentState.stability).toBe("invalid");
+
+    const unmarkedV3 = normalizeCurrentState(
+      wrapConnectorV3State({
+        projection: state as unknown as JsonObject,
+        capabilities: structuredClone(CAPABILITIES) as unknown as JsonObject,
+        observation: { schema: "sts2.connector.v3/observation-1" }
+      }),
+      TEST_SOURCE
+    );
+    expect(unmarkedV3.currentState.stability).toBe("invalid");
+
+    const filteredV3 = normalizeCurrentState(
+      wrapConnectorV3State({
+        projection: state as unknown as JsonObject,
+        capabilities: structuredClone(CAPABILITIES) as unknown as JsonObject,
+        observation: {
+          schema: "sts2.connector.v3/observation-1",
+          diagnostics: [{ code: "bridge.authority.partial_action_admission" }]
+        }
+      }),
+      TEST_SOURCE
+    );
+    expect(filteredV3.currentState).toMatchObject({
+      stability: "actionable",
+      actionAuthority: "bridge_advertised",
+      surface: {
+        kind: "shop_inventory",
+        canClose: true
+      }
+    });
+    expect(buildAllowedActions(filteredV3.currentState, filteredV3.stateHash))
+      .toEqual([expect.objectContaining({ id: "action-shop-buy-armaments" })]);
   });
 
   it("accepts omitted nullable shop product fields from the Bridge wire format", () => {

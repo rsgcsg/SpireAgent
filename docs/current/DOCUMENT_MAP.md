@@ -8,6 +8,7 @@
 4. [V3 implementation plan](CONNECTOR_V3_IMPLEMENTATION_PLAN.md)
 5. [Program plan](PROGRAM_PLAN.md)
 6. [Roadmap](ROADMAP.md)
+7. [V3 stage and human-information architecture reaudit](audits/CONNECTOR_V3_STAGE_AND_HUMAN_INFORMATION_ARCHITECTURE_REAUDIT_2026-08-01.md)
 
 ## Component Contracts
 
@@ -20,6 +21,7 @@
 - [Connector V3 v0.110.1 exact-assembly deployment, 2026-08-01](../../STS2MCP/docs/connector-v3/V0_110_1_EXACT_ASSEMBLY_DEPLOYMENT_2026-08-01.md)
 - [Connector V3 v0.110.1 Codex direct-play evidence](../../STS2MCP/docs/connector-v3/LIVE_EVIDENCE_V0_110_1_CODEX_DIRECT_PLAY_2026-07-31.md)
 - [Connector V3 shop-inventory V3-native cutover](../../STS2MCP/docs/connector-v3/SHOP_INVENTORY_V3_NATIVE_CUTOVER_2026-08-01.md)
+- [Connector V3 v0.110.1 Re shop evidence](../../STS2MCP/docs/connector-v3/LIVE_EVIDENCE_V0_110_1_RE_SHOP_2026-08-01.md)
 - [Re-SpireAgent](../../Re-SpireAgent/README.md)
 - [Re V3 integration](../../Re-SpireAgent/docs/CONNECTOR_V3_INTEGRATION.md)
 - [Re V3 state coverage](../../Re-SpireAgent/docs/MCP_STATE_COVERAGE.md)

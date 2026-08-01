@@ -19,8 +19,8 @@ Implemented in source:
 - visible unsupported interactions;
 - direct combat resolvers for `play_card`, `use_potion` and `end_turn`;
 - direct native commands for combat, shop-room, map, rest, event-option,
-  treasure-room, reward-claim, card-reward and source-bound deck-enchant
-  interactions;
+  shop-inventory, treasure-room, reward-claim, card-reward and source-bound
+  deck-enchant interactions;
 - bounded parameterized commands for remaining ordinary choices, purchases,
   selections and controls through an internal native-binding adapter;
 - one controller, idempotent ledger, stale rejection, exact environment
@@ -39,6 +39,12 @@ Not yet claimed:
 - complete removal of the Re v2 projection sidecar;
 - multi-stack Stratagem Outcome;
 - full vanilla or Mod coverage.
+
+Current exact-runtime Re evidence includes 51 settled V3 actions and native
+shop card/potion purchases. A subsequent shop close exposed a missing
+`cancel_interaction.control_id`; the following run exposed V2 consumer
+validation incorrectly coupling visible facts to operation admission. Both
+are repaired and installed, but the repaired artifact is not loaded.
 
 ## Migration Waves
 
@@ -62,9 +68,17 @@ map, reward, shop, generated choices, rest, treasure and bounded selectors.
 Delete each Provider action-publication dependency after its V3 resolver has
 tests and exact-runtime evidence.
 
+### Wave 2A: Direct Re V3 Consumer
+
+Replace the V2-shaped `legal_actions[]` and semantic normalizer projection with
+direct typed V3 facts and candidates. Re may validate shape, identity and
+state binding, but must not recompute Gateway affordability, legality or
+completion. Migrate vertically and retain the old projection only until each
+selected family has parity tests and replay evidence.
+
 ### Wave 3: V3 Evidence And Detail
 
-Publish V3-native hover/detail/Inspection with explicit availability:
+Publish V3-native persistent summary, hover/detail and Inspection with explicit availability:
 observed, inspectable, unavailable, failed or stale. Remove the v2 capability
 projection sidecar only after Re can obtain equivalent decision-relevant facts
 from V3.

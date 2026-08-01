@@ -32,16 +32,22 @@ the repaired artifact or unexercised families.
 
 ## V3-3: Native Family Migration
 
-Replace the Provider adapter in audited waves. Combat, shop-room, map, rest,
-event-option, treasure-room, reward-claim, card-reward and deck-enchant
-execution now use direct V3 resolvers. Menu, shop inventory, generated choices
-and remaining selectors are next. Delete each replaced execution path; do not
-retain dual authority.
+Replace the Provider adapter in audited waves. Combat, shop-room,
+shop-inventory, map, rest, event-option, treasure-room, reward-claim,
+card-reward and deck-enchant execution now use direct V3 resolvers. Menu,
+generated choices and remaining selectors are next. Delete each replaced
+execution path; do not retain dual authority.
+
+In parallel, replace the temporary V3-to-V2 Re semantic/action projection with
+a direct V3 consumer. The shop partial-authority failure proves that extending
+V2's fact-to-action parity rules is the wrong permanent adaptation mechanism.
 
 ## V3-4: Visibility And Detail
 
 Publish V3-native hover, linked detail and read-only Inspection with explicit
-availability/staleness. Remove Re's v2 capabilities projection sidecar.
+availability/staleness. Keep semantic accessibility as the efficient A default;
+reserve real-page-opening behavior for an optional evidence profile. Remove
+Re's v2 capabilities projection sidecar.
 
 ## V3-5: Authority And V2 Retirement
 

@@ -51,6 +51,13 @@ Re owns normalization, bounded model projection, model choice, command polling,
 successor readiness and evidence recording. It does not reconstruct native
 legality or completion. MCP and REST are transports only.
 
+Player-visible information is projected in four bounded layers: persistent
+HUD summary, the complete current Surface, state-bound linked detail, and
+state-bound read-only Inspection. Information availability and mutation
+authority are orthogonal. The efficient semantic-accessibility profile is the
+mainline A default; physically opening every inspectable UI page is an optional
+human-equivalence evidence mode, not a default mutation requirement.
+
 ## Current Migration Boundary
 
 Combat, shop-room, map, rest-site, event-option, treasure-room, reward-claim
@@ -61,9 +68,10 @@ bounded Provider native bindings inside the Gateway. Re temporarily reads the
 same-runtime v2 capabilities as a non-authorizing semantic projection
 sidecar. Neither path may supply a V2 action ID to V3 execution.
 
-The migration ends when V3 directly owns non-combat command bindings and
-player-visible detail contracts, after which the sidecar and v2 production
-mutation routes are deleted.
+The migration ends when V3 directly owns ordinary non-combat command bindings,
+Re consumes V3 facts/candidates without V2 semantic validation, and V3 owns
+player-visible detail contracts. The sidecar and v2 production mutation routes
+are then deleted.
 
 ## Non-Goals
 

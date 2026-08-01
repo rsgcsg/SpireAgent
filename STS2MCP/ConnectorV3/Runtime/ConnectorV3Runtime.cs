@@ -741,8 +741,9 @@ internal static class ConnectorV3Runtime
             operands[OperandName(binding.Role)] = binding.EntityId;
 
         // Generic controls can coexist on the same owner entity. The semantic
-        // control identity distinguishes them without exposing a V2 action id.
-        if (command == "activate_control")
+        // control identity distinguishes both activation and cancellation
+        // controls without exposing a V2 action id.
+        if (command is "activate_control" or "cancel_interaction")
             operands["control_id"] = operation;
         return operands;
     }

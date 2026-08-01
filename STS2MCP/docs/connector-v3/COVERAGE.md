@@ -16,14 +16,14 @@ Status values are deliberately distinct from Live evidence.
 | Outer reward claim/discard/proceed | typed-surface V3-native discovery and direct resolver | C# owner/entity/discovery tests | current v0.110.1 `.86` claim/proceed path exercised repeatedly; potion discard not exercised on this artifact |
 | Card reward select/alternative | typed-surface V3-native discovery and direct resolver with exact selectable-card facts | C# owner/entity/eligibility tests plus inherited Provider tests | current v0.110.1 `.86` card selection exercised repeatedly; skip alternative not exercised in this session |
 | Menu/run setup | internal native-binding adapter | inherited Provider tests plus V3 projection tests | current `.86` menu and run setup exercised with completed receipts |
-| Shop inventory purchase/removal/close | typed-surface V3-native discovery and direct resolver with exact screen/offer/slot/price revalidation | Gateway 235 tests, including typed eligibility and exact operand discovery | `.86` exercised adapter-backed purchase/close; current SHA `28a6...bf7f` is installed but not loaded, so native-cutover Live evidence is pending |
+| Shop inventory purchase/removal/close | typed-surface V3-native discovery and direct resolver with exact screen/offer/slot/price/control revalidation | Gateway 235 tests, Re partial-authority regression and saved-snapshot re-normalization | current runtime exercised native card and potion purchase; close exposed a missing semantic control operand and remains pending after repair |
 | Generated and other selection families | internal native-binding adapter | inherited family tests | current `.86` Hologram pile selection, Scroll Boxes bundle preview/commit and Infernal Blade generated free attack exercised; `.86` combat-hand label repair still pending |
 | Single-stack Stratagem combat-pile source | exact Power source contract | source registry and protocol tests | pending |
 | Multi-stack Stratagem | typed unsupported | contract deliberately excludes it | not exercised |
 | Tutor combat-pile source | `code_required` for target-player owner binding | static audit; diagnostic only | not exercised |
 | V3 detail/Inspection | pending | none | none |
 | V3 MCP | implemented | locked Python 3.14 syntax check passed | transport not exercised in this journey |
-| Re default V3 run | implemented | 223 tests, typecheck and production build passed | earlier v0.110.1 startup plus one settled main-menu command exercised; the current bounded journeys were Codex direct-play, not Re evidence |
+| Re default V3 run | implemented through a temporary V2 semantic projection sidecar | 224 tests, typecheck and production build passed | current exact runtime exercised 51 settled Re actions; second run exposed and now tests authority-filtered visible shop facts |
 
 Exact attribution is recorded in the
 [first V3 evidence](LIVE_EVIDENCE_2026-07-31.md) and
@@ -75,3 +75,8 @@ The subsequent shop-inventory native cutover is built and installed as SHA
 `28a6fba283bf26075ac8056e167f931f51322e5c36f85f93f85e617e10f8bf7f`,
 MVID `ceee2912-fd46-4f9d-9c80-bef0d81d03fc`, but remains unloaded. See the
 [shop-inventory cutover closeout](SHOP_INVENTORY_V3_NATIVE_CUTOVER_2026-08-01.md).
+
+That historical installation boundary was superseded by the exact runtime
+recorded in the [Re shop evidence](LIVE_EVIDENCE_V0_110_1_RE_SHOP_2026-08-01.md).
+Its native purchases completed; close failed before Commit and is repaired in
+the next built artifact. Evidence is not transferred across the MVID change.

@@ -241,7 +241,8 @@ const ACTION_KINDS = {
 export function normalizeBridgeV2CurrentState(
   rawState: Sts2McpRawState,
   source: AdapterDescriptor,
-  capturedAt: string
+  capturedAt: string,
+  options: BridgeV2NormalizationOptions = {}
 ): StateEnvelope {
   const diagnostics = new DiagnosticsBuilder();
   const bridgeStateRaw = bridgeV2StateFromWrapper(rawState);
@@ -597,7 +598,7 @@ export function normalizeBridgeV2CurrentState(
         validateRestSiteState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
         surface = projectRestSiteSurface(state.surface, state.state_id, state.legal_actions, state.completeness);
       } else if (isBridgeV2ShopInventorySurface(state.surface) && isBridgeV2ShopContext(state.context)) {
-        validateShopInventoryState(state.shared_state, state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
+        validateShopInventoryState(state.shared_state, state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, options.actionCoverage === "authority_filtered", diagnostics);
         surface = projectShopInventorySurface(state.surface, state.state_id, state.legal_actions, state.completeness);
       } else if (isBridgeV2ShopRoomSurface(state.surface) && isBridgeV2ShopContext(state.context)) {
         validateShopRoomState(state.surface, state.state_id, state.legal_actions, state.completeness.missing, advertisedOperations, state.readiness, diagnostics);
@@ -701,6 +702,10 @@ export function normalizeBridgeV2CurrentState(
     }),
     normalizedStateHash: stateHash(currentState)
   };
+}
+
+interface BridgeV2NormalizationOptions {
+  actionCoverage?: "complete" | "authority_filtered";
 }
 
 function validateAuthorityHandoff(
@@ -1358,6 +1363,7 @@ function validateShopInventoryState(
   missing: string[],
   advertisedOperations: ReadonlySet<string>,
   readiness: string,
+  allowAuthorityFilteredActions: boolean,
   diagnostics: DiagnosticsBuilder
 ): void {
   if (!shared) {
@@ -1441,7 +1447,8 @@ function validateShopInventoryState(
     const bound = purchaseActions.filter((action) =>
       action.entity_bindings.some((binding) => binding.role === role && binding.entity_id === offer.entity_id));
     if (offer.can_purchase) {
-      if (bound.length !== 1 || bound[0]?.kind !== expectedPurchaseKinds[category]) {
+      if ((bound.length !== 0 || !allowAuthorityFilteredActions)
+          && (bound.length !== 1 || bound[0]?.kind !== expectedPurchaseKinds[category])) {
         diagnostics.invalid("bridge_v2.legal_actions.entity_bindings", bound, "each purchasable shop offer must have exactly one category-specific action");
       }
     } else if (bound.length > 0) {
@@ -1459,9 +1466,10 @@ function validateShopInventoryState(
   }
   const closeActions = actions.filter((action) => action.kind === "close_shop_inventory");
   if (surface.can_close) {
-    if (closeActions.length !== 1
+    if ((closeActions.length !== 0 || !allowAuthorityFilteredActions)
+        && (closeActions.length !== 1
         || closeActions[0]!.entity_bindings.filter((binding) =>
-          binding.role === "screen" && binding.entity_id === surface.screen_entity_id).length !== 1) {
+          binding.role === "screen" && binding.entity_id === surface.screen_entity_id).length !== 1)) {
       diagnostics.invalid("bridge_v2.legal_actions.entity_bindings", closeActions, "open shop inventory must expose exactly one screen-bound close action");
     }
   } else if (closeActions.length > 0) {
