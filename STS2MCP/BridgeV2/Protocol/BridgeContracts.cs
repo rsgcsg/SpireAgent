@@ -1134,6 +1134,10 @@ public sealed record CombatHandCardSelectionSurface(
     IReadOnlyList<string> SelectedCardEntityIds,
     bool RequireManualConfirmation,
     bool IsPeeking,
+    IReadOnlyList<string> SelectableCardEntityIds,
+    IReadOnlyList<string> DeselectableCardEntityIds,
+    bool CanConfirm,
+    bool CanClosePeek,
     IReadOnlyList<VisibleCard> Cards) : IBridgeSurface;
 
 /// <summary>

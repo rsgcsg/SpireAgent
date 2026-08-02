@@ -848,6 +848,50 @@ public sealed class ConnectorV3ContractTests
     }
 
     [Fact]
+    public void CombatHandDescriptorsUseExplicitActionableCardAndControlFacts()
+    {
+        var surface = new CombatHandCardSelectionSurface(
+            "combat_hand_card_selection",
+            "hand-current",
+            "Choose cards",
+            "simple_select",
+            1,
+            2,
+            1,
+            new[] { "card-selected" },
+            RequireManualConfirmation: true,
+            IsPeeking: false,
+            SelectableCardEntityIds: new[] { "card-option" },
+            DeselectableCardEntityIds: new[] { "card-selected" },
+            CanConfirm: true,
+            CanClosePeek: false,
+            new[]
+            {
+                new VisibleCard(
+                    "card-option", "STRIKE", "Strike", "Attack", "1", null,
+                    "Deal 6 damage.", "Basic", false, false, null),
+                new VisibleCard(
+                    "card-selected", "DEFEND", "Defend", "Skill", "1", null,
+                    "Gain 5 Block.", "Basic", false, true, null)
+            });
+
+        BridgeActionDraft[] commands =
+            ConnectorV3Runtime.DescribeCombatHandCommands(surface).ToArray();
+
+        Assert.Equal(3, commands.Length);
+        Assert.Contains(commands, command =>
+            command.Kind == "select_combat_hand_card"
+            && command.EntityBindings!.Single().EntityId == "card-option");
+        Assert.Contains(commands, command =>
+            command.Kind == "deselect_combat_hand_card"
+            && command.EntityBindings!.Single().EntityId == "card-selected");
+        Assert.Contains(commands, command =>
+            command.Kind == "confirm_combat_hand_selection"
+            && command.EntityBindings!.Count == 0);
+        Assert.DoesNotContain(commands, command => command.Kind == "close_combat_hand_peek");
+    }
+
+    [Fact]
     public void ParameterizedBindingRequiresEveryExactOperandAndNoExtras()
     {
         var candidate = new ConnectorV3CommandCandidate(

@@ -59,7 +59,7 @@ const SOURCE: AdapterDescriptor = {
 
 function combatObservation(): ConnectorV3Observation {
   return decodeConnectorV3Observation({
-    protocol_version: "3.0-preview.3",
+    protocol_version: "3.0-preview.4",
     schema: "sts2.connector.v3/observation-1",
     profile: "semantic_accessibility.tools.v1",
     state_token: "state-fixture-1",
@@ -369,6 +369,67 @@ function generatedCombatChoiceObservation(): ConnectorV3Observation {
         operand_domains: {},
         entity_bindings: [
           { role: "screen", entity_id: "generated-screen-fixture" }
+        ],
+        binding_kind: "native_direct_resolver",
+        authority_state: "trial"
+      }
+    ]
+  };
+  return decodeConnectorV3Observation(value).data;
+}
+
+function combatHandObservation(): ConnectorV3Observation {
+  const value = structuredClone(combatObservation()) as unknown as Record<string, unknown>;
+  value.surface = {
+    kind: "combat_hand_card_selection",
+    hand_entity_id: "hand-fixture",
+    prompt: "Confirm Card to Upgrade",
+    selection_mode: "upgrade_select",
+    min_select: 1,
+    max_select: 1,
+    selected_count: 0,
+    selected_card_entity_ids: [],
+    require_manual_confirmation: true,
+    is_peeking: false,
+    selectable_card_entity_ids: ["card-fixture-1"],
+    deselectable_card_entity_ids: [],
+    can_confirm: false,
+    can_close_peek: false,
+    cards: [
+      {
+        entity_id: "card-fixture-1",
+        definition_id: "STRIKE_IRONCLAD",
+        name: "Strike",
+        type: "Attack",
+        cost: "1",
+        description: "Deal 6 damage.",
+        rarity: "Basic",
+        is_upgraded: false,
+        is_selected: false
+      }
+    ]
+  };
+  value.interaction = {
+    id: "interaction-combat-hand-fixture",
+    kind: "combat_hand_card_selection",
+    phase: "ready",
+    execution_support: "trial",
+    support_reason: null,
+    affordances: ["select_entity"],
+    command_candidates: [
+      {
+        candidate_id: "candidate-combat-hand-select",
+        command: "select_entity",
+        operation: "select_combat_hand_card",
+        label: "Select Strike",
+        operands: {
+          hand_id: "hand-fixture",
+          card_id: "card-fixture-1"
+        },
+        operand_domains: {},
+        entity_bindings: [
+          { role: "hand", entity_id: "hand-fixture" },
+          { role: "card", entity_id: "card-fixture-1" }
         ],
         binding_kind: "native_direct_resolver",
         authority_state: "trial"
@@ -899,7 +960,7 @@ function treasureObservation(): ConnectorV3Observation {
 
 function connectorCapabilities() {
   return {
-    protocol_version: "3.0-preview.3",
+    protocol_version: "3.0-preview.4",
     observation_schema: "sts2.connector.v3/observation-1",
     command_schema: "sts2.connector.v3/command-1",
     inspection_schema: "sts2.connector.v3/inspection-1",
@@ -942,7 +1003,7 @@ describe("Connector V3 strict contract", () => {
 
   it("rejects unknown mutation receipts that permit retry", () => {
     expect(() => decodeConnectorV3Receipt({
-      protocol_version: "3.0-preview.3",
+      protocol_version: "3.0-preview.4",
       request_id: "request-fixture",
       status: "unknown",
       application: "unknown",
@@ -958,7 +1019,7 @@ describe("Connector V3 strict contract", () => {
 
   it("decodes state-bound read-only V3 inspections", () => {
     const decoded = decodeConnectorV3Inspection({
-      protocol_version: "3.0-preview.3",
+      protocol_version: "3.0-preview.4",
       schema: "sts2.connector.v3/inspection-1",
       inspection_id: "v3inspection-fixture",
       expected_state_token: "state-fixture-1",
@@ -990,7 +1051,7 @@ describe("Connector V3 strict contract", () => {
 
   it("rejects V3 inspections whose state token drifted", () => {
     expect(() => decodeConnectorV3Inspection({
-      protocol_version: "3.0-preview.3",
+      protocol_version: "3.0-preview.4",
       schema: "sts2.connector.v3/inspection-1",
       inspection_id: "v3inspection-fixture",
       expected_state_token: "state-fixture-1",
@@ -1072,6 +1133,58 @@ describe("Connector V3 strict contract", () => {
       }
     });
     expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toHaveLength(2);
+  });
+
+  it("consumes combat-hand selection with exact owner and card operands", () => {
+    const observation = combatHandObservation();
+    const projected = projectConnectorV3ForRe(
+      observation,
+      observation as unknown as JsonObject
+    );
+    const wrapper = projected.rawState as Record<string, unknown>;
+
+    expect(wrapper.bridge_v2_state).toBeUndefined();
+    expect(wrapper.bridge_v2_capabilities).toBeUndefined();
+    expect([...projected.invocations.values()]).toEqual([
+      expect.objectContaining({
+        command: "select_entity",
+        operation: "select_combat_hand_card",
+        operands: {
+          hand_id: "hand-fixture",
+          card_id: "card-fixture-1"
+        }
+      })
+    ]);
+    const envelope = normalizeCurrentState(projected.rawState, SOURCE);
+    expect(envelope.diagnostics.status).toBe("ok");
+    expect(envelope.currentState).toMatchObject({
+      sourceStateType: "connector_v3:combat:combat_hand_card_selection:direct",
+      context: { kind: "combat" },
+      surface: {
+        kind: "combat_hand_card_selection",
+        handEntityId: "hand-fixture",
+        selectionMode: "upgrade_select"
+      }
+    });
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toHaveLength(1);
+  });
+
+  it("rejects a combat-hand command bound to a different hand owner", () => {
+    const observation = combatHandObservation();
+    observation.interaction.command_candidates[0]!.operands.hand_id = "hand-replacement";
+    const projected = projectConnectorV3ForRe(
+      observation,
+      observation as unknown as JsonObject
+    );
+    const envelope = normalizeCurrentState(projected.rawState, SOURCE);
+
+    expect(envelope.diagnostics.status).toBe("invalid");
+    expect(envelope.diagnostics.invalidFields).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        path: "connector_v3_observation.interaction.command_candidates"
+      })
+    ]));
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toEqual([]);
   });
 
   it("treats a known settling interaction as supervised no-action, not unsupported", () => {
@@ -1270,6 +1383,7 @@ describe("Connector V3 strict contract", () => {
 
   it.each([
     ["combat", combatObservation, "combat", "combat_turn", 2],
+    ["combat hand", combatHandObservation, "combat", "combat_hand_card_selection", 1],
     ["generated combat choice", generatedCombatChoiceObservation, "combat", "generated_card_choice", 3],
     ["event", eventObservation, "event", "event_option", 1],
     ["map", mapObservation, "map", "map_navigation", 1],

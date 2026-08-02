@@ -2854,6 +2854,10 @@ public sealed class BridgeContractTests
             new[] { "card-selected" },
             RequireManualConfirmation: true,
             IsPeeking: false,
+            SelectableCardEntityIds: new[] { "card-option" },
+            DeselectableCardEntityIds: Array.Empty<string>(),
+            CanConfirm: true,
+            CanClosePeek: false,
             new[]
             {
                 new VisibleCard(
@@ -2873,6 +2877,8 @@ public sealed class BridgeContractTests
         Assert.Contains("\"kind\":\"combat_hand_card_selection\"", json);
         Assert.Contains("\"selection_mode\":\"upgrade_select\"", json);
         Assert.Contains("\"selected_card_entity_ids\":[\"card-selected\"]", json);
+        Assert.Contains("\"selectable_card_entity_ids\":[\"card-option\"]", json);
+        Assert.Contains("\"can_confirm\":true", json);
         Assert.Contains("\"require_manual_confirmation\":true", json);
         Assert.Contains("\"is_selected\":true", json);
     }
@@ -3690,6 +3696,32 @@ public sealed class BridgeContractTests
             currentRoomPresent,
             hasBlockingSurface,
             sourceType));
+    }
+
+    [Theory]
+    [InlineData(true, "RestSiteRoom", false, "run_without_visible_overlay", false, 1)]
+    [InlineData(true, "MerchantRoom", false, "run_without_visible_overlay", false, 2)]
+    [InlineData(true, "TreasureRoom", false, "run_without_visible_overlay", false, 3)]
+    [InlineData(true, "RestSiteRoom", false, "run_without_visible_overlay", true, 0)]
+    [InlineData(true, "RestSiteRoom", true, "run_without_visible_overlay", false, 0)]
+    [InlineData(true, "EventRoom", false, "run_without_visible_overlay", false, 0)]
+    [InlineData(false, "RestSiteRoom", false, "menu_or_no_run", false, 0)]
+    public void KnownRoomNoInputTransitionRequiresExactModelWithoutMountedOwner(
+        bool runInProgress,
+        string currentRoomType,
+        bool hasBlockingSurface,
+        string sourceType,
+        bool expectedRoomNodePresent,
+        int expected)
+    {
+        Assert.Equal(
+            (KnownRoomNoInputKind)expected,
+            BridgeSnapshotBuilder.ClassifyKnownRoomNoInputTransition(
+                runInProgress,
+                currentRoomType,
+                hasBlockingSurface,
+                sourceType,
+                expectedRoomNodePresent));
     }
 
     [Fact]

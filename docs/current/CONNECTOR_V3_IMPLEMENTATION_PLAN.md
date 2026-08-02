@@ -14,7 +14,7 @@ commands, or stop at a precise visible unsupported boundary.
 
 Implemented in source:
 
-- `3.0-preview.3` capabilities, observation, command and receipt contracts,
+- `3.0-preview.4` capabilities, observation, command and receipt contracts,
   plus `sts2.connector.v3/inspection-1`;
 - state token, stable instance identity and one active interaction;
 - visible unsupported interactions;
@@ -23,6 +23,8 @@ Implemented in source:
   shop-inventory, treasure-room, reward-claim, card-reward and source-bound
   deck-enchant interactions, plus current source cutovers for menu/run-setup
   and source-discriminated generated-card choices;
+- direct combat-hand candidate discovery, exact native hand/card execution and
+  direct Re consumption without the V2 projection sidecar;
 - bounded parameterized commands for remaining ordinary choices, purchases,
   selections and controls through an internal native-binding adapter;
 - one controller, idempotent ledger, stale rejection, exact environment
@@ -40,7 +42,7 @@ Implemented in source:
 
 Not yet claimed:
 
-- loaded identity or mutation/Inspection evidence for the latest installed
+- loaded identity or mutation/Inspection evidence for the installed Preview.4
   v0.110.1 artifact;
 - bounded linked detail and the optional physical-UI evidence profile;
 - complete removal of the non-combat Provider adapter;
@@ -48,13 +50,14 @@ Not yet claimed:
 - multi-stack Stratagem Outcome;
 - full vanilla or Mod coverage.
 
-Current exact-runtime Re evidence includes
-the nine Preview.2 runs from `run-20260802073844-wyq08j` through
-`run-20260802074610-ow4g7a`: 48 settled commands with completed receipts and
-available successors. Direct menu/event/map/reward/shop/rest/treasure
-consumption was exercised. All nine runs exposed the same settling-versus-
-unsupported classification defect. Preview.3 repairs it and directly consumes
-combat/generated choice; those changes and Inspection require a new cold load.
+Current exact-runtime Re evidence includes three Preview.3 runs ending in
+`run-20260802090204-x7lsad`: 172 settled commands with completed receipts and
+available successors, including a completed 118-decision game. Direct combat,
+generated choice, menu/event/map/reward/shop/rest/treasure and game-over were
+exercised. Combat-hand selection still used the migration path. One run
+exposed a RestSite model-to-owner mount gap; Preview.4 repairs that gap and
+migrates combat-hand selection. Those changes and Inspection require a new
+cold load.
 
 ## Migration Waves
 

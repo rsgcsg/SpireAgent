@@ -138,6 +138,7 @@ export function usesDirectConnectorV3Consumer(
   if (observation.interaction.phase === "settling") return true;
   if (observation.interaction.execution_support === "unsupported") return true;
   if (observation.surface.kind === "generated_card_choice") return true;
+  if (observation.surface.kind === "combat_hand_card_selection") return true;
   const pair = `${observation.context.kind}:${observation.surface.kind}`;
   return new Set([
     "combat:combat_turn",

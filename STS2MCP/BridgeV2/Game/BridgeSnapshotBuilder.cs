@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Runs;
@@ -15,6 +16,14 @@ internal enum CombatNoInputPhase
     None,
     Setup,
     Resolution
+}
+
+internal enum KnownRoomNoInputKind
+{
+    None,
+    Rest,
+    Shop,
+    Treasure
 }
 
 internal static class BridgeSnapshotBuilder
@@ -167,6 +176,9 @@ internal static class BridgeSnapshotBuilder
 
         if (TryBuildRunMountNoInputTransition(snapshot, entities, game) is { } runTransition)
             return runTransition;
+
+        if (TryBuildKnownRoomNoInputTransition(snapshot, game) is { } roomTransition)
+            return roomTransition;
 
         return Unsupported(
             game,
@@ -348,6 +360,111 @@ internal static class BridgeSnapshotBuilder
         && (!runStatePresent || !currentRoomPresent)
         && !hasBlockingSurface
         && string.Equals(sourceType, "run_without_visible_overlay", StringComparison.Ordinal);
+
+    private static BridgeObservationDraft? TryBuildKnownRoomNoInputTransition(
+        ActiveSurfaceSnapshot snapshot,
+        GameBuildIdentity game)
+    {
+        RunState? runState = RunManager.Instance.DebugOnlyGetState();
+        string roomType = runState?.CurrentRoom?.GetType().Name ?? string.Empty;
+        bool expectedRoomNodePresent = runState?.CurrentRoom switch
+        {
+            RestSiteRoom => NRestSiteRoom.Instance is { } rest && McpMod.IsLiveNode(rest),
+            MerchantRoom => NMerchantRoom.Instance is { } shop && McpMod.IsLiveNode(shop),
+            TreasureRoom => NRun.Instance?.TreasureRoom is { } treasure && McpMod.IsLiveNode(treasure),
+            _ => false
+        };
+        KnownRoomNoInputKind kind = ClassifyKnownRoomNoInputTransition(
+            RunManager.Instance.IsInProgress,
+            roomType,
+            snapshot.HasBlockingSurface,
+            snapshot.SourceType,
+            expectedRoomNodePresent);
+        if (kind == KnownRoomNoInputKind.None)
+            return null;
+
+        IBridgeContext context = kind switch
+        {
+            KnownRoomNoInputKind.Rest => new RestBridgeContext("rest"),
+            KnownRoomNoInputKind.Shop => new ShopBridgeContext("shop"),
+            KnownRoomNoInputKind.Treasure => new TreasureBridgeContext("treasure"),
+            _ => throw new InvalidOperationException("Unsupported known-room transition kind.")
+        };
+        var surface = new NoActionSurface(
+            "no_action",
+            "settling",
+            $"The native {kind.ToString().ToLowerInvariant()} room model is current, but its player-input owner is mounting or handing off.");
+        var completeness = new StateCompleteness(
+            "complete_for_bounded_known_room_no_input_transition",
+            "none_no_input_owner",
+            new[]
+            {
+                "RunState.CurrentRoom exact native type",
+                "expected native room singleton lifecycle",
+                "ActiveSurfaceResolver"
+            },
+            Array.Empty<string>());
+        string signature = BridgeHash.Object(new
+        {
+            game.Version,
+            game.Commit,
+            roomType,
+            context,
+            surface,
+            runState!.CurrentActIndex,
+            runState.TotalFloor
+        });
+
+        return new BridgeObservationDraft(
+            signature,
+            "settling",
+            context,
+            surface,
+            completeness,
+            game,
+            Array.Empty<string>(),
+            Array.Empty<BridgeActionDraft>())
+        {
+            AuthorityHandoff = new AuthorityHandoff(
+                "none_fail_closed",
+                null,
+                "The exact room model has no mounted player-input owner; the Gateway observes and polls without publishing commands."),
+            Diagnostics = new[]
+            {
+                BridgeDiagnostics.Create(
+                    "bridge.lifecycle.known_room_no_input_transition",
+                    "info",
+                    "runtime",
+                    "none",
+                    "settle",
+                    $"{roomType}:model_current_before_or_after_input_owner")
+            }
+        };
+    }
+
+    internal static KnownRoomNoInputKind ClassifyKnownRoomNoInputTransition(
+        bool runInProgress,
+        string currentRoomType,
+        bool hasBlockingSurface,
+        string sourceType,
+        bool expectedRoomNodePresent)
+    {
+        if (!runInProgress
+            || hasBlockingSurface
+            || expectedRoomNodePresent
+            || !string.Equals(sourceType, "run_without_visible_overlay", StringComparison.Ordinal))
+        {
+            return KnownRoomNoInputKind.None;
+        }
+
+        return currentRoomType switch
+        {
+            nameof(RestSiteRoom) => KnownRoomNoInputKind.Rest,
+            nameof(MerchantRoom) => KnownRoomNoInputKind.Shop,
+            nameof(TreasureRoom) => KnownRoomNoInputKind.Treasure,
+            _ => KnownRoomNoInputKind.None
+        };
+    }
 
     internal static CombatNoInputPhase ClassifyCombatNoInputTransition(
         bool runInProgress,

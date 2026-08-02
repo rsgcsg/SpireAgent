@@ -141,6 +141,13 @@ internal sealed class CombatHandCardSelectionSurfaceProvider : IBridgeSurfacePro
         bool requireManualConfirmation = ResolveManualConfirmationRequirement(
             exact.Preferences.RequireManualConfirmation,
             confirm != null && McpMod.IsNodeVisible(confirm));
+        List<BridgeActionDraft> actions = BuildActions(
+            hand,
+            exact,
+            activeHolders,
+            cardIds);
+        string[] selectableCardIds = ActionCardIds(actions, "select_combat_hand_card");
+        string[] deselectableCardIds = ActionCardIds(actions, "deselect_combat_hand_card");
         var surface = new CombatHandCardSelectionSurface(
             SurfaceKind,
             entities.GetId(hand, "hand"),
@@ -152,13 +159,11 @@ internal sealed class CombatHandCardSelectionSurfaceProvider : IBridgeSurfacePro
             selectedIds,
             requireManualConfirmation,
             hand.PeekButton.IsPeeking,
+            selectableCardIds,
+            deselectableCardIds,
+            actions.Any(action => action.Kind == "confirm_combat_hand_selection"),
+            actions.Any(action => action.Kind == "close_combat_hand_peek"),
             cards);
-
-        List<BridgeActionDraft> actions = BuildActions(
-            hand,
-            exact,
-            activeHolders,
-            cardIds);
         string readiness = actions.Count > 0 ? "ready" : "settling";
         var completeness = new StateCompleteness(
             "contract_complete_for_combat_hand_card_selection",
@@ -194,6 +199,18 @@ internal sealed class CombatHandCardSelectionSurfaceProvider : IBridgeSurfacePro
             },
             actions);
     }
+
+    private static string[] ActionCardIds(
+        IEnumerable<BridgeActionDraft> actions,
+        string operation) =>
+        actions
+            .Where(action => action.Kind == operation)
+            .SelectMany(action => action.EntityBindings ?? Array.Empty<ActionEntityBinding>())
+            .Where(binding => binding.Role == "card")
+            .Select(binding => binding.EntityId)
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(id => id, StringComparer.Ordinal)
+            .ToArray();
 
     internal static bool ResolveManualConfirmationRequirement(
         bool preferenceRequiresManualConfirmation,
@@ -366,6 +383,60 @@ internal sealed class CombatHandCardSelectionSurfaceProvider : IBridgeSurfacePro
             () => !IsCurrentSelection(expectedHand) || !expectedHand.PeekButton.IsPeeking,
             "combat_hand_peek_closed");
     }
+
+    internal static BridgeActionStartResult StartSelect(
+        BridgeEntityRegistry entities,
+        string handEntityId,
+        string cardEntityId)
+    {
+        if (!entities.TryResolve(handEntityId, out NPlayerHand? hand)
+            || hand == null
+            || !entities.TryResolve(cardEntityId, out CardModel? card)
+            || card == null
+            || !TryReadBinding(hand, out Binding? binding, out _)
+            || binding == null)
+        {
+            return BridgeActionStartResult.Rejected(
+                "selection_changed",
+                "The exact combat-hand owner, mode, or card is no longer current.");
+        }
+        return StartSelect(hand, binding.Mode, card);
+    }
+
+    internal static BridgeActionStartResult StartDeselect(
+        BridgeEntityRegistry entities,
+        string handEntityId,
+        string cardEntityId)
+    {
+        if (!entities.TryResolve(handEntityId, out NPlayerHand? hand)
+            || hand == null
+            || !entities.TryResolve(cardEntityId, out CardModel? card)
+            || card == null)
+        {
+            return BridgeActionStartResult.Rejected(
+                "selection_changed",
+                "The exact combat-hand owner or selected card is no longer current.");
+        }
+        return StartDeselect(hand, card);
+    }
+
+    internal static BridgeActionStartResult StartConfirm(
+        BridgeEntityRegistry entities,
+        string handEntityId) =>
+        entities.TryResolve(handEntityId, out NPlayerHand? hand) && hand != null
+            ? StartConfirm(hand)
+            : BridgeActionStartResult.Rejected(
+                "selection_changed",
+                "The exact combat-hand owner is no longer current.");
+
+    internal static BridgeActionStartResult StartClosePeek(
+        BridgeEntityRegistry entities,
+        string handEntityId) =>
+        entities.TryResolve(handEntityId, out NPlayerHand? hand) && hand != null
+            ? StartClosePeek(hand)
+            : BridgeActionStartResult.Rejected(
+                "selection_changed",
+                "The exact combat-hand owner is no longer current.");
 
     private static bool TryReadBinding(NPlayerHand hand, out Binding? binding, out string? error)
     {

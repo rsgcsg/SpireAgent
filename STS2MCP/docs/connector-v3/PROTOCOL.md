@@ -1,6 +1,6 @@
 # Connector V3 Protocol
 
-Source protocol: `3.0-preview.3`
+Source protocol: `3.0-preview.4`
 
 Schemas:
 
@@ -26,7 +26,8 @@ worktree digest separately in run metadata.
 
 Shared visible facts, semantic context/surface, visibility metadata and the
 Inspection catalog are typed independently from Bridge v2. Re currently
-consumes ordinary combat, generated-card choice, menu, event, map, game-over,
+consumes ordinary combat, combat-hand selection, generated-card choice, menu,
+event, map, game-over,
 reward/card-reward, shop, rest, treasure, lifecycle-settling and
 visible-unsupported observations directly from these V3 facts. Inspection
 catalog entries advertise state-bound read availability only; they never
@@ -84,6 +85,14 @@ Event-option candidates bind the exact event screen and option entity.
 Treasure candidates bind the exact room and, for relic choice, the exact
 relic entity. Both families resolve current native controls at execution and
 do not execute through Bridge v2 action IDs or Provider action closures.
+
+Combat-hand selection exposes the exact current hand owner, visible card
+membership, selected membership, currently selectable/deselectable card IDs
+and current confirm/peek controls. Commands bind `hand_id` plus an exact
+`card_id` or semantic `control_id`; execution resolves the same native hand and
+card again before using `NPlayerHand`'s native selection controls. This
+contract is deliberately distinct from pile/grid selection because its owner,
+replacement behavior, Commit and Outcome belong to `NPlayerHand`.
 
 Reward-claim candidates are derived from the typed rewards Surface rather than
 Provider action drafts. They bind the exact screen and reward or potion

@@ -122,17 +122,19 @@ Reuse is internal implementation reuse, not V2 protocol authority.
 
 ## Explicit Migration Debt
 
-At `3.0-preview.3`:
+At `3.0-preview.4`:
 
 - combat and multiple ordinary non-combat families use direct V3 native
   resolvers; menu/run-setup, source-discriminated generated choices and
-  game-over are now cut over in source, while remaining selectors use a bounded internal
+  game-over and combat-hand selection are now cut over in source, while
+  remaining selectors use a bounded internal
   `provider_native_binding_adapter` that never submits or searches a v2 REST
   action ID;
 - Re directly consumes ordinary combat, source-discriminated generated-card
   choice, main/singleplayer/character menu, event, map, game-over,
   reward/card-reward, shop, rest, treasure, lifecycle-settling and
-  visible-unsupported facts and candidates. Remaining selector Surfaces use
+  visible-unsupported facts and candidates. Combat-hand selection joins this
+  direct path in Preview.4. Remaining selector Surfaces use
   `/api/v2/capabilities` as a same-runtime,
   non-authorizing semantic/environment projection sidecar and temporarily
   expand V3 candidates into a V2-shaped normalization projection;

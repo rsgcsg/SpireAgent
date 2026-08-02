@@ -4,6 +4,7 @@ import {
   type BridgeRewardClaimSurface,
   type CardRewardSelectionSurface,
   type CharacterSelectSurface,
+  type CombatHandCardSelectionSurface,
   type CombatTurnSurface,
   type EventOptionSurface,
   type GameOverSurface,
@@ -21,6 +22,10 @@ import {
   type TreasureRoomSurface
 } from "../domain/state/index.js";
 import type { AdapterDescriptor } from "../game-io/adapter.js";
+import {
+  gatewayCombatHandSurfaceSchema,
+  type GatewayCombatHandSurface
+} from "../integrations/sts2mcp/gatewayCombatHandProtocol.js";
 import {
   gatewayCombatContextSchema,
   gatewayCombatTurnSurfaceSchema,
@@ -87,7 +92,8 @@ import {
   projectGatewayVisibleState
 } from "./gatewayVisibleStateProjection.js";
 
-type DirectSurface = GatewayCombatTurnSurface | GatewayGeneratedChoiceSurface
+type DirectSurface = GatewayCombatTurnSurface | GatewayCombatHandSurface
+  | GatewayGeneratedChoiceSurface
   | GatewayMenuSurface | GatewayJourneySurface | GatewayRewardSurface
   | GatewayRunRoomSurface;
 type DirectContext = GatewayCombatContext | GatewayMenuContext | GatewayEventContext | GatewayMapContext
@@ -403,6 +409,8 @@ function parseSurface(
     ? gatewayMenuSurfaceSchema
     : observation.surface.kind === "combat_turn"
       ? gatewayCombatTurnSurfaceSchema
+    : observation.surface.kind === "combat_hand_card_selection"
+      ? gatewayCombatHandSurfaceSchema
     : observation.surface.kind === "generated_card_choice"
       ? gatewayGeneratedChoiceSurfaceSchema
     : observation.surface.kind === "event_option"
@@ -473,7 +481,10 @@ function contextMatchesSurface(context: DirectContext, surface: DirectSurface): 
     return (context.reward_kind === "room_rewards" && surface.kind === "reward_claim")
       || (context.reward_kind === "card_reward" && surface.kind === "card_reward_selection");
   }
-  if (context.kind === "combat") return surface.kind === "combat_turn";
+  if (context.kind === "combat") {
+    return surface.kind === "combat_turn"
+      || surface.kind === "combat_hand_card_selection";
+  }
   if (context.kind === "rest") return surface.kind === "rest_site";
   if (context.kind === "shop") {
     return surface.kind === "shop_inventory" || surface.kind === "shop_room";
@@ -494,6 +505,11 @@ function validateCommands(
       return context.kind === "combat"
         ? validateCombatCommand(context, surface, command)
         : ["combat turn command requires combat context"];
+    }
+    if (surface.kind === "combat_hand_card_selection") {
+      return context.kind === "combat"
+        ? validateCombatHandCommand(surface, command)
+        : ["combat-hand command requires combat context"];
     }
     if (surface.kind === "generated_card_choice") {
       return validateGeneratedChoiceCommand(surface, command);
@@ -598,6 +614,63 @@ function validateCombatCommand(
     ]);
   }
   return [`unsupported direct combat operation ${command.operation}`];
+}
+
+function validateCombatHandCommand(
+  surface: GatewayCombatHandSurface,
+  command: ConnectorV3ConsumerCommand
+): string[] {
+  const base = [
+    command.operands.hand_id === surface.hand_entity_id
+      || "combat-hand command must bind the current hand owner",
+    hasBinding(command, "hand", surface.hand_entity_id)
+      || "combat-hand command is missing its exact hand binding"
+  ];
+  if (command.operation === "select_combat_hand_card") {
+    const cardId = command.operands.card_id;
+    return collectErrors([
+      ...base,
+      command.command === "select_entity"
+        || "combat-hand selection must use select_entity",
+      Boolean(cardId && surface.selectable_card_entity_ids.includes(cardId))
+        || "combat-hand selection must bind one currently selectable card",
+      Boolean(cardId && hasBinding(command, "card", cardId))
+        || "combat-hand selection is missing its exact card binding"
+    ]);
+  }
+  if (command.operation === "deselect_combat_hand_card") {
+    const cardId = command.operands.card_id;
+    return collectErrors([
+      ...base,
+      command.command === "deselect_entity"
+        || "combat-hand deselection must use deselect_entity",
+      Boolean(cardId && surface.deselectable_card_entity_ids.includes(cardId))
+        || "combat-hand deselection must bind one currently deselectable card",
+      Boolean(cardId && hasBinding(command, "card", cardId))
+        || "combat-hand deselection is missing its exact card binding"
+    ]);
+  }
+  if (command.operation === "confirm_combat_hand_selection") {
+    return collectErrors([
+      ...base,
+      command.command === "confirm_interaction"
+        || "combat-hand confirmation must use confirm_interaction",
+      surface.can_confirm || "combat-hand confirmation was published while unavailable",
+      command.operands.control_id === command.operation
+        || "combat-hand confirmation control is not exact"
+    ]);
+  }
+  if (command.operation === "close_combat_hand_peek") {
+    return collectErrors([
+      ...base,
+      command.command === "cancel_interaction"
+        || "combat-hand peek close must use cancel_interaction",
+      surface.can_close_peek || "combat-hand peek close was published while unavailable",
+      command.operands.control_id === command.operation
+        || "combat-hand peek control is not exact"
+    ]);
+  }
+  return [`unsupported direct combat-hand operation ${command.operation}`];
 }
 
 function validateRewardCommand(
@@ -1191,6 +1264,9 @@ function projectSurface(
   if (surface.kind === "combat_turn") {
     return projectCombatSurface(surface, observation, legalActions);
   }
+  if (surface.kind === "combat_hand_card_selection") {
+    return projectCombatHandSurface(surface, observation, legalActions);
+  }
   if (surface.kind === "generated_card_choice") {
     return projectGeneratedChoiceSurface(surface, observation, legalActions);
   }
@@ -1288,6 +1364,29 @@ function projectCombatSurface(
     bridgeStateId: observation.state_token,
     roomEntityId: surface.room_entity_id,
     canEndTurn: surface.can_end_turn,
+    legalActions,
+    completeness: projectCompleteness(observation)
+  };
+}
+
+function projectCombatHandSurface(
+  surface: GatewayCombatHandSurface,
+  observation: ConnectorV3Observation,
+  legalActions: BridgeLegalActionSnapshot[]
+): CombatHandCardSelectionSurface {
+  return {
+    kind: "combat_hand_card_selection",
+    bridgeStateId: observation.state_token,
+    handEntityId: surface.hand_entity_id,
+    prompt: surface.prompt,
+    selectionMode: surface.selection_mode,
+    minimumSelections: surface.min_select,
+    maximumSelections: surface.max_select,
+    selectedCount: surface.selected_count,
+    selectedCardEntityIds: [...surface.selected_card_entity_ids],
+    requireManualConfirmation: surface.require_manual_confirmation,
+    isPeeking: surface.is_peeking,
+    cards: surface.cards.map(projectGatewayVisibleCard),
     legalActions,
     completeness: projectCompleteness(observation)
   };

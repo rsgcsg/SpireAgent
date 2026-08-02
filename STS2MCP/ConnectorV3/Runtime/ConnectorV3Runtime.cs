@@ -345,6 +345,8 @@ internal static class ConnectorV3Runtime
             return BuildGeneratedCardChoiceBindings(draft, generatedCardChoice);
         if (draft.Surface is GameOverSurface gameOver)
             return BuildGameOverBindings(draft, gameOver);
+        if (draft.Surface is CombatHandCardSelectionSurface combatHand)
+            return BuildCombatHandBindings(draft, combatHand);
 
         var allowed = new List<(
             BridgeActionDraft Action,
@@ -874,6 +876,92 @@ internal static class ConnectorV3Runtime
             .Cast<ConnectorV3BoundCommand>()
             .ToArray();
 
+    private static IReadOnlyList<ConnectorV3BoundCommand> BuildCombatHandBindings(
+        BridgeObservationDraft draft,
+        CombatHandCardSelectionSurface surface)
+    {
+        var result = new List<ConnectorV3BoundCommand>();
+        foreach (BridgeActionDraft action in DescribeCombatHandCommands(surface))
+        {
+            if (BuildNativeBinding(draft, action) is not { } binding)
+                continue;
+            var operands = binding.Candidate.Operands.ToDictionary(
+                pair => pair.Key,
+                pair => pair.Value,
+                StringComparer.Ordinal);
+            operands["hand_id"] = surface.HandEntityId;
+            ActionEntityBinding[] entityBindings = binding.Candidate.EntityBindings
+                .Append(new ActionEntityBinding("hand", surface.HandEntityId))
+                .Distinct()
+                .ToArray();
+            result.Add(binding with
+            {
+                Candidate = binding.Candidate with
+                {
+                    Operands = operands,
+                    EntityBindings = entityBindings
+                }
+            });
+        }
+        return result;
+    }
+
+    internal static IReadOnlyList<BridgeActionDraft> DescribeCombatHandCommands(
+        CombatHandCardSelectionSurface surface)
+    {
+        var cards = surface.Cards.ToDictionary(card => card.EntityId, StringComparer.Ordinal);
+        var actions = new List<BridgeActionDraft>();
+        foreach (string cardId in surface.SelectableCardEntityIds)
+        {
+            if (!cards.TryGetValue(cardId, out VisibleCard? card))
+                continue;
+            string cardName = card.Name ?? card.DefinitionId;
+            bool replaces = surface.SelectionMode == "upgrade_select"
+                ? surface.SelectedCount > 0
+                : surface.SelectedCount >= surface.MaxSelect;
+            actions.Add(NativeDescriptor(
+                $"select_combat_hand_card:{cardId}",
+                "select_combat_hand_card",
+                "selection",
+                replaces ? $"Replace current selection with {cardName}" : $"Select {cardName}",
+                "NPlayerHand.OnHolderPressed+SelectCardInSimpleMode/SelectCardInUpgradeMode",
+                new[] { new ActionEntityBinding("card", cardId) }));
+        }
+        foreach (string cardId in surface.DeselectableCardEntityIds)
+        {
+            if (!cards.TryGetValue(cardId, out VisibleCard? card))
+                continue;
+            actions.Add(NativeDescriptor(
+                $"deselect_combat_hand_card:{cardId}",
+                "deselect_combat_hand_card",
+                "selection",
+                $"Deselect {card.Name ?? card.DefinitionId}",
+                "NSelectedHandCardContainer.DeselectHolder",
+                new[] { new ActionEntityBinding("card", cardId) }));
+        }
+        if (surface.CanConfirm)
+        {
+            actions.Add(NativeDescriptor(
+                "confirm_combat_hand_selection",
+                "confirm_combat_hand_selection",
+                "commit",
+                "Confirm selected cards",
+                "NPlayerHand.%SelectModeConfirmButton",
+                Array.Empty<ActionEntityBinding>()));
+        }
+        if (surface.CanClosePeek)
+        {
+            actions.Add(NativeDescriptor(
+                "close_combat_hand_peek",
+                "close_combat_hand_peek",
+                "navigation",
+                "Return to card selection",
+                "NPeekButton.OnRelease+SetPeeking(false)",
+                Array.Empty<ActionEntityBinding>()));
+        }
+        return actions;
+    }
+
     private static BridgeActionDraft NativeDescriptor(
         string key,
         string operation,
@@ -1137,6 +1225,7 @@ internal static class ConnectorV3Runtime
                 "singleplayer_menu" => StartSingleplayerMenuCommand(snapshot, request, binding),
                 "character_select" => StartCharacterSelectCommand(snapshot, request, binding),
                 "generated_card_choice" => StartGeneratedCardChoiceCommand(snapshot, request, binding),
+                "combat_hand_card_selection" => StartCombatHandCommand(snapshot, request, binding),
                 "game_over" => StartGameOverCommand(snapshot, request, binding),
                 _ => BridgeActionStartResult.Rejected(
                     "native_command_owner_unsupported",
@@ -1264,6 +1353,59 @@ internal static class ConnectorV3Runtime
         return BridgeActionStartResult.Rejected(
             "generated_choice_command_unsupported",
             "The requested generated-card command is not supported for this exact source.");
+    }
+
+    private static BridgeActionStartResult StartCombatHandCommand(
+        ConnectorV3Snapshot snapshot,
+        ConnectorV3CommandRequest request,
+        ConnectorV3BoundCommand binding)
+    {
+        if (snapshot.Draft.Surface is not CombatHandCardSelectionSurface surface
+            || !HasExactOperand(request, "hand_id", surface.HandEntityId))
+        {
+            return BridgeActionStartResult.Rejected(
+                "combat_hand_owner_changed",
+                "The exact combat-hand selection owner is no longer current.");
+        }
+        IReadOnlyDictionary<string, string> operands =
+            request.Operands ?? new Dictionary<string, string>();
+        if (binding.Candidate.Operation == "select_combat_hand_card"
+            && request.Command == "select_entity"
+            && operands.TryGetValue("card_id", out string? selectedCardId))
+        {
+            return CombatHandCardSelectionSurfaceProvider.StartSelect(
+                Entities,
+                surface.HandEntityId,
+                selectedCardId);
+        }
+        if (binding.Candidate.Operation == "deselect_combat_hand_card"
+            && request.Command == "deselect_entity"
+            && operands.TryGetValue("card_id", out string? deselectedCardId))
+        {
+            return CombatHandCardSelectionSurfaceProvider.StartDeselect(
+                Entities,
+                surface.HandEntityId,
+                deselectedCardId);
+        }
+        if (binding.Candidate.Operation == "confirm_combat_hand_selection"
+            && request.Command == "confirm_interaction"
+            && HasExactOperand(request, "control_id", "confirm_combat_hand_selection"))
+        {
+            return CombatHandCardSelectionSurfaceProvider.StartConfirm(
+                Entities,
+                surface.HandEntityId);
+        }
+        if (binding.Candidate.Operation == "close_combat_hand_peek"
+            && request.Command == "cancel_interaction"
+            && HasExactOperand(request, "control_id", "close_combat_hand_peek"))
+        {
+            return CombatHandCardSelectionSurfaceProvider.StartClosePeek(
+                Entities,
+                surface.HandEntityId);
+        }
+        return BridgeActionStartResult.Rejected(
+            "combat_hand_command_unsupported",
+            "The command does not match the exact current combat-hand interaction.");
     }
 
     private static BridgeActionStartResult StartGameOverCommand(

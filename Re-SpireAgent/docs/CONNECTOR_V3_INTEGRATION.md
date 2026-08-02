@@ -31,6 +31,8 @@ is derived from typed visible control/stage facts rather than `draft.Actions`;
 their execution does not call Provider action closures. Menu/run-setup and
 source-discriminated generated-card choices now follow the same V3-native
 boundary while retaining separate source-specific legality and Outcome.
+Combat-hand selection now publishes exact current hand/card/control facts,
+uses a direct native resolver and is consumed directly by Re.
 Remaining selectors temporarily reuse mature Provider-native bindings inside
 the Gateway. This is bounded migration debt, not a V2 REST fallback.
 
@@ -38,9 +40,10 @@ Ordinary combat, generated-card choice, menu/run-setup, event, map, game-over,
 reward/card-reward, shop, rest, treasure, lifecycle-settling and
 visible-unsupported observations use the direct V3 normalizer and do not
 request Bridge v2 capabilities. Menu, event, map, game-over,
-reward/card-reward, shop, rest and treasure are exact-runtime exercised under
-Preview.2. Combat/generated direct consumption and settling recovery await a
-Preview.3 cold load. Remaining selector families temporarily read same-runtime
+reward/card-reward, shop, rest, treasure, combat and generated choice are
+exact-runtime exercised under Preview.3. Combat-hand direct consumption and
+known-room mount settling recovery await a Preview.4 cold load. Remaining
+selector families temporarily read same-runtime
 Bridge v2 capabilities only as a
 non-executable semantic/environment projection sidecar. No v2 legal action or
 v2 command route enters the V3 execution path. The remaining sidecar is removed

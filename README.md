@@ -14,10 +14,10 @@ the final pre-V3 Connector documents are under
 
 ## Current Status
 
-Source protocol is `3.0-preview.3`. V3 observation, active interaction,
+Source protocol is `3.0-preview.4`. V3 observation, active interaction,
 parameterized commands, receipts, state-bound read-only Inspection, REST, MCP
 and strict Re consumption are implemented. Combat and ordinary non-combat
-families use direct native resolvers; remaining selector families retain
+families and combat-hand selection use direct native resolvers; remaining selector families retain
 bounded Provider migration bindings until their vertical cutover.
 
 The V3 source has automated test evidence. A V3 Release build and installation
