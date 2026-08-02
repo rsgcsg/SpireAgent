@@ -14,7 +14,7 @@ the final pre-V3 Connector documents are under
 
 ## Current Status
 
-Source protocol is `3.0-preview.2`. V3 observation, active interaction,
+Source protocol is `3.0-preview.3`. V3 observation, active interaction,
 parameterized commands, receipts, state-bound read-only Inspection, REST, MCP
 and strict Re consumption are implemented. Combat and ordinary non-combat
 families use direct native resolvers; remaining selector families retain

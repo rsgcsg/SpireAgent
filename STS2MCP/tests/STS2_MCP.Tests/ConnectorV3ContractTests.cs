@@ -11,6 +11,32 @@ namespace STS2_MCP.Tests;
 public sealed class ConnectorV3ContractTests
 {
     [Theory]
+    [InlineData(true, "settling", "combat_turn", 0, false, "supported")]
+    [InlineData(true, "settling", "treasure_room", 0, false, "supported")]
+    [InlineData(true, "ready", "combat_turn", 0, false, "unsupported")]
+    [InlineData(true, "ready", "combat_turn", 1, true, "trial")]
+    [InlineData(true, "ready", "combat_turn", 1, false, "supported")]
+    [InlineData(true, "settling", "unsupported", 0, false, "unsupported")]
+    [InlineData(false, "settling", "combat_turn", 0, false, "unsupported")]
+    public void ExecutionSupportKeepsKnownSettlingInteractionsDistinctFromUnsupported(
+        bool actionExecutionAllowed,
+        string readiness,
+        string surfaceKind,
+        int bindingCount,
+        bool hasTrialBinding,
+        string expected)
+    {
+        Assert.Equal(
+            expected,
+            ConnectorV3Runtime.ClassifyExecutionSupport(
+                actionExecutionAllowed,
+                readiness,
+                surfaceKind,
+                bindingCount,
+                hasTrialBinding));
+    }
+
+    [Theory]
     [InlineData(false, false, false, false, true)]
     [InlineData(true, false, false, true, true)]
     [InlineData(true, true, true, false, true)]

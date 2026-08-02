@@ -135,9 +135,12 @@ export function projectConnectorV3ForRe(
 export function usesDirectConnectorV3Consumer(
   observation: ConnectorV3Observation
 ): boolean {
+  if (observation.interaction.phase === "settling") return true;
   if (observation.interaction.execution_support === "unsupported") return true;
+  if (observation.surface.kind === "generated_card_choice") return true;
   const pair = `${observation.context.kind}:${observation.surface.kind}`;
   return new Set([
+    "combat:combat_turn",
     "menu:main_menu",
     "menu:singleplayer_menu",
     "menu:character_select",

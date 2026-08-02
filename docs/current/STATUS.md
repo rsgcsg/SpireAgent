@@ -4,9 +4,9 @@ Baseline date: 2026-08-02
 
 Branch: `connectorV3`
 
-Source baseline: `6413344e1f075d8e52c114b338ab4c02e23dc916` plus the current reviewed
-V3 direct-consumer, startup-preflight and Inspection worktree. Source, tests,
-build, install, load and Live evidence are separate states below.
+Source baseline: `718bbffc873144db35e2406f11b05de9a6e84054` plus the current reviewed
+Preview.3 settling/combat/generated-consumer worktree. Source, tests, build,
+install, load and Live evidence are separate states below.
 
 ## Current Architecture
 
@@ -19,7 +19,7 @@ supervises receipts and successors. REST and MCP are transports.
 
 Connector V3 currently provides:
 
-- `3.0-preview.2` observation and parameterized command contracts;
+- `3.0-preview.3` observation and parameterized command contracts;
 - `sts2.connector.v3/inspection-1` state-token-bound read-only detail;
 - one visible interaction, including visible unsupported states with no
   command authority;
@@ -29,8 +29,9 @@ Connector V3 currently provides:
 - direct Gateway command resolvers for ordinary combat, menu/run setup,
   event, map, reward/card reward, shop, rest, treasure, generated choice,
   deck enchant and game-over;
-- direct Re observation consumption for menu, event, map, reward/card reward,
-  shop, rest, treasure, game-over and every visible unsupported interaction;
+- direct Re observation consumption for ordinary combat, generated-card
+  choice, menu, event, map, reward/card reward, shop, rest, treasure,
+  game-over, lifecycle-settling and every visible unsupported interaction;
 - scoped trial/quarantine and no retry after unknown mutation.
 
 Remaining migration debt is explicit: several selector families still use
@@ -43,50 +44,50 @@ fallback.
 
 ## Latest Exact Runtime Evidence
 
-`run-20260801205605-0fqlrj` used loaded Gateway SHA
-`954150c6d964a4f6a78a6483aa82c5cb5066fc5e2bdf762ce56efb22e2166ff5`,
-MVID `2e1b0a8f-05e8-4262-b7ff-5791564e9d56`, runtime
-`239d883654b6414e9ab1089c0a45decb`, game `v0.110.1` commit `db5d3552`,
+Nine runs from `run-20260802073844-wyq08j` through
+`run-20260802074610-ow4g7a` used loaded Preview.2 Gateway SHA
+`9a829a23d308aabddf43a36543cb65a46340a353bd4327d3eb229c49d516888e`,
+MVID `6a5ff4af-5d27-444c-b555-d3682cdfb7dd`, runtime
+`b25326e8f84a49c6963fd5ce4bf7423e`, game `v0.110.1` commit `db5d3552`,
 and exact-bridge-only Modset fingerprint
-`1f273ee90ec14e389137f17707436d0065412ecfb432be5f9ef12940196f6035`.
-It reached a completed-game boundary after 175 decisions: 172 settled, two
-safe pre-submit stale refusals, then a normal non-actionable top-menu stop. No
-unknown, unsupported, provider failure or unsettled command occurred.
+`8d2f9d37e7d6970f117768832a8f2a09ead8bf77cfbdc020aef19584f662077e`.
+They recorded 57 decisions: 48 settled commands with confirmed completion and
+available successors, then nine safe pre-mutation stops.
 
-Direct V3 Re consumption was exercised for menu, event, map, game-over,
-reward-claim and card-reward. Shop, rest, treasure and selector observations
-still used the migration sidecar in that loaded artifact. The immediately
-preceding one-decision run exposed the startup `no_active_run_context` race and
-made no mutation. Full attribution and non-claims are in
-[the 2026-08-02 evidence](../../STS2MCP/docs/connector-v3/LIVE_EVIDENCE_V0_110_1_DIRECT_REWARD_COMPLETE_RUN_2026-08-02.md).
+Direct Re consumption was exercised for menu, event, map, reward/card reward,
+shop, rest and treasure. The nine stops were one run-mount, six combat and two
+treasure settling observations incorrectly projected as unsupported. Preview.3
+separates lifecycle readiness from family support and moves ordinary combat
+and generated choice to the direct consumer. Full attribution is in
+[the Preview.2 settling evidence](../../STS2MCP/docs/connector-v3/LIVE_EVIDENCE_V0_110_1_PREVIEW_2_SETTLING_FAILURE_2026-08-02.md).
 
-Run provenance is `unrecorded`, so this is reviewed exact-runtime coverage,
-not Organic qualification or a durable claim. Generated choice, Kifuda, New
-Leaf and V3 Inspection were not exercised.
+Run provenance is `unrecorded` and the game log records developer-console
+assistance. This is reviewed exact-runtime coverage, not Organic qualification
+or a durable claim. Preview.3, generated-choice direct consumption and V3
+Inspection have not been exercised.
 
 ## Current Artifact State
 
 | Evidence level | Current fact |
 |---|---|
-| source | protocol `3.0-preview.2`; inspection schema `sts2.connector.v3/inspection-1`; HEAD `6413344...` plus reviewed worktree |
-| automated tests | Gateway 240/240; Re 249/249 plus typecheck/build; Python MCP syntax passed |
-| Release build | SHA `9a829a23d308aabddf43a36543cb65a46340a353bd4327d3eb229c49d516888e`; MVID `6a5ff4af-5d27-444c-b555-d3682cdfb7dd` |
-| installed | exactly equals the current Release SHA/MVID; one canonical Mod manifest |
-| loaded | `non-claim`: game is stopped and the new artifact has not been cold-loaded |
-| last loaded | predecessor SHA `954150c6...6ff5`, MVID `2e1b0a8f...9d56`, runtime `239d8836...decb` |
-| current authority | none while the Gateway is stopped |
+| source | protocol `3.0-preview.3`; inspection schema `sts2.connector.v3/inspection-1`; HEAD `718bbff...` plus reviewed worktree |
+| automated tests | Gateway 247/247; Re 256/256 plus typecheck/build; Python MCP syntax, CLI, docs, identity, compatibility, permission, qualification, profile and migration checks pass |
+| Release build | Preview.3 SHA `1f82431fa5798768074628eea98a131a20f6faa20eda997d6770035045ec44b0`, MVID `17252734-e9e8-46a4-ba3a-37e6107a5f98` |
+| installed | Preview.3 exactly matches the built SHA/MVID; one canonical Mod manifest |
+| loaded | `non-claim`: the game is stopped and the Preview.3 endpoint has not been cold-loaded |
+| current authority | none while the Gateway is stopped; the predecessor runtime used scoped provisional trial and had no persistent qualification |
 | durable claim | none |
 
 Current rollback snapshot:
-`STS2MCP/.local/deployments/2026-08-01T21-51-15-903Z`.
+`STS2MCP/.local/deployments/2026-08-02T08-11-59-532Z`.
 
 ## Pending Exact-Runtime Evidence
 
-- cold-load source/built/installed SHA and MVID equality;
-- direct Re shop, rest, treasure and visible-unsupported observations without
-  a V2 sidecar;
-- startup wait through `no_active_run_context` without hiding a legitimate
-  unsupported interaction;
+- Preview.3 cold-load identity equality for the built/installed SHA and MVID;
+- settling recovery through run mount, combat resolution and treasure
+  departure without hiding a legitimate unsupported interaction;
+- direct Re combat and generated-card-choice observations without a V2
+  sidecar;
 - V3 `run_deck`, `combat_piles` or `shop_catalog` Inspection with a current
   state token, plus stale-token rejection;
 - generated-card-choice direct consumption and remaining Provider selectors;

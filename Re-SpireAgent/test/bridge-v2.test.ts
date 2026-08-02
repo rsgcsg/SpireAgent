@@ -7624,9 +7624,9 @@ describe("Bridge v2 controller coordination decoding", () => {
 });
 
 describe("Connector V3 Re consumer projection", () => {
-  it("keeps mature semantic normalization while producing V3 executable choices", () => {
+  it("normalizes combat directly while producing V3 executable choices", () => {
     const observation = decodeConnectorV3Observation({
-      protocol_version: "3.0-preview.2",
+      protocol_version: "3.0-preview.3",
       schema: "sts2.connector.v3/observation-1",
       profile: "semantic_accessibility.tools.v1",
       state_token: COMBAT_TURN_STATE.state_id,
@@ -7683,8 +7683,11 @@ describe("Connector V3 Re consumer projection", () => {
     );
 
     expect(envelope.diagnostics.invalidFields).toEqual([]);
+    expect((projected.rawState as Record<string, unknown>).bridge_v2_state).toBeUndefined();
+    expect((projected.rawState as Record<string, unknown>).bridge_v2_capabilities)
+      .toBeUndefined();
     expect(envelope.currentState.sourceStateType).toBe(
-      "connector_v3:combat:combat_turn"
+      "connector_v3:combat:combat_turn:direct"
     );
     expect(actions).toHaveLength(1);
     expect(actions[0]?.action).toEqual({

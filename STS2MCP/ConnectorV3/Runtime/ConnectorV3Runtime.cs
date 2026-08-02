@@ -1861,11 +1861,31 @@ internal static class ConnectorV3Runtime
         BridgeObservationDraft draft,
         IReadOnlyList<ConnectorV3BoundCommand> bindings)
     {
-        if (!draft.Game.Compatibility.ActionExecutionAllowed || bindings.Count == 0)
+        return ClassifyExecutionSupport(
+            draft.Game.Compatibility.ActionExecutionAllowed,
+            draft.Readiness,
+            draft.Surface.Kind,
+            bindings.Count,
+            bindings.Any(binding => binding.Candidate.AuthorityState == "trial"));
+    }
+
+    internal static string ClassifyExecutionSupport(
+        bool actionExecutionAllowed,
+        string readiness,
+        string surfaceKind,
+        int bindingCount,
+        bool hasTrialBinding)
+    {
+        if (!actionExecutionAllowed || surfaceKind == "unsupported")
             return "unsupported";
-        return bindings.Any(binding => binding.Candidate.AuthorityState == "trial")
-            ? "trial"
-            : "supported";
+        // A known native interaction can be settling without any command being
+        // legal now. Empty candidates during that phase are not an unsupported
+        // family and must not terminate a supervising consumer.
+        if (readiness != "ready")
+            return "supported";
+        if (bindingCount == 0)
+            return "unsupported";
+        return hasTrialBinding ? "trial" : "supported";
     }
 
     private static string PublicCommand(string operation)

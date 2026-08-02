@@ -7,8 +7,9 @@ combat, bounded non-combat adapter, V3 MCP and strict Re default.
 
 Exit: automated checks, Release build, safe install and exact identity.
 
-Status: source/test/build/install complete for the current artifact; cold-load
-identity remains pending.
+Status: Preview.2 source/test/build/install/load was exact. Preview.3 source
+and tests repair lifecycle settling and remove combat/generated consumer
+sidecars; its build/install/cold-load identity is pending.
 
 ## V3-1: Exact Runtime Canary
 
@@ -16,11 +17,10 @@ Cold-load the installed artifact. Verify protocol, SHA, MVID, runtime, game,
 Modset and Patch. Execute at least one direct combat command and one non-combat
 command. Unknown, stale and wrong-owner negatives remain fail-closed.
 
-Status: repeatedly obtained. The latest v0.110.1 runtime
-`239d883654b6414e9ab1089c0a45decb` completed a 175-decision ordinary run with
-172 settled actions, two safe pre-submit stale refusals and no unknown Outcome.
-The installed replacement artifact is not loaded, so evidence remains scoped
-to its predecessor SHA/MVID.
+Status: repeatedly obtained. The latest reviewed Preview.2 runtime
+`b25326e8f84a49c6963fd5ce4bf7423e` produced 48 settled commands across nine
+runs with no unknown Outcome. It also exposed a reproducible settling
+misclassification. Preview.3 evidence does not inherit from that SHA/MVID.
 
 ## V3-2: Ordinary Journey
 
@@ -28,9 +28,9 @@ Run one bounded ordinary vanilla game covering combat, map, reward, shop and a
 selection. Stop normally after the game returns to the main menu. Record which
 families used direct V3 bindings versus the internal migration adapter.
 
-Status: repeated, most recently on `run-20260801205605-0fqlrj` under exact
-v0.110.1 identity; the run completed the game-over return and stopped at the
-top-level menu after 175 decisions.
+Status: complete ordinary journeys exist for earlier exact v0.110.1 artifacts.
+The latest Preview.2 batch was human-assisted and intentionally fragmented, so
+it is coverage evidence rather than another unattended complete journey.
 
 ## V3-3: Native Family Migration
 
@@ -38,16 +38,16 @@ Replace the Provider adapter in audited waves. Combat, shop-room,
 shop-inventory, map, rest, event-option, treasure-room, reward-claim,
 card-reward, deck-enchant, menu/run-setup, source-discriminated generated
 choices and game-over now use direct V3 resolvers in source. Remaining ordinary
-selectors are next. Generated choice remains unexercised.
+selectors are next.
 
 In parallel, replace the temporary V3-to-V2 Re semantic/action projection with
 a direct V3 consumer. Main/singleplayer/character menu is exact-runtime
-exercised without `/api/v2/capabilities`. Event, map and game-over now use the
-same direct consumer and are exact-runtime exercised. Reward/card reward are
-also exact-runtime exercised. Shop, rest, treasure and visible unsupported now
-use the direct consumer in source; 17 exact recorded snapshots replay without
-the sidecar, but this replacement artifact still needs cold-load evidence.
-Unmigrated selector families retain the explicit sidecar.
+exercised without `/api/v2/capabilities`. Event, map, game-over, reward/card
+reward, shop, rest and treasure use the same direct consumer and are
+exact-runtime exercised under Preview.2. Preview.3 adds ordinary combat,
+source-discriminated generated choice and lifecycle-settling; they have
+automated evidence but need cold-load evidence. Unmigrated selector families
+retain the explicit sidecar.
 
 ## V3-4: Visibility And Detail
 

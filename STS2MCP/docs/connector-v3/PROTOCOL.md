@@ -1,6 +1,6 @@
 # Connector V3 Protocol
 
-Source protocol: `3.0-preview.2`
+Source protocol: `3.0-preview.3`
 
 Schemas:
 
@@ -26,13 +26,20 @@ worktree digest separately in run metadata.
 
 Shared visible facts, semantic context/surface, visibility metadata and the
 Inspection catalog are typed independently from Bridge v2. Re currently
-consumes menu, event, map, game-over, reward/card-reward, shop, rest, treasure
-and visible-unsupported observations directly from these V3 facts. Inspection
+consumes ordinary combat, generated-card choice, menu, event, map, game-over,
+reward/card-reward, shop, rest, treasure, lifecycle-settling and
+visible-unsupported observations directly from these V3 facts. Inspection
 catalog entries advertise state-bound read availability only; they never
 authorize mutation.
 
 A visible unsupported interaction remains present with
 `execution_support=unsupported` and no candidates.
+
+`interaction.phase` and `execution_support` are independent. A known family
+may have `phase=settling`, zero candidates and `execution_support=supported`:
+no command is legal at that instant, but the family contract is not missing.
+Consumers supervise it as non-actionable lifecycle state. A ready family with
+no exact binding remains `unsupported` and fails closed.
 
 Event options expose `is_enabled` separately from `is_locked`. V3 candidate
 discovery requires both the exact current native control to be enabled and the

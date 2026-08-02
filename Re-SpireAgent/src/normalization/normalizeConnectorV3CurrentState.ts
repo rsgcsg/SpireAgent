@@ -4,11 +4,14 @@ import {
   type BridgeRewardClaimSurface,
   type CardRewardSelectionSurface,
   type CharacterSelectSurface,
+  type CombatTurnSurface,
   type EventOptionSurface,
   type GameOverSurface,
+  type GeneratedCardChoiceSurface,
   type MainMenuSurface,
   type MapNavigationSurface,
   type NormalizedCurrentState,
+  type PlayerSnapshot,
   type RestSiteSurface,
   type SemanticContext,
   type ShopInventorySurface,
@@ -18,6 +21,16 @@ import {
   type TreasureRoomSurface
 } from "../domain/state/index.js";
 import type { AdapterDescriptor } from "../game-io/adapter.js";
+import {
+  gatewayCombatContextSchema,
+  gatewayCombatTurnSurfaceSchema,
+  type GatewayCombatContext,
+  type GatewayCombatTurnSurface
+} from "../integrations/sts2mcp/gatewayCombatProtocol.js";
+import {
+  gatewayGeneratedChoiceSurfaceSchema,
+  type GatewayGeneratedChoiceSurface
+} from "../integrations/sts2mcp/gatewayGeneratedChoiceProtocol.js";
 import {
   gatewayEventContextSchema,
   gatewayEventOptionSurfaceSchema,
@@ -74,9 +87,10 @@ import {
   projectGatewayVisibleState
 } from "./gatewayVisibleStateProjection.js";
 
-type DirectSurface = GatewayMenuSurface | GatewayJourneySurface | GatewayRewardSurface
+type DirectSurface = GatewayCombatTurnSurface | GatewayGeneratedChoiceSurface
+  | GatewayMenuSurface | GatewayJourneySurface | GatewayRewardSurface
   | GatewayRunRoomSurface;
-type DirectContext = GatewayMenuContext | GatewayEventContext | GatewayMapContext
+type DirectContext = GatewayCombatContext | GatewayMenuContext | GatewayEventContext | GatewayMapContext
   | GatewayGameOverContext | GatewayRewardFlowContext | GatewayRunRoomContext;
 
 export function isDirectConnectorV3ConsumerState(rawState: Sts2McpRawState): boolean {
@@ -101,6 +115,7 @@ export function normalizeConnectorV3CurrentState(
   let shared: GatewaySharedVisibleState | undefined;
   let commands: ConnectorV3ConsumerCommand[] = [];
   let visibleUnsupported = false;
+  let settling = false;
 
   try {
     observation = decodeConnectorV3Observation(rawObservation).data;
@@ -108,8 +123,20 @@ export function normalizeConnectorV3CurrentState(
     diagnostics.invalid("connector_v3_observation", rawObservation, safeMessage(error));
   }
   if (observation) {
-    visibleUnsupported = observation.interaction.execution_support === "unsupported";
-    if (visibleUnsupported) {
+    settling = observation.interaction.phase === "settling";
+    visibleUnsupported = observation.interaction.execution_support === "unsupported" && !settling;
+    if (settling) {
+      if (observation.interaction.command_candidates.length > 0) {
+        diagnostics.invalid(
+          "connector_v3_observation.interaction.command_candidates",
+          observation.interaction.command_candidates,
+          "settling interaction must not publish commands"
+        );
+      }
+      context = parseContext(observation, diagnostics);
+      surface = parseSurface(observation, diagnostics);
+      if (observation.shared_state !== null) shared = parseSharedState(observation, diagnostics);
+    } else if (visibleUnsupported) {
       if (observation.interaction.command_candidates.length > 0) {
         diagnostics.invalid(
           "connector_v3_observation.interaction.command_candidates",
@@ -156,7 +183,7 @@ export function normalizeConnectorV3CurrentState(
         error
       );
     }
-    for (const error of validateCommands(surface, commands)) {
+    for (const error of validateCommands(context, surface, commands)) {
       diagnostics.invalid(
         "connector_v3_observation.interaction.command_candidates",
         observation.interaction.command_candidates,
@@ -181,12 +208,24 @@ export function normalizeConnectorV3CurrentState(
     && legalActions.length > 0
     && builtDiagnostics.status !== "invalid";
   const projectedPersistent = shared ? projectGatewayVisibleState(shared) : undefined;
-  const normalizedContext: NormalizedCurrentState["context"] = visibleUnsupported && observation
+  const projectedPlayer = projectedPersistent?.player && context?.kind === "combat"
+    ? projectCombatPlayer(context, projectedPersistent.player)
+    : projectedPersistent?.player;
+  const normalizedContext: NormalizedCurrentState["context"] = settling && observation
+    ? projectSettlingContext(observation, context, surface, projectedPlayer, rawState)
+    : visibleUnsupported && observation
     ? projectVisibleUnsupportedContext(observation, rawState)
     : context
-    ? projectContext(context, surface, projectedPersistent?.player)
+    ? projectContext(context, surface, projectedPlayer)
     : invalidContext(rawState);
-  const normalizedSurface: NormalizedCurrentState["surface"] = visibleUnsupported && observation
+  const normalizedSurface: NormalizedCurrentState["surface"] = settling
+    ? {
+        kind: "no_action",
+        reason: "settling",
+        message: "Native STS2 is settling the current interaction; no command is legal now.",
+        observedTopLevelKeys: Object.keys(rawState).sort()
+      }
+    : visibleUnsupported && observation
     ? {
         kind: "unsupported",
         reason: observation.interaction.support_reason
@@ -211,7 +250,7 @@ export function normalizeConnectorV3CurrentState(
       ? `connector_v3:${observation.context.kind}:${observation.surface.kind}:direct`
       : "connector_v3:invalid:direct",
     ...(projectedPersistent?.run ? { run: projectedPersistent.run } : {}),
-    ...(projectedPersistent?.player ? { player: projectedPersistent.player } : {}),
+    ...(projectedPlayer ? { player: projectedPlayer } : {}),
     ...(shared ? {
       bridgeSharedStateEvidence: {
         scope: shared.scope,
@@ -222,6 +261,8 @@ export function normalizeConnectorV3CurrentState(
     } : {}),
     stability: builtDiagnostics.status === "invalid"
       ? "invalid"
+      : settling
+        ? "settling"
       : visibleUnsupported
         ? "non_actionable"
       : actionable
@@ -305,12 +346,32 @@ function projectVisibleUnsupportedContext(
   };
 }
 
+function projectSettlingContext(
+  observation: ConnectorV3Observation,
+  context: DirectContext | undefined,
+  surface: DirectSurface | undefined,
+  player: NormalizedCurrentState["player"] | undefined,
+  rawState: Sts2McpRawState
+): SemanticContext {
+  if (context) return projectContext(context, surface, player);
+  if (observation.context.kind === "run_transition") {
+    return { kind: "run_transition", phase: "setup" };
+  }
+  return {
+    kind: "unknown",
+    reason: `Connector V3 is settling context ${observation.context.kind}`,
+    observedTopLevelKeys: Object.keys(rawState).sort()
+  };
+}
+
 function parseContext(
   observation: ConnectorV3Observation,
   diagnostics: DiagnosticsBuilder
 ): DirectContext | undefined {
   const schema = observation.context.kind === "menu"
     ? gatewayMenuContextSchema
+    : observation.context.kind === "combat"
+      ? gatewayCombatContextSchema
     : observation.context.kind === "event"
       ? gatewayEventContextSchema
       : observation.context.kind === "map"
@@ -340,6 +401,10 @@ function parseSurface(
   const schema = ["main_menu", "singleplayer_menu", "character_select"]
     .includes(observation.surface.kind)
     ? gatewayMenuSurfaceSchema
+    : observation.surface.kind === "combat_turn"
+      ? gatewayCombatTurnSurfaceSchema
+    : observation.surface.kind === "generated_card_choice"
+      ? gatewayGeneratedChoiceSurfaceSchema
     : observation.surface.kind === "event_option"
       ? gatewayEventOptionSurfaceSchema
       : observation.surface.kind === "map_navigation"
@@ -386,6 +451,18 @@ function parseSharedState(
 }
 
 function contextMatchesSurface(context: DirectContext, surface: DirectSurface): boolean {
+  if (surface.kind === "generated_card_choice") {
+    const combatSource = [
+      "colorless_potion",
+      "attack_potion",
+      "skill_potion",
+      "power_potion",
+      "splash",
+      "quasar",
+      "knowledge_demon_curse"
+    ].includes(surface.source_kind);
+    return combatSource ? context.kind === "combat" : context.kind !== "menu";
+  }
   if (context.kind === "menu") {
     return surface.kind === "main_menu"
       ? context.flow === "root_navigation"
@@ -396,6 +473,7 @@ function contextMatchesSurface(context: DirectContext, surface: DirectSurface): 
     return (context.reward_kind === "room_rewards" && surface.kind === "reward_claim")
       || (context.reward_kind === "card_reward" && surface.kind === "card_reward_selection");
   }
+  if (context.kind === "combat") return surface.kind === "combat_turn";
   if (context.kind === "rest") return surface.kind === "rest_site";
   if (context.kind === "shop") {
     return surface.kind === "shop_inventory" || surface.kind === "shop_room";
@@ -407,10 +485,19 @@ function contextMatchesSurface(context: DirectContext, surface: DirectSurface): 
 }
 
 function validateCommands(
+  context: DirectContext,
   surface: DirectSurface,
   commands: ConnectorV3ConsumerCommand[]
 ): string[] {
   return commands.flatMap((command) => {
+    if (surface.kind === "combat_turn") {
+      return context.kind === "combat"
+        ? validateCombatCommand(context, surface, command)
+        : ["combat turn command requires combat context"];
+    }
+    if (surface.kind === "generated_card_choice") {
+      return validateGeneratedChoiceCommand(surface, command);
+    }
     if (surface.kind === "event_option") return validateEventCommand(surface, command);
     if (surface.kind === "map_navigation") return validateMapCommand(surface, command);
     if (surface.kind === "reward_claim") return validateRewardCommand(surface, command);
@@ -424,6 +511,93 @@ function validateCommands(
     if (surface.kind === "game_over") return validateGameOverCommand(surface, command);
     return validateMenuCommand(surface, command);
   });
+}
+
+function validateGeneratedChoiceCommand(
+  surface: GatewayGeneratedChoiceSurface,
+  command: ConnectorV3ConsumerCommand
+): string[] {
+  const base = [
+    command.operands.screen_id === surface.screen_entity_id
+      || "generated choice command must bind the current screen",
+    hasBinding(command, "screen", surface.screen_entity_id)
+      || "generated choice command is missing its exact screen binding"
+  ];
+  if (command.command === "select_entity") {
+    const card = surface.cards.find(
+      (value) => value.entity_id === command.operands.card_id
+    );
+    return collectErrors([
+      ...base,
+      Boolean(card) || "generated choice must bind one current visible card",
+      Boolean(card && hasBinding(command, "card", card.entity_id))
+        || "generated choice is missing its exact card binding"
+    ]);
+  }
+  if (command.operation.startsWith("skip_")) {
+    return collectErrors([
+      ...base,
+      command.command === "activate_control"
+        || "generated choice skip must activate its native control",
+      surface.can_skip || "generated choice skip was published while unavailable",
+      command.operands.control_id === command.operation
+        || "generated choice skip control is not exact"
+    ]);
+  }
+  return [`unsupported direct generated-choice operation ${command.operation}`];
+}
+
+function validateCombatCommand(
+  context: GatewayCombatContext,
+  surface: GatewayCombatTurnSurface,
+  command: ConnectorV3ConsumerCommand
+): string[] {
+  if (command.operation === "end_turn") {
+    return collectErrors([
+      command.command === "end_turn" || "end turn must use the native end_turn command",
+      surface.can_end_turn || "end turn was published while unavailable",
+      Object.keys(command.operands).length === 0
+        || "end turn must not carry invented operands"
+    ]);
+  }
+  if (command.operation === "play_card") {
+    const card = context.player.hand.find(
+      (value) => value.entity_id === command.operands.card_id
+    );
+    const target = command.operands.target_id
+      ? context.enemies.find((value) => value.entity_id === command.operands.target_id)
+      : undefined;
+    return collectErrors([
+      command.command === "play_card" || "card play must use play_card",
+      Boolean(card) || "card play must bind one current hand card",
+      Boolean(card && hasBinding(command, "card", card.entity_id))
+        || "card play is missing its exact card binding",
+      !command.operands.target_id || Boolean(target)
+        || "card play target must be one current enemy",
+      !target || hasBinding(command, "target", target.entity_id)
+        || "card play target is missing its exact binding"
+    ]);
+  }
+  if (command.operation === "use_potion") {
+    const potion = context.player.potion_states.find(
+      (value) => value.entity_id === command.operands.potion_id
+    );
+    const validTargetIds = new Set([
+      context.player.player_entity_id,
+      ...context.enemies.map((enemy) => enemy.entity_id)
+    ]);
+    return collectErrors([
+      command.command === "use_potion" || "potion use must use use_potion",
+      Boolean(potion) || "potion use must bind one current potion",
+      Boolean(potion && hasBinding(command, "potion", potion.entity_id))
+        || "potion use is missing its exact potion binding",
+      !command.operands.target_id || validTargetIds.has(command.operands.target_id)
+        || "potion target must be a current player or enemy",
+      !command.operands.target_id || hasBinding(command, "target", command.operands.target_id)
+        || "potion target is missing its exact binding"
+    ]);
+  }
+  return [`unsupported direct combat operation ${command.operation}`];
 }
 
 function validateRewardCommand(
@@ -823,6 +997,7 @@ function projectContext(
   surface?: DirectSurface,
   player?: NormalizedCurrentState["player"]
 ): SemanticContext {
+  if (context.kind === "combat") return projectCombatContext(context);
   if (context.kind === "menu") {
     return {
       kind: "menu",
@@ -876,6 +1051,102 @@ function projectContext(
   };
 }
 
+function projectCombatContext(context: GatewayCombatContext): SemanticContext {
+  return {
+    kind: "combat",
+    encounterType: context.encounter_type,
+    round: context.round,
+    turnOwner: context.turn_owner === "player"
+      ? "player"
+      : context.turn_owner === "enemy"
+        ? "enemy"
+        : "unknown",
+    isPlayPhase: context.is_play_phase,
+    enemies: context.enemies.map((enemy) => ({
+      entityId: enemy.entity_id,
+      ...(enemy.combat_id != null ? { combatId: enemy.combat_id } : {}),
+      name: enemy.name ?? enemy.definition_id,
+      hp: enemy.hp,
+      maxHp: enemy.max_hp,
+      block: enemy.block,
+      statuses: enemy.statuses.map(projectStatus),
+      intents: enemy.intents.map((intent) => ({
+        type: intent.type,
+        ...(intent.label ? { label: intent.label } : {}),
+        ...(intent.title ? { title: intent.title } : {}),
+        ...(intent.description ? { description: intent.description } : {})
+      }))
+    }))
+  };
+}
+
+function projectCombatPlayer(
+  context: GatewayCombatContext,
+  persistent: PlayerSnapshot
+): PlayerSnapshot {
+  const player = context.player;
+  const potionStates = new Map(
+    player.potion_states.map((potion) => [potion.entity_id, potion])
+  );
+  return {
+    ...persistent,
+    block: player.block,
+    energy: player.energy,
+    maxEnergy: player.max_energy,
+    ...(player.stars != null ? { stars: player.stars } : {}),
+    hand: player.hand.map(projectGatewayVisibleCard),
+    drawPileCount: player.draw_pile_count,
+    discardPileCount: player.discard_pile_count,
+    exhaustPileCount: player.exhaust_pile_count,
+    drawPile: [],
+    discardPile: [],
+    exhaustPile: [],
+    statuses: player.statuses.map(projectStatus),
+    companions: player.companions.map((companion) => ({
+      entityId: companion.entity_id,
+      id: companion.definition_id,
+      ...(companion.name ? { name: companion.name } : {}),
+      isAlive: companion.is_alive,
+      healthBarVisible: companion.health_bar_visible,
+      ...(companion.hp != null ? { hp: companion.hp } : {}),
+      ...(companion.max_hp != null ? { maxHp: companion.max_hp } : {}),
+      block: companion.block,
+      statuses: companion.statuses.map(projectStatus)
+    })),
+    potions: persistent.potions.map((potion) => {
+      const state = potion.entityId ? potionStates.get(potion.entityId) : undefined;
+      return {
+        ...potion,
+        ...(state ? {
+          targetType: state.target_type,
+          canUseInCombat: state.can_use,
+          automatic: state.automatic
+        } : {})
+      };
+    }),
+    orbs: player.orbs.map((orb) => ({
+      id: orb.definition_id,
+      ...(orb.name ? { name: orb.name } : {}),
+      ...(orb.description ? { description: orb.description } : {}),
+      passiveValue: orb.passive_value,
+      evokeValue: orb.evoke_value,
+      queueIndex: orb.queue_index,
+      isNextToEvoke: orb.is_next_to_evoke
+    })),
+    ...(player.orb_slots != null ? { orbSlots: player.orb_slots } : {})
+  };
+}
+
+function projectStatus(status: GatewayCombatContext["player"]["statuses"][number]) {
+  return {
+    id: status.definition_id,
+    ...(status.name ? { name: status.name } : {}),
+    amount: status.amount,
+    type: status.type,
+    ...(status.description ? { description: status.description } : {})
+  };
+}
+
 function projectMapContext(context: GatewayMapContext): SemanticContext {
   const coordinate = (value: GatewayMapContext["visited"][number]) => ({
     col: value.col,
@@ -917,6 +1188,12 @@ function projectSurface(
   observation: ConnectorV3Observation,
   legalActions: BridgeLegalActionSnapshot[]
 ): NormalizedCurrentState["surface"] {
+  if (surface.kind === "combat_turn") {
+    return projectCombatSurface(surface, observation, legalActions);
+  }
+  if (surface.kind === "generated_card_choice") {
+    return projectGeneratedChoiceSurface(surface, observation, legalActions);
+  }
   if (surface.kind === "event_option") {
     return projectEventSurface(surface, observation, legalActions);
   }
@@ -945,6 +1222,75 @@ function projectSurface(
     return projectGameOverSurface(surface, observation, legalActions);
   }
   return projectMenuSurface(surface, observation, legalActions);
+}
+
+function projectGeneratedChoiceSurface(
+  surface: GatewayGeneratedChoiceSurface,
+  observation: ConnectorV3Observation,
+  legalActions: BridgeLegalActionSnapshot[]
+): GeneratedCardChoiceSurface {
+  const base = {
+    kind: "generated_card_choice" as const,
+    bridgeStateId: observation.state_token,
+    screenEntityId: surface.screen_entity_id,
+    ...(surface.prompt ? { prompt: surface.prompt } : {}),
+    canSkip: surface.can_skip,
+    isPeeking: surface.is_peeking,
+    cards: surface.cards.map(projectGatewayVisibleCard),
+    legalActions,
+    completeness: projectCompleteness(observation)
+  };
+  if (surface.source_kind === "lead_paperweight") {
+    return {
+      ...base,
+      purpose: surface.purpose,
+      sourceKind: surface.source_kind,
+      destination: surface.destination,
+      selectedCardCostPolicy: surface.selected_card_cost_policy
+    };
+  }
+  if (surface.source_kind === "hefty_tablet") {
+    return {
+      ...base,
+      purpose: surface.purpose,
+      sourceKind: surface.source_kind,
+      destination: surface.destination,
+      selectedCardCostPolicy: surface.selected_card_cost_policy
+    };
+  }
+  if (surface.source_kind === "knowledge_demon_curse") {
+    return {
+      ...base,
+      purpose: surface.purpose,
+      sourceKind: surface.source_kind,
+      destination: surface.destination,
+      selectedCardCostPolicy: surface.selected_card_cost_policy,
+      canSkip: false
+    };
+  }
+  return {
+    ...base,
+    purpose: surface.purpose,
+    sourceKind: surface.source_kind,
+    destination: surface.destination,
+    selectedCardCostPolicy: surface.selected_card_cost_policy,
+    overflowDestination: surface.overflow_destination
+  };
+}
+
+function projectCombatSurface(
+  surface: GatewayCombatTurnSurface,
+  observation: ConnectorV3Observation,
+  legalActions: BridgeLegalActionSnapshot[]
+): CombatTurnSurface {
+  return {
+    kind: "combat_turn",
+    bridgeStateId: observation.state_token,
+    roomEntityId: surface.room_entity_id,
+    canEndTurn: surface.can_end_turn,
+    legalActions,
+    completeness: projectCompleteness(observation)
+  };
 }
 
 function projectRestSurface(

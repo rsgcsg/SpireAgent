@@ -122,16 +122,17 @@ Reuse is internal implementation reuse, not V2 protocol authority.
 
 ## Explicit Migration Debt
 
-At `3.0-preview.2`:
+At `3.0-preview.3`:
 
 - combat and multiple ordinary non-combat families use direct V3 native
   resolvers; menu/run-setup, source-discriminated generated choices and
   game-over are now cut over in source, while remaining selectors use a bounded internal
   `provider_native_binding_adapter` that never submits or searches a v2 REST
   action ID;
-- Re directly consumes main/singleplayer/character menu, event, map,
-  game-over, reward/card-reward, shop, rest, treasure and visible-unsupported
-  facts and candidates. Remaining selector Surfaces still use
+- Re directly consumes ordinary combat, source-discriminated generated-card
+  choice, main/singleplayer/character menu, event, map, game-over,
+  reward/card-reward, shop, rest, treasure, lifecycle-settling and
+  visible-unsupported facts and candidates. Remaining selector Surfaces use
   `/api/v2/capabilities` as a same-runtime,
   non-authorizing semantic/environment projection sidecar and temporarily
   expand V3 candidates into a V2-shaped normalization projection;
@@ -145,6 +146,13 @@ These are deletion targets. They must not become permanent dual authority.
 In particular, V2 validators that require every visible affordance to have an
 authorized action cannot be the final V3 consumer contract: visibility and
 operation-scoped authority are intentionally orthogonal.
+
+Readiness is also orthogonal to support. A known interaction in native
+`settling` publishes no command and remains a supported family; Re projects a
+typed `no_action` checkpoint and continues bounded supervision. Treating an
+empty settling candidate set as unsupported is rejected because Preview.2
+demonstrated that it terminates normal run mount, combat resolution and
+treasure departure.
 
 ## Rejected Alternatives
 

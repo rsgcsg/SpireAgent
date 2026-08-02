@@ -59,16 +59,77 @@ const SOURCE: AdapterDescriptor = {
 
 function combatObservation(): ConnectorV3Observation {
   return decodeConnectorV3Observation({
-    protocol_version: "3.0-preview.2",
+    protocol_version: "3.0-preview.3",
     schema: "sts2.connector.v3/observation-1",
     profile: "semantic_accessibility.tools.v1",
     state_token: "state-fixture-1",
     sequence: 1,
     observed_at: "2026-07-31T00:00:00Z",
     status: "actionable_complete",
-    shared_state: null,
-    context: { kind: "combat" },
-    surface: { kind: "combat_turn", hand: [], enemies: [] },
+    shared_state: sharedState(),
+    context: {
+      kind: "combat",
+      encounter_type: "normal",
+      round: 1,
+      turn_owner: "player",
+      is_play_phase: true,
+      player: {
+        player_entity_id: "player-fixture",
+        block: 0,
+        energy: 3,
+        max_energy: 3,
+        hand: [{
+          entity_id: "card-fixture-1",
+          definition_id: "STRIKE_IRONCLAD",
+          name: "Strike",
+          type: "Attack",
+          cost: "1",
+          description: "Deal 6 damage.",
+          rarity: "Basic",
+          is_upgraded: false,
+          is_selected: false,
+          target_type: "AnyEnemy",
+          can_play: true
+        }],
+        draw_pile_count: 5,
+        discard_pile_count: 0,
+        exhaust_pile_count: 0,
+        statuses: [],
+        companions: [],
+        potion_states: [],
+        orbs: [],
+        orb_slots: 0
+      },
+      enemies: [
+        {
+          entity_id: "creature-fixture-1",
+          combat_id: 1,
+          definition_id: "CULTIST",
+          name: "Cultist",
+          hp: 50,
+          max_hp: 50,
+          block: 0,
+          statuses: [],
+          intents: [{ type: "Attack", label: "6" }]
+        },
+        {
+          entity_id: "creature-fixture-2",
+          combat_id: 2,
+          definition_id: "LOUSE",
+          name: "Louse",
+          hp: 12,
+          max_hp: 12,
+          block: 0,
+          statuses: [],
+          intents: [{ type: "Attack", label: "5" }]
+        }
+      ]
+    },
+    surface: {
+      kind: "combat_turn",
+      room_entity_id: "room-fixture",
+      can_end_turn: true
+    },
     interaction: {
       id: "interaction-fixture-1",
       kind: "combat_turn",
@@ -214,6 +275,107 @@ function sharedState() {
       missing: []
     }
   };
+}
+
+function generatedCombatChoiceObservation(): ConnectorV3Observation {
+  const value = structuredClone(combatObservation()) as unknown as Record<string, unknown>;
+  value.surface = {
+    kind: "generated_card_choice",
+    screen_entity_id: "generated-screen-fixture",
+    prompt: "Choose a Card",
+    purpose: "choose_one_generated_combat_card",
+    source_kind: "skill_potion",
+    destination: "combat_hand",
+    selected_card_cost_policy: "free_this_turn",
+    overflow_destination: "combat_discard_if_hand_full",
+    can_skip: true,
+    is_peeking: false,
+    cards: [
+      {
+        entity_id: "generated-card-1",
+        definition_id: "TRUE_GRIT",
+        name: "True Grit",
+        type: "Skill",
+        cost: "1",
+        description: "Gain Block.",
+        rarity: "Common",
+        is_upgraded: false,
+        is_selected: false
+      },
+      {
+        entity_id: "generated-card-2",
+        definition_id: "BATTLE_TRANCE",
+        name: "Battle Trance",
+        type: "Skill",
+        cost: "0",
+        description: "Draw cards.",
+        rarity: "Uncommon",
+        is_upgraded: false,
+        is_selected: false
+      }
+    ]
+  };
+  value.interaction = {
+    id: "interaction-generated-fixture",
+    kind: "generated_card_choice",
+    phase: "ready",
+    execution_support: "trial",
+    support_reason: null,
+    affordances: ["select_entity", "activate_control"],
+    command_candidates: [
+      {
+        candidate_id: "candidate-generated-1",
+        command: "select_entity",
+        operation: "select_generated_combat_card",
+        label: "Choose True Grit",
+        operands: {
+          screen_id: "generated-screen-fixture",
+          card_id: "generated-card-1"
+        },
+        operand_domains: {},
+        entity_bindings: [
+          { role: "screen", entity_id: "generated-screen-fixture" },
+          { role: "card", entity_id: "generated-card-1" }
+        ],
+        binding_kind: "native_direct_resolver",
+        authority_state: "trial"
+      },
+      {
+        candidate_id: "candidate-generated-2",
+        command: "select_entity",
+        operation: "select_generated_combat_card",
+        label: "Choose Battle Trance",
+        operands: {
+          screen_id: "generated-screen-fixture",
+          card_id: "generated-card-2"
+        },
+        operand_domains: {},
+        entity_bindings: [
+          { role: "screen", entity_id: "generated-screen-fixture" },
+          { role: "card", entity_id: "generated-card-2" }
+        ],
+        binding_kind: "native_direct_resolver",
+        authority_state: "trial"
+      },
+      {
+        candidate_id: "candidate-generated-skip",
+        command: "activate_control",
+        operation: "skip_generated_combat_card_choice",
+        label: "Skip",
+        operands: {
+          screen_id: "generated-screen-fixture",
+          control_id: "skip_generated_combat_card_choice"
+        },
+        operand_domains: {},
+        entity_bindings: [
+          { role: "screen", entity_id: "generated-screen-fixture" }
+        ],
+        binding_kind: "native_direct_resolver",
+        authority_state: "trial"
+      }
+    ]
+  };
+  return decodeConnectorV3Observation(value).data;
 }
 
 function eventObservation(): ConnectorV3Observation {
@@ -737,7 +899,7 @@ function treasureObservation(): ConnectorV3Observation {
 
 function connectorCapabilities() {
   return {
-    protocol_version: "3.0-preview.2",
+    protocol_version: "3.0-preview.3",
     observation_schema: "sts2.connector.v3/observation-1",
     command_schema: "sts2.connector.v3/command-1",
     inspection_schema: "sts2.connector.v3/inspection-1",
@@ -780,7 +942,7 @@ describe("Connector V3 strict contract", () => {
 
   it("rejects unknown mutation receipts that permit retry", () => {
     expect(() => decodeConnectorV3Receipt({
-      protocol_version: "3.0-preview.2",
+      protocol_version: "3.0-preview.3",
       request_id: "request-fixture",
       status: "unknown",
       application: "unknown",
@@ -796,7 +958,7 @@ describe("Connector V3 strict contract", () => {
 
   it("decodes state-bound read-only V3 inspections", () => {
     const decoded = decodeConnectorV3Inspection({
-      protocol_version: "3.0-preview.2",
+      protocol_version: "3.0-preview.3",
       schema: "sts2.connector.v3/inspection-1",
       inspection_id: "v3inspection-fixture",
       expected_state_token: "state-fixture-1",
@@ -828,7 +990,7 @@ describe("Connector V3 strict contract", () => {
 
   it("rejects V3 inspections whose state token drifted", () => {
     expect(() => decodeConnectorV3Inspection({
-      protocol_version: "3.0-preview.2",
+      protocol_version: "3.0-preview.3",
       schema: "sts2.connector.v3/inspection-1",
       inspection_id: "v3inspection-fixture",
       expected_state_token: "state-fixture-1",
@@ -872,6 +1034,108 @@ describe("Connector V3 strict contract", () => {
     )).toBe(true);
     const wrapper = projected.rawState as Record<string, unknown>;
     expect(wrapper.adapter_protocol).toBe("connector_v3_selected");
+  });
+
+  it("consumes ordinary combat directly without V2 semantic or capabilities sidecars", () => {
+    const observation = combatObservation();
+    const projected = projectConnectorV3ForRe(
+      observation,
+      observation as unknown as JsonObject
+    );
+    const wrapper = projected.rawState as Record<string, unknown>;
+
+    expect(wrapper.bridge_v2_state).toBeUndefined();
+    expect(wrapper.bridge_v2_capabilities).toBeUndefined();
+    const envelope = normalizeCurrentState(projected.rawState, SOURCE);
+    expect(envelope.diagnostics.status).toBe("ok");
+    expect(envelope.currentState).toMatchObject({
+      sourceStateType: "connector_v3:combat:combat_turn:direct",
+      stability: "actionable",
+      actionAuthority: "bridge_advertised",
+      context: {
+        kind: "combat",
+        turnOwner: "player",
+        enemies: [
+          { entityId: "creature-fixture-1" },
+          { entityId: "creature-fixture-2" }
+        ]
+      },
+      player: {
+        hp: 72,
+        energy: 3,
+        hand: [{ entityId: "card-fixture-1" }]
+      },
+      surface: {
+        kind: "combat_turn",
+        roomEntityId: "room-fixture",
+        canEndTurn: true
+      }
+    });
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toHaveLength(2);
+  });
+
+  it("treats a known settling interaction as supervised no-action, not unsupported", () => {
+    const value = structuredClone(combatObservation()) as unknown as Record<string, unknown>;
+    value.status = "observed";
+    value.interaction = {
+      id: "interaction-combat-settling",
+      kind: "combat_turn",
+      phase: "settling",
+      execution_support: "unsupported",
+      support_reason: "Legacy preview classified empty candidates as unsupported.",
+      affordances: [],
+      command_candidates: []
+    };
+    const observation = decodeConnectorV3Observation(value).data;
+    const projected = projectConnectorV3ForRe(
+      observation,
+      observation as unknown as JsonObject
+    );
+    const envelope = normalizeCurrentState(projected.rawState, SOURCE);
+
+    expect(envelope.diagnostics.status).toBe("ok");
+    expect(envelope.currentState).toMatchObject({
+      sourceStateType: "connector_v3:combat:combat_turn:direct",
+      stability: "settling",
+      actionAuthority: "none",
+      context: { kind: "combat" },
+      surface: { kind: "no_action", reason: "settling" }
+    });
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toEqual([]);
+  });
+
+  it("consumes a run-mount settling observation without any V2 sidecar", () => {
+    const value = structuredClone(combatObservation()) as unknown as Record<string, unknown>;
+    value.status = "observed";
+    value.shared_state = null;
+    value.context = {
+      kind: "run_transition",
+      phase: "setup",
+      transition: "awaiting_run_state"
+    };
+    value.surface = { kind: "no_action", reason: "settling" };
+    value.interaction = {
+      id: "interaction-run-mount",
+      kind: "no_action",
+      phase: "settling",
+      execution_support: "supported",
+      support_reason: null,
+      affordances: [],
+      command_candidates: []
+    };
+    const observation = decodeConnectorV3Observation(value).data;
+    const projected = projectConnectorV3ForRe(
+      observation,
+      observation as unknown as JsonObject
+    );
+    const envelope = normalizeCurrentState(projected.rawState, SOURCE);
+
+    expect(envelope.diagnostics.status).toBe("ok");
+    expect(envelope.currentState).toMatchObject({
+      stability: "settling",
+      context: { kind: "run_transition", phase: "setup" },
+      surface: { kind: "no_action", reason: "settling" }
+    });
   });
 
   it("consumes visible unsupported V3 facts directly without a V2 sidecar", () => {
@@ -1005,6 +1269,8 @@ describe("Connector V3 strict contract", () => {
   });
 
   it.each([
+    ["combat", combatObservation, "combat", "combat_turn", 2],
+    ["generated combat choice", generatedCombatChoiceObservation, "combat", "generated_card_choice", 3],
     ["event", eventObservation, "event", "event_option", 1],
     ["map", mapObservation, "map", "map_navigation", 1],
     ["game over", gameOverObservation, "run_ended", "game_over", 1],
@@ -1097,6 +1363,8 @@ describe("Connector V3 strict contract", () => {
   });
 
   it.each([
+    ["combat", combatObservation, "combat_turn"],
+    ["generated combat choice", generatedCombatChoiceObservation, "generated_card_choice"],
     ["shop inventory", shopInventoryObservation, "shop_inventory"],
     ["rest", restObservation, "rest_site"],
     ["treasure", treasureObservation, "treasure_room"]

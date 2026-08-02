@@ -72,12 +72,19 @@ reward-claim, card-reward, deck-enchant, menu/run-setup, generated-card choice
 and game-over controls have direct V3 native resolvers in current source. Each
 retains source-specific owner, operand, Commit and Outcome contracts while
 sharing only bounded mechanics. Remaining selectors temporarily call bounded
-Provider native bindings inside the Gateway. Re consumes menu, event, map,
-game-over, reward/card-reward, shop, rest, treasure and visible-unsupported
+Provider native bindings inside the Gateway. Re consumes ordinary combat,
+generated-card choice, menu, event, map, game-over, reward/card-reward, shop,
+rest, treasure, lifecycle-settling and visible-unsupported
 facts and commands directly without V2 semantic validation or capabilities.
 Unmigrated selector families still read same-runtime V2 facts as a temporary,
 non-authorizing projection sidecar. Neither path may supply a V2 action ID to
 V3 execution.
+
+Interaction support and instantaneous readiness are orthogonal. A known native
+family may be `settling` with zero legal candidates; it remains observed as a
+supported family and Re supervises a typed `no_action` state. Only an unknown
+or unbound family is visible unsupported. Empty candidates alone never prove
+unsupported semantics.
 
 The migration ends when V3 directly owns remaining selector command bindings,
 Re consumes every supported family without V2 semantic validation, and the

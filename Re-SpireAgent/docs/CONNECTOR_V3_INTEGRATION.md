@@ -34,16 +34,23 @@ boundary while retaining separate source-specific legality and Outcome.
 Remaining selectors temporarily reuse mature Provider-native bindings inside
 the Gateway. This is bounded migration debt, not a V2 REST fallback.
 
-Menu/run-setup, event, map, game-over, reward/card-reward, shop, rest,
-treasure and visible-unsupported observations use the direct V3 normalizer and
-do not request Bridge v2 capabilities. Menu, event, map, game-over and
-reward/card-reward are exact-runtime exercised. The replacement shop/rest/
-treasure slices pass 17 sidecar-free recorded-snapshot replays and await the
-next cold load. Remaining selector families temporarily read same-runtime
+Ordinary combat, generated-card choice, menu/run-setup, event, map, game-over,
+reward/card-reward, shop, rest, treasure, lifecycle-settling and
+visible-unsupported observations use the direct V3 normalizer and do not
+request Bridge v2 capabilities. Menu, event, map, game-over,
+reward/card-reward, shop, rest and treasure are exact-runtime exercised under
+Preview.2. Combat/generated direct consumption and settling recovery await a
+Preview.3 cold load. Remaining selector families temporarily read same-runtime
 Bridge v2 capabilities only as a
 non-executable semantic/environment projection sidecar. No v2 legal action or
 v2 command route enters the V3 execution path. The remaining sidecar is removed
 as direct V3 fact contracts reach equivalent decision-relevant coverage.
+
+Known lifecycle settling is not an unsupported Surface. Re receives a typed
+`no_action`, performs no model call or mutation, and continues only until the
+Gateway publishes a fresh ready interaction or the bounded repeated-state
+guard stops. A genuinely unknown owner remains visible unsupported and
+terminal.
 
 The operator preflight waits through only the explicit
 `no_active_run_context` startup sentinel. It does not wait away a legitimate

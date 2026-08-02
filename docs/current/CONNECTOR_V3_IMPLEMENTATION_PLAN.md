@@ -14,7 +14,7 @@ commands, or stop at a precise visible unsupported boundary.
 
 Implemented in source:
 
-- `3.0-preview.2` capabilities, observation, command and receipt contracts,
+- `3.0-preview.3` capabilities, observation, command and receipt contracts,
   plus `sts2.connector.v3/inspection-1`;
 - state token, stable instance identity and one active interaction;
 - visible unsupported interactions;
@@ -29,9 +29,10 @@ Implemented in source:
   authority, semantic Outcome and unknown-no-retry;
 - V3 REST, MCP tools and strict Re decoder/adapter;
 - Re defaults to V3 and never executes a v2 action ID;
-- Re consumes menu, event, map, game-over, reward/card-reward, shop, rest,
-  treasure and visible-unsupported Surfaces directly and does not request the
-  v2 capabilities sidecar for them;
+- Re consumes ordinary combat, generated-card choice, menu, event, map,
+  game-over, reward/card-reward, shop, rest, treasure, lifecycle-settling and
+  visible-unsupported Surfaces directly and does not request the v2
+  capabilities sidecar for them;
 - state-token-bound V3 Inspection for run deck, combat piles and shop catalog
   is implemented across Gateway, Re and MCP without mutation authority;
 - exact Stratagem Power source binding for the single-stack combat-pile
@@ -48,11 +49,12 @@ Not yet claimed:
 - full vanilla or Mod coverage.
 
 Current exact-runtime Re evidence includes
-`run-20260801205605-0fqlrj`: 172 settled decisions, two safe pre-submit stale
-refusals, no unknown mutation and one normal completed-run boundary after 175
-decisions. Direct menu/event/map/game-over/reward/card-reward consumption was
-exercised. The later direct shop/rest/treasure and Inspection replacement
-requires a new cold load.
+the nine Preview.2 runs from `run-20260802073844-wyq08j` through
+`run-20260802074610-ow4g7a`: 48 settled commands with completed receipts and
+available successors. Direct menu/event/map/reward/shop/rest/treasure
+consumption was exercised. All nine runs exposed the same settling-versus-
+unsupported classification defect. Preview.3 repairs it and directly consumes
+combat/generated choice; those changes and Inspection require a new cold load.
 
 ## Migration Waves
 
