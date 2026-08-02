@@ -6,6 +6,8 @@ import {
   type CharacterSelectSurface,
   type CombatHandCardSelectionSurface,
   type CombatTurnSurface,
+  type DeckUpgradeSelectionSurface,
+  type DeckRemovalSelectionSurface,
   type EventOptionSurface,
   type GameOverSurface,
   type GeneratedCardChoiceSurface,
@@ -32,6 +34,14 @@ import {
   type GatewayCombatContext,
   type GatewayCombatTurnSurface
 } from "../integrations/sts2mcp/gatewayCombatProtocol.js";
+import {
+  gatewayMerchantRemovalSurfaceSchema,
+  type GatewayMerchantRemovalSurface
+} from "../integrations/sts2mcp/gatewayDeckRemovalProtocol.js";
+import {
+  gatewayDeckUpgradeSurfaceSchema,
+  type GatewayDeckUpgradeSurface
+} from "../integrations/sts2mcp/gatewayDeckUpgradeProtocol.js";
 import {
   gatewayGeneratedChoiceSurfaceSchema,
   type GatewayGeneratedChoiceSurface
@@ -93,6 +103,7 @@ import {
 } from "./gatewayVisibleStateProjection.js";
 
 type DirectSurface = GatewayCombatTurnSurface | GatewayCombatHandSurface
+  | GatewayDeckUpgradeSurface | GatewayMerchantRemovalSurface
   | GatewayGeneratedChoiceSurface
   | GatewayMenuSurface | GatewayJourneySurface | GatewayRewardSurface
   | GatewayRunRoomSurface;
@@ -413,6 +424,10 @@ function parseSurface(
       ? gatewayCombatHandSurfaceSchema
     : observation.surface.kind === "generated_card_choice"
       ? gatewayGeneratedChoiceSurfaceSchema
+    : observation.surface.kind === "deck_upgrade_selection"
+      ? gatewayDeckUpgradeSurfaceSchema
+    : observation.surface.kind === "deck_removal_selection"
+      ? gatewayMerchantRemovalSurfaceSchema
     : observation.surface.kind === "event_option"
       ? gatewayEventOptionSurfaceSchema
       : observation.surface.kind === "map_navigation"
@@ -485,6 +500,10 @@ function contextMatchesSurface(context: DirectContext, surface: DirectSurface): 
     return surface.kind === "combat_turn"
       || surface.kind === "combat_hand_card_selection";
   }
+  if (surface.kind === "deck_upgrade_selection") {
+    return context.kind === "rest" || context.kind === "event";
+  }
+  if (surface.kind === "deck_removal_selection") return context.kind === "shop";
   if (context.kind === "rest") return surface.kind === "rest_site";
   if (context.kind === "shop") {
     return surface.kind === "shop_inventory" || surface.kind === "shop_room";
@@ -500,7 +519,7 @@ function validateCommands(
   surface: DirectSurface,
   commands: ConnectorV3ConsumerCommand[]
 ): string[] {
-  return commands.flatMap((command) => {
+  const errors = commands.flatMap((command) => {
     if (surface.kind === "combat_turn") {
       return context.kind === "combat"
         ? validateCombatCommand(context, surface, command)
@@ -513,6 +532,12 @@ function validateCommands(
     }
     if (surface.kind === "generated_card_choice") {
       return validateGeneratedChoiceCommand(surface, command);
+    }
+    if (surface.kind === "deck_upgrade_selection") {
+      return validateDeckUpgradeCommand(surface, command);
+    }
+    if (surface.kind === "deck_removal_selection") {
+      return validateMerchantRemovalCommand(surface, command);
     }
     if (surface.kind === "event_option") return validateEventCommand(surface, command);
     if (surface.kind === "map_navigation") return validateMapCommand(surface, command);
@@ -527,6 +552,73 @@ function validateCommands(
     if (surface.kind === "game_over") return validateGameOverCommand(surface, command);
     return validateMenuCommand(surface, command);
   });
+  if (surface.kind === "deck_upgrade_selection") {
+    errors.push(...validateDeckUpgradeCommandSet(surface, commands));
+  }
+  if (surface.kind === "deck_removal_selection") {
+    errors.push(...validateMerchantRemovalCommandSet(surface, commands));
+  }
+  return errors;
+}
+
+function validateDeckUpgradeCommandSet(
+  surface: GatewayDeckUpgradeSurface,
+  commands: ConnectorV3ConsumerCommand[]
+): string[] {
+  const expected = [
+    ...surface.selectable_card_entity_ids.map(
+      (id) => `toggle_deck_upgrade_card|select_entity|${id}`
+    ),
+    ...surface.deselectable_card_entity_ids.map(
+      (id) => `toggle_deck_upgrade_card|deselect_entity|${id}`
+    ),
+    ...(surface.can_cancel_selection
+      ? ["cancel_deck_upgrade_selection|cancel_interaction|"]
+      : []),
+    ...(surface.can_cancel_preview
+      ? ["cancel_deck_upgrade_preview|cancel_interaction|"]
+      : []),
+    ...(surface.can_confirm ? ["confirm_deck_upgrade|confirm_interaction|"] : [])
+  ].sort();
+  return exactCommandSetErrors("deck-upgrade", expected, commands);
+}
+
+function validateMerchantRemovalCommandSet(
+  surface: GatewayMerchantRemovalSurface,
+  commands: ConnectorV3ConsumerCommand[]
+): string[] {
+  const expected = [
+    ...surface.selectable_card_entity_ids.map(
+      (id) => `toggle_deck_removal_card|select_entity|${id}`
+    ),
+    ...surface.deselectable_card_entity_ids.map(
+      (id) => `toggle_deck_removal_card|deselect_entity|${id}`
+    ),
+    ...(surface.can_preview ? ["preview_deck_removal|confirm_interaction|"] : []),
+    ...(surface.can_cancel_selection
+      ? ["cancel_deck_removal_selection|cancel_interaction|"]
+      : []),
+    ...(surface.can_cancel_preview
+      ? ["cancel_deck_removal_preview|cancel_interaction|"]
+      : []),
+    ...(surface.can_confirm ? ["confirm_deck_removal|confirm_interaction|"] : [])
+  ].sort();
+  return exactCommandSetErrors("merchant-removal", expected, commands);
+}
+
+function exactCommandSetErrors(
+  family: string,
+  expected: string[],
+  commands: ConnectorV3ConsumerCommand[]
+): string[] {
+  const actual = commands.map((command) => [
+    command.operation,
+    command.command,
+    command.operands.card_id ?? ""
+  ].join("|")).sort();
+  return JSON.stringify(actual) === JSON.stringify(expected)
+    ? []
+    : [`${family} command set must exactly match current actionable facts`];
 }
 
 function validateGeneratedChoiceCommand(
@@ -561,6 +653,158 @@ function validateGeneratedChoiceCommand(
     ]);
   }
   return [`unsupported direct generated-choice operation ${command.operation}`];
+}
+
+function validateDeckUpgradeCommand(
+  surface: GatewayDeckUpgradeSurface,
+  command: ConnectorV3ConsumerCommand
+): string[] {
+  const base = [
+    command.operands.screen_id === surface.screen_entity_id
+      || "deck-upgrade command must bind the current screen",
+    hasBinding(command, "screen", surface.screen_entity_id)
+      || "deck-upgrade command is missing its exact screen binding"
+  ];
+  if (command.operation === "toggle_deck_upgrade_card") {
+    const cardId = command.operands.card_id ?? "";
+    const selecting = surface.selectable_card_entity_ids.includes(cardId);
+    const deselecting = surface.deselectable_card_entity_ids.includes(cardId);
+    return collectErrors([
+      ...base,
+      surface.stage === "selecting"
+        || "deck-upgrade card toggle requires selecting stage",
+      (selecting && command.command === "select_entity")
+        || (deselecting && command.command === "deselect_entity")
+        || "deck-upgrade command must match exact selected membership",
+      hasBinding(command, "card", cardId)
+        || "deck-upgrade command is missing its exact card binding"
+    ]);
+  }
+  if (command.operation === "cancel_deck_upgrade_selection") {
+    return collectErrors([
+      ...base,
+      command.command === "cancel_interaction"
+        || "deck-upgrade selection cancel must cancel the interaction",
+      command.operands.control_id === command.operation
+        || "deck-upgrade selection cancel control is not exact",
+      surface.stage === "selecting" && surface.can_cancel_selection
+        || "deck-upgrade selection cancel is unavailable"
+    ]);
+  }
+  if (command.operation === "cancel_deck_upgrade_preview") {
+    return collectErrors([
+      ...base,
+      command.command === "cancel_interaction"
+        || "deck-upgrade preview return must cancel the preview interaction",
+      command.operands.control_id === command.operation
+        || "deck-upgrade preview return control is not exact",
+      surface.stage === "preview" && surface.can_cancel_preview
+        || "deck-upgrade preview return is unavailable"
+    ]);
+  }
+  if (command.operation === "confirm_deck_upgrade") {
+    const boundCards = command.entityBindings
+      .filter((binding) => binding.role === "card")
+      .map((binding) => binding.entityId)
+      .sort();
+    const selectedCards = [...surface.selected_card_entity_ids].sort();
+    return collectErrors([
+      ...base,
+      command.command === "confirm_interaction"
+        || "deck-upgrade commit must confirm the interaction",
+      command.operands.control_id === command.operation
+        || "deck-upgrade confirm control is not exact",
+      surface.stage === "preview" && surface.can_confirm
+        || "deck-upgrade confirm is unavailable",
+      JSON.stringify(boundCards) === JSON.stringify(selectedCards)
+        || "deck-upgrade confirm must bind exact selected-card membership"
+    ]);
+  }
+  return [`unsupported direct deck-upgrade operation ${command.operation}`];
+}
+
+function validateMerchantRemovalCommand(
+  surface: GatewayMerchantRemovalSurface,
+  command: ConnectorV3ConsumerCommand
+): string[] {
+  const base = [
+    command.operands.screen_id === surface.screen_entity_id
+      || "merchant-removal command must bind the current screen",
+    hasBinding(command, "screen", surface.screen_entity_id)
+      || "merchant-removal command is missing its exact screen binding"
+  ];
+  if (command.operation === "toggle_deck_removal_card") {
+    const cardId = command.operands.card_id ?? "";
+    const selecting = surface.selectable_card_entity_ids.includes(cardId);
+    const deselecting = surface.deselectable_card_entity_ids.includes(cardId);
+    return collectErrors([
+      ...base,
+      surface.stage === "selecting"
+        || "merchant-removal card toggle requires selecting stage",
+      (selecting && command.command === "select_entity")
+        || (deselecting && command.command === "deselect_entity")
+        || "merchant-removal command must match exact selected membership",
+      hasBinding(command, "card", cardId)
+        || "merchant-removal command is missing its exact card binding"
+    ]);
+  }
+  const selectedBindingsMatch = (): boolean => {
+    const boundCards = command.entityBindings
+      .filter((binding) => binding.role === "card")
+      .map((binding) => binding.entityId)
+      .sort();
+    return JSON.stringify(boundCards)
+      === JSON.stringify([...surface.selected_card_entity_ids].sort());
+  };
+  if (command.operation === "preview_deck_removal") {
+    return collectErrors([
+      ...base,
+      command.command === "confirm_interaction"
+        || "merchant-removal preview must confirm the selecting stage",
+      command.operands.control_id === command.operation
+        || "merchant-removal preview control is not exact",
+      surface.stage === "selecting" && surface.can_preview
+        || "merchant-removal preview is unavailable",
+      selectedBindingsMatch()
+        || "merchant-removal preview must bind exact selected membership"
+    ]);
+  }
+  if (command.operation === "cancel_deck_removal_selection") {
+    return collectErrors([
+      ...base,
+      command.command === "cancel_interaction"
+        || "merchant-removal selection cancel must cancel the interaction",
+      command.operands.control_id === command.operation
+        || "merchant-removal selection cancel control is not exact",
+      surface.stage === "selecting" && surface.can_cancel_selection
+        || "merchant-removal selection cancel is unavailable"
+    ]);
+  }
+  if (command.operation === "cancel_deck_removal_preview") {
+    return collectErrors([
+      ...base,
+      command.command === "cancel_interaction"
+        || "merchant-removal preview return must cancel the preview interaction",
+      command.operands.control_id === command.operation
+        || "merchant-removal preview return control is not exact",
+      surface.stage === "preview" && surface.can_cancel_preview
+        || "merchant-removal preview return is unavailable"
+    ]);
+  }
+  if (command.operation === "confirm_deck_removal") {
+    return collectErrors([
+      ...base,
+      command.command === "confirm_interaction"
+        || "merchant-removal commit must confirm the interaction",
+      command.operands.control_id === command.operation
+        || "merchant-removal confirm control is not exact",
+      surface.stage === "preview" && surface.can_confirm
+        || "merchant-removal confirm is unavailable",
+      selectedBindingsMatch()
+        || "merchant-removal confirm must bind exact selected membership"
+    ]);
+  }
+  return [`unsupported direct merchant-removal operation ${command.operation}`];
 }
 
 function validateCombatCommand(
@@ -760,6 +1004,8 @@ function validateCardRewardCommand(
 }
 
 function validateSurfaceFacts(surface: DirectSurface): string[] {
+  if (surface.kind === "deck_upgrade_selection") return [];
+  if (surface.kind === "deck_removal_selection") return [];
   if (surface.kind === "rest_site") {
     const entityIds = new Set(surface.options.map((option) => option.entity_id));
     const indices = new Set(surface.options.map((option) => option.index));
@@ -1270,6 +1516,12 @@ function projectSurface(
   if (surface.kind === "generated_card_choice") {
     return projectGeneratedChoiceSurface(surface, observation, legalActions);
   }
+  if (surface.kind === "deck_upgrade_selection") {
+    return projectDeckUpgradeSurface(surface, observation, legalActions);
+  }
+  if (surface.kind === "deck_removal_selection") {
+    return projectMerchantRemovalSurface(surface, observation, legalActions);
+  }
   if (surface.kind === "event_option") {
     return projectEventSurface(surface, observation, legalActions);
   }
@@ -1298,6 +1550,51 @@ function projectSurface(
     return projectGameOverSurface(surface, observation, legalActions);
   }
   return projectMenuSurface(surface, observation, legalActions);
+}
+
+function projectDeckUpgradeSurface(
+  surface: GatewayDeckUpgradeSurface,
+  observation: ConnectorV3Observation,
+  legalActions: BridgeLegalActionSnapshot[]
+): DeckUpgradeSelectionSurface {
+  return {
+    kind: "deck_upgrade_selection",
+    stage: surface.stage,
+    bridgeStateId: observation.state_token,
+    screenEntityId: surface.screen_entity_id,
+    prompt: surface.prompt,
+    minimumSelections: surface.min_select,
+    maximumSelections: surface.max_select,
+    selectedCount: surface.selected_count,
+    selectedCardEntityIds: [...surface.selected_card_entity_ids],
+    cancelable: surface.cancelable,
+    cards: surface.cards.map(projectGatewayVisibleCard),
+    previewCards: surface.preview_cards.map(projectGatewayVisibleCard),
+    legalActions,
+    completeness: projectCompleteness(observation)
+  };
+}
+
+function projectMerchantRemovalSurface(
+  surface: GatewayMerchantRemovalSurface,
+  observation: ConnectorV3Observation,
+  legalActions: BridgeLegalActionSnapshot[]
+): DeckRemovalSelectionSurface {
+  return {
+    kind: "deck_removal_selection",
+    stage: surface.stage,
+    bridgeStateId: observation.state_token,
+    screenEntityId: surface.screen_entity_id,
+    prompt: surface.prompt,
+    minimumSelections: surface.min_select,
+    maximumSelections: surface.max_select,
+    selectedCount: surface.selected_count,
+    selectedCardEntityIds: [...surface.selected_card_entity_ids],
+    cancelable: surface.cancelable,
+    cards: surface.cards.map(projectGatewayVisibleCard),
+    legalActions,
+    completeness: projectCompleteness(observation)
+  };
 }
 
 function projectGeneratedChoiceSurface(

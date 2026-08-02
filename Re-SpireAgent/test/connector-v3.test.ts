@@ -5,6 +5,7 @@ import { projectConnectorV3ForRe } from "../src/integrations/sts2mcp/connectorV3
 import { Sts2ConnectorV3Adapter } from "../src/integrations/sts2mcp/connectorV3Adapter.js";
 import {
   decodeConnectorV3Inspection,
+  decodeConnectorV3LinkedDetail,
   decodeConnectorV3Observation,
   decodeConnectorV3Receipt,
   type ConnectorV3Observation
@@ -59,7 +60,7 @@ const SOURCE: AdapterDescriptor = {
 
 function combatObservation(): ConnectorV3Observation {
   return decodeConnectorV3Observation({
-    protocol_version: "3.0-preview.4",
+    protocol_version: "3.0-preview.5",
     schema: "sts2.connector.v3/observation-1",
     profile: "semantic_accessibility.tools.v1",
     state_token: "state-fixture-1",
@@ -183,6 +184,7 @@ function combatObservation(): ConnectorV3Observation {
       unknown_critical_field_behavior: "fail_closed"
     },
     inspection_catalog: [],
+    linked_detail_catalog: [],
     diagnostics: [],
     warnings: [],
     coverage: {
@@ -435,6 +437,279 @@ function combatHandObservation(): ConnectorV3Observation {
         authority_state: "trial"
       }
     ]
+  };
+  return decodeConnectorV3Observation(value).data;
+}
+
+function deckUpgradeObservation(stage: "selecting" | "preview" = "selecting"):
+ConnectorV3Observation {
+  const value = structuredClone(combatObservation()) as unknown as Record<string, unknown>;
+  const cards = [
+    {
+      entity_id: "deck-card-1",
+      definition_id: "STRIKE_IRONCLAD",
+      name: "Strike",
+      type: "Attack",
+      cost: "1",
+      description: "Deal 6 damage.",
+      rarity: "Basic",
+      is_upgraded: false,
+      is_selected: stage === "preview"
+    },
+    {
+      entity_id: "deck-card-2",
+      definition_id: "DEFEND_IRONCLAD",
+      name: "Defend",
+      type: "Skill",
+      cost: "1",
+      description: "Gain 5 Block.",
+      rarity: "Basic",
+      is_upgraded: false,
+      is_selected: false
+    }
+  ];
+  value.context = { kind: "rest" };
+  value.surface = stage === "selecting"
+    ? {
+        kind: "deck_upgrade_selection",
+        stage,
+        screen_entity_id: "upgrade-screen-fixture",
+        prompt: "Choose a card to Upgrade.",
+        min_select: 1,
+        max_select: 1,
+        selected_count: 0,
+        selected_card_entity_ids: [],
+        cancelable: true,
+        selectable_card_entity_ids: ["deck-card-1", "deck-card-2"],
+        deselectable_card_entity_ids: [],
+        can_cancel_selection: true,
+        can_cancel_preview: false,
+        can_confirm: false,
+        cards,
+        preview_cards: []
+      }
+    : {
+        kind: "deck_upgrade_selection",
+        stage,
+        screen_entity_id: "upgrade-screen-fixture",
+        prompt: "Confirm Upgrade.",
+        min_select: 1,
+        max_select: 1,
+        selected_count: 1,
+        selected_card_entity_ids: ["deck-card-1"],
+        cancelable: true,
+        selectable_card_entity_ids: [],
+        deselectable_card_entity_ids: [],
+        can_cancel_selection: false,
+        can_cancel_preview: true,
+        can_confirm: true,
+        cards,
+        preview_cards: [{
+          ...cards[0],
+          entity_id: "upgrade-preview-card-1",
+          name: "Strike+",
+          description: "Deal 9 damage.",
+          is_upgraded: true,
+          is_selected: false
+        }]
+      };
+  value.interaction = {
+    id: `interaction-deck-upgrade-${stage}`,
+    kind: "deck_upgrade_selection",
+    phase: "ready",
+    execution_support: "trial",
+    support_reason: null,
+    affordances: stage === "selecting"
+      ? ["select_entity", "cancel_interaction"]
+      : ["confirm_interaction", "cancel_interaction"],
+    command_candidates: stage === "selecting"
+      ? [
+          ...cards.map((card) => ({
+            candidate_id: `candidate-upgrade-${card.entity_id}`,
+            command: "select_entity",
+            operation: "toggle_deck_upgrade_card",
+            label: `Select ${card.name}`,
+            operands: {
+              screen_id: "upgrade-screen-fixture",
+              card_id: card.entity_id
+            },
+            operand_domains: {},
+            entity_bindings: [
+              { role: "screen", entity_id: "upgrade-screen-fixture" },
+              { role: "card", entity_id: card.entity_id }
+            ],
+            binding_kind: "native_direct_resolver",
+            authority_state: "trial"
+          })),
+          {
+            candidate_id: "candidate-upgrade-cancel",
+            command: "cancel_interaction",
+            operation: "cancel_deck_upgrade_selection",
+            label: "Cancel deck upgrade selection",
+            operands: {
+              screen_id: "upgrade-screen-fixture",
+              control_id: "cancel_deck_upgrade_selection"
+            },
+            operand_domains: {},
+            entity_bindings: [
+              { role: "screen", entity_id: "upgrade-screen-fixture" }
+            ],
+            binding_kind: "native_direct_resolver",
+            authority_state: "trial"
+          }
+        ]
+      : [
+          {
+            candidate_id: "candidate-upgrade-return",
+            command: "cancel_interaction",
+            operation: "cancel_deck_upgrade_preview",
+            label: "Return to upgrade selection",
+            operands: {
+              screen_id: "upgrade-screen-fixture",
+              control_id: "cancel_deck_upgrade_preview"
+            },
+            operand_domains: {},
+            entity_bindings: [
+              { role: "screen", entity_id: "upgrade-screen-fixture" }
+            ],
+            binding_kind: "native_direct_resolver",
+            authority_state: "trial"
+          },
+          {
+            candidate_id: "candidate-upgrade-confirm",
+            command: "confirm_interaction",
+            operation: "confirm_deck_upgrade",
+            label: "Confirm the visible card upgrade",
+            operands: {
+              screen_id: "upgrade-screen-fixture",
+              control_id: "confirm_deck_upgrade"
+            },
+            operand_domains: {},
+            entity_bindings: [
+              { role: "screen", entity_id: "upgrade-screen-fixture" },
+              { role: "card", entity_id: "deck-card-1" }
+            ],
+            binding_kind: "native_direct_resolver",
+            authority_state: "trial"
+          }
+        ]
+  };
+  return decodeConnectorV3Observation(value).data;
+}
+
+function merchantRemovalObservation(stage: "selecting" | "preview" = "selecting"):
+ConnectorV3Observation {
+  const value = structuredClone(combatObservation()) as unknown as Record<string, unknown>;
+  const card = {
+    entity_id: "merchant-removal-card-1",
+    definition_id: "STRIKE_IRONCLAD",
+    name: "Strike",
+    type: "Attack",
+    cost: "1",
+    description: "Deal 6 damage.",
+    rarity: "Basic",
+    is_upgraded: false,
+    is_selected: stage === "preview"
+  };
+  value.context = { kind: "shop" };
+  value.surface = {
+    kind: "deck_removal_selection",
+    stage,
+    screen_entity_id: "merchant-removal-screen",
+    prompt: stage === "selecting" ? "Choose a card to remove." : "Confirm removal.",
+    min_select: 1,
+    max_select: 1,
+    selected_count: stage === "preview" ? 1 : 0,
+    selected_card_entity_ids: stage === "preview" ? [card.entity_id] : [],
+    cancelable: true,
+    selectable_card_entity_ids: stage === "selecting" ? [card.entity_id] : [],
+    deselectable_card_entity_ids: [],
+    can_preview: false,
+    can_cancel_selection: stage === "selecting",
+    can_cancel_preview: stage === "preview",
+    can_confirm: stage === "preview",
+    cards: [card]
+  };
+  value.interaction = {
+    id: `interaction-merchant-removal-${stage}`,
+    kind: "deck_removal_selection",
+    phase: "ready",
+    execution_support: "trial",
+    support_reason: null,
+    affordances: stage === "selecting"
+      ? ["select_entity", "cancel_interaction"]
+      : ["confirm_interaction", "cancel_interaction"],
+    command_candidates: stage === "selecting"
+      ? [
+          {
+            candidate_id: "candidate-merchant-removal-select",
+            command: "select_entity",
+            operation: "toggle_deck_removal_card",
+            label: "Select Strike to remove",
+            operands: {
+              screen_id: "merchant-removal-screen",
+              card_id: card.entity_id
+            },
+            operand_domains: {},
+            entity_bindings: [
+              { role: "screen", entity_id: "merchant-removal-screen" },
+              { role: "card", entity_id: card.entity_id }
+            ],
+            binding_kind: "native_direct_resolver",
+            authority_state: "trial"
+          },
+          {
+            candidate_id: "candidate-merchant-removal-cancel",
+            command: "cancel_interaction",
+            operation: "cancel_deck_removal_selection",
+            label: "Cancel card removal",
+            operands: {
+              screen_id: "merchant-removal-screen",
+              control_id: "cancel_deck_removal_selection"
+            },
+            operand_domains: {},
+            entity_bindings: [
+              { role: "screen", entity_id: "merchant-removal-screen" }
+            ],
+            binding_kind: "native_direct_resolver",
+            authority_state: "trial"
+          }
+        ]
+      : [
+          {
+            candidate_id: "candidate-merchant-removal-return",
+            command: "cancel_interaction",
+            operation: "cancel_deck_removal_preview",
+            label: "Return to removal selection",
+            operands: {
+              screen_id: "merchant-removal-screen",
+              control_id: "cancel_deck_removal_preview"
+            },
+            operand_domains: {},
+            entity_bindings: [
+              { role: "screen", entity_id: "merchant-removal-screen" }
+            ],
+            binding_kind: "native_direct_resolver",
+            authority_state: "trial"
+          },
+          {
+            candidate_id: "candidate-merchant-removal-confirm",
+            command: "confirm_interaction",
+            operation: "confirm_deck_removal",
+            label: "Confirm removal of Strike",
+            operands: {
+              screen_id: "merchant-removal-screen",
+              control_id: "confirm_deck_removal"
+            },
+            operand_domains: {},
+            entity_bindings: [
+              { role: "screen", entity_id: "merchant-removal-screen" },
+              { role: "card", entity_id: card.entity_id }
+            ],
+            binding_kind: "native_direct_resolver",
+            authority_state: "trial"
+          }
+        ]
   };
   return decodeConnectorV3Observation(value).data;
 }
@@ -960,10 +1235,11 @@ function treasureObservation(): ConnectorV3Observation {
 
 function connectorCapabilities() {
   return {
-    protocol_version: "3.0-preview.4",
+    protocol_version: "3.0-preview.5",
     observation_schema: "sts2.connector.v3/observation-1",
     command_schema: "sts2.connector.v3/command-1",
     inspection_schema: "sts2.connector.v3/inspection-1",
+    linked_detail_schema: "sts2.connector.v3/linked-detail-1",
     status: "experimental_cutover",
     bridge: BRIDGE,
     game: GAME,
@@ -1003,7 +1279,7 @@ describe("Connector V3 strict contract", () => {
 
   it("rejects unknown mutation receipts that permit retry", () => {
     expect(() => decodeConnectorV3Receipt({
-      protocol_version: "3.0-preview.4",
+      protocol_version: "3.0-preview.5",
       request_id: "request-fixture",
       status: "unknown",
       application: "unknown",
@@ -1019,7 +1295,7 @@ describe("Connector V3 strict contract", () => {
 
   it("decodes state-bound read-only V3 inspections", () => {
     const decoded = decodeConnectorV3Inspection({
-      protocol_version: "3.0-preview.4",
+      protocol_version: "3.0-preview.5",
       schema: "sts2.connector.v3/inspection-1",
       inspection_id: "v3inspection-fixture",
       expected_state_token: "state-fixture-1",
@@ -1051,7 +1327,7 @@ describe("Connector V3 strict contract", () => {
 
   it("rejects V3 inspections whose state token drifted", () => {
     expect(() => decodeConnectorV3Inspection({
-      protocol_version: "3.0-preview.4",
+      protocol_version: "3.0-preview.5",
       schema: "sts2.connector.v3/inspection-1",
       inspection_id: "v3inspection-fixture",
       expected_state_token: "state-fixture-1",
@@ -1076,6 +1352,50 @@ describe("Connector V3 strict contract", () => {
       },
       diagnostics: []
     })).toThrow("expected and observed state tokens must match");
+  });
+
+  it("decodes only state-bound linked card detail for the exact entity", () => {
+    const detail = {
+      protocol_version: "3.0-preview.5",
+      schema: "sts2.connector.v3/linked-detail-1",
+      detail_id: "detail-fixture",
+      expected_state_token: "state-fixture-1",
+      observed_state_token: "state-fixture-1",
+      observed_at: "2026-08-02T00:00:00Z",
+      kind: "surface_card",
+      entity_id: "deck-card-1",
+      content: {
+        entity_id: "deck-card-1",
+        definition_id: "STRIKE_IRONCLAD",
+        name: "Strike",
+        type: "Attack",
+        cost: "1",
+        description: "Deal 6 damage.",
+        rarity: "Basic",
+        is_upgraded: false,
+        is_selected: false
+      },
+      bridge: BRIDGE,
+      game: GAME,
+      observation_policy: {
+        id: "player_visible_ui_v1",
+        scope: "visible",
+        includes_hidden_information: false,
+        unknown_field_behavior: "omit_and_mark_incomplete"
+      },
+      diagnostics: []
+    };
+
+    expect(decodeConnectorV3LinkedDetail(detail).data.content.definition_id)
+      .toBe("STRIKE_IRONCLAD");
+    expect(() => decodeConnectorV3LinkedDetail({
+      ...detail,
+      observed_state_token: "state-replacement"
+    })).toThrow("expected and observed state tokens must match");
+    expect(() => decodeConnectorV3LinkedDetail({
+      ...detail,
+      entity_id: "replacement-card"
+    })).toThrow("entity does not match");
   });
 
   it("expands only Gateway-provided operand domains into local opaque choices", () => {
@@ -1185,6 +1505,227 @@ describe("Connector V3 strict contract", () => {
       })
     ]));
     expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toEqual([]);
+  });
+
+  it("consumes deck-upgrade selecting and preview stages without V2 sidecars", () => {
+    const selecting = deckUpgradeObservation("selecting");
+    const selected = projectConnectorV3ForRe(
+      selecting,
+      selecting as unknown as JsonObject
+    );
+    const selectingWrapper = selected.rawState as Record<string, unknown>;
+    expect(selectingWrapper.bridge_v2_state).toBeUndefined();
+    expect(selectingWrapper.bridge_v2_capabilities).toBeUndefined();
+    const selectingEnvelope = normalizeCurrentState(selected.rawState, SOURCE);
+    expect(selectingEnvelope.diagnostics.status).toBe("ok");
+    expect(selectingEnvelope.currentState).toMatchObject({
+      sourceStateType: "connector_v3:rest:deck_upgrade_selection:direct",
+      context: { kind: "rest" },
+      surface: {
+        kind: "deck_upgrade_selection",
+        stage: "selecting",
+        screenEntityId: "upgrade-screen-fixture",
+        selectedCount: 0
+      }
+    });
+    expect(buildAllowedActions(
+      selectingEnvelope.currentState,
+      selectingEnvelope.stateHash
+    )).toHaveLength(3);
+
+    const preview = deckUpgradeObservation("preview");
+    const projectedPreview = projectConnectorV3ForRe(
+      preview,
+      preview as unknown as JsonObject
+    );
+    const previewEnvelope = normalizeCurrentState(projectedPreview.rawState, SOURCE);
+    expect(previewEnvelope.diagnostics.status).toBe("ok");
+    expect(previewEnvelope.currentState.surface).toMatchObject({
+      kind: "deck_upgrade_selection",
+      stage: "preview",
+      selectedCardEntityIds: ["deck-card-1"],
+      previewCards: [{ entityId: "upgrade-preview-card-1", upgraded: true }]
+    });
+    expect([...projectedPreview.invocations.values()]).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        command: "confirm_interaction",
+        operation: "confirm_deck_upgrade"
+      }),
+      expect.objectContaining({
+        command: "cancel_interaction",
+        operation: "cancel_deck_upgrade_preview"
+      })
+    ]));
+    expect(buildAllowedActions(
+      previewEnvelope.currentState,
+      previewEnvelope.stateHash
+    )).toHaveLength(2);
+  });
+
+  it("keeps direct deck-upgrade select and deselect semantics distinct", () => {
+    const value = structuredClone(deckUpgradeObservation("selecting")) as unknown as any;
+    value.surface.selected_count = 1;
+    value.surface.selected_card_entity_ids = ["deck-card-1"];
+    value.surface.selectable_card_entity_ids = ["deck-card-2"];
+    value.surface.deselectable_card_entity_ids = ["deck-card-1"];
+    value.surface.cards[0].is_selected = true;
+    value.interaction.command_candidates[0].command = "deselect_entity";
+    value.interaction.command_candidates[0].label = "Deselect Strike";
+    const observation = decodeConnectorV3Observation(value).data;
+    const projected = projectConnectorV3ForRe(
+      observation,
+      observation as unknown as JsonObject
+    );
+    const commands = [...projected.invocations.values()];
+
+    expect(commands).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        command: "deselect_entity",
+        operands: expect.objectContaining({ card_id: "deck-card-1" })
+      }),
+      expect.objectContaining({
+        command: "select_entity",
+        operands: expect.objectContaining({ card_id: "deck-card-2" })
+      })
+    ]));
+    expect(normalizeCurrentState(projected.rawState, SOURCE).diagnostics.status).toBe("ok");
+  });
+
+  it("fails closed when deck-upgrade owner or selected confirmation binding drifts", () => {
+    const wrongOwner = deckUpgradeObservation("selecting");
+    wrongOwner.interaction.command_candidates[0]!.operands.screen_id = "replacement-screen";
+    const wrongOwnerProjection = projectConnectorV3ForRe(
+      wrongOwner,
+      wrongOwner as unknown as JsonObject
+    );
+    expect(normalizeCurrentState(wrongOwnerProjection.rawState, SOURCE).diagnostics.status)
+      .toBe("invalid");
+
+    const wrongMembership = deckUpgradeObservation("preview");
+    const confirm = wrongMembership.interaction.command_candidates.find(
+      (candidate) => candidate.operation === "confirm_deck_upgrade"
+    )!;
+    confirm.entity_bindings = confirm.entity_bindings.filter(
+      (binding) => binding.role !== "card"
+    );
+    const wrongMembershipProjection = projectConnectorV3ForRe(
+      wrongMembership,
+      wrongMembership as unknown as JsonObject
+    );
+    const envelope = normalizeCurrentState(wrongMembershipProjection.rawState, SOURCE);
+    expect(envelope.diagnostics.status).toBe("invalid");
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toEqual([]);
+  });
+
+  it("consumes merchant removal directly while preserving its commit membership", () => {
+    const selecting = merchantRemovalObservation("selecting");
+    const projectedSelecting = projectConnectorV3ForRe(
+      selecting,
+      selecting as unknown as JsonObject
+    );
+    const selectingWrapper = projectedSelecting.rawState as Record<string, unknown>;
+    expect(selectingWrapper.bridge_v2_state).toBeUndefined();
+    expect(selectingWrapper.bridge_v2_capabilities).toBeUndefined();
+    const selectingEnvelope = normalizeCurrentState(projectedSelecting.rawState, SOURCE);
+    expect(selectingEnvelope.diagnostics.status).toBe("ok");
+    expect(selectingEnvelope.currentState).toMatchObject({
+      sourceStateType: "connector_v3:shop:deck_removal_selection:direct",
+      context: { kind: "shop" },
+      surface: {
+        kind: "deck_removal_selection",
+        stage: "selecting",
+        screenEntityId: "merchant-removal-screen"
+      }
+    });
+    expect(buildAllowedActions(
+      selectingEnvelope.currentState,
+      selectingEnvelope.stateHash
+    )).toHaveLength(2);
+
+    const selectedValue = structuredClone(selecting) as unknown as any;
+    selectedValue.surface.selected_count = 1;
+    selectedValue.surface.selected_card_entity_ids = ["merchant-removal-card-1"];
+    selectedValue.surface.selectable_card_entity_ids = [];
+    selectedValue.surface.deselectable_card_entity_ids = ["merchant-removal-card-1"];
+    selectedValue.surface.can_preview = true;
+    selectedValue.surface.cards[0].is_selected = true;
+    selectedValue.interaction.command_candidates[0].command = "deselect_entity";
+    selectedValue.interaction.command_candidates[0].label = "Deselect Strike";
+    selectedValue.interaction.command_candidates.splice(1, 0, {
+      candidate_id: "candidate-merchant-removal-preview",
+      command: "confirm_interaction",
+      operation: "preview_deck_removal",
+      label: "Preview removal of Strike",
+      operands: {
+        screen_id: "merchant-removal-screen",
+        control_id: "preview_deck_removal"
+      },
+      operand_domains: {},
+      entity_bindings: [
+        { role: "screen", entity_id: "merchant-removal-screen" },
+        { role: "card", entity_id: "merchant-removal-card-1" }
+      ],
+      binding_kind: "native_direct_resolver",
+      authority_state: "trial"
+    });
+    const selectedObservation = decodeConnectorV3Observation(selectedValue).data;
+    const selectedProjection = projectConnectorV3ForRe(
+      selectedObservation,
+      selectedObservation as unknown as JsonObject
+    );
+    const selectedEnvelope = normalizeCurrentState(selectedProjection.rawState, SOURCE);
+    expect(selectedEnvelope.diagnostics.status).toBe("ok");
+    expect([...selectedProjection.invocations.values()]).toEqual(expect.arrayContaining([
+      expect.objectContaining({ command: "deselect_entity" }),
+      expect.objectContaining({
+        command: "confirm_interaction",
+        operation: "preview_deck_removal"
+      })
+    ]));
+
+    const preview = merchantRemovalObservation("preview");
+    const projectedPreview = projectConnectorV3ForRe(
+      preview,
+      preview as unknown as JsonObject
+    );
+    const previewEnvelope = normalizeCurrentState(projectedPreview.rawState, SOURCE);
+    expect(previewEnvelope.diagnostics.status).toBe("ok");
+    expect(previewEnvelope.currentState.surface).toMatchObject({
+      kind: "deck_removal_selection",
+      stage: "preview",
+      selectedCardEntityIds: ["merchant-removal-card-1"]
+    });
+    expect(buildAllowedActions(
+      previewEnvelope.currentState,
+      previewEnvelope.stateHash
+    )).toHaveLength(2);
+  });
+
+  it("fails merchant removal closed on source-screen or commit-membership drift", () => {
+    const wrongOwner = merchantRemovalObservation("selecting");
+    wrongOwner.interaction.command_candidates[0]!.operands.screen_id = "other-shop-screen";
+    const wrongOwnerProjection = projectConnectorV3ForRe(
+      wrongOwner,
+      wrongOwner as unknown as JsonObject
+    );
+    expect(normalizeCurrentState(wrongOwnerProjection.rawState, SOURCE).diagnostics.status)
+      .toBe("invalid");
+
+    const wrongMembership = merchantRemovalObservation("preview");
+    const confirm = wrongMembership.interaction.command_candidates.find(
+      (candidate) => candidate.operation === "confirm_deck_removal"
+    )!;
+    confirm.entity_bindings = confirm.entity_bindings.filter(
+      (binding) => binding.role !== "card"
+    );
+    const wrongMembershipProjection = projectConnectorV3ForRe(
+      wrongMembership,
+      wrongMembership as unknown as JsonObject
+    );
+    expect(normalizeCurrentState(
+      wrongMembershipProjection.rawState,
+      SOURCE
+    ).diagnostics.status).toBe("invalid");
   });
 
   it("treats a known settling interaction as supervised no-action, not unsupported", () => {

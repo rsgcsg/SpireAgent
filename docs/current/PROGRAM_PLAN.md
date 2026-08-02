@@ -22,11 +22,11 @@ or stop at a precise visible unsupported boundary.
 
 1. Close defects found by exact-runtime V3 journeys and keep build/install/load
    attribution exact.
-2. Cold-load and validate the known-room mount settling repair and direct
-   combat-hand consumer. Shop/rest/treasure, combat and generated choice are
-   already exercised under the exact predecessor runtime.
-3. Exercise V3 state-token-bound Inspection, then add bounded linked detail;
-   keep real-page opening as a separate optional evidence profile.
+2. Cold-load and validate direct combat-hand, Smith deck upgrade, merchant
+   removal and the known-room mount settling repair. Their predecessor
+   mechanics are exercised, but Preview.5 contracts need their own evidence.
+3. Exercise V3 state-token-bound Inspection and bounded `surface_card` linked
+   detail; keep real-page opening as a separate optional evidence profile.
 4. Move the remaining selector families to direct V3 discovery and Re
    consumption while deleting each replaced Provider and sidecar dependency.
 5. Simplify V3 authority projection without weakening exact-environment

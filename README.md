@@ -14,11 +14,12 @@ the final pre-V3 Connector documents are under
 
 ## Current Status
 
-Source protocol is `3.0-preview.4`. V3 observation, active interaction,
-parameterized commands, receipts, state-bound read-only Inspection, REST, MCP
-and strict Re consumption are implemented. Combat and ordinary non-combat
-families and combat-hand selection use direct native resolvers; remaining selector families retain
-bounded Provider migration bindings until their vertical cutover.
+Source protocol is `3.0-preview.5`. V3 observation, active interaction,
+parameterized commands, receipts, state-bound read-only Inspection and linked
+detail, REST, MCP and strict Re consumption are implemented. Combat, ordinary
+non-combat, combat-hand, deck-upgrade and merchant deck-removal families use
+direct native resolvers; remaining selector families retain bounded Provider
+migration bindings until their vertical cutover.
 
 The V3 source has automated test evidence. A V3 Release build and installation
 must be distinguished from loaded and Live evidence; see

@@ -150,18 +150,7 @@ internal sealed class DeckUpgradeSelectionSurfaceProvider : IBridgeSurfaceProvid
                 new[] { "preview_cards", "legal_actions" });
         }
 
-        var surface = new DeckUpgradeSelectionSurface(
-            SurfaceKind,
-            stage,
-            entities.GetId(screen, "screen"),
-            prompt,
-            prefs.MinSelect,
-            prefs.MaxSelect,
-            selected.Count,
-            selectedIds,
-            prefs.Cancelable,
-            cards,
-            previewCards);
+        string screenId = entities.GetId(screen, "screen");
         List<BridgeActionDraft> actions = BuildActions(
             screen,
             stage,
@@ -171,11 +160,54 @@ internal sealed class DeckUpgradeSelectionSurfaceProvider : IBridgeSurfaceProvid
             cardIds,
             close,
             singleVisible ? singlePreview : multiPreview);
+        string[] selectableIds = stage == "selecting"
+            ? holders.Where(holder => IsHolderClickable(holder) && !selected.Contains(holder.CardModel))
+                .Select(holder => cardIds[holder.CardModel])
+                .OrderBy(id => id, StringComparer.Ordinal)
+                .ToArray()
+            : Array.Empty<string>();
+        string[] deselectableIds = stage == "selecting"
+            ? holders.Where(holder => IsHolderClickable(holder) && selected.Contains(holder.CardModel))
+                .Select(holder => cardIds[holder.CardModel])
+                .OrderBy(id => id, StringComparer.Ordinal)
+                .ToArray()
+            : Array.Empty<string>();
+        NBackButton? previewCancel = stage == "preview"
+            ? (singleVisible ? singlePreview : multiPreview).GetNodeOrNull<NBackButton>("Cancel")
+            : null;
+        NConfirmButton? previewConfirm = stage == "preview"
+            ? (singleVisible ? singlePreview : multiPreview).GetNodeOrNull<NConfirmButton>("Confirm")
+            : null;
+        bool canCancelSelection = stage == "selecting" && prefs.Cancelable && close.IsEnabled;
+        bool canCancelPreview = previewCancel is { IsEnabled: true };
+        bool canConfirm = previewConfirm is { IsEnabled: true } && selected.Count >= prefs.MinSelect;
+        var surface = new DeckUpgradeSelectionSurface(
+            SurfaceKind,
+            stage,
+            screenId,
+            prompt,
+            prefs.MinSelect,
+            prefs.MaxSelect,
+            selected.Count,
+            selectedIds,
+            prefs.Cancelable,
+            selectableIds,
+            deselectableIds,
+            canCancelSelection,
+            canCancelPreview,
+            canConfirm,
+            cards,
+            previewCards);
 
-        string readiness = actions.Count > 0 ? "ready" : "settling";
+        bool hasCurrentCommand = selectableIds.Length > 0
+                                 || deselectableIds.Length > 0
+                                 || canCancelSelection
+                                 || canCancelPreview
+                                 || canConfirm;
+        string readiness = hasCurrentCommand ? "ready" : "settling";
         var completeness = new StateCompleteness(
             "contract_complete_for_visible_deck_upgrade_selection",
-            actions.Count > 0
+            hasCurrentCommand
                 ? "derived_from_same_current_upgrade_controls_as_execution"
                 : "temporarily_empty_while_upgrade_ui_settles",
             new[]
@@ -381,6 +413,106 @@ internal sealed class DeckUpgradeSelectionSurfaceProvider : IBridgeSurfaceProvid
         return BridgeActionStartResult.Started(
             () => !IsCurrent(expectedScreen),
             "upgrade_selection_cancelled_and_screen_closed");
+    }
+
+    internal static BridgeActionStartResult StartToggle(
+        BridgeEntityRegistry entities,
+        string screenId,
+        string cardId,
+        bool expectedSelected)
+    {
+        if (!entities.TryResolve(screenId, out NDeckUpgradeSelectScreen? screen)
+            || screen == null
+            || !entities.TryResolve(cardId, out CardModel? card)
+            || card == null)
+        {
+            return BridgeActionStartResult.Rejected(
+                "deck_upgrade_binding_stale",
+                "The exact deck-upgrade screen or card no longer resolves.");
+        }
+        NGridCardHolder? holder = McpMod.FindAll<NGridCardHolder>(screen)
+            .FirstOrDefault(candidate => ReferenceEquals(candidate.CardModel, card));
+        return holder == null
+            ? BridgeActionStartResult.Rejected(
+                "deck_upgrade_card_changed",
+                "The exact card is no longer present on the current upgrade screen.")
+            : StartToggle(screen, holder, card, expectedSelected);
+    }
+
+    internal static BridgeActionStartResult StartPreviewCancel(
+        BridgeEntityRegistry entities,
+        string screenId)
+    {
+        if (!entities.TryResolve(screenId, out NDeckUpgradeSelectScreen? screen)
+            || screen == null)
+        {
+            return BridgeActionStartResult.Rejected(
+                "deck_upgrade_binding_stale",
+                "The exact deck-upgrade screen no longer resolves.");
+        }
+        Control? container = McpMod.IsNodeVisible(
+            screen.GetNodeOrNull<Control>("%UpgradeSinglePreviewContainer"))
+            ? screen.GetNodeOrNull<Control>("%UpgradeSinglePreviewContainer")
+            : screen.GetNodeOrNull<Control>("%UpgradeMultiPreviewContainer");
+        NBackButton? cancel = container?.GetNodeOrNull<NBackButton>("Cancel");
+        return cancel == null
+            ? BridgeActionStartResult.Rejected(
+                "deck_upgrade_preview_changed",
+                "The exact preview cancel control is no longer available.")
+            : StartPreviewCancel(screen, cancel);
+    }
+
+    internal static BridgeActionStartResult StartConfirm(
+        BridgeEntityRegistry entities,
+        string screenId,
+        IReadOnlyCollection<string> selectedCardIds)
+    {
+        if (!entities.TryResolve(screenId, out NDeckUpgradeSelectScreen? screen)
+            || screen == null)
+        {
+            return BridgeActionStartResult.Rejected(
+                "deck_upgrade_binding_stale",
+                "The exact deck-upgrade screen no longer resolves.");
+        }
+        var selectedCards = new List<CardModel>();
+        foreach (string cardId in selectedCardIds)
+        {
+            if (!entities.TryResolve(cardId, out CardModel? card) || card == null)
+            {
+                return BridgeActionStartResult.Rejected(
+                    "deck_upgrade_binding_stale",
+                    "An exact selected upgrade card no longer resolves.");
+            }
+            selectedCards.Add(card);
+        }
+        Control? container = McpMod.IsNodeVisible(
+            screen.GetNodeOrNull<Control>("%UpgradeSinglePreviewContainer"))
+            ? screen.GetNodeOrNull<Control>("%UpgradeSinglePreviewContainer")
+            : screen.GetNodeOrNull<Control>("%UpgradeMultiPreviewContainer");
+        NConfirmButton? confirm = container?.GetNodeOrNull<NConfirmButton>("Confirm");
+        return confirm == null
+            ? BridgeActionStartResult.Rejected(
+                "deck_upgrade_commit_changed",
+                "The exact upgrade confirmation control is no longer available.")
+            : StartConfirm(screen, confirm, selectedCards);
+    }
+
+    internal static BridgeActionStartResult StartClose(
+        BridgeEntityRegistry entities,
+        string screenId)
+    {
+        if (!entities.TryResolve(screenId, out NDeckUpgradeSelectScreen? screen)
+            || screen == null)
+        {
+            return BridgeActionStartResult.Rejected(
+                "deck_upgrade_binding_stale",
+                "The exact deck-upgrade selection no longer resolves.");
+        }
+        if (screen.GetNodeOrNull<NBackButton>("%Close") is not { } close)
+            return BridgeActionStartResult.Rejected(
+                "deck_upgrade_binding_stale",
+                "The exact deck-upgrade cancel control no longer resolves.");
+        return StartClose(screen, close);
     }
 
     private static bool IsHolderClickable(NCardHolder holder) =>

@@ -10,10 +10,12 @@ import {
 import {
   decodeConnectorV3Capabilities,
   decodeConnectorV3Inspection,
+  decodeConnectorV3LinkedDetail,
   decodeConnectorV3Observation,
   decodeConnectorV3Receipt,
   type ConnectorV3Capabilities,
   type ConnectorV3Inspection,
+  type ConnectorV3LinkedDetail,
   type ConnectorV3Observation,
   type ConnectorV3Receipt,
   type DecodedConnectorV3Payload
@@ -65,6 +67,28 @@ export class ConnectorV3RestClient {
     if (decoded.data.expected_state_token !== expectedStateToken) {
       throw new ConnectorV3HttpError(
         `Connector v3 ${kind} inspection returned a different state token`
+      );
+    }
+    return decoded;
+  }
+
+  async linkedDetail(
+    entityId: string,
+    expectedStateToken: string
+  ): Promise<DecodedConnectorV3Payload<ConnectorV3LinkedDetail>> {
+    const response = await this.request(
+      `${this.baseUrl}/api/v3/linked-details/${encodeURIComponent(entityId)}`
+        + `?expected_state_token=${encodeURIComponent(expectedStateToken)}`,
+      { method: "GET" }
+    );
+    if (!response.response.ok) {
+      throw httpError("Connector v3 linked detail", response.response, response.value);
+    }
+    const decoded = decodeConnectorV3LinkedDetail(response.value);
+    if (decoded.data.expected_state_token !== expectedStateToken
+        || decoded.data.entity_id !== entityId) {
+      throw new ConnectorV3HttpError(
+        "Connector v3 linked detail returned a different state or entity identity"
       );
     }
     return decoded;

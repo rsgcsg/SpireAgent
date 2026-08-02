@@ -1027,6 +1027,12 @@ public sealed record DeckRemovalSelectionSurface(
     int SelectedCount,
     IReadOnlyList<string> SelectedCardEntityIds,
     bool Cancelable,
+    IReadOnlyList<string> SelectableCardEntityIds,
+    IReadOnlyList<string> DeselectableCardEntityIds,
+    bool CanPreview,
+    bool CanCancelSelection,
+    bool CanCancelPreview,
+    bool CanConfirm,
     IReadOnlyList<VisibleCard> Cards) : IBridgeSurface;
 
 /// <summary>
@@ -1043,6 +1049,11 @@ public sealed record DeckUpgradeSelectionSurface(
     int SelectedCount,
     IReadOnlyList<string> SelectedCardEntityIds,
     bool Cancelable,
+    IReadOnlyList<string> SelectableCardEntityIds,
+    IReadOnlyList<string> DeselectableCardEntityIds,
+    bool CanCancelSelection,
+    bool CanCancelPreview,
+    bool CanConfirm,
     IReadOnlyList<VisibleCard> Cards,
     IReadOnlyList<VisibleCard> PreviewCards) : IBridgeSurface;
 

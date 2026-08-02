@@ -246,17 +246,7 @@ internal sealed class DeckRemovalSelectionSurfaceProvider : IBridgeSurfaceProvid
                 sourceKind);
         }
 
-        var surface = new DeckRemovalSelectionSurface(
-            surfaceKind,
-            stage,
-            entities.GetId(screen, "screen"),
-            prompt,
-            exactBinding.Preferences.MinSelect,
-            exactBinding.Preferences.MaxSelect,
-            selectedCards.Count,
-            selectedIds,
-            exactBinding.Preferences.Cancelable,
-            cards);
+        string screenId = entities.GetId(screen, "screen");
         List<BridgeActionDraft> actions = BuildActions(
             screen,
             exactBinding,
@@ -266,6 +256,59 @@ internal sealed class DeckRemovalSelectionSurfaceProvider : IBridgeSurfaceProvid
             cardIds,
             source,
             startConfirm);
+        string[] selectableIds = stage == "selecting"
+            ? holders.Where(holder => IsHolderClickable(holder)
+                                      && !selectedCards.Contains(holder.CardModel)
+                                      && selectedCards.Count < exactBinding.Preferences.MaxSelect)
+                .Select(holder => cardIds[holder.CardModel])
+                .OrderBy(id => id, StringComparer.Ordinal)
+                .ToArray()
+            : Array.Empty<string>();
+        string[] deselectableIds = stage == "selecting"
+            ? holders.Where(holder => IsHolderClickable(holder)
+                                      && selectedCards.Contains(holder.CardModel))
+                .Select(holder => cardIds[holder.CardModel])
+                .OrderBy(id => id, StringComparer.Ordinal)
+                .ToArray()
+            : Array.Empty<string>();
+        NConfirmButton? previewControl = stage == "selecting"
+            ? FindControl<NConfirmButton>(screen, "_confirmButton")
+            : null;
+        NBackButton? selectionCancel = stage == "selecting"
+            ? FindControl<NBackButton>(screen, "_closeButton")
+            : null;
+        NBackButton? previewCancel = stage == "preview"
+            ? FindControl<NBackButton>(screen, "_previewCancelButton")
+            : null;
+        NConfirmButton? previewConfirm = stage == "preview"
+            ? FindControl<NConfirmButton>(screen, "_previewConfirmButton")
+            : null;
+        bool canPreview = previewControl is { IsEnabled: true }
+                          && McpMod.IsNodeVisible(previewControl);
+        bool canCancelSelection = exactBinding.Preferences.Cancelable
+                                  && selectionCancel is { IsEnabled: true }
+                                  && McpMod.IsNodeVisible(selectionCancel);
+        bool canCancelPreview = previewCancel is { IsEnabled: true }
+                                && McpMod.IsNodeVisible(previewCancel);
+        bool canConfirm = previewConfirm is { IsEnabled: true }
+                          && McpMod.IsNodeVisible(previewConfirm);
+        var surface = new DeckRemovalSelectionSurface(
+            surfaceKind,
+            stage,
+            screenId,
+            prompt,
+            exactBinding.Preferences.MinSelect,
+            exactBinding.Preferences.MaxSelect,
+            selectedCards.Count,
+            selectedIds,
+            exactBinding.Preferences.Cancelable,
+            selectableIds,
+            deselectableIds,
+            canPreview,
+            canCancelSelection,
+            canCancelPreview,
+            canConfirm,
+            cards);
 
         bool cancelBindingMissing = exactBinding.Preferences.Cancelable
                                     && stage == "selecting"
@@ -281,10 +324,16 @@ internal sealed class DeckRemovalSelectionSurfaceProvider : IBridgeSurfaceProvid
                 sourceKind);
         }
 
-        string readiness = actions.Count > 0 ? "ready" : "settling";
+        bool hasCurrentCommand = selectableIds.Length > 0
+                                 || deselectableIds.Length > 0
+                                 || canPreview
+                                 || canCancelSelection
+                                 || canCancelPreview
+                                 || canConfirm;
+        string readiness = hasCurrentCommand ? "ready" : "settling";
         var completeness = new StateCompleteness(
             $"contract_complete_for_{sourceKind}_deck_removal_selection",
-            actions.Count > 0
+            hasCurrentCommand
                 ? "derived_from_exact_visible_grid_and_current_controls"
                 : "temporarily_empty_while_selection_completes_or_settles",
             new[]
@@ -613,6 +662,147 @@ internal sealed class DeckRemovalSelectionSurfaceProvider : IBridgeSurfaceProvid
         return BridgeActionStartResult.Started(
             () => !IsCurrent(expectedScreen),
             MerchantCancelSelectionCompletionWitness);
+    }
+
+    internal static BridgeActionStartResult StartMerchantToggle(
+        BridgeEntityRegistry entities,
+        string screenId,
+        string cardId,
+        bool expectedSelected)
+    {
+        if (!TryResolveMerchant(
+                entities,
+                screenId,
+                out NDeckCardSelectScreen? screen,
+                out _,
+                out BridgeActionStartResult? rejection)
+            || screen == null)
+        {
+            return rejection!;
+        }
+        if (!entities.TryResolve(cardId, out CardModel? card) || card == null)
+        {
+            return BridgeActionStartResult.Rejected(
+                "merchant_removal_binding_stale",
+                "The exact merchant-removal card no longer resolves.");
+        }
+        return StartToggleCard(screen, card, expectedSelected);
+    }
+
+    internal static BridgeActionStartResult StartMerchantPreview(
+        BridgeEntityRegistry entities,
+        string screenId)
+    {
+        return TryResolveMerchant(
+            entities,
+            screenId,
+            out NDeckCardSelectScreen? screen,
+            out _,
+            out BridgeActionStartResult? rejection)
+            && screen != null
+            ? StartPreview(screen)
+            : rejection!;
+    }
+
+    internal static BridgeActionStartResult StartMerchantConfirm(
+        BridgeEntityRegistry entities,
+        string screenId,
+        IReadOnlyCollection<string> selectedCardIds)
+    {
+        if (!TryResolveMerchant(
+                entities,
+                screenId,
+                out NDeckCardSelectScreen? screen,
+                out MerchantRemovalTransaction? transaction,
+                out BridgeActionStartResult? rejection)
+            || screen == null
+            || transaction == null)
+        {
+            return rejection!;
+        }
+        var selectedCards = new List<CardModel>();
+        foreach (string cardId in selectedCardIds)
+        {
+            if (!entities.TryResolve(cardId, out CardModel? card) || card == null)
+            {
+                return BridgeActionStartResult.Rejected(
+                    "merchant_removal_binding_stale",
+                    "An exact selected merchant-removal card no longer resolves.");
+            }
+            selectedCards.Add(card);
+        }
+        return StartMerchantPreviewConfirm(screen, selectedCards, transaction);
+    }
+
+    internal static BridgeActionStartResult StartMerchantPreviewCancel(
+        BridgeEntityRegistry entities,
+        string screenId)
+    {
+        return TryResolveMerchant(
+            entities,
+            screenId,
+            out NDeckCardSelectScreen? screen,
+            out _,
+            out BridgeActionStartResult? rejection)
+            && screen != null
+            ? StartPreviewCancel(screen)
+            : rejection!;
+    }
+
+    internal static BridgeActionStartResult StartMerchantClose(
+        BridgeEntityRegistry entities,
+        string screenId)
+    {
+        return TryResolveMerchant(
+            entities,
+            screenId,
+            out NDeckCardSelectScreen? screen,
+            out MerchantRemovalTransaction? transaction,
+            out BridgeActionStartResult? rejection)
+            && screen != null
+            && transaction != null
+            ? StartClose(screen, transaction)
+            : rejection!;
+    }
+
+    private static bool TryResolveMerchant(
+        BridgeEntityRegistry entities,
+        string screenId,
+        out NDeckCardSelectScreen? screen,
+        out MerchantRemovalTransaction? transaction,
+        out BridgeActionStartResult? rejection)
+    {
+        transaction = null;
+        rejection = null;
+        if (!entities.TryResolve(screenId, out screen) || screen == null || !IsCurrent(screen))
+        {
+            rejection = BridgeActionStartResult.Rejected(
+                "merchant_removal_owner_changed",
+                "The exact merchant-removal screen is no longer current.");
+            return false;
+        }
+        if (!ShopSurfaceFacts.TryGetCurrent(
+                out MerchantRoom? merchantRoom,
+                out NMerchantRoom? room,
+                out MerchantInventory? inventory)
+            || merchantRoom == null
+            || room == null
+            || inventory == null
+            || inventory.CardRemovalEntry is not { } entry
+            || !room.Inventory.IsOpen)
+        {
+            rejection = BridgeActionStartResult.Rejected(
+                "merchant_removal_source_changed",
+                "The exact merchant card-removal transaction is no longer current.");
+            return false;
+        }
+        transaction = new MerchantRemovalTransaction(
+            merchantRoom,
+            room,
+            inventory,
+            entry,
+            inventory.Player);
+        return true;
     }
 
     private static bool SameReferences<T>(

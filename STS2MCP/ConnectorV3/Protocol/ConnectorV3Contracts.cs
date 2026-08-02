@@ -7,10 +7,11 @@ namespace STS2_MCP.ConnectorV3.Protocol;
 
 public static class ConnectorV3Contract
 {
-    public const string ProtocolVersion = "3.0-preview.4";
+    public const string ProtocolVersion = "3.0-preview.5";
     public const string ObservationSchema = "sts2.connector.v3/observation-1";
     public const string CommandSchema = "sts2.connector.v3/command-1";
     public const string InspectionSchema = "sts2.connector.v3/inspection-1";
+    public const string LinkedDetailSchema = "sts2.connector.v3/linked-detail-1";
 }
 
 public sealed record ConnectorV3CapabilitiesResponse(
@@ -18,6 +19,7 @@ public sealed record ConnectorV3CapabilitiesResponse(
     string ObservationSchema,
     string CommandSchema,
     string InspectionSchema,
+    string LinkedDetailSchema,
     string Status,
     BridgeServerIdentity Bridge,
     GameBuildIdentity Game,
@@ -74,6 +76,7 @@ public sealed record ConnectorV3ObservationResponse(
     ObservationPolicyInfo ObservationPolicy,
     BridgeVisibilityState Visibility,
     IReadOnlyList<BridgeInspectionCatalogEntry> InspectionCatalog,
+    IReadOnlyList<ConnectorV3LinkedDetailCatalogEntry> LinkedDetailCatalog,
     IReadOnlyList<BridgeDiagnostic> Diagnostics,
     IReadOnlyList<string> Warnings,
     ConnectorV3Coverage Coverage);
@@ -90,6 +93,28 @@ public sealed record ConnectorV3InspectionResponse(
     string OrderingSemantics,
     IBridgeInspectionContent Content,
     InspectionCompleteness Completeness,
+    BridgeServerIdentity Bridge,
+    GameBuildIdentity Game,
+    ObservationPolicyInfo ObservationPolicy,
+    IReadOnlyList<BridgeDiagnostic> Diagnostics);
+
+public sealed record ConnectorV3LinkedDetailCatalogEntry(
+    string Kind,
+    string EntityId,
+    string VisibilityBasis,
+    bool StateBound,
+    bool CreatesActionAuthority);
+
+public sealed record ConnectorV3LinkedDetailResponse(
+    string ProtocolVersion,
+    string Schema,
+    string DetailId,
+    string ExpectedStateToken,
+    string ObservedStateToken,
+    DateTimeOffset ObservedAt,
+    string Kind,
+    string EntityId,
+    VisibleCard Content,
     BridgeServerIdentity Bridge,
     GameBuildIdentity Game,
     ObservationPolicyInfo ObservationPolicy,

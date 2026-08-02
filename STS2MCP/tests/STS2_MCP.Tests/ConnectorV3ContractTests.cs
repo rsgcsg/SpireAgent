@@ -79,6 +79,7 @@ public sealed class ConnectorV3ContractTests
             null!,
             null!,
             Array.Empty<BridgeInspectionCatalogEntry>(),
+            Array.Empty<ConnectorV3LinkedDetailCatalogEntry>(),
             Array.Empty<BridgeDiagnostic>(),
             Array.Empty<string>(),
             null!);
@@ -129,6 +130,37 @@ public sealed class ConnectorV3ContractTests
     }
 
     [Fact]
+    public void LinkedDetailSerializesStateBoundVisibleCardWithoutAuthority()
+    {
+        var card = new VisibleCard(
+            "surface-card-a", "STRIKE", "Strike", "Attack", "1", null,
+            "Deal 6 damage.", "Basic", false, false, null);
+        var detail = new ConnectorV3LinkedDetailResponse(
+            ConnectorV3Contract.ProtocolVersion,
+            ConnectorV3Contract.LinkedDetailSchema,
+            "detail-a",
+            "state-a",
+            "state-a",
+            DateTimeOffset.UnixEpoch,
+            "surface_card",
+            card.EntityId,
+            card,
+            null!,
+            null!,
+            null!,
+            Array.Empty<BridgeDiagnostic>());
+        string json = JsonSerializer.Serialize(detail, new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+        });
+
+        Assert.Contains("\"schema\":\"sts2.connector.v3/linked-detail-1\"", json);
+        Assert.Contains("\"expected_state_token\":\"state-a\"", json);
+        Assert.Contains("\"entity_id\":\"surface-card-a\"", json);
+        Assert.Contains("\"definition_id\":\"STRIKE\"", json);
+    }
+
+    [Fact]
     public void GenericControlsOnOneOwnerHaveDistinctSemanticOperands()
     {
         var owner = new[] { new ActionEntityBinding("room", "room-a") };
@@ -151,6 +183,106 @@ public sealed class ConnectorV3ContractTests
         Assert.NotEqual(open["control_id"], proceed["control_id"]);
         Assert.Equal("screen-a", close["screen_id"]);
         Assert.Equal("close_shop_inventory", close["control_id"]);
+    }
+
+    [Fact]
+    public void DeckUpgradeNativeDiscoveryKeepsStageAndExactMembership()
+    {
+        var card = new VisibleCard(
+            "deck-card-a", "STRIKE", "Strike", "Attack", "1", null,
+            "Deal 6 damage.", "Basic", false, true, null);
+        var selecting = new DeckUpgradeSelectionSurface(
+            "deck_upgrade_selection",
+            "selecting",
+            "upgrade-screen",
+            "Choose a card to Upgrade.",
+            1,
+            1,
+            0,
+            Array.Empty<string>(),
+            true,
+            new[] { card.EntityId },
+            Array.Empty<string>(),
+            true,
+            false,
+            false,
+            new[] { card },
+            Array.Empty<VisibleCard>());
+        BridgeActionDraft[] selectingCommands =
+            ConnectorV3Runtime.DescribeDeckUpgradeCommands(selecting).ToArray();
+
+        Assert.Contains(selectingCommands, command =>
+            command.Kind == "toggle_deck_upgrade_card"
+            && command.EntityBindings!.Any(binding =>
+                binding.Role == "screen" && binding.EntityId == "upgrade-screen")
+            && command.EntityBindings!.Any(binding =>
+                binding.Role == "card" && binding.EntityId == card.EntityId));
+        Assert.Contains(selectingCommands, command =>
+            command.Kind == "cancel_deck_upgrade_selection");
+        Assert.DoesNotContain(selectingCommands, command =>
+            command.Kind is "confirm_deck_upgrade" or "cancel_deck_upgrade_preview");
+
+        var preview = selecting with
+        {
+            Stage = "preview",
+            SelectedCount = 1,
+            SelectedCardEntityIds = new[] { card.EntityId },
+            SelectableCardEntityIds = Array.Empty<string>(),
+            CanCancelSelection = false,
+            CanCancelPreview = true,
+            CanConfirm = true
+        };
+        BridgeActionDraft[] previewCommands =
+            ConnectorV3Runtime.DescribeDeckUpgradeCommands(preview).ToArray();
+
+        Assert.Contains(previewCommands, command =>
+            command.Kind == "cancel_deck_upgrade_preview");
+        BridgeActionDraft confirm = Assert.Single(previewCommands, command =>
+            command.Kind == "confirm_deck_upgrade");
+        Assert.Contains(confirm.EntityBindings!, binding =>
+            binding.Role == "card" && binding.EntityId == card.EntityId);
+        Assert.DoesNotContain(previewCommands, command =>
+            command.Kind is "toggle_deck_upgrade_card" or "cancel_deck_upgrade_selection");
+    }
+
+    [Fact]
+    public void MerchantRemovalNativeDiscoveryDoesNotAuthorizeOtherRemovalSources()
+    {
+        var card = new VisibleCard(
+            "deck-card-a", "STRIKE", "Strike", "Attack", "1", null,
+            "Deal 6 damage.", "Basic", false, true, null);
+        var merchant = new DeckRemovalSelectionSurface(
+            "deck_removal_selection",
+            "selecting",
+            "removal-screen",
+            "Choose a card to remove.",
+            1,
+            1,
+            1,
+            new[] { card.EntityId },
+            true,
+            Array.Empty<string>(),
+            new[] { card.EntityId },
+            true,
+            true,
+            false,
+            false,
+            new[] { card });
+
+        BridgeActionDraft[] commands =
+            ConnectorV3Runtime.DescribeMerchantRemovalCommands(merchant).ToArray();
+
+        Assert.Contains(commands, command => command.Kind == "toggle_deck_removal_card");
+        Assert.Contains(commands, command => command.Kind == "preview_deck_removal");
+        Assert.Contains(commands, command => command.Kind == "cancel_deck_removal_selection");
+        Assert.All(commands, command => Assert.Contains(
+            command.EntityBindings!,
+            binding => binding.Role == "screen" && binding.EntityId == "removal-screen"));
+
+        Assert.Empty(ConnectorV3Runtime.DescribeMerchantRemovalCommands(
+            merchant with { Kind = "relic_deck_removal_selection" }));
+        Assert.Empty(ConnectorV3Runtime.DescribeMerchantRemovalCommands(
+            merchant with { Kind = "reward_deck_removal_selection" }));
     }
 
     [Fact]

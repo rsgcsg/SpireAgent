@@ -68,17 +68,17 @@ not be smuggled into this semantic read path.
 ## Current Migration Boundary
 
 Combat, shop-room/inventory, map, rest-site, event-option, treasure-room,
-reward-claim, card-reward, deck-enchant, menu/run-setup, generated-card choice
-combat-hand selection and game-over controls have direct V3 native resolvers
-in current source. Each
+reward-claim, card-reward, deck-enchant, deck-upgrade, merchant deck-removal,
+menu/run-setup, generated-card choice, combat-hand selection and game-over
+controls have direct V3 native resolvers in current source. Each
 retains source-specific owner, operand, Commit and Outcome contracts while
 sharing only bounded mechanics. Remaining selectors temporarily call bounded
 Provider native bindings inside the Gateway. Re consumes ordinary combat,
 generated-card choice, menu, event, map, game-over, reward/card-reward, shop,
 rest, treasure, lifecycle-settling and visible-unsupported
 facts and commands directly without V2 semantic validation or capabilities.
-Unmigrated selector families other than combat-hand selection still read
-same-runtime V2 facts as a temporary,
+Unmigrated selector families, including relic- and reward-originated deck
+removal, still read same-runtime V2 facts as a temporary,
 non-authorizing projection sidecar. Neither path may supply a V2 action ID to
 V3 execution.
 

@@ -1,12 +1,13 @@
 # Connector V3 Protocol
 
-Source protocol: `3.0-preview.4`
+Source protocol: `3.0-preview.5`
 
 Schemas:
 
 - `sts2.connector.v3/observation-1`
 - `sts2.connector.v3/command-1`
 - `sts2.connector.v3/inspection-1`
+- `sts2.connector.v3/linked-detail-1`
 
 ## Observation
 
@@ -27,7 +28,7 @@ worktree digest separately in run metadata.
 Shared visible facts, semantic context/surface, visibility metadata and the
 Inspection catalog are typed independently from Bridge v2. Re currently
 consumes ordinary combat, combat-hand selection, generated-card choice, menu,
-event, map, game-over,
+event, map, game-over, deck upgrade, merchant deck removal,
 reward/card-reward, shop, rest, treasure, lifecycle-settling and
 visible-unsupported observations directly from these V3 facts. Inspection
 catalog entries advertise state-bound read availability only; they never
@@ -94,6 +95,12 @@ card again before using `NPlayerHand`'s native selection controls. This
 contract is deliberately distinct from pile/grid selection because its owner,
 replacement behavior, Commit and Outcome belong to `NPlayerHand`.
 
+Deck upgrade exposes the exact current upgrade screen, selectable and selected
+card instances, preview state and native controls. Merchant deck removal uses
+the same bounded card-selection mechanics but retains an independent merchant
+source, Gold/service Commit and exact-card-removal Outcome. Relic and reward
+removal do not inherit merchant authority merely because their UI is similar.
+
 Reward-claim candidates are derived from the typed rewards Surface rather than
 Provider action drafts. They bind the exact screen and reward or potion
 entity; proceed/discard controls also carry a semantic `control_id`. Execution
@@ -137,6 +144,19 @@ order and other hidden information remain excluded. Physically opening the
 native UI is a separate optional evidence profile, not an implicit side effect
 of this endpoint.
 
+## Linked Detail
+
+```text
+GET /api/v3/linked-details/{entity_id}?expected_state_token={state_token}
+```
+
+Preview.5 supports the bounded `surface_card` kind only. The entity must be in
+the exact current observation's `linked_detail_catalog`; the response repeats
+the current state token and exact visible card instance. Reads are stale-safe,
+read-only and non-authorizing. They do not create a ledger request, controller
+lease or command candidate, and they do not expose cards outside the current
+visible Surface.
+
 ## Receipt
 
 Receipt states are:
@@ -152,5 +172,5 @@ not submitting it again.
 ## MCP
 
 The Python adapter exposes V3 capabilities, observation, state-bound
-Inspection, submit and receipt tools. It is a transport adapter and cannot add
-commands, legality or authority.
+Inspection and `surface_card` linked detail, submit and receipt tools. It is a
+transport adapter and cannot add commands, legality or authority.

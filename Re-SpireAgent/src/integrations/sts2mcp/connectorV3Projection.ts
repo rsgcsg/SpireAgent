@@ -139,6 +139,8 @@ export function usesDirectConnectorV3Consumer(
   if (observation.interaction.execution_support === "unsupported") return true;
   if (observation.surface.kind === "generated_card_choice") return true;
   if (observation.surface.kind === "combat_hand_card_selection") return true;
+  if (observation.surface.kind === "deck_upgrade_selection") return true;
+  if (observation.surface.kind === "deck_removal_selection") return true;
   const pair = `${observation.context.kind}:${observation.surface.kind}`;
   return new Set([
     "combat:combat_turn",
@@ -163,13 +165,17 @@ export function expandConnectorV3Commands(
   return observation.interaction.command_candidates.flatMap((candidate) =>
     expandCandidate(observation, candidate).map((invocation) => {
       const selectedEntityIds = new Set(Object.values(invocation.operands));
+      const domainEntityIds = new Set(
+        Object.values(candidate.operand_domains).flatMap((domain) => domain.entity_ids)
+      );
       return {
         ...invocation,
         label: candidate.label,
         bindingKind: candidate.binding_kind,
         authorityState: candidate.authority_state,
         entityBindings: candidate.entity_bindings
-          .filter((binding) => selectedEntityIds.has(binding.entity_id))
+          .filter((binding) => selectedEntityIds.has(binding.entity_id)
+            || !domainEntityIds.has(binding.entity_id))
           .map((binding) => ({ role: binding.role, entityId: binding.entity_id }))
       };
     })

@@ -32,7 +32,9 @@ their execution does not call Provider action closures. Menu/run-setup and
 source-discriminated generated-card choices now follow the same V3-native
 boundary while retaining separate source-specific legality and Outcome.
 Combat-hand selection now publishes exact current hand/card/control facts,
-uses a direct native resolver and is consumed directly by Re.
+uses a direct native resolver and is consumed directly by Re. Smith deck
+upgrade and merchant deck removal also use direct typed facts and commands;
+merchant authority is not reused for relic/reward removal.
 Remaining selectors temporarily reuse mature Provider-native bindings inside
 the Gateway. This is bounded migration debt, not a V2 REST fallback.
 
@@ -41,8 +43,9 @@ reward/card-reward, shop, rest, treasure, lifecycle-settling and
 visible-unsupported observations use the direct V3 normalizer and do not
 request Bridge v2 capabilities. Menu, event, map, game-over,
 reward/card-reward, shop, rest, treasure, combat and generated choice are
-exact-runtime exercised under Preview.3. Combat-hand direct consumption and
-known-room mount settling recovery await a Preview.4 cold load. Remaining
+exact-runtime exercised under Preview.4. Smith's predecessor sidecar path was
+exercised, while its Preview.5 direct path, merchant removal, combat-hand and
+known-room mount settling recovery await a Preview.5 cold load. Remaining
 selector families temporarily read same-runtime
 Bridge v2 capabilities only as a
 non-executable semantic/environment projection sidecar. No v2 legal action or
@@ -61,6 +64,9 @@ visible unsupported owner. On-demand `run_deck`, `combat_piles` and
 `shop_catalog` Inspection uses `/api/v3/inspections/...` and the exact current
 state token; its strict decoder rejects token drift and it never enters command
 submission.
+
+Current-Surface card detail uses `/api/v3/linked-details/{entity_id}` with the
+same exact-token discipline. Re cannot use it to add a candidate or operand.
 
 ## Receipt Rules
 

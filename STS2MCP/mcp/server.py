@@ -200,6 +200,26 @@ async def inspect_sts2_visible_state_v3(
 
 
 @mcp.tool()
+async def get_sts2_surface_card_detail_v3(
+    entity_id: str,
+    expected_state_token: str,
+) -> str:
+    """Read one card from the current state-bound linked-detail catalog.
+
+    The entity must be advertised as a surface_card by the same observation.
+    This read is non-authorizing and never accepts arbitrary fields or methods.
+    """
+    try:
+        encoded_entity = quote(entity_id, safe="")
+        encoded_token = quote(expected_state_token, safe="")
+        return await _v3_get(
+            f"linked-details/{encoded_entity}?expected_state_token={encoded_token}"
+        )
+    except Exception as error:
+        return _handle_error(error)
+
+
+@mcp.tool()
 async def submit_sts2_command_v3(
     request_id: str,
     expected_state_token: str,

@@ -53,16 +53,18 @@ protocol, exact SHA/MVID/runtime, game, Modset and permission before starting.
 - Gateway `completed` is native Outcome authority; Re separately waits for a
   stable successor before the next model decision.
 
-Menu, event, map, game-over, reward/card-reward, shop, rest, treasure and
-visible-unsupported Surfaces use a direct V3 consumer and do not request the
-Bridge v2 capabilities sidecar. Remaining selector Surfaces read that
+Menu, event, map, game-over, reward/card-reward, shop, rest, treasure,
+combat-hand, deck-upgrade, merchant deck-removal and visible-unsupported
+Surfaces use a direct V3 consumer and do not request the Bridge v2 capabilities
+sidecar. Remaining selector Surfaces read that
 same-runtime sidecar only for the mature semantic/environment projection. Re
 never imports v2 actions or executes a v2 action ID. The remaining sidecar is
 explicit migration debt.
 
 The V3 client also exposes typed, state-token-bound read-only Inspection for
-run deck, combat piles and shop catalog. Inspection never grants mutation;
-stale reads require a fresh observation.
+run deck, combat piles and shop catalog plus bounded `surface_card` linked
+detail. Neither read path grants mutation; stale reads require a fresh
+observation.
 
 ## Evidence
 
@@ -72,8 +74,8 @@ journey and durable qualification are separate evidence levels.
 
 ## Current Limits
 
-V3 Inspection awaits exact-runtime evidence, and bounded linked detail remains
-pending. Remaining selectors still use bounded internal Provider native
+V3 Inspection and linked detail await exact-runtime evidence. Remaining
+selectors still use bounded internal Provider native
 bindings until each family moves to the V3 Native Command Catalog. Unknown
 interactions remain visible and fail closed. Physical UI-page opening is not
 the default semantic-accessibility path and remains a separate evidence-mode

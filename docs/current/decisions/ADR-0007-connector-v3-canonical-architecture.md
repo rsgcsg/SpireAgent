@@ -122,25 +122,26 @@ Reuse is internal implementation reuse, not V2 protocol authority.
 
 ## Explicit Migration Debt
 
-At `3.0-preview.4`:
+At `3.0-preview.5`:
 
 - combat and multiple ordinary non-combat families use direct V3 native
   resolvers; menu/run-setup, source-discriminated generated choices and
-  game-over and combat-hand selection are now cut over in source, while
-  remaining selectors use a bounded internal
+  game-over, combat-hand selection, Smith deck upgrade and merchant deck
+  removal are now cut over in source, while remaining selectors use a bounded internal
   `provider_native_binding_adapter` that never submits or searches a v2 REST
   action ID;
 - Re directly consumes ordinary combat, source-discriminated generated-card
   choice, main/singleplayer/character menu, event, map, game-over,
   reward/card-reward, shop, rest, treasure, lifecycle-settling and
-  visible-unsupported facts and candidates. Combat-hand selection joins this
-  direct path in Preview.4. Remaining selector Surfaces use
+  visible-unsupported facts and candidates. Combat-hand, Smith deck upgrade
+  and merchant deck removal join this direct path. Remaining selector Surfaces use
   `/api/v2/capabilities` as a same-runtime,
   non-authorizing semantic/environment projection sidecar and temporarily
   expand V3 candidates into a V2-shaped normalization projection;
 - V3 state-bound read-only Inspection is exposed for run deck, combat piles
-  and shop catalog; bounded linked detail and the optional physical-UI evidence
-  profile remain pending;
+  and shop catalog. Bounded `surface_card` linked detail is also implemented;
+  exact-runtime evidence and the optional physical-UI evidence profile remain
+  pending;
 - v2 endpoints remain mounted for rollback and migration diagnostics, not as
   the default Re or MCP mutation path.
 

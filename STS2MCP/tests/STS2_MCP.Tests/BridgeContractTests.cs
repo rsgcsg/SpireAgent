@@ -1665,6 +1665,11 @@ public sealed class BridgeContractTests
             1,
             new[] { current.EntityId },
             true,
+            Array.Empty<string>(),
+            Array.Empty<string>(),
+            false,
+            true,
+            true,
             new[] { current },
             new[] { preview });
 

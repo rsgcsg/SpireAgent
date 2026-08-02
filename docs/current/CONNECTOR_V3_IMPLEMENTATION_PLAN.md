@@ -14,8 +14,8 @@ commands, or stop at a precise visible unsupported boundary.
 
 Implemented in source:
 
-- `3.0-preview.4` capabilities, observation, command and receipt contracts,
-  plus `sts2.connector.v3/inspection-1`;
+- `3.0-preview.5` capabilities, observation, command and receipt contracts,
+  plus `inspection-1` and `linked-detail-1` read contracts;
 - state token, stable instance identity and one active interaction;
 - visible unsupported interactions;
 - direct combat resolvers for `play_card`, `use_potion` and `end_turn`;
@@ -25,6 +25,8 @@ Implemented in source:
   and source-discriminated generated-card choices;
 - direct combat-hand candidate discovery, exact native hand/card execution and
   direct Re consumption without the V2 projection sidecar;
+- direct Smith deck-upgrade and merchant-only deck-removal selection,
+  preview/cancel/confirm execution and direct Re consumption;
 - bounded parameterized commands for remaining ordinary choices, purchases,
   selections and controls through an internal native-binding adapter;
 - one controller, idempotent ledger, stale rejection, exact environment
@@ -37,27 +39,28 @@ Implemented in source:
   capabilities sidecar for them;
 - state-token-bound V3 Inspection for run deck, combat piles and shop catalog
   is implemented across Gateway, Re and MCP without mutation authority;
+- bounded current-Surface `surface_card` linked detail is implemented across
+  Gateway, REST, Re and MCP without mutation authority;
 - exact Stratagem Power source binding for the single-stack combat-pile
   selection exposed by current Live evidence.
 
 Not yet claimed:
 
-- loaded identity or mutation/Inspection evidence for the installed Preview.4
+- loaded identity or mutation/Inspection evidence for the pending Preview.5
   v0.110.1 artifact;
-- bounded linked detail and the optional physical-UI evidence profile;
+- exact-runtime linked-detail evidence and the optional physical-UI evidence
+  profile;
 - complete removal of the non-combat Provider adapter;
 - complete removal of the Re v2 projection sidecar;
 - multi-stack Stratagem Outcome;
 - full vanilla or Mod coverage.
 
-Current exact-runtime Re evidence includes three Preview.3 runs ending in
-`run-20260802090204-x7lsad`: 172 settled commands with completed receipts and
-available successors, including a completed 118-decision game. Direct combat,
-generated choice, menu/event/map/reward/shop/rest/treasure and game-over were
-exercised. Combat-hand selection still used the migration path. One run
-exposed a RestSite model-to-owner mount gap; Preview.4 repairs that gap and
-migrates combat-hand selection. Those changes and Inspection require a new
-cold load.
+Current exact-runtime evidence includes Preview.4 run
+`run-20260802094606-6734zk`: 157 settled commands with completed receipts and
+available successors in a 161-decision complete game. Smith deck upgrade was
+the only sidecar state. Preview.5 directly migrates that observed family and
+merchant-only removal, but these changes, Inspection and linked detail require
+a new cold load.
 
 ## Migration Waves
 
@@ -77,8 +80,9 @@ back to the last known v2 commit. No durable V3 claim is inherited.
 ### Wave 2: Native Non-Combat Catalog
 
 Replace `provider_native_binding_adapter` family by family. Menu, map, reward,
-shop, generated choices, rest and treasure are cut over in current source;
-prioritize the remaining bounded selectors.
+shop, generated choices, rest, treasure, Smith deck upgrade and merchant deck
+removal are cut over in current source; prioritize remaining bounded selectors,
+including source-distinct relic/reward removal.
 Delete each Provider action-publication dependency after its V3 resolver has
 tests and exact-runtime evidence.
 

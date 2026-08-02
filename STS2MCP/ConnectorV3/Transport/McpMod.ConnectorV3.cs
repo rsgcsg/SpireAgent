@@ -102,6 +102,62 @@ public static partial class McpMod
         }
     }
 
+    private static void HandleGetConnectorV3LinkedDetail(
+        string encodedEntityId,
+        HttpListenerRequest request,
+        HttpListenerResponse response)
+    {
+        string entityId;
+        try
+        {
+            entityId = Uri.UnescapeDataString(encodedEntityId);
+        }
+        catch (UriFormatException)
+        {
+            SendConnectorV3Error(
+                response,
+                400,
+                "invalid_linked_detail_entity",
+                "Linked-detail entity id is not valid URI data.");
+            return;
+        }
+
+        string? expectedStateToken = request.QueryString["expected_state_token"];
+        if (!IsSafeBridgeIdentifier(entityId, 128)
+            || !IsSafeBridgeIdentifier(expectedStateToken, 128))
+        {
+            SendConnectorV3Error(
+                response,
+                400,
+                "invalid_linked_detail_contract",
+                "A catalogued entity_id and expected_state_token are required.");
+            return;
+        }
+
+        try
+        {
+            var task = RunOnMainThread(() => ConnectorV3Runtime.ReadLinkedDetail(
+                entityId,
+                expectedStateToken!));
+            ConnectorV3LinkedDetailReadResult result = task.GetAwaiter().GetResult();
+            if (result.LinkedDetail != null)
+            {
+                SendJson(response, result.LinkedDetail);
+                return;
+            }
+            int statusCode = result.ErrorCode == "linked_detail_binding_failed" ? 500 : 409;
+            SendConnectorV3Error(
+                response,
+                statusCode,
+                result.ErrorCode ?? "linked_detail_failed",
+                result.Detail ?? "Linked-detail read failed closed.");
+        }
+        catch (Exception ex)
+        {
+            SendConnectorV3InternalError(response, "linked_detail_failed", ex);
+        }
+    }
+
     private static void HandlePostConnectorV3Command(
         HttpListenerRequest request,
         HttpListenerResponse response)

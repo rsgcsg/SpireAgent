@@ -8,7 +8,7 @@ import {
 } from "./gatewayRunRoomProtocol.js";
 import { visibleCardSchema } from "./gatewayVisibleStateProtocol.js";
 
-export const SUPPORTED_CONNECTOR_V3_PROTOCOL = "3.0-preview.4" as const;
+export const SUPPORTED_CONNECTOR_V3_PROTOCOL = "3.0-preview.5" as const;
 
 const bridgeIdentitySchema = z.object({
   id: z.string().min(1),
@@ -118,11 +118,22 @@ const inspectionCatalogEntrySchema = z.object({
   hidden_by_policy: z.array(z.string().min(1))
 }).passthrough();
 
+const linkedDetailKindSchema = z.literal("surface_card");
+
+const linkedDetailCatalogEntrySchema = z.object({
+  kind: linkedDetailKindSchema,
+  entity_id: z.string().min(1),
+  visibility_basis: z.literal("normal_player_visible_surface_card"),
+  state_bound: z.literal(true),
+  creates_action_authority: z.literal(false)
+}).strict();
+
 const capabilitiesSchema = z.object({
   protocol_version: z.literal(SUPPORTED_CONNECTOR_V3_PROTOCOL),
   observation_schema: z.literal("sts2.connector.v3/observation-1"),
   command_schema: z.literal("sts2.connector.v3/command-1"),
   inspection_schema: z.literal("sts2.connector.v3/inspection-1"),
+  linked_detail_schema: z.literal("sts2.connector.v3/linked-detail-1"),
   status: z.string().min(1),
   bridge: bridgeIdentitySchema,
   game: gameIdentitySchema,
@@ -159,12 +170,13 @@ const observationSchema = z.object({
     core_status: z.enum(["complete", "partial"]),
     player_visible_closure_status: z.enum(["complete", "partial_catalog", "partial"]),
     available_inspections: z.array(inspectionKindSchema),
-    linked_detail_kinds: z.array(z.string()),
+    linked_detail_kinds: z.array(linkedDetailKindSchema),
     hidden_by_policy: z.array(z.string()),
     missing: z.array(z.string()),
     unknown_critical_field_behavior: z.literal("fail_closed")
   }).passthrough(),
   inspection_catalog: z.array(inspectionCatalogEntrySchema),
+  linked_detail_catalog: z.array(linkedDetailCatalogEntrySchema),
   diagnostics: z.array(diagnosticSchema),
   warnings: z.array(z.string()),
   coverage: z.object({
@@ -225,6 +237,22 @@ const inspectionSchema = z.object({
   diagnostics: z.array(diagnosticSchema)
 }).strict();
 
+const linkedDetailSchema = z.object({
+  protocol_version: z.literal(SUPPORTED_CONNECTOR_V3_PROTOCOL),
+  schema: z.literal("sts2.connector.v3/linked-detail-1"),
+  detail_id: z.string().min(1),
+  expected_state_token: z.string().min(1),
+  observed_state_token: z.string().min(1),
+  observed_at: z.string().min(1),
+  kind: linkedDetailKindSchema,
+  entity_id: z.string().min(1),
+  content: visibleCardSchema,
+  bridge: bridgeIdentitySchema,
+  game: gameIdentitySchema,
+  observation_policy: observationPolicySchema,
+  diagnostics: z.array(diagnosticSchema)
+}).strict();
+
 const receiptSchema = z.object({
   protocol_version: z.literal(SUPPORTED_CONNECTOR_V3_PROTOCOL),
   request_id: z.string().min(1),
@@ -270,6 +298,7 @@ const receiptSchema = z.object({
 export type ConnectorV3Capabilities = z.infer<typeof capabilitiesSchema>;
 export type ConnectorV3Observation = z.infer<typeof observationSchema>;
 export type ConnectorV3Inspection = z.infer<typeof inspectionSchema>;
+export type ConnectorV3LinkedDetail = z.infer<typeof linkedDetailSchema>;
 export type ConnectorV3CommandCandidate = z.infer<typeof commandCandidateSchema>;
 export type ConnectorV3Receipt = z.infer<typeof receiptSchema>;
 
@@ -312,6 +341,14 @@ export function decodeConnectorV3Observation(
       "Connector v3 unsupported interaction must not publish command candidates"
     );
   }
+  const linkedEntityIds = decoded.data.linked_detail_catalog.map(
+    (entry) => entry.entity_id
+  );
+  if (new Set(linkedEntityIds).size !== linkedEntityIds.length) {
+    throw new ConnectorV3DecodeError(
+      "Connector v3 observation has duplicate linked-detail entity ids"
+    );
+  }
   return decoded;
 }
 
@@ -327,6 +364,23 @@ export function decodeConnectorV3Inspection(
   if (decoded.data.kind !== decoded.data.content.kind) {
     throw new ConnectorV3DecodeError(
       "Connector v3 inspection kind does not match its typed content"
+    );
+  }
+  return decoded;
+}
+
+export function decodeConnectorV3LinkedDetail(
+  value: unknown
+): DecodedConnectorV3Payload<ConnectorV3LinkedDetail> {
+  const decoded = decode(value, linkedDetailSchema, "Connector v3 linked detail");
+  if (decoded.data.expected_state_token !== decoded.data.observed_state_token) {
+    throw new ConnectorV3DecodeError(
+      "Connector v3 linked detail expected and observed state tokens must match"
+    );
+  }
+  if (decoded.data.entity_id !== decoded.data.content.entity_id) {
+    throw new ConnectorV3DecodeError(
+      "Connector v3 linked detail entity does not match its typed card content"
     );
   }
   return decoded;
