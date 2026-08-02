@@ -158,7 +158,7 @@ export class Sts2ConnectorV3Adapter implements GameAdapter<
       bridgeCapabilities?.raw
     );
     this.capabilities = connectorCapabilities.data;
-    if (bridgeCapabilities) this.bridgeCapabilities = bridgeCapabilities.data;
+    this.bridgeCapabilities = bridgeCapabilities?.data;
     this.invocations = new Map(projected.invocations);
     this.latestStateToken = observation.data.state_token;
     this.lastReadAuthority =

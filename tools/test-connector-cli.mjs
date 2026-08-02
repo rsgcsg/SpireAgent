@@ -8,6 +8,7 @@ import {
   evaluateEnvironmentReadiness,
   evaluateLoadedArtifact,
   inspectModInstallation,
+  isTransientAgentObservation,
   loadAgentGameDirFromLocalEnv,
   migrationCycleDelegateArgs,
   processListHasGame,
@@ -175,6 +176,18 @@ assert.equal(
   selectAgentAuthorityPath({ observation_ready: false, mutation_ready: false }),
   "legacy_migration_required"
 );
+assert.equal(isTransientAgentObservation({
+  context: { kind: "unknown", source_type: "no_active_run_context" },
+  interaction: { execution_support: "unsupported", command_candidates: [] }
+}), true);
+assert.equal(isTransientAgentObservation({
+  context: { kind: "event", source_type: "unmapped_visible_event" },
+  interaction: { execution_support: "unsupported", command_candidates: [] }
+}), false);
+assert.equal(isTransientAgentObservation({
+  context: { kind: "menu", source_type: "main_menu" },
+  interaction: { execution_support: "trial", command_candidates: [{}] }
+}), false);
 
 const mismatch = evaluateLoadedArtifact({
   csharpProtocol: "2.0-preview.68",

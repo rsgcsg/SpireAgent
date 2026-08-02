@@ -9,9 +9,13 @@ import {
   type MainMenuSurface,
   type MapNavigationSurface,
   type NormalizedCurrentState,
+  type RestSiteSurface,
   type SemanticContext,
+  type ShopInventorySurface,
+  type ShopRoomSurface,
   type SingleplayerMenuSurface,
-  type StateEnvelope
+  type StateEnvelope,
+  type TreasureRoomSurface
 } from "../domain/state/index.js";
 import type { AdapterDescriptor } from "../game-io/adapter.js";
 import {
@@ -40,6 +44,15 @@ import {
   type GatewayRewardSurface
 } from "../integrations/sts2mcp/gatewayRewardProtocol.js";
 import {
+  gatewayRestSiteSurfaceSchema,
+  gatewayRunRoomContextSchema,
+  gatewayShopInventorySurfaceSchema,
+  gatewayShopRoomSurfaceSchema,
+  gatewayTreasureRoomSurfaceSchema,
+  type GatewayRunRoomContext,
+  type GatewayRunRoomSurface
+} from "../integrations/sts2mcp/gatewayRunRoomProtocol.js";
+import {
   decodeConnectorV3Observation,
   type ConnectorV3Observation
 } from "../integrations/sts2mcp/connectorV3Protocol.js";
@@ -54,23 +67,25 @@ import {
 } from "../integrations/sts2mcp/gatewayVisibleStateProtocol.js";
 import type { Sts2McpRawState } from "../integrations/sts2mcp/rawState.js";
 import { stateHash } from "../runtime/stateHash.js";
-import { isJsonObject } from "../shared/json.js";
 import { DiagnosticsBuilder } from "./diagnostics.js";
 import {
   projectGatewayVisibleCard,
+  projectGatewayVisibleRelic,
   projectGatewayVisibleState
 } from "./gatewayVisibleStateProjection.js";
 
-type DirectSurface = GatewayMenuSurface | GatewayJourneySurface | GatewayRewardSurface;
+type DirectSurface = GatewayMenuSurface | GatewayJourneySurface | GatewayRewardSurface
+  | GatewayRunRoomSurface;
 type DirectContext = GatewayMenuContext | GatewayEventContext | GatewayMapContext
-  | GatewayGameOverContext | GatewayRewardFlowContext;
+  | GatewayGameOverContext | GatewayRewardFlowContext | GatewayRunRoomContext;
 
 export function isDirectConnectorV3ConsumerState(rawState: Sts2McpRawState): boolean {
   const observation = rawState.connector_v3_observation;
-  return isJsonObject(observation)
-    && isJsonObject(observation.context)
-    && isJsonObject(observation.surface)
-    && isDirectPair(String(observation.context.kind), String(observation.surface.kind));
+  try {
+    return usesDirectConnectorV3Consumer(decodeConnectorV3Observation(observation).data);
+  } catch {
+    return false;
+  }
 }
 
 export function normalizeConnectorV3CurrentState(
@@ -85,6 +100,7 @@ export function normalizeConnectorV3CurrentState(
   let surface: DirectSurface | undefined;
   let shared: GatewaySharedVisibleState | undefined;
   let commands: ConnectorV3ConsumerCommand[] = [];
+  let visibleUnsupported = false;
 
   try {
     observation = decodeConnectorV3Observation(rawObservation).data;
@@ -92,7 +108,19 @@ export function normalizeConnectorV3CurrentState(
     diagnostics.invalid("connector_v3_observation", rawObservation, safeMessage(error));
   }
   if (observation) {
-    if (!usesDirectConnectorV3Consumer(observation)) {
+    visibleUnsupported = observation.interaction.execution_support === "unsupported";
+    if (visibleUnsupported) {
+      if (observation.interaction.command_candidates.length > 0) {
+        diagnostics.invalid(
+          "connector_v3_observation.interaction.command_candidates",
+          observation.interaction.command_candidates,
+          "visible unsupported interaction must not publish commands"
+        );
+      }
+      if (observation.shared_state !== null) {
+        shared = parseSharedState(observation, diagnostics);
+      }
+    } else if (!usesDirectConnectorV3Consumer(observation)) {
       diagnostics.invalid(
         "connector_v3_observation.surface",
         observation.surface,
@@ -121,6 +149,13 @@ export function normalizeConnectorV3CurrentState(
         "semantic context does not match the current direct V3 surface"
       );
     }
+    for (const error of validateSurfaceFacts(surface)) {
+      diagnostics.invalid(
+        "connector_v3_observation.surface",
+        observation.surface,
+        error
+      );
+    }
     for (const error of validateCommands(surface, commands)) {
       diagnostics.invalid(
         "connector_v3_observation.interaction.command_candidates",
@@ -146,10 +181,22 @@ export function normalizeConnectorV3CurrentState(
     && legalActions.length > 0
     && builtDiagnostics.status !== "invalid";
   const projectedPersistent = shared ? projectGatewayVisibleState(shared) : undefined;
-  const normalizedContext: NormalizedCurrentState["context"] = context
-    ? projectContext(context, surface)
+  const normalizedContext: NormalizedCurrentState["context"] = visibleUnsupported && observation
+    ? projectVisibleUnsupportedContext(observation, rawState)
+    : context
+    ? projectContext(context, surface, projectedPersistent?.player)
     : invalidContext(rawState);
-  const normalizedSurface: NormalizedCurrentState["surface"] = observation && surface
+  const normalizedSurface: NormalizedCurrentState["surface"] = visibleUnsupported && observation
+    ? {
+        kind: "unsupported",
+        reason: observation.interaction.support_reason
+          ?? (typeof observation.surface.reason === "string"
+            ? observation.surface.reason
+            : "Connector V3 exposes this visible interaction without mutation support."),
+        classification: "unknown_surface",
+        observedTopLevelKeys: Object.keys(rawState).sort()
+      }
+    : observation && surface
     && builtDiagnostics.status !== "invalid"
     ? projectSurface(surface, observation, legalActions)
     : {
@@ -175,6 +222,8 @@ export function normalizeConnectorV3CurrentState(
     } : {}),
     stability: builtDiagnostics.status === "invalid"
       ? "invalid"
+      : visibleUnsupported
+        ? "non_actionable"
       : actionable
         ? "actionable"
         : observation?.interaction.phase === "settling"
@@ -235,6 +284,27 @@ export function normalizeConnectorV3CurrentState(
   };
 }
 
+function projectVisibleUnsupportedContext(
+  observation: ConnectorV3Observation,
+  rawState: Sts2McpRawState
+): SemanticContext {
+  if (observation.context.kind === "rest") return { kind: "rest" };
+  if (observation.context.kind === "shop") return { kind: "shop" };
+  if (observation.context.kind === "treasure") return { kind: "treasure" };
+  if (observation.context.kind === "reward_flow"
+      && (observation.context.reward_kind === "card_reward"
+        || observation.context.reward_kind === "room_rewards")) {
+    return { kind: "reward_flow", rewardKind: observation.context.reward_kind };
+  }
+  return {
+    kind: "unknown",
+    reason: typeof observation.context.reason === "string"
+      ? observation.context.reason
+      : `Connector V3 exposes unsupported context ${observation.context.kind}`,
+    observedTopLevelKeys: Object.keys(rawState).sort()
+  };
+}
+
 function parseContext(
   observation: ConnectorV3Observation,
   diagnostics: DiagnosticsBuilder
@@ -246,7 +316,9 @@ function parseContext(
       : observation.context.kind === "map"
         ? gatewayMapContextSchema
         : observation.context.kind === "reward_flow"
-          ? gatewayRewardFlowContextSchema
+      ? gatewayRewardFlowContextSchema
+      : ["rest", "shop", "treasure"].includes(observation.context.kind)
+        ? gatewayRunRoomContextSchema
         : observation.context.kind === "game_over"
           ? gatewayGameOverContextSchema
           : undefined;
@@ -276,6 +348,14 @@ function parseSurface(
           ? gatewayRewardClaimSurfaceSchema
           : observation.surface.kind === "card_reward_selection"
             ? gatewayCardRewardSelectionSurfaceSchema
+            : observation.surface.kind === "rest_site"
+              ? gatewayRestSiteSurfaceSchema
+              : observation.surface.kind === "shop_inventory"
+                ? gatewayShopInventorySurfaceSchema
+                : observation.surface.kind === "shop_room"
+                  ? gatewayShopRoomSurfaceSchema
+                  : observation.surface.kind === "treasure_room"
+                    ? gatewayTreasureRoomSurfaceSchema
         : observation.surface.kind === "game_over"
           ? gatewayGameOverSurfaceSchema
           : undefined;
@@ -316,6 +396,11 @@ function contextMatchesSurface(context: DirectContext, surface: DirectSurface): 
     return (context.reward_kind === "room_rewards" && surface.kind === "reward_claim")
       || (context.reward_kind === "card_reward" && surface.kind === "card_reward_selection");
   }
+  if (context.kind === "rest") return surface.kind === "rest_site";
+  if (context.kind === "shop") {
+    return surface.kind === "shop_inventory" || surface.kind === "shop_room";
+  }
+  if (context.kind === "treasure") return surface.kind === "treasure_room";
   return (context.kind === "event" && surface.kind === "event_option")
     || (context.kind === "map" && surface.kind === "map_navigation")
     || (context.kind === "game_over" && surface.kind === "game_over");
@@ -332,6 +417,10 @@ function validateCommands(
     if (surface.kind === "card_reward_selection") {
       return validateCardRewardCommand(surface, command);
     }
+    if (surface.kind === "rest_site") return validateRestCommand(surface, command);
+    if (surface.kind === "shop_inventory") return validateShopInventoryCommand(surface, command);
+    if (surface.kind === "shop_room") return validateShopRoomCommand(surface, command);
+    if (surface.kind === "treasure_room") return validateTreasureCommand(surface, command);
     if (surface.kind === "game_over") return validateGameOverCommand(surface, command);
     return validateMenuCommand(surface, command);
   });
@@ -421,6 +510,182 @@ function validateCardRewardCommand(
     ]);
   }
   return [`unsupported direct card reward operation ${command.operation}`];
+}
+
+function validateSurfaceFacts(surface: DirectSurface): string[] {
+  if (surface.kind === "rest_site") {
+    const entityIds = new Set(surface.options.map((option) => option.entity_id));
+    const indices = new Set(surface.options.map((option) => option.index));
+    return collectErrors([
+      entityIds.size === surface.options.length || "rest option entity ids must be unique",
+      indices.size === surface.options.length
+        && surface.options.every((option, index) => option.index === index)
+        || "rest options must retain contiguous visible order"
+    ]);
+  }
+  if (surface.kind === "shop_inventory") {
+    const offers = [
+      ...surface.cards,
+      ...surface.relics,
+      ...surface.potions,
+      ...(surface.card_removal ? [surface.card_removal] : [])
+    ];
+    return collectErrors([
+      new Set(offers.map((offer) => offer.entity_id)).size === offers.length
+        || "shop offer entity ids must be unique",
+      new Set(offers.map((offer) => offer.slot_entity_id)).size === offers.length
+        || "shop slot entity ids must be unique",
+      new Set(offers.map((offer) => offer.inventory_index)).size === offers.length
+        || "shop inventory indices must be unique"
+    ]);
+  }
+  return [];
+}
+
+function validateRestCommand(
+  surface: Extract<GatewayRunRoomSurface, { kind: "rest_site" }>,
+  command: ConnectorV3ConsumerCommand
+): string[] {
+  const base = [
+    command.operands.screen_id === surface.screen_entity_id
+      || "rest command must bind the current screen",
+    hasBinding(command, "screen", surface.screen_entity_id)
+      || "rest command is missing its exact screen binding"
+  ];
+  if (command.operation === "choose_rest_option") {
+    const option = surface.options.find(
+      (value) => value.entity_id === command.operands.rest_option_id
+    );
+    return collectErrors([
+      ...base,
+      command.command === "choose" || "rest option must use choose",
+      Boolean(option?.enabled) || "rest option must bind one current enabled option",
+      Boolean(option && hasBinding(command, "rest_option", option.entity_id))
+        || "rest option is missing its exact entity binding"
+    ]);
+  }
+  if (command.operation === "proceed_rest_site") {
+    return collectErrors([
+      ...base,
+      command.command === "activate_control" || "rest proceed must activate a control",
+      command.operands.control_id === "proceed_rest_site"
+        || "rest proceed control is not exact",
+      surface.can_proceed || "rest proceed was published while unavailable"
+    ]);
+  }
+  return [`unsupported direct rest operation ${command.operation}`];
+}
+
+function validateShopRoomCommand(
+  surface: Extract<GatewayRunRoomSurface, { kind: "shop_room" }>,
+  command: ConnectorV3ConsumerCommand
+): string[] {
+  const available = command.operation === "open_shop_inventory"
+    ? surface.can_open_inventory
+    : command.operation === "proceed_shop"
+      ? surface.can_proceed
+      : false;
+  return collectErrors([
+    command.command === "activate_control" || "shop-room command must activate a control",
+    command.operands.room_id === surface.room_entity_id
+      || "shop-room command must bind the current room",
+    command.operands.control_id === command.operation
+      || "shop-room command must bind its exact semantic control",
+    available || "shop-room command was published while its control is unavailable",
+    hasBinding(command, "room", surface.room_entity_id)
+      || "shop-room command is missing its exact room binding"
+  ]);
+}
+
+function validateShopInventoryCommand(
+  surface: Extract<GatewayRunRoomSurface, { kind: "shop_inventory" }>,
+  command: ConnectorV3ConsumerCommand
+): string[] {
+  const base = [
+    command.operands.screen_id === surface.screen_entity_id
+      || "shop command must bind the current screen",
+    hasBinding(command, "screen", surface.screen_entity_id)
+      || "shop command is missing its exact screen binding"
+  ];
+  if (command.operation === "close_shop_inventory") {
+    return collectErrors([
+      ...base,
+      command.command === "cancel_interaction" || "shop close must cancel the interaction",
+      command.operands.control_id === "close_shop_inventory"
+        || "shop close control is not exact",
+      surface.can_close || "shop close was published while unavailable"
+    ]);
+  }
+  if (command.operation === "open_shop_card_removal") {
+    const offer = surface.card_removal;
+    return collectErrors([
+      ...base,
+      command.command === "activate_control" || "shop removal must activate a control",
+      command.operands.control_id === "open_shop_card_removal"
+        || "shop removal control is not exact",
+      Boolean(offer?.can_purchase
+        && offer.entity_id === command.operands.shop_card_removal_id)
+        || "shop removal must bind the current available removal offer",
+      Boolean(offer && hasBinding(command, "shop_card_removal", offer.entity_id))
+        || "shop removal is missing its exact offer binding"
+    ]);
+  }
+  const categories = [
+    { operation: "purchase_shop_card", offers: surface.cards },
+    { operation: "purchase_shop_relic", offers: surface.relics },
+    { operation: "purchase_shop_potion", offers: surface.potions }
+  ] as const;
+  const category = categories.find((value) => value.operation === command.operation);
+  const offer = category?.offers.find(
+    (value) => value.entity_id === command.operands.shop_offer_id
+  );
+  return collectErrors([
+    ...base,
+    Boolean(category) || `unsupported direct shop operation ${command.operation}`,
+    command.command === "purchase" || "shop purchase must use purchase",
+    Boolean(offer?.can_purchase) || "shop purchase must bind one current purchasable offer",
+    Boolean(offer && hasBinding(command, "shop_offer", offer.entity_id))
+      || "shop purchase is missing its exact offer binding"
+  ]);
+}
+
+function validateTreasureCommand(
+  surface: Extract<GatewayRunRoomSurface, { kind: "treasure_room" }>,
+  command: ConnectorV3ConsumerCommand
+): string[] {
+  const base = [
+    command.operands.treasure_room_id === surface.room_entity_id
+      || "treasure command must bind the current room",
+    hasBinding(command, "treasure_room", surface.room_entity_id)
+      || "treasure command is missing its exact room binding"
+  ];
+  if (command.operation === "choose_treasure_relic") {
+    const relic = surface.relics.find(
+      (value) => value.entity_id === command.operands.choice_id
+    );
+    return collectErrors([
+      ...base,
+      command.command === "choose" || "treasure relic selection must use choose",
+      surface.stage === "relic_choice" && Boolean(relic)
+        || "treasure relic selection requires the current visible relic choice",
+      Boolean(relic && hasBinding(command, "relic", relic.entity_id))
+        || "treasure relic selection is missing its exact relic binding"
+    ]);
+  }
+  const expected = command.operation === "open_treasure_chest"
+    ? surface.stage === "closed" && !surface.chest_opened
+    : command.operation === "skip_treasure_relic"
+      ? surface.stage === "relic_choice" && surface.can_skip
+      : command.operation === "proceed_treasure_room"
+        ? surface.stage === "completed" && surface.can_proceed
+        : false;
+  return collectErrors([
+    ...base,
+    command.command === "activate_control" || "treasure control must use activate_control",
+    command.operands.control_id === command.operation
+      || "treasure command must bind its exact semantic control",
+    expected || "treasure command does not match the current stage"
+  ]);
 }
 
 function validateEventCommand(
@@ -553,7 +818,11 @@ function projectCommands(commands: ConnectorV3ConsumerCommand[]): BridgeLegalAct
   }));
 }
 
-function projectContext(context: DirectContext, surface?: DirectSurface): SemanticContext {
+function projectContext(
+  context: DirectContext,
+  surface?: DirectSurface,
+  player?: NormalizedCurrentState["player"]
+): SemanticContext {
   if (context.kind === "menu") {
     return {
       kind: "menu",
@@ -577,6 +846,26 @@ function projectContext(context: DirectContext, surface?: DirectSurface): Semant
   if (context.kind === "reward_flow") {
     return { kind: "reward_flow", rewardKind: context.reward_kind };
   }
+  if (context.kind === "rest") return { kind: "rest" };
+  if (context.kind === "shop") {
+    return {
+      kind: "shop",
+      ...(player?.gold !== undefined ? { gold: player.gold } : {}),
+      ...(player?.maxPotionSlots !== undefined
+        ? { maxPotionSlots: player.maxPotionSlots }
+        : {}),
+      ...(player ? {
+        potions: player.potions.map((potion) => ({
+          entityId: potion.entityId ?? potion.id,
+          id: potion.id,
+          ...(potion.name ? { name: potion.name } : {}),
+          ...(potion.description ? { description: potion.description } : {}),
+          slot: potion.slot ?? 0
+        }))
+      } : {})
+    };
+  }
+  if (context.kind === "treasure") return { kind: "treasure" };
   return {
     kind: "run_ended",
     result: context.result,
@@ -640,10 +929,135 @@ function projectSurface(
   if (surface.kind === "card_reward_selection") {
     return projectCardRewardSurface(surface, observation, legalActions);
   }
+  if (surface.kind === "rest_site") {
+    return projectRestSurface(surface, observation, legalActions);
+  }
+  if (surface.kind === "shop_inventory") {
+    return projectShopInventorySurface(surface, observation, legalActions);
+  }
+  if (surface.kind === "shop_room") {
+    return projectShopRoomSurface(surface, observation, legalActions);
+  }
+  if (surface.kind === "treasure_room") {
+    return projectTreasureSurface(surface, observation, legalActions);
+  }
   if (surface.kind === "game_over") {
     return projectGameOverSurface(surface, observation, legalActions);
   }
   return projectMenuSurface(surface, observation, legalActions);
+}
+
+function projectRestSurface(
+  surface: Extract<GatewayRunRoomSurface, { kind: "rest_site" }>,
+  observation: ConnectorV3Observation,
+  legalActions: BridgeLegalActionSnapshot[]
+): RestSiteSurface {
+  return {
+    kind: "rest_site",
+    bridgeStateId: observation.state_token,
+    screenEntityId: surface.screen_entity_id,
+    options: surface.options.map((option) => ({
+      entityId: option.entity_id,
+      index: option.index,
+      optionId: option.option_id,
+      ...(option.name ? { name: option.name } : {}),
+      ...(option.description ? { description: option.description } : {}),
+      enabled: option.enabled
+    })),
+    canProceed: surface.can_proceed,
+    legalActions,
+    completeness: projectCompleteness(observation)
+  };
+}
+
+function projectShopInventorySurface(
+  surface: Extract<GatewayRunRoomSurface, { kind: "shop_inventory" }>,
+  observation: ConnectorV3Observation,
+  legalActions: BridgeLegalActionSnapshot[]
+): ShopInventorySurface {
+  type Offer = (typeof surface.cards)[number]
+    | (typeof surface.relics)[number]
+    | (typeof surface.potions)[number]
+    | NonNullable<typeof surface.card_removal>;
+  const base = (offer: Offer) => ({
+    entityId: offer.entity_id,
+    slotEntityId: offer.slot_entity_id,
+    inventoryIndex: offer.inventory_index,
+    price: offer.price,
+    stocked: offer.stocked,
+    visible: offer.visible,
+    affordable: offer.affordable,
+    canPurchase: offer.can_purchase,
+    ...(offer.blocked_reason ? { blockedReason: offer.blocked_reason } : {})
+  });
+  return {
+    kind: "shop_inventory",
+    bridgeStateId: observation.state_token,
+    screenEntityId: surface.screen_entity_id,
+    cards: surface.cards.map((offer) => ({
+      ...base(offer),
+      onSale: offer.on_sale,
+      ...(offer.card ? { card: projectGatewayVisibleCard(offer.card) } : {})
+    })),
+    relics: surface.relics.map((offer) => ({
+      ...base(offer),
+      ...(offer.relic ? { relic: projectGatewayVisibleRelic(offer.relic) } : {})
+    })),
+    potions: surface.potions.map((offer) => ({
+      ...base(offer),
+      ...(offer.definition_id ? { id: offer.definition_id } : {}),
+      ...(offer.name ? { name: offer.name } : {}),
+      ...(offer.description ? { description: offer.description } : {}),
+      ...(offer.rarity ? { rarity: offer.rarity } : {})
+    })),
+    ...(surface.card_removal ? {
+      cardRemoval: {
+        ...base(surface.card_removal),
+        nextPriceIncrease: surface.card_removal.next_price_increase
+      }
+    } : {}),
+    canClose: surface.can_close,
+    legalActions,
+    completeness: projectCompleteness(observation)
+  };
+}
+
+function projectShopRoomSurface(
+  surface: Extract<GatewayRunRoomSurface, { kind: "shop_room" }>,
+  observation: ConnectorV3Observation,
+  legalActions: BridgeLegalActionSnapshot[]
+): ShopRoomSurface {
+  return {
+    kind: "shop_room",
+    bridgeStateId: observation.state_token,
+    roomEntityId: surface.room_entity_id,
+    canOpenInventory: surface.can_open_inventory,
+    canProceed: surface.can_proceed,
+    legalActions,
+    completeness: projectCompleteness(observation)
+  };
+}
+
+function projectTreasureSurface(
+  surface: Extract<GatewayRunRoomSurface, { kind: "treasure_room" }>,
+  observation: ConnectorV3Observation,
+  legalActions: BridgeLegalActionSnapshot[]
+): TreasureRoomSurface {
+  return {
+    kind: "treasure_room",
+    stage: surface.stage,
+    bridgeStateId: observation.state_token,
+    roomEntityId: surface.room_entity_id,
+    chestOpened: surface.chest_opened,
+    relics: surface.relics.map((relic) => ({
+      ...projectGatewayVisibleRelic(relic),
+      rarity: String((relic as { rarity?: unknown }).rarity ?? "unknown")
+    })),
+    canSkip: surface.can_skip,
+    canProceed: surface.can_proceed,
+    legalActions,
+    completeness: projectCompleteness(observation)
+  };
 }
 
 function projectRewardSurface(
@@ -909,16 +1323,6 @@ function invalidContext(rawState: Sts2McpRawState): NormalizedCurrentState["cont
     reason: "Connector V3 direct context could not be decoded",
     observedTopLevelKeys: Object.keys(rawState).sort()
   };
-}
-
-function isDirectPair(contextKind: string, surfaceKind: string): boolean {
-  return (contextKind === "menu"
-      && ["main_menu", "singleplayer_menu", "character_select"].includes(surfaceKind))
-    || (contextKind === "event" && surfaceKind === "event_option")
-    || (contextKind === "map" && surfaceKind === "map_navigation")
-    || (contextKind === "reward_flow"
-      && ["reward_claim", "card_reward_selection"].includes(surfaceKind))
-    || (contextKind === "game_over" && surfaceKind === "game_over");
 }
 
 function safeMessage(error: unknown): string {

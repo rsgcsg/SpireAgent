@@ -40,6 +40,68 @@ public static partial class McpMod
         }
     }
 
+    private static void HandleGetConnectorV3Inspection(
+        string encodedKind,
+        HttpListenerRequest request,
+        HttpListenerResponse response)
+    {
+        string kind;
+        try
+        {
+            kind = Uri.UnescapeDataString(encodedKind);
+        }
+        catch (UriFormatException)
+        {
+            SendConnectorV3Error(
+                response,
+                400,
+                "invalid_inspection_kind",
+                "Inspection kind is not valid URI data.");
+            return;
+        }
+
+        string? expectedStateToken = request.QueryString["expected_state_token"];
+        if (!IsSafeBridgeIdentifier(kind, 64)
+            || !IsSafeBridgeIdentifier(expectedStateToken, 128))
+        {
+            SendConnectorV3Error(
+                response,
+                400,
+                "invalid_inspection_contract",
+                "A fixed inspection kind and expected_state_token are required.");
+            return;
+        }
+
+        try
+        {
+            var task = RunOnMainThread(() => ConnectorV3Runtime.Inspect(
+                kind,
+                expectedStateToken!));
+            ConnectorV3InspectionReadResult result = task.GetAwaiter().GetResult();
+            if (result.Inspection != null)
+            {
+                SendJson(response, result.Inspection);
+                return;
+            }
+
+            int statusCode = result.ErrorCode switch
+            {
+                "inspection_kind_not_implemented" => 404,
+                "inspection_binding_failed" => 500,
+                _ => 409
+            };
+            SendConnectorV3Error(
+                response,
+                statusCode,
+                result.ErrorCode ?? "inspection_failed",
+                result.Detail ?? "Inspection failed closed.");
+        }
+        catch (Exception ex)
+        {
+            SendConnectorV3InternalError(response, "inspection_failed", ex);
+        }
+    }
+
     private static void HandlePostConnectorV3Command(
         HttpListenerRequest request,
         HttpListenerResponse response)

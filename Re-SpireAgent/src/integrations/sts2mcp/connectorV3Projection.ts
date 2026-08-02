@@ -135,6 +135,7 @@ export function projectConnectorV3ForRe(
 export function usesDirectConnectorV3Consumer(
   observation: ConnectorV3Observation
 ): boolean {
+  if (observation.interaction.execution_support === "unsupported") return true;
   const pair = `${observation.context.kind}:${observation.surface.kind}`;
   return new Set([
     "menu:main_menu",
@@ -144,6 +145,10 @@ export function usesDirectConnectorV3Consumer(
     "map:map_navigation",
     "reward_flow:reward_claim",
     "reward_flow:card_reward_selection",
+    "rest:rest_site",
+    "shop:shop_inventory",
+    "shop:shop_room",
+    "treasure:treasure_room",
     "game_over:game_over"
   ]).has(pair);
 }

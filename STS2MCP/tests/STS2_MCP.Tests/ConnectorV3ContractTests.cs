@@ -66,6 +66,43 @@ public sealed class ConnectorV3ContractTests
     }
 
     [Fact]
+    public void InspectionSerializesV3StateBoundTypedContract()
+    {
+        var inspection = new ConnectorV3InspectionResponse(
+            ConnectorV3Contract.ProtocolVersion,
+            ConnectorV3Contract.InspectionSchema,
+            "v3inspection-a",
+            "state-a",
+            "state-a",
+            DateTimeOffset.UnixEpoch,
+            BridgeInspectionBuilder.RunDeckKind,
+            "normal_inspection",
+            "unordered_multiset",
+            new RunDeckInspectionContent(
+                BridgeInspectionBuilder.RunDeckKind,
+                0,
+                Array.Empty<VisibleCard>()),
+            new InspectionCompleteness(
+                "complete_for_player_run_deck_contents_without_semantic_order",
+                Array.Empty<string>(),
+                Array.Empty<string>()),
+            null!,
+            null!,
+            null!,
+            Array.Empty<BridgeDiagnostic>());
+        string json = JsonSerializer.Serialize(inspection, new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        });
+
+        Assert.Contains("\"schema\":\"sts2.connector.v3/inspection-1\"", json);
+        Assert.Contains("\"expected_state_token\":\"state-a\"", json);
+        Assert.Contains("\"observed_state_token\":\"state-a\"", json);
+        Assert.Contains("\"kind\":\"run_deck\"", json);
+    }
+
+    [Fact]
     public void GenericControlsOnOneOwnerHaveDistinctSemanticOperands()
     {
         var owner = new[] { new ActionEntityBinding("room", "room-a") };

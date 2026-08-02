@@ -1,7 +1,14 @@
 import { z } from "zod";
 import { isJsonObject, type JsonObject } from "../../shared/json.js";
+import {
+  shopCardOfferSchema,
+  shopCardRemovalOfferSchema,
+  shopPotionOfferSchema,
+  shopRelicOfferSchema
+} from "./gatewayRunRoomProtocol.js";
+import { visibleCardSchema } from "./gatewayVisibleStateProtocol.js";
 
-export const SUPPORTED_CONNECTOR_V3_PROTOCOL = "3.0-preview.1" as const;
+export const SUPPORTED_CONNECTOR_V3_PROTOCOL = "3.0-preview.2" as const;
 
 const bridgeIdentitySchema = z.object({
   id: z.string().min(1),
@@ -89,6 +96,13 @@ const diagnosticSchema = z.object({
   recoverability: z.string().min(1)
 }).passthrough();
 
+const observationPolicySchema = z.object({
+  id: z.string().min(1),
+  scope: z.string(),
+  includes_hidden_information: z.literal(false),
+  unknown_field_behavior: z.string().min(1)
+}).passthrough();
+
 const inspectionKindSchema = z.enum(["run_deck", "combat_piles", "shop_catalog"]);
 
 const inspectionCatalogEntrySchema = z.object({
@@ -108,6 +122,7 @@ const capabilitiesSchema = z.object({
   protocol_version: z.literal(SUPPORTED_CONNECTOR_V3_PROTOCOL),
   observation_schema: z.literal("sts2.connector.v3/observation-1"),
   command_schema: z.literal("sts2.connector.v3/command-1"),
+  inspection_schema: z.literal("sts2.connector.v3/inspection-1"),
   status: z.string().min(1),
   bridge: bridgeIdentitySchema,
   game: gameIdentitySchema,
@@ -138,12 +153,7 @@ const observationSchema = z.object({
   }).passthrough(),
   bridge: bridgeIdentitySchema,
   game: gameIdentitySchema,
-  observation_policy: z.object({
-    id: z.string().min(1),
-    scope: z.string(),
-    includes_hidden_information: z.literal(false),
-    unknown_field_behavior: z.string().min(1)
-  }).passthrough(),
+  observation_policy: observationPolicySchema,
   visibility: z.object({
     profile_id: z.string().min(1),
     core_status: z.enum(["complete", "partial"]),
@@ -164,6 +174,55 @@ const observationSchema = z.object({
     unmapped_visible_controls: z.array(z.string()),
     hidden_by_policy: z.array(z.string())
   }).strict()
+}).strict();
+
+const inspectionCompletenessSchema = z.object({
+  player_visible_semantics: z.string().min(1),
+  sources: z.array(z.string()),
+  missing: z.array(z.string())
+}).passthrough();
+
+const inspectionContentSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("run_deck"),
+    card_count: z.number().int().nonnegative(),
+    cards: z.array(visibleCardSchema)
+  }).passthrough(),
+  z.object({
+    kind: z.literal("combat_piles"),
+    zones: z.array(z.object({
+      zone: z.enum(["draw", "discard", "exhaust"]),
+      card_count: z.number().int().nonnegative(),
+      ordering_semantics: z.literal("unordered_multiset"),
+      cards: z.array(visibleCardSchema)
+    }).passthrough()).length(3)
+  }).passthrough(),
+  z.object({
+    kind: z.literal("shop_catalog"),
+    access_state: z.enum(["inventory_open", "inventory_closed_open_to_inspect"]),
+    cards: z.array(shopCardOfferSchema),
+    relics: z.array(shopRelicOfferSchema),
+    potions: z.array(shopPotionOfferSchema),
+    card_removal: shopCardRemovalOfferSchema.nullable().optional()
+  }).passthrough()
+]);
+
+const inspectionSchema = z.object({
+  protocol_version: z.literal(SUPPORTED_CONNECTOR_V3_PROTOCOL),
+  schema: z.literal("sts2.connector.v3/inspection-1"),
+  inspection_id: z.string().min(1),
+  expected_state_token: z.string().min(1),
+  observed_state_token: z.string().min(1),
+  observed_at: z.string().min(1),
+  kind: inspectionKindSchema,
+  visibility_class: z.literal("normal_inspection"),
+  ordering_semantics: z.enum(["unordered_multiset", "fixed_ui_slots"]),
+  content: inspectionContentSchema,
+  completeness: inspectionCompletenessSchema,
+  bridge: bridgeIdentitySchema,
+  game: gameIdentitySchema,
+  observation_policy: observationPolicySchema,
+  diagnostics: z.array(diagnosticSchema)
 }).strict();
 
 const receiptSchema = z.object({
@@ -210,6 +269,7 @@ const receiptSchema = z.object({
 
 export type ConnectorV3Capabilities = z.infer<typeof capabilitiesSchema>;
 export type ConnectorV3Observation = z.infer<typeof observationSchema>;
+export type ConnectorV3Inspection = z.infer<typeof inspectionSchema>;
 export type ConnectorV3CommandCandidate = z.infer<typeof commandCandidateSchema>;
 export type ConnectorV3Receipt = z.infer<typeof receiptSchema>;
 
@@ -250,6 +310,23 @@ export function decodeConnectorV3Observation(
       && decoded.data.interaction.command_candidates.length > 0) {
     throw new ConnectorV3DecodeError(
       "Connector v3 unsupported interaction must not publish command candidates"
+    );
+  }
+  return decoded;
+}
+
+export function decodeConnectorV3Inspection(
+  value: unknown
+): DecodedConnectorV3Payload<ConnectorV3Inspection> {
+  const decoded = decode(value, inspectionSchema, "Connector v3 inspection");
+  if (decoded.data.expected_state_token !== decoded.data.observed_state_token) {
+    throw new ConnectorV3DecodeError(
+      "Connector v3 inspection expected and observed state tokens must match"
+    );
+  }
+  if (decoded.data.kind !== decoded.data.content.kind) {
+    throw new ConnectorV3DecodeError(
+      "Connector v3 inspection kind does not match its typed content"
     );
   }
   return decoded;

@@ -459,6 +459,47 @@ export async function waitForGateway({
   };
 }
 
+export function isTransientAgentObservation(observation) {
+  return observation?.context?.kind === "unknown"
+    && observation?.context?.source_type === "no_active_run_context"
+    && observation?.interaction?.execution_support === "unsupported"
+    && Array.isArray(observation?.interaction?.command_candidates)
+    && observation.interaction.command_candidates.length === 0;
+}
+
+export async function waitForAgentObservation({
+  endpoint = DEFAULT_ENDPOINT,
+  timeoutMs = DEFAULT_GATEWAY_WAIT_MS,
+  pollMs = DEFAULT_GATEWAY_POLL_MS
+} = {}) {
+  const startedAt = Date.now();
+  let attempts = 0;
+  let lastError = "not_attempted";
+  while (Date.now() - startedAt <= timeoutMs) {
+    attempts += 1;
+    const result = await readJsonResult(endpoint, "/api/v3/observation");
+    if (result.ok && !isTransientAgentObservation(result.value)) {
+      return {
+        ready: true,
+        attempts,
+        waited_ms: Date.now() - startedAt,
+        observation: result.value,
+        error: null
+      };
+    }
+    lastError = result.ok ? "no_active_run_context" : result.error;
+    if (Date.now() - startedAt >= timeoutMs) break;
+    await new Promise((resolve) => setTimeout(resolve, pollMs));
+  }
+  return {
+    ready: false,
+    attempts,
+    waited_ms: Date.now() - startedAt,
+    observation: null,
+    error: lastError
+  };
+}
+
 function summarizeGatewayWait(result) {
   return {
     ready: result.ready,
@@ -547,7 +588,7 @@ async function inspect(options, requireLoaded = false) {
     qualification_status: projectionSidecar?.qualification_system?.status ?? null,
     semantic_state_id: null,
     authority_projection_id: null,
-    note: "V3 state tokens are state-scoped and are inspected through collect-evidence or /api/v3/observation. V2 capabilities remain a temporary non-authorizing Re projection sidecar."
+    note: "V3 observations and read-only /api/v3/inspections are state-token scoped. V2 capabilities remain a temporary non-authorizing projection sidecar for unmigrated selectors."
   };
 }
 
@@ -814,8 +855,18 @@ async function prepareAgentRun(options) {
 
   let authorityPath = selectAgentAuthorityPath(before);
   let after = before;
+  let observationWait = null;
   if (before.observation_ready) {
-    await readJson(endpoint, "/api/v3/observation", true);
+    observationWait = await waitForAgentObservation({
+      endpoint,
+      timeoutMs: options.waitMs,
+      pollMs: options.pollMs
+    });
+    if (!observationWait.ready) {
+      throw new Error(
+        `Gateway loaded but no semantic game context became ready within ${observationWait.waited_ms}ms: ${observationWait.error}`
+      );
+    }
     after = await inspect({ ...options, endpoint }, true);
     authorityPath = selectAgentAuthorityPath(after);
   }
@@ -846,6 +897,14 @@ async function prepareAgentRun(options) {
     permission_mode: after.permission_mode,
     qualification_status: after.qualification_status,
     authority_path: authorityPath,
+    observation_wait: observationWait
+      ? {
+          attempts: observationWait.attempts,
+          waited_ms: observationWait.waited_ms,
+          context_kind: observationWait.observation?.context?.kind ?? null,
+          surface_kind: observationWait.observation?.surface?.kind ?? null
+        }
+      : null,
     non_claims: [
       "preflight is not Organic qualification",
       "unsupported surfaces remain fail closed",

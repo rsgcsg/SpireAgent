@@ -14,7 +14,8 @@ commands, or stop at a precise visible unsupported boundary.
 
 Implemented in source:
 
-- `3.0-preview.1` capabilities, observation, command and receipt contracts;
+- `3.0-preview.2` capabilities, observation, command and receipt contracts,
+  plus `sts2.connector.v3/inspection-1`;
 - state token, stable instance identity and one active interaction;
 - visible unsupported interactions;
 - direct combat resolvers for `play_card`, `use_potion` and `end_turn`;
@@ -28,27 +29,30 @@ Implemented in source:
   authority, semantic Outcome and unknown-no-retry;
 - V3 REST, MCP tools and strict Re decoder/adapter;
 - Re defaults to V3 and never executes a v2 action ID;
-- Re consumes menu, event, map, game-over, room-reward and card-reward
-  Surfaces directly and does not request the v2 capabilities sidecar for them;
+- Re consumes menu, event, map, game-over, reward/card-reward, shop, rest,
+  treasure and visible-unsupported Surfaces directly and does not request the
+  v2 capabilities sidecar for them;
+- state-token-bound V3 Inspection for run deck, combat piles and shop catalog
+  is implemented across Gateway, Re and MCP without mutation authority;
 - exact Stratagem Power source binding for the single-stack combat-pile
   selection exposed by current Live evidence.
 
 Not yet claimed:
 
-- loaded identity or mutation evidence for the latest installed v0.110.1
-  artifact;
-- V3-native read-only detail/Inspection;
+- loaded identity or mutation/Inspection evidence for the latest installed
+  v0.110.1 artifact;
+- bounded linked detail and the optional physical-UI evidence profile;
 - complete removal of the non-combat Provider adapter;
 - complete removal of the Re v2 projection sidecar;
 - multi-stack Stratagem Outcome;
 - full vanilla or Mod coverage.
 
 Current exact-runtime Re evidence includes
-`run-20260801124814-414z9f`: 513 settled decisions, one safe pre-submit stale
-refusal, no unknown mutation and one normal completed-run boundary after 516
-decisions. Direct event/map/game-over consumption and both direct game-over
-controls were exercised. The later direct reward consumer requires a new cold
-load.
+`run-20260801205605-0fqlrj`: 172 settled decisions, two safe pre-submit stale
+refusals, no unknown mutation and one normal completed-run boundary after 175
+decisions. Direct menu/event/map/game-over/reward/card-reward consumption was
+exercised. The later direct shop/rest/treasure and Inspection replacement
+requires a new cold load.
 
 ## Migration Waves
 
@@ -83,10 +87,11 @@ selected family has parity tests and replay evidence.
 
 ### Wave 3: V3 Evidence And Detail
 
-Publish V3-native persistent summary, hover/detail and Inspection with explicit availability:
-observed, inspectable, unavailable, failed or stale. Remove the v2 capability
-projection sidecar only after Re can obtain equivalent decision-relevant facts
-from V3.
+Exercise the implemented V3-native Inspection and publish bounded hover/linked
+detail with explicit availability: observed, inspectable, unavailable, failed
+or stale. Build physical UI-page opening only as a separate optional evidence
+profile. Remove the v2 capability projection sidecar only after Re can obtain
+equivalent decision-relevant facts from V3.
 
 ### Wave 4: Authority Simplification
 

@@ -90,4 +90,5 @@ export const sharedVisibleStateSchema = z.object({
 }).passthrough();
 
 export type GatewayVisibleCard = z.infer<typeof visibleCardSchema>;
+export type GatewayVisibleRelic = z.infer<typeof visibleRelicSchema>;
 export type GatewaySharedVisibleState = z.infer<typeof sharedVisibleStateSchema>;

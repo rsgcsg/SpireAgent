@@ -14,11 +14,11 @@ the final pre-V3 Connector documents are under
 
 ## Current Status
 
-Source protocol is `3.0-preview.1`. V3 observation, active interaction,
-parameterized commands, receipts, REST, MCP and strict Re consumption are
-implemented. Combat uses direct native resolvers. Non-combat families currently
-reuse bounded native Provider bindings internally while they migrate to the V3
-Native Command Catalog.
+Source protocol is `3.0-preview.2`. V3 observation, active interaction,
+parameterized commands, receipts, state-bound read-only Inspection, REST, MCP
+and strict Re consumption are implemented. Combat and ordinary non-combat
+families use direct native resolvers; remaining selector families retain
+bounded Provider migration bindings until their vertical cutover.
 
 The V3 source has automated test evidence. A V3 Release build and installation
 must be distinguished from loaded and Live evidence; see

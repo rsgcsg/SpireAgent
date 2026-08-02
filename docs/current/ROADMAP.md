@@ -7,6 +7,9 @@ combat, bounded non-combat adapter, V3 MCP and strict Re default.
 
 Exit: automated checks, Release build, safe install and exact identity.
 
+Status: source/test/build/install complete for the current artifact; cold-load
+identity remains pending.
+
 ## V3-1: Exact Runtime Canary
 
 Cold-load the installed artifact. Verify protocol, SHA, MVID, runtime, game,
@@ -14,9 +17,10 @@ Modset and Patch. Execute at least one direct combat command and one non-combat
 command. Unknown, stale and wrong-owner negatives remain fail-closed.
 
 Status: repeatedly obtained. The latest v0.110.1 runtime
-`6aa46ac719444902a074be0ef59af7d9` completed a 516-decision ordinary run with
-513 settled actions, one safe pre-submit stale refusal and no unknown Outcome.
-Evidence remains operation- and artifact-scoped.
+`239d883654b6414e9ab1089c0a45decb` completed a 175-decision ordinary run with
+172 settled actions, two safe pre-submit stale refusals and no unknown Outcome.
+The installed replacement artifact is not loaded, so evidence remains scoped
+to its predecessor SHA/MVID.
 
 ## V3-2: Ordinary Journey
 
@@ -24,9 +28,9 @@ Run one bounded ordinary vanilla game covering combat, map, reward, shop and a
 selection. Stop normally after the game returns to the main menu. Record which
 families used direct V3 bindings versus the internal migration adapter.
 
-Status: repeated on `run-20260801124814-414z9f` under exact v0.110.1 identity;
-the run completed the game-over return and stopped at the top-level menu after
-516 decisions.
+Status: repeated, most recently on `run-20260801205605-0fqlrj` under exact
+v0.110.1 identity; the run completed the game-over return and stopped at the
+top-level menu after 175 decisions.
 
 ## V3-3: Native Family Migration
 
@@ -39,16 +43,20 @@ selectors are next. Generated choice remains unexercised.
 In parallel, replace the temporary V3-to-V2 Re semantic/action projection with
 a direct V3 consumer. Main/singleplayer/character menu is exact-runtime
 exercised without `/api/v2/capabilities`. Event, map and game-over now use the
-same direct consumer and are exact-runtime exercised. Room rewards and card
-rewards now use the direct consumer in source and pass 86 sidecar-free recorded
-snapshot replays; remaining families still use the explicit sidecar.
+same direct consumer and are exact-runtime exercised. Reward/card reward are
+also exact-runtime exercised. Shop, rest, treasure and visible unsupported now
+use the direct consumer in source; 17 exact recorded snapshots replay without
+the sidecar, but this replacement artifact still needs cold-load evidence.
+Unmigrated selector families retain the explicit sidecar.
 
 ## V3-4: Visibility And Detail
 
-Publish V3-native hover, linked detail and read-only Inspection with explicit
-availability/staleness. Keep semantic accessibility as the efficient A default;
-reserve real-page-opening behavior for an optional evidence profile. Remove
-Re's v2 capabilities projection sidecar.
+V3-native state-token-bound read-only Inspection is implemented for run deck,
+combat piles and shop catalog across Gateway, Re decoder/client and MCP. Its
+exact-runtime evidence is pending. Next publish bounded linked detail, finish
+selector-side direct consumption and implement real-page opening only as an
+optional human-equivalence evidence profile. Keep semantic accessibility as
+the efficient A default and remove Re's remaining V2 sidecar.
 
 ## V3-5: Authority And V2 Retirement
 

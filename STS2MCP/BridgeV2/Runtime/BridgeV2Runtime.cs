@@ -639,7 +639,10 @@ internal static class BridgeV2Runtime
                 "This inspection kind is not currently available under the state-bound visibility catalog.");
         }
 
-        BridgeInspectionBuildResult built = BridgeInspectionBuilder.Build(kind, current, EntityRegistry);
+        BridgeInspectionBuildResult built = BridgeInspectionBuilder.Build(
+            kind,
+            current.Context,
+            EntityRegistry);
         if (built.Draft == null)
             return new BridgeInspectionReadResult(null, built.ErrorCode, built.Detail);
 

@@ -68,6 +68,11 @@ Inspection. The mainline profile may expose semantically inspectable facts
 without physically changing the UI owner. A strict real-page-opening profile
 is optional evidence tooling, not the default decision path.
 
+Inspection is an independent V3 wire contract bound to the exact current
+`state_token`. Its implementation may share player-visible read mechanics with
+the predecessor, but it does not share predecessor state identity or authority.
+It never enters the Command Ledger and cannot grant mutation.
+
 ### Interaction Engine
 
 Identifies exactly one current input owner and describes visible affordances.
@@ -117,7 +122,7 @@ Reuse is internal implementation reuse, not V2 protocol authority.
 
 ## Explicit Migration Debt
 
-At `3.0-preview.1`:
+At `3.0-preview.2`:
 
 - combat and multiple ordinary non-combat families use direct V3 native
   resolvers; menu/run-setup, source-discriminated generated choices and
@@ -125,11 +130,14 @@ At `3.0-preview.1`:
   `provider_native_binding_adapter` that never submits or searches a v2 REST
   action ID;
 - Re directly consumes main/singleplayer/character menu, event, map,
-  game-over, room-reward and card-reward facts and candidates. Other Surfaces still use
+  game-over, reward/card-reward, shop, rest, treasure and visible-unsupported
+  facts and candidates. Remaining selector Surfaces still use
   `/api/v2/capabilities` as a same-runtime,
   non-authorizing semantic/environment projection sidecar and temporarily
   expand V3 candidates into a V2-shaped normalization projection;
-- V3 read-only detail/Inspection tools are not yet exposed;
+- V3 state-bound read-only Inspection is exposed for run deck, combat piles
+  and shop catalog; bounded linked detail and the optional physical-UI evidence
+  profile remain pending;
 - v2 endpoints remain mounted for rollback and migration diagnostics, not as
   the default Re or MCP mutation path.
 

@@ -4,6 +4,7 @@ import type { AdapterDescriptor } from "../src/game-io/adapter.js";
 import { projectConnectorV3ForRe } from "../src/integrations/sts2mcp/connectorV3Projection.js";
 import { Sts2ConnectorV3Adapter } from "../src/integrations/sts2mcp/connectorV3Adapter.js";
 import {
+  decodeConnectorV3Inspection,
   decodeConnectorV3Observation,
   decodeConnectorV3Receipt,
   type ConnectorV3Observation
@@ -58,7 +59,7 @@ const SOURCE: AdapterDescriptor = {
 
 function combatObservation(): ConnectorV3Observation {
   return decodeConnectorV3Observation({
-    protocol_version: "3.0-preview.1",
+    protocol_version: "3.0-preview.2",
     schema: "sts2.connector.v3/observation-1",
     profile: "semantic_accessibility.tools.v1",
     state_token: "state-fixture-1",
@@ -541,11 +542,205 @@ function cardRewardObservation(): ConnectorV3Observation {
   return decodeConnectorV3Observation(value).data;
 }
 
+function restObservation(): ConnectorV3Observation {
+  const value = structuredClone(combatObservation()) as unknown as Record<string, unknown>;
+  value.shared_state = sharedState();
+  value.context = { kind: "rest" };
+  value.surface = {
+    kind: "rest_site",
+    screen_entity_id: "rest-screen-fixture",
+    options: [{
+      entity_id: "rest-option-fixture",
+      index: 0,
+      option_id: "HEAL",
+      name: "Rest",
+      description: "Heal visible HP.",
+      enabled: true
+    }],
+    can_proceed: false
+  };
+  value.interaction = {
+    id: "interaction-rest-fixture",
+    kind: "rest_site",
+    phase: "ready",
+    execution_support: "trial",
+    support_reason: null,
+    affordances: ["choose"],
+    command_candidates: [{
+      candidate_id: "candidate-rest-fixture",
+      command: "choose",
+      operation: "choose_rest_option",
+      label: "Rest",
+      operands: {
+        screen_id: "rest-screen-fixture",
+        rest_option_id: "rest-option-fixture"
+      },
+      operand_domains: {},
+      entity_bindings: [
+        { role: "screen", entity_id: "rest-screen-fixture" },
+        { role: "rest_option", entity_id: "rest-option-fixture" }
+      ],
+      binding_kind: "native_direct_resolver",
+      authority_state: "trial"
+    }]
+  };
+  return decodeConnectorV3Observation(value).data;
+}
+
+function shopRoomObservation(): ConnectorV3Observation {
+  const value = structuredClone(combatObservation()) as unknown as Record<string, unknown>;
+  value.shared_state = sharedState();
+  value.context = { kind: "shop" };
+  value.surface = {
+    kind: "shop_room",
+    room_entity_id: "shop-room-fixture",
+    can_open_inventory: true,
+    can_proceed: true
+  };
+  value.interaction = {
+    id: "interaction-shop-room-fixture",
+    kind: "shop_room",
+    phase: "ready",
+    execution_support: "trial",
+    support_reason: null,
+    affordances: ["activate_control"],
+    command_candidates: ["open_shop_inventory", "proceed_shop"].map((operation) => ({
+      candidate_id: `candidate-${operation}`,
+      command: "activate_control",
+      operation,
+      label: operation,
+      operands: { room_id: "shop-room-fixture", control_id: operation },
+      operand_domains: {},
+      entity_bindings: [{ role: "room", entity_id: "shop-room-fixture" }],
+      binding_kind: "native_direct_resolver",
+      authority_state: "trial"
+    }))
+  };
+  return decodeConnectorV3Observation(value).data;
+}
+
+function shopInventoryObservation(): ConnectorV3Observation {
+  const value = structuredClone(combatObservation()) as unknown as Record<string, unknown>;
+  value.shared_state = sharedState();
+  value.context = { kind: "shop" };
+  value.surface = {
+    kind: "shop_inventory",
+    screen_entity_id: "shop-screen-fixture",
+    cards: [{
+      entity_id: "shop-offer-fixture",
+      slot_entity_id: "shop-slot-fixture",
+      inventory_index: 0,
+      price: 50,
+      stocked: true,
+      visible: true,
+      affordable: true,
+      can_purchase: true,
+      on_sale: false,
+      card: {
+        entity_id: "shop-card-fixture",
+        definition_id: "STRIKE",
+        name: "Strike",
+        type: "Attack",
+        cost: "1",
+        description: "Deal damage.",
+        rarity: "Basic",
+        is_upgraded: false,
+        is_selected: false
+      }
+    }],
+    relics: [],
+    potions: [],
+    card_removal: null,
+    can_close: true
+  };
+  value.interaction = {
+    id: "interaction-shop-inventory-fixture",
+    kind: "shop_inventory",
+    phase: "ready",
+    execution_support: "trial",
+    support_reason: null,
+    affordances: ["purchase", "cancel_interaction"],
+    command_candidates: [
+      {
+        candidate_id: "candidate-shop-purchase-fixture",
+        command: "purchase",
+        operation: "purchase_shop_card",
+        label: "Buy Strike",
+        operands: {
+          screen_id: "shop-screen-fixture",
+          shop_offer_id: "shop-offer-fixture"
+        },
+        operand_domains: {},
+        entity_bindings: [
+          { role: "screen", entity_id: "shop-screen-fixture" },
+          { role: "shop_offer", entity_id: "shop-offer-fixture" }
+        ],
+        binding_kind: "native_direct_resolver",
+        authority_state: "trial"
+      },
+      {
+        candidate_id: "candidate-shop-close-fixture",
+        command: "cancel_interaction",
+        operation: "close_shop_inventory",
+        label: "Close shop",
+        operands: {
+          screen_id: "shop-screen-fixture",
+          control_id: "close_shop_inventory"
+        },
+        operand_domains: {},
+        entity_bindings: [{ role: "screen", entity_id: "shop-screen-fixture" }],
+        binding_kind: "native_direct_resolver",
+        authority_state: "trial"
+      }
+    ]
+  };
+  return decodeConnectorV3Observation(value).data;
+}
+
+function treasureObservation(): ConnectorV3Observation {
+  const value = structuredClone(combatObservation()) as unknown as Record<string, unknown>;
+  value.shared_state = sharedState();
+  value.context = { kind: "treasure" };
+  value.surface = {
+    kind: "treasure_room",
+    stage: "closed",
+    room_entity_id: "treasure-room-fixture",
+    chest_opened: false,
+    relics: [],
+    can_skip: false,
+    can_proceed: false
+  };
+  value.interaction = {
+    id: "interaction-treasure-fixture",
+    kind: "treasure_room",
+    phase: "ready",
+    execution_support: "trial",
+    support_reason: null,
+    affordances: ["activate_control"],
+    command_candidates: [{
+      candidate_id: "candidate-open-treasure-fixture",
+      command: "activate_control",
+      operation: "open_treasure_chest",
+      label: "Open chest",
+      operands: {
+        treasure_room_id: "treasure-room-fixture",
+        control_id: "open_treasure_chest"
+      },
+      operand_domains: {},
+      entity_bindings: [{ role: "treasure_room", entity_id: "treasure-room-fixture" }],
+      binding_kind: "native_direct_resolver",
+      authority_state: "trial"
+    }]
+  };
+  return decodeConnectorV3Observation(value).data;
+}
+
 function connectorCapabilities() {
   return {
-    protocol_version: "3.0-preview.1",
+    protocol_version: "3.0-preview.2",
     observation_schema: "sts2.connector.v3/observation-1",
     command_schema: "sts2.connector.v3/command-1",
+    inspection_schema: "sts2.connector.v3/inspection-1",
     status: "experimental_cutover",
     bridge: BRIDGE,
     game: GAME,
@@ -585,7 +780,7 @@ describe("Connector V3 strict contract", () => {
 
   it("rejects unknown mutation receipts that permit retry", () => {
     expect(() => decodeConnectorV3Receipt({
-      protocol_version: "3.0-preview.1",
+      protocol_version: "3.0-preview.2",
       request_id: "request-fixture",
       status: "unknown",
       application: "unknown",
@@ -597,6 +792,67 @@ describe("Connector V3 strict contract", () => {
       successor: { status: "pending", state_token: null },
       events: []
     })).toThrow("unknown mutation must forbid retry");
+  });
+
+  it("decodes state-bound read-only V3 inspections", () => {
+    const decoded = decodeConnectorV3Inspection({
+      protocol_version: "3.0-preview.2",
+      schema: "sts2.connector.v3/inspection-1",
+      inspection_id: "v3inspection-fixture",
+      expected_state_token: "state-fixture-1",
+      observed_state_token: "state-fixture-1",
+      observed_at: "2026-08-02T00:00:00Z",
+      kind: "run_deck",
+      visibility_class: "normal_inspection",
+      ordering_semantics: "unordered_multiset",
+      content: { kind: "run_deck", card_count: 0, cards: [] },
+      completeness: {
+        player_visible_semantics: "complete_for_player_run_deck_contents_without_semantic_order",
+        sources: ["NDeckViewScreen.ShowScreen(Player)"],
+        missing: []
+      },
+      bridge: BRIDGE,
+      game: GAME,
+      observation_policy: {
+        id: "player_visible_only",
+        scope: "current_player_visible_state",
+        includes_hidden_information: false,
+        unknown_field_behavior: "omit_and_mark_incomplete"
+      },
+      diagnostics: []
+    }).data;
+
+    expect(decoded.content.kind).toBe("run_deck");
+    expect(decoded.expected_state_token).toBe(decoded.observed_state_token);
+  });
+
+  it("rejects V3 inspections whose state token drifted", () => {
+    expect(() => decodeConnectorV3Inspection({
+      protocol_version: "3.0-preview.2",
+      schema: "sts2.connector.v3/inspection-1",
+      inspection_id: "v3inspection-fixture",
+      expected_state_token: "state-fixture-1",
+      observed_state_token: "state-fixture-2",
+      observed_at: "2026-08-02T00:00:00Z",
+      kind: "run_deck",
+      visibility_class: "normal_inspection",
+      ordering_semantics: "unordered_multiset",
+      content: { kind: "run_deck", card_count: 0, cards: [] },
+      completeness: {
+        player_visible_semantics: "complete",
+        sources: [],
+        missing: []
+      },
+      bridge: BRIDGE,
+      game: GAME,
+      observation_policy: {
+        id: "player_visible_only",
+        scope: "current_player_visible_state",
+        includes_hidden_information: false,
+        unknown_field_behavior: "omit_and_mark_incomplete"
+      },
+      diagnostics: []
+    })).toThrow("expected and observed state tokens must match");
   });
 
   it("expands only Gateway-provided operand domains into local opaque choices", () => {
@@ -618,7 +874,7 @@ describe("Connector V3 strict contract", () => {
     expect(wrapper.adapter_protocol).toBe("connector_v3_selected");
   });
 
-  it("projects a visible unsupported V3 family as typed unsupported instead of an invalid V2 surface", () => {
+  it("consumes visible unsupported V3 facts directly without a V2 sidecar", () => {
     const value = structuredClone(combatObservation()) as unknown as Record<string, unknown>;
     value.status = "observed";
     value.context = { kind: "event", event_id: "SYMBIOTE" };
@@ -639,20 +895,24 @@ describe("Connector V3 strict contract", () => {
     const observation = decodeConnectorV3Observation(value).data;
     const projected = projectConnectorV3ForRe(
       observation,
-      observation as unknown as JsonObject,
-      { protocol_version: "2.0-preview.86" }
+      observation as unknown as JsonObject
     );
     const wrapper = projected.rawState as Record<string, unknown>;
-    const bridgeState = wrapper.bridge_v2_state as Record<string, unknown>;
+    expect(wrapper.bridge_v2_state).toBeUndefined();
+    expect(wrapper.bridge_v2_capabilities).toBeUndefined();
 
-    expect(bridgeState.readiness).toBe("unsupported");
-    expect(bridgeState.surface_kind).toBe("unsupported");
-    expect(bridgeState.surface).toEqual(expect.objectContaining({
-      kind: "unsupported",
-      source_type: "deck_enchant_selection",
-      reason: "The exact source contract is not recognized."
-    }));
-    expect(bridgeState.legal_actions).toEqual([]);
+    const envelope = normalizeCurrentState(projected.rawState, SOURCE);
+    expect(envelope.diagnostics.status).toBe("ok");
+    expect(envelope.currentState).toMatchObject({
+      sourceStateType: "connector_v3:event:deck_enchant_selection:direct",
+      stability: "non_actionable",
+      actionAuthority: "none",
+      surface: {
+        kind: "unsupported",
+        reason: "No exact current command binding is authorized."
+      }
+    });
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toEqual([]);
   });
 
   it("preserves exact card reward owner and entity operands without consumer reconstruction", () => {
@@ -749,7 +1009,11 @@ describe("Connector V3 strict contract", () => {
     ["map", mapObservation, "map", "map_navigation", 1],
     ["game over", gameOverObservation, "run_ended", "game_over", 1],
     ["room rewards", rewardClaimObservation, "reward_flow", "reward_claim", 3],
-    ["card reward", cardRewardObservation, "reward_flow", "card_reward_selection", 2]
+    ["card reward", cardRewardObservation, "reward_flow", "card_reward_selection", 2],
+    ["rest", restObservation, "rest", "rest_site", 1],
+    ["shop room", shopRoomObservation, "shop", "shop_room", 2],
+    ["shop inventory", shopInventoryObservation, "shop", "shop_inventory", 2],
+    ["treasure", treasureObservation, "treasure", "treasure_room", 1]
   ] as const)(
     "consumes direct V3 %s facts, persistent summary, and commands without V2 sidecars",
     (_label, buildObservation, contextKind, surfaceKind, expectedActions) => {
@@ -832,6 +1096,37 @@ describe("Connector V3 strict contract", () => {
     expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toHaveLength(3);
   });
 
+  it.each([
+    ["shop inventory", shopInventoryObservation, "shop_inventory"],
+    ["rest", restObservation, "rest_site"],
+    ["treasure", treasureObservation, "treasure_room"]
+  ] as const)(
+    "does not request V2 capabilities for direct V3 %s",
+    async (_label, buildObservation, expectedSurface) => {
+      const calls: string[] = [];
+      const adapter = new Sts2ConnectorV3Adapter(
+        "http://adapter.test",
+        1_000,
+        { commandPollMs: 1, commandTimeoutMs: 100 },
+        async (input) => {
+          const url = String(input);
+          calls.push(url);
+          if (url.endsWith("/api/v3/capabilities")) return json(connectorCapabilities());
+          if (url.endsWith("/api/v3/observation")) return json(buildObservation());
+          throw new Error(`Unexpected request ${url}`);
+        },
+        async () => {}
+      );
+
+      const raw = await adapter.readCurrentState();
+      const envelope = normalizeCurrentState(raw, adapter.describe());
+
+      expect(calls.some((url) => url.endsWith("/api/v2/capabilities"))).toBe(false);
+      expect(envelope.currentState.surface.kind).toBe(expectedSurface);
+      expect(envelope.currentState.sourceStateType).toMatch(/:direct$/u);
+    }
+  );
+
   it("fails a direct V3 map closed when a candidate binds a non-visible node", () => {
     const observation = mapObservation();
     const candidate = observation.interaction.command_candidates[0]!;
@@ -874,6 +1169,64 @@ describe("Connector V3 strict contract", () => {
     const observation = cardRewardObservation();
     const surface = observation.surface as Record<string, unknown>;
     surface.selectable_card_entity_ids = [];
+    const projected = projectConnectorV3ForRe(
+      observation,
+      observation as unknown as JsonObject
+    );
+
+    const envelope = normalizeCurrentState(projected.rawState, SOURCE);
+
+    expect(envelope.currentState.stability).toBe("invalid");
+    expect(envelope.currentState.actionAuthority).toBe("none");
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toEqual([]);
+  });
+
+  it("fails a direct V3 shop purchase closed when the candidate binds a replacement offer", () => {
+    const observation = shopInventoryObservation();
+    const candidate = observation.interaction.command_candidates[0]!;
+    candidate.operands.shop_offer_id = "shop-offer-replacement";
+    candidate.entity_bindings[1] = {
+      role: "shop_offer",
+      entity_id: "shop-offer-replacement"
+    };
+    const projected = projectConnectorV3ForRe(
+      observation,
+      observation as unknown as JsonObject
+    );
+
+    const envelope = normalizeCurrentState(projected.rawState, SOURCE);
+
+    expect(envelope.currentState.stability).toBe("invalid");
+    expect(envelope.currentState.actionAuthority).toBe("none");
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toEqual([]);
+  });
+
+  it("fails a direct V3 rest choice closed when the current option is disabled", () => {
+    const observation = restObservation();
+    const surface = observation.surface as unknown as {
+      options: Array<{ enabled: boolean }>;
+    };
+    surface.options[0]!.enabled = false;
+    const projected = projectConnectorV3ForRe(
+      observation,
+      observation as unknown as JsonObject
+    );
+
+    const envelope = normalizeCurrentState(projected.rawState, SOURCE);
+
+    expect(envelope.currentState.stability).toBe("invalid");
+    expect(envelope.currentState.actionAuthority).toBe("none");
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toEqual([]);
+  });
+
+  it("fails a direct V3 treasure command closed when its stage changes", () => {
+    const observation = treasureObservation();
+    const surface = observation.surface as unknown as {
+      stage: string;
+      chest_opened: boolean;
+    };
+    surface.stage = "completed";
+    surface.chest_opened = true;
     const projected = projectConnectorV3ForRe(
       observation,
       observation as unknown as JsonObject

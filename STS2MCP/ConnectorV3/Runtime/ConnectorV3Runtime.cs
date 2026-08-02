@@ -21,6 +21,11 @@ internal sealed record ConnectorV3Snapshot(
     BridgeObservationDraft Draft,
     IReadOnlyList<ConnectorV3BoundCommand> Bindings);
 
+internal sealed record ConnectorV3InspectionReadResult(
+    ConnectorV3InspectionResponse? Inspection,
+    string? ErrorCode,
+    string? Detail);
+
 internal sealed record ConnectorV3BoundCommand(
     ConnectorV3CommandCandidate Candidate,
     BridgeActionDraft? LegacyBinding,
@@ -45,6 +50,7 @@ internal static class ConnectorV3Runtime
             ConnectorV3Contract.ProtocolVersion,
             ConnectorV3Contract.ObservationSchema,
             ConnectorV3Contract.CommandSchema,
+            ConnectorV3Contract.InspectionSchema,
             "experimental_cutover",
             v2.Bridge,
             v2.Game,
@@ -72,6 +78,72 @@ internal static class ConnectorV3Runtime
     }
 
     public static ConnectorV3ObservationResponse Observe() => BuildSnapshot().Observation;
+
+    public static ConnectorV3InspectionReadResult Inspect(
+        string kind,
+        string expectedStateToken)
+    {
+        ConnectorV3Snapshot snapshot = BuildSnapshot();
+        ConnectorV3ObservationResponse observation = snapshot.Observation;
+        if (!string.Equals(
+                observation.StateToken,
+                expectedStateToken,
+                StringComparison.Ordinal))
+        {
+            return new ConnectorV3InspectionReadResult(
+                null,
+                "stale_state",
+                "The expected state token is no longer current; obtain a fresh observation before inspecting.");
+        }
+        if (!observation.InspectionCatalog.Any(entry =>
+                string.Equals(entry.Kind, kind, StringComparison.Ordinal)))
+        {
+            return new ConnectorV3InspectionReadResult(
+                null,
+                "inspection_not_available",
+                "This inspection kind is not in the current state-bound visibility catalog.");
+        }
+
+        BridgeInspectionBuildResult built = BridgeInspectionBuilder.Build(
+            kind,
+            snapshot.Draft.Context,
+            Entities);
+        if (built.Draft == null)
+        {
+            return new ConnectorV3InspectionReadResult(
+                null,
+                built.ErrorCode,
+                built.Detail);
+        }
+
+        BridgeInspectionDraft draft = built.Draft;
+        string inspectionId = "v3inspection_" + BridgeHash.Object(new
+        {
+            observation.StateToken,
+            draft.Kind,
+            draft.Content,
+            draft.Completeness
+        })[..20];
+        return new ConnectorV3InspectionReadResult(
+            new ConnectorV3InspectionResponse(
+                ConnectorV3Contract.ProtocolVersion,
+                ConnectorV3Contract.InspectionSchema,
+                inspectionId,
+                expectedStateToken,
+                observation.StateToken,
+                DateTimeOffset.UtcNow,
+                draft.Kind,
+                draft.VisibilityClass,
+                draft.OrderingSemantics,
+                draft.Content,
+                draft.Completeness,
+                observation.Bridge,
+                observation.Game,
+                observation.ObservationPolicy,
+                Array.Empty<BridgeDiagnostic>()),
+            null,
+            null);
+    }
 
     public static ConnectorV3CommandReceipt Submit(ConnectorV3CommandRequest request)
     {

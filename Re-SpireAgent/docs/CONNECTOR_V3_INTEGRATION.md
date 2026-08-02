@@ -34,14 +34,23 @@ boundary while retaining separate source-specific legality and Outcome.
 Remaining selectors temporarily reuse mature Provider-native bindings inside
 the Gateway. This is bounded migration debt, not a V2 REST fallback.
 
-Menu/run-setup, event, map, game-over, room-reward and card-reward use the
-direct V3 normalizer and do not request Bridge v2 capabilities. Menu, event,
-map and game-over are exact-runtime exercised. The reward slices pass 86
-sidecar-free recorded-snapshot replays and await the next cold load. Other
-families temporarily read same-runtime Bridge v2 capabilities only as a
+Menu/run-setup, event, map, game-over, reward/card-reward, shop, rest,
+treasure and visible-unsupported observations use the direct V3 normalizer and
+do not request Bridge v2 capabilities. Menu, event, map, game-over and
+reward/card-reward are exact-runtime exercised. The replacement shop/rest/
+treasure slices pass 17 sidecar-free recorded-snapshot replays and await the
+next cold load. Remaining selector families temporarily read same-runtime
+Bridge v2 capabilities only as a
 non-executable semantic/environment projection sidecar. No v2 legal action or
 v2 command route enters the V3 execution path. The remaining sidecar is removed
 as direct V3 fact contracts reach equivalent decision-relevant coverage.
+
+The operator preflight waits through only the explicit
+`no_active_run_context` startup sentinel. It does not wait away a legitimate
+visible unsupported owner. On-demand `run_deck`, `combat_piles` and
+`shop_catalog` Inspection uses `/api/v3/inspections/...` and the exact current
+state token; its strict decoder rejects token drift and it never enters command
+submission.
 
 ## Receipt Rules
 

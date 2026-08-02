@@ -1,121 +1,66 @@
 # Connector V3 Coverage
 
-Status values are deliberately distinct from Live evidence.
+Status values distinguish source, automated evidence and exact-runtime Live
+evidence. Evidence never transfers across SHA, MVID, runtime, game or Modset.
 
-| Area | Source implementation | Automated evidence | Exact V3 Live evidence |
+| Area | Current source | Automated evidence | Exact V3 Live evidence |
 |---|---|---|---|
-| Observation/state token/entity identity | implemented; explicit null outside a run repaired | C# and Re tests | v0.110.0 completed journey |
-| Visible unsupported interaction | implemented | protocol and Re projection tests | Crystal Sphere, unknown deck selector and pre-repair Symbiote exercised |
-| Combat play card/use potion/end turn | direct native resolver; self-target operands and asynchronous end-turn Outcome repaired | C# and Re contract tests | current v0.110.1 `.86` artifact exercised all three with completed receipts across multi-round combats |
-| Shop room open/proceed | direct native resolver | C# exact-operand tests plus inherited shop tests | exercised on v0.110.0 |
-| Map navigation | direct native resolver with bounded drawing/input-mode Source Bindings | C# source/operand tests plus Re exact owner/choice contract and recorded-snapshot replay | repeated current-runtime V3-native mutations completed |
-| Rest site | direct native resolver with exact child-handoff Outcome | C# source/Outcome tests | Dream Catcher exposed old unknown; repaired child handoff not exercised |
-| Event option | typed-surface V3-native discovery and direct resolver | C# exact enabled/owner/option tests | V3-native option and continuation exercised with completed receipts |
-| Treasure | stage-specific typed-surface V3-native discovery and direct resolver | C# stage/owner/entity tests | current-runtime V3-native mutations completed |
-| Deck enchant | source-specific direct native resolvers for Self-Help Book, Symbiote and Kifuda | C# source/operand and Re unsupported-projection tests | Symbiote and Self-Help Book select/confirm exercised; Kifuda not exercised |
-| Outer reward claim/discard/proceed | typed-surface V3-native discovery and direct resolver | C# owner/entity/discovery tests | current v0.110.1 `.86` claim/proceed path exercised repeatedly; potion discard not exercised on this artifact |
-| Card reward select/alternative | typed-surface V3-native discovery and direct resolver with exact selectable-card facts | C# owner/entity/eligibility tests plus inherited Provider tests | current v0.110.1 `.86` card selection exercised repeatedly; skip alternative not exercised in this session |
-| Menu/run setup | typed-Surface V3-native discovery and exact screen/control/character resolvers | Gateway descriptor/operand tests plus direct Re normalization and no-sidecar adapter tests | direct menu consumer and native resolver completed a full run |
-| Shop inventory purchase/removal/close | typed-surface V3-native discovery and direct resolver with exact screen/offer/slot/price/control revalidation | Gateway tests, Re partial-authority regression and saved-snapshot re-normalization | latest runtime completed three exact close/proceed pairs plus purchases |
-| Generated card choice | source-discriminated V3-native discovery and direct resolver in current source; exact screen/card/source revalidation | generated-source tests plus exact owner/card operand test | predecessor Skill Potion adapter completed; new owner-bound native resolver pending cold load |
-| Game over | typed-Surface direct resolver in current source with exact screen/stage/control revalidation | Gateway descriptor test plus direct Re snapshot replay | predecessor Provider adapter completed; direct resolver pending cold load |
-| Other selection families | internal native-binding adapter | inherited family tests | current `.86` Hologram pile selection and Scroll Boxes bundle preview/commit exercised; migration remains pending |
-| Single-stack Stratagem combat-pile source | exact Power source contract | source registry and protocol tests | pending |
-| Multi-stack Stratagem | typed unsupported | contract deliberately excludes it | not exercised |
-| Tutor combat-pile source | `code_required` for target-player owner binding | static audit; diagnostic only | not exercised |
-| V3 detail/Inspection | pending | none | none |
-| V3 MCP | implemented | locked Python 3.14 syntax check passed | transport not exercised in this journey |
-| Re default V3 run | direct V3 consumer for menu/event/map/game-over/reward/card-reward; temporary V2 semantic sidecar for remaining families | 237 tests, typecheck and build passed; reward slices passed 86 sidecar-free recorded snapshot replays | direct event/map/game-over completed a 516-decision run; reward consumer replacement pending cold load |
+| Observation/state/entity identity | implemented | Gateway/Re tests | repeated v0.110.1 complete journeys |
+| Visible unsupported interaction | direct Re consumption; no command authority | strict decoder and normalization tests | predecessor unsupported states only; current replacement pending cold-load |
+| Combat play/use potion/end turn | native direct resolver | Gateway/Re tests | repeatedly completed |
+| Menu/run setup | typed discovery, native resolver, direct Re | descriptor/operand/no-sidecar tests | complete-run exercised |
+| Event option | typed discovery, native resolver, direct Re | enabled/owner/option tests | complete-run exercised |
+| Map navigation | native resolver, direct Re | exact owner/choice and source-binding tests | repeatedly completed |
+| Reward claim/card reward | typed discovery, native resolver, direct Re | exact entity and normalization tests | 24 reward-claim and seven card-reward states in latest complete run |
+| Shop room/inventory | native resolver; direct Re in replacement source | exact offer/source/price/control and replacement-offer negatives | native commands exercised; direct Re replacement pending cold-load |
+| Rest site | native resolver; direct Re in replacement source | exact option and disabled-option negatives | native commands exercised; direct Re replacement pending cold-load |
+| Treasure | typed native resolver; direct Re in replacement source | stage/owner/entity and changed-stage negatives | native commands exercised; direct Re replacement pending cold-load |
+| Generated card choice | source-discriminated native resolver; direct Re | exact source/owner/card tests | `not exercised` on latest runtime |
+| Game over | typed native resolver; direct Re | screen/stage/control tests | complete-run exercised |
+| Deck enchant | source-specific native resolver | source/operand tests | Symbiote and Self-Help Book exercised historically; Kifuda not exercised |
+| Remaining selectors | `provider_native_binding_adapter` plus V2-shaped Re sidecar | inherited family tests | combat-hand, combat-pile, deck-upgrade and card-bundle exercised; migration pending |
+| V3 Inspection | state-token-bound `run_deck`, `combat_piles`, `shop_catalog`; Gateway/Re/MCP implemented | Gateway serialization, Re strict decode/stale negative, Python syntax | pending cold-load and exact-runtime read |
+| V3 MCP | thin capabilities/observation/Inspection/submit/receipt transport | Python syntax | not exercised in latest Re journey |
 
-Exact attribution is recorded in the
-[first V3 evidence](LIVE_EVIDENCE_2026-07-31.md) and
-[v0.110.0 evidence](LIVE_EVIDENCE_V0_110_0_2026-07-31.md). Each record proves
-only its exact artifact, runtime and exercised families; neither is a durable
-qualification.
+## Latest Reviewed Runtime
 
-The v0.110.0 evidence artifact was SHA
-`68eed0b4890a96741dcb3f234e936149bfcc32affc806eb0c17db1142cc69685`,
-MVID `54decad4-0ab8-4b4a-92c7-04aa2b5a35fb`. The subsequent map/rest/enchant
-repair was built, installed and cold-loaded as SHA
-`24f44c2482efe36a86be3dd9d085542676c275f5acf7f9c40b47329616069c2b`,
-MVID `5feaf546-00c4-436c-8391-96a6087e8eb7`, runtime
-`fb0774a99eaf4289b6ce928bc9070f3b`. It proved Symbiote and Self-Help Book
-deck-enchant execution, did not exercise Dream Catcher, and exposed the
-remaining map input-mode ABI drift. The second map repair plus event/treasure
-V3-native cutovers were subsequently built and installed as SHA
-`40d088745cd3e23844c06d81bbefd2b85ccb427104e7325d0719e3134607d84c`,
-MVID `9add88e7-19d6-4854-95e3-060544ce5663`. At that installation boundary
-they remained pending a new cold load; installation itself was not Live
-evidence.
+The latest reviewed journey is `run-20260801205605-0fqlrj`: 175 decisions,
+172 settled commands, two safe pre-submit stale refusals, no unknown Outcome,
+and a normal completed-game boundary. It used Gateway SHA
+`954150c6d964a4f6a78a6483aa82c5cb5066fc5e2bdf762ce56efb22e2166ff5`,
+MVID `2e1b0a8f-05e8-4262-b7ff-5791564e9d56`, runtime
+`239d883654b6414e9ab1089c0a45decb`, game `v0.110.1` commit `db5d3552`,
+and exact-bridge-only Modset fingerprint
+`1f273ee90ec14e389137f17707436d0065412ecfb432be5f9ef12940196f6035`.
 
-The artifact was later cold-loaded again as runtime
-`2b379e0ef1574de6a482e16b31619981`.
-`run-20260731080952-3q4fw8` proved V3-native event execution and the repaired
-map Source Binding. It also exposed a Re-only migration defect: route actions
-now bind exact `map_screen + map_node`, while the old consumer validator still
-required a single node binding. The saved raw observation passes after the Re
-repair. Subsequent runs completed repeated map, event and treasure V3-native
-mutations and exposed action-local combat Outcome defects recorded in the
-v0.110.0 evidence log.
+See
+[the exact evidence record](LIVE_EVIDENCE_V0_110_1_DIRECT_REWARD_COMPLETE_RUN_2026-08-02.md).
+Provenance is `unrecorded`, so this is reviewed coverage evidence, not a
+durable qualification.
 
-The latest v0.110.1-targeted worktree artifact was built, installed and
-cold-loaded as SHA
-`548f15e45dc6609cf4a25af61af2ef2b07365af625b23dbd4f58369001a5f703`,
-MVID `4700a63e-f587-49b7-a642-bfe10713cc42`, runtime
-`a611dc97e2f046e4bd6e604c3501d692`. Direct Codex play exercised two bounded
-journeys, including current-artifact combat, rewards, card rewards, map,
-event, shop, bundle, pile selection, generated attack, menu and game-over
-paths. The game is now stopped and no session authority remains. See the
-[direct-play evidence](LIVE_EVIDENCE_V0_110_1_CODEX_DIRECT_PLAY_2026-07-31.md).
+## Replacement Artifact
 
-The preceding v0.110.1 startup artifact and its single Re-driven main-menu
-command remain separately recorded in the
-[deployment handoff](V0_110_1_DEPLOYMENT_HANDOFF_2026-07-31.md). No evidence
-from an older SHA/MVID is reassigned to the latest artifact.
+Current source fixes the startup transient and directly consumes shop, rest,
+treasure and visible unsupported observations. It also adds V3-native
+state-bound Inspection. Gateway 240 tests, Re 249 tests/typecheck/build and
+Python syntax pass.
 
-The subsequent shop-inventory native cutover is built and installed as SHA
-`28a6fba283bf26075ac8056e167f931f51322e5c36f85f93f85e617e10f8bf7f`,
-MVID `ceee2912-fd46-4f9d-9c80-bef0d81d03fc`, but remains unloaded. See the
-[shop-inventory cutover closeout](SHOP_INVENTORY_V3_NATIVE_CUTOVER_2026-08-01.md).
+The replacement is built and installed as SHA
+`9a829a23d308aabddf43a36543cb65a46340a353bd4327d3eb229c49d516888e`,
+MVID `6a5ff4af-5d27-444c-b555-d3682cdfb7dd`, with rollback
+`STS2MCP/.local/deployments/2026-08-01T21-51-15-903Z`.
 
-That historical installation boundary was superseded by the exact runtime
-recorded in the [Re shop evidence](LIVE_EVIDENCE_V0_110_1_RE_SHOP_2026-08-01.md).
-Its native purchases completed; close failed before Commit and is repaired in
-the next built artifact. Evidence is not transferred across the MVID change.
+The game is stopped. Loaded identity, direct shop/rest/treasure behavior,
+startup sequencing and V3 Inspection are `pending exact-runtime evidence`.
 
-That repair was subsequently cold-loaded and exercised in the
-[complete Re journey](LIVE_EVIDENCE_V0_110_1_COMPLETE_RE_JOURNEY_2026-08-01.md).
-Three shop close/proceed pairs completed and the ordinary run reached its
-game-over return. The later menu/generated/direct-consumer source changes do
-not inherit that runtime evidence.
+## Non-Claims
 
-The menu/generated artifact was subsequently cold-loaded as SHA
-`150f85a4777b259efb8c22f8dd482fedf881af9616998cc9c6d6a6fc59a2ed7d`,
-MVID `29c747be-329b-487f-ab58-1b0f3b7b98bc`, runtime
-`45acb4ff11084865939a102e9bd256a0`. The
-[direct-menu complete run](LIVE_EVIDENCE_V0_110_1_DIRECT_MENU_COMPLETE_RUN_2026-08-01.md)
-proved direct menu consumption, 93 completed submitted commands and the normal
-game-over return. Generated choice did not occur. The later direct
-event/map/game-over consumer and direct game-over resolver do not inherit that
-runtime evidence.
+- No current durable qualification exists.
+- Fixture, replay, build and install do not prove loaded or Live behavior.
+- A complete journey does not qualify a family that did not occur.
+- New versions, MVIDs, Modsets and Patch sets do not inherit authority.
+- Physical UI-page opening is not implemented by semantic Inspection; it is a
+  separate optional evidence profile.
 
-The replacement source is built and installed as SHA
-`f6274db5945fa9e7af905f44ac5f1dc97a0559614ce00529a06dbd7bf2ba276b`,
-MVID `3d7bf3f9-46ce-4e8c-8607-d8544e7a6254`, with rollback
-`STS2MCP/.local/deployments/2026-08-01T12-43-54-367Z`. The game is stopped;
-loaded identity, authority and exact-runtime behavior are non-claims.
-
-That replacement was subsequently cold-loaded as runtime
-`6aa46ac719444902a074be0ef59af7d9` and completed the
-[516-decision direct journey](LIVE_EVIDENCE_V0_110_1_516_DECISION_DIRECT_JOURNEY_2026-08-01.md).
-Direct event, map and game-over consumption and direct game-over execution are
-therefore exact-runtime exercised. The later direct reward/card-reward Re
-consumer has only tests and sidecar-free recorded replay; it cannot inherit
-the predecessor artifact's Live authority.
-
-The direct reward/card-reward consumer replacement is built and installed as
-SHA `954150c6d964a4f6a78a6483aa82c5cb5066fc5e2bdf762ce56efb22e2166ff5`,
-MVID `2e1b0a8f-05e8-4262-b7ff-5791564e9d56`, with rollback
-`STS2MCP/.local/deployments/2026-08-01T13-38-46-096Z`. Built and installed
-identities agree. The game is stopped, so loaded identity and Live reward
-consumer behavior remain non-claims.
+Older exact-runtime records remain available in this directory and retain
+their original identity scope. They are history, not current authority.

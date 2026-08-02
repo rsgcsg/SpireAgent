@@ -66,6 +66,7 @@ See [Connector V3](docs/connector-v3/README.md). The primary endpoints are:
 ```text
 GET  /api/v3/capabilities
 GET  /api/v3/observation
+GET  /api/v3/inspections/{kind}?expected_state_token={state_token}
 POST /api/v3/commands
 GET  /api/v3/commands/{request_id}
 ```

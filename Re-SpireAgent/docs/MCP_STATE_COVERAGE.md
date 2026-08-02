@@ -6,7 +6,7 @@ exact-runtime evidence status are canonical in
 
 ## Current Contract
 
-Re strictly accepts `3.0-preview.1` observations and receipts. It preserves:
+Re strictly accepts `3.0-preview.2` observations and receipts. It preserves:
 
 - exact Gateway, game, Modset and runtime identity;
 - the state token and active interaction ID;
@@ -32,15 +32,17 @@ operands.
 | map/rest/deck-enchant commands | direct V3 resolvers | Gateway and Re tests | map/deck-enchant exercised; Dream Catcher handoff remains pending |
 | menu/run setup | direct V3 normalization and native resolver | direct normalization, descriptor and no-sidecar tests | direct consumer and resolver completed a 95-decision run |
 | event/map/game over consumer | direct V3 normalization and game-over direct native resolver | strict decode, exact binding negatives and recorded replay | exact runtime exercised all three direct consumers and both game-over controls |
-| reward/card-reward consumer | direct V3 normalization in current source | strict screen/entity/control negatives plus 86 sidecar-free recorded snapshot replays | Gateway commands exercised on predecessor consumer; replacement pending cold load |
+| reward/card-reward consumer | direct V3 normalization | strict screen/entity/control negatives | exact-runtime exercised in a completed 175-decision run |
+| shop/rest/treasure consumer | direct V3 normalization in replacement source | 17 sidecar-free recorded snapshots plus exact offer/option/stage negatives | pending cold load |
 | generated card choice | source-discriminated native resolver in current source | source/owner/operand tests | predecessor Skill Potion adapter exercised; replacement pending cold load |
 | other non-combat selectors | migration adapter | inherited Provider and V3 tests | selected families exercised |
 | visible unsupported interaction | implemented | tests | Crystal Sphere, unknown deck selector and pre-repair Symbiote exercised |
 | typed V3 visible-state projection | shared persistent summary plus visibility and Inspection-catalog metadata for direct contexts | strict schema, projection and saved-snapshot replay | direct menu exercised; expanded contexts pending cold load |
-| V3-native Inspection content | pending | none | pending |
+| V3-native Inspection content | typed state-token-bound run deck/combat piles/shop catalog client | strict content decode and stale-token negative | pending cold load |
 
 Main/singleplayer/character menus, event options, map navigation, game over,
-room rewards and card rewards no longer request the v2 capabilities sidecar.
+reward/card-reward, shop, rest, treasure and visible unsupported no longer
+request the v2 capabilities sidecar.
 For remaining Surfaces, the
 temporary same-runtime sidecar contributes mature environment and semantic
 projection only. It contributes no legal action, operand, execution route or

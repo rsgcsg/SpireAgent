@@ -25,6 +25,7 @@
 - [Connector V3 v0.110.1 complete Re journey evidence](../../STS2MCP/docs/connector-v3/LIVE_EVIDENCE_V0_110_1_COMPLETE_RE_JOURNEY_2026-08-01.md)
 - [Connector V3 v0.110.1 direct-menu complete-run evidence](../../STS2MCP/docs/connector-v3/LIVE_EVIDENCE_V0_110_1_DIRECT_MENU_COMPLETE_RUN_2026-08-01.md)
 - [Connector V3 v0.110.1 516-decision direct journey evidence](../../STS2MCP/docs/connector-v3/LIVE_EVIDENCE_V0_110_1_516_DECISION_DIRECT_JOURNEY_2026-08-01.md)
+- [Connector V3 v0.110.1 direct-reward complete-run evidence](../../STS2MCP/docs/connector-v3/LIVE_EVIDENCE_V0_110_1_DIRECT_REWARD_COMPLETE_RUN_2026-08-02.md)
 - [Re-SpireAgent](../../Re-SpireAgent/README.md)
 - [Re V3 integration](../../Re-SpireAgent/docs/CONNECTOR_V3_INTEGRATION.md)
 - [Re V3 state coverage](../../Re-SpireAgent/docs/MCP_STATE_COVERAGE.md)

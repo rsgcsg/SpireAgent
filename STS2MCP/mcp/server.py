@@ -10,6 +10,8 @@ import asyncio
 from datetime import datetime
 import json
 import time
+from typing import Literal
+from urllib.parse import quote
 import uuid
 
 import httpx
@@ -172,6 +174,27 @@ async def get_sts2_observation_v3() -> str:
     """
     try:
         return await _v3_get("observation")
+    except Exception as error:
+        return _handle_error(error)
+
+
+@mcp.tool()
+async def inspect_sts2_visible_state_v3(
+    kind: Literal["run_deck", "combat_piles", "shop_catalog"],
+    expected_state_token: str,
+) -> str:
+    """Read one advertised player-visible detail without granting action authority.
+
+    The kind must appear in the current observation inspection_catalog. The
+    expected_state_token binds the read to that exact observation; on drift,
+    request a fresh observation instead of reusing this call.
+    """
+    try:
+        encoded_kind = quote(kind, safe="")
+        encoded_token = quote(expected_state_token, safe="")
+        return await _v3_get(
+            f"inspections/{encoded_kind}?expected_state_token={encoded_token}"
+        )
     except Exception as error:
         return _handle_error(error)
 

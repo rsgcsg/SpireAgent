@@ -22,12 +22,12 @@ or stop at a precise visible unsupported boundary.
 
 1. Close defects found by exact-runtime V3 journeys and keep build/install/load
    attribution exact.
-2. Cold-load and validate the direct room-reward/card-reward consumer after
-   exact-runtime event/map/game-over closure.
-3. Move shop and the remaining selector families to direct V3 consumption,
-   while deleting each replaced sidecar or Provider dependency.
-4. Add bounded V3-native persistent summary, linked detail and Inspection;
-   then remove the v2 capabilities sidecar.
+2. Cold-load and validate the direct shop/rest/treasure/visible-unsupported
+   consumer and startup-context wait. Reward/card reward are already exercised.
+3. Exercise V3 state-token-bound Inspection, then add bounded linked detail;
+   keep real-page opening as a separate optional evidence profile.
+4. Move the remaining selector families to direct V3 discovery and Re
+   consumption while deleting each replaced Provider and sidecar dependency.
 5. Simplify V3 authority projection without weakening exact-environment
    validation.
 6. Retire v2 production mutation routes.
@@ -46,10 +46,10 @@ or stop at a precise visible unsupported boundary.
 - no silent V2 mutation fallback;
 - honest coverage and evidence labels.
 
-The baseline is not complete while visible facts and operation-scoped
-authority can only be reconciled through V2 fact-to-action parity validators.
-The current clean-closure inventory still reports 38 V2 fallback authority
-contracts; this is migration debt, not V3 capability.
+The baseline is not complete while supported selector facts and authority can
+only be reconciled through the V2-shaped projection sidecar or a Provider draft.
+Historical V2 fallback counts are not V3 completion metrics; the actionable
+debt is the concrete set of remaining production call paths.
 
 ## Deferred
 

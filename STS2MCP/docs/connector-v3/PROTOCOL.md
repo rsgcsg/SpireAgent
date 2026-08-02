@@ -1,11 +1,12 @@
 # Connector V3 Protocol
 
-Source protocol: `3.0-preview.1`
+Source protocol: `3.0-preview.2`
 
 Schemas:
 
 - `sts2.connector.v3/observation-1`
 - `sts2.connector.v3/command-1`
+- `sts2.connector.v3/inspection-1`
 
 ## Observation
 
@@ -18,12 +19,17 @@ An observation contains:
 - bounded parameterized command candidates;
 - completeness, visibility, diagnostics and hidden-by-policy declarations.
 
+`bridge.upstream_commit` retains the immutable imported Bridge baseline; it is
+not the current repository source revision. Loaded artifact identity is the
+exact assembly SHA/MVID/runtime tuple. Re records its own source revision and
+worktree digest separately in run metadata.
+
 Shared visible facts, semantic context/surface, visibility metadata and the
 Inspection catalog are typed independently from Bridge v2. Re currently
-consumes menu, event, map, game-over, room-reward and card-reward observations
-directly from these V3 facts. Inspection catalog entries advertise state-bound read availability only;
-they never authorize mutation, and V3-native Inspection content transport is
-still pending.
+consumes menu, event, map, game-over, reward/card-reward, shop, rest, treasure
+and visible-unsupported observations directly from these V3 facts. Inspection
+catalog entries advertise state-bound read availability only; they never
+authorize mutation.
 
 A visible unsupported interaction remains present with
 `execution_support=unsupported` and no candidates.
@@ -97,6 +103,24 @@ Combat potions always bind their exact native target, including self/player
 targets. A target that is implicit in the visual label is not implicit in the
 execution contract.
 
+## Inspection
+
+```text
+GET /api/v3/inspections/{kind}?expected_state_token={state_token}
+```
+
+Supported typed kinds are `run_deck`, `combat_piles` and `shop_catalog`. The
+kind must be present in the exact observation's `inspection_catalog`. The
+response repeats matching `expected_state_token` and `observed_state_token`,
+plus exact Gateway/game/Modset identity and an explicit completeness boundary.
+
+Inspection is read-only semantic accessibility. It does not create a request
+ID, controller lease, command candidate, ledger entry or action authority. A
+stale token, unavailable kind or binding failure returns a typed error. Draw
+order and other hidden information remain excluded. Physically opening the
+native UI is a separate optional evidence profile, not an implicit side effect
+of this endpoint.
+
 ## Receipt
 
 Receipt states are:
@@ -111,6 +135,6 @@ not submitting it again.
 
 ## MCP
 
-The Python adapter exposes V3 capabilities, observation, submit and receipt
-tools. It is a transport adapter and cannot add commands, legality or
-authority.
+The Python adapter exposes V3 capabilities, observation, state-bound
+Inspection, submit and receipt tools. It is a transport adapter and cannot add
+commands, legality or authority.

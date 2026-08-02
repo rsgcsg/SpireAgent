@@ -7,15 +7,17 @@ namespace STS2_MCP.ConnectorV3.Protocol;
 
 public static class ConnectorV3Contract
 {
-    public const string ProtocolVersion = "3.0-preview.1";
+    public const string ProtocolVersion = "3.0-preview.2";
     public const string ObservationSchema = "sts2.connector.v3/observation-1";
     public const string CommandSchema = "sts2.connector.v3/command-1";
+    public const string InspectionSchema = "sts2.connector.v3/inspection-1";
 }
 
 public sealed record ConnectorV3CapabilitiesResponse(
     string ProtocolVersion,
     string ObservationSchema,
     string CommandSchema,
+    string InspectionSchema,
     string Status,
     BridgeServerIdentity Bridge,
     GameBuildIdentity Game,
@@ -75,6 +77,23 @@ public sealed record ConnectorV3ObservationResponse(
     IReadOnlyList<BridgeDiagnostic> Diagnostics,
     IReadOnlyList<string> Warnings,
     ConnectorV3Coverage Coverage);
+
+public sealed record ConnectorV3InspectionResponse(
+    string ProtocolVersion,
+    string Schema,
+    string InspectionId,
+    string ExpectedStateToken,
+    string ObservedStateToken,
+    DateTimeOffset ObservedAt,
+    string Kind,
+    string VisibilityClass,
+    string OrderingSemantics,
+    IBridgeInspectionContent Content,
+    InspectionCompleteness Completeness,
+    BridgeServerIdentity Bridge,
+    GameBuildIdentity Game,
+    ObservationPolicyInfo ObservationPolicy,
+    IReadOnlyList<BridgeDiagnostic> Diagnostics);
 
 public sealed record ConnectorV3Consumer(
     string Profile,

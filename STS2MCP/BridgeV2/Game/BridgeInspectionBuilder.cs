@@ -42,7 +42,7 @@ internal static class BridgeInspectionBuilder
 
     public static BridgeInspectionBuildResult Build(
         string kind,
-        BridgeStateEnvelope current,
+        IBridgeContext context,
         BridgeEntityRegistry entities)
     {
         try
@@ -50,8 +50,8 @@ internal static class BridgeInspectionBuilder
             return kind switch
             {
                 RunDeckKind => BuildRunDeck(entities),
-                CombatPilesKind => BuildCombatPiles(current, entities),
-                ShopCatalogKind => BuildShopCatalog(current, entities),
+                CombatPilesKind => BuildCombatPiles(context, entities),
+                ShopCatalogKind => BuildShopCatalog(context, entities),
                 _ => BridgeInspectionBuildResult.Failure(
                     "inspection_kind_not_implemented",
                     $"Inspection kind '{kind}' is not implemented by this bridge revision.")
@@ -96,10 +96,10 @@ internal static class BridgeInspectionBuilder
     }
 
     private static BridgeInspectionBuildResult BuildCombatPiles(
-        BridgeStateEnvelope current,
+        IBridgeContext context,
         BridgeEntityRegistry entities)
     {
-        if (current.Context is not CombatBridgeContext)
+        if (context is not CombatBridgeContext)
         {
             return BridgeInspectionBuildResult.Failure(
                 "inspection_scope_mismatch",
@@ -141,10 +141,10 @@ internal static class BridgeInspectionBuilder
     }
 
     private static BridgeInspectionBuildResult BuildShopCatalog(
-        BridgeStateEnvelope current,
+        IBridgeContext context,
         BridgeEntityRegistry entities)
     {
-        if (current.Context is not ShopBridgeContext
+        if (context is not ShopBridgeContext
             || !ShopSurfaceFacts.TryGetCurrent(
                 out MerchantRoom? merchantRoom,
                 out NMerchantRoom? room,

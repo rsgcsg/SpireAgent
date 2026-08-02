@@ -360,6 +360,16 @@ public static partial class McpMod
                 else
                     SendError(response, 405, "Method not allowed");
             }
+            else if (path.StartsWith("/api/v3/inspections/", StringComparison.Ordinal))
+            {
+                if (request.HttpMethod == "GET")
+                    HandleGetConnectorV3Inspection(
+                        path["/api/v3/inspections/".Length..],
+                        request,
+                        response);
+                else
+                    SendError(response, 405, "Method not allowed");
+            }
             else if (path == "/api/v2/capabilities")
             {
                 if (request.HttpMethod == "GET")

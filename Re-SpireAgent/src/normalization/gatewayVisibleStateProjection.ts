@@ -5,7 +5,8 @@ import type {
 } from "../domain/state/index.js";
 import type {
   GatewaySharedVisibleState,
-  GatewayVisibleCard
+  GatewayVisibleCard,
+  GatewayVisibleRelic
 } from "../integrations/sts2mcp/gatewayVisibleStateProtocol.js";
 
 export function projectGatewayVisibleCard(card: GatewayVisibleCard): CardSnapshot {
@@ -39,6 +40,21 @@ export function projectGatewayVisibleCard(card: GatewayVisibleCard): CardSnapsho
           : {})
       }
     } : {})
+  };
+}
+
+export function projectGatewayVisibleRelic(relic: GatewayVisibleRelic) {
+  return {
+    entityId: relic.entity_id,
+    id: relic.definition_id,
+    ...(relic.name ? { name: relic.name } : {}),
+    ...(relic.description ? { description: relic.description } : {}),
+    ...(relic.counter !== undefined ? { counter: relic.counter } : {}),
+    keywords: relic.keywords.map((keyword) => ({
+      name: keyword.name,
+      ...(keyword.description ? { description: keyword.description } : {})
+    })),
+    cardPreviews: relic.card_previews.map(projectGatewayVisibleCard)
   };
 }
 
@@ -84,15 +100,7 @@ export function projectGatewayVisibleState(shared: GatewaySharedVisibleState): {
       companions: [],
       orbs: [],
       statuses: [],
-      relics: shared.player.relics.map((relic) => ({
-        entityId: relic.entity_id,
-        id: relic.definition_id,
-        ...(relic.name ? { name: relic.name } : {}),
-        ...(relic.description ? { description: relic.description } : {}),
-        ...(relic.counter !== undefined ? { counter: relic.counter } : {}),
-        keywords: keywords(relic.keywords),
-        cardPreviews: relic.card_previews.map(projectGatewayVisibleCard)
-      })),
+      relics: shared.player.relics.map(projectGatewayVisibleRelic),
       potions: shared.player.potions.map((potion) => ({
         entityId: potion.entity_id,
         id: potion.definition_id,

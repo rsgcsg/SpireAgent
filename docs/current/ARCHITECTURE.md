@@ -58,6 +58,13 @@ authority are orthogonal. The efficient semantic-accessibility profile is the
 mainline A default; physically opening every inspectable UI page is an optional
 human-equivalence evidence mode, not a default mutation requirement.
 
+V3 Inspection is a separate `inspection-1` read contract keyed by the exact
+current `state_token`. It reuses only the Gateway's player-visible read
+mechanics, never creates a command, never enters the Command Ledger and never
+grants action authority. A stale token or a kind outside the current catalog
+fails closed. Physical UI opening remains a future evidence profile and must
+not be smuggled into this semantic read path.
+
 ## Current Migration Boundary
 
 Combat, shop-room/inventory, map, rest-site, event-option, treasure-room,
@@ -66,15 +73,16 @@ and game-over controls have direct V3 native resolvers in current source. Each
 retains source-specific owner, operand, Commit and Outcome contracts while
 sharing only bounded mechanics. Remaining selectors temporarily call bounded
 Provider native bindings inside the Gateway. Re consumes menu, event, map,
-game-over, room-reward and card-reward facts and commands directly without V2
-semantic validation or capabilities; other families still read the
-same-runtime v2 capabilities as a non-authorizing semantic projection sidecar.
-Neither path may supply a V2 action ID to V3 execution.
+game-over, reward/card-reward, shop, rest, treasure and visible-unsupported
+facts and commands directly without V2 semantic validation or capabilities.
+Unmigrated selector families still read same-runtime V2 facts as a temporary,
+non-authorizing projection sidecar. Neither path may supply a V2 action ID to
+V3 execution.
 
-The migration ends when V3 directly owns ordinary non-combat command bindings,
-Re consumes V3 facts/candidates without V2 semantic validation, and V3 owns
-player-visible detail contracts. The sidecar and v2 production mutation routes
-are then deleted.
+The migration ends when V3 directly owns remaining selector command bindings,
+Re consumes every supported family without V2 semantic validation, and the
+optional physical-UI evidence profile is implemented separately from semantic
+Inspection. The sidecar and V2 production mutation routes are then deleted.
 
 ## Non-Goals
 
