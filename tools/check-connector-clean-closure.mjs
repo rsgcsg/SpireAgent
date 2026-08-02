@@ -72,6 +72,28 @@ if (catalog.schema_version !== 3
       !== "explicit_native_contracts_plus_typed_session_fallbacks") {
   fail("typed explicit/fallback catalog boundary is missing");
 }
+const eventRemovalContracts = new Map(catalog.contracts
+  .filter((contract) => contract.surface_kind === "event_deck_removal_selection")
+  .map((contract) => [contract.operation, contract]));
+const expectedEventRemovalContracts = new Map([
+  ["toggle_event_deck_removal_card", ["reversible_navigation", "immediate_postcondition_observed"]],
+  ["cancel_event_deck_removal_preview", ["reversible_navigation", "immediate_postcondition_observed"]],
+  ["confirm_event_deck_removal", ["persistent_run_mutation", "transaction_settled"]]
+]);
+for (const [operation, [riskClass, completionBoundary]] of expectedEventRemovalContracts) {
+  const contract = eventRemovalContracts.get(operation);
+  if (!contract
+      || contract.risk_class !== riskClass
+      || contract.completion_boundary !== completionBoundary
+      || contract.source_binding
+        !== "LuminousChoir.ReachIntoTheFlesh+task_local_source_binding"
+      || !contract.witness_id) {
+    fail(`event deck-removal contract drift: ${operation}`);
+  }
+}
+if (eventRemovalContracts.size !== expectedEventRemovalContracts.size) {
+  fail("event deck-removal contract set drift");
+}
 
 const connectorShadowCount = count(
   protocolSource + reStateSource + reNormalizerSource,

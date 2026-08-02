@@ -8,7 +8,7 @@ import {
 } from "./gatewayRunRoomProtocol.js";
 import { visibleCardSchema } from "./gatewayVisibleStateProtocol.js";
 
-export const SUPPORTED_CONNECTOR_V3_PROTOCOL = "3.0-preview.5" as const;
+export const SUPPORTED_CONNECTOR_V3_PROTOCOL = "3.0-preview.6" as const;
 
 const bridgeIdentitySchema = z.object({
   id: z.string().min(1),

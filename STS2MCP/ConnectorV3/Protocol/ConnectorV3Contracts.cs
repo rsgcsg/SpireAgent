@@ -7,12 +7,30 @@ namespace STS2_MCP.ConnectorV3.Protocol;
 
 public static class ConnectorV3Contract
 {
-    public const string ProtocolVersion = "3.0-preview.5";
+    public const string ProtocolVersion = "3.0-preview.6";
     public const string ObservationSchema = "sts2.connector.v3/observation-1";
     public const string CommandSchema = "sts2.connector.v3/command-1";
     public const string InspectionSchema = "sts2.connector.v3/inspection-1";
     public const string LinkedDetailSchema = "sts2.connector.v3/linked-detail-1";
 }
+
+public sealed record EventDeckRemovalSelectionSurface(
+    string Kind,
+    string Stage,
+    string ScreenEntityId,
+    string SourceKind,
+    string Purpose,
+    string Prompt,
+    int MinSelect,
+    int MaxSelect,
+    int SelectedCount,
+    IReadOnlyList<string> SelectedCardEntityIds,
+    IReadOnlyList<string> SelectableCardEntityIds,
+    IReadOnlyList<string> DeselectableCardEntityIds,
+    bool CanCancelPreview,
+    bool CanConfirm,
+    IReadOnlyList<string> ExpectedEffects,
+    IReadOnlyList<VisibleCard> Cards) : IBridgeSurface;
 
 public sealed record ConnectorV3CapabilitiesResponse(
     string ProtocolVersion,

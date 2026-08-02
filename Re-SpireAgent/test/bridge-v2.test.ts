@@ -7626,7 +7626,7 @@ describe("Bridge v2 controller coordination decoding", () => {
 describe("Connector V3 Re consumer projection", () => {
   it("normalizes combat directly while producing V3 executable choices", () => {
     const observation = decodeConnectorV3Observation({
-      protocol_version: "3.0-preview.5",
+      protocol_version: "3.0-preview.6",
       schema: "sts2.connector.v3/observation-1",
       profile: "semantic_accessibility.tools.v1",
       state_token: COMBAT_TURN_STATE.state_id,

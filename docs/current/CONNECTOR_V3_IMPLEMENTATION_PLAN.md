@@ -14,7 +14,7 @@ commands, or stop at a precise visible unsupported boundary.
 
 Implemented in source:
 
-- `3.0-preview.5` capabilities, observation, command and receipt contracts,
+- `3.0-preview.6` capabilities, observation, command and receipt contracts,
   plus `inspection-1` and `linked-detail-1` read contracts;
 - state token, stable instance identity and one active interaction;
 - visible unsupported interactions;
@@ -27,6 +27,8 @@ Implemented in source:
   direct Re consumption without the V2 projection sidecar;
 - direct Smith deck-upgrade and merchant-only deck-removal selection,
   preview/cancel/confirm execution and direct Re consumption;
+- direct Luminous Choir two-card event-removal selection with an exact
+  task-local source, whole native transaction witness and direct Re consumer;
 - bounded parameterized commands for remaining ordinary choices, purchases,
   selections and controls through an internal native-binding adapter;
 - one controller, idempotent ledger, stale rejection, exact environment
@@ -46,7 +48,7 @@ Implemented in source:
 
 Not yet claimed:
 
-- loaded identity or mutation/Inspection evidence for the pending Preview.5
+- loaded identity or mutation evidence for the pending Preview.6
   v0.110.1 artifact;
 - exact-runtime linked-detail evidence and the optional physical-UI evidence
   profile;
@@ -55,12 +57,13 @@ Not yet claimed:
 - multi-stack Stratagem Outcome;
 - full vanilla or Mod coverage.
 
-Current exact-runtime evidence includes Preview.4 run
-`run-20260802094606-6734zk`: 157 settled commands with completed receipts and
-available successors in a 161-decision complete game. Smith deck upgrade was
-the only sidecar state. Preview.5 directly migrates that observed family and
-merchant-only removal, but these changes, Inspection and linked detail require
-a new cold load.
+Current exact-runtime evidence includes a Preview.5 direct session on SHA
+`b6c28dc5...`, MVID `c98dd735...` and runtime `7967ab4c...`. It proved the
+complete direct Smith lifecycle, `run_deck` Inspection, `surface_card` linked
+detail, stale-token refusal, settling and unsupported separation. It stopped
+at Luminous Choir's unsupported two-card selector and did not reach merchant
+removal or combat-hand. Preview.6 fixes that exact blocker but requires a new
+cold load.
 
 ## Migration Waves
 
@@ -81,8 +84,10 @@ back to the last known v2 commit. No durable V3 claim is inherited.
 
 Replace `provider_native_binding_adapter` family by family. Menu, map, reward,
 shop, generated choices, rest, treasure, Smith deck upgrade and merchant deck
-removal are cut over in current source; prioritize remaining bounded selectors,
-including source-distinct relic/reward removal.
+removal are cut over in current source. Luminous Choir event removal is also
+cut over with a source-specific contract. Prioritize the observed missing
+combat-potion candidate, then remaining bounded selectors including combat
+pile, card bundle and source-distinct relic/reward removal.
 Delete each Provider action-publication dependency after its V3 resolver has
 tests and exact-runtime evidence.
 

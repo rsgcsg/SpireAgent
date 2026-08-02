@@ -22,11 +22,12 @@ or stop at a precise visible unsupported boundary.
 
 1. Close defects found by exact-runtime V3 journeys and keep build/install/load
    attribution exact.
-2. Cold-load and validate direct combat-hand, Smith deck upgrade, merchant
-   removal and the known-room mount settling repair. Their predecessor
-   mechanics are exercised, but Preview.5 contracts need their own evidence.
-3. Exercise V3 state-token-bound Inspection and bounded `surface_card` linked
-   detail; keep real-page opening as a separate optional evidence profile.
+2. Cold-load Preview.6 and validate Luminous Choir event removal. Preview.5
+   already proved direct Smith and known-room settling; merchant removal and
+   combat-hand still need exact-runtime evidence.
+3. Extend the Preview.5 `run_deck` and `surface_card` evidence to combat-pile
+   and shop-catalog Inspection; keep real-page opening as a separate optional
+   evidence profile.
 4. Move the remaining selector families to direct V3 discovery and Re
    consumption while deleting each replaced Provider and sidecar dependency.
 5. Simplify V3 authority projection without weakening exact-environment

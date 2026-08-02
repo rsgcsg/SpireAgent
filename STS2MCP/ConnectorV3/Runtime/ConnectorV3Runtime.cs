@@ -310,6 +310,28 @@ internal static class ConnectorV3Runtime
     {
         GameBuildIdentity game = BridgeV2Runtime.ReadCurrentGameIdentity();
         BridgeObservationDraft draft = BridgeSnapshotBuilder.Build(Entities, game);
+        try
+        {
+            draft = EventDeckRemovalSelection.TryBuild(Entities, game) ?? draft;
+        }
+        catch (Exception exception)
+        {
+            string failure = $"v3_event_deck_removal_discovery_failed:{exception.GetType().Name}";
+            BridgeObservationDraft failed = BridgeFailClosedObservation.BindingUnavailable(
+                game,
+                draft.Context,
+                "NDeckCardSelectScreen",
+                "Connector V3 event-removal discovery failed before exact ownership could be proven.",
+                new[] { "LuminousChoir.ReachIntoTheFlesh exact task scope" },
+                new[] { "source_binding", "selection_constraints", "legal_actions" },
+                failure,
+                "connector.v3.event_deck_removal.discovery_failed",
+                "A V3-native discovery error suppresses all mutation authority.");
+            draft = failed with
+            {
+                Signature = BridgeHash.Object(new { failed.Signature, failure })
+            };
+        }
         draft = BridgeV2Runtime.AdmitEncounter(draft);
         draft = BridgeSnapshotBuilder.ApplyCurrentAuthority(draft);
         BridgeSharedVisibleStateBuildResult shared = draft.Game.Compatibility.StateObservationAllowed
@@ -423,6 +445,7 @@ internal static class ConnectorV3Runtime
         {
             DeckEnchantSelectionSurface value => value.Cards,
             DeckRemovalSelectionSurface value => value.Cards,
+            EventDeckRemovalSelectionSurface value => value.Cards,
             DeckUpgradeSelectionSurface value => value.Cards.Concat(value.PreviewCards),
             DeckTransformSelectionSurface value => value.Cards,
             WoodCarvingsReplacementSelectionSurface value => value.Cards,
@@ -464,6 +487,8 @@ internal static class ConnectorV3Runtime
         if (draft.Surface is DeckRemovalSelectionSurface merchantRemoval
             && merchantRemoval.Kind == "deck_removal_selection")
             return BuildMerchantRemovalBindings(draft, merchantRemoval);
+        if (draft.Surface is EventDeckRemovalSelectionSurface eventRemoval)
+            return BuildEventRemovalBindings(draft, eventRemoval);
 
         var allowed = new List<(
             BridgeActionDraft Action,
@@ -1312,6 +1337,53 @@ internal static class ConnectorV3Runtime
         return actions;
     }
 
+    private static IReadOnlyList<ConnectorV3BoundCommand> BuildEventRemovalBindings(
+        BridgeObservationDraft draft,
+        EventDeckRemovalSelectionSurface surface)
+    {
+        var result = new List<ConnectorV3BoundCommand>();
+        foreach (BridgeActionDraft action in EventDeckRemovalSelection.DescribeCommands(surface))
+        {
+            if (BuildNativeBinding(draft, action) is not { } binding)
+                continue;
+            ConnectorV3CommandCandidate candidate = binding.Candidate;
+            if (action.Kind == "toggle_event_deck_removal_card")
+            {
+                string? cardId = action.EntityBindings?
+                    .FirstOrDefault(entity => entity.Role == "card")?.EntityId;
+                if (cardId == null)
+                    continue;
+                string command = surface.DeselectableCardEntityIds.Contains(
+                    cardId,
+                    StringComparer.Ordinal)
+                    ? "deselect_entity"
+                    : "select_entity";
+                candidate = candidate with
+                {
+                    Command = command,
+                    CandidateId = BuildCandidateId(command, candidate.Operation, candidate.Operands)
+                };
+            }
+            else if (action.Kind is
+                     "cancel_event_deck_removal_preview" or
+                     "confirm_event_deck_removal")
+            {
+                var operands = new Dictionary<string, string>(StringComparer.Ordinal)
+                {
+                    ["screen_id"] = surface.ScreenEntityId,
+                    ["control_id"] = action.Kind
+                };
+                candidate = candidate with
+                {
+                    Operands = operands,
+                    CandidateId = BuildCandidateId(candidate.Command, candidate.Operation, operands)
+                };
+            }
+            result.Add(binding with { Candidate = candidate });
+        }
+        return result;
+    }
+
     private static BridgeActionDraft NativeDescriptor(
         string key,
         string operation,
@@ -1584,6 +1656,11 @@ internal static class ConnectorV3Runtime
                 "combat_hand_card_selection" => StartCombatHandCommand(snapshot, request, binding),
                 "deck_upgrade_selection" => StartDeckUpgradeCommand(snapshot, request, binding),
                 "deck_removal_selection" => StartMerchantRemovalCommand(snapshot, request, binding),
+                "event_deck_removal_selection" => EventDeckRemovalSelection.Start(
+                    Entities,
+                    snapshot,
+                    request,
+                    binding),
                 "game_over" => StartGameOverCommand(snapshot, request, binding),
                 _ => BridgeActionStartResult.Rejected(
                     "native_command_owner_unsupported",

@@ -2,74 +2,79 @@
 
 ## V3-0: Vertical Source Cutover
 
-Implemented in source: observation, interaction, commands, receipts, direct
-combat, bounded non-combat adapter, V3 MCP and strict Re default.
+Status: implemented and repeatedly exercised for ordinary journeys. V3 is the
+default Gateway/Re contract; REST and MCP are thin transports. Preview.6 is
+built and installed but not loaded.
 
-Exit: automated checks, Release build, safe install and exact identity.
-
-Status: Preview.4 source/build/install/load identity was exact and completed a
-161-decision game with 157 completed/confirmed commands and no unknown receipt.
-Preview.5 source/tests move Smith deck upgrade and merchant deck removal to
-direct V3 and add bounded current-Surface card detail. Build/install/load are
-tracked separately.
+Exit remains exact source/build/install/load identity plus automated checks.
+Installing a DLL is not loading it.
 
 ## V3-1: Exact Runtime Canary
 
-Cold-load the installed artifact. Verify protocol, SHA, MVID, runtime, game,
-Modset and Patch. Execute at least one direct combat command and one non-combat
-command. Unknown, stale and wrong-owner negatives remain fail-closed.
+Status: Preview.5 loaded exactly and exercised combat, Smith, Inspection,
+linked detail, stale refusals, settling and unsupported boundaries. Preview.6
+inherits none of that runtime authority.
 
-Status: repeatedly obtained. The latest reviewed Preview.4 runtime
-`5a57a66e318f4bdeb7167e4b719e1c3d` produced 157 completed/confirmed commands
-in a complete journey with no unknown Outcome. Preview.5 does not inherit that
-authority or Live evidence.
+Next exit:
+
+- cold-load SHA
+  `7668a1cd1f99cc917466d43069af716ef8abf22f7b42aac59bda67ab321c3b96`
+  and MVID `6704fa1f-f8fe-4cc1-9fe6-ba513f283239`;
+- verify protocol, game, Modset, runtime and scoped authority;
+- exercise the exact Luminous Choir selector lifecycle or retain a precise
+  fail-closed defect.
 
 ## V3-2: Ordinary Journey
 
-Run one bounded ordinary vanilla game covering combat, map, reward, shop and a
-selection. Stop normally after the game returns to the main menu. Record which
-families used direct V3 bindings versus the internal migration adapter.
-
-Status: complete ordinary journeys exist for exact v0.110.1 artifacts. The
-latest Preview.4 batch contains a completed 161-decision game but has
-`unrecorded` provenance, so it is reviewed coverage rather than Organic
-qualification.
+Status: multiple exact v0.110.1 ordinary journeys exist. The latest
+Preview.5 session was intentionally stopped at its first real unsupported
+Surface, not completed. Historical complete journeys retain their original
+SHA/MVID and do not qualify Preview.6.
 
 ## V3-3: Native Family Migration
 
-Replace the Provider adapter in audited waves. Combat, shop-room,
-shop-inventory, map, rest, event-option, treasure-room, reward-claim,
-card-reward, deck-enchant, menu/run-setup, source-discriminated generated
-choices and game-over now use direct V3 resolvers in source. Remaining ordinary
-selectors are next. Preview.4 migrated combat-hand selection; Preview.5 adds
-direct Smith deck upgrade and merchant-only deck removal with separate source,
-Commit and Outcome contracts.
+Direct Gateway and direct Re currently cover ordinary combat and major
+non-combat families, combat-hand, Smith upgrade, merchant removal and the new
+Luminous Choir event removal. The event slice no longer depends on Provider
+candidate publication/execution or a V2-shaped Re sidecar.
 
-In parallel, replace the temporary V3-to-V2 Re semantic/action projection with
-a direct V3 consumer. Main/singleplayer/character menu is exact-runtime
-exercised without `/api/v2/capabilities`. Event, map, game-over, reward/card
-reward, shop, rest and treasure use the same direct consumer and are
-exact-runtime exercised under Preview.4, including ordinary combat. Smith was
-exercised only through the predecessor sidecar; its Preview.5 direct path,
-merchant removal, combat-hand and known-room mount repair need exact-runtime
-evidence. Unmigrated selector families retain the explicit sidecar.
+Next vertical slices, in priority order:
 
-## V3-4: Visibility And Detail
+1. fix the observed usable-combat-potion publication gap;
+2. `combat_pile_card_selection` using its existing typed source catalog;
+3. `card_bundle_selection`;
+4. source-distinct relic and reward deck removal;
+5. any earlier blocker reached organically.
 
-V3-native state-token-bound read-only Inspection is implemented for run deck,
-combat piles and shop catalog. Preview.5 also implements bounded
-`surface_card` linked detail across Gateway, REST, Re and MCP. Both need
-exact-runtime evidence. Finish selector-side direct consumption and implement
-real-page opening only as an optional human-equivalence evidence profile. Keep
-semantic accessibility as the efficient A default.
+Each slice requires typed owner/source/stage facts, exact operands, shared
+publication/execution validation, native Commit, semantic Outcome, direct Re,
+negative tests, scoped permission and exact-runtime evidence before old-path
+deletion. Similar UI never transfers business semantics.
+
+## V3-4: Visibility And Human Information
+
+Status: persistent summary, complete current Surface, typed state-bound
+Inspection and bounded `surface_card` linked detail are implemented. Preview.5
+proved current/stale `run_deck` and linked-detail behavior. Combat-piles and
+shop-catalog Live evidence remain pending.
+
+Semantic accessibility stays the default. Physically opening native pages is
+an optional human-equivalence evidence profile and must not become mutation
+authority.
 
 ## V3-5: Authority And V2 Retirement
 
-Expose the simplified supported/trial/quarantined/unsupported V3 policy,
-validate persistent evidence lifecycle, remove v2 production mutation routes
-and archive the final v2 implementation boundary.
+Status: no durable qualification exists. Exact operation contracts support
+volatile encounter trials only when current runtime/source admission succeeds;
+empty scopes are Fail Closed. Thirty-eight manifest fallback contracts remain
+tracked migration debt.
+
+Retire each remaining Provider/V2-shaped path only after a V3-native
+replacement is tested and exact-runtime exercised. Do not perform a bulk V2
+rewrite, design V4 or move game rules into Re.
 
 ## Later
 
-After V3 stabilizes, resume measurable Agent evaluation and only then consider
-product distribution or optional research tracks.
+After the Live Connector is stable and ordinary migration debt is closed,
+resume measurable Agent evaluation. Headless and learning remain separate
+future projects.

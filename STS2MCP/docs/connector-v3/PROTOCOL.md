@@ -1,6 +1,6 @@
 # Connector V3 Protocol
 
-Source protocol: `3.0-preview.5`
+Source protocol: `3.0-preview.6`
 
 Schemas:
 
@@ -28,7 +28,8 @@ worktree digest separately in run metadata.
 Shared visible facts, semantic context/surface, visibility metadata and the
 Inspection catalog are typed independently from Bridge v2. Re currently
 consumes ordinary combat, combat-hand selection, generated-card choice, menu,
-event, map, game-over, deck upgrade, merchant deck removal,
+event, map, game-over, deck upgrade, merchant deck removal, Luminous Choir
+event deck removal,
 reward/card-reward, shop, rest, treasure, lifecycle-settling and
 visible-unsupported observations directly from these V3 facts. Inspection
 catalog entries advertise state-bound read availability only; they never
@@ -101,6 +102,13 @@ the same bounded card-selection mechanics but retains an independent merchant
 source, Gold/service Commit and exact-card-removal Outcome. Relic and reward
 removal do not inherit merchant authority merely because their UI is similar.
 
+Luminous Choir event removal is a separate source-specific transaction. It
+binds the exact active `ReachIntoTheFlesh` task and non-cancelable two-card
+selector. Its confirm Outcome requires both exact cards absent, one new Spore
+Mind and event completion. It shares grid mechanics with other selectors but
+does not share their authority or effect semantics. An unknown event, task or
+selector shape publishes no commands.
+
 Reward-claim candidates are derived from the typed rewards Surface rather than
 Provider action drafts. They bind the exact screen and reward or potion
 entity; proceed/discard controls also carry a semantic `control_id`. Execution
@@ -150,7 +158,7 @@ of this endpoint.
 GET /api/v3/linked-details/{entity_id}?expected_state_token={state_token}
 ```
 
-Preview.5 supports the bounded `surface_card` kind only. The entity must be in
+The current protocol supports the bounded `surface_card` kind only. The entity must be in
 the exact current observation's `linked_detail_catalog`; the response repeats
 the current state token and exact visible card instance. Reads are stale-safe,
 read-only and non-authorizing. They do not create a ledger request, controller

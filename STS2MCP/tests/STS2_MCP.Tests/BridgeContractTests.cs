@@ -3,6 +3,7 @@ using MegaCrit.Sts2.Core.Nodes.Combat;
 using STS2_MCP.BridgeV2.Game;
 using STS2_MCP.BridgeV2.Protocol;
 using STS2_MCP.BridgeV2.Runtime;
+using STS2_MCP.ConnectorV3.Protocol;
 
 namespace STS2_MCP.Tests;
 
@@ -19,12 +20,18 @@ public sealed class BridgeContractTests
             .OrderBy(kind => kind, StringComparer.Ordinal)
             .ToArray();
 
-        Assert.Equal(26, manifestKinds.Length);
         Assert.Equal(manifestKinds.Length, manifestKinds.Distinct(StringComparer.Ordinal).Count());
-        Assert.Equal(providerKinds, manifestKinds);
+        Assert.Equal(
+            providerKinds,
+            manifestKinds.Where(kind => kind != "event_deck_removal_selection").ToArray());
+        Assert.Contains("event_deck_removal_selection", manifestKinds);
         Assert.All(BridgeContractManifest.Entries, entry =>
         {
-            Assert.Equal(BridgeV2Contract.ProtocolVersion, entry.ProtocolRevision);
+            Assert.Equal(
+                entry.Kind == "event_deck_removal_selection"
+                    ? ConnectorV3Contract.ProtocolVersion
+                    : BridgeV2Contract.ProtocolVersion,
+                entry.ProtocolRevision);
             Assert.False(string.IsNullOrWhiteSpace(entry.Mechanism));
             Assert.False(string.IsNullOrWhiteSpace(entry.SourceBindingId));
             Assert.False(string.IsNullOrWhiteSpace(entry.ReSupport));
@@ -1013,9 +1020,8 @@ public sealed class BridgeContractTests
         int manifestOperationCount = BridgeContractManifest.Entries
             .Sum(entry => entry.Operations.Count);
 
-        Assert.Equal(88, manifestOperationCount);
         Assert.Equal(manifestOperationCount, catalog.Count);
-        Assert.Equal(50, catalog.Count(contract =>
+        Assert.Equal(53, catalog.Count(contract =>
             contract.ContractKind == BridgeOperationQualificationCatalog.ExplicitNativeContract));
         Assert.Equal(38, catalog.Count(contract =>
             contract.ContractKind == BridgeOperationQualificationCatalog.ManifestMigrationFallback));

@@ -67,6 +67,8 @@ internal static class BridgeContractManifest
         "../docs/current/audits/WORKFLOW_C_PREVIEW81_SOURCE_CLOSED_SELECTOR_CONTRACT_WAVE_CLOSEOUT_2026-07-30.md";
     private const string Preview82Closeout =
         "../docs/current/audits/WORKFLOW_C_PREVIEW82_RUNTIME_RECOVERY_CLOSEOUT_2026-07-30.md";
+    private const string ConnectorPreview6Closeout =
+        "docs/connector-v3/PREVIEW_6_LUMINOUS_CHOIR_EVENT_REMOVAL_CUTOVER_2026-08-02.md";
 
     public static readonly IReadOnlyList<BridgeContractManifestEntry> Entries = new[]
     {
@@ -112,6 +114,17 @@ internal static class BridgeContractManifest
             "sts2-v0.109.0:CardRemovalReward.OnSelect+RewardSynchronizer.DoUnsyncedCardRemoval+CardSelectCmd.FromDeckForRemoval+CardPileCmd.RemoveFromDeck+task-local-source-binding+exact-card-post-state-witness",
             "purpose_specific_deck_selection",
             new[] { "visible_deck_cards", "selection", "preview", "cancel", "controls" }),
+        V3Entry(
+            "event_deck_removal_selection",
+            new[]
+            {
+                Operation("toggle_event_deck_removal_card", BridgeOperationEvidenceStatus.SourceAudited, ConnectorPreview6Closeout),
+                Operation("cancel_event_deck_removal_preview", BridgeOperationEvidenceStatus.SourceAudited, ConnectorPreview6Closeout),
+                Operation("confirm_event_deck_removal", BridgeOperationEvidenceStatus.SourceAudited, ConnectorPreview6Closeout)
+            },
+            "sts2-v0.110.1:LuminousChoir.ReachIntoTheFlesh+CardSelectCmd.FromDeckForRemoval(2)+CardPileCmd.RemoveFromDeck+AddCurseToDeck<SporeMind>+SetEventFinished+task-local-source-binding+exact-transaction-witness",
+            "v3_native_source_bound_event_deck_removal",
+            new[] { "visible_deck_cards", "selection", "preview", "expected_effects", "controls" }),
         Entry(
             "deck_upgrade_selection",
             new[]
@@ -483,4 +496,20 @@ internal static class BridgeContractManifest
         string operation,
         BridgeOperationEvidenceStatus evidenceStatus,
         params string[] evidenceIds) => new(operation, evidenceStatus, evidenceIds);
+
+    private static BridgeContractManifestEntry V3Entry(
+        string kind,
+        IReadOnlyList<BridgeOperationManifest> operations,
+        string sourceBindingId,
+        string mechanism,
+        IReadOnlyList<string> visibleFactGroups) => new(
+        kind,
+        "3.0-preview.6",
+        mechanism,
+        sourceBindingId,
+        "strict_connector_v3_decoder_normalizer",
+        visibleFactGroups,
+        operations,
+        new[] { "tests/STS2_MCP.Tests/ConnectorV3ContractTests.cs" },
+        new[] { ConnectorPreview6Closeout });
 }

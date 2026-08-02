@@ -6,7 +6,7 @@ exact-runtime evidence status are canonical in
 
 ## Current Contract
 
-Re strictly accepts `3.0-preview.5` observations and receipts. It preserves:
+Re strictly accepts `3.0-preview.6` observations and receipts. It preserves:
 
 - exact Gateway, game, Modset and runtime identity;
 - the state token and active interaction ID;
@@ -28,11 +28,12 @@ operands.
 | stale local choice rejection | implemented | tests plus Gateway ledger tests | two safe pre-execution refusals observed |
 | unknown-no-retry supervision | implemented | tests | one rest Outcome became unknown and terminated without retry |
 | combat commands | direct V3 resolver and direct Re consumer | Gateway/Re tests plus 11 protocol-rewritten saved-snapshot checks | direct consumer repeatedly exercised under Preview.3 |
-| combat-hand selection | exact hand/card/control discovery, direct V3 resolver and direct Re consumer | Gateway descriptors plus Re owner/card/no-sidecar positives and wrong-owner negative | direct path not exercised under Preview.4 |
+| combat-hand selection | exact hand/card/control discovery, direct V3 resolver and direct Re consumer | Gateway descriptors plus Re owner/card/no-sidecar positives and wrong-owner negative | direct path not exercised under Preview.5 |
 | shop-room commands | direct V3 resolver | Gateway tests | exercised on v0.110.0 |
 | map/rest/deck-enchant commands | direct V3 resolvers | Gateway and Re tests | map/rest exercised under Preview.4; Kifuda not exercised |
-| deck upgrade | direct typed screen/card/control resolver and Re consumer | select/deselect/reselect, preview-return, confirm and drift tests | Smith predecessor sidecar exercised under Preview.4; direct Preview.5 path pending |
-| merchant deck removal | direct merchant-only resolver and Re consumer | source isolation, selection stages and replacement negatives | pending Preview.5; relic/reward removal remains migration debt |
+| deck upgrade | direct typed screen/card/control resolver and Re consumer | select/deselect/reselect, preview-return, confirm and drift tests | direct full lifecycle and semantic post-state exercised under Preview.5 |
+| merchant deck removal | direct merchant-only resolver and Re consumer | source isolation, selection stages and replacement negatives | not reached under Preview.5; relic/reward removal remains migration debt |
+| Luminous Choir event removal | exact typed task/source/stage/effect contract and direct Re consumer | selection/preview/command-set/source/membership negatives | Preview.6 pending cold load |
 | menu/run setup | direct V3 normalization and native resolver | direct normalization, descriptor and no-sidecar tests | direct consumer and resolver completed a 95-decision run |
 | event/map/game over consumer | direct V3 normalization and game-over direct native resolver | strict decode, exact binding negatives and recorded replay | exact runtime exercised all three direct consumers and both game-over controls |
 | reward/card-reward consumer | direct V3 normalization | strict screen/entity/control negatives | exact-runtime exercised in a completed 175-decision run |
@@ -41,10 +42,11 @@ operands.
 | other non-combat selectors | migration adapter | inherited Provider and V3 tests | selected families exercised |
 | visible unsupported interaction | implemented | tests | Crystal Sphere, unknown deck selector and pre-repair Symbiote exercised |
 | typed V3 visible-state projection | shared persistent summary plus visibility and Inspection-catalog metadata for direct contexts | strict schema, projection and saved-snapshot replay | direct menu exercised; expanded contexts pending cold load |
-| V3-native Inspection content | typed state-token-bound run deck/combat piles/shop catalog client | strict content decode and stale-token negative | pending cold load |
-| V3-native linked detail | bounded state-token-bound current-Surface card client | strict entity/content decode and stale-token negative | pending Preview.5 cold load |
+| V3-native Inspection content | typed state-token-bound run deck/combat piles/shop catalog client | strict content decode and stale-token negative | Preview.5 current/stale `run_deck`; other kinds pending |
+| V3-native linked detail | bounded state-token-bound current-Surface card client | strict entity/content decode and stale-token negative | Preview.5 current/stale `surface_card` exercised |
 
 Ordinary combat, combat-hand selection, deck upgrade, merchant deck removal,
+Luminous Choir event removal,
 generated-card choice,
 main/singleplayer/character menus,
 event options, map navigation, game over, reward/card-reward, shop, rest,

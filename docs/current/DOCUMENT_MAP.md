@@ -30,6 +30,8 @@
 - [Connector V3 v0.110.1 Preview.3 direct complete-journey evidence](../../STS2MCP/docs/connector-v3/LIVE_EVIDENCE_V0_110_1_PREVIEW_3_DIRECT_JOURNEY_2026-08-02.md)
 - [Connector V3 v0.110.1 Preview.4 complete-journey evidence](../../STS2MCP/docs/connector-v3/LIVE_EVIDENCE_V0_110_1_PREVIEW_4_COMPLETE_JOURNEY_2026-08-02.md)
 - [Connector V3 Preview.5 selector and linked-detail cutover](../../STS2MCP/docs/connector-v3/PREVIEW_5_SELECTOR_AND_LINKED_DETAIL_CUTOVER_2026-08-02.md)
+- [Connector V3 Preview.5 selector and Inspection Live evidence](../../STS2MCP/docs/connector-v3/LIVE_EVIDENCE_V0_110_1_PREVIEW_5_SELECTOR_INSPECTION_2026-08-02.md)
+- [Connector V3 Preview.6 Luminous Choir event-removal cutover](../../STS2MCP/docs/connector-v3/PREVIEW_6_LUMINOUS_CHOIR_EVENT_REMOVAL_CUTOVER_2026-08-02.md)
 - [Re-SpireAgent](../../Re-SpireAgent/README.md)
 - [Re V3 integration](../../Re-SpireAgent/docs/CONNECTOR_V3_INTEGRATION.md)
 - [Re V3 state coverage](../../Re-SpireAgent/docs/MCP_STATE_COVERAGE.md)

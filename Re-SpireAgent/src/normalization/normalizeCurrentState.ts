@@ -424,6 +424,7 @@ function determineStability(surface: InteractionSurface, diagnosticsStatus: "ok"
   if (surface.kind === "card_selection") return surface.options.length > 0 || surface.canConfirm || surface.canCancel ? "actionable" : "loading";
   if (surface.kind === "deck_enchant_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "deck_removal_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
+  if (surface.kind === "event_deck_removal_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "relic_deck_removal_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "reward_deck_removal_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
   if (surface.kind === "deck_upgrade_selection") return surface.legalActions.length > 0 ? "actionable" : "loading";
@@ -467,7 +468,7 @@ function isCompatible(context: SemanticContext, surface: InteractionSurface): bo
     rewards: ["reward_claim", "card_selection", "no_action", "unsupported"],
     map: ["map_navigation", "no_action", "unsupported"],
     rest: ["rest_site", "option_choice", "card_selection", "deck_upgrade_selection", "no_action", "unsupported"],
-    event: ["event_dialogue", "event_option", "event_card_acquisition", "option_choice", "card_selection", "deck_upgrade_selection", "deck_transform_selection", "wood_carvings_replacement_selection", "card_bundle_selection", "no_action", "unsupported"],
+    event: ["event_dialogue", "event_option", "event_card_acquisition", "event_deck_removal_selection", "option_choice", "card_selection", "deck_upgrade_selection", "deck_transform_selection", "wood_carvings_replacement_selection", "card_bundle_selection", "no_action", "unsupported"],
     shop: ["shop_inventory", "shop_room", "shop_interaction", "no_action", "unsupported"],
     treasure: ["treasure_room", "treasure_claim", "no_action", "unsupported"],
     crystal_sphere: ["grid_interaction", "no_action", "unsupported"],

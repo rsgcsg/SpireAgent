@@ -35,6 +35,9 @@ Combat-hand selection now publishes exact current hand/card/control facts,
 uses a direct native resolver and is consumed directly by Re. Smith deck
 upgrade and merchant deck removal also use direct typed facts and commands;
 merchant authority is not reused for relic/reward removal.
+Luminous Choir event removal uses its own exact task/event/two-card contract,
+whole-transaction Outcome and direct Re Surface. It shares selector mechanics
+but not merchant, relic or reward authority.
 Remaining selectors temporarily reuse mature Provider-native bindings inside
 the Gateway. This is bounded migration debt, not a V2 REST fallback.
 
@@ -43,9 +46,10 @@ reward/card-reward, shop, rest, treasure, lifecycle-settling and
 visible-unsupported observations use the direct V3 normalizer and do not
 request Bridge v2 capabilities. Menu, event, map, game-over,
 reward/card-reward, shop, rest, treasure, combat and generated choice are
-exact-runtime exercised under Preview.4. Smith's predecessor sidecar path was
-exercised, while its Preview.5 direct path, merchant removal, combat-hand and
-known-room mount settling recovery await a Preview.5 cold load. Remaining
+exact-runtime exercised under earlier artifacts. Preview.5 exercised direct
+Smith, known-room settling, visible unsupported, `run_deck` Inspection and
+linked detail. Merchant removal and combat-hand remain unexercised; Preview.6
+Luminous Choir removal is built/installed but not loaded. Remaining
 selector families temporarily read same-runtime
 Bridge v2 capabilities only as a
 non-executable semantic/environment projection sidecar. No v2 legal action or
@@ -67,6 +71,11 @@ submission.
 
 Current-Surface card detail uses `/api/v3/linked-details/{entity_id}` with the
 same exact-token discipline. Re cannot use it to add a candidate or operand.
+
+For `event_deck_removal_selection`, Re accepts only the exact Luminous Choir
+source/purpose/effect tuple and exact command set implied by current selected
+membership and stage. Unknown source literals, missing selected bindings or a
+candidate-set mismatch invalidate the state and produce no local action.
 
 ## Receipt Rules
 

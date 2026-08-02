@@ -60,7 +60,7 @@ const SOURCE: AdapterDescriptor = {
 
 function combatObservation(): ConnectorV3Observation {
   return decodeConnectorV3Observation({
-    protocol_version: "3.0-preview.5",
+    protocol_version: "3.0-preview.6",
     schema: "sts2.connector.v3/observation-1",
     profile: "semantic_accessibility.tools.v1",
     state_token: "state-fixture-1",
@@ -714,6 +714,114 @@ ConnectorV3Observation {
   return decodeConnectorV3Observation(value).data;
 }
 
+function eventRemovalObservation(stage: "selecting" | "preview" = "selecting"):
+ConnectorV3Observation {
+  const value = structuredClone(combatObservation()) as unknown as Record<string, unknown>;
+  const cards = ["STRIKE_IRONCLAD", "DEFEND_IRONCLAD"].map((definitionId, index) => ({
+    entity_id: `event-removal-card-${index + 1}`,
+    definition_id: definitionId,
+    name: index === 0 ? "Strike" : "Defend",
+    type: index === 0 ? "Attack" : "Skill",
+    cost: "1",
+    description: index === 0 ? "Deal 6 damage." : "Gain 5 Block.",
+    rarity: "Basic",
+    is_upgraded: false,
+    is_selected: stage === "preview"
+  }));
+  const selectedIds = stage === "preview" ? cards.map((card) => card.entity_id) : [];
+  value.context = {
+    kind: "event",
+    event_id: "LUMINOUS_CHOIR",
+    name: "Luminous Choir",
+    ancient: false,
+    in_dialogue: false,
+    body: "Reach into the flesh."
+  };
+  value.surface = {
+    kind: "event_deck_removal_selection",
+    stage,
+    screen_entity_id: "event-removal-screen",
+    source_kind: "luminous_choir_reach_into_flesh",
+    purpose: "remove_two_cards_then_gain_spore_mind",
+    expected_effects: ["remove_selected_cards", "add_spore_mind", "finish_event"],
+    prompt: stage === "selecting" ? "Choose two cards to remove." : "Confirm removal.",
+    min_select: 2,
+    max_select: 2,
+    selected_count: selectedIds.length,
+    selected_card_entity_ids: selectedIds,
+    selectable_card_entity_ids: stage === "selecting" ? cards.map((card) => card.entity_id) : [],
+    deselectable_card_entity_ids: [],
+    can_cancel_preview: stage === "preview",
+    can_confirm: stage === "preview",
+    cards
+  };
+  value.interaction = {
+    id: `interaction-event-removal-${stage}`,
+    kind: "event_deck_removal_selection",
+    phase: "ready",
+    execution_support: "trial",
+    support_reason: null,
+    affordances: stage === "selecting"
+      ? ["select_entity"]
+      : ["confirm_interaction", "cancel_interaction"],
+    command_candidates: stage === "selecting"
+      ? cards.map((card) => ({
+          candidate_id: `candidate-event-removal-${card.entity_id}`,
+          command: "select_entity",
+          operation: "toggle_event_deck_removal_card",
+          label: `Select ${card.name}`,
+          operands: {
+            screen_id: "event-removal-screen",
+            card_id: card.entity_id
+          },
+          operand_domains: {},
+          entity_bindings: [
+            { role: "screen", entity_id: "event-removal-screen" },
+            { role: "card", entity_id: card.entity_id }
+          ],
+          binding_kind: "native_direct_resolver",
+          authority_state: "trial"
+        }))
+      : [
+          {
+            candidate_id: "candidate-event-removal-return",
+            command: "cancel_interaction",
+            operation: "cancel_event_deck_removal_preview",
+            label: "Return to event card selection",
+            operands: {
+              screen_id: "event-removal-screen",
+              control_id: "cancel_event_deck_removal_preview"
+            },
+            operand_domains: {},
+            entity_bindings: [
+              { role: "screen", entity_id: "event-removal-screen" },
+              ...selectedIds.map((entityId) => ({ role: "card", entity_id: entityId }))
+            ],
+            binding_kind: "native_direct_resolver",
+            authority_state: "trial"
+          },
+          {
+            candidate_id: "candidate-event-removal-confirm",
+            command: "confirm_interaction",
+            operation: "confirm_event_deck_removal",
+            label: "Confirm event card removal",
+            operands: {
+              screen_id: "event-removal-screen",
+              control_id: "confirm_event_deck_removal"
+            },
+            operand_domains: {},
+            entity_bindings: [
+              { role: "screen", entity_id: "event-removal-screen" },
+              ...selectedIds.map((entityId) => ({ role: "card", entity_id: entityId }))
+            ],
+            binding_kind: "native_direct_resolver",
+            authority_state: "trial"
+          }
+        ]
+  };
+  return decodeConnectorV3Observation(value).data;
+}
+
 function eventObservation(): ConnectorV3Observation {
   const value = structuredClone(combatObservation()) as unknown as Record<string, unknown>;
   value.shared_state = sharedState();
@@ -1235,7 +1343,7 @@ function treasureObservation(): ConnectorV3Observation {
 
 function connectorCapabilities() {
   return {
-    protocol_version: "3.0-preview.5",
+    protocol_version: "3.0-preview.6",
     observation_schema: "sts2.connector.v3/observation-1",
     command_schema: "sts2.connector.v3/command-1",
     inspection_schema: "sts2.connector.v3/inspection-1",
@@ -1279,7 +1387,7 @@ describe("Connector V3 strict contract", () => {
 
   it("rejects unknown mutation receipts that permit retry", () => {
     expect(() => decodeConnectorV3Receipt({
-      protocol_version: "3.0-preview.5",
+      protocol_version: "3.0-preview.6",
       request_id: "request-fixture",
       status: "unknown",
       application: "unknown",
@@ -1295,7 +1403,7 @@ describe("Connector V3 strict contract", () => {
 
   it("decodes state-bound read-only V3 inspections", () => {
     const decoded = decodeConnectorV3Inspection({
-      protocol_version: "3.0-preview.5",
+      protocol_version: "3.0-preview.6",
       schema: "sts2.connector.v3/inspection-1",
       inspection_id: "v3inspection-fixture",
       expected_state_token: "state-fixture-1",
@@ -1327,7 +1435,7 @@ describe("Connector V3 strict contract", () => {
 
   it("rejects V3 inspections whose state token drifted", () => {
     expect(() => decodeConnectorV3Inspection({
-      protocol_version: "3.0-preview.5",
+      protocol_version: "3.0-preview.6",
       schema: "sts2.connector.v3/inspection-1",
       inspection_id: "v3inspection-fixture",
       expected_state_token: "state-fixture-1",
@@ -1356,7 +1464,7 @@ describe("Connector V3 strict contract", () => {
 
   it("decodes only state-bound linked card detail for the exact entity", () => {
     const detail = {
-      protocol_version: "3.0-preview.5",
+      protocol_version: "3.0-preview.6",
       schema: "sts2.connector.v3/linked-detail-1",
       detail_id: "detail-fixture",
       expected_state_token: "state-fixture-1",
@@ -1726,6 +1834,91 @@ describe("Connector V3 strict contract", () => {
       wrongMembershipProjection.rawState,
       SOURCE
     ).diagnostics.status).toBe("invalid");
+  });
+
+  it("consumes the exact Luminous Choir removal transaction without a V2 sidecar", () => {
+    const selecting = eventRemovalObservation("selecting");
+    const selectingProjection = projectConnectorV3ForRe(
+      selecting,
+      selecting as unknown as JsonObject
+    );
+    const selectingWrapper = selectingProjection.rawState as Record<string, unknown>;
+    expect(selectingWrapper.bridge_v2_state).toBeUndefined();
+    expect(selectingWrapper.bridge_v2_capabilities).toBeUndefined();
+    const selectingEnvelope = normalizeCurrentState(selectingProjection.rawState, SOURCE);
+    expect(selectingEnvelope.diagnostics.status).toBe("ok");
+    expect(selectingEnvelope.currentState).toMatchObject({
+      sourceStateType: "connector_v3:event:event_deck_removal_selection:direct",
+      context: { kind: "event" },
+      surface: {
+        kind: "event_deck_removal_selection",
+        stage: "selecting",
+        screenEntityId: "event-removal-screen",
+        sourceKind: "luminous_choir_reach_into_flesh",
+        minimumSelections: 2,
+        maximumSelections: 2,
+        selectedCount: 0
+      }
+    });
+    expect(buildAllowedActions(
+      selectingEnvelope.currentState,
+      selectingEnvelope.stateHash
+    )).toHaveLength(2);
+
+    const preview = eventRemovalObservation("preview");
+    const previewProjection = projectConnectorV3ForRe(
+      preview,
+      preview as unknown as JsonObject
+    );
+    const previewEnvelope = normalizeCurrentState(previewProjection.rawState, SOURCE);
+    expect(previewEnvelope.diagnostics.status).toBe("ok");
+    expect(previewEnvelope.currentState.surface).toMatchObject({
+      kind: "event_deck_removal_selection",
+      stage: "preview",
+      selectedCardEntityIds: ["event-removal-card-1", "event-removal-card-2"],
+      expectedEffects: ["remove_selected_cards", "add_spore_mind", "finish_event"]
+    });
+    expect([...previewProjection.invocations.values()]).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        command: "cancel_interaction",
+        operation: "cancel_event_deck_removal_preview"
+      }),
+      expect.objectContaining({
+        command: "confirm_interaction",
+        operation: "confirm_event_deck_removal"
+      })
+    ]));
+  });
+
+  it("fails event removal closed on unknown source or command membership drift", () => {
+    const unknownSource = structuredClone(
+      eventRemovalObservation("selecting")
+    ) as unknown as any;
+    unknownSource.surface.source_kind = "another_event";
+    const unknownSourceObservation = decodeConnectorV3Observation(unknownSource).data;
+    const unknownSourceProjection = projectConnectorV3ForRe(
+      unknownSourceObservation,
+      unknownSourceObservation as unknown as JsonObject
+    );
+    expect(normalizeCurrentState(
+      unknownSourceProjection.rawState,
+      SOURCE
+    ).diagnostics.status).toBe("invalid");
+
+    const wrongMembership = eventRemovalObservation("preview");
+    const confirm = wrongMembership.interaction.command_candidates.find(
+      (candidate) => candidate.operation === "confirm_event_deck_removal"
+    )!;
+    confirm.entity_bindings = confirm.entity_bindings.filter(
+      (binding) => binding.role !== "card"
+    );
+    const projection = projectConnectorV3ForRe(
+      wrongMembership,
+      wrongMembership as unknown as JsonObject
+    );
+    const envelope = normalizeCurrentState(projection.rawState, SOURCE);
+    expect(envelope.diagnostics.status).toBe("invalid");
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toEqual([]);
   });
 
   it("treats a known settling interaction as supervised no-action, not unsupported", () => {

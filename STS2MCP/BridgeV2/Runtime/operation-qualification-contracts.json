@@ -556,6 +556,42 @@
       "risk_class": "reversible_navigation"
     },
     {
+      "surface_kind": "event_deck_removal_selection",
+      "operation": "toggle_event_deck_removal_card",
+      "interaction_kind": "luminous_choir_removal_card_toggle",
+      "owner_binding": "exact_current_luminous_choir_event_removal_selector_and_task",
+      "source_binding": "LuminousChoir.ReachIntoTheFlesh+task_local_source_binding",
+      "operand_contract": "exact_advertised_deck_card_instance_selected_state_bounds_and_clickability",
+      "commit_contract": "NCardGrid.HolderPressed",
+      "completion_boundary": "immediate_postcondition_observed",
+      "witness_id": "event_removal_exact_selected_membership_changed",
+      "risk_class": "reversible_navigation"
+    },
+    {
+      "surface_kind": "event_deck_removal_selection",
+      "operation": "cancel_event_deck_removal_preview",
+      "interaction_kind": "luminous_choir_removal_preview_cancel",
+      "owner_binding": "exact_current_luminous_choir_event_removal_selector_and_task_in_preview_stage",
+      "source_binding": "LuminousChoir.ReachIntoTheFlesh+task_local_source_binding",
+      "operand_contract": "exact_current_preview_selected_membership_and_enabled_cancel_control",
+      "commit_contract": "NDeckCardSelectScreen._previewCancelButton.ForceClick",
+      "completion_boundary": "immediate_postcondition_observed",
+      "witness_id": "event_removal_preview_closed_and_selection_cleared",
+      "risk_class": "reversible_navigation"
+    },
+    {
+      "surface_kind": "event_deck_removal_selection",
+      "operation": "confirm_event_deck_removal",
+      "interaction_kind": "luminous_choir_removal_commit",
+      "owner_binding": "exact_current_luminous_choir_event_removal_selector_task_and_preview",
+      "source_binding": "LuminousChoir.ReachIntoTheFlesh+task_local_source_binding",
+      "operand_contract": "exact_two_selected_deck_card_instances_source_token_baseline_deck_and_event",
+      "commit_contract": "NDeckCardSelectScreen._previewConfirmButton.ForceClick+CardPileCmd.RemoveFromDeck+AddCurseToDeck<SporeMind>+SetEventFinished",
+      "completion_boundary": "transaction_settled",
+      "witness_id": "luminous_choir_exact_cards_removed_spore_mind_added_and_event_finished",
+      "risk_class": "persistent_run_mutation"
+    },
+    {
       "surface_kind": "card_bundle_selection",
       "operation": "preview_card_bundle",
       "interaction_kind": "scroll_boxes_bundle_preview_open",

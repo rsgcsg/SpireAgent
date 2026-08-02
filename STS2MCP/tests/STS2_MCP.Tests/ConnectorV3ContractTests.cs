@@ -286,6 +286,112 @@ public sealed class ConnectorV3ContractTests
     }
 
     [Fact]
+    public void EventRemovalNativeDiscoveryRequiresExactSourceStageAndMembership()
+    {
+        var first = new VisibleCard(
+            "deck-card-a", "STRIKE", "Strike", "Attack", "1", null,
+            "Deal 6 damage.", "Basic", false, true, null);
+        var second = first with
+        {
+            EntityId = "deck-card-b",
+            DefinitionId = "DEFEND",
+            Name = "Defend"
+        };
+        var selecting = new EventDeckRemovalSelectionSurface(
+            EventDeckRemovalSelection.SurfaceKind,
+            "selecting",
+            "event-removal-screen",
+            EventDeckRemovalSelection.SourceKind,
+            "remove_two_cards_then_gain_spore_mind",
+            "Choose 2 cards to remove.",
+            2,
+            2,
+            1,
+            new[] { first.EntityId },
+            new[] { second.EntityId },
+            new[] { first.EntityId },
+            false,
+            false,
+            new[] { "remove_selected_cards", "add_spore_mind", "finish_event" },
+            new[] { first, second });
+
+        BridgeActionDraft[] selectingCommands =
+            EventDeckRemovalSelection.DescribeCommands(selecting).ToArray();
+        Assert.Contains(selectingCommands, command =>
+            command.Kind == "toggle_event_deck_removal_card"
+            && command.EntityBindings!.Any(binding =>
+                binding.Role == "card" && binding.EntityId == second.EntityId));
+        Assert.DoesNotContain(selectingCommands, command =>
+            command.Kind == "confirm_event_deck_removal");
+
+        var preview = selecting with
+        {
+            Stage = "preview",
+            SelectedCount = 2,
+            SelectedCardEntityIds = new[] { first.EntityId, second.EntityId },
+            SelectableCardEntityIds = Array.Empty<string>(),
+            DeselectableCardEntityIds = Array.Empty<string>(),
+            CanCancelPreview = true,
+            CanConfirm = true
+        };
+        BridgeActionDraft[] previewCommands =
+            EventDeckRemovalSelection.DescribeCommands(preview).ToArray();
+        Assert.Contains(previewCommands, command =>
+            command.Kind == "cancel_event_deck_removal_preview");
+        BridgeActionDraft confirm = Assert.Single(previewCommands, command =>
+            command.Kind == "confirm_event_deck_removal");
+        Assert.Equal(2, confirm.EntityBindings!.Count(binding => binding.Role == "card"));
+
+        Assert.Empty(EventDeckRemovalSelection.DescribeCommands(
+            selecting with { SourceKind = "unknown" }));
+        Assert.Equal(
+            "ReachIntoTheFlesh",
+            LuminousChoirDeckRemovalSourcePatch.ResolveTargetMethod().Name);
+        Assert.Equal(
+            EventDeckRemovalSourceBinding.Resolution.None,
+            EventDeckRemovalSourceBinding.Read(out EventDeckRemovalSourceBinding.ActiveBinding? binding));
+        Assert.Null(binding);
+    }
+
+    [Fact]
+    public void EventRemovalWitnessRequiresWholeNativeTransaction()
+    {
+        var removedA = new object();
+        var removedB = new object();
+        var retained = new object();
+        var sporeMind = new object();
+        object[] baseline = { removedA, removedB, retained };
+        object[] selected = { removedA, removedB };
+        object[] completed = { retained, sporeMind };
+
+        Assert.True(EventDeckRemovalSelection.CompletionSatisfied(
+            true, true, true, baseline, completed, selected, 0, 1));
+        Assert.False(EventDeckRemovalSelection.CompletionSatisfied(
+            true, true, false, baseline, completed, selected, 0, 1));
+        Assert.False(EventDeckRemovalSelection.CompletionSatisfied(
+            true, true, true, baseline, new[] { removedA, retained, sporeMind }, selected, 0, 1));
+        Assert.False(EventDeckRemovalSelection.CompletionSatisfied(
+            true, true, true, baseline, completed, selected, 0, 0));
+
+        Assert.True(EventDeckRemovalSelection.ToggleCompletionSatisfied(
+            isCurrent: true,
+            isSelected: true,
+            expectedSelected: false));
+        Assert.True(EventDeckRemovalSelection.ToggleCompletionSatisfied(
+            isCurrent: true,
+            isSelected: false,
+            expectedSelected: true));
+        Assert.False(EventDeckRemovalSelection.ToggleCompletionSatisfied(
+            isCurrent: false,
+            isSelected: true,
+            expectedSelected: false));
+        Assert.False(EventDeckRemovalSelection.ToggleCompletionSatisfied(
+            isCurrent: true,
+            isSelected: false,
+            expectedSelected: false));
+    }
+
+    [Fact]
     public void MenuNativeDiscoveryUsesTypedSurfaceFactsAndExactOwners()
     {
         var main = new MainMenuSurface(

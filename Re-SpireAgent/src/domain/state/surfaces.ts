@@ -118,6 +118,7 @@ export type InteractionSurface =
   | CardSelectionSurface
   | DeckEnchantSelectionSurface
   | DeckRemovalSelectionSurface
+  | EventDeckRemovalSelectionSurface
   | RelicDeckRemovalSelectionSurface
   | RewardDeckRemovalSelectionSurface
   | DeckUpgradeSelectionSurface
@@ -361,6 +362,25 @@ export interface DeckRemovalSelectionSurface {
   selectedCount: number;
   selectedCardEntityIds: string[];
   cancelable: boolean;
+  cards: CardSnapshot[];
+  legalActions: BridgeLegalActionSnapshot[];
+  completeness: BridgeSurfaceCompleteness;
+}
+
+/** Exact Luminous Choir event transaction; no merchant or generic selector authority applies. */
+export interface EventDeckRemovalSelectionSurface {
+  kind: "event_deck_removal_selection";
+  stage: "selecting" | "preview";
+  bridgeStateId: string;
+  screenEntityId: string;
+  sourceKind: "luminous_choir_reach_into_flesh";
+  purpose: "remove_two_cards_then_gain_spore_mind";
+  prompt: string;
+  minimumSelections: 2;
+  maximumSelections: 2;
+  selectedCount: number;
+  selectedCardEntityIds: string[];
+  expectedEffects: ["remove_selected_cards", "add_spore_mind", "finish_event"];
   cards: CardSnapshot[];
   legalActions: BridgeLegalActionSnapshot[];
   completeness: BridgeSurfaceCompleteness;

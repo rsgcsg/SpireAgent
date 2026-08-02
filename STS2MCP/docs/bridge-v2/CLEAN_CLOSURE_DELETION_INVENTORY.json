@@ -21,8 +21,8 @@
     "production_action_publication_path_count": 1,
     "production_authority_resolver_count": 1,
     "operation_authority_usage_count": 3,
-    "explicit_native_contract_count": 50,
-    "explicit_contract_digest_admission_count": 50,
+    "explicit_native_contract_count": 53,
+    "explicit_contract_digest_admission_count": 53,
     "fallback_authority_contract_count": 38,
     "persistent_fallback_claim_admission_count": 0,
     "supported_mixed_explicit_fallback_surface_count": 0,
@@ -125,6 +125,18 @@
       "authority_cutover": "map annotation exit uses one source-audited explicit native contract; Gateway stale rejection remains non-mutating and Re observes fresh state",
       "runtime_evidence": "preview_81_runs_oaxily_and_vf7ui2 reproduced persistent native map drawing ownership; runs_p8byv8_and_nbos1d reproduced Gateway rejected/not_applied/stale_state receipts",
       "non_claims": "preview_82_not_loaded; exit_map_annotation mutation and successor witness pending exact-runtime evidence; no durable qualification",
+      "rollback": "whole_artifact_restore"
+    },
+    {
+      "family": "connector_v3_luminous_choir_event_removal",
+      "operations": [
+        "event_deck_removal_selection/toggle_event_deck_removal_card",
+        "event_deck_removal_selection/cancel_event_deck_removal_preview",
+        "event_deck_removal_selection/confirm_event_deck_removal"
+      ],
+      "authority_cutover": "exact task-local V3 source binding and three explicit operation contracts; no Provider publication/execution or V2-shaped Re dependency",
+      "runtime_evidence": "preview_5 exposed the exact selector as unsupported; preview_6 source/tests/build/install complete",
+      "non_claims": "preview_6 not loaded or Live; no qualification or evidence transfer from preview_5",
       "rollback": "whole_artifact_restore"
     }
   ],

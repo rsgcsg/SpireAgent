@@ -122,19 +122,22 @@ Reuse is internal implementation reuse, not V2 protocol authority.
 
 ## Explicit Migration Debt
 
-At `3.0-preview.5`:
+At `3.0-preview.6`:
 
 - combat and multiple ordinary non-combat families use direct V3 native
   resolvers; menu/run-setup, source-discriminated generated choices and
-  game-over, combat-hand selection, Smith deck upgrade and merchant deck
-  removal are now cut over in source, while remaining selectors use a bounded internal
+  game-over, combat-hand selection, Smith deck upgrade, merchant deck removal
+  and Luminous Choir event deck removal are now cut over in source. The event
+  selector uses an exact task-local source binding and whole-transaction
+  witness. Remaining selectors use a bounded internal
   `provider_native_binding_adapter` that never submits or searches a v2 REST
   action ID;
 - Re directly consumes ordinary combat, source-discriminated generated-card
   choice, main/singleplayer/character menu, event, map, game-over,
   reward/card-reward, shop, rest, treasure, lifecycle-settling and
   visible-unsupported facts and candidates. Combat-hand, Smith deck upgrade
-  and merchant deck removal join this direct path. Remaining selector Surfaces use
+  merchant deck removal and Luminous Choir event deck removal join this direct
+  path. Remaining selector Surfaces use
   `/api/v2/capabilities` as a same-runtime,
   non-authorizing semantic/environment projection sidecar and temporarily
   expand V3 candidates into a V2-shaped normalization projection;
@@ -156,6 +159,13 @@ typed `no_action` checkpoint and continues bounded supervision. Treating an
 empty settling candidate set as unsupported is rejected because Preview.2
 demonstrated that it terminates normal run mount, combat resolution and
 treasure departure.
+
+Preview.5 Live evidence also established that an exact source-specific child
+transaction can be absent even when its generic UI shape is visible. Preview.6
+therefore permits a V3-native source binding to supersede Provider discovery,
+and forces an empty fail-closed observation if that discovery throws. It does
+not introduce a universal selector or transfer Luminous Choir authority to
+another event, relic, reward or Mod.
 
 ## Rejected Alternatives
 
