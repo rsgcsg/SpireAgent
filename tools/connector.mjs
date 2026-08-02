@@ -6,6 +6,7 @@ import {
   readdirSync,
   readFileSync,
   renameSync,
+  rmSync,
   writeFileSync
 } from "node:fs";
 import { createHash } from "node:crypto";
@@ -13,6 +14,13 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { spawnSync } from "node:child_process";
+import {
+  evaluateBuildProvenance,
+  gatewaySourceIdentity as readGatewaySourceIdentity,
+  readOptionalJson
+} from "./connector-provenance.mjs";
+
+export { evaluateBuildProvenance } from "./connector-provenance.mjs";
 
 const WORKSPACE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DEFAULT_ENDPOINT = "http://127.0.0.1:15526";
@@ -258,6 +266,8 @@ function sourceProtocol(file, pattern) {
 function paths(options = {}) {
   const gameDir = path.resolve(options.gameDir ?? resolveGameDir());
   const modsDir = resolveModsDir(gameDir);
+  const localRoot = path.join(WORKSPACE, "STS2MCP/.local");
+  const installationKey = createHash("sha256").update(gameDir).digest("hex").slice(0, 16);
   return {
     gameDir,
     modsDir,
@@ -265,7 +275,9 @@ function paths(options = {}) {
     sourceManifest: path.join(WORKSPACE, "STS2MCP/mod_manifest.json"),
     installedDll: path.join(modsDir, "STS2_MCP.dll"),
     installedManifest: path.join(modsDir, "STS2_MCP.json"),
-    localRoot: path.join(WORKSPACE, "STS2MCP/.local")
+    localRoot,
+    buildIdentity: path.join(WORKSPACE, "STS2MCP/out/STS2_MCP/build-identity.json"),
+    installedIdentity: path.join(localRoot, "installations", `${installationKey}.json`)
   };
 }
 
@@ -392,6 +404,30 @@ export function workspaceSourceIdentity() {
     sourceDigest: digest.digest("hex"),
     worktreeStatus: statusResult.stdout.trim().length === 0 ? "clean" : "dirty"
   };
+}
+
+export function gatewaySourceIdentity() {
+  return readGatewaySourceIdentity(WORKSPACE);
+}
+
+function writeBuildIdentity(resolved) {
+  const currentSource = gatewaySourceIdentity();
+  const protocols = sourceProtocols();
+  const identity = artifactIdentity(resolved.builtDll);
+  if (!currentSource || !identity) throw new Error("Could not establish Gateway build provenance.");
+  const metadata = {
+    schema_version: 1,
+    built_at: new Date().toISOString(),
+    source_revision: currentSource.revision,
+    gateway_source_digest: currentSource.sourceDigest,
+    source_worktree_status: currentSource.worktreeStatus,
+    source_file_count: currentSource.fileCount,
+    source_protocol: protocols.csharp,
+    artifact_sha256: identity.sha256,
+    artifact_mvid: identity.module_version_id
+  };
+  writeFileSync(resolved.buildIdentity, `${JSON.stringify(metadata, null, 2)}\n`);
+  return metadata;
 }
 
 function artifactIdentity(file) {
@@ -542,6 +578,7 @@ function parseOptions(args) {
 async function inspect(options, requireLoaded = false) {
   const resolved = paths(options);
   const protocols = sourceProtocols();
+  const currentSource = gatewaySourceIdentity();
   const endpoint = options.endpoint ?? DEFAULT_ENDPOINT;
   const waited = options.wait
     ? await waitForGateway({ endpoint, timeoutMs: options.waitMs, pollMs: options.pollMs })
@@ -565,6 +602,8 @@ async function inspect(options, requireLoaded = false) {
     : null;
   const builtIdentity = artifactIdentity(resolved.builtDll);
   const installedIdentity = artifactIdentity(resolved.installedDll);
+  const buildMetadata = readOptionalJson(resolved.buildIdentity);
+  const installedMetadata = readOptionalJson(resolved.installedIdentity);
   const evaluation = evaluateLoadedArtifact({
     csharpProtocol: protocols.csharp,
     reProtocol: protocols.re,
@@ -574,8 +613,25 @@ async function inspect(options, requireLoaded = false) {
     installedMvid: installedIdentity?.module_version_id ?? null,
     capabilities
   });
+  const provenance = evaluateBuildProvenance({
+    currentSource,
+    sourceProtocol: protocols.csharp,
+    builtSha: evaluation.built_sha256,
+    builtMvid: evaluation.built_mvid,
+    buildMetadata,
+    installedSha: evaluation.installed_sha256,
+    installedMvid: evaluation.installed_mvid,
+    installedMetadata
+  });
+  const errors = [...new Set([...evaluation.errors, ...provenance.errors])];
   return {
     ...evaluation,
+    ok: errors.length === 0,
+    artifact_identity_ok: errors.length === 0,
+    errors,
+    source_identity: currentSource,
+    build_provenance: buildMetadata,
+    installed_provenance: installedMetadata,
     ...evaluateEnvironmentReadiness(readinessCapabilities),
     game_dir: resolved.gameDir,
     mods_dir: resolved.modsDir,
@@ -608,6 +664,7 @@ function build(options) {
     "-c", "Release"
   ]);
   run("npm", ["--prefix", "Re-SpireAgent", "run", "build"]);
+  return writeBuildIdentity(resolved);
 }
 
 function test(options) {
@@ -660,6 +717,25 @@ function install(options) {
     throw new Error("Slay the Spire 2 is running. Close it before replacing the Gateway artifact.");
   }
   if (!existsSync(resolved.builtDll)) throw new Error("Release DLL is missing; run connector:build first.");
+  const currentSource = gatewaySourceIdentity();
+  const protocols = sourceProtocols();
+  const builtIdentity = artifactIdentity(resolved.builtDll);
+  const buildMetadata = readOptionalJson(resolved.buildIdentity);
+  const buildProvenance = evaluateBuildProvenance({
+    currentSource,
+    sourceProtocol: protocols.csharp,
+    builtSha: builtIdentity?.sha256 ?? null,
+    builtMvid: builtIdentity?.module_version_id ?? null,
+    buildMetadata,
+    installedSha: null,
+    installedMvid: null,
+    installedMetadata: null
+  });
+  if (!buildProvenance.ok) {
+    throw new Error(
+      `Release build does not match current Gateway source: ${buildProvenance.errors.join(", ")}. Run connector build before install.`
+    );
+  }
   mkdirSync(resolved.modsDir, { recursive: true });
   const modInstallation = inspectModInstallation(resolved.modsDir);
   if (modInstallation.exact_permission_blocker) {
@@ -670,7 +746,19 @@ function install(options) {
   const builtSha = sha256File(resolved.builtDll);
   const installedSha = sha256File(resolved.installedDll);
   if (builtSha === installedSha && existsSync(resolved.installedManifest)) {
-    return { status: "already_installed", sha256: builtSha, installed_dll: resolved.installedDll };
+    const installedProvenance = {
+      ...buildMetadata,
+      installed_at: new Date().toISOString()
+    };
+    mkdirSync(path.dirname(resolved.installedIdentity), { recursive: true });
+    writeFileSync(resolved.installedIdentity, `${JSON.stringify(installedProvenance, null, 2)}\n`);
+    return {
+      status: "already_installed",
+      sha256: builtSha,
+      mvid: builtIdentity.module_version_id,
+      installed_dll: resolved.installedDll,
+      gateway_source_digest: buildMetadata.gateway_source_digest
+    };
   }
 
   const backupDir = path.join(
@@ -681,11 +769,20 @@ function install(options) {
   mkdirSync(backupDir, { recursive: true });
   if (existsSync(resolved.installedDll)) copyFileSync(resolved.installedDll, path.join(backupDir, "STS2_MCP.dll"));
   if (existsSync(resolved.installedManifest)) copyFileSync(resolved.installedManifest, path.join(backupDir, "STS2_MCP.json"));
+  if (existsSync(resolved.installedIdentity)) {
+    copyFileSync(resolved.installedIdentity, path.join(backupDir, "installed-identity.json"));
+  }
+  const previousIdentity = artifactIdentity(resolved.installedDll);
   writeFileSync(path.join(backupDir, "deployment.json"), `${JSON.stringify({
     schema_version: 1,
     created_at: new Date().toISOString(),
     previous_installed_sha256: installedSha,
+    previous_installed_mvid: previousIdentity?.module_version_id ?? null,
     replacement_sha256: builtSha,
+    replacement_mvid: builtIdentity.module_version_id,
+    replacement_source_revision: buildMetadata.source_revision,
+    replacement_gateway_source_digest: buildMetadata.gateway_source_digest,
+    replacement_protocol: buildMetadata.source_protocol,
     game_dir: resolved.gameDir,
     scope: "gateway_artifact_only_not_game_or_modset"
   }, null, 2)}\n`);
@@ -694,11 +791,38 @@ function install(options) {
   copyFileSync(resolved.sourceManifest, resolved.installedManifest);
   const copiedSha = sha256File(resolved.installedDll);
   if (copiedSha !== builtSha) throw new Error("Installed Gateway SHA does not match the Release artifact.");
+  const installedProvenance = {
+    ...buildMetadata,
+    installed_at: new Date().toISOString()
+  };
+  mkdirSync(path.dirname(resolved.installedIdentity), { recursive: true });
+  writeFileSync(resolved.installedIdentity, `${JSON.stringify(installedProvenance, null, 2)}\n`);
   return {
     status: "installed_game_must_be_cold_started",
     sha256: copiedSha,
+    mvid: builtIdentity.module_version_id,
     installed_dll: resolved.installedDll,
+    gateway_source_digest: buildMetadata.gateway_source_digest,
     rollback_backup: backupDir
+  };
+}
+
+function deploy(options) {
+  if (gameProcessRunning()) {
+    throw new Error("Slay the Spire 2 is running. Close it before starting the verified deploy workflow.");
+  }
+  test(options);
+  const buildMetadata = build(options);
+  const installation = install(options);
+  return {
+    status: "verified_source_build_installed_game_must_be_cold_started",
+    source_revision: buildMetadata.source_revision,
+    gateway_source_digest: buildMetadata.gateway_source_digest,
+    protocol: buildMetadata.source_protocol,
+    artifact_sha256: buildMetadata.artifact_sha256,
+    artifact_mvid: buildMetadata.artifact_mvid,
+    installation,
+    loaded: "non_claim"
   };
 }
 
@@ -756,6 +880,13 @@ function restoreKnownEnvironment(options) {
   copyFileSync(dll, resolved.installedDll);
   const manifest = path.join(backup, "STS2_MCP.json");
   if (existsSync(manifest)) copyFileSync(manifest, resolved.installedManifest);
+  const installedIdentity = path.join(backup, "installed-identity.json");
+  if (existsSync(installedIdentity)) {
+    mkdirSync(path.dirname(resolved.installedIdentity), { recursive: true });
+    copyFileSync(installedIdentity, resolved.installedIdentity);
+  } else {
+    rmSync(resolved.installedIdentity, { force: true });
+  }
   return {
     status: "gateway_artifact_restored_game_must_be_cold_started",
     sha256: sha256File(resolved.installedDll),
@@ -812,6 +943,162 @@ async function collectEvidence(options) {
     state_token: state.state_token,
     interaction_id: state.interaction?.id ?? null,
     partial_failures: partialFailures
+  };
+}
+
+function probeCommand(command, args = ["--version"]) {
+  const result = spawnPortable(command, args, {
+    cwd: WORKSPACE,
+    env: process.env,
+    encoding: "utf8",
+    stdio: "pipe"
+  });
+  const output = `${result.stdout ?? ""}\n${result.stderr ?? ""}`.trim();
+  return {
+    available: !result.error && result.status === 0,
+    version: output.split(/\r?\n/u).find(Boolean) ?? null,
+    error: result.error?.message ?? (result.status === 0 ? null : `exit_${result.status}`)
+  };
+}
+
+function gitWorkspaceState() {
+  const read = (args) => {
+    const result = spawnSync("git", args, {
+      cwd: WORKSPACE,
+      encoding: "utf8",
+      stdio: "pipe"
+    });
+    return result.status === 0 ? result.stdout.trim() : null;
+  };
+  return {
+    branch: read(["branch", "--show-current"]),
+    head: read(["rev-parse", "HEAD"]),
+    upstream: read(["rev-parse", "--abbrev-ref", "@{upstream}"]),
+    worktree: read(["status", "--porcelain"]) ? "dirty" : "clean"
+  };
+}
+
+export function recommendDoctorSteps({
+  prerequisites,
+  gameDirExists,
+  agentDependenciesInstalled,
+  status,
+  inspectionError = null
+}) {
+  const steps = [];
+  const missing = Object.entries(prerequisites)
+    .filter(([, value]) => value.required && !value.available)
+    .map(([name]) => name);
+  if (missing.length > 0) steps.push(`Install required tools: ${missing.join(", ")}.`);
+  if (!gameDirExists) steps.push("Install STS2 or set STS2_GAME_DIR to the exact Steam game directory.");
+  if (!agentDependenciesInstalled) steps.push("Run npm run bootstrap from the repository root.");
+  if (inspectionError) steps.push(`Resolve Connector inspection failure: ${inspectionError}`);
+
+  const deployErrors = new Set([
+    "release_artifact_missing",
+    "installed_artifact_missing",
+    "build_provenance_missing",
+    "installed_provenance_missing",
+    "source_build_digest_mismatch",
+    "source_build_protocol_mismatch",
+    "build_provenance_sha_mismatch",
+    "build_provenance_mvid_mismatch",
+    "build_installed_sha_mismatch",
+    "build_installed_mvid_mismatch",
+    "build_installed_provenance_mismatch"
+  ]);
+  if (status?.errors?.some((error) => deployErrors.has(error))) {
+    steps.push("Fully close STS2, then run npm run deploy from the repository root.");
+  }
+  if (status?.mod_installation?.exact_permission_blocker) {
+    steps.push("Fully close STS2, then diagnose and repair duplicate STS2_MCP manifests.");
+  }
+  if (status?.errors?.some((error) => [
+    "installed_loaded_sha_mismatch",
+    "installed_loaded_mvid_mismatch",
+    "source_loaded_protocol_mismatch"
+  ].includes(error))) {
+    steps.push("After a verified deploy, cold-restart STS2 so the installed Gateway is actually loaded.");
+  } else if (status?.errors?.includes("gateway_not_loaded_or_unreachable")) {
+    steps.push("Start STS2, wait for a stable menu, then run npm run verify:loaded.");
+  }
+  if (status?.ok === true
+      && status.environment_ready !== true) {
+    steps.push(`Resolve loaded environment blockers: ${(status.blockers ?? ["observation_not_ready"]).join(", ")}.`);
+  }
+  if (status?.ok === true
+      && status.environment_ready === true
+      && status.mutation_ready !== true
+      && status.provisional_trial_ready !== true) {
+    steps.push("The loaded environment has no bounded mutation authority; keep actions Fail Closed and inspect compatibility.");
+  }
+  if (steps.length === 0 && status?.ok) {
+    steps.push("Run cd Re-SpireAgent && npm run agent:run.");
+  }
+  return [...new Set(steps)];
+}
+
+async function doctor(options) {
+  const python = process.platform === "win32" ? "python" : "python3";
+  const prerequisites = {
+    node: {
+      required: true,
+      available: Number(process.versions.node.split(".")[0]) >= 20,
+      version: process.version,
+      error: null
+    },
+    npm: { required: true, ...probeCommand("npm") },
+    dotnet: { required: true, ...probeCommand("dotnet", ["--version"]) },
+    git: { required: true, ...probeCommand("git", ["--version"]) },
+    python: { required: false, ...probeCommand(python, ["--version"]) },
+    uv: { required: false, ...probeCommand("uv", ["--version"]) }
+  };
+  let gameDir = null;
+  let gameDirExists = false;
+  let gameDirError = null;
+  try {
+    gameDir = path.resolve(options.gameDir ?? resolveGameDir());
+    gameDirExists = existsSync(gameDir);
+  } catch (error) {
+    gameDirError = error instanceof Error ? error.message : String(error);
+  }
+  const agentDependenciesInstalled = existsSync(path.join(
+    WORKSPACE,
+    "Re-SpireAgent/node_modules/typescript/package.json"
+  ));
+  let status = null;
+  let inspectionError = gameDirError;
+  if (gameDirExists && prerequisites.dotnet.available) {
+    try {
+      status = await inspect({ ...options, gameDir });
+    } catch (error) {
+      inspectionError = error instanceof Error ? error.message : String(error);
+    }
+  }
+  const nextSteps = recommendDoctorSteps({
+    prerequisites,
+    gameDirExists,
+    agentDependenciesInstalled,
+    status,
+    inspectionError
+  });
+  return {
+    status: nextSteps.length === 1 && nextSteps[0].includes("agent:run")
+      ? "ready"
+      : "action_required",
+    repository: gitWorkspaceState(),
+    prerequisites,
+    game_dir: gameDir,
+    game_dir_exists: gameDirExists,
+    agent_dependencies_installed: agentDependenciesInstalled,
+    connector: status,
+    inspection_error: inspectionError,
+    next_steps: nextSteps,
+    non_claims: [
+      "doctor is read-only",
+      "installed identity is not loaded identity",
+      "loaded identity is not Organic qualification"
+    ]
   };
 }
 
@@ -916,6 +1203,8 @@ async function prepareAgentRun(options) {
 function usage() {
   return `Usage: npm run connector -- <command> [options]\n\n`
     + `Commands:\n`
+    + `  doctor                            Diagnose prerequisites, checkout and deployment drift\n`
+    + `  deploy                            Test, build, back up and install with the game closed\n`
     + `  inspect | show-status             Read source, disk and optional loaded identity\n`
     + `  test                              Run Gateway, Re and connector checks\n`
     + `  audit                             Run exact local game assembly audits\n`
@@ -942,6 +1231,15 @@ export async function main(argv = process.argv.slice(2)) {
     console.log(usage());
     return;
   }
+  loadAgentGameDirFromLocalEnv();
+  if (command === "doctor") {
+    console.log(JSON.stringify(await doctor(options), null, 2));
+    return;
+  }
+  if (command === "deploy") {
+    console.log(JSON.stringify(deploy(options), null, 2));
+    return;
+  }
   if (command === "inspect" || command === "show-status") {
     console.log(JSON.stringify(await inspect(options), null, 2));
     return;
@@ -954,7 +1252,10 @@ export async function main(argv = process.argv.slice(2)) {
   }
   if (command === "test") return test(options);
   if (command === "audit") return audit(options);
-  if (command === "build") return build(options);
+  if (command === "build") {
+    console.log(JSON.stringify(build(options), null, 2));
+    return;
+  }
   if (command === "install") {
     console.log(JSON.stringify(install(options), null, 2));
     return;
@@ -995,7 +1296,6 @@ export async function main(argv = process.argv.slice(2)) {
     return;
   }
   if (command === "run-agent") {
-    loadAgentGameDirFromLocalEnv();
     console.log(JSON.stringify(await prepareAgentRun(options), null, 2));
     const sourceIdentity = workspaceSourceIdentity();
     run("npm", ["--prefix", "Re-SpireAgent", "run", "agent:run:direct", "--", ...options.passthrough], {

@@ -20,20 +20,21 @@ or stop at a precise visible unsupported boundary.
 
 ## Delivery Order
 
-1. Close defects found by exact-runtime V3 journeys and keep build/install/load
-   attribution exact.
-2. Cold-load Preview.6 and validate Luminous Choir event removal. Preview.5
+1. Keep public fresh-clone, multi-developer handoff and source/build/install/load
+   attribution reproducible with the canonical operator workflow.
+2. Close defects found by exact-runtime V3 journeys.
+3. Cold-load Preview.6 and validate Luminous Choir event removal. Preview.5
    already proved direct Smith and known-room settling; merchant removal and
    combat-hand still need exact-runtime evidence.
-3. Extend the Preview.5 `run_deck` and `surface_card` evidence to combat-pile
+4. Extend the Preview.5 `run_deck` and `surface_card` evidence to combat-pile
    and shop-catalog Inspection; keep real-page opening as a separate optional
    evidence profile.
-4. Move the remaining selector families to direct V3 discovery and Re
+5. Move the remaining selector families to direct V3 discovery and Re
    consumption while deleting each replaced Provider and sidecar dependency.
-5. Simplify V3 authority projection without weakening exact-environment
+6. Simplify V3 authority projection without weakening exact-environment
    validation.
-6. Retire v2 production mutation routes.
-7. Resume A evaluation on the stable V3 evidence boundary.
+7. Retire v2 production mutation routes.
+8. Resume A evaluation on the stable V3 evidence boundary.
 
 ## Exit Conditions For Connector V3 Baseline
 

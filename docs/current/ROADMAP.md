@@ -3,8 +3,9 @@
 ## V3-0: Vertical Source Cutover
 
 Status: implemented and repeatedly exercised for ordinary journeys. V3 is the
-default Gateway/Re contract; REST and MCP are thin transports. Preview.6 is
-built and installed but not loaded.
+default Gateway/Re contract; REST and MCP are thin transports. Preview.6 source
+is reviewed and tested, while its per-machine build/install/load state must be
+queried rather than copied into repository truth.
 
 Exit remains exact source/build/install/load identity plus automated checks.
 Installing a DLL is not loading it.
@@ -17,19 +18,19 @@ inherits none of that runtime authority.
 
 Next exit:
 
-- cold-load SHA
-  `7668a1cd1f99cc917466d43069af716ef8abf22f7b42aac59bda67ab321c3b96`
-  and MVID `6704fa1f-f8fe-4cc1-9fe6-ba513f283239`;
+- use a provenance-verified Preview.6 build/install and cold-load its exact
+  reported SHA/MVID;
 - verify protocol, game, Modset, runtime and scoped authority;
 - exercise the exact Luminous Choir selector lifecycle or retain a precise
   fail-closed defect.
 
 ## V3-2: Ordinary Journey
 
-Status: multiple exact v0.110.1 ordinary journeys exist. The latest
-Preview.5 session was intentionally stopped at its first real unsupported
-Surface, not completed. Historical complete journeys retain their original
-SHA/MVID and do not qualify Preview.6.
+Status: multiple exact v0.110.1 ordinary journeys exist. The latest reviewed
+Preview.5 run completed one game with 80 settled commands and stopped at the
+top-level menu rather than starting another game. A separate Preview.5 session
+stopped at Luminous Choir. Both retain their exact SHA/MVID and do not qualify
+Preview.6.
 
 ## V3-3: Native Family Migration
 

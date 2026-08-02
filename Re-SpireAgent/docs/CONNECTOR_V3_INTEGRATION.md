@@ -49,7 +49,9 @@ reward/card-reward, shop, rest, treasure, combat and generated choice are
 exact-runtime exercised under earlier artifacts. Preview.5 exercised direct
 Smith, known-room settling, visible unsupported, `run_deck` Inspection and
 linked detail. Merchant removal and combat-hand remain unexercised; Preview.6
-Luminous Choir removal is built/installed but not loaded. Remaining
+Luminous Choir removal is implemented/tested but still lacks exact-runtime
+exercise. Build/install/load status is per-machine and must be read with the
+root Connector CLI. Remaining
 selector families temporarily read same-runtime
 Bridge v2 capabilities only as a
 non-executable semantic/environment projection sidecar. No v2 legal action or

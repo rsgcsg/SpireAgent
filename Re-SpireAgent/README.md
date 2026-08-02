@@ -14,13 +14,17 @@ Current component details:
 
 ## Setup
 
+From the repository root (preferred):
+
 ```bash
-npm install
-cp .env.example .env.local
+npm run bootstrap
+cp Re-SpireAgent/.env.example Re-SpireAgent/.env.local
+npm run doctor
 ```
 
 Put the real provider key only in `.env.local`. `STS2_MCP_PROTOCOL` may only be
-`v3`.
+`v3`. See the root [local deployment guide](../docs/current/LOCAL_SETUP.md) for
+custom Steam paths and multi-machine setup.
 
 ## Checks
 
@@ -32,7 +36,8 @@ This runs typecheck, tests and the production build.
 
 ## Live Run
 
-Build and install the Gateway from the repository root, cold-start STS2, then:
+With STS2 closed, run `npm run deploy` from the repository root. Cold-start the
+game and run `npm run verify:loaded`, then:
 
 ```bash
 cd Re-SpireAgent

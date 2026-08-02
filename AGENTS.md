@@ -24,6 +24,11 @@ Before changing current behavior or documentation, read:
 4. the component guide: `Re-SpireAgent/AGENT.md` or `STS2MCP/AGENTS.md`
 5. the component's current protocol, coverage, and integration documents
 
+For any shared-branch, deployment or handoff task, also read
+`docs/current/DEVELOPMENT_MODEL.md`. Record branch, exact HEAD, upstream and
+worktree before editing. Do not overwrite unexplained changes or force-push a
+shared branch.
+
 Use `docs/current/` for repository-level current truth. Connector V3 protocol
 and coverage belong in `STS2MCP/docs/connector-v3/`. Bridge v2 documents are
 migration and evidence history.
@@ -62,6 +67,12 @@ When a current behavior, permission, or support status changes, update the
 relevant component document and `docs/current/STATUS.md` in the same change.
 Run `npm run check:docs` after moving current Markdown files.
 
+Do not hard-code a mutable repository HEAD or one machine's current
+built/installed/loaded tuple as global current truth. Put exact runtime tuples
+in dated evidence records; use `npm run doctor` and `npm run verify:loaded` for
+per-machine truth. A handoff must separate source, tests, build, install, load,
+Live exercise and qualification.
+
 ## Validation
 
 For Re changes:
@@ -76,3 +87,7 @@ For Gateway changes, follow the environment-scoped commands in
 `STS2MCP/README.md`, including C# tests, Python syntax checking, and a Release
 build against the exact game installation. A fixture or build is not Organic
 Qualification; record loaded identity and bounded real-game evidence separately.
+
+For a coherent local deployment, prefer `npm run deploy` over manual copies.
+It records source-to-artifact provenance, backs up the old Gateway and refuses
+to install while the game is running.

@@ -20,7 +20,8 @@ See [Protocol](PROTOCOL.md), [Coverage](COVERAGE.md), and the latest reviewed
 That evidence proves direct Smith, `run_deck` Inspection, linked detail and
 stale refusal for its exact loaded artifact. The
 [Preview.6 cutover](PREVIEW_6_LUMINOUS_CHOIR_EVENT_REMOVAL_CUTOVER_2026-08-02.md)
-implements the next Organic blocker and is built/installed but not loaded.
+implements the next Organic blocker in source and tests; build/install/load are
+per-machine facts reported by `npm run doctor`, not repository-global state.
 Merchant removal, combat-hand and the new event transaction still require
 current exact-runtime exercise.
 Bridge v2 documentation is retained as migration and runtime evidence, not

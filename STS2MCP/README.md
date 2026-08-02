@@ -18,10 +18,20 @@ Never copy game assemblies into this repository.
 From the repository root:
 
 ```bash
-npm run connector -- inspect
+npm run doctor
+npm run deploy
+```
+
+`deploy` runs the tests and build commands below, records source-to-artifact
+provenance, backs up the old install and installs only while STS2 is closed.
+For advanced individual stages:
+
+```bash
+npm run connector -- show-status
 npm run connector -- test
 npm run connector -- audit
 npm run connector -- build
+npm run connector -- install
 ```
 
 Direct macOS checks:
@@ -38,11 +48,12 @@ dotnet build STS2MCP/STS2_MCP.csproj -c Release \
 
 ## Install And Roll Back
 
-Close STS2 before installation:
+Close STS2 before installation. A standalone install accepts only a Release
+artifact whose recorded source digest and protocol match the current checkout:
 
 ```bash
 npm run connector -- install
-npm run connector -- inspect
+npm run doctor
 ```
 
 The install command creates a timestamped rollback snapshot and verifies
@@ -50,7 +61,7 @@ built/installed SHA and MVID. Build or install is not loaded evidence. After a
 cold game start:
 
 ```bash
-npm run connector -- verify-loaded-artifact --wait
+npm run verify:loaded
 ```
 
 Use the rollback path printed by `install`, or:

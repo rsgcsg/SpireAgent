@@ -70,6 +70,12 @@ new MVID. Empty or absent operation scopes remain Fail Closed.
 
 ## Automated, Build And Install Results
 
+This section preserves the original author's local pre-commit deployment
+record. It is historical evidence, not current machine truth. The later
+[public deployment audit](../../../docs/current/audits/PUBLIC_REPOSITORY_DEPLOYMENT_AND_COLLABORATION_AUDIT_2026-08-02.md)
+found a different Preview.5 artifact still loaded after commit and introduced
+source-to-build provenance checks. Use `npm run doctor` for current state.
+
 - Gateway: 260/260 tests passed.
 - Re: 267/267 tests passed; strict typecheck and production build passed.
 - Connector CLI, run identity, inventory, adaptation, Clean Closure,

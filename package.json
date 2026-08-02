@@ -8,11 +8,16 @@
     "node": ">=20"
   },
   "scripts": {
+    "bootstrap": "npm --prefix Re-SpireAgent ci",
+    "doctor": "node tools/connector.mjs doctor",
+    "deploy": "node tools/connector.mjs deploy",
+    "verify:loaded": "node tools/connector.mjs verify-loaded-artifact --wait",
     "check": "npm --prefix Re-SpireAgent run check",
     "check:agent": "npm --prefix Re-SpireAgent run check",
     "test:agent": "npm --prefix Re-SpireAgent test",
     "build:agent": "npm --prefix Re-SpireAgent run build",
-    "check:docs": "node tools/check-active-markdown-links.mjs && npm run check:connector-inventory && npm run check:connector-adaptation && npm run check:connector-clean-closure",
+    "check:docs": "node tools/check-active-markdown-links.mjs && npm run check:current-truth && npm run check:connector-inventory && npm run check:connector-adaptation && npm run check:connector-clean-closure",
+    "check:current-truth": "node tools/check-current-truth.mjs",
     "check:connector-inventory": "node tools/check-connector-operation-inventory.mjs",
     "check:connector-adaptation": "node tools/check-connector-adaptation-contracts.mjs",
     "check:connector-clean-closure": "node tools/check-connector-clean-closure.mjs",

@@ -39,19 +39,23 @@ the capability inventory and missing scenario/eval infrastructure.
 Preferred root entrypoints:
 
 ```bash
-npm run connector -- inspect
+npm run bootstrap
+npm run doctor
+npm run deploy
+npm run verify:loaded
+npm run connector -- show-status
 npm run connector -- test
 npm run connector -- audit
 npm run connector -- build
 npm run connector -- install
-npm run connector -- verify-loaded-artifact
 npm run connector -- collect-evidence
 ```
 
-The CLI is a thin process/file-hash orchestrator over the existing Gateway,
-Re, D and qualification tools. It owns no game semantics, permission,
-completion or compatibility claims. Use `npm run connector -- help` for the
-full command map.
+`doctor` is read-only. `deploy` runs the complete source checks, writes
+source-to-build provenance, builds, backs up and installs while the game is
+closed. It does not claim loaded state. The CLI owns no game semantics,
+permission, completion or compatibility claims. Use
+`npm run connector -- help` for the full command map.
 
 Set `STS2_GAME_DIR` to the exact local Steam installation, then use the
 platform-specific commands in `STS2MCP/README.md` to run C# tests, Python MCP

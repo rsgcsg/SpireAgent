@@ -1,25 +1,65 @@
-# Contributing To The Current Mainline
+# Contributing
 
-Work in the component that owns the behavior:
+SpireAgent is a public multi-developer project. Start with
+[the development model](docs/current/DEVELOPMENT_MODEL.md), [AGENTS.md](AGENTS.md)
+and the owning component guide.
 
-- Agent, prompts, recording, and connector consumption: `Re-SpireAgent/`.
-- Game observation, advertised actions, validation, commit, completion, REST,
-  and optional MCP adaptation: `STS2MCP/`.
+## Before Editing
 
-Read [AGENTS.md](AGENTS.md), then the component-level guide before editing.
-The root package intentionally exposes only Re checks and active Markdown-link
-checks. Gateway validation needs the local game installation described in
-[`STS2MCP/README.md`](STS2MCP/README.md).
+```bash
+git fetch origin
+git status --short --branch
+git rev-parse HEAD
+npm run bootstrap
+npm run doctor
+```
 
-GitHub Actions runs Re checks, active-document checks, connector-inventory
-checks, and Python adapter syntax. It cannot build or test the C# Gateway
-without proprietary local game assemblies. Every Gateway change must therefore
-include the exact local test/build commands and, when runtime behavior changes,
-separately scoped installed/loaded/Organic evidence.
+Use a topic branch for independent work. Do not force-push a shared test branch
+or overwrite another developer's dirty worktree. Keep behavior changes,
+protocol/schema updates, tests and current documentation in one reviewable
+vertical slice.
 
-Use [Fresh Clone And Local Deployment](docs/current/LOCAL_SETUP.md) when
-preparing another development machine.
+## Ownership
 
-Do not treat `archive/` as a source directory. If historical code or evidence
-is needed, cite it in a current decision document and make the smallest
-explicit extraction possible.
+- `Re-SpireAgent/`: provider calls, strict decode, projection, supervision and
+  recording.
+- `STS2MCP/`: player-visible facts, current owner, command admission,
+  execute-time native validation, Commit, Outcome, REST and optional MCP.
+- `tools/` and `docs/current/`: non-authorizing operator workflow and current
+  cross-component truth.
+
+Do not move Gateway legality/completion into Re or grant additional authority
+through REST, MCP, fixtures, manifests or documentation.
+
+## Validation
+
+At minimum:
+
+```bash
+npm run check
+npm run check:docs
+npm run check:connector-cli
+git diff --check
+```
+
+Gateway changes also require the exact local STS2 assemblies:
+
+```bash
+npm run connector -- test
+npm run connector -- build
+```
+
+GitHub Actions cannot access proprietary game assemblies, so local Gateway test
+and build evidence must be reported honestly. Use `npm run deploy` for a safe
+local install and `npm run verify:loaded` only after a cold start.
+
+## Pull Requests
+
+Use the repository PR template. Report source, test, build, installed, loaded
+and Live evidence separately. Include exact SHA/MVID/runtime only when actually
+observed, list non-claims, and provide rollback for production or deployment
+changes.
+
+Never commit `.env.local`, keys, game DLLs, `data/runs/`, `out/`, `.local/`,
+installed artifacts, mutable qualification stores or unreviewed provider
+output. Historical material under `archive/` is not active source.

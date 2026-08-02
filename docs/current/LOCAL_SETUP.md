@@ -1,49 +1,132 @@
 # Fresh Clone And Local Deployment
 
-This is the current cross-component setup and deployment runbook. Component
-READMEs own detailed commands; this file owns their order and the evidence
-needed to call a local deployment complete.
+This is the canonical source deployment path for public testers and
+contributors. It deliberately avoids hand-copying artifacts and does not treat
+one developer's installed DLL as repository truth.
 
-## Names And Repository Layout
+## Components And Names
 
 | Name | Meaning |
 |---|---|
-| SpireAgent | This public monorepo and the overall project |
-| `Re-SpireAgent/` | Current external Agent runtime and strict REST consumer |
-| STS2 Agent Bridge / Semantic Gateway | Current game-side connector product/component |
-| `STS2MCP/` | Existing source-directory and Mod ID family for the Gateway, REST adapter, and optional Python MCP adapter |
+| SpireAgent | This public monorepo and overall project |
+| `Re-SpireAgent/` | External Agent runtime and strict Connector V3 consumer |
+| Semantic Gateway | In-game observation, authority, native Commit and Outcome owner |
+| `STS2MCP/` | Compatibility-sensitive source directory and Mod ID for the Gateway, REST and optional MCP adapter |
 
-`STS2MCP` is retained as a compatibility-sensitive directory/Mod identifier.
-It does not mean that MCP is the required Agent transport: Re uses Gateway REST
-directly, while Python MCP is optional. Renaming the Mod ID, assembly, routes,
-or directory is a separate migration and must not be mixed into ordinary
-deployment.
+The `STS2MCP` name does not make MCP mandatory. Re uses REST directly. A Mod ID
+or directory rename is a separate compatibility migration.
 
-## 1. Clone And Prerequisites
+## 1. Choose A Coherent Revision
+
+For the public default branch:
 
 ```bash
 git clone https://github.com/rsgcsg/SpireAgent.git
 cd SpireAgent
-git switch develop
-git pull --ff-only origin develop
+git status --short --branch
 ```
 
-Install:
-
-- Node.js 20 or newer and npm 10 or newer;
-- .NET 9 SDK;
-- Python 3.11 or newer and `uv` if the optional MCP adapter is needed;
-- Slay the Spire 2 through Steam.
-
-The repository does not contain game assemblies. Gateway builds reference the
-exact local Steam installation.
-
-## Preferred Connector Workflow
-
-From the repository root, use the thin Connector CLI for normal local work:
+Contributors testing the active V3 migration before it reaches the default
+branch may explicitly track the shared branch:
 
 ```bash
-npm run connector -- inspect
+git fetch origin
+git switch --track origin/connectorV3
+```
+
+If the local branch already exists, use `git switch connectorV3` followed by
+`git pull --ff-only`. Never pull over an unexplained dirty worktree. Branch
+roles and multi-developer handoff rules are in
+[Development Model](DEVELOPMENT_MODEL.md).
+
+## 2. Install Prerequisites
+
+Required:
+
+- Node.js 20 or newer and npm;
+- .NET 9 SDK;
+- Git;
+- Slay the Spire 2 through Steam.
+
+Optional MCP development also needs Python 3.11 or newer and `uv`.
+
+The repository does not contain proprietary game assemblies. Gateway tests and
+builds reference the exact local Steam installation.
+
+Install Re dependencies from the repository root:
+
+```bash
+npm run bootstrap
+```
+
+## 3. Configure Only This Machine
+
+```bash
+cp Re-SpireAgent/.env.example Re-SpireAgent/.env.local
+chmod 600 Re-SpireAgent/.env.local
+```
+
+Set `DEEPSEEK_API_KEY` in `.env.local` or the process environment. Never print,
+commit, upload or place it in run evidence. Each machine creates its own file.
+
+The default Steam locations are detected on macOS and Linux. For another
+location, especially Windows, set the exact game directory:
+
+```text
+STS2_GAME_DIR=D:\SteamLibrary\steamapps\common\Slay the Spire 2
+```
+
+Do not edit project files to encode a machine-specific path.
+
+## 4. Diagnose Before Mutating
+
+```bash
+npm run doctor
+```
+
+`doctor` is read-only. It reports prerequisites, Git branch/HEAD/worktree,
+source protocol, source-to-build provenance, built/installed/loaded SHA and
+MVID, game identity, Modset, runtime authority and ordered next steps. It reads
+only `STS2_GAME_DIR` from `.env.local`; it never prints provider configuration.
+
+Typical action-required results include:
+
+- `source_build_digest_mismatch`: source changed after the last Release build;
+- `build_provenance_missing`: an old/manual artifact cannot be tied to source;
+- `source_loaded_protocol_mismatch`: the running game still has an older DLL;
+- `duplicate_gateway_manifests_detected`: more than one Mod manifest is scanned.
+
+Do not bypass these checks by enabling fallback permissions.
+
+## 5. Verified Build And Install
+
+Fully exit Slay the Spire 2, then run:
+
+```bash
+npm run deploy
+```
+
+The command performs, in order:
+
+1. Gateway, Re, Python/MCP and repository contract checks;
+2. exact-game Release build and Re production build;
+3. a build provenance record containing source revision/digest, protocol,
+   artifact SHA and MVID;
+4. duplicate-Mod diagnosis;
+5. timestamped backup of the previous Gateway under ignored
+   `STS2MCP/.local/deployments/`;
+6. safe install and built/installed identity verification.
+
+Installed provenance is keyed by the normalized game directory, so one checkout
+can diagnose multiple local Steam installations without transferring identity
+between them.
+
+It refuses to start while the game is running and refuses to install a stale or
+unattributed Release artifact. Its final `loaded` value is always `non_claim`.
+
+Advanced contributors can run individual stages with:
+
+```bash
 npm run connector -- test
 npm run connector -- audit
 npm run connector -- build
@@ -51,253 +134,93 @@ npm run connector -- diagnose-installation
 npm run connector -- install
 ```
 
-After a Steam cold start, the ordinary Agent entry performs loaded-identity
-verification and exact trial resume itself:
+The root workflow is authoritative. Manual `cp` is an emergency diagnostic,
+not the supported deployment path, because it bypasses provenance and rollback.
+
+## 6. Cold-Load And Verify
+
+Start Slay the Spire 2 through Steam and wait until a stable menu. Then run:
 
 ```bash
-cd Re-SpireAgent
-npm run agent:run -- --max-ticks 20 --delay-ms 250
+npm run verify:loaded
 ```
 
-The separate `wait-for-gateway`, `verify-loaded-artifact`, and
-`collect-evidence` commands remain read-only diagnostics. `agent:run` fails
-before DeepSeek if exact identity or Gateway-revalidated mutation readiness is
-missing.
+This requires exact agreement among current C#/Re protocol, current source
+digest, built DLL, installed DLL and Gateway-reported loaded SHA/MVID. It also
+reports exact game, Modset and runtime identity. A successful check proves only
+loaded identity and environment readiness; it is not mutation canary, Organic
+evidence or persistent qualification.
 
-`inspect` compares C# and Re protocol source, Release and installed SHA/MVID,
-and any reachable loaded identity. `install` refuses to replace the DLL while
-the game is running or duplicate Gateway manifests remain, and stores the
-previous Gateway artifact under the ignored `STS2MCP/.local/deployments/`
-directory. Because the native Mod loader scans recursively, do not keep a
-backup manifest anywhere under the live `mods` tree. With the game closed,
-`repair-installation` can reversibly relocate only duplicates already under an
-explicit `backups` directory; other duplicates require manual review.
-`collect-evidence` requires capabilities and state, then reads controller and
-clients as optional diagnostics into ignored local storage. A missing optional
-diagnostic is reported as a partial failure rather than erasing valid loaded
-identity/state evidence. Read-only commands do not grant authority or turn
-disk identity into Organic evidence. `run-agent`/`agent:run` first probes the
-current state; only the Gateway may admit a current source-resolved action as
-session authority.
-
-For an exact newly loaded environment, the Operator Shell first checks artifact
-identity and requires an exact or explicitly bounded candidate Modset. Normal
-diagnostic observation may start without mutation authority. On the first
-actionable Surface, the Gateway may create only current runtime-bound encounter
-trials in `migration_exploration`. The legacy bulk package cycle runs only when
-that path is unavailable. This ordering permits evidence collection without
-granting Re or the migration tool action authority.
-
-Use `npm run connector -- help` for trial, qualification revoke/rollback, and
-Gateway-artifact restore delegation. `restore-known-environment` restores only
-a backed-up Gateway artifact; it does not restore a Steam game build, Modset,
-configuration, permission, or qualification. The lower-level commands below
-remain the diagnostic and CI source of truth.
-
-## 2. Verify The Agent
+For read-only diagnostics:
 
 ```bash
-npm --prefix Re-SpireAgent ci
-npm --prefix Re-SpireAgent run check
+npm run connector -- show-status
+npm run connector -- collect-evidence
 ```
 
-Create local provider configuration:
+V3 routes are `/api/v3/*`. Any remaining V2 capabilities read is an internal,
+temporary non-authorizing migration sidecar and is not a public consumer API.
 
-```bash
-cp Re-SpireAgent/.env.example Re-SpireAgent/.env.local
-chmod 600 Re-SpireAgent/.env.local
-```
-
-Set `DEEPSEEK_API_KEY` only in `Re-SpireAgent/.env.local` or the process
-environment. Never copy a key into README files, shell history, run records, or
-Git. Each machine owns its own `.env.local`.
-
-On Windows, also set the exact `STS2_GAME_DIR` in `.env.local` (or in the
-calling shell). The `agent:run` wrapper reads only this non-secret path before
-its loaded-artifact preflight; Re loads the remaining provider configuration
-itself.
-
-## 3. Build And Verify The Gateway
-
-macOS:
-
-```bash
-export STS2_GAME_DIR="$HOME/Library/Application Support/Steam/steamapps/common/Slay the Spire 2"
-dotnet test STS2MCP/STS2_MCP.sln -p:STS2GameDir="$STS2_GAME_DIR" \
-  -p:UseSharedCompilation=false
-python3 -m py_compile STS2MCP/mcp/server.py
-uv lock --check --directory STS2MCP/mcp
-dotnet build STS2MCP/STS2_MCP.csproj -c Release \
-  -o STS2MCP/out/STS2_MCP \
-  -p:STS2GameDir="$STS2_GAME_DIR" \
-  -p:UseSharedCompilation=false
-npm run check:connector-adaptation
-npm run audit:connector-compatibility
-```
-
-Windows PowerShell:
-
-```powershell
-$env:STS2_GAME_DIR = "D:\SteamLibrary\steamapps\common\Slay the Spire 2"
-dotnet test STS2MCP/STS2_MCP.sln -p:STS2GameDir="$env:STS2_GAME_DIR" `
-  -p:UseSharedCompilation=false
-dotnet build STS2MCP/STS2_MCP.csproj -c Release `
-  -o STS2MCP/out/STS2_MCP `
-  -p:STS2GameDir="$env:STS2_GAME_DIR" `
-  -p:UseSharedCompilation=false
-python -m py_compile STS2MCP/mcp/server.py
-uv lock --check --directory STS2MCP/mcp
-npm run check:connector-adaptation
-npm run audit:connector-compatibility
-```
-
-If Steam is installed elsewhere, change `STS2_GAME_DIR`; do not edit the
-project file to encode one machine's path.
-
-The compatibility audit writes an ignored local report to
-`STS2MCP/out/compatibility-audit/latest.json` and a deterministic grade to
-`latest-grade.json`. It hashes the exact game assembly, emits layered
-structural fingerprints, verifies reviewed combat-pile selector/commit
-structure, classifies unregistered callers conservatively, and checks the
-exact SHA/MVID scenario plus Tutor negative holdout. It never grants permission
-or qualification. Run `npm run check:connector-compatibility-fixtures` for the
-offline negative grader suite.
-
-## 4. Install With The Game Closed
-
-Close Slay the Spire 2 and confirm its process has exited before replacing the
-DLL. An in-place replacement while the process is running changes disk state,
-not the loaded assembly.
-
-macOS:
-
-```bash
-MODS_DIR="$STS2_GAME_DIR/SlayTheSpire2.app/Contents/MacOS/mods"
-mkdir -p "$MODS_DIR"
-cp STS2MCP/out/STS2_MCP/STS2_MCP.dll "$MODS_DIR/STS2_MCP.dll"
-cp STS2MCP/mod_manifest.json "$MODS_DIR/STS2_MCP.json"
-shasum -a 256 \
-  STS2MCP/out/STS2_MCP/STS2_MCP.dll \
-  "$MODS_DIR/STS2_MCP.dll"
-open "steam://run/2868840"
-```
-
-Windows PowerShell:
-
-```powershell
-$mods = Join-Path $env:STS2_GAME_DIR "mods"
-New-Item -ItemType Directory -Force $mods | Out-Null
-Copy-Item STS2MCP/out/STS2_MCP/STS2_MCP.dll (Join-Path $mods "STS2_MCP.dll") -Force
-Copy-Item STS2MCP/mod_manifest.json (Join-Path $mods "STS2_MCP.json") -Force
-Get-FileHash STS2MCP/out/STS2_MCP/STS2_MCP.dll -Algorithm SHA256
-Get-FileHash (Join-Path $mods "STS2_MCP.dll") -Algorithm SHA256
-Start-Process "steam://run/2868840"
-```
-
-The built and installed hashes must match. Keep any manual rollback copy
-outside the repository, for example under the operating-system temporary
-directory.
-
-## 5. Prove What Is Loaded
-
-After the game reaches a stable menu:
-
-```bash
-curl -sS http://127.0.0.1:15526/
-curl -sS http://127.0.0.1:15526/api/v2/capabilities | python3 -m json.tool
-curl -sS http://127.0.0.1:15526/api/v2/state | python3 -m json.tool
-npm --prefix Re-SpireAgent run agent:inspect
-```
-
-A complete local deployment check requires:
-
-- `protocol_version` matches current C# and Re source;
-- `bridge.assembly_file_sha256` matches the installed DLL;
-- a fresh `bridge.module_version_id` and `bridge.runtime_instance_id` are
-  recorded;
-- game version/commit/hash and loaded Modset are explicit;
-- `compatibility_policy_id`, its 64-character
-  `compatibility_policy_digest`, and `adaptation_level` agree across
-  capabilities and state;
-- compatibility is not inferred from version text alone;
-- Re negotiates `bridge_v2` and strictly decodes the same identity.
-
-For a release that retires v1, verify the loaded process rather than the source
-tree alone:
-
-```bash
-curl -sS -o /dev/null -w '%{http_code}\n' \
-  http://127.0.0.1:15526/api/v1
-curl -sS -o /dev/null -w '%{http_code}\n' \
-  http://127.0.0.1:15526/api/v1/singleplayer
-```
-
-Both must return `410`. A build, copied DLL, fixture, or successful decode does
-not qualify a gameplay operation; Organic action evidence remains separately
-scoped by game/Modset/SHA/MVID/runtime and operation.
-
-## 6. Run Re Or Optional MCP
-
-Re talks directly to Gateway REST:
-
-```bash
-npm --prefix Re-SpireAgent run agent:inspect
-npm --prefix Re-SpireAgent run agent:tick -- --dry-run
-npm --prefix Re-SpireAgent run agent:run -- --max-ticks 20 --delay-ms 250
-```
-
-The last command verifies and prepares the exact environment before invoking
-the Agent. Stop on unknown outcome; do not retry an uncertain command.
-
-The npm `agent:run` entry may choose one Gateway-advertised Continue or new-run
-action only after exact preflight, then remains bounded to one game. The same
-final entry works from the component directory:
+## 7. Run Re-SpireAgent
 
 ```bash
 cd Re-SpireAgent
 npm run agent:run
 ```
 
-The optional Python MCP adapter is for MCP-capable external clients:
+The wrapper verifies exact identity and bounded authority before invoking the
+provider. Re consumes V3 observations, candidates, commands and receipts. It
+may poll the same pending request, but an unknown mutation terminates the run
+and is never resubmitted.
+
+The optional MCP transport is started separately:
 
 ```bash
 uv run --directory STS2MCP/mcp python server.py
 ```
 
-MCP does not own game legality, completion, or extra authority. It forwards the
-v2 Gateway contract.
+MCP owns no game legality, completion or additional permission.
 
-## 7. Update Or Move To Another Machine
+## 8. Update Or Add Another Machine
 
-On every machine:
+On each machine:
 
-1. stop Re and close the game;
-2. `git pull --ff-only origin develop`;
-3. rerun Re checks and the exact-game Gateway tests/build;
-4. replace the local DLL and manifest;
-5. cold-start through Steam and compare built, installed, and loaded identity;
-6. recreate `.env.local` locally rather than copying it through Git;
-7. treat a changed game build, Modset, SHA, or MVID as a new evidence scope.
+1. stop Re and fully close the game;
+2. protect local work with `git status --short --branch`;
+3. `git fetch origin`, then fast-forward the intended branch;
+4. rerun `npm run bootstrap`, `npm run doctor` and `npm run deploy`;
+5. cold-start the game and run `npm run verify:loaded`;
+6. recreate `.env.local` locally;
+7. treat a changed game, Modset, Patch, Gateway SHA/MVID or runtime as a new
+   evidence scope.
 
-Do not copy `bin/`, `obj/`, `out/`, `dist/`, `node_modules/`, game binaries, run
-records, or secrets between machines through Git. Rebuild generated outputs
-locally.
+Do not move `node_modules/`, `dist/`, `bin/`, `obj/`, `out/`, game binaries,
+installed DLLs, `.local/`, qualification stores or `data/runs/` through Git.
 
-## 8. Troubleshooting
+## 9. Rollback
+
+Every changed install reports `rollback_backup`. With the game closed:
+
+```bash
+npm run connector -- restore-known-environment --backup <reported-directory>
+```
+
+This restores only the backed-up Gateway artifact and its local provenance. It
+does not restore a Steam game version, Modset, save, permission or qualification.
+Cold-start and verify again after rollback.
+
+## 10. Troubleshooting
 
 | Symptom | Safe response |
 |---|---|
-| REST endpoint unavailable | Confirm the game is running, the Mod is enabled, and port `15526` is not changed or occupied. |
-| Both `STS2_MCP Loaded` and `STS2_MCP Failed` appear | Run `npm run connector -- diagnose-installation`; recursively scanned backup manifests are independent Mod candidates. Close the game before `repair-installation`. |
-| Steam starts before the Gateway listens | Use `wait-for-gateway` or Re's bounded startup wait. This retries only capabilities discovery, never mutation. |
-| Loaded SHA differs from built/installed SHA | Close the game fully, recopy the DLL, and cold-start; do not claim deployment. |
-| Runtime identity changes during Steam startup | Wait for a stable menu, read capabilities again, then run Re inspection. Early HTTP availability is not a stable-runtime witness. |
-| Protocol or strict decode mismatch | Pull one coherent revision and rebuild both components; never enable fallback. |
-| Compatibility or Modset not eligible | Keep actions fail-closed and audit the exact environment; do not widen a wildcard. |
-| Command times out or outcome is unknown | Stop the run and inspect evidence; never submit the same mutation automatically. |
-| Re cannot find a key | Check only local `.env.local` permissions and variable name; do not print the key. |
+| Gateway endpoint unavailable | Confirm the game is running, the Mod is enabled and port `15526` is free. |
+| Source/build/install drift | Close the game and rerun `npm run deploy`; do not manually relabel the old DLL. |
+| Installed differs from loaded | Fully quit the game, confirm the process exited and cold-start again. |
+| Duplicate `STS2_MCP` manifests | Close the game, run `diagnose-installation`, then use `repair-installation` only for recognized backup directories. |
+| Protocol or strict decode mismatch | Fetch one coherent revision, rebuild both components and cold-start; never enable silent fallback. |
+| Unknown command outcome | Stop and inspect the original receipt/evidence; never retry the mutation. |
+| Missing provider key | Check the local file name and permissions without printing the value. |
 
-Current support and evidence always come from
-[Current Status](STATUS.md) and
-[Connector V3 Coverage](../../STS2MCP/docs/connector-v3/COVERAGE.md), not
-from an old preview closeout.
+Current support is defined by [Status](STATUS.md),
+[Connector coverage](../../STS2MCP/docs/connector-v3/COVERAGE.md) and immutable
+exact-runtime evidence records, not by a successful build alone.

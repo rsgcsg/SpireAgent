@@ -8,7 +8,9 @@
 4. [V3 implementation plan](CONNECTOR_V3_IMPLEMENTATION_PLAN.md)
 5. [Program plan](PROGRAM_PLAN.md)
 6. [Roadmap](ROADMAP.md)
-7. [V3 stage and human-information architecture reaudit](audits/CONNECTOR_V3_STAGE_AND_HUMAN_INFORMATION_ARCHITECTURE_REAUDIT_2026-08-01.md)
+7. [Development model](DEVELOPMENT_MODEL.md)
+8. [V3 stage and human-information architecture reaudit](audits/CONNECTOR_V3_STAGE_AND_HUMAN_INFORMATION_ARCHITECTURE_REAUDIT_2026-08-01.md)
+9. [Public deployment and collaboration audit](audits/PUBLIC_REPOSITORY_DEPLOYMENT_AND_COLLABORATION_AUDIT_2026-08-02.md)
 
 ## Component Contracts
 
@@ -40,9 +42,11 @@
 ## Operations
 
 - [Local setup](LOCAL_SETUP.md)
+- [Development model](DEVELOPMENT_MODEL.md)
 - [Operations](OPERATIONS.md)
 - [Development and evaluation](DEVELOPMENT_AND_EVALUATION.md)
 - [Security](../../SECURITY.md)
+- [Code of Conduct](../../CODE_OF_CONDUCT.md)
 
 ## Decision History
 

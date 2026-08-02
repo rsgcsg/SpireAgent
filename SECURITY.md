@@ -2,9 +2,9 @@
 
 ## Current Product Status
 
-SpireAgent is a development project. The current STS2 Agent Bridge listens on
-loopback and validates game actions, but it does not yet authenticate clients,
-isolate provider credentials, or provide a consumer-grade installer. Preview.64
+SpireAgent is a development project. Connector V3 listens on loopback and
+validates game actions, but it does not yet authenticate hostile local clients,
+isolate provider credentials, or provide a consumer-grade installer. It
 coordinates one runtime-bound mutation controller, but registration metadata
 and lease IDs are not authentication and do not isolate a malicious local
 process. Do not expose port `15526` beyond the local machine.
@@ -35,10 +35,14 @@ binary or provider output containing secrets.
 
 ## Supported Security Scope
 
-Security fixes target the current `develop` mainline:
+Security fixes target the current active implementations:
 
 - `Re-SpireAgent/`
 - `STS2MCP/`
 
 The material under `archive/` is unsupported historical evidence. It must not
 be deployed as a fallback.
+
+No branch name, successful CI run or installed DLL is a security support claim
+by itself. Report the exact source and loaded identities described in
+[`docs/current/DEVELOPMENT_MODEL.md`](docs/current/DEVELOPMENT_MODEL.md).

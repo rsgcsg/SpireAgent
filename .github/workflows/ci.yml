@@ -4,7 +4,13 @@ on:
   pull_request:
   push:
     branches:
+      - main
       - develop
+      - connectorV3
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -38,6 +44,10 @@ jobs:
       - run: npm run check:connector-compatibility-fixtures
       - run: npm run check:connector-permission-fixtures
       - run: npm run check:connector-qualification
+      - run: npm run check:connector-profiles
+      - run: npm run check:connector-migration
+      - run: npm run check:connector-cli
+      - run: npm run check:connector-run-identity
       - run: python -m py_compile STS2MCP/mcp/server.py
 
   # Gateway C# tests/builds require the user's exact local STS2 assemblies.

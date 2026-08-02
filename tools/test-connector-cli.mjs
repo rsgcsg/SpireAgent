@@ -5,13 +5,16 @@ import path from "node:path";
 import {
   agentRunPreflightErrors,
   defaultMigrationCycleArgs,
+  evaluateBuildProvenance,
   evaluateEnvironmentReadiness,
   evaluateLoadedArtifact,
+  gatewaySourceIdentity,
   inspectModInstallation,
   isTransientAgentObservation,
   loadAgentGameDirFromLocalEnv,
   migrationCycleDelegateArgs,
   processListHasGame,
+  recommendDoctorSteps,
   resolveExecutable,
   resolveGameDir,
   resolveModsDir,
@@ -26,6 +29,10 @@ const sourceIdentity = workspaceSourceIdentity();
 assert.match(sourceIdentity.revision, /^[0-9a-f]{40}$/u);
 assert.match(sourceIdentity.sourceDigest, /^[0-9a-f]{64}$/u);
 assert.ok(["clean", "dirty"].includes(sourceIdentity.worktreeStatus));
+const gatewayIdentity = gatewaySourceIdentity();
+assert.match(gatewayIdentity.revision, /^[0-9a-f]{40}$/u);
+assert.match(gatewayIdentity.sourceDigest, /^[0-9a-f]{64}$/u);
+assert.ok(gatewayIdentity.fileCount > 0);
 
 assert.equal(
   resolveGameDir({ STS2_GAME_DIR: "./fixture-game" }, "linux", "/home/test"),
@@ -213,6 +220,86 @@ assert.deepEqual(mismatch.errors, [
   "installed_loaded_mvid_mismatch",
   "source_loaded_protocol_mismatch"
 ]);
+
+const buildMetadata = {
+  gateway_source_digest: "source-digest",
+  source_protocol: "3.0-preview.fixture",
+  artifact_sha256: "a".repeat(64),
+  artifact_mvid: "mvid-a"
+};
+assert.deepEqual(evaluateBuildProvenance({
+  currentSource: { sourceDigest: "source-digest" },
+  sourceProtocol: "3.0-preview.fixture",
+  builtSha: "a".repeat(64),
+  builtMvid: "mvid-a",
+  buildMetadata,
+  installedSha: "a".repeat(64),
+  installedMvid: "mvid-a",
+  installedMetadata: buildMetadata
+}), { ok: true, errors: [] });
+assert.deepEqual(evaluateBuildProvenance({
+  currentSource: { sourceDigest: "new-source" },
+  sourceProtocol: "3.0-preview.next",
+  builtSha: "b".repeat(64),
+  builtMvid: "mvid-b",
+  buildMetadata,
+  installedSha: "a".repeat(64),
+  installedMvid: "mvid-a",
+  installedMetadata: buildMetadata
+}).errors, [
+  "source_build_digest_mismatch",
+  "source_build_protocol_mismatch",
+  "build_provenance_sha_mismatch",
+  "build_provenance_mvid_mismatch"
+]);
+
+const doctorPrerequisites = {
+  node: { required: true, available: true },
+  npm: { required: true, available: true },
+  dotnet: { required: true, available: true },
+  git: { required: true, available: true },
+  python: { required: false, available: false }
+};
+assert.deepEqual(recommendDoctorSteps({
+  prerequisites: doctorPrerequisites,
+  gameDirExists: true,
+  agentDependenciesInstalled: true,
+  status: {
+    ok: false,
+    errors: ["source_build_digest_mismatch", "source_loaded_protocol_mismatch"],
+    mod_installation: { exact_permission_blocker: false }
+  }
+}), [
+  "Fully close STS2, then run npm run deploy from the repository root.",
+  "After a verified deploy, cold-restart STS2 so the installed Gateway is actually loaded."
+]);
+assert.deepEqual(recommendDoctorSteps({
+  prerequisites: doctorPrerequisites,
+  gameDirExists: true,
+  agentDependenciesInstalled: true,
+  status: {
+    ok: true,
+    errors: [],
+    environment_ready: true,
+    mutation_ready: true,
+    provisional_trial_ready: false,
+    mod_installation: { exact_permission_blocker: false }
+  }
+}), ["Run cd Re-SpireAgent && npm run agent:run."]);
+assert.deepEqual(recommendDoctorSteps({
+  prerequisites: doctorPrerequisites,
+  gameDirExists: true,
+  agentDependenciesInstalled: true,
+  status: {
+    ok: true,
+    errors: [],
+    environment_ready: false,
+    mutation_ready: false,
+    provisional_trial_ready: false,
+    blockers: ["normal_observation_disabled"],
+    mod_installation: { exact_permission_blocker: false }
+  }
+}), ["Resolve loaded environment blockers: normal_observation_disabled."]);
 
 const hazardous = evaluateEnvironmentReadiness({
   game: {

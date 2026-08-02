@@ -1,0 +1,54 @@
+name: Bug report
+description: Report a reproducible Agent, Gateway, deployment or documentation defect.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not paste API keys, `.env.local`, proprietary game binaries or full provider output.
+  - type: input
+    id: revision
+    attributes:
+      label: Branch and exact commit
+      placeholder: connectorV3 / 40-character SHA
+    validations:
+      required: true
+  - type: dropdown
+    id: layer
+    attributes:
+      label: Suspected layer
+      options:
+        - Unknown
+        - Agent or prompt
+        - Re consumer or supervision
+        - Gateway observation or command
+        - Build, install or loaded identity
+        - Documentation
+    validations:
+      required: true
+  - type: textarea
+    id: identity
+    attributes:
+      label: Non-secret identity
+      description: Paste the relevant protocol, SHA, MVID, game version, Modset and runtime from `npm run doctor`; remove local paths if desired.
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Include the game state, command and exact failure/stop. A run ID is enough when maintainers have the local evidence separately.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence level
+      description: State whether this is source, test, build, installed, loaded or exact-runtime Live evidence.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true

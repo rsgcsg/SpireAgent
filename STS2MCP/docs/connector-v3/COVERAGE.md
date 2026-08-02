@@ -22,7 +22,7 @@ Evidence never transfers across protocol, SHA, MVID, runtime, game or Modset.
 | V3 linked detail | state-bound current-Surface `surface_card` | strict entity/token tests | Preview.5 current and stale exercised |
 | V3 MCP | thin V3 transport | syntax/import and lock checks | no current MCP mutation journey |
 
-## Latest Loaded Evidence
+## Reviewed Preview.5 Evidence
 
 [Preview.5 selector and Inspection evidence](LIVE_EVIDENCE_V0_110_1_PREVIEW_5_SELECTOR_INSPECTION_2026-08-02.md)
 belongs to SHA
@@ -34,13 +34,21 @@ and its exact-bridge-only Modset.
 Provenance is reviewed interactive Codex direct-V3 coverage. It is not an
 Organic run or durable qualification.
 
-## Current Replacement Artifact
+The later `run-20260802104257-2ljjp3` used SHA
+`dda1e348d7972f42c75768bdde9db5242f332c08bfb739c26fceef96385babcd`,
+MVID `7446a1a2-4a7f-44c0-8c5c-ad95651a7ebd` and runtime
+`929acc4158874d9daabccc3524fbfc6f`. It completed 80 V3 commands and stopped at
+the completed-run menu. Its provenance is `unrecorded`, so it remains scoped
+journey coverage rather than Organic qualification.
+
+## Preview.6 Replacement Source
 
 [Preview.6](PREVIEW_6_LUMINOUS_CHOIR_EVENT_REMOVAL_CUTOVER_2026-08-02.md)
-is built and installed as SHA
-`7668a1cd1f99cc917466d43069af716ef8abf22f7b42aac59bda67ab321c3b96`,
-MVID `6704fa1f-f8fe-4cc1-9fe6-ba513f283239`. The game is stopped. Loaded,
-runtime, canary and Live evidence are non-claims.
+is implemented and tested. Build, installed and loaded identity are
+per-machine facts; query `npm run doctor` and `npm run verify:loaded` rather
+than treating a dated deployment tuple as current. Preview.6 runtime, canary
+and Live behavior remain non-claims until its exact tuple is cold-loaded and
+exercised.
 
 ## Authority And Non-Claims
 
