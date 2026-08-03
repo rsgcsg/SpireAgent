@@ -1,136 +1,84 @@
-# Current Architecture
+# Current Architecture — Human-Equivalent UI-First Target
 
-Authority: [ADR-0007](decisions/ADR-0007-connector-v3-canonical-architecture.md)
+Authority: [ADR-0008](decisions/ADR-0008-human-equivalent-ui-first-connector.md)
 
-## Live Path
+Implementation baseline: inherited Connector V3 at `5e57e47028b780619a9cd37b0cd13aeaebddaa2a`
+
+## Target Live Path
 
 ```text
-Native STS2
--> Observation and one input owner
--> V3-native command catalog
--> exact environment/operation authority
--> execute-time resolver and native Commit
--> action-local Outcome, receipt and successor
+Native STS2 rendered UI and Control tree
+-> Human-Reachable Observation
+-> Current UI Affordances
+-> state/frame-bound executor
+-> delivery ledger
+-> successor observation stream
 -> REST or thin MCP
 -> Re-SpireAgent
 ```
 
-STS2 owns rules, RNG, Tasks, Commands and effects. The Gateway owns
-player-visible facts, the current input owner, command admission, execute-time
-native validation, native Commit invocation and action-local Outcome. Re
-selects only from candidates in the current interaction.
+## Responsibility
 
-## Hard Shell
+STS2 owns game rules, effects, UI state and the actual meaning of player actions.
 
-A command binds:
+The Gateway owns complete current human-reachable UI representation, current modal/UI owner, controls/entities/actions, reveal/navigation operations, state/frame-bound dispatch, one-controller coordination, delivery identity and uncertainty, successor observations and main-menu governance enforcement.
+
+Re owns strict decode, compact projection, deciding what information to reveal, choosing a current affordance, submitting once, interpreting successor state, strategy, run quality and business-result reasoning, recovery and local evidence.
+
+REST and MCP remain transports.
+
+## Human-Reachable Observation
+
+Observation includes directly visible information plus information a human can obtain through hover, focus, tooltip, scroll, tabs, details and native pages. The Connector records provenance and excludes hidden RNG, true future outcomes and private engine state merely readable through reflection.
+
+A page-changing reveal may be observation. Observation is a transition stream, not necessarily a zero-side-effect function.
+
+## Input Contract
+
+Every action binds exact current state, frame, owner and target. Structured controls are preferred. Frame-bound pointer fallback is allowed only for current human-visible custom UI that cannot be represented structurally.
+
+The executor revalidates actionability immediately before dispatch and returns:
 
 ```text
-request_id
-state_token
-interaction_id
-command
-exact entity/control operands
-client session and controller generation
+not_applied
+applied
+pending_delivery
+unknown_delivery
 ```
 
-The Gateway resolves the same objects and native legality again immediately
-before Commit. Receipts are `completed`, `not_executed`, `pending` or
-`unknown`; an unknown mutation is never resubmitted.
+It need not assert the complete business transaction. Successor observation is the default completion channel.
 
-Visible unsupported, known settling, stale, quarantine and revoke are distinct.
-Empty/absent permission scope, unknown source, ambiguous owner, identity drift
-or incomplete Outcome fails closed.
+## Governance Boundary
 
-## Authority And Evidence Plane
+Current in-run UI actions are allowed by default, including bad or irreversible game decisions and abandon-run. Persistent account/profile/save/Mod/global settings and quit-application actions use explicit menu governance.
 
-Capabilities expose exact Gateway SHA/MVID/runtime, game, Modset, runtime
-Patch, permission policy and qualification identities. Session trial is bound
-to one runtime and operation contract. Canary, qualified and durable states
-never inherit across protocol, SHA, MVID, runtime, game, Modset or Patch.
-Evidence tooling records and recommends; it cannot grant live authority.
+## Relationship To Connector V3
 
-## Consumer And Transport
+Retained infrastructure:
 
-Re owns strict V3 decode, deterministic compact model projection, model choice,
-request submission, polling, successor readiness and append-only local
-evidence. It cannot add operands, reconstruct native legality/effects or infer
-completion. Its active V3 client and control session do not import V2 wire
-types or routes.
+- stable identities and stale rejection;
+- one controller;
+- idempotent requests and delivery uncertainty;
+- exact runtime provenance;
+- strict Re and transport boundaries;
+- observation and evidence recording.
 
-REST and MCP serialize the same Gateway contracts. They cannot add commands,
-legality, authority or retry policy.
+Not retained as universal authority requirements:
 
-## Information Contract
+- exact business source for every UI action;
+- per-source command authority;
+- source-specific business Outcome before successor;
+- unknown source automatically meaning no UI input;
+- native-page access restricted to an operator-only evidence profile.
 
-Player-visible information has four semantic layers:
-
-1. persistent summary;
-2. complete current Surface;
-3. state-bound linked detail;
-4. state-bound read-only Inspection.
-
-Inspection and linked detail never enter the Command Ledger or grant mutation.
-Hidden RNG, true draw order and future rewards/events remain excluded.
-
-The production Prompt applies deterministic projection v1 to the complete
-recorded state. It keeps decision facts, exact actions, identities and a small
-information boundary while removing governance-only metadata and duplicate
-representations. Full evidence remains recorded for replay and audit.
-
-`native_pages.v1` is a separate optional human-equivalence evidence profile.
-It is disabled by default and outside normal Agent flow. Operator-invoked
-sessions bind runtime and state, verify pre/post owner, open only fixed native
-pages, read through the same visible contract, restore the owner or enter an
-explicit recovery-required state, suppress mutation while active, and never
-create ledger or action authority.
-
-## Source Closure
-
-All cataloged operation families have direct V3 discovery/execution and direct
-Re consumption. This does not mean every possible source variant is
-supported: unknown source/owner/Commit/Outcome combinations remain typed
-unsupported. The operation catalog is 94 explicit contracts and zero fallback
-authority. Connector V3 has its own
-non-executing command descriptor and consumes no Provider action draft or V2
-state/action sidecar.
-
-Historically named Bridge/Provider files may still implement exact game
-reflection, source binding, native Commit and Outcome mechanics. This is
-internal library reuse, not a second external protocol, publication authority
-or executor. V2 routes remain migration/rollback diagnostics only and are
-unreachable from the active Re V3 entrypoint.
-
-Generated choices demonstrate the intended orthogonal composition. Gateway
-code audits the exact source, owner, visible semantics, Commit and Outcome;
-shared card-grid/entity mechanics produce parameterized commands; Re validates
-the current advertised source-local operation and operands without enumerating
-all source kinds. New owners or completion semantics still require Gateway
-code and evidence. Similar UI alone never grants reuse.
-
-Source-rich families use reviewed, embedded source contracts when the native
-owner, participant, mechanic, Commit and Outcome are already known. The
-contract is a declarative binding input, not an executor or self-authorizing
-Mod manifest. Dynamic trial identity combines the explicit operation contract
-with exact source evidence, so a proven Symbiote operation cannot silently
-authorize Royal Stamp or an unknown same-shaped owner. A new owner,
-participant, Commit or Outcome remains code-required and fail closed.
-
-## Freeze Boundary
-
-The macro architecture is retained at `3.0-preview.12`. Preview.12 was
-cold-loaded and three exact-artifact journeys reached the completed-game
-boundary, but two Royal Stamp failures disproved complete source adaptation.
-Core Execution is architecturally frozen; Vanilla Capability and Distribution
-remain conditional; Adaptation/Compatibility and Human Evidence are not
-frozen. Final freeze still requires the source-registry amendment cold-load,
-remaining rare-family reads, Human profile Live lifecycle and loaded
-rollback/revoke.
+The inherited path remains temporarily as a comparison executor. It must not silently become fallback after Human-Equivalent cutover.
 
 ## Non-Goals
 
-- arbitrary UI tree, coordinates, method names or reflection mutation;
-- universal selector, transaction or Effect DSL;
-- a second STS2 rules engine;
+- reimplement STS2 rules;
+- arbitrary engine methods or reflection mutation;
+- unbound or long-lived coordinates;
 - hidden information exposure;
-- strategy, memory or learning inside the Gateway;
-- silent V2 fallback or automatic authority inheritance.
+- protecting Agent strategy inside a run;
+- automatically permitting destructive persistent management;
+- claiming arbitrary Mod compatibility before evidence.
