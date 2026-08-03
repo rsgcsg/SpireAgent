@@ -1,103 +1,73 @@
 # Connector V3 Integration
 
-Connector V3 is Re-SpireAgent's only live execution protocol. Re consumes a
-current observation, projects the Gateway's bounded parameterized candidates
-to local opaque choices, submits the selected command and supervises its
-receipt plus successor observation.
+Connector V3 is Re-SpireAgent's only live execution protocol. Re consumes one
+current observation, projects bounded candidates to local opaque choices,
+submits the selected command and supervises its receipt and successor.
 
 ## Ownership
 
-The Gateway owns player-visible facts, the active input owner, command
-legality, execute-time revalidation, native Commit and action-local Outcome.
-Re owns strict decoding, consumer projection, model selection, request
-submission, polling, successor stability and append-only local evidence.
+The Gateway owns player-visible facts, the active input owner, operation
+authority, native legality, execute-time revalidation, Commit and action-local
+Outcome. Re owns:
 
-Re never:
+- strict capability/control/observation/receipt decoding;
+- deterministic compact Prompt projection;
+- model choice from exact advertised candidates;
+- client registration and one controller lease;
+- submit/poll of one request ID;
+- stable-successor supervision;
+- append-only local evidence.
 
-- looks up or executes a Bridge v2 action ID;
-- adds an operand that the current V3 candidate did not advertise;
-- retries an `unknown` mutation;
-- derives authority from UI shape, fixtures or historical evidence;
-- treats Inspection or diagnostics as mutation permission.
+Re never adds an operand, executes a V2 action ID, reconstructs STS2 legality
+or effects, infers completion, retries `unknown`, or treats Inspection,
+qualification metadata or diagnostics as mutation permission.
 
 ## Current Cutover
 
-Direct combat commands (`play_card`, `use_potion`, `end_turn`), shop-room,
-map, rest-site, event-option, treasure-room, outer reward, card-reward and
-deck-enchant controls resolve
-current native objects from V3 entity/control IDs and call native legality and
-Commit paths. Event, treasure, outer reward and card-reward candidate discovery
-is derived from typed visible control/stage facts rather than `draft.Actions`;
-their execution does not call Provider action closures. Menu/run-setup and
-source-discriminated generated-card choices now follow the same V3-native
-boundary while retaining separate source-specific legality and Outcome.
-Combat-hand selection now publishes exact current hand/card/control facts,
-uses a direct native resolver and is consumed directly by Re. Smith deck
-upgrade and merchant deck removal also use direct typed facts and commands;
-merchant authority is not reused for relic/reward removal.
-Rest and event card acquisition publish typed facts and direct command
-descriptors without Provider action drafts. Runtime trial admission accepts
-those descriptors only through their explicit native contracts.
-Luminous Choir event removal uses its own exact task/event/two-card contract,
-whole-transaction Outcome and direct Re Surface. It shares selector mechanics
-but not merchant, relic or reward authority.
-Combat-pile, deck-transform and Wood Carvings now join the direct typed path.
-Exact game binding and native Commit helpers can remain inside historically
-named Provider files, but they publish no action authority and are not a
-second execution path.
+All currently cataloged ordinary vanilla single-player families and selectors
+have direct V3 consumer projections. The active V3 adapter/client/control path:
 
-Ordinary combat, generated-card choice, menu/run-setup, event, map, game-over,
-reward/card-reward, shop, rest, treasure, lifecycle-settling and
-visible-unsupported observations use the direct V3 normalizer and do not
-request Bridge v2 capabilities. Menu, event, map, game-over,
-reward/card-reward, shop, rest, treasure, combat and generated choice are
-exact-runtime exercised under earlier artifacts. Preview.5 exercised direct
-Smith, known-room settling, visible unsupported, `run_deck` Inspection and
-linked detail. Merchant removal and combat-hand were exercised under Preview.6.
-Preview.7 completed a 202-command ordinary journey, while two preceding
-Merchant stops exposed the authority-admission cycle repaired in Preview.8.
-Luminous Choir removal remains not exercised. Build/install/load status is
-per-machine and must be read with the
-root Connector CLI. Re now obtains all recognized Surface facts directly from
-V3 and never requests the Bridge v2 capabilities/state sidecar. No v2 legal
-action or v2 command route enters the V3 execution path.
+- imports no `BridgeV2RestClient` or V2 protocol;
+- requests no V2 capabilities/state/action sidecar;
+- accepts only `3.0-preview.11` and its exact schemas;
+- strictly decodes Gateway/game/Modset/runtime/Patch identity;
+- strictly decodes permission/qualification scopes and records them in run
+  metadata;
+- uses only current candidate command/operation/operands;
+- preserves visible unsupported and known settling as different states.
 
-Known lifecycle settling is not an unsupported Surface. Re receives a typed
-`no_action`, performs no model call or mutation, and continues only until the
-Gateway publishes a fresh ready interaction or the bounded repeated-state
-guard stops. A genuinely unknown owner remains visible unsupported and
-terminal.
+Historically compiled V2/hybrid files remain regression/rollback material but
+are not exported by the public production entrypoint.
 
-The operator preflight waits through only the explicit
-`no_active_run_context` startup sentinel. It does not wait away a legitimate
-visible unsupported owner. On-demand `run_deck`, `combat_piles` and
-`shop_catalog` Inspection uses `/api/v3/inspections/...` and the exact current
-state token; its strict decoder rejects token drift and it never enters command
-submission.
+## Information
 
-Current-Surface card detail uses `/api/v3/linked-details/{entity_id}` with the
-same exact-token discipline. Re cannot use it to add a candidate or operand.
+On-demand `run_deck`, `combat_piles` and `shop_catalog` Inspection and
+current-Surface `surface_card` linked detail use the exact state token. They
+are read-only, cannot add candidates and reject stale reads.
 
-For `event_deck_removal_selection`, Re accepts only the exact Luminous Choir
-source/purpose/effect tuple and exact command set implied by current selected
-membership and stage. Unknown source literals, missing selected bindings or a
-candidate-set mismatch invalidate the state and produce no local action.
+The optional Human-equivalence profile is operator-only Gateway evidence. Re
+does not invoke it in normal Agent flow and receives no authority from it.
 
-Generated-card choices likewise require the exact source-bound select/skip
-operation and exact command set implied by current selectable cards and native
-skip availability. A source-operation mismatch or extra candidate invalidates
-the state before model selection.
+The model receives compact projection v1: player-visible decision facts, one
+exact action menu and necessary information boundaries. Full normalized
+evidence remains recorded.
 
-## Receipt Rules
+## Command Lifecycle
 
-- `completed`: the Gateway observed the command-specific Outcome.
-- `not_executed`: validation rejected before native Commit.
-- `pending`: poll the same request ID.
-- `unknown`: application may have occurred; terminate and never resubmit.
+- `completed`: Gateway observed the command-specific Outcome;
+- `not_executed`: rejected before native Commit;
+- `pending`: poll the same request ID;
+- `unknown`: application may have occurred; stop and never resubmit.
 
-After `completed`, Re obtains a fresh observation and waits for a stable next
-decision checkpoint. This supervision does not reinterpret the Gateway
-Outcome.
+After `completed`, Re reads a fresh observation and waits for a stable next
+checkpoint. It does not reinterpret the Gateway Outcome.
+
+## Evidence
+
+The final Preview.11 artifact has strict Re inspect, one completed menu canary,
+stable successor and one Gateway stale refusal. The bounded Agent run recorded
+all exact identities but failed at the first DeepSeek network request before
+command submission. This is not a Journey or qualification.
 
 ## Local Validation
 
@@ -106,11 +76,11 @@ npm run check
 npm run agent:inspect
 ```
 
-`agent:inspect` is read-only. A real run requires a cold-loaded V3 Gateway:
+A real run requires a cold-loaded exact Gateway:
 
 ```bash
 npm run agent:run
 ```
 
-Source, fixture, build, install, load, session trial and runtime journey are
-separate evidence levels.
+Source, tests, build, install, load, canary, Journey, Organic evidence and
+qualification remain separate.

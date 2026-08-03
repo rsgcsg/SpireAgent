@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import {
   agentRunPreflightErrors,
+  configureHumanEquivalenceProfile,
   defaultMigrationCycleArgs,
   evaluateBuildProvenance,
   evaluateEnvironmentReadiness,
@@ -79,6 +80,34 @@ try {
   assert.equal(explicitEnv.STS2_GAME_DIR, "D:\\Explicit");
 } finally {
   rmSync(fixtureEnvDir, { recursive: true, force: true });
+}
+
+const humanProfileDir = mkdtempSync(path.join(os.tmpdir(), "spireagent-human-profile-"));
+try {
+  const configPath = path.join(humanProfileDir, "STS2_MCP.conf");
+  writeFileSync(configPath, JSON.stringify({
+    port: 15526,
+    permission_mode: "migration_exploration",
+    qualification_store: "fixture-ledger.json"
+  }));
+  const configured = configureHumanEquivalenceProfile(configPath, true);
+  const config = JSON.parse(readFileSync(configPath, "utf8"));
+  assert.equal(config.human_equivalence_enabled, true);
+  assert.equal(config.permission_mode, "migration_exploration");
+  assert.equal(config.qualification_store, "fixture-ledger.json");
+  assert.equal(configured.requires_cold_load, true);
+  assert.equal(configured.creates_action_authority, false);
+  configureHumanEquivalenceProfile(configPath, false);
+  assert.equal(
+    JSON.parse(readFileSync(configPath, "utf8")).human_equivalence_enabled,
+    false
+  );
+  assert.throws(
+    () => configureHumanEquivalenceProfile(configPath, "true"),
+    /requires --enabled true or --enabled false/u
+  );
+} finally {
+  rmSync(humanProfileDir, { recursive: true, force: true });
 }
 
 const migrationArgs = defaultMigrationCycleArgs({

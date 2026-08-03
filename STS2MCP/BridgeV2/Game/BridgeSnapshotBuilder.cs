@@ -119,8 +119,8 @@ internal static class BridgeSnapshotBuilder
             return Unsupported(
                 game,
                 "multiplayer_run",
-                "Bridge v2 multiplayer semantics are not implemented in this revision.",
-                new[] { "multiplayer_v2_not_implemented" },
+                "Multiplayer semantics are not implemented by the current Gateway.",
+                new[] { "multiplayer_gateway_not_implemented" },
                 context: null,
                 BridgeDiagnostics.Create(
                     "bridge.compatibility.multiplayer_not_implemented",
@@ -160,7 +160,7 @@ internal static class BridgeSnapshotBuilder
             return Unsupported(
                 game,
                 snapshot.SourceType,
-                $"Multiple Bridge v2 surface providers matched: {string.Join(", ", resolution.MatchedKinds)}.",
+                $"Multiple semantic surface providers matched: {string.Join(", ", resolution.MatchedKinds)}.",
                 new[] { "ambiguous_surface_provider_match" },
                 BridgeContextBuilder.Build(entities),
                 BridgeDiagnostics.Create(
@@ -195,7 +195,7 @@ internal static class BridgeSnapshotBuilder
             new AuthorityHandoff(
                 "none_fail_closed",
                 null,
-                "No Bridge v2 semantic surface owns the current input state."));
+                "No semantic Gateway surface owns the current input state."));
     }
 
     private static BridgeObservationDraft? TryBuildCombatNoInputTransition(
@@ -264,7 +264,7 @@ internal static class BridgeSnapshotBuilder
             AuthorityHandoff = new AuthorityHandoff(
                 "none_fail_closed",
                 null,
-                "The exact combat transition has no player input owner; Bridge v2 will only observe and poll."),
+                "The exact combat transition has no player input owner; the Gateway will only observe and poll."),
             Diagnostics = new[]
             {
                 BridgeDiagnostics.Create(
@@ -337,7 +337,7 @@ internal static class BridgeSnapshotBuilder
             AuthorityHandoff = new AuthorityHandoff(
                 "none_fail_closed",
                 null,
-                "The native run-mount transition has no current input owner; Bridge v2 observes without publishing actions."),
+                "The native run-mount transition has no current input owner; the Gateway observes without publishing actions."),
             Diagnostics = new[]
             {
                 BridgeDiagnostics.Create(
@@ -497,7 +497,7 @@ internal static class BridgeSnapshotBuilder
         context ??= new UnknownBridgeContext(
             "unknown",
             sourceType,
-            "No qualified Bridge v2 context projection is safe for this unsupported surface.");
+            "No qualified Gateway context projection is safe for this unsupported surface.");
         var completeness = new StateCompleteness(
             "not_implemented",
             "empty_fail_closed",
@@ -518,7 +518,7 @@ internal static class BridgeSnapshotBuilder
             AuthorityHandoff = authorityHandoff ?? new AuthorityHandoff(
                 "none_fail_closed",
                 null,
-                "Bridge v2 could not prove a safe action-authority handoff for this state."),
+                "The Gateway could not prove a safe action-authority handoff for this state."),
             Diagnostics = new[] { diagnostic }
         };
     }
@@ -531,7 +531,7 @@ internal static class BridgeSnapshotBuilder
                 AuthorityHandoff = new AuthorityHandoff(
                     "none_fail_closed",
                     null,
-                    "An unsupported surface cannot own Bridge v2 mutation authority.")
+                    "An unsupported surface cannot own Gateway mutation authority.")
             }
         : draft.Actions.Count == 0
             ? draft
@@ -546,7 +546,7 @@ internal static class BridgeSnapshotBuilder
             LegalActions = "suppressed_by_candidate_observation_gate"
         };
         IReadOnlyList<string> warnings = draft.Warnings
-            .Append("candidate_observation_only: no Bridge v2 action or inspection is authorized for this build.")
+            .Append("candidate_observation_only: no Gateway action or inspection is authorized for this build.")
             .ToArray();
         IReadOnlyList<BridgeDiagnostic> diagnostics = draft.Diagnostics
             .Append(BridgeDiagnostics.Create(

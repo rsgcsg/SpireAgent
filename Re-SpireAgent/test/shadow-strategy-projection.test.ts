@@ -38,6 +38,8 @@ describe("shadow strategy projection", () => {
     expect(JSON.stringify(currentState)).toBe(original);
     expect(state.bridgeDiagnostics).toBeUndefined();
     expect(state.bridgeVisibility).toBeUndefined();
+    expect(state.normalizedSchemaVersion).toBeUndefined();
+    expect(state.actionAuthority).toBeUndefined();
     expect((state.surface as JsonObject).legalActions).toBeUndefined();
     expect((state.inspectionFacts as JsonObject).runDeck).toBeUndefined();
     expect((state.inspectionFacts as JsonObject).drawPile).toBeUndefined();
@@ -56,6 +58,8 @@ describe("shadow strategy projection", () => {
     expect(result.omittedEvidenceFields).toEqual(expect.arrayContaining([
       "bridgeDiagnostics",
       "bridgeVisibility",
+      "normalizedSchemaVersion",
+      "actionAuthority",
       "bridgeInspectionFacts",
       "surface.legalActions"
     ]));
@@ -63,6 +67,9 @@ describe("shadow strategy projection", () => {
     expect(result.projectionHash).toMatch(/^sha256:[a-f0-9]{64}$/);
     expect(result.userPrompt).not.toContain("surface-action");
     expect(result.userPrompt).toContain("allowed-action");
+    expect(result.modelPayload.contextKind).toBeUndefined();
+    expect(result.modelPayload.surfaceKind).toBeUndefined();
+    expect(result.modelPayload.outputSchema).toBeUndefined();
   });
 
   it("keeps a usable compact payload when no bridge sidecars exist", () => {

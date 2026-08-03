@@ -65,8 +65,9 @@ remain excluded.
 The canonical information projection separates persistent HUD summary, the
 complete current Surface, state-bound linked detail and state-bound read-only
 Inspection. The mainline profile may expose semantically inspectable facts
-without physically changing the UI owner. A strict real-page-opening profile
-is optional evidence tooling, not the default decision path.
+without physically changing the UI owner. The implemented
+`native_pages.v1` profile is optional evidence tooling, disabled by default,
+runtime/state bound, read-only and not part of the decision path.
 
 Inspection is an independent V3 wire contract bound to the exact current
 `state_token`. Its implementation may share player-visible read mechanics with
@@ -122,7 +123,7 @@ Reuse is internal implementation reuse, not V2 protocol authority.
 
 ## Source Closure And Remaining Debt
 
-At `3.0-preview.9`:
+At `3.0-preview.11`:
 
 - every currently cataloged family, including combat pile, deck transform and
   Wood Carvings, has typed direct V3 discovery/execution and a direct Re
@@ -133,17 +134,23 @@ At `3.0-preview.9`:
   `provider_native_binding_adapter`;
 - Re consumes neither a V2 capabilities/state sidecar nor a V2-shaped
   normalization projection;
-- direct-family Providers publish no action drafts. Historically named
+- Connector V3 uses its own non-executing command descriptor; direct-family
+  Providers publish no action drafts. Historically named
   Provider files may still own exact game reflection, source binding, native
   Commit and Outcome helpers. That internal code is not protocol authority or
   a second executor;
 - V3 state-bound Inspection and linked detail remain read-only and independent;
-- V2 endpoints remain mounted only for rollback and migration diagnostics.
+- V2 endpoints remain mounted only for rollback and migration diagnostics;
+- V3 capabilities/control expose V3-native wire schemas plus exact Patch,
+  permission and qualification scope identity;
+- Re's production Prompt uses deterministic compact projection v1;
+- the optional Human-equivalence profile has fixed native page adapters,
+  owner validation and explicit recovery without authority.
 
-Source migration debt is therefore closed. Runtime evidence, durable
-qualification lifecycle, optional human-equivalence evidence and final V2
-endpoint archival remain. These must not be described as source support or
-solved by retaining dual authority.
+Source migration debt is therefore closed. Rare-family exact-artifact runtime
+evidence, durable qualification lifecycle, loaded rollback/revoke, full Human
+profile Live exercise and final V2 endpoint archival remain. These must not be
+described as source support or solved by retaining dual authority.
 
 Readiness is also orthogonal to support. A known interaction in native
 `settling` publishes no command and remains a supported family; Re projects a
@@ -226,3 +233,29 @@ The supplied Preview.8 archive is historical exact-artifact journey coverage
 with unrecorded provenance. Preview.9 source, tests, Release build and install
 are complete on the current machine, but cold-load, runtime, canary, Organic
 and qualification are non-claims until separately observed.
+
+### Preview.11 freeze-candidate amendment
+
+V3 now owns its command descriptor and control wire. `BridgeActionDraft`,
+Provider action publication, V2 state/action sidecars and fallback authority
+are absent from the active V3 path. Permission, qualification and Patch scope
+identity is part of V3 capabilities and strict Re decoding. Transport body
+limits no longer trust `Content-Length` alone.
+
+The production Prompt uses deterministic compact projection v1. Complete
+normalized evidence remains recorded, while the model receives one action
+menu, deduplicated visible facts and the necessary information boundary. The
+projection hash is audit identity, not command authority.
+
+The default-off `native_pages.v1` evidence profile may open only fixed native
+deck/pile/shop pages. A session binds the exact runtime and state, suppresses
+mutation, validates pre/current/post owner, and enters `recovery_required`
+instead of guessing after a partial failure. It does not enter the Command
+Ledger or authorize a command.
+
+Preview.11 has exact build/install/load identity, strict capability/control
+decode, one `main_menu/open_singleplayer` canary, stable successor, stale
+refusal and disabled-profile Live evidence. Qualified and durable scopes are
+empty. Rare selectors, full Human-page lifecycle, loaded rollback/revoke and
+a same-artifact Journey remain, so the release state is `FREEZE CANDIDATE`,
+not `FROZEN`.

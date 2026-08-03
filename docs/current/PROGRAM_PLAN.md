@@ -2,60 +2,71 @@
 
 ## Product Outcome
 
-The active goal is an external Re-SpireAgent that can reliably complete an
-ordinary vanilla single-player game through one trustworthy live Connector,
-or stop at a precise visible unsupported boundary.
+The active goal is one external Re-SpireAgent that completes an ordinary
+vanilla single-player game through one trustworthy Live Connector, or stops at
+a precise visible unsupported boundary.
 
-## Workstreams
+## Current Boundary
 
-- **A, Agent value:** decision quality, bounded runs and measurable outcomes.
-- **C, Connector:** correct observation, interaction, native command and
-  Outcome. Connector V3 cutover is the current C priority.
-- **D, evaluation:** independent fixtures, replay, compatibility and evidence
-  grading. D never grants live authority.
-- **P, operation/product:** installation, diagnostics, secrets, rollback and
-  future distribution.
-- **X, research:** Headless, training and advanced learning remain optional and
-  cannot block the live baseline.
+Connector V3 source migration is closed. The remaining work is exact-runtime
+qualification and freeze evidence, not another protocol or architecture
+generation.
+
+The production path is:
+
+```text
+Native STS2
+-> exact game binding and native Commit
+-> Connector V3 Gateway
+-> REST or optional thin MCP transport
+-> strict Re consumer and model choice
+```
+
+The Gateway owns facts, owner, admission, validation and Outcome. Re owns
+strict decode, compact decision projection, choice, submit/poll, successor
+supervision and local evidence. Neither REST nor MCP adds game semantics.
 
 ## Delivery Order
 
-1. Keep public fresh-clone, multi-developer handoff and source/build/install/load
-   attribution reproducible with the canonical operator workflow.
-2. Close defects found by exact-runtime V3 journeys.
-3. Cold-load Preview.9 and verify exact SHA/MVID/protocol/game/Modset/runtime.
-   Exercise targetless potion and final selector families without transferring
-   historical authority.
-4. Extend the Preview.5 `run_deck` and `surface_card` evidence to combat-pile
-   and shop-catalog Inspection; keep real-page opening as a separate optional
-   evidence profile.
-5. Run one same-artifact ordinary journey and close every stale, unsupported,
-   unknown and stop attribution.
-6. Simplify V3 authority projection without weakening exact-environment
-   validation.
-7. Retire v2 production mutation routes.
-8. Resume A evaluation on the stable V3 evidence boundary.
+1. Keep fresh-clone deployment and source/build/install/load attribution
+   reproducible.
+2. Preserve the Preview.11 source closure: 94 explicit contracts, zero
+   fallback authority, zero Provider action publication and no active Re V2
+   sidecar.
+3. Exercise the final exact-artifact targetless potion, selector, Inspection
+   and linked-detail matrix.
+4. Exercise `native_pages.v1` open/read/return/recovery while keeping it
+   default-off and non-authorizing.
+5. Restore and cold-load a rollback artifact, prove revoke/drift behavior, then
+   reinstall the candidate.
+6. Run one same-artifact ordinary Journey and review every non-completed
+   lifecycle result.
+7. Freeze only after support, qualification and evidence records agree.
 
-## Exit Conditions For Connector V3 Baseline
+## Freeze Conditions
 
-- exact state and entity binding;
+- exact state, interaction, entity and control binding;
 - one current input owner and one controller;
 - publication/execution parity with native revalidation;
 - STS2 native Commit and action-local Outcome;
 - idempotent requests and unknown-no-retry;
-- visible unsupported interactions;
-- ordinary combat, navigation, choice, purchase and selection journey;
-- exact build/install/load identity and tested rollback;
-- no silent V2 mutation fallback;
-- honest coverage and evidence labels.
+- explicit settling, unsupported and stale behavior;
+- strict Gateway/REST/MCP/Re schema alignment;
+- state-bound, read-only Inspection and linked detail;
+- default-off, non-authorizing Human evidence profile;
+- exact build/install/load identity and loaded rollback;
+- no silent V2 or local reconstruction fallback;
+- one exact-artifact ordinary Journey;
+- honest supported/trial/quarantined/unsupported records.
 
-The source baseline now has 94 explicit contracts, zero fallback authority,
-zero Provider draft publication for direct families and no Re V2 sidecar. The
-delivery baseline remains incomplete until exact Preview.9 load, final-family
-Live evidence, same-artifact journey and rollback lifecycle are recorded.
+## Current Verdict
+
+`FREEZE CANDIDATE`. Source, tests, build, install, load, one menu canary and
+stale refusal are complete. Rare-family Live coverage, Human native-page Live,
+loaded rollback and a same-artifact Journey remain open. The provider network
+currently blocks the Journey before command submission.
 
 ## Deferred
 
-Workshop packaging, Companion, public Agent SDK, plugin platform, Headless and
-training are not part of the V3 cutover. They must consume the same Gateway
-contract without acquiring game authority.
+V4, Workshop packaging, Companion, SDK, Headless, learning and training are
+not part of V3 freeze and must not acquire Gateway authority.

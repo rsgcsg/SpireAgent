@@ -1,71 +1,88 @@
 # Connector V3 Coverage
 
-Evidence never transfers across protocol, SHA, MVID, runtime, game or Modset.
+Evidence never transfers across protocol, SHA, MVID, runtime, game, Modset or
+Patch identity.
 
-| Area | Preview.9 source | Automated evidence | Exact V3 Live evidence |
+## Current Source Matrix
+
+| Area | Preview.11 source | Automated evidence | Exact Preview.11 Live |
 |---|---|---|---|
-| Identity and one owner | implemented | identity, owner, stale and replacement tests | repeated historical journeys; Preview.9 pending |
-| Visible unsupported/settling | typed and authority-free | strict decode and lifecycle tests | known-room settling and unknown-owner stops observed historically |
-| Ordinary combat | direct native resolver/Re | play, potion, target and end-turn tests | play/end-turn repeated; targetless potion fix pending Live |
-| Combat-hand selection | direct typed resolver/Re | select/deselect/reselect/confirm/peek negatives | select/confirm historical; remaining stages pending |
-| Combat-pile selection | direct typed source/selector/Re | exact source, membership, stage and command-set tests | historical source only; Preview.9 direct pending |
-| Menu/map/event/game-over | direct resolver/Re | exact owner/entity/control and command-set tests | repeatedly completed under earlier artifacts |
-| Shop/rest/treasure/reward | direct resolver/Re | offer, source, capacity, stage and Outcome tests | repeatedly completed under earlier artifacts |
-| Generated card choice | direct typed source/operation resolver/Re | exact selectable set, source-operation, skip and owner tests | Attack Potion historical; Preview.9 parity pending |
-| Deck enchant/upgrade/removal | source-specific direct resolver/Re | full selector stages, source isolation and Outcome tests | several historical exact sources; siblings remain scoped |
-| Deck transform | direct source-distinct resolver/Re | select/deselect/preview/cancel/confirm tests | Preview.9 pending |
-| Wood Carvings | direct deterministic replacement resolver/Re | branch, replacement, membership and Outcome tests | Preview.9 pending |
-| Card bundles/event removal | independent direct contracts/Re | atomic bundle and whole-transaction tests | historical source evidence; current artifact pending |
-| V3 Inspection | state-bound run deck/combat piles/shop catalog | strict content and stale negatives | Preview.5 run-deck current/stale; other kinds pending |
-| V3 linked detail | state-bound current-Surface card | strict entity/token tests | Preview.5 current/stale exercised |
-| V3 MCP | thin transport | syntax/import/lock checks | no current MCP mutation journey |
+| Identity and one owner | direct V3 | identity, owner, stale, replacement tests | build/install/load tuple and main/single-player owner observed |
+| Capability/control | V3-native schemas | strict C#/Re/MCP decode and lease tests | capabilities, clients/controller and exact scopes observed |
+| Unsupported/settling | typed and authority-free | lifecycle/decoder tests | not re-exercised on final artifact |
+| Ordinary combat | direct resolver/Re | play, targetless/targeted potion, end-turn tests | pending |
+| Combat hand | direct typed selector/Re | select/deselect/reselect/confirm/peek tests | pending |
+| Combat pile | direct source-bound selector/Re | source, membership, stage and command tests | pending |
+| Menu/map/event/game-over | direct resolver/Re | owner/entity/control negatives | main-menu open canary only |
+| Shop/rest/treasure/reward | direct resolver/Re | offer/source/capacity/Outcome tests | pending |
+| Generated choice | source-operation resolver/Re | selectable set, skip and binding tests | pending |
+| Upgrade/removal/enchant | independent direct selectors | stage/source/Outcome tests | pending |
+| Transform/Wood Carvings | independent direct selectors | source/effect/stage tests | pending |
+| Bundle/event removal | independent direct transactions | atomic/whole-Outcome tests | pending |
+| Inspection | state-bound run deck/combat piles/shop | strict current/stale tests | final artifact capability only; reads pending |
+| Linked detail | state-bound current-Surface card | strict entity/token tests | pending |
+| Prompt projection | deterministic compact v1 | projection, hash and payload tests | model call reached; provider network failed |
+| Human evidence | default-off native-pages contract | config/CLI/open/read/return/recovery tests | capability and disabled refusal only |
+| REST/MCP | transport-only V3 | route/body/schema/Python checks | REST observed; MCP mutation Journey absent |
 
 ## Source Closure
 
-- operation catalog: `94` explicit native contracts, `0` fallback authority;
-- direct-family Provider `BridgeActionDraft` publication: `0`;
-- Connector V3 `draft.Actions`, `LegacyBinding` and
-  `provider_native_binding_adapter` consumption: `0`;
-- Re Connector V3 V2 capabilities/state sidecar: `0`;
-- durable qualification and persistent fallback admission: `0`.
+- operation catalog: 94 explicit native contracts, 0 fallback authority;
+- direct-family Provider action publication: 0;
+- Connector V3 `draft.Actions`, `LegacyBinding`,
+  `provider_native_binding_adapter` and `BridgeActionDraft` consumption: 0;
+- active Re V3 V2 capabilities/state/action sidecar: 0;
+- V3 control routes using V2 wire handlers: 0;
+- durable qualification and persistent fallback admission: 0.
 
-Exact game-binding and native Commit helpers may remain in historically named
-Provider files. They are internal Gateway mechanics, not action publication,
-external protocol authority or a second execution path.
+Exact game-binding, reflection, native Commit and Outcome helpers may remain in
+historically named Bridge/Provider files. They are internal mechanics, not
+external authority or a second executor.
 
-The exact `v0.110.1` static audit retains `Tutor` as a diagnostic-only negative
-holdout. It is `MultiplayerOnly` and binds the selector to
-`cardPlay.Target.Player`, so the ordinary source-card-owner contract must not
-authorize it. Supporting it requires a distinct participant ownership,
-player-visible target and semantic Outcome contract plus current-MVID Live
-evidence. It is not a single-player fallback contract.
+## Final Preview.11 Runtime
 
-## Reviewed Preview.8 Archive
+See the
+[dated closeout](PREVIEW_11_FREEZE_CANDIDATE_CLOSEOUT_2026-08-03.md) for the
+complete exact tuple. On that runtime:
 
-The supplied archive records protocol `3.0-preview.8`, SHA
-`26c5baaeaa24cfe6e8665693c4e7e45486df45f8cab65a2d74ebc2d6bac2e529`,
-MVID `d1476ec1-4da8-4658-b594-6fea40de3ca0`, runtime
-`ddc07fa2e35b4d588f9ebc73283d2044`, game `v0.110.1` commit `db5d3552` and the
-exact-bridge-only Modset. One run stopped safely after an exact binding became
-unavailable; another settled 11 commands and reached completed-game state.
+- V3 capability/control/observation and strict Re decoding succeeded;
+- `main_menu/open_singleplayer` completed and settled to
+  `singleplayer_menu`;
+- a prior state/interaction/screen/control tuple returned
+  `not_executed/stale_state/not_applied`, retry forbidden;
+- polling the same request returned the same receipt and no controller owner
+  remained;
+- `native_pages.v1` advertised default-off and rejected open with
+  `human_equivalence_disabled`;
+- a bounded Agent run failed at the first DeepSeek network request and
+  submitted no command.
 
-Provenance is `unrecorded`. This is exact-artifact journey coverage only, not
-Organic qualification, durable authority or evidence for Preview.9.
+This is loaded/read-only plus one-operation canary evidence. It is not a rare
+selector matrix, Journey, Organic qualification or durable support claim.
 
-## Preview.9 Build/Install
+## Historical Evidence
 
-Release build and installed DLL match SHA
-`540acf9658b3bf04b2e094f3778453e063088aa8af560b67ea35b317c5a39d49`, MVID
-`afa5d986-d82d-4a01-b2ab-5509e3926f61`. STS2 was closed, so loaded identity,
-runtime instance, canary, journey and qualification remain non-claims.
+Preview.5 proved current/stale `run_deck` Inspection and `surface_card`
+linked detail for its exact MVID. Preview.7 completed a 202-command ordinary
+game. Preview.8 included an unrecorded-provenance completed-game run. Those
+records remain useful regression evidence but grant nothing to Preview.11.
 
-## Authority And Non-Claims
+## Support And Negative Boundary
 
-- Qualified and durable scopes are empty.
-- Canary is one exact operation on one current runtime/source, never a whole
-  Surface, origin or sibling operation.
-- Empty scope, unknown source, owner ambiguity, stale identity, incompatible
-  Modset and discovery failure are Fail Closed.
-- Build/install do not prove load or Live behavior.
-- Physical UI opening remains an optional evidence profile, not an implicit
-  effect of semantic Inspection.
+The current claim is ordinary vanilla single-player source coverage on the
+exact reviewed game identity. Unknown Mods, changed assemblies, unknown
+owners/sources and empty scopes remain Fail Closed.
+
+The exact v0.110.1 static audit retains multiplayer-only `Tutor` as a
+diagnostic negative holdout because its target-player pile ownership does not
+match the single-owner contract. It is unsupported, not fallback debt.
+
+## Authority
+
+- canary-permitted: exact encountered operation/runtime scopes only;
+- canary-exercised: `main_menu/open_singleplayer`;
+- scoped/durable qualified: none;
+- persistent authority: disabled;
+- canary never means Surface, origin or sibling-operation qualification.
+
+Status: **FREEZE CANDIDATE**.

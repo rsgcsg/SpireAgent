@@ -227,11 +227,17 @@ async function readRecordedPrompt(request: RecordedPromptComparisonRequest): Pro
   if (!isJsonObject(parsedUserPrompt.currentState) || !Array.isArray(parsedUserPrompt.allowedActions)) {
     throw new Error(`Recorded prompt lacks currentState or allowedActions: ${runId}/${decisionId}`);
   }
+  const context = isJsonObject(parsedUserPrompt.currentState.context)
+    ? parsedUserPrompt.currentState.context
+    : undefined;
+  const surface = isJsonObject(parsedUserPrompt.currentState.surface)
+    ? parsedUserPrompt.currentState.surface
+    : undefined;
   return {
     systemPrompt: value.systemPrompt,
     userPrompt: value.userPrompt,
-    contextKind: stringOrUnknown(parsedUserPrompt.contextKind),
-    surfaceKind: stringOrUnknown(parsedUserPrompt.surfaceKind),
+    contextKind: stringOrUnknown(parsedUserPrompt.contextKind ?? context?.kind),
+    surfaceKind: stringOrUnknown(parsedUserPrompt.surfaceKind ?? surface?.kind),
     actionAuthority: stringOrUnknown(parsedUserPrompt.actionAuthority),
     currentState: parsedUserPrompt.currentState,
     allowedActions: parsedUserPrompt.allowedActions.filter(isJsonValue)

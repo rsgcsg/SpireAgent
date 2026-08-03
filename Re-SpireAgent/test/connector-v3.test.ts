@@ -4,6 +4,8 @@ import type { AdapterDescriptor } from "../src/game-io/adapter.js";
 import { projectConnectorV3ForRe } from "../src/integrations/sts2mcp/connectorV3Projection.js";
 import { Sts2ConnectorV3Adapter } from "../src/integrations/sts2mcp/connectorV3Adapter.js";
 import {
+  decodeConnectorV3ClientRegistration,
+  decodeConnectorV3ControllerLeaseResponse,
   decodeConnectorV3Inspection,
   decodeConnectorV3LinkedDetail,
   decodeConnectorV3Observation,
@@ -36,8 +38,17 @@ const GAME = {
     action_permission_scopes: [{
       surface_kind: "combat_turn",
       operation: "play_card",
-      tier: "qualified"
-    }]
+      tier: "qualified",
+      grant_id: "grant-fixture",
+      grant_version: 1,
+      runtime_epoch: "fixture-runtime",
+      environment_digest: "environment-fixture",
+      patch_digest: "patch-fixture",
+      operation_fingerprint: "operation-fixture",
+      admission_basis: "fixture"
+    }],
+    compatibility_policy_id: "policy-fixture",
+    compatibility_policy_digest: "policy-digest-fixture"
   },
   modset: {
     status: "exact_bridge_only",
@@ -60,7 +71,7 @@ const SOURCE: AdapterDescriptor = {
 
 function combatObservation(): ConnectorV3Observation {
   return decodeConnectorV3Observation({
-    protocol_version: "3.0-preview.9",
+    protocol_version: "3.0-preview.11",
     schema: "sts2.connector.v3/observation-1",
     profile: "semantic_accessibility.tools.v1",
     state_token: "state-fixture-1",
@@ -1901,16 +1912,68 @@ function treasureObservation(): ConnectorV3Observation {
 
 function connectorCapabilities() {
   return {
-    protocol_version: "3.0-preview.9",
+    protocol_version: "3.0-preview.11",
     observation_schema: "sts2.connector.v3/observation-1",
     command_schema: "sts2.connector.v3/command-1",
     inspection_schema: "sts2.connector.v3/inspection-1",
     linked_detail_schema: "sts2.connector.v3/linked-detail-1",
+    control_schema: "sts2.connector.v3/control-1",
+    human_equivalence_schema: "sts2.connector.v3/human-equivalence-1",
     status: "experimental_cutover",
     bridge: BRIDGE,
     game: GAME,
     commands: ["activate_control"],
     control: { recommended_renewal_ms: 10_000 },
+    permission_system: {
+      schema_version: 1,
+      status: "session_scoped",
+      mode: "migration_exploration",
+      runtime_epoch: BRIDGE.runtime_instance_id,
+      policy_id: "policy-fixture",
+      policy_digest: "policy-digest-fixture",
+      dynamic_session_promotion_enabled: false,
+      patch_inventory: {
+        status: "clean_known_owners",
+        digest: "patch-fixture",
+        scope: "fixture",
+        patched_method_count: 1,
+        patch_owners: ["fixture-owner"],
+        unknown_owners: [],
+        limitations: []
+      },
+      grants: [],
+      limitations: []
+    },
+    qualification_system: {
+      schema_version: 2,
+      status: "empty",
+      store_id: "fixture-store",
+      store_digest: "fixture-store-digest",
+      current_environment_digest: "environment-fixture",
+      operation_catalog_id: "fixture-catalog",
+      operation_catalog_digest: "fixture-catalog-digest",
+      persistent_authority_enabled: false,
+      session_canary_candidate_enabled: true,
+      operation_contracts: [],
+      qualifications: [],
+      limitations: []
+    },
+    human_equivalence: {
+      profile: "native_pages.v1",
+      enabled: false,
+      supported_kinds: [
+        "run_deck",
+        "combat_draw_pile",
+        "combat_discard_pile",
+        "combat_exhaust_pile",
+        "shop_catalog"
+      ],
+      state_bound: true,
+      runtime_bound: true,
+      default_in_agent_flow: false,
+      creates_action_authority: false,
+      enters_command_ledger: false
+    },
     non_claims: []
   };
 }
@@ -1923,6 +1986,48 @@ function json(value: unknown, status = 200): Response {
 }
 
 describe("Connector V3 strict contract", () => {
+  it("strictly decodes V3-native control registration and leases", () => {
+    const client = {
+      client_session_id: "client-fixture",
+      client_instance_id: "re-fixture",
+      product_id: "re-spireagent",
+      product_name: "Re-SpireAgent",
+      product_version: "0.1.0",
+      registered_at: "2026-08-03T00:00:00Z",
+      last_seen_at: "2026-08-03T00:00:00Z"
+    };
+    const registration = decodeConnectorV3ClientRegistration({
+      protocol_version: "3.0-preview.11",
+      schema: "sts2.connector.v3/control-1",
+      runtime_instance_id: "fixture-runtime",
+      client
+    }).data;
+    const lease = decodeConnectorV3ControllerLeaseResponse({
+      protocol_version: "3.0-preview.11",
+      schema: "sts2.connector.v3/control-1",
+      runtime_instance_id: "fixture-runtime",
+      status: "controller_acquired",
+      detail: "acquired",
+      client,
+      controller: {
+        status: "active",
+        controller_lease_id: "lease-fixture",
+        controller_generation: 1,
+        client_session_id: "client-fixture",
+        acquired_at: "2026-08-03T00:00:00Z",
+        expires_at: "2026-08-03T00:01:00Z"
+      }
+    }).data;
+
+    expect(registration.protocol_version).toBe("3.0-preview.11");
+    expect(lease.controller?.client_session_id)
+      .toBe(registration.client.client_session_id);
+    expect(() => decodeConnectorV3ClientRegistration({
+      ...registration,
+      protocol_version: "2.0-preview.3"
+    })).toThrow("Connector v3 client registration");
+  });
+
   it("keeps visible unsupported interactions observable without commands", () => {
     const value = structuredClone(combatObservation()) as unknown as Record<string, unknown>;
     value.status = "actionable_partial";
@@ -1945,7 +2050,7 @@ describe("Connector V3 strict contract", () => {
 
   it("rejects unknown mutation receipts that permit retry", () => {
     expect(() => decodeConnectorV3Receipt({
-      protocol_version: "3.0-preview.9",
+      protocol_version: "3.0-preview.11",
       request_id: "request-fixture",
       status: "unknown",
       application: "unknown",
@@ -1961,7 +2066,7 @@ describe("Connector V3 strict contract", () => {
 
   it("decodes state-bound read-only V3 inspections", () => {
     const decoded = decodeConnectorV3Inspection({
-      protocol_version: "3.0-preview.9",
+      protocol_version: "3.0-preview.11",
       schema: "sts2.connector.v3/inspection-1",
       inspection_id: "v3inspection-fixture",
       expected_state_token: "state-fixture-1",
@@ -1993,7 +2098,7 @@ describe("Connector V3 strict contract", () => {
 
   it("rejects V3 inspections whose state token drifted", () => {
     expect(() => decodeConnectorV3Inspection({
-      protocol_version: "3.0-preview.9",
+      protocol_version: "3.0-preview.11",
       schema: "sts2.connector.v3/inspection-1",
       inspection_id: "v3inspection-fixture",
       expected_state_token: "state-fixture-1",
@@ -2022,7 +2127,7 @@ describe("Connector V3 strict contract", () => {
 
   it("decodes only state-bound linked card detail for the exact entity", () => {
     const detail = {
-      protocol_version: "3.0-preview.9",
+      protocol_version: "3.0-preview.11",
       schema: "sts2.connector.v3/linked-detail-1",
       detail_id: "detail-fixture",
       expected_state_token: "state-fixture-1",
@@ -2933,6 +3038,126 @@ describe("Connector V3 strict contract", () => {
     expect(envelope.currentState.sourceStateType)
       .toBe("connector_v3:menu:main_menu:direct");
     expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toHaveLength(1);
+  });
+
+  it("executes through V3 control and command contracts without a V2 route", async () => {
+    const calls: string[] = [];
+    let clientInstanceId = "";
+    const clientSessionId = "client-v3-fixture";
+    const controllerLeaseId = "lease-v3-fixture";
+    const adapter = new Sts2ConnectorV3Adapter(
+      "http://adapter.test",
+      1_000,
+      { commandPollMs: 1, commandTimeoutMs: 100 },
+      async (input, init) => {
+        const url = String(input);
+        calls.push(url);
+        if (url.endsWith("/api/v3/capabilities")) {
+          return json(connectorCapabilities());
+        }
+        if (url.endsWith("/api/v3/observation")) {
+          return json(mainMenuObservation());
+        }
+        if (url.endsWith("/api/v3/clients/register")) {
+          const body = JSON.parse(String(init?.body)) as {
+            client_instance_id: string;
+          };
+          clientInstanceId = body.client_instance_id;
+          return json({
+            protocol_version: "3.0-preview.11",
+            schema: "sts2.connector.v3/control-1",
+            runtime_instance_id: BRIDGE.runtime_instance_id,
+            client: {
+              client_session_id: clientSessionId,
+              client_instance_id: clientInstanceId,
+              product_id: "re-spireagent",
+              product_name: "Re-SpireAgent",
+              product_version: "0.1.0",
+              registered_at: "2026-08-03T00:00:00Z",
+              last_seen_at: "2026-08-03T00:00:00Z"
+            }
+          }, 201);
+        }
+        if (url.endsWith("/api/v3/controller/acquire")) {
+          return json({
+            protocol_version: "3.0-preview.11",
+            schema: "sts2.connector.v3/control-1",
+            runtime_instance_id: BRIDGE.runtime_instance_id,
+            status: "controller_acquired",
+            detail: "fixture acquired",
+            controller: {
+              status: "active",
+              controller_lease_id: controllerLeaseId,
+              controller_generation: 1,
+              client_session_id: clientSessionId,
+              acquired_at: "2026-08-03T00:00:00Z",
+              expires_at: new Date(Date.now() + 60_000).toISOString()
+            }
+          });
+        }
+        if (url.endsWith("/api/v3/commands")) {
+          const body = JSON.parse(String(init?.body)) as any;
+          return json({
+            protocol_version: "3.0-preview.11",
+            request_id: body.request_id,
+            status: "completed",
+            application: "confirmed",
+            command: { kind: body.command, operands: body.operands },
+            completion: {
+              boundary: "native_control_effect_observed",
+              summary: "Single-player menu opened."
+            },
+            retry: { allowed: false, reason: "terminal_receipt" },
+            successor: {
+              status: "available",
+              state_token: "state-menu-successor"
+            },
+            events: [],
+            attribution: {
+              client_session_id: clientSessionId,
+              client_instance_id: clientInstanceId,
+              product_id: "re-spireagent",
+              product_name: "Re-SpireAgent",
+              product_version: "0.1.0",
+              controller_lease_id: controllerLeaseId,
+              controller_generation: 1,
+              runtime_instance_id: BRIDGE.runtime_instance_id
+            }
+          });
+        }
+        if (url.endsWith("/api/v3/controller/release")) {
+          return json({
+            protocol_version: "3.0-preview.11",
+            schema: "sts2.connector.v3/control-1",
+            runtime_instance_id: BRIDGE.runtime_instance_id,
+            status: "controller_released",
+            detail: "fixture released"
+          });
+        }
+        throw new Error(`Unexpected request ${url}`);
+      },
+      async () => {}
+    );
+
+    const raw = await adapter.readCurrentState();
+    const envelope = normalizeCurrentState(raw, adapter.describe());
+    const action = buildAllowedActions(
+      envelope.currentState,
+      envelope.stateHash
+    )[0]!;
+    const result = await adapter.execute(action.action);
+    await adapter.close();
+
+    expect(result).toMatchObject({
+      accepted: true,
+      outcome: "accepted",
+      confirmedStateToken: "state-menu-successor"
+    });
+    expect(calls.some((url) => url.includes("/api/v2/"))).toBe(false);
+    expect(calls.filter((url) => url.endsWith("/api/v3/commands")))
+      .toHaveLength(1);
+    expect(calls.filter((url) => url.endsWith("/api/v3/controller/release")))
+      .toHaveLength(1);
   });
 
   it.each([

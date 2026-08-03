@@ -67,7 +67,12 @@ try {
       provenance: "fixture",
       qualificationUse: "coverage_only_unless_independently_reviewed"
     },
-    adapter: { negotiated: { bridge_protocol_version: "fixture" } }
+    adapter: { negotiated: {
+      connector_protocol_version: "3.0-fixture",
+      bridge_protocol_version: "retired-fixture",
+      runtime_patch_digest: "patch-fixture",
+      permission_policy_digest: "policy-fixture"
+    } }
   }));
 
   const semanticRecord = record({
@@ -137,6 +142,9 @@ try {
   const result = auditRunIdentity({ run: "run-fixture", runsDirectory: root });
   assert.equal(result.authorization_effect, "none");
   assert.equal(result.analysis_kind, "recorded_run_state_identity_audit");
+  assert.equal(result.run.exact_identity.protocol_version, "3.0-fixture");
+  assert.equal(result.run.exact_identity.patch_digest, "patch-fixture");
+  assert.equal(result.run.exact_identity.permission_policy_digest, "policy-fixture");
   assert.equal(result.summary.stale_refusal_count, 3);
   assert.equal(result.summary.semantic_changed, 1);
   assert.equal(result.summary.authority_changed, 1);

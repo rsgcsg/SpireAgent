@@ -1,13 +1,35 @@
 # Connector V3 Protocol
 
-Source protocol: `3.0-preview.9`
+Source protocol: `3.0-preview.11`
 
 Schemas:
 
 - `sts2.connector.v3/observation-1`
 - `sts2.connector.v3/command-1`
+- `sts2.connector.v3/control-1`
 - `sts2.connector.v3/inspection-1`
 - `sts2.connector.v3/linked-detail-1`
+- `sts2.connector.v3/human-equivalence-1`
+
+## Capabilities And Control
+
+`GET /api/v3/capabilities` publishes exact Gateway/game/Modset/runtime
+identity, runtime Patch inventory, permission policy and operation scopes,
+qualification store/environment identity, command vocabulary and the optional
+Human-profile capability. Empty permission or qualification lists grant
+nothing.
+
+Client registration and the single controller lease use only `control-1`:
+
+```text
+POST /api/v3/clients/register
+GET  /api/v3/clients
+GET  /api/v3/controller
+POST /api/v3/controller/{acquire|renew|release}
+```
+
+Every response repeats protocol, schema and runtime identity. A lease does not
+create operation authority; it only selects the one current mutation client.
 
 ## Observation
 
@@ -147,7 +169,7 @@ Map annotation exit and character selection are advertised only when their
 exact current native controls are enabled. A broader visible drawing mode,
 unlocked character or remembered prior state cannot substitute for that fact.
 
-Direct command descriptors are non-executing publication facts. Session trial
+V3-native command descriptors are non-executing publication facts. Session trial
 admission may use them only when the exact operation resolves to an explicit
 native contract. A manifest fallback, fixture or static fingerprint cannot
 turn a descriptor into authority. Rest-site and event-card-acquisition
@@ -193,6 +215,28 @@ the current state token and exact visible card instance. Reads are stale-safe,
 read-only and non-authorizing. They do not create a ledger request, controller
 lease or command candidate, and they do not expose cards outside the current
 visible Surface.
+
+## Optional Human-Equivalence Evidence
+
+The default-off `native_pages.v1` profile uses:
+
+```text
+POST /api/v3/human-equivalence/sessions
+GET  /api/v3/human-equivalence/sessions/{session_id}
+POST /api/v3/human-equivalence/sessions/{session_id}/return
+```
+
+Supported fixed kinds are `run_deck`, `combat_draw_pile`,
+`combat_discard_pile`, `combat_exhaust_pile` and `shop_catalog`. Open binds
+the expected state token and runtime instance, verifies the pre-owner, invokes
+only the exact native page control and suppresses mutation while the evidence
+session is active. Read repeats current owner/page evidence. Return requires
+the same runtime and restores/validates the pre-owner; a partial failure enters
+`recovery_required` rather than guessing success.
+
+The profile is operator evidence only. It is outside Agent Prompt flow, does
+not create controller or command authority, never enters the Command Ledger
+and cannot qualify an operation. Invalid/absent config remains disabled.
 
 ## Receipt
 

@@ -45,7 +45,7 @@ internal static class BridgeContextBuilder
             return new UnknownBridgeContext(
                 "unknown",
                 runState?.CurrentRoom?.GetType().Name ?? "no_active_run_context",
-                "This context has not yet received a player-visible Bridge v2 projection.");
+                "This context has not yet received a player-visible Gateway projection.");
         }
         catch (Exception ex)
         {

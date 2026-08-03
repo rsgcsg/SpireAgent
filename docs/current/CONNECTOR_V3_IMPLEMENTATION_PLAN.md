@@ -1,103 +1,88 @@
-# Connector V3 Implementation And Migration Plan
+# Connector V3 Freeze Plan
 
-Status: source migration closed; exact-runtime closure active
+Status: source closed; exact-runtime freeze candidate
 
 Authority: [ADR-0007](decisions/ADR-0007-connector-v3-canonical-architecture.md)
 
-## Goal
+## Implemented Baseline
 
-Provide one production Connector that completes an ordinary vanilla
-single-player run through player-visible observations and native STS2 commands,
-or stops at a precise typed unsupported boundary.
+Preview.11 provides:
 
-## Current Source
-
-Preview.9 implements:
-
-- V3 capabilities, observation, command and receipt contracts, plus
-  `inspection-1` and `linked-detail-1`;
+- V3 capabilities, control, observation, command, receipt, Inspection, linked
+  detail and optional Human-equivalence contracts;
 - exact state/interaction/entity/control binding, one controller, idempotent
-  ledger, native execute-time validation, native Commit, semantic Outcome and
+  ledger, execute-time validation, native Commit, semantic Outcome and
   unknown-no-retry;
-- direct V3 discovery/execution for ordinary combat, menus, map, events,
-  rooms, shops, rewards, game over and every currently cataloged selector;
-- typed final selector slices for combat pile, deck transform and Wood
-  Carvings, with source-distinct semantics and witnesses;
-- direct generated-choice command construction from typed selectable,
-  skip-control and source-bound operation facts;
-- direct Re decoding/projection of every recognized V3 Surface, with no V2
-  capabilities/state sidecar and no local game-legality reconstruction;
-- 94 explicit native operation contracts and zero fallback authority
-  contracts;
-- state-token-bound run-deck, combat-piles and shop-catalog Inspection plus
-  bounded current-Surface card detail;
-- targetless native potion support and exact map/character control facts.
+- direct V3 discovery/execution and direct Re consumption for all currently
+  cataloged ordinary vanilla single-player families and selectors;
+- V3-native non-executing command descriptors, 94 explicit operation
+  contracts, zero fallback authority and zero Provider action publication;
+- strict Re capability/control/permission/qualification decoding with no V2
+  state/action sidecar;
+- state-bound semantic Inspection, bounded linked detail and deterministic
+  compact Prompt projection v1;
+- default-off `native_pages.v1` with config/CLI/routes, fixed page kinds,
+  native open/read/return, pre/post owner checks, stale/runtime binding,
+  mutation suppression, recovery state, tests and documentation;
+- bounded request bodies for command, control and Human routes.
 
-Provider classes may still contain exact game binding and native Commit helper
-code inside the Gateway. They do not publish V3 authority, create a second
-executor or supply `draft.Actions`. Moving those mechanics into renamed files
-would be organization work, not a remaining production path.
+Provider-named files may retain exact game mechanics but cannot publish
+actions or become a second executor.
 
-## Evidence Boundary
+## Completed Evidence
 
-The supplied Preview.8 archive proves one exact loaded tuple and a completed
-unrecorded-provenance journey. It does not qualify Preview.9.
+- Gateway tests: 278/278.
+- Re: typecheck, 287/287 tests and production build.
+- Python MCP, docs, CLI, identity, compatibility, permission, qualification,
+  profile, migration, inventory, adaptation and clean-closure checks.
+- Release build, coherent install and exact cold load.
+- V3 capability/control/observation and strict Re decode.
+- `main_menu/open_singleplayer` native Commit, receipt and stable successor.
+- stale command refusal before Commit and repeatable same-request receipt.
+- Human profile default-disabled refusal.
 
-Preview.9 has passed source tests and Release build and is installed as SHA
-`540acf9658b3bf04b2e094f3778453e063088aa8af560b67ea35b317c5a39d49`,
-MVID `afa5d986-d82d-4a01-b2ab-5509e3926f61`. STS2 is closed, so load, runtime,
-canary, journey, Organic and qualification are non-claims.
+Exact identities and rollback path are in the
+[Preview.11 closeout](../../STS2MCP/docs/connector-v3/PREVIEW_11_FREEZE_CANDIDATE_CLOSEOUT_2026-08-03.md).
 
-## Remaining Phases
+## Remaining Freeze Phases
 
-### Phase 1: Exact Cold Load
+### Phase 1: Rare-Family Runtime Matrix
 
-Exit conditions:
+On the same artifact, exercise targetless potion, combat-pile,
+deck-transform, Wood Carvings, generated choice, combat-hand reversible
+stages, current/stale Inspection and current/stale linked detail.
 
-- source, built, installed and loaded SHA/MVID agree;
-- protocol, game, Modset, Patch and runtime are recorded;
-- empty/absent authority remains Fail Closed;
-- rollback snapshot is retained.
+Exit: action-local receipts and successors are retained for each reached
+operation. No sibling or Surface-wide authority is inferred.
 
-Rollback: restore `.local/deployments/2026-08-03T05-01-55-991Z` as a whole
-artifact. Never mix its DLL and provenance record with Preview.9.
+### Phase 2: Human Evidence Lifecycle
 
-### Phase 2: Final Family Canaries
+Enable the profile explicitly, cold-load, then exercise fixed native page
+open/read/return plus one stale and one recovery failure. Disable and cold-load
+again afterward.
 
-Exercise, on the same exact Preview.9 runtime:
+Exit: pre/post owner equality, no ledger entry, no mutation authority and
+failure recovery are all observed.
 
-- Explosive Ampoule or another targetless native potion;
-- combat-pile select/deselect/confirm as naturally available;
-- Whispering Hollow/New Leaf transform stages as naturally available;
-- Wood Carvings replacement;
-- generated-card selection and skip with source-operation parity.
+### Phase 3: Rollback And Revoke
 
-Each canary retains one input owner, exact operands, execute-time revalidation,
-native Commit, action-local Outcome and no authority transfer to sibling
-sources.
+Restore one coherent backup, cold-load it, prove loaded identity drift and
+authority refusal, then reinstall/cold-load the candidate. Exercise revoke on
+one exact session scope.
 
-### Phase 3: Information And Lifecycle
+Exit: loaded rollback, reinstall and revoke are recorded without mixed DLL or
+provenance files.
 
-- re-exercise current and stale `combat_piles`, `shop_catalog` and
-  `surface_card` reads;
-- verify known-room settling resumes while unknown owner remains unsupported;
-- capture quarantine, revoke and rollback behavior;
-- implement physical native-page opening only as an optional evidence profile.
+### Phase 4: Same-Artifact Journey
 
-### Phase 4: Same-Artifact Journey And Archive
+Run one bounded ordinary vanilla Journey, classify every stale, unsupported,
+settling, unknown and stop, and review evidence before any qualification.
 
-Run one bounded ordinary journey on the exact artifact, classify every stale,
-unknown, unsupported and stop, then archive the V2 production boundary. V2
-diagnostic endpoints may be deleted separately after rollback tooling no longer
-needs them; they cannot regain Re or mutation authority meanwhile.
+Current blocker: the configured DeepSeek endpoint is unreachable from this
+environment; the final-artifact run stops before command submission.
 
-## Required Gates
+## Freeze Rule
 
-- stale state/action and replacement entity reject before Commit;
-- duplicate request ID never mutates twice;
-- publication and execution use the same typed actionable facts;
-- lost completion evidence returns unknown and is never retried;
-- parent/child owner handoff leaves one mutation owner;
-- hidden RNG and future content never enter decision truth;
-- wrong game, MVID, Modset, Patch or runtime cannot inherit authority;
-- REST, MCP and Re do not add commands or semantics.
+Mark `FROZEN` only after all four phases. Until then use
+`FREEZE CANDIDATE`; do not bump support, create durable qualification or
+inherit old MVID evidence to satisfy the gate.

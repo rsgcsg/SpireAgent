@@ -1,19 +1,16 @@
 import {
-  decodeBridgeV2ClientRegistration,
-  decodeBridgeV2ControllerLeaseResponse,
-  decodeBridgeV2ControlSnapshot,
-  type BridgeV2ClientRegistration,
-  type BridgeV2ControllerLeaseResponse,
-  type BridgeV2ControlSnapshot,
-  type DecodedBridgePayload
-} from "./bridgeV2Protocol.js";
-import {
   decodeConnectorV3Capabilities,
+  decodeConnectorV3ClientRegistration,
+  decodeConnectorV3ControllerLeaseResponse,
+  decodeConnectorV3ControlSnapshot,
   decodeConnectorV3Inspection,
   decodeConnectorV3LinkedDetail,
   decodeConnectorV3Observation,
   decodeConnectorV3Receipt,
   type ConnectorV3Capabilities,
+  type ConnectorV3ClientRegistration,
+  type ConnectorV3ControllerLeaseResponse,
+  type ConnectorV3ControlSnapshot,
   type ConnectorV3Inspection,
   type ConnectorV3LinkedDetail,
   type ConnectorV3Observation,
@@ -139,7 +136,7 @@ export class ConnectorV3RestClient {
     productId: string;
     productName: string;
     productVersion: string;
-  }): Promise<DecodedBridgePayload<BridgeV2ClientRegistration>> {
+  }): Promise<DecodedConnectorV3Payload<ConnectorV3ClientRegistration>> {
     const response = await this.request(`${this.baseUrl}/api/v3/clients/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -151,18 +148,18 @@ export class ConnectorV3RestClient {
       })
     });
     if (!response.response.ok) throw httpError("Connector v3 client registration", response.response, response.value);
-    return decodeBridgeV2ClientRegistration(response.value);
+    return decodeConnectorV3ClientRegistration(response.value);
   }
 
-  async controlSnapshot(): Promise<DecodedBridgePayload<BridgeV2ControlSnapshot>> {
+  async controlSnapshot(): Promise<DecodedConnectorV3Payload<ConnectorV3ControlSnapshot>> {
     const response = await this.request(`${this.baseUrl}/api/v3/controller`, { method: "GET" });
     if (!response.response.ok) throw httpError("Connector v3 controller status", response.response, response.value);
-    return decodeBridgeV2ControlSnapshot(response.value);
+    return decodeConnectorV3ControlSnapshot(response.value);
   }
 
   async acquireController(
     clientSessionId: string
-  ): Promise<DecodedBridgePayload<BridgeV2ControllerLeaseResponse>> {
+  ): Promise<DecodedConnectorV3Payload<ConnectorV3ControllerLeaseResponse>> {
     return this.controllerOperation("acquire", { client_session_id: clientSessionId });
   }
 
@@ -170,7 +167,7 @@ export class ConnectorV3RestClient {
     clientSessionId: string;
     controllerLeaseId: string;
     controllerGeneration: number;
-  }): Promise<DecodedBridgePayload<BridgeV2ControllerLeaseResponse>> {
+  }): Promise<DecodedConnectorV3Payload<ConnectorV3ControllerLeaseResponse>> {
     return this.controllerOperation("renew", {
       client_session_id: input.clientSessionId,
       controller_lease_id: input.controllerLeaseId,
@@ -182,7 +179,7 @@ export class ConnectorV3RestClient {
     clientSessionId: string;
     controllerLeaseId: string;
     controllerGeneration: number;
-  }): Promise<DecodedBridgePayload<BridgeV2ControllerLeaseResponse>> {
+  }): Promise<DecodedConnectorV3Payload<ConnectorV3ControllerLeaseResponse>> {
     return this.controllerOperation("release", {
       client_session_id: input.clientSessionId,
       controller_lease_id: input.controllerLeaseId,
@@ -193,13 +190,13 @@ export class ConnectorV3RestClient {
   private async controllerOperation(
     operation: "acquire" | "renew" | "release",
     body: Record<string, unknown>
-  ): Promise<DecodedBridgePayload<BridgeV2ControllerLeaseResponse>> {
+  ): Promise<DecodedConnectorV3Payload<ConnectorV3ControllerLeaseResponse>> {
     const response = await this.request(`${this.baseUrl}/api/v3/controller/${operation}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body)
     });
-    const decoded = decodeBridgeV2ControllerLeaseResponse(response.value);
+    const decoded = decodeConnectorV3ControllerLeaseResponse(response.value);
     if (!response.response.ok) {
       throw new ConnectorV3HttpError(
         `Connector v3 controller ${operation} rejected: ${decoded.data.status} - ${decoded.data.detail}`,

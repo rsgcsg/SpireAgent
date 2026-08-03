@@ -136,7 +136,10 @@ function identityChange(preIdentity, postIdentity) {
 function exactIdentity(metadata) {
   const negotiated = metadata?.adapter?.negotiated ?? {};
   return {
-    protocol_version: negotiated.bridge_protocol_version ?? null,
+    protocol_version:
+      negotiated.connector_protocol_version
+      ?? negotiated.bridge_protocol_version
+      ?? null,
     gateway_sha256: negotiated.bridge_assembly_file_sha256 ?? null,
     gateway_mvid: negotiated.bridge_module_version_id ?? null,
     runtime_instance_id: negotiated.bridge_runtime_instance_id ?? null,

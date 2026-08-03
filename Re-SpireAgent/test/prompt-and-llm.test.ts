@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { buildAllowedActions } from "../src/domain/actions/buildAllowedActions.js";
-import { NORMALIZED_STATE_SCHEMA_VERSION } from "../src/domain/state/index.js";
 import { DeepSeekDecisionProvider } from "../src/llm/deepseekProvider.js";
 import { parseDecisionText, validateDecisionForActions } from "../src/llm/decisionSchema.js";
 import { normalizeCurrentState } from "../src/normalization/normalizeCurrentState.js";
@@ -15,25 +14,33 @@ import { fixture, TEST_ADAPTER } from "./helpers.js";
 // the same commit and run `npm run check`. Prefer stable semantic invariants over
 // pinning incidental prose unless the exact wording is itself contractual.
 describe("prompt contract", () => {
-  it("records the complete current state and non-executable action summaries", async () => {
+  it("projects decision facts once while retaining the exact allowed actions", async () => {
     const envelope = normalizeCurrentState(await fixture("combat"), TEST_ADAPTER);
     const actions = buildAllowedActions(envelope.currentState, envelope.stateHash);
     const prompt = buildDecisionPrompt(envelope.currentState, actions);
     const payload = JSON.parse(prompt.userPrompt) as Record<string, any>;
 
     expect(prompt.systemPrompt).toContain("Return exactly one JSON object");
-    expect(payload.promptSchemaVersion).toBe(3);
-    expect(payload.currentStateSchemaVersion).toBe(NORMALIZED_STATE_SCHEMA_VERSION);
+    expect(payload.promptProjectionVersion).toBe(1);
     expect(prompt.globalPromptVersion).toBe(4);
     expect(prompt.stateGuideVersion).toBe(5);
-    expect(payload.contextKind).toBe("combat");
-    expect(payload.surfaceKind).toBe("combat_turn");
+    expect(payload.contextKind).toBeUndefined();
+    expect(payload.surfaceKind).toBeUndefined();
     expect(payload.actionAuthority).toBe("local_reconstruction");
     expect(payload.currentState.context.kind).toBe("combat");
     expect(payload.currentState.surface.kind).toBe("combat_turn");
+    expect(payload.currentState.normalizedSchemaVersion).toBeUndefined();
+    expect(payload.currentState.sourceStateType).toBeUndefined();
+    expect(payload.currentState.actionAuthority).toBeUndefined();
+    expect(payload.currentState.surface.legalActions).toBeUndefined();
+    expect(payload.currentState.bridgeLegacyWarnings).toBeUndefined();
+    expect(payload.currentState.bridgeInspectionCatalog).toBeUndefined();
+    expect(payload.outputSchema).toBeUndefined();
     expect(payload.allowedActions).toHaveLength(actions.length);
     expect(payload.allowedActions[0].action).toBeUndefined();
     expect(prompt.userPrompt).not.toContain("DEEPSEEK_API_KEY");
+    expect(prompt.projectionHash).toMatch(/^sha256:[a-f0-9]{64}$/);
+    expect(prompt.sourceNormalizedStateHash).toMatch(/^sha256:[a-f0-9]{64}$/);
   });
 
   it("versions Prompt v4 and states its bounded game-strategy invariants", () => {

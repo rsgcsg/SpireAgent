@@ -98,7 +98,7 @@ internal static class BridgeModsetIdentity
             FingerprintScope,
             ExactPermissionEligible: false,
             mods,
-            "This Modset has no explicit Bridge v2 action or Inspection permission. Observation remains diagnostic only.");
+            "This Modset has no explicit Gateway action or Inspection permission. Observation remains diagnostic only.");
     }
 
     private static LoadedModIdentity BuildMod(Mod mod)

@@ -12,6 +12,19 @@ namespace STS2_MCP.Tests;
 
 public sealed class ConnectorV3ContractTests
 {
+    [Fact]
+    public void BoundedTransportBodyDoesNotTrustContentLength()
+    {
+        Assert.Equal(
+            new byte[] { 1, 2, 3, 4 },
+            McpMod.ReadConnectorV3BoundedBodyBytes(
+                new MemoryStream(new byte[] { 1, 2, 3, 4 }),
+                4));
+        Assert.Null(McpMod.ReadConnectorV3BoundedBodyBytes(
+            new MemoryStream(new byte[] { 1, 2, 3, 4, 5 }),
+            4));
+    }
+
     [Theory]
     [InlineData(true, "settling", "combat_turn", 0, false, "supported")]
     [InlineData(true, "settling", "treasure_room", 0, false, "supported")]
@@ -204,7 +217,7 @@ public sealed class ConnectorV3ContractTests
         Assert.Empty(ConnectorV3Runtime.DescribeMapCommands(blocked));
 
         var ready = blocked with { CanExitAnnotation = true };
-        BridgeActionDraft command = Assert.Single(
+        ConnectorV3CommandDescriptor command = Assert.Single(
             ConnectorV3Runtime.DescribeMapCommands(ready));
 
         Assert.Equal("exit_map_annotation", command.Kind);
@@ -236,7 +249,7 @@ public sealed class ConnectorV3ContractTests
             false,
             new[] { card },
             Array.Empty<VisibleCard>());
-        BridgeActionDraft[] selectingCommands =
+        ConnectorV3CommandDescriptor[] selectingCommands =
             ConnectorV3Runtime.DescribeDeckUpgradeCommands(selecting).ToArray();
 
         Assert.Contains(selectingCommands, command =>
@@ -260,12 +273,12 @@ public sealed class ConnectorV3ContractTests
             CanCancelPreview = true,
             CanConfirm = true
         };
-        BridgeActionDraft[] previewCommands =
+        ConnectorV3CommandDescriptor[] previewCommands =
             ConnectorV3Runtime.DescribeDeckUpgradeCommands(preview).ToArray();
 
         Assert.Contains(previewCommands, command =>
             command.Kind == "cancel_deck_upgrade_preview");
-        BridgeActionDraft confirm = Assert.Single(previewCommands, command =>
+        ConnectorV3CommandDescriptor confirm = Assert.Single(previewCommands, command =>
             command.Kind == "confirm_deck_upgrade");
         Assert.Contains(confirm.EntityBindings!, binding =>
             binding.Role == "card" && binding.EntityId == card.EntityId);
@@ -297,7 +310,7 @@ public sealed class ConnectorV3ContractTests
             false,
             new[] { card });
 
-        BridgeActionDraft[] commands =
+        ConnectorV3CommandDescriptor[] commands =
             ConnectorV3Runtime.DescribeDeckRemovalCommands(merchant).ToArray();
 
         Assert.Contains(commands, command => command.Kind == "toggle_deck_removal_card");
@@ -307,7 +320,7 @@ public sealed class ConnectorV3ContractTests
             command.EntityBindings!,
             binding => binding.Role == "screen" && binding.EntityId == "removal-screen"));
 
-        BridgeActionDraft[] relic = ConnectorV3Runtime.DescribeDeckRemovalCommands(
+        ConnectorV3CommandDescriptor[] relic = ConnectorV3Runtime.DescribeDeckRemovalCommands(
             merchant with { Kind = "relic_deck_removal_selection" }).ToArray();
         Assert.Contains(relic, command => command.Key.StartsWith(
             "deselect_precise_scissors_removal_card",
@@ -315,7 +328,7 @@ public sealed class ConnectorV3ContractTests
         Assert.DoesNotContain(relic, command =>
             command.Kind == "cancel_deck_removal_selection");
 
-        BridgeActionDraft[] reward = ConnectorV3Runtime.DescribeDeckRemovalCommands(
+        ConnectorV3CommandDescriptor[] reward = ConnectorV3Runtime.DescribeDeckRemovalCommands(
             merchant with { Kind = "reward_deck_removal_selection" }).ToArray();
         Assert.Contains(reward, command => command.Key.StartsWith(
             "deselect_card_removal_reward_removal_card",
@@ -356,10 +369,10 @@ public sealed class ConnectorV3ContractTests
             CanCloseSelection = true
         };
 
-        BridgeActionDraft[] selectingCommands =
+        ConnectorV3CommandDescriptor[] selectingCommands =
             ConnectorV3Runtime.DescribeDeckEnchantCommands(selecting).ToArray();
 
-        BridgeActionDraft toggle = Assert.Single(selectingCommands, command =>
+        ConnectorV3CommandDescriptor toggle = Assert.Single(selectingCommands, command =>
             command.Kind == "toggle_card");
         Assert.Contains(toggle.EntityBindings!, binding =>
             binding.Role == "screen" && binding.EntityId == "enchant-screen");
@@ -379,10 +392,10 @@ public sealed class ConnectorV3ContractTests
             CanConfirm = true,
             CanCancelPreview = true
         };
-        BridgeActionDraft[] previewCommands =
+        ConnectorV3CommandDescriptor[] previewCommands =
             ConnectorV3Runtime.DescribeDeckEnchantCommands(preview).ToArray();
 
-        BridgeActionDraft confirm = Assert.Single(previewCommands, command =>
+        ConnectorV3CommandDescriptor confirm = Assert.Single(previewCommands, command =>
             command.Kind == "confirm_selection");
         Assert.Contains(confirm.EntityBindings!, binding =>
             binding.Role == "card" && binding.EntityId == card.EntityId);
@@ -406,7 +419,7 @@ public sealed class ConnectorV3ContractTests
             CanAdvance = true
         };
 
-        BridgeActionDraft command = Assert.Single(
+        ConnectorV3CommandDescriptor command = Assert.Single(
             ConnectorV3Runtime.DescribeEventDialogueCommands(surface));
 
         Assert.Equal("advance_event_dialogue", command.Kind);
@@ -457,7 +470,7 @@ public sealed class ConnectorV3ContractTests
             CanCancelSelection = true,
             CanToggleUpgradeView = true
         };
-        BridgeActionDraft[] transformCommands =
+        ConnectorV3CommandDescriptor[] transformCommands =
             ConnectorV3Runtime.DescribeDeckTransformCommands(transform).ToArray();
         Assert.Contains(transformCommands, command => command.Kind == "toggle_deck_transform_card");
         Assert.Contains(transformCommands, command => command.Kind == "cancel_deck_transform_selection");
@@ -484,7 +497,7 @@ public sealed class ConnectorV3ContractTests
             CanConfirm = true,
             CanCancelPreview = true
         };
-        BridgeActionDraft[] woodCommands =
+        ConnectorV3CommandDescriptor[] woodCommands =
             ConnectorV3Runtime.DescribeWoodCarvingsCommands(wood).ToArray();
         Assert.Contains(woodCommands, command => command.Kind == "confirm_wood_carvings_replacement");
         Assert.Contains(woodCommands, command => command.Kind == "cancel_wood_carvings_replacement_preview");
@@ -518,10 +531,10 @@ public sealed class ConnectorV3ContractTests
             DeselectableCardEntityIds = new[] { card.EntityId },
             CanConfirm = true
         };
-        BridgeActionDraft[] pileCommands =
+        ConnectorV3CommandDescriptor[] pileCommands =
             ConnectorV3Runtime.DescribeCombatPileCommands(pile).ToArray();
         Assert.Contains(pileCommands, command => command.Kind == "toggle_combat_pile_card");
-        BridgeActionDraft pileConfirm = Assert.Single(
+        ConnectorV3CommandDescriptor pileConfirm = Assert.Single(
             pileCommands,
             command => command.Kind == "confirm_combat_pile_selection");
         Assert.Contains(pileConfirm.EntityBindings!, binding =>
@@ -546,7 +559,7 @@ public sealed class ConnectorV3ContractTests
             false,
             new[] { bundle });
 
-        BridgeActionDraft preview = Assert.Single(
+        ConnectorV3CommandDescriptor preview = Assert.Single(
             ConnectorV3Runtime.DescribeCardBundleCommands(choosing));
         Assert.Equal("preview_card_bundle", preview.Kind);
         Assert.Contains(preview.EntityBindings!, binding =>
@@ -554,7 +567,7 @@ public sealed class ConnectorV3ContractTests
         Assert.Contains(preview.EntityBindings!, binding =>
             binding.Role == "bundle" && binding.EntityId == "bundle-a");
 
-        BridgeActionDraft[] previewStage = ConnectorV3Runtime.DescribeCardBundleCommands(
+        ConnectorV3CommandDescriptor[] previewStage = ConnectorV3Runtime.DescribeCardBundleCommands(
             choosing with
             {
                 Stage = "preview",
@@ -599,7 +612,7 @@ public sealed class ConnectorV3ContractTests
             new[] { "remove_selected_cards", "add_spore_mind", "finish_event" },
             new[] { first, second });
 
-        BridgeActionDraft[] selectingCommands =
+        ConnectorV3CommandDescriptor[] selectingCommands =
             EventDeckRemovalSelection.DescribeCommands(selecting).ToArray();
         Assert.Contains(selectingCommands, command =>
             command.Kind == "toggle_event_deck_removal_card"
@@ -618,11 +631,11 @@ public sealed class ConnectorV3ContractTests
             CanCancelPreview = true,
             CanConfirm = true
         };
-        BridgeActionDraft[] previewCommands =
+        ConnectorV3CommandDescriptor[] previewCommands =
             EventDeckRemovalSelection.DescribeCommands(preview).ToArray();
         Assert.Contains(previewCommands, command =>
             command.Kind == "cancel_event_deck_removal_preview");
-        BridgeActionDraft confirm = Assert.Single(previewCommands, command =>
+        ConnectorV3CommandDescriptor confirm = Assert.Single(previewCommands, command =>
             command.Kind == "confirm_event_deck_removal");
         Assert.Equal(2, confirm.EntityBindings!.Count(binding => binding.Role == "card"));
 
@@ -743,9 +756,9 @@ public sealed class ConnectorV3ContractTests
                     "Disabled.")
             });
 
-        BridgeActionDraft[] mainCommands =
+        ConnectorV3CommandDescriptor[] mainCommands =
             ConnectorV3Runtime.DescribeMainMenuCommands(main).ToArray();
-        BridgeActionDraft singleplayerCommand = Assert.Single(
+        ConnectorV3CommandDescriptor singleplayerCommand = Assert.Single(
             ConnectorV3Runtime.DescribeSingleplayerMenuCommands(singleplayer));
 
         Assert.Equal(2, mainCommands.Length);
@@ -808,7 +821,7 @@ public sealed class ConnectorV3ContractTests
             true,
             true);
 
-        BridgeActionDraft[] commands =
+        ConnectorV3CommandDescriptor[] commands =
             ConnectorV3Runtime.DescribeCharacterSelectCommands(surface).ToArray();
 
         Assert.Equal(5, commands.Length);
@@ -816,14 +829,14 @@ public sealed class ConnectorV3ContractTests
             command.EntityBindings!,
             binding => binding.Role == "screen"
                        && binding.EntityId == "character-screen"));
-        BridgeActionDraft select = Assert.Single(commands, command =>
+        ConnectorV3CommandDescriptor select = Assert.Single(commands, command =>
             command.Kind == "select_character");
         Assert.Contains(select.EntityBindings!, binding =>
             binding.Role == "character_choice"
             && binding.EntityId == "choice-available");
         Assert.DoesNotContain(commands, command => command.EntityBindings!.Any(binding =>
             binding.EntityId == "choice-locked"));
-        BridgeActionDraft embark = Assert.Single(commands, command =>
+        ConnectorV3CommandDescriptor embark = Assert.Single(commands, command =>
             command.Kind == "embark_standard_run");
         Assert.Contains(embark.EntityBindings!, binding =>
             binding.Role == "character_choice"
@@ -869,7 +882,7 @@ public sealed class ConnectorV3ContractTests
             SelectCompletionEvidence = "exact-generated-combat-card-witness",
             SkipCompletionEvidence = "unchanged-combat-piles-witness"
         };
-        BridgeActionDraft[] commands =
+        ConnectorV3CommandDescriptor[] commands =
             ConnectorV3Runtime.DescribeGeneratedCardChoiceCommands(surface).ToArray();
 
         Assert.Equal(2, commands.Length);
@@ -927,7 +940,7 @@ public sealed class ConnectorV3ContractTests
             DeselectableCardEntityIds = new[] { "card-selected" }
         };
 
-        BridgeActionDraft[] commands =
+        ConnectorV3CommandDescriptor[] commands =
             ConnectorV3Runtime.DescribeEventCardAcquisitionCommands(surface).ToArray();
 
         Assert.Equal(2, commands.Length);
@@ -992,10 +1005,10 @@ public sealed class ConnectorV3ContractTests
             },
             CanProceed: true);
 
-        BridgeActionDraft[] commands = ConnectorV3Runtime.DescribeRestSiteCommands(surface).ToArray();
+        ConnectorV3CommandDescriptor[] commands = ConnectorV3Runtime.DescribeRestSiteCommands(surface).ToArray();
 
         Assert.Equal(2, commands.Length);
-        BridgeActionDraft choose = Assert.Single(commands, command => command.Kind == "choose_rest_option");
+        ConnectorV3CommandDescriptor choose = Assert.Single(commands, command => command.Kind == "choose_rest_option");
         Assert.Contains(choose.EntityBindings!, binding =>
             binding.Role == "screen" && binding.EntityId == "rest-screen");
         Assert.Contains(choose.EntityBindings!, binding =>
@@ -1112,7 +1125,7 @@ public sealed class ConnectorV3ContractTests
                     Array.Empty<VisibleEventOptionTooltip>())
             });
 
-        BridgeActionDraft command = Assert.Single(
+        ConnectorV3CommandDescriptor command = Assert.Single(
             ConnectorV3Runtime.DescribeEventOptionCommands(surface));
 
         Assert.Equal("choose_event_option", command.Kind);
@@ -1140,9 +1153,9 @@ public sealed class ConnectorV3ContractTests
             false,
             true);
 
-        BridgeActionDraft advance = Assert.Single(
+        ConnectorV3CommandDescriptor advance = Assert.Single(
             ConnectorV3Runtime.DescribeGameOverCommands(intro));
-        BridgeActionDraft exit = Assert.Single(
+        ConnectorV3CommandDescriptor exit = Assert.Single(
             ConnectorV3Runtime.DescribeGameOverCommands(summary));
 
         Assert.Equal("advance_game_over_summary", advance.Kind);
@@ -1197,9 +1210,9 @@ public sealed class ConnectorV3ContractTests
             true,
             false);
 
-        BridgeActionDraft open = Assert.Single(
+        ConnectorV3CommandDescriptor open = Assert.Single(
             ConnectorV3Runtime.DescribeTreasureRoomCommands(closed));
-        BridgeActionDraft[] choices =
+        ConnectorV3CommandDescriptor[] choices =
             ConnectorV3Runtime.DescribeTreasureRoomCommands(choice).ToArray();
 
         Assert.Equal("open_treasure_chest", open.Kind);
@@ -1248,7 +1261,7 @@ public sealed class ConnectorV3ContractTests
             true,
             false);
 
-        BridgeActionDraft[] commands =
+        ConnectorV3CommandDescriptor[] commands =
             ConnectorV3Runtime.DescribeRewardClaimCommands(surface).ToArray();
 
         Assert.Contains(commands, command =>
@@ -1305,7 +1318,7 @@ public sealed class ConnectorV3ContractTests
             SelectableCardEntityIds = new[] { "card-selectable", "unknown-card" }
         };
 
-        BridgeActionDraft[] commands =
+        ConnectorV3CommandDescriptor[] commands =
             ConnectorV3Runtime.DescribeCardRewardCommands(surface).ToArray();
 
         Assert.Collection(
@@ -1329,7 +1342,7 @@ public sealed class ConnectorV3ContractTests
         Assert.DoesNotContain(commands, command => command.EntityBindings!.Any(binding =>
             binding.EntityId is "card-disabled" or "alternative-disabled" or "unknown-card"));
 
-        BridgeActionDraft enabledAlternative = Assert.Single(commands, command =>
+        ConnectorV3CommandDescriptor enabledAlternative = Assert.Single(commands, command =>
             command.Kind == "choose_card_reward_alternative");
         Dictionary<string, string> alternativeOperands =
             ConnectorV3Runtime.BuildCommandOperands(
@@ -1439,7 +1452,7 @@ public sealed class ConnectorV3ContractTests
                 null),
             true);
 
-        BridgeActionDraft[] commands =
+        ConnectorV3CommandDescriptor[] commands =
             ConnectorV3Runtime.DescribeShopInventoryCommands(surface).ToArray();
 
         Assert.Equal(5, commands.Length);
@@ -1455,7 +1468,7 @@ public sealed class ConnectorV3ContractTests
         Assert.Contains(commands, command => command.Kind == "open_shop_card_removal");
         Assert.Contains(commands, command => command.Kind == "close_shop_inventory");
 
-        BridgeActionDraft purchase = Assert.Single(commands, command =>
+        ConnectorV3CommandDescriptor purchase = Assert.Single(commands, command =>
             command.Kind == "purchase_shop_card");
         Dictionary<string, string> operands =
             ConnectorV3Runtime.BuildCommandOperands(
@@ -1466,7 +1479,7 @@ public sealed class ConnectorV3ContractTests
         Assert.Equal("offer-card", operands["shop_offer_id"]);
         Assert.DoesNotContain("action_id", operands.Keys);
 
-        BridgeActionDraft close = Assert.Single(commands, command =>
+        ConnectorV3CommandDescriptor close = Assert.Single(commands, command =>
             command.Kind == "close_shop_inventory");
         Dictionary<string, string> closeOperands =
             ConnectorV3Runtime.BuildCommandOperands(
@@ -1505,7 +1518,7 @@ public sealed class ConnectorV3ContractTests
                     "Gain 5 Block.", "Basic", false, true, null)
             });
 
-        BridgeActionDraft[] commands =
+        ConnectorV3CommandDescriptor[] commands =
             ConnectorV3Runtime.DescribeCombatHandCommands(surface).ToArray();
 
         Assert.Equal(3, commands.Length);

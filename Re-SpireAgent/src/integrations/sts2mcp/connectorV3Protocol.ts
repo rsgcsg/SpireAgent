@@ -8,7 +8,7 @@ import {
 } from "./gatewayRunRoomProtocol.js";
 import { visibleCardSchema } from "./gatewayVisibleStateProtocol.js";
 
-export const SUPPORTED_CONNECTOR_V3_PROTOCOL = "3.0-preview.9" as const;
+export const SUPPORTED_CONNECTOR_V3_PROTOCOL = "3.0-preview.11" as const;
 
 const bridgeIdentitySchema = z.object({
   id: z.string().min(1),
@@ -28,9 +28,86 @@ const compatibilitySchema = z.object({
   action_permission_scopes: z.array(z.object({
     surface_kind: z.string().min(1),
     operation: z.string().min(1),
-    tier: z.enum(["qualified", "canary"])
-  }).passthrough())
+    tier: z.enum(["qualified", "canary"]),
+    grant_id: z.string().min(1),
+    grant_version: z.number().int().positive(),
+    runtime_epoch: z.string().min(1),
+    environment_digest: z.string().min(1),
+    patch_digest: z.string().min(1),
+    operation_fingerprint: z.string().min(1),
+    admission_basis: z.string().min(1)
+  }).strict()),
+  compatibility_policy_id: z.string().min(1),
+  compatibility_policy_digest: z.string().min(1)
 }).passthrough();
+
+const runtimePatchInventorySchema = z.object({
+  status: z.string().min(1),
+  digest: z.string().min(1),
+  scope: z.string().min(1),
+  patched_method_count: z.number().int().nonnegative(),
+  patch_owners: z.array(z.string()),
+  unknown_owners: z.array(z.string()),
+  limitations: z.array(z.string())
+}).strict();
+
+const permissionSystemSchema = z.object({
+  schema_version: z.number().int().positive(),
+  status: z.string().min(1),
+  mode: z.string().min(1),
+  runtime_epoch: z.string().min(1),
+  policy_id: z.string().min(1),
+  policy_digest: z.string().min(1),
+  dynamic_session_promotion_enabled: z.boolean(),
+  patch_inventory: runtimePatchInventorySchema,
+  grants: z.array(z.object({
+    grant_id: z.string().min(1),
+    current: z.boolean(),
+    status: z.string().min(1),
+    surface_kind: z.string().min(1),
+    operation: z.string().min(1),
+    tier: z.string().min(1),
+    runtime_epoch: z.string().min(1),
+    environment_digest: z.string().min(1),
+    gateway_assembly_sha256: z.string().min(1),
+    gateway_module_version_id: z.string().min(1),
+    modset_fingerprint: z.string().min(1),
+    patch_digest: z.string().min(1),
+    operation_fingerprint: z.string().min(1)
+  }).passthrough()),
+  limitations: z.array(z.string())
+}).strict();
+
+const qualificationSystemSchema = z.object({
+  schema_version: z.number().int().positive(),
+  status: z.string().min(1),
+  store_id: z.string().min(1),
+  store_digest: z.string().min(1),
+  current_environment_digest: z.string().min(1),
+  operation_catalog_id: z.string().min(1),
+  operation_catalog_digest: z.string().min(1),
+  persistent_authority_enabled: z.boolean(),
+  session_canary_candidate_enabled: z.boolean(),
+  operation_contracts: z.array(z.object({
+    surface_kind: z.string().min(1),
+    operation: z.string().min(1),
+    contract_kind: z.string().min(1),
+    contract_digest: z.string().min(1),
+    completion_boundary: z.string().min(1),
+    witness_id: z.string().min(1),
+    risk_class: z.string().min(1)
+  }).passthrough()),
+  qualifications: z.array(z.object({
+    qualification_id: z.string().min(1),
+    status: z.string().min(1),
+    authority_tier: z.string().min(1),
+    surface_kind: z.string().min(1),
+    operation: z.string().min(1),
+    applicable_to_current_environment: z.boolean(),
+    applicability: z.string().min(1)
+  }).passthrough()),
+  limitations: z.array(z.string())
+}).strict();
 
 const gameIdentitySchema = z.object({
   version: z.string().nullable().optional(),
@@ -134,6 +211,8 @@ const capabilitiesSchema = z.object({
   command_schema: z.literal("sts2.connector.v3/command-1"),
   inspection_schema: z.literal("sts2.connector.v3/inspection-1"),
   linked_detail_schema: z.literal("sts2.connector.v3/linked-detail-1"),
+  control_schema: z.literal("sts2.connector.v3/control-1"),
+  human_equivalence_schema: z.literal("sts2.connector.v3/human-equivalence-1"),
   status: z.string().min(1),
   bridge: bridgeIdentitySchema,
   game: gameIdentitySchema,
@@ -141,7 +220,78 @@ const capabilitiesSchema = z.object({
   control: z.object({
     recommended_renewal_ms: z.number().int().positive()
   }).passthrough(),
+  permission_system: permissionSystemSchema,
+  qualification_system: qualificationSystemSchema,
+  human_equivalence: z.object({
+    profile: z.literal("native_pages.v1"),
+    enabled: z.boolean(),
+    supported_kinds: z.array(z.enum([
+      "run_deck",
+      "combat_draw_pile",
+      "combat_discard_pile",
+      "combat_exhaust_pile",
+      "shop_catalog"
+    ])),
+    state_bound: z.literal(true),
+    runtime_bound: z.literal(true),
+    default_in_agent_flow: z.literal(false),
+    creates_action_authority: z.literal(false),
+    enters_command_ledger: z.literal(false)
+  }).strict(),
   non_claims: z.array(z.string())
+}).strict();
+
+const controlClientSchema = z.object({
+  client_session_id: z.string().min(1),
+  client_instance_id: z.string().min(1),
+  product_id: z.string().min(1),
+  product_name: z.string().min(1),
+  product_version: z.string().min(1),
+  registered_at: z.string().min(1),
+  last_seen_at: z.string().min(1)
+}).strict();
+
+const controlLeaseSchema = z.object({
+  status: z.string().min(1),
+  controller_lease_id: z.string().min(1),
+  controller_generation: z.number().int().positive(),
+  client_session_id: z.string().min(1),
+  acquired_at: z.string().min(1),
+  expires_at: z.string().min(1)
+}).strict();
+
+const clientRegistrationSchema = z.object({
+  protocol_version: z.literal(SUPPORTED_CONNECTOR_V3_PROTOCOL),
+  schema: z.literal("sts2.connector.v3/control-1"),
+  runtime_instance_id: z.string().min(1),
+  client: controlClientSchema,
+  controller: controlLeaseSchema.nullable().optional()
+}).strict();
+
+const controllerLeaseResponseSchema = z.object({
+  protocol_version: z.literal(SUPPORTED_CONNECTOR_V3_PROTOCOL),
+  schema: z.literal("sts2.connector.v3/control-1"),
+  runtime_instance_id: z.string().min(1),
+  status: z.enum([
+    "controller_acquired",
+    "controller_already_held",
+    "controller_renewed",
+    "controller_released",
+    "controller_lease_held",
+    "controller_lease_stale",
+    "client_session_not_found"
+  ]),
+  detail: z.string().min(1),
+  client: controlClientSchema.nullable().optional(),
+  controller: controlLeaseSchema.nullable().optional()
+}).strict();
+
+const controlSnapshotSchema = z.object({
+  protocol_version: z.literal(SUPPORTED_CONNECTOR_V3_PROTOCOL),
+  schema: z.literal("sts2.connector.v3/control-1"),
+  runtime_instance_id: z.string().min(1),
+  clients: z.array(controlClientSchema),
+  controller: controlLeaseSchema.nullable().optional()
 }).strict();
 
 const observationSchema = z.object({
@@ -301,6 +451,9 @@ export type ConnectorV3Inspection = z.infer<typeof inspectionSchema>;
 export type ConnectorV3LinkedDetail = z.infer<typeof linkedDetailSchema>;
 export type ConnectorV3CommandCandidate = z.infer<typeof commandCandidateSchema>;
 export type ConnectorV3Receipt = z.infer<typeof receiptSchema>;
+export type ConnectorV3ClientRegistration = z.infer<typeof clientRegistrationSchema>;
+export type ConnectorV3ControllerLeaseResponse = z.infer<typeof controllerLeaseResponseSchema>;
+export type ConnectorV3ControlSnapshot = z.infer<typeof controlSnapshotSchema>;
 
 export interface DecodedConnectorV3Payload<T> {
   raw: JsonObject;
@@ -318,6 +471,24 @@ export function decodeConnectorV3Capabilities(
   value: unknown
 ): DecodedConnectorV3Payload<ConnectorV3Capabilities> {
   return decode(value, capabilitiesSchema, "Connector v3 capabilities");
+}
+
+export function decodeConnectorV3ClientRegistration(
+  value: unknown
+): DecodedConnectorV3Payload<ConnectorV3ClientRegistration> {
+  return decode(value, clientRegistrationSchema, "Connector v3 client registration");
+}
+
+export function decodeConnectorV3ControllerLeaseResponse(
+  value: unknown
+): DecodedConnectorV3Payload<ConnectorV3ControllerLeaseResponse> {
+  return decode(value, controllerLeaseResponseSchema, "Connector v3 controller lease response");
+}
+
+export function decodeConnectorV3ControlSnapshot(
+  value: unknown
+): DecodedConnectorV3Payload<ConnectorV3ControlSnapshot> {
+  return decode(value, controlSnapshotSchema, "Connector v3 control snapshot");
 }
 
 export function decodeConnectorV3Observation(

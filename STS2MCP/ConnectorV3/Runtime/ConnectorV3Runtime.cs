@@ -16,6 +16,14 @@ using STS2_MCP.ConnectorV3.Protocol;
 
 namespace STS2_MCP.ConnectorV3.Runtime;
 
+internal sealed record ConnectorV3CommandDescriptor(
+    string Key,
+    string Kind,
+    string Category,
+    string Label,
+    string EvidenceCode,
+    IReadOnlyList<ActionEntityBinding>? EntityBindings = null);
+
 internal sealed record ConnectorV3Snapshot(
     ConnectorV3ObservationResponse Observation,
     BridgeObservationDraft Draft,
@@ -36,9 +44,19 @@ internal sealed record ConnectorV3BoundCommand(
     BridgeActionPermissionBinding PermissionBinding,
     BridgeBoundActionContract ContractBinding);
 
-internal static class ConnectorV3Runtime
+internal static partial class ConnectorV3Runtime
 {
     private static readonly BridgeEntityRegistry Entities = new();
+    private static readonly Lazy<ConnectorV3HumanEquivalenceSessionMachine>
+        HumanEquivalenceLazy = new(() =>
+                new ConnectorV3HumanEquivalenceSessionMachine(
+                new ConnectorV3NativePageEnvironment(
+                    () => BuildSnapshot(
+                        suppressHumanEquivalence: false,
+                        admitEncounter: false),
+                    Entities)));
+    private static ConnectorV3HumanEquivalenceSessionMachine HumanEquivalence =>
+        HumanEquivalenceLazy.Value;
     private static readonly BridgeStateIdentityTracker StateIdentity = new();
     private static readonly BridgeCommandLedger CommandLedger =
         new(BridgeV2Runtime.CommandOutcomeTimeoutMs);
@@ -56,8 +74,10 @@ internal static class ConnectorV3Runtime
             ConnectorV3Contract.CommandSchema,
             ConnectorV3Contract.InspectionSchema,
             ConnectorV3Contract.LinkedDetailSchema,
-            "experimental_cutover",
-            v2.Bridge,
+            ConnectorV3Contract.ControlSchema,
+            ConnectorV3Contract.HumanEquivalenceSchema,
+            "freeze_candidate",
+            GatewayIdentity(v2.Bridge),
             v2.Game,
             new[]
             {
@@ -74,10 +94,13 @@ internal static class ConnectorV3Runtime
                 "activate_control"
             },
             v2.ControlCoordination,
+            v2.PermissionSystem,
+            v2.QualificationSystem,
+            HumanEquivalence.Capability(),
             new[]
             {
                 "V3 source/build/install is not loaded or Live evidence until exact runtime identity is observed.",
-                "Non-combat families still use a bounded native-binding migration adapter; they do not call V2 action endpoints.",
+                "The optional native-page evidence profile is read-only, operator-invoked and never action authority.",
                 "A successful fixture or build is not compatibility qualification."
             });
     }
@@ -305,7 +328,9 @@ internal static class ConnectorV3Runtime
         return ToReceipt(request, response);
     }
 
-    private static ConnectorV3Snapshot BuildSnapshot()
+    private static ConnectorV3Snapshot BuildSnapshot(
+        bool suppressHumanEquivalence = true,
+        bool admitEncounter = true)
     {
         GameBuildIdentity game = BridgeV2Runtime.ReadCurrentGameIdentity();
         BridgeObservationDraft draft = BridgeSnapshotBuilder.Build(Entities, game);
@@ -331,8 +356,10 @@ internal static class ConnectorV3Runtime
                 Signature = BridgeHash.Object(new { failed.Signature, failure })
             };
         }
+        if (suppressHumanEquivalence)
+            draft = HumanEquivalence.SuppressMutation(draft);
         IReadOnlyList<BridgeEncounterAuthorityCandidate>? authorityCandidates =
-            TryDescribeDirectAuthorityCommands(draft.Surface, out IReadOnlyList<BridgeActionDraft> directCommands)
+            TryDescribeDirectAuthorityCommands(draft.Surface, out IReadOnlyList<ConnectorV3CommandDescriptor> directCommands)
                 ? directCommands.Select(action => new BridgeEncounterAuthorityCandidate(
                         draft.Surface.Kind,
                         action.Kind,
@@ -340,7 +367,8 @@ internal static class ConnectorV3Runtime
                         RequiresExplicitNativeContract: true))
                     .ToArray()
                 : null;
-        draft = BridgeV2Runtime.AdmitEncounter(draft, authorityCandidates);
+        if (admitEncounter)
+            draft = BridgeV2Runtime.AdmitEncounter(draft, authorityCandidates);
         draft = BridgeSnapshotBuilder.ApplyCurrentAuthority(draft);
         BridgeSharedVisibleStateBuildResult shared = draft.Game.Compatibility.StateObservationAllowed
             ? BridgeSharedVisibleStateBuilder.Build(Entities)
@@ -423,7 +451,7 @@ internal static class ConnectorV3Runtime
             draft.Surface,
             interaction,
             draft.Completeness,
-            BridgeV2Runtime.ReadBridgeIdentity(),
+            GatewayIdentity(BridgeV2Runtime.ReadBridgeIdentity()),
             draft.Game,
             BridgeV2Runtime.ReadObservationPolicy(),
             v3Visibility,
@@ -434,6 +462,13 @@ internal static class ConnectorV3Runtime
             coverage);
         return new ConnectorV3Snapshot(observation, draft, bindings);
     }
+
+    internal static BridgeServerIdentity GatewayIdentity(
+        BridgeServerIdentity internalIdentity) => internalIdentity with
+    {
+        Id = ConnectorV3Contract.GatewayId,
+        Name = ConnectorV3Contract.GatewayName
+    };
 
     private static IReadOnlyList<ConnectorV3LinkedDetailCatalogEntry>
         BuildLinkedDetailCatalog(IBridgeSurface surface) =>
@@ -467,7 +502,7 @@ internal static class ConnectorV3Runtime
 
     private static bool TryDescribeDirectAuthorityCommands(
         IBridgeSurface surface,
-        out IReadOnlyList<BridgeActionDraft> commands)
+        out IReadOnlyList<ConnectorV3CommandDescriptor> commands)
     {
         commands = surface switch
         {
@@ -499,7 +534,7 @@ internal static class ConnectorV3Runtime
             DeckTransformSelectionSurface value => DescribeDeckTransformCommands(value),
             WoodCarvingsReplacementSelectionSurface value => DescribeWoodCarvingsCommands(value),
             CombatPileCardSelectionSurface value => DescribeCombatPileCommands(value),
-            _ => Array.Empty<BridgeActionDraft>()
+            _ => Array.Empty<ConnectorV3CommandDescriptor>()
         };
         return surface is
             CombatTurnSurface or
@@ -595,7 +630,7 @@ internal static class ConnectorV3Runtime
         CombatTurnSurface surface)
     {
         var result = new List<ConnectorV3BoundCommand>();
-        foreach (BridgeActionDraft descriptor in DescribeCombatCommands(surface))
+        foreach (ConnectorV3CommandDescriptor descriptor in DescribeCombatCommands(surface))
         {
             if (BuildNativeBinding(draft, descriptor) is not { } binding)
                 continue;
@@ -638,10 +673,10 @@ internal static class ConnectorV3Runtime
         return result;
     }
 
-    internal static IReadOnlyList<BridgeActionDraft> DescribeCombatCommands(
+    internal static IReadOnlyList<ConnectorV3CommandDescriptor> DescribeCombatCommands(
         CombatTurnSurface surface)
     {
-        var commands = new List<BridgeActionDraft>();
+        var commands = new List<ConnectorV3CommandDescriptor>();
         foreach (VisibleCombatCommandOption card in surface.PlayableCards)
         {
             commands.Add(NativeDescriptor(
@@ -687,10 +722,10 @@ internal static class ConnectorV3Runtime
         .Cast<ConnectorV3BoundCommand>()
         .ToArray();
 
-    internal static IReadOnlyList<BridgeActionDraft> DescribeShopRoomCommands(
+    internal static IReadOnlyList<ConnectorV3CommandDescriptor> DescribeShopRoomCommands(
         ShopRoomSurface surface)
     {
-        var commands = new List<BridgeActionDraft>();
+        var commands = new List<ConnectorV3CommandDescriptor>();
         ActionEntityBinding room = new("room", surface.RoomEntityId);
         if (surface.CanOpenInventory)
             commands.Add(NativeDescriptor("open_shop_inventory", "open_shop_inventory", "navigation", "Open shop inventory", "NMerchantButton.ForceClick+NMerchantRoom.OpenInventory", new[] { room }));
@@ -707,7 +742,7 @@ internal static class ConnectorV3Runtime
         .Cast<ConnectorV3BoundCommand>()
         .ToArray();
 
-    internal static IReadOnlyList<BridgeActionDraft> DescribeMapCommands(
+    internal static IReadOnlyList<ConnectorV3CommandDescriptor> DescribeMapCommands(
         MapNavigationSurface surface)
     {
         var commands = surface.NextOptions.Select(option => NativeDescriptor(
@@ -745,7 +780,7 @@ internal static class ConnectorV3Runtime
         DeckEnchantSelectionSurface surface)
     {
         var result = new List<ConnectorV3BoundCommand>();
-        foreach (BridgeActionDraft descriptor in DescribeDeckEnchantCommands(surface))
+        foreach (ConnectorV3CommandDescriptor descriptor in DescribeDeckEnchantCommands(surface))
         {
             if (BuildNativeBinding(draft, descriptor) is not { } binding)
                 continue;
@@ -789,10 +824,10 @@ internal static class ConnectorV3Runtime
         return result;
     }
 
-    internal static IReadOnlyList<BridgeActionDraft> DescribeDeckEnchantCommands(
+    internal static IReadOnlyList<ConnectorV3CommandDescriptor> DescribeDeckEnchantCommands(
         DeckEnchantSelectionSurface surface)
     {
-        var commands = new List<BridgeActionDraft>();
+        var commands = new List<ConnectorV3CommandDescriptor>();
         ActionEntityBinding screen = new("screen", surface.ScreenEntityId);
         Dictionary<string, VisibleCard> cards = surface.Cards.ToDictionary(card => card.EntityId, StringComparer.Ordinal);
         foreach (string cardId in surface.SelectableCardEntityIds.Concat(surface.DeselectableCardEntityIds))
@@ -827,7 +862,7 @@ internal static class ConnectorV3Runtime
         .Cast<ConnectorV3BoundCommand>()
         .ToArray();
 
-    internal static IReadOnlyList<BridgeActionDraft> DescribeEventDialogueCommands(
+    internal static IReadOnlyList<ConnectorV3CommandDescriptor> DescribeEventDialogueCommands(
         EventDialogueSurface surface)
     {
         VisibleDialogueLine? current = surface.RevealedLines.SingleOrDefault(line => line.IsCurrent);
@@ -846,7 +881,7 @@ internal static class ConnectorV3Runtime
                         new ActionEntityBinding("dialogue_line", current.EntityId)
                     })
             }
-            : Array.Empty<BridgeActionDraft>();
+            : Array.Empty<ConnectorV3CommandDescriptor>();
     }
 
     private static IReadOnlyList<ConnectorV3BoundCommand> BuildEventOptionBindings(
@@ -854,7 +889,7 @@ internal static class ConnectorV3Runtime
         EventOptionSurface surface)
     {
         var result = new List<ConnectorV3BoundCommand>();
-        foreach (BridgeActionDraft action in DescribeEventOptionCommands(surface))
+        foreach (ConnectorV3CommandDescriptor action in DescribeEventOptionCommands(surface))
         {
             if (BuildNativeBinding(draft, action) is { } binding)
                 result.Add(binding);
@@ -862,7 +897,7 @@ internal static class ConnectorV3Runtime
         return result;
     }
 
-    internal static IReadOnlyList<BridgeActionDraft> DescribeEventOptionCommands(
+    internal static IReadOnlyList<ConnectorV3CommandDescriptor> DescribeEventOptionCommands(
         EventOptionSurface surface) =>
         surface.Options
             .Where(option => option.IsEnabled && !option.IsLocked)
@@ -890,10 +925,10 @@ internal static class ConnectorV3Runtime
             .Cast<ConnectorV3BoundCommand>()
             .ToArray();
 
-    internal static IReadOnlyList<BridgeActionDraft> DescribeRestSiteCommands(
+    internal static IReadOnlyList<ConnectorV3CommandDescriptor> DescribeRestSiteCommands(
         RestSiteSurface surface)
     {
-        var actions = new List<BridgeActionDraft>();
+        var actions = new List<ConnectorV3CommandDescriptor>();
         ActionEntityBinding screen = new("screen", surface.ScreenEntityId);
         foreach (VisibleRestOption option in surface.Options.Where(value => value.Enabled))
         {
@@ -931,10 +966,10 @@ internal static class ConnectorV3Runtime
             .Cast<ConnectorV3BoundCommand>()
             .ToArray();
 
-    internal static IReadOnlyList<BridgeActionDraft> DescribeEventCardAcquisitionCommands(
+    internal static IReadOnlyList<ConnectorV3CommandDescriptor> DescribeEventCardAcquisitionCommands(
         EventCardAcquisitionSurface surface)
     {
-        var actions = new List<BridgeActionDraft>();
+        var actions = new List<ConnectorV3CommandDescriptor>();
         ActionEntityBinding screen = new("screen", surface.ScreenEntityId);
         IReadOnlyDictionary<string, VisibleCard> cards = surface.Cards.ToDictionary(
             card => card.EntityId,
@@ -975,10 +1010,10 @@ internal static class ConnectorV3Runtime
             .Cast<ConnectorV3BoundCommand>()
             .ToArray();
 
-    internal static IReadOnlyList<BridgeActionDraft> DescribeGameOverCommands(
+    internal static IReadOnlyList<ConnectorV3CommandDescriptor> DescribeGameOverCommands(
         GameOverSurface surface)
     {
-        var actions = new List<BridgeActionDraft>();
+        var actions = new List<ConnectorV3CommandDescriptor>();
         ActionEntityBinding screen = new("game_over_screen", surface.ScreenEntityId);
         if (surface.CanAdvanceSummary && surface.Stage == "intro")
         {
@@ -1014,10 +1049,10 @@ internal static class ConnectorV3Runtime
             .Cast<ConnectorV3BoundCommand>()
             .ToArray();
 
-    internal static IReadOnlyList<BridgeActionDraft> DescribeTreasureRoomCommands(
+    internal static IReadOnlyList<ConnectorV3CommandDescriptor> DescribeTreasureRoomCommands(
         TreasureRoomSurface surface)
     {
-        var actions = new List<BridgeActionDraft>();
+        var actions = new List<ConnectorV3CommandDescriptor>();
         ActionEntityBinding room = new("treasure_room", surface.RoomEntityId);
         if (surface.Stage == "closed")
         {
@@ -1076,10 +1111,10 @@ internal static class ConnectorV3Runtime
             .Cast<ConnectorV3BoundCommand>()
             .ToArray();
 
-    internal static IReadOnlyList<BridgeActionDraft> DescribeRewardClaimCommands(
+    internal static IReadOnlyList<ConnectorV3CommandDescriptor> DescribeRewardClaimCommands(
         RewardClaimSurface surface)
     {
-        var actions = new List<BridgeActionDraft>();
+        var actions = new List<ConnectorV3CommandDescriptor>();
         ActionEntityBinding screen = new("screen", surface.ScreenEntityId);
         foreach (VisibleReward reward in surface.Rewards.Where(value => value.Enabled))
         {
@@ -1135,10 +1170,10 @@ internal static class ConnectorV3Runtime
             .Cast<ConnectorV3BoundCommand>()
             .ToArray();
 
-    internal static IReadOnlyList<BridgeActionDraft> DescribeCardRewardCommands(
+    internal static IReadOnlyList<ConnectorV3CommandDescriptor> DescribeCardRewardCommands(
         CardRewardSelectionSurface surface)
     {
-        var actions = new List<BridgeActionDraft>();
+        var actions = new List<ConnectorV3CommandDescriptor>();
         ActionEntityBinding screen = new("screen", surface.ScreenEntityId);
         var selectableCardIds = surface.SelectableCardEntityIds.ToHashSet(StringComparer.Ordinal);
         foreach (VisibleCard card in surface.Cards.Where(value =>
@@ -1183,10 +1218,10 @@ internal static class ConnectorV3Runtime
             .Cast<ConnectorV3BoundCommand>()
             .ToArray();
 
-    internal static IReadOnlyList<BridgeActionDraft> DescribeShopInventoryCommands(
+    internal static IReadOnlyList<ConnectorV3CommandDescriptor> DescribeShopInventoryCommands(
         ShopInventorySurface surface)
     {
-        var actions = new List<BridgeActionDraft>();
+        var actions = new List<ConnectorV3CommandDescriptor>();
         ActionEntityBinding screen = new("screen", surface.ScreenEntityId);
         foreach (VisibleShopCardOffer offer in surface.Cards.Where(value =>
                      value.CanPurchase && value.Card != null))
@@ -1269,10 +1304,10 @@ internal static class ConnectorV3Runtime
             .Cast<ConnectorV3BoundCommand>()
             .ToArray();
 
-    internal static IReadOnlyList<BridgeActionDraft> DescribeMainMenuCommands(
+    internal static IReadOnlyList<ConnectorV3CommandDescriptor> DescribeMainMenuCommands(
         MainMenuSurface surface)
     {
-        var actions = new List<BridgeActionDraft>();
+        var actions = new List<ConnectorV3CommandDescriptor>();
         ActionEntityBinding screen = new("menu_screen", surface.ScreenEntityId);
         if (surface.ContinueRun != null && IsActionableMenuOption(surface.Options, "continue"))
         {
@@ -1306,10 +1341,10 @@ internal static class ConnectorV3Runtime
             .Cast<ConnectorV3BoundCommand>()
             .ToArray();
 
-    internal static IReadOnlyList<BridgeActionDraft> DescribeSingleplayerMenuCommands(
+    internal static IReadOnlyList<ConnectorV3CommandDescriptor> DescribeSingleplayerMenuCommands(
         SingleplayerMenuSurface surface)
     {
-        var actions = new List<BridgeActionDraft>();
+        var actions = new List<ConnectorV3CommandDescriptor>();
         ActionEntityBinding screen = new("menu_screen", surface.ScreenEntityId);
         if (IsActionableMenuOption(surface.Options, "standard"))
         {
@@ -1343,10 +1378,10 @@ internal static class ConnectorV3Runtime
             .Cast<ConnectorV3BoundCommand>()
             .ToArray();
 
-    internal static IReadOnlyList<BridgeActionDraft> DescribeCharacterSelectCommands(
+    internal static IReadOnlyList<ConnectorV3CommandDescriptor> DescribeCharacterSelectCommands(
         CharacterSelectSurface surface)
     {
-        var actions = new List<BridgeActionDraft>();
+        var actions = new List<ConnectorV3CommandDescriptor>();
         ActionEntityBinding screen = new("screen", surface.ScreenEntityId);
         foreach (VisibleCharacterChoice character in surface.Characters.Where(value =>
                      value.IsEnabled && !value.IsLocked && !value.IsSelected))
@@ -1428,14 +1463,14 @@ internal static class ConnectorV3Runtime
             .Cast<ConnectorV3BoundCommand>()
             .ToArray();
 
-    internal static IReadOnlyList<BridgeActionDraft> DescribeGeneratedCardChoiceCommands(
+    internal static IReadOnlyList<ConnectorV3CommandDescriptor> DescribeGeneratedCardChoiceCommands(
         GeneratedCardChoiceSurface surface)
     {
         if (surface.IsPeeking
             || string.IsNullOrWhiteSpace(surface.SelectOperation)
             || string.IsNullOrWhiteSpace(surface.SelectCompletionEvidence))
         {
-            return Array.Empty<BridgeActionDraft>();
+            return Array.Empty<ConnectorV3CommandDescriptor>();
         }
 
         ActionEntityBinding screen = new("screen", surface.ScreenEntityId);
@@ -1474,7 +1509,7 @@ internal static class ConnectorV3Runtime
         CombatHandCardSelectionSurface surface)
     {
         var result = new List<ConnectorV3BoundCommand>();
-        foreach (BridgeActionDraft action in DescribeCombatHandCommands(surface))
+        foreach (ConnectorV3CommandDescriptor action in DescribeCombatHandCommands(surface))
         {
             if (BuildNativeBinding(draft, action) is not { } binding)
                 continue;
@@ -1499,11 +1534,11 @@ internal static class ConnectorV3Runtime
         return result;
     }
 
-    internal static IReadOnlyList<BridgeActionDraft> DescribeCombatHandCommands(
+    internal static IReadOnlyList<ConnectorV3CommandDescriptor> DescribeCombatHandCommands(
         CombatHandCardSelectionSurface surface)
     {
         var cards = surface.Cards.ToDictionary(card => card.EntityId, StringComparer.Ordinal);
-        var actions = new List<BridgeActionDraft>();
+        var actions = new List<ConnectorV3CommandDescriptor>();
         foreach (string cardId in surface.SelectableCardEntityIds)
         {
             if (!cards.TryGetValue(cardId, out VisibleCard? card))
@@ -1560,7 +1595,7 @@ internal static class ConnectorV3Runtime
         DeckUpgradeSelectionSurface surface)
     {
         var result = new List<ConnectorV3BoundCommand>();
-        foreach (BridgeActionDraft action in DescribeDeckUpgradeCommands(surface))
+        foreach (ConnectorV3CommandDescriptor action in DescribeDeckUpgradeCommands(surface))
         {
             if (BuildNativeBinding(draft, action) is not { } binding)
                 continue;
@@ -1600,11 +1635,11 @@ internal static class ConnectorV3Runtime
         return result;
     }
 
-    internal static IReadOnlyList<BridgeActionDraft> DescribeDeckUpgradeCommands(
+    internal static IReadOnlyList<ConnectorV3CommandDescriptor> DescribeDeckUpgradeCommands(
         DeckUpgradeSelectionSurface surface)
     {
         var cards = surface.Cards.ToDictionary(card => card.EntityId, StringComparer.Ordinal);
-        var actions = new List<BridgeActionDraft>();
+        var actions = new List<ConnectorV3CommandDescriptor>();
         ActionEntityBinding screen = new("screen", surface.ScreenEntityId);
         foreach (string cardId in surface.SelectableCardEntityIds)
         {
@@ -1670,7 +1705,7 @@ internal static class ConnectorV3Runtime
         DeckRemovalSelectionSurface surface)
     {
         var result = new List<ConnectorV3BoundCommand>();
-        foreach (BridgeActionDraft action in DescribeDeckRemovalCommands(surface))
+        foreach (ConnectorV3CommandDescriptor action in DescribeDeckRemovalCommands(surface))
         {
             if (BuildNativeBinding(draft, action) is not { } binding)
                 continue;
@@ -1710,14 +1745,14 @@ internal static class ConnectorV3Runtime
         return result;
     }
 
-    internal static IReadOnlyList<BridgeActionDraft> DescribeDeckRemovalCommands(
+    internal static IReadOnlyList<ConnectorV3CommandDescriptor> DescribeDeckRemovalCommands(
         DeckRemovalSelectionSurface surface)
     {
         if (surface.Kind is not (
             "deck_removal_selection" or
             "relic_deck_removal_selection" or
             "reward_deck_removal_selection"))
-            return Array.Empty<BridgeActionDraft>();
+            return Array.Empty<ConnectorV3CommandDescriptor>();
         string sourceLabel = surface.Kind switch
         {
             "deck_removal_selection" => "merchant",
@@ -1731,7 +1766,7 @@ internal static class ConnectorV3Runtime
             _ => "CardRemovalReward.OnSelect task-local binding"
         };
         var cards = surface.Cards.ToDictionary(card => card.EntityId, StringComparer.Ordinal);
-        var actions = new List<BridgeActionDraft>();
+        var actions = new List<ConnectorV3CommandDescriptor>();
         ActionEntityBinding screen = new("screen", surface.ScreenEntityId);
         foreach (string cardId in surface.SelectableCardEntityIds)
         {
@@ -1808,7 +1843,7 @@ internal static class ConnectorV3Runtime
         CardBundleSelectionSurface surface)
     {
         var result = new List<ConnectorV3BoundCommand>();
-        foreach (BridgeActionDraft action in DescribeCardBundleCommands(surface))
+        foreach (ConnectorV3CommandDescriptor action in DescribeCardBundleCommands(surface))
         {
             if (BuildNativeBinding(draft, action) is not { } binding)
                 continue;
@@ -1842,10 +1877,10 @@ internal static class ConnectorV3Runtime
         return result;
     }
 
-    internal static IReadOnlyList<BridgeActionDraft> DescribeCardBundleCommands(
+    internal static IReadOnlyList<ConnectorV3CommandDescriptor> DescribeCardBundleCommands(
         CardBundleSelectionSurface surface)
     {
-        var actions = new List<BridgeActionDraft>();
+        var actions = new List<ConnectorV3CommandDescriptor>();
         ActionEntityBinding screen = new("screen", surface.ScreenEntityId);
         if (surface.Stage == "choosing")
         {
@@ -1897,7 +1932,7 @@ internal static class ConnectorV3Runtime
         DeckTransformSelectionSurface surface)
     {
         var result = new List<ConnectorV3BoundCommand>();
-        foreach (BridgeActionDraft action in DescribeDeckTransformCommands(surface))
+        foreach (ConnectorV3CommandDescriptor action in DescribeDeckTransformCommands(surface))
         {
             if (BuildNativeBinding(draft, action) is not { } binding)
                 continue;
@@ -1951,10 +1986,10 @@ internal static class ConnectorV3Runtime
         return result;
     }
 
-    internal static IReadOnlyList<BridgeActionDraft> DescribeDeckTransformCommands(
+    internal static IReadOnlyList<ConnectorV3CommandDescriptor> DescribeDeckTransformCommands(
         DeckTransformSelectionSurface surface)
     {
-        var actions = new List<BridgeActionDraft>();
+        var actions = new List<ConnectorV3CommandDescriptor>();
         ActionEntityBinding screen = new("screen", surface.ScreenEntityId);
         Dictionary<string, VisibleCard> cards = surface.Cards.ToDictionary(card => card.EntityId, StringComparer.Ordinal);
         foreach (string cardId in surface.SelectableCardEntityIds)
@@ -2002,7 +2037,7 @@ internal static class ConnectorV3Runtime
         WoodCarvingsReplacementSelectionSurface surface)
     {
         var result = new List<ConnectorV3BoundCommand>();
-        foreach (BridgeActionDraft action in DescribeWoodCarvingsCommands(surface))
+        foreach (ConnectorV3CommandDescriptor action in DescribeWoodCarvingsCommands(surface))
         {
             if (BuildNativeBinding(draft, action) is not { } binding)
                 continue;
@@ -2027,10 +2062,10 @@ internal static class ConnectorV3Runtime
         return result;
     }
 
-    internal static IReadOnlyList<BridgeActionDraft> DescribeWoodCarvingsCommands(
+    internal static IReadOnlyList<ConnectorV3CommandDescriptor> DescribeWoodCarvingsCommands(
         WoodCarvingsReplacementSelectionSurface surface)
     {
-        var actions = new List<BridgeActionDraft>();
+        var actions = new List<ConnectorV3CommandDescriptor>();
         ActionEntityBinding screen = new("screen", surface.ScreenEntityId);
         Dictionary<string, VisibleCard> cards = surface.Cards.ToDictionary(card => card.EntityId, StringComparer.Ordinal);
         foreach (string cardId in surface.SelectableCardEntityIds)
@@ -2060,7 +2095,7 @@ internal static class ConnectorV3Runtime
         CombatPileCardSelectionSurface surface)
     {
         var result = new List<ConnectorV3BoundCommand>();
-        foreach (BridgeActionDraft action in DescribeCombatPileCommands(surface))
+        foreach (ConnectorV3CommandDescriptor action in DescribeCombatPileCommands(surface))
         {
             if (BuildNativeBinding(draft, action) is not { } binding)
                 continue;
@@ -2097,10 +2132,10 @@ internal static class ConnectorV3Runtime
         return result;
     }
 
-    internal static IReadOnlyList<BridgeActionDraft> DescribeCombatPileCommands(
+    internal static IReadOnlyList<ConnectorV3CommandDescriptor> DescribeCombatPileCommands(
         CombatPileCardSelectionSurface surface)
     {
-        var actions = new List<BridgeActionDraft>();
+        var actions = new List<ConnectorV3CommandDescriptor>();
         ActionEntityBinding screen = new("screen", surface.ScreenEntityId);
         ActionEntityBinding source = new("source", surface.SourceEntityId);
         Dictionary<string, VisibleCard> cards = surface.Cards.ToDictionary(card => card.EntityId, StringComparer.Ordinal);
@@ -2132,7 +2167,7 @@ internal static class ConnectorV3Runtime
         EventDeckRemovalSelectionSurface surface)
     {
         var result = new List<ConnectorV3BoundCommand>();
-        foreach (BridgeActionDraft action in EventDeckRemovalSelection.DescribeCommands(surface))
+        foreach (ConnectorV3CommandDescriptor action in EventDeckRemovalSelection.DescribeCommands(surface))
         {
             if (BuildNativeBinding(draft, action) is not { } binding)
                 continue;
@@ -2174,7 +2209,7 @@ internal static class ConnectorV3Runtime
         return result;
     }
 
-    private static BridgeActionDraft NativeDescriptor(
+    private static ConnectorV3CommandDescriptor NativeDescriptor(
         string key,
         string operation,
         string category,
@@ -2187,21 +2222,23 @@ internal static class ConnectorV3Runtime
             category,
             label,
             evidenceCode,
-            static () => BridgeActionStartResult.Rejected(
-                "v3_native_binding_required",
-                "Connector V3 native commands cannot execute through a draft action."),
             entityBindings);
 
     private static ConnectorV3BoundCommand? BuildNativeBinding(
         BridgeObservationDraft draft,
-        BridgeActionDraft action)
+        ConnectorV3CommandDescriptor action)
     {
         ActionPermissionScope? scope = BridgeSurfacePermission.FindActionScope(
             draft.Game.Compatibility,
             draft.Surface.Kind,
             action.Kind);
         BridgeBoundActionContract? contract =
-            BridgeBoundActionContract.Build(draft.Surface.Kind, action);
+            BridgeBoundActionContract.Build(
+                draft.Surface.Kind,
+                action.Key,
+                action.Kind,
+                action.EvidenceCode,
+                action.EntityBindings);
         if (scope == null || contract == null || !contract.Matches(scope))
             return null;
         return new ConnectorV3BoundCommand(
@@ -2211,7 +2248,7 @@ internal static class ConnectorV3Runtime
     }
 
     private static ConnectorV3CommandCandidate BuildCandidate(
-        BridgeActionDraft action,
+        ConnectorV3CommandDescriptor action,
         ActionPermissionScope scope,
         string bindingKind)
     {

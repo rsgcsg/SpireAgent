@@ -2,6 +2,7 @@ import { cloneJson, isJsonObject, type JsonObject, type JsonValue } from "../sha
 import { stateHash } from "../runtime/stateHash.js";
 
 export const SHADOW_STRATEGY_PROJECTION_VERSION = 1 as const;
+export const STRATEGY_PROJECTION_VERSION = SHADOW_STRATEGY_PROJECTION_VERSION;
 
 export interface ShadowStrategyProjectionInput {
   readonly contextKind: string;
@@ -24,10 +25,11 @@ export interface ShadowStrategyProjection {
 }
 
 /**
- * Builds a deterministic compact candidate from complete recorded evidence.
- * It is intentionally not wired into live prompt construction or execution.
+ * Builds the deterministic compact model view from complete recorded evidence.
+ * Prompt construction and offline shadow comparison use this same projection;
+ * execution authority remains the in-memory allowed-action whitelist.
  */
-export function buildShadowStrategyProjection(input: ShadowStrategyProjectionInput): ShadowStrategyProjection {
+export function buildStrategyProjection(input: ShadowStrategyProjectionInput): ShadowStrategyProjection {
   const projectedState = cloneJson(input.currentState);
   const omittedEvidenceFields: string[] = [];
   const deduplicatedFactGroups: string[] = [];
@@ -40,16 +42,9 @@ export function buildShadowStrategyProjection(input: ShadowStrategyProjectionInp
   const modelPayload: JsonObject = {
     promptProjectionVersion: SHADOW_STRATEGY_PROJECTION_VERSION,
     task: "select_one_allowed_action",
-    contextKind: input.contextKind,
-    surfaceKind: input.surfaceKind,
     actionAuthority: input.actionAuthority,
     currentState: projectedState,
-    allowedActions: cloneJson([...input.allowedActions]),
-    outputSchema: {
-      selectedActionId: "string_exactly_matching_allowed_action_id",
-      reasonBrief: "non_empty_string_max_240_chars",
-      confidence: "optional_number_0_to_1"
-    }
+    allowedActions: cloneJson([...input.allowedActions])
   };
   if (informationBoundary) modelPayload.informationBoundary = informationBoundary;
 
@@ -68,6 +63,9 @@ export function buildShadowStrategyProjection(input: ShadowStrategyProjectionInp
 
 function removeGovernanceEvidence(state: JsonObject, omitted: string[]): void {
   for (const field of [
+    "normalizedSchemaVersion",
+    "sourceStateType",
+    "actionAuthority",
     "bridgeSharedStateEvidence",
     "bridgeDiagnostics",
     "bridgeLegacyWarnings",
@@ -84,6 +82,8 @@ function removeGovernanceEvidence(state: JsonObject, omitted: string[]): void {
   }
 }
 
+export const buildShadowStrategyProjection = buildStrategyProjection;
+
 function projectInformationBoundary(source: JsonObject): JsonObject | undefined {
   const visibility = isJsonObject(source.bridgeVisibility) ? source.bridgeVisibility : undefined;
   const observation = isJsonObject(source.bridgeObservation) ? source.bridgeObservation : undefined;
@@ -96,7 +96,9 @@ function projectInformationBoundary(source: JsonObject): JsonObject | undefined 
     copyIfJsonValue(visibility, result, "missing");
     copyIfJsonValue(visibility, result, "hiddenByPolicy");
   }
-  if (observation && observation.coherent === true) result.coherentObservation = true;
+  if (observation && typeof observation.coherent === "boolean") {
+    result.coherentObservation = observation.coherent;
+  }
   if (inspectionFacts) {
     const observedFactGroups = Object.keys(inspectionFacts).sort();
     if (observedFactGroups.length > 0) result.observedFactGroups = observedFactGroups;

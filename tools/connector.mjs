@@ -275,6 +275,7 @@ function paths(options = {}) {
     sourceManifest: path.join(WORKSPACE, "STS2MCP/mod_manifest.json"),
     installedDll: path.join(modsDir, "STS2_MCP.dll"),
     installedManifest: path.join(modsDir, "STS2_MCP.json"),
+    runtimeConfig: path.join(modsDir, "STS2_MCP.conf"),
     localRoot,
     buildIdentity: path.join(WORKSPACE, "STS2MCP/out/STS2_MCP/build-identity.json"),
     installedIdentity: path.join(localRoot, "installations", `${installationKey}.json`)
@@ -391,7 +392,14 @@ export function workspaceSourceIdentity() {
   const files = filesResult.stdout.split("\n").filter(Boolean).sort();
   const digest = createHash("sha256");
   for (const file of files) {
-    digest.update(file).update("\0").update(readFileSync(path.join(WORKSPACE, file))).update("\0");
+    const absolutePath = path.join(WORKSPACE, file);
+    digest.update(file).update("\0");
+    if (existsSync(absolutePath)) {
+      digest.update(readFileSync(absolutePath));
+    } else {
+      digest.update("<deleted>");
+    }
+    digest.update("\0");
   }
   const statusResult = spawnSync("git", ["status", "--porcelain", "--", ...sourcePaths], {
     cwd: WORKSPACE,
@@ -566,6 +574,11 @@ function parseOptions(args) {
     else if (value === "--backup") options.backup = args[++index];
     else if (value === "--run") options.run = args[++index];
     else if (value === "--runs") options.runs = args[++index];
+    else if (value === "--enabled") options.enabled = args[++index];
+    else if (value === "--kind") options.kind = args[++index];
+    else if (value === "--state-token") options.stateToken = args[++index];
+    else if (value === "--runtime-instance-id") options.runtimeInstanceId = args[++index];
+    else if (value === "--session") options.session = args[++index];
     else if (value === "--wait") options.wait = true;
     else if (value === "--wait-ms") options.waitMs = parseIntegerOption(value, args[++index], true);
     else if (value === "--poll-ms") options.pollMs = parseIntegerOption(value, args[++index], false);
@@ -573,6 +586,136 @@ function parseOptions(args) {
     else options.passthrough.push(value);
   }
   return options;
+}
+
+export function configureHumanEquivalenceProfile(
+  configPath,
+  enabled
+) {
+  if (typeof enabled !== "boolean") {
+    throw new Error("human-profile configure requires --enabled true or --enabled false");
+  }
+  let config = {
+    port: 15526,
+    permission_mode: "balanced_gray",
+    qualification_store: "STS2_MCP.qualifications.json"
+  };
+  if (existsSync(configPath)) {
+    const parsed = JSON.parse(readFileSync(configPath, "utf8"));
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new Error(`Runtime config is not a JSON object: ${configPath}`);
+    }
+    config = { ...config, ...parsed };
+  }
+  config.human_equivalence_enabled = enabled;
+  mkdirSync(path.dirname(configPath), { recursive: true });
+  const temporary = `${configPath}.tmp-${process.pid}`;
+  writeFileSync(temporary, `${JSON.stringify(config, null, 2)}\n`, "utf8");
+  renameSync(temporary, configPath);
+  return {
+    status: "configured",
+    profile: "native_pages.v1",
+    enabled,
+    config_path: configPath,
+    default_agent_flow: false,
+    creates_action_authority: false,
+    enters_command_ledger: false,
+    requires_cold_load: true
+  };
+}
+
+function parseBooleanOption(value, name) {
+  if (value === "true") return true;
+  if (value === "false") return false;
+  throw new Error(`${name} requires true or false`);
+}
+
+async function connectorProtocolRequest(endpoint, route, init = {}) {
+  const response = await fetch(`${endpoint.replace(/\/$/u, "")}${route}`, {
+    ...init,
+    headers: {
+      "content-type": "application/json",
+      ...(init.headers ?? {})
+    },
+    signal: AbortSignal.timeout(10_000)
+  });
+  const text = await response.text();
+  let value;
+  try {
+    value = JSON.parse(text);
+  } catch {
+    throw new Error(`${route} returned non-JSON HTTP ${response.status}`);
+  }
+  return { ok: response.ok, http_status: response.status, value };
+}
+
+async function humanProfile(options) {
+  const action = options.passthrough[0];
+  const endpoint = options.endpoint ?? DEFAULT_ENDPOINT;
+  if (action === "configure") {
+    const resolved = paths(options);
+    return configureHumanEquivalenceProfile(
+      resolved.runtimeConfig,
+      parseBooleanOption(options.enabled, "--enabled")
+    );
+  }
+  if (action === "status") {
+    const capabilities = await readJson(endpoint, "/api/v3/capabilities", true);
+    return {
+      protocol_version: capabilities.protocol_version,
+      loaded_runtime_instance_id: capabilities.bridge.runtime_instance_id,
+      human_equivalence: capabilities.human_equivalence
+    };
+  }
+  if (action === "open") {
+    if (!options.kind) throw new Error("human-profile open requires --kind");
+    const [capabilities, observation] = await Promise.all([
+      readJson(endpoint, "/api/v3/capabilities", true),
+      readJson(endpoint, "/api/v3/observation", true)
+    ]);
+    const result = await connectorProtocolRequest(
+      endpoint,
+      "/api/v3/human-equivalence/sessions",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          profile: "native_pages.v1",
+          kind: options.kind,
+          expected_state_token: options.stateToken ?? observation.state_token,
+          expected_runtime_instance_id:
+            options.runtimeInstanceId ?? capabilities.bridge.runtime_instance_id
+        })
+      }
+    );
+    return { action, ...result };
+  }
+  if (action === "read") {
+    if (!options.session || !options.runtimeInstanceId) {
+      throw new Error("human-profile read requires --session and --runtime-instance-id");
+    }
+    const route = "/api/v3/human-equivalence/sessions/"
+      + `${encodeURIComponent(options.session)}?expected_runtime_instance_id=`
+      + encodeURIComponent(options.runtimeInstanceId);
+    return { action, ...await connectorProtocolRequest(endpoint, route) };
+  }
+  if (action === "return" || action === "recover") {
+    if (!options.session || !options.runtimeInstanceId) {
+      throw new Error(`human-profile ${action} requires --session and --runtime-instance-id`);
+    }
+    const route = "/api/v3/human-equivalence/sessions/"
+      + `${encodeURIComponent(options.session)}/return`;
+    const result = await connectorProtocolRequest(endpoint, route, {
+      method: "POST",
+      body: JSON.stringify({
+        profile: "native_pages.v1",
+        expected_runtime_instance_id: options.runtimeInstanceId
+      })
+    });
+    return { action, ...result };
+  }
+  throw new Error(
+    "human-profile requires configure, status, open, read, return or recover"
+  );
 }
 
 async function inspect(options, requireLoaded = false) {
@@ -1216,6 +1359,7 @@ function usage() {
     + `  verify-loaded-artifact [--wait]   Require source/built/installed/loaded identity agreement\n`
     + `  run-agent -- <agent args>         Exact-identity preflight, trial resume, then bounded Re run\n`
     + `  collect-evidence [--out FILE]     Capture read-only capabilities/state/controller/clients\n`
+    + `  human-profile <operation>          Configure or exercise optional native-page evidence\n`
     + `  audit-run-identity [--run ID|DIR] Audit stale refusals using formal IDs or historical shadows\n`
     + `  start-or-resume-trial -- <args>   Delegate to the migration cycle\n`
     + `  revoke -- <ledger args>           Revoke a persistent qualification\n`
@@ -1286,6 +1430,12 @@ export async function main(argv = process.argv.slice(2)) {
   }
   if (command === "collect-evidence") {
     console.log(JSON.stringify(await collectEvidence(options), null, 2));
+    return;
+  }
+  if (command === "human-profile") {
+    const result = await humanProfile(options);
+    console.log(JSON.stringify(result, null, 2));
+    if (result?.ok === false) process.exitCode = 1;
     return;
   }
   if (command === "audit-run-identity") {

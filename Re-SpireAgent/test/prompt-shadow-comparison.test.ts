@@ -43,9 +43,9 @@ describe("recorded prompt shadow comparison", () => {
     expect(result.full.finalOutcome).toBe("valid_json");
     expect(result.shadow.finalOutcome).toBe("valid_json");
     expect(result.comparison).toMatchObject({ bothFinalAttemptsValid: true, selectedActionAgreement: true });
-    // Small states are a counterexample: projection metadata can cost more
-    // than it removes, so callers must use the signed byte delta.
-    expect(result.comparison.savedUserPromptBytes).toBeLessThan(0);
+    // The production projection no longer repeats context/surface or the fixed
+    // output schema, so even this deliberately small fixture is now smaller.
+    expect(result.comparison.savedUserPromptBytes).toBeGreaterThan(0);
     expect(result.shadow.projectionHash).toMatch(/^sha256:[a-f0-9]{64}$/);
     expect(result.shadow.omittedEvidenceFields).toContain("bridgeInspectionFacts");
     expect(await readFile(path, "utf8")).toBe(before);

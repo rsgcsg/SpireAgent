@@ -24,6 +24,8 @@ _trust_env: bool = True
 _http: httpx.AsyncClient | None = None
 _control_lock: asyncio.Lock | None = None
 _control: dict | None = None
+_V3_PROTOCOL = "3.0-preview.11"
+_V3_CONTROL_SCHEMA = "sts2.connector.v3/control-1"
 
 
 def _v3_url(path: str) -> str:
@@ -87,6 +89,10 @@ async def _control_request(path: str, body: dict) -> dict:
         )
     if not isinstance(payload, dict):
         raise RuntimeError("Gateway control response must be a JSON object")
+    if payload.get("protocol_version") != _V3_PROTOCOL:
+        raise RuntimeError("Gateway control response protocol does not match this MCP adapter")
+    if payload.get("schema") != _V3_CONTROL_SCHEMA:
+        raise RuntimeError("Gateway control response schema does not match this MCP adapter")
     return payload
 
 

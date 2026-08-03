@@ -8,9 +8,9 @@ import type {
 import type { JsonObject } from "../../shared/json.js";
 import { stableStringify } from "../../runtime/stateHash.js";
 import {
-  BridgeV2ControlSession,
-  type BridgeV2ControllerCredentials
-} from "./bridgeV2ControlSession.js";
+  GatewayControlSession,
+  type GatewayControllerCredentials
+} from "./gatewayControlSession.js";
 import { ConnectorV3HttpError, ConnectorV3RestClient } from "./connectorV3Client.js";
 import {
   projectConnectorV3ForRe,
@@ -35,7 +35,7 @@ export class Sts2ConnectorV3Adapter implements GameAdapter<
   GameExecutionResult
 > {
   private readonly connector: ConnectorV3RestClient;
-  private readonly control: BridgeV2ControlSession;
+  private readonly control: GatewayControlSession;
   private capabilities?: ConnectorV3Capabilities;
   private invocations = new Map<string, ConnectorV3CommandInvocation>();
   private latestStateToken?: string;
@@ -49,7 +49,7 @@ export class Sts2ConnectorV3Adapter implements GameAdapter<
     private readonly sleep: (ms: number) => Promise<void> = defaultSleep
   ) {
     this.connector = new ConnectorV3RestClient(baseUrl, timeoutMs, fetchImpl);
-    this.control = new BridgeV2ControlSession(this.connector);
+    this.control = new GatewayControlSession(this.connector);
   }
 
   async initialize(): Promise<void> {
@@ -88,7 +88,6 @@ export class Sts2ConnectorV3Adapter implements GameAdapter<
       negotiated: {
         protocol_mode: "connector_v3",
         connector_available: Boolean(connector),
-        v2_consumer_projection_sidecar: false,
         ...(connector ? {
           connector_protocol_version: connector.protocol_version,
           observation_schema: connector.observation_schema,
@@ -102,11 +101,29 @@ export class Sts2ConnectorV3Adapter implements GameAdapter<
           main_assembly_hash: connector.game.main_assembly_hash ?? null,
           modset_status: connector.game.modset.status,
           modset_fingerprint: connector.game.modset.fingerprint,
+          runtime_patch_status: connector.permission_system.patch_inventory.status,
+          runtime_patch_digest: connector.permission_system.patch_inventory.digest,
+          permission_status: connector.permission_system.status,
+          permission_mode: connector.permission_system.mode,
+          permission_policy_id: connector.permission_system.policy_id,
+          permission_policy_digest: connector.permission_system.policy_digest,
+          qualification_status: connector.qualification_system.status,
+          qualification_store_digest: connector.qualification_system.store_digest,
+          qualification_environment_digest:
+            connector.qualification_system.current_environment_digest,
+          persistent_authority_enabled:
+            connector.qualification_system.persistent_authority_enabled,
           action_permission_scopes:
             connector.game.compatibility.action_permission_scopes.map((scope) => ({
               surface_kind: scope.surface_kind,
               operation: scope.operation,
-              tier: scope.tier
+              tier: scope.tier,
+              grant_id: scope.grant_id,
+              runtime_epoch: scope.runtime_epoch,
+              environment_digest: scope.environment_digest,
+              patch_digest: scope.patch_digest,
+              operation_fingerprint: scope.operation_fingerprint,
+              admission_basis: scope.admission_basis
             })),
           action_execution_allowed:
             connector.game.compatibility.action_execution_allowed,
@@ -174,7 +191,7 @@ export class Sts2ConnectorV3Adapter implements GameAdapter<
       );
     }
 
-    let controller: BridgeV2ControllerCredentials;
+    let controller: GatewayControllerCredentials;
     try {
       await this.control.register(
         this.capabilities,
@@ -296,7 +313,7 @@ function receiptContractError(
   receipt: ConnectorV3Receipt,
   requestId: string,
   invocation: ConnectorV3CommandInvocation,
-  controller: BridgeV2ControllerCredentials
+  controller: GatewayControllerCredentials
 ): string | undefined {
   if (receipt.request_id !== requestId
       || receipt.command.kind !== invocation.command

@@ -6,94 +6,110 @@ Authority: [ADR-0007](decisions/ADR-0007-connector-v3-canonical-architecture.md)
 
 ```text
 Native STS2
--> Observation Engine
--> Interaction Engine
--> Native Command Catalog
--> Authority Policy
--> Action Runtime
--> Receipt and successor observation
+-> Observation and one input owner
+-> V3-native command catalog
+-> exact environment/operation authority
+-> execute-time resolver and native Commit
+-> action-local Outcome, receipt and successor
+-> REST or thin MCP
 -> Re-SpireAgent
 ```
 
-STS2 owns rules, RNG, Tasks, Commands and side effects. The Gateway owns
-player-visible facts, the current input owner, command admission,
-execute-time native validation, native Commit invocation and action-local
-Outcome. Re selects only from commands projected from the current interaction.
+STS2 owns rules, RNG, Tasks, Commands and effects. The Gateway owns
+player-visible facts, the current input owner, command admission, execute-time
+native validation, native Commit invocation and action-local Outcome. Re
+selects only from candidates in the current interaction.
 
-## Contracts
+## Hard Shell
 
-Observation and execution support are separate. A visible unsupported
-interaction is still represented. The Agent submits:
+A command binds:
 
 ```text
 request_id
 state_token
 interaction_id
 command
-exact entity operands
-controller lease
+exact entity/control operands
+client session and controller generation
 ```
 
-The Gateway resolves those exact objects again at execution time. A receipt is
-`completed`, `not_executed`, `pending` or `unknown`; unknown mutation is never
-retried.
+The Gateway resolves the same objects and native legality again immediately
+before Commit. Receipts are `completed`, `not_executed`, `pending` or
+`unknown`; an unknown mutation is never resubmitted.
 
-## Side Plane
+Visible unsupported, known settling, stale, quarantine and revoke are distinct.
+Empty/absent permission scope, unknown source, ambiguous owner, identity drift
+or incomplete Outcome fails closed.
 
-Exact game, Gateway SHA/MVID/runtime, Modset and Patch identity constrain
-authority. Session trial, quarantine, persistent qualification, revoke and
-rollback are evidence and control concerns. D tooling may recommend but never
-grant live authority.
+## Authority And Evidence Plane
 
-## Consumer Boundary
+Capabilities expose exact Gateway SHA/MVID/runtime, game, Modset, runtime
+Patch, permission policy and qualification identities. Session trial is bound
+to one runtime and operation contract. Canary, qualified and durable states
+never inherit across protocol, SHA, MVID, runtime, game, Modset or Patch.
+Evidence tooling records and recommends; it cannot grant live authority.
 
-Re owns normalization, bounded model projection, model choice, command polling,
-successor readiness and evidence recording. It does not reconstruct native
-legality or completion. MCP and REST are transports only.
+## Consumer And Transport
 
-Player-visible information is projected in four bounded layers: persistent
-HUD summary, the complete current Surface, state-bound linked detail, and
-state-bound read-only Inspection. Information availability and mutation
-authority are orthogonal. The efficient semantic-accessibility profile is the
-mainline A default; physically opening every inspectable UI page is an optional
-human-equivalence evidence mode, not a default mutation requirement.
+Re owns strict V3 decode, deterministic compact model projection, model choice,
+request submission, polling, successor readiness and append-only local
+evidence. It cannot add operands, reconstruct native legality/effects or infer
+completion. Its active V3 client and control session do not import V2 wire
+types or routes.
 
-V3 Inspection is a separate `inspection-1` read contract keyed by the exact
-current `state_token`. It reuses only the Gateway's player-visible read
-mechanics, never creates a command, never enters the Command Ledger and never
-grants action authority. A stale token or a kind outside the current catalog
-fails closed. Physical UI opening remains a future evidence profile and must
-not be smuggled into this semantic read path.
+REST and MCP serialize the same Gateway contracts. They cannot add commands,
+legality, authority or retry policy.
 
-## Current Migration Boundary
+## Information Contract
 
-All currently cataloged combat, room, menu, reward and selector families have
-typed direct V3 discovery/execution and direct Re consumption. Each retains
-source-specific owner, operand, Commit and Outcome contracts while sharing
-only bounded mechanics. The operation catalog contains 94 explicit contracts
-and zero fallback authority. Connector V3 does not consume Provider
-`draft.Actions` or legacy bindings, and Re does not request V2 capabilities or
-state. Historically named Provider files may retain exact game-binding and
-native Commit helpers inside the Gateway; they are neither external authority
-nor a second executor.
+Player-visible information has four semantic layers:
 
-Interaction support and instantaneous readiness are orthogonal. A known native
-family may be `settling` with zero legal candidates; it remains observed as a
-supported family and Re supervises a typed `no_action` state. Only an unknown
-or unbound family is visible unsupported. Empty candidates alone never prove
-unsupported semantics.
+1. persistent summary;
+2. complete current Surface;
+3. state-bound linked detail;
+4. state-bound read-only Inspection.
 
-Source migration is closed. Runtime closure now requires a cold-loaded exact
-Preview.9 artifact, final selector/potion canaries, a same-artifact journey and
-tested revoke/rollback. The optional physical-UI evidence profile remains
-separate from semantic Inspection. V2 endpoints are diagnostics/rollback only
-and cannot regain Re or mutation authority.
+Inspection and linked detail never enter the Command Ledger or grant mutation.
+Hidden RNG, true draw order and future rewards/events remain excluded.
+
+The production Prompt applies deterministic projection v1 to the complete
+recorded state. It keeps decision facts, exact actions, identities and a small
+information boundary while removing governance-only metadata and duplicate
+representations. Full evidence remains recorded for replay and audit.
+
+`native_pages.v1` is a separate optional human-equivalence evidence profile.
+It is disabled by default and outside normal Agent flow. Operator-invoked
+sessions bind runtime and state, verify pre/post owner, open only fixed native
+pages, read through the same visible contract, restore the owner or enter an
+explicit recovery-required state, suppress mutation while active, and never
+create ledger or action authority.
+
+## Source Closure
+
+All cataloged ordinary vanilla single-player families have direct V3
+discovery/execution and direct Re consumption. The operation catalog is
+94 explicit contracts and zero fallback authority. Connector V3 has its own
+non-executing command descriptor and consumes no Provider action draft or V2
+state/action sidecar.
+
+Historically named Bridge/Provider files may still implement exact game
+reflection, source binding, native Commit and Outcome mechanics. This is
+internal library reuse, not a second external protocol, publication authority
+or executor. V2 routes remain migration/rollback diagnostics only and are
+unreachable from the active Re V3 entrypoint.
+
+## Freeze Boundary
+
+The architecture and source are closed at `3.0-preview.11`, but the version
+is only a freeze candidate. Final freeze still requires rare-family
+exact-artifact canaries, Human profile Live lifecycle, loaded rollback/revoke
+and one same-artifact ordinary Journey.
 
 ## Non-Goals
 
-- arbitrary UI tree, coordinates, methods or reflection mutation;
+- arbitrary UI tree, coordinates, method names or reflection mutation;
 - universal selector, transaction or Effect DSL;
 - a second STS2 rules engine;
-- hidden RNG, true draw order or future outcome exposure;
+- hidden information exposure;
 - strategy, memory or learning inside the Gateway;
-- silent v2 fallback.
+- silent V2 fallback or automatic authority inheritance.

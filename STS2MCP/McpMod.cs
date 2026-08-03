@@ -40,7 +40,8 @@ public static partial class McpMod
     private sealed record RuntimeConfig(
         int Port,
         BridgePermissionMode PermissionMode,
-        string? QualificationStorePath);
+        string? QualificationStorePath,
+        bool HumanEquivalenceEnabled);
 
     private static RuntimeConfig LoadRuntimeConfig()
     {
@@ -52,7 +53,8 @@ public static partial class McpMod
                 return new RuntimeConfig(
                     DefaultPort,
                     BridgePermissionMode.BalancedGray,
-                    null);
+                    null,
+                    HumanEquivalenceEnabled: false);
 
             string configPath = Path.Combine(modDir, ConfigFileName);
             if (!File.Exists(configPath))
@@ -63,7 +65,8 @@ public static partial class McpMod
                     {
                         ["port"] = DefaultPort,
                         ["permission_mode"] = "balanced_gray",
-                        ["qualification_store"] = QualificationStoreFileName
+                        ["qualification_store"] = QualificationStoreFileName,
+                        ["human_equivalence_enabled"] = false
                     };
                     string json = JsonSerializer.Serialize(defaultConfig, _jsonOptions);
                     File.WriteAllText(configPath, json);
@@ -76,7 +79,8 @@ public static partial class McpMod
                 return new RuntimeConfig(
                     DefaultPort,
                     BridgePermissionMode.BalancedGray,
-                    Path.Combine(modDir, QualificationStoreFileName));
+                    Path.Combine(modDir, QualificationStoreFileName),
+                    HumanEquivalenceEnabled: false);
             }
 
             string content = File.ReadAllText(configPath);
@@ -135,10 +139,26 @@ public static partial class McpMod
                 : Path.IsPathRooted(qualificationStore)
                     ? qualificationStore
                     : Path.Combine(modDir, qualificationStore);
+            bool humanEquivalenceEnabled = false;
+            if (doc.RootElement.TryGetProperty(
+                    "human_equivalence_enabled",
+                    out JsonElement humanEquivalenceElement))
+            {
+                if (humanEquivalenceElement.ValueKind is JsonValueKind.True or JsonValueKind.False)
+                {
+                    humanEquivalenceEnabled = humanEquivalenceElement.GetBoolean();
+                }
+                else
+                {
+                    GD.PrintErr(
+                        $"[STS2 MCP] Invalid human_equivalence_enabled in {configPath}; keeping the optional evidence profile disabled");
+                }
+            }
             return new RuntimeConfig(
                 configuredPort,
                 BridgePermissionManager.ParseMode(permissionMode),
-                qualificationStorePath);
+                qualificationStorePath,
+                humanEquivalenceEnabled);
         }
         catch (Exception ex)
         {
@@ -147,7 +167,8 @@ public static partial class McpMod
             return new RuntimeConfig(
                 DefaultPort,
                 BridgePermissionMode.Strict,
-                null);
+                null,
+                HumanEquivalenceEnabled: false);
         }
     }
 
@@ -166,6 +187,8 @@ public static partial class McpMod
             BridgeV2Runtime.ConfigurePermissionMode(config.PermissionMode);
             BridgeV2Runtime.ConfigureQualificationStore(
                 config.QualificationStorePath);
+            ConnectorV3.Runtime.ConnectorV3Runtime.ConfigureHumanEquivalence(
+                config.HumanEquivalenceEnabled);
             int port = config.Port;
 
             _listener = new HttpListener();
@@ -183,6 +206,8 @@ public static partial class McpMod
             GD.Print($"[STS2 MCP] v{Version} server started on http://localhost:{port}/");
             GD.Print(
                 $"[STS2 MCP] Permission mode: {BridgePermissionManager.ModeName(config.PermissionMode)}");
+            GD.Print(
+                $"[STS2 MCP] Human-equivalence native-page evidence: {(config.HumanEquivalenceEnabled ? "enabled" : "disabled")}");
             GD.Print("[STS2 MCP] Legacy v1 HTTP namespace: retired");
         }
         catch (Exception ex)
@@ -312,21 +337,21 @@ public static partial class McpMod
             else if (path == "/api/v3/clients/register")
             {
                 if (request.HttpMethod == "POST")
-                    HandlePostBridgeV2ClientRegistration(request, response);
+                    HandlePostConnectorV3ClientRegistration(request, response);
                 else
                     SendError(response, 405, "Method not allowed");
             }
             else if (path == "/api/v3/controller")
             {
                 if (request.HttpMethod == "GET")
-                    HandleGetBridgeV2Controller(response);
+                    HandleGetConnectorV3Control(response);
                 else
                     SendError(response, 405, "Method not allowed");
             }
             else if (path == "/api/v3/clients")
             {
                 if (request.HttpMethod == "GET")
-                    HandleGetBridgeV2Clients(response);
+                    HandleGetConnectorV3Control(response);
                 else
                     SendError(response, 405, "Method not allowed");
             }
@@ -335,7 +360,7 @@ public static partial class McpMod
                 string operation = path["/api/v3/controller/".Length..];
                 if (request.HttpMethod == "POST"
                     && operation is "acquire" or "renew" or "release")
-                    HandlePostBridgeV2Controller(
+                    HandlePostConnectorV3Controller(
                         operation,
                         request,
                         response);
@@ -377,6 +402,40 @@ public static partial class McpMod
                         path["/api/v3/linked-details/".Length..],
                         request,
                         response);
+                else
+                    SendError(response, 405, "Method not allowed");
+            }
+            else if (path == "/api/v3/human-equivalence/sessions")
+            {
+                if (request.HttpMethod == "POST")
+                    HandlePostConnectorV3HumanEquivalenceOpen(request, response);
+                else
+                    SendError(response, 405, "Method not allowed");
+            }
+            else if (path.StartsWith(
+                         "/api/v3/human-equivalence/sessions/",
+                         StringComparison.Ordinal))
+            {
+                string operation = path[
+                    "/api/v3/human-equivalence/sessions/".Length..];
+                if (request.HttpMethod == "POST"
+                    && operation.EndsWith("/return", StringComparison.Ordinal))
+                {
+                    HandlePostConnectorV3HumanEquivalenceReturn(
+                        operation[..^"/return".Length],
+                        request,
+                        response);
+                }
+                else if (request.HttpMethod == "GET"
+                         && !operation.Contains('/'))
+                {
+                    HandleGetConnectorV3HumanEquivalence(
+                        operation,
+                        request,
+                        response);
+                }
+                else if (request.HttpMethod is "GET" or "POST")
+                    SendError(response, 404, "Unknown human-equivalence operation");
                 else
                     SendError(response, 405, "Method not allowed");
             }

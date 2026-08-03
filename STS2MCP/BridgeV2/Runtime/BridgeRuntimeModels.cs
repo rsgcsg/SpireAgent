@@ -68,7 +68,7 @@ internal sealed record BridgeObservationDraft(
     public AuthorityHandoff AuthorityHandoff { get; init; } = new(
         "bridge_owned",
         Surface.Kind,
-        "The current semantic surface is owned by Bridge v2; legacy action fallback is forbidden.");
+        "The current semantic surface is owned by the Gateway; legacy action fallback is forbidden.");
 
     public IReadOnlyList<BridgeDiagnostic> Diagnostics { get; init; } =
         Array.Empty<BridgeDiagnostic>();

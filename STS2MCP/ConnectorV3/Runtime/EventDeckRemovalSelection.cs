@@ -283,7 +283,7 @@ internal static class EventDeckRemovalSelection
             canConfirm,
             new[] { "remove_selected_cards", "add_spore_mind", "finish_event" },
             cards);
-        IReadOnlyList<BridgeActionDraft> actions = DescribeCommands(surface);
+        IReadOnlyList<ConnectorV3CommandDescriptor> actions = DescribeCommands(surface);
         bool actionable = actions.Count > 0;
         var completeness = new StateCompleteness(
             "contract_complete_for_luminous_choir_event_deck_removal",
@@ -315,20 +315,20 @@ internal static class EventDeckRemovalSelection
             {
                 "This authority is limited to the exact active Luminous Choir task; all other NDeckCardSelectScreen sources remain fail closed."
             },
-            actions);
+            []);
     }
 
-    internal static IReadOnlyList<BridgeActionDraft> DescribeCommands(
+    internal static IReadOnlyList<ConnectorV3CommandDescriptor> DescribeCommands(
         EventDeckRemovalSelectionSurface surface)
     {
         if (surface.Kind != SurfaceKind
             || surface.SourceKind != SourceKind)
         {
-            return Array.Empty<BridgeActionDraft>();
+            return Array.Empty<ConnectorV3CommandDescriptor>();
         }
 
         var cards = surface.Cards.ToDictionary(card => card.EntityId, StringComparer.Ordinal);
-        var actions = new List<BridgeActionDraft>();
+        var actions = new List<ConnectorV3CommandDescriptor>();
         ActionEntityBinding screen = new("screen", surface.ScreenEntityId);
         foreach (string cardId in surface.SelectableCardEntityIds)
         {
@@ -608,7 +608,7 @@ internal static class EventDeckRemovalSelection
         request.Operands?.TryGetValue(key, out string? actual) == true
         && string.Equals(actual, expected, StringComparison.Ordinal);
 
-    private static BridgeActionDraft Descriptor(
+    private static ConnectorV3CommandDescriptor Descriptor(
         string key,
         string operation,
         string category,
@@ -620,9 +620,6 @@ internal static class EventDeckRemovalSelection
         category,
         label,
         evidenceCode,
-        static () => BridgeActionStartResult.Rejected(
-            "v3_native_binding_required",
-            "Connector V3 native commands cannot execute through a draft action."),
         entityBindings);
 
     private static T? FindControl<T>(NDeckCardSelectScreen screen, string fieldName)

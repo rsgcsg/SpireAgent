@@ -185,10 +185,16 @@ async function readPromptArtifact(path: string): Promise<ParsedPromptArtifact | 
   }
   const payload = value.payload;
   if (!isJsonObject(payload) || !isJsonObject(payload.currentState) || !Array.isArray(payload.allowedActions)) return undefined;
+  const context = isJsonObject(payload.currentState.context)
+    ? payload.currentState.context
+    : undefined;
+  const surface = isJsonObject(payload.currentState.surface)
+    ? payload.currentState.surface
+    : undefined;
   return {
     userPromptBytes: value.userPromptBytes,
-    contextKind: stringOrUnknown(payload.contextKind),
-    surfaceKind: stringOrUnknown(payload.surfaceKind),
+    contextKind: stringOrUnknown(payload.contextKind ?? context?.kind),
+    surfaceKind: stringOrUnknown(payload.surfaceKind ?? surface?.kind),
     actionAuthority: stringOrUnknown(payload.actionAuthority),
     currentState: payload.currentState,
     allowedActions: payload.allowedActions.filter(isJsonValue)

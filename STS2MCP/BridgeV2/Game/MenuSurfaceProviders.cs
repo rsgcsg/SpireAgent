@@ -83,7 +83,7 @@ internal sealed class MainMenuSurfaceProvider : IBridgeSurfaceProvider
                 canOpenSingleplayer ? "actionable" : "visible_unsupported",
                 canOpenSingleplayer ? null : "The exact Single Player control is not currently enabled."),
             Option(entities, multiplayerButton, "multiplayer", Label(multiplayerButton, "Multiplayer"),
-                "visible_unsupported", "Multiplayer is outside the Bridge v2 single-player support scope."),
+                "visible_unsupported", "Multiplayer is outside the current single-player Gateway scope."),
             Option(entities, timelineButton, "timeline", Label(timelineButton, "Timeline"),
                 "visible_unsupported", "Timeline navigation is not implemented."),
             Option(entities, settingsButton, "settings", Label(settingsButton, "Settings"),

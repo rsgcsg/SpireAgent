@@ -5,9 +5,9 @@ import { TransientObservationError } from "../../game-io/observationError.js";
 import type { JsonObject } from "../../shared/json.js";
 import { BridgeV2HttpError, BridgeV2RestClient } from "./bridgeV2Client.js";
 import {
-  BridgeV2ControlSession,
-  type BridgeV2ControllerCredentials
-} from "./bridgeV2ControlSession.js";
+  GatewayControlSession,
+  type GatewayControllerCredentials
+} from "./gatewayControlSession.js";
 import {
   type BridgeV2Capabilities,
   type BridgeV2Command,
@@ -28,7 +28,7 @@ export interface HybridAdapterOptions {
 
 export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, ExecutableGameAction, GameExecutionResult> {
   private readonly bridge: BridgeV2RestClient;
-  private readonly control: BridgeV2ControlSession;
+  private readonly control: GatewayControlSession;
   private capabilitiesPayload?: { data: BridgeV2Capabilities; raw: JsonObject };
   private lastReadAuthority: "none" | "bridge" = "none";
 
@@ -40,7 +40,7 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
     private readonly sleep: (ms: number) => Promise<void> = defaultSleep
   ) {
     this.bridge = new BridgeV2RestClient(baseUrl, timeoutMs, fetchImpl);
-    this.control = new BridgeV2ControlSession(this.bridge);
+    this.control = new GatewayControlSession(this.bridge);
   }
 
   async initialize(): Promise<void> {
@@ -274,7 +274,7 @@ export class Sts2McpHybridAdapter implements GameAdapter<Sts2McpRawState, Execut
     }
 
     const requestId = `re-p1-${randomUUID()}`;
-    let controller: BridgeV2ControllerCredentials;
+    let controller: GatewayControllerCredentials;
     try {
       await this.control.register(capabilities, capabilities.control_coordination);
       controller = await this.control.credentials();
@@ -470,7 +470,7 @@ function commandContractError(
   command: BridgeV2Command,
   requestId: string,
   action: Extract<ExecutableGameAction, { kind: "bridge_v2_action" }>,
-  controller: BridgeV2ControllerCredentials
+  controller: GatewayControllerCredentials
 ): string | undefined {
   if (command.request_id !== requestId
       || command.expected_state_id !== action.expectedStateId

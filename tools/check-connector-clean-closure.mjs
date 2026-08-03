@@ -17,6 +17,14 @@ const connectorRuntimePath = path.join(
   root,
   "STS2MCP/ConnectorV3/Runtime/ConnectorV3Runtime.cs"
 );
+const connectorEventRemovalPath = path.join(
+  root,
+  "STS2MCP/ConnectorV3/Runtime/EventDeckRemovalSelection.cs"
+);
+const connectorHumanEquivalencePath = path.join(
+  root,
+  "STS2MCP/ConnectorV3/Runtime/ConnectorV3HumanEquivalence.cs"
+);
 const identityPath = path.join(
   root,
   "STS2MCP/BridgeV2/Runtime/BridgeCurrentIdentityProjectionBuilder.cs"
@@ -142,12 +150,21 @@ const reConnectorProjectionPath = path.join(
   root,
   "Re-SpireAgent/src/integrations/sts2mcp/connectorV3Projection.ts"
 );
+const reConnectorClientPath = path.join(
+  root,
+  "Re-SpireAgent/src/integrations/sts2mcp/connectorV3Client.ts"
+);
+const rePublicIndexPath = path.join(root, "Re-SpireAgent/src/index.ts");
+const gatewayRoutesPath = path.join(root, "STS2MCP/McpMod.cs");
 
 const inventory = JSON.parse(await readFile(inventoryPath, "utf8"));
 const protocolSource = await readFile(protocolPath, "utf8");
 const catalog = JSON.parse(await readFile(catalogPath, "utf8"));
 const runtimeSource = await readFile(runtimePath, "utf8");
 const connectorRuntimeSource = await readFile(connectorRuntimePath, "utf8");
+const connectorV3CommandSources = connectorRuntimeSource
+  + await readFile(connectorEventRemovalPath, "utf8")
+  + await readFile(connectorHumanEquivalencePath, "utf8");
 const identitySource = await readFile(identityPath, "utf8");
 const surfacePermissionSource = await readFile(surfacePermissionPath, "utf8");
 const permissionManagerSource = await readFile(permissionManagerPath, "utf8");
@@ -183,6 +200,9 @@ const reStateSource = await readFile(reStatePath, "utf8");
 const reNormalizerSource = await readFile(reNormalizerPath, "utf8");
 const reConnectorAdapterSource = await readFile(reConnectorAdapterPath, "utf8");
 const reConnectorProjectionSource = await readFile(reConnectorProjectionPath, "utf8");
+const reConnectorClientSource = await readFile(reConnectorClientPath, "utf8");
+const rePublicIndexSource = await readFile(rePublicIndexPath, "utf8");
+const gatewayRoutesSource = await readFile(gatewayRoutesPath, "utf8");
 
 const protocol = protocolSource.match(/ProtocolVersion\s*=\s*"([^"]+)"/u)?.[1];
 if (inventory.schema_version !== 1) fail("unsupported inventory schema");
@@ -260,9 +280,32 @@ if (inventory.current.persistent_fallback_claim_admission_count !== 0) {
 if (/draft\.Actions|LegacyBinding|provider_native_binding_adapter/gu.test(connectorRuntimeSource)) {
   fail("Connector V3 runtime regained a Provider action or V2-shaped execution dependency");
 }
+if (/BridgeActionDraft/gu.test(connectorV3CommandSources)) {
+  fail("Connector V3 regained the retired BridgeActionDraft command descriptor");
+}
 if (/BridgeV2RestClient|bridgeSidecar|bridge_v2_capabilities|temporary V2 consumer sidecar/gu
     .test(reConnectorAdapterSource + reConnectorProjectionSource)) {
   fail("Re Connector V3 regained a V2 consumer sidecar");
+}
+if (/bridgeV2|\/api\/v2/gu.test(reConnectorAdapterSource + reConnectorClientSource)) {
+  fail("Re Connector V3 regained a V2 protocol import or HTTP route");
+}
+if (/bridgeV2Client|bridgeV2Protocol|hybridAdapter/gu.test(rePublicIndexSource)) {
+  fail("Re public production entrypoint exports a retired V2 client path");
+}
+for (const legacyHandler of [
+  "HandlePostBridgeV2ClientRegistration",
+  "HandleGetBridgeV2Controller",
+  "HandleGetBridgeV2Clients",
+  "HandlePostBridgeV2Controller"
+]) {
+  const v3RouteBlock = gatewayRoutesSource.slice(
+    gatewayRoutesSource.indexOf('path == "/api/v3/clients/register"'),
+    gatewayRoutesSource.indexOf('path == "/api/v3/commands"')
+  );
+  if (v3RouteBlock.includes(legacyHandler)) {
+    fail(`Connector V3 control route regained V2 wire handler ${legacyHandler}`);
+  }
 }
 if (deckRemovalProviderSource.includes("new BridgeActionDraft")
     || cardBundleProviderSource.includes("new BridgeActionDraft")

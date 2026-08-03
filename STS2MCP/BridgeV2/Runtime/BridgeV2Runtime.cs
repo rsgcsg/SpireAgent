@@ -142,7 +142,7 @@ internal static class BridgeV2Runtime
         GameBuildIdentity game = ReadCurrentGameIdentity();
         var warnings = new List<string>
         {
-            "Bridge v2 is an incremental preview. Unlisted surfaces fail closed with no legal actions.",
+            "The Semantic Gateway is an incremental preview. Unlisted surfaces fail closed with no legal actions.",
             "Capabilities distinguish historically implemented surfaces from the exact current-build qualified and canary lists. Only the explicit current-build lists may own actions.",
             "Run-deck and combat-pile inspections are read-only evidence. They do not grant action authority or enter the command ledger."
         };
@@ -515,7 +515,7 @@ internal static class BridgeV2Runtime
             AuthorityHandoff = new AuthorityHandoff(
                 "none_fail_closed",
                 null,
-                "Bridge v2 cannot grant action authority without the strategy-relevant persistent run HUD."),
+                "The Gateway cannot grant action authority without the strategy-relevant persistent run HUD."),
             Diagnostics = failure == null
                 ? draft.Diagnostics
                 : draft.Diagnostics.Append(failure).ToArray()

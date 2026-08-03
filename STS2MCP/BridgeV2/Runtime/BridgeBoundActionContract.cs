@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using STS2_MCP.BridgeV2.Protocol;
 
@@ -22,18 +23,31 @@ internal sealed record BridgeBoundActionContract(
 {
     public static BridgeBoundActionContract? Build(
         string surfaceKind,
-        BridgeActionDraft action)
+        BridgeActionDraft action) =>
+        Build(
+            surfaceKind,
+            action.Key,
+            action.Kind,
+            action.EvidenceCode,
+            action.EntityBindings);
+
+    public static BridgeBoundActionContract? Build(
+        string surfaceKind,
+        string actionKey,
+        string operation,
+        string evidenceCode,
+        IReadOnlyList<ActionEntityBinding>? entityBindings)
     {
         BridgeOperationQualificationIdentity? identity =
-            BridgeOperationQualificationCatalog.Describe(surfaceKind, action.Kind);
+            BridgeOperationQualificationCatalog.Describe(surfaceKind, operation);
         if (identity == null)
             return null;
 
-        string sourceEvidenceDigest = BridgeHash.Text(action.EvidenceCode);
+        string sourceEvidenceDigest = BridgeHash.Text(evidenceCode);
         string operandDigest = BridgeHash.Object(new
         {
-            action.Key,
-            bindings = (action.EntityBindings ?? Array.Empty<ActionEntityBinding>())
+            Key = actionKey,
+            bindings = (entityBindings ?? Array.Empty<ActionEntityBinding>())
                 .OrderBy(binding => binding.Role, StringComparer.Ordinal)
                 .ThenBy(binding => binding.EntityId, StringComparer.Ordinal)
                 .ToArray()
@@ -46,7 +60,7 @@ internal sealed record BridgeBoundActionContract(
         });
         return new BridgeBoundActionContract(
             surfaceKind,
-            action.Kind,
+            operation,
             identity.ContractDigest,
             sourceEvidenceDigest,
             operandDigest,

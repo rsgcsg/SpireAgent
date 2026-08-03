@@ -2,116 +2,97 @@
 
 Baseline date: 2026-08-03
 
-Active branch: `connectorV3`. The current base HEAD is
-`672389d552f2d7b2f32c53e5aa95aa25b02e2140`; Preview.9 is an uncommitted,
-reviewed worktree over that HEAD. Always use `git rev-parse HEAD` and
-`git status --short` instead of treating this mutable document as checkout
-identity.
+Connector V3 is a **FREEZE CANDIDATE**, not frozen. The active branch is
+`connectorV3`; checkout identity remains a per-machine fact and must be read
+with `git rev-parse HEAD` and `git status --short`.
 
 ## Canonical Architecture
 
 [ADR-0007](decisions/ADR-0007-connector-v3-canonical-architecture.md) is the
 only current Connector target. Native STS2 owns rules and effects. The Gateway
-owns player-visible observation, one mutation owner, exact command admission,
-execute-time native validation, native Commit and action-local Outcome. Re is a
-strict V3 consumer and receipt supervisor. REST and MCP are transports.
+owns player-visible observation, the one mutation owner, exact command
+admission, execute-time native validation, native Commit and action-local
+Outcome. Re is a strict V3 consumer and receipt supervisor. REST and MCP are
+transports.
 
-Current source protocol is `3.0-preview.9`. Inspection remains
-`sts2.connector.v3/inspection-1`; linked detail remains
-`sts2.connector.v3/linked-detail-1`.
+Current source protocol is `3.0-preview.11`. The wire set includes
+`observation-1`, `command-1`, `control-1`, `inspection-1`,
+`linked-detail-1` and `human-equivalence-1`.
 
-## Latest Reviewed Runtime Evidence
+## Source And Test Closure
 
-The supplied Preview.8 archive contains two runs from source revision
-`672389d552f2d7b2f32c53e5aa95aa25b02e2140` with this exact loaded tuple:
+- All 94 cataloged operations require explicit native contracts; fallback
+  authority is zero.
+- Connector V3 publishes candidates from its own non-executing command
+  descriptor. It does not consume `draft.Actions`, `LegacyBinding`,
+  `provider_native_binding_adapter` or `BridgeActionDraft`.
+- Direct-family Provider files publish no actions. Historically named files
+  may retain exact game binding, native Commit and Outcome helpers only.
+- Re's active V3 adapter imports no V2 REST client, state/action sidecar or
+  local legality reconstruction. V3 control registration and leases use
+  `control-1`.
+- V3 capabilities expose exact permission, qualification and Patch identity;
+  Re strictly decodes and records those scopes.
+- The production Prompt uses deterministic compact projection v1. It retains
+  player-visible decision facts, exact actions, instance identity and the
+  information boundary while removing duplicated action menus, duplicated
+  Inspection facts and governance-only metadata.
+- The optional `native_pages.v1` human-equivalence evidence profile is
+  implemented, configurable and CLI-accessible. It is disabled by default,
+  read-only, runtime/state bound, outside normal Agent flow and non-authorizing.
 
-- protocol `3.0-preview.8`;
-- DLL SHA `26c5baaeaa24cfe6e8665693c4e7e45486df45f8cab65a2d74ebc2d6bac2e529`;
-- MVID `d1476ec1-4da8-4658-b594-6fea40de3ca0`;
-- runtime `ddc07fa2e35b4d588f9ebc73283d2044`;
-- game `v0.110.1`, commit `db5d3552`, main hash `-205573697`;
-- Modset `exact_bridge_only`, fingerprint
-  `7bad4df8f7498c76e27fdbeb3994db13894824057dd2c3085ab8bce4bcaba4fb`.
-
-`run-20260803032329-7152dd` settled one command and then stopped safely because
-no exact current command binding existed. `run-20260803032348-tvtdxe` settled
-11 commands and reached a completed-game non-actionable boundary. Both runs
-are direct V3 without a Re V2 sidecar. Their provenance is `unrecorded`, so
-they are exact-artifact journey coverage, not Organic qualification, durable
-authority or evidence for Preview.9.
-
-Older Preview.5-Preview.7 evidence remains valid only for its recorded exact
-SHA/MVID/runtime tuples. In particular, Preview.5 proved current/stale
-`run_deck` Inspection and `surface_card` linked detail; Preview.7 completed a
-202-command game. No predecessor evidence transfers to Preview.9.
-
-## Preview.9 Source Closure
-
-Preview.9 completes the remaining source migration:
-
-- `combat_pile_card_selection`, `deck_transform_selection` and
-  `wood_carvings_replacement_selection` have typed direct V3 discovery,
-  execution and direct Re consumers;
-- all 94 manifest operations require explicit native contracts; fallback
-  authority contracts are zero;
-- Connector V3 does not consume `draft.Actions`, `LegacyBinding` or
-  `provider_native_binding_adapter`;
-- Re Connector V3 no longer requests or projects a V2 capabilities/state
-  sidecar;
-- direct-family Providers publish no `BridgeActionDraft`; generated-card
-  descriptors are built by V3 from typed selectable/control/operation facts;
-- targetless native potions, including Explosive Ampoule, are no longer
-  rejected merely because their valid native target is `null`;
-- map annotation and character selection use exact current native control
-  availability instead of broader visual approximations.
-
-The exact `v0.110.1` assembly audit still reports `Tutor` as the intentional
-negative combat-pile holdout. `Tutor` is multiplayer-only and selects from
-`cardPlay.Target.Player`; the current single-owner source contract cannot
-authorize that target player's pile. It remains diagnostic-only and Fail
-Closed pending a separate participant/visibility/Outcome contract. This does
-not leave a fallback in the ordinary single-player production path.
-
-This is source/test/build/install closure. It is not loaded, Live, canary or
-qualified evidence for Preview.9.
+Gateway tests pass 278/278. Re typecheck, 287/287 tests and production build
+pass. Python MCP syntax, CLI, identity, compatibility, permission,
+qualification, profile, migration, inventory, adaptation and clean-closure
+checks pass.
 
 ## Per-machine Deployment Truth
 
-On this machine, the game was closed and the final Release was built and
-installed with:
+The exact Preview.11 tuple and evidence levels are recorded in the
+[Preview.11 freeze-candidate closeout](../../STS2MCP/docs/connector-v3/PREVIEW_11_FREEZE_CANDIDATE_CLOSEOUT_2026-08-03.md).
+On that artifact:
 
-- SHA `540acf9658b3bf04b2e094f3778453e063088aa8af560b67ea35b317c5a39d49`;
-- MVID `afa5d986-d82d-4a01-b2ab-5509e3926f61`;
-- Gateway source digest
-  `f7efbefc0182d4f4da45640391c063271141f36928ed1e1f1bb2ce1affadd99a`;
-- rollback snapshot `.local/deployments/2026-08-03T05-01-55-991Z`.
+- build, install and loaded SHA/MVID match;
+- V3 capabilities, control, observation and strict Re decoding were observed;
+- the Human profile advertised `enabled=false`, and an open request failed
+  with `human_equivalence_disabled`;
+- `main_menu/open_singleplayer` completed through native Commit, receipt and
+  a stable `singleplayer_menu` successor;
+- an old state/interaction/operand tuple returned
+  `not_executed/stale_state/not_applied`; polling the same request returned
+  the same receipt and no controller remained;
+- the bounded Re run reached the model call but DeepSeek failed at the network
+  boundary before any command submission.
 
-Built and installed identities match. Loaded SHA/MVID, runtime instance,
-game/Modset identity and runtime authority are unverified because STS2 is
-closed. `npm run verify:loaded` must establish them after a cold start.
+This proves one exact operation canary and safety behavior. It does not prove
+the rare selector matrix, a same-artifact Journey, Organic qualification or
+cross-version/Mod support.
 
 ## Authority
 
-- durable qualification: none in reviewed current evidence;
-- Preview.9 session/canary authority: none until exact cold-load admission;
-- Inspection: state-bound, read-only, independent and non-authorizing;
-- disabled: empty/absent scope, unknown source, ambiguous owner, stale binding,
-  unsupported Modset, discovery failure or incomplete exact contract.
+- canary-permitted: exact encountered operation scopes on the current runtime;
+- canary-exercised: `main_menu/open_singleplayer` only;
+- durable/scoped qualification: none;
+- persistent authority: disabled;
+- Inspection and linked detail: read-only, state-bound and non-authorizing;
+- disabled: empty/absent scope, unknown source, ambiguous owner, stale
+  identity, unsupported Modset, discovery failure or incomplete exact
+  contract.
 
-One success never creates a persistent claim. Protocol, MVID, Modset, Patch or
-runtime changes never inherit authority.
+One success never qualifies a Surface, sibling operation or origin. Protocol,
+MVID, runtime, game, Modset or Patch changes never inherit authority.
 
-## Remaining Work
+## Freeze Blockers
 
-- cold-load Preview.9 and verify SHA/MVID/protocol/game/Modset/runtime;
-- exercise targetless potion, combat-pile, deck-transform, Wood Carvings and
-  generated-choice operation parity on this exact artifact;
-- re-exercise current/stale `combat_piles` and `shop_catalog` Inspection plus
-  `surface_card` linked detail;
-- retain evidence for rollback/revoke and supported/trial/quarantined/
-  unsupported lifecycle behavior;
-- add the optional physical native-page human-equivalence evidence profile
-  without changing semantic accessibility by default.
+1. Exercise targetless potion, combat-pile, deck-transform, Wood Carvings,
+   generated choice, combat-hand reversible stages, current/stale Inspection
+   and linked detail on the exact final artifact.
+2. Exercise full native-page open/read/return/recovery with the optional Human
+   profile enabled under operator control.
+3. Complete one same-artifact ordinary Journey and classify every stop.
+4. Record loaded rollback/revoke behavior; disk restore detection is already
+   proven, but rollback loading is not.
+5. Review evidence before creating any durable qualification.
 
 ## Local Runtime Entry
 

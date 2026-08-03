@@ -69,6 +69,12 @@ run deck, combat piles and shop catalog plus bounded `surface_card` linked
 detail. Neither read path grants mutation; stale reads require a fresh
 observation.
 
+The production Prompt uses deterministic compact projection v1: one exact
+action menu, decision-relevant visible facts and the necessary information
+boundary. Full normalized evidence remains recorded. The optional
+`native_pages.v1` Human profile is Gateway operator evidence and is never
+invoked by normal Re decision flow.
+
 ## Evidence
 
 Local runs are written under `data/runs/` by default. They may contain provider
@@ -77,7 +83,8 @@ journey and durable qualification are separate evidence levels.
 
 ## Current Limits
 
-Preview.9 Inspection and linked detail need same-artifact runtime evidence.
-Unknown interactions remain visible and fail closed. Physical UI-page opening
-is not the default semantic-accessibility path and remains a separate evidence
-mode.
+Preview.11 is a freeze candidate. Its exact load, strict decode, one menu
+canary and stale refusal are proven; rare selectors, current/stale read paths,
+enabled Human-page lifecycle and a same-artifact Journey remain. The current
+DeepSeek network fails before command submission. Unknown interactions remain
+visible and fail closed.
