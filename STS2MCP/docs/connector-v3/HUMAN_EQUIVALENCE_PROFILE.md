@@ -1,96 +1,46 @@
-# Optional Human-Equivalence Evidence Profile
+# Human-Equivalence: Inherited Profile And Branch Target
 
-## Purpose
+## Branch Status
 
-`native_pages.v1` verifies that selected semantic information can also be
-reached through the native page a player would open. It is evidence tooling,
-not the normal Agent information path and not mutation authority.
+On `human_euivalent_connector`, Human-Equivalent UI access is the target default Connector model, not merely an optional evidence profile.
 
-Semantic accessibility remains the default. The profile is disabled when its
-config is absent, false or invalid.
+The inherited `native_pages.v1` implementation remains exactly what Connector V3 built: default-off, fixed-page, read-oriented, operator-controlled and non-authorizing. No code change on this branch has yet promoted it into normal Agent flow.
 
-## Fixed Page Kinds
+## Target Meaning
 
-- `run_deck`;
-- `combat_draw_pile`;
-- `combat_discard_pile`;
-- `combat_exhaust_pile`;
-- `shop_catalog`.
+Human-equivalent means the Agent may obtain information and perform actions that a normal human can currently reach through the real UI:
 
-There is no arbitrary node, coordinate, method, reflection target or page name
-input.
+- direct rendered facts;
+- hover, focus and tooltip reveals;
+- scrolling, tabs, expansion and details;
+- native page open/read/return;
+- current real controls and selection affordances;
+- successor states after ordinary UI actions.
 
-## Contract
+Opening a native page or changing a reversible UI stage is a normal UI transition, not automatically a privileged evidence mode.
 
-Open requires `profile`, `kind`, exact `expected_state_token` and exact
-`expected_runtime_instance_id`. The Gateway verifies the pre-owner and
-current Inspection availability, invokes the fixed native page control and
-captures page evidence.
+## Target Contracts
 
-While a session is active, normal mutation candidates are suppressed. Read
-requires the same session/runtime. Return invokes the fixed native return path
-and requires post-owner/state restoration. A partial open/return failure enters
-`recovery_required`; it is not reported as success and must be explicitly
-recovered or followed by a cold restart.
-
-The session:
-
-- is state- and runtime-bound;
-- is read-only and operator-invoked;
-- does not register a controller;
-- does not enter the Command Ledger;
-- does not create command or qualification authority;
-- reuses only player-visible semantic reads;
-- excludes hidden RNG, order and future content.
-
-## Configuration And CLI
-
-Configuration is written atomically to the discovered local STS2 mod config
-and requires a cold load:
-
-```bash
-npm run connector -- human-profile configure --enabled true
-npm run connector -- human-profile status
-npm run connector -- human-profile open --kind run_deck
-npm run connector -- human-profile read --session SESSION --runtime-instance-id RUNTIME
-npm run connector -- human-profile return --session SESSION --runtime-instance-id RUNTIME
-npm run connector -- human-profile recover --session SESSION --runtime-instance-id RUNTIME
-npm run connector -- human-profile configure --enabled false
-```
-
-The REST schema is `sts2.connector.v3/human-equivalence-1`:
+The future profile is expected to be replaced or expanded by:
 
 ```text
-POST /api/v3/human-equivalence/sessions
-GET  /api/v3/human-equivalence/sessions/{session_id}
-POST /api/v3/human-equivalence/sessions/{session_id}/return
+human-ui-observation
+human-ui-reveal
+human-ui-action
+human-ui-receipt
+menu-governance
 ```
 
-## Evidence State
+Every transition binds exact state, frame, owner and control identity. Responses record delivery and successor state rather than requiring a source-specific business Outcome.
 
-Implemented and fixture-tested:
+## In-Run Policy
 
-- default-off config and invalid-config behavior;
-- capability/CLI contract;
-- exact state/runtime checks;
-- open/read/return owner lifecycle;
-- stale and wrong-runtime rejection;
-- mutation suppression;
-- partial-failure recovery;
-- fixed page adapters.
+The normal Agent may execute current human-operable in-run actions, including irreversible choices and abandon-run. The Connector does not protect run quality.
 
-Exact Preview.11 Live:
+## Persistent Governance
 
-- capability advertised `enabled=false`;
-- `open run_deck` returned HTTP 409
-  `human_equivalence_disabled`;
-- no page was opened and no authority was created.
+Profile/save deletion, Mod/global settings and application exit remain separate managed operations. Quit application and destructive persistent operations are denied by default or require explicit operator policy.
 
-Not yet Live-proven on the final artifact:
+## Evidence Boundary
 
-- enabled native page open/read/return for every kind;
-- pre/post owner restoration;
-- induced stale and recovery-required paths.
-
-The profile cannot be marked complete Live evidence until those cases are
-recorded on one exact loaded artifact and it is disabled/cold-loaded afterward.
+Only the inherited disabled-profile behavior and its historical tests/Live records are currently implemented. The broader branch target has no build, load or Live evidence yet.
