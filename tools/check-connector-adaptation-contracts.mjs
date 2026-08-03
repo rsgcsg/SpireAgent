@@ -118,7 +118,7 @@ for (const contract of registry.contracts) {
 }
 
 const manifestKinds = new Set(
-  [...manifest.matchAll(/\bEntry\(\s*"([^"]+)"/gu)].map((match) => match[1])
+  [...manifest.matchAll(/\b(?:V3)?Entry\(\s*"([^"]+)"/gu)].map((match) => match[1])
 );
 const inspectionKinds = new Set(["run_deck", "combat_piles", "shop_catalog"]);
 const environmentKeys = new Set();

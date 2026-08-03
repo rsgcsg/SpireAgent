@@ -790,6 +790,9 @@ const cardBundleSelectionSurfaceSchema = z.object({
   screen_entity_id: z.string().min(1),
   prompt: z.string().min(1).nullable().optional(),
   selected_bundle_entity_id: z.string().min(1).nullable().optional(),
+  selectable_bundle_entity_ids: z.array(z.string().min(1)).default([]),
+  can_confirm: z.boolean().default(false),
+  can_cancel_preview: z.boolean().default(false),
   bundles: z.array(visibleCardBundleSchema).min(1)
 }).passthrough();
 

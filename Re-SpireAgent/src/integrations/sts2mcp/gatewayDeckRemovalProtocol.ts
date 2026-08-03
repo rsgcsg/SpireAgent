@@ -24,6 +24,22 @@ const merchantRemovalBaseSchema = z.object({
   can_cancel_selection: z.boolean()
 }).passthrough();
 
+const relicRemovalBaseSchema = z.object({
+  kind: z.literal("relic_deck_removal_selection"),
+  ...deckRemovalFields,
+  cancelable: z.boolean(),
+  can_preview: z.boolean(),
+  can_cancel_selection: z.literal(false)
+}).passthrough();
+
+const rewardRemovalBaseSchema = z.object({
+  kind: z.literal("reward_deck_removal_selection"),
+  ...deckRemovalFields,
+  cancelable: z.boolean(),
+  can_preview: z.boolean(),
+  can_cancel_selection: z.boolean()
+}).passthrough();
+
 const eventRemovalBaseSchema = z.object({
   kind: z.literal("event_deck_removal_selection"),
   ...deckRemovalFields,
@@ -38,8 +54,16 @@ const eventRemovalBaseSchema = z.object({
   ])
 }).passthrough();
 
-type RemovalShape = z.infer<typeof merchantRemovalBaseSchema>
-  | z.infer<typeof eventRemovalBaseSchema>;
+type RemovalShape = Pick<
+  z.infer<typeof merchantRemovalBaseSchema>,
+  keyof typeof deckRemovalFields
+>;
+
+type SourceRemovalShape = RemovalShape & {
+  cancelable: boolean;
+  can_preview: boolean;
+  can_cancel_selection: boolean;
+};
 
 function validateRemovalSurface(
   surface: RemovalShape,
@@ -90,28 +114,48 @@ function validateRemovalSurface(
   }
 }
 
+function validateSourceRemovalControls(
+  surface: SourceRemovalShape,
+  context: z.RefinementCtx,
+  family: string
+): void {
+  if (surface.stage === "selecting") {
+    if (surface.can_preview && surface.selected_count < surface.min_select) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `${family} preview requires the native minimum selection`
+      });
+    }
+    if (surface.can_cancel_selection && !surface.cancelable) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `${family} selection cancel requires a cancelable selector`
+      });
+    }
+  } else if (surface.can_preview || surface.can_cancel_selection) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: `${family} preview stage cannot publish selecting controls`
+    });
+  }
+}
+
 export const gatewayMerchantRemovalSurfaceSchema = merchantRemovalBaseSchema
   .superRefine((surface, context) => {
     validateRemovalSurface(surface, context, "merchant-removal");
-    if (surface.stage === "selecting") {
-      if (surface.can_preview && surface.selected_count < surface.min_select) {
-        context.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "merchant-removal preview requires the native minimum selection"
-        });
-      }
-      if (surface.can_cancel_selection && !surface.cancelable) {
-        context.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "merchant-removal selection cancel requires a cancelable selector"
-        });
-      }
-    } else if (surface.can_preview || surface.can_cancel_selection) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "merchant-removal preview stage cannot publish selecting controls"
-      });
-    }
+    validateSourceRemovalControls(surface, context, "merchant-removal");
+  });
+
+export const gatewayRelicRemovalSurfaceSchema = relicRemovalBaseSchema
+  .superRefine((surface, context) => {
+    validateRemovalSurface(surface, context, "precise-scissors-removal");
+    validateSourceRemovalControls(surface, context, "precise-scissors-removal");
+  });
+
+export const gatewayRewardRemovalSurfaceSchema = rewardRemovalBaseSchema
+  .superRefine((surface, context) => {
+    validateRemovalSurface(surface, context, "reward-removal");
+    validateSourceRemovalControls(surface, context, "reward-removal");
   });
 
 export const gatewayEventDeckRemovalSurfaceSchema = eventRemovalBaseSchema
@@ -126,6 +170,15 @@ export const gatewayEventDeckRemovalSurfaceSchema = eventRemovalBaseSchema
 export type GatewayMerchantRemovalSurface = z.infer<
   typeof gatewayMerchantRemovalSurfaceSchema
 >;
+export type GatewayRelicRemovalSurface = z.infer<
+  typeof gatewayRelicRemovalSurfaceSchema
+>;
+export type GatewayRewardRemovalSurface = z.infer<
+  typeof gatewayRewardRemovalSurfaceSchema
+>;
+export type GatewayDeckRemovalSurface = GatewayMerchantRemovalSurface
+  | GatewayRelicRemovalSurface
+  | GatewayRewardRemovalSurface;
 export type GatewayEventDeckRemovalSurface = z.infer<
   typeof gatewayEventDeckRemovalSurfaceSchema
 >;

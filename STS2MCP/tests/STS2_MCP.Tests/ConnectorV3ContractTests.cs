@@ -246,7 +246,7 @@ public sealed class ConnectorV3ContractTests
     }
 
     [Fact]
-    public void MerchantRemovalNativeDiscoveryDoesNotAuthorizeOtherRemovalSources()
+    public void DeckRemovalNativeDiscoveryKeepsSourceSpecificContractsSeparate()
     {
         var card = new VisibleCard(
             "deck-card-a", "STRIKE", "Strike", "Attack", "1", null,
@@ -270,7 +270,7 @@ public sealed class ConnectorV3ContractTests
             new[] { card });
 
         BridgeActionDraft[] commands =
-            ConnectorV3Runtime.DescribeMerchantRemovalCommands(merchant).ToArray();
+            ConnectorV3Runtime.DescribeDeckRemovalCommands(merchant).ToArray();
 
         Assert.Contains(commands, command => command.Kind == "toggle_deck_removal_card");
         Assert.Contains(commands, command => command.Kind == "preview_deck_removal");
@@ -279,10 +279,62 @@ public sealed class ConnectorV3ContractTests
             command.EntityBindings!,
             binding => binding.Role == "screen" && binding.EntityId == "removal-screen"));
 
-        Assert.Empty(ConnectorV3Runtime.DescribeMerchantRemovalCommands(
-            merchant with { Kind = "relic_deck_removal_selection" }));
-        Assert.Empty(ConnectorV3Runtime.DescribeMerchantRemovalCommands(
-            merchant with { Kind = "reward_deck_removal_selection" }));
+        BridgeActionDraft[] relic = ConnectorV3Runtime.DescribeDeckRemovalCommands(
+            merchant with { Kind = "relic_deck_removal_selection" }).ToArray();
+        Assert.Contains(relic, command => command.Key.StartsWith(
+            "deselect_precise_scissors_removal_card",
+            StringComparison.Ordinal));
+        Assert.DoesNotContain(relic, command =>
+            command.Kind == "cancel_deck_removal_selection");
+
+        BridgeActionDraft[] reward = ConnectorV3Runtime.DescribeDeckRemovalCommands(
+            merchant with { Kind = "reward_deck_removal_selection" }).ToArray();
+        Assert.Contains(reward, command => command.Key.StartsWith(
+            "deselect_card_removal_reward_removal_card",
+            StringComparison.Ordinal));
+        Assert.Contains(reward, command =>
+            command.Kind == "cancel_deck_removal_selection");
+    }
+
+    [Fact]
+    public void CardBundleNativeDiscoveryKeepsBundlesAtomicAcrossStages()
+    {
+        var card = new VisibleCard(
+            "bundle-card-a", "STRIKE", "Strike", "Attack", "1", null,
+            "Deal 6 damage.", "Basic", false, false, null);
+        var bundle = new VisibleCardBundle("bundle-a", new[] { card });
+        var choosing = new CardBundleSelectionSurface(
+            "card_bundle_selection",
+            "choosing",
+            "bundle-screen",
+            "Choose a bundle.",
+            null,
+            new[] { "bundle-a" },
+            false,
+            false,
+            new[] { bundle });
+
+        BridgeActionDraft preview = Assert.Single(
+            ConnectorV3Runtime.DescribeCardBundleCommands(choosing));
+        Assert.Equal("preview_card_bundle", preview.Kind);
+        Assert.Contains(preview.EntityBindings!, binding =>
+            binding.Role == "screen" && binding.EntityId == "bundle-screen");
+        Assert.Contains(preview.EntityBindings!, binding =>
+            binding.Role == "bundle" && binding.EntityId == "bundle-a");
+
+        BridgeActionDraft[] previewStage = ConnectorV3Runtime.DescribeCardBundleCommands(
+            choosing with
+            {
+                Stage = "preview",
+                SelectedBundleEntityId = "bundle-a",
+                SelectableBundleEntityIds = Array.Empty<string>(),
+                CanConfirm = true,
+                CanCancelPreview = true
+            })
+            .ToArray();
+        Assert.Contains(previewStage, command => command.Kind == "confirm_card_bundle");
+        Assert.Contains(previewStage, command => command.Kind == "cancel_card_bundle_preview");
+        Assert.DoesNotContain(previewStage, command => command.Kind == "preview_card_bundle");
     }
 
     [Fact]

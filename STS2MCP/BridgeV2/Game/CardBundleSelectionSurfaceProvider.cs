@@ -56,11 +56,7 @@ internal sealed class CardBundleSelectionSurfaceProvider : IBridgeSurfaceProvide
             .ToArray();
         if (allBundles.Length == 0 || allBundles.Any(bundle => bundle.Bundle == null || bundle.Bundle.Count == 0))
             return BindingUnavailable(game, BridgeContextBuilder.Build(entities), "No complete visible card bundles are bound.");
-        CardModel[] allCards = allBundles.SelectMany(bundle => bundle.Bundle).ToArray();
-        if (allCards.Length == 0
-            || allCards.Any(card => !ReferenceEquals(card.Owner, allCards[0].Owner))
-            || !allCards[0].Owner.Relics.Any(relic => relic is ScrollBoxes)
-            || allCards.Any(card => allCards[0].Owner.Deck.Cards.Contains(card)))
+        if (!HasExactScrollBoxesSource(allBundles))
         {
             return BindingUnavailable(
                 game,
@@ -83,63 +79,36 @@ internal sealed class CardBundleSelectionSurfaceProvider : IBridgeSurfaceProvide
                 displayPile: PileType.None)).ToArray())).ToArray();
         string? selectedId = selected == null ? null : entities.GetId(selected, "card_bundle");
         string stage = previewShowing ? "preview" : "choosing";
+        string[] selectableBundleIds = !previewShowing && row.Visible
+            ? allBundles.Where(bundle =>
+                    McpMod.IsNodeVisible(bundle) && bundle.Hitbox is { IsEnabled: true })
+                .Select(bundle => entities.GetId(bundle, "card_bundle"))
+                .OrderBy(id => id, StringComparer.Ordinal)
+                .ToArray()
+            : Array.Empty<string>();
+        bool canConfirm = previewShowing
+                          && confirm.IsEnabled
+                          && McpMod.IsNodeVisible(confirm);
+        bool canCancelPreview = previewShowing
+                                && cancel.IsEnabled
+                                && McpMod.IsNodeVisible(cancel);
         var surface = new CardBundleSelectionSurface(
             SurfaceKind,
             stage,
             entities.GetId(screen, "screen"),
             prompt,
             selectedId,
+            selectableBundleIds,
+            canConfirm,
+            canCancelPreview,
             bundles);
-        var actions = new List<BridgeActionDraft>();
-
-        if (!previewShowing && row.Visible)
-        {
-            foreach (NCardBundle bundle in allBundles.Where(bundle =>
-                         McpMod.IsNodeVisible(bundle) && bundle.Hitbox is { IsEnabled: true }))
-            {
-                string bundleId = entities.GetId(bundle, "card_bundle");
-                string names = string.Join(", ", bundle.Bundle.Select(card =>
-                    McpMod.SafeGetText(() => card.Title) ?? card.Id.Entry));
-                actions.Add(new BridgeActionDraft(
-                    $"preview_card_bundle:{bundleId}",
-                    "preview_card_bundle",
-                    "selection",
-                    $"Preview bundle: {names}",
-                    "NCardBundle.Hitbox+NChooseABundleSelectionScreen.OnBundleClicked",
-                    () => StartPreview(screen, bundle, preview, previewCards),
-                    new[] { new ActionEntityBinding("bundle", bundleId) }));
-            }
-        }
-        else if (selected != null)
-        {
-            if (confirm.IsEnabled && McpMod.IsNodeVisible(confirm))
-            {
-                actions.Add(new BridgeActionDraft(
-                    $"confirm_card_bundle:{selectedId}",
-                    "confirm_card_bundle",
-                    "commit",
-                    "Add the previewed bundle to the run deck",
-                    "NChooseABundleSelectionScreen.%Confirm+ScrollBoxes.CardPileCmd.Add(Deck)+exact-card-post-state",
-                    () => StartConfirm(screen, selected, confirm),
-                    new[] { new ActionEntityBinding("bundle", selectedId!) }));
-            }
-            if (cancel.IsEnabled && McpMod.IsNodeVisible(cancel))
-            {
-                actions.Add(new BridgeActionDraft(
-                    $"cancel_card_bundle_preview:{selectedId}",
-                    "cancel_card_bundle_preview",
-                    "navigation",
-                    "Return to bundle choices",
-                    "NChooseABundleSelectionScreen.%Cancel+CancelSelection",
-                    () => StartCancel(screen, selected, cancel, preview),
-                    new[] { new ActionEntityBinding("bundle", selectedId!) }));
-            }
-        }
-
-        string readiness = actions.Count > 0 ? "ready" : "settling";
+        bool hasCurrentCommand = selectableBundleIds.Length > 0
+                                 || canConfirm
+                                 || canCancelPreview;
+        string readiness = hasCurrentCommand ? "ready" : "settling";
         var completeness = new StateCompleteness(
             "contract_complete_for_two_stage_visible_card_bundle_selection",
-            actions.Count > 0
+            hasCurrentCommand
                 ? "derived_from_current_bundle_hitboxes_or_preview_controls"
                 : "temporarily_empty_while_bundle_ui_settles",
             new[]
@@ -154,8 +123,7 @@ internal sealed class CardBundleSelectionSurfaceProvider : IBridgeSurfaceProvide
         string signature = BridgeHash.Object(new
         {
             game.Version,
-            surface,
-            actionKeys = actions.Select(action => action.Key).OrderBy(key => key, StringComparer.Ordinal).ToArray()
+            surface
         });
         return new BridgeObservationDraft(
             signature,
@@ -165,7 +133,7 @@ internal sealed class CardBundleSelectionSurfaceProvider : IBridgeSurfaceProvide
             completeness,
             game,
             Array.Empty<string>(),
-            actions);
+            Array.Empty<BridgeActionDraft>());
     }
 
     private static BridgeActionStartResult StartPreview(
@@ -254,6 +222,130 @@ internal sealed class CardBundleSelectionSurfaceProvider : IBridgeSurfaceProvide
         return BridgeActionStartResult.Started(
             () => IsCurrent(expectedScreen) && !expectedPreview.Visible,
             CancelPreviewCompletionWitness);
+    }
+
+    internal static BridgeActionStartResult StartDirectPreview(
+        BridgeEntityRegistry entities,
+        string screenId,
+        string bundleId)
+    {
+        if (!TryResolveDirect(
+                entities,
+                screenId,
+                bundleId,
+                out NChooseABundleSelectionScreen? screen,
+                out NCardBundle? bundle,
+                out BridgeActionStartResult? rejection)
+            || screen == null
+            || bundle == null)
+        {
+            return rejection!;
+        }
+        Control? preview = screen.GetNodeOrNull<Control>("%BundlePreviewContainer");
+        Control? previewCards = screen.GetNodeOrNull<Control>("%Cards");
+        return preview == null || previewCards == null
+            ? BridgeActionStartResult.Rejected(
+                "bundle_controls_changed",
+                "The exact bundle preview controls are no longer available.")
+            : StartPreview(screen, bundle, preview, previewCards);
+    }
+
+    internal static BridgeActionStartResult StartDirectConfirm(
+        BridgeEntityRegistry entities,
+        string screenId,
+        string bundleId)
+    {
+        if (!TryResolveDirect(
+                entities,
+                screenId,
+                bundleId,
+                out NChooseABundleSelectionScreen? screen,
+                out NCardBundle? bundle,
+                out BridgeActionStartResult? rejection)
+            || screen == null
+            || bundle == null)
+        {
+            return rejection!;
+        }
+        NConfirmButton? confirm = screen.GetNodeOrNull<NConfirmButton>("%Confirm");
+        return confirm == null
+            ? BridgeActionStartResult.Rejected(
+                "bundle_controls_changed",
+                "The exact bundle confirmation control is no longer available.")
+            : StartConfirm(screen, bundle, confirm);
+    }
+
+    internal static BridgeActionStartResult StartDirectCancel(
+        BridgeEntityRegistry entities,
+        string screenId,
+        string bundleId)
+    {
+        if (!TryResolveDirect(
+                entities,
+                screenId,
+                bundleId,
+                out NChooseABundleSelectionScreen? screen,
+                out NCardBundle? bundle,
+                out BridgeActionStartResult? rejection)
+            || screen == null
+            || bundle == null)
+        {
+            return rejection!;
+        }
+        NBackButton? cancel = screen.GetNodeOrNull<NBackButton>("%Cancel");
+        Control? preview = screen.GetNodeOrNull<Control>("%BundlePreviewContainer");
+        return cancel == null || preview == null
+            ? BridgeActionStartResult.Rejected(
+                "bundle_controls_changed",
+                "The exact bundle cancel controls are no longer available.")
+            : StartCancel(screen, bundle, cancel, preview);
+    }
+
+    private static bool TryResolveDirect(
+        BridgeEntityRegistry entities,
+        string screenId,
+        string bundleId,
+        out NChooseABundleSelectionScreen? screen,
+        out NCardBundle? bundle,
+        out BridgeActionStartResult? rejection)
+    {
+        bundle = null;
+        rejection = null;
+        if (!entities.TryResolve(screenId, out screen)
+            || screen == null
+            || !IsCurrent(screen))
+        {
+            rejection = BridgeActionStartResult.Rejected(
+                "card_bundle_owner_changed",
+                "The exact card-bundle owner is no longer current.");
+            return false;
+        }
+        NCardBundle[] bundles = McpMod.FindAll<NCardBundle>(screen)
+            .Where(McpMod.IsLiveNode)
+            .ToArray();
+        if (!HasExactScrollBoxesSource(bundles)
+            || !entities.TryResolve(bundleId, out NCardBundle? resolvedBundle)
+            || resolvedBundle == null
+            || !bundles.Any(candidate => ReferenceEquals(candidate, resolvedBundle)))
+        {
+            rejection = BridgeActionStartResult.Rejected(
+                "card_bundle_source_changed",
+                "The exact Scroll Boxes bundle source or selected bundle changed.");
+            return false;
+        }
+        bundle = resolvedBundle;
+        return true;
+    }
+
+    private static bool HasExactScrollBoxesSource(IReadOnlyList<NCardBundle> bundles)
+    {
+        if (bundles.Count == 0 || bundles.Any(bundle => bundle.Bundle == null || bundle.Bundle.Count == 0))
+            return false;
+        CardModel[] cards = bundles.SelectMany(bundle => bundle.Bundle).ToArray();
+        return cards.Length > 0
+               && cards.All(card => ReferenceEquals(card.Owner, cards[0].Owner))
+               && cards[0].Owner.Relics.Any(relic => relic is ScrollBoxes)
+               && cards.All(card => !cards[0].Owner.Deck.Cards.Contains(card));
     }
 
     private static NCardBundle? ResolvePreviewedBundle(

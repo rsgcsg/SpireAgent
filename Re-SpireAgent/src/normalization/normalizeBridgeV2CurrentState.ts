@@ -3419,6 +3419,9 @@ function projectCardBundleSelectionSurface(
     screenEntityId: surface.screen_entity_id,
     ...(surface.prompt ? { prompt: surface.prompt } : {}),
     ...(surface.selected_bundle_entity_id ? { selectedBundleEntityId: surface.selected_bundle_entity_id } : {}),
+    selectableBundleEntityIds: [...surface.selectable_bundle_entity_ids],
+    canConfirm: surface.can_confirm,
+    canCancelPreview: surface.can_cancel_preview,
     bundles: surface.bundles.map((bundle) => ({
       entityId: bundle.entity_id,
       cards: bundle.cards.map(projectBridgeV2Card)

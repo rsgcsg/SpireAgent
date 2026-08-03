@@ -23,7 +23,7 @@
     "operation_authority_usage_count": 3,
     "explicit_native_contract_count": 53,
     "explicit_contract_digest_admission_count": 53,
-    "fallback_authority_contract_count": 38,
+    "fallback_authority_contract_count": 37,
     "persistent_fallback_claim_admission_count": 0,
     "supported_mixed_explicit_fallback_surface_count": 0,
     "bulk_candidate_startup_path_count": 0,

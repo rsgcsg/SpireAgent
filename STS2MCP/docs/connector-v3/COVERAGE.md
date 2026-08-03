@@ -7,7 +7,7 @@ Evidence never transfers across protocol, SHA, MVID, runtime, game or Modset.
 | Identity and one current owner | implemented | Gateway/Re identity, owner and stale tests | repeated v0.110.1 journeys; Preview.5 exact |
 | Visible unsupported | facts plus zero authority | strict decode/normalization and fail-closed tests | Luminous Choir Preview.5 stop |
 | Ordinary combat | direct native resolver and Re | play/potion/end-turn tests | play/end-turn repeated; usable Explosive Ampoule publication gap observed |
-| Combat-hand selection | direct native resolver and Re | owner/card/control/stage tests | not exercised under Preview.5 |
+| Combat-hand selection | direct native resolver and Re | owner/card/control/stage tests | select/confirm exercised under Preview.6; deselect/reselect/peek return pending |
 | Menu/run setup | direct native resolver and Re | exact operand/no-sidecar tests | complete journeys |
 | Event/map/reward | direct native resolver and Re | exact owner/entity/stage tests | repeatedly completed |
 | Shop/rest/treasure | direct native resolver and Re | offer/control/source/stage tests | repeatedly completed; known-room settling observed |
@@ -15,9 +15,12 @@ Evidence never transfers across protocol, SHA, MVID, runtime, game or Modset.
 | Game over | direct native resolver and Re | stage/control tests | complete-run boundary exercised |
 | Deck enchant | source-specific native resolver | source/operand tests | Symbiote and Self-Help Book historical; Kifuda pending |
 | Smith deck upgrade | direct exact selector and Re | select/deselect/preview/return/confirm/drift | complete Preview.5 lifecycle and semantic upgrade post-state |
-| Merchant deck removal | merchant-only direct selector and Re | source/Gold/service/stage/Outcome tests | not reached under Preview.5 |
-| Luminous Choir event removal | exact task-local V3-native selector and direct Re | source/stage/membership/whole-transaction witness tests | Preview.6 pending cold load |
-| Combat-pile/card-bundle/relic/reward removal | Provider/native migration adapter and V2-shaped Re sidecar | inherited family tests | selected historical families only; direct migration pending |
+| Merchant deck removal | source-specific direct selector and Re | source/Gold/service/stage/Outcome tests | full select/preview/confirm/close/proceed journey under Preview.6 |
+| Precise Scissors removal | task-local direct selector and Re | source/stage/membership/Outcome and no-cancel tests | select/confirm exercised under Preview.6; direct Preview.7 path pending |
+| CardRemovalReward removal | task-local direct selector and Re | source/stage/membership/cancel/Outcome tests | historical Provider evidence only; direct Preview.7 path pending |
+| Scroll Boxes card bundle | atomic direct selector and Re | selectable/control facts, screen/bundle/stage/drift tests | historical Provider evidence only; direct Preview.7 path pending |
+| Luminous Choir event removal | exact task-local V3-native selector and direct Re | source/stage/membership/whole-transaction witness tests | Preview.6 loaded but the natural source was not exercised |
+| Remaining combat-pile/deck-transform selectors | Provider/native migration adapter and V2-shaped Re sidecar | inherited family tests | selected historical families only; direct migration pending |
 | V3 Inspection | state-bound `run_deck`, `combat_piles`, `shop_catalog` | serialization, strict decode and stale negatives | Preview.5 `run_deck` current and stale; others pending |
 | V3 linked detail | state-bound current-Surface `surface_card` | strict entity/token tests | Preview.5 current and stale exercised |
 | V3 MCP | thin V3 transport | syntax/import and lock checks | no current MCP mutation journey |
@@ -41,14 +44,16 @@ MVID `7446a1a2-4a7f-44c0-8c5c-ad95651a7ebd` and runtime
 the completed-run menu. Its provenance is `unrecorded`, so it remains scoped
 journey coverage rather than Organic qualification.
 
-## Preview.6 Replacement Source
+## Preview.6 Live And Preview.7 Replacement Source
 
 [Preview.6](PREVIEW_6_LUMINOUS_CHOIR_EVENT_REMOVAL_CUTOVER_2026-08-02.md)
-is implemented and tested. Build, installed and loaded identity are
-per-machine facts; query `npm run doctor` and `npm run verify:loaded` rather
-than treating a dated deployment tuple as current. Preview.6 runtime, canary
-and Live behavior remain non-claims until its exact tuple is cold-loaded and
-exercised.
+was loaded as SHA `682b1bd6...0ff7`, MVID
+`717c7f91-1e6c-425d-8836-1581dd7562c0`, runtime
+`4e5708f7126a4a7590f9835fe9d34b9d` for
+`run-20260802135723-phwd6m`. The unrecorded journey completed 200 commands and
+one safe stale recovery. Preview.7 replaces selector bindings; build,
+installed and loaded identity remain per-machine facts. Preview.6 evidence
+does not qualify Preview.7.
 
 ## Authority And Non-Claims
 
@@ -58,6 +63,6 @@ exercised.
 - Absent/empty scope, unknown source, owner ambiguity, stale identity,
   incompatible Modset and discovery failure are Fail Closed.
 - Fixture, build and install do not prove load or Live behavior.
-- Preview.5 evidence does not qualify Preview.6.
+- Preview.6 evidence does not qualify Preview.7.
 - Physical UI opening remains an optional evidence profile, not an implicit
   effect of semantic Inspection.

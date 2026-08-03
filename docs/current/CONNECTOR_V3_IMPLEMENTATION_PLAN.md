@@ -14,7 +14,7 @@ commands, or stop at a precise visible unsupported boundary.
 
 Implemented in source:
 
-- `3.0-preview.6` capabilities, observation, command and receipt contracts,
+- `3.0-preview.7` capabilities, observation, command and receipt contracts,
   plus `inspection-1` and `linked-detail-1` read contracts;
 - state token, stable instance identity and one active interaction;
 - visible unsupported interactions;
@@ -27,6 +27,9 @@ Implemented in source:
   direct Re consumption without the V2 projection sidecar;
 - direct Smith deck-upgrade and merchant-only deck-removal selection,
   preview/cancel/confirm execution and direct Re consumption;
+- direct source-bound Precise Scissors and CardRemovalReward removal selectors;
+- direct Scroll Boxes card-bundle discovery, preview, cancel and commit with
+  typed selectable-bundle/control availability;
 - direct Luminous Choir two-card event-removal selection with an exact
   task-local source, whole native transaction witness and direct Re consumer;
 - bounded parameterized commands for remaining ordinary choices, purchases,
@@ -48,7 +51,7 @@ Implemented in source:
 
 Not yet claimed:
 
-- loaded identity or mutation evidence for the pending Preview.6
+- loaded identity or mutation evidence for the pending Preview.7
   v0.110.1 artifact;
 - exact-runtime linked-detail evidence and the optional physical-UI evidence
   profile;
@@ -57,13 +60,11 @@ Not yet claimed:
 - multi-stack Stratagem Outcome;
 - full vanilla or Mod coverage.
 
-Current exact-runtime evidence includes a Preview.5 direct session on SHA
-`b6c28dc5...`, MVID `c98dd735...` and runtime `7967ab4c...`. It proved the
-complete direct Smith lifecycle, `run_deck` Inspection, `surface_card` linked
-detail, stale-token refusal, settling and unsupported separation. It stopped
-at Luminous Choir's unsupported two-card selector and did not reach merchant
-removal or combat-hand. Preview.6 fixes that exact blocker but requires a new
-cold load.
+Current exact-runtime evidence includes the Preview.6 run
+`run-20260802135723-phwd6m`: 200 settled commands, direct combat-hand,
+Precise Scissors and merchant removal, Smith, known-room settling and a safe
+stale recovery. It is unrecorded journey coverage, not Organic qualification.
+Preview.7 changes the migrated selector bindings and requires a new cold load.
 
 ## Migration Waves
 
@@ -83,13 +84,15 @@ back to the last known v2 commit. No durable V3 claim is inherited.
 ### Wave 2: Native Non-Combat Catalog
 
 Replace `provider_native_binding_adapter` family by family. Menu, map, reward,
-shop, generated choices, rest, treasure, Smith deck upgrade and merchant deck
-removal are cut over in current source. Luminous Choir event removal is also
-cut over with a source-specific contract. Prioritize the observed missing
+shop, generated choices, rest, treasure, Smith deck upgrade, all three exact
+ordinary removal sources, Scroll Boxes bundles and Luminous Choir event
+removal are cut over in current source. Prioritize the observed missing
 combat-potion candidate, then remaining bounded selectors including combat
-pile, card bundle and source-distinct relic/reward removal.
+pile and deck transform.
 Delete each Provider action-publication dependency after its V3 resolver has
-tests and exact-runtime evidence.
+source review, positive/negative tests and a verified rollback install. Keep
+the new path Fail Closed until exact-runtime evidence; do not retain a second
+executor merely to wait for that evidence.
 
 ### Wave 2A: Direct Re V3 Consumer
 

@@ -1,6 +1,6 @@
 # Current Status
 
-Baseline date: 2026-08-02
+Baseline date: 2026-08-03
 
 Active migration branch: `connectorV3`. Obtain the exact checkout with
 `git rev-parse HEAD`; a mutable current-status document never fixes its own HEAD.
@@ -15,45 +15,53 @@ admission, execute-time native validation, native Commit and action-local
 Outcome. Re strictly consumes V3 and supervises receipts. REST and MCP are
 transports.
 
-Current source protocol is `3.0-preview.6`. Inspection remains
+Current source protocol is `3.0-preview.7`. Inspection remains
 `sts2.connector.v3/inspection-1`; linked detail remains
 `sts2.connector.v3/linked-detail-1`.
 
 ## Latest Reviewed Runtime Evidence
 
 The latest reviewed local run is
-`run-20260802104257-2ljjp3` from source revision `a53159b...`. Its immutable
+`run-20260802135723-phwd6m` from source revision `0822eef...`. Its immutable
 metadata reports:
 
-- Connector `3.0-preview.5`;
+- Connector `3.0-preview.6`;
 - loaded SHA
-  `dda1e348d7972f42c75768bdde9db5242f332c08bfb739c26fceef96385babcd`;
-- loaded MVID `7446a1a2-4a7f-44c0-8c5c-ad95651a7ebd`;
-- runtime `929acc4158874d9daabccc3524fbfc6f`;
+  `682b1bd647e795c9932648770bd266f010a9e5d7d4ad389eb540d3a6d8160ff7`;
+- loaded MVID `717c7f91-1e6c-425d-8836-1581dd7562c0`;
+- runtime `4e5708f7126a4a7590f9835fe9d34b9d`;
 - game `v0.110.1`, commit `db5d3552`, Modset `exact_bridge_only`;
 - direct V3 consumption with no V2 consumer projection sidecar;
-- 80 `executed_and_settled` commands followed by one expected
+- 200 `executed_and_settled` commands, one safely recovered stale-state
+  refusal, followed by one expected
   `not_executed_non_actionable_state` at the completed-run top-level menu.
 
-The run exercised combat, event, Wood Carvings replacement, map, reward/card
-reward, shop, game-over and menu. It is exact-runtime journey evidence for that
-Preview.5 tuple. Provenance is `unrecorded`, so it is not Organic qualification
-or a durable claim and transfers no authority to Preview.6.
+The run exercised combat, direct combat-hand selection, event, Precise
+Scissors removal, map, reward/card reward, merchant removal, shop, Smith,
+rest, treasure, game-over and menu. Known RestSite/Merchant/Treasure mount
+settling recovered normally. It is exact-runtime journey evidence for that
+Preview.6 tuple. Provenance is `unrecorded`, so it is not Organic qualification
+or a durable claim and transfers no authority to Preview.7.
 
 A separate reviewed Preview.5 session exercised Smith, state-bound Inspection,
 linked detail and stale-token refusal, then stopped safely at Luminous Choir.
 It also exposed a visible usable Explosive Ampoule that published no potion
 command. See [the evidence record](../../STS2MCP/docs/connector-v3/LIVE_EVIDENCE_V0_110_1_PREVIEW_5_SELECTOR_INSPECTION_2026-08-02.md).
 
-## Preview.6 Source
+## Preview.7 Source
 
-Preview.6 adds a direct, source-specific Luminous Choir event-removal
-transaction with exact task/event/screen/card/control binding,
-select/deselect/preview-return/confirm, execute-time revalidation and a
-whole-transaction witness. Unknown deck-removal sources remain Fail Closed.
+Preview.7 cuts merchant, Precise Scissors and CardRemovalReward selectors plus
+Scroll Boxes card bundles over to direct V3 candidate discovery, execution and
+direct Re consumption. They no longer use `draft.Actions`, `LegacyBinding` or
+the V2 consumer sidecar. Shared mechanics retain distinct source, Commit and
+Outcome contracts. Card bundles now publish typed selectable-bundle and
+preview-control availability rather than deriving authority from Provider
+actions. Their old Provider executable closures are deleted and guarded by the
+Clean Closure checker. Unknown sources remain Fail Closed.
 
-The change is source- and test-reviewed. It has no Preview.6 exact-runtime
-mutation evidence yet. See [the cutover record](../../STS2MCP/docs/connector-v3/PREVIEW_6_LUMINOUS_CHOIR_EVENT_REMOVAL_CUTOVER_2026-08-02.md).
+The change is source- and test-reviewed, and one dated local Release/install
+tuple is verified. It has no Preview.7 loaded or exact-runtime mutation
+evidence yet. See [the cutover record](../../STS2MCP/docs/connector-v3/PREVIEW_7_SOURCE_BOUND_SELECTOR_CUTOVER_2026-08-03.md).
 
 ## Per-machine Deployment Truth
 
@@ -84,10 +92,10 @@ Patch or runtime does not inherit old authority.
 
 ## Remaining V3 Work
 
-- cold-load and exercise Preview.6 Luminous Choir lifecycle;
+- cold-load Preview.7 and exercise one migrated source-bound selector;
 - fix and prove the observed Explosive Ampoule publication gap;
-- obtain merchant-removal and combat-hand exact-runtime evidence;
-- migrate combat-pile, card-bundle and source-distinct relic/reward selectors;
+- re-exercise Preview.7 Inspection current/stale reads;
+- migrate combat-pile, deck-transform and remaining Provider selectors;
 - delete remaining Provider/V2-shaped production paths after exact V3
   replacements are tested and runtime-exercised;
 - retain physical UI opening as an optional human-equivalence evidence profile.

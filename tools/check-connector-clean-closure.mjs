@@ -37,6 +37,14 @@ const qualificationLedgerPath = path.join(
   root,
   "tools/connector-qualification-ledger.mjs"
 );
+const deckRemovalProviderPath = path.join(
+  root,
+  "STS2MCP/BridgeV2/Game/DeckRemovalSelectionSurfaceProvider.cs"
+);
+const cardBundleProviderPath = path.join(
+  root,
+  "STS2MCP/BridgeV2/Game/CardBundleSelectionSurfaceProvider.cs"
+);
 const reStatePath = path.join(root, "Re-SpireAgent/src/domain/state/common.ts");
 const reNormalizerPath = path.join(
   root,
@@ -53,6 +61,8 @@ const permissionManagerSource = await readFile(permissionManagerPath, "utf8");
 const boundContractSource = await readFile(boundContractPath, "utf8");
 const qualificationStoreSource = await readFile(qualificationStorePath, "utf8");
 const qualificationLedgerSource = await readFile(qualificationLedgerPath, "utf8");
+const deckRemovalProviderSource = await readFile(deckRemovalProviderPath, "utf8");
+const cardBundleProviderSource = await readFile(cardBundleProviderPath, "utf8");
 const reStateSource = await readFile(reStatePath, "utf8");
 const reNormalizerSource = await readFile(reNormalizerPath, "utf8");
 
@@ -128,6 +138,10 @@ if (!qualificationStoreSource.includes("Manifest migration fallbacks cannot beco
 }
 if (inventory.current.persistent_fallback_claim_admission_count !== 0) {
   fail("persistent fallback claim admission must remain zero");
+}
+if (deckRemovalProviderSource.includes("new BridgeActionDraft")
+    || cardBundleProviderSource.includes("new BridgeActionDraft")) {
+  fail("Preview.7 direct selectors regained a Provider publication/execution path");
 }
 if (/PermissionManager\.Snapshot|QualificationStore\.Snapshot/gu.test(identitySource)) {
   fail("control history re-entered current state identity");

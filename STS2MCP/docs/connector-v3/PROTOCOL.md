@@ -1,6 +1,6 @@
 # Connector V3 Protocol
 
-Source protocol: `3.0-preview.6`
+Source protocol: `3.0-preview.7`
 
 Schemas:
 
@@ -28,8 +28,8 @@ worktree digest separately in run metadata.
 Shared visible facts, semantic context/surface, visibility metadata and the
 Inspection catalog are typed independently from Bridge v2. Re currently
 consumes ordinary combat, combat-hand selection, generated-card choice, menu,
-event, map, game-over, deck upgrade, merchant deck removal, Luminous Choir
-event deck removal,
+event, map, game-over, deck upgrade, merchant/relic/reward deck removal,
+Scroll Boxes card bundles, Luminous Choir event deck removal,
 reward/card-reward, shop, rest, treasure, lifecycle-settling and
 visible-unsupported observations directly from these V3 facts. Inspection
 catalog entries advertise state-bound read availability only; they never
@@ -101,6 +101,16 @@ card instances, preview state and native controls. Merchant deck removal uses
 the same bounded card-selection mechanics but retains an independent merchant
 source, Gold/service Commit and exact-card-removal Outcome. Relic and reward
 removal do not inherit merchant authority merely because their UI is similar.
+
+Precise Scissors and CardRemovalReward removal use the same bounded grid
+mechanics but direct execution re-resolves their independent task-local source
+before Commit. Precise Scissors does not advertise selection cancel because no
+exact source-completion contract exists for that path.
+
+Scroll Boxes bundle selection publishes atomic visible bundles,
+`selectable_bundle_entity_ids`, `can_confirm` and `can_cancel_preview`.
+Preview, confirmation and return bind the exact current screen and bundle.
+Cards inside a bundle are visible facts, not independent operands.
 
 Luminous Choir event removal is a separate source-specific transaction. It
 binds the exact active `ReachIntoTheFlesh` task and non-cancelable two-card

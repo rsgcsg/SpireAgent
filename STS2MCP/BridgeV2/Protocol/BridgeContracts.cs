@@ -1218,6 +1218,9 @@ public sealed record CardBundleSelectionSurface(
     string ScreenEntityId,
     string? Prompt,
     string? SelectedBundleEntityId,
+    IReadOnlyList<string> SelectableBundleEntityIds,
+    bool CanConfirm,
+    bool CanCancelPreview,
     IReadOnlyList<VisibleCardBundle> Bundles) : IBridgeSurface;
 
 public sealed record RewardClaimSurface(

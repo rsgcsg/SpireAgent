@@ -290,6 +290,9 @@ export interface CardBundleSelectionSurface {
   screenEntityId: string;
   prompt?: string;
   selectedBundleEntityId?: string;
+  selectableBundleEntityIds: string[];
+  canConfirm: boolean;
+  canCancelPreview: boolean;
   bundles: Array<{
     entityId: string;
     cards: CardSnapshot[];

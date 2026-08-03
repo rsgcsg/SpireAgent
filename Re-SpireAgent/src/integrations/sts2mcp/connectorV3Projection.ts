@@ -142,6 +142,9 @@ export function usesDirectConnectorV3Consumer(
   if (observation.surface.kind === "deck_upgrade_selection") return true;
   if (observation.surface.kind === "deck_removal_selection") return true;
   if (observation.surface.kind === "event_deck_removal_selection") return true;
+  if (observation.surface.kind === "relic_deck_removal_selection") return true;
+  if (observation.surface.kind === "reward_deck_removal_selection") return true;
+  if (observation.surface.kind === "card_bundle_selection") return true;
   const pair = `${observation.context.kind}:${observation.surface.kind}`;
   return new Set([
     "combat:combat_turn",

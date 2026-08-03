@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using STS2_MCP.BridgeV2.Game;
 using STS2_MCP.BridgeV2.Protocol;
+using STS2_MCP.ConnectorV3.Protocol;
 
 namespace STS2_MCP.BridgeV2.Runtime;
 
@@ -69,6 +70,8 @@ internal static class BridgeContractManifest
         "../docs/current/audits/WORKFLOW_C_PREVIEW82_RUNTIME_RECOVERY_CLOSEOUT_2026-07-30.md";
     private const string ConnectorPreview6Closeout =
         "docs/connector-v3/PREVIEW_6_LUMINOUS_CHOIR_EVENT_REMOVAL_CUTOVER_2026-08-02.md";
+    private const string ConnectorPreview7Closeout =
+        "docs/connector-v3/PREVIEW_7_SOURCE_BOUND_SELECTOR_CUTOVER_2026-08-03.md";
 
     public static readonly IReadOnlyList<BridgeContractManifestEntry> Entries = new[]
     {
@@ -78,7 +81,7 @@ internal static class BridgeContractManifest
             "sts2-v0.110.0:SelfHelpBook.SelectAndEnchant|Symbiote.Approach|Kifuda.AfterObtained+CardSelectCmd.FromDeckForEnchantment+NDeckEnchantSelectScreen+runtime-source-binding+exact-card-enchantment-post-state-witness",
             "purpose_specific_deck_selection",
             new[] { "visible_deck_cards", "selection", "preview", "controls" }),
-        Entry(
+        V3Entry(
             "deck_removal_selection",
             new[]
             {
@@ -91,17 +94,19 @@ internal static class BridgeContractManifest
             "sts2-v0.109.0:MerchantCardRemovalEntry+CardSelectCmd.FromDeckForRemoval+NDeckCardSelectScreen+semantic-post-state-witness",
             "purpose_specific_deck_selection",
             new[] { "visible_deck_cards", "selection", "service_cost", "preview", "controls" }),
-        Entry(
+        V3Entry(
             "relic_deck_removal_selection",
             new[]
             {
-                "toggle_deck_removal_card", "preview_deck_removal", "confirm_deck_removal",
-                "cancel_deck_removal_preview", "cancel_deck_removal_selection"
+                Operation("toggle_deck_removal_card", BridgeOperationEvidenceStatus.SourceAudited, ConnectorPreview7Closeout),
+                Operation("preview_deck_removal", BridgeOperationEvidenceStatus.SourceAudited, ConnectorPreview7Closeout),
+                Operation("confirm_deck_removal", BridgeOperationEvidenceStatus.SourceAudited, ConnectorPreview7Closeout),
+                Operation("cancel_deck_removal_preview", BridgeOperationEvidenceStatus.SourceAudited, ConnectorPreview7Closeout)
             },
             "sts2-v0.109.0:PreciseScissors.AfterObtained+CardSelectCmd.FromDeckForRemoval+CardPileCmd.RemoveFromDeck+task-local-source-binding+exact-card-post-state-witness",
             "purpose_specific_deck_selection",
             new[] { "visible_deck_cards", "selection", "preview", "controls" }),
-        Entry(
+        V3Entry(
             "reward_deck_removal_selection",
             new[]
             {
@@ -124,7 +129,8 @@ internal static class BridgeContractManifest
             },
             "sts2-v0.110.1:LuminousChoir.ReachIntoTheFlesh+CardSelectCmd.FromDeckForRemoval(2)+CardPileCmd.RemoveFromDeck+AddCurseToDeck<SporeMind>+SetEventFinished+task-local-source-binding+exact-transaction-witness",
             "v3_native_source_bound_event_deck_removal",
-            new[] { "visible_deck_cards", "selection", "preview", "expected_effects", "controls" }),
+            new[] { "visible_deck_cards", "selection", "preview", "expected_effects", "controls" },
+            ConnectorPreview6Closeout),
         Entry(
             "deck_upgrade_selection",
             new[]
@@ -224,7 +230,7 @@ internal static class BridgeContractManifest
             "sts2-v0.109.1:source-bound LeadPaperweight/HeftyTablet/native-generated-combat-card-potion/Splash/Quasar/KnowledgeDemon.ChooseCurse+NChooseACardSelectionScreen+purpose-specific exact post-state witnesses",
             "source_discriminated_generated_card_choice",
             new[] { "visible_card_choices", "choice_purpose", "source_kind", "destination", "selected_card_cost_policy", "overflow_destination", "skip_control" }),
-        Entry(
+        V3Entry(
             "card_bundle_selection",
             new[]
             {
@@ -502,14 +508,15 @@ internal static class BridgeContractManifest
         IReadOnlyList<BridgeOperationManifest> operations,
         string sourceBindingId,
         string mechanism,
-        IReadOnlyList<string> visibleFactGroups) => new(
+        IReadOnlyList<string> visibleFactGroups,
+        string documentationReference = ConnectorPreview7Closeout) => new(
         kind,
-        "3.0-preview.6",
+        ConnectorV3Contract.ProtocolVersion,
         mechanism,
         sourceBindingId,
         "strict_connector_v3_decoder_normalizer",
         visibleFactGroups,
         operations,
         new[] { "tests/STS2_MCP.Tests/ConnectorV3ContractTests.cs" },
-        new[] { ConnectorPreview6Closeout });
+        new[] { documentationReference });
 }

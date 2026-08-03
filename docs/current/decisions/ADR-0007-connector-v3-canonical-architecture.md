@@ -122,22 +122,22 @@ Reuse is internal implementation reuse, not V2 protocol authority.
 
 ## Explicit Migration Debt
 
-At `3.0-preview.6`:
+At `3.0-preview.7`:
 
 - combat and multiple ordinary non-combat families use direct V3 native
   resolvers; menu/run-setup, source-discriminated generated choices and
-  game-over, combat-hand selection, Smith deck upgrade, merchant deck removal
-  and Luminous Choir event deck removal are now cut over in source. The event
-  selector uses an exact task-local source binding and whole-transaction
-  witness. Remaining selectors use a bounded internal
+  game-over, combat-hand selection, Smith deck upgrade, all three exact
+  ordinary removal sources, Scroll Boxes bundles and Luminous Choir event
+  removal are now cut over in source. Every shared selection mechanic retains
+  a source-specific Commit and Outcome. Remaining selectors use a bounded internal
   `provider_native_binding_adapter` that never submits or searches a v2 REST
   action ID;
 - Re directly consumes ordinary combat, source-discriminated generated-card
   choice, main/singleplayer/character menu, event, map, game-over,
   reward/card-reward, shop, rest, treasure, lifecycle-settling and
-  visible-unsupported facts and candidates. Combat-hand, Smith deck upgrade
-  merchant deck removal and Luminous Choir event deck removal join this direct
-  path. Remaining selector Surfaces use
+  visible-unsupported facts and candidates. Combat-hand, Smith deck upgrade,
+  merchant/relic/reward removal, Scroll Boxes bundle and Luminous Choir event
+  removal join this direct path. Remaining selector Surfaces use
   `/api/v2/capabilities` as a same-runtime,
   non-authorizing semantic/environment projection sidecar and temporarily
   expand V3 candidates into a V2-shaped normalization projection;
@@ -180,13 +180,16 @@ another event, relic, reward or Mod.
 
 ## Cutover And Deletion Conditions
 
-V2 mutation paths may be removed when V3 has exact-runtime evidence for the
-ordinary vanilla capability matrix and rollback remains tested. The temporary
+The wholesale V2 endpoint retirement still requires exact-runtime evidence for
+the ordinary vanilla capability matrix and tested rollback. A single family
+must not retain two executable authorities while waiting for that evidence:
+after source/owner audit, exact operands, execute-time revalidation, native
+Commit, Outcome, positive and negative tests, and a verified rollback install,
+its replaced Provider closure is deleted and the new path remains Fail Closed
+until cold-loaded. Exact-runtime evidence gates the support and qualification
+claim; it does not justify a permanent fallback executor. The temporary
 projection sidecar may be removed when V3 publishes the required semantic
-state, visibility and detail contracts directly. Each family cutover requires
-source/owner audit, exact operands, execute-time revalidation, native Commit,
-Outcome, positive and negative tests, runtime evidence and an old-path deletion
-condition.
+state, visibility and detail contracts directly.
 
 ## Evidence Boundary
 

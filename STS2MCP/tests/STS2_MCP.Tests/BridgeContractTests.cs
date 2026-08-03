@@ -25,10 +25,18 @@ public sealed class BridgeContractTests
             providerKinds,
             manifestKinds.Where(kind => kind != "event_deck_removal_selection").ToArray());
         Assert.Contains("event_deck_removal_selection", manifestKinds);
+        var connectorV3Kinds = new HashSet<string>(StringComparer.Ordinal)
+        {
+            "deck_removal_selection",
+            "relic_deck_removal_selection",
+            "reward_deck_removal_selection",
+            "event_deck_removal_selection",
+            "card_bundle_selection"
+        };
         Assert.All(BridgeContractManifest.Entries, entry =>
         {
             Assert.Equal(
-                entry.Kind == "event_deck_removal_selection"
+                connectorV3Kinds.Contains(entry.Kind)
                     ? ConnectorV3Contract.ProtocolVersion
                     : BridgeV2Contract.ProtocolVersion,
                 entry.ProtocolRevision);
@@ -1023,7 +1031,7 @@ public sealed class BridgeContractTests
         Assert.Equal(manifestOperationCount, catalog.Count);
         Assert.Equal(53, catalog.Count(contract =>
             contract.ContractKind == BridgeOperationQualificationCatalog.ExplicitNativeContract));
-        Assert.Equal(38, catalog.Count(contract =>
+        Assert.Equal(37, catalog.Count(contract =>
             contract.ContractKind == BridgeOperationQualificationCatalog.ManifestMigrationFallback));
         Assert.Equal(catalog.Count, catalog
             .Select(contract => (contract.SurfaceKind, contract.Operation))
@@ -3230,6 +3238,9 @@ public sealed class BridgeContractTests
             "screen-bundle",
             "Choose a bundle",
             "bundle-a",
+            Array.Empty<string>(),
+            true,
+            true,
             new[]
             {
                 new VisibleCardBundle(
@@ -3254,6 +3265,9 @@ public sealed class BridgeContractTests
         Assert.Contains("\"kind\":\"card_bundle_selection\"", json);
         Assert.Contains("\"stage\":\"preview\"", json);
         Assert.Contains("\"selected_bundle_entity_id\":\"bundle-a\"", json);
+        Assert.Contains("\"selectable_bundle_entity_ids\":[]", json);
+        Assert.Contains("\"can_confirm\":true", json);
+        Assert.Contains("\"can_cancel_preview\":true", json);
         Assert.Contains("\"entity_id\":\"bundle-a\"", json);
         Assert.Contains("\"entity_id\":\"bundle-card-a\"", json);
         Assert.DoesNotContain("card_index", json, StringComparison.OrdinalIgnoreCase);

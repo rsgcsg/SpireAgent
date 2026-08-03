@@ -8,7 +8,7 @@ state-bound Semantic Gateway.
   transport adapter.
 
 Connector V3 is the only current target. Source protocol is
-`3.0-preview.6`. The old root Agent and Connector V2 are retained only as
+`3.0-preview.7`. The old root Agent and Connector V2 are retained only as
 history under [`archive/`](archive/).
 
 > **Project maturity:** active source development. There is not yet a packaged
