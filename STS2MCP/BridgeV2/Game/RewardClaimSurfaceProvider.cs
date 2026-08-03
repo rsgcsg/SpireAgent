@@ -88,51 +88,12 @@ internal sealed class RewardClaimSurfaceProvider : IBridgeSurfaceProvider
         VisibleCombatPotion[] discardablePotions = hasPotionReward && potionSlotsFull
             ? occupiedPotions.Select(entry => BuildDiscardablePotion(entry.Slot, entry.Potion, entities)).ToArray()
             : Array.Empty<VisibleCombatPotion>();
-        var actions = new List<BridgeActionDraft>();
-        foreach (NRewardButton button in buttons.Where(button =>
-                     button.IsEnabled && !IsBlockedPotionReward(button.Reward!, potionSlotsFull)))
-        {
-            Reward reward = button.Reward!;
-            VisibleReward visible = rewards.Single(candidate => candidate.EntityId == entities.GetId(button, "reward"));
-            actions.Add(new BridgeActionDraft(
-                $"claim_reward:{visible.EntityId}",
-                "claim_reward",
-                "claim",
-                $"Claim {visible.Label}",
-                "NRewardButton.Reward+NRewardButton.ForceClick",
-                () => StartClaim(screen, exactPlayer, button, reward, buttons),
-                new[] { new ActionEntityBinding("reward", visible.EntityId) }));
-        }
-        if (hasPotionReward && potionSlotsFull && exactPlayer.CanUseOrRemovePotions)
-        {
-            foreach ((int slot, PotionModel potion) in occupiedPotions)
-            {
-                string potionId = entities.GetId(potion, "potion");
-                string potionName = McpMod.SafeGetText(() => potion.Title) ?? potion.Id.Entry;
-                actions.Add(new BridgeActionDraft(
-                    $"discard_potion_for_reward:{potionId}:{slot}",
-                    "discard_potion_for_reward",
-                    "capacity",
-                    $"Discard {potionName} from slot {slot + 1} to make room",
-                    "NPotionPopup.OnDiscardButtonPressed+DiscardPotionGameAction",
-                    () => StartDiscardPotion(screen, exactPlayer, potion, slot),
-                    new[] { new ActionEntityBinding("potion", potionId) }));
-            }
-        }
-        if (proceedButton.IsEnabled)
-        {
-            bool skips = proceedButton.IsSkip;
-            actions.Add(new BridgeActionDraft(
-                $"proceed_rewards:{entities.GetId(proceedButton, "proceed_button")}",
-                "proceed_rewards",
-                "navigation",
-                skips ? "Skip remaining rewards and continue" : "Continue from rewards",
-                "NRewardsScreen.ProceedButton+NProceedButton.ForceClick",
-                () => StartProceed(screen, proceedButton, buttons)));
-        }
-
         bool hasVisibleControls = buttons.Length > 0 || proceedButton.IsEnabled;
-        string readiness = actions.Count > 0 ? "ready" : hasVisibleControls ? "settling" : "degraded";
+        bool hasCurrentCommand = rewards.Any(reward => reward.Enabled)
+                                 || discardablePotions.Length > 0
+                                    && exactPlayer.CanUseOrRemovePotions
+                                 || proceedButton.IsEnabled;
+        string readiness = hasCurrentCommand ? "ready" : hasVisibleControls ? "settling" : "degraded";
         var missing = hasVisibleControls ? Array.Empty<string>() : new[] { "surface.rewards_or_enabled_proceed" };
         var surface = new RewardClaimSurface(
             SurfaceKind,
@@ -144,7 +105,7 @@ internal sealed class RewardClaimSurfaceProvider : IBridgeSurfaceProvider
             proceedButton.IsSkip);
         var completeness = new StateCompleteness(
             hasVisibleControls ? "contract_complete_for_reward_claim" : "partial",
-            actions.Count > 0
+            hasCurrentCommand
                 ? "derived_from_same_current_ui_controls_as_execution"
                 : "temporarily_empty_while_ui_settles",
             new[]
@@ -160,8 +121,7 @@ internal sealed class RewardClaimSurfaceProvider : IBridgeSurfaceProvider
         string signature = BridgeHash.Object(new
         {
             game.Version,
-            surface,
-            actionKeys = actions.Select(action => action.Key).OrderBy(key => key, StringComparer.Ordinal).ToArray()
+            surface
         });
         return new BridgeObservationDraft(
             signature,
@@ -171,7 +131,7 @@ internal sealed class RewardClaimSurfaceProvider : IBridgeSurfaceProvider
             completeness,
             game,
             Array.Empty<string>(),
-            actions);
+            Array.Empty<BridgeActionDraft>());
     }
 
     private static VisibleReward BuildReward(

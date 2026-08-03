@@ -1,6 +1,6 @@
 # Connector V3 Protocol
 
-Source protocol: `3.0-preview.7`
+Source protocol: `3.0-preview.8`
 
 Schemas:
 
@@ -135,6 +135,12 @@ discovery remains source-discriminated, and execution revalidates the exact
 active source, screen and card before using that source's native Commit and
 Outcome witness. A Skill Potion, Quasar and Knowledge Demon therefore do not
 share a generic result contract merely because they use the same selection UI.
+
+Direct command descriptors are non-executing publication facts. Session trial
+admission may use them only when the exact operation resolves to an explicit
+native contract. A manifest fallback, fixture or static fingerprint cannot
+turn a descriptor into authority. Rest-site and event-card-acquisition
+commands follow this path without requiring Provider `draft.Actions`.
 
 Game-over controls bind the exact current screen, stage and semantic control.
 Execution resolves those facts again and invokes the native advance/return

@@ -332,7 +332,16 @@ internal static class ConnectorV3Runtime
                 Signature = BridgeHash.Object(new { failed.Signature, failure })
             };
         }
-        draft = BridgeV2Runtime.AdmitEncounter(draft);
+        IReadOnlyList<BridgeEncounterAuthorityCandidate>? authorityCandidates =
+            TryDescribeDirectAuthorityCommands(draft.Surface, out IReadOnlyList<BridgeActionDraft> directCommands)
+                ? directCommands.Select(action => new BridgeEncounterAuthorityCandidate(
+                        draft.Surface.Kind,
+                        action.Kind,
+                        action.EvidenceCode,
+                        RequiresExplicitNativeContract: true))
+                    .ToArray()
+                : null;
+        draft = BridgeV2Runtime.AdmitEncounter(draft, authorityCandidates);
         draft = BridgeSnapshotBuilder.ApplyCurrentAuthority(draft);
         BridgeSharedVisibleStateBuildResult shared = draft.Game.Compatibility.StateObservationAllowed
             ? BridgeSharedVisibleStateBuilder.Build(Entities)
@@ -457,6 +466,54 @@ internal static class ConnectorV3Runtime
             _ => Array.Empty<VisibleCard>()
         };
 
+    private static bool TryDescribeDirectAuthorityCommands(
+        IBridgeSurface surface,
+        out IReadOnlyList<BridgeActionDraft> commands)
+    {
+        commands = surface switch
+        {
+            EventOptionSurface value => DescribeEventOptionCommands(value),
+            TreasureRoomSurface value => DescribeTreasureRoomCommands(value),
+            RewardClaimSurface value => DescribeRewardClaimCommands(value),
+            CardRewardSelectionSurface value => DescribeCardRewardCommands(value),
+            ShopInventorySurface value => DescribeShopInventoryCommands(value),
+            MainMenuSurface value => DescribeMainMenuCommands(value),
+            SingleplayerMenuSurface value => DescribeSingleplayerMenuCommands(value),
+            CharacterSelectSurface value => DescribeCharacterSelectCommands(value),
+            GameOverSurface value => DescribeGameOverCommands(value),
+            RestSiteSurface value => DescribeRestSiteCommands(value),
+            GeneratedCardChoiceSurface value => GeneratedCardChoiceSurfaceProvider.DescribeNativeCommands(value),
+            EventCardAcquisitionSurface value => DescribeEventCardAcquisitionCommands(value),
+            CombatHandCardSelectionSurface value => DescribeCombatHandCommands(value),
+            DeckUpgradeSelectionSurface value => DescribeDeckUpgradeCommands(value),
+            DeckRemovalSelectionSurface value when value.Kind is
+                "deck_removal_selection" or
+                "relic_deck_removal_selection" or
+                "reward_deck_removal_selection" => DescribeDeckRemovalCommands(value),
+            EventDeckRemovalSelectionSurface value => EventDeckRemovalSelection.DescribeCommands(value),
+            CardBundleSelectionSurface value => DescribeCardBundleCommands(value),
+            _ => Array.Empty<BridgeActionDraft>()
+        };
+        return surface is
+            EventOptionSurface or
+            TreasureRoomSurface or
+            RewardClaimSurface or
+            CardRewardSelectionSurface or
+            ShopInventorySurface or
+            MainMenuSurface or
+            SingleplayerMenuSurface or
+            CharacterSelectSurface or
+            GameOverSurface or
+            RestSiteSurface or
+            GeneratedCardChoiceSurface or
+            EventCardAcquisitionSurface or
+            CombatHandCardSelectionSurface or
+            DeckUpgradeSelectionSurface or
+            DeckRemovalSelectionSurface or
+            EventDeckRemovalSelectionSurface or
+            CardBundleSelectionSurface;
+    }
+
     private static IReadOnlyList<ConnectorV3BoundCommand> BuildBindings(
         BridgeObservationDraft draft)
     {
@@ -478,8 +535,12 @@ internal static class ConnectorV3Runtime
             return BuildCharacterSelectBindings(draft, characterSelect);
         if (draft.Surface is GeneratedCardChoiceSurface generatedCardChoice)
             return BuildGeneratedCardChoiceBindings(draft, generatedCardChoice);
+        if (draft.Surface is EventCardAcquisitionSurface eventCardAcquisition)
+            return BuildEventCardAcquisitionBindings(draft, eventCardAcquisition);
         if (draft.Surface is GameOverSurface gameOver)
             return BuildGameOverBindings(draft, gameOver);
+        if (draft.Surface is RestSiteSurface restSite)
+            return BuildRestSiteBindings(draft, restSite);
         if (draft.Surface is CombatHandCardSelectionSurface combatHand)
             return BuildCombatHandBindings(draft, combatHand);
         if (draft.Surface is DeckUpgradeSelectionSurface deckUpgrade)
@@ -516,7 +577,6 @@ internal static class ConnectorV3Runtime
         if (draft.Surface.Kind is
             "shop_room" or
             "map_navigation" or
-            "rest_site" or
             "deck_enchant_selection")
             return BuildNativeBindings(allowed);
 
@@ -560,6 +620,91 @@ internal static class ConnectorV3Runtime
                     new ActionEntityBinding("option", option.EntityId)
                 }))
             .ToArray();
+
+    private static IReadOnlyList<ConnectorV3BoundCommand> BuildRestSiteBindings(
+        BridgeObservationDraft draft,
+        RestSiteSurface surface) =>
+        DescribeRestSiteCommands(surface)
+            .Select(action => BuildNativeBinding(draft, action))
+            .Where(binding => binding != null)
+            .Cast<ConnectorV3BoundCommand>()
+            .ToArray();
+
+    internal static IReadOnlyList<BridgeActionDraft> DescribeRestSiteCommands(
+        RestSiteSurface surface)
+    {
+        var actions = new List<BridgeActionDraft>();
+        ActionEntityBinding screen = new("screen", surface.ScreenEntityId);
+        foreach (VisibleRestOption option in surface.Options.Where(value => value.Enabled))
+        {
+            actions.Add(NativeDescriptor(
+                $"rest:option:{surface.ScreenEntityId}:{option.EntityId}",
+                "choose_rest_option",
+                "selection",
+                option.Name ?? option.OptionId,
+                "RestSiteRoom.Options+NRestSiteButton.ForceClick+source-specific-outcome",
+                new[]
+                {
+                    screen,
+                    new ActionEntityBinding("rest_option", option.EntityId)
+                }));
+        }
+        if (surface.CanProceed)
+        {
+            actions.Add(NativeDescriptor(
+                $"rest:proceed:{surface.ScreenEntityId}",
+                "proceed_rest_site",
+                "navigation",
+                "Proceed to map",
+                "NRestSiteRoom.ProceedButton+NMapScreen.Open",
+                new[] { screen }));
+        }
+        return actions;
+    }
+
+    private static IReadOnlyList<ConnectorV3BoundCommand> BuildEventCardAcquisitionBindings(
+        BridgeObservationDraft draft,
+        EventCardAcquisitionSurface surface) =>
+        DescribeEventCardAcquisitionCommands(surface)
+            .Select(action => BuildNativeBinding(draft, action))
+            .Where(binding => binding != null)
+            .Cast<ConnectorV3BoundCommand>()
+            .ToArray();
+
+    internal static IReadOnlyList<BridgeActionDraft> DescribeEventCardAcquisitionCommands(
+        EventCardAcquisitionSurface surface)
+    {
+        var actions = new List<BridgeActionDraft>();
+        ActionEntityBinding screen = new("screen", surface.ScreenEntityId);
+        IReadOnlyDictionary<string, VisibleCard> cards = surface.Cards.ToDictionary(
+            card => card.EntityId,
+            StringComparer.Ordinal);
+        foreach (string cardId in surface.SelectableCardEntityIds)
+        {
+            if (!cards.TryGetValue(cardId, out VisibleCard? card))
+                continue;
+            actions.Add(NativeDescriptor(
+                $"event-acquisition:select:{surface.ScreenEntityId}:{cardId}",
+                "select_event_card_acquisition",
+                "selection",
+                $"Choose {card.Name ?? card.DefinitionId} to add to the run deck",
+                "NSimpleCardSelectScreen.NCardGrid.HolderPressed+exact-event-source",
+                new[] { screen, new ActionEntityBinding("card", cardId) }));
+        }
+        foreach (string cardId in surface.DeselectableCardEntityIds)
+        {
+            if (!cards.TryGetValue(cardId, out VisibleCard? card))
+                continue;
+            actions.Add(NativeDescriptor(
+                $"event-acquisition:deselect:{surface.ScreenEntityId}:{cardId}",
+                "deselect_event_card_acquisition",
+                "selection",
+                $"Deselect {card.Name ?? card.DefinitionId}",
+                "NSimpleCardSelectScreen.NCardGrid.HolderPressed+exact-event-source",
+                new[] { screen, new ActionEntityBinding("card", cardId) }));
+        }
+        return actions;
+    }
 
     private static IReadOnlyList<ConnectorV3BoundCommand> BuildGameOverBindings(
         BridgeObservationDraft draft,
@@ -1762,6 +1907,7 @@ internal static class ConnectorV3Runtime
                 "singleplayer_menu" => StartSingleplayerMenuCommand(snapshot, request, binding),
                 "character_select" => StartCharacterSelectCommand(snapshot, request, binding),
                 "generated_card_choice" => StartGeneratedCardChoiceCommand(snapshot, request, binding),
+                "event_card_acquisition" => StartEventCardAcquisitionCommand(snapshot, request, binding),
                 "combat_hand_card_selection" => StartCombatHandCommand(snapshot, request, binding),
                 "deck_upgrade_selection" => StartDeckUpgradeCommand(snapshot, request, binding),
                 "deck_removal_selection" or
@@ -1903,6 +2049,51 @@ internal static class ConnectorV3Runtime
         return BridgeActionStartResult.Rejected(
             "generated_choice_command_unsupported",
             "The requested generated-card command is not supported for this exact source.");
+    }
+
+    private static BridgeActionStartResult StartEventCardAcquisitionCommand(
+        ConnectorV3Snapshot snapshot,
+        ConnectorV3CommandRequest request,
+        ConnectorV3BoundCommand binding)
+    {
+        if (snapshot.Draft.Surface is not EventCardAcquisitionSurface surface
+            || !HasExactOperand(request, "screen_id", surface.ScreenEntityId))
+        {
+            return BridgeActionStartResult.Rejected(
+                "event_acquisition_owner_changed",
+                "The exact audited event card-acquisition owner is no longer current.");
+        }
+        IReadOnlyDictionary<string, string> operands =
+            request.Operands ?? new Dictionary<string, string>();
+        if (!operands.TryGetValue("card_id", out string? cardId))
+        {
+            return BridgeActionStartResult.Rejected(
+                "event_acquisition_binding_changed",
+                "The exact event card operand is missing.");
+        }
+        if (binding.Candidate.Operation == "select_event_card_acquisition"
+            && request.Command == "select_entity"
+            && surface.SelectableCardEntityIds.Contains(cardId, StringComparer.Ordinal))
+        {
+            return EventCardAcquisitionSurfaceProvider.StartDirectToggle(
+                Entities,
+                surface.ScreenEntityId,
+                cardId,
+                expectedSelected: false);
+        }
+        if (binding.Candidate.Operation == "deselect_event_card_acquisition"
+            && request.Command == "deselect_entity"
+            && surface.DeselectableCardEntityIds.Contains(cardId, StringComparer.Ordinal))
+        {
+            return EventCardAcquisitionSurfaceProvider.StartDirectToggle(
+                Entities,
+                surface.ScreenEntityId,
+                cardId,
+                expectedSelected: true);
+        }
+        return BridgeActionStartResult.Rejected(
+            "event_acquisition_command_unsupported",
+            "The command does not match the exact current event card selection state.");
     }
 
     private static BridgeActionStartResult StartCombatHandCommand(

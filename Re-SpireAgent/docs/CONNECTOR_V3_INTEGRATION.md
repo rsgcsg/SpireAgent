@@ -35,6 +35,9 @@ Combat-hand selection now publishes exact current hand/card/control facts,
 uses a direct native resolver and is consumed directly by Re. Smith deck
 upgrade and merchant deck removal also use direct typed facts and commands;
 merchant authority is not reused for relic/reward removal.
+Rest and event card acquisition publish typed facts and direct command
+descriptors without Provider action drafts. Runtime trial admission accepts
+those descriptors only through their explicit native contracts.
 Luminous Choir event removal uses its own exact task/event/two-card contract,
 whole-transaction Outcome and direct Re Surface. It shares selector mechanics
 but not merchant, relic or reward authority.
@@ -48,9 +51,11 @@ request Bridge v2 capabilities. Menu, event, map, game-over,
 reward/card-reward, shop, rest, treasure, combat and generated choice are
 exact-runtime exercised under earlier artifacts. Preview.5 exercised direct
 Smith, known-room settling, visible unsupported, `run_deck` Inspection and
-linked detail. Merchant removal and combat-hand remain unexercised; Preview.6
-Luminous Choir removal is implemented/tested but still lacks exact-runtime
-exercise. Build/install/load status is per-machine and must be read with the
+linked detail. Merchant removal and combat-hand were exercised under Preview.6.
+Preview.7 completed a 202-command ordinary journey, while two preceding
+Merchant stops exposed the authority-admission cycle repaired in Preview.8.
+Luminous Choir removal remains not exercised. Build/install/load status is
+per-machine and must be read with the
 root Connector CLI. Remaining
 selector families temporarily read same-runtime
 Bridge v2 capabilities only as a

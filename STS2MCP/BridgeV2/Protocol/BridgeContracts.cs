@@ -1166,7 +1166,14 @@ public sealed record EventCardAcquisitionSurface(
     int SelectedCount,
     IReadOnlyList<string> SelectedCardEntityIds,
     bool RequireManualConfirmation,
-    IReadOnlyList<VisibleCard> Cards) : IBridgeSurface;
+    IReadOnlyList<VisibleCard> Cards) : IBridgeSurface
+{
+    public IReadOnlyList<string> SelectableCardEntityIds { get; init; } =
+        Array.Empty<string>();
+
+    public IReadOnlyList<string> DeselectableCardEntityIds { get; init; } =
+        Array.Empty<string>();
+}
 
 public sealed record VisibleCardRewardAlternative(
     string EntityId,
@@ -1206,7 +1213,13 @@ public sealed record GeneratedCardChoiceSurface(
     string? OverflowDestination,
     bool CanSkip,
     bool IsPeeking,
-    IReadOnlyList<VisibleCard> Cards) : IBridgeSurface;
+    IReadOnlyList<VisibleCard> Cards) : IBridgeSurface
+{
+    public IReadOnlyList<string> SelectableCardEntityIds { get; init; } =
+        Array.Empty<string>();
+
+    public bool SkipAvailable { get; init; }
+}
 
 public sealed record VisibleCardBundle(
     string EntityId,

@@ -72,6 +72,8 @@ internal static class BridgeContractManifest
         "docs/connector-v3/PREVIEW_6_LUMINOUS_CHOIR_EVENT_REMOVAL_CUTOVER_2026-08-02.md";
     private const string ConnectorPreview7Closeout =
         "docs/connector-v3/PREVIEW_7_SOURCE_BOUND_SELECTOR_CUTOVER_2026-08-03.md";
+    private const string ConnectorPreview8Closeout =
+        "docs/connector-v3/PREVIEW_8_DIRECT_AUTHORITY_AND_SELECTOR_CUTOVER_2026-08-03.md";
 
     public static readonly IReadOnlyList<BridgeContractManifestEntry> Entries = new[]
     {
@@ -131,16 +133,19 @@ internal static class BridgeContractManifest
             "v3_native_source_bound_event_deck_removal",
             new[] { "visible_deck_cards", "selection", "preview", "expected_effects", "controls" },
             ConnectorPreview6Closeout),
-        Entry(
+        V3Entry(
             "deck_upgrade_selection",
             new[]
             {
-                "toggle_deck_upgrade_card", "confirm_deck_upgrade",
-                "cancel_deck_upgrade_preview", "cancel_deck_upgrade_selection"
+                Operation("toggle_deck_upgrade_card", BridgeOperationEvidenceStatus.OrganicCanaryExercised, ConnectorPreview8Closeout),
+                Operation("confirm_deck_upgrade", BridgeOperationEvidenceStatus.OrganicCanaryExercised, ConnectorPreview8Closeout),
+                Operation("cancel_deck_upgrade_preview", BridgeOperationEvidenceStatus.SourceAudited, ConnectorPreview8Closeout),
+                Operation("cancel_deck_upgrade_selection", BridgeOperationEvidenceStatus.SourceAudited, ConnectorPreview8Closeout)
             },
             "sts2-v0.109.0:CardSelectCmd.FromDeckForUpgrade+NDeckUpgradeSelectScreen+semantic-post-state-canary",
             "purpose_specific_deck_selection",
-            new[] { "visible_deck_cards", "upgrade_preview", "selection", "controls" }),
+            new[] { "visible_deck_cards", "upgrade_preview", "selection", "controls" },
+            ConnectorPreview8Closeout),
         Entry(
             "deck_transform_selection",
             new[]
@@ -184,12 +189,19 @@ internal static class BridgeContractManifest
             "sts2-v0.109.0:NAncientEventLayout+revealed-prefix-only+exact-dialogue-index-witness",
             "event_dialogue_progression",
             new[] { "revealed_dialogue_prefix", "speaker", "advance_control" }),
-        Entry(
+        V3Entry(
             "rest_site",
-            new[] { "choose_rest_option", "proceed_rest_site" },
+            new[]
+            {
+                Operation("choose_rest_option", BridgeOperationEvidenceStatus.OrganicCanaryExercised,
+                    ConnectorPreview8Closeout),
+                Operation("proceed_rest_site", BridgeOperationEvidenceStatus.OrganicCanaryExercised,
+                    ConnectorPreview8Closeout)
+            },
             "sts2-v0.109.1:RestSiteRoom.Options+NRestSiteButton+HealRestSiteOption native base-heal minimum plus option-progression witness+Smith exact upgrade-child witness+NProceedButton+NMapScreen",
             "rest_site_semantic_options",
-            new[] { "visible_rest_options", "availability", "effects", "proceed_control" }),
+            new[] { "visible_rest_options", "availability", "effects", "proceed_control" },
+            ConnectorPreview8Closeout),
         Entry(
             "event_option",
             new[]
@@ -212,24 +224,52 @@ internal static class BridgeContractManifest
             "sts2-v0.109.0:qualified-card-task+CardSelectCmd.FromCombatPile(exact-pile,bounds,commit-mode)+NCombatPileCardSelectScreen+structural-mutation-contract+purpose-specific-witness",
             "source_qualified_structural_combat_pile_transaction",
             new[] { "source_card_provenance", "mutation_kind", "commit_mode", "visible_pile_cards", "selection", "source_and_destination_piles", "destination_position", "replacement", "overflow_destination", "controls" }),
-        Entry(
+        V3Entry(
             "combat_hand_card_selection",
-            new[] { "select_combat_hand_card", "deselect_combat_hand_card", "confirm_combat_hand_selection", "close_combat_hand_peek" },
+            new[]
+            {
+                Operation("select_combat_hand_card", BridgeOperationEvidenceStatus.OrganicCanaryExercised, ConnectorPreview8Closeout),
+                Operation("deselect_combat_hand_card", BridgeOperationEvidenceStatus.SourceAudited, ConnectorPreview8Closeout),
+                Operation("confirm_combat_hand_selection", BridgeOperationEvidenceStatus.OrganicCanaryExercised, ConnectorPreview8Closeout),
+                Operation("close_combat_hand_peek", BridgeOperationEvidenceStatus.SourceAudited, ConnectorPreview8Closeout)
+            },
             "sts2-v0.109.0:NPlayerHand._prefs+_selectedCards+ActiveHolders+NSelectedHandCardContainer+NUpgradePreview+NConfirmButton exact-source revalidation",
             "purpose_specific_combat_hand_selection",
-            new[] { "visible_hand", "selection", "bounds", "preview", "controls" }),
-        Entry(
+            new[] { "visible_hand", "selection", "bounds", "preview", "controls" },
+            ConnectorPreview8Closeout),
+        V3Entry(
             "event_card_acquisition",
-            new[] { "select_event_card_acquisition", "deselect_event_card_acquisition" },
+            new[]
+            {
+                Operation("select_event_card_acquisition", BridgeOperationEvidenceStatus.OrganicCanaryExercised,
+                    ConnectorPreview8Closeout),
+                Operation("deselect_event_card_acquisition", BridgeOperationEvidenceStatus.SourceAudited,
+                    ConnectorPreview8Closeout)
+            },
             "sts2-v0.109.0:BrainLeech+RoomFullOfCheese+EventModel.SelectCardsToAddToDeckFromGrid+NSimpleCardSelectScreen+semantic-run-deck-witness",
             "source_bound_event_card_selection",
-            new[] { "visible_card_choices", "selection", "selection_bounds" }),
-        Entry(
+            new[] { "visible_card_choices", "selection", "selection_bounds" },
+            ConnectorPreview8Closeout),
+        V3Entry(
             "generated_card_choice",
-            new[] { "select_generated_run_card", "skip_generated_run_card_choice", "select_generated_combat_card", "skip_generated_combat_card_choice", "choose_quasar_card", "skip_quasar_choice", "choose_knowledge_demon_curse" },
+            new[]
+            {
+                Operation("select_lead_paperweight_card", BridgeOperationEvidenceStatus.SourceAudited, ConnectorPreview8Closeout),
+                Operation("skip_lead_paperweight_choice", BridgeOperationEvidenceStatus.SourceAudited, ConnectorPreview8Closeout),
+                Operation("select_hefty_tablet_card", BridgeOperationEvidenceStatus.SourceAudited, ConnectorPreview8Closeout),
+                Operation("skip_hefty_tablet_choice", BridgeOperationEvidenceStatus.SourceAudited, ConnectorPreview8Closeout),
+                Operation("select_generated_combat_card", BridgeOperationEvidenceStatus.OrganicCanaryExercised, ConnectorPreview8Closeout),
+                Operation("skip_generated_combat_card_choice", BridgeOperationEvidenceStatus.SourceAudited, ConnectorPreview8Closeout),
+                Operation("select_splash_generated_card", BridgeOperationEvidenceStatus.OrganicCanaryExercised, ConnectorPreview8Closeout),
+                Operation("skip_splash_generated_card_choice", BridgeOperationEvidenceStatus.SourceAudited, ConnectorPreview8Closeout),
+                Operation("choose_quasar_card", BridgeOperationEvidenceStatus.OrganicCanaryExercised, ConnectorPreview8Closeout),
+                Operation("skip_quasar_choice", BridgeOperationEvidenceStatus.SourceAudited, ConnectorPreview8Closeout),
+                Operation("choose_knowledge_demon_curse", BridgeOperationEvidenceStatus.OrganicCanaryExercised, ConnectorPreview8Closeout)
+            },
             "sts2-v0.109.1:source-bound LeadPaperweight/HeftyTablet/native-generated-combat-card-potion/Splash/Quasar/KnowledgeDemon.ChooseCurse+NChooseACardSelectionScreen+purpose-specific exact post-state witnesses",
             "source_discriminated_generated_card_choice",
-            new[] { "visible_card_choices", "choice_purpose", "source_kind", "destination", "selected_card_cost_policy", "overflow_destination", "skip_control" }),
+            new[] { "visible_card_choices", "choice_purpose", "source_kind", "destination", "selected_card_cost_policy", "overflow_destination", "skip_control" },
+            ConnectorPreview8Closeout),
         V3Entry(
             "card_bundle_selection",
             new[]
@@ -254,12 +294,18 @@ internal static class BridgeContractManifest
             "sts2-v0.109.0:NCardRewardSelectionScreen+NGridCardHolder+NCardRewardAlternativeButton+exact-source-canary",
             "card_reward_selection",
             new[] { "visible_card_rewards", "alternatives", "skip_or_close_controls" }),
-        Entry(
+        V3Entry(
             "reward_claim",
-            new[] { "claim_reward", "discard_potion_for_reward", "proceed_rewards" },
+            new[]
+            {
+                Operation("claim_reward", BridgeOperationEvidenceStatus.OrganicCanaryExercised, ConnectorPreview8Closeout),
+                Operation("discard_potion_for_reward", BridgeOperationEvidenceStatus.OrganicCanaryExercised, ConnectorPreview8Closeout),
+                Operation("proceed_rewards", BridgeOperationEvidenceStatus.OrganicCanaryExercised, ConnectorPreview8Closeout)
+            },
             "sts2-v0.109.0:NRewardsScreen+NRewardButton+PotionReward+DiscardPotionGameAction+NProceedButton+exact-source-canary",
             "reward_claim_flow",
-            new[] { "visible_rewards", "claimability", "potion_capacity", "proceed_control" }),
+            new[] { "visible_rewards", "claimability", "potion_capacity", "proceed_control" },
+            ConnectorPreview8Closeout),
         Entry(
             "map_navigation",
             new[]

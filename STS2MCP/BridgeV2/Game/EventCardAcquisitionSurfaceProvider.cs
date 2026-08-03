@@ -130,6 +130,19 @@ internal sealed class EventCardAcquisitionSurfaceProvider : IBridgeSurfaceProvid
                 new[] { "selected_cards", "legal_actions" });
         }
 
+        string[] selectableIds = holders
+            .Where(holder => IsHolderClickable(holder)
+                             && !selectedCards.Contains(holder.CardModel)
+                             && selectedCards.Count < exact.Preferences.MaxSelect)
+            .Select(holder => cardIds[holder.CardModel])
+            .OrderBy(id => id, StringComparer.Ordinal)
+            .ToArray();
+        string[] deselectableIds = holders
+            .Where(holder => IsHolderClickable(holder)
+                             && selectedCards.Contains(holder.CardModel))
+            .Select(holder => cardIds[holder.CardModel])
+            .OrderBy(id => id, StringComparer.Ordinal)
+            .ToArray();
         var surface = new EventCardAcquisitionSurface(
             SurfaceKind,
             entities.GetId(screen, "screen"),
@@ -140,19 +153,17 @@ internal sealed class EventCardAcquisitionSurfaceProvider : IBridgeSurfaceProvid
             selectedCards.Count,
             selectedIds,
             RequireManualConfirmation: false,
-            cards);
-        List<BridgeActionDraft> actions = BuildActions(
-            screen,
-            eventModel,
-            exact,
-            holders,
-            selectedCards,
-            cardIds);
-        bool controlsComplete = actions.Count > 0 || selectedCards.Count >= exact.Preferences.MaxSelect;
-        string readiness = actions.Count > 0 ? "ready" : controlsComplete ? "settling" : "degraded";
+            cards)
+        {
+            SelectableCardEntityIds = selectableIds,
+            DeselectableCardEntityIds = deselectableIds
+        };
+        bool hasCurrentCommand = selectableIds.Length > 0 || deselectableIds.Length > 0;
+        bool controlsComplete = hasCurrentCommand || selectedCards.Count >= exact.Preferences.MaxSelect;
+        string readiness = hasCurrentCommand ? "ready" : controlsComplete ? "settling" : "degraded";
         var completeness = new StateCompleteness(
             "contract_complete_for_audited_event_card_acquisition",
-            actions.Count > 0
+            hasCurrentCommand
                 ? "derived_from_exact_visible_grid_and_source_qualified_commit_semantics"
                 : "temporarily_empty_while_selection_commits_or_settles",
             new[]
@@ -169,7 +180,10 @@ internal sealed class EventCardAcquisitionSurfaceProvider : IBridgeSurfaceProvid
             game.Version,
             context.EventId,
             surface,
-            actionKeys = actions.Select(action => action.Key).OrderBy(key => key, StringComparer.Ordinal).ToArray()
+            commandKeys = selectableIds.Select(id => $"select:{id}")
+                .Concat(deselectableIds.Select(id => $"deselect:{id}"))
+                .OrderBy(key => key, StringComparer.Ordinal)
+                .ToArray()
         });
 
         return new BridgeObservationDraft(
@@ -183,37 +197,7 @@ internal sealed class EventCardAcquisitionSurfaceProvider : IBridgeSurfaceProvid
             {
                 "This Surface is restricted to exact audited event add-to-deck sources; other NSimpleCardSelectScreen purposes remain unsupported."
             },
-            actions);
-    }
-
-    private static List<BridgeActionDraft> BuildActions(
-        NSimpleCardSelectScreen screen,
-        EventModel eventModel,
-        Binding binding,
-        IReadOnlyList<NGridCardHolder> holders,
-        HashSet<CardModel> selectedCards,
-        IReadOnlyDictionary<CardModel, string> cardIds)
-    {
-        var actions = new List<BridgeActionDraft>();
-        foreach (NGridCardHolder holder in holders.Where(IsHolderClickable))
-        {
-            CardModel card = holder.CardModel;
-            bool selected = selectedCards.Contains(card);
-            if (!selected && selectedCards.Count >= binding.Preferences.MaxSelect)
-                continue;
-
-            string cardId = cardIds[card];
-            string cardName = McpMod.SafeGetText(() => card.Title) ?? card.Id.Entry;
-            actions.Add(new BridgeActionDraft(
-                $"event_card_acquisition:{cardId}:{selected}",
-                selected ? "deselect_event_card_acquisition" : "select_event_card_acquisition",
-                "selection",
-                selected ? $"Deselect {cardName}" : $"Choose {cardName} to add to the run deck",
-                "NSimpleCardSelectScreen.NCardGrid.HolderPressed+EventModel.CardPileCmd.Add(Deck)",
-                () => StartToggle(screen, eventModel, card, selected),
-                new[] { new ActionEntityBinding("card", cardId) }));
-        }
-        return actions;
+            Array.Empty<BridgeActionDraft>());
     }
 
     private static BridgeActionStartResult StartToggle(
@@ -279,6 +263,27 @@ internal sealed class EventCardAcquisitionSurfaceProvider : IBridgeSurfaceProvid
                       ReferenceEquals(deckCard, selected))),
             "selected_event_cards_added_as_exact_instances_to_run_deck",
             allowIntermediateStateChanges: true);
+    }
+
+    internal static BridgeActionStartResult StartDirectToggle(
+        BridgeEntityRegistry entities,
+        string expectedScreenId,
+        string expectedCardId,
+        bool expectedSelected)
+    {
+        RunState? runState = RunManager.Instance.DebugOnlyGetState();
+        if (!entities.TryResolve(expectedScreenId, out NSimpleCardSelectScreen? screen)
+            || screen == null
+            || !entities.TryResolve(expectedCardId, out CardModel? card)
+            || card == null
+            || runState?.CurrentRoom is not EventRoom eventRoom
+            || !IsAuditedEvent(eventRoom.LocalMutableEvent))
+        {
+            return BridgeActionStartResult.Rejected(
+                "event_acquisition_changed",
+                "The exact audited event, selector, or card is no longer current.");
+        }
+        return StartToggle(screen, eventRoom.LocalMutableEvent, card, expectedSelected);
     }
 
     private static bool TryReadBinding(

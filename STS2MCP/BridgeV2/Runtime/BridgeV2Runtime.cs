@@ -259,8 +259,12 @@ internal static class BridgeV2Runtime
         ObservationPolicy();
 
     internal static BridgeObservationDraft AdmitEncounter(
-        BridgeObservationDraft draft) =>
-        PermissionManager.AdmitEncounter(draft, BridgeIdentity());
+        BridgeObservationDraft draft,
+        IReadOnlyList<BridgeEncounterAuthorityCandidate>? authorityCandidates = null) =>
+        PermissionManager.AdmitEncounter(
+            draft,
+            BridgeIdentity(),
+            authorityCandidates);
 
     internal static bool AuthorizeBoundExecution(
         BridgeActionPermissionBinding permissionBinding,

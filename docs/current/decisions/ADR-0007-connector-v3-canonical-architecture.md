@@ -122,22 +122,24 @@ Reuse is internal implementation reuse, not V2 protocol authority.
 
 ## Explicit Migration Debt
 
-At `3.0-preview.7`:
+At `3.0-preview.8`:
 
 - combat and multiple ordinary non-combat families use direct V3 native
   resolvers; menu/run-setup, source-discriminated generated choices and
-  game-over, combat-hand selection, Smith deck upgrade, all three exact
-  ordinary removal sources, Scroll Boxes bundles and Luminous Choir event
-  removal are now cut over in source. Every shared selection mechanic retains
-  a source-specific Commit and Outcome. Remaining selectors use a bounded internal
+  game-over, combat-hand selection, Smith deck upgrade, rest, event card
+  acquisition, all three exact ordinary removal sources, Scroll Boxes bundles
+  and Luminous Choir event removal are now cut over in source. Every shared
+  selection mechanic retains a source-specific Commit and Outcome. Remaining
+  selectors use a bounded internal
   `provider_native_binding_adapter` that never submits or searches a v2 REST
   action ID;
 - Re directly consumes ordinary combat, source-discriminated generated-card
   choice, main/singleplayer/character menu, event, map, game-over,
   reward/card-reward, shop, rest, treasure, lifecycle-settling and
   visible-unsupported facts and candidates. Combat-hand, Smith deck upgrade,
-  merchant/relic/reward removal, Scroll Boxes bundle and Luminous Choir event
-  removal join this direct path. Remaining selector Surfaces use
+  merchant/relic/reward removal, Scroll Boxes bundle, rest, event card
+  acquisition and Luminous Choir event removal join this direct path. Remaining
+  selector Surfaces use
   `/api/v2/capabilities` as a same-runtime,
   non-authorizing semantic/environment projection sidecar and temporarily
   expand V3 candidates into a V2-shaped normalization projection;
@@ -192,6 +194,17 @@ projection sidecar may be removed when V3 publishes the required semantic
 state, visibility and detail contracts directly.
 
 ## Evidence Boundary
+
+### Preview.8 implementation amendment
+
+Direct command discovery is an Interaction/Command Catalog fact, not an
+authority grant. Encounter admission may consume an exact direct descriptor,
+but only an explicit native contract can produce the runtime-bound trial scope.
+This removes the historical dependency on Provider `draft.Actions` without
+letting manifests, static similarity or tooling authorize execution. Generated
+choices share bounded screen mechanics while retaining source-specific
+operation and Outcome contracts. The canonical architecture is unchanged;
+remaining fallback contracts are migration debt, not a second target.
 
 Source, fixtures, tests, build, install, load, mutation canary, bounded journey,
 Organic evidence and durable qualification are different states. This ADR

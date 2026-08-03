@@ -43,6 +43,17 @@ internal sealed record BridgeActionPermissionBinding(
     string OperationFingerprint,
     string AdmissionBasis = "reviewed_or_persisted_scope");
 
+/// <summary>
+/// A non-authorizing statement that the current observer resolved one exact
+/// native command contract. The permission manager still decides whether that
+/// contract may receive a runtime-scoped trial; callers cannot mint authority.
+/// </summary>
+internal sealed record BridgeEncounterAuthorityCandidate(
+    string SurfaceKind,
+    string Operation,
+    string SourceEvidence,
+    bool RequiresExplicitNativeContract);
+
 internal sealed class BridgePermissionManager
 {
     private readonly object _gate = new();
@@ -258,13 +269,22 @@ internal sealed class BridgePermissionManager
 
     public BridgeObservationDraft AdmitEncounter(
         BridgeObservationDraft draft,
-        BridgeServerIdentity bridge)
+        BridgeServerIdentity bridge,
+        IReadOnlyList<BridgeEncounterAuthorityCandidate>? authorityCandidates = null)
     {
         lock (_gate)
         {
+            IReadOnlyList<BridgeEncounterAuthorityCandidate> candidates =
+                authorityCandidates
+                ?? draft.Actions.Select(action => new BridgeEncounterAuthorityCandidate(
+                    draft.Surface.Kind,
+                    action.Kind,
+                    action.EvidenceCode,
+                    RequiresExplicitNativeContract: false))
+                    .ToArray();
             if (_mode != BridgePermissionMode.MigrationExploration
                 || !draft.Game.Compatibility.StateObservationAllowed
-                || draft.Actions.Count == 0
+                || candidates.Count == 0
                 || draft.Surface.Kind is "unsupported" or "no_action"
                 || !EncounterEnvironmentEligible(draft.Game, bridge))
             {
@@ -275,14 +295,32 @@ internal sealed class BridgePermissionManager
                 draft.Game,
                 bridge,
                 _lastPatchInventory);
-            foreach (BridgeActionDraft action in draft.Actions)
+            foreach (IGrouping<(string SurfaceKind, string Operation),
+                         BridgeEncounterAuthorityCandidate> group in candidates.GroupBy(
+                         candidate => (candidate.SurfaceKind, candidate.Operation)))
             {
-                string key = Key(draft.Surface.Kind, action.Kind);
+                BridgeEncounterAuthorityCandidate candidateDescriptor = group.First();
+                if (!string.Equals(
+                        candidateDescriptor.SurfaceKind,
+                        draft.Surface.Kind,
+                        StringComparison.Ordinal)
+                    || group.Any(candidate =>
+                        candidate.RequiresExplicitNativeContract)
+                       && !BridgeOperationQualificationCatalog.IsExplicitContract(
+                           candidateDescriptor.SurfaceKind,
+                           candidateDescriptor.Operation))
+                {
+                    continue;
+                }
+
+                string key = Key(
+                    candidateDescriptor.SurfaceKind,
+                    candidateDescriptor.Operation);
                 if (_blockedKeys.Contains(key)
                     || HasApplicableScope(
                         draft.Game.Compatibility,
-                        draft.Surface.Kind,
-                        action.Kind)
+                        candidateDescriptor.SurfaceKind,
+                        candidateDescriptor.Operation)
                     || _currentGrants.TryGetValue(key, out BridgePermissionGrantRecord? existing)
                        && existing.Status == "active"
                        && existing.ExpiresAt > _clock()
@@ -293,7 +331,9 @@ internal sealed class BridgePermissionManager
                 }
 
                 BridgeMigrationPermissionCandidate? candidate =
-                    BridgeMigrationPermissionPolicy.Find(draft.Surface.Kind, action.Kind);
+                    BridgeMigrationPermissionPolicy.Find(
+                        candidateDescriptor.SurfaceKind,
+                        candidateDescriptor.Operation);
                 if (candidate == null
                     || !candidate.EligibleModes.Contains(
                         ModeName(_mode),
@@ -303,16 +343,23 @@ internal sealed class BridgePermissionManager
                 }
 
                 string operationFingerprint = OperationFingerprint(
-                    draft.Surface.Kind,
-                    action.Kind);
+                    candidateDescriptor.SurfaceKind,
+                    candidateDescriptor.Operation);
                 if (operationFingerprint == "unavailable")
                     continue;
 
+                string[] sourceEvidence = group
+                    .Select(value => BridgeHash.Text(value.SourceEvidence))
+                    .Distinct(StringComparer.Ordinal)
+                    .OrderBy(value => value, StringComparer.Ordinal)
+                    .Select(value => $"source-evidence-digest:{value}")
+                    .ToArray();
                 BridgeMigrationPermissionCandidate encountered = candidate with
                 {
                     EvidenceIds = candidate.EvidenceIds
                         .Append("admission:encounter_source_resolved")
                         .Append($"surface-signature:{draft.Signature}")
+                        .Concat(sourceEvidence)
                         .Distinct(StringComparer.Ordinal)
                         .ToArray()
                 };

@@ -628,6 +628,47 @@ public sealed class ConnectorV3ContractTests
     }
 
     [Fact]
+    public void EventCardAcquisitionNativeDiscoveryKeepsExactSelectionState()
+    {
+        static VisibleCard Card(string entityId, string name, bool selected) =>
+            new(entityId, name.ToUpperInvariant(), name, "Skill", "1", null, null,
+                "Common", false, selected, null);
+        var surface = new EventCardAcquisitionSurface(
+            "event_card_acquisition",
+            "event-grid",
+            "Choose cards",
+            "run_deck",
+            1,
+            2,
+            1,
+            new[] { "card-selected" },
+            RequireManualConfirmation: false,
+            new[]
+            {
+                Card("card-option", "Option", selected: false),
+                Card("card-selected", "Selected", selected: true),
+                Card("card-blocked", "Blocked", selected: false)
+            })
+        {
+            SelectableCardEntityIds = new[] { "card-option" },
+            DeselectableCardEntityIds = new[] { "card-selected" }
+        };
+
+        BridgeActionDraft[] commands =
+            ConnectorV3Runtime.DescribeEventCardAcquisitionCommands(surface).ToArray();
+
+        Assert.Equal(2, commands.Length);
+        Assert.Contains(commands, command =>
+            command.Kind == "select_event_card_acquisition"
+            && command.EntityBindings!.Any(binding => binding.EntityId == "card-option"));
+        Assert.Contains(commands, command =>
+            command.Kind == "deselect_event_card_acquisition"
+            && command.EntityBindings!.Any(binding => binding.EntityId == "card-selected"));
+        Assert.DoesNotContain(commands.SelectMany(command => command.EntityBindings!),
+            binding => binding.EntityId == "card-blocked");
+    }
+
+    [Fact]
     public void MapDrawingModeBindingAcceptsOnlyAuditedVersionShapes()
     {
         Assert.True(MapNavigationSurfaceProvider.IsCompatibleLocalDrawingModeSignature(
@@ -663,6 +704,32 @@ public sealed class ConnectorV3ContractTests
             currentHpReached: true,
             optionProgressed: false,
             rewardChildOpened: false));
+    }
+
+    [Fact]
+    public void RestNativeDescriptorsBindOnlyEnabledOptionsAndCurrentProceedControl()
+    {
+        var surface = new RestSiteSurface(
+            "rest_site",
+            "rest-screen",
+            new[]
+            {
+                new VisibleRestOption("rest-heal", 0, "heal", "Rest", "Heal", Enabled: true),
+                new VisibleRestOption("rest-smith", 1, "smith", "Smith", "Upgrade", Enabled: false)
+            },
+            CanProceed: true);
+
+        BridgeActionDraft[] commands = ConnectorV3Runtime.DescribeRestSiteCommands(surface).ToArray();
+
+        Assert.Equal(2, commands.Length);
+        BridgeActionDraft choose = Assert.Single(commands, command => command.Kind == "choose_rest_option");
+        Assert.Contains(choose.EntityBindings!, binding =>
+            binding.Role == "screen" && binding.EntityId == "rest-screen");
+        Assert.Contains(choose.EntityBindings!, binding =>
+            binding.Role == "rest_option" && binding.EntityId == "rest-heal");
+        Assert.DoesNotContain(commands.SelectMany(command => command.EntityBindings ?? Array.Empty<ActionEntityBinding>()),
+            binding => binding.EntityId == "rest-smith");
+        Assert.Single(commands, command => command.Kind == "proceed_rest_site");
     }
 
     [Fact]

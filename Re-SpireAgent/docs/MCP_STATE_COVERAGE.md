@@ -6,7 +6,7 @@ exact-runtime evidence status are canonical in
 
 ## Current Contract
 
-Re strictly accepts `3.0-preview.7` observations and receipts. It preserves:
+Re strictly accepts `3.0-preview.8` observations and receipts. It preserves:
 
 - exact Gateway, game, Modset and runtime identity;
 - the state token and active interaction ID;
@@ -32,9 +32,10 @@ operands.
 | shop-room commands | direct V3 resolver | Gateway tests | exercised on v0.110.0 |
 | map/rest/deck-enchant commands | direct V3 resolvers | Gateway and Re tests | map/rest exercised under Preview.4; Kifuda not exercised |
 | deck upgrade | direct typed screen/card/control resolver and Re consumer | select/deselect/reselect, preview-return, confirm and drift tests | direct full lifecycle and semantic post-state exercised under Preview.5 |
-| merchant/relic/reward deck removal | direct source-specific resolvers and Re consumer | source isolation, exact command-set, stage, membership and replacement negatives | merchant and Precise Scissors exercised under Preview.6; reward direct path pending Preview.7 Live |
-| Scroll Boxes card bundle | direct atomic bundle resolver and Re consumer | selectable/control facts, exact screen/bundle, stage and drift negatives | pending Preview.7 Live |
-| Luminous Choir event removal | exact typed task/source/stage/effect contract and direct Re consumer | selection/preview/command-set/source/membership negatives | Preview.6 pending cold load |
+| merchant/relic/reward deck removal | direct source-specific resolvers and Re consumer | source isolation, exact command-set, stage, membership and replacement negatives | merchant and Precise Scissors exercised under Preview.6; Preview.8 admission path pending |
+| Scroll Boxes card bundle | direct atomic bundle resolver and Re consumer | selectable/control facts, exact screen/bundle, stage and drift negatives | pending Preview.8 Live |
+| Luminous Choir event removal | exact typed task/source/stage/effect contract and direct Re consumer | selection/preview/command-set/source/membership negatives | loaded under Preview.6 but natural source not exercised |
+| rest and event card acquisition | direct descriptors, explicit contracts and Re consumer without Provider action publication | exact source/owner/control/card tests | historical rest journeys; Preview.8 admission path pending |
 | menu/run setup | direct V3 normalization and native resolver | direct normalization, descriptor and no-sidecar tests | direct consumer and resolver completed a 95-decision run |
 | event/map/game over consumer | direct V3 normalization and game-over direct native resolver | strict decode, exact binding negatives and recorded replay | exact runtime exercised all three direct consumers and both game-over controls |
 | reward/card-reward consumer | direct V3 normalization | strict screen/entity/control negatives | exact-runtime exercised in a completed 175-decision run |
@@ -49,7 +50,7 @@ operands.
 Ordinary combat, combat-hand selection, deck upgrade, merchant/relic/reward deck removal,
 card bundle,
 Luminous Choir event removal,
-generated-card choice,
+generated-card choice, rest and event card acquisition,
 main/singleplayer/character menus,
 event options, map navigation, game over, reward/card-reward, shop, rest,
 treasure, lifecycle-settling and visible unsupported no longer

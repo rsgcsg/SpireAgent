@@ -14,7 +14,7 @@ commands, or stop at a precise visible unsupported boundary.
 
 Implemented in source:
 
-- `3.0-preview.7` capabilities, observation, command and receipt contracts,
+- `3.0-preview.8` capabilities, observation, command and receipt contracts,
   plus `inspection-1` and `linked-detail-1` read contracts;
 - state token, stable instance identity and one active interaction;
 - visible unsupported interactions;
@@ -28,6 +28,8 @@ Implemented in source:
 - direct Smith deck-upgrade and merchant-only deck-removal selection,
   preview/cancel/confirm execution and direct Re consumption;
 - direct source-bound Precise Scissors and CardRemovalReward removal selectors;
+- direct rest-site commands, event card acquisition and source-specific
+  generated-card-choice contracts without Provider action publication;
 - direct Scroll Boxes card-bundle discovery, preview, cancel and commit with
   typed selectable-bundle/control availability;
 - direct Luminous Choir two-card event-removal selection with an exact
@@ -51,7 +53,7 @@ Implemented in source:
 
 Not yet claimed:
 
-- loaded identity or mutation evidence for the pending Preview.7
+- loaded identity or mutation evidence for the pending Preview.8
   v0.110.1 artifact;
 - exact-runtime linked-detail evidence and the optional physical-UI evidence
   profile;
@@ -64,7 +66,9 @@ Current exact-runtime evidence includes the Preview.6 run
 `run-20260802135723-phwd6m`: 200 settled commands, direct combat-hand,
 Precise Scissors and merchant removal, Smith, known-room settling and a safe
 stale recovery. It is unrecorded journey coverage, not Organic qualification.
-Preview.7 changes the migrated selector bindings and requires a new cold load.
+Preview.7 later completed a 202-command ordinary journey, while two Merchant
+stops exposed the direct-descriptor authority cycle. Preview.8 repairs that
+cycle and extends the direct cutover; it requires a new cold load.
 
 ## Migration Waves
 
@@ -84,11 +88,10 @@ back to the last known v2 commit. No durable V3 claim is inherited.
 ### Wave 2: Native Non-Combat Catalog
 
 Replace `provider_native_binding_adapter` family by family. Menu, map, reward,
-shop, generated choices, rest, treasure, Smith deck upgrade, all three exact
+shop, generated choices, rest, treasure, event card acquisition, Smith deck upgrade, all three exact
 ordinary removal sources, Scroll Boxes bundles and Luminous Choir event
 removal are cut over in current source. Prioritize the observed missing
-combat-potion candidate, then remaining bounded selectors including combat
-pile and deck transform.
+remaining bounded selectors: combat pile, deck transform and Wood Carvings.
 Delete each Provider action-publication dependency after its V3 resolver has
 source review, positive/negative tests and a verified rollback install. Keep
 the new path Fail Closed until exact-runtime evidence; do not retain a second

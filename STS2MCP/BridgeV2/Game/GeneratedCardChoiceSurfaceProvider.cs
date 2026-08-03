@@ -114,6 +114,24 @@ internal sealed class GeneratedCardChoiceSurfaceProvider : IBridgeSurfaceProvide
         bool guardElapsed = exact.OpenedTicks > 0
                             && Time.GetTicksMsec() >= exact.OpenedTicks + SelectionGuardMs;
         bool isPeeking = peek.IsPeeking;
+        bool controlsReady = holdersMatchCards
+                             && sourceMatchesCards
+                             && !isPeeking
+                             && !string.IsNullOrWhiteSpace(prompt);
+        bool commandGateOpen = controlsReady
+                               && !exact.ScreenComplete
+                               && guardElapsed;
+        string[] selectableCardIds = commandGateOpen
+            ? holders.Where(IsHolderClickable)
+                .Select(holder => entities.GetId(holder.CardModel, "card"))
+                .OrderBy(id => id, StringComparer.Ordinal)
+                .ToArray()
+            : Array.Empty<string>();
+        bool skipAvailable = commandGateOpen
+                             && exact.CanSkip
+                             && skip.IsEnabled
+                             && McpMod.IsNodeVisible(skip)
+                             && !string.IsNullOrWhiteSpace(ReadNodeText(skip, "Label"));
 
         GeneratedChoiceSemantics semantics = SemanticsFor(source);
         var surface = new GeneratedCardChoiceSurface(
@@ -127,57 +145,20 @@ internal sealed class GeneratedCardChoiceSurfaceProvider : IBridgeSurfaceProvide
             semantics.OverflowDestination,
             exact.CanSkip,
             isPeeking,
-            cards);
-        var actions = new List<BridgeActionDraft>();
-        if (holdersMatchCards
-            && sourceMatchesCards
-            && !exact.ScreenComplete
-            && !isPeeking
-            && guardElapsed
-            && !string.IsNullOrWhiteSpace(prompt))
+            cards)
         {
-            foreach (NGridCardHolder holder in holders.Where(IsHolderClickable))
-            {
-                CardModel card = holder.CardModel;
-                string cardId = entities.GetId(card, "card");
-                string cardName = McpMod.SafeGetText(() => card.Title) ?? card.Id.Entry;
-                actions.Add(new BridgeActionDraft(
-                    $"{semantics.SelectActionKind}:{cardId}",
-                    semantics.SelectActionKind,
-                    "selection",
-                    semantics.SelectLabel(cardName),
-                    semantics.SelectEvidenceCode,
-                    () => StartSelect(screen, source, card),
-                    new[] { new ActionEntityBinding("card", cardId) }));
-            }
+            SelectableCardEntityIds = selectableCardIds,
+            SkipAvailable = skipAvailable
+        };
 
-            if (skip.IsEnabled && McpMod.IsNodeVisible(skip))
-            {
-                string? skipLabel = ReadNodeText(skip, "Label");
-                if (!string.IsNullOrWhiteSpace(skipLabel))
-                {
-                    actions.Add(new BridgeActionDraft(
-                        semantics.SkipActionKind,
-                        semantics.SkipActionKind,
-                        "alternative",
-                        skipLabel,
-                        semantics.SkipEvidenceCode,
-                        () => StartSkip(screen, source, skip)));
-                }
-            }
-        }
-
-        bool controlsReady = holdersMatchCards
-                             && sourceMatchesCards
-                             && !isPeeking
-                             && !string.IsNullOrWhiteSpace(prompt);
-        string readiness = actions.Count > 0 ? "ready" : controlsReady ? "settling" : "degraded";
+        bool hasCurrentCommand = selectableCardIds.Length > 0 || skipAvailable;
+        string readiness = hasCurrentCommand ? "ready" : controlsReady ? "settling" : "degraded";
         string[] missing = controlsReady
             ? Array.Empty<string>()
             : new[] { "surface.visible_generated_cards_controls_or_source" };
         var completeness = new StateCompleteness(
             controlsReady ? semantics.CompletenessContract : "partial",
-            actions.Count > 0
+            hasCurrentCommand
                 ? "derived_from_exact_source_visible_choice_controls_and_opening_guard"
                 : "temporarily_empty_while_choice_opens_completes_or_settles",
             semantics.Sources.Concat(new[]
@@ -193,7 +174,13 @@ internal sealed class GeneratedCardChoiceSurfaceProvider : IBridgeSurfaceProvide
             game.Version,
             source.SourceKind,
             surface,
-            actionKeys = actions.Select(action => action.Key).OrderBy(key => key, StringComparer.Ordinal).ToArray()
+            commandKeys = selectableCardIds
+                .Select(id => $"{semantics.SelectActionKind}:{id}")
+                .Concat(skipAvailable
+                    ? new[] { semantics.SkipActionKind }
+                    : Array.Empty<string>())
+                .OrderBy(key => key, StringComparer.Ordinal)
+                .ToArray()
         });
 
         return new BridgeObservationDraft(
@@ -204,7 +191,7 @@ internal sealed class GeneratedCardChoiceSurfaceProvider : IBridgeSurfaceProvide
             completeness,
             game,
             new[] { semantics.ScopeWarning },
-            actions);
+            Array.Empty<BridgeActionDraft>());
     }
 
     private static BridgeActionStartResult StartSelect(
@@ -398,7 +385,8 @@ internal sealed class GeneratedCardChoiceSurfaceProvider : IBridgeSurfaceProvide
             return Array.Empty<BridgeActionDraft>();
 
         ActionEntityBinding screen = new("screen", surface.ScreenEntityId);
-        var actions = surface.Cards.Select(card => new BridgeActionDraft(
+        HashSet<string> selectable = surface.SelectableCardEntityIds.ToHashSet(StringComparer.Ordinal);
+        var actions = surface.Cards.Where(card => selectable.Contains(card.EntityId)).Select(card => new BridgeActionDraft(
             $"{semantics.SelectActionKind}:{surface.ScreenEntityId}:{card.EntityId}",
             semantics.SelectActionKind,
             "selection",
@@ -412,7 +400,7 @@ internal sealed class GeneratedCardChoiceSurfaceProvider : IBridgeSurfaceProvide
                 screen,
                 new ActionEntityBinding("card", card.EntityId)
             })).ToList();
-        if (surface.CanSkip && semantics.SkipActionKind != "unsupported_skip")
+        if (surface.SkipAvailable && semantics.SkipActionKind != "unsupported_skip")
         {
             actions.Add(new BridgeActionDraft(
                 $"{semantics.SkipActionKind}:{surface.ScreenEntityId}",
@@ -538,8 +526,8 @@ internal sealed class GeneratedCardChoiceSurfaceProvider : IBridgeSurfaceProvide
             "run_deck",
             "unchanged",
             null,
-            "select_generated_run_card",
-            "skip_generated_run_card_choice",
+            "select_lead_paperweight_card",
+            "skip_lead_paperweight_choice",
             cardName => $"Add {cardName} to the run deck",
             "LeadPaperweight.AfterObtained+NChooseACardSelectionScreen.SelectHolder+exact-run-deck-witness",
             "LeadPaperweight.AfterObtained+NChooseACardSelectionScreen.OnSkipButtonReleased+unchanged-run-deck-witness",
@@ -555,8 +543,8 @@ internal sealed class GeneratedCardChoiceSurfaceProvider : IBridgeSurfaceProvide
             "run_deck",
             "unchanged",
             null,
-            "select_generated_run_card",
-            "skip_generated_run_card_choice",
+            "select_hefty_tablet_card",
+            "skip_hefty_tablet_choice",
             cardName => $"Add {cardName} and an Injury to the run deck",
             "HeftyTablet.AfterObtained+NChooseACardSelectionScreen.SelectHolder+exact-selected-card-and-Injury-deck-witness",
             "HeftyTablet.AfterObtained+NChooseACardSelectionScreen.OnSkipButtonReleased+exact-Injury-deck-witness",
@@ -590,8 +578,8 @@ internal sealed class GeneratedCardChoiceSurfaceProvider : IBridgeSurfaceProvide
             "combat_hand",
             "free_this_turn",
             "combat_discard_if_hand_full",
-            "select_generated_combat_card",
-            "skip_generated_combat_card_choice",
+            "select_splash_generated_card",
+            "skip_splash_generated_card_choice",
             cardName => $"Choose {cardName}; add it to the combat hand for free this turn",
             "Splash.OnPlay+NChooseACardSelectionScreen.SelectHolder+exact-combat-pile-and-free-cost-witness",
             "Splash.OnPlay+NChooseACardSelectionScreen.OnSkipButtonReleased+unchanged-combat-piles-witness",

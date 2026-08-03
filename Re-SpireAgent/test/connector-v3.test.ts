@@ -60,7 +60,7 @@ const SOURCE: AdapterDescriptor = {
 
 function combatObservation(): ConnectorV3Observation {
   return decodeConnectorV3Observation({
-    protocol_version: "3.0-preview.7",
+    protocol_version: "3.0-preview.8",
     schema: "sts2.connector.v3/observation-1",
     profile: "semantic_accessibility.tools.v1",
     state_token: "state-fixture-1",
@@ -1466,7 +1466,7 @@ function treasureObservation(): ConnectorV3Observation {
 
 function connectorCapabilities() {
   return {
-    protocol_version: "3.0-preview.7",
+    protocol_version: "3.0-preview.8",
     observation_schema: "sts2.connector.v3/observation-1",
     command_schema: "sts2.connector.v3/command-1",
     inspection_schema: "sts2.connector.v3/inspection-1",
@@ -1510,7 +1510,7 @@ describe("Connector V3 strict contract", () => {
 
   it("rejects unknown mutation receipts that permit retry", () => {
     expect(() => decodeConnectorV3Receipt({
-      protocol_version: "3.0-preview.7",
+      protocol_version: "3.0-preview.8",
       request_id: "request-fixture",
       status: "unknown",
       application: "unknown",
@@ -1526,7 +1526,7 @@ describe("Connector V3 strict contract", () => {
 
   it("decodes state-bound read-only V3 inspections", () => {
     const decoded = decodeConnectorV3Inspection({
-      protocol_version: "3.0-preview.7",
+      protocol_version: "3.0-preview.8",
       schema: "sts2.connector.v3/inspection-1",
       inspection_id: "v3inspection-fixture",
       expected_state_token: "state-fixture-1",
@@ -1558,7 +1558,7 @@ describe("Connector V3 strict contract", () => {
 
   it("rejects V3 inspections whose state token drifted", () => {
     expect(() => decodeConnectorV3Inspection({
-      protocol_version: "3.0-preview.7",
+      protocol_version: "3.0-preview.8",
       schema: "sts2.connector.v3/inspection-1",
       inspection_id: "v3inspection-fixture",
       expected_state_token: "state-fixture-1",
@@ -1587,7 +1587,7 @@ describe("Connector V3 strict contract", () => {
 
   it("decodes only state-bound linked card detail for the exact entity", () => {
     const detail = {
-      protocol_version: "3.0-preview.7",
+      protocol_version: "3.0-preview.8",
       schema: "sts2.connector.v3/linked-detail-1",
       detail_id: "detail-fixture",
       expected_state_token: "state-fixture-1",

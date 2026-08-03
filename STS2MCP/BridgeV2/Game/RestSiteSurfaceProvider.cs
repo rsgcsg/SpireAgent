@@ -84,50 +84,23 @@ internal sealed class RestSiteSurfaceProvider : IBridgeSurfaceProvider
             McpMod.SafeGetText(() => option.Title),
             McpMod.SafeGetText(() => option.Description),
             option.IsEnabled)).ToArray();
-        var actions = new List<BridgeActionDraft>();
-        foreach ((RestSiteOption option, int index) in options.Select((option, index) => (option, index)))
-        {
-            NRestSiteButton button = buttonByOption[option];
-            if (!option.IsEnabled || !button.IsEnabled || !McpMod.IsNodeVisible(button))
-                continue;
-            string optionId = entities.GetId(option, "rest_option");
-            actions.Add(new BridgeActionDraft(
-                $"choose_rest_option:{optionId}",
-                "choose_rest_option",
-                "selection",
-                McpMod.SafeGetText(() => option.Title) ?? option.OptionId,
-                "RestSiteRoom.Options+NRestSiteButton.ForceClick",
-                () => StartOption(restRoom, room, localPlayer, option, button, index),
-                new[]
-                {
-                    new ActionEntityBinding("screen", screenId),
-                    new ActionEntityBinding("rest_option", optionId)
-                }));
-        }
+        bool hasVisibleOptionCommand = options.Any(option =>
+            option.IsEnabled
+            && buttonByOption[option].IsEnabled
+            && McpMod.IsNodeVisible(buttonByOption[option]));
 
         NProceedButton proceed = room.ProceedButton;
         bool canProceed = proceed.IsEnabled && McpMod.IsNodeVisible(proceed);
-        if (canProceed)
-        {
-            actions.Add(new BridgeActionDraft(
-                $"proceed_rest_site:{screenId}",
-                "proceed_rest_site",
-                "navigation",
-                "Proceed to map",
-                "NRestSiteRoom.ProceedButton+NMapScreen.Open",
-                () => StartProceed(restRoom, room, proceed),
-                new[] { new ActionEntityBinding("screen", screenId) }));
-        }
-
         var surface = new RestSiteSurface(
             SurfaceKind,
             screenId,
             visibleOptions,
             canProceed);
-        string readiness = actions.Count > 0 ? "ready" : "settling";
+        bool hasCurrentCommand = hasVisibleOptionCommand || canProceed;
+        string readiness = hasCurrentCommand ? "ready" : "settling";
         var completeness = new StateCompleteness(
             "contract_complete_for_visible_rest_site",
-            actions.Count > 0
+            hasCurrentCommand
                 ? "derived_from_exact_option_buttons_and_proceed_control"
                 : "temporarily_empty_while_rest_option_or_overlay_transitions",
             new[]
@@ -142,7 +115,14 @@ internal sealed class RestSiteSurfaceProvider : IBridgeSurfaceProvider
         {
             game.Version,
             surface,
-            actionKeys = actions.Select(action => action.Key).OrderBy(key => key, StringComparer.Ordinal).ToArray()
+            commandKeys = visibleOptions
+                .Where(option => option.Enabled)
+                .Select(option => $"choose_rest_option:{option.EntityId}")
+                .Concat(canProceed
+                    ? new[] { $"proceed_rest_site:{screenId}" }
+                    : Array.Empty<string>())
+                .OrderBy(key => key, StringComparer.Ordinal)
+                .ToArray()
         });
         return new BridgeObservationDraft(
             signature,
@@ -152,7 +132,7 @@ internal sealed class RestSiteSurfaceProvider : IBridgeSurfaceProvider
             completeness,
             game,
             Array.Empty<string>(),
-            actions);
+            Array.Empty<BridgeActionDraft>());
     }
 
     private static BridgeActionStartResult StartOption(

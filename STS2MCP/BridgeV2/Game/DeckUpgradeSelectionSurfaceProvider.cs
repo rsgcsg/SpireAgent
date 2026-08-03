@@ -151,15 +151,6 @@ internal sealed class DeckUpgradeSelectionSurfaceProvider : IBridgeSurfaceProvid
         }
 
         string screenId = entities.GetId(screen, "screen");
-        List<BridgeActionDraft> actions = BuildActions(
-            screen,
-            stage,
-            prefs,
-            holders,
-            selected,
-            cardIds,
-            close,
-            singleVisible ? singlePreview : multiPreview);
         string[] selectableIds = stage == "selecting"
             ? holders.Where(holder => IsHolderClickable(holder) && !selected.Contains(holder.CardModel))
                 .Select(holder => cardIds[holder.CardModel])
@@ -223,8 +214,7 @@ internal sealed class DeckUpgradeSelectionSurfaceProvider : IBridgeSurfaceProvid
         {
             game.Version,
             context,
-            surface,
-            actionKeys = actions.Select(action => action.Key).OrderBy(key => key, StringComparer.Ordinal).ToArray()
+            surface
         });
         return new BridgeObservationDraft(
             signature,
@@ -234,74 +224,7 @@ internal sealed class DeckUpgradeSelectionSurfaceProvider : IBridgeSurfaceProvid
             completeness,
             game,
             Array.Empty<string>(),
-            actions);
-    }
-
-    private static List<BridgeActionDraft> BuildActions(
-        NDeckUpgradeSelectScreen screen,
-        string stage,
-        CardSelectorPrefs prefs,
-        IReadOnlyList<NGridCardHolder> holders,
-        IReadOnlySet<CardModel> selected,
-        IReadOnlyDictionary<CardModel, string> cardIds,
-        NBackButton close,
-        Control previewContainer)
-    {
-        var actions = new List<BridgeActionDraft>();
-        if (stage == "selecting")
-        {
-            foreach (NGridCardHolder holder in holders.Where(IsHolderClickable))
-            {
-                CardModel card = holder.CardModel;
-                string cardId = cardIds[card];
-                bool isSelected = selected.Contains(card);
-                actions.Add(new BridgeActionDraft(
-                    $"toggle_deck_upgrade_card:{cardId}",
-                    "toggle_deck_upgrade_card",
-                    "selection",
-                    $"{(isSelected ? "Deselect" : "Select")} {McpMod.SafeGetText(() => card.Title) ?? card.Id.Entry} for upgrade",
-                    "NDeckUpgradeSelectScreen.OnCardClicked via NCardHolder.Pressed",
-                    () => StartToggle(screen, holder, card, isSelected),
-                    new[] { new ActionEntityBinding("card", cardId) }));
-            }
-            if (prefs.Cancelable && close.IsEnabled)
-            {
-                actions.Add(new BridgeActionDraft(
-                    "cancel_deck_upgrade_selection",
-                    "cancel_deck_upgrade_selection",
-                    "cancel",
-                    "Cancel deck upgrade selection",
-                    "NDeckUpgradeSelectScreen.CloseSelection via visible close button",
-                    () => StartClose(screen, close)));
-            }
-        }
-        else
-        {
-            NBackButton? cancel = previewContainer.GetNodeOrNull<NBackButton>("Cancel");
-            NConfirmButton? confirm = previewContainer.GetNodeOrNull<NConfirmButton>("Confirm");
-            if (cancel is { IsEnabled: true })
-            {
-                actions.Add(new BridgeActionDraft(
-                    "cancel_deck_upgrade_preview",
-                    "cancel_deck_upgrade_preview",
-                    "cancel",
-                    "Cancel preview and return to upgrade selection",
-                    "NDeckUpgradeSelectScreen.CancelSelection via visible preview control",
-                    () => StartPreviewCancel(screen, cancel)));
-            }
-            if (confirm is { IsEnabled: true } && selected.Count >= prefs.MinSelect)
-            {
-                actions.Add(new BridgeActionDraft(
-                    "confirm_deck_upgrade",
-                    "confirm_deck_upgrade",
-                    "commit",
-                    "Confirm the visible card upgrade",
-                    "NDeckUpgradeSelectScreen.ConfirmSelection+caller CardCmd.Upgrade",
-                    () => StartConfirm(screen, confirm, selected),
-                    selected.Select(card => new ActionEntityBinding("card", cardIds[card])).ToArray()));
-            }
-        }
-        return actions;
+            Array.Empty<BridgeActionDraft>());
     }
 
     private static VisibleCard[] BuildPreviewCards(

@@ -31,7 +31,13 @@ public sealed class BridgeContractTests
             "relic_deck_removal_selection",
             "reward_deck_removal_selection",
             "event_deck_removal_selection",
-            "card_bundle_selection"
+            "card_bundle_selection",
+            "deck_upgrade_selection",
+            "combat_hand_card_selection",
+            "reward_claim",
+            "rest_site",
+            "generated_card_choice",
+            "event_card_acquisition"
         };
         Assert.All(BridgeContractManifest.Entries, entry =>
         {
@@ -1029,9 +1035,9 @@ public sealed class BridgeContractTests
             .Sum(entry => entry.Operations.Count);
 
         Assert.Equal(manifestOperationCount, catalog.Count);
-        Assert.Equal(53, catalog.Count(contract =>
+        Assert.Equal(83, catalog.Count(contract =>
             contract.ContractKind == BridgeOperationQualificationCatalog.ExplicitNativeContract));
-        Assert.Equal(37, catalog.Count(contract =>
+        Assert.Equal(11, catalog.Count(contract =>
             contract.ContractKind == BridgeOperationQualificationCatalog.ManifestMigrationFallback));
         Assert.Equal(catalog.Count, catalog
             .Select(contract => (contract.SurfaceKind, contract.Operation))
@@ -1370,6 +1376,13 @@ public sealed class BridgeContractTests
             Contract("reward_deck_removal_selection", "cancel_deck_removal_preview"),
             Contract("reward_deck_removal_selection", "cancel_deck_removal_selection")
         };
+        BridgeOperationQualificationIdentity[] relic =
+        {
+            Contract("relic_deck_removal_selection", "toggle_deck_removal_card"),
+            Contract("relic_deck_removal_selection", "preview_deck_removal"),
+            Contract("relic_deck_removal_selection", "confirm_deck_removal"),
+            Contract("relic_deck_removal_selection", "cancel_deck_removal_preview")
+        };
         BridgeOperationQualificationIdentity[] bundle =
         {
             Contract("card_bundle_selection", "preview_card_bundle"),
@@ -1379,7 +1392,7 @@ public sealed class BridgeContractTests
         BridgeOperationQualificationIdentity dialogue =
             Contract("event_dialogue", "advance_event_dialogue");
         BridgeOperationQualificationIdentity[] migrated =
-            merchant.Concat(reward).Concat(bundle).Append(dialogue).ToArray();
+            merchant.Concat(reward).Concat(relic).Concat(bundle).Append(dialogue).ToArray();
 
         Assert.All(migrated, contract => Assert.Equal(
             BridgeOperationQualificationCatalog.ExplicitNativeContract,
@@ -1399,6 +1412,12 @@ public sealed class BridgeContractTests
         Assert.Equal(DeckRemovalSelectionSurfaceProvider.RewardConfirmCompletionWitness, reward[2].WitnessId);
         Assert.Equal(DeckRemovalSelectionSurfaceProvider.CancelPreviewCompletionWitness, reward[3].WitnessId);
         Assert.Equal(DeckRemovalSelectionSurfaceProvider.RewardCancelSelectionCompletionWitness, reward[4].WitnessId);
+        Assert.Equal(DeckRemovalSelectionSurfaceProvider.ToggleCompletionWitness, relic[0].WitnessId);
+        Assert.Equal(DeckRemovalSelectionSurfaceProvider.PreviewCompletionWitness, relic[1].WitnessId);
+        Assert.Equal(
+            "precise_scissors_selected_card_absent_after_exact_relic_task_completion",
+            relic[2].WitnessId);
+        Assert.Equal(DeckRemovalSelectionSurfaceProvider.CancelPreviewCompletionWitness, relic[3].WitnessId);
         Assert.Equal(CardBundleSelectionSurfaceProvider.PreviewCompletionWitness, bundle[0].WitnessId);
         Assert.Equal(CardBundleSelectionSurfaceProvider.ConfirmCompletionWitness, bundle[1].WitnessId);
         Assert.Equal(CardBundleSelectionSurfaceProvider.CancelPreviewCompletionWitness, bundle[2].WitnessId);
@@ -1408,12 +1427,16 @@ public sealed class BridgeContractTests
         Assert.Equal("transaction_settled", reward[4].CompletionBoundary);
         Assert.Equal("transaction_settled", bundle[1].CompletionBoundary);
 
+        Assert.Equal("transaction_settled", relic[2].CompletionBoundary);
         Assert.Equal(
-            BridgeOperationQualificationCatalog.ManifestMigrationFallback,
-            Contract("relic_deck_removal_selection", "confirm_deck_removal").ContractKind);
-        Assert.Equal(
-            BridgeOperationQualificationCatalog.ManifestMigrationFallback,
+            BridgeOperationQualificationCatalog.ExplicitNativeContract,
             Contract("deck_upgrade_selection", "confirm_deck_upgrade").ContractKind);
+        Assert.Equal(
+            BridgeOperationQualificationCatalog.ExplicitNativeContract,
+            Contract("combat_hand_card_selection", "confirm_combat_hand_selection").ContractKind);
+        Assert.Equal(
+            BridgeOperationQualificationCatalog.ExplicitNativeContract,
+            Contract("reward_claim", "claim_reward").ContractKind);
         Assert.Equal(
             BridgeOperationQualificationCatalog.ManifestMigrationFallback,
             Contract("deck_transform_selection", "confirm_deck_transform").ContractKind);

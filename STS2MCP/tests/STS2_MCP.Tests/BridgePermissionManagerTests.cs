@@ -313,8 +313,8 @@ public sealed class BridgePermissionManagerTests
         BridgeMigrationPermissionCandidate fallback =
             Assert.IsType<BridgeMigrationPermissionCandidate>(
                 BridgeMigrationPermissionPolicy.Find(
-                    "reward_claim",
-                    "claim_reward"));
+                    "deck_transform_selection",
+                    "confirm_deck_transform"));
         Assert.Equal("persistent_run_mutation", fallback.RiskClass);
         Assert.Equal(new[] { "migration_exploration" }, fallback.EligibleModes);
         Assert.Equal(
@@ -383,7 +383,7 @@ public sealed class BridgePermissionManagerTests
             BridgePermissionMode.MigrationExploration);
         CompatibilityAssessment first = manager.Apply(
             GameWithScopes(
-                Scope("reward_claim", "claim_reward", "canary")),
+                Scope("deck_transform_selection", "confirm_deck_transform", "canary")),
             Bridge("runtime-migration"),
             CleanPatchInventory());
         BridgeActionPermissionBinding binding = Binding(
@@ -401,7 +401,7 @@ public sealed class BridgePermissionManagerTests
                 "reward_claimed_and_surface_updated"));
         CompatibilityAssessment promoted = manager.Apply(
             GameWithScopes(
-                Scope("reward_claim", "claim_reward", "canary")),
+                Scope("deck_transform_selection", "confirm_deck_transform", "canary")),
             Bridge("runtime-migration"),
             CleanPatchInventory());
 
@@ -419,7 +419,7 @@ public sealed class BridgePermissionManagerTests
             BridgePermissionMode.MigrationExploration);
         CompatibilityAssessment first = manager.Apply(
             GameWithScopes(
-                Scope("reward_claim", "claim_reward", "canary")),
+                Scope("deck_transform_selection", "confirm_deck_transform", "canary")),
             Bridge("runtime-migration"),
             CleanPatchInventory());
         BridgeActionPermissionBinding binding = Binding(
@@ -436,7 +436,7 @@ public sealed class BridgePermissionManagerTests
                 null));
         CompatibilityAssessment after = manager.Apply(
             GameWithScopes(
-                Scope("reward_claim", "claim_reward", "canary")),
+                Scope("deck_transform_selection", "confirm_deck_transform", "canary")),
             Bridge("runtime-migration"),
             CleanPatchInventory());
 
@@ -465,9 +465,12 @@ public sealed class BridgePermissionManagerTests
             Bridge("runtime-migration"),
             CleanPatchInventory());
         BridgePermissionSystemInfo snapshot = manager.Snapshot();
+        int expectedDynamicGrants = scopes.Count(scope =>
+            BridgeMigrationPermissionPolicy.Find(scope.SurfaceKind, scope.Operation) != null);
 
         Assert.Equal(scopes.Length, applied.ActionPermissionScopes.Count);
-        Assert.Equal(scopes.Length, snapshot.Grants.Count);
+        Assert.Equal(expectedDynamicGrants, snapshot.Grants.Count);
+        Assert.True(expectedDynamicGrants > 64);
         Assert.All(snapshot.Grants, grant =>
         {
             Assert.True(grant.Current);
@@ -568,6 +571,104 @@ public sealed class BridgePermissionManagerTests
             warning => warning.StartsWith(
                 "encounter_provisional_trial:",
                 StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void ExplicitV3NativeCandidateGetsTrialWithoutProviderActionDraft()
+    {
+        var manager = new BridgePermissionManager(
+            "runtime-v3-native",
+            BridgePermissionMode.MigrationExploration);
+        BridgeServerIdentity bridge = Bridge("runtime-v3-native");
+        GameBuildIdentity diagnostic = DiagnosticGame();
+        CompatibilityAssessment initial = manager.Apply(
+            diagnostic,
+            bridge,
+            CleanPatchInventory());
+        BridgeObservationDraft draft = EncounterDraft(
+            diagnostic with { Compatibility = initial },
+            "unused_provider_action") with
+        {
+            Surface = new DeckRemovalSelectionSurface(
+                "deck_removal_selection",
+                "selecting",
+                "screen-a",
+                "Choose a card to Remove.",
+                1,
+                1,
+                0,
+                Array.Empty<string>(),
+                true,
+                new[] { "card-a" },
+                Array.Empty<string>(),
+                false,
+                true,
+                false,
+                false,
+                Array.Empty<VisibleCard>()),
+            Actions = Array.Empty<BridgeActionDraft>()
+        };
+
+        BridgeObservationDraft admitted = manager.AdmitEncounter(
+            draft,
+            bridge,
+            new[]
+            {
+                new BridgeEncounterAuthorityCandidate(
+                    "deck_removal_selection",
+                    "toggle_deck_removal_card",
+                    "MerchantCardRemovalEntry+exact-current-card",
+                    RequiresExplicitNativeContract: true)
+            });
+
+        ActionPermissionScope scope = Assert.Single(
+            admitted.Game.Compatibility.ActionPermissionScopes);
+        Assert.Equal("deck_removal_selection", scope.SurfaceKind);
+        Assert.Equal("toggle_deck_removal_card", scope.Operation);
+        Assert.Equal("encounter_source_resolved", scope.AdmissionBasis);
+        Assert.Empty(admitted.Actions);
+        Assert.Contains(
+            Assert.Single(manager.Snapshot().Grants).EvidenceIds,
+            value => value.StartsWith("source-evidence-digest:", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void V3NativeCandidateCannotAdmitManifestFallbackContract()
+    {
+        var manager = new BridgePermissionManager(
+            "runtime-v3-fallback",
+            BridgePermissionMode.MigrationExploration);
+        BridgeServerIdentity bridge = Bridge("runtime-v3-fallback");
+        GameBuildIdentity diagnostic = DiagnosticGame();
+        CompatibilityAssessment initial = manager.Apply(
+            diagnostic,
+            bridge,
+            CleanPatchInventory());
+        BridgeObservationDraft draft = EncounterDraft(
+            diagnostic with { Compatibility = initial },
+            "unused_provider_action") with
+        {
+            Surface = new UnsupportedSurface(
+                "deck_transform_selection",
+                "fixture",
+                "fixture"),
+            Actions = Array.Empty<BridgeActionDraft>()
+        };
+
+        BridgeObservationDraft admitted = manager.AdmitEncounter(
+            draft,
+            bridge,
+            new[]
+            {
+                new BridgeEncounterAuthorityCandidate(
+                    "deck_transform_selection",
+                    "confirm_deck_transform",
+                    "fixture-source",
+                    RequiresExplicitNativeContract: true)
+            });
+
+        Assert.Empty(admitted.Game.Compatibility.ActionPermissionScopes);
+        Assert.Empty(manager.Snapshot().Grants);
     }
 
     [Fact]

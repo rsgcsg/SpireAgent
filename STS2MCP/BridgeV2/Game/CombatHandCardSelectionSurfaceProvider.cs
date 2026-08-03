@@ -141,13 +141,34 @@ internal sealed class CombatHandCardSelectionSurfaceProvider : IBridgeSurfacePro
         bool requireManualConfirmation = ResolveManualConfirmationRequirement(
             exact.Preferences.RequireManualConfirmation,
             confirm != null && McpMod.IsNodeVisible(confirm));
-        List<BridgeActionDraft> actions = BuildActions(
-            hand,
-            exact,
-            activeHolders,
-            cardIds);
-        string[] selectableCardIds = ActionCardIds(actions, "select_combat_hand_card");
-        string[] deselectableCardIds = ActionCardIds(actions, "deselect_combat_hand_card");
+        bool isPeeking = hand.PeekButton.IsPeeking;
+        string[] selectableCardIds = isPeeking
+            ? Array.Empty<string>()
+            : activeHolders
+                .Where(holder => IsHolderClickable(holder)
+                                 && !IsSelected(hand, holder.CardModel!))
+                .Select(holder => cardIds[holder.CardModel!])
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(id => id, StringComparer.Ordinal)
+                .ToArray();
+        NSelectedHandCardContainer? selectedContainer = exact.Mode == NPlayerHand.Mode.SimpleSelect
+            ? hand.GetNodeOrNull<NSelectedHandCardContainer>("%SelectedHandCardContainer")
+            : null;
+        string[] deselectableCardIds = isPeeking
+            ? Array.Empty<string>()
+            : selectedContainer?.Holders
+                .Where(holder => IsHolderClickable(holder) && holder.CardModel != null)
+                .Select(holder => cardIds[holder.CardModel!])
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(id => id, StringComparer.Ordinal)
+                .ToArray()
+              ?? Array.Empty<string>();
+        bool canConfirm = !isPeeking
+                          && confirm is { IsEnabled: true }
+                          && McpMod.IsNodeVisible(confirm);
+        bool canClosePeek = isPeeking
+                            && hand.PeekButton.IsEnabled
+                            && McpMod.IsNodeVisible(hand.PeekButton);
         var surface = new CombatHandCardSelectionSurface(
             SurfaceKind,
             entities.GetId(hand, "hand"),
@@ -158,16 +179,20 @@ internal sealed class CombatHandCardSelectionSurfaceProvider : IBridgeSurfacePro
             exact.SelectedCards.Count,
             selectedIds,
             requireManualConfirmation,
-            hand.PeekButton.IsPeeking,
+            isPeeking,
             selectableCardIds,
             deselectableCardIds,
-            actions.Any(action => action.Kind == "confirm_combat_hand_selection"),
-            actions.Any(action => action.Kind == "close_combat_hand_peek"),
+            canConfirm,
+            canClosePeek,
             cards);
-        string readiness = actions.Count > 0 ? "ready" : "settling";
+        bool hasCurrentCommand = selectableCardIds.Length > 0
+                                 || deselectableCardIds.Length > 0
+                                 || canConfirm
+                                 || canClosePeek;
+        string readiness = hasCurrentCommand ? "ready" : "settling";
         var completeness = new StateCompleteness(
             "contract_complete_for_combat_hand_card_selection",
-            actions.Count > 0
+            hasCurrentCommand
                 ? "derived_from_exact_visible_hand_selection_and_current_controls"
                 : "temporarily_empty_while_selection_completes_or_settles",
             new[]
@@ -182,8 +207,7 @@ internal sealed class CombatHandCardSelectionSurfaceProvider : IBridgeSurfacePro
         string signature = BridgeHash.Object(new
         {
             game.Version,
-            surface,
-            actionKeys = actions.Select(action => action.Key).OrderBy(key => key, StringComparer.Ordinal).ToArray()
+            surface
         });
 
         return new BridgeObservationDraft(
@@ -197,103 +221,14 @@ internal sealed class CombatHandCardSelectionSurfaceProvider : IBridgeSurfacePro
             {
                 "Private-field bindings are exact-version scoped and expose only semantics already visible in the hand-selection UI."
             },
-            actions);
+            Array.Empty<BridgeActionDraft>());
     }
-
-    private static string[] ActionCardIds(
-        IEnumerable<BridgeActionDraft> actions,
-        string operation) =>
-        actions
-            .Where(action => action.Kind == operation)
-            .SelectMany(action => action.EntityBindings ?? Array.Empty<ActionEntityBinding>())
-            .Where(binding => binding.Role == "card")
-            .Select(binding => binding.EntityId)
-            .Distinct(StringComparer.Ordinal)
-            .OrderBy(id => id, StringComparer.Ordinal)
-            .ToArray();
 
     internal static bool ResolveManualConfirmationRequirement(
         bool preferenceRequiresManualConfirmation,
         bool visibleConfirmControl)
     {
         return preferenceRequiresManualConfirmation || visibleConfirmControl;
-    }
-
-    private static List<BridgeActionDraft> BuildActions(
-        NPlayerHand hand,
-        Binding binding,
-        IReadOnlyList<NHandCardHolder> activeHolders,
-        IReadOnlyDictionary<CardModel, string> cardIds)
-    {
-        var actions = new List<BridgeActionDraft>();
-        if (hand.PeekButton.IsPeeking)
-        {
-            if (hand.PeekButton.IsEnabled && McpMod.IsNodeVisible(hand.PeekButton))
-            {
-                actions.Add(new BridgeActionDraft(
-                    "close_combat_hand_peek",
-                    "close_combat_hand_peek",
-                    "navigation",
-                    "Return to card selection",
-                    "NPeekButton.OnRelease+SetPeeking(false)",
-                    () => StartClosePeek(hand)));
-            }
-            return actions;
-        }
-
-        foreach (NHandCardHolder holder in activeHolders.Where(IsHolderClickable))
-        {
-            CardModel card = holder.CardModel!;
-            string cardId = cardIds[card];
-            string cardName = McpMod.SafeGetText(() => card.Title) ?? card.Id.Entry;
-            actions.Add(new BridgeActionDraft(
-                $"select_combat_hand_card:{cardId}",
-                "select_combat_hand_card",
-                "selection",
-                SelectionLabel(
-                    cardName,
-                    binding.Mode,
-                    binding.SelectedCards.Count,
-                    binding.Preferences.MaxSelect),
-                "NPlayerHand.OnHolderPressed+SelectCardInSimpleMode/SelectCardInUpgradeMode",
-                () => StartSelect(hand, binding.Mode, card),
-                new[] { new ActionEntityBinding("card", cardId) }));
-        }
-
-        if (binding.Mode == NPlayerHand.Mode.SimpleSelect)
-        {
-            NSelectedHandCardContainer? selectedContainer =
-                hand.GetNodeOrNull<NSelectedHandCardContainer>("%SelectedHandCardContainer");
-            foreach (NSelectedHandCardHolder holder in selectedContainer?.Holders.Where(IsHolderClickable)
-                         ?? Enumerable.Empty<NSelectedHandCardHolder>())
-            {
-                CardModel card = holder.CardModel!;
-                string cardId = cardIds[card];
-                string cardName = McpMod.SafeGetText(() => card.Title) ?? card.Id.Entry;
-                actions.Add(new BridgeActionDraft(
-                    $"deselect_combat_hand_card:{cardId}",
-                    "deselect_combat_hand_card",
-                    "selection",
-                    $"Deselect {cardName}",
-                    "NSelectedHandCardContainer.DeselectHolder",
-                    () => StartDeselect(hand, card),
-                    new[] { new ActionEntityBinding("card", cardId) }));
-            }
-        }
-
-        NConfirmButton? confirm = hand.GetNodeOrNull<NConfirmButton>("%SelectModeConfirmButton");
-        if (confirm is { IsEnabled: true } && McpMod.IsNodeVisible(confirm))
-        {
-            actions.Add(new BridgeActionDraft(
-                "confirm_combat_hand_selection",
-                "confirm_combat_hand_selection",
-                "commit",
-                "Confirm selected cards",
-                "NPlayerHand.%SelectModeConfirmButton",
-                () => StartConfirm(hand)));
-        }
-
-        return actions;
     }
 
     internal static string SelectionLabel(

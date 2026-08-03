@@ -45,6 +45,26 @@ const cardBundleProviderPath = path.join(
   root,
   "STS2MCP/BridgeV2/Game/CardBundleSelectionSurfaceProvider.cs"
 );
+const deckUpgradeProviderPath = path.join(
+  root,
+  "STS2MCP/BridgeV2/Game/DeckUpgradeSelectionSurfaceProvider.cs"
+);
+const combatHandProviderPath = path.join(
+  root,
+  "STS2MCP/BridgeV2/Game/CombatHandCardSelectionSurfaceProvider.cs"
+);
+const rewardClaimProviderPath = path.join(
+  root,
+  "STS2MCP/BridgeV2/Game/RewardClaimSurfaceProvider.cs"
+);
+const restSiteProviderPath = path.join(
+  root,
+  "STS2MCP/BridgeV2/Game/RestSiteSurfaceProvider.cs"
+);
+const eventCardAcquisitionProviderPath = path.join(
+  root,
+  "STS2MCP/BridgeV2/Game/EventCardAcquisitionSurfaceProvider.cs"
+);
 const reStatePath = path.join(root, "Re-SpireAgent/src/domain/state/common.ts");
 const reNormalizerPath = path.join(
   root,
@@ -63,6 +83,14 @@ const qualificationStoreSource = await readFile(qualificationStorePath, "utf8");
 const qualificationLedgerSource = await readFile(qualificationLedgerPath, "utf8");
 const deckRemovalProviderSource = await readFile(deckRemovalProviderPath, "utf8");
 const cardBundleProviderSource = await readFile(cardBundleProviderPath, "utf8");
+const deckUpgradeProviderSource = await readFile(deckUpgradeProviderPath, "utf8");
+const combatHandProviderSource = await readFile(combatHandProviderPath, "utf8");
+const rewardClaimProviderSource = await readFile(rewardClaimProviderPath, "utf8");
+const restSiteProviderSource = await readFile(restSiteProviderPath, "utf8");
+const eventCardAcquisitionProviderSource = await readFile(
+  eventCardAcquisitionProviderPath,
+  "utf8"
+);
 const reStateSource = await readFile(reStatePath, "utf8");
 const reNormalizerSource = await readFile(reNormalizerPath, "utf8");
 
@@ -140,8 +168,13 @@ if (inventory.current.persistent_fallback_claim_admission_count !== 0) {
   fail("persistent fallback claim admission must remain zero");
 }
 if (deckRemovalProviderSource.includes("new BridgeActionDraft")
-    || cardBundleProviderSource.includes("new BridgeActionDraft")) {
-  fail("Preview.7 direct selectors regained a Provider publication/execution path");
+    || cardBundleProviderSource.includes("new BridgeActionDraft")
+    || deckUpgradeProviderSource.includes("new BridgeActionDraft")
+    || combatHandProviderSource.includes("new BridgeActionDraft")
+    || rewardClaimProviderSource.includes("new BridgeActionDraft")
+    || restSiteProviderSource.includes("new BridgeActionDraft")
+    || eventCardAcquisitionProviderSource.includes("new BridgeActionDraft")) {
+  fail("a V3 direct family regained a Provider publication/execution path");
 }
 if (/PermissionManager\.Snapshot|QualificationStore\.Snapshot/gu.test(identitySource)) {
   fail("control history re-entered current state identity");
