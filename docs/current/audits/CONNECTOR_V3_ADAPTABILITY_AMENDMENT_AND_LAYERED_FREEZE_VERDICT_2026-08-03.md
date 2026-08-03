@@ -291,3 +291,80 @@ V3 或另起 V4。
 - arbitrary Mod、自动跨版本 qualification、source-aware durable claim 未证明；
 - optional Human native page 与 loaded revoke/rollback 未证明；
 - 三个完整 Journey 只证明到达的序列，不证明每个 vanilla source。
+
+## Post-amendment authority regression and repair
+
+Runs `run-20260803143253-wnuxbv`, `run-20260803143304-8mi9zg`,
+`run-20260803143312-6r936n`, `run-20260803143321-y1skm9`,
+`run-20260803143329-w1gj7x` and `run-20260803143347-9lo5z4` used Re source
+`5e57e47028b780619a9cd37b0cd13aeaebddaa2a`, but their Gateway reported the
+previous artifact SHA `c9f61d76...e72b24` and MVID
+`2b388d99-5a1b-46a7-9626-029a679deba0`. The actionable runs therefore
+provided a real prior-artifact regression plus a deployment identity mismatch,
+not evidence about the corrected binary. Their first actionable commands were
+rejected before native Commit with `permission_or_contract_changed`; two runs
+stopped correctly as visible unsupported while the Gateway was non-actionable.
+
+The prior-artifact regression was confirmed in code: `AdmitEncounter` created
+an exact source grant, then policy re-application could replace it with the
+base operation fingerprint, while execute-time `FindActionScope` did not have
+the source evidence needed to find an encounter scope. The repair now projects
+an active same-environment/source grant unchanged across `Apply`, and relies
+on the single `PermissionManager.AuthorizeExecution` resolver for the final
+exact grant and contract check. The redundant source-blind lookup was removed;
+the V2 observe path now passes raw evidence when it needs the helper.
+
+Repair verification:
+
+```text
+source revision       5e57e47028b780619a9cd37b0cd13aeaebddaa2a
+Gateway source digest fbbaf79a8b217c9a77c68726a252123a2e68952ab72d1c3c362b38d0af554205
+built/installed SHA   1c0e2d82108a44105c45d63caee79a4000c271525b6cff481de748b6d0c20c97
+built/installed MVID  fd3177e5-bc0c-4acd-8097-ea237957a152
+rollback              STS2MCP/.local/deployments/2026-08-03T14-39-21-413Z
+loaded                non-claim
+```
+
+The source-partition re-application regression test and all 287 Gateway tests
+pass. At the time this repair verification entry was first written, the
+corrected artifact had not yet been cold-loaded, so no mutation receipt could
+be claimed. The exact-runtime addendum below supersedes that temporal state.
+
+## Exact-runtime Repair Verification
+
+The corrected artifact was subsequently cold-loaded and verified with
+`npm run verify:loaded`:
+
+```text
+run                   run-20260803144301-4vnzxu
+source revision       5e57e47028b780619a9cd37b0cd13aeaebddaa2a
+protocol              3.0-preview.12
+built/installed/loaded SHA  1c0e2d82108a44105c45d63caee79a4000c271525b6cff481de748b6d0c20c97
+built/installed/loaded MVID fd3177e5-bc0c-4acd-8097-ea237957a152
+runtime               867402a815084c54b6d9eb0d9973aa80
+game                  v0.110.1 / db5d3552 / -205573697
+Modset                exact_bridge_only
+decisions             106
+settled commands      103
+terminal              completed_run_boundary
+qualification         empty; persistent authority disabled
+```
+
+All 103 attempted commands were direct V3 commands. Each returned a
+completed receipt with an available successor and `retry.allowed=false`.
+The run covered combat, event, map, reward, rest and deck-upgrade selection,
+and reached game-over before stopping at the top-level menu. The two event
+settling observations were safely non-actionable; the final non-actionable
+menu is the intentional bounded-run stop. No stale, unknown, unsupported or
+provider/parse failure occurred.
+
+The game log recorded one `Invalid Task ID` from Godot's worker-thread task
+wait during asset loading, but no corresponding Gateway error, command
+failure, unknown outcome or incomplete receipt exists in the run. It is
+therefore recorded as a non-blocking game/runtime log observation, not a
+Connector regression.
+
+This closes the mixed-deployment blocker for the repaired authority path, not
+the entire V3 freeze. Royal Stamp, Kifuda, Quasar, changed combat-hand
+confirmation, Human pages, loaded rollback/revoke and durable qualification
+remain unclaimed until their own exact evidence exists.

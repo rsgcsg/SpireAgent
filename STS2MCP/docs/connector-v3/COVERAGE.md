@@ -91,6 +91,23 @@ match the single-owner contract. It is unsupported, not fallback debt.
 - canary never means Surface, origin or sibling-operation qualification.
 
 Status: **CONDITIONAL FREEZE CANDIDATE**. The source-registry amendment cold-
-load, Royal Stamp source canary and remaining rare-family evidence are pending.
+load and one exact ordinary journey are verified; the Royal Stamp source canary
+and remaining rare-family evidence are pending.
 The amendment is built and installed at SHA `c9f61d76...e72b24`, MVID
-`2b388d99-5a1b-46a7-9626-029a679deba0`; loaded and Live are non-claims.
+`2b388d99-5a1b-46a7-9626-029a679deba0`; the first post-amendment Re run used
+this older Gateway identity and failed before Commit. The corrected artifact
+is installed at SHA `1c0e2d82...c20c97`, MVID
+`fd3177e5-bc0c-4acd-8097-ea237957a152`; the loaded and Live fields in this
+historical status were non-claims before the exact-runtime addendum below.
+
+The corrected artifact was then cold-loaded and used by
+`run-20260803144301-4vnzxu` under runtime
+`867402a815084c54b6d9eb0d9973aa80`, game `v0.110.1 / db5d3552 /
+-205573697`, and `exact_bridge_only` Modset. The run produced 103 direct V3
+settled commands with an available successor and `retry.allowed=false`,
+including combat, event, map, reward, rest and deck-upgrade selection; it
+ended only after game-over returned to the top-level menu. The two
+non-actionable event observations and final `run_boundary` are expected
+supervision behavior. This proves the repaired authority path in one exact
+runtime session; it does not create a durable qualification or prove
+unexercised source families.

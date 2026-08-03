@@ -105,3 +105,38 @@ This addendum supersedes only this document's earlier `loaded = non-claim` and
 combat-hand confirm, Human pages, rollback/revoke, cross-version/Mod behavior
 or the later source-registry artifact. See the
 [adaptation amendment](../../../docs/current/audits/CONNECTOR_V3_ADAPTABILITY_AMENDMENT_AND_LAYERED_FREEZE_VERDICT_2026-08-03.md).
+
+## Authority Repair Addendum
+
+The first runs after the source-registry commit used Re source
+`5e57e47028b780619a9cd37b0cd13aeaebddaa2a` while the loaded Gateway was still
+the earlier SHA `c9f61d76...e72b24` / MVID
+`2b388d99-5a1b-46a7-9626-029a679deba0`. They stopped before native Commit with
+`permission_or_contract_changed`; this is mixed-identity evidence for the
+previous artifact, not Live evidence for the repair.
+
+The corrected artifact is now built and installed at SHA
+`1c0e2d82108a44105c45d63caee79a4000c271525b6cff481de748b6d0c20c97`, MVID
+`fd3177e5-bc0c-4acd-8097-ea237957a152`, with rollback at
+`STS2MCP/.local/deployments/2026-08-03T14-39-21-413Z`. It remains
+`loaded = non-claim` until cold start.
+
+## Authority Repair Live Addendum
+
+The exact artifact above was cold-loaded and verified with
+`npm run verify:loaded`: SHA, MVID and protocol matched, runtime was
+`867402a815084c54b6d9eb0d9973aa80`, and the game was
+`v0.110.1 / db5d3552 / -205573697` under `exact_bridge_only`. The bounded
+Re run `run-20260803144301-4vnzxu` used `connector_v3` directly and completed
+106 decisions. Of these, 103 commands reached `completed` receipts with
+available successors and `retry.allowed=false`; two event observations were
+non-actionable while settling, and the final menu observation stopped with
+`completed_run_boundary` after game-over. No stale, unknown, unsupported or
+provider failure occurred in this run.
+
+This is exact-runtime Live session evidence for the authority repair and
+normal journey boundary. It does not qualify Royal Stamp, Kifuda, Quasar,
+combat-hand confirm, optional Human pages, loaded revoke/rollback, or any
+cross-version/Mod behavior. The qualification store remains empty and
+persistent authority remains disabled. The earlier `loaded = non-claim` text
+above records the pre-cold-load state and is superseded only by this addendum.

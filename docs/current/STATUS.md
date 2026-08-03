@@ -1,6 +1,6 @@
 # Current Status
 
-Baseline date: 2026-08-03
+Baseline date: 2026-08-04
 
 Connector V3 is a **CONDITIONAL FREEZE CANDIDATE**, not frozen. The active branch is
 `connectorV3`; checkout identity remains a per-machine fact and must be read
@@ -84,11 +84,26 @@ not qualify unexercised sources.
 The current source amendment moves reviewed deck-enchant sources into one
 embedded registry, adds Royal Stamp, and binds volatile trial/quarantine to
 the exact source-evidence partition instead of only `surface + operation`.
-Source, tests, Release build and install are verified at SHA
-`c9f61d76a4b58487f336f73241110fd5befb304a7c5388c57454656640e72b24`
-and MVID `2b388d99-5a1b-46a7-9626-029a679deba0`; loaded identity and Live
-behavior remain non-claims until cold start. Its detailed evidence and layered
-freeze decision are in the
+The first post-amendment runs used Re source `5e57e47` against the prior
+loaded Gateway SHA `c9f61d76...e72b24`; their first-command
+`permission_or_contract_changed` failures therefore combined a real prior
+artifact bug with a mixed Re/Gateway deployment identity. The fix preserves
+an active source-partition grant across policy re-application and removes the
+redundant source-blind execute-time scope lookup.
+
+The fixed source is `5e57e47028b780619a9cd37b0cd13aeaebddaa2a`. Source, tests,
+Release build and install are verified at SHA
+`1c0e2d82108a44105c45d63caee79a4000c271525b6cff481de748b6d0c20c97`
+and MVID `fd3177e5-bc0c-4acd-8097-ea237957a152`. That exact artifact was
+cold-loaded in runtime `867402a815084c54b6d9eb0d9973aa80` with game
+`v0.110.1 / db5d3552 / -205573697` and `exact_bridge_only` Modset. Run
+`run-20260803144301-4vnzxu` then completed 106 decisions: 103 direct V3
+commands settled with an available successor and no retry, two event settling
+observations were safely non-actionable, and the completed game stopped at the
+top-level menu with `run_boundary`. This is exact-runtime Live session
+evidence for the repair, not a durable qualification: qualification remains
+empty and persistent authority remains disabled. Its detailed evidence and
+layered freeze decision are in the
 [adaptation amendment](audits/CONNECTOR_V3_ADAPTABILITY_AMENDMENT_AND_LAYERED_FREEZE_VERDICT_2026-08-03.md).
 
 ## Authority
@@ -109,8 +124,9 @@ MVID, runtime, game, Modset or Patch changes never inherit authority.
 
 ## Freeze Blockers
 
-1. Cold-load the source-registry amendment, prove Royal Stamp starts its own
-   source-partitioned canary, and retain unknown-source visible unsupported.
+1. Prove Royal Stamp starts its own source-partitioned canary, and retain
+   unknown-source visible unsupported; the source-registry artifact is now
+   cold-loaded but Royal Stamp was not naturally exercised by the repaired run.
 2. Complete Quasar, combat-hand confirm, targetless potion, Kifuda, current/
    stale Inspection and linked-detail evidence on the same final artifact.
 3. Exercise full native-page open/read/return/recovery with the optional Human

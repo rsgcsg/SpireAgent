@@ -13,6 +13,10 @@ completed three bounded journeys, but Royal Stamp proved that source-rich
 adaptation still depended on Provider edits. The current bounded amendment
 introduces a reviewed source registry and source-partitioned volatile
 authority without changing the wire or creating another architecture generation.
+The first post-amendment run also exposed a deployment identity mismatch:
+Re source and loaded Gateway were not the same revision. Deployment identity
+must be checked before interpreting a runtime failure as a current-source
+semantic result.
 
 The production path is:
 

@@ -42,12 +42,15 @@ The current amendment adds `deck_enchant_source_contracts_v1`, including
 Royal Stamp, and partitions volatile authority by operation contract plus
 exact source evidence. It changes no wire, Re schema, Commit adapter or
 Outcome contract and creates no durable qualification. Its Release artifact
-is built and installed at SHA `c9f61d76...e72b24`, MVID
-`2b388d99-5a1b-46a7-9626-029a679deba0`; cold-load remains pending.
+is now fixed and installed at SHA `1c0e2d82...c20c97`, MVID
+`fd3177e5-bc0c-4acd-8097-ea237957a152`; exact cold-load and one bounded Live
+journey are verified. A prior
+mixed Re/Gateway run exposed the source-blind execute-time lookup and is
+recorded as evidence for this repair, not as evidence against the new artifact.
 
 ## Completed Evidence
 
-- Gateway tests: 284/284.
+- Gateway tests: 287/287.
 - Re: typecheck, 291/291 tests and production build.
 - Python MCP, docs, CLI, identity, compatibility, permission, qualification,
   profile, migration, inventory, adaptation and clean-closure checks.
@@ -57,6 +60,9 @@ is built and installed at SHA `c9f61d76...e72b24`, MVID
   event, map, shop, rest, reward and selector receipts;
 - stale command refusal before Commit and repeatable same-request receipt.
 - Human profile default-disabled refusal.
+- `run-20260803144301-4vnzxu`: 106 decisions on the repaired loaded artifact;
+  103 direct V3 commands settled with available successors and no retry,
+  followed by the intentional completed-run boundary after game-over.
 
 Exact Preview.11 identities are in its
 [closeout](../../STS2MCP/docs/connector-v3/PREVIEW_11_FREEZE_CANDIDATE_CLOSEOUT_2026-08-03.md).

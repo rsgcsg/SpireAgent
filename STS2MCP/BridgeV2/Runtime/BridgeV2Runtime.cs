@@ -278,12 +278,7 @@ internal static class BridgeV2Runtime
         {
             return false;
         }
-        ActionPermissionScope? executionScope =
-            BridgeSurfacePermission.FindActionScope(
-                executionGame.Compatibility,
-                contractBinding.SurfaceKind,
-                contractBinding.Operation);
-        return executionScope != null && contractBinding.Matches(executionScope);
+        return true;
     }
 
     internal static void ObserveBoundCommand(
@@ -336,7 +331,8 @@ internal static class BridgeV2Runtime
                     BridgeSurfacePermission.FindActionScope(
                         draft.Game.Compatibility,
                         draft.Surface.Kind,
-                        action.Kind);
+                        action.Kind,
+                        action.EvidenceCode);
                 BridgeBoundActionContract? contractBinding =
                     BridgeBoundActionContract.Build(draft.Surface.Kind, action);
                 if (permissionScope == null
@@ -379,18 +375,6 @@ internal static class BridgeV2Runtime
                             return BridgeActionStartResult.Rejected(
                                 "permission_grant_changed",
                                 "The operation-scoped grant changed before execution; obtain a fresh state.");
-                        }
-                        ActionPermissionScope? executionScope =
-                            BridgeSurfacePermission.FindActionScope(
-                                executionGame.Compatibility,
-                                contractBinding.SurfaceKind,
-                                contractBinding.Operation);
-                        if (executionScope == null
-                            || !contractBinding.Matches(executionScope))
-                        {
-                            return BridgeActionStartResult.Rejected(
-                                "native_contract_changed",
-                                "The action-local native contract changed before execution; obtain a fresh state.");
                         }
                         return action.Start();
                     },

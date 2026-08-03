@@ -15,7 +15,8 @@ files. They are not another authority, protocol or executor.
 
 ## V3-1: Exact Runtime Candidate
 
-Status: Preview.12 Live observed; source-registry amendment cold-load pending.
+Status: source-registry authority repair cold-loaded; exact repair journey
+observed; source-specific canaries remain pending.
 
 The Preview.11 artifact is built, installed and loaded with exact
 SHA/MVID/runtime/game/Modset/Patch identity. V3 capability/control/observation
@@ -30,6 +31,17 @@ authority by exact source evidence. Exit: cold-load that amendment, exercise
 Royal Stamp and an unknown-source negative, then complete the remaining rare
 selector/potion/read matrix without transferring authority from Preview.12.
 
+The first repair attempt exposed a mixed deployment: Re reported source
+`5e57e47` while Gateway still reported the previous `c9f61d76...e72b24`
+artifact. That run's first-command rejection was attributed to the previous
+Gateway code. The corrected source is now installed as SHA
+`1c0e2d82...c20c97`, MVID `fd3177e5-bc0c-4acd-8097-ea237957a152`, with cold-load
+now verified. The exact-runtime run `run-20260803144301-4vnzxu` completed a
+bounded game with 103 settled direct V3 commands across combat, event, map,
+reward and rest/deck-upgrade surfaces, then stopped at the completed-run
+boundary. It did not naturally exercise Royal Stamp, Kifuda, Quasar or the
+changed combat-hand confirmation path; those remain evidence gates.
+
 ## V3-2: Ordinary Journey
 
 Status: exact Preview.11 Journey achieved.
@@ -38,7 +50,8 @@ Status: exact Preview.11 Journey achieved.
 203 direct decisions on the exact Preview.11 artifact. A journey proves the
 reached sequence, not unexercised sources or durable qualification.
 
-Preview.12 now has three post-repair completed boundaries. They do not
+The corrected artifact now has one exact-runtime completed boundary in
+`run-20260803144301-4vnzxu`. It does not
 substitute for Royal Stamp, Kifuda, Quasar, combat-hand or read gates that did
 not naturally occur on the same artifact.
 

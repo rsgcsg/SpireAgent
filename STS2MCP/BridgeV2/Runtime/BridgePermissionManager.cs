@@ -177,15 +177,40 @@ internal sealed class BridgePermissionManager
                 }
 
                 string key = Key(candidate.SurfaceKind, candidate.Operation);
-                if (!CandidateEligible(
-                        candidate,
-                        staticScope,
-                        game,
-                        bridge,
-                        patchInventory,
-                        operationFingerprint)
-                    || _blockedKeys.Contains(key))
+                bool candidateEligible = CandidateEligible(
+                    candidate,
+                    staticScope,
+                    game,
+                    bridge,
+                    patchInventory,
+                    operationFingerprint);
+                if (!candidateEligible || _blockedKeys.Contains(key))
                 {
+                    continue;
+                }
+
+                // An encounter admission may be partitioned by exact source
+                // evidence. Re-applying the static policy must project that
+                // current grant, not replace it with the broader base digest.
+                if (_currentGrants.TryGetValue(key, out BridgePermissionGrantRecord? current)
+                    && current.Status == "active"
+                    && current.ExpiresAt > _clock()
+                    && current.EnvironmentDigest == environmentDigest
+                    && current.PatchDigest == patchInventory.Digest)
+                {
+                    scopes.Add(new ActionPermissionScope(
+                        staticScope.SurfaceKind,
+                        staticScope.Operation,
+                        "canary")
+                    {
+                        GrantId = current.GrantId,
+                        GrantVersion = current.GrantVersion,
+                        RuntimeEpoch = current.RuntimeEpoch,
+                        EnvironmentDigest = current.EnvironmentDigest,
+                        PatchDigest = current.PatchDigest,
+                        OperationFingerprint = current.OperationFingerprint,
+                        AdmissionBasis = current.AdmissionBasis
+                    });
                     continue;
                 }
 

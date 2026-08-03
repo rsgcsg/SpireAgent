@@ -662,6 +662,16 @@ public sealed class BridgePermissionManagerTests
         ActionPermissionScope firstScope = Assert.Single(
             first.Game.Compatibility.ActionPermissionScopes);
 
+        CompatibilityAssessment reapplied = manager.Apply(
+            diagnostic,
+            bridge,
+            CleanPatchInventory());
+        ActionPermissionScope reappliedScope = Assert.Single(
+            reapplied.ActionPermissionScopes);
+        Assert.Equal(firstScope.GrantId, reappliedScope.GrantId);
+        Assert.Equal(firstScope.OperationFingerprint, reappliedScope.OperationFingerprint);
+        Assert.Equal("encounter_source_resolved", reappliedScope.AdmissionBasis);
+
         CompatibilityAssessment withFirst = manager.Apply(
             diagnostic,
             bridge,
