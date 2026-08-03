@@ -1,79 +1,66 @@
-# Current Functional Roadmap
+# Human-Equivalent Connector Roadmap
 
-## V3-0: Production Source Cutover
+## HE-0: Documentation And Branch Authority
 
-Status: complete at `3.0-preview.12` source.
+Status: complete.
 
-- 94 explicit native contracts and 0 fallback authority;
-- 0 Provider action publication;
-- 0 active Re V2 state/action sidecar;
-- V3-native command descriptors and V3 control wire;
-- REST/MCP remain transport-only.
+- branch created from exact Connector V3 baseline;
+- critical audit added;
+- ADR-0008 accepted on this branch;
+- current status, architecture, plan and component targets aligned.
 
-Internal exact-game mechanics may remain in historically named Bridge/Provider
-files. They are not another authority, protocol or executor.
+## HE-1: Human-Reachable Observation Shadow
 
-## V3-1: Exact Runtime Candidate
+Status: not started.
 
-Status: Preview.12 Live observed; source-registry amendment cold-load pending.
+Deliver rendered frames, structured UI tree, provenance, current controls and reveal opportunities without changing execution authority.
 
-The Preview.11 artifact is built, installed and loaded with exact
-SHA/MVID/runtime/game/Modset/Patch identity. V3 capability/control/observation
-decode, one menu mutation, stable successor, stale rejection, idempotent
-receipt read and Human-profile disabled refusal are Live-observed.
+Exit: compare coverage with inherited V3 across menu, combat, event, reward, shop, rest and selectors.
 
-Preview.12 was cold-loaded with exact identity. Three subsequent runs reached
-completed-game boundaries and two repeatably exposed Royal Stamp as a missing
-deck-enchant source contract. The current amendment replaces source-specific
-Provider branches with a reviewed embedded registry and partitions volatile
-authority by exact source evidence. Exit: cold-load that amendment, exercise
-Royal Stamp and an unknown-source negative, then complete the remaining rare
-selector/potion/read matrix without transferring authority from Preview.12.
+## HE-2: Reveal And Native Navigation
 
-## V3-2: Ordinary Journey
+Status: not started.
 
-Status: exact Preview.11 Journey achieved.
+Deliver hover, focus, tooltip, scroll, tab, open/close native page, return and recovery transitions in normal Agent flow.
 
-`run-20260803003138-awi3r5` returned through the completed-game boundary after
-203 direct decisions on the exact Preview.11 artifact. A journey proves the
-reached sequence, not unexercised sources or durable qualification.
+Exit: information reachable by a human no longer requires an operator-only evidence session.
 
-Preview.12 now has three post-repair completed boundaries. They do not
-substitute for Royal Stamp, Kifuda, Quasar, combat-hand or read gates that did
-not naturally occur on the same artifact.
+## HE-3: Generic Current-Affordance Execution
 
-## V3-3: Information Contract
+Status: not started.
 
-Status: source/test complete; exact-runtime matrix incomplete.
+Deliver state/frame-bound control activation, selection, confirm/cancel and delivery-only receipts.
 
-- semantic accessibility remains the default;
-- persistent summary, complete current Surface, state-bound Inspection and
-  linked detail are implemented;
-- compact Prompt projection v1 is production;
-- `native_pages.v1` Human-equivalence profile has config, CLI, routes,
-  native open/read/return, owner checks, state/runtime binding, recovery,
-  tests and docs; it is default-off and non-authorizing.
+Exit: Royal Stamp or another source-unresolved selector is completed without source-specific business authority, with stale and duplicate protection intact.
 
-Exit: current/stale Inspection and linked detail plus full optional native-page
-session Live evidence on the final artifact.
+## HE-4: Visual/Mod Fallback
 
-## V3-4: Authority, Rollback And Freeze
+Status: not started.
 
-Status: CONDITIONAL FREEZE CANDIDATE.
+Deliver bounded frame-pointer targets for one custom-drawn UI that lacks structured controls.
 
-Session trial scopes are exact-source/operation/runtime grants. Qualified and
-durable scopes remain empty. Disk rollback restore and drift detection are proven;
-loaded rollback and revoke lifecycle remain to be exercised.
+Exit: no arbitrary coordinates, node paths, methods or reflection mutation are introduced.
 
-Freeze gates:
+## HE-5: Re Closed Loop
 
-1. source-registry amendment cold-load and Royal Stamp source canary;
-2. remaining exact final-artifact selector/read matrix and unknown-source holdout;
-3. optional Human profile Live lifecycle;
-4. loaded rollback/revoke evidence;
-5. reviewed evidence-to-support matrix with no inherited qualification.
+Status: not started.
 
-## After Freeze
+Re uses complete UI, reveal tools, transition history and successor state to reason about gameplay results.
 
-Resume measurable Agent evaluation only after these gates. V4, learning,
-Headless, Companion and other product lines remain out of this workstream.
+Exit: complete multi-step selector and page flows without Gateway business completion claims.
+
+## HE-6: Main-Menu Governance
+
+Status: not started.
+
+Allow ordinary run lifecycle while governing persistent management and application exit.
+
+Exit: abandon-run/return-menu works; destructive profile/save and quit are blocked or explicitly granted.
+
+## HE-7: Exact-Runtime A/B And Cutover
+
+Status: not started.
+
+Compare with inherited V3 on adaptation, input integrity, Agent reasoning cost and version/Mod resilience.
+
+Exit: retain, amend or reject Human-Equivalent from evidence. Do not freeze or create durable qualification before this decision.
