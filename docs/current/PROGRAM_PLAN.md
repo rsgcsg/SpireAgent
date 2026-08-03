@@ -1,78 +1,47 @@
-# Current Program Plan
+# Current Program Plan — Human-Equivalent Connector
 
 ## Product Outcome
 
-The active goal is one external Re-SpireAgent that completes an ordinary
-vanilla single-player game through one trustworthy Live Connector, or stops at
-a precise visible unsupported boundary.
+One Re-SpireAgent should operate the real STS2 UI with human-equivalent information and actions, continuously observe successors, and remain constrained by input integrity and explicit main-menu governance rather than per-source business authority.
 
 ## Current Boundary
 
-Connector V3 macro migration is closed. Preview.12 was cold-loaded and
-completed three bounded journeys, but Royal Stamp proved that source-rich
-adaptation still depended on Provider edits. The current bounded amendment
-introduces a reviewed source registry and source-partitioned volatile
-authority without changing the wire or creating another architecture generation.
-
-The production path is:
-
-```text
-Native STS2
--> exact game binding and native Commit
--> Connector V3 Gateway
--> REST or optional thin MCP transport
--> strict Re consumer and model choice
-```
-
-The Gateway owns facts, owner, admission, validation and Outcome. Re owns
-strict decode, compact decision projection, choice, submit/poll, successor
-supervision and local evidence. Neither REST nor MCP adds game semantics.
+This branch forks from `connectorV3@5e57e47028b780619a9cd37b0cd13aeaebddaa2a`. Existing V3 is the executable baseline; Human-Equivalent behavior is not yet implemented.
 
 ## Delivery Order
 
-1. Keep fresh-clone deployment and source/build/install/load attribution
-   reproducible.
-2. Preserve the Preview.12 source closure: 94 explicit contracts, zero
-   fallback authority, zero Provider action publication and no active Re V2
-   sidecar.
-3. Cold-load and exercise the source-registry amendment: Royal Stamp must
-   receive a fresh source canary and an unknown source must remain unsupported.
-4. Exercise the final exact-artifact targetless potion, selector, Inspection
-   and linked-detail matrix.
-5. Exercise `native_pages.v1` open/read/return/recovery while keeping it
-   default-off and non-authorizing.
-6. Restore and cold-load a rollback artifact, prove revoke/drift behavior, then
-   reinstall the candidate.
-7. Review the completed Preview.11 and Preview.12 journeys without transferring
-   session authority across artifacts or source partitions.
-8. Freeze only after support, qualification and evidence records agree.
+1. Close branch documentation under ADR-0008.
+2. Add non-authorizing rendered-frame and structured-UI shadow observation.
+3. Add hover/focus/tooltip/scroll/native-page reveal and navigation.
+4. Add generic state/frame-bound current-affordance execution with delivery-only receipts.
+5. Update Re for successor-driven reasoning and transition history.
+6. Add main-menu governance for persistent/destructive operations and application exit.
+7. Exercise Royal Stamp/source-unresolved, multi-stage selector, custom UI and abandon-run holdouts.
+8. Compare against inherited source-contract V3 before cutover.
 
-## Freeze Conditions
+## Required Invariants
 
-- exact state, interaction, entity and control binding;
-- one current input owner and one controller;
-- publication/execution parity with native revalidation;
-- STS2 native Commit and action-local Outcome;
-- idempotent requests and unknown-no-retry;
-- explicit settling, unsupported and stale behavior;
-- strict Gateway/REST/MCP/Re schema alignment;
-- state-bound, read-only Inspection and linked detail;
-- default-off, non-authorizing Human evidence profile;
-- exact build/install/load identity and loaded rollback;
-- no silent V2 or local reconstruction fallback;
-- one exact-artifact ordinary Journey;
-- honest supported/trial/quarantined/unsupported records.
+- exact current state/frame/owner/target binding;
+- one current controller;
+- execute-time actionability validation;
+- idempotent delivery and no blind replay of unknown delivery;
+- complete human-reachable observation with provenance;
+- no hidden RNG/future/private information;
+- no arbitrary method, node or reflection mutation;
+- persistent management and quit-application policy separated from in-run strategy;
+- no silent V3 fallback after cutover;
+- honest source/test/build/install/load/Live evidence boundaries.
+
+## Run Policy
+
+The Connector does not protect run quality. Current human-operable bad choices, irreversible choices, losing, abandoning a run and returning to the main menu are allowed.
 
 ## Current Verdict
 
-`CONDITIONAL FREEZE CANDIDATE`. Preview.12 produced three exact-runtime
-completed boundaries and repeatably exposed Royal Stamp as a missing source
-contract rather than a closed-gray failure. The source-registry amendment and
-source-partitioned trial fix are automated-test verified but not yet loaded.
-Royal Stamp/Kifuda/Quasar/combat-hand evidence, remaining reads, Human native-
-page Live and loaded rollback/revoke remain open.
+`ARCHITECTURE ACCEPTED / IMPLEMENTATION NOT STARTED`.
+
+The inherited V3 branch remains a conditional freeze candidate and comparison path. It does not grant this branch implementation or runtime claims.
 
 ## Deferred
 
-V4, Workshop packaging, Companion, SDK, Headless, learning and training are
-not part of V3 freeze and must not acquire Gateway authority.
+Learning, training, display-headless reimplementation, Companion packaging and broad product distribution remain separate. They must not be used to hide incomplete Human-Equivalent Connector evidence.
