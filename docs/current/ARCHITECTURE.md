@@ -67,20 +67,15 @@ not be smuggled into this semantic read path.
 
 ## Current Migration Boundary
 
-Combat, shop-room/inventory, map, rest-site, event-option, treasure-room,
-reward-claim, card-reward, deck-enchant, deck-upgrade, merchant deck-removal,
-menu/run-setup, generated-card choice, combat-hand selection and game-over
-controls have direct V3 native resolvers in current source. Each
-retains source-specific owner, operand, Commit and Outcome contracts while
-sharing only bounded mechanics. Remaining selectors temporarily call bounded
-Provider native bindings inside the Gateway. Re consumes ordinary combat,
-generated-card choice, menu, event, map, game-over, reward/card-reward, shop,
-rest, treasure, lifecycle-settling and visible-unsupported
-facts and commands directly without V2 semantic validation or capabilities.
-Unmigrated selector families, including relic- and reward-originated deck
-removal, still read same-runtime V2 facts as a temporary,
-non-authorizing projection sidecar. Neither path may supply a V2 action ID to
-V3 execution.
+All currently cataloged combat, room, menu, reward and selector families have
+typed direct V3 discovery/execution and direct Re consumption. Each retains
+source-specific owner, operand, Commit and Outcome contracts while sharing
+only bounded mechanics. The operation catalog contains 94 explicit contracts
+and zero fallback authority. Connector V3 does not consume Provider
+`draft.Actions` or legacy bindings, and Re does not request V2 capabilities or
+state. Historically named Provider files may retain exact game-binding and
+native Commit helpers inside the Gateway; they are neither external authority
+nor a second executor.
 
 Interaction support and instantaneous readiness are orthogonal. A known native
 family may be `settling` with zero legal candidates; it remains observed as a
@@ -88,10 +83,11 @@ supported family and Re supervises a typed `no_action` state. Only an unknown
 or unbound family is visible unsupported. Empty candidates alone never prove
 unsupported semantics.
 
-The migration ends when V3 directly owns remaining selector command bindings,
-Re consumes every supported family without V2 semantic validation, and the
-optional physical-UI evidence profile is implemented separately from semantic
-Inspection. The sidecar and V2 production mutation routes are then deleted.
+Source migration is closed. Runtime closure now requires a cold-loaded exact
+Preview.9 artifact, final selector/potion canaries, a same-artifact journey and
+tested revoke/rollback. The optional physical-UI evidence profile remains
+separate from semantic Inspection. V2 endpoints are diagnostics/rollback only
+and cannot regain Re or mutation authority.
 
 ## Non-Goals
 

@@ -811,7 +811,15 @@ public sealed record DeckEnchantSelectionSurface(
     IReadOnlyList<string> SelectedCardEntityIds,
     bool Cancelable,
     VisibleEnchantment Enchantment,
-    IReadOnlyList<VisibleCard> Cards) : IBridgeSurface;
+    IReadOnlyList<VisibleCard> Cards) : IBridgeSurface
+{
+    public IReadOnlyList<string> SelectableCardEntityIds { get; init; } = Array.Empty<string>();
+    public IReadOnlyList<string> DeselectableCardEntityIds { get; init; } = Array.Empty<string>();
+    public bool CanPreview { get; init; }
+    public bool CanCloseSelection { get; init; }
+    public bool CanConfirm { get; init; }
+    public bool CanCancelPreview { get; init; }
+}
 
 public sealed record EventOptionSurface(
     string Kind,
@@ -830,7 +838,10 @@ public sealed record EventDialogueSurface(
     string ScreenEntityId,
     int CurrentLineIndex,
     IReadOnlyList<VisibleDialogueLine> RevealedLines,
-    string AdvanceLabel) : IBridgeSurface;
+    string AdvanceLabel) : IBridgeSurface
+{
+    public bool CanAdvance { get; init; }
+}
 
 public sealed record VisibleRestOption(
     string EntityId,
@@ -946,7 +957,8 @@ public sealed record VisibleCharacterChoice(
     string Name,
     bool IsLocked,
     bool IsSelected,
-    bool IsRandom);
+    bool IsRandom,
+    bool IsEnabled);
 
 public sealed record VisibleStartingRelic(
     string DefinitionId,
@@ -1077,7 +1089,16 @@ public sealed record DeckTransformSelectionSurface(
     bool ShowingUpgradePreviews,
     string PreviewKind,
     bool ReplacementKnown,
-    IReadOnlyList<VisibleCard> Cards) : IBridgeSurface;
+    IReadOnlyList<VisibleCard> Cards) : IBridgeSurface
+{
+    public IReadOnlyList<string> SelectableCardEntityIds { get; init; } = Array.Empty<string>();
+    public IReadOnlyList<string> DeselectableCardEntityIds { get; init; } = Array.Empty<string>();
+    public bool CanPreview { get; init; }
+    public bool CanCancelSelection { get; init; }
+    public bool CanCancelPreview { get; init; }
+    public bool CanConfirm { get; init; }
+    public bool CanToggleUpgradeView { get; init; }
+}
 
 public sealed record DeckTransformSource(
     string Kind,
@@ -1101,12 +1122,28 @@ public sealed record WoodCarvingsReplacementSelectionSurface(
     int MaxSelect,
     int SelectedCount,
     IReadOnlyList<string> SelectedCardEntityIds,
-    IReadOnlyList<VisibleCard> Cards) : IBridgeSurface;
+    IReadOnlyList<VisibleCard> Cards) : IBridgeSurface
+{
+    public IReadOnlyList<string> SelectableCardEntityIds { get; init; } = Array.Empty<string>();
+    public bool CanCancelPreview { get; init; }
+    public bool CanConfirm { get; init; }
+}
+
+public sealed record VisibleCombatCommandOption(
+    string EntityId,
+    string? Name,
+    IReadOnlyList<string> TargetEntityIds);
 
 public sealed record CombatTurnSurface(
     string Kind,
     string RoomEntityId,
-    bool CanEndTurn) : IBridgeSurface;
+    bool CanEndTurn) : IBridgeSurface
+{
+    public IReadOnlyList<VisibleCombatCommandOption> PlayableCards { get; init; } =
+        Array.Empty<VisibleCombatCommandOption>();
+    public IReadOnlyList<VisibleCombatCommandOption> UsablePotions { get; init; } =
+        Array.Empty<VisibleCombatCommandOption>();
+}
 
 public sealed record CombatPileCardSelectionSurface(
     string Kind,
@@ -1132,7 +1169,12 @@ public sealed record CombatPileCardSelectionSurface(
     IReadOnlyList<string> SelectedCardEntityIds,
     bool RequireManualConfirmation,
     bool Cancelable,
-    IReadOnlyList<VisibleCard> Cards) : IBridgeSurface;
+    IReadOnlyList<VisibleCard> Cards) : IBridgeSurface
+{
+    public IReadOnlyList<string> SelectableCardEntityIds { get; init; } = Array.Empty<string>();
+    public IReadOnlyList<string> DeselectableCardEntityIds { get; init; } = Array.Empty<string>();
+    public bool CanConfirm { get; init; }
+}
 
 public sealed record CombatHandCardSelectionSurface(
     string Kind,
@@ -1219,6 +1261,14 @@ public sealed record GeneratedCardChoiceSurface(
         Array.Empty<string>();
 
     public bool SkipAvailable { get; init; }
+
+    public string SelectOperation { get; init; } = "";
+
+    public string? SkipOperation { get; init; }
+
+    public string SelectCompletionEvidence { get; init; } = "";
+
+    public string? SkipCompletionEvidence { get; init; }
 }
 
 public sealed record VisibleCardBundle(
@@ -1257,7 +1307,11 @@ public sealed record MapNavigationSurface(
     bool TravelEnabled,
     bool Traveling,
     string DrawingMode,
-    IReadOnlyList<VisibleMapChoice> NextOptions) : IBridgeSurface;
+    IReadOnlyList<VisibleMapChoice> NextOptions) : IBridgeSurface
+{
+    public string? AnnotationInputEntityId { get; init; }
+    public bool CanExitAnnotation { get; init; }
+}
 
 public sealed record UnsupportedSurface(
     string Kind,

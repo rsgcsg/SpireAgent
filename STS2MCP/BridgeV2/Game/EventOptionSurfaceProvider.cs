@@ -55,7 +55,7 @@ internal sealed class EventOptionSurfaceProvider : IBridgeSurfaceProvider
             .Where(entry => McpMod.IsNodeVisible(entry.Button))
             .ToArray();
         var options = new List<VisibleEventOption>(visibleButtons.Length);
-        var actions = new List<BridgeActionDraft>();
+        int actionableOptionCount = 0;
         foreach ((NEventOptionButton button, int position) in visibleButtons)
         {
             EventOption option = button.Option;
@@ -75,20 +75,7 @@ internal sealed class EventOptionSurfaceProvider : IBridgeSurfaceProvider
                 BuildTooltips(option.HoverTips, entityId)));
 
             if (!option.IsLocked && button.IsEnabled)
-            {
-                actions.Add(new BridgeActionDraft(
-                    $"choose_event_option:{entityId}",
-                    option.IsProceed ? "proceed_event" : "choose_event_option",
-                    option.IsProceed ? "navigation" : "selection",
-                    BuildLabel(option),
-                    "NEventRoom.OptionButtonClicked+NEventOptionButton",
-                    () => StartOption(room, button, option, position),
-                    new[]
-                    {
-                        new ActionEntityBinding("screen", entities.GetId(room, "screen")),
-                        new ActionEntityBinding("option", entityId)
-                    }));
-            }
+                actionableOptionCount++;
         }
 
         var surface = new EventOptionSurface(
@@ -100,10 +87,15 @@ internal sealed class EventOptionSurfaceProvider : IBridgeSurfaceProvider
             missing.Add("context.name");
         if (options.Count == 0)
             missing.Add("surface.options");
-        string readiness = ClassifyReadiness(context.Name != null, options.Count, actions.Count);
+        string readiness = ClassifyReadiness(
+            context.Name != null,
+            options.Count,
+            actionableOptionCount);
         var completeness = new StateCompleteness(
             missing.Count == 0 ? "contract_complete_for_supported_surface" : "partial",
-            actions.Count > 0 ? "derived_from_same_validator_as_execution" : "temporarily_empty_while_ui_settles",
+            actionableOptionCount > 0
+                ? "derived_from_same_validator_as_execution"
+                : "temporarily_empty_while_ui_settles",
             new[]
             {
                 "NEventRoom.current_event",
@@ -118,8 +110,7 @@ internal sealed class EventOptionSurfaceProvider : IBridgeSurfaceProvider
         {
             game.Version,
             context,
-            surface,
-            actionKeys = actions.Select(action => action.Key).OrderBy(key => key, StringComparer.Ordinal).ToArray()
+            surface
         });
 
         return new BridgeObservationDraft(
@@ -130,7 +121,7 @@ internal sealed class EventOptionSurfaceProvider : IBridgeSurfaceProvider
             completeness,
             game,
             Array.Empty<string>(),
-            actions);
+            Array.Empty<BridgeActionDraft>());
     }
 
     internal static string ClassifyReadiness(

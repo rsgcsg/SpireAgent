@@ -8,7 +8,7 @@ state-bound Semantic Gateway.
   transport adapter.
 
 Connector V3 is the only current target. Source protocol is
-`3.0-preview.8`. The old root Agent and Connector V2 are retained only as
+`3.0-preview.9`. The old root Agent and Connector V2 are retained only as
 history under [`archive/`](archive/).
 
 > **Project maturity:** active source development. There is not yet a packaged
@@ -63,10 +63,10 @@ secrets, game DLLs and deployment directories are never committed.
 
 ## Current Direction
 
-The short-term goal is a clean V3 path that completes ordinary vanilla
-single-player journeys or stops at a precise typed boundary. Current work
-migrates remaining selector families away from Provider/V2-shaped paths and
-closes exact-runtime defects. Workshop packaging, Companion, Agent SDK,
+The short-term goal is exact-runtime closure for the source-complete V3 path:
+complete ordinary vanilla single-player journeys or stop at a precise typed
+boundary, prove final selector/potion canaries and exercise rollback. Workshop
+packaging, Companion, Agent SDK,
 Headless and learning systems are later projects and must not acquire Gateway
 authority.
 

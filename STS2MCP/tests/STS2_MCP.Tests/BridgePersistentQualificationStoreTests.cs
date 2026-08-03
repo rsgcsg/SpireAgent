@@ -37,7 +37,7 @@ public sealed class BridgePersistentQualificationStoreTests
                 BridgeOperationQualificationCatalog.Describe(
                     "map_navigation",
                     "choose_map_node"));
-        BridgeOperationQualificationIdentity fallback = Assert.IsType<
+        BridgeOperationQualificationIdentity transform = Assert.IsType<
             BridgeOperationQualificationIdentity>(
                 BridgeOperationQualificationCatalog.Describe(
                     "deck_transform_selection",
@@ -55,15 +55,15 @@ public sealed class BridgePersistentQualificationStoreTests
             BridgeOperationQualificationCatalog.ExplicitNativeContract,
             map.ContractKind);
         Assert.Equal(
-            BridgeOperationQualificationCatalog.GatewayCompletionBoundary,
-            fallback.CompletionBoundary);
+            "transaction_settled",
+            transform.CompletionBoundary);
         Assert.Equal(
-            BridgeOperationQualificationCatalog.RuntimeReportedWitness,
-            fallback.WitnessId);
+            "transform_screen_closed_original_instances_absent_and_deck_count_preserved",
+            transform.WitnessId);
         Assert.Equal(
-            BridgeOperationQualificationCatalog.ManifestMigrationFallback,
-            fallback.ContractKind);
-        Assert.Equal("persistent_run_mutation", fallback.RiskClass);
+            BridgeOperationQualificationCatalog.ExplicitNativeContract,
+            transform.ContractKind);
+        Assert.Equal("persistent_run_mutation", transform.RiskClass);
         Assert.NotEqual(menu.ContractDigest, map.ContractDigest);
         Assert.All(
             catalog,
@@ -461,7 +461,7 @@ public sealed class BridgePersistentQualificationStoreTests
     }
 
     [Fact]
-    public void ManifestFallbackQualificationCannotBeActivatedByConcreteGatewayWitness()
+    public void ExplicitTransformQualificationActivatesWithExactWitness()
     {
         using var file = new TemporaryLedger();
         file.Write(Install(
@@ -469,12 +469,14 @@ public sealed class BridgePersistentQualificationStoreTests
             Package("qualification-a", "deck_transform_selection", "confirm_deck_transform")));
         BridgePersistentQualificationStore store =
             BridgePersistentQualificationStore.Load(file.Path, () => Now);
-        Assert.Empty(store.Apply(
+        ActionPermissionScope scope = Assert.Single(store.Apply(
             Game(),
             Bridge(),
             Patch()).Compatibility.ActionPermissionScopes);
-        Assert.Equal("invalid_fail_closed", store.Snapshot().Status);
-        Assert.False(store.Snapshot().PersistentAuthorityEnabled);
+        Assert.Equal("deck_transform_selection", scope.SurfaceKind);
+        Assert.Equal("confirm_deck_transform", scope.Operation);
+        Assert.Equal("active", store.Snapshot().Status);
+        Assert.True(store.Snapshot().PersistentAuthorityEnabled);
     }
 
     [Fact]

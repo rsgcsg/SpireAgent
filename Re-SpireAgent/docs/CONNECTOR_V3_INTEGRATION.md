@@ -41,8 +41,10 @@ those descriptors only through their explicit native contracts.
 Luminous Choir event removal uses its own exact task/event/two-card contract,
 whole-transaction Outcome and direct Re Surface. It shares selector mechanics
 but not merchant, relic or reward authority.
-Remaining selectors temporarily reuse mature Provider-native bindings inside
-the Gateway. This is bounded migration debt, not a V2 REST fallback.
+Combat-pile, deck-transform and Wood Carvings now join the direct typed path.
+Exact game binding and native Commit helpers can remain inside historically
+named Provider files, but they publish no action authority and are not a
+second execution path.
 
 Ordinary combat, generated-card choice, menu/run-setup, event, map, game-over,
 reward/card-reward, shop, rest, treasure, lifecycle-settling and
@@ -56,12 +58,9 @@ Preview.7 completed a 202-command ordinary journey, while two preceding
 Merchant stops exposed the authority-admission cycle repaired in Preview.8.
 Luminous Choir removal remains not exercised. Build/install/load status is
 per-machine and must be read with the
-root Connector CLI. Remaining
-selector families temporarily read same-runtime
-Bridge v2 capabilities only as a
-non-executable semantic/environment projection sidecar. No v2 legal action or
-v2 command route enters the V3 execution path. The remaining sidecar is removed
-as direct V3 fact contracts reach equivalent decision-relevant coverage.
+root Connector CLI. Re now obtains all recognized Surface facts directly from
+V3 and never requests the Bridge v2 capabilities/state sidecar. No v2 legal
+action or v2 command route enters the V3 execution path.
 
 Known lifecycle settling is not an unsupported Surface. Re receives a typed
 `no_action`, performs no model call or mutation, and continues only until the
@@ -83,6 +82,11 @@ For `event_deck_removal_selection`, Re accepts only the exact Luminous Choir
 source/purpose/effect tuple and exact command set implied by current selected
 membership and stage. Unknown source literals, missing selected bindings or a
 candidate-set mismatch invalidate the state and produce no local action.
+
+Generated-card choices likewise require the exact source-bound select/skip
+operation and exact command set implied by current selectable cards and native
+skip availability. A source-operation mismatch or extra candidate invalidates
+the state before model selection.
 
 ## Receipt Rules
 

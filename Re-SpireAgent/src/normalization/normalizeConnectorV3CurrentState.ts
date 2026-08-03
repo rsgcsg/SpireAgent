@@ -5,11 +5,15 @@ import {
   type CardBundleSelectionSurface,
   type CardRewardSelectionSurface,
   type CharacterSelectSurface,
+  type CombatPileCardSelectionSurface,
   type CombatHandCardSelectionSurface,
   type CombatTurnSurface,
+  type DeckEnchantSelectionSurface,
   type DeckUpgradeSelectionSurface,
   type DeckRemovalSelectionSurface,
+  type DeckTransformSelectionSurface,
   type EventDeckRemovalSelectionSurface,
+  type EventDialogueSurface,
   type EventOptionSurface,
   type GameOverSurface,
   type GeneratedCardChoiceSurface,
@@ -25,7 +29,8 @@ import {
   type ShopRoomSurface,
   type SingleplayerMenuSurface,
   type StateEnvelope,
-  type TreasureRoomSurface
+  type TreasureRoomSurface,
+  type WoodCarvingsReplacementSelectionSurface
 } from "../domain/state/index.js";
 import type { AdapterDescriptor } from "../game-io/adapter.js";
 import {
@@ -36,6 +41,10 @@ import {
   gatewayCombatHandSurfaceSchema,
   type GatewayCombatHandSurface
 } from "../integrations/sts2mcp/gatewayCombatHandProtocol.js";
+import {
+  gatewayCombatPileSurfaceSchema,
+  type GatewayCombatPileSurface
+} from "../integrations/sts2mcp/gatewayCombatPileProtocol.js";
 import {
   gatewayCombatContextSchema,
   gatewayCombatTurnSurfaceSchema,
@@ -54,6 +63,20 @@ import {
   gatewayDeckUpgradeSurfaceSchema,
   type GatewayDeckUpgradeSurface
 } from "../integrations/sts2mcp/gatewayDeckUpgradeProtocol.js";
+import {
+  gatewayDeckTransformSurfaceSchema,
+  gatewayWoodCarvingsSurfaceSchema,
+  type GatewayDeckTransformSurface,
+  type GatewayWoodCarvingsSurface
+} from "../integrations/sts2mcp/gatewayTransformProtocol.js";
+import {
+  gatewayDeckEnchantSurfaceSchema,
+  type GatewayDeckEnchantSurface
+} from "../integrations/sts2mcp/gatewayDeckEnchantProtocol.js";
+import {
+  gatewayEventDialogueSurfaceSchema,
+  type GatewayEventDialogueSurface
+} from "../integrations/sts2mcp/gatewayEventDialogueProtocol.js";
 import {
   gatewayGeneratedChoiceSurfaceSchema,
   type GatewayGeneratedChoiceSurface
@@ -98,7 +121,6 @@ import {
 } from "../integrations/sts2mcp/connectorV3Protocol.js";
 import {
   expandConnectorV3Commands,
-  usesDirectConnectorV3Consumer,
   type ConnectorV3ConsumerCommand
 } from "../integrations/sts2mcp/connectorV3Projection.js";
 import {
@@ -115,7 +137,10 @@ import {
 } from "./gatewayVisibleStateProjection.js";
 
 type DirectSurface = GatewayCombatTurnSurface | GatewayCombatHandSurface
+  | GatewayCombatPileSurface
+  | GatewayDeckEnchantSurface | GatewayEventDialogueSurface
   | GatewayDeckUpgradeSurface | GatewayDeckRemovalSurface | GatewayEventDeckRemovalSurface
+  | GatewayDeckTransformSurface | GatewayWoodCarvingsSurface
   | GatewayCardBundleSurface
   | GatewayGeneratedChoiceSurface
   | GatewayMenuSurface | GatewayJourneySurface | GatewayRewardSurface
@@ -126,7 +151,8 @@ type DirectContext = GatewayCombatContext | GatewayMenuContext | GatewayEventCon
 export function isDirectConnectorV3ConsumerState(rawState: Sts2McpRawState): boolean {
   const observation = rawState.connector_v3_observation;
   try {
-    return usesDirectConnectorV3Consumer(decodeConnectorV3Observation(observation).data);
+    decodeConnectorV3Observation(observation);
+    return true;
   } catch {
     return false;
   }
@@ -177,12 +203,6 @@ export function normalizeConnectorV3CurrentState(
       if (observation.shared_state !== null) {
         shared = parseSharedState(observation, diagnostics);
       }
-    } else if (!usesDirectConnectorV3Consumer(observation)) {
-      diagnostics.invalid(
-        "connector_v3_observation.surface",
-        observation.surface,
-        "surface is not assigned to the direct Connector V3 consumer"
-      );
     } else {
       context = parseContext(observation, diagnostics);
       surface = parseSurface(observation, diagnostics);
@@ -213,12 +233,14 @@ export function normalizeConnectorV3CurrentState(
         error
       );
     }
-    for (const error of validateCommands(context, surface, commands)) {
-      diagnostics.invalid(
-        "connector_v3_observation.interaction.command_candidates",
-        observation.interaction.command_candidates,
-        error
-      );
+    if (!settling && !visibleUnsupported) {
+      for (const error of validateCommands(context, surface, commands)) {
+        diagnostics.invalid(
+          "connector_v3_observation.interaction.command_candidates",
+          observation.interaction.command_candidates,
+          error
+        );
+      }
     }
   }
   if (observation && observation.interaction.phase !== "ready" && commands.length > 0) {
@@ -435,10 +457,20 @@ function parseSurface(
       ? gatewayCombatTurnSurfaceSchema
     : observation.surface.kind === "combat_hand_card_selection"
       ? gatewayCombatHandSurfaceSchema
+    : observation.surface.kind === "combat_pile_card_selection"
+      ? gatewayCombatPileSurfaceSchema
+    : observation.surface.kind === "deck_enchant_selection"
+      ? gatewayDeckEnchantSurfaceSchema
+    : observation.surface.kind === "event_dialogue"
+      ? gatewayEventDialogueSurfaceSchema
     : observation.surface.kind === "generated_card_choice"
       ? gatewayGeneratedChoiceSurfaceSchema
     : observation.surface.kind === "deck_upgrade_selection"
       ? gatewayDeckUpgradeSurfaceSchema
+    : observation.surface.kind === "deck_transform_selection"
+      ? gatewayDeckTransformSurfaceSchema
+    : observation.surface.kind === "wood_carvings_replacement_selection"
+      ? gatewayWoodCarvingsSurfaceSchema
     : observation.surface.kind === "deck_removal_selection"
       ? gatewayMerchantRemovalSurfaceSchema
     : observation.surface.kind === "relic_deck_removal_selection"
@@ -521,8 +553,23 @@ function contextMatchesSurface(context: DirectContext, surface: DirectSurface): 
   }
   if (context.kind === "combat") {
     return surface.kind === "combat_turn"
-      || surface.kind === "combat_hand_card_selection";
+      || surface.kind === "combat_hand_card_selection"
+      || surface.kind === "combat_pile_card_selection";
   }
+  if (surface.kind === "deck_transform_selection") {
+    return surface.source.kind === "whispering_hollow_event"
+      ? context.kind === "event"
+      : ["event", "reward_flow", "shop", "treasure"].includes(context.kind);
+  }
+  if (surface.kind === "wood_carvings_replacement_selection") {
+    return context.kind === "event";
+  }
+  if (surface.kind === "deck_enchant_selection") {
+    return surface.source.kind === "kifuda_relic_pickup"
+      ? context.kind === "shop"
+      : context.kind === "event";
+  }
+  if (surface.kind === "event_dialogue") return context.kind === "event";
   if (surface.kind === "deck_upgrade_selection") {
     return context.kind === "rest" || context.kind === "event";
   }
@@ -562,11 +609,28 @@ function validateCommands(
         ? validateCombatHandCommand(surface, command)
         : ["combat-hand command requires combat context"];
     }
+    if (surface.kind === "combat_pile_card_selection") {
+      return context.kind === "combat"
+        ? validateCombatPileCommand(surface, command)
+        : ["combat-pile command requires combat context"];
+    }
     if (surface.kind === "generated_card_choice") {
       return validateGeneratedChoiceCommand(surface, command);
     }
     if (surface.kind === "deck_upgrade_selection") {
       return validateDeckUpgradeCommand(surface, command);
+    }
+    if (surface.kind === "deck_transform_selection") {
+      return validateDeckTransformCommand(surface, command);
+    }
+    if (surface.kind === "wood_carvings_replacement_selection") {
+      return validateWoodCarvingsCommand(surface, command);
+    }
+    if (surface.kind === "deck_enchant_selection") {
+      return validateDeckEnchantCommand(surface, command);
+    }
+    if (surface.kind === "event_dialogue") {
+      return validateEventDialogueCommand(surface, command);
     }
     if (surface.kind === "deck_removal_selection"
         || surface.kind === "relic_deck_removal_selection"
@@ -594,6 +658,30 @@ function validateCommands(
   });
   if (surface.kind === "deck_upgrade_selection") {
     errors.push(...validateDeckUpgradeCommandSet(surface, commands));
+  }
+  if (surface.kind === "deck_transform_selection") {
+    errors.push(...validateDeckTransformCommandSet(surface, commands));
+  }
+  if (surface.kind === "wood_carvings_replacement_selection") {
+    errors.push(...validateWoodCarvingsCommandSet(surface, commands));
+  }
+  if (surface.kind === "deck_enchant_selection") {
+    errors.push(...validateDeckEnchantCommandSet(surface, commands));
+  }
+  if (surface.kind === "generated_card_choice") {
+    errors.push(...validateGeneratedChoiceCommandSet(surface, commands));
+  }
+  if (surface.kind === "event_dialogue") {
+    errors.push(...validateEventDialogueCommandSet(surface, commands));
+  }
+  if (surface.kind === "map_navigation") {
+    errors.push(...validateMapCommandSet(surface, commands));
+  }
+  if (surface.kind === "combat_turn") {
+    errors.push(...validateCombatCommandSet(surface, commands));
+  }
+  if (surface.kind === "combat_pile_card_selection") {
+    errors.push(...validateCombatPileCommandSet(surface, commands));
   }
   if (surface.kind === "deck_removal_selection"
       || surface.kind === "relic_deck_removal_selection"
@@ -629,6 +717,121 @@ function validateDeckUpgradeCommandSet(
     ...(surface.can_confirm ? ["confirm_deck_upgrade|confirm_interaction|"] : [])
   ].sort();
   return exactCommandSetErrors("deck-upgrade", expected, commands);
+}
+
+function validateDeckTransformCommandSet(
+  surface: GatewayDeckTransformSurface,
+  commands: ConnectorV3ConsumerCommand[]
+): string[] {
+  const expected = [
+    ...surface.selectable_card_entity_ids.map(
+      (id) => `toggle_deck_transform_card|select_entity|${id}`
+    ),
+    ...surface.deselectable_card_entity_ids.map(
+      (id) => `toggle_deck_transform_card|deselect_entity|${id}`
+    ),
+    ...(surface.can_preview ? ["preview_deck_transform|confirm_interaction|"] : []),
+    ...(surface.can_cancel_selection
+      ? ["cancel_deck_transform_selection|cancel_interaction|"]
+      : []),
+    ...(surface.can_cancel_preview
+      ? ["cancel_deck_transform_preview|cancel_interaction|"]
+      : []),
+    ...(surface.can_confirm ? ["confirm_deck_transform|confirm_interaction|"] : []),
+    ...(surface.can_toggle_upgrade_view
+      ? ["toggle_deck_transform_upgrade_view|activate_control|"]
+      : [])
+  ].sort();
+  return exactCommandSetErrors("deck-transform", expected, commands);
+}
+
+function validateWoodCarvingsCommandSet(
+  surface: GatewayWoodCarvingsSurface,
+  commands: ConnectorV3ConsumerCommand[]
+): string[] {
+  const expected = [
+    ...surface.selectable_card_entity_ids.map(
+      (id) => `select_wood_carvings_replacement_card|select_entity|${id}`
+    ),
+    ...(surface.can_cancel_preview
+      ? ["cancel_wood_carvings_replacement_preview|cancel_interaction|"]
+      : []),
+    ...(surface.can_confirm
+      ? ["confirm_wood_carvings_replacement|confirm_interaction|"]
+      : [])
+  ].sort();
+  return exactCommandSetErrors("wood-carvings", expected, commands);
+}
+
+function validateDeckEnchantCommandSet(
+  surface: GatewayDeckEnchantSurface,
+  commands: ConnectorV3ConsumerCommand[]
+): string[] {
+  const expected = [
+    ...surface.selectable_card_entity_ids.map(
+      (id) => `toggle_card|select_entity|${id}`
+    ),
+    ...surface.deselectable_card_entity_ids.map(
+      (id) => `toggle_card|deselect_entity|${id}`
+    ),
+    ...(surface.can_preview ? ["preview_selection|confirm_interaction|"] : []),
+    ...(surface.can_close_selection ? ["close_selection|cancel_interaction|"] : []),
+    ...(surface.can_confirm ? ["confirm_selection|confirm_interaction|"] : []),
+    ...(surface.can_cancel_preview ? ["cancel_preview|cancel_interaction|"] : [])
+  ].sort();
+  return exactCommandSetErrors("deck-enchant", expected, commands);
+}
+
+function validateEventDialogueCommandSet(
+  surface: GatewayEventDialogueSurface,
+  commands: ConnectorV3ConsumerCommand[]
+): string[] {
+  const expected = surface.can_advance
+    ? ["advance_event_dialogue|activate_control|"]
+    : [];
+  return exactCommandSetErrors("event-dialogue", expected, commands);
+}
+
+function validateMapCommandSet(
+  surface: Extract<GatewayJourneySurface, { kind: "map_navigation" }>,
+  commands: ConnectorV3ConsumerCommand[]
+): string[] {
+  const expected = [
+    ...surface.next_options.map((option) =>
+      `choose_map_node|navigate|${option.entity_id}`
+    ),
+    ...(surface.can_exit_annotation && surface.annotation_input_entity_id
+      ? [`exit_map_annotation|activate_control|${surface.annotation_input_entity_id}`]
+      : [])
+  ].sort();
+  const actual = commands.map((command) => [
+    command.operation,
+    command.command,
+    command.operands.map_node_id
+      ?? command.operands.map_annotation_input_id
+      ?? ""
+  ].join("|")).sort();
+  return JSON.stringify(actual) === JSON.stringify(expected)
+    ? []
+    : ["map command set must exactly match current actionable facts"];
+}
+
+function validateCombatPileCommandSet(
+  surface: GatewayCombatPileSurface,
+  commands: ConnectorV3ConsumerCommand[]
+): string[] {
+  const expected = [
+    ...surface.selectable_card_entity_ids.map(
+      (id) => `toggle_combat_pile_card|select_entity|${id}`
+    ),
+    ...surface.deselectable_card_entity_ids.map(
+      (id) => `toggle_combat_pile_card|deselect_entity|${id}`
+    ),
+    ...(surface.can_confirm
+      ? ["confirm_combat_pile_selection|confirm_interaction|"]
+      : [])
+  ].sort();
+  return exactCommandSetErrors("combat-pile", expected, commands);
 }
 
 function validateDeckRemovalCommandSet(
@@ -731,22 +934,41 @@ function validateGeneratedChoiceCommand(
     );
     return collectErrors([
       ...base,
+      command.operation === surface.select_operation
+        || "generated choice select operation does not match its exact source contract",
+      surface.selectable_card_entity_ids.includes(command.operands.card_id ?? "")
+        || "generated choice card is not currently selectable",
       Boolean(card) || "generated choice must bind one current visible card",
       Boolean(card && hasBinding(command, "card", card.entity_id))
         || "generated choice is missing its exact card binding"
     ]);
   }
-  if (command.operation.startsWith("skip_")) {
+  if (command.operation === surface.skip_operation) {
     return collectErrors([
       ...base,
       command.command === "activate_control"
         || "generated choice skip must activate its native control",
-      surface.can_skip || "generated choice skip was published while unavailable",
+      surface.skip_available || "generated choice skip was published while unavailable",
       command.operands.control_id === command.operation
         || "generated choice skip control is not exact"
     ]);
   }
   return [`unsupported direct generated-choice operation ${command.operation}`];
+}
+
+function validateGeneratedChoiceCommandSet(
+  surface: GatewayGeneratedChoiceSurface,
+  commands: ConnectorV3ConsumerCommand[]
+): string[] {
+  const expected = [
+    ...surface.selectable_card_entity_ids.map(
+      (id) => `${surface.select_operation}|select_entity|${id}`
+    ),
+    ...(surface.skip_available && surface.skip_operation
+      ? [`${surface.skip_operation}|activate_control|`]
+      : [])
+  ].sort();
+  return exactCommandSetErrors("generated-choice", expected, commands);
 }
 
 function validateDeckUpgradeCommand(
@@ -815,6 +1037,278 @@ function validateDeckUpgradeCommand(
     ]);
   }
   return [`unsupported direct deck-upgrade operation ${command.operation}`];
+}
+
+function validateCombatCommandSet(
+  surface: GatewayCombatTurnSurface,
+  commands: ConnectorV3ConsumerCommand[]
+): string[] {
+  const expected = [
+    ...surface.playable_cards.flatMap((card) =>
+      (card.target_entity_ids.length > 0 ? card.target_entity_ids : [""])
+        .map(() => `play_card|play_card|${card.entity_id}`)
+    ),
+    ...surface.usable_potions.flatMap((potion) =>
+      (potion.target_entity_ids.length > 0 ? potion.target_entity_ids : [""])
+        .map(() => `use_potion|use_potion|`)
+    ),
+    ...(surface.can_end_turn ? ["end_turn|end_turn|"] : [])
+  ].sort();
+  const actual = commands.map((command) => [
+    command.operation,
+    command.command,
+    command.operands.card_id ?? ""
+  ].join("|")).sort();
+  return JSON.stringify(actual) === JSON.stringify(expected)
+    ? []
+    : ["combat command set must exactly match current actionable facts"];
+}
+
+function validateDeckTransformCommand(
+  surface: GatewayDeckTransformSurface,
+  command: ConnectorV3ConsumerCommand
+): string[] {
+  const base = [
+    command.operands.screen_id === surface.screen_entity_id
+      || "deck-transform command must bind the current screen",
+    hasBinding(command, "screen", surface.screen_entity_id)
+      || "deck-transform command is missing its exact screen binding"
+  ];
+  if (command.operation === "toggle_deck_transform_card") {
+    const cardId = command.operands.card_id ?? "";
+    const selecting = surface.selectable_card_entity_ids.includes(cardId);
+    const deselecting = surface.deselectable_card_entity_ids.includes(cardId);
+    return collectErrors([
+      ...base,
+      surface.stage === "selecting" || "deck-transform card toggle requires selecting stage",
+      (selecting && command.command === "select_entity")
+        || (deselecting && command.command === "deselect_entity")
+        || "deck-transform command must match exact selected membership",
+      hasBinding(command, "card", cardId)
+        || "deck-transform command is missing its exact card binding"
+    ]);
+  }
+  const selectedBindingsMatch = (): boolean => {
+    const bound = command.entityBindings
+      .filter((binding) => binding.role === "card")
+      .map((binding) => binding.entityId)
+      .sort();
+    return JSON.stringify(bound)
+      === JSON.stringify([...surface.selected_card_entity_ids].sort());
+  };
+  const control = command.operands.control_id === command.operation;
+  if (command.operation === "preview_deck_transform") {
+    return collectErrors([
+      ...base,
+      command.command === "confirm_interaction" || "deck-transform preview must confirm the selecting interaction",
+      control || "deck-transform preview control is not exact",
+      surface.stage === "selecting" && surface.can_preview || "deck-transform preview is unavailable",
+      selectedBindingsMatch() || "deck-transform preview must bind exact selected membership"
+    ]);
+  }
+  if (command.operation === "cancel_deck_transform_selection") {
+    return collectErrors([
+      ...base,
+      command.command === "cancel_interaction" || "deck-transform close must cancel the interaction",
+      control || "deck-transform close control is not exact",
+      surface.stage === "selecting" && surface.can_cancel_selection || "deck-transform close is unavailable"
+    ]);
+  }
+  if (command.operation === "toggle_deck_transform_upgrade_view") {
+    return collectErrors([
+      ...base,
+      command.command === "activate_control" || "deck-transform upgrade view must activate its native control",
+      control || "deck-transform upgrade-view control is not exact",
+      surface.stage === "selecting" && surface.can_toggle_upgrade_view || "deck-transform upgrade view is unavailable"
+    ]);
+  }
+  if (command.operation === "cancel_deck_transform_preview") {
+    return collectErrors([
+      ...base,
+      command.command === "cancel_interaction" || "deck-transform preview return must cancel the preview",
+      control || "deck-transform preview return control is not exact",
+      surface.stage === "preview" && surface.can_cancel_preview || "deck-transform preview return is unavailable",
+      selectedBindingsMatch() || "deck-transform preview return must bind exact selected membership"
+    ]);
+  }
+  if (command.operation === "confirm_deck_transform") {
+    return collectErrors([
+      ...base,
+      command.command === "confirm_interaction" || "deck-transform commit must confirm the interaction",
+      control || "deck-transform confirm control is not exact",
+      surface.stage === "preview" && surface.can_confirm || "deck-transform confirm is unavailable",
+      selectedBindingsMatch() || "deck-transform commit must bind exact selected membership"
+    ]);
+  }
+  return [`unsupported direct deck-transform operation ${command.operation}`];
+}
+
+function validateWoodCarvingsCommand(
+  surface: GatewayWoodCarvingsSurface,
+  command: ConnectorV3ConsumerCommand
+): string[] {
+  const base = [
+    command.operands.screen_id === surface.screen_entity_id
+      || "Wood Carvings command must bind the current screen",
+    hasBinding(command, "screen", surface.screen_entity_id)
+      || "Wood Carvings command is missing its exact screen binding"
+  ];
+  if (command.operation === "select_wood_carvings_replacement_card") {
+    const cardId = command.operands.card_id ?? "";
+    return collectErrors([
+      ...base,
+      command.command === "select_entity" || "Wood Carvings selection must use select_entity",
+      surface.stage === "selecting" && surface.selectable_card_entity_ids.includes(cardId)
+        || "Wood Carvings selection must bind one currently selectable card",
+      hasBinding(command, "card", cardId)
+        || "Wood Carvings selection is missing its exact card binding"
+    ]);
+  }
+  const selected = command.entityBindings
+    .filter((binding) => binding.role === "card")
+    .map((binding) => binding.entityId)
+    .sort();
+  const selectedMatch = JSON.stringify(selected)
+    === JSON.stringify([...surface.selected_card_entity_ids].sort());
+  if (command.operation === "confirm_wood_carvings_replacement") {
+    return collectErrors([
+      ...base,
+      command.command === "confirm_interaction" || "Wood Carvings commit must confirm the interaction",
+      command.operands.control_id === command.operation || "Wood Carvings confirm control is not exact",
+      surface.stage === "preview" && surface.can_confirm || "Wood Carvings confirm is unavailable",
+      selectedMatch || "Wood Carvings commit must bind the exact selected card"
+    ]);
+  }
+  if (command.operation === "cancel_wood_carvings_replacement_preview") {
+    return collectErrors([
+      ...base,
+      command.command === "cancel_interaction" || "Wood Carvings preview return must cancel the preview",
+      command.operands.control_id === command.operation || "Wood Carvings preview return control is not exact",
+      surface.stage === "preview" && surface.can_cancel_preview || "Wood Carvings preview return is unavailable",
+      selectedMatch || "Wood Carvings preview return must bind the exact selected card"
+    ]);
+  }
+  return [`unsupported direct Wood Carvings operation ${command.operation}`];
+}
+
+function validateDeckEnchantCommand(
+  surface: GatewayDeckEnchantSurface,
+  command: ConnectorV3ConsumerCommand
+): string[] {
+  const base = [
+    command.operands.screen_id === surface.screen_entity_id
+      || "deck-enchant command must bind the current screen",
+    hasBinding(command, "screen", surface.screen_entity_id)
+      || "deck-enchant command is missing its exact screen binding"
+  ];
+  if (command.operation === "toggle_card") {
+    const cardId = command.operands.card_id ?? "";
+    const selecting = surface.selectable_card_entity_ids.includes(cardId);
+    const deselecting = surface.deselectable_card_entity_ids.includes(cardId);
+    return collectErrors([
+      ...base,
+      (selecting && command.command === "select_entity")
+        || (deselecting && command.command === "deselect_entity")
+        || "deck-enchant command must match exact selected membership",
+      hasBinding(command, "card", cardId)
+        || "deck-enchant command is missing its exact card binding"
+    ]);
+  }
+  const expectedAvailability = command.operation === "preview_selection"
+    ? surface.stage === "selecting" && surface.can_preview
+    : command.operation === "close_selection"
+      ? surface.stage === "selecting" && surface.can_close_selection
+      : command.operation === "confirm_selection"
+        ? surface.stage === "preview" && surface.can_confirm
+        : command.operation === "cancel_preview"
+          ? surface.stage === "preview" && surface.can_cancel_preview
+          : false;
+  const expectedCommand = command.operation === "preview_selection"
+      || command.operation === "confirm_selection"
+    ? "confirm_interaction"
+    : "cancel_interaction";
+  const selected = command.entityBindings
+    .filter((binding) => binding.role === "card")
+    .map((binding) => binding.entityId)
+    .sort();
+  const selectedMatch = command.operation !== "confirm_selection"
+    || JSON.stringify(selected) === JSON.stringify([...surface.selected_card_entity_ids].sort());
+  return collectErrors([
+    ...base,
+    expectedAvailability || `deck-enchant operation ${command.operation} is unavailable`,
+    command.command === expectedCommand || "deck-enchant command uses the wrong semantic command",
+    command.operands.control_id === command.operation
+      || "deck-enchant command must bind its exact semantic control",
+    selectedMatch || "deck-enchant commit must bind exact selected membership"
+  ]);
+}
+
+function validateEventDialogueCommand(
+  surface: GatewayEventDialogueSurface,
+  command: ConnectorV3ConsumerCommand
+): string[] {
+  const current = surface.revealed_lines.find((line) => line.is_current);
+  return collectErrors([
+    command.operation === "advance_event_dialogue"
+      || "event-dialogue operation is not supported",
+    command.command === "activate_control"
+      || "event-dialogue advance must activate the semantic control",
+    surface.can_advance || "event-dialogue advance was published while unavailable",
+    command.operands.screen_id === surface.screen_entity_id
+      || "event-dialogue command must bind the current screen",
+    command.operands.dialogue_line_id === current?.entity_id
+      || "event-dialogue command must bind the exact current revealed line",
+    command.operands.control_id === "advance_event_dialogue"
+      || "event-dialogue command must bind the advance control",
+    hasBinding(command, "screen", surface.screen_entity_id)
+      || "event-dialogue command is missing its exact screen binding",
+    Boolean(current && hasBinding(command, "dialogue_line", current.entity_id))
+      || "event-dialogue command is missing its exact line binding"
+  ]);
+}
+
+function validateCombatPileCommand(
+  surface: GatewayCombatPileSurface,
+  command: ConnectorV3ConsumerCommand
+): string[] {
+  const base = [
+    command.operands.screen_id === surface.screen_entity_id
+      || "combat-pile command must bind the current screen",
+    command.operands.source_id === surface.source_entity_id
+      || "combat-pile command must bind the current semantic source",
+    hasBinding(command, "screen", surface.screen_entity_id)
+      || "combat-pile command is missing its exact screen binding",
+    hasBinding(command, "source", surface.source_entity_id)
+      || "combat-pile command is missing its exact source binding"
+  ];
+  if (command.operation === "toggle_combat_pile_card") {
+    const cardId = command.operands.card_id ?? "";
+    const selecting = surface.selectable_card_entity_ids.includes(cardId);
+    const deselecting = surface.deselectable_card_entity_ids.includes(cardId);
+    return collectErrors([
+      ...base,
+      (selecting && command.command === "select_entity")
+        || (deselecting && command.command === "deselect_entity")
+        || "combat-pile command must match exact selected membership",
+      hasBinding(command, "card", cardId)
+        || "combat-pile command is missing its exact card binding"
+    ]);
+  }
+  if (command.operation === "confirm_combat_pile_selection") {
+    const bound = command.entityBindings
+      .filter((binding) => binding.role === "card")
+      .map((binding) => binding.entityId)
+      .sort();
+    return collectErrors([
+      ...base,
+      command.command === "confirm_interaction" || "combat-pile commit must confirm the interaction",
+      command.operands.control_id === command.operation || "combat-pile confirm control is not exact",
+      surface.can_confirm || "combat-pile confirm is unavailable",
+      JSON.stringify(bound) === JSON.stringify([...surface.selected_card_entity_ids].sort())
+        || "combat-pile commit must bind exact selected membership"
+    ]);
+  }
+  return [`unsupported direct combat-pile operation ${command.operation}`];
 }
 
 function validateDeckRemovalCommand(
@@ -1035,6 +1529,9 @@ function validateCombatCommand(
     ]);
   }
   if (command.operation === "play_card") {
+    const option = surface.playable_cards.find(
+      (value) => value.entity_id === command.operands.card_id
+    );
     const card = context.player.hand.find(
       (value) => value.entity_id === command.operands.card_id
     );
@@ -1043,16 +1540,25 @@ function validateCombatCommand(
       : undefined;
     return collectErrors([
       command.command === "play_card" || "card play must use play_card",
+      Boolean(option) || "card play was not published by the current typed surface",
       Boolean(card) || "card play must bind one current hand card",
       Boolean(card && hasBinding(command, "card", card.entity_id))
         || "card play is missing its exact card binding",
       !command.operands.target_id || Boolean(target)
         || "card play target must be one current enemy",
+      Boolean(option && (option.target_entity_ids.length === 0
+        ? !command.operands.target_id
+        : Boolean(command.operands.target_id
+          && option.target_entity_ids.includes(command.operands.target_id))))
+        || "card play target must match its exact published target domain",
       !target || hasBinding(command, "target", target.entity_id)
         || "card play target is missing its exact binding"
     ]);
   }
   if (command.operation === "use_potion") {
+    const option = surface.usable_potions.find(
+      (value) => value.entity_id === command.operands.potion_id
+    );
     const potion = context.player.potion_states.find(
       (value) => value.entity_id === command.operands.potion_id
     );
@@ -1062,11 +1568,17 @@ function validateCombatCommand(
     ]);
     return collectErrors([
       command.command === "use_potion" || "potion use must use use_potion",
+      Boolean(option) || "potion use was not published by the current typed surface",
       Boolean(potion) || "potion use must bind one current potion",
       Boolean(potion && hasBinding(command, "potion", potion.entity_id))
         || "potion use is missing its exact potion binding",
       !command.operands.target_id || validTargetIds.has(command.operands.target_id)
         || "potion target must be a current player or enemy",
+      Boolean(option && (option.target_entity_ids.length === 0
+        ? !command.operands.target_id
+        : Boolean(command.operands.target_id
+          && option.target_entity_ids.includes(command.operands.target_id))))
+        || "potion target must match its exact published target domain",
       !command.operands.target_id || hasBinding(command, "target", command.operands.target_id)
         || "potion target is missing its exact binding"
     ]);
@@ -1219,6 +1731,9 @@ function validateCardRewardCommand(
 
 function validateSurfaceFacts(surface: DirectSurface): string[] {
   if (surface.kind === "deck_upgrade_selection") return [];
+  if (surface.kind === "deck_transform_selection") return [];
+  if (surface.kind === "wood_carvings_replacement_selection") return [];
+  if (surface.kind === "combat_pile_card_selection") return [];
   if (surface.kind === "deck_removal_selection"
       || surface.kind === "relic_deck_removal_selection"
       || surface.kind === "reward_deck_removal_selection") return [];
@@ -1454,7 +1969,11 @@ function validateMapCommand(
       command.command === "activate_control" || "map annotation exit must activate a control",
       command.operands.control_id === "exit_map_annotation"
         || "map annotation exit control is not exact",
+      surface.can_exit_annotation
+        || "map annotation exit was published while its control was unavailable",
       surface.drawing_mode !== "none" || "map annotation exit requires active drawing mode",
+      inputId === surface.annotation_input_entity_id
+        || "map annotation exit must bind the current input owner",
       Boolean(inputId && hasBinding(command, "map_annotation_input", inputId))
         || "map annotation exit is missing its exact input binding"
     ]);
@@ -1731,11 +2250,26 @@ function projectSurface(
   if (surface.kind === "combat_hand_card_selection") {
     return projectCombatHandSurface(surface, observation, legalActions);
   }
+  if (surface.kind === "combat_pile_card_selection") {
+    return projectCombatPileSurface(surface, observation, legalActions);
+  }
+  if (surface.kind === "deck_enchant_selection") {
+    return projectDeckEnchantSurface(surface, observation, legalActions);
+  }
+  if (surface.kind === "event_dialogue") {
+    return projectEventDialogueSurface(surface, observation, legalActions);
+  }
   if (surface.kind === "generated_card_choice") {
     return projectGeneratedChoiceSurface(surface, observation, legalActions);
   }
   if (surface.kind === "deck_upgrade_selection") {
     return projectDeckUpgradeSurface(surface, observation, legalActions);
+  }
+  if (surface.kind === "deck_transform_selection") {
+    return projectDeckTransformSurface(surface, observation, legalActions);
+  }
+  if (surface.kind === "wood_carvings_replacement_selection") {
+    return projectWoodCarvingsSurface(surface, observation, legalActions);
   }
   if (surface.kind === "deck_removal_selection"
       || surface.kind === "relic_deck_removal_selection"
@@ -1778,6 +2312,67 @@ function projectSurface(
   return projectMenuSurface(surface, observation, legalActions);
 }
 
+function projectDeckEnchantSurface(
+  surface: GatewayDeckEnchantSurface,
+  observation: ConnectorV3Observation,
+  legalActions: BridgeLegalActionSnapshot[]
+): DeckEnchantSelectionSurface {
+  return {
+    kind: "deck_enchant_selection",
+    stage: surface.stage,
+    bridgeStateId: observation.state_token,
+    screenEntityId: surface.screen_entity_id,
+    source: {
+      kind: surface.source.kind,
+      definitionId: surface.source.definition_id,
+      bindingEvidence: surface.source.binding_evidence
+    },
+    ...(surface.prompt ? { prompt: surface.prompt } : {}),
+    minimumSelections: surface.min_select,
+    maximumSelections: surface.max_select,
+    selectedCount: surface.selected_count,
+    selectedCardEntityIds: [...surface.selected_card_entity_ids],
+    cancelable: surface.cancelable,
+    enchantment: {
+      definitionId: surface.enchantment.definition_id,
+      ...(surface.enchantment.name ? { name: surface.enchantment.name } : {}),
+      ...(surface.enchantment.description
+        ? { description: surface.enchantment.description }
+        : {}),
+      amount: surface.enchantment.amount,
+      ...(surface.enchantment.observation_source
+        ? { observationSource: surface.enchantment.observation_source }
+        : {})
+    },
+    cards: surface.cards.map(projectGatewayVisibleCard),
+    legalActions,
+    completeness: projectCompleteness(observation)
+  };
+}
+
+function projectEventDialogueSurface(
+  surface: GatewayEventDialogueSurface,
+  observation: ConnectorV3Observation,
+  legalActions: BridgeLegalActionSnapshot[]
+): EventDialogueSurface {
+  return {
+    kind: "event_dialogue",
+    bridgeStateId: observation.state_token,
+    screenEntityId: surface.screen_entity_id,
+    currentLineIndex: surface.current_line_index,
+    revealedLines: surface.revealed_lines.map((line) => ({
+      entityId: line.entity_id,
+      index: line.index,
+      text: line.text,
+      speaker: line.speaker,
+      isCurrent: line.is_current
+    })),
+    advanceLabel: surface.advance_label,
+    legalActions,
+    completeness: projectCompleteness(observation)
+  };
+}
+
 function projectDeckUpgradeSurface(
   surface: GatewayDeckUpgradeSurface,
   observation: ConnectorV3Observation,
@@ -1796,6 +2391,100 @@ function projectDeckUpgradeSurface(
     cancelable: surface.cancelable,
     cards: surface.cards.map(projectGatewayVisibleCard),
     previewCards: surface.preview_cards.map(projectGatewayVisibleCard),
+    legalActions,
+    completeness: projectCompleteness(observation)
+  };
+}
+
+function projectDeckTransformSurface(
+  surface: GatewayDeckTransformSurface,
+  observation: ConnectorV3Observation,
+  legalActions: BridgeLegalActionSnapshot[]
+): DeckTransformSelectionSurface {
+  return {
+    kind: "deck_transform_selection",
+    stage: surface.stage,
+    bridgeStateId: observation.state_token,
+    screenEntityId: surface.screen_entity_id,
+    source: {
+      kind: surface.source.kind,
+      definitionId: surface.source.definition_id,
+      bindingEvidence: surface.source.binding_evidence
+    },
+    prompt: surface.prompt,
+    minimumSelections: surface.min_select,
+    maximumSelections: surface.max_select,
+    selectedCount: surface.selected_count,
+    selectedCardEntityIds: [...surface.selected_card_entity_ids],
+    cancelable: surface.cancelable,
+    upgradeToggleVisible: surface.upgrade_toggle_visible,
+    showingUpgradePreviews: surface.showing_upgrade_previews,
+    previewKind: surface.preview_kind,
+    replacementKnown: false,
+    cards: surface.cards.map(projectGatewayVisibleCard),
+    legalActions,
+    completeness: projectCompleteness(observation)
+  };
+}
+
+function projectWoodCarvingsSurface(
+  surface: GatewayWoodCarvingsSurface,
+  observation: ConnectorV3Observation,
+  legalActions: BridgeLegalActionSnapshot[]
+): WoodCarvingsReplacementSelectionSurface {
+  return {
+    kind: "wood_carvings_replacement_selection",
+    stage: surface.stage,
+    bridgeStateId: observation.state_token,
+    screenEntityId: surface.screen_entity_id,
+    prompt: surface.prompt,
+    branch: surface.branch,
+    replacementDefinitionId: surface.replacement_definition_id,
+    ...(surface.replacement_name ? { replacementName: surface.replacement_name } : {}),
+    ...(surface.replacement_description
+      ? { replacementDescription: surface.replacement_description }
+      : {}),
+    minimumSelections: 1,
+    maximumSelections: 1,
+    selectedCount: surface.selected_count,
+    selectedCardEntityIds: [...surface.selected_card_entity_ids],
+    cards: surface.cards.map(projectGatewayVisibleCard),
+    legalActions,
+    completeness: projectCompleteness(observation)
+  };
+}
+
+function projectCombatPileSurface(
+  surface: GatewayCombatPileSurface,
+  observation: ConnectorV3Observation,
+  legalActions: BridgeLegalActionSnapshot[]
+): CombatPileCardSelectionSurface {
+  return {
+    kind: "combat_pile_card_selection",
+    bridgeStateId: observation.state_token,
+    screenEntityId: surface.screen_entity_id,
+    prompt: surface.prompt,
+    purpose: surface.purpose,
+    mutationKind: surface.mutation_kind,
+    commitMode: surface.commit_mode,
+    sourceKind: surface.source_kind,
+    sourceEntityKind: surface.source_entity_kind,
+    sourceEntityId: surface.source_entity_id,
+    sourceDefinitionId: surface.source_definition_id,
+    sourceCardEntityId: surface.source_card_entity_id ?? null,
+    sourceCardDefinitionId: surface.source_card_definition_id ?? null,
+    pileType: surface.pile_type,
+    destinationPile: surface.destination_pile,
+    destinationPosition: surface.destination_position,
+    overflowDestination: surface.overflow_destination ?? null,
+    replacementCardDefinitionId: surface.replacement_card_definition_id ?? null,
+    minimumSelections: surface.min_select,
+    maximumSelections: surface.max_select,
+    selectedCount: surface.selected_count,
+    selectedCardEntityIds: [...surface.selected_card_entity_ids],
+    requireManualConfirmation: surface.require_manual_confirmation,
+    cancelable: false,
+    cards: surface.cards.map(projectGatewayVisibleCard),
     legalActions,
     completeness: projectCompleteness(observation)
   };
@@ -2277,7 +2966,8 @@ function projectMenuSurface(
       name: character.name,
       locked: character.is_locked,
       selected: character.is_selected,
-      random: character.is_random
+      random: character.is_random,
+      enabled: character.is_enabled
     })),
     ...(surface.selected_details ? {
       selectedDetails: {

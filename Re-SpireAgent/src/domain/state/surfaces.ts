@@ -690,6 +690,7 @@ export interface CharacterSelectSurface {
     locked: boolean;
     selected: boolean;
     random: boolean;
+    enabled?: boolean;
   }>;
   selectedDetails?: {
     characterId: string;

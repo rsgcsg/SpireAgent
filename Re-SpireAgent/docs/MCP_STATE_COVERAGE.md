@@ -1,71 +1,46 @@
 # Connector V3 State Coverage
 
-This file records the current Re consumer boundary. Gateway implementation and
-exact-runtime evidence status are canonical in
+This file records the Re consumer boundary. Gateway implementation and
+exact-runtime evidence are canonical in
 [Connector V3 Coverage](../../STS2MCP/docs/connector-v3/COVERAGE.md).
 
 ## Current Contract
 
-Re strictly accepts `3.0-preview.8` observations and receipts. It preserves:
+Re strictly accepts `3.0-preview.9` observations and receipts. It preserves:
 
 - exact Gateway, game, Modset and runtime identity;
-- the state token and active interaction ID;
-- semantic context, visible surface and shared player facts;
-- visible unsupported interactions with no executable candidates;
-- exact candidate operands and Gateway-provided operand domains;
+- state token, active interaction and exact entity/control operands;
+- semantic context, visible Surface and persistent player facts;
+- visible unsupported and known settling interactions without commands;
 - `completed`, `not_executed`, `pending` and `unknown` receipts.
 
-Re emits executable choices only from the current V3 candidate set. A local
-choice is bound to the current state token, interaction, command and exact
-operands.
+Re emits choices only from the current V3 candidate set. It does not request a
+V2 capability/state sidecar, execute a V2 action ID, add operand domains,
+rebuild STS2 legality or reconstruct native completion.
 
-## Evidence Status
+## Source Coverage
 
-| Area | Re implementation | Automated evidence | Exact V3 runtime |
+| Area | Re implementation | Automated evidence | Exact Preview.9 runtime |
 |---|---|---|---|
-| strict observation and receipt decoding | implemented | tests | v0.110.0 journey completed after explicit-null repair |
-| candidate and operand-domain projection | implemented | tests | exercised |
-| stale local choice rejection | implemented | tests plus Gateway ledger tests | two safe pre-execution refusals observed |
-| unknown-no-retry supervision | implemented | tests | one rest Outcome became unknown and terminated without retry |
-| combat commands | direct V3 resolver and direct Re consumer | Gateway/Re tests plus 11 protocol-rewritten saved-snapshot checks | direct consumer repeatedly exercised under Preview.3 |
-| combat-hand selection | exact hand/card/control discovery, direct V3 resolver and direct Re consumer | Gateway descriptors plus Re owner/card/no-sidecar positives and wrong-owner negative | select/confirm exercised under Preview.6; other stages pending |
-| shop-room commands | direct V3 resolver | Gateway tests | exercised on v0.110.0 |
-| map/rest/deck-enchant commands | direct V3 resolvers | Gateway and Re tests | map/rest exercised under Preview.4; Kifuda not exercised |
-| deck upgrade | direct typed screen/card/control resolver and Re consumer | select/deselect/reselect, preview-return, confirm and drift tests | direct full lifecycle and semantic post-state exercised under Preview.5 |
-| merchant/relic/reward deck removal | direct source-specific resolvers and Re consumer | source isolation, exact command-set, stage, membership and replacement negatives | merchant and Precise Scissors exercised under Preview.6; Preview.8 admission path pending |
-| Scroll Boxes card bundle | direct atomic bundle resolver and Re consumer | selectable/control facts, exact screen/bundle, stage and drift negatives | pending Preview.8 Live |
-| Luminous Choir event removal | exact typed task/source/stage/effect contract and direct Re consumer | selection/preview/command-set/source/membership negatives | loaded under Preview.6 but natural source not exercised |
-| rest and event card acquisition | direct descriptors, explicit contracts and Re consumer without Provider action publication | exact source/owner/control/card tests | historical rest journeys; Preview.8 admission path pending |
-| menu/run setup | direct V3 normalization and native resolver | direct normalization, descriptor and no-sidecar tests | direct consumer and resolver completed a 95-decision run |
-| event/map/game over consumer | direct V3 normalization and game-over direct native resolver | strict decode, exact binding negatives and recorded replay | exact runtime exercised all three direct consumers and both game-over controls |
-| reward/card-reward consumer | direct V3 normalization | strict screen/entity/control negatives | exact-runtime exercised in a completed 175-decision run |
-| shop/rest/treasure consumer | direct V3 normalization | exact offer/option/stage negatives | direct consumer exercised under Preview.2 |
-| generated card choice | source-discriminated native resolver and direct Re consumer | source/owner/screen/card/control tests | direct Attack Potion choice exercised under Preview.3 |
-| other non-combat selectors | migration adapter | inherited Provider and V3 tests | selected families exercised |
-| visible unsupported interaction | implemented | tests | Crystal Sphere, unknown deck selector and pre-repair Symbiote exercised |
-| typed V3 visible-state projection | shared persistent summary plus visibility and Inspection-catalog metadata for direct contexts | strict schema, projection and saved-snapshot replay | direct menu exercised; expanded contexts pending cold load |
-| V3-native Inspection content | typed state-token-bound run deck/combat piles/shop catalog client | strict content decode and stale-token negative | Preview.5 current/stale `run_deck`; other kinds pending |
-| V3-native linked detail | bounded state-token-bound current-Surface card client | strict entity/content decode and stale-token negative | Preview.5 current/stale `surface_card` exercised |
-
-Ordinary combat, combat-hand selection, deck upgrade, merchant/relic/reward deck removal,
-card bundle,
-Luminous Choir event removal,
-generated-card choice, rest and event card acquisition,
-main/singleplayer/character menus,
-event options, map navigation, game over, reward/card-reward, shop, rest,
-treasure, lifecycle-settling and visible unsupported no longer
-request the v2 capabilities sidecar.
-For remaining Surfaces, the
-temporary same-runtime sidecar contributes mature environment and semantic
-projection only. It contributes no legal action, operand, execution route or
-completion claim.
+| observation/receipt/identity | strict direct V3 | schema, identity and receipt tests | pending cold load |
+| combat | direct typed commands | card/potion/target/end-turn tests | targetless potion pending |
+| combat-hand/combat-pile | direct typed selectors | stage, membership and command-set tests | pending final lifecycle |
+| menus/map/events/game-over | direct typed facts/candidates | owner/control/entity negatives | earlier artifacts exercised |
+| shops/rest/treasure/rewards | direct typed facts/candidates | offer/source/capacity/stage tests | earlier artifacts exercised |
+| generated choices | source-operation and selectable-set parity | mismatch, extra-command, skip and binding tests | earlier Attack Potion only |
+| upgrade/removal/enchant | independent direct selectors | full stage/source/Outcome tests | selected earlier sources |
+| transform/Wood Carvings | independent direct selectors | source/effect/stage/command-set tests | pending |
+| bundle/event removal | independent direct transactions | atomic/whole-Outcome tests | source-specific evidence pending |
+| Inspection | typed state-token reads | strict decode and stale negatives | Preview.5 run deck only |
+| linked detail | bounded current-Surface card | strict entity/token tests | Preview.5 current/stale |
 
 ## Fail-Closed Rules
 
-- Unknown protocol, identity mismatch, malformed candidate, stale state,
-  duplicate entity identity or unsupported interaction produces no action.
-- `unknown`, transport uncertainty and inconsistent receipt identity stop the
-  run without mutation retry.
-- Hidden RNG, real draw order, future rewards/events/enemy moves and private
-  game state are never normalized.
-- A fixture or predecessor V2 journey cannot qualify V3.
+- Unknown protocol, malformed candidate, identity drift, stale state,
+  replacement entity, missing native control or command-set mismatch produces
+  no action.
+- `unknown` and transport uncertainty stop without mutation retry.
+- Hidden RNG, draw order, future rewards/events/enemy moves and private game
+  state are never normalized.
+- Empty permission scope grants nothing. Fixture, build, install and historical
+  journeys cannot qualify the current artifact.

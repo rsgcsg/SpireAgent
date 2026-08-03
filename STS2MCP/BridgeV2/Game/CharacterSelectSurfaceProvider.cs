@@ -90,7 +90,8 @@ internal sealed class CharacterSelectSurfaceProvider : IBridgeSurfaceProvider
                 CharacterTitle(character),
                 button.IsLocked,
                 button.IsSelected,
-                button.IsRandom);
+                button.IsRandom,
+                button.IsEnabled);
         }).ToArray();
 
         VisibleSelectedCharacterDetails selectedDetails = BuildSelectedDetails(selected);
@@ -109,70 +110,13 @@ internal sealed class CharacterSelectSurfaceProvider : IBridgeSurfaceProvider
                                     && rightArrow.IsEnabled
                                     && McpMod.IsNodeVisible(rightArrow);
 
-        var actions = new List<BridgeActionDraft>();
-        foreach (NCharacterSelectButton button in buttons.Where(button =>
-                     !button.IsLocked && !button.IsSelected && button.IsEnabled))
-        {
-            string choiceId = entities.GetId(button, "character_choice");
-            actions.Add(new BridgeActionDraft(
-                $"select_character:{choiceId}",
-                "select_character",
-                "selection",
-                $"Select {CharacterTitle(button.Character)}",
-                "NCharacterSelectButton.Select+exact-selected-button-witness",
-                () => StartSelect(screen, lobby!, button),
-                new[] { new ActionEntityBinding("character_choice", choiceId) }));
-        }
-        if (canDecreaseAscension)
-        {
-            actions.Add(new BridgeActionDraft(
-                $"decrease_ascension:{screenId}:{ascension}",
-                "decrease_ascension",
-                "configuration",
-                "Decrease Ascension",
-                "NAscensionPanel.LeftArrow+exact-level-witness",
-                () => StartAscensionChange(screen, lobby!, ascensionPanel, leftArrow, -1),
-                new[] { new ActionEntityBinding("screen", screenId) }));
-        }
-        if (canIncreaseAscension)
-        {
-            actions.Add(new BridgeActionDraft(
-                $"increase_ascension:{screenId}:{ascension}",
-                "increase_ascension",
-                "configuration",
-                "Increase Ascension",
-                "NAscensionPanel.RightArrow+exact-level-witness",
-                () => StartAscensionChange(screen, lobby!, ascensionPanel, rightArrow, 1),
-                new[] { new ActionEntityBinding("screen", screenId) }));
-        }
-        if (canEmbark)
-        {
-            actions.Add(new BridgeActionDraft(
-                $"embark_standard_run:{screenId}:{selected.Character.Id.Entry}:{ascension ?? 0}",
-                "embark_standard_run",
-                "commit",
-                "Embark",
-                "NCharacterSelectScreen.ConfirmButton+RunManager-active-run-witness",
-                () => StartEmbark(screen, lobby!, selected, embark),
-                new[]
-                {
-                    new ActionEntityBinding("screen", screenId),
-                    new ActionEntityBinding("character_choice", entities.GetId(selected, "character_choice"))
-                }));
-        }
-        if (canGoBack)
-        {
-            actions.Add(new BridgeActionDraft(
-                $"back_from_character_select:{screenId}",
-                "back_from_character_select",
-                "navigation",
-                "Back",
-                "NCharacterSelectScreen.BackButton+submenu-owner-change-witness",
-                () => StartBack(screen, lobby!, back),
-                new[] { new ActionEntityBinding("screen", screenId) }));
-        }
-
-        string stage = actions.Count == 0 ? "transitioning" : "choosing";
+        bool hasActionableControl = visibleCharacters.Any(character =>
+            character.IsEnabled && !character.IsLocked && !character.IsSelected)
+            || canDecreaseAscension
+            || canIncreaseAscension
+            || canEmbark
+            || canGoBack;
+        string stage = hasActionableControl ? "choosing" : "transitioning";
         var surface = new CharacterSelectSurface(
             Kind,
             stage,
@@ -193,7 +137,7 @@ internal sealed class CharacterSelectSurfaceProvider : IBridgeSurfaceProvider
             tutorialGateClear
                 ? "contract_complete_for_singleplayer_character_select"
                 : "contract_incomplete_for_first_run_tutorial_child",
-            actions.Count > 0
+            hasActionableControl
                 ? "derived_from_exact_visible_character_and_menu_controls"
                 : "temporarily_empty_during_character_select_transition",
             new[]
@@ -208,12 +152,11 @@ internal sealed class CharacterSelectSurfaceProvider : IBridgeSurfaceProvider
         string signature = BridgeHash.Object(new
         {
             game.Version,
-            surface,
-            actionKeys = actions.Select(action => action.Key).OrderBy(key => key, StringComparer.Ordinal).ToArray()
+            surface
         });
         return new BridgeObservationDraft(
             signature,
-            actions.Count > 0 ? "ready" : "settling",
+            hasActionableControl ? "ready" : "settling",
             new MenuBridgeContext("menu", "standard_run_setup"),
             surface,
             completeness,
@@ -221,7 +164,7 @@ internal sealed class CharacterSelectSurfaceProvider : IBridgeSurfaceProvider
             missing.Length == 0
                 ? Array.Empty<string>()
                 : new[] { "first_run_tutorial_child_not_implemented" },
-            actions);
+            Array.Empty<BridgeActionDraft>());
     }
 
     private static VisibleSelectedCharacterDetails BuildSelectedDetails(NCharacterSelectButton selected)

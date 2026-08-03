@@ -74,6 +74,8 @@ internal static class BridgeContractManifest
         "docs/connector-v3/PREVIEW_7_SOURCE_BOUND_SELECTOR_CUTOVER_2026-08-03.md";
     private const string ConnectorPreview8Closeout =
         "docs/connector-v3/PREVIEW_8_DIRECT_AUTHORITY_AND_SELECTOR_CUTOVER_2026-08-03.md";
+    private const string ConnectorPreview9Closeout =
+        "docs/connector-v3/PREVIEW_9_FINAL_SELECTOR_CUTOVER_2026-08-03.md";
 
     public static readonly IReadOnlyList<BridgeContractManifestEntry> Entries = new[]
     {
@@ -146,7 +148,7 @@ internal static class BridgeContractManifest
             "purpose_specific_deck_selection",
             new[] { "visible_deck_cards", "upgrade_preview", "selection", "controls" },
             ConnectorPreview8Closeout),
-        Entry(
+        V3Entry(
             "deck_transform_selection",
             new[]
             {
@@ -165,8 +167,9 @@ internal static class BridgeContractManifest
             },
             "sts2-v0.109.1:source-discriminated(WhisperingHollow.Hug|NewLeaf.AfterObtained+task-local-binding)+CardSelectCmd.FromDeckForTransformation+NDeckTransformSelectScreen+exact-instance-post-state-witness",
             "purpose_specific_random_deck_transform",
-            new[] { "visible_deck_cards", "selection", "random_uncommitted_preview", "upgrade_view", "controls" }),
-        Entry(
+            new[] { "visible_deck_cards", "selection", "random_uncommitted_preview", "upgrade_view", "controls" },
+            ConnectorPreview9Closeout),
+        V3Entry(
             "wood_carvings_replacement_selection",
             new[]
             {
@@ -179,7 +182,8 @@ internal static class BridgeContractManifest
             },
             "sts2-v0.109.0:WoodCarvings.Bird/Torus+CardSelectCmd.FromDeckGeneric+NDeckCardSelectScreen+exact-source-task-binding+deterministic-replacement-witness",
             "purpose_specific_deterministic_deck_replacement",
-            new[] { "visible_deck_cards", "selection", "event_branch", "known_replacement", "preview", "controls" }),
+            new[] { "visible_deck_cards", "selection", "event_branch", "known_replacement", "preview", "controls" },
+            ConnectorPreview9Closeout),
         Entry(
             "event_dialogue",
             new[]
@@ -218,12 +222,19 @@ internal static class BridgeContractManifest
             "sts2-v0.109.0:CombatManager+PlayerCombatState+CardModel+NPlayerHand+organic-action-lifecycles",
             "combat_turn_controls",
             new[] { "hand", "energy", "combatants", "intents", "potions", "end_turn_control" }),
-        Entry(
+        V3Entry(
             "combat_pile_card_selection",
-            new[] { "toggle_combat_pile_card", "confirm_combat_pile_selection" },
+            new[]
+            {
+                Operation("toggle_combat_pile_card", BridgeOperationEvidenceStatus.SourceAudited,
+                    ConnectorPreview9Closeout),
+                Operation("confirm_combat_pile_selection", BridgeOperationEvidenceStatus.SourceAudited,
+                    ConnectorPreview9Closeout)
+            },
             "sts2-v0.109.0:qualified-card-task+CardSelectCmd.FromCombatPile(exact-pile,bounds,commit-mode)+NCombatPileCardSelectScreen+structural-mutation-contract+purpose-specific-witness",
             "source_qualified_structural_combat_pile_transaction",
-            new[] { "source_card_provenance", "mutation_kind", "commit_mode", "visible_pile_cards", "selection", "source_and_destination_piles", "destination_position", "replacement", "overflow_destination", "controls" }),
+            new[] { "source_card_provenance", "mutation_kind", "commit_mode", "visible_pile_cards", "selection", "source_and_destination_piles", "destination_position", "replacement", "overflow_destination", "controls" },
+            ConnectorPreview9Closeout),
         V3Entry(
             "combat_hand_card_selection",
             new[]

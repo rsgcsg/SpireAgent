@@ -111,30 +111,6 @@ internal sealed class GameOverSurfaceProvider : IBridgeSurfaceProvider
             returnReady ? runState.TotalFloor : null,
             returnReady ? runState.AscensionLevel : null);
         string screenId = entities.GetId(screen, "screen");
-        var actions = new List<BridgeActionDraft>();
-        if (continueReady)
-        {
-            actions.Add(new BridgeActionDraft(
-                $"advance_game_over_summary:{screenId}",
-                "advance_game_over_summary",
-                "navigation",
-                "Continue to the run summary",
-                "NGameOverScreen.%ContinueButton+_isAnimatingSummary",
-                () => StartAdvance(screen, continueButton),
-                new[] { new ActionEntityBinding("game_over_screen", screenId) }));
-        }
-        if (returnReady)
-        {
-            actions.Add(new BridgeActionDraft(
-                $"return_game_over:{screenId}:{destination}",
-                "return_game_over",
-                "navigation",
-                destination == "timeline" ? "Continue to newly discovered Timeline content" : "Return to the main menu",
-                "NGameOverScreen.%MainMenuButton+NGame.MainMenu-loaded",
-                () => StartReturn(screen, mainMenuButton),
-                new[] { new ActionEntityBinding("game_over_screen", screenId) }));
-        }
-
         var surface = new GameOverSurface(
             SurfaceKind,
             stage,
@@ -142,10 +118,11 @@ internal sealed class GameOverSurfaceProvider : IBridgeSurfaceProvider
             destination,
             continueReady,
             returnReady);
-        string readiness = actions.Count > 0 ? "ready" : "settling";
+        bool hasActionableControl = continueReady || returnReady;
+        string readiness = hasActionableControl ? "ready" : "settling";
         var completeness = new StateCompleteness(
             "contract_complete_for_ordinary_single_player_game_over_navigation_and_summary",
-            actions.Count > 0
+            hasActionableControl
                 ? "derived_from_exact_current_enabled_game_over_controls"
                 : "temporarily_empty_while_game_over_intro_or_summary_animation_settles",
             new[]
@@ -162,8 +139,7 @@ internal sealed class GameOverSurfaceProvider : IBridgeSurfaceProvider
         {
             game.Version,
             context,
-            surface,
-            actionKeys = actions.Select(action => action.Key).OrderBy(key => key, StringComparer.Ordinal).ToArray()
+            surface
         });
         return new BridgeObservationDraft(
             signature,
@@ -173,7 +149,7 @@ internal sealed class GameOverSurfaceProvider : IBridgeSurfaceProvider
             completeness,
             game,
             Array.Empty<string>(),
-            actions);
+            Array.Empty<BridgeActionDraft>());
     }
 
     private static bool IsActionable(NButton button) =>

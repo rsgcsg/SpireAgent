@@ -144,16 +144,12 @@ internal sealed class MapNavigationSurfaceProvider : IBridgeSurfaceProvider
             node.Point.coord.col,
             node.Point.coord.row,
             PointType(node.Point))).ToArray();
-        List<BridgeActionDraft> actions = travelable.Select(node => BuildAction(screen, runState, node, entities)).ToList();
-        if (drawingInput != null && CanAdvertiseAnnotationExit(
-                screen.IsOpen,
-                screen.IsTraveling,
-                inputDisabled,
-                drawingMode != DrawingMode.None,
-                drawingInputAvailable: true))
-        {
-            actions.Add(BuildAnnotationExitAction(screen, drawingInput, drawingMode, entities));
-        }
+        bool canExitAnnotation = drawingInput != null && CanAdvertiseAnnotationExit(
+            screen.IsOpen,
+            screen.IsTraveling,
+            inputDisabled,
+            drawingMode != DrawingMode.None,
+            drawingInputAvailable: true);
 
         var surface = new MapNavigationSurface(
             SurfaceKind,
@@ -161,14 +157,21 @@ internal sealed class MapNavigationSurfaceProvider : IBridgeSurfaceProvider
             screen.IsTravelEnabled,
             screen.IsTraveling,
             drawingMode.ToString().ToLowerInvariant(),
-            options);
-        string readiness = actions.Count > 0 ? "ready" : "settling";
+            options)
+        {
+            AnnotationInputEntityId = drawingInput == null
+                ? null
+                : entities.GetId(drawingInput, "map_annotation_input"),
+            CanExitAnnotation = canExitAnnotation
+        };
+        bool hasActionableControl = options.Length > 0 || canExitAnnotation;
+        string readiness = hasActionableControl ? "ready" : "settling";
         IReadOnlyList<string> warnings = drawingMode == DrawingMode.None
             ? Array.Empty<string>()
             : new[] { "map_annotation_mode_active_route_actions_suppressed" };
         var completeness = new StateCompleteness(
             "contract_complete_for_visible_singleplayer_map_navigation",
-            actions.Count > 0
+            hasActionableControl
                 ? drawingMode == DrawingMode.None
                     ? "derived_from_exact_current_travelable_map_point_controls"
                     : "derived_from_exact_active_map_annotation_input_stop_control"
@@ -188,8 +191,7 @@ internal sealed class MapNavigationSurfaceProvider : IBridgeSurfaceProvider
         {
             game.Version,
             context,
-            surface,
-            actionKeys = actions.Select(action => action.Key).OrderBy(key => key, StringComparer.Ordinal).ToArray()
+            surface
         });
 
         return new BridgeObservationDraft(
@@ -200,7 +202,7 @@ internal sealed class MapNavigationSurfaceProvider : IBridgeSurfaceProvider
             completeness,
             game,
             warnings,
-            actions);
+            Array.Empty<BridgeActionDraft>());
     }
 
     internal static bool CanAdvertiseRouteActions(
@@ -303,51 +305,6 @@ internal sealed class MapNavigationSurfaceProvider : IBridgeSurfaceProvider
             coord.col,
             coord.row,
             byCoord.TryGetValue(coord, out NMapPoint? node) ? PointType(node.Point) : null);
-
-    private static BridgeActionDraft BuildAction(
-        NMapScreen screen,
-        RunState runState,
-        NMapPoint node,
-        BridgeEntityRegistry entities)
-    {
-        MapCoord coord = node.Point.coord;
-        string nodeId = entities.GetId(node, "map_node");
-        string pointType = PointType(node.Point);
-        return new BridgeActionDraft(
-            $"choose_map_node:{nodeId}:{coord.col}:{coord.row}",
-            "choose_map_node",
-            "navigation",
-            $"Choose {pointType} at ({coord.col},{coord.row})",
-            "NMapPoint.OnRelease+NMapScreen.OnMapPointSelectedLocally",
-            () => StartTravel(screen, runState, node, coord),
-            new[]
-            {
-                new ActionEntityBinding("map_screen", entities.GetId(screen, "screen")),
-                new ActionEntityBinding("map_node", nodeId)
-            });
-    }
-
-    private static BridgeActionDraft BuildAnnotationExitAction(
-        NMapScreen screen,
-        NMapDrawingInput drawingInput,
-        DrawingMode drawingMode,
-        BridgeEntityRegistry entities)
-    {
-        string inputId = entities.GetId(drawingInput, "map_annotation_input");
-        string screenId = entities.GetId(screen, "screen");
-        return new BridgeActionDraft(
-            $"exit_map_annotation:{inputId}:{drawingMode}",
-            "exit_map_annotation",
-            "navigation",
-            "Exit map annotation mode",
-            "NMapDrawingInput.StopDrawing",
-            () => StopAnnotation(screen, drawingInput, drawingMode),
-            new[]
-            {
-                new ActionEntityBinding("map_screen", screenId),
-                new ActionEntityBinding("map_annotation_input", inputId)
-            });
-    }
 
     internal static BridgeActionStartResult StartTravel(
         BridgeEntityRegistry entities,

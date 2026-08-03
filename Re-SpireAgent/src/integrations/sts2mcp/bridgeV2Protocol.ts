@@ -1,9 +1,10 @@
 import { z } from "zod";
 import { isJsonObject, type JsonObject } from "../../shared/json.js";
 import {
-  characterSelectSurfaceSchema,
+  characterSelectSurfaceSchema as gatewayCharacterSelectSurfaceSchema,
   mainMenuSurfaceSchema,
-  singleplayerMenuSurfaceSchema
+  singleplayerMenuSurfaceSchema,
+  visibleCharacterChoiceSchema
 } from "./gatewayMenuProtocol.js";
 import {
   gatewayEventContextSchema as eventContextSchema,
@@ -11,7 +12,7 @@ import {
   gatewayGameOverContextSchema as gameOverContextSchema,
   gatewayGameOverSurfaceSchema as gameOverSurfaceSchema,
   gatewayMapContextSchema as mapContextSchema,
-  gatewayMapNavigationSurfaceSchema as mapNavigationSurfaceSchema
+  gatewayMapNavigationSurfaceSchema
 } from "./gatewayJourneyProtocol.js";
 import {
   gatewayCardRewardSelectionSurfaceSchema as cardRewardSelectionSurfaceSchema,
@@ -26,6 +27,18 @@ import {
   visibleOwnedPotionSchema,
   visibleRelicSchema
 } from "./gatewayVisibleStateProtocol.js";
+
+// V3 exposes these native control facts as required fields. The retired V2
+// wire did not, so its read-only decoder accepts their absence without
+// reconstructing either fact or granting action authority from it.
+const characterSelectSurfaceSchema = gatewayCharacterSelectSurfaceSchema.extend({
+  characters: z.array(visibleCharacterChoiceSchema.extend({
+    is_enabled: z.boolean().optional()
+  })).min(1)
+});
+const mapNavigationSurfaceSchema = gatewayMapNavigationSurfaceSchema.extend({
+  can_exit_annotation: z.boolean().optional()
+});
 
 export const SUPPORTED_BRIDGE_V2_PROTOCOL = "2.0-preview.86" as const;
 export const BRIDGE_V2_INSPECTION_KINDS = ["run_deck", "combat_piles", "shop_catalog"] as const;

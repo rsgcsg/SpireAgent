@@ -23,14 +23,14 @@ or stop at a precise visible unsupported boundary.
 1. Keep public fresh-clone, multi-developer handoff and source/build/install/load
    attribution reproducible with the canonical operator workflow.
 2. Close defects found by exact-runtime V3 journeys.
-3. Cold-load Preview.6 and validate Luminous Choir event removal. Preview.5
-   already proved direct Smith and known-room settling; merchant removal and
-   combat-hand still need exact-runtime evidence.
+3. Cold-load Preview.9 and verify exact SHA/MVID/protocol/game/Modset/runtime.
+   Exercise targetless potion and final selector families without transferring
+   historical authority.
 4. Extend the Preview.5 `run_deck` and `surface_card` evidence to combat-pile
    and shop-catalog Inspection; keep real-page opening as a separate optional
    evidence profile.
-5. Move the remaining selector families to direct V3 discovery and Re
-   consumption while deleting each replaced Provider and sidecar dependency.
+5. Run one same-artifact ordinary journey and close every stale, unsupported,
+   unknown and stop attribution.
 6. Simplify V3 authority projection without weakening exact-environment
    validation.
 7. Retire v2 production mutation routes.
@@ -49,10 +49,10 @@ or stop at a precise visible unsupported boundary.
 - no silent V2 mutation fallback;
 - honest coverage and evidence labels.
 
-The baseline is not complete while supported selector facts and authority can
-only be reconciled through the V2-shaped projection sidecar or a Provider draft.
-Historical V2 fallback counts are not V3 completion metrics; the actionable
-debt is the concrete set of remaining production call paths.
+The source baseline now has 94 explicit contracts, zero fallback authority,
+zero Provider draft publication for direct families and no Re V2 sidecar. The
+delivery baseline remains incomplete until exact Preview.9 load, final-family
+Live evidence, same-artifact journey and rollback lifecycle are recorded.
 
 ## Deferred
 

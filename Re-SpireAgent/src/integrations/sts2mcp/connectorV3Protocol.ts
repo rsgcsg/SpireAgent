@@ -8,7 +8,7 @@ import {
 } from "./gatewayRunRoomProtocol.js";
 import { visibleCardSchema } from "./gatewayVisibleStateProtocol.js";
 
-export const SUPPORTED_CONNECTOR_V3_PROTOCOL = "3.0-preview.8" as const;
+export const SUPPORTED_CONNECTOR_V3_PROTOCOL = "3.0-preview.9" as const;
 
 const bridgeIdentitySchema = z.object({
   id: z.string().min(1),
@@ -74,7 +74,7 @@ const commandCandidateSchema = z.object({
   operands: z.record(z.string().min(1)),
   operand_domains: z.record(operandDomainSchema),
   entity_bindings: z.array(entityBindingSchema),
-  binding_kind: z.enum(["native_direct_resolver", "provider_native_binding_adapter"]),
+  binding_kind: z.literal("native_direct_resolver"),
   authority_state: z.enum(["supported", "trial"])
 }).strict();
 

@@ -119,60 +119,10 @@ internal sealed class TreasureRoomSurfaceProvider : IBridgeSurfaceProvider
                           && McpMod.IsNodeVisible(proceed);
 
         string roomId = entities.GetId(uiRoom, "treasure_room");
-        var actions = new List<BridgeActionDraft>();
-        if (stage == "closed"
-            && chest.IsEnabled
-            && McpMod.IsNodeVisible(chest)
-            && chest.MouseFilter != Control.MouseFilterEnum.Ignore)
-        {
-            actions.Add(new BridgeActionDraft(
-                $"open_treasure_chest:{roomId}",
-                "open_treasure_chest",
-                "reveal",
-                "Open the treasure chest",
-                "NTreasureRoom.OnChestButtonReleased+OpenChest+native-result-stage",
-                () => StartOpen(room, uiRoom, chest),
-                new[] { new ActionEntityBinding("treasure_room", roomId) }));
-        }
-        if (stage == "relic_choice" && holderActionable)
-        {
-            RelicModel relic = currentRelics[0];
-            string relicId = visibleRelics[0].EntityId;
-            actions.Add(new BridgeActionDraft(
-                $"choose_treasure_relic:{relicId}",
-                "choose_treasure_relic",
-                "claim",
-                $"Take {visibleRelics[0].Name ?? visibleRelics[0].DefinitionId}",
-                "NTreasureRoomRelicCollection.PickRelic+RelicCmd.Obtain+player-relic-post-state",
-                () => StartChoose(room, uiRoom, collection, holder!, relic, player),
-                new[]
-                {
-                    new ActionEntityBinding("treasure_room", roomId),
-                    new ActionEntityBinding("relic", relicId)
-                }));
-        }
-        if (canSkip)
-        {
-            actions.Add(new BridgeActionDraft(
-                $"skip_treasure_relic:{roomId}",
-                "skip_treasure_relic",
-                "skip",
-                "Skip the visible treasure relic",
-                "NTreasureRoom.ProceedButton.IsSkip+SkipRelicLocally+room-exit-post-state",
-                () => StartSkip(room, uiRoom, collection, proceed, player),
-                new[] { new ActionEntityBinding("treasure_room", roomId) }));
-        }
-        if (canProceed)
-        {
-            actions.Add(new BridgeActionDraft(
-                $"proceed_treasure_room:{roomId}",
-                "proceed_treasure_room",
-                "navigation",
-                "Continue from the treasure room",
-                "NTreasureRoom.ProceedButton+room-exit-or-map-open",
-                () => StartProceed(room, uiRoom, proceed),
-                new[] { new ActionEntityBinding("treasure_room", roomId) }));
-        }
+        bool canOpenChest = stage == "closed"
+                            && chest.IsEnabled
+                            && McpMod.IsNodeVisible(chest)
+                            && chest.MouseFilter != Control.MouseFilterEnum.Ignore;
 
         var surface = new TreasureRoomSurface(
             SurfaceKind,
@@ -182,10 +132,14 @@ internal sealed class TreasureRoomSurfaceProvider : IBridgeSurfaceProvider
             visibleRelics,
             canSkip,
             canProceed);
-        string readiness = actions.Count > 0 ? "ready" : "settling";
+        bool hasActionableControl = canOpenChest
+                                    || stage == "relic_choice" && holderActionable
+                                    || canSkip
+                                    || canProceed;
+        string readiness = hasActionableControl ? "ready" : "settling";
         var completeness = new StateCompleteness(
             "contract_complete_for_single_player_treasure_room_lifecycle",
-            actions.Count > 0
+            hasActionableControl
                 ? "derived_from_same_exact_current_controls_as_execution"
                 : "temporarily_empty_while_chest_or_relic_award_animation_settles",
             new[]
@@ -202,8 +156,7 @@ internal sealed class TreasureRoomSurfaceProvider : IBridgeSurfaceProvider
         {
             game.Version,
             context = new TreasureBridgeContext("treasure"),
-            surface,
-            actionKeys = actions.Select(action => action.Key).OrderBy(key => key, StringComparer.Ordinal).ToArray()
+            surface
         });
         return new BridgeObservationDraft(
             signature,
@@ -213,7 +166,7 @@ internal sealed class TreasureRoomSurfaceProvider : IBridgeSurfaceProvider
             completeness,
             game,
             Array.Empty<string>(),
-            actions);
+            Array.Empty<BridgeActionDraft>());
         }
         catch (Exception ex)
         {

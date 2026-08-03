@@ -112,87 +112,7 @@ internal sealed class ShopInventorySurfaceProvider : IBridgeSurfaceProvider
                 entities)
             : null;
 
-        var actions = new List<BridgeActionDraft>();
-        foreach (MerchantCardEntry entry in inventory.CardEntries.Where(entry =>
-                     cards.Single(offer => offer.EntityId == entities.GetId(entry, "shop_entry")).CanPurchase))
-        {
-            VisibleShopCardOffer offer = cards.Single(candidate => candidate.EntityId == entities.GetId(entry, "shop_entry"));
-            CardModel purchasedCard = entry.CreationResult!.Card;
-            actions.Add(CardPurchaseAction(
-                offer.EntityId,
-                $"Buy {offer.Card?.Name ?? offer.Card?.DefinitionId ?? "card"} for {offer.Price} gold",
-                merchantRoom,
-                room,
-                inventory,
-                entry,
-                slotByEntry[entry],
-                purchasedCard,
-                offer.Price));
-        }
-        foreach (MerchantRelicEntry entry in inventory.RelicEntries.Where(entry =>
-                     relics.Single(offer => offer.EntityId == entities.GetId(entry, "shop_entry")).CanPurchase))
-        {
-            VisibleShopRelicOffer offer = relics.Single(candidate => candidate.EntityId == entities.GetId(entry, "shop_entry"));
-            RelicModel purchasedRelic = entry.Model!;
-            actions.Add(RelicPurchaseAction(
-                offer.EntityId,
-                $"Buy {offer.Relic?.Name ?? offer.Relic?.DefinitionId ?? "relic"} for {offer.Price} gold",
-                merchantRoom,
-                room,
-                inventory,
-                entry,
-                slotByEntry[entry],
-                purchasedRelic,
-                offer.Price));
-        }
-        foreach (MerchantPotionEntry entry in inventory.PotionEntries.Where(entry =>
-                     potions.Single(offer => offer.EntityId == entities.GetId(entry, "shop_entry")).CanPurchase))
-        {
-            VisibleShopPotionOffer offer = potions.Single(candidate => candidate.EntityId == entities.GetId(entry, "shop_entry"));
-            PotionModel purchasedPotion = entry.Model!;
-            actions.Add(PotionPurchaseAction(
-                offer.EntityId,
-                $"Buy {offer.Name ?? offer.DefinitionId ?? "potion"} for {offer.Price} gold",
-                merchantRoom,
-                room,
-                inventory,
-                entry,
-                slotByEntry[entry],
-                purchasedPotion,
-                offer.Price));
-        }
-        if (removalEntry != null && removal?.CanPurchase == true)
-        {
-            actions.Add(new BridgeActionDraft(
-                $"open_shop_card_removal:{removal.EntityId}",
-                "open_shop_card_removal",
-                "selection",
-                $"Choose a card to remove for {removal.Price} gold",
-                "MerchantCardRemovalEntry.OnTryPurchaseWrapper+CardSelectCmd.FromDeckForRemoval",
-                () => StartCardRemoval(
-                    merchantRoom,
-                    room,
-                    inventory,
-                    removalEntry,
-                    slotByEntry[removalEntry],
-                    removal.Price),
-                new[] { new ActionEntityBinding("shop_card_removal", removal.EntityId) }));
-        }
-
         bool canClose = inputReady;
-        if (canClose)
-        {
-            string screenId = entities.GetId(inventoryUi, "screen");
-            actions.Add(new BridgeActionDraft(
-                $"close_shop_inventory:{screenId}",
-                "close_shop_inventory",
-                "navigation",
-                "Close shop inventory",
-                "NMerchantInventory.BackButton+NBackButton.ForceClick",
-                () => StartCloseInventory(merchantRoom, room, inventory, backButton),
-                new[] { new ActionEntityBinding("screen", screenId) }));
-        }
-
         var surface = new ShopInventorySurface(
             SurfaceKind,
             entities.GetId(inventoryUi, "screen"),
@@ -201,10 +121,15 @@ internal sealed class ShopInventorySurfaceProvider : IBridgeSurfaceProvider
             potions,
             removal,
             canClose);
-        string readiness = actions.Count > 0 ? "ready" : "settling";
+        bool hasActionableControl = canClose
+            || cards.Any(offer => offer.CanPurchase)
+            || relics.Any(offer => offer.CanPurchase)
+            || potions.Any(offer => offer.CanPurchase)
+            || removal?.CanPurchase == true;
+        string readiness = hasActionableControl ? "ready" : "settling";
         var completeness = new StateCompleteness(
             "contract_complete_for_visible_normal_merchant_inventory",
-            actions.Count > 0
+            hasActionableControl
                 ? "derived_from_exact_inventory_entries_ui_slots_capacity_and_back_control"
                 : "temporarily_empty_while_merchant_inventory_settles",
             new[]
@@ -221,8 +146,7 @@ internal sealed class ShopInventorySurfaceProvider : IBridgeSurfaceProvider
         {
             game.Version,
             context = BridgeContextBuilder.BuildShop(merchantRoom, entities),
-            surface,
-            actionKeys = actions.Select(action => action.Key).OrderBy(key => key, StringComparer.Ordinal).ToArray()
+            surface
         });
         return new BridgeObservationDraft(
             signature,
@@ -232,7 +156,7 @@ internal sealed class ShopInventorySurfaceProvider : IBridgeSurfaceProvider
             completeness,
             game,
             Array.Empty<string>(),
-            actions);
+            Array.Empty<BridgeActionDraft>());
     }
 
     internal static VisibleShopCardOffer BuildCardOffer(
@@ -356,99 +280,6 @@ internal sealed class ShopInventorySurfaceProvider : IBridgeSurfaceProvider
             !stocked ? "already_used"
                 : ShopSurfaceFacts.BlockedReason(stocked, visible, entry.EnoughGold, canPurchase));
     }
-
-    private static BridgeActionDraft CardPurchaseAction(
-        string offerId,
-        string label,
-        MerchantRoom expectedMerchantRoom,
-        NMerchantRoom expectedRoom,
-        MerchantInventory expectedInventory,
-        MerchantCardEntry expectedEntry,
-        NMerchantSlot expectedSlot,
-        CardModel expectedCard,
-        int expectedPrice) =>
-        new(
-            $"purchase_shop_card:{offerId}",
-            "purchase_shop_card",
-            "purchase",
-            label,
-            "MerchantCardEntry.OnTryPurchaseWrapper+exact-card-deck-gold-entry-witness",
-            () => StartPurchase(
-                expectedMerchantRoom,
-                expectedRoom,
-                expectedInventory,
-                expectedEntry,
-                expectedSlot,
-                expectedPrice,
-                () => expectedInventory.Player.Deck.Cards.Any(card => ReferenceEquals(card, expectedCard)),
-                () => !ReferenceEquals(expectedEntry.CreationResult?.Card, expectedCard),
-                () => expectedInventory.Player.Deck.Cards.All(card => !ReferenceEquals(card, expectedCard)),
-                null,
-                null,
-                CardPurchaseCompletionWitness),
-            new[] { new ActionEntityBinding("shop_offer", offerId) });
-
-    private static BridgeActionDraft RelicPurchaseAction(
-        string offerId,
-        string label,
-        MerchantRoom expectedMerchantRoom,
-        NMerchantRoom expectedRoom,
-        MerchantInventory expectedInventory,
-        MerchantRelicEntry expectedEntry,
-        NMerchantSlot expectedSlot,
-        RelicModel expectedRelic,
-        int expectedPrice) =>
-        new(
-            $"purchase_shop_relic:{offerId}",
-            "purchase_shop_relic",
-            "purchase",
-            label,
-            "MerchantRelicEntry.OnTryPurchaseWrapper+exact-relic-gold-entry-witness",
-            () => StartPurchase(
-                expectedMerchantRoom,
-                expectedRoom,
-                expectedInventory,
-                expectedEntry,
-                expectedSlot,
-                expectedPrice,
-                () => expectedInventory.Player.Relics.Any(relic => ReferenceEquals(relic, expectedRelic)),
-                () => !ReferenceEquals(expectedEntry.Model, expectedRelic),
-                () => expectedInventory.Player.Relics.All(relic => !ReferenceEquals(relic, expectedRelic)),
-                null,
-                () => HasExactRelicAcquisitionContinuation(expectedRelic),
-                RelicPurchaseCompletionWitness),
-            new[] { new ActionEntityBinding("shop_offer", offerId) });
-
-    private static BridgeActionDraft PotionPurchaseAction(
-        string offerId,
-        string label,
-        MerchantRoom expectedMerchantRoom,
-        NMerchantRoom expectedRoom,
-        MerchantInventory expectedInventory,
-        MerchantPotionEntry expectedEntry,
-        NMerchantSlot expectedSlot,
-        PotionModel expectedPotion,
-        int expectedPrice) =>
-        new(
-            $"purchase_shop_potion:{offerId}",
-            "purchase_shop_potion",
-            "purchase",
-            label,
-            "MerchantPotionEntry.OnTryPurchaseWrapper+exact-potion-slot-gold-entry-witness",
-            () => StartPurchase(
-                expectedMerchantRoom,
-                expectedRoom,
-                expectedInventory,
-                expectedEntry,
-                expectedSlot,
-                expectedPrice,
-                () => ShopSurfaceFacts.ContainsPotionInstance(expectedInventory.Player, expectedPotion),
-                () => !ReferenceEquals(expectedEntry.Model, expectedPotion),
-                () => !ShopSurfaceFacts.ContainsPotionInstance(expectedInventory.Player, expectedPotion),
-                () => ShopSurfaceFacts.CanProcurePotion(expectedInventory.Player, expectedPotion),
-                null,
-                PotionPurchaseCompletionWitness),
-            new[] { new ActionEntityBinding("shop_offer", offerId) });
 
     private static BridgeActionStartResult StartPurchase(
         MerchantRoom expectedMerchantRoom,
@@ -840,35 +671,12 @@ internal sealed class ShopRoomSurfaceProvider : IBridgeSurfaceProvider
         string roomId = entities.GetId(room, "room");
         bool canOpen = room.MerchantButton.IsEnabled && McpMod.IsNodeVisible(room.MerchantButton);
         bool canProceed = room.ProceedButton.IsEnabled && McpMod.IsNodeVisible(room.ProceedButton);
-        var actions = new List<BridgeActionDraft>();
-        if (canOpen)
-        {
-            actions.Add(new BridgeActionDraft(
-                $"open_shop_inventory:{roomId}",
-                "open_shop_inventory",
-                "navigation",
-                "Open shop inventory",
-                "NMerchantButton.ForceClick+NMerchantRoom.OpenInventory",
-                () => StartOpenInventory(merchantRoom, room, inventory),
-                new[] { new ActionEntityBinding("room", roomId) }));
-        }
-        if (canProceed)
-        {
-            actions.Add(new BridgeActionDraft(
-                $"proceed_shop:{roomId}",
-                "proceed_shop",
-                "navigation",
-                "Leave shop and open map",
-                "NMerchantRoom.ProceedButton+NMapScreen.Open",
-                () => StartProceed(merchantRoom, room),
-                new[] { new ActionEntityBinding("room", roomId) }));
-        }
-
         var surface = new ShopRoomSurface(SurfaceKind, roomId, canOpen, canProceed);
-        string readiness = actions.Count > 0 ? "ready" : "settling";
+        bool hasActionableControl = canOpen || canProceed;
+        string readiness = hasActionableControl ? "ready" : "settling";
         var completeness = new StateCompleteness(
             "contract_complete_for_visible_normal_merchant_room_controls",
-            actions.Count > 0
+            hasActionableControl
                 ? "derived_from_exact_merchant_and_proceed_controls"
                 : "temporarily_empty_while_merchant_room_settles",
             new[]
@@ -882,8 +690,7 @@ internal sealed class ShopRoomSurfaceProvider : IBridgeSurfaceProvider
         {
             game.Version,
             context = BridgeContextBuilder.BuildShop(merchantRoom, entities),
-            surface,
-            actionKeys = actions.Select(action => action.Key).OrderBy(key => key, StringComparer.Ordinal).ToArray()
+            surface
         });
         return new BridgeObservationDraft(
             signature,
@@ -893,7 +700,7 @@ internal sealed class ShopRoomSurfaceProvider : IBridgeSurfaceProvider
             completeness,
             game,
             Array.Empty<string>(),
-            actions);
+            Array.Empty<BridgeActionDraft>());
     }
 
     private static BridgeActionStartResult StartOpenInventory(

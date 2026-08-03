@@ -133,6 +133,27 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
             .OrderBy(id => id, StringComparer.Ordinal)
             .ToArray();
 
+        string[] selectableIds = stage == "selecting"
+            ? holders.Where(holder => !selectedCards.Contains(holder.CardModel)
+                                      && selectedCards.Count < exactBinding.Preferences.MaxSelect
+                                      && exactBinding.Enchantment.CanEnchant(holder.CardModel))
+                .Select(holder => cardIds[holder.CardModel])
+                .OrderBy(id => id, StringComparer.Ordinal)
+                .ToArray()
+            : Array.Empty<string>();
+        string[] deselectableIds = stage == "selecting"
+            ? holders.Where(holder => selectedCards.Contains(holder.CardModel))
+                .Select(holder => cardIds[holder.CardModel])
+                .OrderBy(id => id, StringComparer.Ordinal)
+                .ToArray()
+            : Array.Empty<string>();
+        NConfirmButton? mainConfirm = screen.GetNodeOrNull<NConfirmButton>("Confirm")
+                                      ?? screen.GetNodeOrNull<NConfirmButton>("%Confirm");
+        NBackButton? close = screen.GetNodeOrNull<NBackButton>("%Close");
+        Control? preview = GetVisiblePreview(screen);
+        NConfirmButton? previewConfirm = preview?.GetNodeOrNull<NConfirmButton>("Confirm");
+        NBackButton? previewCancel = preview?.GetNodeOrNull<NBackButton>("Cancel");
+
         VisibleEnchantment enchantment = BuildEnchantment(screen, exactBinding.Enchantment, exactBinding.EnchantmentAmount);
         var surface = new DeckEnchantSelectionSurface(
             "deck_enchant_selection",
@@ -146,17 +167,24 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
             selectedIds,
             exactBinding.Preferences.Cancelable,
             enchantment,
-            cards);
-
-        List<BridgeActionDraft> actions = BuildActions(
-            screen,
-            exactBinding,
-            source!,
-            stage,
-            holders,
-            selectedCards,
-            cardIds,
-            screenEntityId);
+            cards)
+        {
+            SelectableCardEntityIds = selectableIds,
+            DeselectableCardEntityIds = deselectableIds,
+            CanPreview = stage == "selecting"
+                         && mainConfirm is { IsEnabled: true }
+                         && McpMod.IsNodeVisible(mainConfirm),
+            CanCloseSelection = stage == "selecting"
+                                && exactBinding.Preferences.Cancelable
+                                && close is { IsEnabled: true }
+                                && McpMod.IsNodeVisible(close),
+            CanConfirm = stage == "preview"
+                         && previewConfirm is { IsEnabled: true }
+                         && McpMod.IsNodeVisible(previewConfirm),
+            CanCancelPreview = stage == "preview"
+                               && previewCancel is { IsEnabled: true }
+                               && McpMod.IsNodeVisible(previewCancel)
+        };
 
         var missing = new List<string>();
         if (surface.Enchantment.Name == null)
@@ -180,8 +208,7 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
         string signature = BridgeHash.Object(new
         {
             game.Version,
-            surface,
-            actionKeys = actions.Select(action => action.Key).OrderBy(key => key, StringComparer.Ordinal).ToArray()
+            surface
         });
 
         return new BridgeObservationDraft(
@@ -195,110 +222,7 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
             {
                 "Private-field bindings are exact-version scoped and fail closed outside the tested game identity."
             },
-            actions);
-    }
-
-    private static List<BridgeActionDraft> BuildActions(
-        NDeckEnchantSelectScreen screen,
-        Binding binding,
-        DeckEnchantSource source,
-        string stage,
-        IReadOnlyList<NGridCardHolder> holders,
-        HashSet<CardModel> selectedCards,
-        IReadOnlyDictionary<CardModel, string> cardIds,
-        string screenEntityId)
-    {
-        var actions = new List<BridgeActionDraft>();
-
-        if (stage == "selecting")
-        {
-            foreach (NGridCardHolder holder in holders)
-            {
-                CardModel card = holder.CardModel;
-                bool selected = selectedCards.Contains(card);
-                if (!selected && selectedCards.Count >= binding.Preferences.MaxSelect)
-                    continue;
-                if (!selected && !binding.Enchantment.CanEnchant(card))
-                    continue;
-
-                string cardId = cardIds[card];
-                string cardName = McpMod.SafeGetText(() => card.Title) ?? card.Id.Entry;
-                actions.Add(new BridgeActionDraft(
-                    $"toggle_card:{cardId}:{selected}",
-                    "toggle_card",
-                    "selection",
-                    selected ? $"Deselect {cardName}" : $"Select {cardName}",
-                    $"{source.BindingEvidence}|NCardGrid.HolderPressed",
-                    () => StartToggleCard(screen, card, binding.Enchantment),
-                    new[]
-                    {
-                        new ActionEntityBinding("screen", screenEntityId),
-                        new ActionEntityBinding("card", cardId)
-                    }));
-            }
-
-            NConfirmButton? mainConfirm = screen.GetNodeOrNull<NConfirmButton>("Confirm")
-                                               ?? screen.GetNodeOrNull<NConfirmButton>("%Confirm");
-            if (mainConfirm is { IsEnabled: true } && McpMod.IsNodeVisible(mainConfirm))
-            {
-                actions.Add(new BridgeActionDraft(
-                    "preview_selection",
-                    "preview_selection",
-                    "selection",
-                    "Preview selected cards with the enchantment",
-                    $"{source.BindingEvidence}|NDeckEnchantSelectScreen.main_confirm",
-                    () => StartMainPreview(screen),
-                    new[] { new ActionEntityBinding("screen", screenEntityId) }));
-            }
-
-            NBackButton? close = screen.GetNodeOrNull<NBackButton>("%Close");
-            if (binding.Preferences.Cancelable && close is { IsEnabled: true } && McpMod.IsNodeVisible(close))
-            {
-                actions.Add(new BridgeActionDraft(
-                    "close_selection",
-                    "close_selection",
-                    "navigation",
-                    "Close enchant selection without choosing cards",
-                    $"{source.BindingEvidence}|NDeckEnchantSelectScreen.close",
-                    () => StartClose(screen),
-                    new[] { new ActionEntityBinding("screen", screenEntityId) }));
-            }
-        }
-        else
-        {
-            Control? preview = GetVisiblePreview(screen);
-            NConfirmButton? confirm = preview?.GetNodeOrNull<NConfirmButton>("Confirm");
-            if (confirm is { IsEnabled: true } && McpMod.IsNodeVisible(confirm))
-            {
-                actions.Add(new BridgeActionDraft(
-                    "confirm_enchantment",
-                    "confirm_selection",
-                    "commit",
-                    "Confirm and apply the displayed enchantment",
-                    $"{source.BindingEvidence}|NDeckEnchantSelectScreen.preview_confirm",
-                    () => StartPreviewConfirm(
-                        screen,
-                        binding.SelectedCards.ToArray(),
-                        binding.Enchantment.Id.Entry,
-                        binding.EnchantmentAmount),
-                    new[] { new ActionEntityBinding("screen", screenEntityId) }));
-            }
-
-            NBackButton? cancel = preview?.GetNodeOrNull<NBackButton>("Cancel");
-            if (cancel is { IsEnabled: true } && McpMod.IsNodeVisible(cancel))
-            {
-                actions.Add(new BridgeActionDraft(
-                    "cancel_enchantment_preview",
-                    "cancel_preview",
-                    "navigation",
-                    "Cancel preview and return to card selection",
-                    $"{source.BindingEvidence}|NDeckEnchantSelectScreen.preview_cancel",
-                    () => StartPreviewCancel(screen),
-                    new[] { new ActionEntityBinding("screen", screenEntityId) }));
-            }
-        }
-
-        return actions;
+            Array.Empty<BridgeActionDraft>());
     }
 
     private static BridgeActionStartResult StartToggleCard(

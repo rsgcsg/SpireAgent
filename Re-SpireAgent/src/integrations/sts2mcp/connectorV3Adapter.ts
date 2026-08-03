@@ -7,16 +7,13 @@ import type {
 } from "../../game-io/adapter.js";
 import type { JsonObject } from "../../shared/json.js";
 import { stableStringify } from "../../runtime/stateHash.js";
-import { BridgeV2RestClient } from "./bridgeV2Client.js";
 import {
   BridgeV2ControlSession,
   type BridgeV2ControllerCredentials
 } from "./bridgeV2ControlSession.js";
-import type { BridgeV2Capabilities } from "./bridgeV2Protocol.js";
 import { ConnectorV3HttpError, ConnectorV3RestClient } from "./connectorV3Client.js";
 import {
   projectConnectorV3ForRe,
-  usesDirectConnectorV3Consumer,
   type ConnectorV3CommandInvocation
 } from "./connectorV3Projection.js";
 import type {
@@ -38,10 +35,8 @@ export class Sts2ConnectorV3Adapter implements GameAdapter<
   GameExecutionResult
 > {
   private readonly connector: ConnectorV3RestClient;
-  private readonly bridgeSidecar: BridgeV2RestClient;
   private readonly control: BridgeV2ControlSession;
   private capabilities?: ConnectorV3Capabilities;
-  private bridgeCapabilities?: BridgeV2Capabilities;
   private invocations = new Map<string, ConnectorV3CommandInvocation>();
   private latestStateToken?: string;
   private lastReadAuthority: "none" | "connector_v3" = "none";
@@ -54,9 +49,6 @@ export class Sts2ConnectorV3Adapter implements GameAdapter<
     private readonly sleep: (ms: number) => Promise<void> = defaultSleep
   ) {
     this.connector = new ConnectorV3RestClient(baseUrl, timeoutMs, fetchImpl);
-    // Temporary consumer-projection sidecar only. It supplies the mature
-    // visibility/environment schema; it never supplies actions or execution.
-    this.bridgeSidecar = new BridgeV2RestClient(baseUrl, timeoutMs, fetchImpl);
     this.control = new BridgeV2ControlSession(this.connector);
   }
 
@@ -80,7 +72,6 @@ export class Sts2ConnectorV3Adapter implements GameAdapter<
 
   describe(): AdapterDescriptor {
     const connector = this.capabilities;
-    const bridge = this.bridgeCapabilities;
     return {
       adapterId: "sts2-connector-v3",
       ...(connector ? { adapterVersion: connector.bridge.version } : {}),
@@ -97,7 +88,7 @@ export class Sts2ConnectorV3Adapter implements GameAdapter<
       negotiated: {
         protocol_mode: "connector_v3",
         connector_available: Boolean(connector),
-        v2_consumer_projection_sidecar: Boolean(bridge),
+        v2_consumer_projection_sidecar: false,
         ...(connector ? {
           connector_protocol_version: connector.protocol_version,
           observation_schema: connector.observation_schema,
@@ -111,6 +102,12 @@ export class Sts2ConnectorV3Adapter implements GameAdapter<
           main_assembly_hash: connector.game.main_assembly_hash ?? null,
           modset_status: connector.game.modset.status,
           modset_fingerprint: connector.game.modset.fingerprint,
+          action_permission_scopes:
+            connector.game.compatibility.action_permission_scopes.map((scope) => ({
+              surface_kind: scope.surface_kind,
+              operation: scope.operation,
+              tier: scope.tier
+            })),
           action_execution_allowed:
             connector.game.compatibility.action_execution_allowed,
           state_observation_allowed:
@@ -118,20 +115,6 @@ export class Sts2ConnectorV3Adapter implements GameAdapter<
           connector_status: connector.status,
           commands: connector.commands,
           control_session: this.control.snapshot()
-        } : {}),
-        ...(bridge ? {
-          permission_mode: bridge.permission_system.mode,
-          permission_runtime_epoch: bridge.permission_system.runtime_epoch,
-          permission_policy_id: bridge.permission_system.policy_id,
-          permission_policy_digest: bridge.permission_system.policy_digest,
-          runtime_patch_digest: bridge.permission_system.patch_inventory.digest,
-          compatibility_policy_id:
-            bridge.game.compatibility.compatibility_policy_id,
-          compatibility_policy_digest:
-            bridge.game.compatibility.compatibility_policy_digest,
-          qualification_store_id: bridge.qualification_system.store_id,
-          persistent_authority_enabled:
-            bridge.qualification_system.persistent_authority_enabled
         } : {})
       }
     };
@@ -145,20 +128,11 @@ export class Sts2ConnectorV3Adapter implements GameAdapter<
       this.connector.capabilities()
     ]);
     assertObservationIdentity(observation.data, connectorCapabilities.data);
-    const directConsumer = usesDirectConnectorV3Consumer(observation.data);
-    const bridgeCapabilities = directConsumer
-      ? undefined
-      : await this.bridgeSidecar.capabilities();
-    if (bridgeCapabilities) {
-      assertSameGateway(connectorCapabilities.data, bridgeCapabilities.data);
-    }
     const projected = projectConnectorV3ForRe(
       observation.data,
-      observation.raw,
-      bridgeCapabilities?.raw
+      observation.raw
     );
     this.capabilities = connectorCapabilities.data;
-    this.bridgeCapabilities = bridgeCapabilities?.data;
     this.invocations = new Map(projected.invocations);
     this.latestStateToken = observation.data.state_token;
     this.lastReadAuthority =
@@ -299,19 +273,6 @@ export class Sts2ConnectorV3Adapter implements GameAdapter<
 
   async close(): Promise<void> {
     await this.control.close();
-  }
-}
-
-function assertSameGateway(
-  connector: ConnectorV3Capabilities,
-  bridge: BridgeV2Capabilities
-): void {
-  if (connector.bridge.runtime_instance_id !== bridge.bridge.runtime_instance_id
-      || connector.bridge.module_version_id !== bridge.bridge.module_version_id
-      || connector.bridge.assembly_file_sha256.toLowerCase()
-        !== bridge.bridge.assembly_file_sha256.toLowerCase()
-      || connector.game.modset.fingerprint !== bridge.game.modset.fingerprint) {
-    throw new Error("Connector V3 and its temporary V2 projection sidecar do not share exact runtime identity");
   }
 }
 

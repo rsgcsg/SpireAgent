@@ -89,30 +89,20 @@ internal sealed class EventDialogueSurfaceProvider : IBridgeSurfaceProvider
         }
 
         string advanceLabel = ReadLabel(fakeNextLabel) ?? "Continue";
-        string currentLineId = revealed[^1].EntityId;
-        var actions = new List<BridgeActionDraft>();
-        if (McpMod.IsNodeVisible(hitbox) && hitbox.IsEnabled)
-        {
-            actions.Add(new BridgeActionDraft(
-                $"advance_event_dialogue:{currentLineId}",
-                "advance_event_dialogue",
-                "navigation",
-                advanceLabel,
-                "NAncientEventLayout.%DialogueHitbox+_currentDialogueLine",
-                () => StartAdvance(room, layout, hitbox, currentLine),
-                new[] { new ActionEntityBinding("dialogue_line", currentLineId) }));
-        }
-
+        bool canAdvance = McpMod.IsNodeVisible(hitbox) && hitbox.IsEnabled;
         var surface = new EventDialogueSurface(
             SurfaceKind,
             entities.GetId(layout, "screen"),
             currentLine,
             revealed,
-            advanceLabel);
-        string readiness = actions.Count > 0 ? "ready" : "settling";
+            advanceLabel)
+        {
+            CanAdvance = canAdvance
+        };
+        string readiness = canAdvance ? "ready" : "settling";
         var completeness = new StateCompleteness(
             "contract_complete_for_revealed_ancient_dialogue",
-            actions.Count > 0
+            canAdvance
                 ? "derived_from_current_dialogue_hitbox"
                 : "temporarily_empty_while_dialogue_transitions_to_options",
             new[]
@@ -127,8 +117,7 @@ internal sealed class EventDialogueSurfaceProvider : IBridgeSurfaceProvider
         {
             game.Version,
             context,
-            surface,
-            actionKeys = actions.Select(action => action.Key).OrderBy(key => key, StringComparer.Ordinal).ToArray()
+            surface
         });
 
         return new BridgeObservationDraft(
@@ -139,7 +128,44 @@ internal sealed class EventDialogueSurfaceProvider : IBridgeSurfaceProvider
             completeness,
             game,
             Array.Empty<string>(),
-            actions);
+            Array.Empty<BridgeActionDraft>());
+    }
+
+    internal static BridgeActionStartResult StartDirectAdvance(
+        BridgeEntityRegistry entities,
+        string expectedScreenId,
+        string expectedLineId,
+        int expectedLine)
+    {
+        NEventRoom? room = NEventRoom.Instance;
+        if (room == null
+            || !McpMod.IsLiveNode(room)
+            || !entities.TryResolve(expectedScreenId, out NAncientEventLayout? layout)
+            || layout == null
+            || CurrentLineField?.GetValue(layout) is not int currentLine
+            || currentLine != expectedLine)
+        {
+            return BridgeActionStartResult.Rejected(
+                "event_dialogue_changed",
+                "The exact ancient dialogue owner or line is no longer current.");
+        }
+        NAncientDialogueHitbox? hitbox = layout.GetNodeOrNull<NAncientDialogueHitbox>("%DialogueHitbox");
+        VBoxContainer? container = layout.GetNodeOrNull<VBoxContainer>("%DialogueContainer");
+        NAncientDialogueLine? line = container?.GetChildren()
+            .OfType<NAncientDialogueLine>()
+            .ElementAtOrDefault(expectedLine);
+        if (hitbox == null
+            || line == null
+            || !string.Equals(
+                entities.GetId(line, "dialogue_line"),
+                expectedLineId,
+                StringComparison.Ordinal))
+        {
+            return BridgeActionStartResult.Rejected(
+                "event_dialogue_changed",
+                "The exact revealed dialogue line or native advance control no longer resolves.");
+        }
+        return StartAdvance(room, layout, hitbox, expectedLine);
     }
 
     private static BridgeActionStartResult StartAdvance(

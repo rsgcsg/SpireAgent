@@ -13,6 +13,10 @@ const catalogPath = path.join(
   "STS2MCP/BridgeV2/Runtime/operation-qualification-contracts.json"
 );
 const runtimePath = path.join(root, "STS2MCP/BridgeV2/Runtime/BridgeV2Runtime.cs");
+const connectorRuntimePath = path.join(
+  root,
+  "STS2MCP/ConnectorV3/Runtime/ConnectorV3Runtime.cs"
+);
 const identityPath = path.join(
   root,
   "STS2MCP/BridgeV2/Runtime/BridgeCurrentIdentityProjectionBuilder.cs"
@@ -53,6 +57,18 @@ const combatHandProviderPath = path.join(
   root,
   "STS2MCP/BridgeV2/Game/CombatHandCardSelectionSurfaceProvider.cs"
 );
+const combatPileProviderPath = path.join(
+  root,
+  "STS2MCP/BridgeV2/Game/CombatPileCardSelectionSurfaceProvider.cs"
+);
+const deckTransformProviderPath = path.join(
+  root,
+  "STS2MCP/BridgeV2/Game/DeckTransformSelectionSurfaceProvider.cs"
+);
+const woodCarvingsProviderPath = path.join(
+  root,
+  "STS2MCP/BridgeV2/Game/WoodCarvingsReplacementSurfaceProvider.cs"
+);
 const rewardClaimProviderPath = path.join(
   root,
   "STS2MCP/BridgeV2/Game/RewardClaimSurfaceProvider.cs"
@@ -70,11 +86,68 @@ const reNormalizerPath = path.join(
   root,
   "Re-SpireAgent/src/normalization/normalizeBridgeV2CurrentState.ts"
 );
+const deckEnchantProviderPath = path.join(
+  root,
+  "STS2MCP/BridgeV2/Game/DeckEnchantSurfaceProvider.cs"
+);
+const eventDialogueProviderPath = path.join(
+  root,
+  "STS2MCP/BridgeV2/Game/EventDialogueSurfaceProvider.cs"
+);
+const combatTurnProviderPath = path.join(
+  root,
+  "STS2MCP/BridgeV2/Game/CombatTurnSurfaceProvider.cs"
+);
+const mapNavigationProviderPath = path.join(
+  root,
+  "STS2MCP/BridgeV2/Game/MapNavigationSurfaceProvider.cs"
+);
+const shopProviderPath = path.join(
+  root,
+  "STS2MCP/BridgeV2/Game/ShopSurfaceProviders.cs"
+);
+const characterSelectProviderPath = path.join(
+  root,
+  "STS2MCP/BridgeV2/Game/CharacterSelectSurfaceProvider.cs"
+);
+const eventOptionProviderPath = path.join(
+  root,
+  "STS2MCP/BridgeV2/Game/EventOptionSurfaceProvider.cs"
+);
+const gameOverProviderPath = path.join(
+  root,
+  "STS2MCP/BridgeV2/Game/GameOverSurfaceProvider.cs"
+);
+const treasureProviderPath = path.join(
+  root,
+  "STS2MCP/BridgeV2/Game/TreasureRoomSurfaceProvider.cs"
+);
+const cardRewardProviderPath = path.join(
+  root,
+  "STS2MCP/BridgeV2/Game/CardRewardSurfaceProvider.cs"
+);
+const generatedChoiceProviderPath = path.join(
+  root,
+  "STS2MCP/BridgeV2/Game/GeneratedCardChoiceSurfaceProvider.cs"
+);
+const menuProviderPath = path.join(
+  root,
+  "STS2MCP/BridgeV2/Game/MenuSurfaceProviders.cs"
+);
+const reConnectorAdapterPath = path.join(
+  root,
+  "Re-SpireAgent/src/integrations/sts2mcp/connectorV3Adapter.ts"
+);
+const reConnectorProjectionPath = path.join(
+  root,
+  "Re-SpireAgent/src/integrations/sts2mcp/connectorV3Projection.ts"
+);
 
 const inventory = JSON.parse(await readFile(inventoryPath, "utf8"));
 const protocolSource = await readFile(protocolPath, "utf8");
 const catalog = JSON.parse(await readFile(catalogPath, "utf8"));
 const runtimeSource = await readFile(runtimePath, "utf8");
+const connectorRuntimeSource = await readFile(connectorRuntimePath, "utf8");
 const identitySource = await readFile(identityPath, "utf8");
 const surfacePermissionSource = await readFile(surfacePermissionPath, "utf8");
 const permissionManagerSource = await readFile(permissionManagerPath, "utf8");
@@ -85,14 +158,31 @@ const deckRemovalProviderSource = await readFile(deckRemovalProviderPath, "utf8"
 const cardBundleProviderSource = await readFile(cardBundleProviderPath, "utf8");
 const deckUpgradeProviderSource = await readFile(deckUpgradeProviderPath, "utf8");
 const combatHandProviderSource = await readFile(combatHandProviderPath, "utf8");
+const combatPileProviderSource = await readFile(combatPileProviderPath, "utf8");
+const deckTransformProviderSource = await readFile(deckTransformProviderPath, "utf8");
+const woodCarvingsProviderSource = await readFile(woodCarvingsProviderPath, "utf8");
 const rewardClaimProviderSource = await readFile(rewardClaimProviderPath, "utf8");
 const restSiteProviderSource = await readFile(restSiteProviderPath, "utf8");
 const eventCardAcquisitionProviderSource = await readFile(
   eventCardAcquisitionProviderPath,
   "utf8"
 );
+const deckEnchantProviderSource = await readFile(deckEnchantProviderPath, "utf8");
+const eventDialogueProviderSource = await readFile(eventDialogueProviderPath, "utf8");
+const combatTurnProviderSource = await readFile(combatTurnProviderPath, "utf8");
+const mapNavigationProviderSource = await readFile(mapNavigationProviderPath, "utf8");
+const shopProviderSource = await readFile(shopProviderPath, "utf8");
+const characterSelectProviderSource = await readFile(characterSelectProviderPath, "utf8");
+const eventOptionProviderSource = await readFile(eventOptionProviderPath, "utf8");
+const gameOverProviderSource = await readFile(gameOverProviderPath, "utf8");
+const treasureProviderSource = await readFile(treasureProviderPath, "utf8");
+const cardRewardProviderSource = await readFile(cardRewardProviderPath, "utf8");
+const generatedChoiceProviderSource = await readFile(generatedChoiceProviderPath, "utf8");
+const menuProviderSource = await readFile(menuProviderPath, "utf8");
 const reStateSource = await readFile(reStatePath, "utf8");
 const reNormalizerSource = await readFile(reNormalizerPath, "utf8");
+const reConnectorAdapterSource = await readFile(reConnectorAdapterPath, "utf8");
+const reConnectorProjectionSource = await readFile(reConnectorProjectionPath, "utf8");
 
 const protocol = protocolSource.match(/ProtocolVersion\s*=\s*"([^"]+)"/u)?.[1];
 if (inventory.schema_version !== 1) fail("unsupported inventory schema");
@@ -107,8 +197,8 @@ if (inventory.current.explicit_contract_digest_admission_count !== catalog.contr
 }
 if (catalog.schema_version !== 3
     || catalog.authority_effect
-      !== "explicit_native_contracts_plus_typed_session_fallbacks") {
-  fail("typed explicit/fallback catalog boundary is missing");
+      !== "explicit_native_contracts_only") {
+  fail("explicit-only operation catalog boundary is missing");
 }
 const eventRemovalContracts = new Map(catalog.contracts
   .filter((contract) => contract.surface_kind === "event_deck_removal_selection")
@@ -167,13 +257,35 @@ if (!qualificationStoreSource.includes("Manifest migration fallbacks cannot beco
 if (inventory.current.persistent_fallback_claim_admission_count !== 0) {
   fail("persistent fallback claim admission must remain zero");
 }
+if (/draft\.Actions|LegacyBinding|provider_native_binding_adapter/gu.test(connectorRuntimeSource)) {
+  fail("Connector V3 runtime regained a Provider action or V2-shaped execution dependency");
+}
+if (/BridgeV2RestClient|bridgeSidecar|bridge_v2_capabilities|temporary V2 consumer sidecar/gu
+    .test(reConnectorAdapterSource + reConnectorProjectionSource)) {
+  fail("Re Connector V3 regained a V2 consumer sidecar");
+}
 if (deckRemovalProviderSource.includes("new BridgeActionDraft")
     || cardBundleProviderSource.includes("new BridgeActionDraft")
     || deckUpgradeProviderSource.includes("new BridgeActionDraft")
     || combatHandProviderSource.includes("new BridgeActionDraft")
+    || combatPileProviderSource.includes("new BridgeActionDraft")
+    || deckTransformProviderSource.includes("new BridgeActionDraft")
+    || woodCarvingsProviderSource.includes("new BridgeActionDraft")
     || rewardClaimProviderSource.includes("new BridgeActionDraft")
     || restSiteProviderSource.includes("new BridgeActionDraft")
-    || eventCardAcquisitionProviderSource.includes("new BridgeActionDraft")) {
+    || eventCardAcquisitionProviderSource.includes("new BridgeActionDraft")
+    || deckEnchantProviderSource.includes("new BridgeActionDraft")
+    || eventDialogueProviderSource.includes("new BridgeActionDraft")
+    || combatTurnProviderSource.includes("new BridgeActionDraft")
+    || mapNavigationProviderSource.includes("new BridgeActionDraft")
+    || shopProviderSource.includes("new BridgeActionDraft")
+    || characterSelectProviderSource.includes("new BridgeActionDraft")
+    || eventOptionProviderSource.includes("new BridgeActionDraft")
+    || gameOverProviderSource.includes("new BridgeActionDraft")
+    || treasureProviderSource.includes("new BridgeActionDraft")
+    || cardRewardProviderSource.includes("new BridgeActionDraft")
+    || generatedChoiceProviderSource.includes("new BridgeActionDraft")
+    || menuProviderSource.includes("new BridgeActionDraft")) {
   fail("a V3 direct family regained a Provider publication/execution path");
 }
 if (/PermissionManager\.Snapshot|QualificationStore\.Snapshot/gu.test(identitySource)) {
@@ -190,6 +302,8 @@ if (inventory.current.connector_shadow_count !== inventory.target.connector_shad
       !== inventory.target.production_action_publication_path_count
     || inventory.current.production_authority_resolver_count
       !== inventory.target.production_authority_resolver_count
+    || inventory.current.operation_authority_usage_count
+      !== inventory.target.operation_authority_usage_count
     || inventory.current.persistent_fallback_claim_admission_count
       !== inventory.target.persistent_fallback_claim_admission_count
     || inventory.current.bulk_candidate_startup_path_count

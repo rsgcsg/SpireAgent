@@ -146,6 +146,23 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
                 new[] { "selected_cards", "legal_actions" });
         }
 
+        string[] selectableIds = holders
+            .Where(holder => IsHolderClickable(holder)
+                             && !selectedCards.Contains(holder.CardModel)
+                             && selectedCards.Count < exactBinding.Preferences.MaxSelect)
+            .Select(holder => cardIds[holder.CardModel])
+            .OrderBy(id => id, StringComparer.Ordinal)
+            .ToArray();
+        string[] deselectableIds = holders
+            .Where(holder => IsHolderClickable(holder)
+                             && selectedCards.Contains(holder.CardModel))
+            .Select(holder => cardIds[holder.CardModel])
+            .OrderBy(id => id, StringComparer.Ordinal)
+            .ToArray();
+        bool canConfirm = semantics.CommitMode == "manual_confirm"
+                          && selectedCards.Count >= exactBinding.Preferences.MinSelect
+                          && selectedCards.Count <= exactBinding.Preferences.MaxSelect
+                          && FindVisibleEnabledConfirm(screen) != null;
         var surface = new CombatPileCardSelectionSurface(
             SurfaceKind,
             entities.GetId(screen, "screen"),
@@ -172,21 +189,20 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
             selectedIds,
             exactBinding.Preferences.RequireManualConfirmation,
             exactBinding.Preferences.Cancelable,
-            cards);
+            cards)
+        {
+            SelectableCardEntityIds = selectableIds,
+            DeselectableCardEntityIds = deselectableIds,
+            CanConfirm = canConfirm
+        };
 
-        List<BridgeActionDraft> actions = BuildActions(
-            screen,
-            source,
-            semantics,
-            exactBinding,
-            holders,
-            selectedCards,
-            cardIds);
-
-        string readiness = actions.Count > 0 ? "ready" : "settling";
+        bool hasCurrentCommand = selectableIds.Length > 0
+                                 || deselectableIds.Length > 0
+                                 || canConfirm;
+        string readiness = hasCurrentCommand ? "ready" : "settling";
         var completeness = new StateCompleteness(
             semantics.Completeness,
-            actions.Count > 0
+            hasCurrentCommand
                 ? "derived_from_exact_visible_grid_and_current_controls"
                 : "temporarily_empty_while_selection_completes_or_settles",
             new[]
@@ -203,8 +219,7 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
         string signature = BridgeHash.Object(new
         {
             game.Version,
-            surface,
-            actionKeys = actions.Select(action => action.Key).OrderBy(key => key, StringComparer.Ordinal).ToArray()
+            surface
         });
 
         return new BridgeObservationDraft(
@@ -218,51 +233,7 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
             {
                 "Private-field bindings are exact-version scoped and expose only semantics already visible in the combat selection UI."
             },
-            actions);
-    }
-
-    private static List<BridgeActionDraft> BuildActions(
-        NCombatPileCardSelectScreen screen,
-        CombatPileSelectionSourceBinding.SourceBinding source,
-        SourceSemantics semantics,
-        Binding binding,
-        IReadOnlyList<NGridCardHolder> holders,
-        HashSet<CardModel> selectedCards,
-        IReadOnlyDictionary<CardModel, string> cardIds)
-    {
-        var actions = new List<BridgeActionDraft>();
-        foreach (NGridCardHolder holder in holders.Where(IsHolderClickable))
-        {
-            CardModel card = holder.CardModel;
-            bool selected = selectedCards.Contains(card);
-            if (!selected && selectedCards.Count >= binding.Preferences.MaxSelect)
-                continue;
-
-            string cardId = cardIds[card];
-            string cardName = McpMod.SafeGetText(() => card.Title) ?? card.Id.Entry;
-            actions.Add(new BridgeActionDraft(
-                $"combat_pile_toggle:{cardId}",
-                "toggle_combat_pile_card",
-                "selection",
-                semantics.ActionLabel(cardName, selected),
-                semantics.CommitEvidence,
-                () => StartSelection(screen, source, semantics, card, selected),
-                new[] { new ActionEntityBinding("card", cardId) }));
-        }
-
-        if (semantics.CommitMode == "manual_confirm"
-            && FindVisibleEnabledConfirm(screen) is { } confirm)
-        {
-            actions.Add(new BridgeActionDraft(
-                "combat_pile_confirm",
-                "confirm_combat_pile_selection",
-                "commit",
-                "Confirm selected cards",
-                semantics.CommitEvidence,
-                () => StartConfirm(screen, source, semantics, confirm)));
-        }
-
-        return actions;
+            Array.Empty<BridgeActionDraft>());
     }
 
     private static BridgeActionStartResult StartSelection(
@@ -369,6 +340,88 @@ internal sealed class CombatPileCardSelectionSurfaceProvider : IBridgeSurfacePro
                   },
             semantics.CompletionEvidence,
             allowIntermediateStateChanges: true);
+    }
+
+    internal static BridgeActionStartResult StartDirectToggle(
+        BridgeEntityRegistry entities,
+        CombatPileCardSelectionSurface expectedSurface,
+        string cardId,
+        bool expectedSelected)
+    {
+        if (!TryResolveDirect(
+                entities,
+                expectedSurface,
+                out NCombatPileCardSelectScreen? screen,
+                out CombatPileSelectionSourceBinding.SourceBinding? source,
+                out SourceSemantics? semantics)
+            || !entities.TryResolve(cardId, out CardModel? card)
+            || card == null)
+        {
+            return BridgeActionStartResult.Rejected(
+                "combat_pile_binding_stale",
+                "The exact combat-pile screen, source, or card no longer resolves.");
+        }
+        return StartSelection(screen!, source!, semantics!, card, expectedSelected);
+    }
+
+    internal static BridgeActionStartResult StartDirectConfirm(
+        BridgeEntityRegistry entities,
+        CombatPileCardSelectionSurface expectedSurface)
+    {
+        if (!TryResolveDirect(
+                entities,
+                expectedSurface,
+                out NCombatPileCardSelectScreen? screen,
+                out CombatPileSelectionSourceBinding.SourceBinding? source,
+                out SourceSemantics? semantics)
+            || FindVisibleEnabledConfirm(screen!) is not { } confirm)
+        {
+            return BridgeActionStartResult.Rejected(
+                "combat_pile_binding_stale",
+                "The exact combat-pile confirmation no longer resolves.");
+        }
+        return StartConfirm(screen!, source!, semantics!, confirm);
+    }
+
+    private static bool TryResolveDirect(
+        BridgeEntityRegistry entities,
+        CombatPileCardSelectionSurface expectedSurface,
+        out NCombatPileCardSelectScreen? screen,
+        out CombatPileSelectionSourceBinding.SourceBinding? source,
+        out SourceSemantics? semantics)
+    {
+        screen = null;
+        source = null;
+        semantics = null;
+        if (!entities.TryResolve(expectedSurface.ScreenEntityId, out screen)
+            || screen == null
+            || !IsCurrent(screen)
+            || !CombatPileSelectionSourceBinding.TryGetUnique(out source)
+            || source == null
+            || !TryDescribeSource(source, out semantics)
+            || semantics == null)
+        {
+            return false;
+        }
+
+        string sourceEntityId = entities.GetId(source.SourceModel, source.SourceEntityKind);
+        string? sourceCardEntityId = source.SourceCard == null
+            ? null
+            : entities.GetId(source.SourceCard, "card");
+        return string.Equals(sourceEntityId, expectedSurface.SourceEntityId, StringComparison.Ordinal)
+               && string.Equals(source.SourceEntityKind, expectedSurface.SourceEntityKind, StringComparison.Ordinal)
+               && string.Equals(source.SourceDefinitionId, expectedSurface.SourceDefinitionId, StringComparison.Ordinal)
+               && string.Equals(sourceCardEntityId, expectedSurface.SourceCardEntityId, StringComparison.Ordinal)
+               && string.Equals(source.SourceCard?.Id.Entry, expectedSurface.SourceCardDefinitionId, StringComparison.Ordinal)
+               && string.Equals(semantics.SourceKind, expectedSurface.SourceKind, StringComparison.Ordinal)
+               && string.Equals(semantics.Purpose, expectedSurface.Purpose, StringComparison.Ordinal)
+               && string.Equals(semantics.MutationKind, expectedSurface.MutationKind, StringComparison.Ordinal)
+               && string.Equals(semantics.CommitMode, expectedSurface.CommitMode, StringComparison.Ordinal)
+               && string.Equals(semantics.SourcePile, expectedSurface.PileType, StringComparison.Ordinal)
+               && string.Equals(semantics.DestinationPile, expectedSurface.DestinationPile, StringComparison.Ordinal)
+               && string.Equals(semantics.DestinationPosition, expectedSurface.DestinationPosition, StringComparison.Ordinal)
+               && string.Equals(semantics.OverflowDestination, expectedSurface.OverflowDestination, StringComparison.Ordinal)
+               && string.Equals(semantics.ReplacementCardDefinitionId, expectedSurface.ReplacementCardDefinitionId, StringComparison.Ordinal);
     }
 
     private static bool TryDescribeSource(

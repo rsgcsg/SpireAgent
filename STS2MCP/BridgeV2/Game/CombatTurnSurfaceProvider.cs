@@ -58,31 +58,25 @@ internal sealed class CombatTurnSurfaceProvider : IBridgeSurfaceProvider
         if (playerCombat == null)
             return null;
 
-        var actions = new List<BridgeActionDraft>();
+        var playableCards = new List<VisibleCombatCommandOption>();
+        var usablePotions = new List<VisibleCombatCommandOption>();
         if (context.IsPlayPhase)
         {
-            AddCardActions(actions, player, playerCombat, entities);
-            AddPotionActions(actions, player, entities);
+            AddCardOptions(playableCards, player, playerCombat, entities);
+            AddPotionOptions(usablePotions, player, entities);
         }
 
         bool canEndTurn = context.IsPlayPhase
                           && !hand.InCardPlay
                           && hand.CurrentMode == NPlayerHand.Mode.Play;
-        if (canEndTurn)
-        {
-            actions.Add(new BridgeActionDraft(
-                "end_turn",
-                "end_turn",
-                "commit",
-                "End turn",
-                "PlayerCmd.EndTurn+NEndTurnButton.CanTurnBeEnded guards",
-                () => StartEndTurn(player)));
-        }
-
         var surface = new CombatTurnSurface(
             Kind,
             entities.GetId(room, "room"),
-            canEndTurn);
+            canEndTurn)
+        {
+            PlayableCards = playableCards,
+            UsablePotions = usablePotions
+        };
         string readiness = context.IsPlayPhase ? "ready" : "settling";
         var completeness = new StateCompleteness(
             "contract_complete_for_immediate_combat_turn_including_visible_companions; pile contents available through separate read-only inspection",
@@ -104,8 +98,7 @@ internal sealed class CombatTurnSurfaceProvider : IBridgeSurfaceProvider
         {
             game.Version,
             context,
-            surface,
-            actionKeys = actions.Select(action => action.Key).OrderBy(key => key, StringComparer.Ordinal).ToArray()
+            surface
         });
 
         return new BridgeObservationDraft(
@@ -116,7 +109,7 @@ internal sealed class CombatTurnSurfaceProvider : IBridgeSurfaceProvider
             completeness,
             game,
             Array.Empty<string>(),
-            actions)
+            Array.Empty<BridgeActionDraft>())
         {
             Diagnostics = new[]
             {
@@ -134,8 +127,8 @@ internal sealed class CombatTurnSurfaceProvider : IBridgeSurfaceProvider
         };
     }
 
-    private static void AddCardActions(
-        ICollection<BridgeActionDraft> actions,
+    private static void AddCardOptions(
+        ICollection<VisibleCombatCommandOption> commandOptions,
         Player player,
         PlayerCombatState playerCombat,
         BridgeEntityRegistry entities)
@@ -148,40 +141,24 @@ internal sealed class CombatTurnSurfaceProvider : IBridgeSurfaceProvider
             string cardName = McpMod.SafeGetText(() => card.Title) ?? card.Id.Entry;
             if (card.TargetType == TargetType.AnyEnemy)
             {
+                var targetIds = new List<string>();
                 foreach (Creature target in player.Creature.CombatState?.HittableEnemies ?? Array.Empty<Creature>())
                 {
                     string targetId = entities.GetId(target, "enemy");
-                    string targetName = McpMod.SafeGetText(() => target.Monster?.Title) ?? targetId;
-                    actions.Add(new BridgeActionDraft(
-                        $"play_card:{cardId}:target:{targetId}",
-                        "play_card",
-                        "combat",
-                        $"Play {cardName} on {targetName}",
-                        "CardModel.CanPlay+CombatState.HittableEnemies+CardModel.TryManualPlay",
-                        () => StartPlayCard(player, card, target),
-                        new[]
-                        {
-                            new ActionEntityBinding("card", cardId),
-                            new ActionEntityBinding("target", targetId)
-                        }));
+                    targetIds.Add(targetId);
                 }
+                if (targetIds.Count > 0)
+                    commandOptions.Add(new VisibleCombatCommandOption(cardId, cardName, targetIds));
             }
             else
             {
-                actions.Add(new BridgeActionDraft(
-                    $"play_card:{cardId}",
-                    "play_card",
-                    "combat",
-                    $"Play {cardName}",
-                    "CardModel.CanPlay+CardModel.TryManualPlay",
-                    () => StartPlayCard(player, card, null),
-                    new[] { new ActionEntityBinding("card", cardId) }));
+                commandOptions.Add(new VisibleCombatCommandOption(cardId, cardName, Array.Empty<string>()));
             }
         }
     }
 
-    private static void AddPotionActions(
-        ICollection<BridgeActionDraft> actions,
+    private static void AddPotionOptions(
+        ICollection<VisibleCombatCommandOption> commandOptions,
         Player player,
         BridgeEntityRegistry entities)
     {
@@ -192,26 +169,16 @@ internal sealed class CombatTurnSurfaceProvider : IBridgeSurfaceProvider
                 continue;
             string potionId = entities.GetId(potion!, "potion");
             string potionName = McpMod.SafeGetText(() => potion!.Title) ?? potion!.Id.Entry;
-            int capturedSlot = slot;
             if (potion!.TargetType == TargetType.AnyEnemy)
             {
+                var targetIds = new List<string>();
                 foreach (Creature target in (player.Creature.CombatState?.HittableEnemies ?? Array.Empty<Creature>()).Where(potion.IsValidTarget))
                 {
                     string targetId = entities.GetId(target, "enemy");
-                    string targetName = McpMod.SafeGetText(() => target.Monster?.Title) ?? targetId;
-                    actions.Add(new BridgeActionDraft(
-                        $"use_potion:{potionId}:target:{targetId}",
-                        "use_potion",
-                        "combat",
-                        $"Use {potionName} on {targetName}",
-                        "PotionModel.PassesCustomUsabilityCheck+CombatState.HittableEnemies",
-                        () => StartUsePotion(player, potion, capturedSlot, target),
-                        new[]
-                        {
-                            new ActionEntityBinding("potion", potionId),
-                            new ActionEntityBinding("target", targetId)
-                        }));
+                    targetIds.Add(targetId);
                 }
+                if (targetIds.Count > 0)
+                    commandOptions.Add(new VisibleCombatCommandOption(potionId, potionName, targetIds));
             }
             else
             {
@@ -221,24 +188,102 @@ internal sealed class CombatTurnSurfaceProvider : IBridgeSurfaceProvider
                     TargetType.AnyAlly => player.Creature.CombatState?.PlayerCreatures.FirstOrDefault(potion.IsValidTarget),
                     _ => null
                 };
-                if (target == null || !potion.IsValidTarget(target))
+                if (!IsAdvertisablePotionTarget(potion, target))
                     continue;
-                actions.Add(new BridgeActionDraft(
-                    $"use_potion:{potionId}",
-                    "use_potion",
-                    "combat",
-                    $"Use {potionName}",
-                    "PotionModel.PassesCustomUsabilityCheck",
-                    () => StartUsePotion(player, potion, capturedSlot, target),
-                    new[]
-                    {
-                        new ActionEntityBinding("potion", potionId),
-                        new ActionEntityBinding(
-                            "target",
-                            entities.GetId(target, "creature"))
-                    }));
+                commandOptions.Add(new VisibleCombatCommandOption(
+                    potionId,
+                    potionName,
+                    target == null
+                        ? Array.Empty<string>()
+                        : new[] { entities.GetId(target, "creature") }));
             }
         }
+    }
+
+    internal static bool IsAdvertisablePotionTarget(
+        PotionModel potion,
+        Creature? target) => potion.IsValidTarget(target);
+
+    internal static BridgeActionStartResult StartDirectPlayCard(
+        BridgeEntityRegistry entities,
+        string expectedRoomId,
+        string expectedCardId,
+        string? expectedTargetId)
+    {
+        if (!TryResolveDirectCombatOwner(entities, expectedRoomId, out Player? player)
+            || !entities.TryResolve(expectedCardId, out CardModel? card)
+            || card == null)
+        {
+            return BridgeActionStartResult.Rejected(
+                "combat_binding_changed",
+                "The exact combat room, player, or hand card is no longer current.");
+        }
+        Creature? target = null;
+        if (expectedTargetId != null
+            && (!entities.TryResolve(expectedTargetId, out target) || target == null))
+        {
+            return BridgeActionStartResult.Rejected(
+                "target_no_longer_legal",
+                "The exact advertised combat target no longer resolves.");
+        }
+        return StartPlayCard(player!, card, target);
+    }
+
+    internal static BridgeActionStartResult StartDirectUsePotion(
+        BridgeEntityRegistry entities,
+        string expectedRoomId,
+        string expectedPotionId,
+        string? expectedTargetId)
+    {
+        if (!TryResolveDirectCombatOwner(entities, expectedRoomId, out Player? player)
+            || !entities.TryResolve(expectedPotionId, out PotionModel? potion)
+            || potion == null)
+        {
+            return BridgeActionStartResult.Rejected(
+                "combat_binding_changed",
+                "The exact combat room, player, or potion is no longer current.");
+        }
+        int slot = Enumerable.Range(0, player!.PotionSlots.Count)
+            .FirstOrDefault(index => ReferenceEquals(player.GetPotionAtSlotIndex(index), potion), -1);
+        if (slot < 0)
+        {
+            return BridgeActionStartResult.Rejected(
+                "potion_slot_changed",
+                "The exact advertised potion is no longer in a current slot.");
+        }
+        Creature? target = null;
+        if (expectedTargetId != null
+            && (!entities.TryResolve(expectedTargetId, out target) || target == null))
+        {
+            return BridgeActionStartResult.Rejected(
+                "target_no_longer_legal",
+                "The exact advertised potion target no longer resolves.");
+        }
+        return StartUsePotion(player, potion, slot, target);
+    }
+
+    internal static BridgeActionStartResult StartDirectEndTurn(
+        BridgeEntityRegistry entities,
+        string expectedRoomId) =>
+        TryResolveDirectCombatOwner(entities, expectedRoomId, out Player? player)
+            ? StartEndTurn(player!)
+            : BridgeActionStartResult.Rejected(
+                "combat_binding_changed",
+                "The exact combat room or player is no longer current.");
+
+    private static bool TryResolveDirectCombatOwner(
+        BridgeEntityRegistry entities,
+        string expectedRoomId,
+        out Player? player)
+    {
+        RunState? runState = RunManager.Instance.DebugOnlyGetState();
+        NCombatRoom? room = NCombatRoom.Instance;
+        player = runState == null ? null : LocalContext.GetMe(runState);
+        return runState?.CurrentRoom is CombatRoom
+               && room != null
+               && McpMod.IsLiveNode(room)
+               && string.Equals(entities.GetId(room, "room"), expectedRoomId, StringComparison.Ordinal)
+               && player != null;
     }
 
     internal static BridgeActionStartResult StartPlayCard(

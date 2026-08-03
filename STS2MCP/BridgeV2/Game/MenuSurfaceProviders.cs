@@ -72,30 +72,6 @@ internal sealed class MainMenuSurfaceProvider : IBridgeSurfaceProvider
                            && continueSummary != null;
         bool canOpenSingleplayer = IsUsable(singleplayerButton);
         string rootId = entities.GetId(root, "menu_screen");
-        var actions = new List<BridgeActionDraft>();
-        if (canContinue)
-        {
-            actions.Add(new BridgeActionDraft(
-                $"continue_run:{rootId}",
-                "continue_run",
-                "navigation",
-                "Continue the saved run",
-                "NMainMenu.ContinueButton+active-run-witness",
-                () => StartContinue(root, continueButton, runResult!),
-                new[] { new ActionEntityBinding("menu_screen", rootId) }));
-        }
-        if (canOpenSingleplayer)
-        {
-            actions.Add(new BridgeActionDraft(
-                $"open_singleplayer:{rootId}",
-                "open_singleplayer",
-                "navigation",
-                "Open Single Player",
-                "NMainMenu.SingleplayerButton+submenu-owner-witness",
-                () => StartOpenSingleplayer(root, singleplayerButton),
-                new[] { new ActionEntityBinding("menu_screen", rootId) }));
-        }
-
         VisibleMenuOption[] options = new[]
         {
             Option(entities, continueButton, "continue", Label(continueButton, "Continue"),
@@ -124,7 +100,7 @@ internal sealed class MainMenuSurfaceProvider : IBridgeSurfaceProvider
 
         var surface = new MainMenuSurface(
             Kind,
-            actions.Count > 0 ? "choosing" : "blocked",
+            canContinue || canOpenSingleplayer ? "choosing" : "blocked",
             rootId,
             options,
             continueSummary);
@@ -132,11 +108,15 @@ internal sealed class MainMenuSurfaceProvider : IBridgeSurfaceProvider
         {
             game.Version,
             surface,
-            actionKeys = actions.Select(action => action.Key).OrderBy(key => key, StringComparer.Ordinal).ToArray()
+            commandKeys = new[]
+            {
+                canContinue ? $"continue_run:{rootId}" : null,
+                canOpenSingleplayer ? $"open_singleplayer:{rootId}" : null
+            }.Where(key => key != null).OrderBy(key => key, StringComparer.Ordinal).ToArray()
         });
         return new BridgeObservationDraft(
             signature,
-            actions.Count > 0 ? "ready" : "blocked",
+            canContinue || canOpenSingleplayer ? "ready" : "blocked",
             new MenuBridgeContext("menu", "root_navigation"),
             surface,
             new StateCompleteness(
@@ -152,7 +132,7 @@ internal sealed class MainMenuSurfaceProvider : IBridgeSurfaceProvider
                 new[] { "profile_and_patch_notes_hover_detail_not_exposed" }),
             game,
             new[] { "unsupported_root_choices_are_visible_facts_only" },
-            actions);
+            Array.Empty<BridgeActionDraft>());
     }
 
     private static BridgeActionStartResult StartContinue(
@@ -365,30 +345,6 @@ internal sealed class SingleplayerMenuSurfaceProvider : IBridgeSurfaceProvider
         string screenId = entities.GetId(screen, "menu_screen");
         bool canStandard = IsUsable(standard);
         bool canBack = IsUsable(back);
-        var actions = new List<BridgeActionDraft>();
-        if (canStandard)
-        {
-            actions.Add(new BridgeActionDraft(
-                $"open_standard_run_setup:{screenId}",
-                "open_standard_run_setup",
-                "navigation",
-                "Open Standard run setup",
-                "NSingleplayerSubmenu.StandardButton+character-select-owner-witness",
-                () => StartStandard(screen, standard),
-                new[] { new ActionEntityBinding("menu_screen", screenId) }));
-        }
-        if (canBack)
-        {
-            actions.Add(new BridgeActionDraft(
-                $"back_from_singleplayer_menu:{screenId}",
-                "back_from_singleplayer_menu",
-                "navigation",
-                "Back to main menu",
-                "NSingleplayerSubmenu.BackButton+root-owner-witness",
-                () => StartBack(screen, back),
-                new[] { new ActionEntityBinding("menu_screen", screenId) }));
-        }
-
         VisibleMenuOption[] options = new[]
         {
             Option(entities, standard, "standard", "Standard", canStandard ? "actionable" : "visible_unsupported",
@@ -400,16 +356,24 @@ internal sealed class SingleplayerMenuSurfaceProvider : IBridgeSurfaceProvider
             Option(entities, back, "back", "Back", canBack ? "actionable" : "visible_unsupported",
                 canBack ? null : "The exact Back control is not currently enabled.")
         }.Where(option => option != null).Cast<VisibleMenuOption>().ToArray();
-        var surface = new SingleplayerMenuSurface(Kind, actions.Count > 0 ? "choosing" : "blocked", screenId, options);
+        var surface = new SingleplayerMenuSurface(
+            Kind,
+            canStandard || canBack ? "choosing" : "blocked",
+            screenId,
+            options);
         string signature = BridgeHash.Object(new
         {
             game.Version,
             surface,
-            actionKeys = actions.Select(action => action.Key).OrderBy(key => key, StringComparer.Ordinal).ToArray()
+            commandKeys = new[]
+            {
+                canStandard ? $"open_standard_run_setup:{screenId}" : null,
+                canBack ? $"back_from_singleplayer_menu:{screenId}" : null
+            }.Where(key => key != null).OrderBy(key => key, StringComparer.Ordinal).ToArray()
         });
         return new BridgeObservationDraft(
             signature,
-            actions.Count > 0 ? "ready" : "blocked",
+            canStandard || canBack ? "ready" : "blocked",
             new MenuBridgeContext("menu", "standard_run_setup"),
             surface,
             new StateCompleteness(
@@ -425,7 +389,7 @@ internal sealed class SingleplayerMenuSurfaceProvider : IBridgeSurfaceProvider
                 Array.Empty<string>()),
             game,
             new[] { "daily_and_custom_are_visible_facts_only" },
-            actions);
+            Array.Empty<BridgeActionDraft>());
     }
 
     private static BridgeActionStartResult StartStandard(NSingleplayerSubmenu expectedScreen, NButton expectedButton)

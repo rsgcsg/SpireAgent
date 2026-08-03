@@ -75,43 +75,6 @@ internal sealed class CardRewardSurfaceProvider : IBridgeSurfaceProvider
                 button.IsEnabled))
             .ToArray();
 
-        var actions = new List<BridgeActionDraft>();
-        foreach (NGridCardHolder holder in holders.Where(IsHolderClickable))
-        {
-            CardModel card = holder.CardModel;
-            string cardId = entities.GetId(card, "card");
-            string cardName = McpMod.SafeGetText(() => card.Title) ?? card.Id.Entry;
-            actions.Add(new BridgeActionDraft(
-                $"select_card_reward:{cardId}",
-                "select_card_reward",
-                "selection",
-                $"Take {cardName}",
-                "NCardRewardSelectionScreen.SelectCard via NCardHolder.Pressed",
-                () => StartCardSelection(screen, cardRow, holder, card, holders, buttons),
-                new[] { new ActionEntityBinding("card", cardId) }));
-        }
-        foreach ((NCardRewardAlternativeButton button, int index) in buttons.Select((button, index) => (button, index)))
-        {
-            if (!button.IsEnabled)
-                continue;
-            string label = alternatives[index].Label;
-            string alternativeId = alternatives[index].EntityId;
-            actions.Add(new BridgeActionDraft(
-                $"choose_card_reward_alternative:{alternativeId}",
-                "choose_card_reward_alternative",
-                "alternative",
-                label,
-                "NCardRewardAlternativeButton.visible_label+ForceClick",
-                () => StartAlternative(
-                    screen,
-                    alternativesContainer,
-                    button,
-                    label,
-                    holders,
-                    buttons),
-                new[] { new ActionEntityBinding("alternative", alternativeId) }));
-        }
-
         var surface = new CardRewardSelectionSurface(
             SurfaceKind,
             entities.GetId(screen, "screen"),
@@ -124,13 +87,15 @@ internal sealed class CardRewardSurfaceProvider : IBridgeSurfaceProvider
                 .ToArray()
         };
         bool hasVisibleOptions = cards.Length > 0 || alternatives.Length > 0;
-        string readiness = actions.Count > 0 ? "ready" : hasVisibleOptions ? "settling" : "degraded";
+        bool hasActionableOption = surface.SelectableCardEntityIds.Count > 0
+                                   || alternatives.Any(option => option.Enabled);
+        string readiness = hasActionableOption ? "ready" : hasVisibleOptions ? "settling" : "degraded";
         var missing = hasVisibleOptions
             ? Array.Empty<string>()
             : new[] { "surface.cards_or_alternatives" };
         var completeness = new StateCompleteness(
             hasVisibleOptions ? "contract_complete_for_card_reward_selection" : "partial",
-            actions.Count > 0
+            hasActionableOption
                 ? "derived_from_current_clickability_and_enabled_buttons"
                 : "temporarily_empty_while_ui_settles",
             new[]
@@ -145,8 +110,7 @@ internal sealed class CardRewardSurfaceProvider : IBridgeSurfaceProvider
         string signature = BridgeHash.Object(new
         {
             game.Version,
-            surface,
-            actionKeys = actions.Select(action => action.Key).OrderBy(key => key, StringComparer.Ordinal).ToArray()
+            surface
         });
 
         return new BridgeObservationDraft(
@@ -157,7 +121,7 @@ internal sealed class CardRewardSurfaceProvider : IBridgeSurfaceProvider
             completeness,
             game,
             Array.Empty<string>(),
-            actions);
+            Array.Empty<BridgeActionDraft>());
     }
 
     private static BridgeObservationDraft BindingUnavailable(

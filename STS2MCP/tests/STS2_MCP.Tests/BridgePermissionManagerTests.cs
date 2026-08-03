@@ -310,16 +310,16 @@ public sealed class BridgePermissionManagerTests
                     "confirm_selection"));
         Assert.Equal("persistent_run_mutation", enchant.RiskClass);
         Assert.Equal(new[] { "migration_exploration" }, enchant.EligibleModes);
-        BridgeMigrationPermissionCandidate fallback =
+        BridgeMigrationPermissionCandidate transform =
             Assert.IsType<BridgeMigrationPermissionCandidate>(
                 BridgeMigrationPermissionPolicy.Find(
                     "deck_transform_selection",
                     "confirm_deck_transform"));
-        Assert.Equal("persistent_run_mutation", fallback.RiskClass);
-        Assert.Equal(new[] { "migration_exploration" }, fallback.EligibleModes);
+        Assert.Equal("persistent_run_mutation", transform.RiskClass);
+        Assert.Equal(new[] { "migration_exploration" }, transform.EligibleModes);
         Assert.Equal(
-            BridgeOperationQualificationCatalog.RuntimeReportedWitness,
-            fallback.WitnessId);
+            "transform_screen_closed_original_instances_absent_and_deck_count_preserved",
+            transform.WitnessId);
     }
 
     [Fact]
@@ -376,14 +376,14 @@ public sealed class BridgePermissionManagerTests
     }
 
     [Fact]
-    public void ManifestFallbackPromotesOnlyAfterGatewayReportsSemanticCompletion()
+    public void DynamicWitnessContractPromotesOnlyAfterGatewayReportsSemanticCompletion()
     {
         var manager = new BridgePermissionManager(
             "runtime-migration",
             BridgePermissionMode.MigrationExploration);
         CompatibilityAssessment first = manager.Apply(
             GameWithScopes(
-                Scope("deck_transform_selection", "confirm_deck_transform", "canary")),
+                Scope("combat_pile_card_selection", "confirm_combat_pile_selection", "canary")),
             Bridge("runtime-migration"),
             CleanPatchInventory());
         BridgeActionPermissionBinding binding = Binding(
@@ -401,7 +401,7 @@ public sealed class BridgePermissionManagerTests
                 "reward_claimed_and_surface_updated"));
         CompatibilityAssessment promoted = manager.Apply(
             GameWithScopes(
-                Scope("deck_transform_selection", "confirm_deck_transform", "canary")),
+                Scope("combat_pile_card_selection", "confirm_combat_pile_selection", "canary")),
             Bridge("runtime-migration"),
             CleanPatchInventory());
 
@@ -412,14 +412,14 @@ public sealed class BridgePermissionManagerTests
     }
 
     [Fact]
-    public void ManifestFallbackWithoutGatewayWitnessIsQuarantined()
+    public void DynamicWitnessContractWithoutGatewayWitnessIsQuarantined()
     {
         var manager = new BridgePermissionManager(
             "runtime-migration",
             BridgePermissionMode.MigrationExploration);
         CompatibilityAssessment first = manager.Apply(
             GameWithScopes(
-                Scope("deck_transform_selection", "confirm_deck_transform", "canary")),
+                Scope("combat_pile_card_selection", "confirm_combat_pile_selection", "canary")),
             Bridge("runtime-migration"),
             CleanPatchInventory());
         BridgeActionPermissionBinding binding = Binding(
@@ -436,7 +436,7 @@ public sealed class BridgePermissionManagerTests
                 null));
         CompatibilityAssessment after = manager.Apply(
             GameWithScopes(
-                Scope("deck_transform_selection", "confirm_deck_transform", "canary")),
+                Scope("combat_pile_card_selection", "confirm_combat_pile_selection", "canary")),
             Bridge("runtime-migration"),
             CleanPatchInventory());
 
@@ -633,7 +633,7 @@ public sealed class BridgePermissionManagerTests
     }
 
     [Fact]
-    public void V3NativeCandidateCannotAdmitManifestFallbackContract()
+    public void V3NativeCandidateCannotAdmitUnknownContract()
     {
         var manager = new BridgePermissionManager(
             "runtime-v3-fallback",
@@ -662,7 +662,7 @@ public sealed class BridgePermissionManagerTests
             {
                 new BridgeEncounterAuthorityCandidate(
                     "deck_transform_selection",
-                    "confirm_deck_transform",
+                    "unknown_selector_operation",
                     "fixture-source",
                     RequiresExplicitNativeContract: true)
             });

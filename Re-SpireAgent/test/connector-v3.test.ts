@@ -60,7 +60,7 @@ const SOURCE: AdapterDescriptor = {
 
 function combatObservation(): ConnectorV3Observation {
   return decodeConnectorV3Observation({
-    protocol_version: "3.0-preview.8",
+    protocol_version: "3.0-preview.9",
     schema: "sts2.connector.v3/observation-1",
     profile: "semantic_accessibility.tools.v1",
     state_token: "state-fixture-1",
@@ -129,7 +129,13 @@ function combatObservation(): ConnectorV3Observation {
     surface: {
       kind: "combat_turn",
       room_entity_id: "room-fixture",
-      can_end_turn: true
+      can_end_turn: false,
+      playable_cards: [{
+        entity_id: "card-fixture-1",
+        name: "Strike",
+        target_entity_ids: ["creature-fixture-1", "creature-fixture-2"]
+      }],
+      usable_potions: []
     },
     interaction: {
       id: "interaction-fixture-1",
@@ -291,7 +297,11 @@ function generatedCombatChoiceObservation(): ConnectorV3Observation {
     selected_card_cost_policy: "free_this_turn",
     overflow_destination: "combat_discard_if_hand_full",
     can_skip: true,
+    skip_available: true,
     is_peeking: false,
+    selectable_card_entity_ids: ["generated-card-1", "generated-card-2"],
+    select_operation: "select_generated_combat_card",
+    skip_operation: "skip_generated_combat_card_choice",
     cards: [
       {
         entity_id: "generated-card-1",
@@ -436,6 +446,256 @@ function combatHandObservation(): ConnectorV3Observation {
         binding_kind: "native_direct_resolver",
         authority_state: "trial"
       }
+    ]
+  };
+  return decodeConnectorV3Observation(value).data;
+}
+
+const SELECTOR_CARD = {
+  entity_id: "selector-card-1",
+  definition_id: "STRIKE_IRONCLAD",
+  name: "Strike",
+  type: "Attack",
+  cost: "1",
+  description: "Deal 6 damage.",
+  rarity: "Basic",
+  is_upgraded: false,
+  is_selected: false
+};
+
+function deckTransformObservation(stage: "selecting" | "preview" = "selecting"):
+ConnectorV3Observation {
+  const value = structuredClone(combatObservation()) as unknown as any;
+  const selected = stage === "preview";
+  value.context = {
+    kind: "event",
+    event_id: "WHISPERING_HOLLOW",
+    name: "Whispering Hollow",
+    ancient: false,
+    in_dialogue: false
+  };
+  value.surface = {
+    kind: "deck_transform_selection",
+    stage,
+    screen_entity_id: "transform-screen",
+    source: {
+      kind: "whispering_hollow_event",
+      definition_id: "WHISPERING_HOLLOW",
+      binding_evidence: "WhisperingHollow.Hug+CardSelectCmd.FromDeckForTransformation"
+    },
+    prompt: "Choose a card to transform.",
+    min_select: 1,
+    max_select: 1,
+    selected_count: selected ? 1 : 0,
+    selected_card_entity_ids: selected ? [SELECTOR_CARD.entity_id] : [],
+    cancelable: true,
+    upgrade_toggle_visible: true,
+    showing_upgrade_previews: false,
+    preview_kind: selected ? "random_uncommitted_cycle" : "none",
+    replacement_known: false,
+    cards: [{ ...SELECTOR_CARD, is_selected: selected }],
+    selectable_card_entity_ids: selected ? [] : [SELECTOR_CARD.entity_id],
+    deselectable_card_entity_ids: [],
+    can_preview: false,
+    can_cancel_selection: !selected,
+    can_cancel_preview: selected,
+    can_confirm: selected,
+    can_toggle_upgrade_view: !selected
+  };
+  const screen = { role: "screen", entity_id: "transform-screen" };
+  const card = { role: "card", entity_id: SELECTOR_CARD.entity_id };
+  const control = (operation: string, command: string) => ({
+    candidate_id: `candidate-${operation}`,
+    command,
+    operation,
+    label: operation,
+    operands: { screen_id: "transform-screen", control_id: operation },
+    operand_domains: {},
+    entity_bindings: operation === "cancel_deck_transform_selection"
+      || operation === "toggle_deck_transform_upgrade_view"
+      ? [screen]
+      : [screen, card],
+    binding_kind: "native_direct_resolver",
+    authority_state: "trial"
+  });
+  value.interaction = {
+    id: `interaction-transform-${stage}`,
+    kind: "deck_transform_selection",
+    phase: "ready",
+    execution_support: "trial",
+    support_reason: null,
+    affordances: selected
+      ? ["confirm_interaction", "cancel_interaction"]
+      : ["select_entity", "cancel_interaction", "activate_control"],
+    command_candidates: selected
+      ? [
+          control("confirm_deck_transform", "confirm_interaction"),
+          control("cancel_deck_transform_preview", "cancel_interaction")
+        ]
+      : [
+          {
+            candidate_id: "candidate-transform-select",
+            command: "select_entity",
+            operation: "toggle_deck_transform_card",
+            label: "Select Strike",
+            operands: {
+              screen_id: "transform-screen",
+              card_id: SELECTOR_CARD.entity_id
+            },
+            operand_domains: {},
+            entity_bindings: [screen, card],
+            binding_kind: "native_direct_resolver",
+            authority_state: "trial"
+          },
+          control("cancel_deck_transform_selection", "cancel_interaction"),
+          control("toggle_deck_transform_upgrade_view", "activate_control")
+        ]
+  };
+  return decodeConnectorV3Observation(value).data;
+}
+
+function woodCarvingsObservation(stage: "selecting" | "preview" = "selecting"):
+ConnectorV3Observation {
+  const value = structuredClone(combatObservation()) as unknown as any;
+  const selected = stage === "preview";
+  value.context = {
+    kind: "event",
+    event_id: "WOOD_CARVINGS",
+    name: "Wood Carvings",
+    ancient: false,
+    in_dialogue: false
+  };
+  value.surface = {
+    kind: "wood_carvings_replacement_selection",
+    stage,
+    screen_entity_id: "wood-screen",
+    prompt: "Choose a card.",
+    branch: "bird",
+    replacement_definition_id: "PECK",
+    replacement_name: "Peck",
+    replacement_description: "Replacement",
+    min_select: 1,
+    max_select: 1,
+    selected_count: selected ? 1 : 0,
+    selected_card_entity_ids: selected ? [SELECTOR_CARD.entity_id] : [],
+    cards: [{ ...SELECTOR_CARD, is_selected: selected }],
+    selectable_card_entity_ids: selected ? [] : [SELECTOR_CARD.entity_id],
+    can_cancel_preview: selected,
+    can_confirm: selected
+  };
+  const bindings = [
+    { role: "screen", entity_id: "wood-screen" },
+    { role: "card", entity_id: SELECTOR_CARD.entity_id }
+  ];
+  const command = (operation: string, kind: string, control = false) => ({
+    candidate_id: `candidate-${operation}`,
+    command: kind,
+    operation,
+    label: operation,
+    operands: {
+      screen_id: "wood-screen",
+      ...(control ? { control_id: operation } : { card_id: SELECTOR_CARD.entity_id })
+    },
+    operand_domains: {},
+    entity_bindings: bindings,
+    binding_kind: "native_direct_resolver",
+    authority_state: "trial"
+  });
+  value.interaction = {
+    id: `interaction-wood-${stage}`,
+    kind: "wood_carvings_replacement_selection",
+    phase: "ready",
+    execution_support: "trial",
+    support_reason: null,
+    affordances: selected
+      ? ["confirm_interaction", "cancel_interaction"]
+      : ["select_entity"],
+    command_candidates: selected
+      ? [
+          command("confirm_wood_carvings_replacement", "confirm_interaction", true),
+          command("cancel_wood_carvings_replacement_preview", "cancel_interaction", true)
+        ]
+      : [command("select_wood_carvings_replacement_card", "select_entity")]
+  };
+  return decodeConnectorV3Observation(value).data;
+}
+
+function combatPileObservation(selected = false): ConnectorV3Observation {
+  const value = structuredClone(combatObservation()) as unknown as any;
+  value.surface = {
+    kind: "combat_pile_card_selection",
+    screen_entity_id: "pile-screen",
+    prompt: "Choose up to 1 card.",
+    purpose: "move selected card",
+    mutation_kind: "move_selected_cards",
+    commit_mode: "manual_confirm",
+    source_kind: "cleanse",
+    source_entity_kind: "card",
+    source_entity_id: "source-card",
+    source_definition_id: "CLEANSE",
+    source_card_entity_id: "source-card",
+    source_card_definition_id: "CLEANSE",
+    pile_type: "discard",
+    destination_pile: "draw",
+    destination_position: "top",
+    overflow_destination: null,
+    replacement_card_definition_id: null,
+    min_select: 0,
+    max_select: 1,
+    selected_count: selected ? 1 : 0,
+    selected_card_entity_ids: selected ? [SELECTOR_CARD.entity_id] : [],
+    require_manual_confirmation: true,
+    cancelable: false,
+    cards: [{ ...SELECTOR_CARD, is_selected: selected }],
+    selectable_card_entity_ids: selected ? [] : [SELECTOR_CARD.entity_id],
+    deselectable_card_entity_ids: selected ? [SELECTOR_CARD.entity_id] : [],
+    can_confirm: selected
+  };
+  const bindings = [
+    { role: "screen", entity_id: "pile-screen" },
+    { role: "source", entity_id: "source-card" },
+    { role: "card", entity_id: SELECTOR_CARD.entity_id }
+  ];
+  value.interaction = {
+    id: `interaction-pile-${selected}`,
+    kind: "combat_pile_card_selection",
+    phase: "ready",
+    execution_support: "trial",
+    support_reason: null,
+    affordances: selected
+      ? ["deselect_entity", "confirm_interaction"]
+      : ["select_entity"],
+    command_candidates: [
+      {
+        candidate_id: "candidate-pile-toggle",
+        command: selected ? "deselect_entity" : "select_entity",
+        operation: "toggle_combat_pile_card",
+        label: selected ? "Deselect Strike" : "Select Strike",
+        operands: {
+          screen_id: "pile-screen",
+          source_id: "source-card",
+          card_id: SELECTOR_CARD.entity_id
+        },
+        operand_domains: {},
+        entity_bindings: bindings,
+        binding_kind: "native_direct_resolver",
+        authority_state: "trial"
+      },
+      ...(selected ? [{
+        candidate_id: "candidate-pile-confirm",
+        command: "confirm_interaction",
+        operation: "confirm_combat_pile_selection",
+        label: "Confirm selected cards",
+        operands: {
+          screen_id: "pile-screen",
+          source_id: "source-card",
+          control_id: "confirm_combat_pile_selection"
+        },
+        operand_domains: {},
+        entity_bindings: bindings,
+        binding_kind: "native_direct_resolver",
+        authority_state: "trial"
+      }] : [])
     ]
   };
   return decodeConnectorV3Observation(value).data;
@@ -593,6 +853,179 @@ ConnectorV3Observation {
             authority_state: "trial"
           }
         ]
+  };
+  return decodeConnectorV3Observation(value).data;
+}
+
+function deckEnchantObservation(stage: "selecting" | "preview" = "selecting"):
+ConnectorV3Observation {
+  const value = structuredClone(eventObservation()) as unknown as any;
+  const card = {
+    entity_id: "enchant-card-fixture",
+    definition_id: "STRIKE_IRONCLAD",
+    name: "Strike",
+    type: "Attack",
+    cost: "1",
+    description: "Deal 6 damage.",
+    rarity: "Basic",
+    is_upgraded: false,
+    is_selected: stage === "preview"
+  };
+  value.context = {
+    kind: "event",
+    event_id: "SYMBIOTE",
+    name: "Symbiote",
+    ancient: false,
+    in_dialogue: false,
+    body: "Choose a card."
+  };
+  value.surface = {
+    kind: "deck_enchant_selection",
+    stage,
+    screen_entity_id: "enchant-screen-fixture",
+    source: {
+      kind: "symbiote_event",
+      definition_id: "SYMBIOTE",
+      binding_evidence: "Symbiote+exact-task"
+    },
+    prompt: "Choose a card to enchant.",
+    min_select: 1,
+    max_select: 1,
+    selected_count: stage === "preview" ? 1 : 0,
+    selected_card_entity_ids: stage === "preview" ? [card.entity_id] : [],
+    cancelable: true,
+    enchantment: {
+      definition_id: "FIXTURE_ENCHANTMENT",
+      name: "Fixture",
+      description: "Fixture enchantment.",
+      amount: 1,
+      observation_source: "current_screen"
+    },
+    cards: [card],
+    selectable_card_entity_ids: stage === "selecting" ? [card.entity_id] : [],
+    deselectable_card_entity_ids: [],
+    can_preview: false,
+    can_close_selection: stage === "selecting",
+    can_confirm: stage === "preview",
+    can_cancel_preview: stage === "preview"
+  };
+  const screenBinding = { role: "screen", entity_id: "enchant-screen-fixture" };
+  value.interaction = {
+    id: `interaction-deck-enchant-${stage}`,
+    kind: "deck_enchant_selection",
+    phase: "ready",
+    execution_support: "trial",
+    support_reason: null,
+    affordances: stage === "selecting"
+      ? ["select_entity", "cancel_interaction"]
+      : ["confirm_interaction", "cancel_interaction"],
+    command_candidates: stage === "selecting"
+      ? [{
+          candidate_id: "candidate-enchant-select",
+          command: "select_entity",
+          operation: "toggle_card",
+          label: "Select Strike",
+          operands: {
+            screen_id: "enchant-screen-fixture",
+            card_id: card.entity_id
+          },
+          operand_domains: {},
+          entity_bindings: [screenBinding, { role: "card", entity_id: card.entity_id }],
+          binding_kind: "native_direct_resolver",
+          authority_state: "trial"
+        }, {
+          candidate_id: "candidate-enchant-close",
+          command: "cancel_interaction",
+          operation: "close_selection",
+          label: "Close enchant selection",
+          operands: {
+            screen_id: "enchant-screen-fixture",
+            control_id: "close_selection"
+          },
+          operand_domains: {},
+          entity_bindings: [screenBinding],
+          binding_kind: "native_direct_resolver",
+          authority_state: "trial"
+        }]
+      : [{
+          candidate_id: "candidate-enchant-confirm",
+          command: "confirm_interaction",
+          operation: "confirm_selection",
+          label: "Apply enchantment",
+          operands: {
+            screen_id: "enchant-screen-fixture",
+            control_id: "confirm_selection"
+          },
+          operand_domains: {},
+          entity_bindings: [screenBinding, { role: "card", entity_id: card.entity_id }],
+          binding_kind: "native_direct_resolver",
+          authority_state: "trial"
+        }, {
+          candidate_id: "candidate-enchant-return",
+          command: "cancel_interaction",
+          operation: "cancel_preview",
+          label: "Return to selection",
+          operands: {
+            screen_id: "enchant-screen-fixture",
+            control_id: "cancel_preview"
+          },
+          operand_domains: {},
+          entity_bindings: [screenBinding],
+          binding_kind: "native_direct_resolver",
+          authority_state: "trial"
+        }]
+  };
+  return decodeConnectorV3Observation(value).data;
+}
+
+function eventDialogueObservation(): ConnectorV3Observation {
+  const value = structuredClone(eventObservation()) as unknown as any;
+  value.context.in_dialogue = true;
+  value.surface = {
+    kind: "event_dialogue",
+    screen_entity_id: "dialogue-screen-fixture",
+    current_line_index: 1,
+    revealed_lines: [{
+      entity_id: "dialogue-line-0",
+      index: 0,
+      text: "The first visible line.",
+      speaker: "ancient",
+      is_current: false
+    }, {
+      entity_id: "dialogue-line-1",
+      index: 1,
+      text: "The current visible line.",
+      speaker: "character",
+      is_current: true
+    }],
+    advance_label: "Continue",
+    can_advance: true
+  };
+  value.interaction = {
+    id: "interaction-event-dialogue",
+    kind: "event_dialogue",
+    phase: "ready",
+    execution_support: "trial",
+    support_reason: null,
+    affordances: ["activate_control"],
+    command_candidates: [{
+      candidate_id: "candidate-dialogue-advance",
+      command: "activate_control",
+      operation: "advance_event_dialogue",
+      label: "Continue",
+      operands: {
+        screen_id: "dialogue-screen-fixture",
+        dialogue_line_id: "dialogue-line-1",
+        control_id: "advance_event_dialogue"
+      },
+      operand_domains: {},
+      entity_bindings: [
+        { role: "screen", entity_id: "dialogue-screen-fixture" },
+        { role: "dialogue_line", entity_id: "dialogue-line-1" }
+      ],
+      binding_kind: "native_direct_resolver",
+      authority_state: "trial"
+    }]
   };
   return decodeConnectorV3Observation(value).data;
 }
@@ -1023,6 +1456,8 @@ function mapObservation(): ConnectorV3Observation {
     travel_enabled: true,
     traveling: false,
     drawing_mode: "none",
+    annotation_input_entity_id: null,
+    can_exit_annotation: false,
     next_options: [{
       entity_id: "map-node-fixture",
       col: 3,
@@ -1466,7 +1901,7 @@ function treasureObservation(): ConnectorV3Observation {
 
 function connectorCapabilities() {
   return {
-    protocol_version: "3.0-preview.8",
+    protocol_version: "3.0-preview.9",
     observation_schema: "sts2.connector.v3/observation-1",
     command_schema: "sts2.connector.v3/command-1",
     inspection_schema: "sts2.connector.v3/inspection-1",
@@ -1510,7 +1945,7 @@ describe("Connector V3 strict contract", () => {
 
   it("rejects unknown mutation receipts that permit retry", () => {
     expect(() => decodeConnectorV3Receipt({
-      protocol_version: "3.0-preview.8",
+      protocol_version: "3.0-preview.9",
       request_id: "request-fixture",
       status: "unknown",
       application: "unknown",
@@ -1526,7 +1961,7 @@ describe("Connector V3 strict contract", () => {
 
   it("decodes state-bound read-only V3 inspections", () => {
     const decoded = decodeConnectorV3Inspection({
-      protocol_version: "3.0-preview.8",
+      protocol_version: "3.0-preview.9",
       schema: "sts2.connector.v3/inspection-1",
       inspection_id: "v3inspection-fixture",
       expected_state_token: "state-fixture-1",
@@ -1558,7 +1993,7 @@ describe("Connector V3 strict contract", () => {
 
   it("rejects V3 inspections whose state token drifted", () => {
     expect(() => decodeConnectorV3Inspection({
-      protocol_version: "3.0-preview.8",
+      protocol_version: "3.0-preview.9",
       schema: "sts2.connector.v3/inspection-1",
       inspection_id: "v3inspection-fixture",
       expected_state_token: "state-fixture-1",
@@ -1587,7 +2022,7 @@ describe("Connector V3 strict contract", () => {
 
   it("decodes only state-bound linked card detail for the exact entity", () => {
     const detail = {
-      protocol_version: "3.0-preview.8",
+      protocol_version: "3.0-preview.9",
       schema: "sts2.connector.v3/linked-detail-1",
       detail_id: "detail-fixture",
       expected_state_token: "state-fixture-1",
@@ -1633,8 +2068,7 @@ describe("Connector V3 strict contract", () => {
     const observation = combatObservation();
     const projected = projectConnectorV3ForRe(
       observation,
-      observation as unknown as JsonObject,
-      { protocol_version: "2.0-preview.86" }
+      observation as unknown as JsonObject
     );
 
     expect(projected.invocations.size).toBe(2);
@@ -1680,7 +2114,7 @@ describe("Connector V3 strict contract", () => {
       surface: {
         kind: "combat_turn",
         roomEntityId: "room-fixture",
-        canEndTurn: true
+        canEndTurn: false
       }
     });
     expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toHaveLength(2);
@@ -1848,6 +2282,161 @@ describe("Connector V3 strict contract", () => {
     expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toEqual([]);
   });
 
+  it.each([
+    ["selecting", 2],
+    ["preview", 2]
+  ] as const)("consumes deck-enchant %s directly without a V2 sidecar", (stage, count) => {
+    const observation = deckEnchantObservation(stage);
+    const projected = projectConnectorV3ForRe(
+      observation,
+      observation as unknown as JsonObject
+    );
+    const envelope = normalizeCurrentState(projected.rawState, SOURCE);
+
+    expect(envelope.diagnostics.status).toBe("ok");
+    expect(envelope.currentState).toMatchObject({
+      sourceStateType: "connector_v3:event:deck_enchant_selection:direct",
+      surface: {
+        kind: "deck_enchant_selection",
+        stage,
+        screenEntityId: "enchant-screen-fixture"
+      }
+    });
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toHaveLength(count);
+  });
+
+  it("consumes only the revealed current event-dialogue line", () => {
+    const observation = eventDialogueObservation();
+    const projected = projectConnectorV3ForRe(
+      observation,
+      observation as unknown as JsonObject
+    );
+    const envelope = normalizeCurrentState(projected.rawState, SOURCE);
+
+    expect(envelope.diagnostics.status).toBe("ok");
+    expect(envelope.currentState).toMatchObject({
+      sourceStateType: "connector_v3:event:event_dialogue:direct",
+      surface: {
+        kind: "event_dialogue",
+        currentLineIndex: 1,
+        revealedLines: [
+          { index: 0, isCurrent: false },
+          { index: 1, isCurrent: true }
+        ]
+      }
+    });
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toHaveLength(1);
+  });
+
+  it("rejects an unrevealed future dialogue line and grants no action authority", () => {
+    const value = structuredClone(eventDialogueObservation()) as unknown as any;
+    value.surface.revealed_lines.push({
+      entity_id: "dialogue-line-2",
+      index: 2,
+      text: "A future hidden line.",
+      speaker: "ancient",
+      is_current: false
+    });
+
+    const observation = decodeConnectorV3Observation(value).data;
+    const projected = projectConnectorV3ForRe(
+      observation,
+      value as JsonObject
+    );
+    const envelope = normalizeCurrentState(projected.rawState, SOURCE);
+
+    expect(envelope.diagnostics.status).toBe("invalid");
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toEqual([]);
+  });
+
+  it.each([
+    ["deck transform selecting", () => deckTransformObservation("selecting"), "event", "deck_transform_selection", 3],
+    ["deck transform preview", () => deckTransformObservation("preview"), "event", "deck_transform_selection", 2],
+    ["Wood Carvings selecting", () => woodCarvingsObservation("selecting"), "event", "wood_carvings_replacement_selection", 1],
+    ["Wood Carvings preview", () => woodCarvingsObservation("preview"), "event", "wood_carvings_replacement_selection", 2],
+    ["combat pile selecting", () => combatPileObservation(false), "combat", "combat_pile_card_selection", 1],
+    ["combat pile selected", () => combatPileObservation(true), "combat", "combat_pile_card_selection", 2]
+  ] as const)(
+    "consumes %s directly without a V2 sidecar",
+    (_label, buildObservation, contextKind, surfaceKind, actionCount) => {
+      const observation = buildObservation();
+      const projection = projectConnectorV3ForRe(
+        observation,
+        observation as unknown as JsonObject
+      );
+      const wrapper = projection.rawState as Record<string, unknown>;
+      expect(wrapper.bridge_v2_state).toBeUndefined();
+      expect(wrapper.bridge_v2_capabilities).toBeUndefined();
+      const envelope = normalizeCurrentState(projection.rawState, SOURCE);
+      expect(envelope.diagnostics.status).toBe("ok");
+      expect(envelope.currentState).toMatchObject({
+        sourceStateType:
+          `connector_v3:${observation.context.kind}:${observation.surface.kind}:direct`,
+        context: { kind: contextKind },
+        surface: { kind: surfaceKind }
+      });
+      expect(buildAllowedActions(envelope.currentState, envelope.stateHash))
+        .toHaveLength(actionCount);
+    }
+  );
+
+  it("fails a generated-card choice closed on source-operation drift", () => {
+    const observation = generatedCombatChoiceObservation();
+    observation.interaction.command_candidates[0]!.operation = "choose_quasar_card";
+    const projected = projectConnectorV3ForRe(
+      observation,
+      observation as unknown as JsonObject
+    );
+
+    const envelope = normalizeCurrentState(projected.rawState, SOURCE);
+
+    expect(envelope.currentState.stability).toBe("invalid");
+    expect(envelope.currentState.actionAuthority).toBe("none");
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toEqual([]);
+  });
+
+  it("fails a generated-card choice closed when commands exceed current selectable facts", () => {
+    const observation = generatedCombatChoiceObservation();
+    const surface = observation.surface as Record<string, unknown>;
+    surface.selectable_card_entity_ids = ["generated-card-1"];
+    const projected = projectConnectorV3ForRe(
+      observation,
+      observation as unknown as JsonObject
+    );
+
+    const envelope = normalizeCurrentState(projected.rawState, SOURCE);
+
+    expect(envelope.currentState.stability).toBe("invalid");
+    expect(envelope.currentState.actionAuthority).toBe("none");
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toEqual([]);
+  });
+
+  it("keeps final selector exact source, membership, and hidden random outcome fail closed", () => {
+    const transform = deckTransformObservation("preview");
+    expect((transform.surface as any).replacement_known).toBe(false);
+    const transformConfirm = transform.interaction.command_candidates.find(
+      (candidate) => candidate.operation === "confirm_deck_transform"
+    )!;
+    transformConfirm.entity_bindings = transformConfirm.entity_bindings.filter(
+      (binding) => binding.role !== "card"
+    );
+    const transformProjection = projectConnectorV3ForRe(
+      transform,
+      transform as unknown as JsonObject
+    );
+    expect(normalizeCurrentState(transformProjection.rawState, SOURCE).diagnostics.status)
+      .toBe("invalid");
+
+    const pile = combatPileObservation(true);
+    pile.interaction.command_candidates[0]!.operands.source_id = "other-source";
+    const pileProjection = projectConnectorV3ForRe(
+      pile,
+      pile as unknown as JsonObject
+    );
+    expect(normalizeCurrentState(pileProjection.rawState, SOURCE).diagnostics.status)
+      .toBe("invalid");
+  });
+
   it("consumes merchant removal directly while preserving its commit membership", () => {
     const selecting = merchantRemovalObservation("selecting");
     const projectedSelecting = projectConnectorV3ForRe(
@@ -1968,8 +2557,7 @@ describe("Connector V3 strict contract", () => {
       const selecting = sourceRemovalObservation(kind, "selecting");
       const projection = projectConnectorV3ForRe(
         selecting,
-        selecting as unknown as JsonObject,
-        { invalid_v2_sidecar: true }
+        selecting as unknown as JsonObject
       );
       const wrapper = projection.rawState as Record<string, unknown>;
       expect(wrapper.bridge_v2_state).toBeUndefined();
@@ -2015,8 +2603,7 @@ describe("Connector V3 strict contract", () => {
     const choosing = cardBundleObservation("choosing");
     const choosingProjection = projectConnectorV3ForRe(
       choosing,
-      choosing as unknown as JsonObject,
-      { invalid_v2_sidecar: true }
+      choosing as unknown as JsonObject
     );
     const wrapper = choosingProjection.rawState as Record<string, unknown>;
     expect(wrapper.bridge_v2_state).toBeUndefined();
@@ -2287,8 +2874,7 @@ describe("Connector V3 strict contract", () => {
     const observation = mainMenuObservation();
     const projected = projectConnectorV3ForRe(
       observation,
-      observation as unknown as JsonObject,
-      { invalid_v2_sidecar: true }
+      observation as unknown as JsonObject
     );
     const wrapper = projected.rawState as Record<string, unknown>;
 
@@ -2595,8 +3181,7 @@ describe("Connector V3 strict contract", () => {
     raw.context = { kind: "menu", flow: "standard_run_setup" };
     const projected = projectConnectorV3ForRe(
       observation,
-      raw,
-      { protocol_version: "2.0-preview.86" }
+      raw
     );
 
     const envelope = normalizeCurrentState(projected.rawState, SOURCE);

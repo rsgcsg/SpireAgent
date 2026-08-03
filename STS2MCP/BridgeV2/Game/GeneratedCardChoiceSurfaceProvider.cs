@@ -148,7 +148,15 @@ internal sealed class GeneratedCardChoiceSurfaceProvider : IBridgeSurfaceProvide
             cards)
         {
             SelectableCardEntityIds = selectableCardIds,
-            SkipAvailable = skipAvailable
+            SkipAvailable = skipAvailable,
+            SelectOperation = semantics.SelectActionKind,
+            SkipOperation = semantics.SkipActionKind == "unsupported_skip"
+                ? null
+                : semantics.SkipActionKind,
+            SelectCompletionEvidence = semantics.SelectEvidenceCode,
+            SkipCompletionEvidence = semantics.SkipActionKind == "unsupported_skip"
+                ? null
+                : semantics.SkipEvidenceCode
         };
 
         bool hasCurrentCommand = selectableCardIds.Length > 0 || skipAvailable;
@@ -368,68 +376,6 @@ internal sealed class GeneratedCardChoiceSurfaceProvider : IBridgeSurfaceProvide
                 "The exact generated-card skip control is no longer available.")
             : StartSkip(screen, source, skip);
     }
-
-    internal static IReadOnlyList<BridgeActionDraft> DescribeNativeCommands(
-        GeneratedCardChoiceSurface surface)
-    {
-        if (!GeneratedCardChoiceSourceBinding.TryGetUnique(
-                out GeneratedCardChoiceSourceBinding.ActiveBinding? source)
-            || source == null
-            || !string.Equals(source.SourceKind, surface.SourceKind, StringComparison.Ordinal))
-        {
-            return Array.Empty<BridgeActionDraft>();
-        }
-
-        GeneratedChoiceSemantics semantics = SemanticsFor(source);
-        if (!SurfaceMatchesSemantics(surface, semantics))
-            return Array.Empty<BridgeActionDraft>();
-
-        ActionEntityBinding screen = new("screen", surface.ScreenEntityId);
-        HashSet<string> selectable = surface.SelectableCardEntityIds.ToHashSet(StringComparer.Ordinal);
-        var actions = surface.Cards.Where(card => selectable.Contains(card.EntityId)).Select(card => new BridgeActionDraft(
-            $"{semantics.SelectActionKind}:{surface.ScreenEntityId}:{card.EntityId}",
-            semantics.SelectActionKind,
-            "selection",
-            semantics.SelectLabel(card.Name ?? card.DefinitionId),
-            semantics.SelectEvidenceCode,
-            static () => BridgeActionStartResult.Rejected(
-                "v3_native_binding_required",
-                "Connector V3 native commands cannot execute through a draft action."),
-            new[]
-            {
-                screen,
-                new ActionEntityBinding("card", card.EntityId)
-            })).ToList();
-        if (surface.SkipAvailable && semantics.SkipActionKind != "unsupported_skip")
-        {
-            actions.Add(new BridgeActionDraft(
-                $"{semantics.SkipActionKind}:{surface.ScreenEntityId}",
-                semantics.SkipActionKind,
-                "alternative",
-                "Skip",
-                semantics.SkipEvidenceCode,
-                static () => BridgeActionStartResult.Rejected(
-                    "v3_native_binding_required",
-                    "Connector V3 native commands cannot execute through a draft action."),
-                new[] { screen }));
-        }
-        return actions;
-    }
-
-    private static bool SurfaceMatchesSemantics(
-        GeneratedCardChoiceSurface surface,
-        GeneratedChoiceSemantics semantics) =>
-        !surface.IsPeeking
-        && string.Equals(surface.Purpose, semantics.Purpose, StringComparison.Ordinal)
-        && string.Equals(surface.Destination, semantics.Destination, StringComparison.Ordinal)
-        && string.Equals(
-            surface.SelectedCardCostPolicy,
-            semantics.SelectedCardCostPolicy,
-            StringComparison.Ordinal)
-        && string.Equals(
-            surface.OverflowDestination,
-            semantics.OverflowDestination,
-            StringComparison.Ordinal);
 
     private static bool SourceMatchesContext(
         GeneratedCardChoiceSourceBinding.ActiveBinding source,

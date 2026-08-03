@@ -173,6 +173,38 @@ internal sealed class DeckTransformSelectionSurfaceProvider : IBridgeSurfaceProv
         }
 
         bool upgradeToggleVisible = McpMod.IsNodeVisible(upgrades);
+        string[] selectableIds = stage == "selecting"
+            ? holders.Where(holder => IsHolderClickable(holder)
+                                      && !selected.Contains(holder.CardModel)
+                                      && selected.Count < prefs.MaxSelect)
+                .Select(holder => cardIds[holder.CardModel])
+                .OrderBy(id => id, StringComparer.Ordinal)
+                .ToArray()
+            : Array.Empty<string>();
+        string[] deselectableIds = stage == "selecting"
+            ? holders.Where(holder => IsHolderClickable(holder)
+                                      && selected.Contains(holder.CardModel))
+                .Select(holder => cardIds[holder.CardModel])
+                .OrderBy(id => id, StringComparer.Ordinal)
+                .ToArray()
+            : Array.Empty<string>();
+        bool canPreview = stage == "selecting"
+                          && previewButton.IsEnabled
+                          && McpMod.IsNodeVisible(previewButton);
+        bool canCancelSelection = stage == "selecting"
+                                  && prefs.Cancelable
+                                  && close.IsEnabled
+                                  && McpMod.IsNodeVisible(close);
+        bool canToggleUpgradeView = stage == "selecting"
+                                    && upgradeToggleVisible
+                                    && upgrades.IsEnabled;
+        bool canCancelPreview = stage == "preview"
+                                && previewCancel.IsEnabled
+                                && McpMod.IsNodeVisible(previewCancel);
+        bool canConfirm = stage == "preview"
+                          && previewConfirm.IsEnabled
+                          && McpMod.IsNodeVisible(previewConfirm)
+                          && selected.Count >= prefs.MinSelect;
         var surface = new DeckTransformSelectionSurface(
             SurfaceKind,
             stage,
@@ -188,28 +220,28 @@ internal sealed class DeckTransformSelectionSurfaceProvider : IBridgeSurfaceProv
             grid.IsShowingUpgrades,
             stage == "preview" ? "random_uncommitted_cycle" : "none",
             false,
-            cards);
-        List<BridgeActionDraft> actions = BuildActions(
-            screen,
-            player,
-            source,
-            stage,
-            prefs,
-            holders,
-            selected,
-            cardIds,
-            grid,
-            previewButton,
-            previewCancel,
-            previewConfirm,
-            close,
-            upgrades,
-            upgradeToggleVisible);
+            cards)
+        {
+            SelectableCardEntityIds = selectableIds,
+            DeselectableCardEntityIds = deselectableIds,
+            CanPreview = canPreview,
+            CanCancelSelection = canCancelSelection,
+            CanCancelPreview = canCancelPreview,
+            CanConfirm = canConfirm,
+            CanToggleUpgradeView = canToggleUpgradeView
+        };
 
-        string readiness = actions.Count > 0 ? "ready" : "settling";
+        bool hasCurrentCommand = selectableIds.Length > 0
+                                 || deselectableIds.Length > 0
+                                 || canPreview
+                                 || canCancelSelection
+                                 || canCancelPreview
+                                 || canConfirm
+                                 || canToggleUpgradeView;
+        string readiness = hasCurrentCommand ? "ready" : "settling";
         var completeness = new StateCompleteness(
             $"contract_complete_for_{source.Wire.Kind}_random_transform_selection",
-            actions.Count > 0
+            hasCurrentCommand
                 ? "derived_from_same_current_transform_controls_as_execution"
                 : "temporarily_empty_while_transform_ui_settles",
             new[]
@@ -225,8 +257,7 @@ internal sealed class DeckTransformSelectionSurfaceProvider : IBridgeSurfaceProv
         {
             game.Version,
             context,
-            surface,
-            actionKeys = actions.Select(action => action.Key).OrderBy(key => key, StringComparer.Ordinal).ToArray()
+            surface
         });
         return new BridgeObservationDraft(
             signature,
@@ -239,105 +270,7 @@ internal sealed class DeckTransformSelectionSurfaceProvider : IBridgeSurfaceProv
             {
                 "The preview cycles possible cards for player presentation only; it does not reveal or predict the committed random replacement."
             },
-            actions);
-    }
-
-    private static List<BridgeActionDraft> BuildActions(
-        NDeckTransformSelectScreen screen,
-        Player player,
-        TransformSourceContract source,
-        string stage,
-        CardSelectorPrefs prefs,
-        IReadOnlyList<NGridCardHolder> holders,
-        IReadOnlySet<CardModel> selected,
-        IReadOnlyDictionary<CardModel, string> cardIds,
-        NCardGrid grid,
-        NConfirmButton previewButton,
-        NBackButton previewCancel,
-        NConfirmButton previewConfirm,
-        NBackButton close,
-        NTickbox upgrades,
-        bool upgradeToggleVisible)
-    {
-        var actions = new List<BridgeActionDraft>();
-        if (stage == "selecting")
-        {
-            foreach (NGridCardHolder holder in holders.Where(IsHolderClickable))
-            {
-                CardModel card = holder.CardModel;
-                bool wasSelected = selected.Contains(card);
-                if (!wasSelected && selected.Count >= prefs.MaxSelect)
-                    continue;
-                string cardId = cardIds[card];
-                actions.Add(new BridgeActionDraft(
-                    $"toggle_deck_transform_card:{cardId}:{wasSelected}",
-                    "toggle_deck_transform_card",
-                    "selection",
-                    $"{(wasSelected ? "Deselect" : "Select")} {McpMod.SafeGetText(() => card.Title) ?? card.Id.Entry} for random transformation",
-                    $"{source.Wire.BindingEvidence}|NCardGrid.HolderPressed+NDeckTransformSelectScreen.OnCardClicked",
-                    () => StartToggle(screen, holder, card, wasSelected, source),
-                    new[] { new ActionEntityBinding("card", cardId) }));
-            }
-
-            if (previewButton.IsEnabled && McpMod.IsNodeVisible(previewButton))
-            {
-                actions.Add(new BridgeActionDraft(
-                    "preview_deck_transform",
-                    "preview_deck_transform",
-                    "preview",
-                    "Preview the selected random transformation",
-                    $"{source.Wire.BindingEvidence}|NDeckTransformSelectScreen.ConfirmSelection",
-                    () => StartPreview(screen, previewButton, source)));
-            }
-            if (prefs.Cancelable && close.IsEnabled && McpMod.IsNodeVisible(close))
-            {
-                actions.Add(new BridgeActionDraft(
-                    "cancel_deck_transform_selection",
-                    "cancel_deck_transform_selection",
-                    "navigation",
-                    "Cancel random card transformation",
-                    $"{source.Wire.BindingEvidence}|NDeckTransformSelectScreen.CloseSelection",
-                    () => StartClose(screen, close, source)));
-            }
-            if (upgradeToggleVisible && upgrades.IsEnabled)
-            {
-                actions.Add(new BridgeActionDraft(
-                    $"toggle_deck_transform_upgrade_view:{grid.IsShowingUpgrades}",
-                    "toggle_deck_transform_upgrade_view",
-                    "presentation",
-                    grid.IsShowingUpgrades ? "Show current card versions" : "Show upgraded card previews",
-                    $"{source.Wire.BindingEvidence}|NDeckTransformSelectScreen.ToggleShowUpgrades",
-                    () => StartUpgradeToggle(screen, upgrades, grid, grid.IsShowingUpgrades, source)));
-            }
-        }
-        else
-        {
-            if (previewCancel.IsEnabled && McpMod.IsNodeVisible(previewCancel))
-            {
-                actions.Add(new BridgeActionDraft(
-                    "cancel_deck_transform_preview",
-                    "cancel_deck_transform_preview",
-                    "navigation",
-                    "Return to random transformation selection",
-                    $"{source.Wire.BindingEvidence}|NDeckTransformSelectScreen.CancelSelection",
-                    () => StartPreviewCancel(screen, previewCancel, source)));
-            }
-            if (previewConfirm.IsEnabled
-                && McpMod.IsNodeVisible(previewConfirm)
-                && selected.Count >= prefs.MinSelect)
-            {
-                actions.Add(new BridgeActionDraft(
-                    "confirm_deck_transform",
-                    "confirm_deck_transform",
-                    "commit",
-                    "Confirm the random transformation",
-                    $"{source.Wire.BindingEvidence}|NDeckTransformSelectScreen.CompleteSelection+CardCmd.TransformToRandom",
-                    () => StartConfirm(screen, previewConfirm, selected, player, source),
-                    selected.Select(card => new ActionEntityBinding("card", cardIds[card])).ToArray()));
-            }
-        }
-
-        return actions;
+            Array.Empty<BridgeActionDraft>());
     }
 
     private static BridgeActionStartResult StartToggle(
@@ -491,6 +424,136 @@ internal sealed class DeckTransformSelectionSurfaceProvider : IBridgeSurfaceProv
         return BridgeActionStartResult.Started(
             () => IsCurrent(expectedScreen) && expectedGrid.IsShowingUpgrades != wasShowingUpgrades,
             "transform_upgrade_preview_mode_changed");
+    }
+
+    internal static BridgeActionStartResult StartDirectToggle(
+        BridgeEntityRegistry entities,
+        string screenId,
+        string cardId,
+        bool expectedSelected,
+        DeckTransformSource expectedSource)
+    {
+        if (!TryResolveDirect(
+                entities,
+                screenId,
+                expectedSource,
+                out NDeckTransformSelectScreen? screen,
+                out _,
+                out TransformSourceContract? source)
+            || !entities.TryResolve(cardId, out CardModel? card)
+            || card == null)
+        {
+            return BridgeActionStartResult.Rejected(
+                "deck_transform_binding_stale",
+                "The exact transform screen, source, or card no longer resolves.");
+        }
+        NGridCardHolder? holder = McpMod.FindAll<NGridCardHolder>(screen!)
+            .FirstOrDefault(candidate => ReferenceEquals(candidate.CardModel, card));
+        return holder == null
+            ? BridgeActionStartResult.Rejected(
+                "deck_transform_card_changed",
+                "The exact transform card is no longer in the current grid.")
+            : StartToggle(screen!, holder, card, expectedSelected, source!);
+    }
+
+    internal static BridgeActionStartResult StartDirectPreview(
+        BridgeEntityRegistry entities,
+        string screenId,
+        DeckTransformSource expectedSource)
+    {
+        if (!TryResolveDirect(entities, screenId, expectedSource, out NDeckTransformSelectScreen? screen, out _, out TransformSourceContract? source)
+            || screen!.GetNodeOrNull<NConfirmButton>("Confirm") is not { } button)
+        {
+            return BridgeActionStartResult.Rejected("deck_transform_binding_stale", "The exact transform preview control no longer resolves.");
+        }
+        return StartPreview(screen, button, source!);
+    }
+
+    internal static BridgeActionStartResult StartDirectCancelSelection(
+        BridgeEntityRegistry entities,
+        string screenId,
+        DeckTransformSource expectedSource)
+    {
+        if (!TryResolveDirect(entities, screenId, expectedSource, out NDeckTransformSelectScreen? screen, out _, out TransformSourceContract? source)
+            || screen!.GetNodeOrNull<NBackButton>("%Close") is not { } close)
+        {
+            return BridgeActionStartResult.Rejected("deck_transform_binding_stale", "The exact transform close control no longer resolves.");
+        }
+        return StartClose(screen, close, source!);
+    }
+
+    internal static BridgeActionStartResult StartDirectCancelPreview(
+        BridgeEntityRegistry entities,
+        string screenId,
+        DeckTransformSource expectedSource)
+    {
+        if (!TryResolveDirect(entities, screenId, expectedSource, out NDeckTransformSelectScreen? screen, out _, out TransformSourceContract? source)
+            || screen!.GetNodeOrNull<Control>("%PreviewContainer")?.GetNodeOrNull<NBackButton>("Cancel") is not { } cancel)
+        {
+            return BridgeActionStartResult.Rejected("deck_transform_binding_stale", "The exact transform preview cancel control no longer resolves.");
+        }
+        return StartPreviewCancel(screen, cancel, source!);
+    }
+
+    internal static BridgeActionStartResult StartDirectConfirm(
+        BridgeEntityRegistry entities,
+        string screenId,
+        IReadOnlyList<string> selectedCardIds,
+        DeckTransformSource expectedSource)
+    {
+        if (!TryResolveDirect(entities, screenId, expectedSource, out NDeckTransformSelectScreen? screen, out Player? player, out TransformSourceContract? source)
+            || screen!.GetNodeOrNull<Control>("%PreviewContainer")?.GetNodeOrNull<NConfirmButton>("Confirm") is not { } confirm)
+        {
+            return BridgeActionStartResult.Rejected("deck_transform_binding_stale", "The exact transform confirmation no longer resolves.");
+        }
+        var selected = new List<CardModel>(selectedCardIds.Count);
+        foreach (string cardId in selectedCardIds)
+        {
+            if (!entities.TryResolve(cardId, out CardModel? card) || card == null)
+                return BridgeActionStartResult.Rejected("deck_transform_selection_changed", "An exact selected transform card no longer resolves.");
+            selected.Add(card);
+        }
+        return StartConfirm(screen, confirm, selected, player!, source!);
+    }
+
+    internal static BridgeActionStartResult StartDirectToggleUpgradeView(
+        BridgeEntityRegistry entities,
+        string screenId,
+        bool expectedShowingUpgrades,
+        DeckTransformSource expectedSource)
+    {
+        if (!TryResolveDirect(entities, screenId, expectedSource, out NDeckTransformSelectScreen? screen, out _, out TransformSourceContract? source)
+            || McpMod.FindFirst<NCardGrid>(screen!) is not { } grid
+            || screen!.GetNodeOrNull<NTickbox>("%Upgrades") is not { } upgrades)
+        {
+            return BridgeActionStartResult.Rejected("deck_transform_binding_stale", "The exact transform upgrade-view control no longer resolves.");
+        }
+        return StartUpgradeToggle(screen, upgrades, grid, expectedShowingUpgrades, source!);
+    }
+
+    private static bool TryResolveDirect(
+        BridgeEntityRegistry entities,
+        string screenId,
+        DeckTransformSource expectedSource,
+        out NDeckTransformSelectScreen? screen,
+        out Player? player,
+        out TransformSourceContract? source)
+    {
+        screen = null;
+        player = null;
+        source = null;
+        RunState? runState = RunManager.Instance.DebugOnlyGetState();
+        player = runState == null ? null : LocalContext.GetMe(runState);
+        IBridgeContext context = BridgeContextBuilder.Build(entities);
+        return entities.TryResolve(screenId, out screen)
+               && screen != null
+               && player != null
+               && IsCurrent(screen)
+               && TryResolveSource(context, player, out source, out _)
+               && source != null
+               && string.Equals(source.Wire.Kind, expectedSource.Kind, StringComparison.Ordinal)
+               && string.Equals(source.Wire.DefinitionId, expectedSource.DefinitionId, StringComparison.Ordinal)
+               && string.Equals(source.Wire.BindingEvidence, expectedSource.BindingEvidence, StringComparison.Ordinal);
     }
 
     private static bool IsHolderClickable(NCardHolder holder) =>

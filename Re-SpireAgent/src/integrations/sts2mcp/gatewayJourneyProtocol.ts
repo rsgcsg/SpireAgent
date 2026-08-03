@@ -82,6 +82,8 @@ export const gatewayMapNavigationSurfaceSchema = z.object({
   travel_enabled: z.boolean(),
   traveling: z.boolean(),
   drawing_mode: z.enum(["none", "drawing", "erasing"]),
+  annotation_input_entity_id: z.string().min(1).nullable().optional(),
+  can_exit_annotation: z.boolean(),
   next_options: z.array(visibleMapChoiceSchema)
 }).passthrough();
 

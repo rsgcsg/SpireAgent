@@ -7,7 +7,7 @@ namespace STS2_MCP.ConnectorV3.Protocol;
 
 public static class ConnectorV3Contract
 {
-    public const string ProtocolVersion = "3.0-preview.8";
+    public const string ProtocolVersion = "3.0-preview.9";
     public const string ObservationSchema = "sts2.connector.v3/observation-1";
     public const string CommandSchema = "sts2.connector.v3/command-1";
     public const string InspectionSchema = "sts2.connector.v3/inspection-1";

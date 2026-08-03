@@ -644,7 +644,7 @@ async function inspect(options, requireLoaded = false) {
     qualification_status: projectionSidecar?.qualification_system?.status ?? null,
     semantic_state_id: null,
     authority_projection_id: null,
-    note: "V3 observations and read-only /api/v3/inspections are state-token scoped. V2 capabilities remain a temporary non-authorizing projection sidecar for unmigrated selectors."
+    note: "V3 observations and read-only /api/v3/inspections are state-token scoped. Re consumes the V3 contract directly; V2 endpoints are rollback and migration diagnostics only."
   };
 }
 

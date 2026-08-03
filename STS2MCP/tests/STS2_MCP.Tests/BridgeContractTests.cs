@@ -37,7 +37,10 @@ public sealed class BridgeContractTests
             "reward_claim",
             "rest_site",
             "generated_card_choice",
-            "event_card_acquisition"
+            "event_card_acquisition",
+            "deck_transform_selection",
+            "wood_carvings_replacement_selection",
+            "combat_pile_card_selection"
         };
         Assert.All(BridgeContractManifest.Entries, entry =>
         {
@@ -1035,9 +1038,9 @@ public sealed class BridgeContractTests
             .Sum(entry => entry.Operations.Count);
 
         Assert.Equal(manifestOperationCount, catalog.Count);
-        Assert.Equal(83, catalog.Count(contract =>
+        Assert.Equal(94, catalog.Count(contract =>
             contract.ContractKind == BridgeOperationQualificationCatalog.ExplicitNativeContract));
-        Assert.Equal(11, catalog.Count(contract =>
+        Assert.Equal(0, catalog.Count(contract =>
             contract.ContractKind == BridgeOperationQualificationCatalog.ManifestMigrationFallback));
         Assert.Equal(catalog.Count, catalog
             .Select(contract => (contract.SurfaceKind, contract.Operation))
@@ -1438,13 +1441,18 @@ public sealed class BridgeContractTests
             BridgeOperationQualificationCatalog.ExplicitNativeContract,
             Contract("reward_claim", "claim_reward").ContractKind);
         Assert.Equal(
-            BridgeOperationQualificationCatalog.ManifestMigrationFallback,
+            BridgeOperationQualificationCatalog.ExplicitNativeContract,
             Contract("deck_transform_selection", "confirm_deck_transform").ContractKind);
         Assert.Equal(
-            BridgeOperationQualificationCatalog.ManifestMigrationFallback,
+            BridgeOperationQualificationCatalog.ExplicitNativeContract,
             Contract(
                 "wood_carvings_replacement_selection",
                 "confirm_wood_carvings_replacement").ContractKind);
+        Assert.Equal(
+            BridgeOperationQualificationCatalog.ExplicitNativeContract,
+            Contract(
+                "combat_pile_card_selection",
+                "toggle_combat_pile_card").ContractKind);
 
         static BridgeOperationQualificationIdentity Contract(
             string surface,
@@ -2108,8 +2116,8 @@ public sealed class BridgeContractTests
             "character-screen-a",
             new[]
             {
-                new VisibleCharacterChoice("choice-ironclad", 0, "IRONCLAD", "The Ironclad", false, true, false),
-                new VisibleCharacterChoice("choice-random", 1, "RANDOM_CHARACTER", "Random", false, false, true)
+                new VisibleCharacterChoice("choice-ironclad", 0, "IRONCLAD", "The Ironclad", false, true, false, true),
+                new VisibleCharacterChoice("choice-random", 1, "RANDOM_CHARACTER", "Random", false, false, true, true)
             },
             new VisibleSelectedCharacterDetails(
                 "IRONCLAD",
@@ -3010,7 +3018,15 @@ public sealed class BridgeContractTests
                 new VisibleCard(
                     "generated-card", "PRIMAL_FORCE", "Primal Force", "Skill", "0", null,
                     "Transform all Attacks in your Hand into Giant Rock.", "Rare", false, false, null)
-            });
+            })
+        {
+            SelectableCardEntityIds = new[] { "generated-card" },
+            SkipAvailable = true,
+            SelectOperation = "select_lead_paperweight_card",
+            SkipOperation = "skip_lead_paperweight_choice",
+            SelectCompletionEvidence = "exact-selected-card-run-deck-witness",
+            SkipCompletionEvidence = "unchanged-run-deck-witness"
+        };
         var options = new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
@@ -3025,7 +3041,11 @@ public sealed class BridgeContractTests
         Assert.Contains("\"destination\":\"run_deck\"", json);
         Assert.Contains("\"selected_card_cost_policy\":\"unchanged\"", json);
         Assert.Contains("\"can_skip\":true", json);
+        Assert.Contains("\"skip_available\":true", json);
         Assert.Contains("\"is_peeking\":false", json);
+        Assert.Contains("\"selectable_card_entity_ids\":[\"generated-card\"]", json);
+        Assert.Contains("\"select_operation\":\"select_lead_paperweight_card\"", json);
+        Assert.Contains("\"skip_operation\":\"skip_lead_paperweight_choice\"", json);
         Assert.Contains("\"entity_id\":\"generated-card\"", json);
     }
 

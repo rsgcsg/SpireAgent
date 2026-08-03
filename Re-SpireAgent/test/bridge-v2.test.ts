@@ -7626,7 +7626,7 @@ describe("Bridge v2 controller coordination decoding", () => {
 describe("Connector V3 Re consumer projection", () => {
   it("normalizes combat directly while producing V3 executable choices", () => {
     const observation = decodeConnectorV3Observation({
-      protocol_version: "3.0-preview.8",
+      protocol_version: "3.0-preview.9",
       schema: "sts2.connector.v3/observation-1",
       profile: "semantic_accessibility.tools.v1",
       state_token: COMBAT_TURN_STATE.state_id,
@@ -7635,7 +7635,11 @@ describe("Connector V3 Re consumer projection", () => {
       status: "actionable_complete",
       shared_state: COMBAT_TURN_STATE.shared_state,
       context: COMBAT_TURN_STATE.context,
-      surface: COMBAT_TURN_STATE.surface,
+      surface: {
+        ...COMBAT_TURN_STATE.surface,
+        playable_cards: [],
+        usable_potions: []
+      },
       interaction: {
         id: "interaction-combat-fixture",
         kind: "combat_turn",
@@ -7674,8 +7678,7 @@ describe("Connector V3 Re consumer projection", () => {
     }).data;
     const projected = projectConnectorV3ForRe(
       observation,
-      observation as unknown as JsonObject,
-      CAPABILITIES as unknown as JsonObject
+      observation as unknown as JsonObject
     );
     const envelope = normalizeCurrentState(projected.rawState, TEST_SOURCE);
     const actions = buildAllowedActions(

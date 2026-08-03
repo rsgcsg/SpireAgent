@@ -12,7 +12,8 @@ export const visibleCharacterChoiceSchema = z.object({
   name: z.string().min(1),
   is_locked: z.boolean(),
   is_selected: z.boolean(),
-  is_random: z.boolean()
+  is_random: z.boolean(),
+  is_enabled: z.boolean()
 }).passthrough();
 
 const visibleStartingRelicSchema = z.object({

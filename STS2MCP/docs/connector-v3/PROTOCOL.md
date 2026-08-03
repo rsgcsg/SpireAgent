@@ -1,6 +1,6 @@
 # Connector V3 Protocol
 
-Source protocol: `3.0-preview.8`
+Source protocol: `3.0-preview.9`
 
 Schemas:
 
@@ -26,14 +26,10 @@ exact assembly SHA/MVID/runtime tuple. Re records its own source revision and
 worktree digest separately in run metadata.
 
 Shared visible facts, semantic context/surface, visibility metadata and the
-Inspection catalog are typed independently from Bridge v2. Re currently
-consumes ordinary combat, combat-hand selection, generated-card choice, menu,
-event, map, game-over, deck upgrade, merchant/relic/reward deck removal,
-Scroll Boxes card bundles, Luminous Choir event deck removal,
-reward/card-reward, shop, rest, treasure, lifecycle-settling and
-visible-unsupported observations directly from these V3 facts. Inspection
-catalog entries advertise state-bound read availability only; they never
-authorize mutation.
+Inspection catalog are typed independently from Bridge v2. Re consumes every
+recognized V3 Surface directly from these facts and candidates; it does not
+request a V2 capabilities/state projection sidecar. Inspection catalog entries
+advertise state-bound read availability only; they never authorize mutation.
 
 A visible unsupported interaction remains present with
 `execution_support=unsupported` and no candidates.
@@ -131,10 +127,25 @@ the exact character entity. Execution resolves the current native control and
 single-player lobby again; no Provider action closure or V2 action ID is kept.
 
 Generated-card choices share only bounded screen/card mechanics. Candidate
-discovery remains source-discriminated, and execution revalidates the exact
+discovery consumes typed `selectable_card_entity_ids`, `skip_available`,
+`select_operation` and `skip_operation` facts. Re requires exact command-set
+parity and rejects a source-operation mismatch. Execution revalidates the exact
 active source, screen and card before using that source's native Commit and
 Outcome witness. A Skill Potion, Quasar and Knowledge Demon therefore do not
 share a generic result contract merely because they use the same selection UI.
+
+Combat-pile, deck-transform and Wood Carvings selectors expose typed current
+membership, stage, controls and source/effect facts. Their V3 resolvers remain
+separate semantic contracts even where the native grid mechanics overlap.
+An unregistered combat-pile source is visible but authority-free. In the exact
+`v0.110.1` source audit, multiplayer-only `Tutor` selects from
+`cardPlay.Target.Player`; it is intentionally excluded from the ordinary
+source-card-owner contract and remains unsupported until a separate exact
+participant-binding contract and evidence exist.
+
+Map annotation exit and character selection are advertised only when their
+exact current native controls are enabled. A broader visible drawing mode,
+unlocked character or remembered prior state cannot substitute for that fact.
 
 Direct command descriptors are non-executing publication facts. Session trial
 admission may use them only when the exact operation resolves to an explicit
@@ -146,9 +157,11 @@ Game-over controls bind the exact current screen, stage and semantic control.
 Execution resolves those facts again and invokes the native advance/return
 Commit without retaining a Provider action closure.
 
-Combat potions always bind their exact native target, including self/player
-targets. A target that is implicit in the visual label is not implicit in the
-execution contract.
+Combat potions bind every explicit native target. Potions whose native
+`TargetType` accepts `null`, such as an all-enemy effect, advertise an empty
+target operand and revalidate `IsValidTarget(null)` before native Commit. An
+explicit player/enemy target is never omitted merely because it is visually
+obvious.
 
 ## Inspection
 

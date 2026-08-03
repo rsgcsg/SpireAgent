@@ -80,7 +80,17 @@ export const gatewayCombatContextSchema = z.object({
 export const gatewayCombatTurnSurfaceSchema = z.object({
   kind: z.literal("combat_turn"),
   room_entity_id: z.string().min(1),
-  can_end_turn: z.boolean()
+  can_end_turn: z.boolean(),
+  playable_cards: z.array(z.object({
+    entity_id: z.string().min(1),
+    name: z.string().nullable().optional(),
+    target_entity_ids: z.array(z.string().min(1))
+  }).strict()),
+  usable_potions: z.array(z.object({
+    entity_id: z.string().min(1),
+    name: z.string().nullable().optional(),
+    target_entity_ids: z.array(z.string().min(1))
+  }).strict())
 }).passthrough();
 
 export type GatewayCombatContext = z.infer<typeof gatewayCombatContextSchema>;

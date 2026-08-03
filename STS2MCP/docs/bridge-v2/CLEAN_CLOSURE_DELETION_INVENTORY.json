@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
   "source_protocol": "2.0-preview.86",
-  "status": "migration_active_live_evidence_pending",
+  "status": "source_closed_preview_9_live_evidence_pending",
   "target": {
     "connector_shadow_count": 0,
     "permanent_dual_read_path_count": 0,
     "production_action_publication_path_count": 1,
     "production_authority_resolver_count": 1,
-    "operation_authority_usage_count": 0,
+    "operation_authority_usage_count": 3,
     "fallback_authority_contract_count": 0,
     "persistent_fallback_claim_admission_count": 0,
     "supported_mixed_explicit_fallback_surface_count": 0,
@@ -21,9 +21,9 @@
     "production_action_publication_path_count": 1,
     "production_authority_resolver_count": 1,
     "operation_authority_usage_count": 3,
-    "explicit_native_contract_count": 83,
-    "explicit_contract_digest_admission_count": 83,
-    "fallback_authority_contract_count": 11,
+    "explicit_native_contract_count": 94,
+    "explicit_contract_digest_admission_count": 94,
+    "fallback_authority_contract_count": 0,
     "persistent_fallback_claim_admission_count": 0,
     "supported_mixed_explicit_fallback_surface_count": 0,
     "bulk_candidate_startup_path_count": 0,
@@ -38,6 +38,27 @@
     "rollback": "whole_artifact_restore"
   },
   "latest_waves": [
+    {
+      "family": "preview_9_explicit_only_authority_and_final_direct_consumer_cutover",
+      "operations": [
+        "combat_turn/play_card",
+        "combat_turn/use_potion",
+        "combat_turn/end_turn",
+        "deck_enchant_selection/toggle_card",
+        "deck_enchant_selection/preview_selection",
+        "deck_enchant_selection/close_selection",
+        "deck_enchant_selection/confirm_selection",
+        "deck_enchant_selection/cancel_preview",
+        "event_dialogue/advance_event_dialogue",
+        "deck_transform_selection/*",
+        "wood_carvings_replacement_selection/*",
+        "combat_pile_card_selection/*"
+      ],
+      "authority_cutover": "all 94 manifest operations require explicit operation contracts; ConnectorV3Runtime contains no draft.Actions, LegacyBinding, or provider_native_binding_adapter path; Re consumes every V3 observation without a V2 capabilities/state sidecar",
+      "runtime_evidence": "Preview.8 archive records exact loaded SHA 26c5baaeaa24cfe6e8665693c4e7e45486df45f8cab65a2d74ebc2d6bac2e529 and MVID d1476ec1-4da8-4658-b594-6fea40de3ca0, plus one unrecorded-provenance completed run; Preview.9 source/tests/build/install evidence pending closeout",
+      "non_claims": "Preview.9 not cold-loaded or Live; archived Preview.8 runs are coverage evidence only and are not Organic qualification; final selectors, targetless potion regression, Re sidecar deletion, and explicit-only loader remain pending exact-runtime exercise",
+      "rollback": "whole_artifact_restore"
+    },
     {
       "family": "preview_8_direct_authority_and_source_bound_selector_cutover",
       "operations": [

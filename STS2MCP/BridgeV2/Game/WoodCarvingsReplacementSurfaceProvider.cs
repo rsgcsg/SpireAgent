@@ -148,6 +148,24 @@ internal sealed class WoodCarvingsReplacementSurfaceProvider : IBridgeSurfacePro
         CardModel replacement = source.Branch == "bird"
             ? ModelDb.Card<Peck>()
             : ModelDb.Card<ToricToughness>();
+        string[] selectableIds = stage == "selecting"
+            ? holders.Where(holder => IsHolderClickable(holder)
+                                      && !selectedCards.Contains(holder.CardModel))
+                .Select(holder => cardIds[holder.CardModel])
+                .OrderBy(id => id, StringComparer.Ordinal)
+                .ToArray()
+            : Array.Empty<string>();
+        NConfirmButton? previewConfirm = stage == "preview"
+            ? FindControl<NConfirmButton>(screen, "_previewConfirmButton")
+            : null;
+        NBackButton? previewCancel = stage == "preview"
+            ? FindControl<NBackButton>(screen, "_previewCancelButton")
+            : null;
+        bool canConfirm = previewConfirm is { IsEnabled: true }
+                          && McpMod.IsNodeVisible(previewConfirm)
+                          && selectedCards.Count == 1;
+        bool canCancelPreview = previewCancel is { IsEnabled: true }
+                                && McpMod.IsNodeVisible(previewCancel);
         var surface = new WoodCarvingsReplacementSelectionSurface(
             SurfaceKind,
             stage,
@@ -161,19 +179,18 @@ internal sealed class WoodCarvingsReplacementSurfaceProvider : IBridgeSurfacePro
             prefs.MaxSelect,
             selectedCards.Count,
             selectedIds,
-            cards);
-        List<BridgeActionDraft> actions = BuildActions(
-            screen,
-            stage,
-            holders,
-            selectedCards,
-            cardIds,
-            source);
+            cards)
+        {
+            SelectableCardEntityIds = selectableIds,
+            CanCancelPreview = canCancelPreview,
+            CanConfirm = canConfirm
+        };
 
-        string readiness = actions.Count > 0 ? "ready" : "settling";
+        bool hasCurrentCommand = selectableIds.Length > 0 || canCancelPreview || canConfirm;
+        string readiness = hasCurrentCommand ? "ready" : "settling";
         var completeness = new StateCompleteness(
             "contract_complete_for_wood_carvings_deterministic_replacement",
-            actions.Count > 0
+            hasCurrentCommand
                 ? "derived_from_exact_source_binding_visible_grid_and_current_controls"
                 : "temporarily_empty_while_selection_completes_or_settles",
             new[]
@@ -190,8 +207,7 @@ internal sealed class WoodCarvingsReplacementSurfaceProvider : IBridgeSurfacePro
         {
             game.Version,
             context,
-            surface,
-            actionKeys = actions.Select(action => action.Key).OrderBy(key => key, StringComparer.Ordinal).ToArray()
+            surface
         });
         return new BridgeObservationDraft(
             signature,
@@ -204,64 +220,7 @@ internal sealed class WoodCarvingsReplacementSurfaceProvider : IBridgeSurfacePro
             {
                 "This contract is limited to native Wood Carvings Bird/Torus and does not authorize other generic deck selectors."
             },
-            actions);
-    }
-
-    private static List<BridgeActionDraft> BuildActions(
-        NDeckCardSelectScreen screen,
-        string stage,
-        IReadOnlyList<NGridCardHolder> holders,
-        HashSet<CardModel> selectedCards,
-        IReadOnlyDictionary<CardModel, string> cardIds,
-        WoodCarvingsReplacementSourceBinding.ActiveBinding source)
-    {
-        var actions = new List<BridgeActionDraft>();
-        if (stage == "selecting")
-        {
-            foreach (NGridCardHolder holder in holders.Where(IsHolderClickable))
-            {
-                CardModel card = holder.CardModel;
-                if (selectedCards.Contains(card))
-                    continue;
-                string cardId = cardIds[card];
-                string cardName = McpMod.SafeGetText(() => card.Title) ?? card.Id.Entry;
-                actions.Add(new BridgeActionDraft(
-                    $"select_wood_carvings_replacement_card:{cardId}",
-                    "select_wood_carvings_replacement_card",
-                    "selection",
-                    $"Replace {cardName} with {source.ReplacementDefinitionId}",
-                    "NCardGrid.HolderPressed+WoodCarvings source binding",
-                    () => StartSelect(screen, card),
-                    new[] { new ActionEntityBinding("card", cardId) }));
-            }
-        }
-        else
-        {
-            NConfirmButton? confirm = FindControl<NConfirmButton>(screen, "_previewConfirmButton");
-            if (confirm is { IsEnabled: true } && McpMod.IsNodeVisible(confirm))
-            {
-                actions.Add(new BridgeActionDraft(
-                    "confirm_wood_carvings_replacement",
-                    "confirm_wood_carvings_replacement",
-                    "commit",
-                    $"Confirm replacement with {source.ReplacementDefinitionId}",
-                    "NDeckCardSelectScreen._previewConfirmButton+CardCmd.TransformTo",
-                    () => StartConfirm(screen, selectedCards, source)));
-            }
-
-            NBackButton? cancel = FindControl<NBackButton>(screen, "_previewCancelButton");
-            if (cancel is { IsEnabled: true } && McpMod.IsNodeVisible(cancel))
-            {
-                actions.Add(new BridgeActionDraft(
-                    "cancel_wood_carvings_replacement_preview",
-                    "cancel_wood_carvings_replacement_preview",
-                    "navigation",
-                    "Return to Wood Carvings card selection",
-                    "NDeckCardSelectScreen._previewCancelButton",
-                    () => StartPreviewCancel(screen)));
-            }
-        }
-        return actions;
+            Array.Empty<BridgeActionDraft>());
     }
 
     private static BridgeActionStartResult StartSelect(
@@ -335,6 +294,98 @@ internal sealed class WoodCarvingsReplacementSurfaceProvider : IBridgeSurfacePro
         return BridgeActionStartResult.Started(
             () => IsCurrent(expectedScreen) && !IsPreviewVisible(expectedScreen),
             "wood_carvings_preview_closed");
+    }
+
+    internal static BridgeActionStartResult StartDirectSelect(
+        BridgeEntityRegistry entities,
+        string screenId,
+        string cardId,
+        string expectedBranch,
+        string expectedReplacementDefinitionId)
+    {
+        if (!TryResolveDirect(
+                entities,
+                screenId,
+                expectedBranch,
+                expectedReplacementDefinitionId,
+                out NDeckCardSelectScreen? screen,
+                out _)
+            || !entities.TryResolve(cardId, out CardModel? card)
+            || card == null)
+        {
+            return BridgeActionStartResult.Rejected(
+                "wood_carvings_binding_stale",
+                "The exact Wood Carvings screen, source, or card no longer resolves.");
+        }
+        return StartSelect(screen!, card);
+    }
+
+    internal static BridgeActionStartResult StartDirectConfirm(
+        BridgeEntityRegistry entities,
+        string screenId,
+        IReadOnlyList<string> selectedCardIds,
+        string expectedBranch,
+        string expectedReplacementDefinitionId)
+    {
+        if (!TryResolveDirect(
+                entities,
+                screenId,
+                expectedBranch,
+                expectedReplacementDefinitionId,
+                out NDeckCardSelectScreen? screen,
+                out WoodCarvingsReplacementSourceBinding.ActiveBinding? source))
+        {
+            return BridgeActionStartResult.Rejected(
+                "wood_carvings_binding_stale",
+                "The exact Wood Carvings confirmation source no longer resolves.");
+        }
+        var selected = new List<CardModel>(selectedCardIds.Count);
+        foreach (string cardId in selectedCardIds)
+        {
+            if (!entities.TryResolve(cardId, out CardModel? card) || card == null)
+                return BridgeActionStartResult.Rejected("wood_carvings_selection_changed", "The exact selected Wood Carvings card no longer resolves.");
+            selected.Add(card);
+        }
+        return StartConfirm(screen!, selected, source!);
+    }
+
+    internal static BridgeActionStartResult StartDirectCancelPreview(
+        BridgeEntityRegistry entities,
+        string screenId,
+        string expectedBranch,
+        string expectedReplacementDefinitionId)
+    {
+        return !TryResolveDirect(
+                entities,
+                screenId,
+                expectedBranch,
+                expectedReplacementDefinitionId,
+                out NDeckCardSelectScreen? screen,
+                out _)
+            ? BridgeActionStartResult.Rejected(
+                "wood_carvings_binding_stale",
+                "The exact Wood Carvings preview source no longer resolves.")
+            : StartPreviewCancel(screen!);
+    }
+
+    private static bool TryResolveDirect(
+        BridgeEntityRegistry entities,
+        string screenId,
+        string expectedBranch,
+        string expectedReplacementDefinitionId,
+        out NDeckCardSelectScreen? screen,
+        out WoodCarvingsReplacementSourceBinding.ActiveBinding? source)
+    {
+        screen = null;
+        source = null;
+        return entities.TryResolve(screenId, out screen)
+               && screen != null
+               && IsCurrent(screen)
+               && WoodCarvingsReplacementSourceBinding.TryGetUnique(out source)
+               && source != null
+               && string.Equals(source.Branch, expectedBranch, StringComparison.Ordinal)
+               && string.Equals(source.ReplacementDefinitionId, expectedReplacementDefinitionId, StringComparison.Ordinal)
+               && WoodCarvingsReplacementSourceBinding.IsActive(source.Token);
     }
 
     private static T? FindControl<T>(NDeckCardSelectScreen screen, string fieldName)

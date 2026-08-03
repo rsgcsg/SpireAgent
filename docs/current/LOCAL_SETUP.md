@@ -158,8 +158,9 @@ npm run connector -- show-status
 npm run connector -- collect-evidence
 ```
 
-V3 routes are `/api/v3/*`. Any remaining V2 capabilities read is an internal,
-temporary non-authorizing migration sidecar and is not a public consumer API.
+V3 routes are `/api/v3/*`. Re consumes only V3 observations and does not read a
+V2 capabilities/state sidecar. Mounted V2 endpoints are rollback and migration
+diagnostics only, not a public consumer or mutation path.
 
 ## 7. Run Re-SpireAgent
 

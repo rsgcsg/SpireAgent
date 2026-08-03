@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
-  "catalog_id": "bridge_v2_native_action_contracts_v14",
-  "authority_effect": "explicit_native_contracts_plus_typed_session_fallbacks",
+  "catalog_id": "bridge_v2_native_action_contracts_v15",
+  "authority_effect": "explicit_native_contracts_only",
   "contracts": [
     {
       "surface_kind": "main_menu",
@@ -998,6 +998,138 @@
       "completion_boundary": "immediate_postcondition_observed",
       "witness_id": "exact_dialogue_index_advanced_or_event_room_closed",
       "risk_class": "progression"
+    },
+    {
+      "surface_kind": "deck_transform_selection",
+      "operation": "toggle_deck_transform_card",
+      "interaction_kind": "source_bound_random_transform_card_toggle",
+      "owner_binding": "exact_current_deck_transform_selector_in_selecting_stage",
+      "source_binding": "WhisperingHollow.Hug|NewLeaf.AfterObtained+unique_exact_runtime_source_binding",
+      "operand_contract": "exact_advertised_deck_card_instance_selected_state_bounds_transformability_and_clickability",
+      "commit_contract": "NCardGrid.HolderPressed+NDeckTransformSelectScreen.OnCardClicked",
+      "completion_boundary": "immediate_postcondition_observed",
+      "witness_id": "transform_selection_changed_or_preview_opened",
+      "risk_class": "reversible_navigation"
+    },
+    {
+      "surface_kind": "deck_transform_selection",
+      "operation": "preview_deck_transform",
+      "interaction_kind": "source_bound_random_transform_preview_open",
+      "owner_binding": "exact_current_deck_transform_selector_in_selecting_stage",
+      "source_binding": "WhisperingHollow.Hug|NewLeaf.AfterObtained+unique_exact_runtime_source_binding",
+      "operand_contract": "exact_current_selected_membership_and_enabled_preview_control",
+      "commit_contract": "NDeckTransformSelectScreen.ConfirmSelection",
+      "completion_boundary": "immediate_postcondition_observed",
+      "witness_id": "random_transform_preview_opened",
+      "risk_class": "reversible_navigation"
+    },
+    {
+      "surface_kind": "deck_transform_selection",
+      "operation": "confirm_deck_transform",
+      "interaction_kind": "source_bound_random_transform_commit",
+      "owner_binding": "exact_current_deck_transform_selector_in_preview_stage",
+      "source_binding": "WhisperingHollow.Hug|NewLeaf.AfterObtained+unique_exact_runtime_source_binding",
+      "operand_contract": "exact_selected_transformable_owned_deck_instances_and_enabled_confirm",
+      "commit_contract": "NDeckTransformSelectScreen.CompleteSelection+CardCmd.TransformToRandom",
+      "completion_boundary": "transaction_settled",
+      "witness_id": "transform_screen_closed_original_instances_absent_and_deck_count_preserved",
+      "risk_class": "persistent_run_mutation"
+    },
+    {
+      "surface_kind": "deck_transform_selection",
+      "operation": "cancel_deck_transform_preview",
+      "interaction_kind": "source_bound_random_transform_preview_cancel",
+      "owner_binding": "exact_current_deck_transform_selector_in_preview_stage",
+      "source_binding": "WhisperingHollow.Hug|NewLeaf.AfterObtained+unique_exact_runtime_source_binding",
+      "operand_contract": "exact_current_selected_membership_and_enabled_preview_cancel",
+      "commit_contract": "NDeckTransformSelectScreen.CancelSelection",
+      "completion_boundary": "immediate_postcondition_observed",
+      "witness_id": "transform_preview_closed_and_selection_cleared",
+      "risk_class": "reversible_navigation"
+    },
+    {
+      "surface_kind": "deck_transform_selection",
+      "operation": "cancel_deck_transform_selection",
+      "interaction_kind": "source_bound_random_transform_selection_cancel",
+      "owner_binding": "exact_current_cancelable_deck_transform_selector_in_selecting_stage",
+      "source_binding": "WhisperingHollow.Hug|NewLeaf.AfterObtained+unique_exact_runtime_source_binding",
+      "operand_contract": "exact_current_selector_and_enabled_close_control",
+      "commit_contract": "NDeckTransformSelectScreen.CloseSelection",
+      "completion_boundary": "continuation_handoff_observed",
+      "witness_id": "transform_selection_cancelled_and_closed",
+      "risk_class": "reversible_navigation"
+    },
+    {
+      "surface_kind": "deck_transform_selection",
+      "operation": "toggle_deck_transform_upgrade_view",
+      "interaction_kind": "source_bound_random_transform_presentation_toggle",
+      "owner_binding": "exact_current_deck_transform_selector_in_selecting_stage",
+      "source_binding": "WhisperingHollow.Hug|NewLeaf.AfterObtained+unique_exact_runtime_source_binding",
+      "operand_contract": "exact_current_upgrade_preview_mode_and_enabled_visible_tickbox",
+      "commit_contract": "NDeckTransformSelectScreen.ToggleShowUpgrades",
+      "completion_boundary": "immediate_postcondition_observed",
+      "witness_id": "transform_upgrade_preview_mode_changed",
+      "risk_class": "reversible_navigation"
+    },
+    {
+      "surface_kind": "wood_carvings_replacement_selection",
+      "operation": "select_wood_carvings_replacement_card",
+      "interaction_kind": "wood_carvings_exact_replacement_card_select",
+      "owner_binding": "exact_current_WoodCarvings_Bird_or_Torus_selector_in_selecting_stage",
+      "source_binding": "WoodCarvings.Bird|WoodCarvings.Torus+unique_task_local_branch_binding",
+      "operand_contract": "exact_advertised_basic_transformable_deck_card_instance_and_clickability",
+      "commit_contract": "NCardGrid.HolderPressed",
+      "completion_boundary": "immediate_postcondition_observed",
+      "witness_id": "wood_carvings_card_selected_and_preview_opened",
+      "risk_class": "reversible_navigation"
+    },
+    {
+      "surface_kind": "wood_carvings_replacement_selection",
+      "operation": "confirm_wood_carvings_replacement",
+      "interaction_kind": "wood_carvings_exact_replacement_commit",
+      "owner_binding": "exact_current_WoodCarvings_Bird_or_Torus_selector_in_preview_stage",
+      "source_binding": "WoodCarvings.Bird|WoodCarvings.Torus+unique_task_local_branch_binding",
+      "operand_contract": "exact_selected_deck_card_branch_replacement_type_and_enabled_confirm",
+      "commit_contract": "NDeckCardSelectScreen._previewConfirmButton+CardCmd.TransformTo",
+      "completion_boundary": "transaction_settled",
+      "witness_id": "wood_carvings_source_completed_original_absent_exact_replacement_added_and_deck_count_preserved",
+      "risk_class": "persistent_run_mutation"
+    },
+    {
+      "surface_kind": "wood_carvings_replacement_selection",
+      "operation": "cancel_wood_carvings_replacement_preview",
+      "interaction_kind": "wood_carvings_exact_replacement_preview_cancel",
+      "owner_binding": "exact_current_WoodCarvings_Bird_or_Torus_selector_in_preview_stage",
+      "source_binding": "WoodCarvings.Bird|WoodCarvings.Torus+unique_task_local_branch_binding",
+      "operand_contract": "exact_selected_card_branch_and_enabled_preview_cancel",
+      "commit_contract": "NDeckCardSelectScreen._previewCancelButton",
+      "completion_boundary": "immediate_postcondition_observed",
+      "witness_id": "wood_carvings_preview_closed",
+      "risk_class": "reversible_navigation"
+    },
+    {
+      "surface_kind": "combat_pile_card_selection",
+      "operation": "toggle_combat_pile_card",
+      "interaction_kind": "source_registry_bound_combat_pile_card_toggle",
+      "owner_binding": "exact_current_combat_pile_selector_and_unique_active_source_task",
+      "source_binding": "reviewed_embedded_combat_pile_source_registry+closed_witness_catalog+unique_active_source",
+      "operand_contract": "exact_advertised_source_screen_card_selected_state_pile_bounds_and_clickability",
+      "commit_contract": "NCardGrid.HolderPressed+source_specific_native_continuation",
+      "completion_boundary": "gateway_semantic_completion_observed",
+      "witness_id": "gateway_reported_operation_witness",
+      "risk_class": "persistent_run_mutation"
+    },
+    {
+      "surface_kind": "combat_pile_card_selection",
+      "operation": "confirm_combat_pile_selection",
+      "interaction_kind": "source_registry_bound_combat_pile_manual_commit",
+      "owner_binding": "exact_current_manual_confirm_combat_pile_selector_and_unique_active_source_task",
+      "source_binding": "reviewed_embedded_combat_pile_source_registry+closed_witness_catalog+unique_active_source",
+      "operand_contract": "exact_source_screen_selected_membership_bounds_commit_mode_and_enabled_confirm",
+      "commit_contract": "NCombatPileCardSelectScreen.%Confirm.ForceClick+source_specific_native_continuation",
+      "completion_boundary": "gateway_semantic_completion_observed",
+      "witness_id": "gateway_reported_operation_witness",
+      "risk_class": "persistent_run_mutation"
     }
   ]
 }

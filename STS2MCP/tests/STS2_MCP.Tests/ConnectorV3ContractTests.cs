@@ -5,6 +5,8 @@ using STS2_MCP.ConnectorV3.Protocol;
 using STS2_MCP.ConnectorV3.Runtime;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Models.Potions;
 
 namespace STS2_MCP.Tests;
 
@@ -186,6 +188,32 @@ public sealed class ConnectorV3ContractTests
     }
 
     [Fact]
+    public void MapAnnotationExitRequiresTheTypedCurrentControlFact()
+    {
+        var blocked = new MapNavigationSurface(
+            "map_navigation",
+            "map-screen",
+            false,
+            false,
+            "drawing",
+            Array.Empty<VisibleMapChoice>())
+        {
+            AnnotationInputEntityId = "annotation-input",
+            CanExitAnnotation = false
+        };
+        Assert.Empty(ConnectorV3Runtime.DescribeMapCommands(blocked));
+
+        var ready = blocked with { CanExitAnnotation = true };
+        BridgeActionDraft command = Assert.Single(
+            ConnectorV3Runtime.DescribeMapCommands(ready));
+
+        Assert.Equal("exit_map_annotation", command.Kind);
+        Assert.Contains(command.EntityBindings!, binding =>
+            binding.Role == "map_annotation_input"
+            && binding.EntityId == "annotation-input");
+    }
+
+    [Fact]
     public void DeckUpgradeNativeDiscoveryKeepsStageAndExactMembership()
     {
         var card = new VisibleCard(
@@ -294,6 +322,210 @@ public sealed class ConnectorV3ContractTests
             StringComparison.Ordinal));
         Assert.Contains(reward, command =>
             command.Kind == "cancel_deck_removal_selection");
+    }
+
+    [Fact]
+    public void DeckEnchantNativeDiscoveryKeepsPurposeStageAndMembership()
+    {
+        var card = new VisibleCard(
+            "deck-card-a", "STRIKE", "Strike", "Attack", "1", null,
+            "Deal 6 damage.", "Basic", false, false, null);
+        var selecting = new DeckEnchantSelectionSurface(
+            "deck_enchant_selection",
+            "selecting",
+            "enchant-screen",
+            new DeckEnchantSource(
+                "symbiote_event",
+                "SYMBIOTE",
+                "Symbiote+exact_task"),
+            "Choose a card.",
+            1,
+            1,
+            0,
+            Array.Empty<string>(),
+            true,
+            new VisibleEnchantment(
+                "FIXTURE_ENCHANTMENT",
+                "Fixture",
+                "Fixture enchantment.",
+                1,
+                "current_screen"),
+            new[] { card })
+        {
+            SelectableCardEntityIds = new[] { card.EntityId },
+            CanCloseSelection = true
+        };
+
+        BridgeActionDraft[] selectingCommands =
+            ConnectorV3Runtime.DescribeDeckEnchantCommands(selecting).ToArray();
+
+        BridgeActionDraft toggle = Assert.Single(selectingCommands, command =>
+            command.Kind == "toggle_card");
+        Assert.Contains(toggle.EntityBindings!, binding =>
+            binding.Role == "screen" && binding.EntityId == "enchant-screen");
+        Assert.Contains(toggle.EntityBindings!, binding =>
+            binding.Role == "card" && binding.EntityId == card.EntityId);
+        Assert.Contains(selectingCommands, command => command.Kind == "close_selection");
+        Assert.DoesNotContain(selectingCommands, command =>
+            command.Kind is "confirm_selection" or "cancel_preview");
+
+        var preview = selecting with
+        {
+            Stage = "preview",
+            SelectedCount = 1,
+            SelectedCardEntityIds = new[] { card.EntityId },
+            SelectableCardEntityIds = Array.Empty<string>(),
+            CanCloseSelection = false,
+            CanConfirm = true,
+            CanCancelPreview = true
+        };
+        BridgeActionDraft[] previewCommands =
+            ConnectorV3Runtime.DescribeDeckEnchantCommands(preview).ToArray();
+
+        BridgeActionDraft confirm = Assert.Single(previewCommands, command =>
+            command.Kind == "confirm_selection");
+        Assert.Contains(confirm.EntityBindings!, binding =>
+            binding.Role == "card" && binding.EntityId == card.EntityId);
+        Assert.Contains(previewCommands, command => command.Kind == "cancel_preview");
+    }
+
+    [Fact]
+    public void EventDialogueNativeDiscoveryBindsOnlyTheCurrentRevealedLine()
+    {
+        var surface = new EventDialogueSurface(
+            "event_dialogue",
+            "dialogue-screen",
+            1,
+            new[]
+            {
+                new VisibleDialogueLine("line-0", 0, "First", "ancient", false),
+                new VisibleDialogueLine("line-1", 1, "Current", "character", true)
+            },
+            "Continue")
+        {
+            CanAdvance = true
+        };
+
+        BridgeActionDraft command = Assert.Single(
+            ConnectorV3Runtime.DescribeEventDialogueCommands(surface));
+
+        Assert.Equal("advance_event_dialogue", command.Kind);
+        Assert.Contains(command.EntityBindings!, binding =>
+            binding.Role == "screen" && binding.EntityId == "dialogue-screen");
+        Assert.Contains(command.EntityBindings!, binding =>
+            binding.Role == "dialogue_line" && binding.EntityId == "line-1");
+        Assert.DoesNotContain(command.EntityBindings!, binding =>
+            binding.EntityId == "line-0");
+    }
+
+    [Fact]
+    public void AllEnemiesPotionPublishesWithoutInventingCreatureTarget()
+    {
+        var potion = new ExplosiveAmpoule();
+
+        Assert.Equal(TargetType.AllEnemies, potion.TargetType);
+        Assert.True(CombatTurnSurfaceProvider.IsAdvertisablePotionTarget(potion, null));
+    }
+
+    [Fact]
+    public void RemainingSelectorDiscoveryUsesDirectTypedSurfaceFacts()
+    {
+        var card = new VisibleCard(
+            "card-a", "STRIKE", "Strike", "Attack", "1", null,
+            "Deal 6 damage.", "Basic", false, true, null);
+        var transform = new DeckTransformSelectionSurface(
+            "deck_transform_selection",
+            "selecting",
+            "transform-screen",
+            new DeckTransformSource(
+                "whispering_hollow_event",
+                "WHISPERING_HOLLOW",
+                "WhisperingHollow.Hug+CardSelectCmd.FromDeckForTransformation"),
+            "Choose a card to transform.",
+            1,
+            1,
+            0,
+            Array.Empty<string>(),
+            true,
+            true,
+            false,
+            "none",
+            false,
+            new[] { card })
+        {
+            SelectableCardEntityIds = new[] { card.EntityId },
+            CanCancelSelection = true,
+            CanToggleUpgradeView = true
+        };
+        BridgeActionDraft[] transformCommands =
+            ConnectorV3Runtime.DescribeDeckTransformCommands(transform).ToArray();
+        Assert.Contains(transformCommands, command => command.Kind == "toggle_deck_transform_card");
+        Assert.Contains(transformCommands, command => command.Kind == "cancel_deck_transform_selection");
+        Assert.Contains(transformCommands, command => command.Kind == "toggle_deck_transform_upgrade_view");
+        Assert.All(transformCommands, command => Assert.Contains(
+            command.EntityBindings!,
+            binding => binding.Role == "screen" && binding.EntityId == "transform-screen"));
+
+        var wood = new WoodCarvingsReplacementSelectionSurface(
+            "wood_carvings_replacement_selection",
+            "preview",
+            "wood-screen",
+            "Choose a card.",
+            "bird",
+            "PECK",
+            "Peck",
+            "Replacement",
+            1,
+            1,
+            1,
+            new[] { card.EntityId },
+            new[] { card })
+        {
+            CanConfirm = true,
+            CanCancelPreview = true
+        };
+        BridgeActionDraft[] woodCommands =
+            ConnectorV3Runtime.DescribeWoodCarvingsCommands(wood).ToArray();
+        Assert.Contains(woodCommands, command => command.Kind == "confirm_wood_carvings_replacement");
+        Assert.Contains(woodCommands, command => command.Kind == "cancel_wood_carvings_replacement_preview");
+
+        var pile = new CombatPileCardSelectionSurface(
+            "combat_pile_card_selection",
+            "pile-screen",
+            "Choose a card.",
+            "move cards",
+            "move_selected_cards",
+            "manual_confirm",
+            "cleanse",
+            "card",
+            "source-card",
+            "CLEANSE",
+            "source-card",
+            "CLEANSE",
+            "discard",
+            "draw",
+            "top",
+            null,
+            null,
+            0,
+            1,
+            1,
+            new[] { card.EntityId },
+            true,
+            false,
+            new[] { card })
+        {
+            DeselectableCardEntityIds = new[] { card.EntityId },
+            CanConfirm = true
+        };
+        BridgeActionDraft[] pileCommands =
+            ConnectorV3Runtime.DescribeCombatPileCommands(pile).ToArray();
+        Assert.Contains(pileCommands, command => command.Kind == "toggle_combat_pile_card");
+        BridgeActionDraft pileConfirm = Assert.Single(
+            pileCommands,
+            command => command.Kind == "confirm_combat_pile_selection");
+        Assert.Contains(pileConfirm.EntityBindings!, binding =>
+            binding.Role == "source" && binding.EntityId == "source-card");
     }
 
     [Fact]
@@ -546,7 +778,8 @@ public sealed class ConnectorV3ContractTests
                     "Ironclad",
                     false,
                     true,
-                    false),
+                    false,
+                    true),
                 new VisibleCharacterChoice(
                     "choice-available",
                     1,
@@ -554,7 +787,8 @@ public sealed class ConnectorV3ContractTests
                     "Silent",
                     false,
                     false,
-                    false),
+                    false,
+                    true),
                 new VisibleCharacterChoice(
                     "choice-locked",
                     2,
@@ -562,7 +796,8 @@ public sealed class ConnectorV3ContractTests
                     "Defect",
                     true,
                     false,
-                    false)
+                    false,
+                    true)
             },
             null,
             3,
@@ -606,6 +841,44 @@ public sealed class ConnectorV3ContractTests
     [Fact]
     public void GeneratedChoiceNativeOperandsBindOwnerAndExactCard()
     {
+        var surface = new GeneratedCardChoiceSurface(
+            "generated_card_choice",
+            "generated-screen",
+            "Choose a Card",
+            "choose_one_generated_combat_card",
+            "skill_potion",
+            "combat_hand",
+            "free_this_turn",
+            "combat_discard_if_hand_full",
+            CanSkip: true,
+            IsPeeking: false,
+            Cards: new[]
+            {
+                new VisibleCard(
+                    "generated-card", "TRUE_GRIT", "True Grit", "Skill", "1", null,
+                    "Gain Block.", "Common", false, false, null),
+                new VisibleCard(
+                    "blocked-card", "BATTLE_TRANCE", "Battle Trance", "Skill", "0", null,
+                    "Draw cards.", "Uncommon", false, false, null)
+            })
+        {
+            SelectableCardEntityIds = new[] { "generated-card" },
+            SkipAvailable = true,
+            SelectOperation = "select_generated_combat_card",
+            SkipOperation = "skip_generated_combat_card_choice",
+            SelectCompletionEvidence = "exact-generated-combat-card-witness",
+            SkipCompletionEvidence = "unchanged-combat-piles-witness"
+        };
+        BridgeActionDraft[] commands =
+            ConnectorV3Runtime.DescribeGeneratedCardChoiceCommands(surface).ToArray();
+
+        Assert.Equal(2, commands.Length);
+        Assert.Contains(commands, command => command.Kind == "select_generated_combat_card"
+            && command.EntityBindings!.Any(binding => binding.EntityId == "generated-card"));
+        Assert.DoesNotContain(commands, command => command.EntityBindings!.Any(binding =>
+            binding.EntityId == "blocked-card"));
+        Assert.Contains(commands, command => command.Kind == "skip_generated_combat_card_choice");
+
         Dictionary<string, string> select = ConnectorV3Runtime.BuildCommandOperands(
             "select_generated_combat_card",
             "select_entity",

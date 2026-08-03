@@ -120,40 +120,30 @@ is unchanged:
 
 Reuse is internal implementation reuse, not V2 protocol authority.
 
-## Explicit Migration Debt
+## Source Closure And Remaining Debt
 
-At `3.0-preview.8`:
+At `3.0-preview.9`:
 
-- combat and multiple ordinary non-combat families use direct V3 native
-  resolvers; menu/run-setup, source-discriminated generated choices and
-  game-over, combat-hand selection, Smith deck upgrade, rest, event card
-  acquisition, all three exact ordinary removal sources, Scroll Boxes bundles
-  and Luminous Choir event removal are now cut over in source. Every shared
-  selection mechanic retains a source-specific Commit and Outcome. Remaining
-  selectors use a bounded internal
-  `provider_native_binding_adapter` that never submits or searches a v2 REST
-  action ID;
-- Re directly consumes ordinary combat, source-discriminated generated-card
-  choice, main/singleplayer/character menu, event, map, game-over,
-  reward/card-reward, shop, rest, treasure, lifecycle-settling and
-  visible-unsupported facts and candidates. Combat-hand, Smith deck upgrade,
-  merchant/relic/reward removal, Scroll Boxes bundle, rest, event card
-  acquisition and Luminous Choir event removal join this direct path. Remaining
-  selector Surfaces use
-  `/api/v2/capabilities` as a same-runtime,
-  non-authorizing semantic/environment projection sidecar and temporarily
-  expand V3 candidates into a V2-shaped normalization projection;
-- V3 state-bound read-only Inspection is exposed for run deck, combat piles
-  and shop catalog. Bounded `surface_card` linked detail is also implemented;
-  exact-runtime evidence and the optional physical-UI evidence profile remain
-  pending;
-- v2 endpoints remain mounted for rollback and migration diagnostics, not as
-  the default Re or MCP mutation path.
+- every currently cataloged family, including combat pile, deck transform and
+  Wood Carvings, has typed direct V3 discovery/execution and a direct Re
+  consumer;
+- all 94 operation entries require explicit native contracts; no manifest
+  fallback can enter authority;
+- Connector V3 consumes neither Provider `draft.Actions`, `LegacyBinding` nor
+  `provider_native_binding_adapter`;
+- Re consumes neither a V2 capabilities/state sidecar nor a V2-shaped
+  normalization projection;
+- direct-family Providers publish no action drafts. Historically named
+  Provider files may still own exact game reflection, source binding, native
+  Commit and Outcome helpers. That internal code is not protocol authority or
+  a second executor;
+- V3 state-bound Inspection and linked detail remain read-only and independent;
+- V2 endpoints remain mounted only for rollback and migration diagnostics.
 
-These are deletion targets. They must not become permanent dual authority.
-In particular, V2 validators that require every visible affordance to have an
-authorized action cannot be the final V3 consumer contract: visibility and
-operation-scoped authority are intentionally orthogonal.
+Source migration debt is therefore closed. Runtime evidence, durable
+qualification lifecycle, optional human-equivalence evidence and final V2
+endpoint archival remain. These must not be described as source support or
+solved by retaining dual authority.
 
 Readiness is also orthogonal to support. A known interaction in native
 `settling` publishes no command and remains a supported family; Re projects a
@@ -210,3 +200,29 @@ Source, fixtures, tests, build, install, load, mutation canary, bounded journey,
 Organic evidence and durable qualification are different states. This ADR
 authorizes architecture work only. It does not claim that the V3 artifact is
 loaded or Live-qualified.
+
+### Preview.9 implementation amendment
+
+The final selector families use typed Surface facts and direct V3 candidate
+construction. The operation catalog is explicit-only (`94/0`), Provider action
+publication is absent for direct families, and Re's V2 projection sidecar is
+deleted. Generated-card Surface facts now bind current selectable cards and
+source-specific select/skip operations so publication and Re validation share
+one explicit contract instead of accepting any selection-shaped operation.
+
+Targetless native potion support follows STS2 `IsValidTarget(null)` rather
+than inventing a target, while explicit target types retain exact operands.
+Map annotation and character selection similarly require current native
+control availability. These corrections preserve the hard shell; they do not
+grant new durable authority.
+
+The exact `v0.110.1` assembly was also rechecked for the compatibility audit's
+`Tutor` holdout. Its multiplayer target-player selector disproves automatic
+reuse of the ordinary source-owner combat-pile contract. V3 keeps it
+diagnostic-only and Fail Closed; this is a deliberate negative boundary, not
+unfinished fallback authority.
+
+The supplied Preview.8 archive is historical exact-artifact journey coverage
+with unrecorded provenance. Preview.9 source, tests, Release build and install
+are complete on the current machine, but cold-load, runtime, canary, Organic
+and qualification are non-claims until separately observed.
