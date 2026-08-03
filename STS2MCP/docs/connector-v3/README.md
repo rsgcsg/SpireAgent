@@ -3,7 +3,7 @@
 Connector V3 is the current STS2 Semantic Gateway contract. The canonical
 architecture is
 [ADR-0007](../../../docs/current/decisions/ADR-0007-connector-v3-canonical-architecture.md).
-Current status is **FREEZE CANDIDATE** at `3.0-preview.11`.
+Current status is **CONDITIONAL FREEZE CANDIDATE** at `3.0-preview.12`.
 
 ```text
 GET  /api/v3/capabilities
@@ -31,7 +31,9 @@ Current source closure:
 
 See [Protocol](PROTOCOL.md), [Coverage](COVERAGE.md),
 [Support and compatibility](SUPPORT_AND_COMPATIBILITY.md), and the
-[Preview.11 freeze-candidate closeout](PREVIEW_11_FREEZE_CANDIDATE_CLOSEOUT_2026-08-03.md).
+[Preview.12 conditional-freeze closeout](PREVIEW_12_CONDITIONAL_FREEZE_CLOSEOUT_2026-08-03.md).
+The current adaptation and failure analysis is in the
+[freeze re-audit](../../../docs/current/audits/CONNECTOR_V3_FREEZE_READINESS_AND_ADAPTATION_REAUDIT_2026-08-03.md).
 
 Historical Preview evidence remains tied to its exact SHA/MVID/runtime and
 cannot qualify the current artifact. Bridge v2 documents are migration and

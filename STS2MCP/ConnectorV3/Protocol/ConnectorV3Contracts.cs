@@ -7,7 +7,7 @@ namespace STS2_MCP.ConnectorV3.Protocol;
 
 public static class ConnectorV3Contract
 {
-    public const string ProtocolVersion = "3.0-preview.11";
+    public const string ProtocolVersion = "3.0-preview.12";
     public const string GatewayId = "sts2_connector_v3_gateway";
     public const string GatewayName = "STS2 Semantic Gateway";
     public const string ObservationSchema = "sts2.connector.v3/observation-1";

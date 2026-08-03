@@ -239,48 +239,13 @@ interface GeneratedCardChoiceSurfaceBase {
   completeness: BridgeSurfaceCompleteness;
 }
 
-/** Source-bound run-deck acquisition; it does not authorize combat generators. */
-export interface GeneratedRunDeckCardChoiceSurface extends GeneratedCardChoiceSurfaceBase {
-  purpose: "acquire_one_generated_card";
-  sourceKind: "lead_paperweight";
-  destination: "run_deck";
-  selectedCardCostPolicy: "unchanged";
-  overflowDestination?: undefined;
+export interface GeneratedCardChoiceSurface extends GeneratedCardChoiceSurfaceBase {
+  purpose: string;
+  sourceKind: string;
+  destination: string;
+  selectedCardCostPolicy: string;
+  overflowDestination?: string;
 }
-
-/** Hefty Tablet choice; selection and skip both add a separate Injury. */
-export interface HeftyTabletCardChoiceSurface extends GeneratedCardChoiceSurfaceBase {
-  purpose: "acquire_one_generated_rare_card_plus_injury";
-  sourceKind: "hefty_tablet";
-  destination: "run_deck";
-  selectedCardCostPolicy: "unchanged";
-  overflowDestination?: undefined;
-}
-
-/** Source-bound native generated-card potion; full hands redirect to discard. */
-export interface GeneratedCombatCardChoiceSurface extends GeneratedCardChoiceSurfaceBase {
-  purpose: "choose_one_generated_combat_card";
-  sourceKind: "colorless_potion" | "attack_potion" | "skill_potion" | "power_potion" | "splash" | "quasar";
-  destination: "combat_hand";
-  selectedCardCostPolicy: "free_this_turn" | "unchanged";
-  overflowDestination: "combat_discard_if_hand_full";
-}
-
-/** Forced enemy choice; the selected temporary card applies an immediate effect. */
-export interface ImmediateCombatEffectCardChoiceSurface extends GeneratedCardChoiceSurfaceBase {
-  purpose: "choose_one_immediate_enemy_effect";
-  sourceKind: "knowledge_demon_curse";
-  destination: "immediate_player_effect";
-  selectedCardCostPolicy: "not_applicable";
-  overflowDestination?: undefined;
-  canSkip: false;
-}
-
-export type GeneratedCardChoiceSurface =
-  | GeneratedRunDeckCardChoiceSurface
-  | HeftyTabletCardChoiceSurface
-  | GeneratedCombatCardChoiceSurface
-  | ImmediateCombatEffectCardChoiceSurface;
 
 /** Two-stage selection of one atomic visible package of cards. */
 export interface CardBundleSelectionSurface {

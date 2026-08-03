@@ -1,6 +1,6 @@
 # Connector V3 Protocol
 
-Source protocol: `3.0-preview.11`
+Source protocol: `3.0-preview.12`
 
 Schemas:
 
@@ -56,6 +56,11 @@ advertise state-bound read availability only; they never authorize mutation.
 A visible unsupported interaction remains present with
 `execution_support=unsupported` and no candidates.
 
+An observed known UI with an unresolved exact source is also visible
+unsupported. The Gateway retains the observed family and safe reason, but it
+must not label the partial Surface supported or publish candidates. Re does
+not decode that partial payload as a completed supported contract.
+
 `interaction.phase` and `execution_support` are independent. A known family
 may have `phase=settling`, zero candidates and `execution_support=supported`:
 no command is legal at that instant, but the family contract is not missing.
@@ -105,6 +110,14 @@ Event-option candidates bind the exact event screen and option entity.
 Treasure candidates bind the exact room and, for relic choice, the exact
 relic entity. Both families resolve current native controls at execution and
 do not execute through Bridge v2 action IDs or Provider action closures.
+
+Generated-card choices expose source, purpose, destination, cost policy,
+select/skip operations and the current selectable entity set. Those fields are
+a Gateway-local source contract, not a Re-maintained source whitelist. Re
+checks that every candidate uses the Surface's current operation and exact
+screen/card/control bindings. A new source still requires Gateway owner,
+Commit, Outcome and authority evidence; emitting a new string never grants
+permission.
 
 Combat-hand selection exposes the exact current hand owner, visible card
 membership, selected membership, currently selectable/deselectable card IDs

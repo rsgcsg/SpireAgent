@@ -29,7 +29,7 @@ have direct V3 consumer projections. The active V3 adapter/client/control path:
 
 - imports no `BridgeV2RestClient` or V2 protocol;
 - requests no V2 capabilities/state/action sidecar;
-- accepts only `3.0-preview.11` and its exact schemas;
+- accepts only `3.0-preview.12` and its exact schemas;
 - strictly decodes Gateway/game/Modset/runtime/Patch identity;
 - strictly decodes permission/qualification scopes and records them in run
   metadata;
@@ -64,10 +64,11 @@ checkpoint. It does not reinterpret the Gateway Outcome.
 
 ## Evidence
 
-The final Preview.11 artifact has strict Re inspect, one completed menu canary,
-stable successor and one Gateway stale refusal. The bounded Agent run recorded
-all exact identities but failed at the first DeepSeek network request before
-command submission. This is not a Journey or qualification.
+The Preview.11 artifact has strict Re inspection, direct multi-family receipts,
+stable successors, stale refusal and one 203-decision completed Journey. Its
+44-run sample also exposed controller cleanup, Quasar decoding, rest witness
+and combat-hand unknown defects repaired by Preview.12. Preview.12 Live and
+durable qualification remain non-claims.
 
 ## Local Validation
 

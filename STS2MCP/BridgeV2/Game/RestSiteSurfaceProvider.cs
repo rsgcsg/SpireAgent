@@ -25,6 +25,9 @@ namespace STS2_MCP.BridgeV2.Game;
 /// </summary>
 internal sealed class RestSiteSurfaceProvider : IBridgeSurfaceProvider
 {
+    internal const string OptionCompletionWitness =
+        "rest_option_source_specific_heal_progress_or_smith_upgrade_child_observed";
+
     private const string SurfaceKind = "rest_site";
 
     public string Kind => SurfaceKind;
@@ -184,15 +187,9 @@ internal sealed class RestSiteSurfaceProvider : IBridgeSurfaceProvider
             SmithRestSiteOption => () => NOverlayStack.Instance?.Peek() is NDeckUpgradeSelectScreen,
             _ => () => false
         };
-        string completionEvidence = expectedOption switch
-        {
-            HealRestSiteOption => "rest_heal_minimum_hp_and_option_progress_or_reward_child_observed",
-            SmithRestSiteOption => "rest_smith_exact_upgrade_child_opened",
-            _ => "rest_option_completion_not_implemented"
-        };
         return BridgeActionStartResult.Started(
             completion,
-            completionEvidence,
+            OptionCompletionWitness,
             allowIntermediateStateChanges: true);
     }
 

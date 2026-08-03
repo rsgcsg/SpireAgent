@@ -83,8 +83,10 @@ journey and durable qualification are separate evidence levels.
 
 ## Current Limits
 
-Preview.11 is a freeze candidate. Its exact load, strict decode, one menu
-canary and stale refusal are proven; rare selectors, current/stale read paths,
-enabled Human-page lifecycle and a same-artifact Journey remain. The current
-DeepSeek network fails before command submission. Unknown interactions remain
-visible and fail closed.
+Preview.12 is a conditional freeze candidate. Preview.11 supplied an exact
+203-decision completed Journey and exposed Quasar consumer drift, rest witness
+drift, a combat-hand unknown boundary and interrupted controller cleanup.
+Preview.12 repairs those paths and removes Re's generated-source whitelist;
+its cold-load and changed-path Live evidence remain pending. Unknown
+interactions remain visible and fail closed, and no session result is durable
+qualification.

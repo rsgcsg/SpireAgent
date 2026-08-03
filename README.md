@@ -8,10 +8,10 @@ state-bound Semantic Gateway.
   transport adapter.
 
 Connector V3 is the only current target. Source protocol is
-`3.0-preview.11`. The old root Agent and Connector V2 are retained only as
+`3.0-preview.12`. The old root Agent and Connector V2 are retained only as
 history under [`archive/`](archive/).
 
-> **Project maturity:** Connector V3 freeze candidate. There is not yet a packaged
+> **Project maturity:** Connector V3 conditional freeze candidate. There is not yet a packaged
 > Steam Workshop/public binary release. Public users can build and test from
 > source; installed or loaded status is always local-machine evidence.
 
@@ -63,12 +63,13 @@ secrets, game DLLs and deployment directories are never committed.
 
 ## Current Direction
 
-The V3 production source path is closed: 94 explicit contracts, zero fallback
-authority, no Provider action publication and no active Re V2 sidecar. The
-remaining freeze gates are final-artifact selector/read canaries, full optional
-Human-page evidence, loaded rollback/revoke and one same-artifact ordinary
-Journey. Workshop packaging, Companion, Agent SDK, Headless and learning are
-later projects and must not acquire Gateway authority.
+The V3 production path has 94 explicit contracts, zero fallback authority, no
+Provider action publication and no active Re V2 sidecar. Preview.11 completed
+an exact-artifact ordinary Journey but exposed source-contract, witness and
+shutdown defects fixed in Preview.12. Preview.12 remains a conditional freeze
+candidate pending cold-load and targeted Live verification. Workshop
+packaging, Companion, Agent SDK, Headless and learning are later projects and
+must not acquire Gateway authority.
 
 - [Documentation map](docs/current/DOCUMENT_MAP.md)
 - [Current status](docs/current/STATUS.md)

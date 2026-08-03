@@ -6,7 +6,7 @@ exact-runtime evidence are canonical in
 
 ## Current Contract
 
-Re strictly accepts `3.0-preview.11` capabilities, control, observations and
+Re strictly accepts `3.0-preview.12` capabilities, control, observations and
 receipts. It preserves:
 
 - exact Gateway, game, Modset, runtime and Patch identity;
@@ -22,23 +22,24 @@ completion.
 
 ## Coverage
 
-| Area | Re implementation | Automated evidence | Final Preview.11 Live |
+| Area | Re implementation | Automated evidence | Preview.11 Live baseline / Preview.12 pending |
 |---|---|---|---|
 | capability/control/identity | strict direct V3 | schema, scope and lease tests | observed |
 | observation/receipt | strict direct V3 | identity/lifecycle tests | observed |
-| combat | typed V3 commands | card/potion/target/end-turn tests | pending |
-| combat hand/pile | typed selectors | stage/membership/command tests | pending |
-| menus/map/events/game-over | typed facts/candidates | owner/control/entity tests | main-menu canary only |
-| shops/rest/treasure/rewards | typed facts/candidates | source/capacity/Outcome tests | pending |
-| generated choice | source-operation parity | mismatch/skip/binding tests | pending |
-| upgrade/removal/enchant | independent selectors | stage/source/Outcome tests | pending |
-| transform/Wood Carvings | independent selectors | source/effect/stage tests | pending |
+| combat | typed V3 commands | card/potion/target/end-turn tests | card/end-turn receipts observed; not every potion |
+| combat hand/pile | typed selectors | stage/membership/command tests | reversible hand and pile actions observed; hand confirm repair pending |
+| menus/map/events/game-over | typed facts/candidates | owner/control/entity tests | direct actions and completed boundary observed |
+| shops/rest/treasure/rewards | typed facts/candidates | source/capacity/Outcome tests | direct receipts observed; rest repair pending |
+| generated choice | Gateway source-local operation parity | mismatch/skip/binding/holdout tests | Quasar exposed Preview.11 Re drift; repair pending |
+| upgrade/removal/enchant | independent selectors | stage/source/Outcome tests | supported sources observed; unknown source failed closed |
+| transform/Wood Carvings | independent selectors | source/effect/stage tests | incomplete; one Wood action hit controller lease conflict |
 | Inspection | typed state-token reads | current/stale tests | final reads pending |
 | linked detail | bounded Surface card | entity/token tests | final reads pending |
 | compact Prompt | projection v1 | payload/hash/dedup tests | provider boundary reached |
 
-The final bounded run failed at the provider network boundary before command
-submission. Historical MVID journeys remain regression evidence only.
+Preview.11 produced one exact-artifact 203-decision completed Journey and one
+provider-only terminal among 44 runs. Preview.12 has no Live evidence until a
+new cold load; historical MVID evidence never grants its authority.
 
 ## Fail-Closed Rules
 

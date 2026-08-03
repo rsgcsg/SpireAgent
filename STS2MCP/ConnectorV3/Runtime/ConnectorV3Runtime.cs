@@ -409,10 +409,11 @@ internal static partial class ConnectorV3Runtime
         (string stateToken, long sequence) = StateIdentity.Observe(signature);
         string interactionId = "interaction_" + BridgeHash.Text(
             $"{stateToken}|{draft.Surface.Kind}|{draft.Readiness}")[..20];
+        bool visibleUnsupported = draft.Surface is UnsupportedSurface;
         string executionSupport = DetermineExecutionSupport(draft, bindings);
         string status = draft.Readiness == "ready" && bindings.Count > 0
             ? "actionable_complete"
-            : draft.Surface.Kind == "unsupported"
+            : visibleUnsupported
                 ? "actionable_partial"
                 : "observed";
         var interaction = new ConnectorV3Interaction(
@@ -432,9 +433,9 @@ internal static partial class ConnectorV3Runtime
             v3Visibility.CoreStatus == "complete"
                 ? "complete_for_declared_contract"
                 : "partial_for_declared_contract",
-            draft.Surface.Kind == "unsupported" ? "partial" : "complete",
+            visibleUnsupported ? "partial" : "complete",
             executionSupport,
-            draft.Surface.Kind == "unsupported"
+            visibleUnsupported
                 ? new[] { draft.Surface.Kind }
                 : Array.Empty<string>(),
             v3Visibility.HiddenByPolicy);
@@ -3601,7 +3602,8 @@ internal static partial class ConnectorV3Runtime
             draft.Readiness,
             draft.Surface.Kind,
             bindings.Count,
-            bindings.Any(binding => binding.Candidate.AuthorityState == "trial"));
+            bindings.Any(binding => binding.Candidate.AuthorityState == "trial"),
+            draft.Surface is UnsupportedSurface);
     }
 
     internal static string ClassifyExecutionSupport(
@@ -3609,9 +3611,10 @@ internal static partial class ConnectorV3Runtime
         string readiness,
         string surfaceKind,
         int bindingCount,
-        bool hasTrialBinding)
+        bool hasTrialBinding,
+        bool visibleUnsupported = false)
     {
-        if (!actionExecutionAllowed || surfaceKind == "unsupported")
+        if (!actionExecutionAllowed || surfaceKind == "unsupported" || visibleUnsupported)
             return "unsupported";
         // A known native interaction can be settling without any command being
         // legal now. Empty candidates during that phase are not an unsupported

@@ -2,7 +2,7 @@
 
 ## V3-0: Production Source Cutover
 
-Status: complete at `3.0-preview.11`.
+Status: complete at `3.0-preview.12` source.
 
 - 94 explicit native contracts and 0 fallback authority;
 - 0 Provider action publication;
@@ -15,26 +15,30 @@ files. They are not another authority, protocol or executor.
 
 ## V3-1: Exact Runtime Candidate
 
-Status: partially complete.
+Status: Preview.11 Live complete; Preview.12 cold-load pending.
 
-The final Preview.11 artifact is built, installed and loaded with exact
+The Preview.11 artifact is built, installed and loaded with exact
 SHA/MVID/runtime/game/Modset/Patch identity. V3 capability/control/observation
 decode, one menu mutation, stable successor, stale rejection, idempotent
 receipt read and Human-profile disabled refusal are Live-observed.
 
-Exit: exercise the rare selector/potion/read matrix on this exact artifact,
-without transferring authority from historical MVIDs.
+Preview.12 repairs Quasar's duplicate Re source whitelist, rest witness drift,
+combat-hand confirm completion, visible-unsupported classification and
+interrupted controller release. Exit: cold-load Preview.12 and exercise those
+repairs plus the remaining rare selector/potion/read matrix without
+transferring authority from Preview.11.
 
 ## V3-2: Ordinary Journey
 
-Status: blocked by the current provider network.
+Status: exact Preview.11 Journey achieved.
 
-Historical exact-artifact journeys include Preview.7's 202-command game, but
-they do not qualify Preview.11. The current bounded run failed at its first
-DeepSeek request before submitting a command.
+`run-20260803003138-awi3r5` returned through the completed-game boundary after
+203 direct decisions on the exact Preview.11 artifact. A journey proves the
+reached sequence, not unexercised sources or durable qualification.
 
-Exit: one same-artifact ordinary vanilla Journey with honest attribution of
-stale, settling, unsupported, unknown and terminal states.
+Exit for Preview.12: one post-repair bounded run or targeted canaries that
+exercise the changed paths; another full Journey is desirable but is not a
+substitute for the rare-source gates.
 
 ## V3-3: Information Contract
 
@@ -53,7 +57,7 @@ session Live evidence on the final artifact.
 
 ## V3-4: Authority, Rollback And Freeze
 
-Status: FREEZE CANDIDATE.
+Status: CONDITIONAL FREEZE CANDIDATE.
 
 Session trial scopes are exact-operation/runtime grants. Qualified and durable
 scopes remain empty. Disk rollback restore and drift detection are proven;
@@ -61,8 +65,8 @@ loaded rollback and revoke lifecycle remain to be exercised.
 
 Freeze gates:
 
-1. exact final-artifact selector/read matrix;
-2. same-artifact Journey;
+1. Preview.12 cold-load and changed-path canaries;
+2. remaining exact final-artifact selector/read matrix;
 3. optional Human profile Live lifecycle;
 4. loaded rollback/revoke evidence;
 5. reviewed evidence-to-support matrix with no inherited qualification.

@@ -22,6 +22,9 @@ namespace STS2_MCP.BridgeV2.Game;
 /// </summary>
 internal sealed class CombatHandCardSelectionSurfaceProvider : IBridgeSurfaceProvider
 {
+    internal const string ConfirmCompletionWitness =
+        "combat_hand_confirm_control_consumed_or_owner_closed";
+
     private const string SurfaceKind = "combat_hand_card_selection";
     private const string ReflectionEvidence =
         "sts2-v0.109.0:cached_reflection:NPlayerHand._prefs+_selectedCards";
@@ -302,9 +305,18 @@ internal sealed class CombatHandCardSelectionSurfaceProvider : IBridgeSurfacePro
 
         confirm.ForceClick();
         return BridgeActionStartResult.Started(
-            () => !IsCurrentSelection(expectedHand),
-            "combat_hand_selection_confirmed_and_closed");
+            () => ConfirmCompletionObserved(
+                IsCurrentSelection(expectedHand),
+                confirm.IsEnabled,
+                McpMod.IsNodeVisible(confirm)),
+            ConfirmCompletionWitness);
     }
+
+    internal static bool ConfirmCompletionObserved(
+        bool ownerIsCurrent,
+        bool confirmIsEnabled,
+        bool confirmIsVisible) =>
+        !ownerIsCurrent || !confirmIsEnabled || !confirmIsVisible;
 
     private static BridgeActionStartResult StartClosePeek(NPlayerHand expectedHand)
     {

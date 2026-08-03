@@ -8,9 +8,10 @@ a precise visible unsupported boundary.
 
 ## Current Boundary
 
-Connector V3 source migration is closed. The remaining work is exact-runtime
-qualification and freeze evidence, not another protocol or architecture
-generation.
+Connector V3 macro migration is closed. Preview.12 is a bounded correction of
+source-contract composition, witness parity, visible-unsupported projection
+and controller lifecycle. The remaining work is exact-runtime freeze evidence,
+not another protocol or architecture generation.
 
 The production path is:
 
@@ -30,18 +31,20 @@ supervision and local evidence. Neither REST nor MCP adds game semantics.
 
 1. Keep fresh-clone deployment and source/build/install/load attribution
    reproducible.
-2. Preserve the Preview.11 source closure: 94 explicit contracts, zero
+2. Preserve the Preview.12 source closure: 94 explicit contracts, zero
    fallback authority, zero Provider action publication and no active Re V2
    sidecar.
-3. Exercise the final exact-artifact targetless potion, selector, Inspection
+3. Cold-load and exercise the Preview.12 Quasar/rest/combat-hand/unsupported/
+   interrupted-controller corrections.
+4. Exercise the final exact-artifact targetless potion, selector, Inspection
    and linked-detail matrix.
-4. Exercise `native_pages.v1` open/read/return/recovery while keeping it
+5. Exercise `native_pages.v1` open/read/return/recovery while keeping it
    default-off and non-authorizing.
-5. Restore and cold-load a rollback artifact, prove revoke/drift behavior, then
+6. Restore and cold-load a rollback artifact, prove revoke/drift behavior, then
    reinstall the candidate.
-6. Run one same-artifact ordinary Journey and review every non-completed
-   lifecycle result.
-7. Freeze only after support, qualification and evidence records agree.
+7. Review the completed Preview.11 Journey and new Preview.12 evidence without
+   transferring session authority across artifacts.
+8. Freeze only after support, qualification and evidence records agree.
 
 ## Freeze Conditions
 
@@ -61,10 +64,12 @@ supervision and local evidence. Neither REST nor MCP adds game semantics.
 
 ## Current Verdict
 
-`FREEZE CANDIDATE`. Source, tests, build, install, load, one menu canary and
-stale refusal are complete. Rare-family Live coverage, Human native-page Live,
-loaded rollback and a same-artifact Journey remain open. The provider network
-currently blocks the Journey before command submission.
+`CONDITIONAL FREEZE CANDIDATE`. Preview.11 produced one exact-artifact
+203-decision completed journey plus promotion, quarantine and unknown-no-retry
+evidence. Preview.12 source/tests repair the exposed defects and remove Re's
+generated-source whitelist. Preview.12 cold-load, changed-path canaries,
+remaining rare-family reads, Human native-page Live and loaded rollback/revoke
+remain open.
 
 ## Deferred
 

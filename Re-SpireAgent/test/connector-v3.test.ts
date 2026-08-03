@@ -71,7 +71,7 @@ const SOURCE: AdapterDescriptor = {
 
 function combatObservation(): ConnectorV3Observation {
   return decodeConnectorV3Observation({
-    protocol_version: "3.0-preview.11",
+    protocol_version: "3.0-preview.12",
     schema: "sts2.connector.v3/observation-1",
     profile: "semantic_accessibility.tools.v1",
     state_token: "state-fixture-1",
@@ -344,11 +344,11 @@ function generatedCombatChoiceObservation(): ConnectorV3Observation {
     phase: "ready",
     execution_support: "trial",
     support_reason: null,
-    affordances: ["select_entity", "activate_control"],
+    affordances: ["choose", "activate_control"],
     command_candidates: [
       {
         candidate_id: "candidate-generated-1",
-        command: "select_entity",
+        command: "choose",
         operation: "select_generated_combat_card",
         label: "Choose True Grit",
         operands: {
@@ -365,7 +365,7 @@ function generatedCombatChoiceObservation(): ConnectorV3Observation {
       },
       {
         candidate_id: "candidate-generated-2",
-        command: "select_entity",
+        command: "choose",
         operation: "select_generated_combat_card",
         label: "Choose Battle Trance",
         operands: {
@@ -1912,7 +1912,7 @@ function treasureObservation(): ConnectorV3Observation {
 
 function connectorCapabilities() {
   return {
-    protocol_version: "3.0-preview.11",
+    protocol_version: "3.0-preview.12",
     observation_schema: "sts2.connector.v3/observation-1",
     command_schema: "sts2.connector.v3/command-1",
     inspection_schema: "sts2.connector.v3/inspection-1",
@@ -1997,13 +1997,13 @@ describe("Connector V3 strict contract", () => {
       last_seen_at: "2026-08-03T00:00:00Z"
     };
     const registration = decodeConnectorV3ClientRegistration({
-      protocol_version: "3.0-preview.11",
+      protocol_version: "3.0-preview.12",
       schema: "sts2.connector.v3/control-1",
       runtime_instance_id: "fixture-runtime",
       client
     }).data;
     const lease = decodeConnectorV3ControllerLeaseResponse({
-      protocol_version: "3.0-preview.11",
+      protocol_version: "3.0-preview.12",
       schema: "sts2.connector.v3/control-1",
       runtime_instance_id: "fixture-runtime",
       status: "controller_acquired",
@@ -2019,7 +2019,7 @@ describe("Connector V3 strict contract", () => {
       }
     }).data;
 
-    expect(registration.protocol_version).toBe("3.0-preview.11");
+    expect(registration.protocol_version).toBe("3.0-preview.12");
     expect(lease.controller?.client_session_id)
       .toBe(registration.client.client_session_id);
     expect(() => decodeConnectorV3ClientRegistration({
@@ -2050,7 +2050,7 @@ describe("Connector V3 strict contract", () => {
 
   it("rejects unknown mutation receipts that permit retry", () => {
     expect(() => decodeConnectorV3Receipt({
-      protocol_version: "3.0-preview.11",
+      protocol_version: "3.0-preview.12",
       request_id: "request-fixture",
       status: "unknown",
       application: "unknown",
@@ -2066,7 +2066,7 @@ describe("Connector V3 strict contract", () => {
 
   it("decodes state-bound read-only V3 inspections", () => {
     const decoded = decodeConnectorV3Inspection({
-      protocol_version: "3.0-preview.11",
+      protocol_version: "3.0-preview.12",
       schema: "sts2.connector.v3/inspection-1",
       inspection_id: "v3inspection-fixture",
       expected_state_token: "state-fixture-1",
@@ -2098,7 +2098,7 @@ describe("Connector V3 strict contract", () => {
 
   it("rejects V3 inspections whose state token drifted", () => {
     expect(() => decodeConnectorV3Inspection({
-      protocol_version: "3.0-preview.11",
+      protocol_version: "3.0-preview.12",
       schema: "sts2.connector.v3/inspection-1",
       inspection_id: "v3inspection-fixture",
       expected_state_token: "state-fixture-1",
@@ -2127,7 +2127,7 @@ describe("Connector V3 strict contract", () => {
 
   it("decodes only state-bound linked card detail for the exact entity", () => {
     const detail = {
-      protocol_version: "3.0-preview.11",
+      protocol_version: "3.0-preview.12",
       schema: "sts2.connector.v3/linked-detail-1",
       detail_id: "detail-fixture",
       expected_state_token: "state-fixture-1",
@@ -2498,6 +2498,63 @@ describe("Connector V3 strict contract", () => {
     expect(envelope.currentState.stability).toBe("invalid");
     expect(envelope.currentState.actionAuthority).toBe("none");
     expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toEqual([]);
+  });
+
+  it("accepts the exact Quasar choose command without a V2-shaped action", () => {
+    const observation = generatedCombatChoiceObservation();
+    const surface = observation.surface as Record<string, unknown>;
+    surface.source_kind = "quasar";
+    surface.selected_card_cost_policy = "unchanged";
+    surface.select_operation = "choose_quasar_card";
+    surface.skip_operation = "skip_quasar_choice";
+    for (const command of observation.interaction.command_candidates) {
+      if (command.command === "choose") command.operation = "choose_quasar_card";
+      if (command.command === "activate_control") {
+        command.operation = "skip_quasar_choice";
+        command.operands.control_id = "skip_quasar_choice";
+      }
+    }
+    const projected = projectConnectorV3ForRe(
+      observation,
+      observation as unknown as JsonObject
+    );
+
+    const envelope = normalizeCurrentState(projected.rawState, SOURCE);
+
+    expect(envelope.diagnostics.status).toBe("ok");
+    expect(envelope.currentState.surface.kind).toBe("generated_card_choice");
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toHaveLength(3);
+  });
+
+  it("accepts a source-local generated-choice contract without a Re source whitelist", () => {
+    const observation = generatedCombatChoiceObservation();
+    const surface = observation.surface as Record<string, unknown>;
+    surface.source_kind = "holdout_event_source";
+    surface.purpose = "choose_one_source_bound_card";
+    surface.selected_card_cost_policy = "source_contract_defined";
+    surface.select_operation = "choose_holdout_event_card";
+    surface.skip_operation = "skip_holdout_event_choice";
+    for (const command of observation.interaction.command_candidates) {
+      if (command.command === "choose") command.operation = "choose_holdout_event_card";
+      if (command.command === "activate_control") {
+        command.operation = "skip_holdout_event_choice";
+        command.operands.control_id = "skip_holdout_event_choice";
+      }
+    }
+    const projected = projectConnectorV3ForRe(
+      observation,
+      observation as unknown as JsonObject
+    );
+
+    const envelope = normalizeCurrentState(projected.rawState, SOURCE);
+
+    expect(envelope.diagnostics.status).toBe("ok");
+    expect(envelope.currentState.surface).toMatchObject({
+      kind: "generated_card_choice",
+      sourceKind: "holdout_event_source",
+      purpose: "choose_one_source_bound_card"
+    });
+    expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toHaveLength(3);
   });
 
   it("fails a generated-card choice closed when commands exceed current selectable facts", () => {
@@ -2946,7 +3003,7 @@ describe("Connector V3 strict contract", () => {
       actionAuthority: "none",
       surface: {
         kind: "unsupported",
-        reason: "No exact current command binding is authorized."
+        reason: "The exact source contract is not recognized."
       }
     });
     expect(buildAllowedActions(envelope.currentState, envelope.stateHash)).toEqual([]);
@@ -3064,7 +3121,7 @@ describe("Connector V3 strict contract", () => {
           };
           clientInstanceId = body.client_instance_id;
           return json({
-            protocol_version: "3.0-preview.11",
+            protocol_version: "3.0-preview.12",
             schema: "sts2.connector.v3/control-1",
             runtime_instance_id: BRIDGE.runtime_instance_id,
             client: {
@@ -3080,7 +3137,7 @@ describe("Connector V3 strict contract", () => {
         }
         if (url.endsWith("/api/v3/controller/acquire")) {
           return json({
-            protocol_version: "3.0-preview.11",
+            protocol_version: "3.0-preview.12",
             schema: "sts2.connector.v3/control-1",
             runtime_instance_id: BRIDGE.runtime_instance_id,
             status: "controller_acquired",
@@ -3098,7 +3155,7 @@ describe("Connector V3 strict contract", () => {
         if (url.endsWith("/api/v3/commands")) {
           const body = JSON.parse(String(init?.body)) as any;
           return json({
-            protocol_version: "3.0-preview.11",
+            protocol_version: "3.0-preview.12",
             request_id: body.request_id,
             status: "completed",
             application: "confirmed",
@@ -3127,7 +3184,7 @@ describe("Connector V3 strict contract", () => {
         }
         if (url.endsWith("/api/v3/controller/release")) {
           return json({
-            protocol_version: "3.0-preview.11",
+            protocol_version: "3.0-preview.12",
             schema: "sts2.connector.v3/control-1",
             runtime_instance_id: BRIDGE.runtime_instance_id,
             status: "controller_released",

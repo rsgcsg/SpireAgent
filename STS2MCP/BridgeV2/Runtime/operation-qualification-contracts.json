@@ -1,6 +1,6 @@
 {
   "schema_version": 3,
-  "catalog_id": "bridge_v2_native_action_contracts_v15",
+  "catalog_id": "bridge_v2_native_action_contracts_v16",
   "authority_effect": "explicit_native_contracts_only",
   "contracts": [
     {
@@ -888,7 +888,7 @@
       "operand_contract": "exact_current_hand_selected_membership_mode_bounds_and_confirm_control",
       "commit_contract": "NPlayerHand.%SelectModeConfirmButton.ForceClick",
       "completion_boundary": "continuation_handoff_observed",
-      "witness_id": "combat_hand_selection_confirmed_and_closed",
+      "witness_id": "combat_hand_confirm_control_consumed_or_owner_closed",
       "risk_class": "persistent_run_mutation"
     },
     {

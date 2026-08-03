@@ -24,7 +24,7 @@ _trust_env: bool = True
 _http: httpx.AsyncClient | None = None
 _control_lock: asyncio.Lock | None = None
 _control: dict | None = None
-_V3_PROTOCOL = "3.0-preview.11"
+_V3_PROTOCOL = "3.0-preview.12"
 _V3_CONTROL_SCHEMA = "sts2.connector.v3/control-1"
 
 

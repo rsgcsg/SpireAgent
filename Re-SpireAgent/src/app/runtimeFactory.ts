@@ -9,6 +9,7 @@ import type { RunMetadata } from "../recording/types.js";
 import { SettlementWatcher } from "../runtime/settlementWatcher.js";
 import { acquireRuntimeLock } from "../runtime/runtimeLock.js";
 import { TickOrchestrator } from "../runtime/tickOrchestrator.js";
+import { onceAsync } from "./gracefulShutdown.js";
 
 export async function createRuntime(config: RuntimeConfig): Promise<{
   adapter: Sts2ConnectorV3Adapter;
@@ -92,14 +93,18 @@ export async function createConnectorRuntime(config: RuntimeConfig): Promise<{
       endTurnTimeoutMs: config.runtime.endTurnSettlementTimeoutMs,
       roomTransitionTimeoutMs: config.runtime.roomTransitionSettlementTimeoutMs
     });
+    const release = onceAsync(async () => {
+      try {
+        await adapter.close();
+      } finally {
+        await lock.release();
+      }
+    });
     return {
       adapter,
       normalize,
       settlement,
-      release: async () => {
-        await adapter.close();
-        await lock.release();
-      }
+      release
     };
   } catch (error) {
     await lock.release();

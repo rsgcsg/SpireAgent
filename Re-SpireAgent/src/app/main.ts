@@ -10,6 +10,7 @@ import { listRunIds, readRunMetadata, readRunRecords, readRunSummary } from "../
 import { classifyRunTermination, runLoop } from "../runtime/runLoop.js";
 import { parseCliInvocation } from "./cliArgs.js";
 import { runConnectorCanary } from "./connectorCanary.js";
+import { installGracefulShutdown } from "./gracefulShutdown.js";
 import { createRuntime } from "./runtimeFactory.js";
 
 async function main(): Promise<void> {
@@ -95,6 +96,7 @@ async function main(): Promise<void> {
   }
 
   const runtime = await createRuntime(config);
+  const removeSignalHandlers = installGracefulShutdown(runtime.release);
   try {
     if (invocation.command === "tick") {
       const result = await runtime.orchestrator.runTick(1, { dryRun: invocation.dryRun });
@@ -137,6 +139,7 @@ async function main(): Promise<void> {
       return;
     }
   } finally {
+    removeSignalHandlers();
     await runtime.release();
   }
 }

@@ -2,13 +2,14 @@
 
 ## Current Claim
 
-Connector V3 is a freeze candidate for ordinary vanilla single-player STS2 on
+Connector V3 is a conditional freeze candidate for ordinary vanilla single-player STS2 on
 the exact reviewed environment. It is not a claim of arbitrary game-version,
 Mod, multiplayer or cross-machine compatibility.
 
-The current source covers all cataloged ordinary vanilla single-player
-families with direct V3 contracts. Runtime support is still operation- and
-environment-scoped; source implementation alone grants nothing.
+The current source covers all cataloged operations with direct V3 contracts.
+That is not a claim that every source variant is cataloged. Runtime support is
+still source-, operation- and environment-scoped; source implementation alone
+grants nothing.
 
 ## Compatibility Identity
 
@@ -39,12 +40,17 @@ Mod-declared contracts cannot authorize themselves.
 | scoped-qualified | reviewed operation/environment evidence | only exact scope |
 | durable | persisted exact qualification | only while every identity matches |
 
-Current Preview.11 state:
+Exact Preview.11 runtime state:
 
 - encountered session canary scopes exist;
-- only `main_menu/open_singleplayer` was exercised;
+- many current operations promoted to `session_trial_confirmed`;
+- rest and combat-hand examples were quarantined after witness/unknown
+  evidence, while unknown sources never received authority;
 - scoped/durable qualification is empty;
 - persistent authority is disabled.
+
+Preview.12 changes contract fingerprints and runtime identity. It inherits no
+Preview.11 session authority and remains pending cold-load evidence.
 
 Canary is never whole-Surface, whole-origin or sibling-operation support.
 
@@ -64,8 +70,10 @@ operation/environment and cannot be inferred from prior MVIDs. Revoke and
 quarantine must fail closed before Commit.
 
 The current qualification store is empty. The support matrix must remain
-`FREEZE CANDIDATE` until rare-family Live evidence, Human profile lifecycle,
-loaded rollback/revoke and one same-artifact Journey are reviewed.
+`CONDITIONAL FREEZE CANDIDATE` until Preview.12 changed-path and rare-family
+Live evidence, Human profile lifecycle and loaded rollback/revoke are reviewed.
+Preview.11 already supplies one same-artifact completed Journey, but that does
+not qualify Preview.12 or unexercised sources.
 
 ## Rollback
 

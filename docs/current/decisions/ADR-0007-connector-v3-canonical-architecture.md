@@ -123,7 +123,7 @@ Reuse is internal implementation reuse, not V2 protocol authority.
 
 ## Source Closure And Remaining Debt
 
-At `3.0-preview.11`:
+At `3.0-preview.12`:
 
 - every currently cataloged family, including combat pile, deck transform and
   Wood Carvings, has typed direct V3 discovery/execution and a direct Re
@@ -259,3 +259,30 @@ refusal and disabled-profile Live evidence. Qualified and durable scopes are
 empty. Rare selectors, full Human-page lifecycle, loaded rollback/revoke and
 a same-artifact Journey remain, so the release state is `FREEZE CANDIDATE`,
 not `FROZEN`.
+
+### Preview.12 adaptation and freeze-readiness amendment
+
+The macro decision remains accepted, but later Preview.11 Live evidence
+rejected the claim that all remaining failures were merely closed gray scope.
+The sample contained source gaps, post-success witness quarantine, one
+consumer-side generated-choice whitelist drift, controller lease cleanup and
+one correct unknown-no-retry transition.
+
+Generated-choice source semantics are now Gateway-local. Re validates the
+current Surface's source-local operation, current card set and exact bindings;
+it does not enumerate every source kind or infer authority. This is the
+canonical composition rule for shared UI mechanics: visible mechanics may be
+shared, while source, owner, operands, Commit and Outcome remain exact and
+independently auditable.
+
+Source-unresolved known UI is projected as visible unsupported. Runtime
+witness constants for rest and combat-hand confirm are checked against the
+operation catalog, and Re performs idempotent graceful controller release on
+SIGINT/SIGTERM. None of these changes weaken single-writer, execute-time
+revalidation, native Commit, idempotency, unknown-no-retry or exact identity.
+
+Preview.12 is a `CONDITIONAL FREEZE CANDIDATE`. It requires cold-load and
+changed-path Live evidence. The existing empty durable qualification store is
+retained; Preview.11 session grants and quarantine records do not transfer.
+The detailed evidence and non-claims are in the
+[freeze re-audit](../audits/CONNECTOR_V3_FREEZE_READINESS_AND_ADAPTATION_REAUDIT_2026-08-03.md).

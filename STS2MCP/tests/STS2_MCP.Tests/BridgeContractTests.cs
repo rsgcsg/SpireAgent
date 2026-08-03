@@ -1030,6 +1030,20 @@ public sealed class BridgeContractTests
     }
 
     [Fact]
+    public void RestAndCombatHandRuntimeWitnessesMatchTheirAuthorityContracts()
+    {
+        BridgeOperationQualificationIdentity rest = Assert.IsType<BridgeOperationQualificationIdentity>(
+            BridgeOperationQualificationCatalog.Describe("rest_site", "choose_rest_option"));
+        BridgeOperationQualificationIdentity combatHand = Assert.IsType<BridgeOperationQualificationIdentity>(
+            BridgeOperationQualificationCatalog.Describe(
+                "combat_hand_card_selection",
+                "confirm_combat_hand_selection"));
+
+        Assert.Equal(RestSiteSurfaceProvider.OptionCompletionWitness, rest.WitnessId);
+        Assert.Equal(CombatHandCardSelectionSurfaceProvider.ConfirmCompletionWitness, combatHand.WitnessId);
+    }
+
+    [Fact]
     public void QualificationCatalogPartitionsEveryManifestOperationOnce()
     {
         IReadOnlyList<BridgeOperationQualificationIdentityInfo> catalog =

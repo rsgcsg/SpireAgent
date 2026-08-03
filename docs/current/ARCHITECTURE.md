@@ -86,9 +86,11 @@ create ledger or action authority.
 
 ## Source Closure
 
-All cataloged ordinary vanilla single-player families have direct V3
-discovery/execution and direct Re consumption. The operation catalog is
-94 explicit contracts and zero fallback authority. Connector V3 has its own
+All cataloged operation families have direct V3 discovery/execution and direct
+Re consumption. This does not mean every possible source variant is
+supported: unknown source/owner/Commit/Outcome combinations remain typed
+unsupported. The operation catalog is 94 explicit contracts and zero fallback
+authority. Connector V3 has its own
 non-executing command descriptor and consumes no Provider action draft or V2
 state/action sidecar.
 
@@ -98,12 +100,21 @@ internal library reuse, not a second external protocol, publication authority
 or executor. V2 routes remain migration/rollback diagnostics only and are
 unreachable from the active Re V3 entrypoint.
 
+Generated choices demonstrate the intended orthogonal composition. Gateway
+code audits the exact source, owner, visible semantics, Commit and Outcome;
+shared card-grid/entity mechanics produce parameterized commands; Re validates
+the current advertised source-local operation and operands without enumerating
+all source kinds. New owners or completion semantics still require Gateway
+code and evidence. Similar UI alone never grants reuse.
+
 ## Freeze Boundary
 
-The architecture and source are closed at `3.0-preview.11`, but the version
-is only a freeze candidate. Final freeze still requires rare-family
-exact-artifact canaries, Human profile Live lifecycle, loaded rollback/revoke
-and one same-artifact ordinary Journey.
+The macro architecture is retained at `3.0-preview.12`, but the artifact is
+only a conditional freeze candidate. Preview.11 completed an exact-artifact
+ordinary Journey and exposed four defects corrected by Preview.12. Final
+freeze still requires Preview.12 cold-load and changed-path canaries,
+remaining rare-family reads, Human profile Live lifecycle and loaded
+rollback/revoke.
 
 ## Non-Goals
 

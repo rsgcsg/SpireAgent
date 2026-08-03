@@ -280,10 +280,10 @@ export function normalizeConnectorV3CurrentState(
     : visibleUnsupported && observation
     ? {
         kind: "unsupported",
-        reason: observation.interaction.support_reason
-          ?? (typeof observation.surface.reason === "string"
-            ? observation.surface.reason
-            : "Connector V3 exposes this visible interaction without mutation support."),
+        reason: typeof observation.surface.reason === "string"
+          ? observation.surface.reason
+          : observation.interaction.support_reason
+            ?? "Connector V3 exposes this visible interaction without mutation support.",
         classification: "unknown_surface",
         observedTopLevelKeys: Object.keys(rawState).sort()
       }
@@ -528,16 +528,7 @@ function parseSharedState(
 
 function contextMatchesSurface(context: DirectContext, surface: DirectSurface): boolean {
   if (surface.kind === "generated_card_choice") {
-    const combatSource = [
-      "colorless_potion",
-      "attack_potion",
-      "skill_potion",
-      "power_potion",
-      "splash",
-      "quasar",
-      "knowledge_demon_curse"
-    ].includes(surface.source_kind);
-    return combatSource ? context.kind === "combat" : context.kind !== "menu";
+    return context.kind !== "menu";
   }
   if (context.kind === "menu") {
     return surface.kind === "main_menu"
@@ -928,7 +919,7 @@ function validateGeneratedChoiceCommand(
     hasBinding(command, "screen", surface.screen_entity_id)
       || "generated choice command is missing its exact screen binding"
   ];
-  if (command.command === "select_entity") {
+  if (command.command === "choose") {
     const card = surface.cards.find(
       (value) => value.entity_id === command.operands.card_id
     );
@@ -962,7 +953,7 @@ function validateGeneratedChoiceCommandSet(
 ): string[] {
   const expected = [
     ...surface.selectable_card_entity_ids.map(
-      (id) => `${surface.select_operation}|select_entity|${id}`
+      (id) => `${surface.select_operation}|choose|${id}`
     ),
     ...(surface.skip_available && surface.skip_operation
       ? [`${surface.skip_operation}|activate_control|`]
@@ -2585,41 +2576,15 @@ function projectGeneratedChoiceSurface(
     legalActions,
     completeness: projectCompleteness(observation)
   };
-  if (surface.source_kind === "lead_paperweight") {
-    return {
-      ...base,
-      purpose: surface.purpose,
-      sourceKind: surface.source_kind,
-      destination: surface.destination,
-      selectedCardCostPolicy: surface.selected_card_cost_policy
-    };
-  }
-  if (surface.source_kind === "hefty_tablet") {
-    return {
-      ...base,
-      purpose: surface.purpose,
-      sourceKind: surface.source_kind,
-      destination: surface.destination,
-      selectedCardCostPolicy: surface.selected_card_cost_policy
-    };
-  }
-  if (surface.source_kind === "knowledge_demon_curse") {
-    return {
-      ...base,
-      purpose: surface.purpose,
-      sourceKind: surface.source_kind,
-      destination: surface.destination,
-      selectedCardCostPolicy: surface.selected_card_cost_policy,
-      canSkip: false
-    };
-  }
   return {
     ...base,
     purpose: surface.purpose,
     sourceKind: surface.source_kind,
     destination: surface.destination,
     selectedCardCostPolicy: surface.selected_card_cost_policy,
-    overflowDestination: surface.overflow_destination
+    ...(surface.overflow_destination
+      ? { overflowDestination: surface.overflow_destination }
+      : {})
   };
 }
 

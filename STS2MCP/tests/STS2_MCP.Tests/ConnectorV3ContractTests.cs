@@ -51,6 +51,39 @@ public sealed class ConnectorV3ContractTests
                 hasTrialBinding));
     }
 
+    [Fact]
+    public void SourceUnresolvedSurfaceIsVisibleButUnsupportedEvenWhileDegraded()
+    {
+        Assert.Equal(
+            "unsupported",
+            ConnectorV3Runtime.ClassifyExecutionSupport(
+                actionExecutionAllowed: true,
+                readiness: "degraded",
+                surfaceKind: "deck_enchant_selection",
+                bindingCount: 0,
+                hasTrialBinding: false,
+                visibleUnsupported: true));
+    }
+
+    [Theory]
+    [InlineData(true, true, true, false)]
+    [InlineData(false, true, true, true)]
+    [InlineData(true, false, true, true)]
+    [InlineData(true, true, false, true)]
+    public void CombatHandConfirmAcceptsControlConsumptionOrOwnerHandoff(
+        bool ownerIsCurrent,
+        bool confirmIsEnabled,
+        bool confirmIsVisible,
+        bool expected)
+    {
+        Assert.Equal(
+            expected,
+            CombatHandCardSelectionSurfaceProvider.ConfirmCompletionObserved(
+                ownerIsCurrent,
+                confirmIsEnabled,
+                confirmIsVisible));
+    }
+
     [Theory]
     [InlineData(false, false, false, false, true)]
     [InlineData(true, false, false, true, true)]

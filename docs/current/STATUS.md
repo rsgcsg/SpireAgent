@@ -2,7 +2,7 @@
 
 Baseline date: 2026-08-03
 
-Connector V3 is a **FREEZE CANDIDATE**, not frozen. The active branch is
+Connector V3 is a **CONDITIONAL FREEZE CANDIDATE**, not frozen. The active branch is
 `connectorV3`; checkout identity remains a per-machine fact and must be read
 with `git rev-parse HEAD` and `git status --short`.
 
@@ -15,7 +15,7 @@ admission, execute-time native validation, native Commit and action-local
 Outcome. Re is a strict V3 consumer and receipt supervisor. REST and MCP are
 transports.
 
-Current source protocol is `3.0-preview.11`. The wire set includes
+Current source protocol is `3.0-preview.12`. The wire set includes
 `observation-1`, `command-1`, `control-1`, `inspection-1`,
 `linked-detail-1` and `human-equivalence-1`.
 
@@ -33,6 +33,12 @@ Current source protocol is `3.0-preview.11`. The wire set includes
   `control-1`.
 - V3 capabilities expose exact permission, qualification and Patch identity;
   Re strictly decodes and records those scopes.
+- Generated choices compose shared current-card mechanics with a
+  Gateway-local source contract. Re validates the advertised source-local
+  operation and operands without maintaining a second source whitelist.
+- Source-unresolved known UI is visible typed unsupported, not a malformed
+  partial supported Surface. Re releases controller/local locks on normal
+  exit, SIGINT and SIGTERM; Gateway TTL remains the crash fallback.
 - The production Prompt uses deterministic compact projection v1. It retains
   player-visible decision facts, exact actions, instance identity and the
   information boundary while removing duplicated action menus, duplicated
@@ -41,7 +47,7 @@ Current source protocol is `3.0-preview.11`. The wire set includes
   implemented, configurable and CLI-accessible. It is disabled by default,
   read-only, runtime/state bound, outside normal Agent flow and non-authorizing.
 
-Gateway tests pass 278/278. Re typecheck, 287/287 tests and production build
+Gateway tests pass 284/284. Re typecheck, 291/291 tests and production build
 pass. Python MCP syntax, CLI, identity, compatibility, permission,
 qualification, profile, migration, inventory, adaptation and clean-closure
 checks pass.
@@ -50,28 +56,34 @@ checks pass.
 
 The exact Preview.11 tuple and evidence levels are recorded in the
 [Preview.11 freeze-candidate closeout](../../STS2MCP/docs/connector-v3/PREVIEW_11_FREEZE_CANDIDATE_CLOSEOUT_2026-08-03.md).
-On that artifact:
+On that artifact, 44 exact-runtime runs recorded 309 decisions:
 
 - build, install and loaded SHA/MVID match;
 - V3 capabilities, control, observation and strict Re decoding were observed;
 - the Human profile advertised `enabled=false`, and an open request failed
   with `human_equivalence_disabled`;
-- `main_menu/open_singleplayer` completed through native Commit, receipt and
-  a stable `singleplayer_menu` successor;
+- one 203-decision ordinary Journey returned through the completed-game
+  boundary; combat, event, map, shop, rest, reward and multiple selector
+  families produced direct V3 receipts and successors;
 - an old state/interaction/operand tuple returned
   `not_executed/stale_state/not_applied`; polling the same request returned
   the same receipt and no controller remained;
-- the bounded Re run reached the model call but DeepSeek failed at the network
-  boundary before any command submission.
+- four interrupted runs encountered a still-live controller lease; Quasar was
+  rejected by duplicate Re source mechanics; rest Smith exposed a witness
+  mismatch; and combat-hand confirm produced an unknown outcome without retry.
 
-This proves one exact operation canary and safety behavior. It does not prove
-the rare selector matrix, a same-artifact Journey, Organic qualification or
-cross-version/Mod support.
+Preview.12 fixes those four defect classes and changes the operation catalog to
+`bridge_v2_native_action_contracts_v16`. Source/build/install are verified at
+SHA `18f07ca327bb8e6f58f227674ca82fbe7ba1a91fe41875e5dea6de406edd3eaa`
+and MVID `50309e88-c6a0-4faf-b2ae-7092f91eda7d`; the rollback snapshot is
+`STS2MCP/.local/deployments/2026-08-03T12-07-43-930Z`. Loaded identity and all
+Preview.12 Live behavior remain non-claims until cold start.
 
 ## Authority
 
-- canary-permitted: exact encountered operation scopes on the current runtime;
-- canary-exercised: `main_menu/open_singleplayer` only;
+- Preview.11 canary-permitted/exercised: exact encountered operations only;
+- Preview.11 session promotions and quarantines are runtime evidence, not
+  inherited Preview.12 authority;
 - durable/scoped qualification: none;
 - persistent authority: disabled;
 - Inspection and linked detail: read-only, state-bound and non-authorizing;
@@ -84,15 +96,17 @@ MVID, runtime, game, Modset or Patch changes never inherit authority.
 
 ## Freeze Blockers
 
-1. Exercise targetless potion, combat-pile, deck-transform, Wood Carvings,
-   generated choice, combat-hand reversible stages, current/stale Inspection
-   and linked detail on the exact final artifact.
-2. Exercise full native-page open/read/return/recovery with the optional Human
+1. Cold-load Preview.12, then re-exercise Quasar, rest, combat-hand confirm,
+   source-unresolved visible unsupported and immediate restart after SIGINT.
+2. Complete the remaining targetless potion, rare selector, current/stale
+   Inspection and linked-detail matrix on Preview.12 without transferring old
+   MVID evidence.
+3. Exercise full native-page open/read/return/recovery with the optional Human
    profile enabled under operator control.
-3. Complete one same-artifact ordinary Journey and classify every stop.
 4. Record loaded rollback/revoke behavior; disk restore detection is already
    proven, but rollback loading is not.
-5. Review evidence before creating any durable qualification.
+5. Review evidence before creating any durable qualification. Cross-version
+   and bounded-Mod requalification remain separate evidence gaps.
 
 ## Local Runtime Entry
 
