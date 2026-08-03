@@ -4,18 +4,14 @@ using System.Linq;
 using System.Reflection;
 using Godot;
 using MegaCrit.Sts2.Core.CardSelection;
-using MegaCrit.Sts2.Core.Context;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Enchantments;
-using MegaCrit.Sts2.Core.Models.Events;
-using MegaCrit.Sts2.Core.Models.Relics;
 using MegaCrit.Sts2.Core.Nodes.Cards;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
-using MegaCrit.Sts2.Core.Rooms;
 using MegaCrit.Sts2.Core.Runs;
 using STS2_MCP.BridgeV2.Protocol;
 using STS2_MCP.BridgeV2.Runtime;
@@ -25,7 +21,7 @@ namespace STS2_MCP.BridgeV2.Game;
 internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
 {
     private const string ReflectionEvidence =
-        "sts2-v0.110.0:NDeckEnchantSelectScreen+SelfHelpBook.SelectAndEnchant+Symbiote.Approach+Kifuda.AfterObtained";
+        "sts2-v0.110.1:NDeckEnchantSelectScreen+deck_enchant_source_contracts_v1";
     internal const string ToggleCompletionWitness =
         "selected_card_membership_changed";
     internal const string PreviewCompletionWitness =
@@ -491,8 +487,7 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
         NDeckEnchantSelectScreen screen,
         RelicModel expectedRelic)
     {
-        if (expectedRelic is not Kifuda
-            || !IsCurrentScreen(screen)
+        if (!IsCurrentScreen(screen)
             || !TryReadBinding(screen, out Binding? binding, out _)
             || !TryResolveSource(binding!, out DeckEnchantSource? source, out _))
         {
@@ -500,6 +495,7 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
         }
 
         return source!.Kind == "kifuda_relic_pickup"
+               && string.Equals(expectedRelic.Id.Entry, source.DefinitionId, StringComparison.Ordinal)
                && ReferenceEquals(expectedRelic.Owner.Relics
                    .FirstOrDefault(relic => ReferenceEquals(relic, expectedRelic)), expectedRelic);
     }
@@ -509,90 +505,17 @@ internal sealed class DeckEnchantSurfaceProvider : IBridgeSurfaceProvider
         out DeckEnchantSource? source,
         out string? error)
     {
-        source = null;
-        error = null;
-        RunState? runState = RunManager.Instance.DebugOnlyGetState();
-
-        if (runState?.CurrentRoom is MerchantRoom
-            && binding.Enchantment is Adroit
-            && binding.EnchantmentAmount == 3
-            && binding.Preferences.MinSelect == 0
-            && binding.Preferences.MaxSelect == 3
-            && binding.Preferences.RequireManualConfirmation
-            && !binding.Preferences.Cancelable
-            && LocalContext.GetMe(runState)?.Relics.Any(relic => relic is Kifuda) == true)
-        {
-            source = new DeckEnchantSource(
-                "kifuda_relic_pickup",
-                "KIFUDA",
-                "Kifuda.AfterObtained+Adroit:3+min0:max3+manual+noncancelable+owned-relic");
-            return true;
-        }
-
-        EventModel? eventModel = (runState?.CurrentRoom as EventRoom)?.LocalMutableEvent
-                                 ?? (runState?.CurrentRoom as EventRoom)?.CanonicalEvent;
-        DeckEnchantSource? eventSource = ResolveEventSource(eventModel, binding);
-        if (eventSource != null)
-        {
-            source = eventSource;
-            return true;
-        }
-
-        error =
-            "The active enchant screen does not match a source-audited vanilla Self-Help Book, Symbiote, or Kifuda contract.";
-        return false;
+        return DeckEnchantSourceContractRegistry.TryResolve(
+            RunManager.Instance.DebugOnlyGetState(),
+            binding.Enchantment,
+            binding.EnchantmentAmount,
+            binding.Preferences.MinSelect,
+            binding.Preferences.MaxSelect,
+            binding.Preferences.RequireManualConfirmation,
+            binding.Preferences.Cancelable,
+            out source,
+            out error);
     }
-
-    internal static DeckEnchantSource? ResolveEventSource(
-        EventModel? eventModel,
-        Binding binding)
-    {
-        if (eventModel is SelfHelpBook
-            && binding.EnchantmentAmount == 2
-            && binding.Preferences.MinSelect == 1
-            && binding.Preferences.MaxSelect == 1
-            && !binding.Preferences.Cancelable
-            && binding.Enchantment is Sharp or Nimble or MegaCrit.Sts2.Core.Models.Enchantments.Swift)
-        {
-            return new DeckEnchantSource(
-                "self_help_book_event",
-                "SELF_HELP_BOOK",
-                "SelfHelpBook.SelectAndEnchant+supported-enchantment:2+single+noncancelable");
-        }
-
-        if (IsSymbioteSourceContract(
-                eventModel is Symbiote,
-                binding.Enchantment is Corrupted,
-                binding.EnchantmentAmount,
-                binding.Preferences.MinSelect,
-                binding.Preferences.MaxSelect,
-                binding.Preferences.RequireManualConfirmation,
-                binding.Preferences.Cancelable))
-        {
-            return new DeckEnchantSource(
-                "symbiote_event",
-                "SYMBIOTE",
-                "Symbiote.Approach+Corrupted:1+single+noncancelable");
-        }
-
-        return null;
-    }
-
-    internal static bool IsSymbioteSourceContract(
-        bool exactEventType,
-        bool exactEnchantmentType,
-        int enchantmentAmount,
-        int minSelect,
-        int maxSelect,
-        bool requireManualConfirmation,
-        bool cancelable) =>
-        exactEventType
-        && exactEnchantmentType
-        && enchantmentAmount == 1
-        && minSelect == 1
-        && maxSelect == 1
-        && !requireManualConfirmation
-        && !cancelable;
 
     private static object? ReadField(object source, string fieldName)
     {

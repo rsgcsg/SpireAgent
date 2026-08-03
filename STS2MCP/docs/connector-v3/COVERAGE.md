@@ -5,7 +5,7 @@ Patch identity.
 
 ## Current Source Matrix
 
-| Area | Preview.12 source | Automated evidence | Exact Preview.11 Live baseline |
+| Area | Current source | Automated evidence | Exact Preview.12 Live baseline |
 |---|---|---|---|
 | Identity and one owner | direct V3 | identity, owner, stale, replacement tests | build/install/load tuple and main/single-player owner observed |
 | Capability/control | V3-native schemas | strict C#/Re/MCP decode and lease tests | capabilities, clients/controller and exact scopes observed |
@@ -16,7 +16,7 @@ Patch identity.
 | Menu/map/event/game-over | direct resolver/Re | owner/entity/control negatives | direct actions and completed-game boundary observed |
 | Shop/rest/treasure/reward | direct resolver/Re | offer/source/capacity/Outcome tests | shop, rest, reward and room transitions observed; rest witness mismatch quarantined one scope |
 | Generated choice | Gateway-local source contract/Re generic mechanics | selectable set, skip, binding, Quasar and holdout tests | Quasar source/trial observed but Preview.11 Re rejected its native `choose` command |
-| Upgrade/removal/enchant | independent direct selectors | stage/source/Outcome tests | upgrade, removal and supported enchant receipts observed; unknown enchant source failed closed |
+| Upgrade/removal/enchant | independent direct selectors plus reviewed enchant-source registry | stage/source/Outcome, Royal Stamp and source-partition tests | upgrade, removal and Symbiote enchant receipts observed; Royal Stamp was repeatably unsupported before the amendment |
 | Transform/Wood Carvings | independent direct selectors | source/effect/stage tests | Wood Carvings reached but controller lease blocked execution; source-unresolved transform remains unsupported |
 | Bundle/event removal | independent direct transactions | atomic/whole-Outcome tests | pending |
 | Inspection | state-bound run deck/combat piles/shop | strict current/stale tests | final artifact capability only; reads pending |
@@ -39,15 +39,17 @@ Exact game-binding, reflection, native Commit and Outcome helpers may remain in
 historically named Bridge/Provider files. They are internal mechanics, not
 external authority or a second executor.
 
-## Preview.11 Runtime Baseline
+## Preview.12 Runtime Baseline
 
-See the
-[dated closeout](PREVIEW_11_FREEZE_CANDIDATE_CLOSEOUT_2026-08-03.md) for the
-complete exact tuple. On that runtime:
+See the Preview.12
+[dated closeout](PREVIEW_12_CONDITIONAL_FREEZE_CLOSEOUT_2026-08-03.md) and
+[adaptation amendment](../../../docs/current/audits/CONNECTOR_V3_ADAPTABILITY_AMENDMENT_AND_LAYERED_FREEZE_VERDICT_2026-08-03.md).
+On its exact runtime:
 
-- V3 capability/control/observation and strict Re decoding succeeded across
-  44 exact-artifact runs and 309 decisions;
-- one 203-decision Journey returned through the completed-game boundary;
+- five retained runs include three completed-game boundaries and two
+  repeatable Royal Stamp source-contract failures;
+- the three completed runs total 242 decisions: 238 settled, one safe stale
+  refusal and three correct completed boundaries;
 - a prior state/interaction/screen/control tuple returned
   `not_executed/stale_state/not_applied`, retry forbidden;
 - polling the same request returned the same receipt and no controller owner
@@ -57,9 +59,10 @@ complete exact tuple. On that runtime:
 - session grants both promoted and quarantined, proving that gray was active;
   failures were not uniformly caused by closed default authority.
 
-This is loaded, direct-command, receipt and one-Journey evidence. It is not
-Preview.12 evidence, complete rare-source coverage, Organic qualification,
-cross-version/Mod qualification or durable support.
+This is loaded, direct-command and receipt evidence for the old Preview.12
+artifact. It is not evidence for the source-registry amendment, complete rare-
+source coverage, Organic qualification, cross-version/Mod qualification or
+durable support.
 
 ## Historical Evidence
 
@@ -87,5 +90,7 @@ match the single-owner contract. It is unsupported, not fallback debt.
 - persistent authority: disabled;
 - canary never means Surface, origin or sibling-operation qualification.
 
-Status: **CONDITIONAL FREEZE CANDIDATE**. Preview.12 cold-load and changed-path
-evidence are pending.
+Status: **CONDITIONAL FREEZE CANDIDATE**. The source-registry amendment cold-
+load, Royal Stamp source canary and remaining rare-family evidence are pending.
+The amendment is built and installed at SHA `c9f61d76...e72b24`, MVID
+`2b388d99-5a1b-46a7-9626-029a679deba0`; loaded and Live are non-claims.

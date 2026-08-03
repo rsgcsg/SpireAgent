@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "registry_id": "deck_enchant_source_contracts_v1",
+  "authorization_mode": "reviewed_embedded_policy_only",
+  "contracts": [
+    {
+      "source_kind": "self_help_book_event",
+      "definition_id": "SELF_HELP_BOOK",
+      "owner_kind": "current_event",
+      "source_type": "MegaCrit.Sts2.Core.Models.Events.SelfHelpBook",
+      "source_method": "SelectAndEnchant",
+      "enchantment_types": [
+        "MegaCrit.Sts2.Core.Models.Enchantments.Sharp",
+        "MegaCrit.Sts2.Core.Models.Enchantments.Nimble",
+        "MegaCrit.Sts2.Core.Models.Enchantments.Swift"
+      ],
+      "enchantment_amount": 2,
+      "min_select": 1,
+      "max_select": 1,
+      "require_manual_confirmation": false,
+      "cancelable": false,
+      "participant_policy": "local_single_player_owner",
+      "commit_ref": "source_parent_applies_card_cmd_enchant_after_selector_completion",
+      "witness_ref": "screen_closed_and_exact_selected_cards_have_expected_enchantment",
+      "risk_class": "persistent_run_mutation",
+      "binding_evidence": "SelfHelpBook.SelectAndEnchant+supported-enchantment:2+single+noncancelable+current-event"
+    },
+    {
+      "source_kind": "symbiote_event",
+      "definition_id": "SYMBIOTE",
+      "owner_kind": "current_event",
+      "source_type": "MegaCrit.Sts2.Core.Models.Events.Symbiote",
+      "source_method": "Approach",
+      "enchantment_types": [
+        "MegaCrit.Sts2.Core.Models.Enchantments.Corrupted"
+      ],
+      "enchantment_amount": 1,
+      "min_select": 1,
+      "max_select": 1,
+      "require_manual_confirmation": false,
+      "cancelable": false,
+      "participant_policy": "local_single_player_owner",
+      "commit_ref": "source_parent_applies_card_cmd_enchant_after_selector_completion",
+      "witness_ref": "screen_closed_and_exact_selected_cards_have_expected_enchantment",
+      "risk_class": "persistent_run_mutation",
+      "binding_evidence": "Symbiote.Approach+Corrupted:1+single+noncancelable+current-event"
+    },
+    {
+      "source_kind": "kifuda_relic_pickup",
+      "definition_id": "KIFUDA",
+      "owner_kind": "owned_relic",
+      "source_type": "MegaCrit.Sts2.Core.Models.Relics.Kifuda",
+      "source_method": "AfterObtained",
+      "enchantment_types": [
+        "MegaCrit.Sts2.Core.Models.Enchantments.Adroit"
+      ],
+      "enchantment_amount": 3,
+      "min_select": 0,
+      "max_select": 3,
+      "require_manual_confirmation": true,
+      "cancelable": false,
+      "participant_policy": "local_single_player_owner",
+      "commit_ref": "source_parent_applies_card_cmd_enchant_after_selector_completion",
+      "witness_ref": "screen_closed_and_exact_selected_cards_have_expected_enchantment",
+      "risk_class": "persistent_run_mutation",
+      "binding_evidence": "Kifuda.AfterObtained+Adroit:3+min0:max3+manual+noncancelable+owned-relic"
+    },
+    {
+      "source_kind": "royal_stamp_relic_pickup",
+      "definition_id": "ROYAL_STAMP",
+      "owner_kind": "owned_relic",
+      "source_type": "MegaCrit.Sts2.Core.Models.Relics.RoyalStamp",
+      "source_method": "AfterObtained",
+      "enchantment_types": [
+        "MegaCrit.Sts2.Core.Models.Enchantments.RoyallyApproved"
+      ],
+      "enchantment_amount": 1,
+      "min_select": 1,
+      "max_select": 1,
+      "require_manual_confirmation": false,
+      "cancelable": false,
+      "participant_policy": "local_single_player_owner",
+      "commit_ref": "source_parent_applies_card_cmd_enchant_after_selector_completion",
+      "witness_ref": "screen_closed_and_exact_selected_cards_have_expected_enchantment",
+      "risk_class": "persistent_run_mutation",
+      "binding_evidence": "RoyalStamp.AfterObtained+RoyallyApproved:1+single+noncancelable+owned-relic"
+    }
+  ]
+}

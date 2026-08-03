@@ -1163,6 +1163,7 @@ public sealed class BridgeContractTests
                 "shop_inventory",
                 action with { EvidenceCode = "different-native-source" }));
         Assert.Equal(binding.ContractDigest, changedSource.ContractDigest);
+        Assert.NotEqual(binding.AuthorityFingerprint, changedSource.AuthorityFingerprint);
         Assert.NotEqual(binding.SourceEvidenceDigest, changedSource.SourceEvidenceDigest);
         Assert.NotEqual(binding.BoundActionDigest, changedSource.BoundActionDigest);
         Assert.False(binding.Matches(scope with { OperationFingerprint = "stale-contract" }));

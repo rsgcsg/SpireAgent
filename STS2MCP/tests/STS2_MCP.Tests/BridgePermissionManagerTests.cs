@@ -633,6 +633,69 @@ public sealed class BridgePermissionManagerTests
     }
 
     [Fact]
+    public void EncounterTrialDoesNotTransferAcrossSourceEvidencePartitions()
+    {
+        var manager = new BridgePermissionManager(
+            "runtime-source-partitions",
+            BridgePermissionMode.MigrationExploration);
+        BridgeServerIdentity bridge = Bridge("runtime-source-partitions");
+        GameBuildIdentity diagnostic = DiagnosticGame();
+        CompatibilityAssessment initial = manager.Apply(
+            diagnostic,
+            bridge,
+            CleanPatchInventory());
+        BridgeObservationDraft firstDraft = EncounterDraft(
+            diagnostic with { Compatibility = initial },
+            "open_shop_inventory");
+
+        BridgeObservationDraft first = manager.AdmitEncounter(
+            firstDraft,
+            bridge,
+            new[]
+            {
+                new BridgeEncounterAuthorityCandidate(
+                    "shop_room",
+                    "open_shop_inventory",
+                    "source-contract-a",
+                    RequiresExplicitNativeContract: true)
+            });
+        ActionPermissionScope firstScope = Assert.Single(
+            first.Game.Compatibility.ActionPermissionScopes);
+
+        CompatibilityAssessment withFirst = manager.Apply(
+            diagnostic,
+            bridge,
+            CleanPatchInventory());
+        BridgeObservationDraft second = manager.AdmitEncounter(
+            EncounterDraft(
+                diagnostic with { Compatibility = withFirst },
+                "open_shop_inventory"),
+            bridge,
+            new[]
+            {
+                new BridgeEncounterAuthorityCandidate(
+                    "shop_room",
+                    "open_shop_inventory",
+                    "source-contract-b",
+                    RequiresExplicitNativeContract: true)
+            });
+        ActionPermissionScope secondScope = Assert.Single(
+            second.Game.Compatibility.ActionPermissionScopes);
+
+        Assert.NotEqual(
+            firstScope.OperationFingerprint,
+            secondScope.OperationFingerprint);
+        Assert.NotEqual(firstScope.GrantId, secondScope.GrantId);
+        Assert.Equal(firstScope.GrantVersion + 1, secondScope.GrantVersion);
+        Assert.Equal(firstScope.GrantId, Assert.Single(
+            manager.Snapshot().Grants,
+            grant => grant.Current).SupersedesGrantId);
+        Assert.Contains(
+            Assert.Single(manager.Snapshot().Grants, grant => grant.Current).EvidenceIds,
+            value => value == $"source-partition-supersedes:{firstScope.GrantId}");
+    }
+
+    [Fact]
     public void V3NativeCandidateCannotAdmitUnknownContract()
     {
         var manager = new BridgePermissionManager(

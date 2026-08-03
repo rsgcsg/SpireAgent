@@ -10,6 +10,14 @@ const catalogPath = path.join(
   root,
   "STS2MCP/BridgeV2/Game/combat-pile-contract-catalog.json"
 );
+const deckEnchantRegistryPath = path.join(
+  root,
+  "STS2MCP/BridgeV2/Game/deck-enchant-source-contracts.json"
+);
+const adaptationHoldoutsPath = path.join(
+  root,
+  "STS2MCP/docs/connector-v3/adaptation-holdouts.json"
+);
 const policyPath = path.join(
   root,
   "STS2MCP/BridgeV2/Game/exact-environment-policy.json"
@@ -42,6 +50,8 @@ const permissionManagerPath = path.join(
 const [
   registryText,
   catalogText,
+  deckEnchantRegistryText,
+  adaptationHoldoutsText,
   policyText,
   migrationPolicyText,
   manifest,
@@ -53,6 +63,8 @@ const [
   await Promise.all([
     readFile(registryPath, "utf8"),
     readFile(catalogPath, "utf8"),
+    readFile(deckEnchantRegistryPath, "utf8"),
+    readFile(adaptationHoldoutsPath, "utf8"),
     readFile(policyPath, "utf8"),
     readFile(migrationPolicyPath, "utf8"),
     readFile(manifestPath, "utf8"),
@@ -64,6 +76,8 @@ const [
 
 const registry = JSON.parse(registryText);
 const catalog = JSON.parse(catalogText);
+const deckEnchantRegistry = JSON.parse(deckEnchantRegistryText);
+const adaptationHoldouts = JSON.parse(adaptationHoldoutsText);
 const policy = JSON.parse(policyText);
 const migrationPolicy = JSON.parse(migrationPolicyText);
 assert(registry.schema_version === 1, "unsupported combat-pile registry schema");
@@ -76,6 +90,79 @@ assert(
   catalog.authorization_effect === "none"
     && catalog.qualification_effect === "none",
   "combat-pile catalog must not authorize or qualify"
+);
+assert(
+  deckEnchantRegistry.schema_version === 1
+    && deckEnchantRegistry.registry_id === "deck_enchant_source_contracts_v1"
+    && deckEnchantRegistry.authorization_mode === "reviewed_embedded_policy_only",
+  "deck-enchant registry metadata is unsupported"
+);
+assert(
+  adaptationHoldouts.schema_version === 1
+    && adaptationHoldouts.authorization_effect === "none"
+    && adaptationHoldouts.qualification_effect === "none",
+  "adaptation holdouts must be non-authorizing"
+);
+
+const deckEnchantSourceKinds = new Set();
+const deckEnchantSourceOwners = new Set();
+const allowedDeckEnchantOwners = new Set(["current_event", "owned_relic"]);
+for (const contract of deckEnchantRegistry.contracts) {
+  assert(
+    allowedDeckEnchantOwners.has(contract.owner_kind),
+    `unsupported deck-enchant owner ${contract.owner_kind}`
+  );
+  assert(
+    contract.participant_policy === "local_single_player_owner"
+      && contract.commit_ref
+        === "source_parent_applies_card_cmd_enchant_after_selector_completion"
+      && contract.witness_ref
+        === "screen_closed_and_exact_selected_cards_have_expected_enchantment"
+      && contract.risk_class === "persistent_run_mutation",
+    `deck-enchant contract ${contract.source_kind} escapes the closed lifecycle`
+  );
+  assert(
+    !deckEnchantSourceKinds.has(contract.source_kind),
+    `duplicate deck-enchant source kind ${contract.source_kind}`
+  );
+  const ownerKey = `${contract.owner_kind}|${contract.source_type}|${contract.definition_id}`;
+  assert(
+    !deckEnchantSourceOwners.has(ownerKey),
+    `duplicate deck-enchant source owner ${ownerKey}`
+  );
+  deckEnchantSourceKinds.add(contract.source_kind);
+  deckEnchantSourceOwners.add(ownerKey);
+}
+for (const required of [
+  "self_help_book_event",
+  "symbiote_event",
+  "kifuda_relic_pickup",
+  "royal_stamp_relic_pickup"
+]) {
+  assert(deckEnchantSourceKinds.has(required), `missing deck-enchant source ${required}`);
+}
+
+const expectedHoldoutClasses = new Set([
+  "data_only_compatible",
+  "known_mechanic_new_source_contract",
+  "known_mechanic_known_source_evidence_pending",
+  "known_primitives_closed_composition",
+  "new_owner_or_participant_code_required",
+  "unknown_source_unsupported",
+  "native_binding_or_outcome_revalidation_required"
+]);
+const holdoutClasses = new Set();
+for (const holdout of adaptationHoldouts.cases) {
+  assert(holdout.authority_effect === "none", `${holdout.id} may not authorize`);
+  assert(
+    expectedHoldoutClasses.has(holdout.expected_classification),
+    `${holdout.id} has an unsupported adaptation classification`
+  );
+  holdoutClasses.add(holdout.expected_classification);
+}
+assert(
+  holdoutClasses.size === expectedHoldoutClasses.size,
+  "adaptation holdouts do not cover every required change class"
 );
 assert(policy.schema_version === 1, "unsupported exact-environment policy schema");
 assert(
@@ -262,6 +349,25 @@ assert(
   provider.includes("binding.Contract.WitnessKind"),
   "provider must dispatch the closed witness topology rather than source names"
 );
+const deckEnchantProvider = await readFile(
+  path.join(root, "STS2MCP/BridgeV2/Game/DeckEnchantSurfaceProvider.cs"),
+  "utf8"
+);
+assert(
+  deckEnchantProvider.includes("DeckEnchantSourceContractRegistry.TryResolve"),
+  "deck-enchant source resolution must use the reviewed registry"
+);
+for (const forbidden of [
+  "eventModel is SelfHelpBook",
+  "eventModel is Symbiote",
+  "binding.Enchantment is Adroit",
+  "expectedRelic is not Kifuda"
+]) {
+  assert(
+    !deckEnchantProvider.includes(forbidden),
+    `deck-enchant Provider retains hard-coded source branch ${forbidden}`
+  );
+}
 
 console.log(
   JSON.stringify({
@@ -277,7 +383,11 @@ console.log(
     migration_policy_recommendation_effect:
       migrationPolicy.recommendation_effect,
     combat_pile_source_count: registry.contracts.length,
-    source_kinds: [...sourceKinds].sort()
+    source_kinds: [...sourceKinds].sort(),
+    deck_enchant_source_count: deckEnchantRegistry.contracts.length,
+    deck_enchant_source_kinds: [...deckEnchantSourceKinds].sort(),
+    adaptation_holdout_count: adaptationHoldouts.cases.length,
+    adaptation_holdout_classes: [...holdoutClasses].sort()
   })
 );
 

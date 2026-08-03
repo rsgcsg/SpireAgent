@@ -15,18 +15,20 @@ files. They are not another authority, protocol or executor.
 
 ## V3-1: Exact Runtime Candidate
 
-Status: Preview.11 Live complete; Preview.12 cold-load pending.
+Status: Preview.12 Live observed; source-registry amendment cold-load pending.
 
 The Preview.11 artifact is built, installed and loaded with exact
 SHA/MVID/runtime/game/Modset/Patch identity. V3 capability/control/observation
 decode, one menu mutation, stable successor, stale rejection, idempotent
 receipt read and Human-profile disabled refusal are Live-observed.
 
-Preview.12 repairs Quasar's duplicate Re source whitelist, rest witness drift,
-combat-hand confirm completion, visible-unsupported classification and
-interrupted controller release. Exit: cold-load Preview.12 and exercise those
-repairs plus the remaining rare selector/potion/read matrix without
-transferring authority from Preview.11.
+Preview.12 was cold-loaded with exact identity. Three subsequent runs reached
+completed-game boundaries and two repeatably exposed Royal Stamp as a missing
+deck-enchant source contract. The current amendment replaces source-specific
+Provider branches with a reviewed embedded registry and partitions volatile
+authority by exact source evidence. Exit: cold-load that amendment, exercise
+Royal Stamp and an unknown-source negative, then complete the remaining rare
+selector/potion/read matrix without transferring authority from Preview.12.
 
 ## V3-2: Ordinary Journey
 
@@ -36,9 +38,9 @@ Status: exact Preview.11 Journey achieved.
 203 direct decisions on the exact Preview.11 artifact. A journey proves the
 reached sequence, not unexercised sources or durable qualification.
 
-Exit for Preview.12: one post-repair bounded run or targeted canaries that
-exercise the changed paths; another full Journey is desirable but is not a
-substitute for the rare-source gates.
+Preview.12 now has three post-repair completed boundaries. They do not
+substitute for Royal Stamp, Kifuda, Quasar, combat-hand or read gates that did
+not naturally occur on the same artifact.
 
 ## V3-3: Information Contract
 
@@ -59,14 +61,14 @@ session Live evidence on the final artifact.
 
 Status: CONDITIONAL FREEZE CANDIDATE.
 
-Session trial scopes are exact-operation/runtime grants. Qualified and durable
-scopes remain empty. Disk rollback restore and drift detection are proven;
+Session trial scopes are exact-source/operation/runtime grants. Qualified and
+durable scopes remain empty. Disk rollback restore and drift detection are proven;
 loaded rollback and revoke lifecycle remain to be exercised.
 
 Freeze gates:
 
-1. Preview.12 cold-load and changed-path canaries;
-2. remaining exact final-artifact selector/read matrix;
+1. source-registry amendment cold-load and Royal Stamp source canary;
+2. remaining exact final-artifact selector/read matrix and unknown-source holdout;
 3. optional Human profile Live lifecycle;
 4. loaded rollback/revoke evidence;
 5. reviewed evidence-to-support matrix with no inherited qualification.

@@ -1,6 +1,6 @@
 # Connector V3 Freeze Plan
 
-Status: Preview.12 source closed; conditional exact-runtime freeze candidate
+Status: Preview.12 Live baseline recorded; adaptation amendment pending cold-load
 
 Authority: [ADR-0007](decisions/ADR-0007-connector-v3-canonical-architecture.md)
 
@@ -38,6 +38,13 @@ The retained baseline provides:
 Provider-named files may retain exact game mechanics but cannot publish
 actions or become a second executor.
 
+The current amendment adds `deck_enchant_source_contracts_v1`, including
+Royal Stamp, and partitions volatile authority by operation contract plus
+exact source evidence. It changes no wire, Re schema, Commit adapter or
+Outcome contract and creates no durable qualification. Its Release artifact
+is built and installed at SHA `c9f61d76...e72b24`, MVID
+`2b388d99-5a1b-46a7-9626-029a679deba0`; cold-load remains pending.
+
 ## Completed Evidence
 
 - Gateway tests: 284/284.
@@ -57,15 +64,21 @@ The
 [freeze re-audit](audits/CONNECTOR_V3_FREEZE_READINESS_AND_ADAPTATION_REAUDIT_2026-08-03.md)
 classifies the later exact-runtime runs and Preview.12 repairs.
 
+Preview.12 was subsequently cold-loaded. Three runs reached completed-game
+boundaries; two repeatably stopped on Royal Stamp because that source contract
+was absent. See the
+[adaptation amendment](audits/CONNECTOR_V3_ADAPTABILITY_AMENDMENT_AND_LAYERED_FREEZE_VERDICT_2026-08-03.md).
+
 ## Remaining Freeze Phases
 
-### Phase 1: Preview.12 Changed-Path Canaries
+### Phase 1: Source-Partition Adaptation Canary
 
-Cold-load Preview.12 and re-exercise Quasar, rest heal/Smith, combat-hand
-confirm, source-unresolved deck enchant and immediate restart after SIGINT.
+Cold-load the amended artifact. Exercise Royal Stamp and prove it starts from
+`session_canary` even after a different deck-enchant source was promoted.
+Retain one unknown same-shaped source as visible unsupported.
 
-Exit: revised receipts are exact, unsupported remains typed, no false
-quarantine occurs and no second run waits for the 30-second lease TTL.
+Exit: Royal Stamp produces exact native receipts, unknown source remains
+typed, and failure/quarantine is limited to the exact source partition.
 
 ### Phase 2: Rare-Family Runtime Matrix
 

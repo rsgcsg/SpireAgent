@@ -47,7 +47,7 @@ Current source protocol is `3.0-preview.12`. The wire set includes
   implemented, configurable and CLI-accessible. It is disabled by default,
   read-only, runtime/state bound, outside normal Agent flow and non-authorizing.
 
-Gateway tests pass 284/284. Re typecheck, 291/291 tests and production build
+Gateway tests pass 287/287. Re typecheck, 291/291 tests and production build
 pass. Python MCP syntax, CLI, identity, compatibility, permission,
 qualification, profile, migration, inventory, adaptation and clean-closure
 checks pass.
@@ -72,18 +72,31 @@ On that artifact, 44 exact-runtime runs recorded 309 decisions:
   rejected by duplicate Re source mechanics; rest Smith exposed a witness
   mismatch; and combat-hand confirm produced an unknown outcome without retry.
 
-Preview.12 fixes those four defect classes and changes the operation catalog to
-`bridge_v2_native_action_contracts_v16`. Source/build/install are verified at
+Preview.12 fixed those four defect classes and changed the operation catalog to
+`bridge_v2_native_action_contracts_v16`. It was subsequently cold-loaded at
 SHA `18f07ca327bb8e6f58f227674ca82fbe7ba1a91fe41875e5dea6de406edd3eaa`
-and MVID `50309e88-c6a0-4faf-b2ae-7092f91eda7d`; the rollback snapshot is
-`STS2MCP/.local/deployments/2026-08-03T12-07-43-930Z`. Loaded identity and all
-Preview.12 Live behavior remain non-claims until cold start.
+and MVID `50309e88-c6a0-4faf-b2ae-7092f91eda7d` in runtime
+`990ef9d80c3e46c988a184d94e05a0d3`. Five exact-runtime runs include three
+completed-run boundaries and two repeatable Royal Stamp source-contract
+failures. The completed journeys prove reached Preview.12 paths only; they do
+not qualify unexercised sources.
+
+The current source amendment moves reviewed deck-enchant sources into one
+embedded registry, adds Royal Stamp, and binds volatile trial/quarantine to
+the exact source-evidence partition instead of only `surface + operation`.
+Source, tests, Release build and install are verified at SHA
+`c9f61d76a4b58487f336f73241110fd5befb304a7c5388c57454656640e72b24`
+and MVID `2b388d99-5a1b-46a7-9626-029a679deba0`; loaded identity and Live
+behavior remain non-claims until cold start. Its detailed evidence and layered
+freeze decision are in the
+[adaptation amendment](audits/CONNECTOR_V3_ADAPTABILITY_AMENDMENT_AND_LAYERED_FREEZE_VERDICT_2026-08-03.md).
 
 ## Authority
 
-- Preview.11 canary-permitted/exercised: exact encountered operations only;
-- Preview.11 session promotions and quarantines are runtime evidence, not
-  inherited Preview.12 authority;
+- Preview.12 canary-permitted/exercised: exact encountered source/operation
+  partitions only;
+- all session promotions and quarantines are runtime evidence and are not
+  inherited by a new SHA/MVID/runtime;
 - durable/scoped qualification: none;
 - persistent authority: disabled;
 - Inspection and linked detail: read-only, state-bound and non-authorizing;
@@ -96,11 +109,10 @@ MVID, runtime, game, Modset or Patch changes never inherit authority.
 
 ## Freeze Blockers
 
-1. Cold-load Preview.12, then re-exercise Quasar, rest, combat-hand confirm,
-   source-unresolved visible unsupported and immediate restart after SIGINT.
-2. Complete the remaining targetless potion, rare selector, current/stale
-   Inspection and linked-detail matrix on Preview.12 without transferring old
-   MVID evidence.
+1. Cold-load the source-registry amendment, prove Royal Stamp starts its own
+   source-partitioned canary, and retain unknown-source visible unsupported.
+2. Complete Quasar, combat-hand confirm, targetless potion, Kifuda, current/
+   stale Inspection and linked-detail evidence on the same final artifact.
 3. Exercise full native-page open/read/return/recovery with the optional Human
    profile enabled under operator control.
 4. Record loaded rollback/revoke behavior; disk restore detection is already

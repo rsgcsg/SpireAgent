@@ -124,6 +124,11 @@ internal sealed class BridgePermissionManager
             var scopes = new List<ActionPermissionScope>();
             foreach (ActionPermissionScope staticScope in game.Compatibility.ActionPermissionScopes)
             {
+                // Encounter scopes are projections of this manager's volatile ledger,
+                // never a second static-policy input on the next observation.
+                if (staticScope.AdmissionBasis == "encounter_source_resolved")
+                    continue;
+
                 string operationFingerprint = OperationFingerprint(
                     staticScope.SurfaceKind,
                     staticScope.Operation);
@@ -313,23 +318,6 @@ internal sealed class BridgePermissionManager
                     continue;
                 }
 
-                string key = Key(
-                    candidateDescriptor.SurfaceKind,
-                    candidateDescriptor.Operation);
-                if (_blockedKeys.Contains(key)
-                    || HasApplicableScope(
-                        draft.Game.Compatibility,
-                        candidateDescriptor.SurfaceKind,
-                        candidateDescriptor.Operation)
-                    || _currentGrants.TryGetValue(key, out BridgePermissionGrantRecord? existing)
-                       && existing.Status == "active"
-                       && existing.ExpiresAt > _clock()
-                       && existing.EnvironmentDigest == environmentDigest
-                       && existing.PatchDigest == _lastPatchInventory.Digest)
-                {
-                    continue;
-                }
-
                 BridgeMigrationPermissionCandidate? candidate =
                     BridgeMigrationPermissionPolicy.Find(
                         candidateDescriptor.SurfaceKind,
@@ -342,16 +330,45 @@ internal sealed class BridgePermissionManager
                     continue;
                 }
 
-                string operationFingerprint = OperationFingerprint(
+                string baseOperationFingerprint = OperationFingerprint(
                     candidateDescriptor.SurfaceKind,
                     candidateDescriptor.Operation);
-                if (operationFingerprint == "unavailable")
-                    continue;
-
-                string[] sourceEvidence = group
+                string[] sourceEvidenceDigests = group
                     .Select(value => BridgeHash.Text(value.SourceEvidence))
                     .Distinct(StringComparer.Ordinal)
                     .OrderBy(value => value, StringComparer.Ordinal)
+                    .ToArray();
+                if (baseOperationFingerprint == "unavailable"
+                    || sourceEvidenceDigests.Length != 1)
+                    continue;
+                string operationFingerprint = BridgeHash.Object(new
+                {
+                    contractDigest = baseOperationFingerprint,
+                    sourceEvidenceDigest = sourceEvidenceDigests[0]
+                });
+                string key = Key(
+                    candidateDescriptor.SurfaceKind,
+                    candidateDescriptor.Operation);
+                if (_blockedKeys.Contains(SourceKey(
+                        candidateDescriptor.SurfaceKind,
+                        candidateDescriptor.Operation,
+                        operationFingerprint))
+                    || HasApplicableScope(
+                        draft.Game.Compatibility,
+                        candidateDescriptor.SurfaceKind,
+                        candidateDescriptor.Operation,
+                        operationFingerprint)
+                    || _currentGrants.TryGetValue(key, out BridgePermissionGrantRecord? existing)
+                       && existing.Status == "active"
+                       && existing.ExpiresAt > _clock()
+                       && existing.EnvironmentDigest == environmentDigest
+                       && existing.PatchDigest == _lastPatchInventory.Digest
+                       && existing.OperationFingerprint == operationFingerprint)
+                {
+                    continue;
+                }
+
+                string[] sourceEvidence = sourceEvidenceDigests
                     .Select(value => $"source-evidence-digest:{value}")
                     .ToArray();
                 BridgeMigrationPermissionCandidate encountered = candidate with
@@ -407,8 +424,13 @@ internal sealed class BridgePermissionManager
                         == BridgeOperationQualificationCatalog.ExplicitNativeContract
                     ? string.Equals(
                         value.OperationFingerprint,
-                        contract.ContractDigest,
+                        contract.AuthorityFingerprint,
                         StringComparison.Ordinal)
+                      || value.AdmissionBasis != "encounter_source_resolved"
+                         && string.Equals(
+                             value.OperationFingerprint,
+                             contract.ContractDigest,
+                             StringComparison.Ordinal)
                     : string.Equals(value.Operation, expected.Operation, StringComparison.Ordinal)));
             return scope != null
                 && (contract == null || contract.Matches(scope))
@@ -610,10 +632,15 @@ internal sealed class BridgePermissionManager
     private static bool HasApplicableScope(
         CompatibilityAssessment compatibility,
         string surfaceKind,
-        string operation) =>
+        string operation,
+        string operationFingerprint) =>
         compatibility.ActionPermissionScopes.Any(scope =>
             string.Equals(scope.SurfaceKind, surfaceKind, StringComparison.Ordinal)
-            && string.Equals(scope.Operation, operation, StringComparison.Ordinal));
+            && string.Equals(scope.Operation, operation, StringComparison.Ordinal)
+            && string.Equals(
+                scope.OperationFingerprint,
+                operationFingerprint,
+                StringComparison.Ordinal));
 
     private BridgePermissionGrantRecord EnsureSessionCanary(
         BridgeMigrationPermissionCandidate candidate,
@@ -626,7 +653,37 @@ internal sealed class BridgePermissionManager
     {
         string key = Key(candidate.SurfaceKind, candidate.Operation);
         if (_currentGrants.TryGetValue(key, out BridgePermissionGrantRecord? current))
-            return current;
+        {
+            if (current.Status == "active"
+                && current.OperationFingerprint == operationFingerprint)
+            {
+                return current;
+            }
+
+            DateTimeOffset replacedAt = _clock();
+            BridgeMigrationPermissionCandidate replacement = candidate with
+            {
+                EvidenceIds = candidate.EvidenceIds
+                    .Append($"source-partition-supersedes:{current.GrantId}")
+                    .Distinct(StringComparer.Ordinal)
+                    .ToArray()
+            };
+            return AppendGrant(
+                replacement,
+                game,
+                bridge,
+                patchInventory,
+                environmentDigest,
+                operationFingerprint,
+                tier: "session_canary",
+                status: "active",
+                version: current.GrantVersion + 1,
+                issuedAt: replacedAt,
+                expiresAt: replacedAt.AddSeconds(candidate.SessionTtlSeconds),
+                supersedes: current.GrantId,
+                revocationReason: null,
+                admissionBasis: admissionBasis);
+        }
 
         DateTimeOffset now = _clock();
         return AppendGrant(
@@ -654,6 +711,7 @@ internal sealed class BridgePermissionManager
             GrantId = GrantId(
                 current.SurfaceKind,
                 current.Operation,
+                current.OperationFingerprint,
                 current.EnvironmentDigest,
                 current.PatchDigest,
                 current.GrantVersion + 1,
@@ -692,6 +750,7 @@ internal sealed class BridgePermissionManager
             GrantId = GrantId(
                 current.SurfaceKind,
                 current.Operation,
+                current.OperationFingerprint,
                 current.EnvironmentDigest,
                 current.PatchDigest,
                 current.GrantVersion + 1,
@@ -706,7 +765,12 @@ internal sealed class BridgePermissionManager
         };
         _currentGrants[key] = revoked;
         _grantLedger.Add(revoked);
-        _blockedKeys.Add(key);
+        _blockedKeys.Add(current.AdmissionBasis == "encounter_source_resolved"
+            ? SourceKey(
+                current.SurfaceKind,
+                current.Operation,
+                current.OperationFingerprint)
+            : key);
     }
 
     private BridgePermissionGrantRecord AppendGrant(
@@ -730,6 +794,7 @@ internal sealed class BridgePermissionManager
             GrantId(
                 candidate.SurfaceKind,
                 candidate.Operation,
+                operationFingerprint,
                 environmentDigest,
                 patchInventory.Digest,
                 version,
@@ -864,15 +929,22 @@ internal sealed class BridgePermissionManager
     private static string GrantId(
         string surfaceKind,
         string operation,
+        string operationFingerprint,
         string environmentDigest,
         string patchDigest,
         int version,
         DateTimeOffset issuedAt) =>
         "grant_" + BridgeHash.Text(
-            $"{surfaceKind}|{operation}|{environmentDigest}|{patchDigest}|{version}|{issuedAt:O}")[..24];
+            $"{surfaceKind}|{operation}|{operationFingerprint}|{environmentDigest}|{patchDigest}|{version}|{issuedAt:O}")[..24];
 
     private static string Key(string surfaceKind, string operation) =>
         $"{surfaceKind}\n{operation}";
+
+    private static string SourceKey(
+        string surfaceKind,
+        string operation,
+        string operationFingerprint) =>
+        $"{surfaceKind}\n{operation}\n{operationFingerprint}";
 
     internal static string ModeName(BridgePermissionMode mode) => mode switch
     {

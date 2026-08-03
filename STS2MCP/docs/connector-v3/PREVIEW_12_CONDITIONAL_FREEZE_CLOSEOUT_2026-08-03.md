@@ -82,3 +82,26 @@ Preview.12 qualification = empty/non-claim
 
 Human native-page Live, loaded revoke/rollback, cross-version/Mod
 requalification and durable qualification remain non-claims.
+
+## Post-install Cold-load And Live Addendum
+
+The installed identity above was later cold-loaded exactly:
+
+```text
+loaded SHA   18f07ca327bb8e6f58f227674ca82fbe7ba1a91fe41875e5dea6de406edd3eaa
+loaded MVID  50309e88-c6a0-4faf-b2ae-7092f91eda7d
+runtime      990ef9d80c3e46c988a184d94e05a0d3
+game         v0.110.1 / db5d3552 / -205573697
+```
+
+Five retained exact-runtime runs include three completed-game boundaries and
+two repeatable Royal Stamp deck-enchant failures. The completed runs total 242
+decisions: 238 settled, one safe stale refusal and three completed boundaries.
+Royal Stamp was visible under `migration_exploration` but had no candidates,
+which proves a missing source contract rather than default-gray denial.
+
+This addendum supersedes only this document's earlier `loaded = non-claim` and
+`Live = non-claim` lines. It does not qualify Royal Stamp, Kifuda, Quasar,
+combat-hand confirm, Human pages, rollback/revoke, cross-version/Mod behavior
+or the later source-registry artifact. See the
+[adaptation amendment](../../../docs/current/audits/CONNECTOR_V3_ADAPTABILITY_AMENDMENT_AND_LAYERED_FREEZE_VERDICT_2026-08-03.md).

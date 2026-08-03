@@ -286,3 +286,24 @@ changed-path Live evidence. The existing empty durable qualification store is
 retained; Preview.11 session grants and quarantine records do not transfer.
 The detailed evidence and non-claims are in the
 [freeze re-audit](../audits/CONNECTOR_V3_FREEZE_READINESS_AND_ADAPTATION_REAUDIT_2026-08-03.md).
+
+### Source-contract and layered-freeze amendment
+
+Later exact Preview.12 runs retained the macro decision but rejected complete
+source adaptation: three journeys reached the completed-game boundary, while
+two Royal Stamp runs stopped before mutation because the deck-enchant source
+was not represented. This was a source-contract gap, not closed default gray.
+
+For a known owner/mechanic/Commit/Outcome family, a new source may be added by
+a reviewed embedded SourceContract with generated positive and negative
+checks. It does not change the wire or Re and cannot authorize itself. Volatile
+trial identity is the explicit operation contract plus exact source evidence;
+promotion or quarantine for one source cannot transfer to a sibling source.
+New participant, owner, hidden-information boundary, Commit or Outcome remains
+code-required. UI similarity never grants authority.
+
+The resulting freeze is layered: Core Execution is architecturally frozen;
+Vanilla Capability and Distribution are conditional; Adaptation/Compatibility
+and optional Human Evidence are not frozen. The overall verdict remains
+`CONDITIONAL FREEZE`. The detailed evidence, holdouts and non-claims are in the
+[adaptation amendment](../audits/CONNECTOR_V3_ADAPTABILITY_AMENDMENT_AND_LAYERED_FREEZE_VERDICT_2026-08-03.md).

@@ -8,10 +8,11 @@ a precise visible unsupported boundary.
 
 ## Current Boundary
 
-Connector V3 macro migration is closed. Preview.12 is a bounded correction of
-source-contract composition, witness parity, visible-unsupported projection
-and controller lifecycle. The remaining work is exact-runtime freeze evidence,
-not another protocol or architecture generation.
+Connector V3 macro migration is closed. Preview.12 was cold-loaded and
+completed three bounded journeys, but Royal Stamp proved that source-rich
+adaptation still depended on Provider edits. The current bounded amendment
+introduces a reviewed source registry and source-partitioned volatile
+authority without changing the wire or creating another architecture generation.
 
 The production path is:
 
@@ -34,16 +35,16 @@ supervision and local evidence. Neither REST nor MCP adds game semantics.
 2. Preserve the Preview.12 source closure: 94 explicit contracts, zero
    fallback authority, zero Provider action publication and no active Re V2
    sidecar.
-3. Cold-load and exercise the Preview.12 Quasar/rest/combat-hand/unsupported/
-   interrupted-controller corrections.
+3. Cold-load and exercise the source-registry amendment: Royal Stamp must
+   receive a fresh source canary and an unknown source must remain unsupported.
 4. Exercise the final exact-artifact targetless potion, selector, Inspection
    and linked-detail matrix.
 5. Exercise `native_pages.v1` open/read/return/recovery while keeping it
    default-off and non-authorizing.
 6. Restore and cold-load a rollback artifact, prove revoke/drift behavior, then
    reinstall the candidate.
-7. Review the completed Preview.11 Journey and new Preview.12 evidence without
-   transferring session authority across artifacts.
+7. Review the completed Preview.11 and Preview.12 journeys without transferring
+   session authority across artifacts or source partitions.
 8. Freeze only after support, qualification and evidence records agree.
 
 ## Freeze Conditions
@@ -64,12 +65,12 @@ supervision and local evidence. Neither REST nor MCP adds game semantics.
 
 ## Current Verdict
 
-`CONDITIONAL FREEZE CANDIDATE`. Preview.11 produced one exact-artifact
-203-decision completed journey plus promotion, quarantine and unknown-no-retry
-evidence. Preview.12 source/tests repair the exposed defects and remove Re's
-generated-source whitelist. Preview.12 cold-load, changed-path canaries,
-remaining rare-family reads, Human native-page Live and loaded rollback/revoke
-remain open.
+`CONDITIONAL FREEZE CANDIDATE`. Preview.12 produced three exact-runtime
+completed boundaries and repeatably exposed Royal Stamp as a missing source
+contract rather than a closed-gray failure. The source-registry amendment and
+source-partitioned trial fix are automated-test verified but not yet loaded.
+Royal Stamp/Kifuda/Quasar/combat-hand evidence, remaining reads, Human native-
+page Live and loaded rollback/revoke remain open.
 
 ## Deferred
 

@@ -107,12 +107,22 @@ the current advertised source-local operation and operands without enumerating
 all source kinds. New owners or completion semantics still require Gateway
 code and evidence. Similar UI alone never grants reuse.
 
+Source-rich families use reviewed, embedded source contracts when the native
+owner, participant, mechanic, Commit and Outcome are already known. The
+contract is a declarative binding input, not an executor or self-authorizing
+Mod manifest. Dynamic trial identity combines the explicit operation contract
+with exact source evidence, so a proven Symbiote operation cannot silently
+authorize Royal Stamp or an unknown same-shaped owner. A new owner,
+participant, Commit or Outcome remains code-required and fail closed.
+
 ## Freeze Boundary
 
-The macro architecture is retained at `3.0-preview.12`, but the artifact is
-only a conditional freeze candidate. Preview.11 completed an exact-artifact
-ordinary Journey and exposed four defects corrected by Preview.12. Final
-freeze still requires Preview.12 cold-load and changed-path canaries,
+The macro architecture is retained at `3.0-preview.12`. Preview.12 was
+cold-loaded and three exact-artifact journeys reached the completed-game
+boundary, but two Royal Stamp failures disproved complete source adaptation.
+Core Execution is architecturally frozen; Vanilla Capability and Distribution
+remain conditional; Adaptation/Compatibility and Human Evidence are not
+frozen. Final freeze still requires the source-registry amendment cold-load,
 remaining rare-family reads, Human profile Live lifecycle and loaded
 rollback/revoke.
 

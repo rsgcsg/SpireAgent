@@ -1078,30 +1078,117 @@ public sealed class ConnectorV3ContractTests
     }
 
     [Fact]
-    public void SymbioteEnchantSourceRequiresExactNativeContract()
+    public void DeckEnchantRegistryLoadsReviewedExactSourceContracts()
     {
-        Assert.True(DeckEnchantSurfaceProvider.IsSymbioteSourceContract(
-            exactEventType: true,
-            exactEnchantmentType: true,
-            enchantmentAmount: 1,
-            minSelect: 1,
-            maxSelect: 1,
+        Assert.Null(DeckEnchantSourceContractRegistry.LoadError);
+        Assert.Equal(4, DeckEnchantSourceContractRegistry.Contracts.Count);
+        Assert.Equal(
+            new[]
+            {
+                "kifuda_relic_pickup",
+                "royal_stamp_relic_pickup",
+                "self_help_book_event",
+                "symbiote_event"
+            },
+            DeckEnchantSourceContractRegistry.Contracts
+                .Select(contract => contract.SourceKind)
+                .OrderBy(kind => kind, StringComparer.Ordinal));
+    }
+
+    [Fact]
+    public void RoyalStampEnchantSourceRequiresExactOwnerAndNativeShape()
+    {
+        DeckEnchantSourceContract contract = Assert.Single(
+            DeckEnchantSourceContractRegistry.Contracts,
+            candidate => candidate.SourceKind == "royal_stamp_relic_pickup");
+
+        Assert.True(DeckEnchantSourceContractRegistry.MatchesSourceShape(
+            contract,
+            "owned_relic",
+            "MegaCrit.Sts2.Core.Models.Relics.RoyalStamp",
+            "ROYAL_STAMP",
+            "MegaCrit.Sts2.Core.Models.Enchantments.RoyallyApproved",
+            1,
+            1,
+            1,
             requireManualConfirmation: false,
             cancelable: false));
-        Assert.False(DeckEnchantSurfaceProvider.IsSymbioteSourceContract(
-            exactEventType: true,
-            exactEnchantmentType: true,
-            enchantmentAmount: 2,
-            minSelect: 1,
-            maxSelect: 1,
+        Assert.False(DeckEnchantSourceContractRegistry.MatchesSourceShape(
+            contract,
+            "current_event",
+            "MegaCrit.Sts2.Core.Models.Relics.RoyalStamp",
+            "ROYAL_STAMP",
+            "MegaCrit.Sts2.Core.Models.Enchantments.RoyallyApproved",
+            1,
+            1,
+            1,
             requireManualConfirmation: false,
             cancelable: false));
-        Assert.False(DeckEnchantSurfaceProvider.IsSymbioteSourceContract(
-            exactEventType: false,
-            exactEnchantmentType: true,
-            enchantmentAmount: 1,
-            minSelect: 1,
-            maxSelect: 1,
+        Assert.False(DeckEnchantSourceContractRegistry.MatchesSourceShape(
+            contract,
+            "owned_relic",
+            "MegaCrit.Sts2.Core.Models.Relics.RoyalStamp",
+            "ROYAL_STAMP",
+            "MegaCrit.Sts2.Core.Models.Enchantments.RoyallyApproved",
+            2,
+            1,
+            1,
+            requireManualConfirmation: false,
+            cancelable: false));
+    }
+
+    [Fact]
+    public void SymbioteAndKifudaContractsDoNotCollapseDifferentOwnersOrBounds()
+    {
+        DeckEnchantSourceContract symbiote = Assert.Single(
+            DeckEnchantSourceContractRegistry.Contracts,
+            candidate => candidate.SourceKind == "symbiote_event");
+        DeckEnchantSourceContract kifuda = Assert.Single(
+            DeckEnchantSourceContractRegistry.Contracts,
+            candidate => candidate.SourceKind == "kifuda_relic_pickup");
+
+        Assert.True(DeckEnchantSourceContractRegistry.MatchesSourceShape(
+            symbiote,
+            "current_event",
+            symbiote.SourceType,
+            symbiote.DefinitionId,
+            symbiote.EnchantmentTypes[0],
+            1,
+            1,
+            1,
+            requireManualConfirmation: false,
+            cancelable: false));
+        Assert.False(DeckEnchantSourceContractRegistry.MatchesSourceShape(
+            symbiote,
+            "owned_relic",
+            symbiote.SourceType,
+            symbiote.DefinitionId,
+            symbiote.EnchantmentTypes[0],
+            1,
+            1,
+            1,
+            requireManualConfirmation: false,
+            cancelable: false));
+        Assert.True(DeckEnchantSourceContractRegistry.MatchesSourceShape(
+            kifuda,
+            "owned_relic",
+            kifuda.SourceType,
+            kifuda.DefinitionId,
+            kifuda.EnchantmentTypes[0],
+            3,
+            0,
+            3,
+            requireManualConfirmation: true,
+            cancelable: false));
+        Assert.False(DeckEnchantSourceContractRegistry.MatchesSourceShape(
+            kifuda,
+            "owned_relic",
+            kifuda.SourceType,
+            kifuda.DefinitionId,
+            kifuda.EnchantmentTypes[0],
+            3,
+            1,
+            1,
             requireManualConfirmation: false,
             cancelable: false));
     }

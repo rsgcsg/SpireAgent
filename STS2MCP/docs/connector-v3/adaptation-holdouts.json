@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "suite_id": "connector_v3_adaptation_holdouts_2026_08_03",
+  "authorization_effect": "none",
+  "qualification_effect": "none",
+  "cases": [
+    {
+      "id": "data_only_new_combat_card",
+      "evidence": "architectural_holdout",
+      "expected_classification": "data_only_compatible",
+      "required_change_scope": "none",
+      "authority_effect": "none"
+    },
+    {
+      "id": "royal_stamp_known_enchant_mechanic_new_source",
+      "evidence": "preview12_exact_live_unknown_source_plus_v0_110_1_source_audit",
+      "expected_classification": "known_mechanic_new_source_contract",
+      "required_change_scope": "reviewed_source_contract_and_source_canary",
+      "authority_effect": "none"
+    },
+    {
+      "id": "kifuda_rare_selector",
+      "evidence": "source_audit_not_exercised_on_preview12",
+      "expected_classification": "known_mechanic_known_source_evidence_pending",
+      "required_change_scope": "exact_runtime_source_canary",
+      "authority_effect": "none"
+    },
+    {
+      "id": "wood_carvings_closed_composition",
+      "evidence": "preview12_exact_live_settled",
+      "expected_classification": "known_primitives_closed_composition",
+      "required_change_scope": "bounded_source_contract_native_binding_and_outcome",
+      "authority_effect": "none"
+    },
+    {
+      "id": "tutor_same_ui_different_participant",
+      "evidence": "v0_110_1_source_audit_multiplayer_target_owner",
+      "expected_classification": "new_owner_or_participant_code_required",
+      "required_change_scope": "native_binding_and_participant_model",
+      "authority_effect": "none"
+    },
+    {
+      "id": "unknown_mod_enchant_source",
+      "evidence": "negative_holdout",
+      "expected_classification": "unknown_source_unsupported",
+      "required_change_scope": "source_audit_before_candidate_publication",
+      "authority_effect": "none"
+    },
+    {
+      "id": "card_select_cmd_patch_drift",
+      "evidence": "patch_boundary_holdout",
+      "expected_classification": "native_binding_or_outcome_revalidation_required",
+      "required_change_scope": "affected_contract_impact_analysis_and_canary",
+      "authority_effect": "none"
+    }
+  ]
+}

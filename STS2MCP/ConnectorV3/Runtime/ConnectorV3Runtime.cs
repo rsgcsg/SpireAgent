@@ -2232,7 +2232,8 @@ internal static partial class ConnectorV3Runtime
         ActionPermissionScope? scope = BridgeSurfacePermission.FindActionScope(
             draft.Game.Compatibility,
             draft.Surface.Kind,
-            action.Kind);
+            action.Kind,
+            action.EvidenceCode);
         BridgeBoundActionContract? contract =
             BridgeBoundActionContract.Build(
                 draft.Surface.Kind,

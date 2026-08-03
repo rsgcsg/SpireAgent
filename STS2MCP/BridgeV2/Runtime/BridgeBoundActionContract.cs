@@ -14,6 +14,7 @@ internal sealed record BridgeBoundActionContract(
     string SurfaceKind,
     string Operation,
     string ContractDigest,
+    string AuthorityFingerprint,
     string SourceEvidenceDigest,
     string OperandDigest,
     string BoundActionDigest,
@@ -44,6 +45,9 @@ internal sealed record BridgeBoundActionContract(
             return null;
 
         string sourceEvidenceDigest = BridgeHash.Text(evidenceCode);
+        string authorityFingerprint = BuildAuthorityFingerprint(
+            identity.ContractDigest,
+            sourceEvidenceDigest);
         string operandDigest = BridgeHash.Object(new
         {
             Key = actionKey,
@@ -62,6 +66,7 @@ internal sealed record BridgeBoundActionContract(
             surfaceKind,
             operation,
             identity.ContractDigest,
+            authorityFingerprint,
             sourceEvidenceDigest,
             operandDigest,
             boundActionDigest,
@@ -79,7 +84,38 @@ internal sealed record BridgeBoundActionContract(
             && (ContractKind == BridgeOperationQualificationCatalog.ManifestMigrationFallback
                 ? string.Equals(scope.Operation, Operation, StringComparison.Ordinal)
                 : true)
-            && string.Equals(scope.OperationFingerprint, ContractDigest, StringComparison.Ordinal)
+            && (string.Equals(
+                    scope.OperationFingerprint,
+                    AuthorityFingerprint,
+                    StringComparison.Ordinal)
+                || scope.AdmissionBasis != "encounter_source_resolved"
+                   && string.Equals(
+                       scope.OperationFingerprint,
+                       ContractDigest,
+                       StringComparison.Ordinal))
             && string.Equals(current.ContractDigest, ContractDigest, StringComparison.Ordinal);
     }
+
+    public static string? AuthorityFingerprintFor(
+        string surfaceKind,
+        string operation,
+        string sourceEvidence)
+    {
+        BridgeOperationQualificationIdentity? identity =
+            BridgeOperationQualificationCatalog.Describe(surfaceKind, operation);
+        return identity == null
+            ? null
+            : BuildAuthorityFingerprint(
+                identity.ContractDigest,
+                BridgeHash.Text(sourceEvidence));
+    }
+
+    private static string BuildAuthorityFingerprint(
+        string contractDigest,
+        string sourceEvidenceDigest) =>
+        BridgeHash.Object(new
+        {
+            contractDigest,
+            sourceEvidenceDigest
+        });
 }

@@ -82,7 +82,7 @@ internal static class BridgeContractManifest
         Entry(
             "deck_enchant_selection",
             new[] { "toggle_card", "preview_selection", "confirm_selection", "cancel_preview", "close_selection" },
-            "sts2-v0.110.0:SelfHelpBook.SelectAndEnchant|Symbiote.Approach|Kifuda.AfterObtained+CardSelectCmd.FromDeckForEnchantment+NDeckEnchantSelectScreen+runtime-source-binding+exact-card-enchantment-post-state-witness",
+            "sts2-v0.110.1:deck_enchant_source_contracts_v1+CardSelectCmd.FromDeckForEnchantment+NDeckEnchantSelectScreen+exact-owner-source-binding+exact-card-enchantment-post-state-witness",
             "purpose_specific_deck_selection",
             new[] { "visible_deck_cards", "selection", "preview", "controls" }),
         V3Entry(

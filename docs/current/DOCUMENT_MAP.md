@@ -11,7 +11,8 @@
 7. [Development model](DEVELOPMENT_MODEL.md)
 8. [V3 stage and human-information architecture reaudit](audits/CONNECTOR_V3_STAGE_AND_HUMAN_INFORMATION_ARCHITECTURE_REAUDIT_2026-08-01.md)
 9. [Connector V3 freeze readiness and adaptation re-audit](audits/CONNECTOR_V3_FREEZE_READINESS_AND_ADAPTATION_REAUDIT_2026-08-03.md)
-10. [Public deployment and collaboration audit](audits/PUBLIC_REPOSITORY_DEPLOYMENT_AND_COLLABORATION_AUDIT_2026-08-02.md)
+10. [Connector V3 adaptation amendment and layered freeze verdict](audits/CONNECTOR_V3_ADAPTABILITY_AMENDMENT_AND_LAYERED_FREEZE_VERDICT_2026-08-03.md)
+11. [Public deployment and collaboration audit](audits/PUBLIC_REPOSITORY_DEPLOYMENT_AND_COLLABORATION_AUDIT_2026-08-02.md)
 
 ## Component Contracts
 

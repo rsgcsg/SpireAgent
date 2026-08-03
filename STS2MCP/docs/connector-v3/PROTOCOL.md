@@ -119,6 +119,14 @@ screen/card/control bindings. A new source still requires Gateway owner,
 Commit, Outcome and authority evidence; emitting a new string never grants
 permission.
 
+For source-rich known mechanics, the Gateway may load a reviewed embedded
+SourceContract registry. A contract binds exact native owner/source type,
+participant, selection shape, Commit and Outcome references; it is not wire,
+does not execute, and cannot be supplied by a Mod at runtime. Encounter trial
+authority is partitioned by the explicit operation-contract digest plus exact
+source-evidence digest. Static reviewed scopes may retain the base operation
+digest, but a dynamic grant for one source never admits a sibling source.
+
 Combat-hand selection exposes the exact current hand owner, visible card
 membership, selected membership, currently selectable/deselectable card IDs
 and current confirm/peek controls. Commands bind `hand_id` plus an exact

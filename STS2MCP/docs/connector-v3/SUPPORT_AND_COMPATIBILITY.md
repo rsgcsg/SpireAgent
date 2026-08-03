@@ -40,7 +40,7 @@ Mod-declared contracts cannot authorize themselves.
 | scoped-qualified | reviewed operation/environment evidence | only exact scope |
 | durable | persisted exact qualification | only while every identity matches |
 
-Exact Preview.11 runtime state:
+Exact Preview.12 runtime state:
 
 - encountered session canary scopes exist;
 - many current operations promoted to `session_trial_confirmed`;
@@ -49,8 +49,10 @@ Exact Preview.11 runtime state:
 - scoped/durable qualification is empty;
 - persistent authority is disabled.
 
-Preview.12 changes contract fingerprints and runtime identity. It inherits no
-Preview.11 session authority and remains pending cold-load evidence.
+Preview.12 was cold-loaded with exact source/build/install/load identity. Its
+three completed boundaries and two Royal Stamp source failures grant no
+authority to the current source-registry amendment. Encounter grants are now
+partitioned by exact source evidence as well as operation/runtime identity.
 
 Canary is never whole-Surface, whole-origin or sibling-operation support.
 
@@ -69,11 +71,11 @@ separate levels. Qualification requires reviewed evidence for the exact
 operation/environment and cannot be inferred from prior MVIDs. Revoke and
 quarantine must fail closed before Commit.
 
-The current qualification store is empty. The support matrix must remain
-`CONDITIONAL FREEZE CANDIDATE` until Preview.12 changed-path and rare-family
+The current qualification store is empty. The support matrix remains
+`CONDITIONAL FREEZE CANDIDATE` until the source-registry amendment, rare-family
 Live evidence, Human profile lifecycle and loaded rollback/revoke are reviewed.
-Preview.11 already supplies one same-artifact completed Journey, but that does
-not qualify Preview.12 or unexercised sources.
+Preview.12's completed journeys do not qualify the new artifact, Royal Stamp,
+Kifuda or other unexercised sources.
 
 ## Rollback
 

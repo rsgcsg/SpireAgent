@@ -24,7 +24,8 @@ internal static class BridgeSurfacePermission
     public static ActionPermissionScope? FindActionScope(
         CompatibilityAssessment compatibility,
         string surfaceKind,
-        string operation)
+        string operation,
+        string? sourceEvidence = null)
     {
         if (!compatibility.ActionExecutionAllowed)
             return null;
@@ -34,14 +35,26 @@ internal static class BridgeSurfacePermission
         bool explicitContract = BridgeOperationQualificationCatalog.IsExplicitContract(
             surfaceKind,
             operation);
+        string? sourceFingerprint = sourceEvidence == null
+            ? null
+            : BridgeBoundActionContract.AuthorityFingerprintFor(
+                surfaceKind,
+                operation,
+                sourceEvidence);
         return compatibility.ActionPermissionScopes.SingleOrDefault(scope =>
             string.Equals(scope.SurfaceKind, surfaceKind, StringComparison.Ordinal)
             && (explicitContract
                 ? identity != null
-                  && string.Equals(
-                      scope.OperationFingerprint,
-                      identity.ContractDigest,
-                      StringComparison.Ordinal)
+                  && (sourceFingerprint != null
+                      && string.Equals(
+                          scope.OperationFingerprint,
+                          sourceFingerprint,
+                          StringComparison.Ordinal)
+                      || scope.AdmissionBasis != "encounter_source_resolved"
+                         && string.Equals(
+                             scope.OperationFingerprint,
+                             identity.ContractDigest,
+                             StringComparison.Ordinal))
                 : string.Equals(scope.Operation, operation, StringComparison.Ordinal)));
     }
 

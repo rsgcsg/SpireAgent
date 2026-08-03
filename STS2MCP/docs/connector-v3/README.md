@@ -34,6 +34,8 @@ See [Protocol](PROTOCOL.md), [Coverage](COVERAGE.md),
 [Preview.12 conditional-freeze closeout](PREVIEW_12_CONDITIONAL_FREEZE_CLOSEOUT_2026-08-03.md).
 The current adaptation and failure analysis is in the
 [freeze re-audit](../../../docs/current/audits/CONNECTOR_V3_FREEZE_READINESS_AND_ADAPTATION_REAUDIT_2026-08-03.md).
+The later source-contract correction and layered freeze verdict are in the
+[adaptation amendment](../../../docs/current/audits/CONNECTOR_V3_ADAPTABILITY_AMENDMENT_AND_LAYERED_FREEZE_VERDICT_2026-08-03.md).
 
 Historical Preview evidence remains tied to its exact SHA/MVID/runtime and
 cannot qualify the current artifact. Bridge v2 documents are migration and
