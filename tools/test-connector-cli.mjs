@@ -236,6 +236,13 @@ const humanReady = evaluateEnvironmentReadiness({
 });
 assert.equal(humanReady.environment_ready, true);
 assert.equal(humanReady.mutation_ready, true);
+const humanOffline = evaluateEnvironmentReadiness(null, "1.0-preview.1");
+assert.deepEqual(humanOffline.blockers, [
+  "gateway_unreachable",
+  "human_observation_disabled",
+  "human_input_delivery_disabled"
+]);
+assert.equal(humanOffline.exact_permission_eligible, null);
 assert.deepEqual(agentRunPreflightErrors({
   ...humanReady,
   loaded_protocol: "1.0-preview.1",

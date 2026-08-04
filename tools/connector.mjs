@@ -121,12 +121,15 @@ export function evaluateLoadedArtifact({
   };
 }
 
-export function evaluateEnvironmentReadiness(capabilities) {
+export function evaluateEnvironmentReadiness(
+  capabilities,
+  expectedProtocol = capabilities?.protocol_version ?? null
+) {
   const compatibility = capabilities?.game?.compatibility;
   const modset = capabilities?.game?.modset;
-  if (capabilities?.protocol_version?.startsWith("1.0-preview.")) {
+  if (expectedProtocol?.startsWith("1.0-preview.")) {
     const observationReady = compatibility?.state_observation_allowed === true;
-    const mutationReady = capabilities.execution_available === true;
+    const mutationReady = capabilities?.execution_available === true;
     const blockers = [];
     if (!capabilities) blockers.push("gateway_unreachable");
     if (!observationReady) blockers.push("human_observation_disabled");
@@ -795,7 +798,7 @@ async function inspect(options, requireLoaded = false) {
     source_identity: currentSource,
     build_provenance: buildMetadata,
     installed_provenance: installedMetadata,
-    ...evaluateEnvironmentReadiness(readinessCapabilities),
+    ...evaluateEnvironmentReadiness(readinessCapabilities, protocols.csharp),
     game_dir: resolved.gameDir,
     mods_dir: resolved.modsDir,
     game_process_running: gameProcessRunning(),
