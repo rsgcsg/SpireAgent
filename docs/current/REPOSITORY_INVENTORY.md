@@ -10,12 +10,14 @@ preserve the detailed migration provenance.
 | Path | Reason |
 |---|---|
 | `Re-SpireAgent/` | Rebuilt Agent runtime, tests, config example, decision records, and current Agent documentation. |
-| `STS2MCP/ConnectorV3/` | Current external observation, command, receipt, and transport implementation. |
+| `STS2MCP/HumanEquivalent/` | Current external observation, affordance, delivery, Inspection, and linked-detail implementation. |
+| `STS2MCP/ConnectorV3/` | Internal native UI adapters, controller infrastructure, and explicit rollback API. |
 | `STS2MCP/BridgeV2/` | Internal mature Provider, identity, controller, ledger, permission, and Outcome assets reused during V3 migration. Not the current Agent protocol. |
 | `STS2MCP/McpMod.cs`, `McpMod.Helpers.cs`, `McpMod.SettingsUI.cs` | Active Gateway host, shared read helpers, and local port configuration. No v1 state/action route remains. |
-| `STS2MCP/mcp/` | Optional current Connector V3 MCP transport adapter. |
+| `STS2MCP/mcp/` | Optional current Human-Equivalent MCP transport adapter. |
 | `STS2MCP/tests/` | Current Bridge contract/runtime test suite. |
-| `STS2MCP/docs/connector-v3/` | Current Connector protocol, coverage, and migration boundary. |
+| `STS2MCP/docs/human-equivalent/` | Current Connector protocol, coverage, and migration boundary. |
+| `STS2MCP/docs/connector-v3/` | Explicit rollback and migration history. |
 | `STS2MCP/docs/bridge-v2/` | Historical protocol, runtime evidence, and internal migration reference. |
 | `docs/current/` | Repository-level current status, architecture, roadmap, operations, and product truth. |
 | `README.md`, `AGENTS.md`, `CONTRIBUTING.md`, `SECURITY.md`, `.gitignore`, `package.json`, `tools/` | Current workspace entrypoints, security boundary, and checks. |
@@ -29,7 +31,7 @@ preserve the detailed migration provenance.
 | `docs/product/REAL_PRODUCTIZATION_*` | `docs/current/audits/` | Product audit remains current but no longer sits under the retired root documentation system. |
 | `docs/headless/` | `docs/current/headless/` | Headless is a current future boundary, not a root P9 phase. |
 | root `README.md`, `AGENTS.md`, package entry | rewritten at root | Root now introduces the active monorepo rather than the retired runtime. |
-| Connector current-status/index documents | `docs/current/` plus `STS2MCP/docs/connector-v3/` | Bridge v2 current-truth files moved to `archive/connector-v2-final/`; detailed evidence remains historical. |
+| Connector current-status/index documents | `docs/current/` plus `STS2MCP/docs/human-equivalent/` | Connector V3 and Bridge v2 material is rollback or historical evidence. |
 
 ## EXTRACT_FOR_CURRENT_USE
 

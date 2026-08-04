@@ -63,9 +63,9 @@ surface-specific.
 
 ## Action Authority
 
-The action builder is deterministic but not strategic. It dispatches on the
-active surface and first enforces state-level authority. Current execution
-imports only state-bound Connector V3 candidates as local opaque choices. Direct historical v1 records
+The action builder is deterministic but not strategic. Current execution
+imports only state/frame/owner-bound Human-Equivalent affordances as local
+opaque choices. Direct historical v1 records
 remain replay-readable as stored evidence, but a Bridge wrapper containing a
 `legacy_v1_state` sidecar is invalid and receives no action authority.
 
@@ -79,17 +79,11 @@ There is one provider path. It uses JSON mode and an explicit thinking policy, s
 
 ## Settlement
 
-The adapter verifies submitted command identity and polls the Bridge
-action-specific lifecycle. Only `completed/confirmed` reaches the
-next-checkpoint watcher. `rejected/not_applied` is an execution rejection;
-`failed/unknown`, `timed_out/unknown`, transport uncertainty, or inconsistent
-command identity stops without retry. Settlement budgets follow semantic
-action lifecycles: end turn and room transitions receive bounded longer
-windows, while ordinary actions retain the default window. Longer windows
-never convert `loading`, `settling`, or `transitioning` into success. If a
-confirmed action reaches a different valid state whose next decision
-checkpoint remains transitional, Re records `executed_checkpoint_pending` and
-continues with a fresh read; it never resubmits the action. Coherent
+The adapter verifies the exact affordance and delivery receipt. `applied`
+means native UI input was delivered and Re must read the successor;
+`not_applied` discards the old snapshot; `unknown`, transport uncertainty or
+receipt identity mismatch stops without retry. Re may wait through a bounded
+settling successor, but it does not reconstruct business completion. Coherent
 state-plus-Inspection capture fails transiently rather than mixing identities.
 
 When one coherent observation remains non-actionable with the same Bridge state
@@ -120,8 +114,8 @@ supported menu action when a developer explicitly requests that protocol test.
 ## Retired Legacy Inference
 
 Historical v1 shop records contained a local `proceed` inference. It is not a
-current capability or fallback. Connector V3 publishes an exact shop
-interaction and bounded commands; no
+current capability or fallback. Human-Equivalent C publishes exact current
+shop controls; no
 legacy shop fact or action is merged into a current observation.
 
 ## Public API

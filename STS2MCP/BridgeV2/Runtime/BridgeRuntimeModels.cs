@@ -65,6 +65,8 @@ internal sealed record BridgeObservationDraft(
     IReadOnlyList<string> Warnings,
     IReadOnlyList<BridgeActionDraft> Actions)
 {
+    public string CandidateAdmission { get; init; } = "business_contract";
+
     public AuthorityHandoff AuthorityHandoff { get; init; } = new(
         "bridge_owned",
         Surface.Kind,

@@ -1,47 +1,45 @@
-# Current Program Plan — Human-Equivalent Connector
+# Current Program Plan - A First, Human-Equivalent C
 
 ## Product Outcome
 
-One Re-SpireAgent should operate the real STS2 UI with human-equivalent information and actions, continuously observe successors, and remain constrained by input integrity and explicit main-menu governance rather than per-source business authority.
+Re-SpireAgent uses the real UI information and controls available to a normal
+player to complete ordinary single-player runs. C stays a small, adaptable I/O
+boundary; A owns interpretation and strategy; D is optional evidence/hints.
 
-## Current Boundary
+## Current State
 
-This branch forks from `connectorV3@5e57e47028b780619a9cd37b0cd13aeaebddaa2a`. Existing V3 is the executable baseline; Human-Equivalent behavior is not yet implemented.
+The first executable HE vertical slice is complete in source: observation,
+generic affordance projection, exact delivery, successor, direct Re consumer,
+pure/assisted modes and public deployment tooling. The next gate is exact
+cold-load and real-game evidence, not more source-specific C semantics.
 
 ## Delivery Order
 
-1. Close branch documentation under ADR-0008.
-2. Add non-authorizing rendered-frame and structured-UI shadow observation.
-3. Add hover/focus/tooltip/scroll/native-page reveal and navigation.
-4. Add generic state/frame-bound current-affordance execution with delivery-only receipts.
-5. Update Re for successor-driven reasoning and transition history.
-6. Add main-menu governance for persistent/destructive operations and application exit.
-7. Exercise Royal Stamp/source-unresolved, multi-stage selector, custom UI and abandon-run holdouts.
-8. Compare against inherited source-contract V3 before cutover.
+1. Cold-load and verify one coherent HE artifact.
+2. Run an ordinary assisted journey; fix only C facts/input integrity defects.
+3. Exercise one unknown-source native selector and one `he_pure` journey.
+4. Complete Human information parity: hover, focus, tooltip, scroll and native
+   page open/read/return as optional UI transitions.
+5. Add bounded custom-drawn UI targeting only when a real unsupported panel
+   proves structured controls insufficient.
+6. Add run lifecycle governance for abandon/return menu while denying
+   destructive profile/save/Mod management and quit by default.
+7. Shift main effort to A: compact projection, transition interpretation,
+   planning, recovery and long-run quality.
 
-## Required Invariants
+## Invariants
 
-- exact current state/frame/owner/target binding;
-- one current controller;
-- execute-time actionability validation;
-- idempotent delivery and no blind replay of unknown delivery;
-- complete human-reachable observation with provenance;
-- no hidden RNG/future/private information;
-- no arbitrary method, node or reflection mutation;
-- persistent management and quit-application policy separated from in-run strategy;
-- no silent V3 fallback after cutover;
-- honest source/test/build/install/load/Live evidence boundaries.
-
-## Run Policy
-
-The Connector does not protect run quality. Current human-operable bad choices, irreversible choices, losing, abandoning a run and returning to the main menu are allowed.
-
-## Current Verdict
-
-`ARCHITECTURE ACCEPTED / IMPLEMENTATION NOT STARTED`.
-
-The inherited V3 branch remains a conditional freeze candidate and comparison path. It does not grant this branch implementation or runtime claims.
+- STS2 owns rules and effects;
+- exact state/frame/owner/target and one current controller;
+- native target/actionability revalidation at delivery;
+- request idempotency and unknown-no-retry;
+- player-visible information only;
+- D never authorizes or executes;
+- no V3 action fallback, arbitrary reflection, node path or coordinate input;
+- source/test/build/install/load/Live evidence remain separate.
 
 ## Deferred
 
-Learning, training, display-headless reimplementation, Companion packaging and broad product distribution remain separate. They must not be used to hide incomplete Human-Equivalent Connector evidence.
+Learning/training, broad Mod compatibility claims, Companion, Workshop binary
+distribution, Headless and public Agent SDK are separate programs. V3
+qualification OS is not a prerequisite for the HE core.

@@ -1,6 +1,7 @@
 # Human-Equivalent UI Integration Target
 
-Status: design target; Re implementation unchanged at branch creation
+Status: superseded by the implemented contract in
+[`HUMAN_EQUIVALENT_INTEGRATION.md`](HUMAN_EQUIVALENT_INTEGRATION.md)
 
 ## Agent Loop
 
@@ -48,4 +49,6 @@ Re may make bad in-run decisions and may abandon a run. Connector safety must no
 
 ## Evidence Boundary
 
-The current Re adapter still consumes Connector V3 semantic commands and business receipts. This target requires new schemas and exact-runtime A/B evidence before cutover.
+The source, strict decoder, adapter and tests are cut over. Exact-runtime input
+delivery and full-journey evidence remain pending until the installed artifact
+is cold-loaded; source/build/install evidence does not substitute for Live.

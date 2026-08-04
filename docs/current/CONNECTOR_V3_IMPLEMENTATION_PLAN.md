@@ -1,4 +1,7 @@
-# Connector V3 Freeze Plan
+# Connector V3 Freeze Plan (Superseded)
+
+Status: rollback and migration history. ADR-0008 and
+`HUMAN_EQUIVALENT_CONNECTOR_IMPLEMENTATION_PLAN.md` are current authority.
 
 Status: Preview.12 Live baseline recorded; adaptation amendment pending cold-load
 

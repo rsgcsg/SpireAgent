@@ -1,6 +1,6 @@
 # ADR-0008: Human-Equivalent UI-First Connector
 
-Status: Accepted on `human_euivalent_connector`
+Status: Accepted and implemented on `human_equivalent_connector`
 
 Date: 2026-08-04
 
@@ -108,8 +108,12 @@ Do not retain as universal requirements:
 - unknown source automatically meaning no current UI action;
 - native-page access restricted to an operator-only evidence lane.
 
-The inherited V3 executor remains a comparison path during migration. It must not silently become a fallback authority after cutover.
+The inherited V3 executor remains an explicit rollback/comparison endpoint. The
+default Re and operator CLI use `/api/he/*`; there is no silent V3 fallback.
 
 ## Evidence Boundary
 
-At branch creation, this ADR is architecture only. The implemented wire remains `3.0-preview.12`; no Human-Equivalent build, install, load, Live, canary or qualification is claimed.
+Protocol `1.0-preview.1` implements the structured-UI core, generic affordance
+delivery, successor and direct Re consumer. Source/tests/build are separate
+from install/load/Live. Exact-runtime HE evidence and broad Human information
+parity remain pending and are not inherited from V3.

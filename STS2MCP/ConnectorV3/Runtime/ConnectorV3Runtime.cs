@@ -41,8 +41,8 @@ internal sealed record ConnectorV3LinkedDetailReadResult(
 
 internal sealed record ConnectorV3BoundCommand(
     ConnectorV3CommandCandidate Candidate,
-    BridgeActionPermissionBinding PermissionBinding,
-    BridgeBoundActionContract ContractBinding);
+    BridgeActionPermissionBinding? PermissionBinding,
+    BridgeBoundActionContract? ContractBinding);
 
 internal static partial class ConnectorV3Runtime
 {
@@ -258,7 +258,8 @@ internal static partial class ConnectorV3Runtime
             "connector_v3_parameterized_command",
             binding?.Candidate.BindingKind ?? "command_not_resolved",
             binding?.Candidate.EntityBindings ?? Array.Empty<ActionEntityBinding>());
-        RegisteredBridgeAction? action = binding == null
+        RegisteredBridgeAction? action = binding?.PermissionBinding == null
+            || binding.ContractBinding == null
             ? null
             : new RegisteredBridgeAction(
                 descriptor,
@@ -272,7 +273,7 @@ internal static partial class ConnectorV3Runtime
                             "permission_or_contract_changed",
                             "The exact command authority changed before native Commit.");
                     }
-                    return StartResolvedCommand(snapshot, request, binding);
+                    return StartNativeUiInput(snapshot, request, binding);
                 },
                 binding.PermissionBinding,
                 binding.ContractBinding);
@@ -292,7 +293,7 @@ internal static partial class ConnectorV3Runtime
             snapshot.Observation.StateToken,
             action,
             () => BridgeV2Runtime.AuthorizeController(bridgeRequest));
-        if (binding != null && response.Attribution != null)
+        if (binding?.PermissionBinding != null && response.Attribution != null)
         {
             PermissionBindings[requestId] = binding.PermissionBinding;
             BridgeV2Runtime.ObserveBoundCommand(
@@ -2229,6 +2230,20 @@ internal static partial class ConnectorV3Runtime
         BridgeObservationDraft draft,
         ConnectorV3CommandDescriptor action)
     {
+        if (string.Equals(
+                draft.CandidateAdmission,
+                "human_ui",
+                StringComparison.Ordinal))
+        {
+            return new ConnectorV3BoundCommand(
+                BuildCandidate(
+                    action,
+                    scope: null,
+                    "human_ui_native_adapter"),
+                null,
+                null);
+        }
+
         ActionPermissionScope? scope = BridgeSurfacePermission.FindActionScope(
             draft.Game.Compatibility,
             draft.Surface.Kind,
@@ -2251,7 +2266,7 @@ internal static partial class ConnectorV3Runtime
 
     private static ConnectorV3CommandCandidate BuildCandidate(
         ConnectorV3CommandDescriptor action,
-        ActionPermissionScope scope,
+        ActionPermissionScope? scope,
         string bindingKind)
     {
         string command = PublicCommand(action.Kind);
@@ -2271,7 +2286,9 @@ internal static partial class ConnectorV3Runtime
             new Dictionary<string, ConnectorV3OperandDomain>(),
             action.EntityBindings ?? Array.Empty<ActionEntityBinding>(),
             bindingKind,
-            scope.Tier == "canary" ? "trial" : "supported");
+            scope == null
+                ? "human_operable"
+                : scope.Tier == "canary" ? "trial" : "supported");
     }
 
     private static string BuildCandidateId(
@@ -2361,12 +2378,13 @@ internal static partial class ConnectorV3Runtime
         })[..20];
     }
 
-    private static BridgeActionStartResult StartResolvedCommand(
+    private static BridgeActionStartResult StartNativeUiInput(
         ConnectorV3Snapshot snapshot,
         ConnectorV3CommandRequest request,
         ConnectorV3BoundCommand binding)
     {
-        if (binding.Candidate.BindingKind == "native_direct_resolver")
+        if (binding.Candidate.BindingKind is
+            "native_direct_resolver" or "human_ui_native_adapter")
         {
             return snapshot.Draft.Surface.Kind switch
             {

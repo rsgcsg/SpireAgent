@@ -1,24 +1,22 @@
 # SpireAgent
 
-SpireAgent connects an external LLM agent to Slay the Spire 2 through a
-state-bound Semantic Gateway.
+SpireAgent connects an external LLM agent to the real Slay the Spire 2 UI.
 
-- [`Re-SpireAgent/`](Re-SpireAgent/) is the external Agent runtime.
-- [`STS2MCP/`](STS2MCP/) is the in-game Gateway, REST API and optional MCP
-  transport adapter.
+- [`STS2MCP/`](STS2MCP/) is the in-game Human-Equivalent Connector.
+- [`Re-SpireAgent/`](Re-SpireAgent/) is the strict Agent runtime.
 
-Connector V3 is the only current target. Source protocol is
-`3.0-preview.12`. The old root Agent and Connector V2 are retained only as
-history under [`archive/`](archive/).
+Human-Equivalent C is the only current target. Source protocol is
+`1.0-preview.1`. Connector V3 remains an explicit rollback implementation and
+historical comparison, never a silent execution fallback.
 
-> **Project maturity:** Connector V3 conditional freeze candidate. There is not yet a packaged
-> Steam Workshop/public binary release. Public users can build and test from
-> source; installed or loaded status is always local-machine evidence.
+> **Maturity:** source, tests and local Release build are available. Public
+> packaged binaries and broad version/Mod compatibility are not yet claimed.
+> Each machine must separately verify install, loaded identity and Live use.
 
 ## Quick Start
 
-Prerequisites: Node.js 20+, npm, .NET 9 SDK and a Steam installation of Slay
-the Spire 2. Python 3.11+ and `uv` are optional unless using MCP.
+Requirements: Node.js 20+, npm, .NET 9 SDK and a Steam installation of Slay
+the Spire 2. Python 3.11+ is needed only for MCP.
 
 ```bash
 git clone https://github.com/rsgcsg/SpireAgent.git
@@ -28,18 +26,16 @@ cp Re-SpireAgent/.env.example Re-SpireAgent/.env.local
 npm run doctor
 ```
 
-Put `DEEPSEEK_API_KEY` only in `Re-SpireAgent/.env.local` or the process
-environment. On non-default Steam layouts, set `STS2_GAME_DIR` there too.
+Keep `DEEPSEEK_API_KEY` only in `Re-SpireAgent/.env.local` or the process
+environment. Set `STS2_GAME_DIR` there only for a non-default Steam location.
 
-With the game fully closed, test, build, back up and install one coherent
-source revision:
+With the game fully closed:
 
 ```bash
 npm run deploy
 ```
 
-Cold-start the game, wait for a stable menu, then verify what the process
-actually loaded:
+Then cold-start the game and run:
 
 ```bash
 npm run verify:loaded
@@ -47,33 +43,41 @@ cd Re-SpireAgent
 npm run agent:run
 ```
 
-`deploy` never claims that the game loaded the new DLL. `agent:run` refuses a
-source/build/install/load mismatch and never retries an unknown mutation.
+`deploy` backs up the previous mod and records source/build/install identity.
+It does not claim the DLL was loaded. `agent:run` verifies loaded SHA/MVID and
+uses `/api/he/*`; it never retries unknown input delivery.
 
-See [Fresh Clone And Local Deployment](docs/current/LOCAL_SETUP.md) for Windows,
-custom Steam paths, rollback and troubleshooting.
+Use `SPIREAGENT_HE_MODE=he_pure` to disable optional D annotations. The default
+`he_assisted` keeps annotations in a separate non-authorizing envelope.
+
+See [Local Setup](docs/current/LOCAL_SETUP.md) for other machines, custom Steam
+paths, rollback and troubleshooting.
+
+## Architecture
+
+```text
+Native STS2 UI
+-> HumanSnapshot (visible facts, current owner, entities, controls)
+-> current state/frame-bound UI affordances
+-> native UI-equivalent input delivery
+-> delivery receipt + successor snapshot
+-> Re-SpireAgent chooses one opaque affordance ID
+```
+
+C does not require a business source, SourceContract or business Outcome to
+operate a currently exact human UI control. STS2 remains the only rules and
+effects authority. A/Re interprets the flow. Optional D annotations explain
+but never authorize or execute.
 
 ## Contributing
 
-Read [the development model](docs/current/DEVELOPMENT_MODEL.md) and
-[CONTRIBUTING.md](CONTRIBUTING.md) before changing code. Every handoff or PR
-must identify its branch/HEAD, affected authority owner, checks run, and the
-separate source/test/build/install/load/Live evidence levels. Local runs,
-secrets, game DLLs and deployment directories are never committed.
-
-## Current Direction
-
-The V3 production path has 94 explicit contracts, zero fallback authority, no
-Provider action publication and no active Re V2 sidecar. Preview.11 completed
-an exact-artifact ordinary Journey but exposed source-contract, witness and
-shutdown defects fixed in Preview.12. Preview.12 remains a conditional freeze
-candidate pending cold-load and targeted Live verification. Workshop
-packaging, Companion, Agent SDK, Headless and learning are later projects and
-must not acquire Gateway authority.
+Read [Development Model](docs/current/DEVELOPMENT_MODEL.md),
+[CONTRIBUTING.md](CONTRIBUTING.md) and the component `AGENT(S).md` before
+editing. Every PR must identify branch/HEAD, authority boundary, tests and the
+separate source/test/build/install/load/Live evidence levels. Never commit
+keys, `.env.local`, game assemblies, installed DLLs, local run data or logs.
 
 - [Documentation map](docs/current/DOCUMENT_MAP.md)
 - [Current status](docs/current/STATUS.md)
 - [Architecture](docs/current/ARCHITECTURE.md)
 - [Roadmap](docs/current/ROADMAP.md)
-- [Security](SECURITY.md)
-- [Code of Conduct](CODE_OF_CONDUCT.md)

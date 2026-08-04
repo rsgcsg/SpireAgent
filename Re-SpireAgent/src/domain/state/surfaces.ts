@@ -1,4 +1,5 @@
 import type { NormalizedStateBase } from "./common.js";
+import type { JsonObject } from "../../shared/json.js";
 import type {
   CardSnapshot,
   EnchantmentSnapshot,
@@ -109,6 +110,7 @@ export interface UnknownContext {
 
 /** Current functional UI contract. This owns action availability, not strategic context. */
 export type InteractionSurface =
+  | HumanUiSurface
   | CombatTurnSurface
   | CombatPileCardSelectionSurface
   | CombatHandCardSelectionSurface
@@ -146,6 +148,43 @@ export type InteractionSurface =
   | MenuChoiceSurface
   | NoActionSurface
   | UnsupportedSurface;
+
+export interface HumanUiSurface {
+  kind: "human_ui";
+  uiKind: string;
+  stage: string;
+  prompt?: string;
+  ownerId: string;
+  facts: JsonObject;
+  entities: Array<{
+    entityId: string;
+    kind: string;
+    label?: string;
+    visible: boolean;
+    enabled: boolean;
+    selected: boolean;
+    detail?: unknown;
+  }>;
+  controls: Array<{
+    controlId: string;
+    ownerId: string;
+    role: string;
+    label?: string;
+    visible: boolean;
+    enabled: boolean;
+    selected: boolean;
+    focused: boolean;
+    actions: string[];
+  }>;
+  legalActions: BridgeLegalActionSnapshot[];
+  annotations?: {
+    sceneHint?: string;
+    purposeHint?: string;
+    phaseHint?: string;
+    expectedTransition?: string;
+    authorizationEffect: "none";
+  };
+}
 
 export interface BridgeSurfaceCompleteness {
   playerVisibleSemantics: string;

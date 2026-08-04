@@ -29,16 +29,16 @@ For any shared-branch, deployment or handoff task, also read
 worktree before editing. Do not overwrite unexplained changes or force-push a
 shared branch.
 
-Use `docs/current/` for repository-level current truth. Connector V3 protocol
-and coverage belong in `STS2MCP/docs/connector-v3/`. Bridge v2 documents are
-migration and evidence history.
+Use `docs/current/` for repository-level current truth. Human-Equivalent
+protocol and coverage belong in `STS2MCP/docs/human-equivalent/`. Connector V3
+and Bridge v2 documents are rollback, migration and evidence history.
 
 ## Hard Boundaries
 
-- The Gateway is the authority for player-visible facts, the active
-  interaction, command admission, execution-time validation and completion.
-- Re-SpireAgent chooses only from V3 candidates and bounded operand domains. It
-  must not reconstruct legality, native Commit or completion.
+- The Gateway is authority for player-visible UI facts, current owner,
+  affordance admission, execute-time target validation and input delivery.
+- Re-SpireAgent chooses only current HE opaque affordance IDs. It interprets
+  successors but must not reconstruct native legality or input delivery.
 - Exactly one active interaction owns mutation commands at a time.
 - Commands bind exact state, interaction and entity identities, are revalidated
   before execution, and do not retry unknown outcomes.
@@ -46,8 +46,9 @@ migration and evidence history.
   grants mutation authority.
 - Do not expose hidden RNG, draw order, future rewards/events, or other facts
   unavailable to a normal player.
-- Unknown source identity, Modset, ownership, semantic binding, permission, or
-  completion must fail closed.
+- Unknown business source is not an input gate when the exact current UI target
+  is observable and actionable. Unknown owner/target/delivery still fails
+  closed; unknown delivery is never retried.
 - Do not add API keys, installed game assemblies, DLLs, local run artifacts,
   `.env.local`, or mutable runtime data to Git.
 
@@ -58,7 +59,7 @@ migration and evidence history.
 - Current roadmap and gates: `docs/current/ROADMAP.md`.
 - Product, Companion, Workshop, BYOK, SDK, and Headless direction:
   `docs/current/PRODUCT.md` and its linked audit.
-- Connector protocol and coverage: `STS2MCP/docs/connector-v3/`.
+- Connector protocol and coverage: `STS2MCP/docs/human-equivalent/`.
 - Re decision/runtime contract: `Re-SpireAgent/docs/`.
 - Historical source/runtime material: `archive/`; never make it the only
   source for a current claim.

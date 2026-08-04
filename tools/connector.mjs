@@ -124,6 +124,29 @@ export function evaluateLoadedArtifact({
 export function evaluateEnvironmentReadiness(capabilities) {
   const compatibility = capabilities?.game?.compatibility;
   const modset = capabilities?.game?.modset;
+  if (capabilities?.protocol_version?.startsWith("1.0-preview.")) {
+    const observationReady = compatibility?.state_observation_allowed === true;
+    const mutationReady = capabilities.execution_available === true;
+    const blockers = [];
+    if (!capabilities) blockers.push("gateway_unreachable");
+    if (!observationReady) blockers.push("human_observation_disabled");
+    if (!mutationReady) blockers.push("human_input_delivery_disabled");
+    return {
+      environment_ready: Boolean(capabilities) && observationReady,
+      observation_ready: observationReady,
+      inspection_ready: observationReady,
+      mutation_ready: mutationReady,
+      provisional_trial_ready: false,
+      modset_status: modset?.status ?? null,
+      exact_permission_eligible: null,
+      qualification_candidate_eligible: null,
+      persistent_qualification_eligible: null,
+      permission_mode: null,
+      compatibility_status: compatibility?.status ?? null,
+      adaptation_level: "human_ui_runtime_binding",
+      blockers
+    };
+  }
   const modsetStatus = modset?.status ?? null;
   const hazardousModset = modsetStatus === "hazardous_mod_state_detected";
   const observationReady = compatibility?.state_observation_allowed === true;
@@ -226,6 +249,18 @@ export function agentRunPreflightErrors(
   { requireObservation = true, requireMutation = false } = {}
 ) {
   const errors = [...(status?.errors ?? [])];
+  if (status?.loaded_protocol?.startsWith("1.0-preview.")) {
+    if (status?.mod_installation?.exact_permission_blocker === true) {
+      errors.push("duplicate_gateway_manifests_detected");
+    }
+    if (requireObservation && status?.observation_ready !== true) {
+      errors.push("human_observation_disabled");
+    }
+    if (requireMutation && status?.mutation_ready !== true) {
+      errors.push("human_input_delivery_disabled");
+    }
+    return [...new Set(errors)];
+  }
   if (status?.mod_installation?.exact_permission_blocker === true) {
     errors.push("duplicate_gateway_manifests_detected");
   }
@@ -285,12 +320,12 @@ function paths(options = {}) {
 function sourceProtocols() {
   return {
     csharp: sourceProtocol(
-      path.join(WORKSPACE, "STS2MCP/ConnectorV3/Protocol/ConnectorV3Contracts.cs"),
+      path.join(WORKSPACE, "STS2MCP/HumanEquivalent/Protocol/HumanEquivalentContracts.cs"),
       /ProtocolVersion\s*=\s*"([^"]+)"/u
     ),
     re: sourceProtocol(
-      path.join(WORKSPACE, "Re-SpireAgent/src/integrations/sts2mcp/connectorV3Protocol.ts"),
-      /SUPPORTED_CONNECTOR_V3_PROTOCOL\s*=\s*"([^"]+)"/u
+      path.join(WORKSPACE, "Re-SpireAgent/src/integrations/sts2mcp/humanEquivalentProtocol.ts"),
+      /SUPPORTED_HUMAN_EQUIVALENT_PROTOCOL\s*=\s*"([^"]+)"/u
     )
   };
 }
@@ -481,7 +516,7 @@ export async function waitForGateway({
   let lastError = "not_attempted";
   while (Date.now() - startedAt <= timeoutMs) {
     attempts += 1;
-    const result = await readJsonResult(endpoint, "/api/v3/capabilities");
+    const result = await readJsonResult(endpoint, "/api/he/capabilities");
     if (result.ok) {
       return {
         ready: true,
@@ -504,11 +539,7 @@ export async function waitForGateway({
 }
 
 export function isTransientAgentObservation(observation) {
-  return observation?.context?.kind === "unknown"
-    && observation?.context?.source_type === "no_active_run_context"
-    && observation?.interaction?.execution_support === "unsupported"
-    && Array.isArray(observation?.interaction?.command_candidates)
-    && observation.interaction.command_candidates.length === 0;
+  return observation?.status === "settling";
 }
 
 export async function waitForAgentObservation({
@@ -521,7 +552,7 @@ export async function waitForAgentObservation({
   let lastError = "not_attempted";
   while (Date.now() - startedAt <= timeoutMs) {
     attempts += 1;
-    const result = await readJsonResult(endpoint, "/api/v3/observation");
+    const result = await readJsonResult(endpoint, "/api/he/observation?mode=he_assisted");
     if (result.ok && !isTransientAgentObservation(result.value)) {
       return {
         ready: true,
@@ -531,7 +562,7 @@ export async function waitForAgentObservation({
         error: null
       };
     }
-    lastError = result.ok ? "no_active_run_context" : result.error;
+    lastError = result.ok ? "native_ui_settling" : result.error;
     if (Date.now() - startedAt >= timeoutMs) break;
     await new Promise((resolve) => setTimeout(resolve, pollMs));
   }
@@ -730,19 +761,8 @@ async function inspect(options, requireLoaded = false) {
     throw new Error(`Gateway did not become ready within ${waited.waited_ms}ms: ${waited.error}`);
   }
   const capabilities = waited?.capabilities
-    ?? await readJson(endpoint, "/api/v3/capabilities", requireLoaded);
-  const projectionSidecar = await readJson(
-    endpoint,
-    "/api/v2/capabilities",
-    requireLoaded
-  );
-  const readinessCapabilities = capabilities
-    ? {
-        ...capabilities,
-        permission_system: projectionSidecar?.permission_system,
-        qualification_system: projectionSidecar?.qualification_system
-      }
-    : null;
+    ?? await readJson(endpoint, "/api/he/capabilities", requireLoaded);
+  const readinessCapabilities = capabilities;
   const builtIdentity = artifactIdentity(resolved.builtDll);
   const installedIdentity = artifactIdentity(resolved.installedDll);
   const buildMetadata = readOptionalJson(resolved.buildIdentity);
@@ -783,11 +803,11 @@ async function inspect(options, requireLoaded = false) {
     gateway_wait: waited ? summarizeGatewayWait(waited) : null,
     mod_installation: inspectModInstallation(resolved.modsDir),
     compatibility_status: capabilities?.game?.compatibility?.status ?? null,
-    permission_mode: projectionSidecar?.permission_system?.mode ?? null,
-    qualification_status: projectionSidecar?.qualification_system?.status ?? null,
+    permission_mode: null,
+    qualification_status: null,
     semantic_state_id: null,
     authority_projection_id: null,
-    note: "V3 observations and read-only /api/v3/inspections are state-token scoped. Re consumes the V3 contract directly; V2 endpoints are rollback and migration diagnostics only."
+    note: "Human-Equivalent C is the default path. It binds current UI affordances to state/frame/owner and returns delivery plus successor; V3 is explicit rollback only."
   };
 }
 
@@ -1049,12 +1069,10 @@ async function collectEvidence(options) {
     throw new Error(`Gateway did not become ready within ${waited.waited_ms}ms: ${waited.error}`);
   }
   const capabilities = waited.capabilities;
-  const state = await readJson(endpoint, "/api/v3/observation", true);
-  const controller = await readJsonResult(endpoint, "/api/v3/controller");
-  const clients = await readJsonResult(endpoint, "/api/v3/clients");
+  const state = await readJson(endpoint, "/api/he/observation?mode=he_assisted", true);
+  const controller = await readJsonResult(endpoint, "/api/he/controller");
   const partialFailures = [
-    ...(controller.ok ? [] : [{ route: "/api/v3/controller", error: controller.error }]),
-    ...(clients.ok ? [] : [{ route: "/api/v3/clients", error: clients.error }])
+    ...(controller.ok ? [] : [{ route: "/api/he/controller", error: controller.error }])
   ];
   const resolved = paths(options);
   const output = path.resolve(options.out ?? path.join(
@@ -1064,7 +1082,7 @@ async function collectEvidence(options) {
   ));
   mkdirSync(path.dirname(output), { recursive: true });
   writeFileSync(output, `${JSON.stringify({
-    schema_version: 2,
+    schema_version: 3,
     captured_at: new Date().toISOString(),
     evidence_kind: "read_only_loaded_connector_snapshot",
     authorization_effect: "none",
@@ -1073,8 +1091,7 @@ async function collectEvidence(options) {
     capabilities,
     state,
     optional_diagnostics: {
-      controller: controller.value,
-      clients: clients.value
+      controller: controller.value
     },
     partial_failures: partialFailures
   }, null, 2)}\n`);
@@ -1084,7 +1101,8 @@ async function collectEvidence(options) {
     protocol_version: capabilities.protocol_version,
     loaded_sha256: capabilities.bridge?.assembly_file_sha256,
     state_token: state.state_token,
-    interaction_id: state.interaction?.id ?? null,
+    frame_id: state.frame?.frame_id ?? null,
+    owner_id: state.owner?.owner_id ?? null,
     partial_failures: partialFailures
   };
 }
@@ -1283,7 +1301,6 @@ async function prepareAgentRun(options) {
     throw new Error(`Agent preflight rejected loaded environment: ${beforeErrors.join(", ")}`);
   }
 
-  let authorityPath = selectAgentAuthorityPath(before);
   let after = before;
   let observationWait = null;
   if (before.observation_ready) {
@@ -1298,17 +1315,6 @@ async function prepareAgentRun(options) {
       );
     }
     after = await inspect({ ...options, endpoint }, true);
-    authorityPath = selectAgentAuthorityPath(after);
-  }
-
-  if (authorityPath === "legacy_migration_required") {
-    delegate(
-      "tools/connector-migration-orchestrator.mjs",
-      "cycle",
-      defaultMigrationCycleArgs({ ...options, endpoint })
-    );
-    after = await inspect({ ...options, endpoint }, true);
-    authorityPath = "legacy_installed_candidate_fallback";
   }
 
   const afterErrors = agentRunPreflightErrors(after, { requireMutation: true });
@@ -1318,7 +1324,7 @@ async function prepareAgentRun(options) {
     );
   }
   return {
-    status: "exact_environment_ready_for_bounded_agent_run",
+    status: "human_equivalent_environment_ready_for_bounded_agent_run",
     protocol_version: after.loaded_protocol,
     loaded_sha256: after.loaded_sha256,
     loaded_mvid: after.loaded_mvid,
@@ -1326,19 +1332,19 @@ async function prepareAgentRun(options) {
     compatibility_status: after.compatibility_status,
     permission_mode: after.permission_mode,
     qualification_status: after.qualification_status,
-    authority_path: authorityPath,
+    authority_path: "current_native_ui_affordance",
     observation_wait: observationWait
       ? {
           attempts: observationWait.attempts,
           waited_ms: observationWait.waited_ms,
-          context_kind: observationWait.observation?.context?.kind ?? null,
+          context_kind: observationWait.observation?.surface?.facts?.context?.kind ?? null,
           surface_kind: observationWait.observation?.surface?.kind ?? null
         }
       : null,
     non_claims: [
-      "preflight is not Organic qualification",
-      "unsupported surfaces remain fail closed",
-      "the bounded run never retries an unknown mutation outcome"
+      "preflight is not Live journey evidence",
+      "visible unsupported UI remains explicit",
+      "unknown input delivery is never retried"
     ]
   };
 }

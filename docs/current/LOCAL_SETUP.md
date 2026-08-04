@@ -9,8 +9,8 @@ one developer's installed DLL as repository truth.
 | Name | Meaning |
 |---|---|
 | SpireAgent | This public monorepo and overall project |
-| `Re-SpireAgent/` | External Agent runtime and strict Connector V3 consumer |
-| Semantic Gateway | In-game observation, authority, native Commit and Outcome owner |
+| `Re-SpireAgent/` | External Agent runtime and strict Human-Equivalent C consumer |
+| Human-Equivalent C | In-game player-visible UI observation, affordance and input-delivery owner |
 | `STS2MCP/` | Compatibility-sensitive source directory and Mod ID for the Gateway, REST and optional MCP adapter |
 
 The `STS2MCP` name does not make MCP mandatory. Re uses REST directly. A Mod ID
@@ -26,15 +26,15 @@ cd SpireAgent
 git status --short --branch
 ```
 
-Contributors testing the active V3 migration before it reaches the default
+Contributors testing the Human-Equivalent migration before it reaches the default
 branch may explicitly track the shared branch:
 
 ```bash
 git fetch origin
-git switch --track origin/connectorV3
+git switch --track origin/human_equivalent_connector
 ```
 
-If the local branch already exists, use `git switch connectorV3` followed by
+If the local branch already exists, use `git switch human_equivalent_connector` followed by
 `git pull --ff-only`. Never pull over an unexplained dirty worktree. Branch
 roles and multi-developer handoff rules are in
 [Development Model](DEVELOPMENT_MODEL.md).
@@ -158,9 +158,9 @@ npm run connector -- show-status
 npm run connector -- collect-evidence
 ```
 
-V3 routes are `/api/v3/*`. Re consumes only V3 observations and does not read a
-V2 capabilities/state sidecar. Mounted V2 endpoints are rollback and migration
-diagnostics only, not a public consumer or mutation path.
+Current routes are `/api/he/*`. Re consumes HumanSnapshots and exact current UI
+affordances without a V2/V3 capabilities or state sidecar. `/api/v3/*` is an
+explicit rollback/comparison API, never a silent fallback.
 
 ## 7. Run Re-SpireAgent
 
@@ -169,10 +169,10 @@ cd Re-SpireAgent
 npm run agent:run
 ```
 
-The wrapper verifies exact identity and bounded authority before invoking the
-provider. Re consumes V3 observations, candidates, commands and receipts. It
-may poll the same pending request, but an unknown mutation terminates the run
-and is never resubmitted.
+The wrapper verifies exact identity and HE execution availability before
+invoking the provider. Re consumes snapshots, finite opaque affordances,
+delivery receipts and successors. It may query the same pending request, but
+unknown delivery terminates the run and is never resubmitted.
 
 The optional MCP transport is started separately:
 
@@ -223,5 +223,5 @@ Cold-start and verify again after rollback.
 | Missing provider key | Check the local file name and permissions without printing the value. |
 
 Current support is defined by [Status](STATUS.md),
-[Connector coverage](../../STS2MCP/docs/connector-v3/COVERAGE.md) and immutable
+[Connector coverage](../../STS2MCP/docs/human-equivalent/COVERAGE.md) and immutable
 exact-runtime evidence records, not by a successful build alone.

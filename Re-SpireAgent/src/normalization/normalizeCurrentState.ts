@@ -18,7 +18,8 @@ import {
   connectorV3AsBridgeV2Wrapper,
   hasConnectorV3BridgeProjection,
   isConnectorV3WrappedState,
-  isBridgeV2WrappedState
+  isBridgeV2WrappedState,
+  isHumanEquivalentWrappedState
 } from "../integrations/sts2mcp/rawState.js";
 import { decodeBridgeV2Capabilities } from "../integrations/sts2mcp/bridgeV2Protocol.js";
 import { stateHash } from "../runtime/stateHash.js";
@@ -28,6 +29,7 @@ import {
   normalizeConnectorV3CurrentState
 } from "./normalizeConnectorV3CurrentState.js";
 import { DiagnosticsBuilder } from "./diagnostics.js";
+import { normalizeHumanEquivalentCurrentState } from "./normalizeHumanEquivalentCurrentState.js";
 import { projectBridgeV2Inspections } from "./bridgeV2InspectionProjection.js";
 import {
   objectArray,
@@ -54,6 +56,9 @@ const KNOWN_TOP_LEVEL_KEYS = new Set([
 const COMBAT_STATE_TOKENS = ["monster", "boss", "elite", "combat", "battle"] as const;
 
 export function normalizeCurrentState(rawInput: unknown, source: AdapterDescriptor, capturedAt = new Date().toISOString()): StateEnvelope {
+  if (isHumanEquivalentWrappedState(rawInput)) {
+    return normalizeHumanEquivalentCurrentState(rawInput, source, capturedAt);
+  }
   if (isConnectorV3WrappedState(rawInput)) {
     if (isDirectConnectorV3ConsumerState(rawInput)) {
       return normalizeConnectorV3CurrentState(rawInput, source, capturedAt);
@@ -418,6 +423,7 @@ function unknownContext(raw: JsonObject, reason: string): SemanticContext {
 
 function determineStability(surface: InteractionSurface, diagnosticsStatus: "ok" | "degraded" | "invalid"): StateStability {
   if (diagnosticsStatus === "invalid") return "invalid";
+  if (surface.kind === "human_ui") return surface.legalActions.length > 0 ? "actionable" : "non_actionable";
   if (surface.kind === "unsupported") return "unknown";
   if (surface.kind === "no_action") return surface.reason;
   if (surface.kind === "combat_turn") return "actionable";
@@ -461,6 +467,7 @@ function determineStability(surface: InteractionSurface, diagnosticsStatus: "ok"
 }
 
 function isCompatible(context: SemanticContext, surface: InteractionSurface): boolean {
+  if (surface.kind === "human_ui") return true;
   const allowed: Record<SemanticContext["kind"], readonly InteractionSurface["kind"][]> = {
     combat: ["combat_turn", "combat_pile_card_selection", "combat_hand_card_selection", "generated_card_choice", "card_selection", "no_action", "unsupported"],
     reward_flow: ["card_reward_selection", "reward_claim", "no_action", "unsupported"],

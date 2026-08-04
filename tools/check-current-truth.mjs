@@ -21,19 +21,19 @@ function capture(relative, pattern, label) {
 
 const protocolDeclarations = [
   [
-    "STS2MCP/ConnectorV3/Protocol/ConnectorV3Contracts.cs",
+    "STS2MCP/HumanEquivalent/Protocol/HumanEquivalentContracts.cs",
     /ProtocolVersion\s*=\s*"([^"]+)"/u,
     "C# protocol"
   ],
   [
-    "Re-SpireAgent/src/integrations/sts2mcp/connectorV3Protocol.ts",
-    /SUPPORTED_CONNECTOR_V3_PROTOCOL\s*=\s*"([^"]+)"/u,
+    "Re-SpireAgent/src/integrations/sts2mcp/humanEquivalentProtocol.ts",
+    /SUPPORTED_HUMAN_EQUIVALENT_PROTOCOL\s*=\s*"([^"]+)"/u,
     "Re protocol"
   ],
   ["README.md", /Source protocol is\s*`([^`]+)`/u, "README protocol"],
   ["docs/current/STATUS.md", /Current source protocol is `([^`]+)`/u, "status protocol"],
-  ["STS2MCP/docs/connector-v3/PROTOCOL.md", /Source protocol: `([^`]+)`/u, "protocol doc"],
-  ["Re-SpireAgent/docs/MCP_STATE_COVERAGE.md", /strictly accepts `([^`]+)`/u, "Re coverage protocol"]
+  ["STS2MCP/docs/human-equivalent/PROTOCOL.md", /Source protocol: `([^`]+)`/u, "protocol doc"],
+  ["Re-SpireAgent/docs/HUMAN_EQUIVALENT_INTEGRATION.md", /strictly accepts `([^`]+)`/u, "Re coverage protocol"]
 ];
 const protocols = protocolDeclarations.map(([relative, pattern, label]) => ({
   relative,

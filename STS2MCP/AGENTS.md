@@ -1,23 +1,23 @@
-# STS2 Connector V3 Engineering Guide
+# STS2 Human-Equivalent Connector Engineering Guide
 
-Read `../docs/current/decisions/ADR-0007-connector-v3-canonical-architecture.md`,
-`../docs/current/CONNECTOR_V3_IMPLEMENTATION_PLAN.md`, and
-`docs/connector-v3/` before changing the current Connector.
+Read `../docs/current/decisions/ADR-0008-human-equivalent-ui-first-connector.md`,
+`../docs/current/HUMAN_EQUIVALENT_CONNECTOR_IMPLEMENTATION_PLAN.md`, and
+`docs/human-equivalent/` before changing the current Connector.
 
 ## Purpose
 
-This repository contains the current game-side Live Semantic Gateway for Slay
-the Spire 2 plus REST and optional MCP adapters. It is not the strategic brain.
+This repository contains the current game-side Human-Equivalent C plus REST
+and optional MCP adapters. It is not the strategic brain.
 In this workspace, "SpireAgent" means the rebuilt client under
 `../Re-SpireAgent/` unless a legacy system is named explicitly.
 
 The bridge owns:
 
-- game-version identity and compatibility checks;
-- player-visible observations with explicit completeness;
-- state/interaction-scoped parameterized commands with exact entity operands;
-- execution-time revalidation on the Godot main thread;
-- idempotent command lifecycle and honest outcome reporting.
+- exact artifact/runtime identity and player-visible observations;
+- state/frame/current-owner-bound UI affordances;
+- execution-time native target validation on the Godot main thread;
+- idempotent delivery and honest delivery uncertainty;
+- immediate successor observations.
 
 The bridge does not own:
 
@@ -29,13 +29,14 @@ The bridge does not own:
 ## Hard Boundaries
 
 - Never accept an index, node path, method name, coordinate, arbitrary
-  reflection target or effect payload. V3 accepts only a current command and
-  exact operands advertised for its state and interaction.
+  reflection target or effect payload. HE accepts only a current advertised
+  affordance with exact state/frame/owner/target parameters.
 - Command publication and execution must share native legality.
 - Rebuild and compare state before execution. Stale means reject.
-- HTTP success or a UI click means `started`, not `completed`.
-- Timeout means `outcome=unknown`; do not auto-retry an unknown outcome.
-- Unknown interactions stay observable but publish no commands.
+- `applied` means input delivery, not complete business Outcome.
+- Delivery uncertainty means `unknown`; never retry it.
+- Unknown business source may still use exact known UI mechanics. Unknown UI
+  owner/target remains visible unsupported.
 - Private reflection must be exact-game-version scoped, documented, cached when
   appropriate, and fail closed.
 - The complete v1 HTTP namespace is retired. Preserve its archive as migration
@@ -45,9 +46,11 @@ The bridge does not own:
 
 ## Module Boundaries
 
-- `ConnectorV3/Protocol`: current wire DTOs only.
-- `ConnectorV3/Runtime`: V3 observation, binding and command runtime.
-- `ConnectorV3/Transport`: V3 HTTP routing.
+- `HumanEquivalent/Protocol`: current public C wire DTOs.
+- `HumanEquivalent/Runtime`: current UI snapshot, affordance and delivery projection.
+- `HumanEquivalent/Transport`: current `/api/he` HTTP handlers.
+- `ConnectorV3/`: bounded native UI adapters and controller infrastructure
+  reused internally during migration; `/api/v3` is explicit rollback only.
 - `BridgeV2/`: internal migration assets and rollback, not current Agent API.
 - `BridgeV2/Runtime`: game-independent identity, action registry, and command
   lifecycle.
@@ -71,7 +74,7 @@ For a new interaction or source:
 3. Add state and action contract tests.
 4. Build against the exact supported game version.
 5. Run a real in-game smoke before marking it Live-exercised.
-6. Update `docs/connector-v3/COVERAGE.md` and repository `STATUS.md`.
+6. Update `docs/human-equivalent/COVERAGE.md` and repository `STATUS.md`.
 
 ## Validation
 

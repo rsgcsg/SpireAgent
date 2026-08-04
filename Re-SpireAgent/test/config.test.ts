@@ -14,10 +14,11 @@ describe("runtime evidence provenance", () => {
       .toThrow("AGENT_EVIDENCE_PROVENANCE");
   });
 
-  it("accepts only the Connector V3 protocol mode", () => {
-    expect(readRuntimeConfig({ STS2_MCP_PROTOCOL: "v3" }).mcp).not.toHaveProperty("protocolMode");
-    expect(() => readRuntimeConfig({ STS2_MCP_PROTOCOL: "auto" })).toThrow("Connector V3");
-    expect(() => readRuntimeConfig({ STS2_MCP_PROTOCOL: "v2" })).toThrow("Connector V3");
+  it("accepts only Human-Equivalent C and separates assisted from pure mode", () => {
+    expect(readRuntimeConfig({ STS2_MCP_PROTOCOL: "he" }).mcp.mode).toBe("he_assisted");
+    expect(readRuntimeConfig({ SPIREAGENT_HE_MODE: "he_pure" }).mcp.mode).toBe("he_pure");
+    expect(() => readRuntimeConfig({ STS2_MCP_PROTOCOL: "v3" })).toThrow("Human-Equivalent C");
+    expect(() => readRuntimeConfig({ SPIREAGENT_HE_MODE: "semantic_auto" })).toThrow("SPIREAGENT_HE_MODE");
   });
 
   it("uses a bounded read-only Gateway startup wait", () => {

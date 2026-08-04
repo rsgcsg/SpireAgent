@@ -13,6 +13,8 @@ export function buildAllowedActions(state: NormalizedCurrentState, sourceStateHa
     return bridgeActions(state, sourceStateHash);
   }
   switch (state.surface.kind) {
+    case "human_ui":
+      return [];
     case "combat_turn":
       return state.context.kind === "combat" && state.player ? combatActions(state.context, state.player, sourceStateHash) : [];
     case "card_selection":
@@ -86,6 +88,7 @@ export function buildAllowedActions(state: NormalizedCurrentState, sourceStateHa
 function bridgeActions(state: NormalizedCurrentState, sourceStateHash: string): AllowedAction[] {
   const legalActions = "legalActions" in state.surface ? state.surface.legalActions : undefined;
   if (!legalActions) return [];
+  const humanEquivalent = state.sourceStateType.startsWith("human_equivalent:");
   const connectorV3 = state.sourceStateType.startsWith("connector_v3:");
   return legalActions.map((action) => ({
     id: action.actionId,
@@ -93,7 +96,14 @@ function bridgeActions(state: NormalizedCurrentState, sourceStateHash: string): 
     label: action.label,
     description: `Bridge-validated ${action.evidenceCode}`,
     ...(action.entityBindings.length > 0 ? { entityBindings: action.entityBindings } : {}),
-    action: connectorV3
+    action: humanEquivalent
+      ? {
+          kind: "human_ui_action",
+          choiceId: action.actionId,
+          expectedStateToken: action.stateId,
+          affordanceId: action.kind
+        }
+      : connectorV3
       ? {
           kind: "connector_v3_command",
           choiceId: action.actionId,

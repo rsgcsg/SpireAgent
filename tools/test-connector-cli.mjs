@@ -213,17 +213,35 @@ assert.equal(
   "legacy_migration_required"
 );
 assert.equal(isTransientAgentObservation({
-  context: { kind: "unknown", source_type: "no_active_run_context" },
-  interaction: { execution_support: "unsupported", command_candidates: [] }
+  status: "settling",
+  surface: { kind: "no_action" }
 }), true);
 assert.equal(isTransientAgentObservation({
-  context: { kind: "event", source_type: "unmapped_visible_event" },
-  interaction: { execution_support: "unsupported", command_candidates: [] }
+  status: "visible_unsupported",
+  surface: { kind: "unknown_visible_panel" }
 }), false);
 assert.equal(isTransientAgentObservation({
-  context: { kind: "menu", source_type: "main_menu" },
-  interaction: { execution_support: "trial", command_candidates: [{}] }
+  status: "actionable",
+  surface: { kind: "main_menu" },
+  affordances: [{}]
 }), false);
+
+const humanReady = evaluateEnvironmentReadiness({
+  protocol_version: "1.0-preview.1",
+  execution_available: true,
+  game: {
+    compatibility: { state_observation_allowed: true },
+    modset: { status: "additional_mods_loaded" }
+  }
+});
+assert.equal(humanReady.environment_ready, true);
+assert.equal(humanReady.mutation_ready, true);
+assert.deepEqual(agentRunPreflightErrors({
+  ...humanReady,
+  loaded_protocol: "1.0-preview.1",
+  errors: [],
+  mod_installation: { exact_permission_blocker: false }
+}, { requireMutation: true }), []);
 
 const mismatch = evaluateLoadedArtifact({
   csharpProtocol: "2.0-preview.68",

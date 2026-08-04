@@ -10,6 +10,22 @@ export type Sts2McpRawState = RawGameState;
 
 export const BRIDGE_V2_WRAPPER_PROTOCOL = "bridge_v2_selected" as const;
 export const CONNECTOR_V3_WRAPPER_PROTOCOL = "connector_v3_selected" as const;
+export const HUMAN_EQUIVALENT_WRAPPER_PROTOCOL = "human_equivalent_selected" as const;
+
+export function wrapHumanEquivalentState(input: {
+  snapshot: JsonObject;
+}): Sts2McpRawState {
+  return {
+    adapter_protocol: HUMAN_EQUIVALENT_WRAPPER_PROTOCOL,
+    human_snapshot: input.snapshot
+  };
+}
+
+export function isHumanEquivalentWrappedState(value: unknown): value is Sts2McpRawState {
+  return isJsonObject(value)
+    && value.adapter_protocol === HUMAN_EQUIVALENT_WRAPPER_PROTOCOL
+    && isJsonObject(value.human_snapshot);
+}
 
 export function wrapBridgeV2State(input: {
   state: JsonObject;

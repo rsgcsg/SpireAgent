@@ -7,6 +7,7 @@ export const RE_PROJECT_ROOT = resolve(fileURLToPath(new URL("../..", import.met
 
 export interface RuntimeConfig {
   mcp: {
+    mode: "he_assisted" | "he_pure";
     baseUrl: string;
     timeoutMs: number;
     startupWaitMs: number;
@@ -47,8 +48,12 @@ export function readRuntimeConfig(env: NodeJS.ProcessEnv = process.env, projectR
   if (thinkingMode !== "enabled" && thinkingMode !== "disabled") {
     throw new Error("DEEPSEEK_THINKING_MODE must be enabled or disabled");
   }
-  if (env.STS2_MCP_PROTOCOL !== undefined && env.STS2_MCP_PROTOCOL !== "v3") {
-    throw new Error("Re-SpireAgent uses Connector V3; STS2_MCP_PROTOCOL may only be v3");
+  if (env.STS2_MCP_PROTOCOL !== undefined && env.STS2_MCP_PROTOCOL !== "he") {
+    throw new Error("Re-SpireAgent uses Human-Equivalent C; STS2_MCP_PROTOCOL may only be he");
+  }
+  const humanMode = env.SPIREAGENT_HE_MODE ?? "he_assisted";
+  if (humanMode !== "he_assisted" && humanMode !== "he_pure") {
+    throw new Error("SPIREAGENT_HE_MODE must be he_assisted or he_pure");
   }
   const evidenceProvenance = env.AGENT_EVIDENCE_PROVENANCE ?? "unrecorded";
   if (!isEvidenceProvenance(evidenceProvenance)) {
@@ -67,6 +72,7 @@ export function readRuntimeConfig(env: NodeJS.ProcessEnv = process.env, projectR
 
   return {
     mcp: {
+      mode: humanMode,
       baseUrl: stripTrailingSlash(env.STS2_API_URL ?? "http://localhost:15526"),
       timeoutMs: positiveInteger(env.STS2_MCP_TIMEOUT_MS, 5_000, "STS2_MCP_TIMEOUT_MS"),
       startupWaitMs: nonNegativeInteger(
@@ -80,14 +86,14 @@ export function readRuntimeConfig(env: NodeJS.ProcessEnv = process.env, projectR
         "STS2_MCP_STARTUP_POLL_MS"
       ),
       commandPollMs: positiveInteger(
-        env.STS2_CONNECTOR_V3_COMMAND_POLL_MS,
+        env.STS2_HE_ACTION_POLL_MS,
         75,
-        "STS2_CONNECTOR_V3_COMMAND_POLL_MS"
+        "STS2_HE_ACTION_POLL_MS"
       ),
       commandTimeoutMs: positiveInteger(
-        env.STS2_CONNECTOR_V3_COMMAND_TIMEOUT_MS,
+        env.STS2_HE_ACTION_TIMEOUT_MS,
         12_000,
-        "STS2_CONNECTOR_V3_COMMAND_TIMEOUT_MS"
+        "STS2_HE_ACTION_TIMEOUT_MS"
       )
     },
     deepseek: {

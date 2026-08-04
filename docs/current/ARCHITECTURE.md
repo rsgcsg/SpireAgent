@@ -1,84 +1,77 @@
-# Current Architecture — Human-Equivalent UI-First Target
+# Current Architecture - Human-Equivalent C
 
 Authority: [ADR-0008](decisions/ADR-0008-human-equivalent-ui-first-connector.md)
 
-Implementation baseline: inherited Connector V3 at `5e57e47028b780619a9cd37b0cd13aeaebddaa2a`
-
-## Target Live Path
+## Live Path
 
 ```text
-Native STS2 rendered UI and Control tree
--> Human-Reachable Observation
--> Current UI Affordances
--> state/frame-bound executor
--> delivery ledger
--> successor observation stream
+Native STS2 UI and structured controls
+-> HumanSnapshot
+-> current UI affordance catalog
+-> state/frame/owner-bound native input delivery
+-> delivery receipt + successor snapshot
 -> REST or thin MCP
 -> Re-SpireAgent
 ```
 
-## Responsibility
+## Responsibilities
 
-STS2 owns game rules, effects, UI state and the actual meaning of player actions.
+**STS2** owns rules, RNG, UI state, native actions and effects.
 
-The Gateway owns complete current human-reachable UI representation, current modal/UI owner, controls/entities/actions, reveal/navigation operations, state/frame-bound dispatch, one-controller coordination, delivery identity and uncertainty, successor observations and main-menu governance enforcement.
+**C/Gateway** owns player-visible UI facts, one current UI owner, stable entity
+and control identities, current affordance discovery, exact input admission,
+single-writer coordination, native delivery and honest delivery uncertainty.
 
-Re owns strict decode, compact projection, deciding what information to reveal, choosing a current affordance, submitting once, interpreting successor state, strategy, run quality and business-result reasoning, recovery and local evidence.
+**A/Re** strictly decodes C, projects finite opaque choices, selects one,
+submits once, observes the successor, interprets flow and business meaning,
+and owns strategy and recovery. It does not reconstruct native legality.
 
-REST and MCP remain transports.
+**D** may supply an `OptionalAnnotationEnvelope` in `he_assisted`; its
+`authorization_effect` is always `none`. `he_pure` proves A+C works without it.
 
-## Human-Reachable Observation
+**REST/MCP** are transports. **P** owns deployment, persistent configuration
+and rollback; this migration does not expand it.
 
-Observation includes directly visible information plus information a human can obtain through hover, focus, tooltip, scroll, tabs, details and native pages. The Connector records provenance and excludes hidden RNG, true future outcomes and private engine state merely readable through reflection.
+## Contracts
 
-A page-changing reveal may be observation. Observation is a transition stream, not necessarily a zero-side-effect function.
+`HumanSnapshot` separates persistent visible run facts, complete current UI
+surface/context facts, entities, controls, current affordances and optional D
+annotations. Assisted and pure snapshots share the same state token and
+affordance authority.
 
-## Input Contract
+An action binds request ID, mode, expected state token, frame ID, owner ID,
+affordance ID, exact parameters and controller generation. The Gateway
+re-observes and checks the current target immediately before calling a bounded
+native UI adapter. No action ID, index, coordinate, node path or arbitrary
+method is accepted.
 
-Every action binds exact current state, frame, owner and target. Structured controls are preferred. Frame-bound pointer fallback is allowed only for current human-visible custom UI that cannot be represented structurally.
-
-The executor revalidates actionability immediately before dispatch and returns:
+Receipts mean input delivery only:
 
 ```text
-not_applied
-applied
-pending_delivery
-unknown_delivery
+not_applied  -> safe refusal; obtain a fresh snapshot
+applied      -> input delivered; use included successor or read a fresh one
+unknown      -> delivery may have happened; never retry
 ```
 
-It need not assert the complete business transaction. Successor observation is the default completion channel.
+An immediate successor read failure does not relabel known delivery as
+`unknown`; delivery and observation remain separate facts.
 
-## Governance Boundary
+## V3 Decomposition
 
-Current in-run UI actions are allowed by default, including bad or irreversible game decisions and abandon-run. Persistent account/profile/save/Mod/global settings and quit-application actions use explicit menu governance.
+Retained: observation policy, identity, owner/entity registry, native adapters,
+main-thread execution, single-controller lease, Inspection facts and evidence.
 
-## Relationship To Connector V3
+Moved out of C authority: source labels, SourceContract explanations,
+transaction phase, expected business transition, business Outcome grader,
+compatibility/qualification analysis. They belong to optional D/P evidence.
 
-Retained infrastructure:
+Closed for HE: unknown-source action suppression, source permission as the
+default gate, business Outcome blocking successor, Re source whitelists and
+silent V3 executor fallback.
 
-- stable identities and stale rejection;
-- one controller;
-- idempotent requests and delivery uncertainty;
-- exact runtime provenance;
-- strict Re and transport boundaries;
-- observation and evidence recording.
+## Current Limits
 
-Not retained as universal authority requirements:
-
-- exact business source for every UI action;
-- per-source command authority;
-- source-specific business Outcome before successor;
-- unknown source automatically meaning no UI input;
-- native-page access restricted to an operator-only evidence profile.
-
-The inherited path remains temporarily as a comparison executor. It must not silently become fallback after Human-Equivalent cutover.
-
-## Non-Goals
-
-- reimplement STS2 rules;
-- arbitrary engine methods or reflection mutation;
-- unbound or long-lived coordinates;
-- hidden information exposure;
-- protecting Agent strategy inside a run;
-- automatically permitting destructive persistent management;
-- claiming arbitrary Mod compatibility before evidence.
+Structured UI coverage reuses the surfaces V3 already observed. A source-free
+adapter currently covers the native one-of-N card choice. Complete generic
+structured-tree discovery, hover/focus/tooltip/scroll and bounded visual
+fallback remain pending; unmapped visible UI is explicit rather than guessed.

@@ -1,4 +1,8 @@
-# Connector V3 Integration
+# Connector V3 Integration (Rollback Only)
+
+Status: superseded by
+[`HUMAN_EQUIVALENT_INTEGRATION.md`](HUMAN_EQUIVALENT_INTEGRATION.md). This file
+documents the explicit rollback consumer and is not current Re behavior.
 
 Connector V3 is Re-SpireAgent's only live execution protocol. Re consumes one
 current observation, projects bounded candidates to local opaque choices,

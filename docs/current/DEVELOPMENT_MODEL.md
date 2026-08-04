@@ -102,20 +102,19 @@ responsible for exact local C# tests/build evidence when Gateway code changes.
 
 Short term:
 
-- finish Connector V3 selector-family migration and delete replaced
-  Provider/V2-shaped production paths;
-- close exact-runtime defects, currently including the observed usable combat
-  potion publication gap;
-- cold-load and exercise Preview.6 Luminous Choir selection without
-  transferring Preview.5 evidence;
+- cold-load and exercise the current Human-Equivalent artifact in both
+  `he_assisted` and `he_pure` without transferring V3 evidence;
+- close exact-runtime UI coverage defects as bounded native mechanics, not new
+  business source gates;
+- complete player-visible Inspection, linked detail and reveal opportunities;
 - keep fresh-clone deployment and rollback reproducible across machines.
 
 Medium term:
 
 - establish a reviewed ordinary-vanilla support envelope with typed stops;
-- reduce remaining V2 control-plane dependencies without weakening identity or
-  unknown-no-retry;
-- promote the coherent V3 branch through normal review and retire the temporary
+- simplify internal inherited V3 adapters without weakening exact target
+  binding, single-writer delivery or unknown-no-retry;
+- promote the coherent Human-Equivalent branch through normal review and retire the temporary
   migration branch.
 
 Later, separately gated work includes Workshop packaging, Companion, public

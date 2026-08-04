@@ -320,6 +320,78 @@ public static partial class McpMod
             {
                 SendJson(response, new { message = $"Hello from STS2 MCP v{Version}", status = "ok" });
             }
+            else if (path == "/api/he/capabilities")
+            {
+                if (request.HttpMethod == "GET")
+                    HandleGetHumanEquivalentCapabilities(response);
+                else
+                    SendError(response, 405, "Method not allowed");
+            }
+            else if (path == "/api/he/observation")
+            {
+                if (request.HttpMethod == "GET")
+                    HandleGetHumanEquivalentObservation(request, response);
+                else
+                    SendError(response, 405, "Method not allowed");
+            }
+            else if (path.StartsWith("/api/he/inspections/", StringComparison.Ordinal))
+            {
+                if (request.HttpMethod == "GET")
+                    HandleGetHumanEquivalentInspection(
+                        path["/api/he/inspections/".Length..],
+                        request,
+                        response);
+                else
+                    SendError(response, 405, "Method not allowed");
+            }
+            else if (path.StartsWith("/api/he/linked-details/", StringComparison.Ordinal))
+            {
+                if (request.HttpMethod == "GET")
+                    HandleGetHumanEquivalentLinkedDetail(
+                        path["/api/he/linked-details/".Length..],
+                        request,
+                        response);
+                else
+                    SendError(response, 405, "Method not allowed");
+            }
+            else if (path == "/api/he/clients/register")
+            {
+                if (request.HttpMethod == "POST")
+                    HandlePostConnectorV3ClientRegistration(request, response);
+                else
+                    SendError(response, 405, "Method not allowed");
+            }
+            else if (path == "/api/he/controller")
+            {
+                if (request.HttpMethod == "GET")
+                    HandleGetConnectorV3Control(response);
+                else
+                    SendError(response, 405, "Method not allowed");
+            }
+            else if (path.StartsWith("/api/he/controller/", StringComparison.Ordinal))
+            {
+                string operation = path["/api/he/controller/".Length..];
+                if (request.HttpMethod == "POST" && operation is "acquire" or "renew" or "release")
+                    HandlePostConnectorV3Controller(operation, request, response);
+                else if (request.HttpMethod == "POST")
+                    SendError(response, 404, "Unknown controller operation");
+                else
+                    SendError(response, 405, "Method not allowed");
+            }
+            else if (path == "/api/he/actions")
+            {
+                if (request.HttpMethod == "POST")
+                    HandlePostHumanEquivalentAction(request, response);
+                else
+                    SendError(response, 405, "Method not allowed");
+            }
+            else if (path.StartsWith("/api/he/actions/", StringComparison.Ordinal))
+            {
+                if (request.HttpMethod == "GET")
+                    HandleGetHumanEquivalentAction(path["/api/he/actions/".Length..], response);
+                else
+                    SendError(response, 405, "Method not allowed");
+            }
             else if (path == "/api/v3/capabilities")
             {
                 if (request.HttpMethod == "GET")
