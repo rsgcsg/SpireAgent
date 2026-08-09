@@ -1,3 +1,4 @@
+using STS2_MCP.BridgeV2.Protocol;
 using STS2_MCP.ConnectorV3.Runtime;
 using STS2_MCP.HumanEquivalent.Protocol;
 using STS2_MCP.HumanEquivalent.Runtime;
@@ -7,16 +8,31 @@ namespace STS2_MCP.Tests;
 public sealed class HumanEquivalentContractTests
 {
     [Fact]
-    public void ModesAreExplicitAndPureCannotSilentlyBecomeAssisted()
+    public void CWireExcludesModeFrameAnnotationsAndNativeBindingOperands()
     {
-        Assert.Equal(
-            HumanEquivalentContract.AssistedMode,
-            HumanEquivalentRuntime.NormalizeHumanMode(null));
-        Assert.Equal(
-            HumanEquivalentContract.PureMode,
-            HumanEquivalentRuntime.NormalizeHumanMode(HumanEquivalentContract.PureMode));
-        Assert.Throws<ArgumentException>(() =>
-            HumanEquivalentRuntime.NormalizeHumanMode("semantic_auto"));
+        string[] observationProperties = typeof(HumanEquivalentObservationResponse)
+            .GetProperties()
+            .Select(property => property.Name)
+            .ToArray();
+        string[] requestProperties = typeof(HumanEquivalentActionRequest)
+            .GetProperties()
+            .Select(property => property.Name)
+            .ToArray();
+        string[] affordanceProperties = typeof(HumanEquivalentAffordance)
+            .GetProperties()
+            .Select(property => property.Name)
+            .ToArray();
+
+        Assert.DoesNotContain("Mode", observationProperties);
+        Assert.DoesNotContain("Frame", observationProperties);
+        Assert.DoesNotContain("OptionalAnnotations", observationProperties);
+        Assert.DoesNotContain("Mode", requestProperties);
+        Assert.DoesNotContain("ExpectedFrameId", requestProperties);
+        Assert.DoesNotContain("ExpectedOwnerId", requestProperties);
+        Assert.DoesNotContain("Parameters", requestProperties);
+        Assert.DoesNotContain("Parameters", affordanceProperties);
+        Assert.DoesNotContain("ParameterDomains", affordanceProperties);
+        Assert.DoesNotContain("EntityBindings", affordanceProperties);
     }
 
     [Theory]
@@ -34,35 +50,12 @@ public sealed class HumanEquivalentContractTests
     }
 
     [Fact]
-    public void ExactParametersRejectReplacementAndUnexpectedOperands()
+    public void BreakingWireCleanupUsesRevisionedSchemas()
     {
-        var expected = new Dictionary<string, string>
-        {
-            ["screen_id"] = "screen-a",
-            ["card_id"] = "card-a"
-        };
-        Assert.True(HumanEquivalentRuntime.DictionaryEqual(
-            expected,
-            new Dictionary<string, string>
-            {
-                ["card_id"] = "card-a",
-                ["screen_id"] = "screen-a"
-            }));
-        Assert.False(HumanEquivalentRuntime.DictionaryEqual(
-            expected,
-            new Dictionary<string, string>
-            {
-                ["screen_id"] = "screen-a",
-                ["card_id"] = "card-replacement"
-            }));
-        Assert.False(HumanEquivalentRuntime.DictionaryEqual(
-            expected,
-            new Dictionary<string, string>
-            {
-                ["screen_id"] = "screen-a",
-                ["card_id"] = "card-a",
-                ["extra"] = "not-advertised"
-            }));
+        Assert.Equal("1.0-preview.2", HumanEquivalentContract.ProtocolVersion);
+        Assert.EndsWith("/observation-2", HumanEquivalentContract.ObservationSchema);
+        Assert.EndsWith("/action-2", HumanEquivalentContract.ActionSchema);
+        Assert.EndsWith("/receipt-2", HumanEquivalentContract.ReceiptSchema);
     }
 
     [Fact]
@@ -77,8 +70,7 @@ public sealed class HumanEquivalentContractTests
             new HumanEquivalentActionSummary(
                 "affordance-a",
                 "activate",
-                "control-a",
-                new Dictionary<string, string>()),
+                "control-a"),
             "input_delivery_unknown",
             "Delivery may have occurred.",
             new HumanEquivalentRetryPolicy(false, "unknown_delivery_never_retry"),
@@ -216,6 +208,54 @@ public sealed class HumanEquivalentContractTests
             Assert.DoesNotContain("source", command.EvidenceCode, StringComparison.OrdinalIgnoreCase);
             Assert.DoesNotContain("contract", command.EvidenceCode, StringComparison.OrdinalIgnoreCase);
         });
+    }
+
+    [Fact]
+    public void HumanFactsUsePositiveProjectionRatherThanBusinessKeyDeletion()
+    {
+        var surface = new CombatPileCardSelectionSurface(
+            "combat_pile_card_selection",
+            "screen-a",
+            "Choose from discard pile",
+            "return_card",
+            "move",
+            "native_callback",
+            "new_mod_card",
+            "card",
+            "source-a",
+            "NEW_MOD_CARD",
+            "source-card-a",
+            "NEW_MOD_CARD",
+            "discard",
+            "hand",
+            "top",
+            null,
+            null,
+            1,
+            1,
+            0,
+            Array.Empty<string>(),
+            RequireManualConfirmation: true,
+            Cancelable: true,
+            new[] { TestCard("card-a", "Alpha") })
+        {
+            SelectableCardEntityIds = new[] { "card-a" },
+            CanConfirm = false
+        };
+
+        string facts = HumanEquivalentRuntime.ProjectHumanFacts(
+            surface,
+            new UnknownBridgeContext("unknown", "PrivateOwnerType", "Visible UI owner is not classified."))
+            .ToJsonString();
+
+        Assert.Contains("pile_type", facts);
+        Assert.Contains("card-a", facts);
+        Assert.Contains("Visible UI owner is not classified.", facts);
+        Assert.DoesNotContain("source_kind", facts);
+        Assert.DoesNotContain("source_type", facts);
+        Assert.DoesNotContain("destination_pile", facts);
+        Assert.DoesNotContain("mutation_kind", facts);
+        Assert.DoesNotContain("commit_mode", facts);
     }
 
     private static STS2_MCP.BridgeV2.Protocol.VisibleCard TestCard(
