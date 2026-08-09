@@ -15,9 +15,10 @@ Its first Live run exposed and reproduced a Re strict-decoder mismatch for
 omitted, unobserved control state; that defect is fixed in source and tests.
 It does not inherit `preview.1` journey evidence.
 
-Freeze verdict is `conditional freeze`. C authority, delivery, positive fact
-projection and A consumption boundaries are fixed. Short-term freeze now
-requires exact-runtime regression of `preview.2`.
+Freeze verdict is `conditional freeze`, with the core C wire, authority and
+delivery contract frozen. A fixed-`preview.2` ordinary journey completed; the
+remaining conditions are bounded `he_pure`, source-free selector and Human
+information-parity evidence, not another C business-semantics redesign.
 
 ## Implemented
 
@@ -49,7 +50,7 @@ remain valuable.
 
 V3 source permission, qualification, SourceContract and business Outcome are
 not HE admission or completion. Re's V3 live client/executor is deleted. The
-HE runtime still calls six machine-checked V3 adapter-library seams for
+HE runtime still calls five machine-checked V3 adapter-library seams for
 unmigrated families. This is one-way implementation reuse, not wire or
 authority, but moving those implementations under neutral `NativeUi`
 ownership remains readability debt.
@@ -63,6 +64,16 @@ mutation at decision 1. C correctly omitted unobserved `selected` and
 The consumer now accepts omitted or null control state, with a fixture matching
 the Live shape. This run proves exact load and the defect boundary, not an
 ordinary journey.
+
+After that consumer fix, `run-20260809130134-e1b0kj` used source `ceb995f4`,
+SHA `c32a3092...`, MVID `daa75e36...`, runtime `b493c49b...`, protocol
+`preview.2`, and STS2 `v0.110.1/db5d3552`. It completed a game and stopped at
+the bounded top-level-menu boundary after 261 decisions: 186 settled inputs,
+22 delivered checkpoint-pending inputs, 9 safe stale refusals, and 44
+non-actionable transition polls. It covered menu, event, map, combat, reward,
+rest, shop, treasure and game-over return. No unknown delivery occurred. The
+metadata remains `provenance=unrecorded` and `qualificationUse=coverage_only`;
+this is exact Live journey evidence, not Organic evidence or qualification.
 
 Four `he_assisted` runs used source `930941a2`, protocol `1.0-preview.1`, SHA
 `257ccac1...`, MVID `2345552d...`, runtime `da0c602d...`, STS2 `v0.110.1` /
@@ -84,7 +95,7 @@ Organic evidence or durable qualification.
 
 ## Pending Exact-Runtime Evidence
 
-- one ordinary fixed-`preview.2` journey and one bounded `he_pure` journey;
+- one bounded `he_pure` journey;
 - source-free combat-pile select/deselect/confirm;
 - unknown-source one-of-N and deck-card selectors;
 - stale, duplicate-request and unknown-delivery runtime negatives;
