@@ -1,124 +1,81 @@
-# Current Status - Human-Equivalent Connector
+# Current Status - Human Environment Contract
 
-Baseline date: 2026-08-09
+Baseline date: 2026-08-10
 
 Branch: `human_equivalent_connector`
 
-Current source protocol is `1.0-preview.2`.
+Current source protocol is `1.0-preview.3`.
 
 ## Verdict
 
-Human-Equivalent C is the only default product path. Gateway, Re and the
-operator CLI use `/api/he/*`; V3 is explicit rollback/comparison only.
-Protocol `preview.2` is source, test, build, install and exact-load verified.
-Its first Live run exposed and reproduced a Re strict-decoder mismatch for
-omitted, unobserved control state; that defect is fixed in source and tests.
-It does not inherit `preview.1` journey evidence.
+Human-Equivalent C remains the only default product path. This revision makes
+the public contract host-neutral enough for a Live UI host and a future
+Headless host to implement the same fair-player boundary. It is not an LLM,
+Gymnasium, reward, simulator or privileged research API.
 
-Freeze verdict is `conditional freeze`, with the core C wire, authority and
-delivery contract frozen. Fixed-`preview.2` ordinary and `he_pure` journeys
-completed; the remaining conditions are source-free selector and Human
-information-parity evidence, not another C business-semantics redesign.
+The architecture verdict is **conditional freeze**. Snapshot binding,
+single-writer control, current affordance authority, execute-time validation,
+idempotent requests, delivery receipts and unknown-no-retry are retained.
+The public ontology and ownership were not frozen at `preview.2` because they
+still exposed Bridge/V3 names, split one target across entity/control arrays,
+and repeated full deployment evidence on every observation.
 
-## Implemented
+## Current Source And Test Truth
 
-- `HumanSnapshot` with exact state token, current owner, persistent visible
-  state, current Surface facts, entities, controls and affordances;
-- generic `activate/select/deselect/confirm/cancel/play/use/end_turn/skip/open/close`;
-- exact C-local owner/entity/control/native-operand binding;
-- execute-time native target/actionability validation and bounded UI adapters;
-- positive, type-bounded HE fact projection instead of serializing legacy DTOs
-  and deleting business keys;
-- request idempotency and `applied/not_applied/unknown` delivery receipts;
-- immediate successor; business Outcome is not awaited;
-- source-free one-of-N, deck-card and combat-pile selector mechanics;
-- strict Re decoder, generic-verb opaque choices and successor supervision;
-- one pure C wire; `he_pure` and `he_assisted` are A composition modes;
-- state-bound run-deck/combat-pile/shop Inspection and linked card detail;
-- `/api/he/*` default REST and root deployment/run tooling.
+`preview.3` provides:
 
-Unknown control `selected`/`focused` state is omitted, not fabricated as
-`false`. C exposes no D mode, annotation, native parameters, V2/V3 action ID,
-index, coordinate, node path or arbitrary method.
+- `snapshot_id`, one current owner and host-neutral session reference;
+- schema-versioned persistent player-visible state and Surface content;
+- one `elements[]` ontology for visible entities and actionable controls;
+- affordances that target exact current element IDs;
+- one state-bound `reads[]` catalog for Inspection and linked detail;
+- typed completeness with explicit missing and hidden-by-policy facts;
+- capabilities-owned host, game and Modset identity, exact environment
+  fingerprint and optional implementation artifact provenance;
+- generic opaque action request and `applied/not_applied/unknown` receipt;
+- strict Re decoding, element/read normalization and exact opaque choice use.
 
-## Retained Infrastructure And Debt
+The public C DTO file imports no BridgeV2 or ConnectorV3 type. Exact native
+operands remain private to the Live host. D annotations, source contracts,
+business Outcome, rewards, reset/seed/fork and hidden state are absent.
 
-Runtime/artifact identity, player-visible observation policy, entity registry,
-owner resolution, bounded native adapters, main-thread dispatch,
-single-controller lease, stale checks, Inspection and local evidence recording
-remain valuable.
+Automated evidence currently includes all Gateway tests, all Re tests and
+strict schema/boundary checks. Build, install, load and Live are separate.
 
-V3 source permission, qualification, SourceContract and business Outcome are
-not HE admission or completion. Re's V3 live client/executor is deleted. The
-HE runtime still calls five machine-checked V3 adapter-library seams for
-unmigrated families. This is one-way implementation reuse, not wire or
-authority, but moving those implementations under neutral `NativeUi`
-ownership remains readability debt.
+## Latest Live Evidence
 
-## Latest Exact Live Evidence
+`run-20260809134724-5yfbuf` used final `preview.2` artifact SHA
+`bd11374d...`, MVID `93e979d1...`, runtime `2d684668...`, and completed the
+bounded ordinary journey after 286 decisions: 208 settled deliveries, 21
+checkpoint-pending deliveries, 6 safe stale refusals and 51 non-actionable
+transition polls. It ended at the completed-run top-menu boundary with no
+unknown delivery. This is exact Live coverage-only evidence for `preview.2`,
+not Organic evidence, durable qualification or evidence for `preview.3`.
 
-`run-20260809125843-1k1zrv` used exact-loaded `preview.2` artifact SHA
-`28e4b335...`, MVID `69657c34...`, runtime `b87e2551...`, and stopped before
-mutation at decision 1. C correctly omitted unobserved `selected` and
-`focused`; Re incorrectly required those keys despite allowing null values.
-The consumer now accepts omitted or null control state, with a fixture matching
-the Live shape. This run proves exact load and the defect boundary, not an
-ordinary journey.
+Earlier `preview.2` runs include an assisted 261-decision complete journey and
+an `he_pure` 231-decision complete journey. They prove that A+C-only operation
+was possible on those exact artifacts; they do not transfer across this wire
+revision.
 
-After that consumer fix, `run-20260809130134-e1b0kj` used source `ceb995f4`,
-SHA `c32a3092...`, MVID `daa75e36...`, runtime `b493c49b...`, protocol
-`preview.2`, and STS2 `v0.110.1/db5d3552`. It completed a game and stopped at
-the bounded top-level-menu boundary after 261 decisions: 186 settled inputs,
-22 delivered checkpoint-pending inputs, 9 safe stale refusals, and 44
-non-actionable transition polls. It covered menu, event, map, combat, reward,
-rest, shop, treasure and game-over return. No unknown delivery occurred. The
-metadata remains `provenance=unrecorded` and `qualificationUse=coverage_only`;
-this is exact Live journey evidence, not Organic evidence or qualification.
+## Remaining Limits
 
-`run-20260809131456-dfve6q` then exercised `he_pure` on source `b8cfaf30`,
-SHA `d373f6fb...`, MVID `40051d0a...`, runtime `c439a4a2...`. It completed a
-game and stopped at the same bounded menu boundary after 231 decisions: 163
-settled inputs, 14 checkpoint-pending inputs, 9 safe stale refusals and 45
-non-actionable transition polls, with zero unknown delivery. This proves the
-bounded A+C-only composition for that exact artifact. Its unrecorded
-provenance and coverage-only qualification boundary remain unchanged.
+- the Live host internally retains five checked calls into V3-owned bounded
+  adapter implementations; they do not define C wire or authority but remain
+  ownership/readability debt;
+- extensible content is explicitly schema-versioned but still represented by
+  JSON objects rather than generated tagged-union SDKs;
+- native element discovery is complete for current action targets, while some
+  non-actionable player-visible entities remain Surface content rather than
+  first-class elements;
+- hover, focus, tooltip, scroll and native-page read/return are incomplete;
+- no Headless host, Gym/Training adapter, vector environment, clone/fork API or
+  Live-vs-Headless conformance implementation exists;
+- `preview.3` has no loaded or long-journey evidence yet.
 
-Four `he_assisted` runs used source `930941a2`, protocol `1.0-preview.1`, SHA
-`257ccac1...`, MVID `2345552d...`, runtime `da0c602d...`, STS2 `v0.110.1` /
-`db5d3552` and an `additional_loaded_mods` Modset.
+## Per-machine Deployment Truth
 
-- `run-20260809114611-rldlev` reached `completed_run_boundary` after 20
-  decisions and returned from game over to the top menu.
-- `run-20260809083202-4ki7ig` exercised combat, reward, upgrade, event, map,
-  rest, shop and treasure with two safe stale refusals.
-- `run-20260809082509-xi54bi` executed 178 decisions but entered a repeated
-  shop open/close cycle. C delivery remained applied; A exposed changing
-  affordance identity as the semantic kind and its cycle hash retained HE
-  transport identity. Source now projects generic verbs and excludes transport
-  IDs from cycle identity.
-
-These runs are `provenance=unrecorded` and
-`qualificationUse=coverage_only_unless_independently_reviewed`. They are not
-Organic evidence or durable qualification.
-
-## Pending Exact-Runtime Evidence
-
-- source-free combat-pile select/deselect/confirm;
-- unknown-source one-of-N and deck-card selectors;
-- stale, duplicate-request and unknown-delivery runtime negatives;
-- hover/focus/tooltip/scroll/native-page operations;
-- abandon-run/return-menu and persistent-management denial policy.
-
-## Non-Claims
-
-- all human-reachable UI is complete;
-- arbitrary versions or Mods are compatible;
-- a visual pointer fallback exists;
-- HE has Organic or durable qualification;
-- `preview.1` evidence transfers to `preview.2`.
-
-## Per-Machine Deployment Truth
-
-Run `npm run doctor`, `npm run deploy` with STS2 closed, then after a cold start
-run `npm run verify:loaded`. Those commands, not this document, are authority
-for one machine's source/build/install/load tuple.
+Do not infer load or Live behavior from source/tests/build. Do not infer
+Headless equivalence, ML suitability, arbitrary-version/Mod compatibility,
+Organic evidence or qualification from a complete Live journey. Use
+`npm run doctor`, `npm run deploy` and `npm run verify:loaded` for per-machine
+deployment truth.

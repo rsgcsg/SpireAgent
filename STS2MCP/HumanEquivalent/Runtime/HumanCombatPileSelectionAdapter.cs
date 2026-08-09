@@ -19,6 +19,23 @@ using STS2_MCP.HumanEquivalent.Protocol;
 
 namespace STS2_MCP.HumanEquivalent.Runtime;
 
+internal sealed record HumanCombatPileSelectionSurface(
+    string Kind,
+    string Stage,
+    string ScreenEntityId,
+    string? Prompt,
+    string PileType,
+    int MinSelect,
+    int MaxSelect,
+    int SelectedCount,
+    IReadOnlyList<string> SelectedCardEntityIds,
+    IReadOnlyList<string> SelectableCardEntityIds,
+    IReadOnlyList<string> DeselectableCardEntityIds,
+    bool Cancelable,
+    bool CanCancel,
+    bool CanConfirm,
+    IReadOnlyList<VisibleCard> Cards) : IBridgeSurface;
+
 /// <summary>
 /// Source-free native adapter for the visible combat-pile selector. It knows
 /// current UI mechanics, not which card/relic/event opened the selector or the

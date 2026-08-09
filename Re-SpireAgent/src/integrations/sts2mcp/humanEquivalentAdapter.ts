@@ -8,7 +8,7 @@ import type { HumanEquivalentAffordance, HumanEquivalentCapabilities } from "./h
 import { wrapHumanEquivalentState, type Sts2McpRawState } from "./rawState.js";
 
 interface HumanInvocation {
-  expectedStateToken: string;
+  expectedSnapshotId: string;
   affordanceId: string;
 }
 
@@ -59,7 +59,7 @@ export class Sts2HumanEquivalentAdapter implements GameAdapter<Sts2McpRawState, 
     const capabilities = this.capabilities;
     return {
       adapterId: "sts2-human-equivalent",
-      ...(capabilities ? { adapterVersion: capabilities.bridge.version } : {}),
+      ...(capabilities ? { adapterVersion: capabilities.host.version } : {}),
       endpoint: this.baseUrl,
       capabilities: {
         canReadState: true,
@@ -78,17 +78,16 @@ export class Sts2HumanEquivalentAdapter implements GameAdapter<Sts2McpRawState, 
           observation_schema: capabilities.observation_schema,
           action_schema: capabilities.action_schema,
           receipt_schema: capabilities.receipt_schema,
-          bridge_version: capabilities.bridge.version,
-          bridge_module_version_id: capabilities.bridge.module_version_id,
-          bridge_assembly_file_sha256: capabilities.bridge.assembly_file_sha256,
-          bridge_runtime_instance_id: capabilities.bridge.runtime_instance_id,
+          host_version: capabilities.host.version,
+          host_module_version_id: capabilities.host.implementation.module_version_id ?? null,
+          host_artifact_sha256: capabilities.host.implementation.artifact_sha256 ?? null,
+          host_runtime_instance_id: capabilities.host.runtime_instance_id,
+          environment_fingerprint: capabilities.environment_fingerprint,
           game_version: capabilities.game.version ?? null,
           game_commit: capabilities.game.commit ?? null,
           main_assembly_hash: capabilities.game.main_assembly_hash ?? null,
           modset_status: capabilities.game.modset.status,
           modset_fingerprint: capabilities.game.modset.fingerprint,
-          business_source_required: false,
-          business_outcome_required: false,
           execution_available: capabilities.execution_available,
           control_session: this.control.snapshot()
         } : {})
@@ -104,7 +103,7 @@ export class Sts2HumanEquivalentAdapter implements GameAdapter<Sts2McpRawState, 
     ]);
     assertIdentity(observed.data, capabilities.data);
     this.capabilities = capabilities.data;
-    this.latestStateToken = observed.data.state_token;
+    this.latestStateToken = observed.data.snapshot_id;
     this.invocations = new Map(observed.data.affordances.map((affordance) => [
       affordance.affordance_id,
       invocation(observed.data, affordance)
@@ -119,8 +118,8 @@ export class Sts2HumanEquivalentAdapter implements GameAdapter<Sts2McpRawState, 
     const invocation = this.invocations.get(action.choiceId);
     if (!invocation
         || action.affordanceId !== invocation.affordanceId
-        || action.expectedStateToken !== invocation.expectedStateToken
-        || this.latestStateToken !== invocation.expectedStateToken) {
+        || action.expectedSnapshotId !== invocation.expectedSnapshotId
+        || this.latestStateToken !== invocation.expectedSnapshotId) {
       return rejected("stale_snapshot", "The selected UI affordance is not bound to the latest snapshot.");
     }
     await this.initialize();
@@ -130,7 +129,7 @@ export class Sts2HumanEquivalentAdapter implements GameAdapter<Sts2McpRawState, 
 
     let controller: GatewayControllerCredentials;
     try {
-      await this.control.register(this.capabilities, this.capabilities.control);
+      await this.control.register(this.capabilities.host, this.capabilities.control);
       controller = await this.control.credentials();
     } catch (error) {
       return rejected("controller_coordination_unavailable", safeMessage(error));
@@ -149,36 +148,27 @@ export class Sts2HumanEquivalentAdapter implements GameAdapter<Sts2McpRawState, 
     } catch (error) {
       return unknown(requestId, invocation, "action_submit_transport_unknown", safeMessage(error));
     }
-    const started = Date.now();
-    while ((receipt.data.status as string) === "pending") {
-      if (Date.now() - started >= this.options.commandTimeoutMs) {
-        return unknown(requestId, invocation, "action_poll_timeout", "Input delivery did not reach a terminal receipt.", receipt.raw);
-      }
-      await this.sleep(this.options.commandPollMs);
-      try { receipt = await this.connector.poll(requestId); }
-      catch (error) { return unknown(requestId, invocation, "action_poll_transport_unknown", safeMessage(error), receipt.raw); }
-    }
     if (receipt.data.request_id !== requestId
         || receipt.data.action.affordance_id !== invocation.affordanceId
-        || receipt.data.status === "unknown" && receipt.data.retry.allowed
+        || receipt.data.delivery === "unknown" && receipt.data.retry.allowed
         || !receipt.data.attribution
         || receipt.data.attribution.controller_lease_id !== controller.controllerLeaseId) {
       return unknown(requestId, invocation, "receipt_contract_mismatch", "Input receipt identity or attribution did not match the request.", receipt.raw);
     }
-    if (receipt.data.status === "applied") {
+    if (receipt.data.delivery === "applied") {
       return {
         accepted: true,
         outcome: "accepted",
         // HE proves bounded native input delivery. Re observes readiness but
         // must not turn slow game animation into a failed business outcome.
         settlementAuthority: "adapter_confirmed",
-        ...(receipt.data.successor?.state_token
-          ? { confirmedStateToken: receipt.data.successor.state_token }
+        ...(receipt.data.successor?.snapshot_id
+          ? { confirmedStateToken: receipt.data.successor.snapshot_id }
           : {}),
         response: receipt.raw
       };
     }
-    if (receipt.data.status === "unknown") return { accepted: false, outcome: "unknown", response: receipt.raw };
+    if (receipt.data.delivery === "unknown") return { accepted: false, outcome: "unknown", response: receipt.raw };
     return {
       accepted: false,
       outcome: "rejected",
@@ -191,24 +181,24 @@ export class Sts2HumanEquivalentAdapter implements GameAdapter<Sts2McpRawState, 
 }
 
 function invocation(
-  observation: { state_token: string },
+  observation: { snapshot_id: string },
   affordance: HumanEquivalentAffordance
 ): HumanInvocation {
   return {
-    expectedStateToken: observation.state_token,
+    expectedSnapshotId: observation.snapshot_id,
     affordanceId: affordance.affordance_id
   };
 }
 
 function assertIdentity(
-  observation: { bridge: HumanEquivalentCapabilities["bridge"]; game: HumanEquivalentCapabilities["game"] },
+  observation: { session: { runtime_instance_id: string; environment_fingerprint: string } },
   capabilities: HumanEquivalentCapabilities
 ): void {
-  if (observation.bridge.runtime_instance_id !== capabilities.bridge.runtime_instance_id
-      || observation.bridge.module_version_id !== capabilities.bridge.module_version_id
-      || observation.bridge.assembly_file_sha256.toLowerCase() !== capabilities.bridge.assembly_file_sha256.toLowerCase()
-      || observation.game.modset.fingerprint !== capabilities.game.modset.fingerprint) {
+  if (observation.session.runtime_instance_id !== capabilities.host.runtime_instance_id) {
     throw new Error("Human-Equivalent observation identity drifted during coherent read");
+  }
+  if (observation.session.environment_fingerprint !== capabilities.environment_fingerprint) {
+    throw new Error("Human-Equivalent environment identity drifted during coherent read");
   }
 }
 

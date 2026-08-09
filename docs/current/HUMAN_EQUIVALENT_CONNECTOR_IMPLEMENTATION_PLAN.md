@@ -1,59 +1,43 @@
-# Human-Equivalent Connector Implementation Plan
+# Human Environment Contract Implementation Plan
 
-Status: core implemented; exact-runtime validation and information parity open
+Status: `preview.3` source/test complete; exact-runtime and information parity open
 
 Authority: [ADR-0008](decisions/ADR-0008-human-equivalent-ui-first-connector.md)
 
 ## Delivered Core
 
 ```text
-current native UI
--> HumanSnapshot
--> finite generic affordances
--> exact native input delivery
--> receipt + successor
--> direct Re opaque choice
+host observe -> snapshot/elements/affordances/reads
+-> consumer chooses opaque affordance
+-> host revalidates exact local binding
+-> input delivery -> receipt + successor
 ```
 
-The implementation reuses V3's state/entity identity, current UI providers,
-native adapters and controller lease. It does not use V3 action IDs or require
-SourceContract, permission scope, qualification or business Outcome.
+Public C records have neutral host/game/session/controller/element/read types
+and no BridgeV2/ConnectorV3 import. Re strictly consumes `preview.3`; it does
+not accept preview.2 aliases or a silent fallback.
 
-`he_assisted` and `he_pure` are A composition modes over the same pure C wire.
-D is not embedded in C and currently has no default provider.
+## Automated Acceptance
 
-## Acceptance Already Covered By Tests
-
-- strict `preview.2` wire decode and rejection of any embedded D annotation;
-- unknown business source with exact current UI remains actionable;
-- source-free deck-card select/deselect/preview/cancel/confirm contracts;
-- source-free combat-pile select/deselect/cancel/confirm contracts;
-- opaque Re action projection without V2 `legal_actions[]` wire input;
-- exact parameters never leave C and therefore cannot be replaced by Re;
-- generic verbs do not expose business operation as wire authority;
-- unknown delivery is non-retryable;
-- existing Gateway and Re regression suites.
-- adapter-confirmed HE delivery remains successful while successor readiness is
-  transitional; Re continues instead of inventing a business failure.
-- HE semantic cycle detection ignores fresh state/affordance transport identity.
+- strict schema rejects legacy fields, dangling action targets and dangling
+  read targets, unversioned extensible content and environment drift;
+- every affordance targets one current element;
+- unknown source does not gate exact current UI;
+- source-free selector mechanics remain covered;
+- exact operands never leave C;
+- Re stores current UI affordances in an HE-native domain type rather than the
+  historical Bridge legal-action model;
+- stale, duplicate request and unknown-no-retry tests remain active;
+- all Gateway and Re regression suites remain active;
+- boundary check prevents Bridge/V3 public DTOs and old HE wire fields.
 
 ## Remaining Vertical Work
 
-1. Build/install/cold-load `preview.2` and verify SHA/MVID.
-2. Regress source-free combat-pile selection and delivery/readiness separation.
-3. Assisted ordinary journey and pure bounded journey.
-4. Source-unclassified one-of-N and deck-card selector Live holdouts.
-5. Re on-demand consumption of implemented state-bound Inspection and Human
-   normal-flow native page transitions.
-6. Hover/focus/tooltip/scroll structured affordances.
-7. One real custom-drawn UI experiment before deciding on visual fallback.
-8. Main-menu destructive-operation governance.
+1. Release build/install/cold-load `preview.3` and verify SHA/MVID/protocol.
+2. Short current-element/action/read smoke and one ordinary `he_pure` journey.
+3. Native hover/focus/tooltip/scroll/page read-return.
+4. Neutralize five V3-owned host adapter seams.
+5. Generate tagged Surface schemas/SDKs from `content_schema` revisions.
 
-## Deletion Rule
-
-Do not delete the V3 rollback endpoint until HE exact-runtime evidence covers
-ordinary menu, combat, map, event, reward, shop, rest, treasure, selectors and
-game over. It must remain explicit and unreachable from HE/Re default flow.
-
-Do not add source-specific HE permission or business completion to solve a
-strategy/flow issue; that belongs to A or optional D evidence.
+V3 remains explicit rollback only. No source-specific authority, reward,
+business Outcome or simulation lifecycle may be added to C.

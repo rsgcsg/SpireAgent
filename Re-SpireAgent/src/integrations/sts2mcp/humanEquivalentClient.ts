@@ -37,7 +37,7 @@ export class HumanEquivalentRestClient {
 
   async submit(input: {
     requestId: string;
-    expectedStateToken: string;
+    expectedSnapshotId: string;
     affordanceId: string;
     clientSessionId: string;
     controllerLeaseId: string;
@@ -45,7 +45,7 @@ export class HumanEquivalentRestClient {
   }): Promise<DecodedHumanPayload<HumanEquivalentReceipt>> {
     return decodeHumanReceipt(await this.post("/api/he/actions", {
       request_id: input.requestId,
-      expected_state_token: input.expectedStateToken,
+      expected_snapshot_id: input.expectedSnapshotId,
       affordance_id: input.affordanceId,
       client_session_id: input.clientSessionId,
       controller_lease_id: input.controllerLeaseId,

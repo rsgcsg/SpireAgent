@@ -33,6 +33,11 @@ internal sealed record HumanEquivalentLinkedDetailReadResult(
     string? ErrorCode,
     string? Detail);
 
+internal sealed record HumanEquivalentLinkedDetailCatalogEntry(
+    string Kind,
+    string EntityId,
+    string VisibilityBasis);
+
 /// <summary>
 /// Human-Equivalent observation and delivery runtime. It owns the HE wire,
 /// admission and receipt lifecycle and shares only bounded native UI
@@ -58,19 +63,18 @@ internal static partial class HumanEquivalentRuntime
             HumanEquivalentContract.ReceiptSchema,
             HumanEquivalentContract.ControlSchema,
             "implemented",
-            HumanGatewayIdentity(bridge.Bridge),
-            bridge.Game,
+            HumanHostIdentity(bridge.Bridge),
+            HumanGameIdentity(bridge.Game),
+            HumanSession(bridge.Bridge, bridge.Game).EnvironmentFingerprint,
             new[]
             {
                 "activate", "select", "deselect", "confirm", "cancel", "play",
                 "target", "use", "end_turn", "skip", "open", "close"
             },
-            StateBound: true,
+            SnapshotBound: true,
             SingleController: true,
-            BusinessSourceRequired: false,
-            BusinessOutcomeRequired: false,
             ExecutionAvailable: bridge.Game.Compatibility.StateObservationAllowed,
-            bridge.ControlCoordination,
+            new HumanEnvironmentControlPolicy(bridge.ControlCoordination.RecommendedRenewalMs),
             new[]
             {
                 "Applied means native UI input was delivered, not that a business transaction settled.",
@@ -104,7 +108,7 @@ internal static partial class HumanEquivalentRuntime
         }
         string fingerprint = BridgeHash.Object(new
         {
-            request.ExpectedStateToken,
+            request.ExpectedSnapshotId,
             request.AffordanceId,
             request.ClientSessionId,
             request.ControllerLeaseId,
@@ -145,7 +149,7 @@ internal static partial class HumanEquivalentRuntime
             parameters = binding?.Parameters
                 ?? new Dictionary<string, string>(StringComparer.Ordinal);
             string action = affordance?.Action ?? "activate";
-            string targetId = affordance?.TargetId ?? "invalid";
+            string targetId = affordance?.TargetElementId ?? "invalid";
 
             HumanRequestFingerprints[requestId] = fingerprint;
             HumanEquivalentActionReceipt Fail(string code, string detail)
@@ -165,7 +169,7 @@ internal static partial class HumanEquivalentRuntime
                 return failed;
             }
 
-            if (!string.Equals(snapshot.Observation.StateToken, request.ExpectedStateToken, StringComparison.Ordinal))
+            if (!string.Equals(snapshot.Observation.SnapshotId, request.ExpectedSnapshotId, StringComparison.Ordinal))
             {
                 return Fail(
                     "stale_snapshot",
@@ -173,10 +177,7 @@ internal static partial class HumanEquivalentRuntime
             }
             if (affordance == null || binding == null)
                 return Fail("affordance_not_current", "The exact advertised affordance is no longer current.");
-            if (!snapshot.Observation.Game.Compatibility.StateObservationAllowed)
-                return Fail("observation_unavailable", "The current UI cannot be observed exactly enough to deliver input.");
-
-            var bridgeRequest = new BridgeCommandRequest(requestId, request.ExpectedStateToken, affordanceId)
+            var bridgeRequest = new BridgeCommandRequest(requestId, request.ExpectedSnapshotId, affordanceId)
             {
                 ClientSessionId = request.ClientSessionId,
                 ControllerLeaseId = request.ControllerLeaseId,
@@ -250,20 +251,21 @@ internal static partial class HumanEquivalentRuntime
 
     public static HumanEquivalentInspectionReadResult InspectHumanEquivalent(
         string kind,
-        string expectedStateToken)
+        string expectedSnapshotId)
     {
         HumanEquivalentRuntimeSnapshot snapshot =
             BuildHumanEquivalentSnapshot();
         HumanEquivalentObservationResponse observation = snapshot.Observation;
-        if (!string.Equals(observation.StateToken, expectedStateToken, StringComparison.Ordinal))
+        if (!string.Equals(observation.SnapshotId, expectedSnapshotId, StringComparison.Ordinal))
         {
             return new HumanEquivalentInspectionReadResult(
                 null,
                 "stale_state",
-                "The expected state token is no longer current; obtain a fresh HumanSnapshot.");
+                "The expected snapshot is no longer current; obtain a fresh Human Environment observation.");
         }
-        if (!observation.InspectionCatalog.Any(entry =>
-                string.Equals(entry.Kind, kind, StringComparison.Ordinal)))
+        if (!observation.Reads.Any(entry =>
+                string.Equals(entry.Kind, kind, StringComparison.Ordinal)
+                && entry.TargetElementId == null))
         {
             return new HumanEquivalentInspectionReadResult(
                 null,
@@ -281,7 +283,7 @@ internal static partial class HumanEquivalentRuntime
         BridgeInspectionDraft draft = built.Draft;
         string inspectionId = "heinspection_" + BridgeHash.Object(new
         {
-            observation.StateToken,
+            observation.SnapshotId,
             draft.Kind,
             draft.Content,
             draft.Completeness
@@ -291,39 +293,38 @@ internal static partial class HumanEquivalentRuntime
                 HumanEquivalentContract.ProtocolVersion,
                 HumanEquivalentContract.InspectionSchema,
                 inspectionId,
-                expectedStateToken,
-                observation.StateToken,
+                expectedSnapshotId,
+                observation.SnapshotId,
                 DateTimeOffset.UtcNow,
                 draft.Kind,
                 draft.VisibilityClass,
                 draft.OrderingSemantics,
-                draft.Content,
-                draft.Completeness,
-                observation.Bridge,
-                observation.Game,
-                observation.ObservationPolicy,
-                Array.Empty<BridgeDiagnostic>()),
+                ReadContentSchema(draft.Kind),
+                JsonSerializer.SerializeToNode(draft.Content, draft.Content.GetType(), McpMod._jsonOptions) ?? new JsonObject(),
+                HumanCompleteness(draft.Completeness, Array.Empty<string>()),
+                observation.Session,
+                observation.ObservationPolicy),
             null,
             null);
     }
 
     public static HumanEquivalentLinkedDetailReadResult ReadHumanEquivalentLinkedDetail(
         string entityId,
-        string expectedStateToken)
+        string expectedSnapshotId)
     {
         HumanEquivalentRuntimeSnapshot snapshot =
             BuildHumanEquivalentSnapshot();
         HumanEquivalentObservationResponse observation = snapshot.Observation;
-        if (!string.Equals(observation.StateToken, expectedStateToken, StringComparison.Ordinal))
+        if (!string.Equals(observation.SnapshotId, expectedSnapshotId, StringComparison.Ordinal))
         {
             return new HumanEquivalentLinkedDetailReadResult(
                 null,
                 "stale_state",
-                "The expected state token is no longer current; obtain a fresh HumanSnapshot.");
+                "The expected snapshot is no longer current; obtain a fresh Human Environment observation.");
         }
-        if (!observation.LinkedDetailCatalog.Any(entry =>
+        if (!observation.Reads.Any(entry =>
                 string.Equals(entry.Kind, "surface_card", StringComparison.Ordinal)
-                && string.Equals(entry.EntityId, entityId, StringComparison.Ordinal)))
+                && string.Equals(entry.TargetElementId, entityId, StringComparison.Ordinal)))
         {
             return new HumanEquivalentLinkedDetailReadResult(
                 null,
@@ -345,7 +346,7 @@ internal static partial class HumanEquivalentRuntime
 
         string detailId = "hedetail_" + BridgeHash.Object(new
         {
-            observation.StateToken,
+            observation.SnapshotId,
             kind = "surface_card",
             card
         })[..20];
@@ -354,16 +355,15 @@ internal static partial class HumanEquivalentRuntime
                 HumanEquivalentContract.ProtocolVersion,
                 HumanEquivalentContract.LinkedDetailSchema,
                 detailId,
-                expectedStateToken,
-                observation.StateToken,
+                expectedSnapshotId,
+                observation.SnapshotId,
                 DateTimeOffset.UtcNow,
                 "surface_card",
                 entityId,
-                card,
-                observation.Bridge,
-                observation.Game,
-                observation.ObservationPolicy,
-                Array.Empty<BridgeDiagnostic>()),
+                ReadContentSchema("surface_card"),
+                JsonSerializer.SerializeToNode(card, McpMod._jsonOptions) ?? new JsonObject(),
+                observation.Session,
+                observation.ObservationPolicy),
             null,
             null);
     }
@@ -429,34 +429,82 @@ internal static partial class HumanEquivalentRuntime
             ProjectHumanAffordances(nativeBindings, ownerId);
         string stage = ReadFirstString(rawSurface, "stage") ?? draft.Readiness;
         string? prompt = ReadFirstString(rawSurface, "prompt", "body", "message");
-        JsonNode surfaceFacts = ProjectHumanFacts(draft.Surface, draft.Context);
-
-        IReadOnlyList<HumanEquivalentUiEntity> entities = HumanSurfaceCards(draft.Surface)
+        JsonNode surfaceContent = ProjectHumanFacts(draft.Surface, draft.Context);
+        Dictionary<string, VisibleCard> cards = HumanSurfaceCards(draft.Surface)
             .GroupBy(card => card.EntityId, StringComparer.Ordinal)
-            .Select(group => new HumanEquivalentUiEntity(
-                group.Key,
-                "card",
-                group.First().Name ?? group.First().DefinitionId,
-                Visible: true,
-                Enabled: projected.Any(item => string.Equals(item.Affordance.TargetId, group.Key, StringComparison.Ordinal)),
-                Selected: IsSelected(rawSurface, group.Key),
-                JsonSerializer.SerializeToNode(group.First(), McpMod._jsonOptions) ?? new JsonObject()))
-            .OrderBy(entity => entity.EntityId, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
+        IReadOnlyList<HumanEnvironmentElement> elements = projected
+            .GroupBy(item => item.Affordance.TargetElementId, StringComparer.Ordinal)
+            .Select(group =>
+            {
+                string elementId = group.Key;
+                VisibleCard? card = cards.GetValueOrDefault(elementId);
+                string role = card == null
+                    ? ElementRole(group.First().Binding.Command, elementId)
+                    : "card";
+                return new HumanEnvironmentElement(
+                    elementId,
+                    role,
+                    card == null ? "control" : "entity",
+                    card?.Name ?? card?.DefinitionId ?? group.First().Affordance.Label,
+                    new HumanEnvironmentElementState(
+                        Visible: true,
+                        Enabled: true,
+                        Selected: card == null ? null : IsSelected(rawSurface, elementId),
+                        Focused: null,
+                        ObservationBasis: card == null
+                            ? "native_ui_actionability"
+                            : "native_visible_entity"),
+                    group.Select(item => item.Affordance.Action)
+                        .Distinct(StringComparer.Ordinal)
+                        .OrderBy(action => action, StringComparer.Ordinal)
+                        .ToArray(),
+                    card == null ? null : ElementPropertiesSchema("card"),
+                    card == null
+                        ? null
+                        : JsonSerializer.SerializeToNode(card, McpMod._jsonOptions) ?? new JsonObject());
+            })
+            .Concat(cards.Values
+                .Where(card => projected.All(item => !string.Equals(
+                    item.Affordance.TargetElementId,
+                    card.EntityId,
+                    StringComparison.Ordinal)))
+                .Select(card => new HumanEnvironmentElement(
+                    card.EntityId,
+                    "card",
+                    "entity",
+                    card.Name ?? card.DefinitionId,
+                    new HumanEnvironmentElementState(
+                        Visible: true,
+                        Enabled: false,
+                        Selected: IsSelected(rawSurface, card.EntityId),
+                        Focused: null,
+                        ObservationBasis: "native_visible_entity"),
+                    Array.Empty<string>(),
+                    ElementPropertiesSchema("card"),
+                    JsonSerializer.SerializeToNode(card, McpMod._jsonOptions) ?? new JsonObject())))
+            .OrderBy(element => element.ElementId, StringComparer.Ordinal)
             .ToArray();
-        IReadOnlyList<HumanEquivalentUiControl> controls = projected
-            .Select(item => new HumanEquivalentUiControl(
-                item.Affordance.TargetId,
-                item.Affordance.OwnerId,
-                item.Affordance.Action,
-                item.Affordance.Label,
-                Visible: true,
-                Enabled: true,
-                Selected: null,
-                Focused: null,
-                Actions: new[] { item.Affordance.Action }))
-            .GroupBy(control => control.ControlId, StringComparer.Ordinal)
-            .Select(group => group.First())
-            .OrderBy(control => control.ControlId, StringComparer.Ordinal)
+        IReadOnlyList<HumanEnvironmentReadOpportunity> reads = inspections
+            .Select(entry => new HumanEnvironmentReadOpportunity(
+                $"read:{entry.Kind}",
+                entry.Kind,
+                null,
+                ReadContentSchema(entry.Kind),
+                entry.VisibilityBasis,
+                SnapshotBound: true,
+                entry.OrderingSemantics,
+                entry.HiddenByPolicy))
+            .Concat(linkedDetails.Select(entry => new HumanEnvironmentReadOpportunity(
+                $"read:{entry.Kind}:{entry.EntityId}",
+                entry.Kind,
+                entry.EntityId,
+                ReadContentSchema(entry.Kind),
+                entry.VisibilityBasis,
+                SnapshotBound: true,
+                "single_entity",
+                Array.Empty<string>())))
+            .OrderBy(read => read.ReadId, StringComparer.Ordinal)
             .ToArray();
         string signature = BridgeHash.Object(new
         {
@@ -464,14 +512,14 @@ internal static partial class HumanEquivalentRuntime
             game.Commit,
             shared.State,
             draft.Readiness,
-            surface = surfaceFacts,
+            surface = surfaceContent,
             ownerId,
-            entities,
-            controls,
+            elements,
             affordances = projected.Select(item => item.Affordance).ToArray(),
-            visibility
+            reads,
+            visibility.HiddenByPolicy
         });
-        (string stateToken, long sequence) = HumanStateIdentity.Observe(signature);
+        (string snapshotId, long sequence) = HumanStateIdentity.Observe(signature);
         bool visibleUnsupported = draft.Surface is UnsupportedSurface;
         string status = projected.Count > 0
             ? "actionable"
@@ -479,31 +527,31 @@ internal static partial class HumanEquivalentRuntime
         var observation = new HumanEquivalentObservationResponse(
             HumanEquivalentContract.ProtocolVersion,
             HumanEquivalentContract.ObservationSchema,
-            stateToken,
+            snapshotId,
             sequence,
             DateTimeOffset.UtcNow,
             status,
             new HumanEquivalentOwner(ownerId, draft.Surface.Kind),
-            shared.State,
-            new HumanEquivalentUiSurface(draft.Surface.Kind, stage, prompt, surfaceFacts),
-            entities,
-            controls,
+            shared.State == null
+                ? null
+                : new HumanEnvironmentContent(
+                    "sts2.human-environment/persistent/run-player-1",
+                    JsonSerializer.SerializeToNode(shared.State, McpMod._jsonOptions) ?? new JsonObject()),
+            new HumanEquivalentUiSurface(
+                draft.Surface.Kind,
+                stage,
+                prompt,
+                SurfaceContentSchema(draft.Surface.Kind),
+                surfaceContent),
+            elements,
             projected.Select(item => item.Affordance).ToArray(),
-            draft.Completeness,
-            HumanGatewayIdentity(BridgeV2Runtime.ReadBridgeIdentity()),
-            game,
-            BridgeV2Runtime.ReadObservationPolicy(),
-            visibility,
-            inspections,
-            linkedDetails,
-            BridgeDiagnostics.ForObservation(draft),
-            draft.Warnings,
-            new HumanEquivalentCoverage(
-                draft.Completeness.PlayerVisibleSemantics,
-                visibleUnsupported ? "visible_unmapped_ui" : "current_native_ui",
-                projected.Count > 0 ? "human_operable" : visibleUnsupported ? "unsupported" : "no_current_input",
-                visibleUnsupported ? new[] { draft.Surface.Kind } : Array.Empty<string>(),
-                visibility.HiddenByPolicy));
+            reads,
+            HumanCompleteness(
+                draft.Completeness,
+                visibility.HiddenByPolicy,
+                visibleUnsupported ? "visible_unmapped" : null),
+            HumanSession(BridgeV2Runtime.ReadBridgeIdentity(), game),
+            HumanObservationPolicy(BridgeV2Runtime.ReadObservationPolicy()));
         return new HumanEquivalentRuntimeSnapshot(
             observation,
             draft,
@@ -568,9 +616,7 @@ internal static partial class HumanEquivalentRuntime
             .Select(group => new HumanEquivalentLinkedDetailCatalogEntry(
                 "surface_card",
                 group.Key,
-                "normal_player_visible_surface_card",
-                StateBound: true,
-                CreatesActionAuthority: false))
+                "normal_player_visible_surface_card"))
             .OrderBy(entry => entry.EntityId, StringComparer.Ordinal)
             .ToArray();
 
@@ -692,8 +738,7 @@ internal static partial class HumanEquivalentRuntime
                         action,
                         targetId,
                         ownerId,
-                        binding.Candidate.Label,
-                        "native_ui_adapter"),
+                        binding.Candidate.Label),
                     new HumanEquivalentNativeBinding(binding, parameters)));
             }
         }
@@ -736,7 +781,6 @@ internal static partial class HumanEquivalentRuntime
             HumanEquivalentContract.ProtocolVersion,
             HumanEquivalentContract.ReceiptSchema,
             requestId,
-            status,
             delivery,
             new HumanEquivalentActionSummary(affordanceId, action, targetId),
             reasonCode,
@@ -746,14 +790,106 @@ internal static partial class HumanEquivalentRuntime
                 status == "unknown" ? "unknown_delivery_never_retry" : "fresh_snapshot_required"),
             successor)
         {
-            Attribution = attribution
+            Attribution = attribution == null ? null : HumanAttribution(attribution)
         };
 
-    private static BridgeServerIdentity HumanGatewayIdentity(BridgeServerIdentity identity) => identity with
+    private static HumanEnvironmentHostIdentity HumanHostIdentity(BridgeServerIdentity identity) => new(
+        HumanEquivalentContract.GatewayId,
+        HumanEquivalentContract.GatewayName,
+        identity.Version,
+        identity.RuntimeInstanceId,
+        "live_ui",
+        new HumanEnvironmentImplementationIdentity(
+            identity.UpstreamCommit,
+            identity.ModuleVersionId,
+            identity.AssemblyFileSha256));
+
+    private static HumanEnvironmentGameIdentity HumanGameIdentity(GameBuildIdentity game)
     {
-        Id = HumanEquivalentContract.GatewayId,
-        Name = HumanEquivalentContract.GatewayName
-    };
+        ModsetIdentity? modset = game.Modset;
+        return new HumanEnvironmentGameIdentity(
+            game.Version,
+            game.Commit,
+            game.Branch,
+            game.MainAssemblyHash,
+            new HumanEnvironmentCompatibility(
+                game.Compatibility.Status,
+                game.Compatibility.StateObservationAllowed,
+                game.Compatibility.Detail),
+            new HumanEnvironmentModset(
+                modset?.Status ?? "unavailable",
+                modset?.Fingerprint ?? "unavailable",
+                modset?.FingerprintScope ?? "unavailable",
+                modset?.Mods.Select(item => item.Id)
+                    .OrderBy(id => id, StringComparer.Ordinal)
+                    .ToArray() ?? Array.Empty<string>(),
+                modset?.Detail ?? "No loaded Modset identity was available."));
+    }
+
+    private static HumanEnvironmentSessionReference HumanSession(
+        BridgeServerIdentity identity,
+        GameBuildIdentity game) => new(
+            identity.RuntimeInstanceId,
+            BridgeHash.Object(new
+            {
+                identity.AssemblyFileSha256,
+                identity.ModuleVersionId,
+                game.Version,
+                game.Commit,
+                game.MainAssemblyHash,
+                Modset = game.Modset?.Fingerprint
+            }));
+
+    private static HumanEnvironmentObservationPolicy HumanObservationPolicy(
+        ObservationPolicyInfo policy) => new(
+            policy.Id,
+            policy.Scope,
+            policy.IncludesHiddenInformation,
+            policy.UnknownFieldBehavior);
+
+    private static HumanEnvironmentAttribution HumanAttribution(
+        BridgeCommandAttribution value) => new(
+            value.RuntimeInstanceId,
+            value.ClientSessionId,
+            value.ClientInstanceId,
+            value.ProductId,
+            value.ProductName,
+            value.ProductVersion,
+            value.ControllerLeaseId,
+            value.ControllerGeneration);
+
+    private static HumanEnvironmentCompleteness HumanCompleteness(
+        StateCompleteness completeness,
+        IReadOnlyList<string> hiddenByPolicy,
+        string? forcedStatus = null) => new(
+            forcedStatus ?? (completeness.Missing.Count == 0 ? "complete" : "partial"),
+            completeness.PlayerVisibleSemantics,
+            completeness.LegalActions,
+            completeness.Missing,
+            hiddenByPolicy);
+
+    private static HumanEnvironmentCompleteness HumanCompleteness(
+        InspectionCompleteness completeness,
+        IReadOnlyList<string> hiddenByPolicy) => new(
+            completeness.Missing.Count == 0 ? "complete" : "partial",
+            completeness.PlayerVisibleSemantics,
+            "read_only",
+            completeness.Missing,
+            hiddenByPolicy);
+
+    private static string SurfaceContentSchema(string surfaceKind) =>
+        $"sts2.human-environment/surface/{surfaceKind}-1";
+
+    private static string ElementPropertiesSchema(string role) =>
+        $"sts2.human-environment/element/{role}-1";
+
+    private static string ReadContentSchema(string kind) =>
+        $"sts2.human-environment/read/{kind}-1";
+
+    private static string ElementRole(ConnectorV3BoundCommand binding, string elementId) =>
+        binding.Candidate.EntityBindings
+            .FirstOrDefault(item => string.Equals(item.EntityId, elementId, StringComparison.Ordinal))
+            ?.Role ?? "control";
 
     internal static string GenericAction(string command, string operation) => command switch
     {

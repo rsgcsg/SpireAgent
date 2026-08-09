@@ -158,7 +158,7 @@ npm run connector -- show-status
 npm run connector -- collect-evidence
 ```
 
-Current routes are `/api/he/*`. Re consumes HumanSnapshots and exact current UI
+Current routes are `/api/he/*`. Re consumes Human Environment snapshots and exact current UI
 affordances without a V2/V3 capabilities or state sidecar. `/api/v3/*` is an
 explicit rollback/comparison API, never a silent fallback.
 

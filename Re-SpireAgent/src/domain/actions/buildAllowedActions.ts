@@ -117,17 +117,17 @@ function bridgeActions(state: NormalizedCurrentState, sourceStateHash: string): 
 
 function humanUiActions(state: NormalizedCurrentState, sourceStateHash: string): AllowedAction[] {
   if (state.surface.kind !== "human_ui") return [];
-  return state.surface.legalActions.map((action) => ({
-    id: action.actionId,
-    kind: action.kind,
-    label: action.label,
-    description: `Current human UI: ${action.kind}`,
-    ...(action.entityBindings.length > 0 ? { entityBindings: action.entityBindings } : {}),
+  return state.surface.affordances.map((affordance) => ({
+    id: affordance.affordanceId,
+    kind: affordance.action,
+    label: affordance.label,
+    description: `Current human UI: ${affordance.action}`,
+    entityBindings: [{ role: "target", entityId: affordance.targetElementId }],
     action: {
       kind: "human_ui_action",
-      choiceId: action.actionId,
-      expectedStateToken: action.stateId,
-      affordanceId: action.actionId
+      choiceId: affordance.affordanceId,
+      expectedSnapshotId: affordance.snapshotId,
+      affordanceId: affordance.affordanceId
     },
     sourceStateHash
   }));

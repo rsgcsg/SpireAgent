@@ -155,28 +155,38 @@ export interface HumanUiSurface {
   stage: string;
   prompt?: string;
   ownerId: string;
-  facts: JsonObject;
-  entities: Array<{
-    entityId: string;
-    kind: string;
-    label?: string;
-    visible: boolean;
-    enabled: boolean;
-    selected: boolean;
-    detail?: unknown;
-  }>;
-  controls: Array<{
-    controlId: string;
-    ownerId: string;
+  contentSchema: string;
+  content: JsonObject;
+  elements: Array<{
+    elementId: string;
     role: string;
+    category: "entity" | "control";
     label?: string;
     visible: boolean;
     enabled: boolean;
     selected?: boolean;
     focused?: boolean;
+    observationBasis: "native_visible_entity" | "native_ui_actionability";
     actions: string[];
+    propertiesSchema?: string;
+    properties?: unknown;
   }>;
-  legalActions: BridgeLegalActionSnapshot[];
+  reads: Array<{
+    readId: string;
+    kind: string;
+    targetElementId?: string;
+    contentSchema: string;
+    visibilityBasis: string;
+    orderingSemantics: string;
+    hiddenByPolicy: string[];
+  }>;
+  affordances: Array<{
+    affordanceId: string;
+    snapshotId: string;
+    action: string;
+    label: string;
+    targetElementId: string;
+  }>;
 }
 
 export interface BridgeSurfaceCompleteness {

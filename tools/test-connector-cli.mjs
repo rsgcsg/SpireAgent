@@ -227,16 +227,16 @@ assert.equal(isTransientAgentObservation({
 }), false);
 
 const humanReady = evaluateEnvironmentReadiness({
-  protocol_version: "1.0-preview.2",
+  protocol_version: "1.0-preview.3",
   execution_available: true,
   game: {
-    compatibility: { state_observation_allowed: true },
+    compatibility: { observation_allowed: true },
     modset: { status: "additional_mods_loaded" }
   }
 });
 assert.equal(humanReady.environment_ready, true);
 assert.equal(humanReady.mutation_ready, true);
-const humanOffline = evaluateEnvironmentReadiness(null, "1.0-preview.2");
+const humanOffline = evaluateEnvironmentReadiness(null, "1.0-preview.3");
 assert.deepEqual(humanOffline.blockers, [
   "gateway_unreachable",
   "human_observation_disabled",
@@ -245,7 +245,7 @@ assert.deepEqual(humanOffline.blockers, [
 assert.equal(humanOffline.exact_permission_eligible, null);
 assert.deepEqual(agentRunPreflightErrors({
   ...humanReady,
-  loaded_protocol: "1.0-preview.2",
+  loaded_protocol: "1.0-preview.3",
   errors: [],
   mod_installation: { exact_permission_blocker: false }
 }, { requireMutation: true }), []);

@@ -55,9 +55,12 @@ export function buildBaselineReport(
       adapterId: metadata.adapter.adapterId,
       adapterVersion: metadata.adapter.adapterVersion ?? null,
       protocolVersion: stringField(negotiated, "bridge_protocol_version"),
-      assemblySha256: stringField(negotiated, "bridge_assembly_file_sha256"),
-      moduleVersionId: stringField(negotiated, "bridge_module_version_id"),
-      runtimeInstanceId: stringField(negotiated, "bridge_runtime_instance_id")
+      assemblySha256: stringField(negotiated, "host_artifact_sha256")
+        ?? stringField(negotiated, "bridge_assembly_file_sha256"),
+      moduleVersionId: stringField(negotiated, "host_module_version_id")
+        ?? stringField(negotiated, "bridge_module_version_id"),
+      runtimeInstanceId: stringField(negotiated, "host_runtime_instance_id")
+        ?? stringField(negotiated, "bridge_runtime_instance_id")
     },
     game: {
       version: stringField(negotiated, "game_version"),

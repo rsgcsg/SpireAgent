@@ -22,8 +22,8 @@ _trust_env: bool = True
 _http: httpx.AsyncClient | None = None
 _control_lock: asyncio.Lock | None = None
 _control: dict | None = None
-_CONTROL_PROTOCOL = "1.0-preview.2"
-_CONTROL_SCHEMA = "sts2.connector.human-ui/control-1"
+_CONTROL_PROTOCOL = "1.0-preview.3"
+_CONTROL_SCHEMA = "sts2.human-environment/control-1"
 
 
 def _he_url(path: str) -> str:
@@ -172,14 +172,14 @@ async def get_sts2_human_snapshot() -> str:
 @mcp.tool()
 async def inspect_sts2_visible_state(
     kind: Literal["run_deck", "combat_piles", "shop_catalog"],
-    expected_state_token: str,
+    expected_snapshot_id: str,
 ) -> str:
     """Read one catalogued, state-bound player-visible detail without authority."""
     try:
         encoded_kind = quote(kind, safe="")
-        encoded_token = quote(expected_state_token, safe="")
+        encoded_token = quote(expected_snapshot_id, safe="")
         return await _he_get(
-            f"inspections/{encoded_kind}?expected_state_token={encoded_token}"
+            f"inspections/{encoded_kind}?expected_snapshot_id={encoded_token}"
         )
     except Exception as error:
         return _handle_error(error)
@@ -188,14 +188,14 @@ async def inspect_sts2_visible_state(
 @mcp.tool()
 async def get_sts2_surface_card_detail(
     entity_id: str,
-    expected_state_token: str,
+    expected_snapshot_id: str,
 ) -> str:
     """Read one current catalogued card detail; never accepts arbitrary fields."""
     try:
         encoded_entity = quote(entity_id, safe="")
-        encoded_token = quote(expected_state_token, safe="")
+        encoded_token = quote(expected_snapshot_id, safe="")
         return await _he_get(
-            f"linked-details/{encoded_entity}?expected_state_token={encoded_token}"
+            f"linked-details/{encoded_entity}?expected_snapshot_id={encoded_token}"
         )
     except Exception as error:
         return _handle_error(error)
@@ -204,7 +204,7 @@ async def get_sts2_surface_card_detail(
 @mcp.tool()
 async def apply_sts2_ui_affordance(
     request_id: str,
-    expected_state_token: str,
+    expected_snapshot_id: str,
     affordance_id: str,
 ) -> str:
     """Deliver one exact affordance advertised by the same HumanSnapshot.
@@ -219,7 +219,7 @@ async def apply_sts2_ui_affordance(
             "actions",
             {
                 "request_id": request_id,
-                "expected_state_token": expected_state_token,
+                "expected_snapshot_id": expected_snapshot_id,
                 "affordance_id": affordance_id,
                 "client_session_id": control["client_session_id"],
                 "controller_lease_id": lease["controller_lease_id"],

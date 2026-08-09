@@ -26,58 +26,62 @@ const SOURCE: AdapterDescriptor = {
 
 function snapshot(): JsonObject {
   return {
-    protocol_version: "1.0-preview.2",
-    schema: "sts2.connector.human-ui/observation-2",
-    state_token: "state-he-1",
+    protocol_version: "1.0-preview.3",
+    schema: "sts2.human-environment/observation-1",
+    snapshot_id: "state-he-1",
     sequence: 1,
     observed_at: "2026-08-04T00:00:00Z",
     status: "actionable",
-    owner: { owner_id: "screen-current", kind: "generated_card_choice" },
-    persistent_state: null,
+    owner: { owner_id: "screen-current", role: "generated_card_choice" },
+    persistent: null,
     surface: {
       kind: "generated_card_choice",
       stage: "ready",
       prompt: "Choose a card",
-      facts: {
+      content_schema: "sts2.human-environment/surface/generated_card_choice-1",
+      content: {
         surface: { kind: "generated_card_choice", cards: [{ entity_id: "card-1", name: "Visible card" }] },
         context: { kind: "event", name: "Unknown new event" }
       }
     },
-    entities: [{ entity_id: "card-1", kind: "card", label: "Visible card", visible: true, enabled: true, selected: false, detail: {} }],
-    controls: [{ control_id: "card-1", owner_id: "screen-current", role: "select", label: "Choose Visible card", visible: true, enabled: true, selected: false, focused: false, actions: ["select"] }],
+    elements: [{
+      element_id: "card-1",
+      role: "card",
+      category: "entity",
+      label: "Visible card",
+      state: { visible: true, enabled: true, selected: false, observation_basis: "native_visible_entity" },
+      actions: ["select"],
+      properties_schema: "sts2.human-environment/element/card-1",
+      properties: {}
+    }],
     affordances: [{
       affordance_id: "affordance-card-1",
       action: "select",
-      target_id: "card-1",
+      target_element_id: "card-1",
       owner_id: "screen-current",
-      label: "Choose Visible card",
-      provenance: "native_ui_adapter"
+      label: "Choose Visible card"
     }],
-    completeness: { player_visible_semantics: "complete_current_structured_ui", legal_actions: "derived_from_current_visible_enabled_controls", sources: ["native UI"], missing: [] },
-    bridge: { id: "sts2_human_equivalent_connector", name: "STS2 Human-Equivalent Connector", version: "fixture", upstream_commit: "fixture", module_version_id: "fixture-mvid", assembly_file_sha256: "a".repeat(64), runtime_instance_id: "fixture-runtime" },
-    game: { version: "v0.109.1", commit: "fixture", main_assembly_hash: 1, compatibility: { state_observation_allowed: true }, modset: { status: "exact_bridge_only", fingerprint: "fixture-modset" } },
-    observation_policy: { includes_hidden_information: false },
-    visibility: { profile_id: "player_visible", core_status: "complete", player_visible_closure_status: "complete", available_inspections: [], linked_detail_kinds: [], hidden_by_policy: [], missing: [], unknown_critical_field_behavior: "fail_closed" },
-    inspection_catalog: [], linked_detail_catalog: [], diagnostics: [], warnings: [], coverage: {}
+    reads: [],
+    completeness: { status: "complete", visible_information: "complete_current_structured_ui", interaction_discovery: "derived_from_current_visible_enabled_controls", missing: [], hidden_by_policy: [] },
+    session: { runtime_instance_id: "fixture-runtime", environment_fingerprint: "fixture-environment" },
+    observation_policy: { id: "player_visible", scope: "current_human_ui", includes_hidden_information: false, unknown_field_behavior: "fail_closed" }
   };
 }
 
 function capabilities(): JsonObject {
-  const value = snapshot();
   return {
-    protocol_version: "1.0-preview.2",
-    observation_schema: "sts2.connector.human-ui/observation-2",
-    action_schema: "sts2.connector.human-ui/action-2",
-    receipt_schema: "sts2.connector.human-ui/receipt-2",
-    control_schema: "sts2.connector.human-ui/control-1",
+    protocol_version: "1.0-preview.3",
+    observation_schema: "sts2.human-environment/observation-1",
+    action_schema: "sts2.human-environment/action-1",
+    receipt_schema: "sts2.human-environment/receipt-1",
+    control_schema: "sts2.human-environment/control-1",
     status: "ready",
-    bridge: value.bridge!,
-    game: value.game!,
+    host: { id: "sts2_human_environment", name: "STS2 Human Environment", version: "fixture", runtime_instance_id: "fixture-runtime", host_kind: "live_ui", implementation: { source_revision: "fixture", module_version_id: "fixture-mvid", artifact_sha256: "a".repeat(64) } },
+    game: { version: "v0.109.1", commit: "fixture", branch: "fixture", main_assembly_hash: 1, compatibility: { status: "exact", observation_allowed: true, detail: "fixture" }, modset: { status: "exact_bridge_only", fingerprint: "fixture-modset", scope: "loaded", loaded_mod_ids: ["STS2_MCP"], detail: "fixture" } },
+    environment_fingerprint: "fixture-environment",
     actions: ["select"],
-    state_bound: true,
+    snapshot_bound: true,
     single_controller: true,
-    business_source_required: false,
-    business_outcome_required: false,
     execution_available: true,
     control: { recommended_renewal_ms: 10_000 },
     non_claims: []
@@ -92,28 +96,62 @@ function json(value: JsonObject, status = 200): Response {
 }
 
 describe("Human-Equivalent C", () => {
-  it("accepts omitted control state when selected and focused are not observed", () => {
+  it("accepts omitted element state when selected and focused are not observed", () => {
     const current = snapshot();
-    const control = (current.controls as JsonObject[])[0]!;
-    delete control.selected;
-    delete control.focused;
+    const element = (current.elements as JsonObject[])[0]!;
+    const state = element.state as JsonObject;
+    delete state.selected;
+    delete state.focused;
 
-    expect(decodeHumanObservation(current).data.controls[0]).toMatchObject({
-      control_id: "card-1",
-      visible: true,
-      enabled: true
+    expect(decodeHumanObservation(current).data.elements[0]).toMatchObject({
+      element_id: "card-1",
+      state: { visible: true, enabled: true }
     });
   });
 
   it("accepts an unknown business source when current native UI is exact and operable", () => {
     const decoded = decodeHumanObservation(snapshot()).data;
     expect(decoded.affordances).toHaveLength(1);
-    expect(decoded.surface.facts).not.toHaveProperty("source_kind");
+    expect(decoded.surface.content).not.toHaveProperty("source_kind");
   });
 
   it("rejects D annotations in the pure C observation contract", () => {
     expect(() => decodeHumanObservation({ ...snapshot(), optional_annotations: { scene_hint: "event", purpose_hint: null, phase_hint: "ready", expected_transition: null, teacher_generated: false, authorization_effect: "none" } }))
       .toThrow();
+  });
+
+  it("rejects affordances and reads that do not bind a current element", () => {
+    const missingTarget = snapshot();
+    (missingTarget.affordances as JsonObject[])[0]!.target_element_id = "missing-element";
+    expect(() => decodeHumanObservation(missingTarget)).toThrow(/current element/u);
+
+    const missingReadTarget = snapshot();
+    missingReadTarget.reads = [{
+      read_id: "read:surface_card:missing",
+      kind: "surface_card",
+      target_element_id: "missing-element",
+      content_schema: "sts2.human-environment/read/surface_card-1",
+      visibility_basis: "player_visible",
+      snapshot_bound: true,
+      ordering_semantics: "single_entity",
+      hidden_by_policy: []
+    }];
+    expect(() => decodeHumanObservation(missingReadTarget)).toThrow(/current element/u);
+  });
+
+  it("requires schemas for extensible element properties", () => {
+    const unversioned = snapshot();
+    delete (unversioned.elements as JsonObject[])[0]!.properties_schema;
+    expect(() => decodeHumanObservation(unversioned)).toThrow(/content schema/u);
+  });
+
+  it("rejects preview.2 history fields from the current environment contract", () => {
+    expect(() => decodeHumanObservation({
+      ...snapshot(),
+      state_token: "legacy-state",
+      entities: [],
+      controls: []
+    })).toThrow();
   });
 
   it("projects current UI affordances to opaque Re choices without V2 legal_actions wire data", () => {
@@ -126,22 +164,22 @@ describe("Human-Equivalent C", () => {
     expect(actions[0]?.action).toEqual({
       kind: "human_ui_action",
       choiceId: "affordance-card-1",
-      expectedStateToken: "state-he-1",
+      expectedSnapshotId: "state-he-1",
       affordanceId: "affordance-card-1"
     });
   });
 
   it("uses the Human-Equivalent control schema without a V3 wire dependency", () => {
     const registration = decodeHumanClientRegistration({
-      protocol_version: "1.0-preview.2",
-      schema: "sts2.connector.human-ui/control-1",
+      protocol_version: "1.0-preview.3",
+      schema: "sts2.human-environment/control-1",
       runtime_instance_id: "runtime-he",
       client: { client_session_id: "client-session", client_instance_id: "client-instance" },
       controller: null
     }).data;
     const lease = decodeHumanControllerLeaseResponse({
-      protocol_version: "1.0-preview.2",
-      schema: "sts2.connector.human-ui/control-1",
+      protocol_version: "1.0-preview.3",
+      schema: "sts2.human-environment/control-1",
       runtime_instance_id: "runtime-he",
       status: "controller_acquired",
       detail: "acquired",
@@ -155,14 +193,37 @@ describe("Human-Equivalent C", () => {
     }).data;
 
     expect(lease.controller?.controller_lease_id).toBe("lease-he");
-    expect(lease.schema).toBe("sts2.connector.human-ui/control-1");
+    expect(lease.schema).toBe("sts2.human-environment/control-1");
+  });
+
+  it("rejects an observation from a different exact environment", async () => {
+    let capabilityReads = 0;
+    const adapter = new Sts2HumanEquivalentAdapter(
+      "http://fixture.invalid",
+      1_000,
+      { mode: "he_pure", commandPollMs: 1, commandTimeoutMs: 100 },
+      async (input) => {
+        const url = String(input);
+        if (url.endsWith("/api/he/capabilities")) {
+          capabilityReads += 1;
+          const value = capabilities();
+          if (capabilityReads > 1) value.environment_fingerprint = "different-environment";
+          return json(value);
+        }
+        if (url.endsWith("/api/he/observation")) return json(snapshot());
+        throw new Error(`Unexpected request ${url}`);
+      }
+    );
+
+    await expect(adapter.readCurrentState()).rejects.toThrow(/environment identity drifted/u);
+    await adapter.close();
   });
 
   it("treats applied HE input as delivered while successor readiness remains separate", async () => {
     const current = snapshot();
     const successor = {
       ...snapshot(),
-      state_token: "state-he-2",
+      snapshot_id: "state-he-2",
       sequence: 2,
       status: "settling"
     } satisfies JsonObject;
@@ -178,8 +239,8 @@ describe("Human-Equivalent C", () => {
         if (url.endsWith("/api/he/clients/register")) {
           const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
           return json({
-            protocol_version: "1.0-preview.2",
-            schema: "sts2.connector.human-ui/control-1",
+            protocol_version: "1.0-preview.3",
+            schema: "sts2.human-environment/control-1",
             runtime_instance_id: "fixture-runtime",
             client: {
               client_session_id: "client-session",
@@ -190,8 +251,8 @@ describe("Human-Equivalent C", () => {
         }
         if (url.endsWith("/api/he/controller/acquire")) {
           return json({
-            protocol_version: "1.0-preview.2",
-            schema: "sts2.connector.human-ui/control-1",
+            protocol_version: "1.0-preview.3",
+            schema: "sts2.human-environment/control-1",
             runtime_instance_id: "fixture-runtime",
             status: "controller_acquired",
             detail: "acquired",
@@ -211,15 +272,14 @@ describe("Human-Equivalent C", () => {
           const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
           submittedBody = body;
           return json({
-            protocol_version: "1.0-preview.2",
-            schema: "sts2.connector.human-ui/receipt-2",
+            protocol_version: "1.0-preview.3",
+            schema: "sts2.human-environment/receipt-1",
             request_id: String(body.request_id),
-            status: "applied",
             delivery: "applied",
             action: {
               affordance_id: "affordance-card-1",
               action: "select",
-              target_id: "card-1"
+              target_element_id: "card-1"
             },
             reason_code: null,
             detail: "native input delivered",
@@ -254,7 +314,7 @@ describe("Human-Equivalent C", () => {
       confirmedStateToken: "state-he-2"
     });
     expect(submittedBody).toMatchObject({
-      expected_state_token: "state-he-1",
+      expected_snapshot_id: "state-he-1",
       affordance_id: "affordance-card-1"
     });
     expect(submittedBody).not.toHaveProperty("mode");

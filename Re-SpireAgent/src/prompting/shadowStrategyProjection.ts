@@ -130,9 +130,15 @@ function projectInspectionFacts(state: JsonObject, omitted: string[], deduplicat
 
 function removeSurfaceActionSummary(state: JsonObject, omitted: string[]): void {
   const surface = isJsonObject(state.surface) ? state.surface : undefined;
-  if (!surface || !("legalActions" in surface)) return;
-  delete surface.legalActions;
-  omitted.push("surface.legalActions");
+  if (!surface) return;
+  if ("legalActions" in surface) {
+    delete surface.legalActions;
+    omitted.push("surface.legalActions");
+  }
+  if ("affordances" in surface) {
+    delete surface.affordances;
+    omitted.push("surface.affordances");
+  }
 }
 
 function sameField(

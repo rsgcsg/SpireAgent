@@ -5,7 +5,7 @@ Gateway implementation and exact-runtime evidence are canonical in
 
 ## Current Contract
 
-Re strictly accepts the current `1.0-preview.2` HumanSnapshot, finite
+Re strictly accepts the current `1.0-preview.3` Human Environment snapshot, finite
 affordances and delivery receipts. It preserves exact Gateway/game/Modset/
 runtime identity, state/owner binding, persistent visible state and visible
 unsupported UI. C contains no D mode or annotations.
@@ -18,12 +18,12 @@ Outcome or retry unknown delivery.
 
 | Area | Current path | Evidence boundary |
 |---|---|---|
-| menus, map, event, game over | HE projection over bounded native controls | source and automated tests; current HE Live pending |
-| combat hand, targets, potion, end turn | HE projection over exact native adapters | source and automated tests; current HE Live pending |
-| reward, shop, rest, treasure | HE projection over current UI controls | source and automated tests; current HE Live pending |
+| menus, map, event, game over | HE projection over bounded native elements | source and automated tests; preview.3 Live pending |
+| combat hand, targets, potion, end turn | HE projection over exact native adapters | source and automated tests; preview.3 Live pending |
+| reward, shop, rest, treasure | HE projection over current UI elements | source and automated tests; preview.3 Live pending |
 | card selectors | source-independent generated choice plus inherited bounded UI mechanics | unknown generated source tested; other unknown owners remain explicit unsupported |
-| Inspection | `/api/he/inspections/*`, state-bound and read-only | source/build tests; current HE Live pending |
-| linked detail | `/api/he/linked-details/*`, catalogued current card only | source/build tests; current HE Live pending |
+| Inspection | `/api/he/inspections/*`, snapshot-bound and read-only | source/build tests; preview.3 Live pending |
+| linked detail | `/api/he/linked-details/*`, catalogued current card only | source/build tests; preview.3 Live pending |
 
 ## Fail-Closed Rules
 

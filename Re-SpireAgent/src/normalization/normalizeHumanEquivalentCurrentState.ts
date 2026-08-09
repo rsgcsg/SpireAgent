@@ -27,26 +27,23 @@ export function normalizeHumanEquivalentCurrentState(
   }
   const observation = decoded;
   let persistent;
-  if (observation?.persistent_state) {
-    const parsed = sharedVisibleStateSchema.safeParse(observation.persistent_state);
+  if (observation?.persistent) {
+    const parsed = sharedVisibleStateSchema.safeParse(observation.persistent.content);
     if (parsed.success) persistent = projectGatewayVisibleState(parsed.data);
-    else diagnostics.invalid("human_snapshot.persistent_state", observation.persistent_state, parsed.error.message);
+    else diagnostics.invalid("human_snapshot.persistent.content", observation.persistent.content, parsed.error.message);
   }
   const built = diagnostics.build();
   const actionable = observation?.status === "actionable"
     && observation.affordances.length > 0
     && built.status !== "invalid";
-  const legalActions = observation?.affordances.map((affordance) => ({
-    actionId: affordance.affordance_id,
-    stateId: observation.state_token,
-    kind: affordance.action,
+  const affordances = observation?.affordances.map((affordance) => ({
+    affordanceId: affordance.affordance_id,
+    snapshotId: observation.snapshot_id,
+    action: affordance.action,
     label: affordance.label,
-    authority: "current_human_ui",
-    evidenceCode: `human_ui:${affordance.action}`,
-    entityBindings: [{ role: "target", entityId: affordance.target_id }],
-    category: affordance.action
+    targetElementId: affordance.target_element_id
   })) ?? [];
-  const facts = observation?.surface.facts;
+  const content = observation?.surface.content;
   const currentState: NormalizedCurrentState = {
     normalizedSchemaVersion: NORMALIZED_STATE_SCHEMA_VERSION,
     sourceStateType: observation
@@ -60,7 +57,7 @@ export function normalizeHumanEquivalentCurrentState(
     actionAuthority: actionable ? "current_human_ui" : "none",
     ...(persistent?.run ? { run: persistent.run } : {}),
     ...(persistent?.player ? { player: persistent.player } : {}),
-    context: observation ? contextFor(observation.surface.kind, facts) : invalidContext(rawState),
+    context: observation ? contextFor(observation.surface.kind, content) : invalidContext(rawState),
     surface: observation && built.status !== "invalid"
       ? {
           kind: "human_ui",
@@ -68,28 +65,32 @@ export function normalizeHumanEquivalentCurrentState(
           stage: observation.surface.stage,
           ...(observation.surface.prompt ? { prompt: observation.surface.prompt } : {}),
           ownerId: observation.owner.owner_id,
-          facts: asJsonObject(facts),
-          entities: observation.entities.map((entity) => ({
-            entityId: entity.entity_id,
-            kind: entity.kind,
-            ...(entity.label ? { label: entity.label } : {}),
-            visible: entity.visible,
-            enabled: entity.enabled,
-            selected: entity.selected,
-            ...(entity.detail !== undefined ? { detail: entity.detail } : {})
+          contentSchema: observation.surface.content_schema,
+          content: asJsonObject(content),
+          elements: observation.elements.map((element) => ({
+            elementId: element.element_id,
+            role: element.role,
+            category: element.category,
+            ...(element.label ? { label: element.label } : {}),
+            visible: element.state.visible,
+            enabled: element.state.enabled,
+            ...(element.state.selected !== null ? { selected: element.state.selected } : {}),
+            ...(element.state.focused !== null ? { focused: element.state.focused } : {}),
+            observationBasis: element.state.observation_basis,
+            actions: [...element.actions],
+            ...(element.properties_schema ? { propertiesSchema: element.properties_schema } : {}),
+            ...(element.properties !== undefined ? { properties: element.properties } : {})
           })),
-          controls: observation.controls.map((control) => ({
-            controlId: control.control_id,
-            ownerId: control.owner_id,
-            role: control.role,
-            ...(control.label ? { label: control.label } : {}),
-            visible: control.visible,
-            enabled: control.enabled,
-            ...(control.selected !== null ? { selected: control.selected } : {}),
-            ...(control.focused !== null ? { focused: control.focused } : {}),
-            actions: [...control.actions]
+          reads: observation.reads.map((read) => ({
+            readId: read.read_id,
+            kind: read.kind,
+            ...(read.target_element_id ? { targetElementId: read.target_element_id } : {}),
+            contentSchema: read.content_schema,
+            visibilityBasis: read.visibility_basis,
+            orderingSemantics: read.ordering_semantics,
+            hiddenByPolicy: [...read.hidden_by_policy]
           })),
-          legalActions
+          affordances
         }
       : {
           kind: "unsupported",
@@ -106,7 +107,7 @@ export function normalizeHumanEquivalentCurrentState(
     currentState,
     diagnostics: built,
     stateHash: stateHash({
-      stateToken: observation?.state_token ?? null,
+      snapshotId: observation?.snapshot_id ?? null,
       ownerId: observation?.owner.owner_id ?? null,
       affordances: observation?.affordances.map((item) => item.affordance_id) ?? []
     }),

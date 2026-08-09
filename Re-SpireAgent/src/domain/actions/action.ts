@@ -2,7 +2,7 @@ export type ExecutableGameAction =
   | {
       kind: "human_ui_action";
       choiceId: string;
-      expectedStateToken: string;
+      expectedSnapshotId: string;
       affordanceId: string;
     }
   | {

@@ -19,6 +19,24 @@ using STS2_MCP.HumanEquivalent.Protocol;
 
 namespace STS2_MCP.HumanEquivalent.Runtime;
 
+internal sealed record HumanDeckCardSelectionSurface(
+    string Kind,
+    string Stage,
+    string ScreenEntityId,
+    string? Prompt,
+    int MinSelect,
+    int MaxSelect,
+    int SelectedCount,
+    IReadOnlyList<string> SelectedCardEntityIds,
+    IReadOnlyList<string> SelectableCardEntityIds,
+    IReadOnlyList<string> DeselectableCardEntityIds,
+    bool Cancelable,
+    bool CanPreview,
+    bool CanCancelSelection,
+    bool CanCancelPreview,
+    bool CanConfirm,
+    IReadOnlyList<VisibleCard> Cards) : IBridgeSurface;
+
 /// <summary>
 /// Source-free adapter for the native deck-card selector. It exposes only
 /// controls the current player could use and delegates all consequences to the

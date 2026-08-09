@@ -33,6 +33,21 @@ public sealed class HumanEquivalentContractTests
         Assert.DoesNotContain("Parameters", affordanceProperties);
         Assert.DoesNotContain("ParameterDomains", affordanceProperties);
         Assert.DoesNotContain("EntityBindings", affordanceProperties);
+        Assert.Contains("SnapshotId", observationProperties);
+        Assert.Contains("Elements", observationProperties);
+        Assert.Contains("Reads", observationProperties);
+        Assert.DoesNotContain("Bridge", observationProperties);
+        Assert.DoesNotContain("Game", observationProperties);
+        Assert.DoesNotContain("Entities", observationProperties);
+        Assert.DoesNotContain("Controls", observationProperties);
+
+        string[] capabilityProperties = typeof(HumanEquivalentCapabilitiesResponse)
+            .GetProperties()
+            .Select(property => property.Name)
+            .ToArray();
+        Assert.DoesNotContain("BusinessSourceRequired", capabilityProperties);
+        Assert.DoesNotContain("BusinessOutcomeRequired", capabilityProperties);
+        Assert.Contains("EnvironmentFingerprint", capabilityProperties);
     }
 
     [Theory]
@@ -52,10 +67,10 @@ public sealed class HumanEquivalentContractTests
     [Fact]
     public void BreakingWireCleanupUsesRevisionedSchemas()
     {
-        Assert.Equal("1.0-preview.2", HumanEquivalentContract.ProtocolVersion);
-        Assert.EndsWith("/observation-2", HumanEquivalentContract.ObservationSchema);
-        Assert.EndsWith("/action-2", HumanEquivalentContract.ActionSchema);
-        Assert.EndsWith("/receipt-2", HumanEquivalentContract.ReceiptSchema);
+        Assert.Equal("1.0-preview.3", HumanEquivalentContract.ProtocolVersion);
+        Assert.Equal("sts2.human-environment/observation-1", HumanEquivalentContract.ObservationSchema);
+        Assert.Equal("sts2.human-environment/action-1", HumanEquivalentContract.ActionSchema);
+        Assert.Equal("sts2.human-environment/receipt-1", HumanEquivalentContract.ReceiptSchema);
     }
 
     [Fact]
@@ -65,7 +80,6 @@ public sealed class HumanEquivalentContractTests
             HumanEquivalentContract.ProtocolVersion,
             HumanEquivalentContract.ReceiptSchema,
             "request-a",
-            "unknown",
             "unknown",
             new HumanEquivalentActionSummary(
                 "affordance-a",
@@ -84,20 +98,22 @@ public sealed class HumanEquivalentContractTests
     public void ReadOnlyDetailContractsAreHumanEquivalentAndStateBound()
     {
         Assert.Equal(
-            "sts2.connector.human-ui/inspection-1",
+            "sts2.human-environment/read-1",
             HumanEquivalentContract.InspectionSchema);
         Assert.Equal(
-            "sts2.connector.human-ui/linked-detail-1",
+            "sts2.human-environment/read-1",
             HumanEquivalentContract.LinkedDetailSchema);
 
-        var entry = new HumanEquivalentLinkedDetailCatalogEntry(
+        var entry = new HumanEnvironmentReadOpportunity(
+            "read:surface_card:card-a",
             "surface_card",
             "card-a",
+            "sts2.human-environment/read/surface_card-1",
             "normal_player_visible_surface_card",
-            StateBound: true,
-            CreatesActionAuthority: false);
-        Assert.True(entry.StateBound);
-        Assert.False(entry.CreatesActionAuthority);
+            SnapshotBound: true,
+            "single_entity",
+            Array.Empty<string>());
+        Assert.True(entry.SnapshotBound);
     }
 
     [Fact]

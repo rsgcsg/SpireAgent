@@ -423,7 +423,7 @@ function unknownContext(raw: JsonObject, reason: string): SemanticContext {
 
 function determineStability(surface: InteractionSurface, diagnosticsStatus: "ok" | "degraded" | "invalid"): StateStability {
   if (diagnosticsStatus === "invalid") return "invalid";
-  if (surface.kind === "human_ui") return surface.legalActions.length > 0 ? "actionable" : "non_actionable";
+  if (surface.kind === "human_ui") return surface.affordances.length > 0 ? "actionable" : "non_actionable";
   if (surface.kind === "unsupported") return "unknown";
   if (surface.kind === "no_action") return surface.reason;
   if (surface.kind === "combat_turn") return "actionable";

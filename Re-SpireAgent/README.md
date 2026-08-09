@@ -1,7 +1,7 @@
 # Re-SpireAgent
 
 Re-SpireAgent is the strict LLM consumer for Human-Equivalent C. It decodes the
-current HumanSnapshot, projects finite opaque UI choices, asks the configured
+current Human Environment snapshot, projects finite opaque UI choices, asks the configured
 model to select one, submits that exact affordance once and observes the
 successor.
 

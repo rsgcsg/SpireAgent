@@ -95,18 +95,16 @@ function humanShopState(
       uiKind,
       stage: "ready",
       ownerId: uiKind === "shop_room" ? "room-1" : "screen-1",
-      facts: { uiKind, gold },
-      entities: [],
-      controls: [],
-      legalActions: [{
-        actionId: affordanceId,
-        stateId: stateToken,
-        kind: verb,
+      contentSchema: `sts2.human-environment/surface/${uiKind}-1`,
+      content: { uiKind, gold },
+      elements: [],
+      reads: [],
+      affordances: [{
+        affordanceId,
+        snapshotId: stateToken,
+        action: verb,
         label: verb,
-        authority: "current_human_ui",
-        evidenceCode: `human_ui:${verb}`,
-        entityBindings: [{ role: "target", entityId: uiKind === "shop_room" ? "room-1" : "screen-1" }],
-        category: verb
+        targetElementId: uiKind === "shop_room" ? "room-1" : "screen-1"
       }]
     }
   } as NormalizedCurrentState;
@@ -122,7 +120,7 @@ function humanAction(kind: string, affordanceId: string, stateToken: string): Al
     action: {
       kind: "human_ui_action",
       choiceId: affordanceId,
-      expectedStateToken: stateToken,
+      expectedSnapshotId: stateToken,
       affordanceId
     }
   };

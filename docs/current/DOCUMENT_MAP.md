@@ -12,6 +12,7 @@
 8. [HE completion and responsibility reaudit](audits/HUMAN_EQUIVALENT_COMPLETION_AND_RESPONSIBILITY_REAUDIT_2026-08-09.md)
 9. [HE post-cutover decoupling and Live failure closeout](audits/HUMAN_EQUIVALENT_POST_CUTOVER_DECOUPLING_AND_LIVE_FAILURE_CLOSEOUT_2026-08-09.md)
 10. [HE C/A wire and domain freeze reaudit](audits/HUMAN_EQUIVALENT_C_A_WIRE_AND_DOMAIN_FREEZE_REAUDIT_2026-08-09.md)
+11. [Human Environment Contract reaudit](audits/HUMAN_ENVIRONMENT_CONTRACT_REAUDIT_2026-08-10.md)
 
 ## Component Contracts
 

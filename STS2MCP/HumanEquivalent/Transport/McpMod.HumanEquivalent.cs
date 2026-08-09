@@ -52,16 +52,16 @@ public static partial class McpMod
             SendConnectorV3Error(response, 400, "invalid_inspection_kind", "Inspection kind is not valid URI data.");
             return;
         }
-        string? expectedStateToken = request.QueryString["expected_state_token"];
+        string? expectedSnapshotId = request.QueryString["expected_snapshot_id"];
         if (!IsSafeBridgeIdentifier(kind, 64)
-            || !IsSafeBridgeIdentifier(expectedStateToken, 128))
+            || !IsSafeBridgeIdentifier(expectedSnapshotId, 128))
         {
-            SendConnectorV3Error(response, 400, "invalid_inspection_contract", "A current catalog kind and state token are required.");
+            SendConnectorV3Error(response, 400, "invalid_inspection_contract", "A current read kind and snapshot ID are required.");
             return;
         }
         try
         {
-            var task = RunOnMainThread(() => HumanEquivalentRuntime.InspectHumanEquivalent(kind, expectedStateToken!));
+            var task = RunOnMainThread(() => HumanEquivalentRuntime.InspectHumanEquivalent(kind, expectedSnapshotId!));
             HumanEquivalentInspectionReadResult result = task.GetAwaiter().GetResult();
             if (result.Inspection != null)
             {
@@ -95,16 +95,16 @@ public static partial class McpMod
             SendConnectorV3Error(response, 400, "invalid_linked_detail_entity", "Entity id is not valid URI data.");
             return;
         }
-        string? expectedStateToken = request.QueryString["expected_state_token"];
+        string? expectedSnapshotId = request.QueryString["expected_snapshot_id"];
         if (!IsSafeBridgeIdentifier(entityId, 128)
-            || !IsSafeBridgeIdentifier(expectedStateToken, 128))
+            || !IsSafeBridgeIdentifier(expectedSnapshotId, 128))
         {
-            SendConnectorV3Error(response, 400, "invalid_linked_detail_contract", "A current catalog entity and state token are required.");
+            SendConnectorV3Error(response, 400, "invalid_linked_detail_contract", "A current element ID and snapshot ID are required.");
             return;
         }
         try
         {
-            var task = RunOnMainThread(() => HumanEquivalentRuntime.ReadHumanEquivalentLinkedDetail(entityId, expectedStateToken!));
+            var task = RunOnMainThread(() => HumanEquivalentRuntime.ReadHumanEquivalentLinkedDetail(entityId, expectedSnapshotId!));
             HumanEquivalentLinkedDetailReadResult result = task.GetAwaiter().GetResult();
             if (result.LinkedDetail != null)
             {
@@ -136,7 +136,7 @@ public static partial class McpMod
         if (action == null)
             return;
         if (!IsSafeBridgeIdentifier(action.RequestId, 128)
-            || !IsSafeBridgeIdentifier(action.ExpectedStateToken, 128)
+            || !IsSafeBridgeIdentifier(action.ExpectedSnapshotId, 128)
             || !IsSafeBridgeIdentifier(action.AffordanceId, 128))
         {
             SendConnectorV3Error(
@@ -150,7 +150,7 @@ public static partial class McpMod
         {
             var task = RunOnMainThread(() => HumanEquivalentRuntime.SubmitHumanEquivalent(action));
             HumanEquivalentActionReceipt receipt = task.GetAwaiter().GetResult();
-            response.StatusCode = receipt.Status switch
+            response.StatusCode = receipt.Delivery switch
             {
                 "applied" => 200,
                 "unknown" => 202,

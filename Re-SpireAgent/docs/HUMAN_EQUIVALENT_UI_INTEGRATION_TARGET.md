@@ -23,7 +23,7 @@ The model projection should include:
 
 - compact current UI tree;
 - rendered-frame references when useful;
-- current controls and actionability;
+- current elements and actionability;
 - reveal/navigation opportunities;
 - recent state diff and transition history;
 - delivery uncertainty;
@@ -36,7 +36,7 @@ It should not duplicate one business action into source-specific and UI-specific
 
 Re must:
 
-- discard old controls when the exact C state token changes;
+- discard old affordances when the exact C snapshot changes;
 - never blindly replay `unknown_delivery`;
 - use new observations to determine what happened;
 - recognize settling/animation and wait or reobserve;

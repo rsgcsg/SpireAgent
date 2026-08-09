@@ -65,7 +65,7 @@ forbidText(
 );
 
 const pythonMcp = "STS2MCP/mcp/server.py";
-requireText(pythonMcp, '_CONTROL_PROTOCOL = "1.0-preview.2"', "HE MCP control protocol");
+requireText(pythonMcp, '_CONTROL_PROTOCOL = "1.0-preview.3"', "Human Environment MCP control protocol");
 for (const legacyMcpInput of [
   "expected_frame_id",
   "expected_owner_id",
@@ -79,6 +79,14 @@ for (const legacyMcpInput of [
 const humanProtocol = "Re-SpireAgent/src/integrations/sts2mcp/humanEquivalentProtocol.ts";
 for (const legacyWireField of [
   "optional_annotations",
+  "state_token",
+  "persistent_state",
+  "target_id",
+  "entities",
+  "controls",
+  "inspection_catalog",
+  "linked_detail_catalog",
+  "sts2.connector.human-ui",
   "expected_frame_id",
   "expected_owner_id",
   "parameter_domains",
@@ -86,11 +94,15 @@ for (const legacyWireField of [
 ]) {
   forbidText(humanProtocol, legacyWireField, `legacy HE wire field ${legacyWireField}`);
 }
+forbidText("tools/connector.mjs", "surface?.facts", "legacy HE Surface facts lookup");
 forbidText(
   "Re-SpireAgent/src/domain/state/surfaces.ts",
   "authorizationEffect",
   "D annotation embedded in the C/A UI surface"
 );
+const humanNormalizer = "Re-SpireAgent/src/normalization/normalizeHumanEquivalentCurrentState.ts";
+forbidText(humanNormalizer, "legalActions", "legacy action model in the HE normalizer");
+requireText(humanNormalizer, "affordances", "HE-native affordance projection");
 if (existsSync(path.join(workspace, "Re-SpireAgent/src/runtime/settlementWatcher.ts"))) {
   failures.push("Re-SpireAgent/src/runtime/settlementWatcher.ts: legacy business-settlement owner remains");
 }
@@ -106,6 +118,41 @@ if (/partial class ConnectorV3Runtime/u.test(runtime)
   failures.push("HumanEquivalentRuntime.cs: HE remains owned by ConnectorV3Runtime");
 }
 const contract = read("STS2MCP/HumanEquivalent/Protocol/HumanEquivalentContracts.cs");
+for (const legacyNamespace of [
+  "STS2_MCP.BridgeV2",
+  "STS2_MCP.ConnectorV3"
+]) {
+  if (contract.includes(legacyNamespace)) {
+    failures.push(`HumanEquivalentContracts.cs: public environment contract imports ${legacyNamespace}`);
+  }
+}
+for (const requiredContractName of [
+  "HumanEnvironmentElement",
+  "HumanEnvironmentReadOpportunity",
+  "HumanEnvironmentSessionReference",
+  "HumanEnvironmentImplementationIdentity",
+  "HumanEnvironmentContent",
+  "EnvironmentFingerprint",
+  "ContentSchema",
+  "SnapshotId",
+  "TargetElementId"
+]) {
+  if (!contract.includes(requiredContractName)) {
+    failures.push(`HumanEquivalentContracts.cs: missing ${requiredContractName}`);
+  }
+}
+for (const retiredContractName of [
+  "HumanEquivalentUiEntity",
+  "HumanEquivalentUiControl",
+  "BridgeServerIdentity",
+  "GameBuildIdentity",
+  "BusinessSourceRequired",
+  "BusinessOutcomeRequired"
+]) {
+  if (contract.includes(retiredContractName)) {
+    failures.push(`HumanEquivalentContracts.cs: public contract retains ${retiredContractName}`);
+  }
+}
 for (const legacyContractName of [
   "HumanEquivalentFrame",
   "HumanEquivalentAnnotationEnvelope",

@@ -1,3 +1,4 @@
+using System.Linq;
 using STS2_MCP.BridgeV2.Protocol;
 using STS2_MCP.BridgeV2.Runtime;
 using STS2_MCP.HumanEquivalent.Protocol;
@@ -24,8 +25,8 @@ internal static partial class HumanEquivalentRuntime
             HumanEquivalentContract.ProtocolVersion,
             HumanEquivalentContract.ControlSchema,
             response.RuntimeInstanceId,
-            response.Client,
-            response.Controller);
+            HumanClient(response.Client),
+            response.Controller == null ? null : HumanController(response.Controller));
     }
 
     public static HumanEquivalentControlSnapshot GetHumanEquivalentControlSnapshot()
@@ -35,8 +36,8 @@ internal static partial class HumanEquivalentRuntime
             HumanEquivalentContract.ProtocolVersion,
             HumanEquivalentContract.ControlSchema,
             snapshot.RuntimeInstanceId,
-            snapshot.Clients,
-            snapshot.Controller);
+            snapshot.Clients.Select(HumanClient).ToArray(),
+            snapshot.Controller == null ? null : HumanController(snapshot.Controller));
     }
 
     public static HumanEquivalentControllerLeaseResponse AcquireHumanEquivalentController(
@@ -67,6 +68,24 @@ internal static partial class HumanEquivalentRuntime
             response.RuntimeInstanceId,
             response.Status,
             response.Detail,
-            response.Client,
-            response.Controller);
+            response.Client == null ? null : HumanClient(response.Client),
+            response.Controller == null ? null : HumanController(response.Controller));
+
+    private static HumanEnvironmentClient HumanClient(BridgeClientRecord value) => new(
+        value.ClientSessionId,
+        value.ClientInstanceId,
+        value.ProductId,
+        value.ProductName,
+        value.ProductVersion,
+        value.RegisteredAt,
+        value.LastSeenAt);
+
+    private static HumanEnvironmentControllerLease HumanController(
+        BridgeControllerLeaseInfo value) => new(
+            value.Status,
+            value.ControllerLeaseId,
+            value.ControllerGeneration,
+            value.ClientSessionId,
+            value.AcquiredAt,
+            value.ExpiresAt);
 }

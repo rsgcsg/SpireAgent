@@ -70,7 +70,7 @@ export class GatewayControlSession {
   constructor(private readonly gateway: GatewayControlClient) {}
 
   async register(
-    gateway: { bridge: { runtime_instance_id: string } },
+    runtime: { runtime_instance_id: string },
     coordination: { recommended_renewal_ms: number }
   ): Promise<void> {
     if (this.registration) return;
@@ -81,7 +81,7 @@ export class GatewayControlSession {
       productVersion: "0.1.0"
     });
     if (registration.data.runtime_instance_id
-          !== gateway.bridge.runtime_instance_id
+          !== runtime.runtime_instance_id
         || registration.data.client.client_instance_id
           !== this.clientInstanceId) {
       throw new Error("Gateway client registration identity does not match negotiated capabilities");

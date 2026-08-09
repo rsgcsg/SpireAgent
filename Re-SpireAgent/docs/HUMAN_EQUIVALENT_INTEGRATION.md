@@ -1,20 +1,21 @@
 # Re Human-Equivalent Integration
 
-Re strictly accepts `1.0-preview.2`.
+Re strictly accepts `1.0-preview.3`.
 
 The adapter reads `/api/he/observation`, verifies runtime/MVID/SHA/Modset
-coherence, and normalizes current C facts and affordances. It projects a finite
+and environment-fingerprint coherence, then normalizes versioned persistent,
+Surface, element, read and affordance content. It projects a finite
 choice list whose model-visible kind is the generic UI verb. The model receives
 only opaque IDs; exact native operands never leave C.
 
 The live chain is:
 
 ```text
-C HumanSnapshot
+C Human Environment snapshot
 -> A normalization and transition context
 -> finite model choices
 -> LLM selects one opaque ID
--> A submits state token + affordance ID
+-> A submits snapshot ID + affordance ID
 -> C revalidates and delivers native UI input
 -> delivery receipt + successor
 -> A successor readiness and flow interpretation
@@ -34,3 +35,9 @@ or execute.
 
 V3 is not a fallback. The old V3 Re client/executor is deleted; retained V3
 schema/normalization code exists only for historical replay and comparison.
+
+The Live host reports implementation SHA/MVID in optional host implementation
+metadata. A future Headless/replay/test host is not required to invent .NET
+artifact fields, but every host must provide a runtime instance and exact
+environment fingerprint. Re rejects either identity drifting during a coherent
+read.

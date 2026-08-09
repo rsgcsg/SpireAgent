@@ -1,92 +1,85 @@
-# Current Architecture - Human-Equivalent C -> A -> LLM
+# Current Architecture - Human Environment Contract
 
 Authority: [ADR-0008](decisions/ADR-0008-human-equivalent-ui-first-connector.md)
 
-## Canonical Path
+## Canonical Boundary
 
 ```text
-Native STS2 UI
--> C HumanSnapshot (player-visible facts + current affordances)
--> A normalization + previous transition context
--> finite opaque model choices
--> LLM selects one choice ID
--> A submits state token + affordance ID
--> C rebuilds and revalidates its local native binding
--> native UI callback
--> delivery receipt + successor
+STS2 Live UI host (today)       future fair-player Headless host
+             \                  /
+              C Human Environment Contract
+              observe / read / act / receipt
+                         |
+        +----------------+----------------+
+        |                |                |
+   Re LLM adapter   future Training   future Search
+        |             adapter           adapter
+        A                A                A
+```
+
+C is current player-visible facts, current owner, current elements and
+affordances, state-bound read opportunities, exact input delivery and an
+immediate successor. It is independent of the intelligence consuming it.
+
+## Normal Live Path
+
+```text
+C observe snapshot
+-> Re validates and normalizes Surface/elements/reads
+-> Re projects finite opaque choices
+-> LLM selects one local choice ID
+-> Re submits request_id + snapshot_id + affordance_id
+-> C rebuilds owner/target/actionability
+-> native UI input
+-> delivery receipt + optional immediate successor
 -> A interprets readiness, flow and strategy
 ```
 
+`applied` proves delivery, not a business transaction. `not_applied` is a
+known refusal. `unknown` means delivery may have occurred and is terminal for
+automatic retry.
+
 ## Ownership
 
-**STS2** owns rules, RNG, UI state, actionability and effects.
+- **C**: fair-player observation, elements, affordances, reads, stale checks,
+  one controller, exact host-local operands, execute-time validation, native
+  delivery, idempotency and delivery uncertainty.
+- **A/Re**: consumer normalization, finite choice projection, LLM/search/ML
+  policy, transition interpretation, strategy and recovery.
+- **D**: optional annotations, teachers, graders, rewards, replay evaluation
+  and conformance evidence. D never authorizes or executes.
+- **P**: build/install/configuration/runtime identity/rollback and experiment
+  orchestration.
+- **Headless/Simulation Host**: reset, seed, clone, fork, fast stepping and
+  host lifecycle. It must emit the same fair-player C semantics.
+- **Training Adapter**: tensors, action masks, reward, terminated/truncated,
+  vectorization and batching.
 
-**C/Gateway** owns player-visible UI facts, one current owner, entity/control
-identity, current affordance discovery, exact C-local input binding,
-single-writer coordination, native delivery and honest uncertainty.
+## Public Contract
 
-**A/Re** decodes C, creates finite opaque choices, asks the model to select
-one, submits once, observes the successor, interprets flow and owns strategy
-and recovery. It does not reconstruct native legality or business completion.
-
-**D** may provide optional hints to A on a separate input plane. C contains no
-D envelope or mode. D cannot create, remove or authorize an affordance and
-cannot execute.
-
-**P** owns deployment, persistent configuration and rollback. REST/MCP are
-transports only.
-
-## C Contract
-
-`HumanSnapshot` separates persistent visible facts, current UI Surface facts,
-entities, controls, current affordances and explicit coverage gaps. Unknown
-control state is omitted rather than invented. `he_pure` and `he_assisted`
-consume the same C truth; they are A composition modes.
-
-An action request binds request ID, expected state token, opaque affordance ID
-and controller generation. Exact owner, target and native operands never leave
-C. C re-observes and validates the local binding immediately before a bounded
-native UI callback.
-
-Receipts mean delivery only:
+Capabilities carry host/game/Modset identity, an exact environment fingerprint
+and optional implementation provenance. The hot observation carries only a
+session reference plus:
 
 ```text
-not_applied -> safe refusal; obtain a fresh snapshot
-applied     -> input delivered; inspect successor or read again
-unknown     -> delivery may have happened; never retry
+snapshot_id + owner + persistent + versioned Surface content
++ elements + affordances + reads + completeness + observation policy
 ```
 
-Successor readiness in A is distinct from business settlement. A may wait for
-a repeatable decision checkpoint but may not overwrite an applied delivery or
-reconstruct the native effect.
+Every affordance and targeted read references a current element. Exact native
+objects and parameters never cross the wire. Persistent, Surface,
+element-property and read content is explicitly schema-versioned; unknown
+schemas fail strict consumers rather than silently changing meaning.
 
-## V3 Decomposition
+## Internal Reuse And Limits
 
-Retained infrastructure: observation policy, runtime identity, owner/entity
-registry, bounded native adapters, main-thread execution, controller lease,
-Inspection and evidence recording.
+The Live implementation still uses Bridge observation providers and five
+V3-owned bounded adapter-library calls. These are one-way host implementation
+reuse, not C authority or public types. New hosts must implement C directly;
+they do not inherit V3 source permission, SourceContract, qualification or
+business Outcome.
 
-Removed from C authority: source labels, SourceContract, transaction phase,
-business Outcome, compatibility qualification and per-source permission.
-Unknown source cannot suppress an otherwise exact human-operable UI.
-
-HE has its own wire, controller contract, publication and receipt. Re has one
-live HE client/executor. Historical V3 protocol and normalization remain
-read-only replay/comparison assets. Six checked calls into inherited adapter
-implementations remain; no new HE family may add another V3-owned authority
-path.
-
-## Current Freeze Gaps
-
-- several native provider/adapter implementations remain V3-owned internally;
-- hover/focus/tooltip/scroll and native-page open/read/return are incomplete;
-- source-free combat-pile and unknown-source selector paths need exact-runtime
-  regression on the final artifact.
-
-These gaps do not justify source authority, business Outcome, arbitrary
-reflection, coordinates or a second game engine.
-
-`surface.facts` now uses a positive type switch. Known HE/native UI Surface
-families project visible mechanics; source, destination, mutation, Commit and
-evidence fields are never copied and unknown shapes receive only an explicit
-unprojected marker.
+Do not add reward/reset/clone, arbitrary reflection, coordinates, hidden game
+state, source authority or a second rule engine to C. Move reusable native UI
+code toward neutral `NativeUi` ownership as touched, without adding shims or a
+second executor.

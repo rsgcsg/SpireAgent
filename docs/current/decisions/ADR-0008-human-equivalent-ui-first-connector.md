@@ -61,10 +61,10 @@ Observation is not restricted to zero-side-effect reads. Hover, scroll, opening 
 Every transition is recorded as:
 
 ```text
-before state token and current owner
+before snapshot ID and current owner
 + opaque target/action identity (exact native operands remain C-local)
 + delivery result
-+ after state token/current owner
++ after snapshot ID/current owner
 ```
 
 The distinction that matters is not read versus write, but human-equivalent UI transition versus non-UI engine mutation.
@@ -88,7 +88,10 @@ pending mutation: Re may only poll the same request identity.
 
 Compatibility should primarily follow the human-visible UI and structured-control contract. New cards, events, sources, versions and Mods that preserve a usable human UI should not require per-source Gateway authority by default.
 
-Structured controls are preferred. A bounded frame-bound pointer fallback is allowed for current visible custom-drawn UI that cannot be represented structurally. Arbitrary coordinates, node paths, methods and reflection mutation remain forbidden.
+Structured elements are required for authority. Unmapped custom-drawn UI is
+reported as visible unsupported until a bounded native adapter provides stable
+element identity and actionability. Coordinates, node paths, arbitrary methods
+and reflection mutation are forbidden.
 
 ## Relationship To Connector V3
 
@@ -124,12 +127,9 @@ reuse, not a second production executor.
 
 ## Evidence Boundary
 
-Protocol `1.0-preview.2` is the canonical clean wire. It removes D mode and
-annotations, fabricated rendered frame, and client-visible native operands.
-`he_pure` and `he_assisted` are A composition modes over one pure C truth.
-Exact-runtime `preview.1` evidence exists for ordinary surfaces and a complete
-journey, but it does not transfer to `preview.2`. Broad Human information
-parity and `he_pure` Live evidence remain pending.
+Protocol `1.0-preview.2` proved the delivery model through assisted and pure
+A+C journeys, but it is historical. It does not authorize or prove the current
+breaking wire revision.
 
 ## Short Freeze Amendment (2026-08-09)
 
@@ -139,3 +139,21 @@ not serialize a business command and ask A to echo exact parameters. A owns
 semantic action labels, transition context, cycle recovery and strategy. D is
 outside C. The remaining legacy `surface.facts` deny-list and V3-owned adapter
 implementation seams are tracked migration debt, not accepted target design.
+
+## Human Environment Contract Amendment (2026-08-10)
+
+`preview.2` proved the execution model but is superseded as the current wire by
+`preview.3`. The public boundary is host-neutral: capabilities own full
+host/game identity; observations carry snapshot/session identity, versioned
+Surface content, one element ontology, exact affordances and state-bound reads.
+Every targeted action/read must reference a current element.
+
+Extensible persistent, element-property, Surface and read content is explicitly
+schema-versioned. Capabilities carry a generic host identity plus optional
+implementation provenance; observations carry an exact runtime/environment
+reference which consumers verify against capabilities.
+
+This amendment does not broaden C. Live and future Headless hosts may implement
+the same fair-player contract. Host reset/seed/clone/fork, Training reward,
+terminated/truncated/action masks, A strategy and D graders remain separate.
+No previous Live evidence transfers across the breaking wire revision.

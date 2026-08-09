@@ -80,7 +80,11 @@ export function evaluateLoadedArtifact({
   capabilities
 }) {
   const errors = [];
-  const loadedSha = capabilities?.bridge?.assembly_file_sha256 ?? null;
+  const loadedHost = capabilities?.host ?? capabilities?.bridge ?? null;
+  const loadedSha = loadedHost?.implementation?.artifact_sha256
+    ?? loadedHost?.artifact_sha256
+    ?? loadedHost?.assembly_file_sha256
+    ?? null;
   const loadedProtocol = capabilities?.protocol_version ?? null;
   if (csharpProtocol !== reProtocol) errors.push("source_protocol_mismatch");
   if (!builtSha) errors.push("release_artifact_missing");
@@ -89,8 +93,10 @@ export function evaluateLoadedArtifact({
   if (builtSha && installedSha && builtSha !== installedSha) errors.push("built_installed_sha_mismatch");
   if (builtMvid && installedMvid && builtMvid !== installedMvid) errors.push("built_installed_mvid_mismatch");
   if (installedSha && loadedSha && installedSha !== loadedSha) errors.push("installed_loaded_sha_mismatch");
-  if (installedMvid && capabilities?.bridge?.module_version_id
-      && installedMvid !== capabilities.bridge.module_version_id) {
+  const loadedMvid = loadedHost?.implementation?.module_version_id
+    ?? loadedHost?.module_version_id
+    ?? null;
+  if (installedMvid && loadedMvid && installedMvid !== loadedMvid) {
     errors.push("installed_loaded_mvid_mismatch");
   }
   if (loadedProtocol && loadedProtocol !== csharpProtocol) errors.push("source_loaded_protocol_mismatch");
@@ -106,8 +112,8 @@ export function evaluateLoadedArtifact({
     installed_mvid: installedMvid,
     loaded_sha256: loadedSha,
     loaded_protocol: loadedProtocol,
-    loaded_mvid: capabilities?.bridge?.module_version_id ?? null,
-    runtime_instance_id: capabilities?.bridge?.runtime_instance_id ?? null,
+    loaded_mvid: loadedMvid,
+    runtime_instance_id: loadedHost?.runtime_instance_id ?? null,
     game: capabilities?.game
       ? {
           version: capabilities.game.version ?? null,
@@ -128,7 +134,8 @@ export function evaluateEnvironmentReadiness(
   const compatibility = capabilities?.game?.compatibility;
   const modset = capabilities?.game?.modset;
   if (expectedProtocol?.startsWith("1.0-preview.")) {
-    const observationReady = compatibility?.state_observation_allowed === true;
+    const observationReady = compatibility?.observation_allowed === true
+      || compatibility?.state_observation_allowed === true;
     const mutationReady = capabilities?.execution_available === true;
     const blockers = [];
     if (!capabilities) blockers.push("gateway_unreachable");
@@ -579,14 +586,19 @@ export async function waitForAgentObservation({
 }
 
 function summarizeGatewayWait(result) {
+  const host = result.capabilities?.host ?? result.capabilities?.bridge ?? null;
   return {
     ready: result.ready,
     attempts: result.attempts,
     waited_ms: result.waited_ms,
     protocol_version: result.capabilities?.protocol_version ?? null,
-    loaded_sha256: result.capabilities?.bridge?.assembly_file_sha256 ?? null,
-    loaded_mvid: result.capabilities?.bridge?.module_version_id ?? null,
-    runtime_instance_id: result.capabilities?.bridge?.runtime_instance_id ?? null,
+    loaded_sha256: host?.implementation?.artifact_sha256
+      ?? host?.assembly_file_sha256
+      ?? null,
+    loaded_mvid: host?.implementation?.module_version_id
+      ?? host?.module_version_id
+      ?? null,
+    runtime_instance_id: host?.runtime_instance_id ?? null,
     game: result.capabilities?.game
       ? {
           version: result.capabilities.game.version ?? null,
@@ -1102,9 +1114,9 @@ async function collectEvidence(options) {
     status: "read_only_evidence_collected",
     output,
     protocol_version: capabilities.protocol_version,
-    loaded_sha256: capabilities.bridge?.assembly_file_sha256,
-    state_token: state.state_token,
-    frame_id: state.frame?.frame_id ?? null,
+    loaded_sha256: capabilities.host?.implementation?.artifact_sha256
+      ?? capabilities.bridge?.assembly_file_sha256,
+    snapshot_id: state.snapshot_id,
     owner_id: state.owner?.owner_id ?? null,
     partial_failures: partialFailures
   };
@@ -1340,7 +1352,7 @@ async function prepareAgentRun(options) {
       ? {
           attempts: observationWait.attempts,
           waited_ms: observationWait.waited_ms,
-          context_kind: observationWait.observation?.surface?.facts?.context?.kind ?? null,
+          context_kind: observationWait.observation?.surface?.content?.context?.kind ?? null,
           surface_kind: observationWait.observation?.surface?.kind ?? null
         }
       : null,
