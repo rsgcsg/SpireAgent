@@ -32,6 +32,36 @@ const controlSchema = z.object({
   recommended_renewal_ms: z.number().int().positive()
 }).passthrough();
 
+const controlClientSchema = z.object({
+  client_session_id: z.string().min(1),
+  client_instance_id: z.string().min(1)
+}).passthrough();
+
+const controlLeaseSchema = z.object({
+  controller_lease_id: z.string().min(1),
+  controller_generation: z.number().int().positive(),
+  client_session_id: z.string().min(1),
+  expires_at: z.string().min(1)
+}).passthrough();
+
+const clientRegistrationSchema = z.object({
+  protocol_version: z.literal(SUPPORTED_HUMAN_EQUIVALENT_PROTOCOL),
+  schema: z.literal("sts2.connector.human-ui/control-1"),
+  runtime_instance_id: z.string().min(1),
+  client: controlClientSchema,
+  controller: controlLeaseSchema.nullable().optional()
+}).strict();
+
+const controllerLeaseResponseSchema = z.object({
+  protocol_version: z.literal(SUPPORTED_HUMAN_EQUIVALENT_PROTOCOL),
+  schema: z.literal("sts2.connector.human-ui/control-1"),
+  runtime_instance_id: z.string().min(1),
+  status: z.string().min(1),
+  detail: z.string(),
+  client: controlClientSchema.nullable().optional(),
+  controller: controlLeaseSchema.nullable().optional()
+}).strict();
+
 const bindingSchema = z.object({
   role: z.string().min(1),
   entity_id: z.string().min(1)
@@ -253,6 +283,29 @@ export interface HumanEquivalentReceipt {
   successor: HumanEquivalentObservation | null;
   attribution?: { runtime_instance_id: string; client_session_id: string; client_instance_id: string; product_id: string; product_name: string; product_version: string; controller_lease_id: string; controller_generation: number } | null;
 }
+export interface HumanEquivalentClientRegistration {
+  protocol_version: typeof SUPPORTED_HUMAN_EQUIVALENT_PROTOCOL;
+  schema: "sts2.connector.human-ui/control-1";
+  runtime_instance_id: string;
+  client: { client_session_id: string; client_instance_id: string; [key: string]: unknown };
+  controller?: HumanEquivalentControllerLease | null;
+}
+export interface HumanEquivalentControllerLease {
+  controller_lease_id: string;
+  controller_generation: number;
+  client_session_id: string;
+  expires_at: string;
+  [key: string]: unknown;
+}
+export interface HumanEquivalentControllerLeaseResponse {
+  protocol_version: typeof SUPPORTED_HUMAN_EQUIVALENT_PROTOCOL;
+  schema: "sts2.connector.human-ui/control-1";
+  runtime_instance_id: string;
+  status: string;
+  detail: string;
+  client?: { client_session_id: string; client_instance_id: string; [key: string]: unknown } | null;
+  controller?: HumanEquivalentControllerLease | null;
+}
 export interface DecodedHumanPayload<T> { raw: JsonObject; data: T }
 
 export function decodeHumanCapabilities(value: unknown): DecodedHumanPayload<HumanEquivalentCapabilities> {
@@ -263,6 +316,12 @@ export function decodeHumanObservation(value: unknown): DecodedHumanPayload<Huma
 }
 export function decodeHumanReceipt(value: unknown): DecodedHumanPayload<HumanEquivalentReceipt> {
   return decode<HumanEquivalentReceipt>(value, receiptSchema, "Human-Equivalent receipt");
+}
+export function decodeHumanClientRegistration(value: unknown): DecodedHumanPayload<HumanEquivalentClientRegistration> {
+  return decode<HumanEquivalentClientRegistration>(value, clientRegistrationSchema, "Human-Equivalent client registration");
+}
+export function decodeHumanControllerLeaseResponse(value: unknown): DecodedHumanPayload<HumanEquivalentControllerLeaseResponse> {
+  return decode<HumanEquivalentControllerLeaseResponse>(value, controllerLeaseResponseSchema, "Human-Equivalent controller lease");
 }
 
 function decode<T>(value: unknown, schema: z.ZodType<T>, label: string): DecodedHumanPayload<T> {

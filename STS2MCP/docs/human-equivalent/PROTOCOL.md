@@ -41,6 +41,10 @@ delivered; successor is the game fact channel. If its immediate read fails,
 delivery stays `applied` with a null successor and Re performs a fresh read.
 Unknown is reserved for uncertain input delivery and never permits retry.
 
+Controller registration and lease responses use the HE control schema. The HE
+client does not decode V3 control payloads even though the in-process
+single-writer coordinator is shared infrastructure.
+
 ## Evidence Boundary
 
 Protocol/source/test/build/install/load/Live are distinct. This wire contract

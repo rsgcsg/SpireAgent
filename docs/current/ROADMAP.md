@@ -12,7 +12,7 @@ Status: source/test/build complete; load/Live pending.
 
 - `HumanSnapshot`, exact owner/entities/controls and current affordances;
 - generic state/frame-bound delivery and successor;
-- source-free one-of-N card choice;
+- source-free one-of-N and deck-card selection mechanics;
 - direct Re consumer with `he_assisted` and `he_pure`;
 - HE CLI preflight without V2 permission/qualification gates.
 
@@ -23,7 +23,7 @@ journey without hidden V3 execution.
 
 Status: pending exact runtime.
 
-Exercise unknown source selector, stale replacement, duplicate request,
+Exercise both unknown-source selectors, stale replacement, duplicate request,
 unknown delivery, multi-stage selection and `he_pure`. A new source preserving
 known UI mechanics should require no wire, Re or Gateway-core change.
 

@@ -34,10 +34,11 @@ and rollback; this migration does not expand it.
 
 ## Contracts
 
-`HumanSnapshot` separates persistent visible run facts, complete current UI
+`HumanSnapshot` separates persistent visible run facts, mapped current UI
 surface/context facts, entities, controls, current affordances and optional D
 annotations. Assisted and pure snapshots share the same state token and
-affordance authority.
+affordance authority. “Mapped” is deliberate: hover/scroll and unknown custom
+drawn controls are not yet complete and remain explicit coverage gaps.
 
 An action binds request ID, mode, expected state token, frame ID, owner ID,
 affordance ID, exact parameters and controller generation. The Gateway
@@ -71,7 +72,9 @@ silent V3 executor fallback.
 
 ## Current Limits
 
-Structured UI coverage reuses the surfaces V3 already observed. A source-free
-adapter currently covers the native one-of-N card choice. Complete generic
-structured-tree discovery, hover/focus/tooltip/scroll and bounded visual
-fallback remain pending; unmapped visible UI is explicit rather than guessed.
+Structured UI coverage reuses bounded native adapters already proven in V3,
+but HE supplies its own wire, controller contract, publication and delivery
+receipt. Source-free adapters cover native one-of-N card choices and the shared
+deck-card selector lifecycle. Complete generic structured-tree discovery,
+hover/focus/tooltip/scroll and bounded visual fallback remain pending; unmapped
+visible UI is explicit rather than guessed.

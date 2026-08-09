@@ -28,6 +28,12 @@ internal sealed record HumanEquivalentLinkedDetailReadResult(
     string? ErrorCode,
     string? Detail);
 
+/// <summary>
+/// Human-Equivalent observation and delivery facade. It is a partial of the
+/// inherited runtime only to reach its bounded native UI adapter library; HE
+/// owns separate wire contracts, admission and receipts and does not invoke
+/// the V3 HTTP or permission path.
+/// </summary>
 internal static partial class ConnectorV3Runtime
 {
     private static readonly BridgeStateIdentityTracker HumanStateIdentity = new();
@@ -80,6 +86,21 @@ internal static partial class ConnectorV3Runtime
         string mode = NormalizeHumanMode(request.Mode);
         IReadOnlyDictionary<string, string> parameters = request.Parameters
             ?? new Dictionary<string, string>(StringComparer.Ordinal);
+        if (string.IsNullOrWhiteSpace(requestId))
+        {
+            return HumanReceipt(
+                requestId,
+                request.AffordanceId ?? "invalid",
+                "activate",
+                "invalid",
+                parameters,
+                "not_applied",
+                "not_applied",
+                "invalid_request_id",
+                "A bounded non-empty request_id is required.",
+                null,
+                null);
+        }
         string fingerprint = BridgeHash.Object(new
         {
             request.ExpectedStateToken,
@@ -147,8 +168,6 @@ internal static partial class ConnectorV3Runtime
                 return failed;
             }
 
-            if (string.IsNullOrWhiteSpace(requestId))
-                return Fail("invalid_request_id", "A bounded non-empty request_id is required.");
             if (!string.Equals(snapshot.Observation.StateToken, request.ExpectedStateToken, StringComparison.Ordinal)
                 || !string.Equals(snapshot.Observation.Frame.FrameId, request.ExpectedFrameId, StringComparison.Ordinal)
                 || !string.Equals(snapshot.Observation.Owner.OwnerId, request.ExpectedOwnerId, StringComparison.Ordinal))
@@ -320,7 +339,7 @@ internal static partial class ConnectorV3Runtime
                 "linked_detail_not_available",
                 "This entity is not in the current state-bound linked-detail catalog.");
         }
-        VisibleCard? card = SurfaceCards(snapshot.Draft.Surface)
+        VisibleCard? card = HumanSurfaceCards(snapshot.Draft.Surface)
             .FirstOrDefault(value => string.Equals(
                 value.EntityId,
                 entityId,
@@ -361,27 +380,11 @@ internal static partial class ConnectorV3Runtime
     private static HumanEquivalentRuntimeSnapshot BuildHumanEquivalentSnapshot(string mode)
     {
         GameBuildIdentity game = BridgeV2Runtime.ReadCurrentGameIdentity();
-        BridgeObservationDraft? sourceFreeChoice =
-            HumanGeneratedCardChoiceAdapter.TryBuild(Entities, game);
-        BridgeObservationDraft draft = sourceFreeChoice
+        BridgeObservationDraft? sourceFreeSurface =
+            HumanGeneratedCardChoiceAdapter.TryBuild(Entities, game)
+            ?? HumanDeckCardSelectionAdapter.TryBuild(Entities, game);
+        BridgeObservationDraft draft = sourceFreeSurface
             ?? BridgeSnapshotBuilder.Build(Entities, game);
-        if (sourceFreeChoice == null)
-        {
-            try
-            {
-                draft = EventDeckRemovalSelection.TryBuild(Entities, game) ?? draft;
-            }
-            catch (Exception exception)
-            {
-                draft = draft with
-                {
-                    Warnings = draft.Warnings.Concat(new[]
-                    {
-                        $"Optional event-removal UI adapter was unavailable: {exception.GetType().Name}."
-                    }).ToArray()
-                };
-            }
-        }
         draft = HumanEquivalence.SuppressMutation(draft) with
         {
             CandidateAdmission = "human_ui",
@@ -419,16 +422,17 @@ internal static partial class ConnectorV3Runtime
             draft.Surface,
             draft.Surface.GetType(),
             McpMod._jsonOptions) ?? new JsonObject();
+        IReadOnlyList<ConnectorV3BoundCommand> nativeBindings =
+            BuildHumanEquivalentBindings(draft);
         string ownerId = ReadFirstString(
             rawSurface,
             "screen_entity_id",
             "room_entity_id",
             "hand_entity_id",
             "map_screen_entity_id")
-            ?? BuildBindings(draft).SelectMany(item => item.Candidate.EntityBindings)
+            ?? nativeBindings.SelectMany(item => item.Candidate.EntityBindings)
                 .FirstOrDefault(entity => IsOwnerRole(entity.Role))?.EntityId
             ?? "owner_" + BridgeHash.Object(new { draft.Surface.Kind, draft.Signature })[..20];
-        IReadOnlyList<ConnectorV3BoundCommand> nativeBindings = BuildBindings(draft);
         IReadOnlyList<(HumanEquivalentAffordance Affordance, ConnectorV3BoundCommand Binding)> projected =
             ProjectHumanAffordances(nativeBindings, ownerId);
         string stage = ReadFirstString(rawSurface, "stage") ?? draft.Readiness;
@@ -447,7 +451,7 @@ internal static partial class ConnectorV3Runtime
         };
         RemoveBusinessKeys(surfaceFacts);
 
-        IReadOnlyList<HumanEquivalentUiEntity> entities = SurfaceCards(draft.Surface)
+        IReadOnlyList<HumanEquivalentUiEntity> entities = HumanSurfaceCards(draft.Surface)
             .GroupBy(card => card.EntityId, StringComparer.Ordinal)
             .Select(group => new HumanEquivalentUiEntity(
                 group.Key,
@@ -583,7 +587,7 @@ internal static partial class ConnectorV3Runtime
 
     private static IReadOnlyList<HumanEquivalentLinkedDetailCatalogEntry>
         BuildHumanLinkedDetailCatalog(IBridgeSurface surface) =>
-        SurfaceCards(surface)
+        HumanSurfaceCards(surface)
             .GroupBy(card => card.EntityId, StringComparer.Ordinal)
             .Select(group => new HumanEquivalentLinkedDetailCatalogEntry(
                 "surface_card",
@@ -609,6 +613,14 @@ internal static partial class ConnectorV3Runtime
         if (operation == "human_skip_visible_choice"
             && parameters.TryGetValue("screen_id", out screenId))
             return HumanGeneratedCardChoiceAdapter.StartSkip(Entities, screenId);
+        if (snapshot.Draft.Surface is HumanDeckCardSelectionSurface deckSelection)
+        {
+            return HumanDeckCardSelectionAdapter.Start(
+                Entities,
+                deckSelection,
+                binding,
+                parameters);
+        }
 
         ConnectorV3Snapshot carrier = BuildSnapshot(
             suppressHumanEquivalence: false,
@@ -625,6 +637,24 @@ internal static partial class ConnectorV3Runtime
             parameters);
         return StartNativeUiInput(carrier, request, binding);
     }
+
+    private static IReadOnlyList<ConnectorV3BoundCommand> BuildHumanEquivalentBindings(
+        BridgeObservationDraft draft)
+    {
+        if (draft.Surface is not HumanDeckCardSelectionSurface deckSelection)
+            return BuildBindings(draft);
+
+        return HumanDeckCardSelectionAdapter.DescribeCommands(deckSelection)
+            .Select(descriptor => BuildNativeBinding(draft, descriptor))
+            .Where(binding => binding != null)
+            .Cast<ConnectorV3BoundCommand>()
+            .ToArray();
+    }
+
+    private static IEnumerable<VisibleCard> HumanSurfaceCards(IBridgeSurface surface) =>
+        surface is HumanDeckCardSelectionSurface deckSelection
+            ? deckSelection.Cards
+            : SurfaceCards(surface);
 
     private static IReadOnlyList<(HumanEquivalentAffordance, ConnectorV3BoundCommand)>
         ProjectHumanAffordances(

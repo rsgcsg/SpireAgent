@@ -7,6 +7,9 @@ coherence, and converts current affordances into finite opaque local choices.
 The model never receives or constructs the exact request binding. Re rejects a
 stale local choice before submission.
 
+Client registration and controller lease coordination also decode the HE
+control schema; the default adapter has no V3 wire-schema dependency.
+
 `applied` uses the receipt successor when present and otherwise performs a
 fresh client observation for readiness; `not_applied`
 requires a fresh snapshot; `unknown` stops and is never retried.

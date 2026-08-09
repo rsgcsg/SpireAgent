@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { buildAllowedActions } from "../src/domain/actions/buildAllowedActions.js";
 import type { AdapterDescriptor } from "../src/game-io/adapter.js";
-import { decodeHumanObservation } from "../src/integrations/sts2mcp/humanEquivalentProtocol.js";
+import {
+  decodeHumanClientRegistration,
+  decodeHumanControllerLeaseResponse,
+  decodeHumanObservation
+} from "../src/integrations/sts2mcp/humanEquivalentProtocol.js";
 import { wrapHumanEquivalentState } from "../src/integrations/sts2mcp/rawState.js";
 import { normalizeCurrentState } from "../src/normalization/normalizeCurrentState.js";
 import type { JsonObject } from "../src/shared/json.js";
@@ -89,5 +93,32 @@ describe("Human-Equivalent C", () => {
       expectedStateToken: "state-he-1",
       affordanceId: "affordance-card-1"
     });
+  });
+
+  it("uses the Human-Equivalent control schema without a V3 wire dependency", () => {
+    const registration = decodeHumanClientRegistration({
+      protocol_version: "1.0-preview.1",
+      schema: "sts2.connector.human-ui/control-1",
+      runtime_instance_id: "runtime-he",
+      client: { client_session_id: "client-session", client_instance_id: "client-instance" },
+      controller: null
+    }).data;
+    const lease = decodeHumanControllerLeaseResponse({
+      protocol_version: "1.0-preview.1",
+      schema: "sts2.connector.human-ui/control-1",
+      runtime_instance_id: "runtime-he",
+      status: "controller_acquired",
+      detail: "acquired",
+      client: registration.client,
+      controller: {
+        controller_lease_id: "lease-he",
+        controller_generation: 1,
+        client_session_id: registration.client.client_session_id,
+        expires_at: "2026-08-09T00:00:00Z"
+      }
+    }).data;
+
+    expect(lease.controller?.controller_lease_id).toBe("lease-he");
+    expect(lease.schema).toBe("sts2.connector.human-ui/control-1");
   });
 });

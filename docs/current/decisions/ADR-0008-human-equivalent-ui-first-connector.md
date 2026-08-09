@@ -76,11 +76,13 @@ The default receipt describes delivery:
 ```text
 not_applied
 applied
-pending_delivery
-unknown_delivery
+unknown
 ```
 
-It does not need to prove the complete business transaction. Re observes the successor and reasons about gameplay consequences. `unknown_delivery` is not blindly retried.
+It does not need to prove the complete business transaction. Re observes the
+successor and reasons about gameplay consequences. `unknown` means input may
+have been delivered and is never automatically retried. There is no second
+pending mutation: Re may only poll the same request identity.
 
 ## Compatibility Direction
 
@@ -110,6 +112,10 @@ Do not retain as universal requirements:
 
 The inherited V3 executor remains an explicit rollback/comparison endpoint. The
 default Re and operator CLI use `/api/he/*`; there is no silent V3 fallback.
+V3 provider and native-adapter code may be reused inside the game process while
+it is migrated, but it does not supply HE wire types, permission, qualification
+or business Outcome authority. This internal reuse is implementation debt, not
+a second production executor.
 
 ## Evidence Boundary
 

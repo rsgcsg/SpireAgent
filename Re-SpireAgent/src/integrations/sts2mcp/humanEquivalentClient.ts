@@ -1,17 +1,14 @@
 import type { JsonObject } from "../../shared/json.js";
 import {
-  decodeConnectorV3ClientRegistration,
-  decodeConnectorV3ControllerLeaseResponse,
-  type ConnectorV3ClientRegistration,
-  type ConnectorV3ControllerLeaseResponse,
-  type DecodedConnectorV3Payload
-} from "./connectorV3Protocol.js";
-import {
+  decodeHumanClientRegistration,
   decodeHumanCapabilities,
+  decodeHumanControllerLeaseResponse,
   decodeHumanObservation,
   decodeHumanReceipt,
   type DecodedHumanPayload,
   type HumanEquivalentCapabilities,
+  type HumanEquivalentClientRegistration,
+  type HumanEquivalentControllerLeaseResponse,
   type HumanEquivalentObservation,
   type HumanEquivalentReceipt
 } from "./humanEquivalentProtocol.js";
@@ -70,8 +67,8 @@ export class HumanEquivalentRestClient {
 
   async registerClient(input: {
     clientInstanceId: string; productId: string; productName: string; productVersion: string;
-  }): Promise<DecodedConnectorV3Payload<ConnectorV3ClientRegistration>> {
-    return decodeConnectorV3ClientRegistration(await this.post("/api/he/clients/register", {
+  }): Promise<DecodedHumanPayload<HumanEquivalentClientRegistration>> {
+    return decodeHumanClientRegistration(await this.post("/api/he/clients/register", {
       client_instance_id: input.clientInstanceId,
       product_id: input.productId,
       product_name: input.productName,
@@ -79,22 +76,22 @@ export class HumanEquivalentRestClient {
     }));
   }
 
-  async acquireController(clientSessionId: string): Promise<DecodedConnectorV3Payload<ConnectorV3ControllerLeaseResponse>> {
-    return decodeConnectorV3ControllerLeaseResponse(await this.post("/api/he/controller/acquire", {
+  async acquireController(clientSessionId: string): Promise<DecodedHumanPayload<HumanEquivalentControllerLeaseResponse>> {
+    return decodeHumanControllerLeaseResponse(await this.post("/api/he/controller/acquire", {
       client_session_id: clientSessionId
     }));
   }
 
-  async renewController(input: { clientSessionId: string; controllerLeaseId: string; controllerGeneration: number }): Promise<DecodedConnectorV3Payload<ConnectorV3ControllerLeaseResponse>> {
-    return decodeConnectorV3ControllerLeaseResponse(await this.post("/api/he/controller/renew", {
+  async renewController(input: { clientSessionId: string; controllerLeaseId: string; controllerGeneration: number }): Promise<DecodedHumanPayload<HumanEquivalentControllerLeaseResponse>> {
+    return decodeHumanControllerLeaseResponse(await this.post("/api/he/controller/renew", {
       client_session_id: input.clientSessionId,
       controller_lease_id: input.controllerLeaseId,
       controller_generation: input.controllerGeneration
     }));
   }
 
-  async releaseController(input: { clientSessionId: string; controllerLeaseId: string; controllerGeneration: number }): Promise<DecodedConnectorV3Payload<ConnectorV3ControllerLeaseResponse>> {
-    return decodeConnectorV3ControllerLeaseResponse(await this.post("/api/he/controller/release", {
+  async releaseController(input: { clientSessionId: string; controllerLeaseId: string; controllerGeneration: number }): Promise<DecodedHumanPayload<HumanEquivalentControllerLeaseResponse>> {
+    return decodeHumanControllerLeaseResponse(await this.post("/api/he/controller/release", {
       client_session_id: input.clientSessionId,
       controller_lease_id: input.controllerLeaseId,
       controller_generation: input.controllerGeneration

@@ -7,8 +7,11 @@ entry, combat cards/potions/end turn, map, event, reward/card reward, shop,
 rest, treasure, generated choices, combat hand/piles, upgrade/removal/
 transform/enchant/bundle selectors and game over.
 
-Current one-of-N native card choice additionally has source-free discovery:
-an unknown card/event/relic source does not suppress exact visible choices.
+Current one-of-N and deck-card native selectors additionally have source-free
+discovery: an unknown card/event/relic/reward source does not suppress exact
+visible choices. Deck-card selection includes select, deselect, preview, return,
+cancel when native-cancelable and confirm. These actions prove only UI input
+delivery; STS2 owns their eventual effect.
 
 ## Information
 

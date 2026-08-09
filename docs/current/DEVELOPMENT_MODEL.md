@@ -9,12 +9,13 @@ without confusing source, deployment and runtime truth.
 |---|---|
 | `main` | Public default and reviewed distribution source |
 | `develop` | Integration target for coherent changes before promotion |
-| `connectorV3` | Temporary shared migration branch while V3 is not yet promoted |
+| `human_equivalent_connector` | Current shared HE migration and exact-runtime validation branch |
+| `connectorV3` | Superseded V3 history and explicit rollback comparison |
 | topic branch | Preferred location for one developer or Agent's PR-sized change |
 
 The default branch is what a fresh clone receives. A feature branch must never
-be described as a public release merely because it is newer. `connectorV3`
-should be retired after its reviewed history is integrated; it is not a
+be described as a public release merely because it is newer. The HE branch must
+be reviewed into `develop` and then `main`; neither HE nor `connectorV3` is a
 permanent third release channel.
 
 Before work:
@@ -33,12 +34,13 @@ pulls; never force-push a branch other people are actively testing.
 
 Each change identifies the component that owns the behavior:
 
-- Gateway: observation, active owner, source/entity binding, admission,
-  execute-time validation, native Commit and Outcome;
+- Gateway/C: player-visible UI observation, active owner/entity/control
+  binding, affordance admission, execute-time validation, native input delivery
+  and delivery uncertainty;
 - Re: strict decode, decision projection, provider invocation, receipt polling,
   successor supervision and run recording;
 - REST/MCP: transport only;
-- D tooling: non-authorizing audit and evidence;
+- D tooling: optional non-authorizing source/business annotations, audit and evidence;
 - docs/operator shell: reproducible setup, diagnosis and rollback.
 
 A Connector family change should be vertically complete rather than scattered

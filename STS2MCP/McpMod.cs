@@ -357,14 +357,14 @@ public static partial class McpMod
             else if (path == "/api/he/clients/register")
             {
                 if (request.HttpMethod == "POST")
-                    HandlePostConnectorV3ClientRegistration(request, response);
+                    HandlePostHumanEquivalentClientRegistration(request, response);
                 else
                     SendError(response, 405, "Method not allowed");
             }
             else if (path == "/api/he/controller")
             {
                 if (request.HttpMethod == "GET")
-                    HandleGetConnectorV3Control(response);
+                    HandleGetHumanEquivalentControl(response);
                 else
                     SendError(response, 405, "Method not allowed");
             }
@@ -372,7 +372,7 @@ public static partial class McpMod
             {
                 string operation = path["/api/he/controller/".Length..];
                 if (request.HttpMethod == "POST" && operation is "acquire" or "renew" or "release")
-                    HandlePostConnectorV3Controller(operation, request, response);
+                    HandlePostHumanEquivalentController(operation, request, response);
                 else if (request.HttpMethod == "POST")
                     SendError(response, 404, "Unknown controller operation");
                 else

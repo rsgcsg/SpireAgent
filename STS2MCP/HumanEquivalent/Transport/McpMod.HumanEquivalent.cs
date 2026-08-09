@@ -183,6 +183,108 @@ public static partial class McpMod
         }
     }
 
+    private static void HandlePostHumanEquivalentClientRegistration(
+        HttpListenerRequest request,
+        HttpListenerResponse response)
+    {
+        HumanEquivalentClientRegistrationRequest? registration =
+            ReadConnectorV3BoundedBody<HumanEquivalentClientRegistrationRequest>(
+                request,
+                response,
+                MaxHumanEquivalentActionBodyBytes,
+                "Human-Equivalent control");
+        if (registration == null)
+            return;
+        if (!IsSafeBridgeIdentifier(registration.ClientInstanceId, 128)
+            || !IsSafeBridgeIdentifier(registration.ProductId, 64)
+            || !IsSafeBridgeLabel(registration.ProductName, 128)
+            || !IsSafeBridgeIdentifier(registration.ProductVersion, 64))
+        {
+            SendConnectorV3Error(
+                response,
+                400,
+                "invalid_client_registration",
+                "Client instance, product id, product name and product version are required and bounded.");
+            return;
+        }
+
+        try
+        {
+            HumanEquivalentClientRegistrationResponse result =
+                ConnectorV3Runtime.RegisterHumanEquivalentClient(registration);
+            response.StatusCode = 201;
+            SendJson(response, result);
+        }
+        catch (Exception exception)
+        {
+            SendConnectorV3InternalError(response, "human_client_registration_failed", exception);
+        }
+    }
+
+    private static void HandleGetHumanEquivalentControl(HttpListenerResponse response)
+    {
+        try
+        {
+            SendJson(response, ConnectorV3Runtime.GetHumanEquivalentControlSnapshot());
+        }
+        catch (Exception exception)
+        {
+            SendConnectorV3InternalError(response, "human_controller_status_read_failed", exception);
+        }
+    }
+
+    private static void HandlePostHumanEquivalentController(
+        string operation,
+        HttpListenerRequest request,
+        HttpListenerResponse response)
+    {
+        HumanEquivalentControllerLeaseRequest? lease =
+            ReadConnectorV3BoundedBody<HumanEquivalentControllerLeaseRequest>(
+                request,
+                response,
+                MaxHumanEquivalentActionBodyBytes,
+                "Human-Equivalent control");
+        if (lease == null)
+            return;
+        bool acquire = string.Equals(operation, "acquire", StringComparison.Ordinal);
+        if (!IsSafeBridgeIdentifier(lease.ClientSessionId, 128)
+            || (!acquire && !IsSafeBridgeIdentifier(lease.ControllerLeaseId, 128))
+            || (!acquire && lease.ControllerGeneration is null or <= 0))
+        {
+            SendConnectorV3Error(
+                response,
+                400,
+                "invalid_controller_contract",
+                acquire
+                    ? "client_session_id is required to acquire mutation control."
+                    : "client_session_id, controller_lease_id and a positive controller_generation are required.");
+            return;
+        }
+
+        try
+        {
+            HumanEquivalentControllerLeaseResponse result = operation switch
+            {
+                "acquire" => ConnectorV3Runtime.AcquireHumanEquivalentController(lease),
+                "renew" => ConnectorV3Runtime.RenewHumanEquivalentController(lease),
+                _ => ConnectorV3Runtime.ReleaseHumanEquivalentController(lease)
+            };
+            response.StatusCode = result.Status switch
+            {
+                "controller_acquired" or "controller_already_held"
+                    or "controller_renewed" or "controller_released" => 200,
+                "controller_lease_held" or "controller_lease_stale" => 409,
+                "client_session_not_found" => 404,
+                _ => 409
+            };
+            SendJson(response, result);
+        }
+        catch (Exception exception)
+        {
+            SendConnectorV3InternalError(response, "human_controller_operation_failed", exception);
+        }
+    }
+
     private static void HandleGetHumanEquivalentAction(
         string encodedRequestId,
         HttpListenerResponse response)

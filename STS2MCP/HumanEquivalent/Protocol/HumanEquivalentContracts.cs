@@ -42,6 +42,43 @@ public sealed record HumanEquivalentCapabilitiesResponse(
     object Control,
     IReadOnlyList<string> NonClaims);
 
+// Controller coordination is transport-neutral infrastructure. The Human-
+// Equivalent route owns its wire names even though the game-side coordinator
+// is shared with the historical connector implementations.
+public sealed record HumanEquivalentClientRegistrationRequest(
+    string? ClientInstanceId,
+    string? ProductId,
+    string? ProductName,
+    string? ProductVersion);
+
+public sealed record HumanEquivalentControllerLeaseRequest(
+    string? ClientSessionId,
+    string? ControllerLeaseId,
+    long? ControllerGeneration);
+
+public sealed record HumanEquivalentClientRegistrationResponse(
+    string ProtocolVersion,
+    string Schema,
+    string RuntimeInstanceId,
+    BridgeClientRecord Client,
+    BridgeControllerLeaseInfo? Controller);
+
+public sealed record HumanEquivalentControlSnapshot(
+    string ProtocolVersion,
+    string Schema,
+    string RuntimeInstanceId,
+    IReadOnlyList<BridgeClientRecord> Clients,
+    BridgeControllerLeaseInfo? Controller);
+
+public sealed record HumanEquivalentControllerLeaseResponse(
+    string ProtocolVersion,
+    string Schema,
+    string RuntimeInstanceId,
+    string Status,
+    string Detail,
+    BridgeClientRecord? Client,
+    BridgeControllerLeaseInfo? Controller);
+
 public sealed record HumanEquivalentFrame(
     string FrameId,
     int Width,
@@ -57,6 +94,29 @@ public sealed record HumanEquivalentUiSurface(
     string Stage,
     string? Prompt,
     JsonNode Facts);
+
+/// <summary>
+/// Player-visible state of the native deck-card selector. This intentionally
+/// describes UI mechanics only: the card, relic, event or reward that opened
+/// the selector is not action authority in Human-Equivalent mode.
+/// </summary>
+public sealed record HumanDeckCardSelectionSurface(
+    string Kind,
+    string Stage,
+    string ScreenEntityId,
+    string? Prompt,
+    int MinSelect,
+    int MaxSelect,
+    int SelectedCount,
+    IReadOnlyList<string> SelectedCardEntityIds,
+    IReadOnlyList<string> SelectableCardEntityIds,
+    IReadOnlyList<string> DeselectableCardEntityIds,
+    bool Cancelable,
+    bool CanPreview,
+    bool CanCancelSelection,
+    bool CanCancelPreview,
+    bool CanConfirm,
+    IReadOnlyList<VisibleCard> Cards) : IBridgeSurface;
 
 public sealed record HumanEquivalentUiEntity(
     string EntityId,

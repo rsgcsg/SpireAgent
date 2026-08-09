@@ -1,5 +1,6 @@
 using STS2_MCP.ConnectorV3.Runtime;
 using STS2_MCP.HumanEquivalent.Protocol;
+using STS2_MCP.HumanEquivalent.Runtime;
 
 namespace STS2_MCP.Tests;
 
@@ -106,4 +107,88 @@ public sealed class HumanEquivalentContractTests
         Assert.True(entry.StateBound);
         Assert.False(entry.CreatesActionAuthority);
     }
+
+    [Fact]
+    public void DeckSelectorCommandsDependOnCurrentUiStateNotBusinessSource()
+    {
+        var cardA = TestCard("card-a", "Alpha");
+        var cardB = TestCard("card-b", "Beta");
+        var selecting = new HumanDeckCardSelectionSurface(
+            HumanDeckCardSelectionAdapter.SurfaceKind,
+            "selecting",
+            "screen-a",
+            "Choose cards",
+            1,
+            2,
+            1,
+            new[] { "card-b" },
+            new[] { "card-a" },
+            new[] { "card-b" },
+            Cancelable: true,
+            CanPreview: true,
+            CanCancelSelection: true,
+            CanCancelPreview: false,
+            CanConfirm: false,
+            new[] { cardA, cardB });
+
+        ConnectorV3CommandDescriptor[] commands =
+            HumanDeckCardSelectionAdapter.DescribeCommands(selecting).ToArray();
+
+        Assert.Contains(commands, command =>
+            command.Kind == HumanDeckCardSelectionAdapter.SelectOperation);
+        Assert.Contains(commands, command =>
+            command.Kind == HumanDeckCardSelectionAdapter.DeselectOperation);
+        Assert.Contains(commands, command =>
+            command.Kind == HumanDeckCardSelectionAdapter.PreviewOperation);
+        Assert.Contains(commands, command =>
+            command.Kind == HumanDeckCardSelectionAdapter.CancelSelectionOperation);
+        Assert.DoesNotContain(commands, command =>
+            command.EvidenceCode.Contains("source", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void DeckSelectorPreviewOnlyPublishesCurrentPreviewControls()
+    {
+        var surface = new HumanDeckCardSelectionSurface(
+            HumanDeckCardSelectionAdapter.SurfaceKind,
+            "preview",
+            "screen-a",
+            "Confirm cards",
+            1,
+            1,
+            1,
+            new[] { "card-a" },
+            Array.Empty<string>(),
+            Array.Empty<string>(),
+            Cancelable: false,
+            CanPreview: false,
+            CanCancelSelection: false,
+            CanCancelPreview: true,
+            CanConfirm: true,
+            new[] { TestCard("card-a", "Alpha") });
+
+        ConnectorV3CommandDescriptor[] commands =
+            HumanDeckCardSelectionAdapter.DescribeCommands(surface).ToArray();
+
+        Assert.Equal(2, commands.Length);
+        Assert.Contains(commands, command =>
+            command.Kind == HumanDeckCardSelectionAdapter.CancelPreviewOperation);
+        Assert.Contains(commands, command =>
+            command.Kind == HumanDeckCardSelectionAdapter.ConfirmOperation);
+    }
+
+    private static STS2_MCP.BridgeV2.Protocol.VisibleCard TestCard(
+        string entityId,
+        string name) => new(
+            entityId,
+            "test_card",
+            name,
+            "skill",
+            "1",
+            null,
+            "Test description",
+            "common",
+            IsUpgraded: false,
+            IsSelected: false,
+            ExistingEnchantment: null);
 }
