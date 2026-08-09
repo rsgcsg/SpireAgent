@@ -52,6 +52,12 @@ crossed a checkpoint-pending boundary without being resubmitted. There was no
 unknown delivery. This closes the ordinary-journey condition but remains
 coverage-only, unrecorded-provenance evidence.
 
+`run-20260809131456-dfve6q` subsequently completed an exact `he_pure` journey
+on source `b8cfaf30`, SHA `d373f6fb...`, MVID `40051d0a...`, runtime
+`c439a4a2...`. It reached `completed_run_boundary` after 231 decisions with
+zero unknown delivery. This closes the A+C-only composition condition for that
+artifact; it does not create Organic evidence or qualification.
+
 ## Root Causes
 
 The shop loop is A-domain debt, not failed C delivery. C repeatedly returned
@@ -101,12 +107,11 @@ and unknown handling, and structural boundary checks.
 
 Open blockers:
 
-1. a bounded `he_pure` Live journey;
-2. source-free combat-pile and unknown-source selector exact-runtime evidence;
-3. truthful hover/focus/tooltip/scroll/native-page information parity.
+1. source-free combat-pile and unknown-source selector exact-runtime evidence;
+2. truthful hover/focus/tooltip/scroll/native-page information parity.
 
 The core C wire, authority and delivery contract is frozen. The remaining
 provider ownership debt should be retired family by family; it does not justify
 a new protocol, source registry, business Outcome gate or V4. Overall freeze
-remains conditional until the `he_pure`, source-free selector and Human
-information-parity evidence above is obtained.
+remains conditional until the source-free selector and Human information-parity
+evidence above is obtained.

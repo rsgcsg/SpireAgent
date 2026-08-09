@@ -16,8 +16,8 @@ omitted, unobserved control state; that defect is fixed in source and tests.
 It does not inherit `preview.1` journey evidence.
 
 Freeze verdict is `conditional freeze`, with the core C wire, authority and
-delivery contract frozen. A fixed-`preview.2` ordinary journey completed; the
-remaining conditions are bounded `he_pure`, source-free selector and Human
+delivery contract frozen. Fixed-`preview.2` ordinary and `he_pure` journeys
+completed; the remaining conditions are source-free selector and Human
 information-parity evidence, not another C business-semantics redesign.
 
 ## Implemented
@@ -75,6 +75,14 @@ rest, shop, treasure and game-over return. No unknown delivery occurred. The
 metadata remains `provenance=unrecorded` and `qualificationUse=coverage_only`;
 this is exact Live journey evidence, not Organic evidence or qualification.
 
+`run-20260809131456-dfve6q` then exercised `he_pure` on source `b8cfaf30`,
+SHA `d373f6fb...`, MVID `40051d0a...`, runtime `c439a4a2...`. It completed a
+game and stopped at the same bounded menu boundary after 231 decisions: 163
+settled inputs, 14 checkpoint-pending inputs, 9 safe stale refusals and 45
+non-actionable transition polls, with zero unknown delivery. This proves the
+bounded A+C-only composition for that exact artifact. Its unrecorded
+provenance and coverage-only qualification boundary remain unchanged.
+
 Four `he_assisted` runs used source `930941a2`, protocol `1.0-preview.1`, SHA
 `257ccac1...`, MVID `2345552d...`, runtime `da0c602d...`, STS2 `v0.110.1` /
 `db5d3552` and an `additional_loaded_mods` Modset.
@@ -95,7 +103,6 @@ Organic evidence or durable qualification.
 
 ## Pending Exact-Runtime Evidence
 
-- one bounded `he_pure` journey;
 - source-free combat-pile select/deselect/confirm;
 - unknown-source one-of-N and deck-card selectors;
 - stale, duplicate-request and unknown-delivery runtime negatives;
