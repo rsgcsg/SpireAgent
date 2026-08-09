@@ -18,7 +18,7 @@ Outcome or retry unknown delivery.
 
 | Area | Current path | Evidence boundary |
 |---|---|---|
-| menus, map, event, game over | HE projection over bounded native elements | source and automated tests; preview.3 Live pending |
+| menus, map, event, game over | HE projection over bounded native elements | source/automated plus loaded read-only main-menu; preview.3 mutation pending |
 | combat hand, targets, potion, end turn | HE projection over exact native adapters | source and automated tests; preview.3 Live pending |
 | reward, shop, rest, treasure | HE projection over current UI elements | source and automated tests; preview.3 Live pending |
 | card selectors | source-independent generated choice plus inherited bounded UI mechanics | unknown generated source tested; other unknown owners remain explicit unsupported |

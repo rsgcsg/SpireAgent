@@ -1,6 +1,6 @@
 # Human Environment Contract Implementation Plan
 
-Status: `preview.3` source/test complete; exact-runtime and information parity open
+Status: `preview.3` source/test/load/read-only complete; mutation, journey and information parity open
 
 Authority: [ADR-0008](decisions/ADR-0008-human-equivalent-ui-first-connector.md)
 
@@ -33,8 +33,8 @@ not accept preview.2 aliases or a silent fallback.
 
 ## Remaining Vertical Work
 
-1. Release build/install/cold-load `preview.3` and verify SHA/MVID/protocol.
-2. Short current-element/action/read smoke and one ordinary `he_pure` journey.
+1. Short current-element/action/successor mutation smoke.
+2. One ordinary `he_pure` journey.
 3. Native hover/focus/tooltip/scroll/page read-return.
 4. Neutralize five V3-owned host adapter seams.
 5. Generate tagged Surface schemas/SDKs from `content_schema` revisions.

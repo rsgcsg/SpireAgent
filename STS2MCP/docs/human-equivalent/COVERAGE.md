@@ -23,8 +23,9 @@ normal Agent native-page open/read/return and generated typed Surface SDKs.
 ## Evidence
 
 `preview.2` has complete assisted and `he_pure` journeys, including final
-`run-20260809134724-5yfbuf`. `preview.3` currently has source and automated
-evidence only. It requires cold-load and exact-runtime regression.
+`run-20260809134724-5yfbuf`. `preview.3` has source, automated, exact loaded
+identity and strictly decoded read-only `main_menu` evidence on one local
+runtime. Input delivery and journey evidence remain pending.
 
 ## Unsupported
 

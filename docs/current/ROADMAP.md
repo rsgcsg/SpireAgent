@@ -2,7 +2,8 @@
 
 ## C-0: Fair-Player Execution Core
 
-Status: source/test complete, `preview.3` exact-runtime pending.
+Status: source/test/build/install/load/read-only complete on one machine;
+`preview.3` mutation and journey evidence pending.
 
 Snapshot/owner/element binding, one controller, execute-time revalidation,
 native delivery, idempotency, stale refusal, unknown-no-retry and successor.
@@ -33,7 +34,7 @@ reset/seed/fork remain outside C.
 
 ## A Mainline
 
-Status: ready after one `preview.3` exact-runtime regression.
+Status: ready after one `preview.3` input regression and ordinary journey.
 
 Improve decision-lossless projection, transition context, planning, recovery
 and long-run quality. Do not move native legality or completion into A.

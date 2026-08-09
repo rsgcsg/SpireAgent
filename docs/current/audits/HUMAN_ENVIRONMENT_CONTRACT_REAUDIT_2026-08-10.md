@@ -47,7 +47,9 @@ business commands.
 The final `preview.2` journey completed 286 decisions with no unknown delivery.
 That evidence supports the retained execution semantics only. `preview.3`
 currently has automated schema, boundary, Gateway and Re evidence. It does not
-yet have load, Live journey, Headless parity, Organic or qualification evidence.
+yet have mutation or journey evidence. It now has one exact loaded identity and
+strictly decoded read-only `main_menu` snapshot; this does not prove Headless
+parity, Organic evidence or qualification.
 
 ## External Checks
 

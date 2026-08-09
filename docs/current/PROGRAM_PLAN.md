@@ -11,12 +11,13 @@ moving host lifecycle, rewards or strategy into C.
 `preview.2` completed assisted and pure A+C journeys. `preview.3` preserves the
 proven execution semantics while correcting public ownership, reference
 ontology, read discovery and hot-path identity. It is source/test verified and
-now requires build/install/cold-load plus one ordinary regression.
+has one exact loaded/read-only local check; input delivery and an ordinary
+journey remain pending.
 
 ## Delivery Order
 
-1. Build, install, cold-load and verify coherent `preview.3` identity.
-2. Run a short schema/input regression, then one ordinary `he_pure` journey.
+1. Run a short `preview.3` input/successor regression on the exact loaded artifact.
+2. Run one ordinary `he_pure` journey.
 3. Complete hover/focus/tooltip/scroll/native-page information parity.
 4. Move the five remaining adapter-library seams to neutral NativeUi ownership.
 5. Shift normal product effort to A strategy, planning and recovery.

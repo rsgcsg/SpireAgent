@@ -39,8 +39,23 @@ The public C DTO file imports no BridgeV2 or ConnectorV3 type. Exact native
 operands remain private to the Live host. D annotations, source contracts,
 business Outcome, rewards, reset/seed/fork and hidden state are absent.
 
-Automated evidence currently includes all Gateway tests, all Re tests and
-strict schema/boundary checks. Build, install, load and Live are separate.
+Automated evidence includes all Gateway tests, all Re tests and strict
+schema/boundary checks. One local machine has also completed exact
+build/install/load identity and a strictly decoded read-only observation; this
+does not transfer to another machine or prove input delivery.
+
+## Current Preview.3 Runtime Evidence
+
+The committed `preview.3` code at `a0f218f990f049bc2f402647b9558d282289a94f`
+was built, installed and Steam-cold-loaded with SHA
+`7616c381f960d41ba2e9aa746d267b3136316fbf744433b9c51841f7ccab0cae`, MVID
+`a086de75-2527-4b73-8f0c-3d9c45a1e012` and runtime
+`3e717619bd5e42d5aa8caac785241069` on game `v0.110.1/db5d3552`.
+
+The strict Re decoder accepted the exact `main_menu` snapshot and verified the
+capability/snapshot environment fingerprint. This is loaded and read-only Live
+evidence only: no `preview.3` action, successor, assisted journey, pure journey,
+Organic evidence or qualification has been exercised.
 
 ## Latest Live Evidence
 
@@ -70,7 +85,7 @@ revision.
 - hover, focus, tooltip, scroll and native-page read/return are incomplete;
 - no Headless host, Gym/Training adapter, vector environment, clone/fork API or
   Live-vs-Headless conformance implementation exists;
-- `preview.3` has no loaded or long-journey evidence yet.
+- `preview.3` has no mutation delivery or long-journey evidence yet.
 
 ## Per-machine Deployment Truth
 
